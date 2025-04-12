@@ -5,6 +5,9 @@
             "@assets/*": [
                 "./public/*"
             ],
+            "@modules/*": [
+                "./src/modules/*"
+            ],
             "@components/*": [
                 "./src/components/*"
             ],
@@ -14,9 +17,9 @@
             "@utils/*": [
                 "./src/utils/*"
             ],
-            "@hooks/*": [
-                "./src/hooks/*"
-            ]
+            "@theme/*": [
+                "./src/theme/*"
+            ],
         }
     }
 }
