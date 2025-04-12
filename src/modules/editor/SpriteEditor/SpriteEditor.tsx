@@ -1,9 +1,13 @@
-import IEditor from "../IEditor"; 
-
+import IEditor from "../IEditor";
+import { TabData } from "@modules/editor/tab/TabData";
 
 export class SpriteEditor extends IEditor {
     constructor() {
         super();
+        this.tabData = {
+            title: "Sprite",
+            icon: "sprite",
+        };
     }
 
     sendData(data: string) {
@@ -13,14 +17,15 @@ export class SpriteEditor extends IEditor {
     loadData(data: string) {
         console.log("SpriteEditor loadData", data);
     }
+
+    render() {
+        return (
+            <div>
+                <p>Sprite Editor</p>
+            </div>
+        );
+    }
 }
 
-export const SpriteEditorBalise = () => {
-    return (
-        <div>
-            <p>Sprite Editor</p>
-        </div>
-    );
-}
 
 

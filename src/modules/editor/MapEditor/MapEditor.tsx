@@ -1,9 +1,14 @@
-import IEditor from "../IEditor"; 
+import IEditor from "../IEditor";
+import { TabData } from "@modules/editor/tab/TabData";
 
 
 export class MapEditor extends IEditor {
     constructor() {
         super();
+        this.tabData = {
+            title: "Map",
+            icon: "map",
+        };
     }
 
     sendData(data: string) {
@@ -13,12 +18,14 @@ export class MapEditor extends IEditor {
     loadData(data: string) {
         console.log("MapEditor loadData", data);
     }
+
+    render() {
+        return (
+            <div>
+                <p>Map Editor</p>
+            </div>
+        );
+    }
+
 }
 
-export const MapEditorBalise = () => {
-    return (
-        <div>
-            <p>Map Editor babage</p>
-        </div>
-    );
-}

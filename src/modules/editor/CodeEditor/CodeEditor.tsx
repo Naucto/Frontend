@@ -1,9 +1,14 @@
 import IEditor from "../IEditor"; 
+import { TabData } from "@modules/editor/tab/TabData";
 
 
 export class CodeEditor extends IEditor {
     constructor() {
         super();
+        this.tabData = {
+            title: "Code",
+            icon: "code",
+        };
     }
 
     sendData(data: string) {
@@ -13,13 +18,13 @@ export class CodeEditor extends IEditor {
     loadData(data: string) {
         console.log("CodeEditor loadData", data);
     }
-}
 
-export const CodeEditorBalise = () => {
-    return (
-        <div>
-            <p>Code Editor</p>
-        </div>
-    );
+    render() {
+        return (
+            <div>
+                <p>Code Editor</p>
+            </div>
+        );
+    }
 }
 

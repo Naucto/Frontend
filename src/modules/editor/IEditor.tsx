@@ -1,15 +1,11 @@
 
-
+import {TabData} from "@modules/editor/tab/TabData";
 
 class IEditor {
-    constructor() {
-    }
-
-    sendData(data: string) {
-        return;
-    }
-    loadData(data: string) {
-        return;
+    public tabData: TabData = new TabData("IEditor", "Ieditor");
+    constructor() {}
+    render() {
+        return <div></div>;
     }
 }
 
