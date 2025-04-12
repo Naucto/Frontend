@@ -1,0 +1,32 @@
+.SoundEditor {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-wrap: nowrap;
+}
+
+.scrollable-container {
+    max-width: 90%;
+    max-height: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    margin: 10px 0;
+    /* align-items removed to avoid clipping */
+}
+
+.grid {
+    width: max-content;
+    display: grid;
+    gap: 1px;
+    background-color: black;
+    box-sizing: border-box;
+}
+
+.grid-cell {
+    background-color: white;
+    border: 1px solid gray;
+    box-sizing: border-box;
+}

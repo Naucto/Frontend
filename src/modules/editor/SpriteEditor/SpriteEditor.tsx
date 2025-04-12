@@ -1,4 +1,4 @@
-import IEditor from "./IEditor"; 
+import IEditor from "../IEditor"; 
 
 
 class SpriteEditor extends IEditor {

@@ -6,10 +6,11 @@ import "./App.css"
 import { ThemeProvider } from "@theme/ThemeContext"
 
 import { Hub } from "@modules/hub/Hub"
+import { SoundEditorBalise } from "@modules/editor/SoundEditor/SoundEditor"
 function App() {
   return (
     <ThemeProvider>
-      <Hub></Hub>
+      <SoundEditorBalise></SoundEditorBalise>
     </ThemeProvider>
   )
 }
