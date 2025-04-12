@@ -4,24 +4,40 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 import pluginReact from "eslint-plugin-react";
 
+
 export default defineConfig([
   {
     files: ["**/*.{js,mjs,cjs,ts,jsx,tsx}"],
-    languageOptions: { globals: globals.browser },
-    plugins: { js },
+    languageOptions: {
+      globals: globals.browser,
+      parser: tseslint.parser,
+      parserOptions: {
+        project: "./tsconfig.eslint.json"
+      }
+    },
+    plugins: {
+      js,
+      react: pluginReact,
+      "@typescript-eslint": tseslint.plugin,
+    },
     extends: ["js/recommended"],
     rules: {
       indent: ["error", 2],
+      quotes: ["error", "double"],
+      "@typescript-eslint/no-unused-vars": "warn",
+      "no-console": "warn",
       "react/react-in-jsx-scope": "off",
-      ...pluginReact.configs.flat.recommended.rules
+      "react/self-closing-comp": "error",
+      "no-var": "error",
+      "prefer-const": "error",
+      "object-curly-spacing": ["error", "always"],
+
     },
-    settings: {
-      "import/resolver": {
-        typescript: {
-          project: "./tsconfig.json"
-        }
-      }
-    }
+
+
+
+
   },
   tseslint.configs.recommended,
+
 ]);
