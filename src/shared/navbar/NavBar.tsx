@@ -35,9 +35,8 @@ const Right = styled.div`
 
 const NavBar: React.FC = () => {
   const theme = useTheme();
-
   return (
-    <Nav className="navbar" theme={theme}>
+    <Nav className="navbar">
       <Left>
         <img className="navbar-logo" src={theme.logo.primary} alt="Logo" />
         <ImportantNavElem to="/create" theme={theme}>Create</ImportantNavElem>

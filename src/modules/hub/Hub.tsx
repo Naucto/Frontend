@@ -7,8 +7,7 @@ const HubContainer = styled.div<{ theme: any }>`
 `;
 
 export const Hub = () => {
-  const theme = useTheme()
   return (
-    <HubContainer theme={theme} />
+    <HubContainer />
   )
 }
