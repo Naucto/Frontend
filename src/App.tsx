@@ -3,7 +3,6 @@ import { useState } from "react"
 import reactLogo from "./assets/react.svg"
 import viteLogo from "/vite.svg"
 import "./App.css"
-import { ThemeProvider } from "@theme/ThemeContext"
 import { BrowserRouter, Route, Routes } from "react-router-dom"
 import { Hub } from "@modules/hub/Hub"
 import { EditorManager } from "@modules/editor/EditorManager"
@@ -13,8 +12,9 @@ import { MapEditor } from "@modules/editor/MapEditor/MapEditor"
 import { SoundEditor } from "@modules/editor/SoundEditor/SoundEditor"
 import { SpriteEditor } from "@modules/editor/SpriteEditor/SpriteEditor"
 import styled from "styled-components"
-import { useTheme } from "@theme/ThemeContext"
+import { theme, useTheme } from "@theme/ThemeContext"
 import NavBar from "@shared/navbar/NavBar"
+import { ThemeProvider } from 'styled-components';
 
 
 const Container = styled.div<{ theme: any }>`
@@ -35,8 +35,8 @@ function App() {
   editorManager.addEditor(new SpriteEditor());
 
   return (
-    <ThemeProvider>
-      <Container theme={theme}>
+    <Container theme={theme}>
+      <ThemeProvider theme={theme}>
         <BrowserRouter>
           <NavBar />
           <Routes>
@@ -45,8 +45,8 @@ function App() {
             <Route path="/editor" element={editorManager.render()} />
           </Routes>
         </BrowserRouter>
-      </Container>
-    </ThemeProvider>
+      </ThemeProvider>
+    </Container>
   )
 }
 
