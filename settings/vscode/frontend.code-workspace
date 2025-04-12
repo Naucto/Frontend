@@ -1,0 +1,20 @@
+{
+    "folders": [
+        {
+            "name": "frontend",
+            "path": "../.."
+        }
+    ],
+    "settings": {
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.fixAll.eslint": "explicit"
+        },
+    },
+    "extensions": {
+        "recommendations": [
+            "dbaeumer.vscode-eslint",
+            "eamodio.gitlens",
+        ]
+    }
+}
