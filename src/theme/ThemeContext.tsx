@@ -12,6 +12,10 @@ export const theme = {
     fontFamily: "'Roboto', sans-serif",
     fontSize: 16,
   },
+  logo: {
+    primary: "/img/logo.png",
+    secondary: "/img/logo.png",
+  },
 }
 
 type ThemeType = typeof theme;
