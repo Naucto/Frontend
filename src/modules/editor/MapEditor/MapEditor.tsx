@@ -1,7 +1,7 @@
 import IEditor from "../IEditor"; 
 
 
-class MapEditor extends IEditor {
+export class MapEditor extends IEditor {
     constructor() {
         super();
     }
@@ -15,4 +15,10 @@ class MapEditor extends IEditor {
     }
 }
 
-export default MapEditor;
+export const MapEditorBalise = () => {
+    return (
+        <div>
+            <p>Map Editor babage</p>
+        </div>
+    );
+}

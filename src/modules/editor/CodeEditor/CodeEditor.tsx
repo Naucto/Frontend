@@ -1,7 +1,7 @@
 import IEditor from "../IEditor"; 
 
 
-class CodeEditor extends IEditor {
+export class CodeEditor extends IEditor {
     constructor() {
         super();
     }
@@ -15,4 +15,11 @@ class CodeEditor extends IEditor {
     }
 }
 
-export default CodeEditor;
+export const CodeEditorBalise = () => {
+    return (
+        <div>
+            <p>Code Editor</p>
+        </div>
+    );
+}
+

@@ -1,7 +1,7 @@
 import IEditor from "../IEditor"; 
 
 
-class SpriteEditor extends IEditor {
+export class SpriteEditor extends IEditor {
     constructor() {
         super();
     }
@@ -15,4 +15,12 @@ class SpriteEditor extends IEditor {
     }
 }
 
-export default SpriteEditor;
+export const SpriteEditorBalise = () => {
+    return (
+        <div>
+            <p>Sprite Editor</p>
+        </div>
+    );
+}
+
+
