@@ -7,6 +7,15 @@
             ],
             "@components/*": [
                 "./src/components/*"
+            ],
+            "@shared/*": [
+                "./src/shared/*"
+            ],
+            "@utils/*": [
+                "./src/utils/*"
+            ],
+            "@hooks/*": [
+                "./src/hooks/*"
             ]
         }
     }
