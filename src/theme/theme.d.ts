@@ -1,11 +1,25 @@
-import { Palette, PaletteOptions } from "@mui/material/styles";
+import "styled-components";
 
-declare module "@mui/material/styles" {
-    interface Palette {
-        tertiary: Palette["primary"];
-    }
+// used to get correct types
 
-    interface PaletteOptions {
-        tertiary?: PaletteOptions["primary"];
-    }
+declare module "styled-components" {
+  export interface DefaultTheme {
+    colors: {
+      primary: string;
+      secondary: string;
+      red: string;
+      grey: string;
+      background: string;
+      text: string;
+    };
+    typography: {
+      fontFamily: string;
+      fontSize: number;
+    };
+    logo: {
+      primary: string;
+      secondary: string;
+    };
+    spacing: (n: number) => string;
+  }
 }

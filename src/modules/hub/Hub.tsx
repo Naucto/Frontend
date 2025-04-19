@@ -1,18 +1,13 @@
 import { useTheme } from "@theme/ThemeContext"
+import styled from "styled-components";
+
+
+const HubContainer = styled.div<{ theme: any }>`
+    padding: 0;
+`;
 
 export const Hub = () => {
-  const theme = useTheme()
   return (
-    <div
-      style={{
-        backgroundColor: theme.colors.background,
-        color: theme.colors.text,
-        fontFamily: theme.typography.fontFamily,
-        fontSize: theme.typography.fontSize,
-      }}
-    >
-      <h1>Hub</h1>
-      <p>Welcome to the Hub!</p>
-    </div>
+    <HubContainer />
   )
 }

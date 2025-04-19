@@ -1,10 +1,13 @@
 import React, { createContext, useContext } from "react";
+import { DefaultTheme } from "styled-components";
 
 
-export const theme = {
+export const theme: DefaultTheme = {
   colors: {
     primary: "#E5D352",
     secondary: "#537D8D",
+    red: "#AC3931",
+    grey: "#646464",
     background: "#303030",
     text: "#FFFFFF",
   },
@@ -12,18 +15,15 @@ export const theme = {
     fontFamily: "'Roboto', sans-serif",
     fontSize: 16,
   },
+  logo: {
+    primary: "/img/logo.png",
+    secondary: "/img/logo.png",
+  },
+  spacing: (n: number) => `${n * 8}px`,
 }
 
 type ThemeType = typeof theme;
 
 const ThemeContext = createContext<ThemeType>(theme);
-
-export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <ThemeContext.Provider value={theme} >
-      {children}
-    </ThemeContext.Provider>
-  );
-};
 
 export const useTheme = () => useContext(ThemeContext);

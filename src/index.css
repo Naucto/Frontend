@@ -1,3 +1,16 @@
+@font-face {
+  font-family: 'Pixelify';
+  font-style: normal;
+  font-weight: normal;
+  src: url('/fonts/PixelifySans-Medium.ttf') format('truetype');
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Pixelify';
+}
+
 /* :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
