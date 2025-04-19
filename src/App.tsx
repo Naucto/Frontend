@@ -1,11 +1,11 @@
-import React from "react"
+import React, { useMemo, useRef } from "react"
 import { useState } from "react"
 import reactLogo from "./assets/react.svg"
 import viteLogo from "/vite.svg"
 import "./App.css"
 import { BrowserRouter, Route, Routes } from "react-router-dom"
 import { Hub } from "@modules/hub/Hub"
-import { EditorManager } from "@modules/editor/EditorManager"
+import { EditorManager, EditorManagerProvider } from "@modules/editor/EditorManager"
 
 import { CodeEditor } from "@modules/editor/CodeEditor/CodeEditor"
 import { MapEditor } from "@modules/editor/MapEditor/MapEditor"
@@ -15,6 +15,7 @@ import styled from "styled-components"
 import { theme, useTheme } from "@theme/ThemeContext"
 import NavBar from "@shared/navbar/NavBar"
 import { ThemeProvider } from "styled-components";
+import Create from "@modules/create/Create"
 
 
 const Container = styled.div<{ theme: any }>`
@@ -28,25 +29,33 @@ const Container = styled.div<{ theme: any }>`
 
 function App() {
   const theme = useTheme()
-  const editorManager = new EditorManager();
-  editorManager.addEditor(new CodeEditor());
-  editorManager.addEditor(new MapEditor());
-  editorManager.addEditor(new SoundEditor());
-  editorManager.addEditor(new SpriteEditor());
+
+  const editorManagerRef = useRef(new EditorManager());
+  const editorManager = useMemo(() => {
+    const manager = editorManagerRef.current;
+    manager.addEditor(new CodeEditor());
+    manager.addEditor(new MapEditor());
+    manager.addEditor(new SoundEditor());
+    manager.addEditor(new SpriteEditor());
+    return manager;
+  }, []);
 
   return (
     <Container theme={theme}>
-      <ThemeProvider theme={theme}>
-        <BrowserRouter>
-          <NavBar />
-          <Routes>
-            <Route path="/" element={<Hub />} />
-            <Route path="/hub" element={<Hub />} />
-            <Route path="/editor" element={editorManager.render()} />
-          </Routes>
-        </BrowserRouter>
-      </ThemeProvider>
-    </Container>
+      <EditorManagerProvider value={editorManager}>
+        <ThemeProvider theme={theme}>
+          <BrowserRouter>
+            <NavBar />
+            <Routes>
+              <Route path="/" element={<Hub />} />
+              <Route path="/hub" element={<Hub />} />
+              <Route path='/create' element={<Create />} />
+              {/* <Route path="/editor" element={editorManager.render()} /> */}
+            </Routes>
+          </BrowserRouter>
+        </ThemeProvider>
+      </EditorManagerProvider>
+    </Container >
   )
 }
 
