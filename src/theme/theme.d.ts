@@ -8,6 +8,7 @@ declare module "styled-components" {
       primary: string;
       secondary: string;
       red: string;
+      blue: any;
       grey: string;
       background: string;
       text: string;
@@ -19,6 +20,12 @@ declare module "styled-components" {
     logo: {
       primary: string;
       secondary: string;
+    };
+    rounded: {
+      sm: string;
+      md: string;
+      lg: string;
+      fll: string;
     };
     spacing: (n: number) => string;
   }
