@@ -14,7 +14,7 @@ import { SpriteEditor } from "@modules/editor/SpriteEditor/SpriteEditor"
 import styled from "styled-components"
 import { theme, useTheme } from "@theme/ThemeContext"
 import NavBar from "@shared/navbar/NavBar"
-import { ThemeProvider } from 'styled-components';
+import { ThemeProvider } from "styled-components";
 
 
 const Container = styled.div<{ theme: any }>`

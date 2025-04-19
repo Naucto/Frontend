@@ -1,7 +1,8 @@
 import React, { createContext, useContext } from "react";
+import { DefaultTheme } from "styled-components";
 
 
-export const theme = {
+export const theme: DefaultTheme = {
   colors: {
     primary: "#E5D352",
     secondary: "#537D8D",
@@ -18,11 +19,11 @@ export const theme = {
     primary: "/img/logo.png",
     secondary: "/img/logo.png",
   },
+  spacing: (n: number) => `${n * 8}px`,
 }
 
 type ThemeType = typeof theme;
 
 const ThemeContext = createContext<ThemeType>(theme);
-
 
 export const useTheme = () => useContext(ThemeContext);

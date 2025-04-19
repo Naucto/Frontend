@@ -6,31 +6,33 @@ import React from "react";
 import { Link } from "react-router-dom";
 import styled from "styled-components";
 
-const Nav = styled.nav<{ theme: any }>`
+const Nav = styled.nav`
     display: grid;
     padding: 0;
     margin: 0;
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     align-items: center;
     justify-content: space-between;
     .navbar-logo {
         width: 55px;
         height: 55px;
-        margin-right: 1rem;
     }
 `;
 
 const Left = styled.div`
     display: flex;
     align-items: center;
-    margin: 1rem 1rem;
+    margin: ${({ theme }) => theme.spacing(1)};
+    & > * {
+      margin-right: ${({ theme }) => theme.spacing(3)};
+    }
     `;
 
 const Right = styled.div`
     display: flex;
     align-items: center;
     justify-content: right;
-    margin: 1rem 1rem;
+    margin: ${({ theme }) => theme.spacing(1)};
     `;
 
 const NavBar: React.FC = () => {
