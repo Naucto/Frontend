@@ -17,7 +17,7 @@ export class EditorManager {
   public init() {
     this.provider = new WebrtcProvider("your-room-name", this.ydoc, config.webrtc);
 
-    this.editors.forEach(e => e.init())
+    this.editors.forEach(e => e.init(this.ydoc))
   }
 
   public addEditor(editor: IEditor) {

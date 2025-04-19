@@ -14,7 +14,6 @@
     "@monaco-editor/react": "^4.7.0",
     "@mui/material": "^7.0.2",
     "i18n": "^0.15.1",
-    "monaco": "^1.0.0",
     "mui": "^0.0.1",
     "path": "^0.12.7",
     "react": "^19.0.0",
