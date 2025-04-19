@@ -1,13 +1,29 @@
 import * as React from "react";
 
 import "@modules/editor/tab/TabbedComponent.css";
+import { Button, ButtonBase, Tab } from "@mui/material";
+import styled from "styled-components";
+
+
+const StyledTab = styled((props: any) => <Tab {...props} disableRipple />) <{ active: boolean }>`
+  & {
+  font-family: ${({ theme }) => theme.typography.fontFamily};
+  background-color: ${({ theme, active }) =>
+    active ? theme.colors.blue[500] : theme.colors.blue[600]};
+  padding: 0.3rem 2rem;
+  font-size: 1.2rem;
+  border-top-left-radius: ${({ theme }) => theme.rounded.md};
+  border-top-right-radius: ${({ theme }) => theme.rounded.md};
+  color: white;
+  opacity: 1;
+`
 
 interface TabbedComponentPageProps {
   title: string;
   children: React.ReactNode;
 }
 
-interface TabbedComponentPageState {}
+interface TabbedComponentPageState { }
 
 class TabbedComponentPage extends React.Component<TabbedComponentPageProps, TabbedComponentPageState> {
   constructor(props: TabbedComponentPageProps) {
@@ -25,9 +41,7 @@ class TabbedComponentPage extends React.Component<TabbedComponentPageProps, Tabb
       </div>
     );
   }
-}
-
-interface TabbedComponentProps {
+} interface TabbedComponentProps {
   children: React.ReactNode;
 }
 
@@ -45,8 +59,8 @@ class TabbedComponent extends React.Component<TabbedComponentProps, TabbedCompon
   }
 
   render() {
-    const { children } = this.props;
-    const { activeTab } = this.state;
+    const { children } = this.props;
+    const { activeTab } = this.state;
 
     return (
       <div className="tabbed-component">
@@ -63,13 +77,14 @@ class TabbedComponent extends React.Component<TabbedComponentProps, TabbedCompon
             }
 
             return (
-              <li key={index}
-                  className={activeTab === index ? "active" : ""}
-                  onClick={childTabInteract}
-                  onFocus={childTabInteract}
-                  tabIndex={0}>
-                {childTab.props.title}
-              </li>
+              <StyledTab key={index}
+                className={activeTab === index ? "active" : ""}
+                onClick={childTabInteract}
+                onFocus={childTabInteract}
+                tabIndex={0}
+                label={childTab.props.title}
+                active={activeTab === index}
+              />
             );
           })}
         </ul>
@@ -80,7 +95,7 @@ class TabbedComponent extends React.Component<TabbedComponentProps, TabbedCompon
 
             return (
               <div key={index}
-                   className={activeTab === index ? "active" : ""}>
+                className={activeTab === index ? "active" : ""}>
                 {child}
               </div>
             );

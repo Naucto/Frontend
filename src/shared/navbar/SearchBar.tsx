@@ -1,6 +1,7 @@
 import { Box, InputBase, useTheme } from "@mui/material";
 import styled from "styled-components";
-import SearchIcon from "@assets/search.svg";
+import SearchIcon from "@assets/search.svg?react";
+import { ChangeEvent, FormEvent, useState } from "react";
 
 
 const SearchBarContainer = styled(Box)`
@@ -14,8 +15,8 @@ const SearchInput = styled(InputBase)`
     && {
       font-family: 'Pixelify';
       color: white;
-      border: 2px solid #646464;
-      border-radius: 4px;
+      border: 2px solid ${({ theme }) => theme.colors.grey};
+      border-radius: ${({ theme }) => theme.rounded.lg};
       padding: 0.5rem 1rem;
   
       input {
@@ -25,22 +26,43 @@ const SearchInput = styled(InputBase)`
     }
   `;
 
-const SearchIconStyled = styled.img`
-    width: 20px;
-    height: 20px;
-    margin-right: ${({ theme }) => theme.spacing(1)};
+const SearchIconStyled = styled(SearchIcon)`
+    width: 32px;
+    height: 32px;
+    color: ${({ theme }) => theme.colors.grey};
+    margin-right: ${({ theme }) => theme.spacing(3)};
   `;
 
-export const SearchBar = () => {
+
+interface SearchBarProps {
+  onSubmit: (value: string) => void;
+  onChange?: (value: string) => void;
+  placeholder?: string;
+}
+
+export const SearchBar = ({ onSubmit, onChange, placeholder }: SearchBarProps) => {
+  const [value, setValue] = useState("");
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    onSubmit(value);
+  };
+
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setValue(newValue);
+    onChange?.(newValue);
+  };
+
   return (
     <SearchBarContainer>
-      <form onSubmit={(e) => {
-        console.log("search");
-      }}>
+      <form onSubmit={handleSubmit}>
         <SearchInput
           type="text"
-          placeholder="Search for games..."
-          startAdornment={<SearchIconStyled src={SearchIcon} alt="Search" />}
+          value={value}
+          onChange={handleChange}
+          placeholder={placeholder}
+          startAdornment={<SearchIconStyled />}
         />
       </form>
     </SearchBarContainer>
