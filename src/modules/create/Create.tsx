@@ -7,7 +7,7 @@ const Create: React.FC = () => {
   console.log(editorManager)
   return (
     <div>
-      ${editorManager.render()}
+      {editorManager.render()}
     </div>
   );
 };

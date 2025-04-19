@@ -16,6 +16,7 @@ import { theme, useTheme } from "@theme/ThemeContext"
 import NavBar from "@shared/navbar/NavBar"
 import { ThemeProvider } from "styled-components";
 import Create from "@modules/create/Create"
+import { StyledEngineProvider } from "@mui/material"
 
 
 const Container = styled.div<{ theme: any }>`
@@ -28,7 +29,6 @@ const Container = styled.div<{ theme: any }>`
 `;
 
 function App() {
-  const theme = useTheme()
 
   const editorManagerRef = useRef(new EditorManager());
   const editorManager = useMemo(() => {
@@ -43,17 +43,19 @@ function App() {
   return (
     <Container theme={theme}>
       <EditorManagerProvider value={editorManager}>
-        <ThemeProvider theme={theme}>
-          <BrowserRouter>
-            <NavBar />
-            <Routes>
-              <Route path="/" element={<Hub />} />
-              <Route path="/hub" element={<Hub />} />
-              <Route path='/create' element={<Create />} />
-              {/* <Route path="/editor" element={editorManager.render()} /> */}
-            </Routes>
-          </BrowserRouter>
-        </ThemeProvider>
+        <StyledEngineProvider injectFirst>
+          <ThemeProvider theme={theme} >
+            <BrowserRouter>
+              <NavBar />
+              <Routes>
+                <Route path="/" element={<Hub />} />
+                <Route path="/hub" element={<Hub />} />
+                <Route path='/create' element={<Create />} />
+                {/* <Route path="/editor" element={editorManager.render()} /> */}
+              </Routes>
+            </BrowserRouter>
+          </ThemeProvider>
+        </StyledEngineProvider>
       </EditorManagerProvider>
     </Container >
   )
