@@ -37,6 +37,7 @@ function App() {
     return manager;
   }, []);
 
+  const theme = useTheme();
   return (
     <Container theme={theme}>
       <EditorManagerProvider value={editorManager}>
