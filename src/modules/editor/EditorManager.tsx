@@ -6,7 +6,23 @@ import React, { createContext, useContext, useMemo } from "react";
 import { WebrtcProvider } from "y-webrtc";
 import * as Y from "yjs"
 import config from "config.json"
+import styled from "styled-components";
 
+const RightPanel = styled.div`
+  height: 100vh;
+  width: 50%;
+  background-color: rgb(83, 83, 83);
+`;
+
+const Container = styled.div`
+  backgroundColor: theme.colors.background;
+  color: theme.colors.text;
+  fontFamily: theme.typography.fontFamily;
+  fontSize: theme.typography.fontSize;
+  display: flex;
+  flexDirection: column;
+  height: 100vh;
+`
 export class EditorManager {
   private provider: WebrtcProvider;
   private editors: IEditor[] = []
@@ -43,15 +59,11 @@ export class EditorManager {
   render() {
     const theme = useTheme();
     return (
-      <div
-        style={{
-          backgroundColor: theme.colors.background,
-          color: theme.colors.text,
-          fontFamily: theme.typography.fontFamily,
-          fontSize: theme.typography.fontSize,
-        }}
-      >
-        <div className="editor">
+      <Container>
+        <div className="editor"
+          style={{
+            width: "50%",
+          }}>
           <TabbedComponent>
             {this.editors.map((editor, index) => (
               <TabbedComponentPage key={index} title={editor.tabData.title}>
@@ -60,7 +72,11 @@ export class EditorManager {
             ))}
           </TabbedComponent>
         </div>
-      </div>
+        <RightPanel>
+          <h1>right</h1>
+
+        </RightPanel>
+      </Container>
     )
   }
 }
