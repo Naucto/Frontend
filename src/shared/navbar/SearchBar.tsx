@@ -25,7 +25,7 @@ const SearchInput = styled(InputBase)`
     }
   `;
 
-const SearchIconStyled = styled.img`
+const SearchIconStyled = styled(SearchIcon)`
     width: 20px;
     height: 20px;
     margin-right: ${({ theme }) => theme.spacing(1)};
@@ -40,7 +40,7 @@ export const SearchBar = () => {
         <SearchInput
           type="text"
           placeholder="Search for games..."
-          startAdornment={<SearchIconStyled src={SearchIcon} alt="Search" />}
+          startAdornment={<SearchIconStyled />}
         />
       </form>
     </SearchBarContainer>
