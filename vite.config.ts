@@ -7,4 +7,7 @@ export default defineConfig({
   resolve: {
     alias: {},
   },
+  server: {
+    port: 3001,
+  }
 });

@@ -1,30 +1,40 @@
-import IEditor from "../IEditor"; 
-import { TabData } from "@modules/editor/tab/TabData";
+import IEditor from "../IEditor";
 
+import Editor, { Monaco } from '@monaco-editor/react';
+
+import CodeTabTheme from '@modules/editor/CodeEditor/CodeTabTheme.ts';
+import { Doc } from "yjs";
 
 export class CodeEditor extends IEditor {
-    constructor() {
-        super();
-        this.tabData = {
-            title: "Code",
-            icon: "code",
-        };
-    }
+  constructor() {
+    super();
+    this.tabData = {
+      title: "Code",
+      icon: "code",
+    };
+  }
 
-    sendData(data: string) {
-        console.log("CodeEditor sendData", data);
-    }
+  public init(doc: Doc): void {
+    throw new Error("Method not implemented.");
+  }
 
-    loadData(data: string) {
-        console.log("CodeEditor loadData", data);
-    }
+  handleEditorChange(value: string | undefined) {
+    if (!value) return;
+  }
 
-    render() {
-        return (
-            <div>
-                <p>Code Editor</p>
-            </div>
-        );
-    }
+  render() {
+    return (
+      <Editor className="monaco"
+        defaultLanguage="lua"
+        beforeMount={this.editorPreMount}
+        theme={CodeTabTheme.MONACO_THEME_NAME}
+        onChange={this.handleEditorChange}
+        value="//test"
+        options={{ automaticLayout: true }} />
+    );
+  }
+  editorPreMount(monaco: Monaco) {
+    monaco.editor.defineTheme(CodeTabTheme.MONACO_THEME_NAME, CodeTabTheme.MONACO_THEME);
+  }
 }
 

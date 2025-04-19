@@ -11,15 +11,19 @@
   },
   "dependencies": {
     "@emotion/styled": "^11.14.0",
+    "@monaco-editor/react": "^4.7.0",
     "@mui/material": "^7.0.2",
     "i18n": "^0.15.1",
+    "monaco": "^1.0.0",
     "mui": "^0.0.1",
     "path": "^0.12.7",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.5.0",
     "styled-components": "^6.1.17",
-    "vite-tsconfig-paths": "^5.1.4"
+    "vite-tsconfig-paths": "^5.1.4",
+    "y-webrtc": "^10.3.0",
+    "yjs": "^13.6.26"
   },
   "devDependencies": {
     "@eslint/js": "^9.24.0",

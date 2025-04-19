@@ -2,13 +2,24 @@ import IEditor from "@modules/editor/IEditor"
 
 import { useTheme } from "@theme/ThemeContext"
 import { TabbedComponent, TabbedComponentPage } from "@modules/editor/tab/TabbedComponent"
-import React, { createContext, useContext, useRef } from "react";
+import React, { createContext, useContext, useMemo } from "react";
+import { WebrtcProvider } from "y-webrtc";
+import * as Y from "yjs"
+import config from "config.json"
 
 export class EditorManager {
+  private provider: WebrtcProvider;
+  private editors: IEditor[] = []
+  private ydoc: Y.Doc = useMemo(() => new Y.Doc(), []);
 
   public constructor() { }
 
-  private editors: IEditor[] = []
+  public init() {
+    this.provider = new WebrtcProvider("your-room-name", this.ydoc, config.webrtc);
+
+    this.editors.forEach(e => e.init())
+  }
+
   public addEditor(editor: IEditor) {
     console.log("EditorManager addEditor", editor.tabData.title)
     const index = this.editors.indexOf(editor)
@@ -17,12 +28,14 @@ export class EditorManager {
     }
     this.editors.push(editor)
   }
+
   public removeEditor(editor: IEditor) {
     const index = this.editors.indexOf(editor)
     if (index > -1) {
       this.editors.splice(index, 1)
     }
   }
+
   public getEditors(): IEditor[] {
     return this.editors
   }
