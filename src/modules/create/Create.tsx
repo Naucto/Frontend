@@ -6,7 +6,9 @@ const Create: React.FC = () => {
   const editorManager = useEditorManager();
   console.log(editorManager)
   return (
-    <div />
+    <div>
+      ${editorManager.render()}
+    </div>
   );
 };
 
