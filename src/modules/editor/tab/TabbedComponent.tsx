@@ -1,6 +1,6 @@
-import * as React from 'react';
+import * as React from "react";
 
-import '@modules/editor/tab/TabbedComponent.css';
+import "@modules/editor/tab/TabbedComponent.css";
 
 interface TabbedComponentPageProps {
   title: string;
@@ -64,7 +64,7 @@ class TabbedComponent extends React.Component<TabbedComponentProps, TabbedCompon
 
             return (
               <li key={index}
-                  className={activeTab === index ? 'active' : ''}
+                  className={activeTab === index ? "active" : ""}
                   onClick={childTabInteract}
                   onFocus={childTabInteract}
                   tabIndex={0}>
@@ -80,7 +80,7 @@ class TabbedComponent extends React.Component<TabbedComponentProps, TabbedCompon
 
             return (
               <div key={index}
-                   className={activeTab === index ? 'active' : ''}>
+                   className={activeTab === index ? "active" : ""}>
                 {child}
               </div>
             );

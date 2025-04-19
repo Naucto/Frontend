@@ -1,30 +1,26 @@
+import { WebrtcProvider } from "y-webrtc";
+import { Doc } from "yjs";
 import IEditor from "../IEditor";
-import { TabData } from "@modules/editor/tab/TabData";
 
 export class SpriteEditor extends IEditor {
-    constructor() {
-        super();
-        this.tabData = {
-            title: "Sprite",
-            icon: "sprite",
-        };
-    }
+  constructor() {
+    super();
+    this.tabData = {
+      title: "Sprite",
+      icon: "sprite",
+    };
+  }
 
-    sendData(data: string) {
-        console.log("SpriteEditor sendData", data);
-    }
+  public init(doc: Doc, provider: WebrtcProvider): void {
+  }
 
-    loadData(data: string) {
-        console.log("SpriteEditor loadData", data);
-    }
-
-    render() {
-        return (
-            <div>
-                <p>Sprite Editor</p>
-            </div>
-        );
-    }
+  render() {
+    return (
+      <div>
+        <p>Sprite Editor</p>
+      </div>
+    );
+  }
 }
 
 

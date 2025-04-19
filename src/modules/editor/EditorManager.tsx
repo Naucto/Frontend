@@ -1,8 +1,7 @@
 import IEditor from "@modules/editor/IEditor"
 
-import { useTheme } from "@theme/ThemeContext"
 import { TabbedComponent, TabbedComponentPage } from "@modules/editor/tab/TabbedComponent"
-import React, { createContext, useContext, useMemo } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { WebrtcProvider } from "y-webrtc";
 import * as Y from "yjs"
 import config from "config.json"
@@ -12,7 +11,7 @@ const RightPanel = styled.div`
   height: 100vh;
   width: 50%;
   background-color: rgb(83, 83, 83);
-`;
+;`
 
 const Container = styled.div`
   backgroundColor: theme.colors.background;
@@ -23,21 +22,29 @@ const Container = styled.div`
   flexDirection: column;
   height: 100vh;
 `
+
 export class EditorManager {
-  private provider: WebrtcProvider;
   private editors: IEditor[] = []
-  private ydoc: Y.Doc = useMemo(() => new Y.Doc(), []);
 
   public constructor() { }
 
-  public init() {
-    this.provider = new WebrtcProvider("your-room-name", this.ydoc, config.webrtc);
+  public init(room: string) {
+    const ydoc = useMemo(() => new Y.Doc(), []);
+    const [provider, setProvider] = useState<WebrtcProvider | null>(null);
 
-    this.editors.forEach(e => e.init(this.ydoc))
+    useEffect(() => {
+      setProvider(new WebrtcProvider(room, ydoc, config.webrtc));
+
+      return () => {
+        provider?.disconnect();
+        ydoc.destroy();
+      }
+    }, [ydoc]);
+
+    this.editors.forEach(e => e.init(ydoc, provider!));
   }
 
   public addEditor(editor: IEditor) {
-    console.log("EditorManager addEditor", editor.tabData.title)
     const index = this.editors.indexOf(editor)
     if (index > -1) {
       this.editors.splice(index, 1)
@@ -57,7 +64,6 @@ export class EditorManager {
   }
 
   render() {
-    const theme = useTheme();
     return (
       <Container>
         <div className="editor"
@@ -74,10 +80,9 @@ export class EditorManager {
         </div>
         <RightPanel>
           <h1>right</h1>
-
         </RightPanel>
       </Container>
-    )
+    );
   }
 }
 
@@ -106,5 +111,3 @@ export const useEditorManager = (): EditorManager => {
   }
   return context;
 };
-
-
