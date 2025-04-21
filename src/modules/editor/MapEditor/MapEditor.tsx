@@ -1,6 +1,6 @@
 import { WebrtcProvider } from "y-webrtc";
 import { Doc } from "yjs";
-import IEditor from "../IEditor";
+import IEditor from "@modules/editor/IEditor";
 
 
 export class MapEditor extends IEditor {

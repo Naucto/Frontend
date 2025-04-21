@@ -1,7 +1,7 @@
 import IEditor from "@modules/editor/IEditor"
 
 import { TabbedComponent, TabbedComponentPage } from "@modules/editor/tab/TabbedComponent"
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useContext } from "react";
 import { WebrtcProvider } from "y-webrtc";
 import * as Y from "yjs"
 import config from "config.json"
@@ -25,23 +25,22 @@ const Container = styled.div`
 
 export class EditorManager {
   private editors: IEditor[] = []
+  private ydoc: Y.Doc | null = null;
+  private provider: WebrtcProvider | null = null;
 
   public constructor() { }
 
+  cleanUpAndDisconnect(): void {
+    this.provider?.awareness.setLocalState(null);
+    this.provider?.disconnect();
+    this.ydoc?.destroy();
+  }
+
   public init(room: string) {
-    const ydoc = useMemo(() => new Y.Doc(), []);
-    const [provider, setProvider] = useState<WebrtcProvider | null>(null);
+    this.ydoc = new Y.Doc();
+    this.provider = new WebrtcProvider(room, this.ydoc!, config.webrtc);
 
-    useEffect(() => {
-      setProvider(new WebrtcProvider(room, ydoc, config.webrtc));
-
-      return () => {
-        provider?.disconnect();
-        ydoc.destroy();
-      }
-    }, [ydoc]);
-
-    this.editors.forEach(e => e.init(ydoc, provider!));
+    this.editors.forEach(e => e.init(this.ydoc!, this.provider!));
   }
 
   public addEditor(editor: IEditor) {
@@ -53,7 +52,7 @@ export class EditorManager {
   }
 
   public removeEditor(editor: IEditor) {
-    const index = this.editors.indexOf(editor)
+    const index = this.editors.indexOf(editor);
     if (index > -1) {
       this.editors.splice(index, 1)
     }

@@ -1,4 +1,4 @@
-import IEditor from "../IEditor";
+import IEditor from "@modules/editor/IEditor";
 
 import Editor, { Monaco } from "@monaco-editor/react";
 

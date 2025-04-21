@@ -17,17 +17,18 @@ import { StyledEngineProvider } from "@mui/material"
 
 
 const Container = styled.div<{ theme: any }>`
-  min-height: 100vh;
-  min-width: 100vw;
-  margin: 0px;
-  padding: 0;
-  position: absolute;
-  background-color: ${({ theme }) => theme.colors.background};
+    min-height: 100vh;
+    min-width: 100vw;
+    margin: 0;
+    padding: 0;
+    position: absolute;
+    background-color: ${({ theme }) => theme.colors.background};
 `;
 
 function App() {
 
   const editorManagerRef = useRef(new EditorManager());
+
   const editorManager = useMemo(() => {
     const manager = editorManagerRef.current;
     manager.addEditor(new CodeEditor());
