@@ -10,7 +10,7 @@ import styled from "styled-components";
 const RightPanel = styled.div`
   height: 100vh;
   width: 50%;
-  background-color: rgb(83, 83, 83);
+  backgroundColor: rgb(83, 83, 83);
 ;`
 
 const Container = styled.div`
