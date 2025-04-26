@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react"
+import React, {useMemo,useRef, useEffect } from "react"
 import "./App.css"
 import { BrowserRouter, Route, Routes } from "react-router-dom"
 import { Hub } from "@modules/hub/Hub"
@@ -14,7 +14,7 @@ import NavBar from "@shared/navbar/NavBar"
 import { ThemeProvider } from "styled-components";
 import Create from "@modules/create/Create"
 import { StyledEngineProvider } from "@mui/material"
-
+import { useUser } from "src/providers/UserProvider"
 
 const Container = styled.div<{ theme: any }>`
     min-height: 100vh;
@@ -26,7 +26,21 @@ const Container = styled.div<{ theme: any }>`
 `;
 
 function App() {
+  const { user, setUser } = useUser();
 
+  // temporary for example
+  useEffect(() => {
+    setUser({
+      "name": "test",
+      "id": "test",
+    })
+  }, [])
+
+  // temporary for example
+  useEffect(() => {
+    console.log("User", user)
+  }, [user])
+  
   const editorManagerRef = useRef(new EditorManager());
 
   const editorManager = useMemo(() => {
