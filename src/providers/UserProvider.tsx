@@ -4,8 +4,8 @@ import { createContext, useContext, useEffect, useState } from "react";
 
 
 interface UserContextType {
-  user: User;
-  setUser: React.Dispatch<React.SetStateAction<any>>;
+  user: User | null;
+  setUser: React.Dispatch<React.SetStateAction<User | null>>;
 }
 
 const userContext = createContext<UserContextType | null>(null);
