@@ -1,10 +1,18 @@
 import { useEditorManager } from "@modules/editor/EditorManager";
-import React from "react";
+import React, { useEffect } from "react";
 
 
 const Create: React.FC = () => {
   const editorManager = useEditorManager();
-  console.log(editorManager)
+
+  useEffect(() => {
+    editorManager.init("test");
+
+    return () => {
+      editorManager.cleanUpAndDisconnect();
+    }
+  }, [editorManager]);
+
   return (
     <div>
       {editorManager.render()}

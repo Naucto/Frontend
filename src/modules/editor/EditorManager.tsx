@@ -1,44 +1,74 @@
 import IEditor from "@modules/editor/IEditor"
 
-import { useTheme } from "@theme/ThemeContext"
 import { TabbedComponent, TabbedComponentPage } from "@modules/editor/tab/TabbedComponent"
-import React, { createContext, useContext, useRef } from "react";
+import React, { createContext, useContext } from "react";
+import { WebrtcProvider } from "y-webrtc";
+import * as Y from "yjs"
+import config from "config.json"
+import styled from "styled-components";
+
+const RightPanel = styled.div`
+  height: 100vh;
+  width: 50%;
+  backgroundColor: rgb(83, 83, 83);
+;`
+
+const Container = styled.div`
+  backgroundColor: theme.colors.background;
+  color: theme.colors.text;
+  fontFamily: theme.typography.fontFamily;
+  fontSize: theme.typography.fontSize;
+  display: flex;
+  flexDirection: column;
+  height: 100vh;
+`
 
 export class EditorManager {
+  private editors: IEditor[] = []
+  private ydoc: Y.Doc | null = null;
+  private provider: WebrtcProvider | null = null;
 
   public constructor() { }
 
-  private editors: IEditor[] = []
+  cleanUpAndDisconnect(): void {
+    this.provider?.awareness.setLocalState(null);
+    this.provider?.disconnect();
+    this.ydoc?.destroy();
+  }
+
+  public init(room: string) {
+    this.ydoc = new Y.Doc();
+    this.provider = new WebrtcProvider(room, this.ydoc!, config.webrtc);
+
+    this.editors.forEach(e => e.init(this.ydoc!, this.provider!));
+  }
+
   public addEditor(editor: IEditor) {
-    console.log("EditorManager addEditor", editor.tabData.title)
     const index = this.editors.indexOf(editor)
     if (index > -1) {
       this.editors.splice(index, 1)
     }
     this.editors.push(editor)
   }
+
   public removeEditor(editor: IEditor) {
-    const index = this.editors.indexOf(editor)
+    const index = this.editors.indexOf(editor);
     if (index > -1) {
       this.editors.splice(index, 1)
     }
   }
+
   public getEditors(): IEditor[] {
     return this.editors
   }
 
   render() {
-    const theme = useTheme();
     return (
-      <div
-        style={{
-          backgroundColor: theme.colors.background,
-          color: theme.colors.text,
-          fontFamily: theme.typography.fontFamily,
-          fontSize: theme.typography.fontSize,
-        }}
-      >
-        <div className="editor">
+      <Container>
+        <div className="editor"
+          style={{
+            width: "50%",
+          }}>
           <TabbedComponent>
             {this.editors.map((editor, index) => (
               <TabbedComponentPage key={index} title={editor.tabData.title}>
@@ -47,8 +77,11 @@ export class EditorManager {
             ))}
           </TabbedComponent>
         </div>
-      </div>
-    )
+        <RightPanel>
+          <h1>right</h1>
+        </RightPanel>
+      </Container>
+    );
   }
 }
 
@@ -77,5 +110,3 @@ export const useEditorManager = (): EditorManager => {
   }
   return context;
 };
-
-

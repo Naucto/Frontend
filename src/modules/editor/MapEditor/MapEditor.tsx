@@ -1,31 +1,27 @@
-import IEditor from "../IEditor";
-import { TabData } from "@modules/editor/tab/TabData";
+import { WebrtcProvider } from "y-webrtc";
+import { Doc } from "yjs";
+import IEditor from "@modules/editor/IEditor";
 
 
 export class MapEditor extends IEditor {
-    constructor() {
-        super();
-        this.tabData = {
-            title: "Map",
-            icon: "map",
-        };
-    }
+  constructor() {
+    super();
+    this.tabData = {
+      title: "Map",
+      icon: "map",
+    };
+  }
+    
+  public init(doc: Doc, provider: WebrtcProvider): void {
 
-    sendData(data: string) {
-        console.log("MapEditor sendData", data);
-    }
+  }
 
-    loadData(data: string) {
-        console.log("MapEditor loadData", data);
-    }
-
-    render() {
-        return (
-            <div>
-                <p>Map Editor</p>
-            </div>
-        );
-    }
+  render() {
+    return (
+      <div>
+        <p>Map Editor</p>
+      </div>
+    );
+  }
 
 }
-
