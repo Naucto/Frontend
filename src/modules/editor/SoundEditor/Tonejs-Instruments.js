@@ -3,7 +3,7 @@ import * as Tone from "tone";
 export const SampleLibrary = {
     minify: false,
     ext: '.[mp3|ogg]', // use setExt to change the extensions on all files // do not change this variable //
-    baseUrl: 'src/components/sfx/samples/',
+    baseUrl: 'src/modules/editor/SoundEditor/samples/',
     list: ['bass-electric','bassoon','cello','clarinet','contrabass','flute','french-horn','guitar-acoustic','guitar-electric','guitar-nylon', 'harmonium','harp','organ','piano','saxophone','trombone','trumpet','tuba','violin','xylophone'],
     onload: null,
 
@@ -21,7 +21,7 @@ export const SampleLibrary = {
     load: function (arg) {
         var t, rt, i;
         (arg) ? t = arg : t = {};
-        t.instruments = t.instruments || this.list;
+        t.instruments = t.instruments || ['piano'];
         t.baseUrl = t.baseUrl || this.baseUrl;
         t.onload = t.onload || this.onload;
 
@@ -102,7 +102,7 @@ export const SampleLibrary = {
                     onload: t.onload
                 }
             );
-
+            console.log(t.baseUrl + t.instruments + "/");
 
             return s;
         }

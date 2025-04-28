@@ -16,14 +16,14 @@ export class SoundEditor extends IEditor {
 
     private _musics: Music[];
     private _instruments: string[] = [
-        "Flute",
-        "Piano",
-        "Guitar",
-        "Violin",
-        "Bassoon"]
+        "flute",
+        "piano",
+        "guitar",
+        "violin",
+        "bassoon"]
     state: SoundEditorState = {
         currentMusic: new Music(),
-        currentInstrument: "Piano",
+        currentInstrument: "piano",
         activeCells: new Set<string>(),
     };
 

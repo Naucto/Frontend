@@ -65,8 +65,8 @@ class Music {
         Tone.start();
         for (let noteList of this.notes) {
             for (let note of noteList) {
-                
                 this._musicManager.playInstrument(note.samp, note.note, now);
+                
             }
             now += 0.30;
         }

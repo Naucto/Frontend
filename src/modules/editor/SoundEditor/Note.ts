@@ -1,10 +1,11 @@
 
 import * as Tone from "tone";
-import { SampleLibrary } from "./Tonejs-Instruments.js"
+import { SampleLibrary } from "@modules/editor/SoundEditor/Tonejs-Instruments"
 
 
 
 class Note {
+  public samp: Tone.Sampler;
   constructor(
     public note: string = "Nan",
     public duration: number = 1,
@@ -13,11 +14,19 @@ class Note {
     this.note = note;
     this.duration = duration;
     this.instrument = instrument;
-    /* this.sampler = SampleLibrary.load({
-      instruments: this.instrument
-      });
-    this.sampler.toDestination(); */
-    
+    if (this.note == "Nan") {
+      this.samp = new Tone.Sampler();
+    } else {
+      this.samp = SampleLibrary.load({
+        instruments: this.instrument,
+        onload: () => {
+          console.log('Sampler is fully loaded!');
+      }
+
+      }).toDestination();
+      console.log(this.samp);
+    }
+
   }
 
   get durationInSeconds(): number {

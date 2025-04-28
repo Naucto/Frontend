@@ -41,7 +41,7 @@ class MusicManager {
             throw new Error("Number out of bounds");
         }
         let note = number % AllNotes.length;
-        let octave = Math.floor(number / AllNotes.length);
+        let octave = Math.floor(number / AllNotes.length) + 4;
         let result = AllNotes[note] + String(octave);
         return result;
     }
@@ -67,7 +67,11 @@ class MusicManager {
     }
 
     playInstrument(sampler: Tone.Sampler, note: string, when = Tone.now(), duration = "8n") {
+        if (note == "Nan") {
+            return;
+        }
         Tone.loaded().then(() => {
+            console.log(note, duration, when);
             sampler.triggerAttackRelease(note, duration, when);
         });
     }
