@@ -18,6 +18,8 @@ import { ThemeProvider } from "styled-components";
 import Create from "@modules/create/Create"
 import { StyledEngineProvider } from "@mui/material"
 
+import { TabData } from "@modules/editor/tab/TabData"
+
 
 const Container = styled.div<{ theme: any }>`
   min-height: 100vh;
@@ -33,10 +35,11 @@ function App() {
   const editorManagerRef = useRef(new EditorManager());
   const editorManager = useMemo(() => {
     const manager = editorManagerRef.current;
-    manager.addEditor(new CodeEditor());
-    manager.addEditor(new MapEditor());
-    manager.addEditor(new SoundEditor());
-    manager.addEditor(new SpriteEditor());
+    manager.addEditor(CodeEditor, new TabData("Code", "code"));
+    
+    manager.addEditor(MapEditor, new TabData("Map", "map"));
+    manager.addEditor(SoundEditor, new TabData("Sound", "sound"));
+    manager.addEditor(SpriteEditor, new TabData("Sprite", "sprite"));
     return manager;
   }, []);
 

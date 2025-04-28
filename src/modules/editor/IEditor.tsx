@@ -1,9 +1,12 @@
 
 import {TabData} from "@modules/editor/tab/TabData";
+import React from "react";
 
-class IEditor {
+class IEditor extends React.Component {
     public tabData: TabData = new TabData("IEditor", "Ieditor");
-    constructor() {}
+    constructor() {
+        super({});
+    }
     render() {
         return <div></div>;
     }

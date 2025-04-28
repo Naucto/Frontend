@@ -2,7 +2,7 @@ import IEditor from "../IEditor";
 import { TabData } from "@modules/editor/tab/TabData";
 
 
-export class CodeEditor extends IEditor {
+export class CodeEditor extends IEditor {	
 	constructor() {
 		super();
 		this.tabData = {

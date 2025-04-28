@@ -4,31 +4,42 @@ import { useTheme } from "@theme/ThemeContext"
 import { TabbedComponent, TabbedComponentPage } from "@modules/editor/tab/TabbedComponent"
 import React, { createContext, useContext, useRef } from "react";
 
-export class EditorManager {
+import { TabData } from "@modules/editor/tab/TabData";
+
+type EditorComponent = React.ComponentType<any>;
+
+export class EditorManager  {
 
   public constructor() { }
 
-  private editors: IEditor[] = []
-  public addEditor(editor: IEditor) {
-    console.log("EditorManager addEditor", editor.tabData.title)
-    const index = this.editors.indexOf(editor)
-    if (index > -1) {
-      this.editors.splice(index, 1)
-    }
-    this.editors.push(editor)
+  private editors: { component: EditorComponent; tabData: TabData }[] = [];
+  private activeEditorIndex: number = 0;
+
+  public addEditor(component: EditorComponent, tabData: TabData) {
+   
+    this.editors.push({ component, tabData });
+
   }
-  public removeEditor(editor: IEditor) {
-    const index = this.editors.indexOf(editor)
-    if (index > -1) {
-      this.editors.splice(index, 1)
+
+  public removeEditor(index: number) {
+    if (index < 0 || index >= this.editors.length) {
+      throw new Error("Index out of bounds");
     }
+    this.editors.splice(index, 1);
   }
-  public getEditors(): IEditor[] {
+
+  public getEditors() {
     return this.editors
   }
 
+  renderActiveEditor() {
+    const { component: Editor } = this.editors[this.activeEditorIndex];
+    return <Editor />; // React will handle rendering
+  }
+
   render() {
-    const theme = useTheme();
+    const theme = useTheme(); // You can use `useTheme()` inside a functional component, but we need to adjust this since this method is in a class-based component.
+
     return (
       <div
         style={{
@@ -40,15 +51,18 @@ export class EditorManager {
       >
         <div className="editor">
           <TabbedComponent>
-            {this.editors.map((editor, index) => (
-              <TabbedComponentPage key={index} title={editor.tabData.title}>
-                {editor.render()}
-              </TabbedComponentPage>
-            ))}
+            {this.editors.map((editor, index) => {
+              const EditorComponent = editor.component;
+              return (
+                <TabbedComponentPage key={index} title={editor.tabData.title}>
+                  <EditorComponent />
+                </TabbedComponentPage>
+              );
+            })}
           </TabbedComponent>
         </div>
       </div>
-    )
+    );
   }
 }
 

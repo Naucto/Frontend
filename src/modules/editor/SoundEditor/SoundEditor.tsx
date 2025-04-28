@@ -1,15 +1,49 @@
 import IEditor from "@modules/editor/IEditor";
 import { useTheme } from "@theme/ThemeContext"
+import Music from "@modules/editor/SoundEditor/Music";
 import "./SoundEditor.css"
 
+
+
+interface SoundEditorState {
+    currentMusic: Music;
+    currentInstrument: string;
+    activeCells: Set<string>;
+}
+
+
 export class SoundEditor extends IEditor {
-    constructor() {
+
+    private _musics: Music[];
+    private _instruments: string[] = [
+        "Flute",
+        "Piano",
+        "Guitar",
+        "Violin",
+        "Bassoon"]
+    state: SoundEditorState = {
+        currentMusic: new Music(),
+        currentInstrument: "Piano",
+        activeCells: new Set<string>(),
+    };
+
+
+
+    constructor(numberMusics: number = 16) {
         super();
         this.tabData = {
             title: "Sound",
             icon: "sound",
         };
+        this._musics = new Array<Music>(numberMusics);
+        for (let i = 0; i < numberMusics; i++) {
+            this._musics[i] = new Music();
+        }
+        console.log("this._currentMusic", this.state.currentMusic);
+
     }
+
+
 
     sendData(data: string) {
         console.log("SoundEditor sendData", data);
@@ -19,23 +53,47 @@ export class SoundEditor extends IEditor {
         console.log("SoundEditor loadData", data);
     }
 
+    componentWillUnmount() {
+        console.log('SoundEditor unmounted');
+    }
+
+    componentDidMount() {
+        console.log("✅ SoundEditor mounted!");
+    }
+
+    handleCellClick(row: number, col: number) {
+
+        const cellKey = `${row}-${col}`;
+        this.state.currentMusic.setNote(col, row, 1, this.state.currentInstrument);
+        this.setState((prevState) => {
+            const newActiveCells = new Set(prevState.activeCells);
+            if (newActiveCells.has(cellKey)) {
+                newActiveCells.delete(cellKey);
+            } else {
+                newActiveCells.add(cellKey);
+            }
+            return { activeCells: newActiveCells };
+        });
+    }
+
     render() {
-        const theme = useTheme()
-        const editor = new SoundEditor();
-        editor.sendData("test");
+        //const theme = useTheme()
         const cellWidth = 35;
         const cellHeight = 20;
         const gridWidth = 32;
-        const gridHeight = 16;
-        console.log("", cellWidth);
+        const gridHeight = 24;
         return (
+
+
+
+
             <div
-                style={{
-                    backgroundColor: theme.colors.background,
-                    color: theme.colors.text,
-                    fontFamily: theme.typography.fontFamily,
-                    fontSize: theme.typography.fontSize,
-                }}
+            /* style={{
+                backgroundColor: theme.colors.background,
+                color: theme.colors.text,
+                fontFamily: theme.typography.fontFamily,
+                fontSize: theme.typography.fontSize,
+            }} */
             >
                 <div className="SoundEditor">
                     <input
@@ -59,10 +117,14 @@ export class SoundEditor extends IEditor {
                                     return (
                                         <div
                                             key={cellKey}
+                                            onClick={() => {
+                                                this.handleCellClick(row, col);
+                                            }
+                                            }
                                             style={{
                                                 width: `${cellWidth}px`,
                                                 height: `${cellHeight}px`,
-                                                backgroundColor: "white",
+                                                backgroundColor: this.state.activeCells.has(cellKey) ? "black" : "white",
                                                 boxSizing: "border-box"
                                             }}
                                         ></div>
@@ -78,18 +140,25 @@ export class SoundEditor extends IEditor {
                             marginTop: "20px"
                         }}
                     >
-                        <button>Play</button>
+                        <button onClick={() => this.state.currentMusic.play()} >Play</button>
                         <button>load</button>
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-around", marginTop: "20px" }}>
-                        <button style={{ width: "100px", height: "50px" }}>Flute</button>
-                        <button style={{ width: "100px", height: "50px" }}>Piano</button>
-                        <button style={{ width: "100px", height: "50px" }}>Guitar</button>
-                        <button style={{ width: "100px", height: "50px" }}>Violin</button>
-                        <button style={{ width: "100px", height: "50px" }}>Bassoon</button>
+                        <div>
+                            {this._instruments.map((instrument) => (
+                                <button
+                                    key={instrument}
+                                    onClick={() => this.state.currentInstrument = instrument}
+                                    style={{ margin: "5px", padding: "10px 15px" }}
+                                >
+                                    {instrument}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
-            </div>
+            </div >
         )
     }
+
 }
