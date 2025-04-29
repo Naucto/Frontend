@@ -1,6 +1,6 @@
 import { User } from "src/types/userTypes";
 import { createContext, useContext, useEffect, useState } from "react";
-
+import { ContextError } from "src/errors/ContextError";
 
 
 interface UserContextType {
@@ -44,7 +44,7 @@ export const UserProvider = ({ children }) => {
 export const useUser = () => {
   const context = useContext(userContext);
   if (!context) {
-    throw new Error("useUser must be used in a userProvider");
+    throw new ContextError("useUser", "UserProvider");
   }
   return context;
 }
