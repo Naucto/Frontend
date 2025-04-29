@@ -6,6 +6,10 @@ import { WebrtcProvider } from "y-webrtc";
 import * as Y from "yjs"
 import config from "config.json"
 import styled from "styled-components";
+import StyledCanvas, { CanvasHandle } from "@shared/canvas/Canvas";
+import { SpriteSheet } from "src/types/SpriteSheetType";
+import { spriteTable } from "src/temporary/SpriteSheet";
+import { palette } from "src/temporary/SpriteSheet";
 
 const RightPanel = styled.div`
   height: 100vh;
@@ -28,6 +32,28 @@ export class EditorManager {
   private ydoc: Y.Doc | null = null;
   private provider: WebrtcProvider | null = null;
 
+  // temporary
+  private canvasRef = React.createRef<CanvasHandle>();
+
+  private spriteSheet: SpriteSheet = {
+    spriteSheet: spriteTable,
+    spriteSize: {
+      width: 8,
+      height: 8
+    },
+    size: {
+      width: 128,
+      height: 128,
+    },
+    stride: 1
+  };
+
+  screenSize = {
+    width: 320,
+    height: 180
+  };
+
+  ///
   public constructor() { }
 
   cleanUpAndDisconnect(): void {
@@ -41,6 +67,13 @@ export class EditorManager {
     this.provider = new WebrtcProvider(room, this.ydoc!, config.webrtc);
 
     this.editors.forEach(e => e.init(this.ydoc!, this.provider!));
+
+    const canvas = this.canvasRef.current;
+    if (canvas) {
+      canvas.clear(0);
+      canvas.drawSprite(0, 0, 0, 16, 16);
+      canvas.draw();
+    }
   }
 
   public addEditor(editor: IEditor) {
@@ -79,6 +112,12 @@ export class EditorManager {
         </div>
         <RightPanel>
           <h1>right</h1>
+          <StyledCanvas
+            ref={this.canvasRef}
+            screenSize={this.screenSize}
+            spriteSheet={this.spriteSheet}
+            palette={palette}
+          />
         </RightPanel>
       </Container>
     );
