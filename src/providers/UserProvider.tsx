@@ -27,12 +27,9 @@ export const UserProvider = ({ children }) => {
     }
   }, [user]);
 
-  const login = (userData: any) => {
-    setUser(userData);
-  };
-  const logout = () => {
-    setUser(null);
-  };
+  const login = (userData: User) => setUser(userData);
+
+  const logout = () => setUser(null);
 
   return (
     <userContext.Provider value={{ user, setUser }}>
