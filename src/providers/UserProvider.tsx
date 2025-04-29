@@ -4,7 +4,7 @@ import { ContextError } from "src/errors/ContextError";
 
 
 interface UserContextType {
-  user: User | null;
+  user?: User;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
 }
 
