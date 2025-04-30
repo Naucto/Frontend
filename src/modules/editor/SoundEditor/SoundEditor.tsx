@@ -12,6 +12,7 @@ interface SoundEditorState {
     currentMusic: Music;
     currentInstrument: string;
     activeCells: Set<string>;
+    selectedMusicIndex: number;
 }
 
 const instruments: Map<string, string> = new Map([
@@ -50,6 +51,7 @@ export class SoundEditor extends IEditor {
         currentMusic: new Music(),
         currentInstrument: "piano",
         activeCells: new Set<string>(),
+        selectedMusicIndex: 0,
     };
 
     constructor(numberMusics: number = 16) {
@@ -59,7 +61,7 @@ export class SoundEditor extends IEditor {
             icon: "sound",
         };
         this._musics = new Array<Music>(numberMusics);
-        for (let i = 0; i < numberMusics; i++) {
+        for (let i = 0; i < 16; i++) {
             this._musics[i] = new Music();
         }
         console.log("this._currentMusic", this.state.currentMusic);
@@ -69,7 +71,6 @@ export class SoundEditor extends IEditor {
         this.provider = provider;
         this.ydoc = ydoc;
     }
-
 
     sendData(data: string) {
         console.log("SoundEditor sendData", data);
@@ -136,6 +137,26 @@ export class SoundEditor extends IEditor {
     saveMusic() {
         const musicData = this.state.currentMusic.toJson();
         console.log("Music data to save:", musicData);
+        this._musics[this.state.selectedMusicIndex] = (Music.fromJson(musicData));
+    }
+
+    loadStateFromMusic(id : number) {
+        const music = this._musics[id];
+        this.setState({ selectedMusicIndex: id });
+        this.setState({ currentMusic: music });
+        this.setState({ activeCells: new Set<string>() });
+        for (let i = 0; i < music.notes.length; i++) {
+            for (let j = 0; j < music.notes[i].length; j++) {
+                if (music.notes[i][j].note != "Nan") {
+                    const cellKey = `${j}-${i}`;
+                    this.setState((prevState) => {
+                        const newActiveCells = new Set(prevState.activeCells);
+                        newActiveCells.add(cellKey);
+                        return { activeCells: newActiveCells };
+                    });
+                }
+            }
+        }
     }
 
     componentDidMount() {
@@ -210,6 +231,13 @@ export class SoundEditor extends IEditor {
                                 )}
                             </div>
                         </div>
+                        <div className="music-buttons-container">
+                        {this._musics.map((_, index) => (
+                          <button className={`button ${this.state.selectedMusicIndex == index ? "selected" : ""}`} key={index} onClick={() => this.loadStateFromMusic(index)}>
+                            {index + 1}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                     <div
                         style={{
@@ -221,7 +249,7 @@ export class SoundEditor extends IEditor {
                         <button className="button" onClick={() => this.state.currentMusic.play()} >Play</button>
                         <button className="button" onClick={() => this.clearMusic()} >Clear</button>
                         <button className="button" onClick={() => this.saveMusic()} >Save</button>
-                    </div>
+                        </div>
                 </div>
             </div >
         )

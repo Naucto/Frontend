@@ -93,3 +93,21 @@
         flex-grow: 1;
     }
 }
+
+
+.music-buttons-container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    max-width: 15%;
+    margin: 1em;
+
+
+    .button {
+        width: 4em;
+        height: 4em;
+    }
+
+}
