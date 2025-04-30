@@ -20,16 +20,25 @@
 .grid {
     width: max-content;
     display: grid;
-    gap: 1px;
-    background-color: black;
+    row-gap: 2px;
+    background-color: #537D8D;
     box-sizing: border-box;
+    border : 3px solid #537D8D;
+
+
+    .cell {
+        background-color: #3a5863;
+    }
+
+    .cell:hover {
+        background-color: #2a3c45;
+    }
+
+    .cell.selected {
+        background-color: #2a3c45;
+    }
 }
 
-.grid-cell {
-    background-color: white;
-    border: 1px solid gray;
-    box-sizing: border-box;
-}
 
 .button {
     background-color: #3a5863;
@@ -53,10 +62,14 @@
     background-color: #2a3c45;
 }
 
+.button.selected {
+    background-color: #537D8D;
+}
+
 .editor-countainer {
     display: flex;
     flex-direction: row;
-    align-items:start;
+    align-items: start;
     justify-content: left;
     width: 100%;
 }
@@ -67,9 +80,9 @@
     flex-wrap: wrap;
     align-items: center;
     justify-content: center;
-    max-width : 20%;
+    max-width: 20%;
     margin: 1em;
-    
+
     .button {
         flex-grow: 1;
     }

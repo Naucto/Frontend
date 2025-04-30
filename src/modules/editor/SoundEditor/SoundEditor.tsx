@@ -13,7 +13,7 @@ interface SoundEditorState {
     activeCells: Set<string>;
 }
 
-const instruments : Map<string, string> = new Map([
+const instruments: Map<string, string> = new Map([
     ["piano", "Piano"],
     ["guitar-acoustic", "Guitar"],
     ["guitar-electric", "Guitar Electric"],
@@ -65,7 +65,7 @@ export class SoundEditor extends IEditor {
     public init(ydoc: Doc, provider: WebrtcProvider): void {
         this.provider = provider;
         this.ydoc = ydoc;
-      }
+    }
 
 
     sendData(data: string) {
@@ -101,19 +101,16 @@ export class SoundEditor extends IEditor {
 
     clearMusic() {
         this.setState({ activeCells: new Set<string>() });
-        this.state.currentMusic.clear();
+        this.state.currentMusic = new Music();
     }
 
     getInstrumentButtons() {
         return Array.from(instruments.keys()).map((instrument) => (
-            <button className="button"
+            <button
+                className={`button ${this.state.currentInstrument === instrument ? "selected" : ""}`}
                 key={instrument}
                 onClick={() => {
                     this.setState({ currentInstrument: instrument });
-                }}
-                style={{
-                    backgroundColor: this.state.currentInstrument === instrument ? "blue" : "white",
-                    color: this.state.currentInstrument === instrument ? "white" : "black",
                 }}
             >
                 {instruments.get(instrument)}
@@ -128,32 +125,16 @@ export class SoundEditor extends IEditor {
         const gridWidth = 32;
         const gridHeight = 24;
         return (
-
-
-
-
-            <div
-            /* style={{
-                backgroundColor: theme.colors.background,
-                color: theme.colors.text,
-                fontFamily: theme.typography.fontFamily,
-                fontSize: theme.typography.fontSize,
-            }} */
-            >
+            <div>
                 <div className="SoundEditor">
-                    <input
-                        type="number"
-                        min="0"
-                        max={10 - 1}
-                        value={1}
-
-                    />
+                    
                     <div className="editor-countainer">
                         <div className="instrument-buttons">
                             {this.getInstrumentButtons()}
                         </div>
                         <div className="scrollable-container">
-                            <div className="grid"
+                            <div
+                                className="grid"
                                 style={{
                                     gridTemplateColumns: `repeat(${gridWidth}, ${cellWidth}px)`,
                                     gridTemplateRows: `repeat(${gridHeight}, ${cellHeight}px)`,
@@ -162,21 +143,18 @@ export class SoundEditor extends IEditor {
                                 {[...Array(gridHeight)].map((_, row) =>
                                     [...Array(gridWidth)].map((_, col) => {
                                         const cellKey = `${row}-${col}`;
+                                        const isActive = this.state.activeCells.has(cellKey);
                                         return (
                                             <div
                                                 key={cellKey}
-                                                onClick={() => {
-                                                    this.handleCellClick(row, col);
-                                                }
-                                                }
+                                                onClick={() => this.handleCellClick(row, col)}
+                                                className={`cell ${isActive ? "selected" : ""}`}
                                                 style={{
                                                     width: `${cellWidth}px`,
                                                     height: `${cellHeight}px`,
-                                                    backgroundColor: this.state.activeCells.has(cellKey) ? "black" : "white",
                                                     boxSizing: "border-box"
                                                 }}
-                                            >
-                                            </div>
+                                            ></div>
                                         );
                                     })
                                 )}
@@ -191,7 +169,8 @@ export class SoundEditor extends IEditor {
                         }}
                     >
                         <button className="button" onClick={() => this.state.currentMusic.play()} >Play</button>
-                        <button className="button" onClick={() => this.clearMusic()} >clear</button>
+                        <button className="button" onClick={() => this.clearMusic()} >Clear</button>
+                        <button className="button">Save</button>
                     </div>
                 </div>
             </div >

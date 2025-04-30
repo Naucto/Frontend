@@ -31,15 +31,6 @@ class Music {
         return this._notes;
     }
 
-    public clear() {
-        this._notes = new Array<Note[]>(length);
-        for (let i = 0; i < length; i++) {
-            this._notes[i] = new Array<Note>(this._numberOfNotes);
-            for (let j = 0; j < this._numberOfNotes; j++) {
-                this._notes[i][j] = new Note();
-            }
-        }
-    }
 
     public setNote(position: number, note: number, duration: number, instrument: string): void {
 
@@ -74,7 +65,7 @@ class Music {
     public play() {
         let now = Tone.now();
         Tone.start();
-        for (let noteList of this.notes) {
+        for (let noteList of this._notes) {
             for (let note of noteList) {
                 this._musicManager.playInstrument(note.samp, note.note, now);
 
