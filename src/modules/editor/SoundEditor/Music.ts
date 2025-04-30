@@ -8,17 +8,18 @@ class Music {
     private _notes: Note[][];
     private _bpm: number;
     private _musicManager: MusicManager;
+    private _numberOfNotes;
 
     constructor(
         bpm: number = 120,
         length: number = 32,
         numberOfOctaves: number = 2,
     ) {
-        const numberOfNotes = AllNotes.length * numberOfOctaves;
+        this._numberOfNotes = AllNotes.length * numberOfOctaves;
         this._notes = new Array<Note[]>(length);
         for (let i = 0; i < length; i++) {
-            this._notes[i] = new Array<Note>(numberOfNotes);
-            for (let j = 0; j < numberOfNotes; j++) {
+            this._notes[i] = new Array<Note>(this._numberOfNotes);
+            for (let j = 0; j < this._numberOfNotes; j++) {
                 this._notes[i][j] = new Note();
             }
         }
@@ -30,7 +31,17 @@ class Music {
         return this._notes;
     }
 
-    public setNote(position : number, note : number, duration : number, instrument : string): void {
+    public clear() {
+        this._notes = new Array<Note[]>(length);
+        for (let i = 0; i < length; i++) {
+            this._notes[i] = new Array<Note>(this._numberOfNotes);
+            for (let j = 0; j < this._numberOfNotes; j++) {
+                this._notes[i][j] = new Note();
+            }
+        }
+    }
+
+    public setNote(position: number, note: number, duration: number, instrument: string): void {
 
         if (position < 0 || position >= this._notes.length) {
             throw new Error("Position out of bounds");
@@ -41,7 +52,7 @@ class Music {
             this._notes[position][note] = new Note();
         }
     }
-    
+
     get bpm(): number {
         return this._bpm;
     }
@@ -66,10 +77,31 @@ class Music {
         for (let noteList of this.notes) {
             for (let note of noteList) {
                 this._musicManager.playInstrument(note.samp, note.note, now);
-                
+
             }
             now += 0.30;
         }
+    }
+
+    public toJson(): string {
+        return JSON.stringify({
+            bpm: this._bpm,
+            length: this._notes.length,
+            numberOfOctaves: this._numberOfNotes / AllNotes.length,
+            notes: this._notes.map(row => row.map(note => note.toJson())),
+        });
+    }
+
+    public static fromJson(json: string): Music {
+        const data = JSON.parse(json);
+
+        const music = new Music(data.bpm, data.length, data.numberOfOctaves);
+
+        music._notes = data.notes.map((row: any[]) =>
+            row.map(noteData => Note.fromJson(noteData))
+        );
+
+        return music;
     }
 }
 

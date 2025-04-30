@@ -32,6 +32,26 @@ class Note {
   get durationInSeconds(): number {
     return this.duration / 1000;
   }
+
+  public toJson() {
+    return {
+      note: this.note,
+      duration: this.duration,
+      instrument: this.instrument
+    };
+  }
+
+  public static fromJson(json: string | { note: string; duration: number; instrument: string }): Note {
+    let data: { note: string; duration: number; instrument: string };
+  
+    if (typeof json === "string") {
+      data = JSON.parse(json);
+    } else {
+      data = json;
+    }
+  
+    return new Note(data.note, data.duration, data.instrument);
+  }
 }
 
 export default Note;

@@ -30,3 +30,47 @@
     border: 1px solid gray;
     box-sizing: border-box;
 }
+
+.button {
+    background-color: #3a5863;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    font-family: 'Pixelify';
+}
+
+.button:hover {
+    background-color: #537D8D;
+}
+
+.button:active {
+    background-color: #2a3c45;
+}
+
+.editor-countainer {
+    display: flex;
+    flex-direction: row;
+    align-items:start;
+    justify-content: left;
+    width: 100%;
+}
+
+.instrument-buttons {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    max-width : 20%;
+    margin: 1em;
+    
+    .button {
+        flex-grow: 1;
+    }
+}
