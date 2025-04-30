@@ -8,11 +8,11 @@ class Note {
   public samp: Tone.Sampler;
   constructor(
     public note: string = "Nan",
-    public duration: number = 1,
+    private _duration: number = 1,
     public instrument: string = "piano",
   ) {
     this.note = note;
-    this.duration = duration;
+    this._duration = _duration;
     this.instrument = instrument;
     if (this.note == "Nan") {
       this.samp = new Tone.Sampler();
@@ -29,14 +29,14 @@ class Note {
 
   }
 
-  get durationInSeconds(): number {
-    return this.duration / 1000;
+  public get duration() {
+    return this._duration;
   }
 
   public toJson() {
     return {
       note: this.note,
-      duration: this.duration,
+      duration: this._duration,
       instrument: this.instrument
     };
   }

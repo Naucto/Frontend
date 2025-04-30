@@ -1,5 +1,7 @@
 
+import { Duration } from '@mui/material';
 import * as Tone from 'tone';
+import { Time } from 'tone/build/esm/core/type/Units';
 
 
 const AllNotes = [
@@ -40,7 +42,7 @@ class MusicManager {
         if (number < 0) {
             throw new Error("Number out of bounds");
         }
-        let note = number % AllNotes.length;
+        let note = AllNotes.length - number % AllNotes.length;
         let octave = Math.floor(number / AllNotes.length) + 4;
         let result = AllNotes[note] + String(octave);
         return result;
@@ -61,12 +63,12 @@ class MusicManager {
         }
     }
 
-    playNote(note: string, synthType: SynthType, duration: string = "8n", when = Tone.now()) {
+    playNote(note: string, synthType: SynthType, duration: Time, when = Tone.now()) {
         synthType = synthType % 3;
         return this.synthTypeFunctionMap[synthType].triggerAttackRelease(note, duration, when);
     }
 
-    playInstrument(sampler: Tone.Sampler, note: string, when = Tone.now(), duration = "8n") {
+    playInstrument(sampler: Tone.Sampler, note: string, when = Tone.now(), duration : Time) {
         if (note == "Nan") {
             return;
         }

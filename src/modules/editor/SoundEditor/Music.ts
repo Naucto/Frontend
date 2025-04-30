@@ -11,7 +11,7 @@ class Music {
     private _numberOfNotes;
 
     constructor(
-        bpm: number = 120,
+        bpm: number = 240,
         length: number = 32,
         numberOfOctaves: number = 2,
     ) {
@@ -67,10 +67,11 @@ class Music {
         Tone.start();
         for (let noteList of this._notes) {
             for (let note of noteList) {
-                this._musicManager.playInstrument(note.samp, note.note, now);
-
+                if (note.note != "Nan") {
+                    this._musicManager.playInstrument(note.samp, note.note, now, 60/this._bpm * note.duration);
+                }
             }
-            now += 0.30;
+            now += 60/this._bpm;
         }
     }
 

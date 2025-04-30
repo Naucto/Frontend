@@ -4,6 +4,7 @@ import Music from "@modules/editor/SoundEditor/Music";
 import "./SoundEditor.css"
 import { Doc } from "yjs";
 import { WebrtcProvider } from "y-webrtc";
+import { start } from "tone";
 
 
 
@@ -42,6 +43,8 @@ export class SoundEditor extends IEditor {
     private _musics: Music[];
     private provider: WebrtcProvider | null = null;
     private ydoc: Doc | null = null;
+    private _isMouseDown: boolean = false;
+    private _startPosition: [number, number] = [-1, -1];
 
     state: SoundEditorState = {
         currentMusic: new Music(),
@@ -76,27 +79,39 @@ export class SoundEditor extends IEditor {
         console.log("SoundEditor loadData", data);
     }
 
-    componentWillUnmount() {
-        console.log('SoundEditor unmounted');
-    }
+    handleCellClick(endRow: number, endCol: number) {
 
-    componentDidMount() {
-        console.log("✅ SoundEditor mounted!");
-    }
-
-    handleCellClick(row: number, col: number) {
-
-        const cellKey = `${row}-${col}`;
-        this.state.currentMusic.setNote(col, row, 1, this.state.currentInstrument);
-        this.setState((prevState) => {
-            const newActiveCells = new Set(prevState.activeCells);
-            if (newActiveCells.has(cellKey)) {
-                newActiveCells.delete(cellKey);
-            } else {
-                newActiveCells.add(cellKey);
+        if (this._isMouseDown) {
+            if (this._startPosition[0] == -1) {
+                this._startPosition[0] = endRow;
+                this._startPosition[1] = endCol;
             }
-            return { activeCells: newActiveCells };
-        });
+            return;
+        }
+        console.log("handleCellClick", endRow, this._startPosition[0]);
+        if (endRow == this._startPosition[0]) {
+            
+            for (let i = Math.min(this._startPosition[1], endCol); i <= Math.max(this._startPosition[1], endCol); i++) {
+                const row = this._startPosition[0];
+                const col = i;
+                const cellKey = `${row}-${col}`;
+                
+                this.setState((prevState) => {
+                    const newActiveCells = new Set(prevState.activeCells);
+                    if (newActiveCells.has(cellKey)) {
+                        newActiveCells.delete(cellKey);
+                    } else {
+                        newActiveCells.add(cellKey);
+                    }
+                    return { activeCells: newActiveCells };
+                });
+                this.setState({ startPosition: [-1, -1] });
+            }
+            this.state.currentMusic.setNote(this._startPosition[1], this._startPosition[0], Math.max(1, Math.abs(this._startPosition[1] - endCol)), this.state.currentInstrument);
+        }
+
+
+
     }
 
     clearMusic() {
@@ -118,6 +133,24 @@ export class SoundEditor extends IEditor {
         ));
     }
 
+    saveMusic() {
+        const musicData = this.state.currentMusic.toJson();
+        console.log("Music data to save:", musicData);
+    }
+
+    componentDidMount() {
+        window.addEventListener("mouseup", this.handleMouseUp);
+    }
+
+    componentWillUnmount() {
+        window.removeEventListener("mouseup", this.handleMouseUp);
+    }
+
+    handleMouseUp = () => {
+        this.setState({ isMouseDown: false });
+
+    };
+
     render() {
         //const theme = useTheme()
         const cellWidth = 35;
@@ -127,7 +160,7 @@ export class SoundEditor extends IEditor {
         return (
             <div>
                 <div className="SoundEditor">
-                    
+
                     <div className="editor-countainer">
                         <div className="instrument-buttons">
                             {this.getInstrumentButtons()}
@@ -147,14 +180,31 @@ export class SoundEditor extends IEditor {
                                         return (
                                             <div
                                                 key={cellKey}
-                                                onClick={() => this.handleCellClick(row, col)}
+                                                onMouseDown={() => {
+                                                    this._isMouseDown = true;
+                                                    this.handleCellClick(row, col);
+                                                    this.setState({ startPosition: [row, col] });
+                                                }}
+                                                onMouseOver={() => {
+                                                    if (this._isMouseDown) {
+                                                        this.handleCellClick(row, col);
+                                                    }
+                                                }}
+                                                onMouseUp={() => {
+                                                    this._isMouseDown = false;
+                                                    this.handleCellClick(row, col);
+                                                    this._startPosition[0] = -1;
+                                                    this._startPosition[1] = -1;
+                                                }}
                                                 className={`cell ${isActive ? "selected" : ""}`}
                                                 style={{
                                                     width: `${cellWidth}px`,
                                                     height: `${cellHeight}px`,
                                                     boxSizing: "border-box"
                                                 }}
-                                            ></div>
+                                            >
+                                                {this.state.currentMusic.notes[col][row].note == "Nan" ? "" : this.state.currentMusic.notes[col][row].note}
+                                            </div>
                                         );
                                     })
                                 )}
@@ -170,7 +220,7 @@ export class SoundEditor extends IEditor {
                     >
                         <button className="button" onClick={() => this.state.currentMusic.play()} >Play</button>
                         <button className="button" onClick={() => this.clearMusic()} >Clear</button>
-                        <button className="button">Save</button>
+                        <button className="button" onClick={() => this.saveMusic()} >Save</button>
                     </div>
                 </div>
             </div >

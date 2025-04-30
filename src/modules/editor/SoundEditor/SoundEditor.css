@@ -3,6 +3,7 @@
     flex-direction: column;
     align-items: center;
     flex-wrap: nowrap;
+    background-color: #537D8D;
 }
 
 .scrollable-container {
@@ -13,13 +14,13 @@
     display: flex;
     flex-direction: column;
     flex-wrap: nowrap;
-    margin: 10px 0;
     /* align-items removed to avoid clipping */
 }
 
 .grid {
     width: max-content;
     display: grid;
+    margin-top: 1em;
     row-gap: 2px;
     background-color: #537D8D;
     box-sizing: border-box;
@@ -28,6 +29,8 @@
 
     .cell {
         background-color: #3a5863;
+        color: transparent;
+        user-select: none;
     }
 
     .cell:hover {
@@ -36,6 +39,7 @@
 
     .cell.selected {
         background-color: #2a3c45;
+        color: black; 
     }
 }
 
@@ -52,6 +56,8 @@
     margin: 4px 2px;
     cursor: pointer;
     font-family: 'Pixelify';
+    border-radius: 10px;
+    border : 2px solid #3a5863;
 }
 
 .button:hover {
