@@ -96,7 +96,7 @@ export function rectangleToVertices(x: number, y: number, width: number, height:
   ]);
 }
 
-export function setShader(gl: WebGLRenderingContext, source: string, type: GLenum) {
+export function compileShader(gl: WebGLRenderingContext, source: string, type: GLenum) {
   const vertexShader = gl.createShader(type);
   if (!vertexShader) {
     throw new WebGlError("Failed to create vertex shader");

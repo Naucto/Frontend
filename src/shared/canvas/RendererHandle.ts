@@ -1,0 +1,131 @@
+import { compileShader, convertSpritesheetToRGBArray, createGLContext, rectangleToVertices, setGLProgram, setTexture } from "@shared/canvas/CanvasUtil";
+import { GLPipeline, initGLPipeline } from "@shared/canvas/GLSetup";
+import { useEffect, useMemo, useRef } from "react";
+import { SpriteSheet } from "src/types/SpriteSheetType";
+
+
+export type SpriteRendererHandle = {
+  queueSpriteDraw: (index: number, x: number, y: number, width?: number, height?: number, flip_h?: number, flip_v?: number) => void;
+  draw: () => void;
+  clear: (index: number) => void;
+};
+
+export function useSpriteRenderer(
+  canvasRef: React.RefObject<HTMLCanvasElement | null>,
+  spriteSheet: SpriteSheet,
+  palette: Uint8Array,
+  screenSize: { width: number, height: number }
+): SpriteRendererHandle {
+  const spriteNumber = spriteSheet.size.width / spriteSheet.spriteSize.width;
+  const batchedVertices: number[] = [];
+  const batchedUVs: number[] = [];
+
+  const pipelineRef = useRef<GLPipeline | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    pipelineRef.current = initGLPipeline(canvas, spriteSheet, palette, screenSize);
+
+    return () => {
+      pipelineRef.current?.destroy();
+      pipelineRef.current = null;
+    }
+  }, [canvasRef, spriteSheet, palette, screenSize])
+
+  function draw() {
+    const p = pipelineRef.current;
+    if (!p) return;
+
+    const gl = p.gl;
+    const program = p.program;
+    const uvLocation = p.uvLoc;
+    const posLoc = p.positionLoc;
+    const vertexBuffer = p.vertexBuffer;
+    const uvBuffer = p.uvBuffer;
+
+    if (!gl || !program) return;
+    if (batchedVertices.length === 0) return;
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(batchedVertices), gl.STREAM_DRAW);
+
+    gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(posLoc);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(batchedUVs), gl.STREAM_DRAW);
+    gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(uvLocation);
+
+    gl.drawArrays(gl.TRIANGLES, 0, batchedVertices.length / 2);
+
+    batchedVertices.length = 0;
+    batchedUVs.length = 0;
+  }
+
+  function queueSpriteDraw(index: number, x: number, y: number, width: number = 1, height: number = 1, flip_h: number = 0, flip_v: number = 0) {
+    const p = pipelineRef.current
+    if (!p) return;
+    const gl = p.gl
+    const program = p.program;
+
+    if (!gl || !program) return;
+    x = Math.floor(x);
+    y = Math.floor(y);
+    flip_h = flip_h ? 1 : 0;
+    flip_v = flip_v ? 1 : 0;
+
+    const x_sprite = index % (spriteNumber);
+    const y_sprite = Math.floor(index / (spriteNumber));
+
+    let u0 = x_sprite * spriteSheet.spriteSize.width / spriteSheet.size.width;
+    let v0 = y_sprite * spriteSheet.spriteSize.height / spriteSheet.size.height;
+    let u1 = (x_sprite + width) * spriteSheet.spriteSize.width / spriteSheet.size.width;
+    let v1 = (y_sprite + height) * spriteSheet.spriteSize.height / spriteSheet.size.height;
+
+    if (flip_h) [u0, u1] = [u1, u0];
+    if (flip_v) [v0, v1] = [v1, v0];
+
+    const uv = new Float32Array([
+      u0, v0,
+      u1, v0,
+      u0, v1,
+      u0, v1,
+      u1, v0,
+      u1, v1,
+    ]);
+
+    const vertices = rectangleToVertices(
+      x,
+      y,
+      width * spriteSheet.spriteSize.width,
+      height * spriteSheet.spriteSize.height
+    );
+
+    batchedVertices.push(...vertices);
+    batchedUVs.push(...uv);
+  }
+
+  function clear(n: number) {
+    const p = pipelineRef.current
+    if (!p) return;
+    const gl = p.gl
+
+    if (n * 4 >= palette.length) {
+      console.error("Palette index out of bounds");
+      return;
+    }
+    const r = palette[n * 4] / 255;
+    const g = palette[n * 4 + 1] / 255;
+    const b = palette[n * 4 + 2] / 255;
+    gl.clearColor(r, g, b, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+  }
+
+  return useMemo(() => ({
+    queueSpriteDraw,
+    draw,
+    clear
+  }), []);
+}
