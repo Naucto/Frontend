@@ -4,9 +4,19 @@ import { useEffect, useMemo, useRef } from "react";
 import { CanvasError, CanvasNotInitializedError } from "src/errors/CanvasError";
 import { SpriteSheet } from "src/types/SpriteSheetType";
 
+export type QueueSpriteDrawFn = (
+  index: number,
+  x: number,
+  y: number,
+  width?: number,
+  height?: number,
+  flip_h?: number,
+  flip_v?: number
+) => void;
+
 
 export type SpriteRendererHandle = {
-  queueSpriteDraw: (index: number, x: number, y: number, width?: number, height?: number, flip_h?: number, flip_v?: number) => void;
+  queueSpriteDraw: QueueSpriteDrawFn;
   draw: () => void;
   clear: (index: number) => void;
   setColor: (index: number, index2: number) => void;
