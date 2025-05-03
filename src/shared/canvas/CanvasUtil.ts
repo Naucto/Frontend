@@ -52,7 +52,6 @@ export function createGLContext(canvas: HTMLCanvasElement): WebGL2RenderingConte
   return gl;
 }
 
-
 export function setTexture(gl: WebGLRenderingContext,
   width: number,
   height: number,
@@ -87,7 +86,6 @@ export function setTexture(gl: WebGLRenderingContext,
   );
   return texture;
 }
-
 
 export function rectangleToVertices(x: number, y: number, width: number, height: number): Float32Array {
   return new Float32Array([

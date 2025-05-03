@@ -14,7 +14,6 @@ export type QueueSpriteDrawFn = (
   flip_v?: number
 ) => void;
 
-
 export type SpriteRendererHandle = {
   queueSpriteDraw: QueueSpriteDrawFn;
   draw: () => void;
@@ -62,9 +61,9 @@ export function useSpriteRenderer(
     const posLoc = p.positionLoc;
 
     if (batchedVertices.length === 0) return;
+
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(batchedVertices), gl.STREAM_DRAW);
-
     gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(posLoc);
 

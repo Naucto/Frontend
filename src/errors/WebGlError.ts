@@ -1,4 +1,3 @@
-
 class WebGlError extends Error {
   constructor(message: string) {
     super(message);

@@ -3,7 +3,6 @@ import { forwardRef, useImperativeHandle, useRef } from "react";
 import { SpriteSheet } from "src/types/SpriteSheetType";
 import styled from "styled-components";
 
-
 type CanvasProps = {
   spriteSheet: SpriteSheet;
   screenSize: {
