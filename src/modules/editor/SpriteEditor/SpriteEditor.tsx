@@ -14,36 +14,12 @@ export class SpriteEditor extends IEditor {
     };
   }
 
-  screenSize = {
-    width: 320,
-    height: 180
-  };
-
-  spriteSheet: SpriteSheet = {
-    spriteSheet: spriteTable,
-    spriteSize: {
-      width: 8,
-      height: 8
-    },
-    size: {
-      width: 128,
-      height: 128,
-    },
-    stride: 1
-  };
-
   public init(doc: Doc, provider: WebrtcProvider): void {
   }
 
   render() {
     return (
-      <div>
-        <StyledCanvas
-          screenSize={this.screenSize}
-          spriteSheet={this.spriteSheet}
-          palette={palette}
-        />
-      </div>
+      <div />
     );
   }
 }

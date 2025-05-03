@@ -1,6 +1,7 @@
-import { compileShader, convertSpritesheetToRGBArray, createGLContext, rectangleToVertices, setGLProgram, setTexture } from "@shared/canvas/CanvasUtil";
+import { rectangleToVertices } from "@shared/canvas/CanvasUtil";
 import { GLPipeline, initGLPipeline } from "@shared/canvas/GLSetup";
 import { useEffect, useMemo, useRef } from "react";
+import { CanvasError, CanvasNotInitializedError } from "src/errors/CanvasError";
 import { SpriteSheet } from "src/types/SpriteSheetType";
 
 
@@ -22,7 +23,7 @@ export function useSpriteRenderer(
   const batchedVertices: number[] = [];
   const batchedUVs: number[] = [];
   const currentPalette: Uint8Array = new Uint8Array(palette)
-  const currentPaletteSize = currentPalette.length / 4;
+  const currentPaletteSize = currentPalette.length >> 2;
 
   const pipelineRef = useRef<GLPipeline | null>(null);
 
@@ -31,7 +32,9 @@ export function useSpriteRenderer(
     if (!canvas) return;
 
     pipelineRef.current = initGLPipeline(canvas, spriteSheet, palette, screenSize);
-
+    if (!pipelineRef.current) {
+      throw new CanvasNotInitializedError();
+    }
     return () => {
       pipelineRef.current?.destroy();
       pipelineRef.current = null;
@@ -43,13 +46,11 @@ export function useSpriteRenderer(
     if (!p) return;
 
     const gl = p.gl;
-    const program = p.program;
     const vertexBuffer = p.vertexBuffer;
     const uvBuffer = p.uvBuffer;
     const uvLocation = p.uvLoc;
     const posLoc = p.positionLoc;
 
-    if (!gl || !program) return;
     if (batchedVertices.length === 0) return;
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(batchedVertices), gl.STREAM_DRAW);
@@ -62,19 +63,13 @@ export function useSpriteRenderer(
     gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(uvLocation);
 
-    gl.drawArrays(gl.TRIANGLES, 0, batchedVertices.length / 2);
+    gl.drawArrays(gl.TRIANGLES, 0, batchedVertices.length >> 1); // divided by 2 bcs batchedVertices is 2d
 
     batchedVertices.length = 0;
     batchedUVs.length = 0;
   }
 
   function queueSpriteDraw(index: number, x: number, y: number, width: number = 1, height: number = 1, flip_h: number = 0, flip_v: number = 0) {
-    const p = pipelineRef.current
-    if (!p) return;
-    const gl = p.gl
-    const program = p.program;
-
-    if (!gl || !program) return;
     x = Math.floor(x);
     y = Math.floor(y);
     flip_h = flip_h ? 1 : 0;
@@ -112,29 +107,34 @@ export function useSpriteRenderer(
   }
 
   function clear(n: number) {
-    const p = pipelineRef.current
-    if (!p) return;
+    const p = _getPipeline()
     const gl = p.gl
 
-    if (n * 4 >= palette.length) {
-      console.error("Palette index out of bounds");
-      return;
+    const distance = n << 2;
+
+    if (distance >= currentPalette.length) {
+      throw new CanvasError("Palette index out of bounds");
     }
-    const r = palette[n * 4] / 255;
-    const g = palette[n * 4 + 1] / 255;
-    const b = palette[n * 4 + 2] / 255;
+    const r = palette[distance] / 255;
+    const g = palette[distance + 1] / 255;
+    const b = palette[distance + 2] / 255;
     gl.clearColor(r, g, b, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
   }
 
   function setColor(index: number, index2: number) {
-    const p = pipelineRef.current
-    if (!p) return;
+    const p = _getPipeline()
     const gl = p.gl
-    currentPalette[index * 4] = palette[index2 * 4];
-    currentPalette[index * 4 + 1] = palette[index2 * 4 + 1];
-    currentPalette[index * 4 + 2] = palette[index2 * 4 + 2];
-    currentPalette[index * 4 + 3] = palette[index2 * 4 + 3];
+    const distanceIndex = index << 2;
+    const distanceIndex2 = index2 << 2;
+
+    if (distanceIndex >= currentPalette.length || distanceIndex2 >= palette.length) {
+      throw new CanvasError("Palette index out of bounds");
+    }
+    currentPalette[distanceIndex] = palette[distanceIndex2];
+    currentPalette[distanceIndex + 1] = palette[distanceIndex2 + 1];
+    currentPalette[distanceIndex + 2] = palette[distanceIndex2 + 2];
+    currentPalette[distanceIndex + 3] = palette[distanceIndex2 + 3];
 
     gl.activeTexture(gl.TEXTURE1);
     gl.texSubImage2D(
@@ -150,8 +150,7 @@ export function useSpriteRenderer(
   }
 
   function resetColor() {
-    const p = pipelineRef.current
-    if (!p) return;
+    const p = _getPipeline()
     const gl = p.gl
     gl.activeTexture(gl.TEXTURE1);
     gl.texSubImage2D(
@@ -164,6 +163,12 @@ export function useSpriteRenderer(
       gl.UNSIGNED_BYTE,
       palette
     )
+  }
+
+  function _getPipeline(): GLPipeline {
+    const p = pipelineRef.current
+    if (!p) { throw new CanvasNotInitializedError(); }
+    return p
   }
 
   return useMemo(() => ({
