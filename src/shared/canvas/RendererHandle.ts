@@ -22,7 +22,7 @@ export function useSpriteRenderer(
   const spriteNumber = spriteSheet.size.width / spriteSheet.spriteSize.width;
   const batchedVertices: number[] = [];
   const batchedUVs: number[] = [];
-  const currentPalette: Uint8Array = new Uint8Array(palette)
+  const currentPalette: Uint8Array = new Uint8Array(palette);
   const currentPaletteSize = currentPalette.length >> 2;
 
   const pipelineRef = useRef<GLPipeline | null>(null);
@@ -38,8 +38,8 @@ export function useSpriteRenderer(
     return () => {
       pipelineRef.current?.destroy();
       pipelineRef.current = null;
-    }
-  }, [canvasRef, spriteSheet, palette, screenSize])
+    };
+  }, [canvasRef, spriteSheet, palette, screenSize]);
 
   function draw() {
     const p = pipelineRef.current;
@@ -107,8 +107,8 @@ export function useSpriteRenderer(
   }
 
   function clear(n: number) {
-    const p = _getPipeline()
-    const gl = p.gl
+    const p = _getPipeline();
+    const gl = p.gl;
 
     const distance = n << 2;
 
@@ -123,8 +123,8 @@ export function useSpriteRenderer(
   }
 
   function setColor(index: number, index2: number) {
-    const p = _getPipeline()
-    const gl = p.gl
+    const p = _getPipeline();
+    const gl = p.gl;
     const distanceIndex = index << 2;
     const distanceIndex2 = index2 << 2;
 
@@ -146,12 +146,12 @@ export function useSpriteRenderer(
       gl.RGBA,
       gl.UNSIGNED_BYTE,
       currentPalette
-    )
+    );
   }
 
   function resetColor() {
-    const p = _getPipeline()
-    const gl = p.gl
+    const p = _getPipeline();
+    const gl = p.gl;
     gl.activeTexture(gl.TEXTURE1);
     gl.texSubImage2D(
       gl.TEXTURE_2D,
@@ -162,13 +162,13 @@ export function useSpriteRenderer(
       gl.RGBA,
       gl.UNSIGNED_BYTE,
       palette
-    )
+    );
   }
 
   function _getPipeline(): GLPipeline {
-    const p = pipelineRef.current
+    const p = pipelineRef.current;
     if (!p) { throw new CanvasNotInitializedError(); }
-    return p
+    return p;
   }
 
   return useMemo(() => ({

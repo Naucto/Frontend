@@ -31,7 +31,7 @@ export default defineConfig([
       "no-var": "error",
       "prefer-const": "error",
       "object-curly-spacing": ["error", "always"],
-
+      "semi": ["error", "always"],
     },
 
 

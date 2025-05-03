@@ -15,11 +15,10 @@ type CanvasProps = {
 };
 
 const Canvas = forwardRef<SpriteRendererHandle, CanvasProps>(({ screenSize, spriteSheet, palette, className }, ref) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const rendererHandle = useSpriteRenderer(canvasRef, spriteSheet, palette, screenSize)
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const rendererHandle = useSpriteRenderer(canvasRef, spriteSheet, palette, screenSize);
 
-  useImperativeHandle(ref, () => rendererHandle, [rendererHandle])
-
+  useImperativeHandle(ref, () => rendererHandle, [rendererHandle]);
   return (
     <canvas
       ref={canvasRef}
