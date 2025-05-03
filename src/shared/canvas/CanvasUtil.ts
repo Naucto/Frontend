@@ -57,10 +57,14 @@ export function setTexture(gl: WebGLRenderingContext,
   width: number,
   height: number,
   data: Uint8Array,
+  internalFormat: GLenum | undefined = undefined,
   format: GLenum = gl.RGBA,
   activeTexture: GLenum = gl.TEXTURE0,
   octetPerData: number = 4
 ) {
+  if (internalFormat === undefined) {
+    internalFormat = format;
+  }
   const texture = gl.createTexture();
   gl.activeTexture(activeTexture);
   gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -74,7 +78,7 @@ export function setTexture(gl: WebGLRenderingContext,
   gl.texImage2D(
     gl.TEXTURE_2D,
     0,
-    format,
+    internalFormat,
     width, height,
     0,
     format,
