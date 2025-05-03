@@ -3,7 +3,7 @@ import { ColorFormatError } from "src/errors/ColorFormatError";
 import { SpriteSheetError } from "src/errors/SpriteSheetError";
 import WebGlError from "src/errors/WebGlError";
 
-export function convertSpritesheetToRGBArray(spriteSheet: SpriteSheet) {
+export function convertSpritesheetToIndexArray(spriteSheet: SpriteSheet) {
   const spriteSize = spriteSheet.size.width * spriteSheet.size.height;
   const array = new Uint8Array(spriteSize);
   if (spriteSheet.stride <= 0) {

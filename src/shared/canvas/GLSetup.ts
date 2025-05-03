@@ -1,4 +1,4 @@
-import { compileShader, convertSpritesheetToRGBArray, createGLContext, setGLProgram, setTexture } from "@shared/canvas/CanvasUtil";
+import { compileShader, convertSpritesheetToIndexArray, createGLContext, setGLProgram, setTexture } from "@shared/canvas/CanvasUtil";
 import { SpriteSheet } from "src/types/SpriteSheetType";
 
 export interface GLPipeline {
@@ -22,7 +22,7 @@ export function initGLPipeline(
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-  const rgbBuffer = convertSpritesheetToRGBArray(spriteSheet);
+  const rgbBuffer = convertSpritesheetToIndexArray(spriteSheet);
   const spriteSheetTexture = setTexture(gl,
     spriteSheet.size.width, spriteSheet.size.height,
     rgbBuffer,
