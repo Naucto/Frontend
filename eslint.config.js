@@ -32,6 +32,11 @@ export default defineConfig([
       "prefer-const": "error",
       "object-curly-spacing": ["error", "always"],
       "semi": ["error", "always"],
+      "@typescript-eslint/explicit-function-return-type": ["error", {
+        allowExpressions: true,
+        allowTypedFunctionExpressions: true,
+      }],
+
     },
 
 

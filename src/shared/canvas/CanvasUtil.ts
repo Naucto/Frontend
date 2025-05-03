@@ -3,7 +3,7 @@ import { ColorFormatError } from "src/errors/ColorFormatError";
 import { SpriteSheetError } from "src/errors/SpriteSheetError";
 import WebGlError from "src/errors/WebGlError";
 
-export function convertSpritesheetToIndexArray(spriteSheet: SpriteSheet) {
+export function convertSpritesheetToIndexArray(spriteSheet: SpriteSheet): Uint8Array {
   const spriteSize = spriteSheet.size.width * spriteSheet.size.height;
   const array = new Uint8Array(spriteSize);
   if (spriteSheet.stride <= 0) {
@@ -43,7 +43,7 @@ export function getRGBArraysFromPalette(palette: string[], zeroAlphaIndex = 0): 
   });
 }
 
-export function createGLContext(canvas: HTMLCanvasElement) {
+export function createGLContext(canvas: HTMLCanvasElement): WebGL2RenderingContext {
   const gl = canvas.getContext("webgl2");
   if (!gl) {
     throw new WebGlError("WebGL not supported");
@@ -61,7 +61,7 @@ export function setTexture(gl: WebGLRenderingContext,
   format: GLenum = gl.RGBA,
   activeTexture: GLenum = gl.TEXTURE0,
   octetPerData: number = 4
-) {
+): WebGLTexture {
   if (internalFormat === undefined) {
     internalFormat = format;
   }
@@ -100,7 +100,7 @@ export function rectangleToVertices(x: number, y: number, width: number, height:
   ]);
 }
 
-export function compileShader(gl: WebGLRenderingContext, source: string, type: GLenum) {
+export function compileShader(gl: WebGLRenderingContext, source: string, type: GLenum): WebGLShader {
   const vertexShader = gl.createShader(type);
   if (!vertexShader) {
     throw new WebGlError("Failed to create vertex shader");
@@ -118,7 +118,7 @@ export function compileShader(gl: WebGLRenderingContext, source: string, type: G
   return vertexShader;
 }
 
-export function setGLProgram(gl: WebGLRenderingContext, vertexShader: WebGLShader, fragmentShader: WebGLShader) {
+export function setGLProgram(gl: WebGLRenderingContext, vertexShader: WebGLShader, fragmentShader: WebGLShader): WebGLProgram {
   const program = gl.createProgram();
   if (!program) {
     throw new WebGlError("Failed to create program");

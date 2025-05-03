@@ -2,7 +2,7 @@ import { compileShader, convertSpritesheetToIndexArray, createGLContext, setGLPr
 import { SpriteSheet } from "src/types/SpriteSheetType";
 
 export interface GLPipeline {
-  gl: WebGLRenderingContext;
+  gl: WebGL2RenderingContext;
   program: WebGLProgram;
   vertexBuffer: WebGLBuffer;
   uvBuffer: WebGLBuffer;
@@ -85,7 +85,7 @@ export function initGLPipeline(
   gl.clearColor(0, 0, 0, 1);
   gl.clear(gl.COLOR_BUFFER_BIT);
 
-  const destroy = () => {
+  const destroy = (): void => {
     gl.deleteProgram(program);
     gl.deleteShader(vertexShader);
     gl.deleteShader(fragmentShader);
