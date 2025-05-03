@@ -36,6 +36,7 @@ export default defineConfig([
         allowExpressions: true,
         allowTypedFunctionExpressions: true,
       }],
+      "eol-last": ["error", "always"]
 
     },
 
