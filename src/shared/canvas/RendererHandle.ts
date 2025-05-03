@@ -8,6 +8,8 @@ export type SpriteRendererHandle = {
   queueSpriteDraw: (index: number, x: number, y: number, width?: number, height?: number, flip_h?: number, flip_v?: number) => void;
   draw: () => void;
   clear: (index: number) => void;
+  setColor: (index: number, index2: number) => void;
+  resetColor: () => void;
 };
 
 export function useSpriteRenderer(
@@ -19,6 +21,8 @@ export function useSpriteRenderer(
   const spriteNumber = spriteSheet.size.width / spriteSheet.spriteSize.width;
   const batchedVertices: number[] = [];
   const batchedUVs: number[] = [];
+  const currentPalette: Uint8Array = new Uint8Array(palette)
+  const currentPaletteSize = currentPalette.length / 4;
 
   const pipelineRef = useRef<GLPipeline | null>(null);
 
@@ -40,10 +44,10 @@ export function useSpriteRenderer(
 
     const gl = p.gl;
     const program = p.program;
-    const uvLocation = p.uvLoc;
-    const posLoc = p.positionLoc;
     const vertexBuffer = p.vertexBuffer;
     const uvBuffer = p.uvBuffer;
+    const uvLocation = p.uvLoc;
+    const posLoc = p.positionLoc;
 
     if (!gl || !program) return;
     if (batchedVertices.length === 0) return;
@@ -123,9 +127,50 @@ export function useSpriteRenderer(
     gl.clear(gl.COLOR_BUFFER_BIT);
   }
 
+  function setColor(index: number, index2: number) {
+    const p = pipelineRef.current
+    if (!p) return;
+    const gl = p.gl
+    currentPalette[index * 4] = palette[index2 * 4];
+    currentPalette[index * 4 + 1] = palette[index2 * 4 + 1];
+    currentPalette[index * 4 + 2] = palette[index2 * 4 + 2];
+    currentPalette[index * 4 + 3] = palette[index2 * 4 + 3];
+
+    gl.activeTexture(gl.TEXTURE1);
+    gl.texSubImage2D(
+      gl.TEXTURE_2D,
+      0,
+      0, 0,
+      currentPaletteSize,
+      1,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      currentPalette
+    )
+  }
+
+  function resetColor() {
+    const p = pipelineRef.current
+    if (!p) return;
+    const gl = p.gl
+    gl.activeTexture(gl.TEXTURE1);
+    gl.texSubImage2D(
+      gl.TEXTURE_2D,
+      0,
+      0, 0,
+      currentPaletteSize,
+      1,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      palette
+    )
+  }
+
   return useMemo(() => ({
     queueSpriteDraw,
     draw,
-    clear
+    clear,
+    setColor,
+    resetColor
   }), []);
 }
