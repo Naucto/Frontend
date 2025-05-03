@@ -1,6 +1,7 @@
 import { compileShader, convertSpritesheetToIndexArray, createGLContext, setGLProgram, setTexture } from "@shared/canvas/CanvasUtil";
 import { SpriteSheet } from "src/types/SpriteSheetType";
-
+import indexToColorFragment from "src/shared/canvas/shaders/index_to_color_frag.glsl";
+import spriteSheetVertex from "src/shared/canvas/shaders/sprite_cut_vert.glsl";
 export interface GLPipeline {
   gl: WebGL2RenderingContext;
   program: WebGLProgram;
@@ -38,33 +39,8 @@ export function initGLPipeline(
 
   const paletteSize = palette.length >> 2;
 
-  const vertexShaderSource = `
-    uniform vec2 screen_resolution;
-    attribute vec2 vertex_position;
-    attribute vec2 vertex_uv;
-    varying vec2 v_uv;
-
-    void main() {
-        vec2 normalized = vertex_position / vec2(screen_resolution.x, screen_resolution.y);
-        vec2 clipSpace = normalized * 2.0 - 1.0;
-        gl_Position = vec4(clipSpace.x, -clipSpace.y, 0.0, 1.0);
-        v_uv = vertex_uv;
-    }
-  `;
-
-  const fragmentShaderSource = `
-    precision mediump float;
-    uniform sampler2D u_paletteTex;
-    uniform sampler2D u_texture;
-    uniform float u_paletteSize;
-    varying vec2 v_uv;
-    
-    void main() {
-      int index = int(texture2D(u_texture, v_uv).r * 255.0 + 0.5);
-      vec2 uv = vec2(float(index) / u_paletteSize, 0.0);
-      vec4 color = texture2D(u_paletteTex, uv);
-      gl_FragColor = vec4(color.r, color.g, color.b, color.a);
-  }`;
+  const vertexShaderSource = spriteSheetVertex;
+  const fragmentShaderSource = indexToColorFragment;
 
   const vertexShader = compileShader(gl, vertexShaderSource, gl.VERTEX_SHADER);
   const fragmentShader = compileShader(gl, fragmentShaderSource, gl.FRAGMENT_SHADER);
