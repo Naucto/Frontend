@@ -41,7 +41,7 @@ export function useSpriteRenderer(
     };
   }, [canvasRef, spriteSheet, palette, screenSize]);
 
-  function draw() {
+  function draw(): void {
     const p = pipelineRef.current;
     if (!p) return;
 
@@ -69,7 +69,10 @@ export function useSpriteRenderer(
     batchedUVs.length = 0;
   }
 
-  function queueSpriteDraw(index: number, x: number, y: number, width: number = 1, height: number = 1, flip_h: number = 0, flip_v: number = 0) {
+  function queueSpriteDraw(index: number,
+    x: number, y: number,
+    width: number = 1, height: number = 1,
+    flip_h: number = 0, flip_v: number = 0): void {
     x = Math.floor(x);
     y = Math.floor(y);
     flip_h = flip_h ? 1 : 0;
@@ -106,7 +109,7 @@ export function useSpriteRenderer(
     batchedUVs.push(...uv);
   }
 
-  function clear(n: number) {
+  function clear(n: number): void {
     const p = _getPipeline();
     const gl = p.gl;
 
@@ -122,7 +125,7 @@ export function useSpriteRenderer(
     gl.clear(gl.COLOR_BUFFER_BIT);
   }
 
-  function setColor(index: number, index2: number) {
+  function setColor(index: number, index2: number): void {
     const p = _getPipeline();
     const gl = p.gl;
     const distanceIndex = index << 2;
@@ -149,7 +152,7 @@ export function useSpriteRenderer(
     );
   }
 
-  function resetColor() {
+  function resetColor(): void {
     const p = _getPipeline();
     const gl = p.gl;
     gl.activeTexture(gl.TEXTURE1);
