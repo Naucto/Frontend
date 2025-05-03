@@ -53,8 +53,8 @@ export class EditorManager {
     width: 320,
     height: 180
   };
+  //
 
-  ///
   public constructor() { }
 
   cleanUpAndDisconnect(): void {
@@ -69,13 +69,18 @@ export class EditorManager {
 
     this.editors.forEach(e => e.init(this.ydoc!, this.provider!));
     if (!this.canvasRef) return
+
+    // temporary
     const canvas = this.canvasRef.current;
     if (canvas) {
       canvas.clear(0);
-      canvas.setColor(4, 3)
+      canvas.setColor(1, 2)
+      canvas.setColor(2, 3)
+      canvas.setColor(3, 1)
       canvas.queueSpriteDraw(0, 0, 0, 16, 16);
       canvas.draw();
     }
+    //
   }
 
   public addEditor(editor: IEditor) {

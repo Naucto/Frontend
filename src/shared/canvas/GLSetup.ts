@@ -4,13 +4,12 @@ import { SpriteSheet } from "src/types/SpriteSheetType";
 export interface GLPipeline {
   gl: WebGLRenderingContext;
   program: WebGLProgram;
-  positionLoc: number;
-  uvLoc: number;
   vertexBuffer: WebGLBuffer;
   uvBuffer: WebGLBuffer;
-  clearWithPaletteIndex: (index: number) => void;
-  destroy: () => void;
   paletteTexture: WebGLTexture
+  positionLoc: number;
+  uvLoc: number;
+  destroy: () => void;
 }
 
 export function initGLPipeline(
@@ -24,10 +23,10 @@ export function initGLPipeline(
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
   const rgbBuffer = convertSpritesheetToRGBArray(spriteSheet);
-  const spriteSheetTexture = setTexture(gl, spriteSheet.size.width, spriteSheet.size.height, rgbBuffer, gl.LUMINANCE);
-  const paletteTexture = setTexture(gl, palette.length / 4, 1, palette, gl.RGBA, gl.TEXTURE1);
+  const spriteSheetTexture = setTexture(gl, spriteSheet.size.width, spriteSheet.size.height, rgbBuffer, gl.LUMINANCE, gl.TEXTURE0);
+  const paletteTexture = setTexture(gl, palette.length >> 2, 1, palette, gl.RGBA, gl.TEXTURE1);
 
-  const paletteSize = palette.length / 4;
+  const paletteSize = palette.length >> 2;
 
   const vertexShaderSource = `
     uniform vec2 screen_resolution;
@@ -62,8 +61,8 @@ export function initGLPipeline(
   const program = setGLProgram(gl, vertexShader, fragmentShader);
   gl.useProgram(program);
 
-  gl.uniform1i(gl.getUniformLocation(program, "u_texture"), 0);
-  gl.uniform1i(gl.getUniformLocation(program, "u_paletteTex"), 1);
+  gl.uniform1i(gl.getUniformLocation(program, "u_texture"), 0); // 0 is spriteSheetTexture (gl.TEXTURE0)
+  gl.uniform1i(gl.getUniformLocation(program, "u_paletteTex"), 1); // 1 is paletteTexture (gl.TEXTURE1)
   gl.uniform1f(gl.getUniformLocation(program, "u_paletteSize"), paletteSize);
   gl.uniform2f(gl.getUniformLocation(program, "screen_resolution"), screenSize.width, screenSize.height);
 
@@ -75,14 +74,6 @@ export function initGLPipeline(
 
   gl.clearColor(0, 0, 0, 1);
   gl.clear(gl.COLOR_BUFFER_BIT);
-
-  const clearWithPaletteIndex = (n: number) => {
-    const r = palette[n * 4] / 255;
-    const g = palette[n * 4 + 1] / 255;
-    const b = palette[n * 4 + 2] / 255;
-    gl.clearColor(r, g, b, 1);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-  };
 
   const destroy = () => {
     gl.deleteProgram(program);
@@ -99,7 +90,6 @@ export function initGLPipeline(
     program,
     vertexBuffer,
     uvBuffer,
-    clearWithPaletteIndex,
     destroy,
     positionLoc,
     uvLoc,
