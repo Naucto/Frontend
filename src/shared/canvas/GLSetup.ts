@@ -23,8 +23,18 @@ export function initGLPipeline(
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
   const rgbBuffer = convertSpritesheetToRGBArray(spriteSheet);
-  const spriteSheetTexture = setTexture(gl, spriteSheet.size.width, spriteSheet.size.height, rgbBuffer, gl.LUMINANCE, gl.TEXTURE0);
-  const paletteTexture = setTexture(gl, palette.length >> 2, 1, palette, gl.RGBA, gl.TEXTURE1);
+  const spriteSheetTexture = setTexture(gl,
+    spriteSheet.size.width, spriteSheet.size.height,
+    rgbBuffer,
+    gl.R8,
+    gl.RED,
+    gl.TEXTURE0);
+  const paletteTexture = setTexture(gl,
+    palette.length >> 2, 1,
+    palette,
+    gl.RGBA,
+    gl.RGBA,
+    gl.TEXTURE1);
 
   const paletteSize = palette.length >> 2;
 
