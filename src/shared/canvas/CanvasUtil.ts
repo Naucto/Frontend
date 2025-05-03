@@ -12,7 +12,7 @@ export function convertSpritesheetToIndexArray(spriteSheet: SpriteSheet) {
   for (let i = 0; i < spriteSheet.spriteSheet.length; i += spriteSheet.stride) {
     const pixelHexa = spriteSheet.spriteSheet.slice(i, i + spriteSheet.stride);
     const pixel = parseInt(pixelHexa, 16);
-    array[i / spriteSheet.stride] = (pixel)
+    array[i / spriteSheet.stride] = (pixel);
   }
   return array;
 }
@@ -40,7 +40,7 @@ export function getRGBArraysFromPalette(palette: string[], zeroAlphaIndex = 0): 
       rgba[3] = 0;
     }
     return rgba;
-  })
+  });
 }
 
 export function createGLContext(canvas: HTMLCanvasElement) {
