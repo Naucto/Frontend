@@ -10,6 +10,7 @@ export interface GLPipeline {
   uvBuffer: WebGLBuffer;
   clearWithPaletteIndex: (index: number) => void;
   destroy: () => void;
+  paletteTexture: WebGLTexture
 }
 
 export function initGLPipeline(
@@ -96,11 +97,12 @@ export function initGLPipeline(
   return {
     gl,
     program,
-    positionLoc,
-    uvLoc,
     vertexBuffer,
     uvBuffer,
     clearWithPaletteIndex,
-    destroy
+    destroy,
+    positionLoc,
+    uvLoc,
+    paletteTexture,
   };
 }

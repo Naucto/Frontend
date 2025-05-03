@@ -72,6 +72,7 @@ export class EditorManager {
     const canvas = this.canvasRef.current;
     if (canvas) {
       canvas.clear(0);
+      canvas.setColor(4, 3)
       canvas.queueSpriteDraw(0, 0, 0, 16, 16);
       canvas.draw();
     }
