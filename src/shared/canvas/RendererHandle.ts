@@ -29,7 +29,7 @@ export function useSpriteRenderer(
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) { throw new CanvasNotInitializedError(); }
 
     pipelineRef.current = initGLPipeline(canvas, spriteSheet, palette, screenSize);
     if (!pipelineRef.current) {
