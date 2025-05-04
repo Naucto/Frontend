@@ -2,6 +2,7 @@ import { compileShader, convertSpritesheetToIndexArray, createGLContext, setGLPr
 import { SpriteSheet } from "src/types/SpriteSheetType";
 import indexToColorFragment from "src/shared/canvas/shaders/index_to_color_frag.glsl";
 import spriteSheetVertex from "src/shared/canvas/shaders/sprite_cut_vert.glsl";
+
 export interface GLPipeline {
   gl: WebGL2RenderingContext;
   program: WebGLProgram;

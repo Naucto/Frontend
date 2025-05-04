@@ -4,6 +4,7 @@ export class CanvasError extends Error {
     this.name = "CanvasError";
   }
 }
+
 export class CanvasNotInitializedError extends CanvasError {
   constructor() {
     super("Canvas not initialized");
