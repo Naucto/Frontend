@@ -22,12 +22,9 @@ export function hexToRGBArray(hex: string, alpha = 255): number[] {
     throw new ColorFormatError(`Invalid hex color: ${hex}`);
   }
 
-  const hexSliced = hex.slice(1);
-  const hexSize = hexSliced.length / 3;
-
-  const r = parseInt(hex.slice(1, 1 + hexSize), 16);
-  const g = parseInt(hex.slice(hexSize + 1, hexSize * 2 + 1), 16);
-  const b = parseInt(hex.slice(hexSize * 2 + 1), 16);
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5), 16);
   const a = alpha;
 
   return [r, g, b, a];
