@@ -32,13 +32,13 @@ export function initGLPipeline(
     gl.RED,
     gl.TEXTURE0);
   const paletteTexture = setTexture(gl,
-    palette.length >> 2, 1,
+    palette.length / 4, 1,
     palette,
     gl.RGBA,
     gl.RGBA,
     gl.TEXTURE1);
 
-  const paletteSize = palette.length >> 2;
+  const paletteSize = palette.length / 4;
 
   const vertexShaderSource = spriteSheetVertex;
   const fragmentShaderSource = indexToColorFragment;

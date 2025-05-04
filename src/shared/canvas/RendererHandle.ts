@@ -32,7 +32,7 @@ export function useSpriteRenderer(
   const batchedVertices: number[] = [];
   const batchedUVs: number[] = [];
   const currentPalette: Uint8Array = new Uint8Array(palette);
-  const currentPaletteSize = currentPalette.length >> 2;
+  const currentPaletteSize = currentPalette.length / 4;
 
   const pipelineRef = useRef<GLPipeline | null>(null);
 
@@ -72,7 +72,7 @@ export function useSpriteRenderer(
     gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(uvLocation);
 
-    gl.drawArrays(gl.TRIANGLES, 0, batchedVertices.length >> 1); // divided by 2 bcs batchedVertices is 2d
+    gl.drawArrays(gl.TRIANGLES, 0, batchedVertices.length / 2); // divided by 2 bcs batchedVertices is 2d
 
     batchedVertices.length = 0;
     batchedUVs.length = 0;
@@ -122,7 +122,7 @@ export function useSpriteRenderer(
     const p = _getPipeline();
     const gl = p.gl;
 
-    const distance = n << 2;
+    const distance = n * 4;
 
     if (distance >= currentPalette.length) {
       throw new CanvasError("Palette index out of bounds");
@@ -137,8 +137,8 @@ export function useSpriteRenderer(
   function setColor(index: number, index2: number): void {
     const p = _getPipeline();
     const gl = p.gl;
-    const distanceIndex = index << 2;
-    const distanceIndex2 = index2 << 2;
+    const distanceIndex = index * 4;
+    const distanceIndex2 = index2 * 4;
 
     if (distanceIndex >= currentPalette.length || distanceIndex2 >= palette.length) {
       throw new CanvasError("Palette index out of bounds");
