@@ -9,14 +9,14 @@ export default defineConfig({
     react(),
     tsconfigPaths(),
     svgr({
-      exportAsDefault: true,
+      exportAsDefault: true
     }),
-    glsl(),
+    glsl()
   ],
   resolve: {
-    alias: {},
+    alias: {}
   },
   server: {
-    port: 3001,
+    port: 3001
   }
 });
