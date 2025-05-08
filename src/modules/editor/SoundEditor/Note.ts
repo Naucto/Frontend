@@ -19,12 +19,12 @@ class Note {
     } else {
       this.samp = SampleLibrary.load({
         instruments: this.instrument,
-        onload: () => {
-          console.log('Sampler is fully loaded!');
-      }
+        /* onload: () => {
+          console.log("Sampler is fully loaded!");
+        } */
 
       }).toDestination();
-      console.log(this.samp);
+      //console.log(this.samp);
     }
 
   }
@@ -43,13 +43,13 @@ class Note {
 
   public static fromJson(json: string | { note: string; duration: number; instrument: string }): Note {
     let data: { note: string; duration: number; instrument: string };
-  
+
     if (typeof json === "string") {
       data = JSON.parse(json);
     } else {
       data = json;
     }
-  
+
     return new Note(data.note, data.duration, data.instrument);
   }
 }

@@ -6,6 +6,11 @@
     background-color: #537D8D;
 }
 
+
+.flex-item-grow {
+    flex-grow: 1;
+}
+
 .scrollable-container {
     max-width: 90%;
     max-height: 100%;
@@ -24,7 +29,7 @@
     row-gap: 2px;
     background-color: #537D8D;
     box-sizing: border-box;
-    border : 3px solid #537D8D;
+    border: 3px solid #537D8D;
 
 
     .cell {
@@ -39,12 +44,12 @@
 
     .cell.selected {
         background-color: #2a3c45;
-        color: black; 
+        color: black;
     }
 }
 
 
-.button {
+.sound-editor-button {
     background-color: #3a5863;
     color: white;
     border: none;
@@ -57,22 +62,22 @@
     cursor: pointer;
     font-family: 'Pixelify';
     border-radius: 10px;
-    border : 2px solid #3a5863;
+    border: 2px solid #3a5863;
 }
 
-.button:hover {
+.sound-editor-button:hover {
     background-color: #537D8D;
 }
 
-.button:active {
+.sound-editor-button:active {
     background-color: #2a3c45;
 }
 
-.button.selected {
+.sound-editor-button.selected {
     background-color: #537D8D;
 }
 
-.editor-countainer {
+.editor-container {
     display: flex;
     flex-direction: row;
     align-items: start;
@@ -89,7 +94,7 @@
     max-width: 20%;
     margin: 1em;
 
-    .button {
+    .sound-editor-button {
         flex-grow: 1;
     }
 }
@@ -105,9 +110,10 @@
     margin: 1em;
 
 
-    .button {
-        width: 4em;
-        height: 4em;
-    }
+    
+}
 
+.music-selection-button {
+    width: 5em;
+    height: 4.5em;
 }
