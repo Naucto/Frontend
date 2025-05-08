@@ -1,22 +1,23 @@
-import IEditor from "@modules/editor/IEditor"
+import IEditor from "@modules/editor/IEditor";
 
-import { TabbedComponent, TabbedComponentPage } from "@modules/editor/tab/TabbedComponent"
+import { TabbedComponent, TabbedComponentPage } from "@modules/editor/tab/TabbedComponent";
 import React, { createContext, useContext } from "react";
 import { WebrtcProvider } from "y-webrtc";
-import * as Y from "yjs"
-import config from "config.json"
+import * as Y from "yjs";
+import config from "config.json";
 import styled from "styled-components";
 import StyledCanvas from "@shared/canvas/Canvas";
 import { SpriteSheet } from "src/types/SpriteSheetType";
 import { spriteTable } from "src/temporary/SpriteSheet";
 import { palette } from "src/temporary/SpriteSheet";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
+import { TabData } from "@modules/editor/tab/TabData";
 
 const RightPanel = styled.div`
   height: 100vh;
   width: 50%;
   backgroundColor: rgb(83, 83, 83);
-;`
+;`;
 
 const Container = styled.div`
   backgroundColor: theme.colors.background;
@@ -26,10 +27,13 @@ const Container = styled.div`
   display: flex;
   flexDirection: column;
   height: 100vh;
-`
+`;
+
+type EditorComponent = React.ComponentClass<IEditor> & { new (): IEditor };
 
 export class EditorManager {
-  private editors: IEditor[] = []
+  private editors: { component: EditorComponent; tabData: TabData }[] = [];
+
   private ydoc: Y.Doc | null = null;
   private provider: WebrtcProvider | null = null;
 
@@ -67,44 +71,42 @@ export class EditorManager {
     this.ydoc = new Y.Doc();
     this.provider = new WebrtcProvider(room, this.ydoc!, config.webrtc);
 
-    this.editors.forEach(e => e.init(this.ydoc!, this.provider!));
-    if (!this.canvasRef) return
+    this.editors.forEach((e) => {
+      if (e.component.prototype instanceof IEditor) {
+        e.component.prototype.init(this.ydoc!, this.provider!);
+      }
+    });
+    
+    if (!this.canvasRef) return;
 
-    // temporary
+    // temporary  
     const canvas = this.canvasRef.current;
     if (canvas) {
       canvas.clear(0);
-      canvas.setColor(1, 2)
-      canvas.setColor(2, 3)
-      canvas.setColor(3, 1)
+      canvas.setColor(1, 2);
+      canvas.setColor(2, 3);
+      canvas.setColor(3, 1);
       canvas.queueSpriteDraw(0, 0, 0, 16, 16);
       canvas.draw();
     }
     //
   }
 
-  public addEditor(editor: IEditor) {
-    const index = this.editors.indexOf(editor)
-    if (index > -1) {
-      this.editors.splice(index, 1)
-    }
-    this.editors.push(editor)
+  public addEditor(component: EditorComponent, tabData: TabData) {
+
+    this.editors.push({ component, tabData });
+
   }
 
   public removeEditor(editor: IEditor) {
     const index = this.editors.indexOf(editor);
     if (index > -1) {
-      this.editors.splice(index, 1)
+      this.editors.splice(index, 1);
     }
   }
 
   public getEditors(): IEditor[] {
-    return this.editors
-  }
-
-  renderActiveEditor() {
-    const { component: Editor } = this.editors[this.activeEditorIndex];
-    return <Editor />; // React will handle rendering
+    return this.editors;
   }
 
   render() {
@@ -115,14 +117,11 @@ export class EditorManager {
             width: "50%",
           }}>
           <TabbedComponent>
-            {this.editors.map((editor, index) => {
-              const EditorComponent = editor.component;
-              return (
-                <TabbedComponentPage key={index} title={editor.tabData.title}>
-                  <EditorComponent />
-                </TabbedComponentPage>
-              );
-            })}
+            {this.editors.map((editor, index) => (
+              <TabbedComponentPage key={index} title={editor.tabData.title}>
+                <editor.component />
+              </TabbedComponentPage>
+            ))}
           </TabbedComponent>
         </div>
         <RightPanel>
@@ -139,7 +138,6 @@ export class EditorManager {
   }
 }
 
-
 const EditorManagerContext = createContext<EditorManager | null>(null);
 
 interface EditorManagerProviderProps {
@@ -154,8 +152,6 @@ export const EditorManagerProvider = ({ value, children }: EditorManagerProvider
     </EditorManagerContext.Provider>
   );
 };
-
-
 
 export const useEditorManager = (): EditorManager => {
   const context = useContext(EditorManagerContext);

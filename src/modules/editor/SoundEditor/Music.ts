@@ -34,6 +34,7 @@ class Music {
 
   public setNote(position: number, note: number, duration: number, instrument: string): void {
 
+    console.log(position);
     if (position < 0 || position >= this._notes.length) {
       throw new Error("Position out of bounds");
     }

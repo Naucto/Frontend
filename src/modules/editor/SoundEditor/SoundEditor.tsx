@@ -1,13 +1,10 @@
 import IEditor from "@modules/editor/IEditor";
 import Music from "@modules/editor/SoundEditor/Music";
-import "./SoundEditor.css"
+import "./SoundEditor.css";
 import { Doc } from "yjs";
 import { WebrtcProvider } from "y-webrtc";
 import styled, { DefaultTheme } from "styled-components";
 import { c } from "node_modules/vite/dist/node/moduleRunnerTransport.d-CXw_Ws6P";
-
-
-
 
 const ButtonContainer = styled.div <{ theme: DefaultTheme }>`
     display: flex;
@@ -17,6 +14,8 @@ const ButtonContainer = styled.div <{ theme: DefaultTheme }>`
     flex-wrap: wrap;
     align-items: center;
     max-width: 20%;
+    max-height: ${({ theme }) => theme.spacing(70)};
+    overflow-y: scroll;
 `;
 
 const MusicEditorButton = styled.button <{ theme: DefaultTheme }>`
@@ -42,14 +41,8 @@ const MusicEditorButton = styled.button <{ theme: DefaultTheme }>`
     }
 `;
 
-
-
-
 interface SoundEditorState {
-  currentMusic: Music;
-  currentInstrument: string;
-  activeCells: Set<string>;
-  selectedMusicIndex: number;
+  
 }
 
 const instruments: Map<string, string> = new Map([
@@ -75,6 +68,7 @@ const instruments: Map<string, string> = new Map([
   ["harmonium", "Harmonium"],
 ]);
 
+import React from "react";
 
 export class SoundEditor extends IEditor {
 
@@ -84,24 +78,22 @@ export class SoundEditor extends IEditor {
   private _isMouseDown: boolean = false;
   private _startPosition: [number, number] = [-1, -1];
 
-  state: SoundEditorState = {
-    currentMusic: new Music(),
-    currentInstrument: "piano",
-    activeCells: new Set<string>(),
-    selectedMusicIndex: 0,
-  };
-
   constructor(numberMusics: number = 16) {
     super();
     this.tabData = {
       title: "Sound",
       icon: "sound",
     };
+    this.state = {
+      currentMusic: new Music(),
+      currentInstrument: "piano",
+      activeCells: new Set<string>(),
+      selectedMusicIndex: 0,
+    };
     this._musics = new Array<Music>(numberMusics);
     for (let i = 0; i < 16; i++) {
       this._musics[i] = new Music();
     }
-    console.log("this._currentMusic", this.state.currentMusic);
   }
 
   public init(ydoc: Doc, provider: WebrtcProvider): void {
@@ -109,15 +101,15 @@ export class SoundEditor extends IEditor {
     this.ydoc = ydoc;
   }
 
-  sendData(data: string) {
+  sendData(data: string): void {
     console.log("SoundEditor sendData", data);
   }
 
-  loadData(data: string) {
+  loadData(data: string): void {
     console.log("SoundEditor loadData", data);
   }
 
-  handleCellClick(endRow: number, endCol: number) {
+  handleCellClick(endRow: number, endCol: number): void {
 
     if (this._isMouseDown) {
       if (this._startPosition[0] == -1) {
@@ -126,7 +118,6 @@ export class SoundEditor extends IEditor {
       }
       return;
     }
-    console.log("handleCellClick", endRow, this._startPosition[0]);
     if (endRow == this._startPosition[0]) {
 
       for (let i = Math.min(this._startPosition[1], endCol); i <= Math.max(this._startPosition[1], endCol); i++) {
@@ -147,8 +138,6 @@ export class SoundEditor extends IEditor {
       }
       this.state.currentMusic.setNote(this._startPosition[1], this._startPosition[0], Math.max(1, Math.abs(this._startPosition[1] - endCol)), this.state.currentInstrument);
     }
-
-
 
   }
 
@@ -205,7 +194,6 @@ export class SoundEditor extends IEditor {
   }
 
   handleMouseUp = () => this.setState({ isMouseDown: false });
-
 
   render() {
     //const theme = useTheme()
@@ -287,7 +275,7 @@ export class SoundEditor extends IEditor {
           </div>
         </div>
       </div >
-    )
+    );
   }
 
 }

@@ -15,6 +15,7 @@ import { ThemeProvider } from "styled-components";
 import Create from "@modules/create/Create"
 import { StyledEngineProvider } from "@mui/material"
 import { useUser } from "src/providers/UserProvider"
+import { TabData } from "@modules/editor/tab/TabData"
 
 const Container = styled.div<{ theme: any }>`
     min-height: 100vh;
