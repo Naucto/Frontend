@@ -1,34 +1,104 @@
 import IEditor from "@modules/editor/IEditor"
 
-import { useTheme } from "@theme/ThemeContext"
 import { TabbedComponent, TabbedComponentPage } from "@modules/editor/tab/TabbedComponent"
-import React, { createContext, useContext, useRef } from "react";
+import React, { createContext, useContext } from "react";
+import { WebrtcProvider } from "y-webrtc";
+import * as Y from "yjs"
+import config from "config.json"
+import styled from "styled-components";
+import StyledCanvas from "@shared/canvas/Canvas";
+import { SpriteSheet } from "src/types/SpriteSheetType";
+import { spriteTable } from "src/temporary/SpriteSheet";
+import { palette } from "src/temporary/SpriteSheet";
+import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 
-import { TabData } from "@modules/editor/tab/TabData";
+const RightPanel = styled.div`
+  height: 100vh;
+  width: 50%;
+  backgroundColor: rgb(83, 83, 83);
+;`
 
-type EditorComponent = React.ComponentType<any>;
+const Container = styled.div`
+  backgroundColor: theme.colors.background;
+  color: theme.colors.text;
+  fontFamily: theme.typography.fontFamily;
+  fontSize: theme.typography.fontSize;
+  display: flex;
+  flexDirection: column;
+  height: 100vh;
+`
 
-export class EditorManager  {
+export class EditorManager {
+  private editors: IEditor[] = []
+  private ydoc: Y.Doc | null = null;
+  private provider: WebrtcProvider | null = null;
+
+  // temporary
+  private canvasRef = React.createRef<SpriteRendererHandle>();
+
+  private spriteSheet: SpriteSheet = {
+    spriteSheet: spriteTable,
+    spriteSize: {
+      width: 8,
+      height: 8
+    },
+    size: {
+      width: 128,
+      height: 128,
+    },
+    stride: 1
+  };
+
+  screenSize = {
+    width: 320,
+    height: 180
+  };
+  //
 
   public constructor() { }
 
-  private editors: { component: EditorComponent; tabData: TabData }[] = [];
-  private activeEditorIndex: number = 0;
-
-  public addEditor(component: EditorComponent, tabData: TabData) {
-   
-    this.editors.push({ component, tabData });
-
+  cleanUpAndDisconnect(): void {
+    this.provider?.awareness.setLocalState(null);
+    this.provider?.disconnect();
+    this.ydoc?.destroy();
   }
 
-  public removeEditor(index: number) {
-    if (index < 0 || index >= this.editors.length) {
-      throw new Error("Index out of bounds");
+  public init(room: string) {
+    this.ydoc = new Y.Doc();
+    this.provider = new WebrtcProvider(room, this.ydoc!, config.webrtc);
+
+    this.editors.forEach(e => e.init(this.ydoc!, this.provider!));
+    if (!this.canvasRef) return
+
+    // temporary
+    const canvas = this.canvasRef.current;
+    if (canvas) {
+      canvas.clear(0);
+      canvas.setColor(1, 2)
+      canvas.setColor(2, 3)
+      canvas.setColor(3, 1)
+      canvas.queueSpriteDraw(0, 0, 0, 16, 16);
+      canvas.draw();
     }
-    this.editors.splice(index, 1);
+    //
   }
 
-  public getEditors() {
+  public addEditor(editor: IEditor) {
+    const index = this.editors.indexOf(editor)
+    if (index > -1) {
+      this.editors.splice(index, 1)
+    }
+    this.editors.push(editor)
+  }
+
+  public removeEditor(editor: IEditor) {
+    const index = this.editors.indexOf(editor);
+    if (index > -1) {
+      this.editors.splice(index, 1)
+    }
+  }
+
+  public getEditors(): IEditor[] {
     return this.editors
   }
 
@@ -38,18 +108,12 @@ export class EditorManager  {
   }
 
   render() {
-    const theme = useTheme(); // You can use `useTheme()` inside a functional component, but we need to adjust this since this method is in a class-based component.
-
     return (
-      <div
-        style={{
-          backgroundColor: theme.colors.background,
-          color: theme.colors.text,
-          fontFamily: theme.typography.fontFamily,
-          fontSize: theme.typography.fontSize,
-        }}
-      >
-        <div className="editor">
+      <Container>
+        <div className="editor"
+          style={{
+            width: "50%",
+          }}>
           <TabbedComponent>
             {this.editors.map((editor, index) => {
               const EditorComponent = editor.component;
@@ -61,7 +125,16 @@ export class EditorManager  {
             })}
           </TabbedComponent>
         </div>
-      </div>
+        <RightPanel>
+          <h1>right</h1>
+          <StyledCanvas
+            ref={this.canvasRef}
+            screenSize={this.screenSize}
+            spriteSheet={this.spriteSheet}
+            palette={palette}
+          />
+        </RightPanel>
+      </Container>
     );
   }
 }
@@ -91,5 +164,3 @@ export const useEditorManager = (): EditorManager => {
   }
   return context;
 };
-
-

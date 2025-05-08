@@ -1,30 +1,27 @@
-import IEditor from "../IEditor";
-import { TabData } from "@modules/editor/tab/TabData";
+import { WebrtcProvider } from "y-webrtc";
+import { Doc } from "yjs";
+import IEditor from "@modules/editor/IEditor";
+import { palette, spriteTable } from "src/temporary/SpriteSheet";
+import { SpriteSheet } from "src/types/SpriteSheetType";
+import StyledCanvas from "@shared/canvas/Canvas";
 
 export class SpriteEditor extends IEditor {
-    constructor() {
-        super();
-        this.tabData = {
-            title: "Sprite",
-            icon: "sprite",
-        };
-    }
+  constructor() {
+    super();
+    this.tabData = {
+      title: "Sprite",
+      icon: "sprite",
+    };
+  }
 
-    sendData(data: string) {
-        console.log("SpriteEditor sendData", data);
-    }
+  public init(doc: Doc, provider: WebrtcProvider): void {
+  }
 
-    loadData(data: string) {
-        console.log("SpriteEditor loadData", data);
-    }
-
-    render() {
-        return (
-            <div>
-                <p>Sprite Editor</p>
-            </div>
-        );
-    }
+  render() {
+    return (
+      <div />
+    );
+  }
 }
 
 

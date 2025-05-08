@@ -85,7 +85,6 @@ class TabbedComponent extends React.Component<TabbedComponentProps, TabbedCompon
                 label={childTab.props.title}
                 active={activeTab === index}
               />
-
             );
           })}
         </ul>
