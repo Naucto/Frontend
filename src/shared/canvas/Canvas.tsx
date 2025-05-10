@@ -1,5 +1,5 @@
 import { SpriteRendererHandle, useSpriteRenderer } from "@shared/canvas/RendererHandle";
-import { forwardRef, useImperativeHandle, useRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import { SpriteSheet } from "src/types/SpriteSheetType";
 import styled from "styled-components";
 
@@ -13,17 +13,33 @@ type CanvasProps = {
   className?: string;
 };
 
-const Canvas = forwardRef<SpriteRendererHandle, CanvasProps>(({ screenSize, spriteSheet, palette, className }, ref) => {
+export type CanvasHandle = SpriteRendererHandle & {
+  getCanvas: () => HTMLCanvasElement | null;
+};
+
+const Canvas = forwardRef<CanvasHandle, CanvasProps>(({ screenSize, spriteSheet, palette, className }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererHandle = useSpriteRenderer(canvasRef, spriteSheet, palette, screenSize);
 
-  useImperativeHandle(ref, () => rendererHandle, [rendererHandle]);
+  useImperativeHandle(ref, () => ({
+    ...rendererHandle,
+    getCanvas: () => canvasRef.current,
+  }), [rendererHandle]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      throw new Error("Canvas not initialized");
+    }
+  }, []);
+
   return (
     <canvas
       ref={canvasRef}
       width={screenSize.width}
       height={screenSize.height}
       className={className}
+      tabIndex={0}
     />
   );
 });
@@ -31,7 +47,7 @@ const Canvas = forwardRef<SpriteRendererHandle, CanvasProps>(({ screenSize, spri
 const StyledCanvas = styled(Canvas)`
   image-rendering: pixelated;
   width: 100%;
-
+  outline: none;
 `;
 
 export default StyledCanvas;

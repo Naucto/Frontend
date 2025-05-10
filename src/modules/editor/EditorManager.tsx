@@ -1,22 +1,24 @@
-import IEditor from "@modules/editor/IEditor"
+import IEditor from "@modules/editor/IEditor";
 
-import { TabbedComponent, TabbedComponentPage } from "@modules/editor/tab/TabbedComponent"
+import { TabbedComponent, TabbedComponentPage } from "@modules/editor/tab/TabbedComponent";
 import React, { createContext, useContext } from "react";
 import { WebrtcProvider } from "y-webrtc";
-import * as Y from "yjs"
-import config from "config.json"
+import * as Y from "yjs";
+import config from "config.json";
 import styled from "styled-components";
 import StyledCanvas from "@shared/canvas/Canvas";
 import { SpriteSheet } from "src/types/SpriteSheetType";
 import { spriteTable } from "src/temporary/SpriteSheet";
 import { palette } from "src/temporary/SpriteSheet";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
+import GameEngine from "@shared/gameEngine/GameEngine";
+import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
 
 const RightPanel = styled.div`
   height: 100vh;
   width: 50%;
   backgroundColor: rgb(83, 83, 83);
-;`
+;`;
 
 const Container = styled.div`
   backgroundColor: theme.colors.background;
@@ -26,10 +28,10 @@ const Container = styled.div`
   display: flex;
   flexDirection: column;
   height: 100vh;
-`
+`;
 
 export class EditorManager {
-  private editors: IEditor[] = []
+  private editors: IEditor[] = [];
   private ydoc: Y.Doc | null = null;
   private provider: WebrtcProvider | null = null;
 
@@ -53,6 +55,36 @@ export class EditorManager {
     width: 320,
     height: 180
   };
+
+  private envData: EnvData = {
+    code: `function _init()
+  x = 0
+end
+
+function _update()
+  if (btn("ArrowDown")) then
+    x = x + 1
+  end
+  --if (btn("ArrowUp")) then
+    --x = x - 10
+  --end
+  --if (btn("ArrowLeft")) then
+    --playSound(0)
+  --end
+end
+
+function _draw()
+  clr(1)
+  spr(120,x,0)
+  --map(0,0,0,0,10,10)
+end`,
+    output: "",
+  };
+
+  public setOutput = (newOutput: string): void => {
+    this.envData.output = newOutput;
+  };
+
   //
 
   public constructor() { }
@@ -68,15 +100,15 @@ export class EditorManager {
     this.provider = new WebrtcProvider(room, this.ydoc!, config.webrtc);
 
     this.editors.forEach(e => e.init(this.ydoc!, this.provider!));
-    if (!this.canvasRef) return
+    if (!this.canvasRef) return;
 
     // temporary
     const canvas = this.canvasRef.current;
     if (canvas) {
       canvas.clear(0);
-      canvas.setColor(1, 2)
-      canvas.setColor(2, 3)
-      canvas.setColor(3, 1)
+      canvas.setColor(1, 2);
+      canvas.setColor(2, 3);
+      canvas.setColor(3, 1);
       canvas.queueSpriteDraw(0, 0, 0, 16, 16);
       canvas.draw();
     }
@@ -84,22 +116,22 @@ export class EditorManager {
   }
 
   public addEditor(editor: IEditor) {
-    const index = this.editors.indexOf(editor)
+    const index = this.editors.indexOf(editor);
     if (index > -1) {
-      this.editors.splice(index, 1)
+      this.editors.splice(index, 1);
     }
-    this.editors.push(editor)
+    this.editors.push(editor);
   }
 
   public removeEditor(editor: IEditor) {
     const index = this.editors.indexOf(editor);
     if (index > -1) {
-      this.editors.splice(index, 1)
+      this.editors.splice(index, 1);
     }
   }
 
   public getEditors(): IEditor[] {
-    return this.editors
+    return this.editors;
   }
 
   render() {
@@ -119,18 +151,19 @@ export class EditorManager {
         </div>
         <RightPanel>
           <h1>right</h1>
-          <StyledCanvas
+          <GameEngine
             ref={this.canvasRef}
             screenSize={this.screenSize}
             spriteSheet={this.spriteSheet}
             palette={palette}
+            envData={this.envData}
+            setOutput={this.setOutput}
           />
         </RightPanel>
       </Container>
     );
   }
 }
-
 
 const EditorManagerContext = createContext<EditorManager | null>(null);
 
@@ -146,8 +179,6 @@ export const EditorManagerProvider = ({ value, children }: EditorManagerProvider
     </EditorManagerContext.Provider>
   );
 };
-
-
 
 export const useEditorManager = (): EditorManager => {
   const context = useContext(EditorManagerContext);
