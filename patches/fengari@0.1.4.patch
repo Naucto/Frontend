@@ -1,0 +1,12 @@
+diff --git a/src/luaconf.js b/src/luaconf.js
+index dbdcf9ac74c720196935d5f25956dbb5b3e05f86..0f7b8203085e67df679feae7a7f03a4f6d3cb012 100644
+--- a/src/luaconf.js
++++ b/src/luaconf.js
+@@ -1,6 +1,6 @@
+ "use strict";
+ 
+-const conf = (process.env.FENGARICONF ? JSON.parse(process.env.FENGARICONF) : {});
++const conf = (typeof process !== "undefined" && process.env.FENGARICONF ? JSON.parse(process.env.FENGARICONF) : {});
+ 
+ const {
+     LUA_VERSION_MAJOR,
