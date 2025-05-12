@@ -3,6 +3,13 @@ import Note from "@modules/editor/SoundEditor/Note";
 import { AllNotes, MusicManager } from "@modules/editor/SoundEditor/MusicManager";
 import * as Tone from "tone";
 
+export class MusicError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "MusicError";
+  }
+}
+
 class Music {
 
   private _notes: Note[][];
@@ -34,9 +41,8 @@ class Music {
 
   public setNote(position: number, note: number, duration: number, instrument: string): void {
 
-    console.log(position);
     if (position < 0 || position >= this._notes.length) {
-      throw new Error("Position out of bounds");
+      throw new MusicError("Note position out of bounds");
     }
     if (this._notes[position][note].note === "Nan") {
       this._notes[position][note] = new Note(this._musicManager.numberToNote(note), duration, instrument);
@@ -49,16 +55,16 @@ class Music {
     return this._bpm;
   }
 
-  public setBpm(bpm: number): void {
+  set bpm(bpm: number) {
     this._bpm = bpm;
   }
 
   public isNoteActive(position: number, note: number): boolean {
     if (position < 0 || position >= this._notes.length) {
-      throw new Error("Position out of bounds");
+      throw new MusicError("Position out of bounds");
     }
     if (note < 0 || note >= this._notes[position].length) {
-      throw new Error("Note out of bounds");
+      throw new MusicError("Note out of bounds");
     }
     return this._notes[position][note].note !== "Nan";
   }

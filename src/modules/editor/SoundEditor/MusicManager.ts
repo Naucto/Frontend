@@ -1,6 +1,6 @@
 
 import * as Tone from "tone";
-import { Time } from "tone/build/esm/core/type/Units";
+import { MusicError } from "./Music";
 
 const AllNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 
@@ -23,14 +23,15 @@ enum SynthType {
 class MusicManager {
   public numberToNote(number: number): string {
     if (number < 0) {
-      throw new Error("Number out of bounds");
+      throw new MusicError("Number out of bounds");
     }
     const note = AllNotes.length - number % AllNotes.length - 1;
     const octave = 4 - Math.floor(number / AllNotes.length);
     const result = AllNotes[note] + String(octave);
     return result;
   }
-  playInstrument(sampler: Tone.Sampler, note: string, when = Tone.now(), duration: Time): void {
+
+  playInstrument(sampler: Tone.Sampler, note: string, when = Tone.now(), duration: Tone.Unit.Time): void {
     if (note == "Nan") {
       return;
     }

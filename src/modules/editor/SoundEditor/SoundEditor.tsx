@@ -141,12 +141,12 @@ export class SoundEditor extends IEditor {
 
   }
 
-  clearMusic() {
+  clearMusic() : void {
     this.setState({ activeCells: new Set<string>() });
     this.state.currentMusic = new Music();
   }
 
-  getInstrumentButtons() {
+  getInstrumentButtons() : JSX.Element[] {
     return Array.from(instruments.keys()).map((instrument) => (
       <MusicEditorButton
         className={`flex-item-grow ${this.state.currentInstrument === instrument ? "selected" : ""}`}
@@ -160,13 +160,13 @@ export class SoundEditor extends IEditor {
     ));
   }
 
-  saveMusic() {
+  saveMusic() : void {
     const musicData = this.state.currentMusic.toJson();
     console.log("Music data to save:", musicData);
     this._musics[this.state.selectedMusicIndex] = (Music.fromJson(musicData));
   }
 
-  loadStateFromMusic(id: number) {
+  loadStateFromMusic(id: number) : void {
     const music = this._musics[id];
     this.setState({ selectedMusicIndex: id });
     this.setState({ currentMusic: music });
@@ -185,24 +185,16 @@ export class SoundEditor extends IEditor {
     }
   }
 
-  componentDidMount() {
-    window.addEventListener("mouseup", this.handleMouseUp);
-  }
+  handleMouseUp: () => void = () => this.setState({ isMouseDown: false });
 
-  componentWillUnmount() {
-    window.removeEventListener("mouseup", this.handleMouseUp);
-  }
-
-  handleMouseUp = () => this.setState({ isMouseDown: false });
-
-  render() {
+  render() : JSX.Element {
     //const theme = useTheme()
     const cellWidth = 35;
     const cellHeight = 20;
     const gridWidth = 32;
     const gridHeight = 24;
     return (
-      <div>
+      <div onMouseUp={this.handleMouseUp}>
         <div className="SoundEditor">
 
           <div className="editor-container">
