@@ -1,4 +1,4 @@
-import React, {useMemo,useRef, useEffect } from "react"
+import React, { useMemo, useRef, useEffect } from "react"
 import "./App.css"
 import { BrowserRouter, Route, Routes } from "react-router-dom"
 import { Hub } from "@modules/hub/Hub"
@@ -15,6 +15,7 @@ import { ThemeProvider } from "styled-components";
 import Create from "@modules/create/Create"
 import { StyledEngineProvider } from "@mui/material"
 import { useUser } from "src/providers/UserProvider"
+import { TabData } from "@modules/editor/tab/TabData"
 
 const Container = styled.div<{ theme: any }>`
     min-height: 100vh;
@@ -40,15 +41,15 @@ function App() {
   useEffect(() => {
     console.log("User", user)
   }, [user])
-  
+
   const editorManagerRef = useRef(new EditorManager());
 
   const editorManager = useMemo(() => {
     const manager = editorManagerRef.current;
-    manager.addEditor(new CodeEditor());
-    manager.addEditor(new MapEditor());
-    manager.addEditor(new SoundEditor());
-    manager.addEditor(new SpriteEditor());
+    manager.addEditor(CodeEditor, new TabData("Code", "code"));
+    manager.addEditor(MapEditor, new TabData("Map", "map"));
+    manager.addEditor(SoundEditor, new TabData("Sound", "sound"));
+    manager.addEditor(SpriteEditor, new TabData("Sprite", "sprite"));
     return manager;
   }, []);
 
