@@ -21,7 +21,7 @@ div.tabbed-component {
     margin: 0;
     padding: 0;
   }
-  
+    
   div.tabbed-component > ul > li {
     display: inline-block;
   
@@ -60,7 +60,7 @@ div.tabbed-component {
   
   div.tabbed-component > div > div.active {
     display: block;
-  
+    width: 100%;
     flex-grow: 1;
   }
   
