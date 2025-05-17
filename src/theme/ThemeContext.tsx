@@ -1,7 +1,6 @@
 import React, { createContext, useContext } from "react";
 import { DefaultTheme } from "styled-components";
 
-
 export const theme: DefaultTheme = {
   colors: {
     primary: "#E5D352",
@@ -31,7 +30,7 @@ export const theme: DefaultTheme = {
   },
   spacing: (n: number) => `${n * 8}px`,
 
-}
+};
 
 type ThemeType = typeof theme;
 

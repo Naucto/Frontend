@@ -1,7 +1,6 @@
 import { useEditorManager } from "@modules/editor/EditorManager";
 import React, { useEffect } from "react";
 
-
 const Create: React.FC = () => {
   const editorManager = useEditorManager();
 
@@ -10,7 +9,7 @@ const Create: React.FC = () => {
 
     return () => {
       editorManager.cleanUpAndDisconnect();
-    }
+    };
   }, [editorManager]);
 
   return (

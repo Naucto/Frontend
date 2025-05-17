@@ -1,21 +1,21 @@
-import React, { useMemo, useRef, useEffect } from "react"
-import "./App.css"
-import { BrowserRouter, Route, Routes } from "react-router-dom"
-import { Hub } from "@modules/hub/Hub"
-import { EditorManager, EditorManagerProvider } from "@modules/editor/EditorManager"
+import React, { useMemo, useRef, useEffect } from "react";
+import "./App.css";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { Hub } from "@modules/hub/Hub";
+import { EditorManager, EditorManagerProvider } from "@modules/editor/EditorManager";
 
-import { CodeEditor } from "@modules/editor/CodeEditor/CodeEditor"
-import { MapEditor } from "@modules/editor/MapEditor/MapEditor"
-import { SoundEditor } from "@modules/editor/SoundEditor/SoundEditor"
-import { SpriteEditor } from "@modules/editor/SpriteEditor/SpriteEditor"
-import styled from "styled-components"
-import { useTheme } from "@theme/ThemeContext"
-import NavBar from "@shared/navbar/NavBar"
+import { CodeEditor } from "@modules/editor/CodeEditor/CodeEditor";
+import { MapEditor } from "@modules/editor/MapEditor/MapEditor";
+import { SoundEditor } from "@modules/editor/SoundEditor/SoundEditor";
+import { SpriteEditor } from "@modules/editor/SpriteEditor/SpriteEditor";
+import styled from "styled-components";
+import { useTheme } from "@theme/ThemeContext";
+import NavBar from "@shared/navbar/NavBar";
 import { ThemeProvider } from "styled-components";
-import Create from "@modules/create/Create"
-import { StyledEngineProvider } from "@mui/material"
-import { useUser } from "src/providers/UserProvider"
-import { TabData } from "@modules/editor/tab/TabData"
+import Create from "@modules/create/Create";
+import { StyledEngineProvider } from "@mui/material";
+import { useUser } from "src/providers/UserProvider";
+import { TabData } from "@modules/editor/tab/TabData";
 
 const Container = styled.div<{ theme: any }>`
     min-height: 100vh;
@@ -34,13 +34,13 @@ function App() {
     setUser({
       "name": "test",
       "id": "test",
-    })
-  }, [])
+    });
+  }, []);
 
   // temporary for example
   useEffect(() => {
-    console.log("User", user)
-  }, [user])
+    console.log("User", user);
+  }, [user]);
 
   const editorManagerRef = useRef(new EditorManager());
 
@@ -72,7 +72,7 @@ function App() {
         </StyledEngineProvider>
       </EditorManagerProvider>
     </Container >
-  )
+  );
 }
 
-export default App
+export default App;

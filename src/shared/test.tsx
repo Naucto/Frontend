@@ -1,12 +1,11 @@
 
-
 const testfn = () => {
-  console.log("test")
+  console.log("test");
   return (
     <div>
       <h1>Test</h1>
     </div>
-  )
-}
+  );
+};
 
-export { testfn }
+export { testfn };
