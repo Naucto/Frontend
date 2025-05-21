@@ -30,6 +30,13 @@ const Container = styled.div`
   height: 100vh;
 `;
 
+class EditorManagerError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'EditorManagerError';
+  }
+}
+
 type EditorComponent = React.ComponentClass<IEditor> & { new(): IEditor };
 
 export class EditorManager {
@@ -154,9 +161,11 @@ export const EditorManagerProvider = ({ value, children }: EditorManagerProvider
 };
 
 export const useEditorManager = (): EditorManager => {
+  
+
   const context = useContext(EditorManagerContext);
   if (!context) {
-    throw new MusicError("useEditorManager must be used within an EditorManagerProvider");
+    throw new EditorManagerError("useEditorManager must be used within an EditorManagerProvider");
   }
   return context;
 };
