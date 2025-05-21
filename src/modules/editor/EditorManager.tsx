@@ -30,7 +30,7 @@ const Container = styled.div`
   height: 100vh;
 `;
 
-type EditorComponent = React.ComponentClass<IEditor> & { new (): IEditor };
+type EditorComponent = React.ComponentClass<IEditor> & { new(): IEditor };
 
 export class EditorManager {
   private editors: { component: EditorComponent; tabData: TabData }[] = [];
@@ -72,12 +72,6 @@ export class EditorManager {
     this.ydoc = new Y.Doc();
     this.provider = new WebrtcProvider(room, this.ydoc!, config.webrtc);
 
-    this.editors.forEach((e) => {
-      if (e.component.prototype instanceof IEditor) {
-        e.component.prototype.init(this.ydoc!, this.provider!);
-      }
-    });
-    
     if (!this.canvasRef) return;
 
     // temporary  
@@ -94,20 +88,18 @@ export class EditorManager {
   }
 
   public addEditor(component: EditorComponent, tabData: TabData) {
-
     this.editors.push({ component, tabData });
-
   }
 
   public removeEditor(editor: IEditor) {
-    const index = this.editors.indexOf(editor);
+    const index = this.editors.findIndex(e => e.component === editor.constructor);
     if (index > -1) {
       this.editors.splice(index, 1);
     }
   }
 
   public getEditors(): IEditor[] {
-    return this.editors;
+    return this.editors.map(e => new e.component());
   }
 
   render() {
@@ -118,11 +110,18 @@ export class EditorManager {
             width: "50%",
           }}>
           <TabbedComponent>
-            {this.editors.map((editor, index) => (
-              <TabbedComponentPage key={index} title={editor.tabData.title}>
-                <editor.component />
-              </TabbedComponentPage>
-            ))}
+            {this.editors.map((editor, index) => {
+              const EditorComponent = editor.component;
+              return (
+                <TabbedComponentPage key={index} title={editor.tabData.title}>
+                  <EditorComponent ref={(instance: IEditor) => {
+                    if (instance && this.ydoc && this.provider) {
+                      instance.init(this.ydoc, this.provider);
+                    }
+                  }} />
+                </TabbedComponentPage>
+              );
+            })}
           </TabbedComponent>
         </div>
         <RightPanel>
