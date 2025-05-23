@@ -4,6 +4,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Hub } from "@modules/hub/Hub";
 import { EditorManager, EditorManagerProvider } from "@modules/editor/EditorManager";
 
+import { ThemeProvider as MUIThemeProvider } from "@mui/material/styles";
 import { CodeEditor } from "@modules/editor/CodeEditor/CodeEditor";
 import { MapEditor } from "@modules/editor/MapEditor/MapEditor";
 import { SoundEditor } from "@modules/editor/SoundEditor/SoundEditor";
@@ -14,8 +15,8 @@ import NavBar from "@shared/navbar/NavBar";
 import { ThemeProvider } from "styled-components";
 import Create from "@modules/create/Create";
 import { StyledEngineProvider } from "@mui/material";
-import { useUser } from "src/providers/UserProvider";
 import { TabData } from "@modules/editor/tab/TabData";
+import { muiTheme } from "@theme/MUITheme";
 
 const Container = styled.div<{ theme: any }>`
     min-height: 100vh;
@@ -27,20 +28,7 @@ const Container = styled.div<{ theme: any }>`
 `;
 
 function App() {
-  const { user, setUser } = useUser();
-
   // temporary for example
-  useEffect(() => {
-    setUser({
-      "name": "test",
-      "id": "test",
-    });
-  }, []);
-
-  // temporary for example
-  useEffect(() => {
-    console.log("User", user);
-  }, [user]);
 
   const editorManagerRef = useRef(new EditorManager());
 
@@ -58,17 +46,19 @@ function App() {
     <Container theme={theme}>
       <EditorManagerProvider value={editorManager}>
         <StyledEngineProvider injectFirst>
-          <ThemeProvider theme={theme} >
-            <BrowserRouter>
-              <NavBar />
-              <Routes>
-                <Route path="/" element={<Hub />} />
-                <Route path="/hub" element={<Hub />} />
-                <Route path='/create' element={<Create />} />
-                {/* <Route path="/editor" element={editorManager.render()} /> */}
-              </Routes>
-            </BrowserRouter>
-          </ThemeProvider>
+          <MUIThemeProvider theme={muiTheme}>
+            <ThemeProvider theme={theme} >
+              <BrowserRouter>
+                <NavBar />
+                <Routes>
+                  <Route path="/" element={<Hub />} />
+                  <Route path="/hub" element={<Hub />} />
+                  <Route path='/create' element={<Create />} />
+                  {/* <Route path="/editor" element={editorManager.render()} /> */}
+                </Routes>
+              </BrowserRouter>
+            </ThemeProvider>
+          </MUIThemeProvider>
         </StyledEngineProvider>
       </EditorManagerProvider>
     </Container >

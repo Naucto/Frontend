@@ -4,6 +4,7 @@ import { SearchBar } from "@shared/navbar/SearchBar";
 import { useTheme } from "@theme/ThemeContext";
 import React from "react";
 import { Link } from "react-router-dom";
+import { useUser } from "src/providers/UserProvider";
 import styled from "styled-components";
 
 const Nav = styled.nav`
@@ -37,6 +38,7 @@ const Right = styled.div`
 
 const NavBar: React.FC = () => {
   const theme = useTheme();
+  const { user } = useUser();
   return (
     <Nav className="navbar">
       <Left>
@@ -50,7 +52,8 @@ const NavBar: React.FC = () => {
 
       <Right>
         <NavElem to="/friends">Friends</NavElem>
-        <NavProfil />
+        {user && "logged in"}
+        {<NavProfil />}
       </Right>
     </Nav >
   );

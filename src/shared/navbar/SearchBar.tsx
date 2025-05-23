@@ -31,7 +31,6 @@ const SearchIconStyled = styled(SearchIcon)`
     color: ${({ theme }) => theme.colors.grey};
     margin-right: ${({ theme }) => theme.spacing(3)};
   `;
-
 interface SearchBarProps {
   onSubmit: (value: string) => void;
   onChange?: (value: string) => void;
