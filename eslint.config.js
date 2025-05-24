@@ -22,7 +22,7 @@ export default defineConfig([
     },
     extends: ["js/recommended"],
     rules: {
-      indent: ["error", 2],
+      indent: ["error", 2, { "SwitchCase": 1 }],
       quotes: ["error", "double"],
       "@typescript-eslint/no-unused-vars": "warn",
       "no-console": "warn",
@@ -38,7 +38,7 @@ export default defineConfig([
       }],
       "eol-last": ["error", "always"],
       "no-multiple-empty-lines": ["error", { "max": 1 }],
-
+      "no-trailing-spaces": ["error"],
     },
 
 
