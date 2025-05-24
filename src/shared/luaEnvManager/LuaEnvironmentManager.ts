@@ -2,8 +2,6 @@ import { LuaEnvironment } from "@lib/lua";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import { KeyHandler } from "@shared/gameEngine/KeyHandler";
 
-const ERROR_PREFIX = "Error: ";
-
 interface EnvData {
   code: string,
   output: string
@@ -22,6 +20,7 @@ interface ConstructorProps {
 }
 
 class LuaEnvironmentManager {
+  private _error_prefix = "Error: ";
   private _lua: LuaEnvironment;
   private _rendererHandle: SpriteRendererHandle;
   private _keyHandler: KeyHandler;
@@ -44,7 +43,7 @@ class LuaEnvironmentManager {
     try {
       this._lua.evaluate(this.envData.code);
     } catch (error) {
-      this._addOutput(`Error: ${error}`);
+      this._addOutput(this._error_prefix + error);
     }
   }
 
@@ -105,7 +104,7 @@ class LuaEnvironmentManager {
   }
 
   private _getErrorMsg(error: unknown): string {
-    return ERROR_PREFIX + (error instanceof Error ? error.message : String(error));
+    return this._error_prefix + (error instanceof Error ? error.message : String(error));
   }
 
   private _safeEval(code: string): void {
