@@ -52,8 +52,8 @@ const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(({ canvasPr
     if (!canvas) {
       return;
     }
-    canvas.addEventListener("keydown", keyHandlerRef.current?.handleKeyDown);
-    canvas.addEventListener("keyup", keyHandlerRef.current?.handleKeyUp);
+    canvas.addEventListener("keydown", keyHandlerRef.current?.handleKeyDown.bind(keyHandlerRef.current));
+    canvas.addEventListener("keyup", keyHandlerRef.current?.handleKeyUp.bind(keyHandlerRef.current));
 
     return () => {
       canvas.removeEventListener("keydown", keyHandlerRef.current?.handleKeyDown);
