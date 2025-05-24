@@ -23,7 +23,7 @@ const NavProfil: React.FC = () => {
       <IconButton onClick={handleClick} disableRipple>
         <img className="navbar-logo" src={theme.logo.primary} alt="Logo" />
       </IconButton>
-      {showAuthOverlay && (
+      {(
         <AuthOverlay isOpen={showAuthOverlay} setIsOpen={setShowAuthOverlay} />
       )}
     </div>

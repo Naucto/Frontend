@@ -1,4 +1,4 @@
-import { Backdrop, Box, Link, Typography } from "@mui/material";
+import { Backdrop, Box, Button, Link, Typography } from "@mui/material";
 import GenericTextField from "@shared/TextField";
 import React, { FC, ReactNode, useCallback, useMemo, useState } from "react";
 import { styled } from "@mui/material";
@@ -50,6 +50,13 @@ const Center = styled(Box)(({ theme }) => ({
   flexDirection: "column",
   justifyContent: "center",
   alignItems: "center",
+}));
+
+const SwitchModeButton = styled(Button)(({ theme }) => ({
+  color: theme.palette.grey1,
+  "&:focus-visible": {
+    textDecoration: "underline",
+  },
 }));
 
 const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
@@ -130,7 +137,15 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
         <Center>
           <Typography>OR</Typography>
           <Typography>{isSignUp ? "Already have an account ? " : "Don't have an account ? "}
-            <Link sx={{ cursor: "pointer" }} onClick={() => { setIsSignUp(!isSignUp); }}>{authText(!isSignUp)}</Link>
+            <SwitchModeButton
+              disableRipple
+              variant="text"
+              tabIndex={0}
+              type="button"
+              sx={{ cursor: "pointer" }}
+              onClick={() => { setIsSignUp(!isSignUp); }}>
+              {authText(!isSignUp)}
+            </SwitchModeButton>
           </Typography>
         </Center>
       </CustomDialog>
