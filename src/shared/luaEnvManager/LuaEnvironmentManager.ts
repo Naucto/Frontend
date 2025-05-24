@@ -2,11 +2,10 @@ import { LuaEnvironment } from "@lib/lua";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import { KeyHandler } from "@shared/gameEngine/KeyHandler";
 
-interface EnvData {
+export interface EnvData {
   code: string,
   output: string
 }
-export type { EnvData };
 
 interface ConstructorProps {
   envData: EnvData,
