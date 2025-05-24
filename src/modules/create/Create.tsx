@@ -3,18 +3,18 @@ import React, { useEffect } from "react";
 
 const Create: React.FC = () => {
   const editorManager = useEditorManager();
-
+  const [isInit, setIsInit] = React.useState(false);
   useEffect(() => {
     editorManager.init("test");
-
+    setIsInit(true);
     return () => {
       editorManager.cleanUpAndDisconnect();
     };
-  }, [editorManager]);
+  }, [editorManager, setIsInit]);
 
   return (
     <div>
-      {editorManager.render()}
+      {isInit && editorManager.render()}
     </div>
   );
 };
