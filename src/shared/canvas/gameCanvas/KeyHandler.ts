@@ -1,4 +1,3 @@
-
 export class KeyHandler {
   private keysPressed: Set<string>;
 
