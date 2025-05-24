@@ -5,6 +5,8 @@ import { ContextError } from "src/errors/ContextError";
 interface UserContextType {
   user?: User;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
+  login: (userData: User) => void;
+  logout: () => void;
 }
 
 const userContext = createContext<UserContextType | null>(null);
@@ -26,8 +28,12 @@ export const UserProvider = ({ children }) => {
     }
   }, [user]);
 
+  const login = (userData: User) => setUser(userData);
+
+  const logout = () => setUser(null);
+
   return (
-    <userContext.Provider value={{ user, setUser }}>
+    <userContext.Provider value={{ user, setUser, login, logout }}>
       {children}
     </userContext.Provider>
   );

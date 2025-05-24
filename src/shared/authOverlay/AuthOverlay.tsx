@@ -8,29 +8,19 @@ import ImportantButton from "@shared/buttons/ImportantButton";
 import { AuthService } from "src/api/services/AuthService";
 import { c } from "node_modules/vite/dist/node/moduleRunnerTransport.d-CXw_Ws6P";
 import { useUser } from "src/providers/UserProvider";
+import { CustomDialog } from "@shared/dialog/CustomDialog";
 
 interface AuthOverlayProps {
+  isOpen: boolean;
+  setIsOpen: (isOpen: boolean) => void;
   onClose?: () => void;
 }
-
-const Overlay = styled(Box)(({ theme }) => ({
-  display: "flex",
-  flexDirection: "column",
-  position: "absolute",
-  width: 552,
-  height: 580,
-  backgroundColor: theme.palette.background.default,
-  borderRadius: 16,
-  color: theme.palette.text.primary,
-  zIndex: 1000,
-  padding: theme.spacing(6),
-}));
 
 const Title = styled("h2")(({ theme }) => ({
   fontSize: 32,
   margin: 0,
   fontWeight: "normal",
-  padding: theme.spacing(2, 0),
+  padding: theme.spacing(0, 0),
 }));
 
 const StyledTitle = styled(Title)(({ theme }) => ({
@@ -62,11 +52,11 @@ const Center = styled(Box)(({ theme }) => ({
   alignItems: "center",
 }));
 
-const AuthOverlay: FC<AuthOverlayProps> = ({ onClose }) => {
+const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
   const [isSignUp, setIsSignUp] = useState(true);
 
-  const authText = useCallback((boolean) => {
-    return boolean ? "Sign up" : "Login";
+  const authText = useCallback((bool: boolean) => {
+    return bool ? "Sign up" : "Login";
   }, [isSignUp]);
 
   const { user, setUser } = useUser();
@@ -115,46 +105,36 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ onClose }) => {
 
   return (
     <form onSubmit={handleSubmit(handleAuth)}>
-      <Backdrop
-        open={true}
-        onKeyDown={(e) => {
-          if (e.key === "Escape" && onClose) {
-            onClose();
-          }
-        }}
-        tabIndex={0}
-      >
-        <Overlay>
-          <StyledTitle>{authText(isSignUp)}</StyledTitle>
+      <CustomDialog isOpen={isOpen} setIsOpen={setIsOpen} hideSubmitButton>
+        <StyledTitle>{authText(isSignUp)}</StyledTitle>
 
-          <FieldContainer>
-            <label>Email</label>
-            <StyledTextField {...register("email")} />
-          </FieldContainer>
+        <FieldContainer>
+          <label>Email</label>
+          <StyledTextField {...register("email")} />
+        </FieldContainer>
 
-          {isSignUp && <FieldContainer>
-            <label>Username</label>
-            <StyledTextField {...register("username")} />
-          </FieldContainer>}
+        {isSignUp && <FieldContainer>
+          <label>Username</label>
+          <StyledTextField {...register("username")} />
+        </FieldContainer>}
 
-          <FieldContainer>
-            <label>Password</label>
-            <StyledTextField type="password" {...register("password")} />
-          </FieldContainer>
+        <FieldContainer>
+          <label>Password</label>
+          <StyledTextField type="password" {...register("password")} />
+        </FieldContainer>
 
-          <StyledImportantButton type="submit">{authText(isSignUp)}</StyledImportantButton>
+        <StyledImportantButton type="submit">{authText(isSignUp)}</StyledImportantButton>
 
-          {errorMessage && <Typography color="error">{errorMessage}</Typography>}
+        {errorMessage && <Typography color="error">{errorMessage}</Typography>}
 
-          <Center>
-            <Typography>OR</Typography>
-            <Typography>{isSignUp ? "Already have an account ? " : "Don't have an account ? "}
-              <Link sx={{ cursor: "pointer" }} onClick={() => { setIsSignUp(!isSignUp); }}>{authText(!isSignUp)}</Link>
-            </Typography>
-          </Center>
-        </Overlay>
-      </Backdrop>
-    </form>
+        <Center>
+          <Typography>OR</Typography>
+          <Typography>{isSignUp ? "Already have an account ? " : "Don't have an account ? "}
+            <Link sx={{ cursor: "pointer" }} onClick={() => { setIsSignUp(!isSignUp); }}>{authText(!isSignUp)}</Link>
+          </Typography>
+        </Center>
+      </CustomDialog>
+    </form >
   );
 };
 
