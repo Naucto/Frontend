@@ -5,11 +5,11 @@ export class KeyHandler {
     this.keysPressed = new Set();
   }
 
-  public handleKeyDown = (event: KeyboardEvent): void => {
+  public handleKeyDown(event: KeyboardEvent): void {
     this.keysPressed.add(event.key);
   };
 
-  public handleKeyUp = (event: KeyboardEvent): void => {
+  public handleKeyUp(event: KeyboardEvent): void {
     this.keysPressed.delete(event.key);
   };
 
