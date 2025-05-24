@@ -65,41 +65,48 @@ class LuaEnvironmentManager {
   // private
 
   private _injectGameAPI(lua: LuaEnvironment): void {
-    lua.setGlobal("sprite", (n: number, x: number, y: number, w: number, h: number) => {
-      this._rendererHandle.queueSpriteDraw(n, x, y, w, h);
-    });
+    lua.setGlobal("sprite", this._sprite.bind(this));
+    lua.setGlobal("clear", this._clear.bind(this));
+    lua.setGlobal("print", this._print.bind(this));
+    lua.setGlobal("key_pressed", this._keyPressed.bind(this));
+    lua.setGlobal("set_col", this._setCol.bind(this));
+    lua.setGlobal("reset_col", this._resetCol.bind(this));
+  }
 
-    lua.setGlobal("clear", (n: number) => {
-      this._rendererHandle.clear(n);
-    });
+  private _sprite(n: number, x: number, y: number, w: number, h: number): void {
+    this._rendererHandle.queueSpriteDraw(n, x, y, w, h);
+  }
 
-    lua.setGlobal("print", (...args: unknown[]) => {
-      const output = args.map((arg: unknown) => {
-        return String(arg);
-      }).join("\t");
+  private _clear(n: number): void {
+    this._rendererHandle.clear(n);
+  }
 
-      this._addOutput(output);
-    });
+  private _print(...args: unknown[]): void {
+    const output = args.map((arg: unknown) => {
+      return String(arg);
+    }).join("\t");
 
-    lua.setGlobal("key_pressed", (key: string) => {
-      return this._keyHandler.isKeyPressed(key);
-    });
+    this._addOutput(output);
+  }
 
-    lua.setGlobal("set_col", (i1: number, i2: number) => {
-      try {
-        this._rendererHandle.setColor(i1, i2);
-      } catch (error) {
-        this._addOutput(this._getErrorMsg(error));
-      }
-    });
+  private _keyPressed(key: string): boolean {
+    return this._keyHandler.isKeyPressed(key);
+  }
 
-    lua.setGlobal("reset_col", () => {
-      try {
-        this._rendererHandle.resetColor();
-      } catch (error) {
-        this._addOutput(this._getErrorMsg(error));
-      }
-    });
+  private _setCol(i1: number, i2: number): void {
+    try {
+      this._rendererHandle.setColor(i1, i2);
+    } catch (error) {
+      this._addOutput(this._getErrorMsg(error));
+    }
+  }
+
+  private _resetCol(): void {
+    try {
+      this._rendererHandle.resetColor();
+    } catch (error) {
+      this._addOutput(this._getErrorMsg(error));
+    }
   }
 
   private _getErrorMsg(error: unknown): string {
