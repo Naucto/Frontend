@@ -1,8 +1,10 @@
+import { Button } from "@mui/material";
+import AuthOverlay from "@shared/authOverlay/AuthOverlay";
 import { NavElem, ImportantNavElem } from "@shared/navbar/NavElem";
-import NavProfil from "@shared/navbar/NavProfil";
+import NavProfile from "@shared/navbar/Profile/NavProfile";
 import { SearchBar } from "@shared/navbar/SearchBar";
 import { useTheme } from "@theme/ThemeContext";
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useUser } from "src/providers/UserProvider";
 import styled from "styled-components";
@@ -39,6 +41,8 @@ const Right = styled.div`
 const NavBar: React.FC = () => {
   const theme = useTheme();
   const { user } = useUser();
+  const [showAuthOverlay, setShowAuthOverlay] = useState(false);
+
   return (
     <Nav className="navbar">
       <Left>
@@ -52,8 +56,13 @@ const NavBar: React.FC = () => {
 
       <Right>
         <NavElem to="/friends">Friends</NavElem>
-        {user && "logged in"}
-        {<NavProfil />}
+        {user && <NavProfile />}
+        {!user && (
+          <>
+            <Button variant="text" onClick={() => { setShowAuthOverlay(true); }}>Log in</Button>
+            <AuthOverlay isOpen={showAuthOverlay} setIsOpen={setShowAuthOverlay} />
+          </>
+        )}
       </Right>
     </Nav >
   );

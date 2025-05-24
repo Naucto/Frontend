@@ -54,7 +54,7 @@ declare module "@mui/material/styles" {
 export const muiTheme = createTheme({
   palette: {
     grey1: "#9C9C9C",
-    grey2: "",
+    grey2: "#646464",
     red: "#AC3931",
     primary: { main: "#E5D352" },
     secondary: { main: "#537D8D" },
