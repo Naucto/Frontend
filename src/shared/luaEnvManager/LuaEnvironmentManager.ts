@@ -98,8 +98,7 @@ class LuaEnvironmentManager {
     lua.setGlobal("reset_col", () => {
       try {
         this._rendererHandle.resetColor();
-      }
-      catch (error) {
+      } catch (error) {
         this._addOutput(this._getErrorMsg(error));
       }
     });
