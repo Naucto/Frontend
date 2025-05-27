@@ -11,7 +11,8 @@ export type QueueSpriteDrawFn = (
   width?: number,
   height?: number,
   flip_h?: number,
-  flip_v?: number
+  flip_v?: number,
+  scale?: number
 ) => void;
 
 export type SpriteRendererHandle = {
@@ -20,6 +21,7 @@ export type SpriteRendererHandle = {
   clear: (index: number) => void;
   setColor: (index: number, index2: number) => void;
   resetColor: () => void;
+  fitToContent: () => void;
 };
 
 export function useSpriteRenderer(
@@ -81,7 +83,9 @@ export function useSpriteRenderer(
   function queueSpriteDraw(index: number,
     x: number, y: number,
     width: number = 1, height: number = 1,
-    flip_h: number = 0, flip_v: number = 0): void {
+    flip_h: number = 0, flip_v: number = 0,
+    scale: number = 1
+  ): void {
     x = Math.floor(x);
     y = Math.floor(y);
     flip_h = flip_h ? 1 : 0;
@@ -110,8 +114,8 @@ export function useSpriteRenderer(
     const vertices = rectangleToVertices(
       x,
       y,
-      width * spriteSheet.spriteSize.width,
-      height * spriteSheet.spriteSize.height
+      width * spriteSheet.spriteSize.width * scale,
+      height * spriteSheet.spriteSize.height * scale
     );
 
     batchedVertices.push(...vertices);
@@ -177,6 +181,27 @@ export function useSpriteRenderer(
     );
   }
 
+  function fitToContent(): void {
+    const p = _getPipeline();
+    const gl = p.gl;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    // Calculate the scale to fit the sprite to the canvas
+    const scaleX = canvas.width / spriteSheet.spriteSize.width;
+    const scaleY = canvas.height / spriteSheet.spriteSize.height;
+    const scale = Math.min(scaleX, scaleY);
+
+    // Update the viewport to maintain aspect ratio
+    const newWidth = spriteSheet.spriteSize.width * scale;
+    const newHeight = spriteSheet.spriteSize.height * scale;
+    const x = (canvas.width - newWidth) / 2;
+    const y = (canvas.height - newHeight) / 2;
+
+    console.log("fitToContent", x, y, newWidth, newHeight);
+    gl.viewport(x, y, 20, 20);
+  }
+
   function _getPipeline(): GLPipeline {
     const p = pipelineRef.current;
     if (!p) { throw new CanvasNotInitializedError(); }
@@ -188,6 +213,7 @@ export function useSpriteRenderer(
     draw,
     clear,
     setColor,
-    resetColor
+    resetColor,
+    fitToContent
   }), []);
 }
