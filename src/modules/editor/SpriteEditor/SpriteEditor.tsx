@@ -20,6 +20,7 @@ export const SpriteEditor: React.FC<SpriteEditorProps> = ({ doc, provider }) => 
   const [zoom, setZoom] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
+  const [isDrawing, setIsDrawing] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [isMouseOverCanvas, setIsMouseOverCanvas] = useState(false);
   const [editableSpriteTable, setEditableSpriteTable] = useState(spriteTable);
@@ -114,28 +115,51 @@ export const SpriteEditor: React.FC<SpriteEditorProps> = ({ doc, provider }) => 
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!isMouseOverCanvas) return;
-    if (e.button !== 2) return;
-    setIsDragging(true);
-    setDragStart({ x: e.clientX, y: e.clientY });
+
+    if (e.button === 2) { // Right click
+      setIsDragging(true);
+      setDragStart({ x: e.clientX, y: e.clientY });
+    } else if (e.button === 0) { // Left click
+      setIsDrawing(true);
+      const rect = e.currentTarget.getBoundingClientRect();
+      const spriteX = Math.floor(((e.clientX - rect.left) / rect.width * zoom) - (Math.floor(position.x) / 8));
+      const spriteY = Math.floor(((e.clientY - rect.top) / rect.height * zoom) - (Math.floor(position.y) / 8));
+      const x = Math.floor((e.clientX - rect.left) / (rect.width / zoom) * 8 - Math.floor(position.x)) % 8;
+      const y = Math.floor((e.clientY - rect.top) / (rect.width / zoom) * 8 - Math.floor(position.y)) % 8;
+      const spriteIndex = x + spriteX * 8;
+      const pixelIndex = y + spriteY * 8;
+      handleClick(spriteIndex, pixelIndex);
+    }
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDragging) return;
+    if (isDragging) {
+      const dx = ((e.clientX - dragStart.x) * zoom) / 48;
+      const dy = ((e.clientY - dragStart.y) * zoom) / 48;
 
-    const dx = ((e.clientX - dragStart.x) * zoom) / 48;
-    const dy = ((e.clientY - dragStart.y) * zoom) / 48;
+      setPosition(prevPos => ({
+        x: prevPos.x + dx,
+        y: prevPos.y + dy
+      }));
 
-    setPosition(prevPos => ({
-      x: prevPos.x + dx,
-      y: prevPos.y + dy
-    }));
-
-    setDragStart({ x: e.clientX, y: e.clientY });
+      setDragStart({ x: e.clientX, y: e.clientY });
+    } else if (isDrawing) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const spriteX = Math.floor(((e.clientX - rect.left) / rect.width * zoom) - (Math.floor(position.x) / 8));
+      const spriteY = Math.floor(((e.clientY - rect.top) / rect.height * zoom) - (Math.floor(position.y) / 8));
+      const x = Math.floor((e.clientX - rect.left) / (rect.width / zoom) * 8 - Math.floor(position.x)) % 8;
+      const y = Math.floor((e.clientY - rect.top) / (rect.width / zoom) * 8 - Math.floor(position.y)) % 8;
+      const spriteIndex = x + spriteX * 8;
+      const pixelIndex = y + spriteY * 8;
+      handleClick(spriteIndex, pixelIndex);
+    }
   };
 
   const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (e.button === 2) {
       setIsDragging(false);
+    } else if (e.button === 0) {
+      setIsDrawing(false);
     }
   };
 
@@ -168,9 +192,10 @@ export const SpriteEditor: React.FC<SpriteEditorProps> = ({ doc, provider }) => 
               onMouseLeave={() => {
                 setIsMouseOverCanvas(false);
                 setIsDragging(false);
+                setIsDrawing(false);
               }}
               onClick={(e: React.MouseEvent<HTMLCanvasElement>) => {
-                if (!isDragging) {
+                if (!isDragging && !isDrawing) {
                   const rect = e.currentTarget.getBoundingClientRect();
                   const spriteX = Math.floor(((e.clientX - rect.left) / rect.width * zoom) - (Math.floor(position.x) / 8));
                   const spriteY = Math.floor(((e.clientY - rect.top) / rect.height * zoom) - (Math.floor(position.y) / 8));
