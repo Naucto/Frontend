@@ -12,6 +12,8 @@ import { spriteTable } from "src/temporary/SpriteSheet";
 import { palette } from "src/temporary/SpriteSheet";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import { TabData } from "@modules/editor/tab/TabData";
+import { ProjectsService } from "src/api/services/ProjectsService.ts";
+import { Beforeunload } from 'react-beforeunload';
 
 const RightPanel = styled.div`
   height: 100vh;
@@ -36,10 +38,13 @@ class EditorManagerError extends Error {
   }
 }
 
-type EditorComponent = React.ComponentClass<IEditor> & { new(): IEditor };
+interface EditorEntry {
+  instance: IEditor;
+  tabData: TabData;
+}
 
 export class EditorManager {
-  private editors: { component: EditorComponent; tabData: TabData }[] = [];
+  private editors: Record<string, EditorEntry> = {};
 
   private ydoc: Y.Doc | null = null;
   private provider: WebrtcProvider | null = null;
@@ -69,6 +74,22 @@ export class EditorManager {
   public constructor() { }
 
   cleanUpAndDisconnect(): void {
+    const jsonData: { [key: string]: string } = {};
+    Object.values(this.editors).forEach(({ instance }) => {
+      const content = instance.getData();
+      console.log("Saving content of editor :", instance.constructor.name, " content :", content);
+      jsonData[instance.constructor.name] = content;
+    });
+    console.log("Saving project content :", jsonData);
+    if (jsonData && false) { // temporary
+      ProjectsService.projectControllerSaveProjectContent(
+        localStorage.getItem("projectId") || "1",
+        { file: new Blob([JSON.stringify(jsonData)], { type: "application/json" }) }
+      ).catch((error) => {
+        console.error(`Failed to save content :`, error);
+      });
+    }
+
     this.provider?.awareness.setLocalState(null);
     this.provider?.disconnect();
     this.ydoc?.destroy();
@@ -93,19 +114,25 @@ export class EditorManager {
     //
   }
 
-  public addEditor(component: EditorComponent, tabData: TabData) {
-    this.editors.push({ component, tabData });
+  public addEditor(name: string, instance: IEditor, tabData: TabData) {
+    if (this.editors[name]) {
+      throw new EditorManagerError(`Editor with name ${name} already exists.`);
+    }
+
+    this.editors[name] = { instance, tabData };
   }
 
   public removeEditor(editor: IEditor) {
-    const index = this.editors.findIndex(e => e.component === editor.constructor);
-    if (index > -1) {
-      this.editors.splice(index, 1);
+    const editorName = Object.keys(this.editors).find(name => this.editors[name].instance === editor);
+    if (editorName) {
+      delete this.editors[editorName];
+    } else {
+      throw new EditorManagerError(`Editor not found: ${editor.constructor.name}`);
     }
   }
 
   public getEditors(): IEditor[] {
-    return this.editors.map(e => new e.component());
+    return Object.values(this.editors).map(editor => editor.instance);
   }
 
   render() {
@@ -116,18 +143,17 @@ export class EditorManager {
             width: "50%",
           }}>
           <TabbedComponent>
-            {this.editors.map((editor, index) => {
-              const EditorComponent = editor.component;
-              return (
-                <TabbedComponentPage key={index} title={editor.tabData.title}>
-                  <EditorComponent ref={(instance: IEditor) => {
-                    if (instance && this.ydoc && this.provider) {
-                      instance.init(this.ydoc, this.provider);
-                    }
-                  }} />
-                </TabbedComponentPage>
-              );
-            })}
+            {Object.values(this.editors).map((editor, index) => (
+              <TabbedComponentPage key={index} title={editor.tabData.title}>
+                {React.isValidElement(editor.instance)
+                  ? editor.instance
+                  : typeof editor.instance.init === "function" && typeof editor.instance.render === "function"
+                    ? (this.ydoc && this.provider
+                      ? (() => { editor.instance.init(this.ydoc as Y.Doc, this.provider as WebrtcProvider); return editor.instance.render(); })()
+                      : null)
+                    : null}
+              </TabbedComponentPage>
+            ))}
           </TabbedComponent>
         </div>
         <RightPanel>
@@ -139,6 +165,13 @@ export class EditorManager {
             palette={palette}
           />
         </RightPanel>
+        {
+          <Beforeunload onBeforeunload={(event) => {
+            event.preventDefault();
+            this.cleanUpAndDisconnect();
+            return "Are you sure you want to leave? Your changes may not be saved.";
+          }} />
+        }
       </Container>
     );
   }

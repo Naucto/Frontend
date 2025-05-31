@@ -17,6 +17,15 @@ export class SpriteEditor extends IEditor {
   public init(doc: Doc, provider: WebrtcProvider): void {
   }
 
+  public getData(): string {
+    // TODO
+    return "";
+  }
+
+  public setData(data: string): void {
+    // TODO
+  }
+
   render() {
     return (
       <div />

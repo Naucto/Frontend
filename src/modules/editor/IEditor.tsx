@@ -10,6 +10,10 @@ abstract class IEditor extends React.Component {
   };
 
   public abstract init(doc: Y.Doc, provider: WebrtcProvider): void;
+
+  public abstract getData(): string;
+
+  public abstract setData(data: string): void;
   
   render() {
     return <div />;

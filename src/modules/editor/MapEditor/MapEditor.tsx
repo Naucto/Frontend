@@ -15,6 +15,15 @@ export class MapEditor extends IEditor {
 
   }
 
+  public getData(): string {
+    // TODO
+    return "";
+  }
+
+  public setData(data: string): void {
+    // TODO
+  }
+
   render() {
     return (
       <div>

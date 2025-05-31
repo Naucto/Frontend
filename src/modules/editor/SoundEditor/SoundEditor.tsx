@@ -101,6 +101,15 @@ export class SoundEditor extends IEditor {
     this.ydoc = ydoc;
   }
 
+  public getData(): string {
+    // TODO
+    return "";
+  }
+
+  public setData(data: string): void {
+    // TODO
+  }
+
   sendData(data: string): void {
     console.log("SoundEditor sendData", data);
   }

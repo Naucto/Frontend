@@ -33,10 +33,10 @@ function App() {
 
   const editorManager = useMemo(() => {
     const manager = editorManagerRef.current;
-    manager.addEditor(CodeEditor, { title: "Code", icon: "code" });
-    manager.addEditor(MapEditor, { title: "Map", icon: "map" });
-    manager.addEditor(SoundEditor, { title: "Sound", icon: "sound" });
-    manager.addEditor(SpriteEditor, { title: "Sprite", icon: "sprite" });
+    manager.addEditor("code", new CodeEditor(), { title: "Code", icon: "code" });
+    manager.addEditor("map", new MapEditor(), { title: "Map", icon: "map" });
+    manager.addEditor("sound", new SoundEditor(), { title: "Sound", icon: "sound" });
+    manager.addEditor("sprite", new SpriteEditor(), { title: "Sprite", icon: "sprite" });
     return manager;
   }, []);
 
