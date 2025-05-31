@@ -42,25 +42,6 @@ const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(({ canvasPr
     });
   }, [envData, setOutput]);
 
-  // init key handler
-  useEffect(() => {
-    const spriteRenderer = spriteRendererHandleRef.current;
-    if (!spriteRenderer) {
-      return;
-    }
-    const canvas = spriteRenderer.getCanvas();
-    if (!canvas) {
-      return;
-    }
-    canvas.addEventListener("keydown", keyHandlerRef.current?.handleKeyDown.bind(keyHandlerRef.current));
-    canvas.addEventListener("keyup", keyHandlerRef.current?.handleKeyUp.bind(keyHandlerRef.current));
-
-    return () => {
-      canvas.removeEventListener("keydown", keyHandlerRef.current?.handleKeyDown);
-      canvas.removeEventListener("keyup", keyHandlerRef.current?.handleKeyUp);
-    };
-  }, []);
-
   // global init
   useEffect(() => {
     if (!spriteRendererHandleRef.current || !luaEnvManagerRef.current) {
@@ -89,6 +70,8 @@ const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(({ canvasPr
       spriteSheet={spriteSheet}
       palette={palette}
       className={className}
+      onKeyDown={(e) => keyHandlerRef.current?.handleKeyDown(e)}
+      onKeyUp={(e) => keyHandlerRef.current?.handleKeyUp(e)}
     />
   );
 });

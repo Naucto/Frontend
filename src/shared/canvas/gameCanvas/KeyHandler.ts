@@ -1,3 +1,5 @@
+import { KeyboardEvent } from "react";
+
 export class KeyHandler {
   private keysPressed: Set<string>;
 
@@ -5,11 +7,11 @@ export class KeyHandler {
     this.keysPressed = new Set();
   }
 
-  public handleKeyDown(event: KeyboardEvent): void {
+  public handleKeyDown<T extends HTMLElement>(event: KeyboardEvent<T>): void {
     this.keysPressed.add(event.key);
   };
 
-  public handleKeyUp(event: KeyboardEvent): void {
+  public handleKeyUp<T extends HTMLElement>(event: KeyboardEvent<T>): void {
     this.keysPressed.delete(event.key);
   };
 
