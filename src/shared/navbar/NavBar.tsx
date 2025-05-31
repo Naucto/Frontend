@@ -1,9 +1,8 @@
 import { NavElem, ImportantNavElem } from "@shared/navbar/NavElem";
-import NavProfil from "@shared/navbar/NavProfil";
+import NavProfile from "@shared/navbar/NavProfile";
 import { SearchBar } from "@shared/navbar/SearchBar";
 import { useTheme } from "@theme/ThemeContext";
 import React from "react";
-import { Link } from "react-router-dom";
 import { useUser } from "src/providers/UserProvider";
 import styled from "styled-components";
 
@@ -53,7 +52,7 @@ const NavBar: React.FC = () => {
       <Right>
         <NavElem to="/friends">Friends</NavElem>
         {user && "logged in"}
-        {<NavProfil />}
+        {<NavProfile />}
       </Right>
     </Nav >
   );
