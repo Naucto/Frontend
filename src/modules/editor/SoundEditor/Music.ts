@@ -38,7 +38,6 @@ class Music {
     return this._notes;
   }
 
-
   public setNote(position: number, note: number, duration: number, instrument: string): void {
 
     if (position < 0 || position >= this._notes.length) {
