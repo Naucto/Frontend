@@ -5,11 +5,11 @@ class SpriteEditor extends IEditor {
     super();
   }
 
-  sendData(data: string) {
+  sendData(data: string) : void {
     console.log("SpriteEditor sendData", data);
   }
 
-  loadData(data: string) {
+  loadData(data: string) : void {
     console.log("SpriteEditor loadData", data);
   }
 }

@@ -4,7 +4,10 @@ import { WebrtcProvider } from "y-webrtc";
 import React from "react";
 
 abstract class IEditor extends React.Component {
-  public tabData: TabData = new TabData("IEditor", "IEditor");
+  public tabData: TabData = {
+    title: "IEditor",
+    icon: "IEditor",
+  };
 
   public abstract init(doc: Y.Doc, provider: WebrtcProvider): void;
   
