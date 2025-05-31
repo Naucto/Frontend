@@ -3,7 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { UpdateUserDto } from '../models/UpdateUserDto';
-import type { User } from '../models/User';
+import type { UserDto } from '../models/UserDto';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -20,30 +20,38 @@ export class UsersService {
     }
     /**
      * Get all users with pagination and filtering
-     * @param firstname
-     * @param lastname
      * @param page Page number
      * @param limit Items per page
+     * @param nickname Filter by nickname
      * @param email Filter by email
-     * @param sortBy
-     * @param order
-     * @param name Filter by name
+     * @param sortBy Sort by field
+     * @param order Sort order
+     * @param page Page number
+     * @param limit Items per page
+     * @param nickname Filter by nickname
+     * @param email Filter by email
+     * @param sortBy Sort by field
+     * @param order Sort order
      * @returns any
      * @throws ApiError
      */
     public static userControllerFindAll(
-        firstname: string,
-        lastname: string,
-        page: number = 1,
-        limit: number = 10,
+        page?: number,
+        limit?: number,
+        nickname?: string,
         email?: string,
         sortBy?: 'id' | 'name' | 'email' | 'createdAt',
         order?: 'asc' | 'desc',
-        name?: string,
+        page?: number,
+        limit?: number,
+        nickname?: string,
+        email?: string,
+        sortBy?: string,
+        order?: string,
     ): CancelablePromise<{
         statusCode?: number;
         message?: string;
-        data?: Array<User>;
+        data?: Array<UserDto>;
         meta?: {
             page?: number;
             limit?: number;
@@ -57,24 +65,28 @@ export class UsersService {
             query: {
                 'page': page,
                 'limit': limit,
-                'firstname': firstname,
-                'lastname': lastname,
+                'nickname': nickname,
                 'email': email,
                 'sortBy': sortBy,
                 'order': order,
-                'name': name,
+                'page': page,
+                'limit': limit,
+                'nickname': nickname,
+                'email': email,
+                'sortBy': sortBy,
+                'order': order,
             },
         });
     }
     /**
      * Get a user by ID
      * @param id User ID
-     * @returns User Returns the user
+     * @returns UserDto Returns the user
      * @throws ApiError
      */
     public static userControllerFindOne(
         id: number,
-    ): CancelablePromise<User> {
+    ): CancelablePromise<UserDto> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/users/{id}',
@@ -91,13 +103,13 @@ export class UsersService {
      * Update a user by ID
      * @param id User ID
      * @param requestBody
-     * @returns User User updated successfully
+     * @returns UserDto User updated successfully
      * @throws ApiError
      */
     public static userControllerUpdate(
         id: number,
         requestBody: UpdateUserDto,
-    ): CancelablePromise<User> {
+    ): CancelablePromise<UserDto> {
         return __request(OpenAPI, {
             method: 'PATCH',
             url: '/users/{id}',

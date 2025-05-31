@@ -12,13 +12,9 @@ export type CreateUserDto = {
      */
     username: string;
     /**
-     * User first name
+     * User nick name
      */
-    firstName: string;
-    /**
-     * User last name
-     */
-    lastName: string;
+    nickname?: string;
     /**
      * User password
      */

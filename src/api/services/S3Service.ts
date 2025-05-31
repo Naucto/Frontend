@@ -47,21 +47,21 @@ export class S3Service {
     }
     /**
      * Generate a signed download URL
-     * @param bucketName Name of the bucket
      * @param key Object key
+     * @param bucketName Name of the bucket
      * @returns any Returns a signed URL for downloading the file
      * @throws ApiError
      */
     public static s3ControllerGetSignedDownloadUrl(
-        bucketName: string,
         key: string,
+        bucketName: string,
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/s3/download-url/{bucketName}/{key}',
             path: {
-                'bucketName': bucketName,
                 'key': key,
+                'bucketName': bucketName,
             },
             errors: {
                 500: `Server error`,
@@ -70,21 +70,21 @@ export class S3Service {
     }
     /**
      * Download a file directly
-     * @param bucketName Name of the bucket
      * @param key Object key
+     * @param bucketName Name of the bucket
      * @returns any File stream
      * @throws ApiError
      */
     public static s3ControllerDownloadFile(
-        bucketName: string,
         key: string,
+        bucketName: string,
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/s3/download/{bucketName}/{key}',
             path: {
-                'bucketName': bucketName,
                 'key': key,
+                'bucketName': bucketName,
             },
             errors: {
                 500: `Server error`,
@@ -118,21 +118,21 @@ export class S3Service {
     }
     /**
      * Delete a file from S3
-     * @param bucketName Name of the bucket
      * @param key Object key
+     * @param bucketName Name of the bucket
      * @returns any File deleted successfully
      * @throws ApiError
      */
     public static s3ControllerDeleteFile(
-        bucketName: string,
         key: string,
+        bucketName: string,
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'DELETE',
             url: '/s3/delete/{bucketName}/{key}',
             path: {
-                'bucketName': bucketName,
                 'key': key,
+                'bucketName': bucketName,
             },
             errors: {
                 500: `Server error`,
@@ -209,21 +209,21 @@ export class S3Service {
     }
     /**
      * Get object metadata
-     * @param bucketName Name of the bucket
      * @param key Object key
+     * @param bucketName Name of the bucket
      * @returns any Returns object metadata
      * @throws ApiError
      */
     public static s3ControllerGetObjectMetadata(
-        bucketName: string,
         key: string,
+        bucketName: string,
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/s3/metadata/{bucketName}/{key}',
             path: {
-                'bucketName': bucketName,
                 'key': key,
+                'bucketName': bucketName,
             },
             errors: {
                 500: `Server error`,

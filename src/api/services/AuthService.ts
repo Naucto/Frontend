@@ -2,6 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { AuthResponseDto } from '../models/AuthResponseDto';
 import type { CreateUserDto } from '../models/CreateUserDto';
 import type { LoginDto } from '../models/LoginDto';
 import type { CancelablePromise } from '../core/CancelablePromise';
@@ -11,12 +12,12 @@ export class AuthService {
     /**
      * Authenticate a user and return an access token
      * @param requestBody
-     * @returns any Login successful
+     * @returns AuthResponseDto Login successful
      * @throws ApiError
      */
     public static authControllerLogin(
         requestBody: LoginDto,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<AuthResponseDto> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/auth/login',
@@ -30,12 +31,12 @@ export class AuthService {
     /**
      * Register a new user and return an access token
      * @param requestBody
-     * @returns any User registered successfully
+     * @returns AuthResponseDto User registered successfully
      * @throws ApiError
      */
     public static authControllerRegister(
         requestBody: CreateUserDto,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<AuthResponseDto> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/auth/register',

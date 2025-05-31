@@ -9,6 +9,7 @@ export type { OpenAPIConfig } from './core/OpenAPI';
 
 export type { AddCollaboratorDto } from './models/AddCollaboratorDto';
 export type { ApplyPolicyDto } from './models/ApplyPolicyDto';
+export type { AuthResponseDto } from './models/AuthResponseDto';
 export type { CreateBucketDto } from './models/CreateBucketDto';
 export type { CreateProjectDto } from './models/CreateProjectDto';
 export type { CreateUserDto } from './models/CreateUserDto';
@@ -16,10 +17,11 @@ export type { DeleteFilesDto } from './models/DeleteFilesDto';
 export type { GeneratePolicyDto } from './models/GeneratePolicyDto';
 export type { LoginDto } from './models/LoginDto';
 export type { RemoveCollaboratorDto } from './models/RemoveCollaboratorDto';
+export type { RoleDto } from './models/RoleDto';
 export { UpdateProjectDto } from './models/UpdateProjectDto';
 export type { UpdateUserDto } from './models/UpdateUserDto';
 export type { UploadFileDto } from './models/UploadFileDto';
-export type { User } from './models/User';
+export type { UserDto } from './models/UserDto';
 
 export { AuthService } from './services/AuthService';
 export { ProjectsService } from './services/ProjectsService';

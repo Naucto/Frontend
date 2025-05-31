@@ -59,6 +59,7 @@ export class ProjectsService {
                 'id': id,
             },
             errors: {
+                403: `Invalid user or project ID`,
                 404: `Project not found`,
                 500: `Internal server error`,
             },
@@ -157,6 +158,53 @@ export class ProjectsService {
             errors: {
                 404: `Project not found`,
                 500: `Error remove collaborator on project`,
+            },
+        });
+    }
+    /**
+     * Save content file to S3 for a project
+     * @param id
+     * @param formData
+     * @returns any File uploaded successfully
+     * @throws ApiError
+     */
+    public static projectControllerSaveProjectContent(
+        id: string,
+        formData: {
+            file?: Blob;
+        },
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/projects/{id}/saveContent',
+            path: {
+                'id': id,
+            },
+            formData: formData,
+            mediaType: 'multipart/form-data',
+            errors: {
+                403: `Forbidden`,
+            },
+        });
+    }
+    /**
+     * Fetch content file from S3 for a project
+     * @param id
+     * @returns any File fetched successfully
+     * @throws ApiError
+     */
+    public static projectControllerFetchProjectContent(
+        id: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/projects/{id}/fetchContent',
+            path: {
+                'id': id,
+            },
+            errors: {
+                403: `Forbidden`,
+                404: `File not found`,
             },
         });
     }
