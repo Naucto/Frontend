@@ -42,8 +42,8 @@ type EditorComponent = React.ComponentClass<IEditor> & { new(): IEditor };
 export class EditorManager {
   private editors: { component: EditorComponent; tabData: TabData }[] = [];
 
-  private ydoc: Y.Doc | null = null;
-  private provider: WebrtcProvider | null = null;
+  private ydoc?: Y.Doc = undefined;
+  private provider?: WebrtcProvider = undefined;
 
   // FIXME: TEMPORARY FOR EXAMPLE PURPOSES
   // this will be deleted soon, when all data can be get (from server, yjs, etc)
