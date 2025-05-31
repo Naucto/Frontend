@@ -46,7 +46,7 @@ export class EditorManager {
   private ydoc: Y.Doc | null = null;
   private provider: WebrtcProvider | null = null;
 
-  // TEMPORARY FOR EXAMPLE PURPOSES
+  // FIXME: TEMPORARY FOR EXAMPLE PURPOSES
   // this will be deleted soon, when all data can be get (from server, yjs, etc)
   private canvasRef = React.createRef<SpriteRendererHandle>();
 
