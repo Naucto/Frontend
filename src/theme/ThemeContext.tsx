@@ -28,13 +28,12 @@ export const theme: DefaultTheme = {
     lg: "12px",
     fll: "50%",
   },
-  spacing: (n: number, n2?: number) => {
-    if (n2) {
-      return `${n * 8}px ${n2 * 8}px`;
+  spacing: (height: number, width?: number) => {
+    if (width) {
+      return `${height * 8}px ${width * 8}px`;
     }
-    return `${n * 8}px`;
+    return `${height * 8}px`;
   }
-
 };
 
 type ThemeType = typeof theme;
