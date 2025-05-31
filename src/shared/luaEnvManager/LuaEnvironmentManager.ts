@@ -41,7 +41,9 @@ class LuaEnvironmentManager {
     try {
       this._lua.evaluate(this.envData.code);
     } catch (error) {
-      this._addOutput(this._getErrorMsg(error));
+      if (error instanceof Error) {
+        this._addOutput(this._getErrorMsg(error));
+      }
     }
   }
 
@@ -96,7 +98,9 @@ class LuaEnvironmentManager {
     try {
       this._rendererHandle.setColor(i1, i2);
     } catch (error) {
-      this._addOutput(this._getErrorMsg(error));
+      if (error instanceof Error) {
+        this._addOutput(this._getErrorMsg(error));
+      }
     }
   }
 
@@ -104,19 +108,23 @@ class LuaEnvironmentManager {
     try {
       this._rendererHandle.resetColor();
     } catch (error) {
-      this._addOutput(this._getErrorMsg(error));
+      if (error instanceof Error) {
+        this._addOutput(this._getErrorMsg(error));
+      }
     }
   }
 
-  private _getErrorMsg(error: unknown): string {
-    return "Error: " + (error instanceof Error ? error.message : String(error));
+  private _getErrorMsg(error: Error): string {
+    return "Error: " + (error.message);
   }
 
   private _safeEval(code: string): void {
     try {
       this._lua.evaluate(code);
     } catch (error) {
-      this._addOutput(this._getErrorMsg(error));
+      if (error instanceof Error) {
+        this._addOutput(this._getErrorMsg(error));
+      }
     }
   }
 
