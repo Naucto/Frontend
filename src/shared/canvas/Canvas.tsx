@@ -3,7 +3,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import { SpriteSheet } from "src/types/SpriteSheetType";
 import styled from "styled-components";
 
-export type CanvasProps = {
+export type CanvasProps = React.CanvasHTMLAttributes<HTMLCanvasElement> & {
   spriteSheet: SpriteSheet;
   screenSize: {
     width: number;
@@ -17,7 +17,7 @@ export type CanvasHandle = SpriteRendererHandle & {
   getCanvas: () => HTMLCanvasElement | null;
 };
 
-const Canvas = forwardRef<CanvasHandle, CanvasProps>(({ screenSize, spriteSheet, palette, className }, ref) => {
+const Canvas = forwardRef<CanvasHandle, CanvasProps>(({ screenSize, spriteSheet, palette, className, ...props }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererHandle = useSpriteRenderer(canvasRef, spriteSheet, palette, screenSize);
 
@@ -33,6 +33,7 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(({ screenSize, spriteSheet,
       height={screenSize.height}
       className={className}
       tabIndex={0}
+      {...props}
     />
   );
 });
