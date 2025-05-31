@@ -19,7 +19,6 @@ interface ConstructorProps {
 }
 
 class LuaEnvironmentManager {
-  private _error_prefix = "Error: ";
   private _lua: LuaEnvironment;
   private _rendererHandle: SpriteRendererHandle;
   private _keyHandler: KeyHandler;
@@ -42,7 +41,7 @@ class LuaEnvironmentManager {
     try {
       this._lua.evaluate(this.envData.code);
     } catch (error) {
-      this._addOutput(this._error_prefix + error);
+      this._addOutput(this._getErrorMsg(error));
     }
   }
 
@@ -110,7 +109,7 @@ class LuaEnvironmentManager {
   }
 
   private _getErrorMsg(error: unknown): string {
-    return this._error_prefix + (error instanceof Error ? error.message : String(error));
+    return "Error: " + (error instanceof Error ? error.message : String(error));
   }
 
   private _safeEval(code: string): void {
