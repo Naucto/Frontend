@@ -45,7 +45,7 @@ const StyledImportantButton = styled(ImportantButton)(({ theme }) => ({
 const Center = styled(Box)(({ theme }) => ({
   marginTop: theme.spacing(2.5),
   fontSize: 24,
-  color: theme.palette.grey1,
+  color: theme.palette.gray1,
   display: "flex",
   flexDirection: "column",
   justifyContent: "center",
