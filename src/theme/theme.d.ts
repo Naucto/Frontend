@@ -27,6 +27,6 @@ declare module "styled-components" {
       lg: string;
       fll: string;
     };
-    spacing: (n: number, n2?: number) => string;
+    spacing: (height: number, width?: number) => string;
   }
 }
