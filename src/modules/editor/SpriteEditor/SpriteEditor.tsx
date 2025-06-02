@@ -12,7 +12,7 @@ import { spriteTable, palette } from "src/temporary/SpriteSheet";
 interface SpriteEditorProps {
   doc?: Doc;
   provider?: WebrtcProvider;
-  spriteFilePath?: string; // Add this prop to specify the sprite file path
+  spriteFilePath?: string;
 }
 
 export const SpriteEditor: React.FC<SpriteEditorProps> = ({ doc, provider }) => {
@@ -27,18 +27,17 @@ export const SpriteEditor: React.FC<SpriteEditorProps> = ({ doc, provider }) => 
   const drawCanvasRef = React.createRef<SpriteRendererHandle>();
   const canvasContainerRef = useRef<HTMLDivElement>(null);
 
-
   useEffect(() => {
-    const preventContextMenu = (e: MouseEvent) => {
+    const preventContextMenu = (e: MouseEvent): void => {
       if (e.button === 2) {
         e.preventDefault();
       }
     };
 
-    window.addEventListener('contextmenu', preventContextMenu);
+    window.addEventListener("contextmenu", preventContextMenu);
 
     return () => {
-      window.removeEventListener('contextmenu', preventContextMenu);
+      window.removeEventListener("contextmenu", preventContextMenu);
     };
   }, []);
 
@@ -46,13 +45,13 @@ export const SpriteEditor: React.FC<SpriteEditorProps> = ({ doc, provider }) => 
     const container = canvasContainerRef.current;
     if (!container) return;
 
-    const preventScroll = (e: WheelEvent) => {
+    const preventScroll = (e: WheelEvent): void => {
       e.preventDefault();
     };
 
-    container.addEventListener('wheel', preventScroll, { passive: false });
+    container.addEventListener("wheel", preventScroll, { passive: false });
     return () => {
-      container.removeEventListener('wheel', preventScroll);
+      container.removeEventListener("wheel", preventScroll);
     };
   }, []);
 
@@ -82,26 +81,25 @@ export const SpriteEditor: React.FC<SpriteEditorProps> = ({ doc, provider }) => 
     height: Math.floor(8 * zoom)
   };
 
-
-
   useEffect(() => {
     if (doc && provider) {
+      // TODO: Implement doc and provider functionality
     }
   }, [doc, provider]);
 
-  const handleClick = (x: number, y: number) => {
-    const spriteArray = spriteTable.table.split('');
+  const handleClick = (x: number, y: number): void => {
+    const spriteArray = spriteTable.table.split("");
     const index = y * canvasSpriteSheet.size.width + x;
     spriteArray[index] = currentColor.toString(16);
-    spriteTable.table = spriteArray.join('');
+    spriteTable.table = spriteArray.join("");
     setVersion(v => v + 1);
   };
 
-  const changeColor = (index: number) => {
+  const changeColor = (index: number): void => {
     setCurrentColor(index);
   };
 
-  const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
+  const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>): void => {
     const delta = e.deltaY > 0 ? 0.1 : -0.1;
     const power = 5;
     setZoom(prevZoom => {
@@ -110,7 +108,7 @@ export const SpriteEditor: React.FC<SpriteEditorProps> = ({ doc, provider }) => 
     });
   };
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>): void => {
     if (!isMouseOverCanvas) return;
 
     if (e.button === 2) { // Right click
@@ -129,7 +127,7 @@ export const SpriteEditor: React.FC<SpriteEditorProps> = ({ doc, provider }) => 
     }
   };
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>): void => {
     if (isDragging) {
       const dx = ((e.clientX - dragStart.x) * zoom) / 48;
       const dy = ((e.clientY - dragStart.y) * zoom) / 48;
@@ -152,7 +150,7 @@ export const SpriteEditor: React.FC<SpriteEditorProps> = ({ doc, provider }) => 
     }
   };
 
-  const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement>): void => {
     if (e.button === 2) {
       setIsDragging(false);
     } else if (e.button === 0) {
@@ -215,6 +213,4 @@ export const spriteEditorTabData = {
   title: "Sprite",
   icon: "sprite",
 };
-
-
 
