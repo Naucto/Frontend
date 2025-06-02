@@ -21,7 +21,6 @@ export type SpriteRendererHandle = {
   clear: (index: number) => void;
   setColor: (index: number, index2: number) => void;
   resetColor: () => void;
-  fitToContent: () => void;
 };
 
 export function useSpriteRenderer(
@@ -181,27 +180,6 @@ export function useSpriteRenderer(
     );
   }
 
-  function fitToContent(): void {
-    const p = _getPipeline();
-    const gl = p.gl;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    // Calculate the scale to fit the sprite to the canvas
-    const scaleX = canvas.width / spriteSheet.spriteSize.width;
-    const scaleY = canvas.height / spriteSheet.spriteSize.height;
-    const scale = Math.min(scaleX, scaleY);
-
-    // Update the viewport to maintain aspect ratio
-    const newWidth = spriteSheet.spriteSize.width * scale;
-    const newHeight = spriteSheet.spriteSize.height * scale;
-    const x = (canvas.width - newWidth) / 2;
-    const y = (canvas.height - newHeight) / 2;
-
-    console.log("fitToContent", x, y, newWidth, newHeight);
-    gl.viewport(x, y, 20, 20);
-  }
-
   function _getPipeline(): GLPipeline {
     const p = pipelineRef.current;
     if (!p) { throw new CanvasNotInitializedError(); }
@@ -214,6 +192,5 @@ export function useSpriteRenderer(
     clear,
     setColor,
     resetColor,
-    fitToContent
   }), []);
 }
