@@ -192,10 +192,8 @@ export const SpriteEditor: React.FC<SpriteEditorProps> = ({ doc, provider }) => 
               onClick={(e: React.MouseEvent<HTMLCanvasElement>) => {
                 if (!isDragging && !isDrawing) {
                   const rect = e.currentTarget.getBoundingClientRect();
-                  const spriteX = Math.floor(((e.clientX - rect.left) / rect.width * zoom) - (Math.floor(position.x) / 8));
-                  const spriteY = Math.floor(((e.clientY - rect.top) / rect.height * zoom) - (Math.floor(position.y) / 8));
-                  const x = Math.floor((e.clientX - rect.left) / (rect.width / zoom) * 8 - Math.floor(position.x)) % 8;
-                  const y = Math.floor((e.clientY - rect.top) / (rect.width / zoom) * 8 - Math.floor(position.y)) % 8;
+                  const { spriteX, spriteY } = getSpritePos(e, rect, zoom, position);
+                  const { x, y } = getPixelPos(e, rect, zoom, position);
                   const spriteIndex = x + spriteX * 8;
                   const pixelIndex = y + spriteY * 8;
                   handleClick(spriteIndex, pixelIndex);
@@ -213,4 +211,18 @@ export const spriteEditorTabData = {
   title: "Sprite",
   icon: "sprite",
 };
+
+function getPixelPos(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
+  rect: DOMRect, zoom: number, position: { x: number; y: number; }): { x: number; y: number; } {
+  const x = Math.floor((e.clientX - rect.left) / (rect.width / zoom) * 8 - Math.floor(position.x)) % 8;
+  const y = Math.floor((e.clientY - rect.top) / (rect.width / zoom) * 8 - Math.floor(position.y)) % 8;
+  return { x, y };
+}
+
+function getSpritePos(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
+  rect: DOMRect, zoom: number, position: { x: number; y: number; }): { spriteX: number; spriteY: number; } {
+  const spriteX = Math.floor(((e.clientX - rect.left) / rect.width * zoom) - (Math.floor(position.x) / 8));
+  const spriteY = Math.floor(((e.clientY - rect.top) / rect.height * zoom) - (Math.floor(position.y) / 8));
+  return { spriteX, spriteY };
+}
 
