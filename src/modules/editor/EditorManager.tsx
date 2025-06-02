@@ -49,7 +49,7 @@ export class EditorManager {
   private canvasRef = React.createRef<SpriteRendererHandle>();
 
   private spriteSheet: SpriteSheet = {
-    spriteSheet: spriteTable,
+    spriteSheet: spriteTable.table,
     spriteSize: {
       width: 8,
       height: 8
