@@ -9,10 +9,10 @@ import StyledCanvas from "@shared/canvas/Canvas";
 import { SpriteSheet } from "src/types/SpriteSheetType";
 import { spriteTable, palette } from "src/temporary/SpriteSheet";
 
-
 interface SpriteEditorProps {
   doc?: Doc;
   provider?: WebrtcProvider;
+  spriteFilePath?: string; // Add this prop to specify the sprite file path
 }
 
 export const SpriteEditor: React.FC<SpriteEditorProps> = ({ doc, provider }) => {
@@ -23,9 +23,10 @@ export const SpriteEditor: React.FC<SpriteEditorProps> = ({ doc, provider }) => 
   const [isDrawing, setIsDrawing] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [isMouseOverCanvas, setIsMouseOverCanvas] = useState(false);
-  const [editableSpriteTable, setEditableSpriteTable] = useState(spriteTable);
+  const [version, setVersion] = useState(0);
   const drawCanvasRef = React.createRef<SpriteRendererHandle>();
   const canvasContainerRef = useRef<HTMLDivElement>(null);
+
 
   useEffect(() => {
     const preventContextMenu = (e: MouseEvent) => {
@@ -61,10 +62,10 @@ export const SpriteEditor: React.FC<SpriteEditorProps> = ({ doc, provider }) => 
       drawCanvasRef.current.queueSpriteDraw(0, position.x, position.y, 16, 16);
       drawCanvasRef.current.draw();
     }
-  }, [editableSpriteTable, drawCanvasRef, position]);
+  }, [spriteTable.table, drawCanvasRef, position, version]);
 
   const canvasSpriteSheet: SpriteSheet = {
-    spriteSheet: editableSpriteTable,
+    spriteSheet: spriteTable.table,
     spriteSize: {
       width: 8,
       height: 8
@@ -89,15 +90,11 @@ export const SpriteEditor: React.FC<SpriteEditorProps> = ({ doc, provider }) => 
   }, [doc, provider]);
 
   const handleClick = (x: number, y: number) => {
-    const spriteArray = editableSpriteTable.split('');
-
+    const spriteArray = spriteTable.table.split('');
     const index = y * canvasSpriteSheet.size.width + x;
-
     spriteArray[index] = currentColor.toString(16);
-
-    const newSpriteTable = spriteArray.join('');
-
-    setEditableSpriteTable(newSpriteTable);
+    spriteTable.table = spriteArray.join('');
+    setVersion(v => v + 1);
   };
 
   const changeColor = (index: number) => {
