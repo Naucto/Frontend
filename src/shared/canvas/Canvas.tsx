@@ -41,7 +41,6 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(({ screenSize, spriteSheet,
 const StyledCanvas = styled(Canvas)`
   image-rendering: pixelated;
   width: 100%;
-  outline: none;
 `;
 
 export default StyledCanvas;
