@@ -17,7 +17,7 @@ interface AuthOverlayProps {
 }
 
 const Title = styled("h2")(({ theme }) => ({
-  fontSize: 32,
+  fontSize: "32px",
   margin: 0,
   fontWeight: "normal",
   padding: theme.spacing(0, 0),
