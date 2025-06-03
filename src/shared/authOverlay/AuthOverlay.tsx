@@ -91,7 +91,8 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
           email: res.user.email,
           name: res.user.username,
         });
-        localStorage.setItem("token", res.access_token); // temporary
+        // FIXME: put the token to httpOnly cookie using the backend
+        localStorage.setItem("token", res.access_token);
         localStorage.setItem("user", JSON.stringify(res.user));
       }
       reset();
