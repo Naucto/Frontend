@@ -100,8 +100,6 @@ export class EditorManager {
 
   // FIXME END
 
-  public constructor() { }
-
   cleanUpAndDisconnect(): void {
     this.provider?.awareness.setLocalState(null);
     this.provider?.disconnect();
