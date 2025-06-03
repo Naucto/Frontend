@@ -53,16 +53,16 @@ const Center = styled(Box)(({ theme }) => ({
 }));
 
 const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
-  const [isSignUp, setIsSignUp] = useState(true);
+  const [isSignedUp, setIsSignedUp] = useState(true);
 
   const authText = useCallback((bool: boolean) => {
     return bool ? "Sign up" : "Login";
-  }, [isSignUp]);
+  }, [isSignedUp]);
 
   const { user, setUser } = useUser();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { register, handleSubmit, reset } = useForm<CreateUserDto | LoginDto>({
-    defaultValues: isSignUp
+    defaultValues: isSignedUp
       ? {
         email: "",
         username: "",
@@ -80,7 +80,7 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
   const handleAuth = useCallback(async (data: CreateUserDto | LoginDto) => {
     try {
       setErrorMessage(null);
-      if (isSignUp) {
+      if (isSignedUp) {
         const { email, username, password, firstName, lastName } = data as CreateUserDto;
         await AuthService.authControllerRegister({ email, username, password, firstName, lastName });
       } else {
@@ -101,19 +101,19 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
     } catch (error: any) {
       setErrorMessage(error?.body?.message || "Error");
     }
-  }, [isSignUp, reset, onClose, setUser, user,]);
+  }, [isSignedUp, reset, onClose, setUser, user,]);
 
   return (
     <form onSubmit={handleSubmit(handleAuth)}>
       <CustomDialog isOpen={isOpen} setIsOpen={setIsOpen} hideSubmitButton>
-        <StyledTitle>{authText(isSignUp)}</StyledTitle>
+        <StyledTitle>{authText(isSignedUp)}</StyledTitle>
 
         <FieldContainer>
           <label>Email</label>
           <StyledTextField {...register("email")} />
         </FieldContainer>
 
-        {isSignUp && <FieldContainer>
+        {isSignedUp && <FieldContainer>
           <label>Username</label>
           <StyledTextField {...register("username")} />
         </FieldContainer>}
@@ -123,14 +123,14 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
           <StyledTextField type="password" {...register("password")} />
         </FieldContainer>
 
-        <StyledImportantButton type="submit">{authText(isSignUp)}</StyledImportantButton>
+        <StyledImportantButton type="submit">{authText(isSignedUp)}</StyledImportantButton>
 
         {errorMessage && <Typography color="error">{errorMessage}</Typography>}
 
         <Center>
           <Typography>OR</Typography>
-          <Typography>{isSignUp ? "Already have an account ? " : "Don't have an account ? "}
-            <Link sx={{ cursor: "pointer" }} onClick={() => { setIsSignUp(!isSignUp); }}>{authText(!isSignUp)}</Link>
+          <Typography>{isSignedUp ? "Already have an account ? " : "Don't have an account ? "}
+            <Link sx={{ cursor: "pointer" }} onClick={() => { setIsSignedUp(!isSignedUp); }}>{authText(!isSignedUp)}</Link>
           </Typography>
         </Center>
       </CustomDialog>
