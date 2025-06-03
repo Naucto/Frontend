@@ -105,7 +105,7 @@ export class EditorManager {
     this.ydoc?.destroy();
   }
 
-  public init(room: string) {
+  public init(room: string): void {
     this.ydoc = new Y.Doc();
     this.provider = new WebrtcProvider(room, this.ydoc!, config.webrtc);
 
@@ -116,11 +116,11 @@ export class EditorManager {
     });
   }
 
-  public addEditor(component: EditorComponent, tabData: TabData) {
+  public addEditor(component: EditorComponent, tabData: TabData): void {
     this.editors.push({ component, tabData });
   }
 
-  public removeEditor(editor: IEditor) {
+  public removeEditor(editor: IEditor): void {
     const index = this.editors.findIndex(e => e.component === editor.constructor);
     if (index > -1) {
       this.editors.splice(index, 1);
@@ -131,7 +131,7 @@ export class EditorManager {
     return this.editors.map(e => new e.component());
   }
 
-  render() {
+  render(): React.ReactNode {
     return (
       <Container>
         <div className="editor"
