@@ -134,7 +134,7 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
           </Typography>
         </Center>
       </CustomDialog>
-    </form >
+    </form>
   );
 };
 
