@@ -42,7 +42,7 @@ const NavBar: React.FC = () => {
     <Nav className="navbar">
       <Left>
         <img className="navbar-logo" src={theme.logo.primary} alt="Logo" />
-        <ImportantNavElem to="/create" theme={theme}>Create</ImportantNavElem>
+        <ImportantNavElem to="/projects" theme={theme}>Projects</ImportantNavElem>
         <NavElem to="/hub">Home</NavElem>
         <NavElem to="/help">Help</NavElem>
       </Left>

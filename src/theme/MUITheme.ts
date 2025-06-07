@@ -1,5 +1,18 @@
 import { createTheme } from "@mui/material/styles";
 
+interface ColorShades {
+  50?: string;
+  100?: string;
+  200?: string;
+  300?: string;
+  400?: string;
+  500?: string;
+  600?: string;
+  700?: string;
+  800?: string;
+  900?: string;
+}
+
 declare module "@mui/material/styles" {
   interface Theme {
     border: {
@@ -42,20 +55,37 @@ declare module "@mui/material/styles" {
   interface Palette {
     gray1: string;
     gray2: string;
+    gray: ColorShades;
     red: string;
   }
   interface PaletteOptions {
     gray1: string;
     gray2: string;
+    gray: ColorShades;
     red: string;
   }
 }
 
 export const muiTheme = createTheme({
   palette: {
+    //FIXME: replace gray1 and gray2 with gray shades
     gray1: "#9C9C9C",
     gray2: "",
+    gray: {
+      50: "#ececec",
+      100: "#c3c3c3",
+      200: "#a6a6a6",
+      300: "#7e7e7e",
+      400: "#656565",
+      500: "#3e3e3e",
+      600: "#383838",
+      700: "#2c2c2c",
+      800: "#222222",
+      900: "#1a1a1a",
+    },
+    //FIXME: replace colors with shades
     red: "#AC3931",
+
     primary: { main: "#E5D352" },
     secondary: { main: "#537D8D" },
     error: { main: "#AC3931" },

@@ -16,6 +16,8 @@ import { ThemeProvider } from "styled-components";
 import Create from "@modules/create/Create";
 import { StyledEngineProvider } from "@mui/material";
 import { muiTheme } from "@theme/MUITheme";
+import Projects from "@modules/projects/Projects";
+import Project from "@modules/project/Project";
 
 const Container = styled.div<{ theme: any }>`
     min-height: 100vh;
@@ -52,7 +54,8 @@ function App() {
                 <Routes>
                   <Route path="/" element={<Hub />} />
                   <Route path="/hub" element={<Hub />} />
-                  <Route path='/create' element={<Create />} />
+                  <Route path='/projects' element={<Projects />} />
+                  <Route path="/projects/:projectId" element={<Project />} />
                   {/* <Route path="/editor" element={editorManager.render()} /> */}
                 </Routes>
               </BrowserRouter>
