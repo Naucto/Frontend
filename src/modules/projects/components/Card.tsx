@@ -6,7 +6,7 @@ interface CardProps extends ButtonProps {
 }
 
 export const ProjectCardContainer = styled(Button)(({ theme }) => ({
-  width: "320px",
+  width: "100%",
   height: "180px",
   backgroundColor: theme.palette.gray[300],
 
