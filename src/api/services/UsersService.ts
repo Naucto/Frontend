@@ -42,12 +42,6 @@ export class UsersService {
         email?: string,
         sortBy?: 'id' | 'name' | 'email' | 'createdAt',
         order?: 'asc' | 'desc',
-        page?: number,
-        limit?: number,
-        nickname?: string,
-        email?: string,
-        sortBy?: string,
-        order?: string,
     ): CancelablePromise<{
         statusCode?: number;
         message?: string;
@@ -63,12 +57,6 @@ export class UsersService {
             method: 'GET',
             url: '/users',
             query: {
-                'page': page,
-                'limit': limit,
-                'nickname': nickname,
-                'email': email,
-                'sortBy': sortBy,
-                'order': order,
                 'page': page,
                 'limit': limit,
                 'nickname': nickname,
