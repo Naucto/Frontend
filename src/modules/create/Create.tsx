@@ -5,15 +5,20 @@ import { WorkSessionsService } from "src/api/services/WorkSessionsService.ts";
 const Create: React.FC = () => {
   const editorManager = useEditorManager();
   const [isInit, setIsInit] = React.useState(false);
+
   useEffect(() => {
     // FIXME: This should be replaced with a proper project ID selection mechanism
     const projectId = parseInt(localStorage.getItem("projectId") || "1");
     WorkSessionsService.workSessionControllerJoin(projectId).then((session) => {
-      editorManager.init(session.roomId || "test");
+      editorManager.init(session.roomId || "1");
       setIsInit(true);
     }).catch((error) => {
       // FIXME: Handle error appropriately, e.g., show a notification
       console.error("Failed to join work session:", error);
+
+      //FIXME: For now, we will just initialize with a default room id
+      editorManager.init("1");
+      setIsInit(true);
     });
 
     return () => {

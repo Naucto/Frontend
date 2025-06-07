@@ -11,7 +11,6 @@ const Dialog = styled(Box)(({ theme }) => ({
   backgroundColor: theme.palette.background.default,
   borderRadius: 16,
   color: theme.palette.text.primary,
-  zIndex: 1000,
   padding: theme.spacing(6),
 }));
 
@@ -55,7 +54,7 @@ export const CustomDialog: React.FC<CustomDialogProps> = ({
   }, [onClose, setIsOpen]);
 
   return (
-    <Backdrop open={isOpen}>
+    <Backdrop open={isOpen} sx={{ zIndex: 1300 }}>
       <Dialog>
         <CloseButton aria-label="close" onClick={handleClose}>
           <CrossIcon width={32} height={32} />
