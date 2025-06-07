@@ -2,7 +2,7 @@ import { Backdrop, Box, Link, Typography } from "@mui/material";
 import GenericTextField from "@shared/TextField";
 import React, { FC, ReactNode, useCallback, useMemo, useState } from "react";
 import { styled } from "@mui/material";
-import { CreateUserDto, LoginDto } from "src/api";
+import { CreateUserDto, LoginDto, UsersService } from "src/api";
 import { Form, useForm } from "react-hook-form";
 import ImportantButton from "@shared/buttons/ImportantButton";
 import { AuthService } from "src/api/services/AuthService";
@@ -67,8 +67,7 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
         email: "",
         username: "",
         password: "",
-        firstName: "",
-        lastName: "",
+        nickname: "",
         roles: [],
       }
       : {
@@ -81,19 +80,21 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
     try {
       setErrorMessage(null);
       if (isSignedUp) {
-        const { email, username, password, firstName, lastName } = data as CreateUserDto;
-        await AuthService.authControllerRegister({ email, username, password, firstName, lastName });
+        const { email, username, password, nickname } = data as CreateUserDto;
+        await AuthService.authControllerRegister({ email, username, password, nickname });
       } else {
         const { email, password } = data as LoginDto;
-        const res = await AuthService.authControllerLogin({ email, password });
-        setUser({
-          id: res.user.id,
-          email: res.user.email,
-          name: res.user.username,
-        });
+        const loginRes = await AuthService.authControllerLogin({ email, password });
         // FIXME: put the token to httpOnly cookie using the backend
-        localStorage.setItem("token", res.access_token);
-        localStorage.setItem("user", JSON.stringify(res.user));
+        localStorage.setItem("token", loginRes.access_token);
+
+        const userRes = await UsersService.userControllerGetProfile();
+        localStorage.setItem("user", JSON.stringify(loginRes));
+        setUser({
+          id: userRes.id,
+          email: userRes.email,
+          name: userRes.username,
+        });
       }
       reset();
       if (onClose) {
