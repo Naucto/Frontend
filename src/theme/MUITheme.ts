@@ -4,7 +4,7 @@ declare module "@mui/material/styles" {
   interface Theme {
     border: {
       color: {
-        grey: string;
+        gray: string;
       }
     }
     custom: {
@@ -23,7 +23,7 @@ declare module "@mui/material/styles" {
   interface ThemeOptions {
     border: {
       color: {
-        grey: string;
+        gray: string;
       }
     }
     custom?: {
@@ -40,21 +40,21 @@ declare module "@mui/material/styles" {
     };
   }
   interface Palette {
-    grey1: string;
-    grey2: string;
+    gray1: string;
+    gray2: string;
     red: string;
   }
   interface PaletteOptions {
-    grey1: string;
-    grey2: string;
+    gray1: string;
+    gray2: string;
     red: string;
   }
 }
 
 export const muiTheme = createTheme({
   palette: {
-    grey1: "#9C9C9C",
-    grey2: "",
+    gray1: "#9C9C9C",
+    gray2: "",
     red: "#AC3931",
     primary: { main: "#E5D352" },
     secondary: { main: "#537D8D" },
@@ -64,7 +64,7 @@ export const muiTheme = createTheme({
   },
   border: {
     color: {
-      grey: "#646464",
+      gray: "#646464",
     },
   },
   typography: {
@@ -91,7 +91,7 @@ export const muiTheme = createTheme({
     MuiLink: {
       styleOverrides: {
         root: ({ theme }) => ({
-          color: theme.palette.grey1,
+          color: theme.palette.gray1,
         }),
       },
     },

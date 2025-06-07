@@ -10,15 +10,15 @@ const StyledInput = styled(InputBase)(({ theme }) => ({
   borderRadius: theme.custom.rounded.md,
   backgroundColor: theme.palette.background.default,
   color: theme.palette.text.primary,
-  border: `2px solid ${theme.palette.grey[700]}`,
+  border: `2px solid ${theme.border.color.gray}`,
   transition: "border-color 0.2s",
 
   "&:hover": {
-    borderColor: theme.palette.grey1
+    borderColor: theme.palette.gray1
   },
 
   "&.Mui-focused": {
-    borderColor: theme.palette.grey1,
+    borderColor: theme.palette.gray1,
   },
 
   "& input": {

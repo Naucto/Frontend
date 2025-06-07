@@ -6,7 +6,7 @@ export const theme: DefaultTheme = {
     primary: "#E5D352",
     secondary: "#537D8D",
     red: "#AC3931",
-    grey: "#646464",
+    gray: "#646464",
     blue: {
       500: "#537D8D",
       600: "#3a5863",
@@ -28,13 +28,12 @@ export const theme: DefaultTheme = {
     lg: "12px",
     fll: "50%",
   },
-  spacing: (n: number, n2?: number) => {
-    if (n2) {
-      return `${n * 8}px ${n2 * 8}px`;
+  spacing: (height: number, width?: number) => {
+    if (width) {
+      return `${height * 8}px ${width * 8}px`;
     }
-    return `${n * 8}px`;
+    return `${height * 8}px`;
   }
-
 };
 
 type ThemeType = typeof theme;
