@@ -1,6 +1,6 @@
 
 import * as Tone from "tone";
-import { SampleLibrary } from "@modules/editor/SoundEditor/Tonejs-Instruments"
+import { SampleLibrary } from "@modules/editor/SoundEditor/Tonejs-Instruments";
 
 class Note {
   public samp: Tone.Sampler;

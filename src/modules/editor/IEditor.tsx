@@ -1,11 +1,13 @@
 import { TabData } from "@modules/editor/tab/TabData";
-import * as Y from "yjs"
+import * as Y from "yjs";
 import { WebrtcProvider } from "y-webrtc";
 import React from "react";
-import { Doc } from "yjs";
 
 abstract class IEditor extends React.Component {
-  public tabData: TabData = new TabData("IEditor", "IEditor");
+  public tabData: TabData = {
+    title: "IEditor",
+    icon: "IEditor",
+  };
 
   public abstract init(doc: Y.Doc, provider: WebrtcProvider): void;
   
