@@ -16,9 +16,8 @@ const Title = styled("h1")(({ theme }) => ({
 }));
 
 const ProjectCardsContainer = styled("div")(({ theme }) => ({
-  display: "flex",
-  flexDirection: "row",
-  flexWrap: "wrap",
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
   gap: theme.spacing(2),
   marginTop: theme.spacing(2),
 }));
