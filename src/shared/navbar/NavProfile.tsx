@@ -23,7 +23,7 @@ const NavProfile: React.FC = () => {
         <img className="navbar-logo" src={theme.logo.primary} alt="Logo" />
       </IconButton>
       {showAuthOverlay && (
-        <AuthOverlay isOpen={showAuthOverlay} setIsOpen={setShowAuthOverlay} />
+        <AuthOverlay isOpen={showAuthOverlay} setIsOpen={setShowAuthOverlay} onClose={handleClose} />
       )}
     </>
   );
