@@ -9,7 +9,7 @@ import { muiTheme } from "@theme/MUITheme";
 const Nav = styled("nav")(({ theme }) => ({
   display: "grid",
   padding: 0,
-  margin: 0,
+  margin: theme.spacing(1, 2),
   gridTemplateColumns: "1fr 1fr 1fr",
   alignItems: "center",
   justifyContent: "space-between",
