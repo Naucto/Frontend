@@ -9,7 +9,7 @@ declare module "styled-components" {
       secondary: string;
       red: string;
       blue: any;
-      grey: string;
+      gray: string;
       background: string;
       text: string;
     };
@@ -27,6 +27,6 @@ declare module "styled-components" {
       lg: string;
       fll: string;
     };
-    spacing: (n: number) => string;
+    spacing: (height: number, width?: number) => string;
   }
 }

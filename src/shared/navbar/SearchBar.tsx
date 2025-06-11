@@ -3,7 +3,6 @@ import styled from "styled-components";
 import SearchIcon from "@assets/search.svg?react";
 import { ChangeEvent, FormEvent, useState } from "react";
 
-
 const SearchBarContainer = styled(Box)`
     display: flex;
     align-items: center;
@@ -15,7 +14,7 @@ const SearchInput = styled(InputBase)`
     && {
       font-family: 'Pixelify';
       color: white;
-      border: 2px solid ${({ theme }) => theme.colors.grey};
+      border: 2px solid ${({ theme }) => theme.colors.gray};
       border-radius: ${({ theme }) => theme.rounded.lg};
       padding: 0.5rem 1rem;
   
@@ -29,11 +28,9 @@ const SearchInput = styled(InputBase)`
 const SearchIconStyled = styled(SearchIcon)`
     width: 32px;
     height: 32px;
-    color: ${({ theme }) => theme.colors.grey};
+    color: ${({ theme }) => theme.colors.gray};
     margin-right: ${({ theme }) => theme.spacing(3)};
   `;
-
-
 interface SearchBarProps {
   onSubmit: (value: string) => void;
   onChange?: (value: string) => void;
@@ -67,5 +64,5 @@ export const SearchBar = ({ onSubmit, onChange, placeholder }: SearchBarProps) =
       </form>
     </SearchBarContainer>
   );
-}
+};
 

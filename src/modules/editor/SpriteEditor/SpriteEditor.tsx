@@ -24,5 +24,3 @@ export class SpriteEditor extends IEditor {
   }
 }
 
-
-

@@ -12,7 +12,6 @@ import { spriteTable } from "src/temporary/SpriteSheet";
 import { palette } from "src/temporary/SpriteSheet";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import { TabData } from "@modules/editor/tab/TabData";
-import { MusicError } from "./SoundEditor/Music";
 
 const RightPanel = styled.div`
   height: 100vh;
@@ -161,8 +160,6 @@ export const EditorManagerProvider = ({ value, children }: EditorManagerProvider
 };
 
 export const useEditorManager = (): EditorManager => {
-  
-
   const context = useContext(EditorManagerContext);
   if (!context) {
     throw new EditorManagerError("useEditorManager must be used within an EditorManagerProvider");

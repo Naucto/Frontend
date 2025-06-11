@@ -46,7 +46,7 @@ export class CodeEditor extends IEditor {
           border-radius: 4px;
           left: -4px;
           top: -5px;
-      };`
+      };`;
     document.head.appendChild(styleSheet);
     new MonacoBinding(
       this.ydoc!.getText("monaco"),
