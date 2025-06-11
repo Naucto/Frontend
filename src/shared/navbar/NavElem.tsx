@@ -1,19 +1,18 @@
 import { Link } from "react-router-dom";
-import styled from "styled-components";
+import { styled } from "@mui/material/styles";
 
-export const NavElem = styled(Link)`
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 1rem 1rem;
-    text-decoration: none;
-    color: white;
-    font-size: 1.2rem;
-`;
+export const NavElem = styled(Link)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  margin: theme.spacing(2),
+  textDecoration: "none",
+  color: "white",
+  fontSize: "1.2rem",
+}));
 
-export const ImportantNavElem = styled(NavElem) <{ theme: any }>`
-    background-color: ${({ theme }) => theme.colors.red};
-    border-radius: 8px;
-    padding: 0.9rem 1.6rem;
-
-`;
+export const ImportantNavElem = styled(NavElem)(({ theme }) => ({
+  backgroundColor: theme.palette.red[500],
+  borderRadius: 8,
+  padding: theme.spacing(1.5, 3),
+}));

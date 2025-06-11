@@ -5,7 +5,7 @@ import React, { createContext, useContext } from "react";
 import { WebrtcProvider } from "y-webrtc";
 import * as Y from "yjs";
 import config from "config.json";
-import styled from "styled-components";
+import { styled } from "@mui/material";
 import { SpriteSheet } from "src/types/SpriteSheetType";
 import { spriteTable } from "src/temporary/SpriteSheet";
 import { palette } from "src/temporary/SpriteSheet";
@@ -14,21 +14,19 @@ import { TabData } from "@modules/editor/tab/TabData";
 import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
 import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
 
-const RightPanel = styled.div`
-  height: 100vh;
-  width: 50%;
-  backgroundColor: rgb(83, 83, 83);
-;`;
+const RightPanel = styled("div")(() => ({
+  width: "50%",
+}));
 
-const Container = styled.div`
-  backgroundColor: theme.colors.background;
-  color: theme.colors.text;
-  fontFamily: theme.typography.fontFamily;
-  fontSize: theme.typography.fontSize;
-  display: flex;
-  flexDirection: column;
-  height: 100vh;
-`;
+const Container = styled("div")(({ theme }) => ({
+  backgroundColor: theme.palette.background.default,
+  color: theme.palette.text.primary,
+  fontFamily: theme.typography.fontFamily,
+  fontSize: theme.typography.fontSize,
+  display: "flex",
+  flexDirection: "row",
+  width: "100vw",
+}));
 
 class EditorManagerError extends Error {
   constructor(message: string) {

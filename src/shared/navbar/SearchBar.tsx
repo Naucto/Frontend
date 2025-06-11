@@ -1,36 +1,33 @@
-import { Box, InputBase, useTheme } from "@mui/material";
-import styled from "styled-components";
+import { Box, InputBase } from "@mui/material";
+import { styled } from "@mui/material/styles";
 import SearchIcon from "@assets/search.svg?react";
 import { ChangeEvent, FormEvent, useState } from "react";
 
-const SearchBarContainer = styled(Box)`
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    `;
+const SearchBarContainer = styled(Box)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  width: "100%",
+}));
 
-const SearchInput = styled(InputBase)`
-    && {
-      font-family: 'Pixelify';
-      color: white;
-      border: 2px solid ${({ theme }) => theme.colors.gray};
-      border-radius: ${({ theme }) => theme.rounded.lg};
-      padding: 0.5rem 1rem;
-  
-      input {
-        color: white;
-      }
-      
-    }
-  `;
+const SearchInput = styled(InputBase)(({ theme }) => ({
+  fontFamily: "Pixelify",
+  color: "white",
+  border: `2px solid ${theme.palette.grey[500]}`,
+  borderRadius: theme.custom.rounded.lg,
+  padding: "0.5rem 1rem",
 
-const SearchIconStyled = styled(SearchIcon)`
-    width: 32px;
-    height: 32px;
-    color: ${({ theme }) => theme.colors.gray};
-    margin-right: ${({ theme }) => theme.spacing(3)};
-  `;
+  "& input": {
+    color: "white",
+  },
+}));
+
+const SearchIconStyled = styled(SearchIcon)(({ theme }) => ({
+  width: 32,
+  height: 32,
+  color: theme.palette.grey[500],
+  marginRight: theme.spacing(3),
+}));
 interface SearchBarProps {
   onSubmit: (value: string) => void;
   onChange?: (value: string) => void;
