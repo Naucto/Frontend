@@ -1,7 +1,7 @@
 import { SpriteRendererHandle, useSpriteRenderer } from "@shared/canvas/RendererHandle";
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import { SpriteSheet } from "src/types/SpriteSheetType";
-import styled from "styled-components";
+import { styled } from "@mui/system";
 
 export type CanvasProps = React.CanvasHTMLAttributes<HTMLCanvasElement> & {
   spriteSheet: SpriteSheet;
@@ -38,9 +38,9 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(({ screenSize, spriteSheet,
   );
 });
 
-const StyledCanvas = styled(Canvas)`
-  image-rendering: pixelated;
-  width: 100%;
-`;
+const StyledCanvas = styled(Canvas)({
+  imageRendering: "pixelated",
+  width: "100%",
+});
 
 export default StyledCanvas;

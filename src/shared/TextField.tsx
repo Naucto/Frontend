@@ -1,7 +1,6 @@
 import React from "react";
 import InputBase, { InputBaseProps } from "@mui/material/InputBase";
 import { styled } from "@mui/material/styles";
-import { Box, Typography } from "@mui/material";
 
 const StyledInput = styled(InputBase)(({ theme }) => ({
   width: "100%",
@@ -10,15 +9,15 @@ const StyledInput = styled(InputBase)(({ theme }) => ({
   borderRadius: theme.custom.rounded.md,
   backgroundColor: theme.palette.background.default,
   color: theme.palette.text.primary,
-  border: `2px solid ${theme.border.color.gray}`,
+  border: `2px solid ${theme.palette.gray[300]}`,
   transition: "border-color 0.2s",
 
   "&:hover": {
-    borderColor: theme.palette.gray1
+    borderColor: theme.palette.gray[200],
   },
 
   "&.Mui-focused": {
-    borderColor: theme.palette.gray1,
+    borderColor: theme.palette.gray[300],
   },
 
   "& input": {
