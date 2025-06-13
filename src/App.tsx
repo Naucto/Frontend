@@ -1,16 +1,8 @@
-import React, { useMemo, useRef, useEffect } from "react";
 import "./App.css";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Hub } from "@modules/hub/Hub";
-import { EditorManager, EditorManagerProvider } from "@modules/editor/EditorManager";
-
-import { CodeEditor } from "@modules/editor/CodeEditor/CodeEditor";
-import { MapEditor } from "@modules/editor/MapEditor/MapEditor";
-import { SoundEditor } from "@modules/editor/SoundEditor/SoundEditor";
-import { SpriteEditor } from "@modules/editor/SpriteEditor/SpriteEditor";
 import { styled, ThemeProvider } from "@mui/material/styles";
 import NavBar from "@shared/navbar/NavBar";
-import Create from "@modules/create/Create";
 import { muiTheme } from "@theme/MUITheme";
 import GameEditor from "@modules/create/game-editor/GameEditor";
 
