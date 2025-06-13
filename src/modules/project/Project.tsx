@@ -2,12 +2,12 @@ import Create from "@modules/create/Create";
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { ProjectsService } from "src/api";
-import { ProjectProvider, useProject } from "src/providers/ProjectProvider";
+import { ProjectProvider } from "src/providers/ProjectProvider";
 import GameEditor from "@modules/create/game-editor/GameEditor";
 
 const Project: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
-  const [project, setProject] = useState<any>(null);
+  const [project, setProject] = useState<any>(null); //FIXME: define the type project when api ready
 
   useEffect(() => {
     const fetchProject = async (): Promise<void> => {
