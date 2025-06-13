@@ -23,7 +23,7 @@ class LuaEnvironmentManager {
   private _rendererHandle: SpriteRendererHandle;
   private _keyHandler: KeyHandler;
 
-  private readonly envData: EnvData;
+  private envData: EnvData;
 
   private setOutput: ((output: string) => void);
 
@@ -45,6 +45,10 @@ class LuaEnvironmentManager {
         this._addOutput(this._getErrorMsg(error));
       }
     }
+  }
+
+  public setEnvData(envData: EnvData): void {
+    this.envData = envData;
   }
 
   public init(): void {
