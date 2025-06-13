@@ -43,7 +43,15 @@ const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(
         keyHandler,
         setOutput
       });
-    }, [envData, setOutput]);
+    }, []);
+
+    useEffect(() => {
+      if (!luaEnvManagerRef.current) {
+        return;
+      }
+      const luaEnvManager = luaEnvManagerRef.current;
+      luaEnvManager.setEnvData(envData);
+    }, [envData.code]);
 
     // global init
     useEffect(() => {
