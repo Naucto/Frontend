@@ -6,6 +6,7 @@ import NavBar from "@shared/navbar/NavBar";
 import { muiTheme } from "@theme/MUITheme";
 import Projects from "@modules/projects/Projects";
 import Project from "@modules/project/Project";
+import { ProjectProvider } from "src/providers/ProjectProvider";
 
 const Container = styled("div")(({ theme }) => ({
   height: "100vh",

@@ -1,15 +1,16 @@
 import { useEditorManager } from "@modules/editor/EditorManager";
 import React, { useEffect } from "react";
 import { WorkSessionsService } from "src/api/services/WorkSessionsService.ts";
+import { useProject } from "../../providers/ProjectProvider";
 
 const Create: React.FC = () => {
   const editorManager = useEditorManager();
   const [isInit, setIsInit] = React.useState(false);
+  const { setProject, project } = useProject();
 
   useEffect(() => {
     // FIXME: This should be replaced with a proper project ID selection mechanism
-    const projectId = parseInt(localStorage.getItem("projectId") || "1");
-    WorkSessionsService.workSessionControllerJoin(projectId).then((session) => {
+    WorkSessionsService.workSessionControllerJoin(project.id).then((session) => {
       editorManager.init(session.roomId || "1");
       setIsInit(true);
     }).catch((error) => {
