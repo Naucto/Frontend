@@ -14,10 +14,9 @@ const Project: React.FC = () => {
       if (projectId) {
         try {
           const project = await ProjectsService.projectControllerFindOne(parseInt(projectId));
-          console.log("Project fetched:", project);
           setProject(project);
         } catch (error) {
-          //FIXME: Handle error appropriately, e.g., show a notification
+          //FIXME: create a toast notification for error handling
           console.error("Failed to fetch project:", error);
         }
       }
