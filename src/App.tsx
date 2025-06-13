@@ -13,16 +13,17 @@ import styled from "styled-components";
 import { useTheme } from "@theme/ThemeContext";
 import NavBar from "@shared/navbar/NavBar";
 import { ThemeProvider } from "styled-components";
-import Create from "@modules/create/Create";
 import { StyledEngineProvider } from "@mui/material";
 import { muiTheme } from "@theme/MUITheme";
+import GameEditor from "@modules/create/game-editor/GameEditor";
 
 const Container = styled.div<{ theme: any }>`
-    min-height: 100vh;
-    min-width: 100vw;
+    height: 100vh;
+    width: 100vw;
     margin: 0;
     padding: 0;
-    position: absolute;
+    display: flex;
+    flex-direction: column;
     background-color: ${({ theme }) => theme.colors.background};
 `;
 
@@ -42,25 +43,26 @@ function App() {
 
   const theme = useTheme();
   return (
-    <Container theme={theme}>
-      <EditorManagerProvider value={editorManager}>
-        <StyledEngineProvider injectFirst>
-          <MUIThemeProvider theme={muiTheme}>
-            <ThemeProvider theme={theme} >
-              <BrowserRouter>
+    <EditorManagerProvider value={editorManager}> {/* will soon be removed */}
+      <StyledEngineProvider injectFirst>
+        <MUIThemeProvider theme={muiTheme}>
+          <ThemeProvider theme={theme} >
+            <BrowserRouter>
+              <Container theme={theme}>
                 <NavBar />
-                <Routes>
-                  <Route path="/" element={<Hub />} />
-                  <Route path="/hub" element={<Hub />} />
-                  <Route path='/create' element={<Create />} />
-                  {/* <Route path="/editor" element={editorManager.render()} /> */}
-                </Routes>
-              </BrowserRouter>
-            </ThemeProvider>
-          </MUIThemeProvider>
-        </StyledEngineProvider>
-      </EditorManagerProvider>
-    </Container >
+                <div style={{ flex: 1, display: "flex" }}>
+                  <Routes>
+                    <Route path="/" element={<Hub />} />
+                    <Route path="/hub" element={<Hub />} />
+                    <Route path="/create" element={<GameEditor />} />
+                  </Routes>
+                </div>
+              </Container>
+            </BrowserRouter>
+          </ThemeProvider>
+        </MUIThemeProvider>
+      </StyledEngineProvider>
+    </EditorManagerProvider>
   );
 }
 
