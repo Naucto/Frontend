@@ -18,6 +18,7 @@ import { StyledEngineProvider } from "@mui/material";
 import { muiTheme } from "@theme/MUITheme";
 import Projects from "@modules/projects/Projects";
 import Project from "@modules/project/Project";
+import { ProjectProvider } from "src/providers/ProjectProvider";
 
 const Container = styled.div<{ theme: any }>`
     min-height: 100vh;
@@ -45,24 +46,27 @@ function App() {
   const theme = useTheme();
   return (
     <Container theme={theme}>
-      <EditorManagerProvider value={editorManager}>
-        <StyledEngineProvider injectFirst>
-          <MUIThemeProvider theme={muiTheme}>
-            <ThemeProvider theme={theme} >
-              <BrowserRouter>
-                <NavBar />
-                <Routes>
-                  <Route path="/" element={<Hub />} />
-                  <Route path="/hub" element={<Hub />} />
-                  <Route path='/projects' element={<Projects />} />
-                  <Route path="/projects/:projectId" element={<Project />} />
-                  {/* <Route path="/editor" element={editorManager.render()} /> */}
-                </Routes>
-              </BrowserRouter>
-            </ThemeProvider>
-          </MUIThemeProvider>
-        </StyledEngineProvider>
-      </EditorManagerProvider>
+      <ProjectProvider>
+        <EditorManagerProvider value={editorManager}>
+          <StyledEngineProvider injectFirst>
+            <MUIThemeProvider theme={muiTheme}>
+              <ThemeProvider theme={theme} >
+                <BrowserRouter>
+                  <NavBar />
+                  <Routes>
+                    <Route path="/" element={<Hub />} />
+                    <Route path="/hub" element={<Hub />} />
+                    <Route path='/projects' element={<Projects />} />
+                    <Route path="/projects/:projectId" element={<Project />} />
+                    {/* <Route path="/editor" element={editorManager.render()} /> */}
+                  </Routes>
+                </BrowserRouter>
+
+              </ThemeProvider>
+            </MUIThemeProvider>
+          </StyledEngineProvider>
+        </EditorManagerProvider>
+      </ProjectProvider>
     </Container >
   );
 }

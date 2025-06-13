@@ -9,28 +9,10 @@ const Create: React.FC = () => {
   const editorManager = useEditorManager();
   const [isInit, setIsInit] = React.useState(false);
   const { setProject, project } = useProject();
-  const { projectId } = useParams<{ projectId: string }>();
-
-  useEffect(() => {
-    const fetchProject = async () => {
-      if (projectId) {
-        try {
-          const project = await ProjectsService.projectControllerFindOne(parseInt(projectId));
-          console.log("Project fetched:", project);
-          setProject(project);
-        } catch (error) {
-          //FIXME: Handle error appropriately, e.g., show a notification
-          console.error("Failed to fetch project:", error);
-        }
-      }
-    };
-    fetchProject();
-  }, [projectId, setProject]);
 
   useEffect(() => {
     // FIXME: This should be replaced with a proper project ID selection mechanism
-    const projectId = parseInt(localStorage.getItem("projectId") || "1");
-    WorkSessionsService.workSessionControllerJoin(projectId).then((session) => {
+    WorkSessionsService.workSessionControllerJoin(project.id).then((session) => {
       editorManager.init(session.roomId || "1");
       setIsInit(true);
     }).catch((error) => {
