@@ -11,6 +11,8 @@ import StyledCanvas from "@shared/canvas/Canvas";
 import { palette, spriteTable } from "src/temporary/SpriteSheet";
 import { SpriteSheet } from "src/types/SpriteSheetType";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
+import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
+import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
 
 const GameEditorContainer = styled("div")({
   width: "100%",
@@ -57,7 +59,7 @@ const StyledTab = styled(Tab)(({ theme }) => ({
 
 const GameEditor: React.FC = () => {
   const [activeTab, setActiveTab] = React.useState(0);
-
+  const [output, setOutput] = React.useState<string>("");
   const tabs = React.useMemo(() => [
     { label: "code", component: CodeEditor },
     { label: "map", component: undefined },
@@ -109,9 +111,25 @@ const GameEditor: React.FC = () => {
     [ydocs, providers]
   );
 
-  //FIXME: get spritesheet, palette, and canvas size from the game configuration
-  const canvasRef = React.createRef<SpriteRendererHandle>();
+  const [code, setCode] = React.useState("");
 
+  // make a listener to update the code when the Y.Doc changes)
+  useEffect(() => {
+    const ytext = ydocs[0].getText("monaco");
+    setCode(ytext.toString());
+    const handler = (): void => setCode(ytext.toString());
+    ytext.observe(handler);
+    return () => { ytext.unobserve(handler); };
+  }, [ydocs]);
+
+  const envData: EnvData = React.useMemo(() => {
+    return {
+      code: code,
+      output: output,
+    };
+  }, [code, output]);
+
+  //FIXME: get spritesheet, palette, and canvas size from the game configuration
   const spriteSheet: SpriteSheet = useMemo(() => ({
     spriteSheet: spriteTable,
     spriteSize: {
@@ -130,6 +148,7 @@ const GameEditor: React.FC = () => {
     height: 180
   }), []);
 
+  const canvasRef = React.useRef<SpriteRendererHandle>(null);
   // FIXME: for demonstration purposes, remove when the game configuration is implemented
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -158,11 +177,15 @@ const GameEditor: React.FC = () => {
         <TabContent>{editorTabs[activeTab].component}</TabContent>
       </LeftPanel>
       <RightPanel>
-        <StyledCanvas
+        <GameCanvas
           ref={canvasRef}
-          screenSize={screenSize}
-          spriteSheet={spriteSheet}
-          palette={palette}
+          canvasProps={{
+            screenSize: screenSize,
+            spriteSheet: spriteSheet,
+            palette: palette,
+          }}
+          envData={envData}
+          setOutput={setOutput}
         />
       </RightPanel>
     </GameEditorContainer>
