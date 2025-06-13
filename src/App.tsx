@@ -47,6 +47,7 @@ function App() {
   return (
     <Container theme={theme}>
       <ProjectProvider>
+        {/* EditorManagerProvider soon deprecated */}
         <EditorManagerProvider value={editorManager}>
           <StyledEngineProvider injectFirst>
             <MUIThemeProvider theme={muiTheme}>
