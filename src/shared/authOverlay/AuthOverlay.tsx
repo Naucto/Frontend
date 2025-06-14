@@ -40,6 +40,7 @@ const StyledImportantButton = styled(ImportantButton)(({ theme }) => ({
   marginTop: theme.spacing(5),
   width: "100%",
   height: "56px",
+  backgroundColor: theme.palette.red[500]
 }));
 
 const Center = styled(Box)(({ theme }) => ({
