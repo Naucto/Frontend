@@ -64,6 +64,7 @@ const GameEditor: React.FC = () => {
   const [roomId, setRoomId] = useState<string | undefined>(undefined);
 
   const getDataFunctions = useRef<{ [key: string]: () => string }>({});
+  const setDataFunctions = useRef<{ [key: string]: (data: string) => void }>({});
 
   const tabs = useMemo(() => [
     { label: "code", component: CodeEditor },
@@ -74,12 +75,28 @@ const GameEditor: React.FC = () => {
 
   const ydoc: Y.Doc = useMemo(() => new Y.Doc(), []);
 
+  const setProjectContent = (content: any) => {
+    // FIXME: do not works because editorTabs is not yet initialized
+    editorTabs.forEach(({ label, setData }) => {
+      console.log("SET_DATA", setData);
+      if (setData) {
+        console.log(content[label]);
+        setData(content[label]);
+        console.log("Setting content of editor:", label, "content:", content);
+      }
+    });
+  };
+
   useEffect(() => {
     const joinSession = async () => {
       try {
-        const projectId = parseInt(localStorage.getItem("projectId") || "1");
-        const session = await WorkSessionsService.workSessionControllerJoin(projectId);
+        const projectId = localStorage.getItem("projectId") || "1";
+        const session = await WorkSessionsService.workSessionControllerJoin(parseInt(projectId));
         setRoomId(session.roomId);
+
+        const content = await ProjectsService.projectControllerFetchProjectContent(projectId);
+        console.log("Received project content:", content);
+        setProjectContent(content);
       } catch (err) {
         console.error("Failed to join work session:", err); // FIXME : better error handling
       }
@@ -103,6 +120,10 @@ const GameEditor: React.FC = () => {
         getDataFunctions.current[tab.label] = getData;
       };
 
+      const handleSetData = (setData: (data: string) => void) => {
+        setDataFunctions.current[tab.label] = setData;
+      };
+
       return {
         label: tab.label,
         component: EditorComponent ? (
@@ -111,11 +132,13 @@ const GameEditor: React.FC = () => {
             ydoc={ydoc}
             provider={provider}
             onGetData={handleGetData}
+            onSetData={handleSetData}
           />
         ) : (
           <span key={tab.label}>No editor available</span>
         ),
         getData: () => getDataFunctions.current[tab.label]?.() || "",
+        setData: (data: string) => setDataFunctions.current[tab.label]?.(data)
       };
     });
   }, [tabs, ydoc, provider]);

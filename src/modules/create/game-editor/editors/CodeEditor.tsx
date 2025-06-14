@@ -4,7 +4,7 @@ import CodeTabTheme from "@modules/editor/CodeEditor/CodeTabTheme.ts";
 import { MonacoBinding } from "y-monaco";
 import { EditorProps } from "./EditorType";
 
-const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData }) => {
+const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetData }) => {
   const editorRef = useRef<any>(null);
   const ytextRef = useRef<any | null>(null);
 
@@ -18,6 +18,18 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData }) => {
       });
     }
   }, [onGetData]);
+
+  useEffect(() => {
+    if (onSetData) {
+      onSetData((data: string) => {
+        console.log("Trying to set data in CodeEditor:", data);
+        if (ytextRef.current) {
+          ytextRef.current.delete(0, ytextRef.current.length);
+          ytextRef.current.insert(0, data);
+        }
+      });
+    }
+  }, [onSetData]);
 
   const handleMount = (editor: any) => {
     editorRef.current = editor;
