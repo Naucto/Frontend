@@ -1,6 +1,5 @@
-
-import Note from "@modules/editor/SoundEditor/Note";
-import { AllNotes, MusicManager } from "@modules/editor/SoundEditor/MusicManager";
+import { NoteData, createNote, noteToJson, noteFromJson } from "./Note";
+import { AllNotes, numberToNote, playInstrument } from "./MusicManager";
 import * as Tone from "tone";
 
 export class MusicError extends Error {
@@ -10,97 +9,98 @@ export class MusicError extends Error {
   }
 }
 
-class Music {
-
-  private _notes: Note[][];
-  private _bpm: number;
-  private _musicManager: MusicManager;
-  private _numberOfNotes: number;
-
-  constructor(
-    bpm: number = 240,
-    length: number = 32,
-    numberOfOctaves: number = 2,
-  ) {
-    this._numberOfNotes = AllNotes.length * numberOfOctaves;
-    this._notes = new Array<Note[]>(length);
-    for (let i = 0; i < length; i++) {
-      this._notes[i] = new Array<Note>(this._numberOfNotes);
-      for (let j = 0; j < this._numberOfNotes; j++) {
-        this._notes[i][j] = new Note();
-      }
-    }
-    this._bpm = bpm;
-    this._musicManager = new MusicManager();
-  }
-
-  get notes(): Note[][] {
-    return this._notes;
-  }
-
-  public setNote(position: number, note: number, duration: number, instrument: string): void {
-
-    if (position < 0 || position >= this._notes.length) {
-      throw new MusicError("Note position out of bounds");
-    }
-    if (this._notes[position][note].note === "Nan") {
-      this._notes[position][note] = new Note(this._musicManager.numberToNote(note), duration, instrument);
-    } else {
-      this._notes[position][note] = new Note();
-    }
-  }
-
-  get bpm(): number {
-    return this._bpm;
-  }
-
-  set bpm(bpm: number) {
-    this._bpm = bpm;
-  }
-
-  public isNoteActive(position: number, note: number): boolean {
-    if (position < 0 || position >= this._notes.length) {
-      throw new MusicError("Position out of bounds");
-    }
-    if (note < 0 || note >= this._notes[position].length) {
-      throw new MusicError("Note out of bounds");
-    }
-    return this._notes[position][note].note !== "Nan";
-  }
-
-  public play(): void {
-    let now = Tone.now();
-    Tone.start();
-    for (const noteList of this._notes) {
-      for (const note of noteList) {
-        if (note.note != "Nan") {
-          this._musicManager.playInstrument(note.samp, note.note, now, 60 / this._bpm * note.duration);
-        }
-      }
-      now += 60 / this._bpm;
-    }
-  }
-
-  public toJson(): string {
-    return JSON.stringify({
-      bpm: this._bpm,
-      length: this._notes.length,
-      numberOfOctaves: this._numberOfNotes / AllNotes.length,
-      notes: this._notes.map(row => row.map(note => note.toJson())),
-    });
-  }
-
-  public static fromJson(json: string): Music {
-    const data = JSON.parse(json);
-
-    const music = new Music(data.bpm, data.length, data.numberOfOctaves);
-
-    music._notes = data.notes.map((row: Note[]) =>
-      row.map(noteData => Note.fromJson(noteData))
-    );
-
-    return music;
-  }
+export interface MusicData {
+  notes: NoteData[][];
+  bpm: number;
+  length: number;
+  numberOfOctaves: number;
 }
 
-export default Music;
+export const createMusic = (
+  bpm: number = 240,
+  length: number = 32,
+  numberOfOctaves: number = 2,
+): MusicData => {
+  const numberOfNotes = AllNotes.length * numberOfOctaves;
+  const notes = Array.from({ length }, () =>
+    Array.from({ length: numberOfNotes }, () => createNote())
+  );
+
+  return {
+    notes,
+    bpm,
+    length,
+    numberOfOctaves
+  };
+};
+
+export const setNote = (
+  music: MusicData,
+  position: number,
+  note: number,
+  duration: number,
+  instrument: string
+): MusicData => {
+  if (position < 0 || position >= music.notes.length) {
+    throw new MusicError("Note position out of bounds");
+  }
+
+  const newNotes = [...music.notes];
+  newNotes[position] = [...newNotes[position]];
+
+  if (newNotes[position][note].note === "Nan") {
+    newNotes[position][note] = createNote(numberToNote(note), duration, instrument);
+  } else {
+    newNotes[position][note] = createNote();
+  }
+
+  return {
+    ...music,
+    notes: newNotes
+  };
+};
+
+export const isNoteActive = (music: MusicData, position: number, note: number): boolean => {
+  if (position < 0 || position >= music.notes.length) {
+    throw new MusicError("Position out of bounds");
+  }
+  if (note < 0 || note >= music.notes[position].length) {
+    throw new MusicError("Note out of bounds");
+  }
+  return music.notes[position][note].note !== "Nan";
+};
+
+export const playMusic = (music: MusicData): void => {
+  let now = Tone.now();
+  Tone.start();
+
+  for (const noteList of music.notes) {
+    for (const note of noteList) {
+      if (note.note !== "Nan") {
+        playInstrument(note.note, note.instrument, now, 60 / music.bpm * note.duration);
+      }
+    }
+    now += 60 / music.bpm;
+  }
+};
+
+export const musicToJson = (music: MusicData): string => {
+  return JSON.stringify({
+    bpm: music.bpm,
+    length: music.length,
+    numberOfOctaves: music.numberOfOctaves,
+    notes: music.notes.map(row => row.map(note => noteToJson(note))),
+  });
+};
+
+export const musicFromJson = (json: string): MusicData => {
+  const data = JSON.parse(json);
+  const music = createMusic(data.bpm, data.length, data.numberOfOctaves);
+
+  return {
+    ...music,
+    notes: data.notes.map((row: string[]) =>
+      row.map(noteData => noteFromJson(noteData))
+    )
+  };
+};
