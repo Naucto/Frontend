@@ -5,7 +5,6 @@ import React, { createContext, useContext } from "react";
 import { WebrtcProvider } from "y-webrtc";
 import * as Y from "yjs";
 import config from "config.json";
-import { styled } from "@mui/material";
 import { SpriteSheet } from "src/types/SpriteSheetType";
 import { spriteTable } from "src/temporary/SpriteSheet";
 import { palette } from "src/temporary/SpriteSheet";
@@ -13,6 +12,7 @@ import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import { TabData } from "@modules/editor/tab/TabData";
 import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
 import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
+import { styled } from "@mui/material/styles";
 
 const RightPanel = styled("div")(() => ({
   width: "50%",
