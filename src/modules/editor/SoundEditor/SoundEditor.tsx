@@ -40,9 +40,6 @@ const MusicEditorButton = styled("button")(({ theme }) => ({
     backgroundColor: theme.palette.blue[700],
   },
 }));
-interface SoundEditorState {
-
-}
 
 const instruments: Map<string, string> = new Map([
   ["piano", "Piano"],
