@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { styled } from "@mui/material/styles";
 import { Tabs, Tab, Box } from "@mui/material";
 import CodeEditor from "@modules/create/game-editor/editors/CodeEditor";
@@ -7,12 +7,12 @@ import * as Y from "yjs";
 import config from "config.json";
 import { EditorProps } from "./editors/EditorType";
 import { SoundEditor } from "./editors/SoundEditor";
-import StyledCanvas from "@shared/canvas/Canvas";
 import { palette, spriteTable } from "src/temporary/SpriteSheet";
 import { SpriteSheet } from "src/types/SpriteSheetType";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
 import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
+import { WorkSessionsService } from "../../../api";
 
 const GameEditorContainer = styled("div")({
   width: "100%",
@@ -41,7 +41,7 @@ const TabContent = styled(Box)({
 });
 
 const StyledTab = styled(Tab)(({ theme }) => ({
-  fontFamily: theme.typography.fontFamily, // FIXME: use correct theme when available
+  fontFamily: theme.typography.fontFamily,
   backgroundColor: theme.palette.primary.main,
   padding: "0.3rem 2rem",
   fontSize: "1.2rem",
@@ -58,98 +58,83 @@ const StyledTab = styled(Tab)(({ theme }) => ({
 }));
 
 const GameEditor: React.FC = () => {
-  const [activeTab, setActiveTab] = React.useState(0);
-  const [output, setOutput] = React.useState<string>("");
-  const tabs = React.useMemo(() => [
+  const [activeTab, setActiveTab] = useState(0);
+  const [output, setOutput] = useState<string>("");
+  const [roomId, setRoomId] = useState<string | null>(null);
+
+  const tabs = useMemo(() => [
     { label: "code", component: CodeEditor },
     { label: "map", component: undefined },
     { label: "sound", component: SoundEditor },
     { label: "sprite", component: undefined },
   ], []);
 
-  // FIXME: make a correct way to get the Y.Doc instances Louis Théodore
-  const ydocs: Y.Doc[] = React.useMemo(() => {
-    return tabs.map(() => new Y.Doc());
+  const ydoc: Y.Doc = useMemo(() => new Y.Doc(), []);
+
+  useEffect(() => {
+    const joinSession = async () => {
+      try {
+        const projectId = parseInt(localStorage.getItem("projectId") || "1");
+        const session = await WorkSessionsService.workSessionControllerJoin(projectId);
+        setRoomId(session.roomId);
+      } catch (err) {
+        console.error("Failed to join work session:", err);
+      }
+    };
+
+    joinSession();
   }, []);
 
-  const providers: WebrtcProvider[] = React.useMemo(() => {
-    return ydocs.map((doc, index) => {
-      return new WebrtcProvider(`game-editor-${index}`, doc, config.webrtc);
+  const provider: WebrtcProvider | null = useMemo(() => {
+    if (!roomId) return null;
+    return new WebrtcProvider(roomId, ydoc, config.webrtc);
+  }, [roomId, ydoc]);
+
+  const editorTabs = useMemo(() => {
+    if (!ydoc || !provider) return [];
+
+    return tabs.map((tab) => {
+      const EditorComponent: React.FC<EditorProps> | undefined = tab.component;
+      return {
+        label: tab.label,
+        component: EditorComponent ? (
+          <EditorComponent key={tab.label} ydoc={ydoc} provider={provider} />
+        ) : (
+          <span key={tab.label}>No editor available</span>
+        ),
+      };
     });
-  }, [ydocs]);
+  }, [tabs, ydoc, provider]);
 
-  const editorTabs = React.useMemo(
-    () => {
-      if (ydocs.length === 0 || providers.length === 0) {
-        return [];
-      }
-      const editorTabs = tabs.map((tab, index) => {
-        //FIXME: don't forget to remove undefined when all components are implemented
+  const [code, setCode] = useState("");
 
-        const EditorComponent: React.FC<EditorProps | undefined> = tab.component;
-        if (!EditorComponent) {
-          return {
-            label: tab.label,
-            component: <span key={tab.label}>No editor available</span>,
-          };
-        }
-
-        //END_FIXME
-
-        return {
-          label: tab.label,
-          component: (
-            <EditorComponent
-              ydoc={ydocs[index]}
-              provider={providers[index]}
-            />
-          ),
-        };
-      });
-      return editorTabs;
-    },
-    [ydocs, providers]
-  );
-
-  const [code, setCode] = React.useState("");
-
-  // make a listener to update the code when the Y.Doc changes)
   useEffect(() => {
-    const ytext = ydocs[0].getText("monaco");
+    const ytext = ydoc.getText("monaco");
     setCode(ytext.toString());
-    const handler = (): void => setCode(ytext.toString());
+    const handler = () => setCode(ytext.toString());
     ytext.observe(handler);
-    return () => { ytext.unobserve(handler); };
-  }, [ydocs]);
+    return () => ytext.unobserve(handler);
+  }, [ydoc]);
 
-  const envData: EnvData = React.useMemo(() => {
-    return {
-      code: code,
-      output: output,
-    };
-  }, [code, output]);
+  const envData: EnvData = useMemo(() => ({
+    code,
+    output,
+  }), [code, output]);
 
-  //FIXME: get spritesheet, palette, and canvas size from the game configuration
   const spriteSheet: SpriteSheet = useMemo(() => ({
     spriteSheet: spriteTable,
-    spriteSize: {
-      width: 8,
-      height: 8
-    },
-    size: {
-      width: 128,
-      height: 128,
-    },
-    stride: 1
+    spriteSize: { width: 8, height: 8 },
+    size: { width: 128, height: 128 },
+    stride: 1,
   }), []);
 
   const screenSize = useMemo(() => ({
     width: 320,
-    height: 180
+    height: 180,
   }), []);
 
   const canvasRef = React.useRef<SpriteRendererHandle>(null);
-  // FIXME: for demonstration purposes, remove when the game configuration is implemented
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (canvas) {
@@ -161,6 +146,8 @@ const GameEditor: React.FC = () => {
       canvas.draw();
     }
   }, [canvasRef]);
+
+  if (!provider) return <div>Loading work session...</div>;
 
   return (
     <GameEditorContainer>
@@ -174,15 +161,15 @@ const GameEditor: React.FC = () => {
             <StyledTab key={label} label={label} />
           ))}
         </Tabs>
-        <TabContent>{editorTabs[activeTab].component}</TabContent>
+        <TabContent>{editorTabs[activeTab]?.component}</TabContent>
       </LeftPanel>
       <RightPanel>
         <GameCanvas
           ref={canvasRef}
           canvasProps={{
-            screenSize: screenSize,
-            spriteSheet: spriteSheet,
-            palette: palette,
+            screenSize,
+            spriteSheet,
+            palette,
           }}
           envData={envData}
           setOutput={setOutput}
