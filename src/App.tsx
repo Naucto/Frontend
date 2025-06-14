@@ -6,6 +6,7 @@ import styled from "styled-components";
 import { useTheme } from "@theme/ThemeContext";
 import NavBar from "@shared/navbar/NavBar";
 import { ThemeProvider } from "styled-components";
+import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import { StyledEngineProvider } from "@mui/material";
 import { muiTheme } from "@theme/MUITheme";
 import GameEditor from "@modules/create/game-editor/GameEditor";
@@ -26,20 +27,22 @@ function App() {
   const theme = useTheme();
   return (
     <StyledEngineProvider injectFirst>
-      <ThemeProvider theme={theme} >
-        <BrowserRouter>
-          <Container theme={theme}>
-            <NavBar />
-            <div style={{ flex: 1, display: "flex" }}>
-              <Routes>
-                <Route path="/" element={<Hub />} />
-                <Route path="/hub" element={<Hub />} />
-                <Route path="/create" element={<GameEditor />} />
-              </Routes>
-            </div>
-          </Container>
-        </BrowserRouter>
-      </ThemeProvider>
+      <MuiThemeProvider theme={muiTheme}>
+        <ThemeProvider theme={theme} >
+          <BrowserRouter>
+            <Container theme={theme}>
+              <NavBar />
+              <div style={{ flex: 1, display: "flex" }}>
+                <Routes>
+                  <Route path="/" element={<Hub />} />
+                  <Route path="/hub" element={<Hub />} />
+                  <Route path="/create" element={<GameEditor />} />
+                </Routes>
+              </div>
+            </Container>
+          </BrowserRouter>
+        </ThemeProvider>
+      </MuiThemeProvider>
     </StyledEngineProvider>
   );
 }
