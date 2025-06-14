@@ -163,14 +163,12 @@ const GameEditor: React.FC = () => {
       return;
 
     console.log("Saving project content:", jsonData);
-    if (false) { // temporary
-      ProjectsService.projectControllerSaveProjectContent(
-        localStorage.getItem("projectId") || "1",
-        { file: new Blob([JSON.stringify(jsonData)], { type: "application/json" }) }
-      ).catch((error) => {
-        console.error("Failed to save content:", error);
-      });
-    }
+    ProjectsService.projectControllerSaveProjectContent(
+      localStorage.getItem("projectId") || "1",
+      { file: new Blob([JSON.stringify(jsonData)], { type: "application/json" }) }
+    ).catch((error) => {
+      console.error("Failed to save content:", error);
+    });
   };
 
   const cleanUpAndDisconnect = () => {
