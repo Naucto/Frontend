@@ -6,7 +6,6 @@ import { WebrtcProvider } from "y-webrtc";
 import * as Y from "yjs";
 import config from "config.json";
 import { EditorProps, EditorTab } from "./editors/EditorType";
-import { SoundEditor } from "./editors/SoundEditor";
 import { palette, spriteTable } from "src/temporary/SpriteSheet";
 import { SpriteSheet } from "src/types/SpriteSheetType";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
@@ -22,6 +21,7 @@ import SpriteIcon from "src/assets/pen.svg?react";
 import SoundIcon from "src/assets/music.svg?react";
 import MapIcon from "src/assets/map.svg?react";
 import { generateRandomColor } from "@utils/colorUtils";
+import { SoundEditor } from "@modules/editor/SoundEditor/SoundEditor";
 
 const GameEditorContainer = styled("div")(({ theme }) => ({
   height: "100%",

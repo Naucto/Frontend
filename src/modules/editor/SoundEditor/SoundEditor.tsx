@@ -1,11 +1,12 @@
-import IEditor from "@modules/editor/IEditor";
-import Music from "@modules/editor/SoundEditor/Music";
-import "./SoundEditor.css";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
+import { styled } from "@mui/material/styles";
+import { Box } from "@mui/material";
 import { Doc } from "yjs";
 import { WebrtcProvider } from "y-webrtc";
-import { styled } from "@mui/material/styles";
+import { createMusic, MusicData, setNote, playMusic } from "./Music";
+import "./SoundEditor.css";
 
-const ButtonContainer = styled("div")(({ theme }) => ({
+const ButtonContainer = styled(Box)(({ theme }) => ({
   display: "flex",
   flexDirection: "row",
   justifyContent: "center",
@@ -20,23 +21,23 @@ const ButtonContainer = styled("div")(({ theme }) => ({
 const MusicEditorButton = styled("button")(({ theme }) => ({
   backgroundColor: theme.palette.blue[500],
   color: theme.palette.text.primary,
-  padding: theme.spacing(1, 2),
+  padding: `${theme.spacing(1)} ${theme.spacing(2)}`,
   cursor: "pointer",
-  fontSize: theme.typography.fontSize,
+  fontSize: `${theme.typography.fontSize}px`,
   textAlign: "center",
   textDecoration: "none",
   display: "inline-block",
-  margin: theme.spacing(0.5, 0.25),
+  boxShadow: "none",
+  margin: `${theme.spacing(0.5)} ${theme.spacing(0.25)}`,
   fontFamily: theme.typography.fontFamily,
   borderRadius: theme.spacing(1.2),
-  border: `${theme.spacing(0.25)} solid ${theme.palette.blue[700]}`,
-
+  border: `${theme.spacing(0.25)} solid ${theme.palette.blue[600]}`,
+  minWidth: "auto",
   "&:hover": {
     backgroundColor: theme.palette.blue[700],
   },
-
   "&.selected": {
-    backgroundColor: theme.palette.blue[700],
+    backgroundColor: theme.palette.blue[600],
   },
 }));
 
@@ -63,215 +64,205 @@ const instruments: Map<string, string> = new Map([
   ["harmonium", "Harmonium"],
 ]);
 
-import React from "react";
+interface SoundEditorProps {
+  ydoc?: Doc;
+  provider?: WebrtcProvider;
+}
 
-export class SoundEditor extends IEditor {
+export const SoundEditor: React.FC<SoundEditorProps> = ({ ydoc, provider }) => {
+  const [currentMusic, setCurrentMusic] = useState<MusicData>(createMusic());
+  const [currentInstrument, setCurrentInstrument] = useState<string>("piano");
+  const [activeCells, setActiveCells] = useState<Set<string>>(new Set());
+  const [selectedMusicIndex, setSelectedMusicIndex] = useState<number>(0);
+  const [isMouseDown, setIsMouseDown] = useState<boolean>(false);
+  const [startPosition, setStartPosition] = useState<[number, number]>([-1, -1]);
+  const [musics, setMusics] = useState<MusicData[]>(() => Array(16).fill(null).map(() => createMusic()));
 
-  private _musics: Music[];
-  private provider: WebrtcProvider | undefined = undefined;
-  private ydoc: Doc | undefined = undefined;
-  private _isMouseDown: boolean = false;
-  private _startPosition: [number, number] = [-1, -1];
-
-  constructor(numberMusics: number = 16) {
-    super();
-    this.tabData = {
-      title: "Sound",
-      icon: "sound",
-    };
-    this.state = {
-      currentMusic: new Music(),
-      currentInstrument: "piano",
-      activeCells: new Set<string>(),
-      selectedMusicIndex: 0,
-    };
-    this._musics = new Array<Music>(numberMusics);
-    for (let i = 0; i < 16; i++) {
-      this._musics[i] = new Music();
+  // Effect to handle active cells changes
+  useEffect(() => {
+    // You could add any side effects related to active cells here
+    // For example, saving to localStorage or syncing with ydoc
+    if (ydoc && provider) {
+      // Sync active cells with ydoc if needed
+      console.log("Active cells changed:", Array.from(activeCells));
     }
-  }
+  }, [activeCells, ydoc, provider]);
 
-  public init(ydoc: Doc, provider: WebrtcProvider): void {
-    this.provider = provider;
-    this.ydoc = ydoc;
-  }
-
-  public getData(): string {
-    // TODO
-    return "";
-  }
-
-  public setData(): void {
-    // TODO
-  }
-
-  sendData(data: string): void {
-    console.log("SoundEditor sendData", data);
-  }
-
-  loadData(data: string): void {
-    console.log("SoundEditor loadData", data);
-  }
-
-  handleCellClick(endRow: number, endCol: number): void {
-
-    if (this._isMouseDown) {
-      if (this._startPosition[0] == -1) {
-        this._startPosition[0] = endRow;
-        this._startPosition[1] = endCol;
-      }
-      return;
+  // Effect to handle music changes
+  useEffect(() => {
+    if (ydoc && provider) {
+      // Sync music data with ydoc if needed
+      console.log("Music data changed:", currentMusic);
     }
-    if (endRow == this._startPosition[0]) {
+  }, [currentMusic, ydoc, provider]);
 
-      for (let i = Math.min(this._startPosition[1], endCol); i <= Math.max(this._startPosition[1], endCol); i++) {
-        const row = this._startPosition[0];
-        const col = i;
+  // Memoize the grid cells to prevent unnecessary re-renders
+  const gridCells = useMemo(() => {
+    return [...Array(24)].map((_, row) =>
+      [...Array(32)].map((_, col) => {
         const cellKey = `${row}-${col}`;
+        const isActive = activeCells.has(cellKey);
+        return {
+          cellKey,
+          isActive,
+          row,
+          col,
+          note: currentMusic.notes[col][row].note
+        };
+      })
+    ).flat();
+  }, [activeCells, currentMusic]);
 
-        this.setState((prevState) => {
-          const newActiveCells = new Set(prevState.activeCells);
-          if (newActiveCells.has(cellKey)) {
-            newActiveCells.delete(cellKey);
-          } else {
-            newActiveCells.add(cellKey);
-          }
-          return { activeCells: newActiveCells };
-        });
-        this.setState({ startPosition: [-1, -1] });
+  const handleMouseDown = useCallback((row: number, col: number) => {
+    if (isMouseDown) return;
+    setIsMouseDown(true);
+    setStartPosition([row, col]);
+  }, []);
+
+  const handleMouseUp = useCallback((row: number, col: number) => {
+    if (!isMouseDown) return;
+
+    setIsMouseDown(false);
+
+    if (row === startPosition[0]) {
+      const newActiveCells = new Set(activeCells);
+      for (let i = Math.min(startPosition[1], col); i <= Math.max(startPosition[1], col); i++) {
+        const cellKey = `${row}-${i}`;
+        if (!newActiveCells.has(cellKey)) {
+          newActiveCells.add(cellKey);
+        }
       }
-      this.state.currentMusic.setNote(this._startPosition[1], this._startPosition[0], Math.max(1, Math.abs(this._startPosition[1] - endCol)), this.state.currentInstrument);
+      setActiveCells(newActiveCells);
+      setStartPosition([-1, -1]);
+
+      setCurrentMusic(prevMusic =>
+        setNote(prevMusic, startPosition[1], row, Math.max(1, Math.abs(startPosition[1] - col)), currentInstrument)
+      );
     }
+  }, [isMouseDown, startPosition, activeCells, currentInstrument]);
 
-  }
+  const handleMouseOver = useCallback((row: number, col: number) => {
+    if (!isMouseDown) return;
 
-  clearMusic(): void {
-    this.setState({ activeCells: new Set<string>() });
-    this.state.currentMusic = new Music();
-  }
+    if (row === startPosition[0]) {
+      const newActiveCells = new Set(activeCells);
+      for (let i = Math.min(startPosition[1], col); i <= Math.max(startPosition[1], col); i++) {
+        const cellKey = `${row}-${i}`;
+        if (!newActiveCells.has(cellKey)) {
+          newActiveCells.add(cellKey);
+        }
+      }
+      setActiveCells(newActiveCells);
+    }
+  }, [isMouseDown, startPosition, activeCells]);
 
-  getInstrumentButtons(): JSX.Element[] {
-    return Array.from(instruments.keys()).map((instrument) => (
-      <MusicEditorButton
-        className={`flex-item-grow ${this.state.currentInstrument === instrument ? "selected" : ""}`}
-        key={instrument}
-        onClick={() => {
-          this.setState({ currentInstrument: instrument });
-        }}
-      >
-        {instruments.get(instrument)}
-      </MusicEditorButton>
-    ));
-  }
+  const clearMusic = useCallback(() => {
+    setActiveCells(new Set());
+    setCurrentMusic(createMusic());
+  }, []);
 
-  saveMusic(): void {
-    const musicData = this.state.currentMusic.toJson();
-    console.log("Music data to save:", musicData);
-    this._musics[this.state.selectedMusicIndex] = (Music.fromJson(musicData));
-  }
+  const saveMusic = useCallback(() => {
+    setMusics(prevMusics => {
+      const newMusics = [...prevMusics];
+      newMusics[selectedMusicIndex] = currentMusic;
+      return newMusics;
+    });
+  }, [selectedMusicIndex, currentMusic]);
 
-  loadStateFromMusic(id: number): void {
-    const music = this._musics[id];
-    this.setState({ selectedMusicIndex: id });
-    this.setState({ currentMusic: music });
-    this.setState({ activeCells: new Set<string>() });
+  const loadStateFromMusic = useCallback((id: number) => {
+    const music = musics[id];
+    setSelectedMusicIndex(id);
+    setCurrentMusic(music);
+
+    // Calculate active cells in a separate effect
+    const newActiveCells = new Set<string>();
     for (let i = 0; i < music.notes.length; i++) {
       for (let j = 0; j < music.notes[i].length; j++) {
-        if (music.notes[i][j].note != "Nan") {
-          const cellKey = `${j}-${i}`;
-          this.setState((prevState) => {
-            const newActiveCells = new Set(prevState.activeCells);
-            newActiveCells.add(cellKey);
-            return { activeCells: newActiveCells };
-          });
+        if (music.notes[i][j].note !== "Nan") {
+          newActiveCells.add(`${j}-${i}`);
         }
       }
     }
-  }
+    setActiveCells(newActiveCells);
+  }, [musics]);
 
-  handleMouseUp: () => void = () => this.setState({ isMouseDown: false });
+  // Memoize instrument buttons to prevent unnecessary re-renders
+  const instrumentButtons = useMemo(() => (
+    Array.from(instruments.keys()).map((instrument) => (
+      <MusicEditorButton
+        className={currentInstrument === instrument ? "selected" : ""}
+        key={instrument}
+        variant="contained"
+        onClick={() => setCurrentInstrument(instrument)}
+      >
+        {instruments.get(instrument)}
+      </MusicEditorButton>
+    ))
+  ), [currentInstrument]);
 
-  render(): JSX.Element {
-    //const theme = useTheme()
-    const cellWidth = 35;
-    const cellHeight = 20;
-    const gridWidth = 32;
-    const gridHeight = 24;
-    return (
-      <div onMouseUp={this.handleMouseUp}>
-        <div className="SoundEditor">
+  // Memoize music selection buttons
+  const musicSelectionButtons = useMemo(() => (
+    musics.map((_, index) => (
+      <MusicEditorButton
+        className={selectedMusicIndex === index ? "selected" : ""}
+        key={index}
+        variant="contained"
+        onClick={() => loadStateFromMusic(index)}
+      >
+        {index + 1}
+      </MusicEditorButton>
+    ))
+  ), [musics, selectedMusicIndex, loadStateFromMusic]);
 
-          <div className="editor-container">
-            <ButtonContainer>
-              {this.getInstrumentButtons()}
-            </ButtonContainer>
-            <div className="scrollable-container">
-              <div
-                className="grid"
-                style={{
-                  gridTemplateColumns: `repeat(${gridWidth}, ${cellWidth}px)`,
-                  gridTemplateRows: `repeat(${gridHeight}, ${cellHeight}px)`,
-                }}
-              >
-                {[...Array(gridHeight)].map((_, row) =>
-                  [...Array(gridWidth)].map((_, col) => {
-                    const cellKey = `${row}-${col}`;
-                    const isActive = this.state.activeCells.has(cellKey);
-                    return (
-                      <div
-                        key={cellKey}
-                        onMouseDown={() => {
-                          this._isMouseDown = true;
-                          this.handleCellClick(row, col);
-                          this.setState({ startPosition: [row, col] });
-                        }}
-                        onMouseOver={() => {
-                          if (this._isMouseDown) {
-                            this.handleCellClick(row, col);
-                          }
-                        }}
-                        onMouseUp={() => {
-                          this._isMouseDown = false;
-                          this.handleCellClick(row, col);
-                          this._startPosition[0] = -1;
-                          this._startPosition[1] = -1;
-                        }}
-                        className={`cell ${isActive ? "selected" : ""}`}
-                        style={{
-                          width: `${cellWidth}px`,
-                          height: `${cellHeight}px`,
-                          boxSizing: "border-box"
-                        }}
-                      >
-                        {this.state.currentMusic.notes[col][row].note == "Nan" ? "" : this.state.currentMusic.notes[col][row].note}
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-            <ButtonContainer>
-              {this._musics.map((_, index) => (
-                <MusicEditorButton className={`music-selection-button ${this.state.selectedMusicIndex == index ? "selected" : ""}`} key={index} onClick={() => this.loadStateFromMusic(index)}>
-                  {index + 1}
-                </MusicEditorButton>
+  return (
+    <div onMouseUp={() => setIsMouseDown(false)}>
+      <div className="SoundEditor">
+        <div className="editor-container">
+          <ButtonContainer>
+            {instrumentButtons}
+          </ButtonContainer>
+          <div className="scrollable-container">
+            <div
+              className="grid"
+              style={{
+                gridTemplateColumns: `repeat(${32}, 35px)`,
+                gridTemplateRows: `repeat(${24}, 20px)`,
+              }}
+            >
+              {gridCells.map((cell) => (
+                <div
+                  key={cell.cellKey}
+                  onMouseDown={() => handleMouseDown(cell.row, cell.col)}
+                  onMouseOver={() => handleMouseOver(cell.row, cell.col)}
+                  onMouseUp={() => handleMouseUp(cell.row, cell.col)}
+                  className={`cell ${cell.isActive ? "selected" : ""}`}
+                  style={{
+                    width: "35px",
+                    height: "20px",
+                    boxSizing: "border-box"
+                  }}
+                >
+                  {cell.note === "Nan" ? "" : cell.note}
+                </div>
               ))}
-            </ButtonContainer>
+            </div>
           </div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-around",
-              marginTop: "20px"
-            }}
-          >
-            <MusicEditorButton onClick={() => this.state.currentMusic.play()} >Play</MusicEditorButton>
-            <MusicEditorButton onClick={() => this.clearMusic()} >Clear</MusicEditorButton>
-            <MusicEditorButton onClick={() => this.saveMusic()} >Save</MusicEditorButton>
-          </div>
+          <ButtonContainer>
+            {musicSelectionButtons}
+          </ButtonContainer>
         </div>
-      </div >
-    );
-  }
-
-}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-around",
+            marginTop: "20px"
+          }}
+        >
+          <MusicEditorButton variant="contained" onClick={() => playMusic(currentMusic)}>Play</MusicEditorButton>
+          <MusicEditorButton variant="contained" onClick={clearMusic}>Clear</MusicEditorButton>
+          <MusicEditorButton variant="contained" onClick={saveMusic}>Save</MusicEditorButton>
+        </Box>
+      </div>
+    </div>
+  );
+};
