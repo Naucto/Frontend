@@ -42,7 +42,7 @@ const TabContent = styled(Box)({
 });
 
 const StyledTab = styled(Tab)(({ theme }) => ({
-  fontFamily: theme.typography.fontFamily,
+  fontFamily: theme.typography.fontFamily, // FIXME: use correct theme when available
   backgroundColor: theme.palette.primary.main,
   padding: "0.3rem 2rem",
   fontSize: "1.2rem",
@@ -81,7 +81,7 @@ const GameEditor: React.FC = () => {
         const session = await WorkSessionsService.workSessionControllerJoin(projectId);
         setRoomId(session.roomId);
       } catch (err) {
-        console.error("Failed to join work session:", err);
+        console.error("Failed to join work session:", err); // FIXME : better error handling
       }
     };
 
@@ -135,6 +135,7 @@ const GameEditor: React.FC = () => {
     output,
   }), [code, output]);
 
+  //FIXME: get spritesheet, palette, and canvas size from the game configuration
   const spriteSheet: SpriteSheet = useMemo(() => ({
     spriteSheet: spriteTable,
     spriteSize: { width: 8, height: 8 },
@@ -203,7 +204,18 @@ const GameEditor: React.FC = () => {
     }
   }, [canvasRef]);
 
-  if (!provider) return <div>Loading work session...</div>;
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      saveProjectContent();
+    }, 5 * 60 * 1000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [editorTabs]);
+
+  if (!provider)
+    return <div>Loading work session...</div>;
 
   return (
     <GameEditorContainer>
