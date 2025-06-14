@@ -1,18 +1,19 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { styled } from "@mui/material/styles";
 import { Tabs, Tab, Box } from "@mui/material";
 import CodeEditor from "@modules/create/game-editor/editors/CodeEditor";
 import { WebrtcProvider } from "y-webrtc";
 import * as Y from "yjs";
 import config from "config.json";
-import { EditorProps } from "./editors/EditorType";
+import { EditorProps, EditorTab } from "./editors/EditorType";
 import { SoundEditor } from "./editors/SoundEditor";
 import { palette, spriteTable } from "src/temporary/SpriteSheet";
 import { SpriteSheet } from "src/types/SpriteSheetType";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
 import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
-import { WorkSessionsService } from "../../../api";
+import { ProjectsService, WorkSessionsService } from "../../../api";
+import { Beforeunload } from "react-beforeunload";
 
 const GameEditorContainer = styled("div")({
   width: "100%",
@@ -60,7 +61,9 @@ const StyledTab = styled(Tab)(({ theme }) => ({
 const GameEditor: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [output, setOutput] = useState<string>("");
-  const [roomId, setRoomId] = useState<string | null>(null);
+  const [roomId, setRoomId] = useState<string | undefined>(undefined);
+
+  const getDataFunctions = useRef<{ [key: string]: () => string }>({});
 
   const tabs = useMemo(() => [
     { label: "code", component: CodeEditor },
@@ -90,18 +93,29 @@ const GameEditor: React.FC = () => {
     return new WebrtcProvider(roomId, ydoc, config.webrtc);
   }, [roomId, ydoc]);
 
-  const editorTabs = useMemo(() => {
+  const editorTabs: EditorTab[] = useMemo(() => {
     if (!ydoc || !provider) return [];
 
     return tabs.map((tab) => {
       const EditorComponent: React.FC<EditorProps> | undefined = tab.component;
+
+      const handleGetData = (getData: () => string) => {
+        getDataFunctions.current[tab.label] = getData;
+      };
+
       return {
         label: tab.label,
         component: EditorComponent ? (
-          <EditorComponent key={tab.label} ydoc={ydoc} provider={provider} />
+          <EditorComponent
+            key={tab.label}
+            ydoc={ydoc}
+            provider={provider}
+            onGetData={handleGetData}
+          />
         ) : (
           <span key={tab.label}>No editor available</span>
         ),
+        getData: () => getDataFunctions.current[tab.label]?.() || "",
       };
     });
   }, [tabs, ydoc, provider]);
@@ -132,6 +146,48 @@ const GameEditor: React.FC = () => {
     width: 320,
     height: 180,
   }), []);
+
+  const saveProjectContent = () => {
+    const jsonData: { [key: string]: string } = {};
+    // Use the getData functions to get content from each editor
+    editorTabs.forEach(({ label, getData }) => {
+      if (getData) {
+        const content = getData();
+        console.log("Saving content of editor:", label, "content:", content);
+        jsonData[label] = content;
+      }
+    });
+
+    if (!jsonData || Object.keys(jsonData).length === 0)
+      return;
+
+    console.log("Saving project content:", jsonData);
+    if (false) { // temporary
+      ProjectsService.projectControllerSaveProjectContent(
+        localStorage.getItem("projectId") || "1",
+        { file: new Blob([JSON.stringify(jsonData)], { type: "application/json" }) }
+      ).catch((error) => {
+        console.error("Failed to save content:", error);
+      });
+    }
+  };
+
+  const cleanUpAndDisconnect = () => {
+    if (!provider || !ydoc || editorTabs.length === 0)
+      return;
+
+    saveProjectContent();
+
+    provider?.awareness.setLocalState(null);
+    provider?.disconnect();
+    ydoc?.destroy();
+  };
+
+  useEffect(() => {
+    return () => {
+      cleanUpAndDisconnect();
+    };
+  }, [editorTabs]);
 
   const canvasRef = React.useRef<SpriteRendererHandle>(null);
 
@@ -175,6 +231,13 @@ const GameEditor: React.FC = () => {
           setOutput={setOutput}
         />
       </RightPanel>
+      {
+        <Beforeunload onBeforeunload={(event) => {
+          event.preventDefault();
+          cleanUpAndDisconnect();
+          return "Are you sure you want to leave? Your changes may not be saved.";
+        }} />
+      }
     </GameEditorContainer>
   );
 };

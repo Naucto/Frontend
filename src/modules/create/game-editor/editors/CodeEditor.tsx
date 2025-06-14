@@ -1,14 +1,28 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import Editor, { Monaco } from "@monaco-editor/react";
 import CodeTabTheme from "@modules/editor/CodeEditor/CodeTabTheme.ts";
 import { MonacoBinding } from "y-monaco";
 import { EditorProps } from "./EditorType";
 
-const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider }) => {
+const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData }) => {
   const editorRef = useRef<any>(null);
+  const ytextRef = useRef<any | null>(null);
+
+  useEffect(() => {
+    if (onGetData) {
+      onGetData(() => {
+        if (ytextRef.current) {
+          return ytextRef.current.toString();
+        }
+        return "";
+      });
+    }
+  }, [onGetData]);
 
   const handleMount = (editor: any) => {
     editorRef.current = editor;
+
+    ytextRef.current = ydoc.getText("monaco");
 
     const styleSheet = document.createElement("style");
     styleSheet.textContent = `
@@ -32,7 +46,7 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider }) => {
     document.head.appendChild(styleSheet);
 
     new MonacoBinding(
-      ydoc.getText("monaco"),
+      ytextRef.current,
       editor.getModel(),
       new Set([editor]),
       provider.awareness
