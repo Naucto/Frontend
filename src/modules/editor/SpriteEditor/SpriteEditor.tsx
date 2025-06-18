@@ -137,8 +137,12 @@ function getSpritePos(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
   const spriteX = Math.floor((mousePos.x / rect.width * zoom) - (Math.floor(position.x) / SPRITE_SIZE));
   const spriteY = Math.floor((mousePos.y / rect.height * zoom) - (Math.floor(position.y) / SPRITE_SIZE));
 
-  if (spriteX < 0 || spriteX >= SPRITE_SHEET_SIZE / SPRITE_SIZE ||
-    spriteY < 0 || spriteY >= SPRITE_SHEET_SIZE / SPRITE_SIZE) {
+  if (
+    spriteX < 0 ||
+    spriteX >= SPRITE_SHEET_SIZE / SPRITE_SIZE ||
+    spriteY < 0 ||
+    spriteY >= SPRITE_SHEET_SIZE / SPRITE_SIZE
+  ) {
     return null;
   }
 
