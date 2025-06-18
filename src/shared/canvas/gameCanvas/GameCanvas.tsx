@@ -1,4 +1,4 @@
-import StyledCanvas, { CanvasHandle, CanvasProps } from "@shared/canvas/Canvas";
+import { StyledCanvas, CanvasHandle, CanvasProps } from "@shared/canvas/Canvas";
 import { KeyHandler } from "@shared/canvas/gameCanvas/KeyHandler";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import { EnvData, LuaEnvironmentManager } from "@shared/luaEnvManager/LuaEnvironmentManager";
