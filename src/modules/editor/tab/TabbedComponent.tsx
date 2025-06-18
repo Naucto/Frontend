@@ -2,21 +2,24 @@ import * as React from "react";
 
 import "@modules/editor/tab/TabbedComponent.css";
 import { Button, ButtonBase, Tab } from "@mui/material";
-import styled from "styled-components";
+import { styled } from "@mui/material/styles";
 
+interface StyledTabProps {
+  active: boolean;
+}
 
-const StyledTab = styled((props: any) => <Tab {...props} disableRipple />) <{ active: boolean }>`
-  & {
-  font-family: ${({ theme }) => theme.typography.fontFamily};
-  background-color: ${({ theme, active }) =>
-    active ? theme.colors.blue[500] : theme.colors.blue[600]};
-  padding: 0.3rem 2rem;
-  font-size: 1.2rem;
-  border-top-left-radius: ${({ theme }) => theme.rounded.md};
-  border-top-right-radius: ${({ theme }) => theme.rounded.md};
-  color: white;
-  opacity: 1;
-`
+const StyledTab = styled(Tab)<StyledTabProps>(
+  ({ theme, active }) => ({
+    fontFamily: theme.typography.fontFamily,
+    backgroundColor: active ? theme.palette.blue[700] : theme.palette.blue[500],
+    padding: "0.3rem 2rem",
+    fontSize: "1.2rem",
+    borderTopLeftRadius: theme.custom.rounded.md,
+    borderTopRightRadius: theme.custom.rounded.md,
+    color: "white",
+    opacity: 1,
+  })
+);
 
 interface TabbedComponentPageProps {
   title: string;
@@ -74,7 +77,7 @@ class TabbedComponent extends React.Component<TabbedComponentProps, TabbedCompon
               this.setState({
                 activeTab: index
               });
-            }
+            };
 
             return (
               <StyledTab key={index}
@@ -84,6 +87,7 @@ class TabbedComponent extends React.Component<TabbedComponentProps, TabbedCompon
                 tabIndex={0}
                 label={childTab.props.title}
                 active={activeTab === index}
+                disableRipple
               />
             );
           })}

@@ -1,9 +1,9 @@
 import { SpriteRendererHandle, useSpriteRenderer } from "@shared/canvas/RendererHandle";
-import { forwardRef, useImperativeHandle, useRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import { SpriteSheet } from "src/types/SpriteSheetType";
-import styled from "styled-components";
+import { styled } from "@mui/system";
 
-type CanvasProps = {
+export type CanvasProps = React.CanvasHTMLAttributes<HTMLCanvasElement> & {
   spriteSheet: SpriteSheet;
   screenSize: {
     width: number;
@@ -36,7 +36,11 @@ const Canvas = forwardRef<SpriteRendererHandle, CanvasProps>(({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererHandle = useSpriteRenderer(canvasRef, spriteSheet, palette, screenSize);
 
-  useImperativeHandle(ref, () => rendererHandle, [rendererHandle]);
+  useImperativeHandle(ref, () => ({
+    ...rendererHandle,
+    getCanvas: () => canvasRef.current,
+  }), [rendererHandle]);
+
   return (
     <canvas
       ref={canvasRef}

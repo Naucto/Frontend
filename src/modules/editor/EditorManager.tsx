@@ -12,33 +12,41 @@ import { spriteTable } from "src/temporary/SpriteSheet";
 import { palette } from "src/temporary/SpriteSheet";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import { TabData } from "@modules/editor/tab/TabData";
-import { MusicError } from "./SoundEditor/Music";
+import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
+import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
+import { styled } from "@mui/material/styles";
 
-const RightPanel = styled.div`
-  height: 100vh;
-  width: 50%;
-  backgroundColor: rgb(83, 83, 83);
-;`;
+const RightPanel = styled("div")(() => ({
+  width: "50%",
+}));
 
-const Container = styled.div`
-  backgroundColor: theme.colors.background;
-  color: theme.colors.text;
-  fontFamily: theme.typography.fontFamily;
-  fontSize: theme.typography.fontSize;
-  display: flex;
-  flexDirection: column;
-  height: 100vh;
-`;
+const Container = styled("div")(({ theme }) => ({
+  backgroundColor: theme.palette.background.default,
+  color: theme.palette.text.primary,
+  fontFamily: theme.typography.fontFamily,
+  fontSize: theme.typography.fontSize,
+  display: "flex",
+  flexDirection: "row",
+  width: "100vw",
+}));
 
-type EditorComponent = React.ComponentClass<IEditor> & { new (): IEditor };
+class EditorManagerError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "EditorManagerError";
+  }
+}
+
+type EditorComponent = React.ComponentClass<IEditor> & { new(): IEditor };
 
 export class EditorManager {
   private editors: { component: EditorComponent; tabData: TabData }[] = [];
 
-  private ydoc: Y.Doc | null = null;
-  private provider: WebrtcProvider | null = null;
+  private ydoc?: Y.Doc = undefined;
+  private provider?: WebrtcProvider = undefined;
 
-  // temporary
+  // FIXME: TEMPORARY FOR EXAMPLE PURPOSES
+  // this will be deleted soon, when all data can be get (from server, yjs, etc)
   private canvasRef = React.createRef<SpriteRendererHandle>();
 
   private spriteSheet: SpriteSheet = {
@@ -58,9 +66,38 @@ export class EditorManager {
     width: 320,
     height: 180
   };
-  //
 
-  public constructor() { }
+  private envData: EnvData = {
+    code: `function _init()
+      set_col(7,10)
+      x = 0
+    end
+
+    function _update()
+      if (key_pressed("ArrowDown")) then
+        x = x + 1
+      end
+      if (key_pressed("ArrowUp")) then
+        x = x - 1
+      end
+      --if (key_pressed("ArrowLeft")) then
+        --playSound(0)
+      --end
+    end
+
+    function _draw()
+      clear(3)
+      sprite(0,x,0, 16, 16)
+      --map(0,0,0,0,10,10)
+    end`,
+    output: "",
+  };
+
+  public setOutput = (newOutput: string): void => {
+    this.envData.output = newOutput;
+  };
+
+  // FIXME END
 
   cleanUpAndDisconnect(): void {
     this.provider?.awareness.setLocalState(null);
@@ -68,7 +105,7 @@ export class EditorManager {
     this.ydoc?.destroy();
   }
 
-  public init(room: string) {
+  public init(room: string): void {
     this.ydoc = new Y.Doc();
     this.provider = new WebrtcProvider(room, this.ydoc!, config.webrtc);
 
@@ -77,40 +114,24 @@ export class EditorManager {
         e.component.prototype.init(this.ydoc!, this.provider!);
       }
     });
-    
-    if (!this.canvasRef) return;
-
-    // temporary  
-    const canvas = this.canvasRef.current;
-    if (canvas) {
-      canvas.clear(0);
-      canvas.setColor(1, 2);
-      canvas.setColor(2, 3);
-      canvas.setColor(3, 1);
-      canvas.queueSpriteDraw(0, 0, 0, 16, 16);
-      canvas.draw();
-    }
-    //
   }
 
-  public addEditor(component: EditorComponent, tabData: TabData) {
-
+  public addEditor(component: EditorComponent, tabData: TabData): void {
     this.editors.push({ component, tabData });
-
   }
 
-  public removeEditor(editor: IEditor) {
-    const index = this.editors.indexOf(editor);
+  public removeEditor(editor: IEditor): void {
+    const index = this.editors.findIndex(e => e.component === editor.constructor);
     if (index > -1) {
       this.editors.splice(index, 1);
     }
   }
 
   public getEditors(): IEditor[] {
-    return this.editors;
+    return this.editors.map(e => new e.component());
   }
 
-  render() {
+  render(): React.ReactNode {
     return (
       <Container>
         <div className="editor"
@@ -118,20 +139,31 @@ export class EditorManager {
             width: "50%",
           }}>
           <TabbedComponent>
-            {this.editors.map((editor, index) => (
-              <TabbedComponentPage key={index} title={editor.tabData.title}>
-                <editor.component />
-              </TabbedComponentPage>
-            ))}
+            {this.editors.map((editor, index) => {
+              const EditorComponent = editor.component;
+              return (
+                <TabbedComponentPage key={index} title={editor.tabData.title}>
+                  <EditorComponent ref={(instance: IEditor) => {
+                    if (instance && this.ydoc && this.provider) {
+                      instance.init(this.ydoc, this.provider);
+                    }
+                  }} />
+                </TabbedComponentPage>
+              );
+            })}
           </TabbedComponent>
         </div>
         <RightPanel>
           <h1>right</h1>
-          <StyledCanvas
+          <GameCanvas
             ref={this.canvasRef}
-            screenSize={this.screenSize}
-            spriteSheet={this.spriteSheet}
-            palette={palette}
+            canvasProps={{
+              screenSize: this.screenSize,
+              spriteSheet: this.spriteSheet,
+              palette: palette,
+            }}
+            envData={this.envData}
+            setOutput={this.setOutput}
           />
         </RightPanel>
       </Container>
@@ -155,9 +187,10 @@ export const EditorManagerProvider = ({ value, children }: EditorManagerProvider
 };
 
 export const useEditorManager = (): EditorManager => {
+
   const context = useContext(EditorManagerContext);
   if (!context) {
-    throw new MusicError("useEditorManager must be used within an EditorManagerProvider");
+    throw new EditorManagerError("useEditorManager must be used within an EditorManagerProvider");
   }
   return context;
 };
