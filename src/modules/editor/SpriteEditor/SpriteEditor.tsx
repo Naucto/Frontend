@@ -20,7 +20,6 @@ interface SpriteEditorProps {
   spriteFilePath?: string;
 }
 
-// Constants for sprite dimensions
 const SPRITE_SIZE = 8;
 const SPRITE_SHEET_SIZE = 128;
 
@@ -122,18 +121,26 @@ function getPixelPos(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
   const mousePos = getMousePosition(e, rect);
   const scaledPos = getScaledPosition(mousePos, rect, zoom);
 
-  const x = Math.floor(scaledPos.x * SPRITE_SIZE - Math.floor(position.x)) % SPRITE_SIZE;
-  const y = Math.floor(scaledPos.y * SPRITE_SIZE - Math.floor(position.y)) % SPRITE_SIZE;
+  const rawX = Math.floor(scaledPos.x * SPRITE_SIZE - Math.floor(position.x));
+  const rawY = Math.floor(scaledPos.y * SPRITE_SIZE - Math.floor(position.y));
+
+  const x = ((rawX % SPRITE_SIZE) + SPRITE_SIZE) % SPRITE_SIZE;
+  const y = ((rawY % SPRITE_SIZE) + SPRITE_SIZE) % SPRITE_SIZE;
 
   return { x, y };
 }
 
 function getSpritePos(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
-  rect: DOMRect, zoom: number, position: Point): Point {
+  rect: DOMRect, zoom: number, position: Point): Point | null {
   const mousePos = getMousePosition(e, rect);
 
   const spriteX = Math.floor((mousePos.x / rect.width * zoom) - (Math.floor(position.x) / SPRITE_SIZE));
   const spriteY = Math.floor((mousePos.y / rect.height * zoom) - (Math.floor(position.y) / SPRITE_SIZE));
+
+  if (spriteX < 0 || spriteX >= SPRITE_SHEET_SIZE / SPRITE_SIZE ||
+    spriteY < 0 || spriteY >= SPRITE_SHEET_SIZE / SPRITE_SIZE) {
+    return null;
+  }
 
   return { x: spriteX, y: spriteY };
 }
@@ -189,17 +196,10 @@ export const SpriteEditor: React.FC<SpriteEditorProps> = ({ doc, provider }) => 
   }, [spriteTable.table, drawCanvasRef, position, version]);
 
   const handleClick = (x: number, y: number): void => {
-    // Convert sprite table to array for manipulation
     const spriteArray = spriteTable.table.split("");
-
-    // Calculate index in the sprite array
     const spriteWidth = canvasSpriteSheet.size.width;
     const index = y * spriteWidth + x;
-
-    // Update the color at the calculated index
     spriteArray[index] = currentColor.toString(16);
-
-    // Convert back to string and update the table
     spriteTable.table = spriteArray.join("");
     setVersion(v => v + 1);
   };
@@ -225,7 +225,6 @@ export const SpriteEditor: React.FC<SpriteEditorProps> = ({ doc, provider }) => 
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>): void => {
     if (isDragging) {
-      // Calculate drag distance in canvas units
       const dragDistanceX = (e.clientX - dragStart.x) * zoom / 48;
       const dragDistanceY = (e.clientY - dragStart.y) * zoom / 48;
 
@@ -237,17 +236,15 @@ export const SpriteEditor: React.FC<SpriteEditorProps> = ({ doc, provider }) => 
       setDragStart({ x: e.clientX, y: e.clientY });
     } else if (isDrawing) {
       const rect = e.currentTarget.getBoundingClientRect();
+      const spritePos = getSpritePos(e, rect, zoom, position);
 
-      // Get sprite and pixel positions
-      const { x: spriteX, y: spriteY } = getSpritePos(e, rect, zoom, position);
-      const { x, y } = getPixelPos(e, rect, zoom, position);
-
-      // Calculate indices for the sprite array
-      const spriteSize = SPRITE_SIZE; // Size of each sprite in pixels
-      const spriteIndex = x + spriteX * spriteSize;
-      const pixelIndex = y + spriteY * spriteSize;
-
-      handleClick(spriteIndex, pixelIndex);
+      if (spritePos) {
+        const { x, y } = getPixelPos(e, rect, zoom, position);
+        const spriteSize = SPRITE_SIZE;
+        const spriteIndex = x + spritePos.x * spriteSize;
+        const pixelIndex = y + spritePos.y * spriteSize;
+        handleClick(spriteIndex, pixelIndex);
+      }
     }
   };
 
@@ -286,14 +283,14 @@ export const SpriteEditor: React.FC<SpriteEditorProps> = ({ doc, provider }) => 
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>): void => {
     if (!isDragging && !isDrawing) {
       const rect = e.currentTarget.getBoundingClientRect();
-      const { x: spriteX, y: spriteY } = getSpritePos(e, rect, zoom, position);
-      const { x, y } = getPixelPos(e, rect, zoom, position);
+      const spritePos = getSpritePos(e, rect, zoom, position);
 
-      // Calculate indices for the sprite array
-      const spriteIndex = x + spriteX * SPRITE_SIZE;
-      const pixelIndex = y + spriteY * SPRITE_SIZE;
-
-      handleClick(spriteIndex, pixelIndex);
+      if (spritePos) {
+        const { x, y } = getPixelPos(e, rect, zoom, position);
+        const spriteIndex = x + spritePos.x * SPRITE_SIZE;
+        const pixelIndex = y + spritePos.y * SPRITE_SIZE;
+        handleClick(spriteIndex, pixelIndex);
+      }
     }
   };
   return (

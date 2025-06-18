@@ -32,25 +32,8 @@
     align-content: start;
     overflow-y: auto;
     overflow-x: hidden;
-}
-
-/* Customize scrollbar for Webkit browsers */
-.color-selector::-webkit-scrollbar {
-    width: 8px;
-}
-
-.color-selector::-webkit-scrollbar-track {
-    background: #2a3c45;
-    border-radius: 4px;
-}
-
-.color-selector::-webkit-scrollbar-thumb {
-    background: #1a2c35;
-    border-radius: 4px;
-}
-
-.color-selector::-webkit-scrollbar-thumb:hover {
-    background: #0a1c25;
+    scrollbar-width: thin;
+    scrollbar-color: #1a2c35 #2a3c45;
 }
 
 .color-button {
