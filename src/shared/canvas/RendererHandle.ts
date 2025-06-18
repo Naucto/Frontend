@@ -11,8 +11,7 @@ export type QueueSpriteDrawFn = (
   width?: number,
   height?: number,
   flip_h?: number,
-  flip_v?: number,
-  scale?: number
+  flip_v?: number
 ) => void;
 
 export type SpriteRendererHandle = {
@@ -83,7 +82,6 @@ export function useSpriteRenderer(
     x: number, y: number,
     width: number = 1, height: number = 1,
     flip_h: number = 0, flip_v: number = 0,
-    scale: number = 1
   ): void {
     x = Math.floor(x);
     y = Math.floor(y);
@@ -113,8 +111,8 @@ export function useSpriteRenderer(
     const vertices = rectangleToVertices(
       x,
       y,
-      width * spriteSheet.spriteSize.width * scale,
-      height * spriteSheet.spriteSize.height * scale
+      width * spriteSheet.spriteSize.width,
+      height * spriteSheet.spriteSize.height
     );
 
     batchedVertices.push(...vertices);

@@ -6,7 +6,7 @@ import { WebrtcProvider } from "y-webrtc";
 import * as Y from "yjs";
 import config from "config.json";
 import styled from "styled-components";
-import StyledCanvas from "@shared/canvas/Canvas";
+import { StyledCanvas } from "@shared/canvas/Canvas";
 import { SpriteSheet } from "src/types/SpriteSheetType";
 import { spriteTable } from "src/temporary/SpriteSheet";
 import { palette } from "src/temporary/SpriteSheet";

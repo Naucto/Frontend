@@ -1,9 +1,9 @@
-interface Color {
+export interface Color {
   name: string;
   hex: string;
 }
 
-const colorPalette01: Color[] = [
+export const colorPalette: Color[] = [
   { name: "black", hex: "#000000" },
   { name: "dark-blue", hex: "#1D2B53" },
   { name: "dark-purple", hex: "#7E2553" },
@@ -21,6 +21,3 @@ const colorPalette01: Color[] = [
   { name: "pink", hex: "#FF77A8" },
   { name: "peach", hex: "#FFCCAA" }
 ];
-
-export type { Color };
-export { colorPalette01 };

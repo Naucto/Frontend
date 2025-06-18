@@ -54,7 +54,7 @@ const Canvas = forwardRef<SpriteRendererHandle, CanvasProps>(({
   );
 });
 
-const StyledCanvas = styled(Canvas).attrs<CanvasProps>(props => ({
+export const StyledCanvas = styled(Canvas).attrs<CanvasProps>(props => ({
   onClick: props.onClick,
   onWheel: props.onWheel,
   onMouseDown: props.onMouseDown,
@@ -66,5 +66,3 @@ const StyledCanvas = styled(Canvas).attrs<CanvasProps>(props => ({
   image-rendering: pixelated;
   width: 100%;
 `;
-
-export default StyledCanvas;
