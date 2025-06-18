@@ -43,7 +43,7 @@ const TabContent = styled(Box)({
 const StyledTab = styled(Tab)(({ theme }) => ({
   fontFamily: theme.typography.fontFamily,
   backgroundColor: theme.palette.primary.main,
-  padding: "0.3rem 2rem",
+  padding: theme.spacing(1, 2),
   fontSize: "1.2rem",
   borderTopLeftRadius: theme.shape.borderRadius,
   borderTopRightRadius: theme.shape.borderRadius,
@@ -79,6 +79,7 @@ const GameEditor: React.FC = () => {
         setRoomId(session.roomId);
       } catch (err) {
         console.error("Failed to join work session:", err);
+        setRoomId("1");
       }
     };
 
