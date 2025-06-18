@@ -8,7 +8,7 @@ import { EditorProps } from "./EditorType";
 const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider }) => {
   const editorRef = useRef<editor.IStandaloneCodeEditor | undefined>(undefined);
 
-  const handleMount = (editor: editor.IStandaloneCodeEditor) => {
+  const handleMount = (editor: editor.IStandaloneCodeEditor): (() => void) | void => {
     editorRef.current = editor;
 
     const styleSheet = document.createElement("style");
@@ -31,10 +31,14 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider }) => {
           top: -5px;
       };`;
     document.head.appendChild(styleSheet);
-
+    const editorModel = editor.getModel();
+    if (!editorModel) {
+      console.error("Monaco editor model is not available.");
+      return;
+    }
     new MonacoBinding(
       ydoc.getText("monaco"),
-      editor.getModel(),
+      editorModel,
       new Set([editor]),
       provider.awareness
     );
@@ -45,7 +49,7 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider }) => {
     };
   };
 
-  const handleBeforeMount = (monaco: Monaco) => {
+  const handleBeforeMount = (monaco: Monaco): void => {
     monaco.editor.defineTheme(CodeTabTheme.MONACO_THEME_NAME, CodeTabTheme.MONACO_THEME);
   };
 
