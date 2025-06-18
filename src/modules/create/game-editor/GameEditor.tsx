@@ -59,7 +59,7 @@ const StyledTab = styled(Tab)(({ theme }) => ({
 const GameEditor: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [output, setOutput] = useState<string>("");
-  const [roomId, setRoomId] = useState<string | null>(null);
+  const [roomId, setRoomId] = useState<string | undefined>(undefined);
 
   const tabs = useMemo(() => [
     { label: "code", component: CodeEditor },
@@ -111,7 +111,7 @@ const GameEditor: React.FC = () => {
   useEffect(() => {
     const ytext = ydoc.getText("monaco");
     setCode(ytext.toString());
-    const handler = () => setCode(ytext.toString());
+    const handler = (): void => setCode(ytext.toString());
     ytext.observe(handler);
     return () => ytext.unobserve(handler);
   }, [ydoc]);

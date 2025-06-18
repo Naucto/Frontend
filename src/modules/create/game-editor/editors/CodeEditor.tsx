@@ -1,6 +1,6 @@
 import React, { useRef } from "react";
 import Editor, { Monaco } from "@monaco-editor/react";
-import CodeTabTheme from "@modules/editor/CodeEditor/CodeTabTheme.ts";
+import CodeTabTheme from "./CodeTabTheme";
 import { MonacoBinding } from "y-monaco";
 import { EditorProps } from "./EditorType";
 
