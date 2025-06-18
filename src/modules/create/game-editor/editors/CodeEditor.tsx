@@ -1,13 +1,14 @@
 import React, { useRef } from "react";
 import Editor, { Monaco } from "@monaco-editor/react";
+import { editor } from "monaco-editor";
 import CodeTabTheme from "./CodeTabTheme";
 import { MonacoBinding } from "y-monaco";
 import { EditorProps } from "./EditorType";
 
 const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider }) => {
-  const editorRef = useRef<any>(null);
+  const editorRef = useRef<editor.IStandaloneCodeEditor | undefined>(undefined);
 
-  const handleMount = (editor: any) => {
+  const handleMount = (editor: editor.IStandaloneCodeEditor) => {
     editorRef.current = editor;
 
     const styleSheet = document.createElement("style");

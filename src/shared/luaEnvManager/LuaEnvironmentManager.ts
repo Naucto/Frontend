@@ -1,6 +1,6 @@
 import { LuaEnvironment } from "@lib/lua";
+import { KeyHandler } from "@shared/canvas/gameCanvas/KeyHandler";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
-import { KeyHandler } from "@shared/gameEngine/KeyHandler";
 
 export interface EnvData {
   code: string,
@@ -23,23 +23,23 @@ class LuaEnvironmentManager {
   private _rendererHandle: SpriteRendererHandle;
   private _keyHandler: KeyHandler;
 
-  private envData: EnvData;
+  private _envData: EnvData;
 
-  private setOutput: ((output: string) => void);
+  private _setOutput: ((output: string) => void);
 
   constructor({ envData, rendererHandle, setOutput, keyHandler }: ConstructorProps) {
     this._lua = new LuaEnvironment();
     this._rendererHandle = rendererHandle;
     this._injectGameAPI(this._lua);
-    this.setOutput = setOutput;
-    this.envData = envData;
+    this._setOutput = setOutput;
+    this._envData = envData;
     this._keyHandler = keyHandler;
   }
 
   public runCode(): void {
     this.clearOutput();
     try {
-      this._lua.evaluate(this.envData.code);
+      this._lua.evaluate(this._envData.code);
     } catch (error) {
       if (error instanceof Error) {
         this._addOutput(this._getErrorMsg(error));
@@ -48,7 +48,7 @@ class LuaEnvironmentManager {
   }
 
   public setEnvData(envData: EnvData): void {
-    this.envData = envData;
+    this._envData = envData;
   }
 
   public init(): void {
@@ -64,7 +64,7 @@ class LuaEnvironmentManager {
   }
 
   public clearOutput(): void {
-    this.setOutput("");
+    this._setOutput("");
   }
 
   // private
@@ -133,8 +133,8 @@ class LuaEnvironmentManager {
   }
 
   private _addOutput(output: string): void {
-    const newOutput = this.envData.output + output + "\n";
-    this.setOutput(newOutput);
+    const newOutput = this._envData.output + output + "\n";
+    this._setOutput(newOutput);
   }
 }
 

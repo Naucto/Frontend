@@ -31,28 +31,26 @@ const LeftPanel = styled("div")({
 const RightPanel = styled("div")({
   width: "100%",
   height: "100%",
-  backgroundColor: "gray",
 });
 
 const TabContent = styled(Box)({
   flex: 1,
   overflow: "auto",
-  backgroundColor: "white",
 });
 
 const StyledTab = styled(Tab)(({ theme }) => ({
   fontFamily: theme.typography.fontFamily,
-  backgroundColor: theme.palette.primary.main,
+  backgroundColor: theme.palette.primary.main, //FIXME: use blue color from theme
   padding: theme.spacing(1, 2),
   fontSize: "1.2rem",
   borderTopLeftRadius: theme.shape.borderRadius,
   borderTopRightRadius: theme.shape.borderRadius,
   color: "white",
   "&.Mui-selected": {
-    backgroundColor: theme.palette.primary.dark,
+    backgroundColor: theme.palette.primary.dark, //FIXME: use blue color from theme
   },
   "&:hover": {
-    backgroundColor: theme.palette.primary.light,
+    backgroundColor: theme.palette.primary.light, //FIXME: use blue color from theme
   },
 }));
 
@@ -71,13 +69,13 @@ const GameEditor: React.FC = () => {
   const ydoc: Y.Doc = useMemo(() => new Y.Doc(), []);
 
   useEffect(() => {
-    const joinSession = async () => {
+    const joinSession = async (): Promise<void> => {
       try {
         const projectId = parseInt(localStorage.getItem("projectId") || "1");
         const session = await WorkSessionsService.workSessionControllerJoin(projectId);
         setRoomId(session.roomId);
       } catch (err) {
-        console.error("Failed to join work session:", err);
+        console.error("Failed to join work session:", err); // FIXME: make a retry system, page reload
         setRoomId("1");
       }
     };
@@ -85,8 +83,8 @@ const GameEditor: React.FC = () => {
     joinSession();
   }, []);
 
-  const provider: WebrtcProvider | null = useMemo(() => {
-    if (!roomId) return null;
+  const provider: WebrtcProvider | undefined = useMemo(() => {
+    if (!roomId) return undefined;
     return new WebrtcProvider(roomId, ydoc, config.webrtc);
   }, [roomId, ydoc]);
 
@@ -116,6 +114,8 @@ const GameEditor: React.FC = () => {
     return () => ytext.unobserve(handler);
   }, [ydoc]);
 
+  //FIXME: temporary solution, should be replaced with given data from back
+
   const envData: EnvData = useMemo(() => ({
     code,
     output,
@@ -133,19 +133,9 @@ const GameEditor: React.FC = () => {
     height: 180,
   }), []);
 
-  const canvasRef = React.useRef<SpriteRendererHandle>(null);
+  //ENDFIXME
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (canvas) {
-      canvas.clear(0);
-      canvas.setColor(1, 2);
-      canvas.setColor(2, 3);
-      canvas.setColor(3, 1);
-      canvas.queueSpriteDraw(0, 0, 0, 16, 16);
-      canvas.draw();
-    }
-  }, [canvasRef]);
+  const canvasRef = React.useRef<SpriteRendererHandle>(null);
 
   if (!provider) return <div>Loading work session...</div>;
 
