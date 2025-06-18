@@ -48,7 +48,6 @@ const StyledTab = styled(Tab)(({ theme }) => ({
   borderTopLeftRadius: theme.shape.borderRadius,
   borderTopRightRadius: theme.shape.borderRadius,
   color: "white",
-  opacity: 1,
   "&.Mui-selected": {
     backgroundColor: theme.palette.primary.dark,
   },
