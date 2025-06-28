@@ -2,16 +2,15 @@
 
 ---
 
-## Prerequis
+## Prerequisites
 
-- [Bun](https://bun.sh/) should be installed
-
+- [Docker](https://www.docker.com/) should be installed
 ---
 
 ## setup
 
 ```bash
-bun install
+  docker build -t frontend:latest .
 ```
   
 #### vscode workspace recommended for eslint
@@ -20,7 +19,7 @@ click to **File** then **Open workspace from file** and select the **settings/vs
 ## Development
 
 ```bash
-bun run dev
+  docker run -it -p 3001:3001 -v ${PWD}:/app -v /app/node_modules frontend
 ```
 
 ## Recommended Extension
