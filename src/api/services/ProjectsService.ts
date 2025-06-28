@@ -31,12 +31,12 @@ export class ProjectsService {
     /**
      * Create a new project
      * @param requestBody
-     * @returns any Project created successfully
+     * @returns ProjectResponseDto Project created successfully
      * @throws ApiError
      */
     public static projectControllerCreate(
         requestBody: CreateProjectDto,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<ProjectResponseDto> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/projects',

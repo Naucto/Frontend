@@ -2,8 +2,14 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type RoleDto = {
+export type UserRoleDto = {
+    /**
+     * Role ID
+     */
     id: number;
+    /**
+     * Role name
+     */
     name: string;
 };
 
