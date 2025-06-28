@@ -62,6 +62,7 @@ const GameEditor: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [output, setOutput] = useState<string>("");
   const [roomId, setRoomId] = useState<string | undefined>(undefined);
+  const [projectContent, setProjectContent] = useState<any>(null);
 
   const getDataFunctions = useRef<{ [key: string]: () => string }>({});
   const setDataFunctions = useRef<{ [key: string]: (data: string) => void }>({});
@@ -74,18 +75,6 @@ const GameEditor: React.FC = () => {
   ], []);
 
   const ydoc: Y.Doc = useMemo(() => new Y.Doc(), []);
-
-  const setProjectContent = (content: any) => {
-    // FIXME: do not works because editorTabs is not yet initialized
-    editorTabs.forEach(({ label, setData }) => {
-      console.log("SET_DATA", setData);
-      if (setData) {
-        console.log(content[label]);
-        setData(content[label]);
-        console.log("Setting content of editor:", label, "content:", content);
-      }
-    });
-  };
 
   useEffect(() => {
     const joinSession = async () => {
@@ -142,6 +131,20 @@ const GameEditor: React.FC = () => {
       };
     });
   }, [tabs, ydoc, provider]);
+
+  useEffect(() => {
+    if (projectContent && editorTabs.length > 0) {
+      const timeout = setTimeout(() => {
+        editorTabs.forEach(({ label, setData }) => {
+          if (setData && projectContent[label]) {
+            setData(projectContent[label]);
+          }
+        });
+      }, 100);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [projectContent, editorTabs]);
 
   const [code, setCode] = useState("");
 

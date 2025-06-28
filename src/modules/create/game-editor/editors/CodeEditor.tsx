@@ -22,10 +22,11 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetDat
   useEffect(() => {
     if (onSetData) {
       onSetData((data: string) => {
-        console.log("Trying to set data in CodeEditor:", data);
         if (ytextRef.current) {
-          ytextRef.current.delete(0, ytextRef.current.length);
-          ytextRef.current.insert(0, data);
+          ydoc.transact(() => {
+            ytextRef.current.delete(0, ytextRef.current.length);
+            ytextRef.current.insert(0, data);
+          });
         }
       });
     }
