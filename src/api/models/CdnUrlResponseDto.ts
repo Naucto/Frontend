@@ -2,8 +2,10 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type RoleDto = {
-    id: number;
-    name: string;
+export type CdnUrlResponseDto = {
+    /**
+     * The signed CDN URL for accessing the project file
+     */
+    url: string;
 };
 
