@@ -1,19 +1,25 @@
-import { Button, Typography } from "@mui/material";
+import { Typography } from "@mui/material";
 import React from "react";
-import { UpdateProjectDto } from "src/api";
 import { styled } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import Card from "@modules/projects/components/Card";
+import { Project } from "../../../types/ProjectType";
 
-//FIXME: update the type when the API is ready
-//TODO
-type ProjectCardProps = any;
+type ProjectCardProps = {
+  project: Project
+}
 
 const Text = styled(Typography)(({ theme }) => ({
   fontSize: "16px",
   color: theme.palette.text.primary,
   fontWeight: "normal",
   padding: theme.spacing(0, 0),
+}));
+
+const StyledCard = styled(Card)<{ src: string}>(({ src }) => ({
+  backgroundImage: `url(${src})`,
+  backgroundSize: "cover",
+  backgroundPosition: "center",
 }));
 
 const ProjectFooter = styled("div")(({ theme }) => ({
@@ -32,18 +38,22 @@ const ProjectFooter = styled("div")(({ theme }) => ({
 }));
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
-  console.log("ProjectCard props:", project);
   const navigate = useNavigate();
   const redirectToProject = (): void => {
     navigate("/projects/" + project.id);
   };
 
+  let thumbnailUrl = "";
+  if (typeof project.iconUrl === "string") {
+    thumbnailUrl = project.iconUrl;
+  }
+
   return (
-    <Card onClick={redirectToProject}>
+    <StyledCard onClick={redirectToProject} src={thumbnailUrl}>
       <ProjectFooter>
         <Text variant="h6">{project.name}</Text>
       </ProjectFooter>
-    </Card>
+    </StyledCard>
   );
 };
 
