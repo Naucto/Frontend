@@ -1,22 +1,16 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, ReactNode } from "react";
 import { ContextError } from "src/errors/ContextError";
-
-interface ProjectType {
-  name: string;
-  shortDesc?: string;
-  iconUrl?: string;
-}
+import { Project } from "../types/ProjectType";
 
 interface ProjectContextType {
-  project: ProjectType;
-  setProject: (p: ProjectType) => void;
+  project: Project | undefined;
+  setProject: (p: Project | undefined) => void;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 
 export const ProjectProvider: React.FC<ProjectContextType & { children: ReactNode }> =
 ({ project, setProject, children }) => {
-  console.log("ProjectProvider mounted");
   return (
     <ProjectContext.Provider value={{ project, setProject }}>
       {children}
