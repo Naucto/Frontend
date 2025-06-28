@@ -5,7 +5,7 @@ interface CardProps extends ButtonProps {
   children?: React.ReactNode;
 }
 
-export const ProjectCardContainer = styled(Button)(({ theme }) => ({
+export const CardContainer = styled(Button)(({ theme }) => ({
   width: "100%",
   maxWidth: "360px",
   height: "180px",
@@ -19,9 +19,9 @@ export const ProjectCardContainer = styled(Button)(({ theme }) => ({
 
 const Card: React.FC<CardProps> = ({ children, ...props }) => {
   return (
-    <ProjectCardContainer {...props} disableRipple>
+    <CardContainer {...props} disableRipple>
       {children}
-    </ProjectCardContainer>
+    </CardContainer>
   );
 };
 
