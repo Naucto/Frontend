@@ -17,12 +17,52 @@ export class WorkSessionsService {
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/work-sessions/{id}',
+            url: '/work-sessions/join/{id}',
             path: {
                 'id': id,
             },
             errors: {
                 400: `Bad request.`,
+            },
+        });
+    }
+    /**
+     * Leave a work session
+     * @param id Project ID
+     * @returns void
+     * @throws ApiError
+     */
+    public static workSessionControllerLeave(
+        id: number,
+    ): CancelablePromise<void> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/work-sessions/leave/{id}',
+            path: {
+                'id': id,
+            },
+            errors: {
+                400: `Bad request.`,
+            },
+        });
+    }
+    /**
+     * Get work session info
+     * @param id Work session ID
+     * @returns any Work session info retrieved successfully.
+     * @throws ApiError
+     */
+    public static workSessionControllerGetInfo(
+        id: number,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/work-sessions/info/{id}',
+            path: {
+                'id': id,
+            },
+            errors: {
+                404: `Work session not found.`,
             },
         });
     }

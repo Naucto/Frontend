@@ -2,10 +2,10 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type CreateBucketDto = {
+export type CdnUrlResponseDto = {
     /**
-     * Optional bucket location constraint
+     * The signed CDN URL for accessing the project file
      */
-    locationConstraint?: string;
+    url: string;
 };
 
