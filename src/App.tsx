@@ -13,7 +13,8 @@ const Container = styled("div")(({ theme }) => ({
   padding: 0,
   display: "flex",
   flexDirection: "column",
-  backgroundColor: theme.palette.background.default
+  backgroundColor: theme.palette.background.default,
+  flex: 1
 }));
 
 function App() {
@@ -22,14 +23,12 @@ function App() {
       <Container>
         <BrowserRouter>
           <NavBar />
-          <div style={{ flex: 1, display: "flex" }}>
-            <Routes>
-              <Route path="/" element={<Hub />} />
-              <Route path="/hub" element={<Hub />} />
-              <Route path='/create' element={<GameEditor />} />
-              {/* <Route path="/editor" element={editorManager.render()} /> */}
-            </Routes>
-          </div>
+          <Routes>
+            <Route path="/" element={<Hub />} />
+            <Route path="/hub" element={<Hub />} />
+            <Route path='/create' element={<GameEditor />} />
+            {/* <Route path="/editor" element={editorManager.render()} /> */}
+          </Routes>
         </BrowserRouter>
       </Container>
     </ThemeProvider>
