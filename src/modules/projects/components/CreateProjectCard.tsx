@@ -2,7 +2,7 @@ import { Box, Typography } from "@mui/material";;
 import React from "react";
 import Card from "@modules/projects/components/Card";
 import { styled } from "@mui/material";
-import { CreateProjectDto, ProjectsService } from "src/api";
+import { CreateProjectDto, ProjectResponseDto, ProjectsService } from "src/api";
 
 const DashedCard = styled(Card)(({ theme }) => ({
   border: "4px dashed",
@@ -25,7 +25,9 @@ const CreateProjectCard: React.FC = () => {
       shortDesc: ""
     };
     try {
-      const res = await ProjectsService.projectControllerCreate(newProject);
+      const new_project: ProjectResponseDto = await ProjectsService.projectControllerCreate(newProject);
+      const projectId = new_project.id;
+      window.location.href = `/projects/${projectId}`;
     } catch (error) {
       console.error("Error creating new project:", error);
       //FIXME: add error handling
