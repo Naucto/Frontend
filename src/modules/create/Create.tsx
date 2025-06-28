@@ -7,8 +7,7 @@ import { useProject } from "../../providers/ProjectProvider";
 const Create: React.FC = () => {
   const editorManager = useEditorManager();
   const [isInit, setIsInit] = React.useState(false);
-  const { setProject, project } = useProject();
-
+  const { project } = useProject();
   useEffect(() => {
     // FIXME: This should be replaced with a proper project ID selection mechanism
     const projectId = LocalStorageManager.getProjectId();
@@ -18,16 +17,14 @@ const Create: React.FC = () => {
     }).catch((error) => {
       // FIXME: Handle error appropriately, e.g., show a notification
       console.error("Failed to join work session:", error);
-
-      //FIXME: For now, we will just initialize with a default room id
+      //FIXME: For now, we will just initialize with a default room id, because backend needs to be on to test it
       editorManager.init("1");
       setIsInit(true);
     });
-
     return () => {
       editorManager.cleanUpAndDisconnect();
     };
-  }, [editorManager, setIsInit]);
+  }, [editorManager, setIsInit, project]);
 
   return (
     <div>
