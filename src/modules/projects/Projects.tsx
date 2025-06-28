@@ -3,6 +3,8 @@ import { styled } from "@mui/material";
 import ProjectCard from "./components/ProjectCard";
 import { ProjectsService, UpdateProjectDto } from "src/api";
 import CreateProjectCard from "@modules/projects/components/CreateProjectCard";
+import { Project } from "src/types/ProjectType";
+import { useAsync } from "src/hooks/useAsync";
 
 const PageContainer = styled("div")(({ theme }) => ({
   margin: theme.spacing(4),
@@ -24,21 +26,18 @@ const ProjectCardsContainer = styled("div")(({ theme }) => ({
 
 const Projects: React.FC = () => {
 
-  //FIXME: update the type when the API is ready
-  const [projects, setProjects] = useState<any>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+
+  const { value: fetchedProjects } = useAsync(
+    ProjectsService.projectControllerFindAll,
+    []
+  );
 
   useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        const fetchedProjects = await ProjectsService.projectControllerFindAll();
-        setProjects(fetchedProjects);
-      } catch (error) {
-        //FIXME: add error handling
-        console.error("Error fetching projects:", error);
-      }
-    };
-    fetchProjects();
-  }, []);
+    if (fetchedProjects) {
+      setProjects(fetchedProjects);
+    }
+  }, [fetchedProjects]);
 
   return (
     <PageContainer>
