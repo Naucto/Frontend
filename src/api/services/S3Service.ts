@@ -3,7 +3,6 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { ApplyPolicyDto } from '../models/ApplyPolicyDto';
-import type { CreateBucketDto } from '../models/CreateBucketDto';
 import type { DeleteFilesDto } from '../models/DeleteFilesDto';
 import type { GeneratePolicyDto } from '../models/GeneratePolicyDto';
 import type { UploadFileDto } from '../models/UploadFileDto';
@@ -85,6 +84,26 @@ export class S3Service {
             path: {
                 'key': key,
                 'bucketName': bucketName,
+            },
+            errors: {
+                500: `Server error`,
+            },
+        });
+    }
+    /**
+     * Get the CDN URL for a file
+     * @param key Object key
+     * @returns any Returns the CDN URL
+     * @throws ApiError
+     */
+    public static s3ControllerGetCdnUrl(
+        key: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/s3/cdn-url/{key}',
+            path: {
+                'key': key,
             },
             errors: {
                 500: `Server error`,
@@ -186,13 +205,11 @@ export class S3Service {
     /**
      * Create a new bucket
      * @param bucketName Name of the bucket
-     * @param requestBody
      * @returns any Bucket created successfully
      * @throws ApiError
      */
     public static s3ControllerCreateBucket(
         bucketName: string,
-        requestBody: CreateBucketDto,
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
@@ -200,8 +217,6 @@ export class S3Service {
             path: {
                 'bucketName': bucketName,
             },
-            body: requestBody,
-            mediaType: 'application/json',
             errors: {
                 500: `Server error`,
             },

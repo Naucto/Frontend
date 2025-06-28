@@ -2,10 +2,10 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type CreateBucketDto = {
+export type SignedUrlResponseDto = {
     /**
-     * Optional bucket location constraint
+     * The signed CloudFront URL for accessing the protected file
      */
-    locationConstraint?: string;
+    signedUrl: string;
 };
 
