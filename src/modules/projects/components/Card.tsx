@@ -10,6 +10,7 @@ export const ProjectCardContainer = styled(Button)(({ theme }) => ({
   maxWidth: "360px",
   height: "180px",
   backgroundColor: theme.palette.gray[300],
+  borderRadius: theme.custom.rounded.md,
 
   "&:hover, &:focus": {
     backgroundColor: theme.palette.gray[500],
