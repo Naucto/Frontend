@@ -1,13 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, DependencyList } from "react";
 
 type useAsyncReturnType<T> = {
   loading: boolean,
   error: Error | undefined,
   value: T | undefined
 }
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function useAsync<T>(asyncFunction: () => Promise<T>, dependencies: any[] = []): useAsyncReturnType<T> {
+export function useAsync<T>(asyncFunction: () => Promise<T>, dependencies: DependencyList[] = []): useAsyncReturnType<T> {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | undefined>();
   const [value, setValue] = useState<T | undefined>();
