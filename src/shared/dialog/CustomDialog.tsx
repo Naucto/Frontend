@@ -1,8 +1,8 @@
-import { Backdrop, Box, styled, IconButton, Button } from "@mui/material";
+import { Box, styled, IconButton, Button, Dialog, Paper } from "@mui/material";
 import React, { ReactNode, useCallback } from "react";
 import CrossIcon from "@assets/cross.svg?react";
 
-const Dialog = styled(Box)(({ theme }) => ({
+const StyledPaper = styled(Paper)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
   position: "relative",
@@ -12,6 +12,7 @@ const Dialog = styled(Box)(({ theme }) => ({
   borderRadius: 16,
   color: theme.palette.text.primary,
   padding: theme.spacing(6),
+  boxShadow: "none",
 }));
 
 const CloseButton = styled(IconButton)(({ theme }) => ({
@@ -54,20 +55,20 @@ export const CustomDialog: React.FC<CustomDialogProps> = ({
   }, [onClose, setIsOpen]);
 
   return (
-    <Backdrop open={isOpen} sx={{ zIndex: 1300 }}>
-      <Dialog>
-        <CloseButton aria-label="close" onClick={handleClose}>
-          <CrossIcon width={32} height={32} />
-        </CloseButton>
-        <Content>{children}</Content>
-        {!hideSubmitButton && (
-          <Footer>
-            <Button onClick={onSubmit}>
-              Submit
-            </Button>
-          </Footer>
-        )}
-      </Dialog>
-    </Backdrop>
+    <Dialog
+      open={isOpen}
+      onClose={handleClose}
+      slots={{ paper: StyledPaper }}
+    >
+      <CloseButton aria-label="close" onClick={handleClose}>
+        <CrossIcon width={32} height={32} />
+      </CloseButton>
+      <Content>{children}</Content>
+      {!hideSubmitButton && (
+        <Footer>
+          <Button onClick={onSubmit}>Submit</Button>
+        </Footer>
+      )}
+    </Dialog>
   );
 };
