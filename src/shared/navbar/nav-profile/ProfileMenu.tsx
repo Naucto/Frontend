@@ -7,7 +7,7 @@ import { ProfileMenuItem } from "@shared/navbar/nav-profile/ProfileMenuItem";
 import { useUser } from "src/providers/UserProvider";
 import { useNavigate } from "react-router-dom";
 type ProfileMenuProps = {
-  anchorEl: null | HTMLElement;
+  anchorEl: undefined | HTMLElement;
   open: boolean;
   onClose: () => void;
 };
