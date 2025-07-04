@@ -3,6 +3,8 @@ import React from "react";
 import Card from "@modules/projects/components/Card";
 import { styled } from "@mui/material";
 import { CreateProjectDto, ProjectResponseDto, ProjectsService } from "src/api";
+import { useNavigate } from "react-router-dom";
+import * as urls from "@shared/route";
 
 const DashedCard = styled(Card)(({ theme }) => ({
   border: "4px dashed",
@@ -18,7 +20,7 @@ const DashedCard = styled(Card)(({ theme }) => ({
 }));
 
 const CreateProjectCard: React.FC = () => {
-
+  const navigate = useNavigate();
   const createNewProject = async () => {
     const newProject: CreateProjectDto = {
       name: "Untitled Project",
@@ -27,7 +29,8 @@ const CreateProjectCard: React.FC = () => {
     try {
       const new_project: ProjectResponseDto = await ProjectsService.projectControllerCreate(newProject);
       const projectId = new_project.id;
-      window.location.href = `/projects/${projectId}`;
+      navigate(urls.toProject(projectId));
+
     } catch (error) {
       console.error("Error creating new project:", error);
       //FIXME: add error handling
