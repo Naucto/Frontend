@@ -4,6 +4,8 @@ import { styled } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import Card from "@modules/projects/components/Card";
 import { Project } from "src/types/ProjectType";
+import * as urls from "@shared/route";
+
 type ProjectCardProps = {
   project: Project
 }
@@ -39,7 +41,7 @@ const ProjectFooter = styled("div")(({ theme }) => ({
 const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
   const navigate = useNavigate();
   const redirectToProject = (): void => {
-    navigate("/projects/" + project.id);
+    navigate(urls.toProject(project.id));
   };
 
   let thumbnailUrl = "";
