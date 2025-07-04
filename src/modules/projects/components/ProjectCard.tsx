@@ -3,8 +3,7 @@ import React from "react";
 import { styled } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import Card from "@modules/projects/components/Card";
-import { Project } from "../../../types/ProjectType";
-
+import { Project } from "src/types/ProjectType";
 type ProjectCardProps = {
   project: Project
 }
