@@ -4,6 +4,7 @@ import { editor } from "monaco-editor";
 import CodeTabTheme from "./CodeTabTheme";
 import { MonacoBinding } from "y-monaco";
 import { EditorProps } from "./EditorType";
+import "./CodeEditor.css";
 
 const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider }) => {
   const monacoBindingRef = useRef<MonacoBinding | null>(null);
@@ -34,27 +35,6 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider }) => {
 
   return (
     <>
-      <style>{`
-        .yRemoteSelection { 
-          background-color: rgba(250, 129, 0, 0.5); 
-        }
-        .yRemoteSelectionHead {
-          position: absolute;
-          border-left: orange solid 2px;
-          border-top: orange solid 2px;
-          border-bottom: orange solid 2px;
-          height: 100%;
-          box-sizing: border-box;
-        }
-        .yRemoteSelectionHead::after {
-          position: absolute;
-          content: ' ';
-          border: 3px solid orange;
-          border-radius: 4px;
-          left: -4px;
-          top: -5px;
-        }
-      `}</style>
       <Editor
         className="monaco"
         defaultLanguage="lua"
