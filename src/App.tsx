@@ -4,7 +4,9 @@ import { Hub } from "@modules/hub/Hub";
 import { styled, ThemeProvider } from "@mui/material/styles";
 import NavBar from "@shared/navbar/NavBar";
 import { muiTheme } from "@theme/MUITheme";
-import GameEditor from "@modules/create/game-editor/GameEditor";
+import Projects from "@modules/projects/Projects";
+import Project from "@modules/project/Project";
+import { ProjectProvider } from "src/providers/ProjectProvider";
 
 const Container = styled("div")(({ theme }) => ({
   height: "100vh",
@@ -26,7 +28,8 @@ function App() {
           <Routes>
             <Route path="/" element={<Hub />} />
             <Route path="/hub" element={<Hub />} />
-            <Route path='/create' element={<GameEditor />} />
+            <Route path='/projects' element={<Projects />} />
+            <Route path="/projects/:projectId" element={<Project />} />
             {/* <Route path="/editor" element={editorManager.render()} /> */}
           </Routes>
         </BrowserRouter>
