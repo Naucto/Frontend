@@ -2,10 +2,11 @@ import { User } from "src/types/userTypes";
 import { createContext, useContext, useEffect, useState } from "react";
 import { ContextError } from "src/errors/ContextError";
 
-
 interface UserContextType {
   user?: User;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
+  logIn: (userData: User) => void;
+  logOut: () => void;
 }
 
 const userContext = createContext<UserContextType | null>(null);
@@ -27,16 +28,16 @@ export const UserProvider = ({ children }) => {
     }
   }, [user]);
 
-  const login = (userData: User) => setUser(userData);
+  const logIn = (userData: User) => setUser(userData);
 
-  const logout = () => setUser(null);
+  const logOut = () => setUser(null);
 
   return (
-    <userContext.Provider value={{ user, setUser }}>
+    <userContext.Provider value={{ user, setUser, logIn, logOut }}>
       {children}
     </userContext.Provider>
   );
-}
+};
 
 export const useUser = () => {
   const context = useContext(userContext);
@@ -44,4 +45,4 @@ export const useUser = () => {
     throw new ContextError("useUser", "UserProvider");
   }
   return context;
-}
+};

@@ -3,47 +3,43 @@ import Music from "@modules/editor/SoundEditor/Music";
 import "./SoundEditor.css";
 import { Doc } from "yjs";
 import { WebrtcProvider } from "y-webrtc";
-import styled, { DefaultTheme } from "styled-components";
+import { styled } from "@mui/material/styles";
 import { c } from "node_modules/vite/dist/node/moduleRunnerTransport.d-CXw_Ws6P";
 
-const ButtonContainer = styled.div <{ theme: DefaultTheme }>`
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    margin-top: ${({ theme }) => theme.spacing(2.5)};
-    flex-wrap: wrap;
-    align-items: center;
-    max-width: 20%;
-    max-height: ${({ theme }) => theme.spacing(70)};
-    overflow-y: scroll;
-`;
+const ButtonContainer = styled("div")(({ theme }) => ({
+  display: "flex",
+  flexDirection: "row",
+  justifyContent: "center",
+  marginTop: theme.spacing(2.5),
+  flexWrap: "wrap",
+  alignItems: "center",
+  maxWidth: "20%",
+  maxHeight: theme.spacing(70),
+  overflowY: "scroll",
+}));
 
-const MusicEditorButton = styled.button <{ theme: DefaultTheme }>`
-    background-color: ${({ theme }) => theme.colors.blue[500]};
-    color: ${({ theme }) => theme.colors.text};
-    padding: ${({ theme }) => theme.spacing(1)} ${({ theme }) => theme.spacing(2)};
-    cursor: pointer;
-    font-size: ${({ theme }) => theme.typography.fontSize}px;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    margin: ${({ theme }) => theme.spacing(0.5)} ${({ theme }) => theme.spacing(0.25)};
-    font-family: ${({ theme }) => theme.typography.fontFamily};
-    border-radius: ${({ theme }) => theme.spacing(1.2)};
-    border: ${({ theme }) => theme.spacing(0.25)} solid ${({ theme }) => theme.colors.blue[600]};
+const MusicEditorButton = styled("button")(({ theme }) => ({
+  backgroundColor: theme.palette.blue[500],
+  color: theme.palette.text.primary,
+  padding: theme.spacing(1, 2),
+  cursor: "pointer",
+  fontSize: theme.typography.fontSize,
+  textAlign: "center",
+  textDecoration: "none",
+  display: "inline-block",
+  margin: theme.spacing(0.5, 0.25),
+  fontFamily: theme.typography.fontFamily,
+  borderRadius: theme.spacing(1.2),
+  border: `${theme.spacing(0.25)} solid ${theme.palette.blue[700]}`,
 
-    &:hover {
-        background-color: ${({ theme }) => theme.colors.blue[600]};
-    }
+  "&:hover": {
+    backgroundColor: theme.palette.blue[700],
+  },
 
-    &.selected {
-        background-color: ${({ theme }) => theme.colors.blue[600]};
-    }
-`;
-
-interface SoundEditorState {
-  
-}
+  "&.selected": {
+    backgroundColor: theme.palette.blue[700],
+  },
+}));
 
 const instruments: Map<string, string> = new Map([
   ["piano", "Piano"],
@@ -141,12 +137,12 @@ export class SoundEditor extends IEditor {
 
   }
 
-  clearMusic() : void {
+  clearMusic(): void {
     this.setState({ activeCells: new Set<string>() });
     this.state.currentMusic = new Music();
   }
 
-  getInstrumentButtons() : JSX.Element[] {
+  getInstrumentButtons(): JSX.Element[] {
     return Array.from(instruments.keys()).map((instrument) => (
       <MusicEditorButton
         className={`flex-item-grow ${this.state.currentInstrument === instrument ? "selected" : ""}`}
@@ -160,13 +156,13 @@ export class SoundEditor extends IEditor {
     ));
   }
 
-  saveMusic() : void {
+  saveMusic(): void {
     const musicData = this.state.currentMusic.toJson();
     console.log("Music data to save:", musicData);
     this._musics[this.state.selectedMusicIndex] = (Music.fromJson(musicData));
   }
 
-  loadStateFromMusic(id: number) : void {
+  loadStateFromMusic(id: number): void {
     const music = this._musics[id];
     this.setState({ selectedMusicIndex: id });
     this.setState({ currentMusic: music });
@@ -187,7 +183,7 @@ export class SoundEditor extends IEditor {
 
   handleMouseUp: () => void = () => this.setState({ isMouseDown: false });
 
-  render() : JSX.Element {
+  render(): JSX.Element {
     //const theme = useTheme()
     const cellWidth = 35;
     const cellHeight = 20;

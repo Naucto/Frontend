@@ -1,9 +1,9 @@
 import { SpriteRendererHandle, useSpriteRenderer } from "@shared/canvas/RendererHandle";
-import { forwardRef, useImperativeHandle, useRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import { SpriteSheet } from "src/types/SpriteSheetType";
-import styled from "styled-components";
+import { styled } from "@mui/system";
 
-type CanvasProps = {
+export type CanvasProps = React.CanvasHTMLAttributes<HTMLCanvasElement> & {
   spriteSheet: SpriteSheet;
   screenSize: {
     width: number;
@@ -13,25 +13,34 @@ type CanvasProps = {
   className?: string;
 };
 
-const Canvas = forwardRef<SpriteRendererHandle, CanvasProps>(({ screenSize, spriteSheet, palette, className }, ref) => {
+export type CanvasHandle = SpriteRendererHandle & {
+  getCanvas: () => HTMLCanvasElement | null;
+};
+
+const Canvas = forwardRef<CanvasHandle, CanvasProps>(({ screenSize, spriteSheet, palette, className, ...props }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererHandle = useSpriteRenderer(canvasRef, spriteSheet, palette, screenSize);
 
-  useImperativeHandle(ref, () => rendererHandle, [rendererHandle]);
+  useImperativeHandle(ref, () => ({
+    ...rendererHandle,
+    getCanvas: () => canvasRef.current,
+  }), [rendererHandle]);
+
   return (
     <canvas
       ref={canvasRef}
       width={screenSize.width}
       height={screenSize.height}
       className={className}
+      tabIndex={0}
+      {...props}
     />
   );
 });
 
-const StyledCanvas = styled(Canvas)`
-  image-rendering: pixelated;
-  width: 100%;
-
-`;
+const StyledCanvas = styled(Canvas)({
+  imageRendering: "pixelated",
+  width: "100%",
+});
 
 export default StyledCanvas;
