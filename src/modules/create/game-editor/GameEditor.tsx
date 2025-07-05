@@ -63,6 +63,7 @@ const GameEditor: React.FC = () => {
   const [output, setOutput] = useState<string>("");
   const [roomId, setRoomId] = useState<string | undefined>(undefined);
   const [projectContent, setProjectContent] = useState<any>(null);
+  const [isHost, setIsHost] = useState<boolean>(false);
 
   const getDataFunctions = useRef<{ [key: string]: () => string }>({});
   const setDataFunctions = useRef<{ [key: string]: (data: string) => void }>({});
@@ -83,9 +84,13 @@ const GameEditor: React.FC = () => {
         const session = await WorkSessionsService.workSessionControllerJoin(parseInt(projectId));
         setRoomId(session.roomId);
 
-        const content = await ProjectsService.projectControllerFetchProjectContent(projectId);
-        console.log("Received project content:", content);
-        setProjectContent(content);
+        const host = (await WorkSessionsService.workSessionControllerGetInfo(Number(projectId))).host;
+        const userId = JSON.parse(localStorage.getItem("user") ?? "{}").id;
+        if (host == userId) {
+          const content = await ProjectsService.projectControllerFetchProjectContent(projectId);
+          setIsHost(true);
+          setProjectContent(content);
+        }
       } catch (err) {
         console.error("Failed to join work session:", err); // FIXME : better error handling
       }
@@ -95,9 +100,16 @@ const GameEditor: React.FC = () => {
   }, []);
 
   const provider: WebrtcProvider | null = useMemo(() => {
-    if (!roomId) return null;
+    if (!roomId)
+      return null;
     return new WebrtcProvider(roomId, ydoc, config.webrtc);
   }, [roomId, ydoc]);
+
+  const awareness = useMemo(() => {
+    if (!provider)
+      return null;
+    return provider.awareness;
+  }, [provider]);
 
   const editorTabs: EditorTab[] = useMemo(() => {
     if (!ydoc || !provider) return [];
@@ -145,6 +157,54 @@ const GameEditor: React.FC = () => {
       return () => clearTimeout(timeout);
     }
   }, [projectContent, editorTabs]);
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user") ?? "{}");
+    awareness?.setLocalStateField("user", {
+      name: user.name,
+      color: "#abcdef",
+      userId: user.id,
+    });
+
+    const userStateCache = new Map<number, { name: string; color: string; userId: string }>();
+
+    const onChange = ({ added, updated, removed }: {
+      added: number[]
+      updated: number[]
+      removed: number[]
+    }) => {
+      [...added, ...updated].forEach(clientID => {
+        const state = awareness?.getStates().get(clientID);
+        if (state?.user) {
+          userStateCache.set(clientID, state.user);
+        }
+      });
+
+      removed.forEach(clientID => {
+        const disconnectedUser = userStateCache.get(clientID);
+        if (disconnectedUser) {
+          console.log("Utilisateur déconnecté :", disconnectedUser.userId);
+          const projectId = Number(localStorage.getItem("projectId") || "1");
+          WorkSessionsService
+            .workSessionControllerGetInfo(projectId)
+            .then(sessionInfo => {
+              if (sessionInfo.host == user.id) {
+                setIsHost(true);
+              }
+            });
+          userStateCache.delete(clientID);
+
+          WorkSessionsService.workSessionControllerKick(projectId, { userId: Number(disconnectedUser.userId) });
+        }
+      });
+    };
+
+    if (!awareness)
+      return;
+
+    awareness!.on("change", onChange);
+    return () => { awareness!.off("change", onChange); };
+  }, [awareness]);
 
   const [code, setCode] = useState("");
 
@@ -202,6 +262,9 @@ const GameEditor: React.FC = () => {
       return;
 
     saveProjectContent();
+    const projectId = localStorage.getItem("projectId") || "1";
+
+    WorkSessionsService.workSessionControllerLeave(Number(projectId));
 
     provider?.awareness.setLocalState(null);
     provider?.disconnect();
@@ -229,6 +292,9 @@ const GameEditor: React.FC = () => {
   }, [canvasRef]);
 
   useEffect(() => {
+    if (!isHost)
+      return;
+
     const intervalId = setInterval(() => {
       saveProjectContent();
     }, 5 * 60 * 1000);
@@ -236,7 +302,7 @@ const GameEditor: React.FC = () => {
     return () => {
       clearInterval(intervalId);
     };
-  }, [editorTabs]);
+  }, [editorTabs, isHost]);
 
   if (!provider)
     return <div>Loading work session...</div>;

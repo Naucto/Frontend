@@ -16,6 +16,7 @@ export type { CreateUserDto } from './models/CreateUserDto';
 export type { DeleteFilesDto } from './models/DeleteFilesDto';
 export type { FetchWorkSessionDto } from './models/FetchWorkSessionDto';
 export type { GeneratePolicyDto } from './models/GeneratePolicyDto';
+export type { KickWorkSessionDto } from './models/KickWorkSessionDto';
 export type { LoginDto } from './models/LoginDto';
 export type { PaginationMetaDto } from './models/PaginationMetaDto';
 export { ProjectResponseDto } from './models/ProjectResponseDto';

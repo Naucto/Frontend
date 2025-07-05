@@ -3,6 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { FetchWorkSessionDto } from '../models/FetchWorkSessionDto';
+import type { KickWorkSessionDto } from '../models/KickWorkSessionDto';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -42,6 +43,30 @@ export class WorkSessionsService {
             path: {
                 'id': id,
             },
+            errors: {
+                400: `Bad request.`,
+            },
+        });
+    }
+    /**
+     * Leave a work session
+     * @param id Project ID
+     * @param requestBody
+     * @returns void
+     * @throws ApiError
+     */
+    public static workSessionControllerKick(
+        id: number,
+        requestBody: KickWorkSessionDto,
+    ): CancelablePromise<void> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/work-sessions/kick/{id}',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
             errors: {
                 400: `Bad request.`,
             },

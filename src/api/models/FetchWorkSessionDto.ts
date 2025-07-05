@@ -8,6 +8,10 @@ export type FetchWorkSessionDto = {
      */
     users: Array<string>;
     /**
+     * The ID of the session's host
+     */
+    host: number;
+    /**
      * The ID of the project this work session belongs to
      */
     project: number;

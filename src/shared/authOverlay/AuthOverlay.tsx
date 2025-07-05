@@ -1,12 +1,11 @@
-import { Backdrop, Box, Link, Typography } from "@mui/material";
+import { Box, Link, Typography } from "@mui/material";
 import GenericTextField from "@shared/TextField";
-import React, { FC, ReactNode, useCallback, useMemo, useState } from "react";
+import React, { FC, useCallback, useState } from "react";
 import { styled } from "@mui/material";
 import { CreateUserDto, LoginDto, UsersService } from "src/api";
-import { Form, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import ImportantButton from "@shared/buttons/ImportantButton";
 import { AuthService } from "src/api/services/AuthService";
-import { c } from "node_modules/vite/dist/node/moduleRunnerTransport.d-CXw_Ws6P";
 import { useUser } from "src/providers/UserProvider";
 import { CustomDialog } from "@shared/dialog/CustomDialog";
 
@@ -69,7 +68,6 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
         username: "",
         password: "",
         nickname: "",
-        roles: [],
       }
       : {
         email: "",
@@ -80,23 +78,25 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
   const handleAuth = useCallback(async (data: CreateUserDto | LoginDto) => {
     try {
       setErrorMessage(null);
+      let authResponse;
       if (isSignedUp) {
-        const { email, username, password, nickname } = data as CreateUserDto;
-        await AuthService.authControllerRegister({ email, username, password, nickname });
+        const { email, username, password } = data as CreateUserDto;
+        authResponse = await AuthService.authControllerRegister({ email, username, password, nickname: username });
       } else {
         const { email, password } = data as LoginDto;
-        const loginRes = await AuthService.authControllerLogin({ email, password });
-        // FIXME: put the token to httpOnly cookie using the backend
-        localStorage.setItem("token", loginRes.access_token);
-
-        const userRes = await UsersService.userControllerGetProfile();
-        localStorage.setItem("user", JSON.stringify(loginRes));
-        setUser({
-          id: userRes.id,
-          email: userRes.email,
-          name: userRes.username,
-        });
+        authResponse = await AuthService.authControllerLogin({ email, password });
       }
+
+      // FIXME: put the token to httpOnly cookie using the backend
+      localStorage.setItem("token_access", authResponse.access_token);
+
+      const userRes = await UsersService.userControllerGetProfile();
+      localStorage.setItem("user", JSON.stringify(userRes));
+      setUser({
+        id: String(userRes.id),
+        email: userRes.email,
+        name: userRes.username,
+      });
       reset();
       if (onClose) {
         onClose();
