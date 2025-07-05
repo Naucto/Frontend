@@ -7,7 +7,7 @@ export const Login: FC = () => {
   const handleClose = useCallback(() => setShowAuthOverlay(false), []);
   return (
     <>
-      <NavElem to="#" onClick={() => setShowAuthOverlay(true)}> Login </NavElem>
+      <NavElem to="#" onClick={() => setShowAuthOverlay(true)}>Login</NavElem>
       {showAuthOverlay && (
         <AuthOverlay isOpen={showAuthOverlay} setIsOpen={setShowAuthOverlay} onClose={handleClose} />
       )}
