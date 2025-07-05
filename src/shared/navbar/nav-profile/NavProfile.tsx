@@ -3,8 +3,7 @@ import AuthOverlay from "@shared/authOverlay/AuthOverlay";
 import { CustomDialog } from "@shared/dialog/CustomDialog";
 import { ProfileMenu } from "@shared/navbar/nav-profile/ProfileMenu";
 import { useTheme } from "@theme/ThemeContext";
-import { useCallback } from "react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useUser } from "src/providers/UserProvider";
 
 const NavProfile: React.FC = () => {
