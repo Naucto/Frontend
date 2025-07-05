@@ -9,18 +9,12 @@ import { useUser } from "src/providers/UserProvider";
 
 const NavProfile: React.FC = () => {
   const theme = useTheme();
-  const [showAuthOverlay, setShowAuthOverlay] = useState(false);
   const [showBurgerMenu, setShowBurgerMenu] = useState(false);
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const { user } = useUser();
+  const [anchorEl, setAnchorEl] = useState<undefined | HTMLElement>(undefined);
   const handleClick = useCallback((event: React.MouseEvent<HTMLElement>) => {
-    if (user) {
-      setShowBurgerMenu((prev) => !prev);
-      setAnchorEl(event.currentTarget);
-    } else {
-      setShowAuthOverlay((prev) => !prev);
-    }
-  }, [user]);
+    setShowBurgerMenu((prev) => !prev);
+    setAnchorEl(event.currentTarget);
+  }, []);
 
   return (
     <>
