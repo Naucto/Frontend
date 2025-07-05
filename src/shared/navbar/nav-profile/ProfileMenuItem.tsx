@@ -8,7 +8,7 @@ const StyledMenuItem = styled(MenuItem)(({ theme }) => ({
   margin: theme.spacing(1),
   padding: theme.spacing(1),
   borderRadius: theme.spacing(0.5),
-  width: "184px"
+  width: theme.spacing(23)
 }));
 
 const IconWrapper = styled("div")(({ theme }) => ({
