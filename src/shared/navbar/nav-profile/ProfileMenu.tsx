@@ -6,6 +6,7 @@ import UserIcon from "@assets/user.svg?react";
 import { ProfileMenuItem } from "@shared/navbar/nav-profile/ProfileMenuItem";
 import { useUser } from "src/providers/UserProvider";
 import { useNavigate } from "react-router-dom";
+
 type ProfileMenuProps = {
   anchorEl: undefined | HTMLElement;
   open: boolean;
@@ -44,7 +45,6 @@ export const ProfileMenu: FC<ProfileMenuProps> = ({ anchorEl, open, onClose }) =
     >
       <ProfileMenuItem icon={<UserIcon />} text="Profile" />
       <ProfileMenuItem icon={<DisconnectIcon />} text="Logout" onClick={handleLogOut} />
-
     </StyledMenu>
   );
 };
