@@ -1,11 +1,13 @@
-import React, { useRef, useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import Editor, { Monaco } from "@monaco-editor/react";
-import CodeTabTheme from "@modules/editor/CodeEditor/CodeTabTheme.ts";
+import { editor } from "monaco-editor";
+import CodeTabTheme from "./CodeTabTheme";
 import { MonacoBinding } from "y-monaco";
 import { EditorProps } from "./EditorType";
+import "./CodeEditor.css";
 
 const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetData }) => {
-  const editorRef = useRef<any>(null);
+  const monacoBindingRef = useRef<MonacoBinding | null>(null);
   const ytextRef = useRef<any | null>(null);
 
   useEffect(() => {
@@ -32,59 +34,45 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetDat
     }
   }, [onSetData]);
 
-  const handleMount = (editor: any) => {
-    editorRef.current = editor;
+
+  const handleMount = (editor: editor.IStandaloneCodeEditor): (() => void) | void => {
+    const editorModel = editor.getModel();
+    if (!editorModel) {
+      console.error("Monaco editor model is not available.");
+      return;
+    }
 
     ytextRef.current = ydoc.getText("monaco");
 
-    const styleSheet = document.createElement("style");
-    styleSheet.textContent = `
-      .yRemoteSelection { background-color: rgba(250, 129, 0, 0.5); }
-      .yRemoteSelectionHead {
-          position: absolute;
-          border-left: orange solid 2px;
-          border-top: orange solid 2px;
-          border-bottom: orange solid 2px;
-          height: 100%;
-          box-sizing: border-box;
-        }
-      .yRemoteSelectionHead::after {
-          position: absolute;
-          content: ' ';
-          border: 3px solid orange;
-          border-radius: 4px;
-          left: -4px;
-          top: -5px;
-      };`;
-    document.head.appendChild(styleSheet);
-
-    new MonacoBinding(
+    monacoBindingRef.current = new MonacoBinding(
       ytextRef.current,
-      editor.getModel(),
+      editorModel,
       new Set([editor]),
       provider.awareness
     );
 
     return () => {
       editor.dispose();
-      document.head.removeChild(styleSheet);
+      monacoBindingRef.current?.destroy?.();
     };
   };
 
-  const handleBeforeMount = (monaco: Monaco) => {
+  const handleBeforeMount = (monaco: Monaco): void => {
     monaco.editor.defineTheme(CodeTabTheme.MONACO_THEME_NAME, CodeTabTheme.MONACO_THEME);
   };
 
   return (
-    <Editor
-      className="monaco"
-      defaultLanguage="lua"
-      theme={CodeTabTheme.MONACO_THEME_NAME}
-      beforeMount={handleBeforeMount}
-      onMount={handleMount}
-      options={{ automaticLayout: true }}
-      defaultValue="//test"
-    />
+    <>
+      <Editor
+        className="monaco"
+        defaultLanguage="lua"
+        theme={CodeTabTheme.MONACO_THEME_NAME}
+        beforeMount={handleBeforeMount}
+        onMount={handleMount}
+        options={{ automaticLayout: true }}
+        defaultValue="//test"
+      />
+    </>
   );
 };
 

@@ -5,7 +5,7 @@ import { styled } from "@mui/material";
 type Props = React.ComponentProps<typeof Button>;
 
 const StyledImportantButton = styled(Button)(({ theme }) => ({
-  backgroundColor: theme.palette.red,
+  backgroundColor: theme.palette.red[500],
   color: theme.palette.common.white,
 }));
 

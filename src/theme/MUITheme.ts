@@ -1,4 +1,26 @@
+/* eslint-disable @typescript-eslint/no-empty-object-type */
+
 import { createTheme } from "@mui/material/styles";
+import { Colors, colors } from "./colors";
+export type ColorShades = Record<50 | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900, string>;
+
+type LogoConfig = {
+  primary: string;
+  secondary: string;
+};
+
+type RoundedConfig = {
+  sm: string;
+  md: string;
+  lg: string;
+  fll: string;
+};
+
+type BorderConfig = {
+  color: {
+    gray: string;
+  };
+};
 
 interface ColorShades {
   50: string;
@@ -33,90 +55,33 @@ type BorderConfig = {
 
 declare module "@mui/material/styles" {
   interface Theme {
-    border: {
-      color: {
-        gray: string;
-      }
-    }
+    border: BorderConfig;
     custom: {
-      logo: {
-        primary: string;
-        secondary: string;
-      };
-      rounded: {
-        sm: string;
-        md: string;
-        lg: string;
-        fill: string;
-      };
+      logo: LogoConfig;
+      rounded: RoundedConfig;
     };
   }
   interface ThemeOptions {
-    border?: {
-      color?: {
-        gray?: string;
-      }
-    }
+    border?: BorderConfig;
     custom?: {
-      logo?: {
-        primary?: string;
-        secondary?: string;
-      };
-      rounded?: {
-        sm?: string;
-        md?: string;
-        lg?: string;
-        fill?: string;
-      };
+      logo?: LogoConfig;
+      rounded?: RoundedConfig;
     };
   }
-  interface Palette {
-    gray: ColorShades;
-    red: ColorShades;
-  }
-  interface PaletteOptions {
-    gray: ColorShades;
-    red: ColorShades;
-  }
+
+  interface Palette extends Colors { }
+  interface PaletteOptions extends Partial<Colors> { }
 }
 
 export const muiTheme = createTheme({
   palette: {
-    gray: {
-      50: "#ececec",
-      100: "#c3c3c3",
-      200: "#a6a6a6",
-      300: "#7e7e7e",
-      400: "#656565",
-      500: "#3e3e3e",
-      600: "#383838",
-      700: "#2c2c2c",
-      800: "#222222",
-      900: "#1a1a1a",
-    },
-    red: {
-      50: "#f7ebea",
-      100: "#e5c2bf",
-      200: "#d9a4a0",
-      300: "#c77a75",
-      400: "#bd615a",
-      500: "#ac3931",
-      600: "#9d342d",
-      700: "#7a2823",
-      800: "#5f1f1b",
-      900: "#481815",
-    },
+    ...colors,
 
     primary: { main: "#E5D352" },
     secondary: { main: "#537D8D" },
     error: { main: "#AC3931" },
     background: { default: "#303030" },
     text: { primary: "#FFFFFF" },
-  },
-  border: {
-    color: {
-      gray: "#646464",
-    },
   },
   typography: {
     fontFamily: "'Pixelify', 'Roboto', 'Helvetica', 'Arial', sans-serif",

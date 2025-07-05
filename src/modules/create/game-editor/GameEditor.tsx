@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { styled } from "@mui/material/styles";
 import { Tabs, Tab, Box } from "@mui/material";
 import CodeEditor from "@modules/create/game-editor/editors/CodeEditor";
@@ -32,29 +32,26 @@ const LeftPanel = styled("div")({
 const RightPanel = styled("div")({
   width: "100%",
   height: "100%",
-  backgroundColor: "gray",
 });
 
 const TabContent = styled(Box)({
   flex: 1,
   overflow: "auto",
-  backgroundColor: "white",
 });
 
 const StyledTab = styled(Tab)(({ theme }) => ({
-  fontFamily: theme.typography.fontFamily, // FIXME: use correct theme when available
-  backgroundColor: theme.palette.primary.main,
-  padding: "0.3rem 2rem",
+  fontFamily: theme.typography.fontFamily,
+  backgroundColor: theme.palette.primary.main, //FIXME: use blue color from theme
+  padding: theme.spacing(1, 2),
   fontSize: "1.2rem",
   borderTopLeftRadius: theme.shape.borderRadius,
   borderTopRightRadius: theme.shape.borderRadius,
   color: "white",
-  opacity: 1,
   "&.Mui-selected": {
-    backgroundColor: theme.palette.primary.dark,
+    backgroundColor: theme.palette.primary.dark, //FIXME: use blue color from theme
   },
   "&:hover": {
-    backgroundColor: theme.palette.primary.light,
+    backgroundColor: theme.palette.primary.light, //FIXME: use blue color from theme
   },
 }));
 
@@ -211,17 +208,18 @@ const GameEditor: React.FC = () => {
   useEffect(() => {
     const ytext = ydoc.getText("monaco");
     setCode(ytext.toString());
-    const handler = () => setCode(ytext.toString());
+    const handler = (): void => setCode(ytext.toString());
     ytext.observe(handler);
     return () => ytext.unobserve(handler);
   }, [ydoc]);
+
+  //FIXME: temporary solution, should be replaced with given data from back
 
   const envData: EnvData = useMemo(() => ({
     code,
     output,
   }), [code, output]);
 
-  //FIXME: get spritesheet, palette, and canvas size from the game configuration
   const spriteSheet: SpriteSheet = useMemo(() => ({
     spriteSheet: spriteTable,
     spriteSize: { width: 8, height: 8 },
