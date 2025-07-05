@@ -4,9 +4,7 @@ import { FC, useCallback, useState } from "react";
 
 export const Login: FC = () => {
   const [showAuthOverlay, setShowAuthOverlay] = useState(false);
-  const handleClose = useCallback(() => {
-    setShowAuthOverlay(false);
-  }, []);
+  const handleClose = useCallback(() => setShowAuthOverlay(false), []);
   return (
     <>
       <NavElem to="#" onClick={() => setShowAuthOverlay(true)}> Login </NavElem>
