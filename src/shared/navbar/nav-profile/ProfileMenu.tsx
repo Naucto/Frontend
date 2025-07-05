@@ -1,6 +1,6 @@
-import { MenuItem, styled } from "@mui/material";
+import { styled } from "@mui/material";
 import Menu from "@mui/material/Menu";
-import React, { FC, useCallback } from "react";
+import { FC, useCallback } from "react";
 import DisconnectIcon from "@assets/disconnect.svg?react";
 import UserIcon from "@assets/user.svg?react";
 import { ProfileMenuItem } from "@shared/navbar/nav-profile/ProfileMenuItem";
