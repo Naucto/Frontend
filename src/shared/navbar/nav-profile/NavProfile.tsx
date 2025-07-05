@@ -8,10 +8,10 @@ import { useUser } from "src/providers/UserProvider";
 
 const NavProfile: React.FC = () => {
   const theme = useTheme();
-  const [showBurgerMenu, setShowBurgerMenu] = useState(false);
+  const [showPopupMenu, setShowPopupMenu] = useState(false);
   const [anchorEl, setAnchorEl] = useState<undefined | HTMLElement>(undefined);
   const handleClick = useCallback((event: React.MouseEvent<HTMLElement>) => {
-    setShowBurgerMenu((prev) => !prev);
+    setShowPopupMenu((prev) => !prev);
     setAnchorEl(event.currentTarget);
   }, []);
 
@@ -20,8 +20,8 @@ const NavProfile: React.FC = () => {
       <IconButton onClick={handleClick}>
         <img className="navbar-logo" src={theme.logo.primary} alt="Logo" />
       </IconButton>
-      {showBurgerMenu && (
-        <ProfileMenu anchorEl={anchorEl} open={showBurgerMenu} onClose={() => setShowBurgerMenu(false)} />
+      {showPopupMenu && (
+        <ProfileMenu anchorEl={anchorEl} open={showPopupMenu} onClose={() => setShowPopupMenu(false)} />
       )}
     </>
   );
