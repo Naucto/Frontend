@@ -78,25 +78,18 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({ ydoc, provider }) => {
   const [startPosition, setStartPosition] = useState<[number, number]>([-1, -1]);
   const [musics, setMusics] = useState<MusicData[]>(() => Array(16).fill(null).map(() => createMusic()));
 
-  // Effect to handle active cells changes
   useEffect(() => {
-    // You could add any side effects related to active cells here
-    // For example, saving to localStorage or syncing with ydoc
     if (ydoc && provider) {
-      // Sync active cells with ydoc if needed
       console.log("Active cells changed:", Array.from(activeCells));
     }
   }, [activeCells, ydoc, provider]);
 
-  // Effect to handle music changes
   useEffect(() => {
     if (ydoc && provider) {
-      // Sync music data with ydoc if needed
       console.log("Music data changed:", currentMusic);
     }
   }, [currentMusic, ydoc, provider]);
 
-  // Memoize the grid cells to prevent unnecessary re-renders
   const gridCells = useMemo(() => {
     return [...Array(24)].map((_, row) =>
       [...Array(32)].map((_, col) => {
@@ -125,21 +118,74 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({ ydoc, provider }) => {
     setIsMouseDown(false);
 
     if (row === startPosition[0]) {
-      const newActiveCells = new Set(activeCells);
-      for (let i = Math.min(startPosition[1], col); i <= Math.max(startPosition[1], col); i++) {
-        const cellKey = `${row}-${i}`;
-        if (!newActiveCells.has(cellKey)) {
-          newActiveCells.add(cellKey);
-        }
-      }
-      setActiveCells(newActiveCells);
-      setStartPosition([-1, -1]);
+      if (startPosition[1] === col) {
+        let noteStartCol = col;
+        let noteToRemove = null;
 
-      setCurrentMusic(prevMusic =>
-        setNote(prevMusic, startPosition[1], row, Math.max(1, Math.abs(startPosition[1] - col)), currentInstrument)
-      );
+        for (let i = col; i >= 0; i--) {
+          const note = currentMusic.notes[i][row];
+          if (note.note !== "Nan") {
+            const duration = note.duration || 1;
+            if (i + duration > col) {
+              noteStartCol = i;
+              noteToRemove = note;
+              break;
+            }
+          }
+        }
+
+        if (noteToRemove) {
+          setCurrentMusic(prevMusic => {
+            const newMusic = { ...prevMusic };
+            newMusic.notes = newMusic.notes.map(column => [...column]);
+            newMusic.notes[noteStartCol][row] = { note: "Nan", duration: 1, instrument: "" };
+
+            const newActiveCells = new Set<string>();
+            for (let i = 0; i < newMusic.notes.length; i++) {
+              for (let j = 0; j < newMusic.notes[i].length; j++) {
+                const note = newMusic.notes[i][j];
+                if (note.note !== "Nan") {
+                  const duration = note.duration || 1;
+                  for (let k = 0; k < duration; k++) {
+                    if (i + k < newMusic.notes.length) {
+                      const cellKey = `${j}-${i + k}`;
+                      newActiveCells.add(cellKey);
+                    }
+                  }
+                }
+              }
+            }
+            setActiveCells(newActiveCells);
+
+            return newMusic;
+          });
+        } else {
+          const newActiveCells = new Set(activeCells);
+          const cellKey = `${row}-${col}`;
+          newActiveCells.add(cellKey);
+          setActiveCells(newActiveCells);
+
+          setCurrentMusic(prevMusic =>
+            setNote(prevMusic, col, row, 1, currentInstrument)
+          );
+        }
+      } else {
+        const newActiveCells = new Set(activeCells);
+        for (let i = Math.min(startPosition[1], col); i <= Math.max(startPosition[1], col); i++) {
+          const cellKey = `${row}-${i}`;
+          if (!newActiveCells.has(cellKey)) {
+            newActiveCells.add(cellKey);
+          }
+        }
+        setActiveCells(newActiveCells);
+
+        setCurrentMusic(prevMusic =>
+          setNote(prevMusic, startPosition[1], row, Math.max(1, Math.abs(startPosition[1] - col) + 1), currentInstrument)
+        );
+      }
+      setStartPosition([-1, -1]);
     }
-  }, [isMouseDown, startPosition, activeCells, currentInstrument]);
+  }, [isMouseDown, startPosition, activeCells, currentInstrument, currentMusic]);
 
   const handleMouseOver = useCallback((row: number, col: number) => {
     if (!isMouseDown) return;
@@ -174,19 +220,22 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({ ydoc, provider }) => {
     setSelectedMusicIndex(id);
     setCurrentMusic(music);
 
-    // Calculate active cells in a separate effect
     const newActiveCells = new Set<string>();
     for (let i = 0; i < music.notes.length; i++) {
       for (let j = 0; j < music.notes[i].length; j++) {
         if (music.notes[i][j].note !== "Nan") {
-          newActiveCells.add(`${j}-${i}`);
+          const duration = music.notes[i][j].duration || 1;
+          for (let k = 0; k < duration; k++) {
+            if (i + k < music.notes.length) {
+              newActiveCells.add(`${j}-${i + k}`);
+            }
+          }
         }
       }
     }
     setActiveCells(newActiveCells);
   }, [musics]);
 
-  // Memoize instrument buttons to prevent unnecessary re-renders
   const instrumentButtons = useMemo(() => (
     Array.from(instruments.keys()).map((instrument) => (
       <MusicEditorButton
@@ -199,7 +248,6 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({ ydoc, provider }) => {
     ))
   ), [currentInstrument]);
 
-  // Memoize music selection buttons
   const musicSelectionButtons = useMemo(() => (
     musics.map((_, index) => (
       <MusicEditorButton
