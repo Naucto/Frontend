@@ -16,17 +16,6 @@ const ButtonContainer = styled("div")(({ theme }) => ({
   maxHeight: theme.spacing(70),
   overflowY: "scroll",
 }));
-const ButtonContainer = styled("div")(({ theme }) => ({
-  display: "flex",
-  flexDirection: "row",
-  justifyContent: "center",
-  marginTop: theme.spacing(2.5),
-  flexWrap: "wrap",
-  alignItems: "center",
-  maxWidth: "20%",
-  maxHeight: theme.spacing(70),
-  overflowY: "scroll",
-}));
 
 const MusicEditorButton = styled("button")(({ theme }) => ({
   backgroundColor: theme.palette.primary.main,
