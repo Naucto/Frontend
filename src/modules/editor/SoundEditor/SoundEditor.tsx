@@ -192,7 +192,6 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({ ydoc, provider }) => {
       <MusicEditorButton
         className={currentInstrument === instrument ? "selected" : ""}
         key={instrument}
-        variant="contained"
         onClick={() => setCurrentInstrument(instrument)}
       >
         {instruments.get(instrument)}
@@ -206,7 +205,6 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({ ydoc, provider }) => {
       <MusicEditorButton
         className={selectedMusicIndex === index ? "selected" : ""}
         key={index}
-        variant="contained"
         onClick={() => loadStateFromMusic(index)}
       >
         {index + 1}
@@ -258,9 +256,9 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({ ydoc, provider }) => {
             marginTop: "20px"
           }}
         >
-          <MusicEditorButton variant="contained" onClick={() => playMusic(currentMusic)}>Play</MusicEditorButton>
-          <MusicEditorButton variant="contained" onClick={clearMusic}>Clear</MusicEditorButton>
-          <MusicEditorButton variant="contained" onClick={saveMusic}>Save</MusicEditorButton>
+          <MusicEditorButton onClick={() => playMusic(currentMusic)}>Play</MusicEditorButton>
+          <MusicEditorButton onClick={clearMusic}>Clear</MusicEditorButton>
+          <MusicEditorButton onClick={saveMusic}>Save</MusicEditorButton>
         </Box>
       </div>
     </div>
