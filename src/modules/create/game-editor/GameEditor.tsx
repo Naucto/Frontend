@@ -55,6 +55,8 @@ const StyledTab = styled(Tab)(({ theme }) => ({
   },
 }));
 
+type UserState = { name: string; color: string; userId: string };
+
 const GameEditor: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [output, setOutput] = useState<string>("");
@@ -96,15 +98,15 @@ const GameEditor: React.FC = () => {
     joinSession();
   }, []);
 
-  const provider: WebrtcProvider | null = useMemo(() => {
+  const provider: WebrtcProvider | undefined = useMemo(() => {
     if (!roomId)
-      return null;
+      return undefined;
     return new WebrtcProvider(roomId, ydoc, config.webrtc);
   }, [roomId, ydoc]);
 
   const awareness = useMemo(() => {
     if (!provider)
-      return null;
+      return undefined;
     return provider.awareness;
   }, [provider]);
 
@@ -143,15 +145,11 @@ const GameEditor: React.FC = () => {
 
   useEffect(() => {
     if (projectContent && editorTabs.length > 0) {
-      const timeout = setTimeout(() => {
-        editorTabs.forEach(({ label, setData }) => {
-          if (setData && projectContent[label]) {
-            setData(projectContent[label]);
-          }
-        });
-      }, 100);
-
-      return () => clearTimeout(timeout);
+      editorTabs.forEach(({ label, setData }) => {
+        if (setData && projectContent[label]) {
+          setData(projectContent[label]);
+        }
+      });
     }
   }, [projectContent, editorTabs]);
 
@@ -159,11 +157,11 @@ const GameEditor: React.FC = () => {
     const user = JSON.parse(localStorage.getItem("user") ?? "{}");
     awareness?.setLocalStateField("user", {
       name: user.name,
-      color: "#abcdef",
+      color: "#abcdef", // FIXME: use a proper color from each user settings
       userId: user.id,
     });
 
-    const userStateCache = new Map<number, { name: string; color: string; userId: string }>();
+    const userStateCache = new Map<number, UserState>();
 
     const onChange = ({ added, updated, removed }: {
       added: number[]
@@ -180,7 +178,6 @@ const GameEditor: React.FC = () => {
       removed.forEach(clientID => {
         const disconnectedUser = userStateCache.get(clientID);
         if (disconnectedUser) {
-          console.log("Utilisateur déconnecté :", disconnectedUser.userId);
           const projectId = Number(localStorage.getItem("projectId") || "1");
           WorkSessionsService
             .workSessionControllerGetInfo(projectId)
@@ -200,7 +197,7 @@ const GameEditor: React.FC = () => {
       return;
 
     awareness!.on("change", onChange);
-    return () => { awareness!.off("change", onChange); };
+    return () => awareness!.off("change", onChange);
   }, [awareness]);
 
   const [code, setCode] = useState("");
@@ -234,11 +231,9 @@ const GameEditor: React.FC = () => {
 
   const saveProjectContent = () => {
     const jsonData: { [key: string]: string } = {};
-    // Use the getData functions to get content from each editor
     editorTabs.forEach(({ label, getData }) => {
       if (getData) {
         const content = getData();
-        console.log("Saving content of editor:", label, "content:", content);
         jsonData[label] = content;
       }
     });
@@ -246,7 +241,6 @@ const GameEditor: React.FC = () => {
     if (!jsonData || Object.keys(jsonData).length === 0)
       return;
 
-    console.log("Saving project content:", jsonData);
     ProjectsService.projectControllerSaveProjectContent(
       localStorage.getItem("projectId") || "1",
       { file: new Blob([JSON.stringify(jsonData)], { type: "application/json" }) }
