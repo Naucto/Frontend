@@ -1,47 +1,47 @@
+import { styled } from "@mui/material/styles";
 import { NavElem, ImportantNavElem } from "@shared/navbar/NavElem";
-import NavProfil from "@shared/navbar/NavProfil";
+import NavProfile from "@shared/navbar/NavProfile";
 import { SearchBar } from "@shared/navbar/SearchBar";
-import { useTheme } from "@theme/ThemeContext";
 import React from "react";
-import { Link } from "react-router-dom";
-import styled from "styled-components";
+import { useUser } from "src/providers/UserProvider";
+import { muiTheme } from "@theme/MUITheme";
 
-const Nav = styled.nav`
-    display: grid;
-    padding: 0;
-    margin: 0;
-    grid-template-columns: 1fr 1fr 1fr;
-    align-items: center;
-    justify-content: space-between;
-    .navbar-logo {
-        width: 55px;
-        height: 55px;
-    }
-`;
+const Nav = styled("nav")(({ theme }) => ({
+  display: "grid",
+  padding: 0,
+  margin: theme.spacing(1, 2),
+  gridTemplateColumns: "1fr 1fr 1fr",
+  alignItems: "center",
+  justifyContent: "space-between",
+  "& .navbar-logo": {
+    width: 55,
+    height: 55,
+  },
+}));
 
-const Left = styled.div`
-    display: flex;
-    align-items: center;
-    margin: ${({ theme }) => theme.spacing(1)};
-    & > * {
-      margin-right: ${({ theme }) => theme.spacing(3)};
-    }
-    `;
+const Left = styled("div")(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  margin: theme.spacing(1),
+  "& > *": {
+    marginRight: theme.spacing(3),
+  },
+}));
 
-const Right = styled.div`
-    display: flex;
-    align-items: center;
-    justify-content: right;
-    margin: ${({ theme }) => theme.spacing(1)};
-    `;
+const Right = styled("div")(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "right",
+  margin: theme.spacing(1),
+}));
 
 const NavBar: React.FC = () => {
-  const theme = useTheme();
+  const { user } = useUser();
   return (
     <Nav className="navbar">
       <Left>
-        <img className="navbar-logo" src={theme.logo.primary} alt="Logo" />
-        <ImportantNavElem to="/create" theme={theme}>Create</ImportantNavElem>
+        <img className="navbar-logo" src={muiTheme.custom.logo.primary} alt="Logo" />
+        <ImportantNavElem to="/create">Create</ImportantNavElem>
         <NavElem to="/hub">Home</NavElem>
         <NavElem to="/help">Help</NavElem>
       </Left>
@@ -50,7 +50,8 @@ const NavBar: React.FC = () => {
 
       <Right>
         <NavElem to="/friends">Friends</NavElem>
-        <NavProfil />
+        {user && "logged in"}
+        {<NavProfile />}
       </Right>
     </Nav >
   );

@@ -81,7 +81,8 @@ export function useSpriteRenderer(
   function queueSpriteDraw(index: number,
     x: number, y: number,
     width: number = 1, height: number = 1,
-    flip_h: number = 0, flip_v: number = 0): void {
+    flip_h: number = 0, flip_v: number = 0,
+  ): void {
     x = Math.floor(x);
     y = Math.floor(y);
     flip_h = flip_h ? 1 : 0;
@@ -188,6 +189,6 @@ export function useSpriteRenderer(
     draw,
     clear,
     setColor,
-    resetColor
+    resetColor,
   }), []);
 }
