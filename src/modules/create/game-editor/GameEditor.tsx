@@ -14,6 +14,7 @@ import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
 import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
 import { ProjectsService, WorkSessionsService } from "../../../api";
 import { Beforeunload } from "react-beforeunload";
+import { SpriteEditor } from "@modules/editor/SpriteEditor/SpriteEditor";
 
 const GameEditorContainer = styled("div")({
   width: "100%",
@@ -71,7 +72,7 @@ const GameEditor: React.FC = () => {
     { label: "code", component: CodeEditor },
     { label: "map", component: undefined },
     { label: "sound", component: SoundEditor },
-    { label: "sprite", component: undefined },
+    { label: "sprite", component: SpriteEditor },
   ], []);
 
   const ydoc: Y.Doc = useMemo(() => new Y.Doc(), []);
