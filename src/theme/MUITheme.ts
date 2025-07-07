@@ -96,7 +96,7 @@ export const muiTheme = createTheme({
       sm: "4px",
       md: "8px",
       lg: "12px",
-      fill: "50%",
+      fll: "50%",
     },
   },
   components: {
