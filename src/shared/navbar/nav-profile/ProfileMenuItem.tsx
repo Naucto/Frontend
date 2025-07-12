@@ -1,4 +1,4 @@
-import { MenuItem, styled } from "@mui/material";
+import { MenuItem, styled, Typography } from "@mui/material";
 import { FC, JSX } from "react";
 
 const StyledMenuItem = styled(MenuItem)(({ theme }) => ({
@@ -26,7 +26,7 @@ export const ProfileMenuItem: FC<{
       <IconWrapper>
         {icon}
       </IconWrapper>
-      {text}
+      <Typography>{text}</Typography>
     </StyledMenuItem>
   );
 };
