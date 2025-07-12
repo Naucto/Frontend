@@ -3,7 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { ApiRequestOptions } from './ApiRequestOptions';
-import {LocalStorageManager} from "@utils/LocalStorageManager.ts";
+import { LocalStorageManager } from "@utils/LocalStorageManager.ts";
 
 type Resolver<T> = (options: ApiRequestOptions) => Promise<T>;
 type Headers = Record<string, string>;
