@@ -1,5 +1,5 @@
 import { User } from "src/types/userTypes";
-import { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import { ContextError } from "src/errors/ContextError";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
 
