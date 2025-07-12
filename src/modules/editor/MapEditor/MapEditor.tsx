@@ -10,7 +10,7 @@ export class MapEditor extends IEditor {
       icon: "map",
     };
   }
-    
+
   public init(doc: Doc, provider: WebrtcProvider): void {
 
   }

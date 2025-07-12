@@ -319,13 +319,11 @@ const GameEditor: React.FC = () => {
           setOutput={setOutput}
         />
       </RightPanel>
-      {
-        <Beforeunload onBeforeunload={(event) => {
-          event.preventDefault();
-          cleanUpAndDisconnect();
-          return "Are you sure you want to leave? Your changes may not be saved.";
-        }} />
-      }
+      <Beforeunload onBeforeunload={(event) => {
+        event.preventDefault();
+        cleanUpAndDisconnect();
+        return "Are you sure you want to leave? Your changes may not be saved.";
+      }} />
     </GameEditorContainer>
   );
 };
