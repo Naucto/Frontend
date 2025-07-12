@@ -1,5 +1,6 @@
 import * as Y from "yjs";
 import { WebrtcProvider } from "y-webrtc";
+import React from "react";
 
 export type EditorProps = {
   ydoc: Y.Doc;
