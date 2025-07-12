@@ -10,7 +10,7 @@ export type EditorProps = {
 
 export interface EditorTab {
   label: string;
-  component: React.FC<EditorProps> | undefined;
+  component: React.FC<EditorProps>;
   getData?: () => string;
   setData?: (data: string) => void;
 }
