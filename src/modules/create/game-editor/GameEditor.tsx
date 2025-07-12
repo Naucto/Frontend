@@ -12,7 +12,7 @@ import { SpriteSheet } from "src/types/SpriteSheetType";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
 import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
-import { ApiError, ProjectsService, WorkSessionsService } from "../../../api";
+import { ApiError, ProjectsService, WorkSessionsService } from "@api";
 import { Beforeunload } from "react-beforeunload";
 import { SpriteEditor } from "@modules/editor/SpriteEditor/SpriteEditor";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
@@ -109,12 +109,12 @@ const GameEditor: React.FC = () => {
             if (error instanceof ApiError && error.status === 404) {
               setProjectContent({});
             } else {
-              console.error("Failed to fetch project content:", error);
+              console.error("Failed to fetch project content:", error); // FIXME : better error handling
             }
           }
         }
       } catch (err) {
-        console.error("Failed to join work session:", err);
+        console.error("Failed to join work session:", err); // FIXME : better error handling
       }
     };
 

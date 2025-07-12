@@ -2,7 +2,7 @@ import { Box, Typography } from "@mui/material";;
 import React from "react";
 import Card from "@modules/projects/components/Card";
 import { styled } from "@mui/material";
-import { CreateProjectDto, ProjectResponseDto, ProjectsService } from "src/api";
+import { CreateProjectDto, ProjectResponseDto, ProjectsService } from "@api";
 import { useNavigate } from "react-router-dom";
 import * as urls from "@shared/route";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
