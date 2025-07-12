@@ -15,17 +15,18 @@ interface ConstructorProps {
    * this function is used to set the envData.output only
    * @param output the output to set
    */
-  setOutput: ((output: string) => void)
+  setOutput: React.Dispatch<React.SetStateAction<string>>
 }
 
 class LuaEnvironmentManager {
+  private _maxLines = 100;
   private _lua: LuaEnvironment;
   private _rendererHandle: SpriteRendererHandle;
   private _keyHandler: KeyHandler;
 
   private _envData: EnvData;
 
-  private _setOutput: ((output: string) => void);
+  private _setOutput: React.Dispatch<React.SetStateAction<string>>;
 
   constructor({ envData, rendererHandle, setOutput, keyHandler }: ConstructorProps) {
     this._lua = new LuaEnvironment();
@@ -42,7 +43,7 @@ class LuaEnvironmentManager {
       this._lua.evaluate(this._envData.code);
     } catch (error) {
       if (error instanceof Error) {
-        this._addOutput(this._getErrorMsg(error));
+        this._setOutput(this._getErrorMsg(error));
       }
     }
   }
@@ -133,8 +134,14 @@ class LuaEnvironmentManager {
   }
 
   private _addOutput(output: string): void {
-    const newOutput = this._envData.output + output + "\n";
-    this._setOutput(newOutput);
+    this._setOutput(prev => {
+      const lines = prev.split("\n");
+      lines.push(output);
+      if (lines.length >= this._maxLines) {
+        lines.splice(0, lines.length - this._maxLines);
+      }
+      return lines.join("\n");
+    });
   }
 }
 
