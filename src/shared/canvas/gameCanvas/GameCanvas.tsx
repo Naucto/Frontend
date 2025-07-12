@@ -28,7 +28,7 @@ const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(
       luaEnvManager?.draw();
       animationFrameRef.current = requestAnimationFrame(loop);
       spriteRendererHandleRef.current?.draw();
-    }, [luaEnvManagerRef, spriteRendererHandleRef]);
+    }, [luaEnvManagerRef, spriteRendererHandleRef, animationFrameRef]);
 
     // init lua env
     useEffect(() => {
@@ -61,7 +61,10 @@ const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(
       const luaEnvManager = luaEnvManagerRef.current;
 
       spriteRendererHandleRef.current.clear(0);
-      luaEnvManager.runCode();
+      const isLoaded = luaEnvManager.runCode();
+      if (!isLoaded) {
+        return;
+      }
 
       luaEnvManager.init();
       if (animationFrameRef.current) {
