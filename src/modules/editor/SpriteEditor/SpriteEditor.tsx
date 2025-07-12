@@ -234,7 +234,7 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
     const index = y * spriteWidth + x;
     const color = currentColor.toString(16);
     ydoc.transact(() => {
-      ytextRef.current?.delete(index, 8);
+      ytextRef.current?.delete(index, 1);
       ytextRef.current?.insert(index, color);
     });
     setVersion(v => v + 1);
