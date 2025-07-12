@@ -12,7 +12,7 @@ type GameCanvasProps = {
 };
 
 const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(
-  ({ canvasProps: { screenSize, spriteSheet, palette, className }, envData, setOutput }, ref) => {
+  ({ canvasProps: { screenSize, spriteSheet, palette }, envData, setOutput, className }, ref) => {
     const spriteRendererHandleRef = useRef<CanvasHandle>(null);
     const luaEnvManagerRef = useRef<LuaEnvironmentManager>(null);
     const animationFrameRef = useRef<number>(null);

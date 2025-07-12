@@ -5,11 +5,19 @@
   src: url('/fonts/PixelifySans-Medium.ttf') format('truetype');
 }
 
-body {
-  margin: 0;
-  padding: 0;
+html,
+body,
+#root {
+  height: 100%;
   font-family: 'Pixelify';
+  background-color: #383838;
+  display: flex;
+  flex-direction: column;
 }
+
+/* #root {
+  height: 100%;
+} */
 
 /* :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
