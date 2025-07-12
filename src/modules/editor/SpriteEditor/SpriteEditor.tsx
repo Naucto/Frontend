@@ -143,7 +143,7 @@ function getSpritePos(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
   return { x: spriteX, y: spriteY };
 }
 
-export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetData }) => {
+export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, data, setData }) => {
   const [currentColor, setCurrentColor] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [position, setPosition] = useState<Point>({ x: 0, y: 0 });
@@ -177,32 +177,21 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
   }, []);
 
   useEffect(() => {
-    if (onGetData) {
-      onGetData(() => {
-        if (ytextRef.current) {
-          return ytextRef.current.toString();
-        }
-        return "";
-      });
+    if (!ydoc || !provider) {
+      console.error("YDoc or provider is not available.");
+      return;
     }
-  }, [onGetData]);
 
-  useEffect(() => {
-    console.log(onSetData);
-    if (onSetData) {
-      onSetData((data: string) => {
-        console.log(ytextRef.current);
-        if (ytextRef.current) {
-          ydoc!.transact(() => {
-            ytextRef.current?.delete(0, ytextRef.current.length);
-            if (data.length == 0)
-              data = spriteTable.table;
-            ytextRef.current?.insert(0, data);
-          });
-        }
+    if (ytextRef && ytextRef.current) {
+      ydoc.transact(() => {
+        console.log(ytextRef.current?.length);
+        ytextRef.current?.delete(0, ytextRef.current?.length);
+        ytextRef.current?.insert(0, data || "");
       });
+    } else {
+      console.error("YText reference is not available.");
     }
-  }, [onSetData]);
+  }, [ydoc, provider, data]);
 
   useEffect(() => {
     const container = canvasContainerRef.current;

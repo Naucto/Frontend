@@ -6,33 +6,29 @@ import { MonacoBinding } from "y-monaco";
 import { EditorProps } from "./EditorType";
 import "./CodeEditor.css";
 
-const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetData }) => {
+const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, data, setData }) => {
   const monacoBindingRef = useRef<MonacoBinding | null>(null);
   const ytextRef = useRef<any | null>(null);
 
   useEffect(() => {
-    if (onGetData) {
-      onGetData(() => {
-        if (ytextRef.current) {
-          return ytextRef.current.toString();
-        }
-        return "";
+    if (!ydoc || !provider) {
+      console.error("YDoc or provider is not available.");
+      return;
+    }
+    if (ytextRef.current) {
+      ydoc.transact(() => {
+        ytextRef.current.delete(0, ytextRef.current.length);
+        ytextRef.current.insert(0, data);
       });
     }
-  }, [onGetData]);
-
-  useEffect(() => {
-    if (onSetData) {
-      onSetData((data: string) => {
-        if (ytextRef.current) {
-          ydoc.transact(() => {
-            ytextRef.current.delete(0, ytextRef.current.length);
-            ytextRef.current.insert(0, data);
-          });
-        }
-      });
-    }
-  }, [onSetData]);
+    return () => {
+      ytextRef.current = null;
+      if (monacoBindingRef.current) {
+        monacoBindingRef.current.destroy();
+        monacoBindingRef.current = null;
+      }
+    };
+  }, [ydoc, provider, data, setData]);
 
   const handleMount = (editor: editor.IStandaloneCodeEditor): (() => void) | void => {
     const editorModel = editor.getModel();

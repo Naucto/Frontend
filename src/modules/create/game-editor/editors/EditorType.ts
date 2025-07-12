@@ -4,13 +4,11 @@ import { WebrtcProvider } from "y-webrtc";
 export type EditorProps = {
   ydoc: Y.Doc;
   provider: WebrtcProvider;
-  onGetData?: (getData: () => string) => void;
-  onSetData?: (setData: (data: string) => void) => void;
+  data: any;
+  setData: (a: any) => void;
 };
 
 export interface EditorTab {
   label: string;
-  component: React.FC<EditorProps>;
-  getData?: () => string;
-  setData?: (data: string) => void;
+  component: React.FC<EditorProps> | React.ReactElement; // FIXME remove reactelement once all editors are here
 }

@@ -66,8 +66,8 @@ const GameEditor: React.FC = () => {
   const [projectContent, setProjectContent] = useState<any>(null); // FIXME: change typing
   const [isHost, setIsHost] = useState<boolean>(false);
 
-  const getDataFunctions = useRef<{ [key: string]: () => string }>({});
-  const setDataFunctions = useRef<{ [key: string]: (data: string) => void }>({});
+  console.log("isHost", isHost);
+  const [datas, setDatas] = useState<Record<string, any>>({}); // fixme change any to EditorData | SpriteData | SoundData etc
 
   const tabs = useMemo(() => [
     { label: "code", component: CodeEditor },
@@ -114,17 +114,14 @@ const GameEditor: React.FC = () => {
 
   const editorTabs: EditorTab[] = useMemo(() => {
     if (!ydoc || !provider) return [];
-
+    console.log(isHost);
+    if (isHost) {
+      datas.sprite = datas.sprite || spriteTable.table;
+      console.log("Using sprite table:", datas.sprite);
+      datas.code = datas.code || "// Your Lua code here";
+    }
     return tabs.map((tab) => {
       const EditorComponent: React.FC<EditorProps> | undefined = tab.component;
-
-      const handleGetData = (getData: () => string) => {
-        getDataFunctions.current[tab.label] = getData;
-      };
-
-      const handleSetData = (setData: (data: string) => void) => {
-        setDataFunctions.current[tab.label] = setData;
-      };
 
       return {
         label: tab.label,
@@ -133,27 +130,30 @@ const GameEditor: React.FC = () => {
             key={tab.label}
             ydoc={ydoc}
             provider={provider}
-            onGetData={handleGetData}
-            onSetData={handleSetData}
+            data={datas[tab.label]}
+            setData={(data: any) => {
+              setDatas((prev) => ({
+                ...prev,
+                [tab.label]: data,
+              }));
+            }}
           />
         ) : (
           <span key={tab.label}>No editor available</span>
         ),
-        getData: () => getDataFunctions.current[tab.label]?.() || "",
-        setData: (data: string) => setDataFunctions.current[tab.label]?.(data)
       };
     });
-  }, [tabs, ydoc, provider]);
+  }, [tabs, ydoc, provider, datas, isHost]);
 
-  useEffect(() => {
-    if (projectContent && editorTabs.length > 0) {
-      editorTabs.forEach(({ label, setData }) => {
-        if (setData && projectContent[label]) {
-          setData(projectContent[label]);
-        }
-      });
-    }
-  }, [projectContent, editorTabs]);
+  // useEffect(() => {
+  //   if (projectContent && editorTabs.length > 0) {
+  //     editorTabs.forEach(({ label, setData }) => {
+  //       if (setData && projectContent[label]) {
+  //         setData(projectContent[label]);
+  //       }
+  //     });
+  //   }
+  // }, [projectContent, editorTabs]);
 
   useEffect(() => {
     const userName = LocalStorageManager.getUserName();
@@ -182,6 +182,7 @@ const GameEditor: React.FC = () => {
         const disconnectedUser = userStateCache.get(clientID);
         if (disconnectedUser) {
           const projectId = Number(LocalStorageManager.getProjectId());
+
           WorkSessionsService
             .workSessionControllerGetInfo(projectId)
             .then(sessionInfo => {
@@ -236,11 +237,12 @@ const GameEditor: React.FC = () => {
 
   const saveProjectContent = () => {
     const jsonData: { [key: string]: string } = {};
-    editorTabs.forEach(({ label, getData }) => {
-      if (getData) {
-        const content = getData();
-        jsonData[label] = content;
-      }
+    editorTabs.forEach(({ label }) => {
+      jsonData[label] = datas[label] || "";
+      // if (getData) {
+      //   const content = getData();
+      //   jsonData[label] = content;
+      // }
     });
 
     if (!jsonData || Object.keys(jsonData).length === 0)
