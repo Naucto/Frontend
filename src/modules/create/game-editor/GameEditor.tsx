@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { styled } from "@mui/material/styles";
-import { Tabs, Tab, Box } from "@mui/material";
+import { Tabs, Tab, Box, Button } from "@mui/material";
 import CodeEditor from "@modules/create/game-editor/editors/CodeEditor";
 import { WebrtcProvider } from "y-webrtc";
 import * as Y from "yjs";
@@ -16,25 +16,32 @@ import { ProjectsService, WorkSessionsService } from "../../../api";
 import { Beforeunload } from "react-beforeunload";
 import { SpriteEditor } from "@modules/editor/SpriteEditor/SpriteEditor";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
+import GameEditorConsole from "@modules/create/game-editor/editors/GameEditorConsole";
+import CodeIcon from "src/assets/code.svg?react";
+import SpriteIcon from "src/assets/pen.svg?react";
+import SoundIcon from "src/assets/music.svg?react";
+import MapIcon from "src/assets/Map.svg?react";
 
-const GameEditorContainer = styled("div")({
-  width: "100%",
+const GameEditorContainer = styled("div")(({ theme }) => ({
   height: "100%",
   display: "flex",
   flexDirection: "row",
-});
+  margin: theme.spacing(1),
+  gap: theme.spacing(4),
+}));
 
-const LeftPanel = styled("div")({
+const LeftPanel = styled("div")(({ theme }) => ({
   width: "100%",
-  height: "100%",
   display: "flex",
   flexDirection: "column",
-});
+}));
 
-const RightPanel = styled("div")({
-  width: "100%",
-  height: "100%",
-});
+const RightPanel = styled("div")(({ theme }) => ({
+  width: "80%",
+  display: "flex",
+  flexDirection: "column",
+  gap: theme.spacing(4),
+}));
 
 const TabContent = styled(Box)({
   flex: 1,
@@ -43,21 +50,26 @@ const TabContent = styled(Box)({
 
 const StyledTab = styled(Tab)(({ theme }) => ({
   fontFamily: theme.typography.fontFamily,
-  backgroundColor: theme.palette.primary.main, //FIXME: use blue color from theme
-  padding: theme.spacing(1, 2),
+  backgroundColor: theme.palette.blue[500],
+  minHeight: theme.spacing(6),
+  minWidth: theme.spacing(18),
   fontSize: "1.2rem",
-  borderTopLeftRadius: theme.shape.borderRadius,
-  borderTopRightRadius: theme.shape.borderRadius,
+  borderTopLeftRadius: theme.spacing(1),
+  borderTopRightRadius: theme.spacing(1),
   color: "white",
-  "&.Mui-selected": {
-    backgroundColor: theme.palette.primary.dark, //FIXME: use blue color from theme
+  "&.Mui-selected, &.Mui-focusVisible": {
+    backgroundColor: theme.palette.blue[700],
+    color: "white"
   },
   "&:hover": {
-    backgroundColor: theme.palette.primary.light, //FIXME: use blue color from theme
+    backgroundColor: theme.palette.blue[400],
   },
 }));
 
 type UserState = { name: string; color: string; userId: string };
+const PreviewCanvas = styled(GameCanvas)(({ theme }) => ({
+  borderRadius: theme.spacing(1)
+}));
 
 const GameEditor: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
@@ -70,10 +82,10 @@ const GameEditor: React.FC = () => {
   const setDataFunctions = useRef<{ [key: string]: (data: string) => void }>({});
 
   const tabs = useMemo(() => [
-    { label: "code", component: CodeEditor },
-    { label: "map", component: undefined },
-    { label: "sound", component: SoundEditor },
-    { label: "sprite", component: SpriteEditor },
+    { label: "code", component: CodeEditor, icon: <CodeIcon /> },
+    { label: "sprite", component: SpriteEditor, icon: <SpriteIcon /> },
+    { label: "map", component: undefined, icon: <MapIcon /> },
+    { label: "sound", component: SoundEditor, icon: <SoundIcon /> },
   ], []);
 
   const ydoc: Y.Doc = useMemo(() => new Y.Doc(), []);
@@ -127,6 +139,7 @@ const GameEditor: React.FC = () => {
       };
 
       return {
+        ...tab,
         label: tab.label,
         component: EditorComponent ? (
           <EditorComponent
@@ -298,16 +311,20 @@ const GameEditor: React.FC = () => {
         <Tabs
           value={activeTab}
           onChange={(_, newValue) => setActiveTab(newValue)}
-          variant="fullWidth"
+          slotProps={{ indicator: { hidden: true } }}
         >
-          {editorTabs.map(({ label }) => (
-            <StyledTab key={label} label={label} />
+          {editorTabs.map(({ label, icon }) => (
+            <StyledTab
+              iconPosition="start"
+              key={label}
+              label={label}
+              icon={icon} />
           ))}
         </Tabs>
         <TabContent>{editorTabs[activeTab]?.component}</TabContent>
       </LeftPanel>
       <RightPanel>
-        <GameCanvas
+        <PreviewCanvas
           ref={canvasRef}
           canvasProps={{
             screenSize,
@@ -317,6 +334,7 @@ const GameEditor: React.FC = () => {
           envData={envData}
           setOutput={setOutput}
         />
+        <GameEditorConsole output={output} />
       </RightPanel>
       <Beforeunload onBeforeunload={(event) => {
         event.preventDefault();
