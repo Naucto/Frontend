@@ -44,9 +44,9 @@ export class LocalStorageManager {
     return Number(localStorage.getItem(this.PROJECT_ID_KEY) || "1");
   }
 
-  static setProjectId(projectId?: string): void {
+  static setProjectId(projectId?: number): void {
     if (projectId) {
-      localStorage.setItem(this.PROJECT_ID_KEY, projectId);
+      localStorage.setItem(this.PROJECT_ID_KEY, String(projectId));
     } else {
       localStorage.removeItem(this.PROJECT_ID_KEY);
     }

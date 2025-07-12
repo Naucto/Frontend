@@ -20,7 +20,7 @@ import GameEditorConsole from "@modules/create/game-editor/editors/GameEditorCon
 import CodeIcon from "src/assets/code.svg?react";
 import SpriteIcon from "src/assets/pen.svg?react";
 import SoundIcon from "src/assets/music.svg?react";
-import MapIcon from "src/assets/Map.svg?react";
+import MapIcon from "src/assets/map.svg?react";
 
 const GameEditorContainer = styled("div")(({ theme }) => ({
   height: "100%",

@@ -5,6 +5,7 @@ import { styled } from "@mui/material";
 import { CreateProjectDto, ProjectResponseDto, ProjectsService } from "src/api";
 import { useNavigate } from "react-router-dom";
 import * as urls from "@shared/route";
+import { LocalStorageManager } from "@utils/LocalStorageManager";
 
 const DashedCard = styled(Card)(({ theme }) => ({
   border: "4px dashed",
@@ -30,6 +31,7 @@ const CreateProjectCard: React.FC = () => {
       const new_project: ProjectResponseDto = await ProjectsService.projectControllerCreate(newProject);
       const projectId = new_project.id;
       navigate(urls.toProject(projectId));
+      LocalStorageManager.setProjectId(projectId);
 
     } catch (error) {
       console.error("Error creating new project:", error);
