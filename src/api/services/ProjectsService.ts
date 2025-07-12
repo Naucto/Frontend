@@ -3,10 +3,12 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { AddCollaboratorDto } from '../models/AddCollaboratorDto';
+import type { CdnUrlResponseDto } from '../models/CdnUrlResponseDto';
 import type { CreateProjectDto } from '../models/CreateProjectDto';
 import type { ProjectResponseDto } from '../models/ProjectResponseDto';
 import type { ProjectWithRelationsResponseDto } from '../models/ProjectWithRelationsResponseDto';
 import type { RemoveCollaboratorDto } from '../models/RemoveCollaboratorDto';
+import type { SignedUrlResponseDto } from '../models/SignedUrlResponseDto';
 import type { UpdateProjectDto } from '../models/UpdateProjectDto';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
@@ -207,6 +209,44 @@ export class ProjectsService {
             errors: {
                 403: `Forbidden`,
                 404: `File not found`,
+            },
+        });
+    }
+    /**
+     * Get a secure CDN URL for a project file
+     * @param id
+     * @returns CdnUrlResponseDto Signed URL returned successfully
+     * @throws ApiError
+     */
+    public static projectControllerGetProjectCdnUrl(
+        id: string,
+    ): CancelablePromise<CdnUrlResponseDto> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/projects/{id}/getCdnUrl',
+            path: {
+                'id': id,
+            },
+            errors: {
+                403: `Forbidden`,
+                404: `File not found`,
+            },
+        });
+    }
+    /**
+     * Get signed CloudFront URL for a protected file
+     * @param key File key in CDN
+     * @returns SignedUrlResponseDto Signed URL returned
+     * @throws ApiError
+     */
+    public static projectControllerGetSignedUrl(
+        key: string,
+    ): CancelablePromise<SignedUrlResponseDto> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/projects/{key}/signed-url',
+            path: {
+                'key': key,
             },
         });
     }
