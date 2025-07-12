@@ -37,15 +37,18 @@ class LuaEnvironmentManager {
     this._keyHandler = keyHandler;
   }
 
-  public runCode(): void {
+  public runCode(): boolean {
     this.clearOutput();
     try {
       this._lua.evaluate(this._envData.code);
+      return true;
     } catch (error) {
       if (error instanceof Error) {
         this._setOutput(this._getErrorMsg(error));
+        return false;
       }
     }
+    return false;
   }
 
   public setEnvData(envData: EnvData): void {
@@ -135,8 +138,8 @@ class LuaEnvironmentManager {
 
   private _addOutput(output: string): void {
     this._setOutput(prev => {
+      prev += output + "\n";
       const lines = prev.split("\n");
-      lines.push(output);
       if (lines.length >= this._maxLines) {
         lines.splice(0, lines.length - this._maxLines);
       }
