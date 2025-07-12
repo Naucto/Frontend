@@ -19,9 +19,5 @@ export type UpdateUserDto = {
      * User password
      */
     password?: string;
-    /**
-     * List of Role IDs to assign to the user
-     */
-    roles?: Array<string>;
 };
 
