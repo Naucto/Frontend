@@ -15,6 +15,7 @@ import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
 import { ProjectsService, WorkSessionsService } from "../../../api";
 import { Beforeunload } from "react-beforeunload";
 import { SpriteEditor } from "@modules/editor/SpriteEditor/SpriteEditor";
+import { LocalStorageManager } from "@utils/LocalStorageManager";
 
 const GameEditorContainer = styled("div")({
   width: "100%",
@@ -62,7 +63,7 @@ const GameEditor: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [output, setOutput] = useState<string>("");
   const [roomId, setRoomId] = useState<string | undefined>(undefined);
-  const [projectContent, setProjectContent] = useState<any>(null);
+  const [projectContent, setProjectContent] = useState<any>(null); // FIXME: change typing
   const [isHost, setIsHost] = useState<boolean>(false);
 
   const getDataFunctions = useRef<{ [key: string]: () => string }>({});
@@ -80,14 +81,15 @@ const GameEditor: React.FC = () => {
   useEffect(() => {
     const joinSession = async () => {
       try {
-        const projectId = localStorage.getItem("projectId") || "1";
-        const session = await WorkSessionsService.workSessionControllerJoin(parseInt(projectId));
+        const projectId = LocalStorageManager.getProjectId();
+        const session = await WorkSessionsService.workSessionControllerJoin(projectId);
         setRoomId(session.roomId);
 
-        const host = (await WorkSessionsService.workSessionControllerGetInfo(Number(projectId))).host;
-        const userId = JSON.parse(localStorage.getItem("user") ?? "{}").id;
-        if (host == userId) {
-          const content = await ProjectsService.projectControllerFetchProjectContent(projectId);
+        const host = (await WorkSessionsService.workSessionControllerGetInfo(projectId)).host;
+        const userId = LocalStorageManager.getUserId();
+        console.log(host, userId, host === userId);
+        if (host === userId) {
+          const content = await ProjectsService.projectControllerFetchProjectContent(String(projectId));
           setIsHost(true);
           setProjectContent(content);
         }
@@ -155,11 +157,12 @@ const GameEditor: React.FC = () => {
   }, [projectContent, editorTabs]);
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user") ?? "{}");
+    const userName = LocalStorageManager.getUserName();
+    const userId = LocalStorageManager.getUserId();
     awareness?.setLocalStateField("user", {
-      name: user.name,
+      name: userName,
       color: "#abcdef", // FIXME: use a proper color from each user settings
-      userId: user.id,
+      userId: userId,
     });
 
     const userStateCache = new Map<number, UserState>();
@@ -179,11 +182,11 @@ const GameEditor: React.FC = () => {
       removed.forEach(clientID => {
         const disconnectedUser = userStateCache.get(clientID);
         if (disconnectedUser) {
-          const projectId = Number(localStorage.getItem("projectId") || "1");
+          const projectId = Number(LocalStorageManager.getProjectId());
           WorkSessionsService
             .workSessionControllerGetInfo(projectId)
             .then(sessionInfo => {
-              if (sessionInfo.host == user.id) {
+              if (sessionInfo.host == userId) {
                 setIsHost(true);
               }
             });
@@ -230,6 +233,8 @@ const GameEditor: React.FC = () => {
     height: 180,
   }), []);
 
+  //ENDFIXME
+
   const saveProjectContent = () => {
     const jsonData: { [key: string]: string } = {};
     editorTabs.forEach(({ label, getData }) => {
@@ -243,7 +248,7 @@ const GameEditor: React.FC = () => {
       return;
 
     ProjectsService.projectControllerSaveProjectContent(
-      localStorage.getItem("projectId") || "1",
+      String(LocalStorageManager.getProjectId()),
       { file: new Blob([JSON.stringify(jsonData)], { type: "application/json" }) }
     ).catch((error) => {
       console.error("Failed to save content:", error);
@@ -255,7 +260,7 @@ const GameEditor: React.FC = () => {
       return;
 
     saveProjectContent();
-    const projectId = localStorage.getItem("projectId") || "1";
+    const projectId = LocalStorageManager.getProjectId();
 
     WorkSessionsService.workSessionControllerLeave(Number(projectId));
 
@@ -271,18 +276,6 @@ const GameEditor: React.FC = () => {
   }, [editorTabs]);
 
   const canvasRef = React.useRef<SpriteRendererHandle>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (canvas) {
-      canvas.clear(0);
-      canvas.setColor(1, 2);
-      canvas.setColor(2, 3);
-      canvas.setColor(3, 1);
-      canvas.queueSpriteDraw(0, 0, 0, 16, 16);
-      canvas.draw();
-    }
-  }, [canvasRef]);
 
   useEffect(() => {
     if (!isHost)

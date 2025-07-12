@@ -36,7 +36,7 @@ const Right = styled("div")(({ theme }) => ({
 }));
 
 const NavBar: React.FC = () => {
-  const { user } = useUser();
+  const { userId } = useUser();
   return (
     <Nav className="navbar">
       <Left>
@@ -50,7 +50,7 @@ const NavBar: React.FC = () => {
 
       <Right>
         <NavElem to="/friends">Friends</NavElem>
-        {user && "logged in"}
+        {userId && "logged in"}
         {<NavProfile />}
       </Right>
     </Nav >

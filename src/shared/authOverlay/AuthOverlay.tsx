@@ -1,6 +1,6 @@
 import { Box, Link, Typography } from "@mui/material";
 import GenericTextField from "@shared/TextField";
-import React, { FC, useCallback, useState } from "react";
+import { FC, useCallback, useState } from "react";
 import { styled } from "@mui/material";
 import { CreateUserDto, LoginDto, UsersService } from "src/api";
 import { useForm } from "react-hook-form";
@@ -8,6 +8,7 @@ import ImportantButton from "@shared/buttons/ImportantButton";
 import { AuthService } from "src/api/services/AuthService";
 import { useUser } from "src/providers/UserProvider";
 import { CustomDialog } from "@shared/dialog/CustomDialog";
+import { LocalStorageManager } from "@utils/LocalStorageManager";
 
 interface AuthOverlayProps {
   isOpen: boolean;
@@ -26,7 +27,7 @@ const StyledTitle = styled(Title)(({ theme }) => ({
   marginBottom: theme.spacing(2),
 }));
 
-const StyledTextField = styled(GenericTextField)(({ theme }) => ({
+const StyledTextField = styled(GenericTextField)(() => ({
   width: "100%",
   height: "42px",
 }));
@@ -59,7 +60,7 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
     return bool ? "Sign up" : "Login";
   }, [isSignedUp]);
 
-  const { user, setUser } = useUser();
+  const { userId, userName, setUserId, setUserName } = useUser();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { register, handleSubmit, reset } = useForm<CreateUserDto | LoginDto>({
     defaultValues: isSignedUp
@@ -88,15 +89,16 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
       }
 
       // FIXME: put the token to httpOnly cookie using the backend
-      localStorage.setItem("token_access", authResponse.access_token);
+      LocalStorageManager.setToken(authResponse.access_token);
 
       const userRes = await UsersService.userControllerGetProfile();
-      localStorage.setItem("user", JSON.stringify(userRes));
-      setUser({
+      LocalStorageManager.setUser({
         id: String(userRes.id),
         email: userRes.email,
         name: userRes.username,
       });
+      setUserId(userRes.id);
+      setUserName(userRes.username);
       reset();
       if (onClose) {
         onClose();
@@ -104,7 +106,7 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
     } catch (error: any) {
       setErrorMessage(error?.body?.message || "Error");
     }
-  }, [isSignedUp, reset, onClose, setUser, user,]);
+  }, [isSignedUp, reset, onClose, setUserId, setUserName, userId, userName]);
 
   return (
     <form onSubmit={handleSubmit(handleAuth)}>

@@ -3,6 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { ApiRequestOptions } from './ApiRequestOptions';
+import {LocalStorageManager} from "@utils/LocalStorageManager.ts";
 
 type Resolver<T> = (options: ApiRequestOptions) => Promise<T>;
 type Headers = Record<string, string>;
@@ -24,7 +25,7 @@ export const OpenAPI: OpenAPIConfig = {
     VERSION: '1.0',
     WITH_CREDENTIALS: false,
     CREDENTIALS: 'include',
-    TOKEN: () => Promise.resolve(localStorage.getItem('token_access') || ""),
+    TOKEN: () => Promise.resolve(LocalStorageManager.getToken()),
     USERNAME: undefined,
     PASSWORD: undefined,
     HEADERS: undefined,

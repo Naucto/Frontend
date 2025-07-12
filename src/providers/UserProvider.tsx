@@ -1,10 +1,13 @@
 import { User } from "src/types/userTypes";
 import { createContext, useContext, useEffect, useState } from "react";
 import { ContextError } from "src/errors/ContextError";
+import { LocalStorageManager } from "@utils/LocalStorageManager";
 
 interface UserContextType {
-  user?: User;
-  setUser: React.Dispatch<React.SetStateAction<User | null>>;
+  userId?: number;
+  userName?: string;
+  setUserId: React.Dispatch<React.SetStateAction<number>>;
+  setUserName: React.Dispatch<React.SetStateAction<string>>;
   logIn: (userData: User) => void;
   logOut: () => void;
 }
@@ -12,28 +15,23 @@ interface UserContextType {
 const userContext = createContext<UserContextType | null>(null);
 
 export const UserProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      return JSON.parse(storedUser);
-    }
-    return null;
+  const [userId, setUserId] = useState(() => {
+    return LocalStorageManager.getUserId();
+  });
+  const [userName, setUserName] = useState(() => {
+    return LocalStorageManager.getUserName();
   });
 
   useEffect(() => {
-    if (user) {
-      localStorage.setItem("user", JSON.stringify(user));
-    } else {
-      localStorage.removeItem("user");
-    }
-  }, [user]);
+    LocalStorageManager.setUserId(userId);
+  }, [userId]);
 
-  const logIn = (userData: User) => setUser(userData);
+  const logIn = (userData: User) => LocalStorageManager.setUser(userData);
 
-  const logOut = () => setUser(null);
+  const logOut = () => LocalStorageManager.setUser(undefined);
 
   return (
-    <userContext.Provider value={{ user, setUser, logIn, logOut }}>
+    <userContext.Provider value={{ userId, userName, setUserId, setUserName, logIn, logOut }}>
       {children}
     </userContext.Provider>
   );
