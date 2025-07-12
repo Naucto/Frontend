@@ -87,7 +87,6 @@ const GameEditor: React.FC = () => {
 
         const host = (await WorkSessionsService.workSessionControllerGetInfo(projectId)).host;
         const userId = LocalStorageManager.getUserId();
-        console.log(host, userId, host === userId);
         if (host === userId) {
           const content = await ProjectsService.projectControllerFetchProjectContent(String(projectId));
           setIsHost(true);
