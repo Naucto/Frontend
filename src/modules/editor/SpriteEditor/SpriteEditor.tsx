@@ -1,5 +1,3 @@
-import { WebrtcProvider } from "y-webrtc";
-import { Doc } from "yjs";
 import { useState, useEffect, useRef } from "react";
 import { colorPalette } from "./Color";
 import "./SpriteEditor.css";
@@ -8,16 +6,12 @@ import React from "react";
 import { StyledCanvas } from "@shared/canvas/Canvas";
 import { SpriteSheet } from "src/types/SpriteSheetType";
 import { spriteTable, palette } from "src/temporary/SpriteSheet";
+import { EditorProps } from "../../create/game-editor/editors/EditorType";
+import * as Y from "yjs";
 
 interface Point {
   x: number;
   y: number;
-}
-
-interface SpriteEditorProps {
-  doc?: Doc;
-  provider?: WebrtcProvider;
-  spriteFilePath?: string;
 }
 
 const SPRITE_SIZE = 8;
@@ -149,7 +143,7 @@ function getSpritePos(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
   return { x: spriteX, y: spriteY };
 }
 
-export const SpriteEditor: React.FC<SpriteEditorProps> = ({ doc, provider }) => {
+export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetData }) => {
   const [currentColor, setCurrentColor] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [position, setPosition] = useState<Point>({ x: 0, y: 0 });
@@ -160,22 +154,53 @@ export const SpriteEditor: React.FC<SpriteEditorProps> = ({ doc, provider }) => 
   const [version, setVersion] = useState(0);
   const drawCanvasRef = React.createRef<SpriteRendererHandle>();
   const canvasContainerRef = useRef<HTMLDivElement>(null);
+  const ytextRef = useRef<Y.Text>(null);
 
   const handleContextMenu = (e: React.MouseEvent): void => {
     e.preventDefault();
   };
 
   const handleWheel = (e: React.WheelEvent): void => {
-    e.preventDefault();
-    if (!isMouseOverCanvas) return;
+    if (!isMouseOverCanvas)
+      return;
 
     const delta = e.deltaY > 0 ? 0.1 : -0.1;
     const power = 5;
     setZoom(prevZoom => {
       const newZoom = Math.max(1, prevZoom + delta * power);
-      return Math.round(newZoom * 10) / 10;
+      return Math.min(Math.round(newZoom * 10) / 10, 16); // Limit zoom to a maximum of 16
     });
   };
+
+  useEffect(() => {
+    ytextRef.current = ydoc.getText("sprite");
+  }, [ytextRef]);
+
+  useEffect(() => {
+    if (!onGetData)
+      return;
+    onGetData(() => {
+      if (ytextRef.current) {
+        return ytextRef.current.toString();
+      }
+      return "";
+    });
+  }, [onGetData]);
+
+  useEffect(() => {
+    if (!onSetData)
+      return;
+    onSetData((data: string) => {
+      if (!ytextRef.current)
+        return;
+      ydoc!.transact(() => {
+        ytextRef.current?.delete(0, ytextRef.current.length);
+        if (data.length == 0)
+          data = spriteTable.table;
+        ytextRef.current?.insert(0, data);
+      });
+    });
+  }, [onSetData]);
 
   useEffect(() => {
     const container = canvasContainerRef.current;
@@ -197,14 +222,19 @@ export const SpriteEditor: React.FC<SpriteEditorProps> = ({ doc, provider }) => 
       drawCanvasRef.current.queueSpriteDraw(0, position.x, position.y, 16, 16);
       drawCanvasRef.current.draw();
     }
-  }, [spriteTable.table, drawCanvasRef, position, version]);
+  }, [ytextRef, drawCanvasRef, position, version]);
 
   const handleClick = (x: number, y: number): void => {
-    const spriteArray = spriteTable.table.split("");
+    if (!ytextRef.current)
+      return;
+
     const spriteWidth = canvasSpriteSheet.size.width;
     const index = y * spriteWidth + x;
-    spriteArray[index] = currentColor.toString(16);
-    spriteTable.table = spriteArray.join("");
+    const color = currentColor.toString(16);
+    ydoc.transact(() => {
+      ytextRef.current?.delete(index, 8);
+      ytextRef.current?.insert(index, color);
+    });
     setVersion(v => v + 1);
   };
 
@@ -261,7 +291,7 @@ export const SpriteEditor: React.FC<SpriteEditorProps> = ({ doc, provider }) => 
   };
 
   const canvasSpriteSheet: SpriteSheet = {
-    spriteSheet: spriteTable.table,
+    spriteSheet: ytextRef.current ? ytextRef.current.toString() : "",
     spriteSize: {
       width: SPRITE_SIZE,
       height: SPRITE_SIZE
@@ -277,12 +307,6 @@ export const SpriteEditor: React.FC<SpriteEditorProps> = ({ doc, provider }) => 
     width: Math.floor(SPRITE_SIZE * zoom),
     height: Math.floor(SPRITE_SIZE * zoom)
   };
-
-  useEffect(() => {
-    if (doc && provider) {
-      // TODO: Implement doc and provider functionality
-    }
-  }, [doc, provider]);
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>): void => {
     if (!isDragging && !isDrawing) {

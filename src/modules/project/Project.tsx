@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { ProjectResponseDto, ProjectsService } from "src/api";
+import { ProjectResponseDto, ProjectsService } from "@api";
 import { ProjectProvider } from "src/providers/ProjectProvider";
 import GameEditor from "@modules/create/game-editor/GameEditor";
 import { Project as ProjectType } from "../../types/ProjectType";
