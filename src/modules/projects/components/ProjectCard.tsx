@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import Card from "@modules/projects/components/Card";
 import { Project } from "src/types/ProjectType";
 import * as urls from "@shared/route";
+import { LocalStorageManager } from "@utils/LocalStorageManager";
 
 type ProjectCardProps = {
   project: Project
@@ -42,6 +43,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
   const navigate = useNavigate();
   const redirectToProject = (): void => {
     navigate(urls.toProject(project.id));
+    LocalStorageManager.setProjectId(project.id);
   };
 
   let thumbnailUrl = "";

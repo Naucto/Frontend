@@ -154,7 +154,7 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
   const [version, setVersion] = useState(0);
   const drawCanvasRef = React.createRef<SpriteRendererHandle>();
   const canvasContainerRef = useRef<HTMLDivElement>(null);
-  const ytextRef = useRef<Y.Text | null>(null);
+  const ytextRef = useRef<Y.Text>(null);
 
   const handleContextMenu = (e: React.MouseEvent): void => {
     e.preventDefault();
@@ -174,34 +174,32 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
 
   useEffect(() => {
     ytextRef.current = ydoc.getText("sprite");
-  }, []);
+  }, [ytextRef]);
 
   useEffect(() => {
-    if (onGetData) {
-      onGetData(() => {
-        if (ytextRef.current) {
-          return ytextRef.current.toString();
-        }
-        return "";
-      });
-    }
+    if (!onGetData)
+      return;
+    onGetData(() => {
+      if (ytextRef.current) {
+        return ytextRef.current.toString();
+      }
+      return "";
+    });
   }, [onGetData]);
 
   useEffect(() => {
-    console.log(onSetData);
-    if (onSetData) {
-      onSetData((data: string) => {
-        console.log(ytextRef.current);
-        if (ytextRef.current) {
-          ydoc!.transact(() => {
-            ytextRef.current?.delete(0, ytextRef.current.length);
-            if (data.length == 0)
-              data = spriteTable.table;
-            ytextRef.current?.insert(0, data);
-          });
-        }
+    if (!onSetData)
+      return;
+    onSetData((data: string) => {
+      if (!ytextRef.current)
+        return;
+      ydoc!.transact(() => {
+        ytextRef.current?.delete(0, ytextRef.current.length);
+        if (data.length == 0)
+          data = spriteTable.table;
+        ytextRef.current?.insert(0, data);
       });
-    }
+    });
   }, [onSetData]);
 
   useEffect(() => {
