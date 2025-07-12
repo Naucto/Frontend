@@ -34,7 +34,6 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetDat
     }
   }, [onSetData]);
 
-
   const handleMount = (editor: editor.IStandaloneCodeEditor): (() => void) | void => {
     const editorModel = editor.getModel();
     if (!editorModel) {

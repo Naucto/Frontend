@@ -186,7 +186,7 @@ const GameEditor: React.FC = () => {
           WorkSessionsService
             .workSessionControllerGetInfo(projectId)
             .then(sessionInfo => {
-              if (sessionInfo.host == userId) {
+              if (sessionInfo.host === userId) {
                 setIsHost(true);
               }
             });
