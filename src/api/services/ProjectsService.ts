@@ -166,7 +166,7 @@ export class ProjectsService {
         });
     }
     /**
-     * Save content file to S3 for a project
+     * Save project's content
      * @param id
      * @param formData
      * @returns any File uploaded successfully
@@ -192,7 +192,7 @@ export class ProjectsService {
         });
     }
     /**
-     * Fetch content file from S3 for a project
+     * Fetch project's content
      * @param id
      * @returns any File fetched successfully
      * @throws ApiError

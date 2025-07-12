@@ -109,8 +109,8 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
   }, [isSignedUp, reset, onClose, setUserId, setUserName, userId, userName]);
 
   return (
-    <form onSubmit={handleSubmit(handleAuth)}>
-      <CustomDialog isOpen={isOpen} setIsOpen={setIsOpen} hideSubmitButton>
+    <CustomDialog isOpen={isOpen} setIsOpen={setIsOpen} hideSubmitButton>
+      <form onSubmit={handleSubmit(handleAuth)}>
         <StyledTitle>{authText(isSignedUp)}</StyledTitle>
 
         <FieldContainer>
@@ -138,8 +138,8 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
             <Link sx={{ cursor: "pointer" }} onClick={() => { setIsSignedUp(!isSignedUp); }}>{authText(!isSignedUp)}</Link>
           </Typography>
         </Center>
-      </CustomDialog>
-    </form>
+      </form>
+    </CustomDialog>
   );
 };
 

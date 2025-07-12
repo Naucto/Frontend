@@ -2,7 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type DeleteFilesDto = {
+export type DeleteS3FilesDto = {
     /**
      * List of object keys to delete
      */
