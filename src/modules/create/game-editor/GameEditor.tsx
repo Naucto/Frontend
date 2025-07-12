@@ -18,7 +18,7 @@ import { SpriteEditor } from "@modules/editor/SpriteEditor/SpriteEditor";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
 import GameEditorConsole from "@modules/create/game-editor/editors/GameEditorConsole";
 import CodeIcon from "src/assets/code.svg?react";
-import SpriteIcon from "src/assets/image.svg?react";
+import SpriteIcon from "src/assets/pen.svg?react";
 import SoundIcon from "src/assets/music.svg?react";
 import MapIcon from "src/assets/Map.svg?react";
 
