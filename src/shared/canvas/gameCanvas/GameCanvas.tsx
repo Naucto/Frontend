@@ -7,7 +7,7 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from 
 type GameCanvasProps = {
   canvasProps: CanvasProps;
   envData: EnvData;
-  setOutput: (output: string) => void
+  setOutput: React.Dispatch<React.SetStateAction<string>>;
   className?: string;
 };
 
@@ -75,7 +75,7 @@ const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(
           animationFrameRef.current = null;
         }
       };
-    }, [envData]);
+    }, [envData.code]);
 
     return (
       <StyledCanvas
