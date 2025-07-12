@@ -11,9 +11,8 @@ const SearchBarContainer = styled(Box)(({ theme }) => ({
 }));
 
 const SearchInput = styled(InputBase)(({ theme }) => ({
-  fontFamily: "Pixelify",
   color: "white",
-  border: `2px solid ${theme.palette.gray[500]}`,
+  border: `2px solid ${theme.palette.gray[400]}`,
   borderRadius: theme.custom.rounded.lg,
   padding: "0.5rem 1rem",
 
@@ -25,7 +24,7 @@ const SearchInput = styled(InputBase)(({ theme }) => ({
 const SearchIconStyled = styled(SearchIcon)(({ theme }) => ({
   width: 32,
   height: 32,
-  color: theme.palette.gray[500],
+  color: theme.palette.gray[400],
   marginRight: theme.spacing(3),
 }));
 interface SearchBarProps {

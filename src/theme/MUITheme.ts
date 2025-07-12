@@ -100,6 +100,11 @@ export const muiTheme = createTheme({
     },
   },
   components: {
+    MuiButtonBase: {
+      defaultProps: {
+        disableRipple: true,
+      },
+    },
     MuiLink: {
       styleOverrides: {
         root: ({ theme }) => ({
