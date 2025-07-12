@@ -46,5 +46,7 @@ export default defineConfig([
 
   },
   tseslint.configs.recommended,
-
+  {
+    ignores: ["src/api/*"]
+  },
 ]);
