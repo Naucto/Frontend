@@ -6,31 +6,18 @@ import NavBar from "@shared/navbar/NavBar";
 import { muiTheme } from "@theme/MUITheme";
 import GameEditor from "@modules/create/game-editor/GameEditor";
 
-const Container = styled("div")(({ theme }) => ({
-  height: "100vh",
-  width: "100vw",
-  margin: 0,
-  padding: 0,
-  display: "flex",
-  flexDirection: "column",
-  backgroundColor: theme.palette.background.default,
-  flex: 1
-}));
-
 function App() {
   return (
     <ThemeProvider theme={muiTheme}>
-      <Container>
-        <BrowserRouter>
-          <NavBar />
-          <Routes>
-            <Route path="/" element={<Hub />} />
-            <Route path="/hub" element={<Hub />} />
-            <Route path='/create' element={<GameEditor />} />
-            {/* <Route path="/editor" element={editorManager.render()} /> */}
-          </Routes>
-        </BrowserRouter>
-      </Container>
+      <BrowserRouter>
+        <NavBar />
+        <Routes>
+          <Route path="/" element={<Hub />} />
+          <Route path="/hub" element={<Hub />} />
+          <Route path='/create' element={<GameEditor />} />
+          {/* <Route path="/editor" element={editorManager.render()} /> */}
+        </Routes>
+      </BrowserRouter>
     </ThemeProvider>
   );
 }
