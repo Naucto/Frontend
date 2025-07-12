@@ -12,7 +12,7 @@ import { SpriteSheet } from "src/types/SpriteSheetType";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
 import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
-import { ProjectsService, WorkSessionsService } from "../../../api";
+import {ApiError, ProjectsService, WorkSessionsService} from "../../../api";
 import { Beforeunload } from "react-beforeunload";
 import { SpriteEditor } from "@modules/editor/SpriteEditor/SpriteEditor";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
@@ -100,12 +100,21 @@ const GameEditor: React.FC = () => {
         const host = (await WorkSessionsService.workSessionControllerGetInfo(projectId)).host;
         const userId = LocalStorageManager.getUserId();
         if (host === userId) {
-          const content = await ProjectsService.projectControllerFetchProjectContent(String(projectId));
           setIsHost(true);
-          setProjectContent(content);
+
+          try {
+            const content = await ProjectsService.projectControllerFetchProjectContent(String(projectId));
+            setProjectContent(content);
+          } catch (error: any) {
+            if (error instanceof ApiError && error.status === 404) {
+              setProjectContent({});
+            } else {
+              console.error("Failed to fetch project content:", error);
+            }
+          }
         }
       } catch (err) {
-        console.error("Failed to join work session:", err); // FIXME : better error handling
+        console.error("Failed to join work session:", err);
       }
     };
 
