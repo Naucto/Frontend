@@ -14,7 +14,7 @@ export class LocalStorageManager {
     return localStorage.getItem(this.USER_NAME_KEY) || "";
   }
 
-  static setUser(user: User | undefined): void {
+  static setUser(user?: User): void {
     if (user) {
       localStorage.setItem(this.USER_ID_KEY, user.id);
       localStorage.setItem(this.USER_NAME_KEY, user.name || "");
@@ -24,7 +24,7 @@ export class LocalStorageManager {
     }
   }
 
-  static setUserId(userId: number | undefined): void {
+  static setUserId(userId?: number): void {
     if (userId) {
       localStorage.setItem(this.USER_ID_KEY, String(userId));
     } else {
@@ -32,7 +32,7 @@ export class LocalStorageManager {
     }
   }
 
-  static setUserName(userName: string | undefined): void {
+  static setUserName(userName?: string): void {
     if (userName) {
       localStorage.setItem(this.USER_NAME_KEY, userName);
     } else {
@@ -44,7 +44,7 @@ export class LocalStorageManager {
     return Number(localStorage.getItem(this.PROJECT_ID_KEY) || "1");
   }
 
-  static setProjectId(projectId: string | undefined): void {
+  static setProjectId(projectId?: string): void {
     if (projectId) {
       localStorage.setItem(this.PROJECT_ID_KEY, projectId);
     } else {
@@ -56,7 +56,7 @@ export class LocalStorageManager {
     return localStorage.getItem(this.TOKEN_KEY) || "";
   }
 
-  static setToken(token: string | undefined): void {
+  static setToken(token?: string): void {
     if (token) {
       localStorage.setItem(this.TOKEN_KEY, token);
     } else {
