@@ -12,7 +12,7 @@ import { SpriteSheet } from "src/types/SpriteSheetType";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
 import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
-import { ProjectsService, WorkSessionsService } from "../../../api";
+import { ApiError, ProjectsService, WorkSessionsService } from "@api";
 import { Beforeunload } from "react-beforeunload";
 import { SpriteEditor } from "@modules/editor/SpriteEditor/SpriteEditor";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
@@ -20,7 +20,7 @@ import GameEditorConsole from "@modules/create/game-editor/editors/GameEditorCon
 import CodeIcon from "src/assets/code.svg?react";
 import SpriteIcon from "src/assets/pen.svg?react";
 import SoundIcon from "src/assets/music.svg?react";
-import MapIcon from "src/assets/Map.svg?react";
+import MapIcon from "src/assets/map.svg?react";
 
 const GameEditorContainer = styled("div")(({ theme }) => ({
   height: "100%",
@@ -100,9 +100,18 @@ const GameEditor: React.FC = () => {
         const host = (await WorkSessionsService.workSessionControllerGetInfo(projectId)).host;
         const userId = LocalStorageManager.getUserId();
         if (host === userId) {
-          const content = await ProjectsService.projectControllerFetchProjectContent(String(projectId));
           setIsHost(true);
-          setProjectContent(content);
+
+          try {
+            const content = await ProjectsService.projectControllerFetchProjectContent(String(projectId));
+            setProjectContent(content);
+          } catch (error: any) {
+            if (error instanceof ApiError && error.status === 404) {
+              setProjectContent({});
+            } else {
+              console.error("Failed to fetch project content:", error); // FIXME : better error handling
+            }
+          }
         }
       } catch (err) {
         console.error("Failed to join work session:", err); // FIXME : better error handling

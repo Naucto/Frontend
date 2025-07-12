@@ -1,6 +1,6 @@
 import { useEditorManager } from "@modules/editor/EditorManager";
 import React, { useEffect } from "react";
-import { WorkSessionsService } from "src/api/services/WorkSessionsService.ts";
+import { WorkSessionsService } from "@api/services/WorkSessionsService.ts";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
 import { useProject } from "../../providers/ProjectProvider";
 
