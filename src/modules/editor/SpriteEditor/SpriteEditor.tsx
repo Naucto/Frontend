@@ -165,8 +165,9 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, onGetData, onSetData
     const delta = e.deltaY > 0 ? 1 : -1;
     const power = 1 / SCALE;
     setZoom(prevZoom => {
-      const newZoom = Math.max(power, prevZoom + delta * power);
-      return Math.min(newZoom, ZOOM_LIMIT);
+      const maxZoom = 16;
+      const newZoom = Math.max(1, Math.min(prevZoom + delta * power, maxZoom));
+      return Math.round(newZoom * 10) / 10;
     });
   };
 
