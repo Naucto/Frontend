@@ -9,7 +9,7 @@
         "@mui/material": "^7.0.2",
         "@types/react-beforeunload": "^2.1.5",
         "axios": "^1.9.0",
-        "fengari": "0.1.4",
+        "fengari": "^0.1.4",
         "i18n": "^0.15.1",
         "mui": "^0.0.1",
         "openapi-typescript-codegen": "^0.29.0",
