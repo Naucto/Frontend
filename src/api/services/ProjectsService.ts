@@ -3,8 +3,12 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { AddCollaboratorDto } from '../models/AddCollaboratorDto';
+import type { CdnUrlResponseDto } from '../models/CdnUrlResponseDto';
 import type { CreateProjectDto } from '../models/CreateProjectDto';
+import type { ProjectResponseDto } from '../models/ProjectResponseDto';
+import type { ProjectWithRelationsResponseDto } from '../models/ProjectWithRelationsResponseDto';
 import type { RemoveCollaboratorDto } from '../models/RemoveCollaboratorDto';
+import type { SignedUrlResponseDto } from '../models/SignedUrlResponseDto';
 import type { UpdateProjectDto } from '../models/UpdateProjectDto';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
@@ -12,10 +16,10 @@ import { request as __request } from '../core/request';
 export class ProjectsService {
     /**
      * Retrieve the list of projects
-     * @returns any A JSON array of projects
+     * @returns ProjectWithRelationsResponseDto A JSON array of projects with collaborators and creator information
      * @throws ApiError
      */
-    public static projectControllerFindAll(): CancelablePromise<any> {
+    public static projectControllerFindAll(): CancelablePromise<Array<ProjectWithRelationsResponseDto>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/projects',
@@ -27,12 +31,12 @@ export class ProjectsService {
     /**
      * Create a new project
      * @param requestBody
-     * @returns any Project created successfully
+     * @returns ProjectResponseDto Project created successfully
      * @throws ApiError
      */
     public static projectControllerCreate(
         requestBody: CreateProjectDto,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<ProjectResponseDto> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/projects',
@@ -46,12 +50,12 @@ export class ProjectsService {
     /**
      * Retrieve a single project
      * @param id Numeric ID of the project to retrieve
-     * @returns any Project object
+     * @returns ProjectResponseDto Project object
      * @throws ApiError
      */
     public static projectControllerFindOne(
         id: number,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<ProjectResponseDto> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/projects/{id}',
@@ -69,13 +73,13 @@ export class ProjectsService {
      * Update an existing project
      * @param id Numeric ID of the project to update
      * @param requestBody
-     * @returns any Updated project object
+     * @returns ProjectResponseDto Updated project object
      * @throws ApiError
      */
     public static projectControllerUpdate(
         id: number,
         requestBody: UpdateProjectDto,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<ProjectResponseDto> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/projects/{id}',
@@ -115,13 +119,13 @@ export class ProjectsService {
      * Add a new collaborator
      * @param id Numeric ID of the project to update
      * @param requestBody
-     * @returns any Patch project object
+     * @returns ProjectWithRelationsResponseDto Updated project object with collaborators
      * @throws ApiError
      */
     public static projectControllerAddCollaborator(
         id: number,
         requestBody: AddCollaboratorDto,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<ProjectWithRelationsResponseDto> {
         return __request(OpenAPI, {
             method: 'PATCH',
             url: '/projects/{id}/add-collaborator',
@@ -140,13 +144,13 @@ export class ProjectsService {
      * Remove a collaborator
      * @param id Numeric ID of the project to update
      * @param requestBody
-     * @returns any Patch project object
+     * @returns ProjectWithRelationsResponseDto Updated project object with collaborators
      * @throws ApiError
      */
     public static projectControllerRemoveCollaborator(
         id: number,
         requestBody: RemoveCollaboratorDto,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<ProjectWithRelationsResponseDto> {
         return __request(OpenAPI, {
             method: 'DELETE',
             url: '/projects/{id}/remove-collaborator',
@@ -162,7 +166,7 @@ export class ProjectsService {
         });
     }
     /**
-     * Save content file to S3 for a project
+     * Save project's content
      * @param id
      * @param formData
      * @returns any File uploaded successfully
@@ -188,7 +192,7 @@ export class ProjectsService {
         });
     }
     /**
-     * Fetch content file from S3 for a project
+     * Fetch project's content
      * @param id
      * @returns any File fetched successfully
      * @throws ApiError
@@ -205,6 +209,44 @@ export class ProjectsService {
             errors: {
                 403: `Forbidden`,
                 404: `File not found`,
+            },
+        });
+    }
+    /**
+     * Get a secure CDN URL for a project file
+     * @param id
+     * @returns CdnUrlResponseDto Signed URL returned successfully
+     * @throws ApiError
+     */
+    public static projectControllerGetProjectCdnUrl(
+        id: string,
+    ): CancelablePromise<CdnUrlResponseDto> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/projects/{id}/getCdnUrl',
+            path: {
+                'id': id,
+            },
+            errors: {
+                403: `Forbidden`,
+                404: `File not found`,
+            },
+        });
+    }
+    /**
+     * Get signed CloudFront URL for a protected file
+     * @param key File key in CDN
+     * @returns SignedUrlResponseDto Signed URL returned
+     * @throws ApiError
+     */
+    public static projectControllerGetSignedUrl(
+        key: string,
+    ): CancelablePromise<SignedUrlResponseDto> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/projects/{key}/signed-url',
+            path: {
+                'key': key,
             },
         });
     }

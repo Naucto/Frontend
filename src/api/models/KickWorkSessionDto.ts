@@ -2,10 +2,10 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type CreateBucketDto = {
+export type KickWorkSessionDto = {
     /**
-     * Optional bucket location constraint
+     * The ID of the users participating in the work session
      */
-    locationConstraint?: string;
+    userId: number;
 };
 

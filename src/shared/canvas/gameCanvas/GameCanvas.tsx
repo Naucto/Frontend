@@ -1,4 +1,4 @@
-import StyledCanvas, { CanvasHandle, CanvasProps } from "@shared/canvas/Canvas";
+import { StyledCanvas, CanvasHandle, CanvasProps } from "@shared/canvas/Canvas";
 import { KeyHandler } from "@shared/canvas/gameCanvas/KeyHandler";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import { EnvData, LuaEnvironmentManager } from "@shared/luaEnvManager/LuaEnvironmentManager";
@@ -7,12 +7,12 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from 
 type GameCanvasProps = {
   canvasProps: CanvasProps;
   envData: EnvData;
-  setOutput: (output: string) => void
+  setOutput: React.Dispatch<React.SetStateAction<string>>;
   className?: string;
 };
 
 const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(
-  ({ canvasProps: { screenSize, spriteSheet, palette, className }, envData, setOutput }, ref) => {
+  ({ canvasProps: { screenSize, spriteSheet, palette }, envData, setOutput, className }, ref) => {
     const spriteRendererHandleRef = useRef<CanvasHandle>(null);
     const luaEnvManagerRef = useRef<LuaEnvironmentManager>(null);
     const animationFrameRef = useRef<number>(null);
@@ -28,7 +28,7 @@ const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(
       luaEnvManager?.draw();
       animationFrameRef.current = requestAnimationFrame(loop);
       spriteRendererHandleRef.current?.draw();
-    }, [luaEnvManagerRef, spriteRendererHandleRef]);
+    }, [luaEnvManagerRef, spriteRendererHandleRef, animationFrameRef]);
 
     // init lua env
     useEffect(() => {
@@ -61,7 +61,10 @@ const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(
       const luaEnvManager = luaEnvManagerRef.current;
 
       spriteRendererHandleRef.current.clear(0);
-      luaEnvManager.runCode();
+      const isLoaded = luaEnvManager.runCode();
+      if (!isLoaded) {
+        return;
+      }
 
       luaEnvManager.init();
       if (animationFrameRef.current) {
@@ -75,7 +78,7 @@ const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(
           animationFrameRef.current = null;
         }
       };
-    }, [envData]);
+    }, [envData.code]);
 
     return (
       <StyledCanvas
