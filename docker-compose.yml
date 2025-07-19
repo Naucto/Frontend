@@ -10,7 +10,6 @@ services:
       - "3001:3001"
     environment:
       - BUN_INSTALL_FROZEN=1
-    command: bun dev --host 0.0.0.0 --port 3001
 
 volumes:
   node_modules: {}
