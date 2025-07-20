@@ -7,7 +7,7 @@ import { StyledCanvas } from "@shared/canvas/Canvas";
 import { SpriteSheet } from "src/types/SpriteSheetType";
 import { spriteTable, palette } from "src/temporary/SpriteSheet";
 import { EditorProps } from "../../create/game-editor/editors/EditorType";
-import * as Y from "yjs";
+import { YSpriteSheet } from "@modules/create/game-editor/types/YSpriteSheet.ts";
 
 interface Point {
   x: number;
@@ -154,7 +154,7 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
   const [version, setVersion] = useState(0);
   const drawCanvasRef = React.createRef<SpriteRendererHandle>();
   const canvasContainerRef = useRef<HTMLDivElement>(null);
-  const ytextRef = useRef<Y.Text>(null);
+  const yspriteRef = useRef<YSpriteSheet>(null);
 
   const handleContextMenu = (e: React.MouseEvent): void => {
     e.preventDefault();
@@ -173,15 +173,20 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
   };
 
   useEffect(() => {
-    ytextRef.current = ydoc.getText("sprite");
-  }, [ytextRef]);
+    yspriteRef.current = new YSpriteSheet(ydoc, "sprite", SPRITE_SHEET_SIZE, SPRITE_SHEET_SIZE);
+    if (yspriteRef.current) {
+      yspriteRef.current.observe(() => {
+        setVersion(v => v + 1);
+      });
+    }
+  }, [yspriteRef]);
 
   useEffect(() => {
     if (!onGetData)
       return;
     onGetData(() => {
-      if (ytextRef.current) {
-        return ytextRef.current.toString();
+      if (yspriteRef.current) {
+        return yspriteRef.current.toString();
       }
       return "";
     });
@@ -191,13 +196,10 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
     if (!onSetData)
       return;
     onSetData((data: string) => {
-      if (!ytextRef.current)
+      if (!yspriteRef.current)
         return;
       ydoc!.transact(() => {
-        ytextRef.current?.delete(0, ytextRef.current.length);
-        if (data.length == 0)
-          data = spriteTable.table;
-        ytextRef.current?.insert(0, data);
+        yspriteRef.current?.fromString(data ? data : spriteTable.table);
       });
     });
   }, [onSetData]);
@@ -222,18 +224,15 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
       drawCanvasRef.current.queueSpriteDraw(0, position.x, position.y, 16, 16);
       drawCanvasRef.current.draw();
     }
-  }, [ytextRef, drawCanvasRef, position, version]);
+  }, [yspriteRef, drawCanvasRef, position, version]);
 
   const handleClick = (x: number, y: number): void => {
-    if (!ytextRef.current)
+    if (!yspriteRef.current)
       return;
 
-    const spriteWidth = canvasSpriteSheet.size.width;
-    const index = y * spriteWidth + x;
-    const color = currentColor.toString(16);
-    ydoc.transact(() => {
-      ytextRef.current?.delete(index, 1);
-      ytextRef.current?.insert(index, color);
+    const color = currentColor;
+    ydoc!.transact(() => {
+      yspriteRef.current?.setPixel(x, y, color);
     });
     setVersion(v => v + 1);
   };
@@ -291,7 +290,7 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
   };
 
   const canvasSpriteSheet: SpriteSheet = {
-    spriteSheet: ytextRef.current ? ytextRef.current.toString() : "",
+    spriteSheet: yspriteRef.current ? yspriteRef.current.toString() : "",
     spriteSize: {
       width: SPRITE_SIZE,
       height: SPRITE_SIZE
