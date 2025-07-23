@@ -70,8 +70,6 @@ export class YSpriteSheet {
   }
 
   observe(callback: (event: Y.YMapEvent<number>) => void): void {
-    this._spritemap.observe(event => {
-      callback(event);
-    });
+    this._spritemap.observe(callback);
   }
 }
