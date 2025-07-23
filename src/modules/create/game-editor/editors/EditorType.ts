@@ -1,5 +1,6 @@
 import * as Y from "yjs";
 import { WebrtcProvider } from "y-webrtc";
+import { FC } from "react";
 
 export type EditorProps = {
   ydoc: Y.Doc;
@@ -10,7 +11,7 @@ export type EditorProps = {
 
 export interface EditorTab {
   label: string;
-  component: React.FC<EditorProps>;
+  component: FC<EditorProps>;
   getData?: () => string;
   setData?: (data: string) => void;
 }

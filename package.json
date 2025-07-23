@@ -31,7 +31,7 @@
     "vite-plugin-svgr": "^4.3.0",
     "vite-tsconfig-paths": "^5.1.4",
     "y-monaco": "^0.1.6",
-    "y-webrtc": "^10.3.0",
+    "y-webrtc": "github:disarticulate/y-webrtc#master",
     "yjs": "^13.6.26"
   },
   "patchedDependencies": {

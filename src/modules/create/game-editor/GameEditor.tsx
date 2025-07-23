@@ -170,7 +170,7 @@ const GameEditor: React.FC = () => {
   useEffect(() => {
     if (projectContent && editorTabs.length > 0) {
       editorTabs.forEach(({ label, setData }) => {
-        if (setData && projectContent[label]) {
+        if (setData) {
           setData(projectContent[label]);
         }
       });
@@ -330,7 +330,18 @@ const GameEditor: React.FC = () => {
               icon={icon} />
           ))}
         </Tabs>
-        <TabContent>{editorTabs[activeTab]?.component}</TabContent>
+        {editorTabs.map((tab, idx) => (
+          <TabContent
+            key={tab.label}
+            role="tabpanel"
+            hidden={activeTab !== idx}
+            sx={{
+              display: activeTab === idx ? 'block' : 'none',
+            }}
+          >
+            {tab.component}
+          </TabContent>
+        ))}
       </LeftPanel>
       <RightPanel>
         <PreviewCanvas
