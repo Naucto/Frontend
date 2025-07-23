@@ -16,6 +16,8 @@ interface Point {
 
 const SPRITE_SIZE = 8;
 const SPRITE_SHEET_SIZE = 128;
+const SPRITE_NUMBER = SPRITE_SHEET_SIZE / SPRITE_SIZE;
+const SCALE = 1080 / SPRITE_SHEET_SIZE; // used to scale the canvas to avoid pixel perfect drawing
 
 interface ColorButtonProps {
   color: { name: string; hex: string };
@@ -103,23 +105,29 @@ function getMousePosition(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>, re
   };
 }
 
-function getScaledPosition(mousePos: Point, rect: DOMRect, zoom: number): Point {
+function getNormalizedPosition(mousePos: Point, rect: DOMRect): Point {
   return {
-    x: mousePos.x / (rect.width / zoom),
-    y: mousePos.y / (rect.width / zoom)
+    x: mousePos.x / rect.width,
+    y: mousePos.y / rect.height
+  };
+}
+
+function getScaledPosition(mousePos: Point, scale: number, zoom: number): Point {
+  return {
+    x: mousePos.x * zoom * scale,
+    y: mousePos.y * zoom * scale
   };
 }
 
 function getPixelPos(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
   rect: DOMRect, zoom: number, position: Point): Point {
-  const mousePos = getMousePosition(e, rect);
-  const scaledPos = getScaledPosition(mousePos, rect, zoom);
 
-  const rawX = Math.floor(scaledPos.x * SPRITE_SIZE - Math.floor(position.x));
-  const rawY = Math.floor(scaledPos.y * SPRITE_SIZE - Math.floor(position.y));
+  const canvasMousePos = getMousePosition(e, rect);
+  const normalizedMousePos = getNormalizedPosition(canvasMousePos, rect);
+  const scaledPos = getScaledPosition(normalizedMousePos, SCALE, zoom);
 
-  const x = ((rawX % SPRITE_SIZE) + SPRITE_SIZE) % SPRITE_SIZE;
-  const y = ((rawY % SPRITE_SIZE) + SPRITE_SIZE) % SPRITE_SIZE;
+  const x = Math.floor(scaledPos.x * SPRITE_SIZE - Math.floor(position.x));
+  const y = Math.floor(scaledPos.y * SPRITE_SIZE - Math.floor(position.y));
 
   return { x, y };
 }
@@ -164,11 +172,11 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
     if (!isMouseOverCanvas)
       return;
 
-    const delta = e.deltaY > 0 ? 0.1 : -0.1;
-    const power = 5;
+    const delta = e.deltaY > 0 ? 1 : -1;
+    const power = 1 / SCALE;
     setZoom(prevZoom => {
-      const newZoom = Math.max(1, prevZoom + delta * power);
-      return Math.min(Math.round(newZoom * 10) / 10, 16); // Limit zoom to a maximum of 16
+      const newZoom = Math.max(power, prevZoom + delta * power);
+      return Math.min(newZoom, SPRITE_NUMBER / SCALE);
     });
   };
 
@@ -221,18 +229,25 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
   useEffect(() => {
     if (drawCanvasRef.current) {
       drawCanvasRef.current.clear(0);
-      drawCanvasRef.current.queueSpriteDraw(0, position.x, position.y, 16, 16);
+      const snappedX = Math.floor(position.x);
+      const snappedY = Math.floor(position.y);
+
+      drawCanvasRef.current.queueSpriteDraw(
+        0,
+        snappedX * SPRITE_NUMBER / zoom,
+        snappedY * SPRITE_NUMBER / zoom,
+        SPRITE_NUMBER, SPRITE_NUMBER,
+        0, 0,
+        (1 / zoom) * SPRITE_NUMBER);
       drawCanvasRef.current.draw();
     }
   }, [yspriteRef, drawCanvasRef, position, version]);
 
-  const handleClick = (x: number, y: number): void => {
+  const drawAt = (x: number, y: number): void => {
     if (!yspriteRef.current)
       return;
-
-    const color = currentColor;
     ydoc!.transact(() => {
-      yspriteRef.current?.setPixel(x, y, color);
+      yspriteRef.current?.setPixel(x, y, currentColor);
     });
     setVersion(v => v + 1);
   };
@@ -246,38 +261,36 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
     } else if (e.button === 0) { // Left click
       setIsDrawing(true);
       const rect = e.currentTarget.getBoundingClientRect();
-      const spriteX = Math.floor(((e.clientX - rect.left) / rect.width * zoom) - (Math.floor(position.x) / SPRITE_SIZE));
-      const spriteY = Math.floor(((e.clientY - rect.top) / rect.height * zoom) - (Math.floor(position.y) / SPRITE_SIZE));
-      const x = Math.floor((e.clientX - rect.left) / (rect.width / zoom) * SPRITE_SIZE - Math.floor(position.x)) % SPRITE_SIZE;
-      const y = Math.floor((e.clientY - rect.top) / (rect.width / zoom) * SPRITE_SIZE - Math.floor(position.y)) % SPRITE_SIZE;
-      const spriteIndex = x + spriteX * SPRITE_SIZE;
-      const pixelIndex = y + spriteY * SPRITE_SIZE;
-      handleClick(spriteIndex, pixelIndex);
+      const { x, y } = getPixelPos(e, rect, zoom, position);
+      drawAt(x, y);
     }
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>): void => {
     if (isDragging) {
-      const dragDistanceX = (e.clientX - dragStart.x) * zoom / 48;
-      const dragDistanceY = (e.clientY - dragStart.y) * zoom / 48;
+      const dragDelta: Point = {
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y
+      };
+      if (canvasContainerRef.current === null) return;
+      const normalizedDragDelta = getNormalizedPosition(dragDelta, canvasContainerRef.current.getBoundingClientRect());
+
+      const dragDistance: Point = {
+        x: normalizedDragDelta.x * SPRITE_SIZE * zoom * SCALE,
+        y: normalizedDragDelta.y * SPRITE_SIZE * zoom * SCALE
+      };
 
       setPosition(prevPos => ({
-        x: prevPos.x + dragDistanceX,
-        y: prevPos.y + dragDistanceY
+        x: prevPos.x + dragDistance.x,
+        y: prevPos.y + dragDistance.y
       }));
 
       setDragStart({ x: e.clientX, y: e.clientY });
     } else if (isDrawing) {
       const rect = e.currentTarget.getBoundingClientRect();
-      const spritePos = getSpritePos(e, rect, zoom, position);
 
-      if (spritePos) {
-        const { x, y } = getPixelPos(e, rect, zoom, position);
-        const spriteSize = SPRITE_SIZE;
-        const spriteIndex = x + spritePos.x * spriteSize;
-        const pixelIndex = y + spritePos.y * spriteSize;
-        handleClick(spriteIndex, pixelIndex);
-      }
+      const { x, y } = getPixelPos(e, rect, zoom, position);
+      drawAt(x, y);
     }
   };
 
@@ -303,8 +316,8 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
   };
 
   const drawCanvasSize = {
-    width: Math.floor(SPRITE_SIZE * zoom),
-    height: Math.floor(SPRITE_SIZE * zoom)
+    width: Math.floor(SPRITE_SHEET_SIZE) * SCALE,
+    height: Math.floor(SPRITE_SHEET_SIZE) * SCALE
   };
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>): void => {
@@ -314,9 +327,7 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
 
       if (spritePos) {
         const { x, y } = getPixelPos(e, rect, zoom, position);
-        const spriteIndex = x + spritePos.x * SPRITE_SIZE;
-        const pixelIndex = y + spritePos.y * SPRITE_SIZE;
-        handleClick(spriteIndex, pixelIndex);
+        drawAt(x, y);
       }
     }
   };
