@@ -73,13 +73,7 @@ const CanvasContainer: React.FC<CanvasContainerProps> = ({
   containerRef,
   spriteSheet,
   screenSize,
-  onWheel,
-  onMouseDown,
-  onMouseMove,
-  onMouseUp,
-  onMouseEnter,
-  onMouseLeave,
-  onClick
+  ...props
 }) => (
   <div ref={containerRef} className="draw-canvas-container">
     <StyledCanvas
@@ -87,13 +81,7 @@ const CanvasContainer: React.FC<CanvasContainerProps> = ({
       spriteSheet={spriteSheet}
       screenSize={screenSize}
       palette={palette}
-      onWheel={onWheel}
-      onMouseDown={onMouseDown}
-      onMouseMove={onMouseMove}
-      onMouseUp={onMouseUp}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-      onClick={onClick}
+      {...props}
     />
   </div>
 );
