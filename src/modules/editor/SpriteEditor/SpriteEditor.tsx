@@ -17,7 +17,8 @@ interface Point {
 const SPRITE_SIZE = 8;
 const SPRITE_SHEET_SIZE = 128;
 const SPRITE_NUMBER = SPRITE_SHEET_SIZE / SPRITE_SIZE;
-const SCALE = 1080 / SPRITE_SHEET_SIZE; // used to scale the canvas to avoid pixel perfect drawing
+const CANVAS_BASE_RESOLUTION = 1080; // Base resolution for scaling the canvas
+const SCALE = CANVAS_BASE_RESOLUTION / SPRITE_SHEET_SIZE; // used to scale the canvas to avoid pixel perfect drawing
 
 interface ColorButtonProps {
   color: { name: string; hex: string };
