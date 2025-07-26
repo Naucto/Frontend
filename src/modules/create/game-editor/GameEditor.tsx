@@ -188,6 +188,34 @@ const GameEditor: React.FC = () => {
 
     const userStateCache = new Map<number, UserState>();
 
+    const checkAndKickDisconnectedUsers = async () => {
+      const projectId = Number(LocalStorageManager.getProjectId());
+      try {
+        const sessionInfo = await WorkSessionsService.workSessionControllerGetInfo(projectId);
+
+        if (sessionInfo.host === Number(userId)) {
+          setIsHost(true);
+          return;
+        }
+
+        const connectedClients = Array.from(awareness?.getStates().keys() || []);
+        if (connectedClients.length === 1 && connectedClients[0] === awareness?.clientID) {
+          console.log("I'm the only one left in the session but not the host. Cleaning up disconnected users...");
+
+          for (const sessionUserId of sessionInfo.users) {
+            if (Number(sessionUserId) !== userId) {
+              console.log(`Kicking disconnected user with ID ${sessionUserId}`);
+              await WorkSessionsService.workSessionControllerKick(projectId, {
+                userId: Number(sessionUserId)
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error checking or kicking disconnected users:", error);
+      }
+    };
+
     const onChange = ({ added, updated, removed }: {
       added: number[]
       updated: number[]
@@ -214,6 +242,8 @@ const GameEditor: React.FC = () => {
           userStateCache.delete(clientID);
 
           WorkSessionsService.workSessionControllerKick(projectId, { userId: Number(disconnectedUser.userId) });
+
+          checkAndKickDisconnectedUsers();
         }
       });
     };
@@ -222,6 +252,9 @@ const GameEditor: React.FC = () => {
       return;
 
     awareness!.on("change", onChange);
+
+    checkAndKickDisconnectedUsers();
+
     return () => awareness!.off("change", onChange);
   }, [awareness]);
 
