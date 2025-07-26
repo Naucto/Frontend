@@ -9,6 +9,93 @@ import "./CodeEditor.css";
 const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetData }) => {
   const monacoBindingRef = useRef<MonacoBinding | null>(null);
   const ytextRef = useRef<any | null>(null);
+  const styleElementRef = useRef<HTMLStyleElement | null>(null);
+
+  const generateRandomColor = (): string => {
+    const colors = [
+      '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57',
+      '#FF9FF3', '#54A0FF', '#5F27CD', '#00D2D3', '#FF9F43',
+      '#C44569', '#F8B500', '#6C5CE7', '#A29BFE', '#FD79A8'
+    ];
+    return colors[Math.floor(Math.random() * colors.length)];
+  };
+
+  const updateUserStyles = () => {
+    if (!provider?.awareness) return;
+
+    const states = provider.awareness.getStates();
+    let styles = "";
+
+    states.forEach((state, clientId) => {
+      if (state.user && clientId !== provider.awareness.clientID) {
+        const { name, color } = state.user;
+        const rgba = `${color}33`;
+
+        styles += `
+          .yRemoteSelection-${clientId} {
+            background-color: ${rgba} !important;
+          }
+          
+          .yRemoteSelectionHead-${clientId} {
+            border-left: ${color} solid 2px !important;
+            border-top: ${color} solid 2px !important;
+            border-bottom: ${color} solid 2px !important;
+          }
+          
+          .yRemoteSelectionHead-${clientId}::after {
+            border: 3px solid ${color} !important;
+            content: '${name}' !important;
+            background-color: ${color} !important;
+            color: white !important;
+            padding: 2px 6px !important;
+            border-radius: 4px !important;
+            font-size: 12px !important;
+            font-weight: bold !important;
+            white-space: nowrap !important;
+            position: absolute !important;
+            top: -25px !important;
+            left: -4px !important;
+            z-index: 1000 !important;
+          }
+        `;
+      }
+    });
+
+    if (styleElementRef.current) {
+      styleElementRef.current.textContent = styles;
+    } else {
+      const styleElement = document.createElement('style');
+      styleElement.textContent = styles;
+      document.head.appendChild(styleElement);
+      styleElementRef.current = styleElement;
+    }
+  };
+
+  useEffect(() => {
+    if (!provider?.awareness) return;
+
+    const handleAwarenessUpdate = () => {
+      updateUserStyles();
+    };
+
+    const currentUser = provider.awareness.getLocalState()?.user;
+    if (currentUser && !currentUser.color) {
+      provider.awareness.setLocalStateField('user', {
+        ...currentUser,
+        color: generateRandomColor()
+      });
+    }
+
+    provider.awareness.on('update', handleAwarenessUpdate);
+
+    return () => {
+      provider.awareness.off('update', handleAwarenessUpdate);
+      if (styleElementRef.current) {
+        document.head.removeChild(styleElementRef.current);
+        styleElementRef.current = null;
+      }
+    };
+  }, [provider]);
 
   useEffect(() => {
     if (onGetData) {
@@ -49,6 +136,9 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetDat
       new Set([editor]),
       provider.awareness
     );
+
+    // Mettre à jour les styles après la liaison
+    setTimeout(updateUserStyles, 100);
 
     return () => {
       editor.dispose();
