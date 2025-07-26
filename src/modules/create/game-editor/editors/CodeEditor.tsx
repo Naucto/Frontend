@@ -24,7 +24,7 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetDat
   useEffect(() => {
     if (onSetData) {
       onSetData((data: string) => {
-        if (ytextRef.current) {
+        if (ytextRef.current && data) {
           ydoc.transact(() => {
             ytextRef.current.delete(0, ytextRef.current.length);
             ytextRef.current.insert(0, data);
