@@ -229,7 +229,7 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
         (1 / zoom) * SPRITE_NUMBER);
       drawCanvasRef.current.draw();
     }
-  }, [yspriteRef, drawCanvasRef, position, version]);
+  }, [yspriteRef, drawCanvasRef, position, version, zoom]);
 
   const drawAt = (x: number, y: number): void => {
     if (!yspriteRef.current)
