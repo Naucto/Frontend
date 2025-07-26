@@ -19,6 +19,7 @@ const SPRITE_SHEET_SIZE = 128;
 const SPRITE_NUMBER = SPRITE_SHEET_SIZE / SPRITE_SIZE;
 const CANVAS_BASE_RESOLUTION = 1080; // Base resolution for scaling the canvas
 const SCALE = CANVAS_BASE_RESOLUTION / SPRITE_SHEET_SIZE; // used to scale the canvas to avoid pixel perfect drawing
+const ZOOM_LIMIT = SPRITE_NUMBER / SCALE;
 
 interface ColorButtonProps {
   color: { name: string; hex: string };
@@ -165,7 +166,7 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
     const power = 1 / SCALE;
     setZoom(prevZoom => {
       const newZoom = Math.max(power, prevZoom + delta * power);
-      return Math.min(newZoom, SPRITE_NUMBER / SCALE);
+      return Math.min(newZoom, ZOOM_LIMIT);
     });
   };
 
