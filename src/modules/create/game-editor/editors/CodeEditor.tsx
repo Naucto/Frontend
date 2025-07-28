@@ -5,11 +5,13 @@ import CodeTabTheme from "./CodeTabTheme";
 import { MonacoBinding } from "y-monaco";
 import { EditorProps } from "./EditorType";
 import "./CodeEditor.css";
+import { useTheme } from "@mui/material/styles";
 
 const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetData }) => {
   const monacoBindingRef = useRef<MonacoBinding | null>(null);
   const ytextRef = useRef<any | null>(null);
   const styleElementRef = useRef<HTMLStyleElement | null>(null);
+  const theme = useTheme();
 
   const generateRandomColor = (): string => {
     const colors = [
@@ -63,6 +65,7 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetDat
             border-radius: 4px !important;
             font-size: 12px !important;
             font-weight: bold !important;
+            font-family: ${theme.typography.fontFamily} !important;
             white-space: nowrap !important;
             position: absolute !important;
             top: -25px !important;
