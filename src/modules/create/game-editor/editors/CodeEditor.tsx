@@ -97,10 +97,6 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetDat
   useEffect(() => {
     if (!provider?.awareness) return;
 
-    const handleAwarenessUpdate = () => {
-      updateUserStyles();
-    };
-
     const currentUser = provider.awareness.getLocalState()?.user;
     if (currentUser && !currentUser.color) {
       provider.awareness.setLocalStateField("user", {
@@ -109,10 +105,7 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetDat
       });
     }
 
-    provider.awareness.on("update", handleAwarenessUpdate);
-
     return () => {
-      provider.awareness.off("update", handleAwarenessUpdate);
       if (styleElementRef.current) {
         document.head.removeChild(styleElementRef.current);
         styleElementRef.current = null;
@@ -160,10 +153,15 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetDat
       provider.awareness
     );
 
-    // Mettre à jour les styles après la liaison
-    setTimeout(updateUserStyles, 100);
+    const handleAwarenessUpdate = () => {
+      updateUserStyles();
+    };
+
+    provider.awareness.on("update", handleAwarenessUpdate);
+    updateUserStyles();
 
     return () => {
+      provider.awareness.off("update", handleAwarenessUpdate);
       editor.dispose();
       monacoBindingRef.current?.destroy?.();
     };
