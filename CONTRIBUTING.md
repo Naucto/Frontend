@@ -25,6 +25,11 @@ describes what part you're working on in one word
 - [CLEAN] - cleaning dead code, comments, imports, etc.
 - [FIX] - fixing bugs
 
+# Commit content:
+
+We use husky to run linter before each commit, so make sure your code is linted if not it will not be committed.
+
+To check if your code is linted run `bun run lint` or `bun run lint --fix` to fix it automatically simple errors.
 
 # Pull Requests
 describe what was done.
