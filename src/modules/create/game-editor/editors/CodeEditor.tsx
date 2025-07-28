@@ -12,75 +12,97 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetDat
   const monacoBindingRef = useRef<MonacoBinding | null>(null);
   const ytextRef = useRef<any | null>(null);
   const styleElementRef = useRef<HTMLStyleElement | null>(null);
+  const userStylesRef = useRef<Map<number, string>>(new Map());
   const theme = useTheme();
 
-  const updateUserStyles = () => {
+  const generateUserStyles = (clientId: number, name: string, color: string): string => {
+    const rgba = `${color}33`;
+
+    return `
+      .yRemoteSelection-${clientId} {
+        background-color: ${rgba} !important;
+      }
+      
+      .yRemoteSelectionHead-${clientId} {
+        border-left: ${color} solid 2px !important;
+        border-top: ${color} solid 2px !important;
+        border-bottom: ${color} solid 2px !important;
+      }
+      
+      .yRemoteSelectionHead-${clientId}::before {
+        content: '' !important;
+        position: absolute !important;
+        top: -15px !important;
+        left: -15px !important;
+        width: 50px !important;
+        height: 35px !important;
+        z-index: 999 !important;
+        background: transparent !important;
+        border: 10px solid transparent !important;
+      }
+      
+      .yRemoteSelectionHead-${clientId}::after {
+        border: 3px solid ${color} !important;
+        content: '${name}' !important;
+        background-color: ${color} !important;
+        color: white !important;
+        padding: 2px 6px !important;
+        border-radius: 4px !important;
+        font-size: 12px !important;
+        font-weight: bold !important;
+        font-family: ${theme.typography.fontFamily} !important;
+        white-space: nowrap !important;
+        position: absolute !important;
+        top: -25px !important;
+        left: -4px !important;
+        z-index: 1000 !important;
+        opacity: 0 !important;
+        transform: translateY(-5px) !important;
+        transition: opacity 0.2s ease, transform 0.2s ease !important;
+      }
+      
+      .yRemoteSelectionHead-${clientId}:hover::after {
+        opacity: 1 !important;
+        transform: translateY(5px) !important;
+      }
+    `;
+  };
+
+  const updateUserStyles = (changedUsers?: { added: number[], updated: number[], removed: number[] }) => {
     if (!provider?.awareness) return;
 
     const states = provider.awareness.getStates();
-    let styles = "";
 
-    states.forEach((state, clientId) => {
-      if (state.user && clientId !== provider.awareness.clientID) {
-        const { name, color } = state.user;
-        const rgba = `${color}33`;
+    if (changedUsers) {
+      changedUsers.removed.forEach(clientId => {
+        userStylesRef.current.delete(clientId);
+      });
 
-        styles += `
-          .yRemoteSelection-${clientId} {
-            background-color: ${rgba} !important;
-          }
-          
-          .yRemoteSelectionHead-${clientId} {
-            border-left: ${color} solid 2px !important;
-            border-top: ${color} solid 2px !important;
-            border-bottom: ${color} solid 2px !important;
-          }
-          
-          .yRemoteSelectionHead-${clientId}::before {
-            content: '' !important;
-            position: absolute !important;
-            top: -15px !important;
-            left: -15px !important;
-            width: 50px !important;
-            height: 35px !important;
-            z-index: 999 !important;
-            background: transparent !important;
-            border: 10px solid transparent !important;
-          }
-          
-          .yRemoteSelectionHead-${clientId}::after {
-            border: 3px solid ${color} !important;
-            content: '${name}' !important;
-            background-color: ${color} !important;
-            color: white !important;
-            padding: 2px 6px !important;
-            border-radius: 4px !important;
-            font-size: 12px !important;
-            font-weight: bold !important;
-            font-family: ${theme.typography.fontFamily} !important;
-            white-space: nowrap !important;
-            position: absolute !important;
-            top: -25px !important;
-            left: -4px !important;
-            z-index: 1000 !important;
-            opacity: 0 !important;
-            transform: translateY(-5px) !important;
-            transition: opacity 0.2s ease, transform 0.2s ease !important;
-          }
-          
-          .yRemoteSelectionHead-${clientId}:hover::after {
-            opacity: 1 !important;
-            transform: translateY(5px) !important;
-          }
-        `;
-      }
-    });
+      [...changedUsers.added, ...changedUsers.updated].forEach(clientId => {
+        const state = states.get(clientId);
+        if (state?.user && clientId !== provider.awareness.clientID) {
+          const { name, color } = state.user;
+          const userStyles = generateUserStyles(clientId, name, color);
+          userStylesRef.current.set(clientId, userStyles);
+        }
+      });
+    } else {
+      states.forEach((state, clientId) => {
+        if (state.user && clientId !== provider.awareness.clientID) {
+          const { name, color } = state.user;
+          const userStyles = generateUserStyles(clientId, name, color);
+          userStylesRef.current.set(clientId, userStyles);
+        }
+      });
+    }
+
+    const allStyles = Array.from(userStylesRef.current.values()).join("\n");
 
     if (styleElementRef.current) {
-      styleElementRef.current.textContent = styles;
+      styleElementRef.current.textContent = allStyles;
     } else {
       const styleElement = document.createElement("style");
-      styleElement.textContent = styles;
+      styleElement.textContent = allStyles;
       document.head.appendChild(styleElement);
       styleElementRef.current = styleElement;
     }
@@ -145,15 +167,15 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetDat
       provider.awareness
     );
 
-    const handleAwarenessUpdate = () => {
-      updateUserStyles();
+    const handleAwarenessUpdate = (changes: { added: number[], updated: number[], removed: number[] }) => {
+      updateUserStyles(changes);
     };
 
-    provider.awareness.on("update", handleAwarenessUpdate);
+    provider.awareness.on("change", handleAwarenessUpdate);
     updateUserStyles();
 
     return () => {
-      provider.awareness.off("update", handleAwarenessUpdate);
+      provider.awareness.off("change", handleAwarenessUpdate);
       editor.dispose();
       monacoBindingRef.current?.destroy?.();
     };
