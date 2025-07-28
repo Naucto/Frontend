@@ -6,21 +6,13 @@ import { MonacoBinding } from "y-monaco";
 import { EditorProps } from "./EditorType";
 import "./CodeEditor.css";
 import { useTheme } from "@mui/material/styles";
+import { generateRandomColor } from "@utils/colorUtils";
 
 const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetData }) => {
   const monacoBindingRef = useRef<MonacoBinding | null>(null);
   const ytextRef = useRef<any | null>(null);
   const styleElementRef = useRef<HTMLStyleElement | null>(null);
   const theme = useTheme();
-
-  const generateRandomColor = (): string => {
-    const colors = [
-      "#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FECA57",
-      "#FF9FF3", "#54A0FF", "#5F27CD", "#00D2D3", "#FF9F43",
-      "#C44569", "#F8B500", "#6C5CE7", "#A29BFE", "#FD79A8"
-    ];
-    return colors[Math.floor(Math.random() * colors.length)];
-  };
 
   const updateUserStyles = () => {
     if (!provider?.awareness) return;
