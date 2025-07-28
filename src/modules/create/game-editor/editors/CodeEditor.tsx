@@ -13,9 +13,9 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetDat
 
   const generateRandomColor = (): string => {
     const colors = [
-      '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57',
-      '#FF9FF3', '#54A0FF', '#5F27CD', '#00D2D3', '#FF9F43',
-      '#C44569', '#F8B500', '#6C5CE7', '#A29BFE', '#FD79A8'
+      "#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FECA57",
+      "#FF9FF3", "#54A0FF", "#5F27CD", "#00D2D3", "#FF9F43",
+      "#C44569", "#F8B500", "#6C5CE7", "#A29BFE", "#FD79A8"
     ];
     return colors[Math.floor(Math.random() * colors.length)];
   };
@@ -42,6 +42,18 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetDat
             border-bottom: ${color} solid 2px !important;
           }
           
+          .yRemoteSelectionHead-${clientId}::before {
+            content: '' !important;
+            position: absolute !important;
+            top: -15px !important;
+            left: -15px !important;
+            width: 50px !important;
+            height: 35px !important;
+            z-index: 999 !important;
+            background: transparent !important;
+            border: 10px solid transparent !important;
+          }
+          
           .yRemoteSelectionHead-${clientId}::after {
             border: 3px solid ${color} !important;
             content: '${name}' !important;
@@ -56,6 +68,14 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetDat
             top: -25px !important;
             left: -4px !important;
             z-index: 1000 !important;
+            opacity: 0 !important;
+            transform: translateY(-5px) !important;
+            transition: opacity 0.2s ease, transform 0.2s ease !important;
+          }
+          
+          .yRemoteSelectionHead-${clientId}:hover::after {
+            opacity: 1 !important;
+            transform: translateY(5px) !important;
           }
         `;
       }
