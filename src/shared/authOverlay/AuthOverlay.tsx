@@ -103,8 +103,20 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
       if (onClose) {
         onClose();
       }
-    } catch (error: any) {
-      setErrorMessage(error?.body?.message || "Error");
+    } catch (error: unknown) {
+      type ErrorWithBody = { body: { message: string } };
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "body" in error &&
+        typeof (error as ErrorWithBody).body === "object" &&
+        (error as ErrorWithBody).body !== null &&
+        "message" in (error as ErrorWithBody).body
+      ) {
+        setErrorMessage((error as ErrorWithBody).body.message);
+      } else {
+        setErrorMessage("Error");
+      }
     }
   }, [isSignedUp, reset, onClose, setUserId, setUserName, userId, userName]);
 

@@ -1,6 +1,5 @@
-import { WebrtcProvider } from "y-webrtc";
-import { Doc } from "yjs";
 import IEditor from "@modules/editor/IEditor";
+import { JSX } from "react";
 
 export class MapEditor extends IEditor {
   constructor() {
@@ -11,7 +10,7 @@ export class MapEditor extends IEditor {
     };
   }
 
-  public init(doc: Doc, provider: WebrtcProvider): void {
+  public init(): void {
 
   }
 
@@ -20,11 +19,11 @@ export class MapEditor extends IEditor {
     return "";
   }
 
-  public setData(data: string): void {
+  public setData(): void {
     // TODO
   }
 
-  render() {
+  render(): JSX.Element {
     return (
       <div>
         <p>Map Editor</p>

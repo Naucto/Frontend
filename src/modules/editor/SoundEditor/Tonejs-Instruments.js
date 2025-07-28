@@ -19,8 +19,13 @@ export const SampleLibrary = {
   },
 
   load: function (arg) {
-    let t, rt, i;
-    (arg) ? t = arg : t = {};
+    let t, i;
+    const rt = {};
+    if (arg) {
+      t = arg;
+    } else {
+      t = {};
+    }
     t.instruments = t.instruments || ["piano"];
     t.baseUrl = t.baseUrl || this.baseUrl;
     t.onload = t.onload || this.onload;
@@ -33,15 +38,13 @@ export const SampleLibrary = {
       t.ext = this.ext;
     }
 
-    rt = {};
-
     // if an array of instruments is passed...
     if (Array.isArray(t.instruments)) {
       for (i = 0; i <= t.instruments.length - 1; i++) {
-        var newT = this[t.instruments[i]];
+        const newT = this[t.instruments[i]];
         //Minimize the number of samples to load
         if (this.minify === true || t.minify === true) {
-          var minBy = 1;
+          let minBy = 1;
           if (Object.keys(newT).length >= 17) {
             minBy = 2;
           }
@@ -52,7 +55,7 @@ export const SampleLibrary = {
             minBy = 6;
           }
 
-          var filtered = Object.keys(newT).filter(function (_, i) {
+          const filtered = Object.keys(newT).filter(function (_, i) {
             return i % minBy != 0;
           });
           filtered.forEach(function (f) {
@@ -72,11 +75,11 @@ export const SampleLibrary = {
 
       // if a single instrument name is passed...
     } else {
-      newT = this[t.instruments];
+      const newT = this[t.instruments];
 
       //Minimize the number of samples to load
       if (this.minify === true || t.minify === true) {
-        minBy = 1;
+        let minBy = 1;
         if (Object.keys(newT).length >= 17) {
           minBy = 2;
         }
@@ -87,7 +90,7 @@ export const SampleLibrary = {
           minBy = 6;
         }
 
-        filtered = Object.keys(newT).filter(function (_, i) {
+        const filtered = Object.keys(newT).filter(function (_, i) {
           return i % minBy != 0;
         });
         filtered.forEach(function (f) {
@@ -449,7 +452,6 @@ export const SampleLibrary = {
     "C4": "C4.[mp3|ogg]",
     "C5": "C5.[mp3|ogg]",
     "C6": "C6.[mp3|ogg]",
-    "C7": "C7.[mp3|ogg]",
     "C#7": "Cs7.[mp3|ogg]",
     "C#1": "Cs1.[mp3|ogg]",
     "C#2": "Cs2.[mp3|ogg]",

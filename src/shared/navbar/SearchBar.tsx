@@ -1,9 +1,9 @@
 import { Box, InputBase } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import SearchIcon from "@assets/search.svg?react";
-import { ChangeEvent, FormEvent, useState } from "react";
+import { ChangeEvent, FormEvent, JSX, useState } from "react";
 
-const SearchBarContainer = styled(Box)(({ theme }) => ({
+const SearchBarContainer = styled(Box)(() => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -33,15 +33,15 @@ interface SearchBarProps {
   placeholder?: string;
 }
 
-export const SearchBar = ({ onSubmit, onChange, placeholder }: SearchBarProps) => {
+export const SearchBar = ({ onSubmit, onChange, placeholder }: SearchBarProps): JSX.Element => {
   const [value, setValue] = useState("");
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = (e: FormEvent): void => {
     e.preventDefault();
     onSubmit(value);
   };
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>): void => {
     const newValue = e.target.value;
     setValue(newValue);
     onChange?.(newValue);

@@ -3,12 +3,13 @@ import Editor, { Monaco } from "@monaco-editor/react";
 import { editor } from "monaco-editor";
 import CodeTabTheme from "./CodeTabTheme";
 import { MonacoBinding } from "y-monaco";
+import * as Y from "yjs";
 import { EditorProps } from "./EditorType";
 import "./CodeEditor.css";
 
 const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetData }) => {
   const monacoBindingRef = useRef<MonacoBinding | null>(null);
-  const ytextRef = useRef<any | null>(null);
+  const ytextRef = useRef<Y.Text | null>(null);
 
   useEffect(() => {
     if (onGetData) {
@@ -26,8 +27,8 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetDat
       onSetData((data: string) => {
         if (ytextRef.current && data) {
           ydoc.transact(() => {
-            ytextRef.current.delete(0, ytextRef.current.length);
-            ytextRef.current.insert(0, data);
+            ytextRef.current?.delete(0, ytextRef.current?.length);
+            ytextRef.current?.insert(0, data);
           });
         }
       });
