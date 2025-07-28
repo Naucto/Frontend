@@ -57,13 +57,13 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetDat
         left: -4px !important;
         z-index: 1000 !important;
         opacity: 0 !important;
-        transform: translateY(-5px) !important;
+        transform: translateY(10px) !important;
         transition: opacity 0.2s ease, transform 0.2s ease !important;
       }
       
       .yRemoteSelectionHead-${clientId}:hover::after {
         opacity: 1 !important;
-        transform: translateY(5px) !important;
+        transform: translateY(0px) !important;
       }
     `;
   };
