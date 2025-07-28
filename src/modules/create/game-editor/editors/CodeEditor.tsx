@@ -98,10 +98,10 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetDat
     }
 
     return () => {
-      if (styleElementRef.current) {
+      if (styleElementRef.current && document.head.contains(styleElementRef.current)) {
         document.head.removeChild(styleElementRef.current);
-        styleElementRef.current = null;
       }
+      styleElementRef.current = null;
     };
   }, [provider]);
 
