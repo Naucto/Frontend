@@ -87,7 +87,7 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetDat
     if (styleElementRef.current) {
       styleElementRef.current.textContent = styles;
     } else {
-      const styleElement = document.createElement('style');
+      const styleElement = document.createElement("style");
       styleElement.textContent = styles;
       document.head.appendChild(styleElement);
       styleElementRef.current = styleElement;
@@ -103,16 +103,16 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetDat
 
     const currentUser = provider.awareness.getLocalState()?.user;
     if (currentUser && !currentUser.color) {
-      provider.awareness.setLocalStateField('user', {
+      provider.awareness.setLocalStateField("user", {
         ...currentUser,
         color: generateRandomColor()
       });
     }
 
-    provider.awareness.on('update', handleAwarenessUpdate);
+    provider.awareness.on("update", handleAwarenessUpdate);
 
     return () => {
-      provider.awareness.off('update', handleAwarenessUpdate);
+      provider.awareness.off("update", handleAwarenessUpdate);
       if (styleElementRef.current) {
         document.head.removeChild(styleElementRef.current);
         styleElementRef.current = null;
