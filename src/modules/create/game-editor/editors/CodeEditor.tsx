@@ -8,8 +8,8 @@ import { EditorProps } from "./EditorType";
 import "./CodeEditor.css";
 
 const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetData }) => {
-  const monacoBindingRef = useRef<MonacoBinding | null>(null);
-  const ytextRef = useRef<Y.Text | null>(null);
+  const monacoBindingRef = useRef<MonacoBinding>(null);
+  const ytextRef = useRef<Y.Text>(null);
 
   useEffect(() => {
     if (onGetData) {
