@@ -8,7 +8,7 @@ import { SpriteSheet } from "src/types/SpriteSheetType";
 import { spriteTable, palette } from "src/temporary/SpriteSheet";
 import { EditorProps } from "../../create/game-editor/editors/EditorType";
 import { YSpriteSheet } from "@modules/create/game-editor/types/YSpriteSheet.ts";
-import { RemoteCursors } from "./RemoteCursors";
+import { RemoteCursors } from "../../cursor-sync/RemoteCursors";
 import { useTabContext } from "@modules/create/game-editor/context/TabContext";
 
 interface Point {
@@ -379,6 +379,7 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
                 isActiveTab={isActiveTab}
                 zoomRef={zoomRef}
                 positionRef={positionRef}
+                //TODO : drag offset
               />
             ) : null}
           </div>
