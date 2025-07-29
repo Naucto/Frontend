@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Editor, { Monaco } from "@monaco-editor/react";
 import { editor } from "monaco-editor";
 import CodeTabTheme from "./CodeTabTheme";
@@ -11,8 +11,7 @@ import { generateRandomColor } from "@utils/colorUtils";
 const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetData }) => {
   const monacoBindingRef = useRef<MonacoBinding | null>(null);
   const ytextRef = useRef<any | null>(null);
-  const styleElementRef = useRef<HTMLStyleElement | null>(null);
-  const userStylesRef = useRef<Map<number, string>>(new Map());
+  const [userStyles, setUserStyles] = useState<string>("");
   const theme = useTheme();
 
   const generateUserStyles = (clientId: number, name: string, color: string): string => {
@@ -68,45 +67,41 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetDat
     `;
   };
 
-  const updateUserStyles = (changedUsers?: { added: number[], updated: number[], removed: number[] }) => {
+  useEffect(() => {
     if (!provider?.awareness) return;
 
-    const states = provider.awareness.getStates();
+    const updateStyles = (changes?: { added: number[], updated: number[], removed: number[] }) => {
+      const states = provider.awareness.getStates();
+      const styleMap = new Map<number, string>();
 
-    if (changedUsers) {
-      changedUsers.removed.forEach(clientId => {
-        userStylesRef.current.delete(clientId);
-      });
-
-      [...changedUsers.added, ...changedUsers.updated].forEach(clientId => {
-        const state = states.get(clientId);
-        if (state?.user && clientId !== provider.awareness.clientID) {
-          const { name, color } = state.user;
-          const userStyles = generateUserStyles(clientId, name, color);
-          userStylesRef.current.set(clientId, userStyles);
-        }
-      });
-    } else {
       states.forEach((state, clientId) => {
-        if (state.user && clientId !== provider.awareness.clientID) {
+        if (state?.user) {
           const { name, color } = state.user;
-          const userStyles = generateUserStyles(clientId, name, color);
-          userStylesRef.current.set(clientId, userStyles);
+          styleMap.set(clientId, generateUserStyles(clientId, name, color));
         }
       });
-    }
 
-    const allStyles = Array.from(userStylesRef.current.values()).join("\n");
+      if (changes) {
+        changes.removed.forEach((clientId) => {
+          styleMap.delete(clientId);
+        });
+      }
 
-    if (styleElementRef.current) {
-      styleElementRef.current.textContent = allStyles;
-    } else {
-      const styleElement = document.createElement("style");
-      styleElement.textContent = allStyles;
-      document.head.appendChild(styleElement);
-      styleElementRef.current = styleElement;
-    }
-  };
+      setUserStyles(Array.from(styleMap.values()).join("\n"));
+    };
+
+    updateStyles();
+
+    const handleAwarenessUpdate = (changes: { added: number[], updated: number[], removed: number[] }) => {
+      updateStyles(changes);
+    };
+
+    provider.awareness.on("change", handleAwarenessUpdate);
+
+    return () => {
+      provider.awareness.off("change", handleAwarenessUpdate);
+    };
+  }, [provider, generateUserStyles]);
 
   useEffect(() => {
     if (!provider?.awareness) return;
@@ -118,13 +113,6 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetDat
         color: generateRandomColor()
       });
     }
-
-    return () => {
-      if (styleElementRef.current && document.head.contains(styleElementRef.current)) {
-        document.head.removeChild(styleElementRef.current);
-      }
-      styleElementRef.current = null;
-    };
   }, [provider]);
 
   useEffect(() => {
@@ -167,15 +155,7 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetDat
       provider.awareness
     );
 
-    const handleAwarenessUpdate = (changes: { added: number[], updated: number[], removed: number[] }) => {
-      updateUserStyles(changes);
-    };
-
-    provider.awareness.on("change", handleAwarenessUpdate);
-    updateUserStyles();
-
     return () => {
-      provider.awareness.off("change", handleAwarenessUpdate);
       editor.dispose();
       monacoBindingRef.current?.destroy?.();
     };
@@ -187,6 +167,7 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetDat
 
   return (
     <>
+      {userStyles && <style>{userStyles}</style>}
       <Editor
         className="monaco"
         defaultLanguage="lua"
