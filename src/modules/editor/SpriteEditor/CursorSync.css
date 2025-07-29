@@ -1,0 +1,26 @@
+.cursor-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.remote-cursor-container {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1001;
+}
+
+@keyframes cursor-appear {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.remote-cursor-container {
+  animation: cursor-appear 0.3s ease-out;
+}
+

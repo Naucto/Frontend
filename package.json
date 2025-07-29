@@ -20,6 +20,7 @@
     "mui": "^0.0.1",
     "openapi-typescript-codegen": "^0.29.0",
     "path": "^0.12.7",
+    "perfect-cursors": "^1.0.5",
     "react": "^19.0.0",
     "react-beforeunload": "^2.6.0",
     "react-dom": "^19.0.0",

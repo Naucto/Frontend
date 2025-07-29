@@ -8,6 +8,8 @@ import { SpriteSheet } from "src/types/SpriteSheetType";
 import { spriteTable, palette } from "src/temporary/SpriteSheet";
 import { EditorProps } from "../../create/game-editor/editors/EditorType";
 import { YSpriteSheet } from "@modules/create/game-editor/types/YSpriteSheet.ts";
+import { CursorSync } from "./CursorSync";
+import { useTabContext } from "@modules/create/game-editor/context/TabContext";
 
 interface Point {
   x: number;
@@ -153,8 +155,10 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
   const [isMouseOverCanvas, setIsMouseOverCanvas] = useState(false);
   const [version, setVersion] = useState(0);
   const drawCanvasRef = React.createRef<SpriteRendererHandle>();
-  const canvasContainerRef = useRef<HTMLDivElement>(null);
+  const canvasContainerRef = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
   const yspriteRef = useRef<YSpriteSheet>(null);
+  const { activeTab } = useTabContext();
+  const isActiveTab = activeTab === 'sprite';
 
   const handleContextMenu = (e: React.MouseEvent): void => {
     e.preventDefault();
@@ -329,23 +333,32 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
             currentColor={currentColor}
             onColorSelect={setCurrentColor}
           />
-          <CanvasContainer
-            canvasRef={drawCanvasRef}
-            containerRef={canvasContainerRef}
-            spriteSheet={canvasSpriteSheet}
-            screenSize={drawCanvasSize}
-            onWheel={handleWheel}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseEnter={() => setIsMouseOverCanvas(true)}
-            onMouseLeave={() => {
-              setIsMouseOverCanvas(false);
-              setIsDragging(false);
-              setIsDrawing(false);
-            }}
-            onClick={handleCanvasClick}
-          />
+          <div style={{ position: "relative", flex: 1 }}>
+            <CanvasContainer
+              canvasRef={drawCanvasRef}
+              containerRef={canvasContainerRef}
+              spriteSheet={canvasSpriteSheet}
+              screenSize={drawCanvasSize}
+              onWheel={handleWheel}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseEnter={() => setIsMouseOverCanvas(true)}
+              onMouseLeave={() => {
+                setIsMouseOverCanvas(false);
+                setIsDragging(false);
+                setIsDrawing(false);
+              }}
+              onClick={handleCanvasClick}
+            />
+            {provider && provider.awareness && isActiveTab ? (
+              <CursorSync
+                provider={provider}
+                containerRef={canvasContainerRef}
+                isActiveTab={isActiveTab}
+              />
+            ) : null}
+          </div>
         </div>
       </div>
     </div>

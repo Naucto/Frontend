@@ -22,6 +22,7 @@ import SpriteIcon from "src/assets/pen.svg?react";
 import SoundIcon from "src/assets/music.svg?react";
 import MapIcon from "src/assets/map.svg?react";
 import { generateRandomColor } from "@utils/colorUtils";
+import { TabContext } from "./context/TabContext";
 
 const GameEditorContainer = styled("div")(({ theme }) => ({
   height: "100%",
@@ -88,6 +89,8 @@ const GameEditor: React.FC = () => {
     { label: "map", component: undefined, icon: <MapIcon /> },
     { label: "sound", component: SoundEditor, icon: <SoundIcon /> },
   ], []);
+
+  const activeTabLabel = useMemo(() => tabs[activeTab]?.label || "code", [tabs, activeTab]);
 
   const ydoc: Y.Doc = useMemo(() => new Y.Doc(), []);
 
@@ -317,53 +320,55 @@ const GameEditor: React.FC = () => {
     return <div>Loading work session...</div>;
 
   return (
-    <GameEditorContainer>
-      <LeftPanel>
-        <Tabs
-          value={activeTab}
-          onChange={(_, newValue) => setActiveTab(newValue)}
-          slotProps={{ indicator: { hidden: true } }}
-        >
-          {editorTabs.map(({ label, icon }) => (
-            <StyledTab
-              iconPosition="start"
-              key={label}
-              label={label}
-              icon={icon} />
-          ))}
-        </Tabs>
-        {editorTabs.map((tab, idx) => (
-          <TabContent
-            key={tab.label}
-            role="tabpanel"
-            hidden={activeTab !== idx}
-            sx={{
-              display: activeTab === idx ? 'block' : 'none',
-            }}
+    <TabContext.Provider value={{ activeTab: activeTabLabel }}>
+      <GameEditorContainer>
+        <LeftPanel>
+          <Tabs
+            value={activeTab}
+            onChange={(_, newValue) => setActiveTab(newValue)}
+            slotProps={{ indicator: { hidden: true } }}
           >
-            {tab.component}
-          </TabContent>
-        ))}
-      </LeftPanel>
-      <RightPanel>
-        <PreviewCanvas
-          ref={canvasRef}
-          canvasProps={{
-            screenSize,
-            spriteSheet,
-            palette,
-          }}
-          envData={envData}
-          setOutput={setOutput}
-        />
-        <GameEditorConsole output={output} />
-      </RightPanel>
-      <Beforeunload onBeforeunload={(event) => {
-        event.preventDefault();
-        cleanUpAndDisconnect();
-        return "Are you sure you want to leave? Your changes may not be saved.";
-      }} />
-    </GameEditorContainer>
+            {editorTabs.map(({ label, icon }) => (
+              <StyledTab
+                iconPosition="start"
+                key={label}
+                label={label}
+                icon={icon} />
+            ))}
+          </Tabs>
+          {editorTabs.map((tab, idx) => (
+            <TabContent
+              key={tab.label}
+              role="tabpanel"
+              hidden={activeTab !== idx}
+              sx={{
+                display: activeTab === idx ? 'block' : 'none',
+              }}
+            >
+              {tab.component}
+            </TabContent>
+          ))}
+        </LeftPanel>
+        <RightPanel>
+          <PreviewCanvas
+            ref={canvasRef}
+            canvasProps={{
+              screenSize,
+              spriteSheet,
+              palette,
+            }}
+            envData={envData}
+            setOutput={setOutput}
+          />
+          <GameEditorConsole output={output} />
+        </RightPanel>
+        <Beforeunload onBeforeunload={(event) => {
+          event.preventDefault();
+          cleanUpAndDisconnect();
+          return "Are you sure you want to leave? Your changes may not be saved.";
+        }} />
+      </GameEditorContainer>
+    </TabContext.Provider>
   );
 };
 

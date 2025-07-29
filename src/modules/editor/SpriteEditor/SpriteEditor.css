@@ -34,6 +34,7 @@
     overflow-x: hidden;
     scrollbar-width: thin;
     scrollbar-color: #1a2c35 #2a3c45;
+    flex-shrink: 0;
 }
 
 .color-button {
@@ -62,6 +63,8 @@
     display: inline-block;
     height: fit-content;
     min-width: 60%;
+    position: relative;
+    flex: 1;
 }
 
 .sprite-sheet-container {
