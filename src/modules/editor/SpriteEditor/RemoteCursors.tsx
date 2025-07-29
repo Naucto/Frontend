@@ -22,8 +22,8 @@ interface RemoteCursorsProps {
   provider: WebrtcProvider;
   containerRef: React.RefObject<HTMLDivElement>;
   isActiveTab?: boolean;
-  zoomRef: React.RefObject<number | null>;
-  positionRef: React.RefObject<{ x: number; y: number }>;
+  zoomRef?: React.RefObject<number | null>;
+  positionRef?: React.RefObject<{ x: number; y: number }>;
 }
 
 function usePerfectCursor(cb: (point: number[]) => void, point?: number[]) {
@@ -97,15 +97,18 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({
       const contentRelativeX = (absoluteX - paddingLeft - borderLeft) / contentWidth;
       const contentRelativeY = (absoluteY - paddingTop - borderTop) / contentHeight;
 
-      const worldX = contentRelativeX * contentWidth * zoomRef.current! + positionRef.current!.x;
-      const worldY = contentRelativeY * contentHeight * zoomRef.current! + positionRef.current!.y;
+      const zoom = zoomRef?.current || 1;
+      const position = positionRef?.current || { x: 0, y: 0 };
+
+      const worldX = contentRelativeX * contentWidth * zoom + position.x;
+      const worldY = contentRelativeY * contentHeight * zoom + position.y;
 
       provider.awareness.setLocalStateField("cursor", {
         worldX: worldX,
         worldY: worldY,
-        zoom: zoomRef.current!,
-        positionX: positionRef.current!.x,
-        positionY: positionRef.current!.y
+        zoom: zoom,
+        positionX: position.x,
+        positionY: position.y
       });
     } catch (error) {
       console.error("Error sending cursor position:", error);
@@ -261,8 +264,8 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({
             key={clientId}
             user={user}
             containerRef={containerRef}
-            localZoom={zoomRef.current!}
-            localPosition={positionRef.current!}
+            localZoom={zoomRef!.current! || 1}
+            localPosition={positionRef!.current! || { x: 0, y: 0 }}
           />
         )
       ))}
