@@ -8,7 +8,7 @@ import { SpriteSheet } from "src/types/SpriteSheetType";
 import { spriteTable, palette } from "src/temporary/SpriteSheet";
 import { EditorProps } from "../../create/game-editor/editors/EditorType";
 import { YSpriteSheet } from "@modules/create/game-editor/types/YSpriteSheet.ts";
-import { CursorSync } from "./CursorSync";
+import { RemoteCursors } from "./RemoteCursors";
 import { useTabContext } from "@modules/create/game-editor/context/TabContext";
 
 interface Point {
@@ -352,7 +352,7 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
               onClick={handleCanvasClick}
             />
             {provider && provider.awareness && isActiveTab ? (
-              <CursorSync
+              <RemoteCursors
                 provider={provider}
                 containerRef={canvasContainerRef}
                 isActiveTab={isActiveTab}

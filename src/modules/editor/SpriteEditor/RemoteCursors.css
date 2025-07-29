@@ -13,6 +13,7 @@
   position: absolute;
   pointer-events: none;
   z-index: 1001;
+  transition: transform 0.05s ease-out; /* Smoother cursor movement */
 }
 
 @keyframes cursor-appear {

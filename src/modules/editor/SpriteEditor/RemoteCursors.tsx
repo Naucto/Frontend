@@ -1,12 +1,11 @@
 import React, { use, useEffect, useRef, useState, useCallback, useLayoutEffect } from "react";
 import { WebrtcProvider } from "y-webrtc";
 import { PerfectCursor } from "perfect-cursors";
-import "./CursorSync.css";
+import "./RemoteCursors.css";
 
 interface CursorPosition {
   x: number;
   y: number;
-  timestamp: number;
 }
 
 interface RemoteUser {
@@ -16,7 +15,7 @@ interface RemoteUser {
   cursor?: CursorPosition;
 }
 
-interface CursorSyncProps {
+interface RemoteCursorsProps {
   provider: WebrtcProvider;
   containerRef: React.RefObject<HTMLDivElement>;
   isActiveTab?: boolean;
@@ -38,9 +37,9 @@ function usePerfectCursor(cb: (point: number[]) => void, point?: number[]) {
   return onPointChange;
 }
 
-const THROTTLE_DELAY = 200; // 200ms throttling
+const THROTTLE_DELAY = 80; // 80ms throttling
 
-export const CursorSync: React.FC<CursorSyncProps> = ({ provider, containerRef, isActiveTab }) => {
+export const RemoteCursors: React.FC<RemoteCursorsProps> = ({ provider, containerRef, isActiveTab }) => {
   const [remoteUsers, setRemoteUsers] = useState<Map<number, RemoteUser>>(new Map());
   const lastSentTime = useRef<number>(0);
   const currentUserId = useRef<number>(0);
@@ -70,8 +69,7 @@ export const CursorSync: React.FC<CursorSyncProps> = ({ provider, containerRef, 
     try {
       provider.awareness.setLocalStateField("cursor", {
         x: x,
-        y: y,
-        timestamp: now,
+        y: y
       });
     } catch (error) {
       console.error("Error sending cursor position:", error); // FIXME
@@ -163,7 +161,6 @@ export const CursorSync: React.FC<CursorSyncProps> = ({ provider, containerRef, 
               cursor: {
                 x: state.cursor.x,
                 y: state.cursor.y,
-                timestamp: state.cursor.timestamp
               }
             });
           }
@@ -282,8 +279,8 @@ const RemoteCursor: React.FC<RemoteCursorProps> = ({ user, containerRef }) => {
       className="remote-cursor-container"
       style={{
         position: "absolute",
-        top: 0,
-        left: 0,
+        top: -10, // Adjusted to center the cursor icon (not perfect)
+        left: -10, // Adjusted to center the cursor icon (not perfect)
         pointerEvents: "none"
       }}
     >
