@@ -16,6 +16,8 @@ interface AuthOverlayProps {
   onClose?: () => void;
 }
 
+type ErrorWithBody = { body: { message: string } };
+
 const Title = styled("h2")(({ theme }) => ({
   fontSize: "32px",
   margin: 0,
@@ -103,20 +105,8 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
       if (onClose) {
         onClose();
       }
-    } catch (error: unknown) {
-      type ErrorWithBody = { body: { message: string } };
-      if (
-        typeof error === "object" &&
-        error !== null &&
-        "body" in error &&
-        typeof (error as ErrorWithBody).body === "object" &&
-        (error as ErrorWithBody).body !== null &&
-        "message" in (error as ErrorWithBody).body
-      ) {
-        setErrorMessage((error as ErrorWithBody).body.message);
-      } else {
-        setErrorMessage("Error");
-      }
+    } catch (error) {
+      setErrorMessage((error as ErrorWithBody).body.message);
     }
   }, [isSignedUp, reset, onClose, setUserId, setUserName, userId, userName]);
 
