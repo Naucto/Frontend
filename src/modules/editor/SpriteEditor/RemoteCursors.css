@@ -13,15 +13,22 @@
   position: absolute;
   pointer-events: none;
   z-index: 1001;
-  transition: transform 0.05s ease-out; /* Smoother cursor movement */
+  transition: transform 0.05s ease-out;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 @keyframes cursor-appear {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 .remote-cursor-container {
   animation: cursor-appear 0.3s ease-out;
+}
+
+.cursor-label {
+  user-select: none;
+  font-family: system-ui, -apple-system, sans-serif;
 }
 

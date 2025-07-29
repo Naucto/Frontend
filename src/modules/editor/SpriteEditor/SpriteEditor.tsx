@@ -112,8 +112,12 @@ function getScaledPosition(mousePos: Point, rect: DOMRect, zoom: number): Point 
   };
 }
 
-function getPixelPos(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
-  rect: DOMRect, zoom: number, position: Point): Point {
+function getPixelPos(
+  e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
+  rect: DOMRect,
+  zoom: number,
+  position: Point
+): Point {
   const mousePos = getMousePosition(e, rect);
   const scaledPos = getScaledPosition(mousePos, rect, zoom);
 
@@ -126,8 +130,12 @@ function getPixelPos(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
   return { x, y };
 }
 
-function getSpritePos(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
-  rect: DOMRect, zoom: number, position: Point): Point | null {
+function getSpritePos(
+  e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
+  rect: DOMRect,
+  zoom: number,
+  position: Point
+): Point | null {
   const mousePos = getMousePosition(e, rect);
 
   const spriteX = Math.floor((mousePos.x / rect.width * zoom) - (Math.floor(position.x) / SPRITE_SIZE));
@@ -147,8 +155,6 @@ function getSpritePos(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
 
 export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetData }) => {
   const [currentColor, setCurrentColor] = useState(0);
-  const [zoom, setZoom] = useState(1);
-  const [position, setPosition] = useState<Point>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
   const [dragStart, setDragStart] = useState<Point>({ x: 0, y: 0 });
@@ -157,6 +163,13 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
   const drawCanvasRef = React.createRef<SpriteRendererHandle>();
   const canvasContainerRef = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
   const yspriteRef = useRef<YSpriteSheet>(null);
+
+  const zoomRef = useRef<number>(1);
+  const positionRef = useRef<Point>({ x: 0, y: 0 });
+
+  const [, setZoomState] = useState(zoomRef.current);
+  const [, setPositionState] = useState(positionRef.current);
+
   const { activeTab } = useTabContext();
   const isActiveTab = activeTab === 'sprite';
 
@@ -170,10 +183,9 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
 
     const delta = e.deltaY > 0 ? 0.1 : -0.1;
     const power = 5;
-    setZoom(prevZoom => {
-      const newZoom = Math.max(1, prevZoom + delta * power);
-      return Math.min(Math.round(newZoom * 10) / 10, 16); // Limit zoom to a maximum of 16
-    });
+    zoomRef.current = Math.max(1, zoomRef.current + delta * power);
+    zoomRef.current = Math.min(Math.round(zoomRef.current * 10) / 10, 16);
+    setZoomState(zoomRef.current);
   };
 
   useEffect(() => {
@@ -225,10 +237,10 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
   useEffect(() => {
     if (drawCanvasRef.current) {
       drawCanvasRef.current.clear(0);
-      drawCanvasRef.current.queueSpriteDraw(0, position.x, position.y, 16, 16);
+      drawCanvasRef.current.queueSpriteDraw(0, positionRef.current.x, positionRef.current.y, 16, 16);
       drawCanvasRef.current.draw();
     }
-  }, [yspriteRef, drawCanvasRef, position, version]);
+  }, [yspriteRef, drawCanvasRef, positionRef.current, version]);
 
   const handleClick = (x: number, y: number): void => {
     if (!yspriteRef.current)
@@ -250,6 +262,8 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
     } else if (e.button === 0) { // Left click
       setIsDrawing(true);
       const rect = e.currentTarget.getBoundingClientRect();
+      const zoom = zoomRef.current;
+      const position = positionRef.current;
       const spriteX = Math.floor(((e.clientX - rect.left) / rect.width * zoom) - (Math.floor(position.x) / SPRITE_SIZE));
       const spriteY = Math.floor(((e.clientY - rect.top) / rect.height * zoom) - (Math.floor(position.y) / SPRITE_SIZE));
       const x = Math.floor((e.clientX - rect.left) / (rect.width / zoom) * SPRITE_SIZE - Math.floor(position.x)) % SPRITE_SIZE;
@@ -262,17 +276,21 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>): void => {
     if (isDragging) {
+      const zoom = zoomRef.current;
       const dragDistanceX = (e.clientX - dragStart.x) * zoom / 48;
       const dragDistanceY = (e.clientY - dragStart.y) * zoom / 48;
 
-      setPosition(prevPos => ({
-        x: prevPos.x + dragDistanceX,
-        y: prevPos.y + dragDistanceY
-      }));
+      positionRef.current = {
+        x: positionRef.current.x + dragDistanceX,
+        y: positionRef.current.y + dragDistanceY
+      };
+      setPositionState(positionRef.current);
 
       setDragStart({ x: e.clientX, y: e.clientY });
     } else if (isDrawing) {
       const rect = e.currentTarget.getBoundingClientRect();
+      const zoom = zoomRef.current;
+      const position = positionRef.current;
       const spritePos = getSpritePos(e, rect, zoom, position);
 
       if (spritePos) {
@@ -307,13 +325,15 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
   };
 
   const drawCanvasSize = {
-    width: Math.floor(SPRITE_SIZE * zoom),
-    height: Math.floor(SPRITE_SIZE * zoom)
+    width: Math.floor(SPRITE_SIZE * zoomRef.current),
+    height: Math.floor(SPRITE_SIZE * zoomRef.current)
   };
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>): void => {
     if (!isDragging && !isDrawing) {
       const rect = e.currentTarget.getBoundingClientRect();
+      const zoom = zoomRef.current;
+      const position = positionRef.current;
       const spritePos = getSpritePos(e, rect, zoom, position);
 
       if (spritePos) {
@@ -324,6 +344,7 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
       }
     }
   };
+
   return (
     <div className="editor-layout" onContextMenu={handleContextMenu}>
       <div className="canvas-container">
@@ -356,6 +377,8 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
                 provider={provider}
                 containerRef={canvasContainerRef}
                 isActiveTab={isActiveTab}
+                zoomRef={zoomRef}
+                positionRef={positionRef}
               />
             ) : null}
           </div>

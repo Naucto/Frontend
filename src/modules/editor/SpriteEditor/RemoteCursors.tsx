@@ -4,8 +4,11 @@ import { PerfectCursor } from "perfect-cursors";
 import "./RemoteCursors.css";
 
 interface CursorPosition {
-  x: number;
-  y: number;
+  worldX: number;
+  worldY: number;
+  zoom: number;
+  positionX: number;
+  positionY: number;
 }
 
 interface RemoteUser {
@@ -19,6 +22,8 @@ interface RemoteCursorsProps {
   provider: WebrtcProvider;
   containerRef: React.RefObject<HTMLDivElement>;
   isActiveTab?: boolean;
+  zoomRef: React.RefObject<number | null>;
+  positionRef: React.RefObject<{ x: number; y: number }>;
 }
 
 function usePerfectCursor(cb: (point: number[]) => void, point?: number[]) {
@@ -39,7 +44,13 @@ function usePerfectCursor(cb: (point: number[]) => void, point?: number[]) {
 
 const THROTTLE_DELAY = 80; // 80ms throttling
 
-export const RemoteCursors: React.FC<RemoteCursorsProps> = ({ provider, containerRef, isActiveTab }) => {
+export const RemoteCursors: React.FC<RemoteCursorsProps> = ({
+  provider,
+  containerRef,
+  isActiveTab,
+  zoomRef,
+  positionRef
+}) => {
   const [remoteUsers, setRemoteUsers] = useState<Map<number, RemoteUser>>(new Map());
   const lastSentTime = useRef<number>(0);
   const currentUserId = useRef<number>(0);
@@ -67,12 +78,37 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({ provider, containe
     lastSentTime.current = now;
 
     try {
+      const container = containerRef.current;
+      if (!container) return;
+
+      const rect = container.getBoundingClientRect();
+      const containerStyle = window.getComputedStyle(container);
+      const paddingLeft = parseFloat(containerStyle.paddingLeft) || 0;
+      const paddingTop = parseFloat(containerStyle.paddingTop) || 0;
+      const borderLeft = parseFloat(containerStyle.borderLeftWidth) || 0;
+      const borderTop = parseFloat(containerStyle.borderTopWidth) || 0;
+
+      const contentWidth = rect.width - paddingLeft - parseFloat(containerStyle.paddingRight || '0') - borderLeft - parseFloat(containerStyle.borderRightWidth || '0');
+      const contentHeight = rect.height - paddingTop - parseFloat(containerStyle.paddingBottom || '0') - borderTop - parseFloat(containerStyle.borderBottomWidth || '0');
+
+      const absoluteX = x * rect.width;
+      const absoluteY = y * rect.height;
+
+      const contentRelativeX = (absoluteX - paddingLeft - borderLeft) / contentWidth;
+      const contentRelativeY = (absoluteY - paddingTop - borderTop) / contentHeight;
+
+      const worldX = contentRelativeX * contentWidth * zoomRef.current! + positionRef.current!.x;
+      const worldY = contentRelativeY * contentHeight * zoomRef.current! + positionRef.current!.y;
+
       provider.awareness.setLocalStateField("cursor", {
-        x: x,
-        y: y
+        worldX: worldX,
+        worldY: worldY,
+        zoom: zoomRef.current!,
+        positionX: positionRef.current!.x,
+        positionY: positionRef.current!.y
       });
     } catch (error) {
-      console.error("Error sending cursor position:", error); // FIXME
+      console.error("Error sending cursor position:", error);
     }
   };
 
@@ -159,8 +195,11 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({ provider, containe
               color: state.user.color || "#ff0000",
               userId: state.user.userId || String(clientId),
               cursor: {
-                x: state.cursor.x,
-                y: state.cursor.y,
+                worldX: state.cursor.worldX,
+                worldY: state.cursor.worldY,
+                zoom: state.cursor.zoom,
+                positionX: state.cursor.positionX,
+                positionY: state.cursor.positionY
               }
             });
           }
@@ -222,6 +261,8 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({ provider, containe
             key={clientId}
             user={user}
             containerRef={containerRef}
+            localZoom={zoomRef.current!}
+            localPosition={positionRef.current!}
           />
         )
       ))}
@@ -232,20 +273,46 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({ provider, containe
 interface RemoteCursorProps {
   user: RemoteUser;
   containerRef: React.RefObject<HTMLDivElement>;
+  localZoom: number;
+  localPosition: { x: number; y: number };
 }
 
-const RemoteCursor: React.FC<RemoteCursorProps> = ({ user, containerRef }) => {
+const RemoteCursor: React.FC<RemoteCursorProps> = ({
+  user,
+  containerRef,
+  localZoom,
+  localPosition
+}) => {
   const cursorContainerRef = useRef<HTMLDivElement>(null);
   const lastPoint = useRef<[number, number] | null>(null);
+
+  const getCursorScale = () => {
+    const baseScale = 1;
+    const scaleFactor = Math.max(0.5, Math.min(2, baseScale / Math.sqrt(localZoom)));
+    return scaleFactor;
+  };
+
+  const cursorScale = getCursorScale();
+  const CURSOR_BASE_WIDTH = 35;
+  const CURSOR_BASE_HEIGHT = 35;
+  const CURSOR_WIDTH = CURSOR_BASE_WIDTH * cursorScale;
+  const CURSOR_HEIGHT = CURSOR_BASE_HEIGHT * cursorScale;
+
+  const CURSOR_TIP_OFFSET_X = 13 * cursorScale;
+  const CURSOR_TIP_OFFSET_Y = 10 * cursorScale;
 
   const animateCursor = useCallback((point: number[]) => {
     const elm = cursorContainerRef.current;
     if (!elm) return;
+
+    const adjustedX = point[0] - CURSOR_TIP_OFFSET_X;
+    const adjustedY = point[1] - CURSOR_TIP_OFFSET_Y;
+
     elm.style.setProperty(
       "transform",
-      `translate(${point[0]}px, ${point[1]}px)`
+      `translate(${adjustedX}px, ${adjustedY}px)`
     );
-  }, []);
+  }, [CURSOR_TIP_OFFSET_X, CURSOR_TIP_OFFSET_Y]);
 
   const onPointMove = usePerfectCursor(animateCursor);
 
@@ -258,8 +325,20 @@ const RemoteCursor: React.FC<RemoteCursorProps> = ({ user, containerRef }) => {
 
       if (rect.width === 0 || rect.height === 0) return;
 
-      const absoluteX = user.cursor.x * rect.width;
-      const absoluteY = user.cursor.y * rect.height;
+      const containerStyle = window.getComputedStyle(container);
+      const paddingLeft = parseFloat(containerStyle.paddingLeft) || 0;
+      const paddingTop = parseFloat(containerStyle.paddingTop) || 0;
+      const borderLeft = parseFloat(containerStyle.borderLeftWidth) || 0;
+      const borderTop = parseFloat(containerStyle.borderTopWidth) || 0;
+
+      const contentWidth = rect.width - paddingLeft - parseFloat(containerStyle.paddingRight || '0') - borderLeft - parseFloat(containerStyle.borderRightWidth || '0');
+      const contentHeight = rect.height - paddingTop - parseFloat(containerStyle.paddingBottom || '0') - borderTop - parseFloat(containerStyle.borderBottomWidth || '0');
+
+      const localContentX = (user.cursor.worldX - localPosition.x) / (contentWidth * localZoom);
+      const localContentY = (user.cursor.worldY - localPosition.y) / (contentHeight * localZoom);
+
+      const absoluteX = localContentX * contentWidth + paddingLeft + borderLeft;
+      const absoluteY = localContentY * contentHeight + paddingTop + borderTop;
 
       if (isNaN(absoluteX) || isNaN(absoluteY) ||
           !isFinite(absoluteX) || !isFinite(absoluteY)) return;
@@ -271,7 +350,31 @@ const RemoteCursor: React.FC<RemoteCursorProps> = ({ user, containerRef }) => {
     } catch (error) {
       console.error("Error updating cursor position:", error);
     }
-  }, [user.cursor, containerRef, onPointMove]);
+  }, [user.cursor, containerRef, onPointMove, localZoom, localPosition, cursorScale]);
+
+  const isInVisibleArea = () => {
+    if (!containerRef.current || !user.cursor) return false;
+
+    const container = containerRef.current;
+    const rect = container.getBoundingClientRect();
+
+    const containerStyle = window.getComputedStyle(container);
+    const paddingLeft = parseFloat(containerStyle.paddingLeft) || 0;
+    const paddingTop = parseFloat(containerStyle.paddingTop) || 0;
+    const borderLeft = parseFloat(containerStyle.borderLeftWidth) || 0;
+    const borderTop = parseFloat(containerStyle.borderTopWidth) || 0;
+
+    const contentWidth = rect.width - paddingLeft - parseFloat(containerStyle.paddingRight || '0') - borderLeft - parseFloat(containerStyle.borderRightWidth || '0');
+    const contentHeight = rect.height - paddingTop - parseFloat(containerStyle.paddingBottom || '0') - borderTop - parseFloat(containerStyle.borderBottomWidth || '0');
+
+    const localContentX = (user.cursor.worldX - localPosition.x) / (contentWidth * localZoom);
+    const localContentY = (user.cursor.worldY - localPosition.y) / (contentHeight * localZoom);
+
+    const margin = 0.1;
+    return localContentX >= -margin && localContentX <= 1 + margin && localContentY >= -margin && localContentY <= 1 + margin;
+  };
+
+  if (!isInVisibleArea()) return null;
 
   return (
     <div
@@ -279,15 +382,15 @@ const RemoteCursor: React.FC<RemoteCursorProps> = ({ user, containerRef }) => {
       className="remote-cursor-container"
       style={{
         position: "absolute",
-        top: -10, // Adjusted to center the cursor icon (not perfect)
-        left: -10, // Adjusted to center the cursor icon (not perfect)
+        top: 0,
+        left: 0,
         pointerEvents: "none"
       }}
     >
       <svg
         style={{
-          width: 35,
-          height: 35,
+          width: CURSOR_WIDTH,
+          height: CURSOR_HEIGHT,
           filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.3))",
         }}
         xmlns="http://www.w3.org/2000/svg"
@@ -313,18 +416,17 @@ const RemoteCursor: React.FC<RemoteCursorProps> = ({ user, containerRef }) => {
         style={{
           backgroundColor: user.color,
           position: "absolute",
-          top: -30,  // username label above the cursor
-          left: 0,
-          padding: "3px 8px",
-          borderRadius: "4px",
+          top: -35 * cursorScale,
+          left: CURSOR_TIP_OFFSET_X,
+          padding: `${2 * cursorScale}px ${6 * cursorScale}px`,
+          borderRadius: `${3 * cursorScale}px`,
           color: "white",
-          fontSize: "12px",
+          fontSize: `${10 * cursorScale}px`,
           fontWeight: 600,
           whiteSpace: "nowrap",
           boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
           pointerEvents: "none",
-          transform: "translateX(-50%)",  // Center label horizontally
-          marginLeft: 15  // Slight offset to align with cursor
+          transform: "translateX(-50%)",
         }}
       >
         {user.name}

@@ -65,6 +65,7 @@
     min-width: 60%;
     position: relative;
     flex: 1;
+    box-sizing: border-box;
 }
 
 .sprite-sheet-container {
@@ -77,4 +78,5 @@
     background-color: #2a3c45;
     border: 1px solid #537D8D;
     border-radius: 4px;
+    display: block;
 }
