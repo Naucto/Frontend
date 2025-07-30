@@ -21,6 +21,7 @@ import CodeIcon from "src/assets/code.svg?react";
 import SpriteIcon from "src/assets/pen.svg?react";
 import SoundIcon from "src/assets/music.svg?react";
 import MapIcon from "src/assets/map.svg?react";
+import { generateRandomColor } from "@utils/colorUtils";
 
 const GameEditorContainer = styled("div")(({ theme }) => ({
   height: "100%",
@@ -180,9 +181,10 @@ const GameEditor: React.FC = () => {
   useEffect(() => {
     const userName = LocalStorageManager.getUserName();
     const userId = LocalStorageManager.getUserId();
+
     awareness?.setLocalStateField("user", {
       name: userName,
-      color: "#abcdef", // FIXME: use a proper color from each user settings
+      color: generateRandomColor(),
       userId: userId,
     });
 

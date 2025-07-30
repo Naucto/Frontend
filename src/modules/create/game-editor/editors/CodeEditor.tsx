@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Editor, { Monaco } from "@monaco-editor/react";
 import { editor } from "monaco-editor";
 import CodeTabTheme from "./CodeTabTheme";
@@ -6,10 +6,115 @@ import { MonacoBinding } from "y-monaco";
 import * as Y from "yjs";
 import { EditorProps } from "./EditorType";
 import "./CodeEditor.css";
+import { useTheme } from "@mui/material/styles";
+import { generateRandomColor } from "@utils/colorUtils";
 
 const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetData }) => {
   const monacoBindingRef = useRef<MonacoBinding>(null);
   const ytextRef = useRef<Y.Text>(null);
+  const [userStyles, setUserStyles] = useState<string>("");
+  const theme = useTheme();
+
+  const generateUserStyles = (clientId: number, name: string, color: string): string => {
+    const rgba = `${color}33`;
+
+    return `
+      .yRemoteSelection-${clientId} {
+        background-color: ${rgba} !important;
+      }
+      
+      .yRemoteSelectionHead-${clientId} {
+        border-left: ${color} solid 2px !important;
+        border-top: ${color} solid 2px !important;
+        border-bottom: ${color} solid 2px !important;
+      }
+      
+      .yRemoteSelectionHead-${clientId}::before {
+        content: '' !important;
+        position: absolute !important;
+        top: -15px !important;
+        left: -15px !important;
+        width: 50px !important;
+        height: 35px !important;
+        z-index: 999 !important;
+        background: transparent !important;
+        border: 10px solid transparent !important;
+      }
+      
+      .yRemoteSelectionHead-${clientId}::after {
+        border: 3px solid ${color} !important;
+        content: '${name}' !important;
+        background-color: ${color} !important;
+        color: white !important;
+        padding: 2px 6px !important;
+        border-radius: 4px !important;
+        font-size: 12px !important;
+        font-weight: bold !important;
+        font-family: ${theme.typography.fontFamily} !important;
+        white-space: nowrap !important;
+        position: absolute !important;
+        top: -25px !important;
+        left: -4px !important;
+        z-index: 1000 !important;
+        opacity: 0 !important;
+        transform: translateY(10px) !important;
+        transition: opacity 0.2s ease, transform 0.2s ease !important;
+      }
+      
+      .yRemoteSelectionHead-${clientId}:hover::after {
+        opacity: 1 !important;
+        transform: translateY(0px) !important;
+      }
+    `;
+  };
+
+  useEffect(() => {
+    if (!provider?.awareness) return;
+
+    const updateStyles = (changes?: { added: number[], updated: number[], removed: number[] }): void => {
+      const states = provider.awareness.getStates();
+      const styleMap = new Map<number, string>();
+
+      states.forEach((state, clientId) => {
+        if (state?.user) {
+          const { name, color } = state.user;
+          styleMap.set(clientId, generateUserStyles(clientId, name, color));
+        }
+      });
+
+      if (changes) {
+        changes.removed.forEach((clientId) => {
+          styleMap.delete(clientId);
+        });
+      }
+
+      setUserStyles(Array.from(styleMap.values()).join("\n"));
+    };
+
+    updateStyles();
+
+    const handleAwarenessUpdate = (changes: { added: number[], updated: number[], removed: number[] }): void => {
+      updateStyles(changes);
+    };
+
+    provider.awareness.on("change", handleAwarenessUpdate);
+
+    return () => {
+      provider.awareness.off("change", handleAwarenessUpdate);
+    };
+  }, [provider, generateUserStyles]);
+
+  useEffect(() => {
+    if (!provider?.awareness) return;
+
+    const currentUser = provider.awareness.getLocalState()?.user;
+    if (currentUser && !currentUser.color) {
+      provider.awareness.setLocalStateField("user", {
+        ...currentUser,
+        color: generateRandomColor()
+      });
+    }
+  }, [provider]);
 
   useEffect(() => {
     if (onGetData) {
@@ -63,6 +168,7 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetDat
 
   return (
     <>
+      {userStyles && <style>{userStyles}</style>}
       <Editor
         className="monaco"
         defaultLanguage="lua"
