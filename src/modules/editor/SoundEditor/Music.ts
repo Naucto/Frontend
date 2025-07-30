@@ -46,30 +46,12 @@ export const setNote = (
     newNotes[position] = [];
   }
 
-  if (!newNotes[position][note]) {
-    newNotes[position][note] = createNote();
-  }
-
-  if (newNotes[position][note].note === "Nan") {
-    newNotes[position][note] = createNote(numberToNote(note), duration, instrument);
-  } else {
-    newNotes[position][note] = createNote();
-  }
+  newNotes[position][note] = createNote(numberToNote(note), duration, instrument);
 
   return {
     ...music,
     notes: newNotes
   };
-};
-
-export const isNoteActive = (music: MusicData, position: number, note: number): boolean => {
-  if (position < 0 || position >= music.notes.length) {
-    throw new MusicError("Position out of bounds");
-  }
-  if (note < 0 || note >= music.notes[position].length) {
-    throw new MusicError("Note out of bounds");
-  }
-  return music.notes[position][note].note !== "Nan";
 };
 
 export const playMusic = async (music: MusicData): Promise<void> => {
@@ -81,7 +63,7 @@ export const playMusic = async (music: MusicData): Promise<void> => {
   for (let i = 0; i < music.notes.length; i++) {
     if (music.notes[i]) {
       for (const note of music.notes[i]) {
-        if (note && note.note !== "Nan") {
+        if (note) {
           playPromises.push(playInstrument(note.note, note.instrument, now, 60 / music.bpm * note.duration));
         }
       }

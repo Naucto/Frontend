@@ -26,7 +26,7 @@ const createSamplerWithPromise = (instrument: string): Promise<void> => {
 };
 
 export const createNote = (
-  note: string = "Nan",
+  note: string = "D4",
   duration: number = 0.25,
   instrument: string = "piano"
 ): NoteData => {
