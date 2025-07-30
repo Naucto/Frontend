@@ -9,8 +9,8 @@ import { useTheme } from "@mui/material/styles";
 import { generateRandomColor } from "@utils/colorUtils";
 
 const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetData }) => {
-  const monacoBindingRef = useRef<MonacoBinding | null>(null);
-  const ytextRef = useRef<any | null>(null);
+  const monacoBindingRef = useRef<MonacoBinding>(null);
+  const ytextRef = useRef<any>(null);
   const [userStyles, setUserStyles] = useState<string>("");
   const theme = useTheme();
 
