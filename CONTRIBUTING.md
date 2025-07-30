@@ -29,6 +29,8 @@ describes what part you're working on in one word
 
 We use husky to run linter before each commit, so make sure your code is linted if not it will not be committed.
 
+Init husky by doing `bun install` ans also `bun prepare` then you can commit.
+
 To check if your code is linted run `bun run lint` or `bun run lint --fix` to fix it automatically simple errors.
 
 # Pull Requests
