@@ -42,6 +42,64 @@ const MusicEditorButton = styled("button")(({ theme }) => ({
   },
 }));
 
+const GridContainer = styled("div")({
+  width: "max-content",
+  display: "grid",
+  gridTemplateColumns: "repeat(32, 35px)",
+  gridTemplateRows: "repeat(24, 20px)",
+  marginTop: "1em",
+  rowGap: "2px",
+  backgroundColor: "#537D8D",
+  boxSizing: "border-box",
+  border: "3px solid #537D8D",
+});
+
+const GridCell = styled("div")<{ isActive: boolean }>(({ isActive }) => ({
+  width: "35px",
+  height: "20px",
+  boxSizing: "border-box",
+  backgroundColor: isActive ? "#2a3c45" : "#3a5863",
+  color: isActive ? "black" : "transparent",
+  userSelect: "none",
+  cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: isActive ? "12px" : "10px",
+  fontWeight: isActive ? "bold" : "normal",
+  "&:hover": {
+    backgroundColor: "#2a3c45",
+  },
+}));
+
+const ScrollableContainer = styled("div")({
+  maxWidth: "90%",
+  maxHeight: "100%",
+  overflowX: "auto",
+  overflowY: "hidden",
+  display: "flex",
+  flexDirection: "column",
+  flexWrap: "nowrap",
+});
+
+const EditorContainer = styled("div")({
+  display: "flex",
+  gap: "20px",
+  alignItems: "flex-start",
+});
+
+const ControlButtonsContainer = styled("div")({
+  display: "flex",
+  justifyContent: "space-around",
+  marginTop: "20px",
+});
+
+const ErrorMessage = styled("div")({
+  color: "red",
+  textAlign: "center",
+  marginTop: "10px",
+});
+
 const instruments: Map<string, string> = new Map([
   ["piano", "Piano"],
   ["guitar-acoustic", "Guitar"],
@@ -69,6 +127,117 @@ interface SoundEditorProps {
   ydoc?: Doc;
   provider?: WebrtcProvider;
 }
+
+interface GridCellData {
+  cellKey: string;
+  isActive: boolean;
+  row: number;
+  col: number;
+  note: string;
+  isNoteStart: boolean;
+}
+
+interface InstrumentButtonsProps {
+  instruments: Map<string, string>;
+  currentInstrument: string;
+  onInstrumentSelect: (instrument: string) => void;
+}
+
+const InstrumentButtons: React.FC<InstrumentButtonsProps> = ({
+  instruments,
+  currentInstrument,
+  onInstrumentSelect,
+}) => (
+  <ButtonContainer>
+    {Array.from(instruments.keys()).map((instrument) => (
+      <MusicEditorButton
+        className={`flex-item-grow ${currentInstrument === instrument ? "selected" : ""}`}
+        key={instrument}
+        onClick={() => onInstrumentSelect(instrument)}
+      >
+        {instruments.get(instrument)}
+      </MusicEditorButton>
+    ))}
+  </ButtonContainer>
+);
+
+interface MusicSelectionButtonsProps {
+  musics: MusicData[];
+  selectedMusicIndex: number;
+  onMusicSelect: (index: number) => void;
+}
+
+const MusicSelectionButtons: React.FC<MusicSelectionButtonsProps> = ({
+  musics,
+  selectedMusicIndex,
+  onMusicSelect,
+}) => (
+  <ButtonContainer>
+    {musics.map((_, index) => (
+      <MusicEditorButton
+        className={`music-selection-button ${selectedMusicIndex === index ? "selected" : ""}`}
+        key={index}
+        onClick={() => onMusicSelect(index)}
+      >
+        {index + 1}
+      </MusicEditorButton>
+    ))}
+  </ButtonContainer>
+);
+
+interface MusicGridProps {
+  gridCells: GridCellData[];
+  onMouseDown: (row: number, col: number) => void;
+  onMouseOver: (row: number, col: number) => void;
+  onMouseUp: (row: number, col: number) => void;
+}
+
+const MusicGrid: React.FC<MusicGridProps> = ({
+  gridCells,
+  onMouseDown,
+  onMouseOver,
+  onMouseUp,
+}) => (
+  <ScrollableContainer>
+    <GridContainer>
+      {gridCells.map((cell) => (
+        <GridCell
+          key={cell.cellKey}
+          isActive={cell.isActive}
+          onMouseDown={() => onMouseDown(cell.row, cell.col)}
+          onMouseOver={() => onMouseOver(cell.row, cell.col)}
+          onMouseUp={() => onMouseUp(cell.row, cell.col)}
+        >
+          {cell.isNoteStart ? cell.note : ""}
+        </GridCell>
+      ))}
+    </GridContainer>
+  </ScrollableContainer>
+);
+
+interface ControlButtonsProps {
+  isPlaying: boolean;
+  instrumentsLoaded: boolean;
+  onPlay: () => void;
+  onClear: () => void;
+  onSave: () => void;
+}
+
+const ControlButtons: React.FC<ControlButtonsProps> = ({
+  isPlaying,
+  instrumentsLoaded,
+  onPlay,
+  onClear,
+  onSave,
+}) => (
+  <ControlButtonsContainer>
+    <MusicEditorButton onClick={onPlay} disabled={isPlaying || !instrumentsLoaded}>
+      {isPlaying ? "Playing..." : instrumentsLoaded ? "Play" : "Loading..."}
+    </MusicEditorButton>
+    <MusicEditorButton onClick={onClear}>Clear</MusicEditorButton>
+    <MusicEditorButton onClick={onSave}>Save</MusicEditorButton>
+  </ControlButtonsContainer>
+);
 
 export const SoundEditor: React.FC<SoundEditorProps> = ({ ydoc, provider }) => {
   const [currentMusic, setCurrentMusic] = useState<MusicData>(createMusic());
@@ -287,80 +456,39 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({ ydoc, provider }) => {
     setActiveCells(newActiveCells);
   }, [musics]);
 
-  const instrumentButtons = useMemo(() => (
-    Array.from(instruments.keys()).map((instrument) => (
-      <MusicEditorButton
-        className={currentInstrument === instrument ? "selected" : ""}
-        key={instrument}
-        onClick={() => setCurrentInstrument(instrument)}
-      >
-        {instruments.get(instrument)}
-      </MusicEditorButton>
-    ))
-  ), [currentInstrument]);
-
-  const musicSelectionButtons = useMemo(() => (
-    musics.map((_, index) => (
-      <MusicEditorButton
-        className={selectedMusicIndex === index ? "selected" : ""}
-        key={index}
-        onClick={() => loadStateFromMusic(index)}
-      >
-        {index + 1}
-      </MusicEditorButton>
-    ))
-  ), [musics, selectedMusicIndex, loadStateFromMusic]);
-
   return (
     <div onMouseUp={() => setIsMouseDown(false)}>
       <div className="SoundEditor">
-        <div className="editor-container">
-          <ButtonContainer>
-            {instrumentButtons}
-          </ButtonContainer>
-          <div className="scrollable-container">
-            <div
-              className="grid"
-              style={{
-                gridTemplateColumns: `repeat(${32}, 35px)`,
-                gridTemplateRows: `repeat(${24}, 20px)`,
-              }}
-            >
-              {gridCells.map((cell) => (
-                <div
-                  key={cell.cellKey}
-                  onMouseDown={() => handleMouseDown(cell.row, cell.col)}
-                  onMouseOver={() => handleMouseOver(cell.row, cell.col)}
-                  onMouseUp={() => handleMouseUp(cell.row, cell.col)}
-                  className={`cell ${cell.isActive ? "selected" : ""}`}
-                  style={{
-                    width: "35px",
-                    height: "20px",
-                    boxSizing: "border-box"
-                  }}
-                >
-                  {cell.isNoteStart ? cell.note : ""}
-                </div>
-              ))}
-            </div>
-          </div>
-          <ButtonContainer>
-            {musicSelectionButtons}
-          </ButtonContainer>
-        </div>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-around",
-            marginTop: "20px"
-          }}
-        >
-          <MusicEditorButton onClick={handlePlay} disabled={isPlaying || !instrumentsLoaded}>
-            {isPlaying ? "Playing..." : instrumentsLoaded ? "Play" : "Loading..."}
-          </MusicEditorButton>
-          <MusicEditorButton onClick={clearMusic}>Clear</MusicEditorButton>
-          <MusicEditorButton onClick={saveMusic}>Save</MusicEditorButton>
-        </Box>
+        <EditorContainer>
+          <InstrumentButtons
+            instruments={instruments}
+            currentInstrument={currentInstrument}
+            onInstrumentSelect={setCurrentInstrument}
+          />
+          <MusicGrid
+            gridCells={gridCells}
+            onMouseDown={handleMouseDown}
+            onMouseOver={handleMouseOver}
+            onMouseUp={handleMouseUp}
+          />
+          <MusicSelectionButtons
+            musics={musics}
+            selectedMusicIndex={selectedMusicIndex}
+            onMusicSelect={loadStateFromMusic}
+          />
+        </EditorContainer>
+        <ControlButtons
+          isPlaying={isPlaying}
+          instrumentsLoaded={instrumentsLoaded}
+          onPlay={handlePlay}
+          onClear={clearMusic}
+          onSave={saveMusic}
+        />
+        {loadingError && (
+          <ErrorMessage>
+            Warning: Failed to load some instruments. Using fallback audio.
+          </ErrorMessage>
+        )}
       </div>
     </div>
   );
