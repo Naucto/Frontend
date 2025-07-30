@@ -1,5 +1,5 @@
 import { NoteData, createNote, noteToJson, noteFromJson } from "./Note";
-import { AllNotes, numberToNote, playInstrument } from "./MusicManager";
+import { numberToNote, playInstrument } from "./MusicManager";
 import * as Tone from "tone";
 
 export class MusicError extends Error {
@@ -21,11 +21,7 @@ export const createMusic = (
   length: number = 32,
   numberOfOctaves: number = 2,
 ): MusicData => {
-  const numberOfNotes = AllNotes.length * numberOfOctaves;
-  const notes = Array.from({ length }, () =>
-    Array.from({ length: numberOfNotes }, () => createNote())
-  );
-
+  const notes: NoteData[][] = [];
   return {
     notes,
     bpm,
@@ -41,12 +37,18 @@ export const setNote = (
   duration: number,
   instrument: string
 ): MusicData => {
-  if (position < 0 || position >= music.notes.length) {
+  if (position < 0 || position >= music.length) {
     throw new MusicError("Note position out of bounds");
   }
-
   const newNotes = [...music.notes];
-  newNotes[position] = [...newNotes[position]];
+
+  if (!newNotes[position]) {
+    newNotes[position] = [];
+  }
+
+  if (!newNotes[position][note]) {
+    newNotes[position][note] = createNote();
+  }
 
   if (newNotes[position][note].note === "Nan") {
     newNotes[position][note] = createNote(numberToNote(note), duration, instrument);
@@ -70,18 +72,24 @@ export const isNoteActive = (music: MusicData, position: number, note: number): 
   return music.notes[position][note].note !== "Nan";
 };
 
-export const playMusic = (music: MusicData): void => {
+export const playMusic = async (music: MusicData): Promise<void> => {
   let now = Tone.now();
   Tone.start();
 
-  for (const noteList of music.notes) {
-    for (const note of noteList) {
-      if (note.note !== "Nan") {
-        playInstrument(note.note, note.instrument, now, 60 / music.bpm * note.duration);
+  const playPromises: Promise<void>[] = [];
+
+  for (let i = 0; i < music.notes.length; i++) {
+    if (music.notes[i]) {
+      for (const note of music.notes[i]) {
+        if (note && note.note !== "Nan") {
+          playPromises.push(playInstrument(note.note, note.instrument, now, 60 / music.bpm * note.duration));
+        }
       }
     }
     now += 60 / music.bpm;
   }
+
+  await Promise.all(playPromises);
 };
 
 export const musicToJson = (music: MusicData): string => {
@@ -89,7 +97,7 @@ export const musicToJson = (music: MusicData): string => {
     bpm: music.bpm,
     length: music.length,
     numberOfOctaves: music.numberOfOctaves,
-    notes: music.notes.map(row => row.map(note => noteToJson(note))),
+    notes: music.notes.map(row => row ? row.map(note => noteToJson(note)) : []),
   });
 };
 
@@ -100,7 +108,7 @@ export const musicFromJson = (json: string): MusicData => {
   return {
     ...music,
     notes: data.notes.map((row: string[]) =>
-      row.map(noteData => noteFromJson(noteData))
+      row ? row.map(noteData => noteFromJson(noteData)) : []
     )
   };
 };

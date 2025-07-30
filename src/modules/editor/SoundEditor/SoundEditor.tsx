@@ -4,6 +4,7 @@ import { Box } from "@mui/material";
 import { Doc } from "yjs";
 import { WebrtcProvider } from "y-webrtc";
 import { createMusic, MusicData, setNote, playMusic } from "./Music";
+import { preloadInstruments } from "./Note";
 import "./SoundEditor.css";
 
 const ButtonContainer = styled(Box)(({ theme }) => ({
@@ -77,6 +78,31 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({ ydoc, provider }) => {
   const [isMouseDown, setIsMouseDown] = useState<boolean>(false);
   const [startPosition, setStartPosition] = useState<[number, number]>([-1, -1]);
   const [musics, setMusics] = useState<MusicData[]>(() => Array(16).fill(null).map(() => createMusic()));
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [instrumentsLoaded, setInstrumentsLoaded] = useState<boolean>(false);
+  const [loadingError, setLoadingError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    preloadInstruments()
+      .then(() => {
+        if (isMounted) {
+          setInstrumentsLoaded(true);
+          console.log("Instruments loaded successfully");
+        }
+      })
+      .catch((error) => {
+        if (isMounted) {
+          setLoadingError(error.message);
+          console.error("Failed to load instruments:", error);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (ydoc && provider) {
@@ -95,12 +121,25 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({ ydoc, provider }) => {
       [...Array(32)].map((_, col) => {
         const cellKey = `${row}-${col}`;
         const isActive = activeCells.has(cellKey);
+
+        let note = "Nan";
+        let isNoteStart = false;
+
+        if (currentMusic.notes[col] && Array.isArray(currentMusic.notes[col]) && currentMusic.notes[col][row]) {
+          const currentNote = currentMusic.notes[col][row];
+          if (currentNote && currentNote.note !== "Nan") {
+            note = currentNote.note;
+            isNoteStart = true;
+          }
+        }
+
         return {
           cellKey,
           isActive,
           row,
           col,
-          note: currentMusic.notes[col][row].note
+          note,
+          isNoteStart
         };
       })
     ).flat();
@@ -122,34 +161,32 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({ ydoc, provider }) => {
         let noteStartCol = col;
         let noteToRemove = null;
 
-        for (let i = col; i >= 0; i--) {
-          const note = currentMusic.notes[i][row];
-          if (note.note !== "Nan") {
-            const duration = note.duration || 1;
-            if (i + duration > col) {
-              noteStartCol = i;
-              noteToRemove = note;
-              break;
-            }
-          }
+        if (currentMusic.notes[col] && currentMusic.notes[col][row] && currentMusic.notes[col][row].note !== "Nan") {
+          noteStartCol = col;
+          noteToRemove = currentMusic.notes[col][row];
         }
 
         if (noteToRemove) {
           setCurrentMusic(prevMusic => {
             const newMusic = { ...prevMusic };
-            newMusic.notes = newMusic.notes.map(column => [...column]);
+            newMusic.notes = newMusic.notes.map(column => column ? [...column] : []);
+            if (!newMusic.notes[noteStartCol]) {
+              newMusic.notes[noteStartCol] = [];
+            }
             newMusic.notes[noteStartCol][row] = { note: "Nan", duration: 1, instrument: "" };
 
             const newActiveCells = new Set<string>();
             for (let i = 0; i < newMusic.notes.length; i++) {
-              for (let j = 0; j < newMusic.notes[i].length; j++) {
-                const note = newMusic.notes[i][j];
-                if (note.note !== "Nan") {
-                  const duration = note.duration || 1;
-                  for (let k = 0; k < duration; k++) {
-                    if (i + k < newMusic.notes.length) {
-                      const cellKey = `${j}-${i + k}`;
-                      newActiveCells.add(cellKey);
+              if (newMusic.notes[i] && Array.isArray(newMusic.notes[i])) {
+                for (let j = 0; j < newMusic.notes[i].length; j++) {
+                  const note = newMusic.notes[i][j];
+                  if (note && note.note !== "Nan") {
+                    const duration = note.duration || 1;
+                    for (let k = 0; k < duration; k++) {
+                      if (i + k < newMusic.notes.length) {
+                        const cellKey = `${j}-${i + k}`;
+                        newActiveCells.add(cellKey);
+                      }
                     }
                   }
                 }
@@ -207,6 +244,19 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({ ydoc, provider }) => {
     setCurrentMusic(createMusic());
   }, []);
 
+  const handlePlay = useCallback(async () => {
+    if (isPlaying) return;
+
+    setIsPlaying(true);
+    try {
+      await playMusic(currentMusic);
+    } catch (error) {
+      console.error("Error playing music:", error);
+    } finally {
+      setIsPlaying(false);
+    }
+  }, [currentMusic, isPlaying]);
+
   const saveMusic = useCallback(() => {
     setMusics(prevMusics => {
       const newMusics = [...prevMusics];
@@ -222,12 +272,15 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({ ydoc, provider }) => {
 
     const newActiveCells = new Set<string>();
     for (let i = 0; i < music.notes.length; i++) {
-      for (let j = 0; j < music.notes[i].length; j++) {
-        if (music.notes[i][j].note !== "Nan") {
-          const duration = music.notes[i][j].duration || 1;
-          for (let k = 0; k < duration; k++) {
-            if (i + k < music.notes.length) {
-              newActiveCells.add(`${j}-${i + k}`);
+      if (music.notes[i] && Array.isArray(music.notes[i])) {
+        for (let j = 0; j < music.notes[i].length; j++) {
+          const note = music.notes[i][j];
+          if (note && note.note !== "Nan") {
+            const duration = note.duration || 1;
+            for (let k = 0; k < duration; k++) {
+              if (i + k < music.notes.length) {
+                newActiveCells.add(`${j}-${i + k}`);
+              }
             }
           }
         }
@@ -288,7 +341,7 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({ ydoc, provider }) => {
                     boxSizing: "border-box"
                   }}
                 >
-                  {cell.note === "Nan" ? "" : cell.note}
+                  {cell.isNoteStart ? cell.note : ""}
                 </div>
               ))}
             </div>
@@ -304,7 +357,9 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({ ydoc, provider }) => {
             marginTop: "20px"
           }}
         >
-          <MusicEditorButton onClick={() => playMusic(currentMusic)}>Play</MusicEditorButton>
+          <MusicEditorButton onClick={handlePlay} disabled={isPlaying || !instrumentsLoaded}>
+            {isPlaying ? "Playing..." : instrumentsLoaded ? "Play" : "Loading..."}
+          </MusicEditorButton>
           <MusicEditorButton onClick={clearMusic}>Clear</MusicEditorButton>
           <MusicEditorButton onClick={saveMusic}>Save</MusicEditorButton>
         </Box>
