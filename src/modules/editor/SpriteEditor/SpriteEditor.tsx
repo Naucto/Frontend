@@ -166,9 +166,11 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
 
   const zoomRef = useRef<number>(1);
   const positionRef = useRef<Point>({ x: 0, y: 0 });
+  const offsetRef = useRef<Point>({ x: 0, y: 0 });
 
   const [, setZoomState] = useState(zoomRef.current);
   const [, setPositionState] = useState(positionRef.current);
+  const [, setOffsetState] = useState(offsetRef.current);
 
   const { activeTab } = useTabContext();
   const isActiveTab = activeTab === 'sprite';
@@ -280,6 +282,12 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
       const dragDistanceX = (e.clientX - dragStart.x) * zoom / 48;
       const dragDistanceY = (e.clientY - dragStart.y) * zoom / 48;
 
+      offsetRef.current = {
+        x: offsetRef.current.x + dragDistanceX,
+        y: offsetRef.current.y + dragDistanceY
+      };
+      setOffsetState(offsetRef.current);
+
       positionRef.current = {
         x: positionRef.current.x + dragDistanceX,
         y: positionRef.current.y + dragDistanceY
@@ -378,8 +386,7 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
                 containerRef={canvasContainerRef}
                 isActiveTab={isActiveTab}
                 zoomRef={zoomRef}
-                positionRef={positionRef}
-                //TODO : drag offset
+                offsetRef={offsetRef}
               />
             ) : null}
           </div>

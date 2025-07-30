@@ -7,8 +7,8 @@ interface CursorPosition {
   worldX: number;
   worldY: number;
   zoom: number;
-  positionX: number;
-  positionY: number;
+  offsetX: number;
+  offsetY: number;
 }
 
 interface RemoteUser {
@@ -23,7 +23,7 @@ interface RemoteCursorsProps {
   containerRef: React.RefObject<HTMLDivElement>;
   isActiveTab?: boolean;
   zoomRef?: React.RefObject<number | null>;
-  positionRef?: React.RefObject<{ x: number; y: number }>;
+  offsetRef?: React.RefObject<{ x: number; y: number }>;
 }
 
 function usePerfectCursor(cb: (point: number[]) => void, point?: number[]) {
@@ -49,7 +49,7 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({
   containerRef,
   isActiveTab,
   zoomRef,
-  positionRef
+  offsetRef
 }) => {
   const [remoteUsers, setRemoteUsers] = useState<Map<number, RemoteUser>>(new Map());
   const lastSentTime = useRef<number>(0);
@@ -67,7 +67,7 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({
     };
   }, [provider]);
 
-  const sendCursorPosition = (x: number, y: number) => {
+  const sendCursorPosition = (clientX: number, clientY: number) => {
     if (!provider?.awareness || !isMounted.current || !isActiveTab) {
       return;
     }
@@ -82,33 +82,22 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({
       if (!container) return;
 
       const rect = container.getBoundingClientRect();
-      const containerStyle = window.getComputedStyle(container);
-      const paddingLeft = parseFloat(containerStyle.paddingLeft) || 0;
-      const paddingTop = parseFloat(containerStyle.paddingTop) || 0;
-      const borderLeft = parseFloat(containerStyle.borderLeftWidth) || 0;
-      const borderTop = parseFloat(containerStyle.borderTopWidth) || 0;
 
-      const contentWidth = rect.width - paddingLeft - parseFloat(containerStyle.paddingRight || '0') - borderLeft - parseFloat(containerStyle.borderRightWidth || '0');
-      const contentHeight = rect.height - paddingTop - parseFloat(containerStyle.paddingBottom || '0') - borderTop - parseFloat(containerStyle.borderBottomWidth || '0');
+      const containerX = clientX - rect.left;
+      const containerY = clientY - rect.top;
 
-      const absoluteX = x * rect.width;
-      const absoluteY = y * rect.height;
-
-      const contentRelativeX = (absoluteX - paddingLeft - borderLeft) / contentWidth;
-      const contentRelativeY = (absoluteY - paddingTop - borderTop) / contentHeight;
+      const normalizedX = containerX / rect.width;
+      const normalizedY = containerY / rect.height;
 
       const zoom = zoomRef?.current || 1;
-      const position = positionRef?.current || { x: 0, y: 0 };
-
-      const worldX = contentRelativeX * contentWidth * zoom + position.x;
-      const worldY = contentRelativeY * contentHeight * zoom + position.y;
+      const offset = offsetRef?.current || { x: 0, y: 0 };
 
       provider.awareness.setLocalStateField("cursor", {
-        worldX: worldX,
-        worldY: worldY,
+        worldX: normalizedX,
+        worldY: normalizedY,
         zoom: zoom,
-        positionX: position.x,
-        positionY: position.y
+        offsetX: offset.x,
+        offsetY: offset.y
       });
     } catch (error) {
       console.error("Error sending cursor position:", error);
@@ -131,13 +120,7 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({
         return;
       }
 
-      const relativeX = (e.clientX - rect.left) / rect.width;
-      const relativeY = (e.clientY - rect.top) / rect.height;
-
-      if (isNaN(relativeX) || isNaN(relativeY) ||
-          !isFinite(relativeX) || !isFinite(relativeY)) return;
-
-      sendCursorPosition(relativeX, relativeY);
+      sendCursorPosition(e.clientX, e.clientY);
     } catch (error) {
       console.error("Error handling mouse move:", error);
     }
@@ -200,9 +183,9 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({
               cursor: {
                 worldX: state.cursor.worldX,
                 worldY: state.cursor.worldY,
-                zoom: state.cursor.zoom,
-                positionX: state.cursor.positionX,
-                positionY: state.cursor.positionY
+                zoom: state.cursor.zoom || 1,
+                offsetX: state.cursor.offsetX || 0,
+                offsetY: state.cursor.offsetY || 0
               }
             });
           }
@@ -264,8 +247,8 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({
             key={clientId}
             user={user}
             containerRef={containerRef}
-            localZoom={zoomRef!.current! || 1}
-            localPosition={positionRef!.current! || { x: 0, y: 0 }}
+            localZoom={zoomRef?.current || 1}
+            localOffset={offsetRef?.current || { x: 0, y: 0 }}
           />
         )
       ))}
@@ -277,14 +260,14 @@ interface RemoteCursorProps {
   user: RemoteUser;
   containerRef: React.RefObject<HTMLDivElement>;
   localZoom: number;
-  localPosition: { x: number; y: number };
+  localOffset: { x: number; y: number };
 }
 
 const RemoteCursor: React.FC<RemoteCursorProps> = ({
   user,
   containerRef,
   localZoom,
-  localPosition
+  localOffset
 }) => {
   const cursorContainerRef = useRef<HTMLDivElement>(null);
   const lastPoint = useRef<[number, number] | null>(null);
@@ -328,53 +311,41 @@ const RemoteCursor: React.FC<RemoteCursorProps> = ({
 
       if (rect.width === 0 || rect.height === 0) return;
 
-      const containerStyle = window.getComputedStyle(container);
-      const paddingLeft = parseFloat(containerStyle.paddingLeft) || 0;
-      const paddingTop = parseFloat(containerStyle.paddingTop) || 0;
-      const borderLeft = parseFloat(containerStyle.borderLeftWidth) || 0;
-      const borderTop = parseFloat(containerStyle.borderTopWidth) || 0;
+      const remoteNormalizedX = user.cursor.worldX;
+      const remoteNormalizedY = user.cursor.worldY;
+      const remoteZoom = user.cursor.zoom;
+      const remoteOffset = { x: user.cursor.offsetX, y: user.cursor.offsetY };
 
-      const contentWidth = rect.width - paddingLeft - parseFloat(containerStyle.paddingRight || '0') - borderLeft - parseFloat(containerStyle.borderRightWidth || '0');
-      const contentHeight = rect.height - paddingTop - parseFloat(containerStyle.paddingBottom || '0') - borderTop - parseFloat(containerStyle.borderBottomWidth || '0');
+      const remoteContainerWidth = rect.width;
+      const remoteContainerHeight = rect.height;
 
-      const localContentX = (user.cursor.worldX - localPosition.x) / (contentWidth * localZoom);
-      const localContentY = (user.cursor.worldY - localPosition.y) / (contentHeight * localZoom);
+      const worldX = (remoteNormalizedX * remoteContainerWidth) * remoteZoom + remoteOffset.x;
+      const worldY = (remoteNormalizedY * remoteContainerHeight) * remoteZoom + remoteOffset.y;
 
-      const absoluteX = localContentX * contentWidth + paddingLeft + borderLeft;
-      const absoluteY = localContentY * contentHeight + paddingTop + borderTop;
+      const localX = (worldX - localOffset.x) * localZoom;
+      const localY = (worldY - localOffset.y) * localZoom;
 
-      if (isNaN(absoluteX) || isNaN(absoluteY) ||
-          !isFinite(absoluteX) || !isFinite(absoluteY)) return;
+      if (isNaN(localX) || isNaN(localY) || !isFinite(localX) || !isFinite(localY)) return;
 
-      const newPoint: [number, number] = [absoluteX, absoluteY];
+      const newPoint: [number, number] = [localX, localY];
       lastPoint.current = newPoint;
 
       onPointMove(newPoint);
     } catch (error) {
       console.error("Error updating cursor position:", error);
     }
-  }, [user.cursor, containerRef, onPointMove, localZoom, localPosition, cursorScale]);
+  }, [user.cursor, containerRef, onPointMove, localZoom, localOffset, cursorScale]);
 
   const isInVisibleArea = () => {
-    if (!containerRef.current || !user.cursor) return false;
+    if (!containerRef.current || !user.cursor || !lastPoint.current) return false;
 
     const container = containerRef.current;
     const rect = container.getBoundingClientRect();
 
-    const containerStyle = window.getComputedStyle(container);
-    const paddingLeft = parseFloat(containerStyle.paddingLeft) || 0;
-    const paddingTop = parseFloat(containerStyle.paddingTop) || 0;
-    const borderLeft = parseFloat(containerStyle.borderLeftWidth) || 0;
-    const borderTop = parseFloat(containerStyle.borderTopWidth) || 0;
+    const [x, y] = lastPoint.current;
+    const margin = -10;
 
-    const contentWidth = rect.width - paddingLeft - parseFloat(containerStyle.paddingRight || '0') - borderLeft - parseFloat(containerStyle.borderRightWidth || '0');
-    const contentHeight = rect.height - paddingTop - parseFloat(containerStyle.paddingBottom || '0') - borderTop - parseFloat(containerStyle.borderBottomWidth || '0');
-
-    const localContentX = (user.cursor.worldX - localPosition.x) / (contentWidth * localZoom);
-    const localContentY = (user.cursor.worldY - localPosition.y) / (contentHeight * localZoom);
-
-    const margin = 0.1;
-    return localContentX >= -margin && localContentX <= 1 + margin && localContentY >= -margin && localContentY <= 1 + margin;
+    return x >= -margin && x <= rect.width + margin && y >= -margin && y <= rect.height + margin;
   };
 
   if (!isInVisibleArea()) return null;
