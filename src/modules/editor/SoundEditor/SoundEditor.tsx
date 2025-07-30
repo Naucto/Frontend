@@ -276,11 +276,9 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({ ydoc, provider }) => {
         for (let j = 0; j < music.notes[i].length; j++) {
           const note = music.notes[i][j];
           if (note && note.note !== "Nan") {
-            const duration = note.duration || 1;
+            const duration = note.duration;
             for (let k = 0; k < duration; k++) {
-              if (i + k < music.notes.length) {
-                newActiveCells.add(`${j}-${i + k}`);
-              }
+              newActiveCells.add(`${j}-${i + k}`);
             }
           }
         }

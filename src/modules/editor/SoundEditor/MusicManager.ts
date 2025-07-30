@@ -38,10 +38,6 @@ export const playInstrument = async (
   when = Tone.now(),
   duration: Tone.Unit.Time
 ): Promise<void> => {
-  if (note === "Nan") {
-    return;
-  }
-
   try {
     await Tone.loaded();
 
