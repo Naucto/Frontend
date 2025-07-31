@@ -16,8 +16,8 @@ interface Point {
   y: number;
 }
 
-const SPRITE_SIZE = 8;
-const SPRITE_SHEET_SIZE = 128;
+export const SPRITE_SIZE = 8;
+export const SPRITE_SHEET_SIZE = 128;
 
 interface ColorButtonProps {
   color: { name: string; hex: string };

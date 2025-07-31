@@ -2,13 +2,11 @@ import React, { use, useEffect, useRef, useState, useCallback, useLayoutEffect }
 import { WebrtcProvider } from "y-webrtc";
 import { PerfectCursor } from "perfect-cursors";
 import "./RemoteCursors.css";
+import { SPRITE_SIZE, SPRITE_SHEET_SIZE } from "../editor/SpriteEditor/SpriteEditor";
 
 interface CursorPosition {
   worldX: number;
   worldY: number;
-  zoom: number;
-  offsetX: number;
-  offsetY: number;
 }
 
 interface RemoteUser {
@@ -67,7 +65,58 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({
     };
   }, [provider]);
 
-  const sendCursorPosition = (clientX: number, clientY: number) => {
+  const screenToWorld = (screenX: number, screenY: number): { worldX: number; worldY: number } => {
+    const container = containerRef.current;
+    if (!container) return { worldX: 0, worldY: 0 };
+
+    const rect = container.getBoundingClientRect();
+    const zoom = zoomRef?.current || 1;
+    const offset = offsetRef?.current || { x: 0, y: 0 };
+
+    const normalizedX = screenX / rect.width;
+    const normalizedY = screenY / rect.height;
+
+    const worldX = (normalizedX * zoom * SPRITE_SIZE) + offset.x;
+    const worldY = (normalizedY * zoom * SPRITE_SIZE) + offset.y;
+
+    return { worldX, worldY };
+  };
+
+  const worldToScreen = (worldX: number, worldY: number): { screenX: number; screenY: number } => {
+    const container = containerRef.current;
+    if (!container) return { screenX: 0, screenY: 0 };
+
+    const rect = container.getBoundingClientRect();
+    const zoom = zoomRef?.current || 1;
+    const offset = offsetRef?.current || { x: 0, y: 0 };
+
+    const viewportX = (worldX - offset.x) / (zoom * SPRITE_SIZE);
+    const viewportY = (worldY - offset.y) / (zoom * SPRITE_SIZE);
+
+    const screenX = viewportX * rect.width;
+    const screenY = viewportY * rect.height;
+
+    return { screenX, screenY };
+  };
+
+  const isInViewport = (worldX: number, worldY: number): boolean => {
+    const zoom = zoomRef?.current || 1;
+    const offset = offsetRef?.current || { x: 0, y: 0 };
+
+    const viewportLeft = offset.x;
+    const viewportTop = offset.y;
+    const viewportRight = offset.x + (zoom * SPRITE_SIZE);
+    const viewportBottom = offset.y + (zoom * SPRITE_SIZE);
+
+    const margin = SPRITE_SIZE * 0.5;
+
+    return worldX >= (viewportLeft - margin) &&
+           worldX <= (viewportRight + margin) &&
+           worldY >= (viewportTop - margin) &&
+           worldY <= (viewportBottom + margin);
+  };
+
+  const sendCursorPosition = (screenX: number, screenY: number) => {
     if (!provider?.awareness || !isMounted.current || !isActiveTab) {
       return;
     }
@@ -78,27 +127,14 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({
     lastSentTime.current = now;
 
     try {
-      const container = containerRef.current;
-      if (!container) return;
+      const { worldX, worldY } = screenToWorld(screenX, screenY);
 
-      const rect = container.getBoundingClientRect();
-
-      const containerX = clientX - rect.left;
-      const containerY = clientY - rect.top;
-
-      const normalizedX = containerX / rect.width;
-      const normalizedY = containerY / rect.height;
-
-      const zoom = zoomRef?.current || 1;
-      const offset = offsetRef?.current || { x: 0, y: 0 };
-
-      provider.awareness.setLocalStateField("cursor", {
-        worldX: normalizedX,
-        worldY: normalizedY,
-        zoom: zoom,
-        offsetX: offset.x,
-        offsetY: offset.y
-      });
+      if (worldX >= 0 && worldX <= SPRITE_SHEET_SIZE && worldY >= 0 && worldY <= SPRITE_SHEET_SIZE) {
+        provider.awareness.setLocalStateField("cursor", {
+          worldX,
+          worldY
+        });
+      }
     } catch (error) {
       console.error("Error sending cursor position:", error);
     }
@@ -120,7 +156,10 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({
         return;
       }
 
-      sendCursorPosition(e.clientX, e.clientY);
+      const screenX = e.clientX - rect.left;
+      const screenY = e.clientY - rect.top;
+
+      sendCursorPosition(screenX, screenY);
     } catch (error) {
       console.error("Error handling mouse move:", error);
     }
@@ -182,10 +221,7 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({
               userId: state.user.userId || String(clientId),
               cursor: {
                 worldX: state.cursor.worldX,
-                worldY: state.cursor.worldY,
-                zoom: state.cursor.zoom || 1,
-                offsetX: state.cursor.offsetX || 0,
-                offsetY: state.cursor.offsetY || 0
+                worldY: state.cursor.worldY
               }
             });
           }
@@ -242,13 +278,13 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({
   return (
     <div className="cursor-overlay">
       {Array.from(remoteUsers.entries()).map(([clientId, user]) => (
-        user.cursor && (
+        user.cursor && isInViewport(user.cursor.worldX, user.cursor.worldY) && (
           <RemoteCursor
             key={clientId}
             user={user}
             containerRef={containerRef}
-            localZoom={zoomRef?.current || 1}
-            localOffset={offsetRef?.current || { x: 0, y: 0 }}
+            worldToScreen={worldToScreen}
+            zoomRef={zoomRef}
           />
         )
       ))}
@@ -259,22 +295,22 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({
 interface RemoteCursorProps {
   user: RemoteUser;
   containerRef: React.RefObject<HTMLDivElement>;
-  localZoom: number;
-  localOffset: { x: number; y: number };
+  worldToScreen: (worldX: number, worldY: number) => { screenX: number; screenY: number };
+  zoomRef?: React.RefObject<number | null>;
 }
 
 const RemoteCursor: React.FC<RemoteCursorProps> = ({
   user,
   containerRef,
-  localZoom,
-  localOffset
+  worldToScreen,
+  zoomRef
 }) => {
   const cursorContainerRef = useRef<HTMLDivElement>(null);
-  const lastPoint = useRef<[number, number] | null>(null);
 
   const getCursorScale = () => {
+    const zoom = zoomRef?.current || 1;
     const baseScale = 1;
-    const scaleFactor = Math.max(0.5, Math.min(2, baseScale / Math.sqrt(localZoom)));
+    const scaleFactor = Math.max(0.5, Math.min(2, baseScale / Math.sqrt(zoom)));
     return scaleFactor;
   };
 
@@ -306,49 +342,17 @@ const RemoteCursor: React.FC<RemoteCursorProps> = ({
     if (!containerRef.current || !user.cursor) return;
 
     try {
-      const container = containerRef.current;
-      const rect = container.getBoundingClientRect();
+      const { screenX, screenY } = worldToScreen(user.cursor.worldX, user.cursor.worldY);
 
-      if (rect.width === 0 || rect.height === 0) return;
+      if (isNaN(screenX) || isNaN(screenY) ||
+          !isFinite(screenX) || !isFinite(screenY)) return;
 
-      const remoteNormalizedX = user.cursor.worldX;
-      const remoteNormalizedY = user.cursor.worldY;
-      const remoteZoom = user.cursor.zoom;
-      const remoteOffset = { x: user.cursor.offsetX, y: user.cursor.offsetY };
-
-      const remoteContainerWidth = rect.width;
-      const remoteContainerHeight = rect.height;
-
-      const worldX = (remoteNormalizedX * remoteContainerWidth) * remoteZoom + remoteOffset.x;
-      const worldY = (remoteNormalizedY * remoteContainerHeight) * remoteZoom + remoteOffset.y;
-
-      const localX = (worldX - localOffset.x) * localZoom;
-      const localY = (worldY - localOffset.y) * localZoom;
-
-      if (isNaN(localX) || isNaN(localY) || !isFinite(localX) || !isFinite(localY)) return;
-
-      const newPoint: [number, number] = [localX, localY];
-      lastPoint.current = newPoint;
-
+      const newPoint: [number, number] = [screenX, screenY];
       onPointMove(newPoint);
     } catch (error) {
       console.error("Error updating cursor position:", error);
     }
-  }, [user.cursor, containerRef, onPointMove, localZoom, localOffset, cursorScale]);
-
-  const isInVisibleArea = () => {
-    if (!containerRef.current || !user.cursor || !lastPoint.current) return false;
-
-    const container = containerRef.current;
-    const rect = container.getBoundingClientRect();
-
-    const [x, y] = lastPoint.current;
-    const margin = -10;
-
-    return x >= -margin && x <= rect.width + margin && y >= -margin && y <= rect.height + margin;
-  };
-
-  if (!isInVisibleArea()) return null;
+  }, [user.cursor, containerRef, onPointMove, worldToScreen]);
 
   return (
     <div
@@ -390,12 +394,12 @@ const RemoteCursor: React.FC<RemoteCursorProps> = ({
         style={{
           backgroundColor: user.color,
           position: "absolute",
-          top: -35 * cursorScale,
+          top: -20 * cursorScale,
           left: CURSOR_TIP_OFFSET_X,
           padding: `${2 * cursorScale}px ${6 * cursorScale}px`,
           borderRadius: `${3 * cursorScale}px`,
           color: "white",
-          fontSize: `${10 * cursorScale}px`,
+          fontSize: `${15 * cursorScale}px`,
           fontWeight: 600,
           whiteSpace: "nowrap",
           boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
