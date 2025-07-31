@@ -76,8 +76,8 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({
     const normalizedX = screenX / rect.width;
     const normalizedY = screenY / rect.height;
 
-    const worldX = (normalizedX * zoom * SPRITE_SIZE) + offset.x;
-    const worldY = (normalizedY * zoom * SPRITE_SIZE) + offset.y;
+    const worldX = (normalizedX * zoom * SPRITE_SIZE) - Math.floor(offset.x);
+    const worldY = (normalizedY * zoom * SPRITE_SIZE) - Math.floor(offset.y);
 
     return { worldX, worldY };
   };
@@ -90,8 +90,8 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({
     const zoom = zoomRef?.current || 1;
     const offset = offsetRef?.current || { x: 0, y: 0 };
 
-    const viewportX = (worldX - offset.x) / (zoom * SPRITE_SIZE);
-    const viewportY = (worldY - offset.y) / (zoom * SPRITE_SIZE);
+    const viewportX = (worldX + Math.floor(offset.x)) / (zoom * SPRITE_SIZE);
+    const viewportY = (worldY + Math.floor(offset.y)) / (zoom * SPRITE_SIZE);
 
     const screenX = viewportX * rect.width;
     const screenY = viewportY * rect.height;
