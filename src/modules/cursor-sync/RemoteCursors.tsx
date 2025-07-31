@@ -73,21 +73,14 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({
     if (!canvas) return { worldX: 0, worldY: 0 };
 
     const rect = canvas.getBoundingClientRect();
-    console.log("rect", rect);
     const zoom = zoomRef?.current || 1;
     const offset = offsetRef?.current || { x: 0, y: 0 };
 
     const normalizedX = screenX / rect.width;
     const normalizedY = screenY / rect.height;
 
-    console.log("normalizedX", normalizedX);
-    console.log("normalizedY", normalizedY);
-
     const worldX = (normalizedX * zoom * SPRITE_SIZE) - Math.floor(offset.x);
     const worldY = (normalizedY * zoom * SPRITE_SIZE) - Math.floor(offset.y);
-
-    console.log("worldX", worldX);
-    console.log("worldY", worldY);
 
     return { worldX, worldY };
   };
@@ -190,6 +183,8 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({
       console.error("Error clearing cursor position:", error);
     }
   };
+
+  //TODO: handle mouse scrool
 
   useEffect(() => {
     if (!containerRef.current || !provider?.awareness) return;
@@ -326,7 +321,7 @@ const RemoteCursor: React.FC<RemoteCursorProps> = ({
   const getCursorScale = () => {
     const zoom = zoomRef?.current || 1;
     const baseScale = 1;
-    const scaleFactor = Math.max(0.5, Math.min(2, baseScale / Math.sqrt(zoom)));
+    const scaleFactor = Math.max(0.7, Math.min(1.5, baseScale / Math.pow(zoom, 0.35)));
     return scaleFactor;
   };
 
