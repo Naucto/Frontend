@@ -69,15 +69,25 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({
     const container = containerRef.current;
     if (!container) return { worldX: 0, worldY: 0 };
 
-    const rect = container.getBoundingClientRect();
+    const canvas = container.querySelector("canvas");
+    if (!canvas) return { worldX: 0, worldY: 0 };
+
+    const rect = canvas.getBoundingClientRect();
+    console.log("rect", rect);
     const zoom = zoomRef?.current || 1;
     const offset = offsetRef?.current || { x: 0, y: 0 };
 
     const normalizedX = screenX / rect.width;
     const normalizedY = screenY / rect.height;
 
+    console.log("normalizedX", normalizedX);
+    console.log("normalizedY", normalizedY);
+
     const worldX = (normalizedX * zoom * SPRITE_SIZE) - Math.floor(offset.x);
     const worldY = (normalizedY * zoom * SPRITE_SIZE) - Math.floor(offset.y);
+
+    console.log("worldX", worldX);
+    console.log("worldY", worldY);
 
     return { worldX, worldY };
   };
@@ -86,7 +96,10 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({
     const container = containerRef.current;
     if (!container) return { screenX: 0, screenY: 0 };
 
-    const rect = container.getBoundingClientRect();
+    const canvas = container.querySelector("canvas");
+    if (!canvas) return { screenX: 0, screenY: 0 };
+
+    const rect = canvas.getBoundingClientRect();
     const zoom = zoomRef?.current || 1;
     const offset = offsetRef?.current || { x: 0, y: 0 };
 
@@ -144,7 +157,10 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({
     if (!containerRef.current || !provider?.awareness || !isMounted.current) return;
 
     try {
-      const rect = containerRef.current.getBoundingClientRect();
+      const canvas = containerRef.current.querySelector("canvas");
+      if (!canvas) return;
+
+      const rect = canvas.getBoundingClientRect();
       if (rect.width === 0 || rect.height === 0) return;
 
       if (
@@ -320,8 +336,8 @@ const RemoteCursor: React.FC<RemoteCursorProps> = ({
   const CURSOR_WIDTH = CURSOR_BASE_WIDTH * cursorScale;
   const CURSOR_HEIGHT = CURSOR_BASE_HEIGHT * cursorScale;
 
-  const CURSOR_TIP_OFFSET_X = 13 * cursorScale;
-  const CURSOR_TIP_OFFSET_Y = 10 * cursorScale;
+  const CURSOR_TIP_OFFSET_X = cursorScale;
+  const CURSOR_TIP_OFFSET_Y = 0.1 * cursorScale;
 
   const animateCursor = useCallback((point: number[]) => {
     const elm = cursorContainerRef.current;

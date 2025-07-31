@@ -58,8 +58,8 @@
 
 .draw-canvas-container {
     background-color: #3a5863;
-    padding: 1rem;
-    border-radius: 4px;
+    padding: 10px;
+    border-radius: 1px;
     display: inline-block;
     height: fit-content;
     min-width: 60%;
