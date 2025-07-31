@@ -321,7 +321,7 @@ const RemoteCursor: React.FC<RemoteCursorProps> = ({
   const getCursorScale = () => {
     const zoom = zoomRef?.current || 1;
     const baseScale = 1;
-    const scaleFactor = Math.max(0.7, Math.min(1.5, baseScale / Math.pow(zoom, 0.35)));
+    const scaleFactor = Math.max(0.5, baseScale / Math.pow(zoom, 0.1));
     return scaleFactor;
   };
 
