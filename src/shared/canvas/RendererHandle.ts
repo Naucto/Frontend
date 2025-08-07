@@ -3,6 +3,7 @@ import { GLPipeline, initGLPipeline } from "@shared/canvas/GLSetup";
 import { useEffect, useMemo, useRef } from "react";
 import { CanvasError, CanvasNotInitializedError } from "src/errors/CanvasError";
 import { SpriteSheet } from "src/types/SpriteSheetType";
+import { Map } from "src/types/MapType";
 
 export type QueueSpriteDrawFn = (
   index: number,
@@ -18,6 +19,7 @@ export type QueueSpriteDrawFn = (
 export type SpriteRendererHandle = {
   queueSpriteDraw: QueueSpriteDrawFn;
   draw: () => void;
+  drawMap: (x: number, y: number) => void;
   clear: (index: number) => void;
   setColor: (index: number, index2: number) => void;
   resetColor: () => void;
@@ -27,6 +29,7 @@ export function useSpriteRenderer(
   canvasRef: React.RefObject<HTMLCanvasElement | null>,
   spriteSheet: SpriteSheet,
   palette: Uint8Array,
+  map: Map,
   screenSize: { width: number, height: number }
 ): SpriteRendererHandle {
   const spriteNumber = spriteSheet.size.width / spriteSheet.spriteSize.width;
@@ -36,12 +39,10 @@ export function useSpriteRenderer(
   const currentPaletteSize = currentPalette.length / 4;
 
   const pipelineRef = useRef<GLPipeline | null>(null);
-
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) { throw new CanvasNotInitializedError(); }
-
-    pipelineRef.current = initGLPipeline(canvas, spriteSheet, palette, screenSize);
+    pipelineRef.current = initGLPipeline(canvas, spriteSheet, map, palette, screenSize);
     if (!pipelineRef.current) {
       throw new CanvasNotInitializedError();
     }
@@ -49,7 +50,7 @@ export function useSpriteRenderer(
       pipelineRef.current?.destroy();
       pipelineRef.current = null;
     };
-  }, [canvasRef, spriteSheet, palette, screenSize]);
+  }, [canvasRef, spriteSheet, palette, screenSize, map]);
 
   function draw(): void {
     const p = pipelineRef.current;
@@ -77,6 +78,38 @@ export function useSpriteRenderer(
 
     batchedVertices.length = 0;
     batchedUVs.length = 0;
+  }
+
+  function drawMap(x, y): void {
+    const p = pipelineRef.current;
+    if (!p) return;
+
+    if (batchedUVs.length > 0) {
+      draw();
+    }
+
+    const gl = p.gl;
+    const program = p.program;
+    gl.uniform1i(gl.getUniformLocation(program, "u_mode"), 1); // drawmode Map
+    const uv = new Float32Array([
+      0, 0,
+      1, 0,
+      0, 1,
+      0, 1,
+      1, 0,
+      1, 1,
+    ]);
+    const vertices = rectangleToVertices(
+      x,
+      y,
+      map.width * spriteSheet.spriteSize.width,
+      map.height * spriteSheet.spriteSize.height
+    );
+
+    batchedVertices.push(...vertices);
+    batchedUVs.push(...uv);
+    draw();
+    gl.uniform1i(gl.getUniformLocation(program, "u_mode"), 0); // reset to default draw mode
   }
 
   function queueSpriteDraw(index: number,
@@ -189,6 +222,7 @@ export function useSpriteRenderer(
   return useMemo(() => ({
     queueSpriteDraw,
     draw,
+    drawMap,
     clear,
     setColor,
     resetColor,

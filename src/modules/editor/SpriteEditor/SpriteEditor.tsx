@@ -8,6 +8,7 @@ import { SpriteSheet } from "src/types/SpriteSheetType";
 import { spriteTable, palette } from "src/temporary/SpriteSheet";
 import { EditorProps } from "../../create/game-editor/editors/EditorType";
 import { YSpriteSheet } from "@modules/create/game-editor/types/YSpriteSheet.ts";
+import { useProject } from "src/providers/ProjectProvider";
 
 interface Point {
   x: number;
@@ -153,6 +154,7 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, onGetData, onSetData
   const drawCanvasRef = React.createRef<SpriteRendererHandle>();
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const yspriteRef = useRef<YSpriteSheet>(null);
+  const { project } = useProject();
 
   const handleContextMenu = (e: React.MouseEvent): void => {
     e.preventDefault();
@@ -191,13 +193,14 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, onGetData, onSetData
   }, [onGetData]);
 
   useEffect(() => {
+    if (!project) return;
     if (!onSetData)
       return;
     onSetData((data: string) => {
       if (!yspriteRef.current)
         return;
       ydoc!.transact(() => {
-        yspriteRef.current?.fromString(data ? data : spriteTable.table);
+        yspriteRef.current?.fromString(data ? data : project?.spriteSheet.spriteSheet);
       });
     });
   }, [onSetData]);
