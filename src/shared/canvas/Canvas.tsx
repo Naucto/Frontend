@@ -36,7 +36,6 @@ const Canvas = forwardRef<SpriteRendererHandle, CanvasProps>(({
   onMouseLeave,
   onMouseEnter
 }, ref) => {
-  console.log("canvas map:", map);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererHandle = useSpriteRenderer(canvasRef, spriteSheet, palette, map, screenSize);
 

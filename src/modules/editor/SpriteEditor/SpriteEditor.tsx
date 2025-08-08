@@ -5,11 +5,11 @@ import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import React from "react";
 import { StyledCanvas } from "@shared/canvas/Canvas";
 import { SpriteSheet } from "src/types/SpriteSheetType";
-import { spriteTable, palette } from "src/temporary/SpriteSheet";
+import { palette } from "src/temporary/SpriteSheet";
 import { EditorProps } from "../../create/game-editor/editors/EditorType";
 import { YSpriteSheet } from "@modules/create/game-editor/types/YSpriteSheet.ts";
 import { useProject } from "src/providers/ProjectProvider";
-
+import { Map } from "src/types/MapType";
 interface Point {
   x: number;
   y: number;
@@ -61,6 +61,7 @@ interface CanvasContainerProps {
   canvasRef: React.RefObject<SpriteRendererHandle | null>;
   containerRef: React.RefObject<HTMLDivElement | null>;
   spriteSheet: SpriteSheet;
+  map: Map;
   screenSize: { width: number; height: number };
   onWheel: (e: React.WheelEvent) => void;
   onMouseDown: (e: React.MouseEvent<HTMLCanvasElement>) => void;
@@ -75,6 +76,7 @@ const CanvasContainer: React.FC<CanvasContainerProps> = ({
   canvasRef,
   containerRef,
   spriteSheet,
+  map,
   screenSize,
   ...props
 }) => (
@@ -84,6 +86,7 @@ const CanvasContainer: React.FC<CanvasContainerProps> = ({
       spriteSheet={spriteSheet}
       screenSize={screenSize}
       palette={palette}
+      map={map}
       {...props}
     />
   </div>
@@ -333,23 +336,26 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, onGetData, onSetData
             currentColor={currentColor}
             onColorSelect={setCurrentColor}
           />
-          <CanvasContainer
-            canvasRef={drawCanvasRef}
-            containerRef={canvasContainerRef}
-            spriteSheet={canvasSpriteSheet}
-            screenSize={drawCanvasSize}
-            onWheel={handleWheel}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseEnter={() => setIsMouseOverCanvas(true)}
-            onMouseLeave={() => {
-              setIsMouseOverCanvas(false);
-              setIsDragging(false);
-              setIsDrawing(false);
-            }}
-            onClick={handleCanvasClick}
-          />
+          {project && (
+            <CanvasContainer
+              canvasRef={drawCanvasRef}
+              containerRef={canvasContainerRef}
+              spriteSheet={canvasSpriteSheet}
+              map={project.map}
+              screenSize={drawCanvasSize}
+              onWheel={handleWheel}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseEnter={() => setIsMouseOverCanvas(true)}
+              onMouseLeave={() => {
+                setIsMouseOverCanvas(false);
+                setIsDragging(false);
+                setIsDrawing(false);
+              }}
+              onClick={handleCanvasClick}
+            />
+          )}
         </div>
       </div>
     </div>

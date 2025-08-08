@@ -43,7 +43,6 @@ const Project: React.FC = () => {
         palette: palette
       };
       setProject(project);
-      console.log("Project loaded:", project);
     }
   }, [value, setProject]);
 
