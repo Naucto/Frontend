@@ -157,7 +157,7 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, onGetData, onSetData
   const drawCanvasRef = React.createRef<SpriteRendererHandle>();
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const yspriteRef = useRef<YSpriteSheet>(null);
-  const { project } = useProject();
+  const { project, actions } = useProject();
 
   const handleContextMenu = (e: React.MouseEvent): void => {
     e.preventDefault();
@@ -204,9 +204,12 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, onGetData, onSetData
         return;
       ydoc!.transact(() => {
         yspriteRef.current?.fromString(data ? data : project?.spriteSheet.spriteSheet);
+        if (yspriteRef.current) {
+          actions.setSpriteSheetData(yspriteRef.current.toString());
+        }
       });
     });
-  }, [onSetData]);
+  }, [onSetData, project, actions]);
 
   useEffect(() => {
     const container = canvasContainerRef.current;
@@ -244,6 +247,9 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, onGetData, onSetData
       return;
     ydoc!.transact(() => {
       yspriteRef.current?.setPixel(x, y, currentColor);
+      if (yspriteRef.current) {
+        actions.setSpriteSheetData(yspriteRef.current.toString());
+      }
     });
     setVersion(v => v + 1);
   };
