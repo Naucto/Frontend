@@ -13,7 +13,6 @@ type GameCanvasProps = {
 
 const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(
   ({ canvasProps, envData, setOutput, className }, ref) => {
-    console.log("canvasprops:", canvasProps);
     const spriteRendererHandleRef = useRef<CanvasHandle>(null);
     const luaEnvManagerRef = useRef<LuaEnvironmentManager>(null);
     const animationFrameRef = useRef<number>(null);
