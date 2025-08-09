@@ -7,7 +7,6 @@ import * as Y from "yjs";
 import config from "config.json";
 import { EditorProps, EditorTab } from "./editors/EditorType";
 import { SoundEditor } from "./editors/SoundEditor";
-import { palette } from "src/temporary/SpriteSheet";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
 import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
@@ -346,7 +345,7 @@ const GameEditor: React.FC = () => {
               map: project.map,
               screenSize,
               spriteSheet: project.spriteSheet,
-              palette,
+              palette: project.palette,
             }}
             envData={envData}
             setOutput={setOutput}
