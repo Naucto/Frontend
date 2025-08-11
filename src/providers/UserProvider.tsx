@@ -14,7 +14,7 @@ interface UserContextType {
 
 const userContext = createContext<UserContextType | null>(null);
 
-export const UserProvider = ({ children }) => {
+export const UserProvider = ({ children }: { children: React.ReactNode }): React.ReactElement => {
   const [userId, setUserId] = useState(() => {
     return LocalStorageManager.getUserId();
   });
@@ -26,9 +26,9 @@ export const UserProvider = ({ children }) => {
     LocalStorageManager.setUserId(userId);
   }, [userId]);
 
-  const logIn = (userData: User) => LocalStorageManager.setUser(userData);
+  const logIn = (userData: User): void => LocalStorageManager.setUser(userData);
 
-  const logOut = () => LocalStorageManager.setUser(undefined);
+  const logOut = (): void => LocalStorageManager.setUser(undefined);
 
   return (
     <userContext.Provider value={{ userId, userName, setUserId, setUserName, logIn, logOut }}>
@@ -37,7 +37,7 @@ export const UserProvider = ({ children }) => {
   );
 };
 
-export const useUser = () => {
+export const useUser = (): UserContextType => {
   const context = useContext(userContext);
   if (!context) {
     throw new ContextError("useUser", "UserProvider");

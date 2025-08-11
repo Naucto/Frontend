@@ -47,7 +47,7 @@ const NavBar: React.FC = () => {
         <NavElem to="/help">Help</NavElem>
       </Left>
 
-      <SearchBar placeholder="Search for games..." onSubmit={(value) => console.log(value)} />
+      <SearchBar placeholder="Search for games..." onSubmit={() => { /* handle search */ }} />
 
       <Right>
         <NavElem to="/friends">Friends</NavElem>

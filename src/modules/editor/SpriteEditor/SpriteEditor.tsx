@@ -159,7 +159,7 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
   const offsetRef = useRef<Point>({ x: 0, y: 0 });
 
   const { activeTab } = useTabContext();
-  const isActiveTab = activeTab === 'sprite';
+  const isActiveTab = activeTab === "sprite";
 
   const handleContextMenu = (e: React.MouseEvent): void => {
     e.preventDefault();
@@ -360,14 +360,14 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
             onClick={handleCanvasClick}
           />
           {provider && provider.awareness && isActiveTab ? (
-              <RemoteCursors
-                provider={provider}
-                containerRef={canvasContainerRef}
-                isActiveTab={isActiveTab}
-                zoomRef={zoomRef}
-                offsetRef={offsetRef}
-              />
-            ) : null}
+            <RemoteCursors
+              provider={provider}
+              containerRef={canvasContainerRef}
+              isActiveTab={isActiveTab}
+              zoomRef={zoomRef}
+              offsetRef={offsetRef}
+            />
+          ) : null}
         </div>
       </div>
     </div>

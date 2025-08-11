@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { styled } from "@mui/material/styles";
-import { Tabs, Tab, Box, Button } from "@mui/material";
+import { Tabs, Tab, Box } from "@mui/material";
 import CodeEditor from "@modules/create/game-editor/editors/CodeEditor";
 import { WebrtcProvider } from "y-webrtc";
 import * as Y from "yjs";
@@ -32,7 +32,7 @@ const GameEditorContainer = styled("div")(({ theme }) => ({
   gap: theme.spacing(4),
 }));
 
-const LeftPanel = styled("div")(({ theme }) => ({
+const LeftPanel = styled("div")(() => ({
   width: "100%",
   display: "flex",
   flexDirection: "column",
@@ -77,7 +77,7 @@ const GameEditor: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [output, setOutput] = useState<string>("");
   const [roomId, setRoomId] = useState<string | undefined>(undefined);
-  const [projectContent, setProjectContent] = useState<any>(null); // FIXME: change typing
+  const [projectContent, setProjectContent] = useState<Record<string, string> | null>(null);
   const [isHost, setIsHost] = useState<boolean>(false);
 
   const getDataFunctions = useRef<{ [key: string]: () => string }>({});
@@ -95,7 +95,7 @@ const GameEditor: React.FC = () => {
   const ydoc: Y.Doc = useMemo(() => new Y.Doc(), []);
 
   useEffect(() => {
-    const joinSession = async () => {
+    const joinSession = async (): Promise<void> => {
       try {
         const projectId = LocalStorageManager.getProjectId();
         const session = await WorkSessionsService.workSessionControllerJoin(projectId);
@@ -109,7 +109,7 @@ const GameEditor: React.FC = () => {
           try {
             const content = await ProjectsService.projectControllerFetchProjectContent(String(projectId));
             setProjectContent(content);
-          } catch (error: any) {
+          } catch (error: unknown) {
             if (error instanceof ApiError && error.status === 404) {
               setProjectContent({});
             } else {
@@ -143,11 +143,11 @@ const GameEditor: React.FC = () => {
     return tabs.map((tab) => {
       const EditorComponent: React.FC<EditorProps> | undefined = tab.component;
 
-      const handleGetData = (getData: () => string) => {
+      const handleGetData = (getData: () => string): void => {
         getDataFunctions.current[tab.label] = getData;
       };
 
-      const handleSetData = (setData: (data: string) => void) => {
+      const handleSetData = (setData: (data: string) => void): void => {
         setDataFunctions.current[tab.label] = setData;
       };
 
@@ -197,7 +197,7 @@ const GameEditor: React.FC = () => {
       added: number[]
       updated: number[]
       removed: number[]
-    }) => {
+    }): void => {
       [...added, ...updated].forEach(clientID => {
         const state = awareness?.getStates().get(clientID);
         if (state?.user) {
@@ -261,7 +261,7 @@ const GameEditor: React.FC = () => {
 
   //ENDFIXME
 
-  const saveProjectContent = () => {
+  const saveProjectContent = (): void => {
     const jsonData: { [key: string]: string } = {};
     editorTabs.forEach(({ label, getData }) => {
       if (getData) {
@@ -281,7 +281,7 @@ const GameEditor: React.FC = () => {
     });
   };
 
-  const cleanUpAndDisconnect = () => {
+  const cleanUpAndDisconnect = (): void => {
     if (!provider || !ydoc || editorTabs.length === 0)
       return;
 
@@ -342,7 +342,7 @@ const GameEditor: React.FC = () => {
               role="tabpanel"
               hidden={activeTab !== idx}
               sx={{
-                display: activeTab === idx ? 'block' : 'none',
+                display: activeTab === idx ? "block" : "none",
               }}
             >
               {tab.component}

@@ -3,11 +3,11 @@ import Editor, { Monaco } from "@monaco-editor/react";
 import { editor } from "monaco-editor";
 import CodeTabTheme from "./CodeTabTheme";
 import { MonacoBinding } from "y-monaco";
+import * as Y from "yjs";
 import { EditorProps } from "./EditorType";
 import "./CodeEditor.css";
 import { useTheme } from "@mui/material/styles";
 import { generateRandomColor } from "@utils/colorUtils";
-import * as Y from "yjs";
 
 const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetData }) => {
   const monacoBindingRef = useRef<MonacoBinding>(null);
@@ -71,7 +71,7 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetDat
   useEffect(() => {
     if (!provider?.awareness) return;
 
-    const updateStyles = (changes?: { added: number[], updated: number[], removed: number[] }) => {
+    const updateStyles = (changes?: { added: number[], updated: number[], removed: number[] }): void => {
       const states = provider.awareness.getStates();
       const styleMap = new Map<number, string>();
 
@@ -93,7 +93,7 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetDat
 
     updateStyles();
 
-    const handleAwarenessUpdate = (changes: { added: number[], updated: number[], removed: number[] }) => {
+    const handleAwarenessUpdate = (changes: { added: number[], updated: number[], removed: number[] }): void => {
       updateStyles(changes);
     };
 
@@ -132,8 +132,8 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetDat
       onSetData((data: string) => {
         if (ytextRef.current && data) {
           ydoc.transact(() => {
-            ytextRef.current.delete(0, ytextRef.current.length);
-            ytextRef.current.insert(0, data);
+            ytextRef.current?.delete(0, ytextRef.current?.length);
+            ytextRef.current?.insert(0, data);
           });
         }
       });

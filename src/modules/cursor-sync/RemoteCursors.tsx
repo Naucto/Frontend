@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useCallback, useLayoutEffect } from
 import { WebrtcProvider } from "y-webrtc";
 import { PerfectCursor } from "perfect-cursors";
 import "./RemoteCursors.css";
-import { SPRITE_SIZE, SPRITE_SHEET_SIZE, CANVAS_BASE_RESOLUTION, SCALE, SPRITE_NUMBER  } from "../editor/SpriteEditor/SpriteEditor";
+import { SPRITE_SIZE, SPRITE_SHEET_SIZE, SCALE } from "../editor/SpriteEditor/SpriteEditor";
 
 interface CursorPosition {
   worldX: number;
@@ -24,7 +24,12 @@ interface RemoteCursorsProps {
   offsetRef?: React.RefObject<{ x: number; y: number }>;
 }
 
-function usePerfectCursor(cb: (point: number[]) => void, point?: number[]) {
+type AwarenessState = {
+  user?: { name?: string; color?: string; userId?: string };
+  cursor?: { worldX: number; worldY: number };
+};
+
+function usePerfectCursor(cb: (point: number[]) => void, point?: number[]): (point: number[]) => void {
   const [pc] = useState(() => new PerfectCursor(cb));
 
   useLayoutEffect(() => {
@@ -53,7 +58,7 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({
   const lastSentTime = useRef<number>(0);
   const currentUserId = useRef<number>(0);
   const isMounted = useRef<boolean>(true);
-  const awarenessHandlerRef = useRef<((changes: any) => void) | null>(null);
+  const awarenessHandlerRef = useRef<((changes: unknown) => void) | null>(null);
 
   useEffect(() => {
     if (provider?.awareness) {
@@ -125,7 +130,7 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({
            worldY <= (viewportBottom + margin);
   };
 
-  const sendCursorPosition = (screenX: number, screenY: number) => {
+  const sendCursorPosition = (screenX: number, screenY: number): void => {
     if (!provider?.awareness || !isMounted.current || !isActiveTab) {
       return;
     }
@@ -138,7 +143,7 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({
     try {
       const { worldX, worldY } = screenToWorld(screenX, screenY);
 
-      if (worldX >= -SPRITE_SIZE && worldX <= SPRITE_SHEET_SIZE + SPRITE_SIZE && 
+      if (worldX >= -SPRITE_SIZE && worldX <= SPRITE_SHEET_SIZE + SPRITE_SIZE &&
           worldY >= -SPRITE_SIZE && worldY <= SPRITE_SHEET_SIZE + SPRITE_SIZE) {
         provider.awareness.setLocalStateField("cursor", {
           worldX,
@@ -150,7 +155,7 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({
     }
   };
 
-  const handleMouseMove = (e: MouseEvent) => {
+  const handleMouseMove = (e: MouseEvent): void => {
     if (!containerRef.current || !provider?.awareness || !isMounted.current) return;
 
     try {
@@ -178,7 +183,7 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({
     }
   };
 
-  const handleMouseLeave = () => {
+  const handleMouseLeave = (): void => {
     if (!provider?.awareness || !isMounted.current) return;
 
     try {
@@ -219,14 +224,14 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({
   useEffect(() => {
     if (!provider?.awareness) return;
 
-    const handleAwarenessChange = (_changes: { added: number[], updated: number[], removed: number[] }) => {
+    const handleAwarenessChange = (): void => {
       if (!isMounted.current) return;
 
       try {
         const states = provider.awareness.getStates();
         const updatedUsers = new Map<number, RemoteUser>();
 
-        states.forEach((state: any, clientId: number) => {
+        (states as Map<number, AwarenessState>).forEach((state: AwarenessState, clientId: number): void => {
           if (clientId === currentUserId.current) return;
 
           if (state.user && state.cursor) {
@@ -322,7 +327,7 @@ const RemoteCursor: React.FC<RemoteCursorProps> = ({
 }) => {
   const cursorContainerRef = useRef<HTMLDivElement>(null);
 
-  const getCursorScale = () => {
+  const getCursorScale = (): number => {
     const zoom = zoomRef?.current || 1;
     const baseScale = 1;
     const scaleFactor = Math.max(0.5, baseScale / Math.pow(zoom, 0.1));

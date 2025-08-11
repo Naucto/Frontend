@@ -4,7 +4,6 @@ import "./SoundEditor.css";
 import { Doc } from "yjs";
 import { WebrtcProvider } from "y-webrtc";
 import { styled } from "@mui/material/styles";
-import { c } from "node_modules/vite/dist/node/moduleRunnerTransport.d-CXw_Ws6P";
 
 const ButtonContainer = styled("div")(({ theme }) => ({
   display: "flex",
@@ -102,7 +101,7 @@ export class SoundEditor extends IEditor {
     return "";
   }
 
-  public setData(data: string): void {
+  public setData(): void {
     // TODO
   }
 
