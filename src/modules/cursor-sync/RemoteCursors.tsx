@@ -1,8 +1,8 @@
-import React, { use, useEffect, useRef, useState, useCallback, useLayoutEffect } from "react";
+import React, { useEffect, useRef, useState, useCallback, useLayoutEffect } from "react";
 import { WebrtcProvider } from "y-webrtc";
 import { PerfectCursor } from "perfect-cursors";
 import "./RemoteCursors.css";
-import { SPRITE_SIZE, SPRITE_SHEET_SIZE } from "../editor/SpriteEditor/SpriteEditor";
+import { SPRITE_SIZE, SPRITE_SHEET_SIZE, CANVAS_BASE_RESOLUTION, SCALE, SPRITE_NUMBER  } from "../editor/SpriteEditor/SpriteEditor";
 
 interface CursorPosition {
   worldX: number;
@@ -18,7 +18,7 @@ interface RemoteUser {
 
 interface RemoteCursorsProps {
   provider: WebrtcProvider;
-  containerRef: React.RefObject<HTMLDivElement>;
+  containerRef: React.RefObject<HTMLDivElement | null>;
   isActiveTab?: boolean;
   zoomRef?: React.RefObject<number | null>;
   offsetRef?: React.RefObject<{ x: number; y: number }>;
@@ -79,8 +79,11 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({
     const normalizedX = screenX / rect.width;
     const normalizedY = screenY / rect.height;
 
-    const worldX = (normalizedX * zoom * SPRITE_SIZE) - Math.floor(offset.x);
-    const worldY = (normalizedY * zoom * SPRITE_SIZE) - Math.floor(offset.y);
+    const scaledX = normalizedX * zoom * SCALE;
+    const scaledY = normalizedY * zoom * SCALE;
+
+    const worldX = scaledX * SPRITE_SIZE - offset.x;
+    const worldY = scaledY * SPRITE_SIZE - offset.y;
 
     return { worldX, worldY };
   };
@@ -96,11 +99,11 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({
     const zoom = zoomRef?.current || 1;
     const offset = offsetRef?.current || { x: 0, y: 0 };
 
-    const viewportX = (worldX + Math.floor(offset.x)) / (zoom * SPRITE_SIZE);
-    const viewportY = (worldY + Math.floor(offset.y)) / (zoom * SPRITE_SIZE);
+    const scaledX = (worldX + offset.x) / (SPRITE_SIZE * SCALE * zoom);
+    const scaledY = (worldY + offset.y) / (SPRITE_SIZE * SCALE * zoom);
 
-    const screenX = viewportX * rect.width;
-    const screenY = viewportY * rect.height;
+    const screenX = scaledX * rect.width;
+    const screenY = scaledY * rect.height;
 
     return { screenX, screenY };
   };
@@ -109,12 +112,12 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({
     const zoom = zoomRef?.current || 1;
     const offset = offsetRef?.current || { x: 0, y: 0 };
 
-    const viewportLeft = offset.x;
-    const viewportTop = offset.y;
-    const viewportRight = offset.x + (zoom * SPRITE_SIZE);
-    const viewportBottom = offset.y + (zoom * SPRITE_SIZE);
+    const viewportLeft = -offset.x;
+    const viewportTop = -offset.y;
+    const viewportRight = viewportLeft + (SPRITE_SIZE * SCALE * zoom);
+    const viewportBottom = viewportTop + (SPRITE_SIZE * SCALE * zoom);
 
-    const margin = SPRITE_SIZE * 0.5;
+    const margin = SPRITE_SIZE * 2;
 
     return worldX >= (viewportLeft - margin) &&
            worldX <= (viewportRight + margin) &&
@@ -135,7 +138,8 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({
     try {
       const { worldX, worldY } = screenToWorld(screenX, screenY);
 
-      if (worldX >= 0 && worldX <= SPRITE_SHEET_SIZE && worldY >= 0 && worldY <= SPRITE_SHEET_SIZE) {
+      if (worldX >= -SPRITE_SIZE && worldX <= SPRITE_SHEET_SIZE + SPRITE_SIZE && 
+          worldY >= -SPRITE_SIZE && worldY <= SPRITE_SHEET_SIZE + SPRITE_SIZE) {
         provider.awareness.setLocalStateField("cursor", {
           worldX,
           worldY
@@ -215,14 +219,14 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({
   useEffect(() => {
     if (!provider?.awareness) return;
 
-    const handleAwarenessChange = (changes: { added: number[], updated: number[], removed: number[] }) => {
+    const handleAwarenessChange = (_changes: { added: number[], updated: number[], removed: number[] }) => {
       if (!isMounted.current) return;
 
       try {
         const states = provider.awareness.getStates();
         const updatedUsers = new Map<number, RemoteUser>();
 
-        states.forEach((state, clientId) => {
+        states.forEach((state: any, clientId: number) => {
           if (clientId === currentUserId.current) return;
 
           if (state.user && state.cursor) {
@@ -305,7 +309,7 @@ export const RemoteCursors: React.FC<RemoteCursorsProps> = ({
 
 interface RemoteCursorProps {
   user: RemoteUser;
-  containerRef: React.RefObject<HTMLDivElement>;
+  containerRef: React.RefObject<HTMLDivElement | null>;
   worldToScreen: (worldX: number, worldY: number) => { screenX: number; screenY: number };
   zoomRef?: React.RefObject<number | null>;
 }

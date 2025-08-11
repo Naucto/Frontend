@@ -8,8 +8,8 @@ import { SpriteSheet } from "src/types/SpriteSheetType";
 import { spriteTable, palette } from "src/temporary/SpriteSheet";
 import { EditorProps } from "../../create/game-editor/editors/EditorType";
 import { YSpriteSheet } from "@modules/create/game-editor/types/YSpriteSheet.ts";
-import { RemoteCursors } from "../../cursor-sync/RemoteCursors";
 import { useTabContext } from "@modules/create/game-editor/context/TabContext";
+import { RemoteCursors } from "@modules/cursor-sync/RemoteCursors";
 
 interface Point {
   x: number;
@@ -18,6 +18,10 @@ interface Point {
 
 export const SPRITE_SIZE = 8;
 export const SPRITE_SHEET_SIZE = 128;
+export const SPRITE_NUMBER = SPRITE_SHEET_SIZE / SPRITE_SIZE;
+export const CANVAS_BASE_RESOLUTION = 1080; // Base resolution for scaling the canvas
+export const SCALE = CANVAS_BASE_RESOLUTION / SPRITE_SHEET_SIZE; // used to scale the canvas to avoid 1:1 pixel scaling
+const ZOOM_LIMIT = SPRITE_NUMBER / SCALE;
 
 interface ColorButtonProps {
   color: { name: string; hex: string };
@@ -73,13 +77,7 @@ const CanvasContainer: React.FC<CanvasContainerProps> = ({
   containerRef,
   spriteSheet,
   screenSize,
-  onWheel,
-  onMouseDown,
-  onMouseMove,
-  onMouseUp,
-  onMouseEnter,
-  onMouseLeave,
-  onClick
+  ...props
 }) => (
   <div ref={containerRef} className="draw-canvas-container">
     <StyledCanvas
@@ -87,13 +85,7 @@ const CanvasContainer: React.FC<CanvasContainerProps> = ({
       spriteSheet={spriteSheet}
       screenSize={screenSize}
       palette={palette}
-      onWheel={onWheel}
-      onMouseDown={onMouseDown}
-      onMouseMove={onMouseMove}
-      onMouseUp={onMouseUp}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-      onClick={onClick}
+      {...props}
     />
   </div>
 );
@@ -105,37 +97,35 @@ function getMousePosition(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>, re
   };
 }
 
-function getScaledPosition(mousePos: Point, rect: DOMRect, zoom: number): Point {
+function getNormalizedPosition(mousePos: Point, rect: DOMRect): Point {
   return {
-    x: mousePos.x / (rect.width / zoom),
-    y: mousePos.y / (rect.width / zoom)
+    x: mousePos.x / rect.width,
+    y: mousePos.y / rect.height
   };
 }
 
-function getPixelPos(
-  e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
-  rect: DOMRect,
-  zoom: number,
-  position: Point
-): Point {
-  const mousePos = getMousePosition(e, rect);
-  const scaledPos = getScaledPosition(mousePos, rect, zoom);
+function getScaledPosition(mousePos: Point, scale: number, zoom: number): Point {
+  return {
+    x: mousePos.x * zoom * scale,
+    y: mousePos.y * zoom * scale
+  };
+}
 
-  const rawX = Math.floor(scaledPos.x * SPRITE_SIZE - Math.floor(position.x));
-  const rawY = Math.floor(scaledPos.y * SPRITE_SIZE - Math.floor(position.y));
+function getPixelPos(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
+  rect: DOMRect, zoom: number, position: Point): Point {
 
-  const x = ((rawX % SPRITE_SIZE) + SPRITE_SIZE) % SPRITE_SIZE;
-  const y = ((rawY % SPRITE_SIZE) + SPRITE_SIZE) % SPRITE_SIZE;
+  const canvasMousePos = getMousePosition(e, rect);
+  const normalizedMousePos = getNormalizedPosition(canvasMousePos, rect);
+  const scaledPos = getScaledPosition(normalizedMousePos, SCALE, zoom);
+
+  const x = Math.floor(scaledPos.x * SPRITE_SIZE - Math.floor(position.x));
+  const y = Math.floor(scaledPos.y * SPRITE_SIZE - Math.floor(position.y));
 
   return { x, y };
 }
 
-function getSpritePos(
-  e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
-  rect: DOMRect,
-  zoom: number,
-  position: Point
-): Point | null {
+function getSpritePos(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
+  rect: DOMRect, zoom: number, position: Point): Point | null {
   const mousePos = getMousePosition(e, rect);
 
   const spriteX = Math.floor((mousePos.x / rect.width * zoom) - (Math.floor(position.x) / SPRITE_SIZE));
@@ -155,22 +145,18 @@ function getSpritePos(
 
 export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetData }) => {
   const [currentColor, setCurrentColor] = useState(0);
+  const [zoom, setZoom] = useState(1);
+  const [position, setPosition] = useState<Point>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
   const [dragStart, setDragStart] = useState<Point>({ x: 0, y: 0 });
   const [isMouseOverCanvas, setIsMouseOverCanvas] = useState(false);
   const [version, setVersion] = useState(0);
   const drawCanvasRef = React.createRef<SpriteRendererHandle>();
-  const canvasContainerRef = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
   const yspriteRef = useRef<YSpriteSheet>(null);
-
-  const zoomRef = useRef<number>(1);
-  const positionRef = useRef<Point>({ x: 0, y: 0 });
+  const zoomRef = useRef(zoom);
   const offsetRef = useRef<Point>({ x: 0, y: 0 });
-
-  const [, setZoomState] = useState(zoomRef.current);
-  const [, setPositionState] = useState(positionRef.current);
-  const [, setOffsetState] = useState(offsetRef.current);
 
   const { activeTab } = useTabContext();
   const isActiveTab = activeTab === 'sprite';
@@ -183,11 +169,14 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
     if (!isMouseOverCanvas)
       return;
 
-    const delta = e.deltaY > 0 ? 0.1 : -0.1;
-    const power = 5;
-    zoomRef.current = Math.max(1, zoomRef.current + delta * power);
-    zoomRef.current = Math.min(Math.round(zoomRef.current * 10) / 10, 16);
-    setZoomState(zoomRef.current);
+    const delta = e.deltaY > 0 ? 1 : -1;
+    const power = 1 / SCALE;
+    setZoom(prevZoom => {
+      const newZoom = Math.max(power, prevZoom + delta * power);
+      const clampedZoom = Math.min(newZoom, ZOOM_LIMIT);
+      zoomRef.current = clampedZoom;
+      return clampedZoom;
+    });
   };
 
   useEffect(() => {
@@ -239,18 +228,25 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
   useEffect(() => {
     if (drawCanvasRef.current) {
       drawCanvasRef.current.clear(0);
-      drawCanvasRef.current.queueSpriteDraw(0, positionRef.current.x, positionRef.current.y, 16, 16);
+      const snappedX = Math.floor(position.x);
+      const snappedY = Math.floor(position.y);
+
+      drawCanvasRef.current.queueSpriteDraw(
+        0,
+        snappedX * SPRITE_NUMBER / zoom,
+        snappedY * SPRITE_NUMBER / zoom,
+        SPRITE_NUMBER, SPRITE_NUMBER,
+        0, 0,
+        (1 / zoom) * SPRITE_NUMBER);
       drawCanvasRef.current.draw();
     }
-  }, [yspriteRef, drawCanvasRef, positionRef.current, version]);
+  }, [yspriteRef, drawCanvasRef, position, version, zoom]);
 
-  const handleClick = (x: number, y: number): void => {
+  const drawAt = (x: number, y: number): void => {
     if (!yspriteRef.current)
       return;
-
-    const color = currentColor;
     ydoc!.transact(() => {
-      yspriteRef.current?.setPixel(x, y, color);
+      yspriteRef.current?.setPixel(x, y, currentColor);
     });
     setVersion(v => v + 1);
   };
@@ -264,50 +260,39 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
     } else if (e.button === 0) { // Left click
       setIsDrawing(true);
       const rect = e.currentTarget.getBoundingClientRect();
-      const zoom = zoomRef.current;
-      const position = positionRef.current;
-      const spriteX = Math.floor(((e.clientX - rect.left) / rect.width * zoom) - (Math.floor(position.x) / SPRITE_SIZE));
-      const spriteY = Math.floor(((e.clientY - rect.top) / rect.height * zoom) - (Math.floor(position.y) / SPRITE_SIZE));
-      const x = Math.floor((e.clientX - rect.left) / (rect.width / zoom) * SPRITE_SIZE - Math.floor(position.x)) % SPRITE_SIZE;
-      const y = Math.floor((e.clientY - rect.top) / (rect.width / zoom) * SPRITE_SIZE - Math.floor(position.y)) % SPRITE_SIZE;
-      const spriteIndex = x + spriteX * SPRITE_SIZE;
-      const pixelIndex = y + spriteY * SPRITE_SIZE;
-      handleClick(spriteIndex, pixelIndex);
+      const { x, y } = getPixelPos(e, rect, zoom, position);
+      drawAt(x, y);
     }
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>): void => {
     if (isDragging) {
-      const zoom = zoomRef.current;
-      const dragDistanceX = (e.clientX - dragStart.x) * zoom / 48;
-      const dragDistanceY = (e.clientY - dragStart.y) * zoom / 48;
-
-      offsetRef.current = {
-        x: offsetRef.current.x + dragDistanceX,
-        y: offsetRef.current.y + dragDistanceY
+      const dragDelta: Point = {
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y
       };
-      setOffsetState(offsetRef.current);
+      if (canvasContainerRef.current === null) return;
+      const normalizedDragDelta = getNormalizedPosition(dragDelta, canvasContainerRef.current.getBoundingClientRect());
 
-      positionRef.current = {
-        x: positionRef.current.x + dragDistanceX,
-        y: positionRef.current.y + dragDistanceY
+      const dragDistance: Point = {
+        x: normalizedDragDelta.x * SPRITE_SIZE * zoom * SCALE,
+        y: normalizedDragDelta.y * SPRITE_SIZE * zoom * SCALE
       };
-      setPositionState(positionRef.current);
+
+      offsetRef.current.x += dragDistance.x;
+      offsetRef.current.y += dragDistance.y;
+
+      setPosition(prevPos => ({
+        x: prevPos.x + dragDistance.x,
+        y: prevPos.y + dragDistance.y
+      }));
 
       setDragStart({ x: e.clientX, y: e.clientY });
     } else if (isDrawing) {
       const rect = e.currentTarget.getBoundingClientRect();
-      const zoom = zoomRef.current;
-      const position = positionRef.current;
-      const spritePos = getSpritePos(e, rect, zoom, position);
 
-      if (spritePos) {
-        const { x, y } = getPixelPos(e, rect, zoom, position);
-        const spriteSize = SPRITE_SIZE;
-        const spriteIndex = x + spritePos.x * spriteSize;
-        const pixelIndex = y + spritePos.y * spriteSize;
-        handleClick(spriteIndex, pixelIndex);
-      }
+      const { x, y } = getPixelPos(e, rect, zoom, position);
+      drawAt(x, y);
     }
   };
 
@@ -333,26 +318,21 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
   };
 
   const drawCanvasSize = {
-    width: Math.floor(SPRITE_SIZE * zoomRef.current),
-    height: Math.floor(SPRITE_SIZE * zoomRef.current)
+    width: Math.floor(SPRITE_SHEET_SIZE) * SCALE,
+    height: Math.floor(SPRITE_SHEET_SIZE) * SCALE
   };
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>): void => {
     if (!isDragging && !isDrawing) {
       const rect = e.currentTarget.getBoundingClientRect();
-      const zoom = zoomRef.current;
-      const position = positionRef.current;
       const spritePos = getSpritePos(e, rect, zoom, position);
 
       if (spritePos) {
         const { x, y } = getPixelPos(e, rect, zoom, position);
-        const spriteIndex = x + spritePos.x * SPRITE_SIZE;
-        const pixelIndex = y + spritePos.y * SPRITE_SIZE;
-        handleClick(spriteIndex, pixelIndex);
+        drawAt(x, y);
       }
     }
   };
-
   return (
     <div className="editor-layout" onContextMenu={handleContextMenu}>
       <div className="canvas-container">
@@ -362,25 +342,24 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
             currentColor={currentColor}
             onColorSelect={setCurrentColor}
           />
-          <div style={{ position: "relative", flex: 1 }}>
-            <CanvasContainer
-              canvasRef={drawCanvasRef}
-              containerRef={canvasContainerRef}
-              spriteSheet={canvasSpriteSheet}
-              screenSize={drawCanvasSize}
-              onWheel={handleWheel}
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseEnter={() => setIsMouseOverCanvas(true)}
-              onMouseLeave={() => {
-                setIsMouseOverCanvas(false);
-                setIsDragging(false);
-                setIsDrawing(false);
-              }}
-              onClick={handleCanvasClick}
-            />
-            {provider && provider.awareness && isActiveTab ? (
+          <CanvasContainer
+            canvasRef={drawCanvasRef}
+            containerRef={canvasContainerRef}
+            spriteSheet={canvasSpriteSheet}
+            screenSize={drawCanvasSize}
+            onWheel={handleWheel}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseEnter={() => setIsMouseOverCanvas(true)}
+            onMouseLeave={() => {
+              setIsMouseOverCanvas(false);
+              setIsDragging(false);
+              setIsDrawing(false);
+            }}
+            onClick={handleCanvasClick}
+          />
+          {provider && provider.awareness && isActiveTab ? (
               <RemoteCursors
                 provider={provider}
                 containerRef={canvasContainerRef}
@@ -389,7 +368,6 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData,
                 offsetRef={offsetRef}
               />
             ) : null}
-          </div>
         </div>
       </div>
     </div>
