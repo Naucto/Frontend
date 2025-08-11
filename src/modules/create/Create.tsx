@@ -17,9 +17,6 @@ const Create: React.FC = () => {
     }).catch((error) => {
       // FIXME: Handle error appropriately, e.g., show a notification
       console.error("Failed to join work session:", error);
-      //FIXME: For now, we will just initialize with a default room id, because backend needs to be on to test it
-      editorManager.init("1");
-      setIsInit(true);
     });
     return () => {
       editorManager.cleanUpAndDisconnect();
