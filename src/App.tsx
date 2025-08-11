@@ -7,7 +7,7 @@ import { muiTheme } from "@theme/MUITheme";
 import Projects from "@modules/projects/Projects";
 import Project from "@modules/project/Project";
 
-function App() {
+const App: React.FC = () => {
   return (
     <ThemeProvider theme={muiTheme}>
       <BrowserRouter>
@@ -21,6 +21,6 @@ function App() {
       </BrowserRouter>
     </ThemeProvider >
   );
-}
+};
 
 export default App;

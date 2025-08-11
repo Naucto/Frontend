@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { styled } from "@mui/material";
 import ProjectCard from "./components/ProjectCard";
-import { ProjectsService, UpdateProjectDto } from "@api";
+import { ProjectsService } from "@api";
 import CreateProjectCard from "@modules/projects/components/CreateProjectCard";
 import { Project } from "src/types/ProjectType";
 import { useAsync } from "src/hooks/useAsync";

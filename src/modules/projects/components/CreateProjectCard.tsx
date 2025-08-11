@@ -22,7 +22,7 @@ const DashedCard = styled(Card)(({ theme }) => ({
 
 const CreateProjectCard: React.FC = () => {
   const navigate = useNavigate();
-  const createNewProject = async () => {
+  const createNewProject = async (): Promise<void> => {
     const newProject: CreateProjectDto = {
       name: "Untitled Project",
       shortDesc: ""

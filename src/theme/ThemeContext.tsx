@@ -1,4 +1,4 @@
-import React, { createContext, useContext } from "react";
+import { createContext, useContext } from "react";
 import { DefaultTheme } from "styled-components";
 
 export const theme: DefaultTheme = {
@@ -40,4 +40,4 @@ type ThemeType = typeof theme;
 
 const ThemeContext = createContext<ThemeType>(theme);
 
-export const useTheme = () => useContext(ThemeContext);
+export const useTheme = (): ThemeType => useContext(ThemeContext);

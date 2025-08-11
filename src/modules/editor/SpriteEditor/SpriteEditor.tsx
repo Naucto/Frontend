@@ -141,7 +141,7 @@ function getSpritePos(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
   return { x: spriteX, y: spriteY };
 }
 
-export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetData }) => {
+export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, onGetData, onSetData }) => {
   const [currentColor, setCurrentColor] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [position, setPosition] = useState<Point>({ x: 0, y: 0 });
