@@ -101,17 +101,8 @@ const GameEditor: React.FC = () => {
         const userId = LocalStorageManager.getUserId();
         if (host === userId) {
           setIsHost(true);
-
-          try {
-            const content = await ProjectsService.projectControllerFetchProjectContent(String(projectId));
-            setProjectContent(content);
-          } catch (error: any) {
-            if (error instanceof ApiError && error.status === 404) {
-              setProjectContent({});
-            } else {
-              console.error("Failed to fetch project content:", error); // FIXME : better error handling
-            }
-          }
+        } else {
+          setProjectContent({});
         }
       } catch (err) {
         console.error("Failed to join work session:", err); // FIXME : better error handling
@@ -200,16 +191,16 @@ const GameEditor: React.FC = () => {
 
         const connectedClients = Array.from(awareness?.getStates().keys() || []);
         if (connectedClients.length === 1 && connectedClients[0] === awareness?.clientID) {
-          console.log("I'm the only one left in the session but not the host. Cleaning up disconnected users...");
-
           for (const sessionUserId of sessionInfo.users) {
             if (Number(sessionUserId) !== userId) {
-              console.log(`Kicking disconnected user with ID ${sessionUserId}`);
               await WorkSessionsService.workSessionControllerKick(projectId, {
                 userId: Number(sessionUserId)
               });
             }
           }
+
+          setProjectContent(null);
+          setIsHost(true);
         }
       } catch (error) {
         console.error("Error checking or kicking disconnected users:", error);
@@ -343,6 +334,27 @@ const GameEditor: React.FC = () => {
       clearInterval(intervalId);
     };
   }, [editorTabs, isHost]);
+
+  useEffect(() => {
+    if (!isHost || projectContent !== null)
+      return;
+
+    const loadContent = async () => {
+      try {
+        const projectId = LocalStorageManager.getProjectId();
+        const content = await ProjectsService.projectControllerFetchProjectContent(String(projectId));
+        setProjectContent(content);
+      } catch (error: any) {
+        if (error instanceof ApiError && error.status === 404) {
+          setProjectContent({});
+        } else {
+          console.error("Failed to fetch project content:", error); // FIXME : better error handling
+        }
+      }
+    }
+
+    loadContent();
+  }, [editorTabs, isHost, projectContent]);
 
   if (!provider)
     return <div>Loading work session...</div>;
