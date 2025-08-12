@@ -16,6 +16,8 @@ interface AuthOverlayProps {
   onClose?: () => void;
 }
 
+type ErrorWithBody = { body: { message: string } };
+
 const Title = styled("h2")(({ theme }) => ({
   fontSize: "32px",
   margin: 0,
@@ -103,8 +105,8 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
       if (onClose) {
         onClose();
       }
-    } catch (error: any) {
-      setErrorMessage(error?.body?.message || "Error");
+    } catch (error) {
+      setErrorMessage((error as ErrorWithBody).body.message);
     }
   }, [isSignedUp, reset, onClose, setUserId, setUserName, userId, userName]);
 

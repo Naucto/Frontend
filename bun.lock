@@ -10,7 +10,6 @@
         "@types/react-beforeunload": "^2.1.5",
         "axios": "^1.9.0",
         "fengari": "^0.1.4",
-        "y-webrtc": "github:disarticulate/y-webrtc#master",
         "i18n": "^0.15.1",
         "mui": "^0.0.1",
         "openapi-typescript-codegen": "^0.29.0",
@@ -26,6 +25,7 @@
         "vite-plugin-svgr": "^4.3.0",
         "vite-tsconfig-paths": "^5.1.4",
         "y-monaco": "^0.1.6",
+        "y-webrtc": "github:disarticulate/y-webrtc#master",
         "yjs": "^13.6.26",
       },
       "devDependencies": {
@@ -42,6 +42,7 @@
         "eslint-plugin-react-hooks": "^5.1.0",
         "eslint-plugin-react-refresh": "^0.4.19",
         "globals": "^16.0.0",
+        "husky": "^9.1.7",
         "typescript": "~5.7.2",
         "typescript-eslint": "^8.29.1",
         "vite": "^6.2.0",
@@ -685,6 +686,8 @@
     "hasown": ["hasown@2.0.2", "", { "dependencies": { "function-bind": "^1.1.2" } }, "sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ=="],
 
     "hoist-non-react-statics": ["hoist-non-react-statics@3.3.2", "", { "dependencies": { "react-is": "^16.7.0" } }, "sha512-/gGivxi8JPKWNm/W0jSmzcMPpfpPLc3dY/6GxhX2hQ9iGj3aDfklV4ET7NjKpSinLpJ5vafa9iiGIEZg10SfBw=="],
+
+    "husky": ["husky@9.1.7", "", { "bin": { "husky": "bin.js" } }, "sha512-5gs5ytaNjBrh5Ow3zrvdUUY+0VxIuWVL4i9irt6friV+BqdCfmV11CQTWMiBYWHbXhco+J1kHfTOUkePhCDvMA=="],
 
     "i18n": ["i18n@0.15.1", "", { "dependencies": { "@messageformat/core": "^3.0.0", "debug": "^4.3.3", "fast-printf": "^1.6.9", "make-plural": "^7.0.0", "math-interval-parser": "^2.0.1", "mustache": "^4.2.0" } }, "sha512-yue187t8MqUPMHdKjiZGrX+L+xcUsDClGO0Cz4loaKUOK9WrGw5pgan4bv130utOwX7fHE9w2iUeHFalVQWkXA=="],
 
