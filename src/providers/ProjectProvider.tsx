@@ -1,4 +1,4 @@
-import React, { createContext, useContext, ReactNode, useReducer, useMemo } from "react";
+import React, { createContext, useContext, ReactNode, useReducer, useMemo, useEffect } from "react";
 import { ContextError } from "src/errors/ContextError";
 import { Project } from "../types/ProjectType";
 import { SpriteSheet } from "src/types/SpriteSheetType";
@@ -67,6 +67,12 @@ export const ProjectProvider: React.FC<{ project?: Project, children: ReactNode 
     }),
     [dispatch]
   );
+
+  useEffect(() => {
+    if (project) {
+      actions.setProject(project);
+    }
+  }, [project, actions]);
 
   return (
     <ProjectContext.Provider value={{ project: state, actions }}>

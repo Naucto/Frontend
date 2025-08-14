@@ -80,7 +80,7 @@ export function useSpriteRenderer(
     batchedUVs.length = 0;
   }
 
-  function drawMap(x, y): void {
+  function drawMap(x: number, y: number): void {
     const p = pipelineRef.current;
     if (!p) return;
 
@@ -90,7 +90,7 @@ export function useSpriteRenderer(
 
     const gl = p.gl;
     const program = p.program;
-    gl.uniform1i(gl.getUniformLocation(program, "u_mode"), 1); // drawmode Map
+    gl.uniform1i(gl.getUniformLocation(program, "u_texture"), 2);
     const uv = new Float32Array([
       0, 0,
       1, 0,
@@ -109,7 +109,7 @@ export function useSpriteRenderer(
     batchedVertices.push(...vertices);
     batchedUVs.push(...uv);
     draw();
-    gl.uniform1i(gl.getUniformLocation(program, "u_mode"), 0); // reset to default draw mode
+    gl.uniform1i(gl.getUniformLocation(program, "u_texture"), 0);
   }
 
   function queueSpriteDraw(index: number,

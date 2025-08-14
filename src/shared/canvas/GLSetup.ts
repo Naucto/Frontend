@@ -62,7 +62,6 @@ export function initGLPipeline(
 
   gl.uniform1i(gl.getUniformLocation(program, "u_texture"), 0); // 0 is spriteSheetTexture (gl.TEXTURE0)
   gl.uniform1i(gl.getUniformLocation(program, "u_paletteTex"), 1); // 1 is paletteTexture (gl.TEXTURE1)
-  gl.uniform1i(gl.getUniformLocation(program, "u_mapTexture"), 2); // 2 is mapTexture (gl.TEXTURE2)
   gl.uniform1f(gl.getUniformLocation(program, "u_paletteSize"), paletteSize);
   gl.uniform2f(gl.getUniformLocation(program, "screen_resolution"), screenSize.width, screenSize.height);
 
