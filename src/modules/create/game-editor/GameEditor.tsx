@@ -307,7 +307,8 @@ const GameEditor: React.FC = () => {
   }, [editorTabs, isHost]);
 
   if (!provider)
-    return <div>Loading work session...</div>;
+    return <div>Loading work session...</div>; //FIXME: add a loading spinner with a component
+
   return (
     <GameEditorContainer>
       <LeftPanel>

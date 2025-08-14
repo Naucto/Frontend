@@ -196,7 +196,8 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, onGetData, onSetData
   }, [onGetData]);
 
   useEffect(() => {
-    if (!project) return;
+    if (!project)
+      return;
     if (!onSetData)
       return;
     onSetData((data: string) => {
