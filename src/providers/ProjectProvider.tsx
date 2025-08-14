@@ -1,4 +1,4 @@
-import React, { createContext, useContext, ReactNode, useReducer, Dispatch, useEffect, useMemo } from "react";
+import React, { createContext, useContext, ReactNode, useReducer, useMemo } from "react";
 import { ContextError } from "src/errors/ContextError";
 import { Project } from "../types/ProjectType";
 import { SpriteSheet } from "src/types/SpriteSheetType";
@@ -21,9 +21,15 @@ function reducer(project: Project | undefined, action: Action): Project | undefi
   switch (action.type) {
     case "SET_PROJECT":
       return action.payload;
+
     case "SET_SPRITESHEET":
       if (!project) return project;
-      return { ...project, spriteSheet: action.payload, map: { ...project.map, spriteSheet: action.payload } };
+      return {
+        ...project,
+        spriteSheet: action.payload,
+        map: { ...project.map, spriteSheet: action.payload }
+      };
+
     case "SET_SPRITESHEET_DATA":
     {
       if (!project || !project.spriteSheet) return project;
@@ -61,12 +67,6 @@ export const ProjectProvider: React.FC<{ project?: Project, children: ReactNode 
     }),
     [dispatch]
   );
-
-  useEffect(() => {
-    if (project) {
-      actions.setProject(project);
-    }
-  }, [project, actions]);
 
   return (
     <ProjectContext.Provider value={{ project: state, actions }}>
