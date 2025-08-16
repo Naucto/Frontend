@@ -84,9 +84,6 @@ class LuaEnvironmentManager {
   }
 
   private _map(x: number, y: number): void {
-    if (!this._rendererHandle) {
-      throw new Error("Renderer handle is not initialized");
-    }
     this._rendererHandle.drawMap(x, y);
   }
 
