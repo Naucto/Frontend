@@ -78,6 +78,7 @@ const GameEditor: React.FC = () => {
   const [roomId, setRoomId] = useState<string | undefined>(undefined);
   const [projectContent, setProjectContent] = useState<Record<string, string> | null>(null);
   const [isHost, setIsHost] = useState<boolean>(false);
+  const [isKicking, setIsKicking] = useState<boolean>(false);
 
   const getDataFunctions = useRef<{ [key: string]: () => string }>({});
   const setDataFunctions = useRef<{ [key: string]: (data: string) => void }>({});
@@ -182,13 +183,17 @@ const GameEditor: React.FC = () => {
     const userStateCache = new Map<number, UserState>();
 
     const checkAndKickDisconnectedUsers = async (): void => {
+      if (isKicking || !awareness)
+        return;
+
+      setIsKicking(true);
+
       const projectId = Number(LocalStorageManager.getProjectId());
       try {
         const sessionInfo = await WorkSessionsService.workSessionControllerGetInfo(projectId);
 
         if (sessionInfo.host === Number(userId)) {
           setIsHost(true);
-          return;
         }
 
         const connectedClients = Array.from(awareness?.getStates().keys() || []);
@@ -207,6 +212,8 @@ const GameEditor: React.FC = () => {
       } catch (error) {
         console.error("Error checking or kicking disconnected users:", error);
       }
+
+      setIsKicking(false);
     };
 
     const onChange = ({ added, updated, removed }: {
