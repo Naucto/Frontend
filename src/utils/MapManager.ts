@@ -5,38 +5,38 @@ import { Map } from "src/types/MapType";
 export class MapManager {
   private _map: Map;
 
-  private tileIndexMap: number[][];
-  private spritePixelArray: Uint8Array;
-  private mapPixelArray: Uint8Array;
-  private readonly mapDataLength: number;
+  private _tileIndexMap: number[][];
+  private _spritePixelArray: Uint8Array;
+  private _mapPixelArray: Uint8Array;
+  private readonly _mapDataLength: number;
 
   constructor(map: Map) {
     if (map.width <= 0 || map.height <= 0) {
       throw new MapManagerError("Map _width and height must be greater than 0");
     }
 
-    this.mapDataLength = map.width * map.height * map.stride;
-    if (map.mapData.length !== this.mapDataLength) {
-      throw new MapManagerError(`Map data length (${map.mapData.length}) does not match expected size (${this.mapDataLength})`);
+    this._mapDataLength = map.width * map.height * map.stride;
+    if (map.mapData.length !== this._mapDataLength) {
+      throw new MapManagerError(`Map data length (${map.mapData.length}) does not match expected size (${this._mapDataLength})`);
     }
 
     this._map = map;
 
     //FIXME should aready be converted in Project
-    this.spritePixelArray = convertSpritesheetToIndexArray(map.spriteSheet);
-    this.tileIndexMap = this._parseMapData();
-    this.mapPixelArray = this._buildMapPixelArray();
+    this._spritePixelArray = convertSpritesheetToIndexArray(map.spriteSheet);
+    this._tileIndexMap = this._parseMapData();
+    this._mapPixelArray = this._buildMapPixelArray();
   }
 
   public getMapPixelArray(): Uint8Array {
-    return this.mapPixelArray;
+    return this._mapPixelArray;
   }
 
   public getTileAt(x: number, y: number): number | null {
     if (x < 0 || x >= this._map.width || y < 0 || y >= this._map.height) {
       return null;
     }
-    return this.tileIndexMap[y][x];
+    return this._tileIndexMap[y][x];
   }
 
   public setTileAt(x: number, y: number, spriteIndex: number): void {
@@ -44,7 +44,7 @@ export class MapManager {
       throw new MapManagerError(`Tile position (${x}, ${y}) is out of bounds`);
     }
 
-    this.tileIndexMap[y][x] = spriteIndex;
+    this._tileIndexMap[y][x] = spriteIndex;
 
   }
 
@@ -59,7 +59,7 @@ export class MapManager {
     let result = "";
     for (let y = 0; y < this._map.height; y++) {
       for (let x = 0; x < this._map.width; x++) {
-        const tileIndex = this.tileIndexMap[y][x];
+        const tileIndex = this._tileIndexMap[y][x];
         result += tileIndex.toString(16).padStart(2, "0");
       }
     }
@@ -67,14 +67,14 @@ export class MapManager {
   }
 
   public updateMapData(new_mapData: string): void {
-    if (new_mapData.length !== this.mapDataLength) {
-      throw new MapManagerError(`New map data length (${new_mapData.length}) does not match expected size (${this.mapDataLength})`);
+    if (new_mapData.length !== this._mapDataLength) {
+      throw new MapManagerError(`New map data length (${new_mapData.length}) does not match expected size (${this._mapDataLength})`);
     }
 
     this._map.mapData = new_mapData;
-    this.tileIndexMap = this._parseMapData();
+    this._tileIndexMap = this._parseMapData();
 
-    this.mapPixelArray = this._buildMapPixelArray();
+    this._mapPixelArray = this._buildMapPixelArray();
   }
 
   // PRIVATE
@@ -112,8 +112,8 @@ export class MapManager {
         const sheetPixelIndex = (spriteY + y) * sheet_width + (spriteX + x);
         const spritePixelIndex = y * spriteWidth + x;
 
-        if (sheetPixelIndex < this.spritePixelArray.length) {
-          spritePixels[spritePixelIndex] = this.spritePixelArray[sheetPixelIndex];
+        if (sheetPixelIndex < this._spritePixelArray.length) {
+          spritePixels[spritePixelIndex] = this._spritePixelArray[sheetPixelIndex];
         } else {
           spritePixels[spritePixelIndex] = 0;
         }
@@ -130,7 +130,7 @@ export class MapManager {
 
     for (let tileY = 0; tileY < this._map.height; tileY++) {
       for (let tileX = 0; tileX < this._map.width; tileX++) {
-        const spriteIndex = this.tileIndexMap[tileY][tileX];
+        const spriteIndex = this._tileIndexMap[tileY][tileX];
         this._copySpriteToMapPixels(tileX, tileY, mapPixels, spriteIndex);
       }
     }
