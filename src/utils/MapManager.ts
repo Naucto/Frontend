@@ -32,9 +32,9 @@ export class MapManager {
     return this._mapPixelArray;
   }
 
-  public getTileAt(x: number, y: number): number | null {
+  public getTileAt(x: number, y: number): number | undefined {
     if (x < 0 || x >= this._map.width || y < 0 || y >= this._map.height) {
-      return null;
+      return undefined;
     }
     return this._tileIndexMap[y][x];
   }
