@@ -4,14 +4,14 @@ import { Project } from "../types/ProjectType";
 import { SpriteSheet } from "src/types/SpriteSheetType";
 
 type Action =
-  | { type: "SET_PROJECT"; payload: Project | undefined }
+  | { type: "SET_PROJECT"; payload?: Project }
   | { type: "SET_SPRITESHEET"; payload: SpriteSheet }
   | { type: "SET_SPRITESHEET_DATA"; payload: string };
 
 interface ProjectContextType {
   project?: Project;
   actions: {
-    setProject: (newProject: Project | undefined) => void;
+    setProject: (newProject?: Project) => void;
     setSpriteSheet: (spriteSheet: SpriteSheet) => void;
     setSpriteSheetData: (data: string) => void;
   };
@@ -58,7 +58,7 @@ export const ProjectProvider: React.FC<{ project?: Project, children: ReactNode 
 
   const actions = useMemo(
     () => ({
-      setProject: (newProject: Project | undefined) =>
+      setProject: (newProject?: Project) =>
         dispatch({ type: "SET_PROJECT", payload: newProject }),
       setSpriteSheet: (spriteSheet: SpriteSheet) =>
         dispatch({ type: "SET_SPRITESHEET", payload: spriteSheet }),
