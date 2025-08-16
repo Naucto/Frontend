@@ -197,7 +197,11 @@ const GameEditor: React.FC = () => {
         }
 
         const connectedClients = Array.from(awareness?.getStates().keys() || []);
-        if (connectedClients.length === 1 && connectedClients[0] === awareness?.clientID) {
+        if (
+          connectedClients.length === 1 &&
+          awareness?.clientID !== undefined &&
+          connectedClients[0] === awareness?.clientID
+        ) {
           for (const sessionUserId of sessionInfo.users) {
             if (Number(sessionUserId) !== userId) {
               await WorkSessionsService.workSessionControllerKick(projectId, {
