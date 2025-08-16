@@ -80,10 +80,11 @@ export class MapManager {
   // PRIVATE
 
   private _parseMapData(): number[][] {
-    const tiles: number[][] = [];
+    const tiles: number[][] = new Array(this._map.height);
 
     for (let y = 0; y < this._map.height; y++) {
-      tiles[y] = [];
+      tiles[y] = new Array(this._map.width);
+
       for (let x = 0; x < this._map.width; x++) {
         const dataIndex = (y * this._map.width + x) * this._map.stride;
         const hexValue = this._map.mapData.slice(dataIndex, dataIndex + this._map.stride);
