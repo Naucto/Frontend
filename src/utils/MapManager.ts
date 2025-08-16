@@ -21,8 +21,8 @@ export class MapManager {
 
     //FIXME should aready be converted in Project
     this.spritePixelArray = convertSpritesheetToIndexArray(map.spriteSheet);
-    this.tileIndexMap = this.parseMapData();
-    this.mapPixelArray = this.buildMapPixelArray();
+    this.tileIndexMap = this._parseMapData();
+    this.mapPixelArray = this._buildMapPixelArray();
   }
 
   public getMapPixelArray(): Uint8Array {
@@ -69,14 +69,14 @@ export class MapManager {
     }
 
     this._map.mapData = new_mapData;
-    this.tileIndexMap = this.parseMapData();
+    this.tileIndexMap = this._parseMapData();
 
-    this.mapPixelArray = this.buildMapPixelArray();
+    this.mapPixelArray = this._buildMapPixelArray();
   }
 
   // PRIVATE
 
-  private parseMapData(): number[][] {
+  private _parseMapData(): number[][] {
     const tiles: number[][] = [];
 
     for (let y = 0; y < this._map.height; y++) {
@@ -92,7 +92,7 @@ export class MapManager {
     return tiles;
   }
 
-  private getSpritePixels(spriteIndex: number): Uint8Array {
+  private _getSpritePixels(spriteIndex: number): Uint8Array {
     const spriteWidth = this._map.spriteSheet.spriteSize.width;
     const spriteHeight = this._map.spriteSheet.spriteSize.height;
     const spritePixelCount = spriteWidth * spriteHeight;
@@ -120,31 +120,31 @@ export class MapManager {
     return spritePixels;
   }
 
-  private buildMapPixelArray(): Uint8Array {
-    const totalPixels = this.getMapTotalPixels();
+  private _buildMapPixelArray(): Uint8Array {
+    const totalPixels = this._getMapTotalPixels();
 
     const mapPixels = new Uint8Array(totalPixels);
 
     for (let tileY = 0; tileY < this._map.height; tileY++) {
       for (let tileX = 0; tileX < this._map.width; tileX++) {
         const spriteIndex = this.tileIndexMap[tileY][tileX];
-        this.copySpriteToMapPixels(tileX, tileY, mapPixels, spriteIndex);
+        this._copySpriteToMapPixels(tileX, tileY, mapPixels, spriteIndex);
       }
     }
 
     return mapPixels;
   }
 
-  private getMapTotalPixels(): number {
+  private _getMapTotalPixels(): number {
     return this._map.width * this._map.height * this._map.spriteSheet.spriteSize.height * this._map.spriteSheet.spriteSize.width;
   }
 
-  private copySpriteToMapPixels(tileX: number, tileY: number, mapPixels: Uint8Array, spriteIndex: number): void {
+  private _copySpriteToMapPixels(tileX: number, tileY: number, mapPixels: Uint8Array, spriteIndex: number): void {
     const spriteWidth = this._map.spriteSheet.spriteSize.width;
     const spriteHeight = this._map.spriteSheet.spriteSize.height;
     const mapPixelWidth = this._map.width * spriteWidth;
-    const totalPixels = this.getMapTotalPixels();
-    const spritePixels = this.getSpritePixels(spriteIndex);
+    const totalPixels = this._getMapTotalPixels();
+    const spritePixels = this._getSpritePixels(spriteIndex);
 
     for (let pY = 0; pY < spriteHeight; pY++) {
       for (let pX = 0; pX < spriteWidth; pX++) {
