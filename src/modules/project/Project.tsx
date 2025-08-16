@@ -30,7 +30,7 @@ const Project: React.FC = () => {
         stride: 1,
       };
       const project: ProjectType = {
-        ...value,
+        projectResponseDto: value,
         //FIXME: should be replaced with api call which gives project including spritesheet
         spriteSheet: spriteSheet,
         map: {

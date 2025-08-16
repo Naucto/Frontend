@@ -5,5 +5,6 @@ import { Map } from "./MapType";
 export type Project =  {
   spriteSheet: SpriteSheet;
   map: Map;
-  palette: Uint8Array
-} & ProjectResponseDto;
+  palette: Uint8Array;
+  projectResponseDto: ProjectResponseDto;
+}
