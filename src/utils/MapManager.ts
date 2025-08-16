@@ -7,14 +7,16 @@ export class MapManager {
   private tileIndexMap: number[][];
   private spritePixelArray: Uint8Array;
   private mapPixelArray: Uint8Array;
+  private readonly mapDataLength: number;
 
   constructor(map: Map) {
     if (map.width <= 0 || map.height <= 0) {
       throw new Error("Map _width and height must be greater than 0");
     }
 
-    if (map.mapData.length !== map.width * map.height * map.stride) {
-      throw new Error(`Map data length (${map.mapData.length}) does not match expected size (${map.width * map.height * map.stride})`);
+    this.mapDataLength = map.width * map.height * map.stride;
+    if (map.mapData.length !== this.mapDataLength) {
+      throw new Error(`Map data length (${map.mapData.length}) does not match expected size (${this.mapDataLength})`);
     }
 
     this._map = map;
@@ -64,8 +66,8 @@ export class MapManager {
   }
 
   public updateMapData(new_mapData: string): void {
-    if (new_mapData.length !== this._map.width * this._map.height * 2) {
-      throw new Error(`New map data length (${new_mapData.length}) does not match expected size (${this._map.width * this._map.height * 2})`);
+    if (new_mapData.length !== this.mapDataLength) {
+      throw new Error(`New map data length (${new_mapData.length}) does not match expected size (${this.mapDataLength})`);
     }
 
     this._map.mapData = new_mapData;
