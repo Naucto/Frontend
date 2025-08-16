@@ -1,9 +1,8 @@
 
 import React from "react";
-import { EditorProps } from "./EditorType";
+import { EditorProps } from "./EditorType.ts";
 import { styled } from "@mui/material/styles";
 import { useProject } from "src/providers/ProjectProvider";
-import { MapManager } from "@utils/MapManager";
 
 const MapEditorContainer = styled("div")(({ theme }) => ({
   display: "flex",
