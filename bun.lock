@@ -25,7 +25,7 @@
         "vite-plugin-svgr": "^4.3.0",
         "vite-tsconfig-paths": "^5.1.4",
         "y-monaco": "^0.1.6",
-        "y-webrtc": "github:disarticulate/y-webrtc#master",
+        "y-webrtc": "^10.3.0",
         "yjs": "^13.6.26",
       },
       "devDependencies": {
@@ -701,8 +701,6 @@
 
     "inherits": ["inherits@2.0.3", "", {}, "sha512-x00IRNXNy63jwGkJmzPigoySHbaqpNuzKbBOmzK+g2OdZpQ9w+sxCN+VSB3ja7IAge2OP2qpfxTjeNcyjmW1uw=="],
 
-    "int64-buffer": ["int64-buffer@1.1.0", "", {}, "sha512-94smTCQOvigN4d/2R/YDjz8YVG0Sufvv2aAh8P5m42gwhCsDAJqnbNOrxJsrADuAFAA69Q/ptGzxvNcNuIJcvw=="],
-
     "internal-slot": ["internal-slot@1.1.0", "", { "dependencies": { "es-errors": "^1.3.0", "hasown": "^2.0.2", "side-channel": "^1.1.0" } }, "sha512-4gd7VpWNQNB4UKKCFFVcp1AVv+FMOgs9NKzjHKusc8jTMhd5eL1NqQqOpE0KzMds804/yHlglp3uxgluOqAPLw=="],
 
     "is-array-buffer": ["is-array-buffer@3.0.5", "", { "dependencies": { "call-bind": "^1.0.8", "call-bound": "^1.0.3", "get-intrinsic": "^1.2.6" } }, "sha512-DDfANUiiG2wC1qawP66qlTugJeL5HyzMpfr8lLK+jMQirGzNod0B12cFB/9q838Ru27sBwfw78/rdoU7RERz6A=="],
@@ -1097,13 +1095,13 @@
 
     "wordwrap": ["wordwrap@1.0.0", "", {}, "sha512-gvVzJFlPycKc5dZN4yPkP8w7Dc37BtP1yczEneOb4uq34pXZcvrtRTmWV8W+Ume+XCxKgbjM+nevkyFPMybd4Q=="],
 
-    "ws": ["ws@7.5.10", "", { "peerDependencies": { "bufferutil": "^4.0.1", "utf-8-validate": "^5.0.2" }, "optionalPeers": ["bufferutil", "utf-8-validate"] }, "sha512-+dbF1tHwZpXcbOJdVOkzLDxZP1ailvSxM6ZweXTegylPny803bFhA+vqBYw4s31NSAk4S2Qz+AKXK9a4wkdjcQ=="],
+    "ws": ["ws@8.18.3", "", { "peerDependencies": { "bufferutil": "^4.0.1", "utf-8-validate": ">=5.0.2" }, "optionalPeers": ["bufferutil", "utf-8-validate"] }, "sha512-PEIGCY5tSlUt50cqyMXfCzX+oOPqN0vuGqWzbcJ2xvnkzkq46oOpz7dQaTDBdfICb4N14+GARUDw2XV2N4tvzg=="],
 
     "y-monaco": ["y-monaco@0.1.6", "", { "dependencies": { "lib0": "^0.2.43" }, "peerDependencies": { "monaco-editor": ">=0.20.0", "yjs": "^13.3.1" } }, "sha512-sYRywMmcylt+Nupl+11AvizD2am06ST8lkVbUXuaEmrtV6Tf+TD4rsEm6u9YGGowYue+Vfg1IJ97SUP2J+PVXg=="],
 
     "y-protocols": ["y-protocols@1.0.6", "", { "dependencies": { "lib0": "^0.2.85" }, "peerDependencies": { "yjs": "^13.0.0" } }, "sha512-vHRF2L6iT3rwj1jub/K5tYcTT/mEYDUppgNPXwp8fmLpui9f7Yeq3OEtTLVF012j39QnV+KEQpNqoN7CWU7Y9Q=="],
 
-    "y-webrtc": ["y-webrtc@github:disarticulate/y-webrtc#9ed29d4", { "dependencies": { "int64-buffer": "^1.0.1", "lib0": "^0.2.42", "simple-peer": "^9.11.0", "y-protocols": "^1.0.6" }, "optionalDependencies": { "ws": "^7.2.0" }, "bin": { "y-webrtc-signaling": "./bin/server.js" } }, "disarticulate-y-webrtc-9ed29d4"],
+    "y-webrtc": ["y-webrtc@10.3.0", "", { "dependencies": { "lib0": "^0.2.42", "simple-peer": "^9.11.0", "y-protocols": "^1.0.6" }, "optionalDependencies": { "ws": "^8.14.2" }, "peerDependencies": { "yjs": "^13.6.8" }, "bin": { "y-webrtc-signaling": "bin/server.js" } }, "sha512-KalJr7dCgUgyVFxoG3CQYbpS0O2qybegD0vI4bYnYHI0MOwoVbucED3RZ5f2o1a5HZb1qEssUKS0H/Upc6p1lA=="],
 
     "yallist": ["yallist@3.1.1", "", {}, "sha512-a4UGQaWPH59mOXUYnAG2ewncQS4i4F43Tv3JoAM+s2VDAmS9NsK8GpDMLrCHPksFT7h3K6TOoUNn2pb7RoXx4g=="],
 
