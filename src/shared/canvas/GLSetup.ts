@@ -2,7 +2,8 @@ import { compileShader, convertSpritesheetToIndexArray, createGLContext, setGLPr
 import { SpriteSheet } from "src/types/SpriteSheetType";
 import indexToColorFragment from "src/shared/canvas/shaders/index_to_color_frag.glsl";
 import spriteSheetVertex from "src/shared/canvas/shaders/sprite_cut_vert.glsl";
-
+import { Map } from "src/types/MapType";
+import { MapManager } from "@utils/MapManager";
 export interface GLPipeline {
   gl: WebGL2RenderingContext;
   program: WebGLProgram;
@@ -17,6 +18,7 @@ export interface GLPipeline {
 export function initGLPipeline(
   canvas: HTMLCanvasElement,
   spriteSheet: SpriteSheet,
+  map: Map,
   palette: Uint8Array,
   screenSize: { width: number; height: number }
 ): GLPipeline {
@@ -24,10 +26,13 @@ export function initGLPipeline(
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-  const rgbBuffer = convertSpritesheetToIndexArray(spriteSheet);
+  const spriteSheetBuffer = convertSpritesheetToIndexArray(spriteSheet);
+  const mapManager: MapManager = new MapManager(map);
+  const mapPixelBuffer: Uint8Array = mapManager.getMapPixelArray();
+
   const spriteSheetTexture = setTexture(gl,
     spriteSheet.size.width, spriteSheet.size.height,
-    rgbBuffer,
+    spriteSheetBuffer,
     gl.R8,
     gl.RED,
     gl.TEXTURE0);
@@ -37,6 +42,13 @@ export function initGLPipeline(
     gl.RGBA,
     gl.RGBA,
     gl.TEXTURE1);
+
+  const mapTexture = setTexture(gl,
+    map.width * spriteSheet.spriteSize.width, map.height * spriteSheet.spriteSize.height,
+    mapPixelBuffer,
+    gl.R8,
+    gl.RED,
+    gl.TEXTURE2);
 
   const paletteSize = palette.length / 4;
 
@@ -70,6 +82,7 @@ export function initGLPipeline(
     gl.deleteBuffer(uvBuffer);
     gl.deleteTexture(paletteTexture);
     gl.deleteTexture(spriteSheetTexture);
+    gl.deleteTexture(mapTexture);
   };
 
   return {

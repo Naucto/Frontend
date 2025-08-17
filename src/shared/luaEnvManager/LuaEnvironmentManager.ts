@@ -80,6 +80,11 @@ class LuaEnvironmentManager {
     lua.setGlobal("key_pressed", this._keyPressed.bind(this));
     lua.setGlobal("set_col", this._setCol.bind(this));
     lua.setGlobal("reset_col", this._resetCol.bind(this));
+    lua.setGlobal("map", this._map.bind(this));
+  }
+
+  private _map(x: number, y: number): void {
+    this._rendererHandle.drawMap(x, y);
   }
 
   private _sprite(n: number, x: number, y: number, w: number, h: number): void {
