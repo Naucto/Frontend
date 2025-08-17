@@ -9,7 +9,7 @@ import "./CodeEditor.css";
 import { useTheme } from "@mui/material/styles";
 import { generateRandomColor } from "@utils/colorUtils";
 
-const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetData }) => {
+const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider }) => {
   const monacoBindingRef = useRef<MonacoBinding>(null);
   const ytextRef = useRef<Y.Text>(null);
   const [userStyles, setUserStyles] = useState<string>("");
@@ -115,30 +115,6 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetDat
       });
     }
   }, [provider]);
-
-  useEffect(() => {
-    if (onGetData) {
-      onGetData(() => {
-        if (ytextRef.current) {
-          return ytextRef.current.toString();
-        }
-        return "";
-      });
-    }
-  }, [onGetData]);
-
-  useEffect(() => {
-    if (onSetData) {
-      onSetData((data: string) => {
-        if (ytextRef.current && data) {
-          ydoc.transact(() => {
-            ytextRef.current?.delete(0, ytextRef.current?.length);
-            ytextRef.current?.insert(0, data);
-          });
-        }
-      });
-    }
-  }, [onSetData]);
 
   const handleMount = (editor: editor.IStandaloneCodeEditor): (() => void) | void => {
     const editorModel = editor.getModel();
