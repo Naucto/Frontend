@@ -12,7 +12,7 @@ export class MapManager {
 
   constructor(map: Map) {
     if (map.width <= 0 || map.height <= 0) {
-      throw new MapManagerError("Map _width and height must be greater than 0");
+      throw new MapManagerError("Map width and height must be greater than 0");
     }
 
     this._mapDataLength = map.width * map.height * map.stride;
@@ -100,8 +100,8 @@ export class MapManager {
     const spriteWidth = this._map.spriteSheet.spriteSize.width;
     const spriteHeight = this._map.spriteSheet.spriteSize.height;
     const spritePixelCount = spriteWidth * spriteHeight;
-    const sheet_width = this._map.spriteSheet.size.width;
-    const spritesPerRow = Math.floor(sheet_width / spriteWidth);
+    const sheetWidth = this._map.spriteSheet.size.width;
+    const spritesPerRow = Math.floor(sheetWidth / spriteWidth);
 
     const spriteX = (spriteIndex % spritesPerRow) * spriteWidth;
     const spriteY = Math.floor(spriteIndex / spritesPerRow) * spriteHeight;
@@ -110,7 +110,7 @@ export class MapManager {
 
     for (let y = 0; y < spriteHeight; y++) {
       for (let x = 0; x < spriteWidth; x++) {
-        const sheetPixelIndex = (spriteY + y) * sheet_width + (spriteX + x);
+        const sheetPixelIndex = (spriteY + y) * sheetWidth + (spriteX + x);
         const spritePixelIndex = y * spriteWidth + x;
 
         if (sheetPixelIndex < this._spritePixelArray.length) {
