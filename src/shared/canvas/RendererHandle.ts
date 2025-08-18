@@ -82,7 +82,6 @@ export function useSpriteRenderer(
 
   function drawMap(x: number, y: number): void {
     const p = pipelineRef.current;
-    console.log("Drawing map at", x, y);
     if (!p) return;
 
     if (batchedUVs.length > 0) {
