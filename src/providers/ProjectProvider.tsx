@@ -1,27 +1,30 @@
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useEffect } from "react";
 import { ContextError } from "src/errors/ContextError";
-import { Project } from "../types/ProjectType";
+import { Project } from "src/types/ProjectType";
 import { SpriteSheet } from "src/types/SpriteSheetType";
 
 type Action =
   | { type: "SET_PROJECT"; payload?: Project }
   | { type: "SET_SPRITESHEET"; payload: SpriteSheet }
-  | { type: "SET_SPRITESHEET_DATA"; payload: string };
+  | { type: "SET_SPRITESHEET_DATA"; payload: string }
+  | { type: "SET_MAP_DATA"; payload: string };
+
+type ProjectActions = {
+  setProject: (newProject?: Project) => void;
+  setSpriteSheet: (spriteSheet: SpriteSheet) => void;
+  setSpriteSheetData: (data: string) => void;
+  setMapData: (data: string) => void;
+};
 
 interface ProjectContextType {
   project?: Project;
-  actions: {
-    setProject: (newProject?: Project) => void;
-    setSpriteSheet: (spriteSheet: SpriteSheet) => void;
-    setSpriteSheetData: (data: string) => void;
-  };
+  actions: ProjectActions;
 }
 
 function _reducer(project: Maybe<Project>, action: Action): Maybe<Project> {
   switch (action.type) {
     case "SET_PROJECT":
       return action.payload;
-
     case "SET_SPRITESHEET":
       if (!project) return project;
       return {
@@ -29,23 +32,22 @@ function _reducer(project: Maybe<Project>, action: Action): Maybe<Project> {
         spriteSheet: action.payload,
         map: { ...project.map, spriteSheet: action.payload }
       };
-
     case "SET_SPRITESHEET_DATA":
-    {
       if (!project || !project.spriteSheet) return project;
-      const newSpriteSheet = {
-        ...project.spriteSheet,
-        spriteSheet: action.payload,
-      };
+      {
+        const newSpriteSheet = { ...project.spriteSheet, spriteSheet: action.payload };
+        return {
+          ...project,
+          spriteSheet: newSpriteSheet,
+          map: { ...project.map, spriteSheet: newSpriteSheet }
+        };
+      }
+    case "SET_MAP_DATA":
+      if (!project) return project;
       return {
         ...project,
-        spriteSheet: newSpriteSheet,
-        map: {
-          ...project.map,
-          spriteSheet: newSpriteSheet,
-        },
+        map: { ...project.map, mapData: action.payload }
       };
-    }
     default:
       return project;
   }
@@ -58,12 +60,10 @@ export const ProjectProvider: React.FC<{ project?: Project, children: ReactNode 
 
   const actions = useMemo(
     () => ({
-      setProject: (newProject?: Project) =>
-        dispatch({ type: "SET_PROJECT", payload: newProject }),
-      setSpriteSheet: (spriteSheet: SpriteSheet) =>
-        dispatch({ type: "SET_SPRITESHEET", payload: spriteSheet }),
-      setSpriteSheetData: (data: string) =>
-        dispatch({ type: "SET_SPRITESHEET_DATA", payload: data }),
+      setProject: (newProject?: Project) => dispatch({ type: "SET_PROJECT", payload: newProject }),
+      setSpriteSheet: (spriteSheet: SpriteSheet) => dispatch({ type: "SET_SPRITESHEET", payload: spriteSheet }),
+      setSpriteSheetData: (data: string) => dispatch({ type: "SET_SPRITESHEET_DATA", payload: data }),
+      setMapData: (data: string) => dispatch({ type: "SET_MAP_DATA", payload: data })
     }),
     [dispatch]
   );

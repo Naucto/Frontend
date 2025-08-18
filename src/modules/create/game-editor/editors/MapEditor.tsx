@@ -1,5 +1,6 @@
+
 import React from "react";
-import { EditorProps } from "./EditorType.ts";
+import { EditorProps } from "./EditorType";
 import { styled } from "@mui/material/styles";
 import { useProject } from "src/providers/ProjectProvider";
 
