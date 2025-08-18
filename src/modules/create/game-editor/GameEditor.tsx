@@ -78,7 +78,7 @@ const GameEditor: React.FC = () => {
   const [output, setOutput] = useState<string>("");
   const [roomId, setRoomId] = useState<string | undefined>(undefined);
   const [isHost, setIsHost] = useState<boolean>(false);
-  const [docInitialized, setDocInitialized] = useState(false); // added
+  const [docInitialized, setDocInitialized] = useState(false);
 
   const tabs = useMemo(() => [
     { label: "code", component: CodeEditor, icon: <CodeIcon /> },
@@ -103,9 +103,8 @@ const GameEditor: React.FC = () => {
 
         try {
           const content = await ProjectsService.projectControllerFetchProjectContent(String(projectId));
-          if (content?.ydoc) {
-            const update = decodeUpdate(content.ydoc);
-            Y.applyUpdate(ydoc, update);
+          if (content) {
+            await decodeUpdate(ydoc, content);
           }
         } catch (error: unknown) {
           if (error instanceof ApiError && error.status === 404) {
@@ -236,11 +235,10 @@ const GameEditor: React.FC = () => {
 
   const saveProjectContent = (): void => {
     if (!isHost) return;
-    const base64 = encodeUpdate(ydoc);
-    const jsonData = { ydoc: base64 };
+    const data = encodeUpdate(ydoc);
     ProjectsService.projectControllerSaveProjectContent(
       String(LocalStorageManager.getProjectId()),
-      { file: new Blob([JSON.stringify(jsonData)], { type: "application/json" }) }
+      { file: new Blob([data], { type: "application/octet-stream" }) }
     ).catch((error) => {
       console.error("Failed to save content:", error);
     });
