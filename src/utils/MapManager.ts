@@ -32,7 +32,7 @@ export class MapManager {
     return this._mapPixelArray;
   }
 
-  public getTileAt(x: number, y: number): number | undefined {
+  public getTileAt(x: number, y: number): Maybe<number> {
     if (x < 0 || x >= this._map.width || y < 0 || y >= this._map.height) {
       return undefined;
     }

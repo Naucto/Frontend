@@ -8,11 +8,10 @@ import { useAsync } from "src/hooks/useAsync";
 import { palette, spriteTable } from "src/temporary/SpriteSheet";
 import { SpriteSheet } from "../../types/SpriteSheetType";
 import { mapData } from "src/temporary/map";
-
 const Project: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
-  const [project, setProject] = useState<ProjectType | undefined>(undefined);
-  const { value } = useAsync<ProjectResponseDto | undefined>(async () => {
+  const [project, setProject] = useState<Maybe<ProjectType>>(undefined);
+  const { value } = useAsync<Maybe<ProjectResponseDto>>(async () => {
     if (projectId) {
       const project: ProjectResponseDto = await ProjectsService.projectControllerFindOne(parseInt(projectId));
       return project;

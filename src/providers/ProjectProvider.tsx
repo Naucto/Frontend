@@ -17,7 +17,7 @@ interface ProjectContextType {
   };
 }
 
-function _reducer(project: Project | undefined, action: Action): Project | undefined {
+function _reducer(project: Maybe<Project>, action: Action): Maybe<Project> {
   switch (action.type) {
     case "SET_PROJECT":
       return action.payload;
@@ -51,7 +51,7 @@ function _reducer(project: Project | undefined, action: Action): Project | undef
   }
 }
 
-const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
+const ProjectContext = createContext<Maybe<ProjectContextType>>(undefined);
 
 export const ProjectProvider: React.FC<{ project?: Project, children: ReactNode }> = ({ project, children }) => {
   const [state, dispatch] = useReducer(_reducer, project);

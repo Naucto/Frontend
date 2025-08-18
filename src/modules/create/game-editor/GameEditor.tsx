@@ -75,7 +75,7 @@ const PreviewCanvas = styled(GameCanvas)(({ theme }) => ({
 const GameEditor: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [output, setOutput] = useState<string>("");
-  const [roomId, setRoomId] = useState<string | undefined>(undefined);
+  const [roomId, setRoomId] = useState<Maybe<string>>(undefined);
   const [projectContent, setProjectContent] = useState<Record<string, string> | null>(null);
   const [isHost, setIsHost] = useState<boolean>(false);
   const { project } = useProject();
@@ -122,7 +122,7 @@ const GameEditor: React.FC = () => {
     joinSession();
   }, []);
 
-  const provider: WebrtcProvider | undefined = useMemo(() => {
+  const provider: Maybe<WebrtcProvider> = useMemo(() => {
     if (!roomId)
       return undefined;
     return new WebrtcProvider(roomId, ydoc, config.webrtc);
@@ -138,7 +138,7 @@ const GameEditor: React.FC = () => {
     if (!ydoc || !provider) return [];
 
     return tabs.map((tab) => {
-      const EditorComponent: React.FC<EditorProps> | undefined = tab.component;
+      const EditorComponent: Maybe<React.FC<EditorProps>> = tab.component;
 
       const handleGetData = (getData: () => string): void => {
         getDataFunctions.current[tab.label] = getData;
