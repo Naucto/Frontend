@@ -32,20 +32,19 @@ export class MapManager {
     return this._mapPixelArray;
   }
 
-  public getTileAt(x: number, y: number): Maybe<number> {
-    if (x < 0 || x >= this._map.width || y < 0 || y >= this._map.height) {
+  public getTileAt(pos: Point2D): Maybe<number> {
+    if (pos.x < 0 || pos.x >= this._map.width || pos.y < 0 || pos.y >= this._map.height) {
       return undefined;
     }
-    return this._tileIndexMap[y][x];
+    return this._tileIndexMap[pos.y][pos.x];
   }
 
-  public setTileAt(x: number, y: number, spriteIndex: number): void {
-    if (x < 0 || x >= this._map.width || y < 0 || y >= this._map.height) {
-      throw new MapManagerError(`Tile position (${x}, ${y}) is out of bounds`);
+  public setTileAt(pos: Point2D, spriteIndex: number): void {
+    if (pos.x < 0 || pos.x >= this._map.width || pos.y < 0 || pos.y >= this._map.height) {
+      throw new MapManagerError(`Tile position (${pos.x}, ${pos.y}) is out of bounds`);
     }
 
-    this._tileIndexMap[y][x] = spriteIndex;
-
+    this._tileIndexMap[pos.y][pos.x] = spriteIndex;
   }
 
   public getMapDimensions(): { width: number; height: number } {
@@ -126,13 +125,12 @@ export class MapManager {
 
   private _buildMapPixelArray(): Uint8Array {
     const totalPixels = this._getMapTotalPixels();
-
     const mapPixels = new Uint8Array(totalPixels);
 
     for (let tileY = 0; tileY < this._map.height; tileY++) {
       for (let tileX = 0; tileX < this._map.width; tileX++) {
         const spriteIndex = this._tileIndexMap[tileY][tileX];
-        this._copySpriteToMapPixels(tileX, tileY, mapPixels, spriteIndex);
+        this._copySpriteToMapPixels({ x: tileX, y: tileY }, mapPixels, spriteIndex);
       }
     }
 
@@ -140,10 +138,15 @@ export class MapManager {
   }
 
   private _getMapTotalPixels(): number {
-    return this._map.width * this._map.height * this._map.spriteSheet.spriteSize.height * this._map.spriteSheet.spriteSize.width;
+    return (
+      this._map.width *
+      this._map.height *
+      this._map.spriteSheet.spriteSize.height *
+      this._map.spriteSheet.spriteSize.width
+    );
   }
 
-  private _copySpriteToMapPixels(tileX: number, tileY: number, mapPixels: Uint8Array, spriteIndex: number): void {
+  private _copySpriteToMapPixels(tile: Point2D, mapPixels: Uint8Array, spriteIndex: number): void {
     const spriteWidth = this._map.spriteSheet.spriteSize.width;
     const spriteHeight = this._map.spriteSheet.spriteSize.height;
     const mapPixelWidth = this._map.width * spriteWidth;
@@ -152,10 +155,9 @@ export class MapManager {
 
     for (let pY = 0; pY < spriteHeight; pY++) {
       for (let pX = 0; pX < spriteWidth; pX++) {
-
         const spritePixelIndex = pY * spriteWidth + pX;
-        const mapPixelX = tileX * spriteWidth + pX;
-        const mapPixelY = tileY * spriteHeight + pY;
+        const mapPixelX = tile.x * spriteWidth + pX;
+        const mapPixelY = tile.y * spriteHeight + pY;
         const mapPixelIndex = mapPixelY * mapPixelWidth + mapPixelX;
 
         if (mapPixelIndex < totalPixels && spritePixelIndex < spritePixels.length) {

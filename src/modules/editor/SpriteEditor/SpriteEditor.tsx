@@ -10,10 +10,6 @@ import { EditorProps } from "../../create/game-editor/editors/EditorType";
 import { YSpriteSheet } from "@modules/create/game-editor/types/YSpriteSheet.ts";
 import { useProject } from "src/providers/ProjectProvider";
 import { Map } from "src/types/MapType";
-interface Point {
-  x: number;
-  y: number;
-}
 
 const SPRITE_SIZE = 8;
 const SPRITE_SHEET_SIZE = 128;
@@ -92,21 +88,21 @@ const CanvasContainer: React.FC<CanvasContainerProps> = ({
   </div>
 );
 
-function getMousePosition(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>, rect: DOMRect): Point {
+function getMousePosition(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>, rect: DOMRect): Point2D {
   return {
     x: e.clientX - rect.left,
     y: e.clientY - rect.top
   };
 }
 
-function getNormalizedPosition(mousePos: Point, rect: DOMRect): Point {
+function getNormalizedPosition(mousePos: Point2D, rect: DOMRect): Point2D {
   return {
     x: mousePos.x / rect.width,
     y: mousePos.y / rect.height
   };
 }
 
-function getScaledPosition(mousePos: Point, scale: number, zoom: number): Point {
+function getScaledPosition(mousePos: Point2D, scale: number, zoom: number): Point2D {
   return {
     x: mousePos.x * zoom * scale,
     y: mousePos.y * zoom * scale
@@ -114,7 +110,7 @@ function getScaledPosition(mousePos: Point, scale: number, zoom: number): Point 
 }
 
 function getPixelPos(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
-  rect: DOMRect, zoom: number, position: Point): Point {
+  rect: DOMRect, zoom: number, position: Point2D): Point2D {
 
   const canvasMousePos = getMousePosition(e, rect);
   const normalizedMousePos = getNormalizedPosition(canvasMousePos, rect);
@@ -127,7 +123,7 @@ function getPixelPos(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
 }
 
 function getSpritePos(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
-  rect: DOMRect, zoom: number, position: Point): Point | null {
+  rect: DOMRect, zoom: number, position: Point2D): Point2D | null {
   const mousePos = getMousePosition(e, rect);
 
   const spriteX = Math.floor((mousePos.x / rect.width * zoom) - (Math.floor(position.x) / SPRITE_SIZE));
@@ -148,10 +144,10 @@ function getSpritePos(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
 export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, onGetData, onSetData }) => {
   const [currentColor, setCurrentColor] = useState(0);
   const [zoom, setZoom] = useState(1);
-  const [position, setPosition] = useState<Point>({ x: 0, y: 0 });
+  const [position, setPosition] = useState<Point2D>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [dragStart, setDragStart] = useState<Point>({ x: 0, y: 0 });
+  const [dragStart, setDragStart] = useState<Point2D>({ x: 0, y: 0 });
   const [isMouseOverCanvas, setIsMouseOverCanvas] = useState(false);
   const [version, setVersion] = useState(0);
   const drawCanvasRef = React.createRef<SpriteRendererHandle>();
@@ -271,14 +267,14 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, onGetData, onSetData
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>): void => {
     if (isDragging) {
-      const dragDelta: Point = {
+      const dragDelta: Point2D = {
         x: e.clientX - dragStart.x,
         y: e.clientY - dragStart.y
       };
       if (canvasContainerRef.current === null) return;
       const normalizedDragDelta = getNormalizedPosition(dragDelta, canvasContainerRef.current.getBoundingClientRect());
 
-      const dragDistance: Point = {
+      const dragDistance: Point2D = {
         x: normalizedDragDelta.x * SPRITE_SIZE * zoom * SCALE,
         y: normalizedDragDelta.y * SPRITE_SIZE * zoom * SCALE
       };
