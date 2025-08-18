@@ -149,9 +149,7 @@ const GameEditor: React.FC = () => {
           />
         ) : (
           <span key={tab.label}>No editor available</span>
-        ),
-        getData: () => "",
-        setData: () => void 0
+        )
       };
     });
   }, [tabs, ydoc, provider]);
