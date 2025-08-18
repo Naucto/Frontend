@@ -22,7 +22,7 @@ export class MapManager {
 
     this._map = map;
 
-    //FIXME should aready be converted in Project
+    //FIXME should already be converted in Project
     this._spritePixelArray = convertSpritesheetToIndexArray(map.spriteSheet);
     this._tileIndexMap = this._parseMapData();
     this._mapPixelArray = this._buildMapPixelArray();
