@@ -1,4 +1,4 @@
-import { convertSpritesheetToIndexArray } from "@shared/canvas/CanvasUtil";
+import { convertSpritesheetToIndexArray } from "@shared/canvas/glUtils";
 import { MapManagerError } from "src/errors/MapManagerError";
 import { Map } from "src/types/MapType";
 
