@@ -79,6 +79,7 @@ const GameEditor: React.FC = () => {
   const [roomId, setRoomId] = useState<string | undefined>(undefined);
   const [isHost, setIsHost] = useState<boolean>(false);
   const [isKicking, setIsKicking] = useState<boolean>(false);
+  const [awarenessLoaded, setAwarenessLoaded] = useState<boolean>(false);
 
   const [docInitialized, setDocInitialized] = useState(false);
 
@@ -157,6 +158,44 @@ const GameEditor: React.FC = () => {
     });
   }, [tabs, ydoc, provider]);
 
+  const checkAndKickDisconnectedUsers = async (): Promise<void> => {
+    if (isKicking || !awareness)
+      return;
+
+    setIsKicking(true);
+
+    const userId = LocalStorageManager.getUserId();
+
+    const projectId = Number(LocalStorageManager.getProjectId());
+    try {
+      const sessionInfo = await WorkSessionsService.workSessionControllerGetInfo(projectId);
+
+      if (!isHost && sessionInfo.host === Number(userId)) {
+        setIsHost(true);
+      }
+
+      const connectedClients = Array.from(awareness?.getStates().keys() || []);
+      if (
+        connectedClients.length === 1 &&
+        awareness?.clientID !== undefined &&
+        connectedClients[0] === awareness?.clientID
+      ) {
+        for (const sessionUserId of sessionInfo.users) {
+          if (Number(sessionUserId) !== userId) {
+            await WorkSessionsService.workSessionControllerKick(projectId, {
+              userId: Number(sessionUserId)
+            });
+          }
+        }
+        setIsHost(true);
+      }
+    } catch (error) {
+      console.error("Error checking or kicking disconnected users:", error);
+    }
+
+    setIsKicking(false);
+  };
+
   useEffect(() => {
     const userName = LocalStorageManager.getUserName();
     const userId = LocalStorageManager.getUserId();
@@ -168,44 +207,6 @@ const GameEditor: React.FC = () => {
     });
 
     const userStateCache = new Map<number, UserState>();
-
-    const checkAndKickDisconnectedUsers = async (): void => {
-      if (isKicking || !awareness)
-        return;
-
-      setIsKicking(true);
-
-      const projectId = Number(LocalStorageManager.getProjectId());
-      try {
-        const sessionInfo = await WorkSessionsService.workSessionControllerGetInfo(projectId);
-
-        if (sessionInfo.host === Number(userId)) {
-          setIsHost(true);
-        }
-
-        const connectedClients = Array.from(awareness?.getStates().keys() || []);
-        if (
-          connectedClients.length === 1 &&
-          awareness?.clientID !== undefined &&
-          connectedClients[0] === awareness?.clientID
-        ) {
-          for (const sessionUserId of sessionInfo.users) {
-            if (Number(sessionUserId) !== userId) {
-              await WorkSessionsService.workSessionControllerKick(projectId, {
-                userId: Number(sessionUserId)
-              });
-            }
-          }
-
-          setProjectContent(null);
-          setIsHost(true);
-        }
-      } catch (error) {
-        console.error("Error checking or kicking disconnected users:", error);
-      }
-
-      setIsKicking(false);
-    };
 
     const onChange = ({ added, updated, removed }: {
       added: number[]
@@ -237,6 +238,8 @@ const GameEditor: React.FC = () => {
           checkAndKickDisconnectedUsers();
         }
       });
+      if (!awarenessLoaded)
+        setAwarenessLoaded(true);
     };
 
     if (!awareness)
@@ -244,10 +247,15 @@ const GameEditor: React.FC = () => {
 
     awareness!.on("change", onChange);
 
-    checkAndKickDisconnectedUsers();
-
     return () => awareness!.off("change", onChange);
   }, [awareness]);
+
+  useEffect(() => {
+    if (!awarenessLoaded)
+      return;
+
+    checkAndKickDisconnectedUsers();
+  }, [awarenessLoaded]);
 
   const [code, setCode] = useState("");
 
@@ -315,6 +323,8 @@ const GameEditor: React.FC = () => {
     if (!isHost)
       return;
 
+    console.log("IM THE HOTS!!!");
+
     const intervalId = setInterval(() => {
       saveProjectContent();
     }, 5 * 60 * 1000);
@@ -323,27 +333,6 @@ const GameEditor: React.FC = () => {
       clearInterval(intervalId);
     };
   }, [editorTabs, isHost]);
-
-  useEffect(() => {
-    if (!isHost || projectContent !== null)
-      return;
-
-    const loadContent = async (): void => {
-      try {
-        const projectId = LocalStorageManager.getProjectId();
-        const content = await ProjectsService.projectControllerFetchProjectContent(String(projectId));
-        setProjectContent(content);
-      } catch (error: unknown) {
-        if (error instanceof ApiError && error.status === 404) {
-          setProjectContent({});
-        } else {
-          console.error("Failed to fetch project content:", error); // FIXME : better error handling
-        }
-      }
-    };
-
-    loadContent();
-  }, [editorTabs, isHost, projectContent]);
 
   if (!docInitialized || !provider)
     return <div>Loading work session...</div>;
