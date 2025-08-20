@@ -141,7 +141,7 @@ function getSpritePos(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
   return { x: spriteX, y: spriteY };
 }
 
-export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, onGetData, onSetData }) => {
+export const SpriteEditor: React.FC<EditorProps> = ({ ydoc }) => {
   const [currentColor, setCurrentColor] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [position, setPosition] = useState<Point2D>({ x: 0, y: 0 });
@@ -174,39 +174,9 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc, onGetData, onSetData
   useEffect(() => {
     yspriteRef.current = new YSpriteSheet(ydoc, "sprite", SPRITE_SHEET_SIZE, SPRITE_SHEET_SIZE);
     if (yspriteRef.current) {
-      yspriteRef.current.observe(() => {
-        setVersion(v => v + 1);
-      });
+      yspriteRef.current.observe(() => setVersion(v => v + 1));
     }
-  }, [yspriteRef]);
-
-  useEffect(() => {
-    if (!onGetData)
-      return;
-    onGetData(() => {
-      if (yspriteRef.current) {
-        return yspriteRef.current.toString();
-      }
-      return "";
-    });
-  }, [onGetData]);
-
-  useEffect(() => {
-    if (!project)
-      return;
-    if (!onSetData)
-      return;
-    onSetData((data: string) => {
-      if (!yspriteRef.current)
-        return;
-      ydoc!.transact(() => {
-        yspriteRef.current?.fromString(data ? data : project?.spriteSheet.spriteSheet);
-        if (yspriteRef.current) {
-          actions.setSpriteSheetData(yspriteRef.current.toString());
-        }
-      });
-    });
-  }, [onSetData, project, actions]);
+  }, [ydoc]);
 
   useEffect(() => {
     const container = canvasContainerRef.current;

@@ -4,7 +4,7 @@
 /* eslint-disable */
 export type FetchWorkSessionDto = {
     /**
-     * The ID of the users participating in the work session
+     * The ID of the user participating in the work session
      */
     users: Array<string>;
     /**
