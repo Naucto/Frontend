@@ -7,14 +7,13 @@ import * as Y from "yjs";
 import config from "config.json";
 import { EditorProps, EditorTab } from "./editors/EditorType";
 import { SoundEditor } from "./editors/SoundEditor";
-import { palette, spriteTable } from "src/temporary/SpriteSheet";
-import { SpriteSheet } from "src/types/SpriteSheetType";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
 import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
 import { ApiError, ProjectsService, WorkSessionsService } from "@api";
 import { Beforeunload } from "react-beforeunload";
 import { SpriteEditor } from "@modules/editor/SpriteEditor/SpriteEditor";
+import { MapEditor } from "@modules/create/game-editor/editors/MapEditor";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
 import GameEditorConsole from "@modules/create/game-editor/editors/GameEditorConsole";
 import CodeIcon from "src/assets/code.svg?react";
@@ -22,6 +21,7 @@ import SpriteIcon from "src/assets/pen.svg?react";
 import SoundIcon from "src/assets/music.svg?react";
 import MapIcon from "src/assets/map.svg?react";
 import { generateRandomColor } from "@utils/colorUtils";
+import { useProject } from "src/providers/ProjectProvider";
 import { encodeUpdate, decodeUpdate } from "@utils/YSerialize";
 
 const GameEditorContainer = styled("div")(({ theme }) => ({
@@ -83,10 +83,11 @@ const GameEditor: React.FC = () => {
 
   const [docInitialized, setDocInitialized] = useState(false);
 
+  const { project } = useProject();
   const tabs = useMemo(() => [
     { label: "code", component: CodeEditor, icon: <CodeIcon /> },
     { label: "sprite", component: SpriteEditor, icon: <SpriteIcon /> },
-    { label: "map", component: undefined, icon: <MapIcon /> },
+    { label: "map", component: MapEditor, icon: <MapIcon /> },
     { label: "sound", component: SoundEditor, icon: <SoundIcon /> },
   ], []);
 
@@ -125,8 +126,9 @@ const GameEditor: React.FC = () => {
     joinSession();
   }, [ydoc]);
 
-  const provider: WebrtcProvider | undefined = useMemo(() => {
-    if (!roomId || !docInitialized) return undefined; // defer until initial state applied
+  const provider: Maybe<WebrtcProvider> = useMemo(() => {
+    if (!roomId)
+      return undefined;
     return new WebrtcProvider(roomId, ydoc, config.webrtc);
   }, [roomId, ydoc, docInitialized]);
 
@@ -140,7 +142,7 @@ const GameEditor: React.FC = () => {
     if (!ydoc || !provider) return [];
 
     return tabs.map((tab) => {
-      const EditorComponent: React.FC<EditorProps> | undefined = tab.component;
+      const EditorComponent: Maybe<React.FC<EditorProps>> = tab.component;
 
       return {
         ...tab,
@@ -274,13 +276,6 @@ const GameEditor: React.FC = () => {
     output,
   }), [code, output]);
 
-  const spriteSheet: SpriteSheet = useMemo(() => ({
-    spriteSheet: spriteTable,
-    spriteSize: { width: 8, height: 8 },
-    size: { width: 128, height: 128 },
-    stride: 1,
-  }), []);
-
   const screenSize = useMemo(() => ({
     width: 320,
     height: 180,
@@ -334,8 +329,8 @@ const GameEditor: React.FC = () => {
     };
   }, [editorTabs, isHost]);
 
-  if (!docInitialized || !provider)
-    return <div>Loading work session...</div>;
+  if (!provider)
+    return <div>Loading work session...</div>; //FIXME: add a loading spinner with a component
 
   return (
     <GameEditorContainer>
@@ -367,16 +362,19 @@ const GameEditor: React.FC = () => {
         ))}
       </LeftPanel>
       <RightPanel>
-        <PreviewCanvas
-          ref={canvasRef}
-          canvasProps={{
-            screenSize,
-            spriteSheet,
-            palette,
-          }}
-          envData={envData}
-          setOutput={setOutput}
-        />
+        {project && (
+          <PreviewCanvas
+            ref={canvasRef}
+            canvasProps={{
+              map: project.map,
+              screenSize,
+              spriteSheet: project.spriteSheet,
+              palette: project.palette,
+            }}
+            envData={envData}
+            setOutput={setOutput}
+          />
+        )}
         <GameEditorConsole output={output} />
       </RightPanel>
       <Beforeunload onBeforeunload={(event) => {
