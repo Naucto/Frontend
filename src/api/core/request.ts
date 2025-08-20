@@ -197,6 +197,26 @@ export const getRequestBody = (options: ApiRequestOptions): any => {
     return undefined;
 };
 
+function pickResponseType(
+  accept?: string
+): AxiosRequestConfig['responseType'] {
+    const a = (accept ?? '').toLowerCase();
+
+    if (
+      a.includes('application/octet-stream') ||
+      a.includes('application/pdf') ||
+      a.includes('image/') ||
+      a.includes('audio/') ||
+      a.includes('video/')
+    ) {
+        return 'blob';
+    }
+    if (a.includes('application/json') || a.includes('+json')) {
+        return 'json';
+    }
+    return 'text';
+}
+
 export const sendRequest = async <T>(
     config: OpenAPIConfig,
     options: ApiRequestOptions,
@@ -217,6 +237,7 @@ export const sendRequest = async <T>(
         withCredentials: config.WITH_CREDENTIALS,
         withXSRFToken: config.CREDENTIALS === 'include' ? config.WITH_CREDENTIALS : false,
         cancelToken: source.token,
+        responseType: options.responseType ?? pickResponseType(headers['Accept']),
     };
 
     onCancel(() => source.cancel('The user aborted a request.'));

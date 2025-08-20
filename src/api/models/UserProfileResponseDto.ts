@@ -19,7 +19,7 @@ export type UserProfileResponseDto = {
     /**
      * User nickname
      */
-    nickname: Record<string, any> | null;
+    nickname: string | null;
     /**
      * User roles
      */

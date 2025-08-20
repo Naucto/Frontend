@@ -49,7 +49,7 @@ export class WorkSessionsService {
         });
     }
     /**
-     * Leave a work session
+     * Kick user from work session
      * @param id Project ID
      * @param requestBody
      * @returns void
@@ -74,7 +74,7 @@ export class WorkSessionsService {
     }
     /**
      * Get work session info
-     * @param id Work session ID
+     * @param id Project ID
      * @returns FetchWorkSessionDto Work session info retrieved successfully.
      * @throws ApiError
      */
