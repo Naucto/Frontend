@@ -26,7 +26,7 @@ export type { UserProfileResponseDto } from './models/UserProfileResponseDto';
 export type { UserResponseDto } from './models/UserResponseDto';
 export type { UserRoleDto } from './models/UserRoleDto';
 export type { UserSingleResponseDto } from './models/UserSingleResponseDto';
-
+export type { ApiError } from './core/ApiError';
 export { AuthService } from './services/AuthService';
 export { ProjectsService } from './services/ProjectsService';
 export { S3Service } from './services/S3Service';
