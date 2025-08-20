@@ -2,13 +2,14 @@ import { useState, useEffect, useCallback, DependencyList } from "react";
 
 type useAsyncReturnType<T> = {
   loading: boolean,
-  error: Error | undefined,
-  value: T | undefined
+  error: Maybe<Error>
+  value: Maybe<T>
 }
+
 export function useAsync<T>(asyncFunction: () => Promise<T>, dependencies: DependencyList[] = []): useAsyncReturnType<T> {
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | undefined>();
-  const [value, setValue] = useState<T | undefined>();
+  const [error, setError] = useState<Maybe<Error>>();
+  const [value, setValue] = useState<Maybe<T>>();
 
   const callback = useCallback(() => {
     setLoading(true);
