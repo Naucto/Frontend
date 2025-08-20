@@ -3,12 +3,12 @@ import React from "react";
 import { styled } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import Card from "@modules/projects/components/Card";
+import { Project } from "src/types/ProjectType";
 import * as urls from "@shared/route";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
-import { ProjectResponseDto } from "@api";
 
 type ProjectCardProps = {
-  project: ProjectResponseDto
+  project: Project
 }
 
 const Text = styled(Typography)(({ theme }) => ({

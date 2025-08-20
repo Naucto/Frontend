@@ -8,8 +8,11 @@ import { SpriteSheet } from "src/types/SpriteSheetType";
 import { palette } from "src/temporary/SpriteSheet";
 import { EditorProps } from "../../create/game-editor/editors/EditorType";
 import { YSpriteSheet } from "@modules/create/game-editor/types/YSpriteSheet.ts";
-import { useProject } from "src/providers/ProjectProvider";
-import { Map } from "src/types/MapType";
+
+interface Point {
+  x: number;
+  y: number;
+}
 
 const SPRITE_SIZE = 8;
 const SPRITE_SHEET_SIZE = 128;
@@ -57,7 +60,6 @@ interface CanvasContainerProps {
   canvasRef: React.RefObject<SpriteRendererHandle | null>;
   containerRef: React.RefObject<HTMLDivElement | null>;
   spriteSheet: SpriteSheet;
-  map: Map;
   screenSize: { width: number; height: number };
   onWheel: (e: React.WheelEvent) => void;
   onMouseDown: (e: React.MouseEvent<HTMLCanvasElement>) => void;
@@ -72,7 +74,6 @@ const CanvasContainer: React.FC<CanvasContainerProps> = ({
   canvasRef,
   containerRef,
   spriteSheet,
-  map,
   screenSize,
   ...props
 }) => (
@@ -82,27 +83,26 @@ const CanvasContainer: React.FC<CanvasContainerProps> = ({
       spriteSheet={spriteSheet}
       screenSize={screenSize}
       palette={palette}
-      map={map}
       {...props}
     />
   </div>
 );
 
-function getMousePosition(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>, rect: DOMRect): Point2D {
+function getMousePosition(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>, rect: DOMRect): Point {
   return {
     x: e.clientX - rect.left,
     y: e.clientY - rect.top
   };
 }
 
-function getNormalizedPosition(mousePos: Point2D, rect: DOMRect): Point2D {
+function getNormalizedPosition(mousePos: Point, rect: DOMRect): Point {
   return {
     x: mousePos.x / rect.width,
     y: mousePos.y / rect.height
   };
 }
 
-function getScaledPosition(mousePos: Point2D, scale: number, zoom: number): Point2D {
+function getScaledPosition(mousePos: Point, scale: number, zoom: number): Point {
   return {
     x: mousePos.x * zoom * scale,
     y: mousePos.y * zoom * scale
@@ -110,7 +110,7 @@ function getScaledPosition(mousePos: Point2D, scale: number, zoom: number): Poin
 }
 
 function getPixelPos(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
-  rect: DOMRect, zoom: number, position: Point2D): Point2D {
+  rect: DOMRect, zoom: number, position: Point): Point {
 
   const canvasMousePos = getMousePosition(e, rect);
   const normalizedMousePos = getNormalizedPosition(canvasMousePos, rect);
@@ -123,7 +123,7 @@ function getPixelPos(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
 }
 
 function getSpritePos(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
-  rect: DOMRect, zoom: number, position: Point2D): Point2D | null {
+  rect: DOMRect, zoom: number, position: Point): Point | null {
   const mousePos = getMousePosition(e, rect);
 
   const spriteX = Math.floor((mousePos.x / rect.width * zoom) - (Math.floor(position.x) / SPRITE_SIZE));
@@ -144,16 +144,15 @@ function getSpritePos(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
 export const SpriteEditor: React.FC<EditorProps> = ({ ydoc }) => {
   const [currentColor, setCurrentColor] = useState(0);
   const [zoom, setZoom] = useState(1);
-  const [position, setPosition] = useState<Point2D>({ x: 0, y: 0 });
+  const [position, setPosition] = useState<Point>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [dragStart, setDragStart] = useState<Point2D>({ x: 0, y: 0 });
+  const [dragStart, setDragStart] = useState<Point>({ x: 0, y: 0 });
   const [isMouseOverCanvas, setIsMouseOverCanvas] = useState(false);
   const [version, setVersion] = useState(0);
   const drawCanvasRef = React.createRef<SpriteRendererHandle>();
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const yspriteRef = useRef<YSpriteSheet>(null);
-  const { project, actions } = useProject();
 
   const handleContextMenu = (e: React.MouseEvent): void => {
     e.preventDefault();
@@ -214,9 +213,6 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc }) => {
       return;
     ydoc!.transact(() => {
       yspriteRef.current?.setPixel(x, y, currentColor);
-      if (yspriteRef.current) {
-        actions.setSpriteSheetData(yspriteRef.current.toString());
-      }
     });
     setVersion(v => v + 1);
   };
@@ -237,14 +233,14 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc }) => {
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>): void => {
     if (isDragging) {
-      const dragDelta: Point2D = {
+      const dragDelta: Point = {
         x: e.clientX - dragStart.x,
         y: e.clientY - dragStart.y
       };
       if (canvasContainerRef.current === null) return;
       const normalizedDragDelta = getNormalizedPosition(dragDelta, canvasContainerRef.current.getBoundingClientRect());
 
-      const dragDistance: Point2D = {
+      const dragDistance: Point = {
         x: normalizedDragDelta.x * SPRITE_SIZE * zoom * SCALE,
         y: normalizedDragDelta.y * SPRITE_SIZE * zoom * SCALE
       };
@@ -309,26 +305,23 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc }) => {
             currentColor={currentColor}
             onColorSelect={setCurrentColor}
           />
-          {project && (
-            <CanvasContainer
-              canvasRef={drawCanvasRef}
-              containerRef={canvasContainerRef}
-              spriteSheet={canvasSpriteSheet}
-              map={project.map}
-              screenSize={drawCanvasSize}
-              onWheel={handleWheel}
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseEnter={() => setIsMouseOverCanvas(true)}
-              onMouseLeave={() => {
-                setIsMouseOverCanvas(false);
-                setIsDragging(false);
-                setIsDrawing(false);
-              }}
-              onClick={handleCanvasClick}
-            />
-          )}
+          <CanvasContainer
+            canvasRef={drawCanvasRef}
+            containerRef={canvasContainerRef}
+            spriteSheet={canvasSpriteSheet}
+            screenSize={drawCanvasSize}
+            onWheel={handleWheel}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseEnter={() => setIsMouseOverCanvas(true)}
+            onMouseLeave={() => {
+              setIsMouseOverCanvas(false);
+              setIsDragging(false);
+              setIsDrawing(false);
+            }}
+            onClick={handleCanvasClick}
+          />
         </div>
       </div>
     </div>

@@ -53,7 +53,7 @@ export function setTexture(gl: WebGLRenderingContext,
   width: number,
   height: number,
   data: Uint8Array,
-  internalFormat: Maybe<GLenum> = undefined,
+  internalFormat: GLenum | undefined = undefined,
   format: GLenum = gl.RGBA,
   activeTexture: GLenum = gl.TEXTURE0,
   octetPerData: number = 4

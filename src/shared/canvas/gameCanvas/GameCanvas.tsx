@@ -12,7 +12,7 @@ type GameCanvasProps = {
 };
 
 const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(
-  ({ canvasProps, envData, setOutput, className }, ref) => {
+  ({ canvasProps: { screenSize, spriteSheet, palette }, envData, setOutput, className }, ref) => {
     const spriteRendererHandleRef = useRef<CanvasHandle>(null);
     const luaEnvManagerRef = useRef<LuaEnvironmentManager>(null);
     const animationFrameRef = useRef<number>(null);
@@ -83,10 +83,12 @@ const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(
     return (
       <StyledCanvas
         ref={spriteRendererHandleRef}
+        screenSize={screenSize}
+        spriteSheet={spriteSheet}
+        palette={palette}
         className={className}
         onKeyDown={(e) => keyHandlerRef.current?.handleKeyDown(e)}
         onKeyUp={(e) => keyHandlerRef.current?.handleKeyUp(e)}
-        {...canvasProps}
       />
     );
   });

@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { styled } from "@mui/material";
 import ProjectCard from "./components/ProjectCard";
-import { ProjectResponseDto, ProjectsService } from "@api";
+import { ProjectsService } from "@api";
 import CreateProjectCard from "@modules/projects/components/CreateProjectCard";
+import { Project } from "src/types/ProjectType";
 import { useAsync } from "src/hooks/useAsync";
 
 const PageContainer = styled("div")(({ theme }) => ({
@@ -25,7 +26,7 @@ const ProjectCardsContainer = styled("div")(({ theme }) => ({
 
 const Projects: React.FC = () => {
 
-  const [projects, setProjects] = useState<ProjectResponseDto[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
 
   const { value: fetchedProjects } = useAsync(
     ProjectsService.projectControllerFindAll,

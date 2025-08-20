@@ -20,6 +20,10 @@ export class YSpriteSheet {
   setPixel(x: number, y: number, color: number): void {
     const key = this.coordToKey(x, y);
     this._spritemap.set(key, color);
+    // if (color === 0) {
+    //   this._spritemap.delete(key);
+    // } else {
+    // }
   }
 
   deletePixel(x: number, y: number): void {

@@ -2,11 +2,9 @@ import { SpriteRendererHandle, useSpriteRenderer } from "@shared/canvas/Renderer
 import React, { forwardRef, useImperativeHandle, useRef } from "react";
 import { SpriteSheet } from "src/types/SpriteSheetType";
 import styled from "styled-components";
-import { Map } from "src/types/MapType";
 
 export type CanvasProps = React.CanvasHTMLAttributes<HTMLCanvasElement> & {
   spriteSheet: SpriteSheet;
-  map: Map;
   screenSize: {
     width: number;
     height: number;
@@ -25,7 +23,6 @@ export type CanvasProps = React.CanvasHTMLAttributes<HTMLCanvasElement> & {
 const Canvas = forwardRef<SpriteRendererHandle, CanvasProps>(({
   screenSize,
   spriteSheet,
-  map,
   palette,
   className,
   onClick,
@@ -37,7 +34,7 @@ const Canvas = forwardRef<SpriteRendererHandle, CanvasProps>(({
   onMouseEnter
 }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const rendererHandle = useSpriteRenderer(canvasRef, spriteSheet, palette, map, screenSize);
+  const rendererHandle = useSpriteRenderer(canvasRef, spriteSheet, palette, screenSize);
 
   useImperativeHandle(ref, () => ({
     ...rendererHandle,
