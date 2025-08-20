@@ -110,11 +110,13 @@ const GameEditor: React.FC = () => {
           if (error instanceof ApiError && error.status === 404) {
             // FIXME new project: nothing to load; optionally could seed defaults here
             console.error("Failed to fetch project content:", error);
+          } else {
+            throw error;
           }
         }
         setDocInitialized(true);
       } catch (err) {
-        console.error("Failed to join work session:", err);
+        console.error("Failed to join work session:", err); // FIXME : better error handling
       }
     };
     joinSession();
