@@ -91,26 +91,6 @@ export class S3Service {
         });
     }
     /**
-     * Get the CDN URL for a file
-     * @param key Object key
-     * @returns any Returns the CDN URL
-     * @throws ApiError
-     */
-    public static s3ControllerGetCdnUrl(
-        key: string,
-    ): CancelablePromise<any> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/s3/cdn-url/{key}',
-            path: {
-                'key': key,
-            },
-            errors: {
-                500: `Server error`,
-            },
-        });
-    }
-    /**
      * Upload a file to S3
      * @param bucketName Name of the bucket
      * @param formData

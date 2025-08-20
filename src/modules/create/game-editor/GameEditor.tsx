@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { styled } from "@mui/material/styles";
 import { Tabs, Tab, Box } from "@mui/material";
 import CodeEditor from "@modules/create/game-editor/editors/CodeEditor";
@@ -22,6 +22,7 @@ import SpriteIcon from "src/assets/pen.svg?react";
 import SoundIcon from "src/assets/music.svg?react";
 import MapIcon from "src/assets/map.svg?react";
 import { generateRandomColor } from "@utils/colorUtils";
+import { encodeUpdate, decodeUpdate } from "@utils/YSerialize";
 
 const GameEditorContainer = styled("div")(({ theme }) => ({
   height: "100%",
@@ -76,11 +77,8 @@ const GameEditor: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [output, setOutput] = useState<string>("");
   const [roomId, setRoomId] = useState<string | undefined>(undefined);
-  const [projectContent, setProjectContent] = useState<Record<string, string> | null>(null);
   const [isHost, setIsHost] = useState<boolean>(false);
-
-  const getDataFunctions = useRef<{ [key: string]: () => string }>({});
-  const setDataFunctions = useRef<{ [key: string]: (data: string) => void }>({});
+  const [docInitialized, setDocInitialized] = useState(false);
 
   const tabs = useMemo(() => [
     { label: "code", component: CodeEditor, icon: <CodeIcon /> },
@@ -100,33 +98,34 @@ const GameEditor: React.FC = () => {
 
         const host = (await WorkSessionsService.workSessionControllerGetInfo(projectId)).host;
         const userId = LocalStorageManager.getUserId();
-        if (host === userId) {
-          setIsHost(true);
+        const amHost = host === userId;
+        setIsHost(amHost);
 
-          try {
-            const content = await ProjectsService.projectControllerFetchProjectContent(String(projectId));
-            setProjectContent(content);
-          } catch (error: unknown) {
-            if (error instanceof ApiError && error.status === 404) {
-              setProjectContent({});
-            } else {
-              console.error("Failed to fetch project content:", error); // FIXME : better error handling
-            }
+        try {
+          const content = await ProjectsService.projectControllerFetchProjectContent(String(projectId));
+          if (content) {
+            await decodeUpdate(ydoc, content);
+          }
+        } catch (error: unknown) {
+          if (error instanceof ApiError && error.status === 404) {
+            // FIXME new project: nothing to load; optionally could seed defaults here
+            console.error("Failed to fetch project content:", error);
+          } else {
+            throw error;
           }
         }
+        setDocInitialized(true);
       } catch (err) {
         console.error("Failed to join work session:", err); // FIXME : better error handling
       }
     };
-
     joinSession();
-  }, []);
+  }, [ydoc]);
 
   const provider: WebrtcProvider | undefined = useMemo(() => {
-    if (!roomId)
-      return undefined;
+    if (!roomId || !docInitialized) return undefined; // defer until initial state applied
     return new WebrtcProvider(roomId, ydoc, config.webrtc);
-  }, [roomId, ydoc]);
+  }, [roomId, ydoc, docInitialized]);
 
   const awareness = useMemo(() => {
     if (!provider)
@@ -140,14 +139,6 @@ const GameEditor: React.FC = () => {
     return tabs.map((tab) => {
       const EditorComponent: React.FC<EditorProps> | undefined = tab.component;
 
-      const handleGetData = (getData: () => string): void => {
-        getDataFunctions.current[tab.label] = getData;
-      };
-
-      const handleSetData = (setData: (data: string) => void): void => {
-        setDataFunctions.current[tab.label] = setData;
-      };
-
       return {
         ...tab,
         label: tab.label,
@@ -156,27 +147,13 @@ const GameEditor: React.FC = () => {
             key={tab.label}
             ydoc={ydoc}
             provider={provider}
-            onGetData={handleGetData}
-            onSetData={handleSetData}
           />
         ) : (
           <span key={tab.label}>No editor available</span>
-        ),
-        getData: () => getDataFunctions.current[tab.label]?.() || "",
-        setData: (data: string) => setDataFunctions.current[tab.label]?.(data)
+        )
       };
     });
   }, [tabs, ydoc, provider]);
-
-  useEffect(() => {
-    if (projectContent && editorTabs.length > 0) {
-      editorTabs.forEach(({ label, setData }) => {
-        if (setData) {
-          setData(projectContent[label]);
-        }
-      });
-    }
-  }, [projectContent, editorTabs]);
 
   useEffect(() => {
     const userName = LocalStorageManager.getUserName();
@@ -259,29 +236,18 @@ const GameEditor: React.FC = () => {
   //ENDFIXME
 
   const saveProjectContent = (): void => {
-    const jsonData: { [key: string]: string } = {};
-    editorTabs.forEach(({ label, getData }) => {
-      if (getData) {
-        const content = getData();
-        jsonData[label] = content;
-      }
-    });
-
-    if (!jsonData || Object.keys(jsonData).length === 0)
-      return;
-
+    if (!isHost) return;
+    const data = encodeUpdate(ydoc);
     ProjectsService.projectControllerSaveProjectContent(
       String(LocalStorageManager.getProjectId()),
-      { file: new Blob([JSON.stringify(jsonData)], { type: "application/json" }) }
+      { file: new Blob([data], { type: "application/octet-stream" }) }
     ).catch((error) => {
       console.error("Failed to save content:", error);
     });
   };
 
   const cleanUpAndDisconnect = (): void => {
-    if (!provider || !ydoc || editorTabs.length === 0)
-      return;
-
+    if (!provider || !ydoc) return;
     saveProjectContent();
     const projectId = LocalStorageManager.getProjectId();
 
@@ -313,7 +279,7 @@ const GameEditor: React.FC = () => {
     };
   }, [editorTabs, isHost]);
 
-  if (!provider)
+  if (!docInitialized || !provider)
     return <div>Loading work session...</div>;
 
   return (
