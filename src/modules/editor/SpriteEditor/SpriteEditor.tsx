@@ -192,9 +192,7 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc }) => {
       container.removeEventListener("wheel", preventScroll);
     };
   }, []);
-  useEffect(() => {
-    console.log("drawing");
-  }, [drawCanvasRef]);
+
   useEffect(() => {
     if (drawCanvasRef.current) {
       drawCanvasRef.current.clear(0);
