@@ -21,6 +21,7 @@ import SpriteIcon from "src/assets/pen.svg?react";
 import SoundIcon from "src/assets/music.svg?react";
 import MapIcon from "src/assets/map.svg?react";
 import { generateRandomColor } from "@utils/colorUtils";
+import { encodeUpdate, decodeUpdate } from "@utils/YSerialize";
 import { useProject } from "src/providers/ProjectProvider";
 import { encodeUpdate, decodeUpdate } from "@utils/YSerialize";
 
@@ -76,7 +77,7 @@ const PreviewCanvas = styled(GameCanvas)(({ theme }) => ({
 const GameEditor: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [output, setOutput] = useState<string>("");
-  const [roomId, setRoomId] = useState<string | undefined>(undefined);
+  const [roomId, setRoomId] = useState<Maybe<string>>(undefined);
   const [isHost, setIsHost] = useState<boolean>(false);
   const [isKicking, setIsKicking] = useState<boolean>(false);
   const [awarenessLoaded, setAwarenessLoaded] = useState<boolean>(false);
@@ -84,6 +85,8 @@ const GameEditor: React.FC = () => {
   const [docInitialized, setDocInitialized] = useState(false);
 
   const { project } = useProject();
+  const [docInitialized, setDocInitialized] = useState(false);
+
   const tabs = useMemo(() => [
     { label: "code", component: CodeEditor, icon: <CodeIcon /> },
     { label: "sprite", component: SpriteEditor, icon: <SpriteIcon /> },
@@ -127,8 +130,7 @@ const GameEditor: React.FC = () => {
   }, [ydoc]);
 
   const provider: Maybe<WebrtcProvider> = useMemo(() => {
-    if (!roomId)
-      return undefined;
+    if (!roomId || !docInitialized) return undefined; // defer until initial state applied
     return new WebrtcProvider(roomId, ydoc, config.webrtc);
   }, [roomId, ydoc, docInitialized]);
 
@@ -329,7 +331,7 @@ const GameEditor: React.FC = () => {
     };
   }, [editorTabs, isHost]);
 
-  if (!provider)
+  if (!docInitialized || !provider)
     return <div>Loading work session...</div>; //FIXME: add a loading spinner with a component
 
   return (

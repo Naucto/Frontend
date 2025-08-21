@@ -32,3 +32,5 @@ export { ProjectsService } from './services/ProjectsService';
 export { S3Service } from './services/S3Service';
 export { UsersService } from './services/UsersService';
 export { WorkSessionsService } from './services/WorkSessionsService';
+
+export { ApiError } from './core/ApiError';
