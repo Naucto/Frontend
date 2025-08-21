@@ -21,7 +21,6 @@ import SpriteIcon from "src/assets/pen.svg?react";
 import SoundIcon from "src/assets/music.svg?react";
 import MapIcon from "src/assets/map.svg?react";
 import { generateRandomColor } from "@utils/colorUtils";
-import { encodeUpdate, decodeUpdate } from "@utils/YSerialize";
 import { useProject } from "src/providers/ProjectProvider";
 import { encodeUpdate, decodeUpdate } from "@utils/YSerialize";
 
@@ -85,7 +84,6 @@ const GameEditor: React.FC = () => {
   const [docInitialized, setDocInitialized] = useState(false);
 
   const { project } = useProject();
-  const [docInitialized, setDocInitialized] = useState(false);
 
   const tabs = useMemo(() => [
     { label: "code", component: CodeEditor, icon: <CodeIcon /> },
