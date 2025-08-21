@@ -30,7 +30,7 @@ const Bottom = styled("div")(({ theme }) => ({
   backgroundColor: theme.palette.blue[700],
 }));
 
-export const MapEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetData }) => {
+export const MapEditor: React.FC<EditorProps> = () => {
   const { project } = useProject();
   if (!project) {
     return <div>Loading...</div>;
