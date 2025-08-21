@@ -3,6 +3,7 @@ import { EditorProps } from "../EditorType.ts";
 import { styled } from "@mui/material/styles";
 import { useProject } from "src/providers/ProjectProvider";
 import { MapViewport } from "./MapViewport";
+import { SpritePicker } from "./SpritePicker";
 
 const MapEditorContainer = styled("div")(({ theme }) => ({
   display: "flex",
@@ -34,11 +35,7 @@ export const MapEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, on
     <MapEditorContainer>
       <MapViewport selectedIndex={selectedIndex} />
       <Bottom>
-        <input
-          type="number"
-          value={selectedIndex}
-          onChange={(e) => setSelectedIndex(Number(e.target.value))}
-        />
+        <SpritePicker selectedIndex={selectedIndex} onSelect={setSelectedIndex} />
       </Bottom>
     </MapEditorContainer>
   );
