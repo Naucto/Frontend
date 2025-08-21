@@ -161,7 +161,7 @@ const GameEditor: React.FC = () => {
   }, [tabs, ydoc, provider]);
 
   const checkAndKickDisconnectedUsers = async (): Promise<void> => {
-    if (isKicking || !awareness)
+    if (isHost || isKicking || !awareness)
       return;
 
     setIsKicking(true);
@@ -173,6 +173,7 @@ const GameEditor: React.FC = () => {
       const sessionInfo = await WorkSessionsService.workSessionControllerGetInfo(projectId);
 
       if (!isHost && sessionInfo.host === Number(userId)) {
+        console.log("DEBUG 1");
         setIsHost(true);
       }
 
@@ -189,7 +190,10 @@ const GameEditor: React.FC = () => {
             });
           }
         }
-        setIsHost(true);
+        if (!isHost) {
+          console.log("DEBUG 2");
+          setIsHost(true);
+        }
       }
     } catch (error) {
       console.error("Error checking or kicking disconnected users:", error);
@@ -229,7 +233,8 @@ const GameEditor: React.FC = () => {
           WorkSessionsService
             .workSessionControllerGetInfo(projectId)
             .then(sessionInfo => {
-              if (sessionInfo.host === userId) {
+              if (sessionInfo.host === userId && !isHost) {
+                console.log("DEBUG 3");
                 setIsHost(true);
               }
             });
@@ -318,8 +323,6 @@ const GameEditor: React.FC = () => {
     if (!isHost)
       return;
 
-    console.log("IM THE HOTS!!!");
-
     const intervalId = setInterval(() => {
       saveProjectContent();
     }, 5 * 60 * 1000);
@@ -327,7 +330,7 @@ const GameEditor: React.FC = () => {
     return () => {
       clearInterval(intervalId);
     };
-  }, [editorTabs, isHost]);
+  }, [isHost]);
 
   if (!docInitialized || !provider)
     return <div>Loading work session...</div>; //FIXME: add a loading spinner with a component
