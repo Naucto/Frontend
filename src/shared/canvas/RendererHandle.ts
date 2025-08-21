@@ -1,4 +1,4 @@
-import { rectangleToVertices } from "@shared/canvas/CanvasUtil";
+import { rectangleToVertices } from "@shared/canvas/glUtils";
 import { GLPipeline, initGLPipeline } from "@shared/canvas/GLSetup";
 import { useEffect, useMemo, useRef } from "react";
 import { CanvasError, CanvasNotInitializedError } from "src/errors/CanvasError";

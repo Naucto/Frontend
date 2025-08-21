@@ -1,4 +1,4 @@
-import { getRGBArraysFromPalette } from "@shared/canvas/CanvasUtil";
+import { getRGBArraysFromPalette } from "@shared/canvas/glUtils";
 
 const exampleSpriteTable =
   "\

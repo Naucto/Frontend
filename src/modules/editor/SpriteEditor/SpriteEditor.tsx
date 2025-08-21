@@ -173,6 +173,7 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc }) => {
 
   useEffect(() => {
     yspriteRef.current = new YSpriteSheet(ydoc, "sprite", SPRITE_SHEET_SIZE, SPRITE_SHEET_SIZE);
+    actions.setSpriteSheetData(yspriteRef.current.toString());
     if (yspriteRef.current) {
       yspriteRef.current.observe(() => setVersion(v => v + 1));
     }
@@ -206,6 +207,7 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc }) => {
         0, 0,
         (1 / zoom) * SPRITE_NUMBER);
       drawCanvasRef.current.draw();
+      console.log("drawn");
     }
   }, [yspriteRef, drawCanvasRef, position, version, zoom]);
 
