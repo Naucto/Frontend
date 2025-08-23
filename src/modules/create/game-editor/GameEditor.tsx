@@ -173,7 +173,6 @@ const GameEditor: React.FC = () => {
       const sessionInfo = await WorkSessionsService.workSessionControllerGetInfo(projectId);
 
       if (!isHost && sessionInfo.host === Number(userId)) {
-        console.log("DEBUG 1");
         setIsHost(true);
       }
 
@@ -191,7 +190,6 @@ const GameEditor: React.FC = () => {
           }
         }
         if (!isHost) {
-          console.log("DEBUG 2");
           setIsHost(true);
         }
       }
@@ -225,6 +223,16 @@ const GameEditor: React.FC = () => {
           userStateCache.set(clientID, state.user);
         }
       });
+      added.forEach((clientID) => {
+        const projectId = Number(LocalStorageManager.getProjectId());
+
+        WorkSessionsService.workSessionControllerGetInfo(projectId).then(sessionInfo => {
+          if (!sessionInfo.users.includes(String(clientID))) {
+            const state = awareness?.getStates().get(clientID); // FIXME: both user successfully added each other when only one should
+            WorkSessionsService.workSessionControllerAdd(projectId, { userId: Number(state?.user.userId) });
+          }
+        });
+      });
 
       removed.forEach(clientID => {
         const disconnectedUser = userStateCache.get(clientID);
@@ -234,7 +242,6 @@ const GameEditor: React.FC = () => {
             .workSessionControllerGetInfo(projectId)
             .then(sessionInfo => {
               if (sessionInfo.host === userId && !isHost) {
-                console.log("DEBUG 3");
                 setIsHost(true);
               }
             });
@@ -322,6 +329,8 @@ const GameEditor: React.FC = () => {
   useEffect(() => {
     if (!isHost)
       return;
+
+    console.log("IM THE HOTS!!!");
 
     const intervalId = setInterval(() => {
       saveProjectContent();
