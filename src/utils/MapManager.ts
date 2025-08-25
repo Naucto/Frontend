@@ -47,10 +47,10 @@ export class MapManager {
     this._tileIndexMap[pos.y][pos.x] = spriteIndex;
   }
 
-  public getMapDimensions(): { width: number; height: number } {
+  public getMapDimensions(): Point2D {
     return {
-      width: this._map.width,
-      height: this._map.height
+      x: this._map.width,
+      y: this._map.height
     };
   }
 
