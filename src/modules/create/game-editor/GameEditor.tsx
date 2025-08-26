@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { styled } from "@mui/material/styles";
-import { Tabs, Tab, Box } from "@mui/material";
+import { Tabs, Tab, Box, Dialog, DialogTitle, DialogContent, DialogActions, Button, Alert } from "@mui/material";
 import CodeEditor from "@modules/create/game-editor/editors/CodeEditor";
 import { WebrtcProvider } from "y-webrtc";
 import * as Y from "yjs";
@@ -21,8 +21,8 @@ import SpriteIcon from "src/assets/pen.svg?react";
 import SoundIcon from "src/assets/music.svg?react";
 import MapIcon from "src/assets/map.svg?react";
 import { generateRandomColor } from "@utils/colorUtils";
-import { encodeUpdate, decodeUpdate } from "@utils/YSerialize";
 import { useProject } from "src/providers/ProjectProvider";
+import { encodeUpdate, decodeUpdate } from "@utils/YSerialize";
 
 const GameEditorContainer = styled("div")(({ theme }) => ({
   height: "100%",
@@ -78,8 +78,12 @@ const GameEditor: React.FC = () => {
   const [output, setOutput] = useState<string>("");
   const [roomId, setRoomId] = useState<Maybe<string>>(undefined);
   const [isHost, setIsHost] = useState<boolean>(false);
-  const { project } = useProject();
+  const [isKicking, setIsKicking] = useState<boolean>(false);
+  const [awarenessLoaded, setAwarenessLoaded] = useState<boolean>(false);
+
   const [docInitialized, setDocInitialized] = useState(false);
+
+  const { project } = useProject();
 
   const tabs = useMemo(() => [
     { label: "code", component: CodeEditor, icon: <CodeIcon /> },
@@ -124,7 +128,7 @@ const GameEditor: React.FC = () => {
   }, [ydoc]);
 
   const provider: Maybe<WebrtcProvider> = useMemo(() => {
-    if (!roomId || !docInitialized) return undefined; // defer until initial state applied
+    if (!roomId || !docInitialized) return undefined;
     return new WebrtcProvider(roomId, ydoc, config.webrtc);
   }, [roomId, ydoc, docInitialized]);
 
@@ -133,6 +137,42 @@ const GameEditor: React.FC = () => {
       return undefined;
     return provider.awareness;
   }, [provider]);
+
+  const suppressBeforeUnloadRef = React.useRef(false);
+
+  const [isOnline, setIsOnline] = useState<boolean>(typeof navigator !== "undefined" ? navigator.onLine : true);
+  const [offlineWarningOpen, setOfflineWarningOpen] = useState<boolean>(false);
+
+  const [otherUsersCount, setOtherUsersCount] = useState<number>(0);
+
+  useEffect(() => {
+    const handleOnline = async (): Promise<void> => {
+      setIsOnline(true);
+      suppressBeforeUnloadRef.current = true;
+      const data = encodeUpdate(ydoc);
+      await ProjectsService.projectControllerSaveProjectContent(
+        String(LocalStorageManager.getProjectId()),
+        { file: new Blob([data], { type: "application/octet-stream" }) }
+      ).catch((error) => {
+        console.error("Failed to save content during cleanup:", error);
+      });
+      window.location.reload();
+    };
+    const handleOffline = (): void => {
+      setIsOnline(false);
+    };
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isOnline) setOfflineWarningOpen(true);
+  }, [isOnline]);
 
   const editorTabs: EditorTab[] = useMemo(() => {
     if (!ydoc || !provider) return [];
@@ -156,6 +196,46 @@ const GameEditor: React.FC = () => {
     });
   }, [tabs, ydoc, provider]);
 
+  const checkAndKickDisconnectedUsers = async (): Promise<void> => {
+    if (isHost || isKicking || !awareness)
+      return;
+
+    setIsKicking(true);
+
+    const userId = LocalStorageManager.getUserId();
+
+    const projectId = Number(LocalStorageManager.getProjectId());
+    try {
+      const sessionInfo = await WorkSessionsService.workSessionControllerGetInfo(projectId);
+
+      if (!isHost && sessionInfo.host === Number(userId)) {
+        setIsHost(true);
+      }
+
+      const connectedClients = Array.from(awareness?.getStates().keys() || []);
+      if (
+        connectedClients.length === 1 &&
+        awareness?.clientID !== undefined &&
+        connectedClients[0] === awareness?.clientID
+      ) {
+        for (const sessionUserId of sessionInfo.users) {
+          if (Number(sessionUserId) !== userId) {
+            await WorkSessionsService.workSessionControllerKick(projectId, {
+              userId: Number(sessionUserId)
+            });
+          }
+        }
+        if (!isHost) {
+          setIsHost(true);
+        }
+      }
+    } catch (error) {
+      console.error("Error checking or kicking disconnected users:", error);
+    }
+
+    setIsKicking(false);
+  };
+
   useEffect(() => {
     const userName = LocalStorageManager.getUserName();
     const userId = LocalStorageManager.getUserId();
@@ -167,6 +247,16 @@ const GameEditor: React.FC = () => {
     });
 
     const userStateCache = new Map<number, UserState>();
+
+    const computeOtherUsersCount = (): void => {
+      const localUserId = String(LocalStorageManager.getUserId());
+      let count = 0;
+      awareness?.getStates().forEach((state: { user?: UserState }) => {
+        const uid = state?.user?.userId;
+        if (uid && String(uid) !== localUserId) count++;
+      });
+      setOtherUsersCount(count);
+    };
 
     const onChange = ({ added, updated, removed }: {
       added: number[]
@@ -187,23 +277,40 @@ const GameEditor: React.FC = () => {
           WorkSessionsService
             .workSessionControllerGetInfo(projectId)
             .then(sessionInfo => {
-              if (sessionInfo.host === userId) {
+              if (sessionInfo.host === userId && !isHost) {
                 setIsHost(true);
               }
             });
           userStateCache.delete(clientID);
 
           WorkSessionsService.workSessionControllerKick(projectId, { userId: Number(disconnectedUser.userId) });
+
+          checkAndKickDisconnectedUsers();
         }
       });
+
+      computeOtherUsersCount();
+
+      if (!awarenessLoaded)
+        setAwarenessLoaded(true);
     };
 
     if (!awareness)
       return;
 
     awareness!.on("change", onChange);
+
+    computeOtherUsersCount();
+
     return () => awareness!.off("change", onChange);
   }, [awareness]);
+
+  useEffect(() => {
+    if (!awarenessLoaded)
+      return;
+
+    checkAndKickDisconnectedUsers();
+  }, [awarenessLoaded]);
 
   const [code, setCode] = useState("");
 
@@ -271,7 +378,7 @@ const GameEditor: React.FC = () => {
     return () => {
       clearInterval(intervalId);
     };
-  }, [editorTabs, isHost]);
+  }, [isHost]);
 
   if (!docInitialized || !provider)
     return <div>Loading work session...</div>; //FIXME: add a loading spinner with a component
@@ -297,9 +404,7 @@ const GameEditor: React.FC = () => {
             key={tab.label}
             role="tabpanel"
             hidden={activeTab !== idx}
-            sx={{
-              display: activeTab === idx ? "block" : "none",
-            }}
+            sx={{ display: activeTab === idx ? "block" : "none" }}
           >
             {tab.component}
           </TabContent>
@@ -321,7 +426,57 @@ const GameEditor: React.FC = () => {
         )}
         <GameEditorConsole output={output} />
       </RightPanel>
+
+      <Dialog
+        open={!isOnline && offlineWarningOpen}
+        onClose={() => setOfflineWarningOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        slotProps={{
+          paper: {
+            sx: (theme) => ({
+              bgcolor: theme.palette.mode === "dark" ? theme.palette.grey[900] : "#0f0f0f",
+              color: theme.palette.getContrastText(theme.palette.grey[900]),
+              border: `1px solid ${theme.palette.grey[800]}`,
+              boxShadow: theme.shadows[8],
+            }),
+          },
+        }}
+      >
+        <DialogTitle sx={{ color: "inherit" }}>You are offline</DialogTitle>
+        <DialogContent
+          dividers
+          sx={(theme) => ({
+            bgcolor: "transparent",
+            borderColor: theme.palette.grey[800],
+          })}
+        >
+          <Alert
+            severity={otherUsersCount > 0 ? "warning" : "info"}
+            variant="outlined"
+            sx={(theme) => ({
+              bgcolor: "transparent",
+              color: theme.palette.grey[100],
+              borderColor: theme.palette.grey[700],
+              "& .MuiAlert-icon": { color: theme.palette.grey[400] },
+            })}
+          >
+            {otherUsersCount > 0
+              ? `${otherUsersCount} other ${otherUsersCount === 1 ? "person is" : "people are"} in the session. Your local changes may be overwritten when you reconnect.`
+              : "Your local changes may not synchronize until the connection is restored."}
+          </Alert>
+        </DialogContent>
+        <DialogActions sx={{ bgcolor: "transparent" }}>
+          <Button variant="contained" color="primary" onClick={() => setOfflineWarningOpen(false)} autoFocus>
+            Got it
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Beforeunload onBeforeunload={(event) => {
+        if (suppressBeforeUnloadRef.current) {
+          return undefined;
+        }
         event.preventDefault();
         cleanUpAndDisconnect();
         return "Are you sure you want to leave? Your changes may not be saved.";

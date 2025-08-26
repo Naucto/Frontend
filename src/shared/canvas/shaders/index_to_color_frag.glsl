@@ -2,8 +2,6 @@ precision mediump float;
 uniform sampler2D u_paletteTex;
 uniform sampler2D u_texture;
 uniform float u_paletteSize;
-uniform int u_mode;
-
 varying vec2 v_uv;
 
 void main() {
