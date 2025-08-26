@@ -371,8 +371,6 @@ const GameEditor: React.FC = () => {
     if (!isHost)
       return;
 
-    console.log("IM THE HOTS!!!");
-
     const intervalId = setInterval(() => {
       saveProjectContent();
     }, 5 * 60 * 1000);
