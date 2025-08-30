@@ -1,4 +1,4 @@
-import { convertSpritesheetToIndexArray } from "@shared/canvas/CanvasUtil";
+import { convertSpritesheetToIndexArray } from "@shared/canvas/glUtils";
 import { MapManagerError } from "src/errors/MapManagerError";
 import { Map } from "src/types/MapType";
 
@@ -28,6 +28,10 @@ export class MapManager {
     this._mapPixelArray = this._buildMapPixelArray();
   }
 
+  public getMap(): Map {
+    return this._map;
+  }
+
   public getMapPixelArray(): Uint8Array {
     return this._mapPixelArray;
   }
@@ -39,12 +43,18 @@ export class MapManager {
     return this._tileIndexMap[pos.y][pos.x];
   }
 
-  public setTileAt(pos: Point2D, spriteIndex: number): void {
+  public setTileAt(pos: Point2D, spriteIndex: number): boolean {
     if (pos.x < 0 || pos.x >= this._map.width || pos.y < 0 || pos.y >= this._map.height) {
       throw new MapManagerError(`Tile position (${pos.x}, ${pos.y}) is out of bounds`);
     }
-
-    this._tileIndexMap[pos.y][pos.x] = spriteIndex;
+    if (this._tileIndexMap[pos.y][pos.x] === spriteIndex) {
+      return false;
+    }
+    const numberToHex = Number(spriteIndex).toString(16).padStart(this._map.stride, "0");
+    const start = this._map.mapData.slice(0, (pos.y * this._map.width + pos.x) * this._map.stride);
+    const end = this._map.mapData.slice((pos.y * this._map.width + pos.x + 1) * this._map.stride);
+    this._map.mapData = start + numberToHex + end;
+    return true;
   }
 
   public getMapDimensions(): Point2D {

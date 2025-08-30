@@ -1,4 +1,4 @@
-import { compileShader, convertSpritesheetToIndexArray, createGLContext, setGLProgram, setTexture } from "@shared/canvas/CanvasUtil";
+import { compileShader, convertSpritesheetToIndexArray, createGLContext, setGLProgram, setTexture } from "@shared/canvas/glUtils";
 import { SpriteSheet } from "src/types/SpriteSheetType";
 import indexToColorFragment from "src/shared/canvas/shaders/index_to_color_frag.glsl";
 import spriteSheetVertex from "src/shared/canvas/shaders/sprite_cut_vert.glsl";

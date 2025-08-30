@@ -71,5 +71,8 @@ export const StyledCanvas = styled(Canvas).attrs<CanvasProps>(props => ({
   onMouseEnter: props.onMouseEnter
 }))`
   image-rendering: pixelated;
-  width: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
 `;
