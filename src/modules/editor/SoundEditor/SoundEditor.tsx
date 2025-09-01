@@ -220,7 +220,6 @@ interface ControlButtonsProps {
   instrumentsLoaded: boolean;
   onPlay: () => void;
   onClear: () => void;
-  onSave: () => void;
 }
 
 const ControlButtons: React.FC<ControlButtonsProps> = ({
@@ -228,14 +227,12 @@ const ControlButtons: React.FC<ControlButtonsProps> = ({
   instrumentsLoaded,
   onPlay,
   onClear,
-  onSave,
 }) => (
   <ControlButtonsContainer>
     <MusicEditorButton onClick={onPlay} disabled={isPlaying || !instrumentsLoaded}>
       {isPlaying ? "Playing..." : instrumentsLoaded ? "Play" : "Loading..."}
     </MusicEditorButton>
     <MusicEditorButton onClick={onClear}>Clear</MusicEditorButton>
-    <MusicEditorButton onClick={onSave}>Save</MusicEditorButton>
   </ControlButtonsContainer>
 );
 
@@ -272,18 +269,6 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({ ydoc, provider }) => {
       isMounted = false;
     };
   }, []);
-
-  useEffect(() => {
-    if (ydoc && provider) {
-      console.log("Active cells changed:", Array.from(activeCells));
-    }
-  }, [activeCells, ydoc, provider]);
-
-  useEffect(() => {
-    if (ydoc && provider) {
-      console.log("Music data changed:", currentMusic);
-    }
-  }, [currentMusic, ydoc, provider]);
 
   const gridCells = useMemo(() => {
     return [...Array(24)].map((_, row) =>
@@ -426,13 +411,13 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({ ydoc, provider }) => {
     }
   }, [currentMusic, isPlaying]);
 
-  const saveMusic = useCallback(() => {
+  useEffect(() => {
     setMusics(prevMusics => {
       const newMusics = [...prevMusics];
       newMusics[selectedMusicIndex] = currentMusic;
       return newMusics;
     });
-  }, [selectedMusicIndex, currentMusic]);
+  }, [currentMusic, selectedMusicIndex]);
 
   const loadStateFromMusic = useCallback((id: number) => {
     const music = musics[id];
@@ -482,7 +467,6 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({ ydoc, provider }) => {
           instrumentsLoaded={instrumentsLoaded}
           onPlay={handlePlay}
           onClear={clearMusic}
-          onSave={saveMusic}
         />
         {loadingError && (
           <ErrorMessage>
