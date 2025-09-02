@@ -6,7 +6,7 @@ import { WebrtcProvider } from "y-webrtc";
 import * as Y from "yjs";
 import config from "config.json";
 import { EditorProps, EditorTab } from "./editors/EditorType";
-import { SoundEditor } from "./editors/SoundEditor";
+import { SoundEditor } from "src/modules/editor/SoundEditor/SoundEditor";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
 import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
