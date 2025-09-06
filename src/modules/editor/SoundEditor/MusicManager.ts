@@ -1,6 +1,6 @@
 import * as Tone from "tone";
 import { MusicError } from "./Music";
-import { getSampler, getSamplerLoadingPromise, isSamplerReady } from "./Note";
+import { getSynth } from "./Note";
 
 export const AllNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 
@@ -38,48 +38,11 @@ export const playInstrument = async (
   when = Tone.now(),
   duration: Tone.Unit.Time
 ): Promise<void> => {
-  try {
-    await Tone.loaded();
-
-    let sampler = getSampler(instrument);
-    if (!sampler) {
-      const loadingPromise = getSamplerLoadingPromise(instrument);
-      if (loadingPromise) {
-        await loadingPromise;
-        sampler = getSampler(instrument);
-      } else {
-        console.error(`No sampler found for instrument: ${instrument}`);
-        return;
-      }
+  return new Promise(resolve => {
+    const synth = getSynth(instrument);
+    if (synth) {
+      synth.triggerAttackRelease(note, duration, when);
     }
-
-    if (!sampler) {
-      console.error(`Failed to load sampler for instrument: ${instrument}`);
-      return;
-    }
-
-    if (!isSamplerReady(instrument)) {
-      const loadingPromise = getSamplerLoadingPromise(instrument);
-      if (loadingPromise) {
-        await loadingPromise;
-      } else {
-        console.error(`No loading promise found for instrument: ${instrument}`);
-        return;
-      }
-    }
-
-    try {
-      sampler.triggerAttackRelease(note, duration, when);
-    } catch (samplerError) {
-      console.warn(`Sampler failed for ${instrument}, using fallback synth:`, samplerError);
-      fallbackSynth.triggerAttackRelease(note, duration, when);
-    }
-  } catch (error) {
-    console.error(`Error playing instrument ${instrument}:`, error);
-    try {
-      fallbackSynth.triggerAttackRelease(note, duration, when);
-    } catch (fallbackError) {
-      console.error("Fallback synth also failed:", fallbackError);
-    }
-  }
+    resolve();
+  });
 };

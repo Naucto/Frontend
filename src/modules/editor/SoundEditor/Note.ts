@@ -1,7 +1,7 @@
 import * as Tone from "tone";
-import { SampleLibrary } from "./Tonejs-Instruments";
 
 const samplers = new Map<string, Tone.Sampler>();
+const synths = new Map<string, any>();
 
 const samplerLoadingPromises = new Map<string, Promise<void>>();
 
@@ -25,14 +25,27 @@ const createSamplerWithPromise = (instrument: string): Promise<void> => {
   });
 };
 
+const createSynth = (instrument: string): any => {
+  let synth: any;
+  switch (instrument) {
+    case "fm":
+      synth = new Tone.FMSynth().toDestination();
+      break;
+    default:
+      synth = new Tone.Synth().toDestination();
+      break;
+  }
+  synths.set(instrument, synth);
+  return synth;
+};
+
 export const createNote = (
   note: string = "D4",
   duration: number = 0.25,
   instrument: string = "piano"
 ): NoteData => {
-  if (!samplers.has(instrument)) {
-    const loadingPromise = createSamplerWithPromise(instrument);
-    samplerLoadingPromises.set(instrument, loadingPromise);
+  if (!synths.has(instrument)) {
+    createSynth(instrument);
   }
 
   return {
@@ -85,6 +98,10 @@ export const preloadInstruments = async (): Promise<void> => {
 export const isSamplerReady = (instrument: string): boolean => {
   const sampler = samplers.get(instrument);
   return sampler !== undefined;
+};
+
+export const getSynth = (instrument: string): any | undefined => {
+  return synths.get(instrument);
 };
 
 export const getSampler = (instrument: string): Tone.Sampler | undefined => {
