@@ -5,6 +5,7 @@ import { StyledCanvas } from "src/shared/canvas/Canvas.tsx";
 import { SpriteRendererHandle } from "src/shared/canvas/RendererHandle.ts";
 import { getCanvasPoint2DFromEvent } from "src/utils/canvasUtils.ts";
 import { MapManager } from "@utils/MapManager.ts";
+
 const SCREEN_SIZE: Point2D = { x: 320, y: 180 };
 
 const ViewportCanvas = styled(StyledCanvas)(({ theme }) => ({}));
@@ -30,9 +31,7 @@ export const MapViewport: React.FC<Props> = ({ selectedIndex }) => {
 
   const spriteRendererHandleRef = createRef<SpriteRendererHandle>();
 
-  const mapManager: MapManager = useMemo(() => {
-    return new MapManager(project.map);
-  }, [project.map]);
+  const mapManager: MapManager = useMemo(() => new MapManager(project.map), [project.map]);
 
   const draw = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>): void => {
