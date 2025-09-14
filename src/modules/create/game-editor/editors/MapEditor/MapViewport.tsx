@@ -1,7 +1,7 @@
 import React, { createRef, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { styled } from "@mui/material/styles";
 import { useProject } from "src/providers/ProjectProvider";
-import { StyledCanvas } from "src/shared/canvas/Canvas.tsx";
+import { StyledCanvas } from "src/shared/canvas/Canvas";
 import { SpriteRendererHandle } from "src/shared/canvas/RendererHandle.ts";
 import { getCanvasPoint2DFromEvent } from "src/utils/canvasUtils.ts";
 import { MapManager } from "@utils/MapManager.ts";
