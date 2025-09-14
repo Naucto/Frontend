@@ -29,7 +29,7 @@ export const MapEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, on
   const { project } = useProject();
   if (!project) return <div>Loading...</div>;
 
-  const [selectedIndex, setSelectedIndex] = useState<number>(13);
+  const [selectedIndex, setSelectedIndex] = useState(13);
 
   return (
     <MapEditorContainer>
