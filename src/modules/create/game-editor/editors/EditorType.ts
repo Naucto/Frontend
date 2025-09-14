@@ -1,10 +1,8 @@
-import * as Y from "yjs";
-import { WebrtcProvider } from "y-webrtc";
 import { FC } from "react";
+import { EngineProvider } from "src/providers/EngineProvider";
 
 export type EditorProps = {
-  ydoc: Y.Doc;
-  provider: WebrtcProvider;
+  provider: EngineProvider;
 };
 
 export interface EditorTab {

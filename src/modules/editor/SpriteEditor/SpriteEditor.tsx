@@ -7,7 +7,6 @@ import { StyledCanvas } from "@shared/canvas/Canvas";
 import { SpriteSheet } from "src/types/SpriteSheetType";
 import { palette } from "src/temporary/SpriteSheet";
 import { EditorProps } from "../../create/game-editor/editors/EditorType";
-import { YSpriteSheet } from "@modules/create/game-editor/types/YSpriteSheet.ts";
 import { useProject } from "src/providers/ProjectProvider";
 import { Map } from "src/types/MapType";
 
@@ -141,7 +140,7 @@ function getSpritePos(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
   return { x: spriteX, y: spriteY };
 }
 
-export const SpriteEditor: React.FC<EditorProps> = ({ ydoc }) => {
+export const SpriteEditor: React.FC<EditorProps> = ({ provider }) => {
   const [currentColor, setCurrentColor] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [position, setPosition] = useState<Point2D>({ x: 0, y: 0 });
@@ -152,7 +151,6 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc }) => {
   const [version, setVersion] = useState(0);
   const drawCanvasRef = React.createRef<SpriteRendererHandle>();
   const canvasContainerRef = useRef<HTMLDivElement>(null);
-  const yspriteRef = useRef<YSpriteSheet>(null);
   const { project, actions } = useProject();
 
   const handleContextMenu = (e: React.MouseEvent): void => {
@@ -172,11 +170,8 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc }) => {
   };
 
   useEffect(() => {
-    yspriteRef.current = new YSpriteSheet(ydoc, "sprite", SPRITE_SHEET_SIZE, SPRITE_SHEET_SIZE);
-    if (yspriteRef.current) {
-      yspriteRef.current.observe(() => setVersion(v => v + 1));
-    }
-  }, [ydoc]);
+    provider.sprite.observe(() => setVersion(v => v + 1));
+  }, [provider]);
 
   useEffect(() => {
     const container = canvasContainerRef.current;
@@ -207,17 +202,11 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc }) => {
         (1 / zoom) * SPRITE_NUMBER);
       drawCanvasRef.current.draw();
     }
-  }, [yspriteRef, drawCanvasRef, position, version, zoom]);
+  }, [provider.sprite, drawCanvasRef, position, version, zoom]);
 
   const drawAt = (x: number, y: number): void => {
-    if (!yspriteRef.current)
-      return;
-    ydoc!.transact(() => {
-      yspriteRef.current?.setPixel(x, y, currentColor);
-      if (yspriteRef.current) {
-        actions.setSpriteSheetData(yspriteRef.current.toString());
-      }
-    });
+    provider.sprite.setPixel(x, y, currentColor);
+    actions.setSpriteSheetData(provider.sprite.getContent().toString());
     setVersion(v => v + 1);
   };
 
@@ -272,7 +261,7 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc }) => {
   };
 
   const canvasSpriteSheet: SpriteSheet = {
-    spriteSheet: yspriteRef.current ? yspriteRef.current.toString() : "",
+    spriteSheet: provider.sprite ? provider.sprite.getContent().toString() : "",
     spriteSize: {
       width: SPRITE_SIZE,
       height: SPRITE_SIZE

@@ -1,17 +1,15 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Editor, { Monaco } from "@monaco-editor/react";
 import { editor } from "monaco-editor";
 import CodeTabTheme from "./CodeTabTheme";
-import { MonacoBinding } from "y-monaco";
-import * as Y from "yjs";
 import { EditorProps } from "./EditorType";
 import "./CodeEditor.css";
 import { useTheme } from "@mui/material/styles";
 import { generateRandomColor } from "@utils/colorUtils";
+import { AwarenessEventType } from "../../../../providers/editors/AwarenessProvider";
+import { EngineUser } from "src/types/userTypes";
 
-const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider }) => {
-  const monacoBindingRef = useRef<MonacoBinding>(null);
-  const ytextRef = useRef<Y.Text>(null);
+const CodeEditor: React.FC<EditorProps> = ({ provider }) => {
   const [userStyles, setUserStyles] = useState<string>("");
   const theme = useTheme();
 
@@ -76,8 +74,8 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider }) => {
       const styleMap = new Map<number, string>();
 
       states.forEach((state, clientId) => {
-        if (state?.user) {
-          const { name, color } = state.user;
+        if (state && typeof state === "object" && "user" in state) {
+          const { name, color } = (state as { user: EngineUser }).user;
           styleMap.set(clientId, generateUserStyles(clientId, name, color));
         }
       });
@@ -97,19 +95,19 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider }) => {
       updateStyles(changes);
     };
 
-    provider.awareness.on("change", handleAwarenessUpdate);
+    provider.awareness.observe(AwarenessEventType.CHANGE, handleAwarenessUpdate);
 
     return () => {
-      provider.awareness.off("change", handleAwarenessUpdate);
     };
   }, [provider, generateUserStyles]);
 
   useEffect(() => {
     if (!provider?.awareness) return;
 
-    const currentUser = provider.awareness.getLocalState()?.user;
+    const currentUser = provider.awareness.getLocalUser();
+
     if (currentUser && !currentUser.color) {
-      provider.awareness.setLocalStateField("user", {
+      provider.awareness.setLocalUser({
         ...currentUser,
         color: generateRandomColor()
       });
@@ -123,18 +121,10 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider }) => {
       return;
     }
 
-    ytextRef.current = ydoc.getText("monaco");
-
-    monacoBindingRef.current = new MonacoBinding(
-      ytextRef.current,
-      editorModel,
-      new Set([editor]),
-      provider.awareness
-    );
+    provider.code.setMonacoBinding(editor);
 
     return () => {
       editor.dispose();
-      monacoBindingRef.current?.destroy?.();
     };
   };
 
