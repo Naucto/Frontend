@@ -207,7 +207,6 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc }) => {
         0, 0,
         (1 / zoom) * SPRITE_NUMBER);
       drawCanvasRef.current.draw();
-      console.log("drawn");
     }
   }, [yspriteRef, drawCanvasRef, position, version, zoom]);
 
