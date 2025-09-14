@@ -5,9 +5,6 @@ import { StyledCanvas } from "src/shared/canvas/Canvas.tsx";
 import { SpriteRendererHandle } from "src/shared/canvas/RendererHandle.ts";
 import { getCanvasPoint2DFromEvent } from "src/utils/canvasUtils.ts";
 import { MapManager } from "@utils/MapManager.ts";
-
-type Point2D = { x: number; y: number };
-
 const SCREEN_SIZE: Point2D = { x: 320, y: 180 };
 
 const ViewportCanvas = styled(StyledCanvas)(({ theme }) => ({}));
