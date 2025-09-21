@@ -1,7 +1,9 @@
-import React from "react";
-import { EditorProps } from "./EditorType.ts";
+import React, { useState } from "react";
+import { EditorProps } from "../EditorType.ts";
 import { styled } from "@mui/material/styles";
 import { useProject } from "src/providers/ProjectProvider";
+import { MapViewport } from "./MapViewport";
+import { SpritePicker } from "./SpritePicker";
 
 const MapEditorContainer = styled("div")(({ theme }) => ({
   display: "flex",
@@ -16,13 +18,6 @@ const MapEditorContainer = styled("div")(({ theme }) => ({
   padding: theme.spacing(1),
 }));
 
-const Top = styled("div")(({ theme }) => ({
-  flex: 0.6,
-  display: "flex",
-  borderRadius: theme.spacing(1),
-  backgroundColor: theme.palette.blue[700],
-
-}));
 const Bottom = styled("div")(({ theme }) => ({
   flex: 0.4,
   display: "flex",
@@ -30,16 +25,18 @@ const Bottom = styled("div")(({ theme }) => ({
   backgroundColor: theme.palette.blue[700],
 }));
 
-export const MapEditor: React.FC<EditorProps> = () => {
+export const MapEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetData }) => {
   const { project } = useProject();
-  if (!project) {
-    return <div>Loading...</div>;
-  }
+  if (!project) return <div>Loading...</div>;
+
+  const [selectedIndex, setSelectedIndex] = useState(13);
 
   return (
     <MapEditorContainer>
-      <Top />
-      <Bottom />
-    </MapEditorContainer >
+      <MapViewport selectedIndex={selectedIndex} />
+      <Bottom>
+        <SpritePicker selectedIndex={selectedIndex} onSelect={setSelectedIndex} />
+      </Bottom>
+    </MapEditorContainer>
   );
 };
