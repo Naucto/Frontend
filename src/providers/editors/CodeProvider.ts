@@ -4,7 +4,7 @@ import { AwarenessProvider } from "./AwarenessProvider";
 import { editor } from "monaco-editor";
 
 export class CodeProvider implements Disposable {
-  private content: Y.Text;
+  private readonly content: Y.Text;
   private monacoBinding: MonacoBinding | undefined;
   private provider: AwarenessProvider;
 
@@ -12,18 +12,18 @@ export class CodeProvider implements Disposable {
 
   constructor(ydoc: Y.Doc, provider: AwarenessProvider) {
     this.content = ydoc.getText("monaco");
-    this.content.observe(this._callListeners);
+    this.content.observe(this._callListeners.bind(this));
     this.provider = provider;
   }
 
   [Symbol.dispose](): void {
     this.listeners.clear();
-    this.content.unobserve(this._callListeners);
+    this.content.unobserve(this._callListeners.bind(this));
     this.monacoBinding?.destroy();
   }
 
   private _callListeners(): void {
-    const currentContent = this.getContent();
+    const currentContent = this.content.toString();
     this.listeners.forEach((callback) => callback(currentContent));
   }
 

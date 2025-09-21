@@ -7,7 +7,6 @@ import "./CodeEditor.css";
 import { useTheme } from "@mui/material/styles";
 import { generateRandomColor } from "@utils/colorUtils";
 import { AwarenessEventType } from "../../../../providers/editors/AwarenessProvider";
-import { EngineUser } from "src/types/userTypes";
 
 const CodeEditor: React.FC<EditorProps> = ({ provider }) => {
   const [userStyles, setUserStyles] = useState<string>("");
@@ -70,15 +69,10 @@ const CodeEditor: React.FC<EditorProps> = ({ provider }) => {
     if (!provider?.awareness) return;
 
     const updateStyles = (changes?: { added: number[], updated: number[], removed: number[] }): void => {
-      const states = provider.awareness.getStates();
+      const users = provider.awareness.getUsers();
       const styleMap = new Map<number, string>();
 
-      states.forEach((state, clientId) => {
-        if (state && typeof state === "object" && "user" in state) {
-          const { name, color } = (state as { user: EngineUser }).user;
-          styleMap.set(clientId, generateUserStyles(clientId, name, color));
-        }
-      });
+      users.forEach((user) => styleMap.set(user.clientId, generateUserStyles(user.clientId, user.name, user.color)));
 
       if (changes) {
         changes.removed.forEach((clientId) => {
@@ -142,7 +136,7 @@ const CodeEditor: React.FC<EditorProps> = ({ provider }) => {
         beforeMount={handleBeforeMount}
         onMount={handleMount}
         options={{ automaticLayout: true }}
-        defaultValue="//test"
+        defaultValue=""
       />
     </>
   );

@@ -1,7 +1,6 @@
 import React from "react";
 import { EditorProps } from "./EditorType.ts";
 import { styled } from "@mui/material/styles";
-import { useProject } from "src/providers/ProjectProvider";
 
 const MapEditorContainer = styled("div")(({ theme }) => ({
   display: "flex",
@@ -31,11 +30,6 @@ const Bottom = styled("div")(({ theme }) => ({
 }));
 
 export const MapEditor: React.FC<EditorProps> = () => {
-  const { project } = useProject();
-  if (!project) {
-    return <div>Loading...</div>;
-  }
-
   return (
     <MapEditorContainer>
       <Top />

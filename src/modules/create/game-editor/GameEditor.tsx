@@ -11,14 +11,12 @@ import { WorkSessionsService } from "@api";
 import { Beforeunload } from "react-beforeunload";
 import { SpriteEditor } from "@modules/editor/SpriteEditor/SpriteEditor";
 import { MapEditor } from "@modules/create/game-editor/editors/MapEditor";
-import { LocalStorageManager } from "@utils/LocalStorageManager";
 import GameEditorConsole from "@modules/create/game-editor/editors/GameEditorConsole";
 import CodeIcon from "src/assets/code.svg?react";
 import SpriteIcon from "src/assets/pen.svg?react";
 import SoundIcon from "src/assets/music.svg?react";
 import MapIcon from "src/assets/map.svg?react";
-import { useProject } from "src/providers/ProjectProvider";
-import { EngineProvider, ProviderEventType } from "src/providers/EngineProvider.ts";
+import { ProjectProvider, ProviderEventType } from "../../../providers/ProjectProvider.ts";
 
 const GameEditorContainer = styled("div")(({ theme }) => ({
   height: "100%",
@@ -68,18 +66,19 @@ const PreviewCanvas = styled(GameCanvas)(({ theme }) => ({
   borderRadius: theme.spacing(1)
 }));
 
-const GameEditor: React.FC = () => {
+interface GameEditorProps {
+  project: ProjectProvider
+}
+
+const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => {
   const [activeTab, setActiveTab] = useState(0);
   const [output, setOutput] = useState<string>("");
-  const [provider] = useState<EngineProvider>(new EngineProvider());
-
-  const { project } = useProject();
 
   const tabs = useMemo(() => [
-    { label: "code", component: CodeEditor, icon: <CodeIcon /> },
-    { label: "sprite", component: SpriteEditor, icon: <SpriteIcon /> },
-    { label: "map", component: MapEditor, icon: <MapIcon /> },
-    { label: "sound", component: SoundEditor, icon: <SoundIcon /> },
+    { label: "code", component: CodeEditor, icon: <CodeIcon/> },
+    { label: "sprite", component: SpriteEditor, icon: <SpriteIcon/> },
+    { label: "map", component: MapEditor, icon: <MapIcon/> },
+    { label: "sound", component: SoundEditor, icon: <SoundIcon/> },
   ], []);
 
   const suppressBeforeUnloadRef = React.useRef(false);
@@ -91,7 +90,7 @@ const GameEditor: React.FC = () => {
     const handleOnline = async (): Promise<void> => {
       setIsOnline(true);
       suppressBeforeUnloadRef.current = true;
-      provider.saveContent();
+      project.saveContent();
       window.location.reload();
     };
     const handleOffline = (): void => {
@@ -111,7 +110,7 @@ const GameEditor: React.FC = () => {
   }, [isOnline]);
 
   const editorTabs: EditorTab[] = useMemo(() => {
-    if (!provider)
+    if (!project)
       return [];
 
     return tabs.map((tab) => {
@@ -123,22 +122,22 @@ const GameEditor: React.FC = () => {
         component: EditorComponent ? (
           <EditorComponent
             key={tab.label}
-            provider={provider}
+            provider={project}
           />
         ) : (
           <span key={tab.label}>No editor available</span>
         )
       };
     });
-  }, [tabs, provider]);
+  }, [tabs, project]);
 
   useEffect(() => {
-    if (!provider)
+    if (!project)
       return;
 
-    provider.observe(ProviderEventType.BECOME_HOST, becomeHostListener);
-    provider.code.observe(setCode);
-  }, [provider]);
+    project.observe(ProviderEventType.BECOME_HOST, becomeHostListener);
+    project.code.observe(setCode);
+  }, [project]);
 
   const [code, setCode] = useState("");
 
@@ -157,13 +156,12 @@ const GameEditor: React.FC = () => {
   //ENDFIXME
 
   const cleanUpAndDisconnect = (): void => {
-    if (!provider) return;
-    provider.saveContent();
-    const projectId = LocalStorageManager.getProjectId();
+    if (!project) return;
+    project.saveContent();
 
-    WorkSessionsService.workSessionControllerLeave(Number(projectId));
+    WorkSessionsService.workSessionControllerLeave(Number(project.projectId));
 
-    provider.quit();
+    project.quit();
   };
 
   useEffect(() => {
@@ -176,11 +174,11 @@ const GameEditor: React.FC = () => {
 
   const becomeHostListener = (): void => {
     setInterval(() => {
-      provider.saveContent();
+      project.saveContent();
     }, 5 * 60 * 1000);
   };
 
-  if (!provider)
+  if (!project)
     return <div>Loading work session...</div>; //FIXME: add a loading spinner with a component
 
   return (
@@ -196,7 +194,7 @@ const GameEditor: React.FC = () => {
               iconPosition="start"
               key={label}
               label={label}
-              icon={icon} />
+              icon={icon}/>
           ))}
         </Tabs>
         {editorTabs.map((tab, idx) => (
@@ -211,20 +209,17 @@ const GameEditor: React.FC = () => {
         ))}
       </LeftPanel>
       <RightPanel>
-        {project && (
-          <PreviewCanvas
-            ref={canvasRef}
-            canvasProps={{
-              map: project.map,
-              screenSize,
-              spriteSheet: project.spriteSheet,
-              palette: project.palette,
-            }}
-            envData={envData}
-            setOutput={setOutput}
-          />
-        )}
-        <GameEditorConsole output={output} />
+        <PreviewCanvas
+          ref={canvasRef}
+          canvasProps={{
+            map: project.map,
+            screenSize: screenSize,
+            sprite: project.sprite
+          }}
+          envData={envData}
+          setOutput={setOutput}
+        />
+        <GameEditorConsole output={output}/>
       </RightPanel>
 
       <Dialog
@@ -252,7 +247,7 @@ const GameEditor: React.FC = () => {
           })}
         >
           <Alert
-            severity={provider.awareness.count() > 1 ? "warning" : "info"}
+            severity={project.awareness.count() > 1 ? "warning" : "info"}
             variant="outlined"
             sx={(theme) => ({
               bgcolor: "transparent",
@@ -261,8 +256,8 @@ const GameEditor: React.FC = () => {
               "& .MuiAlert-icon": { color: theme.palette.grey[400] },
             })}
           >
-            {provider.awareness.count() > 1
-              ? `${provider.awareness.count()} other ${provider.awareness.count() === 2 ? "person is" : "people are"} in the session. Your local changes may be overwritten when you reconnect.`
+            {project.awareness.count() > 1
+              ? `${project.awareness.count()} other ${project.awareness.count() === 2 ? "person is" : "people are"} in the session. Your local changes may be overwritten when you reconnect.`
               : "Your local changes may not synchronize until the connection is restored."}
           </Alert>
         </DialogContent>
@@ -280,7 +275,7 @@ const GameEditor: React.FC = () => {
         event.preventDefault();
         cleanUpAndDisconnect();
         return "Are you sure you want to leave? Your changes may not be saved.";
-      }} />
+      }}/>
     </GameEditorContainer>
   );
 };

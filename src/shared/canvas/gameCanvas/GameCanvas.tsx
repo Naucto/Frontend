@@ -2,7 +2,7 @@ import { StyledCanvas, CanvasHandle, CanvasProps } from "@shared/canvas/Canvas";
 import { KeyHandler } from "@shared/canvas/gameCanvas/KeyHandler";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import { EnvData, LuaEnvironmentManager } from "@shared/luaEnvManager/LuaEnvironmentManager";
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from "react";
+import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from "react";
 
 type GameCanvasProps = {
   canvasProps: CanvasProps;

@@ -1,19 +1,21 @@
-import { CodeProvider } from "./editors/CodeProvider.ts";
 import * as Y from "yjs";
 import { LocalStorageManager } from "@utils/LocalStorageManager.ts";
 import { ApiError, ProjectsService, WorkSessionsService } from "@api";
 import { decodeUpdate, encodeUpdate } from "@utils/YSerialize.ts";
+import { CodeProvider } from "./editors/CodeProvider.ts";
 import { SpriteProvider } from "./editors/SpriteProvider.ts";
+import { MapProvider } from "./editors/MapProvider.ts";
 import { AwarenessProvider  } from "./editors/AwarenessProvider.ts";
 import { WebrtcProvider } from "y-webrtc";
+import config from "config.json";
 
 export enum ProviderEventType {
   INITIALIZED,
   BECOME_HOST
 }
 
-export class EngineProvider implements Disposable {
-  private readonly provider: WebrtcProvider;
+export class ProjectProvider implements Disposable {
+  private provider: WebrtcProvider;
   private readonly doc: Y.Doc;
   private roomId: string | undefined;
   private isKicking: boolean = false;
@@ -24,32 +26,40 @@ export class EngineProvider implements Disposable {
   public isHost: boolean;
   public code: CodeProvider;
   public sprite: SpriteProvider;
+  public map: MapProvider;
   public awareness: AwarenessProvider;
+  projectId: number;
 
-  constructor() {
+  constructor(projectId: number) {
+    this.projectId = projectId;
     this.isHost = false;
     this.doc = new Y.Doc();
-    this.provider = new WebrtcProvider(this.roomId as string, this.doc);
 
-    this.awareness = new AwarenessProvider(this, this.provider);
-    this.code = new CodeProvider(this.doc, this.awareness);
-    this.sprite = new SpriteProvider(this.doc);
+    this.initializeDoc().then(() => {
+      console.log("INITIALIZED !!!");
+      this.provider = new WebrtcProvider(this.roomId as string, this.doc, config.webrtc);
 
-    this.initializeDoc();
+      this.awareness = new AwarenessProvider(this, this.provider);
+      this.code = new CodeProvider(this.doc, this.awareness);
+      this.sprite = new SpriteProvider(this.doc);
+      this.map = new MapProvider();
+
+      this.init = true;
+      this.emit(ProviderEventType.INITIALIZED);
+    });
   }
 
   private async initializeDoc(): Promise<void> {
     try {
-      const projectId = LocalStorageManager.getProjectId();
-      const session = await WorkSessionsService.workSessionControllerJoin(projectId);
+      const session = await WorkSessionsService.workSessionControllerJoin(this.projectId);
       this.roomId = session.roomId;
 
-      const host = (await WorkSessionsService.workSessionControllerGetInfo(projectId)).host;
+      const host = (await WorkSessionsService.workSessionControllerGetInfo(this.projectId)).host;
       const userId = LocalStorageManager.getUserId();
       this.isHost = host === userId;
 
       try {
-        const content = await ProjectsService.projectControllerFetchProjectContent(String(projectId));
+        const content = await ProjectsService.projectControllerFetchProjectContent(String(this.projectId));
         if (content) {
           await decodeUpdate(this.doc, content);
         }
@@ -64,9 +74,6 @@ export class EngineProvider implements Disposable {
     } catch (err) {
       console.error("Failed to join work session:", err); // FIXME : better error handling
     }
-
-    this.init = true;
-    this.emit(ProviderEventType.INITIALIZED);
   }
 
   quit(): void {
@@ -86,7 +93,7 @@ export class EngineProvider implements Disposable {
       return;
     const data = encodeUpdate(this.doc);
     ProjectsService.projectControllerSaveProjectContent(
-      String(LocalStorageManager.getProjectId()),
+      String(this.projectId),
       { file: new Blob([data], { type: "application/octet-stream" }) }
     ).catch((error) => {
       console.error("Failed to save content:", error);
@@ -101,7 +108,7 @@ export class EngineProvider implements Disposable {
 
     const userId = LocalStorageManager.getUserId();
 
-    const projectId = Number(LocalStorageManager.getProjectId());
+    const projectId = Number(this.projectId);
     try {
       const sessionInfo = await WorkSessionsService.workSessionControllerGetInfo(projectId);
 

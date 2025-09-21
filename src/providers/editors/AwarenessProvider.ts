@@ -3,7 +3,7 @@ import { WebrtcProvider } from "y-webrtc";
 import { Awareness } from "y-protocols/awareness";
 import { generateRandomColor } from "@utils/colorUtils.ts";
 import { LocalStorageManager } from "@utils/LocalStorageManager.ts";
-import { EngineProvider, ProviderEventType } from "../EngineProvider.ts";
+import { ProjectProvider, ProviderEventType } from "../ProjectProvider.ts";
 import { WorkSessionsService } from "@api";
 
 export enum AwarenessEventType {
@@ -19,15 +19,30 @@ export class AwarenessProvider implements Disposable {
   private listeners : Map<AwarenessEventType, Set<AwarenessChangeListener>> = new Map();
   private userStateCache = new Map<number, EngineUser>();
   private provider: WebrtcProvider;
-  private engine: EngineProvider;
+  private engine: ProjectProvider;
   public loaded: boolean = false;
 
-  constructor(engine: EngineProvider, provider: WebrtcProvider) {
+  private changeListener: AwarenessChangeListener;
+  private updateListener: AwarenessChangeListener;
+  private deleteListener: AwarenessChangeListener;
+
+  constructor(engine: ProjectProvider, provider: WebrtcProvider) {
     this.provider = provider;
     this.engine = engine;
-    this.provider.awareness.on("change", (changes: { added: number[], updated: number[], removed: number[] }) => this._callListeners.bind(this, AwarenessEventType.CHANGE, changes));
-    this.provider.awareness.on("update", (changes: { added: number[], updated: number[], removed: number[] }) => this._callListeners.bind(this, AwarenessEventType.UPDATE, changes));
-    this.provider.awareness.on("delete", (changes: { added: number[], updated: number[], removed: number[] }) => this._callListeners.bind(this, AwarenessEventType.DELETE, changes));
+
+    this.changeListener = (changes: { added: number[], updated: number[], removed: number[] }) => {
+      this._callListeners(AwarenessEventType.CHANGE, changes);
+    };
+    this.updateListener = (changes: { added: number[], updated: number[], removed: number[] }) => {
+      this._callListeners(AwarenessEventType.UPDATE, changes);
+    };
+    this.deleteListener = (changes: { added: number[], updated: number[], removed: number[] }) => {
+      this._callListeners(AwarenessEventType.DELETE, changes);
+    };
+
+    this.provider.awareness.on("change", this.changeListener.bind(this));
+    this.provider.awareness.on("update", this.updateListener.bind(this));
+    this.provider.awareness.on("delete", this.deleteListener.bind(this));
 
     const userName = LocalStorageManager.getUserName();
     const userId = LocalStorageManager.getUserId();
@@ -50,9 +65,9 @@ export class AwarenessProvider implements Disposable {
   }
 
   [Symbol.dispose](): void {
-    this.provider.awareness.off("change", this._callListeners);
-    this.provider.awareness.off("update", this._callListeners);
-    this.provider.awareness.off("delete", this._callListeners);
+    this.provider.awareness.off("change", this.changeListener.bind(this));
+    this.provider.awareness.off("update", this.updateListener.bind(this));
+    this.provider.awareness.off("delete", this.deleteListener.bind(this));
     this.listeners.clear();
   }
 
@@ -122,7 +137,7 @@ export class AwarenessProvider implements Disposable {
     changes.removed.forEach(clientID => {
       const disconnectedUser = this.userStateCache.get(clientID);
       if (disconnectedUser) {
-        const projectId = Number(LocalStorageManager.getProjectId());
+        const projectId = Number(this.engine.projectId);
         WorkSessionsService
           .workSessionControllerGetInfo(projectId)
           .then(sessionInfo => {
@@ -132,7 +147,6 @@ export class AwarenessProvider implements Disposable {
             }
           });
         this.userStateCache.delete(clientID);
-
         WorkSessionsService.workSessionControllerKick(projectId, { userId: Number(disconnectedUser.userId) });
 
         this.engine.checkAndKickDisconnectedUsers();
@@ -143,5 +157,9 @@ export class AwarenessProvider implements Disposable {
       this.loaded = true;
       this._callListeners(AwarenessEventType.LOADED, { added: [], updated: [], removed: [] } );
     }
+  }
+
+  getUsers(): EngineUser[] {
+    return Array.from(this.userStateCache.values());
   }
 }

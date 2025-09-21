@@ -1,17 +1,16 @@
 import { SpriteRendererHandle, useSpriteRenderer } from "@shared/canvas/RendererHandle";
 import React, { forwardRef, useImperativeHandle, useRef } from "react";
-import { SpriteSheet } from "src/types/SpriteSheetType";
+import { SpriteProvider } from "src/providers/editors/SpriteProvider";
 import styled from "styled-components";
-import { Map } from "src/types/MapType";
+import { MapProvider } from "src/providers/editors/MapProvider.ts";
 
 export type CanvasProps = React.CanvasHTMLAttributes<HTMLCanvasElement> & {
-  spriteSheet: SpriteSheet;
-  map: Map;
+  sprite: SpriteProvider;
+  map: MapProvider;
   screenSize: {
     width: number;
     height: number;
   };
-  palette: Uint8Array;
   className?: string;
   onClick?: (e: React.MouseEvent<HTMLCanvasElement>) => void;
   onWheel?: (e: React.WheelEvent<HTMLCanvasElement>) => void;
@@ -24,9 +23,8 @@ export type CanvasProps = React.CanvasHTMLAttributes<HTMLCanvasElement> & {
 
 const Canvas = forwardRef<SpriteRendererHandle, CanvasProps>(({
   screenSize,
-  spriteSheet,
+  sprite,
   map,
-  palette,
   className,
   onClick,
   onWheel,
@@ -37,7 +35,7 @@ const Canvas = forwardRef<SpriteRendererHandle, CanvasProps>(({
   onMouseEnter
 }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const rendererHandle = useSpriteRenderer(canvasRef, spriteSheet, palette, map, screenSize);
+  const rendererHandle = useSpriteRenderer(canvasRef, sprite, map, screenSize);
 
   useImperativeHandle(ref, () => ({
     ...rendererHandle,

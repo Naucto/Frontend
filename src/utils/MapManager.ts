@@ -1,16 +1,17 @@
-import { convertSpritesheetToIndexArray } from "@shared/canvas/CanvasUtil";
 import { MapManagerError } from "src/errors/MapManagerError";
-import { Map } from "src/types/MapType";
+import { MapProvider } from "src/providers/editors/MapProvider.ts";
+import { SpriteProvider } from "src/providers/editors/SpriteProvider";
 
 export class MapManager {
-  private _map: Map;
+  private _map: MapProvider;
+  private _sprite: SpriteProvider;
 
   private _tileIndexMap: number[][];
   private _spritePixelArray: Uint8Array;
   private _mapPixelArray: Uint8Array;
   private readonly _mapDataLength: number;
 
-  constructor(map: Map) {
+  constructor(map: MapProvider, sprite: SpriteProvider) {
     if (map.width <= 0 || map.height <= 0) {
       throw new MapManagerError("Map width and height must be greater than 0");
     }
@@ -21,9 +22,10 @@ export class MapManager {
     }
 
     this._map = map;
+    this._sprite = sprite;
 
     //FIXME should already be converted in Project
-    this._spritePixelArray = convertSpritesheetToIndexArray(map.spriteSheet);
+    this._spritePixelArray = sprite.getContentAsUint8Array();
     this._tileIndexMap = this._parseMapData();
     this._mapPixelArray = this._buildMapPixelArray();
   }
@@ -96,10 +98,10 @@ export class MapManager {
   }
 
   private _getSpritePixels(spriteIndex: number): Uint8Array {
-    const spriteWidth = this._map.spriteSheet.spriteSize.width;
-    const spriteHeight = this._map.spriteSheet.spriteSize.height;
+    const spriteWidth = this._sprite.spriteSize.width;
+    const spriteHeight = this._sprite.spriteSize.height;
     const spritePixelCount = spriteWidth * spriteHeight;
-    const sheetWidth = this._map.spriteSheet.size.width;
+    const sheetWidth = this._sprite.size.width;
     const spritesPerRow = Math.floor(sheetWidth / spriteWidth);
 
     const spriteX = (spriteIndex % spritesPerRow) * spriteWidth;
@@ -141,14 +143,14 @@ export class MapManager {
     return (
       this._map.width *
       this._map.height *
-      this._map.spriteSheet.spriteSize.height *
-      this._map.spriteSheet.spriteSize.width
+      this._sprite.spriteSize.height *
+      this._sprite.spriteSize.width
     );
   }
 
   private _copySpriteToMapPixels(tile: Point2D, mapPixels: Uint8Array, spriteIndex: number): void {
-    const spriteWidth = this._map.spriteSheet.spriteSize.width;
-    const spriteHeight = this._map.spriteSheet.spriteSize.height;
+    const spriteWidth = this._sprite.spriteSize.width;
+    const spriteHeight = this._sprite.spriteSize.height;
     const mapPixelWidth = this._map.width * spriteWidth;
     const totalPixels = this._getMapTotalPixels();
     const spritePixels = this._getSpritePixels(spriteIndex);

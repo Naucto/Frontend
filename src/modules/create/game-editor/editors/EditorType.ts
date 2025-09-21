@@ -1,8 +1,8 @@
 import { FC } from "react";
-import { EngineProvider } from "src/providers/EngineProvider";
+import { ProjectProvider } from "../../../../providers/ProjectProvider.ts";
 
 export type EditorProps = {
-  provider: EngineProvider;
+  provider: ProjectProvider;
 };
 
 export interface EditorTab {

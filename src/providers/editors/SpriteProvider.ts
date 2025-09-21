@@ -14,6 +14,7 @@ export class SpriteProvider implements Disposable {
   public palette: Uint8Array;
   public readonly spriteSize: Size;
   public readonly size: Size;
+  public readonly stride: number = 1;
 
   constructor(doc: Y.Doc, spriteSize: Size = { width: 8, height: 8 }, size: Size = { width: 128, height: 128 }) {
     this._spritemap = doc.getMap<number>("sprite");
@@ -21,13 +22,13 @@ export class SpriteProvider implements Disposable {
     this.size = size;
 
     this.palette = palette;
-    this._spritemap.observe(this._callListeners);
+    this._spritemap.observe(this._callListeners.bind(this));
   }
 
   [Symbol.dispose](): void {
     this.listeners.clear();
     this.rawListeners.clear();
-    this._spritemap.unobserve(this._callListeners);
+    this._spritemap.unobserve(this._callListeners.bind(this));
   }
 
   private _callListeners(): void {
@@ -77,6 +78,16 @@ export class SpriteProvider implements Disposable {
       }
     }
     return result;
+  }
+
+  getContentAsUint8Array(): Uint8Array {
+    const arr = new Uint8Array(this.size.width * this.size.height);
+    for (let y = 0; y < this.size.height; y++) {
+      for (let x = 0; x < this.size.width; x++) {
+        arr[y * this.size.width + x] = this.getPixel(x, y);
+      }
+    }
+    return arr;
   }
 
   observe(callback: (content: number[]) => void): void {
