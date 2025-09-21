@@ -1,49 +1,135 @@
-
 import * as Tone from "tone";
-import { SampleLibrary } from "@modules/editor/SoundEditor/Tonejs-Instruments";
 
-class Note {
-  public samp: Tone.Sampler;
-  constructor(
-    public note: string = "Nan",
-    private _duration: number = 1,
-    public _instrument: string = "piano",
-  ) {
-    this.note = note;
-    if (this.note == "Nan") {
-      this.samp = new Tone.Sampler();
-    } else {
-      this.samp = SampleLibrary.load({
-        instruments: this._instrument,
+const samplers = new Map<string, Tone.Sampler>();
+const synths = new Map<string, any>();
 
+const samplerLoadingPromises = new Map<string, Promise<void>>();
+
+const createSamplerWithPromise = (instrument: string): Promise<void> => {
+  return new Promise<void>((resolve) => {
+    try {
+      const sampler = SampleLibrary.load({
+        instruments: instrument,
+        ext: ".mp3",
       }).toDestination();
+
+      samplers.set(instrument, sampler);
+
+      setTimeout(() => {
+        resolve();
+      }, 2000);
+
+    } catch {
+      resolve();
     }
+  });
+};
 
+const createSynth = (instrument: string): any => {
+  let synth: any;
+  switch (instrument) {
+    case "fm":
+      synth = new Tone.FMSynth().toDestination();
+      break;
+    default:
+      synth = new Tone.Synth().toDestination();
+      break;
+  }
+  synths.set(instrument, synth);
+  return synth;
+};
+
+export const createNote = (
+  note: string = "D4",
+  duration: number = 0.25,
+  instrument: string = "piano"
+): NoteData => {
+  if (!synths.has(instrument)) {
+    createSynth(instrument);
   }
 
-  public get duration() : number {
-    return this._duration;
+  return {
+    note,
+    duration,
+    instrument,
+  };
+};
+
+export const preloadInstruments = async (): Promise<void> => {
+  const instruments = [
+    "bass-electric",
+    "bassoon",
+    "cello",
+    "clarinet",
+    "contrabass",
+    "flute",
+    "french-horn",
+    "guitar-acoustic",
+    "guitar-electric",
+    "guitar-nylon",
+    "harmonium",
+    "harp",
+    "organ",
+    "piano",
+    "saxophone",
+    "trombone",
+    "trumpet",
+    "tuba",
+    "violin",
+    "xylophone"
+  ];
+
+  try {
+    await Promise.all(
+      instruments.map(async (instrument) => {
+        if (!samplers.has(instrument)) {
+          const loadingPromise = createSamplerWithPromise(instrument);
+          samplerLoadingPromises.set(instrument, loadingPromise);
+          await loadingPromise;
+        }
+      })
+    );
+  } catch {
+    // continue even if some instruments fail to load
+    return;
   }
+};
 
-  public toJson() : string {
-    return JSON.stringify({
-      note: this.note,
-      duration: this._duration,
-      instrument: this._instrument
-    });
-  }
+export const isSamplerReady = (instrument: string): boolean => {
+  const sampler = samplers.get(instrument);
+  return sampler !== undefined;
+};
 
-  public static fromJson(json: string | { note: string; duration: number; instrument: string }): Note {
-    let data: { note: string; duration: number; instrument: string };
+export const getSynth = (instrument: string): any | undefined => {
+  return synths.get(instrument);
+};
 
-    if (typeof json === "string") {
-      data = JSON.parse(json);
-    } else {
-      data = json;
-    }
+export const getSampler = (instrument: string): Tone.Sampler | undefined => {
+  return samplers.get(instrument);
+};
 
-    return new Note(data.note, data.duration, data.instrument);
-  }
+export const getSamplerLoadingPromise = (instrument: string): Promise<void> | undefined => {
+  return samplerLoadingPromises.get(instrument);
+};
+
+export interface NoteData {
+  note: string;
+  duration: number;
+  instrument: string;
 }
 
-export default Note;
+export const noteToJson = (note: NoteData): string => {
+  return JSON.stringify({
+    note: note.note,
+    duration: note.duration,
+    instrument: note.instrument
+  });
+};
+
+export const noteFromJson = (json: string | NoteData): NoteData => {
+  if (typeof json === "string") {
+    const parsed = JSON.parse(json);
+    return createNote(parsed.note, parsed.duration, parsed.instrument);
+  }
+  return json;
+};
