@@ -396,7 +396,9 @@ const GameEditor: React.FC = () => {
               iconPosition="start"
               key={label}
               label={label}
-              icon={icon} />
+              icon={icon}
+              data-cy={`${label}-tab`}
+            />
           ))}
         </Tabs>
         {editorTabs.map((tab, idx) => (

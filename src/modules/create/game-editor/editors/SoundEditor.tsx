@@ -3,7 +3,8 @@ import { EditorProps } from "./EditorType";
 
 export const SoundEditor: React.FC<EditorProps> = () => {
   return (
-    <h2>Sound Editor</h2>
+    <h2 data-cy="sound-editor"
+    >Sound Editor</h2>
   );
 };
 
