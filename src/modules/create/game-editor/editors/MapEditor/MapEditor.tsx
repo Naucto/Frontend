@@ -32,7 +32,7 @@ export const MapEditor: React.FC<EditorProps> = () => {
   const [selectedIndex, setSelectedIndex] = useState(13);
 
   return (
-    <MapEditorContainer>
+    <MapEditorContainer data-cy="map-editor">
       <MapViewport selectedIndex={selectedIndex} />
       <Bottom>
         <SpritePicker selectedIndex={selectedIndex} onSelect={setSelectedIndex} />
