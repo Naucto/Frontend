@@ -122,7 +122,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
         component: EditorComponent ? (
           <EditorComponent
             key={tab.label}
-            provider={project}
+            project={project}
           />
         ) : (
           <span key={tab.label}>No editor available</span>

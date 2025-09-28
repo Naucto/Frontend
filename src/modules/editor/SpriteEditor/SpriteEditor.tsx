@@ -137,7 +137,7 @@ function getSpritePos(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
   return { x: spriteX, y: spriteY };
 }
 
-export const SpriteEditor: React.FC<EditorProps> = ({ provider }) => {
+export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
   const [currentColor, setCurrentColor] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [position, setPosition] = useState<Point2D>({ x: 0, y: 0 });
@@ -165,9 +165,9 @@ export const SpriteEditor: React.FC<EditorProps> = ({ provider }) => {
     });
   };
 
-    useEffect(() => {
-        provider.sprite.observe(() => setVersion(v => v + 1));
-    }, [provider]);
+  useEffect(() => {
+    project.sprite.observe(() => setVersion(v => v + 1));
+  }, [project]);
 
   useEffect(() => {
     const container = canvasContainerRef.current;
@@ -198,10 +198,10 @@ export const SpriteEditor: React.FC<EditorProps> = ({ provider }) => {
         (1 / zoom) * SPRITE_NUMBER);
       drawCanvasRef.current.draw();
     }
-  }, [provider.sprite, drawCanvasRef, position, version, zoom]);
+  }, [project.sprite, drawCanvasRef, position, version, zoom]);
 
   const drawAt = (x: number, y: number): void => {
-    provider.sprite.setPixel(x, y, currentColor);
+    project.sprite.setPixel(x, y, currentColor);
     setVersion(v => v + 1);
   };
 
@@ -283,8 +283,8 @@ export const SpriteEditor: React.FC<EditorProps> = ({ provider }) => {
           <CanvasContainer
             canvasRef={drawCanvasRef}
             containerRef={canvasContainerRef}
-            sprite={provider.sprite}
-            map={provider.map}
+            sprite={project.sprite}
+            map={project.map}
             screenSize={drawCanvasSize}
             onWheel={handleWheel}
             onMouseDown={handleMouseDown}

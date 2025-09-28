@@ -36,13 +36,12 @@ export class ProjectProvider implements Disposable {
     this.doc = new Y.Doc();
 
     this.initializeDoc().then(() => {
-      console.log("INITIALIZED !!!");
       this.provider = new WebrtcProvider(this.roomId as string, this.doc, config.webrtc);
 
       this.awareness = new AwarenessProvider(this, this.provider);
       this.code = new CodeProvider(this.doc, this.awareness);
       this.sprite = new SpriteProvider(this.doc);
-      this.map = new MapProvider();
+      this.map = new MapProvider(this.doc, { width:128, height:32 }, 2, this.sprite);
 
       this.init = true;
       this.emit(ProviderEventType.INITIALIZED);

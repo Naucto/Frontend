@@ -2,7 +2,6 @@ import { compileShader, createGLContext, setGLProgram, setTexture } from "@share
 import indexToColorFragment from "src/shared/canvas/shaders/index_to_color_frag.glsl";
 import spriteSheetVertex from "src/shared/canvas/shaders/sprite_cut_vert.glsl";
 import { MapProvider } from "src/providers/editors/MapProvider.ts";
-import { MapManager } from "@utils/MapManager";
 import { SpriteProvider } from "src/providers/editors/SpriteProvider";
 export interface GLPipeline {
   gl: WebGL2RenderingContext;
@@ -25,8 +24,7 @@ export function initGLPipeline(
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   const spriteSheetBuffer = sprite.getContentAsUint8Array();
-  const mapManager: MapManager = new MapManager(map, sprite);
-  const mapPixelBuffer: Uint8Array = mapManager.getMapPixelArray();
+  const mapPixelBuffer: Uint8Array = map.getContentAsUint8Array();
 
   const spriteSheetTexture = setTexture(gl,
     sprite.size.width, sprite.size.height,

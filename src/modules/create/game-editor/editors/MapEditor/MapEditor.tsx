@@ -24,15 +24,15 @@ const Bottom = styled("div")(({ theme }) => ({
   backgroundColor: theme.palette.blue[700],
 }));
 
-export const MapEditor: React.FC<EditorProps> = () => {
+export const MapEditor: React.FC<EditorProps> = ({ project }) => {
 
   const [selectedIndex, setSelectedIndex] = useState(13);
 
   return (
     <MapEditorContainer>
-      <MapViewport selectedIndex={selectedIndex} />
+      <MapViewport selectedIndex={selectedIndex} project={project} />
       <Bottom>
-        <SpritePicker selectedIndex={selectedIndex} onSelect={setSelectedIndex} />
+        <SpritePicker selectedIndex={selectedIndex} onSelect={setSelectedIndex} project={project} />
       </Bottom>
     </MapEditorContainer>
   );

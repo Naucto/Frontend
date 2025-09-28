@@ -2,7 +2,7 @@ import { FC } from "react";
 import { ProjectProvider } from "../../../../providers/ProjectProvider.ts";
 
 export type EditorProps = {
-  provider: ProjectProvider;
+  project: ProjectProvider;
 };
 
 export interface EditorTab {

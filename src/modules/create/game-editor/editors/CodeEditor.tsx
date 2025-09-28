@@ -8,7 +8,7 @@ import { useTheme } from "@mui/material/styles";
 import { generateRandomColor } from "@utils/colorUtils";
 import { AwarenessEventType } from "../../../../providers/editors/AwarenessProvider";
 
-const CodeEditor: React.FC<EditorProps> = ({ provider }) => {
+const CodeEditor: React.FC<EditorProps> = ({ project }) => {
   const [userStyles, setUserStyles] = useState<string>("");
   const theme = useTheme();
 
@@ -66,10 +66,10 @@ const CodeEditor: React.FC<EditorProps> = ({ provider }) => {
   };
 
   useEffect(() => {
-    if (!provider?.awareness) return;
+    if (!project?.awareness) return;
 
     const updateStyles = (changes?: { added: number[], updated: number[], removed: number[] }): void => {
-      const users = provider.awareness.getUsers();
+      const users = project.awareness.getUsers();
       const styleMap = new Map<number, string>();
 
       users.forEach((user) => styleMap.set(user.clientId, generateUserStyles(user.clientId, user.name, user.color)));
@@ -89,24 +89,24 @@ const CodeEditor: React.FC<EditorProps> = ({ provider }) => {
       updateStyles(changes);
     };
 
-    provider.awareness.observe(AwarenessEventType.CHANGE, handleAwarenessUpdate);
+    project.awareness.observe(AwarenessEventType.CHANGE, handleAwarenessUpdate);
 
     return () => {
     };
-  }, [provider, generateUserStyles]);
+  }, [project, generateUserStyles]);
 
   useEffect(() => {
-    if (!provider?.awareness) return;
+    if (!project?.awareness) return;
 
-    const currentUser = provider.awareness.getLocalUser();
+    const currentUser = project.awareness.getLocalUser();
 
     if (currentUser && !currentUser.color) {
-      provider.awareness.setLocalUser({
+      project.awareness.setLocalUser({
         ...currentUser,
         color: generateRandomColor()
       });
     }
-  }, [provider]);
+  }, [project]);
 
   const handleMount = (editor: editor.IStandaloneCodeEditor): (() => void) | void => {
     const editorModel = editor.getModel();
@@ -115,7 +115,7 @@ const CodeEditor: React.FC<EditorProps> = ({ provider }) => {
       return;
     }
 
-    provider.code.setMonacoBinding(editor);
+    project.code.setMonacoBinding(editor);
 
     return () => {
       editor.dispose();
