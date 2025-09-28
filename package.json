@@ -10,7 +10,6 @@
     "preview": "vite preview",
     "prepare": "husky",
     "api:generate": "tsx openapi.config.ts",
-    "cypress:open": "cypress open",
     "cypress:run": "cypress run"
   },
   "dependencies": {
