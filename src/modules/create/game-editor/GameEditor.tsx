@@ -10,7 +10,7 @@ import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
 import { WorkSessionsService } from "@api";
 import { Beforeunload } from "react-beforeunload";
 import { SpriteEditor } from "@modules/editor/SpriteEditor/SpriteEditor";
-import { MapEditor } from "@modules/create/game-editor/editors/MapEditor";
+import { MapEditor } from "@modules/create/game-editor/editors/MapEditor/MapEditor";
 import GameEditorConsole from "@modules/create/game-editor/editors/GameEditorConsole";
 import CodeIcon from "src/assets/code.svg?react";
 import SpriteIcon from "src/assets/pen.svg?react";
