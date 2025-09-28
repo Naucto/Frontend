@@ -5,5 +5,7 @@
     "src/**/*.tsx",
     "src/**/*.js",
     "cypress/**/*.ts",
-  ],
+    "src/**/*.test.ts",
+    "jest.config.ts"
+  ]
 }
