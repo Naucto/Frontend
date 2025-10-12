@@ -6,6 +6,7 @@ import { CreateProjectDto, ProjectResponseDto, ProjectsService } from "@api";
 import { useNavigate } from "react-router-dom";
 import * as urls from "@shared/route";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
+import { useSnackbar } from "notistack";
 
 const DashedCard = styled(Card)(({ theme }) => ({
   border: "4px dashed",
@@ -22,6 +23,7 @@ const DashedCard = styled(Card)(({ theme }) => ({
 
 const CreateProjectCard: React.FC = () => {
   const navigate = useNavigate();
+  const { enqueueSnackbar } = useSnackbar();
   const createNewProject = async (): Promise<void> => {
     const newProject: CreateProjectDto = {
       name: "Untitled Project",
@@ -32,7 +34,7 @@ const CreateProjectCard: React.FC = () => {
       const projectId = new_project.id;
       navigate(urls.toProject(projectId));
       LocalStorageManager.setProjectId(projectId);
-
+      enqueueSnackbar("New project created successfully!", { variant: "success" });
     } catch (error) {
       console.error("Error creating new project:", error);
       //FIXME: add error handling
