@@ -18,6 +18,7 @@ export type SpritePickerProps = {
 
 export const SpritePicker: React.FC<SpritePickerProps> = ({ onSelect, project }) => {
   const canvasRef = React.createRef<SpriteRendererHandle>();
+  const [, setVersion] = React.useState(0);
 
   if (!project) return null;
 
@@ -47,6 +48,12 @@ export const SpritePicker: React.FC<SpritePickerProps> = ({ onSelect, project })
     const index = sy * spritesPerRow + sx;
     onSelect(index);
   }, [onSelect, project, spritesPerRow, spritesPerCol]);
+
+  useEffect(() => {
+    project.sprite.observe(() => {
+      setVersion(v => v + 1);
+    });
+  }, [project]);
 
   return (
     <PickerContainer onContextMenu={(e) => e.preventDefault()}>

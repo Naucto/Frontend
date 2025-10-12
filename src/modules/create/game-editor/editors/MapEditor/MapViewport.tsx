@@ -25,6 +25,7 @@ export const MapViewport: React.FC<Props> = ({ selectedIndex, project }) => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<Point2D>({ x: 0, y: 0 });
+  const [, setVersion] = useState(0);
 
   const spriteRendererHandleRef = createRef<SpriteRendererHandle>();
 
@@ -36,6 +37,8 @@ export const MapViewport: React.FC<Props> = ({ selectedIndex, project }) => {
         y: Math.floor((point.y - offset.y) / project.sprite.spriteSize.height),
       };
       project.map.setTileAt(tile, selectedIndex);
+      setVersion(v => v + 1);
+
     },
     [offset, project.sprite.spriteSize, selectedIndex]
   );
@@ -81,6 +84,16 @@ export const MapViewport: React.FC<Props> = ({ selectedIndex, project }) => {
   useEffect(() => {
     spriteRendererHandleRef.current?.drawMap(offset.x, offset.y);
   }, [spriteRendererHandleRef]);
+
+  useEffect(() => {
+    project.map.observe(() => {
+      setVersion(v => v + 1);
+    });
+
+    project.sprite.observe(() => {
+      setVersion(v => v + 1);
+    });
+  }, [project]);
 
   return (
     <ViewportContainer onContextMenu={(e) => e.preventDefault()}>

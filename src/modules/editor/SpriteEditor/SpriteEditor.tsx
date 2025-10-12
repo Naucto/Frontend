@@ -165,9 +165,9 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
     });
   };
 
-  useEffect(() => {
-    project.sprite.observe(() => setVersion(v => v + 1));
-  }, [project]);
+  // useEffect(() => {
+  //   project.sprite.observe(() => setVersion(v => v + 1));
+  // }, [project]);
 
   useEffect(() => {
     const container = canvasContainerRef.current;

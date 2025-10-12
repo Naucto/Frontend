@@ -26,6 +26,7 @@ export class MapProvider implements Disposable {
     }
 
     this._tilemap = ydoc.getMap<number>("map");
+    this._tilemap.observe(this._callListeners.bind(this));
 
     this.width = size.width;
     this.height = size.height;
