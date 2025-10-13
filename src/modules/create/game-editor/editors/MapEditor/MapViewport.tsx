@@ -8,7 +8,7 @@ import { MapManager } from "@utils/MapManager.ts";
 
 const SCREEN_SIZE: Point2D = { x: 320, y: 180 };
 
-const ViewportCanvas = styled(StyledCanvas)(() => ({}));
+const ViewportCanvas = styled(StyledCanvas)();
 const ViewportContainer = styled("div")(({ theme }) => ({
   flex: 0.6,
   display: "flex",
