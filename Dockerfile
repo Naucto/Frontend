@@ -11,4 +11,4 @@ COPY . .
 
 EXPOSE $FRONTEND_PORT
 
-CMD ["bun", "dev", "--host", "0.0.0.0", "--port", "$FRONTEND_PORT"]
+CMD ["bun", "dev", "--host", "0.0.0.0", "--port", "${FRONTEND_PORT}"]
