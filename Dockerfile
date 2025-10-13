@@ -9,6 +9,7 @@ RUN bun install --frozen-lockfile
 
 COPY . .
 
+ENV VITE_SERVER_PORT=$FRONTEND_PORT
 EXPOSE $FRONTEND_PORT
 
-CMD ["bun", "dev", "--host", "0.0.0.0", "--port", "${FRONTEND_PORT}"]
+CMD ["bun", "dev", "--host", "0.0.0.0"]
