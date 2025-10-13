@@ -6,19 +6,23 @@ import NavBar from "@shared/navbar/NavBar";
 import { muiTheme } from "@theme/MUITheme";
 import Projects from "@modules/projects/Projects";
 import Project from "@modules/project/Project";
+import { CustomSnackBarProvider } from "@shared/snackBar/CustomSnackBarProvider";
 
 const App: React.FC = () => {
   return (
     <ThemeProvider theme={muiTheme}>
-      <BrowserRouter>
-        <NavBar />
-        <Routes>
-          <Route path="/" element={<Hub />} />
-          <Route path="/hub" element={<Hub />} />
-          <Route path='/projects' element={<Projects />} />
-          <Route path="/projects/:projectId" element={<Project />} />
-        </Routes>
-      </BrowserRouter>
+      <CustomSnackBarProvider>
+        {/* TODO: Change how the Routes works, should put all routes like that ? */}
+        <BrowserRouter>
+          <NavBar />
+          <Routes>
+            <Route path="/" element={<Hub />} />
+            <Route path="/hub" element={<Hub />} />
+            <Route path='/projects' element={<Projects />} />
+            <Route path="/projects/:projectId" element={<Project />} />
+          </Routes>
+        </BrowserRouter>
+      </CustomSnackBarProvider>
     </ThemeProvider >
   );
 };

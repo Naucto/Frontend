@@ -20,6 +20,7 @@
     "fengari": "^0.1.4",
     "i18n": "^0.15.1",
     "mui": "^0.0.1",
+    "notistack": "^3.0.2",
     "openapi-typescript-codegen": "^0.29.0",
     "path": "^0.12.7",
     "react": "^19.0.0",
