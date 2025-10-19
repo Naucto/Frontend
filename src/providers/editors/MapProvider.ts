@@ -63,7 +63,11 @@ export class MapProvider implements Disposable {
 
   getTileAt(pos: Point2D): number {
     const key = this.coordToKey(pos);
-    const value = this._tilemap.get(key) || 0;
+    const value = this._tilemap.get(key);
+
+    if (value === undefined) {
+      throw new MapProviderError(`Tile at position (${pos.x}, ${pos.y}) is undefined`);
+    }
     return value;
   }
 
@@ -109,7 +113,7 @@ export class MapProvider implements Disposable {
     return result;
   }
 
-  private _getSpritePixels(spriteIndex: number, spritepixelarray: Uint8Array<ArrayBufferLike>): Uint8Array {
+  private _getSpritePixels(spriteIndex: number, spritePixelArray: Uint8Array<ArrayBufferLike>): Uint8Array {
     const spriteWidth = this._sprite.spriteSize.width;
     const spriteHeight = this._sprite.spriteSize.height;
     const spritePixelCount = spriteWidth * spriteHeight;
@@ -126,8 +130,8 @@ export class MapProvider implements Disposable {
         const sheetPixelIndex = (spriteY + y) * sheetWidth + (spriteX + x);
         const spritePixelIndex = y * spriteWidth + x;
 
-        if (sheetPixelIndex < spritepixelarray.length) {
-          spritePixels[spritePixelIndex] = spritepixelarray[sheetPixelIndex];
+        if (sheetPixelIndex < spritePixelArray.length) {
+          spritePixels[spritePixelIndex] = spritePixelArray[sheetPixelIndex];
         } else {
           spritePixels[spritePixelIndex] = 0;
         }
@@ -137,12 +141,12 @@ export class MapProvider implements Disposable {
     return spritePixels;
   }
 
-  private _copySpriteToMapPixels(tile: Point2D, mapPixels: Uint8Array, spriteIndex: number, spritepixelarray: Uint8Array<ArrayBufferLike>): void {
+  private _copySpriteToMapPixels(tile: Point2D, mapPixels: Uint8Array, spriteIndex: number, spritePixelArray: Uint8Array<ArrayBufferLike>): void {
     const spriteWidth = this._sprite.spriteSize.width;
     const spriteHeight = this._sprite.spriteSize.height;
     const mapPixelWidth = this.width * spriteWidth;
     const totalPixels = this._sprite.spriteSize.height * this._sprite.spriteSize.width * this.width * this.height ;
-    const spritePixels = this._getSpritePixels(spriteIndex, spritepixelarray);
+    const spritePixels = this._getSpritePixels(spriteIndex, spritePixelArray);
 
     for (let pY = 0; pY < spriteHeight; pY++) {
       for (let pX = 0; pX < spriteWidth; pX++) {
@@ -169,12 +173,12 @@ export class MapProvider implements Disposable {
 
   getU8PixelBuffer(): Uint8Array {
     const arr = new Uint8Array(this._getMapTotalPixels());
-    const spritepixelarray = this._sprite.getU8PixelBuffer();
+    const spritePixelArray = this._sprite.getU8PixelBuffer();
     for (let y = 0; y < this.height; y++) {
       for (let x = 0; x < this.width; x++) {
         const key = this.coordToKey({ x, y });
         const spriteIndex = this._tilemap.get(key) || 0;
-        this._copySpriteToMapPixels({ x, y }, arr, spriteIndex, spritepixelarray)!;
+        this._copySpriteToMapPixels({ x, y }, arr, spriteIndex, spritePixelArray)!;
       }
     }
     return arr;

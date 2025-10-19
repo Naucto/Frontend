@@ -42,6 +42,8 @@ export class SpriteProvider implements Disposable {
 
   setPixel(x: number, y: number, color: number): void {
     const key = this._coordToKey(x, y);
+    if (color == 0)
+      this._spriteMap.delete(key); // Optimize network by deleting black pixels
     this._spriteMap.set(key, color);
   }
 
