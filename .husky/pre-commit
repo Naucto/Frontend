@@ -7,4 +7,16 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
+bun jest
+if [ $? -ne 0 ]; then
+  echo "❌ Jest tests failed. Please fix the errors before committing."
+  exit 1
+fi
+
+bun cypress:run
+if [ $? -ne 0 ]; then
+  echo "❌ Cypress tests failed. Please fix the errors before committing."
+  exit 1
+fi
+
 echo "✅ Linting passed successfully."

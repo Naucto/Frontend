@@ -25,14 +25,14 @@ const Bottom = styled("div")(({ theme }) => ({
   backgroundColor: theme.palette.blue[700],
 }));
 
-export const MapEditor: React.FC<EditorProps> = ({ ydoc, provider, onGetData, onSetData }) => {
+export const MapEditor: React.FC<EditorProps> = () => {
   const { project } = useProject();
   if (!project) return <div>Loading...</div>;
 
   const [selectedIndex, setSelectedIndex] = useState(13);
 
   return (
-    <MapEditorContainer>
+    <MapEditorContainer data-cy="map-editor">
       <MapViewport selectedIndex={selectedIndex} />
       <Bottom>
         <SpritePicker selectedIndex={selectedIndex} onSelect={setSelectedIndex} />

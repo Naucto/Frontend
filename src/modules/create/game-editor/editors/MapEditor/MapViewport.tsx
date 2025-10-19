@@ -1,4 +1,4 @@
-import React, { createRef, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { createRef, useCallback, useEffect, useMemo, useState } from "react";
 import { styled } from "@mui/material/styles";
 import { useProject } from "src/providers/ProjectProvider";
 import { StyledCanvas } from "src/shared/canvas/Canvas";
@@ -8,7 +8,7 @@ import { MapManager } from "@utils/MapManager.ts";
 
 const SCREEN_SIZE: Point2D = { x: 320, y: 180 };
 
-const ViewportCanvas = styled(StyledCanvas)(({ theme }) => ({}));
+const ViewportCanvas = styled(StyledCanvas)();
 const ViewportContainer = styled("div")(({ theme }) => ({
   flex: 0.6,
   display: "flex",
