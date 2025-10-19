@@ -15,35 +15,35 @@ export enum ProviderEventType {
 }
 
 export class ProjectProvider implements Disposable {
-  private provider: WebrtcProvider;
-  private readonly doc: Y.Doc;
-  private roomId: string | undefined;
-  private isKicking: boolean = false;
-  private init: boolean = false;
+  private _provider!: WebrtcProvider;
+  private readonly _doc: Y.Doc;
+  private _roomId: string | undefined;
+  private _isKicking: boolean = false;
+  private _initialized: boolean = false;
 
-  private listeners : Map<ProviderEventType, Set<() => void>> = new Map();
+  private _listeners : Map<ProviderEventType, Set<() => void>> = new Map();
 
   public isHost: boolean;
-  public code: CodeProvider;
-  public sprite: SpriteProvider;
-  public map: MapProvider;
-  public awareness: AwarenessProvider;
+  public code!: CodeProvider;
+  public sprite!: SpriteProvider;
+  public map!: MapProvider;
+  public awareness!: AwarenessProvider;
   projectId: number;
 
   constructor(projectId: number) {
     this.projectId = projectId;
     this.isHost = false;
-    this.doc = new Y.Doc();
+    this._doc = new Y.Doc();
 
     this.initializeDoc().then(() => {
-      this.provider = new WebrtcProvider(this.roomId as string, this.doc, config.webrtc);
+      this._provider = new WebrtcProvider(this._roomId as string, this._doc, config.webrtc);
 
-      this.awareness = new AwarenessProvider(this, this.provider);
-      this.code = new CodeProvider(this.doc, this.awareness);
-      this.sprite = new SpriteProvider(this.doc);
-      this.map = new MapProvider(this.doc, { width:128, height:32 }, 2, this.sprite);
+      this.awareness = new AwarenessProvider(this, this._provider);
+      this.code = new CodeProvider(this._doc, this.awareness);
+      this.sprite = new SpriteProvider(this._doc);
+      this.map = new MapProvider(this._doc, { width:128, height:32 }, 2, this.sprite);
 
-      this.init = true;
+      this._initialized = true;
       this.emit(ProviderEventType.INITIALIZED);
     });
   }
@@ -51,7 +51,7 @@ export class ProjectProvider implements Disposable {
   private async initializeDoc(): Promise<void> {
     try {
       const session = await WorkSessionsService.workSessionControllerJoin(this.projectId);
-      this.roomId = session.roomId;
+      this._roomId = session.roomId;
 
       const host = (await WorkSessionsService.workSessionControllerGetInfo(this.projectId)).host;
       const userId = LocalStorageManager.getUserId();
@@ -60,7 +60,7 @@ export class ProjectProvider implements Disposable {
       try {
         const content = await ProjectsService.projectControllerFetchProjectContent(String(this.projectId));
         if (content) {
-          await decodeUpdate(this.doc, content);
+          await decodeUpdate(this._doc, content);
         }
       } catch (error: unknown) {
         if (error instanceof ApiError && error.status === 404) {
@@ -83,14 +83,14 @@ export class ProjectProvider implements Disposable {
     this.code[Symbol.dispose]();
     this.sprite[Symbol.dispose]();
     this.awareness[Symbol.dispose]();
-    this.provider.disconnect();
-    this.doc.destroy();
+    this._provider.disconnect();
+    this._doc.destroy();
   }
 
   public async saveContent(): Promise<void> {
     if (!this.isHost)
       return;
-    const data = encodeUpdate(this.doc);
+    const data = encodeUpdate(this._doc);
     ProjectsService.projectControllerSaveProjectContent(
       String(this.projectId),
       { file: new Blob([data], { type: "application/octet-stream" }) }
@@ -100,10 +100,10 @@ export class ProjectProvider implements Disposable {
   }
 
   public async checkAndKickDisconnectedUsers() : Promise<void> {
-    if (this.isHost || this.isKicking || !this.awareness)
+    if (this.isHost || this._isKicking || !this.awareness)
       return;
 
-    this.isKicking = true;
+    this._isKicking = true;
 
     const userId = LocalStorageManager.getUserId();
 
@@ -138,16 +138,16 @@ export class ProjectProvider implements Disposable {
       console.error("Error checking or kicking disconnected users:", error);
     }
 
-    this.isKicking = false;
+    this._isKicking = false;
   };
 
   public observe(event: ProviderEventType, callback: () => void): void {
-    if (!this.listeners.has(event)) {
-      this.listeners.set(event, new Set());
+    if (!this._listeners.has(event)) {
+      this._listeners.set(event, new Set());
     }
-    this.listeners.get(event)?.add(callback);
+    this._listeners.get(event)?.add(callback);
 
-    if (event === ProviderEventType.INITIALIZED && this.init) {
+    if (event === ProviderEventType.INITIALIZED && this._initialized) {
       callback();
     }
 
@@ -157,6 +157,6 @@ export class ProjectProvider implements Disposable {
   }
 
   emit(event: ProviderEventType): void {
-    this.listeners.get(event)?.forEach(callback => callback());
+    this._listeners.get(event)?.forEach(callback => callback());
   }
 }

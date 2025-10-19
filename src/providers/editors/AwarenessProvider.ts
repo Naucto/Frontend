@@ -16,10 +16,10 @@ export enum AwarenessEventType {
 export type AwarenessChangeListener = (changes: { added: number[], updated: number[], removed: number[] }) => void;
 
 export class AwarenessProvider implements Disposable {
-  private listeners : Map<AwarenessEventType, Set<AwarenessChangeListener>> = new Map();
-  private userStateCache = new Map<number, EngineUser>();
-  private provider: WebrtcProvider;
-  private engine: ProjectProvider;
+  private _listeners : Map<AwarenessEventType, Set<AwarenessChangeListener>> = new Map();
+  private _userStateCache = new Map<number, EngineUser>();
+  private _provider: WebrtcProvider;
+  private _engine: ProjectProvider;
   public loaded: boolean = false;
 
   private changeListener: AwarenessChangeListener;
@@ -27,8 +27,8 @@ export class AwarenessProvider implements Disposable {
   private deleteListener: AwarenessChangeListener;
 
   constructor(engine: ProjectProvider, provider: WebrtcProvider) {
-    this.provider = provider;
-    this.engine = engine;
+    this._provider = provider;
+    this._engine = engine;
 
     this.changeListener = (changes: { added: number[], updated: number[], removed: number[] }) => {
       this._callListeners(AwarenessEventType.CHANGE, changes);
@@ -40,9 +40,9 @@ export class AwarenessProvider implements Disposable {
       this._callListeners(AwarenessEventType.DELETE, changes);
     };
 
-    this.provider.awareness.on("change", this.changeListener.bind(this));
-    this.provider.awareness.on("update", this.updateListener.bind(this));
-    this.provider.awareness.on("delete", this.deleteListener.bind(this));
+    this._provider.awareness.on("change", this.changeListener.bind(this));
+    this._provider.awareness.on("update", this.updateListener.bind(this));
+    this._provider.awareness.on("delete", this.deleteListener.bind(this));
 
     const userName = LocalStorageManager.getUserName();
     const userId = LocalStorageManager.getUserId();
@@ -58,29 +58,29 @@ export class AwarenessProvider implements Disposable {
   }
 
   private _callListeners(event: AwarenessEventType, changes: { added: number[], updated: number[], removed: number[] }): void {
-    const listeners = this.listeners.get(event);
+    const listeners = this._listeners.get(event);
     if (listeners) {
-      listeners?.forEach(l => l(changes));
+      listeners?.forEach(listener => listener(changes));
     }
   }
 
   [Symbol.dispose](): void {
-    this.provider.awareness.off("change", this.changeListener.bind(this));
-    this.provider.awareness.off("update", this.updateListener.bind(this));
-    this.provider.awareness.off("delete", this.deleteListener.bind(this));
-    this.listeners.clear();
+    this._provider.awareness.off("change", this.changeListener.bind(this));
+    this._provider.awareness.off("update", this.updateListener.bind(this));
+    this._provider.awareness.off("delete", this.deleteListener.bind(this));
+    this._listeners.clear();
   }
 
   getAwareness(): Awareness {
-    return this.provider.awareness;
+    return this._provider.awareness;
   }
 
   getStates(): Map<number, unknown> {
-    return this.provider.awareness.states;
+    return this._provider.awareness.states;
   }
 
   getUserState(id: number): EngineUser {
-    const data = this.provider.awareness.getStates().get(id);
+    const data = this._provider.awareness.getStates().get(id);
     return {
       clientId: data?.clientId,
       userId: data?.userId,
@@ -90,7 +90,7 @@ export class AwarenessProvider implements Disposable {
   }
 
   getLocalUser(): EngineUser {
-    const data = this.provider.awareness.getLocalState();
+    const data = this._provider.awareness.getLocalState();
     return {
       clientId: data?.clientId,
       userId: data?.userId,
@@ -100,25 +100,25 @@ export class AwarenessProvider implements Disposable {
   }
 
   getClientId(): number {
-    return this.provider.awareness.clientID;
+    return this._provider.awareness.clientID;
   }
 
   setLocalUser(user: EngineUser): void {
-    this.provider.awareness.setLocalStateField("clientId", user.clientId);
-    this.provider.awareness.setLocalStateField("userId", user.userId);
-    this.provider.awareness.setLocalStateField("name", user.name);
-    this.provider.awareness.setLocalStateField("color", user.color);
+    this._provider.awareness.setLocalStateField("clientId", user.clientId);
+    this._provider.awareness.setLocalStateField("userId", user.userId);
+    this._provider.awareness.setLocalStateField("name", user.name);
+    this._provider.awareness.setLocalStateField("color", user.color);
   }
 
   observe(event: AwarenessEventType, callback: AwarenessChangeListener): void {
-    if (!this.listeners.has(event)) {
-      this.listeners.set(event, new Set());
+    if (!this._listeners.has(event)) {
+      this._listeners.set(event, new Set());
     }
-    this.listeners.get(event)?.add(callback);
+    this._listeners.get(event)?.add(callback);
   }
 
   count(): number {
-    return this.provider.awareness.getStates().size;
+    return this._provider.awareness.getStates().size;
   }
 
   private _onChange(changes: { added: number[], updated: number[], removed: number[] }): void {
@@ -126,30 +126,30 @@ export class AwarenessProvider implements Disposable {
     [...changes.added, ...changes.updated].forEach(clientID => {
       const state = this.getUserState(clientID);
       if (state) {
-        this.userStateCache.set(clientID, state);
+        this._userStateCache.set(clientID, state);
       }
     });
 
     changes.removed.forEach(clientID => {
-      this.userStateCache.delete(clientID);
+      this._userStateCache.delete(clientID);
     });
 
     changes.removed.forEach(clientID => {
-      const disconnectedUser = this.userStateCache.get(clientID);
+      const disconnectedUser = this._userStateCache.get(clientID);
       if (disconnectedUser) {
-        const projectId = Number(this.engine.projectId);
+        const projectId = Number(this._engine.projectId);
         WorkSessionsService
           .workSessionControllerGetInfo(projectId)
           .then(sessionInfo => {
-            if (sessionInfo.host === userId && !this.engine.isHost) {
-              this.engine.isHost = true;
-              this.engine.emit(ProviderEventType.BECOME_HOST);
+            if (sessionInfo.host === userId && !this._engine.isHost) {
+              this._engine.isHost = true;
+              this._engine.emit(ProviderEventType.BECOME_HOST);
             }
           });
-        this.userStateCache.delete(clientID);
+        this._userStateCache.delete(clientID);
         WorkSessionsService.workSessionControllerKick(projectId, { userId: Number(disconnectedUser.userId) });
 
-        this.engine.checkAndKickDisconnectedUsers();
+        this._engine.checkAndKickDisconnectedUsers();
       }
     });
 
@@ -160,6 +160,6 @@ export class AwarenessProvider implements Disposable {
   }
 
   getUsers(): EngineUser[] {
-    return Array.from(this.userStateCache.values());
+    return Array.from(this._userStateCache.values());
   }
 }

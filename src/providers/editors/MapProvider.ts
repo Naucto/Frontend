@@ -192,8 +192,6 @@ export class MapProvider implements Disposable {
     this.rawListeners.add(callback);
   }
 
-  // PRIVATE
-
   private _parseMapData(mapData: string): number[][] {
     const tiles: number[][] = new Array(this.height);
 
