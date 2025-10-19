@@ -2,8 +2,8 @@ import { rectangleToVertices } from "@shared/canvas/glUtils";
 import { GLPipeline, initGLPipeline } from "@shared/canvas/GLSetup";
 import { useEffect, useMemo, useRef } from "react";
 import { CanvasError, CanvasNotInitializedError } from "src/errors/CanvasError";
-import { MapProvider } from "src/providers/editors/MapProvider.ts";
-import { SpriteProvider } from "src/providers/editors/SpriteProvider";
+import { MapProvider } from "@providers/editors/MapProvider.ts";
+import { SpriteProvider } from "@providers/editors/SpriteProvider";
 
 export type QueueSpriteDrawFn = (
   index: number,

@@ -4,7 +4,7 @@ import { FC, useCallback } from "react";
 import DisconnectIcon from "@assets/disconnect.svg?react";
 import UserIcon from "@assets/user.svg?react";
 import { ProfileMenuItem } from "@shared/navbar/nav-profile/ProfileMenuItem";
-import { useUser } from "src/providers/UserProvider";
+import { useUser } from "@providers/UserProvider";
 import { useNavigate } from "react-router-dom";
 
 type ProfileMenuProps = {

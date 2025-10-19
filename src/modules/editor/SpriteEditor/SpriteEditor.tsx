@@ -5,8 +5,8 @@ import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import React from "react";
 import { StyledCanvas } from "@shared/canvas/Canvas";
 import { EditorProps } from "../../create/game-editor/editors/EditorType";
-import { MapProvider } from "src/providers/editors/MapProvider.ts";
-import { SpriteProvider } from "src/providers/editors/SpriteProvider.ts";
+import { MapProvider } from "@providers/editors/MapProvider.ts";
+import { SpriteProvider } from "@providers/editors/SpriteProvider.ts";
 
 const SPRITE_SIZE = 8;
 const SPRITE_SHEET_SIZE = 128;

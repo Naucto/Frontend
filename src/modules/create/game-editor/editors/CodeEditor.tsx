@@ -6,7 +6,7 @@ import { EditorProps } from "./EditorType";
 import "./CodeEditor.css";
 import { useTheme } from "@mui/material/styles";
 import { generateRandomColor } from "@utils/colorUtils";
-import { AwarenessEventType } from "../../../../providers/editors/AwarenessProvider";
+import { AwarenessEventType } from "@providers/editors/AwarenessProvider";
 
 const CodeEditor: React.FC<EditorProps> = ({ project }) => {
   const [userStyles, setUserStyles] = useState<string>("");

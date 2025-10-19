@@ -1,5 +1,5 @@
 import { FC } from "react";
-import { ProjectProvider } from "../../../../providers/ProjectProvider.ts";
+import { ProjectProvider } from "@providers/ProjectProvider.ts";
 
 export type EditorProps = {
   project: ProjectProvider;

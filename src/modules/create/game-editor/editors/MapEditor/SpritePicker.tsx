@@ -2,7 +2,7 @@ import React, { useCallback, useEffect } from "react";
 import { styled } from "@mui/material/styles";
 import { StyledCanvas } from "@shared/canvas/Canvas";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
-import { ProjectProvider } from "../../../../../providers/ProjectProvider.ts";
+import { ProjectProvider } from "@providers/ProjectProvider.ts";
 
 const PickerContainer = styled("div")(({ theme }) => ({
   display: "flex",

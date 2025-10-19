@@ -6,7 +6,7 @@ import { CreateUserDto, LoginDto, UsersService } from "@api";
 import { useForm } from "react-hook-form";
 import ImportantButton from "@shared/buttons/ImportantButton";
 import { AuthService } from "@api/services/AuthService";
-import { useUser } from "src/providers/UserProvider";
+import { useUser } from "@providers/UserProvider";
 import { CustomDialog } from "@shared/dialog/CustomDialog";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
 

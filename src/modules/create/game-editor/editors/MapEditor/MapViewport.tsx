@@ -3,7 +3,7 @@ import { styled } from "@mui/material/styles";
 import { StyledCanvas } from "src/shared/canvas/Canvas";
 import { SpriteRendererHandle } from "src/shared/canvas/RendererHandle.ts";
 import { getCanvasPoint2DFromEvent } from "src/utils/canvasUtils.ts";
-import { ProjectProvider } from "src/providers/ProjectProvider.ts";
+import { ProjectProvider } from "@providers/ProjectProvider.ts";
 
 const SCREEN_SIZE: Point2D = { x: 320, y: 180 };
 
