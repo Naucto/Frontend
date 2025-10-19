@@ -1,11 +1,6 @@
 import * as Y from "yjs";
 import { palette } from "../../temporary/SpriteSheet.ts";
 
-interface Size {
-  width: number;
-  height: number;
-}
-
 export class SpriteProvider implements Disposable {
   private _spritemap: Y.Map<number>;
   private rawListeners = new Set<(content: string) => void>();
