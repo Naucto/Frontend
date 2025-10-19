@@ -12,3 +12,7 @@ type Size = {
 
 type RawContentListener = (content: string) => void;
 type ContentListener = (content: number[]) => void;
+
+interface Destroyable {
+  destroy(): void;
+}

@@ -15,7 +15,7 @@ export enum AwarenessEventType {
 
 export type AwarenessChangeListener = (changes: { added: number[], updated: number[], removed: number[] }) => void;
 
-export class AwarenessProvider implements Disposable {
+export class AwarenessProvider implements Destroyable {
   private _listeners : Map<AwarenessEventType, Set<AwarenessChangeListener>> = new Map();
   private _userStateCache = new Map<number, EngineUser>();
   private _provider: WebrtcProvider;
@@ -64,7 +64,7 @@ export class AwarenessProvider implements Disposable {
     }
   }
 
-  [Symbol.dispose](): void {
+  destroy(): void {
     this._provider.awareness.off("change", this.changeListener.bind(this));
     this._provider.awareness.off("update", this.updateListener.bind(this));
     this._provider.awareness.off("delete", this.deleteListener.bind(this));

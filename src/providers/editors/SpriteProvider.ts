@@ -1,10 +1,11 @@
 import * as Y from "yjs";
 import { palette } from "../../temporary/SpriteSheet.ts";
 
-export class SpriteProvider implements Disposable {
+export class SpriteProvider implements Destroyable {
   private _spriteMap: Y.Map<number>;
   private _rawListeners = new Set<RawContentListener>();
   private _listeners = new Set<ContentListener>();
+  private readonly _boundCallListeners: () => void;
 
   public palette: Uint8Array;
   public readonly spriteSize: Size;
@@ -17,13 +18,14 @@ export class SpriteProvider implements Disposable {
     this.size = size;
 
     this.palette = palette;
-    this._spriteMap.observe(this._callListeners.bind(this));
+    this._boundCallListeners = this._callListeners.bind(this);
+    this._spriteMap.observe(this._boundCallListeners);
   }
 
-  [Symbol.dispose](): void {
+  destroy(): void {
     this._listeners.clear();
     this._rawListeners.clear();
-    this._spriteMap.unobserve(this._callListeners.bind(this));
+    this._spriteMap.unobserve(this._boundCallListeners);
   }
 
   private _callListeners(): void {

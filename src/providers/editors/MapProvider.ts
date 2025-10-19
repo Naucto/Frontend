@@ -8,7 +8,7 @@ interface Size {
   height: number;
 }
 
-export class MapProvider implements Disposable {
+export class MapProvider implements Destroyable {
   private _tilemap: Y.Map<number>;
   public width: number;
   public height: number;
@@ -47,7 +47,7 @@ export class MapProvider implements Disposable {
     this._sprite = sprite;
   }
 
-  [Symbol.dispose](): void {
+  destroy(): void {
     this.listeners.clear();
     this.rawListeners.clear();
     this._tilemap.unobserve(this._callListeners.bind(this));
@@ -63,11 +63,8 @@ export class MapProvider implements Disposable {
 
   getTileAt(pos: Point2D): number {
     const key = this.coordToKey(pos);
-    const value = this._tilemap.get(key);
+    const value = this._tilemap.get(key) || 0;
 
-    if (value === undefined) {
-      throw new MapProviderError(`Tile at position (${pos.x}, ${pos.y}) is undefined`);
-    }
     return value;
   }
 

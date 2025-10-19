@@ -3,40 +3,43 @@ import * as Y from "yjs";
 import { AwarenessProvider } from "./AwarenessProvider";
 import { editor } from "monaco-editor";
 
-export class CodeProvider implements Disposable {
-  private readonly content: Y.Text;
-  private monacoBinding: MonacoBinding | undefined;
-  private provider: AwarenessProvider;
+export class CodeProvider implements Destroyable {
+  private readonly _content: Y.Text;
+  private _monacoBinding: MonacoBinding | undefined;
+  private _provider: AwarenessProvider;
 
-  private listeners = new Set<RawContentListener>();
+  private _listeners = new Set<RawContentListener>();
+
+  private readonly _boundCallListeners: () => void;
 
   constructor(ydoc: Y.Doc, provider: AwarenessProvider) {
-    this.content = ydoc.getText("monaco");
-    this.content.observe(this._callListeners.bind(this));
-    this.provider = provider;
+    this._content = ydoc.getText("monaco");
+    this._boundCallListeners = this._callListeners.bind(this);
+    this._content.observe(this._boundCallListeners);
+    this._provider = provider;
   }
 
-  [Symbol.dispose](): void {
-    this.listeners.clear();
-    this.content.unobserve(this._callListeners.bind(this));
-    this.monacoBinding?.destroy();
+  destroy(): void {
+    this._listeners.clear();
+    this._content.unobserve(this._boundCallListeners);
+    this._monacoBinding?.destroy();
   }
 
   private _callListeners(): void {
-    const currentContent = this.content.toString();
-    this.listeners.forEach((callback) => callback(currentContent));
+    const currentContent = this._content.toString();
+    this._listeners.forEach((callback) => callback(currentContent));
   }
 
   getContent(): string {
-    return this.content.toString();
+    return this._content.toString();
   }
 
   observe(callback: RawContentListener): void {
-    this.listeners.add(callback);
+    this._listeners.add(callback);
   }
 
   getMonacoBinding(): MonacoBinding | undefined {
-    return this.monacoBinding;
+    return this._monacoBinding;
   }
 
   setMonacoBinding(editor: editor.IStandaloneCodeEditor): void {
@@ -44,6 +47,6 @@ export class CodeProvider implements Disposable {
     if (!model) {
       throw new Error("Editor model is null.");
     }
-    this.monacoBinding = new MonacoBinding(this.content, model, new Set([editor]), this.provider.getAwareness());
+    this._monacoBinding = new MonacoBinding(this._content, model, new Set([editor]), this._provider.getAwareness());
   }
 }

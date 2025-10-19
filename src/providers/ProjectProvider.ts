@@ -14,7 +14,7 @@ export enum ProviderEventType {
   BECOME_HOST
 }
 
-export class ProjectProvider implements Disposable {
+export class ProjectProvider implements Destroyable {
   private _provider!: WebrtcProvider;
   private readonly _doc: Y.Doc;
   private _roomId: string | undefined;
@@ -76,13 +76,13 @@ export class ProjectProvider implements Disposable {
   }
 
   quit(): void {
-    this[Symbol.dispose]();
+    this.destroy();
   }
 
-  [Symbol.dispose](): void {
-    this.code[Symbol.dispose]();
-    this.sprite[Symbol.dispose]();
-    this.awareness[Symbol.dispose]();
+  destroy(): void {
+    this.code.destroy();
+    this.sprite.destroy();
+    this.awareness.destroy();
     this._provider.disconnect();
     this._doc.destroy();
   }
