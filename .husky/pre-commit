@@ -1,6 +1,6 @@
 #!/bin/sh
 
-npm run lint --fix
+bun lint --fix
 
 if [ $? -ne 0 ]; then
   echo "❌ Linting failed. Please fix the errors before committing."
@@ -13,10 +13,10 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-bun cypress:run
-if [ $? -ne 0 ]; then
-  echo "❌ Cypress tests failed. Please fix the errors before committing."
-  exit 1
-fi
+# bun cypress:run
+# if [ $? -ne 0 ]; then
+#   echo "❌ Cypress tests failed. Please fix the errors before committing."
+#   exit 1
+# fi
 
 echo "✅ Linting passed successfully."

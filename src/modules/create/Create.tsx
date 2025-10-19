@@ -2,7 +2,6 @@ import { useEditorManager } from "@modules/editor/EditorManager";
 import React, { useEffect } from "react";
 import { WorkSessionsService } from "@api/services/WorkSessionsService.ts";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
-import { useProject } from "../../providers/ProjectProvider";
 
 const Create: React.FC = () => {
   const editorManager = useEditorManager();

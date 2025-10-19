@@ -1,10 +1,9 @@
-import React, { createRef, useCallback, useEffect, useMemo, useState } from "react";
+import React, { createRef, useCallback, useEffect, useState } from "react";
 import { styled } from "@mui/material/styles";
-import { useProject } from "src/providers/ProjectProvider";
 import { StyledCanvas } from "src/shared/canvas/Canvas";
 import { SpriteRendererHandle } from "src/shared/canvas/RendererHandle.ts";
 import { getCanvasPoint2DFromEvent } from "src/utils/canvasUtils.ts";
-import { MapManager } from "@utils/MapManager.ts";
+import { ProjectProvider } from "@providers/ProjectProvider";
 
 const SCREEN_SIZE: Point2D = { x: 320, y: 180 };
 
@@ -18,34 +17,30 @@ const ViewportContainer = styled("div")(({ theme }) => ({
 
 type Props = {
   selectedIndex: number;
+  project: ProjectProvider;
 };
 
-export const MapViewport: React.FC<Props> = ({ selectedIndex }) => {
-  const { project, actions } = useProject();
-  if (!project) return null;
-
+export const MapViewport: React.FC<Props> = ({ selectedIndex, project }) => {
   const [offset, setOffset] = useState<Point2D>({ x: 0, y: 0 });
   const [isDrawing, setIsDrawing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<Point2D>({ x: 0, y: 0 });
+  const [, setVersion] = useState(0);
 
   const spriteRendererHandleRef = createRef<SpriteRendererHandle>();
-
-  const mapManager: MapManager = useMemo(() => new MapManager(project.map), [project.map]);
 
   const draw = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>): void => {
       const point: Point2D = getCanvasPoint2DFromEvent(e);
       const tile: Point2D = {
-        x: Math.floor((point.x - offset.x) / project.spriteSheet.spriteSize.width),
-        y: Math.floor((point.y - offset.y) / project.spriteSheet.spriteSize.height),
+        x: Math.floor((point.x - offset.x) / project.sprite.spriteSize.width),
+        y: Math.floor((point.y - offset.y) / project.sprite.spriteSize.height),
       };
-      const changed = mapManager.setTileAt(tile, selectedIndex);
-      if (changed) {
-        actions.setMapData(mapManager.getMap().mapData);
-      }
+      project.map.setTileAt(tile, selectedIndex);
+      setVersion(v => v + 1);
+
     },
-    [mapManager, actions, offset, project.spriteSheet.spriteSize, selectedIndex]
+    [offset, project.sprite.spriteSize, selectedIndex]
   );
 
   const handleMouseDown = useCallback(
@@ -90,12 +85,21 @@ export const MapViewport: React.FC<Props> = ({ selectedIndex }) => {
     spriteRendererHandleRef.current?.drawMap(offset.x, offset.y);
   }, [spriteRendererHandleRef]);
 
+  useEffect(() => {
+    project.map.observe(() => {
+      setVersion(v => v + 1);
+    });
+
+    project.sprite.observe(() => {
+      setVersion(v => v + 1);
+    });
+  }, [project]);
+
   return (
     <ViewportContainer onContextMenu={(e) => e.preventDefault()}>
       <ViewportCanvas
         ref={spriteRendererHandleRef}
-        spriteSheet={project.spriteSheet}
-        palette={project.palette}
+        sprite={project.sprite}
         map={project.map}
         screenSize={{ width: SCREEN_SIZE.x, height: SCREEN_SIZE.y }}
         onMouseDown={handleMouseDown}

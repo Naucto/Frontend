@@ -3,7 +3,7 @@ import { NavElem, ImportantNavElem } from "@shared/navbar/NavElem";
 import NavProfile from "@shared/navbar/nav-profile/NavProfile";
 import { SearchBar } from "@shared/navbar/SearchBar";
 import React from "react";
-import { useUser } from "src/providers/UserProvider";
+import { useUser } from "@providers/UserProvider";
 import { muiTheme } from "@theme/MUITheme";
 import { Login } from "@shared/navbar/login/Login";
 

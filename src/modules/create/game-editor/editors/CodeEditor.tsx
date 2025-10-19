@@ -1,17 +1,14 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Editor, { Monaco } from "@monaco-editor/react";
 import { editor } from "monaco-editor";
 import CodeTabTheme from "./CodeTabTheme";
-import { MonacoBinding } from "y-monaco";
-import * as Y from "yjs";
 import { EditorProps } from "./EditorType";
 import "./CodeEditor.css";
 import { useTheme } from "@mui/material/styles";
 import { generateRandomColor } from "@utils/colorUtils";
+import { AwarenessEventType } from "@providers/editors/AwarenessProvider";
 
-const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider }) => {
-  const monacoBindingRef = useRef<MonacoBinding>(null);
-  const ytextRef = useRef<Y.Text>(null);
+const CodeEditor: React.FC<EditorProps> = ({ project }) => {
   const [userStyles, setUserStyles] = useState<string>("");
   const theme = useTheme();
 
@@ -69,18 +66,13 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider }) => {
   };
 
   useEffect(() => {
-    if (!provider?.awareness) return;
+    if (!project?.awareness) return;
 
     const updateStyles = (changes?: { added: number[], updated: number[], removed: number[] }): void => {
-      const states = provider.awareness.getStates();
+      const users = project.awareness.getUsers();
       const styleMap = new Map<number, string>();
 
-      states.forEach((state, clientId) => {
-        if (state?.user) {
-          const { name, color } = state.user;
-          styleMap.set(clientId, generateUserStyles(clientId, name, color));
-        }
-      });
+      users.forEach((user) => styleMap.set(user.clientId, generateUserStyles(user.clientId, user.name, user.color)));
 
       if (changes) {
         changes.removed.forEach((clientId) => {
@@ -97,24 +89,24 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider }) => {
       updateStyles(changes);
     };
 
-    provider.awareness.on("change", handleAwarenessUpdate);
+    project.awareness.observe(AwarenessEventType.CHANGE, handleAwarenessUpdate);
 
     return () => {
-      provider.awareness.off("change", handleAwarenessUpdate);
     };
-  }, [provider, generateUserStyles]);
+  }, [project, generateUserStyles]);
 
   useEffect(() => {
-    if (!provider?.awareness) return;
+    if (!project?.awareness) return;
 
-    const currentUser = provider.awareness.getLocalState()?.user;
+    const currentUser = project.awareness.getLocalUser();
+
     if (currentUser && !currentUser.color) {
-      provider.awareness.setLocalStateField("user", {
+      project.awareness.setLocalUser({
         ...currentUser,
         color: generateRandomColor()
       });
     }
-  }, [provider]);
+  }, [project]);
 
   const handleMount = (editor: editor.IStandaloneCodeEditor): (() => void) | void => {
     const editorModel = editor.getModel();
@@ -123,18 +115,10 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider }) => {
       return;
     }
 
-    ytextRef.current = ydoc.getText("monaco");
-
-    monacoBindingRef.current = new MonacoBinding(
-      ytextRef.current,
-      editorModel,
-      new Set([editor]),
-      provider.awareness
-    );
+    project.code.setMonacoBinding(editor);
 
     return () => {
-      editor.dispose();
-      monacoBindingRef.current?.destroy?.();
+      editor.destroy();
     };
   };
 
@@ -152,7 +136,6 @@ const CodeEditor: React.FC<EditorProps> = ({ ydoc, provider }) => {
         beforeMount={handleBeforeMount}
         onMount={handleMount}
         options={{ automaticLayout: true }}
-        defaultValue="//test"
       />
     </>
   );

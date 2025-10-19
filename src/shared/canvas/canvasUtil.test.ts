@@ -1,6 +1,6 @@
-import { SpriteSheet } from "src/types/SpriteSheetType";
+import * as Y from "yjs";
+import { YSpriteSheet } from "../../modules/create/game-editor/types/YSpriteSheet";
 import {
-  convertSpritesheetToIndexArray,
   hexToRGBArray,
   getRGBArraysFromPalette,
   rectangleToVertices
@@ -9,14 +9,15 @@ import {
 describe("Feature: Utilities (non-WebGL)", () => {
   describe("Convert a hex spritesheet string into an index Uint8Array", () => {
     test("Given a spritesheet of size 2x2 and data '0a00ff10' When I convert it Then I get [10,0,255,16]", () => {
-      const spriteSheet: SpriteSheet = {
-        size: { width: 2, height: 2 },
-        stride: 2,
-        spriteSize: { width: 1, height: 1 },
-        spriteSheet: "0a00ff10"
-      };
+      const doc = new Y.Doc();
+      const map = doc.getMap<number>("testSprite");
+      map.set("0,0", 0x0a);
+      map.set("1,0", 0x00);
+      map.set("0,1", 0xff);
+      map.set("1,1", 0x10);
+      const spriteSheet = new YSpriteSheet(doc, "testSprite", 2, 2);
 
-      const result = convertSpritesheetToIndexArray(spriteSheet);
+      const result = Uint8Array.from(spriteSheet.toArray());
       expect(result).toBeInstanceOf(Uint8Array);
       expect(result.length).toBe(4);
       expect(Array.from(result)).toEqual([10, 0, 255, 16]);
