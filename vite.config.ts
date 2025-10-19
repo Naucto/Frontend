@@ -17,6 +17,6 @@ export default defineConfig({
     alias: {}
   },
   server: {
-    port: 3001
+    allowedHosts: true
   }
 });

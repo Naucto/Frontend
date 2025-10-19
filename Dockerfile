@@ -7,6 +7,8 @@ RUN bun install --frozen-lockfile
 
 COPY . .
 
-EXPOSE 3001
+ARG FRONTEND_PORT=80
+ENV FRONTEND_PORT=${FRONTEND_PORT}
+EXPOSE $FRONTEND_PORT
 
-CMD ["bun", "dev", "--host", "0.0.0.0", "--port", "3001"]
+CMD bun dev --host 0.0.0.0 --port $FRONTEND_PORT
