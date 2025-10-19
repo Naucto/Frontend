@@ -75,10 +75,6 @@ export class ProjectProvider implements Destroyable {
     }
   }
 
-  quit(): void {
-    this.destroy();
-  }
-
   destroy(): void {
     this.code.destroy();
     this.sprite.destroy();

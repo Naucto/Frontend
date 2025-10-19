@@ -161,7 +161,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
 
     WorkSessionsService.workSessionControllerLeave(Number(project.projectId));
 
-    project.quit();
+    project.destroy();
   };
 
   useEffect(() => {
