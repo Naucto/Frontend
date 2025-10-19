@@ -39,10 +39,16 @@ const RightPanel = styled("div")(({ theme }) => ({
   gap: theme.spacing(4),
 }));
 
-const TabContent = styled(Box)({
+const TabContent = styled(Box)(() => ({
   flex: 1,
   overflow: "auto",
-});
+  "&.active": {
+    display: "block",
+  },
+  "&.hidden": {
+    display: "none",
+  },
+}));
 
 const StyledTab = styled(Tab)(({ theme }) => ({
   fontFamily: theme.typography.fontFamily,
@@ -64,6 +70,37 @@ const StyledTab = styled(Tab)(({ theme }) => ({
 
 const PreviewCanvas = styled(GameCanvas)(({ theme }) => ({
   borderRadius: theme.spacing(1)
+}));
+
+const StyledDialog = styled(Dialog)(({ theme }) => ({
+  "& .MuiPaper-root": {
+    backgroundColor: theme.palette.mode === "dark" ? theme.palette.grey[900] : "#0f0f0f",
+    color: theme.palette.getContrastText(theme.palette.grey[900]),
+    border: `1px solid ${theme.palette.grey[800]}`,
+    boxShadow: theme.shadows[8],
+  },
+}));
+
+const StyledDialogTitle = styled(DialogTitle)(() => ({
+  color: "inherit",
+}));
+
+const StyledDialogContent = styled(DialogContent)(({ theme }) => ({
+  backgroundColor: "transparent",
+  borderColor: theme.palette.grey[800],
+}));
+
+const StyledDialogActions = styled(DialogActions)(() => ({
+  backgroundColor: "transparent",
+}));
+
+const StyledAlert = styled(Alert)(({ theme }) => ({
+  backgroundColor: "transparent",
+  color: theme.palette.grey[100],
+  borderColor: theme.palette.grey[700],
+  "& .MuiAlert-icon": {
+    color: theme.palette.grey[400],
+  },
 }));
 
 interface GameEditorProps {
@@ -178,6 +215,16 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
     }, 5 * 60 * 1000);
   };
 
+  const getAwarenessMessage = (): string => {
+    const count = project.awareness.count();
+    if (count > 1) {
+      const otherUsers = count - 1;
+      const userText = otherUsers === 1 ? "person is" : "people are";
+      return `${otherUsers} other ${userText} in the session. Your local changes may be overwritten when you reconnect.`;
+    }
+    return "Your local changes may not synchronize until the connection is restored.";
+  };
+
   if (!project)
     return <div>Loading work session...</div>; //FIXME: add a loading spinner with a component
 
@@ -202,7 +249,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
             key={tab.label}
             role="tabpanel"
             hidden={activeTab !== idx}
-            sx={{ display: activeTab === idx ? "block" : "none" }}
+            className={activeTab === idx ? "active" : "hidden"}
           >
             {tab.component}
           </TabContent>
@@ -222,51 +269,27 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
         <GameEditorConsole output={output}/>
       </RightPanel>
 
-      <Dialog
+      <StyledDialog
         open={!isOnline && offlineWarningOpen}
         onClose={() => setOfflineWarningOpen(false)}
         maxWidth="sm"
         fullWidth
-        slotProps={{
-          paper: {
-            sx: (theme) => ({
-              bgcolor: theme.palette.mode === "dark" ? theme.palette.grey[900] : "#0f0f0f",
-              color: theme.palette.getContrastText(theme.palette.grey[900]),
-              border: `1px solid ${theme.palette.grey[800]}`,
-              boxShadow: theme.shadows[8],
-            }),
-          },
-        }}
       >
-        <DialogTitle sx={{ color: "inherit" }}>You are offline</DialogTitle>
-        <DialogContent
-          dividers
-          sx={(theme) => ({
-            bgcolor: "transparent",
-            borderColor: theme.palette.grey[800],
-          })}
-        >
-          <Alert
+        <StyledDialogTitle>You are offline</StyledDialogTitle>
+        <StyledDialogContent dividers>
+          <StyledAlert
             severity={project.awareness.count() > 1 ? "warning" : "info"}
             variant="outlined"
-            sx={(theme) => ({
-              bgcolor: "transparent",
-              color: theme.palette.grey[100],
-              borderColor: theme.palette.grey[700],
-              "& .MuiAlert-icon": { color: theme.palette.grey[400] },
-            })}
           >
-            {project.awareness.count() > 1
-              ? `${project.awareness.count()} other ${project.awareness.count() === 2 ? "person is" : "people are"} in the session. Your local changes may be overwritten when you reconnect.`
-              : "Your local changes may not synchronize until the connection is restored."}
-          </Alert>
-        </DialogContent>
-        <DialogActions sx={{ bgcolor: "transparent" }}>
+            {getAwarenessMessage()}
+          </StyledAlert>
+        </StyledDialogContent>
+        <StyledDialogActions>
           <Button variant="contained" color="primary" onClick={() => setOfflineWarningOpen(false)} autoFocus>
             Got it
           </Button>
-        </DialogActions>
-      </Dialog>
+        </StyledDialogActions>
+      </StyledDialog>
 
       <Beforeunload onBeforeunload={(event) => {
         if (suppressBeforeUnloadRef.current) {
