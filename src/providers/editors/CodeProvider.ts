@@ -2,6 +2,7 @@ import { MonacoBinding } from "y-monaco";
 import * as Y from "yjs";
 import { AwarenessProvider } from "./AwarenessProvider";
 import { editor } from "monaco-editor";
+import { CodeProviderError } from "@errors/CodeProviderError";
 
 export class CodeProvider implements Destroyable {
   private readonly _content: Y.Text;
@@ -45,7 +46,7 @@ export class CodeProvider implements Destroyable {
   setMonacoBinding(editor: editor.IStandaloneCodeEditor): void {
     const model = editor.getModel();
     if (!model) {
-      throw new Error("Editor model is null.");
+      throw new CodeProviderError("Editor model is null.");
     }
     this._monacoBinding = new MonacoBinding(this._content, model, new Set([editor]), this._provider.getAwareness());
   }
