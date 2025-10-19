@@ -3,7 +3,7 @@ import * as Tone from "tone";
 export const SampleLibrary = {
   minify: false,
   ext: ".[mp3|ogg]", // use setExt to change the extensions on all files // do not change this variable //
-  baseUrl: "src/modules/editor/SoundEditor/samples/",
+  baseUrl: "/samples/",
   list: ["bass-electric","bassoon","cello","clarinet","contrabass","flute","french-horn","guitar-acoustic","guitar-electric","guitar-nylon", "harmonium","harp","organ","piano","saxophone","trombone","trumpet","tuba","violin","xylophone"],
   onload: null,
 
@@ -15,7 +15,6 @@ export const SampleLibrary = {
       }
     }
     this.ext = newExt;
-    return console.log("sample extensions set to " + this.ext);
   },
 
   load: function (arg) {
@@ -104,7 +103,6 @@ export const SampleLibrary = {
           onload: t.onload
         }
       );
-      console.log(t.baseUrl + t.instruments + "/");
 
       return s;
     }
