@@ -2,9 +2,9 @@ import * as Y from "yjs";
 import { palette } from "../../temporary/SpriteSheet.ts";
 
 export class SpriteProvider implements Disposable {
-  private _spritemap: Y.Map<number>;
-  private rawListeners = new Set<RawContentListener>();
-  private listeners = new Set<ContentListener>();
+  private _spriteMap: Y.Map<number>;
+  private _rawListeners = new Set<RawContentListener>();
+  private _listeners = new Set<ContentListener>();
 
   public palette: Uint8Array;
   public readonly spriteSize: Size;
@@ -12,42 +12,42 @@ export class SpriteProvider implements Disposable {
   public readonly stride: number = 1;
 
   constructor(doc: Y.Doc, spriteSize: Size = { width: 8, height: 8 }, size: Size = { width: 128, height: 128 }) {
-    this._spritemap = doc.getMap<number>("sprite");
+    this._spriteMap = doc.getMap<number>("sprite");
     this.spriteSize = spriteSize;
     this.size = size;
 
     this.palette = palette;
-    this._spritemap.observe(this._callListeners.bind(this));
+    this._spriteMap.observe(this._callListeners.bind(this));
   }
 
   [Symbol.dispose](): void {
-    this.listeners.clear();
-    this.rawListeners.clear();
-    this._spritemap.unobserve(this._callListeners.bind(this));
+    this._listeners.clear();
+    this._rawListeners.clear();
+    this._spriteMap.unobserve(this._callListeners.bind(this));
   }
 
   private _callListeners(): void {
     const content = this.getContent();
-    this.listeners.forEach((callback) => callback(content));
+    this._listeners.forEach((callback) => callback(content));
 
     const rawContent = this.getRawContent();
-    this.rawListeners.forEach((callback) => callback(rawContent));
+    this._rawListeners.forEach((callback) => callback(rawContent));
   }
 
   getPixel(x: number, y: number): number {
     const key = this.coordToKey(x, y);
-    const value = this._spritemap.get(key) || 0;
+    const value = this._spriteMap.get(key) || 0;
     return value;
   }
 
   setPixel(x: number, y: number, color: number): void {
     const key = this.coordToKey(x, y);
-    this._spritemap.set(key, color);
+    this._spriteMap.set(key, color);
   }
 
   deletePixel(x: number, y: number): void {
     const key = this.coordToKey(x, y);
-    this._spritemap.set(key, 0);
+    this._spriteMap.set(key, 0);
   }
 
   private coordToKey(x: number, y: number): string {
@@ -86,10 +86,10 @@ export class SpriteProvider implements Disposable {
   }
 
   observe(callback: ContentListener): void {
-    this.listeners.add(callback);
+    this._listeners.add(callback);
   }
 
   observeRaw(callback: RawContentListener): void {
-    this.rawListeners.add(callback);
+    this._rawListeners.add(callback);
   }
 }
