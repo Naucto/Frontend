@@ -27,35 +27,35 @@ export class SpriteProvider implements Disposable {
   }
 
   private _callListeners(): void {
-    const content = this.getContent();
+    const content = this.getPixelBuffer();
     this._listeners.forEach((callback) => callback(content));
 
-    const rawContent = this.getRawContent();
+    const rawContent = this.getHexRepresentation();
     this._rawListeners.forEach((callback) => callback(rawContent));
   }
 
   getPixel(x: number, y: number): number {
-    const key = this.coordToKey(x, y);
+    const key = this._coordToKey(x, y);
     const value = this._spriteMap.get(key) || 0;
     return value;
   }
 
   setPixel(x: number, y: number, color: number): void {
-    const key = this.coordToKey(x, y);
+    const key = this._coordToKey(x, y);
     this._spriteMap.set(key, color);
   }
 
   deletePixel(x: number, y: number): void {
-    const key = this.coordToKey(x, y);
+    const key = this._coordToKey(x, y);
     this._spriteMap.set(key, 0);
   }
 
-  private coordToKey(x: number, y: number): string {
+  private _coordToKey(x: number, y: number): string {
     const key = `${x},${y}`;
     return key;
   }
 
-  getRawContent(): string {
+  getHexRepresentation(): string {
     let result = "";
     for (let y = 0; y < this.size.height; y++) {
       for (let x = 0; x < this.size.width; x++) {
@@ -65,7 +65,7 @@ export class SpriteProvider implements Disposable {
     return result;
   }
 
-  getContent(): number[] {
+  getPixelBuffer(): number[] {
     const result: number[] = [];
     for (let y = 0; y < this.size.height; y++) {
       for (let x = 0; x < this.size.width; x++) {
@@ -75,14 +75,8 @@ export class SpriteProvider implements Disposable {
     return result;
   }
 
-  getContentAsUint8Array(): Uint8Array {
-    const arr = new Uint8Array(this.size.width * this.size.height);
-    for (let y = 0; y < this.size.height; y++) {
-      for (let x = 0; x < this.size.width; x++) {
-        arr[y * this.size.width + x] = this.getPixel(x, y);
-      }
-    }
-    return arr;
+  getU8PixelBuffer(): Uint8Array {
+    return Uint8Array.from(this.getPixelBuffer());
   }
 
   observe(callback: ContentListener): void {

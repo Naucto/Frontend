@@ -54,10 +54,10 @@ export class MapProvider implements Disposable {
   }
 
   private _callListeners(): void {
-    const content = this.getContent();
+    const content = this.getPixelBuffer();
     this.listeners.forEach((callback) => callback(content));
 
-    const rawContent = this.getRawContent();
+    const rawContent = this.getHexRepresentation();
     this.rawListeners.forEach((callback) => callback(rawContent));
   }
 
@@ -89,7 +89,7 @@ export class MapProvider implements Disposable {
     };
   }
 
-  getRawContent(): string {
+  getHexRepresentation(): string {
     let result = "";
     for (let y = 0; y < this.height; y++) {
       for (let x = 0; x < this.width; x++) {
@@ -99,7 +99,7 @@ export class MapProvider implements Disposable {
     return result;
   }
 
-  getContent(): number[] {
+  getPixelBuffer(): number[] {
     const result: number[] = [];
     for (let y = 0; y < this.height; y++) {
       for (let x = 0; x < this.width; x++) {
@@ -167,9 +167,9 @@ export class MapProvider implements Disposable {
     );
   }
 
-  getContentAsUint8Array(): Uint8Array {
+  getU8PixelBuffer(): Uint8Array {
     const arr = new Uint8Array(this._getMapTotalPixels());
-    const spritepixelarray = this._sprite.getContentAsUint8Array();
+    const spritepixelarray = this._sprite.getU8PixelBuffer();
     for (let y = 0; y < this.height; y++) {
       for (let x = 0; x < this.width; x++) {
         const key = this.coordToKey({ x, y });

@@ -23,8 +23,8 @@ export function initGLPipeline(
   const gl = createGLContext(canvas);
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-  const spriteSheetBuffer = sprite.getContentAsUint8Array();
-  const mapPixelBuffer: Uint8Array = map.getContentAsUint8Array();
+  const spriteSheetBuffer = sprite.getU8PixelBuffer();
+  const mapPixelBuffer: Uint8Array = map.getU8PixelBuffer();
 
   const spriteSheetTexture = setTexture(gl,
     sprite.size.width, sprite.size.height,
