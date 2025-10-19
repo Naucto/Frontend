@@ -8,7 +8,7 @@ export class CodeProvider implements Disposable {
   private monacoBinding: MonacoBinding | undefined;
   private provider: AwarenessProvider;
 
-  private listeners = new Set<(content: string) => void>();
+  private listeners = new Set<RawContentListener>();
 
   constructor(ydoc: Y.Doc, provider: AwarenessProvider) {
     this.content = ydoc.getText("monaco");
@@ -31,7 +31,7 @@ export class CodeProvider implements Disposable {
     return this.content.toString();
   }
 
-  observe(callback: (content: string) => void): void {
+  observe(callback: RawContentListener): void {
     this.listeners.add(callback);
   }
 

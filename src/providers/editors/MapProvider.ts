@@ -14,8 +14,8 @@ export class MapProvider implements Disposable {
   public height: number;
   public stride: number;
 
-  private rawListeners = new Set<(content: string) => void>();
-  private listeners = new Set<(content: number[]) => void>();
+  private rawListeners = new Set<RawContentListener>();
+  private listeners = new Set<ContentListener>();
 
   private _sprite: SpriteProvider;
   private readonly _mapDataLength: number;
@@ -180,11 +180,11 @@ export class MapProvider implements Disposable {
     return arr;
   }
 
-  observe(callback: (content: number[]) => void): void {
+  observe(callback: ContentListener): void {
     this.listeners.add(callback);
   }
 
-  observeRaw(callback: (content: string) => void): void {
+  observeRaw(callback: RawContentListener): void {
     this.rawListeners.add(callback);
   }
 
