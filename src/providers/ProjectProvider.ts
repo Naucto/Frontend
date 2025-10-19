@@ -28,7 +28,7 @@ export class ProjectProvider implements Destroyable {
   public sprite!: SpriteProvider;
   public map!: MapProvider;
   public awareness!: AwarenessProvider;
-  projectId: number;
+  public projectId: number;
 
   constructor(projectId: number) {
     this.projectId = projectId;
