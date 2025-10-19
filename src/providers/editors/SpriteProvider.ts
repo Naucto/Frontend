@@ -1,5 +1,6 @@
 import * as Y from "yjs";
 import { palette } from "../../temporary/SpriteSheet.ts";
+import { SpriteProviderError } from "@errors/SpriteProviderError.ts";
 
 export class SpriteProvider implements Destroyable {
   private _spriteMap: Y.Map<number>;
@@ -37,6 +38,9 @@ export class SpriteProvider implements Destroyable {
   }
 
   getPixel(x: number, y: number): number {
+    if (x < 0 || x >= this.size.width || y < 0 || y >= this.size.height) {
+      throw new SpriteProviderError(`Coordinates out of bounds: (${x}, ${y})`);
+    }
     const key = this._coordToKey(x, y);
     const value = this._spriteMap.get(key) || 0;
     return value;

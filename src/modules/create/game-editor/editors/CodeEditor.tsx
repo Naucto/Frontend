@@ -136,7 +136,6 @@ const CodeEditor: React.FC<EditorProps> = ({ project }) => {
         beforeMount={handleBeforeMount}
         onMount={handleMount}
         options={{ automaticLayout: true }}
-        defaultValue=""
       />
     </>
   );

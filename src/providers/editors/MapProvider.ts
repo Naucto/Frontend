@@ -62,6 +62,9 @@ export class MapProvider implements Destroyable {
   }
 
   getTileAt(pos: Point2D): number {
+    if (pos.x < 0 || pos.x >= this.width || pos.y < 0 || pos.y >= this.height) {
+      throw new MapProviderError(`Position out of bounds: (${pos.x}, ${pos.y})`);
+    }
     const key = this.coordToKey(pos);
     const value = this._tilemap.get(key) || 0;
 
