@@ -3,7 +3,7 @@ import { WebrtcProvider } from "y-webrtc";
 import { Awareness } from "y-protocols/awareness";
 import { generateRandomColor } from "@utils/colorUtils.ts";
 import { LocalStorageManager } from "@utils/LocalStorageManager.ts";
-import { ProjectProvider, ProviderEventType } from "../ProjectProvider.ts";
+import { ProjectProvider, ProviderEventType } from "../ProjectProvider";
 import { WorkSessionsService } from "@api";
 
 export enum AwarenessEventType {

@@ -16,7 +16,7 @@ import CodeIcon from "src/assets/code.svg?react";
 import SpriteIcon from "src/assets/pen.svg?react";
 import SoundIcon from "src/assets/music.svg?react";
 import MapIcon from "src/assets/map.svg?react";
-import { ProjectProvider, ProviderEventType } from "@providers/ProjectProvider.ts";
+import { ProjectProvider, ProviderEventType } from "@providers/ProjectProvider";
 
 const GameEditorContainer = styled("div")(({ theme }) => ({
   height: "100%",
