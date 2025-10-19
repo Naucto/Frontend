@@ -241,7 +241,9 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
               iconPosition="start"
               key={label}
               label={label}
-              icon={icon}/>
+              icon={icon}
+              data-cy={`${label}-tab`}
+            />
           ))}
         </Tabs>
         {editorTabs.map((tab, idx) => (

@@ -272,7 +272,9 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
     }
   };
   return (
-    <div className="editor-layout" onContextMenu={handleContextMenu}>
+    <div className="editor-layout"
+      onContextMenu={handleContextMenu}
+      data-cy="sprite-editor">
       <div className="canvas-container">
         <div className="sprite-editor-header">
           <ColorPalette

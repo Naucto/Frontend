@@ -1,5 +1,6 @@
 {
     "compilerOptions": {
+        "resolveJsonModule": true,
         "allowJs": true,
         "esModuleInterop": true,
         "baseUrl": "./",
@@ -36,6 +37,9 @@
             ],
             "@errors/*": [
                 "./src/errors/*"
+            ],
+            "@types/*": [
+                "./src/types/*"
             ]
         }
     }
