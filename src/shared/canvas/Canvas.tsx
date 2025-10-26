@@ -13,13 +13,6 @@ export type CanvasProps = React.CanvasHTMLAttributes<HTMLCanvasElement> & {
   };
   palette: Uint8Array;
   className?: string;
-  onClick?: (e: React.MouseEvent<HTMLCanvasElement>) => void;
-  onWheel?: (e: React.WheelEvent<HTMLCanvasElement>) => void;
-  onMouseDown?: (e: React.MouseEvent<HTMLCanvasElement>) => void;
-  onMouseMove?: (e: React.MouseEvent<HTMLCanvasElement>) => void;
-  onMouseUp?: (e: React.MouseEvent<HTMLCanvasElement>) => void;
-  onMouseLeave?: () => void;
-  onMouseEnter?: () => void;
 };
 
 const Canvas = forwardRef<SpriteRendererHandle, CanvasProps>(function Canvas(
