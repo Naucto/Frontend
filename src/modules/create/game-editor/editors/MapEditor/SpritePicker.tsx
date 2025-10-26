@@ -53,6 +53,10 @@ export const SpritePicker: React.FC<SpritePickerProps> = ({ onSelect, project })
     project.sprite.observe(() => {
       setVersion(v => v + 1);
     });
+
+    project.map.observe(() => {
+      setVersion(v => v + 1);
+    });
   }, [project]);
 
   return (

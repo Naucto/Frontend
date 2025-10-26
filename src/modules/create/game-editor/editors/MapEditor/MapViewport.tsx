@@ -86,6 +86,7 @@ export const MapViewport: React.FC<Props> = ({ selectedIndex, project }) => {
   }, [spriteRendererHandleRef]);
 
   useEffect(() => {
+    console.log("MapViewport: observe");
     project.map.observe(() => {
       setVersion(v => v + 1);
     });

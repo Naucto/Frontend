@@ -1,6 +1,6 @@
 import { rectangleToVertices } from "@shared/canvas/glUtils";
 import { GLPipeline, initGLPipeline } from "@shared/canvas/GLSetup";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CanvasError, CanvasNotInitializedError } from "src/errors/CanvasError";
 import { MapProvider } from "@providers/editors/MapProvider.ts";
 import { SpriteProvider } from "@providers/editors/SpriteProvider";
@@ -37,6 +37,8 @@ export function useSpriteRenderer(
   const currentPalette: Uint8Array = new Uint8Array(sprite.palette);
   const currentPaletteSize = currentPalette.length / 4;
 
+  const [version, setVersion] = useState(0);
+
   const pipelineRef = useRef<GLPipeline | null>(null);
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -49,7 +51,17 @@ export function useSpriteRenderer(
       pipelineRef.current?.destroy();
       pipelineRef.current = null;
     };
-  }, [canvasRef, screenSize, map]);
+  }, [canvasRef, screenSize, version]);
+
+  useEffect(() => {
+    map.observe(() => {
+      setVersion(v => v + 1);
+    });
+
+    sprite.observe(() => {
+      setVersion(v => v + 1);
+    });
+  }, [map, sprite]);
 
   function draw(): void {
     const p = pipelineRef.current;
