@@ -11,4 +11,7 @@ ARG FRONTEND_PORT=80
 ENV FRONTEND_PORT=${FRONTEND_PORT}
 EXPOSE $FRONTEND_PORT
 
-CMD bun dev --host 0.0.0.0 --port $FRONTEND_PORT
+RUN bun run build
+
+FROM nginx:alpine AS runtime
+COPY --from=build --chown=nginx:nginx /app/dist /usr/share/nginx/html
