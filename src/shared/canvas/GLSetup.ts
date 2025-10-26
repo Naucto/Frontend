@@ -1,9 +1,8 @@
-import { compileShader, convertSpritesheetToIndexArray, createGLContext, setGLProgram, setTexture } from "@shared/canvas/glUtils";
-import { SpriteSheet } from "src/types/SpriteSheetType";
+import { compileShader, createGLContext, setGLProgram, setTexture } from "@shared/canvas/glUtils";
 import indexToColorFragment from "src/shared/canvas/shaders/index_to_color_frag.glsl";
 import spriteSheetVertex from "src/shared/canvas/shaders/sprite_cut_vert.glsl";
-import { Map } from "src/types/MapType";
-import { MapManager } from "@utils/MapManager";
+import { MapProvider } from "@providers/editors/MapProvider.ts";
+import { SpriteProvider } from "@providers/editors/SpriteProvider";
 export interface GLPipeline {
   gl: WebGL2RenderingContext;
   program: WebGLProgram;
@@ -17,40 +16,37 @@ export interface GLPipeline {
 
 export function initGLPipeline(
   canvas: HTMLCanvasElement,
-  spriteSheet: SpriteSheet,
-  map: Map,
-  palette: Uint8Array,
+  sprite: SpriteProvider,
+  map: MapProvider,
   screenSize: { width: number; height: number }
 ): GLPipeline {
   const gl = createGLContext(canvas);
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-
-  const spriteSheetBuffer = convertSpritesheetToIndexArray(spriteSheet);
-  const mapManager: MapManager = new MapManager(map);
-  const mapPixelBuffer: Uint8Array = mapManager.getMapPixelArray();
+  const spriteSheetBuffer = sprite.getU8PixelBuffer();
+  const mapPixelBuffer: Uint8Array = map.getU8PixelBuffer();
 
   const spriteSheetTexture = setTexture(gl,
-    spriteSheet.size.width, spriteSheet.size.height,
+    sprite.size.width, sprite.size.height,
     spriteSheetBuffer,
     gl.R8,
     gl.RED,
     gl.TEXTURE0);
   const paletteTexture = setTexture(gl,
-    palette.length / 4, 1,
-    palette,
+    sprite.palette.length / 4, 1,
+    sprite.palette,
     gl.RGBA,
     gl.RGBA,
     gl.TEXTURE1);
 
   const mapTexture = setTexture(gl,
-    map.width * spriteSheet.spriteSize.width, map.height * spriteSheet.spriteSize.height,
+    map.width * sprite.spriteSize.width, map.height * sprite.spriteSize.height,
     mapPixelBuffer,
     gl.R8,
     gl.RED,
     gl.TEXTURE2);
 
-  const paletteSize = palette.length / 4;
+  const paletteSize = sprite.palette.length / 4;
 
   const vertexShaderSource = spriteSheetVertex;
   const fragmentShaderSource = indexToColorFragment;

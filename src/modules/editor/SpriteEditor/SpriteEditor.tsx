@@ -4,12 +4,9 @@ import "./SpriteEditor.css";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import React from "react";
 import { StyledCanvas } from "@shared/canvas/Canvas";
-import { SpriteSheet } from "src/types/SpriteSheetType";
-import { palette } from "src/temporary/SpriteSheet";
 import { EditorProps } from "../../create/game-editor/editors/EditorType";
-import { YSpriteSheet } from "@modules/create/game-editor/types/YSpriteSheet.ts";
-import { useProject } from "src/providers/ProjectProvider";
-import { Map } from "src/types/MapType";
+import { MapProvider } from "@providers/editors/MapProvider.ts";
+import { SpriteProvider } from "@providers/editors/SpriteProvider.ts";
 
 const SPRITE_SIZE = 8;
 const SPRITE_SHEET_SIZE = 128;
@@ -56,8 +53,8 @@ const ColorPalette: React.FC<ColorPaletteProps> = ({ colors, currentColor, onCol
 interface CanvasContainerProps {
   canvasRef: React.RefObject<SpriteRendererHandle | null>;
   containerRef: React.RefObject<HTMLDivElement | null>;
-  spriteSheet: SpriteSheet;
-  map: Map;
+  sprite: SpriteProvider;
+  map: MapProvider;
   screenSize: { width: number; height: number };
   onWheel: (e: React.WheelEvent) => void;
   onMouseDown: (e: React.MouseEvent<HTMLCanvasElement>) => void;
@@ -71,7 +68,7 @@ interface CanvasContainerProps {
 const CanvasContainer: React.FC<CanvasContainerProps> = ({
   canvasRef,
   containerRef,
-  spriteSheet,
+  sprite,
   map,
   screenSize,
   ...props
@@ -79,9 +76,8 @@ const CanvasContainer: React.FC<CanvasContainerProps> = ({
   <div ref={containerRef} className="draw-canvas-container">
     <StyledCanvas
       ref={canvasRef}
-      spriteSheet={spriteSheet}
+      sprite={sprite}
       screenSize={screenSize}
-      palette={palette}
       map={map}
       {...props}
     />
@@ -141,7 +137,7 @@ function getSpritePos(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
   return { x: spriteX, y: spriteY };
 }
 
-export const SpriteEditor: React.FC<EditorProps> = ({ ydoc }) => {
+export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
   const [currentColor, setCurrentColor] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [position, setPosition] = useState<Point2D>({ x: 0, y: 0 });
@@ -152,8 +148,6 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc }) => {
   const [version, setVersion] = useState(0);
   const drawCanvasRef = React.createRef<SpriteRendererHandle>();
   const canvasContainerRef = useRef<HTMLDivElement>(null);
-  const yspriteRef = useRef<YSpriteSheet>(null);
-  const { project, actions } = useProject();
 
   const handleContextMenu = (e: React.MouseEvent): void => {
     e.preventDefault();
@@ -172,12 +166,10 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc }) => {
   };
 
   useEffect(() => {
-    yspriteRef.current = new YSpriteSheet(ydoc, "sprite", SPRITE_SHEET_SIZE, SPRITE_SHEET_SIZE);
-    actions.setSpriteSheetData(yspriteRef.current.toString());
-    if (yspriteRef.current) {
-      yspriteRef.current.observe(() => setVersion(v => v + 1));
-    }
-  }, [ydoc]);
+    project.sprite.observe(() => setVersion(v => v + 1));
+
+    project.map.observe(() => setVersion(v => v + 1));
+  }, [project]);
 
   useEffect(() => {
     const container = canvasContainerRef.current;
@@ -208,17 +200,10 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc }) => {
         (1 / zoom) * SPRITE_NUMBER);
       drawCanvasRef.current.draw();
     }
-  }, [yspriteRef, drawCanvasRef, position, version, zoom]);
+  }, [project.sprite, drawCanvasRef, position, version, zoom]);
 
   const drawAt = (x: number, y: number): void => {
-    if (!yspriteRef.current)
-      return;
-    ydoc!.transact(() => {
-      yspriteRef.current?.setPixel(x, y, currentColor);
-      if (yspriteRef.current) {
-        actions.setSpriteSheetData(yspriteRef.current.toString());
-      }
-    });
+    project.sprite.setPixel(x, y, currentColor);
     setVersion(v => v + 1);
   };
 
@@ -272,19 +257,6 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc }) => {
     }
   };
 
-  const canvasSpriteSheet: SpriteSheet = {
-    spriteSheet: yspriteRef.current ? yspriteRef.current.toString() : "",
-    spriteSize: {
-      width: SPRITE_SIZE,
-      height: SPRITE_SIZE
-    },
-    size: {
-      width: SPRITE_SHEET_SIZE,
-      height: SPRITE_SHEET_SIZE,
-    },
-    stride: 1
-  };
-
   const drawCanvasSize = {
     width: Math.floor(SPRITE_SHEET_SIZE) * SCALE,
     height: Math.floor(SPRITE_SHEET_SIZE) * SCALE
@@ -312,26 +284,24 @@ export const SpriteEditor: React.FC<EditorProps> = ({ ydoc }) => {
             currentColor={currentColor}
             onColorSelect={setCurrentColor}
           />
-          {project && (
-            <CanvasContainer
-              canvasRef={drawCanvasRef}
-              containerRef={canvasContainerRef}
-              spriteSheet={canvasSpriteSheet}
-              map={project.map}
-              screenSize={drawCanvasSize}
-              onWheel={handleWheel}
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseEnter={() => setIsMouseOverCanvas(true)}
-              onMouseLeave={() => {
-                setIsMouseOverCanvas(false);
-                setIsDragging(false);
-                setIsDrawing(false);
-              }}
-              onClick={handleCanvasClick}
-            />
-          )}
+          <CanvasContainer
+            canvasRef={drawCanvasRef}
+            containerRef={canvasContainerRef}
+            sprite={project.sprite}
+            map={project.map}
+            screenSize={drawCanvasSize}
+            onWheel={handleWheel}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseEnter={() => setIsMouseOverCanvas(true)}
+            onMouseLeave={() => {
+              setIsMouseOverCanvas(false);
+              setIsDragging(false);
+              setIsDrawing(false);
+            }}
+            onClick={handleCanvasClick}
+          />
         </div>
       </div>
     </div>

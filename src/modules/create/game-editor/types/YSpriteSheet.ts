@@ -1,30 +1,30 @@
 import * as Y from "yjs";
 
 export class YSpriteSheet {
-  private _spritemap: Y.Map<number>;
+  private _spriteMap: Y.Map<number>;
   private readonly _width: number;
   private readonly _height: number;
 
   constructor(doc: Y.Doc, name: string, width: number = 128, height: number = 128) {
-    this._spritemap = doc.getMap<number>(name);
+    this._spriteMap = doc.getMap<number>(name);
     this._width = width;
     this._height = height;
   }
 
   getPixel(x: number, y: number): number {
     const key = this.coordToKey(x, y);
-    const value = this._spritemap.get(key) || 0;
+    const value = this._spriteMap.get(key) || 0;
     return value;
   }
 
   setPixel(x: number, y: number, color: number): void {
     const key = this.coordToKey(x, y);
-    this._spritemap.set(key, color);
+    this._spriteMap.set(key, color);
   }
 
   deletePixel(x: number, y: number): void {
     const key = this.coordToKey(x, y);
-    this._spritemap.set(key, 0);
+    this._spriteMap.set(key, 0);
   }
 
   private coordToKey(x: number, y: number): string {
@@ -66,6 +66,6 @@ export class YSpriteSheet {
   }
 
   observe(callback: (event: Y.YMapEvent<number>) => void): void {
-    this._spritemap.observe(callback);
+    this._spriteMap.observe(callback);
   }
 }

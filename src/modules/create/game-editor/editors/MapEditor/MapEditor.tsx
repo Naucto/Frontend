@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { EditorProps } from "../EditorType.ts";
 import { styled } from "@mui/material/styles";
-import { useProject } from "src/providers/ProjectProvider";
 import { MapViewport } from "./MapViewport";
 import { SpritePicker } from "./SpritePicker";
 
@@ -25,17 +24,15 @@ const Bottom = styled("div")(({ theme }) => ({
   backgroundColor: theme.palette.blue[700],
 }));
 
-export const MapEditor: React.FC<EditorProps> = () => {
-  const { project } = useProject();
+export const MapEditor: React.FC<EditorProps> = ({ project }) => {
   if (!project) return <div>Loading...</div>;
-
   const [selectedIndex, setSelectedIndex] = useState(13);
 
   return (
     <MapEditorContainer data-cy="map-editor">
-      <MapViewport selectedIndex={selectedIndex} />
+      <MapViewport selectedIndex={selectedIndex} project={project} />
       <Bottom>
-        <SpritePicker selectedIndex={selectedIndex} onSelect={setSelectedIndex} />
+        <SpritePicker selectedIndex={selectedIndex} onSelect={setSelectedIndex} project={project} />
       </Bottom>
     </MapEditorContainer>
   );

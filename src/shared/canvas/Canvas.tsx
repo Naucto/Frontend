@@ -1,31 +1,29 @@
 import { SpriteRendererHandle, useSpriteRenderer } from "@shared/canvas/RendererHandle";
 import React, { forwardRef, useImperativeHandle, useRef } from "react";
-import { SpriteSheet } from "src/types/SpriteSheetType";
+import { SpriteProvider } from "@providers/editors/SpriteProvider";
 import { styled } from "@mui/material/styles";
-import { Map } from "src/types/MapType";
+import { MapProvider } from "@providers/editors/MapProvider.ts";
 
 export type CanvasProps = React.CanvasHTMLAttributes<HTMLCanvasElement> & {
-  spriteSheet: SpriteSheet;
-  map: Map;
+  sprite: SpriteProvider;
+  map: MapProvider;
   screenSize: {
     width: number;
     height: number;
   };
-  palette: Uint8Array;
   className?: string;
 };
 
 const Canvas = forwardRef<SpriteRendererHandle, CanvasProps>(function Canvas(
   { screenSize,
-    spriteSheet,
+    sprite,
     map,
-    palette,
     className,
     ...rest },
   ref
 ) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const rendererHandle = useSpriteRenderer(canvasRef, spriteSheet, palette, map, screenSize);
+  const rendererHandle = useSpriteRenderer(canvasRef, sprite, map, screenSize);
 
   useImperativeHandle(
     ref,
