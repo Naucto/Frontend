@@ -1,4 +1,4 @@
-import { StyledCanvas, CanvasHandle, CanvasProps } from "@shared/canvas/Canvas";
+import { StyledCanvas, CanvasProps } from "@shared/canvas/Canvas";
 import { KeyHandler } from "@shared/canvas/gameCanvas/KeyHandler";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import { EnvData, LuaEnvironmentManager } from "@shared/luaEnvManager/LuaEnvironmentManager";
@@ -13,7 +13,7 @@ type GameCanvasProps = {
 
 const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(
   ({ canvasProps, envData, setOutput, className }, ref) => {
-    const spriteRendererHandleRef = useRef<CanvasHandle>(null);
+    const spriteRendererHandleRef = useRef<SpriteRendererHandle>(null);
     const luaEnvManagerRef = useRef<LuaEnvironmentManager>(null);
     const animationFrameRef = useRef<number>(null);
     const keyHandlerRef = useRef<KeyHandler>(new KeyHandler);

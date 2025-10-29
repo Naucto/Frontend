@@ -50,4 +50,12 @@ export class LocalStorageManager {
       localStorage.removeItem(this.TOKEN_KEY);
     }
   }
+
+  static setProjectId(projectId?: number): void {
+    if (projectId) {
+      localStorage.setItem("project_id", String(projectId));
+    } else {
+      localStorage.removeItem("project_id");
+    }
+  }
 }

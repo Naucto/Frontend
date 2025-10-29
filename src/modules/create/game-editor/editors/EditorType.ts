@@ -1,4 +1,4 @@
-import { FC } from "react";
+import { FC, ReactElement } from "react";
 import { ProjectProvider } from "@providers/ProjectProvider";
 
 export type EditorProps = {
@@ -8,4 +8,5 @@ export type EditorProps = {
 export interface EditorTab {
   label: string;
   component: FC<EditorProps>;
+  icon: ReactElement;
 }
