@@ -151,19 +151,11 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
       return [];
 
     return tabs.map((tab) => {
-      const EditorComponent: Maybe<React.FC<EditorProps>> = tab.component;
-
       return {
         ...tab,
         label: tab.label,
-        component: EditorComponent ? (
-          <EditorComponent
-            key={tab.label}
-            project={project}
-          />
-        ) : (
-          <span key={tab.label}>No editor available</span>
-        )
+        component: tab.component,
+        icon: tab.icon
       };
     });
   }, [tabs, project]);
@@ -246,16 +238,19 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
             />
           ))}
         </Tabs>
-        {editorTabs.map((tab, idx) => (
-          <TabContent
-            key={tab.label}
-            role="tabpanel"
-            hidden={activeTab !== idx}
-            className={activeTab === idx ? "active" : "hidden"}
-          >
-            {tab.component}
-          </TabContent>
-        ))}
+        {editorTabs.map((tab, idx) => {
+          const EditorComponent = tab.component as React.FC<EditorProps>;
+          return (
+            <TabContent
+              key={tab.label}
+              role="tabpanel"
+              hidden={activeTab !== idx}
+              className={activeTab === idx ? "active" : "hidden"}
+            >
+              {EditorComponent ? <EditorComponent project={project} /> : <span>No editor available</span>}
+            </TabContent>
+          );
+        })}
       </LeftPanel>
       <RightPanel>
         <PreviewCanvas

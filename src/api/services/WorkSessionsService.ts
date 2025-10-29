@@ -2,7 +2,6 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { AddWorkSessionDto } from '../models/AddWorkSessionDto';
 import type { FetchWorkSessionDto } from '../models/FetchWorkSessionDto';
 import type { KickWorkSessionDto } from '../models/KickWorkSessionDto';
 import type { CancelablePromise } from '../core/CancelablePromise';
@@ -63,30 +62,6 @@ export class WorkSessionsService {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/work-sessions/kick/{id}',
-            path: {
-                'id': id,
-            },
-            body: requestBody,
-            mediaType: 'application/json',
-            errors: {
-                400: `Bad request.`,
-            },
-        });
-    }
-    /**
-     * Force add user to work session
-     * @param id Project ID
-     * @param requestBody
-     * @returns void
-     * @throws ApiError
-     */
-    public static workSessionControllerAdd(
-        id: number,
-        requestBody: AddWorkSessionDto,
-    ): CancelablePromise<void> {
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/work-sessions/add/{id}',
             path: {
                 'id': id,
             },

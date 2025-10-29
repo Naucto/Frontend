@@ -118,7 +118,7 @@ const CodeEditor: React.FC<EditorProps> = ({ project }) => {
     project.code.setMonacoBinding(editor);
 
     return () => {
-      editor.destroy();
+      editor.dispose();
     };
   };
 

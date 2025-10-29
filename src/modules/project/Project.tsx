@@ -21,7 +21,7 @@ const Project: React.FC = () => {
 
   return (
     <>
-      { showEditor && <GameEditor project={project} /> }
+      { showEditor && project && <GameEditor project={project} /> }
     </>
   );
 };

@@ -9,7 +9,9 @@ export default defineConfig({
     react(),
     tsconfigPaths(),
     svgr({
-      exportAsDefault: true
+      svgrOptions: {
+        exportType: 'default'
+      }
     }),
     glsl()
   ],
