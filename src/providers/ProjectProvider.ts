@@ -7,7 +7,7 @@ import { SpriteProvider } from "./editors/SpriteProvider.ts";
 import { MapProvider } from "./editors/MapProvider.ts";
 import { AwarenessProvider  } from "./editors/AwarenessProvider.ts";
 import { WebrtcProvider } from "y-webrtc";
-import config from "config.json";
+import config from "@config/providers.json";
 
 export enum ProviderEventType {
   INITIALIZED,

@@ -5,6 +5,9 @@
         "esModuleInterop": true,
         "baseUrl": "./",
         "paths": {
+	    "@config/*": [
+                "./config/*"
+	    ],
             "@assets/*": [
                 "./src/assets/*"
             ],

@@ -7,11 +7,10 @@ RUN bun install --frozen-lockfile
 
 COPY . .
 
-ARG FRONTEND_PORT=80
-ENV FRONTEND_PORT=${FRONTEND_PORT}
-EXPOSE $FRONTEND_PORT
-
-RUN bun run build
+ARG BACKEND_URL
+ENV VITE_BACKEND_URL=${BACKEND_URL}
+RUN echo "VITE_BACKEND_URL=${BACKEND_URL}" > /app/.env.production
+RUN bun run build --mode production
 
 FROM nginx:alpine AS runtime
-COPY --from=build --chown=nginx:nginx /app/dist /usr/share/nginx/html
+COPY --from=base --chown=nginx:nginx /app/dist /usr/share/nginx/html
