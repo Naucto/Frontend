@@ -4,8 +4,16 @@
 /* eslint-disable */
 export type AddCollaboratorDto = {
     /**
-     * The User to add to the project as collaborator
+     * User ID of the user to add as collaborator
      */
-    userId: number;
+    userId?: number;
+    /**
+     * Username of the user to add as collaborator
+     */
+    username?: string;
+    /**
+     * Email of the user to add as collaborator
+     */
+    email?: string;
 };
 

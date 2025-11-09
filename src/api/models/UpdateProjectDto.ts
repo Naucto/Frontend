@@ -14,7 +14,7 @@ export type UpdateProjectDto = {
     /**
      * A detailed description of the project
      */
-    longDesc?: Record<string, any>;
+    longDesc?: string;
     /**
      * URL to the project icon
      */

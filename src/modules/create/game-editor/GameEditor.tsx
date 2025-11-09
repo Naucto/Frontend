@@ -12,11 +12,13 @@ import { Beforeunload } from "react-beforeunload";
 import { SpriteEditor } from "@modules/editor/SpriteEditor/SpriteEditor";
 import { MapEditor } from "@modules/create/game-editor/editors/MapEditor/MapEditor";
 import GameEditorConsole from "@modules/create/game-editor/editors/GameEditorConsole";
+import ProjectIcon from "src/assets/project.svg?react";
 import CodeIcon from "src/assets/code.svg?react";
 import SpriteIcon from "src/assets/pen.svg?react";
 import SoundIcon from "src/assets/music.svg?react";
 import MapIcon from "src/assets/map.svg?react";
 import { ProjectProvider, ProviderEventType } from "@providers/ProjectProvider";
+import ProjectSettingsEditor from "@modules/create/game-editor/editors/ProjectSettingsEditor";
 
 const GameEditorContainer = styled("div")(({ theme }) => ({
   height: "100%",
@@ -112,6 +114,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
   const [output, setOutput] = useState<string>("");
 
   const tabs = useMemo(() => [
+    { label: "project", component: ProjectSettingsEditor, icon: <ProjectIcon/> },
     { label: "code", component: CodeEditor, icon: <CodeIcon/> },
     { label: "sprite", component: SpriteEditor, icon: <SpriteIcon/> },
     { label: "map", component: MapEditor, icon: <MapIcon/> },
