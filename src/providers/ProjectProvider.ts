@@ -6,6 +6,7 @@ import { CodeProvider } from "./editors/CodeProvider.ts";
 import { SpriteProvider } from "./editors/SpriteProvider.ts";
 import { MapProvider } from "./editors/MapProvider.ts";
 import { AwarenessProvider  } from "./editors/AwarenessProvider.ts";
+import { ProjectSettingsProvider } from "./editors/ProjectSettingsProvider.ts";
 import { WebrtcProvider } from "y-webrtc";
 import config from "@config/providers.json";
 
@@ -28,6 +29,7 @@ export class ProjectProvider implements Destroyable {
   public sprite!: SpriteProvider;
   public map!: MapProvider;
   public awareness!: AwarenessProvider;
+  public projectSettings!: ProjectSettingsProvider;
   public projectId: number;
 
   constructor(projectId: number) {
@@ -42,6 +44,7 @@ export class ProjectProvider implements Destroyable {
       this.code = new CodeProvider(this._doc, this.awareness);
       this.sprite = new SpriteProvider(this._doc);
       this.map = new MapProvider(this._doc, { width:128, height:32 }, 2, this.sprite);
+      this.projectSettings = new ProjectSettingsProvider(this._doc, this.awareness);
 
       this._initialized = true;
       this.emit(ProviderEventType.INITIALIZED);
@@ -61,6 +64,11 @@ export class ProjectProvider implements Destroyable {
         const content = await ProjectsService.projectControllerFetchProjectContent(String(this.projectId));
         if (content) {
           await decodeUpdate(this._doc, content);
+        } else {
+          const details = await ProjectsService.projectControllerFindOne(this.projectId);
+          this.projectSettings.updateName(details.name);
+          this.projectSettings.updateShortDesc(details.shortDesc);
+          this.projectSettings.updateLongDesc(typeof details.longDesc === "string" ? details.longDesc : "");
         }
       } catch (error: unknown) {
         if (error instanceof ApiError && error.status === 404) {
@@ -79,6 +87,7 @@ export class ProjectProvider implements Destroyable {
     this.code.destroy();
     this.sprite.destroy();
     this.awareness.destroy();
+    this.projectSettings.destroy();
     this._provider.disconnect();
     this._doc.destroy();
   }

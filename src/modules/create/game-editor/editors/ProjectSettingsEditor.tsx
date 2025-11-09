@@ -3,6 +3,7 @@ import { EditorProps } from "./EditorType";
 import { Box, TextField, Button, Typography, List, ListItem, ListItemText, IconButton, Paper, Divider } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { ProjectsService, ProjectWithRelationsResponseDto, UserBasicInfoDto } from "@api";
+import { ProjectSettings } from "@providers/editors/ProjectSettingsProvider";
 
 const EditorContainer = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(3),
@@ -21,9 +22,7 @@ const CollaboratorList = styled(List)(({ theme }) => ({
 }));
 
 const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
-  const [title, setTitle] = useState("");
-  const [shortDescription, setShortDescription] = useState("");
-  const [longDescription, setLongDescription] = useState("");
+  const [settings, setSettings] = useState<ProjectSettings>({ name: "", shortDesc: "", longDesc: "" });
   const [collaborators, setCollaborators] = useState<UserBasicInfoDto[]>([]);
   const [newCollaborator, setNewCollaborator] = useState("");
 
@@ -31,24 +30,36 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
     const fetchProjectDetails = async (): Promise<void> => {
       try {
         const details = await ProjectsService.projectControllerFindOne(project.projectId);
-        setTitle(details.name);
-        setShortDescription(details.shortDesc);
-        setLongDescription(typeof details.longDesc === "string" ? details.longDesc : "");
         setCollaborators(details.collaborators);
       } catch (error) {
         console.error("Failed to fetch project details:", error);
       }
     };
 
+    const onSettingsChange = (newSettings: ProjectSettings) : void => {
+      setSettings(newSettings);
+    };
+
+    if (project.projectSettings) {
+      setSettings(project.projectSettings.getSettings());
+      project.projectSettings.observe(onSettingsChange);
+    }
+
     fetchProjectDetails();
-  }, [project.projectId]);
+
+    return () => {
+      if (project.projectSettings) {
+        project.projectSettings.unobserve(onSettingsChange);
+      }
+    };
+  }, [project.projectId, project.projectSettings]);
 
   const handleSaveChanges = async () : Promise<void> => {
     try {
       await ProjectsService.projectControllerUpdate(project.projectId, {
-        name: title,
-        shortDesc: shortDescription,
-        longDesc: longDescription,
+        name: settings.name,
+        shortDesc: settings.shortDesc,
+        longDesc: settings.longDesc,
       });
       alert("Project details saved!");
     } catch (error) {
@@ -91,16 +102,16 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
         <TextField
           fullWidth
           label="Project Title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          value={settings.name}
+          onChange={(e) => project.projectSettings.updateName(e.target.value)}
           variant="outlined"
           margin="normal"
         />
         <TextField
           fullWidth
           label="Project Short Description"
-          value={shortDescription}
-          onChange={(e) => setShortDescription(e.target.value)}
+          value={settings.shortDesc}
+          onChange={(e) => project.projectSettings.updateShortDesc(e.target.value)}
           variant="outlined"
           margin="normal"
           multiline
@@ -109,8 +120,8 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
         <TextField
           fullWidth
           label="Prjoect Long Description"
-          value={longDescription}
-          onChange={(e) => setLongDescription(e.target.value)}
+          value={settings.longDesc}
+          onChange={(e) => project.projectSettings.updateLongDesc(e.target.value)}
           variant="outlined"
           margin="normal"
           multiline
