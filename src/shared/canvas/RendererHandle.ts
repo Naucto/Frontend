@@ -23,6 +23,7 @@ export type SpriteRendererHandle = {
   clear: (index: number) => void;
   setColor: (index: number, index2: number) => void;
   resetColor: () => void;
+  moveCamera: (x: number, y: number) => void;
 };
 
 export function useSpriteRenderer(
@@ -37,9 +38,10 @@ export function useSpriteRenderer(
   const currentPalette: Uint8Array = new Uint8Array(sprite.palette);
   const currentPaletteSize = currentPalette.length / 4;
 
+  const pipelineRef = useRef<GLPipeline | null>(null);
+  const cameraPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const [version, setVersion] = useState(0);
 
-  const pipelineRef = useRef<GLPipeline | null>(null);
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) { throw new CanvasNotInitializedError(); }
@@ -63,6 +65,12 @@ export function useSpriteRenderer(
     });
   }, [map, sprite]);
 
+  function moveCamera(x: number, y: number): void {
+    cameraPos.current.x = x;
+    cameraPos.current.y = y;
+  }
+
+
   function draw(): void {
     const p = pipelineRef.current;
     if (!p) return;
@@ -76,6 +84,10 @@ export function useSpriteRenderer(
     if (batchedVertices.length === 0) return;
 
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    for (let i = 0; i < batchedVertices.length; i += 2) {
+      batchedVertices[i] -= cameraPos.current.x;
+      batchedVertices[i + 1] -= cameraPos.current.y;
+    }
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(batchedVertices), gl.STREAM_DRAW);
     gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(posLoc);
@@ -237,5 +249,6 @@ export function useSpriteRenderer(
     clear,
     setColor,
     resetColor,
+    moveCamera
   }), []);
 }
