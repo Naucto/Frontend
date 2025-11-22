@@ -105,7 +105,7 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
         />
         <TextField
           fullWidth
-          label="Prjoect Long Description"
+          label="Project Long Description"
           value={settings.longDesc}
           onChange={(e) => project.projectSettings.updateLongDesc(e.target.value)}
           variant="outlined"
