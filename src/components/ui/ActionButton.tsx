@@ -2,13 +2,13 @@ import React from "react";
 import { IconButton, IconButtonProps } from "@mui/material";
 import { styled } from "@mui/material/styles";
 
-interface PixelButtonProps extends Omit<IconButtonProps, "color"> {
+interface ActionButtonProps extends Omit<IconButtonProps, "color"> {
   variant?: "danger" | "primary" | "secondary";
 }
 
-const StyledPixelButton = styled(IconButton, {
+const StyledActionButton = styled(IconButton, {
   shouldForwardProp: (prop) => prop !== "variant",
-})<PixelButtonProps>(({ theme, variant = "danger" }) => {
+})<ActionButtonProps>(({ theme, variant = "danger" }) => {
   const colors = {
     danger: {
       bg: theme.palette.red?.[500],
@@ -44,10 +44,10 @@ const StyledPixelButton = styled(IconButton, {
   };
 });
 
-export const PixelButton: React.FC<PixelButtonProps> = ({ children, variant = "danger", ...props }) => {
+export const ActionButton: React.FC<ActionButtonProps> = ({ children, variant = "danger", ...props }) => {
   return (
-    <StyledPixelButton variant={variant} {...props}>
+    <StyledActionButton variant={variant} {...props}>
       {children}
-    </StyledPixelButton>
+    </StyledActionButton>
   );
 };

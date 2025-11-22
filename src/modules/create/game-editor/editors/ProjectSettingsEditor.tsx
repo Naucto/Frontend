@@ -4,7 +4,7 @@ import { Box, Button, Typography, List, ListItem, ListItemText, Paper, Divider }
 import { styled } from "@mui/material/styles";
 import { ApiError, ProjectsService, ProjectWithRelationsResponseDto, UserBasicInfoDto } from "@api";
 import { ProjectSettings } from "@providers/editors/ProjectSettingsProvider";
-import { PixelButton } from "@components/ui/PixelButton";
+import { ActionButton } from "@components/ui/ActionButton";
 import { FullWidthTextField } from "@components/ui/FullWidthTextField";
 
 const EditorContainer = styled(Paper)(({ theme }) => ({
@@ -116,14 +116,14 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
         <CollaboratorList>
           {collaborators.map((user) => (
             <ListItem key={user.id} secondaryAction={
-              <PixelButton
+              <ActionButton
                 edge="end"
                 aria-label="delete"
                 size="small"
                 onClick={() => handleRemoveCollaborator(user.id)}
               >
                 ×
-              </PixelButton>
+              </ActionButton>
             }>
               <ListItemText primary={user.username} secondary={user.email} />
             </ListItem>
