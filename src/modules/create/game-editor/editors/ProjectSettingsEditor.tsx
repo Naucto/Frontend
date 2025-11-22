@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { EditorProps } from "./EditorType";
-import { Box, TextField, Button, Typography, List, ListItem, ListItemText, Paper, Divider } from "@mui/material";
+import { Box, Button, Typography, List, ListItem, ListItemText, Paper, Divider } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { ApiError, ProjectsService, ProjectWithRelationsResponseDto, UserBasicInfoDto } from "@api";
 import { ProjectSettings } from "@providers/editors/ProjectSettingsProvider";
 import { PixelButton } from "@components/ui/PixelButton";
+import { FullWidthTextField } from "@components/ui/FullWidthTextField";
 
 const EditorContainer = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(3),
@@ -87,31 +88,22 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
     <EditorContainer>
       <Section>
         <Typography variant="h5" gutterBottom>Project Settings</Typography>
-        <TextField
-          fullWidth
+        <FullWidthTextField
           label="Project Title"
           value={settings.name}
           onChange={(e) => project.projectSettings.updateName(e.target.value)}
-          variant="outlined"
-          margin="normal"
         />
-        <TextField
-          fullWidth
+        <FullWidthTextField
           label="Project Short Description"
           value={settings.shortDesc}
           onChange={(e) => project.projectSettings.updateShortDesc(e.target.value)}
-          variant="outlined"
-          margin="normal"
           multiline
           rows={2}
         />
-        <TextField
-          fullWidth
+        <FullWidthTextField
           label="Project Long Description"
           value={settings.longDesc}
           onChange={(e) => project.projectSettings.updateLongDesc(e.target.value)}
-          variant="outlined"
-          margin="normal"
           multiline
           rows={5}
         />
@@ -138,12 +130,10 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
           ))}
         </CollaboratorList>
         <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
-          <TextField
-            fullWidth
+          <FullWidthTextField
             label="Add collaborator by email or username"
             value={newCollaborator}
             onChange={(e) => setNewCollaborator(e.target.value)}
-            variant="outlined"
             size="small"
           />
           <Button variant="contained" onClick={handleAddCollaborator} sx={{ ml: 2, backgroundColor: "red.500", color: "white" }}>
