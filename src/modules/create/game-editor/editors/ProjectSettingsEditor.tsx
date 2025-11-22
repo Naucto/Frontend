@@ -54,20 +54,6 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
     };
   }, [project.projectId, project.projectSettings]);
 
-  const handleSaveChanges = async () : Promise<void> => {
-    try {
-      await ProjectsService.projectControllerUpdate(project.projectId, {
-        name: settings.name,
-        shortDesc: settings.shortDesc,
-        longDesc: settings.longDesc,
-      });
-      alert("Project details saved!");
-    } catch (error) {
-      console.error("Failed to save project details:", error);
-      alert("Error saving project details.");
-    }
-  };
-
   const handleAddCollaborator = async () : Promise<void>=> {
     if (!newCollaborator.trim()) return;
     try {
@@ -127,9 +113,6 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
           multiline
           rows={5}
         />
-        <Button variant="contained" sx={{ backgroundColor: "red.500", color: "white" }} onClick={handleSaveChanges}>
-          Save Changes
-        </Button>
       </Section>
 
       <Divider />

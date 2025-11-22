@@ -44,7 +44,7 @@ export class ProjectProvider implements Destroyable {
       this.code = new CodeProvider(this._doc, this.awareness);
       this.sprite = new SpriteProvider(this._doc);
       this.map = new MapProvider(this._doc, { width:128, height:32 }, 2, this.sprite);
-      this.projectSettings = new ProjectSettingsProvider(this._doc, this.awareness);
+      this.projectSettings = new ProjectSettingsProvider(this._doc);
 
       this._initialized = true;
       this.emit(ProviderEventType.INITIALIZED);
@@ -96,6 +96,21 @@ export class ProjectProvider implements Destroyable {
     if (!this.isHost)
       return;
     const data = encodeUpdate(this._doc);
+
+    const details = await ProjectsService.projectControllerFindOne(this.projectId);
+
+    const settings = this.projectSettings.getSettings();
+
+    const detailsLongDesc = typeof details.longDesc === "string" ? details.longDesc : "";
+
+    if (details.name !== settings.name || detailsLongDesc !== settings.longDesc || details.shortDesc !== settings.shortDesc) { 
+      await ProjectsService.projectControllerUpdate(this.projectId, {
+        name: settings.name,
+        shortDesc: settings.shortDesc,
+        longDesc: settings.longDesc,
+      });
+    }
+
     ProjectsService.projectControllerSaveProjectContent(
       String(this.projectId),
       { file: new Blob([data], { type: "application/octet-stream" }) }
