@@ -48,12 +48,12 @@ export class ProjectsService {
     /**
      * Retrieve a single project
      * @param id Numeric ID of the project to retrieve
-     * @returns ProjectResponseDto Project object
+     * @returns ProjectWithRelationsResponseDto Project object
      * @throws ApiError
      */
     public static projectControllerFindOne(
         id: number,
-    ): CancelablePromise<ProjectResponseDto> {
+    ): CancelablePromise<ProjectWithRelationsResponseDto> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/projects/{id}',
@@ -115,6 +115,7 @@ export class ProjectsService {
     }
     /**
      * Add a new collaborator
+     * Add a collaborator to a project by providing either userId, username, or email. At least one must be provided.
      * @param id Numeric ID of the project to update
      * @param requestBody
      * @returns ProjectWithRelationsResponseDto Updated project object with collaborators
@@ -133,13 +134,15 @@ export class ProjectsService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                404: `Project not found`,
+                400: `Bad request - no valid identifier provided`,
+                404: `Project or user not found`,
                 500: `Error Patching project`,
             },
         });
     }
     /**
      * Remove a collaborator
+     * Remove a collaborator from a project by providing either userId, username, or email. At least one must be provided.
      * @param id Numeric ID of the project to update
      * @param requestBody
      * @returns ProjectWithRelationsResponseDto Updated project object with collaborators
@@ -158,7 +161,9 @@ export class ProjectsService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                404: `Project not found`,
+                400: `Bad request - no valid identifier provided`,
+                403: `Forbidden - cannot remove project creator`,
+                404: `Project or user not found`,
                 500: `Error remove collaborator on project`,
             },
         });
