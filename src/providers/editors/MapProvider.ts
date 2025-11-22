@@ -32,13 +32,6 @@ export class MapProvider implements Destroyable {
     this.height = size.height;
     this.stride = stride;
 
-    const data = this._parseMapData(mapData);
-    for (let y = 0; y < this.height; y++) {
-      for (let x = 0; x < this.width; x++) {
-        this.setTileAt({ x, y }, data[y][x]);
-      }
-    }
-
     this._mapDataLength = size.width * size.height * stride;
     if (mapData.length !== this._mapDataLength) {
       throw new MapProviderError(`Map data length (${mapData.length}) does not match expected size (${this._mapDataLength})`);
