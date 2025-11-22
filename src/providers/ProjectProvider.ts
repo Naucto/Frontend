@@ -103,7 +103,7 @@ export class ProjectProvider implements Destroyable {
 
     const detailsLongDesc = typeof details.longDesc === "string" ? details.longDesc : "";
 
-    if (details.name !== settings.name || detailsLongDesc !== settings.longDesc || details.shortDesc !== settings.shortDesc) { 
+    if (details.name !== settings.name || detailsLongDesc !== settings.longDesc || details.shortDesc !== settings.shortDesc) {
       await ProjectsService.projectControllerUpdate(this.projectId, {
         name: settings.name,
         shortDesc: settings.shortDesc,
