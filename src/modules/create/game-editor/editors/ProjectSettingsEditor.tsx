@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { EditorProps } from "./EditorType";
-import { Box, TextField, Button, Typography, List, ListItem, ListItemText, IconButton, Paper, Divider } from "@mui/material";
+import { Box, TextField, Button, Typography, List, ListItem, ListItemText, Paper, Divider } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { ProjectsService, ProjectWithRelationsResponseDto, UserBasicInfoDto } from "@api";
 import { ProjectSettings } from "@providers/editors/ProjectSettingsProvider";
+import { PixelButton } from "@components/ui/PixelButton";
 
 const EditorContainer = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(3),
@@ -122,15 +123,14 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
         <CollaboratorList>
           {collaborators.map((user) => (
             <ListItem key={user.id} secondaryAction={
-              <IconButton
+              <PixelButton
                 edge="end"
                 aria-label="delete"
                 size="small"
-                sx={{ backgroundColor: "red.500", color: "white", borderRadius: "50%" }}
                 onClick={() => handleRemoveCollaborator(user.id)}
               >
                 ×
-              </IconButton>
+              </PixelButton>
             }>
               <ListItemText primary={user.username} secondary={user.email} />
             </ListItem>
