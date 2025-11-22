@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { EditorProps } from "./EditorType";
 import { Box, TextField, Button, Typography, List, ListItem, ListItemText, Paper, Divider } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { ProjectsService, ProjectWithRelationsResponseDto, UserBasicInfoDto } from "@api";
+import { ApiError, ProjectsService, ProjectWithRelationsResponseDto, UserBasicInfoDto } from "@api";
 import { ProjectSettings } from "@providers/editors/ProjectSettingsProvider";
 import { PixelButton } from "@components/ui/PixelButton";
 
@@ -32,8 +32,9 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
       try {
         const details = await ProjectsService.projectControllerFindOne(project.projectId);
         setCollaborators(details.collaborators);
-      } catch (error) {
-        console.error("Failed to fetch project details:", error);
+      } catch (err) {
+        alert("Error fetching project details: " +
+          (err instanceof ApiError ? err.message : String(err)));
       }
     };
 
@@ -66,9 +67,9 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
       }
       setCollaborators(details.collaborators);
       setNewCollaborator("");
-    } catch (error) {
-      console.error("Failed to add collaborator:", error);
-      alert("Error adding collaborator. Please check the username or email.");
+    } catch (err) {
+      alert("Error adding collaborator. Please check the username or email. " +
+        (err instanceof ApiError ? err.message : String(err)));
     }
   };
 
@@ -76,9 +77,9 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
     try {
       await ProjectsService.projectControllerRemoveCollaborator(project.projectId, { userId });
       setCollaborators(collaborators.filter(c => c.id !== userId));
-    } catch (error) {
-      console.error("Failed to remove collaborator:", error);
-      alert("Error removing collaborator.");
+    } catch (err) {
+      alert("Error removing collaborator. Please check if you have the right to remove someone. " +
+        (err instanceof ApiError ? err.message : String(err)));
     }
   };
 
