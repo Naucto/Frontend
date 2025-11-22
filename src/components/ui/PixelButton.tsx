@@ -11,16 +11,16 @@ const StyledPixelButton = styled(IconButton, {
 })<PixelButtonProps>(({ theme, variant = "danger" }) => {
   const colors = {
     danger: {
-      bg: theme.palette.red?.[500] || "#ef4444",
-      hover: theme.palette.red?.[600] || "#dc2626",
+      bg: theme.palette.red?.[500],
+      hover: theme.palette.red?.[600],
     },
     primary: {
-      bg: theme.palette.blue?.[500] || "#3b82f6",
-      hover: theme.palette.blue?.[600] || "#2563eb",
+      bg: theme.palette.blue?.[500],
+      hover: theme.palette.blue?.[600],
     },
     secondary: {
-      bg: theme.palette.grey?.[500] || "#6b7280",
-      hover: theme.palette.grey?.[600] || "#4b5563",
+      bg: theme.palette.grey?.[500],
+      hover: theme.palette.grey?.[600],
     },
   };
 
