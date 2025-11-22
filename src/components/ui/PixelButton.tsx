@@ -2,12 +2,12 @@ import React from "react";
 import { IconButton, IconButtonProps } from "@mui/material";
 import { styled } from "@mui/material/styles";
 
-interface PixelButtonProps extends Omit<IconButtonProps, 'color'> {
+interface PixelButtonProps extends Omit<IconButtonProps, "color"> {
   variant?: "danger" | "primary" | "secondary";
 }
 
 const StyledPixelButton = styled(IconButton, {
-  shouldForwardProp: (prop) => prop !== 'variant',
+  shouldForwardProp: (prop) => prop !== "variant",
 })<PixelButtonProps>(({ theme, variant = "danger" }) => {
   const colors = {
     danger: {
