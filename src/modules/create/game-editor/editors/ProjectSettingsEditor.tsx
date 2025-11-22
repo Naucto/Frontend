@@ -54,7 +54,7 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
     };
   }, [project.projectId, project.projectSettings]);
 
-  const handleAddCollaborator = async () : Promise<void>=> {
+  const handleAddCollaborator = async () : Promise<void> => {
     if (!newCollaborator.trim()) return;
     try {
       let details : ProjectWithRelationsResponseDto;
@@ -71,7 +71,7 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
     }
   };
 
-  const handleRemoveCollaborator = async (userId: number) : Promise<void>=> {
+  const handleRemoveCollaborator = async (userId: number) : Promise<void> => {
     try {
       await ProjectsService.projectControllerRemoveCollaborator(project.projectId, { userId });
       setCollaborators(collaborators.filter(c => c.id !== userId));
