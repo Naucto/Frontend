@@ -68,7 +68,7 @@ export class ProjectProvider implements Destroyable {
           const details = await ProjectsService.projectControllerFindOne(this.projectId);
           this.projectSettings.updateName(details.name);
           this.projectSettings.updateShortDesc(details.shortDesc);
-          this.projectSettings.updateLongDesc(typeof details.longDesc === "string" ? details.longDesc : "");
+          this.projectSettings.updateLongDesc(details.longDesc ? JSON.stringify(details.longDesc) : "");
         }
       } catch (error: unknown) {
         if (error instanceof ApiError && error.status === 404) {
@@ -101,13 +101,11 @@ export class ProjectProvider implements Destroyable {
 
     const settings = this.projectSettings.getSettings();
 
-    const detailsLongDesc = typeof details.longDesc === "string" ? details.longDesc : "";
-
-    if (details.name !== settings.name || detailsLongDesc !== settings.longDesc || details.shortDesc !== settings.shortDesc) {
+    if (details.name !== settings.name || (details.longDesc || "") !== settings.longDesc || details.shortDesc !== settings.shortDesc) {
       await ProjectsService.projectControllerUpdate(this.projectId, {
         name: settings.name,
         shortDesc: settings.shortDesc,
-        longDesc: settings.longDesc,
+        longDesc: settings.longDesc as unknown as Record<string, unknown>,
       });
     }
 
