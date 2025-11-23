@@ -1,4 +1,3 @@
-import { mapData } from "src/temporary/map.ts";
 import { SpriteProvider } from "./SpriteProvider.ts";
 import { MapProviderError } from "@errors/MapProviderError.ts";
 import * as Y from "yjs";
@@ -18,7 +17,6 @@ export class MapProvider implements Destroyable {
   private listeners = new Set<ContentListener>();
 
   private _sprite: SpriteProvider;
-  private readonly _mapDataLength: number;
 
   constructor(ydoc: Y.Doc, size: Size, stride: number, sprite: SpriteProvider) {
     if (size.width <= 0 || size.height <= 0) {
@@ -31,11 +29,6 @@ export class MapProvider implements Destroyable {
     this.width = size.width;
     this.height = size.height;
     this.stride = stride;
-
-    this._mapDataLength = size.width * size.height * stride;
-    if (mapData.length !== this._mapDataLength) {
-      throw new MapProviderError(`Map data length (${mapData.length}) does not match expected size (${this._mapDataLength})`);
-    }
 
     this._sprite = sprite;
   }
