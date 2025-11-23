@@ -11,6 +11,7 @@ export interface GLPipeline {
   paletteTexture: WebGLTexture
   positionLoc: number;
   uvLoc: number;
+  cameraPosLoc: WebGLUniformLocation | null;
   destroy: () => void;
 }
 
@@ -61,6 +62,9 @@ export function initGLPipeline(
   gl.uniform1f(gl.getUniformLocation(program, "u_paletteSize"), paletteSize);
   gl.uniform2f(gl.getUniformLocation(program, "screen_resolution"), screenSize.width, screenSize.height);
 
+  const cameraPosLoc = gl.getUniformLocation(program, "camera_position");
+  gl.uniform2f(cameraPosLoc, 0.0, 0.0);
+
   const positionLoc = gl.getAttribLocation(program, "vertex_position");
   const uvLoc = gl.getAttribLocation(program, "vertex_uv");
 
@@ -89,6 +93,7 @@ export function initGLPipeline(
     destroy,
     positionLoc,
     uvLoc,
+    cameraPosLoc,
     paletteTexture,
   };
 }

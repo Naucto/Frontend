@@ -39,7 +39,6 @@ export function useSpriteRenderer(
   const currentPaletteSize = currentPalette.length / 4;
 
   const pipelineRef = useRef<GLPipeline | null>(null);
-  const cameraPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const [version, setVersion] = useState(0);
 
   useEffect(() => {
@@ -66,10 +65,13 @@ export function useSpriteRenderer(
   }, [map, sprite]);
 
   function moveCamera(x: number, y: number): void {
-    cameraPos.current.x = x;
-    cameraPos.current.y = y;
-  }
+    const p = pipelineRef.current;
+    if (!p) return;
 
+    const gl = p.gl;
+    const cameraPosLoc = p.cameraPosLoc;
+    gl.uniform2f(cameraPosLoc, x, y);
+  }
 
   function draw(): void {
     const p = pipelineRef.current;
@@ -84,10 +86,7 @@ export function useSpriteRenderer(
     if (batchedVertices.length === 0) return;
 
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-    for (let i = 0; i < batchedVertices.length; i += 2) {
-      batchedVertices[i] -= cameraPos.current.x;
-      batchedVertices[i + 1] -= cameraPos.current.y;
-    }
+
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(batchedVertices), gl.STREAM_DRAW);
     gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(posLoc);
