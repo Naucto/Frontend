@@ -101,11 +101,12 @@ export class ProjectProvider implements Destroyable {
 
     const settings = this.projectSettings.getSettings();
 
-    if (details.name !== settings.name || (details.longDesc || "") !== settings.longDesc || details.shortDesc !== settings.shortDesc) {
+    if (details.name !== settings.name || (details.longDesc || "") !== settings.longDesc || details.shortDesc !== settings.shortDesc || (details.iconUrl || "") !== settings.iconUrl) {
       await ProjectsService.projectControllerUpdate(this.projectId, {
         name: settings.name,
         shortDesc: settings.shortDesc,
         longDesc: settings.longDesc as unknown as Record<string, unknown>,
+        iconUrl: settings.iconUrl
       });
     }
 

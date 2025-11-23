@@ -24,7 +24,7 @@ const CollaboratorList = styled(List)(({ theme }) => ({
 }));
 
 const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
-  const [settings, setSettings] = useState<ProjectSettings>({ name: "", shortDesc: "", longDesc: "" });
+  const [settings, setSettings] = useState<ProjectSettings>({ name: "", shortDesc: "", longDesc: "", iconUrl: "" });
   const [collaborators, setCollaborators] = useState<UserBasicInfoDto[]>([]);
   const [newCollaborator, setNewCollaborator] = useState("");
 
@@ -94,6 +94,20 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
           onChange={(e) => project.projectSettings.updateName(e.target.value)}
         />
         <FullWidthTextField
+          label="Project Image URL"
+          value={settings.iconUrl}
+          onChange={(e) => project.projectSettings.updateIconUrl(e.target.value)}
+        />
+        {settings.iconUrl && (
+          <Box sx={{ mt: 2, mb: 2, display: "flex", justifyContent: "center" }}>
+            <img
+              src={settings.iconUrl}
+              alt="Project Preview"
+              style={{ maxHeight: "200px", maxWidth: "100%", borderRadius: "4px" }}
+            />
+          </Box>
+        )}
+        <FullWidthTextField
           label="Project Short Description"
           value={settings.shortDesc}
           onChange={(e) => project.projectSettings.updateShortDesc(e.target.value)}
@@ -108,9 +122,7 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
           rows={5}
         />
       </Section>
-
       <Divider />
-
       <Section>
         <Typography variant="h6" gutterBottom>Collaborators</Typography>
         <CollaboratorList>
