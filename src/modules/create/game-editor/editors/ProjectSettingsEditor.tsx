@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { EditorProps } from "./EditorType";
-import { Box, Button, Typography, List, ListItem, ListItemText, Paper, Divider } from "@mui/material";
+import { Box, Button, Typography, List, ListItem, ListItemText, Paper, Divider, Chip } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { ApiError, ProjectsService, ProjectWithRelationsResponseDto, UserBasicInfoDto } from "@api";
+import { ApiError, ProjectsService, ProjectWithRelationsResponseDto, UserBasicInfoDto, } from "@api";
 import { ProjectSettings } from "@providers/editors/ProjectSettingsProvider";
 import { ActionButton } from "@components/ui/ActionButton";
 import { FullWidthTextField } from "@components/ui/FullWidthTextField";
@@ -23,16 +23,25 @@ const CollaboratorList = styled(List)(({ theme }) => ({
   borderRadius: theme.shape.borderRadius,
 }));
 
+const StatusContainer = styled(Box)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  gap: theme.spacing(2),
+  marginBottom: theme.spacing(2),
+}));
+
 const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
   const [settings, setSettings] = useState<ProjectSettings>({ name: "", shortDesc: "", longDesc: "" });
   const [collaborators, setCollaborators] = useState<UserBasicInfoDto[]>([]);
   const [newCollaborator, setNewCollaborator] = useState("");
+  const [isPublished, setIsPublished] = useState(false);
 
   useEffect(() => {
     const fetchProjectDetails = async (): Promise<void> => {
       try {
         const details = await ProjectsService.projectControllerFindOne(project.projectId);
         setCollaborators(details.collaborators);
+        setIsPublished(details.status == ProjectWithRelationsResponseDto.status.COMPLETED || false);
       } catch (err) {
         alert("Error fetching project details: " +
           (err instanceof ApiError ? err.message : String(err)));
@@ -84,10 +93,45 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
     }
   };
 
+  const handlePublishToggle = async (): Promise<void> => {
+    try {
+      const updatedProject = await ProjectsService.projectControllerUpdate(project.projectId, {
+        name: settings.name,
+        shortDesc: settings.shortDesc,
+        longDesc: settings.longDesc as unknown as Record<string, unknown>,
+        status: !isPublished ? ProjectWithRelationsResponseDto.status.COMPLETED : ProjectWithRelationsResponseDto.status.IN_PROGRESS,
+      });
+      setIsPublished(updatedProject.status == ProjectWithRelationsResponseDto.status.COMPLETED);
+    } catch (err) {
+      alert("Error updating publish status: " +
+        (err instanceof ApiError ? err.message : String(err)));
+    }
+  };
+
   return (
     <EditorContainer>
       <Section>
         <Typography variant="h5" gutterBottom>Project Settings</Typography>
+        <StatusContainer>
+          <Typography variant="body1">Status:</Typography>
+          <Chip
+            label={isPublished ? "Published" : "Draft"}
+            color={isPublished ? "success" : "default"}
+          />
+          <Button
+            variant="contained"
+            onClick={handlePublishToggle}
+            sx={{
+              backgroundColor: isPublished ? "gray.500" : "green.500",
+              color: "white",
+              "&:hover": {
+                backgroundColor: isPublished ? "gray.600" : "green.600"
+              }
+            }}
+          >
+            {isPublished ? "Unpublish" : "Publish"}
+          </Button>
+        </StatusContainer>
         <FullWidthTextField
           label="Project Title"
           value={settings.name}
@@ -108,9 +152,7 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
           rows={5}
         />
       </Section>
-
       <Divider />
-
       <Section>
         <Typography variant="h6" gutterBottom>Collaborators</Typography>
         <CollaboratorList>

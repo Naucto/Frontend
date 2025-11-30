@@ -17,6 +17,7 @@ export type QueueSpriteDrawFn = (
 ) => void;
 
 export type SpriteRendererHandle = {
+  getCanvas: () => HTMLCanvasElement;
   queueSpriteDraw: QueueSpriteDrawFn;
   draw: () => void;
   drawMap: (x: number, y: number) => void;
