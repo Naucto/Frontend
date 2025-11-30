@@ -91,10 +91,6 @@ export const GameViewer: React.FC = () => {
       provider.observe(ProviderEventType.INITIALIZED, () => {
         setShowGame(true);
         setCode(String(provider.code || ""));
-
-        if (canvasRef.current?.getCanvas()) {
-          canvasRef.current.getCanvas()?.focus();
-        }
       });
     }
   }, [id]);
