@@ -63,8 +63,7 @@ const Description = styled(Box)(({ theme }) => ({
   borderRadius: theme.shape.borderRadius,
 }));
 
-const PlayingCanvas = styled(GameCanvas)(({ theme }) => ({
-  borderRadius: theme.spacing(1),
+const PlayingCanvas = styled(GameCanvas)(() => ({
   width: "100% !important",
   height: "100% !important",
   objectFit: "contain",
