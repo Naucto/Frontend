@@ -23,6 +23,7 @@ export type SpriteRendererHandle = {
   clear: (index: number) => void;
   setColor: (index: number, index2: number) => void;
   resetColor: () => void;
+  moveCamera: (x: number, y: number) => void;
 };
 
 export function useSpriteRenderer(
@@ -37,9 +38,9 @@ export function useSpriteRenderer(
   const currentPalette: Uint8Array = new Uint8Array(sprite.palette);
   const currentPaletteSize = currentPalette.length / 4;
 
+  const pipelineRef = useRef<GLPipeline | null>(null);
   const [version, setVersion] = useState(0);
 
-  const pipelineRef = useRef<GLPipeline | null>(null);
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) { throw new CanvasNotInitializedError(); }
@@ -62,6 +63,15 @@ export function useSpriteRenderer(
       setVersion(v => v + 1);
     });
   }, [map, sprite]);
+
+  function moveCamera(x: number, y: number): void {
+    const p = pipelineRef.current;
+    if (!p) return;
+
+    const gl = p.gl;
+    const cameraPosLoc = p.cameraPosLoc;
+    gl.uniform2f(cameraPosLoc, x, y);
+  }
 
   function draw(): void {
     const p = pipelineRef.current;
@@ -237,5 +247,6 @@ export function useSpriteRenderer(
     clear,
     setColor,
     resetColor,
+    moveCamera
   }), []);
 }
