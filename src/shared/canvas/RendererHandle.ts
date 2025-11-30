@@ -23,6 +23,9 @@ export type SpriteRendererHandle = {
   clear: (index: number) => void;
   setColor: (index: number, index2: number) => void;
   resetColor: () => void;
+  drawLine: (col: number, x0: number, y0: number, x1: number, y1: number, thickness?: number) => void;
+  drawOutlineRect: (col: number, x: number, y: number, width: number, height: number) => void;
+  drawRect: (col: number, x: number, y: number, width: number, height: number) => void;
 };
 
 export function useSpriteRenderer(
@@ -63,7 +66,108 @@ export function useSpriteRenderer(
     });
   }, [map, sprite]);
 
-  function draw(): void {
+  function drawLine(col: number, x0: number, y0: number, x1: number, y1: number): void {
+    const p = pipelineRef.current;
+    if (!p) return;
+    const gl = p.gl;
+    draw();
+
+    x0 = Math.floor(x0);
+    y0 = Math.floor(y0);
+    x1 = Math.floor(x1);
+    y1 = Math.floor(y1);
+
+    const paletteSize = currentPalette.length / 4;
+    const uvX = (col + 0.5) / paletteSize;
+
+    batchedUVs.push(
+      uvX, 0,
+      uvX, 0,
+    );
+    batchedVertices.push(
+      x0, y0,
+      x1, y1,
+    );
+    gl.uniform1i(gl.getUniformLocation(p.program, "u_texture"), 1);
+    gl.disable(gl.BLEND);
+    draw(gl.LINES);
+    gl.enable(gl.BLEND);
+    gl.uniform1i(gl.getUniformLocation(p.program, "u_texture"), 0);
+  }
+
+  function drawOutlineRect(col: number, x: number, y: number, width: number, height: number): void {
+    const p = pipelineRef.current;
+    if (!p) return;
+    const gl = p.gl;
+    draw();
+    x = Math.floor(x);
+    y = Math.floor(y);
+    width = Math.floor(width);
+    height = Math.floor(height);
+
+    const paletteSize = currentPalette.length / 4;
+    const uvX = (col + 0.5) / paletteSize;
+    const x0 = x + 0.5;
+    const y0 = y + 0.5;
+    const x1 = x + width - 0.5;
+    const y1 = y + height - 0.5;
+
+    batchedUVs.push(
+      uvX, 0,
+      uvX, 0,
+      uvX, 0,
+      uvX, 0,
+    );
+
+    batchedVertices.push(
+      x0, y0,
+      x1, y0,
+      x1, y1,
+      x0, y1,
+    );
+    gl.uniform1i(gl.getUniformLocation(p.program, "u_texture"), 3);
+    gl.disable(gl.BLEND);
+    draw(gl.LINE_LOOP);
+    gl.enable(gl.BLEND);
+    gl.uniform1i(gl.getUniformLocation(p.program, "u_texture"), 0);
+  }
+
+  function drawRect(col: number, x: number, y: number, width: number, height: number): void {
+    const p = pipelineRef.current;
+    if (!p) return;
+    const gl = p.gl;
+    draw();
+
+    x = Math.floor(x);
+    y = Math.floor(y);
+    width = Math.floor(width);
+    height = Math.floor(height);
+
+    const paletteSize = currentPalette.length / 4;
+    const uvX = (col + 0.5) / paletteSize;
+
+    batchedUVs.push(
+      uvX, 0,
+      uvX, 0,
+      uvX, 0,
+      uvX, 0,
+      uvX, 0,
+      uvX, 0,
+    );
+    console.log(x, y, width, height);
+    const verts = rectangleToVertices(x, y, width, height);
+    batchedVertices.push(...verts);
+
+    gl.uniform1i(gl.getUniformLocation(p.program, "u_texture"), 3);
+    gl.disable(gl.BLEND);
+
+    draw(gl.TRIANGLES);
+
+    gl.enable(gl.BLEND);
+    gl.uniform1i(gl.getUniformLocation(p.program, "u_texture"), 0);
+  }
+
+  function draw(type: number = 0x0004): void {
     const p = pipelineRef.current;
     if (!p) return;
 
@@ -85,7 +189,7 @@ export function useSpriteRenderer(
     gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(uvLocation);
 
-    gl.drawArrays(gl.TRIANGLES, 0, batchedVertices.length / 2); // divided by 2 bcs batchedVertices is 2d
+    gl.drawArrays(type, 0, batchedVertices.length / 2); // divided by 2 bcs batchedVertices is 2d
 
     batchedVertices.length = 0;
     batchedUVs.length = 0;
@@ -96,7 +200,7 @@ export function useSpriteRenderer(
     if (!p) return;
 
     if (batchedUVs.length > 0) {
-      draw();
+      draw(p.gl.TRIANGLES);
     }
 
     const gl = p.gl;
@@ -119,7 +223,7 @@ export function useSpriteRenderer(
 
     batchedVertices.push(...vertices);
     batchedUVs.push(...uv);
-    draw();
+    draw(p.gl.TRIANGLES);
     gl.uniform1i(gl.getUniformLocation(program, "u_texture"), 0);
   }
 
@@ -237,5 +341,8 @@ export function useSpriteRenderer(
     clear,
     setColor,
     resetColor,
+    drawLine,
+    drawOutlineRect,
+    drawRect,
   }), []);
 }
