@@ -39,14 +39,10 @@ export default defineConfig([
       "eol-last": ["error", "always"],
       "no-multiple-empty-lines": ["error", { "max": 1 }],
       "no-trailing-spaces": ["error"],
-    },
-
-
-
-
+    }
   },
   tseslint.configs.recommended,
   {
     ignores: ["src/api/*"]
-  },
+  }
 ]);
