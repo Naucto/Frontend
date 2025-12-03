@@ -18,6 +18,7 @@ interface ConstructorProps {
   setOutput: React.Dispatch<React.SetStateAction<string>>
 }
 
+// noinspection JSUnusedLocalSymbols
 class LuaAPI {
   private readonly _maxLines = 100;
 
