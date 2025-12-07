@@ -163,7 +163,6 @@ export function useSpriteRenderer(
       uvX, 0,
       uvX, 0,
     );
-    console.log(x, y, width, height);
     const verts = rectangleToVertices(x, y, width, height);
     batchedVertices.push(...verts);
 
