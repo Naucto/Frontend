@@ -98,8 +98,8 @@ class LuaEnvironmentManager {
   private _camera(x: number, y: number): void {
     this._rendererHandle.moveCamera(x, y);
   }
-  private _line(col: number, x0: number, y0: number, x1: number, y1: number, thickness: number = 1): void {
-    this._rendererHandle.drawLine(col, x0, y0, x1, y1, thickness);
+  private _line(col: number, x0: number, y0: number, x1: number, y1: number): void {
+    this._rendererHandle.drawLine(col, x0, y0, x1, y1);
   }
 
   private _drawOutlineRect(col: number, x: number, y: number, width: number, height: number): void {
