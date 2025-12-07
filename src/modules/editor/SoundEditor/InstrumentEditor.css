@@ -1,0 +1,45 @@
+.instrument-editor-dialog .MuiDialog-paper {
+  min-width: 600px;
+  max-width: 800px;
+  max-height: 90vh;
+}
+
+.instrument-editor-text-field .MuiInputBase-input {
+  color: black;
+}
+
+.instrument-editor-select .MuiSelect-select {
+  color: black;
+}
+
+.instrument-editor-select .MuiInputLabel-root {
+  color: black;
+}
+
+.instrument-editor-select .MuiMenuItem-root {
+  color: black;
+}
+
+.instrument-editor-form-control .MuiInputLabel-root {
+  color: black;
+}
+
+.instrument-editor-input-label {
+  color: black;
+}
+
+.instrument-editor-accordion-title {
+  color: black;
+}
+
+.instrument-editor-menu .MuiMenuItem-root {
+  color: black;
+}
+
+.instrument-editor-name-field {
+  margin-bottom: 16px;
+}
+
+.instrument-editor-name-field .MuiInputBase-input {
+  color: black;
+}

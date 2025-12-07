@@ -1,0 +1,21 @@
+{
+  "volume": 1,
+  "detune": 0,
+  "portamento": 0,
+  "harmonicity": 1,
+  "oscillator": {
+    "type": "triangle",
+    "partialCount": 4,
+    "partials": [1, 0.7, 0.4, 0.2],
+    "phase": 0
+  },
+  "envelope": {
+    "attack": 0.005,
+    "attackCurve": "exponential",
+    "decay": 0.25,
+    "decayCurve": "exponential",
+    "sustain": 0,
+    "release": 0.3,
+    "releaseCurve": "linear"
+  }
+}

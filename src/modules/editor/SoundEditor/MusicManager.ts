@@ -41,7 +41,7 @@ export const playInstrument = async (
   return new Promise(resolve => {
     const synth = getSynth(instrument);
     if (synth) {
-      synth.triggerAttackRelease(note, duration, when);
+      synth.triggerAttackRelease(note, duration, when, 0.2);
     }
     resolve();
   });

@@ -1,0 +1,22 @@
+{
+  "volume": 1,
+  "detune": 0,
+  "portamento": 0,
+  "harmonicity": 3,
+  "oscillator": {
+    "partialCount": 0,
+    "partials": [],
+    "phase": 0,
+    "type": "sine",
+    "modulationType": "square"
+  },
+  "envelope": {
+    "attack": 0.01,
+    "attackCurve": "linear",
+    "decay": 0.2,
+    "decayCurve": "exponential",
+    "release": 0.5,
+    "releaseCurve": "exponential",
+    "sustain": 1
+  }
+}

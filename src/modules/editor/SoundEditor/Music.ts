@@ -1,4 +1,4 @@
-import { NoteData, createNote, noteToJson, noteFromJson } from "./Note";
+import { NoteData, createNote, noteToJson, noteFromJson, preInitializeSynths } from "./Note";
 import { numberToNote, playInstrument } from "./MusicManager";
 import * as Tone from "tone";
 
@@ -55,23 +55,108 @@ export const setNote = (
 };
 
 export const playMusic = async (music: MusicData): Promise<void> => {
-  let now = Tone.now();
-  Tone.start();
+  return playMusicFromPosition(music, 0);
+};
 
-  const playPromises: Promise<void>[] = [];
-
-  for (let i = 0; i < music.notes.length; i++) {
+export const playMusicFromPosition = async (
+  music: MusicData,
+  startPosition: number = 0,
+  onProgress?: (position: number, totalLength: number) => void,
+  onAudioStart?: (audioStartTime: number) => void
+): Promise<void> => {
+  // Collect all instruments that will be used in this playback
+  const instrumentsToUse = new Set<string>();
+  for (let i = startPosition; i < music.notes.length; i++) {
     if (music.notes[i]) {
       for (const note of music.notes[i]) {
-        if (note) {
-          playPromises.push(playInstrument(note.note, note.instrument, now, 60 / music.bpm * note.duration));
+        if (note && note.instrument) {
+          instrumentsToUse.add(note.instrument);
         }
       }
     }
-    now += 60 / music.bpm;
   }
 
+  // Pre-initialize all synths before starting playback to prevent lag
+  await preInitializeSynths(Array.from(instrumentsToUse));
+
+  // Start audio context and capture when we start
+  const wallClockStart = Date.now();
+  Tone.start();
+
+  // Wait a moment for audio context to initialize
+  await new Promise(resolve => setTimeout(resolve, 50)); // Small delay for initialization
+
+  // Get the current Tone.js time - this is the reference point for all scheduling
+  const toneStartTime = Tone.now();
+
+  // Calculate when audio actually starts (wall clock time when Tone context is ready)
+  const actualAudioStartTime = Date.now();
+
+  let now = Tone.now();
+
+  const playPromises: Promise<void>[] = [];
+  const beatDuration = 60 / music.bpm;
+  const totalLength = music.length;
+
+  // Report when audio will actually start playing
+  if (onAudioStart) {
+    onAudioStart(actualAudioStartTime);
+  }
+
+  // Report initial position immediately
+  if (onProgress) {
+    onProgress(startPosition, totalLength);
+  }
+
+  for (let i = startPosition; i < music.notes.length; i++) {
+    const columnIndex = i;
+
+    if (music.notes[i]) {
+      for (const note of music.notes[i]) {
+        if (note) {
+          playPromises.push(playInstrument(note.note, note.instrument, now, beatDuration * note.duration));
+        }
+      }
+    }
+
+    // Schedule progress update using Tone.Draw.schedule which runs on the audio thread
+    // This fires exactly when the sound is actually being emitted
+    if (onProgress) {
+      if (i === startPosition) {
+        // First column - schedule immediately at the audio time
+        Tone.Draw.schedule(() => {
+          // Use requestAnimationFrame to update UI from audio thread
+          requestAnimationFrame(() => {
+            onProgress(columnIndex, totalLength);
+          });
+        }, now);
+      } else {
+        // Schedule callback at the exact audio time when this column's notes are emitted
+        Tone.Draw.schedule(() => {
+          // Use requestAnimationFrame to update UI from audio thread
+          requestAnimationFrame(() => {
+            onProgress(columnIndex, totalLength);
+          });
+        }, now);
+      }
+    }
+
+    now += beatDuration;
+  }
+
+  // Wait for all notes to finish playing
   await Promise.all(playPromises);
+
+  // Report completion at the time when the last note finishes playing
+  if (onProgress && music.notes.length > startPosition) {
+    const lastNoteTime = now; // This is when the last column's notes start
+    // Schedule completion callback when last note finishes (we don't track exact end time, so use a small delay)
+    Tone.Draw.schedule(() => {
+      requestAnimationFrame(() => {
+        onProgress(music.notes.length, totalLength);
+      });
+    }, lastNoteTime);
+  }
 };
 
 export const musicToJson = (music: MusicData): string => {
@@ -94,3 +179,4 @@ export const musicFromJson = (json: string): MusicData => {
     )
   };
 };
+

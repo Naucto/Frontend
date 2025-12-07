@@ -1,0 +1,21 @@
+{
+  "volume": 1,
+  "detune": 0,
+  "portamento": 0.02,
+  "harmonicity": 1,
+  "oscillator": {
+    "type": "sawtooth",
+    "partialCount": 5,
+    "partials": [1, 0.8, 0.6, 0.4, 0.2],
+    "phase": 0
+  },
+  "envelope": {
+    "attack": 0.03,
+    "attackCurve": "exponential",
+    "decay": 0.15,
+    "decayCurve": "exponential",
+    "sustain": 0.9,
+    "release": 0.2,
+    "releaseCurve": "exponential"
+  }
+}
