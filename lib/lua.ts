@@ -44,7 +44,6 @@ class LuaEnvironment {
         fengari.lua.lua_pushnil(this._L);
         while (fengari.lua.lua_next(this._L, index) !== 0) {
           const key = this.getObject(-2);
-          // noinspection UnnecessaryLocalVariableJS
           const val = this.getObject(-1);
 
           value[key] = val;
@@ -92,7 +91,7 @@ class LuaEnvironment {
   public pushObject(value: any): void {
     switch (typeof value) {
       case "boolean":
-        fengari.lua.lua_pushboolean(this._L, value);
+        fengari.lua.lua_pushboolean(this._L, value === true ? 1 : 0);
         break;
 
       case "number":
@@ -188,7 +187,7 @@ class LuaEnvironment {
 
     return results;
   }
-}
+};
 
 export {
   LuaEnvironment,
