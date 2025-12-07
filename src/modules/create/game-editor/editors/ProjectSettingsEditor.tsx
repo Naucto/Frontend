@@ -95,13 +95,13 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
 
   const handlePublishToggle = async (): Promise<void> => {
     try {
-      const updatedProject = await ProjectsService.projectControllerUpdate(project.projectId, {
-        name: settings.name,
-        shortDesc: settings.shortDesc,
-        longDesc: settings.longDesc as unknown as Record<string, unknown>,
-        status: !isPublished ? ProjectWithRelationsResponseDto.status.COMPLETED : ProjectWithRelationsResponseDto.status.IN_PROGRESS,
-      });
-      setIsPublished(updatedProject.status == ProjectWithRelationsResponseDto.status.COMPLETED);
+      if (!isPublished) {
+        await project.saveContent();
+        await ProjectsService.projectControllerPublish(project.projectId.toString());
+      } else {
+        await ProjectsService.projectControllerUnpublish(project.projectId.toString());
+      }
+      setIsPublished(!isPublished);
     } catch (err) {
       alert("Error updating publish status: " +
         (err instanceof ApiError ? err.message : String(err)));

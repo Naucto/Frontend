@@ -1,6 +1,6 @@
 import { styled } from "@mui/material/styles";
 import { JSX, useEffect, useState } from "react";
-import { ProjectsService, ProjectWithRelationsResponseDto } from "@api";
+import { ProjectResponseDto, ProjectsService } from "@api";
 import { useAsync } from "src/hooks/useAsync";
 import { Box, IconButton, Typography } from "@mui/material";
 import { ChevronLeft, ChevronRight } from "@mui/icons-material";
@@ -104,18 +104,18 @@ const ProjectCardWrapper = styled(Box)({
 });
 
 export const Hub = (): JSX.Element => {
-  const [publishedProjects, setPublishedProjects] = useState<ProjectWithRelationsResponseDto[]>([]);
-  const [newGames, setNewGames] = useState<ProjectWithRelationsResponseDto[]>([]);
-  const [playedGames, setPlayedGames] = useState<ProjectWithRelationsResponseDto[]>([]);
+  const [publishedProjects, setPublishedProjects] = useState<ProjectResponseDto[]>([]);
+  const [newGames, setNewGames] = useState<ProjectResponseDto[]>([]);
+  const [playedGames, setPlayedGames] = useState<ProjectResponseDto[]>([]);
 
   const { value: allProjects } = useAsync(
-    ProjectsService.projectControllerFindAll,
+    ProjectsService.projectControllerGetAllReleases,
     []
   );
 
   useEffect(() => {
     if (allProjects) {
-      const published = allProjects.filter(project => project.status === ProjectWithRelationsResponseDto.status.COMPLETED);
+      const published = allProjects.filter(project => project.status === ProjectResponseDto.status.COMPLETED);
       setPublishedProjects(published);
 
       const sortedByDate = [...published].sort((a, b) =>
@@ -135,7 +135,7 @@ export const Hub = (): JSX.Element => {
     }
   };
 
-  const renderCategory = (title: string, projects: ProjectWithRelationsResponseDto[], scrollId: string): JSX.Element => (
+  const renderCategory = (title: string, projects: ProjectResponseDto[], scrollId: string): JSX.Element => (
     <CategorySection>
       <CategoryHeader>
         <CategoryTitle>{title}</CategoryTitle>

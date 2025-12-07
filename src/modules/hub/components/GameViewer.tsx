@@ -109,7 +109,7 @@ export const GameViewer: React.FC = () => {
       if (!id) return;
 
       try {
-        const projectDetails = await ProjectsService.projectControllerFindOne(Number(id));
+        const projectDetails = await ProjectsService.projectControllerGetRelease(id);
         setProject(projectDetails);
       } catch (error) {
         console.error("Error loading project:", error);

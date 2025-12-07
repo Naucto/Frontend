@@ -42,7 +42,7 @@ export class GameProvider implements Destroyable {
 
   private async initializeDoc(): Promise<void> {
     try {
-      const content = await ProjectsService.projectControllerFetchProjectContent(String(this.projectId));
+      const content = await ProjectsService.projectControllerGetReleaseContent(String(this.projectId));
       if (content) {
         await decodeUpdate(this._doc, content);
       }

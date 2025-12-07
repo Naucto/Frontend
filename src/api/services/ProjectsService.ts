@@ -13,6 +13,52 @@ import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
 export class ProjectsService {
     /**
+     * Get all released projects
+     * @returns ProjectResponseDto A JSON array of projects with collaborators and creator information
+     * @throws ApiError
+     */
+    public static projectControllerGetAllReleases(): CancelablePromise<Array<ProjectResponseDto>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/projects/releases',
+        });
+    }
+    /**
+     * Get project release version
+     * @param id
+     * @returns any Project release file
+     * @throws ApiError
+     */
+    public static projectControllerGetRelease(
+        id: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/projects/releases/{id}',
+            path: {
+                'id': id,
+            },
+        });
+    }
+    /**
+     * Get project release version
+     * @param id
+     * @returns any Project release file
+     * @throws ApiError
+     */
+    public static projectControllerGetReleaseContent(
+        id: string,
+    ): CancelablePromise<Blob> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/projects/releases/{id}/content',
+            path: {
+                'id': id,
+            },
+            responseType: "blob"
+        });
+    }
+    /**
      * Retrieve the list of projects
      * @returns ProjectWithRelationsResponseDto A JSON array of projects with collaborators and creator information
      * @throws ApiError
@@ -197,7 +243,7 @@ export class ProjectsService {
     /**
      * Fetch project's content
      * @param id
-     * @returns binary File fetched successfully
+     * @returns any File fetched successfully
      * @throws ApiError
      */
     public static projectControllerFetchProjectContent(
@@ -214,6 +260,184 @@ export class ProjectsService {
                 404: `File not found`,
             },
             responseType: "blob"
+        });
+    }
+    /**
+     * Save project's checkpoint
+     * @param id
+     * @param name
+     * @param formData
+     * @returns any File uploaded successfully
+     * @throws ApiError
+     */
+    public static projectControllerSaveCheckpoint(
+        id: string,
+        name: string,
+        formData: {
+            file?: Blob;
+        },
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/projects/{id}/saveCheckpoint/{name}',
+            path: {
+                'id': id,
+                'name': name,
+            },
+            formData: formData,
+            mediaType: 'multipart/form-data',
+            errors: {
+                403: `Forbidden`,
+            },
+        });
+    }
+    /**
+     * Delete project's checkpoint
+     * @param id
+     * @param name
+     * @returns any File deleted successfully
+     * @throws ApiError
+     */
+    public static projectControllerDeleteCheckpoint(
+        id: string,
+        name: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/projects/{id}/deleteCheckpoint/{name}',
+            path: {
+                'id': id,
+                'name': name,
+            },
+            errors: {
+                403: `Forbidden`,
+            },
+        });
+    }
+    /**
+     * Publish project
+     * @param id
+     * @returns any Project published successfully
+     * @throws ApiError
+     */
+    public static projectControllerPublish(
+        id: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/projects/{id}/publish',
+            path: {
+                'id': id,
+            },
+            errors: {
+                403: `Forbidden`,
+            },
+        });
+    }
+    /**
+     * Unpublish project
+     * @param id
+     * @returns any Project unpublished successfully
+     * @throws ApiError
+     */
+    public static projectControllerUnpublish(
+        id: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/projects/{id}/unpublish',
+            path: {
+                'id': id,
+            },
+            errors: {
+                403: `Forbidden`,
+            },
+        });
+    }
+    /**
+     * Get project versions
+     * @param id
+     * @returns any Project versions retrieved successfully
+     * @throws ApiError
+     */
+    public static projectControllerGetVersions(
+        id: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/projects/{id}/versions',
+            path: {
+                'id': id,
+            },
+            errors: {
+                403: `Forbidden`,
+            },
+        });
+    }
+    /**
+     * Get project checkpoints
+     * @param id
+     * @returns any Project checkpoints retrieved successfully
+     * @throws ApiError
+     */
+    public static projectControllerGetCheckpoints(
+        id: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/projects/{id}/checkpoints',
+            path: {
+                'id': id,
+            },
+            errors: {
+                403: `Forbidden`,
+            },
+        });
+    }
+    /**
+     * Fetch a project version
+     * @param id
+     * @param version
+     * @returns any Project version retrieved successfully
+     * @throws ApiError
+     */
+    public static projectControllerGetVersion(
+        id: string,
+        version: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/projects/{id}/versions/{version}',
+            path: {
+                'id': id,
+                'version': version,
+            },
+            errors: {
+                403: `Forbidden`,
+            },
+        });
+    }
+    /**
+     * Fetch a project checkpoint
+     * @param id
+     * @param checkpoint
+     * @returns any Project checkpoint retrieved successfully
+     * @throws ApiError
+     */
+    public static projectControllerGetCheckpoint(
+        id: string,
+        checkpoint: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/projects/{id}/checkpoints/{checkpoint}',
+            path: {
+                'id': id,
+                'checkpoint': checkpoint,
+            },
+            errors: {
+                403: `Forbidden`,
+            },
         });
     }
 }

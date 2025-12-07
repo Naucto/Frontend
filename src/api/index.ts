@@ -8,13 +8,11 @@ export { OpenAPI } from './core/OpenAPI';
 export type { OpenAPIConfig } from './core/OpenAPI';
 
 export type { AddCollaboratorDto } from './models/AddCollaboratorDto';
-export type { ApplyPolicyDto } from './models/ApplyPolicyDto';
 export type { AuthResponseDto } from './models/AuthResponseDto';
 export type { CreateProjectDto } from './models/CreateProjectDto';
 export type { CreateUserDto } from './models/CreateUserDto';
 export type { DeleteS3FilesDto } from './models/DeleteS3FilesDto';
 export type { FetchWorkSessionDto } from './models/FetchWorkSessionDto';
-export type { GeneratePolicyDto } from './models/GeneratePolicyDto';
 export type { KickWorkSessionDto } from './models/KickWorkSessionDto';
 export type { LoginDto } from './models/LoginDto';
 export type { PaginationMetaDto } from './models/PaginationMetaDto';

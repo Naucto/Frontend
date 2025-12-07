@@ -2,9 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { ApplyPolicyDto } from '../models/ApplyPolicyDto';
 import type { DeleteS3FilesDto } from '../models/DeleteS3FilesDto';
-import type { GeneratePolicyDto } from '../models/GeneratePolicyDto';
 import type { UploadFileDto } from '../models/UploadFileDto';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
@@ -163,46 +161,6 @@ export class S3Service {
         });
     }
     /**
-     * Delete a bucket
-     * @param bucketName Name of the bucket
-     * @returns any Bucket deleted successfully
-     * @throws ApiError
-     */
-    public static s3ControllerDeleteBucket(
-        bucketName: string,
-    ): CancelablePromise<any> {
-        return __request(OpenAPI, {
-            method: 'DELETE',
-            url: '/s3/bucket/{bucketName}',
-            path: {
-                'bucketName': bucketName,
-            },
-            errors: {
-                500: `Server error`,
-            },
-        });
-    }
-    /**
-     * Create a new bucket
-     * @param bucketName Name of the bucket
-     * @returns any Bucket created successfully
-     * @throws ApiError
-     */
-    public static s3ControllerCreateBucket(
-        bucketName: string,
-    ): CancelablePromise<any> {
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/s3/bucket/{bucketName}',
-            path: {
-                'bucketName': bucketName,
-            },
-            errors: {
-                500: `Server error`,
-            },
-        });
-    }
-    /**
      * Get object metadata
      * @param key Object key
      * @param bucketName Name of the bucket
@@ -221,55 +179,6 @@ export class S3Service {
                 'bucketName': bucketName,
             },
             errors: {
-                500: `Server error`,
-            },
-        });
-    }
-    /**
-     * Generate a bucket policy
-     * @param bucketName Name of the bucket
-     * @param requestBody
-     * @returns any Policy generated successfully
-     * @throws ApiError
-     */
-    public static s3ControllerGenerateBucketPolicy(
-        bucketName: string,
-        requestBody: GeneratePolicyDto,
-    ): CancelablePromise<any> {
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/s3/policy/{bucketName}',
-            path: {
-                'bucketName': bucketName,
-            },
-            body: requestBody,
-            mediaType: 'application/json',
-            errors: {
-                500: `Server error`,
-            },
-        });
-    }
-    /**
-     * Apply a policy to a bucket
-     * @param bucketName Name of the bucket
-     * @param requestBody
-     * @returns any Policy applied successfully
-     * @throws ApiError
-     */
-    public static s3ControllerApplyBucketPolicy(
-        bucketName: string,
-        requestBody: ApplyPolicyDto,
-    ): CancelablePromise<any> {
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/s3/apply-policy/{bucketName}',
-            path: {
-                'bucketName': bucketName,
-            },
-            body: requestBody,
-            mediaType: 'application/json',
-            errors: {
-                400: `No policy provided`,
                 500: `Server error`,
             },
         });
