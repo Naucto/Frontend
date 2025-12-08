@@ -1,6 +1,31 @@
 // @ts-ignore
 import fengari from "fengari";
 
+export type LuaCallable = (...args: unknown[]) => unknown;
+export type LuaMetatable = {
+  __index?: LuaCallable | Record<string, any>;
+  __newindex?: (table: any, key: string, value: any) => void;
+  __call?: (table: any, ...args: any[]) => any;
+  __tostring?: (table: any) => string;
+  __len?: (table: any) => number;
+  __unm?: (table: any) => any;
+  __add?: (left: any, right: any) => any;
+  __sub?: (left: any, right: any) => any;
+  __mul?: (left: any, right: any) => any;
+  __div?: (left: any, right: any) => any;
+  __mod?: (left: any, right: any) => any;
+  __pow?: (left: any, right: any) => any;
+  __concat?: (left: any, right: any) => any;
+  __eq?: (left: any, right: any) => boolean;
+  __lt?: (left: any, right: any) => boolean;
+  __le?: (left: any, right: any) => boolean;
+  __gc?: (table: any) => void;
+  __mode?: 'k' | 'v' | 'kv';
+  __metatable?: any;
+  __pairs?: (table: any) => [LuaCallable, any, any];
+  __ipairs?: (table: any) => [LuaCallable, any, number];
+}
+
 class LuaError extends Error {
   constructor(message: string) {
     super(message);
@@ -89,9 +114,13 @@ class LuaEnvironment {
   }
 
   public pushObject(value: any): void {
+    if (value === null) {
+      value = undefined;
+    }
+
     switch (typeof value) {
       case "boolean":
-        fengari.lua.lua_pushboolean(this._L, value === true ? 1 : 0);
+        fengari.lua.lua_pushboolean(this._L, value);
         break;
 
       case "number":
@@ -105,12 +134,16 @@ class LuaEnvironment {
       case "object":
         if (Array.isArray(value)) {
           fengari.lua.lua_createtable(this._L, value.length, 0);
+
           value.forEach((v, i) => {
             this.pushObject(v);
             fengari.lua.lua_rawseti(this._L, -2, i + 1);
           });
         } else {
+          // Assume this is a map-like object
+
           fengari.lua.lua_createtable(this._L, 0, 0);
+
           Object.entries(value).forEach(([k, v]) => {
             this.pushObject(k);
             this.pushObject(v);
@@ -148,10 +181,22 @@ class LuaEnvironment {
               }
               break;
 
+            case "function":
+              fengari.lua.lua_pushjsfunction(this._L, value);
+              break;
+
+            case "undefined":
+              fengari.lua.lua_pushnil(state);
+              return 1;
+
             default:
               return 0;
           }
         });
+        break;
+
+      case "undefined":
+        fengari.lua.lua_pushnil(this._L);
         break;
 
       default:
@@ -159,9 +204,17 @@ class LuaEnvironment {
     }
   }
 
-  public setGlobal(name: string, value: any): void {
+  public setGlobalWith(name: string, value: any): void {
     this.pushObject(value);
+    this.setGlobal(name);
+  }
+
+  public setGlobal(name: string): void {
     fengari.lua.lua_setglobal(this._L, fengari.to_luastring(name));
+  }
+
+  public setMetatable(metatable: LuaMetatable): void {
+    fengari.lua.lua_setmetatable(this._L, metatable);
   }
 
   public evaluate(code: string): any[] {
@@ -187,7 +240,7 @@ class LuaEnvironment {
 
     return results;
   }
-};
+}
 
 export {
   LuaEnvironment,
