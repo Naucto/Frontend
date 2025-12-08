@@ -35,8 +35,10 @@ const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(
       if (spriteRendererHandleRef.current == null || keyHandlerRef.current == null) {
         return;
       }
+
       const rendererHandle = spriteRendererHandleRef.current;
       const keyHandler = keyHandlerRef.current;
+
       luaEnvManagerRef.current = new LuaEnvironmentManager({
         envData,
         rendererHandle,
