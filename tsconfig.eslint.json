@@ -1,17 +1,11 @@
 {
   "extends": "./tsconfig.json",
   "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "src/**/*.js",
+    "src/**/*",
     "cypress/**/*.ts",
-    "src/**/*.test.ts",
-    "jest.config.ts",
-    "tsconfig.jest.json"
-  ],
-  "compilerOptions": {
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
-    "resolveJsonModule": true
-  }
+    "cypress/**/*.tsx",
+    "cypress/**/*.js",
+    "cypress/**/*.jsx",
+    "jest.config.ts"
+  ]
 }

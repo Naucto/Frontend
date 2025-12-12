@@ -7,7 +7,9 @@ import glsl from "vite-plugin-glsl";
 export default defineConfig({
   plugins: [
     react(),
-    tsconfigPaths(),
+    tsconfigPaths({
+      projects: ["./tsconfig.paths.json"]
+    }),
     svgr({
       svgrOptions: {
         exportType: 'default'
