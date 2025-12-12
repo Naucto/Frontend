@@ -5,8 +5,9 @@ import { decodeUpdate, encodeUpdate } from "@utils/YSerialize.ts";
 import { CodeProvider } from "./editors/CodeProvider.ts";
 import { SpriteProvider } from "./editors/SpriteProvider.ts";
 import { MapProvider } from "./editors/MapProvider.ts";
-import { AwarenessProvider  } from "./editors/AwarenessProvider.ts";
+import { AwarenessProvider } from "./editors/AwarenessProvider.ts";
 import { ProjectSettingsProvider } from "./editors/ProjectSettingsProvider.ts";
+import { MultiplayerSettingsProvider } from "./editors/MultiplayerSettingsProvider.ts";
 import { WebrtcProvider } from "y-webrtc";
 import config from "@config/providers.json";
 
@@ -25,10 +26,13 @@ export class ProjectProvider implements Destroyable {
   private _listeners : Map<ProviderEventType, Set<() => void>> = new Map();
 
   public isHost: boolean;
-  public code!: CodeProvider;
-  public sprite!: SpriteProvider;
-  public map!: MapProvider;
-  public awareness!: AwarenessProvider;
+
+  public awarenessProvider!: AwarenessProvider;
+  public codeProvider!: CodeProvider;
+  public spriteProvider!: SpriteProvider;
+  public mapProvider!: MapProvider;
+  public networkSettingsProvider!: MultiplayerSettingsProvider;
+
   public projectSettings!: ProjectSettingsProvider;
   public projectId: number;
 
@@ -40,10 +44,12 @@ export class ProjectProvider implements Destroyable {
     this.initializeDoc().then(() => {
       this._provider = new WebrtcProvider(this._roomId as string, this._doc, config.webrtc);
 
-      this.awareness = new AwarenessProvider(this, this._provider);
-      this.code = new CodeProvider(this._doc, this.awareness);
-      this.sprite = new SpriteProvider(this._doc);
-      this.map = new MapProvider(this._doc, { width:128, height:32 }, 2, this.sprite);
+      this.awarenessProvider       = new AwarenessProvider(this, this._provider);
+      this.codeProvider            = new CodeProvider(this._doc, this.awarenessProvider);
+      this.spriteProvider          = new SpriteProvider(this._doc);
+      this.mapProvider             = new MapProvider(this._doc, { width:128, height:32 }, 2, this.spriteProvider);
+      this.networkSettingsProvider = new MultiplayerSettingsProvider(this._doc);
+
       this.projectSettings = new ProjectSettingsProvider(this._doc);
 
       this._initialized = true;
@@ -84,9 +90,9 @@ export class ProjectProvider implements Destroyable {
   }
 
   destroy(): void {
-    this.code.destroy();
-    this.sprite.destroy();
-    this.awareness.destroy();
+    this.codeProvider.destroy();
+    this.spriteProvider.destroy();
+    this.awarenessProvider.destroy();
     this.projectSettings.destroy();
     this._provider.disconnect();
     this._doc.destroy();
@@ -118,7 +124,7 @@ export class ProjectProvider implements Destroyable {
   }
 
   public async checkAndKickDisconnectedUsers() : Promise<void> {
-    if (this.isHost || this._isKicking || !this.awareness)
+    if (this.isHost || this._isKicking || !this.awarenessProvider)
       return;
 
     this._isKicking = true;
@@ -134,11 +140,11 @@ export class ProjectProvider implements Destroyable {
         this.emit(ProviderEventType.BECOME_HOST);
       }
 
-      const connectedClients = Array.from(this.awareness?.getStates().keys() || []);
+      const connectedClients = Array.from(this.awarenessProvider?.getStates().keys() || []);
       if (
         connectedClients.length === 1 &&
-        this.awareness?.getClientId() !== undefined &&
-        connectedClients[0] === this.awareness?.getClientId()
+        this.awarenessProvider?.getClientId() !== undefined &&
+        connectedClients[0] === this.awarenessProvider?.getClientId()
       ) {
         for (const sessionUserId of sessionInfo.users) {
           if (Number(sessionUserId) !== userId) {

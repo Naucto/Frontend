@@ -166,9 +166,9 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
   };
 
   useEffect(() => {
-    project.sprite.observe(() => setVersion(v => v + 1));
+    project.spriteProvider.observe(() => setVersion(v => v + 1));
 
-    project.map.observe(() => setVersion(v => v + 1));
+    project.mapProvider.observe(() => setVersion(v => v + 1));
   }, [project]);
 
   useEffect(() => {
@@ -200,10 +200,10 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
         (1 / zoom) * SPRITE_NUMBER);
       drawCanvasRef.current.draw();
     }
-  }, [project.sprite, drawCanvasRef, position, version, zoom]);
+  }, [project.spriteProvider, drawCanvasRef, position, version, zoom]);
 
   const drawAt = (x: number, y: number): void => {
-    project.sprite.setPixel(x, y, currentColor);
+    project.spriteProvider.setPixel(x, y, currentColor);
     setVersion(v => v + 1);
   };
 
@@ -287,8 +287,8 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
           <CanvasContainer
             canvasRef={drawCanvasRef}
             containerRef={canvasContainerRef}
-            sprite={project.sprite}
-            map={project.map}
+            sprite={project.spriteProvider}
+            map={project.mapProvider}
             screenSize={drawCanvasSize}
             onWheel={handleWheel}
             onMouseDown={handleMouseDown}

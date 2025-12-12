@@ -168,7 +168,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
       return;
 
     project.observe(ProviderEventType.BECOME_HOST, becomeHostListener);
-    project.code.observe(setCode);
+    project.codeProvider.observe(setCode);
   }, [project]);
 
   const [code, setCode] = useState("");
@@ -211,7 +211,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
   };
 
   const getAwarenessMessage = (): string => {
-    const count = project.awareness.count();
+    const count = project.awarenessProvider.count();
     if (count > 1) {
       const otherUsers = count - 1;
       const userText = otherUsers === 1 ? "person is" : "people are";
@@ -259,9 +259,9 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
         <PreviewCanvas
           ref={canvasRef}
           canvasProps={{
-            map: project.map,
+            map: project.mapProvider,
             screenSize: screenSize,
-            sprite: project.sprite
+            sprite: project.spriteProvider
           }}
           envData={envData}
           setOutput={setOutput}
@@ -278,7 +278,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
         <StyledDialogTitle>You are offline</StyledDialogTitle>
         <StyledDialogContent dividers>
           <StyledAlert
-            severity={project.awareness.count() > 1 ? "warning" : "info"}
+            severity={project.awarenessProvider.count() > 1 ? "warning" : "info"}
             variant="outlined"
           >
             {getAwarenessMessage()}

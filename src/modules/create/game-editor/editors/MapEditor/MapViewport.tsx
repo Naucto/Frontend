@@ -33,14 +33,14 @@ export const MapViewport: React.FC<Props> = ({ selectedIndex, project }) => {
     (e: React.MouseEvent<HTMLCanvasElement>): void => {
       const point: Point2D = getCanvasPoint2DFromEvent(e);
       const tile: Point2D = {
-        x: Math.floor((point.x - offset.x) / project.sprite.spriteSize.width),
-        y: Math.floor((point.y - offset.y) / project.sprite.spriteSize.height),
+        x: Math.floor((point.x - offset.x) / project.spriteProvider.spriteSize.width),
+        y: Math.floor((point.y - offset.y) / project.spriteProvider.spriteSize.height),
       };
-      project.map.setTileAt(tile, selectedIndex);
+      project.mapProvider.setTileAt(tile, selectedIndex);
       setVersion(v => v + 1);
 
     },
-    [offset, project.sprite.spriteSize, selectedIndex]
+    [offset, project.spriteProvider.spriteSize, selectedIndex]
   );
 
   const handleMouseDown = useCallback(
@@ -86,11 +86,11 @@ export const MapViewport: React.FC<Props> = ({ selectedIndex, project }) => {
   }, [spriteRendererHandleRef]);
 
   useEffect(() => {
-    project.map.observe(() => {
+    project.mapProvider.observe(() => {
       setVersion(v => v + 1);
     });
 
-    project.sprite.observe(() => {
+    project.spriteProvider.observe(() => {
       setVersion(v => v + 1);
     });
   }, [project]);
@@ -99,8 +99,8 @@ export const MapViewport: React.FC<Props> = ({ selectedIndex, project }) => {
     <ViewportContainer onContextMenu={(e) => e.preventDefault()}>
       <ViewportCanvas
         ref={spriteRendererHandleRef}
-        sprite={project.sprite}
-        map={project.map}
+        sprite={project.spriteProvider}
+        map={project.mapProvider}
         screenSize={{ width: SCREEN_SIZE.x, height: SCREEN_SIZE.y }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
