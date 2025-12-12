@@ -2,14 +2,22 @@
   "files": [],
   "extends": "./tsconfig.base.json",
   "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
+    { "path": "./tsconfig.app.json" }
   ],
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "src/*": ["src/*"],
-      "config/*": ["config/*"]
-    }
+      "src/*": [
+        "src/*"
+      ],
+      "config/*": [
+        "config/*"
+      ]
+    },
+    "isolatedModules": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true
   }
 }
