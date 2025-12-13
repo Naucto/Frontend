@@ -31,7 +31,7 @@ export class ProjectProvider implements Destroyable {
   public codeProvider!: CodeProvider;
   public spriteProvider!: SpriteProvider;
   public mapProvider!: MapProvider;
-  public networkSettingsProvider!: MultiplayerSettingsProvider;
+  public multiplayerSettingsProvider!: MultiplayerSettingsProvider;
 
   public projectSettings!: ProjectSettingsProvider;
   public projectId: number;
@@ -44,11 +44,11 @@ export class ProjectProvider implements Destroyable {
     this.initializeDoc().then(() => {
       this._provider = new WebrtcProvider(this._roomId as string, this._doc, config.webrtc);
 
-      this.awarenessProvider       = new AwarenessProvider(this, this._provider);
-      this.codeProvider            = new CodeProvider(this._doc, this.awarenessProvider);
-      this.spriteProvider          = new SpriteProvider(this._doc);
-      this.mapProvider             = new MapProvider(this._doc, { width:128, height:32 }, 2, this.spriteProvider);
-      this.networkSettingsProvider = new MultiplayerSettingsProvider(this._doc);
+      this.awarenessProvider           = new AwarenessProvider(this, this._provider);
+      this.codeProvider                = new CodeProvider(this._doc, this.awarenessProvider);
+      this.spriteProvider              = new SpriteProvider(this._doc);
+      this.mapProvider                 = new MapProvider(this._doc, { width:128, height:32 }, 2, this.spriteProvider);
+      this.multiplayerSettingsProvider = new MultiplayerSettingsProvider(this._doc);
 
       this.projectSettings = new ProjectSettingsProvider(this._doc);
 

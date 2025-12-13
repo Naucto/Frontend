@@ -20,6 +20,8 @@ export class MultiplayerDirectorySettings {
   }
 }
 
+type MultiplayerSettingsProviderVisitor = (settings: MultiplayerDirectorySettings, path: string) => void;
+
 export class MultiplayerSettingsProvider {
   private _directory: Y.Map<MultiplayerDirectorySettings>;
 
@@ -52,5 +54,9 @@ export class MultiplayerSettingsProvider {
 
   public deleteDirectorySettings(path: string): void {
     this._directory.delete(path);
+  }
+
+  public visitDirectorySettings(visitor: MultiplayerSettingsProviderVisitor): void {
+    this._directory.forEach(visitor);
   }
 }

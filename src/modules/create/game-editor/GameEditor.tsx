@@ -1,24 +1,27 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Tab, Tabs } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { Tabs, Tab, Box, Dialog, DialogTitle, DialogContent, DialogActions, Button, Alert } from "@mui/material";
+import { Beforeunload } from "react-beforeunload";
+
+import { WorkSessionsService } from "@api";
 import CodeEditor from "@modules/create/game-editor/editors/CodeEditor";
-import { EditorProps, EditorTab } from "./editors/EditorType";
-import { SoundEditor } from "./editors/SoundEditor";
+import GameEditorConsole from "@modules/create/game-editor/editors/GameEditorConsole";
+import { MapEditor } from "@modules/create/game-editor/editors/MapEditor/MapEditor";
+import ProjectSettingsEditor from "@modules/create/game-editor/editors/ProjectSettingsEditor";
+import { SoundEditor } from "@modules/create/game-editor/editors/SoundEditor";
+import { MultiplayerSettingsEditor } from "@modules/create/game-editor/editors/multiplayer/MultiplayerSettingsEditor.tsx";
+import { SpriteEditor } from "@modules/editor/SpriteEditor/SpriteEditor";
+import { ProjectProvider, ProviderEventType } from "@providers/ProjectProvider";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
 import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
-import { WorkSessionsService } from "@api";
-import { Beforeunload } from "react-beforeunload";
-import { SpriteEditor } from "@modules/editor/SpriteEditor/SpriteEditor";
-import { MapEditor } from "@modules/create/game-editor/editors/MapEditor/MapEditor";
-import GameEditorConsole from "@modules/create/game-editor/editors/GameEditorConsole";
-import ProjectIcon from "src/assets/project.svg?react";
 import CodeIcon from "src/assets/code.svg?react";
-import SpriteIcon from "src/assets/pen.svg?react";
-import SoundIcon from "src/assets/music.svg?react";
 import MapIcon from "src/assets/map.svg?react";
-import { ProjectProvider, ProviderEventType } from "@providers/ProjectProvider";
-import ProjectSettingsEditor from "@modules/create/game-editor/editors/ProjectSettingsEditor";
+import MultiplayerIcon from "src/assets/user.svg?react";
+import ProjectIcon from "src/assets/project.svg?react";
+import SoundIcon from "src/assets/music.svg?react";
+import SpriteIcon from "src/assets/pen.svg?react";
+import { EditorProps, EditorTab } from "./editors/EditorType";
 
 const GameEditorContainer = styled("div")(({ theme }) => ({
   height: "100%",
@@ -119,6 +122,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
     { label: "sprite", component: SpriteEditor, icon: <SpriteIcon/> },
     { label: "map", component: MapEditor, icon: <MapIcon/> },
     { label: "sound", component: SoundEditor, icon: <SoundIcon/> },
+    { label: "multiplayer", component: MultiplayerSettingsEditor, icon: <MultiplayerIcon/> }
   ], []);
 
   const suppressBeforeUnloadRef = React.useRef(false);
