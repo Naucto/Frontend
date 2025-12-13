@@ -79,7 +79,7 @@ export function useSpriteRenderer(
     const p = pipelineRef.current;
     if (!p) return;
     const gl = p.gl;
-    draw();
+    draw(gl.TRIANGLES);
 
     x0 = Math.floor(x0);
     y0 = Math.floor(y0);
@@ -108,7 +108,7 @@ export function useSpriteRenderer(
     const p = pipelineRef.current;
     if (!p) return;
     const gl = p.gl;
-    draw();
+    draw(gl.TRIANGLES);
     x = Math.floor(x);
     y = Math.floor(y);
     width = Math.floor(width);
@@ -145,7 +145,7 @@ export function useSpriteRenderer(
     const p = pipelineRef.current;
     if (!p) return;
     const gl = p.gl;
-    draw();
+    draw(gl.TRIANGLES);
 
     x = Math.floor(x);
     y = Math.floor(y);
@@ -175,7 +175,7 @@ export function useSpriteRenderer(
     gl.uniform1i(gl.getUniformLocation(p.program, "u_texture"), 0);
   }
 
-  function draw(type: number = 0x004): void {
+  function draw(type: number): void {
     const p = pipelineRef.current;
     if (!p) return;
 
