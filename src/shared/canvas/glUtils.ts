@@ -25,7 +25,7 @@ export function getRGBArraysFromPalette(palette: string[], zeroAlphaIndex = 0): 
 }
 
 export function createGLContext(canvas: HTMLCanvasElement): WebGL2RenderingContext {
-  const gl = canvas.getContext("webgl2");
+  const gl = canvas.getContext("webgl2", { antialias: false });
   if (!gl) {
     throw new WebGlError("WebGL not supported");
   }
