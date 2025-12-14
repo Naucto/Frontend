@@ -7,7 +7,8 @@ import * as urls from "@shared/route";
 import { ProjectResponseDto } from "@api";
 
 type ProjectCardProps = {
-  project: ProjectResponseDto
+  project: ProjectResponseDto;
+  isPlayable?: boolean;
 }
 
 const Text = styled(Typography)(({ theme }) => ({
@@ -38,10 +39,14 @@ const ProjectFooter = styled("div")(({ theme }) => ({
   borderBottomRightRadius: theme.custom.rounded.md,
 }));
 
-const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
+const ProjectCard: React.FC<ProjectCardProps> = ({ project, isPlayable = false }) => {
   const navigate = useNavigate();
   const redirectToProject = (): void => {
-    navigate(urls.toProject(project.id));
+    if (isPlayable) {
+      navigate(urls.toProjectView(project.id));
+    } else {
+      navigate(urls.toProject(project.id));
+    };
   };
 
   let thumbnailUrl = "";
