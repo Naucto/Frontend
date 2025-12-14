@@ -404,7 +404,7 @@ export class ProjectsService {
     public static projectControllerGetVersion(
         id: string,
         version: string,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<Blob> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/projects/{id}/versions/{version}',
@@ -415,6 +415,7 @@ export class ProjectsService {
             errors: {
                 403: `Forbidden`,
             },
+            responseType: "blob"
         });
     }
     /**
@@ -427,7 +428,7 @@ export class ProjectsService {
     public static projectControllerGetCheckpoint(
         id: string,
         checkpoint: string,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<Blob> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/projects/{id}/checkpoints/{checkpoint}',
@@ -438,6 +439,7 @@ export class ProjectsService {
             errors: {
                 403: `Forbidden`,
             },
+            responseType: "blob"
         });
     }
 }

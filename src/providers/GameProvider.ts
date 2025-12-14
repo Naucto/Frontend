@@ -3,7 +3,6 @@ import { ApiError, ProjectsService } from "@api";
 import { decodeUpdate } from "@utils/YSerialize.ts";
 import { SpriteProvider } from "./editors/SpriteProvider.ts";
 import { MapProvider } from "./editors/MapProvider.ts";
-import { AwarenessProvider  } from "./editors/AwarenessProvider.ts";
 import { ProjectSettingsProvider } from "./editors/ProjectSettingsProvider.ts";
 
 export enum ProviderEventType {
@@ -20,7 +19,6 @@ export class GameProvider implements Destroyable {
   public code!: string;
   public sprite!: SpriteProvider;
   public map!: MapProvider;
-  public awareness!: AwarenessProvider;
   public projectSettings!: ProjectSettingsProvider;
   public projectId: number;
 
