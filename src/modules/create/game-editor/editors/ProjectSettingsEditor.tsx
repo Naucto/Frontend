@@ -30,11 +30,19 @@ const StatusContainer = styled(Box)(({ theme }) => ({
   marginBottom: theme.spacing(2),
 }));
 
+export type ProjectSave = {
+  name: string,
+  date: Date,
+}
+
 const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
   const [settings, setSettings] = useState<ProjectSettings>({ name: "", shortDesc: "", longDesc: "" });
   const [collaborators, setCollaborators] = useState<UserBasicInfoDto[]>([]);
   const [newCollaborator, setNewCollaborator] = useState("");
   const [isPublished, setIsPublished] = useState(false);
+  const [checkpoints, setCheckpoints] = useState<ProjectSave[]>([]);
+  const [saves, setSaves] = useState<ProjectSave[]>([]);
+  const [newCheckpointName, setNewCheckpointName] = useState("");
 
   useEffect(() => {
     const fetchProjectDetails = async (): Promise<void> => {
@@ -65,6 +73,33 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
       }
     };
   }, [project.projectId, project.projectSettings]);
+
+  useEffect(() => {
+    const fetchCheckpointsAndSaves = async (): Promise<void> => {
+      try {
+        const checkpointResponse = await ProjectsService.projectControllerGetCheckpoints(String(project.projectId));
+        const versionResponse = await ProjectsService.projectControllerGetVersions(String(project.projectId));
+
+        const fetchedCheckpoints = checkpointResponse.checkpoints.map((checkpoint: { name: string; date: string }) => ({
+          name: checkpoint.name,
+          date: new Date(checkpoint.date),
+        }));
+
+        const fetchedSaves = versionResponse.versions.map((version: { name: string; date: string }) => ({
+          name: version.name,
+          date: new Date(version.date),
+        }));
+
+        setCheckpoints(fetchedCheckpoints);
+        setSaves(fetchedSaves);
+      } catch (err) {
+        alert("Error fetching checkpoints or saves: " +
+          (err instanceof ApiError ? err.message : String(err)));
+      }
+    };
+
+    fetchCheckpointsAndSaves();
+  }, [project.projectId]);
 
   const handleAddCollaborator = async () : Promise<void> => {
     if (!newCollaborator.trim()) return;
@@ -104,6 +139,47 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
       setIsPublished(!isPublished);
     } catch (err) {
       alert("Error updating publish status: " +
+        (err instanceof ApiError ? err.message : String(err)));
+    }
+  };
+
+  const handleCreateCheckpoint = async (): Promise<void> => {
+    if (!newCheckpointName.trim()) {
+      alert("Checkpoint name cannot be empty.");
+      return;
+    }
+    try {
+      await project.saveContent();
+      await project.createCheckpoint(newCheckpointName);
+      const checkpointResponse = await ProjectsService.projectControllerGetCheckpoints(String(project.projectId));
+      const updatedCheckpoints = checkpointResponse.checkpoints.map((checkpoint: { name: string; date: string }) => ({
+        name: checkpoint.name,
+        date: new Date(checkpoint.date),
+      }));
+      setCheckpoints(updatedCheckpoints);
+      setNewCheckpointName("");
+    } catch (err) {
+      alert("Error creating checkpoint: " +
+        (err instanceof ApiError ? err.message : String(err)));
+    }
+  };
+
+  const handleLoadCheckpoint = async (checkpointName: string): Promise<void> => {
+    try {
+      const file = await ProjectsService.projectControllerGetCheckpoint(String(project.projectId), checkpointName);
+      await project.loadFromFile(file);
+    } catch (err) {
+      alert("Error loading checkpoint: " +
+        (err instanceof ApiError ? err.message : String(err)));
+    }
+  };
+
+  const handleLoadSave = async (saveName: string): Promise<void> => {
+    try {
+      const file = await ProjectsService.projectControllerGetVersion(String(project.projectId), saveName);
+      await project.loadFromFile(file);
+    } catch (err) {
+      alert("Error loading save: " +
         (err instanceof ApiError ? err.message : String(err)));
     }
   };
@@ -182,6 +258,76 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
             Add
           </Button>
         </Box>
+      </Section>
+      <Divider />
+      <Section>
+        <Typography variant="h6" gutterBottom>Checkpoints</Typography>
+        <CollaboratorList>
+          {checkpoints.map((checkpoint) => (
+            <ListItem key={checkpoint.name} secondaryAction={
+              <ActionButton
+                edge="end"
+                aria-label="load"
+                size="small"
+                sx={{
+                  fontFamily: "inherit",
+                  fontSize: "0.875rem",
+                }}
+                onClick={() => handleLoadCheckpoint(checkpoint.name)}
+              >
+                Load
+              </ActionButton>
+            }>
+              <ListItemText primary={checkpoint.name} secondary={checkpoint.date.toLocaleString()} />
+            </ListItem>
+          ))}
+        </CollaboratorList>
+        <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
+          <FullWidthTextField
+            label="Create new checkpoint"
+            value={newCheckpointName}
+            onChange={(e) => setNewCheckpointName(e.target.value)}
+            size="small"
+          />
+          <Button
+            variant="contained"
+            onClick={handleCreateCheckpoint}
+            sx={{
+              ml: 2,
+              backgroundColor: "red.500",
+              color: "white",
+              "&:hover": {
+                backgroundColor: "red.600",
+              },
+            }}
+          >
+            Create
+          </Button>
+        </Box>
+      </Section>
+      <Divider />
+      <Section>
+        <Typography variant="h6" gutterBottom>Saves</Typography>
+        <CollaboratorList>
+          {saves.map((save) => (
+            <ListItem key={save.name} secondaryAction={
+              <ActionButton
+                edge="end"
+                aria-label="load"
+                size="small"
+                sx={{
+                  fontFamily: "inherit",
+                  fontSize: "0.875rem",
+                }}
+                onClick={() => handleLoadSave(save.name)}
+              >
+                Load
+              </ActionButton>
+            }>
+              <ListItemText primary={save.name} secondary={save.date.toLocaleString()} />
+            </ListItem>
+          ))}
+        </CollaboratorList>
       </Section>
     </EditorContainer>
   );

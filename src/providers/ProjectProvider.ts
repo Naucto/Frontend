@@ -92,6 +92,17 @@ export class ProjectProvider implements Destroyable {
     this._doc.destroy();
   }
 
+  public async loadFromFile(file: Blob): Promise<void> {
+    try {
+      const um = new Y.UndoManager(Array.from(this._doc.share.keys()).map(key => this._doc.get(key)), { captureTimeout: 0 });
+      um.clear();
+      um.destroy();
+      await decodeUpdate(this._doc, file);
+    } catch (e) {
+      console.error("Failed to load from file:", e);
+    }
+  }
+
   public async saveContent(): Promise<void> {
     if (!this.isHost)
       return;
@@ -114,6 +125,20 @@ export class ProjectProvider implements Destroyable {
       { file: new Blob([data], { type: "application/octet-stream" }) }
     ).catch((error) => {
       console.error("Failed to save content:", error);
+    });
+  }
+
+  public async createCheckpoint(name: string): Promise<void> {
+    if (!this.isHost) return;
+
+    const data: Uint8Array = encodeUpdate(this._doc);
+
+    ProjectsService.projectControllerSaveCheckpoint(
+      String(this.projectId),
+      name,
+      { file: new Blob([data], { type: "application/octet-stream" }) }
+    ).catch((error: unknown) => {
+      console.error("Failed to save checkpoint:", error);
     });
   }
 
