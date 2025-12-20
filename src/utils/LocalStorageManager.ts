@@ -58,4 +58,9 @@ export class LocalStorageManager {
       localStorage.removeItem("project_id");
     }
   }
+
+  static resetUser(): void {
+    LocalStorageManager.setUser(undefined);
+    LocalStorageManager.setToken(undefined);
+  }
 }

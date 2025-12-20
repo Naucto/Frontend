@@ -12,7 +12,8 @@ import type { ApiResult } from './ApiResult';
 import { CancelablePromise } from './CancelablePromise';
 import type { OnCancel } from './CancelablePromise';
 import type { OpenAPIConfig } from './OpenAPI';
-
+import { LocalStorageManager } from '@utils/LocalStorageManager';
+import * as routes from '@shared/route';
 export const isDefined = <T>(value: T | null | undefined): value is Exclude<T, null | undefined> => {
     return value !== undefined && value !== null;
 };
@@ -332,6 +333,10 @@ export const request = <T>(config: OpenAPIConfig, options: ApiRequestOptions, ax
                     statusText: response.statusText,
                     body: responseHeader ?? responseBody,
                 };
+                if (result.status === 401) {
+                    LocalStorageManager.resetUser();
+                    window.location.href = routes.toHub();
+                }
 
                 catchErrorCodes(options, result);
 

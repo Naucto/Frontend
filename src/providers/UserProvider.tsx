@@ -15,7 +15,11 @@ interface UserContextType {
 const userContext = createContext<UserContextType | null>(null);
 
 export const UserProvider = ({ children }: { children: React.ReactNode }): React.ReactElement => {
-  const { loading, value: profile } = useAsync(UsersService.userControllerGetProfile, []);
+  const token = LocalStorageManager.getToken();
+  const { loading, value: profile } = useAsync(
+    () => token ? UsersService.userControllerGetProfile() : Promise.resolve(undefined),
+    [token]
+  );
   const [user, setUser] = useState<UserProfileResponseDto | undefined>(undefined);
 
   useEffect(() => {
@@ -32,8 +36,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }): React
   const logIn = (userData: User): void => LocalStorageManager.setUser(userData);
 
   const logOut = (): void => {
-    LocalStorageManager.setUser(undefined);
-    LocalStorageManager.setToken(undefined);
+    LocalStorageManager.resetUser();
     setUser(undefined);
   };
 
