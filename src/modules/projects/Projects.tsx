@@ -4,6 +4,9 @@ import ProjectCard from "./components/ProjectCard";
 import { ProjectResponseDto, ProjectsService } from "@api";
 import CreateProjectCard from "@modules/projects/components/CreateProjectCard";
 import { useAsync } from "src/hooks/useAsync";
+import { useUser } from "@providers/UserProvider";
+import { useNavigate } from "react-router-dom";
+import * as urls from "@shared/route";
 
 const PageContainer = styled("div")(({ theme }) => ({
   margin: theme.spacing(4),
@@ -24,6 +27,8 @@ const ProjectCardsContainer = styled("div")(({ theme }) => ({
 }));
 
 const Projects: React.FC = () => {
+  const user = useUser();
+  const navigate = useNavigate();
 
   const [projects, setProjects] = useState<ProjectResponseDto[]>([]);
 
@@ -33,10 +38,14 @@ const Projects: React.FC = () => {
   );
 
   useEffect(() => {
+    if (!user.userId) {
+      navigate(urls.toHub());
+      return;
+    }
     if (fetchedProjects) {
       setProjects(fetchedProjects);
     }
-  }, [fetchedProjects]);
+  }, [fetchedProjects, user.userId]);
 
   return (
     <PageContainer>
