@@ -62,7 +62,7 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
     return bool ? "Sign up" : "Login";
   }, [isSignedUp]);
 
-  const { userId, userName, setUserId, setUserName } = useUser();
+  const { setUser } = useUser();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { register, handleSubmit, reset } = useForm<CreateUserDto | LoginDto>({
     defaultValues: isSignedUp
@@ -99,8 +99,7 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
         email: userRes.email,
         name: userRes.username,
       });
-      setUserId(userRes.id);
-      setUserName(userRes.username);
+      setUser(userRes);
       reset();
       if (onClose) {
         onClose();
@@ -108,7 +107,7 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
     } catch (error) {
       setErrorMessage((error as ErrorWithBody).body.message);
     }
-  }, [isSignedUp, reset, onClose, setUserId, setUserName, userId, userName]);
+  }, [isSignedUp, reset, onClose, setUser]);
 
   return (
     <CustomDialog isOpen={isOpen} setIsOpen={setIsOpen} hideSubmitButton>

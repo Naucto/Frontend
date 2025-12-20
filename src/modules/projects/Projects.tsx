@@ -38,14 +38,14 @@ const Projects: React.FC = () => {
   );
 
   useEffect(() => {
-    if (!user.userId) {
+    if (!user.user) {
       navigate(urls.toHub());
       return;
     }
     if (fetchedProjects) {
       setProjects(fetchedProjects);
     }
-  }, [fetchedProjects, user.userId]);
+  }, [fetchedProjects, user.user]);
 
   return (
     <PageContainer>

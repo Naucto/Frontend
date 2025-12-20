@@ -37,12 +37,12 @@ const Right = styled("div")(({ theme }) => ({
 }));
 
 const NavBar: React.FC = () => {
-  const { userId } = useUser();
+  const { user } = useUser();
   return (
     <Nav className="navbar">
       <Left>
         <img className="navbar-logo" src={muiTheme.custom.logo.primary} alt="Logo" />
-        {userId && <ImportantNavElem to="/projects" data-cy="nav-projects">
+        {user && <ImportantNavElem to="/projects" data-cy="nav-projects">
           Projects
         </ImportantNavElem>}
         <NavElem to="/hub">Home</NavElem>
@@ -53,7 +53,7 @@ const NavBar: React.FC = () => {
 
       <Right>
         <NavElem to="/friends">Friends</NavElem>
-        {userId ? <NavProfile /> : <Login />}
+        {user ? <NavProfile /> : <Login />}
       </Right>
     </Nav >
   );
