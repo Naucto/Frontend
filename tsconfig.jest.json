@@ -2,7 +2,7 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "types": ["jest", "node"],
-    "typeRoots": ["./node_modules/@types"],
+    "typeRoots": ["./node_modules/@types", "./src/types"],
     "module": "NodeNext",
     "moduleResolution": "NodeNext"
   },
