@@ -50,6 +50,8 @@
   "devDependencies": {
     "@eslint/js": "^9.24.0",
     "@stylistic/eslint-plugin": "^5.2.3",
+    "@swc/core": "^1.15.7",
+    "@swc/jest": "^0.2.39",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "@typescript-eslint/eslint-plugin": "^8.40.0",
