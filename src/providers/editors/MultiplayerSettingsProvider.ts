@@ -22,24 +22,33 @@ export class MultiplayerDirectorySettings {
 
 type MultiplayerSettingsProviderVisitor = (settings: MultiplayerDirectorySettings, path: string) => void;
 
+export class MultiplayerStateError extends Error {
+  type = "MultiplayerStateError";
+
+  constructor(message: string) {
+    super(message);
+  }
+}
+
 export class MultiplayerSettingsProvider {
-  private _directory: Y.Map<MultiplayerDirectorySettings>;
+  #yDirectory: Y.Map<MultiplayerDirectorySettings>;
 
   constructor(doc: Y.Doc) {
-    this._directory = doc.getMap<MultiplayerDirectorySettings>("multiplayerDirectory");
+    this.#yDirectory = doc.getMap<MultiplayerDirectorySettings>("multiplayerDirectory");
   }
 
   public getDirectorySettings(path: string): Maybe<MultiplayerDirectorySettings> {
-    if (path.length === 0)
-      return undefined;
+    // Root is an empty string
+    if (path.length === 0 || path.trim().length === 0)
+      path = "";
 
     const components = path.split(".");
 
     while (components.length > 0) {
       const pathToTest = components.join(".");
 
-      if (this._directory.has(pathToTest)) {
-        return this._directory.get(pathToTest);
+      if (this.#yDirectory.has(pathToTest)) {
+        return this.#yDirectory.get(pathToTest);
       }
 
       components.pop();
@@ -48,15 +57,36 @@ export class MultiplayerSettingsProvider {
     return undefined;
   }
 
+  public getRootDirectorySettings() : MultiplayerDirectorySettings {
+    const rootSettings = this.#yDirectory.get("");
+
+    if (!rootSettings) {
+      throw new MultiplayerStateError("Unexpectedly missing root multiplayer directory settings");
+    }
+
+    return rootSettings;
+  }
+
   public setDirectorySettings(path: string, settings: MultiplayerDirectorySettings): void {
-    this._directory.set(path, settings);
+    this.#yDirectory.set(path, settings);
   }
 
   public deleteDirectorySettings(path: string): void {
-    this._directory.delete(path);
+    this.#yDirectory.delete(path);
   }
 
   public visitDirectorySettings(visitor: MultiplayerSettingsProviderVisitor): void {
-    this._directory.forEach(visitor);
+    this.#yDirectory.forEach(visitor);
+  }
+
+  public visitChildDirectorySettings(parentPath: string, visitor: MultiplayerSettingsProviderVisitor): void {
+    const childVisitor: MultiplayerSettingsProviderVisitor = (settings, path) => {
+      if (!path.startsWith(parentPath) || path === parentPath)
+        return;
+
+      visitor(settings, path);
+    };
+
+    this.visitDirectorySettings(childVisitor);
   }
 }
