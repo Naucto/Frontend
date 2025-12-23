@@ -16,3 +16,4 @@ type ContentListener = (content: number[]) => void;
 interface Destroyable {
   destroy(): void;
 }
+
