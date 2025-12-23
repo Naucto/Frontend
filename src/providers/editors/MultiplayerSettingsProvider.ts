@@ -81,16 +81,18 @@ export class MultiplayerSettingsProvider {
     this.#yDirectory.delete(path);
   }
 
-  public accessDirectorySettings(path: string, accessor: MultiplayerSettingsProviderAccessor<void>): void {
+  public accessDirectorySettings<T>(path: string, accessor: MultiplayerSettingsProviderAccessor<T>): Maybe<T> {
     let settings = this.getDirectorySettings(path);
 
     if (!settings) {
       settings = new MultiplayerDirectorySettings();
     }
 
-    accessor(settings, path);
+    const result = accessor(settings, path);
 
     this.setDirectorySettings(path, settings);
+
+    return result;
   }
 
   public visitAllDirectorySettings<T>(accessor: MultiplayerSettingsProviderAccessor<T>): T[] {
