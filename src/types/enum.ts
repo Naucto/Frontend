@@ -1,5 +1,8 @@
-export function enumFromName<E extends Record<string, string | number>>(
+export type EnumLike = { [k: string]: string | number };
 
-  enum_: E, name: string): enum_ is E & Record<typeof name, E[keyof E]> {
-  return name in enum_;
+export function enumFromName<E extends EnumLike>(
+  enumClass: E,
+  name: keyof E | string
+): E[keyof E] {
+  return enumClass[name];
 }
