@@ -45,7 +45,7 @@ const Projects: React.FC = () => {
     if (fetchedProjects) {
       setProjects(fetchedProjects);
     }
-  }, [fetchedProjects, user.user]);
+  }, [fetchedProjects, user.user, navigate]);
 
   return (
     <PageContainer>
