@@ -7,6 +7,7 @@ import { muiTheme } from "@theme/MUITheme";
 import Projects from "@modules/projects/Projects";
 import Project from "@modules/project/Project";
 import { CustomSnackBarProvider } from "@shared/snackBar/CustomSnackBarProvider";
+import Profile from "@modules/profile/Profile";
 
 const App: React.FC = () => {
   return (
@@ -20,6 +21,7 @@ const App: React.FC = () => {
             <Route path="/hub" element={<Hub />} />
             <Route path='/projects' element={<Projects />} />
             <Route path="/projects/:projectId" element={<Project />} />
+            <Route path="/profile/:profileId" element={<Profile />} />
           </Routes>
         </BrowserRouter>
       </CustomSnackBarProvider>
