@@ -333,7 +333,7 @@ export const request = <T>(config: OpenAPIConfig, options: ApiRequestOptions, ax
                     statusText: response.statusText,
                     body: responseHeader ?? responseBody,
                 };
-                if (result.status === 401) {
+                if (result.status === 401 && typeof response.headers?.['www-authenticate'] === 'string') {
                     // TODO: ask for refresh token then logout if not provided
                     LocalStorageManager.resetUser();
                     window.location.href = routes.toHub();
