@@ -28,8 +28,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }): React
     }
     if (profile) {
       setUser(profile);
-    } else {
-      logOut();
     }
   }, [loading, profile]);
 
