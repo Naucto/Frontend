@@ -6,7 +6,7 @@ import React, { useState } from "react";
 import { useUser } from "@providers/UserProvider";
 import { muiTheme } from "@theme/MUITheme";
 import { Login } from "@shared/navbar/login/Login";
-
+import * as Urls from "@shared/route";
 const Nav = styled("nav")(({ theme }) => ({
   display: "grid",
   padding: 0,
@@ -46,7 +46,7 @@ const NavBar: React.FC = () => {
         {<ImportantNavElem to={user ? "/projects" : "#"} data-cy="nav-projects" onClick={user ? undefined : () => setForceShowAuthOverlay(true)}>
           Projects
         </ImportantNavElem>}
-        <NavElem to="/hub">Home</NavElem>
+        <NavElem to={Urls.toHub()}>Home</NavElem>
         <NavElem to="/help">Help</NavElem>
       </Left>
 
