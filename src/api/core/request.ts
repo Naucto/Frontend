@@ -337,6 +337,7 @@ export const request = <T>(config: OpenAPIConfig, options: ApiRequestOptions, ax
                     // TODO: ask for refresh token then logout if not provided
                     LocalStorageManager.resetUser();
                     window.location.href = routes.toHub();
+                    return;
                 }
 
                 catchErrorCodes(options, result);
