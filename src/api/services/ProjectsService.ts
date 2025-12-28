@@ -48,12 +48,12 @@ export class ProjectsService {
     /**
      * Retrieve a single project
      * @param id Numeric ID of the project to retrieve
-     * @returns ProjectWithRelationsResponseDto Project object
+     * @returns ProjectResponseDto Project object
      * @throws ApiError
      */
     public static projectControllerFindOne(
         id: number,
-    ): CancelablePromise<ProjectWithRelationsResponseDto> {
+    ): CancelablePromise<ProjectResponseDto> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/projects/{id}',
@@ -169,15 +169,18 @@ export class ProjectsService {
         });
     }
     /**
-     * Save project's content
+     * Save project's content (Upload)
      * @param id
      * @param formData
      * @returns any File uploaded successfully
      * @throws ApiError
      */
     public static projectControllerSaveProjectContent(
-        id: string,
+        id: number,
         formData: {
+            /**
+             * Project file (zip, pdf, png, etc.)
+             */
             file?: Blob;
         },
     ): CancelablePromise<any> {
@@ -191,18 +194,19 @@ export class ProjectsService {
             mediaType: 'multipart/form-data',
             errors: {
                 403: `Forbidden`,
+                422: `File validation failed`,
             },
         });
     }
     /**
-     * Fetch project's content
+     * Fetch project's content (Download)
      * @param id
-     * @returns binary File fetched successfully
+     * @returns any File stream
      * @throws ApiError
      */
     public static projectControllerFetchProjectContent(
-        id: string,
-    ): CancelablePromise<Blob> {
+        id: number,
+    ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/projects/{id}/fetchContent',
@@ -210,10 +214,8 @@ export class ProjectsService {
                 'id': id,
             },
             errors: {
-                403: `Forbidden`,
-                404: `File not found`,
+                404: `File not found (DB or S3)`,
             },
-            responseType: "blob"
         });
     }
 }
