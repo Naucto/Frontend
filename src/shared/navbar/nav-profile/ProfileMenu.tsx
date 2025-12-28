@@ -6,6 +6,8 @@ import UserIcon from "@assets/user.svg?react";
 import { ProfileMenuItem } from "@shared/navbar/nav-profile/ProfileMenuItem";
 import { useUser } from "@providers/UserProvider";
 import { useNavigate } from "react-router-dom";
+import { LocalStorageManager } from "@utils/LocalStorageManager";
+import * as urls from "@shared/route";
 
 type ProfileMenuProps = {
   anchorEl: undefined | HTMLElement;
@@ -37,13 +39,18 @@ export const ProfileMenu: FC<ProfileMenuProps> = ({ anchorEl, open, onClose }) =
     navigate(0);
   }, [logOut]);
 
+  const navigateToProfile = useCallback(() => {
+    navigate(urls.toProfile(LocalStorageManager.getUserId()));
+    onClose();
+  }, [navigate, onClose]);
+
   return (
     <StyledMenu
       anchorEl={anchorEl}
       open={open}
       onClose={onClose}
     >
-      <ProfileMenuItem icon={<UserIcon />} text="Profile" />
+      <ProfileMenuItem icon={<UserIcon />} text="Profile" onClick={navigateToProfile} />
       <ProfileMenuItem icon={<DisconnectIcon />} text="Logout" onClick={handleLogOut} />
     </StyledMenu>
   );
