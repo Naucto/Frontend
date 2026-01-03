@@ -79,7 +79,7 @@ export function useSpriteRenderer(
     const p = pipelineRef.current;
     if (!p) return;
     const gl = p.gl;
-    draw(gl.TRIANGLES);
+    drawForm(gl.TRIANGLES);
 
     x0 = Math.floor(x0);
     y0 = Math.floor(y0);
@@ -99,7 +99,7 @@ export function useSpriteRenderer(
     );
     gl.uniform1i(gl.getUniformLocation(p.program, "u_texture"), 1);
     gl.disable(gl.BLEND);
-    draw(gl.LINES);
+    drawForm(gl.LINES);
     gl.enable(gl.BLEND);
     gl.uniform1i(gl.getUniformLocation(p.program, "u_texture"), 0);
   }
@@ -108,7 +108,7 @@ export function useSpriteRenderer(
     const p = pipelineRef.current;
     if (!p) return;
     const gl = p.gl;
-    draw(gl.TRIANGLES);
+    drawForm(gl.TRIANGLES);
     x = Math.floor(x);
     y = Math.floor(y);
     width = Math.floor(width);
@@ -136,7 +136,7 @@ export function useSpriteRenderer(
     );
     gl.uniform1i(gl.getUniformLocation(p.program, "u_texture"), 3);
     gl.disable(gl.BLEND);
-    draw(gl.LINE_LOOP);
+    drawForm(gl.LINE_LOOP);
     gl.enable(gl.BLEND);
     gl.uniform1i(gl.getUniformLocation(p.program, "u_texture"), 0);
   }
@@ -145,7 +145,7 @@ export function useSpriteRenderer(
     const p = pipelineRef.current;
     if (!p) return;
     const gl = p.gl;
-    draw(gl.TRIANGLES);
+    drawForm(gl.TRIANGLES);
 
     x = Math.floor(x);
     y = Math.floor(y);
@@ -169,13 +169,19 @@ export function useSpriteRenderer(
     gl.uniform1i(gl.getUniformLocation(p.program, "u_texture"), 3);
     gl.disable(gl.BLEND);
 
-    draw(gl.TRIANGLES);
+    drawForm(gl.TRIANGLES);
 
     gl.enable(gl.BLEND);
     gl.uniform1i(gl.getUniformLocation(p.program, "u_texture"), 0);
   }
 
-  function draw(type: number): void {
+  function draw(): void {
+    const p = pipelineRef.current;
+    if (!p) return;
+    drawForm(p.gl.TRIANGLES);
+  }
+
+  function drawForm(type: number): void {
     const p = pipelineRef.current;
     if (!p) return;
 
@@ -208,7 +214,7 @@ export function useSpriteRenderer(
     if (!p) return;
 
     if (batchedUVs.length > 0) {
-      draw(p.gl.TRIANGLES);
+      draw();
     }
 
     const gl = p.gl;
@@ -231,7 +237,7 @@ export function useSpriteRenderer(
 
     batchedVertices.push(...vertices);
     batchedUVs.push(...uv);
-    draw(p.gl.TRIANGLES);
+    draw();
     gl.uniform1i(gl.getUniformLocation(program, "u_texture"), 0);
   }
 
