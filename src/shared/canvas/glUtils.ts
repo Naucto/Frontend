@@ -1,21 +1,5 @@
-import { SpriteSheet } from "src/types/SpriteSheetType";
 import { ColorFormatError } from "src/errors/ColorFormatError";
-import { SpriteSheetError } from "src/errors/SpriteSheetError";
 import WebGlError from "src/errors/WebGlError";
-
-export function convertSpritesheetToIndexArray(spriteSheet: SpriteSheet): Uint8Array {
-  const spriteSize = spriteSheet.size.width * spriteSheet.size.height;
-  const array = new Uint8Array(spriteSize);
-  if (spriteSheet.stride <= 0) {
-    throw new SpriteSheetError("Stride must be greater than 0");
-  }
-  for (let i = 0; i < spriteSheet.spriteSheet.length; i += spriteSheet.stride) {
-    const pixelHexa = spriteSheet.spriteSheet.slice(i, i + spriteSheet.stride);
-    const pixel = parseInt(pixelHexa, 16);
-    array[i / spriteSheet.stride] = (pixel);
-  }
-  return array;
-}
 
 export function hexToRGBArray(hex: string, alpha = 255): number[] {
   if (!/^#[0-9a-fA-F]{6}$/.test(hex)) {
@@ -41,7 +25,7 @@ export function getRGBArraysFromPalette(palette: string[], zeroAlphaIndex = 0): 
 }
 
 export function createGLContext(canvas: HTMLCanvasElement): WebGL2RenderingContext {
-  const gl = canvas.getContext("webgl2");
+  const gl = canvas.getContext("webgl2", { antialias: false });
   if (!gl) {
     throw new WebGlError("WebGL not supported");
   }

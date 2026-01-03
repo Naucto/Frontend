@@ -81,6 +81,10 @@ class LuaEnvironmentManager {
     lua.setGlobal("set_col", this._setCol.bind(this));
     lua.setGlobal("reset_col", this._resetCol.bind(this));
     lua.setGlobal("map", this._map.bind(this));
+    lua.setGlobal("camera", this._camera.bind(this));
+    lua.setGlobal("line", this._line.bind(this));
+    lua.setGlobal("rect", this._drawOutlineRect.bind(this));
+    lua.setGlobal("fill_rect", this._drawRect.bind(this));
   }
 
   private _map(x: number, y: number): void {
@@ -89,6 +93,21 @@ class LuaEnvironmentManager {
 
   private _sprite(n: number, x: number, y: number, w: number, h: number): void {
     this._rendererHandle.queueSpriteDraw(n, x, y, w, h);
+  }
+
+  private _camera(x: number, y: number): void {
+    this._rendererHandle.moveCamera(x, y);
+  }
+  private _line(col: number, x0: number, y0: number, x1: number, y1: number): void {
+    this._rendererHandle.drawLine(col, x0, y0, x1, y1);
+  }
+
+  private _drawOutlineRect(col: number, x: number, y: number, width: number, height: number): void {
+    this._rendererHandle.drawOutlineRect(col, x, y, width, height);
+  }
+
+  private _drawRect(col: number, x: number, y: number, width: number, height: number): void {
+    this._rendererHandle.drawRect(col, x, y, width, height);
   }
 
   private _clear(n: number): void {

@@ -5,3 +5,10 @@ export type User = {
   token?: string;
   projectId?: number;
 };
+
+export type EngineUser = {
+  clientId: number;
+  userId: number;
+  name: string;
+  color: string;
+};

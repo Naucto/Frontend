@@ -3,7 +3,7 @@ import { NavElem, ImportantNavElem } from "@shared/navbar/NavElem";
 import NavProfile from "@shared/navbar/nav-profile/NavProfile";
 import { SearchBar } from "@shared/navbar/SearchBar";
 import React from "react";
-import { useUser } from "src/providers/UserProvider";
+import { useUser } from "@providers/UserProvider";
 import { muiTheme } from "@theme/MUITheme";
 import { Login } from "@shared/navbar/login/Login";
 
@@ -42,7 +42,9 @@ const NavBar: React.FC = () => {
     <Nav className="navbar">
       <Left>
         <img className="navbar-logo" src={muiTheme.custom.logo.primary} alt="Logo" />
-        <ImportantNavElem to="/projects">Projects</ImportantNavElem>
+        <ImportantNavElem to="/projects" data-cy="nav-projects">
+          Projects
+        </ImportantNavElem>
         <NavElem to="/hub">Home</NavElem>
         <NavElem to="/help">Help</NavElem>
       </Left>

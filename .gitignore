@@ -26,3 +26,4 @@ dist-ssr
 # Sensible informations
 .env
 config.json
+config/providers.json

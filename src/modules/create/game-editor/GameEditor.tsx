@@ -2,27 +2,23 @@ import React, { useEffect, useMemo, useState } from "react";
 import { styled } from "@mui/material/styles";
 import { Tabs, Tab, Box, Dialog, DialogTitle, DialogContent, DialogActions, Button, Alert } from "@mui/material";
 import CodeEditor from "@modules/create/game-editor/editors/CodeEditor";
-import { WebrtcProvider } from "y-webrtc";
-import * as Y from "yjs";
-import config from "config.json";
 import { EditorProps, EditorTab } from "./editors/EditorType";
 import { SoundEditor } from "src/modules/editor/SoundEditor/SoundEditor";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
 import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
-import { ApiError, ProjectsService, WorkSessionsService } from "@api";
+import { WorkSessionsService } from "@api";
 import { Beforeunload } from "react-beforeunload";
 import { SpriteEditor } from "@modules/editor/SpriteEditor/SpriteEditor";
-import { MapEditor } from "@modules/create/game-editor/editors/MapEditor";
-import { LocalStorageManager } from "@utils/LocalStorageManager";
+import { MapEditor } from "@modules/create/game-editor/editors/MapEditor/MapEditor";
 import GameEditorConsole from "@modules/create/game-editor/editors/GameEditorConsole";
+import ProjectIcon from "src/assets/project.svg?react";
 import CodeIcon from "src/assets/code.svg?react";
 import SpriteIcon from "src/assets/pen.svg?react";
 import SoundIcon from "src/assets/music.svg?react";
 import MapIcon from "src/assets/map.svg?react";
-import { generateRandomColor } from "@utils/colorUtils";
-import { useProject } from "src/providers/ProjectProvider";
-import { encodeUpdate, decodeUpdate } from "@utils/YSerialize";
+import { ProjectProvider, ProviderEventType } from "@providers/ProjectProvider";
+import ProjectSettingsEditor from "@modules/create/game-editor/editors/ProjectSettingsEditor";
 
 const GameEditorContainer = styled("div")(({ theme }) => ({
   height: "100%",
@@ -45,10 +41,16 @@ const RightPanel = styled("div")(({ theme }) => ({
   gap: theme.spacing(4),
 }));
 
-const TabContent = styled(Box)({
+const TabContent = styled(Box)(() => ({
   flex: 1,
   overflow: "auto",
-});
+  "&.active": {
+    display: "block",
+  },
+  "&.hidden": {
+    display: "none",
+  },
+}));
 
 const StyledTab = styled(Tab)(({ theme }) => ({
   fontFamily: theme.typography.fontFamily,
@@ -68,94 +70,67 @@ const StyledTab = styled(Tab)(({ theme }) => ({
   },
 }));
 
-type UserState = { name: string; color: string; userId: string };
 const PreviewCanvas = styled(GameCanvas)(({ theme }) => ({
   borderRadius: theme.spacing(1)
 }));
 
-const GameEditor: React.FC = () => {
+const StyledDialog = styled(Dialog)(({ theme }) => ({
+  "& .MuiPaper-root": {
+    backgroundColor: theme.palette.mode === "dark" ? theme.palette.grey[900] : "#0f0f0f",
+    color: theme.palette.getContrastText(theme.palette.grey[900]),
+    border: `1px solid ${theme.palette.grey[800]}`,
+    boxShadow: theme.shadows[8],
+  },
+}));
+
+const StyledDialogTitle = styled(DialogTitle)(() => ({
+  color: "inherit",
+}));
+
+const StyledDialogContent = styled(DialogContent)(({ theme }) => ({
+  backgroundColor: "transparent",
+  borderColor: theme.palette.grey[800],
+}));
+
+const StyledDialogActions = styled(DialogActions)(() => ({
+  backgroundColor: "transparent",
+}));
+
+const StyledAlert = styled(Alert)(({ theme }) => ({
+  backgroundColor: "transparent",
+  color: theme.palette.grey[100],
+  borderColor: theme.palette.grey[700],
+  "& .MuiAlert-icon": {
+    color: theme.palette.grey[400],
+  },
+}));
+
+interface GameEditorProps {
+  project: ProjectProvider
+}
+
+const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => {
   const [activeTab, setActiveTab] = useState(0);
   const [output, setOutput] = useState<string>("");
-  const [roomId, setRoomId] = useState<Maybe<string>>(undefined);
-  const [isHost, setIsHost] = useState<boolean>(false);
-  const [isKicking, setIsKicking] = useState<boolean>(false);
-  const [awarenessLoaded, setAwarenessLoaded] = useState<boolean>(false);
-
-  const [docInitialized, setDocInitialized] = useState(false);
-
-  const { project } = useProject();
 
   const tabs = useMemo(() => [
-    { label: "code", component: CodeEditor, icon: <CodeIcon /> },
-    { label: "sprite", component: SpriteEditor, icon: <SpriteIcon /> },
-    { label: "map", component: MapEditor, icon: <MapIcon /> },
-    { label: "sound", component: SoundEditor, icon: <SoundIcon /> },
+    { label: "project", component: ProjectSettingsEditor, icon: <ProjectIcon/> },
+    { label: "code", component: CodeEditor, icon: <CodeIcon/> },
+    { label: "sprite", component: SpriteEditor, icon: <SpriteIcon/> },
+    { label: "map", component: MapEditor, icon: <MapIcon/> },
+    { label: "sound", component: SoundEditor, icon: <SoundIcon/> },
   ], []);
-
-  const ydoc: Y.Doc = useMemo(() => new Y.Doc(), []);
-
-  useEffect(() => {
-    const joinSession = async (): Promise<void> => {
-      try {
-        const projectId = LocalStorageManager.getProjectId();
-        const session = await WorkSessionsService.workSessionControllerJoin(projectId);
-        setRoomId(session.roomId);
-
-        const host = (await WorkSessionsService.workSessionControllerGetInfo(projectId)).host;
-        const userId = LocalStorageManager.getUserId();
-        const amHost = host === userId;
-        setIsHost(amHost);
-
-        try {
-          const content = await ProjectsService.projectControllerFetchProjectContent(String(projectId));
-          if (content) {
-            await decodeUpdate(ydoc, content);
-          }
-        } catch (error: unknown) {
-          if (error instanceof ApiError && error.status === 404) {
-            // FIXME new project: nothing to load; optionally could seed defaults here
-            console.error("Failed to fetch project content:", error);
-          } else {
-            throw error;
-          }
-        }
-        setDocInitialized(true);
-      } catch (err) {
-        console.error("Failed to join work session:", err); // FIXME : better error handling
-      }
-    };
-    joinSession();
-  }, [ydoc]);
-
-  const provider: Maybe<WebrtcProvider> = useMemo(() => {
-    if (!roomId || !docInitialized) return undefined;
-    return new WebrtcProvider(roomId, ydoc, config.webrtc);
-  }, [roomId, ydoc, docInitialized]);
-
-  const awareness = useMemo(() => {
-    if (!provider)
-      return undefined;
-    return provider.awareness;
-  }, [provider]);
 
   const suppressBeforeUnloadRef = React.useRef(false);
 
   const [isOnline, setIsOnline] = useState<boolean>(typeof navigator !== "undefined" ? navigator.onLine : true);
   const [offlineWarningOpen, setOfflineWarningOpen] = useState<boolean>(false);
 
-  const [otherUsersCount, setOtherUsersCount] = useState<number>(0);
-
   useEffect(() => {
     const handleOnline = async (): Promise<void> => {
       setIsOnline(true);
       suppressBeforeUnloadRef.current = true;
-      const data = encodeUpdate(ydoc);
-      await ProjectsService.projectControllerSaveProjectContent(
-        String(LocalStorageManager.getProjectId()),
-        { file: new Blob([data], { type: "application/octet-stream" }) }
-      ).catch((error) => {
-        console.error("Failed to save content during cleanup:", error);
-      });
+      project.saveContent();
       window.location.reload();
     };
     const handleOffline = (): void => {
@@ -175,152 +150,28 @@ const GameEditor: React.FC = () => {
   }, [isOnline]);
 
   const editorTabs: EditorTab[] = useMemo(() => {
-    if (!ydoc || !provider) return [];
+    if (!project)
+      return [];
 
     return tabs.map((tab) => {
-      const EditorComponent: Maybe<React.FC<EditorProps>> = tab.component;
-
       return {
         ...tab,
         label: tab.label,
-        component: EditorComponent ? (
-          <EditorComponent
-            key={tab.label}
-            ydoc={ydoc}
-            provider={provider}
-          />
-        ) : (
-          <span key={tab.label}>No editor available</span>
-        )
+        component: tab.component,
+        icon: tab.icon
       };
     });
-  }, [tabs, ydoc, provider]);
-
-  const checkAndKickDisconnectedUsers = async (): Promise<void> => {
-    if (isHost || isKicking || !awareness)
-      return;
-
-    setIsKicking(true);
-
-    const userId = LocalStorageManager.getUserId();
-
-    const projectId = Number(LocalStorageManager.getProjectId());
-    try {
-      const sessionInfo = await WorkSessionsService.workSessionControllerGetInfo(projectId);
-
-      if (!isHost && sessionInfo.host === Number(userId)) {
-        setIsHost(true);
-      }
-
-      const connectedClients = Array.from(awareness?.getStates().keys() || []);
-      if (
-        connectedClients.length === 1 &&
-        awareness?.clientID !== undefined &&
-        connectedClients[0] === awareness?.clientID
-      ) {
-        for (const sessionUserId of sessionInfo.users) {
-          if (Number(sessionUserId) !== userId) {
-            await WorkSessionsService.workSessionControllerKick(projectId, {
-              userId: Number(sessionUserId)
-            });
-          }
-        }
-        if (!isHost) {
-          setIsHost(true);
-        }
-      }
-    } catch (error) {
-      console.error("Error checking or kicking disconnected users:", error);
-    }
-
-    setIsKicking(false);
-  };
+  }, [tabs, project]);
 
   useEffect(() => {
-    const userName = LocalStorageManager.getUserName();
-    const userId = LocalStorageManager.getUserId();
-
-    awareness?.setLocalStateField("user", {
-      name: userName,
-      color: generateRandomColor(),
-      userId: userId,
-    });
-
-    const userStateCache = new Map<number, UserState>();
-
-    const computeOtherUsersCount = (): void => {
-      const localUserId = String(LocalStorageManager.getUserId());
-      let count = 0;
-      awareness?.getStates().forEach((state: { user?: UserState }) => {
-        const uid = state?.user?.userId;
-        if (uid && String(uid) !== localUserId) count++;
-      });
-      setOtherUsersCount(count);
-    };
-
-    const onChange = ({ added, updated, removed }: {
-      added: number[]
-      updated: number[]
-      removed: number[]
-    }): void => {
-      [...added, ...updated].forEach(clientID => {
-        const state = awareness?.getStates().get(clientID);
-        if (state?.user) {
-          userStateCache.set(clientID, state.user);
-        }
-      });
-
-      removed.forEach(clientID => {
-        const disconnectedUser = userStateCache.get(clientID);
-        if (disconnectedUser) {
-          const projectId = Number(LocalStorageManager.getProjectId());
-          WorkSessionsService
-            .workSessionControllerGetInfo(projectId)
-            .then(sessionInfo => {
-              if (sessionInfo.host === userId && !isHost) {
-                setIsHost(true);
-              }
-            });
-          userStateCache.delete(clientID);
-
-          WorkSessionsService.workSessionControllerKick(projectId, { userId: Number(disconnectedUser.userId) });
-
-          checkAndKickDisconnectedUsers();
-        }
-      });
-
-      computeOtherUsersCount();
-
-      if (!awarenessLoaded)
-        setAwarenessLoaded(true);
-    };
-
-    if (!awareness)
+    if (!project)
       return;
 
-    awareness!.on("change", onChange);
-
-    computeOtherUsersCount();
-
-    return () => awareness!.off("change", onChange);
-  }, [awareness]);
-
-  useEffect(() => {
-    if (!awarenessLoaded)
-      return;
-
-    checkAndKickDisconnectedUsers();
-  }, [awarenessLoaded]);
+    project.observe(ProviderEventType.BECOME_HOST, becomeHostListener);
+    project.code.observe(setCode);
+  }, [project]);
 
   const [code, setCode] = useState("");
-
-  useEffect(() => {
-    const ytext = ydoc.getText("monaco");
-    setCode(ytext.toString());
-    const handler = (): void => setCode(ytext.toString());
-    ytext.observe(handler);
-    return () => ytext.unobserve(handler);
-  }, [ydoc]);
 
   //FIXME: temporary solution, should be replaced with given data from back
 
@@ -336,27 +187,13 @@ const GameEditor: React.FC = () => {
 
   //ENDFIXME
 
-  const saveProjectContent = (): void => {
-    if (!isHost) return;
-    const data = encodeUpdate(ydoc);
-    ProjectsService.projectControllerSaveProjectContent(
-      String(LocalStorageManager.getProjectId()),
-      { file: new Blob([data], { type: "application/octet-stream" }) }
-    ).catch((error) => {
-      console.error("Failed to save content:", error);
-    });
-  };
-
   const cleanUpAndDisconnect = (): void => {
-    if (!provider || !ydoc) return;
-    saveProjectContent();
-    const projectId = LocalStorageManager.getProjectId();
+    if (!project) return;
+    project.saveContent();
 
-    WorkSessionsService.workSessionControllerLeave(Number(projectId));
+    WorkSessionsService.workSessionControllerLeave(Number(project.projectId));
 
-    provider?.awareness.setLocalState(null);
-    provider?.disconnect();
-    ydoc?.destroy();
+    project.destroy();
   };
 
   useEffect(() => {
@@ -367,20 +204,23 @@ const GameEditor: React.FC = () => {
 
   const canvasRef = React.useRef<SpriteRendererHandle>(null);
 
-  useEffect(() => {
-    if (!isHost)
-      return;
-
-    const intervalId = setInterval(() => {
-      saveProjectContent();
+  const becomeHostListener = (): void => {
+    setInterval(() => {
+      project.saveContent();
     }, 5 * 60 * 1000);
+  };
 
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [isHost]);
+  const getAwarenessMessage = (): string => {
+    const count = project.awareness.count();
+    if (count > 1) {
+      const otherUsers = count - 1;
+      const userText = otherUsers === 1 ? "person is" : "people are";
+      return `${otherUsers} other ${userText} in the session. Your local changes may be overwritten when you reconnect.`;
+    }
+    return "Your local changes may not synchronize until the connection is restored.";
+  };
 
-  if (!docInitialized || !provider)
+  if (!project)
     return <div>Loading work session...</div>; //FIXME: add a loading spinner with a component
 
   return (
@@ -396,82 +236,60 @@ const GameEditor: React.FC = () => {
               iconPosition="start"
               key={label}
               label={label}
-              icon={icon} />
+              icon={icon}
+              data-cy={`${label}-tab`}
+            />
           ))}
         </Tabs>
-        {editorTabs.map((tab, idx) => (
-          <TabContent
-            key={tab.label}
-            role="tabpanel"
-            hidden={activeTab !== idx}
-            sx={{ display: activeTab === idx ? "block" : "none" }}
-          >
-            {tab.component}
-          </TabContent>
-        ))}
+        {editorTabs.map((tab, idx) => {
+          const EditorComponent = tab.component as React.FC<EditorProps>;
+          return (
+            <TabContent
+              key={tab.label}
+              role="tabpanel"
+              hidden={activeTab !== idx}
+              className={activeTab === idx ? "active" : "hidden"}
+            >
+              {EditorComponent ? <EditorComponent project={project} /> : <span>No editor available</span>}
+            </TabContent>
+          );
+        })}
       </LeftPanel>
       <RightPanel>
-        {project && (
-          <PreviewCanvas
-            ref={canvasRef}
-            canvasProps={{
-              map: project.map,
-              screenSize,
-              spriteSheet: project.spriteSheet,
-              palette: project.palette,
-            }}
-            envData={envData}
-            setOutput={setOutput}
-          />
-        )}
-        <GameEditorConsole output={output} />
+        <PreviewCanvas
+          ref={canvasRef}
+          canvasProps={{
+            map: project.map,
+            screenSize: screenSize,
+            sprite: project.sprite
+          }}
+          envData={envData}
+          setOutput={setOutput}
+        />
+        <GameEditorConsole output={output}/>
       </RightPanel>
 
-      <Dialog
+      <StyledDialog
         open={!isOnline && offlineWarningOpen}
         onClose={() => setOfflineWarningOpen(false)}
         maxWidth="sm"
         fullWidth
-        slotProps={{
-          paper: {
-            sx: (theme) => ({
-              bgcolor: theme.palette.mode === "dark" ? theme.palette.grey[900] : "#0f0f0f",
-              color: theme.palette.getContrastText(theme.palette.grey[900]),
-              border: `1px solid ${theme.palette.grey[800]}`,
-              boxShadow: theme.shadows[8],
-            }),
-          },
-        }}
       >
-        <DialogTitle sx={{ color: "inherit" }}>You are offline</DialogTitle>
-        <DialogContent
-          dividers
-          sx={(theme) => ({
-            bgcolor: "transparent",
-            borderColor: theme.palette.grey[800],
-          })}
-        >
-          <Alert
-            severity={otherUsersCount > 0 ? "warning" : "info"}
+        <StyledDialogTitle>You are offline</StyledDialogTitle>
+        <StyledDialogContent dividers>
+          <StyledAlert
+            severity={project.awareness.count() > 1 ? "warning" : "info"}
             variant="outlined"
-            sx={(theme) => ({
-              bgcolor: "transparent",
-              color: theme.palette.grey[100],
-              borderColor: theme.palette.grey[700],
-              "& .MuiAlert-icon": { color: theme.palette.grey[400] },
-            })}
           >
-            {otherUsersCount > 0
-              ? `${otherUsersCount} other ${otherUsersCount === 1 ? "person is" : "people are"} in the session. Your local changes may be overwritten when you reconnect.`
-              : "Your local changes may not synchronize until the connection is restored."}
-          </Alert>
-        </DialogContent>
-        <DialogActions sx={{ bgcolor: "transparent" }}>
+            {getAwarenessMessage()}
+          </StyledAlert>
+        </StyledDialogContent>
+        <StyledDialogActions>
           <Button variant="contained" color="primary" onClick={() => setOfflineWarningOpen(false)} autoFocus>
             Got it
           </Button>
-        </DialogActions>
-      </Dialog>
+        </StyledDialogActions>
+      </StyledDialog>
 
       <Beforeunload onBeforeunload={(event) => {
         if (suppressBeforeUnloadRef.current) {
@@ -480,7 +298,7 @@ const GameEditor: React.FC = () => {
         event.preventDefault();
         cleanUpAndDisconnect();
         return "Are you sure you want to leave? Your changes may not be saved.";
-      }} />
+      }}/>
     </GameEditorContainer>
   );
 };

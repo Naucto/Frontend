@@ -1,55 +1,27 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { ProjectResponseDto, ProjectsService } from "@api";
-import { ProjectProvider } from "src/providers/ProjectProvider";
 import GameEditor from "@modules/create/game-editor/GameEditor";
-import { Project as ProjectType } from "../../types/ProjectType";
-import { useAsync } from "src/hooks/useAsync";
-import { palette, spriteTable } from "src/temporary/SpriteSheet";
-import { SpriteSheet } from "../../types/SpriteSheetType";
-import { mapData } from "src/temporary/map";
+import { ProjectProvider, ProviderEventType } from "@providers/ProjectProvider";
+
 const Project: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
-  const [project, setProject] = useState<Maybe<ProjectType>>(undefined);
-  const { value } = useAsync<Maybe<ProjectResponseDto>>(async () => {
-    if (projectId) {
-      const project: ProjectResponseDto = await ProjectsService.projectControllerFindOne(parseInt(projectId));
-      return project;
-    }
-    return undefined;
+  const [ showEditor, setShowEditor ] = useState(false);
+  const [ project, setProject ] = useState<ProjectProvider>();
+
+  useEffect(() => {
+    if (projectId)
+      setProject(new ProjectProvider(Number(projectId)));
   }, [projectId]);
 
   useEffect(() => {
-    if (value) {
-
-      const spriteSheet: SpriteSheet = {
-        spriteSheet: spriteTable.table,
-        spriteSize: { width: 8, height: 8 },
-        size: { width: 128, height: 128 },
-        stride: 1,
-      };
-      const project: ProjectType = {
-        projectResponseDto: value,
-        //FIXME: should be replaced with api call which gives project including spritesheet
-        spriteSheet: spriteSheet,
-        map: {
-          mapData: mapData,
-          width: 128,
-          height: 32,
-          spriteSheet: spriteSheet,
-          stride: 2,
-        },
-        palette: palette
-      };
-      setProject(project);
-    }
-  }, [value, setProject]);
+    if (!project)
+      return;
+    project.observe(ProviderEventType.INITIALIZED, () => setShowEditor(true));
+  }, [ project ]);
 
   return (
     <>
-      <ProjectProvider project={project}>
-        <GameEditor />
-      </ProjectProvider>
+      { showEditor && project && <GameEditor project={project} /> }
     </>
   );
 };

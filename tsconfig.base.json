@@ -1,9 +1,13 @@
 {
     "compilerOptions": {
+        "resolveJsonModule": true,
         "allowJs": true,
         "esModuleInterop": true,
         "baseUrl": "./",
         "paths": {
+	    "@config/*": [
+                "./config/*"
+	    ],
             "@assets/*": [
                 "./src/assets/*"
             ],
@@ -31,6 +35,15 @@
             "@api/*": [
                 "./src/api/*"
             ],
+            "@providers/*": [
+                "./src/providers/*"
+            ],
+            "@errors/*": [
+                "./src/errors/*"
+            ],
+            "@types/*": [
+                "./src/types/*"
+            ]
         }
     }
 }

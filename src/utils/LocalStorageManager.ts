@@ -3,7 +3,6 @@ import { User } from "../types/userTypes";
 export class LocalStorageManager {
   private static readonly USER_ID_KEY = "user_id";
   private static readonly USER_NAME_KEY = "user_name";
-  private static readonly PROJECT_ID_KEY = "projectId";
   private static readonly TOKEN_KEY = "token_access";
 
   static getUserId(): number {
@@ -40,18 +39,6 @@ export class LocalStorageManager {
     }
   }
 
-  static getProjectId(): number {
-    return Number(localStorage.getItem(this.PROJECT_ID_KEY) || "1");
-  }
-
-  static setProjectId(projectId?: number): void {
-    if (projectId) {
-      localStorage.setItem(this.PROJECT_ID_KEY, String(projectId));
-    } else {
-      localStorage.removeItem(this.PROJECT_ID_KEY);
-    }
-  }
-
   static getToken(): string {
     return localStorage.getItem(this.TOKEN_KEY) || "";
   }
@@ -61,6 +48,14 @@ export class LocalStorageManager {
       localStorage.setItem(this.TOKEN_KEY, token);
     } else {
       localStorage.removeItem(this.TOKEN_KEY);
+    }
+  }
+
+  static setProjectId(projectId?: number): void {
+    if (projectId) {
+      localStorage.setItem("project_id", String(projectId));
+    } else {
+      localStorage.removeItem("project_id");
     }
   }
 }

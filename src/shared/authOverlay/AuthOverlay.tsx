@@ -6,7 +6,7 @@ import { CreateUserDto, LoginDto, UsersService } from "@api";
 import { useForm } from "react-hook-form";
 import ImportantButton from "@shared/buttons/ImportantButton";
 import { AuthService } from "@api/services/AuthService";
-import { useUser } from "src/providers/UserProvider";
+import { useUser } from "@providers/UserProvider";
 import { CustomDialog } from "@shared/dialog/CustomDialog";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
 
@@ -117,7 +117,9 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
 
         <FieldContainer>
           <label>Email</label>
-          <StyledTextField {...register("email")} />
+          <StyledTextField
+            {...register("email")}
+            data-cy="email-input" />
         </FieldContainer>
 
         {isSignedUp && <FieldContainer>
@@ -127,17 +129,26 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
 
         <FieldContainer>
           <label>Password</label>
-          <StyledTextField type="password" {...register("password")} />
+          <StyledTextField
+            type="password"
+            {...register("password")}
+            data-cy="password-input" />
         </FieldContainer>
 
-        <StyledImportantButton type="submit">{authText(isSignedUp)}</StyledImportantButton>
+        <StyledImportantButton type="submit"
+          data-cy="submit-auth">
+          {authText(isSignedUp)}
+        </StyledImportantButton>
 
         {errorMessage && <Typography color="error">{errorMessage}</Typography>}
 
         <Center>
           <Typography>OR</Typography>
           <Typography>{isSignedUp ? "Already have an account ? " : "Don't have an account ? "}
-            <Link sx={{ cursor: "pointer" }} onClick={() => { setIsSignedUp(!isSignedUp); }}>{authText(!isSignedUp)}</Link>
+            <Link
+              sx={{ cursor: "pointer" }}
+              data-cy="toggle-auth-mode"
+              onClick={() => { setIsSignedUp(!isSignedUp); }}>{authText(!isSignedUp)}</Link>
           </Typography>
         </Center>
       </form>

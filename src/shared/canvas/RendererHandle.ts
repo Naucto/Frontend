@@ -1,9 +1,9 @@
-import { rectangleToVertices } from "@shared/canvas/CanvasUtil";
+import { rectangleToVertices } from "@shared/canvas/glUtils";
 import { GLPipeline, initGLPipeline } from "@shared/canvas/GLSetup";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CanvasError, CanvasNotInitializedError } from "src/errors/CanvasError";
-import { SpriteSheet } from "src/types/SpriteSheetType";
-import { Map } from "src/types/MapType";
+import { MapProvider } from "@providers/editors/MapProvider.ts";
+import { SpriteProvider } from "@providers/editors/SpriteProvider";
 
 export type QueueSpriteDrawFn = (
   index: number,
@@ -23,26 +23,31 @@ export type SpriteRendererHandle = {
   clear: (index: number) => void;
   setColor: (index: number, index2: number) => void;
   resetColor: () => void;
+  moveCamera: (x: number, y: number) => void;
+  drawLine: (col: number, x0: number, y0: number, x1: number, y1: number) => void;
+  drawOutlineRect: (col: number, x: number, y: number, width: number, height: number) => void;
+  drawRect: (col: number, x: number, y: number, width: number, height: number) => void;
 };
 
 export function useSpriteRenderer(
   canvasRef: React.RefObject<HTMLCanvasElement | null>,
-  spriteSheet: SpriteSheet,
-  palette: Uint8Array,
-  map: Map,
+  sprite: SpriteProvider,
+  map: MapProvider,
   screenSize: { width: number, height: number }
 ): SpriteRendererHandle {
-  const spriteNumber = spriteSheet.size.width / spriteSheet.spriteSize.width;
+  const spriteNumber = sprite.size.width / sprite.spriteSize.width;
   const batchedVertices: number[] = [];
   const batchedUVs: number[] = [];
-  const currentPalette: Uint8Array = new Uint8Array(palette);
+  const currentPalette: Uint8Array = new Uint8Array(sprite.palette);
   const currentPaletteSize = currentPalette.length / 4;
 
   const pipelineRef = useRef<GLPipeline | null>(null);
+  const [version, setVersion] = useState(0);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) { throw new CanvasNotInitializedError(); }
-    pipelineRef.current = initGLPipeline(canvas, spriteSheet, map, palette, screenSize);
+    pipelineRef.current = initGLPipeline(canvas, sprite, map, screenSize);
     if (!pipelineRef.current) {
       throw new CanvasNotInitializedError();
     }
@@ -50,9 +55,127 @@ export function useSpriteRenderer(
       pipelineRef.current?.destroy();
       pipelineRef.current = null;
     };
-  }, [canvasRef, spriteSheet, palette, screenSize, map]);
+  }, [canvasRef, screenSize, version]);
 
-  function draw(): void {
+  useEffect(() => {
+    map.observe(() => {
+      setVersion(v => v + 1);
+    });
+
+    sprite.observe(() => {
+      setVersion(v => v + 1);
+    });
+  }, [map, sprite]);
+
+  function moveCamera(x: number, y: number): void {
+    const p = pipelineRef.current;
+    if (!p) return;
+
+    const gl = p.gl;
+    const cameraPosLoc = p.cameraPosLoc;
+    gl.uniform2f(cameraPosLoc, x, y);
+  }
+  function drawLine(col: number, x0: number, y0: number, x1: number, y1: number): void {
+    const p = pipelineRef.current;
+    if (!p) return;
+    const gl = p.gl;
+    draw(gl.TRIANGLES);
+
+    x0 = Math.floor(x0);
+    y0 = Math.floor(y0);
+    x1 = Math.floor(x1);
+    y1 = Math.floor(y1);
+
+    const paletteSize = currentPalette.length / 4;
+    const uvX = (col + 0.5) / paletteSize;
+
+    batchedUVs.push(
+      uvX, 0,
+      uvX, 0,
+    );
+    batchedVertices.push(
+      x0, y0,
+      x1, y1,
+    );
+    gl.uniform1i(gl.getUniformLocation(p.program, "u_texture"), 1);
+    gl.disable(gl.BLEND);
+    draw(gl.LINES);
+    gl.enable(gl.BLEND);
+    gl.uniform1i(gl.getUniformLocation(p.program, "u_texture"), 0);
+  }
+
+  function drawOutlineRect(col: number, x: number, y: number, width: number, height: number): void {
+    const p = pipelineRef.current;
+    if (!p) return;
+    const gl = p.gl;
+    draw(gl.TRIANGLES);
+    x = Math.floor(x);
+    y = Math.floor(y);
+    width = Math.floor(width);
+    height = Math.floor(height);
+
+    const paletteSize = currentPalette.length / 4;
+    const uvX = (col + 0.5) / paletteSize;
+    const x0 = x + 0.5;
+    const y0 = y + 0.5;
+    const x1 = x + width - 0.5;
+    const y1 = y + height - 0.5;
+
+    batchedUVs.push(
+      uvX, 0,
+      uvX, 0,
+      uvX, 0,
+      uvX, 0,
+    );
+
+    batchedVertices.push(
+      x0, y0,
+      x1, y0,
+      x1, y1,
+      x0, y1,
+    );
+    gl.uniform1i(gl.getUniformLocation(p.program, "u_texture"), 3);
+    gl.disable(gl.BLEND);
+    draw(gl.LINE_LOOP);
+    gl.enable(gl.BLEND);
+    gl.uniform1i(gl.getUniformLocation(p.program, "u_texture"), 0);
+  }
+
+  function drawRect(col: number, x: number, y: number, width: number, height: number): void {
+    const p = pipelineRef.current;
+    if (!p) return;
+    const gl = p.gl;
+    draw(gl.TRIANGLES);
+
+    x = Math.floor(x);
+    y = Math.floor(y);
+    width = Math.floor(width);
+    height = Math.floor(height);
+
+    const paletteSize = currentPalette.length / 4;
+    const uvX = (col + 0.5) / paletteSize;
+
+    batchedUVs.push(
+      uvX, 0,
+      uvX, 0,
+      uvX, 0,
+      uvX, 0,
+      uvX, 0,
+      uvX, 0,
+    );
+    const verts = rectangleToVertices(x, y, width, height);
+    batchedVertices.push(...verts);
+
+    gl.uniform1i(gl.getUniformLocation(p.program, "u_texture"), 3);
+    gl.disable(gl.BLEND);
+
+    draw(gl.TRIANGLES);
+
+    gl.enable(gl.BLEND);
+    gl.uniform1i(gl.getUniformLocation(p.program, "u_texture"), 0);
+  }
+
+  function draw(type: number): void {
     const p = pipelineRef.current;
     if (!p) return;
 
@@ -74,7 +197,7 @@ export function useSpriteRenderer(
     gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(uvLocation);
 
-    gl.drawArrays(gl.TRIANGLES, 0, batchedVertices.length / 2); // divided by 2 bcs batchedVertices is 2d
+    gl.drawArrays(type, 0, batchedVertices.length / 2); // divided by 2 bcs batchedVertices is 2d
 
     batchedVertices.length = 0;
     batchedUVs.length = 0;
@@ -85,7 +208,7 @@ export function useSpriteRenderer(
     if (!p) return;
 
     if (batchedUVs.length > 0) {
-      draw();
+      draw(p.gl.TRIANGLES);
     }
 
     const gl = p.gl;
@@ -102,13 +225,13 @@ export function useSpriteRenderer(
     const vertices = rectangleToVertices(
       x,
       y,
-      map.width * spriteSheet.spriteSize.width,
-      map.height * spriteSheet.spriteSize.height
+      map.width * sprite.spriteSize.width,
+      map.height * sprite.spriteSize.height
     );
 
     batchedVertices.push(...vertices);
     batchedUVs.push(...uv);
-    draw();
+    draw(p.gl.TRIANGLES);
     gl.uniform1i(gl.getUniformLocation(program, "u_texture"), 0);
   }
 
@@ -126,10 +249,10 @@ export function useSpriteRenderer(
     const x_sprite = index % (spriteNumber);
     const y_sprite = Math.floor(index / (spriteNumber));
 
-    let u0 = x_sprite * spriteSheet.spriteSize.width / spriteSheet.size.width;
-    let v0 = y_sprite * spriteSheet.spriteSize.height / spriteSheet.size.height;
-    let u1 = (x_sprite + width) * spriteSheet.spriteSize.width / spriteSheet.size.width;
-    let v1 = (y_sprite + height) * spriteSheet.spriteSize.height / spriteSheet.size.height;
+    let u0 = x_sprite * sprite.spriteSize.width / sprite.size.width;
+    let v0 = y_sprite * sprite.spriteSize.height / sprite.size.height;
+    let u1 = (x_sprite + width) * sprite.spriteSize.width / sprite.size.width;
+    let v1 = (y_sprite + height) * sprite.spriteSize.height / sprite.size.height;
 
     if (flip_h) [u0, u1] = [u1, u0];
     if (flip_v) [v0, v1] = [v1, v0];
@@ -146,8 +269,8 @@ export function useSpriteRenderer(
     const vertices = rectangleToVertices(
       x,
       y,
-      width * spriteSheet.spriteSize.width * scale,
-      height * spriteSheet.spriteSize.height * scale,
+      width * sprite.spriteSize.width * scale,
+      height * sprite.spriteSize.height * scale,
     );
 
     batchedVertices.push(...vertices);
@@ -163,9 +286,9 @@ export function useSpriteRenderer(
     if (distance >= currentPalette.length) {
       throw new CanvasError("Palette index out of bounds");
     }
-    const r = palette[distance] / 255;
-    const g = palette[distance + 1] / 255;
-    const b = palette[distance + 2] / 255;
+    const r = sprite.palette[distance] / 255;
+    const g = sprite.palette[distance + 1] / 255;
+    const b = sprite.palette[distance + 2] / 255;
     gl.clearColor(r, g, b, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
   }
@@ -176,13 +299,13 @@ export function useSpriteRenderer(
     const distanceIndex = index * 4;
     const distanceIndex2 = index2 * 4;
 
-    if (distanceIndex >= currentPalette.length || distanceIndex2 >= palette.length) {
+    if (distanceIndex >= currentPalette.length || distanceIndex2 >= sprite.palette.length) {
       throw new CanvasError("Palette index out of bounds");
     }
-    currentPalette[distanceIndex] = palette[distanceIndex2];
-    currentPalette[distanceIndex + 1] = palette[distanceIndex2 + 1];
-    currentPalette[distanceIndex + 2] = palette[distanceIndex2 + 2];
-    currentPalette[distanceIndex + 3] = palette[distanceIndex2 + 3];
+    currentPalette[distanceIndex] = sprite.palette[distanceIndex2];
+    currentPalette[distanceIndex + 1] = sprite.palette[distanceIndex2 + 1];
+    currentPalette[distanceIndex + 2] = sprite.palette[distanceIndex2 + 2];
+    currentPalette[distanceIndex + 3] = sprite.palette[distanceIndex2 + 3];
 
     gl.activeTexture(gl.TEXTURE1);
     gl.texSubImage2D(
@@ -209,7 +332,7 @@ export function useSpriteRenderer(
       1,
       gl.RGBA,
       gl.UNSIGNED_BYTE,
-      palette
+      sprite.palette
     );
   }
 
@@ -226,5 +349,9 @@ export function useSpriteRenderer(
     clear,
     setColor,
     resetColor,
+    moveCamera,
+    drawLine,
+    drawOutlineRect,
+    drawRect,
   }), []);
 }
