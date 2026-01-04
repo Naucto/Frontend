@@ -16,7 +16,7 @@ const userContext = createContext<UserContextType | null>(null);
 
 export const UserProvider = ({ children }: { children: React.ReactNode }): React.ReactElement => {
   const token = LocalStorageManager.getToken();
-  const { loading, value: profile } = useAsync(
+  const { loading, value: profile, error } = useAsync(
     () => token ? UsersService.userControllerGetProfile() : Promise.resolve(undefined),
     [token]
   );
@@ -29,7 +29,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }): React
     if (profile) {
       setUser(profile);
     }
-  }, [loading, profile]);
+  }, [loading, profile, error]);
 
   const logIn = (userData: User): void => LocalStorageManager.setUser(userData);
 

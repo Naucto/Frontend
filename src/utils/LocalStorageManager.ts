@@ -4,6 +4,7 @@ export class LocalStorageManager {
   private static readonly USER_ID_KEY = "user_id";
   private static readonly USER_NAME_KEY = "user_name";
   private static readonly TOKEN_KEY = "token_access";
+  private static readonly REFRESH_TOKEN_KEY = "refresh_token";
 
   static getUserId(): number {
     return Number(localStorage.getItem(this.USER_ID_KEY));
@@ -51,6 +52,18 @@ export class LocalStorageManager {
     }
   }
 
+  static getRefreshToken(): string {
+    return localStorage.getItem(this.REFRESH_TOKEN_KEY) || "";
+  }
+
+  static setRefreshToken(refreshToken?: string): void {
+    if (refreshToken) {
+      localStorage.setItem(this.REFRESH_TOKEN_KEY, refreshToken);
+    } else {
+      localStorage.removeItem(this.REFRESH_TOKEN_KEY);
+    }
+  }
+
   static setProjectId(projectId?: number): void {
     if (projectId) {
       localStorage.setItem("project_id", String(projectId));
@@ -62,5 +75,6 @@ export class LocalStorageManager {
   static resetUser(): void {
     LocalStorageManager.setUser(undefined);
     LocalStorageManager.setToken(undefined);
+    LocalStorageManager.setRefreshToken(undefined);
   }
 }

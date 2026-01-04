@@ -1,4 +1,4 @@
-/* generated using openapi-typescript-codegen -- do not edit */
+/* editable generated file */
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
@@ -305,6 +305,60 @@ export const catchErrorCodes = (options: ApiRequestOptions, result: ApiResult): 
     }
 };
 
+const api = axios.create({
+  baseURL: import.meta.env.VITE_BACKEND_URL,
+  withCredentials: true,
+});
+let queue: ((t: string) => void)[] = [];
+
+api.interceptors.request.use(config => {
+    const token = LocalStorageManager.getToken();
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
+
+api.interceptors.response.use(
+  r => r,
+  async error => {
+    const original = error.config;
+    if (original.url.includes('/auth/refresh')) {
+      return Promise.reject(error);
+    }
+
+    if (error.response?.status === 401 && !original._retry) {
+      original._retry = true;
+      console.log("token: ", (LocalStorageManager.getToken()));
+      if (LocalStorageManager.getToken() !== undefined) {
+        console.log('Refreshing token...');
+        try {
+            const { data } = await api.post('/auth/refresh');
+            console.log(data)
+            LocalStorageManager.setToken(data.access_token);
+            queue.forEach(cb => cb(data.access_token));
+            queue = [];
+            return api(original);
+        } catch (err) {
+            LocalStorageManager.resetUser();
+            console.log("refresh error: ", LocalStorageManager.getToken());
+            window.location.href = routes.toHub();
+            return Promise.reject(error);
+        }
+      }
+
+      return new Promise(resolve => {
+        queue.push(token => {
+          original.headers.Authorization = `Bearer ${token}`;
+          resolve(api(original));
+        });
+      });
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 /**
  * Request method
  * @param config The OpenAPI configuration object
@@ -313,7 +367,7 @@ export const catchErrorCodes = (options: ApiRequestOptions, result: ApiResult): 
  * @returns CancelablePromise<T>
  * @throws ApiError
  */
-export const request = <T>(config: OpenAPIConfig, options: ApiRequestOptions, axiosClient: AxiosInstance = axios): CancelablePromise<T> => {
+export const request = <T>(config: OpenAPIConfig, options: ApiRequestOptions, axiosClient: AxiosInstance = api): CancelablePromise<T> => {
     return new CancelablePromise(async (resolve, reject, onCancel) => {
         try {
             const url = getUrl(config, options);
@@ -325,7 +379,6 @@ export const request = <T>(config: OpenAPIConfig, options: ApiRequestOptions, ax
                 const response = await sendRequest<T>(config, options, url, body, formData, headers, onCancel, axiosClient);
                 const responseBody = getResponseBody(response);
                 const responseHeader = getResponseHeader(response, options.responseHeader);
-
                 const result: ApiResult = {
                     url,
                     ok: isSuccess(response.status),
@@ -333,13 +386,6 @@ export const request = <T>(config: OpenAPIConfig, options: ApiRequestOptions, ax
                     statusText: response.statusText,
                     body: responseHeader ?? responseBody,
                 };
-                if (result.status === 401 && typeof response.headers?.['www-authenticate'] === 'string') {
-                    // TODO: ask for refresh token then logout if not provided
-                    LocalStorageManager.resetUser();
-                    window.location.href = routes.toHub();
-                    return;
-                }
-
                 catchErrorCodes(options, result);
 
                 resolve(result.body);
