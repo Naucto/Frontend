@@ -14,6 +14,7 @@ import type { OnCancel } from './CancelablePromise';
 import type { OpenAPIConfig } from './OpenAPI';
 import { LocalStorageManager } from '@utils/LocalStorageManager';
 import * as routes from '@shared/route';
+import { AuthService } from '@api/services/AuthService';
 export const isDefined = <T>(value: T | null | undefined): value is Exclude<T, null | undefined> => {
     return value !== undefined && value !== null;
 };
@@ -309,7 +310,7 @@ const api = axios.create({
   baseURL: import.meta.env.VITE_BACKEND_URL,
   withCredentials: true,
 });
-let queue: ((t: string) => void)[] = [];
+let queue: ((token: string) => void)[] = [];
 
 api.interceptors.request.use(config => {
     const token = LocalStorageManager.getToken();
@@ -329,19 +330,15 @@ api.interceptors.response.use(
 
     if (error.response?.status === 401 && !original._retry) {
       original._retry = true;
-      console.log("token: ", (LocalStorageManager.getToken()));
       if (LocalStorageManager.getToken() !== undefined) {
-        console.log('Refreshing token...');
         try {
-            const { data } = await api.post('/auth/refresh');
-            console.log(data)
-            LocalStorageManager.setToken(data.access_token);
-            queue.forEach(cb => cb(data.access_token));
+            const { access_token } = await AuthService.authControllerRefresh();
+            LocalStorageManager.setToken(access_token);
+            queue.forEach(req => req(access_token));
             queue = [];
             return api(original);
         } catch (err) {
             LocalStorageManager.resetUser();
-            console.log("refresh error: ", LocalStorageManager.getToken());
             window.location.href = routes.toHub();
             return Promise.reject(error);
         }
