@@ -325,7 +325,7 @@ api.interceptors.response.use(
   async error => {
     const original = error.config;
     if (original.url.includes('/auth/refresh')) {
-      return Promise.reject(error);
+        throw error;
     }
 
     if (error.response?.status === 401 && !original._retry) {
@@ -340,7 +340,7 @@ api.interceptors.response.use(
         } catch (err) {
             LocalStorageManager.resetUser();
             window.location.href = routes.toHub();
-            return Promise.reject(error);
+            throw err;
         }
       }
 
@@ -352,7 +352,7 @@ api.interceptors.response.use(
       });
     }
 
-    return Promise.reject(error);
+    throw error;
   }
 );
 
