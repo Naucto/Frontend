@@ -27,11 +27,11 @@ export type ProjectWithRelationsResponseDto = {
     /**
      * The current status of the project
      */
-    status: ProjectWithRelationsResponseDto.status | null;
+    status: 'IN_PROGRESS' | 'COMPLETED' | 'ARCHIVED' | null;
     /**
      * The monetization strategy for this project
      */
-    monetization: ProjectWithRelationsResponseDto.monetization | null;
+    monetization: 'NONE' | 'ADS' | 'PAID' | null;
     /**
      * The price of the project, if applicable
      */
@@ -65,22 +65,4 @@ export type ProjectWithRelationsResponseDto = {
      */
     creator: UserBasicInfoDto;
 };
-export namespace ProjectWithRelationsResponseDto {
-    /**
-     * The current status of the project
-     */
-    export enum status {
-        IN_PROGRESS = 'IN_PROGRESS',
-        COMPLETED = 'COMPLETED',
-        ARCHIVED = 'ARCHIVED',
-    }
-    /**
-     * The monetization strategy for this project
-     */
-    export enum monetization {
-        NONE = 'NONE',
-        ADS = 'ADS',
-        PAID = 'PAID',
-    }
-}
 

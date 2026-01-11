@@ -23,7 +23,7 @@ export type OpenAPIConfig = {
 export const OpenAPI: OpenAPIConfig = {
     BASE: import.meta.env.VITE_BACKEND_URL || 'none',
     VERSION: '1.0',
-    WITH_CREDENTIALS: false,
+    WITH_CREDENTIALS: true,
     CREDENTIALS: 'include',
     TOKEN: () => Promise.resolve(LocalStorageManager.getToken()),
     USERNAME: undefined,
