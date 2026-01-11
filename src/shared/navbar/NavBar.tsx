@@ -18,6 +18,7 @@ const Nav = styled("nav")(({ theme }) => ({
     width: 55,
     height: 55,
   },
+  zIndex: 10,
 }));
 
 const Left = styled("div")(({ theme }) => ({
