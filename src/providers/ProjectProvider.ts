@@ -5,8 +5,9 @@ import { decodeUpdate, encodeUpdate } from "@utils/YSerialize.ts";
 import { CodeProvider } from "./editors/CodeProvider.ts";
 import { SpriteProvider } from "./editors/SpriteProvider.ts";
 import { MapProvider } from "./editors/MapProvider.ts";
-import { AwarenessProvider  } from "./editors/AwarenessProvider.ts";
+import { AwarenessProvider } from "./editors/AwarenessProvider.ts";
 import { ProjectSettingsProvider } from "./editors/ProjectSettingsProvider.ts";
+import { SoundProvider } from "./editors/SoundProvider.ts";
 import { WebrtcProvider } from "y-webrtc";
 import config from "@config/providers.json";
 
@@ -22,7 +23,7 @@ export class ProjectProvider implements Destroyable {
   private _isKicking: boolean = false;
   private _initialized: boolean = false;
 
-  private _listeners : Map<ProviderEventType, Set<() => void>> = new Map();
+  private _listeners: Map<ProviderEventType, Set<() => void>> = new Map();
 
   public isHost: boolean;
   public code!: CodeProvider;
@@ -30,6 +31,7 @@ export class ProjectProvider implements Destroyable {
   public map!: MapProvider;
   public awareness!: AwarenessProvider;
   public projectSettings!: ProjectSettingsProvider;
+  public sound!: SoundProvider;
   public projectId: number;
 
   constructor(projectId: number) {
@@ -43,8 +45,9 @@ export class ProjectProvider implements Destroyable {
       this.awareness = new AwarenessProvider(this, this._provider);
       this.code = new CodeProvider(this._doc, this.awareness);
       this.sprite = new SpriteProvider(this._doc);
-      this.map = new MapProvider(this._doc, { width:128, height:32 }, 2, this.sprite);
+      this.map = new MapProvider(this._doc, { width: 128, height: 32 }, 2, this.sprite);
       this.projectSettings = new ProjectSettingsProvider(this._doc);
+      this.sound = new SoundProvider(this._doc);
 
       this._initialized = true;
       this.emit(ProviderEventType.INITIALIZED);
@@ -88,6 +91,7 @@ export class ProjectProvider implements Destroyable {
     this.sprite.destroy();
     this.awareness.destroy();
     this.projectSettings.destroy();
+    this.sound.destroy();
     this._provider.disconnect();
     this._doc.destroy();
   }
@@ -117,7 +121,7 @@ export class ProjectProvider implements Destroyable {
     });
   }
 
-  public async checkAndKickDisconnectedUsers() : Promise<void> {
+  public async checkAndKickDisconnectedUsers(): Promise<void> {
     if (this.isHost || this._isKicking || !this.awareness)
       return;
 
@@ -140,7 +144,8 @@ export class ProjectProvider implements Destroyable {
         this.awareness?.getClientId() !== undefined &&
         connectedClients[0] === this.awareness?.getClientId()
       ) {
-        for (const sessionUserId of sessionInfo.users) {
+        const users = sessionInfo.users || [];
+        for (const sessionUserId of users) {
           if (Number(sessionUserId) !== userId) {
             await WorkSessionsService.workSessionControllerKick(projectId, {
               userId: Number(sessionUserId)

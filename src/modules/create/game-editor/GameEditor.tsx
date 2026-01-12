@@ -3,7 +3,7 @@ import { styled } from "@mui/material/styles";
 import { Tabs, Tab, Box, Dialog, DialogTitle, DialogContent, DialogActions, Button, Alert } from "@mui/material";
 import CodeEditor from "@modules/create/game-editor/editors/CodeEditor";
 import { EditorProps, EditorTab } from "./editors/EditorType";
-import { SoundEditor } from "./editors/SoundEditor";
+import { SoundEditor } from "src/modules/editor/SoundEditor/SoundEditor";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
 import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
