@@ -6,8 +6,6 @@ export const AllNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "
 
 export const BASE_NOTE = "C4";
 
-const fallbackSynth = new Tone.Synth().toDestination();
-
 export interface SynthNote {
   note: string;
   duration: string;
@@ -19,7 +17,6 @@ export enum SynthType {
   SYNTH = 0,
   DUOSYNTH = 1,
   POLYSYNTH = 2,
-  // NOISE = 3
 }
 
 export const numberToNote = (number: number): string => {

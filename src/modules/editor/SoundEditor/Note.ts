@@ -1,6 +1,5 @@
 import * as Tone from "tone";
 
-
 import pianoConfig from "./instruments/piano.json";
 import trumpetConfig from "./instruments/trumpet.json";
 import fluteConfig from "./instruments/flute.json";
@@ -8,12 +7,10 @@ import guitarConfig from "./instruments/guitar.json";
 import harmonicaConfig from "./instruments/harmonica.json";
 import contrabassConfig from "./instruments/contrabass.json";
 
+const instrumentConfigs = new Map<string, unknown>();
+const configPromises = new Map<string, Promise<unknown>>();
 
-const instrumentConfigs = new Map<string, any>();
-const configPromises = new Map<string, Promise<any>>();
-
-
-const initializeConfigs = () => {
+const initializeConfigs = (): void => {
   instrumentConfigs.set("piano", pianoConfig);
   instrumentConfigs.set("trumpet", trumpetConfig);
   instrumentConfigs.set("flute", fluteConfig);
@@ -22,10 +19,9 @@ const initializeConfigs = () => {
   instrumentConfigs.set("contrabass", contrabassConfig);
 };
 
-
 initializeConfigs();
 
-export const registerCustomInstrument = (name: string, config: any): void => {
+export const registerCustomInstrument = (name: string, config: unknown): void => {
   instrumentConfigs.set(name, config);
 
   if (synths.has(name)) {
@@ -35,18 +31,14 @@ export const registerCustomInstrument = (name: string, config: any): void => {
   createSynth(name);
 };
 
-
-const loadInstrumentConfig = async (instrument: string): Promise<any> => {
-
+const loadInstrumentConfig = async (instrument: string): Promise<unknown> => {
   if (instrumentConfigs.has(instrument)) {
     return instrumentConfigs.get(instrument);
   }
 
-
   if (configPromises.has(instrument)) {
     return configPromises.get(instrument);
   }
-
 
   const loadPromise = (async () => {
     try {
@@ -54,7 +46,7 @@ const loadInstrumentConfig = async (instrument: string): Promise<any> => {
       instrumentConfigs.set(instrument, config.default);
       configPromises.delete(instrument);
       return config.default;
-    } catch (error) {
+    } catch {
       configPromises.delete(instrument);
       return null;
     }
@@ -64,48 +56,43 @@ const loadInstrumentConfig = async (instrument: string): Promise<any> => {
   return loadPromise;
 };
 
-const synths = new Map<string, any>();
+const synths = new Map<string, Tone.Synth | Tone.FMSynth | Tone.AMSynth>();
 
-const createSynth = (instrument: string): any => {
-
+const createSynth = (instrument: string): Tone.Synth | Tone.FMSynth | Tone.AMSynth => {
   if (synths.has(instrument)) {
-    return synths.get(instrument);
+    return synths.get(instrument)!;
   }
 
-  let synth: any;
+  let synth: Tone.Synth | Tone.FMSynth | Tone.AMSynth;
   switch (instrument) {
-    case "fm":
+    case "fm": {
       synth = new Tone.FMSynth().toDestination();
       break;
-    default:
-
+    }
+    default: {
       const config = instrumentConfigs.get(instrument);
       if (config) {
-        synth = new Tone.AMSynth(config).toDestination();
+        synth = new Tone.AMSynth(config as Tone.AMSynthOptions).toDestination();
       } else {
-
         synth = new Tone.Synth().toDestination();
       }
       break;
+    }
   }
   synths.set(instrument, synth);
   return synth;
 };
 
-// Pre-initialize default instruments on startup (after createSynth is defined)
 const defaultInstruments = ["piano", "trumpet", "flute", "guitar", "harmonica", "contrabass"];
 defaultInstruments.forEach(instrument => {
   createSynth(instrument);
 });
-
-
 
 export const ensureSynth = async (instrument: string): Promise<void> => {
   if (synths.has(instrument)) {
     return;
   }
 
-  // Load config if needed
   if (!instrumentConfigs.has(instrument)) {
     const config = await loadInstrumentConfig(instrument);
     if (config) {
@@ -113,7 +100,6 @@ export const ensureSynth = async (instrument: string): Promise<void> => {
     }
   }
 
-  // Use createSynth which has proper caching
   createSynth(instrument);
 };
 
@@ -133,19 +119,24 @@ export const createNote = (
   };
 };
 
-export const getSynth = (instrument: string): Tone.Synth | undefined => {
+export const getSynth = (instrument: string): Tone.Synth | Tone.FMSynth | Tone.AMSynth | undefined => {
   return synths.get(instrument);
 };
 
-// Pre-initialize all synths that will be used in the music
+export const stopAllSynths = (): void => {
+  synths.forEach(synth => {
+    if ("triggerRelease" in synth && typeof synth.triggerRelease === "function") {
+      synth.triggerRelease();
+    }
+    if ("releaseAll" in synth && typeof synth.releaseAll === "function") {
+      (synth as { releaseAll: () => void }).releaseAll();
+    }
+  });
+};
+
 export const preInitializeSynths = async (instruments: string[]): Promise<void> => {
   const uniqueInstruments = [...new Set(instruments)];
   await Promise.all(uniqueInstruments.map(instrument => ensureSynth(instrument)));
-};
-
-
-export const getRegisteredInstruments = (): string[] => {
-  return Array.from(instrumentConfigs.keys());
 };
 
 export interface NoteData {

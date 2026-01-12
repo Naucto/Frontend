@@ -37,10 +37,23 @@ export const setNote = (
   duration: number,
   instrument: string
 ): MusicData => {
-  if (position < 0 || position >= music.length) {
+  if (position < 0) {
     throw new MusicError("Note position out of bounds");
   }
+
+  const maxLength = 32;
+  const requiredLength = Math.max(music.length, position + 1, position + duration);
+  const newLength = Math.min(requiredLength, maxLength);
+
+  if (position >= maxLength) {
+    throw new MusicError("Note position exceeds maximum grid size");
+  }
+
   const newNotes = [...music.notes];
+
+  while (newNotes.length < newLength) {
+    newNotes.push([]);
+  }
 
   if (!newNotes[position]) {
     newNotes[position] = [];
@@ -50,23 +63,22 @@ export const setNote = (
 
   return {
     ...music,
-    notes: newNotes
+    notes: newNotes,
+    length: newLength
   };
-};
-
-export const playMusic = async (music: MusicData): Promise<void> => {
-  return playMusicFromPosition(music, 0);
 };
 
 export const playMusicFromPosition = async (
   music: MusicData,
   startPosition: number = 0,
   onProgress?: (position: number, totalLength: number) => void,
-  onAudioStart?: (audioStartTime: number) => void
+  onAudioStart?: (audioStartTime: number) => void,
+  endPosition?: number
 ): Promise<void> => {
-  // Collect all instruments that will be used in this playback
+  const effectiveEndPosition = endPosition !== undefined ? Math.min(endPosition, music.notes.length) : music.notes.length;
+
   const instrumentsToUse = new Set<string>();
-  for (let i = startPosition; i < music.notes.length; i++) {
+  for (let i = startPosition; i < effectiveEndPosition; i++) {
     if (music.notes[i]) {
       for (const note of music.notes[i]) {
         if (note && note.instrument) {
@@ -76,20 +88,14 @@ export const playMusicFromPosition = async (
     }
   }
 
-  // Pre-initialize all synths before starting playback to prevent lag
   await preInitializeSynths(Array.from(instrumentsToUse));
 
-  // Start audio context and capture when we start
-  const wallClockStart = Date.now();
   Tone.start();
 
-  // Wait a moment for audio context to initialize
-  await new Promise(resolve => setTimeout(resolve, 50)); // Small delay for initialization
+  await new Promise(resolve => setTimeout(resolve, 50));
 
-  // Get the current Tone.js time - this is the reference point for all scheduling
-  const toneStartTime = Tone.now();
+  Tone.now();
 
-  // Calculate when audio actually starts (wall clock time when Tone context is ready)
   const actualAudioStartTime = Date.now();
 
   let now = Tone.now();
@@ -98,17 +104,15 @@ export const playMusicFromPosition = async (
   const beatDuration = 60 / music.bpm;
   const totalLength = music.length;
 
-  // Report when audio will actually start playing
   if (onAudioStart) {
     onAudioStart(actualAudioStartTime);
   }
 
-  // Report initial position immediately
   if (onProgress) {
     onProgress(startPosition, totalLength);
   }
 
-  for (let i = startPosition; i < music.notes.length; i++) {
+  for (let i = startPosition; i < effectiveEndPosition; i++) {
     const columnIndex = i;
 
     if (music.notes[i]) {
@@ -119,21 +123,15 @@ export const playMusicFromPosition = async (
       }
     }
 
-    // Schedule progress update using Tone.Draw.schedule which runs on the audio thread
-    // This fires exactly when the sound is actually being emitted
     if (onProgress) {
       if (i === startPosition) {
-        // First column - schedule immediately at the audio time
         Tone.Draw.schedule(() => {
-          // Use requestAnimationFrame to update UI from audio thread
           requestAnimationFrame(() => {
             onProgress(columnIndex, totalLength);
           });
         }, now);
       } else {
-        // Schedule callback at the exact audio time when this column's notes are emitted
         Tone.Draw.schedule(() => {
-          // Use requestAnimationFrame to update UI from audio thread
           requestAnimationFrame(() => {
             onProgress(columnIndex, totalLength);
           });
@@ -144,16 +142,13 @@ export const playMusicFromPosition = async (
     now += beatDuration;
   }
 
-  // Wait for all notes to finish playing
   await Promise.all(playPromises);
 
-  // Report completion at the time when the last note finishes playing
-  if (onProgress && music.notes.length > startPosition) {
-    const lastNoteTime = now; // This is when the last column's notes start
-    // Schedule completion callback when last note finishes (we don't track exact end time, so use a small delay)
+  if (onProgress && effectiveEndPosition > startPosition) {
+    const lastNoteTime = now;
     Tone.Draw.schedule(() => {
       requestAnimationFrame(() => {
-        onProgress(music.notes.length, totalLength);
+        onProgress(effectiveEndPosition, totalLength);
       });
     }, lastNoteTime);
   }
@@ -164,7 +159,7 @@ export const musicToJson = (music: MusicData): string => {
     bpm: music.bpm,
     length: music.length,
     numberOfOctaves: music.numberOfOctaves,
-    notes: music.notes.map(row => row ? row.map(note => noteToJson(note)) : []),
+    notes: music.notes.map(row => row ? row.map(note => note ? noteToJson(note) : null) : []),
   });
 };
 
@@ -174,8 +169,8 @@ export const musicFromJson = (json: string): MusicData => {
 
   return {
     ...music,
-    notes: data.notes.map((row: string[]) =>
-      row ? row.map(noteData => noteFromJson(noteData)) : []
+    notes: data.notes.map((row: (string | null)[]) =>
+      row ? row.map(noteData => noteData ? noteFromJson(noteData) : null) : []
     )
   };
 };

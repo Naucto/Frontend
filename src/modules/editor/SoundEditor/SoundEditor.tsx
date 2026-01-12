@@ -1,171 +1,11 @@
-import React, { useState, useCallback, useEffect, useMemo } from "react";
-import { styled } from "@mui/material/styles";
+import React, { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { Box } from "@mui/material";
-import { Doc } from "yjs";
-import { WebrtcProvider } from "y-webrtc";
+import * as Tone from "tone";
 import { createMusic, MusicData, setNote, playMusicFromPosition } from "./Music";
-import { registerCustomInstrument } from "./Note";
+import { registerCustomInstrument, stopAllSynths } from "./Note";
 import { InstrumentEditor, InstrumentConfig } from "./InstrumentEditor";
+import { EditorProps } from "@modules/create/game-editor/editors/EditorType";
 import "./SoundEditor.css";
-
-const ButtonContainer = styled(Box)(({ theme }) => ({
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))",
-  gap: theme.spacing(1),
-  marginTop: theme.spacing(2.5),
-  width: "100%",
-  maxWidth: "250px",
-}));
-
-const MusicSelectionContainer = styled(Box)(({ theme }) => ({
-  display: "grid",
-  gridTemplateColumns: "repeat(3, 1fr)",
-  gap: theme.spacing(0.5),
-  marginTop: theme.spacing(2.5),
-  width: "100%",
-  maxWidth: "150px",
-}));
-
-const MusicEditorButton = styled("button")(({ theme }) => ({
-  backgroundColor: theme.palette.blue[500],
-  color: theme.palette.text.primary,
-  padding: `${theme.spacing(1)} ${theme.spacing(2)}`,
-  cursor: "pointer",
-  fontSize: `${theme.typography.fontSize}px`,
-  textAlign: "center",
-  textDecoration: "none",
-  display: "inline-block",
-  boxShadow: "none",
-  margin: `${theme.spacing(0.5)} ${theme.spacing(0.25)}`,
-  fontFamily: theme.typography.fontFamily,
-  borderRadius: theme.spacing(1.2),
-  border: `${theme.spacing(0.25)} solid ${theme.palette.blue[600]}`,
-  minWidth: "auto",
-  "&:hover": {
-    backgroundColor: theme.palette.blue[700],
-  },
-  "&.selected": {
-    backgroundColor: theme.palette.blue[600],
-  },
-}));
-
-const GridContainer = styled("div")({
-  width: "max-content",
-  display: "grid",
-  gridTemplateColumns: "repeat(32, 35px)",
-  gridTemplateRows: "repeat(24, 20px)",
-  marginTop: "1em",
-  rowGap: "2px",
-  backgroundColor: "#537D8D",
-  boxSizing: "border-box",
-  border: "3px solid #537D8D",
-});
-
-const GridCell = styled("div")<{ isActive: boolean; isPlayingColumn: boolean }>(({ isActive, isPlayingColumn }) => ({
-  width: "35px",
-  height: "20px",
-  boxSizing: "border-box",
-  backgroundColor: isPlayingColumn ? "rgba(0, 188, 212, 0.4)" : (isActive ? "#2a3c45" : "#3a5863"),
-  color: isActive ? "black" : "transparent",
-  userSelect: "none",
-  cursor: "pointer",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: isActive ? "12px" : "10px",
-  fontWeight: isActive ? "bold" : "normal",
-  borderLeft: isPlayingColumn ? "3px solid #00BCD4" : "none",
-  borderRight: isPlayingColumn ? "3px solid #00BCD4" : "none",
-  boxShadow: isPlayingColumn ? "0 0 8px rgba(0, 188, 212, 0.8)" : "none",
-  transition: isPlayingColumn ? "background-color 0.1s ease, box-shadow 0.1s ease" : "none",
-  "&:hover": {
-    backgroundColor: isPlayingColumn ? "rgba(0, 188, 212, 0.5)" : "#2a3c45",
-  },
-}));
-
-const ScrollableContainer = styled("div")({
-  maxWidth: "45%",
-  maxHeight: "100%",
-  overflowX: "auto",
-  overflowY: "hidden",
-  display: "flex",
-  flexDirection: "column",
-  flexWrap: "nowrap",
-});
-
-const GridWithProgressContainer = styled("div")({
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "flex-start",
-});
-
-const EditorContainer = styled("div")({
-  display: "flex",
-  gap: "20px",
-  alignItems: "flex-start",
-  width: "100%",
-  maxWidth: "100%",
-  overflow: "hidden",
-});
-
-const ControlButtonsContainer = styled("div")({
-  display: "flex",
-  justifyContent: "space-around",
-  marginTop: "20px",
-});
-
-const ProgressBarContainer = styled("div")(({ theme }) => ({
-  width: "1120px", // Exact grid width: 32 columns * 35px
-  height: "30px",
-  marginTop: "10px",
-  marginBottom: "10px",
-  position: "relative",
-  cursor: "pointer",
-  display: "flex",
-  alignItems: "center",
-  marginLeft: "3px", // Align with grid border (grid has 3px left border)
-}));
-
-const ProgressBarTrack = styled("div")(({ theme }) => ({
-  width: "100%",
-  height: "8px",
-  backgroundColor: "#3a5863",
-  borderRadius: "4px",
-  position: "relative",
-  overflow: "hidden",
-}));
-
-const ProgressBarFill = styled("div")<{ progress: number }>(({ progress, theme }) => ({
-  width: `${progress}%`,
-  height: "100%",
-  backgroundColor: "#00BCD4", // Bright cyan for better contrast against blue-gray background
-  borderRadius: "4px",
-  transition: "width 0.1s linear",
-}));
-
-const ProgressBarThumb = styled("div")<{ position: number }>(({ position, theme }) => ({
-  position: "absolute",
-  left: `${position}%`,
-  top: "50%",
-  transform: "translate(-50%, -50%)",
-  width: "16px",
-  height: "16px",
-  backgroundColor: theme.palette.blue[600],
-  borderRadius: "50%",
-  cursor: "pointer",
-  border: `2px solid ${theme.palette.blue[400]}`,
-  boxShadow: "0 2px 4px rgba(0,0,0,0.3)",
-  "&:hover": {
-    backgroundColor: theme.palette.blue[700],
-    transform: "translate(-50%, -50%) scale(1.2)",
-  },
-}));
-
-const ErrorMessage = styled("div")({
-  color: "red",
-  textAlign: "center",
-  marginTop: "10px",
-});
 
 const defaultInstruments: Map<string, string> = new Map([
   ["piano", "Piano"],
@@ -175,13 +15,6 @@ const defaultInstruments: Map<string, string> = new Map([
   ["contrabass", "Contrabass"],
   ["harmonica", "Harmonica"],
 ]);
-
-const CUSTOM_INSTRUMENTS_STORAGE_KEY = "soundEditor_customInstruments";
-
-interface SoundEditorProps {
-  ydoc?: Doc;
-  provider?: WebrtcProvider;
-}
 
 interface GridCellData {
   cellKey: string;
@@ -214,32 +47,34 @@ const InstrumentButtons: React.FC<InstrumentButtonsProps> = ({
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
-      <ButtonContainer>
+      <Box className="sound-editor-button-container">
         {Array.from(instruments.keys()).map((instrument) => (
-          <MusicEditorButton
-            className={currentInstrument === instrument ? "selected" : ""}
+          <button
+            className={`sound-editor-button ${currentInstrument === instrument ? "selected" : ""}`}
             key={instrument}
             onClick={() => onInstrumentSelect(instrument)}
             style={{ width: "100%" }}
           >
             {instruments.get(instrument)}
-          </MusicEditorButton>
+          </button>
         ))}
-      </ButtonContainer>
+      </Box>
       {isCustomInstrument && onEdit && onDelete && (
         <Box sx={{ display: "flex", gap: 1, mt: 1 }}>
-          <MusicEditorButton
+          <button
+            className="sound-editor-button"
             onClick={() => onEdit(currentInstrument)}
             style={{ backgroundColor: "#4caf50", borderColor: "#45a049" }}
           >
             Edit
-          </MusicEditorButton>
-          <MusicEditorButton
+          </button>
+          <button
+            className="sound-editor-button"
             onClick={() => onDelete(currentInstrument)}
             style={{ backgroundColor: "#f44336", borderColor: "#da190b" }}
           >
             Delete
-          </MusicEditorButton>
+          </button>
         </Box>
       )}
     </Box>
@@ -257,10 +92,10 @@ const MusicSelectionButtons: React.FC<MusicSelectionButtonsProps> = ({
   selectedMusicIndex,
   onMusicSelect,
 }) => (
-  <MusicSelectionContainer>
+  <Box className="sound-editor-music-selection-container">
     {musics.map((_, index) => (
-      <MusicEditorButton
-        className={`music-selection-button ${selectedMusicIndex === index ? "selected" : ""}`}
+      <button
+        className={`sound-editor-button ${selectedMusicIndex === index ? "selected" : ""}`}
         key={index}
         onClick={() => onMusicSelect(index)}
         style={{
@@ -271,9 +106,9 @@ const MusicSelectionButtons: React.FC<MusicSelectionButtonsProps> = ({
         }}
       >
         {index + 1}
-      </MusicEditorButton>
+      </button>
     ))}
-  </MusicSelectionContainer>
+  </Box>
 );
 
 interface MusicGridProps {
@@ -297,56 +132,57 @@ const MusicGrid: React.FC<MusicGridProps> = ({
   maxLength,
   onSeek,
 }) => (
-  <ScrollableContainer>
-    <GridWithProgressContainer>
+  <div className="sound-editor-scrollable-container">
+    <div className="sound-editor-grid-with-progress-container">
       <ProgressBar
         progress={playbackPosition}
         onSeek={onSeek}
         totalLength={totalLength}
         maxLength={maxLength}
       />
-      <GridContainer>
+      <div className="sound-editor-grid-container">
         {gridCells.map((cell) => (
-          <GridCell
+          <div
             key={cell.cellKey}
-            isActive={cell.isActive}
-            isPlayingColumn={cell.isPlayingColumn}
+            className={`sound-editor-grid-cell ${cell.isActive ? "active" : ""} ${cell.isPlayingColumn ? "playing-column" : ""}`}
             onMouseDown={() => onMouseDown(cell.row, cell.col)}
             onMouseOver={() => onMouseOver(cell.row, cell.col)}
             onMouseUp={() => onMouseUp(cell.row, cell.col)}
           >
             {cell.isNoteStart ? cell.note : ""}
-          </GridCell>
+          </div>
         ))}
-      </GridContainer>
-    </GridWithProgressContainer>
-  </ScrollableContainer>
+      </div>
+    </div>
+  </div>
 );
 
 interface ControlButtonsProps {
   isPlaying: boolean;
   onPlay: () => void;
+  onStop: () => void;
   onClear: () => void;
 }
 
 const ControlButtons: React.FC<ControlButtonsProps> = ({
   isPlaying,
   onPlay,
+  onStop,
   onClear,
 }) => (
-  <ControlButtonsContainer>
-    <MusicEditorButton onClick={onPlay} disabled={isPlaying}>
-      {isPlaying ? "Playing..." : "Play"}
-    </MusicEditorButton>
-    <MusicEditorButton onClick={onClear}>Clear</MusicEditorButton>
-  </ControlButtonsContainer>
+  <div className="sound-editor-control-buttons-container">
+    <button className="sound-editor-button" onClick={isPlaying ? onStop : onPlay}>
+      {isPlaying ? "Stop" : "Play"}
+    </button>
+    <button className="sound-editor-button" onClick={onClear}>Clear</button>
+  </div>
 );
 
 interface ProgressBarProps {
-  progress: number; // Current column index
+  progress: number;
   onSeek: (position: number) => void;
-  totalLength: number; // Total columns in music (32)
-  maxLength: number; // Last column with notes
+  totalLength: number;
+  maxLength: number;
 }
 
 const ProgressBar: React.FC<ProgressBarProps> = ({
@@ -355,7 +191,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   totalLength,
   maxLength,
 }) => {
-  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>): void => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const columnWidth = rect.width / totalLength;
@@ -364,48 +200,110 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
     onSeek(position);
   };
 
-  // Calculate position to align with column centers
-  // Each column is 35px wide, so center is at (column + 0.5) * (100 / totalLength)%
-  // Cap progress at maxLength (last column with notes)
   const cappedProgress = Math.min(progress, maxLength - 1);
   const columnCenterPosition = totalLength > 0 ? ((cappedProgress + 0.5) / totalLength) * 100 : 0;
-  // Fill percentage: (progress / maxLength) * (maxLength / totalLength) * 100
-  // This makes the fill stop at maxLength but fill only the portion of the bar that represents notes
   const fillPercentage = totalLength > 0 && maxLength > 0 ? ((cappedProgress + 1) / maxLength) * (maxLength / totalLength) * 100 : 0;
 
   return (
-    <ProgressBarContainer onClick={handleClick}>
-      <ProgressBarTrack>
-        <ProgressBarFill progress={fillPercentage} />
-        <ProgressBarThumb position={columnCenterPosition} />
-      </ProgressBarTrack>
-    </ProgressBarContainer>
+    <div className="sound-editor-progress-bar-container" onClick={handleClick}>
+      <div className="sound-editor-progress-bar-track">
+        <div className="sound-editor-progress-bar-fill" style={{ width: `${fillPercentage}%` }} />
+        <div className="sound-editor-progress-bar-thumb" style={{ left: `${columnCenterPosition}%` }} />
+      </div>
+    </div>
   );
 };
 
-export const SoundEditor: React.FC<SoundEditorProps> = ({ ydoc, provider }) => {
-  const [currentMusic, setCurrentMusic] = useState<MusicData>(createMusic());
-  const [currentInstrument, setCurrentInstrument] = useState<string>("piano");
-  const [activeCells, setActiveCells] = useState<Set<string>>(new Set());
+export const SoundEditor: React.FC<EditorProps> = ({ project }) => {
+  if (!project || !project.sound) {
+    return <div>Loading sound editor...</div>;
+  }
+
+  const soundProvider = project.sound;
+
+  const [musics, setMusics] = useState<MusicData[]>([]);
   const [selectedMusicIndex, setSelectedMusicIndex] = useState<number>(0);
-  const [isMouseDown, setIsMouseDown] = useState<boolean>(false);
-  const [startPosition, setStartPosition] = useState<[number, number]>([-1, -1]);
-  const [musics, setMusics] = useState<MusicData[]>(() => Array(16).fill(null).map(() => createMusic()));
-  const [isPlaying, setIsPlaying] = useState<boolean>(false);
-  const [loadingError, setLoadingError] = useState<string | null>(null);
-  const [playbackPosition, setPlaybackPosition] = useState<number>(0);
-  const [playbackStartPosition, setPlaybackStartPosition] = useState<number>(0);
+  const [currentMusic, setCurrentMusic] = useState<MusicData>(createMusic());
   const [customInstruments, setCustomInstruments] = useState<Map<string, InstrumentConfig>>(new Map());
   const [instruments, setInstruments] = useState<Map<string, string>>(new Map(defaultInstruments));
+
+  const [currentInstrument, setCurrentInstrument] = useState<string>("piano");
+  const [activeCells, setActiveCells] = useState<Set<string>>(new Set());
+  const [isMouseDown, setIsMouseDown] = useState<boolean>(false);
+  const [startPosition, setStartPosition] = useState<[number, number]>([-1, -1]);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [loadingError] = useState<string | null>(null);
+  const [playbackPosition, setPlaybackPosition] = useState<number>(0);
+  const [playbackStartPosition, setPlaybackStartPosition] = useState<number>(0);
   const [isInstrumentEditorOpen, setIsInstrumentEditorOpen] = useState<boolean>(false);
   const [editingInstrument, setEditingInstrument] = useState<{ name: string; config: InstrumentConfig; originalKey?: string } | undefined>(undefined);
+  const [lastColumnWithNotes, setLastColumnWithNotes] = useState<number>(0);
 
-  // Find the last column that has notes
-  const getLastColumnWithNotes = useMemo(() => {
+  const playbackTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const shouldStopRef = useRef<boolean>(false);
+  const isPlayingRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    const handleUpdate = (updatedMusics: MusicData[]): void => {
+      setMusics(updatedMusics);
+      setCurrentMusic(updatedMusics[selectedMusicIndex] || createMusic());
+    };
+
+    soundProvider.observe(handleUpdate);
+    return () => {
+      soundProvider.unobserve(handleUpdate);
+    };
+  }, [soundProvider, selectedMusicIndex]);
+
+  useEffect(() => {
+    if (musics.length > 0 && selectedMusicIndex >= 0 && selectedMusicIndex < musics.length) {
+      setCurrentMusic(musics[selectedMusicIndex] || createMusic());
+    }
+  }, [selectedMusicIndex, musics]);
+
+  useEffect(() => {
+    const handleCustomInstrumentsUpdate = (updatedInstruments: Map<string, InstrumentConfig>): void => {
+      setCustomInstruments(updatedInstruments);
+      const instrumentsMap = new Map(defaultInstruments);
+      updatedInstruments.forEach((_, name) => {
+        instrumentsMap.set(name, name.charAt(0).toUpperCase() + name.slice(1));
+      });
+      setInstruments(instrumentsMap);
+    };
+
+    soundProvider.observeCustomInstruments(handleCustomInstrumentsUpdate);
+    return () => {
+      soundProvider.unobserveCustomInstruments(handleCustomInstrumentsUpdate);
+    };
+  }, [soundProvider]);
+
+  const notesKey = useMemo(() => JSON.stringify(currentMusic.notes), [currentMusic.notes]);
+
+  useEffect(() => {
+    const newActiveCells = new Set<string>();
+    for (let i = 0; i < currentMusic.notes.length; i++) {
+      if (currentMusic.notes[i] && Array.isArray(currentMusic.notes[i])) {
+        for (let j = 0; j < currentMusic.notes[i].length; j++) {
+          const note = currentMusic.notes[i][j];
+          if (note && note.note !== "Nan") {
+            const duration = note.duration || 1;
+            for (let k = 0; k < duration; k++) {
+              if (i + k < currentMusic.notes.length) {
+                newActiveCells.add(`${j}-${i + k}`);
+              }
+            }
+          }
+        }
+      }
+    }
+    setActiveCells(newActiveCells);
+  }, [currentMusic, notesKey]);
+
+  useEffect(() => {
     let lastColumn = -1;
-    for (let i = currentMusic.notes.length - 1; i >= 0; i--) {
-      if (currentMusic.notes[i] && currentMusic.notes[i].length > 0) {
-        // Check if this column has any non-empty notes
+    const maxColumn = Math.max(currentMusic.length, 32);
+    for (let i = maxColumn - 1; i >= 0; i--) {
+      if (currentMusic.notes[i] && Array.isArray(currentMusic.notes[i]) && currentMusic.notes[i].length > 0) {
         const hasNotes = currentMusic.notes[i].some(note => note && note.note !== "Nan");
         if (hasNotes) {
           lastColumn = i;
@@ -413,17 +311,15 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({ ydoc, provider }) => {
         }
       }
     }
-    // If no notes found, return at least 0 or the music length
-    return lastColumn >= 0 ? lastColumn + 1 : currentMusic.length;
-  }, [currentMusic]);
+    const newLastColumn = lastColumn >= 0 ? lastColumn + 1 : currentMusic.length;
+    setLastColumnWithNotes(newLastColumn);
+  }, [currentMusic, notesKey]);
 
   const gridCells = useMemo(() => {
     return [...Array(24)].map((_, row) =>
       [...Array(32)].map((_, col) => {
         const cellKey = `${row}-${col}`;
         const isActive = activeCells.has(cellKey);
-        // Highlight the column that is currently playing
-        // playbackPosition now directly represents the column index (0-based) that's currently playing
         const isPlayingColumn = isPlaying && playbackPosition >= 0 && col === playbackPosition;
 
         let note = "Nan";
@@ -448,8 +344,7 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({ ydoc, provider }) => {
         };
       })
     ).flat();
-  }, [activeCells, currentMusic, isPlaying, playbackPosition, playbackStartPosition]);
-
+  }, [activeCells, currentMusic, isPlaying, playbackPosition]);
 
   const handleMouseDown = useCallback((row: number, col: number) => {
     if (isMouseDown) return;
@@ -473,44 +368,40 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({ ydoc, provider }) => {
         }
 
         if (noteToRemove) {
-          setCurrentMusic(prevMusic => {
-            const newMusic = { ...prevMusic };
-            newMusic.notes = newMusic.notes.map(column => column ? [...column] : []);
-            if (!newMusic.notes[noteStartCol]) {
-              newMusic.notes[noteStartCol] = [];
-            }
-            newMusic.notes[noteStartCol][row] = { note: "Nan", duration: 1, instrument: "" };
+          const newMusic = { ...currentMusic };
+          newMusic.notes = newMusic.notes.map(column => column ? [...column] : []);
+          if (!newMusic.notes[noteStartCol]) {
+            newMusic.notes[noteStartCol] = [];
+          }
+          newMusic.notes[noteStartCol][row] = { note: "Nan", duration: 1, instrument: "" };
 
-            const newActiveCells = new Set<string>();
-            for (let i = 0; i < newMusic.notes.length; i++) {
-              if (newMusic.notes[i] && Array.isArray(newMusic.notes[i])) {
-                for (let j = 0; j < newMusic.notes[i].length; j++) {
-                  const note = newMusic.notes[i][j];
-                  if (note && note.note !== "Nan") {
-                    const duration = note.duration || 1;
-                    for (let k = 0; k < duration; k++) {
-                      if (i + k < newMusic.notes.length) {
-                        const cellKey = `${j}-${i + k}`;
-                        newActiveCells.add(cellKey);
-                      }
+          const newActiveCells = new Set<string>();
+          for (let i = 0; i < newMusic.notes.length; i++) {
+            if (newMusic.notes[i] && Array.isArray(newMusic.notes[i])) {
+              for (let j = 0; j < newMusic.notes[i].length; j++) {
+                const note = newMusic.notes[i][j];
+                if (note && note.note !== "Nan") {
+                  const duration = note.duration || 1;
+                  for (let k = 0; k < duration; k++) {
+                    if (i + k < newMusic.notes.length) {
+                      const cellKey = `${j}-${i + k}`;
+                      newActiveCells.add(cellKey);
                     }
                   }
                 }
               }
             }
-            setActiveCells(newActiveCells);
-
-            return newMusic;
-          });
+          }
+          setActiveCells(newActiveCells);
+          soundProvider.setMusic(selectedMusicIndex, newMusic);
         } else {
           const newActiveCells = new Set(activeCells);
           const cellKey = `${row}-${col}`;
           newActiveCells.add(cellKey);
           setActiveCells(newActiveCells);
 
-          setCurrentMusic(prevMusic =>
-            setNote(prevMusic, col, row, 1, currentInstrument)
-          );
+          const updatedMusic = setNote(currentMusic, col, row, 1, currentInstrument);
+          soundProvider.setMusic(selectedMusicIndex, updatedMusic);
         }
       } else {
         const newActiveCells = new Set(activeCells);
@@ -522,9 +413,8 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({ ydoc, provider }) => {
         }
         setActiveCells(newActiveCells);
 
-        setCurrentMusic(prevMusic =>
-          setNote(prevMusic, startPosition[1], row, Math.max(1, Math.abs(startPosition[1] - col) + 1), currentInstrument)
-        );
+        const updatedMusic = setNote(currentMusic, startPosition[1], row, Math.max(1, Math.abs(startPosition[1] - col) + 1), currentInstrument);
+        soundProvider.setMusic(selectedMusicIndex, updatedMusic);
       }
       setStartPosition([-1, -1]);
     }
@@ -547,79 +437,104 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({ ydoc, provider }) => {
 
   const clearMusic = useCallback(() => {
     setActiveCells(new Set());
-    setCurrentMusic(createMusic());
+    const clearedMusic = createMusic();
+    soundProvider.setMusic(selectedMusicIndex, clearedMusic);
     setPlaybackPosition(0);
     setPlaybackStartPosition(0);
-  }, []);
+  }, [soundProvider, selectedMusicIndex]);
 
   const handlePlay = useCallback(async () => {
-    if (isPlaying) return;
+    if (isPlayingRef.current) return;
 
+    shouldStopRef.current = false;
+    isPlayingRef.current = true;
     setIsPlaying(true);
     setPlaybackPosition(playbackStartPosition);
 
-    const beatDuration = (60 / currentMusic.bpm) * 1000; // Convert to ms
-    const startPosition = playbackStartPosition;
-    // Use the last column with notes to determine actual playback end
-    const actualEndColumn = getLastColumnWithNotes;
+    const beatDuration = (60 / currentMusic.bpm) * 1000;
+    const actualEndColumn = lastColumnWithNotes;
     const totalBeats = actualEndColumn - playbackStartPosition;
     const totalDuration = totalBeats * beatDuration;
 
     try {
-      // Start playing music - progress callback will fire when notes actually play
       await playMusicFromPosition(
         currentMusic,
         playbackStartPosition,
-        (position, totalLength) => {
-          // This callback fires exactly when each column's notes start playing
-          console.log("current col:", position);
+        (position) => {
+          if (shouldStopRef.current) {
+            return;
+          }
+
           setPlaybackPosition(position);
 
-          // Stop at the actual end
           if (position >= actualEndColumn) {
             setPlaybackPosition(actualEndColumn);
             setPlaybackStartPosition(0);
+            isPlayingRef.current = false;
             setIsPlaying(false);
+            if (playbackTimeoutRef.current) {
+              clearTimeout(playbackTimeoutRef.current);
+              playbackTimeoutRef.current = null;
+            }
           }
         },
-        (audioStart) => {
-          // Audio start callback (kept for compatibility but not used for progress tracking)
-        }
+        () => {
+        },
+        lastColumnWithNotes
       );
 
-      // Wait for the actual playback duration before resetting
-      // The progress callback will handle stopping at the end
-      setTimeout(() => {
+      playbackTimeoutRef.current = setTimeout(() => {
+        if (!shouldStopRef.current) {
+          setPlaybackPosition(0);
+          setPlaybackStartPosition(0);
+          isPlayingRef.current = false;
+          setIsPlaying(false);
+        }
+        playbackTimeoutRef.current = null;
+      }, totalDuration + 200);
+    } catch {
+      if (!shouldStopRef.current) {
         setPlaybackPosition(0);
         setPlaybackStartPosition(0);
+        isPlayingRef.current = false;
         setIsPlaying(false);
-      }, totalDuration + 200); // Add 200ms buffer for safety
-    } catch (error) {
-      console.error("Error playing music:", error);
-      setPlaybackPosition(0);
-      setPlaybackStartPosition(0);
-      setIsPlaying(false);
+      }
+      if (playbackTimeoutRef.current) {
+        clearTimeout(playbackTimeoutRef.current);
+        playbackTimeoutRef.current = null;
+      }
     }
-  }, [currentMusic, isPlaying, playbackStartPosition, getLastColumnWithNotes]);
+  }, [currentMusic, playbackStartPosition, lastColumnWithNotes]);
+
+  const handleStop = useCallback(() => {
+    if (!isPlayingRef.current) return;
+
+    shouldStopRef.current = true;
+    isPlayingRef.current = false;
+    setIsPlaying(false);
+
+    stopAllSynths();
+
+    Tone.Transport.cancel();
+    Tone.Transport.stop();
+
+    if (playbackTimeoutRef.current) {
+      clearTimeout(playbackTimeoutRef.current);
+      playbackTimeoutRef.current = null;
+    }
+
+    setPlaybackStartPosition(playbackPosition);
+  }, [isPlaying, playbackPosition]);
 
   const handleSeek = useCallback((position: number) => {
-    if (isPlaying) return; // Don't allow seeking while playing
+    if (isPlaying) return;
     setPlaybackStartPosition(position);
     setPlaybackPosition(position);
   }, [isPlaying]);
 
-  useEffect(() => {
-    setMusics(prevMusics => {
-      const newMusics = [...prevMusics];
-      newMusics[selectedMusicIndex] = currentMusic;
-      return newMusics;
-    });
-  }, [currentMusic, selectedMusicIndex]);
-
   const loadStateFromMusic = useCallback((id: number) => {
     const music = musics[id];
     setSelectedMusicIndex(id);
-    setCurrentMusic(music);
     setPlaybackPosition(0);
     setPlaybackStartPosition(0);
 
@@ -640,112 +555,53 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({ ydoc, provider }) => {
     setActiveCells(newActiveCells);
   }, [musics]);
 
-
   useEffect(() => {
+    const storageKey = `soundEditor_customInstruments_${project.projectId}`;
     try {
-      const stored = localStorage.getItem(CUSTOM_INSTRUMENTS_STORAGE_KEY);
+      const stored = localStorage.getItem(storageKey);
       if (stored) {
         const parsed = JSON.parse(stored);
-        const customMap = new Map<string, InstrumentConfig>();
-        const instrumentsMap = new Map(defaultInstruments);
-
-        Object.entries(parsed).forEach(([name, config]: [string, any]) => {
-          customMap.set(name, config as InstrumentConfig);
-          instrumentsMap.set(name, name.charAt(0).toUpperCase() + name.slice(1));
+        Object.entries(parsed).forEach(([name, config]: [string, unknown]) => {
+          soundProvider.setCustomInstrument(name, config as InstrumentConfig);
           registerCustomInstrument(name, config);
         });
-
-        setCustomInstruments(customMap);
-        setInstruments(instrumentsMap);
       }
-    } catch (error) {
-      console.error("Failed to load custom instruments:", error);
+    } catch {
+      void 0;
     }
-  }, []);
-
+  }, [soundProvider, project.projectId]);
 
   useEffect(() => {
     if (customInstruments.size > 0) {
+      const storageKey = `soundEditor_customInstruments_${project.projectId}`;
       try {
         const toStore: Record<string, InstrumentConfig> = {};
         customInstruments.forEach((config, name) => {
           toStore[name] = config;
         });
-        localStorage.setItem(CUSTOM_INSTRUMENTS_STORAGE_KEY, JSON.stringify(toStore));
-      } catch (error) {
-        console.error("Failed to save custom instruments:", error);
+        localStorage.setItem(storageKey, JSON.stringify(toStore));
+      } catch {
+        void 0;
       }
     }
-  }, [customInstruments]);
+  }, [customInstruments, project.projectId]);
 
   const handleSaveInstrument = useCallback((name: string, config: InstrumentConfig) => {
     const normalizedName = name.toLowerCase().replace(/\s+/g, "-");
     const isEditing = editingInstrument !== undefined;
     const oldKey = editingInstrument?.originalKey;
 
-
     if (isEditing && oldKey && oldKey !== normalizedName) {
-
-      setCustomInstruments(prev => {
-        const newMap = new Map(prev);
-        newMap.delete(oldKey);
-        return newMap;
-      });
-
-      setInstruments(prev => {
-        const newMap = new Map(prev);
-        newMap.delete(oldKey);
-        return newMap;
-      });
-
-
+      soundProvider.deleteCustomInstrument(oldKey);
       if (currentInstrument === oldKey) {
         setCurrentInstrument(normalizedName);
       }
-
-
-      try {
-        const stored = localStorage.getItem(CUSTOM_INSTRUMENTS_STORAGE_KEY);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          delete parsed[oldKey];
-          localStorage.setItem(CUSTOM_INSTRUMENTS_STORAGE_KEY, JSON.stringify(parsed));
-        }
-      } catch (error) {
-        console.error("Failed to update localStorage:", error);
-      }
-    } else if (isEditing && oldKey) {
-
-      try {
-        const stored = localStorage.getItem(CUSTOM_INSTRUMENTS_STORAGE_KEY);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          delete parsed[oldKey];
-          localStorage.setItem(CUSTOM_INSTRUMENTS_STORAGE_KEY, JSON.stringify(parsed));
-        }
-      } catch (error) {
-        console.error("Failed to update localStorage:", error);
-      }
     }
 
-
     registerCustomInstrument(normalizedName, config);
-
-
-    setCustomInstruments(prev => {
-      const newMap = new Map(prev);
-      newMap.set(normalizedName, config);
-      return newMap;
-    });
-
-    setInstruments(prev => {
-      const newMap = new Map(prev);
-      newMap.set(normalizedName, name);
-      return newMap;
-    });
-
+    soundProvider.setCustomInstrument(normalizedName, config);
     setEditingInstrument(undefined);
-  }, [editingInstrument, currentInstrument]);
+  }, [soundProvider, editingInstrument, currentInstrument]);
 
   const handleNewInstrument = useCallback(() => {
     setEditingInstrument(undefined);
@@ -769,38 +625,12 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({ ydoc, provider }) => {
 
   const handleDeleteInstrument = useCallback((instrument: string) => {
     if (window.confirm(`Are you sure you want to delete "${instruments.get(instrument) || instrument}"?`)) {
-
-      setCustomInstruments(prev => {
-        const newMap = new Map(prev);
-        newMap.delete(instrument);
-        return newMap;
-      });
-
-
-      setInstruments(prev => {
-        const newMap = new Map(prev);
-        newMap.delete(instrument);
-        return newMap;
-      });
-
-
+      soundProvider.deleteCustomInstrument(instrument);
       if (currentInstrument === instrument) {
         setCurrentInstrument("piano");
       }
-
-
-      try {
-        const stored = localStorage.getItem(CUSTOM_INSTRUMENTS_STORAGE_KEY);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          delete parsed[instrument];
-          localStorage.setItem(CUSTOM_INSTRUMENTS_STORAGE_KEY, JSON.stringify(parsed));
-        }
-      } catch (error) {
-        console.error("Failed to delete instrument from localStorage:", error);
-      }
     }
-  }, [customInstruments, instruments, currentInstrument]);
+  }, [soundProvider, instruments, currentInstrument]);
 
   return (
     <div onMouseUp={() => setIsMouseDown(false)} style={{ width: "100%", overflow: "hidden" }}>
@@ -808,9 +638,10 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({ ydoc, provider }) => {
         <ControlButtons
           isPlaying={isPlaying}
           onPlay={handlePlay}
+          onStop={handleStop}
           onClear={clearMusic}
         />
-        <EditorContainer>
+        <div className="sound-editor-container">
           <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
             <InstrumentButtons
               instruments={instruments}
@@ -820,12 +651,13 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({ ydoc, provider }) => {
               onEdit={handleEditInstrument}
               onDelete={handleDeleteInstrument}
             />
-            <MusicEditorButton
+            <button
+              className="sound-editor-button"
               onClick={handleNewInstrument}
               style={{ marginTop: "10px" }}
             >
               New Instrument
-            </MusicEditorButton>
+            </button>
           </Box>
           <MusicGrid
             gridCells={gridCells}
@@ -834,7 +666,7 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({ ydoc, provider }) => {
             onMouseUp={handleMouseUp}
             playbackPosition={playbackPosition}
             totalLength={currentMusic.length}
-            maxLength={getLastColumnWithNotes}
+            maxLength={lastColumnWithNotes}
             onSeek={handleSeek}
           />
           <MusicSelectionButtons
@@ -842,11 +674,11 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({ ydoc, provider }) => {
             selectedMusicIndex={selectedMusicIndex}
             onMusicSelect={loadStateFromMusic}
           />
-        </EditorContainer>
+        </div>
         {loadingError && (
-          <ErrorMessage>
+          <div className="sound-editor-error-message">
             Warning: Failed to load some instruments. Using fallback audio.
-          </ErrorMessage>
+          </div>
         )}
       </div>
       <InstrumentEditor
