@@ -19,5 +19,9 @@ export type CreateUserDto = {
      * User password
      */
     password: string;
+    /**
+     * Description of the user
+     */
+    description?: string;
 };
 

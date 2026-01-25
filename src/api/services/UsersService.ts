@@ -3,6 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { UpdateUserDto } from '../models/UpdateUserDto';
+import type { UpdateUserProfileDto } from '../models/UpdateUserProfileDto';
 import type { UserListResponseDto } from '../models/UserListResponseDto';
 import type { UserProfileResponseDto } from '../models/UserProfileResponseDto';
 import type { UserSingleResponseDto } from '../models/UserSingleResponseDto';
@@ -19,6 +20,25 @@ export class UsersService {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/users/profile',
+            errors: {
+                401: `Unauthorized`,
+            },
+        });
+    }
+    /**
+     * Update current user profile
+     * @param requestBody
+     * @returns UserProfileResponseDto User profile updated successfully
+     * @throws ApiError
+     */
+    public static userControllerUpdateProfile(
+        requestBody: UpdateUserProfileDto,
+    ): CancelablePromise<UserProfileResponseDto> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/users/profile',
+            body: requestBody,
+            mediaType: 'application/json',
             errors: {
                 401: `Unauthorized`,
             },

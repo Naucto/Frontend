@@ -21,6 +21,10 @@ export type UserResponseDto = {
      */
     nickname: string | null;
     /**
+     * User description
+     */
+    description: string | null;
+    /**
      * User roles
      */
     roles?: Array<UserRoleDto>;

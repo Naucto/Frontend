@@ -22,32 +22,14 @@ export type UpdateProjectDto = {
     /**
      * Project status
      */
-    status?: UpdateProjectDto.status;
+    status?: 'IN_PROGRESS' | 'COMPLETED' | 'ARCHIVED';
     /**
      * Monetization type
      */
-    monetization?: UpdateProjectDto.monetization;
+    monetization?: 'NONE' | 'ADS' | 'PAID';
     /**
      * The price of the project
      */
     price?: number;
 };
-export namespace UpdateProjectDto {
-    /**
-     * Project status
-     */
-    export enum status {
-        IN_PROGRESS = 'IN_PROGRESS',
-        COMPLETED = 'COMPLETED',
-        ARCHIVED = 'ARCHIVED',
-    }
-    /**
-     * Monetization type
-     */
-    export enum monetization {
-        NONE = 'NONE',
-        ADS = 'ADS',
-        PAID = 'PAID',
-    }
-}
 

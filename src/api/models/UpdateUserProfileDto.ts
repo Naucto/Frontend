@@ -2,23 +2,11 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type UpdateUserDto = {
-    /**
-     * User email address
-     */
-    email?: string;
-    /**
-     * User username
-     */
-    username?: string;
+export type UpdateUserProfileDto = {
     /**
      * User nick name
      */
     nickname?: string;
-    /**
-     * User password
-     */
-    password?: string;
     /**
      * Description of the user
      */
