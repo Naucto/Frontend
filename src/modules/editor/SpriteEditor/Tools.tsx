@@ -1,6 +1,7 @@
 import { DrawTool } from "@modules/editor/SpriteEditor/SpriteEditor";
 import React, { useEffect, useRef } from "react";
 import { SpriteProvider } from "@providers/editors/SpriteProvider";
+import { SpriteToolError } from "@errors/SpriteToolError";
 
 type Point2D = { x: number; y: number };
 type CanvasHandler = ((e: React.MouseEvent<HTMLCanvasElement>, pixelPos: Point2D) => void) | undefined;
@@ -23,8 +24,7 @@ const Tools: React.FC<{
     try {
       startColor = spriteCanvas.getPixel(sx, sy);
     } catch (err) {
-      console.error("Flood fill start position out of bounds", err); //TODO CUSTOM ERROR HANDLING
-      return;
+      throw new SpriteToolError("Flood fill start position out of bounds", "FLOOD_FILL_OUT_OF_BOUNDS", err);
     }
     if (startColor === newColor) return;
 
@@ -41,8 +41,7 @@ const Tools: React.FC<{
       try {
         curColor = spriteCanvas.getPixel(x, y);
       } catch (err) {
-        console.error("Flood fill position out of bounds", err); //TODO CUSTOM ERROR HANDLING
-        continue;
+        throw new SpriteToolError("Flood fill position out of bounds", "FLOOD_FILL_OUT_OF_BOUNDS", err);
       }
       if (curColor !== startColor) continue;
 
