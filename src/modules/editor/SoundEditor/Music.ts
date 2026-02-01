@@ -92,8 +92,6 @@ export const playMusicFromPosition = async (
 
   Tone.start();
 
-  await new Promise(resolve => setTimeout(resolve, 50));
-
   Tone.now();
 
   const actualAudioStartTime = Date.now();
@@ -117,27 +115,22 @@ export const playMusicFromPosition = async (
 
     if (music.notes[i]) {
       for (const note of music.notes[i]) {
-        if (note) {
+        if (note && note.note !== "Nan") {
           playPromises.push(playInstrument(note.note, note.instrument, now, beatDuration * note.duration));
         }
       }
     }
 
-    if (onProgress) {
-      if (i === startPosition) {
-        Tone.Draw.schedule(() => {
-          requestAnimationFrame(() => {
-            onProgress(columnIndex, totalLength);
-          });
-        }, now);
-      } else {
-        Tone.Draw.schedule(() => {
-          requestAnimationFrame(() => {
-            onProgress(columnIndex, totalLength);
-          });
-        }, now);
-      }
+    if (!onProgress) {
+      now += beatDuration;
+      continue;
     }
+
+    Tone.Draw.schedule(() => {
+      requestAnimationFrame(() => {
+        onProgress(columnIndex, totalLength);
+      });
+    }, now);
 
     now += beatDuration;
   }

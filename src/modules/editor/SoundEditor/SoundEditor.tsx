@@ -1,11 +1,92 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { Box } from "@mui/material";
+import { styled } from "@mui/material/styles";
 import * as Tone from "tone";
 import { createMusic, MusicData, setNote, playMusicFromPosition } from "./Music";
-import { registerCustomInstrument, stopAllSynths } from "./Note";
+import { registerCustomInstrument, stopAllSynths, NoteData } from "./Note";
 import { InstrumentEditor, InstrumentConfig } from "./InstrumentEditor";
 import { EditorProps } from "@modules/create/game-editor/editors/EditorType";
-import "./SoundEditor.css";
+import { MusicGrid } from "./MusicGrid";
+
+const ButtonContainer = styled(Box)(() => ({
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))",
+  gap: "8px",
+  marginTop: "20px",
+  width: "100%",
+  maxWidth: "250px",
+}));
+
+const MusicSelectionContainer = styled(Box)(() => ({
+  display: "grid",
+  gridTemplateColumns: "repeat(3, 1fr)",
+  gap: "4px",
+  marginTop: "20px",
+  width: "100%",
+  maxWidth: "150px",
+}));
+
+const StyledButton = styled("button")<{ selected?: boolean }>(({ selected }) => ({
+  backgroundColor: selected ? "#4c7280" : "#537d8d",
+  color: "#ffffff",
+  padding: "8px 16px",
+  cursor: "pointer",
+  fontSize: "16px",
+  textAlign: "center",
+  textDecoration: "none",
+  display: "inline-block",
+  boxShadow: "none",
+  margin: "4px 2px",
+  fontFamily: "'Pixelify', 'Roboto', 'Helvetica', 'Arial', sans-serif",
+  borderRadius: "9.6px",
+  border: "2px solid #4c7280",
+  minWidth: "auto",
+  "&:hover": {
+    backgroundColor: "#3b5964",
+  },
+}));
+
+const MusicSelectionButton = styled(StyledButton)(() => ({
+  padding: "4px 8px",
+  fontSize: "12px",
+  minWidth: "auto",
+  width: "100%",
+}));
+
+const NewInstrumentButton = styled(StyledButton)(({ theme }) => ({
+  marginTop: theme.spacing(1),
+}));
+
+const ControlButtonsContainer = styled("div")(() => ({
+  display: "flex",
+  justifyContent: "space-around",
+  marginTop: "20px",
+}));
+
+const EditorContainer = styled("div")(() => ({
+  display: "flex",
+  gap: "20px",
+  alignItems: "flex-start",
+  width: "100%",
+  maxWidth: "100%",
+  overflow: "hidden",
+}));
+
+const SoundEditorRoot = styled("div")(() => ({
+  width: "100%",
+  overflow: "hidden",
+}));
+
+const ErrorMessage = styled("div")(() => ({
+  color: "red",
+  textAlign: "center",
+  marginTop: "10px",
+}));
+
+const SoundEditorWrapper = styled("div")(() => ({
+  width: "fit-content",
+  maxWidth: "100%",
+}));
 
 const defaultInstruments: Map<string, string> = new Map([
   ["piano", "Piano"],
@@ -15,16 +96,6 @@ const defaultInstruments: Map<string, string> = new Map([
   ["contrabass", "Contrabass"],
   ["harmonica", "Harmonica"],
 ]);
-
-interface GridCellData {
-  cellKey: string;
-  isActive: boolean;
-  row: number;
-  col: number;
-  note: string;
-  isNoteStart: boolean;
-  isPlayingColumn: boolean;
-}
 
 interface InstrumentButtonsProps {
   instruments: Map<string, string>;
@@ -47,34 +118,32 @@ const InstrumentButtons: React.FC<InstrumentButtonsProps> = ({
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
-      <Box className="sound-editor-button-container">
+      <ButtonContainer>
         {Array.from(instruments.keys()).map((instrument) => (
-          <button
-            className={`sound-editor-button ${currentInstrument === instrument ? "selected" : ""}`}
+          <StyledButton
+            selected={currentInstrument === instrument}
             key={instrument}
             onClick={() => onInstrumentSelect(instrument)}
             style={{ width: "100%" }}
           >
             {instruments.get(instrument)}
-          </button>
+          </StyledButton>
         ))}
-      </Box>
+      </ButtonContainer>
       {isCustomInstrument && onEdit && onDelete && (
         <Box sx={{ display: "flex", gap: 1, mt: 1 }}>
-          <button
-            className="sound-editor-button"
+          <StyledButton
             onClick={() => onEdit(currentInstrument)}
             style={{ backgroundColor: "#4caf50", borderColor: "#45a049" }}
           >
             Edit
-          </button>
-          <button
-            className="sound-editor-button"
+          </StyledButton>
+          <StyledButton
             onClick={() => onDelete(currentInstrument)}
             style={{ backgroundColor: "#f44336", borderColor: "#da190b" }}
           >
             Delete
-          </button>
+          </StyledButton>
         </Box>
       )}
     </Box>
@@ -92,69 +161,17 @@ const MusicSelectionButtons: React.FC<MusicSelectionButtonsProps> = ({
   selectedMusicIndex,
   onMusicSelect,
 }) => (
-  <Box className="sound-editor-music-selection-container">
+  <MusicSelectionContainer>
     {musics.map((_, index) => (
-      <button
-        className={`sound-editor-button ${selectedMusicIndex === index ? "selected" : ""}`}
+      <MusicSelectionButton
+        selected={selectedMusicIndex === index}
         key={index}
         onClick={() => onMusicSelect(index)}
-        style={{
-          padding: "4px 8px",
-          fontSize: "12px",
-          minWidth: "auto",
-          width: "100%"
-        }}
       >
         {index + 1}
-      </button>
+      </MusicSelectionButton>
     ))}
-  </Box>
-);
-
-interface MusicGridProps {
-  gridCells: GridCellData[];
-  onMouseDown: (row: number, col: number) => void;
-  onMouseOver: (row: number, col: number) => void;
-  onMouseUp: (row: number, col: number) => void;
-  playbackPosition: number;
-  totalLength: number;
-  maxLength: number;
-  onSeek: (position: number) => void;
-}
-
-const MusicGrid: React.FC<MusicGridProps> = ({
-  gridCells,
-  onMouseDown,
-  onMouseOver,
-  onMouseUp,
-  playbackPosition,
-  totalLength,
-  maxLength,
-  onSeek,
-}) => (
-  <div className="sound-editor-scrollable-container">
-    <div className="sound-editor-grid-with-progress-container">
-      <ProgressBar
-        progress={playbackPosition}
-        onSeek={onSeek}
-        totalLength={totalLength}
-        maxLength={maxLength}
-      />
-      <div className="sound-editor-grid-container">
-        {gridCells.map((cell) => (
-          <div
-            key={cell.cellKey}
-            className={`sound-editor-grid-cell ${cell.isActive ? "active" : ""} ${cell.isPlayingColumn ? "playing-column" : ""}`}
-            onMouseDown={() => onMouseDown(cell.row, cell.col)}
-            onMouseOver={() => onMouseOver(cell.row, cell.col)}
-            onMouseUp={() => onMouseUp(cell.row, cell.col)}
-          >
-            {cell.isNoteStart ? cell.note : ""}
-          </div>
-        ))}
-      </div>
-    </div>
-  </div>
+  </MusicSelectionContainer>
 );
 
 interface ControlButtonsProps {
@@ -170,49 +187,13 @@ const ControlButtons: React.FC<ControlButtonsProps> = ({
   onStop,
   onClear,
 }) => (
-  <div className="sound-editor-control-buttons-container">
-    <button className="sound-editor-button" onClick={isPlaying ? onStop : onPlay}>
+  <ControlButtonsContainer>
+    <StyledButton onClick={isPlaying ? onStop : onPlay}>
       {isPlaying ? "Stop" : "Play"}
-    </button>
-    <button className="sound-editor-button" onClick={onClear}>Clear</button>
-  </div>
+    </StyledButton>
+    <StyledButton onClick={onClear}>Clear</StyledButton>
+  </ControlButtonsContainer>
 );
-
-interface ProgressBarProps {
-  progress: number;
-  onSeek: (position: number) => void;
-  totalLength: number;
-  maxLength: number;
-}
-
-const ProgressBar: React.FC<ProgressBarProps> = ({
-  progress,
-  onSeek,
-  totalLength,
-  maxLength,
-}) => {
-  const handleClick = (e: React.MouseEvent<HTMLDivElement>): void => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const columnWidth = rect.width / totalLength;
-    const column = Math.floor(x / columnWidth);
-    const position = Math.max(0, Math.min(maxLength - 1, column));
-    onSeek(position);
-  };
-
-  const cappedProgress = Math.min(progress, maxLength - 1);
-  const columnCenterPosition = totalLength > 0 ? ((cappedProgress + 0.5) / totalLength) * 100 : 0;
-  const fillPercentage = totalLength > 0 && maxLength > 0 ? ((cappedProgress + 1) / maxLength) * (maxLength / totalLength) * 100 : 0;
-
-  return (
-    <div className="sound-editor-progress-bar-container" onClick={handleClick}>
-      <div className="sound-editor-progress-bar-track">
-        <div className="sound-editor-progress-bar-fill" style={{ width: `${fillPercentage}%` }} />
-        <div className="sound-editor-progress-bar-thumb" style={{ left: `${columnCenterPosition}%` }} />
-      </div>
-    </div>
-  );
-};
 
 export const SoundEditor: React.FC<EditorProps> = ({ project }) => {
   if (!project || !project.sound) {
@@ -279,25 +260,27 @@ export const SoundEditor: React.FC<EditorProps> = ({ project }) => {
 
   const notesKey = useMemo(() => JSON.stringify(currentMusic.notes), [currentMusic.notes]);
 
-  useEffect(() => {
-    const newActiveCells = new Set<string>();
-    for (let i = 0; i < currentMusic.notes.length; i++) {
-      if (currentMusic.notes[i] && Array.isArray(currentMusic.notes[i])) {
-        for (let j = 0; j < currentMusic.notes[i].length; j++) {
-          const note = currentMusic.notes[i][j];
-          if (note && note.note !== "Nan") {
-            const duration = note.duration || 1;
-            for (let k = 0; k < duration; k++) {
-              if (i + k < currentMusic.notes.length) {
-                newActiveCells.add(`${j}-${i + k}`);
-              }
-            }
+  const calculateActiveCells = useCallback((notes: (NoteData[] | null)[]): Set<string> => {
+    const activeCells = new Set<string>();
+    notes.forEach((column, columnIndex) => {
+      if (!column || !Array.isArray(column)) return;
+      column.forEach((note, rowIndex) => {
+        if (!note || note.note === "Nan") return;
+        const duration = note.duration || 1;
+        for (let k = 0; k < duration; k++) {
+          if (columnIndex + k < notes.length) {
+            activeCells.add(`${rowIndex}-${columnIndex + k}`);
           }
         }
-      }
-    }
+      });
+    });
+    return activeCells;
+  }, []);
+
+  useEffect(() => {
+    const newActiveCells = calculateActiveCells(currentMusic.notes);
     setActiveCells(newActiveCells);
-  }, [currentMusic, notesKey]);
+  }, [currentMusic, notesKey, calculateActiveCells]);
 
   useEffect(() => {
     let lastColumn = -1;
@@ -375,23 +358,7 @@ export const SoundEditor: React.FC<EditorProps> = ({ project }) => {
           }
           newMusic.notes[noteStartCol][row] = { note: "Nan", duration: 1, instrument: "" };
 
-          const newActiveCells = new Set<string>();
-          for (let i = 0; i < newMusic.notes.length; i++) {
-            if (newMusic.notes[i] && Array.isArray(newMusic.notes[i])) {
-              for (let j = 0; j < newMusic.notes[i].length; j++) {
-                const note = newMusic.notes[i][j];
-                if (note && note.note !== "Nan") {
-                  const duration = note.duration || 1;
-                  for (let k = 0; k < duration; k++) {
-                    if (i + k < newMusic.notes.length) {
-                      const cellKey = `${j}-${i + k}`;
-                      newActiveCells.add(cellKey);
-                    }
-                  }
-                }
-              }
-            }
-          }
+          const newActiveCells = calculateActiveCells(newMusic.notes);
           setActiveCells(newActiveCells);
           soundProvider.setMusic(selectedMusicIndex, newMusic);
         } else {
@@ -538,22 +505,9 @@ export const SoundEditor: React.FC<EditorProps> = ({ project }) => {
     setPlaybackPosition(0);
     setPlaybackStartPosition(0);
 
-    const newActiveCells = new Set<string>();
-    for (let i = 0; i < music.notes.length; i++) {
-      if (music.notes[i] && Array.isArray(music.notes[i])) {
-        for (let j = 0; j < music.notes[i].length; j++) {
-          const note = music.notes[i][j];
-          if (note && note.note !== "Nan") {
-            const duration = note.duration;
-            for (let k = 0; k < duration; k++) {
-              newActiveCells.add(`${j}-${i + k}`);
-            }
-          }
-        }
-      }
-    }
+    const newActiveCells = calculateActiveCells(music.notes);
     setActiveCells(newActiveCells);
-  }, [musics]);
+  }, [musics, calculateActiveCells]);
 
   useEffect(() => {
     const storageKey = `soundEditor_customInstruments_${project.projectId}`;
@@ -633,15 +587,15 @@ export const SoundEditor: React.FC<EditorProps> = ({ project }) => {
   }, [soundProvider, instruments, currentInstrument]);
 
   return (
-    <div onMouseUp={() => setIsMouseDown(false)} style={{ width: "100%", overflow: "hidden" }}>
-      <div className="SoundEditor" style={{ width: "fit-content", maxWidth: "100%" }}>
+    <SoundEditorRoot onMouseUp={() => setIsMouseDown(false)}>
+      <SoundEditorWrapper>
         <ControlButtons
           isPlaying={isPlaying}
           onPlay={handlePlay}
           onStop={handleStop}
           onClear={clearMusic}
         />
-        <div className="sound-editor-container">
+        <EditorContainer>
           <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
             <InstrumentButtons
               instruments={instruments}
@@ -651,13 +605,11 @@ export const SoundEditor: React.FC<EditorProps> = ({ project }) => {
               onEdit={handleEditInstrument}
               onDelete={handleDeleteInstrument}
             />
-            <button
-              className="sound-editor-button"
+            <NewInstrumentButton
               onClick={handleNewInstrument}
-              style={{ marginTop: "10px" }}
             >
               New Instrument
-            </button>
+            </NewInstrumentButton>
           </Box>
           <MusicGrid
             gridCells={gridCells}
@@ -674,19 +626,19 @@ export const SoundEditor: React.FC<EditorProps> = ({ project }) => {
             selectedMusicIndex={selectedMusicIndex}
             onMusicSelect={loadStateFromMusic}
           />
-        </div>
+        </EditorContainer>
         {loadingError && (
-          <div className="sound-editor-error-message">
+          <ErrorMessage>
             Warning: Failed to load some instruments. Using fallback audio.
-          </div>
+          </ErrorMessage>
         )}
-      </div>
+      </SoundEditorWrapper>
       <InstrumentEditor
         open={isInstrumentEditorOpen}
         onClose={handleCloseInstrumentEditor}
         onSave={handleSaveInstrument}
         editingInstrument={editingInstrument}
       />
-    </div>
+    </SoundEditorRoot>
   );
 };

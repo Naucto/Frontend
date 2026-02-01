@@ -126,6 +126,7 @@ export class SoundProvider implements Destroyable {
         instruments.set(key, config);
       } catch {
         void 0;
+        // Skip invalid instrument configurations to prevent corruption from breaking the editor
       }
     });
     return instruments;

@@ -16,7 +16,112 @@ import {
   AccordionSummary,
   AccordionDetails,
 } from "@mui/material";
-import "./InstrumentEditor.css";
+import { styled } from "@mui/material/styles";
+
+const StyledDialog = styled(Dialog)(() => ({
+  "& .MuiDialog-paper": {
+    minWidth: "600px",
+    maxWidth: "800px",
+    maxHeight: "90vh",
+  },
+}));
+
+const StyledTextField = styled(TextField)(() => ({
+  "& .MuiInputBase-input": {
+    color: "black",
+  },
+}));
+
+const StyledSelect = styled(Select)(() => ({
+  "& .MuiSelect-select": {
+    color: "black",
+  },
+  "& .MuiInputLabel-root": {
+    color: "black",
+  },
+  "& .MuiMenuItem-root": {
+    color: "black",
+  },
+}));
+
+const StyledFormControl = styled(FormControl)(() => ({
+  "& .MuiInputLabel-root": {
+    color: "black",
+  },
+}));
+
+const StyledInputLabel = styled(InputLabel)(() => ({
+  color: "black",
+}));
+
+const StyledAccordionTitle = styled(Typography)(() => ({
+  color: "black",
+}));
+
+const StyledMenuItem = styled(MenuItem)(() => ({
+  color: "black",
+}));
+
+const StyledNameField = styled(TextField)(() => ({
+  marginBottom: "16px",
+  "& .MuiInputBase-input": {
+    color: "black",
+  },
+}));
+
+interface NumberFieldProps {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+  inputProps?: { min?: number; max?: number; step?: number };
+}
+
+const NumberField: React.FC<NumberFieldProps> = ({ label, value, onChange, inputProps }) => (
+  <StyledTextField
+    fullWidth
+    type="number"
+    label={label}
+    value={value.toString()}
+    onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+    inputProps={inputProps}
+  />
+);
+
+interface SelectFieldProps {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+}
+
+const SelectField: React.FC<SelectFieldProps> = ({ label, value, onChange, options }) => (
+  <StyledFormControl fullWidth>
+    <StyledInputLabel>{label}</StyledInputLabel>
+    <StyledSelect
+      value={value}
+      label={label}
+      onChange={(e) => onChange(e.target.value as string)}
+      MenuProps={{
+        PaperProps: {
+          sx: {
+            "& .MuiMenuItem-root": {
+              color: "black",
+            },
+          },
+        },
+      }}
+    >
+      {options.map((option) => (
+        <StyledMenuItem key={option} value={option}>
+          {option.charAt(0).toUpperCase() + option.slice(1)}
+        </StyledMenuItem>
+      ))}
+    </StyledSelect>
+  </StyledFormControl>
+);
+
+const OSCILLATOR_TYPES = ["sine", "square", "sawtooth", "triangle"];
+const CURVE_TYPES = ["linear", "exponential"];
 
 export interface InstrumentConfig {
   volume: number;
@@ -135,20 +240,32 @@ export const InstrumentEditor: React.FC<InstrumentEditorProps> = ({
     }
   };
 
+  const handlePartialCountChange = (count: number): void => {
+    updateOscillator("partialCount", count);
+    if (count > config.oscillator.partials.length) {
+      const newPartials = [
+        ...config.oscillator.partials,
+        ...Array(count - config.oscillator.partials.length).fill(0),
+      ];
+      updateOscillator("partials", newPartials);
+    } else if (count < config.oscillator.partials.length) {
+      updateOscillator("partials", config.oscillator.partials.slice(0, count));
+    }
+  };
+
   return (
-    <Dialog
+    <StyledDialog
       open={open}
       onClose={onClose}
       maxWidth="md"
       fullWidth
-      className="instrument-editor-dialog"
     >
       <DialogTitle>
         {editingInstrument ? "Edit Instrument" : "Create New Instrument"}
       </DialogTitle>
       <DialogContent>
         <Box style={{ marginTop: "16px" }}>
-          <TextField
+          <StyledNameField
             fullWidth
             variant="outlined"
             label="Instrument Name"
@@ -157,64 +274,37 @@ export const InstrumentEditor: React.FC<InstrumentEditorProps> = ({
               setInstrumentName(e.target.value);
             }}
             required
-            className="instrument-editor-name-field"
             autoFocus
           />
 
           <Accordion defaultExpanded>
             <AccordionSummary>
-              <Typography variant="h6" className="instrument-editor-accordion-title">Basic Parameters</Typography>
+              <StyledAccordionTitle variant="h6">Basic Parameters</StyledAccordionTitle>
             </AccordionSummary>
             <AccordionDetails>
               <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 2 }}>
-                <TextField
-                  fullWidth
-                  type="number"
+                <NumberField
                   label="Volume"
-                  value={config.volume.toString()}
-                  onChange={(e) =>
-                    updateConfig(["volume"], parseFloat(e.target.value) || 0)
-                  }
+                  value={config.volume}
+                  onChange={(value) => updateConfig(["volume"], value)}
                   inputProps={{ min: 0, max: 1, step: 0.1 }}
-                  className="instrument-editor-text-field"
                 />
-                <TextField
-                  fullWidth
-                  type="number"
+                <NumberField
                   label="Detune (cents)"
-                  value={config.detune.toString()}
-                  onChange={(e) =>
-                    updateConfig(["detune"], parseFloat(e.target.value) || 0)
-                  }
-                  className="instrument-editor-text-field"
+                  value={config.detune}
+                  onChange={(value) => updateConfig(["detune"], value)}
                 />
-                <TextField
-                  fullWidth
-                  type="number"
+                <NumberField
                   label="Portamento"
-                  value={config.portamento.toString()}
-                  onChange={(e) =>
-                    updateConfig(
-                      ["portamento"],
-                      parseFloat(e.target.value) || 0
-                    )
-                  }
+                  value={config.portamento}
+                  onChange={(value) => updateConfig(["portamento"], value)}
                   inputProps={{ min: 0, step: 0.1 }}
-                  className="instrument-editor-text-field"
                 />
-                <TextField
-                  fullWidth
-                  type="number"
+                <NumberField
                   label="Harmonicity"
-                  value={config.harmonicity.toString()}
-                  onChange={(e) =>
-                    updateConfig(
-                      ["harmonicity"],
-                      parseFloat(e.target.value) || 0
-                    )
-                  }
+                  value={config.harmonicity}
+                  onChange={(value) => updateConfig(["harmonicity"], value)}
                   inputProps={{ min: 0, step: 0.1 }}
-                  className="instrument-editor-text-field"
                 />
               </Box>
             </AccordionDetails>
@@ -222,99 +312,40 @@ export const InstrumentEditor: React.FC<InstrumentEditorProps> = ({
 
           <Accordion>
             <AccordionSummary>
-              <Typography variant="h6" className="instrument-editor-accordion-title">Oscillator</Typography>
+              <StyledAccordionTitle variant="h6">Oscillator</StyledAccordionTitle>
             </AccordionSummary>
             <AccordionDetails>
               <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 2 }}>
-                <FormControl fullWidth className="instrument-editor-form-control">
-                  <InputLabel className="instrument-editor-input-label">Type</InputLabel>
-                  <Select
-                    value={config.oscillator.type}
-                    label="Type"
-                    onChange={(e) =>
-                      updateOscillator("type", e.target.value)
-                    }
-                    className="instrument-editor-select"
-                    MenuProps={{
-                      PaperProps: {
-                        className: "instrument-editor-menu"
-                      }
-                    }}
-                  >
-                    <MenuItem value="sine">Sine</MenuItem>
-                    <MenuItem value="square">Square</MenuItem>
-                    <MenuItem value="sawtooth">Sawtooth</MenuItem>
-                    <MenuItem value="triangle">Triangle</MenuItem>
-                  </Select>
-                </FormControl>
-                <FormControl fullWidth className="instrument-editor-form-control">
-                  <InputLabel className="instrument-editor-input-label">Modulation Type</InputLabel>
-                  <Select
-                    value={config.oscillator.modulationType || "square"}
-                    label="Modulation Type"
-                    onChange={(e) =>
-                      updateOscillator("modulationType", e.target.value)
-                    }
-                    className="instrument-editor-select"
-                    MenuProps={{
-                      PaperProps: {
-                        className: "instrument-editor-menu"
-                      }
-                    }}
-                  >
-                    <MenuItem value="sine">Sine</MenuItem>
-                    <MenuItem value="square">Square</MenuItem>
-                    <MenuItem value="sawtooth">Sawtooth</MenuItem>
-                    <MenuItem value="triangle">Triangle</MenuItem>
-                  </Select>
-                </FormControl>
-                <TextField
-                  fullWidth
-                  type="number"
-                  label="Phase"
-                  value={config.oscillator.phase.toString()}
-                  onChange={(e) =>
-                    updateOscillator(
-                      "phase",
-                      parseFloat(e.target.value) || 0
-                    )
-                  }
-                  className="instrument-editor-text-field"
+                <SelectField
+                  label="Type"
+                  value={config.oscillator.type}
+                  onChange={(value) => updateOscillator("type", value)}
+                  options={OSCILLATOR_TYPES}
                 />
-                <TextField
-                  fullWidth
-                  type="number"
+                <SelectField
+                  label="Modulation Type"
+                  value={config.oscillator.modulationType || "square"}
+                  onChange={(value) => updateOscillator("modulationType", value)}
+                  options={OSCILLATOR_TYPES}
+                />
+                <NumberField
+                  label="Phase"
+                  value={config.oscillator.phase}
+                  onChange={(value) => updateOscillator("phase", value)}
+                />
+                <NumberField
                   label="Partial Count"
-                  value={config.oscillator.partialCount.toString()}
-                  onChange={(e) => {
-                    const count = parseInt(e.target.value) || 0;
-                    updateOscillator("partialCount", count);
-                    if (count > config.oscillator.partials.length) {
-                      const newPartials = [
-                        ...config.oscillator.partials,
-                        ...Array(count - config.oscillator.partials.length).fill(
-                          0
-                        ),
-                      ];
-                      updateOscillator("partials", newPartials);
-                    } else if (count < config.oscillator.partials.length) {
-                      updateOscillator(
-                        "partials",
-                        config.oscillator.partials.slice(0, count)
-                      );
-                    }
-                  }}
+                  value={config.oscillator.partialCount}
+                  onChange={handlePartialCountChange}
                   inputProps={{ min: 0 }}
-                  className="instrument-editor-text-field"
                 />
                 <Box sx={{ gridColumn: "1 / -1" }}>
-                  <TextField
+                  <StyledTextField
                     fullWidth
                     label="Partials (comma-separated)"
                     value={config.oscillator.partials.join(", ")}
                     onChange={(e) => handlePartialsChange(e.target.value)}
                     helperText="Enter partial amplitudes separated by commas (e.g., 1, 0.6, 0.4)"
-                    className="instrument-editor-text-field"
                   />
                 </Box>
               </Box>
@@ -323,121 +354,53 @@ export const InstrumentEditor: React.FC<InstrumentEditorProps> = ({
 
           <Accordion>
             <AccordionSummary>
-              <Typography variant="h6" className="instrument-editor-accordion-title">Envelope</Typography>
+              <StyledAccordionTitle variant="h6">Envelope</StyledAccordionTitle>
             </AccordionSummary>
             <AccordionDetails>
               <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 2 }}>
-                <TextField
-                  fullWidth
-                  type="number"
+                <NumberField
                   label="Attack"
-                  value={config.envelope.attack.toString()}
-                  onChange={(e) =>
-                    updateEnvelope(
-                      "attack",
-                      parseFloat(e.target.value) || 0
-                    )
-                  }
+                  value={config.envelope.attack}
+                  onChange={(value) => updateEnvelope("attack", value)}
                   inputProps={{ min: 0, step: 0.01 }}
-                  className="instrument-editor-text-field"
                 />
-                <FormControl fullWidth className="instrument-editor-form-control">
-                  <InputLabel className="instrument-editor-input-label">Attack Curve</InputLabel>
-                  <Select
-                    value={config.envelope.attackCurve}
-                    label="Attack Curve"
-                    onChange={(e) =>
-                      updateEnvelope("attackCurve", e.target.value)
-                    }
-                    className="instrument-editor-select"
-                    MenuProps={{
-                      PaperProps: {
-                        className: "instrument-editor-menu"
-                      }
-                    }}
-                  >
-                    <MenuItem value="linear">Linear</MenuItem>
-                    <MenuItem value="exponential">Exponential</MenuItem>
-                  </Select>
-                </FormControl>
-                <TextField
-                  fullWidth
-                  type="number"
+                <SelectField
+                  label="Attack Curve"
+                  value={config.envelope.attackCurve}
+                  onChange={(value) => updateEnvelope("attackCurve", value)}
+                  options={CURVE_TYPES}
+                />
+                <NumberField
                   label="Decay"
-                  value={config.envelope.decay.toString()}
-                  onChange={(e) =>
-                    updateEnvelope("decay", parseFloat(e.target.value) || 0)
-                  }
+                  value={config.envelope.decay}
+                  onChange={(value) => updateEnvelope("decay", value)}
                   inputProps={{ min: 0, step: 0.01 }}
-                  className="instrument-editor-text-field"
                 />
-                <FormControl fullWidth className="instrument-editor-form-control">
-                  <InputLabel className="instrument-editor-input-label">Decay Curve</InputLabel>
-                  <Select
-                    value={config.envelope.decayCurve}
-                    label="Decay Curve"
-                    onChange={(e) =>
-                      updateEnvelope("decayCurve", e.target.value)
-                    }
-                    className="instrument-editor-select"
-                    MenuProps={{
-                      PaperProps: {
-                        className: "instrument-editor-menu"
-                      }
-                    }}
-                  >
-                    <MenuItem value="linear">Linear</MenuItem>
-                    <MenuItem value="exponential">Exponential</MenuItem>
-                  </Select>
-                </FormControl>
-                <TextField
-                  fullWidth
-                  type="number"
+                <SelectField
+                  label="Decay Curve"
+                  value={config.envelope.decayCurve}
+                  onChange={(value) => updateEnvelope("decayCurve", value)}
+                  options={CURVE_TYPES}
+                />
+                <NumberField
                   label="Sustain"
-                  value={config.envelope.sustain.toString()}
-                  onChange={(e) =>
-                    updateEnvelope(
-                      "sustain",
-                      parseFloat(e.target.value) || 0
-                    )
-                  }
+                  value={config.envelope.sustain}
+                  onChange={(value) => updateEnvelope("sustain", value)}
                   inputProps={{ min: 0, max: 1, step: 0.1 }}
-                  className="instrument-editor-text-field"
                 />
-                <TextField
-                  fullWidth
-                  type="number"
+                <NumberField
                   label="Release"
-                  value={config.envelope.release.toString()}
-                  onChange={(e) =>
-                    updateEnvelope(
-                      "release",
-                      parseFloat(e.target.value) || 0
-                    )
-                  }
+                  value={config.envelope.release}
+                  onChange={(value) => updateEnvelope("release", value)}
                   inputProps={{ min: 0, step: 0.01 }}
-                  className="instrument-editor-text-field"
                 />
                 <Box sx={{ gridColumn: "1 / -1" }}>
-                  <FormControl fullWidth className="instrument-editor-form-control">
-                    <InputLabel className="instrument-editor-input-label">Release Curve</InputLabel>
-                    <Select
-                      value={config.envelope.releaseCurve}
-                      label="Release Curve"
-                      onChange={(e) =>
-                        updateEnvelope("releaseCurve", e.target.value)
-                      }
-                      className="instrument-editor-select"
-                      MenuProps={{
-                        PaperProps: {
-                          className: "instrument-editor-menu"
-                        }
-                      }}
-                    >
-                      <MenuItem value="linear">Linear</MenuItem>
-                      <MenuItem value="exponential">Exponential</MenuItem>
-                    </Select>
-                  </FormControl>
+                  <SelectField
+                    label="Release Curve"
+                    value={config.envelope.releaseCurve}
+                    onChange={(value) => updateEnvelope("releaseCurve", value)}
+                    options={CURVE_TYPES}
+                  />
                 </Box>
               </Box>
             </AccordionDetails>
@@ -450,7 +413,7 @@ export const InstrumentEditor: React.FC<InstrumentEditorProps> = ({
           Save
         </Button>
       </DialogActions>
-    </Dialog>
+    </StyledDialog>
   );
 };
 

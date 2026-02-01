@@ -9,7 +9,6 @@ COPY . .
 
 ARG BACKEND_URL
 ENV VITE_BACKEND_URL=${BACKEND_URL}
-RUN echo "VITE_BACKEND_URL=${BACKEND_URL}" > /app/.env
 RUN bun run build
 
 FROM nginx:alpine AS runtime

@@ -3,7 +3,7 @@ import { styled } from "@mui/material/styles";
 import { Tabs, Tab, Box, Dialog, DialogTitle, DialogContent, DialogActions, Button, Alert } from "@mui/material";
 import CodeEditor from "@modules/create/game-editor/editors/CodeEditor";
 import { EditorProps, EditorTab } from "./editors/EditorType";
-import { SoundEditor } from "src/modules/editor/SoundEditor/SoundEditor";
+import { SoundEditor } from "@modules/editor/SoundEditor/SoundEditor";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
 import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
@@ -114,11 +114,11 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
   const [output, setOutput] = useState<string>("");
 
   const tabs = useMemo(() => [
-    { label: "project", component: ProjectSettingsEditor, icon: <ProjectIcon/> },
-    { label: "code", component: CodeEditor, icon: <CodeIcon/> },
-    { label: "sprite", component: SpriteEditor, icon: <SpriteIcon/> },
-    { label: "map", component: MapEditor, icon: <MapIcon/> },
-    { label: "sound", component: SoundEditor, icon: <SoundIcon/> },
+    { label: "project", component: ProjectSettingsEditor, icon: <ProjectIcon /> },
+    { label: "code", component: CodeEditor, icon: <CodeIcon /> },
+    { label: "sprite", component: SpriteEditor, icon: <SpriteIcon /> },
+    { label: "map", component: MapEditor, icon: <MapIcon /> },
+    { label: "sound", component: SoundEditor, icon: <SoundIcon /> },
   ], []);
 
   const suppressBeforeUnloadRef = React.useRef(false);
@@ -266,7 +266,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
           envData={envData}
           setOutput={setOutput}
         />
-        <GameEditorConsole output={output}/>
+        <GameEditorConsole output={output} />
       </RightPanel>
 
       <StyledDialog
@@ -298,7 +298,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
         event.preventDefault();
         cleanUpAndDisconnect();
         return "Are you sure you want to leave? Your changes may not be saved.";
-      }}/>
+      }} />
     </GameEditorContainer>
   );
 };

@@ -13,7 +13,7 @@ const SPRITE_SHEET_SIZE = 128;
 const SPRITE_NUMBER = SPRITE_SHEET_SIZE / SPRITE_SIZE;
 const CANVAS_BASE_RESOLUTION = 1080; // Base resolution for scaling the canvas
 const SCALE = CANVAS_BASE_RESOLUTION / SPRITE_SHEET_SIZE; // used to scale the canvas to avoid 1:1 pixel scaling
-//const ZOOM_LIMIT = SPRITE_NUMBER / SCALE;
+const ZOOM_LIMIT = SPRITE_NUMBER / SCALE;
 
 interface ColorButtonProps {
   color: { name: string; hex: string };
@@ -160,9 +160,8 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
     const delta = e.deltaY > 0 ? 1 : -1;
     const power = 1 / SCALE;
     setZoom(prevZoom => {
-      const maxZoom = 16;
-      const newZoom = Math.max(1, Math.min(prevZoom + delta * power, maxZoom));
-      return Math.round(newZoom * 10) / 10;
+      const newZoom = Math.max(power, prevZoom + delta * power);
+      return Math.min(newZoom, ZOOM_LIMIT);
     });
   };
 
