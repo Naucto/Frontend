@@ -16,6 +16,11 @@ const Tools: React.FC<{
   setOnMouseDown?: (fn: CanvasHandler) => void;
 }> = ({ drawTool, onSelectTool, setOnMouseDown, setOnMouseMove, setOnMouseUp, spriteProvider: spriteProvider, color }) => {
   const lastPosRef = useRef<Point2D | null>(null);
+  const colorRef = useRef(color);
+
+  useEffect(() => {
+    colorRef.current = color;
+  }, [color]);
 
   // FIX IT TO MAKE IT WORK PROPERLY ON COLLABORATIVE EDITING
   const floodFillAt = (sx: number, sy: number, newColor: number): void => {
@@ -66,7 +71,7 @@ const Tools: React.FC<{
     let err = dx - dy;
 
     while (true) {
-      spriteProvider.setPixel(x0, y0, color);
+      spriteProvider.setPixel(x0, y0, colorRef.current);
       if (x0 === x1 && y0 === y1) break;
       const e2 = err * 2;
       if (e2 > -dy) {
@@ -87,14 +92,14 @@ const Tools: React.FC<{
 
     if (drawTool === DrawTool.Pen) {
       const down: CanvasHandler = (_e, pos) => {
-        spriteProvider.setPixel(pos.x, pos.y, color);
+        spriteProvider.setPixel(pos.x, pos.y, colorRef.current);
         lastPosRef.current = pos;
       };
 
       const move: CanvasHandler = (_e, pos) => {
         const last = lastPosRef.current;
         if (!last) {
-          spriteProvider.setPixel(pos.x, pos.y, color);
+          spriteProvider.setPixel(pos.x, pos.y, colorRef.current);
           lastPosRef.current = pos;
           return;
         }
@@ -107,7 +112,7 @@ const Tools: React.FC<{
         if (last) {
           drawLineBresenham(last, pos);
         } else {
-          spriteProvider.setPixel(pos.x, pos.y, color);
+          spriteProvider.setPixel(pos.x, pos.y, colorRef.current);
         }
         lastPosRef.current = null;
       };
@@ -120,14 +125,14 @@ const Tools: React.FC<{
 
     if (drawTool === DrawTool.Fill) {
       const down: CanvasHandler = (_e, pos) => {
-        floodFillAt(pos.x, pos.y, color);
+        floodFillAt(pos.x, pos.y, colorRef.current);
       };
 
       setOnMouseDown?.(down);
       return;
     }
 
-  }, [drawTool, setOnMouseDown, setOnMouseMove, setOnMouseUp, spriteProvider, color]);
+  }, [drawTool, setOnMouseDown, setOnMouseMove, setOnMouseUp, spriteProvider]);
 
   return (
     <>
