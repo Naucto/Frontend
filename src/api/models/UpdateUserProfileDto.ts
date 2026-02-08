@@ -11,5 +11,9 @@ export type UpdateUserProfileDto = {
      * Description of the user
      */
     description?: string;
+    /**
+     * Profile image URL
+     */
+    profileImageUrl?: string;
 };
 

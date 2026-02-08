@@ -25,6 +25,10 @@ export type UserResponseDto = {
      */
     description: string | null;
     /**
+     * Profile image URL
+     */
+    profileImageUrl: string | null;
+    /**
      * User roles
      */
     roles?: Array<UserRoleDto>;

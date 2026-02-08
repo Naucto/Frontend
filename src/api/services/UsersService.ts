@@ -45,6 +45,30 @@ export class UsersService {
         });
     }
     /**
+     * Update current user profile photo
+     * @param formData
+     * @returns UserProfileResponseDto User profile photo updated successfully
+     * @throws ApiError
+     */
+    public static userControllerUpdateProfilePhoto(
+        formData: {
+            /**
+             * Profile image (jpg, png, webp)
+             */
+            file: Blob;
+        },
+    ): CancelablePromise<UserProfileResponseDto> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/users/profile/photo',
+            formData: formData,
+            mediaType: 'multipart/form-data',
+            errors: {
+                401: `Unauthorized`,
+            },
+        });
+    }
+    /**
      * Get all users with pagination and filtering
      * @param page Page number
      * @param limit Items per page

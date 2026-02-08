@@ -23,5 +23,9 @@ export type CreateUserDto = {
      * Description of the user
      */
     description?: string;
+    /**
+     * Profile image URL
+     */
+    profileImageUrl?: string;
 };
 
