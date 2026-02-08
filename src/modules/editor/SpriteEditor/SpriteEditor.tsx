@@ -204,15 +204,9 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
   const onMouseMoveRef = useRef<CanvasHandler>(undefined);
   const onMouseUpRef   = useRef<CanvasHandler>(undefined);
 
-  const setOnMouseDown = useCallback((fn: CanvasHandler) => {
-    onMouseDownRef.current = fn;
-  }, []);
-  const setOnMouseMove = useCallback((fn: CanvasHandler) => {
-    onMouseMoveRef.current = fn;
-  }, []);
-  const setOnMouseUp = useCallback((fn: CanvasHandler) => {
-    onMouseUpRef.current = fn;
-  }, []);
+  const setOnMouseDown = useCallback((fn: CanvasHandler) => onMouseDownRef.current = fn, []);
+  const setOnMouseMove = useCallback((fn: CanvasHandler) => onMouseMoveRef.current = fn, []);
+  const setOnMouseUp = useCallback((fn: CanvasHandler) => onMouseUpRef.current = fn, []);
 
   const [position, setPosition] = useState<Point2D>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
