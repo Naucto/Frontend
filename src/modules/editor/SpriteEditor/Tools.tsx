@@ -131,11 +131,11 @@ const Tools: React.FC<{
   }, [drawTool, setOnMouseDown, setOnMouseMove, setOnMouseUp, spriteCanvas, color]);
 
   return (
-    <div className="tools-container">
-      <button className={drawTool === DrawTool.Pen ? "active" : ""} onClick={() => onSelectTool(DrawTool.Pen)}>Pen</button>
+    <>
+      <button onClick={() => onSelectTool(DrawTool.Pen)}>Pen</button>
       {/* FILL commented because not working properly on collaborative editing */}
       {/* <button className={drawTool === DrawTool.Fill ? "active" : ""} onClick={() => onSelectTool(DrawTool.Fill)}>Fill</button> */}
-    </div>
+    </>
   );
 };
 
