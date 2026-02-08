@@ -3,7 +3,6 @@ import React, { useEffect, useRef } from "react";
 import { SpriteProvider } from "@providers/editors/SpriteProvider";
 import { SpriteToolError } from "@errors/SpriteToolError";
 
-type Point2D = { x: number; y: number };
 type CanvasHandler = ((e: React.MouseEvent<HTMLCanvasElement>, pixelPos: Point2D) => void) | undefined;
 
 const Tools: React.FC<{
