@@ -12,8 +12,8 @@ import Tools from "@modules/editor/SpriteEditor/Tools";
 export enum DrawTool {
   Pen,
   Fill,
-  Line,
-  Rectangle,
+  Line, // TODO
+  Rectangle, // TODO
 }
 type CanvasHandler = ((e: React.MouseEvent<HTMLCanvasElement>, pixelPos: Point2D) => void) | undefined;
 
