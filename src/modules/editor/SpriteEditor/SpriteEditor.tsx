@@ -347,7 +347,7 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
               setOnMouseUp={setOnMouseUp}
               drawTool={drawTool}
               onSelectTool={setDrawTool}
-              spriteCanvas={project.sprite}
+              spriteProvider={project.sprite}
             />
           </Left>
           <CanvasContainer
