@@ -59,7 +59,7 @@ const Tools: React.FC<{
 
   };
 
-  const drawLineBresenham = (a: Point2D, b: Point2D) : void => {
+  const drawLine = (a: Point2D, b: Point2D) : void => {
     let x0 = a.x | 0;
     let y0 = a.y | 0;
     const x1 = b.x | 0;
@@ -103,14 +103,14 @@ const Tools: React.FC<{
           lastPosRef.current = pos;
           return;
         }
-        drawLineBresenham(last, pos);
+        drawLine(last, pos);
         lastPosRef.current = pos;
       };
 
       const up: CanvasHandler = (_e, pos) => {
         const last = lastPosRef.current;
         if (last) {
-          drawLineBresenham(last, pos);
+          drawLine(last, pos);
         } else {
           spriteProvider.setPixel(pos.x, pos.y, colorRef.current);
         }
