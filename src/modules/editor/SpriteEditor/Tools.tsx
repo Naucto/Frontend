@@ -1,7 +1,6 @@
 import { DrawTool, CanvasHandler } from "@modules/editor/SpriteEditor/SpriteEditor";
 import React, { useEffect, useRef } from "react";
 import { SpriteProvider } from "@providers/editors/SpriteProvider";
-import { SpriteToolError } from "@errors/SpriteToolError";
 
 const Tools: React.FC<{
   color: number;
@@ -22,12 +21,11 @@ const Tools: React.FC<{
 
   // FIX IT TO MAKE IT WORK PROPERLY ON COLLABORATIVE EDITING
   const floodFillAt = (sx: number, sy: number, newColor: number): void => {
-    let startColor: number;
-    try {
-      startColor = spriteProvider.getPixel(sx, sy);
-    } catch (err) {
-      throw new SpriteToolError("Flood fill start position out of bounds", "FLOOD_FILL_OUT_OF_BOUNDS", err);
+    if (!spriteProvider.isPixelInBounds(sx, sy)) {
+      return;
     }
+
+    const startColor = spriteProvider.getPixel(sx, sy);
     if (startColor === newColor) return;
 
     const stack: [number, number][] = [[sx, sy]];
@@ -39,12 +37,9 @@ const Tools: React.FC<{
       if (visited.has(key)) continue;
       visited.add(key);
 
-      let curColor: number;
-      try {
-        curColor = spriteProvider.getPixel(x, y);
-      } catch (err) {
-        throw new SpriteToolError("Flood fill position out of bounds", "FLOOD_FILL_OUT_OF_BOUNDS", err);
-      }
+      if (!spriteProvider.isPixelInBounds(x, y)) continue;
+
+      const curColor = spriteProvider.getPixel(x, y);
       if (curColor !== startColor) continue;
 
       spriteProvider.setPixel(x, y, newColor);
