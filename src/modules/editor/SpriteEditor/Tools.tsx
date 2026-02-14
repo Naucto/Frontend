@@ -1,9 +1,7 @@
-import { DrawTool } from "@modules/editor/SpriteEditor/SpriteEditor";
+import { DrawTool, CanvasHandler } from "@modules/editor/SpriteEditor/SpriteEditor";
 import React, { useEffect, useRef } from "react";
 import { SpriteProvider } from "@providers/editors/SpriteProvider";
 import { SpriteToolError } from "@errors/SpriteToolError";
-
-type CanvasHandler = ((e: React.MouseEvent<HTMLCanvasElement>, pixelPos: Point2D) => void) | undefined;
 
 const Tools: React.FC<{
   color: number;

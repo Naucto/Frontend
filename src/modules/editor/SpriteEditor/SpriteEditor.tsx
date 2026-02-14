@@ -15,7 +15,7 @@ export enum DrawTool {
   Line, // TODO
   Rectangle, // TODO
 }
-type CanvasHandler = ((e: React.MouseEvent<HTMLCanvasElement>, pixelPos: Point2D) => void) | undefined;
+export type CanvasHandler = ((e: React.MouseEvent<HTMLCanvasElement>, pixelPos: Point2D) => void) | undefined;
 
 const SPRITE_SIZE = 8;
 const SPRITE_SHEET_SIZE = 128;
