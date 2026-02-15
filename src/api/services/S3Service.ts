@@ -161,6 +161,46 @@ export class S3Service {
         });
     }
     /**
+     * Delete a bucket
+     * @param bucketName Name of the bucket
+     * @returns any Bucket deleted successfully
+     * @throws ApiError
+     */
+    public static s3ControllerDeleteBucket(
+        bucketName: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/s3/bucket/{bucketName}',
+            path: {
+                'bucketName': bucketName,
+            },
+            errors: {
+                500: `Server error`,
+            },
+        });
+    }
+    /**
+     * Create a new bucket
+     * @param bucketName Name of the bucket
+     * @returns any Bucket created successfully
+     * @throws ApiError
+     */
+    public static s3ControllerCreateBucket(
+        bucketName: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/s3/bucket/{bucketName}',
+            path: {
+                'bucketName': bucketName,
+            },
+            errors: {
+                500: `Server error`,
+            },
+        });
+    }
+    /**
      * Get object metadata
      * @param key Object key
      * @param bucketName Name of the bucket
@@ -177,6 +217,26 @@ export class S3Service {
             path: {
                 'key': key,
                 'bucketName': bucketName,
+            },
+            errors: {
+                500: `Server error`,
+            },
+        });
+    }
+    /**
+     * Get the CDN URL for a file
+     * @param key Object key
+     * @returns any Returns the CDN URL
+     * @throws ApiError
+     */
+    public static s3ControllerGetCdnUrl(
+        key: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/s3/cdn-url/{key}',
+            path: {
+                'key': key,
             },
             errors: {
                 500: `Server error`,
@@ -204,23 +264,13 @@ export class S3Service {
         });
     }
     /**
-     * Get the CDN URL for a file
-     * @param key Object key
-     * @returns any Returns the CDN URL
+     * @returns any
      * @throws ApiError
      */
-    public static s3ControllerGetCdnUrl(
-        key: string,
-    ): CancelablePromise<any> {
+    public static s3ControllerSetSignedCookies(): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/s3/cdn-url/{key}',
-            path: {
-                'key': key,
-            },
-            errors: {
-                500: `Server error`,
-            },
+            url: '/s3/signed-cookies',
         });
     }
 }

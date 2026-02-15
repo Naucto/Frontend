@@ -7,6 +7,8 @@ import type { CreateProjectDto } from '../models/CreateProjectDto';
 import type { ProjectResponseDto } from '../models/ProjectResponseDto';
 import type { ProjectWithRelationsResponseDto } from '../models/ProjectWithRelationsResponseDto';
 import type { RemoveCollaboratorDto } from '../models/RemoveCollaboratorDto';
+import type { SignedCdnResourceDto } from '../models/SignedCdnResourceDto';
+import type { SignedUrlResponseDto } from '../models/SignedUrlResponseDto';
 import type { UpdateProjectDto } from '../models/UpdateProjectDto';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
@@ -59,6 +61,23 @@ export class ProjectsService {
         });
     }
     /**
+     * Get signed CDN URL for a release
+     * @param id
+     * @returns SignedUrlResponseDto Signed CloudFront URL for the release
+     * @throws ApiError
+     */
+    public static projectControllerGetReleaseContentUrl(
+        id: string,
+    ): CancelablePromise<SignedUrlResponseDto> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/projects/releases/{id}/content-url',
+            path: {
+                'id': id,
+            },
+        });
+    }
+    /**
      * Retrieve the list of projects
      * @returns ProjectWithRelationsResponseDto A JSON array of projects with collaborators and creator information
      * @throws ApiError
@@ -94,7 +113,7 @@ export class ProjectsService {
     /**
      * Retrieve a single project
      * @param id Numeric ID of the project to retrieve
-     * @returns ProjectWithRelationsResponseDto Project object
+     * @returns ProjectResponseDto Project object
      * @throws ApiError
      */
     public static projectControllerFindOne(
@@ -215,15 +234,18 @@ export class ProjectsService {
         });
     }
     /**
-     * Save project's content
+     * Save project's content (Upload)
      * @param id
      * @param formData
      * @returns any File uploaded successfully
      * @throws ApiError
      */
     public static projectControllerSaveProjectContent(
-        id: string,
+        id: number,
         formData: {
+            /**
+             * Project file (zip, pdf, png, etc.)
+             */
             file?: Blob;
         },
     ): CancelablePromise<any> {
@@ -237,13 +259,63 @@ export class ProjectsService {
             mediaType: 'multipart/form-data',
             errors: {
                 403: `Forbidden`,
+                422: `File validation failed`,
             },
         });
     }
     /**
-     * Fetch project's content
+     * Upload project image
      * @param id
-     * @returns any File fetched successfully
+     * @param formData
+     * @returns any Image uploaded successfully
+     * @throws ApiError
+     */
+    public static projectControllerUploadProjectImage(
+        id: number,
+        formData: {
+            /**
+             * Project image file
+             */
+            file?: Blob;
+        },
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/projects/{id}/image',
+            path: {
+                'id': id,
+            },
+            formData: formData,
+            mediaType: 'multipart/form-data',
+            errors: {
+                403: `Forbidden`,
+            },
+        });
+    }
+    /**
+     * Get signed CDN access to project image
+     * @param id
+     * @returns SignedCdnResourceDto Signed cookies and CDN resource URL
+     * @throws ApiError
+     */
+    public static projectControllerGetProjectImage(
+        id: number,
+    ): CancelablePromise<SignedCdnResourceDto> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/projects/{id}/image',
+            path: {
+                'id': id,
+            },
+            errors: {
+                404: `Image not found`,
+            },
+        });
+    }
+    /**
+     * Fetch project's content (Download)
+     * @param id
+     * @returns any File stream
      * @throws ApiError
      */
     public static projectControllerFetchProjectContent(

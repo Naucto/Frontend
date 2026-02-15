@@ -2,6 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { SignedCdnResourceDto } from '../models/SignedCdnResourceDto';
 import type { UpdateUserDto } from '../models/UpdateUserDto';
 import type { UserListResponseDto } from '../models/UserListResponseDto';
 import type { UserProfileResponseDto } from '../models/UserProfileResponseDto';
@@ -21,6 +22,55 @@ export class UsersService {
             url: '/users/profile',
             errors: {
                 401: `Unauthorized`,
+            },
+        });
+    }
+    /**
+     * Upload a user's profile picture
+     * @param id User ID
+     * @param formData
+     * @returns any Profile uploaded
+     * @throws ApiError
+     */
+    public static userControllerUploadProfilePicture(
+        id: number,
+        formData: {
+            /**
+             * Profile picture file
+             */
+            file?: Blob;
+        },
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/users/{id}/profile-picture',
+            path: {
+                'id': id,
+            },
+            formData: formData,
+            mediaType: 'multipart/form-data',
+            errors: {
+                401: `Unauthorized`,
+            },
+        });
+    }
+    /**
+     * Get signed CDN access to a user's profile picture
+     * @param id User ID
+     * @returns SignedCdnResourceDto Signed cookies and CDN resource URL
+     * @throws ApiError
+     */
+    public static userControllerGetProfilePicture(
+        id: number,
+    ): CancelablePromise<SignedCdnResourceDto> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/users/{id}/profile-picture',
+            path: {
+                'id': id,
+            },
+            errors: {
+                404: `Not found`,
             },
         });
     }

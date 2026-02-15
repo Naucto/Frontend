@@ -40,10 +40,28 @@ export class GameProvider implements Destroyable {
 
   private async initializeDoc(): Promise<void> {
     try {
-      const content = await ProjectsService.projectControllerGetReleaseContent(String(this.projectId));
-      if (content) {
-        await decodeUpdate(this._doc, content);
+      const signed = await ProjectsService.projectControllerGetReleaseContentUrl(
+        String(this.projectId)
+      );
+      if (signed?.signedUrl) {
+        try {
+          const response = await fetch(signed.signedUrl);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch release content: ${response.status}`);
+          }
+          const buffer = await response.arrayBuffer();
+          await decodeUpdate(this._doc, new Uint8Array(buffer));
+          return;
+        } catch {
+          console.warn("Failed to fetch release content with signed URL, falling back to API endpoint");
+        }
       }
+
+      const content = await ProjectsService.projectControllerGetReleaseContent(
+        String(this.projectId)
+      );
+      const buffer = await content.arrayBuffer();
+      await decodeUpdate(this._doc, new Uint8Array(buffer));
     } catch (error: unknown) {
       if (error instanceof ApiError && error.status === 404) {
         // FIXME new project: nothing to load; optionally could seed defaults here

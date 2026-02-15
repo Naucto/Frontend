@@ -19,6 +19,8 @@ export type { PaginationMetaDto } from './models/PaginationMetaDto';
 export { ProjectResponseDto } from './models/ProjectResponseDto';
 export { ProjectWithRelationsResponseDto } from './models/ProjectWithRelationsResponseDto';
 export type { RemoveCollaboratorDto } from './models/RemoveCollaboratorDto';
+export type { SignedCdnResourceDto } from './models/SignedCdnResourceDto';
+export type { SignedUrlResponseDto } from './models/SignedUrlResponseDto';
 export { UpdateProjectDto } from './models/UpdateProjectDto';
 export type { UpdateUserDto } from './models/UpdateUserDto';
 export type { UploadFileDto } from './models/UploadFileDto';
