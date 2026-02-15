@@ -60,8 +60,7 @@ export class GameProvider implements Destroyable {
       const content = await ProjectsService.projectControllerGetReleaseContent(
         String(this.projectId)
       );
-      const buffer = await content.arrayBuffer();
-      await decodeUpdate(this._doc, new Uint8Array(buffer));
+      await decodeUpdate(this._doc, content);
     } catch (error: unknown) {
       if (error instanceof ApiError && error.status === 404) {
         // FIXME new project: nothing to load; optionally could seed defaults here

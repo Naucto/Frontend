@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        BACKEND_URL: ${VITE_BACKEND_URL}
     volumes:
       - .:/app:cached
       - node_modules:/app/node_modules:cached
