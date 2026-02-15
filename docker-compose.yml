@@ -9,7 +9,7 @@ services:
       - .:/app:cached
       - node_modules:/app/node_modules:cached
     ports:
-      - "3001:80"
+      - "3001:3001"
     environment:
       - BUN_INSTALL_FROZEN=1
 
