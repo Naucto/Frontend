@@ -22,5 +22,21 @@ export default defineConfig({
   },
   server: {
     allowedHosts: true
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor-react": ["react", "react-dom", "react-router-dom"],
+          "vendor-mui": ["@mui/material", "@emotion/styled"],
+          "vendor-monaco": ["@monaco-editor/react"],
+          "vendor-yjs": ["yjs", "y-monaco"],
+          "vendor-webrtc": ["y-webrtc"],
+          "vendor-lua": ["fengari"],
+          "vendor-tone": ["tone"],
+        }
+      }
+    }
   }
 });
+
