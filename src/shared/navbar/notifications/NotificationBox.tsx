@@ -1,17 +1,18 @@
 import { Badge, IconButton, styled } from "@mui/material";
-import { JSX, useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
-import InfoBoxIcon from "@assets/inbox.svg?react";
+import { JSX, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
+import InfoBoxIcon from "@assets/infoBox.svg?react";
 import { useUser } from "@providers/UserProvider";
+import { LocalStorageManager } from "@utils/LocalStorageManager";
 import { NotificationMenu } from "./NotificationMenu";
 import { NotificationItem } from "./types";
+import { NotificationsService } from "@api/services/NotificationsService";
 
-const TEMP_NOTIFICATION_SOCKET_PATH = "/socket/notifications";
-const MAX_NOTIFICATIONS = 20;
-const WS_READY_STATE_OPEN = 1;
+const NOTIFICATION_SOCKET_PATH = "/socket/notifications";
+const MAX_NOTIFICATIONS = 50;
 
 type NotificationWsMessage =
-  | { type: "register"; userId: string }
-  | { type: "notification"; payload: NotificationItem };
+  | { type: "notification"; payload: NotificationItem }
+  | { type: "notifications:init"; payload: NotificationItem[] };
 
 const NotificationButton = styled(IconButton)(({ theme }) => ({
   margin: theme.spacing(2),
@@ -24,47 +25,79 @@ const InfoIcon = styled(InfoBoxIcon)(({ theme }) => ({
   color: theme.palette.text.primary,
 }));
 
+const mergeNotification = (
+  previous: NotificationItem[],
+  notification: NotificationItem,
+): NotificationItem[] => {
+  const withoutCurrent = previous.filter((item) => item.id !== notification.id);
+  return [notification, ...withoutCurrent].slice(0, MAX_NOTIFICATIONS);
+};
+
+const markOneAsRead = (notifications: NotificationItem[], notificationId: string): NotificationItem[] => {
+  return notifications.map((item) => {
+    if (item.id !== notificationId) {
+      return item;
+    }
+
+    return {
+      ...item,
+      read: true,
+    };
+  });
+};
+
+const markAllAsRead = (notifications: NotificationItem[]): NotificationItem[] => {
+  return notifications.map((item) => ({
+    ...item,
+    read: true,
+  }));
+};
+
 export const NotificationBox = (): JSX.Element => {
   const { user } = useUser();
   const userId = user?.id;
+  const token = LocalStorageManager.getToken();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [showMenu, setShowMenu] = useState(false);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | undefined>(undefined);
   const socketRef = useRef<WebSocket | null>(null);
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const backendUrl = (import.meta.env.VITE_BACKEND_URL || "http://localhost:3000").trim();
+
+  const unreadCount = useMemo(
+    () => notifications.reduce((count, notification) => count + (notification.read ? 0 : 1), 0),
+    [notifications],
+  );
 
   useEffect(() => {
-    if (!userId || !backendUrl) {
+    if (!userId || !token || !backendUrl) {
       if (socketRef.current) {
         socketRef.current.close();
         socketRef.current = null;
       }
       setNotifications([]);
-      setUnreadCount(0);
       return;
     }
 
     const wsBase = backendUrl.replace(/^http/i, "ws").replace(/\/$/, "");
-    const socket = new WebSocket(
-      `${wsBase}${TEMP_NOTIFICATION_SOCKET_PATH}?userId=${encodeURIComponent(String(userId))}`,
-    );
+    const socketUrl = `${wsBase}${NOTIFICATION_SOCKET_PATH}?token=${encodeURIComponent(token)}`;
+    const socket = new WebSocket(socketUrl);
 
     socketRef.current = socket;
-
-    socket.onopen = () => {
-      const registerMessage: NotificationWsMessage = { type: "register", userId: String(userId) };
-      socket.send(JSON.stringify(registerMessage));
-    };
 
     socket.onmessage = (event: MessageEvent<string>) => {
       try {
         const message = JSON.parse(event.data) as NotificationWsMessage;
-        if (message.type !== "notification") return;
-        setNotifications((prev) => [message.payload, ...prev].slice(0, MAX_NOTIFICATIONS));
-        setUnreadCount((prev) => prev + 1);
+
+        if (message.type === "notifications:init") {
+          setNotifications(message.payload.slice(0, MAX_NOTIFICATIONS));
+          return;
+        }
+
+        if (message.type === "notification") {
+          setNotifications((previous) => mergeNotification(previous, message.payload));
+        }
       } catch {
-        //
+        // eslint
       }
     };
 
@@ -72,24 +105,28 @@ export const NotificationBox = (): JSX.Element => {
       socket.close();
       socketRef.current = null;
     };
-  }, [userId, backendUrl]);
+  }, [userId, token, backendUrl]);
 
   const handleClick = useCallback((event: MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
-    setShowMenu((prev) => {
-      const next = !prev;
+    setShowMenu((previous) => {
+      const next = !previous;
+
       if (next) {
-        setUnreadCount(0);
-        if (userId && socketRef.current?.readyState === WS_READY_STATE_OPEN) {
-          const registerMessage: NotificationWsMessage = { type: "register", userId: String(userId) };
-          socketRef.current.send(JSON.stringify(registerMessage));
-        }
+        setNotifications((current) => markAllAsRead(current));
+        NotificationsService.notificationsControllerMarkAllAsRead();
       }
+
       return next;
     });
-  }, [userId]);
+  }, []);
 
   const handleClose = useCallback(() => setShowMenu(false), []);
+
+  const handleMarkAsRead = useCallback((notificationId: string) => {
+    setNotifications((current) => markOneAsRead(current, notificationId));
+    NotificationsService.notificationsControllerMarkAsRead(notificationId);
+  }, []);
 
   return (
     <>
@@ -104,6 +141,7 @@ export const NotificationBox = (): JSX.Element => {
           open={showMenu}
           onClose={handleClose}
           notifications={notifications}
+          onMarkAsRead={handleMarkAsRead}
         />
       )}
     </>

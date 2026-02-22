@@ -1,7 +1,9 @@
 export type NotificationItem = {
   id: string;
-  title: string;
+  userId: number;
+  title: string | null;
   message: string;
+  type: string;
+  read: boolean;
   createdAt: string;
-  link?: string;
 };

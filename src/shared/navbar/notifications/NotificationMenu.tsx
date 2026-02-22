@@ -1,12 +1,13 @@
 import { Box, Menu, Typography, styled } from "@mui/material";
-import { NotificationItem } from "./types";
 import { JSX } from "react";
+import { NotificationItem } from "./types";
 
 type NotificationMenuProps = {
   anchorEl: HTMLElement | undefined;
   open: boolean;
   onClose: () => void;
   notifications: NotificationItem[];
+  onMarkAsRead: (notificationId: string) => void;
 };
 
 const StyledMenu = styled(Menu)(({ theme }) => ({
@@ -29,9 +30,13 @@ const MenuContent = styled(Box)(({ theme }) => ({
   padding: theme.spacing(1.5),
 }));
 
-const NotificationEntry = styled(Box)(({ theme }) => ({
+const NotificationEntry = styled(Box, {
+  shouldForwardProp: (prop) => prop !== "read",
+})<{ read: boolean }>(({ theme, read }) => ({
   padding: theme.spacing(1, 0),
   borderBottom: `1px solid ${theme.palette.gray[500]}`,
+  cursor: "pointer",
+  opacity: read ? 0.75 : 1,
   "&:last-of-type": {
     borderBottom: "none",
   },
@@ -51,28 +56,23 @@ export const NotificationMenu = ({
   open,
   onClose,
   notifications,
+  onMarkAsRead,
 }: NotificationMenuProps): JSX.Element => {
-
-  // TODO: remove temporary test
-  //append notification for test
-  // notifications.push({
-  //   id: "1",
-  //   title: "New Message",
-  //   message: "You have received a new message from John.",
-  //   createdAt: new Date().toISOString(),
-  // });
-
   return (
     <StyledMenu anchorEl={anchorEl} open={open} onClose={onClose}>
       <MenuContent>
         <Typography variant="subtitle1">Notifications</Typography>
         {notifications.length === 0 ? (
-          <EmptyState variant="body2">No notidqsdqfications yet.</EmptyState>
+          <EmptyState variant="body2">No notifications yet.</EmptyState>
         ) : (
           notifications.map((notification) => (
-            <NotificationEntry key={notification.id}>
+            <NotificationEntry
+              key={notification.id}
+              read={notification.read}
+              onClick={() => onMarkAsRead(notification.id)}
+            >
               <Typography variant="body2" fontWeight={600}>
-                {notification.title}
+                {notification.title || notification.type}
               </Typography>
               <Typography variant="caption">
                 {notification.message}
