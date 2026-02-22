@@ -8,6 +8,7 @@ import { MapProvider } from "./editors/MapProvider.ts";
 import { AwarenessProvider } from "./editors/AwarenessProvider.ts";
 import { ProjectSettingsProvider } from "./editors/ProjectSettingsProvider.ts";
 import { MultiplayerSettingsProvider } from "./editors/MultiplayerSettingsProvider.ts";
+import { SoundProvider } from "./editors/SoundProvider.ts";
 import { WebrtcProvider } from "y-webrtc";
 import config from "@config/providers.json";
 
@@ -23,7 +24,7 @@ export class ProjectProvider implements Destroyable {
   private _isKicking: boolean = false;
   private _initialized: boolean = false;
 
-  private _listeners : Map<ProviderEventType, Set<() => void>> = new Map();
+  private _listeners: Map<ProviderEventType, Set<() => void>> = new Map();
 
   public isHost: boolean;
 
@@ -34,6 +35,7 @@ export class ProjectProvider implements Destroyable {
   public multiplayerSettingsProvider!: MultiplayerSettingsProvider;
 
   public projectSettings!: ProjectSettingsProvider;
+  public sound!: SoundProvider;
   public projectId: number;
 
   constructor(projectId: number) {
@@ -49,8 +51,8 @@ export class ProjectProvider implements Destroyable {
       this.spriteProvider              = new SpriteProvider(this._doc);
       this.mapProvider                 = new MapProvider(this._doc, { width:128, height:32 }, 2, this.spriteProvider);
       this.multiplayerSettingsProvider = new MultiplayerSettingsProvider(this._doc);
-
       this.projectSettings = new ProjectSettingsProvider(this._doc);
+      this.sound = new SoundProvider(this._doc);
 
       this._initialized = true;
       this.emit(ProviderEventType.INITIALIZED);
@@ -67,7 +69,7 @@ export class ProjectProvider implements Destroyable {
       this.isHost = host === userId;
 
       try {
-        const content = await ProjectsService.projectControllerFetchProjectContent(String(this.projectId));
+        const content = await ProjectsService.projectControllerFetchProjectContent(this.projectId);
         if (content) {
           await decodeUpdate(this._doc, content);
         } else {
@@ -94,6 +96,7 @@ export class ProjectProvider implements Destroyable {
     this.spriteProvider.destroy();
     this.awarenessProvider.destroy();
     this.projectSettings.destroy();
+    this.sound.destroy();
     this._provider.disconnect();
     this._doc.destroy();
   }
@@ -116,7 +119,7 @@ export class ProjectProvider implements Destroyable {
     }
 
     ProjectsService.projectControllerSaveProjectContent(
-      String(this.projectId),
+      this.projectId,
       { file: new Blob([data], { type: "application/octet-stream" }) }
     ).catch((error) => {
       console.error("Failed to save content:", error);
@@ -146,7 +149,8 @@ export class ProjectProvider implements Destroyable {
         this.awarenessProvider?.getClientId() !== undefined &&
         connectedClients[0] === this.awarenessProvider?.getClientId()
       ) {
-        for (const sessionUserId of sessionInfo.users) {
+        const users = sessionInfo.users || [];
+        for (const sessionUserId of users) {
           if (Number(sessionUserId) !== userId) {
             await WorkSessionsService.workSessionControllerKick(projectId, {
               userId: Number(sessionUserId)

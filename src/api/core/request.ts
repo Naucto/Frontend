@@ -1,4 +1,4 @@
-/* generated using openapi-typescript-codegen -- do not edit */
+/* editable generated file */
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
@@ -12,7 +12,9 @@ import type { ApiResult } from './ApiResult';
 import { CancelablePromise } from './CancelablePromise';
 import type { OnCancel } from './CancelablePromise';
 import type { OpenAPIConfig } from './OpenAPI';
-
+import { LocalStorageManager } from '@utils/LocalStorageManager';
+import * as routes from '@shared/route';
+import { AuthService } from '@api/services/AuthService';
 export const isDefined = <T>(value: T | null | undefined): value is Exclude<T, null | undefined> => {
     return value !== undefined && value !== null;
 };
@@ -304,6 +306,56 @@ export const catchErrorCodes = (options: ApiRequestOptions, result: ApiResult): 
     }
 };
 
+const api = axios.create({
+  baseURL: import.meta.env.VITE_BACKEND_URL,
+  withCredentials: true,
+});
+let queue: ((token: string) => void)[] = [];
+
+api.interceptors.request.use(config => {
+    const token = LocalStorageManager.getToken();
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
+
+api.interceptors.response.use(
+  r => r,
+  async error => {
+    const original = error.config;
+    if (original.url.includes('/auth/refresh')) {
+        throw error;
+    }
+
+    if (error.response?.status === 401 && !original._retry) {
+      original._retry = true;
+      if (LocalStorageManager.getToken() !== undefined) {
+        try {
+            const { access_token } = await AuthService.authControllerRefresh();
+            LocalStorageManager.setToken(access_token);
+            queue.forEach(req => req(access_token));
+            queue = [];
+            return api(original);
+        } catch (err) {
+            LocalStorageManager.resetUser();
+            window.location.href = routes.toHub();
+            throw err;
+        }
+      }
+
+      return new Promise(resolve => {
+        queue.push(token => {
+          original.headers.Authorization = `Bearer ${token}`;
+          resolve(api(original));
+        });
+      });
+    }
+
+    throw error;
+  }
+);
+
 /**
  * Request method
  * @param config The OpenAPI configuration object
@@ -312,7 +364,7 @@ export const catchErrorCodes = (options: ApiRequestOptions, result: ApiResult): 
  * @returns CancelablePromise<T>
  * @throws ApiError
  */
-export const request = <T>(config: OpenAPIConfig, options: ApiRequestOptions, axiosClient: AxiosInstance = axios): CancelablePromise<T> => {
+export const request = <T>(config: OpenAPIConfig, options: ApiRequestOptions, axiosClient: AxiosInstance = api): CancelablePromise<T> => {
     return new CancelablePromise(async (resolve, reject, onCancel) => {
         try {
             const url = getUrl(config, options);
@@ -324,7 +376,6 @@ export const request = <T>(config: OpenAPIConfig, options: ApiRequestOptions, ax
                 const response = await sendRequest<T>(config, options, url, body, formData, headers, onCancel, axiosClient);
                 const responseBody = getResponseBody(response);
                 const responseHeader = getResponseHeader(response, options.responseHeader);
-
                 const result: ApiResult = {
                     url,
                     ok: isSuccess(response.status),
@@ -332,7 +383,6 @@ export const request = <T>(config: OpenAPIConfig, options: ApiRequestOptions, ax
                     statusText: response.statusText,
                     body: responseHeader ?? responseBody,
                 };
-
                 catchErrorCodes(options, result);
 
                 resolve(result.body);

@@ -270,7 +270,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
           envData={envData}
           setOutput={setOutput}
         />
-        <GameEditorConsole output={output}/>
+        <GameEditorConsole output={output} />
       </RightPanel>
 
       <StyledDialog
@@ -302,7 +302,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
         event.preventDefault();
         cleanUpAndDisconnect();
         return "Are you sure you want to leave? Your changes may not be saved.";
-      }}/>
+      }} />
     </GameEditorContainer>
   );
 };

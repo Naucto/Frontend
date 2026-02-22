@@ -44,6 +44,9 @@ class LuaEnvironmentManager {
     this._lua.setGlobalWith("reset_col", this._resetCol.bind(this));
     this._lua.setGlobalWith("map", this._map.bind(this));
     this._lua.setGlobalWith("camera", this._camera.bind(this));
+    this._lua.setGlobalWith("line", this._line.bind(this));
+    this._lua.setGlobalWith("rect", this._drawOutlineRect.bind(this));
+    this._lua.setGlobalWith("fill_rect", this._drawRect.bind(this));
 
     new NetAPI(this._lua);
   }
@@ -92,6 +95,17 @@ class LuaEnvironmentManager {
 
   private _camera(x: number, y: number): void {
     this._rendererHandle.moveCamera(x, y);
+  }
+  private _line(col: number, x0: number, y0: number, x1: number, y1: number): void {
+    this._rendererHandle.drawLine(col, x0, y0, x1, y1);
+  }
+
+  private _drawOutlineRect(col: number, x: number, y: number, width: number, height: number): void {
+    this._rendererHandle.drawOutlineRect(col, x, y, width, height);
+  }
+
+  private _drawRect(col: number, x: number, y: number, width: number, height: number): void {
+    this._rendererHandle.drawRect(col, x, y, width, height);
   }
 
   private _clear(n: number): void {

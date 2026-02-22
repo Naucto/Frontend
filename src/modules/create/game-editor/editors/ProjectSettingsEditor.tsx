@@ -31,7 +31,8 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
   useEffect(() => {
     const fetchProjectDetails = async (): Promise<void> => {
       try {
-        const details = await ProjectsService.projectControllerFindOne(project.projectId);
+        // FIXME: replace with a dedicated GET endpoint that returns collaborators (ProjectWithRelationsResponseDto)
+        const details = await ProjectsService.projectControllerFindOne(project.projectId) as ProjectWithRelationsResponseDto;
         setCollaborators(details.collaborators);
       } catch (err) {
         alert("Error fetching project details: " +

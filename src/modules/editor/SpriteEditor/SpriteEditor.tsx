@@ -1,12 +1,21 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { colorPalette } from "./Color";
-import "./SpriteEditor.css";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import React from "react";
 import { StyledCanvas } from "@shared/canvas/Canvas";
 import { EditorProps } from "../../create/game-editor/editors/EditorType";
 import { MapProvider } from "@providers/editors/MapProvider.ts";
 import { SpriteProvider } from "@providers/editors/SpriteProvider.ts";
+import { styled } from "@mui/material";
+import Tools from "@modules/editor/SpriteEditor/Tools";
+
+export enum DrawTool {
+  Pen,
+  Fill,
+  Line, // TODO
+  Rectangle, // TODO
+}
+export type CanvasHandler = ((e: React.MouseEvent<HTMLCanvasElement>, pixelPos: Point2D) => void) | undefined;
 
 const SPRITE_SIZE = 8;
 const SPRITE_SHEET_SIZE = 128;
@@ -22,11 +31,11 @@ interface ColorButtonProps {
 }
 
 const ColorButton: React.FC<ColorButtonProps> = ({ color, isSelected, onClick }) => (
-  <button
+  <ColorButtonStyled
     key={color.name}
     onClick={onClick}
     style={{ backgroundColor: color.hex }}
-    className={`color-button ${isSelected ? "selected" : ""}`}
+    $selected={isSelected}
     title={color.name}
   />
 );
@@ -38,7 +47,7 @@ interface ColorPaletteProps {
 }
 
 const ColorPalette: React.FC<ColorPaletteProps> = ({ colors, currentColor, onColorSelect }) => (
-  <div className="color-selector">
+  <ColorSelector>
     {colors.map((color, index) => (
       <ColorButton
         key={color.name}
@@ -47,8 +56,76 @@ const ColorPalette: React.FC<ColorPaletteProps> = ({ colors, currentColor, onCol
         onClick={() => onColorSelect(index)}
       />
     ))}
-  </div>
+  </ColorSelector>
 );
+
+const Left = styled("div")(() => ({
+  display: "flex",
+  flexDirection: "column",
+  padding: "0.5rem",
+}));
+
+const EditorLayout = styled("div")(() => ({
+  display: "flex",
+  flexDirection: "column",
+  height: "70%",
+  padding: "1rem",
+  backgroundColor: "#537D8D",
+  color: "#ffffff",
+}));
+
+const CanvasContainerWrapper = styled("div")(() => ({
+  display: "flex",
+  flexDirection: "column",
+  gap: "1rem",
+  height: "100%",
+}));
+
+const SpriteEditorHeader = styled("div")(() => ({
+  display: "flex",
+  gap: "1rem",
+  width: "100%",
+  height: "100%",
+}));
+
+const ColorSelector = styled("div")(() => ({
+  display: "grid",
+  gridTemplateColumns: "repeat(3, 1fr)",
+  gap: "0.5rem",
+  padding: "4px",
+  backgroundColor: "#3a5863",
+  borderRadius: "4px",
+  width: "100%",
+  height: "fit-content",
+  alignContent: "start",
+  overflowY: "auto",
+  overflowX: "hidden",
+  scrollbarWidth: "thin",
+  scrollbarColor: "#1a2c35 #2a3c45",
+}));
+
+const ColorButtonStyled = styled("button", {
+  shouldForwardProp: (prop) => prop !== "$selected",
+})<{ $selected: boolean }>(({ $selected }) => ({
+  aspectRatio: "1",
+  width: "40px",
+  height: "40px",
+  border: `2px solid ${$selected ? "#ffffff" : "#4c4c4c"}`,
+  borderRadius: "4px",
+  cursor: "pointer",
+  transition: "transform 0.1s ease",
+  transform: $selected ? "scale(1.1)" : "none",
+  "&:hover": {
+    transform: "scale(1.1)",
+  },
+  "&:focus": { outline: "none" },
+}));
+
+const DrawCanvasContainer = styled("div")(() => ({
+  backgroundColor: "#3a5863",
+  padding: "1rem",
+  borderRadius: "4px",
+}));
 
 interface CanvasContainerProps {
   canvasRef: React.RefObject<SpriteRendererHandle | null>;
@@ -62,7 +139,7 @@ interface CanvasContainerProps {
   onMouseUp: (e: React.MouseEvent<HTMLCanvasElement>) => void;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
-  onClick: (e: React.MouseEvent<HTMLCanvasElement>) => void;
+  onClick?: (e: React.MouseEvent<HTMLCanvasElement>) => void;
 }
 
 const CanvasContainer: React.FC<CanvasContainerProps> = ({
@@ -73,7 +150,7 @@ const CanvasContainer: React.FC<CanvasContainerProps> = ({
   screenSize,
   ...props
 }) => (
-  <div ref={containerRef} className="draw-canvas-container">
+  <DrawCanvasContainer ref={containerRef}>
     <StyledCanvas
       ref={canvasRef}
       sprite={sprite}
@@ -81,7 +158,7 @@ const CanvasContainer: React.FC<CanvasContainerProps> = ({
       map={map}
       {...props}
     />
-  </div>
+  </DrawCanvasContainer>
 );
 
 function getMousePosition(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>, rect: DOMRect): Point2D {
@@ -118,28 +195,19 @@ function getPixelPos(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
   return { x, y };
 }
 
-function getSpritePos(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
-  rect: DOMRect, zoom: number, position: Point2D): Point2D | null {
-  const mousePos = getMousePosition(e, rect);
-
-  const spriteX = Math.floor((mousePos.x / rect.width * zoom) - (Math.floor(position.x) / SPRITE_SIZE));
-  const spriteY = Math.floor((mousePos.y / rect.height * zoom) - (Math.floor(position.y) / SPRITE_SIZE));
-
-  if (
-    spriteX < 0 ||
-    spriteX >= SPRITE_SHEET_SIZE / SPRITE_SIZE ||
-    spriteY < 0 ||
-    spriteY >= SPRITE_SHEET_SIZE / SPRITE_SIZE
-  ) {
-    return null;
-  }
-
-  return { x: spriteX, y: spriteY };
-}
-
 export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
   const [currentColor, setCurrentColor] = useState(0);
   const [zoom, setZoom] = useState(1);
+
+  const [drawTool, setDrawTool] = useState<DrawTool>(DrawTool.Pen);
+  const onMouseDownRef = useRef<CanvasHandler>(undefined);
+  const onMouseMoveRef = useRef<CanvasHandler>(undefined);
+  const onMouseUpRef   = useRef<CanvasHandler>(undefined);
+
+  const setOnMouseDown = useCallback((fn: CanvasHandler) => onMouseDownRef.current = fn, []);
+  const setOnMouseMove = useCallback((fn: CanvasHandler) => onMouseMoveRef.current = fn, []);
+  const setOnMouseUp = useCallback((fn: CanvasHandler) => onMouseUpRef.current = fn, []);
+
   const [position, setPosition] = useState<Point2D>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -202,11 +270,6 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
     }
   }, [project.spriteProvider, drawCanvasRef, position, version, zoom]);
 
-  const drawAt = (x: number, y: number): void => {
-    project.spriteProvider.setPixel(x, y, currentColor);
-    setVersion(v => v + 1);
-  };
-
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>): void => {
     if (!isMouseOverCanvas) return;
 
@@ -217,7 +280,8 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
       setIsDrawing(true);
       const rect = e.currentTarget.getBoundingClientRect();
       const { x, y } = getPixelPos(e, rect, zoom, position);
-      drawAt(x, y);
+      onMouseDownRef.current?.(e, { x, y });
+      setVersion(v => v + 1);
     }
   };
 
@@ -245,7 +309,8 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
       const rect = e.currentTarget.getBoundingClientRect();
 
       const { x, y } = getPixelPos(e, rect, zoom, position);
-      drawAt(x, y);
+      onMouseMoveRef.current?.(e, { x, y });
+      setVersion(v => v + 1);
     }
   };
 
@@ -262,28 +327,29 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
     height: Math.floor(SPRITE_SHEET_SIZE) * SCALE
   };
 
-  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>): void => {
-    if (!isDragging && !isDrawing) {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const spritePos = getSpritePos(e, rect, zoom, position);
-
-      if (spritePos) {
-        const { x, y } = getPixelPos(e, rect, zoom, position);
-        drawAt(x, y);
-      }
-    }
-  };
   return (
-    <div className="editor-layout"
+    <EditorLayout
       onContextMenu={handleContextMenu}
       data-cy="sprite-editor">
-      <div className="canvas-container">
-        <div className="sprite-editor-header">
-          <ColorPalette
-            colors={colorPalette}
-            currentColor={currentColor}
-            onColorSelect={setCurrentColor}
-          />
+      <CanvasContainerWrapper>
+        <SpriteEditorHeader>
+          <Left>
+            <ColorPalette
+              colors={colorPalette}
+              currentColor={currentColor}
+              onColorSelect={setCurrentColor}
+            />
+            <Tools
+              color={currentColor}
+              position={position}
+              setOnMouseDown={setOnMouseDown}
+              setOnMouseMove={setOnMouseMove}
+              setOnMouseUp={setOnMouseUp}
+              drawTool={drawTool}
+              onSelectTool={setDrawTool}
+              spriteProvider={project.spriteProvider}
+            />
+          </Left>
           <CanvasContainer
             canvasRef={drawCanvasRef}
             containerRef={canvasContainerRef}
@@ -300,11 +366,10 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
               setIsDragging(false);
               setIsDrawing(false);
             }}
-            onClick={handleCanvasClick}
           />
-        </div>
-      </div>
-    </div>
+        </SpriteEditorHeader>
+      </CanvasContainerWrapper>
+    </EditorLayout>
   );
 };
 

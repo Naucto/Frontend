@@ -2,36 +2,44 @@ import { User } from "src/types/userTypes";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { ContextError } from "src/errors/ContextError";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
+import { UserProfileResponseDto, UsersService } from "@api";
+import { useAsync } from "src/hooks/useAsync";
 
 interface UserContextType {
-  userId?: number;
-  userName?: string;
-  setUserId: React.Dispatch<React.SetStateAction<number>>;
-  setUserName: React.Dispatch<React.SetStateAction<string>>;
   logIn: (userData: User) => void;
   logOut: () => void;
+  user: UserProfileResponseDto | undefined;
+  setUser: React.Dispatch<React.SetStateAction<UserProfileResponseDto | undefined>>;
 }
 
 const userContext = createContext<UserContextType | null>(null);
 
 export const UserProvider = ({ children }: { children: React.ReactNode }): React.ReactElement => {
-  const [userId, setUserId] = useState(() => {
-    return LocalStorageManager.getUserId();
-  });
-  const [userName, setUserName] = useState(() => {
-    return LocalStorageManager.getUserName();
-  });
+  const token = LocalStorageManager.getToken();
+  const { loading, value: profile, error } = useAsync(
+    () => token ? UsersService.userControllerGetProfile() : Promise.resolve(undefined),
+    [token]
+  );
+  const [user, setUser] = useState<UserProfileResponseDto | undefined>(undefined);
 
   useEffect(() => {
-    LocalStorageManager.setUserId(userId);
-  }, [userId]);
+    if (loading) {
+      return;
+    }
+    if (profile) {
+      setUser(profile);
+    }
+  }, [loading, profile, error]);
 
   const logIn = (userData: User): void => LocalStorageManager.setUser(userData);
 
-  const logOut = (): void => LocalStorageManager.setUser(undefined);
+  const logOut = (): void => {
+    LocalStorageManager.resetUser();
+    setUser(undefined);
+  };
 
   return (
-    <userContext.Provider value={{ userId, userName, setUserId, setUserName, logIn, logOut }}>
+    <userContext.Provider value={{ user, setUser, logIn, logOut }}>
       {children}
     </userContext.Provider>
   );

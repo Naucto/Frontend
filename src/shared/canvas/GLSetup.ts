@@ -47,6 +47,19 @@ export function initGLPipeline(
     gl.RED,
     gl.TEXTURE2);
 
+  const paletteIndexBuffer = [];
+  for (let i = 0; i < sprite.palette.length; i ++) {
+    paletteIndexBuffer.push(i);
+  }
+
+  const paletteIndexArray = new Uint8Array(paletteIndexBuffer);
+  const paletteIndexTexture = setTexture(gl,
+    sprite.palette.length / 4, 1,
+    paletteIndexArray,
+    gl.R8,
+    gl.RED,
+    gl.TEXTURE3);
+
   const paletteSize = sprite.palette.length / 4;
 
   const vertexShaderSource = spriteSheetVertex;
@@ -59,6 +72,7 @@ export function initGLPipeline(
 
   gl.uniform1i(gl.getUniformLocation(program, "u_texture"), 0); // 0 is spriteSheetTexture (gl.TEXTURE0)
   gl.uniform1i(gl.getUniformLocation(program, "u_paletteTex"), 1); // 1 is paletteTexture (gl.TEXTURE1)
+
   gl.uniform1f(gl.getUniformLocation(program, "u_paletteSize"), paletteSize);
   gl.uniform2f(gl.getUniformLocation(program, "screen_resolution"), screenSize.width, screenSize.height);
 
@@ -83,6 +97,7 @@ export function initGLPipeline(
     gl.deleteTexture(paletteTexture);
     gl.deleteTexture(spriteSheetTexture);
     gl.deleteTexture(mapTexture);
+    gl.deleteTexture(paletteIndexTexture);
   };
 
   return {
