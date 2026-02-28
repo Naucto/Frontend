@@ -1,4 +1,4 @@
-import { Box, Menu, Typography, styled } from "@mui/material";
+import { Menu, Typography, styled } from "@mui/material";
 import { JSX } from "react";
 import { NotificationItem } from "./types";
 import { NotificationListItem } from "./NotificationListItem";
@@ -18,17 +18,10 @@ const StyledMenu = styled(Menu)(({ theme }) => ({
     color: theme.palette.text.primary,
     borderRadius: theme.spacing(1),
     border: `3px solid ${theme.palette.gray[400]}`,
+    padding: theme.spacing(1, 2)
   },
-  "& .MuiList-root": {
-    padding: 0,
-  },
-  marginTop: theme.spacing(1),
-}));
 
-const MenuContent = styled(Box)(({ theme }) => ({
-  minWidth: 280,
-  maxWidth: 360,
-  padding: theme.spacing(1.5),
+  marginTop: theme.spacing(2),
 }));
 
 const EmptyState = styled(Typography)(({ theme }) => ({
@@ -45,20 +38,18 @@ export const NotificationMenu = ({
 }: NotificationMenuProps): JSX.Element => {
   return (
     <StyledMenu anchorEl={anchorEl} open={open} onClose={onClose}>
-      <MenuContent>
-        <Typography variant="subtitle1">Notifications</Typography>
-        {notifications.length === 0 ? (
-          <EmptyState variant="body2">No notifications yet.</EmptyState>
-        ) : (
-          notifications.map((notification) => (
-            <NotificationListItem
-              key={notification.id}
-              notification={notification}
-              onMarkAsRead={onMarkAsRead}
-            />
-          ))
-        )}
-      </MenuContent>
+      <Typography variant="subtitle1">Notifications</Typography>
+      {notifications.length === 0 ? (
+        <EmptyState variant="body2">No notifications yet.</EmptyState>
+      ) : (
+        notifications.map((notification) => (
+          <NotificationListItem
+            key={notification.id}
+            notification={notification}
+            onMarkAsRead={onMarkAsRead}
+          />
+        ))
+      )}
     </StyledMenu>
   );
 };
