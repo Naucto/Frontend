@@ -59,10 +59,19 @@ export const NotificationBox = (): JSX.Element => {
     }
 
     const wsBase = backendUrl.replace(/^http/i, "ws").replace(/\/$/, "");
-    const socketUrl = `${wsBase}${NOTIFICATION_SOCKET_PATH}?token=${encodeURIComponent(token)}`;
+    const socketUrl = `${wsBase}${NOTIFICATION_SOCKET_PATH}`;
     const socket = new WebSocket(socketUrl);
 
     socketRef.current = socket;
+
+    socket.onopen = () => {
+      try {
+        socket.send(JSON.stringify({ type: "auth", token }));
+      } catch {
+        // eslint-disable-next-line no-console
+        console.warn("Failed to send auth message over websocket");
+      }
+    };
 
     socket.onmessage = (event: MessageEvent<string>) => {
       try {
