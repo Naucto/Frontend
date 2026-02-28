@@ -92,11 +92,6 @@ export const NotificationBox = (): JSX.Element => {
     setShowMenu((previous) => {
       const next = !previous;
 
-      // if (next) {
-      //   setNotifications((current) => markAllAsRead(current));
-      //   NotificationsService.notificationsControllerMarkAllAsRead();
-      // }
-
       return next;
     });
   }, []);
