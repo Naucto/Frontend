@@ -24,7 +24,7 @@ export class NotificationsService {
         });
     }
     /**
-     * Mark one notification as read
+     * set one notification as read
      * @param id
      * @returns any Notification marked as read
      * @throws ApiError
@@ -41,8 +41,8 @@ export class NotificationsService {
         });
     }
     /**
-     * Mark all current user notifications as read
-     * @returns any All notifications marked as read
+     * set notifications as read
+     * @returns any All notifications as read
      * @throws ApiError
      */
     public static notificationsControllerMarkAllAsRead(): CancelablePromise<any> {
