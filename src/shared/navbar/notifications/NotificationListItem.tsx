@@ -46,6 +46,7 @@ export const NotificationListItem = ({
     <ActionsRow>
       <Typography
         variant="caption"
+        role="button"
         sx={{ cursor: "pointer", textDecoration: "underline" }}
         onClick={() => onMarkAsRead(notification.id)}
       >
