@@ -113,7 +113,10 @@ export const NotificationBox = (): JSX.Element => {
         notification.id === notificationId ? { ...notification, read: true } : notification,
       ),
     );
-    NotificationsService.notificationsControllerMarkAsRead(notificationId);
+    NotificationsService.notificationsControllerMarkAsRead(notificationId).catch(() => {
+      // eslint-disable-next-line no-console
+      console.error(`Failed to mark notification ${notificationId} as read`);
+    });
   }, []);
 
   return (
