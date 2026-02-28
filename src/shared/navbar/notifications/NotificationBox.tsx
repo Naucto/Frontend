@@ -33,26 +33,6 @@ const mergeNotification = (
   return [notification, ...withoutCurrent].slice(0, MAX_NOTIFICATIONS);
 };
 
-const markOneAsRead = (notifications: NotificationItem[], notificationId: string): NotificationItem[] => {
-  return notifications.map((item) => {
-    if (item.id !== notificationId) {
-      return item;
-    }
-
-    return {
-      ...item,
-      read: true,
-    };
-  });
-};
-
-const markAllAsRead = (notifications: NotificationItem[]): NotificationItem[] => {
-  return notifications.map((item) => ({
-    ...item,
-    read: true,
-  }));
-};
-
 export const NotificationBox = (): JSX.Element => {
   const { user } = useUser();
   const userId = user?.id;
@@ -112,10 +92,10 @@ export const NotificationBox = (): JSX.Element => {
     setShowMenu((previous) => {
       const next = !previous;
 
-      if (next) {
-        setNotifications((current) => markAllAsRead(current));
-        NotificationsService.notificationsControllerMarkAllAsRead();
-      }
+      // if (next) {
+      //   setNotifications((current) => markAllAsRead(current));
+      //   NotificationsService.notificationsControllerMarkAllAsRead();
+      // }
 
       return next;
     });
@@ -124,7 +104,11 @@ export const NotificationBox = (): JSX.Element => {
   const handleClose = useCallback(() => setShowMenu(false), []);
 
   const handleMarkAsRead = useCallback((notificationId: string) => {
-    setNotifications((current) => markOneAsRead(current, notificationId));
+    setNotifications((current) =>
+      current.map((notification) =>
+        notification.id === notificationId ? { ...notification, read: true } : notification,
+      ),
+    );
     NotificationsService.notificationsControllerMarkAsRead(notificationId);
   }, []);
 
