@@ -7,7 +7,6 @@ const NotificationEntry = styled(Box, {
 })<{ read: boolean }>(({ theme, read }) => ({
   padding: theme.spacing(1, 0),
   borderBottom: `1px solid ${theme.palette.gray[500]}`,
-  cursor: "pointer",
   opacity: read ? 0.5 : 1,
   "&:last-of-type": {
     borderBottom: "none",
