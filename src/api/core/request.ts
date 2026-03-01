@@ -198,7 +198,6 @@ export const getRequestBody = (options: ApiRequestOptions): any => {
     }
     return undefined;
 };
-
 function pickResponseType(
   accept?: string
 ): AxiosRequestConfig['responseType'] {
@@ -306,6 +305,7 @@ export const catchErrorCodes = (options: ApiRequestOptions, result: ApiResult): 
     }
 };
 
+
 const api = axios.create({
   baseURL: import.meta.env.VITE_BACKEND_URL,
   withCredentials: true,
@@ -364,7 +364,7 @@ api.interceptors.response.use(
  * @returns CancelablePromise<T>
  * @throws ApiError
  */
-export const request = <T>(config: OpenAPIConfig, options: ApiRequestOptions, axiosClient: AxiosInstance = api): CancelablePromise<T> => {
+export const request = <T>(config: OpenAPIConfig, options: ApiRequestOptions, axiosClient: AxiosInstance = axios): CancelablePromise<T> => {
     return new CancelablePromise(async (resolve, reject, onCancel) => {
         try {
             const url = getUrl(config, options);
@@ -376,6 +376,7 @@ export const request = <T>(config: OpenAPIConfig, options: ApiRequestOptions, ax
                 const response = await sendRequest<T>(config, options, url, body, formData, headers, onCancel, axiosClient);
                 const responseBody = getResponseBody(response);
                 const responseHeader = getResponseHeader(response, options.responseHeader);
+
                 const result: ApiResult = {
                     url,
                     ok: isSuccess(response.status),
@@ -383,6 +384,7 @@ export const request = <T>(config: OpenAPIConfig, options: ApiRequestOptions, ax
                     statusText: response.statusText,
                     body: responseHeader ?? responseBody,
                 };
+
                 catchErrorCodes(options, result);
 
                 resolve(result.body);

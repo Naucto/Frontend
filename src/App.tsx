@@ -6,6 +6,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import NavBar from "@shared/navbar/NavBar";
 import { muiTheme } from "@theme/MUITheme";
 import { CustomSnackBarProvider } from "@shared/snackBar/CustomSnackBarProvider";
+import { GameViewer } from "@modules/hub/components/GameViewer";
 
 const Projects = lazy(() => import("@modules/projects/Projects"));
 const Project = lazy(() => import("@modules/project/Project"));
@@ -23,6 +24,7 @@ const App: React.FC = () => {
               <Route path="/hub" element={<Hub />} />
               <Route path='/projects' element={<Projects />} />
               <Route path="/projects/:projectId" element={<Project />} />
+              <Route path="/project/:id/play" element={<GameViewer />} />
             </Routes>
           </Suspense>
         </BrowserRouter>

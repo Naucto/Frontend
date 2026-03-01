@@ -2,7 +2,10 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type AuthResponseDto = {
-    access_token: string;
+export type SignedUrlResponseDto = {
+    /**
+     * The signed Edge URL for accessing the protected file
+     */
+    signedUrl: string;
 };
 
