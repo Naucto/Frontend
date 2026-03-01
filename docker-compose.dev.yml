@@ -3,8 +3,19 @@ networks:
     driver: bridge
     name: naucto-dev
     attachable: true
+    external: true
 
 services:
   frontend:
     networks:
       - naucto-dev
+    develop:
+      watch:
+        - action: rebuild
+          path: package.json
+        - action: rebuild
+          path: vite.config.ts
+        - action: rebuild
+          path: tsconfig.json
+        - action: rebuild
+          path: tsconfig.paths.json
