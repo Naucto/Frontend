@@ -69,7 +69,6 @@ export const NotificationBox = (): JSX.Element => {
       try {
         socket.send(JSON.stringify({ type: "auth", token }));
       } catch {
-        // eslint-disable-next-line no-console
         console.warn("Failed to send auth message over websocket");
       }
     };
@@ -86,8 +85,8 @@ export const NotificationBox = (): JSX.Element => {
         if (message.type === "notification") {
           setNotifications((previous) => mergeNotification(previous, message.payload));
         }
-      } catch {
-        // eslint
+      } catch (error) {
+        console.warn("Failed to process notification websocket message:", error);
       }
     };
 
@@ -115,7 +114,6 @@ export const NotificationBox = (): JSX.Element => {
       ),
     );
     NotificationsService.notificationsControllerMarkAsRead(notificationId).catch(() => {
-      // eslint-disable-next-line no-console
       console.error(`Failed to mark notification ${notificationId} as read`);
     });
   }, []);
