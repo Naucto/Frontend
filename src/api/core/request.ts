@@ -1,4 +1,4 @@
-/* generated using openapi-typescript-codegen -- do not edit */
+/* editable generated file */
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */

@@ -46,7 +46,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, isPlayable = false }
       navigate(urls.toProjectView(project.id));
     } else {
       navigate(urls.toProject(project.id));
-    };
+    }
   };
 
   let thumbnailUrl = "";

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { EditorProps } from "./EditorType";
 import { Box, Button, Typography, List, ListItem, ListItemText, Paper, Divider, Chip } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { ApiError, ProjectsService, ProjectWithRelationsResponseDto, UserBasicInfoDto, } from "@api";
+import { ApiError, ProjectsService, ProjectWithRelationsResponseDto, UserBasicInfoDto} from "@api";
 import { ProjectSettings } from "@providers/editors/ProjectSettingsProvider";
 import { ActionButton } from "@components/ui/ActionButton";
 import { FullWidthTextField } from "@components/ui/FullWidthTextField";
@@ -41,7 +41,7 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
       try {
         const details = await ProjectsService.projectControllerFindOne(project.projectId);
         setCollaborators(details.collaborators);
-        setIsPublished(details.status == ProjectWithRelationsResponseDto.status.COMPLETED || false);
+        setIsPublished(details.status === ProjectWithRelationsResponseDto.status.COMPLETED || false);
       } catch (err) {
         alert("Error fetching project details: " +
           (err instanceof ApiError ? err.message : String(err)));
@@ -94,6 +94,7 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
   };
 
   const handlePublishToggle = async (): Promise<void> => {
+    // TODO: clarify publish/unpublish persistence behavior (publish currently saves before toggling, unpublish does not).
     try {
       if (!isPublished) {
         await project.saveContent();

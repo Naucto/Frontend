@@ -9,6 +9,13 @@ export enum ProviderEventType {
   INITIALIZED
 }
 
+class ReleaseContentFetchError extends Error {
+  constructor(public readonly status: number, url: string) {
+    super(`Failed to fetch release content from ${url}: ${status}`);
+    this.name = "ReleaseContentFetchError";
+  }
+}
+
 export class GameProvider implements Destroyable {
   private readonly _doc: Y.Doc;
 
@@ -60,7 +67,7 @@ export class GameProvider implements Destroyable {
 
           const response = await fetch(requestUrl);
           if (!response.ok) {
-            throw new Error(`Failed to fetch release content: ${response.status}`);
+            throw new ReleaseContentFetchError(response.status, requestUrl);
           }
           const blob = await response.blob();
           await decodeUpdate(this._doc, blob);
@@ -85,8 +92,12 @@ export class GameProvider implements Destroyable {
   }
 
   destroy(): void {
-    this.sprite.destroy();
-    this.map.destroy();
+    if (this.sprite) {
+      this.sprite.destroy();
+    }
+    if (this.map) {
+      this.map.destroy();
+    }
     this._doc.destroy();
   }
 
