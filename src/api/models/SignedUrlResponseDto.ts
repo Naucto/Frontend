@@ -4,7 +4,7 @@
 /* eslint-disable */
 export type SignedUrlResponseDto = {
     /**
-     * The signed CloudFront URL for accessing the protected file
+     * The signed Edge URL for accessing the protected file
      */
     signedUrl: string;
 };

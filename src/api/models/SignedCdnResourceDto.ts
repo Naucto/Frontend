@@ -8,7 +8,7 @@ export type SignedCdnResourceDto = {
      */
     resourceUrl: string;
     /**
-     * Signed CloudFront cookies (also set as HTTP-only cookies)
+     * Signed Edge cookies (also set as HTTP-only cookies)
      */
     cookies: Record<string, any>;
 };

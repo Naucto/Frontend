@@ -45,12 +45,25 @@ export class GameProvider implements Destroyable {
       );
       if (signed?.signedUrl) {
         try {
-          const response = await fetch(signed.signedUrl);
+          let requestUrl = signed.signedUrl;
+          if (typeof window !== "undefined") {
+            try {
+              const url = new URL(signed.signedUrl);
+              if (url.hostname.endsWith(".svc.edge.scw.cloud")) {
+                url.searchParams.set("cors_bust", Date.now().toString());
+                requestUrl = url.toString();
+              }
+            } catch {
+              requestUrl = signed.signedUrl;
+            }
+          }
+
+          const response = await fetch(requestUrl);
           if (!response.ok) {
             throw new Error(`Failed to fetch release content: ${response.status}`);
           }
-          const buffer = await response.arrayBuffer();
-          await decodeUpdate(this._doc, new Uint8Array(buffer));
+          const blob = await response.blob();
+          await decodeUpdate(this._doc, blob);
           return;
         } catch {
           console.warn("Failed to fetch release content with signed URL, falling back to API endpoint");
