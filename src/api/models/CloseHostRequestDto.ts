@@ -2,10 +2,10 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type SignedUrlResponseDto = {
+export type CloseHostRequestDto = {
     /**
-     * The signed CloudFront URL for accessing the protected file
+     * ID of the project whose session to close
      */
-    signedUrl: string;
+    projectId: number;
 };
 

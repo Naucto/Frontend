@@ -4,8 +4,8 @@
 /* eslint-disable */
 import type { AddCollaboratorDto } from '../models/AddCollaboratorDto';
 import type { CreateProjectDto } from '../models/CreateProjectDto';
+import type { ProjectExResponseDto } from '../models/ProjectExResponseDto';
 import type { ProjectResponseDto } from '../models/ProjectResponseDto';
-import type { ProjectWithRelationsResponseDto } from '../models/ProjectWithRelationsResponseDto';
 import type { RemoveCollaboratorDto } from '../models/RemoveCollaboratorDto';
 import type { SignedCdnResourceDto } from '../models/SignedCdnResourceDto';
 import type { SignedUrlResponseDto } from '../models/SignedUrlResponseDto';
@@ -50,20 +50,19 @@ export class ProjectsService {
      */
     public static projectControllerGetReleaseContent(
         id: string,
-    ): CancelablePromise<Blob> {
+    ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/projects/releases/{id}/content',
             path: {
                 'id': id,
             },
-            responseType: "blob"
         });
     }
     /**
      * Get signed CDN URL for a release
      * @param id
-     * @returns SignedUrlResponseDto Signed CloudFront URL for the release
+     * @returns SignedUrlResponseDto Signed Edge URL for the release
      * @throws ApiError
      */
     public static projectControllerGetReleaseContentUrl(
@@ -79,10 +78,10 @@ export class ProjectsService {
     }
     /**
      * Retrieve the list of projects
-     * @returns ProjectWithRelationsResponseDto A JSON array of projects with collaborators and creator information
+     * @returns ProjectExResponseDto A JSON array of projects with collaborators and creator information
      * @throws ApiError
      */
-    public static projectControllerFindAll(): CancelablePromise<Array<ProjectWithRelationsResponseDto>> {
+    public static projectControllerFindAll(): CancelablePromise<Array<ProjectExResponseDto>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/projects',
@@ -118,7 +117,7 @@ export class ProjectsService {
      */
     public static projectControllerFindOne(
         id: number,
-    ): CancelablePromise<ProjectWithRelationsResponseDto> {
+    ): CancelablePromise<ProjectResponseDto> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/projects/{id}',
@@ -183,13 +182,13 @@ export class ProjectsService {
      * Add a collaborator to a project by providing either userId, username, or email. At least one must be provided.
      * @param id Numeric ID of the project to update
      * @param requestBody
-     * @returns ProjectWithRelationsResponseDto Updated project object with collaborators
+     * @returns ProjectExResponseDto Updated project object with collaborators
      * @throws ApiError
      */
     public static projectControllerAddCollaborator(
         id: number,
         requestBody: AddCollaboratorDto,
-    ): CancelablePromise<ProjectWithRelationsResponseDto> {
+    ): CancelablePromise<ProjectExResponseDto> {
         return __request(OpenAPI, {
             method: 'PATCH',
             url: '/projects/{id}/add-collaborator',
@@ -210,13 +209,13 @@ export class ProjectsService {
      * Remove a collaborator from a project by providing either userId, username, or email. At least one must be provided.
      * @param id Numeric ID of the project to update
      * @param requestBody
-     * @returns ProjectWithRelationsResponseDto Updated project object with collaborators
+     * @returns ProjectExResponseDto Updated project object with collaborators
      * @throws ApiError
      */
     public static projectControllerRemoveCollaborator(
         id: number,
         requestBody: RemoveCollaboratorDto,
-    ): CancelablePromise<ProjectWithRelationsResponseDto> {
+    ): CancelablePromise<ProjectExResponseDto> {
         return __request(OpenAPI, {
             method: 'DELETE',
             url: '/projects/{id}/remove-collaborator',
@@ -319,8 +318,8 @@ export class ProjectsService {
      * @throws ApiError
      */
     public static projectControllerFetchProjectContent(
-        id: string,
-    ): CancelablePromise<Blob> {
+        id: number,
+    ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/projects/{id}/fetchContent',
@@ -328,10 +327,8 @@ export class ProjectsService {
                 'id': id,
             },
             errors: {
-                403: `Forbidden`,
-                404: `File not found`,
+                404: `File not found (DB or S3)`,
             },
-            responseType: "blob"
         });
     }
     /**
@@ -476,7 +473,7 @@ export class ProjectsService {
     public static projectControllerGetVersion(
         id: string,
         version: string,
-    ): CancelablePromise<Blob> {
+    ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/projects/{id}/versions/{version}',
@@ -487,7 +484,6 @@ export class ProjectsService {
             errors: {
                 403: `Forbidden`,
             },
-            responseType: "blob"
         });
     }
     /**
@@ -500,7 +496,7 @@ export class ProjectsService {
     public static projectControllerGetCheckpoint(
         id: string,
         checkpoint: string,
-    ): CancelablePromise<Blob> {
+    ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/projects/{id}/checkpoints/{checkpoint}',
@@ -511,7 +507,6 @@ export class ProjectsService {
             errors: {
                 403: `Forbidden`,
             },
-            responseType: "blob"
         });
     }
 }

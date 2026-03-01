@@ -201,6 +201,31 @@ export class S3Service {
         });
     }
     /**
+     * Apply public read policy for a prefix (default: release*)
+     * @param requestBody
+     * @returns any Policy applied successfully
+     * @throws ApiError
+     */
+    public static s3ControllerApplyPublicReadPolicy(
+        requestBody: {
+            /**
+             * Target bucket name (optional, defaults to S3_BUCKET_NAME)
+             */
+            bucketName?: string;
+            /**
+             * Object key prefix to expose publicly
+             */
+            prefix?: string;
+        },
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/s3/policy/public-read',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+    /**
      * Get object metadata
      * @param key Object key
      * @param bucketName Name of the bucket

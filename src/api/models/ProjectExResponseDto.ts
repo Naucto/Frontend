@@ -3,7 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { UserBasicInfoDto } from './UserBasicInfoDto';
-export type ProjectWithRelationsResponseDto = {
+export type ProjectExResponseDto = {
     /**
      * The unique identifier of the project
      */
@@ -27,11 +27,11 @@ export type ProjectWithRelationsResponseDto = {
     /**
      * The current status of the project
      */
-    status: ProjectWithRelationsResponseDto.status | null;
+    status: ProjectExResponseDto.status | null;
     /**
      * The monetization strategy for this project
      */
-    monetization: ProjectWithRelationsResponseDto.monetization | null;
+    monetization: ProjectExResponseDto.monetization | null;
     /**
      * The price of the project, if applicable
      */
@@ -65,7 +65,7 @@ export type ProjectWithRelationsResponseDto = {
      */
     creator: UserBasicInfoDto;
 };
-export namespace ProjectWithRelationsResponseDto {
+export namespace ProjectExResponseDto {
     /**
      * The current status of the project
      */

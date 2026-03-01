@@ -98,11 +98,23 @@ export class UsersService {
         email?: string,
         sortBy?: 'id' | 'username' | 'email' | 'createdAt',
         order?: 'asc' | 'desc',
+        page?: number,
+        limit?: number,
+        nickname?: string,
+        email?: string,
+        sortBy?: string,
+        order?: string,
     ): CancelablePromise<UserListResponseDto> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/users',
             query: {
+                'page': page,
+                'limit': limit,
+                'nickname': nickname,
+                'email': email,
+                'sortBy': sortBy,
+                'order': order,
                 'page': page,
                 'limit': limit,
                 'nickname': nickname,
