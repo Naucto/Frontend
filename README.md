@@ -25,6 +25,12 @@ bun run dev
 
 ## Docker
 
+### Development (with hot reload feature)
+```bash
+docker compose -f docker-compose.dev.yml up
+```
+
+### Production
 ```bash
 docker compose up
 ```

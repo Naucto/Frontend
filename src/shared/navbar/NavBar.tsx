@@ -6,6 +6,7 @@ import React, { useState } from "react";
 import { useUser } from "@providers/UserProvider";
 import { muiTheme } from "@theme/MUITheme";
 import { Login } from "@shared/navbar/login/Login";
+import { NotificationBox } from "@shared/navbar/notifications/NotificationBox";
 import * as Urls from "@shared/route";
 const Nav = styled("nav")(({ theme }) => ({
   display: "grid",
@@ -54,6 +55,7 @@ const NavBar: React.FC = () => {
 
       <Right>
         <NavElem to="/friends">Friends</NavElem>
+        <NotificationBox />
         {user ? <NavProfile /> : <Login forceShowAuthOverlay={forceShowAuthOverlay} setForceShowAuthOverlay={setForceShowAuthOverlay} />}
       </Right>
     </Nav >

@@ -91,8 +91,6 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
       }
       // FIXME: put the token to httpOnly cookie using the backend
       LocalStorageManager.setToken(authResponse.access_token);
-      LocalStorageManager.setRefreshToken(authResponse.refresh_token);
-
       const userRes = await UsersService.userControllerGetProfile();
       LocalStorageManager.setUser({
         id: String(userRes.id),
