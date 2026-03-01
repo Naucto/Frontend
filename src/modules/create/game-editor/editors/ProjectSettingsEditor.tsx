@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { EditorProps } from "./EditorType";
 import { Box, Button, Typography, List, ListItem, ListItemText, Paper, Divider, Chip } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { ApiError, ProjectsService, ProjectWithRelationsResponseDto, UserBasicInfoDto } from "@api";
+import { ApiError, ProjectsService, ProjectExResponseDto, UserBasicInfoDto } from "@api";
 import { ProjectSettings } from "@providers/editors/ProjectSettingsProvider";
 import { ActionButton } from "@components/ui/ActionButton";
 import { FullWidthTextField } from "@components/ui/FullWidthTextField";
@@ -39,10 +39,9 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
   useEffect(() => {
     const fetchProjectDetails = async (): Promise<void> => {
       try {
-        // FIXME: replace with a dedicated GET endpoint that returns collaborators (ProjectWithRelationsResponseDto)
-        const details = await ProjectsService.projectControllerFindOne(project.projectId) as ProjectWithRelationsResponseDto;
+        const details = await ProjectsService.projectControllerFindOne(project.projectId) as ProjectExResponseDto;
         setCollaborators(details.collaborators);
-        setIsPublished(details.status === ProjectWithRelationsResponseDto.status.COMPLETED || false);
+        setIsPublished(details.status === ProjectExResponseDto.status.COMPLETED || false);
       } catch (err) {
         alert("Error fetching project details: " +
           (err instanceof ApiError ? err.message : String(err)));
@@ -70,7 +69,7 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
   const handleAddCollaborator = async () : Promise<void> => {
     if (!newCollaborator.trim()) return;
     try {
-      let details : ProjectWithRelationsResponseDto;
+      let details : ProjectExResponseDto;
       if (newCollaborator.includes("@")) {
         details = await ProjectsService.projectControllerAddCollaborator(project.projectId, { email: newCollaborator });
       } else {

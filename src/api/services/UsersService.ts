@@ -82,12 +82,6 @@ export class UsersService {
      * @param email Filter by email
      * @param sortBy Sort by field
      * @param order Sort order
-     * @param page Page number
-     * @param limit Items per page
-     * @param nickname Filter by nickname
-     * @param email Filter by email
-     * @param sortBy Sort by field
-     * @param order Sort order
      * @returns UserListResponseDto Returns paginated list of users
      * @throws ApiError
      */
@@ -98,23 +92,11 @@ export class UsersService {
         email?: string,
         sortBy?: 'id' | 'username' | 'email' | 'createdAt',
         order?: 'asc' | 'desc',
-        page?: number,
-        limit?: number,
-        nickname?: string,
-        email?: string,
-        sortBy?: string,
-        order?: string,
     ): CancelablePromise<UserListResponseDto> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/users',
             query: {
-                'page': page,
-                'limit': limit,
-                'nickname': nickname,
-                'email': email,
-                'sortBy': sortBy,
-                'order': order,
                 'page': page,
                 'limit': limit,
                 'nickname': nickname,
