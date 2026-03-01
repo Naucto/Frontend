@@ -26,11 +26,11 @@ export type ProjectResponseDto = {
     /**
      * The current status of the project
      */
-    status: 'IN_PROGRESS' | 'COMPLETED' | 'ARCHIVED' | null;
+    status: ProjectResponseDto.status | null;
     /**
      * The monetization strategy for this project
      */
-    monetization: 'NONE' | 'ADS' | 'PAID' | null;
+    monetization: ProjectResponseDto.monetization | null;
     /**
      * The price of the project, if applicable
      */
@@ -56,4 +56,22 @@ export type ProjectResponseDto = {
      */
     likes: number;
 };
+export namespace ProjectResponseDto {
+    /**
+     * The current status of the project
+     */
+    export enum status {
+        IN_PROGRESS = 'IN_PROGRESS',
+        COMPLETED = 'COMPLETED',
+        ARCHIVED = 'ARCHIVED',
+    }
+    /**
+     * The monetization strategy for this project
+     */
+    export enum monetization {
+        NONE = 'NONE',
+        ADS = 'ADS',
+        PAID = 'PAID',
+    }
+}
 
