@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { EditorProps } from "./EditorType";
 import { Box, Button, Typography, List, ListItem, ListItemText, Paper, Divider, Chip } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { ApiError, ProjectsService, ProjectWithRelationsResponseDto, UserBasicInfoDto} from "@api";
+import { ApiError, ProjectsService, ProjectWithRelationsResponseDto, UserBasicInfoDto } from "@api";
 import { ProjectSettings } from "@providers/editors/ProjectSettingsProvider";
 import { ActionButton } from "@components/ui/ActionButton";
 import { FullWidthTextField } from "@components/ui/FullWidthTextField";
