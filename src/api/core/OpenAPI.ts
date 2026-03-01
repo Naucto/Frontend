@@ -21,7 +21,7 @@ export type OpenAPIConfig = {
 };
 
 export const OpenAPI: OpenAPIConfig = {
-    BASE: (import.meta.env.VITE_BACKEND_URL || "none "),
+    BASE: (import.meta.env.VITE_BACKEND_URL || 'none'),
     VERSION: '1.0',
     WITH_CREDENTIALS: true,
     CREDENTIALS: 'include',
