@@ -72,7 +72,7 @@ const PlayingCanvas = styled(GameCanvas)(() => ({
 export const GameViewer: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [project, setProject] = useState<ProjectWithRelationsResponseDto | null>(null);
+  const [project, setProject] = useState<ProjectWithRelationsResponseDto | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const canvasRef = React.useRef<SpriteRendererHandle>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
