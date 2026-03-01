@@ -6,6 +6,7 @@ import { LocalStorageManager } from "@utils/LocalStorageManager";
 import { NotificationMenu } from "./NotificationMenu";
 import { NotificationItem } from "./types";
 import { NotificationsService } from "@api/services/NotificationsService";
+import { OpenAPI } from "@api";
 
 const NOTIFICATION_SOCKET_PATH = "/socket/notifications";
 const MAX_NOTIFICATIONS = 50;
@@ -41,7 +42,7 @@ export const NotificationBox = (): JSX.Element => {
   const [showMenu, setShowMenu] = useState(false);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | undefined>(undefined);
   const socketRef = useRef<WebSocket | null>(null);
-  const backendUrl = (import.meta.env.VITE_BACKEND_URL || "http://localhost:3000").trim();
+  const backendUrl = OpenAPI.BASE;
 
   const unreadCount = useMemo(
     () => notifications.reduce((count, notification) => count + (notification.read ? 0 : 1), 0),
