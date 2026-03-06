@@ -29,6 +29,8 @@ const GameEditorContainer = styled("div")(({ theme }) => ({
   display: "flex",
   flexDirection: "row",
   gap: theme.spacing(4),
+  padding: `0 calc(${theme.spacing(4)} - 4px) calc(${theme.spacing(4)} - 4px)`,
+  boxSizing: "border-box",
 }));
 
 const LeftPanel = styled("div")(() => ({
