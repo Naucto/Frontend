@@ -3,27 +3,27 @@ import fengari from "fengari";
 
 export type LuaCallable = (...args: unknown[]) => unknown;
 export type LuaMetatable = {
-  __index?: LuaCallable | Record<string, any>;
-  __newindex?: (table: any, key: string, value: any) => void;
-  __call?: (table: any, ...args: any[]) => any;
-  __tostring?: (table: any) => string;
-  __len?: (table: any) => number;
-  __unm?: (table: any) => any;
-  __add?: (left: any, right: any) => any;
-  __sub?: (left: any, right: any) => any;
-  __mul?: (left: any, right: any) => any;
-  __div?: (left: any, right: any) => any;
-  __mod?: (left: any, right: any) => any;
-  __pow?: (left: any, right: any) => any;
-  __concat?: (left: any, right: any) => any;
-  __eq?: (left: any, right: any) => boolean;
-  __lt?: (left: any, right: any) => boolean;
-  __le?: (left: any, right: any) => boolean;
-  __gc?: (table: any) => void;
+  __index?: LuaCallable | Record<string, unknown>;
+  __newindex?: (table: unknown, key: string, value: any) => void;
+  __call?: (table: unknown, ...args: any[]) => any;
+  __tostring?: (table: unknown) => string;
+  __len?: (table: unknown) => number;
+  __unm?: (table: unknown) => any;
+  __add?: (left: unknown, right: any) => any;
+  __sub?: (left: unknown, right: any) => any;
+  __mul?: (left: unknown, right: any) => any;
+  __div?: (left: unknown, right: any) => any;
+  __mod?: (left: unknown, right: any) => any;
+  __pow?: (left: unknown, right: any) => any;
+  __concat?: (left: unknown, right: any) => any;
+  __eq?: (left: unknown, right: any) => boolean;
+  __lt?: (left: unknown, right: any) => boolean;
+  __le?: (left: unknown, right: any) => boolean;
+  __gc?: (table: unknown) => void;
   __mode?: 'k' | 'v' | 'kv';
-  __metatable?: any;
-  __pairs?: (table: any) => [LuaCallable, any, any];
-  __ipairs?: (table: any) => [LuaCallable, any, number];
+  __metatable?: unknown;
+  __pairs?: (table: unknown) => [LuaCallable, any, any];
+  __ipairs?: (table: unknown) => [LuaCallable, any, number];
 }
 
 class LuaError extends Error {
@@ -47,8 +47,8 @@ class LuaEnvironment {
     return errorMessage;
   }
 
-  public getObject(index: number): any {
-    let value: any;
+  public getObject(index: number): unknown {
+    let value: unknown;
 
     switch (fengari.lua.lua_type(this._L, index)) {
       case fengari.lua.LUA_TBOOLEAN:
@@ -81,7 +81,7 @@ class LuaEnvironment {
       case fengari.lua.LUA_TFUNCTION: {
         const func = fengari.lua.lua_toproxy(this._L, index);
 
-        value = (...args: any): any => {
+        value = (...args: unknown): any => {
           const stackTop = fengari.lua.lua_gettop(this._L);
 
           func(this._L);
@@ -94,7 +94,7 @@ class LuaEnvironment {
             throw new LuaError(`Runtime error: ${errorMessage}`);
           }
 
-          const results: any[] = [];
+          const results: unknown[] = [];
           for (let i = stackTop + 1; i <= fengari.lua.lua_gettop(this._L); i++)
             results.push(this.getObject(i));
 
@@ -113,7 +113,7 @@ class LuaEnvironment {
     return value;
   }
 
-  public pushObject(value: any): void {
+  public pushObject(value: unknown): void {
     if (value === null) {
       value = undefined;
     }
@@ -204,7 +204,7 @@ class LuaEnvironment {
     }
   }
 
-  public setGlobalWith(name: string, value: any): void {
+  public setGlobalWith(name: string, value: unknown): void {
     this.pushObject(value);
     this.setGlobal(name);
   }
@@ -214,10 +214,11 @@ class LuaEnvironment {
   }
 
   public setMetatable(metatable: LuaMetatable): void {
-    fengari.lua.lua_setmetatable(this._L, metatable);
+    this.pushObject(metatable);
+    fengari.lua.lua_setmetatable(this._L, -2);
   }
 
-  public evaluate(code: string): any[] {
+  public evaluate(code: string): unknown[] {
     const stackTop = fengari.lua.lua_gettop(this._L);
 
     let success = fengari.lauxlib.luaL_loadstring(this._L, fengari.to_luastring(code)) === fengari.lua.LUA_OK;
@@ -234,7 +235,7 @@ class LuaEnvironment {
       throw new LuaError(`Runtime error: ${errorMessage}`);
     }
 
-    const results: any[] = [];
+    const results: unknown[] = [];
     for (let i = stackTop + 1; i <= fengari.lua.lua_gettop(this._L); i++)
       results.push(this.getObject(i));
 
