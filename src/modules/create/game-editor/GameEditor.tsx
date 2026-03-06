@@ -22,12 +22,12 @@ import ProjectIcon from "src/assets/project.svg?react";
 import SoundIcon from "src/assets/music.svg?react";
 import SpriteIcon from "src/assets/pen.svg?react";
 import { EditorProps, EditorTab } from "./editors/EditorType";
+import { EditorContainer } from "./editors/EditorContainer";
 
 const GameEditorContainer = styled("div")(({ theme }) => ({
   height: "100%",
   display: "flex",
   flexDirection: "row",
-  margin: theme.spacing(1),
   gap: theme.spacing(4),
 }));
 
@@ -57,7 +57,7 @@ const TabContent = styled(Box)(() => ({
 
 const StyledTab = styled(Tab)(({ theme }) => ({
   fontFamily: theme.typography.fontFamily,
-  backgroundColor: theme.palette.blue[500],
+  backgroundColor: theme.palette.blue[700],
   minHeight: theme.spacing(6),
   minWidth: theme.spacing(18),
   fontSize: "1.2rem",
@@ -65,11 +65,11 @@ const StyledTab = styled(Tab)(({ theme }) => ({
   borderTopRightRadius: theme.spacing(1),
   color: "white",
   "&.Mui-selected, &.Mui-focusVisible": {
-    backgroundColor: theme.palette.blue[700],
+    backgroundColor: theme.palette.blue[500],
     color: "white"
   },
   "&:hover": {
-    backgroundColor: theme.palette.blue[400],
+    backgroundColor: theme.palette.blue[600],
   },
 }));
 
@@ -254,7 +254,9 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
               hidden={activeTab !== idx}
               className={activeTab === idx ? "active" : "hidden"}
             >
-              {EditorComponent ? <EditorComponent project={project} /> : <span>No editor available</span>}
+              {EditorComponent
+                ? <EditorContainer><EditorComponent project={project} /></EditorContainer>
+                : <span>No editor available</span>}
             </TabContent>
           );
         })}

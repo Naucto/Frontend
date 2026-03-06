@@ -1,16 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { EditorProps } from "./EditorType";
-import { Box, Button, Typography, List, ListItem, ListItemText, Paper, Divider, Chip } from "@mui/material";
+import { Box, Button, Typography, List, ListItem, ListItemText, Divider, Chip } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { ApiError, ProjectsService, ProjectExResponseDto, UserBasicInfoDto } from "@api";
 import { ProjectSettings } from "@providers/editors/ProjectSettingsProvider";
 import { ActionButton } from "@components/ui/ActionButton";
 import { FullWidthTextField } from "@components/ui/FullWidthTextField";
-
-const EditorContainer = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(3),
-  backgroundColor: theme.palette.blue[500],
-}));
 
 const Section = styled(Box)(({ theme }) => ({
   marginBottom: theme.spacing(4),
@@ -110,7 +105,7 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
   };
 
   return (
-    <EditorContainer>
+    <>
       <Section>
         <Typography variant="h5" gutterBottom>Project Settings</Typography>
         <StatusContainer>
@@ -184,7 +179,7 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
           </Button>
         </Box>
       </Section>
-    </EditorContainer>
+    </>
   );
 };
 

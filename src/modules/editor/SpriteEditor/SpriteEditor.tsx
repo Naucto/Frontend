@@ -68,9 +68,7 @@ const Left = styled("div")(() => ({
 const EditorLayout = styled("div")(() => ({
   display: "flex",
   flexDirection: "column",
-  height: "70%",
-  padding: "1rem",
-  backgroundColor: "#537D8D",
+  height: "100%",
   color: "#ffffff",
 }));
 
