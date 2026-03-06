@@ -118,7 +118,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
 
   const tabs = useMemo(() => [
     { label: "project", component: ProjectSettingsEditor, icon: <ProjectIcon/> },
-    { label: "code", component: CodeEditor, icon: <CodeIcon/> },
+    { label: "code", component: CodeEditor, icon: <CodeIcon/>, disablePadding: true },
     { label: "sprite", component: SpriteEditor, icon: <SpriteIcon/> },
     { label: "map", component: MapEditor, icon: <MapIcon/> },
     { label: "sound", component: SoundEditor, icon: <SoundIcon/> },
@@ -255,7 +255,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
               className={activeTab === idx ? "active" : "hidden"}
             >
               {EditorComponent
-                ? <EditorContainer><EditorComponent project={project} /></EditorContainer>
+                ? <EditorContainer $disablePadding={tab.disablePadding}><EditorComponent project={project} /></EditorContainer>
                 : <span>No editor available</span>}
             </TabContent>
           );
