@@ -1,21 +1,36 @@
 networks:
   naucto-dev:
-    driver: bridge
     name: naucto-dev
-    attachable: true
-    external: true
+    driver: bridge
 
 services:
   frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: bun run dev --host
     networks:
       - naucto-dev
+    ports:
+      - "3001:5173"
     develop:
       watch:
         - action: rebuild
           path: package.json
+
         - action: rebuild
           path: vite.config.ts
+
         - action: rebuild
           path: tsconfig.json
+
         - action: rebuild
           path: tsconfig.paths.json
+
+        - action: sync
+          path: src/
+          target: /app/src
+        
+        - action: sync
+          path: public/
+          target: /app/public

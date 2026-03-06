@@ -1,3 +1,8 @@
+networks:
+  naucto:
+    name: naucto
+    driver: bridge
+
 services:
   frontend:
     build:
@@ -12,6 +17,8 @@ services:
       - "3001:80"
     environment:
       - BUN_INSTALL_FROZEN=1
+    networks:
+      - naucto
 
 volumes:
   node_modules: {}
