@@ -67,7 +67,9 @@ export class MultiplayerSettingsProvider {
     const rootSettings = this.#yDirectory.get("");
 
     if (!rootSettings) {
-      throw new MultiplayerStateError("Unexpectedly missing root multiplayer directory settings");
+      // FIXME: Needs investigation after merging
+      return new MultiplayerDirectorySettings();
+      //throw new MultiplayerStateError("Unexpectedly missing root multiplayer directory settings");
     }
 
     return rootSettings;
