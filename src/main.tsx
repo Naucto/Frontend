@@ -2,11 +2,13 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.tsx";
 import { UserProvider } from "@providers/UserProvider.tsx";
-import { OpenAPI } from "@api";
+import { client } from "@api/client.gen";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
 
-OpenAPI.BASE = import.meta.env.VITE_BACKEND_URL ?? "";
-OpenAPI.TOKEN = () => Promise.resolve(LocalStorageManager.getToken());
+client.setConfig({
+  baseURL: import.meta.env.VITE_BACKEND_URL ?? "",
+  auth: () => LocalStorageManager.getToken(),
+});
 
 createRoot(document.getElementById("root")!).render(
   <UserProvider>

@@ -1,6 +1,7 @@
 import * as Y from "yjs";
 import { LocalStorageManager } from "@utils/LocalStorageManager.ts";
-import { ApiError, ProjectsService, WorkSessionsService } from "@api";
+import { projectControllerFetchProjectContent, projectControllerFindOne, projectControllerSaveProjectContent, projectControllerUpdate, workSessionControllerGetInfo, workSessionControllerJoin, workSessionControllerKick } from "@api";
+import { AxiosError } from "axios";
 import { decodeUpdate, encodeUpdate } from "@utils/YSerialize.ts";
 import { CodeProvider } from "./editors/CodeProvider.ts";
 import { SpriteProvider } from "./editors/SpriteProvider.ts";
@@ -51,8 +52,8 @@ export class ProjectProvider implements Destroyable {
       this.spriteProvider              = new SpriteProvider(this._doc);
       this.mapProvider                 = new MapProvider(this._doc, { width:128, height:32 }, 2, this.spriteProvider);
       this.multiplayerSettingsProvider = new MultiplayerSettingsProvider(this._doc);
-      this.projectSettings = new ProjectSettingsProvider(this._doc);
-      this.sound = new SoundProvider(this._doc);
+      this.projectSettings             = new ProjectSettingsProvider(this._doc);
+      this.sound                       = new SoundProvider(this._doc);
 
       this._initialized = true;
       this.emit(ProviderEventType.INITIALIZED);
@@ -61,26 +62,31 @@ export class ProjectProvider implements Destroyable {
 
   private async initializeDoc(): Promise<void> {
     try {
-      const session = await WorkSessionsService.workSessionControllerJoin(this.projectId);
-      this._roomId = session.roomId;
+      const session = await workSessionControllerJoin({ path: { id: this.projectId } });
+      this._roomId = (session.data as { roomId: string } | undefined)?.roomId;
 
-      const host = (await WorkSessionsService.workSessionControllerGetInfo(this.projectId)).host;
+      const host = (await workSessionControllerGetInfo({ path: { id: this.projectId } })).data!.host;
       const userId = LocalStorageManager.getUserId();
       this.isHost = host === userId;
 
       try {
-        const content = await ProjectsService.projectControllerFetchProjectContent(this.projectId);
-        if (content) {
-          await decodeUpdate(this._doc, content);
+        const { data: content, error } = await projectControllerFetchProjectContent({ path: { id: String(this.projectId) } });
+        if (error) {
+          if ((error as AxiosError)?.response?.status === 404) {
+            console.error("Failed to fetch project content:", error);
+          } else {
+            throw error;
+          }
+        } else if (content) {
+          await decodeUpdate(this._doc, content as Blob);
         } else {
-          const details = await ProjectsService.projectControllerFindOne(this.projectId);
+          const details = (await projectControllerFindOne({ path: { id: this.projectId } })).data!;
           this.projectSettings.updateName(details.name);
           this.projectSettings.updateShortDesc(details.shortDesc);
           this.projectSettings.updateLongDesc(details.longDesc ? JSON.stringify(details.longDesc) : "");
         }
       } catch (error: unknown) {
-        if (error instanceof ApiError && error.status === 404) {
-          // FIXME new project: nothing to load; optionally could seed defaults here
+        if ((error as AxiosError)?.response?.status === 404) {
           console.error("Failed to fetch project content:", error);
         } else {
           throw error;
@@ -106,22 +112,25 @@ export class ProjectProvider implements Destroyable {
       return;
     const data = encodeUpdate(this._doc);
 
-    const details = await ProjectsService.projectControllerFindOne(this.projectId);
+    const details = (await projectControllerFindOne({ path: { id: this.projectId } })).data!;
 
     const settings = this.projectSettings.getSettings();
 
     if (details.name !== settings.name || (details.longDesc || "") !== settings.longDesc || details.shortDesc !== settings.shortDesc) {
-      await ProjectsService.projectControllerUpdate(this.projectId, {
-        name: settings.name,
-        shortDesc: settings.shortDesc,
-        longDesc: settings.longDesc as unknown as Record<string, unknown>,
+      await projectControllerUpdate({
+        path: { id: this.projectId },
+        body: {
+          name: settings.name,
+          shortDesc: settings.shortDesc,
+          longDesc: settings.longDesc as unknown as Record<string, unknown>,
+        },
       });
     }
 
-    ProjectsService.projectControllerSaveProjectContent(
-      this.projectId,
-      { file: new Blob([data], { type: "application/octet-stream" }) }
-    ).catch((error) => {
+    projectControllerSaveProjectContent({
+      path: { id: this.projectId },
+      body: { file: new Blob([data], { type: "application/octet-stream" }) },
+    }).catch((error) => {
       console.error("Failed to save content:", error);
     });
   }
@@ -136,7 +145,7 @@ export class ProjectProvider implements Destroyable {
 
     const projectId = Number(this.projectId);
     try {
-      const sessionInfo = await WorkSessionsService.workSessionControllerGetInfo(projectId);
+      const sessionInfo = (await workSessionControllerGetInfo({ path: { id: projectId } })).data!;
 
       if (!this.isHost && sessionInfo.host === Number(userId)) {
         this.isHost = true;
@@ -152,9 +161,7 @@ export class ProjectProvider implements Destroyable {
         const users = sessionInfo.users || [];
         for (const sessionUserId of users) {
           if (Number(sessionUserId) !== userId) {
-            await WorkSessionsService.workSessionControllerKick(projectId, {
-              userId: Number(sessionUserId)
-            });
+            await workSessionControllerKick({ path: { id: projectId }, body: { userId: Number(sessionUserId) } });
           }
         }
         if (!this.isHost) {

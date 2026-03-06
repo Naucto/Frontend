@@ -1,4 +1,4 @@
-import { LuaCallable, LuaEnvironment } from "@lib/lua.ts";
+import { LuaCallable, LuaEnvironment, LuaMetatable } from "@lib/lua.ts";
 
 const LUA_METHOD_PREFIX = "$";
 
@@ -41,8 +41,8 @@ export abstract class LuaAPI {
 
     _lua.pushObject(luaEntity);
     _lua.setMetatable({
-      "__index": this._indexAccess.bind(this)
-    });
+      __index: this._indexAccess.bind(this)
+    } as LuaMetatable);
     _lua.setGlobal(name);
   }
 

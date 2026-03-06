@@ -3,7 +3,7 @@ import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, 
 import { styled } from "@mui/material/styles";
 import { Beforeunload } from "react-beforeunload";
 
-import { WorkSessionsService } from "@api";
+import { workSessionControllerLeave } from "@api";
 import CodeEditor from "@modules/create/game-editor/editors/CodeEditor";
 import GameEditorConsole from "@modules/create/game-editor/editors/GameEditorConsole";
 import { MapEditor } from "@modules/create/game-editor/editors/MapEditor/MapEditor";
@@ -197,7 +197,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
     if (!project) return;
     project.saveContent();
 
-    WorkSessionsService.workSessionControllerLeave(Number(project.projectId));
+    workSessionControllerLeave({ path: { id: Number(project.projectId) } });
 
     project.destroy();
   };
