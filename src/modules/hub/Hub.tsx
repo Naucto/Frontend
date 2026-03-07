@@ -1,6 +1,6 @@
 import { styled } from "@mui/material/styles";
 import { JSX, useEffect, useState } from "react";
-import { ProjectResponseDto, ProjectsService } from "@api";
+import { ProjectResponseDto, projectControllerGetAllReleases } from "@api";
 import { useAsync } from "src/hooks/useAsync";
 import { Box, IconButton, Typography } from "@mui/material";
 import { ChevronLeft, ChevronRight } from "@mui/icons-material";
@@ -109,13 +109,13 @@ export const Hub = (): JSX.Element => {
   const [playedGames, setPlayedGames] = useState<ProjectResponseDto[]>([]);
 
   const { value: allProjects } = useAsync(
-    ProjectsService.projectControllerGetAllReleases,
+    () => projectControllerGetAllReleases().then(({ data }) => data),
     []
   );
 
   useEffect(() => {
     if (allProjects) {
-      const published = allProjects.filter(project => project.status === ProjectResponseDto.status.COMPLETED);
+      const published = allProjects.filter(project => project.status === ("COMPLETED" satisfies ProjectResponseDto["status"]));
       setPublishedProjects(published);
 
       const sortedByDate = [...published].sort((a, b) =>

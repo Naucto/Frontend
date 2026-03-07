@@ -1,5 +1,6 @@
 import * as Y from "yjs";
-import { ApiError, ProjectsService } from "@api";
+import { projectControllerGetReleaseContent, projectControllerGetReleaseContentUrl } from "@api";
+import { AxiosError } from "axios";
 import { decodeUpdate } from "@utils/YSerialize.ts";
 import { SpriteProvider } from "./editors/SpriteProvider.ts";
 import { MapProvider } from "./editors/MapProvider.ts";
@@ -47,9 +48,7 @@ export class GameProvider implements Destroyable {
 
   private async initializeDoc(): Promise<void> {
     try {
-      const signed = await ProjectsService.projectControllerGetReleaseContentUrl(
-        String(this.projectId)
-      );
+      const signed = (await projectControllerGetReleaseContentUrl({ path: { id: String(this.projectId) } })).data;
       if (signed?.signedUrl) {
         try {
           let requestUrl = signed.signedUrl;
@@ -77,12 +76,10 @@ export class GameProvider implements Destroyable {
         }
       }
 
-      const content = await ProjectsService.projectControllerGetReleaseContent(
-        String(this.projectId)
-      );
-      await decodeUpdate(this._doc, content);
+      const { data: content } = await projectControllerGetReleaseContent({ path: { id: String(this.projectId) } });
+      await decodeUpdate(this._doc, content as Blob);
     } catch (error: unknown) {
-      if (error instanceof ApiError && error.status === 404) {
+      if ((error as AxiosError)?.response?.status === 404) {
         // FIXME new project: nothing to load; optionally could seed defaults here
         console.error("Failed to fetch project content:", error);
       } else {
