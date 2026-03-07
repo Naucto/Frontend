@@ -1,29 +1,29 @@
-// @ts-ignore
+// @ts-expect-error This is a pure JS library
 import fengari from "fengari";
 
 export type LuaCallable = (...args: unknown[]) => unknown;
 export type LuaMetatable = {
   __index?: LuaCallable | Record<string, unknown>;
-  __newindex?: (table: unknown, key: string, value: any) => void;
-  __call?: (table: unknown, ...args: any[]) => any;
+  __newindex?: (table: unknown, key: string, value: unknown) => void;
+  __call?: (table: unknown, ...args: unknown[]) => unknown;
   __tostring?: (table: unknown) => string;
   __len?: (table: unknown) => number;
-  __unm?: (table: unknown) => any;
-  __add?: (left: unknown, right: any) => any;
-  __sub?: (left: unknown, right: any) => any;
-  __mul?: (left: unknown, right: any) => any;
-  __div?: (left: unknown, right: any) => any;
-  __mod?: (left: unknown, right: any) => any;
-  __pow?: (left: unknown, right: any) => any;
-  __concat?: (left: unknown, right: any) => any;
-  __eq?: (left: unknown, right: any) => boolean;
-  __lt?: (left: unknown, right: any) => boolean;
-  __le?: (left: unknown, right: any) => boolean;
+  __unm?: (table: unknown) => unknown;
+  __add?: (left: unknown, right: unknown) => unknown;
+  __sub?: (left: unknown, right: unknown) => unknown;
+  __mul?: (left: unknown, right: unknown) => unknown;
+  __div?: (left: unknown, right: unknown) => unknown;
+  __mod?: (left: unknown, right: unknown) => unknown;
+  __pow?: (left: unknown, right: unknown) => unknown;
+  __concat?: (left: unknown, right: unknown) => unknown;
+  __eq?: (left: unknown, right: unknown) => boolean;
+  __lt?: (left: unknown, right: unknown) => boolean;
+  __le?: (left: unknown, right: unknown) => boolean;
   __gc?: (table: unknown) => void;
-  __mode?: 'k' | 'v' | 'kv';
+  __mode?: "k" | "v" | "kv";
   __metatable?: unknown;
-  __pairs?: (table: unknown) => [LuaCallable, any, any];
-  __ipairs?: (table: unknown) => [LuaCallable, any, number];
+  __pairs?: (table: unknown) => [LuaCallable, unknown, unknown];
+  __ipairs?: (table: unknown) => [LuaCallable, unknown, number];
 }
 
 class LuaError extends Error {
@@ -64,14 +64,12 @@ class LuaEnvironment {
         break;
 
       case fengari.lua.LUA_TTABLE:
-        value = {};
-
         fengari.lua.lua_pushnil(this._L);
         while (fengari.lua.lua_next(this._L, index) !== 0) {
           const key = this.getObject(-2);
           const val = this.getObject(-1);
 
-          value[key] = val;
+          (value as Record<string, unknown>)[String(key)] = val;
 
           fengari.lua.lua_pop(this._L, 1);
         }
@@ -81,7 +79,7 @@ class LuaEnvironment {
       case fengari.lua.LUA_TFUNCTION: {
         const func = fengari.lua.lua_toproxy(this._L, index);
 
-        value = (...args: unknown): any => {
+        value = (...args: unknown[]): unknown => {
           const stackTop = fengari.lua.lua_gettop(this._L);
 
           func(this._L);
@@ -144,7 +142,7 @@ class LuaEnvironment {
 
           fengari.lua.lua_createtable(this._L, 0, 0);
 
-          Object.entries(value).forEach(([k, v]) => {
+          Object.entries(value as Record<string, unknown>).forEach(([k, v]) => {
             this.pushObject(k);
             this.pushObject(v);
             fengari.lua.lua_settable(this._L, -3);
