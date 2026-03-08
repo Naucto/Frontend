@@ -1,4 +1,4 @@
-// @ts-expect-error This is a pure JS library
+// @ts-expect-error This is a pure JS library.
 import fengari from "fengari";
 
 export type LuaCallable = (...args: unknown[]) => unknown;
