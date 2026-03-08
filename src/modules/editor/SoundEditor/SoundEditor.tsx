@@ -1,199 +1,22 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { Box } from "@mui/material";
-import { styled } from "@mui/material/styles";
 import * as Tone from "tone";
 import { createMusic, MusicData, setNote, playMusicFromPosition } from "./Music";
 import { registerCustomInstrument, stopAllSynths, NoteData } from "./Note";
 import { InstrumentEditor, InstrumentConfig } from "./InstrumentEditor";
 import { EditorProps } from "@modules/create/game-editor/editors/EditorType";
 import { MusicGrid } from "./MusicGrid";
-
-const ButtonContainer = styled(Box)(() => ({
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))",
-  gap: "8px",
-  marginTop: "20px",
-  width: "100%",
-  maxWidth: "250px",
-}));
-
-const MusicSelectionContainer = styled(Box)(() => ({
-  display: "grid",
-  gridTemplateColumns: "repeat(3, 1fr)",
-  gap: "4px",
-  marginTop: "20px",
-  width: "100%",
-  maxWidth: "150px",
-}));
-
-const StyledButton = styled("button")<{ selected?: boolean }>(({ selected }) => ({
-  backgroundColor: selected ? "#4c7280" : "#537d8d",
-  color: "#ffffff",
-  padding: "8px 16px",
-  cursor: "pointer",
-  fontSize: "16px",
-  textAlign: "center",
-  textDecoration: "none",
-  display: "inline-block",
-  boxShadow: "none",
-  margin: "4px 2px",
-  fontFamily: "'Pixelify', 'Roboto', 'Helvetica', 'Arial', sans-serif",
-  borderRadius: "9.6px",
-  border: "2px solid #4c7280",
-  minWidth: "auto",
-  "&:hover": {
-    backgroundColor: "#3b5964",
-  },
-}));
-
-const MusicSelectionButton = styled(StyledButton)(() => ({
-  padding: "4px 8px",
-  fontSize: "12px",
-  minWidth: "auto",
-  width: "100%",
-}));
-
-const NewInstrumentButton = styled(StyledButton)(({ theme }) => ({
-  marginTop: theme.spacing(1),
-}));
-
-const ControlButtonsContainer = styled("div")(() => ({
-  display: "flex",
-  justifyContent: "space-around",
-  marginTop: "20px",
-}));
-
-const EditorContainer = styled("div")(() => ({
-  display: "flex",
-  gap: "20px",
-  alignItems: "flex-start",
-  width: "100%",
-  maxWidth: "100%",
-  overflow: "hidden",
-}));
-
-const SoundEditorRoot = styled("div")(() => ({
-  width: "100%",
-  overflow: "hidden",
-}));
-
-const ErrorMessage = styled("div")(() => ({
-  color: "red",
-  textAlign: "center",
-  marginTop: "10px",
-}));
-
-const SoundEditorWrapper = styled("div")(() => ({
-  width: "fit-content",
-  maxWidth: "100%",
-}));
-
-const defaultInstruments: Map<string, string> = new Map([
-  ["piano", "Piano"],
-  ["guitar", "Guitar"],
-  ["flute", "Flute"],
-  ["trumpet", "Trumpet"],
-  ["contrabass", "Contrabass"],
-  ["harmonica", "Harmonica"],
-]);
-
-interface InstrumentButtonsProps {
-  instruments: Map<string, string>;
-  currentInstrument: string;
-  onInstrumentSelect: (instrument: string) => void;
-  customInstruments: Set<string>;
-  onEdit?: (instrument: string) => void;
-  onDelete?: (instrument: string) => void;
-}
-
-const InstrumentButtons: React.FC<InstrumentButtonsProps> = ({
-  instruments,
-  currentInstrument,
-  onInstrumentSelect,
-  customInstruments,
-  onEdit,
-  onDelete,
-}) => {
-  const isCustomInstrument = customInstruments.has(currentInstrument);
-
-  return (
-    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
-      <ButtonContainer>
-        {Array.from(instruments.keys()).map((instrument) => (
-          <StyledButton
-            selected={currentInstrument === instrument}
-            key={instrument}
-            onClick={() => onInstrumentSelect(instrument)}
-            style={{ width: "100%" }}
-          >
-            {instruments.get(instrument)}
-          </StyledButton>
-        ))}
-      </ButtonContainer>
-      {isCustomInstrument && onEdit && onDelete && (
-        <Box sx={{ display: "flex", gap: 1, mt: 1 }}>
-          <StyledButton
-            onClick={() => onEdit(currentInstrument)}
-            style={{ backgroundColor: "#4caf50", borderColor: "#45a049" }}
-          >
-            Edit
-          </StyledButton>
-          <StyledButton
-            onClick={() => onDelete(currentInstrument)}
-            style={{ backgroundColor: "#f44336", borderColor: "#da190b" }}
-          >
-            Delete
-          </StyledButton>
-        </Box>
-      )}
-    </Box>
-  );
-};
-
-interface MusicSelectionButtonsProps {
-  musics: MusicData[];
-  selectedMusicIndex: number;
-  onMusicSelect: (index: number) => void;
-}
-
-const MusicSelectionButtons: React.FC<MusicSelectionButtonsProps> = ({
-  musics,
-  selectedMusicIndex,
-  onMusicSelect,
-}) => (
-  <MusicSelectionContainer>
-    {musics.map((_, index) => (
-      <MusicSelectionButton
-        selected={selectedMusicIndex === index}
-        key={index}
-        onClick={() => onMusicSelect(index)}
-      >
-        {index + 1}
-      </MusicSelectionButton>
-    ))}
-  </MusicSelectionContainer>
-);
-
-interface ControlButtonsProps {
-  isPlaying: boolean;
-  onPlay: () => void;
-  onStop: () => void;
-  onClear: () => void;
-}
-
-const ControlButtons: React.FC<ControlButtonsProps> = ({
-  isPlaying,
-  onPlay,
-  onStop,
-  onClear,
-}) => (
-  <ControlButtonsContainer>
-    <StyledButton onClick={isPlaying ? onStop : onPlay}>
-      {isPlaying ? "Stop" : "Play"}
-    </StyledButton>
-    <StyledButton onClick={onClear}>Clear</StyledButton>
-  </ControlButtonsContainer>
-);
+import { InstrumentButtons } from "./components/InstrumentButtons";
+import { MusicSelectionButtons } from "./components/MusicSelectionButtons";
+import { ControlButtons } from "./components/ControlButtons";
+import { defaultInstruments } from "./constants/instruments";
+import {
+  SoundEditorRoot,
+  SoundEditorWrapper,
+  EditorContainer,
+  ErrorMessage,
+  NewInstrumentButton,
+} from "./styles/SoundEditor.styles";
 
 export const SoundEditor: React.FC<EditorProps> = ({ project }) => {
   if (!project || !project.sound) {
