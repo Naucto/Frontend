@@ -1,0 +1,111 @@
+diff --git a/src/liolib.js b/src/liolib.js
+index 92dda580e726cf5d4914132df363869cef6fefe2..7326692f0d9cce61bacd66711d1552743742bd53 100644
+--- a/src/liolib.js
++++ b/src/liolib.js
+@@ -1,6 +1,5 @@
+ "use strict";
+ 
+-const fs      = require('fs');
+ 
+ const {
+     LUA_REGISTRYINDEX,
+@@ -130,10 +129,6 @@ const io_output = function(L) {
+     return g_iofile(L, IO_OUTPUT, "w");
+ };
+ 
+-/* node <= 6 doesn't support passing a Uint8Array to fs.writeSync */
+-const prepare_string_for_write = process.versions.node > 6 ?
+-    (s) => s : // identity function
+-    (s) => Buffer.from(s.buffer, s.byteOffset, s.byteLength);
+ 
+ const g_write = function(L, f, arg) {
+     let nargs = lua_gettop(L) - arg;
+@@ -142,7 +137,8 @@ const g_write = function(L, f, arg) {
+     for (; nargs--; arg++) {
+         let s = luaL_checklstring(L, arg);
+         try {
+-            status = status && (fs.writeSync(f.fd, prepare_string_for_write(s), 0, s.length) === s.length);
++            status = false;
++            err = new Error("io.write is not supported in the browser");
+         } catch (e) {
+             status = false;
+             err = e;
+@@ -221,9 +217,9 @@ const luaopen_io = function(L) {
+     luaL_newlib(L, iolib);
+     createmeta(L);
+     /* create (and set) default files */
+-    createstdfile(L, process.stdin, IO_INPUT, to_luastring("stdin"));
+-    createstdfile(L, process.stdout, IO_OUTPUT, to_luastring("stdout"));
+-    createstdfile(L, process.stderr, null, to_luastring("stderr"));
++    createstdfile(L, null, IO_INPUT, to_luastring("stdin"));
++    createstdfile(L, null, IO_OUTPUT, to_luastring("stdout"));
++    createstdfile(L, null, null, to_luastring("stderr"));
+     return 1;
+ };
+ 
+diff --git a/src/luaconf.js b/src/luaconf.js
+index 5fb91cd70840b5721009ecf440f950aa9478c833..29753203556e149fceef822766145216b2eafc2d 100644
+--- a/src/luaconf.js
++++ b/src/luaconf.js
+@@ -1,6 +1,6 @@
+ "use strict";
+ 
+-const conf = (process.env.FENGARICONF ? JSON.parse(process.env.FENGARICONF) : {});
++const conf = (typeof process !== "undefined" && process.env && process.env.FENGARICONF ? JSON.parse(process.env.FENGARICONF) : {});
+ 
+ const {
+     LUA_VERSION_MAJOR,
+@@ -57,37 +57,6 @@ if (typeof process === "undefined") {
+         LUA_JSDIR + "?.js;" + LUA_JSDIR + "loadall.js;./?.js"
+     );
+     module.exports.LUA_JSPATH_DEFAULT = LUA_JSPATH_DEFAULT;
+-} else if (require('os').platform() === 'win32') {
+-    const LUA_DIRSEP = "\\";
+-    module.exports.LUA_DIRSEP = LUA_DIRSEP;
+-
+-    /*
+-    ** In Windows, any exclamation mark ('!') in the path is replaced by the
+-    ** path of the directory of the executable file of the current process.
+-    */
+-    const LUA_LDIR = "!\\lua\\";
+-    module.exports.LUA_LDIR = LUA_LDIR;
+-
+-    const LUA_JSDIR = "!\\";
+-    module.exports.LUA_JSDIR = LUA_JSDIR;
+-
+-    const LUA_SHRDIR = "!\\..\\share\\lua\\" + LUA_VDIR + "\\";
+-    module.exports.LUA_SHRDIR = LUA_SHRDIR;
+-
+-    const LUA_PATH_DEFAULT = to_luastring(
+-        LUA_LDIR + "?.lua;" + LUA_LDIR + "?\\init.lua;" +
+-        LUA_JSDIR + "?.lua;" + LUA_JSDIR + "?\\init.lua;" +
+-        LUA_SHRDIR + "?.lua;" + LUA_SHRDIR + "?\\init.lua;" +
+-        ".\\?.lua;.\\?\\init.lua"
+-    );
+-    module.exports.LUA_PATH_DEFAULT = LUA_PATH_DEFAULT;
+-
+-    const LUA_JSPATH_DEFAULT = to_luastring(
+-        LUA_JSDIR + "?.js;" +
+-        LUA_JSDIR + "..\\share\\lua\\" + LUA_VDIR + "\\?.js;" +
+-        LUA_JSDIR + "loadall.js;.\\?.js"
+-    );
+-    module.exports.LUA_JSPATH_DEFAULT = LUA_JSPATH_DEFAULT;
+ } else {
+     const LUA_DIRSEP = "/";
+     module.exports.LUA_DIRSEP = LUA_DIRSEP;
+diff --git a/src/lualib.js b/src/lualib.js
+index fa302684264ef3fe2fa95364e1d105a5d348d626..8a06150af01e529c123054254216954b0e99b83c 100644
+--- a/src/lualib.js
++++ b/src/lualib.js
+@@ -20,11 +20,6 @@ const LUA_TABLIBNAME = "table";
+ module.exports.LUA_TABLIBNAME = LUA_TABLIBNAME;
+ module.exports.luaopen_table = require("./ltablib.js").luaopen_table;
+ 
+-if (typeof process !== "undefined") {
+-    const LUA_IOLIBNAME = "io";
+-    module.exports.LUA_IOLIBNAME = LUA_IOLIBNAME;
+-    module.exports.luaopen_io = require("./liolib.js").luaopen_io;
+-}
+ 
+ const LUA_OSLIBNAME = "os";
+ module.exports.LUA_OSLIBNAME = LUA_OSLIBNAME;

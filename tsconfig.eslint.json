@@ -1,11 +1,11 @@
 {
   "extends": "./tsconfig.json",
   "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "src/**/*.js",
+    "src/**/*",
     "cypress/**/*.ts",
-    "src/**/*.test.ts",
+    "cypress/**/*.tsx",
+    "cypress/**/*.js",
+    "cypress/**/*.jsx",
     "jest.config.ts"
   ]
 }

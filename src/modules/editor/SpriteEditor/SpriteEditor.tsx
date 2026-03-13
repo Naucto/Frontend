@@ -68,9 +68,7 @@ const Left = styled("div")(() => ({
 const EditorLayout = styled("div")(() => ({
   display: "flex",
   flexDirection: "column",
-  height: "70%",
-  padding: "1rem",
-  backgroundColor: "#537D8D",
+  height: "100%",
   color: "#ffffff",
 }));
 
@@ -234,9 +232,9 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
   };
 
   useEffect(() => {
-    project.sprite.observe(() => setVersion(v => v + 1));
+    project.spriteProvider.observe(() => setVersion(v => v + 1));
 
-    project.map.observe(() => setVersion(v => v + 1));
+    project.mapProvider.observe(() => setVersion(v => v + 1));
   }, [project]);
 
   useEffect(() => {
@@ -268,7 +266,7 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
         (1 / zoom) * SPRITE_NUMBER);
       drawCanvasRef.current.draw();
     }
-  }, [project.sprite, drawCanvasRef, position, version, zoom]);
+  }, [project.spriteProvider, drawCanvasRef, position, version, zoom]);
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>): void => {
     if (!isMouseOverCanvas) return;
@@ -347,14 +345,14 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
               setOnMouseUp={setOnMouseUp}
               drawTool={drawTool}
               onSelectTool={setDrawTool}
-              spriteProvider={project.sprite}
+              spriteProvider={project.spriteProvider}
             />
           </Left>
           <CanvasContainer
             canvasRef={drawCanvasRef}
             containerRef={canvasContainerRef}
-            sprite={project.sprite}
-            map={project.map}
+            sprite={project.spriteProvider}
+            map={project.mapProvider}
             screenSize={drawCanvasSize}
             onWheel={handleWheel}
             onMouseDown={handleMouseDown}

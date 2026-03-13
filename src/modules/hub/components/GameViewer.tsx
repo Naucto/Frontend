@@ -3,7 +3,7 @@ import { styled } from "@mui/material/styles";
 import { Box, Typography, IconButton, CircularProgress } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { useNavigate, useParams } from "react-router-dom";
-import { ProjectsService, ProjectWithRelationsResponseDto } from "@api";
+import { projectControllerGetRelease, ProjectExResponseDto } from "@api";
 import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
@@ -72,7 +72,7 @@ const PlayingCanvas = styled(GameCanvas)(() => ({
 export const GameViewer: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [project, setProject] = useState<ProjectWithRelationsResponseDto | undefined>(undefined);
+  const [project, setProject] = useState<ProjectExResponseDto | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const canvasRef = React.useRef<SpriteRendererHandle>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -109,8 +109,8 @@ export const GameViewer: React.FC = () => {
       if (!id) return;
 
       try {
-        const projectDetails = await ProjectsService.projectControllerGetRelease(id);
-        setProject(projectDetails);
+        const { data: projectDetails } = await projectControllerGetRelease({ path: { id } });
+        setProject(projectDetails as ProjectExResponseDto);
       } catch (error) {
         console.error("Error loading project:", error);
         alert("Failed to load project");
