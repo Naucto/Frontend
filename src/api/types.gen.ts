@@ -234,37 +234,6 @@ export type RemoveCollaboratorDto = {
   email?: string;
 };
 
-export type SignedCdnResourceDto = {
-  /**
-   * The CDN URL for the resource (requires signed cookies)
-   */
-  resourceUrl: string;
-  /**
-   * Signed Edge cookies (also set as HTTP-only cookies)
-   */
-  cookies: {
-    [key: string]: unknown;
-  };
-};
-
-export type UploadFileDto = {
-  /**
-   * File to upload
-   */
-  file: Blob | File;
-  /**
-   * Optional metadata for the file
-   */
-  metadata?: string;
-};
-
-export type DeleteS3FilesDto = {
-  /**
-   * List of object keys to delete
-   */
-  keys: Array<string>;
-};
-
 export type LookupHostsResponseDtoHost = {
   sessionUuid: string;
   sessionVisibility: "PUBLIC" | "FRIENDS_ONLY" | "PRIVATE";
@@ -326,6 +295,13 @@ export type JoinHostResponseDto = {
 
 export type LeaveHostRequestDto = {
   sessionUuid: string;
+};
+
+export type ImageUrlResponseDto = {
+  /**
+   * The public CDN URL for the image
+   */
+  url: string;
 };
 
 export type LoginDto = {
@@ -490,6 +466,19 @@ export type UserProfileResponseDto = {
    * User profile message
    */
   message: string;
+};
+
+export type SignedCdnResourceDto = {
+  /**
+   * The CDN URL for the resource (requires signed cookies)
+   */
+  resourceUrl: string;
+  /**
+   * Signed Edge cookies (also set as HTTP-only cookies)
+   */
+  cookies: {
+    [key: string]: unknown;
+  };
 };
 
 export type UpdateUserDto = {
@@ -888,6 +877,10 @@ export type ProjectControllerGetProjectImageData = {
 
 export type ProjectControllerGetProjectImageErrors = {
   /**
+   * Forbidden
+   */
+  403: unknown;
+  /**
    * Image not found
    */
   404: unknown;
@@ -895,9 +888,11 @@ export type ProjectControllerGetProjectImageErrors = {
 
 export type ProjectControllerGetProjectImageResponses = {
   /**
-   * Signed cookies and CDN resource URL
+   * CDN URL for the project image
    */
-  200: SignedCdnResourceDto;
+  200: {
+    url?: string;
+  };
 };
 
 export type ProjectControllerGetProjectImageResponse =
@@ -906,7 +901,7 @@ export type ProjectControllerGetProjectImageResponse =
 export type ProjectControllerUploadProjectImageData = {
   body: {
     /**
-     * Project image file
+     * Project image file (JPEG, PNG, GIF, WebP)
      */
     file?: Blob | File;
   };
@@ -922,6 +917,10 @@ export type ProjectControllerUploadProjectImageErrors = {
    * Forbidden
    */
   403: unknown;
+  /**
+   * Invalid file type or size
+   */
+  422: unknown;
 };
 
 export type ProjectControllerUploadProjectImageResponses = {
@@ -1157,367 +1156,6 @@ export type ProjectControllerGetCheckpointResponses = {
 export type ProjectControllerGetCheckpointResponse =
   ProjectControllerGetCheckpointResponses[keyof ProjectControllerGetCheckpointResponses];
 
-export type S3ControllerListBucketsData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: "/s3/list";
-};
-
-export type S3ControllerListBucketsErrors = {
-  /**
-   * Server error
-   */
-  500: unknown;
-};
-
-export type S3ControllerListBucketsResponses = {
-  /**
-   * Returns a list of all buckets
-   */
-  200: unknown;
-};
-
-export type S3ControllerListObjectsData = {
-  body?: never;
-  path: {
-    /**
-     * Name of the bucket
-     */
-    bucketName: string;
-  };
-  query?: never;
-  url: "/s3/list/{bucketName}";
-};
-
-export type S3ControllerListObjectsErrors = {
-  /**
-   * Server error
-   */
-  500: unknown;
-};
-
-export type S3ControllerListObjectsResponses = {
-  /**
-   * Returns a list of objects in the bucket
-   */
-  200: unknown;
-};
-
-export type S3ControllerGetSignedDownloadUrlData = {
-  body?: never;
-  path: {
-    /**
-     * Object key
-     */
-    key: string;
-    /**
-     * Name of the bucket
-     */
-    bucketName: string;
-  };
-  query?: never;
-  url: "/s3/download-url/{bucketName}/{key}";
-};
-
-export type S3ControllerGetSignedDownloadUrlErrors = {
-  /**
-   * Server error
-   */
-  500: unknown;
-};
-
-export type S3ControllerGetSignedDownloadUrlResponses = {
-  /**
-   * Returns a signed URL for downloading the file
-   */
-  200: unknown;
-};
-
-export type S3ControllerDownloadFileData = {
-  body?: never;
-  path: {
-    /**
-     * Object key
-     */
-    key: string;
-    /**
-     * Name of the bucket
-     */
-    bucketName: string;
-  };
-  query?: never;
-  url: "/s3/download/{bucketName}/{key}";
-};
-
-export type S3ControllerDownloadFileErrors = {
-  /**
-   * Server error
-   */
-  500: unknown;
-};
-
-export type S3ControllerDownloadFileResponses = {
-  /**
-   * File stream
-   */
-  200: unknown;
-};
-
-export type S3ControllerUploadFileData = {
-  body: UploadFileDto;
-  path: {
-    /**
-     * Name of the bucket
-     */
-    bucketName: string;
-  };
-  query?: never;
-  url: "/s3/upload/{bucketName}";
-};
-
-export type S3ControllerUploadFileErrors = {
-  /**
-   * No file provided
-   */
-  400: unknown;
-  /**
-   * Server error
-   */
-  500: unknown;
-};
-
-export type S3ControllerUploadFileResponses = {
-  /**
-   * File uploaded successfully
-   */
-  200: unknown;
-};
-
-export type S3ControllerDeleteFileData = {
-  body?: never;
-  path: {
-    /**
-     * Object key
-     */
-    key: string;
-    /**
-     * Name of the bucket
-     */
-    bucketName: string;
-  };
-  query?: never;
-  url: "/s3/delete/{bucketName}/{key}";
-};
-
-export type S3ControllerDeleteFileErrors = {
-  /**
-   * Server error
-   */
-  500: unknown;
-};
-
-export type S3ControllerDeleteFileResponses = {
-  /**
-   * File deleted successfully
-   */
-  200: unknown;
-};
-
-export type S3ControllerDeleteFilesData = {
-  body: DeleteS3FilesDto;
-  path: {
-    /**
-     * Name of the bucket
-     */
-    bucketName: string;
-  };
-  query?: never;
-  url: "/s3/delete-multiple/{bucketName}";
-};
-
-export type S3ControllerDeleteFilesErrors = {
-  /**
-   * Server error
-   */
-  500: unknown;
-};
-
-export type S3ControllerDeleteFilesResponses = {
-  /**
-   * Files deleted successfully
-   */
-  200: unknown;
-};
-
-export type S3ControllerDeleteBucketData = {
-  body?: never;
-  path: {
-    /**
-     * Name of the bucket
-     */
-    bucketName: string;
-  };
-  query?: never;
-  url: "/s3/bucket/{bucketName}";
-};
-
-export type S3ControllerDeleteBucketErrors = {
-  /**
-   * Server error
-   */
-  500: unknown;
-};
-
-export type S3ControllerDeleteBucketResponses = {
-  /**
-   * Bucket deleted successfully
-   */
-  200: unknown;
-};
-
-export type S3ControllerCreateBucketData = {
-  body?: never;
-  path: {
-    /**
-     * Name of the bucket
-     */
-    bucketName: string;
-  };
-  query?: never;
-  url: "/s3/bucket/{bucketName}";
-};
-
-export type S3ControllerCreateBucketErrors = {
-  /**
-   * Server error
-   */
-  500: unknown;
-};
-
-export type S3ControllerCreateBucketResponses = {
-  /**
-   * Bucket created successfully
-   */
-  201: unknown;
-};
-
-export type S3ControllerApplyPublicReadPolicyData = {
-  body: {
-    /**
-     * Target bucket name (optional, defaults to S3_BUCKET_NAME)
-     */
-    bucketName?: string;
-    /**
-     * Object key prefix to expose publicly
-     */
-    prefix?: string;
-  };
-  path?: never;
-  query?: never;
-  url: "/s3/policy/public-read";
-};
-
-export type S3ControllerApplyPublicReadPolicyResponses = {
-  /**
-   * Policy applied successfully
-   */
-  201: unknown;
-};
-
-export type S3ControllerGetObjectMetadataData = {
-  body?: never;
-  path: {
-    /**
-     * Object key
-     */
-    key: string;
-    /**
-     * Name of the bucket
-     */
-    bucketName: string;
-  };
-  query?: never;
-  url: "/s3/metadata/{bucketName}/{key}";
-};
-
-export type S3ControllerGetObjectMetadataErrors = {
-  /**
-   * Server error
-   */
-  500: unknown;
-};
-
-export type S3ControllerGetObjectMetadataResponses = {
-  /**
-   * Returns object metadata
-   */
-  200: unknown;
-};
-
-export type S3ControllerGetCdnUrlData = {
-  body?: never;
-  path: {
-    /**
-     * Object key
-     */
-    key: string;
-  };
-  query?: never;
-  url: "/s3/cdn-url/{key}";
-};
-
-export type S3ControllerGetCdnUrlErrors = {
-  /**
-   * Server error
-   */
-  500: unknown;
-};
-
-export type S3ControllerGetCdnUrlResponses = {
-  /**
-   * Returns the CDN URL
-   */
-  200: unknown;
-};
-
-export type S3ControllerGetSignedCookiesData = {
-  body?: never;
-  path: {
-    /**
-     * Object key (relative path in CDN)
-     */
-    key: string;
-  };
-  query?: never;
-  url: "/s3/signed-cookies/{key}";
-};
-
-export type S3ControllerGetSignedCookiesErrors = {
-  /**
-   * Server error
-   */
-  500: unknown;
-};
-
-export type S3ControllerGetSignedCookiesResponses = {
-  /**
-   * Returns signed cookies
-   */
-  200: unknown;
-};
-
-export type S3ControllerSetSignedCookiesData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: "/s3/signed-cookies";
-};
-
-export type S3ControllerSetSignedCookiesResponses = {
-  200: unknown;
-};
-
 export type MultiplayerControllerLookupHostsData = {
   body?: never;
   path?: never;
@@ -1647,6 +1285,64 @@ export type MultiplayerControllerLeaveHostResponses = {
    */
   200: unknown;
 };
+
+export type PublicControllerGetPublishedProjectImageData = {
+  body?: never;
+  path: {
+    /**
+     * Project ID
+     */
+    id: number;
+  };
+  query?: never;
+  url: "/public/projects/{id}/image";
+};
+
+export type PublicControllerGetPublishedProjectImageErrors = {
+  /**
+   * Project not found, not published, or has no image
+   */
+  404: unknown;
+};
+
+export type PublicControllerGetPublishedProjectImageResponses = {
+  /**
+   * Returns the CDN URL for the project image
+   */
+  200: ImageUrlResponseDto;
+};
+
+export type PublicControllerGetPublishedProjectImageResponse =
+  PublicControllerGetPublishedProjectImageResponses[keyof PublicControllerGetPublishedProjectImageResponses];
+
+export type PublicControllerGetProfilePictureData = {
+  body?: never;
+  path: {
+    /**
+     * User ID
+     */
+    id: number;
+  };
+  query?: never;
+  url: "/public/users/{id}/profile-picture";
+};
+
+export type PublicControllerGetProfilePictureErrors = {
+  /**
+   * User not found or has no profile picture
+   */
+  404: unknown;
+};
+
+export type PublicControllerGetProfilePictureResponses = {
+  /**
+   * Returns the CDN URL for the profile picture
+   */
+  200: ImageUrlResponseDto;
+};
+
+export type PublicControllerGetProfilePictureResponse =
+  PublicControllerGetProfilePictureResponses[keyof PublicControllerGetProfilePictureResponses];
 
 export type AuthControllerLoginData = {
   body: LoginDto;

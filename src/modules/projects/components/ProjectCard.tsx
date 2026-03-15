@@ -1,10 +1,14 @@
 import { Typography } from "@mui/material";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { styled } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import Card from "@modules/projects/components/Card";
 import * as urls from "@shared/route";
-import { ProjectResponseDto } from "@api";
+import {
+  ProjectResponseDto,
+  publicControllerGetPublishedProjectImage,
+  projectControllerGetProjectImage
+} from "@api";
 
 type ProjectCardProps = {
   project: ProjectResponseDto;
@@ -19,7 +23,7 @@ const Text = styled(Typography)(({ theme }) => ({
 }));
 
 const StyledCard = styled(Card)<{ src: string}>(({ src }) => ({
-  backgroundImage: `url(${src})`,
+  backgroundImage: src ? `url(${src})` : "none",
   backgroundSize: "cover",
   backgroundPosition: "center",
 }));
@@ -41,6 +45,43 @@ const ProjectFooter = styled("div")(({ theme }) => ({
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, isPlayable = false }) => {
   const navigate = useNavigate();
+  const [thumbnailUrl, setThumbnailUrl] = useState<string>("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadImage = async (): Promise<void> => {
+      try {
+        if (isPlayable) {
+          const res = await publicControllerGetPublishedProjectImage({
+            path: { id: project.id }
+          });
+          if (!cancelled && res.data?.url) {
+            setThumbnailUrl(res.data.url);
+            return;
+          }
+        } else {
+          const res = await projectControllerGetProjectImage({
+            path: { id: project.id }
+          });
+          if (!cancelled && res.data?.url) {
+            setThumbnailUrl(res.data.url);
+            return;
+          }
+        }
+      } catch {
+        // Image not found on CDN, fall back to iconUrl
+      }
+
+      if (!cancelled && typeof project.iconUrl === "string" && project.iconUrl) {
+        setThumbnailUrl(project.iconUrl);
+      }
+    };
+
+    loadImage();
+    return () => { cancelled = true; };
+  }, [project.id, project.iconUrl, isPlayable]);
+
   const redirectToProject = (): void => {
     if (isPlayable) {
       navigate(urls.toProjectView(project.id));
@@ -48,11 +89,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, isPlayable = false }
       navigate(urls.toProject(project.id));
     }
   };
-
-  let thumbnailUrl = "";
-  if (typeof project.iconUrl === "string") {
-    thumbnailUrl = project.iconUrl;
-  }
 
   return (
     <StyledCard onClick={redirectToProject} src={thumbnailUrl}>
