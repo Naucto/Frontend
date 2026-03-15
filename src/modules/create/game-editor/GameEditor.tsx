@@ -1,31 +1,36 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Tab, Tabs } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { Tabs, Tab, Box, Dialog, DialogTitle, DialogContent, DialogActions, Button, Alert } from "@mui/material";
+import { Beforeunload } from "react-beforeunload";
+
+import { workSessionControllerLeave } from "@api";
 import CodeEditor from "@modules/create/game-editor/editors/CodeEditor";
-import { EditorProps, EditorTab } from "./editors/EditorType";
-import { SoundEditor } from "./editors/SoundEditor";
+import GameEditorConsole from "@modules/create/game-editor/editors/GameEditorConsole";
+import { MapEditor } from "@modules/create/game-editor/editors/MapEditor/MapEditor";
+import ProjectSettingsEditor from "@modules/create/game-editor/editors/ProjectSettingsEditor";
+import { SoundEditor } from "@modules/create/game-editor/editors/SoundEditor";
+import { MultiplayerSettingsEditor } from "@modules/create/game-editor/editors/multiplayer/MultiplayerSettingsEditor.tsx";
+import { SpriteEditor } from "@modules/editor/SpriteEditor/SpriteEditor";
+import { ProjectProvider, ProviderEventType } from "@providers/ProjectProvider";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
 import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
-import { WorkSessionsService } from "@api";
-import { Beforeunload } from "react-beforeunload";
-import { SpriteEditor } from "@modules/editor/SpriteEditor/SpriteEditor";
-import { MapEditor } from "@modules/create/game-editor/editors/MapEditor/MapEditor";
-import GameEditorConsole from "@modules/create/game-editor/editors/GameEditorConsole";
-import ProjectIcon from "src/assets/project.svg?react";
 import CodeIcon from "src/assets/code.svg?react";
-import SpriteIcon from "src/assets/pen.svg?react";
-import SoundIcon from "src/assets/music.svg?react";
 import MapIcon from "src/assets/map.svg?react";
-import { ProjectProvider, ProviderEventType } from "@providers/ProjectProvider";
-import ProjectSettingsEditor from "@modules/create/game-editor/editors/ProjectSettingsEditor";
+import MultiplayerIcon from "src/assets/user.svg?react";
+import ProjectIcon from "src/assets/project.svg?react";
+import SoundIcon from "src/assets/music.svg?react";
+import SpriteIcon from "src/assets/pen.svg?react";
+import { EditorProps, EditorTab } from "./editors/EditorType";
+import { EditorContainer } from "./editors/EditorContainer";
 
 const GameEditorContainer = styled("div")(({ theme }) => ({
   height: "100%",
   display: "flex",
   flexDirection: "row",
-  margin: theme.spacing(1),
   gap: theme.spacing(4),
+  padding: `0 calc(${theme.spacing(4)} - 4px) calc(${theme.spacing(4)} - 4px)`,
+  boxSizing: "border-box",
 }));
 
 const LeftPanel = styled("div")(() => ({
@@ -54,7 +59,7 @@ const TabContent = styled(Box)(() => ({
 
 const StyledTab = styled(Tab)(({ theme }) => ({
   fontFamily: theme.typography.fontFamily,
-  backgroundColor: theme.palette.blue[500],
+  backgroundColor: theme.palette.blue[700],
   minHeight: theme.spacing(6),
   minWidth: theme.spacing(18),
   fontSize: "1.2rem",
@@ -62,11 +67,11 @@ const StyledTab = styled(Tab)(({ theme }) => ({
   borderTopRightRadius: theme.spacing(1),
   color: "white",
   "&.Mui-selected, &.Mui-focusVisible": {
-    backgroundColor: theme.palette.blue[700],
+    backgroundColor: theme.palette.blue[500],
     color: "white"
   },
   "&:hover": {
-    backgroundColor: theme.palette.blue[400],
+    backgroundColor: theme.palette.blue[600],
   },
 }));
 
@@ -115,10 +120,11 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
 
   const tabs = useMemo(() => [
     { label: "project", component: ProjectSettingsEditor, icon: <ProjectIcon/> },
-    { label: "code", component: CodeEditor, icon: <CodeIcon/> },
+    { label: "code", component: CodeEditor, icon: <CodeIcon/>, disablePadding: true },
     { label: "sprite", component: SpriteEditor, icon: <SpriteIcon/> },
     { label: "map", component: MapEditor, icon: <MapIcon/> },
     { label: "sound", component: SoundEditor, icon: <SoundIcon/> },
+    { label: "multiplayer", component: MultiplayerSettingsEditor, icon: <MultiplayerIcon/> }
   ], []);
 
   const suppressBeforeUnloadRef = React.useRef(false);
@@ -168,7 +174,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
       return;
 
     project.observe(ProviderEventType.BECOME_HOST, becomeHostListener);
-    project.code.observe(setCode);
+    project.codeProvider.observe(setCode);
   }, [project]);
 
   const [code, setCode] = useState("");
@@ -191,7 +197,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
     if (!project) return;
     project.saveContent();
 
-    WorkSessionsService.workSessionControllerLeave(Number(project.projectId));
+    workSessionControllerLeave({ path: { id: Number(project.projectId) } });
 
     project.destroy();
   };
@@ -211,7 +217,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
   };
 
   const getAwarenessMessage = (): string => {
-    const count = project.awareness.count();
+    const count = project.awarenessProvider.count();
     if (count > 1) {
       const otherUsers = count - 1;
       const userText = otherUsers === 1 ? "person is" : "people are";
@@ -250,7 +256,9 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
               hidden={activeTab !== idx}
               className={activeTab === idx ? "active" : "hidden"}
             >
-              {EditorComponent ? <EditorComponent project={project} /> : <span>No editor available</span>}
+              {EditorComponent
+                ? <EditorContainer $disablePadding={tab.disablePadding}><EditorComponent project={project} /></EditorContainer>
+                : <span>No editor available</span>}
             </TabContent>
           );
         })}
@@ -259,14 +267,14 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
         <PreviewCanvas
           ref={canvasRef}
           canvasProps={{
-            map: project.map,
+            map: project.mapProvider,
             screenSize: screenSize,
-            sprite: project.sprite
+            sprite: project.spriteProvider
           }}
           envData={envData}
           setOutput={setOutput}
         />
-        <GameEditorConsole output={output}/>
+        <GameEditorConsole output={output} />
       </RightPanel>
 
       <StyledDialog
@@ -278,7 +286,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
         <StyledDialogTitle>You are offline</StyledDialogTitle>
         <StyledDialogContent dividers>
           <StyledAlert
-            severity={project.awareness.count() > 1 ? "warning" : "info"}
+            severity={project.awarenessProvider.count() > 1 ? "warning" : "info"}
             variant="outlined"
           >
             {getAwarenessMessage()}
@@ -298,7 +306,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
         event.preventDefault();
         cleanUpAndDisconnect();
         return "Are you sure you want to leave? Your changes may not be saved.";
-      }}/>
+      }} />
     </GameEditorContainer>
   );
 };

@@ -2,11 +2,11 @@ import { styled } from "@mui/material/styles";
 import { NavElem, ImportantNavElem } from "@shared/navbar/NavElem";
 import NavProfile from "@shared/navbar/nav-profile/NavProfile";
 import { SearchBar } from "@shared/navbar/SearchBar";
-import React from "react";
+import React, { useState } from "react";
 import { useUser } from "@providers/UserProvider";
 import { muiTheme } from "@theme/MUITheme";
 import { Login } from "@shared/navbar/login/Login";
-
+import * as Urls from "@shared/route";
 const Nav = styled("nav")(({ theme }) => ({
   display: "grid",
   padding: 0,
@@ -37,15 +37,16 @@ const Right = styled("div")(({ theme }) => ({
 }));
 
 const NavBar: React.FC = () => {
-  const { userId } = useUser();
+  const { user } = useUser();
+  const [forceShowAuthOverlay, setForceShowAuthOverlay] = useState(false);
   return (
     <Nav className="navbar">
       <Left>
         <img className="navbar-logo" src={muiTheme.custom.logo.primary} alt="Logo" />
-        <ImportantNavElem to="/projects" data-cy="nav-projects">
+        {<ImportantNavElem to={user ? "/projects" : "#"} data-cy="nav-projects" onClick={user ? undefined : () => setForceShowAuthOverlay(true)}>
           Projects
-        </ImportantNavElem>
-        <NavElem to="/hub">Home</NavElem>
+        </ImportantNavElem>}
+        <NavElem to={Urls.toHub()}>Home</NavElem>
         <NavElem to="/help">Help</NavElem>
       </Left>
 
@@ -53,7 +54,7 @@ const NavBar: React.FC = () => {
 
       <Right>
         <NavElem to="/friends">Friends</NavElem>
-        {userId ? <NavProfile /> : <Login />}
+        {user ? <NavProfile /> : <Login forceShowAuthOverlay={forceShowAuthOverlay} setForceShowAuthOverlay={setForceShowAuthOverlay} />}
       </Right>
     </Nav >
   );

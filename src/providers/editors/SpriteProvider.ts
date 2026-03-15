@@ -37,8 +37,12 @@ export class SpriteProvider implements Destroyable {
     this._rawListeners.forEach((callback) => callback(rawContent));
   }
 
+  isPixelInBounds(x: number, y: number): boolean {
+    return x >= 0 && x < this.size.width && y >= 0 && y < this.size.height;
+  }
+
   getPixel(x: number, y: number): number {
-    if (x < 0 || x >= this.size.width || y < 0 || y >= this.size.height) {
+    if (!this.isPixelInBounds(x, y)) {
       throw new SpriteProviderError(`Coordinates out of bounds: (${x}, ${y})`);
     }
     const key = this._coordToKey(x, y);

@@ -7,7 +7,9 @@ import glsl from "vite-plugin-glsl";
 export default defineConfig({
   plugins: [
     react(),
-    tsconfigPaths(),
+    tsconfigPaths({
+      projects: ["./tsconfig.paths.json"]
+    }),
     svgr({
       svgrOptions: {
         exportType: 'default'
@@ -19,6 +21,23 @@ export default defineConfig({
     alias: {}
   },
   server: {
+    host: true,
     allowedHosts: true
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor-react": ["react", "react-dom", "react-router-dom"],
+          "vendor-mui": ["@mui/material", "@emotion/styled"],
+          "vendor-monaco": ["@monaco-editor/react"],
+          "vendor-yjs": ["yjs", "y-monaco"],
+          "vendor-webrtc": ["y-webrtc"],
+          "vendor-lua": ["fengari"],
+          "vendor-tone": ["tone"],
+        }
+      }
+    }
   }
 });
+

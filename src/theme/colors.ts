@@ -5,6 +5,7 @@ export interface Colors {
   red: ColorShades;
   yellow: ColorShades;
   blue: ColorShades;
+  green: ColorShades;
 }
 
 export const colors: Colors = {
@@ -55,5 +56,17 @@ export const colors: Colors = {
     700: "#3b5964",
     800: "#2e454e",
     900: "#23353b",
-  }
+  },
+  green: {
+    50:  "#edf4ed",
+    100: "#e4efe4",
+    200: "#c8dec8",
+    300: "#4c934c",
+    400: "#448444",
+    500: "#3d763d",
+    600: "#396e39",
+    700: "#2e582e",
+    800: "#224222",
+    900: "#1b331b",
+  },
 };

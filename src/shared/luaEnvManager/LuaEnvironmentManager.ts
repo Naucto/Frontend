@@ -1,6 +1,7 @@
 import { LuaEnvironment } from "@lib/lua";
 import { KeyHandler } from "@shared/canvas/gameCanvas/KeyHandler";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
+import { NetAPI } from "@shared/luaEnvManager/api/NetAPI";
 
 export interface EnvData {
   code: string,
@@ -31,10 +32,23 @@ class LuaEnvironmentManager {
   constructor({ envData, rendererHandle, setOutput, keyHandler }: ConstructorProps) {
     this._lua = new LuaEnvironment();
     this._rendererHandle = rendererHandle;
-    this._injectGameAPI(this._lua);
     this._setOutput = setOutput;
     this._envData = envData;
     this._keyHandler = keyHandler;
+
+    this._lua.setGlobalWith("sprite", this._sprite.bind(this));
+    this._lua.setGlobalWith("clear", this._clear.bind(this));
+    this._lua.setGlobalWith("print", this._print.bind(this));
+    this._lua.setGlobalWith("key_pressed", this._keyPressed.bind(this));
+    this._lua.setGlobalWith("set_col", this._setCol.bind(this));
+    this._lua.setGlobalWith("reset_col", this._resetCol.bind(this));
+    this._lua.setGlobalWith("map", this._map.bind(this));
+    this._lua.setGlobalWith("camera", this._camera.bind(this));
+    this._lua.setGlobalWith("line", this._line.bind(this));
+    this._lua.setGlobalWith("rect", this._drawOutlineRect.bind(this));
+    this._lua.setGlobalWith("fill_rect", this._drawRect.bind(this));
+
+    new NetAPI(this._lua);
   }
 
   public runCode(): boolean {
@@ -71,24 +85,27 @@ class LuaEnvironmentManager {
     this._setOutput("");
   }
 
-  // private
-
-  private _injectGameAPI(lua: LuaEnvironment): void {
-    lua.setGlobal("sprite", this._sprite.bind(this));
-    lua.setGlobal("clear", this._clear.bind(this));
-    lua.setGlobal("print", this._print.bind(this));
-    lua.setGlobal("key_pressed", this._keyPressed.bind(this));
-    lua.setGlobal("set_col", this._setCol.bind(this));
-    lua.setGlobal("reset_col", this._resetCol.bind(this));
-    lua.setGlobal("map", this._map.bind(this));
-  }
-
   private _map(x: number, y: number): void {
     this._rendererHandle.drawMap(x, y);
   }
 
   private _sprite(n: number, x: number, y: number, w: number, h: number): void {
     this._rendererHandle.queueSpriteDraw(n, x, y, w, h);
+  }
+
+  private _camera(x: number, y: number): void {
+    this._rendererHandle.moveCamera(x, y);
+  }
+  private _line(col: number, x0: number, y0: number, x1: number, y1: number): void {
+    this._rendererHandle.drawLine(col, x0, y0, x1, y1);
+  }
+
+  private _drawOutlineRect(col: number, x: number, y: number, width: number, height: number): void {
+    this._rendererHandle.drawOutlineRect(col, x, y, width, height);
+  }
+
+  private _drawRect(col: number, x: number, y: number, width: number, height: number): void {
+    this._rendererHandle.drawRect(col, x, y, width, height);
   }
 
   private _clear(n: number): void {

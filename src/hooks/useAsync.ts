@@ -6,7 +6,7 @@ type useAsyncReturnType<T> = {
   value: Maybe<T>
 }
 
-export function useAsync<T>(asyncFunction: () => Promise<T>, dependencies: DependencyList[] = []): useAsyncReturnType<T> {
+export function useAsync<T>(asyncFunction: () => Promise<T>, dependencies: DependencyList = []): useAsyncReturnType<T> {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Maybe<Error>>();
   const [value, setValue] = useState<Maybe<T>>();

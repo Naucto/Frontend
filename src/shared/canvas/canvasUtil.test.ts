@@ -1,5 +1,5 @@
 import * as Y from "yjs";
-import { YSpriteSheet } from "../../modules/create/game-editor/types/YSpriteSheet";
+import { YSpriteSheet } from "@modules/create/game-editor/types/YSpriteSheet";
 import {
   hexToRGBArray,
   getRGBArraysFromPalette,

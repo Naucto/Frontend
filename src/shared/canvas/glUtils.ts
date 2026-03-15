@@ -1,5 +1,5 @@
-import { ColorFormatError } from "src/errors/ColorFormatError";
-import WebGlError from "src/errors/WebGlError";
+import { ColorFormatError } from "@errors/ColorFormatError";
+import WebGlError from "@errors/WebGlError";
 
 export function hexToRGBArray(hex: string, alpha = 255): number[] {
   if (!/^#[0-9a-fA-F]{6}$/.test(hex)) {
@@ -25,7 +25,7 @@ export function getRGBArraysFromPalette(palette: string[], zeroAlphaIndex = 0): 
 }
 
 export function createGLContext(canvas: HTMLCanvasElement): WebGL2RenderingContext {
-  const gl = canvas.getContext("webgl2");
+  const gl = canvas.getContext("webgl2", { antialias: false });
   if (!gl) {
     throw new WebGlError("WebGL not supported");
   }

@@ -1,10 +1,41 @@
+import { createRequire } from "node:module";
+import { pathsToModuleNameMapper } from "ts-jest";
+
+const localRequire = createRequire(import.meta.url);
+const pathsConfig = localRequire("./tsconfig.paths.json");
+
+const moduleNameMapper = {
+  "^.+\\.(css|less|gif|jpg|jpeg|svg|png)$": "<rootDir>/__mocks__/styleMock.ts",
+  ...pathsToModuleNameMapper(pathsConfig.compilerOptions?.paths ?? {}, {
+    prefix: "<rootDir>/"
+  })
+};
+
 export default {
-  preset: "ts-jest",
+  displayName: "app",
   testEnvironment: "jsdom",
-  globals: {
-    "ts-jest": {
-      tsconfig: "tsconfig.app.json"
-    }
-  },
-  moduleNameMapper: { "^.+\\.(css|less|gif|jpg|jpeg|svg|png)$": "module.exports = {};", "src/(.*)": "<rootDir>/src/$1" },
+  extensionsToTreatAsEsm: [".ts", ".tsx"],
+  moduleNameMapper,
+  transform: {
+    "^.+\\.(t|j)sx?$": [
+      "@swc/jest",
+      {
+        jsc: {
+          parser: {
+            syntax: "typescript",
+            tsx: true
+          },
+          transform: {
+            react: {
+              runtime: "automatic"
+            }
+          },
+          target: "es2022"
+        },
+        module: {
+          type: "es6"
+        }
+      }
+    ]
+  }
 };

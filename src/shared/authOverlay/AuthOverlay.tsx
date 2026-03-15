@@ -2,10 +2,9 @@ import { Box, Link, Typography } from "@mui/material";
 import GenericTextField from "@shared/TextField";
 import { FC, useCallback, useState } from "react";
 import { styled } from "@mui/material";
-import { CreateUserDto, LoginDto, UsersService } from "@api";
+import { CreateUserDto, LoginDto, authControllerRegister, authControllerLogin, userControllerGetProfile } from "@api";
 import { useForm } from "react-hook-form";
 import ImportantButton from "@shared/buttons/ImportantButton";
-import { AuthService } from "@api/services/AuthService";
 import { useUser } from "@providers/UserProvider";
 import { CustomDialog } from "@shared/dialog/CustomDialog";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
@@ -62,7 +61,7 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
     return bool ? "Sign up" : "Login";
   }, [isSignedUp]);
 
-  const { userId, userName, setUserId, setUserName } = useUser();
+  const { setUser } = useUser();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { register, handleSubmit, reset } = useForm<CreateUserDto | LoginDto>({
     defaultValues: isSignedUp
@@ -81,26 +80,27 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
   const handleAuth = useCallback(async (data: CreateUserDto | LoginDto) => {
     try {
       setErrorMessage(null);
-      let authResponse;
+      let accessToken: string;
       if (isSignedUp) {
         const { email, username, password } = data as CreateUserDto;
-        authResponse = await AuthService.authControllerRegister({ email, username, password, nickname: username });
+        const { data: authResponse } = await authControllerRegister({ body: { email, username, password, nickname: username } });
+        accessToken = authResponse!.access_token;
       } else {
         const { email, password } = data as LoginDto;
-        authResponse = await AuthService.authControllerLogin({ email, password });
+        const { data: authResponse } = await authControllerLogin({ body: { email, password } });
+        accessToken = authResponse!.access_token;
       }
 
       // FIXME: put the token to httpOnly cookie using the backend
-      LocalStorageManager.setToken(authResponse.access_token);
+      LocalStorageManager.setToken(accessToken);
 
-      const userRes = await UsersService.userControllerGetProfile();
+      const { data: userRes } = await userControllerGetProfile();
       LocalStorageManager.setUser({
-        id: String(userRes.id),
-        email: userRes.email,
-        name: userRes.username,
+        id: String(userRes!.id),
+        email: userRes!.email,
+        name: userRes!.username,
       });
-      setUserId(userRes.id);
-      setUserName(userRes.username);
+      setUser(userRes!);
       reset();
       if (onClose) {
         onClose();
@@ -108,7 +108,7 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
     } catch (error) {
       setErrorMessage((error as ErrorWithBody).body.message);
     }
-  }, [isSignedUp, reset, onClose, setUserId, setUserName, userId, userName]);
+  }, [isSignedUp, reset, onClose, setUser]);
 
   return (
     <CustomDialog isOpen={isOpen} setIsOpen={setIsOpen} hideSubmitButton>
