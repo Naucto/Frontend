@@ -1,7 +1,7 @@
 import * as Y from "yjs";
 import { SoundProviderError } from "@errors/SoundProviderError.ts";
-import { MusicData, musicToJson, musicFromJson, createMusic } from "@modules/editor/SoundEditor/Music";
-import { InstrumentConfig } from "@modules/editor/SoundEditor/InstrumentEditor";
+import { MusicData, musicToJson, musicFromJson, createMusic } from "@modules/create/game-editor/editors/SoundEditor/Music";
+import { InstrumentConfig } from "@modules/create/game-editor/editors/SoundEditor/InstrumentEditor";
 
 export type SoundProviderListener = (musics: MusicData[]) => void;
 export type CustomInstrumentsListener = (instruments: Map<string, InstrumentConfig>) => void;
