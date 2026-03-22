@@ -97,17 +97,6 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
-    if (!allowedTypes.includes(file.type)) {
-      alert("Invalid file type. Please upload a JPEG, PNG, GIF, or WebP image.");
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      alert("File is too large. Maximum size is 5MB.");
-      return;
-    }
-
     setIsUploading(true);
     try {
       await projectControllerUploadProjectImage({

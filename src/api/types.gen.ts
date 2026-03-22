@@ -20,15 +20,11 @@ export type ProjectResponseDto = {
   /**
    * A detailed description of the project
    */
-  longDesc: {
-    [key: string]: unknown;
-  } | null;
+  longDesc: string | null;
   /**
    * URL to the project icon
    */
-  iconUrl: {
-    [key: string]: unknown;
-  } | null;
+  iconUrl: string | null;
   /**
    * The current status of the project
    */
@@ -40,9 +36,7 @@ export type ProjectResponseDto = {
   /**
    * The price of the project, if applicable
    */
-  price: {
-    [key: string]: unknown;
-  } | null;
+  price: number | null;
   /**
    * The ID of the user who owns this project
    */
@@ -103,15 +97,11 @@ export type ProjectExResponseDto = {
   /**
    * A detailed description of the project
    */
-  longDesc: {
-    [key: string]: unknown;
-  } | null;
+  longDesc: string | null;
   /**
    * URL to the project icon
    */
-  iconUrl: {
-    [key: string]: unknown;
-  } | null;
+  iconUrl: string | null;
   /**
    * The current status of the project
    */
@@ -123,9 +113,7 @@ export type ProjectExResponseDto = {
   /**
    * The price of the project, if applicable
    */
-  price: {
-    [key: string]: unknown;
-  } | null;
+  price: number | null;
   /**
    * The ID of the user who owns this project
    */
@@ -234,6 +222,13 @@ export type RemoveCollaboratorDto = {
   email?: string;
 };
 
+export type ImageUrlResponseDto = {
+  /**
+   * The public CDN URL for the image
+   */
+  url: string;
+};
+
 export type LookupHostsResponseDtoHost = {
   sessionUuid: string;
   sessionVisibility: "PUBLIC" | "FRIENDS_ONLY" | "PRIVATE";
@@ -295,13 +290,6 @@ export type JoinHostResponseDto = {
 
 export type LeaveHostRequestDto = {
   sessionUuid: string;
-};
-
-export type ImageUrlResponseDto = {
-  /**
-   * The public CDN URL for the image
-   */
-  url: string;
 };
 
 export type LoginDto = {
@@ -880,19 +868,17 @@ export type ProjectControllerGetProjectImageErrors = {
    * Forbidden
    */
   403: unknown;
-  /**
-   * Image not found
-   */
-  404: unknown;
 };
 
 export type ProjectControllerGetProjectImageResponses = {
   /**
    * CDN URL for the project image
    */
-  200: {
-    url?: string;
-  };
+  200: ImageUrlResponseDto;
+  /**
+   * Project has no image
+   */
+  204: void;
 };
 
 export type ProjectControllerGetProjectImageResponse =
@@ -929,6 +915,35 @@ export type ProjectControllerUploadProjectImageResponses = {
    */
   201: unknown;
 };
+
+export type ProjectControllerGetPublishedProjectImageData = {
+  body?: never;
+  path: {
+    /**
+     * Project ID
+     */
+    id: number;
+  };
+  query?: never;
+  url: "/projects/public/{id}/image";
+};
+
+export type ProjectControllerGetPublishedProjectImageErrors = {
+  /**
+   * Project not found, not published, or has no image
+   */
+  404: unknown;
+};
+
+export type ProjectControllerGetPublishedProjectImageResponses = {
+  /**
+   * Returns the CDN URL for the project image
+   */
+  200: ImageUrlResponseDto;
+};
+
+export type ProjectControllerGetPublishedProjectImageResponse =
+  ProjectControllerGetPublishedProjectImageResponses[keyof ProjectControllerGetPublishedProjectImageResponses];
 
 export type ProjectControllerFetchProjectContentData = {
   body?: never;
@@ -1285,64 +1300,6 @@ export type MultiplayerControllerLeaveHostResponses = {
    */
   200: unknown;
 };
-
-export type PublicControllerGetPublishedProjectImageData = {
-  body?: never;
-  path: {
-    /**
-     * Project ID
-     */
-    id: number;
-  };
-  query?: never;
-  url: "/public/projects/{id}/image";
-};
-
-export type PublicControllerGetPublishedProjectImageErrors = {
-  /**
-   * Project not found, not published, or has no image
-   */
-  404: unknown;
-};
-
-export type PublicControllerGetPublishedProjectImageResponses = {
-  /**
-   * Returns the CDN URL for the project image
-   */
-  200: ImageUrlResponseDto;
-};
-
-export type PublicControllerGetPublishedProjectImageResponse =
-  PublicControllerGetPublishedProjectImageResponses[keyof PublicControllerGetPublishedProjectImageResponses];
-
-export type PublicControllerGetProfilePictureData = {
-  body?: never;
-  path: {
-    /**
-     * User ID
-     */
-    id: number;
-  };
-  query?: never;
-  url: "/public/users/{id}/profile-picture";
-};
-
-export type PublicControllerGetProfilePictureErrors = {
-  /**
-   * User not found or has no profile picture
-   */
-  404: unknown;
-};
-
-export type PublicControllerGetProfilePictureResponses = {
-  /**
-   * Returns the CDN URL for the profile picture
-   */
-  200: ImageUrlResponseDto;
-};
-
-export type PublicControllerGetProfilePictureResponse =
-  PublicControllerGetProfilePictureResponses[keyof PublicControllerGetProfilePictureResponses];
 
 export type AuthControllerLoginData = {
   body: LoginDto;
@@ -1722,6 +1679,35 @@ export type UserControllerUpdateResponses = {
 
 export type UserControllerUpdateResponse =
   UserControllerUpdateResponses[keyof UserControllerUpdateResponses];
+
+export type UserControllerGetPublicProfilePictureData = {
+  body?: never;
+  path: {
+    /**
+     * User ID
+     */
+    id: number;
+  };
+  query?: never;
+  url: "/users/public/{id}/profile-picture";
+};
+
+export type UserControllerGetPublicProfilePictureErrors = {
+  /**
+   * User not found or has no profile picture
+   */
+  404: unknown;
+};
+
+export type UserControllerGetPublicProfilePictureResponses = {
+  /**
+   * Returns the CDN URL for the profile picture
+   */
+  200: ImageUrlResponseDto;
+};
+
+export type UserControllerGetPublicProfilePictureResponse =
+  UserControllerGetPublicProfilePictureResponses[keyof UserControllerGetPublicProfilePictureResponses];
 
 export type WorkSessionControllerJoinData = {
   body?: never;

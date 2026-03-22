@@ -66,6 +66,9 @@ import type {
   ProjectControllerGetProjectImageData,
   ProjectControllerGetProjectImageErrors,
   ProjectControllerGetProjectImageResponses,
+  ProjectControllerGetPublishedProjectImageData,
+  ProjectControllerGetPublishedProjectImageErrors,
+  ProjectControllerGetPublishedProjectImageResponses,
   ProjectControllerGetReleaseContentData,
   ProjectControllerGetReleaseContentResponses,
   ProjectControllerGetReleaseContentUrlData,
@@ -102,12 +105,6 @@ import type {
   ProjectControllerUploadProjectImageData,
   ProjectControllerUploadProjectImageErrors,
   ProjectControllerUploadProjectImageResponses,
-  PublicControllerGetProfilePictureData,
-  PublicControllerGetProfilePictureErrors,
-  PublicControllerGetProfilePictureResponses,
-  PublicControllerGetPublishedProjectImageData,
-  PublicControllerGetPublishedProjectImageErrors,
-  PublicControllerGetPublishedProjectImageResponses,
   UserControllerFindAllData,
   UserControllerFindAllErrors,
   UserControllerFindAllResponses,
@@ -120,6 +117,9 @@ import type {
   UserControllerGetProfilePictureErrors,
   UserControllerGetProfilePictureResponses,
   UserControllerGetProfileResponses,
+  UserControllerGetPublicProfilePictureData,
+  UserControllerGetPublicProfilePictureErrors,
+  UserControllerGetPublicProfilePictureResponses,
   UserControllerRemoveData,
   UserControllerRemoveErrors,
   UserControllerRemoveResponses,
@@ -443,6 +443,25 @@ export const projectControllerUploadProjectImage = <
   });
 
 /**
+ * Get public CDN URL for a published project's image
+ */
+export const projectControllerGetPublishedProjectImage = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<ProjectControllerGetPublishedProjectImageData, ThrowOnError>
+) =>
+  (options.client ?? client).get<
+    ProjectControllerGetPublishedProjectImageResponses,
+    ProjectControllerGetPublishedProjectImageErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/projects/public/{id}/image",
+    ...options
+  });
+
+/**
  * Fetch project's content
  */
 export const projectControllerFetchProjectContent = <
@@ -715,42 +734,6 @@ export const multiplayerControllerLeaveHost = <
   });
 
 /**
- * Get public CDN URL for a published project's image
- */
-export const publicControllerGetPublishedProjectImage = <
-  ThrowOnError extends boolean = false
->(
-  options: Options<PublicControllerGetPublishedProjectImageData, ThrowOnError>
-) =>
-  (options.client ?? client).get<
-    PublicControllerGetPublishedProjectImageResponses,
-    PublicControllerGetPublishedProjectImageErrors,
-    ThrowOnError
-  >({
-    responseType: "json",
-    url: "/public/projects/{id}/image",
-    ...options
-  });
-
-/**
- * Get public CDN URL for a user's profile picture
- */
-export const publicControllerGetProfilePicture = <
-  ThrowOnError extends boolean = false
->(
-  options: Options<PublicControllerGetProfilePictureData, ThrowOnError>
-) =>
-  (options.client ?? client).get<
-    PublicControllerGetProfilePictureResponses,
-    PublicControllerGetProfilePictureErrors,
-    ThrowOnError
-  >({
-    responseType: "json",
-    url: "/public/users/{id}/profile-picture",
-    ...options
-  });
-
-/**
  * Authenticate a user and return an access token
  */
 export const authControllerLogin = <ThrowOnError extends boolean = false>(
@@ -973,6 +956,25 @@ export const userControllerUpdate = <ThrowOnError extends boolean = false>(
       "Content-Type": "application/json",
       ...options.headers
     }
+  });
+
+/**
+ * Get public CDN URL for a user's profile picture
+ */
+export const userControllerGetPublicProfilePicture = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<UserControllerGetPublicProfilePictureData, ThrowOnError>
+) =>
+  (options.client ?? client).get<
+    UserControllerGetPublicProfilePictureResponses,
+    UserControllerGetPublicProfilePictureErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/users/public/{id}/profile-picture",
+    ...options
   });
 
 /**

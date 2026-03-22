@@ -6,7 +6,7 @@ import Card from "@modules/projects/components/Card";
 import * as urls from "@shared/route";
 import {
   ProjectResponseDto,
-  publicControllerGetPublishedProjectImage,
+  projectControllerGetPublishedProjectImage,
   projectControllerGetProjectImage
 } from "@api";
 
@@ -22,8 +22,10 @@ const Text = styled(Typography)(({ theme }) => ({
   padding: theme.spacing(0, 0),
 }));
 
-const StyledCard = styled(Card)<{ src: string}>(({ src }) => ({
-  backgroundImage: src ? `url(${src})` : "none",
+const StyledCard = styled(Card, {
+  shouldForwardProp: (prop) => prop !== "$src",
+})<{ $src: string }>(({ $src }) => ({
+  backgroundImage: $src ? `url(${$src})` : "none",
   backgroundSize: "cover",
   backgroundPosition: "center",
 }));
@@ -52,25 +54,16 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, isPlayable = false }
 
     const loadImage = async (): Promise<void> => {
       try {
-        if (isPlayable) {
-          const res = await publicControllerGetPublishedProjectImage({
-            path: { id: project.id }
-          });
-          if (!cancelled && res.data?.url) {
-            setThumbnailUrl(res.data.url);
-            return;
-          }
-        } else {
-          const res = await projectControllerGetProjectImage({
-            path: { id: project.id }
-          });
-          if (!cancelled && res.data?.url) {
-            setThumbnailUrl(res.data.url);
-            return;
-          }
+        const res = isPlayable
+          ? await projectControllerGetPublishedProjectImage({ path: { id: project.id } })
+          : await projectControllerGetProjectImage({ path: { id: project.id } });
+
+        if (!cancelled && res.data?.url) {
+          setThumbnailUrl(res.data.url);
+          return;
         }
       } catch {
-        // Image not found on CDN, fall back to iconUrl
+        // Image not available, fall back to iconUrl
       }
 
       if (!cancelled && typeof project.iconUrl === "string" && project.iconUrl) {
@@ -91,7 +84,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, isPlayable = false }
   };
 
   return (
-    <StyledCard onClick={redirectToProject} src={thumbnailUrl}>
+    <StyledCard onClick={redirectToProject} $src={thumbnailUrl}>
       <ProjectFooter>
         <Text variant="h6">{project.name}</Text>
       </ProjectFooter>
