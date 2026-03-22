@@ -5,10 +5,6 @@ Build a Platformer Game
 This tutorial walks you through building a complete platformer with animated sprites, gravity,
 jumping, platform collision, and camera scrolling.
 
-.. contents:: In this tutorial
-   :local:
-   :depth: 2
-
 What you will build
 ===================
 
