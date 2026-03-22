@@ -106,7 +106,7 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
 
       const res = await projectControllerGetProjectImage({ path: { id: project.projectId } });
       if (res.data?.url) {
-        setBannerUrl(res.data.url + "?t=" + Date.now());
+        setBannerUrl(res.data.url);
       }
     } catch (err) {
       alert("Error uploading banner image: " +
