@@ -53,17 +53,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, isPlayable = false }
     let cancelled = false;
 
     const loadImage = async (): Promise<void> => {
-      try {
-        const res = isPlayable
-          ? await projectControllerGetPublishedProjectImage({ path: { id: project.id } })
-          : await projectControllerGetProjectImage({ path: { id: project.id } });
+      const res = isPlayable
+        ? await projectControllerGetPublishedProjectImage({ path: { id: project.id } })
+        : await projectControllerGetProjectImage({ path: { id: project.id } });
 
-        if (!cancelled && res.data?.url) {
-          setThumbnailUrl(res.data.url);
-          return;
-        }
-      } catch {
-        // Image not available, fall back to iconUrl
+      if (!cancelled && res.status !== 204 && res.status !== 404 && res.data?.url) {
+        setThumbnailUrl(res.data.url);
+        return;
       }
 
       if (!cancelled && typeof project.iconUrl === "string" && project.iconUrl) {
