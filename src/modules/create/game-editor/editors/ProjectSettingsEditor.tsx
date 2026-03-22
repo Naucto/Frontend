@@ -1,16 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { EditorProps } from "./EditorType";
-import { Box, Button, Typography, List, ListItem, ListItemText, Paper, Divider } from "@mui/material";
+import { Box, Button, Typography, List, ListItem, ListItemText, Divider, Chip } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { ApiError, ProjectsService, ProjectWithRelationsResponseDto, UserBasicInfoDto } from "@api";
+import { projectControllerFindOne, projectControllerAddCollaborator, projectControllerRemoveCollaborator, projectControllerPublish, projectControllerUnpublish, ProjectExResponseDto, UserBasicInfoDto } from "@api";
 import { ProjectSettings } from "@providers/editors/ProjectSettingsProvider";
 import { ActionButton } from "@components/ui/ActionButton";
 import { FullWidthTextField } from "@components/ui/FullWidthTextField";
-
-const EditorContainer = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(3),
-  backgroundColor: theme.palette.blue[500],
-}));
 
 const Section = styled(Box)(({ theme }) => ({
   marginBottom: theme.spacing(4),
@@ -23,19 +18,28 @@ const CollaboratorList = styled(List)(({ theme }) => ({
   borderRadius: theme.shape.borderRadius,
 }));
 
+const StatusContainer = styled(Box)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  gap: theme.spacing(2),
+  marginBottom: theme.spacing(2),
+}));
+
 const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
   const [settings, setSettings] = useState<ProjectSettings>({ name: "", shortDesc: "", longDesc: "" });
   const [collaborators, setCollaborators] = useState<UserBasicInfoDto[]>([]);
   const [newCollaborator, setNewCollaborator] = useState("");
+  const [isPublished, setIsPublished] = useState(false);
 
   useEffect(() => {
     const fetchProjectDetails = async (): Promise<void> => {
       try {
-        const details = await ProjectsService.projectControllerFindOne(project.projectId);
+        const details = (await projectControllerFindOne({ path: { id: project.projectId } })).data as ProjectExResponseDto;
         setCollaborators(details.collaborators);
+        setIsPublished(details.status === ("COMPLETED" satisfies ProjectExResponseDto["status"]) || false);
       } catch (err) {
         alert("Error fetching project details: " +
-          (err instanceof ApiError ? err.message : String(err)));
+          (err instanceof Error ? err.message : String(err)));
       }
     };
 
@@ -60,34 +64,70 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
   const handleAddCollaborator = async () : Promise<void> => {
     if (!newCollaborator.trim()) return;
     try {
-      let details : ProjectWithRelationsResponseDto;
+      let details : ProjectExResponseDto;
       if (newCollaborator.includes("@")) {
-        details = await ProjectsService.projectControllerAddCollaborator(project.projectId, { email: newCollaborator });
+        details = (await projectControllerAddCollaborator({ path: { id: project.projectId }, body: { email: newCollaborator } })).data!;
       } else {
-        details = await ProjectsService.projectControllerAddCollaborator(project.projectId, { username: newCollaborator });
+        details = (await projectControllerAddCollaborator({ path: { id: project.projectId }, body: { username: newCollaborator } })).data!;
       }
       setCollaborators(details.collaborators);
       setNewCollaborator("");
     } catch (err) {
       alert("Error adding collaborator. Please check the username or email. " +
-        (err instanceof ApiError ? err.message : String(err)));
+        (err instanceof Error ? err.message : String(err)));
     }
   };
 
   const handleRemoveCollaborator = async (userId: number) : Promise<void> => {
     try {
-      await ProjectsService.projectControllerRemoveCollaborator(project.projectId, { userId });
+      await projectControllerRemoveCollaborator({ path: { id: project.projectId }, body: { userId } });
       setCollaborators(collaborators.filter(c => c.id !== userId));
     } catch (err) {
       alert("Error removing collaborator. Please check if you have the right to remove someone. " +
-        (err instanceof ApiError ? err.message : String(err)));
+        (err instanceof Error ? err.message : String(err)));
+    }
+  };
+
+  const handlePublishToggle = async (): Promise<void> => {
+    // TODO: clarify publish/unpublish persistence behavior (publish currently saves before toggling, unpublish does not).
+    try {
+      if (!isPublished) {
+        await project.saveContent();
+        await projectControllerPublish({ path: { id: project.projectId.toString() } });
+      } else {
+        await projectControllerUnpublish({ path: { id: project.projectId.toString() } });
+      }
+      setIsPublished(!isPublished);
+    } catch (err) {
+      alert("Error updating publish status: " +
+        (err instanceof Error ? err.message : String(err)));
     }
   };
 
   return (
-    <EditorContainer>
+    <>
       <Section>
         <Typography variant="h5" gutterBottom>Project Settings</Typography>
+        <StatusContainer>
+          <Typography variant="body1">Status:</Typography>
+          <Chip
+            label={isPublished ? "Published" : "Draft"}
+            color={isPublished ? "success" : "default"}
+          />
+          <Button
+            variant="contained"
+            onClick={handlePublishToggle}
+            sx={{
+              backgroundColor: isPublished ? "gray.500" : "green.500",
+              color: "white",
+              "&:hover": {
+                backgroundColor: isPublished ? "gray.600" : "green.600"
+              }
+            }}
+          >
+            {isPublished ? "Unpublish" : "Publish"}
+          </Button>
+        </StatusContainer>
         <FullWidthTextField
           label="Project Title"
           value={settings.name}
@@ -108,9 +148,7 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
           rows={5}
         />
       </Section>
-
       <Divider />
-
       <Section>
         <Typography variant="h6" gutterBottom>Collaborators</Typography>
         <CollaboratorList>
@@ -141,7 +179,7 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
           </Button>
         </Box>
       </Section>
-    </EditorContainer>
+    </>
   );
 };
 

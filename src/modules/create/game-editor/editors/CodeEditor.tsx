@@ -66,10 +66,10 @@ const CodeEditor: React.FC<EditorProps> = ({ project }) => {
   };
 
   useEffect(() => {
-    if (!project?.awareness) return;
+    if (!project?.awarenessProvider) return;
 
     const updateStyles = (changes?: { added: number[], updated: number[], removed: number[] }): void => {
-      const users = project.awareness.getUsers();
+      const users = project.awarenessProvider.getUsers();
       const styleMap = new Map<number, string>();
 
       users.forEach((user) => styleMap.set(user.clientId, generateUserStyles(user.clientId, user.name, user.color)));
@@ -89,19 +89,19 @@ const CodeEditor: React.FC<EditorProps> = ({ project }) => {
       updateStyles(changes);
     };
 
-    project.awareness.observe(AwarenessEventType.CHANGE, handleAwarenessUpdate);
+    project.awarenessProvider.observe(AwarenessEventType.CHANGE, handleAwarenessUpdate);
 
     return () => {
     };
   }, [project, generateUserStyles]);
 
   useEffect(() => {
-    if (!project?.awareness) return;
+    if (!project?.awarenessProvider) return;
 
-    const currentUser = project.awareness.getLocalUser();
+    const currentUser = project.awarenessProvider.getLocalUser();
 
     if (currentUser && !currentUser.color) {
-      project.awareness.setLocalUser({
+      project.awarenessProvider.setLocalUser({
         ...currentUser,
         color: generateRandomColor()
       });
@@ -115,7 +115,7 @@ const CodeEditor: React.FC<EditorProps> = ({ project }) => {
       return;
     }
 
-    project.code.setMonacoBinding(editor);
+    project.codeProvider.setMonacoBinding(editor);
 
     return () => {
       editor.dispose();

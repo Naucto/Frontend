@@ -2,7 +2,7 @@ import { User } from "src/types/userTypes";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { ContextError } from "src/errors/ContextError";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
-import { UserProfileResponseDto, UsersService } from "@api";
+import { UserProfileResponseDto, userControllerGetProfile } from "@api";
 import { useAsync } from "src/hooks/useAsync";
 
 interface UserContextType {
@@ -17,7 +17,7 @@ const userContext = createContext<UserContextType | null>(null);
 export const UserProvider = ({ children }: { children: React.ReactNode }): React.ReactElement => {
   const token = LocalStorageManager.getToken();
   const { loading, value: profile, error } = useAsync(
-    () => token ? UsersService.userControllerGetProfile() : Promise.resolve(undefined),
+    () => token ? userControllerGetProfile().then(({ data }) => data) : Promise.resolve(undefined),
     [token]
   );
   const [user, setUser] = useState<UserProfileResponseDto | undefined>(undefined);

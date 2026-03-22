@@ -9,4 +9,5 @@ export interface EditorTab {
   label: string;
   component: FC<EditorProps>;
   icon: ReactElement;
+  disablePadding?: boolean;
 }
