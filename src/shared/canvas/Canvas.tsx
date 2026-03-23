@@ -3,6 +3,7 @@ import React, { forwardRef, useImperativeHandle, useRef } from "react";
 import { SpriteProvider } from "@providers/editors/SpriteProvider";
 import { styled } from "@mui/material/styles";
 import { MapProvider } from "@providers/editors/MapProvider.ts";
+import { SoundProvider } from "../../providers/editors/SoundProvider";
 
 export type CanvasProps = React.CanvasHTMLAttributes<HTMLCanvasElement> & {
   sprite: SpriteProvider;
@@ -11,6 +12,7 @@ export type CanvasProps = React.CanvasHTMLAttributes<HTMLCanvasElement> & {
     width: number;
     height: number;
   };
+  sound: SoundProvider;
   className?: string;
 };
 

@@ -269,10 +269,12 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
           canvasProps={{
             map: project.mapProvider,
             screenSize: screenSize,
-            sprite: project.spriteProvider
+            sprite: project.spriteProvider,
+            sound: project.sound
           }}
           envData={envData}
           setOutput={setOutput}
+          soundProvider={project.sound}
         />
         <GameEditorConsole output={output} />
       </RightPanel>

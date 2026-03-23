@@ -2,6 +2,7 @@ import { LuaEnvironment } from "@lib/lua";
 import { KeyHandler } from "@shared/canvas/gameCanvas/KeyHandler";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import { NetAPI } from "@shared/luaEnvManager/api/NetAPI";
+import { MusicPlayer } from "@shared/audio/MusicPlayer";
 
 export interface EnvData {
   code: string,
@@ -12,6 +13,7 @@ interface ConstructorProps {
   envData: EnvData,
   rendererHandle: SpriteRendererHandle,
   keyHandler: KeyHandler,
+  musicPlayer?: MusicPlayer,
   /**
    * this function is used to set the envData.output only
    * @param output the output to set
@@ -24,17 +26,19 @@ class LuaEnvironmentManager {
   private _lua: LuaEnvironment;
   private _rendererHandle: SpriteRendererHandle;
   private _keyHandler: KeyHandler;
+  private _musicPlayer?: MusicPlayer;
 
   private _envData: EnvData;
 
   private _setOutput: React.Dispatch<React.SetStateAction<string>>;
 
-  constructor({ envData, rendererHandle, setOutput, keyHandler }: ConstructorProps) {
+  constructor({ envData, rendererHandle, setOutput, keyHandler, musicPlayer }: ConstructorProps) {
     this._lua = new LuaEnvironment();
     this._rendererHandle = rendererHandle;
     this._setOutput = setOutput;
     this._envData = envData;
     this._keyHandler = keyHandler;
+    this._musicPlayer = musicPlayer;
 
     this._lua.setGlobalWith("sprite", this._sprite.bind(this));
     this._lua.setGlobalWith("clear", this._clear.bind(this));
@@ -47,7 +51,8 @@ class LuaEnvironmentManager {
     this._lua.setGlobalWith("line", this._line.bind(this));
     this._lua.setGlobalWith("rect", this._drawOutlineRect.bind(this));
     this._lua.setGlobalWith("fill_rect", this._drawRect.bind(this));
-
+    this._lua.setGlobalWith("play_music", this._playMusic.bind(this));
+    this._lua.setGlobalWith("stop_music", this._stopMusic.bind(this));
     new NetAPI(this._lua);
   }
 
@@ -142,6 +147,20 @@ class LuaEnvironmentManager {
         this._addOutput(this._getErrorMsg(error));
       }
     }
+  }
+
+  private _playMusic(index?: number): void {
+    if (!this._musicPlayer) return;
+    this._musicPlayer.play(index).catch((error) => {
+      if (error instanceof Error) {
+        this._addOutput(this._getErrorMsg(error));
+      }
+    });
+  }
+
+  private _stopMusic(): void {
+    if (!this._musicPlayer) return;
+    this._musicPlayer.stop();
   }
 
   private _getErrorMsg(error: Error): string {
