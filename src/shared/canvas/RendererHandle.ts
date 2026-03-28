@@ -1,6 +1,6 @@
 import { rectangleToVertices } from "@shared/canvas/glUtils";
 import { GLPipeline, initGLPipeline } from "@shared/canvas/GLSetup";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { CanvasError, CanvasNotInitializedError } from "src/errors/CanvasError";
 import { MapProvider } from "@providers/editors/MapProvider.ts";
 import { SpriteProvider } from "@providers/editors/SpriteProvider";
@@ -42,7 +42,6 @@ export function useSpriteRenderer(
   const currentPaletteSize = currentPalette.length / 4;
 
   const pipelineRef = useRef<GLPipeline | null>(null);
-  const [version, setVersion] = useState(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -55,17 +54,60 @@ export function useSpriteRenderer(
       pipelineRef.current?.destroy();
       pipelineRef.current = null;
     };
-  }, [canvasRef, screenSize, version]);
+  }, [canvasRef, map, screenSize, sprite]);
 
   useEffect(() => {
     map.observe(() => {
-      setVersion(v => v + 1);
+      _refreshMapTexture();
     });
 
     sprite.observe(() => {
-      setVersion(v => v + 1);
+      _refreshSpriteTexture();
+      _refreshMapTexture();
     });
   }, [map, sprite]);
+
+  function _refreshSpriteTexture(): void {
+    const p = pipelineRef.current;
+    if (!p) return;
+
+    const gl = p.gl;
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, p.spriteSheetTexture);
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+    gl.texSubImage2D(
+      gl.TEXTURE_2D,
+      0,
+      0,
+      0,
+      sprite.size.width,
+      sprite.size.height,
+      gl.RED,
+      gl.UNSIGNED_BYTE,
+      sprite.getU8PixelBuffer()
+    );
+  }
+
+  function _refreshMapTexture(): void {
+    const p = pipelineRef.current;
+    if (!p) return;
+
+    const gl = p.gl;
+    gl.activeTexture(gl.TEXTURE2);
+    gl.bindTexture(gl.TEXTURE_2D, p.mapTexture);
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+    gl.texSubImage2D(
+      gl.TEXTURE_2D,
+      0,
+      0,
+      0,
+      map.width * sprite.spriteSize.width,
+      map.height * sprite.spriteSize.height,
+      gl.RED,
+      gl.UNSIGNED_BYTE,
+      map.getU8PixelBuffer()
+    );
+  }
 
   function moveCamera(x: number, y: number): void {
     const p = pipelineRef.current;

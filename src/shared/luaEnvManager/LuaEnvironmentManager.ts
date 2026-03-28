@@ -4,6 +4,7 @@ import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import { NetAPI } from "@shared/luaEnvManager/api/NetAPI";
 import { MusicPlayer } from "@shared/audio/MusicPlayer";
 import { SpriteProvider } from "@providers/editors/SpriteProvider";
+import { MapProvider } from "@providers/editors/MapProvider";
 
 export interface EnvData {
   code: string,
@@ -14,6 +15,7 @@ interface ConstructorProps {
   envData: EnvData,
   rendererHandle: SpriteRendererHandle,
   spriteProvider: SpriteProvider,
+  mapProvider: MapProvider,
   keyHandler: KeyHandler,
   musicPlayer?: MusicPlayer,
   /**
@@ -28,6 +30,7 @@ class LuaEnvironmentManager {
   private _lua: LuaEnvironment;
   private _rendererHandle: SpriteRendererHandle;
   private _spriteProvider: SpriteProvider;
+  private _mapProvider: MapProvider;
   private _keyHandler: KeyHandler;
   private _musicPlayer?: MusicPlayer;
 
@@ -35,10 +38,11 @@ class LuaEnvironmentManager {
 
   private _setOutput: React.Dispatch<React.SetStateAction<string>>;
 
-  constructor({ envData, rendererHandle, spriteProvider, setOutput, keyHandler, musicPlayer }: ConstructorProps) {
+  constructor({ envData, rendererHandle, spriteProvider, mapProvider, setOutput, keyHandler, musicPlayer }: ConstructorProps) {
     this._lua = new LuaEnvironment();
     this._rendererHandle = rendererHandle;
     this._spriteProvider = spriteProvider;
+    this._mapProvider = mapProvider;
     this._setOutput = setOutput;
     this._envData = envData;
     this._keyHandler = keyHandler;
@@ -51,6 +55,7 @@ class LuaEnvironmentManager {
     this._lua.setGlobalWith("set_col", this._setCol.bind(this));
     this._lua.setGlobalWith("reset_col", this._resetCol.bind(this));
     this._lua.setGlobalWith("map", this._map.bind(this));
+    this._lua.setGlobalWith("mget", this._mget.bind(this));
     this._lua.setGlobalWith("fget", this._fget.bind(this));
     this._lua.setGlobalWith("camera", this._camera.bind(this));
     this._lua.setGlobalWith("line", this._line.bind(this));
@@ -97,6 +102,10 @@ class LuaEnvironmentManager {
 
   private _map(x: number, y: number): void {
     this._rendererHandle.drawMap(x, y);
+  }
+
+  private _mget(x: number, y: number): number {
+    return this._mapProvider.getTileAt({ x, y });
   }
 
   private _fget(spriteIndex: number, bit?: number): boolean | number {

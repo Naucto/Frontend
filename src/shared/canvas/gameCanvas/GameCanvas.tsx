@@ -49,6 +49,7 @@ const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(
         envData,
         rendererHandle,
         spriteProvider: canvasProps.sprite,
+        mapProvider: canvasProps.map,
         keyHandler,
         setOutput,
         musicPlayer: musicPlayerRef.current
