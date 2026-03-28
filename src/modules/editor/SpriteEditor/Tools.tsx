@@ -2,16 +2,17 @@ import { DrawTool, CanvasHandler } from "@modules/editor/SpriteEditor/SpriteEdit
 import React, { useEffect, useRef } from "react";
 import { SpriteProvider } from "@providers/editors/SpriteProvider";
 
+export type SpritePixelAccessor = Pick<SpriteProvider, "isPixelInBounds" | "getPixel" | "setPixel">;
+
 const Tools: React.FC<{
   color: number;
-  position: Point2D;
   drawTool: DrawTool;
   onSelectTool: (tool: DrawTool) => void;
-  spriteProvider: SpriteProvider;
+  spriteProvider: SpritePixelAccessor;
   setOnMouseMove?: (fn: CanvasHandler) => void;
   setOnMouseUp?: (fn: CanvasHandler) => void;
   setOnMouseDown?: (fn: CanvasHandler) => void;
-}> = ({ drawTool, onSelectTool, setOnMouseDown, setOnMouseMove, setOnMouseUp, spriteProvider: spriteProvider, color }) => {
+}> = ({ drawTool, onSelectTool, setOnMouseDown, setOnMouseMove, setOnMouseUp, spriteProvider, color }) => {
   const lastPosRef = useRef<Point2D | null>(null);
   const colorRef = useRef(color);
 

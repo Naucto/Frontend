@@ -1,13 +1,11 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { colorPalette } from "./Color";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import React from "react";
 import { StyledCanvas } from "@shared/canvas/Canvas";
 import { EditorProps } from "../../create/game-editor/editors/EditorType";
-import { MapProvider } from "@providers/editors/MapProvider.ts";
-import { SpriteProvider } from "@providers/editors/SpriteProvider.ts";
 import { styled } from "@mui/material";
-import Tools from "@modules/editor/SpriteEditor/Tools";
+import Tools, { SpritePixelAccessor } from "@modules/editor/SpriteEditor/Tools";
 
 export enum DrawTool {
   Pen,
@@ -17,12 +15,8 @@ export enum DrawTool {
 }
 export type CanvasHandler = ((e: React.MouseEvent<HTMLCanvasElement>, pixelPos: Point2D) => void) | undefined;
 
-const SPRITE_SIZE = 8;
-const SPRITE_SHEET_SIZE = 128;
-const SPRITE_NUMBER = SPRITE_SHEET_SIZE / SPRITE_SIZE;
-const CANVAS_BASE_RESOLUTION = 1080; // Base resolution for scaling the canvas
-const SCALE = CANVAS_BASE_RESOLUTION / SPRITE_SHEET_SIZE; // used to scale the canvas to avoid 1:1 pixel scaling
-const ZOOM_LIMIT = SPRITE_NUMBER / SCALE;
+const TILE_SIZES = [8, 16, 32] as const;
+type TileSize = typeof TILE_SIZES[number];
 
 interface ColorButtonProps {
   color: { name: string; hex: string };
@@ -59,56 +53,59 @@ const ColorPalette: React.FC<ColorPaletteProps> = ({ colors, currentColor, onCol
   </ColorSelector>
 );
 
-const Left = styled("div")(() => ({
+const EditorLayout = styled("div")(({ theme }) => ({
+  display: "grid",
+  gridTemplateColumns: "320px minmax(0, 1fr)",
+  gap: theme.spacing(2),
+  minHeight: 0,
+  "@media (max-width: 960px)": {
+    gridTemplateColumns: "1fr",
+  },
+}));
+
+const ToolBar = styled("div")(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
-  padding: "0.5rem",
+  gap: theme.spacing(2),
 }));
 
-const EditorLayout = styled("div")(() => ({
+const CanvasColumns = styled("div")(({ theme }) => ({
+  display: "grid",
+  gap: theme.spacing(2),
+  minHeight: 0,
+  "@media (max-width: 1200px)": {
+    gridTemplateColumns: "1fr",
+  },
+}));
+
+const Panel = styled("section")(() => ({
   display: "flex",
   flexDirection: "column",
-  height: "100%",
-  color: "#ffffff",
 }));
 
-const CanvasContainerWrapper = styled("div")(() => ({
-  display: "flex",
-  flexDirection: "column",
-  gap: "1rem",
-  height: "100%",
-}));
-
-const SpriteEditorHeader = styled("div")(() => ({
-  display: "flex",
-  gap: "1rem",
-  width: "100%",
-  height: "100%",
-}));
-
-const ColorSelector = styled("div")(() => ({
+const ColorSelector = styled("div")(({ theme }) => ({
   display: "grid",
   gridTemplateColumns: "repeat(3, 1fr)",
-  gap: "0.5rem",
-  padding: "4px",
-  backgroundColor: "#3a5863",
-  borderRadius: "4px",
+  gap: theme.spacing(1),
+  padding: theme.spacing(0.5),
+  backgroundColor: theme.palette.blue[800],
+  borderRadius: theme.shape.borderRadius,
   width: "100%",
   height: "fit-content",
   alignContent: "start",
   overflowY: "auto",
   overflowX: "hidden",
   scrollbarWidth: "thin",
-  scrollbarColor: "#1a2c35 #2a3c45",
+  scrollbarColor: `${theme.palette.grey[900]} ${theme.palette.grey[800]}`,
 }));
 
 const ColorButtonStyled = styled("button", {
   shouldForwardProp: (prop) => prop !== "$selected",
-})<{ $selected: boolean }>(({ $selected }) => ({
+})<{ $selected: boolean }>(({ $selected, theme }) => ({
   aspectRatio: "1",
-  width: "40px",
-  height: "40px",
-  border: `2px solid ${$selected ? "#ffffff" : "#4c4c4c"}`,
+  width: theme.spacing(5),
+  height: theme.spacing(5),
+  border: `2px solid ${$selected ? theme.palette.common.white : theme.palette.grey[600]}`,
   borderRadius: "4px",
   cursor: "pointer",
   transition: "transform 0.1s ease",
@@ -119,254 +116,313 @@ const ColorButtonStyled = styled("button", {
   "&:focus": { outline: "none" },
 }));
 
-const DrawCanvasContainer = styled("div")(() => ({
-  backgroundColor: "#3a5863",
-  padding: "1rem",
-  borderRadius: "4px",
+const TileContainer = styled("div")(({ theme }) => ({
+  display: "grid",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  gap: theme.spacing(1),
 }));
 
-interface CanvasContainerProps {
-  canvasRef: React.RefObject<SpriteRendererHandle | null>;
-  containerRef: React.RefObject<HTMLDivElement | null>;
-  sprite: SpriteProvider;
-  map: MapProvider;
-  screenSize: { width: number; height: number };
-  onWheel: (e: React.WheelEvent) => void;
-  onMouseDown: (e: React.MouseEvent<HTMLCanvasElement>) => void;
-  onMouseMove: (e: React.MouseEvent<HTMLCanvasElement>) => void;
-  onMouseUp: (e: React.MouseEvent<HTMLCanvasElement>) => void;
-  onMouseEnter: () => void;
-  onMouseLeave: () => void;
-  onClick?: (e: React.MouseEvent<HTMLCanvasElement>) => void;
+const TileSizeButton = styled("button", {
+  shouldForwardProp: (prop) => prop !== "$selected",
+})<{ $selected: boolean }>(({ $selected, theme }) => ({
+  border: `1px solid ${$selected ? theme.palette.common.white : theme.palette.grey[500]}`,
+  backgroundColor: $selected ? theme.palette.common.white : theme.palette.grey[900],
+  color: $selected ? theme.palette.grey[900] : theme.palette.common.white,
+  borderRadius: theme.shape.borderRadius,
+  padding: theme.spacing(1.2, 1.5),
+  fontSize: "0.9rem",
+  fontWeight: 700,
+  cursor: "pointer",
+}));
+
+const CanvasViewport = styled("div")(({ theme }) => ({
+  position: "relative",
+  borderRadius: theme.shape.borderRadius,
+  overflow: "hidden",
+  backgroundColor: theme.palette.grey[900],
+  boxShadow: `inset 0 0 0 1px ${theme.palette.action.selected}`,
+}));
+
+const CanvasGridOverlay = styled("div", {
+  shouldForwardProp: (prop) => !["$columns", "$rows", "$lineColor"].includes(String(prop)),
+})<{ $columns: number; $rows: number; $lineColor: string }>(({ $columns, $rows, $lineColor }) => ({
+  position: "absolute",
+  inset: 0,
+  pointerEvents: "none",
+  backgroundImage: `
+    linear-gradient(to right, ${$lineColor} 1px, transparent 1px),
+    linear-gradient(to bottom, ${$lineColor} 1px, transparent 1px)
+  `,
+  backgroundSize: `
+    calc(100% / ${$columns}) 100%,
+    100% calc(100% / ${$rows})
+  `,
+}));
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
 }
 
-const CanvasContainer: React.FC<CanvasContainerProps> = ({
-  canvasRef,
-  containerRef,
-  sprite,
-  map,
-  screenSize,
-  ...props
-}) => (
-  <DrawCanvasContainer ref={containerRef}>
-    <StyledCanvas
-      ref={canvasRef}
-      sprite={sprite}
-      screenSize={screenSize}
-      map={map}
-      {...props}
-    />
-  </DrawCanvasContainer>
-);
+function getCanvasPixelPos(
+  e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
+  rect: DOMRect,
+  width: number,
+  height: number
+): Point2D {
+  const normalizedX = clamp((e.clientX - rect.left) / rect.width, 0, 1);
+  const normalizedY = clamp((e.clientY - rect.top) / rect.height, 0, 1);
 
-function getMousePosition(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>, rect: DOMRect): Point2D {
   return {
-    x: e.clientX - rect.left,
-    y: e.clientY - rect.top
+    x: Math.floor(normalizedX * width),
+    y: Math.floor(normalizedY * height),
   };
-}
-
-function getNormalizedPosition(mousePos: Point2D, rect: DOMRect): Point2D {
-  return {
-    x: mousePos.x / rect.width,
-    y: mousePos.y / rect.height
-  };
-}
-
-function getScaledPosition(mousePos: Point2D, scale: number, zoom: number): Point2D {
-  return {
-    x: mousePos.x * zoom * scale,
-    y: mousePos.y * zoom * scale
-  };
-}
-
-function getPixelPos(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
-  rect: DOMRect, zoom: number, position: Point2D): Point2D {
-
-  const canvasMousePos = getMousePosition(e, rect);
-  const normalizedMousePos = getNormalizedPosition(canvasMousePos, rect);
-  const scaledPos = getScaledPosition(normalizedMousePos, SCALE, zoom);
-
-  const x = Math.floor(scaledPos.x * SPRITE_SIZE - Math.floor(position.x));
-  const y = Math.floor(scaledPos.y * SPRITE_SIZE - Math.floor(position.y));
-
-  return { x, y };
 }
 
 export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
   const [currentColor, setCurrentColor] = useState(0);
-  const [zoom, setZoom] = useState(1);
-
+  const [tileSize, setTileSize] = useState<TileSize>(8);
+  const [selectedTile, setSelectedTile] = useState<Point2D>({ x: 0, y: 0 });
   const [drawTool, setDrawTool] = useState<DrawTool>(DrawTool.Pen);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [version, setVersion] = useState(0);
+  const [selectionCanvasVersion, setSelectionCanvasVersion] = useState(0);
+  const [detailCanvasVersion, setDetailCanvasVersion] = useState(0);
+
   const onMouseDownRef = useRef<CanvasHandler>(undefined);
   const onMouseMoveRef = useRef<CanvasHandler>(undefined);
-  const onMouseUpRef   = useRef<CanvasHandler>(undefined);
+  const onMouseUpRef = useRef<CanvasHandler>(undefined);
+  const selectionCanvasRef = useRef<SpriteRendererHandle | null>(null);
+  const detailCanvasRef = useRef<SpriteRendererHandle | null>(null);
 
-  const setOnMouseDown = useCallback((fn: CanvasHandler) => onMouseDownRef.current = fn, []);
-  const setOnMouseMove = useCallback((fn: CanvasHandler) => onMouseMoveRef.current = fn, []);
-  const setOnMouseUp = useCallback((fn: CanvasHandler) => onMouseUpRef.current = fn, []);
+  const setSelectionCanvasHandle = useCallback((handle: SpriteRendererHandle | null) => {
+    if (selectionCanvasRef.current === handle) return;
+    selectionCanvasRef.current = handle;
+    setSelectionCanvasVersion((value) => value + 1);
+  }, []);
 
-  const [position, setPosition] = useState<Point2D>({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [dragStart, setDragStart] = useState<Point2D>({ x: 0, y: 0 });
-  const [isMouseOverCanvas, setIsMouseOverCanvas] = useState(false);
-  const [version, setVersion] = useState(0);
-  const drawCanvasRef = React.createRef<SpriteRendererHandle>();
-  const canvasContainerRef = useRef<HTMLDivElement>(null);
+  const setDetailCanvasHandle = useCallback((handle: SpriteRendererHandle | null) => {
+    if (detailCanvasRef.current === handle) return;
+    detailCanvasRef.current = handle;
+    setDetailCanvasVersion((value) => value + 1);
+  }, []);
+
+  const setOnMouseDown = useCallback((fn: CanvasHandler) => {
+    onMouseDownRef.current = fn;
+  }, []);
+  const setOnMouseMove = useCallback((fn: CanvasHandler) => {
+    onMouseMoveRef.current = fn;
+  }, []);
+  const setOnMouseUp = useCallback((fn: CanvasHandler) => {
+    onMouseUpRef.current = fn;
+  }, []);
+
+  const sheetWidth = project.spriteProvider.size.width;
+  const sheetHeight = project.spriteProvider.size.height;
+  const baseSpriteWidth = project.spriteProvider.spriteSize.width;
+  const baseSpriteHeight = project.spriteProvider.spriteSize.height;
+  const selectionScreenSize = useMemo(() => ({
+    width: sheetWidth,
+    height: sheetHeight,
+  }), [sheetHeight, sheetWidth]);
+  const detailScreenSize = useMemo(() => ({
+    width: tileSize,
+    height: tileSize,
+  }), [tileSize]);
+  const spritesPerRow = sheetWidth / baseSpriteWidth;
+  const tileSpriteSpanWidth = tileSize / baseSpriteWidth;
+  const tileSpriteSpanHeight = tileSize / baseSpriteHeight;
+  const tileColumns = sheetWidth / tileSize;
+  const tileRows = sheetHeight / tileSize;
+  const selectedTileIndex =
+    (selectedTile.y / baseSpriteHeight) * spritesPerRow + (selectedTile.x / baseSpriteWidth);
+
+  useEffect(() => {
+    project.spriteProvider.observe(() => setVersion((value) => value + 1));
+  }, [project]);
+
+  useEffect(() => {
+    setSelectedTile((prevTile) => ({
+      x: clamp(Math.floor(prevTile.x / tileSize) * tileSize, 0, sheetWidth - tileSize),
+      y: clamp(Math.floor(prevTile.y / tileSize) * tileSize, 0, sheetHeight - tileSize),
+    }));
+    setIsDrawing(false);
+  }, [tileSize, sheetWidth, sheetHeight]);
+
+  const tileSpriteAccessor = useMemo<SpritePixelAccessor>(() => {
+    const minX = selectedTile.x;
+    const minY = selectedTile.y;
+    const maxX = minX + tileSize;
+    const maxY = minY + tileSize;
+
+    return {
+      isPixelInBounds: (x: number, y: number) => x >= minX && x < maxX && y >= minY && y < maxY,
+      getPixel: (x: number, y: number) => project.spriteProvider.getPixel(x, y),
+      setPixel: (x: number, y: number, color: number) => {
+        if (x < minX || x >= maxX || y < minY || y >= maxY) {
+          return;
+        }
+        project.spriteProvider.setPixel(x, y, color);
+      },
+    };
+  }, [project.spriteProvider, selectedTile.x, selectedTile.y, tileSize]);
+
+  useEffect(() => {
+    const handle = selectionCanvasRef.current;
+    if (!handle) return;
+
+    handle.clear(0);
+    handle.queueSpriteDraw(0, 0, 0, spritesPerRow, sheetHeight / baseSpriteHeight);
+    handle.drawOutlineRect(7, selectedTile.x, selectedTile.y, tileSize, tileSize);
+    handle.draw();
+  }, [baseSpriteHeight, selectedTile.x, selectedTile.y, selectionCanvasVersion, sheetHeight, spritesPerRow, tileSize, version]);
+
+  useEffect(() => {
+    const handle = detailCanvasRef.current;
+    if (!handle) return;
+
+    handle.clear(0);
+    handle.queueSpriteDraw(selectedTileIndex, 0, 0, tileSpriteSpanWidth, tileSpriteSpanHeight);
+    handle.draw();
+  }, [detailCanvasVersion, selectedTileIndex, tileSpriteSpanHeight, tileSpriteSpanWidth, version]);
 
   const handleContextMenu = (e: React.MouseEvent): void => {
     e.preventDefault();
   };
 
-  const handleWheel = (e: React.WheelEvent): void => {
-    if (!isMouseOverCanvas)
-      return;
+  const handleTileSelect = (e: React.MouseEvent<HTMLCanvasElement>): void => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const { x, y } = getCanvasPixelPos(e, rect, sheetWidth, sheetHeight);
 
-    const delta = e.deltaY > 0 ? 1 : -1;
-    const power = 1 / SCALE;
-    setZoom(prevZoom => {
-      const newZoom = Math.max(power, prevZoom + delta * power);
-      return Math.min(newZoom, ZOOM_LIMIT);
+    setSelectedTile({
+      x: clamp(Math.floor(x / tileSize) * tileSize, 0, sheetWidth - tileSize),
+      y: clamp(Math.floor(y / tileSize) * tileSize, 0, sheetHeight - tileSize),
     });
   };
 
-  useEffect(() => {
-    project.spriteProvider.observe(() => setVersion(v => v + 1));
+  const toSelectedTilePixel = useCallback((
+    e: React.MouseEvent<HTMLCanvasElement, MouseEvent>
+  ): Point2D => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const localPos = getCanvasPixelPos(e, rect, tileSize, tileSize);
 
-    project.mapProvider.observe(() => setVersion(v => v + 1));
-  }, [project]);
-
-  useEffect(() => {
-    const container = canvasContainerRef.current;
-    if (!container) return;
-
-    const preventScroll = (e: WheelEvent): void => {
-      e.preventDefault();
+    return {
+      x: selectedTile.x + localPos.x,
+      y: selectedTile.y + localPos.y,
     };
+  }, [selectedTile.x, selectedTile.y, tileSize]);
 
-    container.addEventListener("wheel", preventScroll, { passive: false });
-    return () => {
-      container.removeEventListener("wheel", preventScroll);
-    };
-  }, []);
+  const handleEditorMouseDown = (e: React.MouseEvent<HTMLCanvasElement>): void => {
+    if (e.button !== 0) return;
 
-  useEffect(() => {
-    if (drawCanvasRef.current) {
-      drawCanvasRef.current.clear(0);
-      const snappedX = Math.floor(position.x);
-      const snappedY = Math.floor(position.y);
-
-      drawCanvasRef.current.queueSpriteDraw(
-        0,
-        snappedX * SPRITE_NUMBER / zoom,
-        snappedY * SPRITE_NUMBER / zoom,
-        SPRITE_NUMBER, SPRITE_NUMBER,
-        0, 0,
-        (1 / zoom) * SPRITE_NUMBER);
-      drawCanvasRef.current.draw();
-    }
-  }, [project.spriteProvider, drawCanvasRef, position, version, zoom]);
-
-  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>): void => {
-    if (!isMouseOverCanvas) return;
-
-    if (e.button === 2) { // Right click
-      setIsDragging(true);
-      setDragStart({ x: e.clientX, y: e.clientY });
-    } else if (e.button === 0) { // Left click
-      setIsDrawing(true);
-      const rect = e.currentTarget.getBoundingClientRect();
-      const { x, y } = getPixelPos(e, rect, zoom, position);
-      onMouseDownRef.current?.(e, { x, y });
-      setVersion(v => v + 1);
-    }
+    setIsDrawing(true);
+    onMouseDownRef.current?.(e, toSelectedTilePixel(e));
+    setVersion((value) => value + 1);
   };
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>): void => {
-    if (isDragging) {
-      const dragDelta: Point2D = {
-        x: e.clientX - dragStart.x,
-        y: e.clientY - dragStart.y
-      };
-      if (canvasContainerRef.current === null) return;
-      const normalizedDragDelta = getNormalizedPosition(dragDelta, canvasContainerRef.current.getBoundingClientRect());
+  const handleEditorMouseMove = (e: React.MouseEvent<HTMLCanvasElement>): void => {
+    if (!isDrawing) return;
 
-      const dragDistance: Point2D = {
-        x: normalizedDragDelta.x * SPRITE_SIZE * zoom * SCALE,
-        y: normalizedDragDelta.y * SPRITE_SIZE * zoom * SCALE
-      };
-
-      setPosition(prevPos => ({
-        x: prevPos.x + dragDistance.x,
-        y: prevPos.y + dragDistance.y
-      }));
-
-      setDragStart({ x: e.clientX, y: e.clientY });
-    } else if (isDrawing) {
-      const rect = e.currentTarget.getBoundingClientRect();
-
-      const { x, y } = getPixelPos(e, rect, zoom, position);
-      onMouseMoveRef.current?.(e, { x, y });
-      setVersion(v => v + 1);
-    }
+    onMouseMoveRef.current?.(e, toSelectedTilePixel(e));
+    setVersion((value) => value + 1);
   };
 
-  const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement>): void => {
-    if (e.button === 2) {
-      setIsDragging(false);
-    } else if (e.button === 0) {
-      setIsDrawing(false);
-    }
-  };
+  const handleEditorMouseUp = (e: React.MouseEvent<HTMLCanvasElement>): void => {
+    if (e.button !== 0) return;
 
-  const drawCanvasSize = {
-    width: Math.floor(SPRITE_SHEET_SIZE) * SCALE,
-    height: Math.floor(SPRITE_SHEET_SIZE) * SCALE
+    onMouseUpRef.current?.(e, toSelectedTilePixel(e));
+    setIsDrawing(false);
+    setVersion((value) => value + 1);
   };
 
   return (
     <EditorLayout
       onContextMenu={handleContextMenu}
-      data-cy="sprite-editor">
-      <CanvasContainerWrapper>
-        <SpriteEditorHeader>
-          <Left>
-            <ColorPalette
-              colors={colorPalette}
-              currentColor={currentColor}
-              onColorSelect={setCurrentColor}
-            />
-            <Tools
-              color={currentColor}
-              position={position}
-              setOnMouseDown={setOnMouseDown}
-              setOnMouseMove={setOnMouseMove}
-              setOnMouseUp={setOnMouseUp}
-              drawTool={drawTool}
-              onSelectTool={setDrawTool}
-              spriteProvider={project.spriteProvider}
-            />
-          </Left>
-          <CanvasContainer
-            canvasRef={drawCanvasRef}
-            containerRef={canvasContainerRef}
-            sprite={project.spriteProvider}
-            map={project.mapProvider}
-            screenSize={drawCanvasSize}
-            onWheel={handleWheel}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseEnter={() => setIsMouseOverCanvas(true)}
-            onMouseLeave={() => {
-              setIsMouseOverCanvas(false);
-              setIsDragging(false);
-              setIsDrawing(false);
-            }}
+      data-cy="sprite-editor"
+    >
+      <ToolBar>
+        <Panel>
+          <ColorPalette
+            colors={colorPalette}
+            currentColor={currentColor}
+            onColorSelect={setCurrentColor}
           />
-        </SpriteEditorHeader>
-      </CanvasContainerWrapper>
+        </Panel>
+
+        <Panel>
+          <Tools
+            color={currentColor}
+            setOnMouseDown={setOnMouseDown}
+            setOnMouseMove={setOnMouseMove}
+            setOnMouseUp={setOnMouseUp}
+            drawTool={drawTool}
+            onSelectTool={setDrawTool}
+            spriteProvider={tileSpriteAccessor}
+          />
+        </Panel>
+
+        <Panel>
+          <TileContainer>
+            {TILE_SIZES.map((size) => (
+              <TileSizeButton
+                key={size}
+                type="button"
+                $selected={tileSize === size}
+                onClick={() => setTileSize(size)}
+              >
+                {size}x{size}
+              </TileSizeButton>
+            ))}
+          </TileContainer>
+        </Panel>
+        <Panel>
+          <CanvasViewport>
+            <StyledCanvas
+              ref={setSelectionCanvasHandle}
+              sprite={project.spriteProvider}
+              map={project.mapProvider}
+              sound={project.sound}
+              screenSize={selectionScreenSize}
+              onClick={handleTileSelect}
+              style={{
+                width: "100%",
+                height: "100%",
+              }}
+            />
+            <CanvasGridOverlay
+              $columns={tileColumns}
+              $rows={tileRows}
+              $lineColor="rgba(255, 255, 255, 0.20)"
+            />
+          </CanvasViewport>
+        </Panel>
+      </ToolBar>
+
+      <CanvasColumns>
+        <Panel>
+          <CanvasViewport>
+            <StyledCanvas
+              ref={setDetailCanvasHandle}
+              sprite={project.spriteProvider}
+              map={project.mapProvider}
+              screenSize={detailScreenSize}
+              sound={project.sound}
+              onMouseDown={handleEditorMouseDown}
+              onMouseMove={handleEditorMouseMove}
+              onMouseUp={handleEditorMouseUp}
+              onMouseLeave={() => setIsDrawing(false)}
+              style={{
+                width: "100%",
+                height: "100%"
+              }}
+            />
+            <CanvasGridOverlay
+              $columns={tileSize}
+              $rows={tileSize}
+              $lineColor="rgba(255, 255, 255, 0.20)"
+            />
+          </CanvasViewport>
+        </Panel>
+      </CanvasColumns>
     </EditorLayout>
   );
 };
