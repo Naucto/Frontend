@@ -12,7 +12,7 @@ export type CanvasProps = React.CanvasHTMLAttributes<HTMLCanvasElement> & {
     width: number;
     height: number;
   };
-  sound: SoundProvider;
+  sound?: SoundProvider;
   className?: string;
 };
 

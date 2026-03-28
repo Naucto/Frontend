@@ -48,6 +48,7 @@ const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(
       luaEnvManagerRef.current = new LuaEnvironmentManager({
         envData,
         rendererHandle,
+        spriteProvider: canvasProps.sprite,
         keyHandler,
         setOutput,
         musicPlayer: musicPlayerRef.current

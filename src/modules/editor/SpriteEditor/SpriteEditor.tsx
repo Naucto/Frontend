@@ -16,6 +16,7 @@ export enum DrawTool {
 export type CanvasHandler = ((e: React.MouseEvent<HTMLCanvasElement>, pixelPos: Point2D) => void) | undefined;
 
 const TILE_SIZES = [8, 16, 32] as const;
+const BIT_INDICES = [0,1,2,3,4,5,6,7] as const;
 type TileSize = typeof TILE_SIZES[number];
 
 interface ColorButtonProps {
@@ -83,13 +84,52 @@ const Panel = styled("section")(() => ({
   flexDirection: "column",
 }));
 
-const SpriteIndexLabel = styled("div")(({ theme }) => ({
+const SpriteMetaPanel = styled("div")(({ theme }) => ({
+  display: "grid",
+  gap: theme.spacing(1.25),
   padding: theme.spacing(1.5),
   backgroundColor: theme.palette.grey[900],
   color: theme.palette.common.white,
   borderRadius: theme.shape.borderRadius,
-  fontSize: "0.95rem",
-  fontWeight: 600,
+}));
+
+const SpriteMetaRow = styled("div")(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: theme.spacing(1),
+}));
+
+const SpriteMetaTitle = styled("span")(() => ({
+  fontWeight: 700,
+}));
+
+const SpriteMetaValue = styled("span")(({ theme }) => ({
+  color: theme.palette.yellow[300],
+}));
+
+const FlagInput = styled("input")(({ theme }) => ({
+  borderRadius: theme.shape.borderRadius,
+  backgroundColor: theme.palette.grey[800],
+  color: theme.palette.common.white,
+  padding: theme.spacing(1),
+  border: "none"
+}));
+
+const BitGrid = styled("div")(({ theme }) => ({
+  display: "grid",
+  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+  gap: theme.spacing(1.0),
+}));
+
+const BitButton = styled("button", {
+  shouldForwardProp: (prop) => prop !== "$active",
+})<{ $active: boolean }>(({ $active, theme }) => ({
+  border: "none",
+  borderRadius: theme.shape.borderRadius,
+  backgroundColor: $active ? theme.palette.blue[500] : theme.palette.grey[800],
+  color: theme.palette.common.white,
+  padding: theme.spacing(1),
 }));
 
 const ColorSelector = styled("div")(({ theme }) => ({
@@ -173,6 +213,10 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
+function formatByte(value: number): string {
+  return value.toString(2).padStart(8, "0");
+}
+
 function getCanvasPixelPos(
   e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
   rect: DOMRect,
@@ -244,9 +288,12 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
   const tileColumns = sheetWidth / tileSize;
   const tileRows = sheetHeight / tileSize;
   const selectedTileIndex = (selectedTile.y / baseSpriteHeight) * spritesPerRow + (selectedTile.x / baseSpriteWidth);
+  const selectedSpriteFlag = project.spriteProvider.getFlag(selectedTileIndex);
+  const selectedSpriteFlagBits = formatByte(selectedSpriteFlag);
 
   useEffect(() => {
     project.spriteProvider.observe(() => setVersion((value) => value + 1));
+    project.spriteProvider.observeFlags(() => setVersion((value) => value + 1));
   }, [project]);
 
   useEffect(() => {
@@ -343,6 +390,19 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
     setVersion((value) => value + 1);
   };
 
+  const handleFlagChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    const rawValue = Number(e.target.value);
+    const nextValue = Number.isNaN(rawValue) ? 0 : clamp(Math.trunc(rawValue), 0, 255);
+
+    project.spriteProvider.setFlag(selectedTileIndex, nextValue);
+    setVersion((value) => value + 1);
+  };
+
+  const handleBitToggle = (bit: number): void => {
+    project.spriteProvider.setFlagBit(selectedTileIndex, bit, !project.spriteProvider.getFlagBit(selectedTileIndex, bit));
+    setVersion((value) => value + 1);
+  };
+
   return (
     <EditorLayout
       onContextMenu={handleContextMenu}
@@ -385,9 +445,39 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
         </Panel>
 
         <Panel>
-          <SpriteIndexLabel>
-            Sprite index: {selectedTileIndex}
-          </SpriteIndexLabel>
+          <SpriteMetaPanel>
+            <SpriteMetaRow>
+              <SpriteMetaTitle>Sprite index</SpriteMetaTitle>
+              <SpriteMetaValue>{selectedTileIndex}</SpriteMetaValue>
+            </SpriteMetaRow>
+
+            <SpriteMetaRow>
+              <SpriteMetaTitle>Flag value</SpriteMetaTitle>
+              <SpriteMetaValue>0b{selectedSpriteFlagBits}</SpriteMetaValue>
+            </SpriteMetaRow>
+
+            <FlagInput
+              type="number"
+              min={0}
+              max={255}
+              value={selectedSpriteFlag}
+              onChange={handleFlagChange}
+              aria-label={`Flag value for sprite ${selectedTileIndex}`}
+            />
+
+            <BitGrid>
+              {BIT_INDICES.map((bit) => (
+                <BitButton
+                  key={bit}
+                  type="button"
+                  $active={project.spriteProvider.getFlagBit(selectedTileIndex, bit)}
+                  onClick={() => handleBitToggle(bit)}
+                >
+                  {bit}
+                </BitButton>
+              ))}
+            </BitGrid>
+          </SpriteMetaPanel>
         </Panel>
 
         <Panel>
