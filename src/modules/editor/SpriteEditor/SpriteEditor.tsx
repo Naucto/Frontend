@@ -125,6 +125,7 @@ const ColorButtonStyled = styled("button", {
   "&:focus": { outline: "none" },
 }));
 
+// temporay, will be removed for a better tile size selection system
 const TileContainer = styled("div")(({ theme }) => ({
   display: "grid",
   gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
