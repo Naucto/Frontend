@@ -83,6 +83,15 @@ const Panel = styled("section")(() => ({
   flexDirection: "column",
 }));
 
+const SpriteIndexLabel = styled("div")(({ theme }) => ({
+  padding: theme.spacing(1.5),
+  backgroundColor: theme.palette.grey[900],
+  color: theme.palette.common.white,
+  borderRadius: theme.shape.borderRadius,
+  fontSize: "0.95rem",
+  fontWeight: 600,
+}));
+
 const ColorSelector = styled("div")(({ theme }) => ({
   display: "grid",
   gridTemplateColumns: "repeat(3, 1fr)",
@@ -233,8 +242,7 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
   const tileSpriteSpanHeight = tileSize / baseSpriteHeight;
   const tileColumns = sheetWidth / tileSize;
   const tileRows = sheetHeight / tileSize;
-  const selectedTileIndex =
-    (selectedTile.y / baseSpriteHeight) * spritesPerRow + (selectedTile.x / baseSpriteWidth);
+  const selectedTileIndex = (selectedTile.y / baseSpriteHeight) * spritesPerRow + (selectedTile.x / baseSpriteWidth);
 
   useEffect(() => {
     project.spriteProvider.observe(() => setVersion((value) => value + 1));
@@ -374,6 +382,13 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
             ))}
           </TileContainer>
         </Panel>
+
+        <Panel>
+          <SpriteIndexLabel>
+            Sprite index: {selectedTileIndex}
+          </SpriteIndexLabel>
+        </Panel>
+
         <Panel>
           <CanvasViewport>
             <StyledCanvas
