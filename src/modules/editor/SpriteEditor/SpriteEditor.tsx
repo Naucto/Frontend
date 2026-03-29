@@ -14,6 +14,7 @@ export enum DrawTool {
   Fill,
   Line, // TODO
   Rectangle, // TODO
+  Circle
 }
 export type CanvasHandler = ((e: React.MouseEvent<HTMLCanvasElement>, pixelPos: Point2D) => void) | undefined;
 
@@ -317,6 +318,10 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
       setIsDragging(false);
     } else if (e.button === 0) {
       setIsDrawing(false);
+      const rect = e.currentTarget.getBoundingClientRect();
+      const { x, y } = getPixelPos(e, rect, zoom, position);
+      onMouseUpRef.current?.(e, { x, y });
+      setVersion(v => v + 1);
     }
   };
 
