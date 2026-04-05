@@ -22,6 +22,16 @@ import type {
   AuthControllerRegisterData,
   AuthControllerRegisterErrors,
   AuthControllerRegisterResponses,
+  CommentControllerCreateCommentData,
+  CommentControllerCreateCommentResponses,
+  CommentControllerCreateReplyData,
+  CommentControllerCreateReplyResponses,
+  CommentControllerDeleteCommentData,
+  CommentControllerDeleteCommentResponses,
+  CommentControllerGetCommentsData,
+  CommentControllerGetCommentsResponses,
+  CommentControllerUpdateCommentData,
+  CommentControllerUpdateCommentResponses,
   MultiplayerControllerCloseHostData,
   MultiplayerControllerCloseHostErrors,
   MultiplayerControllerCloseHostResponses,
@@ -63,6 +73,8 @@ import type {
   ProjectControllerGetCheckpointsData,
   ProjectControllerGetCheckpointsErrors,
   ProjectControllerGetCheckpointsResponses,
+  ProjectControllerGetLikeStatusData,
+  ProjectControllerGetLikeStatusResponses,
   ProjectControllerGetProjectImageData,
   ProjectControllerGetProjectImageErrors,
   ProjectControllerGetProjectImageResponses,
@@ -81,6 +93,8 @@ import type {
   ProjectControllerGetVersionsData,
   ProjectControllerGetVersionsErrors,
   ProjectControllerGetVersionsResponses,
+  ProjectControllerLikeProjectData,
+  ProjectControllerLikeProjectResponses,
   ProjectControllerPublishData,
   ProjectControllerPublishErrors,
   ProjectControllerPublishResponses,
@@ -96,11 +110,16 @@ import type {
   ProjectControllerSaveProjectContentData,
   ProjectControllerSaveProjectContentErrors,
   ProjectControllerSaveProjectContentResponses,
+  ProjectControllerUnlikeProjectData,
+  ProjectControllerUnlikeProjectResponses,
   ProjectControllerUnpublishData,
   ProjectControllerUnpublishErrors,
   ProjectControllerUnpublishResponses,
   ProjectControllerUpdateData,
   ProjectControllerUpdateErrors,
+  ProjectControllerUpdateReleaseData,
+  ProjectControllerUpdateReleaseErrors,
+  ProjectControllerUpdateReleaseResponses,
   ProjectControllerUpdateResponses,
   ProjectControllerUploadProjectImageData,
   ProjectControllerUploadProjectImageErrors,
@@ -192,6 +211,7 @@ export const projectControllerGetRelease = <
     unknown,
     ThrowOnError
   >({
+    responseType: "json",
     security: [{ scheme: "bearer", type: "http" }],
     url: "/projects/releases/{id}",
     ...options
@@ -630,6 +650,81 @@ export const projectControllerGetCheckpoint = <
   });
 
 /**
+ * Unlike a published project (authenticated users only)
+ */
+export const projectControllerUnlikeProject = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<ProjectControllerUnlikeProjectData, ThrowOnError>
+) =>
+  (options.client ?? client).delete<
+    ProjectControllerUnlikeProjectResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/projects/releases/{id}/like",
+    ...options
+  });
+
+/**
+ * Like a published project (toggle for authenticated users, increment for anonymous)
+ */
+export const projectControllerLikeProject = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<ProjectControllerLikeProjectData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    ProjectControllerLikeProjectResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/projects/releases/{id}/like",
+    ...options
+  });
+
+/**
+ * Get like status for a project (authenticated users only)
+ */
+export const projectControllerGetLikeStatus = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<ProjectControllerGetLikeStatusData, ThrowOnError>
+) =>
+  (options.client ?? client).get<
+    ProjectControllerGetLikeStatusResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/projects/releases/{id}/like-status",
+    ...options
+  });
+
+/**
+ * Update an already published project's release content
+ */
+export const projectControllerUpdateRelease = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<ProjectControllerUpdateReleaseData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    ProjectControllerUpdateReleaseResponses,
+    ProjectControllerUpdateReleaseErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/projects/{id}/update-release",
+    ...options
+  });
+
+/**
  * List available game hosts/sessions from the user's perspective
  */
 export const multiplayerControllerLookupHosts = <
@@ -726,6 +821,112 @@ export const multiplayerControllerLeaveHost = <
     ThrowOnError
   >({
     url: "/multiplayer/leave-host",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Get comments for a project
+ */
+export const commentControllerGetComments = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<CommentControllerGetCommentsData, ThrowOnError>
+) =>
+  (options.client ?? client).get<
+    CommentControllerGetCommentsResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/projects/{projectId}/comments",
+    ...options
+  });
+
+/**
+ * Create a comment on a project
+ */
+export const commentControllerCreateComment = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<CommentControllerCreateCommentData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    CommentControllerCreateCommentResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/projects/{projectId}/comments",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Reply to a comment
+ */
+export const commentControllerCreateReply = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<CommentControllerCreateReplyData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    CommentControllerCreateReplyResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/projects/{projectId}/comments/{commentId}/reply",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Delete a comment
+ */
+export const commentControllerDeleteComment = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<CommentControllerDeleteCommentData, ThrowOnError>
+) =>
+  (options.client ?? client).delete<
+    CommentControllerDeleteCommentResponses,
+    unknown,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/projects/{projectId}/comments/{commentId}",
+    ...options
+  });
+
+/**
+ * Edit a comment
+ */
+export const commentControllerUpdateComment = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<CommentControllerUpdateCommentData, ThrowOnError>
+) =>
+  (options.client ?? client).put<
+    CommentControllerUpdateCommentResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/projects/{projectId}/comments/{commentId}",
     ...options,
     headers: {
       "Content-Type": "application/json",

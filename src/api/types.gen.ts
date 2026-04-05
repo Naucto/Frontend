@@ -46,6 +46,14 @@ export type ProjectResponseDto = {
    */
   createdAt: string;
   /**
+   * The date and time when the project was last updated
+   */
+  updatedAt: string;
+  /**
+   * The date and time when the project was last published
+   */
+  publishedAt: string | null;
+  /**
    * The number of unique players who have interacted with this project
    */
   uniquePlayers: number;
@@ -57,13 +65,10 @@ export type ProjectResponseDto = {
    * The number of likes received by the project
    */
   likes: number;
-};
-
-export type SignedUrlResponseDto = {
   /**
-   * The signed CloudFront URL for accessing the protected file
+   * The number of comments on the project
    */
-  signedUrl: string;
+  commentCount?: number;
 };
 
 export type UserBasicInfoDto = {
@@ -123,6 +128,14 @@ export type ProjectExResponseDto = {
    */
   createdAt: string;
   /**
+   * The date and time when the project was last updated
+   */
+  updatedAt: string;
+  /**
+   * The date and time when the project was last published
+   */
+  publishedAt: string | null;
+  /**
    * The number of unique players who have interacted with this project
    */
   uniquePlayers: number;
@@ -135,6 +148,10 @@ export type ProjectExResponseDto = {
    */
   likes: number;
   /**
+   * The number of comments on the project
+   */
+  commentCount?: number;
+  /**
    * The users collaborating on this project
    */
   collaborators: Array<UserBasicInfoDto>;
@@ -142,6 +159,13 @@ export type ProjectExResponseDto = {
    * The creator of this project
    */
   creator: UserBasicInfoDto;
+};
+
+export type SignedUrlResponseDto = {
+  /**
+   * The signed CloudFront URL for accessing the protected file
+   */
+  signedUrl: string;
 };
 
 export type CreateProjectDto = {
@@ -229,6 +253,17 @@ export type ImageUrlResponseDto = {
   url: string;
 };
 
+export type LikeResponseDto = {
+  /**
+   * Total number of likes on the project
+   */
+  likes: number;
+  /**
+   * Whether the current user has liked this project
+   */
+  liked: boolean;
+};
+
 export type LookupHostsResponseDtoHost = {
   sessionUuid: string;
   sessionVisibility: "PUBLIC" | "FRIENDS_ONLY" | "PRIVATE";
@@ -290,6 +325,39 @@ export type JoinHostResponseDto = {
 
 export type LeaveHostRequestDto = {
   sessionUuid: string;
+};
+
+export type CommentAuthorDto = {
+  id: number;
+  username: string;
+  nickname?: string | null;
+};
+
+export type CommentResponseDto = {
+  id: number;
+  content: string;
+  createdAt: string;
+  projectId: number;
+  author: CommentAuthorDto;
+  deleted?: boolean;
+  /**
+   * Replies to this comment (only for top-level comments)
+   */
+  replies?: Array<CommentResponseDto>;
+};
+
+export type PaginatedCommentsResponseDto = {
+  comments: Array<CommentResponseDto>;
+  total: number;
+  page: number;
+  limit: number;
+};
+
+export type CreateCommentDto = {
+  /**
+   * The content of the comment
+   */
+  content: string;
 };
 
 export type LoginDto = {
@@ -550,10 +618,13 @@ export type ProjectControllerGetReleaseData = {
 
 export type ProjectControllerGetReleaseResponses = {
   /**
-   * Project release file
+   * Project release metadata
    */
-  200: unknown;
+  200: ProjectExResponseDto;
 };
+
+export type ProjectControllerGetReleaseResponse =
+  ProjectControllerGetReleaseResponses[keyof ProjectControllerGetReleaseResponses];
 
 export type ProjectControllerGetReleaseContentData = {
   body?: never;
@@ -1171,6 +1242,90 @@ export type ProjectControllerGetCheckpointResponses = {
 export type ProjectControllerGetCheckpointResponse =
   ProjectControllerGetCheckpointResponses[keyof ProjectControllerGetCheckpointResponses];
 
+export type ProjectControllerUnlikeProjectData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/projects/releases/{id}/like";
+};
+
+export type ProjectControllerUnlikeProjectResponses = {
+  /**
+   * Like removed
+   */
+  200: LikeResponseDto;
+};
+
+export type ProjectControllerUnlikeProjectResponse =
+  ProjectControllerUnlikeProjectResponses[keyof ProjectControllerUnlikeProjectResponses];
+
+export type ProjectControllerLikeProjectData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/projects/releases/{id}/like";
+};
+
+export type ProjectControllerLikeProjectResponses = {
+  /**
+   * Like status
+   */
+  200: LikeResponseDto;
+};
+
+export type ProjectControllerLikeProjectResponse =
+  ProjectControllerLikeProjectResponses[keyof ProjectControllerLikeProjectResponses];
+
+export type ProjectControllerGetLikeStatusData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/projects/releases/{id}/like-status";
+};
+
+export type ProjectControllerGetLikeStatusResponses = {
+  /**
+   * Like status
+   */
+  200: LikeResponseDto;
+};
+
+export type ProjectControllerGetLikeStatusResponse =
+  ProjectControllerGetLikeStatusResponses[keyof ProjectControllerGetLikeStatusResponses];
+
+export type ProjectControllerUpdateReleaseData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/projects/{id}/update-release";
+};
+
+export type ProjectControllerUpdateReleaseErrors = {
+  /**
+   * Project is not published
+   */
+  400: unknown;
+  /**
+   * Forbidden
+   */
+  403: unknown;
+};
+
+export type ProjectControllerUpdateReleaseResponses = {
+  /**
+   * Release updated successfully
+   */
+  200: unknown;
+};
+
 export type MultiplayerControllerLookupHostsData = {
   body?: never;
   path?: never;
@@ -1300,6 +1455,108 @@ export type MultiplayerControllerLeaveHostResponses = {
    */
   200: unknown;
 };
+
+export type CommentControllerGetCommentsData = {
+  body?: never;
+  path: {
+    projectId: number;
+  };
+  query?: {
+    page?: number;
+    limit?: number;
+    sort?: "newest" | "oldest";
+  };
+  url: "/projects/{projectId}/comments";
+};
+
+export type CommentControllerGetCommentsResponses = {
+  /**
+   * Paginated list of comments
+   */
+  200: PaginatedCommentsResponseDto;
+};
+
+export type CommentControllerGetCommentsResponse =
+  CommentControllerGetCommentsResponses[keyof CommentControllerGetCommentsResponses];
+
+export type CommentControllerCreateCommentData = {
+  body: CreateCommentDto;
+  path: {
+    projectId: number;
+  };
+  query?: never;
+  url: "/projects/{projectId}/comments";
+};
+
+export type CommentControllerCreateCommentResponses = {
+  /**
+   * Comment created
+   */
+  201: CommentResponseDto;
+};
+
+export type CommentControllerCreateCommentResponse =
+  CommentControllerCreateCommentResponses[keyof CommentControllerCreateCommentResponses];
+
+export type CommentControllerCreateReplyData = {
+  body: CreateCommentDto;
+  path: {
+    projectId: number;
+    commentId: number;
+  };
+  query?: never;
+  url: "/projects/{projectId}/comments/{commentId}/reply";
+};
+
+export type CommentControllerCreateReplyResponses = {
+  /**
+   * Reply created
+   */
+  201: CommentResponseDto;
+};
+
+export type CommentControllerCreateReplyResponse =
+  CommentControllerCreateReplyResponses[keyof CommentControllerCreateReplyResponses];
+
+export type CommentControllerDeleteCommentData = {
+  body?: never;
+  path: {
+    projectId: number;
+    commentId: number;
+  };
+  query?: never;
+  url: "/projects/{projectId}/comments/{commentId}";
+};
+
+export type CommentControllerDeleteCommentResponses = {
+  /**
+   * Comment deleted
+   */
+  204: void;
+};
+
+export type CommentControllerDeleteCommentResponse =
+  CommentControllerDeleteCommentResponses[keyof CommentControllerDeleteCommentResponses];
+
+export type CommentControllerUpdateCommentData = {
+  body: CreateCommentDto;
+  path: {
+    commentId: number;
+    projectId: number;
+  };
+  query?: never;
+  url: "/projects/{projectId}/comments/{commentId}";
+};
+
+export type CommentControllerUpdateCommentResponses = {
+  /**
+   * Comment updated
+   */
+  200: CommentResponseDto;
+};
+
+export type CommentControllerUpdateCommentResponse =
+  CommentControllerUpdateCommentResponses[keyof CommentControllerUpdateCommentResponses];
 
 export type AuthControllerLoginData = {
   body: LoginDto;

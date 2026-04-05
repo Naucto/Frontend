@@ -8,6 +8,7 @@ import {
   projectControllerRemoveCollaborator,
   projectControllerPublish,
   projectControllerUnpublish,
+  projectControllerUpdateRelease,
   projectControllerUploadProjectImage,
   projectControllerGetProjectImage,
   ProjectExResponseDto,
@@ -47,6 +48,8 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
   const [collaborators, setCollaborators] = useState<UserBasicInfoDto[]>([]);
   const [newCollaborator, setNewCollaborator] = useState("");
   const [isPublished, setIsPublished] = useState(false);
+  const [publishedAt, setPublishedAt] = useState<string | null>(null);
+  const [isUpdatingRelease, setIsUpdatingRelease] = useState(false);
   const [bannerUrl, setBannerUrl] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -57,6 +60,7 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
         const details = (await projectControllerFindOne({ path: { id: project.projectId } })).data as ProjectExResponseDto;
         setCollaborators(details.collaborators);
         setIsPublished(details.status === ("COMPLETED" satisfies ProjectExResponseDto["status"]) || false);
+        setPublishedAt((details as Record<string, unknown>).publishedAt as string | null ?? null);
       } catch (err) {
         alert("Error fetching project details: " +
           (err instanceof Error ? err.message : String(err)));
@@ -152,6 +156,7 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
       if (!isPublished) {
         await project.saveContent();
         await projectControllerPublish({ path: { id: project.projectId.toString() } });
+        setPublishedAt(new Date().toISOString());
       } else {
         await projectControllerUnpublish({ path: { id: project.projectId.toString() } });
       }
@@ -159,6 +164,20 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
     } catch (err) {
       alert("Error updating publish status: " +
         (err instanceof Error ? err.message : String(err)));
+    }
+  };
+
+  const handleUpdateRelease = async (): Promise<void> => {
+    setIsUpdatingRelease(true);
+    try {
+      await project.saveContent();
+      await projectControllerUpdateRelease({ path: { id: project.projectId.toString() } });
+      setPublishedAt(new Date().toISOString());
+    } catch (err) {
+      alert("Error updating release: " +
+        (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setIsUpdatingRelease(false);
     }
   };
 
@@ -185,7 +204,26 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
           >
             {isPublished ? "Unpublish" : "Publish"}
           </Button>
+          {isPublished && (
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleUpdateRelease}
+              disabled={isUpdatingRelease}
+            >
+              {isUpdatingRelease ? (
+                <><CircularProgress size={16} sx={{ mr: 1 }} /> Updating...</>
+              ) : (
+                "Update Release"
+              )}
+            </Button>
+          )}
         </StatusContainer>
+        {isPublished && publishedAt && (
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Last published: {new Date(publishedAt).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+          </Typography>
+        )}
         <FullWidthTextField
           label="Project Title"
           value={settings.name}

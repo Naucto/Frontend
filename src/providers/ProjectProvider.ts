@@ -127,11 +127,9 @@ export class ProjectProvider implements Destroyable {
       });
     }
 
-    projectControllerSaveProjectContent({
+    await projectControllerSaveProjectContent({
       path: { id: this.projectId },
       body: { file: new Blob([data], { type: "application/octet-stream" }) },
-    }).catch((error) => {
-      console.error("Failed to save content:", error);
     });
   }
 

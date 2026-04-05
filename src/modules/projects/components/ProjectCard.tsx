@@ -4,6 +4,8 @@ import { styled } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import Card from "@modules/projects/components/Card";
 import * as urls from "@shared/route";
+import LikeSvg from "@assets/like.svg";
+import CommentSvg from "@assets/comment.svg";
 import {
   ProjectResponseDto,
   projectControllerGetPublishedProjectImage,
@@ -45,6 +47,20 @@ const ProjectFooter = styled("div")(({ theme }) => ({
   borderBottomRightRadius: theme.custom.rounded.md,
 }));
 
+const StatsRow = styled("div")(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  gap: theme.spacing(1.5),
+}));
+
+const StatItem = styled("div")(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  gap: theme.spacing(0.5),
+  color: theme.palette.grey[400],
+  fontSize: "12px",
+}));
+
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, isPlayable = false }) => {
   const navigate = useNavigate();
   const [thumbnailUrl, setThumbnailUrl] = useState<string>("");
@@ -83,6 +99,18 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, isPlayable = false }
     <StyledCard onClick={redirectToProject} $src={thumbnailUrl}>
       <ProjectFooter>
         <Text variant="h6">{project.name}</Text>
+        {isPlayable && (
+          <StatsRow>
+            <StatItem>
+              <img src={LikeSvg} width="14" height="14" style={{ imageRendering: "pixelated" }} alt="likes" />
+              {project.likes ?? 0}
+            </StatItem>
+            <StatItem>
+              <img src={CommentSvg} width="14" height="14" style={{ imageRendering: "pixelated" }} alt="comments" />
+              {project.commentCount ?? 0}
+            </StatItem>
+          </StatsRow>
+        )}
       </ProjectFooter>
     </StyledCard>
   );

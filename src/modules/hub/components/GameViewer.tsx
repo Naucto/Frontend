@@ -2,12 +2,21 @@ import React, { useEffect, useMemo, useState } from "react";
 import { styled } from "@mui/material/styles";
 import { Box, Typography, IconButton, CircularProgress } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import LikeSvg from "@assets/like.svg";
 import { useNavigate, useParams } from "react-router-dom";
-import { projectControllerGetRelease, ProjectExResponseDto } from "@api";
+import {
+  projectControllerGetRelease,
+  projectControllerLikeProject,
+  projectControllerGetLikeStatus,
+  ProjectExResponseDto,
+} from "@api";
 import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
 import { GameProvider, ProviderEventType } from "@providers/GameProvider";
+import { useUser } from "@providers/UserProvider";
+import { LocalStorageManager } from "@utils/LocalStorageManager";
+import CommentSection from "./CommentSection";
 
 const Overlay = styled(Box)(() => ({
   position: "fixed",
@@ -63,6 +72,23 @@ const Description = styled(Box)(({ theme }) => ({
   borderRadius: theme.shape.borderRadius,
 }));
 
+const LikeButton = styled(IconButton, {
+  shouldForwardProp: (prop) => prop !== "$liked",
+})<{ $liked: boolean }>(({ $liked }) => ({
+  padding: "4px",
+  transition: "transform 0.2s",
+  "&:hover": {
+    transform: "scale(1.15)",
+    backgroundColor: "transparent",
+  },
+  "& img": {
+    filter: $liked
+      ? "invert(23%) sepia(97%) saturate(3000%) hue-rotate(345deg) brightness(95%)"
+      : "invert(70%) sepia(0%) saturate(0%) brightness(90%)",
+    imageRendering: "pixelated",
+  },
+}));
+
 const PlayingCanvas = styled(GameCanvas)(() => ({
   width: "100% !important",
   height: "100% !important",
@@ -72,6 +98,7 @@ const PlayingCanvas = styled(GameCanvas)(() => ({
 export const GameViewer: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useUser();
   const [project, setProject] = useState<ProjectExResponseDto | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const canvasRef = React.useRef<SpriteRendererHandle>(null);
@@ -81,6 +108,10 @@ export const GameViewer: React.FC = () => {
 
   const [ gameProvider, setGameProvider ] = useState<GameProvider>();
   const [ showGame, setShowGame ] = useState(false);
+
+  // Like state
+  const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
 
   useEffect(() => {
     if (id) {
@@ -110,7 +141,22 @@ export const GameViewer: React.FC = () => {
 
       try {
         const { data: projectDetails } = await projectControllerGetRelease({ path: { id } });
-        setProject(projectDetails as ProjectExResponseDto);
+        const proj = projectDetails as ProjectExResponseDto;
+        setProject(proj);
+        setLikeCount(proj?.likes ?? 0);
+
+        // Check like status
+        if (user) {
+          try {
+            const { data: likeData } = await projectControllerGetLikeStatus({ path: { id } });
+            if (likeData) setLiked(likeData.liked);
+          } catch {
+            // Not critical
+          }
+        } else {
+          // Check anonymous like from localStorage
+          setLiked(LocalStorageManager.isProjectLiked(Number(id)));
+        }
       } catch (error) {
         console.error("Error loading project:", error);
         alert("Failed to load project");
@@ -120,7 +166,7 @@ export const GameViewer: React.FC = () => {
     };
 
     fetchProjectData();
-  }, [id]);
+  }, [id, user]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
@@ -135,6 +181,27 @@ export const GameViewer: React.FC = () => {
 
   const handleClose = (): void => {
     navigate("/");
+  };
+
+  const handleLike = async (): Promise<void> => {
+    if (!id) return;
+    try {
+      const { data } = await projectControllerLikeProject({ path: { id } });
+      if (data) {
+        setLiked(data.liked);
+        setLikeCount(data.likes);
+      }
+      // Track in localStorage for anonymous users
+      if (!user) {
+        if (liked) {
+          LocalStorageManager.removeLikedProject(Number(id));
+        } else {
+          LocalStorageManager.addLikedProject(Number(id));
+        }
+      }
+    } catch (error) {
+      console.error("Error toggling like:", error);
+    }
   };
 
   if (loading) {
@@ -189,18 +256,39 @@ export const GameViewer: React.FC = () => {
         </GameContainer>
 
         <Description>
-          <Typography variant="h5" gutterBottom color="white">
-            About this game
-          </Typography>
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+            <Typography variant="h5" color="white">
+              About this game
+            </Typography>
+            <Box display="flex" alignItems="center" gap={1}>
+              <LikeButton $liked={liked} onClick={handleLike}>
+                <img src={LikeSvg} width="24" height="24" alt="like" />
+              </LikeButton>
+              <Typography color="grey.300" fontSize="14px">
+                {likeCount}
+              </Typography>
+            </Box>
+          </Box>
           <Typography variant="body1">
             {String(project.longDesc || project.shortDesc || "No description available.")}
           </Typography>
-          <Box mt={2}>
+          <Box mt={2} display="flex" justifyContent="space-between" alignItems="center">
             <Typography variant="caption" color="grey.500">
               Created by: {project.creator?.username || "Unknown"}
             </Typography>
+            {project.publishedAt && (
+              <Typography variant="caption" color="grey.500">
+                Last updated: {new Date(project.publishedAt).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </Typography>
+            )}
           </Box>
         </Description>
+
+        <CommentSection projectId={Number(id)} projectCreatorId={project.creator?.id} />
       </Container>
     </Overlay>
   );
