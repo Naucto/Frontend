@@ -65,6 +65,9 @@ import type {
   ProjectControllerFindOneData,
   ProjectControllerFindOneErrors,
   ProjectControllerFindOneResponses,
+  ProjectControllerForkData,
+  ProjectControllerForkErrors,
+  ProjectControllerForkResponses,
   ProjectControllerGetAllReleasesData,
   ProjectControllerGetAllReleasesResponses,
   ProjectControllerGetCheckpointData,
@@ -347,6 +350,23 @@ export const projectControllerUpdate = <ThrowOnError extends boolean = false>(
       "Content-Type": "application/json",
       ...options.headers
     }
+  });
+
+/**
+ * Fork a published project
+ */
+export const projectControllerFork = <ThrowOnError extends boolean = false>(
+  options: Options<ProjectControllerForkData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    ProjectControllerForkResponses,
+    ProjectControllerForkErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/projects/{id}/fork",
+    ...options
   });
 
 /**

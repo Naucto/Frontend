@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { styled } from "@mui/material/styles";
 import { Box, Chip, Typography, IconButton, CircularProgress } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import LikeSvg from "@assets/like.svg";
 import CommentSvg from "@assets/comment.svg";
@@ -14,7 +15,10 @@ import {
   projectControllerGetLikeStatus,
   projectControllerRegisterReleaseView,
   ProjectExResponseDto,
+  projectControllerFork
 } from "@api";
+import { Button } from "@mui/material";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
@@ -23,6 +27,8 @@ import { useUser } from "@providers/UserProvider";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
 import { getCachedProjectImageUrl } from "@utils/projectImageCache";
 import CommentSection from "./CommentSection";
+import { useSnackbar } from "notistack";
+import * as urls from "@shared/route";
 
 const Overlay = styled(Box)(() => ({
   position: "fixed",
@@ -172,10 +178,13 @@ export const GameViewer: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const [launching, setLaunching] = useState(false);
   const { user } = useUser();
+  const { enqueueSnackbar } = useSnackbar();
   const [project, setProject] = useState<ProjectExResponseDto | undefined>(undefined);
   const [loading, setLoading] = useState(true);
-  const [launching, setLaunching] = useState(false);
+  const [forking, setForking] = useState(false);
+  const [forkedFromInfo, setForkedFromInfo] = useState<{ name: string; creator: string } | null>(null);
   const canvasRef = React.useRef<SpriteRendererHandle>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [code, setCode] = useState<string>("");
@@ -189,6 +198,7 @@ export const GameViewer: React.FC = () => {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [viewCount, setViewCount] = useState(0);
+  const [forkCount, setForkCount] = useState(0);
 
   const screenSize = useMemo(() => ({
     width: 320,
@@ -210,6 +220,7 @@ export const GameViewer: React.FC = () => {
         setProject(proj);
         setLikeCount(proj?.likes ?? 0);
         setViewCount(proj?.viewCount ?? 0);
+        setForkCount(proj?.forkCount ?? 0);
 
         const imageUrl = await getCachedProjectImageUrl(
           "published",
@@ -249,6 +260,21 @@ export const GameViewer: React.FC = () => {
           // Check anonymous like from localStorage
           setLiked(LocalStorageManager.isProjectLiked(Number(id)));
         }
+
+        if (proj?.forkedFromId) {
+          try {
+            const { data: sourceProject } = await projectControllerGetRelease({ path: { id: String(proj.forkedFromId) } });
+            const source = sourceProject as ProjectExResponseDto | undefined;
+            if (source) {
+              setForkedFromInfo({
+                name: source.name,
+                creator: source.creator?.username || "Unknown"
+              });
+            }
+          } catch {
+            setForkedFromInfo(null);
+          }
+        }
       } catch (error) {
         console.error("Error loading project:", error);
         alert("Failed to load project");
@@ -275,6 +301,23 @@ export const GameViewer: React.FC = () => {
       setLaunching(false);
     });
   };
+
+  useEffect(() => {
+    if (!showGame) {
+      return;
+    }
+
+    const focusCanvas = (): void => {
+      containerRef.current?.querySelector("canvas")?.focus();
+    };
+
+    focusCanvas();
+    const frame = window.requestAnimationFrame(focusCanvas);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
+  }, [showGame]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
@@ -333,6 +376,32 @@ export const GameViewer: React.FC = () => {
       }
     } catch (error) {
       console.error("Error toggling like:", error);
+    }
+  };
+
+  const handleFork = async (): Promise<void> => {
+    if (!id || forking) return;
+    setForking(true);
+    try {
+      const { data: forkedProject } = await projectControllerFork({ path: { id: Number(id) } });
+      if (forkedProject) {
+        const nextForkCount = forkCount + 1;
+        setForkCount(nextForkCount);
+        setProject((current) => (current ? { ...current, forkCount: nextForkCount } : current));
+        window.dispatchEvent(new CustomEvent("project-stats-updated", {
+          detail: {
+            projectId: Number(id),
+            changes: { forkCount: nextForkCount }
+          }
+        }));
+        enqueueSnackbar("Project forked successfully!", { variant: "success" });
+        navigate(urls.toProject(forkedProject.id));
+      }
+    } catch (error) {
+      console.error("Error forking project:", error);
+      enqueueSnackbar("Failed to fork project", { variant: "error" });
+    } finally {
+      setForking(false);
     }
   };
 
@@ -424,6 +493,11 @@ export const GameViewer: React.FC = () => {
           <Typography variant="body2" color="grey.400" sx={{ mb: 1 }}>
             A game made by {creatorsLabel}
           </Typography>
+          {forkedFromInfo && (
+            <Typography variant="body2" color="grey.400" sx={{ mb: 1 }}>
+              This game was forked from: {forkedFromInfo.name} by {forkedFromInfo.creator}
+            </Typography>
+          )}
           <Typography variant="body1">
             {String(project.longDesc || project.shortDesc || "No description available.")}
           </Typography>
@@ -447,10 +521,37 @@ export const GameViewer: React.FC = () => {
               <img src={CommentSvg} width="16" height="16" alt="comments" style={{ imageRendering: "pixelated" }} />
               <span>{project.commentCount ?? 0}</span>
             </StatItem>
+            <StatItem>
+              <ContentCopyOutlinedIcon sx={{ fontSize: 16 }} />
+              <span>{forkCount}</span>
+            </StatItem>
             <Typography variant="caption" color="grey.400">
               Creation date: {new Date(project.createdAt).toLocaleDateString("en-GB")}
             </Typography>
           </MetaRow>
+          <Box mt={2} display="flex" justifyContent="space-between" alignItems="center">
+            <Box>
+              <Typography variant="caption" color="grey.500">
+                Created by: {project.creator?.username || "Unknown"}
+              </Typography>
+              {forkedFromInfo && (
+                <Typography variant="caption" color="grey.500" display="block">
+                  Forked from: {forkedFromInfo.name} by {forkedFromInfo.creator}
+                </Typography>
+              )}
+            </Box>
+            {user && (
+              <Button
+                variant="contained"
+                startIcon={<ContentCopyIcon />}
+                onClick={handleFork}
+                disabled={forking}
+                size="small"
+              >
+                {forking ? "Forking..." : "Fork this project"}
+              </Button>
+            )}
+          </Box>
         </Description>
 
         <CommentSection projectId={Number(id)} projectCreatorId={project.creator?.id} />

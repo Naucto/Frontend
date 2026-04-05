@@ -26,6 +26,8 @@ export class ProjectProvider implements Destroyable {
   private _initialized: boolean = false;
 
   private _listeners: Map<ProviderEventType, Set<() => void>> = new Map();
+  private _contentListeners: Set<() => void> = new Set();
+  private readonly _boundHandleDocumentUpdate: () => void;
 
   public isHost: boolean;
 
@@ -43,6 +45,8 @@ export class ProjectProvider implements Destroyable {
     this.projectId = projectId;
     this.isHost = false;
     this._doc = new Y.Doc();
+    this._boundHandleDocumentUpdate = this.handleDocumentUpdate.bind(this);
+    this._doc.on("update", this._boundHandleDocumentUpdate);
 
     this.initializeDoc().then(() => {
       this._provider = new WebrtcProvider(this._roomId as string, this._doc, config.webrtc);
@@ -105,7 +109,12 @@ export class ProjectProvider implements Destroyable {
     this.projectSettings.destroy();
     this.sound.destroy();
     this._provider.disconnect();
+    this._doc.off("update", this._boundHandleDocumentUpdate);
     this._doc.destroy();
+  }
+
+  private handleDocumentUpdate(): void {
+    this._contentListeners.forEach((callback) => callback());
   }
 
   public async saveContent(): Promise<void> {
@@ -141,6 +150,18 @@ export class ProjectProvider implements Destroyable {
       path: { id: this.projectId },
       body: { file: new Blob([data], { type: "application/octet-stream" }) },
     });
+  }
+
+  public getContentSnapshot(): Uint8Array {
+    return encodeUpdate(this._doc);
+  }
+
+  public observeContentChanges(callback: () => void): void {
+    this._contentListeners.add(callback);
+  }
+
+  public unobserveContentChanges(callback: () => void): void {
+    this._contentListeners.delete(callback);
   }
 
   public async checkAndKickDisconnectedUsers() : Promise<void> {

@@ -1,6 +1,7 @@
 import { Typography } from "@mui/material";
 import React, { useEffect, useMemo, useState } from "react";
 import { styled } from "@mui/material";
+import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import { useLocation, useNavigate } from "react-router-dom";
 import Card from "@modules/projects/components/Card";
@@ -195,6 +196,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, isPlayable = false }
             <StatItem>
               <img src={CommentSvg} width="14" height="14" style={{ imageRendering: "pixelated" }} alt="comments" />
               <span>{project.commentCount ?? 0}</span>
+            </StatItem>
+            <StatItem>
+              <ContentCopyOutlinedIcon sx={{ fontSize: 14 }} />
+              <span>{project.forkCount ?? 0}</span>
             </StatItem>
           </StatsColumn>
         </PlayableMeta>

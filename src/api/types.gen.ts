@@ -88,10 +88,21 @@ export type ProjectExResponseDto = {
    * The number of likes received by the project
    */
   likes: number;
+  
   /**
    * The number of comments on the project
    */
   commentCount?: number;
+
+  /**
+   * The number of forks created from this project
+   */
+  forkCount?: number;
+
+  /**
+   * The ID of the project this was forked from, if any
+   */
+  forkedFromId?: number | null;
   /**
    * The users collaborating on this project
    */
@@ -182,6 +193,11 @@ export type ProjectResponseDto = {
    * The number of comments on the project
    */
   commentCount?: number;
+
+  /**
+   * The number of forks created from this project
+   */
+  forkCount?: number;
 };
 
 export type CreateProjectDto = {
@@ -201,6 +217,73 @@ export type CreateProjectDto = {
    * Tags attached to the project
    */
   tags?: Array<string>;
+};
+
+export type ForkProjectResponseDto = {
+  /**
+   * The unique identifier of the project
+   */
+  id: number;
+  /**
+   * The name of the project
+   */
+  name: string;
+  /**
+   * A short description of the project
+   */
+  shortDesc: string;
+  /**
+   * A detailed description of the project
+   */
+  longDesc: string | null;
+  /**
+   * URL to the project icon
+   */
+  iconUrl: string | null;
+  /**
+   * The current status of the project
+   */
+  status: "IN_PROGRESS" | "COMPLETED" | "ARCHIVED";
+  /**
+   * The monetization strategy for this project
+   */
+  monetization: "NONE" | "ADS" | "PAID";
+  /**
+   * The price of the project, if applicable
+   */
+  price: number | null;
+  /**
+   * The ID of the user who owns this project
+   */
+  userId: number;
+  /**
+   * The date and time when the project was created
+   */
+  createdAt: string;
+  /**
+   * The number of unique players who have interacted with this project
+   */
+  uniquePlayers: number;
+  /**
+   * The number of currently active players in this project
+   */
+  activePlayers: number;
+  /**
+   * The number of likes received by the project
+   */
+  likes: number;
+  /**
+   * The ID of the project this was forked from, if any
+   */
+  forkedFromId?: number | null;
+  /**
+   * The users collaborating on this project
+   */
+  collaborators: Array<UserBasicInfoDto>;
+  /**
+   * The creator of this project
+   */
+  creator: UserBasicInfoDto;
 };
 
 export type UpdateProjectDto = {
@@ -845,6 +928,39 @@ export type ProjectControllerUpdateResponses = {
 
 export type ProjectControllerUpdateResponse =
   ProjectControllerUpdateResponses[keyof ProjectControllerUpdateResponses];
+
+export type ProjectControllerForkData = {
+  body?: never;
+  path: {
+    /**
+     * Numeric ID of the published project to fork
+     */
+    id: number;
+  };
+  query?: never;
+  url: "/projects/{id}/fork";
+};
+
+export type ProjectControllerForkErrors = {
+  /**
+   * Project is not published
+   */
+  400: unknown;
+  /**
+   * Project not found
+   */
+  404: unknown;
+};
+
+export type ProjectControllerForkResponses = {
+  /**
+   * Forked project created successfully
+   */
+  201: ForkProjectResponseDto;
+};
+
+export type ProjectControllerForkResponse =
+  ProjectControllerForkResponses[keyof ProjectControllerForkResponses];
 
 export type ProjectControllerAddCollaboratorData = {
   body: AddCollaboratorDto;

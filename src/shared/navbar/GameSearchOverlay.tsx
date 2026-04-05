@@ -1,6 +1,7 @@
 import { projectControllerGetAllReleases, projectControllerGetPublishedProjectImage, ProjectExResponseDto, ProjectResponseDto } from "@api";
 import LikeSvg from "@assets/like.svg";
 import CommentSvg from "@assets/comment.svg";
+import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import { Box, Button, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
@@ -136,6 +137,25 @@ const SearchResultDescription = styled(Typography)(({ theme }) => ({
   textOverflow: "ellipsis",
 }));
 
+const SearchResultTags = styled(Box)(({ theme }) => ({
+  display: "flex",
+  flexWrap: "wrap",
+  gap: theme.spacing(0.75),
+  marginTop: theme.spacing(0.25),
+}));
+
+const SearchTag = styled("span")(({ theme }) => ({
+  display: "inline-flex",
+  alignItems: "center",
+  padding: `${theme.spacing(0.35)} ${theme.spacing(0.9)}`,
+  borderRadius: 999,
+  backgroundColor: "rgba(70, 125, 255, 0.2)",
+  border: "1px solid rgba(110, 165, 255, 0.28)",
+  color: theme.palette.common.white,
+  fontSize: "12px",
+  lineHeight: 1,
+}));
+
 const SearchResultStats = styled(Box)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
@@ -248,6 +268,7 @@ const SearchResultItem = ({ project, onSelect }: SearchResultItemProps): JSX.Ele
     .join(", ");
 
   const description = project.shortDesc || project.longDesc || "No description available.";
+  const visibleTags = project.tags.slice(0, 5);
 
   return (
     <SearchResultButton
@@ -263,6 +284,13 @@ const SearchResultItem = ({ project, onSelect }: SearchResultItemProps): JSX.Ele
           <SearchResultTitle>{project.name}</SearchResultTitle>
           <SearchResultCreators>{creatorsLabel}</SearchResultCreators>
           <SearchResultDescription>{description}</SearchResultDescription>
+          {visibleTags.length > 0 && (
+            <SearchResultTags>
+              {visibleTags.map((tag) => (
+                <SearchTag key={`${project.id}-${tag}`}>{tag}</SearchTag>
+              ))}
+            </SearchResultTags>
+          )}
         </SearchResultCopy>
         <SearchResultStats>
           <SearchStat>
@@ -277,6 +305,10 @@ const SearchResultItem = ({ project, onSelect }: SearchResultItemProps): JSX.Ele
             <img src={CommentSvg} width="16" height="16" style={{ imageRendering: "pixelated" }} alt="comments" />
             <span>{project.commentCount ?? 0}</span>
           </SearchStat>
+          <SearchStat>
+            <ContentCopyOutlinedIcon sx={{ fontSize: 16 }} />
+            <span>{project.forkCount ?? 0}</span>
+          </SearchStat>
         </SearchResultStats>
       </SearchResultContent>
     </SearchResultButton>
@@ -290,7 +322,7 @@ type GameSearchOverlayProps = {
 
 export const GameSearchOverlay = ({ query, onClose }: GameSearchOverlayProps): JSX.Element | null => {
   const [visibleCount, setVisibleCount] = useState(10);
-  const [statsOverrides, setStatsOverrides] = useState<Record<number, Partial<Pick<ProjectResponseDto, "viewCount" | "likes" | "commentCount">>>>({});
+  const [statsOverrides, setStatsOverrides] = useState<Record<number, Partial<Pick<ProjectResponseDto, "viewCount" | "likes" | "commentCount" | "forkCount">>>>({});
   const trimmedQuery = normalizeSearchText(query);
 
   const { value: allProjects } = useAsync(
@@ -302,7 +334,7 @@ export const GameSearchOverlay = ({ query, onClose }: GameSearchOverlayProps): J
     const handleStatsUpdate = (event: Event): void => {
       const customEvent = event as CustomEvent<{
         projectId: number;
-        changes: Partial<Pick<ProjectResponseDto, "viewCount" | "likes" | "commentCount">>;
+        changes: Partial<Pick<ProjectResponseDto, "viewCount" | "likes" | "commentCount" | "forkCount">>;
       }>;
 
       if (!customEvent.detail) {

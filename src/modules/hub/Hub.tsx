@@ -1,5 +1,6 @@
 import { styled } from "@mui/material/styles";
 import { JSX, useEffect, useMemo, useState } from "react";
+import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import { ProjectExResponseDto, ProjectResponseDto, projectControllerGetAllReleases } from "@api";
 import { useAsync } from "src/hooks/useAsync";
 import { Autocomplete, Box, Button, Chip, FormControl, IconButton, MenuItem, Select, TextField, Typography } from "@mui/material";
@@ -75,7 +76,7 @@ const ViewMoreButton = styled(Typography)(({ theme }) => ({
 const ScrollContainer = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "flex-start",
-  gap: theme.spacing(1.5),
+  gap: theme.spacing(0.25),
 }));
 
 const ProjectsScroller = styled(Box)(({ theme }) => ({
@@ -105,7 +106,7 @@ const ScrollButton = styled(IconButton)(({ theme }) => ({
   width: 116,
   height: 116,
   padding: 0,
-  marginTop: 24,
+  marginTop: 18,
   backgroundColor: "transparent",
   color: theme.palette.common.white,
   flexShrink: 0,
@@ -143,7 +144,7 @@ const SummaryChip = styled(Chip)(({ theme }) => ({
   border: "1px solid rgba(255,255,255,0.12)",
 }));
 
-function getSortMetricLabel(metric: "weighted" | "viewCount" | "likes" | "commentCount"): string {
+function getSortMetricLabel(metric: "weighted" | "viewCount" | "likes" | "commentCount" | "forkCount"): string {
   switch (metric) {
     case "viewCount":
       return "Views";
@@ -151,6 +152,8 @@ function getSortMetricLabel(metric: "weighted" | "viewCount" | "likes" | "commen
       return "Likes";
     case "commentCount":
       return "Comments";
+    case "forkCount":
+      return "Forks";
     default:
       return "Popularity";
   }
@@ -192,10 +195,12 @@ const darkMenuProps = {
 
 export const Hub = (): JSX.Element => {
   const [showCustomSort, setShowCustomSort] = useState(false);
-  const [sortMetric, setSortMetric] = useState<"weighted" | "viewCount" | "likes" | "commentCount">("weighted");
+  const [sortMetric, setSortMetric] = useState<"weighted" | "viewCount" | "likes" | "commentCount" | "forkCount">("weighted");
   const [releaseWindow, setReleaseWindow] = useState<"all" | "30d" | "7d">("30d");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [statsOverrides, setStatsOverrides] = useState<Record<number, Partial<Pick<ProjectResponseDto, "viewCount" | "likes" | "commentCount">>>>({});
+  const [newGamesOrder, setNewGamesOrder] = useState<"desc" | "asc">("desc");
+  const [playedGamesOrder, setPlayedGamesOrder] = useState<"desc" | "asc">("desc");
+  const [statsOverrides, setStatsOverrides] = useState<Record<number, Partial<Pick<ProjectResponseDto, "viewCount" | "likes" | "commentCount" | "forkCount">>>>({});
   const [playedRevision, setPlayedRevision] = useState(0);
 
   const { value: allProjects } = useAsync(
@@ -207,7 +212,7 @@ export const Hub = (): JSX.Element => {
     const handleStatsUpdate = (event: Event): void => {
       const customEvent = event as CustomEvent<{
         projectId: number;
-        changes: Partial<Pick<ProjectResponseDto, "viewCount" | "likes" | "commentCount">>;
+        changes: Partial<Pick<ProjectResponseDto, "viewCount" | "likes" | "commentCount" | "forkCount">>;
       }>;
       if (!customEvent.detail) {
         return;
@@ -277,7 +282,8 @@ export const Hub = (): JSX.Element => {
       if (sortMetric === "likes") return project.likes ?? 0;
       if (sortMetric === "commentCount") return project.commentCount ?? 0;
       if (sortMetric === "viewCount") return project.viewCount ?? 0;
-      return (project.viewCount ?? 0) + (project.likes ?? 0) * 4 + (project.commentCount ?? 0) * 3;
+      if (sortMetric === "forkCount") return project.forkCount ?? 0;
+      return (project.viewCount ?? 0) + (project.likes ?? 0) * 4 + (project.commentCount ?? 0) * 3 + (project.forkCount ?? 0) * 5;
     };
 
     return [...projects].sort((a, b) => {
@@ -293,18 +299,27 @@ export const Hub = (): JSX.Element => {
     () =>
       [...publishedProjects].sort(
         (a, b) =>
-          new Date(b.publishedAt || b.createdAt).getTime() -
-          new Date(a.publishedAt || a.createdAt).getTime()
+          (newGamesOrder === "desc" ? -1 : 1) *
+          (new Date(a.publishedAt || a.createdAt).getTime() -
+            new Date(b.publishedAt || b.createdAt).getTime())
       ),
-    [publishedProjects]
+    [newGamesOrder, publishedProjects]
   );
 
   const playedGames = useMemo(() => {
     const playedIds = LocalStorageManager.getPlayedProjects();
     return playedIds
       .map((id) => publishedProjects.find((project) => project.id === id))
-      .filter((project): project is ProjectExResponseDto => project !== undefined);
-  }, [publishedProjects]);
+      .filter((project): project is ProjectExResponseDto => project !== undefined)
+      .sort(
+        (a, b) =>
+          (playedGamesOrder === "desc" ? -1 : 1) *
+          (new Date(a.publishedAt || a.createdAt).getTime() -
+            new Date(b.publishedAt || b.createdAt).getTime())
+      );
+  }, [playedGamesOrder, publishedProjects]);
+
+  const getDateOrderLabel = (order: "desc" | "asc"): string => (order === "desc" ? "Newest first" : "Oldest first");
 
   const scroll = (elementId: string, direction: "left" | "right"): void => {
     const container = document.getElementById(elementId);
@@ -390,7 +405,7 @@ export const Hub = (): JSX.Element => {
             <FormControl size="small" sx={{ minWidth: 180 }}>
               <Select
                 value={sortMetric}
-                onChange={(event) => setSortMetric(event.target.value as "weighted" | "viewCount" | "likes" | "commentCount")}
+                onChange={(event) => setSortMetric(event.target.value as "weighted" | "viewCount" | "likes" | "commentCount" | "forkCount")}
                 sx={darkSelectSx}
                 MenuProps={darkMenuProps}
               >
@@ -398,6 +413,12 @@ export const Hub = (): JSX.Element => {
                 <MenuItem value="viewCount">Views</MenuItem>
                 <MenuItem value="likes">Likes</MenuItem>
                 <MenuItem value="commentCount">Comments</MenuItem>
+                <MenuItem value="forkCount">
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <ContentCopyOutlinedIcon sx={{ fontSize: 16 }} />
+                    <span>Forks</span>
+                  </Box>
+                </MenuItem>
               </Select>
             </FormControl>
             <Autocomplete
@@ -461,8 +482,26 @@ export const Hub = (): JSX.Element => {
           </FilterPanel>
         ) : undefined,
       )}
-      {renderCategory("New games", newGames, "new-games")}
-      {renderCategory("Played games", playedGames, "played-games")}
+      {renderCategory(
+        "New games",
+        newGames,
+        "new-games",
+        <HeaderControls>
+          <CustomSortButton variant="outlined" onClick={() => setNewGamesOrder((current) => current === "desc" ? "asc" : "desc")}>
+            {getDateOrderLabel(newGamesOrder)}
+          </CustomSortButton>
+        </HeaderControls>
+      )}
+      {renderCategory(
+        "Played games",
+        playedGames,
+        "played-games",
+        <HeaderControls>
+          <CustomSortButton variant="outlined" onClick={() => setPlayedGamesOrder((current) => current === "desc" ? "asc" : "desc")}>
+            {getDateOrderLabel(playedGamesOrder)}
+          </CustomSortButton>
+        </HeaderControls>
+      )}
     </PageContainer>
   );
 };
