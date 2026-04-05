@@ -40,11 +40,10 @@ const LeftPanel = styled("div")(() => ({
   flexDirection: "column",
 }));
 
-const RightPanel = styled("div")(({ theme }) => ({
+const RightPanel = styled("div")(() => ({
   width: "80%",
   display: "flex",
   flexDirection: "column",
-  gap: theme.spacing(4),
 }));
 
 const RightPanelTabContent = styled(Box)(() => ({
