@@ -1,7 +1,14 @@
-import * as Y from "yjs";
 import { LocalStorageManager } from "@utils/LocalStorageManager.ts";
-import { projectControllerFetchProjectContent, projectControllerFindOne, projectControllerSaveProjectContent, projectControllerUpdate, workSessionControllerGetInfo, workSessionControllerJoin, workSessionControllerKick } from "@api";
-import { AxiosError } from "axios";
+import {
+  projectControllerFetchProjectContent,
+  projectControllerFindOne,
+  projectControllerSaveProjectContent,
+  projectControllerUpdate,
+  WebRtcOfferDto,
+  workSessionControllerGetInfo,
+  workSessionControllerJoin,
+  workSessionControllerKick
+} from "@api";
 import { decodeUpdate, encodeUpdate } from "@utils/YSerialize.ts";
 import { CodeProvider } from "./editors/CodeProvider.ts";
 import { SpriteProvider } from "./editors/SpriteProvider.ts";
@@ -10,8 +17,10 @@ import { AwarenessProvider } from "./editors/AwarenessProvider.ts";
 import { ProjectSettingsProvider } from "./editors/ProjectSettingsProvider.ts";
 import { MultiplayerSettingsProvider } from "./editors/MultiplayerSettingsProvider.ts";
 import { SoundProvider } from "./editors/SoundProvider.ts";
-import { WebrtcProvider } from "y-webrtc";
-import config from "@config/providers.json";
+import { ProviderOptions, WebrtcProvider } from "y-webrtc";
+
+import * as Y from "yjs";
+import { AxiosError } from "axios";
 
 export enum ProviderEventType {
   INITIALIZED,
@@ -19,8 +28,9 @@ export enum ProviderEventType {
 }
 
 export class ProjectProvider implements Destroyable {
-  private _provider!: WebrtcProvider;
-  private readonly _doc: Y.Doc;
+  private _yjsProvider!: WebrtcProvider;
+  private readonly _yjsDoc: Y.Doc;
+
   private _roomId: string | undefined;
   private _isKicking: boolean = false;
   private _initialized: boolean = false;
@@ -35,65 +45,84 @@ export class ProjectProvider implements Destroyable {
   public mapProvider!: MapProvider;
   public multiplayerSettingsProvider!: MultiplayerSettingsProvider;
 
-  public projectSettings!: ProjectSettingsProvider;
-  public sound!: SoundProvider;
+  public projectSettingsProvider!: ProjectSettingsProvider;
+  public soundProvider!: SoundProvider;
   public projectId: number;
 
   constructor(projectId: number) {
     this.projectId = projectId;
     this.isHost = false;
-    this._doc = new Y.Doc();
+    this._yjsDoc = new Y.Doc();
 
-    this.initializeDoc().then(() => {
-      this._provider = new WebrtcProvider(this._roomId as string, this._doc, config.webrtc);
+    this.initializeDoc().then((webrtcOffer?: WebRtcOfferDto) => {
+      if (webrtcOffer === undefined) {
+        console.log("Couldn't get WebRTC offer from server, cannot initialize");
+        return;
+      }
 
-      this.awarenessProvider           = new AwarenessProvider(this, this._provider);
-      this.codeProvider                = new CodeProvider(this._doc, this.awarenessProvider);
-      this.spriteProvider              = new SpriteProvider(this._doc);
-      this.mapProvider                 = new MapProvider(this._doc, { width:128, height:32 }, 2, this.spriteProvider);
-      this.multiplayerSettingsProvider = new MultiplayerSettingsProvider(this._doc);
-      this.projectSettings             = new ProjectSettingsProvider(this._doc);
-      this.sound                       = new SoundProvider(this._doc);
+      this._yjsProvider = new WebrtcProvider(this._roomId as string, this._yjsDoc, webrtcOffer! as ProviderOptions);
+
+      this.projectSettingsProvider     = new ProjectSettingsProvider(this._yjsDoc);
+      this.awarenessProvider           = new AwarenessProvider(this, this._yjsProvider);
+      this.codeProvider                = new CodeProvider(this._yjsDoc, this.awarenessProvider);
+      this.spriteProvider              = new SpriteProvider(this._yjsDoc);
+      this.mapProvider                 = new MapProvider(this._yjsDoc, { width:128, height:32 }, 2, this.spriteProvider);
+      this.multiplayerSettingsProvider = new MultiplayerSettingsProvider(this._yjsDoc);
+      this.soundProvider               = new SoundProvider(this._yjsDoc);
 
       this._initialized = true;
       this.emit(ProviderEventType.INITIALIZED);
     });
   }
 
-  private async initializeDoc(): Promise<void> {
+  private async initializeDoc(): Promise<WebRtcOfferDto | undefined> {
+    const isNotFoundError = (error: unknown): boolean =>
+      (error as AxiosError)?.response?.status === 404;
+
     try {
-      const session = await workSessionControllerJoin({ path: { id: this.projectId } });
-      this._roomId = (session.data as { roomId: string } | undefined)?.roomId;
+      const { data: session } = await workSessionControllerJoin({
+        path: { id: this.projectId }
+      });
 
-      const host = (await workSessionControllerGetInfo({ path: { id: this.projectId } })).data!.host;
+      console.log(`Joined work session ${session!.roomId} for project ID ${this.projectId}`);
+
+      this._roomId = session!.roomId;
+
       const userId = LocalStorageManager.getUserId();
-      this.isHost = host === userId;
+      this.isHost = session!.hostId === userId;
 
-      try {
-        const { data: content, error } = await projectControllerFetchProjectContent({ path: { id: String(this.projectId) } });
-        if (error) {
-          if ((error as AxiosError)?.response?.status === 404) {
-            console.error("Failed to fetch project content:", error);
-          } else {
-            throw error;
-          }
-        } else if (content) {
-          await decodeUpdate(this._doc, content as Blob);
-        } else {
-          const details = (await projectControllerFindOne({ path: { id: this.projectId } })).data!;
-          this.projectSettings.updateName(details.name);
-          this.projectSettings.updateShortDesc(details.shortDesc);
-          this.projectSettings.updateLongDesc(details.longDesc ? JSON.stringify(details.longDesc) : "");
-        }
-      } catch (error: unknown) {
-        if ((error as AxiosError)?.response?.status === 404) {
-          console.error("Failed to fetch project content:", error);
-        } else {
-          throw error;
-        }
+      const { data: projectContent } = await projectControllerFetchProjectContent({
+        path: { id: String(this.projectId) }
+      });
+
+      console.log("Fetched project content");
+
+      if (projectContent) {
+        await decodeUpdate(this._yjsDoc, projectContent);
+
+        console.log("Project content decoded successfully");
+      } else {
+        const { data: projectDetails } = (await projectControllerFindOne({
+          path: { id: this.projectId }
+        }));
+
+        this.projectSettingsProvider.updateName(projectDetails!.name);
+        this.projectSettingsProvider.updateShortDesc(projectDetails!.shortDesc);
+        this.projectSettingsProvider.updateLongDesc(projectDetails!.longDesc ?? JSON.stringify(projectDetails!.longDesc));
+
+        console.log("Project content initialized successfully");
       }
-    } catch (err) {
-      console.error("Failed to join work session:", err); // FIXME : better error handling
+
+      return session!.webrtcOffer;
+    } catch (error: unknown) {
+      if (!isNotFoundError(error)) {
+        throw error;
+      }
+
+      // FIXME: better error handling
+      console.error("Failed to fetch project content:", error);
+
+      return undefined;
     }
   }
 
@@ -101,20 +130,21 @@ export class ProjectProvider implements Destroyable {
     this.codeProvider.destroy();
     this.spriteProvider.destroy();
     this.awarenessProvider.destroy();
-    this.projectSettings.destroy();
-    this.sound.destroy();
-    this._provider.disconnect();
-    this._doc.destroy();
+    this.projectSettingsProvider.destroy();
+    this.soundProvider.destroy();
+
+    this._yjsProvider.disconnect();
+    this._yjsDoc.destroy();
   }
 
   public async saveContent(): Promise<void> {
     if (!this.isHost)
       return;
-    const data = encodeUpdate(this._doc);
+    const data = encodeUpdate(this._yjsDoc);
 
     const details = (await projectControllerFindOne({ path: { id: this.projectId } })).data!;
 
-    const settings = this.projectSettings.getSettings();
+    const settings = this.projectSettingsProvider.getSettings();
 
     if (details.name !== settings.name || (details.longDesc || "") !== settings.longDesc || details.shortDesc !== settings.shortDesc) {
       await projectControllerUpdate({
@@ -147,7 +177,7 @@ export class ProjectProvider implements Destroyable {
     try {
       const sessionInfo = (await workSessionControllerGetInfo({ path: { id: projectId } })).data!;
 
-      if (!this.isHost && sessionInfo.host === Number(userId)) {
+      if (!this.isHost && sessionInfo.hostId === userId) {
         this.isHost = true;
         this.emit(ProviderEventType.BECOME_HOST);
       }

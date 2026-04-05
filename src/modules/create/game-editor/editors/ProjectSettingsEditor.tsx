@@ -47,19 +47,19 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
       setSettings(newSettings);
     };
 
-    if (project.projectSettings) {
-      setSettings(project.projectSettings.getSettings());
-      project.projectSettings.observe(onSettingsChange);
+    if (project.projectSettingsProvider) {
+      setSettings(project.projectSettingsProvider.getSettings());
+      project.projectSettingsProvider.observe(onSettingsChange);
     }
 
     fetchProjectDetails();
 
     return () => {
-      if (project.projectSettings) {
-        project.projectSettings.unobserve(onSettingsChange);
+      if (project.projectSettingsProvider) {
+        project.projectSettingsProvider.unobserve(onSettingsChange);
       }
     };
-  }, [project.projectId, project.projectSettings]);
+  }, [project.projectId, project.projectSettingsProvider]);
 
   const handleAddCollaborator = async () : Promise<void> => {
     if (!newCollaborator.trim()) return;
@@ -131,19 +131,19 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
         <FullWidthTextField
           label="Project Title"
           value={settings.name}
-          onChange={(e) => project.projectSettings.updateName(e.target.value)}
+          onChange={(e) => project.projectSettingsProvider.updateName(e.target.value)}
         />
         <FullWidthTextField
           label="Project Short Description"
           value={settings.shortDesc}
-          onChange={(e) => project.projectSettings.updateShortDesc(e.target.value)}
+          onChange={(e) => project.projectSettingsProvider.updateShortDesc(e.target.value)}
           multiline
           rows={2}
         />
         <FullWidthTextField
           label="Project Long Description"
           value={settings.longDesc}
-          onChange={(e) => project.projectSettings.updateLongDesc(e.target.value)}
+          onChange={(e) => project.projectSettingsProvider.updateLongDesc(e.target.value)}
           multiline
           rows={5}
         />
