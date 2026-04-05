@@ -297,31 +297,32 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
           role="tabpanel"
           hidden={rightPanelTab !== 0}
           className={rightPanelTab === 0 ? "active" : "hidden"}
+          data-cy="display-panel"
           sx={{ flexDirection: "column", gap: 4 }}
         >
-          <>
-            <PreviewCanvas
-              ref={canvasRef}
-              canvasProps={{
-                map: project.mapProvider,
-                screenSize: screenSize,
-                sprite: project.spriteProvider
-              }}
-              envData={envData}
-              setOutput={setOutput}
-            />
-            <GameEditorConsole output={output} />
-          </>
+          <PreviewCanvas
+            ref={canvasRef}
+            canvasProps={{
+              map: project.mapProvider,
+              screenSize: screenSize,
+              sprite: project.spriteProvider
+            }}
+            envData={envData}
+            setOutput={setOutput}
+          />
+          <GameEditorConsole output={output} />
         </RightPanelTabContent>
         <RightPanelTabContent
           role="tabpanel"
           hidden={rightPanelTab !== 1}
           className={rightPanelTab === 1 ? "active" : "hidden"}
+          data-cy="doc-panel"
           sx={{ flexDirection: "column" }}
         >
           <DocIframe
             src={import.meta.env.VITE_DOCS_URL ?? "https://docs.naucto.net"}
             title="Naucto Documentation"
+            data-cy="doc-iframe"
           />
         </RightPanelTabContent>
       </RightPanel>
