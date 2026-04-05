@@ -10,6 +10,7 @@ import {
   projectControllerUnpublish,
   projectControllerUploadProjectImage,
   projectControllerGetProjectImage,
+  projectControllerGetRelease,
   ProjectExResponseDto,
   UserBasicInfoDto
 } from "@api";
@@ -49,6 +50,7 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
   const [isPublished, setIsPublished] = useState(false);
   const [bannerUrl, setBannerUrl] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
+  const [forkedFromName, setForkedFromName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -57,6 +59,19 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
         const details = (await projectControllerFindOne({ path: { id: project.projectId } })).data as ProjectExResponseDto;
         setCollaborators(details.collaborators);
         setIsPublished(details.status === ("COMPLETED" satisfies ProjectExResponseDto["status"]) || false);
+
+        // Fetch forked-from project name if this is a fork
+        if (details.forkedFromId) {
+          try {
+            const { data: sourceProject } = await projectControllerGetRelease({ path: { id: String(details.forkedFromId) } });
+            const source = sourceProject as ProjectExResponseDto | undefined;
+            if (source) {
+              setForkedFromName(source.name);
+            }
+          } catch {
+            setForkedFromName("Unknown project");
+          }
+        }
       } catch (err) {
         alert("Error fetching project details: " +
           (err instanceof Error ? err.message : String(err)));
@@ -166,6 +181,15 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
     <>
       <Section>
         <Typography variant="h5" gutterBottom>Project Settings</Typography>
+        {forkedFromName && (
+          <Chip
+            label={`Forked from: ${forkedFromName}`}
+            variant="outlined"
+            color="default"
+            size="small"
+            sx={{ mb: 2 }}
+          />
+        )}
         <StatusContainer>
           <Typography variant="body1">Status:</Typography>
           <Chip

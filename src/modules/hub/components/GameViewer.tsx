@@ -1,13 +1,17 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { styled } from "@mui/material/styles";
-import { Box, Typography, IconButton, CircularProgress } from "@mui/material";
+import { Box, Typography, IconButton, CircularProgress, Button } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { useNavigate, useParams } from "react-router-dom";
-import { projectControllerGetRelease, ProjectExResponseDto } from "@api";
+import { projectControllerGetRelease, projectControllerFork, ProjectExResponseDto } from "@api";
 import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
 import { GameProvider, ProviderEventType } from "@providers/GameProvider";
+import { useUser } from "@providers/UserProvider";
+import { useSnackbar } from "notistack";
+import * as urls from "@shared/route";
 
 const Overlay = styled(Box)(() => ({
   position: "fixed",
@@ -72,8 +76,12 @@ const PlayingCanvas = styled(GameCanvas)(() => ({
 export const GameViewer: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useUser();
+  const { enqueueSnackbar } = useSnackbar();
   const [project, setProject] = useState<ProjectExResponseDto | undefined>(undefined);
   const [loading, setLoading] = useState(true);
+  const [forking, setForking] = useState(false);
+  const [forkedFromInfo, setForkedFromInfo] = useState<{ name: string; creator: string } | null>(null);
   const canvasRef = React.useRef<SpriteRendererHandle>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [code, setCode] = useState<string>("");
@@ -110,7 +118,23 @@ export const GameViewer: React.FC = () => {
 
       try {
         const { data: projectDetails } = await projectControllerGetRelease({ path: { id } });
-        setProject(projectDetails as ProjectExResponseDto);
+        const details = projectDetails as ProjectExResponseDto;
+        setProject(details);
+
+        if (details?.forkedFromId) {
+          try {
+            const { data: sourceProject } = await projectControllerGetRelease({ path: { id: String(details.forkedFromId) } });
+            const source = sourceProject as ProjectExResponseDto | undefined;
+            if (source) {
+              setForkedFromInfo({
+                name: source.name,
+                creator: source.creator?.username || "Unknown"
+              });
+            }
+          } catch {
+            // Source project may have been deleted
+          }
+        }
       } catch (error) {
         console.error("Error loading project:", error);
         alert("Failed to load project");
@@ -135,6 +159,23 @@ export const GameViewer: React.FC = () => {
 
   const handleClose = (): void => {
     navigate("/");
+  };
+
+  const handleFork = async (): Promise<void> => {
+    if (!id || forking) return;
+    setForking(true);
+    try {
+      const { data: forkedProject } = await projectControllerFork({ path: { id: Number(id) } });
+      if (forkedProject) {
+        enqueueSnackbar(`Project forked successfully!`, { variant: "success" });
+        navigate(urls.toProject(forkedProject.id));
+      }
+    } catch (error) {
+      console.error("Error forking project:", error);
+      enqueueSnackbar("Failed to fork project", { variant: "error" });
+    } finally {
+      setForking(false);
+    }
   };
 
   if (loading) {
@@ -195,10 +236,28 @@ export const GameViewer: React.FC = () => {
           <Typography variant="body1">
             {String(project.longDesc || project.shortDesc || "No description available.")}
           </Typography>
-          <Box mt={2}>
-            <Typography variant="caption" color="grey.500">
-              Created by: {project.creator?.username || "Unknown"}
-            </Typography>
+          <Box mt={2} display="flex" justifyContent="space-between" alignItems="center">
+            <Box>
+              <Typography variant="caption" color="grey.500">
+                Created by: {project.creator?.username || "Unknown"}
+              </Typography>
+              {forkedFromInfo && (
+                <Typography variant="caption" color="grey.500" display="block">
+                  Forked from: {forkedFromInfo.name} by {forkedFromInfo.creator}
+                </Typography>
+              )}
+            </Box>
+            {user && (
+              <Button
+                variant="contained"
+                startIcon={<ContentCopyIcon />}
+                onClick={handleFork}
+                disabled={forking}
+                size="small"
+              >
+                {forking ? "Forking..." : "Fork this project"}
+              </Button>
+            )}
           </Box>
         </Description>
       </Container>

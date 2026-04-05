@@ -1,13 +1,17 @@
-import { Typography } from "@mui/material";
+import { IconButton, Tooltip, Typography } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import { styled } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import Card from "@modules/projects/components/Card";
 import * as urls from "@shared/route";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import { useSnackbar } from "notistack";
+import { useUser } from "@providers/UserProvider";
 import {
   ProjectResponseDto,
   projectControllerGetPublishedProjectImage,
-  projectControllerGetProjectImage
+  projectControllerGetProjectImage,
+  projectControllerFork
 } from "@api";
 
 type ProjectCardProps = {
@@ -47,7 +51,10 @@ const ProjectFooter = styled("div")(({ theme }) => ({
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, isPlayable = false }) => {
   const navigate = useNavigate();
+  const { enqueueSnackbar } = useSnackbar();
+  const { user } = useUser();
   const [thumbnailUrl, setThumbnailUrl] = useState<string>("");
+  const [forking, setForking] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -79,10 +86,40 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, isPlayable = false }
     }
   };
 
+  const handleFork = async (e: React.MouseEvent): Promise<void> => {
+    e.stopPropagation();
+    if (forking) return;
+    setForking(true);
+    try {
+      const { data: forkedProject } = await projectControllerFork({ path: { id: project.id } });
+      if (forkedProject) {
+        enqueueSnackbar(`Project forked successfully!`, { variant: "success" });
+        navigate(urls.toProject(forkedProject.id));
+      }
+    } catch (error) {
+      console.error("Error forking project:", error);
+      enqueueSnackbar("Failed to fork project", { variant: "error" });
+    } finally {
+      setForking(false);
+    }
+  };
+
   return (
     <StyledCard onClick={redirectToProject} $src={thumbnailUrl}>
       <ProjectFooter>
         <Text variant="h6">{project.name}</Text>
+        {isPlayable && user && (
+          <Tooltip title="Fork this project">
+            <IconButton
+              size="small"
+              onClick={handleFork}
+              disabled={forking}
+              sx={{ color: "white", ml: 1, "&:hover": { backgroundColor: "rgba(255,255,255,0.15)" } }}
+            >
+              <ContentCopyIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        )}
       </ProjectFooter>
     </StyledCard>
   );
