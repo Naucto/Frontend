@@ -381,6 +381,7 @@ export const GameSearchOverlay = ({ query, onClose }: GameSearchOverlayProps): J
       .map((project) => {
         const fields = [
           { value: project.name, weight: 5 },
+          { value: project.tags.join(" "), weight: 3 },
           { value: [project.creator.username, ...project.collaborators.map((collaborator) => collaborator.username)].join(" "), weight: 3.2 },
           { value: project.shortDesc ?? "", weight: 2.4 },
           { value: project.longDesc ?? "", weight: 1.8 },
