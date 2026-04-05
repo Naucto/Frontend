@@ -66,6 +66,9 @@ import type {
   ProjectControllerGetProjectImageData,
   ProjectControllerGetProjectImageErrors,
   ProjectControllerGetProjectImageResponses,
+  ProjectControllerGetPublishedProjectImageData,
+  ProjectControllerGetPublishedProjectImageErrors,
+  ProjectControllerGetPublishedProjectImageResponses,
   ProjectControllerGetReleaseContentData,
   ProjectControllerGetReleaseContentResponses,
   ProjectControllerGetReleaseContentUrlData,
@@ -102,46 +105,6 @@ import type {
   ProjectControllerUploadProjectImageData,
   ProjectControllerUploadProjectImageErrors,
   ProjectControllerUploadProjectImageResponses,
-  S3ControllerApplyPublicReadPolicyData,
-  S3ControllerApplyPublicReadPolicyResponses,
-  S3ControllerCreateBucketData,
-  S3ControllerCreateBucketErrors,
-  S3ControllerCreateBucketResponses,
-  S3ControllerDeleteBucketData,
-  S3ControllerDeleteBucketErrors,
-  S3ControllerDeleteBucketResponses,
-  S3ControllerDeleteFileData,
-  S3ControllerDeleteFileErrors,
-  S3ControllerDeleteFileResponses,
-  S3ControllerDeleteFilesData,
-  S3ControllerDeleteFilesErrors,
-  S3ControllerDeleteFilesResponses,
-  S3ControllerDownloadFileData,
-  S3ControllerDownloadFileErrors,
-  S3ControllerDownloadFileResponses,
-  S3ControllerGetCdnUrlData,
-  S3ControllerGetCdnUrlErrors,
-  S3ControllerGetCdnUrlResponses,
-  S3ControllerGetObjectMetadataData,
-  S3ControllerGetObjectMetadataErrors,
-  S3ControllerGetObjectMetadataResponses,
-  S3ControllerGetSignedCookiesData,
-  S3ControllerGetSignedCookiesErrors,
-  S3ControllerGetSignedCookiesResponses,
-  S3ControllerGetSignedDownloadUrlData,
-  S3ControllerGetSignedDownloadUrlErrors,
-  S3ControllerGetSignedDownloadUrlResponses,
-  S3ControllerListBucketsData,
-  S3ControllerListBucketsErrors,
-  S3ControllerListBucketsResponses,
-  S3ControllerListObjectsData,
-  S3ControllerListObjectsErrors,
-  S3ControllerListObjectsResponses,
-  S3ControllerSetSignedCookiesData,
-  S3ControllerSetSignedCookiesResponses,
-  S3ControllerUploadFileData,
-  S3ControllerUploadFileErrors,
-  S3ControllerUploadFileResponses,
   UserControllerFindAllData,
   UserControllerFindAllErrors,
   UserControllerFindAllResponses,
@@ -154,6 +117,9 @@ import type {
   UserControllerGetProfilePictureErrors,
   UserControllerGetProfilePictureResponses,
   UserControllerGetProfileResponses,
+  UserControllerGetPublicProfilePictureData,
+  UserControllerGetPublicProfilePictureErrors,
+  UserControllerGetPublicProfilePictureResponses,
   UserControllerRemoveData,
   UserControllerRemoveErrors,
   UserControllerRemoveResponses,
@@ -435,7 +401,7 @@ export const projectControllerSaveProjectContent = <
   });
 
 /**
- * Get signed CDN access to project image
+ * Get CDN URL for project image (authenticated, any project status)
  */
 export const projectControllerGetProjectImage = <
   ThrowOnError extends boolean = false
@@ -474,6 +440,25 @@ export const projectControllerUploadProjectImage = <
       "Content-Type": null,
       ...options.headers
     }
+  });
+
+/**
+ * Get public CDN URL for a published project's image
+ */
+export const projectControllerGetPublishedProjectImage = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<ProjectControllerGetPublishedProjectImageData, ThrowOnError>
+) =>
+  (options.client ?? client).get<
+    ProjectControllerGetPublishedProjectImageResponses,
+    ProjectControllerGetPublishedProjectImageErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/projects/public/{id}/image",
+    ...options
   });
 
 /**
@@ -643,203 +628,6 @@ export const projectControllerGetCheckpoint = <
     url: "/projects/{id}/checkpoints/{checkpoint}",
     ...options
   });
-
-/**
- * List all S3 buckets
- */
-export const s3ControllerListBuckets = <ThrowOnError extends boolean = false>(
-  options?: Options<S3ControllerListBucketsData, ThrowOnError>
-) =>
-  (options?.client ?? client).get<
-    S3ControllerListBucketsResponses,
-    S3ControllerListBucketsErrors,
-    ThrowOnError
-  >({ url: "/s3/list", ...options });
-
-/**
- * List objects in a bucket
- */
-export const s3ControllerListObjects = <ThrowOnError extends boolean = false>(
-  options: Options<S3ControllerListObjectsData, ThrowOnError>
-) =>
-  (options.client ?? client).get<
-    S3ControllerListObjectsResponses,
-    S3ControllerListObjectsErrors,
-    ThrowOnError
-  >({ url: "/s3/list/{bucketName}", ...options });
-
-/**
- * Generate a signed download URL
- */
-export const s3ControllerGetSignedDownloadUrl = <
-  ThrowOnError extends boolean = false
->(
-  options: Options<S3ControllerGetSignedDownloadUrlData, ThrowOnError>
-) =>
-  (options.client ?? client).get<
-    S3ControllerGetSignedDownloadUrlResponses,
-    S3ControllerGetSignedDownloadUrlErrors,
-    ThrowOnError
-  >({ url: "/s3/download-url/{bucketName}/{key}", ...options });
-
-/**
- * Download a file directly
- */
-export const s3ControllerDownloadFile = <ThrowOnError extends boolean = false>(
-  options: Options<S3ControllerDownloadFileData, ThrowOnError>
-) =>
-  (options.client ?? client).get<
-    S3ControllerDownloadFileResponses,
-    S3ControllerDownloadFileErrors,
-    ThrowOnError
-  >({ url: "/s3/download/{bucketName}/{key}", ...options });
-
-/**
- * Upload a file to S3
- */
-export const s3ControllerUploadFile = <ThrowOnError extends boolean = false>(
-  options: Options<S3ControllerUploadFileData, ThrowOnError>
-) =>
-  (options.client ?? client).post<
-    S3ControllerUploadFileResponses,
-    S3ControllerUploadFileErrors,
-    ThrowOnError
-  >({
-    ...formDataBodySerializer,
-    url: "/s3/upload/{bucketName}",
-    ...options,
-    headers: {
-      "Content-Type": null,
-      ...options.headers
-    }
-  });
-
-/**
- * Delete a file from S3
- */
-export const s3ControllerDeleteFile = <ThrowOnError extends boolean = false>(
-  options: Options<S3ControllerDeleteFileData, ThrowOnError>
-) =>
-  (options.client ?? client).delete<
-    S3ControllerDeleteFileResponses,
-    S3ControllerDeleteFileErrors,
-    ThrowOnError
-  >({ url: "/s3/delete/{bucketName}/{key}", ...options });
-
-/**
- * Delete multiple files from S3
- */
-export const s3ControllerDeleteFiles = <ThrowOnError extends boolean = false>(
-  options: Options<S3ControllerDeleteFilesData, ThrowOnError>
-) =>
-  (options.client ?? client).delete<
-    S3ControllerDeleteFilesResponses,
-    S3ControllerDeleteFilesErrors,
-    ThrowOnError
-  >({
-    url: "/s3/delete-multiple/{bucketName}",
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers
-    }
-  });
-
-/**
- * Delete a bucket
- */
-export const s3ControllerDeleteBucket = <ThrowOnError extends boolean = false>(
-  options: Options<S3ControllerDeleteBucketData, ThrowOnError>
-) =>
-  (options.client ?? client).delete<
-    S3ControllerDeleteBucketResponses,
-    S3ControllerDeleteBucketErrors,
-    ThrowOnError
-  >({ url: "/s3/bucket/{bucketName}", ...options });
-
-/**
- * Create a new bucket
- */
-export const s3ControllerCreateBucket = <ThrowOnError extends boolean = false>(
-  options: Options<S3ControllerCreateBucketData, ThrowOnError>
-) =>
-  (options.client ?? client).post<
-    S3ControllerCreateBucketResponses,
-    S3ControllerCreateBucketErrors,
-    ThrowOnError
-  >({ url: "/s3/bucket/{bucketName}", ...options });
-
-/**
- * Apply public read policy for a prefix (default: release*)
- */
-export const s3ControllerApplyPublicReadPolicy = <
-  ThrowOnError extends boolean = false
->(
-  options: Options<S3ControllerApplyPublicReadPolicyData, ThrowOnError>
-) =>
-  (options.client ?? client).post<
-    S3ControllerApplyPublicReadPolicyResponses,
-    unknown,
-    ThrowOnError
-  >({
-    url: "/s3/policy/public-read",
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers
-    }
-  });
-
-/**
- * Get object metadata
- */
-export const s3ControllerGetObjectMetadata = <
-  ThrowOnError extends boolean = false
->(
-  options: Options<S3ControllerGetObjectMetadataData, ThrowOnError>
-) =>
-  (options.client ?? client).get<
-    S3ControllerGetObjectMetadataResponses,
-    S3ControllerGetObjectMetadataErrors,
-    ThrowOnError
-  >({ url: "/s3/metadata/{bucketName}/{key}", ...options });
-
-/**
- * Get the CDN URL for a file
- */
-export const s3ControllerGetCdnUrl = <ThrowOnError extends boolean = false>(
-  options: Options<S3ControllerGetCdnUrlData, ThrowOnError>
-) =>
-  (options.client ?? client).get<
-    S3ControllerGetCdnUrlResponses,
-    S3ControllerGetCdnUrlErrors,
-    ThrowOnError
-  >({ url: "/s3/cdn-url/{key}", ...options });
-
-/**
- * Generate CloudFront signed cookies for a resource
- */
-export const s3ControllerGetSignedCookies = <
-  ThrowOnError extends boolean = false
->(
-  options: Options<S3ControllerGetSignedCookiesData, ThrowOnError>
-) =>
-  (options.client ?? client).get<
-    S3ControllerGetSignedCookiesResponses,
-    S3ControllerGetSignedCookiesErrors,
-    ThrowOnError
-  >({ url: "/s3/signed-cookies/{key}", ...options });
-
-export const s3ControllerSetSignedCookies = <
-  ThrowOnError extends boolean = false
->(
-  options?: Options<S3ControllerSetSignedCookiesData, ThrowOnError>
-) =>
-  (options?.client ?? client).get<
-    S3ControllerSetSignedCookiesResponses,
-    unknown,
-    ThrowOnError
-  >({ url: "/s3/signed-cookies", ...options });
 
 /**
  * List available game hosts/sessions from the user's perspective
@@ -1171,6 +959,25 @@ export const userControllerUpdate = <ThrowOnError extends boolean = false>(
   });
 
 /**
+ * Get public CDN URL for a user's profile picture
+ */
+export const userControllerGetPublicProfilePicture = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<UserControllerGetPublicProfilePictureData, ThrowOnError>
+) =>
+  (options.client ?? client).get<
+    UserControllerGetPublicProfilePictureResponses,
+    UserControllerGetPublicProfilePictureErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/users/public/{id}/profile-picture",
+    ...options
+  });
+
+/**
  * Join a work session
  */
 export const workSessionControllerJoin = <ThrowOnError extends boolean = false>(
@@ -1181,6 +988,7 @@ export const workSessionControllerJoin = <ThrowOnError extends boolean = false>(
     WorkSessionControllerJoinErrors,
     ThrowOnError
   >({
+    responseType: "json",
     security: [{ scheme: "bearer", type: "http" }],
     url: "/work-sessions/join/{id}",
     ...options
