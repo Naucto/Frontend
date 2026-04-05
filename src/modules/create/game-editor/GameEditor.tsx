@@ -320,7 +320,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
           sx={{ flexDirection: "column" }}
         >
           <DocIframe
-            src="https://docs.naucto.net"
+            src={import.meta.env.VITE_DOCS_URL ?? "https://docs.naucto.net"}
             title="Naucto Documentation"
           />
         </RightPanelTabContent>
