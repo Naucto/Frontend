@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Tab, Tabs } from "@mui/material";
+import { MenuBook, SportsEsports } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import { Beforeunload } from "react-beforeunload";
 
@@ -44,6 +45,25 @@ const RightPanel = styled("div")(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
   gap: theme.spacing(4),
+}));
+
+const RightPanelTabContent = styled(Box)(() => ({
+  flex: 1,
+  minHeight: 0,
+  "&.active": {
+    display: "flex",
+  },
+  "&.hidden": {
+    display: "none",
+  },
+}));
+
+const DocIframe = styled("iframe")(({ theme }) => ({
+  width: "100%",
+  flex: 1,
+  border: "none",
+  borderRadius: theme.spacing(1),
+  backgroundColor: theme.palette.blue[500],
 }));
 
 const TabContent = styled(Box)(() => ({
@@ -116,6 +136,7 @@ interface GameEditorProps {
 
 const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => {
   const [activeTab, setActiveTab] = useState(0);
+  const [rightPanelTab, setRightPanelTab] = useState(0);
   const [output, setOutput] = useState<string>("");
 
   const tabs = useMemo(() => [
@@ -264,17 +285,45 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
         })}
       </LeftPanel>
       <RightPanel>
-        <PreviewCanvas
-          ref={canvasRef}
-          canvasProps={{
-            map: project.mapProvider,
-            screenSize: screenSize,
-            sprite: project.spriteProvider
-          }}
-          envData={envData}
-          setOutput={setOutput}
-        />
-        <GameEditorConsole output={output} />
+        <Tabs
+          value={rightPanelTab}
+          onChange={(_, newValue) => setRightPanelTab(newValue)}
+          slotProps={{ indicator: { hidden: true } }}
+        >
+          <StyledTab iconPosition="start" icon={<SportsEsports />} label="Display" data-cy="display-tab" />
+          <StyledTab iconPosition="start" icon={<MenuBook />} label="Doc" data-cy="doc-tab" />
+        </Tabs>
+        <RightPanelTabContent
+          role="tabpanel"
+          hidden={rightPanelTab !== 0}
+          className={rightPanelTab === 0 ? "active" : "hidden"}
+          sx={{ flexDirection: "column", gap: 4 }}
+        >
+          <>
+            <PreviewCanvas
+              ref={canvasRef}
+              canvasProps={{
+                map: project.mapProvider,
+                screenSize: screenSize,
+                sprite: project.spriteProvider
+              }}
+              envData={envData}
+              setOutput={setOutput}
+            />
+            <GameEditorConsole output={output} />
+          </>
+        </RightPanelTabContent>
+        <RightPanelTabContent
+          role="tabpanel"
+          hidden={rightPanelTab !== 1}
+          className={rightPanelTab === 1 ? "active" : "hidden"}
+          sx={{ flexDirection: "column" }}
+        >
+          <DocIframe
+            src="https://docs.naucto.net"
+            title="Naucto Documentation"
+          />
+        </RightPanelTabContent>
       </RightPanel>
 
       <StyledDialog
