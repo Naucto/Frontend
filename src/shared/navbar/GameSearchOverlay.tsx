@@ -152,7 +152,9 @@ const SearchTag = styled("span")(({ theme }) => ({
   backgroundColor: "rgba(70, 125, 255, 0.2)",
   border: "1px solid rgba(110, 165, 255, 0.28)",
   color: theme.palette.common.white,
+  fontFamily: theme.typography.fontFamily,
   fontSize: "12px",
+  fontWeight: 500,
   lineHeight: 1,
 }));
 
