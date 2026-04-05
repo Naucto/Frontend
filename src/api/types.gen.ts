@@ -4,73 +4,6 @@ export type ClientOptions = {
   baseURL: string;
 };
 
-export type ProjectResponseDto = {
-  /**
-   * The unique identifier of the project
-   */
-  id: number;
-  /**
-   * The name of the project
-   */
-  name: string;
-  /**
-   * A short description of the project
-   */
-  shortDesc: string;
-  /**
-   * A detailed description of the project
-   */
-  longDesc: string | null;
-  /**
-   * URL to the project icon
-   */
-  iconUrl: string | null;
-  /**
-   * The current status of the project
-   */
-  status: "IN_PROGRESS" | "COMPLETED" | "ARCHIVED";
-  /**
-   * The monetization strategy for this project
-   */
-  monetization: "NONE" | "ADS" | "PAID";
-  /**
-   * The price of the project, if applicable
-   */
-  price: number | null;
-  /**
-   * The ID of the user who owns this project
-   */
-  userId: number;
-  /**
-   * The date and time when the project was created
-   */
-  createdAt: string;
-  /**
-   * The date and time when the project was last updated
-   */
-  updatedAt: string;
-  /**
-   * The date and time when the project was last published
-   */
-  publishedAt: string | null;
-  /**
-   * The number of unique players who have interacted with this project
-   */
-  uniquePlayers: number;
-  /**
-   * The number of currently active players in this project
-   */
-  activePlayers: number;
-  /**
-   * The number of likes received by the project
-   */
-  likes: number;
-  /**
-   * The number of comments on the project
-   */
-  commentCount?: number;
-};
-
 export type UserBasicInfoDto = {
   /**
    * The unique identifier of the user
@@ -104,6 +37,10 @@ export type ProjectExResponseDto = {
    */
   longDesc: string | null;
   /**
+   * Tags associated with the project
+   */
+  tags: Array<string>;
+  /**
    * URL to the project icon
    */
   iconUrl: string | null;
@@ -135,6 +72,10 @@ export type ProjectExResponseDto = {
    * The date and time when the project was last published
    */
   publishedAt: string | null;
+  /**
+   * The number of times players opened this game's play page
+   */
+  viewCount: number;
   /**
    * The number of unique players who have interacted with this project
    */
@@ -168,6 +109,81 @@ export type SignedUrlResponseDto = {
   signedUrl: string;
 };
 
+export type ProjectResponseDto = {
+  /**
+   * The unique identifier of the project
+   */
+  id: number;
+  /**
+   * The name of the project
+   */
+  name: string;
+  /**
+   * A short description of the project
+   */
+  shortDesc: string;
+  /**
+   * A detailed description of the project
+   */
+  longDesc: string | null;
+  /**
+   * Tags associated with the project
+   */
+  tags: Array<string>;
+  /**
+   * URL to the project icon
+   */
+  iconUrl: string | null;
+  /**
+   * The current status of the project
+   */
+  status: "IN_PROGRESS" | "COMPLETED" | "ARCHIVED";
+  /**
+   * The monetization strategy for this project
+   */
+  monetization: "NONE" | "ADS" | "PAID";
+  /**
+   * The price of the project, if applicable
+   */
+  price: number | null;
+  /**
+   * The ID of the user who owns this project
+   */
+  userId: number;
+  /**
+   * The date and time when the project was created
+   */
+  createdAt: string;
+  /**
+   * The date and time when the project was last updated
+   */
+  updatedAt: string;
+  /**
+   * The date and time when the project was last published
+   */
+  publishedAt: string | null;
+  /**
+   * The number of times players opened this game's play page
+   */
+  viewCount: number;
+  /**
+   * The number of unique players who have interacted with this project
+   */
+  uniquePlayers: number;
+  /**
+   * The number of currently active players in this project
+   */
+  activePlayers: number;
+  /**
+   * The number of likes received by the project
+   */
+  likes: number;
+  /**
+   * The number of comments on the project
+   */
+  commentCount?: number;
+};
+
 export type CreateProjectDto = {
   /**
    * The name of the project
@@ -181,6 +197,10 @@ export type CreateProjectDto = {
    * URL to the project icon
    */
   iconUrl?: string;
+  /**
+   * Tags attached to the project
+   */
+  tags?: Array<string>;
 };
 
 export type UpdateProjectDto = {
@@ -198,6 +218,10 @@ export type UpdateProjectDto = {
   longDesc?: {
     [key: string]: unknown;
   };
+  /**
+   * Tags attached to the project
+   */
+  tags?: Array<string>;
   /**
    * URL to the project icon
    */
@@ -262,6 +286,13 @@ export type LikeResponseDto = {
    * Whether the current user has liked this project
    */
   liked: boolean;
+};
+
+export type ViewResponseDto = {
+  /**
+   * The number of play opens registered for the project
+   */
+  viewCount: number;
 };
 
 export type LookupHostsResponseDtoHost = {
@@ -601,7 +632,7 @@ export type ProjectControllerGetAllReleasesResponses = {
   /**
    * A JSON array of projects with collaborators and creator information
    */
-  200: Array<ProjectResponseDto>;
+  200: Array<ProjectExResponseDto>;
 };
 
 export type ProjectControllerGetAllReleasesResponse =
@@ -1298,6 +1329,25 @@ export type ProjectControllerGetLikeStatusResponses = {
 
 export type ProjectControllerGetLikeStatusResponse =
   ProjectControllerGetLikeStatusResponses[keyof ProjectControllerGetLikeStatusResponses];
+
+export type ProjectControllerRegisterReleaseViewData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/projects/releases/{id}/view";
+};
+
+export type ProjectControllerRegisterReleaseViewResponses = {
+  /**
+   * Updated view count
+   */
+  200: ViewResponseDto;
+};
+
+export type ProjectControllerRegisterReleaseViewResponse =
+  ProjectControllerRegisterReleaseViewResponses[keyof ProjectControllerRegisterReleaseViewResponses];
 
 export type ProjectControllerUpdateReleaseData = {
   body?: never;

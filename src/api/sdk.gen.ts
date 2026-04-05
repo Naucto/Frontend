@@ -98,6 +98,8 @@ import type {
   ProjectControllerPublishData,
   ProjectControllerPublishErrors,
   ProjectControllerPublishResponses,
+  ProjectControllerRegisterReleaseViewData,
+  ProjectControllerRegisterReleaseViewResponses,
   ProjectControllerRemoveCollaboratorData,
   ProjectControllerRemoveCollaboratorErrors,
   ProjectControllerRemoveCollaboratorResponses,
@@ -703,6 +705,25 @@ export const projectControllerGetLikeStatus = <
     responseType: "json",
     security: [{ scheme: "bearer", type: "http" }],
     url: "/projects/releases/{id}/like-status",
+    ...options
+  });
+
+/**
+ * Register a play view for a published project
+ */
+export const projectControllerRegisterReleaseView = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<ProjectControllerRegisterReleaseViewData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    ProjectControllerRegisterReleaseViewResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/projects/releases/{id}/view",
     ...options
   });
 

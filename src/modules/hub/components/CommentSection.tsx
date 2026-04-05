@@ -11,12 +11,19 @@ import {
 } from "@api";
 import { useUser } from "@providers/UserProvider";
 import CommentItem from "./CommentItem";
+import {
+  COMMENT_MAX_LENGTH,
+  COMMENT_MAX_NEWLINES,
+  countCommentNewlines,
+  sanitizeCommentValue,
+} from "./commentValidation";
 
 const SectionContainer = styled(Box)(({ theme }) => ({
   marginTop: theme.spacing(3),
-  backgroundColor: theme.palette.grey[900],
+  backgroundColor: "rgba(10, 10, 10, 0.28)",
   borderRadius: theme.shape.borderRadius,
   overflow: "hidden",
+  backdropFilter: "blur(8px)",
 }));
 
 const SectionHeader = styled(Box)(({ theme }) => ({
@@ -28,6 +35,7 @@ const CommentInputContainer = styled(Box)(({ theme }) => ({
   padding: theme.spacing(2, 3),
   borderBottom: `1px solid ${theme.palette.grey[800]}`,
   display: "flex",
+  alignItems: "flex-start",
   gap: theme.spacing(1),
 }));
 
@@ -96,7 +104,16 @@ const CommentSection: React.FC<CommentSectionProps> = ({
       });
       if (data) {
         setComments((prev) => [data, ...prev]);
-        setTotal((prev) => prev + 1);
+        setTotal((prev) => {
+          const next = prev + 1;
+          window.dispatchEvent(new CustomEvent("project-stats-updated", {
+            detail: {
+              projectId,
+              changes: { commentCount: next }
+            }
+          }));
+          return next;
+        });
         setNewComment("");
       }
     } catch (error) {
@@ -116,6 +133,16 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     });
     if (data) {
       // Add reply to the parent comment
+      setTotal((prev) => {
+        const next = prev + 1;
+        window.dispatchEvent(new CustomEvent("project-stats-updated", {
+          detail: {
+            projectId,
+            changes: { commentCount: next }
+          }
+        }));
+        return next;
+      });
       setComments((prev) =>
         prev.map((c) =>
           c.id === commentId
@@ -135,7 +162,16 @@ const CommentSection: React.FC<CommentSectionProps> = ({
       setComments((prev) => {
         const topComment = prev.find((c) => c.id === commentId);
         if (topComment) {
-          setTotal((t) => t - 1);
+          setTotal((t) => {
+            const next = t - 1;
+            window.dispatchEvent(new CustomEvent("project-stats-updated", {
+              detail: {
+                projectId,
+                changes: { commentCount: next }
+              }
+            }));
+            return next;
+          });
           if (topComment.replies && topComment.replies.length > 0) {
             // Soft-delete: replace with deleted placeholder
             return prev.map((c) =>
@@ -146,6 +182,16 @@ const CommentSection: React.FC<CommentSectionProps> = ({
           return prev.filter((c) => c.id !== commentId);
         }
         // Reply: hard-delete from parent
+        setTotal((t) => {
+          const next = t - 1;
+          window.dispatchEvent(new CustomEvent("project-stats-updated", {
+            detail: {
+              projectId,
+              changes: { commentCount: next }
+            }
+          }));
+          return next;
+        });
         return prev.map((c) => ({
           ...c,
           replies: c.replies?.filter((r) => r.id !== commentId),
@@ -163,6 +209,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
   };
 
   const hasMore = comments.length < total;
+  const commentNewlineCount = countCommentNewlines(newComment);
 
   return (
     <SectionContainer>
@@ -182,13 +229,19 @@ const CommentSection: React.FC<CommentSectionProps> = ({
             size="small"
             placeholder="Write a comment..."
             value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
+            onChange={(e) => setNewComment(sanitizeCommentValue(e.target.value))}
             fullWidth
             multiline
-            maxRows={4}
+            minRows={3}
+            maxRows={12}
+            helperText={`${newComment.length}/${COMMENT_MAX_LENGTH} chars • ${commentNewlineCount}/${COMMENT_MAX_NEWLINES} line breaks`}
             sx={{
               "& .MuiInputBase-root": {
                 color: "white",
+              },
+              "& .MuiFormHelperText-root": {
+                color: "rgba(255,255,255,0.65)",
+                marginLeft: 0,
               },
             }}
           />
@@ -196,7 +249,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
             variant="contained"
             onClick={handlePostComment}
             disabled={submitting || !newComment.trim()}
-            sx={{ minWidth: "80px", alignSelf: "flex-end" }}
+            sx={{ minWidth: "80px", alignSelf: "flex-start", mt: 0.25 }}
           >
             {submitting ? <CircularProgress size={20} /> : "Post"}
           </Button>

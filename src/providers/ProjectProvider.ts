@@ -84,6 +84,7 @@ export class ProjectProvider implements Destroyable {
           this.projectSettings.updateName(details.name);
           this.projectSettings.updateShortDesc(details.shortDesc);
           this.projectSettings.updateLongDesc(details.longDesc ? JSON.stringify(details.longDesc) : "");
+          this.projectSettings.updateTags(details.tags ?? []);
         }
       } catch (error: unknown) {
         if ((error as AxiosError)?.response?.status === 404) {
@@ -116,13 +117,22 @@ export class ProjectProvider implements Destroyable {
 
     const settings = this.projectSettings.getSettings();
 
-    if (details.name !== settings.name || (details.longDesc || "") !== settings.longDesc || details.shortDesc !== settings.shortDesc) {
+    const currentTags = [...(details.tags ?? [])].sort();
+    const nextTags = [...settings.tags].sort();
+
+    if (
+      details.name !== settings.name ||
+      (details.longDesc || "") !== settings.longDesc ||
+      details.shortDesc !== settings.shortDesc ||
+      JSON.stringify(currentTags) !== JSON.stringify(nextTags)
+    ) {
       await projectControllerUpdate({
         path: { id: this.projectId },
         body: {
           name: settings.name,
           shortDesc: settings.shortDesc,
           longDesc: settings.longDesc as unknown as Record<string, unknown>,
+          tags: settings.tags,
         },
       });
     }

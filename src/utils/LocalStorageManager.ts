@@ -67,6 +67,7 @@ export class LocalStorageManager {
   // ─── Liked Projects (anonymous like tracking) ─────────────────────────
 
   private static readonly LIKED_PROJECTS_KEY = "liked_projects";
+  private static readonly PLAYED_PROJECTS_KEY = "played_projects";
 
   static getLikedProjects(): number[] {
     try {
@@ -92,5 +93,23 @@ export class LocalStorageManager {
 
   static isProjectLiked(id: number): boolean {
     return this.getLikedProjects().includes(id);
+  }
+
+  static getPlayedProjects(): number[] {
+    try {
+      const raw = localStorage.getItem(this.PLAYED_PROJECTS_KEY);
+      return raw ? (JSON.parse(raw) as number[]) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  static addPlayedProject(id: number): void {
+    const played = this.getPlayedProjects().filter((projectId) => projectId !== id);
+    played.unshift(id);
+    localStorage.setItem(
+      this.PLAYED_PROJECTS_KEY,
+      JSON.stringify(played.slice(0, 24))
+    );
   }
 }

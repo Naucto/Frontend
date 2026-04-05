@@ -5,6 +5,12 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import ReplyIcon from "@mui/icons-material/Reply";
 import { CommentResponseDto } from "@api";
 import { useUser } from "@providers/UserProvider";
+import {
+  COMMENT_MAX_LENGTH,
+  COMMENT_MAX_NEWLINES,
+  countCommentNewlines,
+  sanitizeCommentValue,
+} from "./commentValidation";
 
 const CommentContainer = styled(Box)(({ theme }) => ({
   padding: theme.spacing(2),
@@ -33,6 +39,9 @@ const CommentContent = styled(Typography)(({ theme }) => ({
   color: theme.palette.grey[300],
   fontSize: "14px",
   lineHeight: 1.5,
+  whiteSpace: "pre-wrap",
+  overflowWrap: "anywhere",
+  wordBreak: "break-word",
 }));
 
 const ReplyContainer = styled(Box)(({ theme }) => ({
@@ -84,6 +93,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
   const [submitting, setSubmitting] = useState(false);
 
   const canDelete = !comment.deleted && user && (user.id === comment.author.id || isProjectCreator);
+  const replyNewlineCount = countCommentNewlines(replyContent);
 
   const handleReply = async (): Promise<void> => {
     if (!replyContent.trim()) return;
@@ -144,7 +154,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
                     </AuthorName>
                     <CommentDate>{formatTimeAgo(reply.createdAt)}</CommentDate>
                   </Box>
-                  {user && (user.id === reply.author.id || isProjectCreator) && (
+                  {!reply.deleted && user && (user.id === reply.author.id || isProjectCreator) && (
                     <IconButton
                       size="small"
                       onClick={() => onDelete(reply.id)}
@@ -154,7 +164,9 @@ const CommentItem: React.FC<CommentItemProps> = ({
                     </IconButton>
                   )}
                 </CommentHeader>
-                <CommentContent sx={{ fontSize: "13px" }}>{reply.content}</CommentContent>
+                <CommentContent sx={reply.deleted ? { fontSize: "13px", fontStyle: "italic", color: "grey.600" } : { fontSize: "13px" }}>
+                  {reply.deleted ? "[Comment deleted]" : reply.content}
+                </CommentContent>
               </Box>
             ))}
           </ReplyContainer>
@@ -168,12 +180,20 @@ const CommentItem: React.FC<CommentItemProps> = ({
             size="small"
             placeholder="Write a reply..."
             value={replyContent}
-            onChange={(e) => setReplyContent(e.target.value)}
+            onChange={(e) => setReplyContent(sanitizeCommentValue(e.target.value))}
             fullWidth
+            multiline
+            minRows={2}
+            maxRows={8}
+            helperText={`${replyContent.length}/${COMMENT_MAX_LENGTH} chars • ${replyNewlineCount}/${COMMENT_MAX_NEWLINES} line breaks`}
             sx={{
               "& .MuiInputBase-root": {
                 color: "white",
                 fontSize: "13px",
+              },
+              "& .MuiFormHelperText-root": {
+                color: "rgba(255,255,255,0.65)",
+                marginLeft: 0,
               },
             }}
           />

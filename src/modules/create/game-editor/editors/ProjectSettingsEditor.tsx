@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { EditorProps } from "./EditorType";
-import { Box, Button, Typography, List, ListItem, ListItemText, Divider, Chip, CircularProgress } from "@mui/material";
+import { Box, Button, Typography, List, ListItem, ListItemText, Divider, Chip, CircularProgress, Autocomplete, TextField } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import {
   projectControllerFindOne,
@@ -17,6 +17,7 @@ import {
 import { ProjectSettings } from "@providers/editors/ProjectSettingsProvider";
 import { ActionButton } from "@components/ui/ActionButton";
 import { FullWidthTextField } from "@components/ui/FullWidthTextField";
+import { PREDEFINED_PROJECT_TAGS } from "@modules/projects/projectTags";
 
 const Section = styled(Box)(({ theme }) => ({
   marginBottom: theme.spacing(4),
@@ -43,8 +44,16 @@ const BannerPreview = styled("img")({
   objectFit: "cover",
 });
 
+const TagPickerContainer = styled(Box)(({ theme }) => ({
+  padding: theme.spacing(1.25),
+  borderRadius: theme.custom.rounded.md,
+  backgroundColor: theme.palette.blue[500],
+  border: `1px solid ${theme.palette.blue[300]}`,
+  boxShadow: `inset 0 0 0 1px ${theme.palette.blue[400]}`,
+}));
+
 const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
-  const [settings, setSettings] = useState<ProjectSettings>({ name: "", shortDesc: "", longDesc: "", iconUrl: "" });
+  const [settings, setSettings] = useState<ProjectSettings>({ name: "", shortDesc: "", longDesc: "", iconUrl: "", tags: [] });
   const [collaborators, setCollaborators] = useState<UserBasicInfoDto[]>([]);
   const [newCollaborator, setNewCollaborator] = useState("");
   const [isPublished, setIsPublished] = useState(false);
@@ -61,6 +70,9 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
         setCollaborators(details.collaborators);
         setIsPublished(details.status === ("COMPLETED" satisfies ProjectExResponseDto["status"]) || false);
         setPublishedAt((details as Record<string, unknown>).publishedAt as string | null ?? null);
+        if (project.projectSettings && details.tags) {
+          project.projectSettings.updateTags(details.tags);
+        }
       } catch (err) {
         alert("Error fetching project details: " +
           (err instanceof Error ? err.message : String(err)));
@@ -276,6 +288,96 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
           multiline
           rows={5}
         />
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="subtitle1" gutterBottom>Project Tags</Typography>
+          <TagPickerContainer>
+            <Autocomplete
+              multiple
+              freeSolo
+              options={[...PREDEFINED_PROJECT_TAGS]}
+              value={settings.tags}
+              onChange={(_, value) => project.projectSettings.updateTags(value.map((tag) => tag.trim()).filter(Boolean))}
+              slotProps={{
+                paper: {
+                  sx: {
+                    mt: 1,
+                    backgroundColor: theme => theme.palette.blue[800],
+                    color: "white",
+                    backgroundImage: "none",
+                    border: theme => `1px solid ${theme.palette.blue[400]}`,
+                    ".MuiAutocomplete-listbox": {
+                      padding: 0.5,
+                      maxHeight: 240,
+                      overflowY: "auto",
+                    },
+                  }
+                },
+                listbox: {
+                  sx: {
+                    maxHeight: 240,
+                    overflowY: "auto",
+                  }
+                },
+              }}
+              renderOption={(props, option, { selected }) => (
+                <Box
+                  component="li"
+                  {...props}
+                  sx={{
+                    color: "white",
+                    backgroundColor: `${selected ? "rgba(255, 255, 255, 0.12)" : "transparent"} !important`,
+                    borderRadius: 1,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: 1,
+                    px: 1.25,
+                    py: 0.9,
+                  }}
+                >
+                  <span>{option}</span>
+                  {selected && <Chip label="Selected" size="small" sx={{ backgroundColor: "rgba(255,255,255,0.18)", color: "white" }} />}
+                </Box>
+              )}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => (
+                  <Chip
+                    {...getTagProps({ index })}
+                    key={`${option}-${index}`}
+                    label={option}
+                    size="small"
+                    sx={{ backgroundColor: theme => theme.palette.blue[700], color: "white" }}
+                  />
+                ))
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Add predefined or custom tags"
+                  placeholder="Roguelike, Shooter, custom tag..."
+                  sx={{
+                    ".MuiOutlinedInput-root": {
+                      color: "white",
+                      backgroundColor: "transparent",
+                    },
+                    ".MuiOutlinedInput-notchedOutline": {
+                      borderColor: "rgba(255,255,255,0.28)",
+                    },
+                    ".MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "rgba(255,255,255,0.42)",
+                    },
+                    ".MuiInputLabel-root": {
+                      color: "rgba(255,255,255,0.82)",
+                    },
+                    ".MuiInputLabel-root.Mui-focused": {
+                      color: "white",
+                    },
+                  }}
+                />
+              )}
+            />
+          </TagPickerContainer>
+        </Box>
       </Section>
       <Divider />
       <Section>

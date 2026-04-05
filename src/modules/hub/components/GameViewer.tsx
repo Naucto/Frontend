@@ -1,13 +1,16 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { styled } from "@mui/material/styles";
-import { Box, Typography, IconButton, CircularProgress } from "@mui/material";
+import { Box, Chip, Typography, IconButton, CircularProgress } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import LikeSvg from "@assets/like.svg";
-import { useNavigate, useParams } from "react-router-dom";
+import CommentSvg from "@assets/comment.svg";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   projectControllerGetRelease,
   projectControllerLikeProject,
   projectControllerGetLikeStatus,
+  projectControllerRegisterReleaseView,
   ProjectExResponseDto,
 } from "@api";
 import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
@@ -24,7 +27,8 @@ const Overlay = styled(Box)(() => ({
   left: 0,
   right: 0,
   bottom: 0,
-  backgroundColor: "rgba(0, 0, 0, 0.9)",
+  backgroundColor: "rgba(0, 0, 0, 0.5)",
+  backdropFilter: "blur(6px)",
   zIndex: 9999,
   overflowY: "auto",
 }));
@@ -41,9 +45,9 @@ const CloseButton = styled(IconButton)(({ theme }) => ({
   top: theme.spacing(2),
   right: theme.spacing(2),
   color: theme.palette.common.white,
-  backgroundColor: "rgba(0, 0, 0, 0.5)",
+  backgroundColor: "rgba(0, 0, 0, 0.28)",
   "&:hover": {
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    backgroundColor: "rgba(0, 0, 0, 0.45)",
   },
 }));
 
@@ -56,7 +60,7 @@ const GameTitle = styled(Typography)(({ theme }) => ({
 const GameContainer = styled(Box)(({ theme }) => ({
   width: "100%",
   aspectRatio: "16/9",
-  backgroundColor: theme.palette.grey[900],
+  backgroundColor: "rgba(8, 12, 20, 0.74)",
   marginBottom: theme.spacing(3),
   borderRadius: theme.shape.borderRadius,
   overflow: "hidden",
@@ -67,9 +71,34 @@ const GameContainer = styled(Box)(({ theme }) => ({
 
 const Description = styled(Box)(({ theme }) => ({
   color: theme.palette.grey[300],
-  backgroundColor: theme.palette.grey[900],
+  backgroundColor: "rgba(10, 10, 10, 0.34)",
   padding: theme.spacing(3),
   borderRadius: theme.shape.borderRadius,
+  backdropFilter: "blur(8px)",
+}));
+
+const MetaRow = styled(Box)(({ theme }) => ({
+  display: "flex",
+  flexWrap: "wrap",
+  alignItems: "center",
+  gap: theme.spacing(1.5),
+  marginTop: theme.spacing(1.5),
+  color: theme.palette.grey[300],
+}));
+
+const StatItem = styled(Box)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  gap: theme.spacing(0.75),
+  fontSize: "14px",
+  color: theme.palette.grey[200],
+}));
+
+const TagRow = styled(Box)(({ theme }) => ({
+  display: "flex",
+  flexWrap: "wrap",
+  gap: theme.spacing(1),
+  marginTop: theme.spacing(1.5),
 }));
 
 const LikeButton = styled(IconButton, {
@@ -98,6 +127,7 @@ const PlayingCanvas = styled(GameCanvas)(() => ({
 export const GameViewer: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useUser();
   const [project, setProject] = useState<ProjectExResponseDto | undefined>(undefined);
   const [loading, setLoading] = useState(true);
@@ -112,6 +142,7 @@ export const GameViewer: React.FC = () => {
   // Like state
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
+  const [viewCount, setViewCount] = useState(0);
 
   useEffect(() => {
     if (id) {
@@ -144,6 +175,20 @@ export const GameViewer: React.FC = () => {
         const proj = projectDetails as ProjectExResponseDto;
         setProject(proj);
         setLikeCount(proj?.likes ?? 0);
+        setViewCount(proj?.viewCount ?? 0);
+
+        const { data: viewData } = await projectControllerRegisterReleaseView({ path: { id } });
+        if (viewData) {
+          setViewCount(viewData.viewCount);
+          window.dispatchEvent(new CustomEvent("project-stats-updated", {
+            detail: {
+              projectId: Number(id),
+              changes: { viewCount: viewData.viewCount }
+            }
+          }));
+        }
+        LocalStorageManager.addPlayedProject(Number(id));
+        window.dispatchEvent(new Event("played-history-updated"));
 
         // Check like status
         if (user) {
@@ -170,6 +215,20 @@ export const GameViewer: React.FC = () => {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
+      const target = e.target;
+      const isEditableTarget =
+        target instanceof HTMLElement &&
+        (
+          target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable ||
+          target.closest("[contenteditable='true'], input, textarea, [role='textbox']") !== null
+        );
+
+      if (isEditableTarget) {
+        return;
+      }
+
       if (showGame && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key)) {
         e.preventDefault();
       }
@@ -180,7 +239,11 @@ export const GameViewer: React.FC = () => {
   }, [showGame]);
 
   const handleClose = (): void => {
-    navigate("/");
+    if ((location.state as { backgroundLocation?: Location } | null)?.backgroundLocation) {
+      navigate(-1);
+      return;
+    }
+    navigate("/hub");
   };
 
   const handleLike = async (): Promise<void> => {
@@ -190,6 +253,12 @@ export const GameViewer: React.FC = () => {
       if (data) {
         setLiked(data.liked);
         setLikeCount(data.likes);
+        window.dispatchEvent(new CustomEvent("project-stats-updated", {
+          detail: {
+            projectId: Number(id),
+            changes: { likes: data.likes }
+          }
+        }));
       }
       // Track in localStorage for anonymous users
       if (!user) {
@@ -226,6 +295,17 @@ export const GameViewer: React.FC = () => {
       </Overlay>
     );
   }
+
+  const creators = Array.from(
+    new Map(
+      [project.creator, ...project.collaborators].filter(Boolean).map((creator) => [creator.id, creator])
+    ).values()
+  );
+  const creatorNames = creators.map((creator) => creator.username);
+  const creatorsLabel =
+    creatorNames.length <= 1
+      ? creatorNames[0] ?? "Unknown"
+      : `${creatorNames.slice(0, -1).join(", ")} and ${creatorNames[creatorNames.length - 1]}`;
 
   return (
     <Overlay>
@@ -269,23 +349,36 @@ export const GameViewer: React.FC = () => {
               </Typography>
             </Box>
           </Box>
+          <Typography variant="body2" color="grey.400" sx={{ mb: 1 }}>
+            A game made by {creatorsLabel}
+          </Typography>
           <Typography variant="body1">
             {String(project.longDesc || project.shortDesc || "No description available.")}
           </Typography>
-          <Box mt={2} display="flex" justifyContent="space-between" alignItems="center">
-            <Typography variant="caption" color="grey.500">
-              Created by: {project.creator?.username || "Unknown"}
+          {project.tags.length > 0 && (
+            <TagRow>
+              {project.tags.map((tag) => (
+                <Chip key={tag} label={tag} size="small" sx={{ backgroundColor: "rgba(255,255,255,0.12)", color: "white" }} />
+              ))}
+            </TagRow>
+          )}
+          <MetaRow>
+            <StatItem>
+              <VisibilityOutlinedIcon sx={{ fontSize: 16 }} />
+              <span>{viewCount}</span>
+            </StatItem>
+            <StatItem>
+              <img src={LikeSvg} width="16" height="16" alt="likes" style={{ imageRendering: "pixelated" }} />
+              <span>{likeCount}</span>
+            </StatItem>
+            <StatItem>
+              <img src={CommentSvg} width="16" height="16" alt="comments" style={{ imageRendering: "pixelated" }} />
+              <span>{project.commentCount ?? 0}</span>
+            </StatItem>
+            <Typography variant="caption" color="grey.400">
+              Creation date: {new Date(project.createdAt).toLocaleDateString("en-GB")}
             </Typography>
-            {project.publishedAt && (
-              <Typography variant="caption" color="grey.500">
-                Last updated: {new Date(project.publishedAt).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </Typography>
-            )}
-          </Box>
+          </MetaRow>
         </Description>
 
         <CommentSection projectId={Number(id)} projectCreatorId={project.creator?.id} />
