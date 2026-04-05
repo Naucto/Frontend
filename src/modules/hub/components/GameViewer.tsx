@@ -167,7 +167,7 @@ export const GameViewer: React.FC = () => {
     try {
       const { data: forkedProject } = await projectControllerFork({ path: { id: Number(id) } });
       if (forkedProject) {
-        enqueueSnackbar(`Project forked successfully!`, { variant: "success" });
+        enqueueSnackbar("Project forked successfully!", { variant: "success" });
         navigate(urls.toProject(forkedProject.id));
       }
     } catch (error) {

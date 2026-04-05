@@ -93,7 +93,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, isPlayable = false }
     try {
       const { data: forkedProject } = await projectControllerFork({ path: { id: project.id } });
       if (forkedProject) {
-        enqueueSnackbar(`Project forked successfully!`, { variant: "success" });
+        enqueueSnackbar("Project forked successfully!", { variant: "success" });
         navigate(urls.toProject(forkedProject.id));
       }
     } catch (error) {
