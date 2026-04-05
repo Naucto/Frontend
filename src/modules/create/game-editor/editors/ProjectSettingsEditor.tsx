@@ -1,8 +1,18 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { EditorProps } from "./EditorType";
-import { Box, Button, Typography, List, ListItem, ListItemText, Divider, Chip } from "@mui/material";
+import { Box, Button, Typography, List, ListItem, ListItemText, Divider, Chip, CircularProgress } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { projectControllerFindOne, projectControllerAddCollaborator, projectControllerRemoveCollaborator, projectControllerPublish, projectControllerUnpublish, ProjectExResponseDto, UserBasicInfoDto } from "@api";
+import {
+  projectControllerFindOne,
+  projectControllerAddCollaborator,
+  projectControllerRemoveCollaborator,
+  projectControllerPublish,
+  projectControllerUnpublish,
+  projectControllerUploadProjectImage,
+  projectControllerGetProjectImage,
+  ProjectExResponseDto,
+  UserBasicInfoDto
+} from "@api";
 import { ProjectSettings } from "@providers/editors/ProjectSettingsProvider";
 import { ActionButton } from "@components/ui/ActionButton";
 import { FullWidthTextField } from "@components/ui/FullWidthTextField";
@@ -25,11 +35,21 @@ const StatusContainer = styled(Box)(({ theme }) => ({
   marginBottom: theme.spacing(2),
 }));
 
+const BannerPreview = styled("img")({
+  maxHeight: "200px",
+  maxWidth: "100%",
+  borderRadius: "4px",
+  objectFit: "cover",
+});
+
 const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
-  const [settings, setSettings] = useState<ProjectSettings>({ name: "", shortDesc: "", longDesc: "" });
+  const [settings, setSettings] = useState<ProjectSettings>({ name: "", shortDesc: "", longDesc: "", iconUrl: "" });
   const [collaborators, setCollaborators] = useState<UserBasicInfoDto[]>([]);
   const [newCollaborator, setNewCollaborator] = useState("");
   const [isPublished, setIsPublished] = useState(false);
+  const [bannerUrl, setBannerUrl] = useState<string>("");
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const fetchProjectDetails = async (): Promise<void> => {
@@ -43,6 +63,17 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
       }
     };
 
+    const fetchBannerImage = async (): Promise<void> => {
+      try {
+        const res = await projectControllerGetProjectImage({ path: { id: project.projectId } });
+        if (res.data?.url) {
+          setBannerUrl(res.data.url);
+        }
+      } catch {
+        // No banner image yet
+      }
+    };
+
     const onSettingsChange = (newSettings: ProjectSettings) : void => {
       setSettings(newSettings);
     };
@@ -53,6 +84,7 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
     }
 
     fetchProjectDetails();
+    fetchBannerImage();
 
     return () => {
       if (project.projectSettingsProvider) {
@@ -60,6 +92,32 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
       }
     };
   }, [project.projectId, project.projectSettingsProvider]);
+
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>): Promise<void> => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      await projectControllerUploadProjectImage({
+        path: { id: project.projectId },
+        body: { file }
+      });
+
+      const res = await projectControllerGetProjectImage({ path: { id: project.projectId } });
+      if (res.data?.url) {
+        setBannerUrl(res.data.url);
+      }
+    } catch (err) {
+      alert("Error uploading banner image: " +
+        (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
 
   const handleAddCollaborator = async () : Promise<void> => {
     if (!newCollaborator.trim()) return;
@@ -133,6 +191,39 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
           value={settings.name}
           onChange={(e) => project.projectSettingsProvider.updateName(e.target.value)}
         />
+
+        <Box sx={{ mt: 2, mb: 2 }}>
+          <Typography variant="subtitle1" gutterBottom>Project Banner Image</Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+            <Button
+              variant="outlined"
+              component="label"
+              disabled={isUploading}
+            >
+              {isUploading ? (
+                <><CircularProgress size={16} sx={{ mr: 1 }} /> Uploading...</>
+              ) : (
+                "Upload Banner Image"
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                hidden
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                onChange={handleBannerUpload}
+              />
+            </Button>
+            <Typography variant="caption" color="text.secondary">
+              Max 5MB. Accepted: JPEG, PNG, GIF, WebP
+            </Typography>
+          </Box>
+          {bannerUrl && (
+            <Box sx={{ display: "flex", justifyContent: "center" }}>
+              <BannerPreview src={bannerUrl} alt="Project Banner" />
+            </Box>
+          )}
+        </Box>
+
         <FullWidthTextField
           label="Project Short Description"
           value={settings.shortDesc}
