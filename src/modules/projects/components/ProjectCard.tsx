@@ -7,6 +7,7 @@ import Card from "@modules/projects/components/Card";
 import * as urls from "@shared/route";
 import LikeSvg from "@assets/like.svg";
 import CommentSvg from "@assets/comment.svg";
+import { getCachedProjectImageUrl } from "@utils/projectImageCache";
 import {
   ProjectResponseDto,
   projectControllerGetPublishedProjectImage,
@@ -132,21 +133,27 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, isPlayable = false }
     let cancelled = false;
 
     const loadImage = async (): Promise<void> => {
-      const res = isPlayable
-        ? await projectControllerGetPublishedProjectImage({ path: { id: project.id } })
-        : await projectControllerGetProjectImage({ path: { id: project.id } });
+      const imageUrl = await getCachedProjectImageUrl(
+        isPlayable ? "published" : "draft",
+        project.id,
+        async () => {
+          const res = isPlayable
+            ? await projectControllerGetPublishedProjectImage({ path: { id: project.id } })
+            : await projectControllerGetProjectImage({ path: { id: project.id } });
 
-      if (!cancelled && res.status !== 204 && res.status !== 404 && res.data?.url) {
-        setThumbnailUrl(res.data.url);
-        return;
-      }
+          return res.status !== 204 && res.status !== 404 && res.data?.url
+            ? res.data.url
+            : null;
+        },
+        typeof project.iconUrl === "string" ? project.iconUrl : null,
+      );
 
-      if (!cancelled && typeof project.iconUrl === "string" && project.iconUrl) {
-        setThumbnailUrl(project.iconUrl);
+      if (!cancelled) {
+        setThumbnailUrl(imageUrl);
       }
     };
 
-    loadImage();
+    void loadImage();
     return () => {
       cancelled = true;
     };

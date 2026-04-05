@@ -6,6 +6,7 @@ import { Box, Button, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import * as urls from "@shared/route";
 import { useAsync } from "src/hooks/useAsync";
+import { getCachedProjectImageUrl } from "@utils/projectImageCache";
 import { JSX, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -218,9 +219,20 @@ const SearchResultItem = ({ project, onSelect }: SearchResultItemProps): JSX.Ele
     let cancelled = false;
 
     const loadImage = async (): Promise<void> => {
-      const response = await projectControllerGetPublishedProjectImage({ path: { id: project.id } });
-      if (!cancelled && response.status !== 204 && response.status !== 404 && response.data?.url) {
-        setThumbnailUrl(response.data.url);
+      const imageUrl = await getCachedProjectImageUrl(
+        "published",
+        project.id,
+        async () => {
+          const response = await projectControllerGetPublishedProjectImage({ path: { id: project.id } });
+          return response.status !== 204 && response.status !== 404 && response.data?.url
+            ? response.data.url
+            : null;
+        },
+        project.iconUrl,
+      );
+
+      if (!cancelled) {
+        setThumbnailUrl(imageUrl);
       }
     };
 
@@ -278,6 +290,7 @@ type GameSearchOverlayProps = {
 
 export const GameSearchOverlay = ({ query, onClose }: GameSearchOverlayProps): JSX.Element | null => {
   const [visibleCount, setVisibleCount] = useState(10);
+  const [statsOverrides, setStatsOverrides] = useState<Record<number, Partial<Pick<ProjectResponseDto, "viewCount" | "likes" | "commentCount">>>>({});
   const trimmedQuery = normalizeSearchText(query);
 
   const { value: allProjects } = useAsync(
@@ -285,9 +298,42 @@ export const GameSearchOverlay = ({ query, onClose }: GameSearchOverlayProps): J
     []
   );
 
+  useEffect(() => {
+    const handleStatsUpdate = (event: Event): void => {
+      const customEvent = event as CustomEvent<{
+        projectId: number;
+        changes: Partial<Pick<ProjectResponseDto, "viewCount" | "likes" | "commentCount">>;
+      }>;
+
+      if (!customEvent.detail) {
+        return;
+      }
+
+      setStatsOverrides((current) => ({
+        ...current,
+        [customEvent.detail.projectId]: {
+          ...current[customEvent.detail.projectId],
+          ...customEvent.detail.changes,
+        },
+      }));
+    };
+
+    window.addEventListener("project-stats-updated", handleStatsUpdate as EventListener);
+
+    return () => {
+      window.removeEventListener("project-stats-updated", handleStatsUpdate as EventListener);
+    };
+  }, []);
+
   const publishedProjects = useMemo<SearchableProject[]>(
-    () => (allProjects ?? []).filter((project) => project.status === ("COMPLETED" satisfies ProjectResponseDto["status"])),
-    [allProjects]
+    () =>
+      (allProjects ?? [])
+        .filter((project) => project.status === ("COMPLETED" satisfies ProjectResponseDto["status"]))
+        .map((project) => ({
+          ...project,
+          ...statsOverrides[project.id],
+        })),
+    [allProjects, statsOverrides]
   );
 
   const searchResults = useMemo(() => {

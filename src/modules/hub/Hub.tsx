@@ -137,7 +137,6 @@ const CustomSortButton = styled(Button)(({ theme }) => ({
   },
 }));
 
-
 const SummaryChip = styled(Chip)(({ theme }) => ({
   backgroundColor: "rgba(255,255,255,0.08)",
   color: theme.palette.common.white,
@@ -146,14 +145,14 @@ const SummaryChip = styled(Chip)(({ theme }) => ({
 
 function getSortMetricLabel(metric: "weighted" | "viewCount" | "likes" | "commentCount"): string {
   switch (metric) {
-  case "viewCount":
-    return "Views";
-  case "likes":
-    return "Likes";
-  case "commentCount":
-    return "Comments";
-  default:
-    return "Popularity";
+    case "viewCount":
+      return "Views";
+    case "likes":
+      return "Likes";
+    case "commentCount":
+      return "Comments";
+    default:
+      return "Popularity";
   }
 }
 

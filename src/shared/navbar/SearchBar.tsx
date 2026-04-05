@@ -1,7 +1,7 @@
 import { Box, InputBase } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import SearchIcon from "@assets/search.svg?react";
-import { ChangeEvent, FormEvent, JSX, KeyboardEvent, ReactNode, useEffect, useState } from "react";
+import { ChangeEvent, FormEvent, JSX, KeyboardEvent, ReactNode, useEffect, useRef, useState } from "react";
 
 const SearchBarContainer = styled(Box)(({ theme }) => ({
   position: "relative",
@@ -53,10 +53,37 @@ interface SearchBarProps {
 
 export const SearchBar = ({ onSubmit, onChange, placeholder, value: controlledValue, overlay }: SearchBarProps): JSX.Element => {
   const [value, setValue] = useState(controlledValue ?? "");
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setValue(controlledValue ?? "");
   }, [controlledValue]);
+
+  useEffect(() => {
+    if (!value.trim()) {
+      return;
+    }
+
+    const handlePointerDown = (event: MouseEvent): void => {
+      if (!(event.target instanceof Node)) {
+        return;
+      }
+
+      if (containerRef.current?.contains(event.target)) {
+        return;
+      }
+
+      setValue("");
+      onChange?.("");
+      onSubmit("");
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+    };
+  }, [onChange, onSubmit, value]);
 
   const handleSubmit = (e: FormEvent): void => {
     e.preventDefault();
@@ -81,7 +108,7 @@ export const SearchBar = ({ onSubmit, onChange, placeholder, value: controlledVa
   };
 
   return (
-    <SearchBarContainer>
+    <SearchBarContainer ref={containerRef}>
       <SearchForm onSubmit={handleSubmit}>
         <SearchInput
           type="text"

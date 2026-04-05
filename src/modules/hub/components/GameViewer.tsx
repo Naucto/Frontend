@@ -5,9 +5,11 @@ import CloseIcon from "@mui/icons-material/Close";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import LikeSvg from "@assets/like.svg";
 import CommentSvg from "@assets/comment.svg";
+import NextSvg from "@assets/next.svg";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   projectControllerGetRelease,
+  projectControllerGetPublishedProjectImage,
   projectControllerLikeProject,
   projectControllerGetLikeStatus,
   projectControllerRegisterReleaseView,
@@ -19,6 +21,7 @@ import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
 import { GameProvider, ProviderEventType } from "@providers/GameProvider";
 import { useUser } from "@providers/UserProvider";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
+import { getCachedProjectImageUrl } from "@utils/projectImageCache";
 import CommentSection from "./CommentSection";
 
 const Overlay = styled(Box)(() => ({
@@ -27,7 +30,7 @@ const Overlay = styled(Box)(() => ({
   left: 0,
   right: 0,
   bottom: 0,
-  backgroundColor: "rgba(0, 0, 0, 0.5)",
+  backgroundColor: "rgba(0, 0, 0, 0.64)",
   backdropFilter: "blur(6px)",
   zIndex: 9999,
   overflowY: "auto",
@@ -124,6 +127,47 @@ const PlayingCanvas = styled(GameCanvas)(() => ({
   objectFit: "contain",
 }));
 
+const LaunchScreenButton = styled("button", {
+  shouldForwardProp: (prop) => prop !== "$src",
+})<{ $src: string }>(({ theme, $src }) => ({
+  width: "100%",
+  height: "100%",
+  border: "none",
+  padding: 0,
+  cursor: "pointer",
+  position: "relative",
+  overflow: "hidden",
+  borderRadius: theme.shape.borderRadius,
+  backgroundColor: "rgba(0, 0, 0, 0.42)",
+  backgroundImage: $src ? `url(${$src})` : "none",
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+}));
+
+const LaunchOverlay = styled(Box)(({ theme }) => ({
+  position: "absolute",
+  inset: 0,
+  background: "linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.58) 100%)",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: theme.spacing(2),
+}));
+
+const LaunchIcon = styled("img")({
+  width: "104px",
+  height: "104px",
+  imageRendering: "pixelated",
+});
+
+const LaunchLabel = styled(Typography)(({ theme }) => ({
+  color: theme.palette.common.white,
+  fontSize: "22px",
+  fontWeight: 600,
+  textShadow: "0 4px 18px rgba(0,0,0,0.55)",
+}));
+
 export const GameViewer: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -131,10 +175,12 @@ export const GameViewer: React.FC = () => {
   const { user } = useUser();
   const [project, setProject] = useState<ProjectExResponseDto | undefined>(undefined);
   const [loading, setLoading] = useState(true);
+  const [launching, setLaunching] = useState(false);
   const canvasRef = React.useRef<SpriteRendererHandle>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [code, setCode] = useState<string>("");
   const [output, setOutput] = useState<string>("");
+  const [bannerUrl, setBannerUrl] = useState<string>("");
 
   const [ gameProvider, setGameProvider ] = useState<GameProvider>();
   const [ showGame, setShowGame ] = useState(false);
@@ -143,18 +189,6 @@ export const GameViewer: React.FC = () => {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [viewCount, setViewCount] = useState(0);
-
-  useEffect(() => {
-    if (id) {
-      const provider = new GameProvider(Number(id));
-      setGameProvider(provider);
-
-      provider.observe(ProviderEventType.INITIALIZED, () => {
-        setShowGame(true);
-        setCode(String(provider.code || ""));
-      });
-    }
-  }, [id]);
 
   const screenSize = useMemo(() => ({
     width: 320,
@@ -176,6 +210,19 @@ export const GameViewer: React.FC = () => {
         setProject(proj);
         setLikeCount(proj?.likes ?? 0);
         setViewCount(proj?.viewCount ?? 0);
+
+        const imageUrl = await getCachedProjectImageUrl(
+          "published",
+          Number(id),
+          async () => {
+            const imageResponse = await projectControllerGetPublishedProjectImage({ path: { id: Number(id) } });
+            return imageResponse.status !== 204 && imageResponse.status !== 404 && imageResponse.data?.url
+              ? imageResponse.data.url
+              : null;
+          },
+          proj.iconUrl,
+        );
+        setBannerUrl(imageUrl);
 
         const { data: viewData } = await projectControllerRegisterReleaseView({ path: { id } });
         if (viewData) {
@@ -212,6 +259,22 @@ export const GameViewer: React.FC = () => {
 
     fetchProjectData();
   }, [id, user]);
+
+  const handleLaunchGame = (): void => {
+    if (!id || showGame || launching) {
+      return;
+    }
+
+    setLaunching(true);
+    const provider = new GameProvider(Number(id));
+    setGameProvider(provider);
+
+    provider.observe(ProviderEventType.INITIALIZED, () => {
+      setCode(String(provider.code || ""));
+      setShowGame(true);
+      setLaunching(false);
+    });
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
@@ -329,9 +392,18 @@ export const GameViewer: React.FC = () => {
               setOutput={setOutput}
             />
           ) : (
-            <Box display="flex" justifyContent="center" alignItems="center" height="100%">
-              <CircularProgress />
-            </Box>
+            <LaunchScreenButton type="button" onClick={handleLaunchGame} $src={bannerUrl}>
+              <LaunchOverlay>
+                {launching ? (
+                  <CircularProgress />
+                ) : (
+                  <>
+                    <LaunchIcon src={NextSvg} alt="play" />
+                    <LaunchLabel>Click to play</LaunchLabel>
+                  </>
+                )}
+              </LaunchOverlay>
+            </LaunchScreenButton>
           )}
         </GameContainer>
 

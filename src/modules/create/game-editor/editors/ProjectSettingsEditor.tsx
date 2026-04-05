@@ -18,6 +18,11 @@ import { ProjectSettings } from "@providers/editors/ProjectSettingsProvider";
 import { ActionButton } from "@components/ui/ActionButton";
 import { FullWidthTextField } from "@components/ui/FullWidthTextField";
 import { PREDEFINED_PROJECT_TAGS } from "@modules/projects/projectTags";
+import {
+  getCachedProjectImageUrl,
+  invalidateCachedProjectImageUrl,
+  setCachedProjectImageUrl,
+} from "@utils/projectImageCache";
 
 const Section = styled(Box)(({ theme }) => ({
   marginBottom: theme.spacing(4),
@@ -81,9 +86,17 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
 
     const fetchBannerImage = async (): Promise<void> => {
       try {
-        const res = await projectControllerGetProjectImage({ path: { id: project.projectId } });
-        if (res.data?.url) {
-          setBannerUrl(res.data.url);
+        const imageUrl = await getCachedProjectImageUrl(
+          "draft",
+          project.projectId,
+          async () => {
+            const res = await projectControllerGetProjectImage({ path: { id: project.projectId } });
+            return res.data?.url ?? null;
+          },
+          project.projectSettings?.getSettings().iconUrl,
+        );
+        if (imageUrl) {
+          setBannerUrl(imageUrl);
         }
       } catch {
         // No banner image yet
@@ -115,14 +128,24 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
 
     setIsUploading(true);
     try {
+      invalidateCachedProjectImageUrl("draft", project.projectId);
       await projectControllerUploadProjectImage({
         path: { id: project.projectId },
         body: { file }
       });
 
-      const res = await projectControllerGetProjectImage({ path: { id: project.projectId } });
-      if (res.data?.url) {
-        setBannerUrl(res.data.url);
+      const imageUrl = await getCachedProjectImageUrl(
+        "draft",
+        project.projectId,
+        async () => {
+          const res = await projectControllerGetProjectImage({ path: { id: project.projectId } });
+          return res.data?.url ?? null;
+        },
+        project.projectSettings?.getSettings().iconUrl,
+      );
+      setCachedProjectImageUrl("draft", project.projectId, imageUrl);
+      if (imageUrl) {
+        setBannerUrl(imageUrl);
       }
     } catch (err) {
       alert("Error uploading banner image: " +
@@ -168,9 +191,11 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
       if (!isPublished) {
         await project.saveContent();
         await projectControllerPublish({ path: { id: project.projectId.toString() } });
+        invalidateCachedProjectImageUrl("published", project.projectId);
         setPublishedAt(new Date().toISOString());
       } else {
         await projectControllerUnpublish({ path: { id: project.projectId.toString() } });
+        invalidateCachedProjectImageUrl("published", project.projectId);
       }
       setIsPublished(!isPublished);
     } catch (err) {
@@ -184,6 +209,7 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
     try {
       await project.saveContent();
       await projectControllerUpdateRelease({ path: { id: project.projectId.toString() } });
+      invalidateCachedProjectImageUrl("published", project.projectId);
       setPublishedAt(new Date().toISOString());
     } catch (err) {
       alert("Error updating release: " +
