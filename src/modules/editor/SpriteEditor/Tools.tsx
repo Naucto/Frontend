@@ -77,7 +77,10 @@ const Tools: React.FC<{
     let err = dx - dy;
 
     while (true) {
-      spriteProvider.setPixel(x0, y0, colorRef.current);
+      if (spriteProvider.getPixel(x0, y0) !== colorRef.current) {
+        spriteProvider.setPixel(x0, y0, colorRef.current);
+      }
+
       if (x0 === x1 && y0 === y1) break;
       const e2 = err * 2;
       if (e2 > -dy) {
@@ -97,12 +100,12 @@ const Tools: React.FC<{
     lastPosRef.current = null;
 
     if (drawTool === DrawTool.Pen) {
-      const down: CanvasHandler = (_e, pos) => {
+      const down: CanvasHandler = (pos) => {
         spriteProvider.setPixel(pos.x, pos.y, colorRef.current);
         lastPosRef.current = pos;
       };
 
-      const move: CanvasHandler = (_e, pos) => {
+      const move: CanvasHandler = (pos) => {
         const last = lastPosRef.current;
         if (!last) {
           spriteProvider.setPixel(pos.x, pos.y, colorRef.current);
@@ -113,7 +116,7 @@ const Tools: React.FC<{
         lastPosRef.current = pos;
       };
 
-      const up: CanvasHandler = (_e, pos) => {
+      const up: CanvasHandler = (pos) => {
         const last = lastPosRef.current;
         if (last) {
           drawLine(last, pos);
@@ -130,7 +133,7 @@ const Tools: React.FC<{
     }
 
     if (drawTool === DrawTool.Fill) {
-      const down: CanvasHandler = (_e, pos) => {
+      const down: CanvasHandler = (pos) => {
         floodFillAt(pos.x, pos.y, colorRef.current);
       };
 

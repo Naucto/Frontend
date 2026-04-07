@@ -54,8 +54,23 @@ export function useSpriteRenderer(
       pipelineRef.current?.destroy();
       pipelineRef.current = null;
     };
-  }, [canvasRef, map, screenSize, sprite]);
+  }, [canvasRef, map, sprite]);
 
+  useEffect(() => {
+    const p = pipelineRef.current;
+    const canvas = canvasRef.current;
+    if (!p || !canvas) return;
+
+    const gl = p.gl;
+    gl.useProgram(p.program);
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.uniform2f(
+      gl.getUniformLocation(p.program, "screen_resolution"),
+      screenSize.width,
+      screenSize.height
+    );
+
+  }, [screenSize.width, screenSize.height]);
   useEffect(() => {
     map.observe(() => {
       _refreshMapTexture();

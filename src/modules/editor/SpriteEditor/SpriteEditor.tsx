@@ -17,7 +17,7 @@ export enum DrawTool {
 }
 export type CanvasHandler = ((pixelPos: Point2D) => void) | undefined;
 
-const TILE_SIZES = Array.from({ length: 8 }, (_, i) => (i + 1) * 8);
+const TILE_SIZES = [8, 16, 32] as const;
 const BIT_INDICES = [0,1,2,3,4,5,6,7] as const;
 type TileSize = typeof TILE_SIZES[number];
 
@@ -86,12 +86,6 @@ const Panel = styled("section")(() => ({
   flexDirection: "column",
 }));
 
-const HPanel = styled("section")(() => ({
-  display: "flex",
-  flexDirection: "row",
-  gap: 16,
-}));
-
 const SpriteMetaPanel = styled("div")(({ theme }) => ({
   display: "grid",
   gap: theme.spacing(1.25),
@@ -142,11 +136,12 @@ const BitButton = styled("button", {
 
 const ColorSelector = styled("div")(({ theme }) => ({
   display: "grid",
-  gridTemplateColumns: "repeat(3, 0fr)",
+  gridTemplateColumns: "repeat(3, 1fr)",
   gap: theme.spacing(1),
   padding: theme.spacing(0.5),
   backgroundColor: theme.palette.blue[800],
   borderRadius: theme.shape.borderRadius,
+  width: "100%",
   height: "fit-content",
   alignContent: "start",
   overflowY: "auto",
@@ -173,10 +168,11 @@ const ColorButtonStyled = styled("button", {
 }));
 
 const CanvasViewport = styled("div")(({ theme }) => ({
-  backgroundColor: theme.palette.grey[900],
   position: "relative",
   borderRadius: theme.shape.borderRadius,
   overflow: "hidden",
+  backgroundColor: theme.palette.grey[900],
+  boxShadow: `inset 0 0 0 1px ${theme.palette.action.selected}`,
 }));
 
 function clamp(value: number, min: number, max: number): number {
@@ -216,6 +212,18 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
   const selectionCanvasRef = useRef<SpriteRendererHandle | null>(null);
   const detailCanvasRef = useRef<SpriteRendererHandle | null>(null);
 
+  const setSelectionCanvasHandle = useCallback((handle: SpriteRendererHandle | null) => {
+    if (selectionCanvasRef.current === handle) return;
+    selectionCanvasRef.current = handle;
+    setSelectionCanvasVersion((value) => value + 1);
+  }, []);
+
+  const setDetailCanvasHandle = useCallback((handle: SpriteRendererHandle | null) => {
+    if (detailCanvasRef.current === handle) return;
+    detailCanvasRef.current = handle;
+    setDetailCanvasVersion((value) => value + 1);
+  }, []);
+
   const setOnMouseDown = useCallback((fn: CanvasHandler) => {
     onMouseDownRef.current = fn;
   }, []);
@@ -243,53 +251,16 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
 
   const tileSpriteSpanWidth = tileSize / baseSpriteWidth;
   const tileSpriteSpanHeight = tileSize / baseSpriteHeight;
-
   const selectedTileIndex = (selectedTile.y / baseSpriteHeight) * spritesPerRow + (selectedTile.x / baseSpriteWidth);
   const selectedSpriteX = selectedTileIndex % spritesPerRow;
   const selectedSpriteY = Math.floor(selectedTileIndex / spritesPerRow);
-
   const selectedSpriteFlag = project.spriteProvider.getFlag(selectedTileIndex);
   const selectedSpriteFlagBits = formatByte(selectedSpriteFlag);
 
-  const drawSelectionCanvas = useCallback((): void => {
-    const handle = selectionCanvasRef.current;
-    if (!handle) return;
-
-    handle.queueSpriteDraw(0, 0, 0, spritesPerRow, sheetHeight / baseSpriteHeight);
-    handle.draw();
-  }, [baseSpriteHeight, sheetHeight, spritesPerRow]);
-
-  const drawDetailCanvas = useCallback((): void => {
-    const handle = detailCanvasRef.current;
-    if (!handle) return;
-
-    handle.queueSpriteDraw(selectedTileIndex, 0, 0, tileSpriteSpanWidth, tileSpriteSpanHeight);
-    handle.draw();
-  }, [selectedTileIndex, tileSpriteSpanHeight, tileSpriteSpanWidth]);
-
-  const redraw = useCallback((): void => {
-    drawDetailCanvas();
-    drawSelectionCanvas();
-  }, [drawDetailCanvas, drawSelectionCanvas]);
-
-  const setSelectionCanvasHandle = useCallback((handle: SpriteRendererHandle | null) => {
-    selectionCanvasRef.current = handle;
-    if (handle) {
-      redraw();
-    }
-  }, [redraw]);
-
-  const setDetailCanvasHandle = useCallback((handle: SpriteRendererHandle | null) => {
-    detailCanvasRef.current = handle;
-    if (handle) {
-      redraw();
-    }
-  }, [redraw]);
-
   useEffect(() => {
-    project.spriteProvider.observe(redraw);
-    project.spriteProvider.observeFlags(() => setFlagVersion((value) => value + 1));
-  }, [project, redraw]);
+    project.spriteProvider.observe(() => setVersion((value) => value + 1));
+    project.spriteProvider.observeFlags(() => setVersion((value) => value + 1));
+  }, [project]);
 
   useEffect(() => {
     setSelectedTile((prevTile) => ({
@@ -318,8 +289,22 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
   }, [project.spriteProvider, selectedTile.x, selectedTile.y, tileSize]);
 
   useEffect(() => {
-    redraw();
-  }, [redraw, selectedTile, tileSize]);
+    const handle = selectionCanvasRef.current;
+    if (!handle) return;
+
+    handle.clear(0);
+    handle.queueSpriteDraw(0, 0, 0, spritesPerRow, sheetHeight / baseSpriteHeight);
+    handle.draw();
+  }, [baseSpriteHeight, selectedTile.x, selectedTile.y, selectionCanvasVersion, sheetHeight, spritesPerRow, tileSize, version]);
+
+  useEffect(() => {
+    const handle = detailCanvasRef.current;
+    if (!handle) return;
+
+    handle.clear(0);
+    handle.queueSpriteDraw(selectedTileIndex, 0, 0, tileSpriteSpanWidth, tileSpriteSpanHeight);
+    handle.draw();
+  }, [detailCanvasVersion, selectedTileIndex, tileSpriteSpanHeight, tileSpriteSpanWidth, version]);
 
   const handleContextMenu = (e: React.MouseEvent): void => {
     e.preventDefault();
@@ -350,34 +335,24 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
   const handleEditorMouseDown = (e: React.MouseEvent<HTMLCanvasElement>): void => {
     if (e.button !== 0) return;
 
-    isDrawingRef.current = true;
-    onMouseDownRef.current?.(toSelectedTilePixel(e));
-    redraw();
+    setIsDrawing(true);
+    onMouseDownRef.current?.(e, toSelectedTilePixel(e));
+    setVersion((value) => value + 1);
   };
 
   const handleEditorMouseMove = (e: React.MouseEvent<HTMLCanvasElement>): void => {
     if (!isDrawingRef.current) return;
 
-    onMouseMoveRef.current?.(toSelectedTilePixel(e));
-    redraw();
+    onMouseMoveRef.current?.(e, toSelectedTilePixel(e));
+    setVersion((value) => value + 1);
   };
 
   const handleEditorMouseUp = (e: React.MouseEvent<HTMLCanvasElement>): void => {
     if (e.button !== 0) return;
 
-    if (isDrawingRef.current) {
-      onMouseUpRef.current?.(toSelectedTilePixel(e));
-      redraw();
-    }
-    isDrawingRef.current = false;
-  };
-
-  const handleEditorMouseLeave = (e: React.MouseEvent<HTMLCanvasElement>): void => {
-    if (!isDrawingRef.current) return;
-
-    onMouseUpRef.current?.(toSelectedTilePixel(e));
-    isDrawingRef.current = false;
-    redraw();
+    onMouseUpRef.current?.(e, toSelectedTilePixel(e));
+    setIsDrawing(false);
+    setVersion((value) => value + 1);
   };
 
   const handleFlagChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
@@ -410,12 +385,15 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
       data-cy="sprite-editor"
     >
       <ToolBar>
-        <HPanel>
+        <Panel>
           <ColorPalette
             colors={colorPalette}
             currentColor={currentColor}
             onColorSelect={setCurrentColor}
           />
+        </Panel>
+
+        <Panel>
           <Tools
             color={currentColor}
             setOnMouseDown={setOnMouseDown}
@@ -425,7 +403,7 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
             onSelectTool={setDrawTool}
             spriteProvider={tileSpriteAccessor}
           />
-        </HPanel>
+        </Panel>
 
         <Panel>
           <SpriteMetaPanel>
@@ -494,7 +472,7 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
 
       <CanvasColumns>
         <Panel>
-          <CanvasViewport onWheel={handleTileSizeWheel}>
+          <CanvasViewport>
             <StyledCanvas
               ref={setDetailCanvasHandle}
               sprite={project.spriteProvider}
