@@ -1,8 +1,20 @@
 import { DrawTool, CanvasHandler } from "@modules/editor/SpriteEditor/SpriteEditor";
 import React, { useEffect, useRef } from "react";
 import { SpriteProvider } from "@providers/editors/SpriteProvider";
+import { styled } from "@mui/material";
 
 export type SpritePixelAccessor = Pick<SpriteProvider, "isPixelInBounds" | "getPixel" | "setPixel">;
+
+const Container = styled("div")(() => ({
+  display: "flex",
+  gap: 8,
+}));
+
+const ToolButton = styled("button")(({ theme }) => ({
+  padding: theme.spacing(0.5, 1),
+  width: theme.spacing(6),
+  height: theme.spacing(6),
+}));
 
 const Tools: React.FC<{
   color: number;
@@ -129,11 +141,11 @@ const Tools: React.FC<{
   }, [drawTool, setOnMouseDown, setOnMouseMove, setOnMouseUp, spriteProvider]);
 
   return (
-    <>
-      <button onClick={() => onSelectTool(DrawTool.Pen)}>Pen</button>
+    <Container>
+      <ToolButton onClick={() => onSelectTool(DrawTool.Pen)}>Pen</ToolButton>
       {/* FILL commented because not working properly on collaborative editing */}
       {/* <button className={drawTool === DrawTool.Fill ? "active" : ""} onClick={() => onSelectTool(DrawTool.Fill)}>Fill</button> */}
-    </>
+    </Container>
   );
 };
 
