@@ -16,9 +16,9 @@ type GameCanvasProps = {
 
 const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(
   ({ canvasProps, envData, setOutput, className, soundProvider }, ref) => {
-    const spriteRendererHandleRef = useRef<SpriteRendererHandle>(null);
-    const luaEnvManagerRef = useRef<LuaEnvironmentManager>(null);
-    const animationFrameRef = useRef<number>(null);
+    const spriteRendererHandleRef = useRef<SpriteRendererHandle>(undefined);
+    const luaEnvManagerRef = useRef<LuaEnvironmentManager>(undefined);
+    const animationFrameRef = useRef<number>(undefined);
     const keyHandlerRef = useRef<KeyHandler>(new KeyHandler);
     const musicPlayerRef = useRef<MusicPlayer>(undefined);
 
@@ -86,7 +86,7 @@ const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(
       return () => {
         if (animationFrameRef.current) {
           cancelAnimationFrame(animationFrameRef.current);
-          animationFrameRef.current = null;
+          animationFrameRef.current = undefined;
         }
       };
     }, [envData.code]);
