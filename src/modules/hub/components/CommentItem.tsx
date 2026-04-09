@@ -1,16 +1,11 @@
 import React, { useState } from "react";
 import { styled } from "@mui/material/styles";
-import { Box, Typography, IconButton, TextField, Button } from "@mui/material";
+import { Box, Typography, IconButton } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ReplyIcon from "@mui/icons-material/Reply";
 import { CommentResponseDto } from "@api";
 import { useUser } from "@providers/UserProvider";
-import {
-  COMMENT_MAX_LENGTH,
-  COMMENT_MAX_NEWLINES,
-  countCommentNewlines,
-  sanitizeCommentValue,
-} from "./commentValidation";
+import CommentComposer from "./CommentComposer";
 
 const CommentContainer = styled(Box)(({ theme }) => ({
   padding: theme.spacing(2),
@@ -93,7 +88,6 @@ const CommentItem: React.FC<CommentItemProps> = ({
   const [submitting, setSubmitting] = useState(false);
 
   const canDelete = !comment.deleted && user && (user.id === comment.author.id || isProjectCreator);
-  const replyNewlineCount = countCommentNewlines(replyContent);
 
   const handleReply = async (): Promise<void> => {
     if (!replyContent.trim()) return;
@@ -176,36 +170,17 @@ const CommentItem: React.FC<CommentItemProps> = ({
       {/* Reply input */}
       {showReplyInput && (
         <ReplyInput>
-          <TextField
-            size="small"
-            placeholder="Write a reply..."
+          <CommentComposer
+            compact
             value={replyContent}
-            onChange={(e) => setReplyContent(sanitizeCommentValue(e.target.value))}
-            fullWidth
-            multiline
+            onChange={setReplyContent}
+            onSubmit={handleReply}
+            placeholder="Write a reply..."
+            submitLabel="Reply"
             minRows={2}
             maxRows={8}
-            helperText={`${replyContent.length}/${COMMENT_MAX_LENGTH} chars • ${replyNewlineCount}/${COMMENT_MAX_NEWLINES} line breaks`}
-            sx={{
-              "& .MuiInputBase-root": {
-                color: "white",
-                fontSize: "13px",
-              },
-              "& .MuiFormHelperText-root": {
-                color: "rgba(255,255,255,0.65)",
-                marginLeft: 0,
-              },
-            }}
+            submitting={submitting}
           />
-          <Button
-            variant="contained"
-            size="small"
-            onClick={handleReply}
-            disabled={submitting || !replyContent.trim()}
-            sx={{ minWidth: "60px" }}
-          >
-            Reply
-          </Button>
         </ReplyInput>
       )}
     </>

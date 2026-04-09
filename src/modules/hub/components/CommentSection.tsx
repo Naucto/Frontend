@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { styled } from "@mui/material/styles";
-import { Box, Typography, TextField, Button, CircularProgress } from "@mui/material";
+import { Box, Typography, Button, CircularProgress } from "@mui/material";
 import CommentSvg from "@assets/comment.svg";
 import {
   commentControllerGetComments,
@@ -11,12 +11,7 @@ import {
 } from "@api";
 import { useUser } from "@providers/UserProvider";
 import CommentItem from "./CommentItem";
-import {
-  COMMENT_MAX_LENGTH,
-  COMMENT_MAX_NEWLINES,
-  countCommentNewlines,
-  sanitizeCommentValue,
-} from "./commentValidation";
+import CommentComposer from "./CommentComposer";
 
 const SectionContainer = styled(Box)(({ theme }) => ({
   marginTop: theme.spacing(3),
@@ -209,7 +204,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
   };
 
   const hasMore = comments.length < total;
-  const commentNewlineCount = countCommentNewlines(newComment);
 
   return (
     <SectionContainer>
@@ -225,34 +219,16 @@ const CommentSection: React.FC<CommentSectionProps> = ({
       {/* Comment input (logged-in users only) */}
       {user ? (
         <CommentInputContainer>
-          <TextField
-            size="small"
-            placeholder="Write a comment..."
+          <CommentComposer
             value={newComment}
-            onChange={(e) => setNewComment(sanitizeCommentValue(e.target.value))}
-            fullWidth
-            multiline
+            onChange={setNewComment}
+            onSubmit={handlePostComment}
+            placeholder="Write a comment..."
+            submitLabel="Post"
             minRows={3}
             maxRows={12}
-            helperText={`${newComment.length}/${COMMENT_MAX_LENGTH} chars • ${commentNewlineCount}/${COMMENT_MAX_NEWLINES} line breaks`}
-            sx={{
-              "& .MuiInputBase-root": {
-                color: "white",
-              },
-              "& .MuiFormHelperText-root": {
-                color: "rgba(255,255,255,0.65)",
-                marginLeft: 0,
-              },
-            }}
+            submitting={submitting}
           />
-          <Button
-            variant="contained"
-            onClick={handlePostComment}
-            disabled={submitting || !newComment.trim()}
-            sx={{ minWidth: "80px", alignSelf: "flex-start", mt: 0.25 }}
-          >
-            {submitting ? <CircularProgress size={20} /> : "Post"}
-          </Button>
         </CommentInputContainer>
       ) : (
         <Box px={3} py={2}>

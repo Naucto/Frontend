@@ -64,6 +64,14 @@ export class LocalStorageManager {
     LocalStorageManager.setToken(undefined);
   }
 
+  private static safeSetItem(key: string, value: string): void {
+    try {
+      localStorage.setItem(key, value);
+    } catch {
+      console.warn(`Failed to write to localStorage for key: ${key}`);
+    }
+  }
+
   // ─── Liked Projects (anonymous like tracking) ─────────────────────────
 
   private static readonly LIKED_PROJECTS_KEY = "liked_projects";
@@ -82,13 +90,13 @@ export class LocalStorageManager {
     const liked = this.getLikedProjects();
     if (!liked.includes(id)) {
       liked.push(id);
-      localStorage.setItem(this.LIKED_PROJECTS_KEY, JSON.stringify(liked));
+      this.safeSetItem(this.LIKED_PROJECTS_KEY, JSON.stringify(liked));
     }
   }
 
   static removeLikedProject(id: number): void {
     const liked = this.getLikedProjects().filter((pid) => pid !== id);
-    localStorage.setItem(this.LIKED_PROJECTS_KEY, JSON.stringify(liked));
+    this.safeSetItem(this.LIKED_PROJECTS_KEY, JSON.stringify(liked));
   }
 
   static isProjectLiked(id: number): boolean {
@@ -107,7 +115,7 @@ export class LocalStorageManager {
   static addPlayedProject(id: number): void {
     const played = this.getPlayedProjects().filter((projectId) => projectId !== id);
     played.unshift(id);
-    localStorage.setItem(
+    this.safeSetItem(
       this.PLAYED_PROJECTS_KEY,
       JSON.stringify(played.slice(0, 24))
     );
