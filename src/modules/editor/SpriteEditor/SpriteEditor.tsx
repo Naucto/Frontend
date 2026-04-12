@@ -483,8 +483,8 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
             <SelectedSpriteFrame
               $left={`${(selectedSpriteX / spritesPerRow) * 100}%`}
               $top={`${(selectedSpriteY / spritesPerCol) * 100}%`}
-              $width={`${(100 / spritesPerRow)*tileSize/8}%`}
-              $height={`${(100 / spritesPerCol)*tileSize/8}%`}
+              $width={`${(100 / spritesPerRow) * tileSize / 8}%`}
+              $height={`${(100 / spritesPerCol) * tileSize / 8}%`}
             />
           </CanvasViewport>
         </Panel>
