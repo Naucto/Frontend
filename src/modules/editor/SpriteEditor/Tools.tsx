@@ -1,21 +1,27 @@
 import { DrawTool, CanvasHandler } from "@modules/editor/SpriteEditor/SpriteEditor";
 import React, { useEffect, useRef, useState } from "react";
 import { SpriteProvider } from "@providers/editors/SpriteProvider";
+import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 
 const Tools: React.FC<{
   color: number;
   position: Point2D;
+  zoom: number;
   drawTool: DrawTool;
   onSelectTool: (tool: DrawTool) => void;
   spriteProvider: SpriteProvider;
   setOnMouseMove?: (fn: CanvasHandler) => void;
   setOnMouseUp?: (fn: CanvasHandler) => void;
   setOnMouseDown?: (fn: CanvasHandler) => void;
-}> = ({ drawTool, onSelectTool, setOnMouseDown, setOnMouseMove, setOnMouseUp, spriteProvider: spriteProvider, color }) => {
+  setPreviewOverlay?: (fn: ((renderer: SpriteRendererHandle) => void) | null) => void;
+}> = ({ drawTool, onSelectTool, setOnMouseDown, setOnMouseMove, setOnMouseUp, spriteProvider, color, position, zoom, setPreviewOverlay }) => {
   const lastPosRef = useRef<Point2D | null>(null);
   const colorRef = useRef(color);
   const [fillCircle, setFillCircle] = useState(false);
   const fillCircleRef = useRef(false);
+  const previewRef = useRef<{ center: Point2D; radius: number } | null>(null);
+  const positionRef = useRef(position);
+  const zoomRef = useRef(zoom);
 
   useEffect(() => {
     colorRef.current = color;
@@ -24,6 +30,9 @@ const Tools: React.FC<{
   useEffect(() => {
     fillCircleRef.current = fillCircle;
   }, [fillCircle]);
+
+  useEffect(() => { positionRef.current = position; }, [position]);
+  useEffect(() => { zoomRef.current = zoom; }, [zoom]);
 
   // FIX IT TO MAKE IT WORK PROPERLY ON COLLABORATIVE EDITING
   const floodFillAt = (sx: number, sy: number, newColor: number): void => {
@@ -130,6 +139,8 @@ const Tools: React.FC<{
     setOnMouseMove?.(undefined);
     setOnMouseUp?.(undefined);
     lastPosRef.current = null;
+    setPreviewOverlay?.(null);
+    previewRef.current = null;
 
     if (drawTool === DrawTool.Pen) {
       const down: CanvasHandler = (_e, pos) => {
@@ -139,10 +150,9 @@ const Tools: React.FC<{
 
       const move: CanvasHandler = (_e, pos) => {
         const last = lastPosRef.current;
-        if (!last) {
-          spriteProvider.setPixel(pos.x, pos.y, colorRef.current);
+        if (last) {
+          drawLine(last, pos);
           lastPosRef.current = pos;
-          return;
         }
       };
 
@@ -172,17 +182,50 @@ const Tools: React.FC<{
     }
 
     if (drawTool === DrawTool.Circle) {
+      const spriteNumber = spriteProvider.size.width / spriteProvider.spriteSize.width;
+
+      const overlayFn = (renderer: SpriteRendererHandle): void => {
+        const prev = previewRef.current;
+        if (!prev || prev.radius <= 0) return;
+
+        const pixelSize = spriteNumber / zoomRef.current;
+        const snappedX = Math.floor(positionRef.current.x);
+        const snappedY = Math.floor(positionRef.current.y);
+
+        const drawPoint = (px: number, py: number): void => {
+          renderer.drawRect(colorRef.current, (snappedX + px) * pixelSize, (snappedY + py) * pixelSize, pixelSize, pixelSize);
+        };
+
+        let x = prev.radius;
+        let y = 0;
+        let err = 1 - prev.radius;
+        while (x >= y) {
+          drawPoint(prev.center.x + x, prev.center.y + y);
+          drawPoint(prev.center.x - x, prev.center.y + y);
+          drawPoint(prev.center.x + x, prev.center.y - y);
+          drawPoint(prev.center.x - x, prev.center.y - y);
+          drawPoint(prev.center.x + y, prev.center.y + x);
+          drawPoint(prev.center.x - y, prev.center.y + x);
+          drawPoint(prev.center.x + y, prev.center.y - x);
+          drawPoint(prev.center.x - y, prev.center.y - x);
+          y++;
+          if (err < 0) err += 2 * y + 1;
+          else { x--; err += 2 * (y - x) + 1; }
+        }
+      };
+      setPreviewOverlay?.(overlayFn);
+
       const down: CanvasHandler = (_e, pos) => {
         lastPosRef.current = pos;
+        previewRef.current = { center: pos, radius: 0 };
       };
 
-      //TODO: Implement circle preview
-      /* const move: CanvasHandler = (_e, pos) => {
+      const move: CanvasHandler = (_e, pos) => {
         const last = lastPosRef.current;
-        if (!last) {
-          return;
-        }
-      }; */
+        if (!last) return;
+        const radius = Math.floor(Math.sqrt((pos.x - last.x) ** 2 + (pos.y - last.y) ** 2));
+        previewRef.current = { center: last, radius };
+      };
 
       const up: CanvasHandler = (_e, pos) => {
         const last = lastPosRef.current;
@@ -192,11 +235,12 @@ const Tools: React.FC<{
         } else {
           drawCircle(pos.x, pos.y, 1, colorRef.current, fillCircleRef.current);
         }
+        previewRef.current = null;
         lastPosRef.current = null;
       };
 
       setOnMouseDown?.(down);
-      //setOnMouseMove?.(move);
+      setOnMouseMove?.(move);
       setOnMouseUp?.(up);
       return;
     }
@@ -210,7 +254,7 @@ const Tools: React.FC<{
       return;
     }
 
-  }, [drawTool, setOnMouseDown, setOnMouseMove, setOnMouseUp, spriteProvider]);
+  }, [drawTool, setOnMouseDown, setOnMouseMove, setOnMouseUp, setPreviewOverlay, spriteProvider]);
 
   return (
     <>

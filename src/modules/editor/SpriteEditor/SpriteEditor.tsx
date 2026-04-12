@@ -207,6 +207,11 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
   const setOnMouseMove = useCallback((fn: CanvasHandler) => onMouseMoveRef.current = fn, []);
   const setOnMouseUp = useCallback((fn: CanvasHandler) => onMouseUpRef.current = fn, []);
 
+  const previewOverlayRef = useRef<((renderer: SpriteRendererHandle) => void) | null>(null);
+  const setPreviewOverlay = useCallback((fn: ((renderer: SpriteRendererHandle) => void) | null) => {
+    previewOverlayRef.current = fn;
+  }, []);
+
   const [position, setPosition] = useState<Point2D>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -266,6 +271,7 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
         0, 0,
         (1 / zoom) * SPRITE_NUMBER);
       drawCanvasRef.current.draw();
+      previewOverlayRef.current?.(drawCanvasRef.current);
     }
   }, [project.spriteProvider, drawCanvasRef, position, version, zoom]);
 
@@ -345,9 +351,11 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
             <Tools
               color={currentColor}
               position={position}
+              zoom={zoom}
               setOnMouseDown={setOnMouseDown}
               setOnMouseMove={setOnMouseMove}
               setOnMouseUp={setOnMouseUp}
+              setPreviewOverlay={setPreviewOverlay}
               drawTool={drawTool}
               onSelectTool={setDrawTool}
               spriteProvider={project.spriteProvider}
