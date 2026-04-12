@@ -1,5 +1,5 @@
 import { DrawTool, CanvasHandler } from "@modules/editor/SpriteEditor/SpriteEditor";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { SpriteProvider } from "@providers/editors/SpriteProvider";
 
 const Tools: React.FC<{
@@ -14,10 +14,16 @@ const Tools: React.FC<{
 }> = ({ drawTool, onSelectTool, setOnMouseDown, setOnMouseMove, setOnMouseUp, spriteProvider: spriteProvider, color }) => {
   const lastPosRef = useRef<Point2D | null>(null);
   const colorRef = useRef(color);
+  const [fillCircle, setFillCircle] = useState(false);
+  const fillCircleRef = useRef(false);
 
   useEffect(() => {
     colorRef.current = color;
   }, [color]);
+
+  useEffect(() => {
+    fillCircleRef.current = fillCircle;
+  }, [fillCircle]);
 
   // FIX IT TO MAKE IT WORK PROPERLY ON COLLABORATIVE EDITING
   const floodFillAt = (sx: number, sy: number, newColor: number): void => {
@@ -182,9 +188,9 @@ const Tools: React.FC<{
         const last = lastPosRef.current;
         if (last) {
           const radius = Math.floor(Math.sqrt((pos.x - last.x) ** 2 + (pos.y - last.y) ** 2));
-          drawCircle(last.x, last.y, radius, colorRef.current, false);
+          drawCircle(last.x, last.y, radius, colorRef.current, fillCircleRef.current);
         } else {
-          drawCircle(pos.x, pos.y, 1, colorRef.current, false);
+          drawCircle(pos.x, pos.y, 1, colorRef.current, fillCircleRef.current);
         }
         lastPosRef.current = null;
       };
@@ -210,6 +216,16 @@ const Tools: React.FC<{
     <>
       <button onClick={() => onSelectTool(DrawTool.Pen)}>Pen</button>
       <button onClick={() => onSelectTool(DrawTool.Circle)}>Circle</button>
+      {drawTool === DrawTool.Circle && (
+        <label>
+          <input
+            type="checkbox"
+            checked={fillCircle}
+            onChange={(e) => setFillCircle(e.target.checked)}
+          />
+          Fill
+        </label>
+      )}
       {/* FILL commented because not working properly on collaborative editing */}
       {/* <button className={drawTool === DrawTool.Fill ? "active" : ""} onClick={() => onSelectTool(DrawTool.Fill)}>Fill</button> */}
     </>
