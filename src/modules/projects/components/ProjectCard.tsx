@@ -29,7 +29,7 @@ const StyledCard = styled(Card, {
   backgroundPosition: "center",
   overflow: "hidden",
   "&::before": {
-    content: '""',
+    content: "\"\"",
     position: "absolute",
     inset: 0,
     backgroundColor: "rgba(0, 0, 0, 0)",
@@ -67,7 +67,7 @@ const Thumbnail = styled("div", {
   boxShadow: "0 14px 40px rgba(0, 0, 0, 0.18)",
   position: "relative",
   "&::after": {
-    content: '""',
+    content: "\"\"",
     position: "absolute",
     inset: 0,
     backgroundColor: "rgba(0, 0, 0, 0)",
