@@ -35,10 +35,9 @@ const FilterPanel = styled(Box)(({ theme }) => ({
 
 const HeaderRow = styled(Box)(({ theme }) => ({
   display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
+  flexDirection: "column",
+  alignItems: "flex-start",
   gap: theme.spacing(2),
-  flexWrap: "wrap",
 }));
 
 const HeaderControls = styled(Box)(({ theme }) => ({
@@ -46,6 +45,7 @@ const HeaderControls = styled(Box)(({ theme }) => ({
   alignItems: "center",
   gap: theme.spacing(1),
   flexWrap: "wrap",
+  justifyContent: "flex-start",
 }));
 
 const Section = styled(Box)(({ theme }) => ({
