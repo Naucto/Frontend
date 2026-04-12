@@ -23,7 +23,7 @@ const SelectedSpritePreview = styled("div")(({ theme }) => ({
   zIndex: 1,
   padding: theme.spacing(1),
   borderRadius: theme.spacing(1),
-  backgroundColor: "rgb(0, 0, 0, 0.50)",
+  backgroundColor: "rgba(0, 0, 0, 0.50)",
 }));
 
 const PreviewCanvas = styled(StyledCanvas)(({ theme }) => ({
