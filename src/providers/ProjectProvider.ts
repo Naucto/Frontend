@@ -97,8 +97,8 @@ export class ProjectProvider implements Destroyable {
 
       console.log("Fetched project content");
 
-      if (projectContent) {
-        await decodeUpdate(this._yjsDoc, projectContent);
+      if (projectContent!.size > 0) {
+        await decodeUpdate(this._yjsDoc, projectContent!);
 
         console.log("Project content decoded successfully");
       } else {
