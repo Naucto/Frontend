@@ -103,7 +103,7 @@ export const MapViewport: React.FC<Props> = ({ selectedIndex, project }) => {
 
   useEffect(() => {
     spriteRendererHandleRef.current?.drawMap(offset.x, offset.y);
-  }, [spriteRendererHandleRef]);
+  }, [spriteRendererHandleRef, offset]);
 
   useEffect(() => {
     const handle = previewRendererHandleRef.current;
