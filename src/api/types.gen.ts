@@ -4,68 +4,6 @@ export type ClientOptions = {
   baseURL: string;
 };
 
-export type ProjectResponseDto = {
-  /**
-   * The unique identifier of the project
-   */
-  id: number;
-  /**
-   * The name of the project
-   */
-  name: string;
-  /**
-   * A short description of the project
-   */
-  shortDesc: string;
-  /**
-   * A detailed description of the project
-   */
-  longDesc: string | null;
-  /**
-   * URL to the project icon
-   */
-  iconUrl: string | null;
-  /**
-   * The current status of the project
-   */
-  status: "IN_PROGRESS" | "COMPLETED" | "ARCHIVED";
-  /**
-   * The monetization strategy for this project
-   */
-  monetization: "NONE" | "ADS" | "PAID";
-  /**
-   * The price of the project, if applicable
-   */
-  price: number | null;
-  /**
-   * The ID of the user who owns this project
-   */
-  userId: number;
-  /**
-   * The date and time when the project was created
-   */
-  createdAt: string;
-  /**
-   * The number of unique players who have interacted with this project
-   */
-  uniquePlayers: number;
-  /**
-   * The number of currently active players in this project
-   */
-  activePlayers: number;
-  /**
-   * The number of likes received by the project
-   */
-  likes: number;
-};
-
-export type SignedUrlResponseDto = {
-  /**
-   * The signed CloudFront URL for accessing the protected file
-   */
-  signedUrl: string;
-};
-
 export type UserBasicInfoDto = {
   /**
    * The unique identifier of the user
@@ -99,6 +37,206 @@ export type ProjectExResponseDto = {
    */
   longDesc: string | null;
   /**
+   * Tags associated with the project
+   */
+  tags: Array<string>;
+  /**
+   * URL to the project icon
+   */
+  iconUrl: string | null;
+  /**
+   * The current status of the project
+   */
+  status: "IN_PROGRESS" | "COMPLETED" | "ARCHIVED";
+  /**
+   * The monetization strategy for this project
+   */
+  monetization: "NONE" | "ADS" | "PAID";
+  /**
+   * The price of the project, if applicable
+   */
+  price: number | null;
+  /**
+   * The ID of the user who owns this project
+   */
+  userId: number;
+  /**
+   * The date and time when the project was created
+   */
+  createdAt: string;
+  /**
+   * The date and time when the project was last updated
+   */
+  updatedAt: string;
+  /**
+   * The date and time when the project was last published
+   */
+  publishedAt: string | null;
+  /**
+   * The number of times players opened this game's play page
+   */
+  viewCount: number;
+  /**
+   * The number of unique players who have interacted with this project
+   */
+  uniquePlayers: number;
+  /**
+   * The number of currently active players in this project
+   */
+  activePlayers: number;
+  /**
+   * The number of likes received by the project
+   */
+  likes: number;
+  
+  /**
+   * The number of comments on the project
+   */
+  commentCount?: number;
+
+  /**
+   * The number of forks created from this project
+   */
+  forkCount?: number;
+
+  /**
+   * The ID of the project this was forked from, if any
+   */
+  forkedFromId?: number | null;
+  /**
+   * The users collaborating on this project
+   */
+  collaborators: Array<UserBasicInfoDto>;
+  /**
+   * The creator of this project
+   */
+  creator: UserBasicInfoDto;
+};
+
+export type SignedUrlResponseDto = {
+  /**
+   * The signed CloudFront URL for accessing the protected file
+   */
+  signedUrl: string;
+};
+
+export type ProjectResponseDto = {
+  /**
+   * The unique identifier of the project
+   */
+  id: number;
+  /**
+   * The name of the project
+   */
+  name: string;
+  /**
+   * A short description of the project
+   */
+  shortDesc: string;
+  /**
+   * A detailed description of the project
+   */
+  longDesc: string | null;
+  /**
+   * Tags associated with the project
+   */
+  tags: Array<string>;
+  /**
+   * URL to the project icon
+   */
+  iconUrl: string | null;
+  /**
+   * The current status of the project
+   */
+  status: "IN_PROGRESS" | "COMPLETED" | "ARCHIVED";
+  /**
+   * The monetization strategy for this project
+   */
+  monetization: "NONE" | "ADS" | "PAID";
+  /**
+   * The price of the project, if applicable
+   */
+  price: number | null;
+  /**
+   * The ID of the user who owns this project
+   */
+  userId: number;
+  /**
+   * The date and time when the project was created
+   */
+  createdAt: string;
+  /**
+   * The date and time when the project was last updated
+   */
+  updatedAt: string;
+  /**
+   * The date and time when the project was last published
+   */
+  publishedAt: string | null;
+  /**
+   * The number of times players opened this game's play page
+   */
+  viewCount: number;
+  /**
+   * The number of unique players who have interacted with this project
+   */
+  uniquePlayers: number;
+  /**
+   * The number of currently active players in this project
+   */
+  activePlayers: number;
+  /**
+   * The number of likes received by the project
+   */
+  likes: number;
+  /**
+   * The number of comments on the project
+   */
+  commentCount?: number;
+
+  /**
+   * The number of forks created from this project
+   */
+  forkCount?: number;
+};
+
+export type CreateProjectDto = {
+  /**
+   * The name of the project
+   */
+  name: string;
+  /**
+   * A short description of the project
+   */
+  shortDesc: string;
+  /**
+   * URL to the project icon
+   */
+  iconUrl?: string;
+  /**
+   * Tags attached to the project
+   */
+  tags?: Array<string>;
+};
+
+export type ForkProjectResponseDto = {
+  /**
+   * The unique identifier of the project
+   */
+  id: number;
+  /**
+   * The name of the project
+   */
+  name: string;
+  /**
+   * A short description of the project
+   */
+  shortDesc: string;
+  /**
+   * A detailed description of the project
+   */
+  longDesc: string | null;
+  /**
    * URL to the project icon
    */
   iconUrl: string | null;
@@ -135,6 +273,10 @@ export type ProjectExResponseDto = {
    */
   likes: number;
   /**
+   * The ID of the project this was forked from, if any
+   */
+  forkedFromId?: number | null;
+  /**
    * The users collaborating on this project
    */
   collaborators: Array<UserBasicInfoDto>;
@@ -142,21 +284,6 @@ export type ProjectExResponseDto = {
    * The creator of this project
    */
   creator: UserBasicInfoDto;
-};
-
-export type CreateProjectDto = {
-  /**
-   * The name of the project
-   */
-  name: string;
-  /**
-   * A short description of the project
-   */
-  shortDesc: string;
-  /**
-   * URL to the project icon
-   */
-  iconUrl?: string;
 };
 
 export type UpdateProjectDto = {
@@ -174,6 +301,10 @@ export type UpdateProjectDto = {
   longDesc?: {
     [key: string]: unknown;
   };
+  /**
+   * Tags attached to the project
+   */
+  tags?: Array<string>;
   /**
    * URL to the project icon
    */
@@ -227,6 +358,24 @@ export type ImageUrlResponseDto = {
    * The public CDN URL for the image
    */
   url: string;
+};
+
+export type LikeResponseDto = {
+  /**
+   * Total number of likes on the project
+   */
+  likes: number;
+  /**
+   * Whether the current user has liked this project
+   */
+  liked: boolean;
+};
+
+export type ViewResponseDto = {
+  /**
+   * The number of play opens registered for the project
+   */
+  viewCount: number;
 };
 
 export type LookupHostsResponseDtoHost = {
@@ -290,6 +439,39 @@ export type JoinHostResponseDto = {
 
 export type LeaveHostRequestDto = {
   sessionUuid: string;
+};
+
+export type CommentAuthorDto = {
+  id: number;
+  username: string;
+  nickname?: string | null;
+};
+
+export type CommentResponseDto = {
+  id: number;
+  content: string;
+  createdAt: string;
+  projectId: number;
+  author: CommentAuthorDto;
+  deleted?: boolean;
+  /**
+   * Replies to this comment (only for top-level comments)
+   */
+  replies?: Array<CommentResponseDto>;
+};
+
+export type PaginatedCommentsResponseDto = {
+  comments: Array<CommentResponseDto>;
+  total: number;
+  page: number;
+  limit: number;
+};
+
+export type CreateCommentDto = {
+  /**
+   * The content of the comment
+   */
+  content: string;
 };
 
 export type LoginDto = {
@@ -533,7 +715,7 @@ export type ProjectControllerGetAllReleasesResponses = {
   /**
    * A JSON array of projects with collaborators and creator information
    */
-  200: Array<ProjectResponseDto>;
+  200: Array<ProjectExResponseDto>;
 };
 
 export type ProjectControllerGetAllReleasesResponse =
@@ -550,10 +732,13 @@ export type ProjectControllerGetReleaseData = {
 
 export type ProjectControllerGetReleaseResponses = {
   /**
-   * Project release file
+   * Project release metadata
    */
-  200: unknown;
+  200: ProjectExResponseDto;
 };
+
+export type ProjectControllerGetReleaseResponse =
+  ProjectControllerGetReleaseResponses[keyof ProjectControllerGetReleaseResponses];
 
 export type ProjectControllerGetReleaseContentData = {
   body?: never;
@@ -743,6 +928,39 @@ export type ProjectControllerUpdateResponses = {
 
 export type ProjectControllerUpdateResponse =
   ProjectControllerUpdateResponses[keyof ProjectControllerUpdateResponses];
+
+export type ProjectControllerForkData = {
+  body?: never;
+  path: {
+    /**
+     * Numeric ID of the published project to fork
+     */
+    id: number;
+  };
+  query?: never;
+  url: "/projects/{id}/fork";
+};
+
+export type ProjectControllerForkErrors = {
+  /**
+   * Project is not published
+   */
+  400: unknown;
+  /**
+   * Project not found
+   */
+  404: unknown;
+};
+
+export type ProjectControllerForkResponses = {
+  /**
+   * Forked project created successfully
+   */
+  201: ForkProjectResponseDto;
+};
+
+export type ProjectControllerForkResponse =
+  ProjectControllerForkResponses[keyof ProjectControllerForkResponses];
 
 export type ProjectControllerAddCollaboratorData = {
   body: AddCollaboratorDto;
@@ -1171,6 +1389,109 @@ export type ProjectControllerGetCheckpointResponses = {
 export type ProjectControllerGetCheckpointResponse =
   ProjectControllerGetCheckpointResponses[keyof ProjectControllerGetCheckpointResponses];
 
+export type ProjectControllerUnlikeProjectData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/projects/releases/{id}/like";
+};
+
+export type ProjectControllerUnlikeProjectResponses = {
+  /**
+   * Like removed
+   */
+  200: LikeResponseDto;
+};
+
+export type ProjectControllerUnlikeProjectResponse =
+  ProjectControllerUnlikeProjectResponses[keyof ProjectControllerUnlikeProjectResponses];
+
+export type ProjectControllerLikeProjectData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/projects/releases/{id}/like";
+};
+
+export type ProjectControllerLikeProjectResponses = {
+  /**
+   * Like status
+   */
+  200: LikeResponseDto;
+};
+
+export type ProjectControllerLikeProjectResponse =
+  ProjectControllerLikeProjectResponses[keyof ProjectControllerLikeProjectResponses];
+
+export type ProjectControllerGetLikeStatusData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/projects/releases/{id}/like-status";
+};
+
+export type ProjectControllerGetLikeStatusResponses = {
+  /**
+   * Like status
+   */
+  200: LikeResponseDto;
+};
+
+export type ProjectControllerGetLikeStatusResponse =
+  ProjectControllerGetLikeStatusResponses[keyof ProjectControllerGetLikeStatusResponses];
+
+export type ProjectControllerRegisterReleaseViewData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/projects/releases/{id}/view";
+};
+
+export type ProjectControllerRegisterReleaseViewResponses = {
+  /**
+   * Updated view count
+   */
+  200: ViewResponseDto;
+};
+
+export type ProjectControllerRegisterReleaseViewResponse =
+  ProjectControllerRegisterReleaseViewResponses[keyof ProjectControllerRegisterReleaseViewResponses];
+
+export type ProjectControllerUpdateReleaseData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/projects/{id}/update-release";
+};
+
+export type ProjectControllerUpdateReleaseErrors = {
+  /**
+   * Project is not published
+   */
+  400: unknown;
+  /**
+   * Forbidden
+   */
+  403: unknown;
+};
+
+export type ProjectControllerUpdateReleaseResponses = {
+  /**
+   * Release updated successfully
+   */
+  200: unknown;
+};
+
 export type MultiplayerControllerLookupHostsData = {
   body?: never;
   path?: never;
@@ -1300,6 +1621,108 @@ export type MultiplayerControllerLeaveHostResponses = {
    */
   200: unknown;
 };
+
+export type CommentControllerGetCommentsData = {
+  body?: never;
+  path: {
+    projectId: number;
+  };
+  query?: {
+    page?: number;
+    limit?: number;
+    sort?: "newest" | "oldest";
+  };
+  url: "/projects/{projectId}/comments";
+};
+
+export type CommentControllerGetCommentsResponses = {
+  /**
+   * Paginated list of comments
+   */
+  200: PaginatedCommentsResponseDto;
+};
+
+export type CommentControllerGetCommentsResponse =
+  CommentControllerGetCommentsResponses[keyof CommentControllerGetCommentsResponses];
+
+export type CommentControllerCreateCommentData = {
+  body: CreateCommentDto;
+  path: {
+    projectId: number;
+  };
+  query?: never;
+  url: "/projects/{projectId}/comments";
+};
+
+export type CommentControllerCreateCommentResponses = {
+  /**
+   * Comment created
+   */
+  201: CommentResponseDto;
+};
+
+export type CommentControllerCreateCommentResponse =
+  CommentControllerCreateCommentResponses[keyof CommentControllerCreateCommentResponses];
+
+export type CommentControllerCreateReplyData = {
+  body: CreateCommentDto;
+  path: {
+    projectId: number;
+    commentId: number;
+  };
+  query?: never;
+  url: "/projects/{projectId}/comments/{commentId}/reply";
+};
+
+export type CommentControllerCreateReplyResponses = {
+  /**
+   * Reply created
+   */
+  201: CommentResponseDto;
+};
+
+export type CommentControllerCreateReplyResponse =
+  CommentControllerCreateReplyResponses[keyof CommentControllerCreateReplyResponses];
+
+export type CommentControllerDeleteCommentData = {
+  body?: never;
+  path: {
+    projectId: number;
+    commentId: number;
+  };
+  query?: never;
+  url: "/projects/{projectId}/comments/{commentId}";
+};
+
+export type CommentControllerDeleteCommentResponses = {
+  /**
+   * Comment deleted
+   */
+  204: void;
+};
+
+export type CommentControllerDeleteCommentResponse =
+  CommentControllerDeleteCommentResponses[keyof CommentControllerDeleteCommentResponses];
+
+export type CommentControllerUpdateCommentData = {
+  body: CreateCommentDto;
+  path: {
+    commentId: number;
+    projectId: number;
+  };
+  query?: never;
+  url: "/projects/{projectId}/comments/{commentId}";
+};
+
+export type CommentControllerUpdateCommentResponses = {
+  /**
+   * Comment updated
+   */
+  200: CommentResponseDto;
+};
+
+export type CommentControllerUpdateCommentResponse =
+  CommentControllerUpdateCommentResponses[keyof CommentControllerUpdateCommentResponses];
 
 export type AuthControllerLoginData = {
   body: LoginDto;

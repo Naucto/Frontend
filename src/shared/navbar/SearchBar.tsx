@@ -1,12 +1,26 @@
 import { Box, InputBase } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import SearchIcon from "@assets/search.svg?react";
-import { ChangeEvent, FormEvent, JSX, useState } from "react";
+import { ChangeEvent, FormEvent, JSX, KeyboardEvent, ReactNode, useEffect, useRef, useState } from "react";
 
-const SearchBarContainer = styled(Box)(() => ({
+const SearchBarContainer = styled(Box)(({ theme }) => ({
+  position: "relative",
   display: "flex",
+  flexDirection: "column",
   alignItems: "center",
   justifyContent: "center",
+  width: "100%",
+  maxWidth: "720px",
+  margin: "0 auto",
+  [theme.breakpoints.down("lg")]: {
+    maxWidth: "640px",
+  },
+  [theme.breakpoints.down("md")]: {
+    maxWidth: "100%",
+  },
+}));
+
+const SearchForm = styled("form")(() => ({
   width: "100%",
 }));
 
@@ -15,6 +29,8 @@ const SearchInput = styled(InputBase)(({ theme }) => ({
   border: `2px solid ${theme.palette.gray[400]}`,
   borderRadius: theme.custom.rounded.lg,
   padding: "0.5rem 1rem",
+  width: "100%",
+  backgroundColor: "rgba(0, 0, 0, 0.22)",
 
   "& input": {
     color: "white",
@@ -31,10 +47,43 @@ interface SearchBarProps {
   onSubmit: (value: string) => void;
   onChange?: (value: string) => void;
   placeholder?: string;
+  value?: string;
+  overlay?: ReactNode;
 }
 
-export const SearchBar = ({ onSubmit, onChange, placeholder }: SearchBarProps): JSX.Element => {
-  const [value, setValue] = useState("");
+export const SearchBar = ({ onSubmit, onChange, placeholder, value: controlledValue, overlay }: SearchBarProps): JSX.Element => {
+  const [value, setValue] = useState(controlledValue ?? "");
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    setValue(controlledValue ?? "");
+  }, [controlledValue]);
+
+  useEffect(() => {
+    if (!value.trim()) {
+      return;
+    }
+
+    const handlePointerDown = (event: MouseEvent): void => {
+      if (!(event.target instanceof Node)) {
+        return;
+      }
+
+      if (containerRef.current?.contains(event.target)) {
+        return;
+      }
+
+      setValue("");
+      onChange?.("");
+      onSubmit("");
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+    };
+  }, [onChange, onSubmit, value]);
 
   const handleSubmit = (e: FormEvent): void => {
     e.preventDefault();
@@ -47,17 +96,30 @@ export const SearchBar = ({ onSubmit, onChange, placeholder }: SearchBarProps): 
     onChange?.(newValue);
   };
 
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>): void => {
+    if (e.key !== "Escape") {
+      return;
+    }
+
+    setValue("");
+    onChange?.("");
+    onSubmit("");
+    e.currentTarget.blur();
+  };
+
   return (
-    <SearchBarContainer>
-      <form onSubmit={handleSubmit}>
+    <SearchBarContainer ref={containerRef}>
+      <SearchForm onSubmit={handleSubmit}>
         <SearchInput
           type="text"
           value={value}
           onChange={handleChange}
+          onKeyDown={handleKeyDown}
           placeholder={placeholder}
           startAdornment={<SearchIconStyled />}
         />
-      </form>
+      </SearchForm>
+      {overlay}
     </SearchBarContainer>
   );
 };
