@@ -92,7 +92,9 @@ export class SpriteProvider implements Destroyable {
     return `${index}`;
   }
 
-  private _normalizeFlagValue(value: number): number {
+  private _validateFlagValue(value: number): number {
+    value = Math.trunc(value);
+
     if (value < 0 || value > 255) {
       throw new SpriteProviderError(`Flag value out of bounds: ${value}`);
     }
@@ -147,7 +149,7 @@ export class SpriteProvider implements Destroyable {
 
   setFlag(index: number, value: number): void {
     this._validateSpriteIndex(index);
-    const normalizedValue = this._normalizeFlagValue(value);
+    const normalizedValue = this._validateFlagValue(value);
     const key = this._spriteIndexToKey(index);
 
     if (normalizedValue === 0) {
