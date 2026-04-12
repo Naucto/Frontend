@@ -1,13 +1,14 @@
 import React, { useCallback, useEffect } from "react";
 import { styled } from "@mui/material/styles";
 import { StyledCanvas } from "@shared/canvas/Canvas";
+import CanvasGridOverlay from "@shared/canvas/CanvasGridOverlay";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import { ProjectProvider } from "@providers/ProjectProvider";
+import { SelectedSpriteFrame } from "@shared/canvas/SelectedSpriteFrame";
 
-const PickerContainer = styled("div")(({ theme }) => ({
+const PickerContainer = styled("div")(() => ({
   display: "flex",
-  padding: theme.spacing(1),
-  width: "100%",
+  position: "relative",
 }));
 
 export type SpritePickerProps = {
@@ -16,7 +17,7 @@ export type SpritePickerProps = {
   project: ProjectProvider;
 };
 
-export const SpritePicker: React.FC<SpritePickerProps> = ({ onSelect, project }) => {
+export const SpritePicker: React.FC<SpritePickerProps> = ({ selectedIndex, onSelect, project }) => {
   const canvasRef = React.createRef<SpriteRendererHandle>();
   const [, setVersion] = React.useState(0);
 
@@ -24,6 +25,8 @@ export const SpritePicker: React.FC<SpritePickerProps> = ({ onSelect, project })
 
   const spritesPerRow = project.spriteProvider.size.width / project.spriteProvider.spriteSize.width;
   const spritesPerCol = project.spriteProvider.size.height / project.spriteProvider.spriteSize.height;
+  const selectedSpriteX = selectedIndex % spritesPerRow;
+  const selectedSpriteY = Math.floor(selectedIndex / spritesPerRow);
 
   useEffect(() => {
     const handle = canvasRef.current;
@@ -70,6 +73,13 @@ export const SpritePicker: React.FC<SpritePickerProps> = ({ onSelect, project })
           height: project.spriteProvider.size.height,
         }}
         onClick={handleClick}
+      />
+      <CanvasGridOverlay columns={spritesPerRow} rows={spritesPerCol} />
+      <SelectedSpriteFrame
+        $left={`${(selectedSpriteX / spritesPerRow) * 100}%`}
+        $top={`${(selectedSpriteY / spritesPerCol) * 100}%`}
+        $width={`${100 / spritesPerRow}%`}
+        $height={`${100 / spritesPerCol}%`}
       />
     </PickerContainer>
   );
