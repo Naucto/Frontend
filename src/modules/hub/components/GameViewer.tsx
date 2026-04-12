@@ -459,6 +459,7 @@ export const GameViewer: React.FC = () => {
               }}
               envData={envData}
               setOutput={setOutput}
+              soundProvider={gameProvider.sound}
             />
           ) : (
             <LaunchScreenButton type="button" onClick={handleLaunchGame} $src={bannerUrl}>
