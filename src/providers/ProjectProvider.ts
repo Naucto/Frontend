@@ -36,6 +36,8 @@ export class ProjectProvider implements Destroyable {
   private _initialized: boolean = false;
 
   private _listeners: Map<ProviderEventType, Set<() => void>> = new Map();
+  private _contentListeners: Set<() => void> = new Set();
+  private readonly _boundHandleDocumentUpdate: () => void;
 
   public isHost: boolean;
 
@@ -52,7 +54,10 @@ export class ProjectProvider implements Destroyable {
   constructor(projectId: number) {
     this.projectId = projectId;
     this.isHost = false;
+
     this._yjsDoc = new Y.Doc();
+    this._boundHandleDocumentUpdate = this.handleDocumentUpdate.bind(this);
+    this._yjsDoc.on("update", this._boundHandleDocumentUpdate);
 
     this.initializeDoc().then((webrtcOffer?: WebRtcOfferDto) => {
       if (webrtcOffer === undefined) {
@@ -109,6 +114,7 @@ export class ProjectProvider implements Destroyable {
         this.projectSettingsProvider.updateName(projectDetails!.name);
         this.projectSettingsProvider.updateShortDesc(projectDetails!.shortDesc);
         this.projectSettingsProvider.updateLongDesc(projectDetails!.longDesc ?? JSON.stringify(projectDetails!.longDesc));
+        this.projectSettingsProvider.updateTags(projectDetails!.tags ?? []);
 
         console.log("Project content initialized successfully");
       }
@@ -134,7 +140,12 @@ export class ProjectProvider implements Destroyable {
     this.soundProvider.destroy();
 
     this._yjsProvider.disconnect();
+    this._yjsDoc.off("update", this._boundHandleDocumentUpdate);
     this._yjsDoc.destroy();
+  }
+
+  private handleDocumentUpdate(): void {
+    this._contentListeners.forEach((callback) => callback());
   }
 
   public async saveContent(): Promise<void> {
@@ -146,23 +157,42 @@ export class ProjectProvider implements Destroyable {
 
     const settings = this.projectSettingsProvider.getSettings();
 
-    if (details.name !== settings.name || (details.longDesc || "") !== settings.longDesc || details.shortDesc !== settings.shortDesc) {
+    const currentTags = [...(details.tags ?? [])].sort();
+    const nextTags = [...settings.tags].sort();
+
+    if (
+      details.name !== settings.name ||
+      (details.longDesc || "") !== settings.longDesc ||
+      details.shortDesc !== settings.shortDesc ||
+      JSON.stringify(currentTags) !== JSON.stringify(nextTags)
+    ) {
       await projectControllerUpdate({
         path: { id: this.projectId },
         body: {
           name: settings.name,
           shortDesc: settings.shortDesc,
           longDesc: settings.longDesc as unknown as Record<string, unknown>,
+          tags: settings.tags,
         },
       });
     }
 
-    projectControllerSaveProjectContent({
+    await projectControllerSaveProjectContent({
       path: { id: this.projectId },
       body: { file: new Blob([data], { type: "application/octet-stream" }) },
-    }).catch((error) => {
-      console.error("Failed to save content:", error);
     });
+  }
+
+  public getContentSnapshot(): Uint8Array {
+    return encodeUpdate(this._yjsDoc);
+  }
+
+  public observeContentChanges(callback: () => void): void {
+    this._contentListeners.add(callback);
+  }
+
+  public unobserveContentChanges(callback: () => void): void {
+    this._contentListeners.delete(callback);
   }
 
   public async checkAndKickDisconnectedUsers() : Promise<void> {

@@ -1,12 +1,14 @@
 import { styled } from "@mui/material/styles";
 import { NavElem, ImportantNavElem } from "@shared/navbar/NavElem";
 import NavProfile from "@shared/navbar/nav-profile/NavProfile";
+import { GameSearchOverlay } from "@shared/navbar/GameSearchOverlay";
 import { SearchBar } from "@shared/navbar/SearchBar";
 import React, { useState } from "react";
 import { useUser } from "@providers/UserProvider";
 import { muiTheme } from "@theme/MUITheme";
 import { Login } from "@shared/navbar/login/Login";
 import * as Urls from "@shared/route";
+
 const Nav = styled("nav")(({ theme }) => ({
   display: "grid",
   padding: 0,
@@ -39,6 +41,8 @@ const Right = styled("div")(({ theme }) => ({
 const NavBar: React.FC = () => {
   const { user } = useUser();
   const [forceShowAuthOverlay, setForceShowAuthOverlay] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
+
   return (
     <Nav className="navbar">
       <Left>
@@ -50,7 +54,13 @@ const NavBar: React.FC = () => {
         <NavElem to="/help">Help</NavElem>
       </Left>
 
-      <SearchBar placeholder="Search for games..." onSubmit={() => { /* handle search */ }} />
+      <SearchBar
+        placeholder="Search for games..."
+        value={searchValue}
+        onChange={setSearchValue}
+        onSubmit={setSearchValue}
+        overlay={<GameSearchOverlay query={searchValue} onClose={() => setSearchValue("")} />}
+      />
 
       <Right>
         <NavElem to="/friends">Friends</NavElem>

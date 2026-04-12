@@ -63,4 +63,61 @@ export class LocalStorageManager {
     LocalStorageManager.setUser(undefined);
     LocalStorageManager.setToken(undefined);
   }
+
+  private static safeSetItem(key: string, value: string): void {
+    try {
+      localStorage.setItem(key, value);
+    } catch {
+      console.warn(`Failed to write to localStorage for key: ${key}`);
+    }
+  }
+
+  // ─── Liked Projects (anonymous like tracking) ─────────────────────────
+
+  private static readonly LIKED_PROJECTS_KEY = "liked_projects";
+  private static readonly PLAYED_PROJECTS_KEY = "played_projects";
+
+  static getLikedProjects(): number[] {
+    try {
+      const raw = localStorage.getItem(this.LIKED_PROJECTS_KEY);
+      return raw ? (JSON.parse(raw) as number[]) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  static addLikedProject(id: number): void {
+    const liked = this.getLikedProjects();
+    if (!liked.includes(id)) {
+      liked.push(id);
+      this.safeSetItem(this.LIKED_PROJECTS_KEY, JSON.stringify(liked));
+    }
+  }
+
+  static removeLikedProject(id: number): void {
+    const liked = this.getLikedProjects().filter((pid) => pid !== id);
+    this.safeSetItem(this.LIKED_PROJECTS_KEY, JSON.stringify(liked));
+  }
+
+  static isProjectLiked(id: number): boolean {
+    return this.getLikedProjects().includes(id);
+  }
+
+  static getPlayedProjects(): number[] {
+    try {
+      const raw = localStorage.getItem(this.PLAYED_PROJECTS_KEY);
+      return raw ? (JSON.parse(raw) as number[]) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  static addPlayedProject(id: number): void {
+    const played = this.getPlayedProjects().filter((projectId) => projectId !== id);
+    played.unshift(id);
+    this.safeSetItem(
+      this.PLAYED_PROJECTS_KEY,
+      JSON.stringify(played.slice(0, 24))
+    );
+  }
 }
