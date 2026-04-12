@@ -85,9 +85,9 @@ const CustomSortButton = styled(Button)(({ theme }) => ({
 
 const ProjectCardsContainer = styled("div")(({ theme }) => ({
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fill, minmax(300px, 300px))",
+  gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))",
   gap: theme.spacing(2),
-  justifyContent: "start",
+  alignItems: "start",
 }));
 
 const EmptyState = styled(Typography)(({ theme }) => ({
@@ -246,6 +246,7 @@ const Projects: React.FC = () => {
   );
 
   const renderSection = (
+    category: "drafts" | "published",
     title: string,
     sectionProjects: ProjectResponseDto[],
     options?: { includeCreateCard?: boolean; emptyMessage: string }
@@ -253,7 +254,17 @@ const Projects: React.FC = () => {
     <Section>
       <SectionHeader>
         <SectionTitle>{title}</SectionTitle>
-        <SummaryChip label={`${sectionProjects.length} project${sectionProjects.length === 1 ? "" : "s"}`} size="small" />
+        <SummaryChip
+          label={`${sectionProjects.length} project${sectionProjects.length === 1 ? "" : "s"}`}
+          size="small"
+          onClick={() => navigate(urls.toProjectsCategory(category), {
+            state: {
+              sortMetric,
+              sortOrder,
+              selectedTags,
+            }
+          })}
+        />
       </SectionHeader>
       {sectionProjects.length > 0 || options?.includeCreateCard ? (
         <ProjectCardsContainer>
@@ -361,11 +372,11 @@ const Projects: React.FC = () => {
         </FilterPanel>
       ) : null}
 
-      {renderSection("Drafts", draftProjects, {
+      {renderSection("drafts", "Drafts", draftProjects, {
         includeCreateCard: true,
         emptyMessage: "No drafts yet. Create a new project to get started.",
       })}
-      {renderSection("Published", publishedProjects, {
+      {renderSection("published", "Published", publishedProjects, {
         emptyMessage: "No published projects yet.",
       })}
     </PageContainer>

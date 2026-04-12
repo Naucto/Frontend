@@ -490,14 +490,6 @@ export const GameViewer: React.FC = () => {
               </Typography>
             </Box>
           </Box>
-          <Typography variant="body2" color="grey.400" sx={{ mb: 1 }}>
-            A game made by {creatorsLabel}
-          </Typography>
-          {forkedFromInfo && (
-            <Typography variant="body2" color="grey.400" sx={{ mb: 1 }}>
-              This game was forked from: {forkedFromInfo.name} by {forkedFromInfo.creator}
-            </Typography>
-          )}
           <Typography variant="body1">
             {String(project.longDesc || project.shortDesc || "No description available.")}
           </Typography>
@@ -525,14 +517,14 @@ export const GameViewer: React.FC = () => {
               <ContentCopyOutlinedIcon sx={{ fontSize: 16 }} />
               <span>{forkCount}</span>
             </StatItem>
-            <Typography variant="caption" color="grey.400">
-              Creation date: {new Date(project.createdAt).toLocaleDateString("en-GB")}
-            </Typography>
           </MetaRow>
           <Box mt={2} display="flex" justifyContent="space-between" alignItems="center">
             <Box>
-              <Typography variant="caption" color="grey.500">
-                Created by: {project.creator?.username || "Unknown"}
+              <Typography variant="body2" color="grey.400">
+                A game made by {creatorsLabel}
+              </Typography>
+              <Typography variant="caption" color="grey.400">
+                Creation date: {new Date(project.createdAt).toLocaleDateString("en-GB")}
               </Typography>
               {forkedFromInfo && (
                 <Typography variant="caption" color="grey.500" display="block">

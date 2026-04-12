@@ -9,6 +9,8 @@ import { LocalStorageManager } from "@utils/LocalStorageManager";
 import { PREDEFINED_PROJECT_TAGS } from "@modules/projects/projectTags";
 import PrevSvg from "@assets/prev.svg";
 import NextSvg from "@assets/next.svg";
+import { useNavigate } from "react-router-dom";
+import * as urls from "@shared/route";
 
 const PageContainer = styled("div")(({ theme }) => ({
   margin: theme.spacing(4),
@@ -159,6 +161,29 @@ function getSortMetricLabel(metric: "weighted" | "viewCount" | "likes" | "commen
   }
 }
 
+type HubListSortMetric = "lastPlayed" | "publishedAt" | "viewCount" | "likes" | "commentCount" | "forkCount" | "name" | "tags";
+
+function getListSortMetricLabel(metric: HubListSortMetric): string {
+  switch (metric) {
+    case "lastPlayed":
+      return "Last played";
+    case "publishedAt":
+      return "Published";
+    case "viewCount":
+      return "Views";
+    case "likes":
+      return "Likes";
+    case "commentCount":
+      return "Comments";
+    case "forkCount":
+      return "Forks";
+    case "tags":
+      return "Tags";
+    default:
+      return "Name";
+  }
+}
+
 const darkSelectSx = {
   color: "white",
   backgroundColor: "rgba(20, 20, 20, 0.72)",
@@ -194,12 +219,19 @@ const darkMenuProps = {
 };
 
 export const Hub = (): JSX.Element => {
+  const navigate = useNavigate();
   const [showCustomSort, setShowCustomSort] = useState(false);
+  const [showNewGamesCustomSort, setShowNewGamesCustomSort] = useState(false);
+  const [showPlayedGamesCustomSort, setShowPlayedGamesCustomSort] = useState(false);
   const [sortMetric, setSortMetric] = useState<"weighted" | "viewCount" | "likes" | "commentCount" | "forkCount">("weighted");
   const [releaseWindow, setReleaseWindow] = useState<"all" | "30d" | "7d">("30d");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [newGamesOrder, setNewGamesOrder] = useState<"desc" | "asc">("desc");
+  const [newGamesSortMetric, setNewGamesSortMetric] = useState<HubListSortMetric>("publishedAt");
+  const [newGamesTags, setNewGamesTags] = useState<string[]>([]);
   const [playedGamesOrder, setPlayedGamesOrder] = useState<"desc" | "asc">("desc");
+  const [playedGamesSortMetric, setPlayedGamesSortMetric] = useState<HubListSortMetric>("lastPlayed");
+  const [playedGamesTags, setPlayedGamesTags] = useState<string[]>([]);
   const [statsOverrides, setStatsOverrides] = useState<Record<number, Partial<Pick<ProjectResponseDto, "viewCount" | "likes" | "commentCount" | "forkCount">>>>({});
   const [playedRevision, setPlayedRevision] = useState(0);
 
@@ -295,29 +327,72 @@ export const Hub = (): JSX.Element => {
     });
   }, [publishedProjects, releaseWindow, selectedTags, sortMetric]);
 
+  const sortListProjects = (
+    projects: ProjectExResponseDto[],
+    metric: HubListSortMetric,
+    order: "desc" | "asc",
+    playedOrder: number[] = []
+  ): ProjectExResponseDto[] => {
+    const direction = order === "asc" ? 1 : -1;
+    const playedIndex = new Map(playedOrder.map((projectId, index) => [projectId, index]));
+
+    return [...projects].sort((a, b) => {
+      if (metric === "lastPlayed") {
+        const leftIndex = playedIndex.get(a.id) ?? Number.MAX_SAFE_INTEGER;
+        const rightIndex = playedIndex.get(b.id) ?? Number.MAX_SAFE_INTEGER;
+        const diff = rightIndex - leftIndex;
+        if (diff !== 0) {
+          return diff * direction;
+        }
+      } else if (metric === "name") {
+        const diff = a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+        if (diff !== 0) {
+          return diff * direction;
+        }
+      } else if (metric === "tags") {
+        const left = [...a.tags].sort((x, y) => x.localeCompare(y)).join(", ");
+        const right = [...b.tags].sort((x, y) => x.localeCompare(y)).join(", ");
+        const diff = left.localeCompare(right, undefined, { sensitivity: "base" });
+        if (diff !== 0) {
+          return diff * direction;
+        }
+      } else if (metric === "publishedAt") {
+        const diff = new Date(a.publishedAt || a.createdAt).getTime() - new Date(b.publishedAt || b.createdAt).getTime();
+        if (diff !== 0) {
+          return diff * direction;
+        }
+      } else {
+        const diff = (a[metric] ?? 0) - (b[metric] ?? 0);
+        if (diff !== 0) {
+          return diff * direction;
+        }
+      }
+
+      return (new Date(a.publishedAt || a.createdAt).getTime() - new Date(b.publishedAt || b.createdAt).getTime()) * direction;
+    });
+  };
+
   const newGames = useMemo(
-    () =>
-      [...publishedProjects].sort(
-        (a, b) =>
-          (newGamesOrder === "desc" ? -1 : 1) *
-          (new Date(a.publishedAt || a.createdAt).getTime() -
-            new Date(b.publishedAt || b.createdAt).getTime())
-      ),
-    [newGamesOrder, publishedProjects]
+    () => sortListProjects(
+      publishedProjects.filter((project) => newGamesTags.length === 0 || newGamesTags.every((tag) => project.tags.includes(tag))),
+      newGamesSortMetric,
+      newGamesOrder,
+    ),
+    [newGamesOrder, newGamesSortMetric, newGamesTags, publishedProjects]
   );
 
   const playedGames = useMemo(() => {
     const playedIds = LocalStorageManager.getPlayedProjects();
-    return playedIds
-      .map((id) => publishedProjects.find((project) => project.id === id))
-      .filter((project): project is ProjectExResponseDto => project !== undefined)
-      .sort(
-        (a, b) =>
-          (playedGamesOrder === "desc" ? -1 : 1) *
-          (new Date(a.publishedAt || a.createdAt).getTime() -
-            new Date(b.publishedAt || b.createdAt).getTime())
-      );
-  }, [playedGamesOrder, publishedProjects]);
+    return sortListProjects(
+      playedIds
+        .map((id) => publishedProjects.find((project) => project.id === id))
+        .filter((project): project is ProjectExResponseDto => project !== undefined)
+        .filter((project) => playedGamesTags.length === 0 || playedGamesTags.every((tag) => project.tags.includes(tag))),
+      playedGamesSortMetric,
+      playedGamesOrder,
+      playedIds,
+    );
+  }, [playedGamesOrder, playedGamesSortMetric, playedGamesTags, publishedProjects]);
 
   const getDateOrderLabel = (order: "desc" | "asc"): string => (order === "desc" ? "Newest first" : "Oldest first");
 
@@ -330,6 +405,7 @@ export const Hub = (): JSX.Element => {
   };
 
   const renderCategory = (
+    categoryKey: "popular" | "new" | "played",
     title: string,
     projects: ProjectResponseDto[],
     scrollId: string,
@@ -343,7 +419,23 @@ export const Hub = (): JSX.Element => {
             <CategoryTitle>{title}</CategoryTitle>
             {headerControls}
           </CategoryTitleRow>
-          <ViewMoreButton>{projects.length} games</ViewMoreButton>
+          <ViewMoreButton
+            onClick={() => navigate(urls.toHubCategory(categoryKey), {
+              state: {
+                sortMetric,
+                releaseWindow,
+                selectedTags,
+                newGamesOrder,
+                newGamesSortMetric,
+                newGamesTags,
+                playedGamesOrder,
+                playedGamesSortMetric,
+                playedGamesTags,
+              }
+            })}
+          >
+            {projects.length} games
+          </ViewMoreButton>
         </CategoryHeaderTop>
         {expandedContent}
       </CategoryHeader>
@@ -376,6 +468,7 @@ export const Hub = (): JSX.Element => {
   return (
     <PageContainer>
       {renderCategory(
+        "popular",
         "Popular games",
         filteredPopularProjects,
         "popular-games",
@@ -483,24 +576,191 @@ export const Hub = (): JSX.Element => {
         ) : undefined,
       )}
       {renderCategory(
+        "new",
         "New games",
         newGames,
         "new-games",
         <HeaderControls>
+          <CustomSortButton variant="outlined" onClick={() => setShowNewGamesCustomSort((value) => !value)}>
+            {showNewGamesCustomSort ? "Hide custom sort" : "Custom sort"}
+          </CustomSortButton>
           <CustomSortButton variant="outlined" onClick={() => setNewGamesOrder((current) => current === "desc" ? "asc" : "desc")}>
             {getDateOrderLabel(newGamesOrder)}
           </CustomSortButton>
-        </HeaderControls>
+          <SummaryChip label={`Sort: ${getListSortMetricLabel(newGamesSortMetric)}`} size="small" />
+          {newGamesTags.map((tag) => (
+            <SummaryChip
+              key={`new-tag-${tag}`}
+              label={tag}
+              size="small"
+              onDelete={() => setNewGamesTags((current) => current.filter((currentTag) => currentTag !== tag))}
+            />
+          ))}
+        </HeaderControls>,
+        showNewGamesCustomSort ? (
+          <FilterPanel>
+            <FormControl size="small" sx={{ minWidth: 180 }}>
+              <Select
+                value={newGamesSortMetric}
+                onChange={(event) => setNewGamesSortMetric(event.target.value as HubListSortMetric)}
+                sx={darkSelectSx}
+                MenuProps={darkMenuProps}
+              >
+                <MenuItem value="publishedAt">Published date</MenuItem>
+                <MenuItem value="viewCount">Views</MenuItem>
+                <MenuItem value="likes">Likes</MenuItem>
+                <MenuItem value="commentCount">Comments</MenuItem>
+                <MenuItem value="forkCount">Forks</MenuItem>
+                <MenuItem value="name">Name</MenuItem>
+                <MenuItem value="tags">Tags</MenuItem>
+              </Select>
+            </FormControl>
+            <Autocomplete
+              multiple
+              options={availableTags}
+              value={newGamesTags}
+              onChange={(_, value) => setNewGamesTags(value)}
+              sx={{ minWidth: 280, flex: 1 }}
+              slotProps={{
+                paper: {
+                  sx: {
+                    backgroundColor: "#1A1A1A",
+                    color: "white",
+                    backgroundImage: "none",
+                    ".MuiAutocomplete-listbox": {
+                      maxHeight: 240,
+                      overflowY: "auto",
+                    },
+                  }
+                },
+                listbox: {
+                  sx: {
+                    maxHeight: 240,
+                    overflowY: "auto",
+                  }
+                },
+              }}
+              renderOption={(props, option) => (
+                <Box component="li" {...props} sx={{ color: "white", backgroundColor: "#1A1A1A !important" }}>
+                  {option}
+                </Box>
+              )}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Filter by tags"
+                  placeholder="Action, RPG..."
+                  sx={{
+                    ".MuiOutlinedInput-root": {
+                      color: "white",
+                      backgroundColor: "rgba(20, 20, 20, 0.72)",
+                    },
+                    ".MuiInputLabel-root": {
+                      color: "rgba(255,255,255,0.7)",
+                    },
+                    ".MuiInputLabel-root.Mui-focused": {
+                      color: "white",
+                    },
+                  }}
+                />
+              )}
+            />
+          </FilterPanel>
+        ) : undefined
       )}
       {renderCategory(
+        "played",
         "Played games",
         playedGames,
         "played-games",
         <HeaderControls>
+          <CustomSortButton variant="outlined" onClick={() => setShowPlayedGamesCustomSort((value) => !value)}>
+            {showPlayedGamesCustomSort ? "Hide custom sort" : "Custom sort"}
+          </CustomSortButton>
           <CustomSortButton variant="outlined" onClick={() => setPlayedGamesOrder((current) => current === "desc" ? "asc" : "desc")}>
             {getDateOrderLabel(playedGamesOrder)}
           </CustomSortButton>
-        </HeaderControls>
+          <SummaryChip label={`Sort: ${getListSortMetricLabel(playedGamesSortMetric)}`} size="small" />
+          {playedGamesTags.map((tag) => (
+            <SummaryChip
+              key={`played-tag-${tag}`}
+              label={tag}
+              size="small"
+              onDelete={() => setPlayedGamesTags((current) => current.filter((currentTag) => currentTag !== tag))}
+            />
+          ))}
+        </HeaderControls>,
+        showPlayedGamesCustomSort ? (
+          <FilterPanel>
+            <FormControl size="small" sx={{ minWidth: 180 }}>
+              <Select
+                value={playedGamesSortMetric}
+                onChange={(event) => setPlayedGamesSortMetric(event.target.value as HubListSortMetric)}
+                sx={darkSelectSx}
+                MenuProps={darkMenuProps}
+              >
+                <MenuItem value="lastPlayed">Last played</MenuItem>
+                <MenuItem value="publishedAt">Published date</MenuItem>
+                <MenuItem value="viewCount">Views</MenuItem>
+                <MenuItem value="likes">Likes</MenuItem>
+                <MenuItem value="commentCount">Comments</MenuItem>
+                <MenuItem value="forkCount">Forks</MenuItem>
+                <MenuItem value="name">Name</MenuItem>
+                <MenuItem value="tags">Tags</MenuItem>
+              </Select>
+            </FormControl>
+            <Autocomplete
+              multiple
+              options={availableTags}
+              value={playedGamesTags}
+              onChange={(_, value) => setPlayedGamesTags(value)}
+              sx={{ minWidth: 280, flex: 1 }}
+              slotProps={{
+                paper: {
+                  sx: {
+                    backgroundColor: "#1A1A1A",
+                    color: "white",
+                    backgroundImage: "none",
+                    ".MuiAutocomplete-listbox": {
+                      maxHeight: 240,
+                      overflowY: "auto",
+                    },
+                  }
+                },
+                listbox: {
+                  sx: {
+                    maxHeight: 240,
+                    overflowY: "auto",
+                  }
+                },
+              }}
+              renderOption={(props, option) => (
+                <Box component="li" {...props} sx={{ color: "white", backgroundColor: "#1A1A1A !important" }}>
+                  {option}
+                </Box>
+              )}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Filter by tags"
+                  placeholder="Action, RPG..."
+                  sx={{
+                    ".MuiOutlinedInput-root": {
+                      color: "white",
+                      backgroundColor: "rgba(20, 20, 20, 0.72)",
+                    },
+                    ".MuiInputLabel-root": {
+                      color: "rgba(255,255,255,0.7)",
+                    },
+                    ".MuiInputLabel-root.Mui-focused": {
+                      color: "white",
+                    },
+                  }}
+                />
+              )}
+            />
+          </FilterPanel>
+        ) : undefined
       )}
     </PageContainer>
   );
