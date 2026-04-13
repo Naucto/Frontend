@@ -25,7 +25,7 @@ export default defineConfig([
       indent: ["error", 2, { "SwitchCase": 1 }],
       quotes: ["error", "double"],
       "@typescript-eslint/no-unused-vars": "warn",
-      "no-console": "warn",
+      /* "no-console": "warn", */
       "react/react-in-jsx-scope": "off",
       "react/self-closing-comp": "error",
       "no-var": "error",

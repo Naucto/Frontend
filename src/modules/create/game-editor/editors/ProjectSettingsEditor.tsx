@@ -239,9 +239,9 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
       recomputeUnpublishedChanges();
     };
 
-    if (project.projectSettings) {
-      setSettings(project.projectSettings.getSettings());
-      project.projectSettings.observe(onSettingsChange);
+    if (project.projectSettingsProvider) {
+      setSettings(project.projectSettingsProvider.getSettings());
+      project.projectSettingsProvider.observe(onSettingsChange);
     }
     project.observeContentChanges(onContentChange);
 
@@ -249,12 +249,12 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
     fetchBannerImage();
 
     return () => {
-      if (project.projectSettings) {
-        project.projectSettings.unobserve(onSettingsChange);
+      if (project.projectSettingsProvider) {
+        project.projectSettingsProvider.unobserve(onSettingsChange);
       }
       project.unobserveContentChanges(onContentChange);
     };
-  }, [loadPublishedBaseline, project, project.projectId, project.projectSettings, recomputeUnpublishedChanges]);
+  }, [loadPublishedBaseline, project, recomputeUnpublishedChanges]);
 
   const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>): Promise<void> => {
     const file = e.target.files?.[0];
@@ -438,7 +438,7 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
         <FullWidthTextField
           label="Project Title"
           value={settings.name}
-          onChange={(e) => project.projectSettings.updateName(e.target.value)}
+          onChange={(e) => project.projectSettingsProvider.updateName(e.target.value)}
         />
 
         <Box sx={{ mt: 2, mb: 2 }}>
@@ -476,14 +476,14 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
         <FullWidthTextField
           label="Project Short Description"
           value={settings.shortDesc}
-          onChange={(e) => project.projectSettings.updateShortDesc(e.target.value)}
+          onChange={(e) => project.projectSettingsProvider.updateShortDesc(e.target.value)}
           multiline
           rows={2}
         />
         <FullWidthTextField
           label="Project Long Description"
           value={settings.longDesc}
-          onChange={(e) => project.projectSettings.updateLongDesc(e.target.value)}
+          onChange={(e) => project.projectSettingsProvider.updateLongDesc(e.target.value)}
           multiline
           rows={5}
         />

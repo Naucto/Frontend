@@ -412,7 +412,7 @@ export type WebRtcOfferPeerOpts = {
 };
 
 export type WebRtcOfferDto = {
-  signaling: string;
+  signaling: Array<string>;
   maxConns: number;
   peerOpts: WebRtcOfferPeerOpts;
 };
@@ -670,6 +670,21 @@ export type UpdateUserDto = {
   password?: string;
 };
 
+export type JoinWorkSessionDto = {
+  /**
+   * The unique room ID for the work session
+   */
+  roomId: string;
+  /**
+   * The user ID of the session's host
+   */
+  hostId: number;
+  /**
+   * The WebRTC offer given to the client
+   */
+  webrtcOffer: WebRtcOfferDto;
+};
+
 export type KickWorkSessionDto = {
   /**
    * The ID of the user participating in the work session
@@ -685,7 +700,7 @@ export type FetchWorkSessionDto = {
   /**
    * The ID of the session's host
    */
-  host: number;
+  hostId: number;
   /**
    * The ID of the project this work session belongs to
    */
@@ -698,10 +713,6 @@ export type FetchWorkSessionDto = {
    * The ID of the room for this work session
    */
   roomId: string;
-  /**
-   * The password for the room of this work session
-   */
-  roomPassword: string;
 };
 
 export type ProjectControllerGetAllReleasesData = {
@@ -2155,8 +2166,11 @@ export type WorkSessionControllerJoinResponses = {
   /**
    * The work session has been successfully created.
    */
-  201: unknown;
+  201: JoinWorkSessionDto;
 };
+
+export type WorkSessionControllerJoinResponse =
+  WorkSessionControllerJoinResponses[keyof WorkSessionControllerJoinResponses];
 
 export type WorkSessionControllerLeaveData = {
   body?: never;
