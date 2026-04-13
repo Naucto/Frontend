@@ -40,36 +40,37 @@ const LeftPanel = styled("div")(() => ({
   flexDirection: "column",
 }));
 
-const RightPanel = styled("div")(() => ({
-  width: "80%",
+const RightPanel = styled("div")(({ theme }) => ({
+  width: "100%",
   display: "flex",
   flexDirection: "column",
+  gap: theme.spacing(4)
 }));
 
-const RightPanelTabContent = styled(Box)(() => ({
-  flex: 1,
-  minHeight: 0,
-  "&.active": {
-    display: "flex",
-  },
-  "&.hidden": {
-    display: "none",
-  },
+const RightPanelSubcontainer = styled("div")(() => ({
+  display: "flex",
+  flexDirection: "column",
+  height: "100%"
 }));
 
 const DocIframe = styled("iframe")(({ theme }) => ({
   width: "100%",
-  flex: 1,
+  height: "50vh",
+
   border: "none",
   borderRadius: theme.spacing(1),
+  borderTopLeftRadius: 0,
+
   backgroundColor: theme.palette.blue[500],
 }));
 
 const TabContent = styled(Box)(() => ({
   flex: 1,
   overflow: "auto",
+  display: "flex",
+  flexDirection: "column",
   "&.active": {
-    display: "block",
+    display: "contents",
   },
   "&.hidden": {
     display: "none",
@@ -85,6 +86,7 @@ const StyledTab = styled(Tab)(({ theme }) => ({
   borderTopLeftRadius: theme.spacing(1),
   borderTopRightRadius: theme.spacing(1),
   color: "white",
+
   "&.Mui-selected, &.Mui-focusVisible": {
     backgroundColor: theme.palette.blue[500],
     color: "white"
@@ -134,8 +136,8 @@ interface GameEditorProps {
 }
 
 const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => {
-  const [activeTab, setActiveTab] = useState(0);
-  const [rightPanelTab, setRightPanelTab] = useState(0);
+  const [activeLeftPanelTab, setActiveLeftPanelTab] = useState(0);
+  const [activeRightPanelTab, setActiveRightPanelTab] = useState(0);
   const [output, setOutput] = useState<string>("");
 
   const tabs = useMemo(() => [
@@ -249,12 +251,16 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
   if (!project)
     return <div>Loading work session...</div>; //FIXME: add a loading spinner with a component
 
+  /*
+   * FIXME: the TabContent should be refactored so that we only have to put
+   *        true/false to indicate whether or not the tab is active
+   */
   return (
     <GameEditorContainer>
       <LeftPanel>
         <Tabs
-          value={activeTab}
-          onChange={(_, newValue) => setActiveTab(newValue)}
+          value={activeLeftPanelTab}
+          onChange={(_, newValue) => setActiveLeftPanelTab(newValue)}
           slotProps={{ indicator: { hidden: true } }}
         >
           {editorTabs.map(({ label, icon }) => (
@@ -273,8 +279,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
             <TabContent
               key={tab.label}
               role="tabpanel"
-              hidden={activeTab !== idx}
-              className={activeTab === idx ? "active" : "hidden"}
+              className={activeLeftPanelTab === idx ? "active" : "hidden"}
             >
               {EditorComponent
                 ? <EditorContainer $disablePadding={tab.disablePadding}><EditorComponent project={project} /></EditorContainer>
@@ -283,50 +288,53 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
           );
         })}
       </LeftPanel>
+
       <RightPanel>
-        <Tabs
-          value={rightPanelTab}
-          onChange={(_, newValue) => setRightPanelTab(newValue)}
-          slotProps={{ indicator: { hidden: true } }}
-        >
-          <StyledTab iconPosition="start" icon={<SportsEsports />} label="Display" data-cy="display-tab" />
-          <StyledTab iconPosition="start" icon={<MenuBook />} label="Doc" data-cy="doc-tab" />
-        </Tabs>
-        <RightPanelTabContent
-          role="tabpanel"
-          hidden={rightPanelTab !== 0}
-          className={rightPanelTab === 0 ? "active" : "hidden"}
-          data-cy="display-panel"
-          sx={{ flexDirection: "column", gap: 4 }}
-        >
-          <PreviewCanvas
-            ref={canvasRef}
-            canvasProps={{
-              map: project.mapProvider,
-              screenSize: screenSize,
-              sprite: project.spriteProvider,
-              sound: project.sound
-            }}
-            envData={envData}
-            setOutput={setOutput}
-            soundProvider={project.sound}
-          />
-          <GameEditorConsole output={output} />
-        </RightPanelTabContent>
-        <RightPanelTabContent
-          role="tabpanel"
-          hidden={rightPanelTab !== 1}
-          className={rightPanelTab === 1 ? "active" : "hidden"}
-          data-cy="doc-panel"
-          sx={{ flexDirection: "column" }}
-        >
-          <DocIframe
-            src={import.meta.env.VITE_DOCS_URL ?? "https://docs.naucto.net"}
-            title="Naucto Documentation"
-            data-cy="doc-iframe"
-          />
-        </RightPanelTabContent>
-        <GameEditorConsole output={output} />
+        <RightPanelSubcontainer>
+          <Tabs
+            value={activeRightPanelTab}
+            onChange={(_, newValue) => setActiveRightPanelTab(newValue)}
+            slotProps={{ indicator: { hidden: true } }}
+          >
+            <StyledTab iconPosition="start" icon={<SportsEsports />} label="Preview" data-cy="display-tab" />
+            <StyledTab iconPosition="start" icon={<MenuBook />} label="Doc" data-cy="doc-tab" />
+          </Tabs>
+          <TabContent
+            role="tabpanel"
+            className={activeRightPanelTab === 0 ? "active" : "hidden"}
+            data-cy="preview-panel"
+          >
+            <PreviewCanvas
+              ref={canvasRef}
+              canvasProps={{
+                map: project.mapProvider,
+                screenSize: screenSize,
+                sprite: project.spriteProvider,
+                sound: project.sound
+              }}
+              sx={{
+                borderTopLeftRadius: 0
+              }}
+              envData={envData}
+              setOutput={setOutput}
+              soundProvider={project.sound}
+            />
+          </TabContent>
+          <TabContent
+            role="tabpanel"
+            className={activeRightPanelTab === 1 ? "active" : "hidden"}
+            data-cy="doc-panel"
+          >
+            <DocIframe
+              src={import.meta.env.VITE_DOCS_URL ?? "https://docs.naucto.net"}
+              title="Naucto Documentation"
+              data-cy="doc-iframe"
+            />
+          </TabContent>
+        </RightPanelSubcontainer>
+
+        <GameEditorConsole
+          output={output} />
       </RightPanel>
 
       <StyledDialog
@@ -355,8 +363,10 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
         if (suppressBeforeUnloadRef.current) {
           return undefined;
         }
+
         event.preventDefault();
         cleanUpAndDisconnect();
+
         return "Are you sure you want to leave? Your changes may not be saved.";
       }} />
     </GameEditorContainer>
