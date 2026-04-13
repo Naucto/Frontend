@@ -59,6 +59,8 @@ export class ProjectProvider implements Destroyable {
     this._boundHandleDocumentUpdate = this.handleDocumentUpdate.bind(this);
     this._yjsDoc.on("update", this._boundHandleDocumentUpdate);
 
+    this.projectSettingsProvider = new ProjectSettingsProvider(this._yjsDoc);
+
     this.initializeDoc().then((webrtcOffer?: WebRtcOfferDto) => {
       if (webrtcOffer === undefined) {
         console.log("Couldn't get WebRTC offer from server, cannot initialize");
@@ -67,7 +69,6 @@ export class ProjectProvider implements Destroyable {
 
       this._yjsProvider = new WebrtcProvider(this._roomId as string, this._yjsDoc, webrtcOffer! as ProviderOptions);
 
-      this.projectSettingsProvider     = new ProjectSettingsProvider(this._yjsDoc);
       this.awarenessProvider           = new AwarenessProvider(this, this._yjsProvider);
       this.codeProvider                = new CodeProvider(this._yjsDoc, this.awarenessProvider);
       this.spriteProvider              = new SpriteProvider(this._yjsDoc);
@@ -106,7 +107,7 @@ export class ProjectProvider implements Destroyable {
         await decodeUpdate(this._yjsDoc, projectContent!);
 
         console.log("Project content decoded successfully");
-      } else {
+
         const { data: projectDetails } = (await projectControllerFindOne({
           path: { id: this.projectId }
         }));
@@ -115,6 +116,10 @@ export class ProjectProvider implements Destroyable {
         this.projectSettingsProvider.updateShortDesc(projectDetails!.shortDesc);
         this.projectSettingsProvider.updateLongDesc(projectDetails!.longDesc ?? JSON.stringify(projectDetails!.longDesc));
         this.projectSettingsProvider.updateTags(projectDetails!.tags ?? []);
+
+        console.log("Project content loaded successfully");
+      } else {
+        this.projectSettingsProvider.updateName("Untitled Project");
 
         console.log("Project content initialized successfully");
       }
