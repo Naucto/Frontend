@@ -4,7 +4,7 @@ import { Awareness } from "y-protocols/awareness";
 import { generateRandomColor } from "@utils/colorUtils.ts";
 import { LocalStorageManager } from "@utils/LocalStorageManager.ts";
 import { ProjectProvider, ProviderEventType } from "../ProjectProvider";
-import { WorkSessionsService } from "@api";
+import { workSessionControllerGetInfo, workSessionControllerKick } from "@api";
 
 export enum AwarenessEventType {
   CHANGE,
@@ -138,16 +138,15 @@ export class AwarenessProvider implements Destroyable {
       const disconnectedUser = this._userStateCache.get(clientID);
       if (disconnectedUser) {
         const projectId = Number(this._engine.projectId);
-        WorkSessionsService
-          .workSessionControllerGetInfo(projectId)
-          .then(sessionInfo => {
-            if (sessionInfo.host === userId && !this._engine.isHost) {
+        workSessionControllerGetInfo({ path: { id: projectId } })
+          .then(({ data: sessionInfo }) => {
+            if (sessionInfo!.hostId === userId && !this._engine.isHost) {
               this._engine.isHost = true;
               this._engine.emit(ProviderEventType.BECOME_HOST);
             }
           });
         this._userStateCache.delete(clientID);
-        WorkSessionsService.workSessionControllerKick(projectId, { userId: Number(disconnectedUser.userId) });
+        workSessionControllerKick({ path: { id: projectId }, body: { userId: Number(disconnectedUser.userId) } });
 
         this._engine.checkAndKickDisconnectedUsers();
       }

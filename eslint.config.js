@@ -25,7 +25,7 @@ export default defineConfig([
       indent: ["error", 2, { "SwitchCase": 1 }],
       quotes: ["error", "double"],
       "@typescript-eslint/no-unused-vars": "warn",
-      "no-console": "warn",
+      /* "no-console": "warn", */
       "react/react-in-jsx-scope": "off",
       "react/self-closing-comp": "error",
       "no-var": "error",
@@ -39,14 +39,10 @@ export default defineConfig([
       "eol-last": ["error", "always"],
       "no-multiple-empty-lines": ["error", { "max": 1 }],
       "no-trailing-spaces": ["error"],
-    },
-
-
-
-
+    }
   },
   tseslint.configs.recommended,
   {
     ignores: ["src/api/*"]
-  },
+  }
 ]);

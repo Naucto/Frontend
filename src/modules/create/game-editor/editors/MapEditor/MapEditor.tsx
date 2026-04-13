@@ -1,20 +1,18 @@
 import React, { useState } from "react";
 import { EditorProps } from "../EditorType.ts";
 import { styled } from "@mui/material/styles";
+import { Box } from "@mui/material";
 import { MapViewport } from "./MapViewport";
 import { SpritePicker } from "./SpritePicker";
 
-const MapEditorContainer = styled("div")(({ theme }) => ({
+const MapEditorInner = styled(Box)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
   width: "100%",
   height: "100%",
-  borderRadius: theme.spacing(1),
-  borderTopLeftRadius: 0,
-  backgroundColor: theme.palette.blue[800],
+  backgroundColor: theme.palette.blue[500],
   gap: theme.spacing(1),
   boxSizing: "border-box",
-  padding: theme.spacing(1),
 }));
 
 const Bottom = styled("div")(({ theme }) => ({
@@ -29,11 +27,11 @@ export const MapEditor: React.FC<EditorProps> = ({ project }) => {
   const [selectedIndex, setSelectedIndex] = useState(13);
 
   return (
-    <MapEditorContainer data-cy="map-editor">
+    <MapEditorInner data-cy="map-editor">
       <MapViewport selectedIndex={selectedIndex} project={project} />
       <Bottom>
         <SpritePicker selectedIndex={selectedIndex} onSelect={setSelectedIndex} project={project} />
       </Bottom>
-    </MapEditorContainer>
+    </MapEditorInner>
   );
 };

@@ -1,13 +1,14 @@
 import React, { useCallback, useEffect } from "react";
 import { styled } from "@mui/material/styles";
 import { StyledCanvas } from "@shared/canvas/Canvas";
+import CanvasGridOverlay from "@shared/canvas/CanvasGridOverlay";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import { ProjectProvider } from "@providers/ProjectProvider";
+import { SelectedSpriteFrame } from "@shared/canvas/SelectedSpriteFrame";
 
-const PickerContainer = styled("div")(({ theme }) => ({
+const PickerContainer = styled("div")(() => ({
   display: "flex",
-  padding: theme.spacing(1),
-  width: "100%",
+  position: "relative",
 }));
 
 export type SpritePickerProps = {
@@ -16,14 +17,16 @@ export type SpritePickerProps = {
   project: ProjectProvider;
 };
 
-export const SpritePicker: React.FC<SpritePickerProps> = ({ onSelect, project }) => {
+export const SpritePicker: React.FC<SpritePickerProps> = ({ selectedIndex, onSelect, project }) => {
   const canvasRef = React.createRef<SpriteRendererHandle>();
   const [, setVersion] = React.useState(0);
 
   if (!project) return null;
 
-  const spritesPerRow = project.sprite.size.width / project.sprite.spriteSize.width;
-  const spritesPerCol = project.sprite.size.height / project.sprite.spriteSize.height;
+  const spritesPerRow = project.spriteProvider.size.width / project.spriteProvider.spriteSize.width;
+  const spritesPerCol = project.spriteProvider.size.height / project.spriteProvider.spriteSize.height;
+  const selectedSpriteX = selectedIndex % spritesPerRow;
+  const selectedSpriteY = Math.floor(selectedIndex / spritesPerRow);
 
   useEffect(() => {
     const handle = canvasRef.current;
@@ -38,11 +41,11 @@ export const SpritePicker: React.FC<SpritePickerProps> = ({ onSelect, project })
     const nx = (e.clientX - rect.left) / rect.width;
     const ny = (e.clientY - rect.top) / rect.height;
 
-    const px = Math.floor(nx * project.sprite.size.width);
-    const py = Math.floor(ny * project.sprite.size.height);
+    const px = Math.floor(nx * project.spriteProvider.size.width);
+    const py = Math.floor(ny * project.spriteProvider.size.height);
 
-    const sx = Math.floor(px / project.sprite.spriteSize.width);
-    const sy = Math.floor(py / project.sprite.spriteSize.height);
+    const sx = Math.floor(px / project.spriteProvider.spriteSize.width);
+    const sy = Math.floor(py / project.spriteProvider.spriteSize.height);
 
     if (sx < 0 || sy < 0 || sx >= spritesPerRow || sy >= spritesPerCol) return;
     const index = sy * spritesPerRow + sx;
@@ -50,11 +53,11 @@ export const SpritePicker: React.FC<SpritePickerProps> = ({ onSelect, project })
   }, [onSelect, project, spritesPerRow, spritesPerCol]);
 
   useEffect(() => {
-    project.sprite.observe(() => {
+    project.spriteProvider.observe(() => {
       setVersion(v => v + 1);
     });
 
-    project.map.observe(() => {
+    project.mapProvider.observe(() => {
       setVersion(v => v + 1);
     });
   }, [project]);
@@ -63,13 +66,20 @@ export const SpritePicker: React.FC<SpritePickerProps> = ({ onSelect, project })
     <PickerContainer onContextMenu={(e) => e.preventDefault()}>
       <StyledCanvas
         ref={canvasRef}
-        sprite={project.sprite}
-        map={project.map}
+        sprite={project.spriteProvider}
+        map={project.mapProvider}
         screenSize={{
-          width: project.sprite.size.width,
-          height: project.sprite.size.height,
+          width: project.spriteProvider.size.width,
+          height: project.spriteProvider.size.height,
         }}
         onClick={handleClick}
+      />
+      <CanvasGridOverlay columns={spritesPerRow} rows={spritesPerCol} />
+      <SelectedSpriteFrame
+        $left={`${(selectedSpriteX / spritesPerRow) * 100}%`}
+        $top={`${(selectedSpriteY / spritesPerCol) * 100}%`}
+        $width={`${100 / spritesPerRow}%`}
+        $height={`${100 / spritesPerCol}%`}
       />
     </PickerContainer>
   );

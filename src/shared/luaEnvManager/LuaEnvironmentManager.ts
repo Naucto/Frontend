@@ -1,6 +1,10 @@
 import { LuaEnvironment } from "@lib/lua";
 import { KeyHandler } from "@shared/canvas/gameCanvas/KeyHandler";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
+import { NetAPI } from "@shared/luaEnvManager/api/NetAPI";
+import { MusicPlayer } from "@shared/audio/MusicPlayer";
+import { SpriteProvider } from "@providers/editors/SpriteProvider";
+import { MapProvider } from "@providers/editors/MapProvider";
 
 export interface EnvData {
   code: string,
@@ -10,7 +14,10 @@ export interface EnvData {
 interface ConstructorProps {
   envData: EnvData,
   rendererHandle: SpriteRendererHandle,
+  spriteProvider: SpriteProvider,
+  mapProvider: MapProvider,
   keyHandler: KeyHandler,
+  musicPlayer?: MusicPlayer,
   /**
    * this function is used to set the envData.output only
    * @param output the output to set
@@ -22,19 +29,41 @@ class LuaEnvironmentManager {
   private _maxLines = 100;
   private _lua: LuaEnvironment;
   private _rendererHandle: SpriteRendererHandle;
+  private _spriteProvider: SpriteProvider;
+  private _mapProvider: MapProvider;
   private _keyHandler: KeyHandler;
+  private _musicPlayer?: MusicPlayer;
 
   private _envData: EnvData;
 
   private _setOutput: React.Dispatch<React.SetStateAction<string>>;
 
-  constructor({ envData, rendererHandle, setOutput, keyHandler }: ConstructorProps) {
+  constructor({ envData, rendererHandle, spriteProvider, mapProvider, setOutput, keyHandler, musicPlayer }: ConstructorProps) {
     this._lua = new LuaEnvironment();
     this._rendererHandle = rendererHandle;
-    this._injectGameAPI(this._lua);
+    this._spriteProvider = spriteProvider;
+    this._mapProvider = mapProvider;
     this._setOutput = setOutput;
     this._envData = envData;
     this._keyHandler = keyHandler;
+    this._musicPlayer = musicPlayer;
+
+    this._lua.setGlobalWith("sprite", this._sprite.bind(this));
+    this._lua.setGlobalWith("clear", this._clear.bind(this));
+    this._lua.setGlobalWith("print", this._print.bind(this));
+    this._lua.setGlobalWith("key_pressed", this._keyPressed.bind(this));
+    this._lua.setGlobalWith("set_col", this._setCol.bind(this));
+    this._lua.setGlobalWith("reset_col", this._resetCol.bind(this));
+    this._lua.setGlobalWith("map", this._map.bind(this));
+    this._lua.setGlobalWith("mget", this._mget.bind(this));
+    this._lua.setGlobalWith("fget", this._fget.bind(this));
+    this._lua.setGlobalWith("camera", this._camera.bind(this));
+    this._lua.setGlobalWith("line", this._line.bind(this));
+    this._lua.setGlobalWith("rect", this._drawOutlineRect.bind(this));
+    this._lua.setGlobalWith("fill_rect", this._drawRect.bind(this));
+    this._lua.setGlobalWith("play_music", this._playMusic.bind(this));
+    this._lua.setGlobalWith("stop_music", this._stopMusic.bind(this));
+    new NetAPI(this._lua);
   }
 
   public runCode(): boolean {
@@ -71,24 +100,20 @@ class LuaEnvironmentManager {
     this._setOutput("");
   }
 
-  // private
-
-  private _injectGameAPI(lua: LuaEnvironment): void {
-    lua.setGlobal("sprite", this._sprite.bind(this));
-    lua.setGlobal("clear", this._clear.bind(this));
-    lua.setGlobal("print", this._print.bind(this));
-    lua.setGlobal("key_pressed", this._keyPressed.bind(this));
-    lua.setGlobal("set_col", this._setCol.bind(this));
-    lua.setGlobal("reset_col", this._resetCol.bind(this));
-    lua.setGlobal("map", this._map.bind(this));
-    lua.setGlobal("camera", this._camera.bind(this));
-    lua.setGlobal("line", this._line.bind(this));
-    lua.setGlobal("rect", this._drawOutlineRect.bind(this));
-    lua.setGlobal("fill_rect", this._drawRect.bind(this));
-  }
-
   private _map(x: number, y: number): void {
     this._rendererHandle.drawMap(x, y);
+  }
+
+  private _mget(x: number, y: number): number {
+    return this._mapProvider.getTileAt({ x, y });
+  }
+
+  private _fget(spriteIndex: number, bit?: number): boolean | number {
+    if (bit === undefined) {
+      return this._spriteProvider.getFlag(spriteIndex);
+    }
+    const val = this._spriteProvider.getFlagBit(spriteIndex, bit);
+    return val;
   }
 
   private _sprite(n: number, x: number, y: number, w: number, h: number): void {
@@ -144,6 +169,20 @@ class LuaEnvironmentManager {
         this._addOutput(this._getErrorMsg(error));
       }
     }
+  }
+
+  private _playMusic(index?: number): void {
+    if (!this._musicPlayer) return;
+    this._musicPlayer.play(index).catch((error) => {
+      if (error instanceof Error) {
+        this._addOutput(this._getErrorMsg(error));
+      }
+    });
+  }
+
+  private _stopMusic(): void {
+    if (!this._musicPlayer) return;
+    this._musicPlayer.stop();
   }
 
   private _getErrorMsg(error: Error): string {

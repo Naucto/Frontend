@@ -11,8 +11,26 @@ const ViewportCanvas = styled(StyledCanvas)();
 const ViewportContainer = styled("div")(({ theme }) => ({
   flex: 0.6,
   display: "flex",
+  position: "relative",
   borderRadius: theme.spacing(1),
   backgroundColor: theme.palette.blue[700],
+}));
+
+const SelectedSpritePreview = styled("div")(({ theme }) => ({
+  position: "absolute",
+  top: theme.spacing(1),
+  right: theme.spacing(1),
+  zIndex: 1,
+  padding: theme.spacing(1),
+  borderRadius: theme.spacing(1),
+  backgroundColor: "rgba(0, 0, 0, 0.50)",
+}));
+
+const PreviewCanvas = styled(StyledCanvas)(({ theme }) => ({
+  width: theme.spacing(8),
+  height: theme.spacing(8),
+  borderRadius: theme.spacing(0.5),
+  backgroundColor: theme.palette.grey[900],
 }));
 
 type Props = {
@@ -28,19 +46,21 @@ export const MapViewport: React.FC<Props> = ({ selectedIndex, project }) => {
   const [, setVersion] = useState(0);
 
   const spriteRendererHandleRef = createRef<SpriteRendererHandle>();
+  const previewRendererHandleRef = createRef<SpriteRendererHandle>();
+  const [, setPreviewVersion] = useState(0);
 
   const draw = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>): void => {
       const point: Point2D = getCanvasPoint2DFromEvent(e);
       const tile: Point2D = {
-        x: Math.floor((point.x - offset.x) / project.sprite.spriteSize.width),
-        y: Math.floor((point.y - offset.y) / project.sprite.spriteSize.height),
+        x: Math.floor((point.x - offset.x) / project.spriteProvider.spriteSize.width),
+        y: Math.floor((point.y - offset.y) / project.spriteProvider.spriteSize.height),
       };
-      project.map.setTileAt(tile, selectedIndex);
+      project.mapProvider.setTileAt(tile, selectedIndex);
       setVersion(v => v + 1);
 
     },
-    [offset, project.sprite.spriteSize, selectedIndex]
+    [offset, project.spriteProvider.spriteSize, selectedIndex]
   );
 
   const handleMouseDown = useCallback(
@@ -83,15 +103,25 @@ export const MapViewport: React.FC<Props> = ({ selectedIndex, project }) => {
 
   useEffect(() => {
     spriteRendererHandleRef.current?.drawMap(offset.x, offset.y);
-  }, [spriteRendererHandleRef]);
+  }, [spriteRendererHandleRef, offset]);
 
   useEffect(() => {
-    project.map.observe(() => {
+    const handle = previewRendererHandleRef.current;
+    if (!handle) return;
+
+    handle.clear(0);
+    handle.queueSpriteDraw(selectedIndex, 0, 0);
+    handle.draw();
+  }, [previewRendererHandleRef, selectedIndex, offset]);
+
+  useEffect(() => {
+    project.mapProvider.observe(() => {
       setVersion(v => v + 1);
     });
 
-    project.sprite.observe(() => {
+    project.spriteProvider.observe(() => {
       setVersion(v => v + 1);
+      setPreviewVersion(v => v + 1);
     });
   }, [project]);
 
@@ -99,13 +129,25 @@ export const MapViewport: React.FC<Props> = ({ selectedIndex, project }) => {
     <ViewportContainer onContextMenu={(e) => e.preventDefault()}>
       <ViewportCanvas
         ref={spriteRendererHandleRef}
-        sprite={project.sprite}
-        map={project.map}
+        sprite={project.spriteProvider}
+        map={project.mapProvider}
         screenSize={{ width: SCREEN_SIZE.x, height: SCREEN_SIZE.y }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
       />
+      <SelectedSpritePreview>
+        <PreviewCanvas
+          ref={previewRendererHandleRef}
+          sprite={project.spriteProvider}
+          map={project.mapProvider}
+          screenSize={{
+            width: project.spriteProvider.spriteSize.width,
+            height: project.spriteProvider.spriteSize.height,
+          }}
+        />
+
+      </SelectedSpritePreview>
     </ViewportContainer>
   );
 };

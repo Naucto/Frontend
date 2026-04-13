@@ -3,20 +3,24 @@ import { KeyHandler } from "@shared/canvas/gameCanvas/KeyHandler";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import { EnvData, LuaEnvironmentManager } from "@shared/luaEnvManager/LuaEnvironmentManager";
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from "react";
+import { SoundProvider } from "@providers/editors/SoundProvider";
+import { MusicPlayer } from "@shared/audio/MusicPlayer";
 
 type GameCanvasProps = {
   canvasProps: CanvasProps;
   envData: EnvData;
   setOutput: React.Dispatch<React.SetStateAction<string>>;
+  soundProvider?: SoundProvider;
   className?: string;
 };
 
 const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(
-  ({ canvasProps, envData, setOutput, className }, ref) => {
-    const spriteRendererHandleRef = useRef<SpriteRendererHandle>(null);
-    const luaEnvManagerRef = useRef<LuaEnvironmentManager>(null);
-    const animationFrameRef = useRef<number>(null);
+  ({ canvasProps, envData, setOutput, className, soundProvider }, ref) => {
+    const spriteRendererHandleRef = useRef<SpriteRendererHandle | null>(null);
+    const luaEnvManagerRef = useRef<LuaEnvironmentManager>(undefined);
+    const animationFrameRef = useRef<number>(undefined);
     const keyHandlerRef = useRef<KeyHandler>(new KeyHandler);
+    const musicPlayerRef = useRef<MusicPlayer>(undefined);
 
     useImperativeHandle(ref, () => spriteRendererHandleRef.current as SpriteRendererHandle, []);
     const loop = useCallback((): void => {
@@ -35,13 +39,20 @@ const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(
       if (spriteRendererHandleRef.current == null || keyHandlerRef.current == null) {
         return;
       }
+
       const rendererHandle = spriteRendererHandleRef.current;
       const keyHandler = keyHandlerRef.current;
+      if (soundProvider) {
+        musicPlayerRef.current = new MusicPlayer(soundProvider);
+      }
       luaEnvManagerRef.current = new LuaEnvironmentManager({
         envData,
         rendererHandle,
+        spriteProvider: canvasProps.sprite,
+        mapProvider: canvasProps.map,
         keyHandler,
-        setOutput
+        setOutput,
+        musicPlayer: musicPlayerRef.current
       });
     }, []);
 
@@ -75,7 +86,7 @@ const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(
       return () => {
         if (animationFrameRef.current) {
           cancelAnimationFrame(animationFrameRef.current);
-          animationFrameRef.current = null;
+          animationFrameRef.current = undefined;
         }
       };
     }, [envData.code]);

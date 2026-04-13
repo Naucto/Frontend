@@ -4,6 +4,8 @@ export interface ProjectSettings {
   name: string;
   shortDesc: string;
   longDesc: string;
+  iconUrl: string;
+  tags: string[];
 }
 
 export type ProjectSettingsListener = (settings: ProjectSettings) => void;
@@ -12,6 +14,8 @@ export class ProjectSettingsProvider implements Destroyable {
   private readonly _projectNameContent: Y.Text;
   private readonly _shortDescContent: Y.Text;
   private readonly _longDescContent: Y.Text;
+  private readonly _iconUrlContent: Y.Text;
+  private readonly _tagsContent: Y.Text;
 
   private _listeners = new Set<ProjectSettingsListener>();
 
@@ -21,10 +25,14 @@ export class ProjectSettingsProvider implements Destroyable {
     this._projectNameContent = ydoc.getText("projectName");
     this._shortDescContent = ydoc.getText("shortDescription");
     this._longDescContent = ydoc.getText("longDescription");
+    this._iconUrlContent = ydoc.getText("iconUrl");
+    this._tagsContent = ydoc.getText("projectTags");
     this._boundCallListeners = this._callListeners.bind(this);
     this._projectNameContent.observe(this._boundCallListeners);
     this._shortDescContent.observe(this._boundCallListeners);
     this._longDescContent.observe(this._boundCallListeners);
+    this._iconUrlContent.observe(this._boundCallListeners);
+    this._tagsContent.observe(this._boundCallListeners);
   }
 
   destroy(): void {
@@ -32,6 +40,8 @@ export class ProjectSettingsProvider implements Destroyable {
     this._projectNameContent.unobserve(this._boundCallListeners);
     this._shortDescContent.unobserve(this._boundCallListeners);
     this._longDescContent.unobserve(this._boundCallListeners);
+    this._iconUrlContent.unobserve(this._boundCallListeners);
+    this._tagsContent.unobserve(this._boundCallListeners);
   }
 
   private _callListeners(): void {
@@ -39,10 +49,21 @@ export class ProjectSettingsProvider implements Destroyable {
   }
 
   public getSettings(): ProjectSettings {
+    let tags: string[] = [];
+    try {
+      tags = this._tagsContent.length
+        ? (JSON.parse(this._tagsContent.toString()) as string[])
+        : [];
+    } catch {
+      tags = [];
+    }
+
     return {
       name: this._projectNameContent.toString(),
       shortDesc: this._shortDescContent.toString(),
       longDesc: this._longDescContent.toString(),
+      iconUrl: this._iconUrlContent.toString(),
+      tags,
     };
   }
 
@@ -64,6 +85,21 @@ export class ProjectSettingsProvider implements Destroyable {
     if (this._longDescContent.toString() !== longDesc) {
       this._longDescContent.delete(0, this._longDescContent.length);
       this._longDescContent.insert(0, longDesc);
+    }
+  }
+
+  public updateIconUrl(iconUrl: string): void {
+    if (this._iconUrlContent.toString() !== iconUrl) {
+      this._iconUrlContent.delete(0, this._iconUrlContent.length);
+      this._iconUrlContent.insert(0, iconUrl);
+    }
+  }
+
+  public updateTags(tags: string[]): void {
+    const normalized = JSON.stringify(tags);
+    if (this._tagsContent.toString() !== normalized) {
+      this._tagsContent.delete(0, this._tagsContent.length);
+      this._tagsContent.insert(0, normalized);
     }
   }
 

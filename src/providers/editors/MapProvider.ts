@@ -177,7 +177,7 @@ export class MapProvider implements Destroyable {
   observeRaw(callback: RawContentListener): void {
     this.rawListeners.add(callback);
   }
-
+  /*
   private _parseMapData(mapData: string): number[][] {
     const tiles: number[][] = new Array(this.height);
 
@@ -193,5 +193,5 @@ export class MapProvider implements Destroyable {
     }
 
     return tiles;
-  }
+  } */
 }

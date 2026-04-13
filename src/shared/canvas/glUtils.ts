@@ -1,5 +1,5 @@
-import { ColorFormatError } from "src/errors/ColorFormatError";
-import WebGlError from "src/errors/WebGlError";
+import { ColorFormatError } from "@errors/ColorFormatError";
+import WebGlError from "@errors/WebGlError";
 
 export function hexToRGBArray(hex: string, alpha = 255): number[] {
   if (!/^#[0-9a-fA-F]{6}$/.test(hex)) {
