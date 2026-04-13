@@ -112,12 +112,12 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
     const publishedSettings = publishedSettingsBaselineRef.current;
     const publishedContent = publishedContentBaselineRef.current;
 
-    if (!isPublished || !publishedSettings || !publishedContent || !project.projectSettings) {
+    if (!isPublished || !publishedSettings || !publishedContent || !project.projectSettingsProvider) {
       setHasUnpublishedChanges(false);
       return;
     }
 
-    const currentSettings = normalizeSettings(nextSettings ?? project.projectSettings.getSettings());
+    const currentSettings = normalizeSettings(nextSettings ?? project.projectSettingsProvider.getSettings());
     const settingsChanged =
       currentSettings.name !== publishedSettings.name ||
       currentSettings.shortDesc !== publishedSettings.shortDesc ||
@@ -131,18 +131,18 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
   }, [isPublished, project]);
 
   const markCurrentStateAsPublished = useCallback((): void => {
-    if (!project.projectSettings) {
+    if (!project.projectSettingsProvider) {
       return;
     }
 
-    publishedSettingsBaselineRef.current = normalizeSettings(project.projectSettings.getSettings());
+    publishedSettingsBaselineRef.current = normalizeSettings(project.projectSettingsProvider.getSettings());
     publishedContentBaselineRef.current = project.getContentSnapshot();
     publishedBannerDirtyRef.current = false;
     setHasUnpublishedChanges(false);
   }, [project]);
 
   const loadPublishedBaseline = useCallback(async (): Promise<void> => {
-    if (!project.projectSettings) {
+    if (!project.projectSettingsProvider) {
       return;
     }
 
@@ -165,7 +165,7 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
       publishedBannerDirtyRef.current = false;
       recomputeUnpublishedChanges();
     } catch {
-      publishedSettingsBaselineRef.current = normalizeSettings(project.projectSettings.getSettings());
+      publishedSettingsBaselineRef.current = normalizeSettings(project.projectSettingsProvider.getSettings());
       publishedContentBaselineRef.current = project.getContentSnapshot();
       publishedBannerDirtyRef.current = false;
       setHasUnpublishedChanges(false);
@@ -180,8 +180,8 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
         const published = details.status === ("COMPLETED" satisfies ProjectExResponseDto["status"]) || false;
         setIsPublished(published);
         setPublishedAt((details as Record<string, unknown>).publishedAt as string | null ?? null);
-        if (project.projectSettings && details.tags) {
-          project.projectSettings.updateTags(details.tags);
+        if (project.projectSettingsProvider && details.tags) {
+          project.projectSettingsProvider.updateTags(details.tags);
         }
 
         // Fetch forked-from project name if this is a fork
@@ -220,7 +220,7 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
             const res = await projectControllerGetProjectImage({ path: { id: project.projectId } });
             return res.data?.url ?? null;
           },
-          project.projectSettings?.getSettings().iconUrl,
+          project.projectSettingsProvider?.getSettings().iconUrl,
         );
         if (imageUrl) {
           setBannerUrl(imageUrl);
@@ -275,7 +275,7 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
           const res = await projectControllerGetProjectImage({ path: { id: project.projectId } });
           return res.data?.url ?? null;
         },
-        project.projectSettings?.getSettings().iconUrl,
+        project.projectSettingsProvider?.getSettings().iconUrl,
       );
       setCachedProjectImageUrl("draft", project.projectId, imageUrl);
       if (imageUrl) {
@@ -495,7 +495,7 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
               freeSolo
               options={[...PREDEFINED_PROJECT_TAGS]}
               value={settings.tags}
-              onChange={(_, value) => project.projectSettings.updateTags(value.map((tag) => tag.trim()).filter(Boolean))}
+              onChange={(_, value) => project.projectSettingsProvider.updateTags(value.map((tag) => tag.trim()).filter(Boolean))}
               slotProps={{
                 paper: {
                   sx: {

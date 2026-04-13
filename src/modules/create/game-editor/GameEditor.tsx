@@ -310,14 +310,14 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
                 map: project.mapProvider,
                 screenSize: screenSize,
                 sprite: project.spriteProvider,
-                sound: project.sound
+                sound: project.soundProvider
               }}
               sx={{
                 borderTopLeftRadius: 0
               }}
               envData={envData}
               setOutput={setOutput}
-              soundProvider={project.sound}
+              soundProvider={project.soundProvider}
             />
           </TabContent>
           <TabContent

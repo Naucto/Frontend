@@ -179,7 +179,7 @@ export class ProjectProvider implements Destroyable {
 
     await projectControllerSaveProjectContent({
       path: { id: this.projectId },
-      body: { file: new Blob([data], { type: "application/octet-stream" }) },
+      body: { file: new Blob([data as BlobPart], { type: "application/octet-stream" }) },
     });
   }
 
