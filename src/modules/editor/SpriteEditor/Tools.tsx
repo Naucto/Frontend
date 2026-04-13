@@ -1,17 +1,30 @@
 import { DrawTool, CanvasHandler } from "@modules/editor/SpriteEditor/SpriteEditor";
 import React, { useEffect, useRef } from "react";
 import { SpriteProvider } from "@providers/editors/SpriteProvider";
+import { styled } from "@mui/material";
+
+export type SpritePixelAccessor = Pick<SpriteProvider, "isPixelInBounds" | "getPixel" | "setPixel">;
+
+const Container = styled("div")(() => ({
+  display: "flex",
+  gap: 8,
+}));
+
+const ToolButton = styled("button")(({ theme }) => ({
+  padding: theme.spacing(0.5, 1),
+  width: theme.spacing(6),
+  height: theme.spacing(6),
+}));
 
 const Tools: React.FC<{
   color: number;
-  position: Point2D;
   drawTool: DrawTool;
   onSelectTool: (tool: DrawTool) => void;
-  spriteProvider: SpriteProvider;
+  spriteProvider: SpritePixelAccessor;
   setOnMouseMove?: (fn: CanvasHandler) => void;
   setOnMouseUp?: (fn: CanvasHandler) => void;
   setOnMouseDown?: (fn: CanvasHandler) => void;
-}> = ({ drawTool, onSelectTool, setOnMouseDown, setOnMouseMove, setOnMouseUp, spriteProvider: spriteProvider, color }) => {
+}> = ({ drawTool, onSelectTool, setOnMouseDown, setOnMouseMove, setOnMouseUp, spriteProvider, color }) => {
   const lastPosRef = useRef<Point2D | null>(null);
   const colorRef = useRef(color);
 
@@ -64,7 +77,10 @@ const Tools: React.FC<{
     let err = dx - dy;
 
     while (true) {
-      spriteProvider.setPixel(x0, y0, colorRef.current);
+      if (spriteProvider.getPixel(x0, y0) !== colorRef.current) {
+        spriteProvider.setPixel(x0, y0, colorRef.current);
+      }
+
       if (x0 === x1 && y0 === y1) break;
       const e2 = err * 2;
       if (e2 > -dy) {
@@ -84,12 +100,12 @@ const Tools: React.FC<{
     lastPosRef.current = null;
 
     if (drawTool === DrawTool.Pen) {
-      const down: CanvasHandler = (_e, pos) => {
+      const down: CanvasHandler = (pos) => {
         spriteProvider.setPixel(pos.x, pos.y, colorRef.current);
         lastPosRef.current = pos;
       };
 
-      const move: CanvasHandler = (_e, pos) => {
+      const move: CanvasHandler = (pos) => {
         const last = lastPosRef.current;
         if (!last) {
           spriteProvider.setPixel(pos.x, pos.y, colorRef.current);
@@ -100,7 +116,7 @@ const Tools: React.FC<{
         lastPosRef.current = pos;
       };
 
-      const up: CanvasHandler = (_e, pos) => {
+      const up: CanvasHandler = (pos) => {
         const last = lastPosRef.current;
         if (last) {
           drawLine(last, pos);
@@ -117,7 +133,7 @@ const Tools: React.FC<{
     }
 
     if (drawTool === DrawTool.Fill) {
-      const down: CanvasHandler = (_e, pos) => {
+      const down: CanvasHandler = (pos) => {
         floodFillAt(pos.x, pos.y, colorRef.current);
       };
 
@@ -128,11 +144,11 @@ const Tools: React.FC<{
   }, [drawTool, setOnMouseDown, setOnMouseMove, setOnMouseUp, spriteProvider]);
 
   return (
-    <>
-      <button onClick={() => onSelectTool(DrawTool.Pen)}>Pen</button>
+    <Container>
+      <ToolButton onClick={() => onSelectTool(DrawTool.Pen)}>Pen</ToolButton>
       {/* FILL commented because not working properly on collaborative editing */}
       {/* <button className={drawTool === DrawTool.Fill ? "active" : ""} onClick={() => onSelectTool(DrawTool.Fill)}>Fill</button> */}
-    </>
+    </Container>
   );
 };
 

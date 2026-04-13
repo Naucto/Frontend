@@ -304,10 +304,12 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
             canvasProps={{
               map: project.mapProvider,
               screenSize: screenSize,
-              sprite: project.spriteProvider
+              sprite: project.spriteProvider,
+              sound: project.sound
             }}
             envData={envData}
             setOutput={setOutput}
+            soundProvider={project.sound}
           />
           <GameEditorConsole output={output} />
         </RightPanelTabContent>
@@ -324,6 +326,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
             data-cy="doc-iframe"
           />
         </RightPanelTabContent>
+        <GameEditorConsole output={output} />
       </RightPanel>
 
       <StyledDialog
