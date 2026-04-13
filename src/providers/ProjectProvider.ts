@@ -107,22 +107,16 @@ export class ProjectProvider implements Destroyable {
         await decodeUpdate(this._yjsDoc, projectContent!);
 
         console.log("Project content decoded successfully");
-
-        const { data: projectDetails } = (await projectControllerFindOne({
-          path: { id: this.projectId }
-        }));
-
-        this.projectSettingsProvider.updateName(projectDetails!.name);
-        this.projectSettingsProvider.updateShortDesc(projectDetails!.shortDesc);
-        this.projectSettingsProvider.updateLongDesc(projectDetails!.longDesc ?? JSON.stringify(projectDetails!.longDesc));
-        this.projectSettingsProvider.updateTags(projectDetails!.tags ?? []);
-
-        console.log("Project content loaded successfully");
-      } else {
-        this.projectSettingsProvider.updateName("Untitled Project");
-
-        console.log("Project content initialized successfully");
       }
+
+      const { data: projectDetails } = (await projectControllerFindOne({
+        path: { id: this.projectId }
+      }));
+
+      this.projectSettingsProvider.updateName(projectDetails!.name);
+      this.projectSettingsProvider.updateShortDesc(projectDetails!.shortDesc);
+      this.projectSettingsProvider.updateLongDesc(projectDetails!.longDesc ?? JSON.stringify(projectDetails!.longDesc));
+      this.projectSettingsProvider.updateTags(projectDetails!.tags ?? []);
 
       return session!.webrtcOffer;
     } catch (error: unknown) {
