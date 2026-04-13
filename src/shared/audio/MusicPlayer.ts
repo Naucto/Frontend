@@ -1,6 +1,6 @@
 import * as Tone from "tone";
 import { SoundProvider } from "@providers/editors/SoundProvider";
-import { playMusicFromPosition } from "@modules/editor/SoundEditor/Music";
+import { playMusicFromPosition } from "@modules/create/game-editor/editors/SoundEditor/Music";
 
 export class MusicPlayer {
   private _soundProvider: SoundProvider;

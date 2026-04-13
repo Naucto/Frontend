@@ -1230,6 +1230,7 @@ export const workSessionControllerJoin = <ThrowOnError extends boolean = false>(
     WorkSessionControllerJoinErrors,
     ThrowOnError
   >({
+    responseType: "json",
     security: [{ scheme: "bearer", type: "http" }],
     url: "/work-sessions/join/{id}",
     ...options
