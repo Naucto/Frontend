@@ -10,18 +10,20 @@ import GameEditorConsole from "@modules/create/game-editor/editors/GameEditorCon
 import { MapEditor } from "@modules/create/game-editor/editors/MapEditor/MapEditor";
 import ProjectSettingsEditor from "@modules/create/game-editor/editors/ProjectSettingsEditor";
 import { SoundEditor } from "@modules/create/game-editor/editors/SoundEditor";
-import { MultiplayerSettingsEditor } from "@modules/create/game-editor/editors/multiplayer/MultiplayerSettingsEditor.tsx";
+// import { MultiplayerSettingsEditor } from "@modules/create/game-editor/editors/multiplayer/MultiplayerSettingsEditor.tsx";
 import { SpriteEditor } from "@modules/editor/SpriteEditor/SpriteEditor";
 import { ProjectProvider, ProviderEventType } from "@providers/ProjectProvider";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
+
 import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
 import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
 import CodeIcon from "src/assets/code.svg?react";
 import MapIcon from "src/assets/map.svg?react";
-import MultiplayerIcon from "src/assets/user.svg?react";
+// import MultiplayerIcon from "src/assets/user.svg?react";
 import ProjectIcon from "src/assets/project.svg?react";
 import SoundIcon from "src/assets/music.svg?react";
 import SpriteIcon from "src/assets/pen.svg?react";
+
 import { EditorProps, EditorTab } from "./editors/EditorType";
 import { EditorContainer } from "./editors/EditorContainer";
 
@@ -146,7 +148,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
     { label: "sprite", component: SpriteEditor, icon: <SpriteIcon/> },
     { label: "map", component: MapEditor, icon: <MapIcon/> },
     { label: "sound", component: SoundEditor, icon: <SoundIcon/> },
-    { label: "multiplayer", component: MultiplayerSettingsEditor, icon: <MultiplayerIcon/> }
+    // { label: "multiplayer", component: MultiplayerSettingsEditor, icon: <MultiplayerIcon/> }
   ], []);
 
   const suppressBeforeUnloadRef = React.useRef(false);
