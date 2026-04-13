@@ -19,11 +19,11 @@ import {
 } from "./SoundEditor/styles/SoundEditor.styles";
 
 export const SoundEditor: React.FC<EditorProps> = ({ project }) => {
-  if (!project || !project.sound) {
+  if (!project || !project.soundProvider) {
     return <div>Loading sound editor...</div>;
   }
 
-  const soundProvider = project.sound;
+  const soundProvider = project.soundProvider;
 
   const [musics, setMusics] = useState<MusicData[]>([]);
   const [selectedMusicIndex, setSelectedMusicIndex] = useState<number>(0);
