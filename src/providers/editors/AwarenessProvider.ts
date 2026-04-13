@@ -140,7 +140,7 @@ export class AwarenessProvider implements Destroyable {
         const projectId = Number(this._engine.projectId);
         workSessionControllerGetInfo({ path: { id: projectId } })
           .then(({ data: sessionInfo }) => {
-            if (sessionInfo!.host === userId && !this._engine.isHost) {
+            if (sessionInfo!.hostId === userId && !this._engine.isHost) {
               this._engine.isHost = true;
               this._engine.emit(ProviderEventType.BECOME_HOST);
             }
