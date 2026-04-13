@@ -16,7 +16,7 @@ type GameCanvasProps = {
 
 const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(
   ({ canvasProps, envData, setOutput, className, soundProvider }, ref) => {
-    const spriteRendererHandleRef = useRef<SpriteRendererHandle>(undefined);
+    const spriteRendererHandleRef = useRef<SpriteRendererHandle | null>(null);
     const luaEnvManagerRef = useRef<LuaEnvironmentManager>(undefined);
     const animationFrameRef = useRef<number>(undefined);
     const keyHandlerRef = useRef<KeyHandler>(new KeyHandler);

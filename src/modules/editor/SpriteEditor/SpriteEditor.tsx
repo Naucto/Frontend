@@ -467,7 +467,7 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
               ref={setSelectionCanvasHandle}
               sprite={project.spriteProvider}
               map={project.mapProvider}
-              sound={project.sound}
+              sound={project.soundProvider}
               screenSize={selectionScreenSize}
               onClick={handleTileSelect}
               style={{
@@ -498,7 +498,7 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
               sprite={project.spriteProvider}
               map={project.mapProvider}
               screenSize={detailScreenSize}
-              sound={project.sound}
+              sound={project.soundProvider}
               onMouseDown={handleEditorMouseDown}
               onMouseMove={handleEditorMouseMove}
               onMouseUp={handleEditorMouseUp}
