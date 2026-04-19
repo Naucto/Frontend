@@ -339,7 +339,7 @@ export const HubCategoryPage = (): JSX.Element => {
   }): Promise<number> => {
     const { data } = await projectControllerCountReleasedProjects({
       query: {
-        releaseWindow: params?.releaseWindow === "365d" ? "30d" : params?.releaseWindow,
+        releaseWindow: params?.releaseWindow,
         search: params?.search?.trim() || undefined,
         tags: params?.tags && params.tags.length > 0 ? params.tags.join(",") : undefined,
       },
