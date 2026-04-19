@@ -811,7 +811,7 @@ export type ProjectControllerCountReleasedProjectsData = {
      * Comma-separated tag list
      */
     tags?: string;
-    releaseWindow?: "all" | "30d" | "7d";
+    releaseWindow?: "all" | "365d" | "30d" | "7d";
   };
   url: "/projects/releases/count";
 };

@@ -147,6 +147,24 @@ const SummaryChip = styled(Chip)(({ theme }) => ({
 
 const PAGE_SIZE = 24;
 
+function getReleaseWindowThreshold(releaseWindow: HubReleaseWindow): number | null {
+  const now = Date.now();
+
+  if (releaseWindow === "7d") {
+    return now - 7 * 24 * 60 * 60 * 1000;
+  }
+
+  if (releaseWindow === "30d") {
+    return now - 30 * 24 * 60 * 60 * 1000;
+  }
+
+  if (releaseWindow === "365d") {
+    return now - 365 * 24 * 60 * 60 * 1000;
+  }
+
+  return null;
+}
+
 function getSortMetricLabel(metric: "weighted" | "viewCount" | "likes" | "commentCount" | "forkCount"): string {
   switch (metric) {
     case "viewCount":
@@ -163,6 +181,7 @@ function getSortMetricLabel(metric: "weighted" | "viewCount" | "likes" | "commen
 }
 
 type HubListSortMetric = "lastPlayed" | "publishedAt" | "viewCount" | "likes" | "commentCount" | "forkCount" | "name" | "tags";
+type HubReleaseWindow = "all" | "365d" | "30d" | "7d";
 
 function getListSortMetricLabel(metric: HubListSortMetric): string {
   switch (metric) {
@@ -225,9 +244,10 @@ export const Hub = (): JSX.Element => {
   const [showNewGamesCustomSort, setShowNewGamesCustomSort] = useState(false);
   const [showPlayedGamesCustomSort, setShowPlayedGamesCustomSort] = useState(false);
   const [sortMetric, setSortMetric] = useState<"weighted" | "viewCount" | "likes" | "commentCount" | "forkCount">("weighted");
-  const [releaseWindow, setReleaseWindow] = useState<"all" | "30d" | "7d">("30d");
+  const [releaseWindow, setReleaseWindow] = useState<HubReleaseWindow>("30d");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [popularSearchQuery, setPopularSearchQuery] = useState("");
+  const [newGamesReleaseWindow, setNewGamesReleaseWindow] = useState<HubReleaseWindow>("30d");
   const [newGamesOrder, setNewGamesOrder] = useState<"desc" | "asc">("desc");
   const [newGamesSortMetric, setNewGamesSortMetric] = useState<HubListSortMetric>("publishedAt");
   const [newGamesTags, setNewGamesTags] = useState<string[]>([]);
@@ -311,7 +331,7 @@ export const Hub = (): JSX.Element => {
   }, []);
 
   const fetchReleasedProjectCount = useCallback(async (params?: {
-    releaseWindow?: "all" | "30d" | "7d";
+    releaseWindow?: HubReleaseWindow;
     search?: string;
     tags?: string[];
   }): Promise<number> => {
@@ -365,6 +385,7 @@ export const Hub = (): JSX.Element => {
     let cancelled = false;
 
     void fetchReleasedProjectCount({
+      releaseWindow: newGamesReleaseWindow,
       search: newGamesSearchQuery,
       tags: newGamesTags,
     }).then((total) => {
@@ -376,7 +397,7 @@ export const Hub = (): JSX.Element => {
     return () => {
       cancelled = true;
     };
-  }, [fetchReleasedProjectCount, newGamesSearchQuery, newGamesTags]);
+  }, [fetchReleasedProjectCount, newGamesReleaseWindow, newGamesSearchQuery, newGamesTags]);
 
   const getPublishedProjects = useCallback((sourceProjects: ProjectExResponseDto[]): ProjectExResponseDto[] => (
     sourceProjects.filter(
@@ -401,13 +422,7 @@ export const Hub = (): JSX.Element => {
   }, [playedRevision, publishedProjects]);
 
   const filteredPopularProjects = useMemo(() => {
-    const now = Date.now();
-    const releaseThreshold =
-      releaseWindow === "7d"
-        ? now - 7 * 24 * 60 * 60 * 1000
-        : releaseWindow === "30d"
-          ? now - 30 * 24 * 60 * 60 * 1000
-          : null;
+    const releaseThreshold = getReleaseWindowThreshold(releaseWindow);
 
     const projects = publishedProjects.filter((project) => {
       const releaseTime = new Date(project.publishedAt || project.createdAt).getTime();
@@ -484,14 +499,20 @@ export const Hub = (): JSX.Element => {
 
   const newGames = useMemo(
     () => sortListProjects(
-      publishedProjects.filter((project) => (
-        (newGamesTags.length === 0 || newGamesTags.every((tag) => project.tags.includes(tag)))
-        && project.name.toLowerCase().includes(newGamesSearchQuery.trim().toLowerCase())
-      )),
+      publishedProjects.filter((project) => {
+        const releaseThreshold = getReleaseWindowThreshold(newGamesReleaseWindow);
+        const releaseTime = new Date(project.publishedAt || project.createdAt).getTime();
+
+        return (
+          (releaseThreshold === null || releaseTime >= releaseThreshold)
+          && (newGamesTags.length === 0 || newGamesTags.every((tag) => project.tags.includes(tag)))
+          && project.name.toLowerCase().includes(newGamesSearchQuery.trim().toLowerCase())
+        );
+      }),
       newGamesSortMetric,
       newGamesOrder,
     ),
-    [newGamesOrder, newGamesSearchQuery, newGamesSortMetric, newGamesTags, publishedProjects]
+    [newGamesOrder, newGamesReleaseWindow, newGamesSearchQuery, newGamesSortMetric, newGamesTags, publishedProjects]
   );
 
   const playedGames = useMemo(() => {
@@ -524,13 +545,7 @@ export const Hub = (): JSX.Element => {
     const scopedPublishedProjects = getPublishedProjects(sourceProjects);
 
     if (categoryKey === "popular") {
-      const now = Date.now();
-      const releaseThreshold =
-        releaseWindow === "7d"
-          ? now - 7 * 24 * 60 * 60 * 1000
-          : releaseWindow === "30d"
-            ? now - 30 * 24 * 60 * 60 * 1000
-            : null;
+      const releaseThreshold = getReleaseWindowThreshold(releaseWindow);
 
       const categoryProjects = scopedPublishedProjects.filter((project) => {
         const releaseTime = new Date(project.publishedAt || project.createdAt).getTime();
@@ -562,10 +577,16 @@ export const Hub = (): JSX.Element => {
 
     if (categoryKey === "new") {
       return sortListProjects(
-        scopedPublishedProjects.filter((project) => (
-          (newGamesTags.length === 0 || newGamesTags.every((tag) => project.tags.includes(tag)))
-          && project.name.toLowerCase().includes(newGamesSearchQuery.trim().toLowerCase())
-        )),
+        scopedPublishedProjects.filter((project) => {
+          const releaseThreshold = getReleaseWindowThreshold(newGamesReleaseWindow);
+          const releaseTime = new Date(project.publishedAt || project.createdAt).getTime();
+
+          return (
+            (releaseThreshold === null || releaseTime >= releaseThreshold)
+            && (newGamesTags.length === 0 || newGamesTags.every((tag) => project.tags.includes(tag)))
+            && project.name.toLowerCase().includes(newGamesSearchQuery.trim().toLowerCase())
+          );
+        }),
         newGamesSortMetric,
         newGamesOrder,
       );
@@ -587,6 +608,7 @@ export const Hub = (): JSX.Element => {
   }, [
     getPublishedProjects,
     newGamesOrder,
+    newGamesReleaseWindow,
     newGamesSearchQuery,
     newGamesSortMetric,
     newGamesTags,
@@ -608,7 +630,7 @@ export const Hub = (): JSX.Element => {
 
   useEffect(() => {
     setNewGamesVisibleCount(PAGE_SIZE);
-  }, [newGames.length, newGamesOrder, newGamesSearchQuery, newGamesSortMetric, newGamesTags]);
+  }, [newGames.length, newGamesOrder, newGamesReleaseWindow, newGamesSearchQuery, newGamesSortMetric, newGamesTags]);
 
   useEffect(() => {
     setPlayedGamesVisibleCount(PAGE_SIZE);
@@ -719,6 +741,7 @@ export const Hub = (): JSX.Element => {
                   releaseWindow,
                   selectedTags,
                   popularSearchQuery,
+                  newGamesReleaseWindow,
                   newGamesOrder,
                   newGamesSortMetric,
                   newGamesTags,
@@ -788,11 +811,12 @@ export const Hub = (): JSX.Element => {
           <FormControl size="small" sx={{ minWidth: 140 }}>
             <Select
               value={releaseWindow}
-              onChange={(event) => setReleaseWindow(event.target.value as "all" | "30d" | "7d")}
+              onChange={(event) => setReleaseWindow(event.target.value as HubReleaseWindow)}
               sx={darkSelectSx}
               MenuProps={darkMenuProps}
             >
               <MenuItem value="all">All time</MenuItem>
+              <MenuItem value="365d">1 year</MenuItem>
               <MenuItem value="30d">1 month</MenuItem>
               <MenuItem value="7d">1 week</MenuItem>
             </Select>
@@ -915,6 +939,19 @@ export const Hub = (): JSX.Element => {
         newGamesVisibleCount,
         newGamesTotalCount ?? newGames.length,
         <HeaderControls>
+          <FormControl size="small" sx={{ minWidth: 140 }}>
+            <Select
+              value={newGamesReleaseWindow}
+              onChange={(event) => setNewGamesReleaseWindow(event.target.value as HubReleaseWindow)}
+              sx={darkSelectSx}
+              MenuProps={darkMenuProps}
+            >
+              <MenuItem value="all">All time</MenuItem>
+              <MenuItem value="365d">1 year</MenuItem>
+              <MenuItem value="30d">1 month</MenuItem>
+              <MenuItem value="7d">1 week</MenuItem>
+            </Select>
+          </FormControl>
           <CustomSortButton variant="outlined" onClick={() => setShowNewGamesCustomSort((value) => !value)}>
             {showNewGamesCustomSort ? "Hide custom sort" : "Custom sort"}
           </CustomSortButton>

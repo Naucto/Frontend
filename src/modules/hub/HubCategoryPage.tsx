@@ -131,12 +131,14 @@ type HubSortMetric = "weighted" | "viewCount" | "likes" | "commentCount" | "fork
 type HubDateOrder = "desc" | "asc";
 type HubCategoryKey = "popular" | "new" | "played";
 type HubListSortMetric = "lastPlayed" | "publishedAt" | "viewCount" | "likes" | "commentCount" | "forkCount" | "name" | "tags";
+type HubReleaseWindow = "all" | "365d" | "30d" | "7d";
 
 type HubCategoryPageState = {
   sortMetric?: HubSortMetric;
-  releaseWindow?: "all" | "30d" | "7d";
+  releaseWindow?: HubReleaseWindow;
   selectedTags?: string[];
   popularSearchQuery?: string;
+  newGamesReleaseWindow?: HubReleaseWindow;
   newGamesOrder?: HubDateOrder;
   newGamesSortMetric?: HubListSortMetric;
   newGamesTags?: string[];
@@ -148,6 +150,24 @@ type HubCategoryPageState = {
 };
 
 const PAGE_SIZE = 24;
+
+function getReleaseWindowThreshold(releaseWindow: HubReleaseWindow): number | null {
+  const now = Date.now();
+
+  if (releaseWindow === "7d") {
+    return now - 7 * 24 * 60 * 60 * 1000;
+  }
+
+  if (releaseWindow === "30d") {
+    return now - 30 * 24 * 60 * 60 * 1000;
+  }
+
+  if (releaseWindow === "365d") {
+    return now - 365 * 24 * 60 * 60 * 1000;
+  }
+
+  return null;
+}
 
 function isHubCategoryKey(value: string | undefined): value is HubCategoryKey {
   return value === "popular" || value === "new" || value === "played";
@@ -221,9 +241,10 @@ export const HubCategoryPage = (): JSX.Element => {
   const location = useLocation();
   const state = (location.state as HubCategoryPageState | null) ?? null;
   const [sortMetric, setSortMetric] = useState<HubSortMetric>(state?.sortMetric ?? "weighted");
-  const [releaseWindow, setReleaseWindow] = useState<"all" | "30d" | "7d">(state?.releaseWindow ?? "30d");
+  const [releaseWindow, setReleaseWindow] = useState<HubReleaseWindow>(state?.releaseWindow ?? "30d");
   const [selectedTags, setSelectedTags] = useState<string[]>(state?.selectedTags ?? []);
   const [popularSearchQuery, setPopularSearchQuery] = useState(state?.popularSearchQuery ?? "");
+  const [newGamesReleaseWindow, setNewGamesReleaseWindow] = useState<HubReleaseWindow>(state?.newGamesReleaseWindow ?? "30d");
   const [newGamesOrder, setNewGamesOrder] = useState<HubDateOrder>(state?.newGamesOrder ?? "desc");
   const [newGamesSortMetric, setNewGamesSortMetric] = useState<HubListSortMetric>(state?.newGamesSortMetric ?? "publishedAt");
   const [newGamesTags, setNewGamesTags] = useState<string[]>(state?.newGamesTags ?? []);
@@ -312,7 +333,7 @@ export const HubCategoryPage = (): JSX.Element => {
   }, []);
 
   const fetchReleasedProjectCount = useCallback(async (params?: {
-    releaseWindow?: "all" | "30d" | "7d";
+    releaseWindow?: HubReleaseWindow;
     search?: string;
     tags?: string[];
   }): Promise<number> => {
@@ -367,18 +388,13 @@ export const HubCategoryPage = (): JSX.Element => {
     return Array.from(tags).sort((a, b) => a.localeCompare(b));
   }, [playedRevision, publishedProjects]);
 
-  const popularGames = useMemo(() => {
-    const now = Date.now();
-    const releaseThreshold =
-      releaseWindow === "7d"
-        ? now - 7 * 24 * 60 * 60 * 1000
-        : releaseWindow === "30d"
-          ? now - 30 * 24 * 60 * 60 * 1000
-          : null;
+  const popularReleaseThreshold = getReleaseWindowThreshold(releaseWindow);
+  const newGamesReleaseThreshold = getReleaseWindowThreshold(newGamesReleaseWindow);
 
+  const popularGames = useMemo(() => {
     const projects = publishedProjects.filter((project) => {
       const releaseTime = new Date(project.publishedAt || project.createdAt).getTime();
-      const matchesWindow = releaseThreshold === null || releaseTime >= releaseThreshold;
+      const matchesWindow = popularReleaseThreshold === null || releaseTime >= popularReleaseThreshold;
       const matchesTags =
         selectedTags.length === 0 ||
         selectedTags.every((tag) => project.tags.includes(tag));
@@ -402,7 +418,7 @@ export const HubCategoryPage = (): JSX.Element => {
       }
       return new Date(b.publishedAt || b.createdAt).getTime() - new Date(a.publishedAt || a.createdAt).getTime();
     });
-  }, [popularSearchQuery, publishedProjects, releaseWindow, selectedTags, sortMetric]);
+  }, [popularReleaseThreshold, popularSearchQuery, publishedProjects, selectedTags, sortMetric]);
 
   const sortListProjects = (
     projects: ProjectExResponseDto[],
@@ -451,14 +467,19 @@ export const HubCategoryPage = (): JSX.Element => {
 
   const newGames = useMemo(
     () => sortListProjects(
-      publishedProjects.filter((project) => (
-        (newGamesTags.length === 0 || newGamesTags.every((tag) => project.tags.includes(tag)))
-        && project.name.toLowerCase().includes(newGamesSearchQuery.trim().toLowerCase())
-      )),
+      publishedProjects.filter((project) => {
+        const releaseTime = new Date(project.publishedAt || project.createdAt).getTime();
+
+        return (
+          (newGamesReleaseThreshold === null || releaseTime >= newGamesReleaseThreshold)
+          && (newGamesTags.length === 0 || newGamesTags.every((tag) => project.tags.includes(tag)))
+          && project.name.toLowerCase().includes(newGamesSearchQuery.trim().toLowerCase())
+        );
+      }),
       newGamesSortMetric,
       newGamesOrder,
     ),
-    [newGamesOrder, newGamesSearchQuery, newGamesSortMetric, newGamesTags, publishedProjects]
+    [newGamesOrder, newGamesReleaseThreshold, newGamesSearchQuery, newGamesSortMetric, newGamesTags, publishedProjects]
   );
 
   const playedGames = useMemo(() => {
@@ -552,7 +573,7 @@ export const HubCategoryPage = (): JSX.Element => {
     }
 
     void fetchReleasedProjectCount({
-      releaseWindow: category === "popular" ? releaseWindow : undefined,
+      releaseWindow: category === "popular" ? releaseWindow : category === "new" ? newGamesReleaseWindow : undefined,
       search: category === "popular" ? popularSearchQuery : newGamesSearchQuery,
       tags: category === "popular" ? selectedTags : newGamesTags,
     }).then((total) => {
@@ -567,6 +588,7 @@ export const HubCategoryPage = (): JSX.Element => {
   }, [
     category,
     fetchReleasedProjectCount,
+    newGamesReleaseWindow,
     newGamesSearchQuery,
     newGamesTags,
     playedGames.length,
@@ -583,17 +605,9 @@ export const HubCategoryPage = (): JSX.Element => {
     const scopedPublishedProjects = getPublishedProjects(sourceProjects);
 
     if (category === "popular") {
-      const now = Date.now();
-      const releaseThreshold =
-        releaseWindow === "7d"
-          ? now - 7 * 24 * 60 * 60 * 1000
-          : releaseWindow === "30d"
-            ? now - 30 * 24 * 60 * 60 * 1000
-            : null;
-
       const filteredProjects = scopedPublishedProjects.filter((project) => {
         const releaseTime = new Date(project.publishedAt || project.createdAt).getTime();
-        const matchesWindow = releaseThreshold === null || releaseTime >= releaseThreshold;
+        const matchesWindow = popularReleaseThreshold === null || releaseTime >= popularReleaseThreshold;
         const matchesTags =
           selectedTags.length === 0 ||
           selectedTags.every((tag) => project.tags.includes(tag));
@@ -621,10 +635,15 @@ export const HubCategoryPage = (): JSX.Element => {
 
     if (category === "new") {
       return sortListProjects(
-        scopedPublishedProjects.filter((project) => (
-          (newGamesTags.length === 0 || newGamesTags.every((tag) => project.tags.includes(tag)))
-          && project.name.toLowerCase().includes(newGamesSearchQuery.trim().toLowerCase())
-        )),
+        scopedPublishedProjects.filter((project) => {
+          const releaseTime = new Date(project.publishedAt || project.createdAt).getTime();
+
+          return (
+            (newGamesReleaseThreshold === null || releaseTime >= newGamesReleaseThreshold)
+            && (newGamesTags.length === 0 || newGamesTags.every((tag) => project.tags.includes(tag)))
+            && project.name.toLowerCase().includes(newGamesSearchQuery.trim().toLowerCase())
+          );
+        }),
         newGamesSortMetric,
         newGamesOrder,
       );
@@ -647,6 +666,7 @@ export const HubCategoryPage = (): JSX.Element => {
     category,
     getPublishedProjects,
     newGamesOrder,
+    newGamesReleaseThreshold,
     newGamesSearchQuery,
     newGamesSortMetric,
     newGamesTags,
@@ -654,8 +674,8 @@ export const HubCategoryPage = (): JSX.Element => {
     playedGamesSearchQuery,
     playedGamesSortMetric,
     playedGamesTags,
+    popularReleaseThreshold,
     popularSearchQuery,
-    releaseWindow,
     selectedTags,
     sortMetric,
   ]);
@@ -668,6 +688,7 @@ export const HubCategoryPage = (): JSX.Element => {
   }, [
     category,
     newGamesOrder,
+    newGamesReleaseWindow,
     newGamesSearchQuery,
     newGamesSortMetric,
     newGamesTags,
@@ -745,11 +766,12 @@ export const HubCategoryPage = (): JSX.Element => {
           <FormControl size="small" sx={{ minWidth: 140 }}>
             <Select
               value={releaseWindow}
-              onChange={(event) => setReleaseWindow(event.target.value as "all" | "30d" | "7d")}
+              onChange={(event) => setReleaseWindow(event.target.value as HubReleaseWindow)}
               sx={darkSelectSx}
               MenuProps={darkMenuProps}
             >
               <MenuItem value="all">All time</MenuItem>
+              <MenuItem value="365d">1 year</MenuItem>
               <MenuItem value="30d">1 month</MenuItem>
               <MenuItem value="7d">1 week</MenuItem>
             </Select>
@@ -854,6 +876,21 @@ export const HubCategoryPage = (): JSX.Element => {
         </FilterPanel>
       ) : (
         <FilterPanel>
+          {category === "new" ? (
+            <FormControl size="small" sx={{ minWidth: 140 }}>
+              <Select
+                value={newGamesReleaseWindow}
+                onChange={(event) => setNewGamesReleaseWindow(event.target.value as HubReleaseWindow)}
+                sx={darkSelectSx}
+                MenuProps={darkMenuProps}
+              >
+                <MenuItem value="all">All time</MenuItem>
+                <MenuItem value="365d">1 year</MenuItem>
+                <MenuItem value="30d">1 month</MenuItem>
+                <MenuItem value="7d">1 week</MenuItem>
+              </Select>
+            </FormControl>
+          ) : null}
           <FormControl size="small" sx={{ minWidth: 180 }}>
             <Select
               value={category === "new" ? newGamesSortMetric : playedGamesSortMetric}
