@@ -424,42 +424,42 @@ const Projects: React.FC = () => {
     const canLoadMore = visibleCount < (sectionTotalCount ?? sectionProjects.length);
 
     return (
-    <Section>
-      <SectionHeader>
-        <SectionTitle>{title}</SectionTitle>
-        <ViewMoreButton
-          onClick={() => navigate(urls.toProjectsCategory(category), {
-            state: {
-              sortMetric,
-              sortOrder,
-              selectedTags,
-              projectNameQuery,
-            }
-          })}
-        >
-          {sectionTotalCount ?? sectionProjects.length} project{(sectionTotalCount ?? sectionProjects.length) === 1 ? "" : "s"}
-        </ViewMoreButton>
-      </SectionHeader>
-      {sectionProjects.length > 0 || options?.includeCreateCard ? (
-        <>
-          <ProjectCardsContainer>
-            {options?.includeCreateCard ? <CreateProjectCard /> : null}
-            {visibleProjects.map((project) => (
-              <ProjectCard key={project.id} project={project} />
-            ))}
-          </ProjectCardsContainer>
-          {canLoadMore ? (
-            <LoadMoreRow>
-              <CustomSortButton variant="outlined" onClick={() => void loadMoreProjects(category)} disabled={isLoadingProjects || loadingMoreCategory !== null}>
-                {loadingMoreCategory === category ? "Loading..." : "Load more"}
-              </CustomSortButton>
-            </LoadMoreRow>
-          ) : null}
-        </>
-      ) : (
-        <EmptyState>{options?.emptyMessage}</EmptyState>
-      )}
-    </Section>
+      <Section>
+        <SectionHeader>
+          <SectionTitle>{title}</SectionTitle>
+          <ViewMoreButton
+            onClick={() => navigate(urls.toProjectsCategory(category), {
+              state: {
+                sortMetric,
+                sortOrder,
+                selectedTags,
+                projectNameQuery,
+              }
+            })}
+          >
+            {sectionTotalCount ?? sectionProjects.length} project{(sectionTotalCount ?? sectionProjects.length) === 1 ? "" : "s"}
+          </ViewMoreButton>
+        </SectionHeader>
+        {sectionProjects.length > 0 || options?.includeCreateCard ? (
+          <>
+            <ProjectCardsContainer>
+              {options?.includeCreateCard ? <CreateProjectCard /> : null}
+              {visibleProjects.map((project) => (
+                <ProjectCard key={project.id} project={project} />
+              ))}
+            </ProjectCardsContainer>
+            {canLoadMore ? (
+              <LoadMoreRow>
+                <CustomSortButton variant="outlined" onClick={() => void loadMoreProjects(category)} disabled={isLoadingProjects || loadingMoreCategory !== null}>
+                  {loadingMoreCategory === category ? "Loading..." : "Load more"}
+                </CustomSortButton>
+              </LoadMoreRow>
+            ) : null}
+          </>
+        ) : (
+          <EmptyState>{options?.emptyMessage}</EmptyState>
+        )}
+      </Section>
     );
   };
 

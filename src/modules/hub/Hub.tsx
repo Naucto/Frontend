@@ -705,73 +705,73 @@ export const Hub = (): JSX.Element => {
     const canLoadMore = visibleProjects.length < projects.length || hasMoreProjects;
 
     return (
-    <CategorySection>
-      <CategoryHeader>
-        <CategoryHeaderTop>
-          <CategoryTitleRow>
-            <CategoryTitle>{title}</CategoryTitle>
-            {headerControls}
-          </CategoryTitleRow>
-          <ViewMoreButton
-            onClick={() => navigate(urls.toHubCategory(categoryKey), {
-              state: {
-                sortMetric,
-                releaseWindow,
-                selectedTags,
-                popularSearchQuery,
-                newGamesOrder,
-                newGamesSortMetric,
-                newGamesTags,
-                newGamesSearchQuery,
-                playedGamesOrder,
-                playedGamesSortMetric,
-                playedGamesTags,
-                playedGamesSearchQuery,
-              }
-            })}
+      <CategorySection>
+        <CategoryHeader>
+          <CategoryHeaderTop>
+            <CategoryTitleRow>
+              <CategoryTitle>{title}</CategoryTitle>
+              {headerControls}
+            </CategoryTitleRow>
+            <ViewMoreButton
+              onClick={() => navigate(urls.toHubCategory(categoryKey), {
+                state: {
+                  sortMetric,
+                  releaseWindow,
+                  selectedTags,
+                  popularSearchQuery,
+                  newGamesOrder,
+                  newGamesSortMetric,
+                  newGamesTags,
+                  newGamesSearchQuery,
+                  playedGamesOrder,
+                  playedGamesSortMetric,
+                  playedGamesTags,
+                  playedGamesSearchQuery,
+                }
+              })}
+            >
+              {displayedCount} games
+            </ViewMoreButton>
+          </CategoryHeaderTop>
+          {expandedContent}
+        </CategoryHeader>
+        <ScrollContainer>
+          <LeftScrollArea
+            onClick={() => scroll(scrollId, "left")}
           >
-            {displayedCount} games
-          </ViewMoreButton>
-        </CategoryHeaderTop>
-        {expandedContent}
-      </CategoryHeader>
-      <ScrollContainer>
-        <LeftScrollArea
-          onClick={() => scroll(scrollId, "left")}
-        >
-          <ScrollButton className="scroll-button" size="small">
-            <ArrowIcon src={PrevSvg} alt="previous" />
-          </ScrollButton>
-        </LeftScrollArea>
-        <ProjectsScroller id={scrollId}>
-          {visibleProjects.map((project) => (
-            <ProjectCardWrapper key={project.id}>
-              <ProjectCard project={project} isPlayable />
-            </ProjectCardWrapper>
-          ))}
-        </ProjectsScroller>
-        <RightScrollArea
-          onClick={async () => {
-            const shouldLoadMore = canLoadMore && isNearScrollEnd(scrollId);
+            <ScrollButton className="scroll-button" size="small">
+              <ArrowIcon src={PrevSvg} alt="previous" />
+            </ScrollButton>
+          </LeftScrollArea>
+          <ProjectsScroller id={scrollId}>
+            {visibleProjects.map((project) => (
+              <ProjectCardWrapper key={project.id}>
+                <ProjectCard project={project} isPlayable />
+              </ProjectCardWrapper>
+            ))}
+          </ProjectsScroller>
+          <RightScrollArea
+            onClick={async () => {
+              const shouldLoadMore = canLoadMore && isNearScrollEnd(scrollId);
 
-            if (shouldLoadMore) {
-              await handleLoadMoreCategory(categoryKey, visibleCount);
-            }
+              if (shouldLoadMore) {
+                await handleLoadMoreCategory(categoryKey, visibleCount);
+              }
 
-            requestAnimationFrame(() => scroll(scrollId, "right"));
-          }}
-        >
-          <ScrollButton className="scroll-button" size="small">
-            <ArrowIcon src={NextSvg} alt="next" />
-          </ScrollButton>
-        </RightScrollArea>
-      </ScrollContainer>
-      {loadingMoreCategory === categoryKey ? (
-        <Box sx={{ mt: 1.5, width: "100%" }}>
-          <LinearProgress sx={{ borderRadius: 999 }} />
-        </Box>
-      ) : null}
-    </CategorySection>
+              requestAnimationFrame(() => scroll(scrollId, "right"));
+            }}
+          >
+            <ScrollButton className="scroll-button" size="small">
+              <ArrowIcon src={NextSvg} alt="next" />
+            </ScrollButton>
+          </RightScrollArea>
+        </ScrollContainer>
+        {loadingMoreCategory === categoryKey ? (
+          <Box sx={{ mt: 1.5, width: "100%" }}>
+            <LinearProgress sx={{ borderRadius: 999 }} />
+          </Box>
+        ) : null}
+      </CategorySection>
     );
   };
 
