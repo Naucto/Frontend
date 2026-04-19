@@ -1,4 +1,4 @@
-import { ProjectExResponseDto, ProjectResponseDto, projectControllerCountReleasedProjects, projectControllerGetPaginatedReleases } from "@api";
+import { ProjectExResponseDto, ProjectResponseDto, projectControllerCountReleasedProjects, projectControllerGetPaginatedReleases, projectControllerGetRelease } from "@api";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import { Autocomplete, Box, Button, Chip, FormControl, LinearProgress, MenuItem, Select, TextField, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
@@ -239,6 +239,7 @@ export const HubCategoryPage = (): JSX.Element => {
   const [categoryTotalCount, setCategoryTotalCount] = useState<number | null>(null);
   const [isLoadingProjects, setIsLoadingProjects] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [resolvedPlayedProjectCount, setResolvedPlayedProjectCount] = useState<number | null>(null);
   const [statsOverrides, setStatsOverrides] = useState<Record<number, Partial<Pick<ProjectResponseDto, "viewCount" | "likes" | "commentCount" | "forkCount">>>>({});
   const [playedRevision, setPlayedRevision] = useState(0);
 
@@ -477,13 +478,72 @@ export const HubCategoryPage = (): JSX.Element => {
   }, [playedGamesOrder, playedGamesSearchQuery, playedGamesSortMetric, playedGamesTags, publishedProjects]);
 
   useEffect(() => {
+    if (category !== "played") {
+      setResolvedPlayedProjectCount(null);
+      return;
+    }
+
+    const playedIds = LocalStorageManager.getPlayedProjects();
+
+    if (playedIds.length === 0) {
+      setResolvedPlayedProjectCount(0);
+      return;
+    }
+
+    const publishedProjectIds = new Set(
+      getPublishedProjects(allProjects).map((project) => project.id)
+    );
+    const missingIds = playedIds.filter((id) => !publishedProjectIds.has(id));
+
+    if (missingIds.length === 0) {
+      setResolvedPlayedProjectCount(playedIds.length);
+      return;
+    }
+
+    let cancelled = false;
+
+    void Promise.all(
+      missingIds.map(async (id) => {
+        try {
+          const { data } = await projectControllerGetRelease({
+            path: { id: String(id) }
+          });
+
+          return data ?? null;
+        } catch {
+          return null;
+        }
+      })
+    ).then((results) => {
+      if (cancelled) {
+        return;
+      }
+
+      const fetchedProjects = results.filter(
+        (project): project is ProjectExResponseDto => project !== null
+      );
+      const fetchedIds = new Set(fetchedProjects.map((project) => project.id));
+
+      setAllProjects((current) => mergeProjects(current, fetchedProjects));
+      setResolvedPlayedProjectCount(
+        playedIds.filter(
+          (id) => publishedProjectIds.has(id) || fetchedIds.has(id)
+        ).length
+      );
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [allProjects, category, getPublishedProjects, mergeProjects, playedRevision]);
+
+  useEffect(() => {
     let cancelled = false;
 
     if (category === "played") {
-      const playedIds = LocalStorageManager.getPlayedProjects();
       setCategoryTotalCount(
         playedGamesTags.length === 0 && !playedGamesSearchQuery.trim()
-          ? playedIds.length
+          ? (resolvedPlayedProjectCount ?? playedGames.length)
           : playedGames.length
       );
       return () => {
@@ -515,6 +575,7 @@ export const HubCategoryPage = (): JSX.Element => {
     playedRevision,
     popularSearchQuery,
     releaseWindow,
+    resolvedPlayedProjectCount,
     selectedTags,
   ]);
 
@@ -624,7 +685,7 @@ export const HubCategoryPage = (): JSX.Element => {
     return <></>;
   }
   const visibleProjects = projects.slice(0, visibleCount);
-  const canLoadMore = visibleProjects.length < projects.length || hasMoreProjects;
+  const canLoadMore = visibleCount < (categoryTotalCount ?? projects.length);
 
   const handleLoadMore = async (): Promise<void> => {
     const nextVisibleCount = visibleCount + PAGE_SIZE;
