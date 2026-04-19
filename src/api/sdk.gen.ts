@@ -22,16 +22,6 @@ import type {
   AuthControllerRegisterData,
   AuthControllerRegisterErrors,
   AuthControllerRegisterResponses,
-  CommentControllerCreateCommentData,
-  CommentControllerCreateCommentResponses,
-  CommentControllerCreateReplyData,
-  CommentControllerCreateReplyResponses,
-  CommentControllerDeleteCommentData,
-  CommentControllerDeleteCommentResponses,
-  CommentControllerGetCommentsData,
-  CommentControllerGetCommentsResponses,
-  CommentControllerUpdateCommentData,
-  CommentControllerUpdateCommentResponses,
   MultiplayerControllerCloseHostData,
   MultiplayerControllerCloseHostErrors,
   MultiplayerControllerCloseHostResponses,
@@ -47,9 +37,23 @@ import type {
   MultiplayerControllerOpenHostData,
   MultiplayerControllerOpenHostErrors,
   MultiplayerControllerOpenHostResponses,
+  ProjectCommentControllerCreateCommentData,
+  ProjectCommentControllerCreateCommentResponses,
+  ProjectCommentControllerCreateReplyData,
+  ProjectCommentControllerCreateReplyResponses,
+  ProjectCommentControllerDeleteCommentData,
+  ProjectCommentControllerDeleteCommentResponses,
+  ProjectCommentControllerGetCommentsData,
+  ProjectCommentControllerGetCommentsResponses,
+  ProjectCommentControllerUpdateCommentData,
+  ProjectCommentControllerUpdateCommentResponses,
   ProjectControllerAddCollaboratorData,
   ProjectControllerAddCollaboratorErrors,
   ProjectControllerAddCollaboratorResponses,
+  ProjectControllerCountProjectsData,
+  ProjectControllerCountProjectsResponses,
+  ProjectControllerCountReleasedProjectsData,
+  ProjectControllerCountReleasedProjectsResponses,
   ProjectControllerCreateData,
   ProjectControllerCreateErrors,
   ProjectControllerCreateResponses,
@@ -61,6 +65,9 @@ import type {
   ProjectControllerFetchProjectContentResponses,
   ProjectControllerFindAllData,
   ProjectControllerFindAllErrors,
+  ProjectControllerFindAllPaginatedData,
+  ProjectControllerFindAllPaginatedErrors,
+  ProjectControllerFindAllPaginatedResponses,
   ProjectControllerFindAllResponses,
   ProjectControllerFindOneData,
   ProjectControllerFindOneErrors,
@@ -78,6 +85,8 @@ import type {
   ProjectControllerGetCheckpointsResponses,
   ProjectControllerGetLikeStatusData,
   ProjectControllerGetLikeStatusResponses,
+  ProjectControllerGetPaginatedReleasesData,
+  ProjectControllerGetPaginatedReleasesResponses,
   ProjectControllerGetProjectImageData,
   ProjectControllerGetProjectImageErrors,
   ProjectControllerGetProjectImageResponses,
@@ -204,6 +213,44 @@ export const projectControllerGetAllReleases = <
   });
 
 /**
+ * Get released projects with pagination
+ */
+export const projectControllerGetPaginatedReleases = <
+  ThrowOnError extends boolean = false
+>(
+  options?: Options<ProjectControllerGetPaginatedReleasesData, ThrowOnError>
+) =>
+  (options?.client ?? client).get<
+    ProjectControllerGetPaginatedReleasesResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/projects/releases/paginated",
+    ...options
+  });
+
+/**
+ * Count released projects with filters
+ */
+export const projectControllerCountReleasedProjects = <
+  ThrowOnError extends boolean = false
+>(
+  options?: Options<ProjectControllerCountReleasedProjectsData, ThrowOnError>
+) =>
+  (options?.client ?? client).get<
+    ProjectControllerCountReleasedProjectsResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/projects/releases/count",
+    ...options
+  });
+
+/**
  * Get project release version
  */
 export const projectControllerGetRelease = <
@@ -296,6 +343,44 @@ export const projectControllerCreate = <ThrowOnError extends boolean = false>(
       "Content-Type": "application/json",
       ...options.headers
     }
+  });
+
+/**
+ * Count the user's projects with filters
+ */
+export const projectControllerCountProjects = <
+  ThrowOnError extends boolean = false
+>(
+  options?: Options<ProjectControllerCountProjectsData, ThrowOnError>
+) =>
+  (options?.client ?? client).get<
+    ProjectControllerCountProjectsResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/projects/count",
+    ...options
+  });
+
+/**
+ * Retrieve the paginated list of projects
+ */
+export const projectControllerFindAllPaginated = <
+  ThrowOnError extends boolean = false
+>(
+  options?: Options<ProjectControllerFindAllPaginatedData, ThrowOnError>
+) =>
+  (options?.client ?? client).get<
+    ProjectControllerFindAllPaginatedResponses,
+    ProjectControllerFindAllPaginatedErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/projects/paginated",
+    ...options
   });
 
 /**
@@ -872,18 +957,17 @@ export const multiplayerControllerLeaveHost = <
 /**
  * Get comments for a project
  */
-export const commentControllerGetComments = <
+export const projectCommentControllerGetComments = <
   ThrowOnError extends boolean = false
 >(
-  options: Options<CommentControllerGetCommentsData, ThrowOnError>
+  options: Options<ProjectCommentControllerGetCommentsData, ThrowOnError>
 ) =>
   (options.client ?? client).get<
-    CommentControllerGetCommentsResponses,
+    ProjectCommentControllerGetCommentsResponses,
     unknown,
     ThrowOnError
   >({
     responseType: "json",
-    security: [{ scheme: "bearer", type: "http" }],
     url: "/projects/{projectId}/comments",
     ...options
   });
@@ -891,13 +975,13 @@ export const commentControllerGetComments = <
 /**
  * Create a comment on a project
  */
-export const commentControllerCreateComment = <
+export const projectCommentControllerCreateComment = <
   ThrowOnError extends boolean = false
 >(
-  options: Options<CommentControllerCreateCommentData, ThrowOnError>
+  options: Options<ProjectCommentControllerCreateCommentData, ThrowOnError>
 ) =>
   (options.client ?? client).post<
-    CommentControllerCreateCommentResponses,
+    ProjectCommentControllerCreateCommentResponses,
     unknown,
     ThrowOnError
   >({
@@ -914,13 +998,13 @@ export const commentControllerCreateComment = <
 /**
  * Reply to a comment
  */
-export const commentControllerCreateReply = <
+export const projectCommentControllerCreateReply = <
   ThrowOnError extends boolean = false
 >(
-  options: Options<CommentControllerCreateReplyData, ThrowOnError>
+  options: Options<ProjectCommentControllerCreateReplyData, ThrowOnError>
 ) =>
   (options.client ?? client).post<
-    CommentControllerCreateReplyResponses,
+    ProjectCommentControllerCreateReplyResponses,
     unknown,
     ThrowOnError
   >({
@@ -937,13 +1021,13 @@ export const commentControllerCreateReply = <
 /**
  * Delete a comment
  */
-export const commentControllerDeleteComment = <
+export const projectCommentControllerDeleteComment = <
   ThrowOnError extends boolean = false
 >(
-  options: Options<CommentControllerDeleteCommentData, ThrowOnError>
+  options: Options<ProjectCommentControllerDeleteCommentData, ThrowOnError>
 ) =>
   (options.client ?? client).delete<
-    CommentControllerDeleteCommentResponses,
+    ProjectCommentControllerDeleteCommentResponses,
     unknown,
     ThrowOnError
   >({
@@ -955,13 +1039,13 @@ export const commentControllerDeleteComment = <
 /**
  * Edit a comment
  */
-export const commentControllerUpdateComment = <
+export const projectCommentControllerUpdateComment = <
   ThrowOnError extends boolean = false
 >(
-  options: Options<CommentControllerUpdateCommentData, ThrowOnError>
+  options: Options<ProjectCommentControllerUpdateCommentData, ThrowOnError>
 ) =>
   (options.client ?? client).put<
-    CommentControllerUpdateCommentResponses,
+    ProjectCommentControllerUpdateCommentResponses,
     unknown,
     ThrowOnError
   >({

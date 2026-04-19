@@ -1,12 +1,11 @@
-import { ProjectExResponseDto, ProjectResponseDto, projectControllerGetAllReleases } from "@api";
+import { ProjectExResponseDto, ProjectResponseDto, projectControllerCountReleasedProjects, projectControllerGetPaginatedReleases } from "@api";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
-import { Autocomplete, Box, Button, Chip, FormControl, MenuItem, Select, TextField, Typography } from "@mui/material";
+import { Autocomplete, Box, Button, Chip, FormControl, LinearProgress, MenuItem, Select, TextField, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import ProjectCard from "@modules/projects/components/ProjectCard";
 import { PREDEFINED_PROJECT_TAGS } from "@modules/projects/projectTags";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
-import { JSX, useEffect, useMemo, useState } from "react";
-import { useAsync } from "src/hooks/useAsync";
+import { JSX, useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import * as urls from "@shared/route";
 
@@ -88,6 +87,12 @@ const EmptyState = styled(Typography)(({ theme }) => ({
   padding: theme.spacing(3, 0),
 }));
 
+const LoadMoreRow = styled(Box)(({ theme }) => ({
+  display: "flex",
+  justifyContent: "center",
+  marginTop: theme.spacing(2),
+}));
+
 const darkSelectSx = {
   color: "white",
   backgroundColor: "rgba(20, 20, 20, 0.72)",
@@ -131,13 +136,18 @@ type HubCategoryPageState = {
   sortMetric?: HubSortMetric;
   releaseWindow?: "all" | "30d" | "7d";
   selectedTags?: string[];
+  popularSearchQuery?: string;
   newGamesOrder?: HubDateOrder;
   newGamesSortMetric?: HubListSortMetric;
   newGamesTags?: string[];
+  newGamesSearchQuery?: string;
   playedGamesOrder?: HubDateOrder;
   playedGamesSortMetric?: HubListSortMetric;
   playedGamesTags?: string[];
+  playedGamesSearchQuery?: string;
 };
+
+const PAGE_SIZE = 24;
 
 function isHubCategoryKey(value: string | undefined): value is HubCategoryKey {
   return value === "popular" || value === "new" || value === "played";
@@ -213,19 +223,24 @@ export const HubCategoryPage = (): JSX.Element => {
   const [sortMetric, setSortMetric] = useState<HubSortMetric>(state?.sortMetric ?? "weighted");
   const [releaseWindow, setReleaseWindow] = useState<"all" | "30d" | "7d">(state?.releaseWindow ?? "30d");
   const [selectedTags, setSelectedTags] = useState<string[]>(state?.selectedTags ?? []);
+  const [popularSearchQuery, setPopularSearchQuery] = useState(state?.popularSearchQuery ?? "");
   const [newGamesOrder, setNewGamesOrder] = useState<HubDateOrder>(state?.newGamesOrder ?? "desc");
   const [newGamesSortMetric, setNewGamesSortMetric] = useState<HubListSortMetric>(state?.newGamesSortMetric ?? "publishedAt");
   const [newGamesTags, setNewGamesTags] = useState<string[]>(state?.newGamesTags ?? []);
+  const [newGamesSearchQuery, setNewGamesSearchQuery] = useState(state?.newGamesSearchQuery ?? "");
   const [playedGamesOrder, setPlayedGamesOrder] = useState<HubDateOrder>(state?.playedGamesOrder ?? "desc");
   const [playedGamesSortMetric, setPlayedGamesSortMetric] = useState<HubListSortMetric>(state?.playedGamesSortMetric ?? "lastPlayed");
   const [playedGamesTags, setPlayedGamesTags] = useState<string[]>(state?.playedGamesTags ?? []);
+  const [playedGamesSearchQuery, setPlayedGamesSearchQuery] = useState(state?.playedGamesSearchQuery ?? "");
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [allProjects, setAllProjects] = useState<ProjectExResponseDto[]>([]);
+  const [loadedPage, setLoadedPage] = useState(0);
+  const [totalProjects, setTotalProjects] = useState<number | null>(null);
+  const [categoryTotalCount, setCategoryTotalCount] = useState<number | null>(null);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [statsOverrides, setStatsOverrides] = useState<Record<number, Partial<Pick<ProjectResponseDto, "viewCount" | "likes" | "commentCount" | "forkCount">>>>({});
   const [playedRevision, setPlayedRevision] = useState(0);
-
-  const { value: allProjects } = useAsync(
-    () => projectControllerGetAllReleases().then(({ data }) => (data ?? []) as ProjectExResponseDto[]),
-    []
-  );
 
   useEffect(() => {
     if (!isHubCategoryKey(category)) {
@@ -266,15 +281,81 @@ export const HubCategoryPage = (): JSX.Element => {
     };
   }, []);
 
+  const mergeProjects = useCallback((current: ProjectExResponseDto[], next: ProjectExResponseDto[]): ProjectExResponseDto[] => {
+    const mergedProjects = [...current, ...next];
+    const seen = new Set<number>();
+
+    return mergedProjects.filter((project) => {
+      if (seen.has(project.id)) {
+        return false;
+      }
+
+      seen.add(project.id);
+      return true;
+    });
+  }, []);
+
+  const fetchProjectsPage = useCallback(async (page: number) => {
+    const { data } = await projectControllerGetPaginatedReleases({
+      query: {
+        page,
+        limit: PAGE_SIZE,
+      },
+    });
+
+    return {
+      projects: data?.projects ?? [],
+      page: data?.page ?? page,
+      total: data?.total ?? 0,
+    };
+  }, []);
+
+  const fetchReleasedProjectCount = useCallback(async (params?: {
+    releaseWindow?: "all" | "30d" | "7d";
+    search?: string;
+    tags?: string[];
+  }): Promise<number> => {
+    const { data } = await projectControllerCountReleasedProjects({
+      query: {
+        releaseWindow: params?.releaseWindow,
+        search: params?.search?.trim() || undefined,
+        tags: params?.tags && params.tags.length > 0 ? params.tags.join(",") : undefined,
+      },
+    });
+
+    return data?.total ?? 0;
+  }, []);
+
+  const loadProjectsPage = useCallback(async (page: number, reset = false): Promise<void> => {
+    setIsLoadingProjects(true);
+
+    try {
+      const response = await fetchProjectsPage(page);
+
+      setAllProjects((current) => mergeProjects(reset ? [] : current, response.projects));
+      setLoadedPage(response.page);
+      setTotalProjects(response.total);
+    } finally {
+      setIsLoadingProjects(false);
+    }
+  }, [fetchProjectsPage, mergeProjects]);
+
+  useEffect(() => {
+    void loadProjectsPage(1, true);
+  }, [loadProjectsPage]);
+
+  const getPublishedProjects = useCallback((sourceProjects: ProjectExResponseDto[]): ProjectExResponseDto[] => (
+    sourceProjects.filter(
+      (project) => project.status === ("COMPLETED" satisfies ProjectResponseDto["status"])
+    ).map((project) => ({
+      ...project,
+      ...statsOverrides[project.id]
+    }))
+  ), [statsOverrides]);
+
   const publishedProjects = useMemo<ProjectExResponseDto[]>(
-    () =>
-      (allProjects ?? []).filter(
-        (project) => project.status === ("COMPLETED" satisfies ProjectResponseDto["status"])
-      ).map((project) => ({
-        ...project,
-        ...statsOverrides[project.id]
-      })),
-    [allProjects, statsOverrides]
+    () => getPublishedProjects(allProjects ?? []),
+    [allProjects, getPublishedProjects]
   );
 
   const availableTags = useMemo(() => {
@@ -300,8 +381,9 @@ export const HubCategoryPage = (): JSX.Element => {
       const matchesTags =
         selectedTags.length === 0 ||
         selectedTags.every((tag) => project.tags.includes(tag));
+      const matchesName = project.name.toLowerCase().includes(popularSearchQuery.trim().toLowerCase());
 
-      return matchesWindow && matchesTags;
+      return matchesWindow && matchesTags && matchesName;
     });
 
     const score = (project: ProjectResponseDto): number => {
@@ -319,7 +401,7 @@ export const HubCategoryPage = (): JSX.Element => {
       }
       return new Date(b.publishedAt || b.createdAt).getTime() - new Date(a.publishedAt || a.createdAt).getTime();
     });
-  }, [publishedProjects, releaseWindow, selectedTags, sortMetric]);
+  }, [popularSearchQuery, publishedProjects, releaseWindow, selectedTags, sortMetric]);
 
   const sortListProjects = (
     projects: ProjectExResponseDto[],
@@ -368,11 +450,14 @@ export const HubCategoryPage = (): JSX.Element => {
 
   const newGames = useMemo(
     () => sortListProjects(
-      publishedProjects.filter((project) => newGamesTags.length === 0 || newGamesTags.every((tag) => project.tags.includes(tag))),
+      publishedProjects.filter((project) => (
+        (newGamesTags.length === 0 || newGamesTags.every((tag) => project.tags.includes(tag)))
+        && project.name.toLowerCase().includes(newGamesSearchQuery.trim().toLowerCase())
+      )),
       newGamesSortMetric,
       newGamesOrder,
     ),
-    [newGamesOrder, newGamesSortMetric, newGamesTags, publishedProjects]
+    [newGamesOrder, newGamesSearchQuery, newGamesSortMetric, newGamesTags, publishedProjects]
   );
 
   const playedGames = useMemo(() => {
@@ -381,18 +466,203 @@ export const HubCategoryPage = (): JSX.Element => {
       playedIds
         .map((id) => publishedProjects.find((project) => project.id === id))
         .filter((project): project is ProjectExResponseDto => project !== undefined)
-        .filter((project) => playedGamesTags.length === 0 || playedGamesTags.every((tag) => project.tags.includes(tag))),
+        .filter((project) => (
+          (playedGamesTags.length === 0 || playedGamesTags.every((tag) => project.tags.includes(tag)))
+          && project.name.toLowerCase().includes(playedGamesSearchQuery.trim().toLowerCase())
+        )),
       playedGamesSortMetric,
       playedGamesOrder,
       playedIds,
     );
-  }, [playedGamesOrder, playedGamesSortMetric, playedGamesTags, publishedProjects]);
+  }, [playedGamesOrder, playedGamesSearchQuery, playedGamesSortMetric, playedGamesTags, publishedProjects]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (category === "played") {
+      const playedIds = LocalStorageManager.getPlayedProjects();
+      setCategoryTotalCount(
+        playedGamesTags.length === 0 && !playedGamesSearchQuery.trim()
+          ? playedIds.length
+          : playedGames.length
+      );
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    void fetchReleasedProjectCount({
+      releaseWindow: category === "popular" ? releaseWindow : undefined,
+      search: category === "popular" ? popularSearchQuery : newGamesSearchQuery,
+      tags: category === "popular" ? selectedTags : newGamesTags,
+    }).then((total) => {
+      if (!cancelled) {
+        setCategoryTotalCount(total);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    category,
+    fetchReleasedProjectCount,
+    newGamesSearchQuery,
+    newGamesTags,
+    playedGames.length,
+    playedGamesSearchQuery,
+    playedGamesTags,
+    playedRevision,
+    popularSearchQuery,
+    releaseWindow,
+    selectedTags,
+  ]);
+
+  const getScopedProjects = useCallback((sourceProjects: ProjectExResponseDto[]): ProjectExResponseDto[] => {
+    const scopedPublishedProjects = getPublishedProjects(sourceProjects);
+
+    if (category === "popular") {
+      const now = Date.now();
+      const releaseThreshold =
+        releaseWindow === "7d"
+          ? now - 7 * 24 * 60 * 60 * 1000
+          : releaseWindow === "30d"
+            ? now - 30 * 24 * 60 * 60 * 1000
+            : null;
+
+      const filteredProjects = scopedPublishedProjects.filter((project) => {
+        const releaseTime = new Date(project.publishedAt || project.createdAt).getTime();
+        const matchesWindow = releaseThreshold === null || releaseTime >= releaseThreshold;
+        const matchesTags =
+          selectedTags.length === 0 ||
+          selectedTags.every((tag) => project.tags.includes(tag));
+        const matchesName = project.name.toLowerCase().includes(popularSearchQuery.trim().toLowerCase());
+
+        return matchesWindow && matchesTags && matchesName;
+      });
+
+      const score = (project: ProjectResponseDto): number => {
+        if (sortMetric === "likes") return project.likes ?? 0;
+        if (sortMetric === "commentCount") return project.commentCount ?? 0;
+        if (sortMetric === "viewCount") return project.viewCount ?? 0;
+        if (sortMetric === "forkCount") return project.forkCount ?? 0;
+        return (project.viewCount ?? 0) + (project.likes ?? 0) * 4 + (project.commentCount ?? 0) * 3 + (project.forkCount ?? 0) * 5;
+      };
+
+      return [...filteredProjects].sort((a, b) => {
+        const scoreDiff = score(b) - score(a);
+        if (scoreDiff !== 0) {
+          return scoreDiff;
+        }
+        return new Date(b.publishedAt || b.createdAt).getTime() - new Date(a.publishedAt || a.createdAt).getTime();
+      });
+    }
+
+    if (category === "new") {
+      return sortListProjects(
+        scopedPublishedProjects.filter((project) => (
+          (newGamesTags.length === 0 || newGamesTags.every((tag) => project.tags.includes(tag)))
+          && project.name.toLowerCase().includes(newGamesSearchQuery.trim().toLowerCase())
+        )),
+        newGamesSortMetric,
+        newGamesOrder,
+      );
+    }
+
+    const playedIds = LocalStorageManager.getPlayedProjects();
+    return sortListProjects(
+      playedIds
+        .map((id) => scopedPublishedProjects.find((project) => project.id === id))
+        .filter((project): project is ProjectExResponseDto => project !== undefined)
+        .filter((project) => (
+          (playedGamesTags.length === 0 || playedGamesTags.every((tag) => project.tags.includes(tag)))
+          && project.name.toLowerCase().includes(playedGamesSearchQuery.trim().toLowerCase())
+        )),
+      playedGamesSortMetric,
+      playedGamesOrder,
+      playedIds,
+    );
+  }, [
+    category,
+    getPublishedProjects,
+    newGamesOrder,
+    newGamesSearchQuery,
+    newGamesSortMetric,
+    newGamesTags,
+    playedGamesOrder,
+    playedGamesSearchQuery,
+    playedGamesSortMetric,
+    playedGamesTags,
+    popularSearchQuery,
+    releaseWindow,
+    selectedTags,
+    sortMetric,
+  ]);
+
+  const projects = category === "popular" ? popularGames : category === "new" ? newGames : playedGames;
+  const hasMoreProjects = totalProjects === null || allProjects.length < totalProjects;
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [
+    category,
+    newGamesOrder,
+    newGamesSearchQuery,
+    newGamesSortMetric,
+    newGamesTags,
+    playedGamesOrder,
+    playedGamesSearchQuery,
+    playedGamesSortMetric,
+    playedGamesTags,
+    popularSearchQuery,
+    releaseWindow,
+    selectedTags,
+    sortMetric,
+  ]);
 
   if (!isHubCategoryKey(category)) {
     return <></>;
   }
+  const visibleProjects = projects.slice(0, visibleCount);
+  const canLoadMore = visibleProjects.length < projects.length || hasMoreProjects;
 
-  const projects = category === "popular" ? popularGames : category === "new" ? newGames : playedGames;
+  const handleLoadMore = async (): Promise<void> => {
+    const nextVisibleCount = visibleCount + PAGE_SIZE;
+    const currentProjects = getScopedProjects(allProjects);
+
+    if (isLoadingProjects || isLoadingMore) {
+      return;
+    }
+
+    if (!hasMoreProjects || currentProjects.length >= nextVisibleCount) {
+      setVisibleCount(nextVisibleCount);
+      return;
+    }
+
+    setIsLoadingMore(true);
+
+    try {
+      let mergedProjects = [...allProjects];
+      let nextPage = loadedPage;
+      let total = totalProjects ?? Number.MAX_SAFE_INTEGER;
+      let scopedProjects = currentProjects;
+
+      while (scopedProjects.length < nextVisibleCount && mergedProjects.length < total) {
+        const response = await fetchProjectsPage(nextPage + 1);
+        mergedProjects = mergeProjects(mergedProjects, response.projects);
+        nextPage = response.page;
+        total = response.total;
+        scopedProjects = getScopedProjects(mergedProjects);
+      }
+
+      setAllProjects(mergedProjects);
+      setLoadedPage(nextPage);
+      setTotalProjects(Number.isFinite(total) ? total : 0);
+      setVisibleCount(Math.min(nextVisibleCount, scopedProjects.length));
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
   return (
     <PageContainer>
@@ -405,7 +675,7 @@ export const HubCategoryPage = (): JSX.Element => {
           <CustomSortButton variant="outlined" onClick={() => navigate(urls.toHub())}>
             Back to Hub
           </CustomSortButton>
-          <SummaryChip label={`${projects.length} game${projects.length === 1 ? "" : "s"}`} size="small" />
+          <SummaryChip label={`${categoryTotalCount ?? projects.length} game${(categoryTotalCount ?? projects.length) === 1 ? "" : "s"}`} size="small" />
         </HeaderControls>
       </HeaderRow>
 
@@ -443,6 +713,25 @@ export const HubCategoryPage = (): JSX.Element => {
             </Select>
           </FormControl>
           <SummaryChip label={`Sort: ${getSortMetricLabel(sortMetric)}`} size="small" />
+          <TextField
+            value={popularSearchQuery}
+            onChange={(event) => setPopularSearchQuery(event.target.value)}
+            label="Search by name"
+            placeholder="Game name..."
+            sx={{
+              minWidth: 220,
+              ".MuiOutlinedInput-root": {
+                color: "white",
+                backgroundColor: "rgba(20, 20, 20, 0.72)",
+              },
+              ".MuiInputLabel-root": {
+                color: "rgba(255,255,255,0.7)",
+              },
+              ".MuiInputLabel-root.Mui-focused": {
+                color: "white",
+              },
+            }}
+          />
           <Autocomplete
             multiple
             options={availableTags}
@@ -532,6 +821,25 @@ export const HubCategoryPage = (): JSX.Element => {
             {getDateOrderLabel(category === "new" ? newGamesOrder : playedGamesOrder)}
           </CustomSortButton>
           <SummaryChip label={`Sort: ${getListSortMetricLabel(category === "new" ? newGamesSortMetric : playedGamesSortMetric)}`} size="small" />
+          <TextField
+            value={category === "new" ? newGamesSearchQuery : playedGamesSearchQuery}
+            onChange={(event) => category === "new" ? setNewGamesSearchQuery(event.target.value) : setPlayedGamesSearchQuery(event.target.value)}
+            label="Search by name"
+            placeholder="Game name..."
+            sx={{
+              minWidth: 220,
+              ".MuiOutlinedInput-root": {
+                color: "white",
+                backgroundColor: "rgba(20, 20, 20, 0.72)",
+              },
+              ".MuiInputLabel-root": {
+                color: "rgba(255,255,255,0.7)",
+              },
+              ".MuiInputLabel-root.Mui-focused": {
+                color: "white",
+              },
+            }}
+          />
           <Autocomplete
             multiple
             options={availableTags}
@@ -596,11 +904,23 @@ export const HubCategoryPage = (): JSX.Element => {
       )}
 
       {projects.length > 0 ? (
-        <ProjectGrid>
-          {projects.map((project) => (
-            <ProjectCard key={project.id} project={project} isPlayable />
-          ))}
-        </ProjectGrid>
+        <>
+          <ProjectGrid>
+            {visibleProjects.map((project) => (
+              <ProjectCard key={project.id} project={project} isPlayable />
+            ))}
+          </ProjectGrid>
+          {canLoadMore ? (
+            <LoadMoreRow>
+              <Box sx={{ width: "100%", maxWidth: 320 }}>
+                <CustomSortButton variant="outlined" onClick={() => void handleLoadMore()} disabled={isLoadingProjects || isLoadingMore} fullWidth>
+                  Load more
+                </CustomSortButton>
+                {isLoadingMore ? <LinearProgress sx={{ mt: 1, borderRadius: 999 }} /> : null}
+              </Box>
+            </LoadMoreRow>
+          ) : null}
+        </>
       ) : (
         <EmptyState>No games match the current selection.</EmptyState>
       )}

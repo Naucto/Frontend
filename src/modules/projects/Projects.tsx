@@ -1,14 +1,15 @@
-import React, { JSX, useEffect, useMemo, useState } from "react";
+import React, { JSX, useCallback, useEffect, useMemo, useState } from "react";
 import { styled } from "@mui/material";
 import ProjectCard from "./components/ProjectCard";
-import { ProjectResponseDto, projectControllerFindAll } from "@api";
+import { ProjectResponseDto, projectControllerCountProjects, projectControllerFindAllPaginated } from "@api";
 import CreateProjectCard from "@modules/projects/components/CreateProjectCard";
-import { useAsync } from "src/hooks/useAsync";
 import { useUser } from "@providers/UserProvider";
 import { useNavigate } from "react-router-dom";
 import * as urls from "@shared/route";
 import { Autocomplete, Box, Button, Chip, FormControl, MenuItem, Select, TextField, Typography } from "@mui/material";
 import { PREDEFINED_PROJECT_TAGS } from "@modules/projects/projectTags";
+
+const PAGE_SIZE = 24;
 
 const PageContainer = styled("div")(({ theme }) => ({
   margin: theme.spacing(4),
@@ -67,6 +68,15 @@ const SectionTitle = styled(Typography)(({ theme }) => ({
   color: theme.palette.text.primary,
 }));
 
+const ViewMoreButton = styled(Typography)(({ theme }) => ({
+  fontSize: "14px",
+  color: theme.palette.primary.main,
+  cursor: "pointer",
+  "&:hover": {
+    textDecoration: "underline",
+  },
+}));
+
 const SummaryChip = styled(Chip)(({ theme }) => ({
   backgroundColor: "rgba(255,255,255,0.08)",
   color: theme.palette.common.white,
@@ -94,6 +104,12 @@ const EmptyState = styled(Typography)(({ theme }) => ({
   color: theme.palette.grey[400],
   fontSize: "15px",
   padding: theme.spacing(1, 0),
+}));
+
+const LoadMoreRow = styled(Box)(({ theme }) => ({
+  display: "flex",
+  justifyContent: "center",
+  marginTop: theme.spacing(2),
 }));
 
 const darkSelectSx = {
@@ -196,21 +212,78 @@ const Projects: React.FC = () => {
   const [sortMetric, setSortMetric] = useState<SortMetric>("updatedAt");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [projectNameQuery, setProjectNameQuery] = useState("");
+  const [loadedPage, setLoadedPage] = useState(0);
+  const [totalProjects, setTotalProjects] = useState<number | null>(null);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(false);
+  const [draftVisibleCount, setDraftVisibleCount] = useState(PAGE_SIZE);
+  const [publishedVisibleCount, setPublishedVisibleCount] = useState(PAGE_SIZE);
+  const [draftTotalCount, setDraftTotalCount] = useState<number | null>(null);
+  const [publishedTotalCount, setPublishedTotalCount] = useState<number | null>(null);
+  const [loadingMoreCategory, setLoadingMoreCategory] = useState<"drafts" | "published" | null>(null);
 
-  const { value: fetchedProjects } = useAsync(
-    () => projectControllerFindAll().then(({ data }) => data),
-    []
-  );
+  const mergeProjects = useCallback((current: ProjectResponseDto[], next: ProjectResponseDto[]): ProjectResponseDto[] => {
+    const mergedProjects = [...current, ...next];
+    const seen = new Set<number>();
+
+    return mergedProjects.filter((project) => {
+      if (seen.has(project.id)) {
+        return false;
+      }
+
+      seen.add(project.id);
+      return true;
+    });
+  }, []);
+
+  const fetchProjectsPage = useCallback(async (page: number) => {
+    const { data } = await projectControllerFindAllPaginated({
+      query: {
+        page,
+        limit: PAGE_SIZE,
+      },
+    });
+
+    return {
+      projects: data?.projects ?? [],
+      page: data?.page ?? page,
+      total: data?.total ?? 0,
+    };
+  }, []);
+
+  const fetchProjectCount = useCallback(async (status: "drafts" | "published"): Promise<number> => {
+    const { data } = await projectControllerCountProjects({
+      query: {
+        search: projectNameQuery.trim() || undefined,
+        tags: selectedTags.length > 0 ? selectedTags.join(",") : undefined,
+        status,
+      },
+    });
+
+    return data?.total ?? 0;
+  }, [projectNameQuery, selectedTags]);
+
+  const loadProjectsPage = useCallback(async (page: number, reset = false): Promise<void> => {
+    setIsLoadingProjects(true);
+
+    try {
+      const response = await fetchProjectsPage(page);
+      setProjects((current) => mergeProjects(reset ? [] : current, response.projects));
+      setLoadedPage(response.page);
+      setTotalProjects(response.total);
+    } finally {
+      setIsLoadingProjects(false);
+    }
+  }, [fetchProjectsPage, mergeProjects]);
 
   useEffect(() => {
     if (!user.user) {
       navigate(urls.toHub());
       return;
     }
-    if (fetchedProjects) {
-      setProjects(fetchedProjects);
-    }
-  }, [fetchedProjects, user.user, navigate]);
+
+    void loadProjectsPage(1, true);
+  }, [loadProjectsPage, user.user, navigate]);
 
   const availableTags = useMemo(() => {
     const tags = new Set<string>(PREDEFINED_PROJECT_TAGS);
@@ -223,9 +296,10 @@ const Projects: React.FC = () => {
 
   const filteredProjects = useMemo(() => {
     return projects.filter((project) => (
-      selectedTags.length === 0 || selectedTags.every((tag) => project.tags.includes(tag))
+      (selectedTags.length === 0 || selectedTags.every((tag) => project.tags.includes(tag)))
+      && project.name.toLowerCase().includes(projectNameQuery.trim().toLowerCase())
     ));
-  }, [projects, selectedTags]);
+  }, [projectNameQuery, projects, selectedTags]);
 
   const publishedProjects = useMemo(
     () => sortProjects(
@@ -245,39 +319,149 @@ const Projects: React.FC = () => {
     [filteredProjects, sortMetric, sortOrder]
   );
 
+  useEffect(() => {
+    setDraftVisibleCount(PAGE_SIZE);
+    setPublishedVisibleCount(PAGE_SIZE);
+  }, [projectNameQuery, selectedTags, sortMetric, sortOrder]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void fetchProjectCount("drafts").then((total) => {
+      if (!cancelled) {
+        setDraftTotalCount(total);
+      }
+    });
+
+    void fetchProjectCount("published").then((total) => {
+      if (!cancelled) {
+        setPublishedTotalCount(total);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchProjectCount]);
+
+  const hasMoreProjects = totalProjects === null || projects.length < totalProjects;
+
+  const getSectionProjectsFrom = useCallback((
+    sourceProjects: ProjectResponseDto[],
+    category: "drafts" | "published"
+  ): ProjectResponseDto[] => {
+    const filteredSourceProjects = sourceProjects.filter((project) => (
+      (selectedTags.length === 0 || selectedTags.every((tag) => project.tags.includes(tag)))
+      && project.name.toLowerCase().includes(projectNameQuery.trim().toLowerCase())
+    ));
+
+    const scopedProjects = filteredSourceProjects.filter((project) => (
+      category === "published"
+        ? project.status === ("COMPLETED" satisfies ProjectResponseDto["status"])
+        : project.status !== ("COMPLETED" satisfies ProjectResponseDto["status"])
+    ));
+
+    return sortProjects(scopedProjects, sortMetric, sortOrder);
+  }, [projectNameQuery, selectedTags, sortMetric, sortOrder]);
+
+  const loadMoreProjects = async (category: "drafts" | "published"): Promise<void> => {
+    const visibleCount = category === "drafts" ? draftVisibleCount : publishedVisibleCount;
+    const nextVisibleCount = visibleCount + PAGE_SIZE;
+    const currentProjects = getSectionProjectsFrom(projects, category);
+
+    if (isLoadingProjects || loadingMoreCategory !== null) {
+      return;
+    }
+
+    if (!hasMoreProjects || currentProjects.length >= nextVisibleCount) {
+      if (category === "drafts") {
+        setDraftVisibleCount(nextVisibleCount);
+      } else {
+        setPublishedVisibleCount(nextVisibleCount);
+      }
+      return;
+    }
+
+    setLoadingMoreCategory(category);
+
+    try {
+      let mergedProjects = [...projects];
+      let nextPage = loadedPage;
+      let total = totalProjects ?? Number.MAX_SAFE_INTEGER;
+      let scopedProjects = currentProjects;
+
+      while (scopedProjects.length < nextVisibleCount && mergedProjects.length < total) {
+        const response = await fetchProjectsPage(nextPage + 1);
+        mergedProjects = mergeProjects(mergedProjects, response.projects);
+        nextPage = response.page;
+        total = response.total;
+        scopedProjects = getSectionProjectsFrom(mergedProjects, category);
+      }
+
+      setProjects(mergedProjects);
+      setLoadedPage(nextPage);
+      setTotalProjects(Number.isFinite(total) ? total : 0);
+
+      if (category === "drafts") {
+        setDraftVisibleCount(Math.min(nextVisibleCount, scopedProjects.length));
+      } else {
+        setPublishedVisibleCount(Math.min(nextVisibleCount, scopedProjects.length));
+      }
+    } finally {
+      setLoadingMoreCategory(null);
+    }
+  };
+
   const renderSection = (
     category: "drafts" | "published",
     title: string,
     sectionProjects: ProjectResponseDto[],
     options?: { includeCreateCard?: boolean; emptyMessage: string }
-  ): JSX.Element => (
+  ): JSX.Element => {
+    const visibleCount = category === "drafts" ? draftVisibleCount : publishedVisibleCount;
+    const visibleProjects = sectionProjects.slice(0, visibleCount);
+    const sectionTotalCount = category === "drafts" ? draftTotalCount : publishedTotalCount;
+    const canLoadMore = visibleCount < (sectionTotalCount ?? sectionProjects.length);
+
+    return (
     <Section>
       <SectionHeader>
         <SectionTitle>{title}</SectionTitle>
-        <SummaryChip
-          label={`${sectionProjects.length} project${sectionProjects.length === 1 ? "" : "s"}`}
-          size="small"
+        <ViewMoreButton
           onClick={() => navigate(urls.toProjectsCategory(category), {
             state: {
               sortMetric,
               sortOrder,
               selectedTags,
+              projectNameQuery,
             }
           })}
-        />
+        >
+          {sectionTotalCount ?? sectionProjects.length} project{(sectionTotalCount ?? sectionProjects.length) === 1 ? "" : "s"}
+        </ViewMoreButton>
       </SectionHeader>
       {sectionProjects.length > 0 || options?.includeCreateCard ? (
-        <ProjectCardsContainer>
-          {options?.includeCreateCard ? <CreateProjectCard /> : null}
-          {sectionProjects.map((project) => (
-            <ProjectCard key={project.id} project={project} />
-          ))}
-        </ProjectCardsContainer>
+        <>
+          <ProjectCardsContainer>
+            {options?.includeCreateCard ? <CreateProjectCard /> : null}
+            {visibleProjects.map((project) => (
+              <ProjectCard key={project.id} project={project} />
+            ))}
+          </ProjectCardsContainer>
+          {canLoadMore ? (
+            <LoadMoreRow>
+              <CustomSortButton variant="outlined" onClick={() => void loadMoreProjects(category)} disabled={isLoadingProjects || loadingMoreCategory !== null}>
+                {loadingMoreCategory === category ? "Loading..." : "Load more"}
+              </CustomSortButton>
+            </LoadMoreRow>
+          ) : null}
+        </>
       ) : (
         <EmptyState>{options?.emptyMessage}</EmptyState>
       )}
     </Section>
-  );
+    );
+  };
 
   return (
     <PageContainer>
@@ -289,6 +473,7 @@ const Projects: React.FC = () => {
           </CustomSortButton>
           <SummaryChip label={`Sort: ${getSortMetricLabel(sortMetric)}`} size="small" />
           <SummaryChip label={`Order: ${getSortOrderLabel(sortOrder)}`} size="small" />
+          {projectNameQuery ? <SummaryChip label={`Name: ${projectNameQuery}`} size="small" /> : null}
           {selectedTags.map((tag) => (
             <SummaryChip
               key={`selected-tag-${tag}`}
@@ -319,6 +504,25 @@ const Projects: React.FC = () => {
           <CustomSortButton variant="outlined" onClick={() => setSortOrder((current) => current === "asc" ? "desc" : "asc")}>
             {getSortOrderLabel(sortOrder)}
           </CustomSortButton>
+          <TextField
+            value={projectNameQuery}
+            onChange={(event) => setProjectNameQuery(event.target.value)}
+            label="Search by name"
+            placeholder="Project name..."
+            sx={{
+              minWidth: 220,
+              ".MuiOutlinedInput-root": {
+                color: "white",
+                backgroundColor: "rgba(20, 20, 20, 0.72)",
+              },
+              ".MuiInputLabel-root": {
+                color: "rgba(255,255,255,0.7)",
+              },
+              ".MuiInputLabel-root.Mui-focused": {
+                color: "white",
+              },
+            }}
+          />
           <Autocomplete
             multiple
             options={availableTags}
