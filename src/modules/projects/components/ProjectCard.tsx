@@ -23,9 +23,21 @@ type ProjectCardProps = {
 const StyledCard = styled(Card, {
   shouldForwardProp: (prop) => prop !== "$src",
 })<{ $src: string }>(({ $src }) => ({
+  position: "relative",
   backgroundImage: $src ? `url(${$src})` : "none",
   backgroundSize: "cover",
   backgroundPosition: "center",
+  overflow: "hidden",
+  "&::before": {
+    content: "\"\"",
+    position: "absolute",
+    inset: 0,
+    backgroundColor: "rgba(0, 0, 0, 0)",
+    transition: "background-color 0.2s ease",
+  },
+  "&:hover::before": {
+    backgroundColor: "rgba(0, 0, 0, 0.22)",
+  },
 }));
 
 const PlayableCardButton = styled("button")(({ theme }) => ({
@@ -36,6 +48,9 @@ const PlayableCardButton = styled("button")(({ theme }) => ({
   color: theme.palette.text.primary,
   textAlign: "left",
   cursor: "pointer",
+  "&:hover > div:first-of-type::after": {
+    backgroundColor: "rgba(0, 0, 0, 0.22)",
+  },
 }));
 
 const Thumbnail = styled("div", {
@@ -50,6 +65,15 @@ const Thumbnail = styled("div", {
   backgroundPosition: "center",
   overflow: "hidden",
   boxShadow: "0 14px 40px rgba(0, 0, 0, 0.18)",
+  position: "relative",
+  "&::after": {
+    content: "\"\"",
+    position: "absolute",
+    inset: 0,
+    backgroundColor: "rgba(0, 0, 0, 0)",
+    transition: "background-color 0.2s ease",
+    pointerEvents: "none",
+  },
 }));
 
 const PlayableMeta = styled("div")(({ theme }) => ({

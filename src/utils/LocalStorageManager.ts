@@ -117,7 +117,7 @@ export class LocalStorageManager {
     played.unshift(id);
     this.safeSetItem(
       this.PLAYED_PROJECTS_KEY,
-      JSON.stringify(played.slice(0, 24))
+      JSON.stringify(played)
     );
   }
 }
