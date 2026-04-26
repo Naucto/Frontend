@@ -3,7 +3,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { ContextError } from "src/errors/ContextError";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
 import { UserProfileResponseDto, userControllerGetProfile } from "@api";
-import { useAsync } from "src/hooks/useAsync";
+import { useAsync } from "@hooks/useAsync";
 
 interface UserContextType {
   logIn: (userData: User) => void;

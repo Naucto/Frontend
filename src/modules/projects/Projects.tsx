@@ -3,7 +3,7 @@ import { styled } from "@mui/material";
 import ProjectCard from "./components/ProjectCard";
 import { ProjectResponseDto, projectControllerFindAll } from "@api";
 import CreateProjectCard from "@modules/projects/components/CreateProjectCard";
-import { useAsync } from "src/hooks/useAsync";
+import { useAsync } from "@hooks/useAsync";
 import { useUser } from "@providers/UserProvider";
 import { useNavigate } from "react-router-dom";
 import * as urls from "@shared/route";

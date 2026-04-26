@@ -6,7 +6,7 @@ import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import { Box, Button, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import * as urls from "@shared/route";
-import { useAsync } from "src/hooks/useAsync";
+import { useAsync } from "@hooks/useAsync";
 import { getCachedProjectImageUrl } from "@utils/projectImageCache";
 import { JSX, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";

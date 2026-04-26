@@ -10,23 +10,56 @@ export enum MultiplayerDirectoryFlags {
   SERVER_WRITE = 1 << 3,
 }
 
-// Struct-like class
+const ROOT_PATH = "";
+
+// Struct-like data
+type MultiplayerDirectoryData = {
+  flags: MultiplayerDirectoryFlags;
+};
+
 export class MultiplayerDirectorySettings {
-  public flags: MultiplayerDirectoryFlags = MultiplayerDirectoryFlags.NONE;
+  private _path: string;
+  private _data: MultiplayerDirectoryData;
+
+  public constructor(path: string, data?: MultiplayerDirectoryData)
+  {
+    this._path = path;
+
+    if (data) {
+      this._data = data;
+    } else {
+      this._data = {
+        flags: MultiplayerDirectoryFlags.NONE
+      };
+    }
+  }
+
+  public get path(): string {
+    return this._path;
+  }
+
+  public get isRootNode(): boolean {
+    return this._path == ROOT_PATH;
+  }
+
+  public get data(): MultiplayerDirectoryData {
+    return this._data;
+  }
 
   public can(flags: MultiplayerDirectoryFlags): boolean {
-    return (this.flags & flags) === flags;
+    return (this._data.flags & flags) === flags;
   }
 
   public set(flags: MultiplayerDirectoryFlags, value: boolean): void {
     if (value)
-      this.flags |= flags;
+      this._data.flags |= flags;
     else
-      this.flags &= ~flags;
+      this._data.flags &= ~flags;
   }
 }
 
-type MultiplayerSettingsProviderAccessor<T> = (settings: MultiplayerDirectorySettings, path: string) => Maybe<T>;
+type MultiplayerSettingsProviderAccessor<T> =
+  (settings: MultiplayerDirectorySettings) => Maybe<T>;
 
 export class MultiplayerStateError extends Error {
   type = "MultiplayerStateError";
@@ -37,24 +70,27 @@ export class MultiplayerStateError extends Error {
 }
 
 export class MultiplayerSettingsProvider {
-  #yDirectory: Y.Map<MultiplayerDirectorySettings>;
+  _yDirectory: Y.Map<MultiplayerDirectoryData>;
 
   constructor(doc: Y.Doc) {
-    this.#yDirectory = doc.getMap<MultiplayerDirectorySettings>("multiplayerDirectory");
+    this._yDirectory = doc.getMap<MultiplayerDirectoryData>("multiplayerDirectory");
   }
 
   public getDirectorySettings(path: string): Maybe<MultiplayerDirectorySettings> {
     // Root is an empty string
     if (path.length === 0 || path.trim().length === 0)
-      path = "";
+      path = ROOT_PATH;
 
     const components = path.split(".");
 
     while (components.length > 0) {
       const pathToTest = components.join(".");
 
-      if (this.#yDirectory.has(pathToTest)) {
-        return this.#yDirectory.get(pathToTest);
+      if (this._yDirectory.has(pathToTest)) {
+        return new MultiplayerDirectorySettings(
+          pathToTest,
+          this._yDirectory.get(pathToTest)
+        );
       }
 
       components.pop();
@@ -64,33 +100,35 @@ export class MultiplayerSettingsProvider {
   }
 
   public getRootDirectorySettings() : MultiplayerDirectorySettings {
-    const rootSettings = this.#yDirectory.get("");
+    let rootSettings: MultiplayerDirectorySettings;
+    const rootSettingsData = this._yDirectory.get(ROOT_PATH);
 
-    if (!rootSettings) {
-      // FIXME: Needs investigation after merging
-      return new MultiplayerDirectorySettings();
-      //throw new MultiplayerStateError("Unexpectedly missing root multiplayer directory settings");
+    if (rootSettingsData) {
+      rootSettings = new MultiplayerDirectorySettings(ROOT_PATH, rootSettingsData);
+    } else {
+      rootSettings = new MultiplayerDirectorySettings(ROOT_PATH);
+      this._yDirectory.set(ROOT_PATH, rootSettings.data);
     }
 
     return rootSettings;
   }
 
   public setDirectorySettings(path: string, settings: MultiplayerDirectorySettings): void {
-    this.#yDirectory.set(path, settings);
+    this._yDirectory.set(path, settings.data);
   }
 
   public deleteDirectorySettings(path: string): void {
-    this.#yDirectory.delete(path);
+    this._yDirectory.delete(path);
   }
 
   public accessDirectorySettings<T>(path: string, accessor: MultiplayerSettingsProviderAccessor<T>): Maybe<T> {
     let settings = this.getDirectorySettings(path);
 
     if (!settings) {
-      settings = new MultiplayerDirectorySettings();
+      settings = new MultiplayerDirectorySettings(path);
     }
 
-    const result = accessor(settings, path);
+    const result = accessor(settings);
 
     this.setDirectorySettings(path, settings);
 
@@ -100,12 +138,14 @@ export class MultiplayerSettingsProvider {
   public visitAllDirectorySettings<T>(accessor: MultiplayerSettingsProviderAccessor<T>): T[] {
     const results: T[] = [];
 
-    const directoryKeys = Object.keys(this.#yDirectory).sort();
+    const directoryKeys = Object.keys(this._yDirectory).sort();
 
     directoryKeys.forEach(
-      (key) => {
-        const settings = this.#yDirectory.get(key);
-        const result = accessor(settings!, key);
+      (path) => {
+        const settings = this._yDirectory.get(path);
+        const result = accessor(
+          new MultiplayerDirectorySettings(path, settings!),
+        );
 
         if (result !== undefined)
           results.push(result);
@@ -116,16 +156,18 @@ export class MultiplayerSettingsProvider {
   }
 
   public visitChildDirectorySettings<T>(parentPath: string, accessor: MultiplayerSettingsProviderAccessor<T>): T[] {
-    const childVisitor: MultiplayerSettingsProviderAccessor<T> = (settings, path) => {
-      const calcPathDepth = (p: string): number => Number(p === "") + p.split(".").length;
+    const childVisitor: MultiplayerSettingsProviderAccessor<T> = (settings) => {
+      const calcPathDepth = (p: string): number => Number(p === ROOT_PATH) + p.split(".").length;
 
-      const pathDepth       = calcPathDepth(path);
+      const pathDepth       = calcPathDepth(settings.path);
       const parentPathDepth = calcPathDepth(parentPath);
 
-      if (!path.startsWith(parentPath) || path === parentPath || pathDepth !== parentPathDepth + 1)
+      if (!settings.path.startsWith(parentPath) ||
+          settings.path === parentPath ||
+            pathDepth !== parentPathDepth + 1)
         return undefined;
 
-      accessor(settings, path);
+      accessor(settings);
     };
 
     return this.visitAllDirectorySettings(childVisitor);

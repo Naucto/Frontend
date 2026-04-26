@@ -2,7 +2,7 @@ import { styled } from "@mui/material/styles";
 import { JSX, useEffect, useMemo, useState } from "react";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import { ProjectExResponseDto, ProjectResponseDto, projectControllerGetAllReleases } from "@api";
-import { useAsync } from "src/hooks/useAsync";
+import { useAsync } from "@hooks/useAsync";
 import { Autocomplete, Box, Button, Chip, FormControl, IconButton, MenuItem, Select, TextField, Typography } from "@mui/material";
 import ProjectCard from "@modules/projects/components/ProjectCard";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
