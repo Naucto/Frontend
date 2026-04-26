@@ -19,7 +19,10 @@ const Tools: React.FC<{
   const colorRef = useRef(color);
   const [fillCircle, setFillCircle] = useState(false);
   const fillCircleRef = useRef(false);
+  const [fillRectangle, setFillRectangle] = useState(false);
+  const fillRectangleRef = useRef(false);
   const previewRef = useRef<{ center: Point2D; radius: number } | null>(null);
+  const rectPreviewRef = useRef<{ start: Point2D; end: Point2D } | null>(null);
   const positionRef = useRef(position);
   const zoomRef = useRef(zoom);
 
@@ -30,6 +33,10 @@ const Tools: React.FC<{
   useEffect(() => {
     fillCircleRef.current = fillCircle;
   }, [fillCircle]);
+
+  useEffect(() => {
+    fillRectangleRef.current = fillRectangle;
+  }, [fillRectangle]);
 
   useEffect(() => { positionRef.current = position; }, [position]);
   useEffect(() => { zoomRef.current = zoom; }, [zoom]);
@@ -110,6 +117,27 @@ const Tools: React.FC<{
     spriteProvider.setPixel(xc - y, yc - x, color);
   };
 
+  const drawRectangle = (a: Point2D, b: Point2D, color: number, fill = false): void => {
+    const x1 = Math.min(a.x, b.x) | 0;
+    const x2 = Math.max(a.x, b.x) | 0;
+    const y1 = Math.min(a.y, b.y) | 0;
+    const y2 = Math.max(a.y, b.y) | 0;
+
+    if (fill) {
+      for (let y = y1; y <= y2; y++) {
+        drawHLine(x1, x2, y, color);
+      }
+      return;
+    }
+
+    drawHLine(x1, x2, y1, color);
+    drawHLine(x1, x2, y2, color);
+    for (let y = y1 + 1; y <= y2 - 1; y++) {
+      spriteProvider.setPixel(x1, y, color);
+      spriteProvider.setPixel(x2, y, color);
+    }
+  };
+
   const drawCircle = (xc: number, yc: number, radius: number, color: number, fill = false): void => {
     let x = radius;
     let y = 0;
@@ -141,6 +169,7 @@ const Tools: React.FC<{
     lastPosRef.current = null;
     setPreviewOverlay?.(null);
     previewRef.current = null;
+    rectPreviewRef.current = null;
 
     if (drawTool === DrawTool.Pen) {
       const down: CanvasHandler = (_e, pos) => {
@@ -246,7 +275,70 @@ const Tools: React.FC<{
     }
 
     if (drawTool === DrawTool.Rectangle) {
-      // TODO: Implement rectangle drawing
+      const spriteNumber = spriteProvider.size.width / spriteProvider.spriteSize.width;
+
+      const overlayFn = (renderer: SpriteRendererHandle): void => {
+        const prev = rectPreviewRef.current;
+        if (!prev) return;
+
+        const pixelSize = spriteNumber / zoomRef.current;
+        const snappedX = Math.floor(positionRef.current.x);
+        const snappedY = Math.floor(positionRef.current.y);
+
+        const drawPoint = (px: number, py: number): void => {
+          renderer.drawRect(colorRef.current, (snappedX + px) * pixelSize, (snappedY + py) * pixelSize, pixelSize, pixelSize);
+        };
+
+        const x1 = Math.min(prev.start.x, prev.end.x) | 0;
+        const x2 = Math.max(prev.start.x, prev.end.x) | 0;
+        const y1 = Math.min(prev.start.y, prev.end.y) | 0;
+        const y2 = Math.max(prev.start.y, prev.end.y) | 0;
+
+        if (fillRectangleRef.current) {
+          for (let y = y1; y <= y2; y++) {
+            for (let x = x1; x <= x2; x++) {
+              drawPoint(x, y);
+            }
+          }
+          return;
+        }
+
+        for (let x = x1; x <= x2; x++) {
+          drawPoint(x, y1);
+          drawPoint(x, y2);
+        }
+        for (let y = y1 + 1; y <= y2 - 1; y++) {
+          drawPoint(x1, y);
+          drawPoint(x2, y);
+        }
+      };
+      setPreviewOverlay?.(overlayFn);
+
+      const down: CanvasHandler = (_e, pos) => {
+        lastPosRef.current = pos;
+        rectPreviewRef.current = { start: pos, end: pos };
+      };
+
+      const move: CanvasHandler = (_e, pos) => {
+        const last = lastPosRef.current;
+        if (!last) return;
+        rectPreviewRef.current = { start: last, end: pos };
+      };
+
+      const up: CanvasHandler = (_e, pos) => {
+        const last = lastPosRef.current;
+        if (last) {
+          drawRectangle(last, pos, colorRef.current, fillRectangleRef.current);
+        } else {
+          spriteProvider.setPixel(pos.x, pos.y, colorRef.current);
+        }
+        rectPreviewRef.current = null;
+        lastPosRef.current = null;
+      };
+
+      setOnMouseDown?.(down);
+      setOnMouseMove?.(move);
+      setOnMouseUp?.(up);
       return;
     }
     if (drawTool === DrawTool.Line) {
@@ -260,12 +352,23 @@ const Tools: React.FC<{
     <>
       <button onClick={() => onSelectTool(DrawTool.Pen)}>Pen</button>
       <button onClick={() => onSelectTool(DrawTool.Circle)}>Circle</button>
+      <button onClick={() => onSelectTool(DrawTool.Rectangle)}>Rectangle</button>
       {drawTool === DrawTool.Circle && (
         <label>
           <input
             type="checkbox"
             checked={fillCircle}
             onChange={(e) => setFillCircle(e.target.checked)}
+          />
+          Fill
+        </label>
+      )}
+      {drawTool === DrawTool.Rectangle && (
+        <label>
+          <input
+            type="checkbox"
+            checked={fillRectangle}
+            onChange={(e) => setFillRectangle(e.target.checked)}
           />
           Fill
         </label>
