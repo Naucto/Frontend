@@ -123,9 +123,8 @@ export const MultiplayerDirectoryEntryButtonGroup: React.FC<MultiplayerDirectory
             };
 
             return (
-              <Tooltip title={flagName}>
+              <Tooltip title={flagName} key={flagName}>
                 <Checkbox
-                  key={flagName}
                   checked={normal_flagStates[flagName]}
                   onChange={flagUpdate} />
               </Tooltip>
@@ -182,7 +181,7 @@ export const MultiplayerDirectoryEntryButtonGroup: React.FC<MultiplayerDirectory
     };
 
     const validateChange = (): void => {
-      console.log(newNodePath);
+      mpsp.createDirectorySettings(createChild_newNodePath.value);
       setEntryState(MultiplayerDirectoryEntryState.NORMAL);
     };
 
@@ -233,10 +232,35 @@ interface MultiplayerDirectoryEntryProps {
 };
 
 export const MultiplayerDirectoryEntry: React.FC<MultiplayerDirectoryEntryProps> = ({ settings, multiplayerSettingsProvider }) => {
+  const [childrenEntries, setChildrenEntries] = useState<MultiplayerDirectorySettings[]>([]);
+
   const [isNodeOpened, setNodeOpened] = useState(settings.isRootNode);
 
   const handleNodeToggle = (): void => {
     setNodeOpened(!isNodeOpened);
+
+    if (!isNodeOpened) {
+      setChildrenEntries([]);
+      return;
+    }
+
+    setChildrenEntries(
+      multiplayerSettingsProvider.visitAllDirectorySettings(
+        (childSettings: MultiplayerDirectorySettings) => {
+          const calcPathDepth = (p: string): number => Number(p === "") + p.split(".").length;
+          const parentPathDepth = calcPathDepth(settings.path);
+
+          const childDepth = calcPathDepth(childSettings.path);
+
+          if (!childSettings.path.startsWith(settings.path) ||
+              childSettings.path === settings.path ||
+              childDepth !== parentPathDepth + 1)
+            return undefined;
+
+          return childSettings;
+        }
+      )
+    );
   };
 
   const pathDisplayName = settings.isRootNode ? "[root]" : settings.path;
@@ -256,31 +280,12 @@ export const MultiplayerDirectoryEntry: React.FC<MultiplayerDirectoryEntryProps>
       </ListItemButton>
 
       <Collapse in={isNodeOpened} unmountOnExit>
-        {(() => {
-          if (!isNodeOpened)
-            return null;
-
-          const calcPathDepth = (p: string): number => Number(p === "") + p.split(".").length;
-          const parentPathDepth = calcPathDepth(settings.path);
-
-          return multiplayerSettingsProvider.visitAllDirectorySettings(
-            (childSettings: MultiplayerDirectorySettings) => {
-              const childDepth = calcPathDepth(childSettings.path);
-
-              if (!childSettings.path.startsWith(settings.path) ||
-                  childSettings.path === settings.path ||
-                  childDepth !== parentPathDepth + 1)
-                return undefined;
-
-              return (
-                <MultiplayerDirectoryEntry
-                  key={childSettings.path}
-                  settings={childSettings}
-                  multiplayerSettingsProvider={multiplayerSettingsProvider} />
-              );
-            }
-          );
-        })()}
+        {childrenEntries.map(childSettings => (
+          <MultiplayerDirectoryEntry
+            key={childSettings.path}
+            settings={childSettings}
+            multiplayerSettingsProvider={multiplayerSettingsProvider} />
+        ))}
       </Collapse>
     </>
   );

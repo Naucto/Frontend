@@ -117,6 +117,10 @@ export class MultiplayerSettingsProvider {
     this._yDirectory.set(path, settings.data);
   }
 
+  public createDirectorySettings(path: string): void {
+    this.setDirectorySettings(path, new MultiplayerDirectorySettings(path));
+  }
+
   public deleteDirectorySettings(path: string): void {
     this._yDirectory.delete(path);
   }
