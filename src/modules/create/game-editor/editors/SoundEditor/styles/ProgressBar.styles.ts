@@ -1,7 +1,7 @@
 import { styled } from "@mui/material/styles";
 
 export const ProgressBarContainer = styled("div")(() => ({
-  width: "1120px",
+  width: "calc(100% - 6px)",
   height: "30px",
   marginTop: "10px",
   marginBottom: "10px",

@@ -17,5 +17,6 @@ export interface MusicGridProps {
   totalLength: number;
   maxLength: number;
   onSeek: (position: number) => void;
+  isPlaying: boolean;
 }
 

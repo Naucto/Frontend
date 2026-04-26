@@ -3,11 +3,11 @@ import { styled } from "@mui/material/styles";
 
 export const ButtonContainer = styled(Box)(() => ({
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))",
-  gap: "8px",
-  marginTop: "20px",
+  gridTemplateColumns: "1fr",
+  gap: "4px",
+  marginTop: "12px",
   width: "100%",
-  maxWidth: "250px",
+  maxWidth: "160px",
 }));
 
 export const MusicSelectionContainer = styled(Box)(() => ({
@@ -22,16 +22,16 @@ export const MusicSelectionContainer = styled(Box)(() => ({
 export const StyledButton = styled("button")<{ selected?: boolean }>(({ selected }) => ({
   backgroundColor: selected ? "#4c7280" : "#537d8d",
   color: "#ffffff",
-  padding: "8px 16px",
+  padding: "4px 8px",
   cursor: "pointer",
-  fontSize: "16px",
+  fontSize: "14px",
   textAlign: "center",
   textDecoration: "none",
   display: "inline-block",
   boxShadow: "none",
-  margin: "4px 2px",
+  margin: "2px 1px",
   fontFamily: "'Pixelify', 'Roboto', 'Helvetica', 'Arial', sans-serif",
-  borderRadius: "9.6px",
+  borderRadius: "6px",
   border: "2px solid #4c7280",
   minWidth: "auto",
   "&:hover": {
@@ -61,13 +61,12 @@ export const EditorContainer = styled("div")(() => ({
   gap: "20px",
   alignItems: "flex-start",
   width: "100%",
-  maxWidth: "100%",
-  overflow: "hidden",
 }));
 
 export const SoundEditorRoot = styled("div")(() => ({
+  display: "flex",
+  flexDirection: "column",
   width: "100%",
-  overflow: "hidden",
 }));
 
 export const ErrorMessage = styled("div")(() => ({
@@ -77,7 +76,8 @@ export const ErrorMessage = styled("div")(() => ({
 }));
 
 export const SoundEditorWrapper = styled("div")(() => ({
-  width: "fit-content",
-  maxWidth: "100%",
+  display: "flex",
+  flexDirection: "column",
+  width: "100%",
 }));
 
