@@ -1,16 +1,19 @@
-import { JSX, useEffect, useMemo, useState } from "react";
+import { JSX, useEffect, useMemo, useRef, useState } from "react";
 import { styled } from "@mui/material/styles";
 import { Box, Typography } from "@mui/material";
 import { useParams } from "react-router-dom";
-import { UsersService } from "@api/services/UsersService";
 import { useAsync } from "src/hooks/useAsync";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
 import ImportantButton from "@shared/buttons/ImportantButton";
 import { Editable } from "@shared/forms/Editable";
 import { useForm } from "react-hook-form";
-import { UpdateUserProfileDto } from "@api/models/UpdateUserProfileDto";
 import UserIcon from "@assets/user.svg?react";
 import { useSnackbar } from "notistack";
+import {
+  userControllerGetPublicProfile,
+  userControllerUpdateMyProfile,
+  userControllerUploadProfilePicture,
+} from "@api";
 
 const ProfileBackground = styled("div")<{ src: string }>(({ src, theme }) => ({
   position: "absolute",
@@ -82,24 +85,30 @@ export const Profile = (): JSX.Element => {
   const [refresh, setRefresh] = useState(1);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const { enqueueSnackbar } = useSnackbar();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const { value: profile } = useAsync(
     () => {
-      if (!profileId) return Promise.reject();
-      return UsersService.userControllerFindOne(Number(profileId));
+      if (!profileId) return Promise.reject(new Error("Missing profileId"));
+      return userControllerGetPublicProfile<true>({
+        throwOnError: true,
+        path: { id: Number(profileId) },
+      });
     },
     [profileId, refresh]
   );
-  const { register, handleSubmit, reset } = useForm<UpdateUserProfileDto>();
+  const { register, handleSubmit, reset } = useForm<{ nickname?: string }>();
+
+  const profileData = profile?.data?.data;
 
   useEffect(() => {
-    if (profile?.data) {
+    if (profileData) {
       reset({
-        description: profile.data.description ?? "",
+        nickname: profileData.nickname ?? "",
       });
       setSelectedFile(null);
     }
-  }, [profile, reset]);
+  }, [profileData, reset]);
 
   const previewUrl = useMemo(() => {
     if (!selectedFile) return null;
@@ -116,16 +125,27 @@ export const Profile = (): JSX.Element => {
     setSelectedFile(file);
   };
 
-  const handleProfileUpdate = async (data: UpdateUserProfileDto): Promise<void> => {
+  const handleProfileUpdate = async (data: { nickname?: string }): Promise<void> => {
     try {
+      if (!isEditable) return;
+
       if (selectedFile) {
-        await UsersService.userControllerUpdateProfilePhoto({ file: selectedFile });
+        await userControllerUploadProfilePicture<true>({
+          throwOnError: true,
+          path: { id: userId },
+          body: { file: selectedFile },
+        });
       }
-      const currentDescription = profile?.data.description ?? "";
-      const nextDescription = data.description ?? "";
-      if (nextDescription !== currentDescription) {
-        await UsersService.userControllerUpdateProfile({ description: nextDescription });
+
+      const currentNickname = profileData?.nickname ?? "";
+      const nextNickname = data.nickname ?? "";
+      if (nextNickname !== currentNickname) {
+        await userControllerUpdateMyProfile<true>({
+          throwOnError: true,
+          body: { nickname: nextNickname },
+        });
       }
+
       setIsEditing(false);
       setRefresh((prev) => prev * -1);
       setSelectedFile(null);
@@ -143,7 +163,8 @@ export const Profile = (): JSX.Element => {
     }
   };
 
-  const profileImageUrl = previewUrl ?? profile?.data.profileImageUrl ?? "";
+  const profileImageUrl =
+    previewUrl ?? profileData?.profileImageUrl ?? "";
 
   return (
     <>
@@ -158,23 +179,41 @@ export const Profile = (): JSX.Element => {
             )}
           </ProfilePicture>
           <TextInfo>
-            <Typography variant="h5">{profile?.data.username}</Typography>
-            <Editable editing={isEditing} value={profile?.data.description ?? ""} register={register("description")}>
-              <Typography>{profile?.data.description}</Typography>
+            <Typography variant="h5">
+              {profileData?.username ?? ""}
+            </Typography>
+            <Editable
+              editing={isEditing}
+              value={profileData?.nickname ?? ""}
+              register={register("nickname")}
+            >
+              <Typography>{profileData?.nickname ?? ""}</Typography>
             </Editable>
+
             {isEditable && isEditing && (
-              <ChangePhotoButton component="label">
-                Change photo
+              <>
+                <ChangePhotoButton
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  Change photo
+                </ChangePhotoButton>
+
                 <input
+                  ref={fileInputRef}
                   hidden
                   accept="image/png,image/jpeg,image/webp"
                   type="file"
                   onChange={handleFileChange}
                 />
-              </ChangePhotoButton>
+              </>
             )}
-            {isEditable && <EditProfileButton onClick={handleEditButtonClick}>{isEditing ? "Cancel" : "Edit Profile"}</EditProfileButton>}
-            {isEditing && <EditProfileButton type="submit">Submit</EditProfileButton>}
+            {isEditable && (
+              <EditProfileButton type="button" onClick={handleEditButtonClick}>
+                {isEditing ? "Cancel" : "Edit Profile"}
+              </EditProfileButton>
+            )}
+            {isEditable && isEditing && <EditProfileButton type="submit">Submit</EditProfileButton>}
           </TextInfo>
         </ProfileInfo>
       </form>
