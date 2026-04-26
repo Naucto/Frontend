@@ -31,7 +31,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
-import React, { JSX, useState } from "react";
+import React, { JSX, useEffect, useState } from "react";
 
 interface MultiplayerDirectoryEntryButtonGroupProps {
   multiplayerSettingsProvider: MultiplayerSettingsProvider,
@@ -41,6 +41,7 @@ interface MultiplayerDirectoryEntryButtonGroupProps {
 enum MultiplayerDirectoryEntryState {
   NORMAL,
   EDIT,
+  DELETE,
   CREATE_CHILD
 };
 
@@ -57,6 +58,7 @@ export const MultiplayerDirectoryEntryButtonGroup: React.FC<MultiplayerDirectory
 
   // "Normal" state specific things
   type DirectoryFlagsRecord = Record<string, boolean>;
+
   const normal_flagNames = enumNames(MultiplayerDirectoryFlags);
   const [normal_flagStates, normal_setFlagStates] =
     useState<DirectoryFlagsRecord>(
@@ -82,7 +84,7 @@ export const MultiplayerDirectoryEntryButtonGroup: React.FC<MultiplayerDirectory
     };
 
     const deleteThisNode = (): void => {
-
+      setEntryState(MultiplayerDirectoryEntryState.DELETE);
     };
 
     const renameThisNode = (): void => {
@@ -91,12 +93,6 @@ export const MultiplayerDirectoryEntryButtonGroup: React.FC<MultiplayerDirectory
 
     return (
       <StyledButtonGroup>
-        <Tooltip title="Add child node">
-          <IconButton onClick={addChildNode}>
-            <AddIcon />
-          </IconButton>
-        </Tooltip>
-
         {!settings.isRootNode && (
           <>
             <Tooltip title="Delete this node and its children">
@@ -112,6 +108,12 @@ export const MultiplayerDirectoryEntryButtonGroup: React.FC<MultiplayerDirectory
             </Tooltip>
           </>
         )}
+
+        <Tooltip title="Add child node">
+          <IconButton onClick={addChildNode}>
+            <AddIcon />
+          </IconButton>
+        </Tooltip>
 
         {
           normal_flagNames.map((flagName) => {
@@ -173,6 +175,33 @@ export const MultiplayerDirectoryEntryButtonGroup: React.FC<MultiplayerDirectory
     );
   };
 
+  const deleteState = (): JSX.Element => {
+    const cancel = (): void => {
+      setEntryState(MultiplayerDirectoryEntryState.NORMAL);
+    };
+
+    const validateChange = (): void => {
+      mpsp.deleteDirectorySettings(settings.path);
+      setEntryState(MultiplayerDirectoryEntryState.NORMAL);
+    };
+
+    return (
+      <StyledButtonGroup>
+        <Tooltip title="Cancel deletition">
+          <IconButton onClick={cancel}>
+            <CloseIcon />
+          </IconButton>
+        </Tooltip>
+
+        <Tooltip title="Delete this node, for sure">
+          <IconButton onClick={validateChange} color="error">
+            <DeleteIcon />
+          </IconButton>
+        </Tooltip>
+      </StyledButtonGroup>
+    );
+  };
+
   const createChildState = (): JSX.Element => {
     const { value: newNodePath, onChange: newNodePath_onChange } = createChild_newNodePath;
 
@@ -215,6 +244,7 @@ export const MultiplayerDirectoryEntryButtonGroup: React.FC<MultiplayerDirectory
     switch (entryState) {
       case MultiplayerDirectoryEntryState.NORMAL:       return normalState();
       case MultiplayerDirectoryEntryState.EDIT:         return editState();
+      case MultiplayerDirectoryEntryState.DELETE:       return deleteState();
       case MultiplayerDirectoryEntryState.CREATE_CHILD: return createChildState();
     }
   };
@@ -232,38 +262,51 @@ interface MultiplayerDirectoryEntryProps {
 };
 
 export const MultiplayerDirectoryEntry: React.FC<MultiplayerDirectoryEntryProps> = ({ settings, multiplayerSettingsProvider }) => {
+  const mpsp = multiplayerSettingsProvider;
+
   const [childrenEntries, setChildrenEntries] = useState<MultiplayerDirectorySettings[]>([]);
 
   const [isNodeOpened, setNodeOpened] = useState(settings.isRootNode);
 
-  const handleNodeToggle = (): void => {
-    setNodeOpened(!isNodeOpened);
+  const getNodeEntries = (): Array<MultiplayerDirectorySettings> => {
+    const newChildrenSet: Array<MultiplayerDirectorySettings> = [];
 
-    if (!isNodeOpened) {
-      setChildrenEntries([]);
-      return;
-    }
+    mpsp.visitChildDirectorySettings(settings.path, (childNode) => {
+      newChildrenSet.push(childNode);
+    });
 
-    setChildrenEntries(
-      multiplayerSettingsProvider.visitAllDirectorySettings(
-        (childSettings: MultiplayerDirectorySettings) => {
-          const calcPathDepth = (p: string): number => Number(p === "") + p.split(".").length;
-          const parentPathDepth = calcPathDepth(settings.path);
-
-          const childDepth = calcPathDepth(childSettings.path);
-
-          if (!childSettings.path.startsWith(settings.path) ||
-              childSettings.path === settings.path ||
-              childDepth !== parentPathDepth + 1)
-            return undefined;
-
-          return childSettings;
-        }
-      )
-    );
+    return newChildrenSet;
   };
 
-  const pathDisplayName = settings.isRootNode ? "[root]" : settings.path;
+  useEffect(
+    () => {
+      if (!isNodeOpened) {
+        mpsp.unobserve(settings.path);
+        setChildrenEntries([]);
+        return;
+      }
+
+      setChildrenEntries(getNodeEntries());
+
+      const observeCallback = (newSettings: MultiplayerDirectorySettings | undefined): void => {
+        if (newSettings === undefined)
+          return;
+
+        setChildrenEntries(getNodeEntries());
+      };
+
+      mpsp.observe(settings.path, observeCallback);
+
+      return () => {
+        mpsp.unobserve(settings.path);
+      };
+    },
+    [isNodeOpened]
+  );
+
+  const handleNodeToggle = (): void => {
+    setNodeOpened(prev => !prev);
+  };
 
   return (
     <>
@@ -271,7 +314,7 @@ export const MultiplayerDirectoryEntry: React.FC<MultiplayerDirectoryEntryProps>
         <ListItemIcon>
           {isNodeOpened ? <ExpandMoreIcon /> : <ExpandLessIcon />}
         </ListItemIcon>
-        <ListItemText primary={pathDisplayName} />
+        <ListItemText primary={settings.name} />
         <ListItemIcon>
           <MultiplayerDirectoryEntryButtonGroup
             multiplayerSettingsProvider={multiplayerSettingsProvider}
@@ -280,12 +323,14 @@ export const MultiplayerDirectoryEntry: React.FC<MultiplayerDirectoryEntryProps>
       </ListItemButton>
 
       <Collapse in={isNodeOpened} unmountOnExit>
-        {childrenEntries.map(childSettings => (
-          <MultiplayerDirectoryEntry
-            key={childSettings.path}
-            settings={childSettings}
-            multiplayerSettingsProvider={multiplayerSettingsProvider} />
-        ))}
+        <List sx={{ pl: 4 }}>
+          {childrenEntries.map(childSettings => (
+            <MultiplayerDirectoryEntry
+              key={childSettings.path}
+              settings={childSettings}
+              multiplayerSettingsProvider={multiplayerSettingsProvider} />
+          ))}
+        </List>
       </Collapse>
     </>
   );

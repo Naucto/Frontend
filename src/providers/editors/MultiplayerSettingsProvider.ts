@@ -1,4 +1,5 @@
 import * as Y from "yjs";
+import { YMapEvent } from "yjs";
 
 export enum MultiplayerDirectoryFlags {
   NONE         = 0,
@@ -11,6 +12,7 @@ export enum MultiplayerDirectoryFlags {
 }
 
 const ROOT_PATH = "";
+const ROOT_NAME = "<root>";
 
 // Struct-like data
 type MultiplayerDirectoryData = {
@@ -36,6 +38,10 @@ export class MultiplayerDirectorySettings {
 
   public get path(): string {
     return this._path;
+  }
+
+  public get name(): string {
+    return this._path === ROOT_PATH ? ROOT_NAME : this._path.split(".").at(-1)!;
   }
 
   public get isRootNode(): boolean {
@@ -69,16 +75,38 @@ export class MultiplayerStateError extends Error {
   }
 }
 
-export class MultiplayerSettingsProvider {
-  _yDirectory: Y.Map<MultiplayerDirectoryData>;
+export type MultiplayerSettingsUpdateListener =
+  (directory?: MultiplayerDirectorySettings) => void;
+
+export class MultiplayerSettingsProvider implements Destroyable {
+  private _yDoc: Y.Doc;
+  private _yDirectory: Y.Map<MultiplayerDirectoryData>;
+
+  private readonly _rootSettingsChangeListener: (e: YMapEvent<MultiplayerDirectoryData>) => void;
+  private _boundSettingsChangeListeners = new Map<string, MultiplayerSettingsUpdateListener>();
 
   constructor(doc: Y.Doc) {
-    this._yDirectory = doc.getMap<MultiplayerDirectoryData>("multiplayerDirectory");
+    this._yDoc = doc;
+    this._yDirectory = this._yDoc.getMap<MultiplayerDirectoryData>("multiplayerDirectory");
+
+    // Not a bug: this makes sure that the root node is always there
+    this.getRootDirectorySettings();
+
+    this._rootSettingsChangeListener = this.onSettingsChange.bind(this);
+    this._yDirectory.observe(this._rootSettingsChangeListener);
+  }
+
+  destroy(): void {
+    this._yDirectory.unobserve(this._rootSettingsChangeListener);
+  }
+
+  public isRootNodePath(path: string): boolean {
+    return path.length === 0 || path.trim().length === 0;
   }
 
   public getDirectorySettings(path: string): Maybe<MultiplayerDirectorySettings> {
     // Root is an empty string
-    if (path.length === 0 || path.trim().length === 0)
+    if (this.isRootNodePath(path))
       path = ROOT_PATH;
 
     const components = path.split(".");
@@ -99,6 +127,27 @@ export class MultiplayerSettingsProvider {
     return undefined;
   }
 
+  public getPathDepth(path: string): number {
+    return path.split(".").length - Number(path === ROOT_PATH);
+  }
+
+  public getParentNodePath(path: string): string {
+    if (path.length === 0 || path.trim().length === 0)
+      return path;
+
+    const components = path.split(".");
+
+    return components.slice(0, -1).join(".");
+  }
+
+  public getParentDirectorySettings(path: string): Maybe<MultiplayerDirectorySettings> {
+    if (this.isRootNodePath(path))
+      return undefined;
+
+    const parentNodePath = this.getParentNodePath(path);
+    return this.getDirectorySettings(parentNodePath);
+  }
+
   public getRootDirectorySettings() : MultiplayerDirectorySettings {
     let rootSettings: MultiplayerDirectorySettings;
     const rootSettingsData = this._yDirectory.get(ROOT_PATH);
@@ -114,6 +163,19 @@ export class MultiplayerSettingsProvider {
   }
 
   public setDirectorySettings(path: string, settings: MultiplayerDirectorySettings): void {
+    const components = path.split(".");
+
+    while (components.length > 0) {
+      const pathToMake = components.join(".");
+
+      if (!this._yDirectory.has(pathToMake)) {
+        const settings = new MultiplayerDirectorySettings(pathToMake);
+        this._yDirectory.set(pathToMake, settings.data);
+      }
+
+      components.pop();
+    }
+
     this._yDirectory.set(path, settings.data);
   }
 
@@ -142,7 +204,7 @@ export class MultiplayerSettingsProvider {
   public visitAllDirectorySettings<T>(accessor: MultiplayerSettingsProviderAccessor<T>): T[] {
     const results: T[] = [];
 
-    const directoryKeys = Object.keys(this._yDirectory).sort();
+    const directoryKeys = [...this._yDirectory.keys()].sort();
 
     directoryKeys.forEach(
       (path) => {
@@ -161,19 +223,66 @@ export class MultiplayerSettingsProvider {
 
   public visitChildDirectorySettings<T>(parentPath: string, accessor: MultiplayerSettingsProviderAccessor<T>): T[] {
     const childVisitor: MultiplayerSettingsProviderAccessor<T> = (settings) => {
-      const calcPathDepth = (p: string): number => Number(p === ROOT_PATH) + p.split(".").length;
+      const pathDepth       = this.getPathDepth(settings.path);
+      const parentPathDepth = this.getPathDepth(parentPath);
 
-      const pathDepth       = calcPathDepth(settings.path);
-      const parentPathDepth = calcPathDepth(parentPath);
-
-      if (!settings.path.startsWith(parentPath) ||
-          settings.path === parentPath ||
-            pathDepth !== parentPathDepth + 1)
+      if (
+        !settings.path.startsWith(parentPath) ||
+        settings.path === parentPath ||
+        pathDepth !== parentPathDepth + 1
+      )
         return undefined;
 
       accessor(settings);
     };
 
     return this.visitAllDirectorySettings(childVisitor);
+  }
+
+  // --------------------------------------------------------------------------
+
+  public observe(path: string, callback: MultiplayerSettingsUpdateListener): void {
+    this._boundSettingsChangeListeners.set(path, callback);
+  }
+
+  public unobserve(path: string): void {
+    this._boundSettingsChangeListeners.delete(path);
+  }
+
+  private onSettingsChange(event: Y.YMapEvent<MultiplayerDirectoryData>): void {
+    event.changes.keys.forEach((change, nodePath) => {
+      if (event.target !== this._yDirectory)
+        return;
+
+      const action = change.action;
+
+      if (!this._boundSettingsChangeListeners.has(nodePath)) {
+        return;
+      }
+
+      const callback = this._boundSettingsChangeListeners.get(nodePath);
+
+      if (action === "add" || action === "update") {
+        console.log("add/update", nodePath);
+        // Both exclamation marks are fine here because
+        // 1. callback has to be defined, otherwise we're in an undefined behavior state
+        // 2. the node must exist
+        callback!(this.getDirectorySettings(nodePath));
+      } else if (action === "delete") {
+        console.log("delete", nodePath);
+        callback!(undefined);
+
+        const parentNodePath = this.getParentNodePath(nodePath);
+
+        if (nodePath === parentNodePath)
+          return;
+
+        const parentNode     = this.getDirectorySettings(nodePath);
+        const parentCallback = this._boundSettingsChangeListeners.get(parentNodePath);
+
+        if (parentCallback)
+          parentCallback(parentNode);
+      }
+    });
   }
 }
