@@ -1,12 +1,13 @@
 import React, { JSX, useCallback, useEffect, useMemo, useState } from "react";
-import { styled } from "@mui/material";
+import { styled } from "@mui/material/styles";
 import ProjectCard from "./components/ProjectCard";
-import { ProjectResponseDto, projectControllerCountProjects, projectControllerFindAllPaginated } from "@api";
+import { ProjectResponseDto, projectControllerCountProjects, projectControllerFindAll } from "@api";
 import CreateProjectCard from "@modules/projects/components/CreateProjectCard";
 import { useUser } from "@providers/UserProvider";
 import { useNavigate } from "react-router-dom";
 import * as urls from "@shared/route";
-import { Autocomplete, Box, Button, Chip, FormControl, MenuItem, Select, TextField, Typography } from "@mui/material";
+import { darkMenuProps } from "@shared/darkMenuProps";
+import { Autocomplete, Box, Button, Chip, FormControl, MenuItem, Paper, Select, TextField, Typography } from "@mui/material";
 import { PREDEFINED_PROJECT_TAGS } from "@modules/projects/projectTags";
 
 const PAGE_SIZE = 24;
@@ -68,11 +69,14 @@ const SectionTitle = styled(Typography)(({ theme }) => ({
   color: theme.palette.text.primary,
 }));
 
-const ViewMoreButton = styled(Typography)(({ theme }) => ({
+const ViewMoreButton = styled(Button)(({ theme }) => ({
   fontSize: "14px",
   color: theme.palette.primary.main,
-  cursor: "pointer",
+  padding: 0,
+  minWidth: 0,
+  textTransform: "none",
   "&:hover": {
+    backgroundColor: "transparent",
     textDecoration: "underline",
   },
 }));
@@ -112,8 +116,12 @@ const LoadMoreRow = styled(Box)(({ theme }) => ({
   marginTop: theme.spacing(2),
 }));
 
-const darkSelectSx = {
-  color: "white",
+const SortFormControl = styled(FormControl)({
+  minWidth: 180,
+});
+
+const DarkSelect = styled(Select)(({ theme }) => ({
+  color: theme.palette.common.white,
   backgroundColor: "rgba(20, 20, 20, 0.72)",
   borderRadius: "8px",
   ".MuiOutlinedInput-notchedOutline": {
@@ -123,31 +131,59 @@ const darkSelectSx = {
     borderColor: "rgba(255,255,255,0.3)",
   },
   ".MuiSvgIcon-root": {
-    color: "white",
+    color: theme.palette.common.white,
   },
-};
+}));
 
-const darkMenuProps = {
-  PaperProps: {
-    sx: {
-      backgroundColor: "#1A1A1A",
-      color: "white",
-      backgroundImage: "none",
-      ".MuiMenuItem-root": {
-        color: "white",
-      },
-      ".MuiMenuItem-root.Mui-selected": {
-        backgroundColor: "rgba(229, 211, 82, 0.18)",
-      },
-      ".MuiMenuItem-root:hover": {
-        backgroundColor: "rgba(255,255,255,0.08)",
-      },
-    }
-  }
+const DarkTextField = styled(TextField)(({ theme }) => ({
+  minWidth: 220,
+  ".MuiOutlinedInput-root": {
+    color: theme.palette.common.white,
+    backgroundColor: "rgba(20, 20, 20, 0.72)",
+  },
+  ".MuiInputLabel-root": {
+    color: "rgba(255,255,255,0.7)",
+  },
+  ".MuiInputLabel-root.Mui-focused": {
+    color: theme.palette.common.white,
+  },
+}));
+
+const TagsAutocomplete = styled(Autocomplete<string, true, false, false>)({
+  minWidth: 280,
+  flex: 1,
+});
+
+const AutocompleteOption = styled("li")({
+  color: "white",
+  backgroundColor: "#1A1A1A",
+});
+
+const DarkAutocompletePaper = styled(Paper)({
+  backgroundColor: "#1A1A1A",
+  color: "white",
+  backgroundImage: "none",
+  ".MuiAutocomplete-listbox": {
+    maxHeight: 240,
+    overflowY: "auto",
+  },
+});
+
+const DarkAutocompleteListbox = styled("ul")({
+  maxHeight: 240,
+  overflowY: "auto",
+});
+
+const autocompleteSlots = {
+  paper: DarkAutocompletePaper,
+  listbox: DarkAutocompleteListbox,
 };
 
 type SortMetric = "updatedAt" | "createdAt" | "name" | "publishedAt" | "tags";
 type SortOrder = "asc" | "desc";
+type ProjectCategory = "drafts" | "published";
+
+const PUBLISHED_PROJECT_STATUS = "COMPLETED" satisfies ProjectResponseDto["status"];
 
 function getSortMetricLabel(metric: SortMetric): string {
   switch (metric) {
@@ -203,6 +239,12 @@ function sortProjects(projects: ProjectResponseDto[], metric: SortMetric, order:
   });
 }
 
+function projectMatchesCategory(project: ProjectResponseDto, category: ProjectCategory): boolean {
+  return category === "published"
+    ? category === "published" && project.status === PUBLISHED_PROJECT_STATUS
+    : category === "drafts" && project.status !== PUBLISHED_PROJECT_STATUS;
+}
+
 const Projects: React.FC = () => {
   const user = useUser();
   const navigate = useNavigate();
@@ -237,7 +279,7 @@ const Projects: React.FC = () => {
   }, []);
 
   const fetchProjectsPage = useCallback(async (page: number) => {
-    const { data } = await projectControllerFindAllPaginated({
+    const { data } = await projectControllerFindAll({
       query: {
         page,
         limit: PAGE_SIZE,
@@ -303,7 +345,7 @@ const Projects: React.FC = () => {
 
   const publishedProjects = useMemo(
     () => sortProjects(
-      filteredProjects.filter((project) => project.status === ("COMPLETED" satisfies ProjectResponseDto["status"])),
+      filteredProjects.filter((project) => projectMatchesCategory(project, "published")),
       sortMetric,
       sortOrder,
     ),
@@ -312,7 +354,7 @@ const Projects: React.FC = () => {
 
   const draftProjects = useMemo(
     () => sortProjects(
-      filteredProjects.filter((project) => project.status !== ("COMPLETED" satisfies ProjectResponseDto["status"])),
+      filteredProjects.filter((project) => projectMatchesCategory(project, "drafts")),
       sortMetric,
       sortOrder,
     ),
@@ -348,23 +390,19 @@ const Projects: React.FC = () => {
 
   const getSectionProjectsFrom = useCallback((
     sourceProjects: ProjectResponseDto[],
-    category: "drafts" | "published"
+    category: ProjectCategory
   ): ProjectResponseDto[] => {
     const filteredSourceProjects = sourceProjects.filter((project) => (
       (selectedTags.length === 0 || selectedTags.every((tag) => project.tags.includes(tag)))
       && project.name.toLowerCase().includes(projectNameQuery.trim().toLowerCase())
     ));
 
-    const scopedProjects = filteredSourceProjects.filter((project) => (
-      category === "published"
-        ? project.status === ("COMPLETED" satisfies ProjectResponseDto["status"])
-        : project.status !== ("COMPLETED" satisfies ProjectResponseDto["status"])
-    ));
+    const scopedProjects = filteredSourceProjects.filter((project) => projectMatchesCategory(project, category));
 
     return sortProjects(scopedProjects, sortMetric, sortOrder);
   }, [projectNameQuery, selectedTags, sortMetric, sortOrder]);
 
-  const loadMoreProjects = async (category: "drafts" | "published"): Promise<void> => {
+  const loadMoreProjects = async (category: ProjectCategory): Promise<void> => {
     const visibleCount = category === "drafts" ? draftVisibleCount : publishedVisibleCount;
     const nextVisibleCount = visibleCount + PAGE_SIZE;
     const currentProjects = getSectionProjectsFrom(projects, category);
@@ -413,7 +451,7 @@ const Projects: React.FC = () => {
   };
 
   const renderSection = (
-    category: "drafts" | "published",
+    category: ProjectCategory,
     title: string,
     sectionProjects: ProjectResponseDto[],
     options?: { includeCreateCard?: boolean; emptyMessage: string }
@@ -487,11 +525,10 @@ const Projects: React.FC = () => {
 
       {showCustomSort ? (
         <FilterPanel>
-          <FormControl size="small" sx={{ minWidth: 180 }}>
-            <Select
+          <SortFormControl size="small">
+            <DarkSelect
               value={sortMetric}
               onChange={(event) => setSortMetric(event.target.value as SortMetric)}
-              sx={darkSelectSx}
               MenuProps={darkMenuProps}
             >
               <MenuItem value="updatedAt">Last updated</MenuItem>
@@ -499,77 +536,33 @@ const Projects: React.FC = () => {
               <MenuItem value="publishedAt">Published date</MenuItem>
               <MenuItem value="name">Name</MenuItem>
               <MenuItem value="tags">Tags</MenuItem>
-            </Select>
-          </FormControl>
+            </DarkSelect>
+          </SortFormControl>
           <CustomSortButton variant="outlined" onClick={() => setSortOrder((current) => current === "asc" ? "desc" : "asc")}>
             {getSortOrderLabel(sortOrder)}
           </CustomSortButton>
-          <TextField
+          <DarkTextField
             value={projectNameQuery}
             onChange={(event) => setProjectNameQuery(event.target.value)}
             label="Search by name"
             placeholder="Project name..."
-            sx={{
-              minWidth: 220,
-              ".MuiOutlinedInput-root": {
-                color: "white",
-                backgroundColor: "rgba(20, 20, 20, 0.72)",
-              },
-              ".MuiInputLabel-root": {
-                color: "rgba(255,255,255,0.7)",
-              },
-              ".MuiInputLabel-root.Mui-focused": {
-                color: "white",
-              },
-            }}
           />
-          <Autocomplete
+          <TagsAutocomplete
             multiple
             options={availableTags}
             value={selectedTags}
             onChange={(_, value) => setSelectedTags(value)}
-            sx={{ minWidth: 280, flex: 1 }}
-            slotProps={{
-              paper: {
-                sx: {
-                  backgroundColor: "#1A1A1A",
-                  color: "white",
-                  backgroundImage: "none",
-                  ".MuiAutocomplete-listbox": {
-                    maxHeight: 240,
-                    overflowY: "auto",
-                  },
-                }
-              },
-              listbox: {
-                sx: {
-                  maxHeight: 240,
-                  overflowY: "auto",
-                }
-              },
-            }}
+            slots={autocompleteSlots}
             renderOption={(props, option) => (
-              <Box component="li" {...props} sx={{ color: "white", backgroundColor: "#1A1A1A !important" }}>
+              <AutocompleteOption {...props}>
                 {option}
-              </Box>
+              </AutocompleteOption>
             )}
             renderInput={(params) => (
-              <TextField
+              <DarkTextField
                 {...params}
                 label="Filter by tags"
                 placeholder="Action, RPG..."
-                sx={{
-                  ".MuiOutlinedInput-root": {
-                    color: "white",
-                    backgroundColor: "rgba(20, 20, 20, 0.72)",
-                  },
-                  ".MuiInputLabel-root": {
-                    color: "rgba(255,255,255,0.7)",
-                  },
-                  ".MuiInputLabel-root.Mui-focused": {
-                    color: "white",
-                  },
-                }}
               />
             )}
           />

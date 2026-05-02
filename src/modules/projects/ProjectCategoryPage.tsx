@@ -1,8 +1,9 @@
-import { ProjectResponseDto, projectControllerFindAllPaginated } from "@api";
-import { Autocomplete, Box, Button, Chip, FormControl, LinearProgress, MenuItem, Select, TextField, Typography } from "@mui/material";
+import { ProjectResponseDto, projectControllerFindAll } from "@api";
+import { Autocomplete, Box, Button, Chip, FormControl, LinearProgress, MenuItem, Paper, Select, TextField, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { PREDEFINED_PROJECT_TAGS } from "@modules/projects/projectTags";
 import { useUser } from "@providers/UserProvider";
+import { darkMenuProps } from "@shared/darkMenuProps";
 import * as urls from "@shared/route";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
@@ -105,8 +106,12 @@ const LoadMoreRow = styled(Box)(({ theme }) => ({
   marginTop: theme.spacing(2),
 }));
 
-const darkSelectSx = {
-  color: "white",
+const SelectFormControl = styled(FormControl)<{ minwidth?: number }>(({ minwidth }) => ({
+  minWidth: minwidth ?? 180,
+}));
+
+const DarkSelect = styled(Select)(({ theme }) => ({
+  color: theme.palette.common.white,
   backgroundColor: "rgba(20, 20, 20, 0.72)",
   borderRadius: "8px",
   ".MuiOutlinedInput-notchedOutline": {
@@ -116,28 +121,63 @@ const darkSelectSx = {
     borderColor: "rgba(255,255,255,0.3)",
   },
   ".MuiSvgIcon-root": {
-    color: "white",
+    color: theme.palette.common.white,
   },
+}));
+
+const DarkTextField = styled(TextField)(({ theme }) => ({
+  minWidth: 220,
+  ".MuiOutlinedInput-root": {
+    color: theme.palette.common.white,
+    backgroundColor: "rgba(20, 20, 20, 0.72)",
+  },
+  ".MuiInputLabel-root": {
+    color: "rgba(255,255,255,0.7)",
+  },
+  ".MuiInputLabel-root.Mui-focused": {
+    color: theme.palette.common.white,
+  },
+}));
+
+const TagsAutocomplete = styled(Autocomplete<string, true, false, false>)({
+  minWidth: 280,
+  flex: 1,
+});
+
+const AutocompleteOption = styled("li")({
+  color: "white",
+  backgroundColor: "#1A1A1A",
+});
+
+const DarkAutocompletePaper = styled(Paper)({
+  backgroundColor: "#1A1A1A",
+  color: "white",
+  backgroundImage: "none",
+  ".MuiAutocomplete-listbox": {
+    maxHeight: 240,
+    overflowY: "auto",
+  },
+});
+
+const DarkAutocompleteListbox = styled("ul")({
+  maxHeight: 240,
+  overflowY: "auto",
+});
+
+const autocompleteSlots = {
+  paper: DarkAutocompletePaper,
+  listbox: DarkAutocompleteListbox,
 };
 
-const darkMenuProps = {
-  PaperProps: {
-    sx: {
-      backgroundColor: "#1A1A1A",
-      color: "white",
-      backgroundImage: "none",
-      ".MuiMenuItem-root": {
-        color: "white",
-      },
-      ".MuiMenuItem-root.Mui-selected": {
-        backgroundColor: "rgba(229, 211, 82, 0.18)",
-      },
-      ".MuiMenuItem-root:hover": {
-        backgroundColor: "rgba(255,255,255,0.08)",
-      },
-    }
-  }
-};
+const LoadMoreContent = styled(Box)({
+  width: "100%",
+  maxWidth: 320,
+});
+
+const LoadMoreProgress = styled(LinearProgress)(({ theme }) => ({
+  marginTop: theme.spacing(1),
+  borderRadius: 999,
+}));
 
 function isProjectCategoryKey(value: string | undefined): value is ProjectCategoryKey {
   return value === "drafts" || value === "published";
@@ -239,7 +279,7 @@ const ProjectCategoryPage: React.FC = () => {
   }, []);
 
   const fetchProjectsPage = useCallback(async (page: number) => {
-    const { data } = await projectControllerFindAllPaginated({
+    const { data } = await projectControllerFindAll({
       query: {
         page,
         limit: PAGE_SIZE,
@@ -395,11 +435,10 @@ const ProjectCategoryPage: React.FC = () => {
       </HeaderRow>
 
       <FilterPanel>
-        <FormControl size="small" sx={{ minWidth: 180 }}>
-          <Select
+        <SelectFormControl size="small">
+          <DarkSelect
             value={sortMetric}
             onChange={(event) => setSortMetric(event.target.value as SortMetric)}
-            sx={darkSelectSx}
             MenuProps={darkMenuProps}
           >
             <MenuItem value="updatedAt">Last updated</MenuItem>
@@ -407,78 +446,34 @@ const ProjectCategoryPage: React.FC = () => {
             <MenuItem value="publishedAt">Published date</MenuItem>
             <MenuItem value="name">Name</MenuItem>
             <MenuItem value="tags">Tags</MenuItem>
-          </Select>
-        </FormControl>
+          </DarkSelect>
+        </SelectFormControl>
         <CustomSortButton variant="outlined" onClick={() => setSortOrder((current) => current === "asc" ? "desc" : "asc")}>
           {getSortOrderLabel(sortOrder)}
         </CustomSortButton>
         <SummaryChip label={`Sort: ${getSortMetricLabel(sortMetric)}`} size="small" />
-        <TextField
+        <DarkTextField
           value={projectNameQuery}
           onChange={(event) => setProjectNameQuery(event.target.value)}
           label="Search by name"
           placeholder="Project name..."
-          sx={{
-            minWidth: 220,
-            ".MuiOutlinedInput-root": {
-              color: "white",
-              backgroundColor: "rgba(20, 20, 20, 0.72)",
-            },
-            ".MuiInputLabel-root": {
-              color: "rgba(255,255,255,0.7)",
-            },
-            ".MuiInputLabel-root.Mui-focused": {
-              color: "white",
-            },
-          }}
         />
-        <Autocomplete
+        <TagsAutocomplete
           multiple
           options={availableTags}
           value={selectedTags}
           onChange={(_, value) => setSelectedTags(value)}
-          sx={{ minWidth: 280, flex: 1 }}
-          slotProps={{
-            paper: {
-              sx: {
-                backgroundColor: "#1A1A1A",
-                color: "white",
-                backgroundImage: "none",
-                ".MuiAutocomplete-listbox": {
-                  maxHeight: 240,
-                  overflowY: "auto",
-                },
-              }
-            },
-            listbox: {
-              sx: {
-                maxHeight: 240,
-                overflowY: "auto",
-              }
-            },
-          }}
+          slots={autocompleteSlots}
           renderOption={(props, option) => (
-            <Box component="li" {...props} sx={{ color: "white", backgroundColor: "#1A1A1A !important" }}>
+            <AutocompleteOption {...props}>
               {option}
-            </Box>
+            </AutocompleteOption>
           )}
           renderInput={(params) => (
-            <TextField
+            <DarkTextField
               {...params}
               label="Filter by tags"
               placeholder="Action, RPG..."
-              sx={{
-                ".MuiOutlinedInput-root": {
-                  color: "white",
-                  backgroundColor: "rgba(20, 20, 20, 0.72)",
-                },
-                ".MuiInputLabel-root": {
-                  color: "rgba(255,255,255,0.7)",
-                },
-                ".MuiInputLabel-root.Mui-focused": {
-                  color: "white",
-                },
-              }}
             />
           )}
         />
@@ -508,12 +503,12 @@ const ProjectCategoryPage: React.FC = () => {
           </ProjectGrid>
           {canLoadMore ? (
             <LoadMoreRow>
-              <Box sx={{ width: "100%", maxWidth: 320 }}>
+              <LoadMoreContent>
                 <CustomSortButton variant="outlined" onClick={() => void handleLoadMore()} disabled={isLoadingProjects || isLoadingMore} fullWidth>
                   Load more
                 </CustomSortButton>
-                {isLoadingMore ? <LinearProgress sx={{ mt: 1, borderRadius: 999 }} /> : null}
-              </Box>
+                {isLoadingMore ? <LoadMoreProgress /> : null}
+              </LoadMoreContent>
             </LoadMoreRow>
           ) : null}
         </>

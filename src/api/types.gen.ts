@@ -886,7 +886,10 @@ export type ProjectControllerGetReleaseContentUrlResponse =
 export type ProjectControllerFindAllData = {
   body?: never;
   path?: never;
-  query?: never;
+  query?: {
+    page?: number;
+    limit?: number;
+  };
   url: "/projects";
 };
 
@@ -899,9 +902,9 @@ export type ProjectControllerFindAllErrors = {
 
 export type ProjectControllerFindAllResponses = {
   /**
-   * A JSON array of projects with collaborators and creator information
+   * A paginated list of projects with collaborators and creator information
    */
-  200: Array<ProjectExResponseDto>;
+  200: PaginatedProjectsResponseDto;
 };
 
 export type ProjectControllerFindAllResponse =
@@ -954,33 +957,6 @@ export type ProjectControllerCountProjectsResponses = {
 
 export type ProjectControllerCountProjectsResponse =
   ProjectControllerCountProjectsResponses[keyof ProjectControllerCountProjectsResponses];
-
-export type ProjectControllerFindAllPaginatedData = {
-  body?: never;
-  path?: never;
-  query?: {
-    page?: number;
-    limit?: number;
-  };
-  url: "/projects/paginated";
-};
-
-export type ProjectControllerFindAllPaginatedErrors = {
-  /**
-   * Internal server error
-   */
-  500: unknown;
-};
-
-export type ProjectControllerFindAllPaginatedResponses = {
-  /**
-   * A paginated list of projects with collaborators and creator information
-   */
-  200: PaginatedProjectsResponseDto;
-};
-
-export type ProjectControllerFindAllPaginatedResponse =
-  ProjectControllerFindAllPaginatedResponses[keyof ProjectControllerFindAllPaginatedResponses];
 
 export type ProjectControllerRemoveData = {
   body?: never;

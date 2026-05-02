@@ -65,9 +65,6 @@ import type {
   ProjectControllerFetchProjectContentResponses,
   ProjectControllerFindAllData,
   ProjectControllerFindAllErrors,
-  ProjectControllerFindAllPaginatedData,
-  ProjectControllerFindAllPaginatedErrors,
-  ProjectControllerFindAllPaginatedResponses,
   ProjectControllerFindAllResponses,
   ProjectControllerFindOneData,
   ProjectControllerFindOneErrors,
@@ -308,7 +305,7 @@ export const projectControllerGetReleaseContentUrl = <
   });
 
 /**
- * Retrieve the list of projects
+ * Retrieve the paginated list of projects
  */
 export const projectControllerFindAll = <ThrowOnError extends boolean = false>(
   options?: Options<ProjectControllerFindAllData, ThrowOnError>
@@ -361,25 +358,6 @@ export const projectControllerCountProjects = <
     responseType: "json",
     security: [{ scheme: "bearer", type: "http" }],
     url: "/projects/count",
-    ...options
-  });
-
-/**
- * Retrieve the paginated list of projects
- */
-export const projectControllerFindAllPaginated = <
-  ThrowOnError extends boolean = false
->(
-  options?: Options<ProjectControllerFindAllPaginatedData, ThrowOnError>
-) =>
-  (options?.client ?? client).get<
-    ProjectControllerFindAllPaginatedResponses,
-    ProjectControllerFindAllPaginatedErrors,
-    ThrowOnError
-  >({
-    responseType: "json",
-    security: [{ scheme: "bearer", type: "http" }],
-    url: "/projects/paginated",
     ...options
   });
 
