@@ -1,13 +1,17 @@
-import { Box, Link, Typography } from "@mui/material";
+import { Box, Link, Typography, Divider } from "@mui/material";
 import GenericTextField from "@shared/TextField";
 import { FC, useCallback, useState } from "react";
 import { styled } from "@mui/material";
-import { CreateUserDto, LoginDto, authControllerRegister, authControllerLogin, userControllerGetProfile } from "@api";
+import { CreateUserDto, LoginDto, authControllerRegister, authControllerLogin, userControllerGetProfile, authControllerLoginWithGoogle, authControllerLoginWithMicrosoft } from "@api";
 import { useForm } from "react-hook-form";
 import ImportantButton from "@shared/buttons/ImportantButton";
 import { useUser } from "@providers/UserProvider";
 import { CustomDialog } from "@shared/dialog/CustomDialog";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
+import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
+import { useAuthSuccess } from "@hooks/useAuthSuccess";
+import { useMsal } from "@azure/msal-react";
+import { loginRequest } from "../../authConfig";
 
 interface AuthOverlayProps {
   isOpen: boolean;
@@ -54,17 +58,19 @@ const Center = styled(Box)(({ theme }) => ({
   alignItems: "center",
 }));
 
-const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
-  const [isSignedUp, setIsSignedUp] = useState(true);
+const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }): React.JSX.Element => {
+  const { instance } = useMsal();
+  const [isSignUpMode, setIsSignedUp] = useState(false);
 
   const authText = useCallback((bool: boolean) => {
     return bool ? "Sign up" : "Login";
-  }, [isSignedUp]);
+  }, [isSignUpMode]);
 
   const { setUser } = useUser();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { handleAuthSuccess } = useAuthSuccess();
   const { register, handleSubmit, reset } = useForm<CreateUserDto | LoginDto>({
-    defaultValues: isSignedUp
+    defaultValues: isSignUpMode
       ? {
         email: "",
         username: "",
@@ -77,11 +83,11 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
       },
   });
 
-  const handleAuth = useCallback(async (data: CreateUserDto | LoginDto) => {
+  const handleAuth = useCallback(async (data: CreateUserDto | LoginDto): Promise<void> => {
     try {
       setErrorMessage(null);
       let accessToken: string;
-      if (isSignedUp) {
+      if (isSignUpMode) {
         const { email, username, password } = data as CreateUserDto;
         const { data: authResponse } = await authControllerRegister({ body: { email, username, password, nickname: username } });
         accessToken = authResponse!.access_token;
@@ -108,12 +114,55 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
     } catch (error) {
       setErrorMessage((error as ErrorWithBody).body.message);
     }
-  }, [isSignedUp, reset, onClose, setUser]);
+  }, [isSignUpMode, reset, onClose, setUser]);
+
+  const handleGoogleAuth = async (credentialResponse: CredentialResponse): Promise<void> => {
+    try {
+      setErrorMessage(null);
+      if (!credentialResponse.credential) {
+        throw new Error("Aucun token reçu de Google.");
+      }
+
+      const { data: authResponse } = await authControllerLoginWithGoogle({
+        body: { token: credentialResponse.credential }
+      });
+
+      await handleAuthSuccess(authResponse!.access_token);
+    } catch (error) {
+      const msg = (error as ErrorWithBody)?.body?.message || "La connexion avec Google a échoué.";
+      setErrorMessage(msg);
+    }
+  };
+
+  const handleGithubLogin = (): void => {
+    const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
+    const redirectUri = import.meta.env.VITE_GITHUB_REDIRECT_URI;
+    window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=user:email`;
+  };
+
+  const handleMicrosoftLogin = async (): Promise<void> => {
+    try {
+      setErrorMessage(null);
+
+      const response = await instance.loginPopup(loginRequest);
+
+      if (response && response.idToken) {
+        const { data: authResponse } = await authControllerLoginWithMicrosoft({
+          body: { token: response.idToken }
+        });
+
+        await handleAuthSuccess(authResponse!.access_token);
+      }
+    } catch (error) {
+      console.error("Erreur Microsoft:", error);
+      setErrorMessage("La connexion avec Microsoft a échoué ou a été annulée.");
+    }
+  };
 
   return (
     <CustomDialog isOpen={isOpen} setIsOpen={setIsOpen} hideSubmitButton>
       <form onSubmit={handleSubmit(handleAuth)}>
-        <StyledTitle>{authText(isSignedUp)}</StyledTitle>
+        <StyledTitle>{authText(isSignUpMode)}</StyledTitle>
 
         <FieldContainer>
           <label>Email</label>
@@ -122,7 +171,7 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
             data-cy="email-input" />
         </FieldContainer>
 
-        {isSignedUp && <FieldContainer>
+        {isSignUpMode && <FieldContainer>
           <label>Username</label>
           <StyledTextField {...register("username")} />
         </FieldContainer>}
@@ -137,18 +186,50 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
 
         <StyledImportantButton type="submit"
           data-cy="submit-auth">
-          {authText(isSignedUp)}
+          {authText(isSignUpMode)}
         </StyledImportantButton>
 
         {errorMessage && <Typography color="error">{errorMessage}</Typography>}
 
+        <Box sx={{ width: "100%", my: 3 }}>
+          <Divider>
+            <Typography variant="body2" color="textSecondary">OR</Typography>
+          </Divider>
+        </Box>
+
+        <Box display="flex" flexDirection="column" alignItems="center" gap={2} mb={3}>
+
+          <GoogleLogin
+            onSuccess={handleGoogleAuth}
+            onError={() => setErrorMessage("La fenêtre Google a été fermée ou une erreur est survenue.")}
+            theme="filled_black"
+            text={isSignUpMode ? "signup_with" : "signin_with"}
+          />
+
+          <ImportantButton
+            type="button"
+            onClick={handleGithubLogin}
+            sx={{ width: "100%", backgroundColor: "#333", "&:hover": { backgroundColor: "#000" } }}
+          >
+            Continuer avec GitHub
+          </ImportantButton>
+
+          <ImportantButton
+            type="button"
+            onClick={handleMicrosoftLogin}
+            sx={{ width: "100%", mt: 2, backgroundColor: "#00a4ef", "&:hover": { backgroundColor: "#008ad2" } }}
+          >
+            Continuer avec Microsoft
+          </ImportantButton>
+
+        </Box>
+
         <Center>
-          <Typography>OR</Typography>
-          <Typography>{isSignedUp ? "Already have an account ? " : "Don't have an account ? "}
+          <Typography>{isSignUpMode ? "Already have an account ? " : "Don't have an account ? "}
             <Link
               sx={{ cursor: "pointer" }}
               data-cy="toggle-auth-mode"
-              onClick={() => { setIsSignedUp(!isSignedUp); }}>{authText(!isSignedUp)}</Link>
+              onClick={() => { setIsSignedUp(!isSignUpMode); }}>{authText(!isSignUpMode)}</Link>
           </Typography>
         </Center>
       </form>

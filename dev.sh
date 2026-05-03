@@ -1,3 +1,3 @@
 #!/bin/sh
 
-docker-compose -f docker-compose.dev.yml watch
+docker compose -f docker-compose.dev.yml watch

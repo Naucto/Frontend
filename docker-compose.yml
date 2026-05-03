@@ -18,7 +18,8 @@ services:
     environment:
       - BUN_INSTALL_FROZEN=1
     networks:
-      - naucto
+      - naucto:
+          external: true
 
 volumes:
   node_modules: {}

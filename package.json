@@ -13,10 +13,13 @@
     "cypress:run": "cypress run"
   },
   "dependencies": {
+    "@azure/msal-browser": "^5.9.0",
+    "@azure/msal-react": "^5.3.2",
     "@emotion/styled": "^11.14.1",
     "@monaco-editor/react": "^4.7.0",
     "@mui/icons-material": "^7.3.9",
     "@mui/material": "^7.3.9",
+    "@react-oauth/google": "^0.13.5",
     "@types/jest": "^30.0.0",
     "@types/react-beforeunload": "^2.1.5",
     "axios": "^1.13.6",
@@ -46,6 +49,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@hey-api/openapi-ts": "^0.97.0",
     "@stylistic/eslint-plugin": "^5.10.0",
     "@swc/core": "^1.15.18",
     "@swc/jest": "^0.2.39",
