@@ -11,7 +11,7 @@ import UserIcon from "@assets/user.svg?react";
 import { useSnackbar } from "notistack";
 import {
   ProjectExResponseDto,
-  userControllerGetPublicProfile,
+  userPublicControllerGetPublicProfile,
   userControllerUpdateMyProfile,
   userControllerUploadProfilePicture,
 } from "@api";
@@ -68,6 +68,11 @@ const ProfileImage = styled("img")({
   objectFit: "cover",
 });
 
+const Description = styled(Typography)(({ theme }) => ({
+  fontSize: "18px",
+  color: theme.palette.grey[200],
+}));
+
 const ChangePhotoButton = styled(ImportantButton)(({ theme }) => ({
   marginTop: theme.spacing(1),
   width: theme.spacing(18),
@@ -121,14 +126,14 @@ export const Profile = (): JSX.Element => {
   const { value: profile } = useAsync(
     () => {
       if (!profileId) return Promise.reject(new Error("Missing profileId"));
-      return userControllerGetPublicProfile<true>({
+      return userPublicControllerGetPublicProfile<true>({
         throwOnError: true,
         path: { id: Number(profileId) },
       });
     },
     [profileId, refresh]
   );
-  const { register, handleSubmit, reset } = useForm<{ nickname?: string }>();
+  const { register, handleSubmit, reset } = useForm<{ description?: string }>();
 
   const profileData = profile?.data?.data;
   const profileNumericId = useMemo(() => Number(profileId), [profileId]);
@@ -136,7 +141,7 @@ export const Profile = (): JSX.Element => {
   useEffect(() => {
     if (profileData) {
       reset({
-        nickname: profileData.nickname ?? "",
+        description: profileData.nickname ?? "",
       });
       setSelectedFile(null);
     }
@@ -183,7 +188,7 @@ export const Profile = (): JSX.Element => {
     setSelectedFile(file);
   };
 
-  const handleProfileUpdate = async (data: { nickname?: string }): Promise<void> => {
+  const handleProfileUpdate = async (data: { description?: string }): Promise<void> => {
     try {
       if (!isEditable) return;
 
@@ -195,12 +200,12 @@ export const Profile = (): JSX.Element => {
         });
       }
 
-      const currentNickname = profileData?.nickname ?? "";
-      const nextNickname = data.nickname ?? "";
-      if (nextNickname !== currentNickname) {
+      const currentDescription = profileData?.nickname ?? "";
+      const nextDescription = data.description ?? "";
+      if (nextDescription !== currentDescription) {
         await userControllerUpdateMyProfile<true>({
           throwOnError: true,
-          body: { nickname: nextNickname },
+          body: { nickname: nextDescription },
         });
       }
 
@@ -244,9 +249,9 @@ export const Profile = (): JSX.Element => {
               <Editable
                 editing={isEditing}
                 value={profileData?.nickname ?? ""}
-                register={register("nickname")}
+                register={register("description")}
               >
-                <Typography>{profileData?.nickname ?? ""}</Typography>
+                <Description>{profileData?.description ?? ""}</Description>
               </Editable>
 
               {isEditable && isEditing && (

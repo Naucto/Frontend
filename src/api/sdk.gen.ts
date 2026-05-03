@@ -141,12 +141,6 @@ import type {
   UserControllerGetProfilePictureErrors,
   UserControllerGetProfilePictureResponses,
   UserControllerGetProfileResponses,
-  UserControllerGetPublicProfileData,
-  UserControllerGetPublicProfileErrors,
-  UserControllerGetPublicProfilePictureData,
-  UserControllerGetPublicProfilePictureErrors,
-  UserControllerGetPublicProfilePictureResponses,
-  UserControllerGetPublicProfileResponses,
   UserControllerRemoveData,
   UserControllerRemoveErrors,
   UserControllerRemoveResponses,
@@ -159,6 +153,16 @@ import type {
   UserControllerUploadProfilePictureData,
   UserControllerUploadProfilePictureErrors,
   UserControllerUploadProfilePictureResponses,
+  UserPublicControllerGetLikedGamesData,
+  UserPublicControllerGetLikedGamesResponses,
+  UserPublicControllerGetPublicProfileData,
+  UserPublicControllerGetPublicProfileErrors,
+  UserPublicControllerGetPublicProfilePictureData,
+  UserPublicControllerGetPublicProfilePictureErrors,
+  UserPublicControllerGetPublicProfilePictureResponses,
+  UserPublicControllerGetPublicProfileResponses,
+  UserPublicControllerGetPublishedGamesData,
+  UserPublicControllerGetPublishedGamesResponses,
   WorkSessionControllerGetInfoData,
   WorkSessionControllerGetInfoErrors,
   WorkSessionControllerGetInfoResponses,
@@ -1115,25 +1119,6 @@ export const userControllerUpdateMyProfile = <
   });
 
 /**
- * Get a public user profile by ID
- */
-export const userControllerGetPublicProfile = <
-  ThrowOnError extends boolean = false
->(
-  options: Options<UserControllerGetPublicProfileData, ThrowOnError>
-) =>
-  (options.client ?? client).get<
-    UserControllerGetPublicProfileResponses,
-    UserControllerGetPublicProfileErrors,
-    ThrowOnError
-  >({
-    responseType: "json",
-    security: [{ scheme: "bearer", type: "http" }],
-    url: "/users/public/{id}/profile",
-    ...options
-  });
-
-/**
  * Get signed CDN access to a user's profile picture
  */
 export const userControllerGetProfilePicture = <
@@ -1248,21 +1233,77 @@ export const userControllerUpdate = <ThrowOnError extends boolean = false>(
   });
 
 /**
- * Get public CDN URL for a user's profile picture
+ * Get a public user profile by ID
  */
-export const userControllerGetPublicProfilePicture = <
+export const userPublicControllerGetPublicProfile = <
   ThrowOnError extends boolean = false
 >(
-  options: Options<UserControllerGetPublicProfilePictureData, ThrowOnError>
+  options: Options<UserPublicControllerGetPublicProfileData, ThrowOnError>
 ) =>
   (options.client ?? client).get<
-    UserControllerGetPublicProfilePictureResponses,
-    UserControllerGetPublicProfilePictureErrors,
+    UserPublicControllerGetPublicProfileResponses,
+    UserPublicControllerGetPublicProfileErrors,
     ThrowOnError
   >({
     responseType: "json",
-    security: [{ scheme: "bearer", type: "http" }],
+    url: "/users/public/{id}/profile",
+    ...options
+  });
+
+/**
+ * Get public CDN URL for a user's profile picture
+ */
+export const userPublicControllerGetPublicProfilePicture = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<
+    UserPublicControllerGetPublicProfilePictureData,
+    ThrowOnError
+  >
+) =>
+  (options.client ?? client).get<
+    UserPublicControllerGetPublicProfilePictureResponses,
+    UserPublicControllerGetPublicProfilePictureErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
     url: "/users/public/{id}/profile-picture",
+    ...options
+  });
+
+/**
+ * Get a user's liked published games
+ */
+export const userPublicControllerGetLikedGames = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<UserPublicControllerGetLikedGamesData, ThrowOnError>
+) =>
+  (options.client ?? client).get<
+    UserPublicControllerGetLikedGamesResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/users/public/{id}/likes",
+    ...options
+  });
+
+/**
+ * Get a user's published games
+ */
+export const userPublicControllerGetPublishedGames = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<UserPublicControllerGetPublishedGamesData, ThrowOnError>
+) =>
+  (options.client ?? client).get<
+    UserPublicControllerGetPublishedGamesResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/users/public/{id}/published-games",
     ...options
   });
 

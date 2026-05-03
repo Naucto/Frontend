@@ -676,6 +676,10 @@ export type PublicUserProfileDto = {
    */
   nickname?: string | null;
   /**
+   * User profile description
+   */
+  description?: string | null;
+  /**
    * Public CDN URL of the profile image (if any)
    */
   profileImageUrl?: string | null;
@@ -701,6 +705,10 @@ export type UpdateUserProfileDto = {
    * Public nickname / bio displayed on the profile
    */
   nickname?: string;
+  /**
+   * Public profile description displayed on the profile
+   */
+  description?: string;
 };
 
 export type SignedCdnResourceDto = {
@@ -1976,35 +1984,6 @@ export type UserControllerUpdateMyProfileResponses = {
 export type UserControllerUpdateMyProfileResponse =
   UserControllerUpdateMyProfileResponses[keyof UserControllerUpdateMyProfileResponses];
 
-export type UserControllerGetPublicProfileData = {
-  body?: never;
-  path: {
-    /**
-     * User ID
-     */
-    id: number;
-  };
-  query?: never;
-  url: "/users/public/{id}/profile";
-};
-
-export type UserControllerGetPublicProfileErrors = {
-  /**
-   * User not found
-   */
-  404: unknown;
-};
-
-export type UserControllerGetPublicProfileResponses = {
-  /**
-   * Returns the public user profile
-   */
-  200: PublicUserProfileResponseDto;
-};
-
-export type UserControllerGetPublicProfileResponse =
-  UserControllerGetPublicProfileResponses[keyof UserControllerGetPublicProfileResponses];
-
 export type UserControllerGetProfilePictureData = {
   body?: never;
   path: {
@@ -2232,7 +2211,36 @@ export type UserControllerUpdateResponses = {
 export type UserControllerUpdateResponse =
   UserControllerUpdateResponses[keyof UserControllerUpdateResponses];
 
-export type UserControllerGetPublicProfilePictureData = {
+export type UserPublicControllerGetPublicProfileData = {
+  body?: never;
+  path: {
+    /**
+     * User ID
+     */
+    id: number;
+  };
+  query?: never;
+  url: "/users/public/{id}/profile";
+};
+
+export type UserPublicControllerGetPublicProfileErrors = {
+  /**
+   * User not found
+   */
+  404: unknown;
+};
+
+export type UserPublicControllerGetPublicProfileResponses = {
+  /**
+   * Returns the public user profile
+   */
+  200: PublicUserProfileResponseDto;
+};
+
+export type UserPublicControllerGetPublicProfileResponse =
+  UserPublicControllerGetPublicProfileResponses[keyof UserPublicControllerGetPublicProfileResponses];
+
+export type UserPublicControllerGetPublicProfilePictureData = {
   body?: never;
   path: {
     /**
@@ -2244,22 +2252,66 @@ export type UserControllerGetPublicProfilePictureData = {
   url: "/users/public/{id}/profile-picture";
 };
 
-export type UserControllerGetPublicProfilePictureErrors = {
+export type UserPublicControllerGetPublicProfilePictureErrors = {
   /**
    * User not found or has no profile picture
    */
   404: unknown;
 };
 
-export type UserControllerGetPublicProfilePictureResponses = {
+export type UserPublicControllerGetPublicProfilePictureResponses = {
   /**
    * Returns the CDN URL for the profile picture
    */
   200: ImageUrlResponseDto;
 };
 
-export type UserControllerGetPublicProfilePictureResponse =
-  UserControllerGetPublicProfilePictureResponses[keyof UserControllerGetPublicProfilePictureResponses];
+export type UserPublicControllerGetPublicProfilePictureResponse =
+  UserPublicControllerGetPublicProfilePictureResponses[keyof UserPublicControllerGetPublicProfilePictureResponses];
+
+export type UserPublicControllerGetLikedGamesData = {
+  body?: never;
+  path: {
+    /**
+     * User ID
+     */
+    id: number;
+  };
+  query?: never;
+  url: "/users/public/{id}/likes";
+};
+
+export type UserPublicControllerGetLikedGamesResponses = {
+  /**
+   * Returns the list of published games liked by the user
+   */
+  200: Array<ProjectExResponseDto>;
+};
+
+export type UserPublicControllerGetLikedGamesResponse =
+  UserPublicControllerGetLikedGamesResponses[keyof UserPublicControllerGetLikedGamesResponses];
+
+export type UserPublicControllerGetPublishedGamesData = {
+  body?: never;
+  path: {
+    /**
+     * User ID
+     */
+    id: number;
+  };
+  query?: never;
+  url: "/users/public/{id}/published-games";
+};
+
+export type UserPublicControllerGetPublishedGamesResponses = {
+  /**
+   * Returns the list of games published by the user
+   */
+  200: Array<ProjectExResponseDto>;
+};
+
+export type UserPublicControllerGetPublishedGamesResponse =
+  UserPublicControllerGetPublishedGamesResponses[keyof UserPublicControllerGetPublishedGamesResponses];
 
 export type WorkSessionControllerJoinData = {
   body?: never;
