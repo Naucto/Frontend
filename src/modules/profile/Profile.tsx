@@ -10,19 +10,29 @@ import { useForm } from "react-hook-form";
 import UserIcon from "@assets/user.svg?react";
 import { useSnackbar } from "notistack";
 import {
+  ProjectExResponseDto,
   userControllerGetPublicProfile,
   userControllerUpdateMyProfile,
   userControllerUploadProfilePicture,
 } from "@api";
+import { client } from "@api/client.gen";
+import ProjectCard from "@modules/projects/components/ProjectCard";
 
-const ProfileBackground = styled("div")<{ src: string }>(({ src, theme }) => ({
+const ProfileBackground = styled("div")<{ src: string }>(({ src }) => ({
   position: "absolute",
   width: "100%",
-  height: theme.spacing(54),
+  height: "100%",
   backgroundImage: `url(${src})`,
   backgroundSize: "cover",
   backgroundPosition: "center",
   zIndex: 0,
+}));
+
+const ProfileHeader = styled("div")(({ theme }) => ({
+  position: "relative",
+  width: "100%",
+  height: theme.spacing(56),
+  overflow: "hidden",
 }));
 
 const ProfileInfo = styled(Box)(({ theme }) => ({
@@ -77,6 +87,27 @@ const EditProfileButton = styled(ImportantButton)(({ theme }) => ({
   fontSize: "16px"
 }));
 
+const Section = styled(Box)(({ theme }) => ({
+  position: "relative",
+  zIndex: 1,
+  paddingLeft: theme.spacing(14),
+  paddingRight: theme.spacing(14),
+  paddingTop: theme.spacing(2),
+}));
+
+const HorizontalScroller = styled(Box)(({ theme }) => ({
+  display: "flex",
+  flexDirection: "row",
+  gap: theme.spacing(2),
+  overflowX: "auto",
+  paddingBottom: theme.spacing(1),
+}));
+
+const ProjectCardWrapper = styled(Box)(() => ({
+  flex: "0 0 auto",
+  width: 360,
+}));
+
 export const Profile = (): JSX.Element => {
   const { profileId } = useParams<{ profileId: string }>();
   const userId = Number(LocalStorageManager.getUserId());
@@ -100,6 +131,7 @@ export const Profile = (): JSX.Element => {
   const { register, handleSubmit, reset } = useForm<{ nickname?: string }>();
 
   const profileData = profile?.data?.data;
+  const profileNumericId = useMemo(() => Number(profileId), [profileId]);
 
   useEffect(() => {
     if (profileData) {
@@ -109,6 +141,32 @@ export const Profile = (): JSX.Element => {
       setSelectedFile(null);
     }
   }, [profileData, reset]);
+
+  const { value: likedGames } = useAsync(
+    async () => {
+      if (!profileId || Number.isNaN(profileNumericId)) return [];
+      const { data } = await client.get({
+        url: "/users/public/{id}/likes",
+        path: { id: profileNumericId },
+        responseType: "json",
+      });
+      return (data ?? []) as ProjectExResponseDto[];
+    },
+    [profileId, profileNumericId, refresh]
+  );
+
+  const { value: publishedGames } = useAsync(
+    async () => {
+      if (!profileId || Number.isNaN(profileNumericId)) return [];
+      const { data } = await client.get({
+        url: "/users/public/{id}/published-games",
+        path: { id: profileNumericId },
+        responseType: "json",
+      });
+      return (data ?? []) as ProjectExResponseDto[];
+    },
+    [profileId, profileNumericId, refresh]
+  );
 
   const previewUrl = useMemo(() => {
     if (!selectedFile) return null;
@@ -169,53 +227,81 @@ export const Profile = (): JSX.Element => {
   return (
     <>
       <form onSubmit={handleSubmit(handleProfileUpdate)}>
-        <ProfileBackground src="https://png.pngtree.com/thumb_back/fh260/background/20250512/pngtree-blue-gradient-soft-background-vector-image_17280771.jpg" />
-        <ProfileInfo>
-          <ProfilePicture>
-            {profileImageUrl ? (
-              <ProfileImage src={profileImageUrl} alt="Profile" />
-            ) : (
-              <UserIcon width={32} height={32} />
-            )}
-          </ProfilePicture>
-          <TextInfo>
-            <Typography variant="h5">
-              {profileData?.username ?? ""}
-            </Typography>
-            <Editable
-              editing={isEditing}
-              value={profileData?.nickname ?? ""}
-              register={register("nickname")}
-            >
-              <Typography>{profileData?.nickname ?? ""}</Typography>
-            </Editable>
+        <ProfileHeader>
+          <ProfileBackground src="https://png.pngtree.com/thumb_back/fh260/background/20250512/pngtree-blue-gradient-soft-background-vector-image_17280771.jpg" />
+          <ProfileInfo>
+            <ProfilePicture>
+              {profileImageUrl ? (
+                <ProfileImage src={profileImageUrl} alt="Profile" />
+              ) : (
+                <UserIcon width={32} height={32} />
+              )}
+            </ProfilePicture>
+            <TextInfo>
+              <Typography variant="h5">
+                {profileData?.username ?? ""}
+              </Typography>
+              <Editable
+                editing={isEditing}
+                value={profileData?.nickname ?? ""}
+                register={register("nickname")}
+              >
+                <Typography>{profileData?.nickname ?? ""}</Typography>
+              </Editable>
 
-            {isEditable && isEditing && (
-              <>
-                <ChangePhotoButton
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  Change photo
-                </ChangePhotoButton>
+              {isEditable && isEditing && (
+                <>
+                  <ChangePhotoButton
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    Change photo
+                  </ChangePhotoButton>
 
-                <input
-                  ref={fileInputRef}
-                  hidden
-                  accept="image/png,image/jpeg,image/webp"
-                  type="file"
-                  onChange={handleFileChange}
-                />
-              </>
-            )}
-            {isEditable && (
-              <EditProfileButton type="button" onClick={handleEditButtonClick}>
-                {isEditing ? "Cancel" : "Edit Profile"}
-              </EditProfileButton>
-            )}
-            {isEditable && isEditing && <EditProfileButton type="submit">Submit</EditProfileButton>}
-          </TextInfo>
-        </ProfileInfo>
+                  <input
+                    ref={fileInputRef}
+                    hidden
+                    accept="image/png,image/jpeg,image/webp"
+                    type="file"
+                    onChange={handleFileChange}
+                  />
+                </>
+              )}
+              {isEditable && (
+                <EditProfileButton type="button" onClick={handleEditButtonClick}>
+                  {isEditing ? "Cancel" : "Edit Profile"}
+                </EditProfileButton>
+              )}
+              {isEditable && isEditing && <EditProfileButton type="submit">Submit</EditProfileButton>}
+            </TextInfo>
+          </ProfileInfo>
+        </ProfileHeader>
+
+        <Section>
+          <Typography variant="h6" color="white">
+            Published games
+          </Typography>
+          <HorizontalScroller>
+            {(publishedGames ?? []).map((game) => (
+              <ProjectCardWrapper key={game.id}>
+                <ProjectCard project={game} isPlayable />
+              </ProjectCardWrapper>
+            ))}
+          </HorizontalScroller>
+        </Section>
+
+        <Section>
+          <Typography variant="h6" color="white">
+            Liked games
+          </Typography>
+          <HorizontalScroller>
+            {(likedGames ?? []).map((game) => (
+              <ProjectCardWrapper key={game.id}>
+                <ProjectCard project={game} isPlayable />
+              </ProjectCardWrapper>
+            ))}
+          </HorizontalScroller>
+        </Section>
       </form>
     </>
   );
