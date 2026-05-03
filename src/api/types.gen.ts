@@ -4,74 +4,6 @@ export type ClientOptions = {
   baseURL: string;
 };
 
-export type ProjectResponseDto = {
-  /**
-   * The unique identifier of the project
-   */
-  id: number;
-  /**
-   * The name of the project
-   */
-  name: string;
-  /**
-   * A short description of the project
-   */
-  shortDesc: string;
-  /**
-   * A detailed description of the project
-   */
-  longDesc: {
-    [key: string]: unknown;
-  } | null;
-  /**
-   * URL to the project icon
-   */
-  iconUrl: {
-    [key: string]: unknown;
-  } | null;
-  /**
-   * The current status of the project
-   */
-  status: "IN_PROGRESS" | "COMPLETED" | "ARCHIVED";
-  /**
-   * The monetization strategy for this project
-   */
-  monetization: "NONE" | "ADS" | "PAID";
-  /**
-   * The price of the project, if applicable
-   */
-  price: {
-    [key: string]: unknown;
-  } | null;
-  /**
-   * The ID of the user who owns this project
-   */
-  userId: number;
-  /**
-   * The date and time when the project was created
-   */
-  createdAt: string;
-  /**
-   * The number of unique players who have interacted with this project
-   */
-  uniquePlayers: number;
-  /**
-   * The number of currently active players in this project
-   */
-  activePlayers: number;
-  /**
-   * The number of likes received by the project
-   */
-  likes: number;
-};
-
-export type SignedUrlResponseDto = {
-  /**
-   * The signed CloudFront URL for accessing the protected file
-   */
-  signedUrl: string;
-};
-
 export type UserBasicInfoDto = {
   /**
    * The unique identifier of the user
@@ -103,15 +35,15 @@ export type ProjectExResponseDto = {
   /**
    * A detailed description of the project
    */
-  longDesc: {
-    [key: string]: unknown;
-  } | null;
+  longDesc: string | null;
+  /**
+   * Tags associated with the project
+   */
+  tags: Array<string>;
   /**
    * URL to the project icon
    */
-  iconUrl: {
-    [key: string]: unknown;
-  } | null;
+  iconUrl: string | null;
   /**
    * The current status of the project
    */
@@ -123,9 +55,203 @@ export type ProjectExResponseDto = {
   /**
    * The price of the project, if applicable
    */
-  price: {
-    [key: string]: unknown;
-  } | null;
+  price: number | null;
+  /**
+   * The ID of the user who owns this project
+   */
+  userId: number;
+  /**
+   * The date and time when the project was created
+   */
+  createdAt: string;
+  /**
+   * The date and time when the project was last updated
+   */
+  updatedAt: string;
+  /**
+   * The date and time when the project was last published
+   */
+  publishedAt: string | null;
+  /**
+   * The number of times players opened this game's play page
+   */
+  viewCount: number;
+  /**
+   * The number of unique players who have interacted with this project
+   */
+  uniquePlayers: number;
+  /**
+   * The number of currently active players in this project
+   */
+  activePlayers: number;
+  /**
+   * The number of likes received by the project
+   */
+  likes: number;
+  
+  /**
+   * The number of comments on the project
+   */
+  commentCount?: number;
+
+  /**
+   * The number of forks created from this project
+   */
+  forkCount?: number;
+
+  /**
+   * The ID of the project this was forked from, if any
+   */
+  forkedFromId?: number | null;
+  /**
+   * The users collaborating on this project
+   */
+  collaborators: Array<UserBasicInfoDto>;
+  /**
+   * The creator of this project
+   */
+  creator: UserBasicInfoDto;
+};
+
+export type SignedUrlResponseDto = {
+  /**
+   * The signed CloudFront URL for accessing the protected file
+   */
+  signedUrl: string;
+};
+
+export type ProjectResponseDto = {
+  /**
+   * The unique identifier of the project
+   */
+  id: number;
+  /**
+   * The name of the project
+   */
+  name: string;
+  /**
+   * A short description of the project
+   */
+  shortDesc: string;
+  /**
+   * A detailed description of the project
+   */
+  longDesc: string | null;
+  /**
+   * Tags associated with the project
+   */
+  tags: Array<string>;
+  /**
+   * URL to the project icon
+   */
+  iconUrl: string | null;
+  /**
+   * The current status of the project
+   */
+  status: "IN_PROGRESS" | "COMPLETED" | "ARCHIVED";
+  /**
+   * The monetization strategy for this project
+   */
+  monetization: "NONE" | "ADS" | "PAID";
+  /**
+   * The price of the project, if applicable
+   */
+  price: number | null;
+  /**
+   * The ID of the user who owns this project
+   */
+  userId: number;
+  /**
+   * The date and time when the project was created
+   */
+  createdAt: string;
+  /**
+   * The date and time when the project was last updated
+   */
+  updatedAt: string;
+  /**
+   * The date and time when the project was last published
+   */
+  publishedAt: string | null;
+  /**
+   * The number of times players opened this game's play page
+   */
+  viewCount: number;
+  /**
+   * The number of unique players who have interacted with this project
+   */
+  uniquePlayers: number;
+  /**
+   * The number of currently active players in this project
+   */
+  activePlayers: number;
+  /**
+   * The number of likes received by the project
+   */
+  likes: number;
+  /**
+   * The number of comments on the project
+   */
+  commentCount?: number;
+
+  /**
+   * The number of forks created from this project
+   */
+  forkCount?: number;
+};
+
+export type CreateProjectDto = {
+  /**
+   * The name of the project
+   */
+  name: string;
+  /**
+   * A short description of the project
+   */
+  shortDesc: string;
+  /**
+   * URL to the project icon
+   */
+  iconUrl?: string;
+  /**
+   * Tags attached to the project
+   */
+  tags?: Array<string>;
+};
+
+export type ForkProjectResponseDto = {
+  /**
+   * The unique identifier of the project
+   */
+  id: number;
+  /**
+   * The name of the project
+   */
+  name: string;
+  /**
+   * A short description of the project
+   */
+  shortDesc: string;
+  /**
+   * A detailed description of the project
+   */
+  longDesc: string | null;
+  /**
+   * URL to the project icon
+   */
+  iconUrl: string | null;
+  /**
+   * The current status of the project
+   */
+  status: "IN_PROGRESS" | "COMPLETED" | "ARCHIVED";
+  /**
+   * The monetization strategy for this project
+   */
+  monetization: "NONE" | "ADS" | "PAID";
+  /**
+   * The price of the project, if applicable
+   */
+  price: number | null;
   /**
    * The ID of the user who owns this project
    */
@@ -147,6 +273,10 @@ export type ProjectExResponseDto = {
    */
   likes: number;
   /**
+   * The ID of the project this was forked from, if any
+   */
+  forkedFromId?: number | null;
+  /**
    * The users collaborating on this project
    */
   collaborators: Array<UserBasicInfoDto>;
@@ -154,21 +284,6 @@ export type ProjectExResponseDto = {
    * The creator of this project
    */
   creator: UserBasicInfoDto;
-};
-
-export type CreateProjectDto = {
-  /**
-   * The name of the project
-   */
-  name: string;
-  /**
-   * A short description of the project
-   */
-  shortDesc: string;
-  /**
-   * URL to the project icon
-   */
-  iconUrl?: string;
 };
 
 export type UpdateProjectDto = {
@@ -186,6 +301,10 @@ export type UpdateProjectDto = {
   longDesc?: {
     [key: string]: unknown;
   };
+  /**
+   * Tags attached to the project
+   */
+  tags?: Array<string>;
   /**
    * URL to the project icon
    */
@@ -234,35 +353,29 @@ export type RemoveCollaboratorDto = {
   email?: string;
 };
 
-export type SignedCdnResourceDto = {
+export type ImageUrlResponseDto = {
   /**
-   * The CDN URL for the resource (requires signed cookies)
+   * The public CDN URL for the image
    */
-  resourceUrl: string;
-  /**
-   * Signed Edge cookies (also set as HTTP-only cookies)
-   */
-  cookies: {
-    [key: string]: unknown;
-  };
+  url: string;
 };
 
-export type UploadFileDto = {
+export type LikeResponseDto = {
   /**
-   * File to upload
+   * Total number of likes on the project
    */
-  file: Blob | File;
+  likes: number;
   /**
-   * Optional metadata for the file
+   * Whether the current user has liked this project
    */
-  metadata?: string;
+  liked: boolean;
 };
 
-export type DeleteS3FilesDto = {
+export type ViewResponseDto = {
   /**
-   * List of object keys to delete
+   * The number of play opens registered for the project
    */
-  keys: Array<string>;
+  viewCount: number;
 };
 
 export type LookupHostsResponseDtoHost = {
@@ -299,7 +412,7 @@ export type WebRtcOfferPeerOpts = {
 };
 
 export type WebRtcOfferDto = {
-  signaling: string;
+  signaling: Array<string>;
   maxConns: number;
   peerOpts: WebRtcOfferPeerOpts;
 };
@@ -326,6 +439,39 @@ export type JoinHostResponseDto = {
 
 export type LeaveHostRequestDto = {
   sessionUuid: string;
+};
+
+export type CommentAuthorDto = {
+  id: number;
+  username: string;
+  nickname?: string | null;
+};
+
+export type CommentResponseDto = {
+  id: number;
+  content: string;
+  createdAt: string;
+  projectId: number;
+  author: CommentAuthorDto;
+  deleted?: boolean;
+  /**
+   * Replies to this comment (only for top-level comments)
+   */
+  replies?: Array<CommentResponseDto>;
+};
+
+export type PaginatedCommentsResponseDto = {
+  comments: Array<CommentResponseDto>;
+  total: number;
+  page: number;
+  limit: number;
+};
+
+export type CreateCommentDto = {
+  /**
+   * The content of the comment
+   */
+  content: string;
 };
 
 export type LoginDto = {
@@ -492,6 +638,19 @@ export type UserProfileResponseDto = {
   message: string;
 };
 
+export type SignedCdnResourceDto = {
+  /**
+   * The CDN URL for the resource (requires signed cookies)
+   */
+  resourceUrl: string;
+  /**
+   * Signed Edge cookies (also set as HTTP-only cookies)
+   */
+  cookies: {
+    [key: string]: unknown;
+  };
+};
+
 export type UpdateUserDto = {
   /**
    * User email address
@@ -511,6 +670,21 @@ export type UpdateUserDto = {
   password?: string;
 };
 
+export type JoinWorkSessionDto = {
+  /**
+   * The unique room ID for the work session
+   */
+  roomId: string;
+  /**
+   * The user ID of the session's host
+   */
+  hostId: number;
+  /**
+   * The WebRTC offer given to the client
+   */
+  webrtcOffer: WebRtcOfferDto;
+};
+
 export type KickWorkSessionDto = {
   /**
    * The ID of the user participating in the work session
@@ -526,7 +700,7 @@ export type FetchWorkSessionDto = {
   /**
    * The ID of the session's host
    */
-  host: number;
+  hostId: number;
   /**
    * The ID of the project this work session belongs to
    */
@@ -539,10 +713,6 @@ export type FetchWorkSessionDto = {
    * The ID of the room for this work session
    */
   roomId: string;
-  /**
-   * The password for the room of this work session
-   */
-  roomPassword: string;
 };
 
 export type ProjectControllerGetAllReleasesData = {
@@ -556,7 +726,7 @@ export type ProjectControllerGetAllReleasesResponses = {
   /**
    * A JSON array of projects with collaborators and creator information
    */
-  200: Array<ProjectResponseDto>;
+  200: Array<ProjectExResponseDto>;
 };
 
 export type ProjectControllerGetAllReleasesResponse =
@@ -573,10 +743,13 @@ export type ProjectControllerGetReleaseData = {
 
 export type ProjectControllerGetReleaseResponses = {
   /**
-   * Project release file
+   * Project release metadata
    */
-  200: unknown;
+  200: ProjectExResponseDto;
 };
+
+export type ProjectControllerGetReleaseResponse =
+  ProjectControllerGetReleaseResponses[keyof ProjectControllerGetReleaseResponses];
 
 export type ProjectControllerGetReleaseContentData = {
   body?: never;
@@ -767,6 +940,39 @@ export type ProjectControllerUpdateResponses = {
 export type ProjectControllerUpdateResponse =
   ProjectControllerUpdateResponses[keyof ProjectControllerUpdateResponses];
 
+export type ProjectControllerForkData = {
+  body?: never;
+  path: {
+    /**
+     * Numeric ID of the published project to fork
+     */
+    id: number;
+  };
+  query?: never;
+  url: "/projects/{id}/fork";
+};
+
+export type ProjectControllerForkErrors = {
+  /**
+   * Project is not published
+   */
+  400: unknown;
+  /**
+   * Project not found
+   */
+  404: unknown;
+};
+
+export type ProjectControllerForkResponses = {
+  /**
+   * Forked project created successfully
+   */
+  201: ForkProjectResponseDto;
+};
+
+export type ProjectControllerForkResponse =
+  ProjectControllerForkResponses[keyof ProjectControllerForkResponses];
+
 export type ProjectControllerAddCollaboratorData = {
   body: AddCollaboratorDto;
   path: {
@@ -888,16 +1094,20 @@ export type ProjectControllerGetProjectImageData = {
 
 export type ProjectControllerGetProjectImageErrors = {
   /**
-   * Image not found
+   * Forbidden
    */
-  404: unknown;
+  403: unknown;
 };
 
 export type ProjectControllerGetProjectImageResponses = {
   /**
-   * Signed cookies and CDN resource URL
+   * CDN URL for the project image
    */
-  200: SignedCdnResourceDto;
+  200: ImageUrlResponseDto;
+  /**
+   * Project has no image
+   */
+  204: void;
 };
 
 export type ProjectControllerGetProjectImageResponse =
@@ -906,7 +1116,7 @@ export type ProjectControllerGetProjectImageResponse =
 export type ProjectControllerUploadProjectImageData = {
   body: {
     /**
-     * Project image file
+     * Project image file (JPEG, PNG, GIF, WebP)
      */
     file?: Blob | File;
   };
@@ -922,6 +1132,10 @@ export type ProjectControllerUploadProjectImageErrors = {
    * Forbidden
    */
   403: unknown;
+  /**
+   * Invalid file type or size
+   */
+  422: unknown;
 };
 
 export type ProjectControllerUploadProjectImageResponses = {
@@ -930,6 +1144,35 @@ export type ProjectControllerUploadProjectImageResponses = {
    */
   201: unknown;
 };
+
+export type ProjectControllerGetPublishedProjectImageData = {
+  body?: never;
+  path: {
+    /**
+     * Project ID
+     */
+    id: number;
+  };
+  query?: never;
+  url: "/projects/public/{id}/image";
+};
+
+export type ProjectControllerGetPublishedProjectImageErrors = {
+  /**
+   * Project not found, not published, or has no image
+   */
+  404: unknown;
+};
+
+export type ProjectControllerGetPublishedProjectImageResponses = {
+  /**
+   * Returns the CDN URL for the project image
+   */
+  200: ImageUrlResponseDto;
+};
+
+export type ProjectControllerGetPublishedProjectImageResponse =
+  ProjectControllerGetPublishedProjectImageResponses[keyof ProjectControllerGetPublishedProjectImageResponses];
 
 export type ProjectControllerFetchProjectContentData = {
   body?: never;
@@ -1157,364 +1400,106 @@ export type ProjectControllerGetCheckpointResponses = {
 export type ProjectControllerGetCheckpointResponse =
   ProjectControllerGetCheckpointResponses[keyof ProjectControllerGetCheckpointResponses];
 
-export type S3ControllerListBucketsData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: "/s3/list";
-};
-
-export type S3ControllerListBucketsErrors = {
-  /**
-   * Server error
-   */
-  500: unknown;
-};
-
-export type S3ControllerListBucketsResponses = {
-  /**
-   * Returns a list of all buckets
-   */
-  200: unknown;
-};
-
-export type S3ControllerListObjectsData = {
+export type ProjectControllerUnlikeProjectData = {
   body?: never;
   path: {
-    /**
-     * Name of the bucket
-     */
-    bucketName: string;
+    id: string;
   };
   query?: never;
-  url: "/s3/list/{bucketName}";
+  url: "/projects/releases/{id}/like";
 };
 
-export type S3ControllerListObjectsErrors = {
+export type ProjectControllerUnlikeProjectResponses = {
   /**
-   * Server error
+   * Like removed
    */
-  500: unknown;
+  200: LikeResponseDto;
 };
 
-export type S3ControllerListObjectsResponses = {
-  /**
-   * Returns a list of objects in the bucket
-   */
-  200: unknown;
-};
+export type ProjectControllerUnlikeProjectResponse =
+  ProjectControllerUnlikeProjectResponses[keyof ProjectControllerUnlikeProjectResponses];
 
-export type S3ControllerGetSignedDownloadUrlData = {
+export type ProjectControllerLikeProjectData = {
   body?: never;
   path: {
-    /**
-     * Object key
-     */
-    key: string;
-    /**
-     * Name of the bucket
-     */
-    bucketName: string;
+    id: string;
   };
   query?: never;
-  url: "/s3/download-url/{bucketName}/{key}";
+  url: "/projects/releases/{id}/like";
 };
 
-export type S3ControllerGetSignedDownloadUrlErrors = {
+export type ProjectControllerLikeProjectResponses = {
   /**
-   * Server error
+   * Like status
    */
-  500: unknown;
+  200: LikeResponseDto;
 };
 
-export type S3ControllerGetSignedDownloadUrlResponses = {
-  /**
-   * Returns a signed URL for downloading the file
-   */
-  200: unknown;
-};
+export type ProjectControllerLikeProjectResponse =
+  ProjectControllerLikeProjectResponses[keyof ProjectControllerLikeProjectResponses];
 
-export type S3ControllerDownloadFileData = {
+export type ProjectControllerGetLikeStatusData = {
   body?: never;
   path: {
-    /**
-     * Object key
-     */
-    key: string;
-    /**
-     * Name of the bucket
-     */
-    bucketName: string;
+    id: string;
   };
   query?: never;
-  url: "/s3/download/{bucketName}/{key}";
+  url: "/projects/releases/{id}/like-status";
 };
 
-export type S3ControllerDownloadFileErrors = {
+export type ProjectControllerGetLikeStatusResponses = {
   /**
-   * Server error
+   * Like status
    */
-  500: unknown;
+  200: LikeResponseDto;
 };
 
-export type S3ControllerDownloadFileResponses = {
-  /**
-   * File stream
-   */
-  200: unknown;
-};
+export type ProjectControllerGetLikeStatusResponse =
+  ProjectControllerGetLikeStatusResponses[keyof ProjectControllerGetLikeStatusResponses];
 
-export type S3ControllerUploadFileData = {
-  body: UploadFileDto;
+export type ProjectControllerRegisterReleaseViewData = {
+  body?: never;
   path: {
-    /**
-     * Name of the bucket
-     */
-    bucketName: string;
+    id: string;
   };
   query?: never;
-  url: "/s3/upload/{bucketName}";
+  url: "/projects/releases/{id}/view";
 };
 
-export type S3ControllerUploadFileErrors = {
+export type ProjectControllerRegisterReleaseViewResponses = {
   /**
-   * No file provided
+   * Updated view count
+   */
+  200: ViewResponseDto;
+};
+
+export type ProjectControllerRegisterReleaseViewResponse =
+  ProjectControllerRegisterReleaseViewResponses[keyof ProjectControllerRegisterReleaseViewResponses];
+
+export type ProjectControllerUpdateReleaseData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/projects/{id}/update-release";
+};
+
+export type ProjectControllerUpdateReleaseErrors = {
+  /**
+   * Project is not published
    */
   400: unknown;
   /**
-   * Server error
+   * Forbidden
    */
-  500: unknown;
+  403: unknown;
 };
 
-export type S3ControllerUploadFileResponses = {
+export type ProjectControllerUpdateReleaseResponses = {
   /**
-   * File uploaded successfully
+   * Release updated successfully
    */
-  200: unknown;
-};
-
-export type S3ControllerDeleteFileData = {
-  body?: never;
-  path: {
-    /**
-     * Object key
-     */
-    key: string;
-    /**
-     * Name of the bucket
-     */
-    bucketName: string;
-  };
-  query?: never;
-  url: "/s3/delete/{bucketName}/{key}";
-};
-
-export type S3ControllerDeleteFileErrors = {
-  /**
-   * Server error
-   */
-  500: unknown;
-};
-
-export type S3ControllerDeleteFileResponses = {
-  /**
-   * File deleted successfully
-   */
-  200: unknown;
-};
-
-export type S3ControllerDeleteFilesData = {
-  body: DeleteS3FilesDto;
-  path: {
-    /**
-     * Name of the bucket
-     */
-    bucketName: string;
-  };
-  query?: never;
-  url: "/s3/delete-multiple/{bucketName}";
-};
-
-export type S3ControllerDeleteFilesErrors = {
-  /**
-   * Server error
-   */
-  500: unknown;
-};
-
-export type S3ControllerDeleteFilesResponses = {
-  /**
-   * Files deleted successfully
-   */
-  200: unknown;
-};
-
-export type S3ControllerDeleteBucketData = {
-  body?: never;
-  path: {
-    /**
-     * Name of the bucket
-     */
-    bucketName: string;
-  };
-  query?: never;
-  url: "/s3/bucket/{bucketName}";
-};
-
-export type S3ControllerDeleteBucketErrors = {
-  /**
-   * Server error
-   */
-  500: unknown;
-};
-
-export type S3ControllerDeleteBucketResponses = {
-  /**
-   * Bucket deleted successfully
-   */
-  200: unknown;
-};
-
-export type S3ControllerCreateBucketData = {
-  body?: never;
-  path: {
-    /**
-     * Name of the bucket
-     */
-    bucketName: string;
-  };
-  query?: never;
-  url: "/s3/bucket/{bucketName}";
-};
-
-export type S3ControllerCreateBucketErrors = {
-  /**
-   * Server error
-   */
-  500: unknown;
-};
-
-export type S3ControllerCreateBucketResponses = {
-  /**
-   * Bucket created successfully
-   */
-  201: unknown;
-};
-
-export type S3ControllerApplyPublicReadPolicyData = {
-  body: {
-    /**
-     * Target bucket name (optional, defaults to S3_BUCKET_NAME)
-     */
-    bucketName?: string;
-    /**
-     * Object key prefix to expose publicly
-     */
-    prefix?: string;
-  };
-  path?: never;
-  query?: never;
-  url: "/s3/policy/public-read";
-};
-
-export type S3ControllerApplyPublicReadPolicyResponses = {
-  /**
-   * Policy applied successfully
-   */
-  201: unknown;
-};
-
-export type S3ControllerGetObjectMetadataData = {
-  body?: never;
-  path: {
-    /**
-     * Object key
-     */
-    key: string;
-    /**
-     * Name of the bucket
-     */
-    bucketName: string;
-  };
-  query?: never;
-  url: "/s3/metadata/{bucketName}/{key}";
-};
-
-export type S3ControllerGetObjectMetadataErrors = {
-  /**
-   * Server error
-   */
-  500: unknown;
-};
-
-export type S3ControllerGetObjectMetadataResponses = {
-  /**
-   * Returns object metadata
-   */
-  200: unknown;
-};
-
-export type S3ControllerGetCdnUrlData = {
-  body?: never;
-  path: {
-    /**
-     * Object key
-     */
-    key: string;
-  };
-  query?: never;
-  url: "/s3/cdn-url/{key}";
-};
-
-export type S3ControllerGetCdnUrlErrors = {
-  /**
-   * Server error
-   */
-  500: unknown;
-};
-
-export type S3ControllerGetCdnUrlResponses = {
-  /**
-   * Returns the CDN URL
-   */
-  200: unknown;
-};
-
-export type S3ControllerGetSignedCookiesData = {
-  body?: never;
-  path: {
-    /**
-     * Object key (relative path in CDN)
-     */
-    key: string;
-  };
-  query?: never;
-  url: "/s3/signed-cookies/{key}";
-};
-
-export type S3ControllerGetSignedCookiesErrors = {
-  /**
-   * Server error
-   */
-  500: unknown;
-};
-
-export type S3ControllerGetSignedCookiesResponses = {
-  /**
-   * Returns signed cookies
-   */
-  200: unknown;
-};
-
-export type S3ControllerSetSignedCookiesData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: "/s3/signed-cookies";
-};
-
-export type S3ControllerSetSignedCookiesResponses = {
   200: unknown;
 };
 
@@ -1647,6 +1632,108 @@ export type MultiplayerControllerLeaveHostResponses = {
    */
   200: unknown;
 };
+
+export type CommentControllerGetCommentsData = {
+  body?: never;
+  path: {
+    projectId: number;
+  };
+  query?: {
+    page?: number;
+    limit?: number;
+    sort?: "newest" | "oldest";
+  };
+  url: "/projects/{projectId}/comments";
+};
+
+export type CommentControllerGetCommentsResponses = {
+  /**
+   * Paginated list of comments
+   */
+  200: PaginatedCommentsResponseDto;
+};
+
+export type CommentControllerGetCommentsResponse =
+  CommentControllerGetCommentsResponses[keyof CommentControllerGetCommentsResponses];
+
+export type CommentControllerCreateCommentData = {
+  body: CreateCommentDto;
+  path: {
+    projectId: number;
+  };
+  query?: never;
+  url: "/projects/{projectId}/comments";
+};
+
+export type CommentControllerCreateCommentResponses = {
+  /**
+   * Comment created
+   */
+  201: CommentResponseDto;
+};
+
+export type CommentControllerCreateCommentResponse =
+  CommentControllerCreateCommentResponses[keyof CommentControllerCreateCommentResponses];
+
+export type CommentControllerCreateReplyData = {
+  body: CreateCommentDto;
+  path: {
+    projectId: number;
+    commentId: number;
+  };
+  query?: never;
+  url: "/projects/{projectId}/comments/{commentId}/reply";
+};
+
+export type CommentControllerCreateReplyResponses = {
+  /**
+   * Reply created
+   */
+  201: CommentResponseDto;
+};
+
+export type CommentControllerCreateReplyResponse =
+  CommentControllerCreateReplyResponses[keyof CommentControllerCreateReplyResponses];
+
+export type CommentControllerDeleteCommentData = {
+  body?: never;
+  path: {
+    projectId: number;
+    commentId: number;
+  };
+  query?: never;
+  url: "/projects/{projectId}/comments/{commentId}";
+};
+
+export type CommentControllerDeleteCommentResponses = {
+  /**
+   * Comment deleted
+   */
+  204: void;
+};
+
+export type CommentControllerDeleteCommentResponse =
+  CommentControllerDeleteCommentResponses[keyof CommentControllerDeleteCommentResponses];
+
+export type CommentControllerUpdateCommentData = {
+  body: CreateCommentDto;
+  path: {
+    commentId: number;
+    projectId: number;
+  };
+  query?: never;
+  url: "/projects/{projectId}/comments/{commentId}";
+};
+
+export type CommentControllerUpdateCommentResponses = {
+  /**
+   * Comment updated
+   */
+  200: CommentResponseDto;
+};
+
+export type CommentControllerUpdateCommentResponse =
+  CommentControllerUpdateCommentResponses[keyof CommentControllerUpdateCommentResponses];
 
 export type AuthControllerLoginData = {
   body: LoginDto;
@@ -2027,6 +2114,35 @@ export type UserControllerUpdateResponses = {
 export type UserControllerUpdateResponse =
   UserControllerUpdateResponses[keyof UserControllerUpdateResponses];
 
+export type UserControllerGetPublicProfilePictureData = {
+  body?: never;
+  path: {
+    /**
+     * User ID
+     */
+    id: number;
+  };
+  query?: never;
+  url: "/users/public/{id}/profile-picture";
+};
+
+export type UserControllerGetPublicProfilePictureErrors = {
+  /**
+   * User not found or has no profile picture
+   */
+  404: unknown;
+};
+
+export type UserControllerGetPublicProfilePictureResponses = {
+  /**
+   * Returns the CDN URL for the profile picture
+   */
+  200: ImageUrlResponseDto;
+};
+
+export type UserControllerGetPublicProfilePictureResponse =
+  UserControllerGetPublicProfilePictureResponses[keyof UserControllerGetPublicProfilePictureResponses];
+
 export type WorkSessionControllerJoinData = {
   body?: never;
   path: {
@@ -2050,8 +2166,11 @@ export type WorkSessionControllerJoinResponses = {
   /**
    * The work session has been successfully created.
    */
-  201: unknown;
+  201: JoinWorkSessionDto;
 };
+
+export type WorkSessionControllerJoinResponse =
+  WorkSessionControllerJoinResponses[keyof WorkSessionControllerJoinResponses];
 
 export type WorkSessionControllerLeaveData = {
   body?: never;

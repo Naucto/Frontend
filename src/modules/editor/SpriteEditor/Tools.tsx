@@ -1,27 +1,37 @@
-import { DrawTool, CanvasHandler } from "@modules/editor/SpriteEditor/SpriteEditor";
+import { DrawTool, CanvasHandler, PreviewOverlay } from "@modules/editor/SpriteEditor/SpriteEditor";
 import React, { useEffect, useRef, useState } from "react";
 import { SpriteProvider } from "@providers/editors/SpriteProvider";
-import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
+import { styled } from "@mui/material";
+
+export type SpritePixelAccessor = Pick<SpriteProvider, "isPixelInBounds" | "getPixel" | "setPixel">;
+
+const Container = styled("div")(() => ({
+  display: "flex",
+  gap: 8,
+  alignItems: "center",
+}));
+
+const ToolButton = styled("button")(({ theme }) => ({
+  padding: theme.spacing(0.5, 1),
+  width: theme.spacing(6),
+  height: theme.spacing(6),
+}));
 
 const Tools: React.FC<{
   color: number;
-  position: Point2D;
-  zoom: number;
   drawTool: DrawTool;
   onSelectTool: (tool: DrawTool) => void;
-  spriteProvider: SpriteProvider;
+  spriteProvider: SpritePixelAccessor;
   setOnMouseMove?: (fn: CanvasHandler) => void;
   setOnMouseUp?: (fn: CanvasHandler) => void;
   setOnMouseDown?: (fn: CanvasHandler) => void;
-  setPreviewOverlay?: (fn: ((renderer: SpriteRendererHandle) => void) | null) => void;
-}> = ({ drawTool, onSelectTool, setOnMouseDown, setOnMouseMove, setOnMouseUp, spriteProvider, color, position, zoom, setPreviewOverlay }) => {
+  setPreviewOverlay?: (fn: PreviewOverlay | null) => void;
+}> = ({ drawTool, onSelectTool, setOnMouseDown, setOnMouseMove, setOnMouseUp, setPreviewOverlay, spriteProvider, color }) => {
   const lastPosRef = useRef<Point2D | null>(null);
   const colorRef = useRef(color);
   const [fillCircle, setFillCircle] = useState(false);
   const fillCircleRef = useRef(false);
   const previewRef = useRef<{ center: Point2D; radius: number } | null>(null);
-  const positionRef = useRef(position);
-  const zoomRef = useRef(zoom);
 
   useEffect(() => {
     colorRef.current = color;
@@ -30,9 +40,6 @@ const Tools: React.FC<{
   useEffect(() => {
     fillCircleRef.current = fillCircle;
   }, [fillCircle]);
-
-  useEffect(() => { positionRef.current = position; }, [position]);
-  useEffect(() => { zoomRef.current = zoom; }, [zoom]);
 
   // FIX IT TO MAKE IT WORK PROPERLY ON COLLABORATIVE EDITING
   const floodFillAt = (sx: number, sy: number, newColor: number): void => {
@@ -79,7 +86,10 @@ const Tools: React.FC<{
     let err = dx - dy;
 
     while (true) {
-      spriteProvider.setPixel(x0, y0, colorRef.current);
+      if (spriteProvider.getPixel(x0, y0) !== colorRef.current) {
+        spriteProvider.setPixel(x0, y0, colorRef.current);
+      }
+
       if (x0 === x1 && y0 === y1) break;
       const e2 = err * 2;
       if (e2 > -dy) {
@@ -138,25 +148,28 @@ const Tools: React.FC<{
     setOnMouseDown?.(undefined);
     setOnMouseMove?.(undefined);
     setOnMouseUp?.(undefined);
-    lastPosRef.current = null;
     setPreviewOverlay?.(null);
+    lastPosRef.current = null;
     previewRef.current = null;
 
     if (drawTool === DrawTool.Pen) {
-      const down: CanvasHandler = (_e, pos) => {
+      const down: CanvasHandler = (pos) => {
         spriteProvider.setPixel(pos.x, pos.y, colorRef.current);
         lastPosRef.current = pos;
       };
 
-      const move: CanvasHandler = (_e, pos) => {
+      const move: CanvasHandler = (pos) => {
         const last = lastPosRef.current;
-        if (last) {
-          drawLine(last, pos);
+        if (!last) {
+          spriteProvider.setPixel(pos.x, pos.y, colorRef.current);
           lastPosRef.current = pos;
+          return;
         }
+        drawLine(last, pos);
+        lastPosRef.current = pos;
       };
 
-      const up: CanvasHandler = (_e, pos) => {
+      const up: CanvasHandler = (pos) => {
         const last = lastPosRef.current;
         if (last) {
           drawLine(last, pos);
@@ -173,7 +186,7 @@ const Tools: React.FC<{
     }
 
     if (drawTool === DrawTool.Fill) {
-      const down: CanvasHandler = (_e, pos) => {
+      const down: CanvasHandler = (pos) => {
         floodFillAt(pos.x, pos.y, colorRef.current);
       };
 
@@ -182,32 +195,42 @@ const Tools: React.FC<{
     }
 
     if (drawTool === DrawTool.Circle) {
-      const spriteNumber = spriteProvider.size.width / spriteProvider.spriteSize.width;
-
-      const overlayFn = (renderer: SpriteRendererHandle): void => {
+      const overlayFn: PreviewOverlay = (renderer, offsetX, offsetY) => {
         const prev = previewRef.current;
-        if (!prev || prev.radius <= 0) return;
-
-        const pixelSize = spriteNumber / zoomRef.current;
-        const snappedX = Math.floor(positionRef.current.x);
-        const snappedY = Math.floor(positionRef.current.y);
+        if (!prev) return;
 
         const drawPoint = (px: number, py: number): void => {
-          renderer.drawRect(colorRef.current, (snappedX + px) * pixelSize, (snappedY + py) * pixelSize, pixelSize, pixelSize);
+          renderer.drawRect(colorRef.current, px - offsetX, py - offsetY, 1, 1);
         };
+
+        if (prev.radius <= 0) {
+          drawPoint(prev.center.x, prev.center.y);
+          return;
+        }
 
         let x = prev.radius;
         let y = 0;
         let err = 1 - prev.radius;
         while (x >= y) {
-          drawPoint(prev.center.x + x, prev.center.y + y);
-          drawPoint(prev.center.x - x, prev.center.y + y);
-          drawPoint(prev.center.x + x, prev.center.y - y);
-          drawPoint(prev.center.x - x, prev.center.y - y);
-          drawPoint(prev.center.x + y, prev.center.y + x);
-          drawPoint(prev.center.x - y, prev.center.y + x);
-          drawPoint(prev.center.x + y, prev.center.y - x);
-          drawPoint(prev.center.x - y, prev.center.y - x);
+          if (fillCircleRef.current) {
+            for (let i = prev.center.x - x; i <= prev.center.x + x; i++) {
+              drawPoint(i, prev.center.y + y);
+              drawPoint(i, prev.center.y - y);
+            }
+            for (let i = prev.center.x - y; i <= prev.center.x + y; i++) {
+              drawPoint(i, prev.center.y + x);
+              drawPoint(i, prev.center.y - x);
+            }
+          } else {
+            drawPoint(prev.center.x + x, prev.center.y + y);
+            drawPoint(prev.center.x - x, prev.center.y + y);
+            drawPoint(prev.center.x + x, prev.center.y - y);
+            drawPoint(prev.center.x - x, prev.center.y - y);
+            drawPoint(prev.center.x + y, prev.center.y + x);
+            drawPoint(prev.center.x - y, prev.center.y + x);
+            drawPoint(prev.center.x + y, prev.center.y - x);
+            drawPoint(prev.center.x - y, prev.center.y - x);
+          }
           y++;
           if (err < 0) err += 2 * y + 1;
           else { x--; err += 2 * (y - x) + 1; }
@@ -215,19 +238,19 @@ const Tools: React.FC<{
       };
       setPreviewOverlay?.(overlayFn);
 
-      const down: CanvasHandler = (_e, pos) => {
+      const down: CanvasHandler = (pos) => {
         lastPosRef.current = pos;
         previewRef.current = { center: pos, radius: 0 };
       };
 
-      const move: CanvasHandler = (_e, pos) => {
+      const move: CanvasHandler = (pos) => {
         const last = lastPosRef.current;
         if (!last) return;
         const radius = Math.floor(Math.sqrt((pos.x - last.x) ** 2 + (pos.y - last.y) ** 2));
         previewRef.current = { center: last, radius };
       };
 
-      const up: CanvasHandler = (_e, pos) => {
+      const up: CanvasHandler = (pos) => {
         const last = lastPosRef.current;
         if (last) {
           const radius = Math.floor(Math.sqrt((pos.x - last.x) ** 2 + (pos.y - last.y) ** 2));
@@ -257,9 +280,9 @@ const Tools: React.FC<{
   }, [drawTool, setOnMouseDown, setOnMouseMove, setOnMouseUp, setPreviewOverlay, spriteProvider]);
 
   return (
-    <>
-      <button onClick={() => onSelectTool(DrawTool.Pen)}>Pen</button>
-      <button onClick={() => onSelectTool(DrawTool.Circle)}>Circle</button>
+    <Container>
+      <ToolButton onClick={() => onSelectTool(DrawTool.Pen)}>Pen</ToolButton>
+      <ToolButton onClick={() => onSelectTool(DrawTool.Circle)}>Circle</ToolButton>
       {drawTool === DrawTool.Circle && (
         <label>
           <input
@@ -272,7 +295,7 @@ const Tools: React.FC<{
       )}
       {/* FILL commented because not working properly on collaborative editing */}
       {/* <button className={drawTool === DrawTool.Fill ? "active" : ""} onClick={() => onSelectTool(DrawTool.Fill)}>Fill</button> */}
-    </>
+    </Container>
   );
 };
 

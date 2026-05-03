@@ -8,7 +8,10 @@ export interface GLPipeline {
   program: WebGLProgram;
   vertexBuffer: WebGLBuffer;
   uvBuffer: WebGLBuffer;
-  paletteTexture: WebGLTexture
+  spriteSheetTexture: WebGLTexture;
+  paletteTexture: WebGLTexture;
+  mapTexture: WebGLTexture;
+  paletteIndexTexture: WebGLTexture;
   positionLoc: number;
   uvLoc: number;
   cameraPosLoc: WebGLUniformLocation | null;
@@ -105,6 +108,9 @@ export function initGLPipeline(
     program,
     vertexBuffer,
     uvBuffer,
+    spriteSheetTexture,
+    mapTexture,
+    paletteIndexTexture,
     destroy,
     positionLoc,
     uvLoc,

@@ -10,7 +10,7 @@ interface GameEditorConsoleProps {
 
 const GameEditorConsole: React.FC<GameEditorConsoleProps> = ({ output }) => {
   return (
-    <Panel title="Game Console">
+    <Panel title="Game Console" data-cy="game-console">
       <Editor
         className="monaco"
         defaultLanguage="lua"
