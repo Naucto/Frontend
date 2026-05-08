@@ -683,6 +683,10 @@ export type PublicUserProfileDto = {
    * Public CDN URL of the profile image (if any)
    */
   profileImageUrl?: string | null;
+  /**
+   * Public CDN URL of the profile background image (if any)
+   */
+  backgroundImageUrl?: string | null;
 };
 
 export type PublicUserProfileResponseDto = {
@@ -2044,6 +2048,37 @@ export type UserControllerUploadProfilePictureResponses = {
   201: unknown;
 };
 
+export type UserControllerUploadProfileBackgroundData = {
+  body: {
+    /**
+     * Profile background file
+     */
+    file?: Blob | File;
+  };
+  path: {
+    /**
+     * User ID
+     */
+    id: number;
+  };
+  query?: never;
+  url: "/users/{id}/profile-background";
+};
+
+export type UserControllerUploadProfileBackgroundErrors = {
+  /**
+   * Unauthorized
+   */
+  401: unknown;
+};
+
+export type UserControllerUploadProfileBackgroundResponses = {
+  /**
+   * Profile background uploaded
+   */
+  201: unknown;
+};
+
 export type UserControllerFindAllData = {
   body?: never;
   path?: never;
@@ -2268,6 +2303,35 @@ export type UserPublicControllerGetPublicProfilePictureResponses = {
 
 export type UserPublicControllerGetPublicProfilePictureResponse =
   UserPublicControllerGetPublicProfilePictureResponses[keyof UserPublicControllerGetPublicProfilePictureResponses];
+
+export type UserPublicControllerGetPublicProfileBackgroundData = {
+  body?: never;
+  path: {
+    /**
+     * User ID
+     */
+    id: number;
+  };
+  query?: never;
+  url: "/users/public/{id}/profile-background";
+};
+
+export type UserPublicControllerGetPublicProfileBackgroundErrors = {
+  /**
+   * User not found or has no profile background
+   */
+  404: unknown;
+};
+
+export type UserPublicControllerGetPublicProfileBackgroundResponses = {
+  /**
+   * Returns the CDN URL for the profile background
+   */
+  200: ImageUrlResponseDto;
+};
+
+export type UserPublicControllerGetPublicProfileBackgroundResponse =
+  UserPublicControllerGetPublicProfileBackgroundResponses[keyof UserPublicControllerGetPublicProfileBackgroundResponses];
 
 export type UserPublicControllerGetLikedGamesData = {
   body?: never;

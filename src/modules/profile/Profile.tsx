@@ -14,9 +14,14 @@ import {
   userPublicControllerGetPublicProfile,
   userControllerUpdateMyProfile,
   userControllerUploadProfilePicture,
+  PublicUserProfileDto,
+  userControllerUploadProfileBackground,
 } from "@api";
 import { client } from "@api/client.gen";
 import ProjectCard from "@modules/projects/components/ProjectCard";
+
+const DEFAULT_PROFILE_BACKGROUND =
+  "https://png.pngtree.com/thumb_back/fh260/background/20250512/pngtree-blue-gradient-soft-background-vector-image_17280771.jpg";
 
 const ProfileBackground = styled("div")<{ src: string }>(({ src }) => ({
   position: "absolute",
@@ -75,7 +80,7 @@ const Description = styled(Typography)(({ theme }) => ({
 
 const ChangePhotoButton = styled(ImportantButton)(({ theme }) => ({
   marginTop: theme.spacing(1),
-  width: theme.spacing(18),
+  width: "fit-content",
   fontSize: "14px",
 }));
 
@@ -90,6 +95,13 @@ const EditProfileButton = styled(ImportantButton)(({ theme }) => ({
   marginTop: theme.spacing(1),
   width: theme.spacing(15),
   fontSize: "16px"
+}));
+
+const ImageInputActions = styled(Box)(({ theme }) => ({
+  display: "flex",
+  flexDirection: "row",
+  gap: theme.spacing(1),
+  marginTop: theme.spacing(1),
 }));
 
 const Section = styled(Box)(({ theme }) => ({
@@ -119,9 +131,11 @@ export const Profile = (): JSX.Element => {
   const isEditable = profileId ? Number(profileId) === userId : false;
   const [isEditing, setIsEditing] = useState(false);
   const [refresh, setRefresh] = useState(1);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedProfileFile, setSelectedProfileFile] = useState<File | null>(null);
+  const [selectedBackgroundFile, setSelectedBackgroundFile] = useState<File | null>(null);
   const { enqueueSnackbar } = useSnackbar();
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const profileFileInputRef = useRef<HTMLInputElement | null>(null);
+  const backgroundFileInputRef = useRef<HTMLInputElement | null>(null);
 
   const { value: profile } = useAsync(
     () => {
@@ -135,15 +149,16 @@ export const Profile = (): JSX.Element => {
   );
   const { register, handleSubmit, reset } = useForm<{ description?: string }>();
 
-  const profileData = profile?.data?.data;
+  const profileData = profile?.data?.data as PublicUserProfileDto | undefined;
   const profileNumericId = useMemo(() => Number(profileId), [profileId]);
 
   useEffect(() => {
     if (profileData) {
       reset({
-        description: profileData.nickname ?? "",
+        description: profileData.description ?? "",
       });
-      setSelectedFile(null);
+      setSelectedProfileFile(null);
+      setSelectedBackgroundFile(null);
     }
   }, [profileData, reset]);
 
@@ -173,34 +188,57 @@ export const Profile = (): JSX.Element => {
     [profileId, profileNumericId, refresh]
   );
 
-  const previewUrl = useMemo(() => {
-    if (!selectedFile) return null;
-    return URL.createObjectURL(selectedFile);
-  }, [selectedFile]);
+  const profilePreviewUrl = useMemo(() => {
+    if (!selectedProfileFile) return null;
+    return URL.createObjectURL(selectedProfileFile);
+  }, [selectedProfileFile]);
+
+  const backgroundPreviewUrl = useMemo(() => {
+    if (!selectedBackgroundFile) return null;
+    return URL.createObjectURL(selectedBackgroundFile);
+  }, [selectedBackgroundFile]);
 
   useEffect(() => {
-    if (!previewUrl) return;
-    return () => URL.revokeObjectURL(previewUrl);
-  }, [previewUrl]);
+    if (!profilePreviewUrl) return;
+    return () => URL.revokeObjectURL(profilePreviewUrl);
+  }, [profilePreviewUrl]);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+  useEffect(() => {
+    if (!backgroundPreviewUrl) return;
+    return () => URL.revokeObjectURL(backgroundPreviewUrl);
+  }, [backgroundPreviewUrl]);
+
+  const handleProfileFileChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
     const file = event.target.files?.[0] ?? null;
-    setSelectedFile(file);
+    setSelectedProfileFile(file);
+  };
+
+  const handleBackgroundFileChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+    const file = event.target.files?.[0] ?? null;
+    setSelectedBackgroundFile(file);
   };
 
   const handleProfileUpdate = async (data: { description?: string }): Promise<void> => {
     try {
       if (!isEditable) return;
 
-      if (selectedFile) {
+      if (selectedProfileFile) {
         await userControllerUploadProfilePicture<true>({
           throwOnError: true,
           path: { id: userId },
-          body: { file: selectedFile },
+          body: { file: selectedProfileFile },
         });
       }
 
-      const currentDescription = profileData?.nickname ?? "";
+      if (selectedBackgroundFile) {
+        await userControllerUploadProfileBackground<true>({
+          throwOnError: true,
+          path: { id: userId },
+          body: { file: selectedBackgroundFile },
+        });
+      }
+
+      const currentDescription = profileData?.description ?? profileData?.nickname ?? "";
       const nextDescription = data.description ?? "";
       if (nextDescription !== currentDescription) {
         await userControllerUpdateMyProfile<true>({
@@ -211,7 +249,8 @@ export const Profile = (): JSX.Element => {
 
       setIsEditing(false);
       setRefresh((prev) => prev * -1);
-      setSelectedFile(null);
+      setSelectedProfileFile(null);
+      setSelectedBackgroundFile(null);
       enqueueSnackbar("Profile updated successfully", { variant: "success" });
     } catch (error) {
       console.error("Error updating profile:", error);
@@ -222,18 +261,21 @@ export const Profile = (): JSX.Element => {
   const handleEditButtonClick = (): void => {
     setIsEditing(!isEditing);
     if (isEditing) {
-      setSelectedFile(null);
+      setSelectedProfileFile(null);
+      setSelectedBackgroundFile(null);
     }
   };
 
   const profileImageUrl =
-    previewUrl ?? profileData?.profileImageUrl ?? "";
+    profilePreviewUrl ?? profileData?.profileImageUrl ?? "";
+  const backgroundImageUrl =
+    backgroundPreviewUrl ?? profileData?.backgroundImageUrl ?? DEFAULT_PROFILE_BACKGROUND;
 
   return (
     <>
       <form onSubmit={handleSubmit(handleProfileUpdate)}>
         <ProfileHeader>
-          <ProfileBackground src="https://png.pngtree.com/thumb_back/fh260/background/20250512/pngtree-blue-gradient-soft-background-vector-image_17280771.jpg" />
+          <ProfileBackground src={backgroundImageUrl} />
           <ProfileInfo>
             <ProfilePicture>
               {profileImageUrl ? (
@@ -248,29 +290,43 @@ export const Profile = (): JSX.Element => {
               </Typography>
               <Editable
                 editing={isEditing}
-                value={profileData?.nickname ?? ""}
+                value={profileData?.description ?? profileData?.nickname ?? ""}
                 register={register("description")}
               >
                 <Description>{profileData?.description ?? ""}</Description>
               </Editable>
 
               {isEditable && isEditing && (
-                <>
+                <ImageInputActions>
                   <ChangePhotoButton
                     type="button"
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={() => profileFileInputRef.current?.click()}
                   >
                     Change photo
                   </ChangePhotoButton>
 
                   <input
-                    ref={fileInputRef}
+                    ref={profileFileInputRef}
                     hidden
-                    accept="image/png,image/jpeg,image/webp"
+                    accept="image/png,image/jpeg,image/gif,image/webp"
                     type="file"
-                    onChange={handleFileChange}
+                    onChange={handleProfileFileChange}
                   />
-                </>
+
+                  <ChangePhotoButton
+                    type="button"
+                    onClick={() => backgroundFileInputRef.current?.click()}
+                  >
+                    Change background
+                  </ChangePhotoButton>
+                  <input
+                    ref={backgroundFileInputRef}
+                    hidden
+                    accept="image/png,image/jpeg,image/gif,image/webp"
+                    type="file"
+                    onChange={handleBackgroundFileChange}
+                  />
+                </ImageInputActions>
               )}
               {isEditable && (
                 <EditProfileButton type="button" onClick={handleEditButtonClick}>
@@ -283,9 +339,7 @@ export const Profile = (): JSX.Element => {
         </ProfileHeader>
 
         <Section>
-          <Typography variant="h6" color="white">
-            Published games
-          </Typography>
+          <Typography variant="h6" color="white">Published games</Typography>
           <HorizontalScroller>
             {(publishedGames ?? []).map((game) => (
               <ProjectCardWrapper key={game.id}>
@@ -296,9 +350,7 @@ export const Profile = (): JSX.Element => {
         </Section>
 
         <Section>
-          <Typography variant="h6" color="white">
-            Liked games
-          </Typography>
+          <Typography variant="h6" color="white">Liked games</Typography>
           <HorizontalScroller>
             {(likedGames ?? []).map((game) => (
               <ProjectCardWrapper key={game.id}>

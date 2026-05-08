@@ -150,11 +150,17 @@ import type {
   UserControllerUpdateMyProfileErrors,
   UserControllerUpdateMyProfileResponses,
   UserControllerUpdateResponses,
+  UserControllerUploadProfileBackgroundData,
+  UserControllerUploadProfileBackgroundErrors,
+  UserControllerUploadProfileBackgroundResponses,
   UserControllerUploadProfilePictureData,
   UserControllerUploadProfilePictureErrors,
   UserControllerUploadProfilePictureResponses,
   UserPublicControllerGetLikedGamesData,
   UserPublicControllerGetLikedGamesResponses,
+  UserPublicControllerGetPublicProfileBackgroundData,
+  UserPublicControllerGetPublicProfileBackgroundErrors,
+  UserPublicControllerGetPublicProfileBackgroundResponses,
   UserPublicControllerGetPublicProfileData,
   UserPublicControllerGetPublicProfileErrors,
   UserPublicControllerGetPublicProfilePictureData,
@@ -1161,6 +1167,29 @@ export const userControllerUploadProfilePicture = <
   });
 
 /**
+ * Upload a user's profile background
+ */
+export const userControllerUploadProfileBackground = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<UserControllerUploadProfileBackgroundData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    UserControllerUploadProfileBackgroundResponses,
+    UserControllerUploadProfileBackgroundErrors,
+    ThrowOnError
+  >({
+    ...formDataBodySerializer,
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/users/{id}/profile-background",
+    ...options,
+    headers: {
+      "Content-Type": null,
+      ...options.headers
+    }
+  });
+
+/**
  * Get all users with pagination and filtering
  */
 export const userControllerFindAll = <ThrowOnError extends boolean = false>(
@@ -1268,6 +1297,27 @@ export const userPublicControllerGetPublicProfilePicture = <
   >({
     responseType: "json",
     url: "/users/public/{id}/profile-picture",
+    ...options
+  });
+
+/**
+ * Get public CDN URL for a user's profile background
+ */
+export const userPublicControllerGetPublicProfileBackground = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<
+    UserPublicControllerGetPublicProfileBackgroundData,
+    ThrowOnError
+  >
+) =>
+  (options.client ?? client).get<
+    UserPublicControllerGetPublicProfileBackgroundResponses,
+    UserPublicControllerGetPublicProfileBackgroundErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/users/public/{id}/profile-background",
     ...options
   });
 
