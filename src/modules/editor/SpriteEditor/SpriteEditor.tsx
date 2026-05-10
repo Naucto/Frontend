@@ -14,8 +14,10 @@ export enum DrawTool {
   Fill,
   Line, // TODO
   Rectangle, // TODO
+  Circle
 }
 export type CanvasHandler = ((pixelPos: Point2D) => void) | undefined;
+export type PreviewOverlay = (renderer: SpriteRendererHandle, offsetX: number, offsetY: number) => void;
 
 const TILE_SIZES = Array.from({ length: 8 }, (_, i) => (i + 1) * 8);
 const BIT_INDICES = [0,1,2,3,4,5,6,7] as const;
@@ -212,6 +214,7 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
   const onMouseDownRef = useRef<CanvasHandler>(undefined);
   const onMouseMoveRef = useRef<CanvasHandler>(undefined);
   const onMouseUpRef = useRef<CanvasHandler>(undefined);
+  const previewOverlayRef = useRef<PreviewOverlay | null>(null);
   const selectionCanvasRef = useRef<SpriteRendererHandle | null>(null);
   const detailCanvasRef = useRef<SpriteRendererHandle | null>(null);
 
@@ -223,6 +226,9 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
   }, []);
   const setOnMouseUp = useCallback((fn: CanvasHandler) => {
     onMouseUpRef.current = fn;
+  }, []);
+  const setPreviewOverlay = useCallback((fn: PreviewOverlay | null) => {
+    previewOverlayRef.current = fn;
   }, []);
 
   const sheetWidth = project.spriteProvider.size.width;
@@ -261,7 +267,8 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
 
     handle.queueSpriteDraw(selectedTileIndex, 0, 0, tileSpriteSpanWidth, tileSpriteSpanHeight);
     handle.draw();
-  }, [selectedTileIndex, tileSpriteSpanHeight, tileSpriteSpanWidth]);
+    previewOverlayRef.current?.(handle, selectedTile.x, selectedTile.y);
+  }, [selectedTile.x, selectedTile.y, selectedTileIndex, tileSpriteSpanHeight, tileSpriteSpanWidth]);
 
   const redraw = useCallback((): void => {
     drawDetailCanvas();
@@ -408,6 +415,7 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
             setOnMouseDown={setOnMouseDown}
             setOnMouseMove={setOnMouseMove}
             setOnMouseUp={setOnMouseUp}
+            setPreviewOverlay={setPreviewOverlay}
             drawTool={drawTool}
             onSelectTool={setDrawTool}
             spriteProvider={tileSpriteAccessor}
