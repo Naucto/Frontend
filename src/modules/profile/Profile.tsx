@@ -74,7 +74,6 @@ const ProfileImage = styled("img")({
 });
 
 const Description = styled(Typography)(({ theme }) => ({
-  fontSize: "18px",
   color: theme.palette.grey[200],
 }));
 
@@ -285,7 +284,7 @@ export const Profile = (): JSX.Element => {
               )}
             </ProfilePicture>
             <TextInfo>
-              <Typography variant="h5">
+              <Typography variant="h4">
                 {profileData?.username ?? ""}
               </Typography>
               <Editable
@@ -293,7 +292,8 @@ export const Profile = (): JSX.Element => {
                 value={profileData?.description ?? profileData?.nickname ?? ""}
                 register={register("description")}
               >
-                <Description>{profileData?.description ?? ""}</Description>
+                <Description variant="body1"
+                >{profileData?.description ?? ""}</Description>
               </Editable>
 
               {isEditable && isEditing && (
@@ -342,9 +342,11 @@ export const Profile = (): JSX.Element => {
           <Typography variant="h6" color="white">Published games</Typography>
           <HorizontalScroller>
             {(publishedGames ?? []).map((game) => (
-              <ProjectCardWrapper key={game.id}>
-                <ProjectCard project={game} isPlayable />
-              </ProjectCardWrapper>
+              <>
+                <ProjectCardWrapper key={game.id}>
+                  <ProjectCard project={game} isPlayable />
+                </ProjectCardWrapper>
+              </>
             ))}
           </HorizontalScroller>
         </Section>
