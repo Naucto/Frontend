@@ -1,258 +1,35 @@
-import React, { JSX, useCallback, useEffect, useMemo, useState } from "react";
-import { styled } from "@mui/material/styles";
-import ProjectCard from "./components/ProjectCard";
 import { ProjectResponseDto, projectControllerCountProjects, projectControllerFindAll } from "@api";
-import CreateProjectCard from "@modules/projects/components/CreateProjectCard";
-import { useUser } from "@providers/UserProvider";
-import { useNavigate } from "react-router-dom";
-import * as urls from "@shared/route";
-import { darkMenuProps } from "@shared/darkMenuProps";
-import { Autocomplete, Box, Button, Chip, FormControl, MenuItem, Paper, Select, TextField, Typography } from "@mui/material";
+import { ProjectPageHeader } from "@modules/projects/components/browse/Header";
+import { CustomSortButton, SummaryChip } from "@modules/projects/components/browse/Controls";
+import { ProjectSortFilters } from "@modules/projects/components/browse/Filters";
+import { PageContainer } from "@modules/projects/components/browse/Layout";
+import { ProjectSection } from "@modules/projects/components/browse/ProjectSection";
 import { PREDEFINED_PROJECT_TAGS } from "@modules/projects/projectTags";
+import {
+  getProjectSortMetricLabel,
+  getProjectSortOrderLabel,
+  projectMatchesCategory,
+  projectMatchesNameAndTags,
+  sortProjects,
+  type ProjectCategory,
+  type ProjectSortMetric,
+  type ProjectSortOrder,
+} from "@modules/projects/projectListUtils";
+import { useUser } from "@providers/UserProvider";
+import * as urls from "@shared/route";
+import { type JSX, useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const PAGE_SIZE = 24;
 
-const PageContainer = styled("div")(({ theme }) => ({
-  margin: theme.spacing(4),
-}));
-
-const Title = styled(Typography)(({ theme }) => ({
-  fontSize: "32px",
-  color: theme.palette.text.primary,
-  fontWeight: "normal",
-  padding: theme.spacing(0, 0),
-}));
-
-const FilterPanel = styled(Box)(({ theme }) => ({
-  display: "flex",
-  flexWrap: "wrap",
-  gap: theme.spacing(1.5),
-  padding: theme.spacing(1.5),
-  borderRadius: theme.custom.rounded.md,
-  backgroundColor: "rgba(255, 255, 255, 0.06)",
-  backdropFilter: "blur(12px)",
-  marginTop: theme.spacing(2),
-  width: "100%",
-}));
-
-const HeaderRow = styled(Box)(({ theme }) => ({
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "flex-start",
-  gap: theme.spacing(2),
-}));
-
-const HeaderControls = styled(Box)(({ theme }) => ({
-  display: "flex",
-  alignItems: "center",
-  gap: theme.spacing(1),
-  flexWrap: "wrap",
-  justifyContent: "flex-start",
-}));
-
-const Section = styled(Box)(({ theme }) => ({
-  marginTop: theme.spacing(4),
-}));
-
-const SectionHeader = styled(Box)(({ theme }) => ({
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  gap: theme.spacing(2),
-  flexWrap: "wrap",
-  marginBottom: theme.spacing(2),
-}));
-
-const SectionTitle = styled(Typography)(({ theme }) => ({
-  fontSize: "24px",
-  fontWeight: 500,
-  color: theme.palette.text.primary,
-}));
-
-const ViewMoreButton = styled(Button)(({ theme }) => ({
-  fontSize: "14px",
-  color: theme.palette.primary.main,
-  padding: 0,
-  minWidth: 0,
-  textTransform: "none",
-  "&:hover": {
-    backgroundColor: "transparent",
-    textDecoration: "underline",
-  },
-}));
-
-const SummaryChip = styled(Chip)(({ theme }) => ({
-  backgroundColor: "rgba(255,255,255,0.08)",
-  color: theme.palette.common.white,
-  border: "1px solid rgba(255,255,255,0.12)",
-}));
-
-const CustomSortButton = styled(Button)(({ theme }) => ({
-  borderColor: "rgba(255,255,255,0.18)",
-  color: theme.palette.common.white,
-  backgroundColor: "rgba(20, 20, 20, 0.42)",
-  "&:hover": {
-    borderColor: "rgba(255,255,255,0.3)",
-    backgroundColor: "rgba(20, 20, 20, 0.55)",
-  },
-}));
-
-const ProjectCardsContainer = styled("div")(({ theme }) => ({
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))",
-  gap: theme.spacing(2),
-  alignItems: "start",
-}));
-
-const EmptyState = styled(Typography)(({ theme }) => ({
-  color: theme.palette.grey[400],
-  fontSize: "15px",
-  padding: theme.spacing(1, 0),
-}));
-
-const LoadMoreRow = styled(Box)(({ theme }) => ({
-  display: "flex",
-  justifyContent: "center",
-  marginTop: theme.spacing(2),
-}));
-
-const SortFormControl = styled(FormControl)({
-  minWidth: 180,
-});
-
-const DarkSelect = styled(Select)(({ theme }) => ({
-  color: theme.palette.common.white,
-  backgroundColor: "rgba(20, 20, 20, 0.72)",
-  borderRadius: "8px",
-  ".MuiOutlinedInput-notchedOutline": {
-    borderColor: "rgba(255,255,255,0.18)",
-  },
-  "&:hover .MuiOutlinedInput-notchedOutline": {
-    borderColor: "rgba(255,255,255,0.3)",
-  },
-  ".MuiSvgIcon-root": {
-    color: theme.palette.common.white,
-  },
-}));
-
-const DarkTextField = styled(TextField)(({ theme }) => ({
-  minWidth: 220,
-  ".MuiOutlinedInput-root": {
-    color: theme.palette.common.white,
-    backgroundColor: "rgba(20, 20, 20, 0.72)",
-  },
-  ".MuiInputLabel-root": {
-    color: "rgba(255,255,255,0.7)",
-  },
-  ".MuiInputLabel-root.Mui-focused": {
-    color: theme.palette.common.white,
-  },
-}));
-
-const TagsAutocomplete = styled(Autocomplete<string, true, false, false>)({
-  minWidth: 280,
-  flex: 1,
-});
-
-const AutocompleteOption = styled("li")({
-  color: "white",
-  backgroundColor: "#1A1A1A",
-});
-
-const DarkAutocompletePaper = styled(Paper)({
-  backgroundColor: "#1A1A1A",
-  color: "white",
-  backgroundImage: "none",
-  ".MuiAutocomplete-listbox": {
-    maxHeight: 240,
-    overflowY: "auto",
-  },
-});
-
-const DarkAutocompleteListbox = styled("ul")({
-  maxHeight: 240,
-  overflowY: "auto",
-});
-
-const autocompleteSlots = {
-  paper: DarkAutocompletePaper,
-  listbox: DarkAutocompleteListbox,
-};
-
-type SortMetric = "updatedAt" | "createdAt" | "name" | "publishedAt" | "tags";
-type SortOrder = "asc" | "desc";
-type ProjectCategory = "drafts" | "published";
-
-const PUBLISHED_PROJECT_STATUS = "COMPLETED" satisfies ProjectResponseDto["status"];
-
-function getSortMetricLabel(metric: SortMetric): string {
-  switch (metric) {
-    case "createdAt":
-      return "Created";
-    case "name":
-      return "Name";
-    case "publishedAt":
-      return "Published";
-    case "tags":
-      return "Tags";
-    default:
-      return "Updated";
-  }
-}
-
-function getSortOrderLabel(order: SortOrder): string {
-  return order === "asc" ? "Ascending" : "Descending";
-}
-
-function getProjectDateValue(project: ProjectResponseDto, metric: "updatedAt" | "createdAt" | "publishedAt"): number {
-  if (metric === "publishedAt") {
-    return new Date(project.publishedAt || project.updatedAt || project.createdAt).getTime();
-  }
-
-  return new Date(project[metric]).getTime();
-}
-
-function sortProjects(projects: ProjectResponseDto[], metric: SortMetric, order: SortOrder): ProjectResponseDto[] {
-  const direction = order === "asc" ? 1 : -1;
-
-  return [...projects].sort((a, b) => {
-    if (metric === "name") {
-      const nameDiff = a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
-      if (nameDiff !== 0) {
-        return nameDiff * direction;
-      }
-    } else if (metric === "tags") {
-      const tagsA = [...a.tags].sort((left, right) => left.localeCompare(right)).join(", ");
-      const tagsB = [...b.tags].sort((left, right) => left.localeCompare(right)).join(", ");
-      const tagDiff = tagsA.localeCompare(tagsB, undefined, { sensitivity: "base" });
-      if (tagDiff !== 0) {
-        return tagDiff * direction;
-      }
-    } else {
-      const dateDiff = getProjectDateValue(a, metric) - getProjectDateValue(b, metric);
-      if (dateDiff !== 0) {
-        return dateDiff * direction;
-      }
-    }
-
-    return (new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()) * direction;
-  });
-}
-
-function projectMatchesCategory(project: ProjectResponseDto, category: ProjectCategory): boolean {
-  return category === "published"
-    ? category === "published" && project.status === PUBLISHED_PROJECT_STATUS
-    : category === "drafts" && project.status !== PUBLISHED_PROJECT_STATUS;
-}
-
-const Projects: React.FC = () => {
+const Projects = (): JSX.Element => {
   const user = useUser();
   const navigate = useNavigate();
 
   const [projects, setProjects] = useState<ProjectResponseDto[]>([]);
   const [showCustomSort, setShowCustomSort] = useState(false);
-  const [sortMetric, setSortMetric] = useState<SortMetric>("updatedAt");
-  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+  const [sortMetric, setSortMetric] = useState<ProjectSortMetric>("updatedAt");
+  const [sortOrder, setSortOrder] = useState<ProjectSortOrder>("desc");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [projectNameQuery, setProjectNameQuery] = useState("");
   const [loadedPage, setLoadedPage] = useState(0);
@@ -262,7 +39,7 @@ const Projects: React.FC = () => {
   const [publishedVisibleCount, setPublishedVisibleCount] = useState(PAGE_SIZE);
   const [draftTotalCount, setDraftTotalCount] = useState<number | null>(null);
   const [publishedTotalCount, setPublishedTotalCount] = useState<number | null>(null);
-  const [loadingMoreCategory, setLoadingMoreCategory] = useState<"drafts" | "published" | null>(null);
+  const [loadingMoreCategory, setLoadingMoreCategory] = useState<ProjectCategory | null>(null);
 
   const mergeProjects = useCallback((current: ProjectResponseDto[], next: ProjectResponseDto[]): ProjectResponseDto[] => {
     const mergedProjects = [...current, ...next];
@@ -293,7 +70,7 @@ const Projects: React.FC = () => {
     };
   }, []);
 
-  const fetchProjectCount = useCallback(async (status: "drafts" | "published"): Promise<number> => {
+  const fetchProjectCount = useCallback(async (status: ProjectCategory): Promise<number> => {
     const { data } = await projectControllerCountProjects({
       query: {
         search: projectNameQuery.trim() || undefined,
@@ -336,12 +113,9 @@ const Projects: React.FC = () => {
     return Array.from(tags).sort((a, b) => a.localeCompare(b));
   }, [projects]);
 
-  const filteredProjects = useMemo(() => {
-    return projects.filter((project) => (
-      (selectedTags.length === 0 || selectedTags.every((tag) => project.tags.includes(tag)))
-      && project.name.toLowerCase().includes(projectNameQuery.trim().toLowerCase())
-    ));
-  }, [projectNameQuery, projects, selectedTags]);
+  const filteredProjects = useMemo(() => (
+    projects.filter((project) => projectMatchesNameAndTags(project, selectedTags, projectNameQuery))
+  ), [projectNameQuery, projects, selectedTags]);
 
   const publishedProjects = useMemo(
     () => sortProjects(
@@ -393,10 +167,8 @@ const Projects: React.FC = () => {
     category: ProjectCategory
   ): ProjectResponseDto[] => {
     const filteredSourceProjects = sourceProjects.filter((project) => (
-      (selectedTags.length === 0 || selectedTags.every((tag) => project.tags.includes(tag)))
-      && project.name.toLowerCase().includes(projectNameQuery.trim().toLowerCase())
+      projectMatchesNameAndTags(project, selectedTags, projectNameQuery)
     ));
-
     const scopedProjects = filteredSourceProjects.filter((project) => projectMatchesCategory(project, category));
 
     return sortProjects(scopedProjects, sortMetric, sortOrder);
@@ -450,132 +222,77 @@ const Projects: React.FC = () => {
     }
   };
 
-  const renderSection = (
-    category: ProjectCategory,
-    title: string,
-    sectionProjects: ProjectResponseDto[],
-    options?: { includeCreateCard?: boolean; emptyMessage: string }
-  ): JSX.Element => {
-    const visibleCount = category === "drafts" ? draftVisibleCount : publishedVisibleCount;
-    const visibleProjects = sectionProjects.slice(0, visibleCount);
-    const sectionTotalCount = category === "drafts" ? draftTotalCount : publishedTotalCount;
-    const canLoadMore = visibleCount < (sectionTotalCount ?? sectionProjects.length);
+  const handleViewMore = useCallback((category: ProjectCategory) => {
+    navigate(urls.toProjectsCategory(category), {
+      state: {
+        sortMetric,
+        sortOrder,
+        selectedTags,
+        projectNameQuery,
+      }
+    });
+  }, [navigate, projectNameQuery, selectedTags, sortMetric, sortOrder]);
 
-    return (
-      <Section>
-        <SectionHeader>
-          <SectionTitle>{title}</SectionTitle>
-          <ViewMoreButton
-            onClick={() => navigate(urls.toProjectsCategory(category), {
-              state: {
-                sortMetric,
-                sortOrder,
-                selectedTags,
-                projectNameQuery,
-              }
-            })}
-          >
-            {sectionTotalCount ?? sectionProjects.length} project{(sectionTotalCount ?? sectionProjects.length) === 1 ? "" : "s"}
-          </ViewMoreButton>
-        </SectionHeader>
-        {sectionProjects.length > 0 || options?.includeCreateCard ? (
-          <>
-            <ProjectCardsContainer>
-              {options?.includeCreateCard ? <CreateProjectCard /> : null}
-              {visibleProjects.map((project) => (
-                <ProjectCard key={project.id} project={project} />
-              ))}
-            </ProjectCardsContainer>
-            {canLoadMore ? (
-              <LoadMoreRow>
-                <CustomSortButton variant="outlined" onClick={() => void loadMoreProjects(category)} disabled={isLoadingProjects || loadingMoreCategory !== null}>
-                  {loadingMoreCategory === category ? "Loading..." : "Load more"}
-                </CustomSortButton>
-              </LoadMoreRow>
-            ) : null}
-          </>
-        ) : (
-          <EmptyState>{options?.emptyMessage}</EmptyState>
-        )}
-      </Section>
-    );
-  };
+  const isLoadMoreDisabled = isLoadingProjects || loadingMoreCategory !== null;
 
   return (
     <PageContainer>
-      <HeaderRow>
-        <Title variant="h1">Projects</Title>
-        <HeaderControls>
-          <CustomSortButton variant="outlined" onClick={() => setShowCustomSort((value) => !value)}>
-            {showCustomSort ? "Hide custom sort" : "Custom sort"}
-          </CustomSortButton>
-          <SummaryChip label={`Sort: ${getSortMetricLabel(sortMetric)}`} size="small" />
-          <SummaryChip label={`Order: ${getSortOrderLabel(sortOrder)}`} size="small" />
-          {projectNameQuery ? <SummaryChip label={`Name: ${projectNameQuery}`} size="small" /> : null}
-          {selectedTags.map((tag) => (
-            <SummaryChip
-              key={`selected-tag-${tag}`}
-              label={tag}
-              size="small"
-              onDelete={() => setSelectedTags((current) => current.filter((currentTag) => currentTag !== tag))}
-            />
-          ))}
-        </HeaderControls>
-      </HeaderRow>
+      <ProjectPageHeader title="Projects" variant="stacked">
+        <CustomSortButton variant="outlined" onClick={() => setShowCustomSort((value) => !value)}>
+          {showCustomSort ? "Hide custom sort" : "Custom sort"}
+        </CustomSortButton>
+        <SummaryChip label={`Sort: ${getProjectSortMetricLabel(sortMetric)}`} size="small" />
+        <SummaryChip label={`Order: ${getProjectSortOrderLabel(sortOrder)}`} size="small" />
+        {projectNameQuery ? <SummaryChip label={`Name: ${projectNameQuery}`} size="small" /> : null}
+        {selectedTags.map((tag) => (
+          <SummaryChip
+            key={`selected-tag-${tag}`}
+            label={tag}
+            size="small"
+            onDelete={() => setSelectedTags((current) => current.filter((currentTag) => currentTag !== tag))}
+          />
+        ))}
+      </ProjectPageHeader>
 
       {showCustomSort ? (
-        <FilterPanel>
-          <SortFormControl size="small">
-            <DarkSelect
-              value={sortMetric}
-              onChange={(event) => setSortMetric(event.target.value as SortMetric)}
-              MenuProps={darkMenuProps}
-            >
-              <MenuItem value="updatedAt">Last updated</MenuItem>
-              <MenuItem value="createdAt">Created date</MenuItem>
-              <MenuItem value="publishedAt">Published date</MenuItem>
-              <MenuItem value="name">Name</MenuItem>
-              <MenuItem value="tags">Tags</MenuItem>
-            </DarkSelect>
-          </SortFormControl>
-          <CustomSortButton variant="outlined" onClick={() => setSortOrder((current) => current === "asc" ? "desc" : "asc")}>
-            {getSortOrderLabel(sortOrder)}
-          </CustomSortButton>
-          <DarkTextField
-            value={projectNameQuery}
-            onChange={(event) => setProjectNameQuery(event.target.value)}
-            label="Search by name"
-            placeholder="Project name..."
-          />
-          <TagsAutocomplete
-            multiple
-            options={availableTags}
-            value={selectedTags}
-            onChange={(_, value) => setSelectedTags(value)}
-            slots={autocompleteSlots}
-            renderOption={(props, option) => (
-              <AutocompleteOption {...props}>
-                {option}
-              </AutocompleteOption>
-            )}
-            renderInput={(params) => (
-              <DarkTextField
-                {...params}
-                label="Filter by tags"
-                placeholder="Action, RPG..."
-              />
-            )}
-          />
-        </FilterPanel>
+        <ProjectSortFilters
+          availableTags={availableTags}
+          projectNameQuery={projectNameQuery}
+          selectedTags={selectedTags}
+          sortMetric={sortMetric}
+          sortOrder={sortOrder}
+          onProjectNameQueryChange={setProjectNameQuery}
+          onSelectedTagsChange={setSelectedTags}
+          onSortMetricChange={setSortMetric}
+          onSortOrderToggle={() => setSortOrder((current) => current === "asc" ? "desc" : "asc")}
+        />
       ) : null}
 
-      {renderSection("drafts", "Drafts", draftProjects, {
-        includeCreateCard: true,
-        emptyMessage: "No drafts yet. Create a new project to get started.",
-      })}
-      {renderSection("published", "Published", publishedProjects, {
-        emptyMessage: "No published projects yet.",
-      })}
+      <ProjectSection
+        category="drafts"
+        title="Drafts"
+        projects={draftProjects}
+        visibleCount={draftVisibleCount}
+        totalCount={draftTotalCount}
+        includeCreateCard
+        emptyMessage="No drafts yet. Create a new project to get started."
+        isLoading={isLoadMoreDisabled}
+        loadMoreLabel={loadingMoreCategory === "drafts" ? "Loading..." : "Load more"}
+        onLoadMore={(category) => void loadMoreProjects(category)}
+        onViewMore={handleViewMore}
+      />
+      <ProjectSection
+        category="published"
+        title="Published"
+        projects={publishedProjects}
+        visibleCount={publishedVisibleCount}
+        totalCount={publishedTotalCount}
+        emptyMessage="No published projects yet."
+        isLoading={isLoadMoreDisabled}
+        loadMoreLabel={loadingMoreCategory === "published" ? "Loading..." : "Load more"}
+        onLoadMore={(category) => void loadMoreProjects(category)}
+        onViewMore={handleViewMore}
+      />
     </PageContainer>
   );
 };
