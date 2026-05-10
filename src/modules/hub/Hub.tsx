@@ -113,13 +113,13 @@ export const Hub = (): JSX.Element => {
   const [playedGames, setPlayedGames] = useState<ProjectResponseDto[]>([]);
 
   const { value: allProjects } = useAsync(
-      () => projectControllerGetAllReleases().then(({ data }) => {
-          if (Array.isArray(data)) return data;
+    () => projectControllerGetAllReleases().then(({ data }) => {
+      if (Array.isArray(data)) return data;
 
-          const paginatedData = data as unknown as ProjectListResponse;
-          return paginatedData?.data || [];
-      }),
-      []
+      const paginatedData = data as unknown as ProjectListResponse;
+      return paginatedData?.data || [];
+    }),
+    []
   );
 
   useEffect(() => {

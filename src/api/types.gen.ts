@@ -53,10 +53,8 @@ export type GithubLoginDto = {
 };
 
 export type MicrosoftLoginDto = {
-    /**
-     * Microsoft Graph API access token
-     */
     token: string;
+    codeVerifier: string;
 };
 
 export type ChangePasswordDto = {

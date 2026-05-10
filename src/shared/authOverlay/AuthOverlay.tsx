@@ -1,17 +1,16 @@
-import { Box, Link, Typography, Divider } from "@mui/material";
+import { Box, Link, Typography, Divider, useTheme } from "@mui/material";
 import GenericTextField from "@shared/TextField";
 import { FC, useCallback, useState } from "react";
 import { styled } from "@mui/material";
-import { CreateUserDto, LoginDto, authControllerRegister, authControllerLogin, userControllerGetProfile, authControllerLoginWithGoogle, authControllerLoginWithMicrosoft } from "@api";
+import { CreateUserDto, LoginDto, authControllerRegister, authControllerLogin, userControllerGetProfile, authControllerLoginWithGoogle } from "@api";
 import { useForm } from "react-hook-form";
 import ImportantButton from "@shared/buttons/ImportantButton";
 import { useUser } from "@providers/UserProvider";
 import { CustomDialog } from "@shared/dialog/CustomDialog";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
-import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
+import { CredentialResponse, GoogleLogin } from "@react-oauth/google";
 import { useAuthSuccess } from "@hooks/useAuthSuccess";
-import { useMsal } from "@azure/msal-react";
-import { loginRequest } from "../../authConfig";
+import { generatePKCE, savePKCE } from "@utils/pkce";
 
 interface AuthOverlayProps {
   isOpen: boolean;
@@ -29,7 +28,7 @@ const Title = styled("h2")(({ theme }) => ({
 }));
 
 const StyledTitle = styled(Title)(({ theme }) => ({
-  marginBottom: theme.spacing(2),
+  marginBottom: theme.spacing(1),
 }));
 
 const StyledTextField = styled(GenericTextField)(() => ({
@@ -42,10 +41,26 @@ const FieldContainer = styled(Box)(({ theme }) => ({
 }));
 
 const StyledImportantButton = styled(ImportantButton)(({ theme }) => ({
-  marginTop: theme.spacing(5),
+  marginTop: theme.spacing(4),
   width: "100%",
-  height: "56px",
+  height: "48px",
   backgroundColor: theme.palette.red[500]
+}));
+
+const OAuthButtonsContainer = styled(Box)(({ theme }) => ({
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  gap: theme.spacing(1.5),
+  marginBottom: theme.spacing(3),
+  width: "100%"
+}));
+
+const OAuthButton = styled(ImportantButton)(() => ({
+  width: "100%",
+  height: "40px",
+  fontSize: "14px",
+  fontWeight: 500
 }));
 
 const Center = styled(Box)(({ theme }) => ({
@@ -59,12 +74,12 @@ const Center = styled(Box)(({ theme }) => ({
 }));
 
 const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }): React.JSX.Element => {
-  const { instance } = useMsal();
+  const theme = useTheme();
   const [isSignUpMode, setIsSignedUp] = useState(false);
 
   const authText = useCallback((bool: boolean) => {
     return bool ? "Sign up" : "Login";
-  }, [isSignUpMode]);
+  }, []);
 
   const { setUser } = useUser();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -97,7 +112,6 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }): Reac
         accessToken = authResponse!.access_token;
       }
 
-      // FIXME: put the token to httpOnly cookie using the backend
       LocalStorageManager.setToken(accessToken);
 
       const { data: userRes } = await userControllerGetProfile();
@@ -112,11 +126,16 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }): Reac
         onClose();
       }
     } catch (error) {
-      setErrorMessage((error as ErrorWithBody).body.message);
+      let msg = "Une erreur est survenue";
+      if (error instanceof Error) {
+        const errorWithBody = error as unknown as ErrorWithBody;
+        msg = errorWithBody?.body?.message || error.message;
+      }
+      setErrorMessage(msg);
     }
   }, [isSignUpMode, reset, onClose, setUser]);
 
-  const handleGoogleAuth = async (credentialResponse: CredentialResponse): Promise<void> => {
+  const handleGoogleAuthCallback = useCallback(async (credentialResponse: CredentialResponse): Promise<void> => {
     try {
       setErrorMessage(null);
       if (!credentialResponse.credential) {
@@ -129,35 +148,54 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }): Reac
 
       await handleAuthSuccess(authResponse!.access_token);
     } catch (error) {
-      const msg = (error as ErrorWithBody)?.body?.message || "La connexion avec Google a échoué.";
+      let msg = "La connexion avec Google a échoué.";
+      if (error instanceof Error) {
+        const errorWithBody = error as unknown as ErrorWithBody;
+        msg = errorWithBody?.body?.message || error.message;
+      }
       setErrorMessage(msg);
     }
-  };
+  }, [handleAuthSuccess]);
 
-  const handleGithubLogin = (): void => {
+  const handleGoogleAuth = useCallback((): void => {
+    // Trigger the hidden GoogleLogin button
+    const googleButton = document.querySelector<HTMLButtonElement>(".google-button-wrapper button");
+    googleButton?.click();
+  }, []);
+
+  const handleGithubLogin = useCallback((): void => {
     const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
     const redirectUri = import.meta.env.VITE_GITHUB_REDIRECT_URI;
     window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=user:email`;
-  };
+  }, []);
 
-  const handleMicrosoftLogin = async (): Promise<void> => {
+  const handleMicrosoftLogin = useCallback(async (): Promise<void> => {
     try {
       setErrorMessage(null);
+      const { codeVerifier, codeChallenge } = await generatePKCE();
+      savePKCE(codeVerifier);
 
-      const response = await instance.loginPopup(loginRequest);
+      const clientId = import.meta.env.VITE_MICROSOFT_CLIENT_ID;
+      const tenantId = import.meta.env.VITE_MICROSOFT_TENANT_ID;
+      const redirectUri = import.meta.env.VITE_MICROSOFT_REDIRECT_URI || `${window.location.origin}/oauth/microsoft/callback`;
+      const state = btoa(JSON.stringify({ timestamp: Date.now() }));
 
-      if (response && response.idToken) {
-        const { data: authResponse } = await authControllerLoginWithMicrosoft({
-          body: { token: response.idToken }
-        });
+      const authorizationUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize?` +
+        `client_id=${clientId}` +
+        `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+        "&response_type=code" +
+        "&scope=openid%20profile%20email" +
+        `&code_challenge=${codeChallenge}` +
+        "&code_challenge_method=S256" +
+        `&state=${state}` +
+        "&response_mode=query";
 
-        await handleAuthSuccess(authResponse!.access_token);
-      }
+      window.open(authorizationUrl, "microsoft_login", "width=500,height=700");
     } catch (error) {
-      console.error("Erreur Microsoft:", error);
-      setErrorMessage("La connexion avec Microsoft a échoué ou a été annulée.");
+      const msg = error instanceof Error ? error.message : "Erreur lors de l'initialisation de la connexion Microsoft.";
+      setErrorMessage(msg);
     }
-  };
+  }, []);
 
   return (
     <CustomDialog isOpen={isOpen} setIsOpen={setIsOpen} hideSubmitButton>
@@ -165,20 +203,24 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }): Reac
         <StyledTitle>{authText(isSignUpMode)}</StyledTitle>
 
         <FieldContainer>
-          <label>Email</label>
+          <label htmlFor="email-input">Email</label>
           <StyledTextField
+            id="email-input"
             {...register("email")}
             data-cy="email-input" />
         </FieldContainer>
 
         {isSignUpMode && <FieldContainer>
-          <label>Username</label>
-          <StyledTextField {...register("username")} />
+          <label htmlFor="username-input">Username</label>
+          <StyledTextField
+            id="username-input"
+            {...register("username")} />
         </FieldContainer>}
 
         <FieldContainer>
-          <label>Password</label>
+          <label htmlFor="password-input">Password</label>
           <StyledTextField
+            id="password-input"
             type="password"
             {...register("password")}
             data-cy="password-input" />
@@ -191,40 +233,45 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }): Reac
 
         {errorMessage && <Typography color="error">{errorMessage}</Typography>}
 
-        <Box sx={{ width: "100%", my: 3 }}>
+        <Box sx={{ width: "100%", my: 2 }}>
           <Divider>
             <Typography variant="body2" color="textSecondary">OR</Typography>
           </Divider>
         </Box>
 
-        <Box display="flex" flexDirection="column" alignItems="center" gap={2} mb={3}>
+        <OAuthButtonsContainer>
 
-          <GoogleLogin
-            onSuccess={handleGoogleAuth}
-            onError={() => setErrorMessage("La fenêtre Google a été fermée ou une erreur est survenue.")}
-            theme="filled_black"
-            text={isSignUpMode ? "signup_with" : "signin_with"}
-          />
+          <Box className="google-button-wrapper" sx={{ display: "none" }}>
+            <GoogleLogin
+              onSuccess={handleGoogleAuthCallback}
+              onError={() => setErrorMessage("La fenêtre Google a été fermée ou une erreur est survenue.")}
+            />
+          </Box>
 
-          <ImportantButton
+          <OAuthButton
+            type="button"
+            onClick={handleGoogleAuth}
+          >
+            Continuer avec Google
+          </OAuthButton>
+
+          <OAuthButton
             type="button"
             onClick={handleGithubLogin}
-            sx={{ width: "100%", backgroundColor: "#333", "&:hover": { backgroundColor: "#000" } }}
           >
             Continuer avec GitHub
-          </ImportantButton>
+          </OAuthButton>
 
-          <ImportantButton
+          <OAuthButton
             type="button"
             onClick={handleMicrosoftLogin}
-            sx={{ width: "100%", mt: 2, backgroundColor: "#00a4ef", "&:hover": { backgroundColor: "#008ad2" } }}
           >
             Continuer avec Microsoft
-          </ImportantButton>
+          </OAuthButton>
 
-        </Box>
+        </OAuthButtonsContainer>
 
-        <Center>
+        <Center sx={{ marginTop: isSignUpMode ? theme.spacing(-1) : theme.spacing(3) }}>
           <Typography>{isSignUpMode ? "Already have an account ? " : "Don't have an account ? "}
             <Link
               sx={{ cursor: "pointer" }}
