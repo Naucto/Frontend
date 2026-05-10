@@ -2284,10 +2284,8 @@ export type UserPublicControllerGetLikedGamesData = {
     id: number;
   };
   query?: {
-    /**
-     * Optional max number of games to return
-     */
-    limit?: string;
+    page?: number;
+    limit?: number;
   };
   url: "/users/public/{id}/likes";
 };
@@ -2311,10 +2309,8 @@ export type UserPublicControllerGetPublishedGamesData = {
     id: number;
   };
   query?: {
-    /**
-     * Optional max number of games to return
-     */
-    limit?: string;
+    page?: number;
+    limit?: number;
   };
   url: "/users/public/{id}/published-games";
 };

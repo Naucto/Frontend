@@ -186,7 +186,7 @@ export const Profile = (): JSX.Element => {
       if (!profileId || Number.isNaN(profileNumericId)) return [];
       const { data } = await userPublicControllerGetLikedGames({
         path: { id: profileNumericId },
-        query: { limit: String(PROFILE_GAMES_PREVIEW_LIMIT) },
+        query: { page: 1, limit: PROFILE_GAMES_PREVIEW_LIMIT },
         throwOnError: true,
       });
       return (data ?? []) as ProjectExResponseDto[];
@@ -199,7 +199,7 @@ export const Profile = (): JSX.Element => {
       if (!profileId || Number.isNaN(profileNumericId)) return [];
       const { data } = await userPublicControllerGetPublishedGames({
         path: { id: profileNumericId },
-        query: { limit: String(PROFILE_GAMES_PREVIEW_LIMIT) },
+        query: { page: 1, limit: PROFILE_GAMES_PREVIEW_LIMIT },
         throwOnError: true,
       });
       return (data ?? []) as ProjectExResponseDto[];

@@ -1,6 +1,6 @@
 import React from "react";
 import { styled } from "@mui/material";
-import { Box, Typography } from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
 import { Link, useParams } from "react-router-dom";
 import { useAsync } from "src/hooks/useAsync";
 import { ProjectExResponseDto, userPublicControllerGetLikedGames, userPublicControllerGetPublishedGames } from "@api";
@@ -44,6 +44,24 @@ const StatusText = styled(Typography)(({ theme }) => ({
   marginTop: theme.spacing(2),
 }));
 
+const PaginationRow = styled(Box)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: theme.spacing(2),
+  marginTop: theme.spacing(2),
+}));
+
+const PAGINATION_LIMIT = 20;
+
+const PaginationButton = styled(Button)(({ theme }) => ({
+  color: theme.palette.grey[200],
+  // change mui disabled color
+  "&.Mui-disabled": {
+    color: theme.palette.grey[500],
+  },
+}));
+
 type Props = {
   title: string;
   type: "liked" | "published";
@@ -57,6 +75,7 @@ export const ProfileGamesSeeAllBase: React.FC<Props> = ({
 }) => {
   const { profileId } = useParams<{ profileId: string }>();
   const numericProfileId = Number(profileId);
+  const [page, setPage] = React.useState(1);
 
   const { loading, value: games } = useAsync(
     async () => {
@@ -65,16 +84,21 @@ export const ProfileGamesSeeAllBase: React.FC<Props> = ({
         type === "liked"
           ? await userPublicControllerGetLikedGames({
             path: { id: numericProfileId },
+            query: { page, limit: PAGINATION_LIMIT },
             throwOnError: true,
           })
           : await userPublicControllerGetPublishedGames({
             path: { id: numericProfileId },
+            query: { page, limit: PAGINATION_LIMIT },
             throwOnError: true,
           });
       return (data ?? []) as ProjectExResponseDto[];
     },
-    [profileId, numericProfileId, type]
+    [profileId, numericProfileId, type, page]
   );
+
+  const hasPrev = page > 1;
+  const hasNext = (games ?? []).length === PAGINATION_LIMIT;
 
   return (
     <PageContainer>
@@ -96,13 +120,32 @@ export const ProfileGamesSeeAllBase: React.FC<Props> = ({
           {emptyLabel}
         </StatusText>
       ) : (
-        <CardsWrap>
-          {(games ?? []).map((game) => (
-            <ProjectCardWrapper key={game.id}>
-              <ProjectCard project={game} isPlayable />
-            </ProjectCardWrapper>
-          ))}
-        </CardsWrap>
+        <>
+          <CardsWrap>
+            {(games ?? []).map((game) => (
+              <ProjectCardWrapper key={game.id}>
+                <ProjectCard project={game} isPlayable />
+              </ProjectCardWrapper>
+            ))}
+          </CardsWrap>
+          <PaginationRow>
+            <PaginationButton
+              disabled={!hasPrev}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              Previous
+            </PaginationButton>
+            <Typography variant="body2" color="white">
+              Page {page}
+            </Typography>
+            <PaginationButton
+              disabled={!hasNext}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Next
+            </PaginationButton>
+          </PaginationRow>
+        </>
       )}
     </PageContainer>
   );
