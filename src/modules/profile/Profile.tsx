@@ -1,7 +1,7 @@
 import { JSX, useEffect, useMemo, useRef, useState } from "react";
 import { styled } from "@mui/material/styles";
 import { Box, Typography } from "@mui/material";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useAsync } from "src/hooks/useAsync";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
 import ImportantButton from "@shared/buttons/ImportantButton";
@@ -9,15 +9,18 @@ import { Editable } from "@shared/forms/Editable";
 import { useForm } from "react-hook-form";
 import UserIcon from "@assets/user.svg?react";
 import { useSnackbar } from "notistack";
+import * as urls from "@shared/route";
 import {
   ProjectExResponseDto,
   userPublicControllerGetPublicProfile,
+  userPublicControllerGetLikedGames,
+  userPublicControllerGetPublishedGames,
   userControllerUpdateMyProfile,
   userControllerUploadProfilePicture,
   PublicUserProfileDto,
   userControllerUploadProfileBackground,
 } from "@api";
-import { client } from "@api/client.gen";
+import { isAxiosError } from "axios";
 import ProjectCard from "@modules/projects/components/ProjectCard";
 
 const DEFAULT_PROFILE_BACKGROUND =
@@ -92,15 +95,14 @@ const TextInfo = styled("div")(({ theme }) => ({
 
 const EditProfileButton = styled(ImportantButton)(({ theme }) => ({
   marginTop: theme.spacing(1),
-  width: theme.spacing(15),
+  width: "fit-content",
   fontSize: "16px"
 }));
 
-const ImageInputActions = styled(Box)(({ theme }) => ({
+const HorizontalBox = styled(Box)(({ theme }) => ({
   display: "flex",
   flexDirection: "row",
   gap: theme.spacing(1),
-  marginTop: theme.spacing(1),
 }));
 
 const Section = styled(Box)(({ theme }) => ({
@@ -123,6 +125,24 @@ const ProjectCardWrapper = styled(Box)(() => ({
   flex: "0 0 auto",
   width: 360,
 }));
+
+const SectionHeader = styled(Box)(({ theme }) => ({
+  display: "flex",
+  alignItems: "baseline",
+  justifyContent: "space-between",
+  gap: theme.spacing(2),
+}));
+
+const SeeAllLink = styled(Link)(({ theme }) => ({
+  color: theme.palette.grey[200],
+  textDecoration: "none",
+  fontSize: "22px",
+  "&:hover": {
+    textDecoration: "underline",
+  },
+}));
+
+const PROFILE_GAMES_PREVIEW_LIMIT = 5;
 
 export const Profile = (): JSX.Element => {
   const { profileId } = useParams<{ profileId: string }>();
@@ -164,10 +184,10 @@ export const Profile = (): JSX.Element => {
   const { value: likedGames } = useAsync(
     async () => {
       if (!profileId || Number.isNaN(profileNumericId)) return [];
-      const { data } = await client.get({
-        url: "/users/public/{id}/likes",
+      const { data } = await userPublicControllerGetLikedGames({
         path: { id: profileNumericId },
-        responseType: "json",
+        query: { limit: String(PROFILE_GAMES_PREVIEW_LIMIT) },
+        throwOnError: true,
       });
       return (data ?? []) as ProjectExResponseDto[];
     },
@@ -177,10 +197,10 @@ export const Profile = (): JSX.Element => {
   const { value: publishedGames } = useAsync(
     async () => {
       if (!profileId || Number.isNaN(profileNumericId)) return [];
-      const { data } = await client.get({
-        url: "/users/public/{id}/published-games",
+      const { data } = await userPublicControllerGetPublishedGames({
         path: { id: profileNumericId },
-        responseType: "json",
+        query: { limit: String(PROFILE_GAMES_PREVIEW_LIMIT) },
+        throwOnError: true,
       });
       return (data ?? []) as ProjectExResponseDto[];
     },
@@ -252,8 +272,13 @@ export const Profile = (): JSX.Element => {
       setSelectedBackgroundFile(null);
       enqueueSnackbar("Profile updated successfully", { variant: "success" });
     } catch (error) {
-      console.error("Error updating profile:", error);
-      enqueueSnackbar("Error updating profile", { variant: "error" });
+      if (isAxiosError(error)) {
+        const errorMessage = error.response?.data?.message ?? "An error occurred while updating the profile";
+        enqueueSnackbar(errorMessage, { variant: "error" });
+      }
+      else {
+        enqueueSnackbar("An unexpected error occurred while updating the profile", { variant: "error" });
+      }
     }
   };
 
@@ -297,7 +322,7 @@ export const Profile = (): JSX.Element => {
               </Editable>
 
               {isEditable && isEditing && (
-                <ImageInputActions>
+                <HorizontalBox>
                   <ChangePhotoButton
                     type="button"
                     onClick={() => profileFileInputRef.current?.click()}
@@ -326,35 +351,45 @@ export const Profile = (): JSX.Element => {
                     type="file"
                     onChange={handleBackgroundFileChange}
                   />
-                </ImageInputActions>
+                </HorizontalBox>
               )}
-              {isEditable && (
-                <EditProfileButton type="button" onClick={handleEditButtonClick}>
-                  {isEditing ? "Cancel" : "Edit Profile"}
-                </EditProfileButton>
-              )}
-              {isEditable && isEditing && <EditProfileButton type="submit">Submit</EditProfileButton>}
+              <HorizontalBox>
+                {isEditable && (
+                  <EditProfileButton type="button" onClick={handleEditButtonClick}>
+                    {isEditing ? "Cancel" : "Edit Profile"}
+                  </EditProfileButton>
+                )}
+                {isEditable && isEditing && <EditProfileButton type="submit">Submit</EditProfileButton>}
+              </HorizontalBox>
             </TextInfo>
           </ProfileInfo>
         </ProfileHeader>
 
         <Section>
-          <Typography variant="h6" color="white">Published games</Typography>
+          <SectionHeader>
+            <Typography variant="h6" color="white">Published games</Typography>
+            {!Number.isNaN(profileNumericId) && (
+              <SeeAllLink to={urls.toProfilePublishedGames(profileNumericId)}>See all</SeeAllLink>
+            )}
+          </SectionHeader>
           <HorizontalScroller>
-            {(publishedGames ?? []).map((game) => (
-              <>
-                <ProjectCardWrapper key={game.id}>
-                  <ProjectCard project={game} isPlayable />
-                </ProjectCardWrapper>
-              </>
+            {(publishedGames ?? []).slice(0, PROFILE_GAMES_PREVIEW_LIMIT).map((game) => (
+              <ProjectCardWrapper key={game.id}>
+                <ProjectCard project={game} isPlayable />
+              </ProjectCardWrapper>
             ))}
           </HorizontalScroller>
         </Section>
 
         <Section>
-          <Typography variant="h6" color="white">Liked games</Typography>
+          <SectionHeader>
+            <Typography variant="h6" color="white">Liked games</Typography>
+            {!Number.isNaN(profileNumericId) && (
+              <SeeAllLink to={urls.toProfileLikedGames(profileNumericId)}>See all</SeeAllLink>
+            )}
+          </SectionHeader>
           <HorizontalScroller>
-            {(likedGames ?? []).map((game) => (
+            {(likedGames ?? []).slice(0, PROFILE_GAMES_PREVIEW_LIMIT).map((game) => (
               <ProjectCardWrapper key={game.id}>
                 <ProjectCard project={game} isPlayable />
               </ProjectCardWrapper>
