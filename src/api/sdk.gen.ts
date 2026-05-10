@@ -158,14 +158,8 @@ import type {
   UserControllerUploadProfilePictureResponses,
   UserPublicControllerGetLikedGamesData,
   UserPublicControllerGetLikedGamesResponses,
-  UserPublicControllerGetPublicProfileBackgroundData,
-  UserPublicControllerGetPublicProfileBackgroundErrors,
-  UserPublicControllerGetPublicProfileBackgroundResponses,
   UserPublicControllerGetPublicProfileData,
   UserPublicControllerGetPublicProfileErrors,
-  UserPublicControllerGetPublicProfilePictureData,
-  UserPublicControllerGetPublicProfilePictureErrors,
-  UserPublicControllerGetPublicProfilePictureResponses,
   UserPublicControllerGetPublicProfileResponses,
   UserPublicControllerGetPublishedGamesData,
   UserPublicControllerGetPublishedGamesResponses,
@@ -1276,48 +1270,6 @@ export const userPublicControllerGetPublicProfile = <
   >({
     responseType: "json",
     url: "/users/public/{id}/profile",
-    ...options
-  });
-
-/**
- * Get public CDN URL for a user's profile picture
- */
-export const userPublicControllerGetPublicProfilePicture = <
-  ThrowOnError extends boolean = false
->(
-  options: Options<
-    UserPublicControllerGetPublicProfilePictureData,
-    ThrowOnError
-  >
-) =>
-  (options.client ?? client).get<
-    UserPublicControllerGetPublicProfilePictureResponses,
-    UserPublicControllerGetPublicProfilePictureErrors,
-    ThrowOnError
-  >({
-    responseType: "json",
-    url: "/users/public/{id}/profile-picture",
-    ...options
-  });
-
-/**
- * Get public CDN URL for a user's profile background
- */
-export const userPublicControllerGetPublicProfileBackground = <
-  ThrowOnError extends boolean = false
->(
-  options: Options<
-    UserPublicControllerGetPublicProfileBackgroundData,
-    ThrowOnError
-  >
-) =>
-  (options.client ?? client).get<
-    UserPublicControllerGetPublicProfileBackgroundResponses,
-    UserPublicControllerGetPublicProfileBackgroundErrors,
-    ThrowOnError
-  >({
-    responseType: "json",
-    url: "/users/public/{id}/profile-background",
     ...options
   });
 

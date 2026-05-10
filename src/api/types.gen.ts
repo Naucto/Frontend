@@ -2275,64 +2275,6 @@ export type UserPublicControllerGetPublicProfileResponses = {
 export type UserPublicControllerGetPublicProfileResponse =
   UserPublicControllerGetPublicProfileResponses[keyof UserPublicControllerGetPublicProfileResponses];
 
-export type UserPublicControllerGetPublicProfilePictureData = {
-  body?: never;
-  path: {
-    /**
-     * User ID
-     */
-    id: number;
-  };
-  query?: never;
-  url: "/users/public/{id}/profile-picture";
-};
-
-export type UserPublicControllerGetPublicProfilePictureErrors = {
-  /**
-   * User not found or has no profile picture
-   */
-  404: unknown;
-};
-
-export type UserPublicControllerGetPublicProfilePictureResponses = {
-  /**
-   * Returns the CDN URL for the profile picture
-   */
-  200: ImageUrlResponseDto;
-};
-
-export type UserPublicControllerGetPublicProfilePictureResponse =
-  UserPublicControllerGetPublicProfilePictureResponses[keyof UserPublicControllerGetPublicProfilePictureResponses];
-
-export type UserPublicControllerGetPublicProfileBackgroundData = {
-  body?: never;
-  path: {
-    /**
-     * User ID
-     */
-    id: number;
-  };
-  query?: never;
-  url: "/users/public/{id}/profile-background";
-};
-
-export type UserPublicControllerGetPublicProfileBackgroundErrors = {
-  /**
-   * User not found or has no profile background
-   */
-  404: unknown;
-};
-
-export type UserPublicControllerGetPublicProfileBackgroundResponses = {
-  /**
-   * Returns the CDN URL for the profile background
-   */
-  200: ImageUrlResponseDto;
-};
-
-export type UserPublicControllerGetPublicProfileBackgroundResponse =
-  UserPublicControllerGetPublicProfileBackgroundResponses[keyof UserPublicControllerGetPublicProfileBackgroundResponses];
-
 export type UserPublicControllerGetLikedGamesData = {
   body?: never;
   path: {
@@ -2341,7 +2283,12 @@ export type UserPublicControllerGetLikedGamesData = {
      */
     id: number;
   };
-  query?: never;
+  query?: {
+    /**
+     * Optional max number of games to return
+     */
+    limit?: string;
+  };
   url: "/users/public/{id}/likes";
 };
 
@@ -2363,7 +2310,12 @@ export type UserPublicControllerGetPublishedGamesData = {
      */
     id: number;
   };
-  query?: never;
+  query?: {
+    /**
+     * Optional max number of games to return
+     */
+    limit?: string;
+  };
   url: "/users/public/{id}/published-games";
 };
 
