@@ -30,3 +30,13 @@ export const getPKCE = (): string | null => {
   localStorage.removeItem("pkce_verifier");
   return verifier;
 };
+
+export const saveGooglePKCE = (codeVerifier: string): void => {
+  localStorage.setItem("google_pkce_verifier", codeVerifier);
+};
+
+export const getGooglePKCE = (): string | null => {
+  const verifier = localStorage.getItem("google_pkce_verifier");
+  localStorage.removeItem("google_pkce_verifier");
+  return verifier;
+};

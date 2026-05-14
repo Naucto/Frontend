@@ -850,6 +850,34 @@ export type AuthControllerLoginWithGoogleResponses = {
 
 export type AuthControllerLoginWithGoogleResponse = AuthControllerLoginWithGoogleResponses[keyof AuthControllerLoginWithGoogleResponses];
 
+export type GoogleCodeDto = {
+    code: string;
+    codeVerifier: string;
+};
+
+export type AuthControllerLoginWithGoogleCodeData = {
+    body: GoogleCodeDto;
+    path?: never;
+    query?: never;
+    url: '/auth/google/code';
+};
+
+export type AuthControllerLoginWithGoogleCodeErrors = {
+    /**
+     * Invalid Google code or code_verifier
+     */
+    401: unknown;
+};
+
+export type AuthControllerLoginWithGoogleCodeResponses = {
+    /**
+     * Login successful with Google
+     */
+    201: AuthResponseDto;
+};
+
+export type AuthControllerLoginWithGoogleCodeResponse = AuthControllerLoginWithGoogleCodeResponses[keyof AuthControllerLoginWithGoogleCodeResponses];
+
 export type AuthControllerLoginWithGithubData = {
     body: GithubLoginDto;
     path?: never;
