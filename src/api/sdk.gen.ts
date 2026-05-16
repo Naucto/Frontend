@@ -1272,7 +1272,7 @@ export const userPublicControllerGetPublicProfile = <
     ThrowOnError
   >({
     responseType: "json",
-    url: "/users/public/{id}/profile",
+    url: "/users/public/public/{id}/profile",
     ...options
   });
 
@@ -1293,7 +1293,7 @@ export const userPublicControllerGetPublicProfileByUsername = <
     ThrowOnError
   >({
     responseType: "json",
-    url: "/users/public/username/{username}/profile",
+    url: "/users/public/public/username/{username}/profile",
     ...options
   });
 
@@ -1311,7 +1311,7 @@ export const userPublicControllerGetLikedGames = <
     ThrowOnError
   >({
     responseType: "json",
-    url: "/users/public/{id}/likes",
+    url: "/users/public/public/{id}/likes",
     ...options
   });
 
@@ -1329,7 +1329,7 @@ export const userPublicControllerGetPublishedGames = <
     ThrowOnError
   >({
     responseType: "json",
-    url: "/users/public/{id}/published-games",
+    url: "/users/public/public/{id}/published-games",
     ...options
   });
 
