@@ -12,7 +12,7 @@ import { useSnackbar } from "notistack";
 import * as urls from "@shared/route";
 import {
   ProjectExResponseDto,
-  userPublicControllerGetPublicProfile,
+  userPublicControllerGetPublicProfileByUsername,
   userPublicControllerGetLikedGames,
   userPublicControllerGetPublishedGames,
   userControllerUpdateMyProfile,
@@ -22,6 +22,8 @@ import {
 } from "@api";
 import { isAxiosError } from "axios";
 import ProjectCard from "@modules/projects/components/ProjectCard";
+
+const ACCEPTED_IMAGE_TYPES = "image/png,image/jpeg,image/gif,image/webp";
 
 const DEFAULT_PROFILE_BACKGROUND =
   "https://png.pngtree.com/thumb_back/fh260/background/20250512/pngtree-blue-gradient-soft-background-vector-image_17280771.jpg";
@@ -44,7 +46,6 @@ const ProfileHeader = styled("div")(({ theme }) => ({
 }));
 
 const ProfileInfo = styled(Box)(({ theme }) => ({
-  // make box absolute positioned at the top of the page
   width: "100%",
   position: "relative",
   flex: 1,
@@ -145,9 +146,8 @@ const SeeAllLink = styled(Link)(({ theme }) => ({
 const PROFILE_GAMES_PREVIEW_LIMIT = 5;
 
 export const Profile = (): JSX.Element => {
-  const { profileId } = useParams<{ profileId: string }>();
+  const { username } = useParams<{ username?: string }>();
   const userId = Number(LocalStorageManager.getUserId());
-  const isEditable = profileId ? Number(profileId) === userId : false;
   const [isEditing, setIsEditing] = useState(false);
   const [refresh, setRefresh] = useState(1);
   const [selectedProfileFile, setSelectedProfileFile] = useState<File | null>(null);
@@ -158,18 +158,25 @@ export const Profile = (): JSX.Element => {
 
   const { value: profile } = useAsync(
     () => {
-      if (!profileId) return Promise.reject(new Error("Missing profileId"));
-      return userPublicControllerGetPublicProfile<true>({
-        throwOnError: true,
-        path: { id: Number(profileId) },
-      });
+      if (username) {
+        return userPublicControllerGetPublicProfileByUsername<true>({
+          throwOnError: true,
+          path: { username },
+        });
+      }
+      return Promise.reject(new Error("Missing profile identifier"));
     },
-    [profileId, refresh]
+    [username, refresh]
   );
   const { register, handleSubmit, reset } = useForm<{ description?: string }>();
 
   const profileData = profile?.data?.data as PublicUserProfileDto | undefined;
-  const profileNumericId = useMemo(() => Number(profileId), [profileId]);
+  const resolvedProfileId = useMemo(
+    () => profileData?.id ?? Number.NaN,
+    [profileData?.id]
+  );
+
+  const isEditable = Number.isFinite(resolvedProfileId) && resolvedProfileId === userId;
 
   useEffect(() => {
     if (profileData) {
@@ -183,28 +190,28 @@ export const Profile = (): JSX.Element => {
 
   const { value: likedGames } = useAsync(
     async () => {
-      if (!profileId || Number.isNaN(profileNumericId)) return [];
+      if (!Number.isFinite(resolvedProfileId)) return [];
       const { data } = await userPublicControllerGetLikedGames({
-        path: { id: profileNumericId },
+        path: { id: resolvedProfileId },
         query: { page: 1, limit: PROFILE_GAMES_PREVIEW_LIMIT },
         throwOnError: true,
       });
       return (data ?? []) as ProjectExResponseDto[];
     },
-    [profileId, profileNumericId, refresh]
+    [resolvedProfileId, refresh]
   );
 
   const { value: publishedGames } = useAsync(
     async () => {
-      if (!profileId || Number.isNaN(profileNumericId)) return [];
+      if (!Number.isFinite(resolvedProfileId)) return [];
       const { data } = await userPublicControllerGetPublishedGames({
-        path: { id: profileNumericId },
+        path: { id: resolvedProfileId },
         query: { page: 1, limit: PROFILE_GAMES_PREVIEW_LIMIT },
         throwOnError: true,
       });
       return (data ?? []) as ProjectExResponseDto[];
     },
-    [profileId, profileNumericId, refresh]
+    [resolvedProfileId, refresh]
   );
 
   const profilePreviewUrl = useMemo(() => {
@@ -257,12 +264,12 @@ export const Profile = (): JSX.Element => {
         });
       }
 
-      const currentDescription = profileData?.description ?? profileData?.nickname ?? "";
+      const currentDescription = profileData?.description ?? "";
       const nextDescription = data.description ?? "";
       if (nextDescription !== currentDescription) {
         await userControllerUpdateMyProfile<true>({
           throwOnError: true,
-          body: { nickname: nextDescription },
+          body: { description: nextDescription },
         });
       }
 
@@ -314,7 +321,7 @@ export const Profile = (): JSX.Element => {
               </Typography>
               <Editable
                 editing={isEditing}
-                value={profileData?.description ?? profileData?.nickname ?? ""}
+                value={profileData?.description ?? ""}
                 register={register("description")}
               >
                 <Description variant="body1"
@@ -333,7 +340,7 @@ export const Profile = (): JSX.Element => {
                   <input
                     ref={profileFileInputRef}
                     hidden
-                    accept="image/png,image/jpeg,image/gif,image/webp"
+                    accept={ACCEPTED_IMAGE_TYPES}
                     type="file"
                     onChange={handleProfileFileChange}
                   />
@@ -347,7 +354,7 @@ export const Profile = (): JSX.Element => {
                   <input
                     ref={backgroundFileInputRef}
                     hidden
-                    accept="image/png,image/jpeg,image/gif,image/webp"
+                    accept={ACCEPTED_IMAGE_TYPES}
                     type="file"
                     onChange={handleBackgroundFileChange}
                   />
@@ -368,8 +375,8 @@ export const Profile = (): JSX.Element => {
         <Section>
           <SectionHeader>
             <Typography variant="h6" color="white">Published games</Typography>
-            {!Number.isNaN(profileNumericId) && (
-              <SeeAllLink to={urls.toProfilePublishedGames(profileNumericId)}>See all</SeeAllLink>
+            {username && (
+              <SeeAllLink to={urls.toProfilePublishedGamesByUsername(username)}>See all</SeeAllLink>
             )}
           </SectionHeader>
           <HorizontalScroller>
@@ -384,8 +391,8 @@ export const Profile = (): JSX.Element => {
         <Section>
           <SectionHeader>
             <Typography variant="h6" color="white">Liked games</Typography>
-            {!Number.isNaN(profileNumericId) && (
-              <SeeAllLink to={urls.toProfileLikedGames(profileNumericId)}>See all</SeeAllLink>
+            {username && (
+              <SeeAllLink to={urls.toProfileLikedGamesByUsername(username)}>See all</SeeAllLink>
             )}
           </SectionHeader>
           <HorizontalScroller>

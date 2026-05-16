@@ -3,7 +3,12 @@ import { styled } from "@mui/material";
 import { Box, Button, Typography } from "@mui/material";
 import { Link, useParams } from "react-router-dom";
 import { useAsync } from "src/hooks/useAsync";
-import { ProjectExResponseDto, userPublicControllerGetLikedGames, userPublicControllerGetPublishedGames } from "@api";
+import {
+  ProjectExResponseDto,
+  userPublicControllerGetLikedGames,
+  userPublicControllerGetPublishedGames,
+  userPublicControllerGetPublicProfileByUsername,
+} from "@api";
 import ProjectCard from "@modules/projects/components/ProjectCard";
 import * as urls from "@shared/route";
 
@@ -56,7 +61,6 @@ const PAGINATION_LIMIT = 20;
 
 const PaginationButton = styled(Button)(({ theme }) => ({
   color: theme.palette.grey[200],
-  // change mui disabled color
   "&.Mui-disabled": {
     color: theme.palette.grey[500],
   },
@@ -73,32 +77,46 @@ export const ProfileGamesSeeAllBase: React.FC<Props> = ({
   type,
   emptyLabel,
 }) => {
-  const { profileId } = useParams<{ profileId: string }>();
-  const numericProfileId = Number(profileId);
+  const { username } = useParams<{ username?: string }>();
   const [page, setPage] = React.useState(1);
 
-  const { loading, value: games } = useAsync(
+  const { loading: loadingProfile, value: resolvedProfileId } = useAsync(
     async () => {
-      if (!profileId || Number.isNaN(numericProfileId)) return [];
+      if (!username) return Number.NaN;
+      const { data } = await userPublicControllerGetPublicProfileByUsername({
+        path: { username },
+        throwOnError: true,
+      });
+      return typeof data?.data?.id === "number" ? data.data.id : Number.NaN;
+    },
+    [username]
+  );
+  const resolvedProfileIdNumber =
+    typeof resolvedProfileId === "number" ? resolvedProfileId : Number.NaN;
+
+  const { loading: loadingGames, value: games } = useAsync(
+    async () => {
+      if (!Number.isFinite(resolvedProfileIdNumber)) return [];
       const { data } =
         type === "liked"
           ? await userPublicControllerGetLikedGames({
-            path: { id: numericProfileId },
+            path: { id: resolvedProfileIdNumber },
             query: { page, limit: PAGINATION_LIMIT },
             throwOnError: true,
           })
           : await userPublicControllerGetPublishedGames({
-            path: { id: numericProfileId },
+            path: { id: resolvedProfileIdNumber },
             query: { page, limit: PAGINATION_LIMIT },
             throwOnError: true,
           });
       return (data ?? []) as ProjectExResponseDto[];
     },
-    [profileId, numericProfileId, type, page]
+    [resolvedProfileIdNumber, type, page]
   );
 
   const hasPrev = page > 1;
   const hasNext = (games ?? []).length === PAGINATION_LIMIT;
+  const loading = loadingProfile || loadingGames;
 
   return (
     <PageContainer>
@@ -106,8 +124,14 @@ export const ProfileGamesSeeAllBase: React.FC<Props> = ({
         <Typography variant="h4" color="white">
           {title}
         </Typography>
-        {!Number.isNaN(numericProfileId) && (
-          <BackLink to={urls.toProfile(numericProfileId)}>Back to profile</BackLink>
+        {Number.isFinite(resolvedProfileIdNumber) && (
+          <BackLink
+            to={
+              username ? urls.toProfileByUsername(username) : ""
+            }
+          >
+            Back to profile
+          </BackLink>
         )}
       </HeaderRow>
 

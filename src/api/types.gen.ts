@@ -2275,6 +2275,35 @@ export type UserPublicControllerGetPublicProfileResponses = {
 export type UserPublicControllerGetPublicProfileResponse =
   UserPublicControllerGetPublicProfileResponses[keyof UserPublicControllerGetPublicProfileResponses];
 
+export type UserPublicControllerGetPublicProfileByUsernameData = {
+  body?: never;
+  path: {
+    /**
+     * Username
+     */
+    username: string;
+  };
+  query?: never;
+  url: "/users/public/username/{username}/profile";
+};
+
+export type UserPublicControllerGetPublicProfileByUsernameErrors = {
+  /**
+   * User not found
+   */
+  404: unknown;
+};
+
+export type UserPublicControllerGetPublicProfileByUsernameResponses = {
+  /**
+   * Returns the public user profile
+   */
+  200: PublicUserProfileResponseDto;
+};
+
+export type UserPublicControllerGetPublicProfileByUsernameResponse =
+  UserPublicControllerGetPublicProfileByUsernameResponses[keyof UserPublicControllerGetPublicProfileByUsernameResponses];
+
 export type UserPublicControllerGetLikedGamesData = {
   body?: never;
   path: {

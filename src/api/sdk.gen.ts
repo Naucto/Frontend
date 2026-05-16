@@ -158,6 +158,9 @@ import type {
   UserControllerUploadProfilePictureResponses,
   UserPublicControllerGetLikedGamesData,
   UserPublicControllerGetLikedGamesResponses,
+  UserPublicControllerGetPublicProfileByUsernameData,
+  UserPublicControllerGetPublicProfileByUsernameErrors,
+  UserPublicControllerGetPublicProfileByUsernameResponses,
   UserPublicControllerGetPublicProfileData,
   UserPublicControllerGetPublicProfileErrors,
   UserPublicControllerGetPublicProfileResponses,
@@ -1270,6 +1273,27 @@ export const userPublicControllerGetPublicProfile = <
   >({
     responseType: "json",
     url: "/users/public/{id}/profile",
+    ...options
+  });
+
+/**
+ * Get a public user profile by username
+ */
+export const userPublicControllerGetPublicProfileByUsername = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<
+    UserPublicControllerGetPublicProfileByUsernameData,
+    ThrowOnError
+  >
+) =>
+  (options.client ?? client).get<
+    UserPublicControllerGetPublicProfileByUsernameResponses,
+    UserPublicControllerGetPublicProfileByUsernameErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/users/public/username/{username}/profile",
     ...options
   });
 

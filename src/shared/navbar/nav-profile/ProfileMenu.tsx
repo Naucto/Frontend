@@ -40,7 +40,7 @@ export const ProfileMenu: FC<ProfileMenuProps> = ({ anchorEl, open, onClose }) =
   }, [logOut]);
 
   const navigateToProfile = useCallback(() => {
-    navigate(urls.toProfile(LocalStorageManager.getUserId()));
+    navigate(urls.toProfileByUsername(LocalStorageManager.getUserName()));
     onClose();
   }, [navigate, onClose]);
 

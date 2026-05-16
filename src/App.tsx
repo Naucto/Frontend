@@ -51,13 +51,12 @@ const AppRoutes: React.FC = () => {
             <Route path="/hub" element={<Hub />} />
             <Route path='/projects' element={<Projects />} />
             <Route path="/projects/:projectId" element={<Project />} />
-            <Route path="/profile/:profileId" element={<Profile />} />
             {isStandalonePlayRoute && (
               <Route path="/project/:id/play" element={<Hub />} />
             )}
-            <Route path="/profile/:profileId" element={<Profile />} />
-            <Route path="/profile/:profileId/published-games" element={<ProfilePublishedGames />}/>
-            <Route path="/profile/:profileId/liked-games" element={<ProfileLikedGames />}/>
+            <Route path="/profile/:username" element={<Profile />} />
+            <Route path="/profile/:username/published-games" element={<ProfilePublishedGames />} />
+            <Route path="/profile/:username/liked-games" element={<ProfileLikedGames />} />
           </Routes>
           {(backgroundLocation || isStandalonePlayRoute) && (
             <Routes>
