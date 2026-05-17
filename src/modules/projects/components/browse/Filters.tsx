@@ -1,5 +1,5 @@
 import { Autocomplete, Chip, FormControl, MenuItem, Paper, Select, TextField } from "@mui/material";
-import { styled } from "@mui/material/styles";
+import { alpha, styled } from "@mui/material/styles";
 import { darkMenuProps } from "@shared/darkMenuProps";
 import { type JSX } from "react";
 import {
@@ -30,7 +30,7 @@ const FilterPanel = styled("div")(({ theme }) => ({
   gap: theme.spacing(1.5),
   padding: theme.spacing(1.5),
   borderRadius: theme.custom.rounded.md,
-  backgroundColor: "rgba(255, 255, 255, 0.06)",
+  backgroundColor: alpha(theme.palette.common.white, 0.06),
   backdropFilter: "blur(12px)",
   marginTop: theme.spacing(2),
   width: "100%",
@@ -42,13 +42,13 @@ const SelectFormControl = styled(FormControl)<{ minwidth?: number }>(({ minwidth
 
 const DarkSelect = styled(Select)(({ theme }) => ({
   color: theme.palette.common.white,
-  backgroundColor: "rgba(20, 20, 20, 0.72)",
-  borderRadius: "8px",
+  backgroundColor: alpha(theme.palette.gray[900], 0.72),
+  borderRadius: theme.custom.rounded.md,
   ".MuiOutlinedInput-notchedOutline": {
-    borderColor: "rgba(255,255,255,0.18)",
+    borderColor: alpha(theme.palette.common.white, 0.18),
   },
   "&:hover .MuiOutlinedInput-notchedOutline": {
-    borderColor: "rgba(255,255,255,0.3)",
+    borderColor: alpha(theme.palette.common.white, 0.3),
   },
   ".MuiSvgIcon-root": {
     color: theme.palette.common.white,
@@ -59,10 +59,10 @@ const DarkTextField = styled(TextField)(({ theme }) => ({
   minWidth: 220,
   ".MuiOutlinedInput-root": {
     color: theme.palette.common.white,
-    backgroundColor: "rgba(20, 20, 20, 0.72)",
+    backgroundColor: alpha(theme.palette.gray[900], 0.72),
   },
   ".MuiInputLabel-root": {
-    color: "rgba(255,255,255,0.7)",
+    color: alpha(theme.palette.common.white, 0.7),
   },
   ".MuiInputLabel-root.Mui-focused": {
     color: theme.palette.common.white,
@@ -74,20 +74,20 @@ const TagsAutocomplete = styled(Autocomplete<string, true, false, false>)({
   flex: 1,
 });
 
-const AutocompleteOption = styled("li")({
-  color: "white",
-  backgroundColor: "#1A1A1A",
-});
+const AutocompleteOption = styled("li")(({ theme }) => ({
+  color: theme.palette.common.white,
+  backgroundColor: theme.palette.gray[900],
+}));
 
-const DarkAutocompletePaper = styled(Paper)({
-  backgroundColor: "#1A1A1A",
-  color: "white",
+const DarkAutocompletePaper = styled(Paper)(({ theme }) => ({
+  backgroundColor: theme.palette.gray[900],
+  color: theme.palette.common.white,
   backgroundImage: "none",
   ".MuiAutocomplete-listbox": {
     maxHeight: 240,
     overflowY: "auto",
   },
-});
+}));
 
 const DarkAutocompleteListbox = styled("ul")({
   maxHeight: 240,

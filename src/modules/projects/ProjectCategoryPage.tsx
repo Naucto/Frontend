@@ -22,9 +22,11 @@ import {
 } from "@modules/projects/projectListUtils";
 import { useUser } from "@providers/UserProvider";
 import * as urls from "@shared/route";
-import { type JSX, useCallback, useEffect, useMemo, useState } from "react";
+import { type JSX, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import ProjectCard from "./components/ProjectCard";
+
+const PAGE_SIZE = 24;
 
 type ProjectCategoryPageState = {
   sortMetric?: ProjectSortMetric;
@@ -33,7 +35,34 @@ type ProjectCategoryPageState = {
   projectNameQuery?: string;
 };
 
-const PAGE_SIZE = 24;
+function mergeProjects(current: ProjectResponseDto[], next: ProjectResponseDto[]): ProjectResponseDto[] {
+  const mergedProjects = [...current, ...next];
+  const seen = new Set<number>();
+
+  return mergedProjects.filter((project) => {
+    if (seen.has(project.id)) {
+      return false;
+    }
+
+    seen.add(project.id);
+    return true;
+  });
+}
+
+async function fetchProjectsPage(page: number): Promise<{ projects: ProjectResponseDto[]; page: number; total: number }> {
+  const { data } = await projectControllerFindAll({
+    query: {
+      page,
+      limit: PAGE_SIZE,
+    },
+  });
+
+  return {
+    projects: data?.projects ?? [],
+    page: data?.page ?? page,
+    total: data?.total ?? 0,
+  };
+}
 
 function getCategoryTitle(category: ProjectCategory): string {
   return category === "drafts" ? "Draft projects" : "Published projects";
@@ -62,48 +91,6 @@ const ProjectCategoryPage = (): JSX.Element => {
   const [isLoadingProjects, setIsLoadingProjects] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  const mergeProjects = useCallback((current: ProjectResponseDto[], next: ProjectResponseDto[]): ProjectResponseDto[] => {
-    const mergedProjects = [...current, ...next];
-    const seen = new Set<number>();
-
-    return mergedProjects.filter((project) => {
-      if (seen.has(project.id)) {
-        return false;
-      }
-
-      seen.add(project.id);
-      return true;
-    });
-  }, []);
-
-  const fetchProjectsPage = useCallback(async (page: number) => {
-    const { data } = await projectControllerFindAll({
-      query: {
-        page,
-        limit: PAGE_SIZE,
-      },
-    });
-
-    return {
-      projects: data?.projects ?? [],
-      page: data?.page ?? page,
-      total: data?.total ?? 0,
-    };
-  }, []);
-
-  const loadProjectsPage = useCallback(async (page: number, reset = false): Promise<void> => {
-    setIsLoadingProjects(true);
-
-    try {
-      const response = await fetchProjectsPage(page);
-      setProjects((current) => mergeProjects(reset ? [] : current, response.projects));
-      setLoadedPage(response.page);
-      setTotalProjects(response.total);
-    } finally {
-      setIsLoadingProjects(false);
-    }
-  }, [fetchProjectsPage, mergeProjects]);
-
   useEffect(() => {
     if (!user.user) {
       navigate(urls.toHub());
@@ -115,8 +102,15 @@ const ProjectCategoryPage = (): JSX.Element => {
       return;
     }
 
-    void loadProjectsPage(1, true);
-  }, [category, loadProjectsPage, navigate, user.user]);
+    setIsLoadingProjects(true);
+    void fetchProjectsPage(1).then((response) => {
+      setProjects(mergeProjects([], response.projects));
+      setLoadedPage(response.page);
+      setTotalProjects(response.total);
+    }).finally(() => {
+      setIsLoadingProjects(false);
+    });
+  }, [category, navigate, user.user]);
 
   const availableTags = useMemo(() => {
     const tags = new Set<string>(PREDEFINED_PROJECT_TAGS);
@@ -141,7 +135,7 @@ const ProjectCategoryPage = (): JSX.Element => {
     return sortProjects(scopedProjects, sortMetric, sortOrder);
   }, [category, filteredProjects, sortMetric, sortOrder]);
 
-  const getCategoryProjectsFrom = useCallback((sourceProjects: ProjectResponseDto[]): ProjectResponseDto[] => {
+  const getCategoryProjectsFrom = (sourceProjects: ProjectResponseDto[]): ProjectResponseDto[] => {
     if (!isProjectCategory(category)) {
       return [];
     }
@@ -151,7 +145,7 @@ const ProjectCategoryPage = (): JSX.Element => {
       .filter((project) => projectMatchesCategory(project, category));
 
     return sortProjects(scopedProjects, sortMetric, sortOrder);
-  }, [category, projectNameQuery, selectedTags, sortMetric, sortOrder]);
+  };
 
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);

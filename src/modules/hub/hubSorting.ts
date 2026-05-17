@@ -87,6 +87,32 @@ export function sortPopularProjects(
   });
 }
 
+function getPrimarySortDiff(
+  a: ProjectExResponseDto,
+  b: ProjectExResponseDto,
+  metric: HubListSortMetric,
+  playedIndex: Map<number, number>
+): number {
+  switch (metric) {
+    case "lastPlayed": {
+      const leftIndex = playedIndex.get(a.id) ?? Number.MAX_SAFE_INTEGER;
+      const rightIndex = playedIndex.get(b.id) ?? Number.MAX_SAFE_INTEGER;
+      return rightIndex - leftIndex;
+    }
+    case "name":
+      return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+    case "tags": {
+      const left = [...a.tags].sort((x, y) => x.localeCompare(y)).join(", ");
+      const right = [...b.tags].sort((x, y) => x.localeCompare(y)).join(", ");
+      return left.localeCompare(right, undefined, { sensitivity: "base" });
+    }
+    case "publishedAt":
+      return getPublishedTime(a) - getPublishedTime(b);
+    default:
+      return (a[metric] ?? 0) - (b[metric] ?? 0);
+  }
+}
+
 export function sortHubProjects(
   projects: ProjectExResponseDto[],
   metric: HubListSortMetric,
@@ -97,44 +123,54 @@ export function sortHubProjects(
   const playedIndex = new Map(playedOrder.map((projectId, index) => [projectId, index]));
 
   return [...projects].sort((a, b) => {
-    if (metric === "lastPlayed") {
-      const leftIndex = playedIndex.get(a.id) ?? Number.MAX_SAFE_INTEGER;
-      const rightIndex = playedIndex.get(b.id) ?? Number.MAX_SAFE_INTEGER;
-      const diff = rightIndex - leftIndex;
+    const primaryDiff = getPrimarySortDiff(a, b, metric, playedIndex);
 
-      if (diff !== 0) {
-        return diff * direction;
-      }
-    } else if (metric === "name") {
-      const diff = a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
-
-      if (diff !== 0) {
-        return diff * direction;
-      }
-    } else if (metric === "tags") {
-      const left = [...a.tags].sort((x, y) => x.localeCompare(y)).join(", ");
-      const right = [...b.tags].sort((x, y) => x.localeCompare(y)).join(", ");
-      const diff = left.localeCompare(right, undefined, { sensitivity: "base" });
-
-      if (diff !== 0) {
-        return diff * direction;
-      }
-    } else if (metric === "publishedAt") {
-      const diff = getPublishedTime(a) - getPublishedTime(b);
-
-      if (diff !== 0) {
-        return diff * direction;
-      }
-    } else {
-      const diff = (a[metric] ?? 0) - (b[metric] ?? 0);
-
-      if (diff !== 0) {
-        return diff * direction;
-      }
+    if (primaryDiff !== 0) {
+      return primaryDiff * direction;
     }
 
     return (getPublishedTime(a) - getPublishedTime(b)) * direction;
   });
+}
+
+export function getSortMetricLabel(metric: HubSortMetric): string {
+  switch (metric) {
+    case "viewCount":
+      return "Views";
+    case "likes":
+      return "Likes";
+    case "commentCount":
+      return "Comments";
+    case "forkCount":
+      return "Forks";
+    default:
+      return "Popularity";
+  }
+}
+
+export function getListSortMetricLabel(metric: HubListSortMetric): string {
+  switch (metric) {
+    case "lastPlayed":
+      return "Last played";
+    case "publishedAt":
+      return "Published";
+    case "viewCount":
+      return "Views";
+    case "likes":
+      return "Likes";
+    case "commentCount":
+      return "Comments";
+    case "forkCount":
+      return "Forks";
+    case "tags":
+      return "Tags";
+    default:
+      return "Name";
+  }
+}
+
+export function getDateOrderLabel(order: HubDateOrder): string {
+  return order === "desc" ? "Newest first" : "Oldest first";
 }
 
 export function getPlayedProjectsFromPublished(

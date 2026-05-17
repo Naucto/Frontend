@@ -60,8 +60,8 @@ const TagRow = styled(Box)(({ theme }) => ({
 
 const LikeButton = styled(IconButton, {
   shouldForwardProp: (prop) => prop !== "$liked",
-})<{ $liked: boolean }>(({ $liked }) => ({
-  padding: "4px",
+})<{ $liked: boolean }>(({ theme, $liked }) => ({
+  padding: theme.spacing(0.5),
   transition: "transform 0.2s",
   "&:hover": {
     transform: "scale(1.15)",
