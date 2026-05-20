@@ -4,14 +4,14 @@
 
 ## Prerequis
 
-- [Bun](https://bun.sh/) should be installed
+- [Node.js](https://nodejs.org/) should be installed
 
 ---
 
 ## setup
 
 ```bash
-bun install
+npm install
 ```
   
 #### vscode workspace recommended for eslint
@@ -20,7 +20,7 @@ click to **File** then **Open workspace from file** and select the **settings/vs
 ## Development
 
 ```bash
-bun run dev
+npm run dev
 ```
 
 ## Docker

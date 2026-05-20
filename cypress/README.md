@@ -5,8 +5,8 @@ This directory contains E2E tests for the project using Cypress.
 ## Setup
 
 ```bash
-bun install --dev cypress
-bun cypress open
+npm install --dev cypress
+npm cypress open
 ```
 
 Setup Cypress in the e2e section and it uses Electron.
@@ -18,7 +18,7 @@ Click on the spec file to run the test in the cypress interface
 Or run headlessly using:
 
 ```bash
-bun cypress run
+npm cypress run
 ```
 
 ## Naming Conventions

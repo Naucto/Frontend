@@ -1,7 +1,10 @@
-diff --git a/src/liolib.js b/src/liolib.js
-index 92dda580e726cf5d4914132df363869cef6fefe2..7326692f0d9cce61bacd66711d1552743742bd53 100644
---- a/src/liolib.js
-+++ b/src/liolib.js
+diff --git a/node_modules/fengari/.bun-tag-e962097406933241 b/node_modules/fengari/.bun-tag-e962097406933241
+new file mode 100644
+index 0000000..e69de29
+diff --git a/node_modules/fengari/src/liolib.js b/node_modules/fengari/src/liolib.js
+index 92dda58..7326692 100644
+--- a/node_modules/fengari/src/liolib.js
++++ b/node_modules/fengari/src/liolib.js
 @@ -1,6 +1,5 @@
  "use strict";
  
@@ -43,10 +46,10 @@ index 92dda580e726cf5d4914132df363869cef6fefe2..7326692f0d9cce61bacd66711d155274
      return 1;
  };
  
-diff --git a/src/luaconf.js b/src/luaconf.js
-index 5fb91cd70840b5721009ecf440f950aa9478c833..29753203556e149fceef822766145216b2eafc2d 100644
---- a/src/luaconf.js
-+++ b/src/luaconf.js
+diff --git a/node_modules/fengari/src/luaconf.js b/node_modules/fengari/src/luaconf.js
+index 5fb91cd..2975320 100644
+--- a/node_modules/fengari/src/luaconf.js
++++ b/node_modules/fengari/src/luaconf.js
 @@ -1,6 +1,6 @@
  "use strict";
  
@@ -93,10 +96,10 @@ index 5fb91cd70840b5721009ecf440f950aa9478c833..29753203556e149fceef822766145216
  } else {
      const LUA_DIRSEP = "/";
      module.exports.LUA_DIRSEP = LUA_DIRSEP;
-diff --git a/src/lualib.js b/src/lualib.js
-index fa302684264ef3fe2fa95364e1d105a5d348d626..8a06150af01e529c123054254216954b0e99b83c 100644
---- a/src/lualib.js
-+++ b/src/lualib.js
+diff --git a/node_modules/fengari/src/lualib.js b/node_modules/fengari/src/lualib.js
+index fa30268..8a06150 100644
+--- a/node_modules/fengari/src/lualib.js
++++ b/node_modules/fengari/src/lualib.js
 @@ -20,11 +20,6 @@ const LUA_TABLIBNAME = "table";
  module.exports.LUA_TABLIBNAME = LUA_TABLIBNAME;
  module.exports.luaopen_table = require("./ltablib.js").luaopen_table;

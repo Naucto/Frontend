@@ -1,19 +1,19 @@
 #!/bin/sh
 
-bun lint --fix
+npm run lint -- --fix
 
 if [ $? -ne 0 ]; then
   echo "❌ Linting failed. Please fix the errors before committing."
   exit 1
 fi
 
-bun jest
+npx jest
 if [ $? -ne 0 ]; then
   echo "❌ Jest tests failed. Please fix the errors before committing."
   exit 1
 fi
 
-# bun cypress:run
+# npm cypress:run
 # if [ $? -ne 0 ]; then
 #   echo "❌ Cypress tests failed. Please fix the errors before committing."
 #   exit 1
