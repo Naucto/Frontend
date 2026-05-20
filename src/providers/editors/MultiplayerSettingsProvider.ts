@@ -75,8 +75,9 @@ export class MultiplayerStateError extends Error {
   }
 }
 
+export type MultiplayerSettingsUpdateAction = "add" | "update" | "delete";
 export type MultiplayerSettingsUpdateListener =
-  (directory?: MultiplayerDirectorySettings) => void;
+  (action: MultiplayerSettingsUpdateAction, directory: MultiplayerDirectorySettings) => void;
 
 export class MultiplayerSettingsProvider implements Destroyable {
   private _yDoc: Y.Doc;
@@ -256,33 +257,21 @@ export class MultiplayerSettingsProvider implements Destroyable {
 
       const action = change.action;
 
-      if (!this._boundSettingsChangeListeners.has(nodePath)) {
+      const callback        = this._boundSettingsChangeListeners.get(nodePath);
+      const updatedSettings = this.getDirectorySettings(nodePath);
+
+      if (callback !== undefined)
+        callback(action, updatedSettings!);
+
+      const parentNodePath = this.getParentNodePath(nodePath);
+
+      if (nodePath === parentNodePath)
         return;
-      }
 
-      const callback = this._boundSettingsChangeListeners.get(nodePath);
+      const parentCallback = this._boundSettingsChangeListeners.get(parentNodePath);
 
-      if (action === "add" || action === "update") {
-        console.log("add/update", nodePath);
-        // Both exclamation marks are fine here because
-        // 1. callback has to be defined, otherwise we're in an undefined behavior state
-        // 2. the node must exist
-        callback!(this.getDirectorySettings(nodePath));
-      } else if (action === "delete") {
-        console.log("delete", nodePath);
-        callback!(undefined);
-
-        const parentNodePath = this.getParentNodePath(nodePath);
-
-        if (nodePath === parentNodePath)
-          return;
-
-        const parentNode     = this.getDirectorySettings(nodePath);
-        const parentCallback = this._boundSettingsChangeListeners.get(parentNodePath);
-
-        if (parentCallback)
-          parentCallback(parentNode);
-      }
+      if (parentCallback && nodePath !== parentNodePath)
+        parentCallback(action, updatedSettings!); 
     });
   }
 }

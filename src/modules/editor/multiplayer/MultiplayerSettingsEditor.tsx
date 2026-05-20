@@ -1,7 +1,8 @@
 import {
   MultiplayerDirectoryFlags,
   MultiplayerDirectorySettings,
-  MultiplayerSettingsProvider
+  MultiplayerSettingsProvider,
+  MultiplayerSettingsUpdateListener
 } from "@providers/editors/MultiplayerSettingsProvider.ts";
 import { EditorProps } from "@modules/create/game-editor/editors/EditorType";
 
@@ -280,33 +281,29 @@ export const MultiplayerDirectoryEntry: React.FC<MultiplayerDirectoryEntryProps>
 
   useEffect(
     () => {
+      console.log("init", settings.path);
+
       if (!isNodeOpened) {
-        mpsp.unobserve(settings.path);
         setChildrenEntries([]);
+        mpsp.unobserve(settings.path);
+
         return;
       }
 
-      setChildrenEntries(getNodeEntries());
-
-      const observeCallback = (newSettings: MultiplayerDirectorySettings | undefined): void => {
-        if (newSettings === undefined)
-          return;
-
+      const observeCallback: MultiplayerSettingsUpdateListener = (action, settings) => {
+        console.log(action, settings.path);
         setChildrenEntries(getNodeEntries());
-      };
+      }
 
+      setChildrenEntries(getNodeEntries());
       mpsp.observe(settings.path, observeCallback);
 
-      return () => {
-        mpsp.unobserve(settings.path);
-      };
+      return () => mpsp.unobserve(settings.path);
     },
     [isNodeOpened]
   );
 
-  const handleNodeToggle = (): void => {
-    setNodeOpened(prev => !prev);
-  };
+  const handleNodeToggle = (): void => setNodeOpened(prev => !prev);
 
   return (
     <>
