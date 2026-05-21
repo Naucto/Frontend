@@ -60,17 +60,30 @@ export const MultiplayerDirectoryEntryButtonGroup: React.FC<MultiplayerDirectory
   // "Normal" state specific things
   type DirectoryFlagsRecord = Record<string, boolean>;
 
-  const normal_flagNames = enumNames(MultiplayerDirectoryFlags);
-  const [normal_flagStates, normal_setFlagStates] =
-    useState<DirectoryFlagsRecord>(
-      normal_flagNames.reduce(
-        (record, flagName) => {
-          record[flagName] = settings.can(enumFromName(MultiplayerDirectoryFlags, flagName));
-          return record;
-        },
-        {} as DirectoryFlagsRecord
-      )
+  const getFlagStates = (): Record<string, boolean> =>
+    normal_flagNames.reduce(
+      (record, flagName) => {
+        record[flagName] = settings.can(enumFromName(MultiplayerDirectoryFlags, flagName));
+        return record;
+      },
+      {} as DirectoryFlagsRecord
     );
+
+  const normal_flagNames = enumNames(MultiplayerDirectoryFlags);
+  const [normal_flagStates, normal_setFlagStates] = useState<DirectoryFlagsRecord>(getFlagStates());
+
+  const normal_observeCallback: MultiplayerSettingsUpdateListener = (action, updatedSettings) => {
+    if (updatedSettings.path !== settings.path) {
+      // We only care about ourselves, not children
+      return;
+    }
+    else if (action !== "update") {
+      // We also only care about changes, notably on the checkbox set
+      return;
+    }
+
+    normal_setFlagStates(getFlagStates());
+  };
 
   useEffect(
     () => {
@@ -82,6 +95,13 @@ export const MultiplayerDirectoryEntryButtonGroup: React.FC<MultiplayerDirectory
       );
     },
     [normal_flagStates]
+  );
+
+  useEffect(
+    () => {
+      mpsp.observe(settings.path, normal_observeCallback);
+      return () => mpsp.unobserve(settings.path, normal_observeCallback);
+    }
   );
 
   // "Edit" state specific things
@@ -133,8 +153,6 @@ export const MultiplayerDirectoryEntryButtonGroup: React.FC<MultiplayerDirectory
             const flagUpdate = (_: React.ChangeEvent, checked: boolean): void => {
               mpsp.accessDirectorySettings(settings.path,
                 (settings) => settings.set(enumFromName(MultiplayerDirectoryFlags, flagName), checked));
-
-              normal_setFlagStates(prev => ({ ...prev, [flagName]: checked }));
             };
 
             return (
@@ -296,51 +314,51 @@ export const MultiplayerDirectoryEntry: React.FC<MultiplayerDirectoryEntryProps>
     return newChildrenSet;
   };
 
+  const observeCallback: MultiplayerSettingsUpdateListener = (action, updatedSettings) => {
+    if (updatedSettings.path === settings.path) {
+      // We only care about children, not ourselves
+      return;
+    }
+
+    switch (action) {
+      case "add":
+      {
+        setChildrenEntries(
+          prevArray => [...prevArray, updatedSettings]
+        );
+        break;
+      }
+
+      case "delete":
+      {
+        setChildrenEntries(
+          prevArray =>
+            prevArray.filter(entry =>
+              entry.path !== updatedSettings.path)
+        );
+        break;
+      }
+
+      case "update":
+      {
+        setChildrenEntries(
+          prevArray =>
+            prevArray.map(entry =>
+              entry.path === updatedSettings.path ? updatedSettings : entry)
+        );
+        break;
+      }
+    }
+  };
+
   useEffect(
     () => {
       if (!isNodeOpened) {
         setChildrenEntries([]);
-        mpsp.unobserve(settings.path);
+        mpsp.unobserve(settings.path, observeCallback);
 
         return;
       }
-
-      const observeCallback: MultiplayerSettingsUpdateListener = (action, updatedSettings) => {
-        if (updatedSettings.path === settings.path) {
-          // We only care about children, not ourselves
-          return;
-        }
-
-        switch (action) {
-          case "add":
-          {
-            setChildrenEntries(
-              prevArray => [...prevArray, updatedSettings]
-            );
-            break;
-          }
-
-          case "delete":
-          {
-            setChildrenEntries(
-              prevArray =>
-                prevArray.filter(entry =>
-                  entry.path !== updatedSettings.path)
-            );
-            break;
-          }
-
-          case "update":
-          {
-            setChildrenEntries(
-              prevArray =>
-                prevArray.map(entry =>
-                  entry.path === updatedSettings.path ? updatedSettings : entry)
-            );
-            break;
-          }
-        }
-      };
 
       setChildrenEntries(getNodeEntries());
       mpsp.observe(settings.path, observeCallback);

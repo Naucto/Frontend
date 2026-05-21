@@ -84,7 +84,7 @@ export class MultiplayerSettingsProvider implements Destroyable {
   private _yDirectory: Y.Map<MultiplayerDirectoryData>;
 
   private readonly _rootSettingsChangeListener: (e: YMapEvent<MultiplayerDirectoryData>) => void;
-  private _boundSettingsChangeListeners = new Map<string, MultiplayerSettingsUpdateListener>();
+  private _boundSettingsChangeListeners = new Map<string, MultiplayerSettingsUpdateListener[]>();
 
   constructor(doc: Y.Doc) {
     this._yDoc = doc;
@@ -243,11 +243,30 @@ export class MultiplayerSettingsProvider implements Destroyable {
   // --------------------------------------------------------------------------
 
   public observe(path: string, callback: MultiplayerSettingsUpdateListener): void {
-    this._boundSettingsChangeListeners.set(path, callback);
+    let listeners = this._boundSettingsChangeListeners.get(path);
+
+    if (!listeners)
+      listeners = [];
+
+    listeners.push(callback);
+    this._boundSettingsChangeListeners.set(path, listeners);
   }
 
-  public unobserve(path: string): void {
-    this._boundSettingsChangeListeners.delete(path);
+  public unobserve(path: string, callback?: MultiplayerSettingsUpdateListener): void {
+    if (callback === undefined)
+      this._boundSettingsChangeListeners.delete(path);
+
+    const listeners = this._boundSettingsChangeListeners.get(path);
+
+    if (!listeners)
+      return;
+
+    const filtered = listeners.filter(registeredCallback => registeredCallback !== callback);
+
+    if (filtered.length === 0)
+      this._boundSettingsChangeListeners.delete(path);
+    else
+      this._boundSettingsChangeListeners.set(path, filtered);
   }
 
   private onSettingsChange(event: Y.YMapEvent<MultiplayerDirectoryData>): void {
@@ -257,24 +276,24 @@ export class MultiplayerSettingsProvider implements Destroyable {
 
       const action = change.action;
 
-      const callback        = this._boundSettingsChangeListeners.get(nodePath);
+      const callbacks       = this._boundSettingsChangeListeners.get(nodePath);
       const updatedSettings =
         action === "delete"
           ? new MultiplayerDirectorySettings(nodePath, change.oldValue)
           : this.getDirectorySettings(nodePath);
 
-      if (callback !== undefined)
-        callback(action, updatedSettings!);
+      if (callbacks)
+        callbacks.forEach(c => c(action, updatedSettings!));
 
       const parentNodePath = this.getParentNodePath(nodePath);
 
       if (nodePath === parentNodePath)
         return;
 
-      const parentCallback = this._boundSettingsChangeListeners.get(parentNodePath);
+      const parentCallbacks = this._boundSettingsChangeListeners.get(parentNodePath);
 
-      if (parentCallback && nodePath !== parentNodePath)
-        parentCallback(action, updatedSettings!);
+      if (parentCallbacks && nodePath !== parentNodePath)
+        parentCallbacks.forEach(c => c(action, updatedSettings!));
     });
   }
 }
