@@ -72,12 +72,24 @@ export const MultiplayerDirectoryEntryButtonGroup: React.FC<MultiplayerDirectory
       )
     );
 
+  useEffect(
+    () => {
+      Object.entries(normal_flagStates).forEach(
+        ([key, value]) => settings.set(
+          enumFromName(MultiplayerDirectoryFlags, key),
+          value
+        )
+      );
+    },
+    [normal_flagStates]
+  );
+
   // "Edit" state specific things
   const edit_newNodePath = useInputValue(settings.path);
 
   // "Create child" state specific things
   const createChild_newNodePath =
-    useInputValue(settings.isRootNode ? "" : `${settings.path}.`);
+    useInputValue(`${settings.path}.`);
 
   const normalState = (): JSX.Element => {
     const addChildNode = (): void => {
@@ -204,7 +216,11 @@ export const MultiplayerDirectoryEntryButtonGroup: React.FC<MultiplayerDirectory
   };
 
   const createChildState = (): JSX.Element => {
-    const { value: newNodePath, onChange: newNodePath_onChange } = createChild_newNodePath;
+    const {
+      value: newNodePath,
+      onChange: newNodePath_onChange,
+      setInput: newNodePath_setInput
+    } = createChild_newNodePath;
 
     const cancel = (): void => {
       setEntryState(MultiplayerDirectoryEntryState.NORMAL);
@@ -212,6 +228,7 @@ export const MultiplayerDirectoryEntryButtonGroup: React.FC<MultiplayerDirectory
 
     const validateChange = (): void => {
       mpsp.createDirectorySettings(createChild_newNodePath.value);
+      newNodePath_setInput(`${settings.path}.`);
       setEntryState(MultiplayerDirectoryEntryState.NORMAL);
     };
 
@@ -281,8 +298,6 @@ export const MultiplayerDirectoryEntry: React.FC<MultiplayerDirectoryEntryProps>
 
   useEffect(
     () => {
-      console.log("init", settings.path);
-
       if (!isNodeOpened) {
         setChildrenEntries([]);
         mpsp.unobserve(settings.path);
@@ -290,10 +305,37 @@ export const MultiplayerDirectoryEntry: React.FC<MultiplayerDirectoryEntryProps>
         return;
       }
 
-      const observeCallback: MultiplayerSettingsUpdateListener = (action, settings) => {
-        console.log(action, settings.path);
-        setChildrenEntries(getNodeEntries());
-      }
+      const observeCallback: MultiplayerSettingsUpdateListener = (action, updatedSettings) => {
+        switch (action) {
+          case "add":
+          {
+            setChildrenEntries(
+              prevArray => [...prevArray, updatedSettings]
+            );
+            break;
+          }
+
+          case "delete":
+          {
+            setChildrenEntries(
+              prevArray =>
+                prevArray.filter(entry =>
+                  entry.path === updatedSettings.path)
+            );
+            break;
+          }
+
+          case "update":
+          {
+            setChildrenEntries(
+              prevArray =>
+                prevArray.map(entry =>
+                  entry.path === updatedSettings.path ? updatedSettings : entry)
+            );
+            break;
+          }
+        }
+      };
 
       setChildrenEntries(getNodeEntries());
       mpsp.observe(settings.path, observeCallback);
@@ -303,7 +345,9 @@ export const MultiplayerDirectoryEntry: React.FC<MultiplayerDirectoryEntryProps>
     [isNodeOpened]
   );
 
-  const handleNodeToggle = (): void => setNodeOpened(prev => !prev);
+  const handleNodeToggle = (): void => {
+    setNodeOpened(prev => !prev);
+  };
 
   return (
     <>

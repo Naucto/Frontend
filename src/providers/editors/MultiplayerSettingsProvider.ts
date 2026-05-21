@@ -258,7 +258,10 @@ export class MultiplayerSettingsProvider implements Destroyable {
       const action = change.action;
 
       const callback        = this._boundSettingsChangeListeners.get(nodePath);
-      const updatedSettings = this.getDirectorySettings(nodePath);
+      const updatedSettings =
+        action === "delete"
+          ? new MultiplayerDirectorySettings(nodePath, change.oldValue)
+          : this.getDirectorySettings(nodePath);
 
       if (callback !== undefined)
         callback(action, updatedSettings!);
@@ -271,7 +274,7 @@ export class MultiplayerSettingsProvider implements Destroyable {
       const parentCallback = this._boundSettingsChangeListeners.get(parentNodePath);
 
       if (parentCallback && nodePath !== parentNodePath)
-        parentCallback(action, updatedSettings!); 
+        parentCallback(action, updatedSettings!);
     });
   }
 }
