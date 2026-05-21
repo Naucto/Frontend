@@ -306,6 +306,11 @@ export const MultiplayerDirectoryEntry: React.FC<MultiplayerDirectoryEntryProps>
       }
 
       const observeCallback: MultiplayerSettingsUpdateListener = (action, updatedSettings) => {
+        if (updatedSettings.path === settings.path) {
+          // We only care about children, not ourselves
+          return;
+        }
+
         switch (action) {
           case "add":
           {
@@ -320,7 +325,7 @@ export const MultiplayerDirectoryEntry: React.FC<MultiplayerDirectoryEntryProps>
             setChildrenEntries(
               prevArray =>
                 prevArray.filter(entry =>
-                  entry.path === updatedSettings.path)
+                  entry.path !== updatedSettings.path)
             );
             break;
           }
