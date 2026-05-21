@@ -60,14 +60,17 @@ export const MultiplayerDirectoryEntryButtonGroup: React.FC<MultiplayerDirectory
   // "Normal" state specific things
   type DirectoryFlagsRecord = Record<string, boolean>;
 
-  const getFlagStates = (): Record<string, boolean> =>
-    normal_flagNames.reduce(
+  const getFlagStates = (): Record<string, boolean> => {
+    const updatedSettings = mpsp.getDirectorySettings(settings.path)!;
+
+    return normal_flagNames.reduce(
       (record, flagName) => {
-        record[flagName] = settings.can(enumFromName(MultiplayerDirectoryFlags, flagName));
+        record[flagName] = updatedSettings.can(enumFromName(MultiplayerDirectoryFlags, flagName));
         return record;
       },
       {} as DirectoryFlagsRecord
     );
+  };
 
   const normal_flagNames = enumNames(MultiplayerDirectoryFlags);
   const [normal_flagStates, normal_setFlagStates] = useState<DirectoryFlagsRecord>(getFlagStates());
@@ -84,18 +87,6 @@ export const MultiplayerDirectoryEntryButtonGroup: React.FC<MultiplayerDirectory
 
     normal_setFlagStates(getFlagStates());
   };
-
-  useEffect(
-    () => {
-      Object.entries(normal_flagStates).forEach(
-        ([key, value]) => settings.set(
-          enumFromName(MultiplayerDirectoryFlags, key),
-          value
-        )
-      );
-    },
-    [normal_flagStates]
-  );
 
   useEffect(
     () => {
@@ -152,7 +143,11 @@ export const MultiplayerDirectoryEntryButtonGroup: React.FC<MultiplayerDirectory
           normal_flagNames.map((flagName) => {
             const flagUpdate = (_: React.ChangeEvent, checked: boolean): void => {
               mpsp.accessDirectorySettings(settings.path,
-                (settings) => settings.set(enumFromName(MultiplayerDirectoryFlags, flagName), checked));
+                (settings) => settings.set(
+                  enumFromName(MultiplayerDirectoryFlags, flagName),
+                  checked
+                )
+              );
             };
 
             return (
