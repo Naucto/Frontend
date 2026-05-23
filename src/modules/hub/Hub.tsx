@@ -6,10 +6,6 @@ import { Box, IconButton, Typography } from "@mui/material";
 import { ChevronLeft, ChevronRight } from "@mui/icons-material";
 import ProjectCard from "@modules/projects/components/ProjectCard";
 
-interface ProjectListResponse {
-  data: ProjectResponseDto[];
-}
-
 const PageContainer = styled("div")(({ theme }) => ({
   margin: theme.spacing(4),
 }));
@@ -116,8 +112,7 @@ export const Hub = (): JSX.Element => {
     () => projectControllerGetAllReleases().then(({ data }) => {
       if (Array.isArray(data)) return data;
 
-      const paginatedData = data as unknown as ProjectListResponse;
-      return paginatedData?.data || [];
+      return (data as unknown as { data: ProjectResponseDto[] })?.data || [];
     }),
     []
   );
