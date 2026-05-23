@@ -38,7 +38,7 @@ export const GoogleOAuthCallback = (): React.JSX.Element => {
         navigate("/");
       })
       .catch((err: Error) => {
-        console.error("Erreur Google:", err.message);
+        console.error("Google error:", err.message);
         navigate("/?error=google_failed");
       });
   }, [searchParams, navigate, handleAuthSuccess]);
@@ -46,7 +46,8 @@ export const GoogleOAuthCallback = (): React.JSX.Element => {
   return (
     <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="100vh">
       <CircularProgress size={60} sx={{ mb: 4 }} />
-      <Typography variant="h5">Authentification Google en cours...</Typography>
+      {/* TODO: replace with a proper branded loading screen showing auth progress */}
+      <Typography variant="h5">Signing in with Google...</Typography>
     </Box>
   );
 };

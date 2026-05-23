@@ -23,7 +23,7 @@ export const OAuthCallback = (): React.JSX.Element => {
           navigate("/");
         })
         .catch((err: Error) => {
-          console.error("Erreur Github:", err);
+          console.error("Github error:", err);
           navigate("/?error=github_failed");
         });
     } else if (!code) {
@@ -34,7 +34,8 @@ export const OAuthCallback = (): React.JSX.Element => {
   return (
     <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="100vh">
       <CircularProgress size={60} sx={{ mb: 4 }} />
-      <Typography variant="h5">Authentification GitHub en cours...</Typography>
+      {/* TODO: replace with a proper branded loading screen showing auth progress */}
+      <Typography variant="h5">Signing in with GitHub...</Typography>
     </Box>
   );
 };

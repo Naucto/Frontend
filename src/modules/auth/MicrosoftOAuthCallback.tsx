@@ -71,7 +71,7 @@ export const MicrosoftOAuthCallback = (): React.JSX.Element => {
         window.close();
       })
       .catch((err: Error) => {
-        console.error("Erreur Microsoft:", err.message);
+        console.error("Microsoft error:", err.message);
         window.opener?.postMessage({ type: "microsoft_auth_error", error: err.message }, window.opener.location.origin);
         window.close();
       });
@@ -80,7 +80,8 @@ export const MicrosoftOAuthCallback = (): React.JSX.Element => {
   return (
     <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="100vh">
       <CircularProgress size={60} sx={{ mb: 4 }} />
-      <Typography variant="h5">Authentification Microsoft en cours...</Typography>
+      {/* TODO: replace with a proper branded loading screen showing auth progress */}
+      <Typography variant="h5">Signing in with Microsoft...</Typography>
     </Box>
   );
 };
