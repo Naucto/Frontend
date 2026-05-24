@@ -13,13 +13,18 @@ export const useAuthSuccess = (): UseAuthSuccessReturn => {
   const handleAuthSuccess = useCallback(async (accessToken: string, onClose?: () => void) => {
     LocalStorageManager.setToken(accessToken);
 
-    const { data: userRes } = await userControllerGetProfile();
+    const { data: userRes, error } = await userControllerGetProfile();
+    if (error || !userRes) {
+      LocalStorageManager.setToken();
+      throw new Error((error as { message?: string })?.message ?? "Failed to fetch user profile");
+    }
+
     LocalStorageManager.setUser({
-      id: String(userRes!.id),
-      email: userRes!.email,
-      name: userRes!.username,
+      id: String(userRes.id),
+      email: userRes.email,
+      name: userRes.username,
     });
-    setUser(userRes!);
+    setUser(userRes);
 
     if (onClose) onClose();
   }, [setUser]);
