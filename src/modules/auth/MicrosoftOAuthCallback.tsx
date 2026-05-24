@@ -48,7 +48,7 @@ export const MicrosoftOAuthCallback = (): React.JSX.Element => {
 
     const clientId = import.meta.env.VITE_MICROSOFT_CLIENT_ID;
     const tenantId = import.meta.env.VITE_MICROSOFT_TENANT_ID;
-    const redirectUri = import.meta.env.VITE_MICROSOFT_REDIRECT_URI;
+    const redirectUri = import.meta.env.VITE_MICROSOFT_REDIRECT_URI || `${window.location.origin}/oauth/microsoft/callback`;
 
     // Exchange the code directly from the browser — avoids Docker network restrictions.
     // Requires the redirect URI to be registered as "Single-page application" in Azure Portal.
