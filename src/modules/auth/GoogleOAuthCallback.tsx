@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { authControllerLoginWithGoogleCode } from "@api";
 import { useAuthSuccess } from "@hooks/useAuthSuccess";
-import { getGooglePKCE } from "@utils/pkce";
+import { getGooglePKCE, getGoogleState } from "@utils/pkce";
 import { Box, Typography, CircularProgress } from "@mui/material";
 
 export const GoogleOAuthCallback = (): React.JSX.Element => {
@@ -14,9 +14,17 @@ export const GoogleOAuthCallback = (): React.JSX.Element => {
   useEffect(() => {
     const code = searchParams.get("code");
     const error = searchParams.get("error");
+    const returnedState = searchParams.get("state");
+    const expectedState = getGoogleState();
 
     if (error) {
       console.error("Google OAuth error:", error);
+      navigate("/?error=google_failed");
+      return;
+    }
+
+    if (!returnedState || returnedState !== expectedState) {
+      console.error("Google OAuth state mismatch — possible CSRF attack");
       navigate("/?error=google_failed");
       return;
     }

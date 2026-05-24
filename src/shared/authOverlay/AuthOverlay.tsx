@@ -6,7 +6,7 @@ import { CreateUserDto, LoginDto, authControllerRegister, authControllerLogin, u
 import { useUser } from "@providers/UserProvider";
 import { CustomDialog } from "@shared/dialog/CustomDialog";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
-import { generatePKCE, savePKCE, saveGooglePKCE, saveGithubState, saveMicrosoftState } from "@utils/pkce";
+import { generatePKCE, savePKCE, saveGooglePKCE, saveGoogleState, saveGithubState, saveMicrosoftState } from "@utils/pkce";
 
 import * as S from "./AuthOverlay.styles";
 import GitHubPixelLogo from "@assets/GithubLogo.png";
@@ -81,7 +81,9 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }): Reac
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
     const redirectUri = import.meta.env.VITE_GOOGLE_REDIRECT_URI;
     const { codeVerifier, codeChallenge } = await generatePKCE();
+    const state = btoa(JSON.stringify({ timestamp: Date.now() }));
     saveGooglePKCE(codeVerifier);
+    saveGoogleState(state);
     window.location.href =
       "https://accounts.google.com/o/oauth2/v2/auth?" +
       `client_id=${clientId}` +
@@ -89,7 +91,8 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }): Reac
       "&response_type=code" +
       "&scope=openid%20email%20profile" +
       `&code_challenge=${codeChallenge}` +
-      "&code_challenge_method=S256";
+      "&code_challenge_method=S256" +
+      `&state=${encodeURIComponent(state)}`;
   }, []);
 
   const handleGithubLogin = useCallback((): void => {

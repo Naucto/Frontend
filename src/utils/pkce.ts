@@ -60,3 +60,13 @@ export const getMicrosoftState = (): string | null => {
   localStorage.removeItem("microsoft_oauth_state");
   return state;
 };
+
+export const saveGoogleState = (state: string): void => {
+  localStorage.setItem("google_oauth_state", state);
+};
+
+export const getGoogleState = (): string | null => {
+  const state = localStorage.getItem("google_oauth_state");
+  localStorage.removeItem("google_oauth_state");
+  return state;
+};
