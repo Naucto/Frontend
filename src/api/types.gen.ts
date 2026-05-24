@@ -2255,7 +2255,7 @@ export type UserPublicControllerGetPublicProfileData = {
     id: number;
   };
   query?: never;
-  url: "/users/public/public/{id}/profile";
+  url: "/users/public/{id}/profile";
 };
 
 export type UserPublicControllerGetPublicProfileErrors = {
@@ -2284,7 +2284,7 @@ export type UserPublicControllerGetPublicProfileByUsernameData = {
     username: string;
   };
   query?: never;
-  url: "/users/public/public/username/{username}/profile";
+  url: "/users/public/username/{username}/profile";
 };
 
 export type UserPublicControllerGetPublicProfileByUsernameErrors = {
@@ -2316,7 +2316,7 @@ export type UserPublicControllerGetLikedGamesData = {
     page?: number;
     limit?: number;
   };
-  url: "/users/public/public/{id}/likes";
+  url: "/users/public/{id}/likes";
 };
 
 export type UserPublicControllerGetLikedGamesResponses = {
@@ -2341,7 +2341,7 @@ export type UserPublicControllerGetPublishedGamesData = {
     page?: number;
     limit?: number;
   };
-  url: "/users/public/public/{id}/published-games";
+  url: "/users/public/{id}/published-games";
 };
 
 export type UserPublicControllerGetPublishedGamesResponses = {
