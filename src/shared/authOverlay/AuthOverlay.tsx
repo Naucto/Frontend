@@ -108,7 +108,7 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }): Reac
       `https://github.com/login/oauth/authorize?client_id=${clientId}` +
       `&redirect_uri=${encodeURIComponent(redirectUri)}` +
       "&scope=user:email" +
-      `&state=${state}`;
+      `&state=${encodeURIComponent(state)}`;
   }, []);
 
   const handleMicrosoftLogin = useCallback(async (): Promise<void> => {
