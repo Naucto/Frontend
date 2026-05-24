@@ -19,7 +19,6 @@ interface AuthOverlayProps {
   onClose?: () => void;
 }
 
-type ErrorWithBody = { body: { message: string } };
 
 const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }): React.JSX.Element => {
   const theme = useTheme();
@@ -51,11 +50,13 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }): Reac
       let accessToken: string;
       if (isSignUpMode) {
         const { email, username, password } = data as CreateUserDto;
-        const { data: authResponse } = await authControllerRegister({ body: { email, username, password, nickname: username } });
+        const { data: authResponse, error } = await authControllerRegister({ body: { email, username, password, nickname: username } });
+        if (error) throw new Error((error as { message?: string })?.message ?? "Registration failed");
         accessToken = authResponse!.access_token;
       } else {
         const { email, password } = data as LoginDto;
-        const { data: authResponse } = await authControllerLogin({ body: { email, password } });
+        const { data: authResponse, error } = await authControllerLogin({ body: { email, password } });
+        if (error) throw new Error((error as { message?: string })?.message ?? "Login failed");
         accessToken = authResponse!.access_token;
       }
 
@@ -73,12 +74,7 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }): Reac
         onClose();
       }
     } catch (error) {
-      let msg = "Une erreur est survenue";
-      if (error instanceof Error) {
-        const errorWithBody = error as unknown as ErrorWithBody;
-        msg = errorWithBody?.body?.message || error.message;
-      }
-      setErrorMessage(msg);
+      setErrorMessage(error instanceof Error ? error.message : String(error));
     }
   }, [isSignUpMode, reset, onClose, setUser]);
 
