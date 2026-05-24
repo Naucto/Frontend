@@ -135,6 +135,8 @@ import type {
   ProjectControllerUploadProjectImageData,
   ProjectControllerUploadProjectImageErrors,
   ProjectControllerUploadProjectImageResponses,
+  ReportControllerCreateData,
+  ReportControllerCreateResponses,
   UserControllerFindAllData,
   UserControllerFindAllErrors,
   UserControllerFindAllResponses,
@@ -1030,6 +1032,27 @@ export const projectCommentControllerUpdateComment = <
     responseType: "json",
     security: [{ scheme: "bearer", type: "http" }],
     url: "/projects/{projectId}/comments/{commentId}",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Report a user, project, or comment for moderation
+ */
+export const reportControllerCreate = <ThrowOnError extends boolean = false>(
+  options: Options<ReportControllerCreateData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    ReportControllerCreateResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/reports",
     ...options,
     headers: {
       "Content-Type": "application/json",

@@ -524,6 +524,26 @@ export type CreateCommentDto = {
   content: string;
 };
 
+export type CreateReportDto = {
+  targetType: "USER" | "PROJECT" | "COMMENT";
+  targetId: number;
+  reason: string;
+  details?: string;
+};
+
+export type ReportResponseDto = {
+  id: number;
+  targetType: "USER" | "PROJECT" | "COMMENT";
+  targetId: number;
+  reporterId: number;
+  reason: string;
+  details: {
+    [key: string]: unknown;
+  } | null;
+  status: "OPEN" | "IN_REVIEW" | "RESOLVED" | "DISMISSED";
+  createdAt: string;
+};
+
 export type LoginDto = {
   /**
    * User email address
@@ -590,6 +610,10 @@ export type UserResponseDto = {
    * User roles
    */
   roles?: Array<UserRoleDto>;
+  /**
+   * Current account moderation status
+   */
+  accountStatus: "ACTIVE" | "SUSPENDED" | "BANNED";
   /**
    * User creation date
    */
@@ -674,6 +698,10 @@ export type UserProfileResponseDto = {
    * User roles
    */
   roles?: Array<UserRoleDto>;
+  /**
+   * Current account moderation status
+   */
+  accountStatus: "ACTIVE" | "SUSPENDED" | "BANNED";
   /**
    * User creation date
    */
@@ -1855,6 +1883,23 @@ export type ProjectCommentControllerUpdateCommentResponses = {
 
 export type ProjectCommentControllerUpdateCommentResponse =
   ProjectCommentControllerUpdateCommentResponses[keyof ProjectCommentControllerUpdateCommentResponses];
+
+export type ReportControllerCreateData = {
+  body: CreateReportDto;
+  path?: never;
+  query?: never;
+  url: "/reports";
+};
+
+export type ReportControllerCreateResponses = {
+  /**
+   * Report submitted
+   */
+  201: ReportResponseDto;
+};
+
+export type ReportControllerCreateResponse =
+  ReportControllerCreateResponses[keyof ReportControllerCreateResponses];
 
 export type AuthControllerLoginData = {
   body: LoginDto;

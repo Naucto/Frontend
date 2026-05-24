@@ -12,7 +12,7 @@ type MissingProjectViewerProps = {
   onClose: () => void;
 };
 
-export const Overlay = styled(Box)(() => ({
+export const Overlay = styled(Box)(({ theme }) => ({
   position: "fixed",
   top: 0,
   left: 0,
@@ -20,7 +20,7 @@ export const Overlay = styled(Box)(() => ({
   bottom: 0,
   backgroundColor: "rgba(0, 0, 0, 0.64)",
   backdropFilter: "blur(6px)",
-  zIndex: 9999,
+  zIndex: theme.zIndex.modal - 1,
   overflowY: "auto",
 }));
 

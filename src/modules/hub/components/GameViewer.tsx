@@ -232,6 +232,7 @@ export const GameViewer = (): JSX.Element => {
       }
     } catch (error) {
       console.error("Error toggling like:", error);
+      enqueueSnackbar("Could not update like. Your account may be suspended.", { variant: "error" });
     }
   };
 

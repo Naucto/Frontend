@@ -7,6 +7,7 @@ import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import { Box, Button, Chip, IconButton, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { type JSX } from "react";
+import { ReportAction } from "../ReportAction";
 
 export type ForkedFromInfo = {
   creator: string;
@@ -159,16 +160,21 @@ export const GameDetailsPanel = ({
         ) : null}
       </Box>
       {canFork ? (
-        <Button
-          variant="contained"
-          startIcon={<ContentCopyIcon />}
-          onClick={onFork}
-          disabled={forking}
-          size="small"
-        >
-          {forking ? "Forking..." : "Fork this project"}
-        </Button>
-      ) : null}
+        <Box display="flex" alignItems="center" gap={1}>
+          <ReportAction targetType="PROJECT" targetId={project.id} />
+          <Button
+            variant="contained"
+            startIcon={<ContentCopyIcon />}
+            onClick={onFork}
+            disabled={forking}
+            size="small"
+          >
+            {forking ? "Forking..." : "Fork this project"}
+          </Button>
+        </Box>
+      ) : (
+        <ReportAction targetType="PROJECT" targetId={project.id} />
+      )}
     </Box>
   </Description>
 );

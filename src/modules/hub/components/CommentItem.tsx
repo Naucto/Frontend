@@ -6,6 +6,7 @@ import ReplyIcon from "@mui/icons-material/Reply";
 import { CommentResponseDto } from "@api";
 import { useUser } from "@providers/UserProvider";
 import CommentComposer from "./CommentComposer";
+import { ReportAction } from "./ReportAction";
 
 const CommentContainer = styled(Box)(({ theme }) => ({
   padding: theme.spacing(2),
@@ -113,6 +114,13 @@ const CommentItem: React.FC<CommentItemProps> = ({
           </Box>
           <Box display="flex" alignItems="center">
             {user && !comment.deleted && (
+              <ReportAction
+                targetType="COMMENT"
+                targetId={comment.id}
+                compact
+              />
+            )}
+            {user && !comment.deleted && (
               <IconButton
                 size="small"
                 onClick={() => setShowReplyInput(!showReplyInput)}
@@ -148,14 +156,23 @@ const CommentItem: React.FC<CommentItemProps> = ({
                     </AuthorName>
                     <CommentDate>{formatTimeAgo(reply.createdAt)}</CommentDate>
                   </Box>
-                  {!reply.deleted && user && (user.id === reply.author.id || isProjectCreator) && (
-                    <IconButton
-                      size="small"
-                      onClick={() => onDelete(reply.id)}
-                      sx={{ color: "grey.500" }}
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
+                  {!reply.deleted && user && (
+                    <Box display="flex" alignItems="center">
+                      <ReportAction
+                        targetType="COMMENT"
+                        targetId={reply.id}
+                        compact
+                      />
+                      {(user.id === reply.author.id || isProjectCreator) && (
+                        <IconButton
+                          size="small"
+                          onClick={() => onDelete(reply.id)}
+                          sx={{ color: "grey.500" }}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      )}
+                    </Box>
                   )}
                 </CommentHeader>
                 <CommentContent sx={reply.deleted ? { fontSize: "13px", fontStyle: "italic", color: "grey.600" } : { fontSize: "13px" }}>
