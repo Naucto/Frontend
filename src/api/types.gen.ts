@@ -38,12 +38,6 @@ export type CreateUserDto = {
     password: string;
 };
 
-export type GoogleLoginDto = {
-    /**
-     * Google ID token
-     */
-    token: string;
-};
 
 export type GithubLoginDto = {
     /**
@@ -826,29 +820,6 @@ export type AuthControllerRegisterResponses = {
 };
 
 export type AuthControllerRegisterResponse = AuthControllerRegisterResponses[keyof AuthControllerRegisterResponses];
-
-export type AuthControllerLoginWithGoogleData = {
-    body: GoogleLoginDto;
-    path?: never;
-    query?: never;
-    url: '/auth/google';
-};
-
-export type AuthControllerLoginWithGoogleErrors = {
-    /**
-     * Invalid Google token
-     */
-    401: unknown;
-};
-
-export type AuthControllerLoginWithGoogleResponses = {
-    /**
-     * Login successful with Google
-     */
-    201: AuthResponseDto;
-};
-
-export type AuthControllerLoginWithGoogleResponse = AuthControllerLoginWithGoogleResponses[keyof AuthControllerLoginWithGoogleResponses];
 
 export type GoogleCodeDto = {
     code: string;

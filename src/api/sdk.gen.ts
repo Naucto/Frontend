@@ -43,18 +43,6 @@ export const authControllerRegister = <ThrowOnError extends boolean = false>(opt
 });
 
 /**
- * Authenticate with Google OAuth token
- */
-export const authControllerLoginWithGoogle = <ThrowOnError extends boolean = false>(options: Options<AuthControllerLoginWithGoogleData, ThrowOnError>) => (options.client ?? client).post<AuthControllerLoginWithGoogleResponses, AuthControllerLoginWithGoogleErrors, ThrowOnError>({
-    url: '/auth/google',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
  * Authenticate with Google authorization code + PKCE
  */
 export const authControllerLoginWithGoogleCode = <ThrowOnError extends boolean = false>(options: Options<AuthControllerLoginWithGoogleCodeData, ThrowOnError>) => (options.client ?? client).post<AuthControllerLoginWithGoogleCodeResponses, AuthControllerLoginWithGoogleCodeErrors, ThrowOnError>({
