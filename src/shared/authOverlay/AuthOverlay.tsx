@@ -23,7 +23,7 @@ type ErrorWithBody = { body: { message: string } };
 
 const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }): React.JSX.Element => {
   const theme = useTheme();
-  const [isSignUpMode, setIsSignedUp] = useState(false);
+  const [isSignUpMode, setIsSignUpMode] = useState(false);
 
   const authText = useCallback((bool: boolean) => {
     return bool ? "Sign up" : "Login";
@@ -186,7 +186,7 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }): Reac
         <S.Center sx={{ marginTop: isSignUpMode ? theme.spacing(-1) : theme.spacing(3) }}>
           <Typography>
             {isSignUpMode ? "Already have an account ? " : "Don't have an account ? "}
-            <Link sx={{ cursor: "pointer" }} onClick={() => setIsSignedUp(!isSignUpMode)}>
+            <Link sx={{ cursor: "pointer" }} onClick={() => setIsSignUpMode(!isSignUpMode)}>
               {authText(!isSignUpMode)}
             </Link>
           </Typography>
