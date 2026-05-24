@@ -61,13 +61,17 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }): Reac
 
       LocalStorageManager.setToken(accessToken);
 
-      const { data: userRes } = await userControllerGetProfile();
+      const { data: userRes, error: profileError } = await userControllerGetProfile();
+      if (profileError || !userRes) {
+        LocalStorageManager.setToken();
+        throw new Error((profileError as { message?: string })?.message ?? "Failed to fetch user profile");
+      }
       LocalStorageManager.setUser({
-        id: String(userRes!.id),
-        email: userRes!.email,
-        name: userRes!.username,
+        id: String(userRes.id),
+        email: userRes.email,
+        name: userRes.username,
       });
-      setUser(userRes!);
+      setUser(userRes);
       reset();
       if (onClose) {
         onClose();
