@@ -23,14 +23,14 @@ export const MicrosoftOAuthCallback = (): React.JSX.Element => {
 
     if (error) {
       console.error("Microsoft OAuth error:", error, searchParams.get("error_description"));
-      window.opener?.postMessage({ error }, "*");
+      window.opener?.postMessage({ type: "microsoft_auth_error", error }, window.opener.location.origin);
       window.close();
       return;
     }
 
     if (!returnedState || returnedState !== expectedState) {
       console.error("Microsoft OAuth state mismatch — possible CSRF attack");
-      window.opener?.postMessage({ error: "state_mismatch" }, "*");
+      window.opener?.postMessage({ type: "microsoft_auth_error", error: "state_mismatch" }, window.opener.location.origin);
       window.close();
       return;
     }
@@ -41,7 +41,7 @@ export const MicrosoftOAuthCallback = (): React.JSX.Element => {
     const codeVerifier = getPKCE();
     if (!codeVerifier) {
       console.error("Code verifier not found in localStorage");
-      window.opener?.postMessage({ error: "missing_verifier" }, "*");
+      window.opener?.postMessage({ type: "microsoft_auth_error", error: "missing_verifier" }, window.opener.location.origin);
       window.close();
       return;
     }
