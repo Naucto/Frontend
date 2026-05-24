@@ -23,14 +23,14 @@ export const MicrosoftOAuthCallback = (): React.JSX.Element => {
 
     if (error) {
       console.error("Microsoft OAuth error:", error, searchParams.get("error_description"));
-      window.opener?.postMessage({ type: "microsoft_auth_error", error }, window.opener.location.origin);
+      window.opener?.postMessage({ type: "microsoft_auth_error", error }, window.location.origin);
       window.close();
       return;
     }
 
     if (!returnedState || returnedState !== expectedState) {
       console.error("Microsoft OAuth state mismatch — possible CSRF attack");
-      window.opener?.postMessage({ type: "microsoft_auth_error", error: "state_mismatch" }, window.opener.location.origin);
+      window.opener?.postMessage({ type: "microsoft_auth_error", error: "state_mismatch" }, window.location.origin);
       window.close();
       return;
     }
@@ -41,7 +41,7 @@ export const MicrosoftOAuthCallback = (): React.JSX.Element => {
     const codeVerifier = getPKCE();
     if (!codeVerifier) {
       console.error("Code verifier not found in localStorage");
-      window.opener?.postMessage({ type: "microsoft_auth_error", error: "missing_verifier" }, window.opener.location.origin);
+      window.opener?.postMessage({ type: "microsoft_auth_error", error: "missing_verifier" }, window.location.origin);
       window.close();
       return;
     }
@@ -76,12 +76,12 @@ export const MicrosoftOAuthCallback = (): React.JSX.Element => {
         if (response.error) {
           throw new Error(JSON.stringify(response.error));
         }
-        window.opener?.postMessage({ type: "microsoft_auth_success", token: response.data!.access_token }, window.opener.location.origin);
+        window.opener?.postMessage({ type: "microsoft_auth_success", token: response.data!.access_token }, window.location.origin);
         window.close();
       })
       .catch((err: Error) => {
         console.error("Microsoft error:", err.message);
-        window.opener?.postMessage({ type: "microsoft_auth_error", error: err.message }, window.opener.location.origin);
+        window.opener?.postMessage({ type: "microsoft_auth_error", error: err.message }, window.location.origin);
         window.close();
       });
   }, [searchParams]);
