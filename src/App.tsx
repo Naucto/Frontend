@@ -10,7 +10,6 @@ import { GameViewer } from "@modules/hub/components/GameViewer";
 import { OAuthCallback } from "@modules/auth/OAuthCallback";
 import { MicrosoftOAuthCallback } from "@modules/auth/MicrosoftOAuthCallback";
 import { GoogleOAuthCallback } from "@modules/auth/GoogleOAuthCallback";
-import { LocalStorageManager } from "@utils/LocalStorageManager";
 import { useAuthSuccess } from "@hooks/useAuthSuccess";
 
 const Projects = lazy(() => import("@modules/projects/Projects"));
@@ -23,7 +22,6 @@ const App: React.FC = () => {
     const handleMessage = (event: MessageEvent): void => {
       if (event.origin !== window.location.origin) return;
       if (event.data.type === "microsoft_auth_success" && event.data.token) {
-        LocalStorageManager.setToken(event.data.token);
         handleAuthSuccess(event.data.token).catch(err => {
           console.error("Error handling auth success:", err);
         });
