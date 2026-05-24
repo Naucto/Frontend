@@ -109,7 +109,7 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }): Reac
       setErrorMessage(null);
       const popup = window.open("about:blank", "microsoft_login", "width=500,height=700");
       if (!popup) {
-        setErrorMessage("Le popup a été bloqué. Autorisez les popups pour ce site.");
+        setErrorMessage("Popup blocked. Please allow popups for this site.");
         return;
       }
 
@@ -134,7 +134,7 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }): Reac
 
       popup.location.href = authorizationUrl;
     } catch (error) {
-      const msg = error instanceof Error ? error.message : "Erreur lors de l'initialisation de la connexion Microsoft.";
+      const msg = error instanceof Error ? error.message : "Microsoft login initialization failed.";
       setErrorMessage(msg);
     }
   }, []);
