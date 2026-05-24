@@ -9,6 +9,7 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   width: 552,
   minHeight: "auto",
   maxHeight: "85vh",
+  overflowY: "auto",
   backgroundColor: theme.palette.background.default,
   borderRadius: 16,
   color: theme.palette.text.primary,
