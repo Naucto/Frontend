@@ -21,6 +21,7 @@ const App: React.FC = () => {
   useEffect(() => {
     const handleMessage = (event: MessageEvent): void => {
       if (event.origin !== window.location.origin) return;
+      if (!event.data || typeof event.data !== "object") return;
       if (event.data.type === "microsoft_auth_success" && event.data.token) {
         handleAuthSuccess(event.data.token).catch(err => {
           console.error("Error handling auth success:", err);
