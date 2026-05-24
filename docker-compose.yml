@@ -1,7 +1,7 @@
 networks:
   naucto:
     name: naucto
-    external: true
+    driver: bridge
 
 services:
   frontend:
