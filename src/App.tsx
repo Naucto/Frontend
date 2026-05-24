@@ -27,7 +27,7 @@ const App: React.FC = () => {
           console.error("Error handling auth success:", err);
         });
       } else if (event.data.type === "microsoft_auth_error") {
-        console.error("[Microsoft OAuth] Erreur reçue du popup:", event.data.error);
+        console.error("[Microsoft OAuth] Error received from popup:", event.data.error);
       }
     };
 
