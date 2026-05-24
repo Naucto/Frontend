@@ -32,7 +32,8 @@ export const OAuthCallback = (): React.JSX.Element => {
       hasCalledAPI.current = true;
 
       authControllerLoginWithGithub({ body: { code } })
-        .then(async ({ data }) => {
+        .then(async ({ data, error }) => {
+          if (error) throw new Error((error as { message?: string })?.message ?? "GitHub login failed");
           await handleAuthSuccess(data!.access_token);
           navigate("/");
         })
