@@ -186,7 +186,7 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }): Reac
         <S.Center sx={{ marginTop: isSignUpMode ? theme.spacing(-1) : theme.spacing(3) }}>
           <Typography>
             {isSignUpMode ? "Already have an account ? " : "Don't have an account ? "}
-            <Link sx={{ cursor: "pointer" }} onClick={() => setIsSignUpMode(!isSignUpMode)}>
+            <Link sx={{ cursor: "pointer" }} data-cy="toggle-auth-mode" onClick={() => setIsSignUpMode(!isSignUpMode)}>
               {authText(!isSignUpMode)}
             </Link>
           </Typography>
