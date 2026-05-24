@@ -6,7 +6,7 @@ import { CreateUserDto, LoginDto, authControllerRegister, authControllerLogin, u
 import { useUser } from "@providers/UserProvider";
 import { CustomDialog } from "@shared/dialog/CustomDialog";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
-import { generatePKCE, savePKCE, saveGooglePKCE } from "@utils/pkce";
+import { generatePKCE, savePKCE, saveGooglePKCE, saveGithubState, saveMicrosoftState } from "@utils/pkce";
 
 import * as S from "./AuthOverlay.styles";
 import GitHubPixelLogo from "@assets/GithubLogo.png";
@@ -18,7 +18,6 @@ interface AuthOverlayProps {
   setIsOpen: (isOpen: boolean) => void;
   onClose?: () => void;
 }
-
 
 const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }): React.JSX.Element => {
   const theme = useTheme();
@@ -96,7 +95,13 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }): Reac
   const handleGithubLogin = useCallback((): void => {
     const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
     const redirectUri = import.meta.env.VITE_GITHUB_REDIRECT_URI;
-    window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=user:email`;
+    const state = btoa(JSON.stringify({ timestamp: Date.now() }));
+    saveGithubState(state);
+    window.location.href =
+      `https://github.com/login/oauth/authorize?client_id=${clientId}` +
+      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+      "&scope=user:email" +
+      `&state=${state}`;
   }, []);
 
   const handleMicrosoftLogin = useCallback(async (): Promise<void> => {
@@ -115,6 +120,7 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }): Reac
       const tenantId = import.meta.env.VITE_MICROSOFT_TENANT_ID;
       const redirectUri = import.meta.env.VITE_MICROSOFT_REDIRECT_URI || `${window.location.origin}/oauth/microsoft/callback`;
       const state = btoa(JSON.stringify({ timestamp: Date.now() }));
+      saveMicrosoftState(state);
 
       const authorizationUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize?` +
         `client_id=${clientId}` +
@@ -123,7 +129,7 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }): Reac
         "&scope=openid%20profile%20email" +
         `&code_challenge=${codeChallenge}` +
         "&code_challenge_method=S256" +
-        `&state=${state}` +
+        `&state=${encodeURIComponent(state)}` +
         "&response_mode=query";
 
       popup.location.href = authorizationUrl;

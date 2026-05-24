@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { authControllerLoginWithGithub } from "@api";
 import { useAuthSuccess } from "@hooks/useAuthSuccess";
+import { getGithubState } from "@utils/pkce";
 import { Box, Typography, CircularProgress } from "@mui/material";
 
 export const OAuthCallback = (): React.JSX.Element => {
@@ -13,8 +14,21 @@ export const OAuthCallback = (): React.JSX.Element => {
 
   useEffect(() => {
     const code = searchParams.get("code");
+    const returnedState = searchParams.get("state");
+    const expectedState = getGithubState();
 
-    if (code && !hasCalledAPI.current) {
+    if (!code) {
+      navigate("/");
+      return;
+    }
+
+    if (!returnedState || returnedState !== expectedState) {
+      console.error("GitHub OAuth state mismatch — possible CSRF attack");
+      navigate("/?error=github_failed");
+      return;
+    }
+
+    if (!hasCalledAPI.current) {
       hasCalledAPI.current = true;
 
       authControllerLoginWithGithub({ body: { code } })
@@ -26,8 +40,6 @@ export const OAuthCallback = (): React.JSX.Element => {
           console.error("Github error:", err);
           navigate("/?error=github_failed");
         });
-    } else if (!code) {
-      navigate("/");
     }
   }, [searchParams, navigate, handleAuthSuccess]);
 

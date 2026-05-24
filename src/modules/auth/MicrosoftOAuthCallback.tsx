@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Box, Typography, CircularProgress } from "@mui/material";
 import { authControllerLoginWithMicrosoft } from "@api";
-import { getPKCE } from "@utils/pkce";
+import { getPKCE, getMicrosoftState } from "@utils/pkce";
 
 interface MicrosoftTokenResponse {
   access_token?: string;
@@ -18,10 +18,19 @@ export const MicrosoftOAuthCallback = (): React.JSX.Element => {
   useEffect(() => {
     const code = searchParams.get("code");
     const error = searchParams.get("error");
+    const returnedState = searchParams.get("state");
+    const expectedState = getMicrosoftState();
 
     if (error) {
       console.error("Microsoft OAuth error:", error, searchParams.get("error_description"));
       window.opener?.postMessage({ error }, "*");
+      window.close();
+      return;
+    }
+
+    if (!returnedState || returnedState !== expectedState) {
+      console.error("Microsoft OAuth state mismatch — possible CSRF attack");
+      window.opener?.postMessage({ error: "state_mismatch" }, "*");
       window.close();
       return;
     }

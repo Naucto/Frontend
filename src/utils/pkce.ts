@@ -40,3 +40,23 @@ export const getGooglePKCE = (): string | null => {
   localStorage.removeItem("google_pkce_verifier");
   return verifier;
 };
+
+export const saveGithubState = (state: string): void => {
+  localStorage.setItem("github_oauth_state", state);
+};
+
+export const getGithubState = (): string | null => {
+  const state = localStorage.getItem("github_oauth_state");
+  localStorage.removeItem("github_oauth_state");
+  return state;
+};
+
+export const saveMicrosoftState = (state: string): void => {
+  localStorage.setItem("microsoft_oauth_state", state);
+};
+
+export const getMicrosoftState = (): string | null => {
+  const state = localStorage.getItem("microsoft_oauth_state");
+  localStorage.removeItem("microsoft_oauth_state");
+  return state;
+};
