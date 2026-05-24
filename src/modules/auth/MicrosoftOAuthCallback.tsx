@@ -72,7 +72,7 @@ export const MicrosoftOAuthCallback = (): React.JSX.Element => {
         if (!tokens.id_token) {
           throw new Error("No id_token in Microsoft response");
         }
-        const response = await authControllerLoginWithMicrosoft({ body: { token: tokens.id_token } });
+        const response = await authControllerLoginWithMicrosoft({ body: { token: tokens.id_token, codeVerifier } });
         if (response.error) {
           throw new Error(JSON.stringify(response.error));
         }
