@@ -6,7 +6,7 @@ import { CreateUserDto, LoginDto, authControllerRegister, authControllerLogin, u
 import { useUser } from "@providers/UserProvider";
 import { CustomDialog } from "@shared/dialog/CustomDialog";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
-import { generatePKCE, savePKCE, saveGooglePKCE, saveGoogleState, saveGithubState, saveMicrosoftState } from "@utils/pkce";
+import { generatePKCE, generateState, savePKCE, saveGooglePKCE, saveGoogleState, saveGithubState, saveMicrosoftState } from "@utils/pkce";
 
 import * as S from "./AuthOverlay.styles";
 import GitHubPixelLogo from "@assets/GithubLogo.png";
@@ -85,7 +85,7 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }): Reac
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
     const redirectUri = import.meta.env.VITE_GOOGLE_REDIRECT_URI;
     const { codeVerifier, codeChallenge } = await generatePKCE();
-    const state = btoa(JSON.stringify({ timestamp: Date.now() }));
+    const state = generateState();
     saveGooglePKCE(codeVerifier);
     saveGoogleState(state);
     window.location.href =
@@ -102,7 +102,7 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }): Reac
   const handleGithubLogin = useCallback((): void => {
     const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
     const redirectUri = import.meta.env.VITE_GITHUB_REDIRECT_URI;
-    const state = btoa(JSON.stringify({ timestamp: Date.now() }));
+    const state = generateState();
     saveGithubState(state);
     window.location.href =
       `https://github.com/login/oauth/authorize?client_id=${clientId}` +
@@ -126,7 +126,7 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }): Reac
       const clientId = import.meta.env.VITE_MICROSOFT_CLIENT_ID;
       const tenantId = import.meta.env.VITE_MICROSOFT_TENANT_ID;
       const redirectUri = import.meta.env.VITE_MICROSOFT_REDIRECT_URI || `${window.location.origin}/oauth/microsoft/callback`;
-      const state = btoa(JSON.stringify({ timestamp: Date.now() }));
+      const state = generateState();
       saveMicrosoftState(state);
 
       const authorizationUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize?` +
