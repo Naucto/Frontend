@@ -15,7 +15,6 @@ import {
   Checkbox,
   IconButton,
   Tooltip,
-  Collapse,
   TextField,
   Table,
   TableContainer,
@@ -34,11 +33,6 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 import React, { JSX, useEffect, useState } from "react";
 
-interface MultiplayerDirectoryEntryButtonGroupProps {
-  multiplayerSettingsProvider: MultiplayerSettingsProvider,
-  settings: MultiplayerDirectorySettings
-};
-
 enum MultiplayerDirectoryEntryState {
   NORMAL,
   EDIT,
@@ -48,16 +42,18 @@ enum MultiplayerDirectoryEntryState {
 
 const StyledButtonGroup = styled(ButtonGroup)(({ theme }) => ({
   display: "flex",
-  alignItems: "center",
+  alignItems: "right",
   gap: theme.spacing(1),
 }));
 
-export const MultiplayerDirectoryEntryButtonGroup: React.FC<MultiplayerDirectoryEntryButtonGroupProps> = ({ multiplayerSettingsProvider, settings }) => {
+interface MultiplayerDirectoryEntryPermissionsSetProps {
+  multiplayerSettingsProvider: MultiplayerSettingsProvider,
+  settings: MultiplayerDirectorySettings
+};
+
+export const MultiplayerDirectoryEntryPermissionsSet: React.FC<MultiplayerDirectoryEntryPermissionsSetProps> = ({ multiplayerSettingsProvider, settings }) => {
   const mpsp = multiplayerSettingsProvider;
 
-  const [entryState, setEntryState] = useState(MultiplayerDirectoryEntryState.NORMAL);
-
-  // "Normal" state specific things
   type DirectoryFlagsRecord = Record<string, boolean>;
 
   const getFlagStates = (): Record<string, boolean> => {
@@ -94,6 +90,44 @@ export const MultiplayerDirectoryEntryButtonGroup: React.FC<MultiplayerDirectory
       return () => mpsp.unobserve(settings.path, normal_observeCallback);
     }
   );
+
+  return (
+    <span onClick={(e) => e.stopPropagation()}>
+      <StyledButtonGroup>
+        {
+          normal_flagNames.map((flagName) => {
+            const flagUpdate = (_: React.ChangeEvent, checked: boolean): void => {
+              mpsp.accessDirectorySettings(settings.path,
+                (settings) => settings.set(
+                  enumFromName(MultiplayerDirectoryFlags, flagName),
+                  checked
+                )
+              );
+            };
+
+            return (
+              <Tooltip title={flagName} key={flagName}>
+                <Checkbox
+                  checked={normal_flagStates[flagName]}
+                  onChange={flagUpdate} />
+              </Tooltip>
+            );
+          })
+        }
+      </StyledButtonGroup>
+    </span>
+  );
+};
+
+interface MultiplayerDirectoryEntryActionSetProps {
+  multiplayerSettingsProvider: MultiplayerSettingsProvider,
+  settings: MultiplayerDirectorySettings
+};
+
+export const MultiplayerDirectoryEntryActionSet: React.FC<MultiplayerDirectoryEntryActionSetProps> = ({ multiplayerSettingsProvider, settings }) => {
+  const mpsp = multiplayerSettingsProvider;
+
+  const [entryState, setEntryState] = useState(MultiplayerDirectoryEntryState.NORMAL);
 
   // "Edit" state specific things
   const edit_newNodePath = useInputValue(settings.path);
@@ -138,27 +172,6 @@ export const MultiplayerDirectoryEntryButtonGroup: React.FC<MultiplayerDirectory
             <AddIcon />
           </IconButton>
         </Tooltip>
-
-        {
-          normal_flagNames.map((flagName) => {
-            const flagUpdate = (_: React.ChangeEvent, checked: boolean): void => {
-              mpsp.accessDirectorySettings(settings.path,
-                (settings) => settings.set(
-                  enumFromName(MultiplayerDirectoryFlags, flagName),
-                  checked
-                )
-              );
-            };
-
-            return (
-              <Tooltip title={flagName} key={flagName}>
-                <Checkbox
-                  checked={normal_flagStates[flagName]}
-                  onChange={flagUpdate} />
-              </Tooltip>
-            );
-          })
-        }
       </StyledButtonGroup>
     );
   };
@@ -367,26 +380,33 @@ export const MultiplayerDirectoryEntry: React.FC<MultiplayerDirectoryEntryProps>
     setNodeOpened(prev => !prev);
   };
 
+  const nodeDepth = mpsp.getPathDepth(settings.path);
+
   return (
     <>
       <TableRow onClick={handleNodeToggle}>
-        <TableCell>{isNodeOpened ? <ExpandMoreIcon /> : <ExpandLessIcon />}</TableCell>
+        <TableCell sx={{ pl: (nodeDepth + .5) * 4 }}>
+          {isNodeOpened ? <ExpandMoreIcon /> : <ExpandLessIcon />}
+        </TableCell>
         <TableCell>{settings.name}</TableCell>
         <TableCell>
-          <MultiplayerDirectoryEntryButtonGroup
+          <MultiplayerDirectoryEntryActionSet
+            multiplayerSettingsProvider={multiplayerSettingsProvider}
+            settings={settings} />
+        </TableCell>
+        <TableCell>
+          <MultiplayerDirectoryEntryPermissionsSet
             multiplayerSettingsProvider={multiplayerSettingsProvider}
             settings={settings} />
         </TableCell>
       </TableRow>
 
-      <Collapse in={isNodeOpened} unmountOnExit sx={{ pl: 4 }}>
-        {childrenEntries.map(childSettings => (
-          <MultiplayerDirectoryEntry
-            key={childSettings.path}
-            settings={childSettings}
-            multiplayerSettingsProvider={multiplayerSettingsProvider} />
-        ))}
-      </Collapse>
+      {isNodeOpened && childrenEntries.map(childSettings => (
+        <MultiplayerDirectoryEntry
+          key={childSettings.path}
+          settings={childSettings}
+          multiplayerSettingsProvider={multiplayerSettingsProvider} />
+      ))}
     </>
   );
 };
@@ -396,10 +416,11 @@ export const MultiplayerSettingsEditor: React.FC<EditorProps> = ({ project }) =>
 
   return (
     <TableContainer>
-      <Table>
+      <Table tableLayout="fixed">
         <TableHead>
           <TableRow>
-            <TableCell colSpan={2}>Node Path</TableCell>
+            <TableCell sx={{ width: "auto" }} />
+            <TableCell>Node Path</TableCell>
             <TableCell>Operations</TableCell>
             <TableCell>Permissions</TableCell>
           </TableRow>
