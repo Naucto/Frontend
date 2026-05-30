@@ -6,8 +6,6 @@ import {
 } from "@providers/editors/MultiplayerSettingsProvider.ts";
 import { EditorProps } from "@modules/create/game-editor/editors/EditorType";
 
-import { Section } from "@components/ui/Section";
-
 import { enumFromName, enumNames } from "@our-types/enum";
 import { useInputValue } from "@hooks/useInputValue";
 
@@ -15,14 +13,16 @@ import {
   styled,
   ButtonGroup,
   Checkbox,
-  List,
-  ListItemText,
   IconButton,
   Tooltip,
   Collapse,
   TextField,
-  ListItemButton,
-  ListItemIcon,
+  Table,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
 } from "@mui/material";
 
 import AddIcon from "@mui/icons-material/Add";
@@ -369,27 +369,23 @@ export const MultiplayerDirectoryEntry: React.FC<MultiplayerDirectoryEntryProps>
 
   return (
     <>
-      <ListItemButton onClick={handleNodeToggle}>
-        <ListItemIcon>
-          {isNodeOpened ? <ExpandMoreIcon /> : <ExpandLessIcon />}
-        </ListItemIcon>
-        <ListItemText primary={settings.name} />
-        <ListItemIcon>
+      <TableRow onClick={handleNodeToggle}>
+        <TableCell>{isNodeOpened ? <ExpandMoreIcon /> : <ExpandLessIcon />}</TableCell>
+        <TableCell>{settings.name}</TableCell>
+        <TableCell>
           <MultiplayerDirectoryEntryButtonGroup
             multiplayerSettingsProvider={multiplayerSettingsProvider}
             settings={settings} />
-        </ListItemIcon>
-      </ListItemButton>
+        </TableCell>
+      </TableRow>
 
-      <Collapse in={isNodeOpened} unmountOnExit>
-        <List sx={{ pl: 4 }}>
-          {childrenEntries.map(childSettings => (
-            <MultiplayerDirectoryEntry
-              key={childSettings.path}
-              settings={childSettings}
-              multiplayerSettingsProvider={multiplayerSettingsProvider} />
-          ))}
-        </List>
+      <Collapse in={isNodeOpened} unmountOnExit sx={{ pl: 4 }}>
+        {childrenEntries.map(childSettings => (
+          <MultiplayerDirectoryEntry
+            key={childSettings.path}
+            settings={childSettings}
+            multiplayerSettingsProvider={multiplayerSettingsProvider} />
+        ))}
       </Collapse>
     </>
   );
@@ -399,13 +395,23 @@ export const MultiplayerSettingsEditor: React.FC<EditorProps> = ({ project }) =>
   const rootNode = project.multiplayerSettingsProvider.getRootDirectorySettings();
 
   return (
-    <Section>
-      <List>
-        <MultiplayerDirectoryEntry
-          key={rootNode.path}
-          settings={rootNode}
-          multiplayerSettingsProvider={project.multiplayerSettingsProvider} />
-      </List>
-    </Section>
+    <TableContainer>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell colSpan={2}>Node Path</TableCell>
+            <TableCell>Operations</TableCell>
+            <TableCell>Permissions</TableCell>
+          </TableRow>
+        </TableHead>
+
+        <TableBody>
+          <MultiplayerDirectoryEntry
+            key={rootNode.path}
+            settings={rootNode}
+            multiplayerSettingsProvider={project.multiplayerSettingsProvider} />
+        </TableBody>
+      </Table>
+    </TableContainer>
   );
 };
