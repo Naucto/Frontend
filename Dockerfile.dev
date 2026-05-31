@@ -4,7 +4,7 @@ WORKDIR /app
 COPY ./patches ./patches
 COPY package.json ./
 COPY package-lock.json ./
-RUN npm ci && npx patch-package
+RUN npm ci
 
 COPY . .
 
