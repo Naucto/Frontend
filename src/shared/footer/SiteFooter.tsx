@@ -9,13 +9,13 @@ import ArticleIcon from "@mui/icons-material/Article";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import { DOCUMENTATION_URL } from "@shared/docs/DocumentationFrame";
 import {
-  FEEDBACK_URL,
   GITHUB_URL,
   LICENSE_URL,
   LINKEDIN_URL,
   REDDIT_URL,
   X_URL,
 } from "@shared/constants/links";
+import { FeedbackLanguagePicker } from "@shared/feedback/FeedbackLanguagePicker";
 
 const footerLinks = [
   { label: "GitHub", href: GITHUB_URL, icon: <GitHubIcon fontSize="small" /> },
@@ -23,7 +23,6 @@ const footerLinks = [
   { label: "Reddit", href: REDDIT_URL, icon: <RedditIcon fontSize="small" /> },
   { label: "LinkedIn", href: LINKEDIN_URL, icon: <LinkedInIcon fontSize="small" /> },
   { label: "Documentation", href: DOCUMENTATION_URL, icon: <ArticleIcon fontSize="small" /> },
-  { label: "Feedback", href: FEEDBACK_URL, icon: <OpenInNewIcon fontSize="small" /> },
   { label: "License", href: LICENSE_URL, icon: <ArticleIcon fontSize="small" /> },
 ];
 
@@ -66,6 +65,24 @@ const FooterLink = styled(MuiLink)(({ theme }) => ({
   },
 }));
 
+const FooterActionButton = styled("button")(({ theme }) => ({
+  display: "inline-flex",
+  alignItems: "center",
+  gap: theme.spacing(0.5),
+  color: theme.palette.gray[100],
+  textDecoration: "none",
+  fontSize: "14px",
+  lineHeight: 1.2,
+  border: "none",
+  background: "transparent",
+  fontFamily: theme.typography.fontFamily,
+  cursor: "pointer",
+  padding: 0,
+  "&:hover": {
+    color: theme.palette.yellow[500],
+  },
+}));
+
 export const SiteFooter: React.FC = () => {
   return (
     <Footer>
@@ -85,6 +102,14 @@ export const SiteFooter: React.FC = () => {
               {link.label}
             </FooterLink>
           ))}
+          <FeedbackLanguagePicker>
+            {(openFeedbackDialog) => (
+              <FooterActionButton type="button" onClick={openFeedbackDialog}>
+                <OpenInNewIcon fontSize="small" />
+                Feedback
+              </FooterActionButton>
+            )}
+          </FeedbackLanguagePicker>
         </LinkList>
       </FooterInner>
     </Footer>

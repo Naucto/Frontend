@@ -1,7 +1,7 @@
 import { styled } from "@mui/material/styles";
 import AddIcon from "@mui/icons-material/Add";
 import FeedbackIcon from "@mui/icons-material/Feedback";
-import { ExternalNavElem, NavElem, ImportantNavElem, ImportantNavActionButton } from "@shared/navbar/NavElem";
+import { NavElem, ImportantNavElem, ImportantNavActionButton, NavActionButton } from "@shared/navbar/NavElem";
 import NavProfile from "@shared/navbar/nav-profile/NavProfile";
 import { GameSearchOverlay } from "@shared/navbar/GameSearchOverlay";
 import { SearchBar } from "@shared/navbar/SearchBar";
@@ -11,7 +11,7 @@ import { muiTheme } from "@theme/MUITheme";
 import { Login } from "@shared/navbar/login/Login";
 import * as Urls from "@shared/route";
 import { useCreateProject } from "@modules/projects/hooks/useCreateProject";
-import { FEEDBACK_URL } from "@shared/constants/links";
+import { FeedbackLanguagePicker } from "@shared/feedback/FeedbackLanguagePicker";
 
 const Nav = styled("nav")(({ theme }) => ({
   display: "grid",
@@ -94,10 +94,14 @@ const NavBar: React.FC = () => {
       />
 
       <Right>
-        <ExternalNavElem href={FEEDBACK_URL} target="_blank" rel="noreferrer">
-          <FeedbackIcon fontSize="small" />
-          Give your feedback
-        </ExternalNavElem>
+        <FeedbackLanguagePicker>
+          {(openFeedbackDialog) => (
+            <NavActionButton type="button" onClick={openFeedbackDialog}>
+              <FeedbackIcon fontSize="small" />
+              Give your feedback
+            </NavActionButton>
+          )}
+        </FeedbackLanguagePicker>
         <NavElem to="/friends">Friends</NavElem>
         {user ? <NavProfile /> : <Login forceShowAuthOverlay={forceShowAuthOverlay} setForceShowAuthOverlay={setForceShowAuthOverlay} />}
       </Right>
