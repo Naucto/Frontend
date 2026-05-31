@@ -7,6 +7,21 @@ import NavBar from "@shared/navbar/NavBar";
 import { muiTheme } from "@theme/MUITheme";
 import { CustomSnackBarProvider } from "@shared/snackBar/CustomSnackBarProvider";
 import { GameViewer } from "@modules/hub/components/GameViewer";
+import { styled } from "@mui/material/styles";
+
+const AppContainer = styled("div")(() => ({
+  display: "flex",
+  flexDirection: "column",
+  flex: 1,
+  minHeight: 0,
+}));
+
+const AppContent = styled("div")(() => ({
+  display: "flex",
+  flexDirection: "column",
+  flex: 1,
+  minHeight: 0,
+}));
 
 const Projects = lazy(() => import("@modules/projects/Projects"));
 const Project = lazy(() => import("@modules/project/Project"));
@@ -23,25 +38,27 @@ const AppRoutes: React.FC = () => {
     !backgroundLocation && /^\/project\/\d+\/play$/.test(location.pathname);
 
   return (
-    <>
+    <AppContainer>
       <NavBar />
-      <Suspense fallback={null}>
-        <Routes location={backgroundLocation || location}>
-          <Route path="/" element={<Hub />} />
-          <Route path="/hub" element={<Hub />} />
-          <Route path='/projects' element={<Projects />} />
-          <Route path="/projects/:projectId" element={<Project />} />
-          {isStandalonePlayRoute && (
-            <Route path="/project/:id/play" element={<Hub />} />
-          )}
-        </Routes>
-        {(backgroundLocation || isStandalonePlayRoute) && (
-          <Routes>
-            <Route path="/project/:id/play" element={<GameViewer />} />
+      <AppContent>
+        <Suspense fallback={null}>
+          <Routes location={backgroundLocation || location}>
+            <Route path="/" element={<Hub />} />
+            <Route path="/hub" element={<Hub />} />
+            <Route path='/projects' element={<Projects />} />
+            <Route path="/projects/:projectId" element={<Project />} />
+            {isStandalonePlayRoute && (
+              <Route path="/project/:id/play" element={<Hub />} />
+            )}
           </Routes>
-        )}
-      </Suspense>
-    </>
+          {(backgroundLocation || isStandalonePlayRoute) && (
+            <Routes>
+              <Route path="/project/:id/play" element={<GameViewer />} />
+            </Routes>
+          )}
+        </Suspense>
+      </AppContent>
+    </AppContainer>
   );
 };
 
@@ -58,4 +75,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-

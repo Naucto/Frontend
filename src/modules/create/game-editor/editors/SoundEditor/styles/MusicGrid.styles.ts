@@ -1,10 +1,10 @@
 import { styled } from "@mui/material/styles";
 
 export const ScrollableContainer = styled("div")(() => ({
-  maxWidth: "45%",
-  maxHeight: "100%",
+  width: "531px",
+  flexShrink: 0,
   overflowX: "auto",
-  overflowY: "hidden",
+  overflowY: "auto",
   display: "flex",
   flexDirection: "column",
   flexWrap: "nowrap",
@@ -14,6 +14,7 @@ export const GridWithProgressContainer = styled("div")(() => ({
   display: "flex",
   flexDirection: "column",
   alignItems: "flex-start",
+  width: "max-content",
 }));
 
 export const GridContainer = styled("div")(() => ({

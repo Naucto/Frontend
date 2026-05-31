@@ -443,6 +443,7 @@ export const SoundEditor: React.FC<EditorProps> = ({ project }) => {
             totalLength={currentMusic.length}
             maxLength={lastColumnWithNotes}
             onSeek={handleSeek}
+            isPlaying={isPlaying}
           />
           <MusicSelectionButtons
             musics={musics}
