@@ -16,13 +16,18 @@ import {
   IconButton,
   Tooltip,
   TextField,
-  Table,
   TableContainer,
   TableHead,
-  TableRow,
-  TableCell,
   TableBody,
+  TableRow,
 } from "@mui/material";
+
+import {
+  StyledTable,
+  StyledTableRow,
+  StyledTableCell,
+  StyledGrownTableCell,
+} from "@components/ui/StyledTable.tsx";
 
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -30,6 +35,7 @@ import RenameIcon from "@mui/icons-material/Edit";
 import CloseIcon from "@mui/icons-material/Close";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import SubdirectoryArrowRightIcon from "@mui/icons-material/SubdirectoryArrowRight";
 
 import React, { JSX, useEffect, useState } from "react";
 
@@ -42,8 +48,7 @@ enum MultiplayerDirectoryEntryState {
 
 const StyledButtonGroup = styled(ButtonGroup)(({ theme }) => ({
   display: "flex",
-  alignItems: "right",
-  gap: theme.spacing(1),
+  gap: theme.spacing(0.5),
 }));
 
 interface MultiplayerDirectoryEntryPermissionsSetProps {
@@ -151,6 +156,12 @@ export const MultiplayerDirectoryEntryActionSet: React.FC<MultiplayerDirectoryEn
 
     return (
       <StyledButtonGroup>
+        <Tooltip title="Add child node">
+          <IconButton onClick={addChildNode}>
+            <AddIcon />
+          </IconButton>
+        </Tooltip>
+
         {!settings.isRootNode && (
           <>
             <Tooltip title="Delete this node and its children">
@@ -166,12 +177,6 @@ export const MultiplayerDirectoryEntryActionSet: React.FC<MultiplayerDirectoryEn
             </Tooltip>
           </>
         )}
-
-        <Tooltip title="Add child node">
-          <IconButton onClick={addChildNode}>
-            <AddIcon />
-          </IconButton>
-        </Tooltip>
       </StyledButtonGroup>
     );
   };
@@ -381,25 +386,32 @@ export const MultiplayerDirectoryEntry: React.FC<MultiplayerDirectoryEntryProps>
   };
 
   const nodeDepth = mpsp.getPathDepth(settings.path);
+  let   doesNodeHaveChildren = false;
+
+  mpsp.visitChildDirectorySettings(settings.path, () => doesNodeHaveChildren = true);
 
   return (
     <>
-      <TableRow onClick={handleNodeToggle}>
-        <TableCell sx={{ pl: (nodeDepth + .5) * 4 }}>
-          {isNodeOpened ? <ExpandMoreIcon /> : <ExpandLessIcon />}
-        </TableCell>
-        <TableCell>{settings.name}</TableCell>
-        <TableCell>
+      <StyledTableRow hoverable={doesNodeHaveChildren} onClick={handleNodeToggle}>
+        <StyledTableCell sx={{ pl: (nodeDepth + .2) * 4 }}>
+          {doesNodeHaveChildren
+            ? (isNodeOpened ? <ExpandMoreIcon /> : <ExpandLessIcon />)
+            : <SubdirectoryArrowRightIcon />}
+        </StyledTableCell>
+        <StyledTableCell>
           <MultiplayerDirectoryEntryActionSet
             multiplayerSettingsProvider={multiplayerSettingsProvider}
             settings={settings} />
-        </TableCell>
-        <TableCell>
+        </StyledTableCell>
+        <StyledGrownTableCell>
+          {settings.name}
+        </StyledGrownTableCell>
+        <StyledTableCell>
           <MultiplayerDirectoryEntryPermissionsSet
             multiplayerSettingsProvider={multiplayerSettingsProvider}
             settings={settings} />
-        </TableCell>
-      </TableRow>
+        </StyledTableCell>
+      </StyledTableRow>
 
       {isNodeOpened && childrenEntries.map(childSettings => (
         <MultiplayerDirectoryEntry
@@ -416,13 +428,13 @@ export const MultiplayerSettingsEditor: React.FC<EditorProps> = ({ project }) =>
 
   return (
     <TableContainer>
-      <Table tableLayout="fixed">
+      <StyledTable>
         <TableHead>
           <TableRow>
-            <TableCell sx={{ width: "auto" }} />
-            <TableCell>Node Path</TableCell>
-            <TableCell>Operations</TableCell>
-            <TableCell>Permissions</TableCell>
+            <StyledTableCell />
+            <StyledTableCell>Operations</StyledTableCell>
+            <StyledTableCell>Node Path</StyledTableCell>
+            <StyledTableCell>Permissions</StyledTableCell>
           </TableRow>
         </TableHead>
 
@@ -432,7 +444,7 @@ export const MultiplayerSettingsEditor: React.FC<EditorProps> = ({ project }) =>
             settings={rootNode}
             multiplayerSettingsProvider={project.multiplayerSettingsProvider} />
         </TableBody>
-      </Table>
+      </StyledTable>
     </TableContainer>
   );
 };
