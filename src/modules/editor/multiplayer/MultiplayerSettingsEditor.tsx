@@ -445,7 +445,7 @@ export const MultiplayerDirectoryEntry: React.FC<MultiplayerDirectoryEntryProps>
       <StyledTableRow hoverable={doesNodeHaveChildren} onClick={handleNodeToggle}>
         <StyledTableCell sx={{ pl: (nodeDepth + .2) * 4 }}>
           {doesNodeHaveChildren
-            ? (isNodeOpened ? <ExpandMoreIcon /> : <ExpandLessIcon />)
+            ? (isNodeOpened ? <ExpandLessIcon /> : <ExpandMoreIcon />)
             : <SubdirectoryArrowRightIcon />}
         </StyledTableCell>
         <StyledTableCell>
