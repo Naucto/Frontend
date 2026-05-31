@@ -288,8 +288,10 @@ export class MultiplayerSettingsProvider implements Destroyable {
   }
 
   public unobserve(path: string, callback?: MultiplayerSettingsUpdateListener): void {
-    if (callback === undefined)
+    if (callback === undefined) {
       this._boundSettingsChangeListeners.delete(path);
+      return;
+    }
 
     const listeners = this._boundSettingsChangeListeners.get(path);
 
