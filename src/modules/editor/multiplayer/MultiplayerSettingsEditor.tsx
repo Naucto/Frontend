@@ -7,7 +7,6 @@ import {
 import { EditorProps } from "@modules/create/game-editor/editors/EditorType";
 
 import { enumFromName, enumNames } from "@our-types/enum";
-import { useInputValue } from "@hooks/useInputValue";
 
 import {
   styled,
@@ -20,6 +19,12 @@ import {
   TableHead,
   TableBody,
   TableRow,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button,
 } from "@mui/material";
 
 import {
@@ -32,24 +37,164 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import RenameIcon from "@mui/icons-material/Edit";
-import CloseIcon from "@mui/icons-material/Close";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SubdirectoryArrowRightIcon from "@mui/icons-material/SubdirectoryArrowRight";
 
-import React, { JSX, useEffect, useState } from "react";
-
-enum MultiplayerDirectoryEntryState {
-  NORMAL,
-  EDIT,
-  DELETE,
-  CREATE_CHILD
-};
+import React, { JSX, useEffect, useState, useContext } from "react";
 
 const StyledButtonGroup = styled(ButtonGroup)(({ theme }) => ({
   display: "flex",
   gap: theme.spacing(0.5),
 }));
+
+// --------------------------------------------------------------------------
+// Dialog manager context (shared across all rows)
+// --------------------------------------------------------------------------
+
+type MultiplayerDialogType = "delete" | "createChild" | "rename";
+
+interface MultiplayerDialogManagerState {
+  type: MultiplayerDialogType | null;
+  open: boolean;
+  path: string;
+  inputValue: string;
+}
+
+interface MultiplayerDialogManagerContextValue {
+  state: MultiplayerDialogManagerState;
+  openDialog: (type: MultiplayerDialogType, path: string) => void;
+  closeDialog: () => void;
+  setDialogInputValue: (value: string) => void;
+}
+
+const MultiplayerDialogManagerContext = React.createContext<MultiplayerDialogManagerContextValue | null>(null);
+
+const useMultiplayerDialogManager = (): MultiplayerDialogManagerContextValue => {
+  const ctx = useContext(MultiplayerDialogManagerContext);
+  if (!ctx) throw new Error("useMultiplayerDialogManager must be used within MultiplayerDialogManagerProvider");
+  return ctx;
+};
+
+interface MultiplayerDialogManagerProviderProps {
+  children: JSX.Element;
+  multiplayerSettingsProvider: MultiplayerSettingsProvider;
+}
+
+const MultiplayerDialogManagerProvider: React.FC<MultiplayerDialogManagerProviderProps> = ({ children, multiplayerSettingsProvider }) => {
+  const mpsp = multiplayerSettingsProvider;
+
+  const [state, setState] = useState<MultiplayerDialogManagerState>({ type: null, open: false, path: "", inputValue: "" });
+
+  const openDialog = (type: MultiplayerDialogType, path: string): void => {
+    const initialInputValue = type === "createChild" ? `${path}.` : path;
+    setState({ type, open: true, path, inputValue: initialInputValue });
+  };
+
+  const closeDialog = (): void => {
+    setState({ type: null, open: false, path: "", inputValue: "" });
+  };
+
+  const setDialogInputValue = (value: string): void => {
+    setState(prev => ({ ...prev, inputValue: value }));
+  };
+
+  return (
+    <MultiplayerDialogManagerContext.Provider value={{ state, openDialog, closeDialog, setDialogInputValue }}>
+      {children}
+      {state.type === "delete" && state.open && (
+        <Dialog
+          open={state.open}
+          onClose={closeDialog}
+          maxWidth="sm"
+          fullWidth
+          role="alertdialog"
+        >
+          <DialogTitle>Delete node</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Are you sure you want to delete node <strong>{state.path}</strong> and its children?
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={closeDialog}>Cancel</Button>
+            <Button onClick={() => {
+              mpsp.deleteDirectorySettings(state.path);
+              closeDialog();
+            }} color="error" autoFocus>
+              Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
+      {state.type === "createChild" && state.open && (
+        <Dialog
+          open={state.open}
+          onClose={closeDialog}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>Create child node</DialogTitle>
+          <DialogContent>
+            <TextField
+              autoFocus
+              label="Child node name"
+              value={state.inputValue}
+              onChange={(e) => setDialogInputValue(e.target.value)}
+              placeholder={`${state.path}.`}
+              fullWidth
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={closeDialog}>Cancel</Button>
+            <Button onClick={() => {
+              mpsp.createDirectorySettings(state.inputValue);
+              closeDialog();
+            }} autoFocus>
+              Create
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
+      {state.type === "rename" && state.open && (
+        <Dialog
+          open={state.open}
+          onClose={closeDialog}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>Rename node</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Renaming node <strong>{state.path}</strong>
+            </DialogContentText>
+            <TextField
+              autoFocus
+              label="New node path"
+              value={state.inputValue}
+              onChange={(e) => setDialogInputValue(e.target.value)}
+              fullWidth
+              sx={{ mt: 2 }}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={closeDialog}>Cancel</Button>
+            <Button onClick={() => {
+              // TODO: Implement rename API call here
+              closeDialog();
+            }} autoFocus>
+              Rename
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
+    </MultiplayerDialogManagerContext.Provider>
+  );
+};
+
+// --------------------------------------------------------------------------
+// Permissions set (unchanged)
+// --------------------------------------------------------------------------
 
 interface MultiplayerDirectoryEntryPermissionsSetProps {
   multiplayerSettingsProvider: MultiplayerSettingsProvider,
@@ -124,35 +269,21 @@ export const MultiplayerDirectoryEntryPermissionsSet: React.FC<MultiplayerDirect
   );
 };
 
+// --------------------------------------------------------------------------
+// Action set (refactored: uses shared dialog manager, no inline dialogs)
+// --------------------------------------------------------------------------
+
 interface MultiplayerDirectoryEntryActionSetProps {
-  multiplayerSettingsProvider: MultiplayerSettingsProvider,
   settings: MultiplayerDirectorySettings
 };
 
-export const MultiplayerDirectoryEntryActionSet: React.FC<MultiplayerDirectoryEntryActionSetProps> = ({ multiplayerSettingsProvider, settings }) => {
-  const mpsp = multiplayerSettingsProvider;
-
-  const [entryState, setEntryState] = useState(MultiplayerDirectoryEntryState.NORMAL);
-
-  // "Edit" state specific things
-  const edit_newNodePath = useInputValue(settings.path);
-
-  // "Create child" state specific things
-  const createChild_newNodePath =
-    useInputValue(`${settings.path}.`);
+export const MultiplayerDirectoryEntryActionSet: React.FC<MultiplayerDirectoryEntryActionSetProps> = ({ settings }) => {
+  const { openDialog } = useMultiplayerDialogManager();
 
   const normalState = (): JSX.Element => {
-    const addChildNode = (): void => {
-      setEntryState(MultiplayerDirectoryEntryState.CREATE_CHILD);
-    };
-
-    const deleteThisNode = (): void => {
-      setEntryState(MultiplayerDirectoryEntryState.DELETE);
-    };
-
-    const renameThisNode = (): void => {
-      setEntryState(MultiplayerDirectoryEntryState.EDIT);
-    };
+    const addChildNode = (): void => openDialog("createChild", settings.path);
+    const deleteThisNode = (): void => openDialog("delete", settings.path);
+    const renameThisNode = (): void => openDialog("rename", settings.path);
 
     return (
       <StyledButtonGroup>
@@ -181,129 +312,16 @@ export const MultiplayerDirectoryEntryActionSet: React.FC<MultiplayerDirectoryEn
     );
   };
 
-  const editState = (): JSX.Element => {
-    const { value: newNodePath, onChange: newNodePath_onChange } = edit_newNodePath;
-
-    const cancel = (): void => {
-      setEntryState(MultiplayerDirectoryEntryState.NORMAL);
-    };
-
-    const validateChange = (): void => {
-      console.log(newNodePath);
-      setEntryState(MultiplayerDirectoryEntryState.NORMAL);
-    };
-
-    return (
-      <StyledButtonGroup>
-        <Tooltip title="New path of the node">
-          <TextField
-            variant="standard"
-            size="small"
-            hiddenLabel
-            value={newNodePath}
-            onChange={newNodePath_onChange} />
-        </Tooltip>
-
-        <Tooltip title="Cancel change">
-          <IconButton onClick={cancel}>
-            <CloseIcon />
-          </IconButton>
-        </Tooltip>
-
-        <Tooltip title="Rename this node">
-          <IconButton onClick={validateChange}>
-            <RenameIcon />
-          </IconButton>
-        </Tooltip>
-      </StyledButtonGroup>
-    );
-  };
-
-  const deleteState = (): JSX.Element => {
-    const cancel = (): void => {
-      setEntryState(MultiplayerDirectoryEntryState.NORMAL);
-    };
-
-    const validateChange = (): void => {
-      mpsp.deleteDirectorySettings(settings.path);
-      setEntryState(MultiplayerDirectoryEntryState.NORMAL);
-    };
-
-    return (
-      <StyledButtonGroup>
-        <Tooltip title="Cancel deletition">
-          <IconButton onClick={cancel}>
-            <CloseIcon />
-          </IconButton>
-        </Tooltip>
-
-        <Tooltip title="Delete this node, for sure">
-          <IconButton onClick={validateChange} color="error">
-            <DeleteIcon />
-          </IconButton>
-        </Tooltip>
-      </StyledButtonGroup>
-    );
-  };
-
-  const createChildState = (): JSX.Element => {
-    const {
-      value: newNodePath,
-      onChange: newNodePath_onChange,
-      setInput: newNodePath_setInput
-    } = createChild_newNodePath;
-
-    const cancel = (): void => {
-      setEntryState(MultiplayerDirectoryEntryState.NORMAL);
-    };
-
-    const validateChange = (): void => {
-      mpsp.createDirectorySettings(createChild_newNodePath.value);
-      newNodePath_setInput(`${settings.path}.`);
-      setEntryState(MultiplayerDirectoryEntryState.NORMAL);
-    };
-
-    return (
-      <StyledButtonGroup>
-        <Tooltip title="New path of the node">
-          <TextField
-            variant="standard"
-            size="small"
-            hiddenLabel
-            value={newNodePath}
-            onChange={newNodePath_onChange} />
-        </Tooltip>
-
-        <Tooltip title="Cancel change">
-          <IconButton onClick={cancel}>
-            <CloseIcon />
-          </IconButton>
-        </Tooltip>
-
-        <Tooltip title="Create a new child node with this name">
-          <IconButton onClick={validateChange}>
-            <AddIcon />
-          </IconButton>
-        </Tooltip>
-      </StyledButtonGroup>
-    );
-  };
-
-  const entryStateContents = (): JSX.Element => {
-    switch (entryState) {
-      case MultiplayerDirectoryEntryState.NORMAL:       return normalState();
-      case MultiplayerDirectoryEntryState.EDIT:         return editState();
-      case MultiplayerDirectoryEntryState.DELETE:       return deleteState();
-      case MultiplayerDirectoryEntryState.CREATE_CHILD: return createChildState();
-    }
-  };
-
   return (
     <span onClick={(e) => e.stopPropagation()}>
-      {entryStateContents()}
+      {normalState()}
     </span>
   );
 };
+
+// --------------------------------------------------------------------------
+// Directory entry (unchanged structure, uses refactored ActionSet)
+// --------------------------------------------------------------------------
 
 interface MultiplayerDirectoryEntryProps {
   settings: MultiplayerDirectorySettings;
@@ -357,7 +375,8 @@ export const MultiplayerDirectoryEntry: React.FC<MultiplayerDirectoryEntryProps>
         setChildrenEntries(
           prevArray =>
             prevArray.map(entry =>
-              entry.path === updatedSettings.path ? updatedSettings : entry)
+              entry.path === updatedSettings.path ? updatedSettings : entry
+            )
         );
         break;
       }
@@ -400,7 +419,6 @@ export const MultiplayerDirectoryEntry: React.FC<MultiplayerDirectoryEntryProps>
         </StyledTableCell>
         <StyledTableCell>
           <MultiplayerDirectoryEntryActionSet
-            multiplayerSettingsProvider={multiplayerSettingsProvider}
             settings={settings} />
         </StyledTableCell>
         <StyledGrownTableCell>
@@ -423,28 +441,36 @@ export const MultiplayerDirectoryEntry: React.FC<MultiplayerDirectoryEntryProps>
   );
 };
 
+// --------------------------------------------------------------------------
+// Editor (refactored: wraps table in dialog provider, renders dialogs top-level)
+// --------------------------------------------------------------------------
+
 export const MultiplayerSettingsEditor: React.FC<EditorProps> = ({ project }) => {
   const rootNode = project.multiplayerSettingsProvider.getRootDirectorySettings();
 
   return (
-    <TableContainer>
-      <StyledTable>
-        <TableHead>
-          <TableRow>
-            <StyledTableCell />
-            <StyledTableCell>Operations</StyledTableCell>
-            <StyledTableCell>Node Path</StyledTableCell>
-            <StyledTableCell>Permissions</StyledTableCell>
-          </TableRow>
-        </TableHead>
+    <MultiplayerDialogManagerProvider
+      multiplayerSettingsProvider={project.multiplayerSettingsProvider}
+    >
+      <TableContainer>
+        <StyledTable>
+          <TableHead>
+            <TableRow>
+              <StyledTableCell />
+              <StyledTableCell>Operations</StyledTableCell>
+              <StyledTableCell>Node Path</StyledTableCell>
+              <StyledTableCell>Permissions</StyledTableCell>
+            </TableRow>
+          </TableHead>
 
-        <TableBody>
-          <MultiplayerDirectoryEntry
-            key={rootNode.path}
-            settings={rootNode}
-            multiplayerSettingsProvider={project.multiplayerSettingsProvider} />
-        </TableBody>
-      </StyledTable>
-    </TableContainer>
+          <TableBody>
+            <MultiplayerDirectoryEntry
+              key={rootNode.path}
+              settings={rootNode}
+              multiplayerSettingsProvider={project.multiplayerSettingsProvider} />
+          </TableBody>
+        </StyledTable>
+      </TableContainer>
+    </MultiplayerDialogManagerProvider>
   );
 };
