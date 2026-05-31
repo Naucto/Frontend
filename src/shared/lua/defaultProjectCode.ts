@@ -1,10 +1,15 @@
 export const DEFAULT_LUA_PROJECT_CODE = `-- Naucto starter cart
--- Move sprite 1 with arrow keys or WASD.
+-- Move the yellow moon with arrow keys or WASD.
 
 local player = {
-  x = 160,
-  y = 90,
-  sprite = 1,
+  x = 152,
+  y = 82,
+  sprites = {
+    top_left = 1,
+    top_right = 2,
+    bottom_left = 17,
+    bottom_right = 18
+  },
   speed = 2
 }
 
@@ -32,6 +37,9 @@ end
 
 function _draw()
   clear(0)
-  sprite(player.sprite, player.x, player.y, 1, 1)
+  sprite(player.sprites.top_left, player.x, player.y, 1, 1)
+  sprite(player.sprites.top_right, player.x + 8, player.y, 1, 1)
+  sprite(player.sprites.bottom_left, player.x, player.y + 8, 1, 1)
+  sprite(player.sprites.bottom_right, player.x + 8, player.y + 8, 1, 1)
 end
 `;

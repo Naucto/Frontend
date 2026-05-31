@@ -2,19 +2,28 @@ import * as Y from "yjs";
 import { DEFAULT_LUA_PROJECT_CODE } from "@shared/lua/defaultProjectCode";
 
 const SPRITE_MAP_NAME = "sprite";
-const DEFAULT_PLAYER_SPRITE_INDEX = 1;
+const DEFAULT_PLAYER_SPRITE_INDICES = [1, 2, 17, 18] as const;
 const SPRITE_SIZE = 8;
 const SPRITE_SHEET_WIDTH = 128;
+const PALETTE_YELLOW = 10;
 
 const DEFAULT_PLAYER_SPRITE = [
-  "000cc000",
-  "00c77c00",
-  "0c7777c0",
-  "0c7aa7c0",
-  "00cccc00",
-  "00666600",
-  "00600600",
-  "06600660",
+  "00000aaaaaa00000",
+  "0000aaaaaaaaa000",
+  "000aa0aaaaaaa000",
+  "00aa000aaa000000",
+  "00a00000a0000000",
+  "0aaa000a00000000",
+  "0aaaa0aa00000000",
+  "0aaaaaa000000000",
+  "0aaaaaa00000000a",
+  "0aaaaaaa000000aa",
+  "00aaaaaa00000aaa",
+  "00aaaaaaa000aaaa",
+  "000aaaaaaaaaaaa0",
+  "0000aaaaaaaaaa00",
+  "00000aaaaaaaa000",
+  "0000000000000000",
 ];
 
 function getSpriteOrigin(spriteIndex: number): Point2D {
@@ -44,25 +53,35 @@ function isSpriteEmpty(spriteMap: Y.Map<number>, spriteIndex: number): boolean {
   return true;
 }
 
-function seedDefaultPlayerSprite(doc: Y.Doc): void {
-  const spriteMap = doc.getMap<number>(SPRITE_MAP_NAME);
+function areDefaultSpriteSlotsEmpty(spriteMap: Y.Map<number>): boolean {
+  return DEFAULT_PLAYER_SPRITE_INDICES.every((spriteIndex) => isSpriteEmpty(spriteMap, spriteIndex));
+}
 
-  if (!isSpriteEmpty(spriteMap, DEFAULT_PLAYER_SPRITE_INDEX)) {
-    return;
-  }
+function seedSpriteTile(spriteMap: Y.Map<number>, spriteIndex: number, rows: string[]): void {
+  const origin = getSpriteOrigin(spriteIndex);
 
-  const origin = getSpriteOrigin(DEFAULT_PLAYER_SPRITE_INDEX);
-
-  DEFAULT_PLAYER_SPRITE.forEach((row, y) => {
+  rows.forEach((row, y) => {
     [...row].forEach((color, x) => {
-      const colorIndex = Number.parseInt(color, 16);
-      if (colorIndex === 0) {
+      if (color !== "a") {
         return;
       }
 
-      spriteMap.set(coordToKey(origin.x + x, origin.y + y), colorIndex);
+      spriteMap.set(coordToKey(origin.x + x, origin.y + y), PALETTE_YELLOW);
     });
   });
+}
+
+function seedDefaultPlayerSprite(doc: Y.Doc): void {
+  const spriteMap = doc.getMap<number>(SPRITE_MAP_NAME);
+
+  if (!areDefaultSpriteSlotsEmpty(spriteMap)) {
+    return;
+  }
+
+  seedSpriteTile(spriteMap, 1, DEFAULT_PLAYER_SPRITE.slice(0, 8).map((row) => row.slice(0, 8)));
+  seedSpriteTile(spriteMap, 2, DEFAULT_PLAYER_SPRITE.slice(0, 8).map((row) => row.slice(8, 16)));
+  seedSpriteTile(spriteMap, 17, DEFAULT_PLAYER_SPRITE.slice(8, 16).map((row) => row.slice(0, 8)));
+  seedSpriteTile(spriteMap, 18, DEFAULT_PLAYER_SPRITE.slice(8, 16).map((row) => row.slice(8, 16)));
 }
 
 export function seedDefaultProjectContent(doc: Y.Doc): void {
