@@ -426,7 +426,7 @@ export const MultiplayerDirectoryEntry: React.FC<MultiplayerDirectoryEntryProps>
       setChildrenEntries(getNodeEntries());
       mpsp.observe(settings.path, observeCallback);
 
-      return () => mpsp.unobserve(settings.path);
+      return () => mpsp.unobserve(settings.path, observeCallback);
     },
     [isNodeOpened]
   );
