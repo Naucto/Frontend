@@ -105,8 +105,13 @@ export class MultiplayerSettingsProvider implements Destroyable {
     return path.length === 0 || path.trim().length === 0;
   }
 
+  public doesDirectorySettingsPathExist(path: string): boolean {
+    return this._yDirectory.has(path);
+  }
+
   public validateDirectorySettingsPath(path: string): boolean {
-    if (path.length === 0) return true; // Root is allowed
+    if (path.length === 0)
+      return true;
 
     // Path should be alphanumeric with dots, no consecutive dots, no leading/trailing dots
     const pathRegex = /^[a-z0-9]+(\.[a-z0-9]+)*$/i;

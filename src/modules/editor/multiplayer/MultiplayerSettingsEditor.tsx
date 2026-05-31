@@ -88,14 +88,24 @@ interface CreateChildNodeDialogProps {
 
 const CreateChildNodeDialog: React.FC<CreateChildNodeDialogProps> = ({ parentPath, onClose, onConfirm, multiplayerSettingsProvider }) => {
   const [inputValue, setInputValue] = useState("");
+  const [touched, setTouched] = useState(false);
 
   useEffect(() => {
     if (parentPath !== null) {
       setInputValue(parentPath === "" ? "" : `${parentPath}.`);
+      setTouched(false);
     }
   }, [parentPath]);
 
-  const isValid = multiplayerSettingsProvider.validateDirectorySettingsPath(inputValue) && inputValue !== "" && inputValue !== `${parentPath}.`;
+  const isFormatValid = multiplayerSettingsProvider.validateDirectorySettingsPath(inputValue);
+  const exists = multiplayerSettingsProvider.doesDirectorySettingsPathExist(inputValue);
+  const isValid = isFormatValid && !exists && inputValue !== "" && inputValue !== `${parentPath}.`;
+
+  let helperText = "";
+  if (touched) {
+    if (!isFormatValid) helperText = "Invalid path format";
+    else if (exists) helperText = "A node with this path already exists";
+  }
 
   return (
     <Dialog
@@ -114,11 +124,14 @@ const CreateChildNodeDialog: React.FC<CreateChildNodeDialogProps> = ({ parentPat
           autoFocus
           label="Child node name"
           value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
+          onChange={(e) => {
+            setInputValue(e.target.value);
+            setTouched(true);
+          }}
           placeholder={parentPath === "" ? "node" : `${parentPath}.node`}
           fullWidth
-          error={!multiplayerSettingsProvider.validateDirectorySettingsPath(inputValue)}
-          helperText={!multiplayerSettingsProvider.validateDirectorySettingsPath(inputValue) ? "Invalid path format" : ""}
+          error={touched && (!isFormatValid || exists)}
+          helperText={helperText}
         />
 
         <Alert severity="info" sx={{ mt: 2 }}>
@@ -145,14 +158,24 @@ interface RenameNodeDialogProps {
 
 const RenameNodeDialog: React.FC<RenameNodeDialogProps> = ({ path, onClose, onConfirm, multiplayerSettingsProvider }) => {
   const [inputValue, setInputValue] = useState("");
+  const [touched, setTouched] = useState(false);
 
   useEffect(() => {
     if (path !== null) {
       setInputValue(path);
+      setTouched(false);
     }
   }, [path]);
 
-  const isValid = multiplayerSettingsProvider.validateDirectorySettingsPath(inputValue) && inputValue !== "" && inputValue !== path;
+  const isFormatValid = multiplayerSettingsProvider.validateDirectorySettingsPath(inputValue);
+  const exists = inputValue !== path && multiplayerSettingsProvider.doesDirectorySettingsPathExist(inputValue);
+  const isValid = isFormatValid && !exists && inputValue !== "" && inputValue !== path;
+
+  let helperText = "";
+  if (touched) {
+    if (!isFormatValid) helperText = "Invalid path format";
+    else if (exists) helperText = "A node with this path already exists";
+  }
 
   return (
     <Dialog
@@ -171,11 +194,14 @@ const RenameNodeDialog: React.FC<RenameNodeDialogProps> = ({ path, onClose, onCo
           autoFocus
           label="New node path"
           value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
+          onChange={(e) => {
+            setInputValue(e.target.value);
+            setTouched(true);
+          }}
           fullWidth
           sx={{ mt: 2 }}
-          error={!multiplayerSettingsProvider.validateDirectorySettingsPath(inputValue)}
-          helperText={!multiplayerSettingsProvider.validateDirectorySettingsPath(inputValue) ? "Invalid path format" : ""}
+          error={touched && (!isFormatValid || exists)}
+          helperText={helperText}
         />
 
         <Alert severity="info" sx={{ mt: 2 }}>
