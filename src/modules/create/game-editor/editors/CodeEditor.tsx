@@ -1,15 +1,18 @@
-import React, { useEffect, useState } from "react";
-import Editor, { Monaco } from "@monaco-editor/react";
-import { editor } from "monaco-editor";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import Editor, { type Monaco } from "@monaco-editor/react";
+import type { editor as MonacoEditor } from "monaco-editor";
 import CodeTabTheme from "./CodeTabTheme";
 import { EditorProps } from "./EditorType";
 import "./CodeEditor.css";
 import { useTheme } from "@mui/material/styles";
 import { generateRandomColor } from "@utils/colorUtils";
 import { AwarenessEventType } from "@providers/editors/AwarenessProvider";
+import { getLuaErrorMarkers, LUA_MARKER_OWNER, registerLuaLanguageFeatures } from "./luaLanguageFeatures";
 
-const CodeEditor: React.FC<EditorProps> = ({ project }) => {
+const CodeEditor: React.FC<EditorProps> = ({ project, consoleOutput }) => {
   const [userStyles, setUserStyles] = useState<string>("");
+  const editorRef = useRef<MonacoEditor.IStandaloneCodeEditor | null>(null);
+  const monacoRef = useRef<Monaco | null>(null);
   const theme = useTheme();
 
   const generateUserStyles = (clientId: number, name: string, color: string): string => {
@@ -108,22 +111,45 @@ const CodeEditor: React.FC<EditorProps> = ({ project }) => {
     }
   }, [project]);
 
-  const handleMount = (editor: editor.IStandaloneCodeEditor): (() => void) | void => {
-    const editorModel = editor.getModel();
+  const updateLuaErrorMarkers = useCallback((): void => {
+    const monaco = monacoRef.current;
+    const editor = editorRef.current;
+    const editorModel = editor?.getModel();
+    if (!monaco || !editorModel) {
+      return;
+    }
+
+    monaco.editor.setModelMarkers(
+      editorModel,
+      LUA_MARKER_OWNER,
+      getLuaErrorMarkers(monaco, editorModel, consoleOutput)
+    );
+  }, [consoleOutput]);
+
+  useEffect(() => {
+    updateLuaErrorMarkers();
+  }, [updateLuaErrorMarkers]);
+
+  const handleMount = (
+    mountedEditor: MonacoEditor.IStandaloneCodeEditor,
+    monaco: Monaco,
+  ): void => {
+    editorRef.current = mountedEditor;
+    monacoRef.current = monaco;
+    const editorModel = mountedEditor.getModel();
     if (!editorModel) {
       console.error("Monaco editor model is not available.");
       return;
     }
 
-    project.codeProvider.setMonacoBinding(editor);
-
-    return () => {
-      editor.dispose();
-    };
+    project.codeProvider.setMonacoBinding(mountedEditor);
+    updateLuaErrorMarkers();
   };
 
   const handleBeforeMount = (monaco: Monaco): void => {
+    monacoRef.current = monaco;
     monaco.editor.defineTheme(CodeTabTheme.MONACO_THEME_NAME, CodeTabTheme.MONACO_THEME);
+    registerLuaLanguageFeatures(monaco);
   };
 
   return (
@@ -135,7 +161,16 @@ const CodeEditor: React.FC<EditorProps> = ({ project }) => {
         theme={CodeTabTheme.MONACO_THEME_NAME}
         beforeMount={handleBeforeMount}
         onMount={handleMount}
-        options={{ automaticLayout: true }}
+        options={{
+          automaticLayout: true,
+          quickSuggestions: true,
+          snippetSuggestions: "top",
+          suggest: {
+            preview: true,
+            showWords: false,
+          },
+          tabCompletion: "on",
+        }}
       />
     </>
   );

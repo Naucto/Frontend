@@ -8,23 +8,25 @@ import { muiTheme } from "@theme/MUITheme";
 import { CustomSnackBarProvider } from "@shared/snackBar/CustomSnackBarProvider";
 import { GameViewer } from "@modules/hub/components/GameViewer";
 import { styled } from "@mui/material/styles";
+import { SiteFooter } from "@shared/footer/SiteFooter";
 
 const AppContainer = styled("div")(() => ({
   display: "flex",
   flexDirection: "column",
-  flex: 1,
-  minHeight: 0,
+  flex: "1 0 auto",
+  minHeight: "100%",
 }));
 
 const AppContent = styled("div")(() => ({
   display: "flex",
   flexDirection: "column",
-  flex: 1,
-  minHeight: 0,
+  flex: "1 0 auto",
+  minHeight: "auto",
 }));
 
 const Projects = lazy(() => import("@modules/projects/Projects"));
 const Project = lazy(() => import("@modules/project/Project"));
+const Help = lazy(() => import("@modules/help/Help"));
 
 type RouterState = {
   backgroundLocation?: Location;
@@ -47,6 +49,7 @@ const AppRoutes: React.FC = () => {
             <Route path="/hub" element={<Hub />} />
             <Route path='/projects' element={<Projects />} />
             <Route path="/projects/:projectId" element={<Project />} />
+            <Route path="/help" element={<Help />} />
             {isStandalonePlayRoute && (
               <Route path="/project/:id/play" element={<Hub />} />
             )}
@@ -58,6 +61,7 @@ const AppRoutes: React.FC = () => {
           )}
         </Suspense>
       </AppContent>
+      <SiteFooter />
     </AppContainer>
   );
 };

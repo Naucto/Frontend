@@ -39,6 +39,10 @@ export class CodeProvider implements Destroyable {
     this._listeners.add(callback);
   }
 
+  unobserve(callback: RawContentListener): void {
+    this._listeners.delete(callback);
+  }
+
   getMonacoBinding(): MonacoBinding | undefined {
     return this._monacoBinding;
   }

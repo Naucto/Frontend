@@ -6,6 +6,7 @@ import { SpriteProvider } from "./editors/SpriteProvider.ts";
 import { MapProvider } from "./editors/MapProvider.ts";
 import { ProjectSettingsProvider } from "./editors/ProjectSettingsProvider.ts";
 import { SoundProvider } from "./editors/SoundProvider";
+import { seedDefaultProjectContent } from "@shared/project/defaultProjectContent";
 
 export enum ProviderEventType {
   INITIALIZED
@@ -83,12 +84,13 @@ export class GameProvider implements Destroyable {
       await decodeUpdate(this._doc, content as Blob);
     } catch (error: unknown) {
       if ((error as AxiosError)?.response?.status === 404) {
-        // FIXME new project: nothing to load; optionally could seed defaults here
         console.error("Failed to fetch project content:", error);
       } else {
         throw error;
       }
     }
+
+    seedDefaultProjectContent(this._doc);
   }
 
   destroy(): void {

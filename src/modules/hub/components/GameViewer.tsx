@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { styled } from "@mui/material/styles";
-import { Box, Chip, Typography, IconButton, CircularProgress } from "@mui/material";
+import { Box, Button, Chip, Typography, IconButton, CircularProgress } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import LikeSvg from "@assets/like.svg";
 import CommentSvg from "@assets/comment.svg";
 import NextSvg from "@assets/next.svg";
@@ -17,7 +18,6 @@ import {
   ProjectExResponseDto,
   projectControllerFork
 } from "@api";
-import { Button } from "@mui/material";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
@@ -60,10 +60,44 @@ const CloseButton = styled(IconButton)(({ theme }) => ({
   },
 }));
 
+const HeaderBar = styled(Box)(({ theme }) => ({
+  display: "grid",
+  gridTemplateColumns: "1fr auto 1fr",
+  alignItems: "center",
+  gap: theme.spacing(2),
+  marginBottom: theme.spacing(2),
+  paddingRight: theme.spacing(7),
+  [theme.breakpoints.down("sm")]: {
+    gridTemplateColumns: "1fr",
+    paddingRight: theme.spacing(6),
+  },
+}));
+
 const GameTitle = styled(Typography)(({ theme }) => ({
   color: theme.palette.common.white,
-  marginBottom: theme.spacing(2),
   textAlign: "center",
+  minWidth: 0,
+  overflowWrap: "anywhere",
+}));
+
+const HeaderActions = styled(Box)(({ theme }) => ({
+  justifySelf: "end",
+  display: "flex",
+  alignItems: "center",
+  gap: theme.spacing(1),
+  [theme.breakpoints.down("sm")]: {
+    justifySelf: "center",
+  },
+}));
+
+const RefreshGameButton = styled(Button)(({ theme }) => ({
+  color: theme.palette.common.white,
+  borderColor: "rgba(255, 255, 255, 0.24)",
+  backgroundColor: "rgba(20, 20, 20, 0.38)",
+  "&:hover": {
+    borderColor: "rgba(255, 255, 255, 0.42)",
+    backgroundColor: "rgba(20, 20, 20, 0.56)",
+  },
 }));
 
 const GameContainer = styled(Box)(({ theme }) => ({
@@ -86,21 +120,46 @@ const Description = styled(Box)(({ theme }) => ({
   backdropFilter: "blur(8px)",
 }));
 
-const MetaRow = styled(Box)(({ theme }) => ({
+const InfoLayout = styled(Box)(({ theme }) => ({
+  display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr) 220px",
+  gap: theme.spacing(3),
+  alignItems: "start",
+  [theme.breakpoints.down("md")]: {
+    gridTemplateColumns: "1fr",
+  },
+}));
+
+const DetailsColumn = styled(Box)(({ theme }) => ({
   display: "flex",
-  flexWrap: "wrap",
-  alignItems: "center",
-  gap: theme.spacing(1.5),
-  marginTop: theme.spacing(1.5),
-  color: theme.palette.grey[300],
+  flexDirection: "column",
+  gap: theme.spacing(1),
+  minWidth: 0,
+}));
+
+const StatsPanel = styled(Box)(({ theme }) => ({
+  display: "flex",
+  flexDirection: "column",
+  gap: theme.spacing(1),
+  padding: theme.spacing(1.5),
+  borderRadius: theme.custom.rounded.md,
+  backgroundColor: "rgba(255, 255, 255, 0.07)",
+  border: "1px solid rgba(255, 255, 255, 0.12)",
 }));
 
 const StatItem = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
+  justifyContent: "space-between",
   gap: theme.spacing(0.75),
   fontSize: "14px",
   color: theme.palette.grey[200],
+}));
+
+const StatLabel = styled(Box)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  gap: theme.spacing(0.75),
 }));
 
 const TagRow = styled(Box)(({ theme }) => ({
@@ -110,14 +169,20 @@ const TagRow = styled(Box)(({ theme }) => ({
   marginTop: theme.spacing(1.5),
 }));
 
-const LikeButton = styled(IconButton, {
+const LikeCounterButton = styled(Button, {
   shouldForwardProp: (prop) => prop !== "$liked",
 })<{ $liked: boolean }>(({ $liked }) => ({
-  padding: "4px",
+  justifyContent: "space-between",
+  padding: "7px 10px",
+  minWidth: "100%",
+  color: "white",
+  borderColor: $liked ? "rgba(229, 83, 69, 0.72)" : "rgba(255,255,255,0.16)",
+  backgroundColor: $liked ? "rgba(172, 57, 49, 0.34)" : "rgba(255,255,255,0.05)",
   transition: "transform 0.2s",
   "&:hover": {
-    transform: "scale(1.15)",
-    backgroundColor: "transparent",
+    transform: "translateY(-1px)",
+    borderColor: $liked ? "rgba(229, 83, 69, 0.92)" : "rgba(255,255,255,0.28)",
+    backgroundColor: $liked ? "rgba(172, 57, 49, 0.46)" : "rgba(255,255,255,0.08)",
   },
   "& img": {
     filter: $liked
@@ -190,6 +255,7 @@ export const GameViewer: React.FC = () => {
   const [code, setCode] = useState<string>("");
   const [output, setOutput] = useState<string>("");
   const [bannerUrl, setBannerUrl] = useState<string>("");
+  const [gameRefreshKey, setGameRefreshKey] = useState(0);
 
   const [ gameProvider, setGameProvider ] = useState<GameProvider>();
   const [ showGame, setShowGame ] = useState(false);
@@ -298,9 +364,28 @@ export const GameViewer: React.FC = () => {
     provider.observe(ProviderEventType.INITIALIZED, () => {
       setCode(String(provider.code || ""));
       setShowGame(true);
+      setGameRefreshKey((value) => value + 1);
       setLaunching(false);
     });
   };
+
+  const handleRefreshGame = (): void => {
+    if (!showGame) {
+      return;
+    }
+
+    setOutput("");
+    setGameRefreshKey((value) => value + 1);
+    window.requestAnimationFrame(() => {
+      containerRef.current?.querySelector("canvas")?.focus();
+    });
+  };
+
+  useEffect(() => {
+    return () => {
+      gameProvider?.destroy();
+    };
+  }, [gameProvider]);
 
   useEffect(() => {
     if (!showGame) {
@@ -368,10 +453,10 @@ export const GameViewer: React.FC = () => {
       }
       // Track in localStorage for anonymous users
       if (!user) {
-        if (liked) {
-          LocalStorageManager.removeLikedProject(Number(id));
-        } else {
+        if (data?.liked) {
           LocalStorageManager.addLikedProject(Number(id));
+        } else {
+          LocalStorageManager.removeLikedProject(Number(id));
         }
       }
     } catch (error) {
@@ -446,11 +531,27 @@ export const GameViewer: React.FC = () => {
           <CloseIcon />
         </CloseButton>
 
-        <GameTitle variant="h3">{project.name}</GameTitle>
+        <HeaderBar>
+          <Box />
+          <GameTitle variant="h3">{project.name}</GameTitle>
+          <HeaderActions>
+            {showGame && (
+              <RefreshGameButton
+                variant="outlined"
+                size="small"
+                startIcon={<RefreshIcon />}
+                onClick={handleRefreshGame}
+              >
+                Refresh game
+              </RefreshGameButton>
+            )}
+          </HeaderActions>
+        </HeaderBar>
 
         <GameContainer ref={containerRef} style={{ position: "relative" }}>
           {showGame && gameProvider ? (
             <PlayingCanvas
+              key={gameRefreshKey}
               ref={canvasRef}
               canvasProps={{
                 map: gameProvider.map,
@@ -478,60 +579,29 @@ export const GameViewer: React.FC = () => {
         </GameContainer>
 
         <Description>
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-            <Typography variant="h5" color="white">
-              About this game
-            </Typography>
-            <Box display="flex" alignItems="center" gap={1}>
-              <LikeButton $liked={liked} onClick={handleLike}>
-                <img src={LikeSvg} width="24" height="24" alt="like" />
-              </LikeButton>
-              <Typography color="grey.300" fontSize="14px">
-                {likeCount}
+          <InfoLayout>
+            <DetailsColumn>
+              <Typography variant="h5" color="white">
+                About this game
               </Typography>
-            </Box>
-          </Box>
-          <Typography variant="body2" color="grey.400" sx={{ mb: 1 }}>
-            A game made by {creatorsLabel}
-          </Typography>
-          {forkedFromInfo && (
-            <Typography variant="body2" color="grey.400" sx={{ mb: 1 }}>
-              This game was forked from: {forkedFromInfo.name} by {forkedFromInfo.creator}
-            </Typography>
-          )}
-          <Typography variant="body1">
-            {String(project.longDesc || project.shortDesc || "No description available.")}
-          </Typography>
-          {project.tags.length > 0 && (
-            <TagRow>
-              {project.tags.map((tag) => (
-                <Chip key={tag} label={tag} size="small" sx={{ backgroundColor: "rgba(255,255,255,0.12)", color: "white" }} />
-              ))}
-            </TagRow>
-          )}
-          <MetaRow>
-            <StatItem>
-              <VisibilityOutlinedIcon sx={{ fontSize: 16 }} />
-              <span>{viewCount}</span>
-            </StatItem>
-            <StatItem>
-              <img src={LikeSvg} width="16" height="16" alt="likes" style={{ imageRendering: "pixelated" }} />
-              <span>{likeCount}</span>
-            </StatItem>
-            <StatItem>
-              <img src={CommentSvg} width="16" height="16" alt="comments" style={{ imageRendering: "pixelated" }} />
-              <span>{project.commentCount ?? 0}</span>
-            </StatItem>
-            <StatItem>
-              <ContentCopyOutlinedIcon sx={{ fontSize: 16 }} />
-              <span>{forkCount}</span>
-            </StatItem>
-            <Typography variant="caption" color="grey.400">
-              Creation date: {new Date(project.createdAt).toLocaleDateString("en-GB")}
-            </Typography>
-          </MetaRow>
-          <Box mt={2} display="flex" justifyContent="space-between" alignItems="center">
-            <Box>
+              <Typography variant="body2" color="grey.400">
+                A game made by {creatorsLabel}
+              </Typography>
+              {forkedFromInfo && (
+                <Typography variant="body2" color="grey.400">
+                  This game was forked from: {forkedFromInfo.name} by {forkedFromInfo.creator}
+                </Typography>
+              )}
+              <Typography variant="body1">
+                {String(project.longDesc || project.shortDesc || "No description available.")}
+              </Typography>
+              {project.tags.length > 0 && (
+                <TagRow>
+                  {project.tags.map((tag) => (
+                    <Chip key={tag} label={tag} size="small" sx={{ backgroundColor: "rgba(255,255,255,0.12)", color: "white" }} />
+                  ))}
+                </TagRow>
+              )}
               <Typography variant="caption" color="grey.500">
                 Created by: {project.creator?.username || "Unknown"}
               </Typography>
@@ -540,19 +610,52 @@ export const GameViewer: React.FC = () => {
                   Forked from: {forkedFromInfo.name} by {forkedFromInfo.creator}
                 </Typography>
               )}
-            </Box>
-            {user && (
-              <Button
-                variant="contained"
-                startIcon={<ContentCopyIcon />}
-                onClick={handleFork}
-                disabled={forking}
-                size="small"
-              >
-                {forking ? "Forking..." : "Fork this project"}
-              </Button>
-            )}
-          </Box>
+            </DetailsColumn>
+            <StatsPanel>
+              <LikeCounterButton $liked={liked} variant="outlined" onClick={handleLike}>
+                <StatLabel>
+                  <img src={LikeSvg} width="18" height="18" alt="like" />
+                  <span>{liked ? "Liked" : "Like"}</span>
+                </StatLabel>
+                <span>{likeCount}</span>
+              </LikeCounterButton>
+              <StatItem>
+                <StatLabel>
+                  <VisibilityOutlinedIcon sx={{ fontSize: 16 }} />
+                  <span>Views</span>
+                </StatLabel>
+                <span>{viewCount}</span>
+              </StatItem>
+              <StatItem>
+                <StatLabel>
+                  <img src={CommentSvg} width="16" height="16" alt="comments" style={{ imageRendering: "pixelated" }} />
+                  <span>Comments</span>
+                </StatLabel>
+                <span>{project.commentCount ?? 0}</span>
+              </StatItem>
+              <StatItem>
+                <StatLabel>
+                  <ContentCopyOutlinedIcon sx={{ fontSize: 16 }} />
+                  <span>Forks</span>
+                </StatLabel>
+                <span>{forkCount}</span>
+              </StatItem>
+              <Typography variant="caption" color="grey.400">
+                Created {new Date(project.createdAt).toLocaleDateString("en-GB")}
+              </Typography>
+              {user && (
+                <Button
+                  variant="contained"
+                  startIcon={<ContentCopyIcon />}
+                  onClick={handleFork}
+                  disabled={forking}
+                  size="small"
+                >
+                  {forking ? "Forking..." : "Fork project"}
+                </Button>
+              )}
+            </StatsPanel>
+          </InfoLayout>
         </Description>
 
         <CommentSection projectId={Number(id)} projectCreatorId={project.creator?.id} />
