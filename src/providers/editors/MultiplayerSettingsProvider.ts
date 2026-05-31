@@ -105,6 +105,14 @@ export class MultiplayerSettingsProvider implements Destroyable {
     return path.length === 0 || path.trim().length === 0;
   }
 
+  public validateDirectorySettingsPath(path: string): boolean {
+    if (path.length === 0) return true; // Root is allowed
+
+    // Path should be alphanumeric with dots, no consecutive dots, no leading/trailing dots
+    const pathRegex = /^[a-z0-9]+(\.[a-z0-9]+)*$/i;
+    return pathRegex.test(path);
+  }
+
   public getDirectorySettings(path: string): Maybe<MultiplayerDirectorySettings> {
     // Root is an empty string
     if (this.isRootNodePath(path))
@@ -186,6 +194,28 @@ export class MultiplayerSettingsProvider implements Destroyable {
 
   public deleteDirectorySettings(path: string): void {
     this._yDirectory.delete(path);
+  }
+
+  public renameDirectorySettings(oldPath: string, newPath: string): void {
+    if (oldPath === newPath) return;
+
+    const data = this._yDirectory.get(oldPath);
+    if (!data) return;
+
+    this._yDoc.transact(() => {
+      this._yDirectory.set(newPath, { ...data });
+      this._yDirectory.delete(oldPath);
+
+      const prefix = `${oldPath}.`;
+      for (const key of this._yDirectory.keys()) {
+        if (key.startsWith(prefix)) {
+          const childData = this._yDirectory.get(key);
+          const childNewPath = newPath + key.slice(oldPath.length);
+          this._yDirectory.set(childNewPath, { ...childData! });
+          this._yDirectory.delete(key);
+        }
+      }
+    });
   }
 
   public accessDirectorySettings<T>(path: string, accessor: MultiplayerSettingsProviderAccessor<T>): Maybe<T> {
