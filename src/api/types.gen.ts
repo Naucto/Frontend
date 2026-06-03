@@ -88,17 +88,14 @@ export type ProjectExResponseDto = {
    * The number of likes received by the project
    */
   likes: number;
-  
   /**
    * The number of comments on the project
    */
   commentCount?: number;
-
   /**
    * The number of forks created from this project
    */
   forkCount?: number;
-
   /**
    * The ID of the project this was forked from, if any
    */
@@ -193,11 +190,14 @@ export type ProjectResponseDto = {
    * The number of comments on the project
    */
   commentCount?: number;
-
   /**
    * The number of forks created from this project
    */
   forkCount?: number;
+  /**
+   * The ID of the project this was forked from, if any
+   */
+  forkedFromId?: number | null;
 };
 
 export type CreateProjectDto = {
@@ -237,6 +237,10 @@ export type ForkProjectResponseDto = {
    */
   longDesc: string | null;
   /**
+   * Tags associated with the project
+   */
+  tags: Array<string>;
+  /**
    * URL to the project icon
    */
   iconUrl: string | null;
@@ -261,6 +265,18 @@ export type ForkProjectResponseDto = {
    */
   createdAt: string;
   /**
+   * The date and time when the project was last updated
+   */
+  updatedAt: string;
+  /**
+   * The date and time when the project was last published
+   */
+  publishedAt: string | null;
+  /**
+   * The number of times players opened this game's play page
+   */
+  viewCount: number;
+  /**
    * The number of unique players who have interacted with this project
    */
   uniquePlayers: number;
@@ -272,6 +288,14 @@ export type ForkProjectResponseDto = {
    * The number of likes received by the project
    */
   likes: number;
+  /**
+   * The number of comments on the project
+   */
+  commentCount?: number;
+  /**
+   * The number of forks created from this project
+   */
+  forkCount?: number;
   /**
    * The ID of the project this was forked from, if any
    */
@@ -398,7 +422,7 @@ export type WebRtcOfferPeerIceServerConfig = {
   username?: {
     [key: string]: unknown;
   };
-  credentials?: {
+  credential?: {
     [key: string]: unknown;
   };
 };
@@ -636,6 +660,59 @@ export type UserProfileResponseDto = {
    * User profile message
    */
   message: string;
+};
+
+export type PublicUserProfileDto = {
+  /**
+   * User ID
+   */
+  id: number;
+  /**
+   * Username
+   */
+  username: string;
+  /**
+   * User nickname / bio
+   */
+  nickname?: string | null;
+  /**
+   * User profile description
+   */
+  description?: string | null;
+  /**
+   * Public CDN URL of the profile image (if any)
+   */
+  profileImageUrl?: string | null;
+  /**
+   * Public CDN URL of the profile background image (if any)
+   */
+  backgroundImageUrl?: string | null;
+};
+
+export type PublicUserProfileResponseDto = {
+  /**
+   * HTTP status code
+   */
+  statusCode: number;
+  /**
+   * Response message
+   */
+  message: string;
+  /**
+   * Public user profile
+   */
+  data: PublicUserProfileDto;
+};
+
+export type UpdateUserProfileDto = {
+  /**
+   * Public nickname / bio displayed on the profile
+   */
+  nickname?: string;
+  /**
+   * Public profile description displayed on the profile
+   */
+  description?: string;
 };
 
 export type SignedCdnResourceDto = {
@@ -1633,7 +1710,7 @@ export type MultiplayerControllerLeaveHostResponses = {
   200: unknown;
 };
 
-export type CommentControllerGetCommentsData = {
+export type ProjectCommentControllerGetCommentsData = {
   body?: never;
   path: {
     projectId: number;
@@ -1646,17 +1723,17 @@ export type CommentControllerGetCommentsData = {
   url: "/projects/{projectId}/comments";
 };
 
-export type CommentControllerGetCommentsResponses = {
+export type ProjectCommentControllerGetCommentsResponses = {
   /**
    * Paginated list of comments
    */
   200: PaginatedCommentsResponseDto;
 };
 
-export type CommentControllerGetCommentsResponse =
-  CommentControllerGetCommentsResponses[keyof CommentControllerGetCommentsResponses];
+export type ProjectCommentControllerGetCommentsResponse =
+  ProjectCommentControllerGetCommentsResponses[keyof ProjectCommentControllerGetCommentsResponses];
 
-export type CommentControllerCreateCommentData = {
+export type ProjectCommentControllerCreateCommentData = {
   body: CreateCommentDto;
   path: {
     projectId: number;
@@ -1665,17 +1742,17 @@ export type CommentControllerCreateCommentData = {
   url: "/projects/{projectId}/comments";
 };
 
-export type CommentControllerCreateCommentResponses = {
+export type ProjectCommentControllerCreateCommentResponses = {
   /**
    * Comment created
    */
   201: CommentResponseDto;
 };
 
-export type CommentControllerCreateCommentResponse =
-  CommentControllerCreateCommentResponses[keyof CommentControllerCreateCommentResponses];
+export type ProjectCommentControllerCreateCommentResponse =
+  ProjectCommentControllerCreateCommentResponses[keyof ProjectCommentControllerCreateCommentResponses];
 
-export type CommentControllerCreateReplyData = {
+export type ProjectCommentControllerCreateReplyData = {
   body: CreateCommentDto;
   path: {
     projectId: number;
@@ -1685,17 +1762,17 @@ export type CommentControllerCreateReplyData = {
   url: "/projects/{projectId}/comments/{commentId}/reply";
 };
 
-export type CommentControllerCreateReplyResponses = {
+export type ProjectCommentControllerCreateReplyResponses = {
   /**
    * Reply created
    */
   201: CommentResponseDto;
 };
 
-export type CommentControllerCreateReplyResponse =
-  CommentControllerCreateReplyResponses[keyof CommentControllerCreateReplyResponses];
+export type ProjectCommentControllerCreateReplyResponse =
+  ProjectCommentControllerCreateReplyResponses[keyof ProjectCommentControllerCreateReplyResponses];
 
-export type CommentControllerDeleteCommentData = {
+export type ProjectCommentControllerDeleteCommentData = {
   body?: never;
   path: {
     projectId: number;
@@ -1705,17 +1782,17 @@ export type CommentControllerDeleteCommentData = {
   url: "/projects/{projectId}/comments/{commentId}";
 };
 
-export type CommentControllerDeleteCommentResponses = {
+export type ProjectCommentControllerDeleteCommentResponses = {
   /**
    * Comment deleted
    */
   204: void;
 };
 
-export type CommentControllerDeleteCommentResponse =
-  CommentControllerDeleteCommentResponses[keyof CommentControllerDeleteCommentResponses];
+export type ProjectCommentControllerDeleteCommentResponse =
+  ProjectCommentControllerDeleteCommentResponses[keyof ProjectCommentControllerDeleteCommentResponses];
 
-export type CommentControllerUpdateCommentData = {
+export type ProjectCommentControllerUpdateCommentData = {
   body: CreateCommentDto;
   path: {
     commentId: number;
@@ -1725,15 +1802,15 @@ export type CommentControllerUpdateCommentData = {
   url: "/projects/{projectId}/comments/{commentId}";
 };
 
-export type CommentControllerUpdateCommentResponses = {
+export type ProjectCommentControllerUpdateCommentResponses = {
   /**
    * Comment updated
    */
   200: CommentResponseDto;
 };
 
-export type CommentControllerUpdateCommentResponse =
-  CommentControllerUpdateCommentResponses[keyof CommentControllerUpdateCommentResponses];
+export type ProjectCommentControllerUpdateCommentResponse =
+  ProjectCommentControllerUpdateCommentResponses[keyof ProjectCommentControllerUpdateCommentResponses];
 
 export type AuthControllerLoginData = {
   body: LoginDto;
@@ -1887,6 +1964,30 @@ export type UserControllerGetProfileResponses = {
 export type UserControllerGetProfileResponse =
   UserControllerGetProfileResponses[keyof UserControllerGetProfileResponses];
 
+export type UserControllerUpdateMyProfileData = {
+  body: UpdateUserProfileDto;
+  path?: never;
+  query?: never;
+  url: "/users/profile";
+};
+
+export type UserControllerUpdateMyProfileErrors = {
+  /**
+   * Unauthorized
+   */
+  401: unknown;
+};
+
+export type UserControllerUpdateMyProfileResponses = {
+  /**
+   * User profile updated successfully
+   */
+  200: PublicUserProfileResponseDto;
+};
+
+export type UserControllerUpdateMyProfileResponse =
+  UserControllerUpdateMyProfileResponses[keyof UserControllerUpdateMyProfileResponses];
+
 export type UserControllerGetProfilePictureData = {
   body?: never;
   path: {
@@ -1943,6 +2044,37 @@ export type UserControllerUploadProfilePictureErrors = {
 export type UserControllerUploadProfilePictureResponses = {
   /**
    * Profile uploaded
+   */
+  201: unknown;
+};
+
+export type UserControllerUploadProfileBackgroundData = {
+  body: {
+    /**
+     * Profile background file
+     */
+    file?: Blob | File;
+  };
+  path: {
+    /**
+     * User ID
+     */
+    id: number;
+  };
+  query?: never;
+  url: "/users/{id}/profile-background";
+};
+
+export type UserControllerUploadProfileBackgroundErrors = {
+  /**
+   * Unauthorized
+   */
+  401: unknown;
+};
+
+export type UserControllerUploadProfileBackgroundResponses = {
+  /**
+   * Profile background uploaded
    */
   201: unknown;
 };
@@ -2114,7 +2246,7 @@ export type UserControllerUpdateResponses = {
 export type UserControllerUpdateResponse =
   UserControllerUpdateResponses[keyof UserControllerUpdateResponses];
 
-export type UserControllerGetPublicProfilePictureData = {
+export type UserPublicControllerGetPublicProfileData = {
   body?: never;
   path: {
     /**
@@ -2123,25 +2255,104 @@ export type UserControllerGetPublicProfilePictureData = {
     id: number;
   };
   query?: never;
-  url: "/users/public/{id}/profile-picture";
+  url: "/users/public/{id}/profile";
 };
 
-export type UserControllerGetPublicProfilePictureErrors = {
+export type UserPublicControllerGetPublicProfileErrors = {
   /**
-   * User not found or has no profile picture
+   * User not found
    */
   404: unknown;
 };
 
-export type UserControllerGetPublicProfilePictureResponses = {
+export type UserPublicControllerGetPublicProfileResponses = {
   /**
-   * Returns the CDN URL for the profile picture
+   * Returns the public user profile
    */
-  200: ImageUrlResponseDto;
+  200: PublicUserProfileResponseDto;
 };
 
-export type UserControllerGetPublicProfilePictureResponse =
-  UserControllerGetPublicProfilePictureResponses[keyof UserControllerGetPublicProfilePictureResponses];
+export type UserPublicControllerGetPublicProfileResponse =
+  UserPublicControllerGetPublicProfileResponses[keyof UserPublicControllerGetPublicProfileResponses];
+
+export type UserPublicControllerGetPublicProfileByUsernameData = {
+  body?: never;
+  path: {
+    /**
+     * Username
+     */
+    username: string;
+  };
+  query?: never;
+  url: "/users/public/username/{username}/profile";
+};
+
+export type UserPublicControllerGetPublicProfileByUsernameErrors = {
+  /**
+   * User not found
+   */
+  404: unknown;
+};
+
+export type UserPublicControllerGetPublicProfileByUsernameResponses = {
+  /**
+   * Returns the public user profile
+   */
+  200: PublicUserProfileResponseDto;
+};
+
+export type UserPublicControllerGetPublicProfileByUsernameResponse =
+  UserPublicControllerGetPublicProfileByUsernameResponses[keyof UserPublicControllerGetPublicProfileByUsernameResponses];
+
+export type UserPublicControllerGetLikedGamesData = {
+  body?: never;
+  path: {
+    /**
+     * User ID
+     */
+    id: number;
+  };
+  query?: {
+    page?: number;
+    limit?: number;
+  };
+  url: "/users/public/{id}/likes";
+};
+
+export type UserPublicControllerGetLikedGamesResponses = {
+  /**
+   * Returns the list of published games liked by the user
+   */
+  200: Array<ProjectExResponseDto>;
+};
+
+export type UserPublicControllerGetLikedGamesResponse =
+  UserPublicControllerGetLikedGamesResponses[keyof UserPublicControllerGetLikedGamesResponses];
+
+export type UserPublicControllerGetPublishedGamesData = {
+  body?: never;
+  path: {
+    /**
+     * User ID
+     */
+    id: number;
+  };
+  query?: {
+    page?: number;
+    limit?: number;
+  };
+  url: "/users/public/{id}/published-games";
+};
+
+export type UserPublicControllerGetPublishedGamesResponses = {
+  /**
+   * Returns the list of games published by the user
+   */
+  200: Array<ProjectExResponseDto>;
+};
+
+export type UserPublicControllerGetPublishedGamesResponse =
+  UserPublicControllerGetPublishedGamesResponses[keyof UserPublicControllerGetPublishedGamesResponses];
 
 export type WorkSessionControllerJoinData = {
   body?: never;

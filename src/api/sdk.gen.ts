@@ -22,16 +22,6 @@ import type {
   AuthControllerRegisterData,
   AuthControllerRegisterErrors,
   AuthControllerRegisterResponses,
-  CommentControllerCreateCommentData,
-  CommentControllerCreateCommentResponses,
-  CommentControllerCreateReplyData,
-  CommentControllerCreateReplyResponses,
-  CommentControllerDeleteCommentData,
-  CommentControllerDeleteCommentResponses,
-  CommentControllerGetCommentsData,
-  CommentControllerGetCommentsResponses,
-  CommentControllerUpdateCommentData,
-  CommentControllerUpdateCommentResponses,
   MultiplayerControllerCloseHostData,
   MultiplayerControllerCloseHostErrors,
   MultiplayerControllerCloseHostResponses,
@@ -47,6 +37,16 @@ import type {
   MultiplayerControllerOpenHostData,
   MultiplayerControllerOpenHostErrors,
   MultiplayerControllerOpenHostResponses,
+  ProjectCommentControllerCreateCommentData,
+  ProjectCommentControllerCreateCommentResponses,
+  ProjectCommentControllerCreateReplyData,
+  ProjectCommentControllerCreateReplyResponses,
+  ProjectCommentControllerDeleteCommentData,
+  ProjectCommentControllerDeleteCommentResponses,
+  ProjectCommentControllerGetCommentsData,
+  ProjectCommentControllerGetCommentsResponses,
+  ProjectCommentControllerUpdateCommentData,
+  ProjectCommentControllerUpdateCommentResponses,
   ProjectControllerAddCollaboratorData,
   ProjectControllerAddCollaboratorErrors,
   ProjectControllerAddCollaboratorResponses,
@@ -141,18 +141,31 @@ import type {
   UserControllerGetProfilePictureErrors,
   UserControllerGetProfilePictureResponses,
   UserControllerGetProfileResponses,
-  UserControllerGetPublicProfilePictureData,
-  UserControllerGetPublicProfilePictureErrors,
-  UserControllerGetPublicProfilePictureResponses,
   UserControllerRemoveData,
   UserControllerRemoveErrors,
   UserControllerRemoveResponses,
   UserControllerUpdateData,
   UserControllerUpdateErrors,
+  UserControllerUpdateMyProfileData,
+  UserControllerUpdateMyProfileErrors,
+  UserControllerUpdateMyProfileResponses,
   UserControllerUpdateResponses,
+  UserControllerUploadProfileBackgroundData,
+  UserControllerUploadProfileBackgroundErrors,
+  UserControllerUploadProfileBackgroundResponses,
   UserControllerUploadProfilePictureData,
   UserControllerUploadProfilePictureErrors,
   UserControllerUploadProfilePictureResponses,
+  UserPublicControllerGetLikedGamesData,
+  UserPublicControllerGetLikedGamesResponses,
+  UserPublicControllerGetPublicProfileByUsernameData,
+  UserPublicControllerGetPublicProfileByUsernameErrors,
+  UserPublicControllerGetPublicProfileByUsernameResponses,
+  UserPublicControllerGetPublicProfileData,
+  UserPublicControllerGetPublicProfileErrors,
+  UserPublicControllerGetPublicProfileResponses,
+  UserPublicControllerGetPublishedGamesData,
+  UserPublicControllerGetPublishedGamesResponses,
   WorkSessionControllerGetInfoData,
   WorkSessionControllerGetInfoErrors,
   WorkSessionControllerGetInfoResponses,
@@ -872,18 +885,17 @@ export const multiplayerControllerLeaveHost = <
 /**
  * Get comments for a project
  */
-export const commentControllerGetComments = <
+export const projectCommentControllerGetComments = <
   ThrowOnError extends boolean = false
 >(
-  options: Options<CommentControllerGetCommentsData, ThrowOnError>
+  options: Options<ProjectCommentControllerGetCommentsData, ThrowOnError>
 ) =>
   (options.client ?? client).get<
-    CommentControllerGetCommentsResponses,
+    ProjectCommentControllerGetCommentsResponses,
     unknown,
     ThrowOnError
   >({
     responseType: "json",
-    security: [{ scheme: "bearer", type: "http" }],
     url: "/projects/{projectId}/comments",
     ...options
   });
@@ -891,13 +903,13 @@ export const commentControllerGetComments = <
 /**
  * Create a comment on a project
  */
-export const commentControllerCreateComment = <
+export const projectCommentControllerCreateComment = <
   ThrowOnError extends boolean = false
 >(
-  options: Options<CommentControllerCreateCommentData, ThrowOnError>
+  options: Options<ProjectCommentControllerCreateCommentData, ThrowOnError>
 ) =>
   (options.client ?? client).post<
-    CommentControllerCreateCommentResponses,
+    ProjectCommentControllerCreateCommentResponses,
     unknown,
     ThrowOnError
   >({
@@ -914,13 +926,13 @@ export const commentControllerCreateComment = <
 /**
  * Reply to a comment
  */
-export const commentControllerCreateReply = <
+export const projectCommentControllerCreateReply = <
   ThrowOnError extends boolean = false
 >(
-  options: Options<CommentControllerCreateReplyData, ThrowOnError>
+  options: Options<ProjectCommentControllerCreateReplyData, ThrowOnError>
 ) =>
   (options.client ?? client).post<
-    CommentControllerCreateReplyResponses,
+    ProjectCommentControllerCreateReplyResponses,
     unknown,
     ThrowOnError
   >({
@@ -937,13 +949,13 @@ export const commentControllerCreateReply = <
 /**
  * Delete a comment
  */
-export const commentControllerDeleteComment = <
+export const projectCommentControllerDeleteComment = <
   ThrowOnError extends boolean = false
 >(
-  options: Options<CommentControllerDeleteCommentData, ThrowOnError>
+  options: Options<ProjectCommentControllerDeleteCommentData, ThrowOnError>
 ) =>
   (options.client ?? client).delete<
-    CommentControllerDeleteCommentResponses,
+    ProjectCommentControllerDeleteCommentResponses,
     unknown,
     ThrowOnError
   >({
@@ -955,13 +967,13 @@ export const commentControllerDeleteComment = <
 /**
  * Edit a comment
  */
-export const commentControllerUpdateComment = <
+export const projectCommentControllerUpdateComment = <
   ThrowOnError extends boolean = false
 >(
-  options: Options<CommentControllerUpdateCommentData, ThrowOnError>
+  options: Options<ProjectCommentControllerUpdateCommentData, ThrowOnError>
 ) =>
   (options.client ?? client).put<
-    CommentControllerUpdateCommentResponses,
+    ProjectCommentControllerUpdateCommentResponses,
     unknown,
     ThrowOnError
   >({
@@ -1087,6 +1099,29 @@ export const userControllerGetProfile = <ThrowOnError extends boolean = false>(
   });
 
 /**
+ * Update current user profile
+ */
+export const userControllerUpdateMyProfile = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<UserControllerUpdateMyProfileData, ThrowOnError>
+) =>
+  (options.client ?? client).patch<
+    UserControllerUpdateMyProfileResponses,
+    UserControllerUpdateMyProfileErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/users/profile",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
  * Get signed CDN access to a user's profile picture
  */
 export const userControllerGetProfilePicture = <
@@ -1121,6 +1156,29 @@ export const userControllerUploadProfilePicture = <
     ...formDataBodySerializer,
     security: [{ scheme: "bearer", type: "http" }],
     url: "/users/{id}/profile-picture",
+    ...options,
+    headers: {
+      "Content-Type": null,
+      ...options.headers
+    }
+  });
+
+/**
+ * Upload a user's profile background
+ */
+export const userControllerUploadProfileBackground = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<UserControllerUploadProfileBackgroundData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    UserControllerUploadProfileBackgroundResponses,
+    UserControllerUploadProfileBackgroundErrors,
+    ThrowOnError
+  >({
+    ...formDataBodySerializer,
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/users/{id}/profile-background",
     ...options,
     headers: {
       "Content-Type": null,
@@ -1201,21 +1259,77 @@ export const userControllerUpdate = <ThrowOnError extends boolean = false>(
   });
 
 /**
- * Get public CDN URL for a user's profile picture
+ * Get a public user profile by ID
  */
-export const userControllerGetPublicProfilePicture = <
+export const userPublicControllerGetPublicProfile = <
   ThrowOnError extends boolean = false
 >(
-  options: Options<UserControllerGetPublicProfilePictureData, ThrowOnError>
+  options: Options<UserPublicControllerGetPublicProfileData, ThrowOnError>
 ) =>
   (options.client ?? client).get<
-    UserControllerGetPublicProfilePictureResponses,
-    UserControllerGetPublicProfilePictureErrors,
+    UserPublicControllerGetPublicProfileResponses,
+    UserPublicControllerGetPublicProfileErrors,
     ThrowOnError
   >({
     responseType: "json",
-    security: [{ scheme: "bearer", type: "http" }],
-    url: "/users/public/{id}/profile-picture",
+    url: "/users/public/{id}/profile",
+    ...options
+  });
+
+/**
+ * Get a public user profile by username
+ */
+export const userPublicControllerGetPublicProfileByUsername = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<
+    UserPublicControllerGetPublicProfileByUsernameData,
+    ThrowOnError
+  >
+) =>
+  (options.client ?? client).get<
+    UserPublicControllerGetPublicProfileByUsernameResponses,
+    UserPublicControllerGetPublicProfileByUsernameErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/users/public/username/{username}/profile",
+    ...options
+  });
+
+/**
+ * Get a user's liked published games
+ */
+export const userPublicControllerGetLikedGames = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<UserPublicControllerGetLikedGamesData, ThrowOnError>
+) =>
+  (options.client ?? client).get<
+    UserPublicControllerGetLikedGamesResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/users/public/{id}/likes",
+    ...options
+  });
+
+/**
+ * Get a user's published games
+ */
+export const userPublicControllerGetPublishedGames = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<UserPublicControllerGetPublishedGamesData, ThrowOnError>
+) =>
+  (options.client ?? client).get<
+    UserPublicControllerGetPublishedGamesResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/users/public/{id}/published-games",
     ...options
   });
 
