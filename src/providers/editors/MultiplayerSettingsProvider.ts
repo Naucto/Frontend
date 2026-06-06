@@ -179,7 +179,7 @@ export class MultiplayerSettingsProvider implements Destroyable {
   public setDirectorySettings(path: string, settings: MultiplayerDirectorySettings): void {
     const components = path.split(".");
 
-    while (components.length > 0) {
+    while (components.length > 1) {
       const pathToMake = components.join(".");
 
       if (!this._yDirectory.has(pathToMake)) {
