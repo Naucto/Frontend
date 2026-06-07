@@ -121,6 +121,8 @@ export class ProjectProvider implements Destroyable {
       this.projectSettingsProvider.updateLongDesc(projectDetails!.longDesc ?? JSON.stringify(projectDetails!.longDesc));
       this.projectSettingsProvider.updateTags(projectDetails!.tags ?? []);
 
+      await this.saveContent();
+
       return session!.webrtcOffer;
     } catch (error: unknown) {
       if (!isNotFoundError(error)) {
