@@ -9,6 +9,7 @@ import ArticleIcon from "@mui/icons-material/Article";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import { DOCUMENTATION_URL } from "@shared/docs/DocumentationFrame";
 import {
+  DISCORD_URL,
   GITHUB_URL,
   LICENSE_URL,
   LINKEDIN_URL,
@@ -16,9 +17,11 @@ import {
   X_URL,
 } from "@shared/constants/links";
 import { FeedbackLanguagePicker } from "@shared/feedback/FeedbackLanguagePicker";
+import { DiscordIcon } from "@shared/icons/DiscordIcon";
 
 const footerLinks = [
   { label: "GitHub", href: GITHUB_URL, icon: <GitHubIcon fontSize="small" /> },
+  { label: "Discord", href: DISCORD_URL, icon: <DiscordIcon fontSize="small" /> },
   { label: "X", href: X_URL, icon: <XIcon fontSize="small" /> },
   { label: "Reddit", href: REDDIT_URL, icon: <RedditIcon fontSize="small" /> },
   { label: "LinkedIn", href: LINKEDIN_URL, icon: <LinkedInIcon fontSize="small" /> },

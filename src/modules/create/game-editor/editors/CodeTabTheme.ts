@@ -24,7 +24,6 @@ const syntaxColors = {
 } as const;
 
 class CodeTabTheme {
-  // Stolen from https://github.com/brijeshb42/monaco-themes/blob/master/themes/Solarized-dark.json
   static MONACO_THEME: monaco.editor.IStandaloneThemeData = {
     "base": "vs-dark",
     "inherit": true,
