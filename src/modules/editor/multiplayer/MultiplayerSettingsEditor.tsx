@@ -5,13 +5,13 @@ import {
   StyledTableRow,
 } from "@components/ui/StyledTable";
 import { EditorProps } from "@modules/create/game-editor/editors/EditorType";
-import { enumFromName, enumNames } from "@our-types/enum";
 import {
   MultiplayerDirectoryFlags,
   MultiplayerDirectorySettings,
   MultiplayerSettingsProvider,
   MultiplayerSettingsUpdateListener
 } from "@providers/editors/MultiplayerSettingsProvider";
+import { enumFromName, enumNames } from "@typedefs/enum";
 
 import React, { JSX, useEffect, useState } from "react";
 

@@ -8,7 +8,7 @@ import simpleImportSort from "eslint-plugin-simple-import-sort";
 // Sources ending in a stylesheet/asset extension (incl. ?query suffix, e.g. .svg?react).
 const ASSET = "\\.(css|scss|sass|less|svg|png|jpe?g|gif|webp|glsl|mp3|wav|ogg)(\\?\\w+)?$";
 // Project path aliases (see tsconfig.paths.json), to tell them apart from npm @scope packages.
-const PROJECT = "@(modules|shared|components|providers|hooks|utils|theme|api|errors|assets|lib|our-types)(/|$)";
+const PROJECT = "@(modules|shared|components|providers|hooks|utils|theme|api|errors|assets|lib|typedefs)(/|$)";
 
 export default defineConfig([
   {

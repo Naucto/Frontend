@@ -1,4 +1,4 @@
-import { type EngineUser } from "@our-types/userTypes";
+import { type EngineUser } from "@typedefs/userTypes";
 
 export type AwarenessChanges = {
   added: number[];

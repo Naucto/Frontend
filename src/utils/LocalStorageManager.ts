@@ -1,4 +1,4 @@
-import { User } from "@our-types/userTypes";
+import { User } from "@typedefs/userTypes";
 
 export class LocalStorageManager {
   private static readonly USER_ID_KEY = "user_id";
