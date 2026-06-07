@@ -1,3 +1,4 @@
+import { ErrorBoundary } from "@components/ui/ErrorBoundary";
 import { useAuthSuccess } from "@hooks/useAuthSuccess";
 import { GoogleOAuthCallback } from "@modules/auth/GoogleOAuthCallback";
 import { MicrosoftOAuthCallback } from "@modules/auth/MicrosoftOAuthCallback";
@@ -106,11 +107,13 @@ const App: React.FC = () => {
   }, [handleAuthSuccess]);
   return (
     <ThemeProvider theme={muiTheme}>
-      <CustomSnackBarProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </CustomSnackBarProvider>
+      <ErrorBoundary>
+        <CustomSnackBarProvider>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </CustomSnackBarProvider>
+      </ErrorBoundary>
     </ThemeProvider>
   );
 };
