@@ -16,6 +16,7 @@ type UserProfileLinkProps = {
   user?: ProfileLinkUser | null;
   showAvatar?: boolean;
   showName?: boolean;
+  showTooltip?: boolean;
   avatarSize?: number;
   nameVariant?: TypographyProps["variant"];
   className?: string;
@@ -187,6 +188,7 @@ export const UserProfileLink: React.FC<UserProfileLinkProps> = ({
   user,
   showAvatar = false,
   showName = true,
+  showTooltip = true,
   avatarSize = 24,
   nameVariant = "body2",
   className,
@@ -211,36 +213,44 @@ export const UserProfileLink: React.FC<UserProfileLinkProps> = ({
   const avatarUrl = profile?.profileImageUrl || user.profileImageUrl || "";
   const tooltipTitle = getProfileTooltip(user, profile);
 
+  const profileLink = (
+    <ProfileRoot
+      to={urls.toProfileByUsername(username)}
+      className={className}
+      aria-label={`Open ${displayName}'s profile`}
+    >
+      {showAvatar && (
+        <ProfileAvatar src={avatarUrl} $size={avatarSize} className="NauctoUserProfileLink-avatar">
+          {getFallbackInitial(displayName)}
+        </ProfileAvatar>
+      )}
+      {showName && (
+        <Typography
+          component="span"
+          variant={nameVariant}
+          className="NauctoUserProfileLink-name"
+          sx={{
+            color: "common.white",
+            fontWeight: 600,
+            minWidth: 0,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {displayName}
+        </Typography>
+      )}
+    </ProfileRoot>
+  );
+
+  if (!showTooltip) {
+    return profileLink;
+  }
+
   return (
     <Tooltip title={tooltipTitle} arrow slotProps={profileTooltipSlotProps}>
-      <ProfileRoot
-        to={urls.toProfileByUsername(username)}
-        className={className}
-        aria-label={`Open ${displayName}'s profile`}
-      >
-        {showAvatar && (
-          <ProfileAvatar src={avatarUrl} $size={avatarSize} className="NauctoUserProfileLink-avatar">
-            {getFallbackInitial(displayName)}
-          </ProfileAvatar>
-        )}
-        {showName && (
-          <Typography
-            component="span"
-            variant={nameVariant}
-            className="NauctoUserProfileLink-name"
-            sx={{
-              color: "common.white",
-              fontWeight: 600,
-              minWidth: 0,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {displayName}
-          </Typography>
-        )}
-      </ProfileRoot>
+      {profileLink}
     </Tooltip>
   );
 };

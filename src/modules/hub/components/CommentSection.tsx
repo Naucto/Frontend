@@ -220,7 +220,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
       {/* Comment input (logged-in users only) */}
       {user ? (
         <CommentInputContainer>
-          <UserProfileLink user={user} showAvatar showName={false} avatarSize={36} />
+          <UserProfileLink user={user} showAvatar showName={false} avatarSize={36} showTooltip={false} />
           <CommentComposer
             value={newComment}
             onChange={setNewComment}

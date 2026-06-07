@@ -116,7 +116,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
       <CommentContainer>
         <CommentHeader>
           <CommentAuthorMeta>
-            <UserProfileLink user={comment.author} showAvatar avatarSize={36} />
+            <UserProfileLink user={comment.author} showAvatar avatarSize={36} showTooltip={false} />
             <CommentDate>{formatTimeAgo(comment.createdAt)}</CommentDate>
           </CommentAuthorMeta>
           <Box display="flex" alignItems="center">
@@ -158,6 +158,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
                       showAvatar
                       avatarSize={28}
                       nameVariant="caption"
+                      showTooltip={false}
                     />
                     <CommentDate>{formatTimeAgo(reply.createdAt)}</CommentDate>
                   </CommentAuthorMeta>
