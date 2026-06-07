@@ -6,6 +6,10 @@ import { ThemeProvider } from "@mui/material/styles";
 import NavBar from "@shared/navbar/NavBar";
 import { muiTheme } from "@theme/MUITheme";
 import { CustomSnackBarProvider } from "@shared/snackBar/CustomSnackBarProvider";
+import Profile from "@modules/profile/Profile";
+import ProfilePublishedGames from "@modules/profile/ProfilePublishedGames";
+import ProfileLikedGames from "@modules/profile/ProfileLikedGames";
+
 import { GameViewer } from "@modules/hub/components/GameViewer";
 import { styled } from "@mui/material/styles";
 
@@ -54,6 +58,9 @@ const AppRoutes: React.FC = () => {
             {isStandalonePlayRoute && (
               <Route path="/project/:id/play" element={<Hub />} />
             )}
+            <Route path="/profile/:username" element={<Profile />} />
+            <Route path="/profile/:username/published-games" element={<ProfilePublishedGames />} />
+            <Route path="/profile/:username/liked-games" element={<ProfileLikedGames />} />
           </Routes>
           {(backgroundLocation || isStandalonePlayRoute) && (
             <Routes>
