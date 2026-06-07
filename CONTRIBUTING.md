@@ -33,6 +33,13 @@ Init husky by doing `npm install` then you can commit.
 
 To check if your code is linted run `npm run lint` or `npm run lint --fix` to fix it automatically simple errors.
 
+# Code conventions
+
+Code style, architecture, and project-structure conventions live in [`AGENTS.md`](./AGENTS.md)
+(it applies to both human contributors and AI agents).
+
+`TODO` / `FIXME` comments must reference a Jira ticket, e.g. `// TODO(NCTO-123): ...`.
+
 # Pull Requests
 describe what was done.
 
