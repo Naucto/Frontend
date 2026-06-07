@@ -3,7 +3,7 @@ import CodeEditor from "@modules/create/game-editor/editors/CodeEditor";
 import GameEditorConsole from "@modules/create/game-editor/editors/GameEditorConsole";
 import { MapEditor } from "@modules/create/game-editor/editors/MapEditor/MapEditor";
 import ProjectSettingsEditor from "@modules/create/game-editor/editors/ProjectSettingsEditor";
-import { SoundEditor } from "@modules/create/game-editor/editors/SoundEditor";
+import { SoundEditor } from "@modules/create/game-editor/editors/SoundEditor/SoundEditor";
 import { MultiplayerSettingsEditor } from "@modules/editor/multiplayer/MultiplayerSettingsEditor";
 import { SpriteEditor } from "@modules/editor/SpriteEditor/SpriteEditor";
 import { ProjectProvider, ProviderEventType } from "@providers/ProjectProvider";

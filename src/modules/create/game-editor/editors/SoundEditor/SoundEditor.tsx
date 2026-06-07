@@ -1,20 +1,20 @@
 import { EditorProps } from "@modules/create/game-editor/editors/EditorType";
 
-import { ControlButtons } from "./SoundEditor/components/ControlButtons";
-import { InstrumentButtons } from "./SoundEditor/components/InstrumentButtons";
-import { MusicSelectionButtons } from "./SoundEditor/components/MusicSelectionButtons";
-import { defaultInstruments } from "./SoundEditor/constants/instruments";
-import { InstrumentConfig, InstrumentEditor } from "./SoundEditor/InstrumentEditor";
-import { createMusic, MusicData, playMusicFromPosition, setNote } from "./SoundEditor/Music";
-import { MusicGrid } from "./SoundEditor/MusicGrid";
-import { NoteData, registerCustomInstrument, stopAllSynths } from "./SoundEditor/Note";
+import { ControlButtons } from "./components/ControlButtons";
+import { InstrumentButtons } from "./components/InstrumentButtons";
+import { MusicSelectionButtons } from "./components/MusicSelectionButtons";
+import { defaultInstruments } from "./constants/instruments";
+import { InstrumentConfig, InstrumentEditor } from "./InstrumentEditor";
+import { createMusic, MusicData, playMusicFromPosition, setNote } from "./Music";
+import { MusicGrid } from "./MusicGrid";
+import { NoteData, registerCustomInstrument, stopAllSynths } from "./Note";
 import {
   EditorContainer,
   ErrorMessage,
   NewInstrumentButton,
   SoundEditorRoot,
   SoundEditorWrapper,
-} from "./SoundEditor/styles/SoundEditor.styles";
+} from "./styles/SoundEditor.styles";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
