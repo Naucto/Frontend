@@ -5,15 +5,22 @@ import { useUser } from "@providers/UserProvider";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
 import { NotificationMenu } from "./NotificationMenu";
 import { NotificationItem } from "./types";
-import { NotificationsService } from "@api/services/NotificationsService";
-import { OpenAPI } from "@api";
+import {
+  notificationsControllerGetWebRtcOffer,
+  notificationsControllerMarkAsRead,
+} from "@api";
 
-const NOTIFICATION_SOCKET_PATH = "/socket/notifications";
 const MAX_NOTIFICATIONS = 50;
 
 type NotificationWsMessage =
   | { type: "notification"; payload: NotificationItem }
   | { type: "notifications:init"; payload: NotificationItem[] };
+
+type NotificationWebRTCOffer = {
+  data: {
+    signaling: string[];
+  };
+};
 
 const NotificationButton = styled(IconButton)(({ theme }) => ({
   margin: theme.spacing(2),
@@ -42,7 +49,6 @@ export const NotificationBox = (): JSX.Element => {
   const [showMenu, setShowMenu] = useState(false);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | undefined>(undefined);
   const socketRef = useRef<WebSocket | null>(null);
-  const backendUrl = OpenAPI.BASE;
 
   const unreadCount = useMemo(
     () => notifications.reduce((count, notification) => count + (notification.read ? 0 : 1), 0),
@@ -50,7 +56,7 @@ export const NotificationBox = (): JSX.Element => {
   );
 
   useEffect(() => {
-    if (!userId || !token || !backendUrl) {
+    if (!userId || !token) {
       if (socketRef.current) {
         socketRef.current.close();
         socketRef.current = null;
@@ -59,42 +65,61 @@ export const NotificationBox = (): JSX.Element => {
       return;
     }
 
-    const wsBase = backendUrl.replace(/^http/i, "ws").replace(/\/$/, "");
-    const socketUrl = `${wsBase}${NOTIFICATION_SOCKET_PATH}`;
-    const socket = new WebSocket(socketUrl);
+    let cancelled = false;
 
-    socketRef.current = socket;
-
-    socket.onopen = () => {
+    const connect = async (): Promise<void> => {
       try {
-        socket.send(JSON.stringify({ type: "auth", token }));
-      } catch {
-        console.warn("Failed to send auth message over websocket");
-      }
-    };
+        const response = await notificationsControllerGetWebRtcOffer({
+          throwOnError: true,
+        });
+        console.debug("Received WebRTC offer for notifications:", response.data);
+        const offer = response.data as NotificationWebRTCOffer;
+        const socketUrl = offer.data.signaling[0];
 
-    socket.onmessage = (event: MessageEvent<string>) => {
-      try {
-        const message = JSON.parse(event.data) as NotificationWsMessage;
-
-        if (message.type === "notifications:init") {
-          setNotifications(message.payload.slice(0, MAX_NOTIFICATIONS));
+        if (!socketUrl || cancelled) {
           return;
         }
 
-        if (message.type === "notification") {
-          setNotifications((previous) => mergeNotification(previous, message.payload));
-        }
+        const socket = new WebSocket(socketUrl);
+
+        socketRef.current = socket;
+        console.debug("asdsasd", socketUrl);
+        socket.onopen = () => {
+          try {
+            socket.send(JSON.stringify({ type: "auth", token }));
+          } catch {
+            console.warn("Failed to send auth message over notification websocket");
+          }
+        };
+
+        socket.onmessage = (event: MessageEvent<string>) => {
+          try {
+            const message = JSON.parse(event.data) as NotificationWsMessage;
+            if (message.type === "notifications:init") {
+              setNotifications(message.payload.slice(0, MAX_NOTIFICATIONS));
+              return;
+            }
+
+            if (message.type === "notification") {
+              setNotifications((previous) => mergeNotification(previous, message.payload));
+            }
+          } catch (error) {
+            console.warn("Failed to process notification websocket message:", error);
+          }
+        };
       } catch (error) {
-        console.warn("Failed to process notification websocket message:", error);
+        console.warn("Failed to connect notification websocket:", error);
       }
     };
 
+    connect();
+
     return () => {
-      socket.close();
+      cancelled = true;
+      socketRef.current?.close();
       socketRef.current = null;
     };
-  }, [userId, token, backendUrl]);
+  }, [userId, token]);
 
   const handleClick = useCallback((event: MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -113,7 +138,9 @@ export const NotificationBox = (): JSX.Element => {
         notification.id === notificationId ? { ...notification, read: true } : notification,
       ),
     );
-    NotificationsService.notificationsControllerMarkAsRead(notificationId).catch(() => {
+    notificationsControllerMarkAsRead({
+      path: { id: notificationId },
+    }).catch(() => {
       console.error(`Failed to mark notification ${notificationId} as read`);
     });
   }, []);
