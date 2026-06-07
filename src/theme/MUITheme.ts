@@ -44,6 +44,7 @@ declare module "@mui/material/styles" {
 
 export const muiTheme = createTheme({
   palette: {
+    mode: "dark",
     ...colors,
 
     primary: { main: "#E5D352" },

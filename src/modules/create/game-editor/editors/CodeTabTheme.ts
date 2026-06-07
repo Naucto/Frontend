@@ -1,25 +1,124 @@
 import monaco from "monaco-editor";
 
+import { colors } from "@theme/colors";
+
+const tokenColor = (color: string): string => color.replace("#", "");
+
+const syntaxColors = {
+  comment: "#6A9955",
+  string: "#CE9178",
+  stringEscape: "#D7BA7D",
+  invalid: "#F44747",
+  declarationKeyword: "#569CD6",
+  controlKeyword: "#C586C0",
+  lifecycle: "#F44747",
+  function: "#4FC1FF",
+  module: "#4EC9B0",
+  identifier: "#D4D4D4",
+  variable: "#9CDCFE",
+  property: "#C8C8C8",
+  constant: "#569CD6",
+  number: "#B5CEA8",
+  operator: "#D4D4D4",
+  delimiter: "#808080",
+} as const;
+
 class CodeTabTheme {
-  // Stolen from https://github.com/brijeshb42/monaco-themes/blob/master/themes/Solarized-dark.json
   static MONACO_THEME: monaco.editor.IStandaloneThemeData = {
     "base": "vs-dark",
     "inherit": true,
     "rules": [
       {
-        "background": "002B36",
+        "background": tokenColor(colors.gray[900]),
         "token": ""
       },
       {
-        "foreground": "#66D9EF", // increased saturation for comments
+        "foreground": tokenColor(syntaxColors.declarationKeyword),
+        "fontStyle": "bold",
+        "token": "keyword.declaration"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.controlKeyword),
+        "token": "keyword.control"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.lifecycle),
+        "fontStyle": "bold",
+        "token": "naucto.lifecycle"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.function),
+        "fontStyle": "bold",
+        "token": "naucto.function"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.function),
+        "token": "support.function"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.module),
+        "fontStyle": "bold",
+        "token": "support.module"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.function),
+        "token": "entity.name.function"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.identifier),
+        "token": "identifier"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.variable),
+        "token": "variable"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.property),
+        "token": "variable.property"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.constant),
+        "token": "constant.language"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.number),
+        "token": "number"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.number),
+        "token": "number.float"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.number),
+        "token": "number.hex"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.operator),
+        "token": "operator"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.delimiter),
+        "token": "delimiter"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.invalid),
+        "token": "string.invalid"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.stringEscape),
+        "token": "string.escape"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.comment),
+        "fontStyle": "italic",
         "token": "comment"
       },
       {
-        "foreground": "2aa198",
+        "foreground": tokenColor(syntaxColors.string),
         "token": "string"
       },
       {
-        "foreground": "AE81FF",
+        "foreground": tokenColor(syntaxColors.string),
         "token": "string"
       },
       {
@@ -1077,15 +1176,131 @@ class CodeTabTheme {
       {
         "background": "cb4b16",
         "token": "sublimelinter.underline.violation"
+      },
+      // Keep the inherited Solarized coverage above, then give Lua a vibrant,
+      // VS Code-like syntax pass that still sits on Naucto's dark surface.
+      {
+        "foreground": tokenColor(syntaxColors.comment),
+        "fontStyle": "italic",
+        "token": "comment"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.string),
+        "token": "string"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.string),
+        "token": "string.quoted.double"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.string),
+        "token": "string.quoted.single"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.stringEscape),
+        "token": "string.escape"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.invalid),
+        "token": "string.invalid"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.declarationKeyword),
+        "fontStyle": "bold",
+        "token": "keyword.declaration"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.controlKeyword),
+        "fontStyle": "bold",
+        "token": "keyword.control"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.controlKeyword),
+        "fontStyle": "bold",
+        "token": "keyword"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.lifecycle),
+        "fontStyle": "bold",
+        "token": "naucto.lifecycle"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.function),
+        "fontStyle": "bold",
+        "token": "naucto.function"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.function),
+        "token": "support.function"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.module),
+        "fontStyle": "bold",
+        "token": "support.module"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.function),
+        "token": "entity.name.function"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.identifier),
+        "token": "identifier"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.variable),
+        "token": "variable"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.property),
+        "token": "variable.property"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.variable),
+        "token": "variable.language"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.variable),
+        "token": "variable.other"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.constant),
+        "token": "constant.language"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.number),
+        "token": "number"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.number),
+        "token": "number.float"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.number),
+        "token": "number.hex"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.number),
+        "token": "constant.numeric"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.operator),
+        "token": "operator"
+      },
+      {
+        "foreground": tokenColor(syntaxColors.delimiter),
+        "token": "delimiter"
       }
     ],
     "colors": {
-      "editor.foreground": "#839496",
-      "editor.background": "#002B36",
-      "editor.selectionBackground": "#073642",
-      "editor.lineHighlightBackground": "#073642",
-      "editorCursor.foreground": "#819090",
-      "editorWhitespace.foreground": "#073642"
+      "editor.foreground": colors.gray[50],
+      "editor.background": colors.gray[900],
+      "editor.selectionBackground": colors.blue[800],
+      "editor.lineHighlightBackground": colors.gray[800],
+      "editorCursor.foreground": colors.yellow[500],
+      "editorWhitespace.foreground": colors.gray[700],
+      "editorError.foreground": colors.red[500],
+      "editorWarning.foreground": colors.yellow[500],
+      "editorInfo.foreground": colors.blue[200]
     }
   };
 

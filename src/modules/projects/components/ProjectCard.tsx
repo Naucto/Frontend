@@ -10,32 +10,57 @@ import LikeSvg from "@assets/like.svg";
 import CommentSvg from "@assets/comment.svg";
 import { getCachedProjectImageUrl } from "@utils/projectImageCache";
 import {
+  ProjectExResponseDto,
   ProjectResponseDto,
   projectControllerGetPublishedProjectImage,
   projectControllerGetProjectImage
 } from "@api";
+import { UserAvatarStack } from "@shared/user/UserProfileLink";
+
+type ProjectCardProject = ProjectResponseDto & Partial<Pick<ProjectExResponseDto, "creator" | "collaborators">>;
 
 type ProjectCardProps = {
-  project: ProjectResponseDto;
+  project: ProjectCardProject;
   isPlayable?: boolean;
 };
 
 const StyledCard = styled(Card, {
   shouldForwardProp: (prop) => prop !== "$src",
 })<{ $src: string }>(({ $src }) => ({
+  position: "relative",
   backgroundImage: $src ? `url(${$src})` : "none",
   backgroundSize: "cover",
   backgroundPosition: "center",
+  overflow: "hidden",
+  "&::before": {
+    content: "\"\"",
+    position: "absolute",
+    inset: 0,
+    backgroundColor: "rgba(0, 0, 0, 0)",
+    transition: "background-color 0.2s ease",
+  },
+  "&:hover::before": {
+    backgroundColor: "rgba(0, 0, 0, 0.22)",
+  },
 }));
 
-const PlayableCardButton = styled("button")(({ theme }) => ({
+const PlayableCardButton = styled("div")(({ theme }) => ({
   width: "100%",
+  display: "block",
   padding: 0,
   border: "none",
   background: "transparent",
   color: theme.palette.text.primary,
   textAlign: "left",
   cursor: "pointer",
+  "&:focus-visible": {
+    outline: `2px solid ${theme.palette.yellow[500]}`,
+    outlineOffset: 2,
+    borderRadius: theme.custom.rounded.md,
+  },
+  "&:hover > div:first-of-type::after": {
+    backgroundColor: "rgba(0, 0, 0, 0.22)",
+  },
 }));
 
 const Thumbnail = styled("div", {
@@ -50,6 +75,15 @@ const Thumbnail = styled("div", {
   backgroundPosition: "center",
   overflow: "hidden",
   boxShadow: "0 14px 40px rgba(0, 0, 0, 0.18)",
+  position: "relative",
+  "&::after": {
+    content: "\"\"",
+    position: "absolute",
+    inset: 0,
+    backgroundColor: "rgba(0, 0, 0, 0)",
+    transition: "background-color 0.2s ease",
+    pointerEvents: "none",
+  },
 }));
 
 const PlayableMeta = styled("div")(({ theme }) => ({
@@ -63,10 +97,19 @@ const PlayableMeta = styled("div")(({ theme }) => ({
 const CopyColumn = styled("div")(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
-  gap: theme.spacing(0.35),
+  gap: theme.spacing(0.45),
   minWidth: 0,
   flex: 1,
   paddingLeft: theme.spacing(0.5),
+}));
+
+const CreatorRow = styled("div")(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  gap: theme.spacing(0.75),
+  minHeight: 26,
+  color: theme.palette.grey[400],
+  fontSize: "12px",
 }));
 
 const Title = styled(Typography)(({ theme }) => ({
@@ -175,13 +218,42 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, isPlayable = false }
     [project.longDesc, project.shortDesc]
   );
 
+  const creators = useMemo(
+    () => Array.from(
+      new Map(
+        [project.creator, ...(project.collaborators ?? [])]
+          .filter((creator): creator is NonNullable<ProjectCardProject["creator"]> => Boolean(creator))
+          .map((creator) => [creator.id, creator])
+      ).values()
+    ),
+    [project.collaborators, project.creator]
+  );
+
+  const handlePlayableCardKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      redirectToProject();
+    }
+  };
+
   if (isPlayable) {
     return (
-      <PlayableCardButton type="button" onClick={redirectToProject}>
+      <PlayableCardButton
+        role="button"
+        tabIndex={0}
+        onClick={redirectToProject}
+        onKeyDown={handlePlayableCardKeyDown}
+      >
         <Thumbnail $src={thumbnailUrl} />
         <PlayableMeta>
           <CopyColumn>
             <Title variant="h6">{project.name}</Title>
+            {creators.length > 0 && (
+              <CreatorRow>
+                <span>Made by</span>
+                <UserAvatarStack users={creators} avatarSize={22} stopPropagation />
+              </CreatorRow>
+            )}
             <Description variant="body2">{description}</Description>
           </CopyColumn>
           <StatsColumn>

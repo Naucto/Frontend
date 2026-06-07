@@ -6,6 +6,8 @@ import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef 
 import { SoundProvider } from "@providers/editors/SoundProvider";
 import { MusicPlayer } from "@shared/audio/MusicPlayer";
 
+const ENGINE_FRAME_TIME = 1000 / 60;
+
 type GameCanvasProps = {
   canvasProps: CanvasProps;
   envData: EnvData;
@@ -18,21 +20,23 @@ const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(
   ({ canvasProps, envData, setOutput, className, soundProvider }, ref) => {
     const spriteRendererHandleRef = useRef<SpriteRendererHandle | null>(null);
     const luaEnvManagerRef = useRef<LuaEnvironmentManager>(undefined);
-    const animationFrameRef = useRef<number>(undefined);
+    const engineIntervalRef = useRef<NodeJS.Timeout>(undefined);
     const keyHandlerRef = useRef<KeyHandler>(new KeyHandler);
     const musicPlayerRef = useRef<MusicPlayer>(undefined);
 
     useImperativeHandle(ref, () => spriteRendererHandleRef.current as SpriteRendererHandle, []);
-    const loop = useCallback((): void => {
-      if (!spriteRendererHandleRef.current) {
+
+    // TODO: Make this configurable from project settings
+    //       Allow toggling between 60 Hz lock and delta time support in _update()
+    const engineLoop = useCallback((): void => {
+      if (!spriteRendererHandleRef.current)
         return;
-      }
+
       const luaEnvManager = luaEnvManagerRef.current;
       luaEnvManager?.update();
       luaEnvManager?.draw();
-      animationFrameRef.current = requestAnimationFrame(loop);
       spriteRendererHandleRef.current?.draw();
-    }, [luaEnvManagerRef, spriteRendererHandleRef, animationFrameRef]);
+    }, [luaEnvManagerRef, spriteRendererHandleRef]);
 
     // init lua env
     useEffect(() => {
@@ -78,26 +82,36 @@ const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(
       }
 
       luaEnvManager.init();
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
+      if (engineIntervalRef.current) {
+        clearInterval(engineIntervalRef.current);
       }
-      animationFrameRef.current = requestAnimationFrame(loop);
+      engineIntervalRef.current = setInterval(engineLoop, ENGINE_FRAME_TIME);
 
       return () => {
-        if (animationFrameRef.current) {
-          cancelAnimationFrame(animationFrameRef.current);
-          animationFrameRef.current = undefined;
+        if (engineIntervalRef.current) {
+          clearInterval(engineIntervalRef.current);
+          engineIntervalRef.current = undefined;
         }
       };
     }, [envData.code]);
 
+    useEffect(() => {
+      const canvas = spriteRendererHandleRef.current?.getCanvas?.();
+      if (!canvas) {
+        return;
+      }
+
+      keyHandlerRef.current.attachTo(canvas);
+      return () => {
+        keyHandlerRef.current.detach();
+      };
+    }, []);
+
     return (
       <StyledCanvas
         ref={spriteRendererHandleRef}
-        className={className}
-        onKeyDown={(e) => keyHandlerRef.current?.handleKeyDown(e)}
-        onKeyUp={(e) => keyHandlerRef.current?.handleKeyUp(e)}
         {...canvasProps}
+        className={className}
       />
     );
   });

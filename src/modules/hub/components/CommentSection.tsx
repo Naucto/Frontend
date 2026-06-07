@@ -3,15 +3,16 @@ import { styled } from "@mui/material/styles";
 import { Box, Typography, Button, CircularProgress } from "@mui/material";
 import CommentSvg from "@assets/comment.svg";
 import {
-  commentControllerGetComments,
-  commentControllerCreateComment,
-  commentControllerCreateReply,
-  commentControllerDeleteComment,
+  projectCommentControllerGetComments,
+  projectCommentControllerCreateComment,
+  projectCommentControllerCreateReply,
+  projectCommentControllerDeleteComment,
   CommentResponseDto,
 } from "@api";
 import { useUser } from "@providers/UserProvider";
 import CommentItem from "./CommentItem";
 import CommentComposer from "./CommentComposer";
+import { UserProfileLink } from "@shared/user/UserProfileLink";
 
 const SectionContainer = styled(Box)(({ theme }) => ({
   marginTop: theme.spacing(3),
@@ -65,7 +66,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
   const fetchComments = useCallback(
     async (pageNum: number, append: boolean = false): Promise<void> => {
       try {
-        const { data } = await commentControllerGetComments({
+        const { data } = await projectCommentControllerGetComments({
           path: { projectId },
           query: { page: pageNum, limit: 20, sort: "newest" },
         });
@@ -93,7 +94,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     if (!newComment.trim()) return;
     setSubmitting(true);
     try {
-      const { data } = await commentControllerCreateComment({
+      const { data } = await projectCommentControllerCreateComment({
         path: { projectId },
         body: { content: newComment },
       });
@@ -122,7 +123,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     commentId: number,
     content: string
   ): Promise<void> => {
-    const { data } = await commentControllerCreateReply({
+    const { data } = await projectCommentControllerCreateReply({
       path: { projectId, commentId },
       body: { content },
     });
@@ -150,7 +151,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
 
   const handleDelete = async (commentId: number): Promise<void> => {
     try {
-      await commentControllerDeleteComment({
+      await projectCommentControllerDeleteComment({
         path: { projectId, commentId },
       });
       // Update state based on whether comment was soft- or hard-deleted
@@ -219,6 +220,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
       {/* Comment input (logged-in users only) */}
       {user ? (
         <CommentInputContainer>
+          <UserProfileLink user={user} showAvatar showName={false} avatarSize={36} showTooltip={false} />
           <CommentComposer
             value={newComment}
             onChange={setNewComment}
