@@ -7,19 +7,34 @@ import ProjectSettingsEditor from "@modules/create/game-editor/editors/ProjectSe
 import { SoundEditor } from "@modules/create/game-editor/editors/SoundEditor/SoundEditor";
 import { SpriteEditor } from "@modules/create/game-editor/editors/SpriteEditor/SpriteEditor";
 import { ProjectProvider, ProviderEventType } from "@providers/ProjectProvider";
-import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
-import { DocumentationFrame } from "@shared/docs/DocumentationFrame";
 import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
 
 import { EditorContainer } from "./editors/EditorContainer";
 import { EditorProps, EditorTab } from "./editors/EditorType";
+import {
+  DocIframe,
+  GameEditorContainer,
+  LeftPanel,
+  PreviewCanvas,
+  PreviewControls,
+  PreviewToolbar,
+  RightPanel,
+  RightPanelSubcontainer,
+  RunPreviewButton,
+  StyledAlert,
+  StyledDialog,
+  StyledDialogActions,
+  StyledDialogContent,
+  StyledDialogTitle,
+  StyledTab,
+  TabContent,
+} from "./GameEditor.styles";
 
 import React, { useEffect, useMemo, useState } from "react";
 
 import { MenuBook, PlayArrow, SportsEsports } from "@mui/icons-material";
-import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Switch, Tab, Tabs, Tooltip } from "@mui/material";
-import { styled } from "@mui/material/styles";
+import { Button, FormControlLabel, Switch, Tabs, Tooltip } from "@mui/material";
 import { Beforeunload } from "react-beforeunload";
 
 import CodeIcon from "@assets/code.svg?react";
@@ -28,136 +43,6 @@ import SoundIcon from "@assets/music.svg?react";
 import SpriteIcon from "@assets/pen.svg?react";
 import ProjectIcon from "@assets/project.svg?react";
 import MultiplayerIcon from "@assets/user.svg?react";
-
-const GameEditorContainer = styled("div")(({ theme }) => ({
-  height: "100%",
-  display: "flex",
-  flexDirection: "row",
-  gap: theme.spacing(4),
-  padding: `0 calc(${theme.spacing(4)} - 4px) calc(${theme.spacing(4)} - 4px)`,
-  boxSizing: "border-box",
-}));
-
-const LeftPanel = styled("div")(() => ({
-  width: "100%",
-  display: "flex",
-  flexDirection: "column",
-}));
-
-const RightPanel = styled("div")(({ theme }) => ({
-  width: "100%",
-  display: "flex",
-  flexDirection: "column",
-  gap: theme.spacing(4)
-}));
-
-const RightPanelSubcontainer = styled("div")(() => ({
-  display: "flex",
-  flexDirection: "column",
-  height: "100%"
-}));
-
-const PreviewToolbar = styled(Box)(({ theme }) => ({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: theme.spacing(1),
-  padding: theme.spacing(1),
-  backgroundColor: theme.palette.blue[500],
-}));
-
-const PreviewControls = styled(Box)(({ theme }) => ({
-  display: "flex",
-  alignItems: "center",
-  gap: theme.spacing(1.5),
-  flexWrap: "wrap",
-}));
-
-const RunPreviewButton = styled(Button)(({ theme }) => ({
-  color: theme.palette.common.white,
-  backgroundColor: theme.palette.red[500],
-  "&:hover": {
-    backgroundColor: theme.palette.red[600],
-  },
-}));
-
-const DocIframe = styled(DocumentationFrame)(({ theme }) => ({
-  width: "100%",
-  height: "50vh",
-
-  border: "none",
-  borderRadius: theme.spacing(1),
-  borderTopLeftRadius: 0,
-
-  backgroundColor: theme.palette.blue[500],
-}));
-
-const TabContent = styled(Box)(() => ({
-  flex: 1,
-  overflow: "auto",
-  display: "flex",
-  flexDirection: "column",
-  "&.active": {
-    display: "contents",
-  },
-  "&.hidden": {
-    display: "none",
-  },
-}));
-
-const StyledTab = styled(Tab)(({ theme }) => ({
-  fontFamily: theme.typography.fontFamily,
-  backgroundColor: theme.palette.blue[700],
-  minHeight: theme.spacing(6),
-  minWidth: theme.spacing(18),
-  fontSize: "1.2rem",
-  borderTopLeftRadius: theme.spacing(1),
-  borderTopRightRadius: theme.spacing(1),
-  color: "white",
-
-  "&.Mui-selected, &.Mui-focusVisible": {
-    backgroundColor: theme.palette.blue[500],
-    color: "white"
-  },
-  "&:hover": {
-    backgroundColor: theme.palette.blue[600],
-  },
-}));
-
-const PreviewCanvas = styled(GameCanvas)(({ theme }) => ({
-  borderRadius: theme.spacing(1)
-}));
-
-const StyledDialog = styled(Dialog)(({ theme }) => ({
-  "& .MuiPaper-root": {
-    backgroundColor: theme.palette.mode === "dark" ? theme.palette.grey[900] : "#0f0f0f",
-    color: theme.palette.getContrastText(theme.palette.grey[900]),
-    border: `1px solid ${theme.palette.grey[800]}`,
-    boxShadow: theme.shadows[8],
-  },
-}));
-
-const StyledDialogTitle = styled(DialogTitle)(() => ({
-  color: "inherit",
-}));
-
-const StyledDialogContent = styled(DialogContent)(({ theme }) => ({
-  backgroundColor: "transparent",
-  borderColor: theme.palette.grey[800],
-}));
-
-const StyledDialogActions = styled(DialogActions)(() => ({
-  backgroundColor: "transparent",
-}));
-
-const StyledAlert = styled(Alert)(({ theme }) => ({
-  backgroundColor: "transparent",
-  color: theme.palette.grey[100],
-  borderColor: theme.palette.grey[700],
-  "& .MuiAlert-icon": {
-    color: theme.palette.grey[400],
-  },
-}));
 
 interface GameEditorProps {
   project: ProjectProvider
