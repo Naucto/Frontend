@@ -15,6 +15,7 @@
       "@providers/*": ["./src/providers/*"],
       "@errors/*": ["./src/errors/*"],
       "@our-types/*": ["./src/types/*"],
+      "@hooks/*": ["./src/hooks/*"],
       "src/*": ["src/*"],
       "config/*": ["config/*"]
     }

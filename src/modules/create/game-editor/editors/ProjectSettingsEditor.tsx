@@ -19,6 +19,7 @@ import {
 import { ProjectSettings } from "@providers/editors/ProjectSettingsProvider";
 import { ActionButton } from "@components/ui/ActionButton";
 import { FullWidthTextField } from "@components/ui/FullWidthTextField";
+import { Section } from "@components/ui/Section";
 import { PREDEFINED_PROJECT_TAGS } from "@modules/projects/projectTags";
 import {
   getCachedProjectImageUrl,
@@ -26,10 +27,6 @@ import {
   setCachedProjectImageUrl,
 } from "@utils/projectImageCache";
 import { UserProfileLink } from "@shared/user/UserProfileLink";
-
-const Section = styled(Box)(({ theme }) => ({
-  marginBottom: theme.spacing(4),
-}));
 
 const CollaboratorList = styled(List)(({ theme }) => ({
   maxHeight: "200px",

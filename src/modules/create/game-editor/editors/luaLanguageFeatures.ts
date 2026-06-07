@@ -909,7 +909,7 @@ export function registerLuaLanguageFeatures(monaco: Monaco): void {
   registerLuaColorization(monaco);
   monaco.languages.registerCompletionItemProvider("lua", {
     triggerCharacters: ["_", ".", ":", "\"", "'"],
-    provideCompletionItems: (model, position) => {
+    provideCompletionItems: (model: MonacoEditor.ITextModel, position: Position) => {
       const range = getCompletionRange(model, position);
       const symbols = collectLuaSymbols(getTextBeforePosition(model, position));
       const memberContext = getMemberContext(model, position);

@@ -1,9 +1,6 @@
 import { styled } from "@mui/material/styles";
 import { Typography } from "@mui/material";
 import { JSX, useEffect, useMemo, useState } from "react";
-import { ProjectExResponseDto } from "@api";
-import { PREDEFINED_PROJECT_TAGS } from "@modules/projects/projectTags";
-import { LocalStorageManager } from "@utils/LocalStorageManager";
 import { useNavigate } from "react-router-dom";
 import * as urls from "@shared/route";
 import {
@@ -15,6 +12,8 @@ import {
   sortHubProjects,
   sortPopularProjects,
 } from "./hubSorting";
+import { LocalStorageManager } from "@utils/LocalStorageManager";
+import { PREDEFINED_PROJECT_TAGS } from "@modules/projects/projectTags";
 import { useReleasedProjects, mergeProjects } from "./hooks/useReleasedProjects";
 import { useHubEvents } from "./hooks/useHubEvents";
 import { useReleasedProjectCount } from "./hooks/useReleasedProjectCount";
@@ -22,6 +21,7 @@ import { getProjectsForCategory, HubFiltersState, INITIAL_FILTERS } from "./hubF
 import { PopularHubSection } from "./components/PopularHubSection";
 import { NewHubSection } from "./components/NewHubSection";
 import { PlayedHubSection } from "./components/PlayedHubSection";
+import { ProjectExResponseDto } from "@api";
 
 const PageContainer = styled("div")(({ theme }) => ({
   margin: theme.spacing(4),
