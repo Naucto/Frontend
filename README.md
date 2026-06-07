@@ -32,12 +32,6 @@ npm run cypress:run # e2e tests
 
 ## Docker
 
-### Development (with hot reload feature)
-```bash
-docker compose -f docker-compose.dev.yml up
-```
-
-### Production
 ```bash
 docker compose up
 ```
