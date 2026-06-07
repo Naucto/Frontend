@@ -96,13 +96,23 @@ const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(
       };
     }, [envData.code]);
 
+    useEffect(() => {
+      const canvas = spriteRendererHandleRef.current?.getCanvas?.();
+      if (!canvas) {
+        return;
+      }
+
+      keyHandlerRef.current.attachTo(canvas);
+      return () => {
+        keyHandlerRef.current.detach();
+      };
+    }, []);
+
     return (
       <StyledCanvas
         ref={spriteRendererHandleRef}
-        className={className}
-        onKeyDown={(e) => keyHandlerRef.current?.handleKeyDown(e)}
-        onKeyUp={(e) => keyHandlerRef.current?.handleKeyUp(e)}
         {...canvasProps}
+        className={className}
       />
     );
   });

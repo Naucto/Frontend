@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Tab, Tabs } from "@mui/material";
-import { MenuBook, SportsEsports } from "@mui/icons-material";
+import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Switch, Tab, Tabs, Tooltip } from "@mui/material";
+import { MenuBook, PlayArrow, SportsEsports } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import { Beforeunload } from "react-beforeunload";
 
@@ -17,6 +17,7 @@ import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 
 import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
 import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
+import { DocumentationFrame } from "@shared/docs/DocumentationFrame";
 import CodeIcon from "src/assets/code.svg?react";
 import MapIcon from "src/assets/map.svg?react";
 import MultiplayerIcon from "src/assets/user.svg?react";
@@ -55,7 +56,31 @@ const RightPanelSubcontainer = styled("div")(() => ({
   height: "100%"
 }));
 
-const DocIframe = styled("iframe")(({ theme }) => ({
+const PreviewToolbar = styled(Box)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: theme.spacing(1),
+  padding: theme.spacing(1),
+  backgroundColor: theme.palette.blue[500],
+}));
+
+const PreviewControls = styled(Box)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  gap: theme.spacing(1.5),
+  flexWrap: "wrap",
+}));
+
+const RunPreviewButton = styled(Button)(({ theme }) => ({
+  color: theme.palette.common.white,
+  backgroundColor: theme.palette.red[500],
+  "&:hover": {
+    backgroundColor: theme.palette.red[600],
+  },
+}));
+
+const DocIframe = styled(DocumentationFrame)(({ theme }) => ({
   width: "100%",
   height: "50vh",
 
@@ -140,7 +165,11 @@ interface GameEditorProps {
 const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => {
   const [activeLeftPanelTab, setActiveLeftPanelTab] = useState(0);
   const [activeRightPanelTab, setActiveRightPanelTab] = useState(0);
+  const [code, setCode] = useState("");
   const [output, setOutput] = useState<string>("");
+  const [autoRefreshPreview, setAutoRefreshPreview] = useState(false);
+  const [previewCode, setPreviewCode] = useState("");
+  const [previewRevision, setPreviewRevision] = useState(0);
 
   const tabs = useMemo(() => [
     { label: "project", component: ProjectSettingsEditor, icon: <ProjectIcon/> },
@@ -198,17 +227,28 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
       return;
 
     project.observe(ProviderEventType.BECOME_HOST, becomeHostListener);
-    project.codeProvider.observe(setCode);
-  }, [project]);
 
-  const [code, setCode] = useState("");
+    const initialCode = project.codeProvider.getContent();
+    setCode(initialCode);
+    setPreviewCode(initialCode);
+
+    const onCodeChange = (nextCode: string): void => {
+      setCode(nextCode);
+    };
+
+    project.codeProvider.observe(onCodeChange);
+
+    return () => {
+      project.codeProvider.unobserve(onCodeChange);
+    };
+  }, [project]);
 
   //FIXME: temporary solution, should be replaced with given data from back
 
   const envData: EnvData = useMemo(() => ({
-    code,
+    code: previewCode,
     output,
-  }), [code, output]);
+  }), [output, previewCode]);
 
   const screenSize = useMemo(() => ({
     width: 320,
@@ -239,6 +279,20 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
       project.saveContent();
     }, 5 * 60 * 1000);
   };
+
+  const runPreview = (): void => {
+    setOutput("");
+    setPreviewCode(project.codeProvider.getContent());
+    setPreviewRevision((value) => value + 1);
+  };
+
+  useEffect(() => {
+    if (!autoRefreshPreview) {
+      return;
+    }
+
+    setPreviewCode(code);
+  }, [autoRefreshPreview, code]);
 
   const getAwarenessMessage = (): string => {
     const count = project.awarenessProvider.count();
@@ -284,7 +338,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
               className={activeLeftPanelTab === idx ? "active" : "hidden"}
             >
               {EditorComponent
-                ? <EditorContainer $disablePadding={tab.disablePadding}><EditorComponent project={project} /></EditorContainer>
+                ? <EditorContainer $disablePadding={tab.disablePadding}><EditorComponent project={project} consoleOutput={output} /></EditorContainer>
                 : <span>No editor available</span>}
             </TabContent>
           );
@@ -306,7 +360,34 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
             className={activeRightPanelTab === 0 ? "active" : "hidden"}
             data-cy="preview-panel"
           >
+            <PreviewToolbar>
+              <PreviewControls>
+                <RunPreviewButton
+                  variant="contained"
+                  size="small"
+                  startIcon={<PlayArrow />}
+                  onClick={runPreview}
+                  data-cy="run-preview"
+                >
+                  Play
+                </RunPreviewButton>
+                <Tooltip title="Refresh the preview whenever the code changes">
+                  <FormControlLabel
+                    sx={{ color: "white", m: 0 }}
+                    control={
+                      <Switch
+                        checked={autoRefreshPreview}
+                        onChange={(event) => setAutoRefreshPreview(event.target.checked)}
+                        size="small"
+                      />
+                    }
+                    label="Auto"
+                  />
+                </Tooltip>
+              </PreviewControls>
+            </PreviewToolbar>
             <PreviewCanvas
+              key={previewRevision}
               ref={canvasRef}
               canvasProps={{
                 map: project.mapProvider,
@@ -328,8 +409,6 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
             data-cy="doc-panel"
           >
             <DocIframe
-              src={import.meta.env.VITE_DOCS_URL ?? "https://docs.naucto.net"}
-              title="Naucto Documentation"
               data-cy="doc-iframe"
             />
           </TabContent>
