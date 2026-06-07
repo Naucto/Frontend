@@ -20,6 +20,11 @@ export default defineConfig({
   resolve: {
     alias: {}
   },
+  // Strip dev-only console calls from production bundles (dev is not minified,
+  // so these stay during `vite dev`). console.warn / console.error are kept.
+  esbuild: {
+    pure: ["console.log", "console.info", "console.debug"]
+  },
   server: {
     host: true,
     allowedHosts: true
