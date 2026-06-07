@@ -196,7 +196,7 @@ const darkMenuProps = {
 export const Hub = (): JSX.Element => {
   const [showCustomSort, setShowCustomSort] = useState(false);
   const [sortMetric, setSortMetric] = useState<"weighted" | "viewCount" | "likes" | "commentCount" | "forkCount">("weighted");
-  const [releaseWindow, setReleaseWindow] = useState<"all" | "30d" | "7d">("30d");
+  const [releaseWindow, setReleaseWindow] = useState<"all" | "30d" | "7d">("all");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [newGamesOrder, setNewGamesOrder] = useState<"desc" | "asc">("desc");
   const [playedGamesOrder, setPlayedGamesOrder] = useState<"desc" | "asc">("desc");

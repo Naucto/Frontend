@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { styled } from "@mui/material/styles";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { alpha, styled } from "@mui/material/styles";
 import { Box, Button, Chip, Typography, IconButton, CircularProgress } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
@@ -30,13 +30,13 @@ import CommentSection from "./CommentSection";
 import { useSnackbar } from "notistack";
 import * as urls from "@shared/route";
 
-const Overlay = styled(Box)(() => ({
+const Overlay = styled(Box)(({ theme }) => ({
   position: "fixed",
   top: 0,
   left: 0,
   right: 0,
   bottom: 0,
-  backgroundColor: "rgba(0, 0, 0, 0.64)",
+  backgroundColor: alpha(theme.palette.common.black, 0.64),
   backdropFilter: "blur(6px)",
   zIndex: 9999,
   overflowY: "auto",
@@ -54,9 +54,9 @@ const CloseButton = styled(IconButton)(({ theme }) => ({
   top: theme.spacing(2),
   right: theme.spacing(2),
   color: theme.palette.common.white,
-  backgroundColor: "rgba(0, 0, 0, 0.28)",
+  backgroundColor: alpha(theme.palette.common.black, 0.28),
   "&:hover": {
-    backgroundColor: "rgba(0, 0, 0, 0.45)",
+    backgroundColor: alpha(theme.palette.common.black, 0.45),
   },
 }));
 
@@ -92,18 +92,18 @@ const HeaderActions = styled(Box)(({ theme }) => ({
 
 const RefreshGameButton = styled(Button)(({ theme }) => ({
   color: theme.palette.common.white,
-  borderColor: "rgba(255, 255, 255, 0.24)",
-  backgroundColor: "rgba(20, 20, 20, 0.38)",
+  borderColor: alpha(theme.palette.common.white, 0.24),
+  backgroundColor: alpha(theme.palette.gray[900], 0.38),
   "&:hover": {
-    borderColor: "rgba(255, 255, 255, 0.42)",
-    backgroundColor: "rgba(20, 20, 20, 0.56)",
+    borderColor: alpha(theme.palette.common.white, 0.42),
+    backgroundColor: alpha(theme.palette.gray[900], 0.56),
   },
 }));
 
 const GameContainer = styled(Box)(({ theme }) => ({
   width: "100%",
   aspectRatio: "16/9",
-  backgroundColor: "rgba(8, 12, 20, 0.74)",
+  backgroundColor: alpha(theme.palette.blue[900], 0.74),
   marginBottom: theme.spacing(3),
   borderRadius: theme.shape.borderRadius,
   overflow: "hidden",
@@ -114,7 +114,7 @@ const GameContainer = styled(Box)(({ theme }) => ({
 
 const Description = styled(Box)(({ theme }) => ({
   color: theme.palette.grey[300],
-  backgroundColor: "rgba(10, 10, 10, 0.34)",
+  backgroundColor: alpha(theme.palette.gray[900], 0.34),
   padding: theme.spacing(3),
   borderRadius: theme.shape.borderRadius,
   backdropFilter: "blur(8px)",
@@ -143,8 +143,8 @@ const StatsPanel = styled(Box)(({ theme }) => ({
   gap: theme.spacing(1),
   padding: theme.spacing(1.5),
   borderRadius: theme.custom.rounded.md,
-  backgroundColor: "rgba(255, 255, 255, 0.07)",
-  border: "1px solid rgba(255, 255, 255, 0.12)",
+  backgroundColor: alpha(theme.palette.common.white, 0.07),
+  border: `1px solid ${alpha(theme.palette.common.white, 0.12)}`,
 }));
 
 const StatItem = styled(Box)(({ theme }) => ({
@@ -171,18 +171,18 @@ const TagRow = styled(Box)(({ theme }) => ({
 
 const LikeCounterButton = styled(Button, {
   shouldForwardProp: (prop) => prop !== "$liked",
-})<{ $liked: boolean }>(({ $liked }) => ({
+})<{ $liked: boolean }>(({ theme, $liked }) => ({
   justifyContent: "space-between",
-  padding: "7px 10px",
+  padding: theme.spacing(0.875, 1.25),
   minWidth: "100%",
-  color: "white",
-  borderColor: $liked ? "rgba(229, 83, 69, 0.72)" : "rgba(255,255,255,0.16)",
-  backgroundColor: $liked ? "rgba(172, 57, 49, 0.34)" : "rgba(255,255,255,0.05)",
+  color: theme.palette.common.white,
+  borderColor: $liked ? alpha(theme.palette.red[400], 0.72) : alpha(theme.palette.common.white, 0.16),
+  backgroundColor: $liked ? alpha(theme.palette.red[500], 0.34) : alpha(theme.palette.common.white, 0.05),
   transition: "transform 0.2s",
   "&:hover": {
     transform: "translateY(-1px)",
-    borderColor: $liked ? "rgba(229, 83, 69, 0.92)" : "rgba(255,255,255,0.28)",
-    backgroundColor: $liked ? "rgba(172, 57, 49, 0.46)" : "rgba(255,255,255,0.08)",
+    borderColor: $liked ? alpha(theme.palette.red[400], 0.92) : alpha(theme.palette.common.white, 0.28),
+    backgroundColor: $liked ? alpha(theme.palette.red[500], 0.46) : alpha(theme.palette.common.white, 0.08),
   },
   "& img": {
     filter: $liked
@@ -209,7 +209,7 @@ const LaunchScreenButton = styled("button", {
   position: "relative",
   overflow: "hidden",
   borderRadius: theme.shape.borderRadius,
-  backgroundColor: "rgba(0, 0, 0, 0.42)",
+  backgroundColor: alpha(theme.palette.common.black, 0.42),
   backgroundImage: $src ? `url(${$src})` : "none",
   backgroundSize: "cover",
   backgroundPosition: "center",
@@ -218,7 +218,7 @@ const LaunchScreenButton = styled("button", {
 const LaunchOverlay = styled(Box)(({ theme }) => ({
   position: "absolute",
   inset: 0,
-  background: "linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.58) 100%)",
+  background: `linear-gradient(180deg, ${alpha(theme.palette.common.black, 0.18)} 0%, ${alpha(theme.palette.common.black, 0.58)} 100%)`,
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
@@ -236,7 +236,12 @@ const LaunchLabel = styled(Typography)(({ theme }) => ({
   color: theme.palette.common.white,
   fontSize: "22px",
   fontWeight: 600,
-  textShadow: "0 4px 18px rgba(0,0,0,0.55)",
+  textShadow: `0 4px 18px ${alpha(theme.palette.common.black, 0.55)}`,
+}));
+
+const TagChip = styled(Chip)(({ theme }) => ({
+  backgroundColor: alpha(theme.palette.common.white, 0.12),
+  color: theme.palette.common.white,
 }));
 
 export const GameViewer: React.FC = () => {
@@ -251,7 +256,6 @@ export const GameViewer: React.FC = () => {
   const [forking, setForking] = useState(false);
   const [forkedFromInfo, setForkedFromInfo] = useState<{ name: string; creator: string } | null>(null);
   const canvasRef = React.useRef<SpriteRendererHandle>(null);
-  const containerRef = React.useRef<HTMLDivElement>(null);
   const [code, setCode] = useState<string>("");
   const [output, setOutput] = useState<string>("");
   const [bannerUrl, setBannerUrl] = useState<string>("");
@@ -275,6 +279,10 @@ export const GameViewer: React.FC = () => {
     code,
     output,
   }), [code, output]);
+
+  const focusGameCanvas = useCallback((): void => {
+    canvasRef.current?.getCanvas?.()?.focus();
+  }, []);
 
   useEffect(() => {
     const fetchProjectData = async (): Promise<void> => {
@@ -376,9 +384,7 @@ export const GameViewer: React.FC = () => {
 
     setOutput("");
     setGameRefreshKey((value) => value + 1);
-    window.requestAnimationFrame(() => {
-      containerRef.current?.querySelector("canvas")?.focus();
-    });
+    window.requestAnimationFrame(focusGameCanvas);
   };
 
   useEffect(() => {
@@ -393,7 +399,7 @@ export const GameViewer: React.FC = () => {
     }
 
     const focusCanvas = (): void => {
-      containerRef.current?.querySelector("canvas")?.focus();
+      focusGameCanvas();
     };
 
     focusCanvas();
@@ -402,32 +408,7 @@ export const GameViewer: React.FC = () => {
     return () => {
       window.cancelAnimationFrame(frame);
     };
-  }, [showGame]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent): void => {
-      const target = e.target;
-      const isEditableTarget =
-        target instanceof HTMLElement &&
-        (
-          target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.isContentEditable ||
-          target.closest("[contenteditable='true'], input, textarea, [role='textbox']") !== null
-        );
-
-      if (isEditableTarget) {
-        return;
-      }
-
-      if (showGame && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key)) {
-        e.preventDefault();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showGame]);
+  }, [focusGameCanvas, showGame]);
 
   const handleClose = (): void => {
     if ((location.state as { backgroundLocation?: Location } | null)?.backgroundLocation) {
@@ -548,7 +529,7 @@ export const GameViewer: React.FC = () => {
           </HeaderActions>
         </HeaderBar>
 
-        <GameContainer ref={containerRef} style={{ position: "relative" }}>
+        <GameContainer style={{ position: "relative" }}>
           {showGame && gameProvider ? (
             <PlayingCanvas
               key={gameRefreshKey}
@@ -598,7 +579,7 @@ export const GameViewer: React.FC = () => {
               {project.tags.length > 0 && (
                 <TagRow>
                   {project.tags.map((tag) => (
-                    <Chip key={tag} label={tag} size="small" sx={{ backgroundColor: "rgba(255,255,255,0.12)", color: "white" }} />
+                    <TagChip key={tag} label={tag} size="small" />
                   ))}
                 </TagRow>
               )}

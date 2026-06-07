@@ -6,8 +6,6 @@ import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef 
 import { SoundProvider } from "@providers/editors/SoundProvider";
 import { MusicPlayer } from "@shared/audio/MusicPlayer";
 
-const GAME_CONTROL_KEYS = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "]);
-
 type GameCanvasProps = {
   canvasProps: CanvasProps;
   envData: EnvData;
@@ -18,7 +16,6 @@ type GameCanvasProps = {
 
 const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(
   ({ canvasProps, envData, setOutput, className, soundProvider }, ref) => {
-    const { onKeyDown, onKeyUp, onMouseDown, onBlur, ...restCanvasProps } = canvasProps;
     const spriteRendererHandleRef = useRef<SpriteRendererHandle | null>(null);
     const luaEnvManagerRef = useRef<LuaEnvironmentManager>(undefined);
     const animationFrameRef = useRef<number>(undefined);
@@ -94,33 +91,23 @@ const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(
       };
     }, [envData.code]);
 
+    useEffect(() => {
+      const canvas = spriteRendererHandleRef.current?.getCanvas?.();
+      if (!canvas) {
+        return;
+      }
+
+      keyHandlerRef.current.attachTo(canvas);
+      return () => {
+        keyHandlerRef.current.detach();
+      };
+    }, []);
+
     return (
       <StyledCanvas
         ref={spriteRendererHandleRef}
+        {...canvasProps}
         className={className}
-        onKeyDown={(event) => {
-          if (GAME_CONTROL_KEYS.has(event.key)) {
-            event.preventDefault();
-          }
-          keyHandlerRef.current?.handleKeyDown(event);
-          onKeyDown?.(event);
-        }}
-        onKeyUp={(event) => {
-          if (GAME_CONTROL_KEYS.has(event.key)) {
-            event.preventDefault();
-          }
-          keyHandlerRef.current?.handleKeyUp(event);
-          onKeyUp?.(event);
-        }}
-        onMouseDown={(event) => {
-          event.currentTarget.focus();
-          onMouseDown?.(event);
-        }}
-        onBlur={(event) => {
-          keyHandlerRef.current?.clearKeys();
-          onBlur?.(event);
-        }}
-        {...restCanvasProps}
       />
     );
   });

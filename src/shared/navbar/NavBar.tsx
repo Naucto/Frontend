@@ -1,7 +1,7 @@
 import { styled } from "@mui/material/styles";
 import AddIcon from "@mui/icons-material/Add";
 import FeedbackIcon from "@mui/icons-material/Feedback";
-import { NavElem, ImportantNavElem, ImportantNavActionButton, NavActionButton } from "@shared/navbar/NavElem";
+import { NavElem, ImportantNavActionButton, NavActionButton } from "@shared/navbar/NavElem";
 import NavProfile from "@shared/navbar/nav-profile/NavProfile";
 import { GameSearchOverlay } from "@shared/navbar/GameSearchOverlay";
 import { SearchBar } from "@shared/navbar/SearchBar";
@@ -56,9 +56,13 @@ const NavBar: React.FC = () => {
   const [searchValue, setSearchValue] = useState("");
   const { createProject, isCreatingProject } = useCreateProject();
 
+  const openAuthOverlay = (): void => {
+    setForceShowAuthOverlay(true);
+  };
+
   const createNewGame = (): void => {
     if (!user) {
-      setForceShowAuthOverlay(true);
+      openAuthOverlay();
       return;
     }
 
@@ -69,9 +73,6 @@ const NavBar: React.FC = () => {
     <Nav className="navbar">
       <Left>
         <img className="navbar-logo" src={muiTheme.custom.logo.primary} alt="Logo" />
-        {<ImportantNavElem to={user ? "/projects" : "#"} data-cy="nav-projects" onClick={user ? undefined : () => setForceShowAuthOverlay(true)}>
-          Projects
-        </ImportantNavElem>}
         <ImportantNavActionButton
           type="button"
           onClick={createNewGame}
@@ -79,9 +80,12 @@ const NavBar: React.FC = () => {
           data-cy="nav-create-game"
         >
           <AddIcon fontSize="small" />
-          {isCreatingProject ? "Creating..." : "Create new game"}
+          {isCreatingProject ? "Creating..." : "New Game"}
         </ImportantNavActionButton>
         <NavElem to={Urls.toHub()}>Home</NavElem>
+        <NavElem to={user ? "/projects" : "#"} data-cy="nav-projects" onClick={user ? undefined : openAuthOverlay}>
+          My Games
+        </NavElem>
         <NavElem to="/help">Help</NavElem>
       </Left>
 
@@ -98,7 +102,7 @@ const NavBar: React.FC = () => {
           {(openFeedbackDialog) => (
             <NavActionButton type="button" onClick={openFeedbackDialog}>
               <FeedbackIcon fontSize="small" />
-              Give your feedback
+              Feedback
             </NavActionButton>
           )}
         </FeedbackLanguagePicker>
