@@ -38,8 +38,8 @@ const GameContainer = styled("div")(({ theme }) => ({
 }));
 
 const PlayingCanvas = styled(GameCanvas)(() => ({
-  width: "100% !important",
-  height: "100% !important",
+  width: "100%",
+  height: "100%",
   objectFit: "contain",
 }));
 
