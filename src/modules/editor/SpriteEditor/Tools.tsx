@@ -1,6 +1,8 @@
-import { DrawTool, CanvasHandler, PreviewOverlay } from "@modules/editor/SpriteEditor/SpriteEditor";
-import React, { useEffect, useRef, useState } from "react";
+import { CanvasHandler, DrawTool, PreviewOverlay } from "@modules/editor/SpriteEditor/SpriteEditor";
 import { SpriteProvider } from "@providers/editors/SpriteProvider";
+
+import React, { useEffect, useRef, useState } from "react";
+
 import { styled } from "@mui/material";
 
 export type SpritePixelAccessor = Pick<SpriteProvider, "isPixelInBounds" | "getPixel" | "setPixel">;

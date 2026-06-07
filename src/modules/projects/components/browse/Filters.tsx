@@ -1,14 +1,17 @@
-import { Autocomplete, Chip, FormControl, MenuItem, Paper, Select, TextField } from "@mui/material";
-import { alpha, styled } from "@mui/material/styles";
-import { darkMenuProps } from "@shared/darkMenuProps";
-import { type JSX } from "react";
 import {
   getProjectSortMetricLabel,
   getProjectSortOrderLabel,
   type ProjectSortMetric,
   type ProjectSortOrder,
 } from "@modules/projects/projectListUtils";
+import { darkMenuProps } from "@shared/darkMenuProps";
+
 import { CustomSortButton, SummaryChip } from "./Controls";
+
+import { type JSX } from "react";
+
+import { Autocomplete, Chip, FormControl, MenuItem, Paper, Select, TextField } from "@mui/material";
+import { alpha, styled } from "@mui/material/styles";
 
 type ProjectSortFiltersProps = {
   availableTags: string[];

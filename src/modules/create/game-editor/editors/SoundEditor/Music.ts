@@ -1,5 +1,6 @@
-import { NoteData, createNote, noteToJson, noteFromJson, preInitializeSynths } from "./Note";
 import { numberToNote, playInstrument } from "./MusicManager";
+import { createNote, NoteData, noteFromJson, noteToJson, preInitializeSynths } from "./Note";
+
 import * as Tone from "tone";
 
 export class MusicError extends Error {

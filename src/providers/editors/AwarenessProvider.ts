@@ -1,10 +1,12 @@
+import { workSessionControllerGetInfo, workSessionControllerKick } from "@api";
 import { EngineUser } from "@our-types/userTypes";
-import { WebrtcProvider } from "y-webrtc";
-import { Awareness } from "y-protocols/awareness";
 import { generateRandomColor } from "@utils/colorUtils";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
+
 import { ProjectProvider, ProviderEventType } from "../ProjectProvider";
-import { workSessionControllerGetInfo, workSessionControllerKick } from "@api";
+
+import { Awareness } from "y-protocols/awareness";
+import { WebrtcProvider } from "y-webrtc";
 
 export enum AwarenessEventType {
   CHANGE,

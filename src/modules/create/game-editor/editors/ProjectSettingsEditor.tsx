@@ -1,32 +1,35 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import { EditorProps } from "./EditorType";
-import { Box, Button, Typography, List, ListItem, ListItemText, Divider, Chip, CircularProgress, Autocomplete, TextField } from "@mui/material";
-import { styled } from "@mui/material/styles";
 import {
-  projectControllerFindOne,
   projectControllerAddCollaborator,
-  projectControllerRemoveCollaborator,
-  projectControllerPublish,
-  projectControllerUnpublish,
-  projectControllerUpdateRelease,
-  projectControllerUploadProjectImage,
+  projectControllerFindOne,
   projectControllerGetProjectImage,
   projectControllerGetRelease,
   projectControllerGetReleaseContent,
+  projectControllerPublish,
+  projectControllerRemoveCollaborator,
+  projectControllerUnpublish,
+  projectControllerUpdateRelease,
+  projectControllerUploadProjectImage,
   ProjectExResponseDto,
   UserBasicInfoDto
 } from "@api";
-import { ProjectSettings } from "@providers/editors/ProjectSettingsProvider";
 import { ActionButton } from "@components/ui/ActionButton";
 import { FullWidthTextField } from "@components/ui/FullWidthTextField";
 import { Section } from "@components/ui/Section";
 import { PREDEFINED_PROJECT_TAGS } from "@modules/projects/projectTags";
+import { ProjectSettings } from "@providers/editors/ProjectSettingsProvider";
+import { UserProfileLink } from "@shared/user/UserProfileLink";
 import {
   getCachedProjectImageUrl,
   invalidateCachedProjectImageUrl,
   setCachedProjectImageUrl,
 } from "@utils/projectImageCache";
-import { UserProfileLink } from "@shared/user/UserProfileLink";
+
+import { EditorProps } from "./EditorType";
+
+import React, { useCallback, useEffect, useRef, useState } from "react";
+
+import { Autocomplete, Box, Button, Chip, CircularProgress, Divider, List, ListItem, ListItemText, TextField, Typography } from "@mui/material";
+import { styled } from "@mui/material/styles";
 
 const CollaboratorList = styled(List)(({ theme }) => ({
   maxHeight: "200px",

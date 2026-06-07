@@ -1,21 +1,23 @@
-import { Typography } from "@mui/material";
-import React, { useEffect, useMemo, useState } from "react";
-import { styled } from "@mui/material";
-import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
-import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
-import { useLocation, useNavigate } from "react-router-dom";
+import {
+  projectControllerGetProjectImage,
+  projectControllerGetPublishedProjectImage,
+  ProjectExResponseDto,
+  ProjectResponseDto } from "@api";
 import Card from "@modules/projects/components/Card";
 import * as urls from "@shared/route";
-import LikeSvg from "@assets/like.svg";
-import CommentSvg from "@assets/comment.svg";
-import { getCachedProjectImageUrl } from "@utils/projectImageCache";
-import {
-  ProjectExResponseDto,
-  ProjectResponseDto,
-  projectControllerGetPublishedProjectImage,
-  projectControllerGetProjectImage
-} from "@api";
 import { UserAvatarStack } from "@shared/user/UserProfileLink";
+import { getCachedProjectImageUrl } from "@utils/projectImageCache";
+
+import React, { useEffect, useMemo, useState } from "react";
+
+import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import { Typography } from "@mui/material";
+import { styled } from "@mui/material";
+import { useLocation, useNavigate } from "react-router-dom";
+
+import CommentSvg from "@assets/comment.svg";
+import LikeSvg from "@assets/like.svg";
 
 type ProjectCardProject = ProjectResponseDto & Partial<Pick<ProjectExResponseDto, "creator" | "collaborators">>;
 

@@ -1,7 +1,9 @@
+import { DocumentationFrame } from "@shared/docs/DocumentationFrame";
+
 import React from "react";
+
 import { Box, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { DocumentationFrame } from "@shared/docs/DocumentationFrame";
 
 const PageContainer = styled(Box)(({ theme }) => ({
   display: "flex",

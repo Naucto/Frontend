@@ -1,9 +1,11 @@
+import { CustomSortButton, SummaryChip } from "@modules/projects/components/browse/Controls";
+import * as urls from "@shared/route";
+
+import { type JSX } from "react";
+
 import { Box, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { CustomSortButton, SummaryChip } from "@modules/projects/components/browse/Controls";
 import { useNavigate } from "react-router-dom";
-import * as urls from "@shared/route";
-import { type JSX } from "react";
 
 const HeaderRow = styled(Box)(({ theme }) => ({
   display: "flex",

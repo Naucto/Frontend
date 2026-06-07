@@ -1,25 +1,20 @@
-import RefreshIcon from "@mui/icons-material/Refresh";
-import { Box, Button } from "@mui/material";
-import { alpha, styled } from "@mui/material/styles";
 import {
-  ProjectExResponseDto,
   projectControllerFork,
   projectControllerGetLikeStatus,
   projectControllerGetPublishedProjectImage,
   projectControllerGetRelease,
   projectControllerLikeProject,
   projectControllerRegisterReleaseView,
+  ProjectExResponseDto,
 } from "@api";
 import { GameProvider, ProviderEventType } from "@providers/GameProvider";
 import { useUser } from "@providers/UserProvider";
 import { type SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import { type EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
 import * as urls from "@shared/route";
-import { getCachedProjectImageUrl } from "@utils/projectImageCache";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
-import { useSnackbar } from "notistack";
-import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { getCachedProjectImageUrl } from "@utils/projectImageCache";
+
 import CommentSection from "./CommentSection";
 import {
   type ForkedFromInfo,
@@ -32,6 +27,14 @@ import {
   MissingProjectViewer,
 } from "./game-viewer/GameViewerLayout";
 import { PlayableGameFrame } from "./game-viewer/PlayableGameFrame";
+
+import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+import RefreshIcon from "@mui/icons-material/Refresh";
+import { Box, Button } from "@mui/material";
+import { alpha, styled } from "@mui/material/styles";
+import { useSnackbar } from "notistack";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 const HeaderBar = styled(Box)(({ theme }) => ({
   display: "grid",

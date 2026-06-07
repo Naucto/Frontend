@@ -1,12 +1,14 @@
-import * as Y from "yjs";
 import { projectControllerGetReleaseContent, projectControllerGetReleaseContentUrl } from "@api";
-import { AxiosError } from "axios";
+import { seedDefaultProjectContent } from "@shared/project/defaultProjectContent";
 import { decodeUpdate } from "@utils/YSerialize";
-import { SpriteProvider } from "./editors/SpriteProvider";
+
 import { MapProvider } from "./editors/MapProvider";
 import { ProjectSettingsProvider } from "./editors/ProjectSettingsProvider";
 import { SoundProvider } from "./editors/SoundProvider";
-import { seedDefaultProjectContent } from "@shared/project/defaultProjectContent";
+import { SpriteProvider } from "./editors/SpriteProvider";
+
+import { AxiosError } from "axios";
+import * as Y from "yjs";
 
 export enum ProviderEventType {
   INITIALIZED

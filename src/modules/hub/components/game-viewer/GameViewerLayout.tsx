@@ -1,7 +1,8 @@
+import { type JSX, type ReactNode } from "react";
+
 import CloseIcon from "@mui/icons-material/Close";
 import { Box, CircularProgress, IconButton, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { type JSX, type ReactNode } from "react";
 
 type GameViewerLayoutProps = {
   children: ReactNode;

@@ -1,9 +1,11 @@
+import { ProjectExResponseDto } from "@api";
+import { CustomSortButton } from "@modules/projects/components/browse/Controls";
+import ProjectCard from "@modules/projects/components/ProjectCard";
+
+import { type JSX } from "react";
+
 import { Box, LinearProgress, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { ProjectExResponseDto } from "@api";
-import ProjectCard from "@modules/projects/components/ProjectCard";
-import { CustomSortButton } from "@modules/projects/components/browse/Controls";
-import { type JSX } from "react";
 
 const ProjectGrid = styled("div")(({ theme }) => ({
   display: "grid",

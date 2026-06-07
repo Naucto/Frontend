@@ -1,9 +1,11 @@
+import * as urls from "@shared/route";
+import { usePublicUserProfile } from "@shared/user/usePublicUserProfile";
+
 import React, { Fragment, useMemo } from "react";
+
 import { Avatar, Tooltip, Typography, type TypographyProps } from "@mui/material";
 import { alpha, styled } from "@mui/material/styles";
 import { Link } from "react-router-dom";
-import * as urls from "@shared/route";
-import { usePublicUserProfile } from "@shared/user/usePublicUserProfile";
 
 export type ProfileLinkUser = {
   id?: number;

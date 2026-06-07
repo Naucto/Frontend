@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 
-import { createTheme } from "@mui/material/styles";
 import { Colors, colors } from "./colors";
+
+import { createTheme } from "@mui/material/styles";
 export type ColorShades = Record<50 | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900, string>;
 
 type LogoConfig = {

@@ -1,12 +1,15 @@
-import React, { useState } from "react";
-import { styled } from "@mui/material/styles";
-import { Box, Typography, IconButton } from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
-import ReplyIcon from "@mui/icons-material/Reply";
 import { CommentResponseDto } from "@api";
 import { useUser } from "@providers/UserProvider";
-import CommentComposer from "./CommentComposer";
 import { UserProfileLink } from "@shared/user/UserProfileLink";
+
+import CommentComposer from "./CommentComposer";
+
+import React, { useState } from "react";
+
+import DeleteIcon from "@mui/icons-material/Delete";
+import ReplyIcon from "@mui/icons-material/Reply";
+import { Box, IconButton, Typography } from "@mui/material";
+import { styled } from "@mui/material/styles";
 
 const CommentContainer = styled(Box)(({ theme }) => ({
   padding: theme.spacing(2),

@@ -1,5 +1,7 @@
-import { SpriteProvider } from "./SpriteProvider";
 import { MapProviderError } from "@errors/MapProviderError";
+
+import { SpriteProvider } from "./SpriteProvider";
+
 import * as Y from "yjs";
 
 interface Size {

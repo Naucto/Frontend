@@ -1,18 +1,22 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { styled } from "@mui/material/styles";
-import { Box, Typography, Button, CircularProgress } from "@mui/material";
-import CommentSvg from "@assets/comment.svg";
 import {
-  projectCommentControllerGetComments,
+  CommentResponseDto,
   projectCommentControllerCreateComment,
   projectCommentControllerCreateReply,
   projectCommentControllerDeleteComment,
-  CommentResponseDto,
+  projectCommentControllerGetComments,
 } from "@api";
 import { useUser } from "@providers/UserProvider";
-import CommentItem from "./CommentItem";
-import CommentComposer from "./CommentComposer";
 import { UserProfileLink } from "@shared/user/UserProfileLink";
+
+import CommentComposer from "./CommentComposer";
+import CommentItem from "./CommentItem";
+
+import React, { useCallback, useEffect, useState } from "react";
+
+import { Box, Button, CircularProgress, Typography } from "@mui/material";
+import { styled } from "@mui/material/styles";
+
+import CommentSvg from "@assets/comment.svg";
 
 const SectionContainer = styled(Box)(({ theme }) => ({
   marginTop: theme.spacing(3),

@@ -1,13 +1,15 @@
-import { Box, Link, Typography } from "@mui/material";
-import GenericTextField from "@shared/TextField";
-import { FC, useCallback, useState } from "react";
-import { styled } from "@mui/material";
-import { CreateUserDto, LoginDto, authControllerRegister, authControllerLogin, userControllerGetProfile } from "@api";
-import { useForm } from "react-hook-form";
-import ImportantButton from "@shared/buttons/ImportantButton";
+import { authControllerLogin, authControllerRegister, CreateUserDto, LoginDto, userControllerGetProfile } from "@api";
 import { useUser } from "@providers/UserProvider";
+import ImportantButton from "@shared/buttons/ImportantButton";
 import { CustomDialog } from "@shared/dialog/CustomDialog";
+import GenericTextField from "@shared/TextField";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
+
+import { FC, useCallback, useState } from "react";
+
+import { Box, Link, Typography } from "@mui/material";
+import { styled } from "@mui/material";
+import { useForm } from "react-hook-form";
 
 interface AuthOverlayProps {
   isOpen: boolean;

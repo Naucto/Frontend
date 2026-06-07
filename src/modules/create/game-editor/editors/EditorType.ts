@@ -1,5 +1,6 @@
-import { FC, ReactElement } from "react";
 import { ProjectProvider } from "@providers/ProjectProvider";
+
+import { FC, ReactElement } from "react";
 
 export type EditorProps = {
   project: ProjectProvider;

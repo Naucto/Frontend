@@ -1,4 +1,3 @@
-import { LocalStorageManager } from "@utils/LocalStorageManager";
 import {
   projectControllerFetchProjectContent,
   projectControllerFindOne,
@@ -9,19 +8,21 @@ import {
   workSessionControllerJoin,
   workSessionControllerKick
 } from "@api";
-import { decodeUpdate, encodeUpdate } from "@utils/YSerialize";
-import { CodeProvider } from "./editors/CodeProvider";
-import { SpriteProvider } from "./editors/SpriteProvider";
-import { MapProvider } from "./editors/MapProvider";
-import { AwarenessProvider } from "./editors/AwarenessProvider";
-import { ProjectSettingsProvider } from "./editors/ProjectSettingsProvider";
-import { MultiplayerSettingsProvider } from "./editors/MultiplayerSettingsProvider";
-import { SoundProvider } from "./editors/SoundProvider";
-import { ProviderOptions, WebrtcProvider } from "y-webrtc";
 import { seedDefaultProjectContent } from "@shared/project/defaultProjectContent";
+import { LocalStorageManager } from "@utils/LocalStorageManager";
+import { decodeUpdate, encodeUpdate } from "@utils/YSerialize";
 
-import * as Y from "yjs";
+import { AwarenessProvider } from "./editors/AwarenessProvider";
+import { CodeProvider } from "./editors/CodeProvider";
+import { MapProvider } from "./editors/MapProvider";
+import { MultiplayerSettingsProvider } from "./editors/MultiplayerSettingsProvider";
+import { ProjectSettingsProvider } from "./editors/ProjectSettingsProvider";
+import { SoundProvider } from "./editors/SoundProvider";
+import { SpriteProvider } from "./editors/SpriteProvider";
+
 import { AxiosError } from "axios";
+import { ProviderOptions, WebrtcProvider } from "y-webrtc";
+import * as Y from "yjs";
 
 export enum ProviderEventType {
   INITIALIZED,

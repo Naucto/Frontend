@@ -1,11 +1,11 @@
-import * as Tone from "tone";
-
-import pianoConfig from "./instruments/piano.json";
-import trumpetConfig from "./instruments/trumpet.json";
+import contrabassConfig from "./instruments/contrabass.json";
 import fluteConfig from "./instruments/flute.json";
 import guitarConfig from "./instruments/guitar.json";
 import harmonicaConfig from "./instruments/harmonica.json";
-import contrabassConfig from "./instruments/contrabass.json";
+import pianoConfig from "./instruments/piano.json";
+import trumpetConfig from "./instruments/trumpet.json";
+
+import * as Tone from "tone";
 
 const instrumentConfigs = new Map<string, unknown>();
 const configPromises = new Map<string, Promise<unknown>>();

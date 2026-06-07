@@ -1,6 +1,8 @@
-import { IconButton, styled } from "@mui/material";
 import { ProfileMenu } from "@shared/navbar/nav-profile/ProfileMenu";
+
 import { useCallback, useState } from "react";
+
+import { IconButton, styled } from "@mui/material";
 
 const LogoDiv = styled("div")(({ theme }) => ({
   width: 48,

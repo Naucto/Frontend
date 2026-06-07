@@ -1,40 +1,19 @@
 import {
+  StyledGrownTableCell,
+  StyledTable,
+  StyledTableCell,
+  StyledTableRow,
+} from "@components/ui/StyledTable";
+import { EditorProps } from "@modules/create/game-editor/editors/EditorType";
+import { enumFromName, enumNames } from "@our-types/enum";
+import {
   MultiplayerDirectoryFlags,
   MultiplayerDirectorySettings,
   MultiplayerSettingsProvider,
   MultiplayerSettingsUpdateListener
 } from "@providers/editors/MultiplayerSettingsProvider";
-import { EditorProps } from "@modules/create/game-editor/editors/EditorType";
 
-import { enumFromName, enumNames } from "@our-types/enum";
-
-import {
-  styled,
-  ButtonGroup,
-  Checkbox,
-  IconButton,
-  Tooltip,
-  TextField,
-  TableContainer,
-  TableHead,
-  TableBody,
-  TableRow,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Button,
-  Alert,
-  AlertTitle,
-} from "@mui/material";
-
-import {
-  StyledTable,
-  StyledTableRow,
-  StyledTableCell,
-  StyledGrownTableCell,
-} from "@components/ui/StyledTable";
+import React, { JSX, useEffect, useState } from "react";
 
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -42,8 +21,26 @@ import RenameIcon from "@mui/icons-material/Edit";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SubdirectoryArrowRightIcon from "@mui/icons-material/SubdirectoryArrowRight";
-
-import React, { JSX, useEffect, useState } from "react";
+import {
+  Alert,
+  AlertTitle,
+  Button,
+  ButtonGroup,
+  Checkbox,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  IconButton,
+  styled,
+  TableBody,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
+  Tooltip,
+} from "@mui/material";
 
 const StyledButtonGroup = styled(ButtonGroup)(({ theme }) => ({
   display: "flex",

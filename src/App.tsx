@@ -1,18 +1,20 @@
-import "./App.css";
-import React, { Suspense, lazy } from "react";
-import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
-import { Hub } from "@modules/hub/Hub";
-import { ThemeProvider } from "@mui/material/styles";
-import NavBar from "@shared/navbar/NavBar";
-import { muiTheme } from "@theme/MUITheme";
-import { CustomSnackBarProvider } from "@shared/snackBar/CustomSnackBarProvider";
-import Profile from "@modules/profile/Profile";
-import ProfilePublishedGames from "@modules/profile/ProfilePublishedGames";
-import ProfileLikedGames from "@modules/profile/ProfileLikedGames";
-
 import { GameViewer } from "@modules/hub/components/GameViewer";
-import { styled } from "@mui/material/styles";
+import { Hub } from "@modules/hub/Hub";
+import Profile from "@modules/profile/Profile";
+import ProfileLikedGames from "@modules/profile/ProfileLikedGames";
+import ProfilePublishedGames from "@modules/profile/ProfilePublishedGames";
 import { SiteFooter } from "@shared/footer/SiteFooter";
+import NavBar from "@shared/navbar/NavBar";
+import { CustomSnackBarProvider } from "@shared/snackBar/CustomSnackBarProvider";
+import { muiTheme } from "@theme/MUITheme";
+
+import React, { lazy, Suspense } from "react";
+
+import { ThemeProvider } from "@mui/material/styles";
+import { styled } from "@mui/material/styles";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+
+import "./App.css";
 
 const AppContainer = styled("div")(() => ({
   display: "flex",

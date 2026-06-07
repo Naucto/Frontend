@@ -1,16 +1,18 @@
-import React from "react";
-import { styled } from "@mui/material";
-import { Box, Button, Typography } from "@mui/material";
-import { Link, useParams } from "react-router-dom";
-import { useAsync } from "@hooks/useAsync";
 import {
   ProjectExResponseDto,
   userPublicControllerGetLikedGames,
-  userPublicControllerGetPublishedGames,
   userPublicControllerGetPublicProfileByUsername,
+  userPublicControllerGetPublishedGames,
 } from "@api";
+import { useAsync } from "@hooks/useAsync";
 import ProjectCard from "@modules/projects/components/ProjectCard";
 import * as urls from "@shared/route";
+
+import React from "react";
+
+import { styled } from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
+import { Link, useParams } from "react-router-dom";
 
 const PageContainer = styled("div")(({ theme }) => ({
   margin: theme.spacing(4),

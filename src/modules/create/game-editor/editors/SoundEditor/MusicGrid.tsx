@@ -1,12 +1,13 @@
-import React, { useRef, useEffect } from "react";
 import { ProgressBar } from "./components/ProgressBar";
-import { MusicGridProps, GridCellData } from "./types/MusicGrid.types";
 import {
-  ScrollableContainer,
-  GridWithProgressContainer,
-  GridContainer,
   GridCell,
+  GridContainer,
+  GridWithProgressContainer,
+  ScrollableContainer,
 } from "./styles/MusicGrid.styles";
+import { GridCellData, MusicGridProps } from "./types/MusicGrid.types";
+
+import React, { useEffect, useRef } from "react";
 
 export type { GridCellData, MusicGridProps };
 

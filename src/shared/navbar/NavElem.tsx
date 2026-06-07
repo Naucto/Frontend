@@ -1,5 +1,5 @@
-import { Link } from "react-router-dom";
 import { styled, type Theme } from "@mui/material/styles";
+import { Link } from "react-router-dom";
 
 const navElementStyles = ({ theme }: { theme: Theme }): Record<string, string | number> => ({
   display: "flex",

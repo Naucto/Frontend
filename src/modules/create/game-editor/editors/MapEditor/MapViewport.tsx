@@ -1,9 +1,11 @@
-import React, { createRef, useCallback, useEffect, useState } from "react";
-import { styled } from "@mui/material/styles";
+import { ProjectProvider } from "@providers/ProjectProvider";
 import { StyledCanvas } from "@shared/canvas/Canvas";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import { getCanvasPoint2DFromEvent } from "@utils/canvasUtils";
-import { ProjectProvider } from "@providers/ProjectProvider";
+
+import React, { createRef, useCallback, useEffect, useState } from "react";
+
+import { styled } from "@mui/material/styles";
 
 const SCREEN_SIZE: Point2D = { x: 320, y: 180 };
 

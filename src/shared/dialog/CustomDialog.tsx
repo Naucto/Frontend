@@ -1,5 +1,7 @@
-import { Box, styled, IconButton, Button, Dialog, Paper } from "@mui/material";
 import React, { ReactNode, useCallback } from "react";
+
+import { Box, Button, Dialog, IconButton, Paper, styled } from "@mui/material";
+
 import CrossIcon from "@assets/cross.svg?react";
 
 const StyledPaper = styled(Paper)(({ theme }) => ({

@@ -1,8 +1,10 @@
+import { CodeProviderError } from "@errors/CodeProviderError";
+
+import { AwarenessProvider } from "./AwarenessProvider";
+
+import { editor } from "monaco-editor";
 import { MonacoBinding } from "y-monaco";
 import * as Y from "yjs";
-import { AwarenessProvider } from "./AwarenessProvider";
-import { editor } from "monaco-editor";
-import { CodeProviderError } from "@errors/CodeProviderError";
 
 export class CodeProvider implements Destroyable {
   private readonly _content: Y.Text;

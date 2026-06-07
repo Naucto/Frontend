@@ -1,4 +1,5 @@
-import { ReactNode, JSX } from "react";
+import { JSX, ReactNode } from "react";
+
 import InputBase from "@mui/material/InputBase";
 import { UseFormRegisterReturn } from "react-hook-form";
 

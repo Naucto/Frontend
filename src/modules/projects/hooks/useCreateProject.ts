@@ -1,9 +1,11 @@
-import { useCallback, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useSnackbar } from "notistack";
 import { CreateProjectDto, projectControllerCreate } from "@api";
-import { LocalStorageManager } from "@utils/LocalStorageManager";
 import * as urls from "@shared/route";
+import { LocalStorageManager } from "@utils/LocalStorageManager";
+
+import { useCallback, useState } from "react";
+
+import { useSnackbar } from "notistack";
+import { useNavigate } from "react-router-dom";
 
 const DEFAULT_PROJECT: CreateProjectDto = {
   name: "Untitled Project",

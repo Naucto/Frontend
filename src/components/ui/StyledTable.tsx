@@ -1,8 +1,8 @@
 import {
   styled,
   Table,
-  TableRow,
   TableCell,
+  TableRow,
   TableRowProps
 } from "@mui/material";
 

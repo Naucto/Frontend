@@ -1,7 +1,9 @@
+import { ChangeEvent, FormEvent, JSX, KeyboardEvent, ReactNode, useEffect, useRef, useState } from "react";
+
 import { Box, InputBase } from "@mui/material";
 import { styled } from "@mui/material/styles";
+
 import SearchIcon from "@assets/search.svg?react";
-import { ChangeEvent, FormEvent, JSX, KeyboardEvent, ReactNode, useEffect, useRef, useState } from "react";
 
 const SearchBarContainer = styled(Box)(({ theme }) => ({
   position: "relative",

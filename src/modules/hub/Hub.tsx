@@ -1,8 +1,15 @@
-import { styled } from "@mui/material/styles";
-import { Typography } from "@mui/material";
-import { JSX, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { ProjectExResponseDto } from "@api";
+import { PREDEFINED_PROJECT_TAGS } from "@modules/projects/projectTags";
 import * as urls from "@shared/route";
+import { LocalStorageManager } from "@utils/LocalStorageManager";
+
+import { NewHubSection } from "./components/NewHubSection";
+import { PlayedHubSection } from "./components/PlayedHubSection";
+import { PopularHubSection } from "./components/PopularHubSection";
+import { useHubEvents } from "./hooks/useHubEvents";
+import { useReleasedProjectCount } from "./hooks/useReleasedProjectCount";
+import { mergeProjects, useReleasedProjects } from "./hooks/useReleasedProjects";
+import { getProjectsForCategory, HubFiltersState, INITIAL_FILTERS } from "./hubFiltersState";
 import {
   filterReleasedProjects,
   getPlayedProjectsFromPublished,
@@ -12,16 +19,12 @@ import {
   sortHubProjects,
   sortPopularProjects,
 } from "./hubSorting";
-import { LocalStorageManager } from "@utils/LocalStorageManager";
-import { PREDEFINED_PROJECT_TAGS } from "@modules/projects/projectTags";
-import { useReleasedProjects, mergeProjects } from "./hooks/useReleasedProjects";
-import { useHubEvents } from "./hooks/useHubEvents";
-import { useReleasedProjectCount } from "./hooks/useReleasedProjectCount";
-import { getProjectsForCategory, HubFiltersState, INITIAL_FILTERS } from "./hubFiltersState";
-import { PopularHubSection } from "./components/PopularHubSection";
-import { NewHubSection } from "./components/NewHubSection";
-import { PlayedHubSection } from "./components/PlayedHubSection";
-import { ProjectExResponseDto } from "@api";
+
+import { JSX, useEffect, useMemo, useState } from "react";
+
+import { Typography } from "@mui/material";
+import { styled } from "@mui/material/styles";
+import { useNavigate } from "react-router-dom";
 
 const PageContainer = styled("div")(({ theme }) => ({
   margin: theme.spacing(4),

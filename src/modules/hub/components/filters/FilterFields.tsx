@@ -1,25 +1,28 @@
-import { Box, Chip, MenuItem } from "@mui/material";
-import { darkMenuProps } from "@shared/darkMenuProps";
-import { type JSX } from "react";
-import { CustomSortButton, SummaryChip } from "@modules/projects/components/browse/Controls";
 import {
+  getDateOrderLabel,
+  getListSortMetricLabel,
+  getSortMetricLabel,
   HubDateOrder,
   HubListSortMetric,
   HubReleaseWindow,
   HubSortMetric,
-  getDateOrderLabel,
-  getListSortMetricLabel,
-  getSortMetricLabel,
 } from "@modules/hub/hubSorting";
+import { CustomSortButton, SummaryChip } from "@modules/projects/components/browse/Controls";
+import { darkMenuProps } from "@shared/darkMenuProps";
+
 import {
   AutocompleteOption,
+  autocompleteSlots,
   DarkSelect,
   DarkTextField,
   SelectFormControl,
   SmallCopyIcon,
   TagsAutocomplete,
-  autocompleteSlots,
 } from "./FilterStyles";
+
+import { type JSX } from "react";
+
+import { Box, Chip, MenuItem } from "@mui/material";
 
 type SimpleChange<T> = (value: T) => void;
 

@@ -1,6 +1,7 @@
+import { type JSX, type ReactNode } from "react";
+
 import { Box, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { type JSX, type ReactNode } from "react";
 
 type ProjectPageHeaderVariant = "split" | "stacked";
 
