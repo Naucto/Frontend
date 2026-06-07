@@ -2660,7 +2660,6 @@ export type GoogleCodeDto = {
 
 export type MicrosoftLoginDto = {
     token: string;
-    codeVerifier: string;
 };
 
 export type UserControllerGetPublicProfilePictureData = {
