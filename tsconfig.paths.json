@@ -11,11 +11,11 @@
       "@lib/*": ["./lib/*"],
       "@api": ["./src/api"],
       "@api/*": ["./src/api/*"],
+      "@hooks": ["./src/hooks"],
+      "@hooks/*": ["./src/hooks/*"],
       "@providers/*": ["./src/providers/*"],
       "@errors/*": ["./src/errors/*"],
-      "@our-types/*": ["./src/types/*"],
-      "@hooks/*": ["./src/hooks/*"]
+      "@our-types/*": ["./src/types/*"]
     }
   }
 }
-

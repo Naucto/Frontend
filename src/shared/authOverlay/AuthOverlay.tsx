@@ -1,15 +1,19 @@
 import { authControllerLogin, authControllerRegister, CreateUserDto, LoginDto, userControllerGetProfile } from "@api";
 import { useUser } from "@providers/UserProvider";
-import ImportantButton from "@shared/buttons/ImportantButton";
 import { CustomDialog } from "@shared/dialog/CustomDialog";
-import GenericTextField from "@shared/TextField";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
+import { generatePKCE, generateState, saveGithubState, saveGooglePKCE, saveGoogleState, saveMicrosoftState, savePKCE } from "@utils/pkce";
+
+import * as S from "./AuthOverlay.styles";
 
 import { FC, useCallback, useState } from "react";
 
-import { Box, Link, Typography } from "@mui/material";
-import { styled } from "@mui/material";
+import { Box, Divider, Link, Typography, useTheme } from "@mui/material";
 import { useForm } from "react-hook-form";
+
+import GitHubPixelLogo from "@assets/GithubLogo.png";
+import GooglePixelLogo from "@assets/GoogleLogo.png";
+import MicrosoftPixelLogo from "@assets/MicrosoftLogo.png";
 
 interface AuthOverlayProps {
   isOpen: boolean;
@@ -17,56 +21,18 @@ interface AuthOverlayProps {
   onClose?: () => void;
 }
 
-type ErrorWithBody = { body: { message: string } };
-
-const Title = styled("h2")(({ theme }) => ({
-  fontSize: "32px",
-  margin: 0,
-  fontWeight: "normal",
-  padding: theme.spacing(0, 0),
-}));
-
-const StyledTitle = styled(Title)(({ theme }) => ({
-  marginBottom: theme.spacing(2),
-}));
-
-const StyledTextField = styled(GenericTextField)(() => ({
-  width: "100%",
-  height: "42px",
-}));
-
-const FieldContainer = styled(Box)(({ theme }) => ({
-  marginTop: theme.spacing(2.5),
-}));
-
-const StyledImportantButton = styled(ImportantButton)(({ theme }) => ({
-  marginTop: theme.spacing(5),
-  width: "100%",
-  height: "56px",
-  backgroundColor: theme.palette.red[500]
-}));
-
-const Center = styled(Box)(({ theme }) => ({
-  marginTop: theme.spacing(2.5),
-  fontSize: 24,
-  color: theme.palette.gray[200],
-  display: "flex",
-  flexDirection: "column",
-  justifyContent: "center",
-  alignItems: "center",
-}));
-
-const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
-  const [isSignedUp, setIsSignedUp] = useState(true);
+const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }): React.JSX.Element => {
+  const theme = useTheme();
+  const [isSignUpMode, setIsSignUpMode] = useState(false);
 
   const authText = useCallback((bool: boolean) => {
     return bool ? "Sign up" : "Login";
-  }, [isSignedUp]);
+  }, []);
 
   const { setUser } = useUser();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { register, handleSubmit, reset } = useForm<CreateUserDto | LoginDto>({
-    defaultValues: isSignedUp
+    defaultValues: isSignUpMode
       ? {
         email: "",
         username: "",
@@ -79,80 +45,168 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }) => {
       },
   });
 
-  const handleAuth = useCallback(async (data: CreateUserDto | LoginDto) => {
+  const handleAuth = useCallback(async (data: CreateUserDto | LoginDto): Promise<void> => {
     try {
       setErrorMessage(null);
       let accessToken: string;
-      if (isSignedUp) {
+      if (isSignUpMode) {
         const { email, username, password } = data as CreateUserDto;
-        const { data: authResponse } = await authControllerRegister({ body: { email, username, password, nickname: username } });
+        const { data: authResponse, error } = await authControllerRegister({ body: { email, username, password, nickname: username } });
+        if (error) throw new Error((error as { message?: string })?.message ?? "Registration failed");
         accessToken = authResponse!.access_token;
       } else {
         const { email, password } = data as LoginDto;
-        const { data: authResponse } = await authControllerLogin({ body: { email, password } });
+        const { data: authResponse, error } = await authControllerLogin({ body: { email, password } });
+        if (error) throw new Error((error as { message?: string })?.message ?? "Login failed");
         accessToken = authResponse!.access_token;
       }
 
-      // FIXME: put the token to httpOnly cookie using the backend
       LocalStorageManager.setToken(accessToken);
 
-      const { data: userRes } = await userControllerGetProfile();
+      const { data: userRes, error: profileError } = await userControllerGetProfile();
+      if (profileError || !userRes) {
+        LocalStorageManager.setToken();
+        throw new Error((profileError as { message?: string })?.message ?? "Failed to fetch user profile");
+      }
       LocalStorageManager.setUser({
-        id: String(userRes!.id),
-        email: userRes!.email,
-        name: userRes!.username,
+        id: String(userRes.id),
+        email: userRes.email,
+        name: userRes.username,
       });
-      setUser(userRes!);
+      setUser(userRes);
       reset();
       if (onClose) {
         onClose();
       }
     } catch (error) {
-      setErrorMessage((error as ErrorWithBody).body.message);
+      setErrorMessage(error instanceof Error ? error.message : String(error));
     }
-  }, [isSignedUp, reset, onClose, setUser]);
+  }, [isSignUpMode, reset, onClose, setUser]);
+
+  const handleGoogleLogin = useCallback(async (): Promise<void> => {
+    try {
+      setErrorMessage(null);
+      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+      const redirectUri = import.meta.env.VITE_GOOGLE_REDIRECT_URI;
+      const { codeVerifier, codeChallenge } = await generatePKCE();
+      const state = generateState();
+      saveGooglePKCE(codeVerifier);
+      saveGoogleState(state);
+      window.location.href =
+        "https://accounts.google.com/o/oauth2/v2/auth?" +
+        `client_id=${clientId}` +
+        `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+        "&response_type=code" +
+        "&scope=openid%20email%20profile" +
+        `&code_challenge=${codeChallenge}` +
+        "&code_challenge_method=S256" +
+        `&state=${encodeURIComponent(state)}`;
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Google login initialization failed.");
+    }
+  }, []);
+
+  const handleGithubLogin = useCallback((): void => {
+    const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
+    const redirectUri = import.meta.env.VITE_GITHUB_REDIRECT_URI;
+    const state = generateState();
+    saveGithubState(state);
+    window.location.href =
+      `https://github.com/login/oauth/authorize?client_id=${clientId}` +
+      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+      "&scope=user:email" +
+      `&state=${encodeURIComponent(state)}`;
+  }, []);
+
+  const handleMicrosoftLogin = useCallback(async (): Promise<void> => {
+    try {
+      setErrorMessage(null);
+      const popup = window.open("about:blank", "microsoft_login", "width=500,height=700");
+      if (!popup) {
+        setErrorMessage("Popup blocked. Please allow popups for this site.");
+        return;
+      }
+
+      const { codeVerifier, codeChallenge } = await generatePKCE();
+      savePKCE(codeVerifier);
+
+      const clientId = import.meta.env.VITE_MICROSOFT_CLIENT_ID;
+      const tenantId = import.meta.env.VITE_MICROSOFT_TENANT_ID;
+      const redirectUri = import.meta.env.VITE_MICROSOFT_REDIRECT_URI || `${window.location.origin}/oauth/microsoft/callback`;
+      const state = generateState();
+      saveMicrosoftState(state);
+
+      const authorizationUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize?` +
+        `client_id=${clientId}` +
+        `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+        "&response_type=code" +
+        "&scope=openid%20profile%20email" +
+        `&code_challenge=${codeChallenge}` +
+        "&code_challenge_method=S256" +
+        `&state=${encodeURIComponent(state)}` +
+        "&response_mode=query";
+
+      popup.location.href = authorizationUrl;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Microsoft login initialization failed.";
+      setErrorMessage(msg);
+    }
+  }, []);
 
   return (
     <CustomDialog isOpen={isOpen} setIsOpen={setIsOpen} hideSubmitButton>
       <form onSubmit={handleSubmit(handleAuth)}>
-        <StyledTitle>{authText(isSignedUp)}</StyledTitle>
+        <S.StyledTitle>{authText(isSignUpMode)}</S.StyledTitle>
 
-        <FieldContainer>
-          <label>Email</label>
-          <StyledTextField
-            {...register("email")}
-            data-cy="email-input" />
-        </FieldContainer>
+        <S.FieldContainer>
+          <label htmlFor="email-input">Email</label>
+          <S.StyledTextField id="email-input" {...register("email")} data-cy="email-input" />
+        </S.FieldContainer>
 
-        {isSignedUp && <FieldContainer>
-          <label>Username</label>
-          <StyledTextField {...register("username")} />
-        </FieldContainer>}
+        {isSignUpMode && (
+          <S.FieldContainer>
+            <label htmlFor="username-input">Username</label>
+            <S.StyledTextField id="username-input" {...register("username")} />
+          </S.FieldContainer>
+        )}
 
-        <FieldContainer>
-          <label>Password</label>
-          <StyledTextField
-            type="password"
-            {...register("password")}
-            data-cy="password-input" />
-        </FieldContainer>
+        <S.FieldContainer>
+          <label htmlFor="password-input">Password</label>
+          <S.StyledTextField id="password-input" type="password" {...register("password")} data-cy="password-input" />
+        </S.FieldContainer>
 
-        <StyledImportantButton type="submit"
-          data-cy="submit-auth">
-          {authText(isSignedUp)}
-        </StyledImportantButton>
+        <S.StyledImportantButton type="submit" data-cy="submit-auth">
+          {authText(isSignUpMode)}
+        </S.StyledImportantButton>
 
         {errorMessage && <Typography color="error">{errorMessage}</Typography>}
 
-        <Center>
-          <Typography>OR</Typography>
-          <Typography>{isSignedUp ? "Already have an account ? " : "Don't have an account ? "}
-            <Link
-              sx={{ cursor: "pointer" }}
-              data-cy="toggle-auth-mode"
-              onClick={() => { setIsSignedUp(!isSignedUp); }}>{authText(!isSignedUp)}</Link>
+        <Box sx={{ width: "100%", my: 2 }}>
+          <Divider><Typography variant="body2" color="textSecondary">OR</Typography></Divider>
+        </Box>
+
+        <S.OAuthButtonsContainer>
+          <S.OAuthButton type="button" bgColor="#ffffff" textColor="#3c4043" onClick={handleGoogleLogin}>
+            <S.PixelIcon src={GooglePixelLogo} alt="Google" /> Google
+          </S.OAuthButton>
+
+          <S.OAuthButton type="button" bgColor="#24292e" onClick={handleGithubLogin}>
+            <S.PixelIcon src={GitHubPixelLogo} alt="GitHub" /> GitHub
+          </S.OAuthButton>
+
+          <S.OAuthButton type="button" bgColor="#ffffff" textColor="#3c4043" onClick={handleMicrosoftLogin}>
+            <S.PixelIcon src={MicrosoftPixelLogo} alt="Microsoft" /> Microsoft
+          </S.OAuthButton>
+        </S.OAuthButtonsContainer>
+
+        <S.Center sx={{ marginTop: isSignUpMode ? theme.spacing(-1) : theme.spacing(3) }}>
+          <Typography>
+            {isSignUpMode ? "Already have an account ? " : "Don't have an account ? "}
+            <Link component="button" type="button" sx={{ cursor: "pointer", verticalAlign: "baseline" }} data-cy="toggle-auth-mode" onClick={() => setIsSignUpMode(!isSignUpMode)}>
+              {authText(!isSignUpMode)}
+            </Link>
           </Typography>
-        </Center>
+        </S.Center>
       </form>
     </CustomDialog>
   );

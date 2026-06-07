@@ -8,12 +8,21 @@ import {
 } from "./client";
 import { client } from "./client.gen";
 import type {
+  AuthControllerChangePasswordData,
+  AuthControllerChangePasswordErrors,
+  AuthControllerChangePasswordResponses,
   AuthControllerLoginData,
   AuthControllerLoginErrors,
   AuthControllerLoginResponses,
-  AuthControllerLoginWithGoogleData,
-  AuthControllerLoginWithGoogleErrors,
-  AuthControllerLoginWithGoogleResponses,
+  AuthControllerLoginWithGithubData,
+  AuthControllerLoginWithGithubErrors,
+  AuthControllerLoginWithGithubResponses,
+  AuthControllerLoginWithGoogleCodeData,
+  AuthControllerLoginWithGoogleCodeErrors,
+  AuthControllerLoginWithGoogleCodeResponses,
+  AuthControllerLoginWithMicrosoftData,
+  AuthControllerLoginWithMicrosoftErrors,
+  AuthControllerLoginWithMicrosoftResponses,
   AuthControllerLogoutData,
   AuthControllerLogoutResponses,
   AuthControllerRefreshData,
@@ -147,6 +156,9 @@ import type {
   UserControllerGetProfilePictureErrors,
   UserControllerGetProfilePictureResponses,
   UserControllerGetProfileResponses,
+  UserControllerGetPublicProfilePictureData,
+  UserControllerGetPublicProfilePictureErrors,
+  UserControllerGetPublicProfilePictureResponses,
   UserControllerRemoveData,
   UserControllerRemoveErrors,
   UserControllerRemoveResponses,
@@ -1090,31 +1102,6 @@ export const authControllerRegister = <ThrowOnError extends boolean = false>(
     }
   });
 
-/**
- * Authenticate with Google OAuth token
- */
-export const authControllerLoginWithGoogle = <
-  ThrowOnError extends boolean = false
->(
-  options: Options<AuthControllerLoginWithGoogleData, ThrowOnError>
-) =>
-  (options.client ?? client).post<
-    AuthControllerLoginWithGoogleResponses,
-    AuthControllerLoginWithGoogleErrors,
-    ThrowOnError
-  >({
-    responseType: "json",
-    url: "/auth/google",
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers
-    }
-  });
-
-/**
- * Refresh the access token using refresh token cookie
- */
 export const authControllerRefresh = <ThrowOnError extends boolean = false>(
   options?: Options<AuthControllerRefreshData, ThrowOnError>
 ) =>
@@ -1469,3 +1456,81 @@ export const workSessionControllerGetInfo = <
     url: "/work-sessions/info/{id}",
     ...options
   });
+
+/**
+ * Authenticate with Google authorization code + PKCE
+ */
+export const authControllerLoginWithGoogleCode = <ThrowOnError extends boolean = false>(options: Options<AuthControllerLoginWithGoogleCodeData, ThrowOnError>) => (options.client ?? client).post<AuthControllerLoginWithGoogleCodeResponses, AuthControllerLoginWithGoogleCodeErrors, ThrowOnError>({
+    url: '/auth/google/code',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Authenticate with GitHub OAuth authorization code
+ */
+
+/**
+ * Authenticate with GitHub OAuth authorization code
+ */
+export const authControllerLoginWithGithub = <ThrowOnError extends boolean = false>(options: Options<AuthControllerLoginWithGithubData, ThrowOnError>) => (options.client ?? client).post<AuthControllerLoginWithGithubResponses, AuthControllerLoginWithGithubErrors, ThrowOnError>({
+    url: '/auth/github',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Authenticate with Microsoft Graph access token
+ */
+
+/**
+ * Authenticate with Microsoft Graph access token
+ */
+export const authControllerLoginWithMicrosoft = <ThrowOnError extends boolean = false>(options: Options<AuthControllerLoginWithMicrosoftData, ThrowOnError>) => (options.client ?? client).post<AuthControllerLoginWithMicrosoftResponses, AuthControllerLoginWithMicrosoftErrors, ThrowOnError>({
+    url: '/auth/microsoft',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Refresh the access token using refresh token cookie
+ */
+
+/**
+ * Change password, OAuth users can set one without providing a current password
+ */
+export const authControllerChangePassword = <ThrowOnError extends boolean = false>(options: Options<AuthControllerChangePasswordData, ThrowOnError>) => (options.client ?? client).patch<AuthControllerChangePasswordResponses, AuthControllerChangePasswordErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/password',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Remove refresh token cookie
+ */
+
+/**
+ * Get public CDN URL for a user's profile picture
+ */
+export const userControllerGetPublicProfilePicture = <ThrowOnError extends boolean = false>(options: Options<UserControllerGetPublicProfilePictureData, ThrowOnError>) => (options.client ?? client).get<UserControllerGetPublicProfilePictureResponses, UserControllerGetPublicProfilePictureErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/users/public/{id}/profile-picture',
+    ...options
+});
+
+/**
+ * Get all released projects
+ */
