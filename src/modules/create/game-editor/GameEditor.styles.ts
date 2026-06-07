@@ -1,4 +1,4 @@
-import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
+import GameCanvas from "@shared/canvas/game-canvas/GameCanvas";
 import { DocumentationFrame } from "@shared/docs/DocumentationFrame";
 
 import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Tab } from "@mui/material";

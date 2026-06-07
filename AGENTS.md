@@ -62,8 +62,8 @@ Dev server runs on `http://localhost:3001`; it talks to the backend on `http://l
 an existing one (e.g. `src/providers/ProjectProvider.ts`, `src/providers/UserProvider.tsx`)
 and reuse the pattern. **Ask before introducing a new state library.**
 
-**Editor layout:** each editor is a folder `EditorName/EditorName.tsx` with co-located
-`components/`, `styles/`, `types/`, `constants/` (see `MapEditor/`, `SpriteEditor/`).
+**Editor layout:** each editor is a folder `editor-name/EditorName.tsx` with co-located
+`components/`, `styles/`, `types/`, `constants/` (see `map-editor/`, `sprite-editor/`).
 
 ## Conventions (not enforced by tooling — follow these)
 
@@ -121,7 +121,10 @@ import "./Editor.css";
 - `console.log` is fine for development — it is stripped from production builds. Use
   `console.warn` / `console.error` for genuine problems.
 
-**Files**
+**Files & folders**
+- **Folder names are `kebab-case`** (`game-canvas/`, `auth-overlay/`, `sound-editor/`) — never
+  `camelCase` or `PascalCase`. Component files stay `PascalCase` (`GameCanvas.tsx`); hooks and
+  utilities stay `camelCase` (`useThing.ts`, `colorUtils.ts`).
 - Split files/components by responsibility as they grow; keep one clear responsibility per file.
 
 **TODO / FIXME**
@@ -132,8 +135,8 @@ import "./Editor.css";
   encouraged to have tests but not required.
 
 **Error handling**
-- Prefer the custom error classes in `src/errors/` over ad-hoc throws/checks. (A top-level
-  React ErrorBoundary is a planned standard — see backlog.)
+- Prefer the custom error classes in `src/errors/` over ad-hoc throws/checks. A top-level
+  `ErrorBoundary` (`@components/ui/ErrorBoundary`) wraps the routed app and catches render errors.
 
 **Commits / branches** — see `CONTRIBUTING.md` (branch = Jira key; commit = `[PART] [TYPE] message`).
 

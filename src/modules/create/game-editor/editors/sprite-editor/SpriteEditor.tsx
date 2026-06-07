@@ -1,5 +1,5 @@
 import { EditorProps } from "@modules/create/game-editor/editors/EditorType";
-import Tools, { SpritePixelAccessor } from "@modules/create/game-editor/editors/SpriteEditor/Tools";
+import Tools, { SpritePixelAccessor } from "@modules/create/game-editor/editors/sprite-editor/Tools";
 import { StyledCanvas } from "@shared/canvas/Canvas";
 import CanvasGridOverlay from "@shared/canvas/CanvasGridOverlay";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";

@@ -1,4 +1,4 @@
-import { CanvasHandler, DrawTool, PreviewOverlay } from "@modules/create/game-editor/editors/SpriteEditor/SpriteEditor";
+import { CanvasHandler, DrawTool, PreviewOverlay } from "@modules/create/game-editor/editors/sprite-editor/SpriteEditor";
 import { SpriteProvider } from "@providers/editors/SpriteProvider";
 
 import React, { useEffect, useRef, useState } from "react";
