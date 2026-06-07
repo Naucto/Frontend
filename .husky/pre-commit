@@ -1,6 +1,6 @@
 #!/bin/sh
 
-npm run lint -- --fix
+npx lint-staged
 
 if [ $? -ne 0 ]; then
   echo "❌ Linting failed. Please fix the errors before committing."
