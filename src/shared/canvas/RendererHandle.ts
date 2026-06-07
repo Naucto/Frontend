@@ -27,6 +27,7 @@ export type SpriteRendererHandle = {
   drawLine: (col: number, x0: number, y0: number, x1: number, y1: number) => void;
   drawOutlineRect: (col: number, x: number, y: number, width: number, height: number) => void;
   drawRect: (col: number, x: number, y: number, width: number, height: number) => void;
+  getCanvas?: () => HTMLCanvasElement | null;
 };
 
 export function useSpriteRenderer(

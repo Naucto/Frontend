@@ -25,6 +25,7 @@ import {
   invalidateCachedProjectImageUrl,
   setCachedProjectImageUrl,
 } from "@utils/projectImageCache";
+import { UserProfileLink } from "@shared/user/UserProfileLink";
 
 const Section = styled(Box)(({ theme }) => ({
   marginBottom: theme.spacing(4),
@@ -44,12 +45,19 @@ const StatusContainer = styled(Box)(({ theme }) => ({
   marginBottom: theme.spacing(2),
 }));
 
-const BannerPreview = styled("img")({
-  maxHeight: "200px",
-  maxWidth: "100%",
-  borderRadius: "4px",
-  objectFit: "cover",
-});
+const BannerPreview = styled("div", {
+  shouldForwardProp: (prop) => prop !== "$src",
+})<{ $src: string }>(({ theme, $src }) => ({
+  width: "100%",
+  maxWidth: "360px",
+  aspectRatio: "16 / 9",
+  borderRadius: theme.custom.rounded.md,
+  backgroundColor: "rgba(255, 255, 255, 0.06)",
+  backgroundImage: $src ? `url(${$src})` : "none",
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+  boxShadow: "0 14px 40px rgba(0, 0, 0, 0.18)",
+}));
 
 const TagPickerContainer = styled(Box)(({ theme }) => ({
   padding: theme.spacing(1.25),
@@ -468,7 +476,7 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
           </Box>
           {bannerUrl && (
             <Box sx={{ display: "flex", justifyContent: "center" }}>
-              <BannerPreview src={bannerUrl} alt="Project Banner" />
+              <BannerPreview $src={bannerUrl} role="img" aria-label="Project banner preview" />
             </Box>
           )}
         </Box>
@@ -593,7 +601,10 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
                 ×
               </ActionButton>
             }>
-              <ListItemText primary={user.username} secondary={user.email} />
+              <ListItemText
+                primary={<UserProfileLink user={user} showAvatar avatarSize={28} />}
+                secondary={user.email}
+              />
             </ListItem>
           ))}
         </CollaboratorList>

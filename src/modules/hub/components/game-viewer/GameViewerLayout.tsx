@@ -33,8 +33,9 @@ export const Container = styled(Box)(({ theme }) => ({
 
 export const GameTitle = styled(Typography)(({ theme }) => ({
   color: theme.palette.common.white,
-  marginBottom: theme.spacing(2),
   textAlign: "center",
+  minWidth: 0,
+  overflowWrap: "anywhere",
 }));
 
 const CloseButton = styled(IconButton)(({ theme }) => ({

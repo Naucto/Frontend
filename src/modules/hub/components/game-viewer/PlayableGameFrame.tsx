@@ -12,6 +12,7 @@ type PlayableGameFrameProps = {
   canvasRef: RefObject<SpriteRendererHandle | null>;
   containerRef: RefObject<HTMLDivElement | null>;
   envData: EnvData;
+  gameRefreshKey: number;
   gameProvider?: GameProvider;
   launching: boolean;
   screenSize: {
@@ -88,6 +89,7 @@ export const PlayableGameFrame = ({
   canvasRef,
   containerRef,
   envData,
+  gameRefreshKey,
   gameProvider,
   launching,
   screenSize,
@@ -98,6 +100,7 @@ export const PlayableGameFrame = ({
   <GameContainer ref={containerRef}>
     {showGame && gameProvider ? (
       <PlayingCanvas
+        key={gameRefreshKey}
         ref={canvasRef}
         canvasProps={{
           map: gameProvider.map,

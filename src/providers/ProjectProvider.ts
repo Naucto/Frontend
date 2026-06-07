@@ -18,6 +18,7 @@ import { ProjectSettingsProvider } from "./editors/ProjectSettingsProvider.ts";
 import { MultiplayerSettingsProvider } from "./editors/MultiplayerSettingsProvider.ts";
 import { SoundProvider } from "./editors/SoundProvider.ts";
 import { ProviderOptions, WebrtcProvider } from "y-webrtc";
+import { seedDefaultProjectContent } from "@shared/project/defaultProjectContent";
 
 import * as Y from "yjs";
 import { AxiosError } from "axios";
@@ -108,6 +109,8 @@ export class ProjectProvider implements Destroyable {
 
         console.log("Project content decoded successfully");
       }
+
+      seedDefaultProjectContent(this._yjsDoc);
 
       const { data: projectDetails } = (await projectControllerFindOne({
         path: { id: this.projectId }

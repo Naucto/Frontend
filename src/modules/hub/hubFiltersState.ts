@@ -23,12 +23,12 @@ export type HubFiltersState = {
 export const INITIAL_FILTERS: HubFiltersState = {
   popular: {
     sortMetric: "viewCount",
-    releaseWindow: "30d",
+    releaseWindow: "all",
     selectedTags: [],
     searchQuery: "",
   },
   new: {
-    releaseWindow: "30d",
+    releaseWindow: "all",
     order: "desc",
     sortMetric: "publishedAt",
     selectedTags: [],

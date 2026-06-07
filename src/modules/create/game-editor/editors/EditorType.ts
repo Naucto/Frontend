@@ -3,6 +3,7 @@ import { ProjectProvider } from "@providers/ProjectProvider";
 
 export type EditorProps = {
   project: ProjectProvider;
+  consoleOutput?: string;
 };
 
 export interface EditorTab {

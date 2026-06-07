@@ -12,24 +12,26 @@ import ProfileLikedGames from "@modules/profile/ProfileLikedGames";
 
 import { GameViewer } from "@modules/hub/components/GameViewer";
 import { styled } from "@mui/material/styles";
+import { SiteFooter } from "@shared/footer/SiteFooter";
 
 const AppContainer = styled("div")(() => ({
   display: "flex",
   flexDirection: "column",
-  flex: 1,
-  minHeight: 0,
+  flex: "1 0 auto",
+  minHeight: "100%",
 }));
 
 const AppContent = styled("div")(() => ({
   display: "flex",
   flexDirection: "column",
-  flex: 1,
-  minHeight: 0,
+  flex: "1 0 auto",
+  minHeight: "auto",
 }));
 
 const Projects = lazy(() => import("@modules/projects/Projects"));
 const ProjectCategoryPage = lazy(() => import("@modules/projects/ProjectCategoryPage"));
 const Project = lazy(() => import("@modules/project/Project"));
+const Help = lazy(() => import("@modules/help/Help"));
 const HubCategoryPage = lazy(() => import("@modules/hub/HubCategoryPage"));
 
 type RouterState = {
@@ -55,6 +57,7 @@ const AppRoutes: React.FC = () => {
             <Route path='/projects' element={<Projects />} />
             <Route path="/projects/category/:category" element={<ProjectCategoryPage />} />
             <Route path="/projects/:projectId" element={<Project />} />
+            <Route path="/help" element={<Help />} />
             {isStandalonePlayRoute && (
               <Route path="/project/:id/play" element={<Hub />} />
             )}
@@ -69,6 +72,7 @@ const AppRoutes: React.FC = () => {
           )}
         </Suspense>
       </AppContent>
+      <SiteFooter />
     </AppContainer>
   );
 };

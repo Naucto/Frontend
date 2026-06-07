@@ -1,23 +1,26 @@
-import { type JSX, useEffect, useMemo, useRef, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import { Box, Button } from "@mui/material";
+import { alpha, styled } from "@mui/material/styles";
 import {
-  projectControllerGetRelease,
-  projectControllerGetPublishedProjectImage,
-  projectControllerLikeProject,
-  projectControllerGetLikeStatus,
-  projectControllerRegisterReleaseView,
   ProjectExResponseDto,
-  projectControllerFork
+  projectControllerFork,
+  projectControllerGetLikeStatus,
+  projectControllerGetPublishedProjectImage,
+  projectControllerGetRelease,
+  projectControllerLikeProject,
+  projectControllerRegisterReleaseView,
 } from "@api";
-import { type SpriteRendererHandle } from "@shared/canvas/RendererHandle";
-import { type EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
 import { GameProvider, ProviderEventType } from "@providers/GameProvider";
 import { useUser } from "@providers/UserProvider";
-import { LocalStorageManager } from "@utils/LocalStorageManager";
-import { getCachedProjectImageUrl } from "@utils/projectImageCache";
-import CommentSection from "./CommentSection";
-import { useSnackbar } from "notistack";
+import { type SpriteRendererHandle } from "@shared/canvas/RendererHandle";
+import { type EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
 import * as urls from "@shared/route";
+import { getCachedProjectImageUrl } from "@utils/projectImageCache";
+import { LocalStorageManager } from "@utils/LocalStorageManager";
+import { useSnackbar } from "notistack";
+import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import CommentSection from "./CommentSection";
 import {
   type ForkedFromInfo,
   GameDetailsPanel,
@@ -30,27 +33,58 @@ import {
 } from "./game-viewer/GameViewerLayout";
 import { PlayableGameFrame } from "./game-viewer/PlayableGameFrame";
 
+const HeaderBar = styled(Box)(({ theme }) => ({
+  display: "grid",
+  gridTemplateColumns: "1fr auto 1fr",
+  alignItems: "center",
+  gap: theme.spacing(2),
+  marginBottom: theme.spacing(2),
+  paddingRight: theme.spacing(7),
+  [theme.breakpoints.down("sm")]: {
+    gridTemplateColumns: "1fr",
+    paddingRight: theme.spacing(6),
+  },
+}));
+
+const HeaderActions = styled(Box)(({ theme }) => ({
+  justifySelf: "end",
+  display: "flex",
+  alignItems: "center",
+  gap: theme.spacing(1),
+  [theme.breakpoints.down("sm")]: {
+    justifySelf: "center",
+  },
+}));
+
+const RefreshGameButton = styled(Button)(({ theme }) => ({
+  color: theme.palette.common.white,
+  borderColor: alpha(theme.palette.common.white, 0.24),
+  backgroundColor: alpha(theme.palette.gray[900], 0.38),
+  "&:hover": {
+    borderColor: alpha(theme.palette.common.white, 0.42),
+    backgroundColor: alpha(theme.palette.gray[900], 0.56),
+  },
+}));
+
 export const GameViewer = (): JSX.Element => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const [launching, setLaunching] = useState(false);
   const { user } = useUser();
   const { enqueueSnackbar } = useSnackbar();
+  const [launching, setLaunching] = useState(false);
   const [project, setProject] = useState<ProjectExResponseDto | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [forking, setForking] = useState(false);
   const [forkedFromInfo, setForkedFromInfo] = useState<ForkedFromInfo | null>(null);
   const canvasRef = useRef<SpriteRendererHandle>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [code, setCode] = useState<string>("");
-  const [output, setOutput] = useState<string>("");
-  const [bannerUrl, setBannerUrl] = useState<string>("");
-
-  const [ gameProvider, setGameProvider ] = useState<GameProvider>();
-  const [ showGame, setShowGame ] = useState(false);
-
-  // Like state
+  const [code, setCode] = useState("");
+  const [output, setOutput] = useState("");
+  const [bannerUrl, setBannerUrl] = useState("");
+  const [gameProvider, setGameProvider] = useState<GameProvider>();
+  const [showGame, setShowGame] = useState(false);
+  const [gameRefreshKey, setGameRefreshKey] = useState(0);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [viewCount, setViewCount] = useState(0);
@@ -66,9 +100,19 @@ export const GameViewer = (): JSX.Element => {
     output,
   }), [code, output]);
 
+  const focusGameCanvas = useCallback((): void => {
+    canvasRef.current?.getCanvas?.()?.focus();
+  }, []);
+
   useEffect(() => {
     const fetchProjectData = async (): Promise<void> => {
-      if (!id) return;
+      if (!id) {
+        return;
+      }
+
+      setLoading(true);
+      setProject(undefined);
+      setForkedFromInfo(null);
 
       try {
         const { data: projectDetails } = await projectControllerGetRelease({ path: { id } });
@@ -97,34 +141,38 @@ export const GameViewer = (): JSX.Element => {
           window.dispatchEvent(new CustomEvent("project-stats-updated", {
             detail: {
               projectId: Number(id),
-              changes: { viewCount: viewData.viewCount }
-            }
+              changes: { viewCount: viewData.viewCount },
+            },
           }));
         }
+
         LocalStorageManager.addPlayedProject(Number(id));
         window.dispatchEvent(new Event("played-history-updated"));
 
-        // Check like status
         if (user) {
           try {
             const { data: likeData } = await projectControllerGetLikeStatus({ path: { id } });
-            if (likeData) setLiked(likeData.liked);
+            if (likeData) {
+              setLiked(likeData.liked);
+            }
           } catch {
-            // Not critical
+            // Like status should not block opening a published game.
           }
         } else {
-          // Check anonymous like from localStorage
           setLiked(LocalStorageManager.isProjectLiked(Number(id)));
         }
 
         if (proj?.forkedFromId) {
           try {
-            const { data: sourceProject } = await projectControllerGetRelease({ path: { id: String(proj.forkedFromId) } });
+            const { data: sourceProject } = await projectControllerGetRelease({
+              path: { id: String(proj.forkedFromId) },
+            });
             const source = sourceProject as ProjectExResponseDto | undefined;
             if (source) {
               setForkedFromInfo({
+                id: source.id,
                 name: source.name,
-                creator: source.creator?.username || "Unknown"
+                creator: source.creator ?? null,
               });
             }
           } catch {
@@ -133,14 +181,31 @@ export const GameViewer = (): JSX.Element => {
         }
       } catch (error) {
         console.error("Error loading project:", error);
-        alert("Failed to load project");
+        enqueueSnackbar("Failed to load project", { variant: "error" });
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProjectData();
-  }, [id, user]);
+    void fetchProjectData();
+  }, [enqueueSnackbar, id, user]);
+
+  useEffect(() => () => {
+    gameProvider?.destroy();
+  }, [gameProvider]);
+
+  useEffect(() => {
+    if (!showGame) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(focusGameCanvas);
+    focusGameCanvas();
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
+  }, [focusGameCanvas, showGame, gameRefreshKey]);
 
   const handleLaunchGame = (): void => {
     if (!id || showGame || launching) {
@@ -154,62 +219,34 @@ export const GameViewer = (): JSX.Element => {
     provider.observe(ProviderEventType.INITIALIZED, () => {
       setCode(String(provider.code || ""));
       setShowGame(true);
+      setGameRefreshKey((value) => value + 1);
       setLaunching(false);
     });
   };
 
-  useEffect(() => {
+  const handleRefreshGame = (): void => {
     if (!showGame) {
       return;
     }
 
-    const focusCanvas = (): void => {
-      containerRef.current?.querySelector("canvas")?.focus();
-    };
-
-    focusCanvas();
-    const frame = window.requestAnimationFrame(focusCanvas);
-
-    return () => {
-      window.cancelAnimationFrame(frame);
-    };
-  }, [showGame]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent): void => {
-      const target = e.target;
-      const isEditableTarget =
-        target instanceof HTMLElement &&
-        (
-          target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.isContentEditable ||
-          target.closest("[contenteditable='true'], input, textarea, [role='textbox']") !== null
-        );
-
-      if (isEditableTarget) {
-        return;
-      }
-
-      if (showGame && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key)) {
-        e.preventDefault();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showGame]);
+    setOutput("");
+    setGameRefreshKey((value) => value + 1);
+    window.requestAnimationFrame(focusGameCanvas);
+  };
 
   const handleClose = (): void => {
-    if ((location.state as { backgroundLocation?: Location } | null)?.backgroundLocation) {
+    if ((location.state as { backgroundLocation?: unknown } | null)?.backgroundLocation) {
       navigate(-1);
       return;
     }
-    navigate("/hub");
+    navigate(urls.toHub());
   };
 
   const handleLike = async (): Promise<void> => {
-    if (!id) return;
+    if (!id) {
+      return;
+    }
+
     try {
       const { data } = await projectControllerLikeProject({ path: { id } });
       if (data) {
@@ -218,16 +255,16 @@ export const GameViewer = (): JSX.Element => {
         window.dispatchEvent(new CustomEvent("project-stats-updated", {
           detail: {
             projectId: Number(id),
-            changes: { likes: data.likes }
-          }
+            changes: { likes: data.likes },
+          },
         }));
       }
-      // Track in localStorage for anonymous users
+
       if (!user) {
-        if (liked) {
-          LocalStorageManager.removeLikedProject(Number(id));
-        } else {
+        if (data?.liked) {
           LocalStorageManager.addLikedProject(Number(id));
+        } else {
+          LocalStorageManager.removeLikedProject(Number(id));
         }
       }
     } catch (error) {
@@ -236,7 +273,10 @@ export const GameViewer = (): JSX.Element => {
   };
 
   const handleFork = async (): Promise<void> => {
-    if (!id || forking) return;
+    if (!id || forking) {
+      return;
+    }
+
     setForking(true);
     try {
       const { data: forkedProject } = await projectControllerFork({ path: { id: Number(id) } });
@@ -247,8 +287,8 @@ export const GameViewer = (): JSX.Element => {
         window.dispatchEvent(new CustomEvent("project-stats-updated", {
           detail: {
             projectId: Number(id),
-            changes: { forkCount: nextForkCount }
-          }
+            changes: { forkCount: nextForkCount },
+          },
         }));
         enqueueSnackbar("Project forked successfully!", { variant: "success" });
         navigate(urls.toProject(forkedProject.id));
@@ -271,7 +311,22 @@ export const GameViewer = (): JSX.Element => {
 
   return (
     <GameViewerLayout onClose={handleClose}>
-      <GameTitle variant="h3">{project.name}</GameTitle>
+      <HeaderBar>
+        <Box />
+        <GameTitle variant="h3">{project.name}</GameTitle>
+        <HeaderActions>
+          {showGame ? (
+            <RefreshGameButton
+              variant="outlined"
+              size="small"
+              startIcon={<RefreshIcon />}
+              onClick={handleRefreshGame}
+            >
+              Refresh game
+            </RefreshGameButton>
+          ) : null}
+        </HeaderActions>
+      </HeaderBar>
 
       <PlayableGameFrame
         bannerUrl={bannerUrl}
@@ -279,6 +334,7 @@ export const GameViewer = (): JSX.Element => {
         containerRef={containerRef}
         envData={envData}
         gameProvider={gameProvider}
+        gameRefreshKey={gameRefreshKey}
         launching={launching}
         screenSize={screenSize}
         showGame={showGame}
