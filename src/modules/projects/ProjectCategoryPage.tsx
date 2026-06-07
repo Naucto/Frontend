@@ -1,4 +1,5 @@
 import { projectControllerFindAll, ProjectResponseDto } from "@api";
+import { mergeProjectsById } from "@hooks/usePaginatedProjects";
 import { CustomSortButton, SummaryChip } from "@modules/projects/components/browse/Controls";
 import { ProjectSortFilters } from "@modules/projects/components/browse/Filters";
 import { ProjectPageHeader } from "@modules/projects/components/browse/Header";
@@ -19,7 +20,7 @@ import {
   type ProjectSortOrder,
   sortProjects,
 } from "@modules/projects/projectListUtils";
-import { PREDEFINED_PROJECT_TAGS } from "@modules/projects/projectTags";
+import { collectAvailableTags } from "@modules/projects/projectTags";
 import { useUser } from "@providers/UserProvider";
 import * as urls from "@shared/navigation/routes";
 
@@ -37,20 +38,6 @@ type ProjectCategoryPageState = {
   selectedTags?: string[];
   projectNameQuery?: string;
 };
-
-function mergeProjects(current: ProjectResponseDto[], next: ProjectResponseDto[]): ProjectResponseDto[] {
-  const mergedProjects = [...current, ...next];
-  const seen = new Set<number>();
-
-  return mergedProjects.filter((project) => {
-    if (seen.has(project.id)) {
-      return false;
-    }
-
-    seen.add(project.id);
-    return true;
-  });
-}
 
 async function fetchProjectsPage(page: number): Promise<{ projects: ProjectResponseDto[]; page: number; total: number }> {
   const { data } = await projectControllerFindAll({
@@ -107,7 +94,7 @@ const ProjectCategoryPage = (): JSX.Element => {
 
     setIsLoadingProjects(true);
     void fetchProjectsPage(1).then((response) => {
-      setProjects(mergeProjects([], response.projects));
+      setProjects(mergeProjectsById([], response.projects));
       setLoadedPage(response.page);
       setTotalProjects(response.total);
     }).finally(() => {
@@ -115,14 +102,7 @@ const ProjectCategoryPage = (): JSX.Element => {
     });
   }, [category, navigate, user.user]);
 
-  const availableTags = useMemo(() => {
-    const tags = new Set<string>(PREDEFINED_PROJECT_TAGS);
-    projects.forEach((project) => {
-      project.tags.forEach((tag) => tags.add(tag));
-    });
-
-    return Array.from(tags).sort((a, b) => a.localeCompare(b));
-  }, [projects]);
+  const availableTags = useMemo(() => collectAvailableTags(projects), [projects]);
 
   const filteredProjects = useMemo(() => (
     projects.filter((project) => projectMatchesNameAndTags(project, selectedTags, projectNameQuery))
@@ -181,7 +161,7 @@ const ProjectCategoryPage = (): JSX.Element => {
 
       while (scopedProjects.length < nextVisibleCount && mergedProjects.length < total) {
         const response = await fetchProjectsPage(nextPage + 1);
-        mergedProjects = mergeProjects(mergedProjects, response.projects);
+        mergedProjects = mergeProjectsById(mergedProjects, response.projects);
         nextPage = response.page;
         total = response.total;
         scopedProjects = getCategoryProjectsFrom(mergedProjects);
