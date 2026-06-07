@@ -28,7 +28,9 @@ const AppContent = styled("div")(() => ({
 }));
 
 const Projects = lazy(() => import("@modules/projects/Projects"));
+const ProjectCategoryPage = lazy(() => import("@modules/projects/ProjectCategoryPage"));
 const Project = lazy(() => import("@modules/project/Project"));
+const HubCategoryPage = lazy(() => import("@modules/hub/HubCategoryPage"));
 
 type RouterState = {
   backgroundLocation?: Location;
@@ -49,7 +51,9 @@ const AppRoutes: React.FC = () => {
           <Routes location={backgroundLocation || location}>
             <Route path="/" element={<Hub />} />
             <Route path="/hub" element={<Hub />} />
+            <Route path="/hub/category/:category" element={<HubCategoryPage />} />
             <Route path='/projects' element={<Projects />} />
+            <Route path="/projects/category/:category" element={<ProjectCategoryPage />} />
             <Route path="/projects/:projectId" element={<Project />} />
             {isStandalonePlayRoute && (
               <Route path="/project/:id/play" element={<Hub />} />

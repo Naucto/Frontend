@@ -110,6 +110,32 @@ export type ProjectExResponseDto = {
   creator: UserBasicInfoDto;
 };
 
+export type PaginatedProjectsResponseDto = {
+  /**
+   * The projects included in the current page
+   */
+  projects: Array<ProjectExResponseDto>;
+  /**
+   * The total number of projects matching the request
+   */
+  total: number;
+  /**
+   * The current page number
+   */
+  page: number;
+  /**
+   * The number of projects requested per page
+   */
+  limit: number;
+};
+
+export type ProjectsCountResponseDto = {
+  /**
+   * The total number of projects matching the request
+   */
+  total: number;
+};
+
 export type SignedUrlResponseDto = {
   /**
    * The signed CloudFront URL for accessing the protected file
@@ -809,6 +835,50 @@ export type ProjectControllerGetAllReleasesResponses = {
 export type ProjectControllerGetAllReleasesResponse =
   ProjectControllerGetAllReleasesResponses[keyof ProjectControllerGetAllReleasesResponses];
 
+export type ProjectControllerGetPaginatedReleasesData = {
+  body?: never;
+  path?: never;
+  query?: {
+    page?: number;
+    limit?: number;
+  };
+  url: "/projects/releases/paginated";
+};
+
+export type ProjectControllerGetPaginatedReleasesResponses = {
+  /**
+   * A paginated list of released projects
+   */
+  200: PaginatedProjectsResponseDto;
+};
+
+export type ProjectControllerGetPaginatedReleasesResponse =
+  ProjectControllerGetPaginatedReleasesResponses[keyof ProjectControllerGetPaginatedReleasesResponses];
+
+export type ProjectControllerCountReleasedProjectsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    search?: string;
+    /**
+     * Comma-separated tag list
+     */
+    tags?: string;
+    releaseWindow?: "all" | "365d" | "30d" | "7d";
+  };
+  url: "/projects/releases/count";
+};
+
+export type ProjectControllerCountReleasedProjectsResponses = {
+  /**
+   * The total number of released projects matching the request
+   */
+  200: ProjectsCountResponseDto;
+};
+
+export type ProjectControllerCountReleasedProjectsResponse =
+  ProjectControllerCountReleasedProjectsResponses[keyof ProjectControllerCountReleasedProjectsResponses];
+
 export type ProjectControllerGetReleaseData = {
   body?: never;
   path: {
@@ -869,7 +939,10 @@ export type ProjectControllerGetReleaseContentUrlResponse =
 export type ProjectControllerFindAllData = {
   body?: never;
   path?: never;
-  query?: never;
+  query?: {
+    page?: number;
+    limit?: number;
+  };
   url: "/projects";
 };
 
@@ -882,9 +955,9 @@ export type ProjectControllerFindAllErrors = {
 
 export type ProjectControllerFindAllResponses = {
   /**
-   * A JSON array of projects with collaborators and creator information
+   * A paginated list of projects with collaborators and creator information
    */
-  200: Array<ProjectExResponseDto>;
+  200: PaginatedProjectsResponseDto;
 };
 
 export type ProjectControllerFindAllResponse =
@@ -913,6 +986,30 @@ export type ProjectControllerCreateResponses = {
 
 export type ProjectControllerCreateResponse =
   ProjectControllerCreateResponses[keyof ProjectControllerCreateResponses];
+
+export type ProjectControllerCountProjectsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    search?: string;
+    /**
+     * Comma-separated tag list
+     */
+    tags?: string;
+    status?: "all" | "drafts" | "published";
+  };
+  url: "/projects/count";
+};
+
+export type ProjectControllerCountProjectsResponses = {
+  /**
+   * The total number of user projects matching the request
+   */
+  200: ProjectsCountResponseDto;
+};
+
+export type ProjectControllerCountProjectsResponse =
+  ProjectControllerCountProjectsResponses[keyof ProjectControllerCountProjectsResponses];
 
 export type ProjectControllerRemoveData = {
   body?: never;

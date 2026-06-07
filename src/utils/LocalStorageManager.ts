@@ -76,6 +76,7 @@ export class LocalStorageManager {
 
   private static readonly LIKED_PROJECTS_KEY = "liked_projects";
   private static readonly PLAYED_PROJECTS_KEY = "played_projects";
+  private static readonly MAX_PLAYED_PROJECTS = 24;
 
   static getLikedProjects(): number[] {
     try {
@@ -117,7 +118,7 @@ export class LocalStorageManager {
     played.unshift(id);
     this.safeSetItem(
       this.PLAYED_PROJECTS_KEY,
-      JSON.stringify(played.slice(0, 24))
+      JSON.stringify(played.slice(0, this.MAX_PLAYED_PROJECTS))
     );
   }
 }

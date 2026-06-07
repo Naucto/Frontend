@@ -50,6 +50,10 @@ import type {
   ProjectControllerAddCollaboratorData,
   ProjectControllerAddCollaboratorErrors,
   ProjectControllerAddCollaboratorResponses,
+  ProjectControllerCountProjectsData,
+  ProjectControllerCountProjectsResponses,
+  ProjectControllerCountReleasedProjectsData,
+  ProjectControllerCountReleasedProjectsResponses,
   ProjectControllerCreateData,
   ProjectControllerCreateErrors,
   ProjectControllerCreateResponses,
@@ -78,6 +82,8 @@ import type {
   ProjectControllerGetCheckpointsResponses,
   ProjectControllerGetLikeStatusData,
   ProjectControllerGetLikeStatusResponses,
+  ProjectControllerGetPaginatedReleasesData,
+  ProjectControllerGetPaginatedReleasesResponses,
   ProjectControllerGetProjectImageData,
   ProjectControllerGetProjectImageErrors,
   ProjectControllerGetProjectImageResponses,
@@ -217,6 +223,44 @@ export const projectControllerGetAllReleases = <
   });
 
 /**
+ * Get released projects with pagination
+ */
+export const projectControllerGetPaginatedReleases = <
+  ThrowOnError extends boolean = false
+>(
+  options?: Options<ProjectControllerGetPaginatedReleasesData, ThrowOnError>
+) =>
+  (options?.client ?? client).get<
+    ProjectControllerGetPaginatedReleasesResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/projects/releases/paginated",
+    ...options
+  });
+
+/**
+ * Count released projects with filters
+ */
+export const projectControllerCountReleasedProjects = <
+  ThrowOnError extends boolean = false
+>(
+  options?: Options<ProjectControllerCountReleasedProjectsData, ThrowOnError>
+) =>
+  (options?.client ?? client).get<
+    ProjectControllerCountReleasedProjectsResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/projects/releases/count",
+    ...options
+  });
+
+/**
  * Get project release version
  */
 export const projectControllerGetRelease = <
@@ -274,7 +318,7 @@ export const projectControllerGetReleaseContentUrl = <
   });
 
 /**
- * Retrieve the list of projects
+ * Retrieve the paginated list of projects
  */
 export const projectControllerFindAll = <ThrowOnError extends boolean = false>(
   options?: Options<ProjectControllerFindAllData, ThrowOnError>
@@ -309,6 +353,25 @@ export const projectControllerCreate = <ThrowOnError extends boolean = false>(
       "Content-Type": "application/json",
       ...options.headers
     }
+  });
+
+/**
+ * Count the user's projects with filters
+ */
+export const projectControllerCountProjects = <
+  ThrowOnError extends boolean = false
+>(
+  options?: Options<ProjectControllerCountProjectsData, ThrowOnError>
+) =>
+  (options?.client ?? client).get<
+    ProjectControllerCountProjectsResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/projects/count",
+    ...options
   });
 
 /**

@@ -7,85 +7,27 @@ import "./CodeEditor.css";
 import { useTheme } from "@mui/material/styles";
 import { generateRandomColor } from "@utils/colorUtils";
 import { AwarenessEventType } from "@providers/editors/AwarenessProvider";
+import {
+  type AwarenessChanges,
+  createRemoteUsersStyles,
+} from "./code-editor/collaborationStyles";
 
 const CodeEditor: React.FC<EditorProps> = ({ project }) => {
   const [userStyles, setUserStyles] = useState<string>("");
   const theme = useTheme();
-
-  const generateUserStyles = (clientId: number, name: string, color: string): string => {
-    const rgba = `${color}33`;
-
-    return `
-      .yRemoteSelection-${clientId} {
-        background-color: ${rgba} !important;
-      }
-      
-      .yRemoteSelectionHead-${clientId} {
-        border-left: ${color} solid 2px !important;
-        border-top: ${color} solid 2px !important;
-        border-bottom: ${color} solid 2px !important;
-      }
-      
-      .yRemoteSelectionHead-${clientId}::before {
-        content: '' !important;
-        position: absolute !important;
-        top: -15px !important;
-        left: -15px !important;
-        width: 50px !important;
-        height: 35px !important;
-        z-index: 999 !important;
-        background: transparent !important;
-        border: 10px solid transparent !important;
-      }
-      
-      .yRemoteSelectionHead-${clientId}::after {
-        border: 3px solid ${color} !important;
-        content: '${name}' !important;
-        background-color: ${color} !important;
-        color: white !important;
-        padding: 2px 6px !important;
-        border-radius: 4px !important;
-        font-size: 12px !important;
-        font-weight: bold !important;
-        font-family: ${theme.typography.fontFamily} !important;
-        white-space: nowrap !important;
-        position: absolute !important;
-        top: -25px !important;
-        left: -4px !important;
-        z-index: 1000 !important;
-        opacity: 0 !important;
-        transform: translateY(10px) !important;
-        transition: opacity 0.2s ease, transform 0.2s ease !important;
-      }
-      
-      .yRemoteSelectionHead-${clientId}:hover::after {
-        opacity: 1 !important;
-        transform: translateY(0px) !important;
-      }
-    `;
-  };
+  const fontFamily = String(theme.typography.fontFamily ?? "sans-serif");
 
   useEffect(() => {
     if (!project?.awarenessProvider) return;
 
-    const updateStyles = (changes?: { added: number[], updated: number[], removed: number[] }): void => {
+    const updateStyles = (changes?: AwarenessChanges): void => {
       const users = project.awarenessProvider.getUsers();
-      const styleMap = new Map<number, string>();
-
-      users.forEach((user) => styleMap.set(user.clientId, generateUserStyles(user.clientId, user.name, user.color)));
-
-      if (changes) {
-        changes.removed.forEach((clientId) => {
-          styleMap.delete(clientId);
-        });
-      }
-
-      setUserStyles(Array.from(styleMap.values()).join("\n"));
+      setUserStyles(createRemoteUsersStyles(users, fontFamily, changes));
     };
 
     updateStyles();
 
-    const handleAwarenessUpdate = (changes: { added: number[], updated: number[], removed: number[] }): void => {
+    const handleAwarenessUpdate = (changes: AwarenessChanges): void => {
       updateStyles(changes);
     };
 
@@ -93,7 +35,7 @@ const CodeEditor: React.FC<EditorProps> = ({ project }) => {
 
     return () => {
     };
-  }, [project, generateUserStyles]);
+  }, [fontFamily, project]);
 
   useEffect(() => {
     if (!project?.awarenessProvider) return;
