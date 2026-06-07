@@ -1,7 +1,7 @@
 import { createRoot } from "react-dom/client";
 import "./index.css";
-import App from "./App.tsx";
-import { UserProvider } from "@providers/UserProvider.tsx";
+import App from "./App";
+import { UserProvider } from "@providers/UserProvider";
 import { client } from "@api/client.gen";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
 

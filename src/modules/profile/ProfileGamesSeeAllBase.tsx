@@ -2,7 +2,7 @@ import React from "react";
 import { styled } from "@mui/material";
 import { Box, Button, Typography } from "@mui/material";
 import { Link, useParams } from "react-router-dom";
-import { useAsync } from "src/hooks/useAsync";
+import { useAsync } from "@hooks/useAsync";
 import {
   ProjectExResponseDto,
   userPublicControllerGetLikedGames,

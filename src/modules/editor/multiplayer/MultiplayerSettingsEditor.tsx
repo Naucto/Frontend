@@ -3,7 +3,7 @@ import {
   MultiplayerDirectorySettings,
   MultiplayerSettingsProvider,
   MultiplayerSettingsUpdateListener
-} from "@providers/editors/MultiplayerSettingsProvider.ts";
+} from "@providers/editors/MultiplayerSettingsProvider";
 import { EditorProps } from "@modules/create/game-editor/editors/EditorType";
 
 import { enumFromName, enumNames } from "@our-types/enum";
@@ -34,7 +34,7 @@ import {
   StyledTableRow,
   StyledTableCell,
   StyledGrownTableCell,
-} from "@components/ui/StyledTable.tsx";
+} from "@components/ui/StyledTable";
 
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";

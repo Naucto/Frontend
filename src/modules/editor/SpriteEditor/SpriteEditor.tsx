@@ -4,7 +4,7 @@ import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import React from "react";
 import { StyledCanvas } from "@shared/canvas/Canvas";
 import CanvasGridOverlay from "@shared/canvas/CanvasGridOverlay";
-import { EditorProps } from "../../create/game-editor/editors/EditorType";
+import { EditorProps } from "@modules/create/game-editor/editors/EditorType";
 import { styled } from "@mui/material";
 import Tools, { SpritePixelAccessor } from "@modules/editor/SpriteEditor/Tools";
 import { SelectedSpriteFrame } from "@shared/canvas/SelectedSpriteFrame";

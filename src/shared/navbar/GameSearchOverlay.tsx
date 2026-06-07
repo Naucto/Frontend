@@ -7,7 +7,7 @@ import { Box, Button, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import * as urls from "@shared/route";
 import { UserProfileList } from "@shared/user/UserProfileLink";
-import { useAsync } from "src/hooks/useAsync";
+import { useAsync } from "@hooks/useAsync";
 import { getCachedProjectImageUrl } from "@utils/projectImageCache";
 import { JSX, useEffect, useMemo, useState, type KeyboardEvent, type MouseEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";

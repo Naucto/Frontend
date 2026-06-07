@@ -1,4 +1,4 @@
-import { LocalStorageManager } from "@utils/LocalStorageManager.ts";
+import { LocalStorageManager } from "@utils/LocalStorageManager";
 import {
   projectControllerFetchProjectContent,
   projectControllerFindOne,
@@ -9,14 +9,14 @@ import {
   workSessionControllerJoin,
   workSessionControllerKick
 } from "@api";
-import { decodeUpdate, encodeUpdate } from "@utils/YSerialize.ts";
-import { CodeProvider } from "./editors/CodeProvider.ts";
-import { SpriteProvider } from "./editors/SpriteProvider.ts";
-import { MapProvider } from "./editors/MapProvider.ts";
-import { AwarenessProvider } from "./editors/AwarenessProvider.ts";
-import { ProjectSettingsProvider } from "./editors/ProjectSettingsProvider.ts";
-import { MultiplayerSettingsProvider } from "./editors/MultiplayerSettingsProvider.ts";
-import { SoundProvider } from "./editors/SoundProvider.ts";
+import { decodeUpdate, encodeUpdate } from "@utils/YSerialize";
+import { CodeProvider } from "./editors/CodeProvider";
+import { SpriteProvider } from "./editors/SpriteProvider";
+import { MapProvider } from "./editors/MapProvider";
+import { AwarenessProvider } from "./editors/AwarenessProvider";
+import { ProjectSettingsProvider } from "./editors/ProjectSettingsProvider";
+import { MultiplayerSettingsProvider } from "./editors/MultiplayerSettingsProvider";
+import { SoundProvider } from "./editors/SoundProvider";
 import { ProviderOptions, WebrtcProvider } from "y-webrtc";
 import { seedDefaultProjectContent } from "@shared/project/defaultProjectContent";
 

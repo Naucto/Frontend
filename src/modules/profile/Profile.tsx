@@ -2,7 +2,7 @@ import { JSX, useEffect, useMemo, useRef, useState } from "react";
 import { styled } from "@mui/material/styles";
 import { Box, Typography } from "@mui/material";
 import { Link, useParams } from "react-router-dom";
-import { useAsync } from "src/hooks/useAsync";
+import { useAsync } from "@hooks/useAsync";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
 import ImportantButton from "@shared/buttons/ImportantButton";
 import { Editable } from "@shared/forms/Editable";

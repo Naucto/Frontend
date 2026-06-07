@@ -1,6 +1,6 @@
 import * as Y from "yjs";
-import { palette } from "../../temporary/SpriteSheet.ts";
-import { SpriteProviderError } from "@errors/SpriteProviderError.ts";
+import { palette } from "../../temporary/SpriteSheet";
+import { SpriteProviderError } from "@errors/SpriteProviderError";
 
 type SpriteFlagListener = (flags: number[]) => void;
 

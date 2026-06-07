@@ -1,10 +1,10 @@
 import * as Y from "yjs";
 import { projectControllerGetReleaseContent, projectControllerGetReleaseContentUrl } from "@api";
 import { AxiosError } from "axios";
-import { decodeUpdate } from "@utils/YSerialize.ts";
-import { SpriteProvider } from "./editors/SpriteProvider.ts";
-import { MapProvider } from "./editors/MapProvider.ts";
-import { ProjectSettingsProvider } from "./editors/ProjectSettingsProvider.ts";
+import { decodeUpdate } from "@utils/YSerialize";
+import { SpriteProvider } from "./editors/SpriteProvider";
+import { MapProvider } from "./editors/MapProvider";
+import { ProjectSettingsProvider } from "./editors/ProjectSettingsProvider";
 import { SoundProvider } from "./editors/SoundProvider";
 import { seedDefaultProjectContent } from "@shared/project/defaultProjectContent";
 

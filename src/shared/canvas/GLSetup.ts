@@ -1,7 +1,7 @@
 import { compileShader, createGLContext, setGLProgram, setTexture } from "@shared/canvas/glUtils";
-import indexToColorFragment from "src/shared/canvas/shaders/index_to_color_frag.glsl";
-import spriteSheetVertex from "src/shared/canvas/shaders/sprite_cut_vert.glsl";
-import { MapProvider } from "@providers/editors/MapProvider.ts";
+import indexToColorFragment from "@shared/canvas/shaders/index_to_color_frag.glsl";
+import spriteSheetVertex from "@shared/canvas/shaders/sprite_cut_vert.glsl";
+import { MapProvider } from "@providers/editors/MapProvider";
 import { SpriteProvider } from "@providers/editors/SpriteProvider";
 export interface GLPipeline {
   gl: WebGL2RenderingContext;

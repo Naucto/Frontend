@@ -2,8 +2,8 @@ import { SpriteRendererHandle, useSpriteRenderer } from "@shared/canvas/Renderer
 import React, { forwardRef, useImperativeHandle, useRef } from "react";
 import { SpriteProvider } from "@providers/editors/SpriteProvider";
 import { styled } from "@mui/material/styles";
-import { MapProvider } from "@providers/editors/MapProvider.ts";
-import { SoundProvider } from "../../providers/editors/SoundProvider";
+import { MapProvider } from "@providers/editors/MapProvider";
+import { SoundProvider } from "@providers/editors/SoundProvider";
 
 export type CanvasProps = React.CanvasHTMLAttributes<HTMLCanvasElement> & {
   sprite: SpriteProvider;

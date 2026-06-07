@@ -1,5 +1,5 @@
 import * as Y from "yjs";
-import { SoundProviderError } from "@errors/SoundProviderError.ts";
+import { SoundProviderError } from "@errors/SoundProviderError";
 import { MusicData, musicToJson, musicFromJson, createMusic } from "@modules/create/game-editor/editors/SoundEditor/Music";
 import { InstrumentConfig } from "@modules/create/game-editor/editors/SoundEditor/InstrumentEditor";
 

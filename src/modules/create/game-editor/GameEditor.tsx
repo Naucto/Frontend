@@ -10,7 +10,7 @@ import GameEditorConsole from "@modules/create/game-editor/editors/GameEditorCon
 import { MapEditor } from "@modules/create/game-editor/editors/MapEditor/MapEditor";
 import ProjectSettingsEditor from "@modules/create/game-editor/editors/ProjectSettingsEditor";
 import { SoundEditor } from "@modules/create/game-editor/editors/SoundEditor";
-import { MultiplayerSettingsEditor } from "@modules/editor/multiplayer/MultiplayerSettingsEditor.tsx";
+import { MultiplayerSettingsEditor } from "@modules/editor/multiplayer/MultiplayerSettingsEditor";
 import { SpriteEditor } from "@modules/editor/SpriteEditor/SpriteEditor";
 import { ProjectProvider, ProviderEventType } from "@providers/ProjectProvider";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
@@ -18,12 +18,12 @@ import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
 import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
 import { DocumentationFrame } from "@shared/docs/DocumentationFrame";
-import CodeIcon from "src/assets/code.svg?react";
-import MapIcon from "src/assets/map.svg?react";
-import MultiplayerIcon from "src/assets/user.svg?react";
-import ProjectIcon from "src/assets/project.svg?react";
-import SoundIcon from "src/assets/music.svg?react";
-import SpriteIcon from "src/assets/pen.svg?react";
+import CodeIcon from "@assets/code.svg?react";
+import MapIcon from "@assets/map.svg?react";
+import MultiplayerIcon from "@assets/user.svg?react";
+import ProjectIcon from "@assets/project.svg?react";
+import SoundIcon from "@assets/music.svg?react";
+import SpriteIcon from "@assets/pen.svg?react";
 
 import { EditorProps, EditorTab } from "./editors/EditorType";
 import { EditorContainer } from "./editors/EditorContainer";

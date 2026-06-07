@@ -1,4 +1,4 @@
-import { LuaCallable, LuaEnvironment, LuaMetatable } from "@lib/lua.ts";
+import { LuaCallable, LuaEnvironment, LuaMetatable } from "@lib/lua";
 
 const LUA_METHOD_PREFIX = "$";
 

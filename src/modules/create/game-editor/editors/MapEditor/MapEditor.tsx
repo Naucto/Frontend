@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { EditorProps } from "../EditorType.ts";
+import { EditorProps } from "../EditorType";
 import { styled } from "@mui/material/styles";
 import { Box } from "@mui/material";
 import { MapViewport } from "./MapViewport";
