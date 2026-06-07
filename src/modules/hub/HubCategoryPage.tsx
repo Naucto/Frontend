@@ -1,6 +1,6 @@
 import { projectControllerGetRelease, ProjectExResponseDto } from "@api";
 import { PREDEFINED_PROJECT_TAGS } from "@modules/projects/projectTags";
-import * as urls from "@shared/route";
+import * as urls from "@shared/navigation/routes";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
 
 import { CategoryHeader } from "./components/CategoryHeader";

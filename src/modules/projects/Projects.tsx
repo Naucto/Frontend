@@ -16,7 +16,7 @@ import {
 } from "@modules/projects/projectListUtils";
 import { PREDEFINED_PROJECT_TAGS } from "@modules/projects/projectTags";
 import { useUser } from "@providers/UserProvider";
-import * as urls from "@shared/route";
+import * as urls from "@shared/navigation/routes";
 
 import { type JSX, useCallback, useEffect, useMemo, useState } from "react";
 

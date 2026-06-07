@@ -1,4 +1,4 @@
-import * as urls from "@shared/route";
+import * as urls from "@shared/navigation/routes";
 import { usePublicUserProfile } from "@shared/user/usePublicUserProfile";
 
 import React, { Fragment, useMemo } from "react";

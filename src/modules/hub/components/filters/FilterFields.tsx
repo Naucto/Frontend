@@ -8,7 +8,7 @@ import {
   HubSortMetric,
 } from "@modules/hub/hubSorting";
 import { CustomSortButton, SummaryChip } from "@modules/projects/components/browse/Controls";
-import { darkMenuProps } from "@shared/darkMenuProps";
+import { darkMenuProps } from "@theme/darkMenuProps";
 
 import {
   AutocompleteOption,

@@ -183,10 +183,7 @@ These are tracked cleanups; avoid partial migrations that make them worse.
   `permissions: { contents: read }` block to `.github/workflows/build.yml`. Migrate the auth
   token off `localStorage` to httpOnly cookies (needs backend support).
 - **Structure (Phase 3):**
-  - `components/ui` vs `shared` boundary not yet reconciled (duplicate `TextField`, loose files
-    at `shared/` root).
-  - Editors split between `modules/editor/` and `modules/create/game-editor/editors/` — target
-    is to consolidate under `game-editor/editors/`.
-  - `SoundEditor.tsx` sits outside its `SoundEditor/` folder (should be `SoundEditor/SoundEditor.tsx`).
-  - `src/temporary/` (`map.ts` dead; `SpriteSheet.ts` is live placeholder data) to be cleaned up.
+  - Shared `ConfirmDialog` to replace MultiplayerSettingsEditor's 3 near-identical dialogs;
+    de-duplicate Hub/Projects via a shared listing hook.
+  - Standardize error handling: custom `src/errors/` classes + a top-level React ErrorBoundary.
   - Large files to split: `CodeTabTheme.ts`, `luaLanguageFeatures.ts`, `GameEditor.tsx`.

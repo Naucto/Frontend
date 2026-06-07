@@ -1,6 +1,6 @@
 import { projectControllerGetAllReleases, projectControllerGetPublishedProjectImage, ProjectExResponseDto, ProjectResponseDto } from "@api";
 import { useAsync } from "@hooks/useAsync";
-import * as urls from "@shared/route";
+import * as urls from "@shared/navigation/routes";
 import { UserProfileList } from "@shared/user/UserProfileLink";
 import { getCachedProjectImageUrl } from "@utils/projectImageCache";
 

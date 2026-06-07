@@ -11,7 +11,7 @@ import { GameProvider, ProviderEventType } from "@providers/GameProvider";
 import { useUser } from "@providers/UserProvider";
 import { type SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import { type EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
-import * as urls from "@shared/route";
+import * as urls from "@shared/navigation/routes";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
 import { getCachedProjectImageUrl } from "@utils/projectImageCache";
 

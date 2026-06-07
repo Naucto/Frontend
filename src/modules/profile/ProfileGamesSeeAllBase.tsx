@@ -6,7 +6,7 @@ import {
 } from "@api";
 import { useAsync } from "@hooks/useAsync";
 import ProjectCard from "@modules/projects/components/ProjectCard";
-import * as urls from "@shared/route";
+import * as urls from "@shared/navigation/routes";
 
 import React from "react";
 

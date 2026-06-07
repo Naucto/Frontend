@@ -6,7 +6,7 @@ import { Login } from "@shared/navbar/login/Login";
 import NavProfile from "@shared/navbar/nav-profile/NavProfile";
 import { ImportantNavActionButton, NavActionButton, NavElem } from "@shared/navbar/NavElem";
 import { SearchBar } from "@shared/navbar/SearchBar";
-import * as Urls from "@shared/route";
+import * as Urls from "@shared/navigation/routes";
 import { muiTheme } from "@theme/MUITheme";
 
 import React, { useState } from "react";

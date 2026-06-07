@@ -4,7 +4,7 @@ import {
   type ProjectSortMetric,
   type ProjectSortOrder,
 } from "@modules/projects/projectListUtils";
-import { darkMenuProps } from "@shared/darkMenuProps";
+import { darkMenuProps } from "@theme/darkMenuProps";
 
 import { CustomSortButton, SummaryChip } from "./Controls";
 
