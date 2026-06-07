@@ -12,6 +12,7 @@ import {
 import { useUser } from "@providers/UserProvider";
 import CommentItem from "./CommentItem";
 import CommentComposer from "./CommentComposer";
+import { UserProfileLink } from "@shared/user/UserProfileLink";
 
 const SectionContainer = styled(Box)(({ theme }) => ({
   marginTop: theme.spacing(3),
@@ -219,6 +220,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
       {/* Comment input (logged-in users only) */}
       {user ? (
         <CommentInputContainer>
+          <UserProfileLink user={user} showAvatar showName={false} avatarSize={36} />
           <CommentComposer
             value={newComment}
             onChange={setNewComment}

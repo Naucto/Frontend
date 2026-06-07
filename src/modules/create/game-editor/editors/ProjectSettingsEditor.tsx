@@ -25,6 +25,7 @@ import {
   invalidateCachedProjectImageUrl,
   setCachedProjectImageUrl,
 } from "@utils/projectImageCache";
+import { UserProfileLink } from "@shared/user/UserProfileLink";
 
 const Section = styled(Box)(({ theme }) => ({
   marginBottom: theme.spacing(4),
@@ -600,7 +601,10 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
                 ×
               </ActionButton>
             }>
-              <ListItemText primary={user.username} secondary={user.email} />
+              <ListItemText
+                primary={<UserProfileLink user={user} showAvatar avatarSize={28} />}
+                secondary={user.email}
+              />
             </ListItem>
           ))}
         </CollaboratorList>

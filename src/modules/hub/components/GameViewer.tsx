@@ -8,7 +8,7 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import LikeSvg from "@assets/like.svg";
 import CommentSvg from "@assets/comment.svg";
 import NextSvg from "@assets/next.svg";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   projectControllerGetRelease,
   projectControllerGetPublishedProjectImage,
@@ -16,7 +16,8 @@ import {
   projectControllerGetLikeStatus,
   projectControllerRegisterReleaseView,
   ProjectExResponseDto,
-  projectControllerFork
+  projectControllerFork,
+  type UserBasicInfoDto,
 } from "@api";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
@@ -29,6 +30,7 @@ import { getCachedProjectImageUrl } from "@utils/projectImageCache";
 import CommentSection from "./CommentSection";
 import { useSnackbar } from "notistack";
 import * as urls from "@shared/route";
+import { UserAvatarStack } from "@shared/user/UserProfileLink";
 
 const Overlay = styled(Box)(({ theme }) => ({
   position: "fixed",
@@ -244,6 +246,24 @@ const TagChip = styled(Chip)(({ theme }) => ({
   color: theme.palette.common.white,
 }));
 
+const AttributionLine = styled(Typography)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  flexWrap: "wrap",
+  gap: theme.spacing(0.75),
+  color: theme.palette.grey[400],
+}));
+
+const ForkedGameLink = styled(Link)(({ theme }) => ({
+  color: theme.palette.common.white,
+  fontWeight: 700,
+  textDecoration: "none",
+  "&:hover": {
+    color: theme.palette.yellow[500],
+    textDecoration: "underline",
+  },
+}));
+
 export const GameViewer: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -254,7 +274,7 @@ export const GameViewer: React.FC = () => {
   const [project, setProject] = useState<ProjectExResponseDto | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [forking, setForking] = useState(false);
-  const [forkedFromInfo, setForkedFromInfo] = useState<{ name: string; creator: string } | null>(null);
+  const [forkedFromInfo, setForkedFromInfo] = useState<{ id: number; name: string; creator: UserBasicInfoDto | null } | null>(null);
   const canvasRef = React.useRef<SpriteRendererHandle>(null);
   const [code, setCode] = useState<string>("");
   const [output, setOutput] = useState<string>("");
@@ -341,8 +361,9 @@ export const GameViewer: React.FC = () => {
             const source = sourceProject as ProjectExResponseDto | undefined;
             if (source) {
               setForkedFromInfo({
+                id: source.id,
                 name: source.name,
-                creator: source.creator?.username || "Unknown"
+                creator: source.creator ?? null
               });
             }
           } catch {
@@ -499,12 +520,6 @@ export const GameViewer: React.FC = () => {
       [project.creator, ...project.collaborators].filter(Boolean).map((creator) => [creator.id, creator])
     ).values()
   );
-  const creatorNames = creators.map((creator) => creator.username);
-  const creatorsLabel =
-    creatorNames.length <= 1
-      ? creatorNames[0] ?? "Unknown"
-      : `${creatorNames.slice(0, -1).join(", ")} and ${creatorNames[creatorNames.length - 1]}`;
-
   return (
     <Overlay>
       <Container>
@@ -565,13 +580,19 @@ export const GameViewer: React.FC = () => {
               <Typography variant="h5" color="white">
                 About this game
               </Typography>
-              <Typography variant="body2" color="grey.400">
-                A game made by {creatorsLabel}
-              </Typography>
+              <AttributionLine variant="body2">
+                <span>Made by</span>
+                <UserAvatarStack users={creators} avatarSize={30} />
+              </AttributionLine>
               {forkedFromInfo && (
-                <Typography variant="body2" color="grey.400">
-                  This game was forked from: {forkedFromInfo.name} by {forkedFromInfo.creator}
-                </Typography>
+                <AttributionLine variant="body2">
+                  <span>Forked from:</span>
+                  <ForkedGameLink to={urls.toProjectView(forkedFromInfo.id)}>
+                    {forkedFromInfo.name}
+                  </ForkedGameLink>
+                  <span>by</span>
+                  <UserAvatarStack users={forkedFromInfo.creator ? [forkedFromInfo.creator] : []} avatarSize={30} />
+                </AttributionLine>
               )}
               <Typography variant="body1">
                 {String(project.longDesc || project.shortDesc || "No description available.")}
@@ -582,14 +603,6 @@ export const GameViewer: React.FC = () => {
                     <TagChip key={tag} label={tag} size="small" />
                   ))}
                 </TagRow>
-              )}
-              <Typography variant="caption" color="grey.500">
-                Created by: {project.creator?.username || "Unknown"}
-              </Typography>
-              {forkedFromInfo && (
-                <Typography variant="caption" color="grey.500" display="block">
-                  Forked from: {forkedFromInfo.name} by {forkedFromInfo.creator}
-                </Typography>
               )}
             </DetailsColumn>
             <StatsPanel>
