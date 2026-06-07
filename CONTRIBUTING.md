@@ -9,10 +9,12 @@ Branches should be named directly from the corresponding Jira task.
 (ex. NCTO-7-ide-vs-code-issue)
 
 # Commit naming:
-[PART] [TYPE] commit message
+[PART] [TYPE] Commit message
+
+The message after the tags starts with a **capital letter**.
 
 ## example:
-[COLLAB] [UPDATE] update imports using @ and improve editor manager cleanup
+[COLLAB] [UPDATE] Update imports using @ and improve editor manager cleanup
 
 ### PART:
 describes what part you're working on in one word

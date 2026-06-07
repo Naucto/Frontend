@@ -69,11 +69,43 @@ and reuse the pattern. **Ask before introducing a new state library.**
 
 These complement the lint/TS rules (which you should read from the config files, not restate).
 
-**Imports**
-- Use the path aliases from `tsconfig.paths.json` (`@modules/*`, `@shared/*`, `@components/*`,
-  `@providers/*`, `@hooks/*`, `@utils/*`, `@theme/*`, `@api`, `@our-types/*`, `@errors/*`,
-  `@assets/*`, `@lib/*`, `@config/*`). Avoid deep relative imports (`../../...`).
+**Imports — alias policy**
+- Use a project `@`-alias for **any cross-directory import**. The project aliases are:
+  `@modules`, `@shared`, `@components`, `@providers`, `@hooks`, `@utils`, `@theme`, `@api`,
+  `@errors`, `@assets`, `@lib`, `@our-types` (see `tsconfig.paths.json`).
+- **Same-directory `./x` imports are fine** (preferred for siblings within a folder).
+- **Don't** use `../` parent-relative imports — use an alias instead.
+- **Don't** import via raw `src/...` paths — use the matching `@`-alias (`src/assets/…` →
+  `@assets/…`, `src/shared/…` → `@shared/…`, etc.).
 - Don't include file extensions in imports (write `"./Music"`, not `"./Music.ts"`).
+- Note: npm scoped packages (`@mui/*`, `@emotion/*`, `@monaco-editor/*`) start with `@` but are
+  **libraries**, not project imports — see ordering below.
+
+**Imports — ordering** (blank line between each group; alphabetical within each):
+
+```ts
+// 1. Project — @-aliases
+import { useUser } from "@providers/UserProvider";
+import { Hub } from "@modules/hub/Hub";
+
+// 1. Project — same-dir relative
+import { EditorTab } from "./EditorType";
+
+// 2. Libraries — react first
+import React, { useState } from "react";
+import { createRoot } from "react-dom/client";
+
+// 2. Libraries — the rest
+import { Box } from "@mui/material";
+import axios from "axios";
+
+// 3. Standard TS/JS builtins (rare in browser src)
+import { join } from "node:path";
+
+// 4. Styles & assets (last)
+import icon from "@assets/icon.svg?react";
+import "./Editor.css";
+```
 
 **Styling**
 - No `!important`. Resolve specificity through MUI's styling system / proper selectors.
@@ -140,12 +172,16 @@ See `SECURITY.md` for the disclosure policy. Rules for agents and contributors:
 These are tracked cleanups; avoid partial migrations that make them worse.
 
 - **Tooling (Phase 2):** add a `typecheck` script; `package.json` dep cleanup; strip prod
-  `console`; `lint-staged` + `commitlint`; lint rules for alias/extension imports.
+  `console`; `lint-staged` + `commitlint`. Auto-enforce the import convention
+  (`simple-import-sort` for ordering; ban `../` and raw `src/...` imports and file extensions),
+  and clean up `tsconfig.paths.json` (drop the redundant `src/*` and unused `config/*`/
+  `@config/*` mappings; migrate the ~23 `src/...` imports to `@`-aliases).
 - **Security (Phase 2):** ~75 open Dependabot alerts. Patch direct deps first (`axios`→≥1.16.0,
   `react-router-dom`→≥7.15.0, `vite`→≥6.4.2), then resolve transitive ones (handlebars,
   dompurify, rollup, …) via `npm audit fix` / `overrides`. Add `.github/dependabot.yml`
-  (grouped updates), enable GitHub secret scanning, and consider CodeQL code scanning. Migrate
-  the auth token off `localStorage` to httpOnly cookies (needs backend support).
+  (grouped updates). Secret scanning + CodeQL are enabled; address CodeQL's finding by adding a
+  `permissions: { contents: read }` block to `.github/workflows/build.yml`. Migrate the auth
+  token off `localStorage` to httpOnly cookies (needs backend support).
 - **Structure (Phase 3):**
   - `components/ui` vs `shared` boundary not yet reconciled (duplicate `TextField`, loose files
     at `shared/` root).
