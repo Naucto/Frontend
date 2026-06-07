@@ -1,4 +1,5 @@
 import React from "react";
+
 import { styled } from "@mui/material/styles";
 
 export const DOCUMENTATION_URL = import.meta.env.VITE_DOCS_URL ?? "https://docs.naucto.net";

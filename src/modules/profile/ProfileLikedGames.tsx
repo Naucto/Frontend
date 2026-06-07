@@ -1,5 +1,6 @@
-import React from "react";
 import ProfileGamesSeeAllBase from "@modules/profile/ProfileGamesSeeAllBase";
+
+import React from "react";
 
 export const ProfileLikedGames: React.FC = () => {
   return (

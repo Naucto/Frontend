@@ -1,14 +1,16 @@
-import { Box, Link, Typography, Divider, useTheme } from "@mui/material";
-import { FC, useCallback, useState } from "react";
-import { useForm } from "react-hook-form";
-
-import { CreateUserDto, LoginDto, authControllerRegister, authControllerLogin, userControllerGetProfile } from "@api";
+import { authControllerLogin, authControllerRegister, CreateUserDto, LoginDto, userControllerGetProfile } from "@api";
 import { useUser } from "@providers/UserProvider";
 import { CustomDialog } from "@shared/dialog/CustomDialog";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
-import { generatePKCE, generateState, savePKCE, saveGooglePKCE, saveGoogleState, saveGithubState, saveMicrosoftState } from "@utils/pkce";
+import { generatePKCE, generateState, saveGithubState, saveGooglePKCE, saveGoogleState, saveMicrosoftState, savePKCE } from "@utils/pkce";
 
 import * as S from "./AuthOverlay.styles";
+
+import { FC, useCallback, useState } from "react";
+
+import { Box, Divider, Link, Typography, useTheme } from "@mui/material";
+import { useForm } from "react-hook-form";
+
 import GitHubPixelLogo from "@assets/GithubLogo.png";
 import GooglePixelLogo from "@assets/GoogleLogo.png";
 import MicrosoftPixelLogo from "@assets/MicrosoftLogo.png";

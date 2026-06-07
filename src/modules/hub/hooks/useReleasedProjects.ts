@@ -1,4 +1,5 @@
-import { ProjectExResponseDto, projectControllerGetPaginatedReleases } from "@api";
+import { projectControllerGetPaginatedReleases, ProjectExResponseDto } from "@api";
+
 import { useCallback, useEffect, useState } from "react";
 
 type FetchedPage = {

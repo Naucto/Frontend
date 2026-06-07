@@ -1,7 +1,8 @@
-import { useCallback } from "react";
 import { userControllerGetProfile } from "@api";
 import { useUser } from "@providers/UserProvider";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
+
+import { useCallback } from "react";
 
 interface UseAuthSuccessReturn {
   handleAuthSuccess: (accessToken: string, onClose?: () => void) => Promise<void>;

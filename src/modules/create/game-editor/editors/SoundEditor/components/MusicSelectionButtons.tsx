@@ -1,6 +1,7 @@
-import React from "react";
+import { MusicSelectionButton, MusicSelectionContainer } from "../styles/SoundEditor.styles";
 import { MusicSelectionButtonsProps } from "../types/SoundEditor.types";
-import { MusicSelectionContainer, MusicSelectionButton } from "../styles/SoundEditor.styles";
+
+import React from "react";
 
 export const MusicSelectionButtons: React.FC<MusicSelectionButtonsProps> = ({
   musics,

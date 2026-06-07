@@ -2,7 +2,6 @@
   "compilerOptions": {
     "baseUrl": "./",
     "paths": {
-      "@config/*": ["./config/*"],
       "@assets/*": ["./src/assets/*"],
       "@modules/*": ["./src/modules/*"],
       "@components/*": ["./src/components/*"],
@@ -16,10 +15,7 @@
       "@hooks/*": ["./src/hooks/*"],
       "@providers/*": ["./src/providers/*"],
       "@errors/*": ["./src/errors/*"],
-      "@our-types/*": ["./src/types/*"],
-      "src/*": ["src/*"],
-      "config/*": ["config/*"]
+      "@our-types/*": ["./src/types/*"]
     }
   }
 }
-

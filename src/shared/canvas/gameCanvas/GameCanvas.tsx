@@ -1,10 +1,11 @@
-import { StyledCanvas, CanvasProps } from "@shared/canvas/Canvas";
+import { SoundProvider } from "@providers/editors/SoundProvider";
+import { MusicPlayer } from "@shared/audio/MusicPlayer";
+import { CanvasProps, StyledCanvas } from "@shared/canvas/Canvas";
 import { KeyHandler } from "@shared/canvas/gameCanvas/KeyHandler";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import { EnvData, LuaEnvironmentManager } from "@shared/luaEnvManager/LuaEnvironmentManager";
+
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from "react";
-import { SoundProvider } from "@providers/editors/SoundProvider";
-import { MusicPlayer } from "@shared/audio/MusicPlayer";
 
 const ENGINE_FRAME_TIME = 1000 / 60;
 

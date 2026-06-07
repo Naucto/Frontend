@@ -1,11 +1,14 @@
-import NextSvg from "@assets/next.svg";
+import { type GameProvider } from "@providers/GameProvider";
+import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
+import { type SpriteRendererHandle } from "@shared/canvas/RendererHandle";
+import { type EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
+
+import { type Dispatch, type JSX, type RefObject, type SetStateAction } from "react";
+
 import { CircularProgress, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { type SpriteRendererHandle } from "@shared/canvas/RendererHandle";
-import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
-import { type EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
-import { type GameProvider } from "@providers/GameProvider";
-import { type Dispatch, type JSX, type RefObject, type SetStateAction } from "react";
+
+import NextSvg from "@assets/next.svg";
 
 type PlayableGameFrameProps = {
   bannerUrl: string;

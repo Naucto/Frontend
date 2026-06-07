@@ -1,5 +1,6 @@
-import * as Y from "yjs";
 import { DEFAULT_LUA_PROJECT_CODE } from "@shared/lua/defaultProjectCode";
+
+import * as Y from "yjs";
 
 const SPRITE_MAP_NAME = "sprite";
 const DEFAULT_PLAYER_SPRITE_INDICES = [1, 2, 17, 18] as const;

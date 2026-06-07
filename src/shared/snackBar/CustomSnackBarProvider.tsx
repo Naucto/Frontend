@@ -1,10 +1,10 @@
 import { styled } from "@mui/material";
 import { MaterialDesignContent, SnackbarProvider } from "notistack";
 
-import CheckIcon from "src/assets/check.svg?react";
-import ErrorIcon from "src/assets/cross.svg?react";
-import InfoIcon from "src/assets/infoBox.svg?react";
-import WarningIcon from "src/assets/warningBox.svg?react";
+import CheckIcon from "@assets/check.svg?react";
+import ErrorIcon from "@assets/cross.svg?react";
+import InfoIcon from "@assets/infoBox.svg?react";
+import WarningIcon from "@assets/warningBox.svg?react";
 
 const styledSnackbar = styled(MaterialDesignContent)(({ theme }) => ({
   "&.notistack-MuiContent-success": {

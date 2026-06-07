@@ -1,6 +1,7 @@
-import { Box, styled } from "@mui/material";
-import GenericTextField from "@shared/TextField";
 import ImportantButton from "@shared/buttons/ImportantButton";
+import GenericTextField from "@shared/TextField";
+
+import { Box, styled } from "@mui/material";
 
 interface OAuthButtonProps {
   bgColor?: string;

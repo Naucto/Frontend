@@ -1,11 +1,12 @@
-import React from "react";
-import { ProgressBarProps } from "../types/SoundEditor.types";
 import {
   ProgressBarContainer,
-  ProgressBarTrack,
   ProgressBarFill,
   ProgressBarThumb,
+  ProgressBarTrack,
 } from "../styles/ProgressBar.styles";
+import { ProgressBarProps } from "../types/SoundEditor.types";
+
+import React from "react";
 
 export const ProgressBar: React.FC<ProgressBarProps> = ({
   progress,

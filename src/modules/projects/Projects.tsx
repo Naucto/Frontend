@@ -1,23 +1,25 @@
-import { ProjectResponseDto, projectControllerCountProjects, projectControllerFindAll } from "@api";
-import { ProjectPageHeader } from "@modules/projects/components/browse/Header";
+import { projectControllerCountProjects, projectControllerFindAll, ProjectResponseDto } from "@api";
 import { CustomSortButton, SummaryChip } from "@modules/projects/components/browse/Controls";
 import { ProjectSortFilters } from "@modules/projects/components/browse/Filters";
+import { ProjectPageHeader } from "@modules/projects/components/browse/Header";
 import { PageContainer } from "@modules/projects/components/browse/Layout";
 import { ProjectSection } from "@modules/projects/components/browse/ProjectSection";
-import { PREDEFINED_PROJECT_TAGS } from "@modules/projects/projectTags";
 import {
   getProjectSortMetricLabel,
   getProjectSortOrderLabel,
+  type ProjectCategory,
   projectMatchesCategory,
   projectMatchesNameAndTags,
-  sortProjects,
-  type ProjectCategory,
   type ProjectSortMetric,
   type ProjectSortOrder,
+  sortProjects,
 } from "@modules/projects/projectListUtils";
+import { PREDEFINED_PROJECT_TAGS } from "@modules/projects/projectTags";
 import { useUser } from "@providers/UserProvider";
 import * as urls from "@shared/route";
+
 import { type JSX, useCallback, useEffect, useMemo, useState } from "react";
+
 import { useNavigate } from "react-router-dom";
 
 const PAGE_SIZE = 24;

@@ -1,9 +1,11 @@
-import React, { useState } from "react";
-import { EditorProps } from "../EditorType.ts";
-import { styled } from "@mui/material/styles";
-import { Box } from "@mui/material";
+import { EditorProps } from "../EditorType";
 import { MapViewport } from "./MapViewport";
 import { SpritePicker } from "./SpritePicker";
+
+import React, { useState } from "react";
+
+import { Box } from "@mui/material";
+import { styled } from "@mui/material/styles";
 
 const MapEditorInner = styled(Box)(({ theme }) => ({
   display: "flex",

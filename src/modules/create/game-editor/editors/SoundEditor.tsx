@@ -1,22 +1,25 @@
-import React, { useState, useCallback, useEffect, useMemo, useRef } from "react";
-import { Box } from "@mui/material";
-import * as Tone from "tone";
-import { createMusic, MusicData, setNote, playMusicFromPosition } from "./SoundEditor/Music";
-import { registerCustomInstrument, stopAllSynths, NoteData } from "./SoundEditor/Note";
-import { InstrumentEditor, InstrumentConfig } from "./SoundEditor/InstrumentEditor";
 import { EditorProps } from "@modules/create/game-editor/editors/EditorType";
-import { MusicGrid } from "./SoundEditor/MusicGrid";
+
+import { ControlButtons } from "./SoundEditor/components/ControlButtons";
 import { InstrumentButtons } from "./SoundEditor/components/InstrumentButtons";
 import { MusicSelectionButtons } from "./SoundEditor/components/MusicSelectionButtons";
-import { ControlButtons } from "./SoundEditor/components/ControlButtons";
 import { defaultInstruments } from "./SoundEditor/constants/instruments";
+import { InstrumentConfig, InstrumentEditor } from "./SoundEditor/InstrumentEditor";
+import { createMusic, MusicData, playMusicFromPosition, setNote } from "./SoundEditor/Music";
+import { MusicGrid } from "./SoundEditor/MusicGrid";
+import { NoteData, registerCustomInstrument, stopAllSynths } from "./SoundEditor/Note";
 import {
-  SoundEditorRoot,
-  SoundEditorWrapper,
   EditorContainer,
   ErrorMessage,
   NewInstrumentButton,
+  SoundEditorRoot,
+  SoundEditorWrapper,
 } from "./SoundEditor/styles/SoundEditor.styles";
+
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+import { Box } from "@mui/material";
+import * as Tone from "tone";
 
 export const SoundEditor: React.FC<EditorProps> = ({ project }) => {
   if (!project || !project.soundProvider) {

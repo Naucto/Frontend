@@ -1,15 +1,18 @@
-import CommentSvg from "@assets/comment.svg";
-import LikeSvg from "@assets/like.svg";
 import { type ProjectExResponseDto, type UserBasicInfoDto } from "@api";
+import * as urls from "@shared/route";
+import { UserAvatarStack } from "@shared/user/UserProfileLink";
+
+import { type JSX } from "react";
+
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import { Box, Button, Chip, Typography } from "@mui/material";
 import { alpha, styled } from "@mui/material/styles";
-import { UserAvatarStack } from "@shared/user/UserProfileLink";
-import { type JSX } from "react";
 import { Link } from "react-router-dom";
-import * as urls from "@shared/route";
+
+import CommentSvg from "@assets/comment.svg";
+import LikeSvg from "@assets/like.svg";
 
 export type ForkedFromInfo = {
   creator: UserBasicInfoDto | null;

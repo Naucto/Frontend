@@ -1,9 +1,11 @@
-import { useEffect, useRef } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
 import { authControllerLoginWithGoogleCode } from "@api";
 import { useAuthSuccess } from "@hooks/useAuthSuccess";
 import { getGooglePKCE, getGoogleState } from "@utils/pkce";
-import { Box, Typography, CircularProgress } from "@mui/material";
+
+import { useEffect, useRef } from "react";
+
+import { Box, CircularProgress, Typography } from "@mui/material";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 export const GoogleOAuthCallback = (): React.JSX.Element => {
   const [searchParams] = useSearchParams();

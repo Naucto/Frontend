@@ -1,8 +1,10 @@
-import { useEffect, useRef } from "react";
-import { useSearchParams } from "react-router-dom";
-import { Box, Typography, CircularProgress } from "@mui/material";
 import { authControllerLoginWithMicrosoft } from "@api";
-import { getPKCE, getMicrosoftState } from "@utils/pkce";
+import { getMicrosoftState, getPKCE } from "@utils/pkce";
+
+import { useEffect, useRef } from "react";
+
+import { Box, CircularProgress, Typography } from "@mui/material";
+import { useSearchParams } from "react-router-dom";
 
 interface MicrosoftTokenResponse {
   access_token?: string;

@@ -1,13 +1,3 @@
-import React from "react";
-import { Box, Link as MuiLink, Typography } from "@mui/material";
-import { styled } from "@mui/material/styles";
-import GitHubIcon from "@mui/icons-material/GitHub";
-import XIcon from "@mui/icons-material/X";
-import RedditIcon from "@mui/icons-material/Reddit";
-import LinkedInIcon from "@mui/icons-material/LinkedIn";
-import ArticleIcon from "@mui/icons-material/Article";
-import OpenInNewIcon from "@mui/icons-material/OpenInNew";
-import { DOCUMENTATION_URL } from "@shared/docs/DocumentationFrame";
 import {
   DISCORD_URL,
   GITHUB_URL,
@@ -16,8 +6,20 @@ import {
   REDDIT_URL,
   X_URL,
 } from "@shared/constants/links";
+import { DOCUMENTATION_URL } from "@shared/docs/DocumentationFrame";
 import { FeedbackLanguagePicker } from "@shared/feedback/FeedbackLanguagePicker";
 import { DiscordIcon } from "@shared/icons/DiscordIcon";
+
+import React from "react";
+
+import ArticleIcon from "@mui/icons-material/Article";
+import GitHubIcon from "@mui/icons-material/GitHub";
+import LinkedInIcon from "@mui/icons-material/LinkedIn";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import RedditIcon from "@mui/icons-material/Reddit";
+import XIcon from "@mui/icons-material/X";
+import { Box, Link as MuiLink, Typography } from "@mui/material";
+import { styled } from "@mui/material/styles";
 
 const footerLinks = [
   { label: "GitHub", href: GITHUB_URL, icon: <GitHubIcon fontSize="small" /> },

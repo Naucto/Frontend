@@ -1,8 +1,10 @@
+import { FEEDBACK_ENGLISH_URL, FEEDBACK_FRENCH_URL } from "@shared/constants/links";
+
 import React, { useEffect, useRef, useState } from "react";
+
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import OpenInNewIcon from "@mui/icons-material/OpenInNew";
-import { FEEDBACK_ENGLISH_URL, FEEDBACK_FRENCH_URL } from "@shared/constants/links";
 
 type FeedbackLanguagePickerProps = {
   children: (openDialog: () => void) => React.ReactNode;

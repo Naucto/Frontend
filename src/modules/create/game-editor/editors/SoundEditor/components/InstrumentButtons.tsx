@@ -1,7 +1,9 @@
-import React from "react";
-import { Box } from "@mui/material";
-import { InstrumentButtonsProps } from "../types/SoundEditor.types";
 import { ButtonContainer, StyledButton } from "../styles/SoundEditor.styles";
+import { InstrumentButtonsProps } from "../types/SoundEditor.types";
+
+import React from "react";
+
+import { Box } from "@mui/material";
 
 export const InstrumentButtons: React.FC<InstrumentButtonsProps> = ({
   instruments,

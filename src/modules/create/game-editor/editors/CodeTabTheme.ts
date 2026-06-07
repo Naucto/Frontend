@@ -1,6 +1,6 @@
-import monaco from "monaco-editor";
-
 import { colors } from "@theme/colors";
+
+import monaco from "monaco-editor";
 
 const tokenColor = (color: string): string => color.replace("#", "");
 

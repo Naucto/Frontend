@@ -1,9 +1,7 @@
 import { ProjectExResponseDto } from "@api";
 import { CustomSortButton, SummaryChip } from "@modules/projects/components/browse/Controls";
-import { type JSX } from "react";
+
 import { HubDateOrder, HubReleaseWindow } from "../hubSorting";
-import { NewGamesFiltersState } from "./filters/NewGamesFiltersPanel";
-import { FilterPanel } from "./filters/FilterStyles";
 import {
   ListSortMetricSelect,
   ListSortSummaryChip,
@@ -14,7 +12,11 @@ import {
   SelectedTagSummaryChips,
   TagsField,
 } from "./filters/FilterFields";
+import { FilterPanel } from "./filters/FilterStyles";
+import { NewGamesFiltersState } from "./filters/NewGamesFiltersPanel";
 import { HubCarouselSection } from "./HubCarouselSection";
+
+import { type JSX } from "react";
 
 type NewHubSectionProps = {
   availableTags: string[];

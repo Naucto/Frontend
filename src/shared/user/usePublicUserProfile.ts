@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
 import {
   PublicUserProfileDto,
   userPublicControllerGetPublicProfileByUsername,
 } from "@api";
+
+import { useEffect, useState } from "react";
 
 const profileCache = new Map<string, PublicUserProfileDto | null>();
 const pendingProfileRequests = new Map<string, Promise<PublicUserProfileDto | null>>();

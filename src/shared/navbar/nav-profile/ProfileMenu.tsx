@@ -1,13 +1,16 @@
+import { useUser } from "@providers/UserProvider";
+import { ProfileMenuItem } from "@shared/navbar/nav-profile/ProfileMenuItem";
+import * as urls from "@shared/route";
+import { LocalStorageManager } from "@utils/LocalStorageManager";
+
+import { FC, useCallback } from "react";
+
 import { styled } from "@mui/material";
 import Menu from "@mui/material/Menu";
-import { FC, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+
 import DisconnectIcon from "@assets/disconnect.svg?react";
 import UserIcon from "@assets/user.svg?react";
-import { ProfileMenuItem } from "@shared/navbar/nav-profile/ProfileMenuItem";
-import { useUser } from "@providers/UserProvider";
-import { useNavigate } from "react-router-dom";
-import { LocalStorageManager } from "@utils/LocalStorageManager";
-import * as urls from "@shared/route";
 
 type ProfileMenuProps = {
   anchorEl: undefined | HTMLElement;

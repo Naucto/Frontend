@@ -1,10 +1,12 @@
-import React, { useCallback, useEffect } from "react";
-import { styled } from "@mui/material/styles";
+import { ProjectProvider } from "@providers/ProjectProvider";
 import { StyledCanvas } from "@shared/canvas/Canvas";
 import CanvasGridOverlay from "@shared/canvas/CanvasGridOverlay";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
-import { ProjectProvider } from "@providers/ProjectProvider";
 import { SelectedSpriteFrame } from "@shared/canvas/SelectedSpriteFrame";
+
+import React, { useCallback, useEffect } from "react";
+
+import { styled } from "@mui/material/styles";
 
 const PickerContainer = styled("div")(() => ({
   display: "flex",

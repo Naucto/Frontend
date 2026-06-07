@@ -1,32 +1,33 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Switch, Tab, Tabs, Tooltip } from "@mui/material";
-import { MenuBook, PlayArrow, SportsEsports } from "@mui/icons-material";
-import { styled } from "@mui/material/styles";
-import { Beforeunload } from "react-beforeunload";
-
 import { workSessionControllerLeave } from "@api";
 import CodeEditor from "@modules/create/game-editor/editors/CodeEditor";
 import GameEditorConsole from "@modules/create/game-editor/editors/GameEditorConsole";
 import { MapEditor } from "@modules/create/game-editor/editors/MapEditor/MapEditor";
 import ProjectSettingsEditor from "@modules/create/game-editor/editors/ProjectSettingsEditor";
 import { SoundEditor } from "@modules/create/game-editor/editors/SoundEditor";
-import { MultiplayerSettingsEditor } from "@modules/editor/multiplayer/MultiplayerSettingsEditor.tsx";
+import { MultiplayerSettingsEditor } from "@modules/editor/multiplayer/MultiplayerSettingsEditor";
 import { SpriteEditor } from "@modules/editor/SpriteEditor/SpriteEditor";
 import { ProjectProvider, ProviderEventType } from "@providers/ProjectProvider";
-import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
-
 import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
-import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
+import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import { DocumentationFrame } from "@shared/docs/DocumentationFrame";
-import CodeIcon from "src/assets/code.svg?react";
-import MapIcon from "src/assets/map.svg?react";
-import MultiplayerIcon from "src/assets/user.svg?react";
-import ProjectIcon from "src/assets/project.svg?react";
-import SoundIcon from "src/assets/music.svg?react";
-import SpriteIcon from "src/assets/pen.svg?react";
+import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
 
-import { EditorProps, EditorTab } from "./editors/EditorType";
 import { EditorContainer } from "./editors/EditorContainer";
+import { EditorProps, EditorTab } from "./editors/EditorType";
+
+import React, { useEffect, useMemo, useState } from "react";
+
+import { MenuBook, PlayArrow, SportsEsports } from "@mui/icons-material";
+import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Switch, Tab, Tabs, Tooltip } from "@mui/material";
+import { styled } from "@mui/material/styles";
+import { Beforeunload } from "react-beforeunload";
+
+import CodeIcon from "@assets/code.svg?react";
+import MapIcon from "@assets/map.svg?react";
+import SoundIcon from "@assets/music.svg?react";
+import SpriteIcon from "@assets/pen.svg?react";
+import ProjectIcon from "@assets/project.svg?react";
+import MultiplayerIcon from "@assets/user.svg?react";
 
 const GameEditorContainer = styled("div")(({ theme }) => ({
   height: "100%",

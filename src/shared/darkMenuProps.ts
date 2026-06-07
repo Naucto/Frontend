@@ -1,5 +1,5 @@
-import { alpha } from "@mui/material/styles";
 import type { MenuProps } from "@mui/material/Menu";
+import { alpha } from "@mui/material/styles";
 
 export const darkMenuProps: Partial<MenuProps> = {
   slotProps: {

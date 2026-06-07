@@ -1,5 +1,6 @@
-import { SvgIcon, type SvgIconProps } from "@mui/material";
 import { type JSX } from "react";
+
+import { SvgIcon, type SvgIconProps } from "@mui/material";
 
 export const DiscordIcon = (props: SvgIconProps): JSX.Element => (
   <SvgIcon {...props} viewBox="0 0 24 24">

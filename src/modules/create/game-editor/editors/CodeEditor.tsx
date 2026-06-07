@@ -1,17 +1,21 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import Editor, { type Monaco } from "@monaco-editor/react";
-import type { editor as MonacoEditor } from "monaco-editor";
-import CodeTabTheme from "./CodeTabTheme";
-import { EditorProps } from "./EditorType";
-import "./CodeEditor.css";
-import { useTheme } from "@mui/material/styles";
-import { generateRandomColor } from "@utils/colorUtils";
 import { AwarenessEventType } from "@providers/editors/AwarenessProvider";
-import { getLuaErrorMarkers, LUA_MARKER_OWNER, registerLuaLanguageFeatures } from "./luaLanguageFeatures";
+import { generateRandomColor } from "@utils/colorUtils";
+
 import {
   type AwarenessChanges,
   createRemoteUsersStyles,
 } from "./code-editor/collaborationStyles";
+import CodeTabTheme from "./CodeTabTheme";
+import { EditorProps } from "./EditorType";
+import { getLuaErrorMarkers, LUA_MARKER_OWNER, registerLuaLanguageFeatures } from "./luaLanguageFeatures";
+
+import React, { useCallback, useEffect, useRef, useState } from "react";
+
+import Editor, { type Monaco } from "@monaco-editor/react";
+import { useTheme } from "@mui/material/styles";
+import type { editor as MonacoEditor } from "monaco-editor";
+
+import "./CodeEditor.css";
 
 const CodeEditor: React.FC<EditorProps> = ({ project, consoleOutput }) => {
   const [userStyles, setUserStyles] = useState<string>("");

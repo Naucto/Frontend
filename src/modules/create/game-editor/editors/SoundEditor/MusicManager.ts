@@ -1,6 +1,7 @@
-import * as Tone from "tone";
 import { MusicError } from "./Music";
 import { getSynth } from "./Note";
+
+import * as Tone from "tone";
 
 export const AllNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 

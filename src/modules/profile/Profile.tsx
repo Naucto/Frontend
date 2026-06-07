@@ -1,27 +1,30 @@
-import { JSX, useEffect, useMemo, useRef, useState } from "react";
-import { styled } from "@mui/material/styles";
-import { Box, Typography } from "@mui/material";
-import { Link, useParams } from "react-router-dom";
-import { useAsync } from "src/hooks/useAsync";
-import { LocalStorageManager } from "@utils/LocalStorageManager";
-import ImportantButton from "@shared/buttons/ImportantButton";
-import { Editable } from "@shared/forms/Editable";
-import { useForm } from "react-hook-form";
-import UserIcon from "@assets/user.svg?react";
-import { useSnackbar } from "notistack";
-import * as urls from "@shared/route";
 import {
   ProjectExResponseDto,
-  userPublicControllerGetPublicProfileByUsername,
-  userPublicControllerGetLikedGames,
-  userPublicControllerGetPublishedGames,
-  userControllerUpdateMyProfile,
-  userControllerUploadProfilePicture,
   PublicUserProfileDto,
+  userControllerUpdateMyProfile,
   userControllerUploadProfileBackground,
+  userControllerUploadProfilePicture,
+  userPublicControllerGetLikedGames,
+  userPublicControllerGetPublicProfileByUsername,
+  userPublicControllerGetPublishedGames,
 } from "@api";
-import { isAxiosError } from "axios";
+import { useAsync } from "@hooks/useAsync";
 import ProjectCard from "@modules/projects/components/ProjectCard";
+import ImportantButton from "@shared/buttons/ImportantButton";
+import { Editable } from "@shared/forms/Editable";
+import * as urls from "@shared/route";
+import { LocalStorageManager } from "@utils/LocalStorageManager";
+
+import { JSX, useEffect, useMemo, useRef, useState } from "react";
+
+import { Box, Typography } from "@mui/material";
+import { styled } from "@mui/material/styles";
+import { isAxiosError } from "axios";
+import { useSnackbar } from "notistack";
+import { useForm } from "react-hook-form";
+import { Link, useParams } from "react-router-dom";
+
+import UserIcon from "@assets/user.svg?react";
 
 const ACCEPTED_IMAGE_TYPES = "image/png,image/jpeg,image/gif,image/webp";
 

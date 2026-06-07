@@ -1,22 +1,23 @@
-import "./App.css";
-import React, { Suspense, lazy, useEffect } from "react";
-import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
-import { Hub } from "@modules/hub/Hub";
-import { ThemeProvider } from "@mui/material/styles";
-import NavBar from "@shared/navbar/NavBar";
-import { muiTheme } from "@theme/MUITheme";
-import { CustomSnackBarProvider } from "@shared/snackBar/CustomSnackBarProvider";
-import Profile from "@modules/profile/Profile";
-import ProfilePublishedGames from "@modules/profile/ProfilePublishedGames";
-import ProfileLikedGames from "@modules/profile/ProfileLikedGames";
-
-import { GameViewer } from "@modules/hub/components/GameViewer";
-import { OAuthCallback } from "@modules/auth/OAuthCallback";
-import { MicrosoftOAuthCallback } from "@modules/auth/MicrosoftOAuthCallback";
-import { GoogleOAuthCallback } from "@modules/auth/GoogleOAuthCallback";
 import { useAuthSuccess } from "@hooks/useAuthSuccess";
-import { styled } from "@mui/material/styles";
+import { GoogleOAuthCallback } from "@modules/auth/GoogleOAuthCallback";
+import { MicrosoftOAuthCallback } from "@modules/auth/MicrosoftOAuthCallback";
+import { OAuthCallback } from "@modules/auth/OAuthCallback";
+import { GameViewer } from "@modules/hub/components/GameViewer";
+import { Hub } from "@modules/hub/Hub";
+import Profile from "@modules/profile/Profile";
+import ProfileLikedGames from "@modules/profile/ProfileLikedGames";
+import ProfilePublishedGames from "@modules/profile/ProfilePublishedGames";
 import { SiteFooter } from "@shared/footer/SiteFooter";
+import NavBar from "@shared/navbar/NavBar";
+import { CustomSnackBarProvider } from "@shared/snackBar/CustomSnackBarProvider";
+import { muiTheme } from "@theme/MUITheme";
+
+import React, { lazy, Suspense, useEffect } from "react";
+
+import { styled, ThemeProvider } from "@mui/material/styles";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+
+import "./App.css";
 
 const AppContainer = styled("div")(() => ({
   display: "flex",

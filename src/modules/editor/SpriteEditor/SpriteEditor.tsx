@@ -1,13 +1,16 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { colorPalette } from "./Color";
-import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
-import React from "react";
+import { EditorProps } from "@modules/create/game-editor/editors/EditorType";
+import Tools, { SpritePixelAccessor } from "@modules/editor/SpriteEditor/Tools";
 import { StyledCanvas } from "@shared/canvas/Canvas";
 import CanvasGridOverlay from "@shared/canvas/CanvasGridOverlay";
-import { EditorProps } from "../../create/game-editor/editors/EditorType";
-import { styled } from "@mui/material";
-import Tools, { SpritePixelAccessor } from "@modules/editor/SpriteEditor/Tools";
+import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import { SelectedSpriteFrame } from "@shared/canvas/SelectedSpriteFrame";
+
+import { colorPalette } from "./Color";
+
+import React from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+import { styled } from "@mui/material";
 
 export enum DrawTool {
   Pen,
@@ -20,7 +23,7 @@ export type CanvasHandler = ((pixelPos: Point2D) => void) | undefined;
 export type PreviewOverlay = (renderer: SpriteRendererHandle, offsetX: number, offsetY: number) => void;
 
 const TILE_SIZES = Array.from({ length: 8 }, (_, i) => (i + 1) * 8);
-const BIT_INDICES = [0,1,2,3,4,5,6,7] as const;
+const BIT_INDICES = [0, 1, 2, 3, 4, 5, 6, 7] as const;
 type TileSize = typeof TILE_SIZES[number];
 
 interface ColorButtonProps {
