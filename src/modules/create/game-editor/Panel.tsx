@@ -22,11 +22,12 @@ const TitleBox = styled(Box)(({ theme }) => ({
 interface PanelProps {
   title: string;
   children?: React.ReactNode;
+  [key: string]: unknown;
 }
 
-const Panel: React.FC<PanelProps> = ({ title, children }) => {
+const Panel: React.FC<PanelProps> = ({ title, children, ...rest }) => {
   return (
-    <ConsoleContainer>
+    <ConsoleContainer {...rest}>
       <TitleBox>
         <Typography variant="subtitle2">
           {title}

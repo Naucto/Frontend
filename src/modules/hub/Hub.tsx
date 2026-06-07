@@ -1,181 +1,281 @@
 import { styled } from "@mui/material/styles";
-import { JSX, useEffect, useState } from "react";
-import { ProjectResponseDto, projectControllerGetAllReleases } from "@api";
-import { useAsync } from "src/hooks/useAsync";
-import { Box, IconButton, Typography } from "@mui/material";
-import { ChevronLeft, ChevronRight } from "@mui/icons-material";
-import ProjectCard from "@modules/projects/components/ProjectCard";
+import { Typography } from "@mui/material";
+import { JSX, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import * as urls from "@shared/route";
+import {
+  filterReleasedProjects,
+  getPlayedProjectsFromPublished,
+  getPublishedProjects,
+  HubCategoryKey,
+  projectMatchesNameAndTags,
+  sortHubProjects,
+  sortPopularProjects,
+} from "./hubSorting";
+import { LocalStorageManager } from "@utils/LocalStorageManager";
+import { PREDEFINED_PROJECT_TAGS } from "@modules/projects/projectTags";
+import { useReleasedProjects, mergeProjects } from "./hooks/useReleasedProjects";
+import { useHubEvents } from "./hooks/useHubEvents";
+import { useReleasedProjectCount } from "./hooks/useReleasedProjectCount";
+import { getProjectsForCategory, HubFiltersState, INITIAL_FILTERS } from "./hubFiltersState";
+import { PopularHubSection } from "./components/PopularHubSection";
+import { NewHubSection } from "./components/NewHubSection";
+import { PlayedHubSection } from "./components/PlayedHubSection";
+import { ProjectExResponseDto } from "@api";
 
 const PageContainer = styled("div")(({ theme }) => ({
   margin: theme.spacing(4),
 }));
 
-const CategorySection = styled(Box)(({ theme }) => ({
-  marginBottom: theme.spacing(4),
-}));
-
-const CategoryHeader = styled(Box)(({ theme }) => ({
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
+const StatusMessage = styled(Typography)(({ theme }) => ({
+  color: theme.palette.grey[400],
+  fontSize: "15px",
   marginBottom: theme.spacing(2),
 }));
 
-const CategoryTitle = styled(Typography)(({ theme }) => ({
-  fontSize: "24px",
-  fontWeight: "500",
-  color: theme.palette.text.primary,
-}));
+const PAGE_SIZE = 24;
 
-const ViewMoreButton = styled(Typography)(({ theme }) => ({
-  fontSize: "14px",
-  color: theme.palette.primary.main,
-  cursor: "pointer",
-  "&:hover": {
-    textDecoration: "underline",
-  },
-}));
+type CategoryExpandedState = Record<HubCategoryKey, boolean>;
+type CategoryVisibleCounts = Record<HubCategoryKey, number>;
 
-const ScrollContainer = styled(Box)(() => ({
-  position: "relative",
-}));
+const INITIAL_EXPANDED: CategoryExpandedState = {
+  popular: false,
+  new: false,
+  played: false,
+};
 
-const ProjectsScroller = styled(Box)(({ theme }) => ({
-  display: "flex",
-  gap: theme.spacing(2),
-  overflowX: "auto",
-  scrollBehavior: "smooth",
-  scrollbarWidth: "none",
-  "&::-webkit-scrollbar": {
-    display: "none",
-  },
-  paddingBottom: theme.spacing(1),
-}));
-
-const ScrollArea = styled(Box)(() => ({
-  position: "absolute",
-  top: 0,
-  bottom: 0,
-  width: "80px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 2,
-  cursor: "pointer",
-  "&:hover": {
-    backgroundColor: "rgba(0, 0, 0, 0.3)",
-    "& .scroll-button": {
-      opacity: 1,
-    },
-  },
-}));
-
-const LeftScrollArea = styled(ScrollArea)({
-  left: 0,
-  background: "linear-gradient(to right, rgba(0, 0, 0, 0.5), transparent)",
-  "&:hover": {
-    background: "linear-gradient(to right, rgba(0, 0, 0, 0.7), transparent)",
-  },
-});
-
-const RightScrollArea = styled(ScrollArea)({
-  right: 0,
-  background: "linear-gradient(to left, rgba(0, 0, 0, 0.5), transparent)",
-  "&:hover": {
-    background: "linear-gradient(to left, rgba(0, 0, 0, 0.7), transparent)",
-  },
-});
-
-const ScrollButton = styled(IconButton)(({ theme }) => ({
-  backgroundColor: "rgba(0, 0, 0, 0.7)",
-  color: theme.palette.common.white,
-  opacity: 0,
-  transition: "opacity 0.3s, background-color 0.3s",
-  pointerEvents: "none",
-  "&:hover": {
-    backgroundColor: "rgba(0, 0, 0, 0.9)",
-  },
-}));
-
-const ProjectCardWrapper = styled(Box)({
-  minWidth: "300px",
-  maxWidth: "300px",
-  flexShrink: 0,
-});
+const INITIAL_VISIBLE_COUNTS: CategoryVisibleCounts = {
+  popular: PAGE_SIZE,
+  new: PAGE_SIZE,
+  played: PAGE_SIZE,
+};
 
 export const Hub = (): JSX.Element => {
-  const [publishedProjects, setPublishedProjects] = useState<ProjectResponseDto[]>([]);
-  const [newGames, setNewGames] = useState<ProjectResponseDto[]>([]);
-  const [playedGames, setPlayedGames] = useState<ProjectResponseDto[]>([]);
+  const navigate = useNavigate();
+  const [customSortOpen, setCustomSortOpen] = useState<CategoryExpandedState>(INITIAL_EXPANDED);
+  const [filters, setFilters] = useState<HubFiltersState>(INITIAL_FILTERS);
+  const [visibleCounts, setVisibleCounts] = useState<CategoryVisibleCounts>(INITIAL_VISIBLE_COUNTS);
+  const [loadingMoreCategory, setLoadingMoreCategory] = useState<HubCategoryKey | null>(null);
 
-  const { value: allProjects } = useAsync(
-    () => projectControllerGetAllReleases().then(({ data }) => {
-      if (Array.isArray(data)) return data;
+  const { statsOverrides, playedRevision } = useHubEvents();
+  const {
+    allProjects,
+    setAllProjects,
+    loadedPage,
+    setLoadedPage,
+    totalProjects,
+    setTotalProjects,
+    isLoadingProjects,
+    setIsLoadingProjects,
+    loadError,
+    hasMoreProjects,
+    fetchPage,
+  } = useReleasedProjects(PAGE_SIZE);
 
-      return (data as unknown as { data: ProjectResponseDto[] })?.data || [];
-    }),
-    []
+  const popularCount = useReleasedProjectCount({
+    releaseWindow: filters.popular.releaseWindow,
+    search: filters.popular.searchQuery,
+    tags: filters.popular.selectedTags,
+  });
+
+  const newCount = useReleasedProjectCount({
+    releaseWindow: filters.new.releaseWindow,
+    search: filters.new.searchQuery,
+    tags: filters.new.selectedTags,
+  });
+
+  const publishedProjects = useMemo<ProjectExResponseDto[]>(
+    () => getPublishedProjects(allProjects, statsOverrides),
+    [allProjects, statsOverrides]
   );
 
-  useEffect(() => {
-    if (allProjects && Array.isArray(allProjects)) {
-      const published = allProjects.filter(project => project.status === ("COMPLETED" satisfies ProjectResponseDto["status"]));
-      setPublishedProjects(published);
+  const availableTags = useMemo(() => {
+    const tags = new Set<string>(PREDEFINED_PROJECT_TAGS);
+    publishedProjects.forEach((project) => project.tags.forEach((tag) => tags.add(tag)));
+    return Array.from(tags).sort((a, b) => a.localeCompare(b));
+  }, [publishedProjects]);
 
-      const sortedByDate = [...published].sort((a, b) =>
-        new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-      );
-      setNewGames(sortedByDate);
+  const popularGames = useMemo(() => sortPopularProjects(
+    filterReleasedProjects(
+      publishedProjects,
+      filters.popular.releaseWindow,
+      filters.popular.selectedTags,
+      filters.popular.searchQuery
+    ),
+    filters.popular.sortMetric
+  ), [filters.popular, publishedProjects]);
 
-      setPlayedGames(published);
+  const newGames = useMemo(() => sortHubProjects(
+    filterReleasedProjects(
+      publishedProjects,
+      filters.new.releaseWindow,
+      filters.new.selectedTags,
+      filters.new.searchQuery
+    ),
+    filters.new.sortMetric,
+    filters.new.order,
+  ), [filters.new, publishedProjects]);
+
+  const playedGames = useMemo(() => {
+    const playedIds = LocalStorageManager.getPlayedProjects();
+    return sortHubProjects(
+      getPlayedProjectsFromPublished(playedIds, publishedProjects)
+        .filter((project) => (
+          projectMatchesNameAndTags(project, filters.played.selectedTags, filters.played.searchQuery)
+        )),
+      filters.played.sortMetric,
+      filters.played.order,
+      playedIds,
+    );
+  }, [filters.played, publishedProjects, playedRevision]);
+
+  const playedTotalCount = useMemo(() => {
+    const playedIds = LocalStorageManager.getPlayedProjects();
+
+    if (filters.played.selectedTags.length === 0 && !filters.played.searchQuery.trim()) {
+      return playedIds.length;
     }
-  }, [allProjects]);
 
-  const scroll = (elementId: string, direction: "left" | "right"): void => {
-    const container = document.getElementById(elementId);
-    if (container) {
-      const scrollAmount = direction === "left" ? -340 : 340;
-      container.scrollBy({ left: scrollAmount, behavior: "smooth" });
+    return playedGames.length;
+  }, [filters.played.searchQuery, filters.played.selectedTags, playedGames.length, playedRevision]);
+
+  useEffect(() => {
+    setVisibleCounts((current) => ({ ...current, popular: PAGE_SIZE }));
+  }, [popularGames.length, filters.popular]);
+
+  useEffect(() => {
+    setVisibleCounts((current) => ({ ...current, new: PAGE_SIZE }));
+  }, [newGames.length, filters.new]);
+
+  useEffect(() => {
+    setVisibleCounts((current) => ({ ...current, played: PAGE_SIZE }));
+  }, [playedGames.length, filters.played]);
+
+  const updateFilters = <K extends HubCategoryKey>(
+    category: K,
+    changes: Partial<HubFiltersState[K]>,
+  ): void => {
+    setFilters((current) => ({
+      ...current,
+      [category]: { ...current[category], ...changes },
+    }));
+  };
+
+  const toggleExpanded = (category: HubCategoryKey): void => {
+    setCustomSortOpen((current) => ({ ...current, [category]: !current[category] }));
+  };
+
+  const navigateToCategory = (categoryKey: HubCategoryKey): void => {
+    navigate(urls.toHubCategory(categoryKey), {
+      state: {
+        sortMetric: filters.popular.sortMetric,
+        releaseWindow: filters.popular.releaseWindow,
+        selectedTags: filters.popular.selectedTags,
+        popularSearchQuery: filters.popular.searchQuery,
+        newGamesReleaseWindow: filters.new.releaseWindow,
+        newGamesOrder: filters.new.order,
+        newGamesSortMetric: filters.new.sortMetric,
+        newGamesTags: filters.new.selectedTags,
+        newGamesSearchQuery: filters.new.searchQuery,
+        playedGamesOrder: filters.played.order,
+        playedGamesSortMetric: filters.played.sortMetric,
+        playedGamesTags: filters.played.selectedTags,
+        playedGamesSearchQuery: filters.played.searchQuery,
+      }
+    });
+  };
+
+  const handleLoadMoreCategory = async (categoryKey: HubCategoryKey): Promise<void> => {
+    const visibleCount = visibleCounts[categoryKey];
+    const nextVisibleCount = visibleCount + PAGE_SIZE;
+    const currentProjects = getProjectsForCategory(categoryKey, allProjects, filters, statsOverrides);
+
+    if (isLoadingProjects) {
+      return;
+    }
+
+    if (!hasMoreProjects || currentProjects.length >= nextVisibleCount) {
+      setVisibleCounts((current) => ({ ...current, [categoryKey]: nextVisibleCount }));
+      return;
+    }
+
+    let mergedProjects = [...allProjects];
+    let nextPage = loadedPage;
+    let total = totalProjects ?? Number.MAX_SAFE_INTEGER;
+    let scopedProjects = currentProjects;
+
+    setIsLoadingProjects(true);
+    setLoadingMoreCategory(categoryKey);
+
+    try {
+      while (scopedProjects.length < nextVisibleCount && mergedProjects.length < total) {
+        const response = await fetchPage(nextPage + 1);
+        mergedProjects = mergeProjects(mergedProjects, response.projects);
+        nextPage = response.page;
+        total = response.total;
+        scopedProjects = getProjectsForCategory(categoryKey, mergedProjects, filters, statsOverrides);
+      }
+
+      setAllProjects(mergedProjects);
+      setLoadedPage(nextPage);
+      setTotalProjects(Number.isFinite(total) ? total : 0);
+      const reachedCount = Math.min(PAGE_SIZE, scopedProjects.length - visibleCount);
+      setVisibleCounts((current) => ({ ...current, [categoryKey]: current[categoryKey] + reachedCount }));
+    } finally {
+      setIsLoadingProjects(false);
+      setLoadingMoreCategory(null);
     }
   };
 
-  const renderCategory = (title: string, projects: ProjectResponseDto[], scrollId: string): JSX.Element => (
-    <CategorySection>
-      <CategoryHeader>
-        <CategoryTitle>{title}</CategoryTitle>
-        <ViewMoreButton>View more</ViewMoreButton>
-      </CategoryHeader>
-      <ScrollContainer>
-        <LeftScrollArea
-          onClick={() => scroll(scrollId, "left")}
-        >
-          <ScrollButton className="scroll-button" size="small">
-            <ChevronLeft />
-          </ScrollButton>
-        </LeftScrollArea>
-        <ProjectsScroller id={scrollId}>
-          {projects.map((project) => (
-            <ProjectCardWrapper key={project.id}>
-              <ProjectCard project={project} isPlayable />
-            </ProjectCardWrapper>
-          ))}
-        </ProjectsScroller>
-        <RightScrollArea
-          onClick={() => scroll(scrollId, "right")}
-        >
-          <ScrollButton className="scroll-button" size="small">
-            <ChevronRight />
-          </ScrollButton>
-        </RightScrollArea>
-      </ScrollContainer>
-    </CategorySection>
-  );
-
   return (
     <PageContainer>
-      {renderCategory("Popular games", publishedProjects, "popular-games")}
-      {renderCategory("New games", newGames, "new-games")}
-      {renderCategory("Played games", playedGames, "played-games")}
+      {loadError ? (
+        <StatusMessage>
+          Some games could not be loaded. Try refreshing the page.
+        </StatusMessage>
+      ) : null}
+
+      <PopularHubSection
+        availableTags={availableTags}
+        filters={filters.popular}
+        expanded={customSortOpen.popular}
+        visibleProjects={popularGames.slice(0, visibleCounts.popular)}
+        displayedCount={popularCount ?? popularGames.length}
+        canLoadMore={visibleCounts.popular < popularGames.length || hasMoreProjects}
+        isLoadingMore={loadingMoreCategory === "popular"}
+        onToggleExpanded={() => toggleExpanded("popular")}
+        onChange={(changes) => updateFilters("popular", changes)}
+        onViewMore={() => navigateToCategory("popular")}
+        onLoadMore={() => handleLoadMoreCategory("popular")}
+      />
+
+      <NewHubSection
+        availableTags={availableTags}
+        filters={filters.new}
+        expanded={customSortOpen.new}
+        visibleProjects={newGames.slice(0, visibleCounts.new)}
+        displayedCount={newCount ?? newGames.length}
+        canLoadMore={visibleCounts.new < newGames.length || hasMoreProjects}
+        isLoadingMore={loadingMoreCategory === "new"}
+        onToggleExpanded={() => toggleExpanded("new")}
+        onChange={(changes) => updateFilters("new", changes)}
+        onViewMore={() => navigateToCategory("new")}
+        onLoadMore={() => handleLoadMoreCategory("new")}
+      />
+
+      <PlayedHubSection
+        availableTags={availableTags}
+        filters={filters.played}
+        expanded={customSortOpen.played}
+        visibleProjects={playedGames.slice(0, visibleCounts.played)}
+        displayedCount={playedTotalCount}
+        canLoadMore={visibleCounts.played < playedGames.length || hasMoreProjects}
+        isLoadingMore={loadingMoreCategory === "played"}
+        onToggleExpanded={() => toggleExpanded("played")}
+        onChange={(changes) => updateFilters("played", changes)}
+        onViewMore={() => navigateToCategory("played")}
+        onLoadMore={() => handleLoadMoreCategory("played")}
+      />
     </PageContainer>
   );
 };

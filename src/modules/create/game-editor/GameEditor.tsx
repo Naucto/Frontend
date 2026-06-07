@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Tab, Tabs } from "@mui/material";
+import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Switch, Tab, Tabs, Tooltip } from "@mui/material";
+import { MenuBook, PlayArrow, SportsEsports } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import { Beforeunload } from "react-beforeunload";
 
@@ -9,18 +10,21 @@ import GameEditorConsole from "@modules/create/game-editor/editors/GameEditorCon
 import { MapEditor } from "@modules/create/game-editor/editors/MapEditor/MapEditor";
 import ProjectSettingsEditor from "@modules/create/game-editor/editors/ProjectSettingsEditor";
 import { SoundEditor } from "@modules/create/game-editor/editors/SoundEditor";
-import { MultiplayerSettingsEditor } from "@modules/create/game-editor/editors/multiplayer/MultiplayerSettingsEditor.tsx";
+import { MultiplayerSettingsEditor } from "@modules/editor/multiplayer/MultiplayerSettingsEditor.tsx";
 import { SpriteEditor } from "@modules/editor/SpriteEditor/SpriteEditor";
 import { ProjectProvider, ProviderEventType } from "@providers/ProjectProvider";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
+
 import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
 import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
+import { DocumentationFrame } from "@shared/docs/DocumentationFrame";
 import CodeIcon from "src/assets/code.svg?react";
 import MapIcon from "src/assets/map.svg?react";
 import MultiplayerIcon from "src/assets/user.svg?react";
 import ProjectIcon from "src/assets/project.svg?react";
 import SoundIcon from "src/assets/music.svg?react";
 import SpriteIcon from "src/assets/pen.svg?react";
+
 import { EditorProps, EditorTab } from "./editors/EditorType";
 import { EditorContainer } from "./editors/EditorContainer";
 
@@ -40,17 +44,60 @@ const LeftPanel = styled("div")(() => ({
 }));
 
 const RightPanel = styled("div")(({ theme }) => ({
-  width: "80%",
+  width: "100%",
   display: "flex",
   flexDirection: "column",
-  gap: theme.spacing(4),
+  gap: theme.spacing(4)
+}));
+
+const RightPanelSubcontainer = styled("div")(() => ({
+  display: "flex",
+  flexDirection: "column",
+  height: "100%"
+}));
+
+const PreviewToolbar = styled(Box)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: theme.spacing(1),
+  padding: theme.spacing(1),
+  backgroundColor: theme.palette.blue[500],
+}));
+
+const PreviewControls = styled(Box)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  gap: theme.spacing(1.5),
+  flexWrap: "wrap",
+}));
+
+const RunPreviewButton = styled(Button)(({ theme }) => ({
+  color: theme.palette.common.white,
+  backgroundColor: theme.palette.red[500],
+  "&:hover": {
+    backgroundColor: theme.palette.red[600],
+  },
+}));
+
+const DocIframe = styled(DocumentationFrame)(({ theme }) => ({
+  width: "100%",
+  height: "50vh",
+
+  border: "none",
+  borderRadius: theme.spacing(1),
+  borderTopLeftRadius: 0,
+
+  backgroundColor: theme.palette.blue[500],
 }));
 
 const TabContent = styled(Box)(() => ({
   flex: 1,
   overflow: "auto",
+  display: "flex",
+  flexDirection: "column",
   "&.active": {
-    display: "block",
+    display: "contents",
   },
   "&.hidden": {
     display: "none",
@@ -66,6 +113,7 @@ const StyledTab = styled(Tab)(({ theme }) => ({
   borderTopLeftRadius: theme.spacing(1),
   borderTopRightRadius: theme.spacing(1),
   color: "white",
+
   "&.Mui-selected, &.Mui-focusVisible": {
     backgroundColor: theme.palette.blue[500],
     color: "white"
@@ -115,8 +163,13 @@ interface GameEditorProps {
 }
 
 const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => {
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeLeftPanelTab, setActiveLeftPanelTab] = useState(0);
+  const [activeRightPanelTab, setActiveRightPanelTab] = useState(0);
+  const [code, setCode] = useState("");
   const [output, setOutput] = useState<string>("");
+  const [autoRefreshPreview, setAutoRefreshPreview] = useState(false);
+  const [previewCode, setPreviewCode] = useState("");
+  const [previewRevision, setPreviewRevision] = useState(0);
 
   const tabs = useMemo(() => [
     { label: "project", component: ProjectSettingsEditor, icon: <ProjectIcon/> },
@@ -174,17 +227,28 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
       return;
 
     project.observe(ProviderEventType.BECOME_HOST, becomeHostListener);
-    project.codeProvider.observe(setCode);
-  }, [project]);
 
-  const [code, setCode] = useState("");
+    const initialCode = project.codeProvider.getContent();
+    setCode(initialCode);
+    setPreviewCode(initialCode);
+
+    const onCodeChange = (nextCode: string): void => {
+      setCode(nextCode);
+    };
+
+    project.codeProvider.observe(onCodeChange);
+
+    return () => {
+      project.codeProvider.unobserve(onCodeChange);
+    };
+  }, [project]);
 
   //FIXME: temporary solution, should be replaced with given data from back
 
   const envData: EnvData = useMemo(() => ({
-    code,
+    code: previewCode,
     output,
-  }), [code, output]);
+  }), [output, previewCode]);
 
   const screenSize = useMemo(() => ({
     width: 320,
@@ -216,6 +280,20 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
     }, 5 * 60 * 1000);
   };
 
+  const runPreview = (): void => {
+    setOutput("");
+    setPreviewCode(project.codeProvider.getContent());
+    setPreviewRevision((value) => value + 1);
+  };
+
+  useEffect(() => {
+    if (!autoRefreshPreview) {
+      return;
+    }
+
+    setPreviewCode(code);
+  }, [autoRefreshPreview, code]);
+
   const getAwarenessMessage = (): string => {
     const count = project.awarenessProvider.count();
     if (count > 1) {
@@ -229,12 +307,16 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
   if (!project)
     return <div>Loading work session...</div>; //FIXME: add a loading spinner with a component
 
+  /*
+   * FIXME: the TabContent should be refactored so that we only have to put
+   *        true/false to indicate whether or not the tab is active
+   */
   return (
     <GameEditorContainer>
       <LeftPanel>
         <Tabs
-          value={activeTab}
-          onChange={(_, newValue) => setActiveTab(newValue)}
+          value={activeLeftPanelTab}
+          onChange={(_, newValue) => setActiveLeftPanelTab(newValue)}
           slotProps={{ indicator: { hidden: true } }}
         >
           {editorTabs.map(({ label, icon }) => (
@@ -253,28 +335,87 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
             <TabContent
               key={tab.label}
               role="tabpanel"
-              hidden={activeTab !== idx}
-              className={activeTab === idx ? "active" : "hidden"}
+              className={activeLeftPanelTab === idx ? "active" : "hidden"}
             >
               {EditorComponent
-                ? <EditorContainer $disablePadding={tab.disablePadding}><EditorComponent project={project} /></EditorContainer>
+                ? <EditorContainer $disablePadding={tab.disablePadding}><EditorComponent project={project} consoleOutput={output} /></EditorContainer>
                 : <span>No editor available</span>}
             </TabContent>
           );
         })}
       </LeftPanel>
+
       <RightPanel>
-        <PreviewCanvas
-          ref={canvasRef}
-          canvasProps={{
-            map: project.mapProvider,
-            screenSize: screenSize,
-            sprite: project.spriteProvider
-          }}
-          envData={envData}
-          setOutput={setOutput}
-        />
-        <GameEditorConsole output={output} />
+        <RightPanelSubcontainer>
+          <Tabs
+            value={activeRightPanelTab}
+            onChange={(_, newValue) => setActiveRightPanelTab(newValue)}
+            slotProps={{ indicator: { hidden: true } }}
+          >
+            <StyledTab iconPosition="start" icon={<SportsEsports />} label="Preview" data-cy="display-tab" />
+            <StyledTab iconPosition="start" icon={<MenuBook />} label="Doc" data-cy="doc-tab" />
+          </Tabs>
+          <TabContent
+            role="tabpanel"
+            className={activeRightPanelTab === 0 ? "active" : "hidden"}
+            data-cy="preview-panel"
+          >
+            <PreviewToolbar>
+              <PreviewControls>
+                <RunPreviewButton
+                  variant="contained"
+                  size="small"
+                  startIcon={<PlayArrow />}
+                  onClick={runPreview}
+                  data-cy="run-preview"
+                >
+                  Play
+                </RunPreviewButton>
+                <Tooltip title="Refresh the preview whenever the code changes">
+                  <FormControlLabel
+                    sx={{ color: "white", m: 0 }}
+                    control={
+                      <Switch
+                        checked={autoRefreshPreview}
+                        onChange={(event) => setAutoRefreshPreview(event.target.checked)}
+                        size="small"
+                      />
+                    }
+                    label="Auto"
+                  />
+                </Tooltip>
+              </PreviewControls>
+            </PreviewToolbar>
+            <PreviewCanvas
+              key={previewRevision}
+              ref={canvasRef}
+              canvasProps={{
+                map: project.mapProvider,
+                screenSize: screenSize,
+                sprite: project.spriteProvider,
+                sound: project.soundProvider
+              }}
+              sx={{
+                borderTopLeftRadius: 0
+              }}
+              envData={envData}
+              setOutput={setOutput}
+              soundProvider={project.soundProvider}
+            />
+          </TabContent>
+          <TabContent
+            role="tabpanel"
+            className={activeRightPanelTab === 1 ? "active" : "hidden"}
+            data-cy="doc-panel"
+          >
+            <DocIframe
+              data-cy="doc-iframe"
+            />
+          </TabContent>
+        </RightPanelSubcontainer>
+
+        <GameEditorConsole
+          output={output} />
       </RightPanel>
 
       <StyledDialog
@@ -303,8 +444,10 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
         if (suppressBeforeUnloadRef.current) {
           return undefined;
         }
+
         event.preventDefault();
         cleanUpAndDisconnect();
+
         return "Are you sure you want to leave? Your changes may not be saved.";
       }} />
     </GameEditorContainer>

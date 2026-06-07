@@ -5,6 +5,8 @@ import { decodeUpdate } from "@utils/YSerialize.ts";
 import { SpriteProvider } from "./editors/SpriteProvider.ts";
 import { MapProvider } from "./editors/MapProvider.ts";
 import { ProjectSettingsProvider } from "./editors/ProjectSettingsProvider.ts";
+import { SoundProvider } from "./editors/SoundProvider";
+import { seedDefaultProjectContent } from "@shared/project/defaultProjectContent";
 
 export enum ProviderEventType {
   INITIALIZED
@@ -28,6 +30,7 @@ export class GameProvider implements Destroyable {
   public sprite!: SpriteProvider;
   public map!: MapProvider;
   public projectSettings!: ProjectSettingsProvider;
+  public sound!: SoundProvider;
   public projectId: number;
 
   constructor(projectId: number) {
@@ -39,6 +42,7 @@ export class GameProvider implements Destroyable {
       this.code = this._doc.getText("monaco").toString();
       this.sprite = new SpriteProvider(this._doc);
       this.map = new MapProvider(this._doc, { width:128, height:32 }, 2, this.sprite);
+      this.sound = new SoundProvider(this._doc);
       this._initialized = true;
 
       this.emit(ProviderEventType.INITIALIZED);
@@ -80,12 +84,13 @@ export class GameProvider implements Destroyable {
       await decodeUpdate(this._doc, content as Blob);
     } catch (error: unknown) {
       if ((error as AxiosError)?.response?.status === 404) {
-        // FIXME new project: nothing to load; optionally could seed defaults here
         console.error("Failed to fetch project content:", error);
       } else {
         throw error;
       }
     }
+
+    seedDefaultProjectContent(this._doc);
   }
 
   destroy(): void {

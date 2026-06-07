@@ -6,7 +6,7 @@ import { client } from "@api/client.gen";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
 
 client.setConfig({
-  baseUrl: import.meta.env.VITE_BACKEND_URL ?? "",
+  baseURL: import.meta.env.VITE_BACKEND_URL ?? "",
   auth: () => LocalStorageManager.getToken(),
 });
 

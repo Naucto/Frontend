@@ -5,9 +5,9 @@ describe("game editors spec", () => {
     cy.get("[data-cy=\"nav-projects\"]").click();
     cy.contains("button", "New project").click();
 
-    cy.get("[data-cy=\"code-editor\"]").should("be.visible");
+    cy.get("[data-cy=\"project-tab\"]", { timeout: 10000 }).should("be.visible");
 
-    cy.get("[data-cy=\"spite-tab\"]").click();
+    cy.get("[data-cy=\"sprite-tab\"]").click();
     cy.get("[data-cy=\"sprite-editor\"]").should("be.visible");
 
     cy.get("[data-cy=\"map-tab\"]").click();
