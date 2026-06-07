@@ -10,7 +10,7 @@ import {
   getDateOrderLabel,
   getListSortMetricLabel,
   getSortMetricLabel,
-} from "../../hubSorting";
+} from "@modules/hub/hubSorting";
 import {
   AutocompleteOption,
   DarkSelect,
