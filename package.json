@@ -72,5 +72,8 @@
     "vite-plugin-svgr": "^4.5.0",
     "vite-tsconfig-paths": "^5.1.4"
   },
+  "overrides": {
+    "dompurify": "^3.4.10"
+  },
   "packageManager": "npm@11.8.0"
 }
