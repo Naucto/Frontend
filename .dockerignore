@@ -1,6 +1,7 @@
 .idea
 .husky
 .github
+.env
 esling.config.js
 README.md
 license.txt
