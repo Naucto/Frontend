@@ -1,5 +1,5 @@
 import { LuaEnvironment } from "@lib/lua";
-import { LuaAPI } from "@shared/luaEnvManager/api/API";
+import { LuaAPI } from "@shared/lua-env-manager/api/API";
 
 export class NetAPI extends LuaAPI {
   constructor(lua: LuaEnvironment) {

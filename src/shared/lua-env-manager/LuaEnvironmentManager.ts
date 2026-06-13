@@ -2,9 +2,9 @@ import { LuaEnvironment } from "@lib/lua";
 import { MapProvider } from "@providers/editors/MapProvider";
 import { SpriteProvider } from "@providers/editors/SpriteProvider";
 import { MusicPlayer } from "@shared/audio/MusicPlayer";
-import { KeyHandler } from "@shared/canvas/gameCanvas/KeyHandler";
+import { KeyHandler } from "@shared/canvas/game-canvas/KeyHandler";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
-import { NetAPI } from "@shared/luaEnvManager/api/NetAPI";
+import { NetAPI } from "@shared/lua-env-manager/api/NetAPI";
 
 export interface EnvData {
   code: string,

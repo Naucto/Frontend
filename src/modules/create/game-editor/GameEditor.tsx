@@ -1,14 +1,14 @@
 import { workSessionControllerLeave } from "@api";
 import CodeEditor from "@modules/create/game-editor/editors/CodeEditor";
 import GameEditorConsole from "@modules/create/game-editor/editors/GameEditorConsole";
-import { MapEditor } from "@modules/create/game-editor/editors/MapEditor/MapEditor";
+import { MapEditor } from "@modules/create/game-editor/editors/map-editor/MapEditor";
 import { MultiplayerSettingsEditor } from "@modules/create/game-editor/editors/multiplayer/MultiplayerSettingsEditor";
 import ProjectSettingsEditor from "@modules/create/game-editor/editors/ProjectSettingsEditor";
-import { SoundEditor } from "@modules/create/game-editor/editors/SoundEditor/SoundEditor";
-import { SpriteEditor } from "@modules/create/game-editor/editors/SpriteEditor/SpriteEditor";
+import { SoundEditor } from "@modules/create/game-editor/editors/sound-editor/SoundEditor";
+import { SpriteEditor } from "@modules/create/game-editor/editors/sprite-editor/SpriteEditor";
 import { ProjectProvider, ProviderEventType } from "@providers/ProjectProvider";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
-import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
+import { EnvData } from "@shared/lua-env-manager/LuaEnvironmentManager";
 
 import { EditorContainer } from "./editors/EditorContainer";
 import { EditorProps, EditorTab } from "./editors/EditorType";

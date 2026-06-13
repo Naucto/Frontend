@@ -10,7 +10,7 @@ import ProfileLikedGames from "@modules/profile/ProfileLikedGames";
 import ProfilePublishedGames from "@modules/profile/ProfilePublishedGames";
 import { SiteFooter } from "@shared/footer/SiteFooter";
 import NavBar from "@shared/navbar/NavBar";
-import { CustomSnackBarProvider } from "@shared/snackBar/CustomSnackBarProvider";
+import { CustomSnackBarProvider } from "@shared/snack-bar/CustomSnackBarProvider";
 import { muiTheme } from "@theme/MUITheme";
 
 import React, { lazy, Suspense, useEffect } from "react";

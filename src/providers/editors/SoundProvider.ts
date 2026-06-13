@@ -1,6 +1,6 @@
 import { SoundProviderError } from "@errors/SoundProviderError";
-import { InstrumentConfig } from "@modules/create/game-editor/editors/SoundEditor/InstrumentEditor";
-import { createMusic, MusicData, musicFromJson, musicToJson } from "@modules/create/game-editor/editors/SoundEditor/Music";
+import { InstrumentConfig } from "@modules/create/game-editor/editors/sound-editor/InstrumentEditor";
+import { createMusic, MusicData, musicFromJson, musicToJson } from "@modules/create/game-editor/editors/sound-editor/Music";
 
 import * as Y from "yjs";
 
