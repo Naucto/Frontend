@@ -1,28 +1,14 @@
 import { projectControllerGetPaginatedReleases, ProjectExResponseDto } from "@api";
+import { FetchedProjectsPage, mergeProjectsById, usePaginatedProjects } from "@hooks/usePaginatedProjects";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 
-type FetchedPage = {
-  projects: ProjectExResponseDto[];
-  page: number;
-  total: number;
-};
-
+/** Re-exported for the released-projects pages that merge pages manually. */
 export function mergeProjects(current: ProjectExResponseDto[], next: ProjectExResponseDto[]): ProjectExResponseDto[] {
-  const mergedProjects = [...current, ...next];
-  const seen = new Set<number>();
-
-  return mergedProjects.filter((project) => {
-    if (seen.has(project.id)) {
-      return false;
-    }
-
-    seen.add(project.id);
-    return true;
-  });
+  return mergeProjectsById(current, next);
 }
 
-export async function fetchReleasedProjectsPage(page: number, limit: number): Promise<FetchedPage> {
+export async function fetchReleasedProjectsPage(page: number, limit: number): Promise<FetchedProjectsPage<ProjectExResponseDto>> {
   const { data } = await projectControllerGetPaginatedReleases({
     query: { page, limit },
   });
@@ -46,43 +32,35 @@ export type UseReleasedProjectsResult = {
   loadError: boolean;
   hasMoreProjects: boolean;
   loadProjectsPage: (page: number, reset?: boolean) => Promise<void>;
-  fetchPage: (page: number) => Promise<FetchedPage>;
+  fetchPage: (page: number) => Promise<FetchedProjectsPage<ProjectExResponseDto>>;
 };
 
 export function useReleasedProjects(pageSize: number): UseReleasedProjectsResult {
-  const [allProjects, setAllProjects] = useState<ProjectExResponseDto[]>([]);
-  const [loadedPage, setLoadedPage] = useState(0);
-  const [totalProjects, setTotalProjects] = useState<number | null>(null);
-  const [isLoadingProjects, setIsLoadingProjects] = useState(false);
-  const [loadError, setLoadError] = useState(false);
-
-  const fetchPage = useCallback((page: number) => fetchReleasedProjectsPage(page, pageSize), [pageSize]);
-
-  const loadProjectsPage = useCallback(async (page: number, reset = false): Promise<void> => {
-    setIsLoadingProjects(true);
-    setLoadError(false);
-
-    try {
-      const response = await fetchPage(page);
-      setAllProjects((current) => mergeProjects(reset ? [] : current, response.projects));
-      setLoadedPage(response.page);
-      setTotalProjects(response.total);
-    } catch {
-      setLoadError(true);
-    } finally {
-      setIsLoadingProjects(false);
-    }
-  }, [fetchPage]);
+  const fetchPage = useCallback(
+    (page: number) => fetchReleasedProjectsPage(page, pageSize),
+    [pageSize],
+  );
+  const {
+    projects,
+    setProjects,
+    loadedPage,
+    setLoadedPage,
+    totalProjects,
+    setTotalProjects,
+    isLoadingProjects,
+    setIsLoadingProjects,
+    loadError,
+    hasMoreProjects,
+    loadProjectsPage,
+  } = usePaginatedProjects<ProjectExResponseDto>(fetchPage);
 
   useEffect(() => {
     void loadProjectsPage(1, true);
   }, [loadProjectsPage]);
 
-  const hasMoreProjects = totalProjects === null || allProjects.length < totalProjects;
-
   return {
-    allProjects,
-    setAllProjects,
+    allProjects: projects,
+    setAllProjects: setProjects,
     loadedPage,
     setLoadedPage,
     totalProjects,

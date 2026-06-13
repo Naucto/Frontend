@@ -1,5 +1,5 @@
 import { workSessionControllerGetInfo, workSessionControllerKick } from "@api";
-import { EngineUser } from "@our-types/userTypes";
+import { EngineUser } from "@typedefs/userTypes";
 import { generateRandomColor } from "@utils/colorUtils";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
 

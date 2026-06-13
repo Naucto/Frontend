@@ -1,6 +1,6 @@
 import { ProjectExResponseDto } from "@api";
-import { PREDEFINED_PROJECT_TAGS } from "@modules/projects/projectTags";
-import * as urls from "@shared/route";
+import { collectAvailableTags } from "@modules/projects/projectTags";
+import * as urls from "@shared/navigation/routes";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
 
 import { NewHubSection } from "./components/NewHubSection";
@@ -92,11 +92,7 @@ export const Hub = (): JSX.Element => {
     [allProjects, statsOverrides]
   );
 
-  const availableTags = useMemo(() => {
-    const tags = new Set<string>(PREDEFINED_PROJECT_TAGS);
-    publishedProjects.forEach((project) => project.tags.forEach((tag) => tags.add(tag)));
-    return Array.from(tags).sort((a, b) => a.localeCompare(b));
-  }, [publishedProjects]);
+  const availableTags = useMemo(() => collectAvailableTags(publishedProjects), [publishedProjects]);
 
   const popularGames = useMemo(() => sortPopularProjects(
     filterReleasedProjects(

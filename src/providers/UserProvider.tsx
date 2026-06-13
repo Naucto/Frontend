@@ -1,7 +1,7 @@
 import { userControllerGetProfile, UserProfileResponseDto } from "@api";
 import { ContextError } from "@errors/ContextError";
 import { useAsync } from "@hooks/useAsync";
-import { User } from "@our-types/userTypes";
+import { User } from "@typedefs/userTypes";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
 
 import React, { createContext, useContext, useEffect, useState } from "react";

@@ -1,5 +1,5 @@
 import { type ProjectExResponseDto, type UserBasicInfoDto } from "@api";
-import * as urls from "@shared/route";
+import * as urls from "@shared/navigation/routes";
 import { UserAvatarStack } from "@shared/user/UserProfileLink";
 
 import { type JSX } from "react";

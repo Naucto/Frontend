@@ -1,5 +1,5 @@
+import GenericTextField from "@components/ui/GenericTextField";
 import ImportantButton from "@shared/buttons/ImportantButton";
-import GenericTextField from "@shared/TextField";
 
 import { Box, styled } from "@mui/material";
 

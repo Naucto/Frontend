@@ -52,7 +52,7 @@ Dev server runs on `http://localhost:3001`; it talks to the backend on `http://l
 | `src/hooks/` | Reusable React hooks (`useX`) |
 | `src/utils/` | Framework-agnostic utilities |
 | `src/theme/` | MUI theme + colors |
-| `src/types/` | Shared TypeScript types (`@our-types/*` alias) |
+| `src/types/` | Shared TypeScript types (`@typedefs/*` alias) |
 | `src/errors/` | Custom error classes |
 | `src/api/` | **Generated** OpenAPI client — do not edit |
 | `lib/` | Standalone libraries |
@@ -72,7 +72,7 @@ These complement the lint/TS rules (which you should read from the config files,
 **Imports — alias policy**
 - Use a project `@`-alias for **any cross-directory import**. The project aliases are:
   `@modules`, `@shared`, `@components`, `@providers`, `@hooks`, `@utils`, `@theme`, `@api`,
-  `@errors`, `@assets`, `@lib`, `@our-types` (see `tsconfig.paths.json`).
+  `@errors`, `@assets`, `@lib`, `@typedefs` (see `tsconfig.paths.json`).
 - **Same-directory `./x` imports are fine** (preferred for siblings within a folder).
 - **Don't** use `../` parent-relative imports — use an alias instead.
 - **Don't** import via raw `src/...` paths — use the matching `@`-alias (`src/assets/…` →
@@ -183,11 +183,7 @@ These are tracked cleanups; avoid partial migrations that make them worse.
   `permissions: { contents: read }` block to `.github/workflows/build.yml`. Migrate the auth
   token off `localStorage` to httpOnly cookies (needs backend support).
 - **Structure (Phase 3):**
-  - `components/ui` vs `shared` boundary not yet reconciled (duplicate `TextField`, loose files
-    at `shared/` root).
-  - Editors split between `modules/editor/` and `modules/create/game-editor/editors/` — target
-    is to consolidate under `game-editor/editors/`.
-  - `SoundEditor.tsx` sits outside its `SoundEditor/` folder (should be `SoundEditor/SoundEditor.tsx`).
-  - `@our-types/*` will be renamed to `@typedefs`.
-  - `src/temporary/` (`map.ts` dead; `SpriteSheet.ts` is live placeholder data) to be cleaned up.
+  - Shared `ConfirmDialog` to replace MultiplayerSettingsEditor's 3 near-identical dialogs;
+    de-duplicate Hub/Projects via a shared listing hook.
+  - Standardize error handling: custom `src/errors/` classes + a top-level React ErrorBoundary.
   - Large files to split: `CodeTabTheme.ts`, `luaLanguageFeatures.ts`, `GameEditor.tsx`.

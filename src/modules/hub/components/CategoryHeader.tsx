@@ -1,5 +1,5 @@
 import { CustomSortButton, SummaryChip } from "@modules/projects/components/browse/Controls";
-import * as urls from "@shared/route";
+import * as urls from "@shared/navigation/routes";
 
 import { type JSX } from "react";
 

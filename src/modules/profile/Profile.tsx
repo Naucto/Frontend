@@ -12,7 +12,7 @@ import { useAsync } from "@hooks/useAsync";
 import ProjectCard from "@modules/projects/components/ProjectCard";
 import ImportantButton from "@shared/buttons/ImportantButton";
 import { Editable } from "@shared/forms/Editable";
-import * as urls from "@shared/route";
+import * as urls from "@shared/navigation/routes";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
 
 import { JSX, useEffect, useMemo, useRef, useState } from "react";

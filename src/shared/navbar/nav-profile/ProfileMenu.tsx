@@ -1,6 +1,6 @@
 import { useUser } from "@providers/UserProvider";
 import { ProfileMenuItem } from "@shared/navbar/nav-profile/ProfileMenuItem";
-import * as urls from "@shared/route";
+import * as urls from "@shared/navigation/routes";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
 
 import { FC, useCallback } from "react";

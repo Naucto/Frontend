@@ -15,7 +15,7 @@
       "@hooks/*": ["./src/hooks/*"],
       "@providers/*": ["./src/providers/*"],
       "@errors/*": ["./src/errors/*"],
-      "@our-types/*": ["./src/types/*"]
+      "@typedefs/*": ["./src/types/*"]
     }
   }
 }

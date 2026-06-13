@@ -1,3 +1,4 @@
+import { ConfirmDialog } from "@components/ui/ConfirmDialog";
 import {
   StyledGrownTableCell,
   StyledTable,
@@ -5,13 +6,13 @@ import {
   StyledTableRow,
 } from "@components/ui/StyledTable";
 import { EditorProps } from "@modules/create/game-editor/editors/EditorType";
-import { enumFromName, enumNames } from "@our-types/enum";
 import {
   MultiplayerDirectoryFlags,
   MultiplayerDirectorySettings,
   MultiplayerSettingsProvider,
   MultiplayerSettingsUpdateListener
 } from "@providers/editors/MultiplayerSettingsProvider";
+import { enumFromName, enumNames } from "@typedefs/enum";
 
 import React, { JSX, useEffect, useState } from "react";
 
@@ -24,14 +25,9 @@ import SubdirectoryArrowRightIcon from "@mui/icons-material/SubdirectoryArrowRig
 import {
   Alert,
   AlertTitle,
-  Button,
   ButtonGroup,
   Checkbox,
-  Dialog,
-  DialogActions,
-  DialogContent,
   DialogContentText,
-  DialogTitle,
   IconButton,
   styled,
   TableBody,
@@ -54,26 +50,19 @@ interface DeleteNodeDialogProps {
 }
 
 const DeleteNodeDialog: React.FC<DeleteNodeDialogProps> = ({ path, onClose, onConfirm }) => (
-  <Dialog
+  <ConfirmDialog
     open={path !== null}
+    title="Delete node"
     onClose={onClose}
-    maxWidth="sm"
-    fullWidth
+    onConfirm={() => onConfirm(path!)}
+    confirmLabel="Delete"
+    confirmColor="error"
     role="alertdialog"
   >
-    <DialogTitle>Delete node</DialogTitle>
-    <DialogContent>
-      <DialogContentText>
-        Are you sure you want to delete node <strong>{path}</strong> and its children?
-      </DialogContentText>
-    </DialogContent>
-    <DialogActions>
-      <Button onClick={onClose}>Cancel</Button>
-      <Button onClick={() => onConfirm(path!)} color="error" autoFocus>
-        Delete
-      </Button>
-    </DialogActions>
-  </Dialog>
+    <DialogContentText>
+      Are you sure you want to delete node <strong>{path}</strong> and its children?
+    </DialogContentText>
+  </ConfirmDialog>
 );
 
 interface CreateChildNodeDialogProps {
@@ -105,44 +94,37 @@ const CreateChildNodeDialog: React.FC<CreateChildNodeDialogProps> = ({ parentPat
   }
 
   return (
-    <Dialog
+    <ConfirmDialog
       open={parentPath !== null}
+      title="Create child node"
       onClose={onClose}
-      maxWidth="sm"
-      fullWidth
+      onConfirm={() => onConfirm(inputValue)}
+      confirmLabel="Create"
+      confirmDisabled={!isValid}
     >
-      <DialogTitle>Create child node</DialogTitle>
-      <DialogContent>
-        <DialogContentText sx={{ mb: 2 }}>
-          Permissions are configurable after instantiating the node.
-        </DialogContentText>
+      <DialogContentText sx={{ mb: 2 }}>
+        Permissions are configurable after instantiating the node.
+      </DialogContentText>
 
-        <TextField
-          autoFocus
-          label="Child node name"
-          value={inputValue}
-          onChange={(e) => {
-            setInputValue(e.target.value);
-            setTouched(true);
-          }}
-          placeholder={parentPath === "" ? "node" : `${parentPath}.node`}
-          fullWidth
-          error={touched && (!isFormatValid || exists)}
-          helperText={helperText}
-        />
+      <TextField
+        autoFocus
+        label="Child node name"
+        value={inputValue}
+        onChange={(e) => {
+          setInputValue(e.target.value);
+          setTouched(true);
+        }}
+        placeholder={parentPath === "" ? "node" : `${parentPath}.node`}
+        fullWidth
+        error={touched && (!isFormatValid || exists)}
+        helperText={helperText}
+      />
 
-        <Alert severity="info" sx={{ mt: 2 }}>
-          <AlertTitle>Tip</AlertTitle>
-          You can also add further children to this new node once it is created.
-        </Alert>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={() => onConfirm(inputValue)} disabled={!isValid} autoFocus>
-          Create
-        </Button>
-      </DialogActions>
-    </Dialog>
+      <Alert severity="info" sx={{ mt: 2 }}>
+        <AlertTitle>Tip</AlertTitle>
+        You can also add further children to this new node once it is created.
+      </Alert>
+    </ConfirmDialog>
   );
 };
 
@@ -175,45 +157,37 @@ const RenameNodeDialog: React.FC<RenameNodeDialogProps> = ({ path, onClose, onCo
   }
 
   return (
-    <Dialog
+    <ConfirmDialog
       open={path !== null}
+      title="Rename node"
       onClose={onClose}
-      maxWidth="sm"
-      fullWidth
+      onConfirm={() => onConfirm(path!, inputValue)}
+      confirmLabel="Rename"
+      confirmDisabled={!isValid}
     >
-      <DialogTitle>Rename node</DialogTitle>
-      <DialogContent>
-        <DialogContentText>
-          Renaming node <strong>{path}</strong>
-        </DialogContentText>
+      <DialogContentText>
+        Renaming node <strong>{path}</strong>
+      </DialogContentText>
 
-        <TextField
-          autoFocus
-          label="New node path"
-          value={inputValue}
-          onChange={(e) => {
-            setInputValue(e.target.value);
-            setTouched(true);
-          }}
-          fullWidth
-          sx={{ mt: 2 }}
-          error={touched && (!isFormatValid || exists)}
-          helperText={helperText}
-        />
+      <TextField
+        autoFocus
+        label="New node path"
+        value={inputValue}
+        onChange={(e) => {
+          setInputValue(e.target.value);
+          setTouched(true);
+        }}
+        fullWidth
+        sx={{ mt: 2 }}
+        error={touched && (!isFormatValid || exists)}
+        helperText={helperText}
+      />
 
-        <Alert severity="info" sx={{ mt: 2 }}>
-          <AlertTitle>Tip</AlertTitle>
-          Changing the path will move this node and all its children to the new location.
-        </Alert>
-      </DialogContent>
-
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={() => onConfirm(path!, inputValue)} disabled={!isValid} autoFocus>
-          Rename
-        </Button>
-      </DialogActions>
-    </Dialog>
+      <Alert severity="info" sx={{ mt: 2 }}>
+        <AlertTitle>Tip</AlertTitle>
+        Changing the path will move this node and all its children to the new location.
+      </Alert>
+    </ConfirmDialog>
   );
 };
 

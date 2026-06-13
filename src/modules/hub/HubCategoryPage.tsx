@@ -1,6 +1,6 @@
 import { projectControllerGetRelease, ProjectExResponseDto } from "@api";
-import { PREDEFINED_PROJECT_TAGS } from "@modules/projects/projectTags";
-import * as urls from "@shared/route";
+import { collectAvailableTags } from "@modules/projects/projectTags";
+import * as urls from "@shared/navigation/routes";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
 
 import { CategoryHeader } from "./components/CategoryHeader";
@@ -141,12 +141,10 @@ export const HubCategoryPage = (): JSX.Element => {
     // playedRevision triggers re-evaluation when local played history changes
   }, [allProjects, category, filters, playedRevision, statsOverrides]);
 
-  const availableTags = useMemo(() => {
-    const publishedProjects = getPublishedProjects(allProjects, statsOverrides);
-    const tags = new Set<string>(PREDEFINED_PROJECT_TAGS);
-    publishedProjects.forEach((project) => project.tags.forEach((tag) => tags.add(tag)));
-    return Array.from(tags).sort((a, b) => a.localeCompare(b));
-  }, [allProjects, statsOverrides]);
+  const availableTags = useMemo(
+    () => collectAvailableTags(getPublishedProjects(allProjects, statsOverrides)),
+    [allProjects, statsOverrides],
+  );
 
   useEffect(() => {
     if (category !== "played") {

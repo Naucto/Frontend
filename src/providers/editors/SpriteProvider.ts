@@ -1,6 +1,5 @@
 import { SpriteProviderError } from "@errors/SpriteProviderError";
-
-import { palette } from "../../temporary/SpriteSheet";
+import { palette } from "@shared/placeholders/spriteSheet";
 
 import * as Y from "yjs";
 
