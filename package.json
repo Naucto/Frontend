@@ -48,7 +48,7 @@
     "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.56.1",
     "@typescript-eslint/parser": "^8.56.1",
-    "@vitejs/plugin-react": "^4.7.0",
+    "@vitejs/plugin-react": "^6.0.2",
     "cypress": "^15.11.0",
     "eslint": "^9.39.4",
     "eslint-import-resolver-typescript": "^3.10.1",
@@ -67,10 +67,10 @@
     "tsx": "^4.21.0",
     "typescript": "5.8.2",
     "typescript-eslint": "^8.56.1",
-    "vite": "^6.4.3",
-    "vite-plugin-glsl": "^1.5.5",
-    "vite-plugin-svgr": "^4.5.0",
-    "vite-tsconfig-paths": "^5.1.4"
+    "vite": "^8.0.16",
+    "vite-plugin-glsl": "^1.6.0",
+    "vite-plugin-svgr": "^5.2.0",
+    "vite-tsconfig-paths": "^6.1.1"
   },
   "overrides": {
     "dompurify": "^3.4.10"
