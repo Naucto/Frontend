@@ -1,6 +1,5 @@
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
-import tsconfigPaths from "vite-tsconfig-paths";
 import svgr from "vite-plugin-svgr";
 import glsl from "vite-plugin-glsl";
 
@@ -22,9 +21,6 @@ function stripDevConsole(): Plugin {
 export default defineConfig({
   plugins: [
     react(),
-    tsconfigPaths({
-      projects: ["./tsconfig.paths.json"]
-    }),
     svgr({
       svgrOptions: {
         exportType: 'default'
@@ -33,8 +29,9 @@ export default defineConfig({
     glsl(),
     stripDevConsole()
   ],
+  // Resolve the `@`-aliases from tsconfig.paths.json natively (replaces vite-tsconfig-paths).
   resolve: {
-    alias: {}
+    tsconfigPaths: true
   },
   server: {
     host: true,
