@@ -183,7 +183,4 @@ These are tracked cleanups; avoid partial migrations that make them worse.
   `permissions: { contents: read }` block to `.github/workflows/build.yml`. Migrate the auth
   token off `localStorage` to httpOnly cookies (needs backend support).
 - **Structure (Phase 3):**
-  - Shared `ConfirmDialog` to replace MultiplayerSettingsEditor's 3 near-identical dialogs;
-    de-duplicate Hub/Projects via a shared listing hook.
-  - Standardize error handling: custom `src/errors/` classes + a top-level React ErrorBoundary.
   - Large files to split: `CodeTabTheme.ts`, `luaLanguageFeatures.ts`, `GameEditor.tsx`.
