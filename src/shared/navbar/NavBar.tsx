@@ -14,6 +14,7 @@ import React, { useState } from "react";
 import AddIcon from "@mui/icons-material/Add";
 import FeedbackIcon from "@mui/icons-material/Feedback";
 import { styled } from "@mui/material/styles";
+import { NotificationBox } from "@shared/navbar/notifications/NotificationBox";
 
 const Nav = styled("nav")(({ theme }) => ({
   display: "grid",
@@ -109,6 +110,7 @@ const NavBar: React.FC = () => {
           )}
         </FeedbackLanguagePicker>
         <NavElem to="/friends">Friends</NavElem>
+        <NotificationBox />
         {user ? <NavProfile /> : <Login forceShowAuthOverlay={forceShowAuthOverlay} setForceShowAuthOverlay={setForceShowAuthOverlay} />}
       </Right>
     </Nav >
