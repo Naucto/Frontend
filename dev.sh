@@ -3,8 +3,6 @@ set -e
 
 NETWORK=naucto-dev
 
-# The backend runs in its own project on this shared network. We call it from the browser, so we
-# need the host-published port, and we refuse to start without it.
 BACKEND=$(docker ps --filter "network=${NETWORK}" --filter "publish=3000" --format '{{.Names}}' | head -n1)
 if [ -z "${BACKEND}" ]; then
   echo "Backend not running on '${NETWORK}'. Start it first: run ./dev.sh in the backend project."

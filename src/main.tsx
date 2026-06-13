@@ -8,8 +8,6 @@ import { createRoot } from "react-dom/client";
 
 import "./index.css";
 
-// VITE_BACKEND_URL wins (prod/CI). Otherwise, in dev, target the same host the app is served from
-// so it works over localhost and LAN alike; the port comes from dev.sh's docker lookup.
 const resolveBackendUrl = (): string => {
   if (import.meta.env.VITE_BACKEND_URL) {
     return import.meta.env.VITE_BACKEND_URL;

@@ -9,8 +9,6 @@ services:
       context: .
       dockerfile: Dockerfile.dev
     command: npm run dev --host
-    # Host is resolved at runtime from window.location; only the backend port is injected (dev.sh
-    # overrides it with the docker-discovered one).
     environment:
       VITE_BACKEND_PORT: ${VITE_BACKEND_PORT:-3000}
     networks:
