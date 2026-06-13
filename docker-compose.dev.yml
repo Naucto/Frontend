@@ -9,6 +9,8 @@ services:
       context: .
       dockerfile: Dockerfile.dev
     command: npm run dev --host
+    environment:
+      VITE_BACKEND_PORT: ${VITE_BACKEND_PORT:-3000}
     networks:
       - naucto-dev
     ports:

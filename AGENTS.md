@@ -8,7 +8,7 @@ this file documents the intent, conventions, and gotchas that tooling can't capt
 
 ## Overview
 
-Naucto Frontend is a React 19 + Vite 6 + TypeScript single-page app: a collaborative,
+Naucto Frontend is a React 19 + Vite 8 + TypeScript single-page app: a collaborative,
 multiplayer game editor. It uses MUI v7 for UI, Yjs (CRDT) + y-webrtc for real-time
 collaboration, Monaco for code editing, and the fengari Lua VM to run games in the browser.
 Dev server runs on `http://localhost:3001`; it talks to the backend on `http://localhost:3000`.
