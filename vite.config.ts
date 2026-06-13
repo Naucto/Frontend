@@ -4,13 +4,8 @@ import tsconfigPaths from "vite-tsconfig-paths";
 import svgr from "vite-plugin-svgr";
 import glsl from "vite-plugin-glsl";
 
-// Strip dev-only console calls (log/info/debug) from our production bundles. Vite 8's
-// Rolldown/Oxc minifier can only drop *all* console calls (`drop_console`), but we deliberately
-// keep console.warn / console.error, so we do a targeted transform on build. Dev is not minified,
-// so these stay during `vite dev`. Scoped to project source — third-party logging in node_modules
-// is left alone (regex-stripping minified deps risks corruption). See AGENTS.md "Logging".
-// The arg pattern tolerates one level of nested parens (e.g. console.log(fn(x))); deeper nesting
-// simply fails to match and is left intact rather than corrupted.
+// Strip dev-only console.log/info/debug from our production bundles (Oxc's minifier only does
+// all-or-nothing `drop_console`; we keep warn/error). Scoped to project source. See AGENTS.md.
 function stripDevConsole(): Plugin {
   const CONSOLE_CALL = /console\s*\.\s*(?:log|info|debug)\s*\((?:[^()]|\([^()]*\))*\)\s*;?/g;
   return {
