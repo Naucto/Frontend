@@ -1,6 +1,8 @@
-import { Box, MenuItem, Typography, styled } from "@mui/material";
-import { JSX } from "react";
 import { NotificationItem } from "./types";
+
+import { JSX } from "react";
+
+import { Box, MenuItem, styled, Typography } from "@mui/material";
 
 const NotificationEntry = styled(MenuItem, {
   shouldForwardProp: (prop) => prop !== "read",

@@ -1,7 +1,9 @@
-import { Menu, Typography, styled } from "@mui/material";
-import { JSX } from "react";
-import { NotificationItem } from "./types";
 import { NotificationListItem } from "./NotificationListItem";
+import { NotificationItem } from "./types";
+
+import { JSX } from "react";
+
+import { Menu, styled, Typography } from "@mui/material";
 
 type NotificationMenuProps = {
   anchorEl: HTMLElement | undefined;

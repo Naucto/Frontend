@@ -5,6 +5,7 @@ import { GameSearchOverlay } from "@shared/navbar/GameSearchOverlay";
 import { Login } from "@shared/navbar/login/Login";
 import NavProfile from "@shared/navbar/nav-profile/NavProfile";
 import { ImportantNavActionButton, NavActionButton, NavElem } from "@shared/navbar/NavElem";
+import { NotificationBox } from "@shared/navbar/notifications/NotificationBox";
 import { SearchBar } from "@shared/navbar/SearchBar";
 import * as Urls from "@shared/navigation/routes";
 import { muiTheme } from "@theme/MUITheme";
@@ -14,7 +15,6 @@ import React, { useState } from "react";
 import AddIcon from "@mui/icons-material/Add";
 import FeedbackIcon from "@mui/icons-material/Feedback";
 import { styled } from "@mui/material/styles";
-import { NotificationBox } from "@shared/navbar/notifications/NotificationBox";
 
 const Nav = styled("nav")(({ theme }) => ({
   display: "grid",

@@ -1,14 +1,18 @@
-import { Badge, IconButton, styled } from "@mui/material";
-import { JSX, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
-import InfoBoxIcon from "@assets/infoBox.svg?react";
-import { useUser } from "@providers/UserProvider";
-import { LocalStorageManager } from "@utils/LocalStorageManager";
-import { NotificationMenu } from "./NotificationMenu";
-import { NotificationItem } from "./types";
 import {
   notificationsControllerGetWebRtcOffer,
   notificationsControllerMarkAsRead,
 } from "@api";
+import { useUser } from "@providers/UserProvider";
+import { LocalStorageManager } from "@utils/LocalStorageManager";
+
+import { NotificationMenu } from "./NotificationMenu";
+import { NotificationItem } from "./types";
+
+import { JSX, type MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+import { Badge, IconButton, styled } from "@mui/material";
+
+import InfoBoxIcon from "@assets/infoBox.svg?react";
 
 const MAX_NOTIFICATIONS = 50;
 
