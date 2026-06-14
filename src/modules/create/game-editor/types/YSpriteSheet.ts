@@ -5,7 +5,12 @@ export class YSpriteSheet {
   private readonly _width: number;
   private readonly _height: number;
 
-  constructor(doc: Y.Doc, name: string, width: number = 128, height: number = 128) {
+  constructor(
+    doc: Y.Doc,
+    name: string,
+    width: number = 128,
+    height: number = 128,
+  ) {
     this._spriteMap = doc.getMap<number>(name);
     this._width = width;
     this._height = height;

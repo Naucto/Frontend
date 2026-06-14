@@ -6,7 +6,7 @@ import {
   WebRtcOfferDto,
   workSessionControllerGetInfo,
   workSessionControllerJoin,
-  workSessionControllerKick
+  workSessionControllerKick,
 } from "@api";
 import { seedDefaultProjectContent } from "@shared/project/defaultProjectContent";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
@@ -26,7 +26,7 @@ import * as Y from "yjs";
 
 export enum ProviderEventType {
   INITIALIZED,
-  BECOME_HOST
+  BECOME_HOST,
 }
 
 export class ProjectProvider implements Destroyable {
@@ -69,14 +69,28 @@ export class ProjectProvider implements Destroyable {
         return;
       }
 
-      this._yjsProvider = new WebrtcProvider(this._roomId as string, this._yjsDoc, webrtcOffer! as ProviderOptions);
+      this._yjsProvider = new WebrtcProvider(
+        this._roomId as string,
+        this._yjsDoc,
+        webrtcOffer! as ProviderOptions,
+      );
 
-      this.awarenessProvider           = new AwarenessProvider(this, this._yjsProvider);
-      this.codeProvider                = new CodeProvider(this._yjsDoc, this.awarenessProvider);
-      this.spriteProvider              = new SpriteProvider(this._yjsDoc);
-      this.mapProvider                 = new MapProvider(this._yjsDoc, { width:128, height:32 }, 2, this.spriteProvider);
-      this.multiplayerSettingsProvider = new MultiplayerSettingsProvider(this._yjsDoc);
-      this.soundProvider               = new SoundProvider(this._yjsDoc);
+      this.awarenessProvider = new AwarenessProvider(this, this._yjsProvider);
+      this.codeProvider = new CodeProvider(
+        this._yjsDoc,
+        this.awarenessProvider,
+      );
+      this.spriteProvider = new SpriteProvider(this._yjsDoc);
+      this.mapProvider = new MapProvider(
+        this._yjsDoc,
+        { width: 128, height: 32 },
+        2,
+        this.spriteProvider,
+      );
+      this.multiplayerSettingsProvider = new MultiplayerSettingsProvider(
+        this._yjsDoc,
+      );
+      this.soundProvider = new SoundProvider(this._yjsDoc);
 
       this._initialized = true;
       this.emit(ProviderEventType.INITIALIZED);
@@ -89,37 +103,43 @@ export class ProjectProvider implements Destroyable {
 
     try {
       const { data: session } = await workSessionControllerJoin({
-        path: { id: this.projectId }
+        path: { id: this.projectId },
       });
 
-      console.log(`Joined work session ${session!.roomId} for project ID ${this.projectId}`);
+      console.log(
+        `Joined work session ${session!.roomId} for project ID ${this.projectId}`,
+      );
 
       this._roomId = session!.roomId;
 
       const userId = LocalStorageManager.getUserId();
       this.isHost = session!.hostId === userId;
 
-      const { data: projectContent } = await projectControllerFetchProjectContent({
-        path: { id: String(this.projectId) }
-      });
+      const { data: projectContent } =
+        await projectControllerFetchProjectContent({
+          path: { id: String(this.projectId) },
+        });
 
       console.log("Fetched project content");
 
-      if (projectContent!.size > 0) {
-        await decodeUpdate(this._yjsDoc, projectContent!);
-
+      if (projectContent !== undefined && projectContent.size > 0) {
+        await decodeUpdate(this._yjsDoc, projectContent);
         console.log("Project content decoded successfully");
+      } else {
+        console.log("No existing project content, seeding default content");
       }
 
       seedDefaultProjectContent(this._yjsDoc);
 
-      const { data: projectDetails } = (await projectControllerFindOne({
-        path: { id: this.projectId }
-      }));
+      const { data: projectDetails } = await projectControllerFindOne({
+        path: { id: this.projectId },
+      });
 
       this.projectSettingsProvider.updateName(projectDetails!.name);
       this.projectSettingsProvider.updateShortDesc(projectDetails!.shortDesc);
-      this.projectSettingsProvider.updateLongDesc(projectDetails!.longDesc ?? JSON.stringify(projectDetails!.longDesc));
+      this.projectSettingsProvider.updateLongDesc(
+        projectDetails!.longDesc ?? JSON.stringify(projectDetails!.longDesc),
+      );
       this.projectSettingsProvider.updateTags(projectDetails!.tags ?? []);
 
       await this.saveContent();
@@ -154,11 +174,12 @@ export class ProjectProvider implements Destroyable {
   }
 
   public async saveContent(): Promise<void> {
-    if (!this.isHost)
-      return;
+    if (!this.isHost) return;
     const data = encodeUpdate(this._yjsDoc);
 
-    const details = (await projectControllerFindOne({ path: { id: this.projectId } })).data!;
+    const details = (
+      await projectControllerFindOne({ path: { id: this.projectId } })
+    ).data!;
 
     const settings = this.projectSettingsProvider.getSettings();
 
@@ -184,7 +205,11 @@ export class ProjectProvider implements Destroyable {
 
     await projectControllerSaveProjectContent({
       path: { id: this.projectId },
-      body: { file: new Blob([data as BlobPart], { type: "application/octet-stream" }) },
+      body: {
+        file: new Blob([data as BlobPart], {
+          type: "application/octet-stream",
+        }),
+      },
     });
   }
 
@@ -200,9 +225,8 @@ export class ProjectProvider implements Destroyable {
     this._contentListeners.delete(callback);
   }
 
-  public async checkAndKickDisconnectedUsers() : Promise<void> {
-    if (this.isHost || this._isKicking || !this.awarenessProvider)
-      return;
+  public async checkAndKickDisconnectedUsers(): Promise<void> {
+    if (this.isHost || this._isKicking || !this.awarenessProvider) return;
 
     this._isKicking = true;
 
@@ -210,14 +234,18 @@ export class ProjectProvider implements Destroyable {
 
     const projectId = Number(this.projectId);
     try {
-      const sessionInfo = (await workSessionControllerGetInfo({ path: { id: projectId } })).data!;
+      const sessionInfo = (
+        await workSessionControllerGetInfo({ path: { id: projectId } })
+      ).data!;
 
       if (!this.isHost && sessionInfo.hostId === userId) {
         this.isHost = true;
         this.emit(ProviderEventType.BECOME_HOST);
       }
 
-      const connectedClients = Array.from(this.awarenessProvider?.getStates().keys() || []);
+      const connectedClients = Array.from(
+        this.awarenessProvider?.getStates().keys() || [],
+      );
       if (
         connectedClients.length === 1 &&
         this.awarenessProvider?.getClientId() !== undefined &&
@@ -226,7 +254,10 @@ export class ProjectProvider implements Destroyable {
         const users = sessionInfo.users || [];
         for (const sessionUserId of users) {
           if (Number(sessionUserId) !== userId) {
-            await workSessionControllerKick({ path: { id: projectId }, body: { userId: Number(sessionUserId) } });
+            await workSessionControllerKick({
+              path: { id: projectId },
+              body: { userId: Number(sessionUserId) },
+            });
           }
         }
         if (!this.isHost) {
@@ -239,7 +270,7 @@ export class ProjectProvider implements Destroyable {
     }
 
     this._isKicking = false;
-  };
+  }
 
   public observe(event: ProviderEventType, callback: () => void): void {
     if (!this._listeners.has(event)) {
@@ -257,6 +288,6 @@ export class ProjectProvider implements Destroyable {
   }
 
   emit(event: ProviderEventType): void {
-    this._listeners.get(event)?.forEach(callback => callback());
+    this._listeners.get(event)?.forEach((callback) => callback());
   }
 }

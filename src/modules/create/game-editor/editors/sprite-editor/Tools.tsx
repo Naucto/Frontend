@@ -1,11 +1,20 @@
-import { CanvasHandler, DrawTool, PreviewOverlay } from "@modules/create/game-editor/editors/sprite-editor/SpriteEditor";
+import {
+  CanvasHandler,
+  DrawTool,
+  PreviewOverlay,
+} from "@modules/create/game-editor/editors/sprite-editor/SpriteEditor";
 import { SpriteProvider } from "@providers/editors/SpriteProvider";
 
 import React, { useEffect, useRef, useState } from "react";
 
 import { styled } from "@mui/material";
 
-export type SpritePixelAccessor = Pick<SpriteProvider, "isPixelInBounds" | "getPixel" | "setPixel">;
+export type SpritePixelAccessor = Pick<
+  SpriteProvider,
+  "isPixelInBounds" | "getPixel" | "setPixel"
+> & {
+  transact?: (fn: () => void) => void;
+};
 
 const Container = styled("div")(() => ({
   display: "flex",
@@ -28,7 +37,16 @@ const Tools: React.FC<{
   setOnMouseUp?: (fn: CanvasHandler) => void;
   setOnMouseDown?: (fn: CanvasHandler) => void;
   setPreviewOverlay?: (fn: PreviewOverlay | null) => void;
-}> = ({ drawTool, onSelectTool, setOnMouseDown, setOnMouseMove, setOnMouseUp, setPreviewOverlay, spriteProvider, color }) => {
+}> = ({
+  drawTool,
+  onSelectTool,
+  setOnMouseDown,
+  setOnMouseMove,
+  setOnMouseUp,
+  setPreviewOverlay,
+  spriteProvider,
+  color,
+}) => {
   const lastPosRef = useRef<Point2D | null>(null);
   const colorRef = useRef(color);
   const [fillCircle, setFillCircle] = useState(false);
@@ -43,7 +61,14 @@ const Tools: React.FC<{
     fillCircleRef.current = fillCircle;
   }, [fillCircle]);
 
-  // FIX IT TO MAKE IT WORK PROPERLY ON COLLABORATIVE EDITING
+  const withBatch = (fn: () => void): void => {
+    if (spriteProvider.transact) {
+      spriteProvider.transact(fn);
+    } else {
+      fn();
+    }
+  };
+
   const floodFillAt = (sx: number, sy: number, newColor: number): void => {
     if (!spriteProvider.isPixelInBounds(sx, sy)) {
       return;
@@ -52,6 +77,7 @@ const Tools: React.FC<{
     const startColor = spriteProvider.getPixel(sx, sy);
     if (startColor === newColor) return;
 
+    const toFill: [number, number][] = [];
     const stack: [number, number][] = [[sx, sy]];
     const visited = new Set<string>();
 
@@ -66,7 +92,7 @@ const Tools: React.FC<{
       const curColor = spriteProvider.getPixel(x, y);
       if (curColor !== startColor) continue;
 
-      spriteProvider.setPixel(x, y, newColor);
+      toFill.push([x, y]);
 
       stack.push([x + 1, y]);
       stack.push([x - 1, y]);
@@ -74,9 +100,14 @@ const Tools: React.FC<{
       stack.push([x, y - 1]);
     }
 
+    withBatch(() => {
+      for (const [x, y] of toFill) {
+        spriteProvider.setPixel(x, y, newColor);
+      }
+    });
   };
 
-  const drawLine = (a: Point2D, b: Point2D) : void => {
+  const drawLine = (a: Point2D, b: Point2D): void => {
     let x0 = a.x | 0;
     let y0 = a.y | 0;
     const x1 = b.x | 0;
@@ -87,31 +118,44 @@ const Tools: React.FC<{
     const sy = y0 < y1 ? 1 : -1;
     let err = dx - dy;
 
-    while (true) {
-      if (spriteProvider.getPixel(x0, y0) !== colorRef.current) {
-        spriteProvider.setPixel(x0, y0, colorRef.current);
-      }
+    withBatch(() => {
+      while (true) {
+        if (spriteProvider.getPixel(x0, y0) !== colorRef.current) {
+          spriteProvider.setPixel(x0, y0, colorRef.current);
+        }
 
-      if (x0 === x1 && y0 === y1) break;
-      const e2 = err * 2;
-      if (e2 > -dy) {
-        err -= dy;
-        x0 += sx;
+        if (x0 === x1 && y0 === y1) break;
+        const e2 = err * 2;
+        if (e2 > -dy) {
+          err -= dy;
+          x0 += sx;
+        }
+        if (e2 < dx) {
+          err += dx;
+          y0 += sy;
+        }
       }
-      if (e2 < dx) {
-        err += dx;
-        y0 += sy;
-      }
-    }
+    });
   };
 
-  const drawHLine = (x1: number, x2: number, y: number, color: number): void => {
+  const drawHLine = (
+    x1: number,
+    x2: number,
+    y: number,
+    color: number,
+  ): void => {
     for (let x = x1; x <= x2; x++) {
       spriteProvider.setPixel(x, y, color);
     }
   };
 
-  const plotCirclePoints = (xc: number, yc: number, x: number, y: number, color: number): void => {
+  const plotCirclePoints = (
+    xc: number,
+    yc: number,
+    x: number,
+    y: number,
+    color: number,
+  ): void => {
     spriteProvider.setPixel(xc + x, yc + y, color);
     spriteProvider.setPixel(xc - x, yc + y, color);
     spriteProvider.setPixel(xc + x, yc - y, color);
@@ -122,28 +166,36 @@ const Tools: React.FC<{
     spriteProvider.setPixel(xc - y, yc - x, color);
   };
 
-  const drawCircle = (xc: number, yc: number, radius: number, color: number, fill = false): void => {
-    let x = radius;
-    let y = 0;
-    let err = 1 - radius;
+  const drawCircle = (
+    xc: number,
+    yc: number,
+    radius: number,
+    color: number,
+    fill = false,
+  ): void => {
+    withBatch(() => {
+      let x = radius;
+      let y = 0;
+      let err = 1 - radius;
 
-    while (x >= y) {
-      if (fill) {
-        drawHLine(xc - x, xc + x, yc + y, color);
-        drawHLine(xc - y, xc + y, yc + x, color);
-        drawHLine(xc - x, xc + x, yc - y, color);
-        drawHLine(xc - y, xc + y, yc - x, color);
-      } else {
-        plotCirclePoints(xc, yc, x, y, color);
+      while (x >= y) {
+        if (fill) {
+          drawHLine(xc - x, xc + x, yc + y, color);
+          drawHLine(xc - y, xc + y, yc + x, color);
+          drawHLine(xc - x, xc + x, yc - y, color);
+          drawHLine(xc - y, xc + y, yc - x, color);
+        } else {
+          plotCirclePoints(xc, yc, x, y, color);
+        }
+        y++;
+        if (err < 0) {
+          err += 2 * y + 1;
+        } else {
+          x--;
+          err += 2 * (y - x) + 1;
+        }
       }
-      y++;
-      if (err < 0) {
-        err += 2 * y + 1;
-      } else {
-        x--;
-        err += 2 * (y - x) + 1;
-      }
-    }
+    });
   };
 
   useEffect(() => {
@@ -235,7 +287,10 @@ const Tools: React.FC<{
           }
           y++;
           if (err < 0) err += 2 * y + 1;
-          else { x--; err += 2 * (y - x) + 1; }
+          else {
+            x--;
+            err += 2 * (y - x) + 1;
+          }
         }
       };
       setPreviewOverlay?.(overlayFn);
@@ -248,15 +303,25 @@ const Tools: React.FC<{
       const move: CanvasHandler = (pos) => {
         const last = lastPosRef.current;
         if (!last) return;
-        const radius = Math.floor(Math.sqrt((pos.x - last.x) ** 2 + (pos.y - last.y) ** 2));
+        const radius = Math.floor(
+          Math.sqrt((pos.x - last.x) ** 2 + (pos.y - last.y) ** 2),
+        );
         previewRef.current = { center: last, radius };
       };
 
       const up: CanvasHandler = (pos) => {
         const last = lastPosRef.current;
         if (last) {
-          const radius = Math.floor(Math.sqrt((pos.x - last.x) ** 2 + (pos.y - last.y) ** 2));
-          drawCircle(last.x, last.y, radius, colorRef.current, fillCircleRef.current);
+          const radius = Math.floor(
+            Math.sqrt((pos.x - last.x) ** 2 + (pos.y - last.y) ** 2),
+          );
+          drawCircle(
+            last.x,
+            last.y,
+            radius,
+            colorRef.current,
+            fillCircleRef.current,
+          );
         } else {
           drawCircle(pos.x, pos.y, 1, colorRef.current, fillCircleRef.current);
         }
@@ -278,13 +343,21 @@ const Tools: React.FC<{
       // TODO: Implement line drawing
       return;
     }
-
-  }, [drawTool, setOnMouseDown, setOnMouseMove, setOnMouseUp, setPreviewOverlay, spriteProvider]);
+  }, [
+    drawTool,
+    setOnMouseDown,
+    setOnMouseMove,
+    setOnMouseUp,
+    setPreviewOverlay,
+    spriteProvider,
+  ]);
 
   return (
     <Container>
       <ToolButton onClick={() => onSelectTool(DrawTool.Pen)}>Pen</ToolButton>
-      <ToolButton onClick={() => onSelectTool(DrawTool.Circle)}>Circle</ToolButton>
+      <ToolButton onClick={() => onSelectTool(DrawTool.Circle)}>
+        Circle
+      </ToolButton>
       {drawTool === DrawTool.Circle && (
         <label>
           <input
@@ -295,8 +368,7 @@ const Tools: React.FC<{
           Fill
         </label>
       )}
-      {/* FILL commented because not working properly on collaborative editing */}
-      {/* <button className={drawTool === DrawTool.Fill ? "active" : ""} onClick={() => onSelectTool(DrawTool.Fill)}>Fill</button> */}
+      <ToolButton onClick={() => onSelectTool(DrawTool.Fill)}>Fill</ToolButton>
     </Container>
   );
 };

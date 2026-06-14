@@ -21,6 +21,8 @@ export class ProjectSettingsProvider implements Destroyable {
 
   private readonly _boundCallListeners: () => void;
 
+  private _isDestroyed = false;
+
   constructor(ydoc: Y.Doc) {
     this._projectNameContent = ydoc.getText("projectName");
     this._shortDescContent = ydoc.getText("shortDescription");
@@ -36,6 +38,8 @@ export class ProjectSettingsProvider implements Destroyable {
   }
 
   destroy(): void {
+    if (this._isDestroyed) return;
+    this._isDestroyed = true;
     this._listeners.clear();
     this._projectNameContent.unobserve(this._boundCallListeners);
     this._shortDescContent.unobserve(this._boundCallListeners);
