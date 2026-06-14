@@ -5,6 +5,7 @@ import {
   projectControllerGetRelease,
   projectControllerLikeProject,
   projectControllerRegisterReleaseView,
+  projectControllerUnlikeProject,
   ProjectExResponseDto,
 } from "@api";
 import { GameProvider, ProviderEventType } from "@providers/GameProvider";
@@ -162,7 +163,7 @@ export const GameViewer = (): JSX.Element => {
             // Like status should not block opening a published game.
           }
         } else {
-          setLiked(LocalStorageManager.isProjectLiked(Number(id)));
+          setLiked(false);
         }
 
         if (proj?.forkedFromId) {
@@ -250,8 +251,19 @@ export const GameViewer = (): JSX.Element => {
       return;
     }
 
+    if (!user) {
+      enqueueSnackbar("Please log in to like games.", { variant: "info" });
+      return;
+    }
+
+    const nextLiked = !liked;
+    setLiked(nextLiked);
+
     try {
-      const { data } = await projectControllerLikeProject({ path: { id } });
+      const { data } = nextLiked
+        ? await projectControllerLikeProject({ path: { id } })
+        : await projectControllerUnlikeProject({ path: { id } });
+
       if (data) {
         setLiked(data.liked);
         setLikeCount(data.likes);
@@ -262,15 +274,8 @@ export const GameViewer = (): JSX.Element => {
           },
         }));
       }
-
-      if (!user) {
-        if (data?.liked) {
-          LocalStorageManager.addLikedProject(Number(id));
-        } else {
-          LocalStorageManager.removeLikedProject(Number(id));
-        }
-      }
     } catch (error) {
+      setLiked(!nextLiked);
       console.error("Error toggling like:", error);
     }
   };

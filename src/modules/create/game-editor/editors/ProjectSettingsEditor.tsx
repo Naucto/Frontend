@@ -17,6 +17,11 @@ import { FullWidthTextField } from "@components/ui/FullWidthTextField";
 import { Section } from "@components/ui/Section";
 import { PREDEFINED_PROJECT_TAGS } from "@modules/projects/projectTags";
 import { ProjectSettings } from "@providers/editors/ProjectSettingsProvider";
+import {
+  PROJECT_LONG_DESC_MAX_LENGTH,
+  PROJECT_NAME_MAX_LENGTH,
+  PROJECT_SHORT_DESC_MAX_LENGTH,
+} from "@shared/constants/projectFieldLimits";
 import { UserProfileLink } from "@shared/user/UserProfileLink";
 import {
   getCachedProjectImageUrl,
@@ -447,6 +452,8 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
           label="Project Title"
           value={settings.name}
           onChange={(e) => project.projectSettingsProvider.updateName(e.target.value)}
+          slotProps={{ htmlInput: { maxLength: PROJECT_NAME_MAX_LENGTH } }}
+          helperText={`${settings.name.length}/${PROJECT_NAME_MAX_LENGTH}`}
         />
 
         <Box sx={{ mt: 2, mb: 2 }}>
@@ -487,6 +494,8 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
           onChange={(e) => project.projectSettingsProvider.updateShortDesc(e.target.value)}
           multiline
           rows={2}
+          slotProps={{ htmlInput: { maxLength: PROJECT_SHORT_DESC_MAX_LENGTH } }}
+          helperText={`${settings.shortDesc.length}/${PROJECT_SHORT_DESC_MAX_LENGTH}`}
         />
         <FullWidthTextField
           label="Project Long Description"
@@ -494,6 +503,8 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
           onChange={(e) => project.projectSettingsProvider.updateLongDesc(e.target.value)}
           multiline
           rows={5}
+          slotProps={{ htmlInput: { maxLength: PROJECT_LONG_DESC_MAX_LENGTH } }}
+          helperText={`${settings.longDesc.length}/${PROJECT_LONG_DESC_MAX_LENGTH}`}
         />
         <Box sx={{ mt: 2 }}>
           <Typography variant="subtitle1" gutterBottom>Project Tags</Typography>
