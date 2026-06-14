@@ -167,6 +167,7 @@ const ColorSelector = styled("div")(({ theme }) => ({
   borderRadius: theme.shape.borderRadius,
   height: "fit-content",
   alignContent: "start",
+  flexShrink: 0,
   overflowY: "auto",
   overflowX: "hidden",
   scrollbarWidth: "thin",

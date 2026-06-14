@@ -23,17 +23,12 @@ export class SpriteProvider implements Destroyable {
   public readonly stride: number = 1;
   public readonly spriteCount: number;
 
-  constructor(
-    doc: Y.Doc,
-    spriteSize: Size = { width: 8, height: 8 },
-    size: Size = { width: 128, height: 128 },
-  ) {
+  constructor(doc: Y.Doc, spriteSize: Size = { width: 8, height: 8 }, size: Size = { width: 128, height: 128 }) {
     this._spriteMap = doc.getMap<number>("sprite");
     this._spriteFlags = doc.getMap<number>("sprite_flags");
     this.spriteSize = spriteSize;
     this.size = size;
-    this.spriteCount =
-      (size.width / spriteSize.width) * (size.height / spriteSize.height);
+    this.spriteCount = (size.width / spriteSize.width) * (size.height / spriteSize.height);
 
     this.palette = webglPaletteBuffer;
     this._boundCallListeners = this._callListeners.bind(this);

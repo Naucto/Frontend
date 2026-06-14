@@ -1,25 +1,28 @@
-import {
-  CanvasHandler,
-  DrawTool,
-  PreviewOverlay,
-} from "@modules/create/game-editor/editors/sprite-editor/SpriteEditor";
+import { CanvasHandler, DrawTool, PreviewOverlay } from "@modules/create/game-editor/editors/sprite-editor/SpriteEditor";
 import { SpriteProvider } from "@providers/editors/SpriteProvider";
 
 import React, { useEffect, useRef, useState } from "react";
 
 import { styled } from "@mui/material";
 
-export type SpritePixelAccessor = Pick<
-  SpriteProvider,
-  "isPixelInBounds" | "getPixel" | "setPixel"
-> & {
+export type SpritePixelAccessor = Pick<SpriteProvider, "isPixelInBounds" | "getPixel" | "setPixel"> & {
   transact?: (fn: () => void) => void;
 };
 
 const Container = styled("div")(() => ({
+  display: "contents",
+}));
+
+const ButtonRow = styled("div")(() => ({
   display: "flex",
   gap: 8,
-  alignItems: "center",
+  alignItems: "flex-start",
+}));
+
+const CircleGroup = styled("div")(() => ({
+  display: "flex",
+  flexDirection: "column",
+  gap: 4,
 }));
 
 const ToolButton = styled("button")(({ theme }) => ({
@@ -37,16 +40,7 @@ const Tools: React.FC<{
   setOnMouseUp?: (fn: CanvasHandler) => void;
   setOnMouseDown?: (fn: CanvasHandler) => void;
   setPreviewOverlay?: (fn: PreviewOverlay | null) => void;
-}> = ({
-  drawTool,
-  onSelectTool,
-  setOnMouseDown,
-  setOnMouseMove,
-  setOnMouseUp,
-  setPreviewOverlay,
-  spriteProvider,
-  color,
-}) => {
+}> = ({ drawTool, onSelectTool, setOnMouseDown, setOnMouseMove, setOnMouseUp, setPreviewOverlay, spriteProvider, color }) => {
   const lastPosRef = useRef<Point2D | null>(null);
   const colorRef = useRef(color);
   const [fillCircle, setFillCircle] = useState(false);
@@ -124,7 +118,9 @@ const Tools: React.FC<{
           spriteProvider.setPixel(x0, y0, colorRef.current);
         }
 
-        if (x0 === x1 && y0 === y1) break;
+        if (x0 === x1 && y0 === y1) {
+          break;
+        }
         const e2 = err * 2;
         if (e2 > -dy) {
           err -= dy;
@@ -138,24 +134,13 @@ const Tools: React.FC<{
     });
   };
 
-  const drawHLine = (
-    x1: number,
-    x2: number,
-    y: number,
-    color: number,
-  ): void => {
+  const drawHLine = (x1: number, x2: number, y: number, color: number): void => {
     for (let x = x1; x <= x2; x++) {
       spriteProvider.setPixel(x, y, color);
     }
   };
 
-  const plotCirclePoints = (
-    xc: number,
-    yc: number,
-    x: number,
-    y: number,
-    color: number,
-  ): void => {
+  const plotCirclePoints = (xc: number, yc: number, x: number, y: number, color: number): void => {
     spriteProvider.setPixel(xc + x, yc + y, color);
     spriteProvider.setPixel(xc - x, yc + y, color);
     spriteProvider.setPixel(xc + x, yc - y, color);
@@ -166,13 +151,7 @@ const Tools: React.FC<{
     spriteProvider.setPixel(xc - y, yc - x, color);
   };
 
-  const drawCircle = (
-    xc: number,
-    yc: number,
-    radius: number,
-    color: number,
-    fill = false,
-  ): void => {
+  const drawCircle = (xc: number, yc: number, radius: number, color: number, fill = false): void => {
     withBatch(() => {
       let x = radius;
       let y = 0;
@@ -303,25 +282,15 @@ const Tools: React.FC<{
       const move: CanvasHandler = (pos) => {
         const last = lastPosRef.current;
         if (!last) return;
-        const radius = Math.floor(
-          Math.sqrt((pos.x - last.x) ** 2 + (pos.y - last.y) ** 2),
-        );
+        const radius = Math.floor(Math.sqrt((pos.x - last.x) ** 2 + (pos.y - last.y) ** 2));
         previewRef.current = { center: last, radius };
       };
 
       const up: CanvasHandler = (pos) => {
         const last = lastPosRef.current;
         if (last) {
-          const radius = Math.floor(
-            Math.sqrt((pos.x - last.x) ** 2 + (pos.y - last.y) ** 2),
-          );
-          drawCircle(
-            last.x,
-            last.y,
-            radius,
-            colorRef.current,
-            fillCircleRef.current,
-          );
+          const radius = Math.floor(Math.sqrt((pos.x - last.x) ** 2 + (pos.y - last.y) ** 2));
+          drawCircle(last.x, last.y, radius, colorRef.current, fillCircleRef.current);
         } else {
           drawCircle(pos.x, pos.y, 1, colorRef.current, fillCircleRef.current);
         }
@@ -343,32 +312,25 @@ const Tools: React.FC<{
       // TODO: Implement line drawing
       return;
     }
-  }, [
-    drawTool,
-    setOnMouseDown,
-    setOnMouseMove,
-    setOnMouseUp,
-    setPreviewOverlay,
-    spriteProvider,
-  ]);
+  }, [drawTool, setOnMouseDown, setOnMouseMove, setOnMouseUp, setPreviewOverlay, spriteProvider]);
 
   return (
     <Container>
-      <ToolButton onClick={() => onSelectTool(DrawTool.Pen)}>Pen</ToolButton>
-      <ToolButton onClick={() => onSelectTool(DrawTool.Circle)}>
-        Circle
-      </ToolButton>
-      {drawTool === DrawTool.Circle && (
-        <label>
-          <input
-            type="checkbox"
-            checked={fillCircle}
-            onChange={(e) => setFillCircle(e.target.checked)}
-          />
-          Fill
-        </label>
-      )}
-      <ToolButton onClick={() => onSelectTool(DrawTool.Fill)}>Fill</ToolButton>
+      <ButtonRow>
+        <ToolButton onClick={() => onSelectTool(DrawTool.Pen)}>Pen</ToolButton>
+        <CircleGroup>
+          <ToolButton onClick={() => onSelectTool(DrawTool.Circle)}>Circle</ToolButton>
+          <label style={{ visibility: drawTool === DrawTool.Circle ? "visible" : "hidden" }}>
+            <input
+              type="checkbox"
+              checked={fillCircle}
+              onChange={(e) => setFillCircle(e.target.checked)}
+            />
+            Fill
+          </label>
+        </CircleGroup>
+        <ToolButton onClick={() => onSelectTool(DrawTool.Fill)}>Fill</ToolButton>
+      </ButtonRow>
     </Container>
   );
 };
