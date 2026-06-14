@@ -59,6 +59,34 @@ export const NotificationBox = (): JSX.Element => {
     [notifications],
   );
 
+  const authenticateNotificationSocket = useCallback((socket: WebSocket) => {
+    try {
+      socket.send(JSON.stringify({ type: "auth", token }));
+    } catch {
+      console.warn("Failed to send auth message over notification websocket");
+    }
+  }, [token]);
+
+  const handleNotificationSocketMessage = useCallback((event: MessageEvent<string>) => {
+    try {
+      const message = JSON.parse(event.data) as NotificationWsMessage;
+      if (message.type === "notifications:init") {
+        setNotifications(message.payload.slice(0, MAX_NOTIFICATIONS));
+        return;
+      }
+
+      if (message.type === "notification") {
+        setNotifications((previous) => mergeNotification(previous, message.payload));
+      }
+    } catch (error) {
+      console.warn("Failed to process notification websocket message:", error);
+    }
+  }, []);
+
+  const handleNotificationSocketConnectionError = useCallback((error: unknown) => {
+    console.warn("Failed to connect notification websocket:", error);
+  }, []);
+
   useEffect(() => {
     if (!userId || !token) {
       if (socketRef.current) {
@@ -76,7 +104,6 @@ export const NotificationBox = (): JSX.Element => {
         const response = await notificationsControllerGetWebRtcOffer({
           throwOnError: true,
         });
-        console.debug("Received WebRTC offer for notifications:", response.data);
         const offer = response.data as NotificationWebRTCOffer;
         const socketUrl = offer.data.signaling[0];
 
@@ -87,32 +114,10 @@ export const NotificationBox = (): JSX.Element => {
         const socket = new WebSocket(socketUrl);
 
         socketRef.current = socket;
-        console.debug("asdsasd", socketUrl);
-        socket.onopen = () => {
-          try {
-            socket.send(JSON.stringify({ type: "auth", token }));
-          } catch {
-            console.warn("Failed to send auth message over notification websocket");
-          }
-        };
-
-        socket.onmessage = (event: MessageEvent<string>) => {
-          try {
-            const message = JSON.parse(event.data) as NotificationWsMessage;
-            if (message.type === "notifications:init") {
-              setNotifications(message.payload.slice(0, MAX_NOTIFICATIONS));
-              return;
-            }
-
-            if (message.type === "notification") {
-              setNotifications((previous) => mergeNotification(previous, message.payload));
-            }
-          } catch (error) {
-            console.warn("Failed to process notification websocket message:", error);
-          }
-        };
+        socket.onopen = () => authenticateNotificationSocket(socket);
+        socket.onmessage = handleNotificationSocketMessage;
       } catch (error) {
-        console.warn("Failed to connect notification websocket:", error);
+        handleNotificationSocketConnectionError(error);
       }
     };
 
@@ -123,7 +128,13 @@ export const NotificationBox = (): JSX.Element => {
       socketRef.current?.close();
       socketRef.current = null;
     };
-  }, [userId, token]);
+  }, [
+    authenticateNotificationSocket,
+    handleNotificationSocketConnectionError,
+    handleNotificationSocketMessage,
+    userId,
+    token,
+  ]);
 
   const handleClick = useCallback((event: MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
