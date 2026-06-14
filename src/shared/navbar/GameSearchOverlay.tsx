@@ -127,6 +127,13 @@ const SearchResultTitle = styled(Typography)(({ theme }) => ({
   fontSize: "20px",
   fontWeight: 600,
   lineHeight: 1.1,
+  minWidth: 0,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  overflowWrap: "anywhere",
+  display: "-webkit-box",
+  WebkitBoxOrient: "vertical",
+  WebkitLineClamp: 2,
 }));
 
 const SearchResultCreators = styled("div")(({ theme }) => ({
@@ -138,8 +145,10 @@ const SearchResultDescription = styled(Typography)(({ theme }) => ({
   color: theme.palette.grey[400],
   fontSize: "14px",
   lineHeight: 1.35,
+  minWidth: 0,
   display: "-webkit-box",
   overflow: "hidden",
+  overflowWrap: "anywhere",
   WebkitBoxOrient: "vertical",
   WebkitLineClamp: 3,
   textOverflow: "ellipsis",

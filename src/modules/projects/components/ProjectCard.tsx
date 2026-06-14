@@ -119,15 +119,24 @@ const Title = styled(Typography)(({ theme }) => ({
   fontWeight: 600,
   lineHeight: 1.1,
   color: theme.palette.text.primary,
+  minWidth: 0,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  overflowWrap: "anywhere",
+  display: "-webkit-box",
+  WebkitBoxOrient: "vertical",
+  WebkitLineClamp: 2,
 }));
 
 const Description = styled(Typography)(({ theme }) => ({
   fontSize: "14px",
   color: theme.palette.grey[400],
   lineHeight: 1.15,
+  minWidth: 0,
   display: "-webkit-box",
   overflow: "hidden",
   textOverflow: "ellipsis",
+  overflowWrap: "anywhere",
   WebkitBoxOrient: "vertical",
   WebkitLineClamp: 2,
 }));
@@ -154,6 +163,10 @@ const TruncatedText = styled(Typography)(({ theme }) => ({
   color: theme.palette.text.primary,
   fontWeight: "normal",
   padding: theme.spacing(0, 0),
+  minWidth: 0,
+  overflow: "hidden",
+  whiteSpace: "nowrap",
+  textOverflow: "ellipsis",
 }));
 
 const ProjectFooter = styled("div")(({ theme }) => ({

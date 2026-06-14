@@ -29,15 +29,29 @@ const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(
 
     // TODO: Make this configurable from project settings
     //       Allow toggling between 60 Hz lock and delta time support in _update()
+    const stopEngineLoop = useCallback((): void => {
+      if (engineIntervalRef.current) {
+        clearInterval(engineIntervalRef.current);
+        engineIntervalRef.current = undefined;
+      }
+    }, []);
+
     const engineLoop = useCallback((): void => {
       if (!spriteRendererHandleRef.current)
         return;
 
       const luaEnvManager = luaEnvManagerRef.current;
-      luaEnvManager?.update();
-      luaEnvManager?.draw();
+      // If a frame fails (e.g. a runtime error or infinite recursion in
+      // _update/_draw), halt the loop instead of re-throwing the same error
+      // 60 times a second — that error storm froze/crashed the page.
+      const updated = luaEnvManager?.update() ?? true;
+      const drawn = updated ? (luaEnvManager?.draw() ?? true) : false;
+      if (!updated || !drawn) {
+        stopEngineLoop();
+        return;
+      }
       spriteRendererHandleRef.current?.draw();
-    }, [luaEnvManagerRef, spriteRendererHandleRef]);
+    }, [luaEnvManagerRef, spriteRendererHandleRef, stopEngineLoop]);
 
     // init lua env
     useEffect(() => {
@@ -82,19 +96,15 @@ const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(
         return;
       }
 
-      luaEnvManager.init();
-      if (engineIntervalRef.current) {
-        clearInterval(engineIntervalRef.current);
+      stopEngineLoop();
+      // Don't start the per-frame loop if init() itself errored.
+      if (!luaEnvManager.init()) {
+        return;
       }
       engineIntervalRef.current = setInterval(engineLoop, ENGINE_FRAME_TIME);
 
-      return () => {
-        if (engineIntervalRef.current) {
-          clearInterval(engineIntervalRef.current);
-          engineIntervalRef.current = undefined;
-        }
-      };
-    }, [envData.code]);
+      return stopEngineLoop;
+    }, [envData.code, engineLoop, stopEngineLoop]);
 
     useEffect(() => {
       const canvas = spriteRendererHandleRef.current?.getCanvas?.();
