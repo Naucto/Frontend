@@ -138,11 +138,7 @@ export const NotificationBox = (): JSX.Element => {
 
   const handleClick = useCallback((event: MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
-    setShowMenu((previous) => {
-      const next = !previous;
-
-      return next;
-    });
+    setShowMenu((previous) => !previous);
   }, []);
 
   const handleClose = useCallback(() => setShowMenu(false), []);
