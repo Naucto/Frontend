@@ -19,7 +19,7 @@ export const colorPalette: Color[] = [
   { name: "blue", hex: "#29ADFF" },
   { name: "lavender", hex: "#83769C" },
   { name: "pink", hex: "#FF77A8" },
-  { name: "peach", hex: "#FFCCAA" },
+  { name: "peach", hex: "#FFCCAA" }
 ];
 
 export const webglPaletteBuffer = new Uint8Array(

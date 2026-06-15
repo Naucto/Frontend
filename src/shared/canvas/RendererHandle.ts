@@ -119,10 +119,10 @@ export function useSpriteRenderer(
       maxX = -Infinity,
       maxY = -Infinity;
     for (const { x, y } of changes) {
-      if (x < minX) minX = x;
-      if (x > maxX) maxX = x;
-      if (y < minY) minY = y;
-      if (y > maxY) maxY = y;
+      minX = Math.min(minX, x);
+      maxX = Math.max(maxX, x);
+      minY = Math.min(minY, y);
+      maxY = Math.max(maxY, y);
     }
 
     minX = Math.max(0, minX);
