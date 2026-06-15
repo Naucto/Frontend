@@ -193,7 +193,7 @@ export const GameDetailsPanel = ({
               ) : null}
             </AttributionLine>
           ) : null}
-          <Typography variant="body1">
+          <Typography variant="body1" sx={{ overflowWrap: "anywhere", whiteSpace: "pre-wrap" }}>
             {String(project.longDesc || project.shortDesc || "No description available.")}
           </Typography>
           {project.tags.length > 0 ? (

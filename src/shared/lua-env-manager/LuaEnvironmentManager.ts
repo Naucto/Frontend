@@ -84,16 +84,16 @@ class LuaEnvironmentManager {
     this._envData = envData;
   }
 
-  public init(): void {
-    this._safeEval("if _G._init then _G._init() end");
+  public init(): boolean {
+    return this._safeEval("if _G._init then _G._init() end");
   }
 
-  public update(): void {
-    this._safeEval("if _G._update then _G._update() end");
+  public update(): boolean {
+    return this._safeEval("if _G._update then _G._update() end");
   }
 
-  public draw(): void {
-    this._safeEval("if _G._draw then _G._draw() end");
+  public draw(): boolean {
+    return this._safeEval("if _G._draw then _G._draw() end");
   }
 
   public clearOutput(): void {
@@ -189,13 +189,22 @@ class LuaEnvironmentManager {
     return "Error: " + (error.message);
   }
 
-  private _safeEval(code: string): void {
+  /**
+   * Evaluates a fragment, reporting any failure to the console output.
+   * Returns true on success, false if evaluation threw. Catches every
+   * throwable (not just `Error`) so a misbehaving script — e.g. infinite
+   * recursion in `_update` — can never escape the per-frame game loop.
+   */
+  private _safeEval(code: string): boolean {
     try {
       this._lua.evaluate(code);
+      return true;
     } catch (error) {
-      if (error instanceof Error) {
-        this._addOutput(this._getErrorMsg(error));
-      }
+      const message = error instanceof Error
+        ? this._getErrorMsg(error)
+        : "Error: " + String(error);
+      this._addOutput(message);
+      return false;
     }
   }
 

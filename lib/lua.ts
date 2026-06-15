@@ -31,13 +31,39 @@ class LuaError extends Error {
     super(message);
   }
 }
+const HOOK_INTERVAL = 100_000;
+const INSTRUCTION_LIMIT = 10_000_000;
 
 class LuaEnvironment {
   _L: fengari.lua.lua_State;
+  private _instructionsUsed = 0;
 
   constructor() {
     this._L = fengari.lauxlib.luaL_newstate();
     fengari.lualib.luaL_openlibs(this._L);
+    this._installInstructionGuard();
+  }
+
+  /**
+   * Installs a count hook that aborts execution after INSTRUCTION_LIMIT
+   * instructions within a single evaluation. This turns otherwise-fatal
+   * infinite loops and runaway recursion into a normal runtime error that the
+   * caller can catch and report, rather than a hung tab.
+   */
+  private _installInstructionGuard(): void {
+    const hook = (L: fengari.lua.lua_State): void => {
+      this._instructionsUsed += HOOK_INTERVAL;
+      if (this._instructionsUsed > INSTRUCTION_LIMIT) {
+        fengari.lauxlib.luaL_error(
+          L,
+          fengari.to_luastring(
+            "execution aborted: possible infinite loop or recursion"
+          )
+        );
+      }
+    };
+
+    fengari.lua.lua_sethook(this._L, hook, fengari.lua.LUA_MASKCOUNT, HOOK_INTERVAL);
   }
 
   private _getErrorMessage(): string {
@@ -64,6 +90,7 @@ class LuaEnvironment {
         break;
 
       case fengari.lua.LUA_TTABLE:
+        value = {};
         fengari.lua.lua_pushnil(this._L);
         while (fengari.lua.lua_next(this._L, index) !== 0) {
           const key = this.getObject(-2);
@@ -217,6 +244,8 @@ class LuaEnvironment {
   }
 
   public evaluate(code: string): unknown[] {
+    this._instructionsUsed = 0;
+
     const stackTop = fengari.lua.lua_gettop(this._L);
 
     let success = fengari.lauxlib.luaL_loadstring(this._L, fengari.to_luastring(code)) === fengari.lua.LUA_OK;
