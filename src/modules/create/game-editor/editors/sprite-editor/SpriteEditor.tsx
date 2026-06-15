@@ -368,7 +368,6 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
   useEffect(() => {
     const handlePixelChanges = (changes: PixelChange[]): void => {
       let touchesSelectedTile = false;
-      const affectedTiles = new Set<number>();
 
       for (const { x, y } of changes) {
         const tileX = Math.floor(x / baseSpriteWidth) * baseSpriteWidth;
@@ -377,10 +376,6 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
         if (tileX === selectedTile.x && tileY === selectedTile.y) {
           touchesSelectedTile = true;
         }
-
-        const tileIndex =
-          (tileY / baseSpriteHeight) * spritesPerRow + tileX / baseSpriteWidth;
-        affectedTiles.add(tileIndex);
       }
 
       if (touchesSelectedTile) {
@@ -405,7 +400,6 @@ export const SpriteEditor: React.FC<EditorProps> = ({ project }) => {
     project,
     baseSpriteWidth,
     baseSpriteHeight,
-    spritesPerRow,
     selectedTile.x,
     selectedTile.y,
     scheduleDetailDraw,

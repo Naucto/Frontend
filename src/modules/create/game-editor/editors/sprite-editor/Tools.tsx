@@ -31,6 +31,18 @@ const ToolButton = styled("button")(({ theme }) => ({
   height: theme.spacing(6),
 }));
 
+function iterateCircle(radius: number, cb: (x: number, y: number) => void): void {
+  let x = radius;
+  let y = 0;
+  let err = 1 - radius;
+  while (x >= y) {
+    cb(x, y);
+    y++;
+    if (err < 0) err += 2 * y + 1;
+    else { x--; err += 2 * (y - x) + 1; }
+  }
+}
+
 const Tools: React.FC<{
   color: number;
   drawTool: DrawTool;
@@ -153,11 +165,7 @@ const Tools: React.FC<{
 
   const drawCircle = (xc: number, yc: number, radius: number, color: number, fill = false): void => {
     withBatch(() => {
-      let x = radius;
-      let y = 0;
-      let err = 1 - radius;
-
-      while (x >= y) {
+      iterateCircle(radius, (x, y) => {
         if (fill) {
           drawHLine(xc - x, xc + x, yc + y, color);
           drawHLine(xc - y, xc + y, yc + x, color);
@@ -166,14 +174,7 @@ const Tools: React.FC<{
         } else {
           plotCirclePoints(xc, yc, x, y, color);
         }
-        y++;
-        if (err < 0) {
-          err += 2 * y + 1;
-        } else {
-          x--;
-          err += 2 * (y - x) + 1;
-        }
-      }
+      });
     });
   };
 
@@ -241,10 +242,7 @@ const Tools: React.FC<{
           return;
         }
 
-        let x = prev.radius;
-        let y = 0;
-        let err = 1 - prev.radius;
-        while (x >= y) {
+        iterateCircle(prev.radius, (x, y) => {
           if (fillCircleRef.current) {
             for (let i = prev.center.x - x; i <= prev.center.x + x; i++) {
               drawPoint(i, prev.center.y + y);
@@ -264,13 +262,7 @@ const Tools: React.FC<{
             drawPoint(prev.center.x + y, prev.center.y - x);
             drawPoint(prev.center.x - y, prev.center.y - x);
           }
-          y++;
-          if (err < 0) err += 2 * y + 1;
-          else {
-            x--;
-            err += 2 * (y - x) + 1;
-          }
-        }
+        });
       };
       setPreviewOverlay?.(overlayFn);
 

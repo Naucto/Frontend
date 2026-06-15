@@ -176,6 +176,10 @@ export class MapProvider implements Destroyable {
     this.listeners.add(callback);
   }
 
+  unobserve(callback: ContentListener): void {
+    this.listeners.delete(callback);
+  }
+
   observeRaw(callback: RawContentListener): void {
     this.rawListeners.add(callback);
   }
