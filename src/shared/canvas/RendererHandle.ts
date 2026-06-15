@@ -97,13 +97,15 @@ export function useSpriteRenderer(
     const spriteCallback = (changes: PixelChange[]): void => {
       _refreshSpriteTexturePartial(changes);
     };
-
-    map.observe(() => {
+    const mapCallback = (): void => {
       _refreshMapTexture();
-    });
+    };
+
+    map.observe(mapCallback);
     sprite.observe(spriteCallback);
 
     return () => {
+      map.unobserve(mapCallback);
       sprite.unobserve(spriteCallback);
     };
   }, [map, sprite]);
