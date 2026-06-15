@@ -21,3 +21,15 @@ export const colorPalette: Color[] = [
   { name: "pink", hex: "#FF77A8" },
   { name: "peach", hex: "#FFCCAA" }
 ];
+
+export const webglPaletteBuffer = new Uint8Array(
+  colorPalette.flatMap((c) => {
+    const hex = c.hex.replace("#", "");
+    return [
+      parseInt(hex.substring(0, 2), 16),
+      parseInt(hex.substring(2, 4), 16),
+      parseInt(hex.substring(4, 6), 16),
+      255,
+    ];
+  }),
+);

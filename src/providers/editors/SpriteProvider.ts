@@ -1,7 +1,10 @@
 import { SpriteProviderError } from "@errors/SpriteProviderError";
-import { palette } from "@shared/placeholders/spriteSheet";
+import { webglPaletteBuffer } from "@modules/create/game-editor/editors/sprite-editor/Color";
 
 import * as Y from "yjs";
+
+export type PixelChange = { x: number; y: number; color: number };
+export type SpriteContentListener = (changes: PixelChange[]) => void;
 
 type SpriteFlagListener = (flags: number[]) => void;
 
@@ -9,9 +12,9 @@ export class SpriteProvider implements Destroyable {
   private _spriteMap: Y.Map<number>;
   private _spriteFlags: Y.Map<number>;
   private _rawListeners = new Set<RawContentListener>();
-  private _listeners = new Set<ContentListener>();
+  private _listeners = new Set<SpriteContentListener>();
   private _flagListeners = new Set<SpriteFlagListener>();
-  private readonly _boundCallListeners: () => void;
+  private readonly _boundCallListeners: (event: Y.YMapEvent<number>) => void;
   private readonly _boundCallFlagListeners: () => void;
 
   public palette: Uint8Array;
@@ -27,7 +30,7 @@ export class SpriteProvider implements Destroyable {
     this.size = size;
     this.spriteCount = (size.width / spriteSize.width) * (size.height / spriteSize.height);
 
-    this.palette = palette;
+    this.palette = webglPaletteBuffer;
     this._boundCallListeners = this._callListeners.bind(this);
     this._boundCallFlagListeners = this._callFlagListeners.bind(this);
     this._spriteMap.observe(this._boundCallListeners);
@@ -42,12 +45,28 @@ export class SpriteProvider implements Destroyable {
     this._spriteFlags.unobserve(this._boundCallFlagListeners);
   }
 
-  private _callListeners(): void {
-    const content = this.getPixelBuffer();
-    this._listeners.forEach((callback) => callback(content));
+  private _callListeners(event: Y.YMapEvent<number>): void {
+    if (this._listeners.size > 0) {
+      const changes: PixelChange[] = [];
 
-    const rawContent = this.getHexRepresentation();
-    this._rawListeners.forEach((callback) => callback(rawContent));
+      event.changes.keys.forEach((_change, key) => {
+        const [xStr, yStr] = key.split(",");
+        const x = Number(xStr);
+        const y = Number(yStr);
+        const color = this._spriteMap.get(key) ?? 0;
+
+        changes.push({ x, y, color });
+      });
+
+      if (changes.length > 0) {
+        this._listeners.forEach((callback) => callback(changes));
+      }
+    }
+
+    if (this._rawListeners.size > 0) {
+      const rawContent = this.getHexRepresentation();
+      this._rawListeners.forEach((callback) => callback(rawContent));
+    }
   }
 
   private _callFlagListeners(): void {
@@ -74,14 +93,20 @@ export class SpriteProvider implements Destroyable {
 
   setPixel(x: number, y: number, color: number): void {
     const key = this._coordToKey(x, y);
-    if (color == 0)
-      this._spriteMap.delete(key); // Optimize network by deleting black pixels
+    if (color === 0) {
+      this._spriteMap.delete(key);
+      return;
+    }
     this._spriteMap.set(key, color);
   }
 
   deletePixel(x: number, y: number): void {
     const key = this._coordToKey(x, y);
     this._spriteMap.set(key, 0);
+  }
+
+  transact(fn: () => void): void {
+    this._spriteMap.doc!.transact(fn);
   }
 
   private _coordToKey(x: number, y: number): string {
@@ -173,8 +198,8 @@ export class SpriteProvider implements Destroyable {
     const normalizedBit = this._validateBitIndex(bit);
     const currentValue = this.getFlag(index);
     const nextValue = enabled
-      ? (currentValue | (1 << normalizedBit))
-      : (currentValue & ~(1 << normalizedBit));
+      ? currentValue | (1 << normalizedBit)
+      : currentValue & ~(1 << normalizedBit);
 
     this.setFlag(index, nextValue);
   }
@@ -189,7 +214,7 @@ export class SpriteProvider implements Destroyable {
     return flags;
   }
 
-  observe(callback: ContentListener): void {
+  observe(callback: SpriteContentListener): void {
     this._listeners.add(callback);
   }
 
@@ -199,5 +224,17 @@ export class SpriteProvider implements Destroyable {
 
   observeFlags(callback: SpriteFlagListener): void {
     this._flagListeners.add(callback);
+  }
+
+  unobserve(callback: SpriteContentListener): void {
+    this._listeners.delete(callback);
+  }
+
+  unobserveRaw(callback: RawContentListener): void {
+    this._rawListeners.delete(callback);
+  }
+
+  unobserveFlags(callback: SpriteFlagListener): void {
+    this._flagListeners.delete(callback);
   }
 }
