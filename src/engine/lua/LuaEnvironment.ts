@@ -198,7 +198,12 @@ class LuaEnvironment {
         break;
 
       case "number":
-        fengari.lua.lua_pushnumber(this._L, value);
+        // Integer-valued numbers must push as Lua integers; otherwise ids and
+        // counters surface as floats ("1.0") and break string concatenation.
+        if (Number.isInteger(value))
+          fengari.lua.lua_pushinteger(this._L, value);
+        else
+          fengari.lua.lua_pushnumber(this._L, value);
         break;
 
       case "string":
