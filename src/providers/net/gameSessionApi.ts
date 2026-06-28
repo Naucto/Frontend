@@ -29,10 +29,11 @@ export const createGameSession = async (
 export const joinGameSession = async (
   sessionUuid: string,
   joinCode?: string,
+  editorTest?: boolean,
 ): Promise<GameSessionConnectionResponseDto> => {
   const { data, error } = await multiplayerControllerJoin({
     path: { sessionId: sessionUuid },
-    body: { joinCode },
+    body: { joinCode, editorTest },
   });
   if (error || !data) {
     throw new GameSessionError(messageOf(error, "Failed to join game session"));
@@ -42,8 +43,9 @@ export const joinGameSession = async (
 
 export const joinGameSessionByCode = async (
   joinCode: string,
+  editorTest?: boolean,
 ): Promise<GameSessionConnectionResponseDto> => {
-  const { data, error } = await multiplayerControllerJoinByCode({ body: { joinCode } });
+  const { data, error } = await multiplayerControllerJoinByCode({ body: { joinCode, editorTest } });
   if (error || !data) {
     throw new GameSessionError(messageOf(error, "Failed to join with that code"));
   }

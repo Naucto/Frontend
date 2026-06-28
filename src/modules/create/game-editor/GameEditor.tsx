@@ -344,7 +344,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
         return "Are you sure you want to leave? Your changes may not be saved.";
       }} />
 
-      <NetSessionModals bridge={netBridge} projectId={project.projectId} />
+      <NetSessionModals bridge={netBridge} projectId={project.projectId} selfJoin />
     </GameEditorContainer>
   );
 };
