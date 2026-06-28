@@ -31,21 +31,20 @@ import type {
   AuthControllerRegisterData,
   AuthControllerRegisterErrors,
   AuthControllerRegisterResponses,
-  MultiplayerControllerCloseHostData,
-  MultiplayerControllerCloseHostErrors,
-  MultiplayerControllerCloseHostResponses,
-  MultiplayerControllerJoinHostData,
-  MultiplayerControllerJoinHostErrors,
-  MultiplayerControllerJoinHostResponses,
-  MultiplayerControllerLeaveHostData,
-  MultiplayerControllerLeaveHostErrors,
-  MultiplayerControllerLeaveHostResponses,
-  MultiplayerControllerLookupHostsData,
-  MultiplayerControllerLookupHostsErrors,
-  MultiplayerControllerLookupHostsResponses,
-  MultiplayerControllerOpenHostData,
-  MultiplayerControllerOpenHostErrors,
-  MultiplayerControllerOpenHostResponses,
+  MultiplayerControllerCreateData,
+  MultiplayerControllerCreateResponses,
+  MultiplayerControllerGetData,
+  MultiplayerControllerGetResponses,
+  MultiplayerControllerJoinData,
+  MultiplayerControllerJoinResponses,
+  MultiplayerControllerLeaveData,
+  MultiplayerControllerLeaveResponses,
+  MultiplayerControllerListData,
+  MultiplayerControllerListResponses,
+  MultiplayerControllerRemoveData,
+  MultiplayerControllerRemoveResponses,
+  MultiplayerControllerUpdateData,
+  MultiplayerControllerUpdateResponses,
   ProjectCommentControllerCreateCommentData,
   ProjectCommentControllerCreateCommentResponses,
   ProjectCommentControllerCreateReplyData,
@@ -156,9 +155,6 @@ import type {
   UserControllerGetProfilePictureErrors,
   UserControllerGetProfilePictureResponses,
   UserControllerGetProfileResponses,
-  UserControllerGetPublicProfilePictureData,
-  UserControllerGetPublicProfilePictureErrors,
-  UserControllerGetPublicProfilePictureResponses,
   UserControllerRemoveData,
   UserControllerRemoveErrors,
   UserControllerRemoveResponses,
@@ -779,7 +775,7 @@ export const projectControllerUnlikeProject = <
   });
 
 /**
- * Like a published project (toggle for authenticated users, increment for anonymous)
+ * Like a published project (idempotent, authenticated users only)
  */
 export const projectControllerLikeProject = <
   ThrowOnError extends boolean = false
@@ -854,38 +850,38 @@ export const projectControllerUpdateRelease = <
   });
 
 /**
- * List available game hosts/sessions from the user's perspective
+ * List game sessions for a project, from the caller's perspective
  */
-export const multiplayerControllerLookupHosts = <
-  ThrowOnError extends boolean = false
->(
-  options?: Options<MultiplayerControllerLookupHostsData, ThrowOnError>
+export const multiplayerControllerList = <ThrowOnError extends boolean = false>(
+  options: Options<MultiplayerControllerListData, ThrowOnError>
 ) =>
-  (options?.client ?? client).get<
-    MultiplayerControllerLookupHostsResponses,
-    MultiplayerControllerLookupHostsErrors,
+  (options.client ?? client).get<
+    MultiplayerControllerListResponses,
+    unknown,
     ThrowOnError
   >({
     responseType: "json",
-    url: "/multiplayer/list-hosts",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/game-sessions",
     ...options
   });
 
 /**
- * Open a new game host/session, with the caller being the game host
+ * Create a new game session, with the caller as host
  */
-export const multiplayerControllerOpenHost = <
+export const multiplayerControllerCreate = <
   ThrowOnError extends boolean = false
 >(
-  options: Options<MultiplayerControllerOpenHostData, ThrowOnError>
+  options: Options<MultiplayerControllerCreateData, ThrowOnError>
 ) =>
   (options.client ?? client).post<
-    MultiplayerControllerOpenHostResponses,
-    MultiplayerControllerOpenHostErrors,
+    MultiplayerControllerCreateResponses,
+    unknown,
     ThrowOnError
   >({
     responseType: "json",
-    url: "/multiplayer/open-host",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/game-sessions",
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -894,41 +890,55 @@ export const multiplayerControllerOpenHost = <
   });
 
 /**
- * Close an existing game host/session, with the caller being the game host
+ * Close/delete a game session (host only)
  */
-export const multiplayerControllerCloseHost = <
+export const multiplayerControllerRemove = <
   ThrowOnError extends boolean = false
 >(
-  options: Options<MultiplayerControllerCloseHostData, ThrowOnError>
+  options: Options<MultiplayerControllerRemoveData, ThrowOnError>
 ) =>
   (options.client ?? client).delete<
-    MultiplayerControllerCloseHostResponses,
-    MultiplayerControllerCloseHostErrors,
+    MultiplayerControllerRemoveResponses,
+    unknown,
     ThrowOnError
   >({
-    url: "/multiplayer/close-host",
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers
-    }
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/game-sessions/{sessionId}",
+    ...options
   });
 
 /**
- * Join an existing game host/session as a player
+ * Fetch a single game session
  */
-export const multiplayerControllerJoinHost = <
-  ThrowOnError extends boolean = false
->(
-  options: Options<MultiplayerControllerJoinHostData, ThrowOnError>
+export const multiplayerControllerGet = <ThrowOnError extends boolean = false>(
+  options: Options<MultiplayerControllerGetData, ThrowOnError>
 ) =>
-  (options.client ?? client).patch<
-    MultiplayerControllerJoinHostResponses,
-    MultiplayerControllerJoinHostErrors,
+  (options.client ?? client).get<
+    MultiplayerControllerGetResponses,
+    unknown,
     ThrowOnError
   >({
     responseType: "json",
-    url: "/multiplayer/join-host",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/game-sessions/{sessionId}",
+    ...options
+  });
+
+/**
+ * Update game session settings (host only)
+ */
+export const multiplayerControllerUpdate = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<MultiplayerControllerUpdateData, ThrowOnError>
+) =>
+  (options.client ?? client).patch<
+    MultiplayerControllerUpdateResponses,
+    unknown,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/game-sessions/{sessionId}",
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -937,24 +947,42 @@ export const multiplayerControllerJoinHost = <
   });
 
 /**
- * Leave a game host/session as a player
+ * Join a game session as a player
  */
-export const multiplayerControllerLeaveHost = <
-  ThrowOnError extends boolean = false
->(
-  options: Options<MultiplayerControllerLeaveHostData, ThrowOnError>
+export const multiplayerControllerJoin = <ThrowOnError extends boolean = false>(
+  options: Options<MultiplayerControllerJoinData, ThrowOnError>
 ) =>
-  (options.client ?? client).patch<
-    MultiplayerControllerLeaveHostResponses,
-    MultiplayerControllerLeaveHostErrors,
+  (options.client ?? client).post<
+    MultiplayerControllerJoinResponses,
+    unknown,
     ThrowOnError
   >({
-    url: "/multiplayer/leave-host",
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/game-sessions/{sessionId}/join",
     ...options,
     headers: {
       "Content-Type": "application/json",
       ...options.headers
     }
+  });
+
+/**
+ * Leave a game session as a player
+ */
+export const multiplayerControllerLeave = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<MultiplayerControllerLeaveData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    MultiplayerControllerLeaveResponses,
+    unknown,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/game-sessions/{sessionId}/leave",
+    ...options
   });
 
 /**
@@ -1102,6 +1130,75 @@ export const authControllerRegister = <ThrowOnError extends boolean = false>(
     }
   });
 
+/**
+ * Authenticate with Google authorization code + PKCE
+ */
+export const authControllerLoginWithGoogleCode = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<AuthControllerLoginWithGoogleCodeData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    AuthControllerLoginWithGoogleCodeResponses,
+    AuthControllerLoginWithGoogleCodeErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/auth/google/code",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Authenticate with GitHub OAuth authorization code
+ */
+export const authControllerLoginWithGithub = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<AuthControllerLoginWithGithubData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    AuthControllerLoginWithGithubResponses,
+    AuthControllerLoginWithGithubErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/auth/github",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Authenticate with Microsoft ID token
+ */
+export const authControllerLoginWithMicrosoft = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<AuthControllerLoginWithMicrosoftData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    AuthControllerLoginWithMicrosoftResponses,
+    AuthControllerLoginWithMicrosoftErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/auth/microsoft",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Refresh the access token using refresh token cookie
+ */
 export const authControllerRefresh = <ThrowOnError extends boolean = false>(
   options?: Options<AuthControllerRefreshData, ThrowOnError>
 ) =>
@@ -1113,6 +1210,28 @@ export const authControllerRefresh = <ThrowOnError extends boolean = false>(
     responseType: "json",
     url: "/auth/refresh",
     ...options
+  });
+
+/**
+ * Change password, OAuth users can set one without providing a current password
+ */
+export const authControllerChangePassword = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<AuthControllerChangePasswordData, ThrowOnError>
+) =>
+  (options.client ?? client).patch<
+    AuthControllerChangePasswordResponses,
+    AuthControllerChangePasswordErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/auth/password",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
   });
 
 /**
@@ -1456,81 +1575,3 @@ export const workSessionControllerGetInfo = <
     url: "/work-sessions/info/{id}",
     ...options
   });
-
-/**
- * Authenticate with Google authorization code + PKCE
- */
-export const authControllerLoginWithGoogleCode = <ThrowOnError extends boolean = false>(options: Options<AuthControllerLoginWithGoogleCodeData, ThrowOnError>) => (options.client ?? client).post<AuthControllerLoginWithGoogleCodeResponses, AuthControllerLoginWithGoogleCodeErrors, ThrowOnError>({
-    url: '/auth/google/code',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Authenticate with GitHub OAuth authorization code
- */
-
-/**
- * Authenticate with GitHub OAuth authorization code
- */
-export const authControllerLoginWithGithub = <ThrowOnError extends boolean = false>(options: Options<AuthControllerLoginWithGithubData, ThrowOnError>) => (options.client ?? client).post<AuthControllerLoginWithGithubResponses, AuthControllerLoginWithGithubErrors, ThrowOnError>({
-    url: '/auth/github',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Authenticate with Microsoft Graph access token
- */
-
-/**
- * Authenticate with Microsoft Graph access token
- */
-export const authControllerLoginWithMicrosoft = <ThrowOnError extends boolean = false>(options: Options<AuthControllerLoginWithMicrosoftData, ThrowOnError>) => (options.client ?? client).post<AuthControllerLoginWithMicrosoftResponses, AuthControllerLoginWithMicrosoftErrors, ThrowOnError>({
-    url: '/auth/microsoft',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Refresh the access token using refresh token cookie
- */
-
-/**
- * Change password, OAuth users can set one without providing a current password
- */
-export const authControllerChangePassword = <ThrowOnError extends boolean = false>(options: Options<AuthControllerChangePasswordData, ThrowOnError>) => (options.client ?? client).patch<AuthControllerChangePasswordResponses, AuthControllerChangePasswordErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/password',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Remove refresh token cookie
- */
-
-/**
- * Get public CDN URL for a user's profile picture
- */
-export const userControllerGetPublicProfilePicture = <ThrowOnError extends boolean = false>(options: Options<UserControllerGetPublicProfilePictureData, ThrowOnError>) => (options.client ?? client).get<UserControllerGetPublicProfilePictureResponses, UserControllerGetPublicProfilePictureErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/users/public/{id}/profile-picture',
-    ...options
-});
-
-/**
- * Get all released projects
- */

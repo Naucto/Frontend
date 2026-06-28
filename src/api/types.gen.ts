@@ -428,19 +428,20 @@ export type ViewResponseDto = {
   viewCount: number;
 };
 
-export type LookupHostsResponseDtoHost = {
-  sessionUuid: string;
-  sessionVisibility: "PUBLIC" | "FRIENDS_ONLY" | "PRIVATE";
-  playerCount: number;
-};
-
-export type LookupHostsResponseDto = {
-  hosts: Array<LookupHostsResponseDtoHost>;
-};
-
-export type OpenHostRequestDto = {
+export type CreateGameSessionDto = {
+  /**
+   * ID of the project this session is played on
+   */
   projectId: number;
-  visibility: "PUBLIC" | "FRIENDS_ONLY" | "PRIVATE";
+  /**
+   * Human-readable title of the session
+   */
+  title: string;
+  /**
+   * Maximum number of players, host included
+   */
+  maxPlayers: number;
+  visibility: "PUBLIC" | "FRIENDS_ONLY" | "INVITE_CODE";
 };
 
 export type WebRtcOfferPeerIceServerConfig = {
@@ -467,28 +468,58 @@ export type WebRtcOfferDto = {
   peerOpts: WebRtcOfferPeerOpts;
 };
 
-export type OpenHostResponseDto = {
+export type GameSessionConnectionResponseDto = {
   sessionUuid: string;
   webrtcConfig: WebRtcOfferDto;
-};
-
-export type CloseHostRequestDto = {
   /**
-   * ID of the project whose session to close
+   * Short-lived signed ticket presented on the WebRTC connection
    */
-  projectId: number;
+  connectionTicket: string;
+  /**
+   * Join code to share, present only when hosting an INVITE_CODE session
+   */
+  joinCode?: string;
 };
 
-export type JoinHostRequestDto = {
+export type GameSessionResponseDto = {
   sessionUuid: string;
+  title: string;
+  visibility: "PUBLIC" | "FRIENDS_ONLY" | "INVITE_CODE";
+  /**
+   * ID of the host user
+   */
+  hostId: number;
+  /**
+   * Maximum number of players, host included
+   */
+  maxPlayers: number;
+  /**
+   * Current number of players, host included
+   */
+  playerCount: number;
 };
 
-export type JoinHostResponseDto = {
-  webrtcConfig: WebRtcOfferDto;
+export type GameSessionListResponseDto = {
+  sessions: Array<GameSessionResponseDto>;
 };
 
-export type LeaveHostRequestDto = {
-  sessionUuid: string;
+export type UpdateGameSessionDto = {
+  /**
+   * New title of the session
+   */
+  title?: string;
+  /**
+   * New maximum number of players, host included
+   */
+  maxPlayers?: number;
+  visibility?: "PUBLIC" | "FRIENDS_ONLY" | "INVITE_CODE";
+};
+
+export type JoinGameSessionDto = {
+  /**
+   * Join code, required for INVITE_CODE sessions
+   */
+  joinCode?: string;
 };
 
 export type CommentAuthorDto = {
@@ -535,10 +566,6 @@ export type LoginDto = {
   password: string;
 };
 
-export type AuthResponseDto = {
-  access_token: string;
-};
-
 export type CreateUserDto = {
   /**
    * User email address
@@ -556,6 +583,42 @@ export type CreateUserDto = {
    * User password
    */
   password: string;
+};
+
+export type GoogleCodeDto = {
+  /**
+   * Google authorization code
+   */
+  code: string;
+  /**
+   * PKCE code verifier
+   */
+  codeVerifier: string;
+};
+
+export type GithubLoginDto = {
+  /**
+   * GitHub OAuth authorization code
+   */
+  code: string;
+};
+
+export type MicrosoftLoginDto = {
+  /**
+   * Microsoft ID token
+   */
+  token: string;
+};
+
+export type ChangePasswordDto = {
+  /**
+   * Current password (not required for OAuth accounts)
+   */
+  currentPassword?: string;
+  /**
+   * New password
+   */
+  newPassword: string;
 };
 
 export type UserRoleDto = {
@@ -1677,133 +1740,104 @@ export type ProjectControllerUpdateReleaseResponses = {
   200: unknown;
 };
 
-export type MultiplayerControllerLookupHostsData = {
+export type MultiplayerControllerListData = {
   body?: never;
   path?: never;
-  query?: never;
-  url: "/multiplayer/list-hosts";
+  query: {
+    projectId: number;
+  };
+  url: "/game-sessions";
 };
 
-export type MultiplayerControllerLookupHostsErrors = {
-  /**
-   * Bad request (wrong project ID).
-   */
-  400: unknown;
-  /**
-   * Unhandled server error.
-   */
-  500: unknown;
+export type MultiplayerControllerListResponses = {
+  200: GameSessionListResponseDto;
 };
 
-export type MultiplayerControllerLookupHostsResponses = {
-  /**
-   * A list of available game hosts is returned.
-   */
-  200: LookupHostsResponseDto;
-};
+export type MultiplayerControllerListResponse =
+  MultiplayerControllerListResponses[keyof MultiplayerControllerListResponses];
 
-export type MultiplayerControllerLookupHostsResponse =
-  MultiplayerControllerLookupHostsResponses[keyof MultiplayerControllerLookupHostsResponses];
-
-export type MultiplayerControllerOpenHostData = {
-  body: OpenHostRequestDto;
+export type MultiplayerControllerCreateData = {
+  body: CreateGameSessionDto;
   path?: never;
   query?: never;
-  url: "/multiplayer/open-host";
+  url: "/game-sessions";
 };
 
-export type MultiplayerControllerOpenHostErrors = {
-  /**
-   * The user is already hosting a game session for this project.
-   */
-  400: unknown;
-  /**
-   * The user or project was not found.
-   */
-  404: unknown;
+export type MultiplayerControllerCreateResponses = {
+  201: GameSessionConnectionResponseDto;
 };
 
-export type MultiplayerControllerOpenHostResponses = {
-  /**
-   * The game host/session has been successfully opened.
-   */
-  200: OpenHostResponseDto;
-};
+export type MultiplayerControllerCreateResponse =
+  MultiplayerControllerCreateResponses[keyof MultiplayerControllerCreateResponses];
 
-export type MultiplayerControllerOpenHostResponse =
-  MultiplayerControllerOpenHostResponses[keyof MultiplayerControllerOpenHostResponses];
-
-export type MultiplayerControllerCloseHostData = {
-  body: CloseHostRequestDto;
-  path?: never;
+export type MultiplayerControllerRemoveData = {
+  body?: never;
+  path: {
+    sessionId: string;
+  };
   query?: never;
-  url: "/multiplayer/close-host";
+  url: "/game-sessions/{sessionId}";
 };
 
-export type MultiplayerControllerCloseHostErrors = {
-  /**
-   * The user, project, or game session was not found.
-   */
-  404: unknown;
-};
-
-export type MultiplayerControllerCloseHostResponses = {
-  /**
-   * The game host/session has been successfully closed.
-   */
+export type MultiplayerControllerRemoveResponses = {
   200: unknown;
 };
 
-export type MultiplayerControllerJoinHostData = {
-  body: JoinHostRequestDto;
-  path?: never;
+export type MultiplayerControllerGetData = {
+  body?: never;
+  path: {
+    sessionId: string;
+  };
   query?: never;
-  url: "/multiplayer/join-host";
+  url: "/game-sessions/{sessionId}";
 };
 
-export type MultiplayerControllerJoinHostErrors = {
-  /**
-   * User is already in the session or is the host.
-   */
-  400: unknown;
-  /**
-   * Game session or user not found.
-   */
-  404: unknown;
+export type MultiplayerControllerGetResponses = {
+  200: GameSessionResponseDto;
 };
 
-export type MultiplayerControllerJoinHostResponses = {
-  /**
-   * Successfully joined the game session.
-   */
-  200: JoinHostResponseDto;
-};
+export type MultiplayerControllerGetResponse =
+  MultiplayerControllerGetResponses[keyof MultiplayerControllerGetResponses];
 
-export type MultiplayerControllerJoinHostResponse =
-  MultiplayerControllerJoinHostResponses[keyof MultiplayerControllerJoinHostResponses];
-
-export type MultiplayerControllerLeaveHostData = {
-  body: LeaveHostRequestDto;
-  path?: never;
+export type MultiplayerControllerUpdateData = {
+  body: UpdateGameSessionDto;
+  path: {
+    sessionId: string;
+  };
   query?: never;
-  url: "/multiplayer/leave-host";
+  url: "/game-sessions/{sessionId}";
 };
 
-export type MultiplayerControllerLeaveHostErrors = {
-  /**
-   * User is not part of the session or is the host.
-   */
-  400: unknown;
-  /**
-   * Game session or user not found.
-   */
-  404: unknown;
+export type MultiplayerControllerUpdateResponses = {
+  200: unknown;
 };
 
-export type MultiplayerControllerLeaveHostResponses = {
-  /**
-   * Successfully left the game session.
-   */
+export type MultiplayerControllerJoinData = {
+  body: JoinGameSessionDto;
+  path: {
+    sessionId: string;
+  };
+  query?: never;
+  url: "/game-sessions/{sessionId}/join";
+};
+
+export type MultiplayerControllerJoinResponses = {
+  200: GameSessionConnectionResponseDto;
+};
+
+export type MultiplayerControllerJoinResponse =
+  MultiplayerControllerJoinResponses[keyof MultiplayerControllerJoinResponses];
+
+export type MultiplayerControllerLeaveData = {
+  body?: never;
+  path: {
+    sessionId: string;
+  };
+  query?: never;
+  url: "/game-sessions/{sessionId}/leave";
+};
+
+export type MultiplayerControllerLeaveResponses = {
   200: unknown;
 };
 
@@ -1922,20 +1956,18 @@ export type AuthControllerLoginErrors = {
    */
   400: unknown;
   /**
-   * Cannot register as an admin
+   * Invalid credentials
    */
-  403: unknown;
-  /**
-   * Email or username already in use
-   */
-  409: unknown;
+  401: unknown;
 };
 
 export type AuthControllerLoginResponses = {
   /**
-   * User registered successfully
+   * User logged in successfully
    */
-  201: AuthResponseDto;
+  201: {
+    access_token: string;
+  };
 };
 
 export type AuthControllerLoginResponse =
@@ -1967,11 +1999,91 @@ export type AuthControllerRegisterResponses = {
   /**
    * User registered successfully
    */
-  201: AuthResponseDto;
+  201: {
+    access_token: string;
+  };
 };
 
 export type AuthControllerRegisterResponse =
   AuthControllerRegisterResponses[keyof AuthControllerRegisterResponses];
+
+export type AuthControllerLoginWithGoogleCodeData = {
+  body: GoogleCodeDto;
+  path?: never;
+  query?: never;
+  url: "/auth/google/code";
+};
+
+export type AuthControllerLoginWithGoogleCodeErrors = {
+  /**
+   * Invalid Google code or code_verifier
+   */
+  401: unknown;
+};
+
+export type AuthControllerLoginWithGoogleCodeResponses = {
+  /**
+   * Login successful with Google
+   */
+  201: {
+    access_token: string;
+  };
+};
+
+export type AuthControllerLoginWithGoogleCodeResponse =
+  AuthControllerLoginWithGoogleCodeResponses[keyof AuthControllerLoginWithGoogleCodeResponses];
+
+export type AuthControllerLoginWithGithubData = {
+  body: GithubLoginDto;
+  path?: never;
+  query?: never;
+  url: "/auth/github";
+};
+
+export type AuthControllerLoginWithGithubErrors = {
+  /**
+   * Invalid or expired GitHub code
+   */
+  401: unknown;
+};
+
+export type AuthControllerLoginWithGithubResponses = {
+  /**
+   * Login successful with GitHub
+   */
+  201: {
+    access_token: string;
+  };
+};
+
+export type AuthControllerLoginWithGithubResponse =
+  AuthControllerLoginWithGithubResponses[keyof AuthControllerLoginWithGithubResponses];
+
+export type AuthControllerLoginWithMicrosoftData = {
+  body: MicrosoftLoginDto;
+  path?: never;
+  query?: never;
+  url: "/auth/microsoft";
+};
+
+export type AuthControllerLoginWithMicrosoftErrors = {
+  /**
+   * Invalid Microsoft ID token
+   */
+  401: unknown;
+};
+
+export type AuthControllerLoginWithMicrosoftResponses = {
+  /**
+   * Login successful with Microsoft
+   */
+  201: {
+    access_token: string;
+  };
+};
+
+export type AuthControllerLoginWithMicrosoftResponse =
+  AuthControllerLoginWithMicrosoftResponses[keyof AuthControllerLoginWithMicrosoftResponses];
 
 export type AuthControllerRefreshData = {
   body?: never;
@@ -1991,11 +2103,38 @@ export type AuthControllerRefreshResponses = {
   /**
    * Access token refreshed successfully
    */
-  201: AuthResponseDto;
+  201: {
+    access_token: string;
+  };
 };
 
 export type AuthControllerRefreshResponse =
   AuthControllerRefreshResponses[keyof AuthControllerRefreshResponses];
+
+export type AuthControllerChangePasswordData = {
+  body: ChangePasswordDto;
+  path?: never;
+  query?: never;
+  url: "/auth/password";
+};
+
+export type AuthControllerChangePasswordErrors = {
+  /**
+   * Current password required for non-OAuth accounts
+   */
+  400: unknown;
+  /**
+   * Current password incorrect
+   */
+  401: unknown;
+};
+
+export type AuthControllerChangePasswordResponses = {
+  /**
+   * Password updated successfully
+   */
+  200: unknown;
+};
 
 export type AuthControllerLogoutData = {
   body?: never;
@@ -2540,152 +2679,3 @@ export type WorkSessionControllerGetInfoResponses = {
 
 export type WorkSessionControllerGetInfoResponse =
   WorkSessionControllerGetInfoResponses[keyof WorkSessionControllerGetInfoResponses];
-
-export type AuthControllerChangePasswordData = {
-    body: ChangePasswordDto;
-    path?: never;
-    query?: never;
-    url: '/auth/password';
-};
-
-export type AuthControllerChangePasswordErrors = {
-    /**
-     * Current password required for non-OAuth accounts
-     */
-    400: unknown;
-    /**
-     * Current password incorrect
-     */
-    401: unknown;
-};
-
-export type AuthControllerChangePasswordResponses = {
-    /**
-     * Password updated successfully
-     */
-    200: unknown;
-};
-
-export type AuthControllerLoginWithGithubData = {
-    body: GithubLoginDto;
-    path?: never;
-    query?: never;
-    url: '/auth/github';
-};
-
-export type AuthControllerLoginWithGithubErrors = {
-    /**
-     * Invalid or expired GitHub code
-     */
-    401: unknown;
-};
-
-export type AuthControllerLoginWithGithubResponse = AuthControllerLoginWithGithubResponses[keyof AuthControllerLoginWithGithubResponses];
-
-export type AuthControllerLoginWithGithubResponses = {
-    /**
-     * Login successful with GitHub
-     */
-    201: AuthResponseDto;
-};
-
-export type AuthControllerLoginWithGoogleCodeData = {
-    body: GoogleCodeDto;
-    path?: never;
-    query?: never;
-    url: '/auth/google/code';
-};
-
-export type AuthControllerLoginWithGoogleCodeErrors = {
-    /**
-     * Invalid Google code or code_verifier
-     */
-    401: unknown;
-};
-
-export type AuthControllerLoginWithGoogleCodeResponse = AuthControllerLoginWithGoogleCodeResponses[keyof AuthControllerLoginWithGoogleCodeResponses];
-
-export type AuthControllerLoginWithGoogleCodeResponses = {
-    /**
-     * Login successful with Google
-     */
-    201: AuthResponseDto;
-};
-
-export type AuthControllerLoginWithMicrosoftData = {
-    body: MicrosoftLoginDto;
-    path?: never;
-    query?: never;
-    url: '/auth/microsoft';
-};
-
-export type AuthControllerLoginWithMicrosoftErrors = {
-    /**
-     * Invalid Microsoft token
-     */
-    401: unknown;
-};
-
-export type AuthControllerLoginWithMicrosoftResponse = AuthControllerLoginWithMicrosoftResponses[keyof AuthControllerLoginWithMicrosoftResponses];
-
-export type AuthControllerLoginWithMicrosoftResponses = {
-    /**
-     * Login successful with Microsoft
-     */
-    201: AuthResponseDto;
-};
-
-export type ChangePasswordDto = {
-    /**
-     * Current password (not required for OAuth accounts)
-     */
-    currentPassword?: string;
-    /**
-     * New password
-     */
-    newPassword: string;
-};
-
-export type GithubLoginDto = {
-    /**
-     * GitHub OAuth authorization code
-     */
-    code: string;
-};
-
-export type GoogleCodeDto = {
-    code: string;
-    codeVerifier: string;
-};
-
-export type MicrosoftLoginDto = {
-    token: string;
-};
-
-export type UserControllerGetPublicProfilePictureData = {
-    body?: never;
-    path: {
-        /**
-         * User ID
-         */
-        id: number;
-    };
-    query?: never;
-    url: '/users/public/{id}/profile-picture';
-};
-
-export type UserControllerGetPublicProfilePictureErrors = {
-    /**
-     * User not found or has no profile picture
-     */
-    404: unknown;
-};
-
-export type UserControllerGetPublicProfilePictureResponse = UserControllerGetPublicProfilePictureResponses[keyof UserControllerGetPublicProfilePictureResponses];
-
-export type UserControllerGetPublicProfilePictureResponses = {
-    /**
-     * Returns the CDN URL for the profile picture
-     */
-    200: ImageUrlResponseDto;
-};
