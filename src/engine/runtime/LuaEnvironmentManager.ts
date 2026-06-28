@@ -5,7 +5,6 @@ import { MapAPI } from "@engine/api/MapAPI";
 import { NetAPI } from "@engine/api/NetAPI";
 import { SoundAPI } from "@engine/api/SoundAPI";
 import { LuaEnvironment } from "@engine/lua/LuaEnvironment";
-import { InputSource, MapSource, Renderer, SoundPlayer, SpriteSource } from "@engine/ports";
 
 export interface EnvData {
   code: string,
@@ -16,13 +15,13 @@ export interface EnvData {
 // engine having to depend on React's `Dispatch`/`SetStateAction` types.
 export type OutputSetter = (value: string | ((prev: string) => string)) => void;
 
+// The ports the app supplies; the manager owns the rest of the ApiContext (the
+// Lua VM and console output).
+export type EnginePorts = Omit<ApiContext, "lua" | "print">;
+
 interface ConstructorProps {
   envData: EnvData,
-  rendererHandle: Renderer,
-  spriteProvider: SpriteSource,
-  mapProvider: MapSource,
-  keyHandler: InputSource,
-  musicPlayer?: SoundPlayer,
+  ports: EnginePorts,
   setOutput: OutputSetter
 }
 
@@ -42,7 +41,7 @@ class LuaEnvironmentManager {
 
   private _setOutput: OutputSetter;
 
-  constructor({ envData, rendererHandle, spriteProvider, mapProvider, setOutput, keyHandler, musicPlayer }: ConstructorProps) {
+  constructor({ envData, ports, setOutput }: ConstructorProps) {
     this._lua = new LuaEnvironment();
     this._setOutput = setOutput;
     this._envData = envData;
@@ -51,12 +50,8 @@ class LuaEnvironmentManager {
 
     const ctx: ApiContext = {
       lua: this._lua,
-      renderer: rendererHandle,
-      sprites: spriteProvider,
-      maps: mapProvider,
-      input: keyHandler,
-      sounds: musicPlayer,
       print: this._addOutput.bind(this),
+      ...ports,
     };
 
     for (const Module of LuaEnvironmentManager.API_MODULES) {

@@ -99,7 +99,7 @@ export class NetAPI extends EngineModule {
       return 0;
 
     let length = 0;
-    for (;;) {
+    while (true) {
       const path = prefix ? `${prefix}.${length + 1}` : String(length + 1);
 
       if (this._session.getValue(path) === undefined && !this._session.isContainer(path))

@@ -1,3 +1,4 @@
+import { NetUi } from "@engine/net/NetUi";
 import { EnvData, LuaEnvironmentManager } from "@engine/runtime/LuaEnvironmentManager";
 import { SoundProvider } from "@providers/editors/SoundProvider";
 import { MusicPlayer } from "@shared/audio/MusicPlayer";
@@ -14,11 +15,12 @@ type GameCanvasProps = {
   envData: EnvData;
   setOutput: React.Dispatch<React.SetStateAction<string>>;
   soundProvider?: SoundProvider;
+  uiBridge?: NetUi;
   className?: string;
 };
 
 const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(
-  ({ canvasProps, envData, setOutput, className, soundProvider }, ref) => {
+  ({ canvasProps, envData, setOutput, className, soundProvider, uiBridge }, ref) => {
     const spriteRendererHandleRef = useRef<SpriteRendererHandle | null>(null);
     const luaEnvManagerRef = useRef<LuaEnvironmentManager>(undefined);
     const engineIntervalRef = useRef<NodeJS.Timeout>(undefined);
@@ -66,12 +68,15 @@ const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(
       }
       luaEnvManagerRef.current = new LuaEnvironmentManager({
         envData,
-        rendererHandle,
-        spriteProvider: canvasProps.sprite,
-        mapProvider: canvasProps.map,
-        keyHandler,
+        ports: {
+          renderer: rendererHandle,
+          sprites: canvasProps.sprite,
+          maps: canvasProps.map,
+          input: keyHandler,
+          sounds: musicPlayerRef.current,
+          ui: uiBridge,
+        },
         setOutput,
-        musicPlayer: musicPlayerRef.current
       });
     }, []);
 
