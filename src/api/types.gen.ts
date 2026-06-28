@@ -486,6 +486,10 @@ export type JoinByCodeDto = {
    * Invite code of the session to join
    */
   joinCode: string;
+  /**
+   * Set by the game editor to allow a self-join for solo testing
+   */
+  editorTest?: boolean;
 };
 
 export type GameSessionResponseDto = {
@@ -496,6 +500,18 @@ export type GameSessionResponseDto = {
    * ID of the host user
    */
   hostId: number;
+  /**
+   * Username of the host
+   */
+  hostUsername: string;
+  /**
+   * Display nickname of the host, if set
+   */
+  hostNickname?: string;
+  /**
+   * Name of the game (project) being played
+   */
+  projectName: string;
   /**
    * Maximum number of players, host included
    */
@@ -527,6 +543,10 @@ export type JoinGameSessionDto = {
    * Join code, required for INVITE_CODE sessions
    */
   joinCode?: string;
+  /**
+   * Set by the game editor to allow a self-join for solo testing
+   */
+  editorTest?: boolean;
 };
 
 export type CommentAuthorDto = {
