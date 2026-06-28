@@ -3,7 +3,7 @@ import { SessionRole } from "@engine/net/SessionTransport";
 import { SessionSignalingSocket } from "./SessionSignalingSocket";
 import { SyncedSessionTransport, SyncedSessionTransportOptions } from "./SyncedSessionTransport";
 
-import SimplePeer from "simple-peer";
+import SimplePeer from "simple-peer/simplepeer.min.js";
 
 jest.mock("./SessionSignalingSocket", () => ({
   SessionSignalingSocket: jest.fn().mockImplementation(function (this: Record<string, unknown>, opts: unknown) {
@@ -13,7 +13,7 @@ jest.mock("./SessionSignalingSocket", () => ({
   }),
 }));
 
-jest.mock("simple-peer", () =>
+jest.mock("simple-peer/simplepeer.min.js", () =>
   jest.fn().mockImplementation(() => {
     const handlers: Record<string, (arg?: unknown) => void> = {};
     return {

@@ -8,7 +8,13 @@ import {
 import { InboundFrame } from "./frames";
 import { RefreshedTicket, SessionSignalingSocket } from "./SessionSignalingSocket";
 
-import SimplePeer from "simple-peer";
+import SimplePeer from "simple-peer/simplepeer.min.js";
+
+// The min build's default export is the constructor only; pull the type members
+// from the @types/simple-peer namespace.
+type PeerInstance = import("simple-peer").Instance;
+type PeerSignalData = import("simple-peer").SignalData;
+type PeerData = import("simple-peer").SimplePeerData;
 
 const FALLBACK_MS = 8_000;
 
@@ -26,7 +32,7 @@ export interface SyncedSessionTransportOptions {
 type AnyListener = (...args: unknown[]) => void;
 
 interface Peer {
-  conn: SimplePeer.Instance;
+  conn: PeerInstance;
   channelOpen: boolean;
   announced: boolean;
   fallbackTimer?: ReturnType<typeof setTimeout>;
@@ -202,7 +208,7 @@ export class SyncedSessionTransport implements SessionTransport {
     const peer = this._ensurePeer(userId);
 
     try {
-      peer.conn.signal(data as SimplePeer.SignalData);
+      peer.conn.signal(data as PeerSignalData);
     } catch {
       this._announce(userId);
     }
@@ -251,7 +257,7 @@ export class SyncedSessionTransport implements SessionTransport {
     return peer;
   }
 
-  private _onChannelData(userId: UserId, raw: SimplePeer.SimplePeerData): void {
+  private _onChannelData(userId: UserId, raw: PeerData): void {
     let frame: { type: string; data?: unknown };
 
     try {
