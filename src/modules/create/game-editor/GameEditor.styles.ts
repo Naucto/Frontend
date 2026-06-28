@@ -1,7 +1,7 @@
 import GameCanvas from "@shared/canvas/game-canvas/GameCanvas";
 import { DocumentationFrame } from "@shared/docs/DocumentationFrame";
 
-import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Tab } from "@mui/material";
+import { Box, Button, Tab } from "@mui/material";
 import { styled } from "@mui/material/styles";
 
 export const GameEditorContainer = styled("div")(({ theme }) => ({
@@ -101,35 +101,4 @@ export const StyledTab = styled(Tab)(({ theme }) => ({
 
 export const PreviewCanvas = styled(GameCanvas)(({ theme }) => ({
   borderRadius: theme.spacing(1)
-}));
-
-export const StyledDialog = styled(Dialog)(({ theme }) => ({
-  "& .MuiPaper-root": {
-    backgroundColor: theme.palette.mode === "dark" ? theme.palette.grey[900] : "#0f0f0f",
-    color: theme.palette.getContrastText(theme.palette.grey[900]),
-    border: `1px solid ${theme.palette.grey[800]}`,
-    boxShadow: theme.shadows[8],
-  },
-}));
-
-export const StyledDialogTitle = styled(DialogTitle)(() => ({
-  color: "inherit",
-}));
-
-export const StyledDialogContent = styled(DialogContent)(({ theme }) => ({
-  backgroundColor: "transparent",
-  borderColor: theme.palette.grey[800],
-}));
-
-export const StyledDialogActions = styled(DialogActions)(() => ({
-  backgroundColor: "transparent",
-}));
-
-export const StyledAlert = styled(Alert)(({ theme }) => ({
-  backgroundColor: "transparent",
-  color: theme.palette.grey[100],
-  borderColor: theme.palette.grey[700],
-  "& .MuiAlert-icon": {
-    color: theme.palette.grey[400],
-  },
 }));

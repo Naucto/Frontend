@@ -1,3 +1,5 @@
+import { ConfirmDialog } from "@components/ui/ConfirmDialog";
+
 import React, { useEffect, useState } from "react";
 
 import {
@@ -5,11 +7,6 @@ import {
   AccordionDetails,
   AccordionSummary,
   Box,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   FormControl,
   InputLabel,
   MenuItem,
@@ -17,58 +14,6 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { styled } from "@mui/material/styles";
-
-const StyledDialog = styled(Dialog)(() => ({
-  "& .MuiDialog-paper": {
-    minWidth: "600px",
-    maxWidth: "800px",
-    maxHeight: "90vh",
-  },
-}));
-
-const StyledTextField = styled(TextField)(() => ({
-  "& .MuiInputBase-input": {
-    color: "black",
-  },
-}));
-
-const StyledSelect = styled(Select)(() => ({
-  "& .MuiSelect-select": {
-    color: "black",
-  },
-  "& .MuiInputLabel-root": {
-    color: "black",
-  },
-  "& .MuiMenuItem-root": {
-    color: "black",
-  },
-}));
-
-const StyledFormControl = styled(FormControl)(() => ({
-  "& .MuiInputLabel-root": {
-    color: "black",
-  },
-}));
-
-const StyledInputLabel = styled(InputLabel)(() => ({
-  color: "black",
-}));
-
-const StyledAccordionTitle = styled(Typography)(() => ({
-  color: "black",
-}));
-
-const StyledMenuItem = styled(MenuItem)(() => ({
-  color: "black",
-}));
-
-const StyledNameField = styled(TextField)(() => ({
-  marginBottom: "16px",
-  "& .MuiInputBase-input": {
-    color: "black",
-  },
-}));
 
 interface NumberFieldProps {
   label: string;
@@ -78,7 +23,7 @@ interface NumberFieldProps {
 }
 
 const NumberField: React.FC<NumberFieldProps> = ({ label, value, onChange, inputProps }) => (
-  <StyledTextField
+  <TextField
     fullWidth
     type="number"
     label={label}
@@ -96,29 +41,20 @@ interface SelectFieldProps {
 }
 
 const SelectField: React.FC<SelectFieldProps> = ({ label, value, onChange, options }) => (
-  <StyledFormControl fullWidth>
-    <StyledInputLabel>{label}</StyledInputLabel>
-    <StyledSelect
+  <FormControl fullWidth>
+    <InputLabel>{label}</InputLabel>
+    <Select
       value={value}
       label={label}
       onChange={(e) => onChange(e.target.value as string)}
-      MenuProps={{
-        PaperProps: {
-          sx: {
-            "& .MuiMenuItem-root": {
-              color: "black",
-            },
-          },
-        },
-      }}
     >
       {options.map((option) => (
-        <StyledMenuItem key={option} value={option}>
+        <MenuItem key={option} value={option}>
           {option.charAt(0).toUpperCase() + option.slice(1)}
-        </StyledMenuItem>
+        </MenuItem>
       ))}
-    </StyledSelect>
-  </StyledFormControl>
+    </Select>
+  </FormControl>
 );
 
 const OSCILLATOR_TYPES = ["sine", "square", "sawtooth", "triangle"];
@@ -199,10 +135,6 @@ export const InstrumentEditor: React.FC<InstrumentEditorProps> = ({
   }, [editingInstrument, open]);
 
   const handleSave = (): void => {
-    if (!instrumentName.trim()) {
-      alert("Please enter an instrument name");
-      return;
-    }
     onSave(instrumentName.trim(), config);
     onClose();
   };
@@ -255,166 +187,159 @@ export const InstrumentEditor: React.FC<InstrumentEditorProps> = ({
   };
 
   return (
-    <StyledDialog
+    <ConfirmDialog
       open={open}
       onClose={onClose}
+      title={editingInstrument ? "Edit Instrument" : "Create New Instrument"}
+      onConfirm={handleSave}
+      confirmLabel="Save"
+      confirmColor="primary"
+      confirmDisabled={!instrumentName.trim()}
       maxWidth="md"
-      fullWidth
     >
-      <DialogTitle>
-        {editingInstrument ? "Edit Instrument" : "Create New Instrument"}
-      </DialogTitle>
-      <DialogContent>
-        <Box style={{ marginTop: "16px" }}>
-          <StyledNameField
-            fullWidth
-            variant="outlined"
-            label="Instrument Name"
-            value={instrumentName}
-            onChange={(e) => {
-              setInstrumentName(e.target.value);
-            }}
-            required
-            autoFocus
-          />
+      <Box style={{ marginTop: "16px" }}>
+        <TextField
+          fullWidth
+          variant="outlined"
+          label="Instrument Name"
+          value={instrumentName}
+          onChange={(e) => {
+            setInstrumentName(e.target.value);
+          }}
+          required
+          autoFocus
+          sx={{ mb: 2 }}
+        />
 
-          <Accordion defaultExpanded>
-            <AccordionSummary>
-              <StyledAccordionTitle variant="h6">Basic Parameters</StyledAccordionTitle>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 2 }}>
-                <NumberField
-                  label="Volume"
-                  value={config.volume}
-                  onChange={(value) => updateConfig(["volume"], value)}
-                  inputProps={{ min: 0, max: 1, step: 0.1 }}
-                />
-                <NumberField
-                  label="Detune (cents)"
-                  value={config.detune}
-                  onChange={(value) => updateConfig(["detune"], value)}
-                />
-                <NumberField
-                  label="Portamento"
-                  value={config.portamento}
-                  onChange={(value) => updateConfig(["portamento"], value)}
-                  inputProps={{ min: 0, step: 0.1 }}
-                />
-                <NumberField
-                  label="Harmonicity"
-                  value={config.harmonicity}
-                  onChange={(value) => updateConfig(["harmonicity"], value)}
-                  inputProps={{ min: 0, step: 0.1 }}
+        <Accordion defaultExpanded>
+          <AccordionSummary>
+            <Typography variant="h6">Basic Parameters</Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 2 }}>
+              <NumberField
+                label="Volume"
+                value={config.volume}
+                onChange={(value) => updateConfig(["volume"], value)}
+                inputProps={{ min: 0, max: 1, step: 0.1 }}
+              />
+              <NumberField
+                label="Detune (cents)"
+                value={config.detune}
+                onChange={(value) => updateConfig(["detune"], value)}
+              />
+              <NumberField
+                label="Portamento"
+                value={config.portamento}
+                onChange={(value) => updateConfig(["portamento"], value)}
+                inputProps={{ min: 0, step: 0.1 }}
+              />
+              <NumberField
+                label="Harmonicity"
+                value={config.harmonicity}
+                onChange={(value) => updateConfig(["harmonicity"], value)}
+                inputProps={{ min: 0, step: 0.1 }}
+              />
+            </Box>
+          </AccordionDetails>
+        </Accordion>
+
+        <Accordion>
+          <AccordionSummary>
+            <Typography variant="h6">Oscillator</Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 2 }}>
+              <SelectField
+                label="Type"
+                value={config.oscillator.type}
+                onChange={(value) => updateOscillator("type", value)}
+                options={OSCILLATOR_TYPES}
+              />
+              <SelectField
+                label="Modulation Type"
+                value={config.oscillator.modulationType || "square"}
+                onChange={(value) => updateOscillator("modulationType", value)}
+                options={OSCILLATOR_TYPES}
+              />
+              <NumberField
+                label="Phase"
+                value={config.oscillator.phase}
+                onChange={(value) => updateOscillator("phase", value)}
+              />
+              <NumberField
+                label="Partial Count"
+                value={config.oscillator.partialCount}
+                onChange={handlePartialCountChange}
+                inputProps={{ min: 0 }}
+              />
+              <Box sx={{ gridColumn: "1 / -1" }}>
+                <TextField
+                  fullWidth
+                  label="Partials (comma-separated)"
+                  value={config.oscillator.partials.join(", ")}
+                  onChange={(e) => handlePartialsChange(e.target.value)}
+                  helperText="Enter partial amplitudes separated by commas (e.g., 1, 0.6, 0.4)"
                 />
               </Box>
-            </AccordionDetails>
-          </Accordion>
+            </Box>
+          </AccordionDetails>
+        </Accordion>
 
-          <Accordion>
-            <AccordionSummary>
-              <StyledAccordionTitle variant="h6">Oscillator</StyledAccordionTitle>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 2 }}>
+        <Accordion>
+          <AccordionSummary>
+            <Typography variant="h6">Envelope</Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 2 }}>
+              <NumberField
+                label="Attack"
+                value={config.envelope.attack}
+                onChange={(value) => updateEnvelope("attack", value)}
+                inputProps={{ min: 0, step: 0.01 }}
+              />
+              <SelectField
+                label="Attack Curve"
+                value={config.envelope.attackCurve}
+                onChange={(value) => updateEnvelope("attackCurve", value)}
+                options={CURVE_TYPES}
+              />
+              <NumberField
+                label="Decay"
+                value={config.envelope.decay}
+                onChange={(value) => updateEnvelope("decay", value)}
+                inputProps={{ min: 0, step: 0.01 }}
+              />
+              <SelectField
+                label="Decay Curve"
+                value={config.envelope.decayCurve}
+                onChange={(value) => updateEnvelope("decayCurve", value)}
+                options={CURVE_TYPES}
+              />
+              <NumberField
+                label="Sustain"
+                value={config.envelope.sustain}
+                onChange={(value) => updateEnvelope("sustain", value)}
+                inputProps={{ min: 0, max: 1, step: 0.1 }}
+              />
+              <NumberField
+                label="Release"
+                value={config.envelope.release}
+                onChange={(value) => updateEnvelope("release", value)}
+                inputProps={{ min: 0, step: 0.01 }}
+              />
+              <Box sx={{ gridColumn: "1 / -1" }}>
                 <SelectField
-                  label="Type"
-                  value={config.oscillator.type}
-                  onChange={(value) => updateOscillator("type", value)}
-                  options={OSCILLATOR_TYPES}
-                />
-                <SelectField
-                  label="Modulation Type"
-                  value={config.oscillator.modulationType || "square"}
-                  onChange={(value) => updateOscillator("modulationType", value)}
-                  options={OSCILLATOR_TYPES}
-                />
-                <NumberField
-                  label="Phase"
-                  value={config.oscillator.phase}
-                  onChange={(value) => updateOscillator("phase", value)}
-                />
-                <NumberField
-                  label="Partial Count"
-                  value={config.oscillator.partialCount}
-                  onChange={handlePartialCountChange}
-                  inputProps={{ min: 0 }}
-                />
-                <Box sx={{ gridColumn: "1 / -1" }}>
-                  <StyledTextField
-                    fullWidth
-                    label="Partials (comma-separated)"
-                    value={config.oscillator.partials.join(", ")}
-                    onChange={(e) => handlePartialsChange(e.target.value)}
-                    helperText="Enter partial amplitudes separated by commas (e.g., 1, 0.6, 0.4)"
-                  />
-                </Box>
-              </Box>
-            </AccordionDetails>
-          </Accordion>
-
-          <Accordion>
-            <AccordionSummary>
-              <StyledAccordionTitle variant="h6">Envelope</StyledAccordionTitle>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 2 }}>
-                <NumberField
-                  label="Attack"
-                  value={config.envelope.attack}
-                  onChange={(value) => updateEnvelope("attack", value)}
-                  inputProps={{ min: 0, step: 0.01 }}
-                />
-                <SelectField
-                  label="Attack Curve"
-                  value={config.envelope.attackCurve}
-                  onChange={(value) => updateEnvelope("attackCurve", value)}
+                  label="Release Curve"
+                  value={config.envelope.releaseCurve}
+                  onChange={(value) => updateEnvelope("releaseCurve", value)}
                   options={CURVE_TYPES}
                 />
-                <NumberField
-                  label="Decay"
-                  value={config.envelope.decay}
-                  onChange={(value) => updateEnvelope("decay", value)}
-                  inputProps={{ min: 0, step: 0.01 }}
-                />
-                <SelectField
-                  label="Decay Curve"
-                  value={config.envelope.decayCurve}
-                  onChange={(value) => updateEnvelope("decayCurve", value)}
-                  options={CURVE_TYPES}
-                />
-                <NumberField
-                  label="Sustain"
-                  value={config.envelope.sustain}
-                  onChange={(value) => updateEnvelope("sustain", value)}
-                  inputProps={{ min: 0, max: 1, step: 0.1 }}
-                />
-                <NumberField
-                  label="Release"
-                  value={config.envelope.release}
-                  onChange={(value) => updateEnvelope("release", value)}
-                  inputProps={{ min: 0, step: 0.01 }}
-                />
-                <Box sx={{ gridColumn: "1 / -1" }}>
-                  <SelectField
-                    label="Release Curve"
-                    value={config.envelope.releaseCurve}
-                    onChange={(value) => updateEnvelope("releaseCurve", value)}
-                    options={CURVE_TYPES}
-                  />
-                </Box>
               </Box>
-            </AccordionDetails>
-          </Accordion>
-        </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={handleSave} variant="contained" color="primary">
-          Save
-        </Button>
-      </DialogActions>
-    </StyledDialog>
+            </Box>
+          </AccordionDetails>
+        </Accordion>
+      </Box>
+    </ConfirmDialog>
   );
 };
-
