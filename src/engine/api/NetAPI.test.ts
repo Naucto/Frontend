@@ -1,5 +1,5 @@
 import { LuaEnvironment } from "@engine/lua/LuaEnvironment";
-import { NetUi } from "@engine/net/NetUi";
+import { NetHostOptions, NetUi } from "@engine/net/NetUi";
 import { SessionTransport } from "@engine/net/SessionTransport";
 import { SharedTableSession } from "@engine/net/SharedTableSession";
 import { InputSource, MapSource, Renderer, SoundPlayer, SpriteSource } from "@engine/ports";
@@ -35,7 +35,7 @@ function setup(): { lua: LuaEnvironment; session: SharedTableSession } {
   const lua = new LuaEnvironment();
   const session = new SharedTableSession(hostTransport());
   const ui: NetUi = {
-    host: onReady => onReady(session),
+    host: (_options, onReady) => onReady(session),
     join: onReady => onReady(null),
     leave: () => undefined,
   };
@@ -114,5 +114,23 @@ describe("NetAPI net.state", () => {
     `);
 
     expect(session.getValue("score")).toBe(1);
+  });
+
+  it("passes the game-supplied max_players to the host UI", () => {
+    const lua = new LuaEnvironment();
+    let captured: NetHostOptions | undefined;
+    const ui: NetUi = {
+      host: (options, onReady) => {
+        captured = options;
+        onReady(null);
+      },
+      join: onReady => onReady(null),
+      leave: () => undefined,
+    };
+    new NetAPI(makeContext(lua, ui));
+
+    lua.evaluate("net.host({ max_players = 6, title = 'Arena' })");
+
+    expect(captured).toEqual({ maxPlayers: 6, title: "Arena" });
   });
 });

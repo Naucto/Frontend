@@ -1,5 +1,6 @@
 import { LUA_PROXY, LuaProxy } from "@engine/lua/LuaEnvironment";
 import { NetError } from "@engine/net/NetError";
+import { NetHostOptions } from "@engine/net/NetUi";
 import { SharedTableSession, TableScalar } from "@engine/net/SharedTableSession";
 
 import { ApiContext } from "./ApiContext";
@@ -21,7 +22,7 @@ export class NetAPI extends EngineModule {
       on: (pattern: string, callback: LuaCallback) => this._on(pattern, callback),
       emit: (name: string, payload: unknown) => this._require().emit(name, payload),
       lock: (path: string, fn: LuaCallback) => this._lock(path, fn),
-      host: (callback?: LuaCallback) => this.ctx.ui?.host(session => this._ready(session, callback)),
+      host: (configOrCallback?: unknown, maybeCallback?: LuaCallback) => this._host(configOrCallback, maybeCallback),
       join: (callback?: LuaCallback) => this.ctx.ui?.join(session => this._ready(session, callback)),
       leave: () => this._leave(),
     });
@@ -50,6 +51,24 @@ export class NetAPI extends EngineModule {
     this.ctx.ui?.leave();
     this._session?.destroy();
     this._session = null;
+  }
+
+  // net.host accepts net.host(config, cb), net.host(config) or net.host(cb).
+  private _host(configOrCallback: unknown, maybeCallback?: LuaCallback): void {
+    const calledWithCallbackOnly = typeof configOrCallback === "function";
+    const config = calledWithCallbackOnly ? {} : configOrCallback;
+    const callback = (calledWithCallbackOnly ? configOrCallback : maybeCallback) as LuaCallback | undefined;
+
+    this.ctx.ui?.host(this._hostOptions(config), session => this._ready(session, callback));
+  }
+
+  private _hostOptions(config: unknown): NetHostOptions {
+    const table = (typeof config === "object" && config !== null ? config : {}) as Record<string, unknown>;
+
+    return {
+      maxPlayers: typeof table.max_players === "number" ? table.max_players : 2,
+      title: typeof table.title === "string" ? table.title : undefined,
+    };
   }
 
   private _stateProxy(prefix: string): LuaProxy {
