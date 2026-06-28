@@ -101,4 +101,18 @@ describe("NetAPI net.state", () => {
 
     expect(() => lua.evaluate("net.state.cb = function() end")).toThrow(/cannot store a function/);
   });
+
+  it("runs a net.lock critical section and releases it", () => {
+    const { lua, session } = setup();
+    lua.evaluate("net.host()");
+
+    lua.evaluate(`
+      net.lock("score", function(unlock)
+        net.state.score = (net.state.score or 0) + 1
+        unlock()
+      end)
+    `);
+
+    expect(session.getValue("score")).toBe(1);
+  });
 });

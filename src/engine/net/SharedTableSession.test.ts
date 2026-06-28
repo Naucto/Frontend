@@ -182,4 +182,34 @@ describe("SharedTableSession", () => {
 
     expect(hits).toEqual(["players.alice"]);
   });
+
+  it("notifies the host when a peer joins", () => {
+    const hub = new Hub();
+    const host = makeSession("host", 1, hub);
+
+    const joined: number[] = [];
+    host.onPeer("joined", id => joined.push(id));
+
+    makeSession("slave", 2, hub);
+
+    expect(joined).toEqual([2]);
+  });
+
+  it("serializes a lock and grants a waiting slave on release", async () => {
+    const hub = new Hub();
+    const host = makeSession("host", 1, hub);
+    const slave = makeSession("slave", 2, hub);
+
+    const order: string[] = [];
+    host.acquireLock("score", () => order.push("host"));
+    slave.acquireLock("score", () => order.push("slave"));
+    await flush();
+
+    expect(order).toEqual(["host"]);
+
+    host.releaseLock("score");
+    await flush();
+
+    expect(order).toEqual(["host", "slave"]);
+  });
 });

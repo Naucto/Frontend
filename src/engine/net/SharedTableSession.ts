@@ -35,18 +35,28 @@ type StatePayload =
 
 type RequestPayload =
   | { kind: "write"; reqId: string; ops: WriteOp[] }
-  | { kind: "event"; name: string; payload: unknown };
+  | { kind: "event"; name: string; payload: unknown }
+  | { kind: "lock"; reqId: string; path: string; action: "acquire" | "release" };
 
 // Bootstrap snapshot is a targeted host -> one slave message, so it rides the
 // response channel alongside write acks/nacks rather than the broadcast channel.
 type ResponsePayload =
   | { kind: "write-ack"; reqId: string; results: Array<{ path: string; version: number }> }
   | { kind: "write-nack"; reqId: string; rejected: Array<{ path: string }> }
+  | { kind: "lock-grant"; reqId: string }
   | SnapshotPayload;
+
+type PeerEvent = "joined" | "left";
 
 interface InflightWrite {
   paths: string[];
   previous: Map<string, TableEntry | undefined>;
+}
+
+interface LockWaiter {
+  userId: UserId;
+  reqId?: string;
+  grant?: () => void;
 }
 
 const compilePattern = (pattern: string): RegExp => {
@@ -88,6 +98,12 @@ export class SharedTableSession implements Destroyable {
   private readonly _changeSubs: Array<{ regex: RegExp; cb: TableChangeListener }> = [];
   private readonly _eventSubs = new Map<string, Set<TableEventListener>>();
   private readonly _errorSubs = new Set<(path: string, reason: string) => void>();
+  private readonly _peerSubs = new Map<PeerEvent, Set<(userId: UserId) => void>>();
+  private readonly _endedSubs = new Set<() => void>();
+
+  private readonly _lockOwner = new Map<string, UserId>();
+  private readonly _lockWaiters = new Map<string, LockWaiter[]>();
+  private readonly _pendingLocks = new Map<string, () => void>();
 
   constructor(transport: SessionTransport) {
     this._transport = transport;
@@ -96,7 +112,9 @@ export class SharedTableSession implements Destroyable {
     transport.on("state", data => this._onState(data as StatePayload));
     transport.on("request", (from, data) => this._onRequest(from, data as RequestPayload));
     transport.on("response", data => this._onResponse(data as ResponsePayload));
-    transport.on("peerJoined", userId => this._sendSnapshot(userId));
+    transport.on("peerJoined", userId => this._onPeerJoined(userId));
+    transport.on("peerLeft", userId => this._onPeerLeft(userId));
+    transport.on("ended", () => this._endedSubs.forEach(cb => cb()));
   }
 
   destroy(): void {
@@ -104,6 +122,8 @@ export class SharedTableSession implements Destroyable {
     this._changeSubs.length = 0;
     this._eventSubs.clear();
     this._errorSubs.clear();
+    this._peerSubs.clear();
+    this._endedSubs.clear();
     this._store.clear();
   }
 
@@ -204,6 +224,36 @@ export class SharedTableSession implements Destroyable {
     this._errorSubs.add(cb);
   }
 
+  onPeer(event: PeerEvent, cb: (userId: UserId) => void): void {
+    const set = this._peerSubs.get(event) ?? new Set<(userId: UserId) => void>();
+    set.add(cb);
+    this._peerSubs.set(event, set);
+  }
+
+  onEnded(cb: () => void): void {
+    this._endedSubs.add(cb);
+  }
+
+  acquireLock(path: string, onGranted: () => void): void {
+    if (this._isHost) {
+      this._hostAcquire(this._transport.selfUserId, path, undefined, onGranted);
+      return;
+    }
+
+    const reqId = `${this._transport.selfUserId}-lock-${this._reqCounter++}`;
+    this._pendingLocks.set(reqId, onGranted);
+    this._transport.sendRequest({ kind: "lock", reqId, path, action: "acquire" });
+  }
+
+  releaseLock(path: string): void {
+    if (this._isHost) {
+      this._hostRelease(this._transport.selfUserId, path);
+      return;
+    }
+
+    this._transport.sendRequest({ kind: "lock", reqId: "", path, action: "release" });
+  }
+
   private _guardInflight(path: string): void {
     if (this._inflightPaths.has(path))
       throw new NetConflictError(path);
@@ -287,6 +337,15 @@ export class SharedTableSession implements Destroyable {
       return;
     }
 
+    if (payload.kind === "lock") {
+      if (payload.action === "acquire")
+        this._hostAcquire(from, payload.path, payload.reqId, undefined);
+      else
+        this._hostRelease(from, payload.path);
+
+      return;
+    }
+
     this._handleWrite(from, payload);
   }
 
@@ -323,6 +382,17 @@ export class SharedTableSession implements Destroyable {
       return;
     }
 
+    if (payload.kind === "lock-grant") {
+      const grant = this._pendingLocks.get(payload.reqId);
+
+      if (grant) {
+        this._pendingLocks.delete(payload.reqId);
+        grant();
+      }
+
+      return;
+    }
+
     const inflight = this._inflight.get(payload.reqId);
 
     if (!inflight)
@@ -352,6 +422,59 @@ export class SharedTableSession implements Destroyable {
 
     for (const rejected of payload.rejected)
       this._errorSubs.forEach((cb) => cb(rejected.path, "conflict"));
+  }
+
+  private _onPeerJoined(userId: UserId): void {
+    this._sendSnapshot(userId);
+    this._dispatchPeer("joined", userId);
+  }
+
+  private _onPeerLeft(userId: UserId): void {
+    const owned = [...this._lockOwner.entries()].filter(([, owner]) => owner === userId).map(([path]) => path);
+    for (const path of owned)
+      this._hostRelease(userId, path);
+
+    for (const [path, waiters] of this._lockWaiters)
+      this._lockWaiters.set(path, waiters.filter(waiter => waiter.userId !== userId));
+
+    this._dispatchPeer("left", userId);
+  }
+
+  private _dispatchPeer(event: PeerEvent, userId: UserId): void {
+    this._peerSubs.get(event)?.forEach(cb => cb(userId));
+  }
+
+  private _hostAcquire(userId: UserId, path: string, reqId: string | undefined, grant: (() => void) | undefined): void {
+    if (!this._lockOwner.has(path)) {
+      this._lockOwner.set(path, userId);
+      this._grantLock(userId, reqId, grant);
+      return;
+    }
+
+    const waiters = this._lockWaiters.get(path) ?? [];
+    waiters.push({ userId, reqId, grant });
+    this._lockWaiters.set(path, waiters);
+  }
+
+  private _hostRelease(userId: UserId, path: string): void {
+    if (this._lockOwner.get(path) !== userId)
+      return;
+
+    this._lockOwner.delete(path);
+
+    const next = this._lockWaiters.get(path)?.shift();
+    if (!next)
+      return;
+
+    this._lockOwner.set(path, next.userId);
+    this._grantLock(next.userId, next.reqId, next.grant);
+  }
+
+  private _grantLock(userId: UserId, reqId: string | undefined, grant: (() => void) | undefined): void {
+    if (userId === this._transport.selfUserId)
+      grant?.();
+    else if (reqId !== undefined)
+      this._transport.respondTo(userId, { kind: "lock-grant", reqId });
   }
 
   private _sendSnapshot(userId: UserId): void {

@@ -20,6 +20,7 @@ export class NetAPI extends EngineModule {
       state: this._stateProxy(""),
       on: (pattern: string, callback: LuaCallback) => this._on(pattern, callback),
       emit: (name: string, payload: unknown) => this._require().emit(name, payload),
+      lock: (path: string, fn: LuaCallback) => this._lock(path, fn),
       host: (callback?: LuaCallback) => this.ctx.ui?.host(session => this._ready(session, callback)),
       join: (callback?: LuaCallback) => this.ctx.ui?.join(session => this._ready(session, callback)),
       leave: () => this._leave(),
@@ -137,6 +138,16 @@ export class NetAPI extends EngineModule {
   private _on(pattern: string, callback: LuaCallback): void {
     const session = this._require();
 
+    if (pattern === "peer.joined" || pattern === "peer.left") {
+      session.onPeer(pattern === "peer.joined" ? "joined" : "left", userId => this._invoke(callback, userId));
+      return;
+    }
+
+    if (pattern === "ended") {
+      session.onEnded(() => this._invoke(callback));
+      return;
+    }
+
     if (pattern.startsWith(EVENT_PREFIX)) {
       const name = pattern.slice(EVENT_PREFIX.length);
       session.onEvent(name, (from, payload) => this._invoke(callback, from, payload));
@@ -144,6 +155,15 @@ export class NetAPI extends EngineModule {
     }
 
     session.onChange(pattern, (changedPath, newValue) => this._invoke(callback, changedPath, newValue));
+  }
+
+  private _lock(path: string, fn: LuaCallback): void {
+    const session = this._require();
+
+    session.acquireLock(path, () => {
+      const unlock = (): void => session.releaseLock(path);
+      this._invoke(fn, unlock);
+    });
   }
 
   private _invoke(callback: LuaCallback, ...args: unknown[]): void {
