@@ -1,4 +1,5 @@
 import { GameSessionConnectionResponseDto, GameSessionResponseDto } from "@api";
+import { ConfirmDialog } from "@components/ui/ConfirmDialog";
 import { SharedTableSession } from "@engine/net/SharedTableSession";
 import {
   createGameSession,
@@ -8,7 +9,6 @@ import {
 } from "@providers/net/gameSessionApi";
 import { NetUiBridge, NetUiRequest } from "@providers/net/NetUiBridge";
 import { buildSession } from "@providers/net/sessionFactory";
-import { CustomDialog } from "@shared/dialog/CustomDialog";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
 
 import { type JSX, useEffect, useState, useSyncExternalStore } from "react";
@@ -16,7 +16,6 @@ import { type JSX, useEffect, useState, useSyncExternalStore } from "react";
 import {
   Box,
   Button,
-  CircularProgress,
   FormControlLabel,
   Radio,
   RadioGroup,
@@ -60,22 +59,31 @@ const HostDialog = ({ request, projectId }: { request: NetUiRequest; projectId: 
 
   if (pending) {
     return (
-      <CustomDialog isOpen setIsOpen={() => request.resolve(null)} hideSubmitButton onClose={() => request.resolve(pending.session)}>
-        <Typography variant="h6">Session ready</Typography>
-        <Typography sx={{ mt: 2 }}>Share this code so others can join:</Typography>
+      <ConfirmDialog
+        open
+        title="Session ready"
+        onClose={() => request.resolve(null)}
+        onConfirm={() => request.resolve(pending.session)}
+        confirmLabel="Start"
+        confirmColor="primary"
+      >
+        <Typography>Share this code so others can join:</Typography>
         <Typography variant="h4" sx={{ mt: 1, letterSpacing: 4, fontFamily: "monospace" }}>{pending.joinCode}</Typography>
-        <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 4 }}>
-          <Button variant="contained" onClick={() => request.resolve(pending.session)}>Start</Button>
-        </Box>
-      </CustomDialog>
+      </ConfirmDialog>
     );
   }
 
   return (
-    <CustomDialog isOpen setIsOpen={() => request.resolve(null)} hideSubmitButton onClose={() => request.resolve(null)}>
-      <Typography variant="h6">Host a session</Typography>
-
-      <TextField label="Title" fullWidth value={title} onChange={event => setTitle(event.target.value)} sx={{ mt: 3 }} />
+    <ConfirmDialog
+      open
+      title="Host a session"
+      onClose={() => request.resolve(null)}
+      onConfirm={host}
+      confirmLabel={busy ? "Hosting…" : "Host"}
+      confirmColor="primary"
+      confirmDisabled={busy}
+    >
+      <TextField label="Title" fullWidth value={title} onChange={event => setTitle(event.target.value)} sx={{ mt: 1 }} />
       <Typography sx={{ mt: 3 }}>Up to {maxPlayers} players (set by the game).</Typography>
 
       <RadioGroup value={visibility} onChange={event => setVisibility(event.target.value as Visibility)} sx={{ mt: 2 }}>
@@ -84,12 +92,7 @@ const HostDialog = ({ request, projectId }: { request: NetUiRequest; projectId: 
       </RadioGroup>
 
       {error && <Typography color="error" sx={{ mt: 2 }}>{error}</Typography>}
-
-      <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mt: 4 }}>
-        <Button onClick={() => request.resolve(null)} disabled={busy}>Cancel</Button>
-        <Button variant="contained" onClick={host} disabled={busy}>{busy ? <CircularProgress size={20} /> : "Host"}</Button>
-      </Box>
-    </CustomDialog>
+    </ConfirmDialog>
   );
 };
 
@@ -117,13 +120,16 @@ const JoinDialog = ({ request, projectId }: { request: NetUiRequest; projectId: 
   };
 
   return (
-    <CustomDialog isOpen setIsOpen={() => request.resolve(null)} hideSubmitButton onClose={() => request.resolve(null)}>
-      <Typography variant="h6">Join a session</Typography>
-
-      <Box sx={{ display: "flex", gap: 1, mt: 3 }}>
-        <TextField label="Invite code" fullWidth value={code} onChange={event => setCode(event.target.value)} />
-        <Button variant="contained" disabled={busy || !code} onClick={() => connect(() => joinGameSessionByCode(code))}>Join</Button>
-      </Box>
+    <ConfirmDialog
+      open
+      title="Join a session"
+      onClose={() => request.resolve(null)}
+      onConfirm={() => connect(() => joinGameSessionByCode(code))}
+      confirmLabel="Join by code"
+      confirmColor="primary"
+      confirmDisabled={busy || !code}
+    >
+      <TextField label="Invite code" fullWidth value={code} onChange={event => setCode(event.target.value)} sx={{ mt: 1 }} />
 
       <Typography sx={{ mt: 3 }}>Or browse public sessions:</Typography>
 
@@ -139,11 +145,7 @@ const JoinDialog = ({ request, projectId }: { request: NetUiRequest; projectId: 
       </Box>
 
       {error && <Typography color="error" sx={{ mt: 2 }}>{error}</Typography>}
-
-      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 4 }}>
-        <Button onClick={() => request.resolve(null)} disabled={busy}>Cancel</Button>
-      </Box>
-    </CustomDialog>
+    </ConfirmDialog>
   );
 };
 
