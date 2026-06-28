@@ -1,5 +1,6 @@
 import { type EnvData } from "@engine/runtime/LuaEnvironmentManager";
 import { type GameProvider } from "@providers/GameProvider";
+import { type NetUiBridge } from "@providers/net/NetUiBridge";
 import GameCanvas from "@shared/canvas/game-canvas/GameCanvas";
 import { type SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 
@@ -23,6 +24,7 @@ type PlayableGameFrameProps = {
     height: number;
   };
   showGame: boolean;
+  uiBridge?: NetUiBridge;
   onLaunch: () => void;
   setOutput: Dispatch<SetStateAction<string>>;
 };
@@ -97,6 +99,7 @@ export const PlayableGameFrame = ({
   launching,
   screenSize,
   showGame,
+  uiBridge,
   onLaunch,
   setOutput,
 }: PlayableGameFrameProps): JSX.Element => (
@@ -113,6 +116,7 @@ export const PlayableGameFrame = ({
         envData={envData}
         setOutput={setOutput}
         soundProvider={gameProvider.sound}
+        uiBridge={uiBridge}
       />
     ) : (
       <LaunchScreenButton type="button" onClick={onLaunch} $src={bannerUrl}>

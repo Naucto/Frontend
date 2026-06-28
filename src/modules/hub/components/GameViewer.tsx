@@ -10,6 +10,7 @@ import {
 } from "@api";
 import { type EnvData } from "@engine/runtime/LuaEnvironmentManager";
 import { GameProvider, ProviderEventType } from "@providers/GameProvider";
+import { NetUiBridge } from "@providers/net/NetUiBridge";
 import { useUser } from "@providers/UserProvider";
 import { type SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 import * as urls from "@shared/navigation/routes";
@@ -27,6 +28,7 @@ import {
   LoadingGameViewer,
   MissingProjectViewer,
 } from "./game-viewer/GameViewerLayout";
+import { NetSessionModals } from "./game-viewer/NetSessionModals";
 import { PlayableGameFrame } from "./game-viewer/PlayableGameFrame";
 
 import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -83,6 +85,9 @@ export const GameViewer = (): JSX.Element => {
   const [forkedFromInfo, setForkedFromInfo] = useState<ForkedFromInfo | null>(null);
   const canvasRef = useRef<SpriteRendererHandle>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const netBridge = useMemo(() => new NetUiBridge(), []);
+
+  useEffect(() => () => netBridge.destroy(), [netBridge]);
   const [code, setCode] = useState("");
   const [output, setOutput] = useState("");
   const [bannerUrl, setBannerUrl] = useState("");
@@ -346,9 +351,12 @@ export const GameViewer = (): JSX.Element => {
         launching={launching}
         screenSize={screenSize}
         showGame={showGame}
+        uiBridge={netBridge}
         onLaunch={handleLaunchGame}
         setOutput={setOutput}
       />
+
+      <NetSessionModals bridge={netBridge} projectId={Number(id)} />
 
       <GameDetailsPanel
         canFork={!!user}
