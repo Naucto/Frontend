@@ -1,19 +1,21 @@
 import { ConfirmDialog } from "@components/ui/ConfirmDialog";
+import { darkMenuProps } from "@theme/darkMenuProps";
 
 import React, { useEffect, useState } from "react";
 
 import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
   Box,
   FormControl,
   InputLabel,
   MenuItem,
   Select,
+  Tab,
+  Tabs,
   TextField,
-  Typography,
 } from "@mui/material";
+
+// Two-column grid shared by every parameter tab.
+const fieldGridSx = { display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 2 } as const;
 
 interface NumberFieldProps {
   label: string;
@@ -47,6 +49,7 @@ const SelectField: React.FC<SelectFieldProps> = ({ label, value, onChange, optio
       value={value}
       label={label}
       onChange={(e) => onChange(e.target.value as string)}
+      MenuProps={darkMenuProps}
     >
       {options.map((option) => (
         <MenuItem key={option} value={option}>
@@ -121,6 +124,7 @@ export const InstrumentEditor: React.FC<InstrumentEditorProps> = ({
 }) => {
   const [instrumentName, setInstrumentName] = useState<string>("");
   const [config, setConfig] = useState<InstrumentConfig>(defaultConfig);
+  const [activeTab, setActiveTab] = useState(0);
 
   useEffect(() => {
     if (open) {
@@ -197,7 +201,7 @@ export const InstrumentEditor: React.FC<InstrumentEditorProps> = ({
       confirmDisabled={!instrumentName.trim()}
       maxWidth="md"
     >
-      <Box style={{ marginTop: "16px" }}>
+      <Box sx={{ mt: 2 }}>
         <TextField
           fullWidth
           variant="outlined"
@@ -211,12 +215,19 @@ export const InstrumentEditor: React.FC<InstrumentEditorProps> = ({
           sx={{ mb: 2 }}
         />
 
-        <Accordion defaultExpanded>
-          <AccordionSummary>
-            <Typography variant="h6">Basic Parameters</Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 2 }}>
+        <Tabs
+          value={activeTab}
+          onChange={(_, value) => setActiveTab(value)}
+          sx={{ mb: 2 }}
+        >
+          <Tab label="Basic" />
+          <Tab label="Oscillator" />
+          <Tab label="Envelope" />
+        </Tabs>
+
+        <Box sx={{ minHeight: 272 }}>
+          {activeTab === 0 && (
+            <Box sx={fieldGridSx}>
               <NumberField
                 label="Volume"
                 value={config.volume}
@@ -241,15 +252,10 @@ export const InstrumentEditor: React.FC<InstrumentEditorProps> = ({
                 inputProps={{ min: 0, step: 0.1 }}
               />
             </Box>
-          </AccordionDetails>
-        </Accordion>
+          )}
 
-        <Accordion>
-          <AccordionSummary>
-            <Typography variant="h6">Oscillator</Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 2 }}>
+          {activeTab === 1 && (
+            <Box sx={fieldGridSx}>
               <SelectField
                 label="Type"
                 value={config.oscillator.type}
@@ -283,15 +289,10 @@ export const InstrumentEditor: React.FC<InstrumentEditorProps> = ({
                 />
               </Box>
             </Box>
-          </AccordionDetails>
-        </Accordion>
+          )}
 
-        <Accordion>
-          <AccordionSummary>
-            <Typography variant="h6">Envelope</Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 2 }}>
+          {activeTab === 2 && (
+            <Box sx={fieldGridSx}>
               <NumberField
                 label="Attack"
                 value={config.envelope.attack}
@@ -337,8 +338,8 @@ export const InstrumentEditor: React.FC<InstrumentEditorProps> = ({
                 />
               </Box>
             </Box>
-          </AccordionDetails>
-        </Accordion>
+          )}
+        </Box>
       </Box>
     </ConfirmDialog>
   );
