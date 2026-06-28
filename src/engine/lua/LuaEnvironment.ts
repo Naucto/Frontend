@@ -239,22 +239,29 @@ class LuaEnvironment {
 
       case "function":
         fengari.lua.lua_pushjsfunction(this._L, (state: fengari.lua_State) => {
-          const args = Array.from({ length: fengari.lua.lua_gettop(state) }, (_, i) => this.getObject(i + 1));
+          // A JS throw escaping into fengari surfaces as an opaque non-string
+          // error, so convert it into a proper Lua error carrying the message.
+          try {
+            const args = Array.from({ length: fengari.lua.lua_gettop(state) }, (_, i) => this.getObject(i + 1));
 
-          while (fengari.lua.lua_gettop(state) > 0)
-            fengari.lua.lua_remove(state, 1);
+            while (fengari.lua.lua_gettop(state) > 0)
+              fengari.lua.lua_remove(state, 1);
 
-          const returnValues = value(...args);
+            const returnValues = value(...args);
 
-          // An array becomes multiple Lua return values; anything else (scalar,
-          // table, proxy, nil) is one value marshalled through pushObject.
-          if (Array.isArray(returnValues)) {
-            returnValues.forEach(entry => this.pushObject(entry));
-            return returnValues.length;
+            // An array becomes multiple Lua return values; anything else (scalar,
+            // table, proxy, nil) is one value marshalled through pushObject.
+            if (Array.isArray(returnValues)) {
+              returnValues.forEach(entry => this.pushObject(entry));
+              return returnValues.length;
+            }
+
+            this.pushObject(returnValues);
+            return 1;
+          } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            return fengari.lauxlib.luaL_error(state, fengari.to_luastring(message));
           }
-
-          this.pushObject(returnValues);
-          return 1;
         });
         break;
 
