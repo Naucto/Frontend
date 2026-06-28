@@ -35,12 +35,16 @@ import type {
   MultiplayerControllerCreateResponses,
   MultiplayerControllerGetData,
   MultiplayerControllerGetResponses,
+  MultiplayerControllerJoinByCodeData,
+  MultiplayerControllerJoinByCodeResponses,
   MultiplayerControllerJoinData,
   MultiplayerControllerJoinResponses,
   MultiplayerControllerLeaveData,
   MultiplayerControllerLeaveResponses,
   MultiplayerControllerListData,
   MultiplayerControllerListResponses,
+  MultiplayerControllerRefreshTicketData,
+  MultiplayerControllerRefreshTicketResponses,
   MultiplayerControllerRemoveData,
   MultiplayerControllerRemoveResponses,
   MultiplayerControllerUpdateData,
@@ -890,6 +894,29 @@ export const multiplayerControllerCreate = <
   });
 
 /**
+ * Join an invite-code game session by its code
+ */
+export const multiplayerControllerJoinByCode = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<MultiplayerControllerJoinByCodeData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    MultiplayerControllerJoinByCodeResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/game-sessions/join-by-code",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
  * Close/delete a game session (host only)
  */
 export const multiplayerControllerRemove = <
@@ -982,6 +1009,25 @@ export const multiplayerControllerLeave = <
   >({
     security: [{ scheme: "bearer", type: "http" }],
     url: "/game-sessions/{sessionId}/leave",
+    ...options
+  });
+
+/**
+ * Mint a fresh connection ticket for the caller's session
+ */
+export const multiplayerControllerRefreshTicket = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<MultiplayerControllerRefreshTicketData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    MultiplayerControllerRefreshTicketResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/game-sessions/{sessionId}/ticket",
     ...options
   });
 

@@ -481,6 +481,13 @@ export type GameSessionConnectionResponseDto = {
   joinCode?: string;
 };
 
+export type JoinByCodeDto = {
+  /**
+   * Invite code of the session to join
+   */
+  joinCode: string;
+};
+
 export type GameSessionResponseDto = {
   sessionUuid: string;
   title: string;
@@ -1770,6 +1777,20 @@ export type MultiplayerControllerCreateResponses = {
 export type MultiplayerControllerCreateResponse =
   MultiplayerControllerCreateResponses[keyof MultiplayerControllerCreateResponses];
 
+export type MultiplayerControllerJoinByCodeData = {
+  body: JoinByCodeDto;
+  path?: never;
+  query?: never;
+  url: "/game-sessions/join-by-code";
+};
+
+export type MultiplayerControllerJoinByCodeResponses = {
+  200: GameSessionConnectionResponseDto;
+};
+
+export type MultiplayerControllerJoinByCodeResponse =
+  MultiplayerControllerJoinByCodeResponses[keyof MultiplayerControllerJoinByCodeResponses];
+
 export type MultiplayerControllerRemoveData = {
   body?: never;
   path: {
@@ -1840,6 +1861,22 @@ export type MultiplayerControllerLeaveData = {
 export type MultiplayerControllerLeaveResponses = {
   200: unknown;
 };
+
+export type MultiplayerControllerRefreshTicketData = {
+  body?: never;
+  path: {
+    sessionId: string;
+  };
+  query?: never;
+  url: "/game-sessions/{sessionId}/ticket";
+};
+
+export type MultiplayerControllerRefreshTicketResponses = {
+  200: GameSessionConnectionResponseDto;
+};
+
+export type MultiplayerControllerRefreshTicketResponse =
+  MultiplayerControllerRefreshTicketResponses[keyof MultiplayerControllerRefreshTicketResponses];
 
 export type ProjectCommentControllerGetCommentsData = {
   body?: never;

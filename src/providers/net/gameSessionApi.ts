@@ -4,8 +4,10 @@ import {
   GameSessionResponseDto,
   multiplayerControllerCreate,
   multiplayerControllerJoin,
+  multiplayerControllerJoinByCode,
   multiplayerControllerLeave,
   multiplayerControllerList,
+  multiplayerControllerRefreshTicket,
 } from "@api";
 import { GameSessionError } from "@errors/GameSessionError";
 
@@ -34,6 +36,26 @@ export const joinGameSession = async (
   });
   if (error || !data) {
     throw new GameSessionError(messageOf(error, "Failed to join game session"));
+  }
+  return data;
+};
+
+export const joinGameSessionByCode = async (
+  joinCode: string,
+): Promise<GameSessionConnectionResponseDto> => {
+  const { data, error } = await multiplayerControllerJoinByCode({ body: { joinCode } });
+  if (error || !data) {
+    throw new GameSessionError(messageOf(error, "Failed to join with that code"));
+  }
+  return data;
+};
+
+export const refreshSessionTicket = async (
+  sessionUuid: string,
+): Promise<GameSessionConnectionResponseDto> => {
+  const { data, error } = await multiplayerControllerRefreshTicket({ path: { sessionId: sessionUuid } });
+  if (error || !data) {
+    throw new GameSessionError(messageOf(error, "Failed to refresh session ticket"));
   }
   return data;
 };
