@@ -10,14 +10,22 @@ import {
 } from "@providers/net/gameSessionApi";
 import { NetUiBridge, NetUiRequest } from "@providers/net/NetUiBridge";
 import { buildSession } from "@providers/net/sessionFactory";
-import { usePublicUserProfile } from "@shared/user/usePublicUserProfile";
+import { UserAvatar } from "@shared/user/UserAvatar";
 
-import { type JSX, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { type JSX, type ReactNode, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import PublicIcon from "@mui/icons-material/Public";
+import VpnKeyIcon from "@mui/icons-material/VpnKey";
 import {
-  Avatar,
   Box,
   Button,
+  Card,
+  CardActionArea,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   FormControlLabel,
   Radio,
   RadioGroup,
@@ -44,28 +52,23 @@ const ErrorDialog = ({ title, message, onDismiss }: {
   </ConfirmDialog>
 );
 
-const BackLink = ({ onClick }: { onClick: () => void }): JSX.Element => (
-  <Button variant="text" size="small" onClick={onClick} sx={{ pl: 0, mb: 1 }}>← Back</Button>
+const ChoiceCard = ({ icon, title, description, onClick }: {
+  icon: ReactNode;
+  title: string;
+  description: string;
+  onClick: () => void;
+}): JSX.Element => (
+  <Card variant="outlined" sx={{ flex: 1 }}>
+    <CardActionArea
+      onClick={onClick}
+      sx={{ p: 3, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 1 }}
+    >
+      {icon}
+      <Typography variant="h6">{title}</Typography>
+      <Typography variant="body2" color="text.secondary">{description}</Typography>
+    </CardActionArea>
+  </Card>
 );
-
-// Avatar + name without UserProfileLink's navigation (which would leave the game).
-const HostCell = ({ hostId, username, nickname }: {
-  hostId: number;
-  username: string;
-  nickname?: string;
-}): JSX.Element => {
-  const profile = usePublicUserProfile(username);
-  const name = profile?.nickname || nickname || profile?.username || username || `Player ${hostId}`;
-
-  return (
-    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-      <Avatar src={profile?.profileImageUrl ?? ""} sx={{ width: 28, height: 28 }}>
-        {name.charAt(0).toUpperCase()}
-      </Avatar>
-      <Typography variant="body2">{name}</Typography>
-    </Box>
-  );
-};
 
 const HostDialog = ({ request, projectId }: { request: NetUiRequest; projectId: number }): JSX.Element => {
   const maxPlayers = request.hostOptions?.maxPlayers ?? 2;
@@ -147,6 +150,8 @@ const JoinDialog = ({ request, projectId, selfJoin }: {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const cancel = (): void => request.resolve(null);
+
   const loadSessions = (): void => {
     listGameSessions(projectId).then(setSessions).catch(caught => setError(messageOf(caught)));
   };
@@ -174,7 +179,7 @@ const JoinDialog = ({ request, projectId, selfJoin }: {
       return sessions;
 
     return sessions.filter(session =>
-      [session.title, session.projectName, session.hostUsername, session.hostNickname]
+      [session.title, session.hostUsername, session.hostNickname]
         .some(field => field?.toLowerCase().includes(q))
     );
   }, [sessions, query]);
@@ -184,91 +189,109 @@ const JoinDialog = ({ request, projectId, selfJoin }: {
 
   if (mode === "choose") {
     return (
-      <ConfirmDialog
-        open
-        title="Join a session"
-        onClose={() => request.resolve(null)}
-        onConfirm={() => setMode("public")}
-        confirmLabel="Browse public games"
-        confirmColor="primary"
-      >
-        <Typography sx={{ mb: 2 }}>How would you like to join?</Typography>
-        <Button variant="outlined" fullWidth onClick={() => setMode("code")}>Join with an invite code</Button>
-      </ConfirmDialog>
+      <Dialog open onClose={cancel} maxWidth="sm" fullWidth>
+        <DialogTitle>Join a session</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: "flex", gap: 2, mt: 1 }}>
+            <ChoiceCard
+              icon={<VpnKeyIcon color="primary" sx={{ fontSize: 40 }} />}
+              title="Invite code"
+              description="Join a private session with a code you were given."
+              onClick={() => setMode("code")}
+            />
+            <ChoiceCard
+              icon={<PublicIcon color="primary" sx={{ fontSize: 40 }} />}
+              title="Public game"
+              description="Browse and join an open session for this game."
+              onClick={() => setMode("public")}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={cancel}>Cancel</Button>
+        </DialogActions>
+      </Dialog>
     );
   }
 
   if (mode === "code") {
     return (
-      <ConfirmDialog
-        open
-        title="Join with an invite code"
-        onClose={() => request.resolve(null)}
-        onConfirm={() => connect(() => joinGameSessionByCode(code, selfJoin))}
-        confirmLabel="Join"
-        confirmColor="primary"
-        confirmDisabled={busy || !code}
-      >
-        <BackLink onClick={() => setMode("choose")} />
-        <TextField label="Invite code" fullWidth value={code} onChange={event => setCode(event.target.value)} />
-      </ConfirmDialog>
+      <Dialog open onClose={cancel} maxWidth="sm" fullWidth>
+        <DialogTitle>Join with an invite code</DialogTitle>
+        <DialogContent>
+          <TextField label="Invite code" fullWidth value={code} onChange={event => setCode(event.target.value)} sx={{ mt: 1 }} />
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: "space-between" }}>
+          <Button startIcon={<ArrowBackIcon />} onClick={() => setMode("choose")}>Back</Button>
+          <Button
+            variant="contained"
+            disabled={busy || !code}
+            onClick={() => connect(() => joinGameSessionByCode(code, selfJoin))}
+          >
+            Join
+          </Button>
+        </DialogActions>
+      </Dialog>
     );
   }
 
   return (
-    <ConfirmDialog
-      open
-      title="Public sessions"
-      onClose={() => request.resolve(null)}
-      onConfirm={loadSessions}
-      confirmLabel="Refresh"
-    >
-      <BackLink onClick={() => setMode("choose")} />
-      <TextField
-        placeholder="Search by game or host"
-        fullWidth
-        size="small"
-        value={query}
-        onChange={event => setQuery(event.target.value)}
-        sx={{ mb: 1 }}
-      />
+    <Dialog open onClose={cancel} maxWidth="sm" fullWidth>
+      <DialogTitle>Public sessions</DialogTitle>
+      <DialogContent>
+        <TextField
+          placeholder="Search by host or session"
+          fullWidth
+          size="small"
+          value={query}
+          onChange={event => setQuery(event.target.value)}
+          sx={{ mt: 1, mb: 1 }}
+        />
 
-      {filtered.length === 0 ? (
-        <Typography sx={{ mt: 2 }}>No public sessions match.</Typography>
-      ) : (
-        <StyledTable size="small">
-          <TableHead>
-            <StyledTableRow>
-              <StyledTableCell>Host</StyledTableCell>
-              <StyledTableCell>Game</StyledTableCell>
-              <StyledTableCell>Players</StyledTableCell>
-              <StyledTableCell />
-            </StyledTableRow>
-          </TableHead>
-          <TableBody>
-            {filtered.map(session => (
-              <StyledTableRow key={session.sessionUuid}>
-                <StyledTableCell>
-                  <HostCell hostId={session.hostId} username={session.hostUsername} nickname={session.hostNickname} />
-                </StyledTableCell>
-                <StyledTableCell>{session.projectName}</StyledTableCell>
-                <StyledTableCell>{session.playerCount}/{session.maxPlayers}</StyledTableCell>
-                <StyledTableCell>
-                  <Button
-                    variant="contained"
-                    size="small"
-                    disabled={busy}
-                    onClick={() => connect(() => joinGameSession(session.sessionUuid, undefined, selfJoin))}
-                  >
-                    Join
-                  </Button>
-                </StyledTableCell>
+        {filtered.length === 0 ? (
+          <Typography sx={{ mt: 2 }}>No public sessions match.</Typography>
+        ) : (
+          <StyledTable size="small">
+            <TableHead>
+              <StyledTableRow>
+                <StyledTableCell>Host</StyledTableCell>
+                <StyledTableCell>Players</StyledTableCell>
+                <StyledTableCell />
               </StyledTableRow>
-            ))}
-          </TableBody>
-        </StyledTable>
-      )}
-    </ConfirmDialog>
+            </TableHead>
+            <TableBody>
+              {filtered.map(session => (
+                <StyledTableRow key={session.sessionUuid}>
+                  <StyledTableCell>
+                    <UserAvatar
+                      username={session.hostUsername}
+                      nickname={session.hostNickname}
+                      fallbackLabel={`Player ${session.hostId}`}
+                      showName
+                    />
+                  </StyledTableCell>
+                  <StyledTableCell>{session.playerCount}/{session.maxPlayers}</StyledTableCell>
+                  <StyledTableCell>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      disabled={busy}
+                      onClick={() => connect(() => joinGameSession(session.sessionUuid, undefined, selfJoin))}
+                    >
+                      Join
+                    </Button>
+                  </StyledTableCell>
+                </StyledTableRow>
+              ))}
+            </TableBody>
+          </StyledTable>
+        )}
+      </DialogContent>
+      <DialogActions sx={{ justifyContent: "space-between" }}>
+        <Button startIcon={<ArrowBackIcon />} onClick={() => setMode("choose")}>Back</Button>
+        <Button onClick={loadSessions}>Refresh</Button>
+      </DialogActions>
+    </Dialog>
   );
 };
 
