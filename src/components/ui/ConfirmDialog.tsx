@@ -48,7 +48,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
         {actions ?? (
           <>
             <Button onClick={onClose}>{cancelLabel}</Button>
-            <Button onClick={onConfirm} color={confirmColor} disabled={confirmDisabled} autoFocus>
+            <Button onClick={onConfirm} variant="contained" color={confirmColor} disabled={confirmDisabled} autoFocus>
               {confirmLabel}
             </Button>
           </>
