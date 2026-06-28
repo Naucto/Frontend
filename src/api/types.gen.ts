@@ -470,6 +470,10 @@ export type WebRtcOfferDto = {
 
 export type GameSessionConnectionResponseDto = {
   sessionUuid: string;
+  /**
+   * Player id assigned to this connection
+   */
+  playerId: number;
   webrtcConfig: WebRtcOfferDto;
   /**
    * Short-lived signed ticket presented on the WebRTC connection
