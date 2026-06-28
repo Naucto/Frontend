@@ -402,6 +402,13 @@ const MODULE_COMPLETIONS = new Map<string, LuaCompletion[]>([
       kind: "function",
     },
     {
+      label: "id",
+      detail: "net.id()",
+      documentation: "Returns the local player's user id (the one peer.joined/left and custom events report as 'from').",
+      insertText: "id()",
+      kind: "function",
+    },
+    {
       label: "on",
       detail: "net.on(pattern, callback)",
       documentation: "Subscribes to table changes (path glob, e.g. 'players.*'), custom events ('event:name'), or 'peer.joined' / 'peer.left' / 'ended'.",

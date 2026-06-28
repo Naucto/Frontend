@@ -19,6 +19,7 @@ export class NetAPI extends EngineModule {
 
     ctx.lua.setGlobalWith("net", {
       state: this._stateProxy(""),
+      id: () => this._require().selfUserId,
       on: (pattern: string, callback: LuaCallback) => this._on(pattern, callback),
       emit: (name: string, payload: unknown) => this._require().emit(name, payload),
       lock: (path: string) => this._lockHandle(path),

@@ -145,6 +145,10 @@ export class SharedTableSession implements Destroyable {
     return this._isHost;
   }
 
+  get selfUserId(): UserId {
+    return this._transport.selfUserId;
+  }
+
   getValue(path: string): TableScalar | undefined {
     return this._store.get(path)?.value;
   }

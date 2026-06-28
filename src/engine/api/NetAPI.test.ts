@@ -54,6 +54,13 @@ describe("NetAPI net.state", () => {
     expect(() => lua.evaluate("return net.state.score")).toThrow(/no active session/);
   });
 
+  it("exposes the local user id via net.id", () => {
+    const { lua } = setup();
+    lua.evaluate("net.host()");
+
+    expect(lua.evaluate("return net.id()")[0]).toBe(1);
+  });
+
   it("reads and writes scalars after net.host", () => {
     const { lua, session } = setup();
 
