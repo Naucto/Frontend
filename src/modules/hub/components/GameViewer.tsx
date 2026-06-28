@@ -8,10 +8,10 @@ import {
   projectControllerUnlikeProject,
   ProjectExResponseDto,
 } from "@api";
+import { type EnvData } from "@engine/runtime/LuaEnvironmentManager";
 import { GameProvider, ProviderEventType } from "@providers/GameProvider";
 import { useUser } from "@providers/UserProvider";
 import { type SpriteRendererHandle } from "@shared/canvas/RendererHandle";
-import { type EnvData } from "@shared/lua-env-manager/LuaEnvironmentManager";
 import * as urls from "@shared/navigation/routes";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
 import { getCachedProjectImageUrl } from "@utils/projectImageCache";

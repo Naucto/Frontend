@@ -1,4 +1,5 @@
 import { workSessionControllerLeave } from "@api";
+import { EnvData } from "@engine/runtime/LuaEnvironmentManager";
 import CodeEditor from "@modules/create/game-editor/editors/CodeEditor";
 import GameEditorConsole from "@modules/create/game-editor/editors/GameEditorConsole";
 import { MapEditor } from "@modules/create/game-editor/editors/map-editor/MapEditor";
@@ -8,7 +9,6 @@ import { SoundEditor } from "@modules/create/game-editor/editors/sound-editor/So
 import { SpriteEditor } from "@modules/create/game-editor/editors/sprite-editor/SpriteEditor";
 import { ProjectProvider, ProviderEventType } from "@providers/ProjectProvider";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
-import { EnvData } from "@shared/lua-env-manager/LuaEnvironmentManager";
 
 import { EditorContainer } from "./editors/EditorContainer";
 import { EditorProps, EditorTab } from "./editors/EditorType";

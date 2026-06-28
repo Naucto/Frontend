@@ -1,7 +1,7 @@
+import { type EnvData } from "@engine/runtime/LuaEnvironmentManager";
 import { type GameProvider } from "@providers/GameProvider";
 import GameCanvas from "@shared/canvas/game-canvas/GameCanvas";
 import { type SpriteRendererHandle } from "@shared/canvas/RendererHandle";
-import { type EnvData } from "@shared/lua-env-manager/LuaEnvironmentManager";
 
 import { type Dispatch, type JSX, type RefObject, type SetStateAction } from "react";
 

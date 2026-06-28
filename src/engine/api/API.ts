@@ -1,4 +1,6 @@
-import { LuaCallable, LuaEnvironment, LuaMetatable } from "@lib/lua";
+import { LuaCallable } from "@engine/lua/LuaEnvironment";
+
+import { ApiContext } from "./ApiContext";
 
 const LUA_METHOD_PREFIX = "$";
 
@@ -9,7 +11,8 @@ class LuaAPIMethodError implements Error {
 }
 
 export abstract class LuaAPI {
-  protected constructor(name: string, protected _lua: LuaEnvironment) {
+  protected constructor(name: string, protected _ctx: ApiContext) {
+    const lua = _ctx.lua;
     const luaEntity = new Map<string, LuaCallable>();
 
     for (const propertyName of Object.getOwnPropertyNames(Object.getPrototypeOf(this))) {
@@ -39,15 +42,15 @@ export abstract class LuaAPI {
       }
     }
 
-    _lua.pushObject(luaEntity);
-    _lua.setMetatable({
-      __index: this._indexAccess.bind(this)
-    } as LuaMetatable);
-    _lua.setGlobal(name);
+    lua.pushObject(luaEntity);
+    lua.setMetatable({
+      index: key => this._indexAccess(key)
+    });
+    lua.setGlobal(name);
   }
 
-  private _indexAccess(key: string): unknown {
-    const camelKeyName = key.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase());
+  private _indexAccess(key: string | number): unknown {
+    const camelKeyName = String(key).replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase());
     const nativeKeyName = `${LUA_METHOD_PREFIX}${camelKeyName}`;
 
     return Reflect.get(this, nativeKeyName);

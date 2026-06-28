@@ -1,0 +1,146 @@
+import { ApiContext } from "@engine/api/ApiContext";
+import { GraphicsAPI } from "@engine/api/GraphicsAPI";
+import { InputAPI } from "@engine/api/InputAPI";
+import { MapAPI } from "@engine/api/MapAPI";
+import { NetAPI } from "@engine/api/NetAPI";
+import { SoundAPI } from "@engine/api/SoundAPI";
+import { LuaEnvironment } from "@engine/lua/LuaEnvironment";
+import { InputSource, MapSource, Renderer, SoundPlayer, SpriteSource } from "@engine/ports";
+
+export interface EnvData {
+  code: string,
+  output: string
+}
+
+// Console-output setter — a React `useState` setter satisfies this without the
+// engine having to depend on React's `Dispatch`/`SetStateAction` types.
+export type OutputSetter = (value: string | ((prev: string) => string)) => void;
+
+interface ConstructorProps {
+  envData: EnvData,
+  rendererHandle: Renderer,
+  spriteProvider: SpriteSource,
+  mapProvider: MapSource,
+  keyHandler: InputSource,
+  musicPlayer?: SoundPlayer,
+  setOutput: OutputSetter
+}
+
+class LuaEnvironmentManager {
+  private static readonly API_MODULES: Array<new (ctx: ApiContext) => unknown> = [
+    GraphicsAPI,
+    InputAPI,
+    MapAPI,
+    SoundAPI,
+    NetAPI,
+  ];
+
+  private _maxLines = 100;
+  private _lua: LuaEnvironment;
+
+  private _envData: EnvData;
+
+  private _setOutput: OutputSetter;
+
+  constructor({ envData, rendererHandle, spriteProvider, mapProvider, setOutput, keyHandler, musicPlayer }: ConstructorProps) {
+    this._lua = new LuaEnvironment();
+    this._setOutput = setOutput;
+    this._envData = envData;
+
+    this._lua.setGlobalWith("print", this._print.bind(this));
+
+    const ctx: ApiContext = {
+      lua: this._lua,
+      renderer: rendererHandle,
+      sprites: spriteProvider,
+      maps: mapProvider,
+      input: keyHandler,
+      sounds: musicPlayer,
+      print: this._addOutput.bind(this),
+    };
+
+    for (const Module of LuaEnvironmentManager.API_MODULES) {
+      new Module(ctx);
+    }
+  }
+
+  public runCode(): boolean {
+    this.clearOutput();
+    try {
+      this._lua.evaluate(this._envData.code);
+      return true;
+    } catch (error) {
+      if (error instanceof Error) {
+        this._setOutput(this._getErrorMsg(error));
+        return false;
+      }
+    }
+    return false;
+  }
+
+  public setEnvData(envData: EnvData): void {
+    this._envData = envData;
+  }
+
+  public init(): boolean {
+    return this._safeEval("if _G._init then _G._init() end");
+  }
+
+  public update(): boolean {
+    return this._safeEval("if _G._update then _G._update() end");
+  }
+
+  public draw(): boolean {
+    return this._safeEval("if _G._draw then _G._draw() end");
+  }
+
+  public clearOutput(): void {
+    this._setOutput("");
+  }
+
+  private _print(...args: unknown[]): void {
+    const output = args.map((arg: unknown) => {
+      return String(arg);
+    }).join("\t");
+
+    this._addOutput(output);
+  }
+
+  private _getErrorMsg(error: Error): string {
+    return "Error: " + (error.message);
+  }
+
+  /**
+   * Evaluates a fragment, reporting any failure to the console output.
+   * Returns true on success, false if evaluation threw. Catches every
+   * throwable (not just `Error`) so a misbehaving script — e.g. infinite
+   * recursion in `_update` — can never escape the per-frame game loop.
+   */
+  private _safeEval(code: string): boolean {
+    try {
+      this._lua.evaluate(code);
+      return true;
+    } catch (error) {
+      const message = error instanceof Error
+        ? this._getErrorMsg(error)
+        : "Error: " + String(error);
+      this._addOutput(message);
+      return false;
+    }
+  }
+
+  private _addOutput(output: string): void {
+    this._setOutput(prev => {
+      prev += output + "\n";
+      const lines = prev.split("\n");
+      if (lines.length >= this._maxLines) {
+        lines.splice(0, lines.length - this._maxLines);
+      }
+      return lines.join("\n");
+    });
+  }
+}
+
+export {
+  LuaEnvironmentManager
+};

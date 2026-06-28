@@ -9,6 +9,7 @@
       "@utils/*": ["./src/utils/*"],
       "@theme/*": ["./src/theme/*"],
       "@lib/*": ["./lib/*"],
+      "@engine/*": ["./src/engine/*"],
       "@api": ["./src/api"],
       "@api/*": ["./src/api/*"],
       "@hooks": ["./src/hooks"],

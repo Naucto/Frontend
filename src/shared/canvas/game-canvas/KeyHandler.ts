@@ -1,4 +1,6 @@
-export class KeyHandler {
+import { InputSource } from "@engine/ports";
+
+export class KeyHandler implements InputSource {
   private keysPressed: Set<string>;
   private detachListeners?: () => void;
 

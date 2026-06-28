@@ -1,9 +1,9 @@
+import { EnvData, LuaEnvironmentManager } from "@engine/runtime/LuaEnvironmentManager";
 import { SoundProvider } from "@providers/editors/SoundProvider";
 import { MusicPlayer } from "@shared/audio/MusicPlayer";
 import { CanvasProps, StyledCanvas } from "@shared/canvas/Canvas";
 import { KeyHandler } from "@shared/canvas/game-canvas/KeyHandler";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
-import { EnvData, LuaEnvironmentManager } from "@shared/lua-env-manager/LuaEnvironmentManager";
 
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from "react";
 
