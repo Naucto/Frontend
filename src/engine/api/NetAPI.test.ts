@@ -179,4 +179,34 @@ describe("NetAPI net.state", () => {
     expect(lua.evaluate("return _G.first")[0]).toBe(7);
     expect(lua.evaluate("return _G.second")[0]).toBe(8);
   });
+
+  it("blocks net.join while already hosting", () => {
+    const { lua } = setup();
+    lua.evaluate("net.host()");
+
+    expect(() => lua.evaluate("net.join()")).toThrow(/already in a session/);
+  });
+
+  it("blocks net.host after joining as a client", () => {
+    const lua = new LuaEnvironment();
+    const session = new SharedTableSession(hostTransport());
+    const ui: NetUi = {
+      host: (_options, onReady) => onReady(session),
+      join: onReady => onReady(session),
+      leave: () => undefined,
+    };
+    new NetAPI(makeContext(lua, ui));
+
+    lua.evaluate("net.join()");
+
+    expect(() => lua.evaluate("net.host()")).toThrow(/already in a session/);
+  });
+
+  it("allows hosting again after net.leave", () => {
+    const { lua } = setup();
+    lua.evaluate("net.host()");
+    lua.evaluate("net.leave()");
+
+    expect(() => lua.evaluate("net.host()")).not.toThrow();
+  });
 });

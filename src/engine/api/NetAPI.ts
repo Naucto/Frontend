@@ -13,6 +13,8 @@ type LuaCallback = (...args: unknown[]) => unknown;
 
 export class NetAPI extends EngineModule {
   private _session: SharedTableSession | null = null;
+  // A host/join modal is open but not yet resolved — also blocks a second one.
+  private _pending = false;
 
   constructor(ctx: ApiContext) {
     super(ctx);
@@ -25,7 +27,7 @@ export class NetAPI extends EngineModule {
       lock: (path: string) => this._lockHandle(path),
       queue: (path: string) => this._queue(path),
       host: (configOrCallback?: unknown, maybeCallback?: LuaCallback) => this._host(configOrCallback, maybeCallback),
-      join: (callback?: LuaCallback) => this.ctx.ui?.join(session => this._ready(session, callback)),
+      join: (callback?: LuaCallback) => this._join(callback),
       leave: () => this._leave(),
     });
   }
@@ -33,6 +35,7 @@ export class NetAPI extends EngineModule {
   destroy(): void {
     this._session?.destroy();
     this._session = null;
+    this._pending = false;
   }
 
   private _require(): SharedTableSession {
@@ -42,7 +45,18 @@ export class NetAPI extends EngineModule {
     return this._session;
   }
 
+  // Host and join are mutually exclusive with an active (or pending) session:
+  // a client must net.leave() before it can host or join something else.
+  private _assertIdle(): void {
+    if (this._session)
+      throw new NetError("net: already in a session; call net.leave() first");
+
+    if (this._pending)
+      throw new NetError("net: a host/join request is already in progress");
+  }
+
   private _ready(session: SharedTableSession | null, callback?: LuaCallback): void {
+    this._pending = false;
     this._session = session;
 
     if (session && callback)
@@ -53,15 +67,32 @@ export class NetAPI extends EngineModule {
     this.ctx.ui?.leave();
     this._session?.destroy();
     this._session = null;
+    this._pending = false;
   }
 
   // net.host accepts net.host(config, cb), net.host(config) or net.host(cb).
   private _host(configOrCallback: unknown, maybeCallback?: LuaCallback): void {
+    this._assertIdle();
+
     const calledWithCallbackOnly = typeof configOrCallback === "function";
     const config = calledWithCallbackOnly ? {} : configOrCallback;
     const callback = (calledWithCallbackOnly ? configOrCallback : maybeCallback) as LuaCallback | undefined;
 
-    this.ctx.ui?.host(this._hostOptions(config), session => this._ready(session, callback));
+    if (!this.ctx.ui)
+      return;
+
+    this._pending = true;
+    this.ctx.ui.host(this._hostOptions(config), session => this._ready(session, callback));
+  }
+
+  private _join(callback?: LuaCallback): void {
+    this._assertIdle();
+
+    if (!this.ctx.ui)
+      return;
+
+    this._pending = true;
+    this.ctx.ui.join(session => this._ready(session, callback));
   }
 
   private _hostOptions(config: unknown): NetHostOptions {
