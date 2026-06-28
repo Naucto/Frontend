@@ -212,4 +212,37 @@ describe("SharedTableSession", () => {
 
     expect(order).toEqual(["host", "slave"]);
   });
+
+  it("serializes a queue across host and slave, FIFO", async () => {
+    const hub = new Hub();
+    const host = makeSession("host", 1, hub);
+    const slave = makeSession("slave", 2, hub);
+
+    slave.queuePush("events", "a");
+    host.queuePush("events", "b");
+    await flush();
+
+    const popped: unknown[] = [];
+    host.queuePop("events", value => popped.push(value));
+    host.queuePop("events", value => popped.push(value));
+    host.queuePop("events", value => popped.push(value));
+    await flush();
+
+    expect(popped).toEqual(["a", "b", undefined]);
+  });
+
+  it("returns a popped value to a slave", async () => {
+    const hub = new Hub();
+    const host = makeSession("host", 1, hub);
+    const slave = makeSession("slave", 2, hub);
+    host.queuePush("q", 42);
+
+    let got: unknown;
+    slave.queuePop("q", value => {
+      got = value;
+    });
+    await flush();
+
+    expect(got).toBe(42);
+  });
 });

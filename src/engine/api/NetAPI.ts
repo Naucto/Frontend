@@ -22,6 +22,7 @@ export class NetAPI extends EngineModule {
       on: (pattern: string, callback: LuaCallback) => this._on(pattern, callback),
       emit: (name: string, payload: unknown) => this._require().emit(name, payload),
       lock: (path: string, fn: LuaCallback) => this._lock(path, fn),
+      queue: (path: string) => this._queue(path),
       host: (configOrCallback?: unknown, maybeCallback?: LuaCallback) => this._host(configOrCallback, maybeCallback),
       join: (callback?: LuaCallback) => this.ctx.ui?.join(session => this._ready(session, callback)),
       leave: () => this._leave(),
@@ -183,6 +184,21 @@ export class NetAPI extends EngineModule {
       const unlock = (): void => session.releaseLock(path);
       this._invoke(fn, unlock);
     });
+  }
+
+  private _queue(path: string): { push: (value: unknown) => void; pop: (callback?: LuaCallback) => void } {
+    return {
+      push: (value: unknown) => {
+        if (typeof value === "function")
+          throw new NetError("net: cannot queue a function");
+
+        this._require().queuePush(path, value);
+      },
+      pop: (callback?: LuaCallback) => this._require().queuePop(path, value => {
+        if (callback)
+          this._invoke(callback, value);
+      }),
+    };
   }
 
   private _invoke(callback: LuaCallback, ...args: unknown[]): void {

@@ -36,7 +36,8 @@ type StatePayload =
 type RequestPayload =
   | { kind: "write"; reqId: string; ops: WriteOp[] }
   | { kind: "event"; name: string; payload: unknown }
-  | { kind: "lock"; reqId: string; path: string; action: "acquire" | "release" };
+  | { kind: "lock"; reqId: string; path: string; action: "acquire" | "release" }
+  | { kind: "queue"; reqId: string; path: string; op: "push" | "pop"; value?: unknown };
 
 // Bootstrap snapshot is a targeted host -> one slave message, so it rides the
 // response channel alongside write acks/nacks rather than the broadcast channel.
@@ -44,6 +45,7 @@ type ResponsePayload =
   | { kind: "write-ack"; reqId: string; results: Array<{ path: string; version: number }> }
   | { kind: "write-nack"; reqId: string; rejected: Array<{ path: string }> }
   | { kind: "lock-grant"; reqId: string }
+  | { kind: "queue-result"; reqId: string; value: unknown }
   | SnapshotPayload;
 
 type PeerEvent = "joined" | "left";
@@ -105,6 +107,9 @@ export class SharedTableSession implements Destroyable {
   private readonly _lockWaiters = new Map<string, LockWaiter[]>();
   private readonly _pendingLocks = new Map<string, () => void>();
 
+  private readonly _queues = new Map<string, unknown[]>();
+  private readonly _pendingPops = new Map<string, (value: unknown) => void>();
+
   constructor(transport: SessionTransport) {
     this._transport = transport;
     this._isHost = transport.role === "host";
@@ -124,6 +129,8 @@ export class SharedTableSession implements Destroyable {
     this._errorSubs.clear();
     this._peerSubs.clear();
     this._endedSubs.clear();
+    this._queues.clear();
+    this._pendingPops.clear();
     this._store.clear();
   }
 
@@ -254,6 +261,26 @@ export class SharedTableSession implements Destroyable {
     this._transport.sendRequest({ kind: "lock", reqId: "", path, action: "release" });
   }
 
+  queuePush(path: string, value: unknown): void {
+    if (this._isHost) {
+      this._enqueue(path, value);
+      return;
+    }
+
+    this._transport.sendRequest({ kind: "queue", reqId: "", path, op: "push", value });
+  }
+
+  queuePop(path: string, onResult: (value: unknown) => void): void {
+    if (this._isHost) {
+      onResult(this._dequeue(path));
+      return;
+    }
+
+    const reqId = `${this._transport.selfUserId}-pop-${this._reqCounter++}`;
+    this._pendingPops.set(reqId, onResult);
+    this._transport.sendRequest({ kind: "queue", reqId, path, op: "pop" });
+  }
+
   private _guardInflight(path: string): void {
     if (this._inflightPaths.has(path))
       throw new NetConflictError(path);
@@ -346,6 +373,15 @@ export class SharedTableSession implements Destroyable {
       return;
     }
 
+    if (payload.kind === "queue") {
+      if (payload.op === "push")
+        this._enqueue(payload.path, payload.value);
+      else
+        this._transport.respondTo(from, { kind: "queue-result", reqId: payload.reqId, value: this._dequeue(payload.path) });
+
+      return;
+    }
+
     this._handleWrite(from, payload);
   }
 
@@ -388,6 +424,17 @@ export class SharedTableSession implements Destroyable {
       if (grant) {
         this._pendingLocks.delete(payload.reqId);
         grant();
+      }
+
+      return;
+    }
+
+    if (payload.kind === "queue-result") {
+      const onResult = this._pendingPops.get(payload.reqId);
+
+      if (onResult) {
+        this._pendingPops.delete(payload.reqId);
+        onResult(payload.value);
       }
 
       return;
@@ -475,6 +522,18 @@ export class SharedTableSession implements Destroyable {
       grant?.();
     else if (reqId !== undefined)
       this._transport.respondTo(userId, { kind: "lock-grant", reqId });
+  }
+
+  private _enqueue(path: string, value: unknown): void {
+    const queue = this._queues.get(path) ?? [];
+    queue.push(value);
+    this._queues.set(path, queue);
+  }
+
+  private _dequeue(path: string): unknown {
+    const queue = this._queues.get(path);
+
+    return queue && queue.length > 0 ? queue.shift() : undefined;
   }
 
   private _sendSnapshot(userId: UserId): void {

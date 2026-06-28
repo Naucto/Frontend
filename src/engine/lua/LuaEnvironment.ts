@@ -240,37 +240,16 @@ class LuaEnvironment {
             fengari.lua.lua_remove(state, 1);
 
           const returnValues = value(...args);
-          switch (typeof returnValues) {
-            case "boolean":
-              fengari.lua.lua_pushboolean(state, returnValues ? 1 : 0);
-              return 1;
 
-            case "number":
-              fengari.lua.lua_pushnumber(state, returnValues);
-              return 1;
-
-            case "string":
-              fengari.lua.lua_pushstring(state, fengari.to_luastring(returnValues));
-              return 1;
-
-            case "object":
-              if (Array.isArray(returnValues)) {
-                returnValues.forEach(entry => this.pushObject(entry));
-                return returnValues.length;
-              }
-              break;
-
-            case "function":
-              fengari.lua.lua_pushjsfunction(this._L, value);
-              break;
-
-            case "undefined":
-              fengari.lua.lua_pushnil(state);
-              return 1;
-
-            default:
-              return 0;
+          // An array becomes multiple Lua return values; anything else (scalar,
+          // table, proxy, nil) is one value marshalled through pushObject.
+          if (Array.isArray(returnValues)) {
+            returnValues.forEach(entry => this.pushObject(entry));
+            return returnValues.length;
           }
+
+          this.pushObject(returnValues);
+          return 1;
         });
         break;
 

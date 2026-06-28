@@ -422,6 +422,13 @@ const MODULE_COMPLETIONS = new Map<string, LuaCompletion[]>([
       insertText: "lock(${1:path}, ${2:function(unlock) unlock() end})",
       kind: "function",
     },
+    {
+      label: "queue",
+      detail: "net.queue(path)",
+      documentation: "Returns a host-serialized FIFO queue handle with push(value) and pop(callback) where callback receives the popped value (or nil when empty).",
+      insertText: "queue(${1:path})",
+      kind: "function",
+    },
   ]],
   ["math", [
     { label: "abs", detail: "math.abs(x)", documentation: "Returns the absolute value.", insertText: "abs(${1:x})", kind: "function" },

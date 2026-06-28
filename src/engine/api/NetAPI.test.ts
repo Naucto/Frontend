@@ -133,4 +133,20 @@ describe("NetAPI net.state", () => {
 
     expect(captured).toEqual({ maxPlayers: 6, title: "Arena" });
   });
+
+  it("pushes and pops FIFO through net.queue", () => {
+    const { lua } = setup();
+    lua.evaluate("net.host()");
+
+    lua.evaluate(`
+      local q = net.queue("events")
+      q.push(7)
+      q.push(8)
+      q.pop(function(value) _G.first = value end)
+      q.pop(function(value) _G.second = value end)
+    `);
+
+    expect(lua.evaluate("return _G.first")[0]).toBe(7);
+    expect(lua.evaluate("return _G.second")[0]).toBe(8);
+  });
 });
