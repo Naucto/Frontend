@@ -1,4 +1,5 @@
 import { ApiContext } from "@engine/api/ApiContext";
+import { EngineModule } from "@engine/api/EngineModule";
 import { GraphicsAPI } from "@engine/api/GraphicsAPI";
 import { InputAPI } from "@engine/api/InputAPI";
 import { MapAPI } from "@engine/api/MapAPI";
@@ -26,13 +27,15 @@ interface ConstructorProps {
 }
 
 class LuaEnvironmentManager {
-  private static readonly API_MODULES: Array<new (ctx: ApiContext) => unknown> = [
+  private static readonly API_MODULES: Array<new (ctx: ApiContext) => EngineModule> = [
     GraphicsAPI,
     InputAPI,
     MapAPI,
     SoundAPI,
     NetAPI,
   ];
+
+  private readonly _modules: EngineModule[] = [];
 
   private _maxLines = 100;
   private _lua: LuaEnvironment;
@@ -55,8 +58,15 @@ class LuaEnvironmentManager {
     };
 
     for (const Module of LuaEnvironmentManager.API_MODULES) {
-      new Module(ctx);
+      this._modules.push(new Module(ctx));
     }
+  }
+
+  // Releases the engine's API modules (e.g. NetAPI ends its multiplayer session
+  // and closes the socket). Call when the canvas unmounts or the page unloads.
+  destroy(): void {
+    for (const module of this._modules)
+      module.destroy();
   }
 
   public runCode(): boolean {

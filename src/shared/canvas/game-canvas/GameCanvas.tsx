@@ -78,6 +78,22 @@ const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(
         },
         setOutput,
       });
+
+      // Tear the engine down on a preview re-run / navigation (unmount) and on a
+      // hard reload (pagehide, where React cleanups don't run): NetAPI ends its
+      // multiplayer session and closes the socket, so the backend frees the
+      // session immediately instead of waiting for the heartbeat.
+      const teardown = (): void => {
+        luaEnvManagerRef.current?.destroy();
+        luaEnvManagerRef.current = undefined;
+        musicPlayerRef.current?.stop();
+      };
+
+      window.addEventListener("pagehide", teardown);
+      return () => {
+        window.removeEventListener("pagehide", teardown);
+        teardown();
+      };
     }, []);
 
     useEffect(() => {
