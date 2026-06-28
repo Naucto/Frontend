@@ -21,7 +21,7 @@ export class NetAPI extends EngineModule {
       state: this._stateProxy(""),
       on: (pattern: string, callback: LuaCallback) => this._on(pattern, callback),
       emit: (name: string, payload: unknown) => this._require().emit(name, payload),
-      lock: (path: string, fn: LuaCallback) => this._lock(path, fn),
+      lock: (path: string) => this._lockHandle(path),
       queue: (path: string) => this._queue(path),
       host: (configOrCallback?: unknown, maybeCallback?: LuaCallback) => this._host(configOrCallback, maybeCallback),
       join: (callback?: LuaCallback) => this.ctx.ui?.join(session => this._ready(session, callback)),
@@ -177,16 +177,25 @@ export class NetAPI extends EngineModule {
     session.onChange(pattern, (changedPath, newValue) => this._invoke(callback, changedPath, newValue));
   }
 
-  private _lock(path: string, fn: LuaCallback): void {
-    const session = this._require();
-
-    session.acquireLock(path, () => {
-      const unlock = (): void => session.releaseLock(path);
-      this._invoke(fn, unlock);
-    });
+  private _lockHandle(path: string): { acquire: (fn: LuaCallback) => void; is_locked: () => boolean } {
+    return {
+      acquire: (fn: LuaCallback) => {
+        const session = this._require();
+        session.acquireLock(path, () => {
+          const release = (): void => session.releaseLock(path);
+          this._invoke(fn, release);
+        });
+      },
+      is_locked: () => this._require().isLocked(path),
+    };
   }
 
-  private _queue(path: string): { push: (value: unknown) => void; pop: (callback?: LuaCallback) => void } {
+  private _queue(path: string): {
+    push: (value: unknown) => void;
+    pop: (callback?: LuaCallback) => void;
+    length: () => number;
+    peek: () => unknown;
+  } {
     return {
       push: (value: unknown) => {
         if (typeof value === "function")
@@ -198,6 +207,8 @@ export class NetAPI extends EngineModule {
         if (callback)
           this._invoke(callback, value);
       }),
+      length: () => this._require().queueLength(path),
+      peek: () => this._require().queuePeek(path),
     };
   }
 

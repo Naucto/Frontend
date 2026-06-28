@@ -245,4 +245,31 @@ describe("SharedTableSession", () => {
 
     expect(got).toBe(42);
   });
+
+  it("replicates queue contents and lock ownership to slaves for local reads", async () => {
+    const hub = new Hub();
+    const host = makeSession("host", 1, hub);
+    const slave = makeSession("slave", 2, hub);
+
+    host.queuePush("events", "a");
+    host.queuePush("events", "b");
+    host.acquireLock("turn", () => undefined);
+    await flush();
+
+    expect(slave.queueLength("events")).toBe(2);
+    expect(slave.queuePeek("events")).toBe("a");
+    expect(slave.isLocked("turn")).toBe(true);
+  });
+
+  it("bootstraps the sidecar to a late-joining slave", async () => {
+    const hub = new Hub();
+    const host = makeSession("host", 1, hub);
+    host.queuePush("events", "x");
+    await flush();
+
+    const slave = makeSession("slave", 2, hub);
+    await flush();
+
+    expect(slave.queueLength("events")).toBe(1);
+  });
 });

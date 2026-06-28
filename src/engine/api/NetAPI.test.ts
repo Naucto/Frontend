@@ -102,18 +102,41 @@ describe("NetAPI net.state", () => {
     expect(() => lua.evaluate("net.state.cb = function() end")).toThrow(/cannot store a function/);
   });
 
-  it("runs a net.lock critical section and releases it", () => {
+  it("runs a net.lock critical section and reports lock state", () => {
     const { lua, session } = setup();
     lua.evaluate("net.host()");
 
     lua.evaluate(`
-      net.lock("score", function(unlock)
+      local m = net.lock("score")
+      _G.before = m.is_locked()
+      m.acquire(function(release)
+        _G.during = m.is_locked()
         net.state.score = (net.state.score or 0) + 1
-        unlock()
+        release()
       end)
+      _G.after = m.is_locked()
     `);
 
     expect(session.getValue("score")).toBe(1);
+    expect(lua.evaluate("return _G.before")[0]).toBe(false);
+    expect(lua.evaluate("return _G.during")[0]).toBe(true);
+    expect(lua.evaluate("return _G.after")[0]).toBe(false);
+  });
+
+  it("exposes queue length and peek", () => {
+    const { lua } = setup();
+    lua.evaluate("net.host()");
+
+    lua.evaluate(`
+      local q = net.queue("events")
+      q.push("a")
+      q.push("b")
+      _G.len = q.length()
+      _G.head = q.peek()
+    `);
+
+    expect(lua.evaluate("return _G.len")[0]).toBe(2);
+    expect(lua.evaluate("return _G.head")[0]).toBe("a");
   });
 
   it("passes the game-supplied max_players to the host UI", () => {

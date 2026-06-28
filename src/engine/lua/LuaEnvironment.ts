@@ -125,7 +125,7 @@ class LuaEnvironment {
         break;
 
       case fengari.lua.LUA_TBOOLEAN:
-        value = fengari.lua.lua_toboolean(this._L, index) !== 0;
+        value = Boolean(fengari.lua.lua_toboolean(this._L, index));
         break;
 
       case fengari.lua.LUA_TNUMBER:
@@ -194,7 +194,7 @@ class LuaEnvironment {
 
     switch (typeof value) {
       case "boolean":
-        fengari.lua.lua_pushboolean(this._L, value);
+        fengari.lua.lua_pushboolean(this._L, value ? 1 : 0);
         break;
 
       case "number":

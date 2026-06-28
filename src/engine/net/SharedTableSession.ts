@@ -27,11 +27,18 @@ type WriteOp =
 type SnapshotPayload = {
   kind: "snapshot";
   entries: Array<{ path: string; value: TableScalar; version: number }>;
+  sidecar: Array<{ key: string; value: unknown }>;
 };
 
 type StatePayload =
   | { kind: "patch"; ops: PatchOp[] }
+  | { kind: "sidecar"; key: string; value: unknown }
   | { kind: "event"; name: string; from: UserId; payload: unknown };
+
+// Sidecar keys: lock owner (UserId | null) and queue contents (array), kept out
+// of the user-visible net.state store but synced and snapshotted like it.
+const LOCK_KEY = "lock:";
+const QUEUE_KEY = "queue:";
 
 type RequestPayload =
   | { kind: "write"; reqId: string; ops: WriteOp[] }
@@ -103,11 +110,11 @@ export class SharedTableSession implements Destroyable {
   private readonly _peerSubs = new Map<PeerEvent, Set<(userId: UserId) => void>>();
   private readonly _endedSubs = new Set<() => void>();
 
-  private readonly _lockOwner = new Map<string, UserId>();
+  // Synced, host-authoritative, hidden from net.state: lock owners + queue contents.
+  private readonly _sidecar = new Map<string, unknown>();
+  // Host-internal lock grant order (carries the reqId/callback to wake a waiter).
   private readonly _lockWaiters = new Map<string, LockWaiter[]>();
   private readonly _pendingLocks = new Map<string, () => void>();
-
-  private readonly _queues = new Map<string, unknown[]>();
   private readonly _pendingPops = new Map<string, (value: unknown) => void>();
 
   constructor(transport: SessionTransport) {
@@ -129,7 +136,7 @@ export class SharedTableSession implements Destroyable {
     this._errorSubs.clear();
     this._peerSubs.clear();
     this._endedSubs.clear();
-    this._queues.clear();
+    this._sidecar.clear();
     this._pendingPops.clear();
     this._store.clear();
   }
@@ -281,6 +288,18 @@ export class SharedTableSession implements Destroyable {
     this._transport.sendRequest({ kind: "queue", reqId, path, op: "pop" });
   }
 
+  isLocked(path: string): boolean {
+    return this._lockOwnerOf(LOCK_KEY + path) !== null;
+  }
+
+  queueLength(path: string): number {
+    return this._queueArray(QUEUE_KEY + path).length;
+  }
+
+  queuePeek(path: string): unknown {
+    return this._queueArray(QUEUE_KEY + path)[0];
+  }
+
   private _guardInflight(path: string): void {
     if (this._inflightPaths.has(path))
       throw new NetConflictError(path);
@@ -354,6 +373,11 @@ export class SharedTableSession implements Destroyable {
       return;
     }
 
+    if (payload.kind === "sidecar") {
+      this._sidecar.set(payload.key, payload.value);
+      return;
+    }
+
     this._dispatchEvent(payload.name, payload.from, payload.payload);
   }
 
@@ -415,6 +439,8 @@ export class SharedTableSession implements Destroyable {
     if (payload.kind === "snapshot") {
       for (const entry of payload.entries)
         this._writeEntry(entry.path, entry.value, entry.version);
+      for (const item of payload.sidecar)
+        this._sidecar.set(item.key, item.value);
       return;
     }
 
@@ -477,7 +503,9 @@ export class SharedTableSession implements Destroyable {
   }
 
   private _onPeerLeft(userId: UserId): void {
-    const owned = [...this._lockOwner.entries()].filter(([, owner]) => owner === userId).map(([path]) => path);
+    const owned = [...this._sidecar.entries()]
+      .filter(([key, owner]) => key.startsWith(LOCK_KEY) && owner === userId)
+      .map(([key]) => key.slice(LOCK_KEY.length));
     for (const path of owned)
       this._hostRelease(userId, path);
 
@@ -492,8 +520,10 @@ export class SharedTableSession implements Destroyable {
   }
 
   private _hostAcquire(userId: UserId, path: string, reqId: string | undefined, grant: (() => void) | undefined): void {
-    if (!this._lockOwner.has(path)) {
-      this._lockOwner.set(path, userId);
+    const key = LOCK_KEY + path;
+
+    if (this._lockOwnerOf(key) === null) {
+      this._writeSidecar(key, userId);
       this._grantLock(userId, reqId, grant);
       return;
     }
@@ -504,17 +534,19 @@ export class SharedTableSession implements Destroyable {
   }
 
   private _hostRelease(userId: UserId, path: string): void {
-    if (this._lockOwner.get(path) !== userId)
-      return;
+    const key = LOCK_KEY + path;
 
-    this._lockOwner.delete(path);
+    if (this._lockOwnerOf(key) !== userId)
+      return;
 
     const next = this._lockWaiters.get(path)?.shift();
-    if (!next)
-      return;
 
-    this._lockOwner.set(path, next.userId);
-    this._grantLock(next.userId, next.reqId, next.grant);
+    if (next) {
+      this._writeSidecar(key, next.userId);
+      this._grantLock(next.userId, next.reqId, next.grant);
+    } else {
+      this._writeSidecar(key, null);
+    }
   }
 
   private _grantLock(userId: UserId, reqId: string | undefined, grant: (() => void) | undefined): void {
@@ -524,16 +556,37 @@ export class SharedTableSession implements Destroyable {
       this._transport.respondTo(userId, { kind: "lock-grant", reqId });
   }
 
+  private _lockOwnerOf(key: string): UserId | null {
+    const owner = this._sidecar.get(key);
+    return typeof owner === "number" ? owner : null;
+  }
+
   private _enqueue(path: string, value: unknown): void {
-    const queue = this._queues.get(path) ?? [];
-    queue.push(value);
-    this._queues.set(path, queue);
+    const key = QUEUE_KEY + path;
+    this._writeSidecar(key, [...this._queueArray(key), value]);
   }
 
   private _dequeue(path: string): unknown {
-    const queue = this._queues.get(path);
+    const key = QUEUE_KEY + path;
+    const queue = this._queueArray(key);
 
-    return queue && queue.length > 0 ? queue.shift() : undefined;
+    if (queue.length === 0)
+      return undefined;
+
+    const [head, ...rest] = queue;
+    this._writeSidecar(key, rest);
+
+    return head;
+  }
+
+  private _queueArray(key: string): unknown[] {
+    const queue = this._sidecar.get(key);
+    return Array.isArray(queue) ? queue : [];
+  }
+
+  private _writeSidecar(key: string, value: unknown): void {
+    this._sidecar.set(key, value);
+    this._transport.broadcastState({ kind: "sidecar", key, value });
   }
 
   private _sendSnapshot(userId: UserId): void {
@@ -542,8 +595,9 @@ export class SharedTableSession implements Destroyable {
       value: entry.value,
       version: entry.version,
     }));
+    const sidecar = [...this._sidecar.entries()].map(([key, value]) => ({ key, value }));
 
-    this._transport.respondTo(userId, { kind: "snapshot", entries });
+    this._transport.respondTo(userId, { kind: "snapshot", entries, sidecar });
   }
 
   private _writeEntry(path: string, value: TableScalar, version: number): void {
