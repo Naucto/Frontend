@@ -11,12 +11,12 @@ export const buildSession = (
   role: SessionRole,
   selfUserId: UserId,
 ): SharedTableSession => {
-  // username/credential are typed as objects by the generated client but are
-  // strings at runtime.
+  // The generated client types username/credential as objects, but they are
+  // strings at runtime; narrow on type rather than force-casting.
   const iceServers: RTCIceServer[] = connection.webrtcConfig.peerOpts.config.iceServers.map(server => ({
     urls: server.urls,
-    username: server.username as unknown as string | undefined,
-    credential: server.credential as unknown as string | undefined,
+    username: typeof server.username === "string" ? server.username : undefined,
+    credential: typeof server.credential === "string" ? server.credential : undefined,
   }));
 
   const refreshTicket = async (): Promise<RefreshedTicket | null> => {
