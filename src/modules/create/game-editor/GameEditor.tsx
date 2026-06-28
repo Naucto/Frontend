@@ -7,6 +7,8 @@ import { MultiplayerSettingsEditor } from "@modules/create/game-editor/editors/m
 import ProjectSettingsEditor from "@modules/create/game-editor/editors/ProjectSettingsEditor";
 import { SoundEditor } from "@modules/create/game-editor/editors/sound-editor/SoundEditor";
 import { SpriteEditor } from "@modules/create/game-editor/editors/sprite-editor/SpriteEditor";
+import { NetSessionModals } from "@modules/hub/components/game-viewer/NetSessionModals";
+import { NetUiBridge } from "@providers/net/NetUiBridge";
 import { ProjectProvider, ProviderEventType } from "@providers/ProjectProvider";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
 
@@ -56,6 +58,10 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
   const [autoRefreshPreview, setAutoRefreshPreview] = useState(false);
   const [previewCode, setPreviewCode] = useState("");
   const [previewRevision, setPreviewRevision] = useState(0);
+
+  const netBridge = useMemo(() => new NetUiBridge(), []);
+
+  useEffect(() => () => netBridge.destroy(), [netBridge]);
 
   const tabs = useMemo(() => [
     { label: "project", component: ProjectSettingsEditor, icon: <ProjectIcon/> },
@@ -287,6 +293,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
               envData={envData}
               setOutput={setOutput}
               soundProvider={project.soundProvider}
+              uiBridge={netBridge}
             />
           </TabContent>
           <TabContent
@@ -336,6 +343,8 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
 
         return "Are you sure you want to leave? Your changes may not be saved.";
       }} />
+
+      <NetSessionModals bridge={netBridge} projectId={project.projectId} />
     </GameEditorContainer>
   );
 };
