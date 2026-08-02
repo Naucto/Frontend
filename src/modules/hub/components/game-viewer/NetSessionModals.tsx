@@ -254,6 +254,7 @@ const JoinDialog = ({ request, projectId, selfJoin }: {
           <StyledTable size="small">
             <TableHead>
               <StyledTableRow>
+                <StyledTableCell>Session</StyledTableCell>
                 <StyledTableCell>Host</StyledTableCell>
                 <StyledTableCell>Players</StyledTableCell>
                 <StyledTableCell />
@@ -262,6 +263,10 @@ const JoinDialog = ({ request, projectId, selfJoin }: {
             <TableBody>
               {filtered.map(session => (
                 <StyledTableRow key={session.sessionUuid}>
+                  <StyledTableCell>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{session.title}</Typography>
+                    <Typography variant="caption" color="text.secondary">{session.projectName}</Typography>
+                  </StyledTableCell>
                   <StyledTableCell>
                     <UserAvatar
                       username={session.hostUsername}
