@@ -95,6 +95,14 @@ export class SharedTableSession implements Destroyable {
 
   private readonly _store = new Map<string, TableEntry>();
 
+  // A slave must apply the host's baseline snapshot before any live patch, or the
+  // game can read a half-populated table — e.g. net.state.pads holding only the
+  // host's own side while the joiner's side hasn't replicated yet. Live state is
+  // buffered until the snapshot lands, then replayed on top of it. The host owns
+  // the authoritative store and never waits for a snapshot.
+  private _snapshotApplied: boolean;
+  private readonly _bufferedState: StatePayload[] = [];
+
   private readonly _pendingPatch: PatchOp[] = [];
   private readonly _pendingWrite: WriteOp[] = [];
   private _pendingBefore = new Map<string, TableEntry | undefined>();
@@ -120,6 +128,7 @@ export class SharedTableSession implements Destroyable {
   constructor(transport: SessionTransport) {
     this._transport = transport;
     this._isHost = transport.role === "host";
+    this._snapshotApplied = this._isHost;
 
     transport.on("state", data => this._onState(data as StatePayload));
     transport.on("request", (from, data) => this._onRequest(from, data as RequestPayload));
@@ -139,6 +148,7 @@ export class SharedTableSession implements Destroyable {
     this._sidecar.clear();
     this._pendingPops.clear();
     this._store.clear();
+    this._bufferedState.length = 0;
   }
 
   get isHost(): boolean {
@@ -367,6 +377,13 @@ export class SharedTableSession implements Destroyable {
   }
 
   private _onState(payload: StatePayload): void {
+    // Hold live state until the baseline snapshot has been applied (slave only),
+    // then replay it in arrival order on top of the snapshot.
+    if (!this._snapshotApplied) {
+      this._bufferedState.push(payload);
+      return;
+    }
+
     if (payload.kind === "patch") {
       for (const op of payload.ops) {
         if (op.op === "set")
@@ -445,6 +462,14 @@ export class SharedTableSession implements Destroyable {
         this._writeEntry(entry.path, entry.value, entry.version);
       for (const item of payload.sidecar)
         this._sidecar.set(item.key, item.value);
+
+      // Baseline is in place: apply anything that arrived while we were waiting,
+      // in order, so later host writes win over the snapshot.
+      this._snapshotApplied = true;
+      const buffered = this._bufferedState.splice(0);
+      for (const state of buffered)
+        this._onState(state);
+
       return;
     }
 

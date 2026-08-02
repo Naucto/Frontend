@@ -116,6 +116,34 @@ describe("SharedTableSession", () => {
     expect(slave.getValue("score")).toBe(42);
   });
 
+  it("buffers live state until the snapshot so a joiner never reads a half-populated table", async () => {
+    const hub = new Hub();
+    const host = makeSession("host", 1, hub);
+
+    // Host seeds a table whose two sides are owned by different players.
+    host.setValue("pads.left", 10);
+    host.setValue("pads.right", 20);
+    await flush();
+
+    // Reproduce the real race: a live patch for the host's own side reaches the
+    // joiner before its baseline snapshot. Wire the session, deliver the patch,
+    // then register (which fires peerJoined -> snapshot).
+    const transport = new MockTransport("slave", 2, hub);
+    const slave = new SharedTableSession(transport);
+    transport.fire("state", { kind: "patch", ops: [{ path: "pads.left", op: "set", value: 11, version: 2 }] });
+
+    // Nothing applied yet: net.state.pads must not appear half-populated.
+    expect(slave.getValue("pads.left")).toBeUndefined();
+    expect(slave.getValue("pads.right")).toBeUndefined();
+    expect(slave.isContainer("pads")).toBe(false);
+
+    hub.register(transport);
+
+    // Snapshot brought both sides; the buffered patch replays on top.
+    expect(slave.getValue("pads.right")).toBe(20);
+    expect(slave.getValue("pads.left")).toBe(11);
+  });
+
   it("applies a slave write through the host and acks it", async () => {
     const hub = new Hub();
     makeSession("host", 1, hub);

@@ -98,22 +98,21 @@ describe("SyncedSessionTransport", () => {
     transport.destroy();
   });
 
-  it("falls back to a relay broadcast after the P2P timeout", () => {
-    jest.useFakeTimers();
+  it("announces a joined peer immediately over the relay (no P2P wait)", () => {
     const transport = new SyncedSessionTransport(options("host", 1));
     const joined: number[] = [];
     transport.on("peerJoined", id => joined.push(id));
 
     signaling().opts.onFrame({ type: "peer-joined", userId: 2 });
-    jest.advanceTimersByTime(9_000);
 
+    // peerJoined fires synchronously — the host must be able to push its state
+    // snapshot right away, before its own live patches reach the newcomer.
     expect(joined).toEqual([2]);
 
     transport.broadcastState({ x: 1 });
     expect(signaling().send).toHaveBeenCalledWith({ type: "state", data: { x: 1 } });
 
     transport.destroy();
-    jest.useRealTimers();
   });
 
   it("sends over the data channel once a slave's P2P connects", () => {

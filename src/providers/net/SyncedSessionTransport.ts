@@ -16,8 +16,6 @@ type PeerInstance = import("simple-peer").Instance;
 type PeerSignalData = import("simple-peer").SignalData;
 type PeerData = import("simple-peer").SimplePeerData;
 
-const FALLBACK_MS = 8_000;
-
 export interface SyncedSessionTransportOptions {
   role: SessionRole;
   selfUserId: UserId;
@@ -35,7 +33,6 @@ interface Peer {
   conn: PeerInstance;
   channelOpen: boolean;
   announced: boolean;
-  fallbackTimer?: ReturnType<typeof setTimeout>;
 }
 
 // Star-to-host P2P with relay fallback. The same `{type,data}` frames ride a
@@ -186,11 +183,15 @@ export class SyncedSessionTransport implements SessionTransport {
   }
 
   private _onPeerJoined(userId: UserId): void {
-    const peer = this._ensurePeer(userId);
+    this._ensurePeer(userId);
 
-    // P2P may never come up; promise reachability over the relay after a grace
-    // period so the host can start talking to the slave either way.
-    peer.fallbackTimer = setTimeout(() => this._announce(userId), FALLBACK_MS);
+    // Announce over the relay immediately rather than waiting for P2P (or a
+    // fallback timer): the relay is already reachable, so the host can push its
+    // state snapshot to the newcomer right away, and P2P upgrades transparently
+    // once it connects. Deferring this let the host's live per-frame patches
+    // (e.g. its own paddle) reach the slave before the baseline snapshot,
+    // briefly exposing half-populated sub-tables to the game.
+    this._announce(userId);
   }
 
   private _onPeerLeft(userId: UserId): void {
@@ -280,9 +281,6 @@ export class SyncedSessionTransport implements SessionTransport {
     if (!peer || peer.announced)
       return;
 
-    if (peer.fallbackTimer)
-      clearTimeout(peer.fallbackTimer);
-
     peer.announced = true;
 
     // The slave's own "peer" is the host; only a host announces joined slaves.
@@ -306,9 +304,6 @@ export class SyncedSessionTransport implements SessionTransport {
   }
 
   private _teardownPeer(peer: Peer): void {
-    if (peer.fallbackTimer)
-      clearTimeout(peer.fallbackTimer);
-
     try {
       peer.conn.destroy();
     } catch {
