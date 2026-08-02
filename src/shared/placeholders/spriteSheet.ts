@@ -139,5 +139,5 @@ const paletteColors = [
   "#FF004D", "#FFA300", "#FFEC27", "#00E436", "#29ADFF", "#83769C", "#FF77A8", "#FFCCAA"
 ];
 
-const palette = new Uint8Array(getRGBArraysFromPalette(paletteColors, 1));
+const palette = new Uint8Array(getRGBArraysFromPalette(paletteColors, 0));
 export { palette };

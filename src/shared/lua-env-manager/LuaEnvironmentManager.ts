@@ -116,8 +116,17 @@ class LuaEnvironmentManager {
     return val;
   }
 
-  private _sprite(n: number, x: number, y: number, w: number, h: number): void {
-    this._rendererHandle.queueSpriteDraw(n, x, y, w, h);
+  private _sprite(
+    n: number,
+    x: number,
+    y: number,
+    w?: number,
+    h?: number,
+    flip_h?: boolean,
+    flip_v?: boolean,
+    scale?: number,
+  ): void {
+    this._rendererHandle.queueSpriteDraw(n, x, y, w, h, flip_h, flip_v, scale);
   }
 
   private _camera(x: number, y: number): void {

@@ -12,8 +12,8 @@ export type QueueSpriteDrawFn = (
   y: number,
   width?: number,
   height?: number,
-  flip_h?: number,
-  flip_v?: number,
+  flip_h?: boolean,
+  flip_v?: boolean,
   scale?: number,
 ) => void;
 
@@ -356,14 +356,14 @@ export function useSpriteRenderer(
     y: number,
     width: number = 1,
     height: number = 1,
-    flip_h: number = 0,
-    flip_v: number = 0,
+    flip_h: boolean = false,
+    flip_v: boolean = false,
     scale: number = 1,
   ): void {
     x = Math.floor(x);
     y = Math.floor(y);
-    flip_h = flip_h ? 1 : 0;
-    flip_v = flip_v ? 1 : 0;
+    width = Math.floor(width);
+    height = Math.floor(height);
 
     const x_sprite = index % spriteNumber;
     const y_sprite = Math.floor(index / spriteNumber);
