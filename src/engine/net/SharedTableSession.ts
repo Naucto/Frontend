@@ -1,4 +1,3 @@
-import { NetConflictError } from "./NetError";
 import { SessionTransport, UserId } from "./SessionTransport";
 
 export type TableScalar = number | string | boolean;
@@ -110,6 +109,12 @@ export class SharedTableSession implements Destroyable {
 
   private readonly _inflight = new Map<string, InflightWrite>();
   private readonly _inflightPaths = new Set<string>();
+  // Latest desired write per path that arrived while that path had an in-flight
+  // write; flushed once the in-flight ack settles the version (write coalescing).
+  private readonly _deferredWrites = new Map<
+    string,
+    { op: "set"; value: TableScalar } | { op: "del" }
+  >();
   private _reqCounter = 0;
 
   private readonly _changeSubs: Array<{ regex: RegExp; cb: TableChangeListener }> = [];
@@ -149,6 +154,7 @@ export class SharedTableSession implements Destroyable {
     this._pendingPops.clear();
     this._store.clear();
     this._bufferedState.length = 0;
+    this._deferredWrites.clear();
   }
 
   get isHost(): boolean {
@@ -199,10 +205,19 @@ export class SharedTableSession implements Destroyable {
       return;
     }
 
-    this._guardInflight(path);
     const baseVersion = this._store.get(path)?.version ?? 0;
     this._captureBefore(path);
     this._writeEntry(path, value, baseVersion);
+
+    // A path with an in-flight write can't be re-sent yet (its server version
+    // isn't settled). Coalesce to the latest value locally and send it once the
+    // ack lands, so a client can stream an owned value (e.g. its paddle) every
+    // frame without self-conflicting.
+    if (this._inflightPaths.has(path)) {
+      this._deferredWrites.set(path, { op: "set", value });
+      return;
+    }
+
     this._pendingWrite.push({ path, op: "set", value, baseVersion });
     this._scheduleFlush();
   }
@@ -216,13 +231,17 @@ export class SharedTableSession implements Destroyable {
       return;
     }
 
-    for (const p of paths)
-      this._guardInflight(p);
-
     for (const p of paths) {
       const baseVersion = this._store.get(p)?.version ?? 0;
       this._captureBefore(p);
       this._removeEntry(p);
+
+      // Same coalescing as setValue: defer a delete for a path still in flight.
+      if (this._inflightPaths.has(p)) {
+        this._deferredWrites.set(p, { op: "del" });
+        continue;
+      }
+
       this._pendingWrite.push({ path: p, op: "del", baseVersion });
     }
 
@@ -314,14 +333,35 @@ export class SharedTableSession implements Destroyable {
     return this._queueArray(QUEUE_KEY + path)[0];
   }
 
-  private _guardInflight(path: string): void {
-    if (this._inflightPaths.has(path))
-      throw new NetConflictError(path);
-  }
-
   private _captureBefore(path: string): void {
     if (!this._pendingBefore.has(path))
       this._pendingBefore.set(path, this._store.get(path));
+  }
+
+  // Re-queue writes coalesced while their path was in flight, now that the ack
+  // has settled the base version. The latest value is already applied locally.
+  private _flushDeferred(paths: string[]): void {
+    let queued = false;
+
+    for (const path of paths) {
+      const deferred = this._deferredWrites.get(path);
+      if (!deferred)
+        continue;
+
+      this._deferredWrites.delete(path);
+      const baseVersion = this._store.get(path)?.version ?? 0;
+      this._captureBefore(path);
+
+      if (deferred.op === "set")
+        this._pendingWrite.push({ path, op: "set", value: deferred.value, baseVersion });
+      else
+        this._pendingWrite.push({ path, op: "del", baseVersion });
+
+      queued = true;
+    }
+
+    if (queued)
+      this._scheduleFlush();
   }
 
   private _hostSet(path: string, value: TableScalar): void {
@@ -510,10 +550,15 @@ export class SharedTableSession implements Destroyable {
         if (entry)
           entry.version = result.version;
       }
+      // The version is now settled; flush any value coalesced while in flight.
+      this._flushDeferred(inflight.paths);
       return;
     }
 
     for (const p of inflight.paths) {
+      // A rejected write invalidates any follow-up we were holding for it.
+      this._deferredWrites.delete(p);
+
       const before = inflight.previous.get(p);
 
       if (before === undefined)

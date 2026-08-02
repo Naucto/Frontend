@@ -144,6 +144,45 @@ describe("SharedTableSession", () => {
     expect(slave.getValue("pads.left")).toBe(11);
   });
 
+  it("coalesces streamed writes to an in-flight path instead of throwing", async () => {
+    // A manual transport whose acks are delivered by the test, so a path can be
+    // kept in flight across writes (the auto-acking Hub settles synchronously).
+    const sent: Array<{ reqId: string; ops: Array<Record<string, unknown>> }> = [];
+    const handlers = new Map<string, AnyListener>();
+    const transport: SessionTransport = {
+      role: "slave",
+      selfUserId: 2,
+      broadcastState: () => {},
+      respondTo: () => {},
+      sendRequest: (data) => sent.push(data as { reqId: string; ops: Array<Record<string, unknown>> }),
+      on: (event, listener) => { handlers.set(event, listener as AnyListener); },
+      off: () => {},
+      destroy: () => {},
+    };
+    const fire = (event: string, ...args: unknown[]): void => handlers.get(event)?.(...args);
+
+    const slave = new SharedTableSession(transport);
+    fire("response", { kind: "snapshot", entries: [{ path: "pads.right", value: 0, version: 1 }], sidecar: [] });
+
+    slave.setValue("pads.right", 5);
+    await flush();
+    expect(sent).toHaveLength(1);
+    expect(sent[0]!.ops[0]).toMatchObject({ path: "pads.right", value: 5, baseVersion: 1 });
+
+    // More writes while the first is still in flight must not throw; they coalesce.
+    expect(() => slave.setValue("pads.right", 6)).not.toThrow();
+    expect(() => slave.setValue("pads.right", 7)).not.toThrow();
+    await flush();
+    expect(sent).toHaveLength(1);              // nothing new sent while in flight
+    expect(slave.getValue("pads.right")).toBe(7); // local prediction is the latest
+
+    // The ack settles the version; the coalesced latest is then sent once.
+    fire("response", { kind: "write-ack", reqId: sent[0]!.reqId, results: [{ path: "pads.right", version: 2 }] });
+    await flush();
+    expect(sent).toHaveLength(2);
+    expect(sent[1]!.ops[0]).toMatchObject({ path: "pads.right", value: 7, baseVersion: 2 });
+  });
+
   it("applies a slave write through the host and acks it", async () => {
     const hub = new Hub();
     makeSession("host", 1, hub);
