@@ -21,7 +21,6 @@ export const Overlay = styled(Box)(() => ({
   bottom: 0,
   backgroundColor: "rgba(0, 0, 0, 0.64)",
   backdropFilter: "blur(6px)",
-  zIndex: 9999,
   overflowY: "auto",
 }));
 
