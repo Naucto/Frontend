@@ -7,6 +7,18 @@ import { refreshSessionTicket } from "./gameSessionApi";
 import { RefreshedTicket } from "./SessionSignalingSocket";
 import { SyncedSessionTransport } from "./SyncedSessionTransport";
 
+const toReachableSignalingUrl = (url: string): string => {
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") {
+      parsed.hostname = window.location.hostname;
+    }
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+};
+
 export const buildSession = (
   connection: GameSessionConnectionResponseDto,
   role: SessionRole,
@@ -33,7 +45,7 @@ export const buildSession = (
   const transport = new SyncedSessionTransport({
     role,
     selfUserId,
-    signalingUrl: connection.webrtcConfig.signaling[0]!,
+    signalingUrl: toReachableSignalingUrl(connection.webrtcConfig.signaling[0]!),
     ticket: connection.connectionTicket,
     ticketIssuedAt: Date.now(),
     iceServers,
