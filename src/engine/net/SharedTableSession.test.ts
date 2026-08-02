@@ -183,6 +183,37 @@ describe("SharedTableSession", () => {
     expect(sent[1]!.ops[0]).toMatchObject({ path: "pads.right", value: 7, baseVersion: 2 });
   });
 
+  it("ignores the host's echo of a value the client is still driving", async () => {
+    const sent: Array<{ reqId: string; ops: Array<Record<string, unknown>> }> = [];
+    const handlers = new Map<string, AnyListener>();
+    const transport: SessionTransport = {
+      role: "slave",
+      selfUserId: 2,
+      broadcastState: () => {},
+      respondTo: () => {},
+      sendRequest: (data) => sent.push(data as { reqId: string; ops: Array<Record<string, unknown>> }),
+      on: (event, listener) => { handlers.set(event, listener as AnyListener); },
+      off: () => {},
+      destroy: () => {},
+    };
+    const fire = (event: string, ...args: unknown[]): void => handlers.get(event)?.(...args);
+
+    const slave = new SharedTableSession(transport);
+    fire("response", { kind: "snapshot", entries: [{ path: "pads.right", value: 0, version: 1 }], sidecar: [] });
+
+    slave.setValue("pads.right", 5);
+    await flush();                    // pads.right now in flight
+    slave.setValue("pads.right", 9);  // newer local prediction (coalesced)
+
+    // The host echoes the older value back; the owner must keep its prediction.
+    fire("state", { kind: "patch", ops: [{ path: "pads.right", op: "set", value: 5, version: 2 }] });
+    expect(slave.getValue("pads.right")).toBe(9);
+
+    // A host-owned path (nothing pending locally) still applies normally.
+    fire("state", { kind: "patch", ops: [{ path: "ball.x", op: "set", value: 42, version: 2 }] });
+    expect(slave.getValue("ball.x")).toBe(42);
+  });
+
   it("applies a slave write through the host and acks it", async () => {
     const hub = new Hub();
     makeSession("host", 1, hub);

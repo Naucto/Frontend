@@ -426,6 +426,13 @@ export class SharedTableSession implements Destroyable {
 
     if (payload.kind === "patch") {
       for (const op of payload.ops) {
+        // Skip the host's echo of a value we're still driving: a path with an
+        // in-flight or coalesced local write holds a newer prediction, and
+        // applying the stale echo would snap it back (a visible stutter). The
+        // version reconciles on the write-ack instead.
+        if (this._inflightPaths.has(op.path) || this._deferredWrites.has(op.path))
+          continue;
+
         if (op.op === "set")
           this._writeEntry(op.path, op.value, op.version);
         else
