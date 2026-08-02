@@ -187,6 +187,29 @@ describe("NetAPI net.state", () => {
     expect(() => lua.evaluate("net.join()")).toThrow(/already in a session/);
   });
 
+  it("ignores repeated net.host/net.join while a dialog is still open", () => {
+    // A dialog that never resolves keeps the request pending, mimicking a key
+    // held across frames. Repeat calls must be no-ops, not throw (which would
+    // halt the game loop).
+    const lua = new LuaEnvironment();
+    let hostCalls = 0;
+    let joinCalls = 0;
+    const ui: NetUi = {
+      host: () => { hostCalls++; },
+      join: () => { joinCalls++; },
+      leave: () => undefined,
+    };
+    new NetAPI(makeContext(lua, ui));
+
+    expect(() => {
+      lua.evaluate("net.host()");
+      lua.evaluate("net.host()");
+      lua.evaluate("net.join()");
+    }).not.toThrow();
+    expect(hostCalls).toBe(1);
+    expect(joinCalls).toBe(0);
+  });
+
   it("blocks net.host after joining as a client", () => {
     const lua = new LuaEnvironment();
     const session = new SharedTableSession(hostTransport());

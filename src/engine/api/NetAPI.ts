@@ -45,14 +45,10 @@ export class NetAPI extends EngineModule {
     return this._session;
   }
 
-  // Host and join are mutually exclusive with an active (or pending) session:
-  // a client must net.leave() before it can host or join something else.
-  private _assertIdle(): void {
+  // A client must net.leave() before it can host or join something else.
+  private _assertNotInSession(): void {
     if (this._session)
       throw new NetError("net: already in a session; call net.leave() first");
-
-    if (this._pending)
-      throw new NetError("net: a host/join request is already in progress");
   }
 
   private _ready(session: SharedTableSession | null, callback?: LuaCallback): void {
@@ -72,7 +68,13 @@ export class NetAPI extends EngineModule {
 
   // net.host accepts net.host(config, cb), net.host(config) or net.host(cb).
   private _host(configOrCallback: unknown, maybeCallback?: LuaCallback): void {
-    this._assertIdle();
+    // A dialog is already open (e.g. the key that opened it is still held down
+    // across frames) — ignore the repeat rather than throwing, which would halt
+    // the game.
+    if (this._pending)
+      return;
+
+    this._assertNotInSession();
 
     const calledWithCallbackOnly = typeof configOrCallback === "function";
     const config = calledWithCallbackOnly ? {} : configOrCallback;
@@ -86,7 +88,11 @@ export class NetAPI extends EngineModule {
   }
 
   private _join(callback?: LuaCallback): void {
-    this._assertIdle();
+    // Same as _host: a dialog already open means ignore the repeat.
+    if (this._pending)
+      return;
+
+    this._assertNotInSession();
 
     if (!this.ctx.ui)
       return;
