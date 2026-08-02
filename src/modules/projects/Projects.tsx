@@ -1,23 +1,26 @@
-import { ProjectResponseDto, projectControllerCountProjects, projectControllerFindAll } from "@api";
-import { ProjectPageHeader } from "@modules/projects/components/browse/Header";
+import { projectControllerCountProjects, projectControllerFindAll, ProjectResponseDto } from "@api";
+import { mergeProjectsById, usePaginatedProjects } from "@hooks/usePaginatedProjects";
 import { CustomSortButton, SummaryChip } from "@modules/projects/components/browse/Controls";
 import { ProjectSortFilters } from "@modules/projects/components/browse/Filters";
+import { ProjectPageHeader } from "@modules/projects/components/browse/Header";
 import { PageContainer } from "@modules/projects/components/browse/Layout";
 import { ProjectSection } from "@modules/projects/components/browse/ProjectSection";
-import { PREDEFINED_PROJECT_TAGS } from "@modules/projects/projectTags";
 import {
   getProjectSortMetricLabel,
   getProjectSortOrderLabel,
+  type ProjectCategory,
   projectMatchesCategory,
   projectMatchesNameAndTags,
-  sortProjects,
-  type ProjectCategory,
   type ProjectSortMetric,
   type ProjectSortOrder,
+  sortProjects,
 } from "@modules/projects/projectListUtils";
+import { collectAvailableTags } from "@modules/projects/projectTags";
 import { useUser } from "@providers/UserProvider";
-import * as urls from "@shared/route";
+import * as urls from "@shared/navigation/routes";
+
 import { type JSX, useCallback, useEffect, useMemo, useState } from "react";
+
 import { useNavigate } from "react-router-dom";
 
 const PAGE_SIZE = 24;
@@ -26,34 +29,16 @@ const Projects = (): JSX.Element => {
   const user = useUser();
   const navigate = useNavigate();
 
-  const [projects, setProjects] = useState<ProjectResponseDto[]>([]);
   const [showCustomSort, setShowCustomSort] = useState(false);
   const [sortMetric, setSortMetric] = useState<ProjectSortMetric>("updatedAt");
   const [sortOrder, setSortOrder] = useState<ProjectSortOrder>("desc");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [projectNameQuery, setProjectNameQuery] = useState("");
-  const [loadedPage, setLoadedPage] = useState(0);
-  const [totalProjects, setTotalProjects] = useState<number | null>(null);
-  const [isLoadingProjects, setIsLoadingProjects] = useState(false);
   const [draftVisibleCount, setDraftVisibleCount] = useState(PAGE_SIZE);
   const [publishedVisibleCount, setPublishedVisibleCount] = useState(PAGE_SIZE);
   const [draftTotalCount, setDraftTotalCount] = useState<number | null>(null);
   const [publishedTotalCount, setPublishedTotalCount] = useState<number | null>(null);
   const [loadingMoreCategory, setLoadingMoreCategory] = useState<ProjectCategory | null>(null);
-
-  const mergeProjects = useCallback((current: ProjectResponseDto[], next: ProjectResponseDto[]): ProjectResponseDto[] => {
-    const mergedProjects = [...current, ...next];
-    const seen = new Set<number>();
-
-    return mergedProjects.filter((project) => {
-      if (seen.has(project.id)) {
-        return false;
-      }
-
-      seen.add(project.id);
-      return true;
-    });
-  }, []);
 
   const fetchProjectsPage = useCallback(async (page: number) => {
     const { data } = await projectControllerFindAll({
@@ -70,6 +55,18 @@ const Projects = (): JSX.Element => {
     };
   }, []);
 
+  const {
+    projects,
+    setProjects,
+    loadedPage,
+    setLoadedPage,
+    totalProjects,
+    setTotalProjects,
+    isLoadingProjects,
+    hasMoreProjects,
+    loadProjectsPage,
+  } = usePaginatedProjects<ProjectResponseDto>(fetchProjectsPage);
+
   const fetchProjectCount = useCallback(async (status: ProjectCategory): Promise<number> => {
     const { data } = await projectControllerCountProjects({
       query: {
@@ -82,19 +79,6 @@ const Projects = (): JSX.Element => {
     return data?.total ?? 0;
   }, [projectNameQuery, selectedTags]);
 
-  const loadProjectsPage = useCallback(async (page: number, reset = false): Promise<void> => {
-    setIsLoadingProjects(true);
-
-    try {
-      const response = await fetchProjectsPage(page);
-      setProjects((current) => mergeProjects(reset ? [] : current, response.projects));
-      setLoadedPage(response.page);
-      setTotalProjects(response.total);
-    } finally {
-      setIsLoadingProjects(false);
-    }
-  }, [fetchProjectsPage, mergeProjects]);
-
   useEffect(() => {
     if (!user.user) {
       navigate(urls.toHub());
@@ -104,14 +88,7 @@ const Projects = (): JSX.Element => {
     void loadProjectsPage(1, true);
   }, [loadProjectsPage, user.user, navigate]);
 
-  const availableTags = useMemo(() => {
-    const tags = new Set<string>(PREDEFINED_PROJECT_TAGS);
-    projects.forEach((project) => {
-      project.tags.forEach((tag) => tags.add(tag));
-    });
-
-    return Array.from(tags).sort((a, b) => a.localeCompare(b));
-  }, [projects]);
+  const availableTags = useMemo(() => collectAvailableTags(projects), [projects]);
 
   const filteredProjects = useMemo(() => (
     projects.filter((project) => projectMatchesNameAndTags(project, selectedTags, projectNameQuery))
@@ -160,8 +137,6 @@ const Projects = (): JSX.Element => {
     };
   }, [fetchProjectCount]);
 
-  const hasMoreProjects = totalProjects === null || projects.length < totalProjects;
-
   const getSectionProjectsFrom = useCallback((
     sourceProjects: ProjectResponseDto[],
     category: ProjectCategory
@@ -202,7 +177,7 @@ const Projects = (): JSX.Element => {
 
       while (scopedProjects.length < nextVisibleCount && mergedProjects.length < total) {
         const response = await fetchProjectsPage(nextPage + 1);
-        mergedProjects = mergeProjects(mergedProjects, response.projects);
+        mergedProjects = mergeProjectsById(mergedProjects, response.projects);
         nextPage = response.page;
         total = response.total;
         scopedProjects = getSectionProjectsFrom(mergedProjects, category);

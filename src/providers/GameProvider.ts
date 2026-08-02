@@ -1,11 +1,14 @@
-import * as Y from "yjs";
 import { projectControllerGetReleaseContent, projectControllerGetReleaseContentUrl } from "@api";
-import { AxiosError } from "axios";
-import { decodeUpdate } from "@utils/YSerialize.ts";
-import { SpriteProvider } from "./editors/SpriteProvider.ts";
-import { MapProvider } from "./editors/MapProvider.ts";
-import { ProjectSettingsProvider } from "./editors/ProjectSettingsProvider.ts";
+import { seedDefaultProjectContent } from "@shared/project/defaultProjectContent";
+import { decodeUpdate } from "@utils/YSerialize";
+
+import { MapProvider } from "./editors/MapProvider";
+import { ProjectSettingsProvider } from "./editors/ProjectSettingsProvider";
 import { SoundProvider } from "./editors/SoundProvider";
+import { SpriteProvider } from "./editors/SpriteProvider";
+
+import { AxiosError } from "axios";
+import * as Y from "yjs";
 
 export enum ProviderEventType {
   INITIALIZED
@@ -83,12 +86,13 @@ export class GameProvider implements Destroyable {
       await decodeUpdate(this._doc, content as Blob);
     } catch (error: unknown) {
       if ((error as AxiosError)?.response?.status === 404) {
-        // FIXME new project: nothing to load; optionally could seed defaults here
         console.error("Failed to fetch project content:", error);
       } else {
         throw error;
       }
     }
+
+    seedDefaultProjectContent(this._doc);
   }
 
   destroy(): void {

@@ -1,12 +1,16 @@
-import React, { useState } from "react";
-import { styled } from "@mui/material/styles";
-import { Box, Typography, IconButton } from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
-import ReplyIcon from "@mui/icons-material/Reply";
 import { CommentResponseDto } from "@api";
 import { useUser } from "@providers/UserProvider";
+import { UserProfileLink } from "@shared/user/UserProfileLink";
+
 import CommentComposer from "./CommentComposer";
 import { ReportAction } from "./ReportAction";
+
+import React, { useState } from "react";
+
+import DeleteIcon from "@mui/icons-material/Delete";
+import ReplyIcon from "@mui/icons-material/Reply";
+import { Box, IconButton, Typography } from "@mui/material";
+import { styled } from "@mui/material/styles";
 
 const CommentContainer = styled(Box)(({ theme }) => ({
   padding: theme.spacing(2),
@@ -18,12 +22,6 @@ const CommentHeader = styled(Box)(({ theme }) => ({
   justifyContent: "space-between",
   alignItems: "center",
   marginBottom: theme.spacing(0.5),
-}));
-
-const AuthorName = styled(Typography)(({ theme }) => ({
-  fontWeight: 600,
-  color: theme.palette.common.white,
-  fontSize: "14px",
 }));
 
 const CommentDate = styled(Typography)(({ theme }) => ({
@@ -40,10 +38,25 @@ const CommentContent = styled(Typography)(({ theme }) => ({
   wordBreak: "break-word",
 }));
 
+const CommentAuthorMeta = styled(Box)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  gap: theme.spacing(1),
+  minWidth: 0,
+}));
+
+const CommentBody = styled(Box)(({ theme }) => ({
+  marginLeft: theme.spacing(5.5),
+}));
+
 const ReplyContainer = styled(Box)(({ theme }) => ({
   marginLeft: theme.spacing(4),
   borderLeft: `2px solid ${theme.palette.grey[700]}`,
   paddingLeft: theme.spacing(2),
+}));
+
+const ReplyBody = styled(Box)(({ theme }) => ({
+  marginLeft: theme.spacing(4.5),
 }));
 
 const ReplyInput = styled(Box)(({ theme }) => ({
@@ -106,12 +119,10 @@ const CommentItem: React.FC<CommentItemProps> = ({
     <>
       <CommentContainer>
         <CommentHeader>
-          <Box display="flex" alignItems="center" gap={1}>
-            <AuthorName>
-              {comment.author.nickname ?? comment.author.username}
-            </AuthorName>
+          <CommentAuthorMeta>
+            <UserProfileLink user={comment.author} showAvatar avatarSize={36} showTooltip={false} />
             <CommentDate>{formatTimeAgo(comment.createdAt)}</CommentDate>
-          </Box>
+          </CommentAuthorMeta>
           <Box display="flex" alignItems="center">
             {user && !comment.deleted && (
               <ReportAction
@@ -140,9 +151,11 @@ const CommentItem: React.FC<CommentItemProps> = ({
             )}
           </Box>
         </CommentHeader>
-        <CommentContent sx={comment.deleted ? { fontStyle: "italic", color: "grey.600" } : {}}>
-          {comment.deleted ? "[Comment deleted]" : comment.content}
-        </CommentContent>
+        <CommentBody>
+          <CommentContent sx={comment.deleted ? { fontStyle: "italic", color: "grey.600" } : {}}>
+            {comment.deleted ? "[Comment deleted]" : comment.content}
+          </CommentContent>
+        </CommentBody>
 
         {/* Replies */}
         {comment.replies && comment.replies.length > 0 && (
@@ -150,34 +163,31 @@ const CommentItem: React.FC<CommentItemProps> = ({
             {comment.replies.map((reply) => (
               <Box key={reply.id} py={1}>
                 <CommentHeader>
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <AuthorName sx={{ fontSize: "13px" }}>
-                      {reply.author.nickname ?? reply.author.username}
-                    </AuthorName>
+                  <CommentAuthorMeta>
+                    <UserProfileLink
+                      user={reply.author}
+                      showAvatar
+                      avatarSize={28}
+                      nameVariant="caption"
+                      showTooltip={false}
+                    />
                     <CommentDate>{formatTimeAgo(reply.createdAt)}</CommentDate>
-                  </Box>
-                  {!reply.deleted && user && (
-                    <Box display="flex" alignItems="center">
-                      <ReportAction
-                        targetType="COMMENT"
-                        targetId={reply.id}
-                        compact
-                      />
-                      {(user.id === reply.author.id || isProjectCreator) && (
-                        <IconButton
-                          size="small"
-                          onClick={() => onDelete(reply.id)}
-                          sx={{ color: "grey.500" }}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      )}
-                    </Box>
+                  </CommentAuthorMeta>
+                  {!reply.deleted && user && (user.id === reply.author.id || isProjectCreator) && (
+                    <IconButton
+                      size="small"
+                      onClick={() => onDelete(reply.id)}
+                      sx={{ color: "grey.500" }}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
                   )}
                 </CommentHeader>
-                <CommentContent sx={reply.deleted ? { fontSize: "13px", fontStyle: "italic", color: "grey.600" } : { fontSize: "13px" }}>
-                  {reply.deleted ? "[Comment deleted]" : reply.content}
-                </CommentContent>
+                <ReplyBody>
+                  <CommentContent sx={reply.deleted ? { fontSize: "13px", fontStyle: "italic", color: "grey.600" } : { fontSize: "13px" }}>
+                    {reply.deleted ? "[Comment deleted]" : reply.content}
+                  </CommentContent>
+                </ReplyBody>
               </Box>
             ))}
           </ReplyContainer>

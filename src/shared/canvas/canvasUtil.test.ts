@@ -1,10 +1,12 @@
-import * as Y from "yjs";
 import { YSpriteSheet } from "@modules/create/game-editor/types/YSpriteSheet";
+
 import {
-  hexToRGBArray,
   getRGBArraysFromPalette,
+  hexToRGBArray,
   rectangleToVertices
 } from "./glUtils";
+
+import * as Y from "yjs";
 
 describe("Feature: Utilities (non-WebGL)", () => {
   describe("Convert a hex spritesheet string into an index Uint8Array", () => {

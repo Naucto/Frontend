@@ -1,6 +1,8 @@
 import { ProjectResponseDto } from "@api";
-import { useEffect, useState } from "react";
+
 import { HubStatsOverride } from "../hubSorting";
+
+import { useEffect, useState } from "react";
 
 type StatsUpdateDetail = {
   projectId: number;

@@ -1,7 +1,8 @@
+import { type JSX, type ReactNode } from "react";
+
 import CloseIcon from "@mui/icons-material/Close";
 import { Box, CircularProgress, IconButton, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { type JSX, type ReactNode } from "react";
 
 type GameViewerLayoutProps = {
   children: ReactNode;
@@ -33,8 +34,9 @@ export const Container = styled(Box)(({ theme }) => ({
 
 export const GameTitle = styled(Typography)(({ theme }) => ({
   color: theme.palette.common.white,
-  marginBottom: theme.spacing(2),
   textAlign: "center",
+  minWidth: 0,
+  overflowWrap: "anywhere",
 }));
 
 const CloseButton = styled(IconButton)(({ theme }) => ({

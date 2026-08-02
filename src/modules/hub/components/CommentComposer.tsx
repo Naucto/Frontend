@@ -1,12 +1,14 @@
-import React from "react";
-import { styled } from "@mui/material/styles";
-import { Box, Button, CircularProgress, TextField } from "@mui/material";
 import {
   COMMENT_MAX_LENGTH,
   COMMENT_MAX_NEWLINES,
   countCommentNewlines,
   sanitizeCommentValue,
 } from "./commentValidation";
+
+import React from "react";
+
+import { Box, Button, CircularProgress, TextField } from "@mui/material";
+import { styled } from "@mui/material/styles";
 
 const ComposerRow = styled(Box)(({ theme }) => ({
   display: "flex",

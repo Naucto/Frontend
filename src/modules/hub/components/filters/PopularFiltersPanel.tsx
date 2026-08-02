@@ -1,6 +1,4 @@
-import { type JSX } from "react";
 import { HubReleaseWindow, HubSortMetric } from "../../hubSorting";
-import { FilterPanel } from "./FilterStyles";
 import {
   PopularSortMetricSelect,
   PopularSortSummaryChip,
@@ -9,6 +7,9 @@ import {
   SelectedTagChips,
   TagsField,
 } from "./FilterFields";
+import { FilterPanel } from "./FilterStyles";
+
+import { type JSX } from "react";
 
 export type PopularFiltersState = {
   sortMetric: HubSortMetric;

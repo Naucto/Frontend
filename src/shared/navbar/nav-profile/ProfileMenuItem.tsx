@@ -1,5 +1,6 @@
-import { MenuItem, styled, Typography } from "@mui/material";
 import { FC, JSX } from "react";
+
+import { MenuItem, styled, Typography } from "@mui/material";
 
 const StyledMenuItem = styled(MenuItem)(({ theme }) => ({
   "&:hover": {

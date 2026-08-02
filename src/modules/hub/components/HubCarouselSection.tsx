@@ -1,10 +1,13 @@
-import { Box, Button, IconButton, LinearProgress, Typography } from "@mui/material";
-import { alpha, styled } from "@mui/material/styles";
-import NextSvg from "@assets/next.svg";
-import PrevSvg from "@assets/prev.svg";
 import { ProjectExResponseDto } from "@api";
 import ProjectCard from "@modules/projects/components/ProjectCard";
+
 import { type JSX, type ReactNode } from "react";
+
+import { Box, Button, IconButton, LinearProgress, Typography } from "@mui/material";
+import { alpha, styled } from "@mui/material/styles";
+
+import NextSvg from "@assets/next.svg";
+import PrevSvg from "@assets/prev.svg";
 
 const Section = styled(Box)(({ theme }) => ({
   marginBottom: theme.spacing(4),

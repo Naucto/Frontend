@@ -1,11 +1,15 @@
-import { styled } from "@mui/material/styles";
-import { Typography } from "@mui/material";
-import { JSX, useEffect, useMemo, useState } from "react";
 import { ProjectExResponseDto } from "@api";
-import { PREDEFINED_PROJECT_TAGS } from "@modules/projects/projectTags";
+import { collectAvailableTags } from "@modules/projects/projectTags";
+import * as urls from "@shared/navigation/routes";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
-import { useNavigate } from "react-router-dom";
-import * as urls from "@shared/route";
+
+import { NewHubSection } from "./components/NewHubSection";
+import { PlayedHubSection } from "./components/PlayedHubSection";
+import { PopularHubSection } from "./components/PopularHubSection";
+import { useHubEvents } from "./hooks/useHubEvents";
+import { useReleasedProjectCount } from "./hooks/useReleasedProjectCount";
+import { mergeProjects, useReleasedProjects } from "./hooks/useReleasedProjects";
+import { getProjectsForCategory, HubFiltersState, INITIAL_FILTERS } from "./hubFiltersState";
 import {
   filterReleasedProjects,
   getPlayedProjectsFromPublished,
@@ -15,13 +19,12 @@ import {
   sortHubProjects,
   sortPopularProjects,
 } from "./hubSorting";
-import { useReleasedProjects, mergeProjects } from "./hooks/useReleasedProjects";
-import { useHubEvents } from "./hooks/useHubEvents";
-import { useReleasedProjectCount } from "./hooks/useReleasedProjectCount";
-import { getProjectsForCategory, HubFiltersState, INITIAL_FILTERS } from "./hubFiltersState";
-import { PopularHubSection } from "./components/PopularHubSection";
-import { NewHubSection } from "./components/NewHubSection";
-import { PlayedHubSection } from "./components/PlayedHubSection";
+
+import { JSX, useEffect, useMemo, useState } from "react";
+
+import { Typography } from "@mui/material";
+import { styled } from "@mui/material/styles";
+import { useNavigate } from "react-router-dom";
 
 const PageContainer = styled("div")(({ theme }) => ({
   margin: theme.spacing(4),
@@ -89,11 +92,7 @@ export const Hub = (): JSX.Element => {
     [allProjects, statsOverrides]
   );
 
-  const availableTags = useMemo(() => {
-    const tags = new Set<string>(PREDEFINED_PROJECT_TAGS);
-    publishedProjects.forEach((project) => project.tags.forEach((tag) => tags.add(tag)));
-    return Array.from(tags).sort((a, b) => a.localeCompare(b));
-  }, [publishedProjects]);
+  const availableTags = useMemo(() => collectAvailableTags(publishedProjects), [publishedProjects]);
 
   const popularGames = useMemo(() => sortPopularProjects(
     filterReleasedProjects(

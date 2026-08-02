@@ -1,12 +1,10 @@
-import { Box, Typography } from "@mui/material";;
-import React from "react";
 import Card from "@modules/projects/components/Card";
+import { useCreateProject } from "@modules/projects/hooks/useCreateProject";
+
+import React from "react";
+
+import { Box, Typography } from "@mui/material";
 import { styled } from "@mui/material";
-import { CreateProjectDto, projectControllerCreate } from "@api";
-import { useNavigate } from "react-router-dom";
-import * as urls from "@shared/route";
-import { LocalStorageManager } from "@utils/LocalStorageManager";
-import { useSnackbar } from "notistack";
 
 const DashedCard = styled(Card)(({ theme }) => ({
   border: "4px dashed",
@@ -22,36 +20,13 @@ const DashedCard = styled(Card)(({ theme }) => ({
 }));
 
 const CreateProjectCard: React.FC = () => {
-  const navigate = useNavigate();
-  const { enqueueSnackbar } = useSnackbar();
-  const createNewProject = async (): Promise<void> => {
-    const newProject: CreateProjectDto = {
-      name: "Untitled Project",
-      shortDesc: ""
-    };
-
-    try {
-      const { data: newProject_ } = await projectControllerCreate({ body: newProject });
-
-      if (!newProject_)
-        return;
-
-      const projectId = newProject_.id;
-
-      navigate(urls.toProject(projectId));
-      LocalStorageManager.setProjectId(projectId);
-      enqueueSnackbar("New project created successfully!", { variant: "success" });
-    } catch (error) {
-      console.error("Error creating new project:", error);
-      //FIXME: add error handling
-    }
-  };
+  const { createProject, isCreatingProject } = useCreateProject();
 
   return (
-    <DashedCard onClick={createNewProject}>
+    <DashedCard onClick={() => void createProject()} disabled={isCreatingProject}>
       <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center">
         <Typography fontWeight="regular">
-          New project
+          {isCreatingProject ? "Creating..." : "New project"}
         </Typography>
       </Box>
     </DashedCard>);

@@ -1,7 +1,10 @@
-import React from "react";
-import { Editor } from "@monaco-editor/react";
 import CodeTabTheme from "@modules/create/game-editor/editors/CodeTabTheme";
 import Panel from "@modules/create/game-editor/Panel";
+
+import React from "react";
+
+import { Editor } from "@monaco-editor/react";
+
 import "./monaco.css";
 
 interface GameEditorConsoleProps {

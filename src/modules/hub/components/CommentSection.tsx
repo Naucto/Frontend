@@ -1,18 +1,23 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { styled } from "@mui/material/styles";
-import { Box, Typography, Button, CircularProgress } from "@mui/material";
-import CommentSvg from "@assets/comment.svg";
 import {
-  projectCommentControllerGetComments,
+  CommentResponseDto,
   projectCommentControllerCreateComment,
   projectCommentControllerCreateReply,
   projectCommentControllerDeleteComment,
-  CommentResponseDto,
+  projectCommentControllerGetComments,
 } from "@api";
 import { useUser } from "@providers/UserProvider";
-import CommentItem from "./CommentItem";
+import { UserProfileLink } from "@shared/user/UserProfileLink";
+
 import CommentComposer from "./CommentComposer";
+import CommentItem from "./CommentItem";
+
+import React, { useCallback, useEffect, useState } from "react";
+
+import { Box, Button, CircularProgress, Typography } from "@mui/material";
+import { styled } from "@mui/material/styles";
 import { useSnackbar } from "notistack";
+
+import CommentSvg from "@assets/comment.svg";
 
 const SectionContainer = styled(Box)(({ theme }) => ({
   marginTop: theme.spacing(3),
@@ -228,6 +233,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
       {/* Comment input (logged-in users only) */}
       {user ? (
         <CommentInputContainer>
+          <UserProfileLink user={user} showAvatar showName={false} avatarSize={36} showTooltip={false} />
           <CommentComposer
             value={newComment}
             onChange={setNewComment}

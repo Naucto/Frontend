@@ -1,5 +1,7 @@
-import { Box, styled, IconButton, Button, Dialog, Paper } from "@mui/material";
 import React, { ReactNode, useCallback } from "react";
+
+import { Box, Button, Dialog, IconButton, Paper, styled } from "@mui/material";
+
 import CrossIcon from "@assets/cross.svg?react";
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
@@ -7,7 +9,9 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   flexDirection: "column",
   position: "relative",
   width: 552,
-  height: 580,
+  minHeight: "auto",
+  maxHeight: "85vh",
+  overflowY: "auto",
   backgroundColor: theme.palette.background.default,
   borderRadius: 16,
   color: theme.palette.text.primary,

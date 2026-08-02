@@ -1,5 +1,9 @@
 import { ProjectExResponseDto } from "@api";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
+
+import { NewGamesFiltersState } from "./components/filters/NewGamesFiltersPanel";
+import { PlayedGamesFiltersState } from "./components/filters/PlayedGamesFiltersPanel";
+import { PopularFiltersState } from "./components/filters/PopularFiltersPanel";
 import {
   filterReleasedProjects,
   getPlayedProjectsFromPublished,
@@ -10,9 +14,6 @@ import {
   sortHubProjects,
   sortPopularProjects,
 } from "./hubSorting";
-import { NewGamesFiltersState } from "./components/filters/NewGamesFiltersPanel";
-import { PlayedGamesFiltersState } from "./components/filters/PlayedGamesFiltersPanel";
-import { PopularFiltersState } from "./components/filters/PopularFiltersPanel";
 
 export type HubFiltersState = {
   popular: PopularFiltersState;
@@ -23,12 +24,12 @@ export type HubFiltersState = {
 export const INITIAL_FILTERS: HubFiltersState = {
   popular: {
     sortMetric: "viewCount",
-    releaseWindow: "30d",
+    releaseWindow: "all",
     selectedTags: [],
     searchQuery: "",
   },
   new: {
-    releaseWindow: "30d",
+    releaseWindow: "all",
     order: "desc",
     sortMetric: "publishedAt",
     selectedTags: [],

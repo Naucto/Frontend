@@ -1,22 +1,28 @@
-import { Typography } from "@mui/material";
+import {
+  projectControllerGetProjectImage,
+  projectControllerGetPublishedProjectImage,
+  ProjectExResponseDto,
+  ProjectResponseDto } from "@api";
+import Card from "@modules/projects/components/Card";
+import * as urls from "@shared/navigation/routes";
+import { UserAvatarStack } from "@shared/user/UserProfileLink";
+import { getCachedProjectImageUrl } from "@utils/projectImageCache";
+
 import React, { useEffect, useMemo, useState } from "react";
-import { styled } from "@mui/material";
+
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import { Typography } from "@mui/material";
+import { styled } from "@mui/material";
 import { useLocation, useNavigate } from "react-router-dom";
-import Card from "@modules/projects/components/Card";
-import * as urls from "@shared/route";
-import LikeSvg from "@assets/like.svg";
+
 import CommentSvg from "@assets/comment.svg";
-import { getCachedProjectImageUrl } from "@utils/projectImageCache";
-import {
-  ProjectResponseDto,
-  projectControllerGetPublishedProjectImage,
-  projectControllerGetProjectImage
-} from "@api";
+import LikeSvg from "@assets/like.svg";
+
+type ProjectCardProject = ProjectResponseDto & Partial<Pick<ProjectExResponseDto, "creator" | "collaborators">>;
 
 type ProjectCardProps = {
-  project: ProjectResponseDto;
+  project: ProjectCardProject;
   isPlayable?: boolean;
 };
 
@@ -40,14 +46,20 @@ const StyledCard = styled(Card, {
   },
 }));
 
-const PlayableCardButton = styled("button")(({ theme }) => ({
+const PlayableCardButton = styled("div")(({ theme }) => ({
   width: "100%",
+  display: "block",
   padding: 0,
   border: "none",
   background: "transparent",
   color: theme.palette.text.primary,
   textAlign: "left",
   cursor: "pointer",
+  "&:focus-visible": {
+    outline: `2px solid ${theme.palette.yellow[500]}`,
+    outlineOffset: 2,
+    borderRadius: theme.custom.rounded.md,
+  },
   "&:hover > div:first-of-type::after": {
     backgroundColor: "rgba(0, 0, 0, 0.22)",
   },
@@ -87,10 +99,19 @@ const PlayableMeta = styled("div")(({ theme }) => ({
 const CopyColumn = styled("div")(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
-  gap: theme.spacing(0.35),
+  gap: theme.spacing(0.45),
   minWidth: 0,
   flex: 1,
   paddingLeft: theme.spacing(0.5),
+}));
+
+const CreatorRow = styled("div")(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  gap: theme.spacing(0.75),
+  minHeight: 26,
+  color: theme.palette.grey[400],
+  fontSize: "12px",
 }));
 
 const Title = styled(Typography)(({ theme }) => ({
@@ -98,15 +119,24 @@ const Title = styled(Typography)(({ theme }) => ({
   fontWeight: 600,
   lineHeight: 1.1,
   color: theme.palette.text.primary,
+  minWidth: 0,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  overflowWrap: "anywhere",
+  display: "-webkit-box",
+  WebkitBoxOrient: "vertical",
+  WebkitLineClamp: 2,
 }));
 
 const Description = styled(Typography)(({ theme }) => ({
   fontSize: "14px",
   color: theme.palette.grey[400],
   lineHeight: 1.15,
+  minWidth: 0,
   display: "-webkit-box",
   overflow: "hidden",
   textOverflow: "ellipsis",
+  overflowWrap: "anywhere",
   WebkitBoxOrient: "vertical",
   WebkitLineClamp: 2,
 }));
@@ -133,6 +163,10 @@ const TruncatedText = styled(Typography)(({ theme }) => ({
   color: theme.palette.text.primary,
   fontWeight: "normal",
   padding: theme.spacing(0, 0),
+  minWidth: 0,
+  overflow: "hidden",
+  whiteSpace: "nowrap",
+  textOverflow: "ellipsis",
 }));
 
 const ProjectFooter = styled("div")(({ theme }) => ({
@@ -199,13 +233,42 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, isPlayable = false }
     [project.longDesc, project.shortDesc]
   );
 
+  const creators = useMemo(
+    () => Array.from(
+      new Map(
+        [project.creator, ...(project.collaborators ?? [])]
+          .filter((creator): creator is NonNullable<ProjectCardProject["creator"]> => Boolean(creator))
+          .map((creator) => [creator.id, creator])
+      ).values()
+    ),
+    [project.collaborators, project.creator]
+  );
+
+  const handlePlayableCardKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      redirectToProject();
+    }
+  };
+
   if (isPlayable) {
     return (
-      <PlayableCardButton type="button" onClick={redirectToProject}>
+      <PlayableCardButton
+        role="button"
+        tabIndex={0}
+        onClick={redirectToProject}
+        onKeyDown={handlePlayableCardKeyDown}
+      >
         <Thumbnail $src={thumbnailUrl} />
         <PlayableMeta>
           <CopyColumn>
             <Title variant="h6">{project.name}</Title>
+            {creators.length > 0 && (
+              <CreatorRow>
+                <span>Made by</span>
+                <UserAvatarStack users={creators} avatarSize={22} stopPropagation />
+              </CreatorRow>
+            )}
             <Description variant="body2">{description}</Description>
           </CopyColumn>
           <StatsColumn>

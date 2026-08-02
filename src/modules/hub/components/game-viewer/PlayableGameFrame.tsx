@@ -1,17 +1,21 @@
-import NextSvg from "@assets/next.svg";
+import { type GameProvider } from "@providers/GameProvider";
+import GameCanvas from "@shared/canvas/game-canvas/GameCanvas";
+import { type SpriteRendererHandle } from "@shared/canvas/RendererHandle";
+import { type EnvData } from "@shared/lua-env-manager/LuaEnvironmentManager";
+
+import { type Dispatch, type JSX, type RefObject, type SetStateAction } from "react";
+
 import { CircularProgress, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { type SpriteRendererHandle } from "@shared/canvas/RendererHandle";
-import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
-import { type EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
-import { type GameProvider } from "@providers/GameProvider";
-import { type Dispatch, type JSX, type RefObject, type SetStateAction } from "react";
+
+import NextSvg from "@assets/next.svg";
 
 type PlayableGameFrameProps = {
   bannerUrl: string;
   canvasRef: RefObject<SpriteRendererHandle | null>;
   containerRef: RefObject<HTMLDivElement | null>;
   envData: EnvData;
+  gameRefreshKey: number;
   gameProvider?: GameProvider;
   launching: boolean;
   screenSize: {
@@ -37,8 +41,8 @@ const GameContainer = styled("div")(({ theme }) => ({
 }));
 
 const PlayingCanvas = styled(GameCanvas)(() => ({
-  width: "100% !important",
-  height: "100% !important",
+  width: "100%",
+  height: "100%",
   objectFit: "contain",
 }));
 
@@ -88,6 +92,7 @@ export const PlayableGameFrame = ({
   canvasRef,
   containerRef,
   envData,
+  gameRefreshKey,
   gameProvider,
   launching,
   screenSize,
@@ -98,6 +103,7 @@ export const PlayableGameFrame = ({
   <GameContainer ref={containerRef}>
     {showGame && gameProvider ? (
       <PlayingCanvas
+        key={gameRefreshKey}
         ref={canvasRef}
         canvasProps={{
           map: gameProvider.map,

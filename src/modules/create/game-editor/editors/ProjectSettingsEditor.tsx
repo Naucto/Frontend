@@ -1,34 +1,40 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import { EditorProps } from "./EditorType";
-import { Box, Button, Typography, List, ListItem, ListItemText, Divider, Chip, CircularProgress, Autocomplete, TextField } from "@mui/material";
-import { styled } from "@mui/material/styles";
 import {
-  projectControllerFindOne,
   projectControllerAddCollaborator,
-  projectControllerRemoveCollaborator,
-  projectControllerPublish,
-  projectControllerUnpublish,
-  projectControllerUpdateRelease,
-  projectControllerUploadProjectImage,
+  projectControllerFindOne,
   projectControllerGetProjectImage,
   projectControllerGetRelease,
   projectControllerGetReleaseContent,
+  projectControllerPublish,
+  projectControllerRemoveCollaborator,
+  projectControllerUnpublish,
+  projectControllerUpdateRelease,
+  projectControllerUploadProjectImage,
   ProjectExResponseDto,
   UserBasicInfoDto
 } from "@api";
-import { ProjectSettings } from "@providers/editors/ProjectSettingsProvider";
 import { ActionButton } from "@components/ui/ActionButton";
 import { FullWidthTextField } from "@components/ui/FullWidthTextField";
+import { Section } from "@components/ui/Section";
 import { PREDEFINED_PROJECT_TAGS } from "@modules/projects/projectTags";
+import { ProjectSettings } from "@providers/editors/ProjectSettingsProvider";
+import {
+  PROJECT_LONG_DESC_MAX_LENGTH,
+  PROJECT_NAME_MAX_LENGTH,
+  PROJECT_SHORT_DESC_MAX_LENGTH,
+} from "@shared/constants/projectFieldLimits";
+import { UserProfileLink } from "@shared/user/UserProfileLink";
 import {
   getCachedProjectImageUrl,
   invalidateCachedProjectImageUrl,
   setCachedProjectImageUrl,
 } from "@utils/projectImageCache";
 
-const Section = styled(Box)(({ theme }) => ({
-  marginBottom: theme.spacing(4),
-}));
+import { EditorProps } from "./EditorType";
+
+import React, { useCallback, useEffect, useRef, useState } from "react";
+
+import { Autocomplete, Box, Button, Chip, CircularProgress, Divider, List, ListItem, ListItemText, TextField, Typography } from "@mui/material";
+import { styled } from "@mui/material/styles";
 
 const CollaboratorList = styled(List)(({ theme }) => ({
   maxHeight: "200px",
@@ -44,12 +50,19 @@ const StatusContainer = styled(Box)(({ theme }) => ({
   marginBottom: theme.spacing(2),
 }));
 
-const BannerPreview = styled("img")({
-  maxHeight: "200px",
-  maxWidth: "100%",
-  borderRadius: "4px",
-  objectFit: "cover",
-});
+const BannerPreview = styled("div", {
+  shouldForwardProp: (prop) => prop !== "$src",
+})<{ $src: string }>(({ theme, $src }) => ({
+  width: "100%",
+  maxWidth: "360px",
+  aspectRatio: "16 / 9",
+  borderRadius: theme.custom.rounded.md,
+  backgroundColor: "rgba(255, 255, 255, 0.06)",
+  backgroundImage: $src ? `url(${$src})` : "none",
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+  boxShadow: "0 14px 40px rgba(0, 0, 0, 0.18)",
+}));
 
 const TagPickerContainer = styled(Box)(({ theme }) => ({
   padding: theme.spacing(1.25),
@@ -439,6 +452,8 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
           label="Project Title"
           value={settings.name}
           onChange={(e) => project.projectSettingsProvider.updateName(e.target.value)}
+          slotProps={{ htmlInput: { maxLength: PROJECT_NAME_MAX_LENGTH } }}
+          helperText={`${settings.name.length}/${PROJECT_NAME_MAX_LENGTH}`}
         />
 
         <Box sx={{ mt: 2, mb: 2 }}>
@@ -468,7 +483,7 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
           </Box>
           {bannerUrl && (
             <Box sx={{ display: "flex", justifyContent: "center" }}>
-              <BannerPreview src={bannerUrl} alt="Project Banner" />
+              <BannerPreview $src={bannerUrl} role="img" aria-label="Project banner preview" />
             </Box>
           )}
         </Box>
@@ -479,6 +494,8 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
           onChange={(e) => project.projectSettingsProvider.updateShortDesc(e.target.value)}
           multiline
           rows={2}
+          slotProps={{ htmlInput: { maxLength: PROJECT_SHORT_DESC_MAX_LENGTH } }}
+          helperText={`${settings.shortDesc.length}/${PROJECT_SHORT_DESC_MAX_LENGTH}`}
         />
         <FullWidthTextField
           label="Project Long Description"
@@ -486,6 +503,8 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
           onChange={(e) => project.projectSettingsProvider.updateLongDesc(e.target.value)}
           multiline
           rows={5}
+          slotProps={{ htmlInput: { maxLength: PROJECT_LONG_DESC_MAX_LENGTH } }}
+          helperText={`${settings.longDesc.length}/${PROJECT_LONG_DESC_MAX_LENGTH}`}
         />
         <Box sx={{ mt: 2 }}>
           <Typography variant="subtitle1" gutterBottom>Project Tags</Typography>
@@ -593,7 +612,10 @@ const ProjectSettingsEditor: React.FC<EditorProps> = ({ project }) => {
                 ×
               </ActionButton>
             }>
-              <ListItemText primary={user.username} secondary={user.email} />
+              <ListItemText
+                primary={<UserProfileLink user={user} showAvatar avatarSize={28} />}
+                secondary={user.email}
+              />
             </ListItem>
           ))}
         </CollaboratorList>

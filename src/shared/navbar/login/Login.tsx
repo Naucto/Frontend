@@ -1,5 +1,6 @@
-import AuthOverlay from "@shared/authOverlay/AuthOverlay";
+import AuthOverlay from "@shared/auth-overlay/AuthOverlay";
 import { NavElem } from "@shared/navbar/NavElem";
+
 import { FC, useCallback, useEffect, useState } from "react";
 
 type LoginProps = {

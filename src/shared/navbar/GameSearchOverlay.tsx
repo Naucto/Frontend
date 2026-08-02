@@ -1,15 +1,19 @@
 import { projectControllerGetAllReleases, projectControllerGetPublishedProjectImage, ProjectExResponseDto, ProjectResponseDto } from "@api";
-import LikeSvg from "@assets/like.svg";
-import CommentSvg from "@assets/comment.svg";
+import { useAsync } from "@hooks/useAsync";
+import * as urls from "@shared/navigation/routes";
+import { UserProfileList } from "@shared/user/UserProfileLink";
+import { getCachedProjectImageUrl } from "@utils/projectImageCache";
+
+import { JSX, type KeyboardEvent, type MouseEvent, useEffect, useMemo, useState } from "react";
+
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import { Box, Button, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import * as urls from "@shared/route";
-import { useAsync } from "src/hooks/useAsync";
-import { getCachedProjectImageUrl } from "@utils/projectImageCache";
-import { JSX, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+
+import CommentSvg from "@assets/comment.svg";
+import LikeSvg from "@assets/like.svg";
 
 const OverlayContainer = styled(Box)(({ theme }) => ({
   position: "absolute",
@@ -67,7 +71,7 @@ const LoadMoreButton = styled(Button)(({ theme }) => ({
   },
 }));
 
-const SearchResultButton = styled("button")(({ theme }) => ({
+const SearchResultButton = styled("div")(({ theme }) => ({
   width: "100%",
   border: "1px solid rgba(255,255,255,0.08)",
   borderRadius: theme.custom.rounded.md,
@@ -83,6 +87,10 @@ const SearchResultButton = styled("button")(({ theme }) => ({
   "&:hover": {
     backgroundColor: "rgba(0, 0, 0, 0.56)",
     transform: "translateY(-1px)",
+  },
+  "&:focus-visible": {
+    outline: `2px solid ${theme.palette.yellow[500]}`,
+    outlineOffset: 2,
   },
 }));
 
@@ -119,9 +127,16 @@ const SearchResultTitle = styled(Typography)(({ theme }) => ({
   fontSize: "20px",
   fontWeight: 600,
   lineHeight: 1.1,
+  minWidth: 0,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  overflowWrap: "anywhere",
+  display: "-webkit-box",
+  WebkitBoxOrient: "vertical",
+  WebkitLineClamp: 2,
 }));
 
-const SearchResultCreators = styled(Typography)(({ theme }) => ({
+const SearchResultCreators = styled("div")(({ theme }) => ({
   color: theme.palette.grey[300],
   fontSize: "13px",
 }));
@@ -130,8 +145,10 @@ const SearchResultDescription = styled(Typography)(({ theme }) => ({
   color: theme.palette.grey[400],
   fontSize: "14px",
   lineHeight: 1.35,
+  minWidth: 0,
   display: "-webkit-box",
   overflow: "hidden",
+  overflowWrap: "anywhere",
   WebkitBoxOrient: "vertical",
   WebkitLineClamp: 3,
   textOverflow: "ellipsis",
@@ -265,26 +282,51 @@ const SearchResultItem = ({ project, onSelect }: SearchResultItemProps): JSX.Ele
     };
   }, [project.iconUrl, project.id]);
 
-  const creatorsLabel = [project.creator.username, ...project.collaborators.map((collaborator) => collaborator.username)]
-    .filter((value, index, values) => values.indexOf(value) === index)
-    .join(", ");
+  const creators = useMemo(
+    () => Array.from(
+      new Map(
+        [project.creator, ...project.collaborators].map((creator) => [creator.id, creator])
+      ).values()
+    ),
+    [project.collaborators, project.creator]
+  );
 
   const description = project.shortDesc || project.longDesc || "No description available.";
   const visibleTags = project.tags.slice(0, 5);
 
+  const openProject = (): void => {
+    onSelect?.();
+    navigate(urls.toProjectView(project.id), { state: { backgroundLocation: location } });
+  };
+
+  const handleResultKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openProject();
+    }
+  };
+
+  const stopCreatorLinkPropagation = (event: MouseEvent | KeyboardEvent): void => {
+    event.stopPropagation();
+  };
+
   return (
     <SearchResultButton
-      type="button"
-      onClick={() => {
-        onSelect?.();
-        navigate(urls.toProjectView(project.id), { state: { backgroundLocation: location } });
-      }}
+      role="button"
+      tabIndex={0}
+      onClick={openProject}
+      onKeyDown={handleResultKeyDown}
     >
       <SearchThumbnail $src={thumbnailUrl} />
       <SearchResultContent>
         <SearchResultCopy>
           <SearchResultTitle>{project.name}</SearchResultTitle>
-          <SearchResultCreators>{creatorsLabel}</SearchResultCreators>
+          <SearchResultCreators
+            onClick={stopCreatorLinkPropagation}
+            onKeyDown={stopCreatorLinkPropagation}
+          >
+            <UserProfileList users={creators} nameVariant="caption" />
+          </SearchResultCreators>
           <SearchResultDescription>{description}</SearchResultDescription>
           {visibleTags.length > 0 && (
             <SearchResultTags>

@@ -9,10 +9,12 @@ Branches should be named directly from the corresponding Jira task.
 (ex. NCTO-7-ide-vs-code-issue)
 
 # Commit naming:
-[PART] [TYPE] commit message
+[PART] [TYPE] Commit message
+
+The message after the tags starts with a **capital letter**.
 
 ## example:
-[COLLAB] [UPDATE] update imports using @ and improve editor manager cleanup
+[COLLAB] [UPDATE] Update imports using @ and improve editor manager cleanup
 
 ### PART:
 describes what part you're working on in one word
@@ -29,9 +31,16 @@ describes what part you're working on in one word
 
 We use husky to run linter before each commit, so make sure your code is linted if not it will not be committed.
 
-Init husky by doing `bun install` ans also `bun prepare` then you can commit.
+Init husky by doing `npm install` then you can commit.
 
-To check if your code is linted run `bun run lint` or `bun run lint --fix` to fix it automatically simple errors.
+To check if your code is linted run `npm run lint` or `npm run lint --fix` to fix it automatically simple errors.
+
+# Code conventions
+
+Code style, architecture, and project-structure conventions live in [`AGENTS.md`](./AGENTS.md)
+(it applies to both human contributors and AI agents).
+
+`TODO` / `FIXME` comments must reference a Jira ticket, e.g. `// TODO(NCTO-123): ...`.
 
 # Pull Requests
 describe what was done.

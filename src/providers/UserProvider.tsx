@@ -1,9 +1,10 @@
-import { User } from "src/types/userTypes";
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { ContextError } from "src/errors/ContextError";
+import { userControllerGetProfile, UserProfileResponseDto } from "@api";
+import { ContextError } from "@errors/ContextError";
+import { useAsync } from "@hooks/useAsync";
+import { User } from "@typedefs/userTypes";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
-import { UserProfileResponseDto, userControllerGetProfile } from "@api";
-import { useAsync } from "src/hooks/useAsync";
+
+import React, { createContext, useContext, useEffect, useState } from "react";
 
 interface UserContextType {
   logIn: (userData: User) => void;

@@ -1,11 +1,16 @@
+import { useUser } from "@providers/UserProvider";
+import { ProfileMenuItem } from "@shared/navbar/nav-profile/ProfileMenuItem";
+import * as urls from "@shared/navigation/routes";
+import { LocalStorageManager } from "@utils/LocalStorageManager";
+
+import { FC, useCallback } from "react";
+
 import { styled } from "@mui/material";
 import Menu from "@mui/material/Menu";
-import { FC, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+
 import DisconnectIcon from "@assets/disconnect.svg?react";
 import UserIcon from "@assets/user.svg?react";
-import { ProfileMenuItem } from "@shared/navbar/nav-profile/ProfileMenuItem";
-import { useUser } from "@providers/UserProvider";
-import { useNavigate } from "react-router-dom";
 
 type ProfileMenuProps = {
   anchorEl: undefined | HTMLElement;
@@ -37,13 +42,18 @@ export const ProfileMenu: FC<ProfileMenuProps> = ({ anchorEl, open, onClose }) =
     navigate(0);
   }, [logOut]);
 
+  const navigateToProfile = useCallback(() => {
+    navigate(urls.toProfileByUsername(LocalStorageManager.getUserName()));
+    onClose();
+  }, [navigate, onClose]);
+
   return (
     <StyledMenu
       anchorEl={anchorEl}
       open={open}
       onClose={onClose}
     >
-      <ProfileMenuItem icon={<UserIcon />} text="Profile" />
+      <ProfileMenuItem icon={<UserIcon />} text="Profile" onClick={navigateToProfile} />
       <ProfileMenuItem icon={<DisconnectIcon />} text="Logout" onClick={handleLogOut} />
     </StyledMenu>
   );

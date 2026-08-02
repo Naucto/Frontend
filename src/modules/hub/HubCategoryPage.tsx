@@ -1,10 +1,21 @@
-import { ProjectExResponseDto, projectControllerGetRelease } from "@api";
-import { styled } from "@mui/material/styles";
-import { PREDEFINED_PROJECT_TAGS } from "@modules/projects/projectTags";
+import { projectControllerGetRelease, ProjectExResponseDto } from "@api";
+import { collectAvailableTags } from "@modules/projects/projectTags";
+import * as urls from "@shared/navigation/routes";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
-import { JSX, useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
-import * as urls from "@shared/route";
+
+import { CategoryHeader } from "./components/CategoryHeader";
+import { CategoryProjectsGrid } from "./components/CategoryProjectsGrid";
+import { NewGamesFiltersPanel } from "./components/filters/NewGamesFiltersPanel";
+import { PlayedGamesFiltersPanel } from "./components/filters/PlayedGamesFiltersPanel";
+import { PopularFiltersPanel } from "./components/filters/PopularFiltersPanel";
+import { useHubEvents } from "./hooks/useHubEvents";
+import { fetchReleasedProjectCount } from "./hooks/useReleasedProjectCount";
+import { mergeProjects, useReleasedProjects } from "./hooks/useReleasedProjects";
+import {
+  getProjectsForCategory,
+  HubFiltersState,
+  INITIAL_FILTERS,
+} from "./hubFiltersState";
 import {
   getPublishedProjects,
   HubCategoryKey,
@@ -13,19 +24,11 @@ import {
   HubReleaseWindow,
   HubSortMetric,
 } from "./hubSorting";
-import { fetchReleasedProjectCount } from "./hooks/useReleasedProjectCount";
-import { mergeProjects, useReleasedProjects } from "./hooks/useReleasedProjects";
-import { useHubEvents } from "./hooks/useHubEvents";
-import {
-  getProjectsForCategory,
-  HubFiltersState,
-  INITIAL_FILTERS,
-} from "./hubFiltersState";
-import { CategoryHeader } from "./components/CategoryHeader";
-import { CategoryProjectsGrid } from "./components/CategoryProjectsGrid";
-import { PopularFiltersPanel } from "./components/filters/PopularFiltersPanel";
-import { NewGamesFiltersPanel } from "./components/filters/NewGamesFiltersPanel";
-import { PlayedGamesFiltersPanel } from "./components/filters/PlayedGamesFiltersPanel";
+
+import { JSX, useEffect, useMemo, useState } from "react";
+
+import { styled } from "@mui/material/styles";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 const PageContainer = styled("div")(({ theme }) => ({
   margin: theme.spacing(4),
@@ -138,12 +141,10 @@ export const HubCategoryPage = (): JSX.Element => {
     // playedRevision triggers re-evaluation when local played history changes
   }, [allProjects, category, filters, playedRevision, statsOverrides]);
 
-  const availableTags = useMemo(() => {
-    const publishedProjects = getPublishedProjects(allProjects, statsOverrides);
-    const tags = new Set<string>(PREDEFINED_PROJECT_TAGS);
-    publishedProjects.forEach((project) => project.tags.forEach((tag) => tags.add(tag)));
-    return Array.from(tags).sort((a, b) => a.localeCompare(b));
-  }, [allProjects, statsOverrides]);
+  const availableTags = useMemo(
+    () => collectAvailableTags(getPublishedProjects(allProjects, statsOverrides)),
+    [allProjects, statsOverrides],
+  );
 
   useEffect(() => {
     if (category !== "played") {

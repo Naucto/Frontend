@@ -1,6 +1,7 @@
 .idea
 .husky
 .github
-esling.config.js
+.env
+eslint.config.js
 README.md
 license.txt

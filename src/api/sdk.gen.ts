@@ -8,12 +8,21 @@ import {
 } from "./client";
 import { client } from "./client.gen";
 import type {
+  AuthControllerChangePasswordData,
+  AuthControllerChangePasswordErrors,
+  AuthControllerChangePasswordResponses,
   AuthControllerLoginData,
   AuthControllerLoginErrors,
   AuthControllerLoginResponses,
-  AuthControllerLoginWithGoogleData,
-  AuthControllerLoginWithGoogleErrors,
-  AuthControllerLoginWithGoogleResponses,
+  AuthControllerLoginWithGithubData,
+  AuthControllerLoginWithGithubErrors,
+  AuthControllerLoginWithGithubResponses,
+  AuthControllerLoginWithGoogleCodeData,
+  AuthControllerLoginWithGoogleCodeErrors,
+  AuthControllerLoginWithGoogleCodeResponses,
+  AuthControllerLoginWithMicrosoftData,
+  AuthControllerLoginWithMicrosoftErrors,
+  AuthControllerLoginWithMicrosoftResponses,
   AuthControllerLogoutData,
   AuthControllerLogoutResponses,
   AuthControllerRefreshData,
@@ -157,10 +166,26 @@ import type {
   UserControllerRemoveResponses,
   UserControllerUpdateData,
   UserControllerUpdateErrors,
+  UserControllerUpdateMyProfileData,
+  UserControllerUpdateMyProfileErrors,
+  UserControllerUpdateMyProfileResponses,
   UserControllerUpdateResponses,
+  UserControllerUploadProfileBackgroundData,
+  UserControllerUploadProfileBackgroundErrors,
+  UserControllerUploadProfileBackgroundResponses,
   UserControllerUploadProfilePictureData,
   UserControllerUploadProfilePictureErrors,
   UserControllerUploadProfilePictureResponses,
+  UserPublicControllerGetLikedGamesData,
+  UserPublicControllerGetLikedGamesResponses,
+  UserPublicControllerGetPublicProfileByUsernameData,
+  UserPublicControllerGetPublicProfileByUsernameErrors,
+  UserPublicControllerGetPublicProfileByUsernameResponses,
+  UserPublicControllerGetPublicProfileData,
+  UserPublicControllerGetPublicProfileErrors,
+  UserPublicControllerGetPublicProfileResponses,
+  UserPublicControllerGetPublishedGamesData,
+  UserPublicControllerGetPublishedGamesResponses,
   WorkSessionControllerGetInfoData,
   WorkSessionControllerGetInfoErrors,
   WorkSessionControllerGetInfoResponses,
@@ -1100,31 +1125,6 @@ export const authControllerRegister = <ThrowOnError extends boolean = false>(
     }
   });
 
-/**
- * Authenticate with Google OAuth token
- */
-export const authControllerLoginWithGoogle = <
-  ThrowOnError extends boolean = false
->(
-  options: Options<AuthControllerLoginWithGoogleData, ThrowOnError>
-) =>
-  (options.client ?? client).post<
-    AuthControllerLoginWithGoogleResponses,
-    AuthControllerLoginWithGoogleErrors,
-    ThrowOnError
-  >({
-    responseType: "json",
-    url: "/auth/google",
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers
-    }
-  });
-
-/**
- * Refresh the access token using refresh token cookie
- */
 export const authControllerRefresh = <ThrowOnError extends boolean = false>(
   options?: Options<AuthControllerRefreshData, ThrowOnError>
 ) =>
@@ -1172,6 +1172,29 @@ export const userControllerGetProfile = <ThrowOnError extends boolean = false>(
   });
 
 /**
+ * Update current user profile
+ */
+export const userControllerUpdateMyProfile = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<UserControllerUpdateMyProfileData, ThrowOnError>
+) =>
+  (options.client ?? client).patch<
+    UserControllerUpdateMyProfileResponses,
+    UserControllerUpdateMyProfileErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/users/profile",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
  * Get signed CDN access to a user's profile picture
  */
 export const userControllerGetProfilePicture = <
@@ -1206,6 +1229,29 @@ export const userControllerUploadProfilePicture = <
     ...formDataBodySerializer,
     security: [{ scheme: "bearer", type: "http" }],
     url: "/users/{id}/profile-picture",
+    ...options,
+    headers: {
+      "Content-Type": null,
+      ...options.headers
+    }
+  });
+
+/**
+ * Upload a user's profile background
+ */
+export const userControllerUploadProfileBackground = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<UserControllerUploadProfileBackgroundData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    UserControllerUploadProfileBackgroundResponses,
+    UserControllerUploadProfileBackgroundErrors,
+    ThrowOnError
+  >({
+    ...formDataBodySerializer,
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/users/{id}/profile-background",
     ...options,
     headers: {
       "Content-Type": null,
@@ -1286,21 +1332,77 @@ export const userControllerUpdate = <ThrowOnError extends boolean = false>(
   });
 
 /**
- * Get public CDN URL for a user's profile picture
+ * Get a public user profile by ID
  */
-export const userControllerGetPublicProfilePicture = <
+export const userPublicControllerGetPublicProfile = <
   ThrowOnError extends boolean = false
 >(
-  options: Options<UserControllerGetPublicProfilePictureData, ThrowOnError>
+  options: Options<UserPublicControllerGetPublicProfileData, ThrowOnError>
 ) =>
   (options.client ?? client).get<
-    UserControllerGetPublicProfilePictureResponses,
-    UserControllerGetPublicProfilePictureErrors,
+    UserPublicControllerGetPublicProfileResponses,
+    UserPublicControllerGetPublicProfileErrors,
     ThrowOnError
   >({
     responseType: "json",
-    security: [{ scheme: "bearer", type: "http" }],
-    url: "/users/public/{id}/profile-picture",
+    url: "/users/public/{id}/profile",
+    ...options
+  });
+
+/**
+ * Get a public user profile by username
+ */
+export const userPublicControllerGetPublicProfileByUsername = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<
+    UserPublicControllerGetPublicProfileByUsernameData,
+    ThrowOnError
+  >
+) =>
+  (options.client ?? client).get<
+    UserPublicControllerGetPublicProfileByUsernameResponses,
+    UserPublicControllerGetPublicProfileByUsernameErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/users/public/username/{username}/profile",
+    ...options
+  });
+
+/**
+ * Get a user's liked published games
+ */
+export const userPublicControllerGetLikedGames = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<UserPublicControllerGetLikedGamesData, ThrowOnError>
+) =>
+  (options.client ?? client).get<
+    UserPublicControllerGetLikedGamesResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/users/public/{id}/likes",
+    ...options
+  });
+
+/**
+ * Get a user's published games
+ */
+export const userPublicControllerGetPublishedGames = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<UserPublicControllerGetPublishedGamesData, ThrowOnError>
+) =>
+  (options.client ?? client).get<
+    UserPublicControllerGetPublishedGamesResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/users/public/{id}/published-games",
     ...options
   });
 
@@ -1377,3 +1479,81 @@ export const workSessionControllerGetInfo = <
     url: "/work-sessions/info/{id}",
     ...options
   });
+
+/**
+ * Authenticate with Google authorization code + PKCE
+ */
+export const authControllerLoginWithGoogleCode = <ThrowOnError extends boolean = false>(options: Options<AuthControllerLoginWithGoogleCodeData, ThrowOnError>) => (options.client ?? client).post<AuthControllerLoginWithGoogleCodeResponses, AuthControllerLoginWithGoogleCodeErrors, ThrowOnError>({
+    url: '/auth/google/code',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Authenticate with GitHub OAuth authorization code
+ */
+
+/**
+ * Authenticate with GitHub OAuth authorization code
+ */
+export const authControllerLoginWithGithub = <ThrowOnError extends boolean = false>(options: Options<AuthControllerLoginWithGithubData, ThrowOnError>) => (options.client ?? client).post<AuthControllerLoginWithGithubResponses, AuthControllerLoginWithGithubErrors, ThrowOnError>({
+    url: '/auth/github',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Authenticate with Microsoft Graph access token
+ */
+
+/**
+ * Authenticate with Microsoft Graph access token
+ */
+export const authControllerLoginWithMicrosoft = <ThrowOnError extends boolean = false>(options: Options<AuthControllerLoginWithMicrosoftData, ThrowOnError>) => (options.client ?? client).post<AuthControllerLoginWithMicrosoftResponses, AuthControllerLoginWithMicrosoftErrors, ThrowOnError>({
+    url: '/auth/microsoft',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Refresh the access token using refresh token cookie
+ */
+
+/**
+ * Change password, OAuth users can set one without providing a current password
+ */
+export const authControllerChangePassword = <ThrowOnError extends boolean = false>(options: Options<AuthControllerChangePasswordData, ThrowOnError>) => (options.client ?? client).patch<AuthControllerChangePasswordResponses, AuthControllerChangePasswordErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/password',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Remove refresh token cookie
+ */
+
+/**
+ * Get public CDN URL for a user's profile picture
+ */
+export const userControllerGetPublicProfilePicture = <ThrowOnError extends boolean = false>(options: Options<UserControllerGetPublicProfilePictureData, ThrowOnError>) => (options.client ?? client).get<UserControllerGetPublicProfilePictureResponses, UserControllerGetPublicProfilePictureErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/users/public/{id}/profile-picture',
+    ...options
+});
+
+/**
+ * Get all released projects
+ */

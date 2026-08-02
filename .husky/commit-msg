@@ -1,0 +1,8 @@
+#!/bin/sh
+
+npx --no -- commitlint --edit "$1"
+if [ $? -ne 0 ]; then
+  echo "❌ Commit message must be: [PART] [TYPE] Capitalized message"
+  echo "   TYPE one of: ADD, REMOVE, UPDATE, REFACTO, CLEAN, FIX"
+  exit 1
+fi

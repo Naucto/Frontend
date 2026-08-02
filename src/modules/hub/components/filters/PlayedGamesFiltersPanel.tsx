@@ -1,6 +1,4 @@
-import { type JSX } from "react";
 import { HubDateOrder, HubListSortMetric } from "../../hubSorting";
-import { FilterPanel } from "./FilterStyles";
 import {
   ListSortMetricSelect,
   ListSortSummaryChip,
@@ -9,6 +7,9 @@ import {
   SelectedTagChips,
   TagsField,
 } from "./FilterFields";
+import { FilterPanel } from "./FilterStyles";
+
+import { type JSX } from "react";
 
 export type PlayedGamesFiltersState = {
   order: HubDateOrder;

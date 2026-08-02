@@ -1,12 +1,15 @@
 import { type ProjectResponseDto } from "@api";
-import { Button, Typography } from "@mui/material";
-import { styled } from "@mui/material/styles";
 import CreateProjectCard from "@modules/projects/components/CreateProjectCard";
 import ProjectCard from "@modules/projects/components/ProjectCard";
 import { type ProjectCategory } from "@modules/projects/projectListUtils";
-import { type JSX } from "react";
+
 import { CustomSortButton } from "./Controls";
 import { EmptyState, LoadMoreRow, ProjectGrid } from "./Layout";
+
+import { type JSX } from "react";
+
+import { Button, Typography } from "@mui/material";
+import { styled } from "@mui/material/styles";
 
 type ProjectSectionProps = {
   category: ProjectCategory;

@@ -1,3 +1,9 @@
+import {
+  PROJECT_LONG_DESC_MAX_LENGTH,
+  PROJECT_NAME_MAX_LENGTH,
+  PROJECT_SHORT_DESC_MAX_LENGTH,
+} from "@shared/constants/projectFieldLimits";
+
 import * as Y from "yjs";
 
 export interface ProjectSettings {
@@ -21,6 +27,8 @@ export class ProjectSettingsProvider implements Destroyable {
 
   private readonly _boundCallListeners: () => void;
 
+  private _isDestroyed = false;
+
   constructor(ydoc: Y.Doc) {
     this._projectNameContent = ydoc.getText("projectName");
     this._shortDescContent = ydoc.getText("shortDescription");
@@ -36,6 +44,8 @@ export class ProjectSettingsProvider implements Destroyable {
   }
 
   destroy(): void {
+    if (this._isDestroyed) return;
+    this._isDestroyed = true;
     this._listeners.clear();
     this._projectNameContent.unobserve(this._boundCallListeners);
     this._shortDescContent.unobserve(this._boundCallListeners);
@@ -68,23 +78,26 @@ export class ProjectSettingsProvider implements Destroyable {
   }
 
   public updateName(name: string): void {
-    if (this._projectNameContent.toString() !== name) {
+    const trimmed = name.slice(0, PROJECT_NAME_MAX_LENGTH);
+    if (this._projectNameContent.toString() !== trimmed) {
       this._projectNameContent.delete(0, this._projectNameContent.length);
-      this._projectNameContent.insert(0, name);
+      this._projectNameContent.insert(0, trimmed);
     }
   }
 
   public updateShortDesc(shortDesc: string): void {
-    if (this._shortDescContent.toString() !== shortDesc) {
+    const trimmed = shortDesc.slice(0, PROJECT_SHORT_DESC_MAX_LENGTH);
+    if (this._shortDescContent.toString() !== trimmed) {
       this._shortDescContent.delete(0, this._shortDescContent.length);
-      this._shortDescContent.insert(0, shortDesc);
+      this._shortDescContent.insert(0, trimmed);
     }
   }
 
   public updateLongDesc(longDesc: string): void {
-    if (this._longDescContent.toString() !== longDesc) {
+    const trimmed = longDesc.slice(0, PROJECT_LONG_DESC_MAX_LENGTH);
+    if (this._longDescContent.toString() !== trimmed) {
       this._longDescContent.delete(0, this._longDescContent.length);
-      this._longDescContent.insert(0, longDesc);
+      this._longDescContent.insert(0, trimmed);
     }
   }
 

@@ -1,5 +1,7 @@
-import { SpriteProvider } from "./SpriteProvider.ts";
-import { MapProviderError } from "@errors/MapProviderError.ts";
+import { MapProviderError } from "@errors/MapProviderError";
+
+import { SpriteProvider } from "./SpriteProvider";
+
 import * as Y from "yjs";
 
 interface Size {
@@ -172,6 +174,10 @@ export class MapProvider implements Destroyable {
 
   observe(callback: ContentListener): void {
     this.listeners.add(callback);
+  }
+
+  unobserve(callback: ContentListener): void {
+    this.listeners.delete(callback);
   }
 
   observeRaw(callback: RawContentListener): void {

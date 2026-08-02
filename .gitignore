@@ -27,3 +27,10 @@ dist-ssr
 .env
 config.json
 config/providers.json
+
+# Vim session files
+Session.vim
+.editorconfig
+
+# Local agent memory (kept out of the repo)
+memories/

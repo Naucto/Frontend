@@ -1,4 +1,8 @@
+import { reportControllerCreate } from "@api";
+import { useUser } from "@providers/UserProvider";
+
 import { type JSX, useState } from "react";
+
 import FlagOutlinedIcon from "@mui/icons-material/FlagOutlined";
 import {
   Button,
@@ -13,8 +17,6 @@ import {
 } from "@mui/material";
 import { type SxProps, type Theme } from "@mui/material/styles";
 import { useSnackbar } from "notistack";
-import { reportControllerCreate } from "@api";
-import { useUser } from "@providers/UserProvider";
 
 type ReportActionProps = {
   targetType: "USER" | "PROJECT" | "COMMENT";

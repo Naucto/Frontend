@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
 import GameEditor from "@modules/create/game-editor/GameEditor";
 import { ProjectProvider, ProviderEventType } from "@providers/ProjectProvider";
+
+import React, { useEffect, useState } from "react";
+
+import { useParams } from "react-router-dom";
 
 const Project: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();

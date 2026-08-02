@@ -1,137 +1,48 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Tab, Tabs } from "@mui/material";
-import { MenuBook, SportsEsports } from "@mui/icons-material";
-import { styled } from "@mui/material/styles";
-import { Beforeunload } from "react-beforeunload";
-
 import { workSessionControllerLeave } from "@api";
 import CodeEditor from "@modules/create/game-editor/editors/CodeEditor";
 import GameEditorConsole from "@modules/create/game-editor/editors/GameEditorConsole";
-import { MapEditor } from "@modules/create/game-editor/editors/MapEditor/MapEditor";
+import { MapEditor } from "@modules/create/game-editor/editors/map-editor/MapEditor";
+import { MultiplayerSettingsEditor } from "@modules/create/game-editor/editors/multiplayer/MultiplayerSettingsEditor";
 import ProjectSettingsEditor from "@modules/create/game-editor/editors/ProjectSettingsEditor";
-import { SoundEditor } from "@modules/create/game-editor/editors/SoundEditor";
-// import { MultiplayerSettingsEditor } from "@modules/create/game-editor/editors/multiplayer/MultiplayerSettingsEditor.tsx";
-import { SpriteEditor } from "@modules/editor/SpriteEditor/SpriteEditor";
+import { SoundEditor } from "@modules/create/game-editor/editors/sound-editor/SoundEditor";
+import { SpriteEditor } from "@modules/create/game-editor/editors/sprite-editor/SpriteEditor";
 import { ProjectProvider, ProviderEventType } from "@providers/ProjectProvider";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
+import { EnvData } from "@shared/lua-env-manager/LuaEnvironmentManager";
 
-import GameCanvas from "@shared/canvas/gameCanvas/GameCanvas";
-import { EnvData } from "@shared/luaEnvManager/LuaEnvironmentManager";
-import CodeIcon from "src/assets/code.svg?react";
-import MapIcon from "src/assets/map.svg?react";
-// import MultiplayerIcon from "src/assets/user.svg?react";
-import ProjectIcon from "src/assets/project.svg?react";
-import SoundIcon from "src/assets/music.svg?react";
-import SpriteIcon from "src/assets/pen.svg?react";
-
-import { EditorProps, EditorTab } from "./editors/EditorType";
 import { EditorContainer } from "./editors/EditorContainer";
+import { EditorProps, EditorTab } from "./editors/EditorType";
+import {
+  DocIframe,
+  GameEditorContainer,
+  LeftPanel,
+  PreviewCanvas,
+  PreviewControls,
+  PreviewToolbar,
+  RightPanel,
+  RightPanelSubcontainer,
+  RunPreviewButton,
+  StyledAlert,
+  StyledDialog,
+  StyledDialogActions,
+  StyledDialogContent,
+  StyledDialogTitle,
+  StyledTab,
+  TabContent,
+} from "./GameEditor.styles";
 
-const GameEditorContainer = styled("div")(({ theme }) => ({
-  height: "100%",
-  display: "flex",
-  flexDirection: "row",
-  gap: theme.spacing(4),
-  padding: `0 calc(${theme.spacing(4)} - 4px) calc(${theme.spacing(4)} - 4px)`,
-  boxSizing: "border-box",
-}));
+import React, { useEffect, useMemo, useState } from "react";
 
-const LeftPanel = styled("div")(() => ({
-  width: "100%",
-  display: "flex",
-  flexDirection: "column",
-}));
+import { MenuBook, PlayArrow, SportsEsports } from "@mui/icons-material";
+import { Button, FormControlLabel, Switch, Tabs, Tooltip } from "@mui/material";
+import { Beforeunload } from "react-beforeunload";
 
-const RightPanel = styled("div")(({ theme }) => ({
-  width: "100%",
-  display: "flex",
-  flexDirection: "column",
-  gap: theme.spacing(4)
-}));
-
-const RightPanelSubcontainer = styled("div")(() => ({
-  display: "flex",
-  flexDirection: "column",
-  height: "100%"
-}));
-
-const DocIframe = styled("iframe")(({ theme }) => ({
-  width: "100%",
-  height: "50vh",
-
-  border: "none",
-  borderRadius: theme.spacing(1),
-  borderTopLeftRadius: 0,
-
-  backgroundColor: theme.palette.blue[500],
-}));
-
-const TabContent = styled(Box)(() => ({
-  flex: 1,
-  overflow: "auto",
-  display: "flex",
-  flexDirection: "column",
-  "&.active": {
-    display: "contents",
-  },
-  "&.hidden": {
-    display: "none",
-  },
-}));
-
-const StyledTab = styled(Tab)(({ theme }) => ({
-  fontFamily: theme.typography.fontFamily,
-  backgroundColor: theme.palette.blue[700],
-  minHeight: theme.spacing(6),
-  minWidth: theme.spacing(18),
-  fontSize: "1.2rem",
-  borderTopLeftRadius: theme.spacing(1),
-  borderTopRightRadius: theme.spacing(1),
-  color: "white",
-
-  "&.Mui-selected, &.Mui-focusVisible": {
-    backgroundColor: theme.palette.blue[500],
-    color: "white"
-  },
-  "&:hover": {
-    backgroundColor: theme.palette.blue[600],
-  },
-}));
-
-const PreviewCanvas = styled(GameCanvas)(({ theme }) => ({
-  borderRadius: theme.spacing(1)
-}));
-
-const StyledDialog = styled(Dialog)(({ theme }) => ({
-  "& .MuiPaper-root": {
-    backgroundColor: theme.palette.mode === "dark" ? theme.palette.grey[900] : "#0f0f0f",
-    color: theme.palette.getContrastText(theme.palette.grey[900]),
-    border: `1px solid ${theme.palette.grey[800]}`,
-    boxShadow: theme.shadows[8],
-  },
-}));
-
-const StyledDialogTitle = styled(DialogTitle)(() => ({
-  color: "inherit",
-}));
-
-const StyledDialogContent = styled(DialogContent)(({ theme }) => ({
-  backgroundColor: "transparent",
-  borderColor: theme.palette.grey[800],
-}));
-
-const StyledDialogActions = styled(DialogActions)(() => ({
-  backgroundColor: "transparent",
-}));
-
-const StyledAlert = styled(Alert)(({ theme }) => ({
-  backgroundColor: "transparent",
-  color: theme.palette.grey[100],
-  borderColor: theme.palette.grey[700],
-  "& .MuiAlert-icon": {
-    color: theme.palette.grey[400],
-  },
-}));
+import CodeIcon from "@assets/code.svg?react";
+import MapIcon from "@assets/map.svg?react";
+import SoundIcon from "@assets/music.svg?react";
+import SpriteIcon from "@assets/pen.svg?react";
+import ProjectIcon from "@assets/project.svg?react";
+import MultiplayerIcon from "@assets/user.svg?react";
 
 interface GameEditorProps {
   project: ProjectProvider
@@ -140,7 +51,11 @@ interface GameEditorProps {
 const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => {
   const [activeLeftPanelTab, setActiveLeftPanelTab] = useState(0);
   const [activeRightPanelTab, setActiveRightPanelTab] = useState(0);
+  const [code, setCode] = useState("");
   const [output, setOutput] = useState<string>("");
+  const [autoRefreshPreview, setAutoRefreshPreview] = useState(false);
+  const [previewCode, setPreviewCode] = useState("");
+  const [previewRevision, setPreviewRevision] = useState(0);
 
   const tabs = useMemo(() => [
     { label: "project", component: ProjectSettingsEditor, icon: <ProjectIcon/> },
@@ -148,7 +63,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
     { label: "sprite", component: SpriteEditor, icon: <SpriteIcon/> },
     { label: "map", component: MapEditor, icon: <MapIcon/> },
     { label: "sound", component: SoundEditor, icon: <SoundIcon/> },
-    // { label: "multiplayer", component: MultiplayerSettingsEditor, icon: <MultiplayerIcon/> }
+    { label: "multiplayer", component: MultiplayerSettingsEditor, icon: <MultiplayerIcon/> }
   ], []);
 
   const suppressBeforeUnloadRef = React.useRef(false);
@@ -198,17 +113,28 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
       return;
 
     project.observe(ProviderEventType.BECOME_HOST, becomeHostListener);
-    project.codeProvider.observe(setCode);
-  }, [project]);
 
-  const [code, setCode] = useState("");
+    const initialCode = project.codeProvider.getContent();
+    setCode(initialCode);
+    setPreviewCode(initialCode);
+
+    const onCodeChange = (nextCode: string): void => {
+      setCode(nextCode);
+    };
+
+    project.codeProvider.observe(onCodeChange);
+
+    return () => {
+      project.codeProvider.unobserve(onCodeChange);
+    };
+  }, [project]);
 
   //FIXME: temporary solution, should be replaced with given data from back
 
   const envData: EnvData = useMemo(() => ({
-    code,
+    code: previewCode,
     output,
-  }), [code, output]);
+  }), [output, previewCode]);
 
   const screenSize = useMemo(() => ({
     width: 320,
@@ -239,6 +165,20 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
       project.saveContent();
     }, 5 * 60 * 1000);
   };
+
+  const runPreview = (): void => {
+    setOutput("");
+    setPreviewCode(project.codeProvider.getContent());
+    setPreviewRevision((value) => value + 1);
+  };
+
+  useEffect(() => {
+    if (!autoRefreshPreview) {
+      return;
+    }
+
+    setPreviewCode(code);
+  }, [autoRefreshPreview, code]);
 
   const getAwarenessMessage = (): string => {
     const count = project.awarenessProvider.count();
@@ -284,7 +224,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
               className={activeLeftPanelTab === idx ? "active" : "hidden"}
             >
               {EditorComponent
-                ? <EditorContainer $disablePadding={tab.disablePadding}><EditorComponent project={project} /></EditorContainer>
+                ? <EditorContainer $disablePadding={tab.disablePadding}><EditorComponent project={project} consoleOutput={output} /></EditorContainer>
                 : <span>No editor available</span>}
             </TabContent>
           );
@@ -306,7 +246,34 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
             className={activeRightPanelTab === 0 ? "active" : "hidden"}
             data-cy="preview-panel"
           >
+            <PreviewToolbar>
+              <PreviewControls>
+                <RunPreviewButton
+                  variant="contained"
+                  size="small"
+                  startIcon={<PlayArrow />}
+                  onClick={runPreview}
+                  data-cy="run-preview"
+                >
+                  Play
+                </RunPreviewButton>
+                <Tooltip title="Refresh the preview whenever the code changes">
+                  <FormControlLabel
+                    sx={{ color: "white", m: 0 }}
+                    control={
+                      <Switch
+                        checked={autoRefreshPreview}
+                        onChange={(event) => setAutoRefreshPreview(event.target.checked)}
+                        size="small"
+                      />
+                    }
+                    label="Auto"
+                  />
+                </Tooltip>
+              </PreviewControls>
+            </PreviewToolbar>
             <PreviewCanvas
+              key={previewRevision}
               ref={canvasRef}
               canvasProps={{
                 map: project.mapProvider,
@@ -328,8 +295,6 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
             data-cy="doc-panel"
           >
             <DocIframe
-              src={import.meta.env.VITE_DOCS_URL ?? "https://docs.naucto.net"}
-              title="Naucto Documentation"
               data-cy="doc-iframe"
             />
           </TabContent>
