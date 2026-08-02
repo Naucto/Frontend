@@ -1,3 +1,4 @@
+import { ALLOW_ALL, NetPermissions } from "./NetPermissions";
 import { SessionTransport, UserId } from "./SessionTransport";
 
 export type TableScalar = number | string | boolean;
@@ -49,7 +50,7 @@ type RequestPayload =
 // response channel alongside write acks/nacks rather than the broadcast channel.
 type ResponsePayload =
   | { kind: "write-ack"; reqId: string; results: Array<{ path: string; version: number }> }
-  | { kind: "write-nack"; reqId: string; rejected: Array<{ path: string }> }
+  | { kind: "write-nack"; reqId: string; rejected: Array<{ path: string; reason?: string }> }
   | { kind: "lock-grant"; reqId: string }
   | { kind: "queue-result"; reqId: string; value: unknown }
   | SnapshotPayload;
@@ -91,6 +92,8 @@ const compilePattern = (pattern: string): RegExp => {
 export class SharedTableSession implements Destroyable {
   private readonly _transport: SessionTransport;
   private readonly _isHost: boolean;
+  // Host-enforced per-path access control; allow-all when unconfigured.
+  private readonly _permissions: NetPermissions;
 
   private readonly _store = new Map<string, TableEntry>();
 
@@ -130,9 +133,10 @@ export class SharedTableSession implements Destroyable {
   private readonly _pendingLocks = new Map<string, () => void>();
   private readonly _pendingPops = new Map<string, (value: unknown) => void>();
 
-  constructor(transport: SessionTransport) {
+  constructor(transport: SessionTransport, permissions: NetPermissions = ALLOW_ALL) {
     this._transport = transport;
     this._isHost = transport.role === "host";
+    this._permissions = permissions;
     this._snapshotApplied = this._isHost;
 
     transport.on("state", data => this._onState(data as StatePayload));
@@ -393,8 +397,13 @@ export class SharedTableSession implements Destroyable {
       if (this._pendingPatch.length === 0)
         return;
 
-      this._transport.broadcastState({ kind: "patch", ops: [...this._pendingPatch] });
+      // Privacy: withhold server-private paths from clients. The host keeps them
+      // in its own store; they're simply never broadcast.
+      const ops = this._pendingPatch.filter((op) => this._permissions.canClientRead(op.path));
       this._pendingPatch.length = 0;
+
+      if (ops.length > 0)
+        this._transport.broadcastState({ kind: "patch", ops });
       return;
     }
 
@@ -478,13 +487,26 @@ export class SharedTableSession implements Destroyable {
   }
 
   private _handleWrite(from: UserId, payload: { reqId: string; ops: WriteOp[] }): void {
+    // Authority: a client may only write paths it is permitted to. Reject the
+    // whole request if any op is forbidden, so a partial write never lands.
+    const forbidden = payload.ops.filter((op) => !this._permissions.canClientWrite(op.path));
+
+    if (forbidden.length > 0) {
+      this._transport.respondTo(from, {
+        kind: "write-nack",
+        reqId: payload.reqId,
+        rejected: forbidden.map((op) => ({ path: op.path, reason: "forbidden" })),
+      });
+      return;
+    }
+
     const conflict = payload.ops.find((op) => (this._store.get(op.path)?.version ?? 0) !== op.baseVersion);
 
     if (conflict) {
       this._transport.respondTo(from, {
         kind: "write-nack",
         reqId: payload.reqId,
-        rejected: [{ path: conflict.path }],
+        rejected: [{ path: conflict.path, reason: "conflict" }],
       });
       return;
     }
@@ -575,7 +597,7 @@ export class SharedTableSession implements Destroyable {
     }
 
     for (const rejected of payload.rejected)
-      this._errorSubs.forEach((cb) => cb(rejected.path, "conflict"));
+      this._errorSubs.forEach((cb) => cb(rejected.path, rejected.reason ?? "conflict"));
   }
 
   private _onPeerJoined(userId: UserId): void {
@@ -671,11 +693,13 @@ export class SharedTableSession implements Destroyable {
   }
 
   private _sendSnapshot(userId: UserId): void {
-    const entries = [...this._store.entries()].map(([path, entry]) => ({
-      path,
-      value: entry.value,
-      version: entry.version,
-    }));
+    const entries = [...this._store.entries()]
+      .filter(([path]) => this._permissions.canClientRead(path))
+      .map(([path, entry]) => ({
+        path,
+        value: entry.value,
+        version: entry.version,
+      }));
     const sidecar = [...this._sidecar.entries()].map(([key, value]) => ({ key, value }));
 
     this._transport.respondTo(userId, { kind: "snapshot", entries, sidecar });

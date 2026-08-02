@@ -12,7 +12,7 @@ import {
   MultiplayerSettingsProvider,
   MultiplayerSettingsUpdateListener
 } from "@providers/editors/MultiplayerSettingsProvider";
-import { enumFromName, enumNames } from "@typedefs/enum";
+import { enumFromName } from "@typedefs/enum";
 
 import React, { JSX, useEffect, useState } from "react";
 
@@ -213,7 +213,9 @@ export const MultiplayerDirectoryEntryPermissionsSet: React.FC<MultiplayerDirect
     );
   };
 
-  const normal_flagNames = enumNames(MultiplayerDirectoryFlags);
+  // Only CLIENT_* is enforced by the host at runtime; SERVER_* is reserved (the
+  // host is always the authority), so it isn't surfaced here.
+  const normal_flagNames = ["CLIENT_READ", "CLIENT_WRITE"];
   const [normal_flagStates, normal_setFlagStates] = useState<DirectoryFlagsRecord>(getFlagStates());
 
   const normal_observeCallback: MultiplayerSettingsUpdateListener = (action, updatedSettings) => {
@@ -251,7 +253,7 @@ export const MultiplayerDirectoryEntryPermissionsSet: React.FC<MultiplayerDirect
             };
 
             return (
-              <Tooltip title={flagName} key={flagName}>
+              <Tooltip title={flagName === "CLIENT_READ" ? "Clients can read this path" : "Clients can write this path"} key={flagName}>
                 <Checkbox
                   checked={normal_flagStates[flagName]}
                   onChange={flagUpdate} />

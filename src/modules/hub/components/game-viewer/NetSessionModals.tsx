@@ -1,6 +1,7 @@
 import { GameSessionConnectionResponseDto, GameSessionResponseDto } from "@api";
 import { ConfirmDialog } from "@components/ui/ConfirmDialog";
 import { StyledTable, StyledTableCell, StyledTableRow } from "@components/ui/StyledTable";
+import { NetPermissions } from "@engine/net/NetPermissions";
 import { SharedTableSession } from "@engine/net/SharedTableSession";
 import {
   createGameSession,
@@ -70,7 +71,7 @@ const ChoiceCard = ({ icon, title, description, onClick }: {
   </Card>
 );
 
-const HostDialog = ({ request, projectId }: { request: NetUiRequest; projectId: number }): JSX.Element => {
+const HostDialog = ({ request, projectId, permissions }: { request: NetUiRequest; projectId: number; permissions?: NetPermissions }): JSX.Element => {
   const maxPlayers = request.hostOptions?.maxPlayers ?? 2;
   const [title, setTitle] = useState(request.hostOptions?.title ?? "My game");
   const [visibility, setVisibility] = useState<Visibility>("PUBLIC");
@@ -83,7 +84,7 @@ const HostDialog = ({ request, projectId }: { request: NetUiRequest; projectId: 
 
     try {
       const connection = await createGameSession({ projectId, title, maxPlayers, visibility });
-      const session = buildSession(connection, "host", connection.playerId);
+      const session = buildSession(connection, "host", connection.playerId, permissions);
 
       if (connection.joinCode) {
         setPending({ session, joinCode: connection.joinCode });
@@ -300,10 +301,11 @@ const JoinDialog = ({ request, projectId, selfJoin }: {
   );
 };
 
-export const NetSessionModals = ({ bridge, projectId, selfJoin }: {
+export const NetSessionModals = ({ bridge, projectId, selfJoin, permissions }: {
   bridge: NetUiBridge;
   projectId: number;
   selfJoin?: boolean;
+  permissions?: NetPermissions;
 }): JSX.Element | null => {
   const request = useSyncExternalStore(bridge.subscribe, bridge.getSnapshot);
 
@@ -311,7 +313,7 @@ export const NetSessionModals = ({ bridge, projectId, selfJoin }: {
     return null;
 
   if (request.kind === "host")
-    return <HostDialog request={request} projectId={projectId} />;
+    return <HostDialog request={request} projectId={projectId} permissions={permissions} />;
 
   return <JoinDialog request={request} projectId={projectId} selfJoin={selfJoin} />;
 };

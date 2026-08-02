@@ -9,6 +9,7 @@ import ProjectSettingsEditor from "@modules/create/game-editor/editors/ProjectSe
 import { SoundEditor } from "@modules/create/game-editor/editors/sound-editor/SoundEditor";
 import { SpriteEditor } from "@modules/create/game-editor/editors/sprite-editor/SpriteEditor";
 import { NetSessionModals } from "@modules/hub/components/game-viewer/NetSessionModals";
+import { netPermissionsFromSettings } from "@providers/net/netPermissions";
 import { NetUiBridge } from "@providers/net/NetUiBridge";
 import { ProjectProvider, ProviderEventType } from "@providers/ProjectProvider";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
@@ -61,6 +62,11 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
   const [previewRevision, setPreviewRevision] = useState(0);
 
   const netBridge = useMemo(() => new NetUiBridge(), []);
+  // Per-path permissions configured in the MULTIPLAYER tab, enforced by the host.
+  const netPermissions = useMemo(
+    () => netPermissionsFromSettings(project.multiplayerSettingsProvider),
+    [project],
+  );
 
   useEffect(() => () => netBridge.destroy(), [netBridge]);
 
@@ -347,7 +353,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
         return "Are you sure you want to leave? Your changes may not be saved.";
       }} />
 
-      <NetSessionModals bridge={netBridge} projectId={project.projectId} selfJoin />
+      <NetSessionModals bridge={netBridge} projectId={project.projectId} selfJoin permissions={netPermissions} />
     </GameEditorContainer>
   );
 };

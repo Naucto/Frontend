@@ -1,4 +1,5 @@
 import { GameSessionConnectionResponseDto } from "@api";
+import { NetPermissions } from "@engine/net/NetPermissions";
 import { SessionRole, UserId } from "@engine/net/SessionTransport";
 import { SharedTableSession } from "@engine/net/SharedTableSession";
 
@@ -10,6 +11,7 @@ export const buildSession = (
   connection: GameSessionConnectionResponseDto,
   role: SessionRole,
   selfUserId: UserId,
+  permissions?: NetPermissions,
 ): SharedTableSession => {
   // The generated client types username/credential as objects, but they are
   // strings at runtime; narrow on type rather than force-casting.
@@ -38,5 +40,5 @@ export const buildSession = (
     refreshTicket,
   });
 
-  return new SharedTableSession(transport);
+  return new SharedTableSession(transport, permissions);
 };

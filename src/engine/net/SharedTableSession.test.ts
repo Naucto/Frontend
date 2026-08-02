@@ -1,3 +1,4 @@
+import { NetPermissions } from "./NetPermissions";
 import {
   SessionRole,
   SessionTransport,
@@ -85,9 +86,9 @@ const flush = async (): Promise<void> => {
     await Promise.resolve();
 };
 
-function makeSession(role: SessionRole, userId: UserId, hub: Hub): SharedTableSession {
+function makeSession(role: SessionRole, userId: UserId, hub: Hub, permissions?: NetPermissions): SharedTableSession {
   const transport = new MockTransport(role, userId, hub);
-  const session = new SharedTableSession(transport);
+  const session = new SharedTableSession(transport, permissions);
   hub.register(transport);
   return session;
 }
@@ -212,6 +213,55 @@ describe("SharedTableSession", () => {
     // A host-owned path (nothing pending locally) still applies normally.
     fire("state", { kind: "patch", ops: [{ path: "ball.x", op: "set", value: 42, version: 2 }] });
     expect(slave.getValue("ball.x")).toBe(42);
+  });
+
+  it("rejects a client write to a path without CLIENT_WRITE and rolls it back", async () => {
+    const hub = new Hub();
+    const perms: NetPermissions = { canClientWrite: (p) => p !== "score", canClientRead: () => true };
+    const host = makeSession("host", 1, hub, perms);
+    const slave = makeSession("slave", 2, hub);
+    const errors: Array<{ path: string; reason: string }> = [];
+    slave.onError((path, reason) => errors.push({ path, reason }));
+
+    slave.setValue("score", 99);
+    await flush();
+
+    expect(slave.getValue("score")).toBeUndefined();  // optimistic write rolled back
+    expect(host.getValue("score")).toBeUndefined();    // never applied on the host
+    expect(errors).toContainEqual({ path: "score", reason: "forbidden" });
+
+    // A permitted path still writes through.
+    slave.setValue("players.2.x", 5);
+    await flush();
+    expect(host.getValue("players.2.x")).toBe(5);
+  });
+
+  it("withholds a server-private path from the client snapshot", async () => {
+    const hub = new Hub();
+    const perms: NetPermissions = { canClientWrite: () => true, canClientRead: (p) => p !== "secret" };
+    const host = makeSession("host", 1, hub, perms);
+
+    host.setValue("secret", 42);
+    host.setValue("public", 7);
+    await flush();
+
+    const slave = makeSession("slave", 2, hub);  // register fires the host snapshot
+    expect(slave.getValue("public")).toBe(7);
+    expect(slave.getValue("secret")).toBeUndefined();
+  });
+
+  it("withholds a server-private path from live broadcasts", async () => {
+    const hub = new Hub();
+    const perms: NetPermissions = { canClientWrite: () => true, canClientRead: (p) => p !== "secret" };
+    const host = makeSession("host", 1, hub, perms);
+    const slave = makeSession("slave", 2, hub);
+
+    host.setValue("secret", 1);
+    host.setValue("visible", 2);
+    await flush();
+
+    expect(slave.getValue("visible")).toBe(2);
+    expect(slave.getValue("secret")).toBeUndefined();
   });
 
   it("applies a slave write through the host and acks it", async () => {
