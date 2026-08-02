@@ -9,6 +9,7 @@ import {
   ProjectExResponseDto,
 } from "@api";
 import { type EnvData } from "@engine/runtime/LuaEnvironmentManager";
+import { useReturnFocusOnNetDialogClose } from "@hooks/useReturnFocusOnNetDialogClose";
 import { GameProvider, ProviderEventType } from "@providers/GameProvider";
 import { NetUiBridge } from "@providers/net/NetUiBridge";
 import { useUser } from "@providers/UserProvider";
@@ -86,6 +87,8 @@ export const GameViewer = (): JSX.Element => {
   const canvasRef = useRef<SpriteRendererHandle>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const netBridge = useMemo(() => new NetUiBridge(), []);
+
+  useReturnFocusOnNetDialogClose(netBridge, canvasRef);
 
   useEffect(() => () => netBridge.destroy(), [netBridge]);
   const [code, setCode] = useState("");

@@ -1,5 +1,6 @@
 import { workSessionControllerLeave } from "@api";
 import { EnvData } from "@engine/runtime/LuaEnvironmentManager";
+import { useReturnFocusOnNetDialogClose } from "@hooks/useReturnFocusOnNetDialogClose";
 import CodeEditor from "@modules/create/game-editor/editors/CodeEditor";
 import GameEditorConsole from "@modules/create/game-editor/editors/GameEditorConsole";
 import { MapEditor } from "@modules/create/game-editor/editors/map-editor/MapEditor";
@@ -165,6 +166,8 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
   }, [editorTabs]);
 
   const canvasRef = React.useRef<SpriteRendererHandle>(null);
+
+  useReturnFocusOnNetDialogClose(netBridge, canvasRef);
 
   const becomeHostListener = (): void => {
     setInterval(() => {
