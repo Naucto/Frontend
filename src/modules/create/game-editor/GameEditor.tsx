@@ -196,7 +196,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
   }, [autoRefreshPreview, code]);
 
   const getAwarenessMessage = (): string => {
-    const count = project.awarenessProvider.count();
+    const count = project.awarenessProvider?.count() ?? 1;
     if (count > 1) {
       const otherUsers = count - 1;
       const userText = otherUsers === 1 ? "person is" : "people are";
@@ -329,7 +329,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
         <StyledDialogTitle>You are offline</StyledDialogTitle>
         <StyledDialogContent dividers>
           <StyledAlert
-            severity={project.awarenessProvider.count() > 1 ? "warning" : "info"}
+            severity={(project.awarenessProvider?.count() ?? 1) > 1 ? "warning" : "info"}
             variant="outlined"
           >
             {getAwarenessMessage()}
