@@ -2,6 +2,7 @@ import { GameSessionConnectionResponseDto } from "@api";
 import { NetPermissions } from "@engine/net/NetPermissions";
 import { SessionRole, UserId } from "@engine/net/SessionTransport";
 import { SharedTableSession } from "@engine/net/SharedTableSession";
+import { GameSessionError } from "@errors/GameSessionError";
 
 import { refreshSessionTicket } from "./gameSessionApi";
 import { RefreshedTicket } from "./SessionSignalingSocket";
@@ -33,6 +34,10 @@ export const buildSession = (
     credential: typeof server.credential === "string" ? server.credential : undefined,
   }));
 
+  const signalingUrl = connection.webrtcConfig.signaling[0];
+  if (!signalingUrl)
+    throw new GameSessionError("session has no signaling endpoint");
+
   const refreshTicket = async (): Promise<RefreshedTicket | null> => {
     try {
       const fresh = await refreshSessionTicket(connection.sessionUuid);
@@ -45,7 +50,7 @@ export const buildSession = (
   const transport = new SyncedSessionTransport({
     role,
     selfUserId,
-    signalingUrl: toReachableSignalingUrl(connection.webrtcConfig.signaling[0]!),
+    signalingUrl: toReachableSignalingUrl(signalingUrl),
     ticket: connection.connectionTicket,
     ticketIssuedAt: Date.now(),
     iceServers,

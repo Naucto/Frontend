@@ -92,7 +92,7 @@ export const GameViewer = (): JSX.Element => {
 
   useEffect(() => () => netBridge.destroy(), [netBridge]);
   const [code, setCode] = useState("");
-  const [output, setOutput] = useState("");
+  const [, setOutput] = useState("");
   const [bannerUrl, setBannerUrl] = useState("");
   const [gameProvider, setGameProvider] = useState<GameProvider>();
   const [showGame, setShowGame] = useState(false);
@@ -109,8 +109,7 @@ export const GameViewer = (): JSX.Element => {
 
   const envData: EnvData = useMemo(() => ({
     code,
-    output,
-  }), [code, output]);
+  }), [code]);
 
   const focusGameCanvas = useCallback((): void => {
     canvasRef.current?.getCanvas?.()?.focus();

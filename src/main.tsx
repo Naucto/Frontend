@@ -1,7 +1,7 @@
-import { authControllerRefresh } from "@api";
 import { client } from "@api/client.gen";
 import { UserProvider } from "@providers/UserProvider";
 import { AUTH_EXPIRED_EVENT } from "@utils/authEvents";
+import { refreshAccessToken } from "@utils/authRefresh";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
 
 import App from "./App";
@@ -52,10 +52,9 @@ client.instance.interceptors.response.use(
 
     config!._authRetried = true;
 
-    const { data } = await authControllerRefresh();
-    if (data?.access_token) {
-      LocalStorageManager.setToken(data.access_token);
-      config!.headers.set("Authorization", `Bearer ${data.access_token}`);
+    const token = await refreshAccessToken();
+    if (token) {
+      config!.headers.set("Authorization", `Bearer ${token}`);
       return client.instance.request(config!);
     }
 

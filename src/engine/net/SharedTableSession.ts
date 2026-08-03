@@ -62,6 +62,10 @@ interface InflightWrite {
   previous: Map<string, TableEntry | undefined>;
 }
 
+type DeferredWrite =
+  | { op: "set"; value: TableScalar; before: TableEntry | undefined }
+  | { op: "del"; before: TableEntry | undefined };
+
 interface LockWaiter {
   userId: UserId;
   reqId?: string;
@@ -89,6 +93,26 @@ const compilePattern = (pattern: string): RegExp => {
   return new RegExp("^" + out + "$");
 };
 
+// Frames arrive over the P2P data channel already JSON-parsed and are otherwise
+// untrusted: a malicious or buggy peer bypasses the backend relay. Validate the
+// shape before acting so a bad frame is dropped instead of throwing (which would
+// break the host's session for everyone) or storing a non-scalar value.
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const isTableScalar = (value: unknown): value is TableScalar =>
+  typeof value === "number" || typeof value === "string" || typeof value === "boolean";
+
+const isValidWriteOp = (op: unknown): op is WriteOp => {
+  if (!isRecord(op) || typeof op.path !== "string" || typeof op.baseVersion !== "number")
+    return false;
+
+  if (op.op === "set")
+    return isTableScalar(op.value);
+
+  return op.op === "del";
+};
+
 export class SharedTableSession implements Destroyable {
   private readonly _transport: SessionTransport;
   private readonly _isHost: boolean;
@@ -114,10 +138,10 @@ export class SharedTableSession implements Destroyable {
   private readonly _inflightPaths = new Set<string>();
   // Latest desired write per path that arrived while that path had an in-flight
   // write; flushed once the in-flight ack settles the version (write coalescing).
-  private readonly _deferredWrites = new Map<
-    string,
-    { op: "set"; value: TableScalar } | { op: "del" }
-  >();
+  // `before` is the last-good baseline captured when the path first went in
+  // flight, carried through so a later nack rolls back to it rather than to the
+  // coalesced prediction it would otherwise re-capture.
+  private readonly _deferredWrites = new Map<string, DeferredWrite>();
   private _reqCounter = 0;
 
   private readonly _changeSubs: Array<{ regex: RegExp; cb: TableChangeListener }> = [];
@@ -209,19 +233,23 @@ export class SharedTableSession implements Destroyable {
       return;
     }
 
-    const baseVersion = this._store.get(path)?.version ?? 0;
-    this._captureBefore(path);
-    this._writeEntry(path, value, baseVersion);
+    const existing = this._store.get(path);
+    const baseVersion = existing?.version ?? 0;
 
     // A path with an in-flight write can't be re-sent yet (its server version
     // isn't settled). Coalesce to the latest value locally and send it once the
     // ack lands, so a client can stream an owned value (e.g. its paddle) every
-    // frame without self-conflicting.
+    // frame without self-conflicting. Preserve the baseline from the first
+    // coalesced write so a nack rolls back past every prediction.
     if (this._inflightPaths.has(path)) {
-      this._deferredWrites.set(path, { op: "set", value });
+      const before = this._deferredWrites.get(path)?.before ?? existing;
+      this._writeEntry(path, value, baseVersion);
+      this._deferredWrites.set(path, { op: "set", value, before });
       return;
     }
 
+    this._captureBefore(path);
+    this._writeEntry(path, value, baseVersion);
     this._pendingWrite.push({ path, op: "set", value, baseVersion });
     this._scheduleFlush();
   }
@@ -236,16 +264,20 @@ export class SharedTableSession implements Destroyable {
     }
 
     for (const p of paths) {
-      const baseVersion = this._store.get(p)?.version ?? 0;
-      this._captureBefore(p);
-      this._removeEntry(p);
+      const existing = this._store.get(p);
+      const baseVersion = existing?.version ?? 0;
 
-      // Same coalescing as setValue: defer a delete for a path still in flight.
+      // Same coalescing as setValue: defer a delete for a path still in flight,
+      // preserving the baseline captured when it first went in flight.
       if (this._inflightPaths.has(p)) {
-        this._deferredWrites.set(p, { op: "del" });
+        const before = this._deferredWrites.get(p)?.before ?? existing;
+        this._removeEntry(p);
+        this._deferredWrites.set(p, { op: "del", before });
         continue;
       }
 
+      this._captureBefore(p);
+      this._removeEntry(p);
       this._pendingWrite.push({ path: p, op: "del", baseVersion });
     }
 
@@ -354,7 +386,9 @@ export class SharedTableSession implements Destroyable {
 
       this._deferredWrites.delete(path);
       const baseVersion = this._store.get(path)?.version ?? 0;
-      this._captureBefore(path);
+      // Carry the baseline captured at coalesce time so a nack on this deferred
+      // write rolls back to the last good value, not the prediction it replaced.
+      this._pendingBefore.set(path, deferred.before);
 
       if (deferred.op === "set")
         this._pendingWrite.push({ path, op: "set", value: deferred.value, baseVersion });
@@ -426,6 +460,9 @@ export class SharedTableSession implements Destroyable {
   }
 
   private _onState(payload: StatePayload): void {
+    if (!isRecord(payload))
+      return;
+
     // Hold live state until the baseline snapshot has been applied (slave only),
     // then replay it in arrival order on top of the snapshot.
     if (!this._snapshotApplied) {
@@ -434,7 +471,13 @@ export class SharedTableSession implements Destroyable {
     }
 
     if (payload.kind === "patch") {
+      if (!Array.isArray(payload.ops))
+        return;
+
       for (const op of payload.ops) {
+        if (!isRecord(op) || typeof op.path !== "string")
+          continue;
+
         // Skip the host's echo of a value we're still driving: a path with an
         // in-flight or coalesced local write holds a newer prediction, and
         // applying the stale echo would snap it back (a visible stutter). The
@@ -442,23 +485,30 @@ export class SharedTableSession implements Destroyable {
         if (this._inflightPaths.has(op.path) || this._deferredWrites.has(op.path))
           continue;
 
-        if (op.op === "set")
-          this._writeEntry(op.path, op.value, op.version);
-        else
+        if (op.op === "set") {
+          if (isTableScalar(op.value) && typeof op.version === "number")
+            this._writeEntry(op.path, op.value, op.version);
+        } else if (op.op === "del") {
           this._removeEntry(op.path);
+        }
       }
       return;
     }
 
     if (payload.kind === "sidecar") {
-      this._sidecar.set(payload.key, payload.value);
+      if (typeof payload.key === "string")
+        this._sidecar.set(payload.key, payload.value);
       return;
     }
 
-    this._dispatchEvent(payload.name, payload.from, payload.payload);
+    if (payload.kind === "event")
+      this._dispatchEvent(payload.name, payload.from, payload.payload);
   }
 
   private _onRequest(from: UserId, payload: RequestPayload): void {
+    if (!isRecord(payload))
+      return;
+
     if (payload.kind === "event") {
       this._transport.broadcastState({ kind: "event", name: payload.name, from, payload: payload.payload });
       this._dispatchEvent(payload.name, from, payload.payload);
@@ -466,6 +516,9 @@ export class SharedTableSession implements Destroyable {
     }
 
     if (payload.kind === "lock") {
+      if (typeof payload.path !== "string")
+        return;
+
       if (payload.action === "acquire")
         this._hostAcquire(from, payload.path, payload.reqId, undefined);
       else
@@ -475,6 +528,9 @@ export class SharedTableSession implements Destroyable {
     }
 
     if (payload.kind === "queue") {
+      if (typeof payload.path !== "string")
+        return;
+
       if (payload.op === "push")
         this._enqueue(payload.path, payload.value);
       else
@@ -483,10 +539,16 @@ export class SharedTableSession implements Destroyable {
       return;
     }
 
-    this._handleWrite(from, payload);
+    if (payload.kind === "write")
+      this._handleWrite(from, payload);
   }
 
   private _handleWrite(from: UserId, payload: { reqId: string; ops: WriteOp[] }): void {
+    // Untrusted peer input: drop a malformed frame rather than let a bad shape
+    // throw (e.g. ops.filter on a non-array) or store a non-scalar value.
+    if (typeof payload.reqId !== "string" || !Array.isArray(payload.ops) || !payload.ops.every(isValidWriteOp))
+      return;
+
     // Authority: a client may only write paths it is permitted to. Reject the
     // whole request if any op is forbidden, so a partial write never lands.
     const forbidden = payload.ops.filter((op) => !this._permissions.canClientWrite(op.path));
@@ -526,11 +588,21 @@ export class SharedTableSession implements Destroyable {
   }
 
   private _onResponse(payload: ResponsePayload): void {
+    if (!isRecord(payload))
+      return;
+
     if (payload.kind === "snapshot") {
-      for (const entry of payload.entries)
-        this._writeEntry(entry.path, entry.value, entry.version);
-      for (const item of payload.sidecar)
-        this._sidecar.set(item.key, item.value);
+      if (!Array.isArray(payload.entries) || !Array.isArray(payload.sidecar))
+        return;
+
+      for (const entry of payload.entries) {
+        if (isRecord(entry) && typeof entry.path === "string" && isTableScalar(entry.value) && typeof entry.version === "number")
+          this._writeEntry(entry.path, entry.value, entry.version);
+      }
+      for (const item of payload.sidecar) {
+        if (isRecord(item) && typeof item.key === "string")
+          this._sidecar.set(item.key, item.value);
+      }
 
       // Baseline is in place: apply anything that arrived while we were waiting,
       // in order, so later host writes win over the snapshot.
@@ -574,10 +646,15 @@ export class SharedTableSession implements Destroyable {
       this._inflightPaths.delete(p);
 
     if (payload.kind === "write-ack") {
-      for (const result of payload.results) {
-        const entry = this._store.get(result.path);
-        if (entry)
-          entry.version = result.version;
+      if (Array.isArray(payload.results)) {
+        for (const result of payload.results) {
+          if (!isRecord(result) || typeof result.path !== "string" || typeof result.version !== "number")
+            continue;
+
+          const entry = this._store.get(result.path);
+          if (entry)
+            entry.version = result.version;
+        }
       }
       // The version is now settled; flush any value coalesced while in flight.
       this._flushDeferred(inflight.paths);
@@ -596,8 +673,15 @@ export class SharedTableSession implements Destroyable {
         this._writeEntry(p, before.value, before.version);
     }
 
-    for (const rejected of payload.rejected)
-      this._errorSubs.forEach((cb) => cb(rejected.path, rejected.reason ?? "conflict"));
+    if (Array.isArray(payload.rejected)) {
+      for (const rejected of payload.rejected) {
+        if (!isRecord(rejected) || typeof rejected.path !== "string")
+          continue;
+
+        const reason = typeof rejected.reason === "string" ? rejected.reason : "conflict";
+        this._errorSubs.forEach((cb) => cb(rejected.path, reason));
+      }
+    }
   }
 
   private _onPeerJoined(userId: UserId): void {

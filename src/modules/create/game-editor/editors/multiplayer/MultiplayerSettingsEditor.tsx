@@ -12,7 +12,7 @@ import {
   MultiplayerSettingsProvider,
   MultiplayerSettingsUpdateListener
 } from "@providers/editors/MultiplayerSettingsProvider";
-import { enumFromName } from "@typedefs/enum";
+import { enumFromName, enumNames } from "@typedefs/enum";
 
 import React, { JSX, useEffect, useState } from "react";
 
@@ -214,8 +214,10 @@ export const MultiplayerDirectoryEntryPermissionsSet: React.FC<MultiplayerDirect
   };
 
   // Only CLIENT_* is enforced by the host at runtime; SERVER_* is reserved (the
-  // host is always the authority), so it isn't surfaced here.
-  const normal_flagNames = ["CLIENT_READ", "CLIENT_WRITE"];
+  // host is always the authority), so it isn't surfaced here. Derived from the
+  // enum so a renamed member can't silently drift out of sync with the UI.
+  const normal_flagNames = enumNames(MultiplayerDirectoryFlags)
+    .filter(name => name.startsWith("CLIENT_"));
   const [normal_flagStates, normal_setFlagStates] = useState<DirectoryFlagsRecord>(getFlagStates());
 
   const normal_observeCallback: MultiplayerSettingsUpdateListener = (action, updatedSettings) => {

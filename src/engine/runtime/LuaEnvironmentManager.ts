@@ -1,5 +1,6 @@
 import { ApiContext } from "@engine/api/ApiContext";
 import { EngineModule } from "@engine/api/EngineModule";
+import { errorMessage } from "@engine/api/errorMessage";
 import { GraphicsAPI } from "@engine/api/GraphicsAPI";
 import { InputAPI } from "@engine/api/InputAPI";
 import { MapAPI } from "@engine/api/MapAPI";
@@ -8,8 +9,7 @@ import { SoundAPI } from "@engine/api/SoundAPI";
 import { LuaEnvironment } from "@engine/lua/LuaEnvironment";
 
 export interface EnvData {
-  code: string,
-  output: string
+  code: string
 }
 
 // Console-output setter — a React `useState` setter satisfies this without the
@@ -76,7 +76,7 @@ class LuaEnvironmentManager {
       return true;
     } catch (error) {
       if (error instanceof Error) {
-        this._setOutput(this._getErrorMsg(error));
+        this._setOutput(errorMessage(error));
         return false;
       }
     }
@@ -111,10 +111,6 @@ class LuaEnvironmentManager {
     this._addOutput(output);
   }
 
-  private _getErrorMsg(error: Error): string {
-    return "Error: " + (error.message);
-  }
-
   /**
    * Evaluates a fragment, reporting any failure to the console output.
    * Returns true on success, false if evaluation threw. Catches every
@@ -127,7 +123,7 @@ class LuaEnvironmentManager {
       return true;
     } catch (error) {
       const message = error instanceof Error
-        ? this._getErrorMsg(error)
+        ? errorMessage(error)
         : "Error: " + String(error);
       this._addOutput(message);
       return false;

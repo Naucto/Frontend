@@ -146,8 +146,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
 
   const envData: EnvData = useMemo(() => ({
     code: previewCode,
-    output,
-  }), [output, previewCode]);
+  }), [previewCode]);
 
   const screenSize = useMemo(() => ({
     width: 320,

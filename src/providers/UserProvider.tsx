@@ -1,8 +1,9 @@
-import { authControllerRefresh, userControllerGetProfile, UserProfileResponseDto } from "@api";
+import { userControllerGetProfile, UserProfileResponseDto } from "@api";
 import { ContextError } from "@errors/ContextError";
 import { useAsync } from "@hooks/useAsync";
 import { User } from "@typedefs/userTypes";
 import { AUTH_EXPIRED_EVENT } from "@utils/authEvents";
+import { refreshAccessToken } from "@utils/authRefresh";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
@@ -70,11 +71,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }): React
         return;
       }
       active = false;
-      void authControllerRefresh().then(({ data }) => {
-        if (data?.access_token) {
-          LocalStorageManager.setToken(data.access_token);
-        }
-      });
+      void refreshAccessToken();
     }, REFRESH_INTERVAL_MS);
 
     return () => {

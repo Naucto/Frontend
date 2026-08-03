@@ -184,6 +184,66 @@ describe("SharedTableSession", () => {
     expect(sent[1]!.ops[0]).toMatchObject({ path: "pads.right", value: 7, baseVersion: 2 });
   });
 
+  it("rolls a coalesced write back to the last good value after an interleaved flush", async () => {
+    const sent: Array<{ reqId: string; ops: Array<Record<string, unknown>> }> = [];
+    const handlers = new Map<string, AnyListener>();
+    const transport: SessionTransport = {
+      role: "slave",
+      selfUserId: 2,
+      broadcastState: () => {},
+      respondTo: () => {},
+      sendRequest: (data) => sent.push(data as { reqId: string; ops: Array<Record<string, unknown>> }),
+      on: (event, listener) => { handlers.set(event, listener as AnyListener); },
+      off: () => {},
+      destroy: () => {},
+    };
+    const fire = (event: string, ...args: unknown[]): void => handlers.get(event)?.(...args);
+
+    const slave = new SharedTableSession(transport);
+    fire("response", {
+      kind: "snapshot",
+      entries: [{ path: "a", value: 100, version: 1 }, { path: "b", value: 200, version: 1 }],
+      sidecar: [],
+    });
+
+    // "a" goes in flight.
+    slave.setValue("a", 101);
+    await flush();
+    const firstReq = sent[0]!.reqId;
+
+    // Coalesce a second write to "a" while it is in flight, and push an unrelated
+    // write to "b" that flushes in between (this is what leaked "a"'s baseline).
+    slave.setValue("a", 102);
+    slave.setValue("b", 201);
+    await flush();
+    expect(sent).toHaveLength(2);
+
+    // Acking the first "a" write settles the version and sends the coalesced 102.
+    fire("response", { kind: "write-ack", reqId: firstReq, results: [{ path: "a", version: 2 }] });
+    await flush();
+    expect(sent).toHaveLength(3);
+    expect(sent[2]!.ops[0]).toMatchObject({ path: "a", value: 102, baseVersion: 2 });
+
+    // The host rejects the coalesced write: it must roll back to 101 (the last
+    // host-accepted value), never to the rejected prediction 102.
+    fire("response", { kind: "write-nack", reqId: sent[2]!.reqId, rejected: [{ path: "a", reason: "conflict" }] });
+    await flush();
+    expect(slave.getValue("a")).toBe(101);
+  });
+
+  it("drops a malformed write frame instead of throwing or storing a non-scalar", () => {
+    const hub = new Hub();
+    const host = makeSession("host", 1, hub);
+    makeSession("slave", 2, hub);
+
+    // A buggy/malicious peer sends ops as a non-array: the host must not throw.
+    expect(() => hub.sendRequest(2, { kind: "write", reqId: "x", ops: 5 })).not.toThrow();
+
+    // A non-scalar op value must be rejected rather than stored and broadcast.
+    hub.sendRequest(2, { kind: "write", reqId: "y", ops: [{ path: "p", op: "set", value: { nested: true }, baseVersion: 0 }] });
+    expect(host.getValue("p")).toBeUndefined();
+  });
+
   it("ignores the host's echo of a value the client is still driving", async () => {
     const sent: Array<{ reqId: string; ops: Array<Record<string, unknown>> }> = [];
     const handlers = new Map<string, AnyListener>();

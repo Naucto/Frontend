@@ -60,8 +60,13 @@ export class NetAPI extends EngineModule {
   }
 
   private _leave(): void {
-    this.ctx.ui?.leave();
-    this._session?.destroy();
+    // The UI bridge's leave() owns session teardown; only destroy directly when
+    // there is no bridge, so the session isn't destroyed twice.
+    if (this.ctx.ui)
+      this.ctx.ui.leave();
+    else
+      this._session?.destroy();
+
     this._session = null;
     this._pending = false;
   }
