@@ -55,8 +55,26 @@ export class NetAPI extends EngineModule {
     this._pending = false;
     this._session = session;
 
-    if (session && callback)
+    if (!session)
+      return;
+
+    // A session can end remotely (e.g. the host leaves). Tear it down and clear
+    // local state so net.host()/net.join() don't throw from _assertNotInSession
+    // and halt the game loop. Defer so the game's own net.on("ended") listeners
+    // still fire before the session is destroyed.
+    session.onEnded(() => queueMicrotask(() => this._onRemoteEnd(session)));
+
+    if (callback)
       this._invoke(callback);
+  }
+
+  private _onRemoteEnd(session: SharedTableSession): void {
+    if (this._session !== session)
+      return;
+
+    session.destroy();
+    this._session = null;
+    this._pending = false;
   }
 
   private _leave(): void {

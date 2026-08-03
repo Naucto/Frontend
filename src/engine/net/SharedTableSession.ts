@@ -163,9 +163,17 @@ export class SharedTableSession implements Destroyable {
     this._permissions = permissions;
     this._snapshotApplied = this._isHost;
 
-    transport.on("state", data => this._onState(data as StatePayload));
-    transport.on("request", (from, data) => this._onRequest(from, data as RequestPayload));
-    transport.on("response", data => this._onResponse(data as ResponsePayload));
+    // The host is authoritative: it only accepts client input through the
+    // permission-checked request path, never raw state/response frames (a peer
+    // could otherwise send a patch/snapshot to bypass canClientWrite). Slaves
+    // only consume state/response and never handle requests.
+    if (this._isHost)
+      transport.on("request", (from, data) => this._onRequest(from, data as RequestPayload));
+    else {
+      transport.on("state", data => this._onState(data as StatePayload));
+      transport.on("response", data => this._onResponse(data as ResponsePayload));
+    }
+
     transport.on("peerJoined", userId => this._onPeerJoined(userId));
     transport.on("peerLeft", userId => this._onPeerLeft(userId));
     transport.on("ended", () => this._endedSubs.forEach(cb => cb()));
