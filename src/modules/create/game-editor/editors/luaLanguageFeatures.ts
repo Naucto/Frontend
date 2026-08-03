@@ -411,7 +411,7 @@ const MODULE_COMPLETIONS = new Map<string, LuaCompletion[]>([
     {
       label: "on",
       detail: "net.on(pattern, callback)",
-      documentation: "Subscribes to table changes (path glob, e.g. 'players.*'), custom events ('event:name'), or 'peer.joined' / 'peer.left' / 'ended'.",
+      documentation: "Subscribes to table changes (path glob, e.g. 'players.*'), custom events ('event:name'), 'peer.joined' / 'peer.left' / 'ended', or 'error' (a rejected write, called with path and reason).",
       insertText: "on(${1:pattern}, ${2:function() end})",
       kind: "function",
     },

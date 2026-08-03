@@ -231,6 +231,43 @@ describe("SharedTableSession", () => {
     expect(slave.getValue("a")).toBe(101);
   });
 
+  it("deletes an in-flight path against the acked version, not a stale zero", async () => {
+    const sent: Array<{ reqId: string; ops: Array<Record<string, unknown>> }> = [];
+    const handlers = new Map<string, AnyListener>();
+    const transport: SessionTransport = {
+      role: "slave",
+      selfUserId: 2,
+      broadcastState: () => {},
+      respondTo: () => {},
+      sendRequest: (data) => sent.push(data as { reqId: string; ops: Array<Record<string, unknown>> }),
+      on: (event, listener) => { handlers.set(event, listener as AnyListener); },
+      off: () => {},
+      destroy: () => {},
+    };
+    const fire = (event: string, ...args: unknown[]): void => handlers.get(event)?.(...args);
+
+    const slave = new SharedTableSession(transport);
+    fire("response", { kind: "snapshot", entries: [{ path: "pads.right", value: 0, version: 1 }], sidecar: [] });
+
+    // "pads.right" goes in flight.
+    slave.setValue("pads.right", 5);
+    await flush();
+    expect(sent).toHaveLength(1);
+
+    // Delete it while the set is still in flight: the delete is coalesced and the
+    // local entry is removed, so its version can only come from the ack.
+    slave.deleteSubtree("pads.right");
+    await flush();
+    expect(sent).toHaveLength(1); // nothing new sent while in flight
+
+    // Ack settles the set at version 2; the deferred delete must be sent based on
+    // that version, otherwise the host nacks it and resurrects the deleted value.
+    fire("response", { kind: "write-ack", reqId: sent[0]!.reqId, results: [{ path: "pads.right", version: 2 }] });
+    await flush();
+    expect(sent).toHaveLength(2);
+    expect(sent[1]!.ops[0]).toMatchObject({ path: "pads.right", op: "del", baseVersion: 2 });
+  });
+
   it("drops a malformed write frame instead of throwing or storing a non-scalar", () => {
     const hub = new Hub();
     const host = makeSession("host", 1, hub);

@@ -211,6 +211,11 @@ export class NetAPI extends EngineModule {
       return;
     }
 
+    if (pattern === "error") {
+      session.onError((path, reason) => this._invoke(callback, path, reason));
+      return;
+    }
+
     if (pattern.startsWith(EVENT_PREFIX)) {
       const name = pattern.slice(EVENT_PREFIX.length);
       session.onEvent(name, (from, payload) => this._invoke(callback, from, payload));

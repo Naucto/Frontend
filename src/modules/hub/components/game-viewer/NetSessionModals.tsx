@@ -13,7 +13,7 @@ import { NetUiBridge, NetUiRequest } from "@providers/net/NetUiBridge";
 import { buildSession } from "@providers/net/sessionFactory";
 import { UserAvatar } from "@shared/user/UserAvatar";
 
-import { type JSX, type ReactNode, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { type JSX, type ReactNode, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import PublicIcon from "@mui/icons-material/Public";
@@ -78,6 +78,15 @@ const HostDialog = ({ request, projectId, permissions }: { request: NetUiRequest
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<{ session: SharedTableSession; joinCode: string } | null>(null);
+  // buildSession() opens the signaling socket and WebRTC transport immediately, so
+  // a pending-but-unstarted session that never becomes _active on the bridge would
+  // leak. Track hand-off and destroy the session on any abandoning unmount.
+  const started = useRef(false);
+
+  useEffect(() => (): void => {
+    if (pending && !started.current)
+      pending.session.destroy();
+  }, [pending]);
 
   const host = async (): Promise<void> => {
     setBusy(true);
@@ -108,7 +117,7 @@ const HostDialog = ({ request, projectId, permissions }: { request: NetUiRequest
         open
         title="Session ready"
         onClose={() => request.resolve(null)}
-        onConfirm={() => request.resolve(pending.session)}
+        onConfirm={() => { started.current = true; request.resolve(pending.session); }}
         confirmLabel="Start"
         confirmColor="primary"
       >

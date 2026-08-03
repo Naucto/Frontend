@@ -5,7 +5,6 @@ import {
   multiplayerControllerCreate,
   multiplayerControllerJoin,
   multiplayerControllerJoinByCode,
-  multiplayerControllerLeave,
   multiplayerControllerList,
   multiplayerControllerRefreshTicket,
 } from "@api";
@@ -70,11 +69,4 @@ export const listGameSessions = async (
     throw new GameSessionError(messageOf(error, "Failed to list game sessions"));
   }
   return data.sessions;
-};
-
-export const leaveGameSession = async (sessionUuid: string): Promise<void> => {
-  const { error } = await multiplayerControllerLeave({ path: { sessionId: sessionUuid } });
-  if (error) {
-    throw new GameSessionError(messageOf(error, "Failed to leave game session"));
-  }
 };

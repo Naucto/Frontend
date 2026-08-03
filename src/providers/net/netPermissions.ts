@@ -13,10 +13,11 @@ export function netPermissionsFromSettings(
   settings: MultiplayerSettingsProvider,
 ): NetPermissions {
   const resolve = (path: string, flag: MultiplayerDirectoryFlags): boolean => {
-    const dir = settings.getDirectorySettings(path);
-
-    if (!dir)
-      return true;
+    // getDirectorySettings walks up to the nearest configured ancestor but stops
+    // before the root, so fall back to the root node explicitly — otherwise flags
+    // a developer set on the root are silently unenforced for paths that have no
+    // configured intermediate ancestor.
+    const dir = settings.getDirectorySettings(path) ?? settings.getRootDirectorySettings();
 
     if (dir.isRootNode && dir.data.flags === MultiplayerDirectoryFlags.NONE)
       return true;

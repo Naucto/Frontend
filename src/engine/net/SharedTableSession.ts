@@ -376,7 +376,7 @@ export class SharedTableSession implements Destroyable {
 
   // Re-queue writes coalesced while their path was in flight, now that the ack
   // has settled the base version. The latest value is already applied locally.
-  private _flushDeferred(paths: string[]): void {
+  private _flushDeferred(paths: string[], ackedVersions?: Map<string, number>): void {
     let queued = false;
 
     for (const path of paths) {
@@ -385,7 +385,9 @@ export class SharedTableSession implements Destroyable {
         continue;
 
       this._deferredWrites.delete(path);
-      const baseVersion = this._store.get(path)?.version ?? 0;
+      // A deferred delete removed the local entry, so read the settled version
+      // from the ack instead of the (now absent) store entry.
+      const baseVersion = this._store.get(path)?.version ?? ackedVersions?.get(path) ?? 0;
       // Carry the baseline captured at coalesce time so a nack on this deferred
       // write rolls back to the last good value, not the prediction it replaced.
       this._pendingBefore.set(path, deferred.before);
@@ -646,18 +648,24 @@ export class SharedTableSession implements Destroyable {
       this._inflightPaths.delete(p);
 
     if (payload.kind === "write-ack") {
+      // Capture the settled version for every acked path, even ones whose local
+      // entry was removed by a coalesced delete — a deferred delete needs it as
+      // its baseVersion or the host nacks it and resurrects the deleted value.
+      const ackedVersions = new Map<string, number>();
+
       if (Array.isArray(payload.results)) {
         for (const result of payload.results) {
           if (!isRecord(result) || typeof result.path !== "string" || typeof result.version !== "number")
             continue;
 
+          ackedVersions.set(result.path, result.version);
           const entry = this._store.get(result.path);
           if (entry)
             entry.version = result.version;
         }
       }
       // The version is now settled; flush any value coalesced while in flight.
-      this._flushDeferred(inflight.paths);
+      this._flushDeferred(inflight.paths, ackedVersions);
       return;
     }
 
