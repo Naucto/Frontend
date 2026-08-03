@@ -7,8 +7,8 @@ export type QueueSpriteDrawFn = (
   y: number,
   width?: number,
   height?: number,
-  flip_h?: number,
-  flip_v?: number,
+  flip_h?: boolean,
+  flip_v?: boolean,
   scale?: number,
 ) => void;
 

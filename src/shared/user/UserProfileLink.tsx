@@ -88,7 +88,7 @@ const AvatarStackRoot = styled("span", {
     borderRadius: "50%",
     transition: "margin-left 0.18s ease, transform 0.18s ease",
   },
-  "& .NauctoUserAvatarStack-item:first-child": {
+  "& .NauctoUserAvatarStack-item:first-of-type": {
     marginLeft: 0,
   },
   "& .NauctoUserAvatarStack-hiddenUser": {
@@ -97,7 +97,7 @@ const AvatarStackRoot = styled("span", {
   "&:hover .NauctoUserAvatarStack-item": {
     marginLeft: theme.spacing(0.2),
   },
-  "&:hover .NauctoUserAvatarStack-item:first-child": {
+  "&:hover .NauctoUserAvatarStack-item:first-of-type": {
     marginLeft: 0,
   },
   "&:hover .NauctoUserAvatarStack-hiddenUser": {

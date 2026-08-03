@@ -16,6 +16,8 @@ import * as urls from "@shared/navigation/routes";
 import { ProfilePicture } from "@shared/user/ProfilePicture";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
 
+import { ChangePasswordDialog } from "./ChangePasswordDialog";
+
 import { JSX, useEffect, useMemo, useRef, useState } from "react";
 
 import { Box, Typography } from "@mui/material";
@@ -132,6 +134,7 @@ export const Profile = (): JSX.Element => {
   const { username } = useParams<{ username?: string }>();
   const userId = Number(LocalStorageManager.getUserId());
   const [isEditing, setIsEditing] = useState(false);
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [refresh, setRefresh] = useState(1);
   const [selectedProfileFile, setSelectedProfileFile] = useState<File | null>(null);
   const [selectedBackgroundFile, setSelectedBackgroundFile] = useState<File | null>(null);
@@ -346,6 +349,11 @@ export const Profile = (): JSX.Element => {
                   </EditProfileButton>
                 )}
                 {isEditable && isEditing && <EditProfileButton type="submit">Submit</EditProfileButton>}
+                {isEditable && (
+                  <EditProfileButton type="button" onClick={() => setIsPasswordDialogOpen(true)}>
+                    Change password
+                  </EditProfileButton>
+                )}
               </HorizontalBox>
             </TextInfo>
           </ProfileInfo>
@@ -383,6 +391,7 @@ export const Profile = (): JSX.Element => {
           </HorizontalScroller>
         </Section>
       </form>
+      <ChangePasswordDialog isOpen={isPasswordDialogOpen} onClose={() => setIsPasswordDialogOpen(false)} />
     </>
   );
 };
