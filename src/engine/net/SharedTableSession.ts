@@ -27,18 +27,34 @@ type WriteOp =
 type SnapshotPayload = {
   kind: "snapshot";
   entries: Array<{ path: string; value: TableScalar; version: number }>;
-  sidecar: Array<{ key: string; value: unknown }>;
 };
 
 type StatePayload =
   | { kind: "patch"; ops: PatchOp[] }
-  | { kind: "sidecar"; key: string; value: unknown }
   | { kind: "event"; name: string; from: UserId; payload: unknown };
 
-// Sidecar keys: lock owner (UserId | null) and queue contents (array), kept out
-// of the user-visible net.state store but synced and snapshotted like it.
-const LOCK_KEY = "lock:";
-const QUEUE_KEY = "queue:";
+// Locks and queues live *in* net.state: a lock/queue object at net.state path P
+// keeps its backing (type marker, lock owner, queue contents) under the reserved
+// child branch `P.__netobj__.*`. Because that branch sits inside P's own dotted
+// namespace, the ordinary store machinery replicates, snapshots, and deletes it
+// for free; the proxy simply hides the reserved segment from user-facing reads.
+const OBJECT_MARK = "__netobj__";
+const RESERVED_INFIX = "." + OBJECT_MARK;
+const TYPE_SUFFIX = RESERVED_INFIX + ".type";
+const OWNER_SUFFIX = RESERVED_INFIX + ".owner";
+const QUEUE_SUFFIX = RESERVED_INFIX + ".q";
+
+// A store key is reserved when it lives inside some object's `__netobj__` branch.
+const isReserved = (key: string): boolean => key.includes(RESERVED_INFIX);
+
+// The net.state path that owns a (possibly reserved) store key: for a reserved
+// key this is the object's own path (everything before `.__netobj__`), and for a
+// plain key it is the key itself. Used to map reserved storage back onto the
+// object's path for permission checks and read filtering.
+const ownerPathOf = (key: string): string => {
+  const at = key.indexOf(RESERVED_INFIX);
+  return at === -1 ? key : key.slice(0, at);
+};
 
 type RequestPayload =
   | { kind: "write"; reqId: string; ops: WriteOp[] }
@@ -150,9 +166,10 @@ export class SharedTableSession implements Destroyable {
   private readonly _peerSubs = new Map<PeerEvent, Set<(userId: UserId) => void>>();
   private readonly _endedSubs = new Set<() => void>();
 
-  // Synced, host-authoritative, hidden from net.state: lock owners + queue contents.
-  private readonly _sidecar = new Map<string, unknown>();
   // Host-internal lock grant order (carries the reqId/callback to wake a waiter).
+  // The authoritative lock owner and queue contents themselves live in `_store`
+  // under each object's reserved branch (see OBJECT_MARK); only the grant queue,
+  // which never needs to replicate, is kept here.
   private readonly _lockWaiters = new Map<string, LockWaiter[]>();
   private readonly _pendingLocks = new Map<string, () => void>();
   private readonly _pendingPops = new Map<string, (value: unknown) => void>();
@@ -186,7 +203,8 @@ export class SharedTableSession implements Destroyable {
     this._errorSubs.clear();
     this._peerSubs.clear();
     this._endedSubs.clear();
-    this._sidecar.clear();
+    this._lockWaiters.clear();
+    this._pendingLocks.clear();
     this._pendingPops.clear();
     this._store.clear();
     this._bufferedState.length = 0;
@@ -229,10 +247,37 @@ export class SharedTableSession implements Destroyable {
         continue;
 
       const dot = rest.indexOf(".");
-      children.add(dot === -1 ? rest : rest.slice(0, dot));
+      const child = dot === -1 ? rest : rest.slice(0, dot);
+
+      // Never surface an object's internal branch as a user-visible key.
+      if (child === OBJECT_MARK)
+        continue;
+
+      children.add(child);
     }
 
     return [...children];
+  }
+
+  // The kind of net.state object declared at `path`, or undefined if the path
+  // holds a plain value / branch / nothing. Backed by the reserved type marker.
+  objectKindAt(path: string): "lock" | "queue" | undefined {
+    const type = this.getValue(path + TYPE_SUFFIX);
+    return type === "lock" || type === "queue" ? type : undefined;
+  }
+
+  // Assign a lock/queue object into net.state at `path`. Clears whatever the path
+  // held before (scalar, branch, or a different object), then plants the type
+  // marker. Runs the same code on host and client: the host writes directly, a
+  // client's writes flow through the permission-checked request path, so a
+  // forbidden declare is nacked and rolled back like any other write.
+  declareObject(path: string, kind: "lock" | "queue"): void {
+    const typeKey = path + TYPE_SUFFIX;
+    // Keep the type slot so re-declaring an existing object overwrites it in
+    // place (matching base versions) instead of delete-then-recreate, which
+    // would self-conflict on a client.
+    this._deletePaths(this._descendants(path).filter((p) => p !== typeKey));
+    this.setValue(typeKey, kind);
   }
 
   setValue(path: string, value: TableScalar): void {
@@ -263,8 +308,10 @@ export class SharedTableSession implements Destroyable {
   }
 
   deleteSubtree(path: string): void {
-    const paths = this._descendants(path);
+    this._deletePaths(this._descendants(path));
+  }
 
+  private _deletePaths(paths: string[]): void {
     if (this._isHost) {
       for (const p of paths)
         this._hostDelete(p);
@@ -366,15 +413,15 @@ export class SharedTableSession implements Destroyable {
   }
 
   isLocked(path: string): boolean {
-    return this._lockOwnerOf(LOCK_KEY + path) !== null;
+    return this._lockOwnerOf(path) !== null;
   }
 
   queueLength(path: string): number {
-    return this._queueArray(QUEUE_KEY + path).length;
+    return this._queueArray(path).length;
   }
 
   queuePeek(path: string): unknown {
-    return this._queueArray(QUEUE_KEY + path)[0];
+    return this._queueArray(path)[0];
   }
 
   private _captureBefore(path: string): void {
@@ -442,8 +489,9 @@ export class SharedTableSession implements Destroyable {
         return;
 
       // Privacy: withhold server-private paths from clients. The host keeps them
-      // in its own store; they're simply never broadcast.
-      const ops = this._pendingPatch.filter((op) => this._permissions.canClientRead(op.path));
+      // in its own store; they're simply never broadcast. A lock/queue object's
+      // reserved keys inherit the read permission of the object's own path.
+      const ops = this._pendingPatch.filter((op) => this._permissions.canClientRead(ownerPathOf(op.path)));
       this._pendingPatch.length = 0;
 
       if (ops.length > 0)
@@ -505,12 +553,6 @@ export class SharedTableSession implements Destroyable {
       return;
     }
 
-    if (payload.kind === "sidecar") {
-      if (typeof payload.key === "string")
-        this._sidecar.set(payload.key, payload.value);
-      return;
-    }
-
     if (payload.kind === "event")
       this._dispatchEvent(payload.name, payload.from, payload.payload);
   }
@@ -529,6 +571,13 @@ export class SharedTableSession implements Destroyable {
       if (typeof payload.path !== "string")
         return;
 
+      // An object lives at a net.state path, so it obeys that path's write
+      // permission: a client that cannot write the path cannot lock it either
+      // (if it can't write the value, it has nothing to protect). Silently drop
+      // a forbidden acquire — the grant simply never comes.
+      if (!this._permissions.canClientWrite(payload.path))
+        return;
+
       if (payload.action === "acquire")
         this._hostAcquire(from, payload.path, payload.reqId, undefined);
       else
@@ -540,6 +589,15 @@ export class SharedTableSession implements Destroyable {
     if (payload.kind === "queue") {
       if (typeof payload.path !== "string")
         return;
+
+      // Same authority as locks. A forbidden pop still needs a reply so the
+      // caller's pending callback resolves (with nil, as if the queue were
+      // empty) rather than dangling forever.
+      if (!this._permissions.canClientWrite(payload.path)) {
+        if (payload.op === "pop")
+          this._transport.respondTo(from, { kind: "queue-result", reqId: payload.reqId, value: undefined });
+        return;
+      }
 
       if (payload.op === "push")
         this._enqueue(payload.path, payload.value);
@@ -559,16 +617,23 @@ export class SharedTableSession implements Destroyable {
     if (typeof payload.reqId !== "string" || !Array.isArray(payload.ops) || !payload.ops.every(isValidWriteOp))
       return;
 
-    // Authority: a client may only write paths it is permitted to. Reject the
-    // whole request if any op is forbidden, so a partial write never lands.
-    const forbidden = payload.ops.filter((op) => !this._permissions.canClientWrite(op.path));
+    // A client may set an object's reserved branch only to *declare* it (the type
+    // marker, with a valid kind); the owner and queue contents are host-managed,
+    // so forging them would bypass host ordering. Deletes are allowed — they ride
+    // the ordinary subtree-delete path when a game clears a net.state slot.
+    const forgedReserved = payload.ops.find((op) =>
+      isReserved(op.path) && op.op === "set" && !(op.path.endsWith(TYPE_SUFFIX) && (op.value === "lock" || op.value === "queue")));
 
-    if (forbidden.length > 0) {
-      this._transport.respondTo(from, {
-        kind: "write-nack",
-        reqId: payload.reqId,
-        rejected: forbidden.map((op) => ({ path: op.path, reason: "forbidden" })),
-      });
+    // Authority: a client may only write paths it is permitted to. An object's
+    // reserved branch inherits the object's own net.state path permission. Reject
+    // the whole request if any op is forbidden, so a partial write never lands.
+    const forbidden = payload.ops.filter((op) => !this._permissions.canClientWrite(ownerPathOf(op.path)));
+
+    if (forgedReserved || forbidden.length > 0) {
+      const rejected = forgedReserved
+        ? [{ path: forgedReserved.path, reason: "forbidden" }]
+        : forbidden.map((op) => ({ path: op.path, reason: "forbidden" }));
+      this._transport.respondTo(from, { kind: "write-nack", reqId: payload.reqId, rejected });
       return;
     }
 
@@ -602,16 +667,12 @@ export class SharedTableSession implements Destroyable {
       return;
 
     if (payload.kind === "snapshot") {
-      if (!Array.isArray(payload.entries) || !Array.isArray(payload.sidecar))
+      if (!Array.isArray(payload.entries))
         return;
 
       for (const entry of payload.entries) {
         if (isRecord(entry) && typeof entry.path === "string" && isTableScalar(entry.value) && typeof entry.version === "number")
           this._writeEntry(entry.path, entry.value, entry.version);
-      }
-      for (const item of payload.sidecar) {
-        if (isRecord(item) && typeof item.key === "string")
-          this._sidecar.set(item.key, item.value);
       }
 
       // Baseline is in place: apply anything that arrived while we were waiting,
@@ -706,9 +767,13 @@ export class SharedTableSession implements Destroyable {
   }
 
   private _onPeerLeft(userId: UserId): void {
-    const owned = [...this._sidecar.entries()]
-      .filter(([key, owner]) => key.startsWith(LOCK_KEY) && owner === userId)
-      .map(([key]) => key.slice(LOCK_KEY.length));
+    // Free any lock the departing peer still held. Owners live at each lock's
+    // reserved owner key in the store; find the ones this peer owned.
+    const owned: string[] = [];
+    for (const [key, entry] of this._store) {
+      if (key.endsWith(OWNER_SUFFIX) && entry.value === userId)
+        owned.push(key.slice(0, key.length - OWNER_SUFFIX.length));
+    }
     for (const path of owned)
       this._hostRelease(userId, path);
 
@@ -723,10 +788,8 @@ export class SharedTableSession implements Destroyable {
   }
 
   private _hostAcquire(userId: UserId, path: string, reqId: string | undefined, grant: (() => void) | undefined): void {
-    const key = LOCK_KEY + path;
-
-    if (this._lockOwnerOf(key) === null) {
-      this._writeSidecar(key, userId);
+    if (this._lockOwnerOf(path) === null) {
+      this._hostSet(path + OWNER_SUFFIX, userId);
       this._grantLock(userId, reqId, grant);
       return;
     }
@@ -737,18 +800,16 @@ export class SharedTableSession implements Destroyable {
   }
 
   private _hostRelease(userId: UserId, path: string): void {
-    const key = LOCK_KEY + path;
-
-    if (this._lockOwnerOf(key) !== userId)
+    if (this._lockOwnerOf(path) !== userId)
       return;
 
     const next = this._lockWaiters.get(path)?.shift();
 
     if (next) {
-      this._writeSidecar(key, next.userId);
+      this._hostSet(path + OWNER_SUFFIX, next.userId);
       this._grantLock(next.userId, next.reqId, next.grant);
     } else {
-      this._writeSidecar(key, null);
+      this._hostDelete(path + OWNER_SUFFIX);
     }
   }
 
@@ -759,50 +820,56 @@ export class SharedTableSession implements Destroyable {
       this._transport.respondTo(userId, { kind: "lock-grant", reqId });
   }
 
-  private _lockOwnerOf(key: string): UserId | null {
-    const owner = this._sidecar.get(key);
+  private _lockOwnerOf(path: string): UserId | null {
+    const owner = this.getValue(path + OWNER_SUFFIX);
     return typeof owner === "number" ? owner : null;
   }
 
   private _enqueue(path: string, value: unknown): void {
-    const key = QUEUE_KEY + path;
-    this._writeSidecar(key, [...this._queueArray(key), value]);
+    this._hostSet(path + QUEUE_SUFFIX, JSON.stringify([...this._queueArray(path), value]));
   }
 
   private _dequeue(path: string): unknown {
-    const key = QUEUE_KEY + path;
-    const queue = this._queueArray(key);
+    const queue = this._queueArray(path);
 
     if (queue.length === 0)
       return undefined;
 
     const [head, ...rest] = queue;
-    this._writeSidecar(key, rest);
+    if (rest.length === 0)
+      this._hostDelete(path + QUEUE_SUFFIX);
+    else
+      this._hostSet(path + QUEUE_SUFFIX, JSON.stringify(rest));
 
     return head;
   }
 
-  private _queueArray(key: string): unknown[] {
-    const queue = this._sidecar.get(key);
-    return Array.isArray(queue) ? queue : [];
-  }
+  // Queue contents ride net.state as a JSON string under the reserved queue key:
+  // items may be nested tables, and one opaque scalar keeps that shape intact
+  // through the ordinary patch/snapshot path without flattening each element.
+  private _queueArray(path: string): unknown[] {
+    const raw = this.getValue(path + QUEUE_SUFFIX);
+    if (typeof raw !== "string")
+      return [];
 
-  private _writeSidecar(key: string, value: unknown): void {
-    this._sidecar.set(key, value);
-    this._transport.broadcastState({ kind: "sidecar", key, value });
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
   }
 
   private _sendSnapshot(userId: UserId): void {
     const entries = [...this._store.entries()]
-      .filter(([path]) => this._permissions.canClientRead(path))
+      .filter(([path]) => this._permissions.canClientRead(ownerPathOf(path)))
       .map(([path, entry]) => ({
         path,
         value: entry.value,
         version: entry.version,
       }));
-    const sidecar = [...this._sidecar.entries()].map(([key, value]) => ({ key, value }));
 
-    this._transport.respondTo(userId, { kind: "snapshot", entries, sidecar });
+    this._transport.respondTo(userId, { kind: "snapshot", entries });
   }
 
   private _writeEntry(path: string, value: TableScalar, version: number): void {
@@ -835,6 +902,11 @@ export class SharedTableSession implements Destroyable {
 
   private _fireChange(path: string, newValue: TableScalar | undefined, oldValue: TableScalar | undefined): void {
     if (newValue === oldValue)
+      return;
+
+    // An object's reserved backing (lock owner, queue contents) is not net.state
+    // data, so its churn must not fire the game's net.on(path) change listeners.
+    if (isReserved(path))
       return;
 
     for (const sub of this._changeSubs) {

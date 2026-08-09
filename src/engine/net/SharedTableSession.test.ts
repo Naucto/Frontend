@@ -163,7 +163,7 @@ describe("SharedTableSession", () => {
     const fire = (event: string, ...args: unknown[]): void => handlers.get(event)?.(...args);
 
     const slave = new SharedTableSession(transport);
-    fire("response", { kind: "snapshot", entries: [{ path: "pads.right", value: 0, version: 1 }], sidecar: [] });
+    fire("response", { kind: "snapshot", entries: [{ path: "pads.right", value: 0, version: 1 }] });
 
     slave.setValue("pads.right", 5);
     await flush();
@@ -203,7 +203,6 @@ describe("SharedTableSession", () => {
     fire("response", {
       kind: "snapshot",
       entries: [{ path: "a", value: 100, version: 1 }, { path: "b", value: 200, version: 1 }],
-      sidecar: [],
     });
 
     // "a" goes in flight.
@@ -247,7 +246,7 @@ describe("SharedTableSession", () => {
     const fire = (event: string, ...args: unknown[]): void => handlers.get(event)?.(...args);
 
     const slave = new SharedTableSession(transport);
-    fire("response", { kind: "snapshot", entries: [{ path: "pads.right", value: 0, version: 1 }], sidecar: [] });
+    fire("response", { kind: "snapshot", entries: [{ path: "pads.right", value: 0, version: 1 }] });
 
     // "pads.right" goes in flight.
     slave.setValue("pads.right", 5);
@@ -297,7 +296,7 @@ describe("SharedTableSession", () => {
     const fire = (event: string, ...args: unknown[]): void => handlers.get(event)?.(...args);
 
     const slave = new SharedTableSession(transport);
-    fire("response", { kind: "snapshot", entries: [{ path: "pads.right", value: 0, version: 1 }], sidecar: [] });
+    fire("response", { kind: "snapshot", entries: [{ path: "pads.right", value: 0, version: 1 }] });
 
     slave.setValue("pads.right", 5);
     await flush();                    // pads.right now in flight
@@ -506,15 +505,160 @@ describe("SharedTableSession", () => {
     expect(slave.isLocked("turn")).toBe(true);
   });
 
-  it("bootstraps the sidecar to a late-joining slave", async () => {
+  it("bootstraps object contents to a late-joining slave via the snapshot", async () => {
     const hub = new Hub();
     const host = makeSession("host", 1, hub);
+    host.declareObject("events", "queue");
     host.queuePush("events", "x");
+    host.declareObject("turn", "lock");
+    host.acquireLock("turn", () => undefined);
     await flush();
 
     const slave = makeSession("slave", 2, hub);
     await flush();
 
+    expect(slave.objectKindAt("events")).toBe("queue");
     expect(slave.queueLength("events")).toBe(1);
+    expect(slave.objectKindAt("turn")).toBe("lock");
+    expect(slave.isLocked("turn")).toBe(true);
+  });
+
+  it("replicates a host object declaration to a slave as a patch, no sidecar frame", async () => {
+    const hub = new Hub();
+    const frames: unknown[] = [];
+    const host = makeSession("host", 1, hub);
+    const slave = makeSession("slave", 2, hub);
+
+    // Capture everything the host broadcasts: it must all be patch/event, never a
+    // separate "sidecar" frame kind (that channel is gone).
+    const transport = new MockTransport("slave", 3, hub);
+    transport.on("state", (data) => frames.push(data));
+    new SharedTableSession(transport);
+    hub.register(transport);
+
+    host.declareObject("respawns", "queue");
+    await flush();
+
+    expect(slave.objectKindAt("respawns")).toBe("queue");
+    expect(frames.every((f) => (f as { kind: string }).kind !== "sidecar")).toBe(true);
+    expect(frames.some((f) => (f as { kind: string }).kind === "patch")).toBe(true);
+  });
+
+  it("gates lock and queue ops on the object path's write permission", async () => {
+    const hub = new Hub();
+    const perms: NetPermissions = { canClientWrite: (p) => p !== "gate", canClientRead: () => true };
+    const host = makeSession("host", 1, hub, perms);
+    const slave = makeSession("slave", 2, hub);
+
+    // A forbidden acquire never grants; a forbidden pop still resolves with nil.
+    let granted = false;
+    slave.acquireLock("gate", () => { granted = true; });
+    slave.queuePush("gate", "x");
+    let popResolved = false;
+    let popped: unknown = "sentinel";
+    slave.queuePop("gate", (value) => { popResolved = true; popped = value; });
+    await flush();
+
+    expect(granted).toBe(false);
+    expect(host.isLocked("gate")).toBe(false);
+    expect(host.queueLength("gate")).toBe(0);
+    expect(popResolved).toBe(true);
+    expect(popped).toBeUndefined();
+
+    // The host itself is always authoritative and unrestricted.
+    host.acquireLock("gate", () => undefined);
+    expect(host.isLocked("gate")).toBe(true);
+  });
+
+  it("nacks and rolls back a client object declaration on a forbidden path", async () => {
+    const hub = new Hub();
+    const perms: NetPermissions = { canClientWrite: (p) => p !== "gate", canClientRead: () => true };
+    const host = makeSession("host", 1, hub, perms);
+    const slave = makeSession("slave", 2, hub);
+    const errors: Array<{ path: string; reason: string }> = [];
+    slave.onError((path, reason) => errors.push({ path, reason }));
+
+    slave.declareObject("gate", "lock");   // forbidden
+    await flush();
+
+    expect(slave.objectKindAt("gate")).toBeUndefined();  // optimistic declare rolled back
+    expect(host.objectKindAt("gate")).toBeUndefined();
+    expect(errors.some((e) => e.reason === "forbidden")).toBe(true);
+
+    // A permitted path declares through and replicates.
+    slave.declareObject("respawns", "queue");
+    await flush();
+    expect(host.objectKindAt("respawns")).toBe("queue");
+  });
+
+  it("rejects a client set forging an object's owner or contents", async () => {
+    const hub = new Hub();
+    const host = makeSession("host", 1, hub);
+    makeSession("slave", 2, hub);
+
+    // A peer tries to plant itself as a lock owner directly, bypassing host order.
+    hub.sendRequest(2, {
+      kind: "write",
+      reqId: "forge",
+      ops: [{ path: "turn.__netobj__.owner", op: "set", value: 2, baseVersion: 0 }],
+    });
+
+    expect(host.isLocked("turn")).toBe(false);
+    expect(host.getValue("turn.__netobj__.owner")).toBeUndefined();
+  });
+
+  it("withholds a server-private object's contents from a slave", async () => {
+    const hub = new Hub();
+    const perms: NetPermissions = { canClientWrite: () => true, canClientRead: (p) => p !== "deck" };
+    const host = makeSession("host", 1, hub, perms);
+    const slave = makeSession("slave", 2, hub);
+
+    host.declareObject("deck", "queue");
+    host.queuePush("deck", "ace");
+    await flush();
+
+    // The private object and its contents never reach the client.
+    expect(slave.objectKindAt("deck")).toBeUndefined();
+    expect(slave.queueLength("deck")).toBe(0);
+  });
+
+  it("releases a nested lock and clears its backing when a peer leaves", async () => {
+    const hub = new Hub();
+    const host = makeSession("host", 1, hub);
+    const slave = makeSession("slave", 2, hub);
+    host.declareObject("coins.1.lock", "lock");
+
+    const order: string[] = [];
+    slave.acquireLock("coins.1.lock", () => order.push("slave"));
+    host.acquireLock("coins.1.lock", () => order.push("host"));  // queues behind the slave
+    await flush();
+
+    expect(order).toEqual(["slave"]);
+    expect(host.isLocked("coins.1.lock")).toBe(true);
+
+    // The slave drops out while holding the nested lock: the host reclaims it and
+    // hands it to the waiting host request.
+    host["_onPeerLeft"](2);
+    await flush();
+
+    expect(order).toEqual(["slave", "host"]);
+  });
+
+  it("clears a nested object's backing when its subtree is deleted", async () => {
+    const hub = new Hub();
+    const host = makeSession("host", 1, hub);
+    const slave = makeSession("slave", 2, hub);
+
+    host.declareObject("coins.1.lock", "lock");
+    host.setValue("coins.1.x", 5);
+    await flush();
+    expect(slave.objectKindAt("coins.1.lock")).toBe("lock");
+
+    host.deleteSubtree("coins");
+    await flush();
+
+    expect(host.objectKindAt("coins.1.lock")).toBeUndefined();
+    expect(slave.objectKindAt("coins.1.lock")).toBeUndefined();
+    expect(slave.getValue("coins.1.x")).toBeUndefined();
   });
 });

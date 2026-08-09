@@ -9,6 +9,22 @@ import { errorMessage } from "./errorMessage";
 
 const EVENT_PREFIX = "event:";
 
+// Tag identifying a value produced by net.lock() / net.queue(). It must be a
+// plain string key: values crossing the Lua VM boundary are deep-copied field by
+// field (Object.entries), so a Symbol tag would be dropped and the sentinel would
+// reach net.state assignment as an empty table.
+const NET_OBJECT = "__net_object__";
+
+type NetObjectKind = "lock" | "queue";
+
+const netObjectKind = (value: unknown): NetObjectKind | undefined => {
+  if (typeof value !== "object" || value === null)
+    return undefined;
+
+  const tag = (value as Record<string, unknown>)[NET_OBJECT];
+  return tag === "lock" || tag === "queue" ? tag : undefined;
+};
+
 type LuaCallback = (...args: unknown[]) => unknown;
 
 export class NetAPI extends EngineModule {
@@ -24,8 +40,8 @@ export class NetAPI extends EngineModule {
       id: () => this._require().selfUserId,
       on: (pattern: string, callback: LuaCallback) => this._on(pattern, callback),
       emit: (name: string, payload: unknown) => this._require().emit(name, payload),
-      lock: (path: string) => this._lockHandle(path),
-      queue: (path: string) => this._queue(path),
+      lock: () => this._localLock(),
+      queue: () => this._localQueue(),
       host: (configOrCallback?: unknown, maybeCallback?: LuaCallback) => this._host(configOrCallback, maybeCallback),
       join: (callback?: LuaCallback) => this._join(callback),
       leave: () => this._leave(),
@@ -141,6 +157,15 @@ export class NetAPI extends EngineModule {
       index: key => {
         const session = this._require();
         const path = pathOf(key);
+
+        // A lock/queue lives *at* this path: surface its handle, never the raw
+        // reserved backing. Checked first so it wins over the empty-branch view.
+        const kind = session.objectKindAt(path);
+        if (kind === "lock")
+          return this._lockHandle(path);
+        if (kind === "queue")
+          return this._queue(path);
+
         const value = session.getValue(path);
 
         if (value !== undefined)
@@ -160,6 +185,12 @@ export class NetAPI extends EngineModule {
           return;
         }
 
+        const kind = netObjectKind(value);
+        if (kind) {
+          session.declareObject(path, kind);
+          return;
+        }
+
         if (typeof value === "function")
           throw new NetError("net: cannot store a function in net.state");
 
@@ -167,6 +198,11 @@ export class NetAPI extends EngineModule {
           this._assignTable(session, path, value as Record<string, unknown>);
           return;
         }
+
+        // Overwriting an existing lock/queue with a plain value: drop the object
+        // first so its handle stops shadowing the new scalar.
+        if (session.objectKindAt(path) !== undefined)
+          session.deleteSubtree(path);
 
         session.setValue(path, value as TableScalar);
       },
@@ -183,7 +219,9 @@ export class NetAPI extends EngineModule {
     while (true) {
       const path = prefix ? `${prefix}.${length + 1}` : String(length + 1);
 
-      if (this._session.getValue(path) === undefined && !this._session.isContainer(path))
+      if (this._session.getValue(path) === undefined
+        && !this._session.isContainer(path)
+        && this._session.objectKindAt(path) === undefined)
         break;
 
       length++;
@@ -198,6 +236,12 @@ export class NetAPI extends EngineModule {
     const walk = (value: unknown, at: string): void => {
       if (value === undefined || value === null)
         return;
+
+      const kind = netObjectKind(value);
+      if (kind) {
+        session.declareObject(at, kind);
+        return;
+      }
 
       if (typeof value === "function")
         throw new NetError("net: cannot store a function in net.state");
@@ -241,6 +285,54 @@ export class NetAPI extends EngineModule {
     }
 
     session.onChange(pattern, (changedPath, newValue) => this._invoke(callback, changedPath, newValue));
+  }
+
+  // net.lock() / net.queue() build a local, in-VM object usable with no session.
+  // Assigning it into net.state (its NET_OBJECT tag is caught by newindex) is what
+  // turns it into the replicated, host-ordered version; left out of net.state it
+  // stays a plain local primitive. Both carry the tag so the assignment works.
+  private _localLock(): { [NET_OBJECT]: NetObjectKind; acquire: (fn: LuaCallback) => void; is_locked: () => boolean } {
+    // One Lua VM has no real contention, so a local lock grants immediately; it
+    // exists so the same code runs whether or not the lock is shared.
+    let held = false;
+
+    return {
+      [NET_OBJECT]: "lock",
+      acquire: (fn: LuaCallback) => {
+        held = true;
+        this._invoke(fn, () => {
+          held = false;
+        });
+      },
+      is_locked: () => held,
+    };
+  }
+
+  private _localQueue(): {
+    [NET_OBJECT]: NetObjectKind;
+    push: (value: unknown) => void;
+    pop: (callback?: LuaCallback) => void;
+    length: () => number;
+    peek: () => unknown;
+    } {
+    const items: unknown[] = [];
+
+    return {
+      [NET_OBJECT]: "queue",
+      push: (value: unknown) => {
+        if (typeof value === "function")
+          throw new NetError("net: cannot queue a function");
+
+        items.push(value);
+      },
+      pop: (callback?: LuaCallback) => {
+        const value = items.shift();
+        if (callback)
+          this._invoke(callback, value);
+      },
+      length: () => items.length,
+      peek: () => items[0],
+    };
   }
 
   private _lockHandle(path: string): { acquire: (fn: LuaCallback) => void; is_locked: () => boolean } {
