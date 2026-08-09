@@ -524,6 +524,21 @@ export type CreateCommentDto = {
   content: string;
 };
 
+export type NotificationTestDto = {
+  /**
+   * The title of the test notification
+   */
+  title: string;
+  /**
+   * The message content of the test notification
+   */
+  message: string;
+  /**
+   * The type of the notification
+   */
+  type: "INFO" | "WARNING";
+};
+
 export type LoginDto = {
   /**
    * User email address
@@ -1908,6 +1923,50 @@ export type ProjectCommentControllerUpdateCommentResponses = {
 
 export type ProjectCommentControllerUpdateCommentResponse =
   ProjectCommentControllerUpdateCommentResponses[keyof ProjectCommentControllerUpdateCommentResponses];
+
+export type NotificationsControllerGetWebRtcOfferData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/notifications/webrtc-offer";
+};
+
+export type NotificationsControllerGetWebRtcOfferResponses = {
+  /**
+   * Notification websocket configuration
+   */
+  200: unknown;
+};
+
+export type NotificationsControllerSendTestNotificationData = {
+  body: NotificationTestDto;
+  path?: never;
+  query?: never;
+  url: "/notifications/test";
+};
+
+export type NotificationsControllerSendTestNotificationResponses = {
+  /**
+   * Notification created and sent
+   */
+  200: unknown;
+};
+
+export type NotificationsControllerMarkAsReadData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/notifications/{id}/read";
+};
+
+export type NotificationsControllerMarkAsReadResponses = {
+  /**
+   * Notification marked as read
+   */
+  200: unknown;
+};
 
 export type AuthControllerLoginData = {
   body: LoginDto;
