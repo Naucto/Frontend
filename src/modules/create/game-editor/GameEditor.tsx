@@ -1,4 +1,5 @@
 import { workSessionControllerLeave } from "@api";
+import { ConfirmDialog } from "@components/ui/ConfirmDialog";
 import CodeEditor from "@modules/create/game-editor/editors/CodeEditor";
 import GameEditorConsole from "@modules/create/game-editor/editors/GameEditorConsole";
 import { MapEditor } from "@modules/create/game-editor/editors/map-editor/MapEditor";
@@ -22,11 +23,6 @@ import {
   RightPanel,
   RightPanelSubcontainer,
   RunPreviewButton,
-  StyledAlert,
-  StyledDialog,
-  StyledDialogActions,
-  StyledDialogContent,
-  StyledDialogTitle,
   StyledTab,
   TabContent,
 } from "./GameEditor.styles";
@@ -34,7 +30,7 @@ import {
 import React, { useEffect, useMemo, useState } from "react";
 
 import { MenuBook, PlayArrow, SportsEsports } from "@mui/icons-material";
-import { Button, FormControlLabel, Switch, Tabs, Tooltip } from "@mui/material";
+import { Alert, Button, FormControlLabel, Switch, Tabs, Tooltip } from "@mui/material";
 import { Beforeunload } from "react-beforeunload";
 
 import CodeIcon from "@assets/code.svg?react";
@@ -304,27 +300,23 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
           output={output} />
       </RightPanel>
 
-      <StyledDialog
+      <ConfirmDialog
         open={!isOnline && offlineWarningOpen}
         onClose={() => setOfflineWarningOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <StyledDialogTitle>You are offline</StyledDialogTitle>
-        <StyledDialogContent dividers>
-          <StyledAlert
-            severity={project.awarenessProvider.count() > 1 ? "warning" : "info"}
-            variant="outlined"
-          >
-            {getAwarenessMessage()}
-          </StyledAlert>
-        </StyledDialogContent>
-        <StyledDialogActions>
+        title="You are offline"
+        actions={
           <Button variant="contained" color="primary" onClick={() => setOfflineWarningOpen(false)} autoFocus>
             Got it
           </Button>
-        </StyledDialogActions>
-      </StyledDialog>
+        }
+      >
+        <Alert
+          severity={project.awarenessProvider.count() > 1 ? "warning" : "info"}
+          variant="outlined"
+        >
+          {getAwarenessMessage()}
+        </Alert>
+      </ConfirmDialog>
 
       <Beforeunload onBeforeunload={(event) => {
         if (suppressBeforeUnloadRef.current) {

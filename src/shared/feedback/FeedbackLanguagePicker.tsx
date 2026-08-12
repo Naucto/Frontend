@@ -1,9 +1,10 @@
+import { ConfirmDialog } from "@components/ui/ConfirmDialog";
 import { FEEDBACK_ENGLISH_URL, FEEDBACK_FRENCH_URL } from "@shared/constants/links";
 
 import React, { useEffect, useRef, useState } from "react";
 
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 
 type FeedbackLanguagePickerProps = {
@@ -11,16 +12,6 @@ type FeedbackLanguagePickerProps = {
 };
 
 const RETURN_POPUP_DELAY_MS = 1000;
-
-const StyledDialog = styled(Dialog)(({ theme }) => ({
-  "& .MuiPaper-root": {
-    backgroundColor: theme.palette.gray[900],
-    color: theme.palette.common.white,
-    border: `1px solid ${theme.palette.gray[700]}`,
-    borderRadius: theme.custom.rounded.md,
-    backgroundImage: "none",
-  },
-}));
 
 const LanguageActions = styled(Box)(({ theme }) => ({
   display: "grid",
@@ -90,53 +81,50 @@ export const FeedbackLanguagePicker: React.FC<FeedbackLanguagePickerProps> = ({ 
   return (
     <>
       {children(() => setOpen(true))}
-      <StyledDialog
+
+      <ConfirmDialog
         open={open}
         onClose={() => setOpen(false)}
+        title="Feedback language"
         maxWidth="xs"
-        fullWidth
+        hideActions
       >
-        <DialogTitle>Feedback language</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="gray.300">
-            Choose the form language you prefer.
-          </Typography>
-          <LanguageActions>
-            <LanguageButton
-              variant="outlined"
-              endIcon={<OpenInNewIcon />}
-              onClick={() => handleSelect(FEEDBACK_ENGLISH_URL)}
-            >
-              English
-            </LanguageButton>
-            <LanguageButton
-              variant="outlined"
-              endIcon={<OpenInNewIcon />}
-              onClick={() => handleSelect(FEEDBACK_FRENCH_URL)}
-            >
-              Français
-            </LanguageButton>
-          </LanguageActions>
-        </DialogContent>
-      </StyledDialog>
-      <StyledDialog
+        <Typography variant="body2" color="gray.300">
+          Choose the form language you prefer.
+        </Typography>
+        <LanguageActions>
+          <LanguageButton
+            variant="outlined"
+            endIcon={<OpenInNewIcon />}
+            onClick={() => handleSelect(FEEDBACK_ENGLISH_URL)}
+          >
+            English
+          </LanguageButton>
+          <LanguageButton
+            variant="outlined"
+            endIcon={<OpenInNewIcon />}
+            onClick={() => handleSelect(FEEDBACK_FRENCH_URL)}
+          >
+            Français
+          </LanguageButton>
+        </LanguageActions>
+      </ConfirmDialog>
+
+      <ConfirmDialog
         open={thankYouOpen}
         onClose={() => setThankYouOpen(false)}
+        title="Thank you"
         maxWidth="xs"
-        fullWidth
-      >
-        <DialogTitle>Thank you</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="gray.300">
-            Thank you for giving feedback. It helps us a lot.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
+        actions={
           <Button variant="contained" onClick={() => setThankYouOpen(false)}>
             Close
           </Button>
-        </DialogActions>
-      </StyledDialog>
+        }
+      >
+        <Typography variant="body2" color="gray.300">
+          Thank you for giving feedback. It helps us a lot.
+        </Typography>
+      </ConfirmDialog>
     </>
   );
 };
