@@ -1591,6 +1591,66 @@ export type ProjectControllerGetPublishedProjectImageResponses = {
 export type ProjectControllerGetPublishedProjectImageResponse =
   ProjectControllerGetPublishedProjectImageResponses[keyof ProjectControllerGetPublishedProjectImageResponses];
 
+export type ProjectControllerGetProjectPreviewData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/projects/{id}/preview";
+};
+
+export type ProjectControllerGetProjectPreviewErrors = {
+  /**
+   * Staff access required
+   */
+  403: unknown;
+  /**
+   * Project not found
+   */
+  404: unknown;
+};
+
+export type ProjectControllerGetProjectPreviewResponses = {
+  /**
+   * Project metadata
+   */
+  200: ProjectExResponseDto;
+};
+
+export type ProjectControllerGetProjectPreviewResponse =
+  ProjectControllerGetProjectPreviewResponses[keyof ProjectControllerGetProjectPreviewResponses];
+
+export type ProjectControllerGetProjectPreviewContentData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/projects/{id}/preview/content";
+};
+
+export type ProjectControllerGetProjectPreviewContentErrors = {
+  /**
+   * Staff access required
+   */
+  403: unknown;
+  /**
+   * Project or content not found
+   */
+  404: unknown;
+};
+
+export type ProjectControllerGetProjectPreviewContentResponses = {
+  /**
+   * Playable project content
+   */
+  200: Blob | File;
+};
+
+export type ProjectControllerGetProjectPreviewContentResponse =
+  ProjectControllerGetProjectPreviewContentResponses[keyof ProjectControllerGetProjectPreviewContentResponses];
+
 export type ProjectControllerFetchProjectContentData = {
   body?: never;
   path: {
@@ -2198,6 +2258,7 @@ export type AdminAuthControllerRefreshData = {
 
 export type AdminAuthControllerRefreshErrors = {
   401: unknown;
+  403: unknown;
 };
 
 export type AdminAuthControllerRefreshResponses = {

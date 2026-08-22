@@ -205,6 +205,12 @@ import type {
   ProjectControllerGetProjectImageData,
   ProjectControllerGetProjectImageErrors,
   ProjectControllerGetProjectImageResponses,
+  ProjectControllerGetProjectPreviewContentData,
+  ProjectControllerGetProjectPreviewContentErrors,
+  ProjectControllerGetProjectPreviewContentResponses,
+  ProjectControllerGetProjectPreviewData,
+  ProjectControllerGetProjectPreviewErrors,
+  ProjectControllerGetProjectPreviewResponses,
   ProjectControllerGetPublishedProjectImageData,
   ProjectControllerGetPublishedProjectImageErrors,
   ProjectControllerGetPublishedProjectImageResponses,
@@ -696,6 +702,44 @@ export const projectControllerGetPublishedProjectImage = <
     responseType: "json",
     security: [{ scheme: "bearer", type: "http" }],
     url: "/projects/public/{id}/image",
+    ...options
+  });
+
+/**
+ * Get any project's metadata for staff preview, published or not
+ */
+export const projectControllerGetProjectPreview = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<ProjectControllerGetProjectPreviewData, ThrowOnError>
+) =>
+  (options.client ?? client).get<
+    ProjectControllerGetProjectPreviewResponses,
+    ProjectControllerGetProjectPreviewErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/projects/{id}/preview",
+    ...options
+  });
+
+/**
+ * Get any project's playable content for staff preview: the published release when there is one, otherwise the latest save
+ */
+export const projectControllerGetProjectPreviewContent = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<ProjectControllerGetProjectPreviewContentData, ThrowOnError>
+) =>
+  (options.client ?? client).get<
+    ProjectControllerGetProjectPreviewContentResponses,
+    ProjectControllerGetProjectPreviewContentErrors,
+    ThrowOnError
+  >({
+    responseType: "blob",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/projects/{id}/preview/content",
     ...options
   });
 
