@@ -654,6 +654,27 @@ export type ModerationReasonDto = {
   reportId?: number;
 };
 
+export type AdminUserResponseDto = {
+  id: number;
+  email: string;
+  username: string;
+  nickname?: {
+    [key: string]: unknown;
+  } | null;
+  accountStatus: "ACTIVE" | "SUSPENDED" | "BANNED";
+  roles: Array<string>;
+  createdAt: string;
+  moderationReason?: {
+    [key: string]: unknown;
+  } | null;
+  moderatedAt?: {
+    [key: string]: unknown;
+  } | null;
+  moderatedById?: {
+    [key: string]: unknown;
+  } | null;
+};
+
 export type ResetPasswordDto = {
   newPassword: string;
   reason?: string;
@@ -2447,31 +2468,53 @@ export type AdminUserControllerRestoreResponses = {
   200: unknown;
 };
 
-export type AdminUserControllerRevokeModeratorData = {
+export type AdminUserControllerRevokeRoleData = {
   body: ModerationReasonDto;
   path: {
     id: number;
+    role: "Admin" | "Moderator";
   };
   query?: never;
-  url: "/admin/users/{id}/roles/moderator";
+  url: "/admin/users/{id}/roles/{role}";
 };
 
-export type AdminUserControllerRevokeModeratorResponses = {
-  200: unknown;
+export type AdminUserControllerRevokeRoleErrors = {
+  /**
+   * Unknown role
+   */
+  400: unknown;
 };
 
-export type AdminUserControllerGrantModeratorData = {
+export type AdminUserControllerRevokeRoleResponses = {
+  200: AdminUserResponseDto;
+};
+
+export type AdminUserControllerRevokeRoleResponse =
+  AdminUserControllerRevokeRoleResponses[keyof AdminUserControllerRevokeRoleResponses];
+
+export type AdminUserControllerGrantRoleData = {
   body: ModerationReasonDto;
   path: {
     id: number;
+    role: "Admin" | "Moderator";
   };
   query?: never;
-  url: "/admin/users/{id}/roles/moderator";
+  url: "/admin/users/{id}/roles/{role}";
 };
 
-export type AdminUserControllerGrantModeratorResponses = {
-  200: unknown;
+export type AdminUserControllerGrantRoleErrors = {
+  /**
+   * Unknown role
+   */
+  400: unknown;
 };
+
+export type AdminUserControllerGrantRoleResponses = {
+  200: AdminUserResponseDto;
+};
+
+export type AdminUserControllerGrantRoleResponse =
+  AdminUserControllerGrantRoleResponses[keyof AdminUserControllerGrantRoleResponses];
 
 export type AdminUserControllerResetPasswordData = {
   body: ResetPasswordDto;

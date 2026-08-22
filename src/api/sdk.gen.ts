@@ -76,8 +76,9 @@ import type {
   AdminUserControllerCreateResponses,
   AdminUserControllerGetData,
   AdminUserControllerGetResponses,
-  AdminUserControllerGrantModeratorData,
-  AdminUserControllerGrantModeratorResponses,
+  AdminUserControllerGrantRoleData,
+  AdminUserControllerGrantRoleErrors,
+  AdminUserControllerGrantRoleResponses,
   AdminUserControllerListData,
   AdminUserControllerListResponses,
   AdminUserControllerRemoveData,
@@ -86,8 +87,9 @@ import type {
   AdminUserControllerResetPasswordResponses,
   AdminUserControllerRestoreData,
   AdminUserControllerRestoreResponses,
-  AdminUserControllerRevokeModeratorData,
-  AdminUserControllerRevokeModeratorResponses,
+  AdminUserControllerRevokeRoleData,
+  AdminUserControllerRevokeRoleErrors,
+  AdminUserControllerRevokeRoleResponses,
   AdminUserControllerSuspendData,
   AdminUserControllerSuspendResponses,
   AdminUserControllerUpdateData,
@@ -1653,18 +1655,19 @@ export const adminUserControllerRestore = <
   });
 
 /**
- * Revoke Moderator role
+ * Revoke a staff role (Admin or Moderator)
  */
-export const adminUserControllerRevokeModerator = <
+export const adminUserControllerRevokeRole = <
   ThrowOnError extends boolean = false
 >(
-  options: Options<AdminUserControllerRevokeModeratorData, ThrowOnError>
+  options: Options<AdminUserControllerRevokeRoleData, ThrowOnError>
 ) =>
   (options.client ?? client).delete<
-    AdminUserControllerRevokeModeratorResponses,
-    unknown,
+    AdminUserControllerRevokeRoleResponses,
+    AdminUserControllerRevokeRoleErrors,
     ThrowOnError
   >({
+    responseType: "json",
     security: [
       {
         in: "cookie",
@@ -1672,7 +1675,7 @@ export const adminUserControllerRevokeModerator = <
         type: "apiKey"
       }
     ],
-    url: "/admin/users/{id}/roles/moderator",
+    url: "/admin/users/{id}/roles/{role}",
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -1681,18 +1684,19 @@ export const adminUserControllerRevokeModerator = <
   });
 
 /**
- * Grant Moderator role
+ * Grant a staff role (Admin or Moderator)
  */
-export const adminUserControllerGrantModerator = <
+export const adminUserControllerGrantRole = <
   ThrowOnError extends boolean = false
 >(
-  options: Options<AdminUserControllerGrantModeratorData, ThrowOnError>
+  options: Options<AdminUserControllerGrantRoleData, ThrowOnError>
 ) =>
   (options.client ?? client).post<
-    AdminUserControllerGrantModeratorResponses,
-    unknown,
+    AdminUserControllerGrantRoleResponses,
+    AdminUserControllerGrantRoleErrors,
     ThrowOnError
   >({
+    responseType: "json",
     security: [
       {
         in: "cookie",
@@ -1700,7 +1704,7 @@ export const adminUserControllerGrantModerator = <
         type: "apiKey"
       }
     ],
-    url: "/admin/users/{id}/roles/moderator",
+    url: "/admin/users/{id}/roles/{role}",
     ...options,
     headers: {
       "Content-Type": "application/json",
