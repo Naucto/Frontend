@@ -5,6 +5,7 @@ import { GameSearchOverlay } from "@shared/navbar/GameSearchOverlay";
 import { Login } from "@shared/navbar/login/Login";
 import NavProfile from "@shared/navbar/nav-profile/NavProfile";
 import { ImportantNavActionButton, NavActionButton, NavElem } from "@shared/navbar/NavElem";
+import { NotificationBox } from "@shared/navbar/notifications/NotificationBox";
 import { SearchBar } from "@shared/navbar/SearchBar";
 import * as Urls from "@shared/navigation/routes";
 import { muiTheme } from "@theme/MUITheme";
@@ -108,6 +109,8 @@ const NavBar: React.FC = () => {
             </NavActionButton>
           )}
         </FeedbackLanguagePicker>
+        <NavElem to="/friends">Friends</NavElem>
+        <NotificationBox />
         {user ? <NavProfile /> : <Login forceShowAuthOverlay={forceShowAuthOverlay} setForceShowAuthOverlay={setForceShowAuthOverlay} />}
       </Right>
     </Nav >
