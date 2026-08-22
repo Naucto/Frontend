@@ -524,6 +524,132 @@ export type CreateCommentDto = {
   content: string;
 };
 
+export type CreateReportDto = {
+  targetType: "USER" | "PROJECT" | "COMMENT";
+  targetId: number;
+  reason: string;
+  details?: string;
+};
+
+export type ReportResponseDto = {
+  id: number;
+  targetType: "USER" | "PROJECT" | "COMMENT";
+  targetId: number;
+  reporterId: number;
+  reason: string;
+  details: {
+    [key: string]: unknown;
+  } | null;
+  status: "OPEN" | "IN_REVIEW" | "RESOLVED" | "DISMISSED";
+  createdAt: string;
+};
+
+export type AdminLoginDto = {
+  email: string;
+  password: string;
+};
+
+export type AdminMeDto = {
+  id: number;
+  email: string;
+  username: string;
+  nickname?: {
+    [key: string]: unknown;
+  } | null;
+  accountStatus: "ACTIVE" | "SUSPENDED" | "BANNED";
+  roles: Array<string>;
+};
+
+export type CreateAdminUserDto = {
+  email: string;
+  username: string;
+  nickname?: string;
+  password: string;
+  roles: Array<string>;
+};
+
+export type UpdateAdminUserDto = {
+  email?: string;
+  username?: string;
+  nickname?: {
+    [key: string]: unknown;
+  } | null;
+  roles?: Array<string>;
+  /**
+   * Free-form audit reason, recorded in the moderation log
+   */
+  reason?: string;
+};
+
+export type ModerationReasonDto = {
+  /**
+   * Free-form reason recorded in the audit log
+   */
+  reason?: string;
+  /**
+   * Optional related report id
+   */
+  reportId?: number;
+};
+
+export type ResetPasswordDto = {
+  newPassword: string;
+  reason?: string;
+};
+
+export type AdminUpdateProjectDto = {
+  name?: string;
+  shortDesc?: string;
+  longDesc?: {
+    [key: string]: unknown;
+  } | null;
+  publishedName?: {
+    [key: string]: unknown;
+  } | null;
+  publishedShortDesc?: {
+    [key: string]: unknown;
+  } | null;
+  publishedLongDesc?: {
+    [key: string]: unknown;
+  } | null;
+  tags?: Array<string>;
+  publishedTags?: Array<string>;
+  iconUrl?: {
+    [key: string]: unknown;
+  } | null;
+  monetization?: "NONE" | "ADS" | "PAID";
+  price?: {
+    [key: string]: unknown;
+  } | null;
+  hiddenReason?: {
+    [key: string]: unknown;
+  } | null;
+  reason?: string;
+};
+
+export type AdminUpdateCommentDto = {
+  content: string;
+  reason?: string;
+};
+
+export type ReportActionDto = {
+  resolutionNote?: string;
+};
+
+export type CreateRoleDto = {
+  name: string;
+  reason?: string;
+};
+
+export type UpdateRoleDto = {
+  name: string;
+  reason?: string;
+};
+
+export type DeleteRoleDto = {
+  reason?: string;
+};
+
 export type NotificationTestDto = {
   /**
    * The title of the test notification
@@ -550,10 +676,6 @@ export type LoginDto = {
   password: string;
 };
 
-export type AuthResponseDto = {
-  access_token: string;
-};
-
 export type CreateUserDto = {
   /**
    * User email address
@@ -571,6 +693,42 @@ export type CreateUserDto = {
    * User password
    */
   password: string;
+};
+
+export type GoogleCodeDto = {
+  /**
+   * Google authorization code
+   */
+  code: string;
+  /**
+   * PKCE code verifier
+   */
+  codeVerifier: string;
+};
+
+export type GithubLoginDto = {
+  /**
+   * GitHub OAuth authorization code
+   */
+  code: string;
+};
+
+export type MicrosoftLoginDto = {
+  /**
+   * Microsoft ID token
+   */
+  token: string;
+};
+
+export type ChangePasswordDto = {
+  /**
+   * Current password (not required for OAuth accounts)
+   */
+  currentPassword?: string;
+  /**
+   * New password
+   */
+  newPassword: string;
 };
 
 export type UserRoleDto = {
@@ -1932,6 +2090,761 @@ export type ProjectCommentControllerUpdateCommentResponses = {
 export type ProjectCommentControllerUpdateCommentResponse =
   ProjectCommentControllerUpdateCommentResponses[keyof ProjectCommentControllerUpdateCommentResponses];
 
+export type ReportControllerCreateData = {
+  body: CreateReportDto;
+  path?: never;
+  query?: never;
+  url: "/reports";
+};
+
+export type ReportControllerCreateResponses = {
+  /**
+   * Report submitted
+   */
+  201: ReportResponseDto;
+};
+
+export type ReportControllerCreateResponse =
+  ReportControllerCreateResponses[keyof ReportControllerCreateResponses];
+
+export type AdminAuthControllerLoginData = {
+  body: AdminLoginDto;
+  path?: never;
+  query?: never;
+  url: "/admin/auth/login";
+};
+
+export type AdminAuthControllerLoginErrors = {
+  401: unknown;
+  403: unknown;
+};
+
+export type AdminAuthControllerLoginResponses = {
+  200: AdminMeDto;
+};
+
+export type AdminAuthControllerLoginResponse =
+  AdminAuthControllerLoginResponses[keyof AdminAuthControllerLoginResponses];
+
+export type AdminAuthControllerRefreshData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/admin/auth/refresh";
+};
+
+export type AdminAuthControllerRefreshErrors = {
+  401: unknown;
+};
+
+export type AdminAuthControllerRefreshResponses = {
+  200: AdminMeDto;
+};
+
+export type AdminAuthControllerRefreshResponse =
+  AdminAuthControllerRefreshResponses[keyof AdminAuthControllerRefreshResponses];
+
+export type AdminAuthControllerLogoutData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/admin/auth/logout";
+};
+
+export type AdminAuthControllerLogoutResponses = {
+  200: unknown;
+};
+
+export type AdminAuthControllerMeData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/admin/auth/me";
+};
+
+export type AdminAuthControllerMeResponses = {
+  200: AdminMeDto;
+};
+
+export type AdminAuthControllerMeResponse =
+  AdminAuthControllerMeResponses[keyof AdminAuthControllerMeResponses];
+
+export type AdminInsightsControllerGetDashboardData = {
+  body?: never;
+  path?: never;
+  query?: {
+    days?: number;
+  };
+  url: "/admin/insights/dashboard";
+};
+
+export type AdminInsightsControllerGetDashboardResponses = {
+  200: unknown;
+};
+
+export type AdminInsightsControllerGetLiveData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/admin/insights/live";
+};
+
+export type AdminInsightsControllerGetLiveResponses = {
+  200: unknown;
+};
+
+export type AdminInsightsControllerGetSocialData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/admin/insights/social";
+};
+
+export type AdminInsightsControllerGetSocialResponses = {
+  200: unknown;
+};
+
+export type AdminUserControllerListData = {
+  body?: never;
+  path?: never;
+  query?: {
+    page?: number;
+    limit?: number;
+    sortBy?:
+      | "id"
+      | "email"
+      | "username"
+      | "nickname"
+      | "createdAt"
+      | "accountStatus";
+    order?: "asc" | "desc";
+    email?: string;
+    username?: string;
+    nickname?: string;
+    accountStatus?: "ACTIVE" | "SUSPENDED" | "BANNED";
+    /**
+     * Filter users having this role name
+     */
+    role?: string;
+  };
+  url: "/admin/users";
+};
+
+export type AdminUserControllerListResponses = {
+  200: unknown;
+};
+
+export type AdminUserControllerCreateData = {
+  body: CreateAdminUserDto;
+  path?: never;
+  query?: never;
+  url: "/admin/users";
+};
+
+export type AdminUserControllerCreateResponses = {
+  201: unknown;
+};
+
+export type AdminUserControllerRemoveData = {
+  body: ModerationReasonDto;
+  path: {
+    id: number;
+  };
+  query?: never;
+  url: "/admin/users/{id}";
+};
+
+export type AdminUserControllerRemoveResponses = {
+  200: unknown;
+};
+
+export type AdminUserControllerGetData = {
+  body?: never;
+  path: {
+    id: number;
+  };
+  query?: never;
+  url: "/admin/users/{id}";
+};
+
+export type AdminUserControllerGetResponses = {
+  200: unknown;
+};
+
+export type AdminUserControllerUpdateData = {
+  body: UpdateAdminUserDto;
+  path: {
+    id: number;
+  };
+  query?: never;
+  url: "/admin/users/{id}";
+};
+
+export type AdminUserControllerUpdateResponses = {
+  200: unknown;
+};
+
+export type AdminUserControllerSuspendData = {
+  body: ModerationReasonDto;
+  path: {
+    id: number;
+  };
+  query?: never;
+  url: "/admin/users/{id}/suspend";
+};
+
+export type AdminUserControllerSuspendResponses = {
+  200: unknown;
+};
+
+export type AdminUserControllerBanData = {
+  body: ModerationReasonDto;
+  path: {
+    id: number;
+  };
+  query?: never;
+  url: "/admin/users/{id}/ban";
+};
+
+export type AdminUserControllerBanResponses = {
+  200: unknown;
+};
+
+export type AdminUserControllerRestoreData = {
+  body: ModerationReasonDto;
+  path: {
+    id: number;
+  };
+  query?: never;
+  url: "/admin/users/{id}/restore";
+};
+
+export type AdminUserControllerRestoreResponses = {
+  200: unknown;
+};
+
+export type AdminUserControllerRevokeModeratorData = {
+  body: ModerationReasonDto;
+  path: {
+    id: number;
+  };
+  query?: never;
+  url: "/admin/users/{id}/roles/moderator";
+};
+
+export type AdminUserControllerRevokeModeratorResponses = {
+  200: unknown;
+};
+
+export type AdminUserControllerGrantModeratorData = {
+  body: ModerationReasonDto;
+  path: {
+    id: number;
+  };
+  query?: never;
+  url: "/admin/users/{id}/roles/moderator";
+};
+
+export type AdminUserControllerGrantModeratorResponses = {
+  200: unknown;
+};
+
+export type AdminUserControllerResetPasswordData = {
+  body: ResetPasswordDto;
+  path: {
+    id: number;
+  };
+  query?: never;
+  url: "/admin/users/{id}/reset-password";
+};
+
+export type AdminUserControllerResetPasswordResponses = {
+  200: unknown;
+};
+
+export type AdminProjectControllerListData = {
+  body?: never;
+  path?: never;
+  query?: {
+    page?: number;
+    limit?: number;
+    sortBy?:
+      | "id"
+      | "name"
+      | "createdAt"
+      | "updatedAt"
+      | "publishedAt"
+      | "likes"
+      | "viewCount";
+    order?: "asc" | "desc";
+    name?: string;
+    status?: "IN_PROGRESS" | "COMPLETED" | "ARCHIVED";
+    hidden?: boolean;
+    userId?: number;
+  };
+  url: "/admin/projects";
+};
+
+export type AdminProjectControllerListResponses = {
+  200: unknown;
+};
+
+export type AdminProjectControllerGetData = {
+  body?: never;
+  path: {
+    id: number;
+  };
+  query?: never;
+  url: "/admin/projects/{id}";
+};
+
+export type AdminProjectControllerGetResponses = {
+  200: unknown;
+};
+
+export type AdminProjectControllerUpdateData = {
+  body: AdminUpdateProjectDto;
+  path: {
+    id: number;
+  };
+  query?: never;
+  url: "/admin/projects/{id}";
+};
+
+export type AdminProjectControllerUpdateResponses = {
+  200: unknown;
+};
+
+export type AdminProjectControllerHideData = {
+  body: ModerationReasonDto;
+  path: {
+    id: number;
+  };
+  query?: never;
+  url: "/admin/projects/{id}/hide";
+};
+
+export type AdminProjectControllerHideResponses = {
+  200: unknown;
+};
+
+export type AdminProjectControllerRestoreData = {
+  body: ModerationReasonDto;
+  path: {
+    id: number;
+  };
+  query?: never;
+  url: "/admin/projects/{id}/restore";
+};
+
+export type AdminProjectControllerRestoreResponses = {
+  200: unknown;
+};
+
+export type AdminProjectControllerUnpublishData = {
+  body: ModerationReasonDto;
+  path: {
+    id: number;
+  };
+  query?: never;
+  url: "/admin/projects/{id}/unpublish";
+};
+
+export type AdminProjectControllerUnpublishResponses = {
+  200: unknown;
+};
+
+export type AdminCommentControllerListData = {
+  body?: never;
+  path?: never;
+  query?: {
+    page?: number;
+    limit?: number;
+    sortBy?: "id" | "createdAt";
+    order?: "asc" | "desc";
+    projectId?: number;
+    authorId?: number;
+    hidden?: boolean;
+    deleted?: boolean;
+  };
+  url: "/admin/comments";
+};
+
+export type AdminCommentControllerListResponses = {
+  200: unknown;
+};
+
+export type AdminCommentControllerGetData = {
+  body?: never;
+  path: {
+    id: number;
+  };
+  query?: never;
+  url: "/admin/comments/{id}";
+};
+
+export type AdminCommentControllerGetResponses = {
+  200: unknown;
+};
+
+export type AdminCommentControllerUpdateData = {
+  body: AdminUpdateCommentDto;
+  path: {
+    id: number;
+  };
+  query?: never;
+  url: "/admin/comments/{id}";
+};
+
+export type AdminCommentControllerUpdateResponses = {
+  200: unknown;
+};
+
+export type AdminCommentControllerHideData = {
+  body: ModerationReasonDto;
+  path: {
+    id: number;
+  };
+  query?: never;
+  url: "/admin/comments/{id}/hide";
+};
+
+export type AdminCommentControllerHideResponses = {
+  200: unknown;
+};
+
+export type AdminCommentControllerRestoreData = {
+  body: ModerationReasonDto;
+  path: {
+    id: number;
+  };
+  query?: never;
+  url: "/admin/comments/{id}/restore";
+};
+
+export type AdminCommentControllerRestoreResponses = {
+  200: unknown;
+};
+
+export type AdminReportControllerListData = {
+  body?: never;
+  path?: never;
+  query?: {
+    page?: number;
+    limit?: number;
+    sortBy?: "id" | "createdAt" | "updatedAt" | "status";
+    order?: "asc" | "desc";
+    targetType?: "USER" | "PROJECT" | "COMMENT";
+    targetId?: number;
+    status?: "OPEN" | "IN_REVIEW" | "RESOLVED" | "DISMISSED";
+    reporterId?: number;
+  };
+  url: "/admin/reports";
+};
+
+export type AdminReportControllerListResponses = {
+  200: unknown;
+};
+
+export type AdminReportControllerGetData = {
+  body?: never;
+  path: {
+    id: number;
+  };
+  query?: never;
+  url: "/admin/reports/{id}";
+};
+
+export type AdminReportControllerGetResponses = {
+  200: unknown;
+};
+
+export type AdminReportControllerUpdateData = {
+  body: ReportActionDto;
+  path: {
+    id: number;
+  };
+  query?: never;
+  url: "/admin/reports/{id}";
+};
+
+export type AdminReportControllerUpdateResponses = {
+  200: unknown;
+};
+
+export type AdminReportControllerReviewData = {
+  body: ReportActionDto;
+  path: {
+    id: number;
+  };
+  query?: never;
+  url: "/admin/reports/{id}/review";
+};
+
+export type AdminReportControllerReviewResponses = {
+  200: unknown;
+};
+
+export type AdminReportControllerResolveData = {
+  body: ReportActionDto;
+  path: {
+    id: number;
+  };
+  query?: never;
+  url: "/admin/reports/{id}/resolve";
+};
+
+export type AdminReportControllerResolveResponses = {
+  200: unknown;
+};
+
+export type AdminReportControllerDismissData = {
+  body: ReportActionDto;
+  path: {
+    id: number;
+  };
+  query?: never;
+  url: "/admin/reports/{id}/dismiss";
+};
+
+export type AdminReportControllerDismissResponses = {
+  200: unknown;
+};
+
+export type AdminModerationLogControllerListData = {
+  body?: never;
+  path?: never;
+  query?: {
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    order?: "asc" | "desc";
+    actorId?: number;
+    targetType?: "USER" | "PROJECT" | "COMMENT" | "REPORT";
+    targetId?: number;
+    action?:
+      | "SUSPEND_USER"
+      | "BAN_USER"
+      | "RESTORE_USER"
+      | "HIDE_PROJECT"
+      | "RESTORE_PROJECT"
+      | "UNPUBLISH_PROJECT"
+      | "HIDE_COMMENT"
+      | "RESTORE_COMMENT"
+      | "REVIEW_REPORT"
+      | "RESOLVE_REPORT"
+      | "DISMISS_REPORT"
+      | "ANONYMIZE_USER"
+      | "HARD_DELETE_USER"
+      | "CREATE_STAFF_USER"
+      | "UPDATE_ROLES"
+      | "EDIT_USER"
+      | "EDIT_PROJECT"
+      | "EDIT_COMMENT"
+      | "UPDATE_REPORT"
+      | "RESET_PASSWORD"
+      | "CREATE_ROLE"
+      | "RENAME_ROLE"
+      | "DELETE_ROLE";
+    createdAfter?: string;
+    createdBefore?: string;
+  };
+  url: "/admin/moderation-log";
+};
+
+export type AdminModerationLogControllerListResponses = {
+  200: unknown;
+};
+
+export type AdminModerationLogControllerGetData = {
+  body?: never;
+  path: {
+    id: number;
+  };
+  query?: never;
+  url: "/admin/moderation-log/{id}";
+};
+
+export type AdminModerationLogControllerGetResponses = {
+  200: unknown;
+};
+
+export type AdminRoleControllerListData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/admin/roles";
+};
+
+export type AdminRoleControllerListResponses = {
+  200: unknown;
+};
+
+export type AdminRoleControllerCreateData = {
+  body: CreateRoleDto;
+  path?: never;
+  query?: never;
+  url: "/admin/roles";
+};
+
+export type AdminRoleControllerCreateResponses = {
+  201: unknown;
+};
+
+export type AdminRoleControllerRemoveData = {
+  body: DeleteRoleDto;
+  path: {
+    id: number;
+  };
+  query?: never;
+  url: "/admin/roles/{id}";
+};
+
+export type AdminRoleControllerRemoveResponses = {
+  200: unknown;
+};
+
+export type AdminRoleControllerRenameData = {
+  body: UpdateRoleDto;
+  path: {
+    id: number;
+  };
+  query?: never;
+  url: "/admin/roles/{id}";
+};
+
+export type AdminRoleControllerRenameResponses = {
+  200: unknown;
+};
+
+export type AdminLookupControllerLikesData = {
+  body?: never;
+  path?: never;
+  query?: {
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    order?: "asc" | "desc";
+  };
+  url: "/admin/lookup/likes";
+};
+
+export type AdminLookupControllerLikesResponses = {
+  200: unknown;
+};
+
+export type AdminLookupControllerFriendshipsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    order?: "asc" | "desc";
+  };
+  url: "/admin/lookup/friendships";
+};
+
+export type AdminLookupControllerFriendshipsResponses = {
+  200: unknown;
+};
+
+export type AdminLookupControllerFriendRequestsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    order?: "asc" | "desc";
+  };
+  url: "/admin/lookup/friend-requests";
+};
+
+export type AdminLookupControllerFriendRequestsResponses = {
+  200: unknown;
+};
+
+export type AdminLookupControllerSubscriptionsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    order?: "asc" | "desc";
+  };
+  url: "/admin/lookup/subscriptions";
+};
+
+export type AdminLookupControllerSubscriptionsResponses = {
+  200: unknown;
+};
+
+export type AdminLookupControllerGameSessionsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    order?: "asc" | "desc";
+  };
+  url: "/admin/lookup/game-sessions";
+};
+
+export type AdminLookupControllerGameSessionsResponses = {
+  200: unknown;
+};
+
+export type AdminLookupControllerWorkSessionsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    order?: "asc" | "desc";
+  };
+  url: "/admin/lookup/work-sessions";
+};
+
+export type AdminLookupControllerWorkSessionsResponses = {
+  200: unknown;
+};
+
+export type AdminLookupControllerAnalyticsEventsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    order?: "asc" | "desc";
+  };
+  url: "/admin/lookup/analytics-events";
+};
+
+export type AdminLookupControllerAnalyticsEventsResponses = {
+  200: unknown;
+};
+
+export type AdminLookupControllerDailyRollupsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    order?: "asc" | "desc";
+  };
+  url: "/admin/lookup/daily-rollups";
+};
+
+export type AdminLookupControllerDailyRollupsResponses = {
+  200: unknown;
+};
+
 export type NotificationsControllerGetWebRtcOfferData = {
   body?: never;
   path?: never;
@@ -1989,20 +2902,18 @@ export type AuthControllerLoginErrors = {
    */
   400: unknown;
   /**
-   * Cannot register as an admin
+   * Invalid credentials
    */
-  403: unknown;
-  /**
-   * Email or username already in use
-   */
-  409: unknown;
+  401: unknown;
 };
 
 export type AuthControllerLoginResponses = {
   /**
-   * User registered successfully
+   * User logged in successfully
    */
-  201: AuthResponseDto;
+  201: {
+    access_token: string;
+  };
 };
 
 export type AuthControllerLoginResponse =
@@ -2034,11 +2945,91 @@ export type AuthControllerRegisterResponses = {
   /**
    * User registered successfully
    */
-  201: AuthResponseDto;
+  201: {
+    access_token: string;
+  };
 };
 
 export type AuthControllerRegisterResponse =
   AuthControllerRegisterResponses[keyof AuthControllerRegisterResponses];
+
+export type AuthControllerLoginWithGoogleCodeData = {
+  body: GoogleCodeDto;
+  path?: never;
+  query?: never;
+  url: "/auth/google/code";
+};
+
+export type AuthControllerLoginWithGoogleCodeErrors = {
+  /**
+   * Invalid Google code or code_verifier
+   */
+  401: unknown;
+};
+
+export type AuthControllerLoginWithGoogleCodeResponses = {
+  /**
+   * Login successful with Google
+   */
+  201: {
+    access_token: string;
+  };
+};
+
+export type AuthControllerLoginWithGoogleCodeResponse =
+  AuthControllerLoginWithGoogleCodeResponses[keyof AuthControllerLoginWithGoogleCodeResponses];
+
+export type AuthControllerLoginWithGithubData = {
+  body: GithubLoginDto;
+  path?: never;
+  query?: never;
+  url: "/auth/github";
+};
+
+export type AuthControllerLoginWithGithubErrors = {
+  /**
+   * Invalid or expired GitHub code
+   */
+  401: unknown;
+};
+
+export type AuthControllerLoginWithGithubResponses = {
+  /**
+   * Login successful with GitHub
+   */
+  201: {
+    access_token: string;
+  };
+};
+
+export type AuthControllerLoginWithGithubResponse =
+  AuthControllerLoginWithGithubResponses[keyof AuthControllerLoginWithGithubResponses];
+
+export type AuthControllerLoginWithMicrosoftData = {
+  body: MicrosoftLoginDto;
+  path?: never;
+  query?: never;
+  url: "/auth/microsoft";
+};
+
+export type AuthControllerLoginWithMicrosoftErrors = {
+  /**
+   * Invalid Microsoft ID token
+   */
+  401: unknown;
+};
+
+export type AuthControllerLoginWithMicrosoftResponses = {
+  /**
+   * Login successful with Microsoft
+   */
+  201: {
+    access_token: string;
+  };
+};
+
+export type AuthControllerLoginWithMicrosoftResponse =
+  AuthControllerLoginWithMicrosoftResponses[keyof AuthControllerLoginWithMicrosoftResponses];
 
 export type AuthControllerRefreshData = {
   body?: never;
@@ -2058,11 +3049,38 @@ export type AuthControllerRefreshResponses = {
   /**
    * Access token refreshed successfully
    */
-  201: AuthResponseDto;
+  201: {
+    access_token: string;
+  };
 };
 
 export type AuthControllerRefreshResponse =
   AuthControllerRefreshResponses[keyof AuthControllerRefreshResponses];
+
+export type AuthControllerChangePasswordData = {
+  body: ChangePasswordDto;
+  path?: never;
+  query?: never;
+  url: "/auth/password";
+};
+
+export type AuthControllerChangePasswordErrors = {
+  /**
+   * Current password required for non-OAuth accounts
+   */
+  400: unknown;
+  /**
+   * Current password incorrect
+   */
+  401: unknown;
+};
+
+export type AuthControllerChangePasswordResponses = {
+  /**
+   * Password updated successfully
+   */
+  200: unknown;
+};
 
 export type AuthControllerLogoutData = {
   body?: never;
@@ -2607,152 +3625,3 @@ export type WorkSessionControllerGetInfoResponses = {
 
 export type WorkSessionControllerGetInfoResponse =
   WorkSessionControllerGetInfoResponses[keyof WorkSessionControllerGetInfoResponses];
-
-export type AuthControllerChangePasswordData = {
-    body: ChangePasswordDto;
-    path?: never;
-    query?: never;
-    url: '/auth/password';
-};
-
-export type AuthControllerChangePasswordErrors = {
-    /**
-     * Current password required for non-OAuth accounts
-     */
-    400: unknown;
-    /**
-     * Current password incorrect
-     */
-    401: unknown;
-};
-
-export type AuthControllerChangePasswordResponses = {
-    /**
-     * Password updated successfully
-     */
-    200: unknown;
-};
-
-export type AuthControllerLoginWithGithubData = {
-    body: GithubLoginDto;
-    path?: never;
-    query?: never;
-    url: '/auth/github';
-};
-
-export type AuthControllerLoginWithGithubErrors = {
-    /**
-     * Invalid or expired GitHub code
-     */
-    401: unknown;
-};
-
-export type AuthControllerLoginWithGithubResponse = AuthControllerLoginWithGithubResponses[keyof AuthControllerLoginWithGithubResponses];
-
-export type AuthControllerLoginWithGithubResponses = {
-    /**
-     * Login successful with GitHub
-     */
-    201: AuthResponseDto;
-};
-
-export type AuthControllerLoginWithGoogleCodeData = {
-    body: GoogleCodeDto;
-    path?: never;
-    query?: never;
-    url: '/auth/google/code';
-};
-
-export type AuthControllerLoginWithGoogleCodeErrors = {
-    /**
-     * Invalid Google code or code_verifier
-     */
-    401: unknown;
-};
-
-export type AuthControllerLoginWithGoogleCodeResponse = AuthControllerLoginWithGoogleCodeResponses[keyof AuthControllerLoginWithGoogleCodeResponses];
-
-export type AuthControllerLoginWithGoogleCodeResponses = {
-    /**
-     * Login successful with Google
-     */
-    201: AuthResponseDto;
-};
-
-export type AuthControllerLoginWithMicrosoftData = {
-    body: MicrosoftLoginDto;
-    path?: never;
-    query?: never;
-    url: '/auth/microsoft';
-};
-
-export type AuthControllerLoginWithMicrosoftErrors = {
-    /**
-     * Invalid Microsoft token
-     */
-    401: unknown;
-};
-
-export type AuthControllerLoginWithMicrosoftResponse = AuthControllerLoginWithMicrosoftResponses[keyof AuthControllerLoginWithMicrosoftResponses];
-
-export type AuthControllerLoginWithMicrosoftResponses = {
-    /**
-     * Login successful with Microsoft
-     */
-    201: AuthResponseDto;
-};
-
-export type ChangePasswordDto = {
-    /**
-     * Current password (not required for OAuth accounts)
-     */
-    currentPassword?: string;
-    /**
-     * New password
-     */
-    newPassword: string;
-};
-
-export type GithubLoginDto = {
-    /**
-     * GitHub OAuth authorization code
-     */
-    code: string;
-};
-
-export type GoogleCodeDto = {
-    code: string;
-    codeVerifier: string;
-};
-
-export type MicrosoftLoginDto = {
-    token: string;
-};
-
-export type UserControllerGetPublicProfilePictureData = {
-    body?: never;
-    path: {
-        /**
-         * User ID
-         */
-        id: number;
-    };
-    query?: never;
-    url: '/users/public/{id}/profile-picture';
-};
-
-export type UserControllerGetPublicProfilePictureErrors = {
-    /**
-     * User not found or has no profile picture
-     */
-    404: unknown;
-};
-
-export type UserControllerGetPublicProfilePictureResponse = UserControllerGetPublicProfilePictureResponses[keyof UserControllerGetPublicProfilePictureResponses];
-
-export type UserControllerGetPublicProfilePictureResponses = {
-    /**
-     * Returns the CDN URL for the profile picture
-     */
-    200: ImageUrlResponseDto;
-};
