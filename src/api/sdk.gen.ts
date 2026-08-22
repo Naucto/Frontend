@@ -46,6 +46,12 @@ import type {
   MultiplayerControllerOpenHostData,
   MultiplayerControllerOpenHostErrors,
   MultiplayerControllerOpenHostResponses,
+  NotificationsControllerGetWebRtcOfferData,
+  NotificationsControllerGetWebRtcOfferResponses,
+  NotificationsControllerMarkAsReadData,
+  NotificationsControllerMarkAsReadResponses,
+  NotificationsControllerSendTestNotificationData,
+  NotificationsControllerSendTestNotificationResponses,
   ProjectCommentControllerCreateCommentData,
   ProjectCommentControllerCreateCommentResponses,
   ProjectCommentControllerCreateReplyData,
@@ -1065,24 +1071,64 @@ export const projectCommentControllerUpdateComment = <
   });
 
 /**
- * Report a user, project, or comment for moderation
+ * Get notification websocket configuration
  */
-export const reportControllerCreate = <ThrowOnError extends boolean = false>(
-  options: Options<ReportControllerCreateData, ThrowOnError>
+export const notificationsControllerGetWebRtcOffer = <
+  ThrowOnError extends boolean = false
+>(
+  options?: Options<NotificationsControllerGetWebRtcOfferData, ThrowOnError>
 ) =>
-  (options.client ?? client).post<
-    ReportControllerCreateResponses,
+  (options?.client ?? client).get<
+    NotificationsControllerGetWebRtcOfferResponses,
     unknown,
     ThrowOnError
   >({
-    responseType: "json",
     security: [{ scheme: "bearer", type: "http" }],
-    url: "/reports",
+    url: "/notifications/webrtc-offer",
+    ...options
+  });
+
+/**
+ * Send a test notification to the current user
+ */
+export const notificationsControllerSendTestNotification = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<
+    NotificationsControllerSendTestNotificationData,
+    ThrowOnError
+  >
+) =>
+  (options.client ?? client).post<
+    NotificationsControllerSendTestNotificationResponses,
+    unknown,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/notifications/test",
     ...options,
     headers: {
       "Content-Type": "application/json",
       ...options.headers
     }
+  });
+
+/**
+ * set one notification as read
+ */
+export const notificationsControllerMarkAsRead = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<NotificationsControllerMarkAsReadData, ThrowOnError>
+) =>
+  (options.client ?? client).patch<
+    NotificationsControllerMarkAsReadResponses,
+    unknown,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/notifications/{id}/read",
+    ...options
   });
 
 /**

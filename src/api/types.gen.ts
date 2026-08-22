@@ -524,24 +524,19 @@ export type CreateCommentDto = {
   content: string;
 };
 
-export type CreateReportDto = {
-  targetType: "USER" | "PROJECT" | "COMMENT";
-  targetId: number;
-  reason: string;
-  details?: string;
-};
-
-export type ReportResponseDto = {
-  id: number;
-  targetType: "USER" | "PROJECT" | "COMMENT";
-  targetId: number;
-  reporterId: number;
-  reason: string;
-  details: {
-    [key: string]: unknown;
-  } | null;
-  status: "OPEN" | "IN_REVIEW" | "RESOLVED" | "DISMISSED";
-  createdAt: string;
+export type NotificationTestDto = {
+  /**
+   * The title of the test notification
+   */
+  title: string;
+  /**
+   * The message content of the test notification
+   */
+  message: string;
+  /**
+   * The type of the notification
+   */
+  type: "INFO" | "WARNING";
 };
 
 export type LoginDto = {
@@ -1937,22 +1932,49 @@ export type ProjectCommentControllerUpdateCommentResponses = {
 export type ProjectCommentControllerUpdateCommentResponse =
   ProjectCommentControllerUpdateCommentResponses[keyof ProjectCommentControllerUpdateCommentResponses];
 
-export type ReportControllerCreateData = {
-  body: CreateReportDto;
+export type NotificationsControllerGetWebRtcOfferData = {
+  body?: never;
   path?: never;
   query?: never;
-  url: "/reports";
+  url: "/notifications/webrtc-offer";
 };
 
-export type ReportControllerCreateResponses = {
+export type NotificationsControllerGetWebRtcOfferResponses = {
   /**
-   * Report submitted
+   * Notification websocket configuration
    */
-  201: ReportResponseDto;
+  200: unknown;
 };
 
-export type ReportControllerCreateResponse =
-  ReportControllerCreateResponses[keyof ReportControllerCreateResponses];
+export type NotificationsControllerSendTestNotificationData = {
+  body: NotificationTestDto;
+  path?: never;
+  query?: never;
+  url: "/notifications/test";
+};
+
+export type NotificationsControllerSendTestNotificationResponses = {
+  /**
+   * Notification created and sent
+   */
+  200: unknown;
+};
+
+export type NotificationsControllerMarkAsReadData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/notifications/{id}/read";
+};
+
+export type NotificationsControllerMarkAsReadResponses = {
+  /**
+   * Notification marked as read
+   */
+  200: unknown;
+};
 
 export type AuthControllerLoginData = {
   body: LoginDto;
