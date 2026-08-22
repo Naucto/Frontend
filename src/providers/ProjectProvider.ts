@@ -119,10 +119,20 @@ export class ProjectProvider implements Destroyable {
         path: { id: this.projectId },
       });
 
-      this.projectSettingsProvider.updateName(projectDetails!.name);
-      this.projectSettingsProvider.updateShortDesc(projectDetails!.shortDesc);
-      this.projectSettingsProvider.updateLongDesc(projectDetails!.longDesc ?? JSON.stringify(projectDetails!.longDesc));
-      this.projectSettingsProvider.updateTags(projectDetails!.tags ?? []);
+      // The Yjs doc decoded above is the source of truth for these collaborative
+      // fields; only seed from the backend when a field is still empty (a fresh
+      // project). Overwriting on every load churns the Y.Text and, under concurrent
+      // sync, appends defaults to the end — and the old longDesc fallback stored
+      // the literal string "null" via JSON.stringify(null).
+      const settings = this.projectSettingsProvider.getSettings();
+      if (!settings.name)
+        this.projectSettingsProvider.updateName(projectDetails!.name);
+      if (!settings.shortDesc)
+        this.projectSettingsProvider.updateShortDesc(projectDetails!.shortDesc ?? "");
+      if (!settings.longDesc)
+        this.projectSettingsProvider.updateLongDesc(projectDetails!.longDesc ?? "");
+      if (!settings.tags.length)
+        this.projectSettingsProvider.updateTags(projectDetails!.tags ?? []);
 
       await this.saveContent();
 

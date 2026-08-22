@@ -1,9 +1,10 @@
+import { NetUi } from "@engine/net/NetUi";
+import { EnvData, LuaEnvironmentManager } from "@engine/runtime/LuaEnvironmentManager";
 import { SoundProvider } from "@providers/editors/SoundProvider";
 import { MusicPlayer } from "@shared/audio/MusicPlayer";
 import { CanvasProps, StyledCanvas } from "@shared/canvas/Canvas";
 import { KeyHandler } from "@shared/canvas/game-canvas/KeyHandler";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
-import { EnvData, LuaEnvironmentManager } from "@shared/lua-env-manager/LuaEnvironmentManager";
 
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from "react";
 
@@ -14,11 +15,12 @@ type GameCanvasProps = {
   envData: EnvData;
   setOutput: React.Dispatch<React.SetStateAction<string>>;
   soundProvider?: SoundProvider;
+  uiBridge?: NetUi;
   className?: string;
 };
 
 const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(
-  ({ canvasProps, envData, setOutput, className, soundProvider }, ref) => {
+  ({ canvasProps, envData, setOutput, className, soundProvider, uiBridge }, ref) => {
     const spriteRendererHandleRef = useRef<SpriteRendererHandle | null>(null);
     const luaEnvManagerRef = useRef<LuaEnvironmentManager>(undefined);
     const engineIntervalRef = useRef<NodeJS.Timeout>(undefined);
@@ -66,13 +68,32 @@ const GameCanvas = forwardRef<SpriteRendererHandle, GameCanvasProps>(
       }
       luaEnvManagerRef.current = new LuaEnvironmentManager({
         envData,
-        rendererHandle,
-        spriteProvider: canvasProps.sprite,
-        mapProvider: canvasProps.map,
-        keyHandler,
+        ports: {
+          renderer: rendererHandle,
+          sprites: canvasProps.sprite,
+          maps: canvasProps.map,
+          input: keyHandler,
+          sounds: musicPlayerRef.current,
+          ui: uiBridge,
+        },
         setOutput,
-        musicPlayer: musicPlayerRef.current
       });
+
+      // Tear the engine down on a preview re-run / navigation (unmount) and on a
+      // hard reload (pagehide, where React cleanups don't run): NetAPI ends its
+      // multiplayer session and closes the socket, so the backend frees the
+      // session immediately instead of waiting for the heartbeat.
+      const teardown = (): void => {
+        luaEnvManagerRef.current?.destroy();
+        luaEnvManagerRef.current = undefined;
+        musicPlayerRef.current?.stop();
+      };
+
+      window.addEventListener("pagehide", teardown);
+      return () => {
+        window.removeEventListener("pagehide", teardown);
+        teardown();
+      };
     }, []);
 
     useEffect(() => {

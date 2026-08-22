@@ -13,6 +13,7 @@ import ProjectCard from "@modules/projects/components/ProjectCard";
 import ImportantButton from "@shared/buttons/ImportantButton";
 import { Editable } from "@shared/forms/Editable";
 import * as urls from "@shared/navigation/routes";
+import { ProfilePicture } from "@shared/user/ProfilePicture";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
 
 import { ChangePasswordDialog } from "./ChangePasswordDialog";
@@ -25,8 +26,6 @@ import { isAxiosError } from "axios";
 import { useSnackbar } from "notistack";
 import { useForm } from "react-hook-form";
 import { Link, useParams } from "react-router-dom";
-
-import UserIcon from "@assets/user.svg?react";
 
 const ACCEPTED_IMAGE_TYPES = "image/png,image/jpeg,image/gif,image/webp";
 
@@ -62,25 +61,6 @@ const ProfileInfo = styled(Box)(({ theme }) => ({
   paddingLeft: theme.spacing(14),
   gap: theme.spacing(2),
 }));
-
-const ProfilePicture = styled("div")(({ theme }) => ({
-  width: theme.spacing(10),
-  height: theme.spacing(10),
-  borderRadius: "50%",
-  backgroundColor: theme.palette.gray[700],
-  border: `2px solid ${theme.palette.gray[400]}`,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  overflow: "hidden",
-  marginBottom: theme.spacing(2),
-}));
-
-const ProfileImage = styled("img")({
-  width: "100%",
-  height: "100%",
-  objectFit: "cover",
-});
 
 const Description = styled(Typography)(({ theme }) => ({
   color: theme.palette.grey[200],
@@ -314,13 +294,9 @@ export const Profile = (): JSX.Element => {
         <ProfileHeader>
           <ProfileBackground src={backgroundImageUrl} />
           <ProfileInfo>
-            <ProfilePicture>
-              {profileImageUrl ? (
-                <ProfileImage src={profileImageUrl} alt="Profile" />
-              ) : (
-                <UserIcon width={32} height={32} />
-              )}
-            </ProfilePicture>
+            <Box sx={{ mb: 2 }}>
+              <ProfilePicture src={profileImageUrl} size={80} />
+            </Box>
             <TextInfo>
               <Typography variant="h4">
                 {profileData?.username ?? ""}

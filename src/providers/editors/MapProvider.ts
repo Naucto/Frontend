@@ -1,3 +1,4 @@
+import { MapSource } from "@engine/ports";
 import { MapProviderError } from "@errors/MapProviderError";
 
 import { SpriteProvider } from "./SpriteProvider";
@@ -9,7 +10,7 @@ interface Size {
   height: number;
 }
 
-export class MapProvider implements Destroyable {
+export class MapProvider implements Destroyable, MapSource {
   private _tilemap: Y.Map<number>;
   public width: number;
   public height: number;

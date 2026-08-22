@@ -1,9 +1,10 @@
 import * as urls from "@shared/navigation/routes";
+import { ProfilePicture } from "@shared/user/ProfilePicture";
 import { usePublicUserProfile } from "@shared/user/usePublicUserProfile";
 
 import React, { Fragment, useMemo } from "react";
 
-import { Avatar, Tooltip, Typography, type TypographyProps } from "@mui/material";
+import { Tooltip, Typography, type TypographyProps } from "@mui/material";
 import { alpha, styled } from "@mui/material/styles";
 import { Link } from "react-router-dom";
 
@@ -67,18 +68,6 @@ const ProfileRoot = styled(Link)(({ theme }) => ({
     color: theme.palette.yellow[500],
     textDecoration: "underline",
   },
-}));
-
-const ProfileAvatar = styled(Avatar, {
-  shouldForwardProp: (prop) => prop !== "$size",
-})<{ $size: number }>(({ theme, $size }) => ({
-  width: $size,
-  height: $size,
-  flex: `0 0 ${$size}px`,
-  fontSize: Math.max(11, Math.floor($size * 0.42)),
-  color: theme.palette.common.white,
-  backgroundColor: theme.palette.blue[700],
-  border: `1px solid ${theme.palette.gray[500]}`,
 }));
 
 const ListRoot = styled("span")({
@@ -162,10 +151,6 @@ function getProfileTooltip(user: ProfileLinkUser, profile: ProfileLinkUser | nul
   return username && username !== displayName ? `${displayName} (${username})` : displayName;
 }
 
-function getFallbackInitial(label: string): string {
-  return label.trim().charAt(0).toUpperCase() || "?";
-}
-
 function getSeparator(index: number, total: number): string {
   if (index === 0) return "";
   if (total === 2) return " and ";
@@ -222,9 +207,7 @@ export const UserProfileLink: React.FC<UserProfileLinkProps> = ({
       aria-label={`Open ${displayName}'s profile`}
     >
       {showAvatar && (
-        <ProfileAvatar src={avatarUrl} $size={avatarSize} className="NauctoUserProfileLink-avatar">
-          {getFallbackInitial(displayName)}
-        </ProfileAvatar>
+        <ProfilePicture src={avatarUrl} size={avatarSize} className="NauctoUserProfileLink-avatar" />
       )}
       {showName && (
         <Typography

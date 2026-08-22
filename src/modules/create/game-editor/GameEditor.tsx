@@ -1,4 +1,6 @@
 import { workSessionControllerLeave } from "@api";
+import { EnvData } from "@engine/runtime/LuaEnvironmentManager";
+import { useReturnFocusOnNetDialogClose } from "@hooks/useReturnFocusOnNetDialogClose";
 import CodeEditor from "@modules/create/game-editor/editors/CodeEditor";
 import GameEditorConsole from "@modules/create/game-editor/editors/GameEditorConsole";
 import { MapEditor } from "@modules/create/game-editor/editors/map-editor/MapEditor";
@@ -6,9 +8,11 @@ import { MultiplayerSettingsEditor } from "@modules/create/game-editor/editors/m
 import ProjectSettingsEditor from "@modules/create/game-editor/editors/ProjectSettingsEditor";
 import { SoundEditor } from "@modules/create/game-editor/editors/sound-editor/SoundEditor";
 import { SpriteEditor } from "@modules/create/game-editor/editors/sprite-editor/SpriteEditor";
+import { NetSessionModals } from "@modules/hub/components/game-viewer/NetSessionModals";
+import { netPermissionsFromSettings } from "@providers/net/netPermissions";
+import { NetUiBridge } from "@providers/net/NetUiBridge";
 import { ProjectProvider, ProviderEventType } from "@providers/ProjectProvider";
 import { SpriteRendererHandle } from "@shared/canvas/RendererHandle";
-import { EnvData } from "@shared/lua-env-manager/LuaEnvironmentManager";
 
 import { EditorContainer } from "./editors/EditorContainer";
 import { EditorProps, EditorTab } from "./editors/EditorType";
@@ -56,6 +60,15 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
   const [autoRefreshPreview, setAutoRefreshPreview] = useState(false);
   const [previewCode, setPreviewCode] = useState("");
   const [previewRevision, setPreviewRevision] = useState(0);
+
+  const netBridge = useMemo(() => new NetUiBridge(), []);
+  // Per-path permissions configured in the MULTIPLAYER tab, enforced by the host.
+  const netPermissions = useMemo(
+    () => netPermissionsFromSettings(project.multiplayerSettingsProvider),
+    [project],
+  );
+
+  useEffect(() => () => netBridge.destroy(), [netBridge]);
 
   const tabs = useMemo(() => [
     { label: "project", component: ProjectSettingsEditor, icon: <ProjectIcon/> },
@@ -133,8 +146,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
 
   const envData: EnvData = useMemo(() => ({
     code: previewCode,
-    output,
-  }), [output, previewCode]);
+  }), [previewCode]);
 
   const screenSize = useMemo(() => ({
     width: 320,
@@ -160,6 +172,8 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
 
   const canvasRef = React.useRef<SpriteRendererHandle>(null);
 
+  useReturnFocusOnNetDialogClose(netBridge, canvasRef);
+
   const becomeHostListener = (): void => {
     setInterval(() => {
       project.saveContent();
@@ -181,7 +195,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
   }, [autoRefreshPreview, code]);
 
   const getAwarenessMessage = (): string => {
-    const count = project.awarenessProvider.count();
+    const count = project.awarenessProvider?.count() ?? 1;
     if (count > 1) {
       const otherUsers = count - 1;
       const userText = otherUsers === 1 ? "person is" : "people are";
@@ -287,6 +301,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
               envData={envData}
               setOutput={setOutput}
               soundProvider={project.soundProvider}
+              uiBridge={netBridge}
             />
           </TabContent>
           <TabContent
@@ -313,7 +328,7 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
         <StyledDialogTitle>You are offline</StyledDialogTitle>
         <StyledDialogContent dividers>
           <StyledAlert
-            severity={project.awarenessProvider.count() > 1 ? "warning" : "info"}
+            severity={(project.awarenessProvider?.count() ?? 1) > 1 ? "warning" : "info"}
             variant="outlined"
           >
             {getAwarenessMessage()}
@@ -336,6 +351,8 @@ const GameEditor: React.FC<GameEditorProps> = ({ project }: GameEditorProps) => 
 
         return "Are you sure you want to leave? Your changes may not be saved.";
       }} />
+
+      <NetSessionModals bridge={netBridge} projectId={project.projectId} selfJoin permissions={netPermissions} />
     </GameEditorContainer>
   );
 };

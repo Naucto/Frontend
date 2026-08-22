@@ -8,6 +8,8 @@ import { Hub } from "@modules/hub/Hub";
 import Profile from "@modules/profile/Profile";
 import ProfileLikedGames from "@modules/profile/ProfileLikedGames";
 import ProfilePublishedGames from "@modules/profile/ProfilePublishedGames";
+import { RequireAuth } from "@shared/auth-overlay/RequireAuth";
+import { SessionExpiredModal } from "@shared/auth-overlay/SessionExpiredModal";
 import { SiteFooter } from "@shared/footer/SiteFooter";
 import NavBar from "@shared/navbar/NavBar";
 import { CustomSnackBarProvider } from "@shared/snack-bar/CustomSnackBarProvider";
@@ -62,7 +64,7 @@ const AppRoutes: React.FC = () => {
             <Route path="/hub/category/:category" element={<HubCategoryPage />} />
             <Route path='/projects' element={<Projects />} />
             <Route path="/projects/category/:category" element={<ProjectCategoryPage />} />
-            <Route path="/projects/:projectId" element={<Project />} />
+            <Route path="/projects/:projectId" element={<RequireAuth><Project /></RequireAuth>} />
             <Route path="/help" element={<Help />} />
             {isStandalonePlayRoute && (
               <Route path="/project/:id/play" element={<Hub />} />
@@ -82,6 +84,7 @@ const AppRoutes: React.FC = () => {
         </Suspense>
       </AppContent>
       <SiteFooter />
+      <SessionExpiredModal />
     </AppContainer>
   );
 };
