@@ -30,3 +30,6 @@ RUN npm run build
 
 FROM nginx:alpine AS runtime
 COPY --from=base --chown=nginx:nginx /app/dist /usr/share/nginx/html
+# Without this nginx 404s every deep link (the app uses BrowserRouter).
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80

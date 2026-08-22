@@ -10,5 +10,6 @@ COPY . .
 
 EXPOSE 5173
 
-CMD ["npm", "run", "dev", "--host"]
+# `--` is required, otherwise npm swallows --host instead of forwarding it to vite.
+CMD ["npm", "run", "dev", "--", "--host"]
 
