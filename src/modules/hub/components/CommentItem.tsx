@@ -1,9 +1,9 @@
 import { CommentResponseDto } from "@api";
 import { useUser } from "@providers/UserProvider";
+import { ReportAction } from "@shared/moderation/ReportAction";
 import { UserProfileLink } from "@shared/user/UserProfileLink";
 
 import CommentComposer from "./CommentComposer";
-import { ReportAction } from "./ReportAction";
 
 import React, { useState } from "react";
 

@@ -16,6 +16,7 @@ import { GameProvider, ProviderEventType } from "@providers/GameProvider";
 import { NetUiBridge } from "@providers/net/NetUiBridge";
 import { useUser } from "@providers/UserProvider";
 import { type SpriteRendererHandle } from "@shared/canvas/RendererHandle";
+import { ReportAction } from "@shared/moderation/ReportAction";
 import * as urls from "@shared/navigation/routes";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
 import { getCachedProjectImageUrl } from "@utils/projectImageCache";
@@ -33,7 +34,6 @@ import {
 } from "./game-viewer/GameViewerLayout";
 import { NetSessionModals } from "./game-viewer/NetSessionModals";
 import { PlayableGameFrame } from "./game-viewer/PlayableGameFrame";
-import { ReportAction } from "./ReportAction";
 
 import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
