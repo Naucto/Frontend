@@ -1,3 +1,4 @@
+import { SpriteSource } from "@engine/ports";
 import { SpriteProviderError } from "@errors/SpriteProviderError";
 import { webglPaletteBuffer } from "@modules/create/game-editor/editors/sprite-editor/Color";
 
@@ -8,7 +9,7 @@ export type SpriteContentListener = (changes: PixelChange[]) => void;
 
 type SpriteFlagListener = (flags: number[]) => void;
 
-export class SpriteProvider implements Destroyable {
+export class SpriteProvider implements Destroyable, SpriteSource {
   private _spriteMap: Y.Map<number>;
   private _spriteFlags: Y.Map<number>;
   private _rawListeners = new Set<RawContentListener>();

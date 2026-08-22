@@ -8,10 +8,12 @@ import {
   projectControllerUnlikeProject,
   ProjectExResponseDto,
 } from "@api";
+import { type EnvData } from "@engine/runtime/LuaEnvironmentManager";
+import { useReturnFocusOnNetDialogClose } from "@hooks/useReturnFocusOnNetDialogClose";
 import { GameProvider, ProviderEventType } from "@providers/GameProvider";
+import { NetUiBridge } from "@providers/net/NetUiBridge";
 import { useUser } from "@providers/UserProvider";
 import { type SpriteRendererHandle } from "@shared/canvas/RendererHandle";
-import { type EnvData } from "@shared/lua-env-manager/LuaEnvironmentManager";
 import * as urls from "@shared/navigation/routes";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
 import { getCachedProjectImageUrl } from "@utils/projectImageCache";
@@ -27,6 +29,7 @@ import {
   LoadingGameViewer,
   MissingProjectViewer,
 } from "./game-viewer/GameViewerLayout";
+import { NetSessionModals } from "./game-viewer/NetSessionModals";
 import { PlayableGameFrame } from "./game-viewer/PlayableGameFrame";
 
 import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -83,8 +86,13 @@ export const GameViewer = (): JSX.Element => {
   const [forkedFromInfo, setForkedFromInfo] = useState<ForkedFromInfo | null>(null);
   const canvasRef = useRef<SpriteRendererHandle>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const netBridge = useMemo(() => new NetUiBridge(), []);
+
+  useReturnFocusOnNetDialogClose(netBridge, canvasRef);
+
+  useEffect(() => () => netBridge.destroy(), [netBridge]);
   const [code, setCode] = useState("");
-  const [output, setOutput] = useState("");
+  const [, setOutput] = useState("");
   const [bannerUrl, setBannerUrl] = useState("");
   const [gameProvider, setGameProvider] = useState<GameProvider>();
   const [showGame, setShowGame] = useState(false);
@@ -101,8 +109,7 @@ export const GameViewer = (): JSX.Element => {
 
   const envData: EnvData = useMemo(() => ({
     code,
-    output,
-  }), [code, output]);
+  }), [code]);
 
   const focusGameCanvas = useCallback((): void => {
     canvasRef.current?.getCanvas?.()?.focus();
@@ -347,9 +354,12 @@ export const GameViewer = (): JSX.Element => {
         launching={launching}
         screenSize={screenSize}
         showGame={showGame}
+        uiBridge={netBridge}
         onLaunch={handleLaunchGame}
         setOutput={setOutput}
       />
+
+      <NetSessionModals bridge={netBridge} projectId={Number(id)} />
 
       <GameDetailsPanel
         canFork={!!user}

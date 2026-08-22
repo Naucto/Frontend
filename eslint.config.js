@@ -10,7 +10,7 @@ const ASSET =
   "\\.(css|scss|sass|less|svg|png|jpe?g|gif|webp|glsl|mp3|wav|ogg)(\\?\\w+)?$";
 // Project path aliases (see tsconfig.paths.json), to tell them apart from npm @scope packages.
 const PROJECT =
-  "@(modules|shared|components|providers|hooks|utils|theme|api|errors|assets|lib|typedefs)(/|$)";
+  "@(modules|shared|components|providers|hooks|utils|theme|api|errors|assets|lib|engine|typedefs)(/|$)";
 
 export default defineConfig([
   {

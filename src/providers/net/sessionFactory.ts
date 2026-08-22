@@ -1,0 +1,61 @@
+import { GameSessionConnectionResponseDto } from "@api";
+import { NetPermissions } from "@engine/net/NetPermissions";
+import { SessionRole, UserId } from "@engine/net/SessionTransport";
+import { SharedTableSession } from "@engine/net/SharedTableSession";
+import { GameSessionError } from "@errors/GameSessionError";
+
+import { refreshSessionTicket } from "./gameSessionApi";
+import { RefreshedTicket } from "./SessionSignalingSocket";
+import { SyncedSessionTransport } from "./SyncedSessionTransport";
+
+const toReachableSignalingUrl = (url: string): string => {
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") {
+      parsed.hostname = window.location.hostname;
+    }
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+};
+
+export const buildSession = (
+  connection: GameSessionConnectionResponseDto,
+  role: SessionRole,
+  selfUserId: UserId,
+  permissions?: NetPermissions,
+): SharedTableSession => {
+  // The generated client types username/credential as objects, but they are
+  // strings at runtime; narrow on type rather than force-casting.
+  const iceServers: RTCIceServer[] = connection.webrtcConfig.peerOpts.config.iceServers.map(server => ({
+    urls: server.urls,
+    username: typeof server.username === "string" ? server.username : undefined,
+    credential: typeof server.credential === "string" ? server.credential : undefined,
+  }));
+
+  const signalingUrl = connection.webrtcConfig.signaling[0];
+  if (!signalingUrl)
+    throw new GameSessionError("session has no signaling endpoint");
+
+  const refreshTicket = async (): Promise<RefreshedTicket | null> => {
+    try {
+      const fresh = await refreshSessionTicket(connection.sessionUuid);
+      return { ticket: fresh.connectionTicket, issuedAt: Date.now() };
+    } catch {
+      return null;
+    }
+  };
+
+  const transport = new SyncedSessionTransport({
+    role,
+    selfUserId,
+    signalingUrl: toReachableSignalingUrl(signalingUrl),
+    ticket: connection.connectionTicket,
+    ticketIssuedAt: Date.now(),
+    iceServers,
+    refreshTicket,
+  });
+
+  return new SharedTableSession(transport, permissions);
+};

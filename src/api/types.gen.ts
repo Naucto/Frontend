@@ -428,19 +428,20 @@ export type ViewResponseDto = {
   viewCount: number;
 };
 
-export type LookupHostsResponseDtoHost = {
-  sessionUuid: string;
-  sessionVisibility: "PUBLIC" | "FRIENDS_ONLY" | "PRIVATE";
-  playerCount: number;
-};
-
-export type LookupHostsResponseDto = {
-  hosts: Array<LookupHostsResponseDtoHost>;
-};
-
-export type OpenHostRequestDto = {
+export type CreateGameSessionDto = {
+  /**
+   * ID of the project this session is played on
+   */
   projectId: number;
-  visibility: "PUBLIC" | "FRIENDS_ONLY" | "PRIVATE";
+  /**
+   * Human-readable title of the session
+   */
+  title: string;
+  /**
+   * Maximum number of players, host included
+   */
+  maxPlayers: number;
+  visibility: "PUBLIC" | "FRIENDS_ONLY" | "INVITE_CODE";
 };
 
 export type WebRtcOfferPeerIceServerConfig = {
@@ -467,28 +468,89 @@ export type WebRtcOfferDto = {
   peerOpts: WebRtcOfferPeerOpts;
 };
 
-export type OpenHostResponseDto = {
+export type GameSessionConnectionResponseDto = {
   sessionUuid: string;
-  webrtcConfig: WebRtcOfferDto;
-};
-
-export type CloseHostRequestDto = {
   /**
-   * ID of the project whose session to close
+   * Player id assigned to this connection
    */
-  projectId: number;
-};
-
-export type JoinHostRequestDto = {
-  sessionUuid: string;
-};
-
-export type JoinHostResponseDto = {
+  playerId: number;
   webrtcConfig: WebRtcOfferDto;
+  /**
+   * Short-lived signed ticket presented on the WebRTC connection
+   */
+  connectionTicket: string;
+  /**
+   * Join code to share, present only when hosting an INVITE_CODE session
+   */
+  joinCode?: string;
 };
 
-export type LeaveHostRequestDto = {
+export type JoinByCodeDto = {
+  /**
+   * Invite code of the session to join
+   */
+  joinCode: string;
+  /**
+   * Set by the game editor to allow a self-join for solo testing
+   */
+  editorTest?: boolean;
+};
+
+export type GameSessionResponseDto = {
   sessionUuid: string;
+  title: string;
+  visibility: "PUBLIC" | "FRIENDS_ONLY" | "INVITE_CODE";
+  /**
+   * ID of the host user
+   */
+  hostId: number;
+  /**
+   * Username of the host
+   */
+  hostUsername: string;
+  /**
+   * Display nickname of the host, if set
+   */
+  hostNickname?: string;
+  /**
+   * Name of the game (project) being played
+   */
+  projectName: string;
+  /**
+   * Maximum number of players, host included
+   */
+  maxPlayers: number;
+  /**
+   * Current number of players, host included
+   */
+  playerCount: number;
+};
+
+export type GameSessionListResponseDto = {
+  sessions: Array<GameSessionResponseDto>;
+};
+
+export type UpdateGameSessionDto = {
+  /**
+   * New title of the session
+   */
+  title?: string;
+  /**
+   * New maximum number of players, host included
+   */
+  maxPlayers?: number;
+  visibility?: "PUBLIC" | "FRIENDS_ONLY" | "INVITE_CODE";
+};
+
+export type JoinGameSessionDto = {
+  /**
+   * Join code, required for INVITE_CODE sessions
+   */
+  joinCode?: string;
+  /**
+   * Set by the game editor to allow a self-join for solo testing
+   */
+  editorTest?: boolean;
 };
 
 export type CommentAuthorDto = {
@@ -1858,135 +1920,136 @@ export type ProjectControllerUpdateReleaseResponses = {
   200: unknown;
 };
 
-export type MultiplayerControllerLookupHostsData = {
+export type MultiplayerControllerListData = {
   body?: never;
   path?: never;
-  query?: never;
-  url: "/multiplayer/list-hosts";
+  query: {
+    projectId: number;
+  };
+  url: "/game-sessions";
 };
 
-export type MultiplayerControllerLookupHostsErrors = {
-  /**
-   * Bad request (wrong project ID).
-   */
-  400: unknown;
-  /**
-   * Unhandled server error.
-   */
-  500: unknown;
+export type MultiplayerControllerListResponses = {
+  200: GameSessionListResponseDto;
 };
 
-export type MultiplayerControllerLookupHostsResponses = {
-  /**
-   * A list of available game hosts is returned.
-   */
-  200: LookupHostsResponseDto;
-};
+export type MultiplayerControllerListResponse =
+  MultiplayerControllerListResponses[keyof MultiplayerControllerListResponses];
 
-export type MultiplayerControllerLookupHostsResponse =
-  MultiplayerControllerLookupHostsResponses[keyof MultiplayerControllerLookupHostsResponses];
-
-export type MultiplayerControllerOpenHostData = {
-  body: OpenHostRequestDto;
+export type MultiplayerControllerCreateData = {
+  body: CreateGameSessionDto;
   path?: never;
   query?: never;
-  url: "/multiplayer/open-host";
+  url: "/game-sessions";
 };
 
-export type MultiplayerControllerOpenHostErrors = {
-  /**
-   * The user is already hosting a game session for this project.
-   */
-  400: unknown;
-  /**
-   * The user or project was not found.
-   */
-  404: unknown;
+export type MultiplayerControllerCreateResponses = {
+  201: GameSessionConnectionResponseDto;
 };
 
-export type MultiplayerControllerOpenHostResponses = {
-  /**
-   * The game host/session has been successfully opened.
-   */
-  200: OpenHostResponseDto;
-};
+export type MultiplayerControllerCreateResponse =
+  MultiplayerControllerCreateResponses[keyof MultiplayerControllerCreateResponses];
 
-export type MultiplayerControllerOpenHostResponse =
-  MultiplayerControllerOpenHostResponses[keyof MultiplayerControllerOpenHostResponses];
-
-export type MultiplayerControllerCloseHostData = {
-  body: CloseHostRequestDto;
+export type MultiplayerControllerJoinByCodeData = {
+  body: JoinByCodeDto;
   path?: never;
   query?: never;
-  url: "/multiplayer/close-host";
+  url: "/game-sessions/join-by-code";
 };
 
-export type MultiplayerControllerCloseHostErrors = {
-  /**
-   * The user, project, or game session was not found.
-   */
-  404: unknown;
+export type MultiplayerControllerJoinByCodeResponses = {
+  200: GameSessionConnectionResponseDto;
 };
 
-export type MultiplayerControllerCloseHostResponses = {
-  /**
-   * The game host/session has been successfully closed.
-   */
+export type MultiplayerControllerJoinByCodeResponse =
+  MultiplayerControllerJoinByCodeResponses[keyof MultiplayerControllerJoinByCodeResponses];
+
+export type MultiplayerControllerRemoveData = {
+  body?: never;
+  path: {
+    sessionId: string;
+  };
+  query?: never;
+  url: "/game-sessions/{sessionId}";
+};
+
+export type MultiplayerControllerRemoveResponses = {
   200: unknown;
 };
 
-export type MultiplayerControllerJoinHostData = {
-  body: JoinHostRequestDto;
-  path?: never;
+export type MultiplayerControllerGetData = {
+  body?: never;
+  path: {
+    sessionId: string;
+  };
   query?: never;
-  url: "/multiplayer/join-host";
+  url: "/game-sessions/{sessionId}";
 };
 
-export type MultiplayerControllerJoinHostErrors = {
-  /**
-   * User is already in the session or is the host.
-   */
-  400: unknown;
-  /**
-   * Game session or user not found.
-   */
-  404: unknown;
+export type MultiplayerControllerGetResponses = {
+  200: GameSessionResponseDto;
 };
 
-export type MultiplayerControllerJoinHostResponses = {
-  /**
-   * Successfully joined the game session.
-   */
-  200: JoinHostResponseDto;
-};
+export type MultiplayerControllerGetResponse =
+  MultiplayerControllerGetResponses[keyof MultiplayerControllerGetResponses];
 
-export type MultiplayerControllerJoinHostResponse =
-  MultiplayerControllerJoinHostResponses[keyof MultiplayerControllerJoinHostResponses];
-
-export type MultiplayerControllerLeaveHostData = {
-  body: LeaveHostRequestDto;
-  path?: never;
+export type MultiplayerControllerUpdateData = {
+  body: UpdateGameSessionDto;
+  path: {
+    sessionId: string;
+  };
   query?: never;
-  url: "/multiplayer/leave-host";
+  url: "/game-sessions/{sessionId}";
 };
 
-export type MultiplayerControllerLeaveHostErrors = {
-  /**
-   * User is not part of the session or is the host.
-   */
-  400: unknown;
-  /**
-   * Game session or user not found.
-   */
-  404: unknown;
-};
-
-export type MultiplayerControllerLeaveHostResponses = {
-  /**
-   * Successfully left the game session.
-   */
+export type MultiplayerControllerUpdateResponses = {
   200: unknown;
 };
+
+export type MultiplayerControllerJoinData = {
+  body: JoinGameSessionDto;
+  path: {
+    sessionId: string;
+  };
+  query?: never;
+  url: "/game-sessions/{sessionId}/join";
+};
+
+export type MultiplayerControllerJoinResponses = {
+  200: GameSessionConnectionResponseDto;
+};
+
+export type MultiplayerControllerJoinResponse =
+  MultiplayerControllerJoinResponses[keyof MultiplayerControllerJoinResponses];
+
+export type MultiplayerControllerLeaveData = {
+  body?: never;
+  path: {
+    sessionId: string;
+  };
+  query?: never;
+  url: "/game-sessions/{sessionId}/leave";
+};
+
+export type MultiplayerControllerLeaveResponses = {
+  200: unknown;
+};
+
+export type MultiplayerControllerRefreshTicketData = {
+  body?: never;
+  path: {
+    sessionId: string;
+  };
+  query?: never;
+  url: "/game-sessions/{sessionId}/ticket";
+};
+
+export type MultiplayerControllerRefreshTicketResponses = {
+  200: GameSessionConnectionResponseDto;
+};
+
+export type MultiplayerControllerRefreshTicketResponse =
+  MultiplayerControllerRefreshTicketResponses[keyof MultiplayerControllerRefreshTicketResponses];
 
 export type ProjectCommentControllerGetCommentsData = {
   body?: never;

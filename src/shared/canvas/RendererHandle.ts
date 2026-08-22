@@ -1,3 +1,4 @@
+import { Renderer } from "@engine/ports";
 import { CanvasError, CanvasNotInitializedError } from "@errors/CanvasError";
 import { MapProvider } from "@providers/editors/MapProvider";
 import { PixelChange, SpriteProvider } from "@providers/editors/SpriteProvider";
@@ -6,48 +7,8 @@ import { rectangleToVertices } from "@shared/canvas/glUtils";
 
 import { useEffect, useMemo, useRef } from "react";
 
-export type QueueSpriteDrawFn = (
-  index: number,
-  x: number,
-  y: number,
-  width?: number,
-  height?: number,
-  flip_h?: boolean,
-  flip_v?: boolean,
-  scale?: number,
-) => void;
-
-export type SpriteRendererHandle = {
-  queueSpriteDraw: QueueSpriteDrawFn;
-  draw: () => void;
-  drawMap: (x: number, y: number) => void;
-  clear: (index: number) => void;
-  setColor: (index: number, index2: number) => void;
-  resetColor: () => void;
-  moveCamera: (x: number, y: number) => void;
-  drawLine: (
-    col: number,
-    x0: number,
-    y0: number,
-    x1: number,
-    y1: number,
-  ) => void;
-  drawOutlineRect: (
-    col: number,
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-  ) => void;
-  drawRect: (
-    col: number,
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-  ) => void;
-  getCanvas?: () => HTMLCanvasElement | null;
-};
+export type SpriteRendererHandle = Renderer;
+export type { QueueSpriteDrawFn } from "@engine/ports";
 
 export function useSpriteRenderer(
   canvasRef: React.RefObject<HTMLCanvasElement | null>,

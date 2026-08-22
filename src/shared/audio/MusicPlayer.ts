@@ -1,9 +1,10 @@
+import { SoundPlayer } from "@engine/ports";
 import { playMusicFromPosition } from "@modules/create/game-editor/editors/sound-editor/Music";
 import { SoundProvider } from "@providers/editors/SoundProvider";
 
 import * as Tone from "tone";
 
-export class MusicPlayer {
+export class MusicPlayer implements SoundPlayer {
   private _soundProvider: SoundProvider;
 
   constructor(soundProvider: SoundProvider) {

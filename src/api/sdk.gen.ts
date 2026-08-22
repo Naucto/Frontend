@@ -131,21 +131,24 @@ import type {
   AuthControllerRegisterData,
   AuthControllerRegisterErrors,
   AuthControllerRegisterResponses,
-  MultiplayerControllerCloseHostData,
-  MultiplayerControllerCloseHostErrors,
-  MultiplayerControllerCloseHostResponses,
-  MultiplayerControllerJoinHostData,
-  MultiplayerControllerJoinHostErrors,
-  MultiplayerControllerJoinHostResponses,
-  MultiplayerControllerLeaveHostData,
-  MultiplayerControllerLeaveHostErrors,
-  MultiplayerControllerLeaveHostResponses,
-  MultiplayerControllerLookupHostsData,
-  MultiplayerControllerLookupHostsErrors,
-  MultiplayerControllerLookupHostsResponses,
-  MultiplayerControllerOpenHostData,
-  MultiplayerControllerOpenHostErrors,
-  MultiplayerControllerOpenHostResponses,
+  MultiplayerControllerCreateData,
+  MultiplayerControllerCreateResponses,
+  MultiplayerControllerGetData,
+  MultiplayerControllerGetResponses,
+  MultiplayerControllerJoinByCodeData,
+  MultiplayerControllerJoinByCodeResponses,
+  MultiplayerControllerJoinData,
+  MultiplayerControllerJoinResponses,
+  MultiplayerControllerLeaveData,
+  MultiplayerControllerLeaveResponses,
+  MultiplayerControllerListData,
+  MultiplayerControllerListResponses,
+  MultiplayerControllerRefreshTicketData,
+  MultiplayerControllerRefreshTicketResponses,
+  MultiplayerControllerRemoveData,
+  MultiplayerControllerRemoveResponses,
+  MultiplayerControllerUpdateData,
+  MultiplayerControllerUpdateResponses,
   NotificationsControllerGetWebRtcOfferData,
   NotificationsControllerGetWebRtcOfferResponses,
   NotificationsControllerMarkAsReadData,
@@ -959,38 +962,38 @@ export const projectControllerUpdateRelease = <
   });
 
 /**
- * List available game hosts/sessions from the user's perspective
+ * List game sessions for a project, from the caller's perspective
  */
-export const multiplayerControllerLookupHosts = <
-  ThrowOnError extends boolean = false
->(
-  options?: Options<MultiplayerControllerLookupHostsData, ThrowOnError>
+export const multiplayerControllerList = <ThrowOnError extends boolean = false>(
+  options: Options<MultiplayerControllerListData, ThrowOnError>
 ) =>
-  (options?.client ?? client).get<
-    MultiplayerControllerLookupHostsResponses,
-    MultiplayerControllerLookupHostsErrors,
+  (options.client ?? client).get<
+    MultiplayerControllerListResponses,
+    unknown,
     ThrowOnError
   >({
     responseType: "json",
-    url: "/multiplayer/list-hosts",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/game-sessions",
     ...options
   });
 
 /**
- * Open a new game host/session, with the caller being the game host
+ * Create a new game session, with the caller as host
  */
-export const multiplayerControllerOpenHost = <
+export const multiplayerControllerCreate = <
   ThrowOnError extends boolean = false
 >(
-  options: Options<MultiplayerControllerOpenHostData, ThrowOnError>
+  options: Options<MultiplayerControllerCreateData, ThrowOnError>
 ) =>
   (options.client ?? client).post<
-    MultiplayerControllerOpenHostResponses,
-    MultiplayerControllerOpenHostErrors,
+    MultiplayerControllerCreateResponses,
+    unknown,
     ThrowOnError
   >({
     responseType: "json",
-    url: "/multiplayer/open-host",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/game-sessions",
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -999,41 +1002,78 @@ export const multiplayerControllerOpenHost = <
   });
 
 /**
- * Close an existing game host/session, with the caller being the game host
+ * Join an invite-code game session by its code
  */
-export const multiplayerControllerCloseHost = <
+export const multiplayerControllerJoinByCode = <
   ThrowOnError extends boolean = false
 >(
-  options: Options<MultiplayerControllerCloseHostData, ThrowOnError>
+  options: Options<MultiplayerControllerJoinByCodeData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    MultiplayerControllerJoinByCodeResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/game-sessions/join-by-code",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Close/delete a game session (host only)
+ */
+export const multiplayerControllerRemove = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<MultiplayerControllerRemoveData, ThrowOnError>
 ) =>
   (options.client ?? client).delete<
-    MultiplayerControllerCloseHostResponses,
-    MultiplayerControllerCloseHostErrors,
+    MultiplayerControllerRemoveResponses,
+    unknown,
     ThrowOnError
   >({
-    url: "/multiplayer/close-host",
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers
-    }
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/game-sessions/{sessionId}",
+    ...options
   });
 
 /**
- * Join an existing game host/session as a player
+ * Fetch a single game session
  */
-export const multiplayerControllerJoinHost = <
-  ThrowOnError extends boolean = false
->(
-  options: Options<MultiplayerControllerJoinHostData, ThrowOnError>
+export const multiplayerControllerGet = <ThrowOnError extends boolean = false>(
+  options: Options<MultiplayerControllerGetData, ThrowOnError>
 ) =>
-  (options.client ?? client).patch<
-    MultiplayerControllerJoinHostResponses,
-    MultiplayerControllerJoinHostErrors,
+  (options.client ?? client).get<
+    MultiplayerControllerGetResponses,
+    unknown,
     ThrowOnError
   >({
     responseType: "json",
-    url: "/multiplayer/join-host",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/game-sessions/{sessionId}",
+    ...options
+  });
+
+/**
+ * Update game session settings (host only)
+ */
+export const multiplayerControllerUpdate = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<MultiplayerControllerUpdateData, ThrowOnError>
+) =>
+  (options.client ?? client).patch<
+    MultiplayerControllerUpdateResponses,
+    unknown,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/game-sessions/{sessionId}",
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -1042,24 +1082,61 @@ export const multiplayerControllerJoinHost = <
   });
 
 /**
- * Leave a game host/session as a player
+ * Join a game session as a player
  */
-export const multiplayerControllerLeaveHost = <
-  ThrowOnError extends boolean = false
->(
-  options: Options<MultiplayerControllerLeaveHostData, ThrowOnError>
+export const multiplayerControllerJoin = <ThrowOnError extends boolean = false>(
+  options: Options<MultiplayerControllerJoinData, ThrowOnError>
 ) =>
-  (options.client ?? client).patch<
-    MultiplayerControllerLeaveHostResponses,
-    MultiplayerControllerLeaveHostErrors,
+  (options.client ?? client).post<
+    MultiplayerControllerJoinResponses,
+    unknown,
     ThrowOnError
   >({
-    url: "/multiplayer/leave-host",
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/game-sessions/{sessionId}/join",
     ...options,
     headers: {
       "Content-Type": "application/json",
       ...options.headers
     }
+  });
+
+/**
+ * Leave a game session as a player
+ */
+export const multiplayerControllerLeave = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<MultiplayerControllerLeaveData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    MultiplayerControllerLeaveResponses,
+    unknown,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/game-sessions/{sessionId}/leave",
+    ...options
+  });
+
+/**
+ * Mint a fresh connection ticket for the caller's session
+ */
+export const multiplayerControllerRefreshTicket = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<MultiplayerControllerRefreshTicketData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    MultiplayerControllerRefreshTicketResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/game-sessions/{sessionId}/ticket",
+    ...options
   });
 
 /**
