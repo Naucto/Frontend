@@ -12,6 +12,7 @@ type NotificationMenuProps = {
   notifications: NotificationItem[];
   onMarkAsRead: (notificationId: string) => void;
   onAcceptFriendRequest?: (requestId: number, notificationId: string) => Promise<void>;
+  onDeclineFriendRequest?: (requestId: number, notificationId: string) => Promise<void>;
 };
 
 const StyledMenu = styled(Menu)(({ theme }) => ({
@@ -39,6 +40,7 @@ export const NotificationMenu = ({
   notifications,
   onMarkAsRead,
   onAcceptFriendRequest,
+  onDeclineFriendRequest,
 }: NotificationMenuProps): JSX.Element => {
   return (
     <StyledMenu anchorEl={anchorEl} open={open} onClose={onClose}>
@@ -52,6 +54,7 @@ export const NotificationMenu = ({
             notification={notification}
             onMarkAsRead={onMarkAsRead}
             onAcceptFriendRequest={onAcceptFriendRequest}
+            onDeclineFriendRequest={onDeclineFriendRequest}
           />
         ))
       )}

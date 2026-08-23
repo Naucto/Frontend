@@ -1,3 +1,7 @@
+import {
+  FriendRequestNotificationActions,
+  isFriendRequestNotification,
+} from "./FriendRequestNotificationActions";
 import { NotificationItem } from "./types";
 
 import { JSX } from "react";
@@ -31,11 +35,15 @@ const ActionsRow = styled(Box)(({ theme }) => ({
 type NotificationListItemProps = {
   notification: NotificationItem;
   onMarkAsRead: (notificationId: string) => void;
+  onAcceptFriendRequest?: (requestId: number, notificationId: string) => Promise<void>;
+  onDeclineFriendRequest?: (requestId: number, notificationId: string) => Promise<void>;
 };
 
 export const NotificationListItem = ({
   notification,
   onMarkAsRead,
+  onAcceptFriendRequest,
+  onDeclineFriendRequest,
 }: NotificationListItemProps): JSX.Element => (
   <NotificationEntry
     read={notification.read}
@@ -57,6 +65,13 @@ export const NotificationListItem = ({
       {new Date(notification.createdAt).toLocaleString()}
     </NonImportantTypography>
     <ActionsRow>
+      {isFriendRequestNotification(notification) && onAcceptFriendRequest && onDeclineFriendRequest && (
+        <FriendRequestNotificationActions
+          notification={notification}
+          onAccept={onAcceptFriendRequest}
+          onDecline={onDeclineFriendRequest}
+        />
+      )}
       <Typography
         variant="caption"
         role="button"

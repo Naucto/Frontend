@@ -1,4 +1,6 @@
 import {
+  friendControllerAcceptFriendRequest,
+  friendControllerCancelOrRejectFriendRequest,
   notificationsControllerGetWebRtcOffer,
   notificationsControllerMarkAsRead,
 } from "@api";
@@ -156,6 +158,22 @@ export const NotificationBox = (): JSX.Element => {
     });
   }, []);
 
+  const handleAcceptFriendRequest = useCallback(async (requestId: number, notificationId: string): Promise<void> => {
+    await friendControllerAcceptFriendRequest({
+      path: { requestId },
+      throwOnError: true,
+    });
+    handleMarkAsRead(notificationId);
+  }, [handleMarkAsRead]);
+
+  const handleDeclineFriendRequest = useCallback(async (requestId: number, notificationId: string): Promise<void> => {
+    await friendControllerCancelOrRejectFriendRequest({
+      path: { requestId },
+      throwOnError: true,
+    });
+    handleMarkAsRead(notificationId);
+  }, [handleMarkAsRead]);
+
   return (
     <>
       <NotificationButton onClick={handleClick} disabled={!userId}>
@@ -170,6 +188,8 @@ export const NotificationBox = (): JSX.Element => {
           onClose={handleClose}
           notifications={notifications}
           onMarkAsRead={handleMarkAsRead}
+          onAcceptFriendRequest={handleAcceptFriendRequest}
+          onDeclineFriendRequest={handleDeclineFriendRequest}
         />
       )}
     </>
