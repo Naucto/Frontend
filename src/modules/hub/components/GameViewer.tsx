@@ -391,7 +391,11 @@ export const GameViewer = ({ preview = false }: GameViewerProps): JSX.Element =>
         <GameTitle variant="h3">{project.name}</GameTitle>
         <HeaderActions>
           {!preview ? (
-            <ReportAction targetType="PROJECT" targetId={Number(id)} />
+            <ReportAction
+              targetType="PROJECT"
+              targetId={Number(id)}
+              ownerId={project.creator?.id ?? null}
+            />
           ) : null}
           {showGame ? (
             <RefreshGameButton

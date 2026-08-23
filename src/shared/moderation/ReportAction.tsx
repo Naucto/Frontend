@@ -22,6 +22,12 @@ type ReportActionProps = {
   targetType: "USER" | "PROJECT" | "COMMENT";
   targetId: number;
   compact?: boolean;
+  /**
+   * Who owns the content. When it is the signed-in user the button is not
+   * rendered: the backend refuses self-reports, so showing it only offers an
+   * action that will fail. Omit when ownership is not knowable here.
+   */
+  ownerId?: number | null;
 };
 
 const REPORT_REASONS = [
@@ -93,13 +99,18 @@ export const ReportAction = ({
   targetType,
   targetId,
   compact = false,
-}: ReportActionProps): JSX.Element => {
+  ownerId,
+}: ReportActionProps): JSX.Element | null => {
   const { user } = useUser();
   const { enqueueSnackbar } = useSnackbar();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState(REPORT_REASONS[0]);
   const [details, setDetails] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  const isOwnContent =
+    (ownerId != null && user?.id === ownerId) ||
+    (targetType === "USER" && user?.id === targetId);
 
   const handleOpen = (): void => {
     if (!user) {
@@ -131,6 +142,10 @@ export const ReportAction = ({
       setSubmitting(false);
     }
   };
+
+  if (isOwnContent) {
+    return null;
+  }
 
   return (
     <>

@@ -128,6 +128,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
               <ReportAction
                 targetType="COMMENT"
                 targetId={comment.id}
+                ownerId={comment.author?.id ?? null}
                 compact
               />
             )}
