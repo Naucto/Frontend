@@ -786,72 +786,6 @@ export type AuditLogResponseDto = {
   meta: PaginatedMetaDto;
 };
 
-export type LoginDto = {
-  /**
-   * User email address
-   */
-  email: string;
-  /**
-   * User password
-   */
-  password: string;
-};
-
-export type CreateUserDto = {
-  /**
-   * User email address
-   */
-  email: string;
-  /**
-   * User username
-   */
-  username: string;
-  /**
-   * User nick name
-   */
-  nickname?: string;
-  /**
-   * User password
-   */
-  password: string;
-};
-
-export type GoogleCodeDto = {
-  /**
-   * Google authorization code
-   */
-  code: string;
-  /**
-   * PKCE code verifier
-   */
-  codeVerifier: string;
-};
-
-export type GithubLoginDto = {
-  /**
-   * GitHub OAuth authorization code
-   */
-  code: string;
-};
-
-export type MicrosoftLoginDto = {
-  /**
-   * Microsoft ID token
-   */
-  token: string;
-};
-
-export type ChangePasswordDto = {
-  /**
-   * Current password (not required for OAuth accounts)
-   */
-  currentPassword?: string;
-  /**
-   * New password
-   */
-  newPassword: string;
-};
-
 export type UserRoleDto = {
   /**
    * Role ID
@@ -1073,6 +1007,72 @@ export type UpdateUserDto = {
    * User password
    */
   password?: string;
+};
+
+export type LoginDto = {
+  /**
+   * User email address
+   */
+  email: string;
+  /**
+   * User password
+   */
+  password: string;
+};
+
+export type CreateUserDto = {
+  /**
+   * User email address
+   */
+  email: string;
+  /**
+   * User username
+   */
+  username: string;
+  /**
+   * User nick name
+   */
+  nickname?: string;
+  /**
+   * User password
+   */
+  password: string;
+};
+
+export type GoogleCodeDto = {
+  /**
+   * Google authorization code
+   */
+  code: string;
+  /**
+   * PKCE code verifier
+   */
+  codeVerifier: string;
+};
+
+export type GithubLoginDto = {
+  /**
+   * GitHub OAuth authorization code
+   */
+  code: string;
+};
+
+export type MicrosoftLoginDto = {
+  /**
+   * Microsoft ID token
+   */
+  token: string;
+};
+
+export type ChangePasswordDto = {
+  /**
+   * Current password (not required for OAuth accounts)
+   */
+  currentPassword?: string;
+  /**
+   * New password
+   */
+  newPassword: string;
 };
 
 export type JoinWorkSessionDto = {
@@ -2830,213 +2830,6 @@ export type AuditControllerHistoryOfResponses = {
 export type AuditControllerHistoryOfResponse =
   AuditControllerHistoryOfResponses[keyof AuditControllerHistoryOfResponses];
 
-export type AuthControllerLoginData = {
-  body: LoginDto;
-  path?: never;
-  query?: never;
-  url: "/auth/login";
-};
-
-export type AuthControllerLoginErrors = {
-  /**
-   * Bad request
-   */
-  400: unknown;
-  /**
-   * Invalid credentials
-   */
-  401: unknown;
-};
-
-export type AuthControllerLoginResponses = {
-  /**
-   * User logged in successfully
-   */
-  201: {
-    access_token: string;
-  };
-};
-
-export type AuthControllerLoginResponse =
-  AuthControllerLoginResponses[keyof AuthControllerLoginResponses];
-
-export type AuthControllerRegisterData = {
-  body: CreateUserDto;
-  path?: never;
-  query?: never;
-  url: "/auth/register";
-};
-
-export type AuthControllerRegisterErrors = {
-  /**
-   * Bad request
-   */
-  400: unknown;
-  /**
-   * Cannot register as an admin
-   */
-  403: unknown;
-  /**
-   * Email already in use
-   */
-  409: unknown;
-};
-
-export type AuthControllerRegisterResponses = {
-  /**
-   * User registered successfully
-   */
-  201: {
-    access_token: string;
-  };
-};
-
-export type AuthControllerRegisterResponse =
-  AuthControllerRegisterResponses[keyof AuthControllerRegisterResponses];
-
-export type AuthControllerLoginWithGoogleCodeData = {
-  body: GoogleCodeDto;
-  path?: never;
-  query?: never;
-  url: "/auth/google/code";
-};
-
-export type AuthControllerLoginWithGoogleCodeErrors = {
-  /**
-   * Invalid Google code or code_verifier
-   */
-  401: unknown;
-};
-
-export type AuthControllerLoginWithGoogleCodeResponses = {
-  /**
-   * Login successful with Google
-   */
-  201: {
-    access_token: string;
-  };
-};
-
-export type AuthControllerLoginWithGoogleCodeResponse =
-  AuthControllerLoginWithGoogleCodeResponses[keyof AuthControllerLoginWithGoogleCodeResponses];
-
-export type AuthControllerLoginWithGithubData = {
-  body: GithubLoginDto;
-  path?: never;
-  query?: never;
-  url: "/auth/github";
-};
-
-export type AuthControllerLoginWithGithubErrors = {
-  /**
-   * Invalid or expired GitHub code
-   */
-  401: unknown;
-};
-
-export type AuthControllerLoginWithGithubResponses = {
-  /**
-   * Login successful with GitHub
-   */
-  201: {
-    access_token: string;
-  };
-};
-
-export type AuthControllerLoginWithGithubResponse =
-  AuthControllerLoginWithGithubResponses[keyof AuthControllerLoginWithGithubResponses];
-
-export type AuthControllerLoginWithMicrosoftData = {
-  body: MicrosoftLoginDto;
-  path?: never;
-  query?: never;
-  url: "/auth/microsoft";
-};
-
-export type AuthControllerLoginWithMicrosoftErrors = {
-  /**
-   * Invalid Microsoft ID token
-   */
-  401: unknown;
-};
-
-export type AuthControllerLoginWithMicrosoftResponses = {
-  /**
-   * Login successful with Microsoft
-   */
-  201: {
-    access_token: string;
-  };
-};
-
-export type AuthControllerLoginWithMicrosoftResponse =
-  AuthControllerLoginWithMicrosoftResponses[keyof AuthControllerLoginWithMicrosoftResponses];
-
-export type AuthControllerRefreshData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: "/auth/refresh";
-};
-
-export type AuthControllerRefreshErrors = {
-  /**
-   * Refresh token missing or invalid
-   */
-  401: unknown;
-};
-
-export type AuthControllerRefreshResponses = {
-  /**
-   * Access token refreshed successfully
-   */
-  201: {
-    access_token: string;
-  };
-};
-
-export type AuthControllerRefreshResponse =
-  AuthControllerRefreshResponses[keyof AuthControllerRefreshResponses];
-
-export type AuthControllerChangePasswordData = {
-  body: ChangePasswordDto;
-  path?: never;
-  query?: never;
-  url: "/auth/password";
-};
-
-export type AuthControllerChangePasswordErrors = {
-  /**
-   * Current password required for non-OAuth accounts
-   */
-  400: unknown;
-  /**
-   * Current password incorrect
-   */
-  401: unknown;
-};
-
-export type AuthControllerChangePasswordResponses = {
-  /**
-   * Password updated successfully
-   */
-  200: unknown;
-};
-
-export type AuthControllerLogoutData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: "/auth/logout";
-};
-
-export type AuthControllerLogoutResponses = {
-  /**
-   * Logout successful
-   */
-  200: unknown;
-};
-
 export type UserControllerGetProfileData = {
   body?: never;
   path?: never;
@@ -3462,6 +3255,213 @@ export type UserPublicControllerGetPublishedGamesResponses = {
 
 export type UserPublicControllerGetPublishedGamesResponse =
   UserPublicControllerGetPublishedGamesResponses[keyof UserPublicControllerGetPublishedGamesResponses];
+
+export type AuthControllerLoginData = {
+  body: LoginDto;
+  path?: never;
+  query?: never;
+  url: "/auth/login";
+};
+
+export type AuthControllerLoginErrors = {
+  /**
+   * Bad request
+   */
+  400: unknown;
+  /**
+   * Invalid credentials
+   */
+  401: unknown;
+};
+
+export type AuthControllerLoginResponses = {
+  /**
+   * User logged in successfully
+   */
+  201: {
+    access_token: string;
+  };
+};
+
+export type AuthControllerLoginResponse =
+  AuthControllerLoginResponses[keyof AuthControllerLoginResponses];
+
+export type AuthControllerRegisterData = {
+  body: CreateUserDto;
+  path?: never;
+  query?: never;
+  url: "/auth/register";
+};
+
+export type AuthControllerRegisterErrors = {
+  /**
+   * Bad request
+   */
+  400: unknown;
+  /**
+   * Cannot register as an admin
+   */
+  403: unknown;
+  /**
+   * Email already in use
+   */
+  409: unknown;
+};
+
+export type AuthControllerRegisterResponses = {
+  /**
+   * User registered successfully
+   */
+  201: {
+    access_token: string;
+  };
+};
+
+export type AuthControllerRegisterResponse =
+  AuthControllerRegisterResponses[keyof AuthControllerRegisterResponses];
+
+export type AuthControllerLoginWithGoogleCodeData = {
+  body: GoogleCodeDto;
+  path?: never;
+  query?: never;
+  url: "/auth/google/code";
+};
+
+export type AuthControllerLoginWithGoogleCodeErrors = {
+  /**
+   * Invalid Google code or code_verifier
+   */
+  401: unknown;
+};
+
+export type AuthControllerLoginWithGoogleCodeResponses = {
+  /**
+   * Login successful with Google
+   */
+  201: {
+    access_token: string;
+  };
+};
+
+export type AuthControllerLoginWithGoogleCodeResponse =
+  AuthControllerLoginWithGoogleCodeResponses[keyof AuthControllerLoginWithGoogleCodeResponses];
+
+export type AuthControllerLoginWithGithubData = {
+  body: GithubLoginDto;
+  path?: never;
+  query?: never;
+  url: "/auth/github";
+};
+
+export type AuthControllerLoginWithGithubErrors = {
+  /**
+   * Invalid or expired GitHub code
+   */
+  401: unknown;
+};
+
+export type AuthControllerLoginWithGithubResponses = {
+  /**
+   * Login successful with GitHub
+   */
+  201: {
+    access_token: string;
+  };
+};
+
+export type AuthControllerLoginWithGithubResponse =
+  AuthControllerLoginWithGithubResponses[keyof AuthControllerLoginWithGithubResponses];
+
+export type AuthControllerLoginWithMicrosoftData = {
+  body: MicrosoftLoginDto;
+  path?: never;
+  query?: never;
+  url: "/auth/microsoft";
+};
+
+export type AuthControllerLoginWithMicrosoftErrors = {
+  /**
+   * Invalid Microsoft ID token
+   */
+  401: unknown;
+};
+
+export type AuthControllerLoginWithMicrosoftResponses = {
+  /**
+   * Login successful with Microsoft
+   */
+  201: {
+    access_token: string;
+  };
+};
+
+export type AuthControllerLoginWithMicrosoftResponse =
+  AuthControllerLoginWithMicrosoftResponses[keyof AuthControllerLoginWithMicrosoftResponses];
+
+export type AuthControllerRefreshData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/auth/refresh";
+};
+
+export type AuthControllerRefreshErrors = {
+  /**
+   * Refresh token missing or invalid
+   */
+  401: unknown;
+};
+
+export type AuthControllerRefreshResponses = {
+  /**
+   * Access token refreshed successfully
+   */
+  201: {
+    access_token: string;
+  };
+};
+
+export type AuthControllerRefreshResponse =
+  AuthControllerRefreshResponses[keyof AuthControllerRefreshResponses];
+
+export type AuthControllerChangePasswordData = {
+  body: ChangePasswordDto;
+  path?: never;
+  query?: never;
+  url: "/auth/password";
+};
+
+export type AuthControllerChangePasswordErrors = {
+  /**
+   * Current password required for non-OAuth accounts
+   */
+  400: unknown;
+  /**
+   * Current password incorrect
+   */
+  401: unknown;
+};
+
+export type AuthControllerChangePasswordResponses = {
+  /**
+   * Password updated successfully
+   */
+  200: unknown;
+};
+
+export type AuthControllerLogoutData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/auth/logout";
+};
+
+export type AuthControllerLogoutResponses = {
+  /**
+   * Logout successful
+   */
+  200: unknown;
+};
 
 export type WorkSessionControllerJoinData = {
   body?: never;

@@ -2039,166 +2039,6 @@ export const auditControllerHistoryOf = <ThrowOnError extends boolean = false>(
   });
 
 /**
- * Authenticate a user and return an access token
- */
-export const authControllerLogin = <ThrowOnError extends boolean = false>(
-  options: Options<AuthControllerLoginData, ThrowOnError>
-) =>
-  (options.client ?? client).post<
-    AuthControllerLoginResponses,
-    AuthControllerLoginErrors,
-    ThrowOnError
-  >({
-    responseType: "json",
-    url: "/auth/login",
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers
-    }
-  });
-
-/**
- * Register a new user and return an access token
- */
-export const authControllerRegister = <ThrowOnError extends boolean = false>(
-  options: Options<AuthControllerRegisterData, ThrowOnError>
-) =>
-  (options.client ?? client).post<
-    AuthControllerRegisterResponses,
-    AuthControllerRegisterErrors,
-    ThrowOnError
-  >({
-    responseType: "json",
-    url: "/auth/register",
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers
-    }
-  });
-
-/**
- * Authenticate with Google authorization code + PKCE
- */
-export const authControllerLoginWithGoogleCode = <
-  ThrowOnError extends boolean = false
->(
-  options: Options<AuthControllerLoginWithGoogleCodeData, ThrowOnError>
-) =>
-  (options.client ?? client).post<
-    AuthControllerLoginWithGoogleCodeResponses,
-    AuthControllerLoginWithGoogleCodeErrors,
-    ThrowOnError
-  >({
-    responseType: "json",
-    url: "/auth/google/code",
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers
-    }
-  });
-
-/**
- * Authenticate with GitHub OAuth authorization code
- */
-export const authControllerLoginWithGithub = <
-  ThrowOnError extends boolean = false
->(
-  options: Options<AuthControllerLoginWithGithubData, ThrowOnError>
-) =>
-  (options.client ?? client).post<
-    AuthControllerLoginWithGithubResponses,
-    AuthControllerLoginWithGithubErrors,
-    ThrowOnError
-  >({
-    responseType: "json",
-    url: "/auth/github",
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers
-    }
-  });
-
-/**
- * Authenticate with Microsoft ID token
- */
-export const authControllerLoginWithMicrosoft = <
-  ThrowOnError extends boolean = false
->(
-  options: Options<AuthControllerLoginWithMicrosoftData, ThrowOnError>
-) =>
-  (options.client ?? client).post<
-    AuthControllerLoginWithMicrosoftResponses,
-    AuthControllerLoginWithMicrosoftErrors,
-    ThrowOnError
-  >({
-    responseType: "json",
-    url: "/auth/microsoft",
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers
-    }
-  });
-
-/**
- * Refresh the access token using refresh token cookie
- */
-export const authControllerRefresh = <ThrowOnError extends boolean = false>(
-  options?: Options<AuthControllerRefreshData, ThrowOnError>
-) =>
-  (options?.client ?? client).post<
-    AuthControllerRefreshResponses,
-    AuthControllerRefreshErrors,
-    ThrowOnError
-  >({
-    responseType: "json",
-    url: "/auth/refresh",
-    ...options
-  });
-
-/**
- * Change password, OAuth users can set one without providing a current password
- */
-export const authControllerChangePassword = <
-  ThrowOnError extends boolean = false
->(
-  options: Options<AuthControllerChangePasswordData, ThrowOnError>
-) =>
-  (options.client ?? client).patch<
-    AuthControllerChangePasswordResponses,
-    AuthControllerChangePasswordErrors,
-    ThrowOnError
-  >({
-    security: [{ scheme: "bearer", type: "http" }],
-    url: "/auth/password",
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers
-    }
-  });
-
-/**
- * Remove refresh token cookie
- */
-export const authControllerLogout = <ThrowOnError extends boolean = false>(
-  options?: Options<AuthControllerLogoutData, ThrowOnError>
-) =>
-  (options?.client ?? client).post<
-    AuthControllerLogoutResponses,
-    unknown,
-    ThrowOnError
-  >({
-    responseType: "json",
-    url: "/auth/logout",
-    ...options
-  });
-
-/**
  * Get current user profile
  */
 export const userControllerGetProfile = <ThrowOnError extends boolean = false>(
@@ -2447,6 +2287,166 @@ export const userPublicControllerGetPublishedGames = <
   >({
     responseType: "json",
     url: "/users/public/{id}/published-games",
+    ...options
+  });
+
+/**
+ * Authenticate a user and return an access token
+ */
+export const authControllerLogin = <ThrowOnError extends boolean = false>(
+  options: Options<AuthControllerLoginData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    AuthControllerLoginResponses,
+    AuthControllerLoginErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/auth/login",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Register a new user and return an access token
+ */
+export const authControllerRegister = <ThrowOnError extends boolean = false>(
+  options: Options<AuthControllerRegisterData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    AuthControllerRegisterResponses,
+    AuthControllerRegisterErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/auth/register",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Authenticate with Google authorization code + PKCE
+ */
+export const authControllerLoginWithGoogleCode = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<AuthControllerLoginWithGoogleCodeData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    AuthControllerLoginWithGoogleCodeResponses,
+    AuthControllerLoginWithGoogleCodeErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/auth/google/code",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Authenticate with GitHub OAuth authorization code
+ */
+export const authControllerLoginWithGithub = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<AuthControllerLoginWithGithubData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    AuthControllerLoginWithGithubResponses,
+    AuthControllerLoginWithGithubErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/auth/github",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Authenticate with Microsoft ID token
+ */
+export const authControllerLoginWithMicrosoft = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<AuthControllerLoginWithMicrosoftData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    AuthControllerLoginWithMicrosoftResponses,
+    AuthControllerLoginWithMicrosoftErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/auth/microsoft",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Refresh the access token using refresh token cookie
+ */
+export const authControllerRefresh = <ThrowOnError extends boolean = false>(
+  options?: Options<AuthControllerRefreshData, ThrowOnError>
+) =>
+  (options?.client ?? client).post<
+    AuthControllerRefreshResponses,
+    AuthControllerRefreshErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/auth/refresh",
+    ...options
+  });
+
+/**
+ * Change password, OAuth users can set one without providing a current password
+ */
+export const authControllerChangePassword = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<AuthControllerChangePasswordData, ThrowOnError>
+) =>
+  (options.client ?? client).patch<
+    AuthControllerChangePasswordResponses,
+    AuthControllerChangePasswordErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/auth/password",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Remove refresh token cookie
+ */
+export const authControllerLogout = <ThrowOnError extends boolean = false>(
+  options?: Options<AuthControllerLogoutData, ThrowOnError>
+) =>
+  (options?.client ?? client).post<
+    AuthControllerLogoutResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/auth/logout",
     ...options
   });
 
