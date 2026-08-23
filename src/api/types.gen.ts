@@ -371,6 +371,14 @@ export type UpdateProjectDto = {
    * The price of the project
    */
   price?: number;
+  /**
+   * Take the project off the site, or put it back. Moderators only; a non-staff caller sending this is rejected.
+   */
+  hidden?: boolean;
+  /**
+   * Why the moderation change was made. Recorded on the audit entry, so it is only meaningful alongside a staff-only field.
+   */
+  moderationReason?: string;
 };
 
 export type AddCollaboratorDto = {
@@ -586,6 +594,33 @@ export type CreateCommentDto = {
   content: string;
 };
 
+export type UpdateCommentDto = {
+  /**
+   * The content of the comment
+   */
+  content?: string;
+  /**
+   * Take the comment off the site, or put it back. Moderators only.
+   */
+  hidden?: boolean;
+  /**
+   * Why the moderation change was made; recorded on the audit entry.
+   */
+  moderationReason?: string;
+};
+
+export type CommentListMetaDto = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};
+
+export type CommentListResponseDto = {
+  data: Array<CommentResponseDto>;
+  meta: CommentListMetaDto;
+};
+
 export type CreateReportDto = {
   targetType: "USER" | "PROJECT" | "COMMENT";
   targetId: number;
@@ -630,19 +665,6 @@ export type CreateAdminUserDto = {
   roles: Array<string>;
 };
 
-export type UpdateAdminUserDto = {
-  email?: string;
-  username?: string;
-  nickname?: {
-    [key: string]: unknown;
-  } | null;
-  roles?: Array<string>;
-  /**
-   * Free-form audit reason, recorded in the moderation log
-   */
-  reason?: string;
-};
-
 export type ModerationReasonDto = {
   /**
    * Free-form reason recorded in the audit log
@@ -664,54 +686,10 @@ export type AdminUserResponseDto = {
   accountStatus: "ACTIVE" | "SUSPENDED" | "BANNED";
   roles: Array<string>;
   createdAt: string;
-  moderationReason?: {
-    [key: string]: unknown;
-  } | null;
-  moderatedAt?: {
-    [key: string]: unknown;
-  } | null;
-  moderatedById?: {
-    [key: string]: unknown;
-  } | null;
 };
 
 export type ResetPasswordDto = {
   newPassword: string;
-  reason?: string;
-};
-
-export type AdminUpdateProjectDto = {
-  name?: string;
-  shortDesc?: string;
-  longDesc?: {
-    [key: string]: unknown;
-  } | null;
-  publishedName?: {
-    [key: string]: unknown;
-  } | null;
-  publishedShortDesc?: {
-    [key: string]: unknown;
-  } | null;
-  publishedLongDesc?: {
-    [key: string]: unknown;
-  } | null;
-  tags?: Array<string>;
-  publishedTags?: Array<string>;
-  iconUrl?: {
-    [key: string]: unknown;
-  } | null;
-  monetization?: "NONE" | "ADS" | "PAID";
-  price?: {
-    [key: string]: unknown;
-  } | null;
-  hiddenReason?: {
-    [key: string]: unknown;
-  } | null;
-  reason?: string;
-};
-
-export type AdminUpdateCommentDto = {
-  content: string;
   reason?: string;
 };
 
@@ -746,6 +724,66 @@ export type NotificationTestDto = {
    * The type of the notification
    */
   type: "INFO" | "WARNING";
+};
+
+export type AuditEntryDto = {
+  id: number;
+  targetType: "USER" | "PROJECT" | "COMMENT" | "REPORT";
+  targetId: number;
+  action:
+    | "SUSPEND_USER"
+    | "BAN_USER"
+    | "RESTORE_USER"
+    | "HIDE_PROJECT"
+    | "RESTORE_PROJECT"
+    | "UNPUBLISH_PROJECT"
+    | "HIDE_COMMENT"
+    | "RESTORE_COMMENT"
+    | "DELETE_COMMENT"
+    | "REVIEW_REPORT"
+    | "RESOLVE_REPORT"
+    | "DISMISS_REPORT"
+    | "ANONYMIZE_USER"
+    | "HARD_DELETE_USER"
+    | "CREATE_STAFF_USER"
+    | "UPDATE_ROLES"
+    | "EDIT_USER"
+    | "EDIT_PROJECT"
+    | "DELETE_PROJECT"
+    | "EDIT_COMMENT"
+    | "UPDATE_REPORT"
+    | "RESET_PASSWORD"
+    | "CREATE_ROLE"
+    | "RENAME_ROLE"
+    | "DELETE_ROLE";
+  actorId: {
+    [key: string]: unknown;
+  } | null;
+  /**
+   * @username of the staff member
+   */
+  actorLabel: {
+    [key: string]: unknown;
+  } | null;
+  reason: {
+    [key: string]: unknown;
+  } | null;
+  reportId: {
+    [key: string]: unknown;
+  } | null;
+  createdAt: string;
+};
+
+export type PaginatedMetaDto = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};
+
+export type AuditLogResponseDto = {
+  data: Array<AuditEntryDto>;
+  meta: PaginatedMetaDto;
 };
 
 export type LoginDto = {
@@ -1206,6 +1244,14 @@ export type ProjectControllerFindAllData = {
   query?: {
     page?: number;
     limit?: number;
+    /**
+     * "all" lists every project. Moderators only.
+     */
+    scope?: "mine" | "all";
+    /**
+     * Filter on moderation visibility. Moderators only.
+     */
+    hidden?: boolean;
   };
   url: "/projects";
 };
@@ -2215,7 +2261,7 @@ export type ProjectCommentControllerDeleteCommentResponse =
   ProjectCommentControllerDeleteCommentResponses[keyof ProjectCommentControllerDeleteCommentResponses];
 
 export type ProjectCommentControllerUpdateCommentData = {
-  body: CreateCommentDto;
+  body: UpdateCommentDto;
   path: {
     commentId: number;
     projectId: number;
@@ -2233,6 +2279,71 @@ export type ProjectCommentControllerUpdateCommentResponses = {
 
 export type ProjectCommentControllerUpdateCommentResponse =
   ProjectCommentControllerUpdateCommentResponses[keyof ProjectCommentControllerUpdateCommentResponses];
+
+export type CommentControllerFindOneData = {
+  body?: never;
+  path: {
+    id: number;
+  };
+  query?: never;
+  url: "/comments/{id}";
+};
+
+export type CommentControllerFindOneErrors = {
+  /**
+   * Staff access required
+   */
+  403: unknown;
+};
+
+export type CommentControllerFindOneResponses = {
+  200: CommentResponseDto;
+};
+
+export type CommentControllerFindOneResponse =
+  CommentControllerFindOneResponses[keyof CommentControllerFindOneResponses];
+
+export type CommentControllerListData = {
+  body?: never;
+  path?: never;
+  query?: {
+    page?: number;
+    limit?: number;
+    /**
+     * Only comments on this project
+     */
+    projectId?: number;
+    /**
+     * Only comments by this author
+     */
+    authorId?: number;
+    /**
+     * Moderators only
+     */
+    hidden?: boolean;
+    /**
+     * Moderators only
+     */
+    deleted?: boolean;
+    sortBy?: "id" | "createdAt";
+    order?: "asc" | "desc";
+  };
+  url: "/comments";
+};
+
+export type CommentControllerListErrors = {
+  /**
+   * Staff access required
+   */
+  403: unknown;
+};
+
+export type CommentControllerListResponses = {
+  200: CommentListResponseDto;
+};
+
+export type CommentControllerListResponse =
+  CommentControllerListResponses[keyof CommentControllerListResponses];
 
 export type ReportControllerCreateData = {
   body: CreateReportDto;
@@ -2349,36 +2460,6 @@ export type AdminInsightsControllerGetSocialResponses = {
   200: unknown;
 };
 
-export type AdminUserControllerListData = {
-  body?: never;
-  path?: never;
-  query?: {
-    page?: number;
-    limit?: number;
-    sortBy?:
-      | "id"
-      | "email"
-      | "username"
-      | "nickname"
-      | "createdAt"
-      | "accountStatus";
-    order?: "asc" | "desc";
-    email?: string;
-    username?: string;
-    nickname?: string;
-    accountStatus?: "ACTIVE" | "SUSPENDED" | "BANNED";
-    /**
-     * Filter users having this role name
-     */
-    role?: string;
-  };
-  url: "/admin/users";
-};
-
-export type AdminUserControllerListResponses = {
-  200: unknown;
-};
-
 export type AdminUserControllerCreateData = {
   body: CreateAdminUserDto;
   path?: never;
@@ -2388,45 +2469,6 @@ export type AdminUserControllerCreateData = {
 
 export type AdminUserControllerCreateResponses = {
   201: unknown;
-};
-
-export type AdminUserControllerRemoveData = {
-  body: ModerationReasonDto;
-  path: {
-    id: number;
-  };
-  query?: never;
-  url: "/admin/users/{id}";
-};
-
-export type AdminUserControllerRemoveResponses = {
-  200: unknown;
-};
-
-export type AdminUserControllerGetData = {
-  body?: never;
-  path: {
-    id: number;
-  };
-  query?: never;
-  url: "/admin/users/{id}";
-};
-
-export type AdminUserControllerGetResponses = {
-  200: unknown;
-};
-
-export type AdminUserControllerUpdateData = {
-  body: UpdateAdminUserDto;
-  path: {
-    id: number;
-  };
-  query?: never;
-  url: "/admin/users/{id}";
-};
-
-export type AdminUserControllerUpdateResponses = {
-  200: unknown;
 };
 
 export type AdminUserControllerSuspendData = {
@@ -2526,170 +2568,6 @@ export type AdminUserControllerResetPasswordData = {
 };
 
 export type AdminUserControllerResetPasswordResponses = {
-  200: unknown;
-};
-
-export type AdminProjectControllerListData = {
-  body?: never;
-  path?: never;
-  query?: {
-    page?: number;
-    limit?: number;
-    sortBy?:
-      | "id"
-      | "name"
-      | "createdAt"
-      | "updatedAt"
-      | "publishedAt"
-      | "likes"
-      | "viewCount";
-    order?: "asc" | "desc";
-    name?: string;
-    status?: "IN_PROGRESS" | "COMPLETED" | "ARCHIVED";
-    hidden?: boolean;
-    userId?: number;
-  };
-  url: "/admin/projects";
-};
-
-export type AdminProjectControllerListResponses = {
-  200: unknown;
-};
-
-export type AdminProjectControllerGetData = {
-  body?: never;
-  path: {
-    id: number;
-  };
-  query?: never;
-  url: "/admin/projects/{id}";
-};
-
-export type AdminProjectControllerGetResponses = {
-  200: unknown;
-};
-
-export type AdminProjectControllerUpdateData = {
-  body: AdminUpdateProjectDto;
-  path: {
-    id: number;
-  };
-  query?: never;
-  url: "/admin/projects/{id}";
-};
-
-export type AdminProjectControllerUpdateResponses = {
-  200: unknown;
-};
-
-export type AdminProjectControllerHideData = {
-  body: ModerationReasonDto;
-  path: {
-    id: number;
-  };
-  query?: never;
-  url: "/admin/projects/{id}/hide";
-};
-
-export type AdminProjectControllerHideResponses = {
-  200: unknown;
-};
-
-export type AdminProjectControllerRestoreData = {
-  body: ModerationReasonDto;
-  path: {
-    id: number;
-  };
-  query?: never;
-  url: "/admin/projects/{id}/restore";
-};
-
-export type AdminProjectControllerRestoreResponses = {
-  200: unknown;
-};
-
-export type AdminProjectControllerUnpublishData = {
-  body: ModerationReasonDto;
-  path: {
-    id: number;
-  };
-  query?: never;
-  url: "/admin/projects/{id}/unpublish";
-};
-
-export type AdminProjectControllerUnpublishResponses = {
-  200: unknown;
-};
-
-export type AdminCommentControllerListData = {
-  body?: never;
-  path?: never;
-  query?: {
-    page?: number;
-    limit?: number;
-    sortBy?: "id" | "createdAt";
-    order?: "asc" | "desc";
-    projectId?: number;
-    authorId?: number;
-    hidden?: boolean;
-    deleted?: boolean;
-  };
-  url: "/admin/comments";
-};
-
-export type AdminCommentControllerListResponses = {
-  200: unknown;
-};
-
-export type AdminCommentControllerGetData = {
-  body?: never;
-  path: {
-    id: number;
-  };
-  query?: never;
-  url: "/admin/comments/{id}";
-};
-
-export type AdminCommentControllerGetResponses = {
-  200: unknown;
-};
-
-export type AdminCommentControllerUpdateData = {
-  body: AdminUpdateCommentDto;
-  path: {
-    id: number;
-  };
-  query?: never;
-  url: "/admin/comments/{id}";
-};
-
-export type AdminCommentControllerUpdateResponses = {
-  200: unknown;
-};
-
-export type AdminCommentControllerHideData = {
-  body: ModerationReasonDto;
-  path: {
-    id: number;
-  };
-  query?: never;
-  url: "/admin/comments/{id}/hide";
-};
-
-export type AdminCommentControllerHideResponses = {
-  200: unknown;
-};
-
-export type AdminCommentControllerRestoreData = {
-  body: ModerationReasonDto;
-  path: {
-    id: number;
-  };
-  query?: never;
-  url: "/admin/comments/{id}/restore";
-};
-
-export type AdminCommentControllerRestoreResponses = {
   200: unknown;
 };
 
@@ -2798,6 +2676,7 @@ export type AdminModerationLogControllerListData = {
       | "UNPUBLISH_PROJECT"
       | "HIDE_COMMENT"
       | "RESTORE_COMMENT"
+      | "DELETE_COMMENT"
       | "REVIEW_REPORT"
       | "RESOLVE_REPORT"
       | "DISMISS_REPORT"
@@ -2807,6 +2686,7 @@ export type AdminModerationLogControllerListData = {
       | "UPDATE_ROLES"
       | "EDIT_USER"
       | "EDIT_PROJECT"
+      | "DELETE_PROJECT"
       | "EDIT_COMMENT"
       | "UPDATE_REPORT"
       | "RESET_PASSWORD"
@@ -2927,6 +2807,28 @@ export type NotificationsControllerMarkAsReadResponses = {
    */
   200: unknown;
 };
+
+export type AuditControllerHistoryOfData = {
+  body?: never;
+  path: {
+    targetType: "USER" | "PROJECT" | "COMMENT" | "REPORT";
+    targetId: number;
+  };
+  query?: {
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    order?: "asc" | "desc";
+  };
+  url: "/moderation-log/{targetType}/{targetId}";
+};
+
+export type AuditControllerHistoryOfResponses = {
+  200: AuditLogResponseDto;
+};
+
+export type AuditControllerHistoryOfResponse =
+  AuditControllerHistoryOfResponses[keyof AuditControllerHistoryOfResponses];
 
 export type AuthControllerLoginData = {
   body: LoginDto;
@@ -3294,6 +3196,18 @@ export type UserControllerFindAllData = {
      * Filter by email
      */
     email?: string;
+    /**
+     * Filter by username
+     */
+    username?: string;
+    /**
+     * Filter by account status. Moderators only.
+     */
+    accountStatus?: "ACTIVE" | "SUSPENDED" | "BANNED";
+    /**
+     * Only users holding this role. Moderators only.
+     */
+    role?: string;
     /**
      * Sort by field
      */

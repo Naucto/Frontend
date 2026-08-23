@@ -18,16 +18,6 @@ import type {
   AdminAuthControllerRefreshData,
   AdminAuthControllerRefreshErrors,
   AdminAuthControllerRefreshResponses,
-  AdminCommentControllerGetData,
-  AdminCommentControllerGetResponses,
-  AdminCommentControllerHideData,
-  AdminCommentControllerHideResponses,
-  AdminCommentControllerListData,
-  AdminCommentControllerListResponses,
-  AdminCommentControllerRestoreData,
-  AdminCommentControllerRestoreResponses,
-  AdminCommentControllerUpdateData,
-  AdminCommentControllerUpdateResponses,
   AdminInsightsControllerGetDashboardData,
   AdminInsightsControllerGetDashboardResponses,
   AdminInsightsControllerGetLiveData,
@@ -38,18 +28,6 @@ import type {
   AdminModerationLogControllerGetResponses,
   AdminModerationLogControllerListData,
   AdminModerationLogControllerListResponses,
-  AdminProjectControllerGetData,
-  AdminProjectControllerGetResponses,
-  AdminProjectControllerHideData,
-  AdminProjectControllerHideResponses,
-  AdminProjectControllerListData,
-  AdminProjectControllerListResponses,
-  AdminProjectControllerRestoreData,
-  AdminProjectControllerRestoreResponses,
-  AdminProjectControllerUnpublishData,
-  AdminProjectControllerUnpublishResponses,
-  AdminProjectControllerUpdateData,
-  AdminProjectControllerUpdateResponses,
   AdminReportControllerDismissData,
   AdminReportControllerDismissResponses,
   AdminReportControllerGetData,
@@ -74,15 +52,9 @@ import type {
   AdminUserControllerBanResponses,
   AdminUserControllerCreateData,
   AdminUserControllerCreateResponses,
-  AdminUserControllerGetData,
-  AdminUserControllerGetResponses,
   AdminUserControllerGrantRoleData,
   AdminUserControllerGrantRoleErrors,
   AdminUserControllerGrantRoleResponses,
-  AdminUserControllerListData,
-  AdminUserControllerListResponses,
-  AdminUserControllerRemoveData,
-  AdminUserControllerRemoveResponses,
   AdminUserControllerResetPasswordData,
   AdminUserControllerResetPasswordResponses,
   AdminUserControllerRestoreData,
@@ -92,8 +64,8 @@ import type {
   AdminUserControllerRevokeRoleResponses,
   AdminUserControllerSuspendData,
   AdminUserControllerSuspendResponses,
-  AdminUserControllerUpdateData,
-  AdminUserControllerUpdateResponses,
+  AuditControllerHistoryOfData,
+  AuditControllerHistoryOfResponses,
   AuthControllerChangePasswordData,
   AuthControllerChangePasswordErrors,
   AuthControllerChangePasswordResponses,
@@ -117,6 +89,12 @@ import type {
   AuthControllerRegisterData,
   AuthControllerRegisterErrors,
   AuthControllerRegisterResponses,
+  CommentControllerFindOneData,
+  CommentControllerFindOneErrors,
+  CommentControllerFindOneResponses,
+  CommentControllerListData,
+  CommentControllerListErrors,
+  CommentControllerListResponses,
   MultiplayerControllerCreateData,
   MultiplayerControllerCreateResponses,
   MultiplayerControllerGetData,
@@ -1275,6 +1253,40 @@ export const projectCommentControllerUpdateComment = <
   });
 
 /**
+ * Fetch one comment by id (moderators only)
+ */
+export const commentControllerFindOne = <ThrowOnError extends boolean = false>(
+  options: Options<CommentControllerFindOneData, ThrowOnError>
+) =>
+  (options.client ?? client).get<
+    CommentControllerFindOneResponses,
+    CommentControllerFindOneErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/comments/{id}",
+    ...options
+  });
+
+/**
+ * List comments across projects (moderators only)
+ */
+export const commentControllerList = <ThrowOnError extends boolean = false>(
+  options?: Options<CommentControllerListData, ThrowOnError>
+) =>
+  (options?.client ?? client).get<
+    CommentControllerListResponses,
+    CommentControllerListErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/comments",
+    ...options
+  });
+
+/**
  * Report a user, project, or comment for moderation
  */
 export const reportControllerCreate = <ThrowOnError extends boolean = false>(
@@ -1451,28 +1463,6 @@ export const adminInsightsControllerGetSocial = <
   });
 
 /**
- * List users with pagination and filters
- */
-export const adminUserControllerList = <ThrowOnError extends boolean = false>(
-  options?: Options<AdminUserControllerListData, ThrowOnError>
-) =>
-  (options?.client ?? client).get<
-    AdminUserControllerListResponses,
-    unknown,
-    ThrowOnError
-  >({
-    security: [
-      {
-        in: "cookie",
-        name: "naucto_admin_access",
-        type: "apiKey"
-      }
-    ],
-    url: "/admin/users",
-    ...options
-  });
-
-/**
  * Create a new staff account
  */
 export const adminUserControllerCreate = <ThrowOnError extends boolean = false>(
@@ -1491,80 +1481,6 @@ export const adminUserControllerCreate = <ThrowOnError extends boolean = false>(
       }
     ],
     url: "/admin/users",
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers
-    }
-  });
-
-/**
- * Hard delete a user account
- */
-export const adminUserControllerRemove = <ThrowOnError extends boolean = false>(
-  options: Options<AdminUserControllerRemoveData, ThrowOnError>
-) =>
-  (options.client ?? client).delete<
-    AdminUserControllerRemoveResponses,
-    unknown,
-    ThrowOnError
-  >({
-    security: [
-      {
-        in: "cookie",
-        name: "naucto_admin_access",
-        type: "apiKey"
-      }
-    ],
-    url: "/admin/users/{id}",
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers
-    }
-  });
-
-/**
- * Get a single user with moderation metadata
- */
-export const adminUserControllerGet = <ThrowOnError extends boolean = false>(
-  options: Options<AdminUserControllerGetData, ThrowOnError>
-) =>
-  (options.client ?? client).get<
-    AdminUserControllerGetResponses,
-    unknown,
-    ThrowOnError
-  >({
-    security: [
-      {
-        in: "cookie",
-        name: "naucto_admin_access",
-        type: "apiKey"
-      }
-    ],
-    url: "/admin/users/{id}",
-    ...options
-  });
-
-/**
- * Update user fields and/or role membership
- */
-export const adminUserControllerUpdate = <ThrowOnError extends boolean = false>(
-  options: Options<AdminUserControllerUpdateData, ThrowOnError>
-) =>
-  (options.client ?? client).patch<
-    AdminUserControllerUpdateResponses,
-    unknown,
-    ThrowOnError
-  >({
-    security: [
-      {
-        in: "cookie",
-        name: "naucto_admin_access",
-        type: "apiKey"
-      }
-    ],
-    url: "/admin/users/{id}",
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -1733,294 +1649,6 @@ export const adminUserControllerResetPassword = <
       }
     ],
     url: "/admin/users/{id}/reset-password",
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers
-    }
-  });
-
-/**
- * List projects with pagination and filters
- */
-export const adminProjectControllerList = <
-  ThrowOnError extends boolean = false
->(
-  options?: Options<AdminProjectControllerListData, ThrowOnError>
-) =>
-  (options?.client ?? client).get<
-    AdminProjectControllerListResponses,
-    unknown,
-    ThrowOnError
-  >({
-    security: [
-      {
-        in: "cookie",
-        name: "naucto_admin_access",
-        type: "apiKey"
-      }
-    ],
-    url: "/admin/projects",
-    ...options
-  });
-
-/**
- * Get a single project
- */
-export const adminProjectControllerGet = <ThrowOnError extends boolean = false>(
-  options: Options<AdminProjectControllerGetData, ThrowOnError>
-) =>
-  (options.client ?? client).get<
-    AdminProjectControllerGetResponses,
-    unknown,
-    ThrowOnError
-  >({
-    security: [
-      {
-        in: "cookie",
-        name: "naucto_admin_access",
-        type: "apiKey"
-      }
-    ],
-    url: "/admin/projects/{id}",
-    ...options
-  });
-
-/**
- * Edit project metadata as a moderator
- */
-export const adminProjectControllerUpdate = <
-  ThrowOnError extends boolean = false
->(
-  options: Options<AdminProjectControllerUpdateData, ThrowOnError>
-) =>
-  (options.client ?? client).patch<
-    AdminProjectControllerUpdateResponses,
-    unknown,
-    ThrowOnError
-  >({
-    security: [
-      {
-        in: "cookie",
-        name: "naucto_admin_access",
-        type: "apiKey"
-      }
-    ],
-    url: "/admin/projects/{id}",
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers
-    }
-  });
-
-/**
- * Hide the project from public surfaces
- */
-export const adminProjectControllerHide = <
-  ThrowOnError extends boolean = false
->(
-  options: Options<AdminProjectControllerHideData, ThrowOnError>
-) =>
-  (options.client ?? client).post<
-    AdminProjectControllerHideResponses,
-    unknown,
-    ThrowOnError
-  >({
-    security: [
-      {
-        in: "cookie",
-        name: "naucto_admin_access",
-        type: "apiKey"
-      }
-    ],
-    url: "/admin/projects/{id}/hide",
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers
-    }
-  });
-
-/**
- * Restore a hidden project
- */
-export const adminProjectControllerRestore = <
-  ThrowOnError extends boolean = false
->(
-  options: Options<AdminProjectControllerRestoreData, ThrowOnError>
-) =>
-  (options.client ?? client).post<
-    AdminProjectControllerRestoreResponses,
-    unknown,
-    ThrowOnError
-  >({
-    security: [
-      {
-        in: "cookie",
-        name: "naucto_admin_access",
-        type: "apiKey"
-      }
-    ],
-    url: "/admin/projects/{id}/restore",
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers
-    }
-  });
-
-/**
- * Unpublish a published project
- */
-export const adminProjectControllerUnpublish = <
-  ThrowOnError extends boolean = false
->(
-  options: Options<AdminProjectControllerUnpublishData, ThrowOnError>
-) =>
-  (options.client ?? client).post<
-    AdminProjectControllerUnpublishResponses,
-    unknown,
-    ThrowOnError
-  >({
-    security: [
-      {
-        in: "cookie",
-        name: "naucto_admin_access",
-        type: "apiKey"
-      }
-    ],
-    url: "/admin/projects/{id}/unpublish",
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers
-    }
-  });
-
-/**
- * List comments with pagination and filters
- */
-export const adminCommentControllerList = <
-  ThrowOnError extends boolean = false
->(
-  options?: Options<AdminCommentControllerListData, ThrowOnError>
-) =>
-  (options?.client ?? client).get<
-    AdminCommentControllerListResponses,
-    unknown,
-    ThrowOnError
-  >({
-    security: [
-      {
-        in: "cookie",
-        name: "naucto_admin_access",
-        type: "apiKey"
-      }
-    ],
-    url: "/admin/comments",
-    ...options
-  });
-
-/**
- * Get a single comment
- */
-export const adminCommentControllerGet = <ThrowOnError extends boolean = false>(
-  options: Options<AdminCommentControllerGetData, ThrowOnError>
-) =>
-  (options.client ?? client).get<
-    AdminCommentControllerGetResponses,
-    unknown,
-    ThrowOnError
-  >({
-    security: [
-      {
-        in: "cookie",
-        name: "naucto_admin_access",
-        type: "apiKey"
-      }
-    ],
-    url: "/admin/comments/{id}",
-    ...options
-  });
-
-/**
- * Edit a comment's content as a moderator
- */
-export const adminCommentControllerUpdate = <
-  ThrowOnError extends boolean = false
->(
-  options: Options<AdminCommentControllerUpdateData, ThrowOnError>
-) =>
-  (options.client ?? client).patch<
-    AdminCommentControllerUpdateResponses,
-    unknown,
-    ThrowOnError
-  >({
-    security: [
-      {
-        in: "cookie",
-        name: "naucto_admin_access",
-        type: "apiKey"
-      }
-    ],
-    url: "/admin/comments/{id}",
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers
-    }
-  });
-
-/**
- * Hide a comment
- */
-export const adminCommentControllerHide = <
-  ThrowOnError extends boolean = false
->(
-  options: Options<AdminCommentControllerHideData, ThrowOnError>
-) =>
-  (options.client ?? client).post<
-    AdminCommentControllerHideResponses,
-    unknown,
-    ThrowOnError
-  >({
-    security: [
-      {
-        in: "cookie",
-        name: "naucto_admin_access",
-        type: "apiKey"
-      }
-    ],
-    url: "/admin/comments/{id}/hide",
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers
-    }
-  });
-
-/**
- * Restore a hidden comment
- */
-export const adminCommentControllerRestore = <
-  ThrowOnError extends boolean = false
->(
-  options: Options<AdminCommentControllerRestoreData, ThrowOnError>
-) =>
-  (options.client ?? client).post<
-    AdminCommentControllerRestoreResponses,
-    unknown,
-    ThrowOnError
-  >({
-    security: [
-      {
-        in: "cookie",
-        name: "naucto_admin_access",
-        type: "apiKey"
-      }
-    ],
-    url: "/admin/comments/{id}/restore",
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -2390,6 +2018,23 @@ export const notificationsControllerMarkAsRead = <
   >({
     security: [{ scheme: "bearer", type: "http" }],
     url: "/notifications/{id}/read",
+    ...options
+  });
+
+/**
+ * Moderation history for one target
+ */
+export const auditControllerHistoryOf = <ThrowOnError extends boolean = false>(
+  options: Options<AuditControllerHistoryOfData, ThrowOnError>
+) =>
+  (options.client ?? client).get<
+    AuditControllerHistoryOfResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/moderation-log/{targetType}/{targetId}",
     ...options
   });
 
