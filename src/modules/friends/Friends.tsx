@@ -1,4 +1,4 @@
-import { friendControllerGetMyFriendCount } from "@api";
+import { friendControllerGetMyFriendCount, friendControllerGetReceivedRequests } from "@api";
 import { useAsync } from "@hooks/useAsync";
 import { AddFriendDialog } from "@modules/friends/components/AddFriendDialog";
 import { FriendList } from "@modules/friends/components/FriendList";
@@ -83,6 +83,16 @@ export const Friends = (): JSX.Element => {
 
   const friendCount = (countResponse?.data as { data?: { count: number } } | null)?.data?.count ?? 0;
 
+  const { value: receivedRequestsResponse, loading } = useAsync(
+    () => {
+      if (!user) return Promise.resolve(null);
+      return friendControllerGetReceivedRequests<true>({ throwOnError: true });
+    },
+    [user, friendCountRefresh]
+  );
+
+  const receivedRequestCount = loading ? undefined : (receivedRequestsResponse?.data as { data?: unknown[] } | null)?.data?.length;
+
   if (!user) {
     return (
       <NotLoggedIn>
@@ -119,7 +129,7 @@ export const Friends = (): JSX.Element => {
 
       <StyledTabs value={activeTab} onChange={(_e, v: number) => setActiveTab(v)} aria-label="Friends tabs">
         <Tab label="My Friends"/>
-        <Tab label="Requests"/>
+        <Tab label={`Requests (${receivedRequestCount ?? "" })`}/>
       </StyledTabs>
 
       <TabContent hidden={activeTab !== 0}>
