@@ -1,6 +1,7 @@
 import {
   projectControllerFork,
   projectControllerGetLikeStatus,
+  projectControllerGetProjectPreview,
   projectControllerGetPublishedProjectImage,
   projectControllerGetRelease,
   projectControllerLikeProject,
@@ -9,11 +10,13 @@ import {
   ProjectExResponseDto,
 } from "@api";
 import { type EnvData } from "@engine/runtime/LuaEnvironmentManager";
+import { useIsStaff } from "@hooks/useIsStaff";
 import { useReturnFocusOnNetDialogClose } from "@hooks/useReturnFocusOnNetDialogClose";
 import { GameProvider, ProviderEventType } from "@providers/GameProvider";
 import { NetUiBridge } from "@providers/net/NetUiBridge";
 import { useUser } from "@providers/UserProvider";
 import { type SpriteRendererHandle } from "@shared/canvas/RendererHandle";
+import { ReportAction } from "@shared/moderation/ReportAction";
 import * as urls from "@shared/navigation/routes";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
 import { getCachedProjectImageUrl } from "@utils/projectImageCache";
@@ -35,7 +38,7 @@ import { PlayableGameFrame } from "./game-viewer/PlayableGameFrame";
 import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import RefreshIcon from "@mui/icons-material/Refresh";
-import { Box, Button } from "@mui/material";
+import { Box, Button, Chip, Typography } from "@mui/material";
 import { alpha, styled } from "@mui/material/styles";
 import { useSnackbar } from "notistack";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
@@ -63,6 +66,22 @@ const HeaderActions = styled(Box)(({ theme }) => ({
   },
 }));
 
+const PreviewBanner = styled(Box)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  gap: theme.spacing(1.5),
+  flexWrap: "wrap",
+  marginBottom: theme.spacing(2),
+  padding: theme.spacing(1.5, 2),
+  borderRadius: theme.shape.borderRadius,
+  border: `1px solid ${alpha(theme.palette.common.white, 0.18)}`,
+  backgroundColor: alpha(theme.palette.gray[900], 0.5),
+}));
+
+const PreviewNote = styled(Typography)(({ theme }) => ({
+  color: alpha(theme.palette.common.white, 0.78),
+}));
+
 const RefreshGameButton = styled(Button)(({ theme }) => ({
   color: theme.palette.common.white,
   borderColor: alpha(theme.palette.common.white, 0.24),
@@ -73,8 +92,18 @@ const RefreshGameButton = styled(Button)(({ theme }) => ({
   },
 }));
 
-export const GameViewer = (): JSX.Element => {
+type GameViewerProps = {
+  /**
+   * Staff preview: loads the project whether or not it is published, and leaves
+   * public counters (views, play history, likes) untouched so moderating a game
+   * never inflates its stats.
+   */
+  preview?: boolean;
+};
+
+export const GameViewer = ({ preview = false }: GameViewerProps): JSX.Element => {
   const { id } = useParams<{ id: string }>();
+  const isStaff = useIsStaff();
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useUser();
@@ -126,7 +155,9 @@ export const GameViewer = (): JSX.Element => {
       setForkedFromInfo(null);
 
       try {
-        const { data: projectDetails } = await projectControllerGetRelease({ path: { id } });
+        const { data: projectDetails } = preview
+          ? await projectControllerGetProjectPreview({ path: { id } })
+          : await projectControllerGetRelease({ path: { id } });
         const proj = projectDetails as ProjectExResponseDto;
         setProject(proj);
         setLikeCount(proj?.likes ?? 0);
@@ -146,21 +177,25 @@ export const GameViewer = (): JSX.Element => {
         );
         setBannerUrl(imageUrl);
 
-        const { data: viewData } = await projectControllerRegisterReleaseView({ path: { id } });
-        if (viewData) {
-          setViewCount(viewData.viewCount);
-          window.dispatchEvent(new CustomEvent("project-stats-updated", {
-            detail: {
-              projectId: Number(id),
-              changes: { viewCount: viewData.viewCount },
-            },
-          }));
+        // A moderator opening a game to review it is not a play: leave the view
+        // count, the played history, and the like state alone.
+        if (!preview) {
+          const { data: viewData } = await projectControllerRegisterReleaseView({ path: { id } });
+          if (viewData) {
+            setViewCount(viewData.viewCount);
+            window.dispatchEvent(new CustomEvent("project-stats-updated", {
+              detail: {
+                projectId: Number(id),
+                changes: { viewCount: viewData.viewCount },
+              },
+            }));
+          }
+
+          LocalStorageManager.addPlayedProject(Number(id));
+          window.dispatchEvent(new Event("played-history-updated"));
         }
 
-        LocalStorageManager.addPlayedProject(Number(id));
-        window.dispatchEvent(new Event("played-history-updated"));
-
-        if (user) {
+        if (user && !preview) {
           try {
             const { data: likeData } = await projectControllerGetLikeStatus({ path: { id } });
             if (likeData) {
@@ -199,7 +234,7 @@ export const GameViewer = (): JSX.Element => {
     };
 
     void fetchProjectData();
-  }, [enqueueSnackbar, id, user]);
+  }, [enqueueSnackbar, id, preview, user]);
 
   useEffect(() => () => {
     gameProvider?.destroy();
@@ -224,7 +259,7 @@ export const GameViewer = (): JSX.Element => {
     }
 
     setLaunching(true);
-    const provider = new GameProvider(Number(id));
+    const provider = new GameProvider(Number(id), preview ? "preview" : "release");
     setGameProvider(provider);
 
     provider.observe(ProviderEventType.INITIALIZED, () => {
@@ -284,6 +319,7 @@ export const GameViewer = (): JSX.Element => {
     } catch (error) {
       setLiked(!nextLiked);
       console.error("Error toggling like:", error);
+      enqueueSnackbar("Could not update like. Your account may be suspended.", { variant: "error" });
     }
   };
 
@@ -316,6 +352,12 @@ export const GameViewer = (): JSX.Element => {
     }
   };
 
+  // The API enforces this too; refusing here just avoids a pointless 403 round
+  // trip and a confusing empty viewer.
+  if (preview && !isStaff) {
+    return <MissingProjectViewer onClose={handleClose} />;
+  }
+
   if (loading) {
     return <LoadingGameViewer />;
   }
@@ -324,12 +366,37 @@ export const GameViewer = (): JSX.Element => {
     return <MissingProjectViewer onClose={handleClose} />;
   }
 
+  const isPublished = project.status === "COMPLETED";
+
   return (
     <GameViewerLayout onClose={handleClose}>
+      {preview ? (
+        <PreviewBanner>
+          <Chip
+            size="small"
+            color={isPublished ? "success" : "warning"}
+            label={isPublished ? "Published" : "Unpublished"}
+          />
+          <PreviewNote variant="body2">
+            Staff preview — {isPublished
+              ? "showing the published release, exactly what players load."
+              : "showing the latest save; this game is not public yet."}
+            {" "}Views, play history and likes are not recorded here.
+          </PreviewNote>
+        </PreviewBanner>
+      ) : null}
+
       <HeaderBar>
         <Box />
         <GameTitle variant="h3">{project.name}</GameTitle>
         <HeaderActions>
+          {!preview ? (
+            <ReportAction
+              targetType="PROJECT"
+              targetId={Number(id)}
+              ownerId={project.creator?.id ?? null}
+            />
+          ) : null}
           {showGame ? (
             <RefreshGameButton
               variant="outlined"
@@ -361,7 +428,7 @@ export const GameViewer = (): JSX.Element => {
       <NetSessionModals bridge={netBridge} projectId={Number(id)} />
 
       <GameDetailsPanel
-        canFork={!!user}
+        canFork={!!user && !preview}
         forkCount={forkCount}
         forkedFromInfo={forkedFromInfo}
         forking={forking}
@@ -373,7 +440,11 @@ export const GameViewer = (): JSX.Element => {
         onLike={handleLike}
       />
 
-      <CommentSection projectId={Number(id)} projectCreatorId={project.creator?.id} />
+      {/* Comments live on the published game and are moderated from the panel,
+          so the preview stays a pure "does this game run" view. */}
+      {!preview ? (
+        <CommentSection projectId={Number(id)} projectCreatorId={project.creator?.id} />
+      ) : null}
     </GameViewerLayout>
   );
 };

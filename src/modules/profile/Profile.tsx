@@ -12,6 +12,7 @@ import { useAsync } from "@hooks/useAsync";
 import ProjectCard from "@modules/projects/components/ProjectCard";
 import ImportantButton from "@shared/buttons/ImportantButton";
 import { Editable } from "@shared/forms/Editable";
+import { ReportAction } from "@shared/moderation/ReportAction";
 import * as urls from "@shared/navigation/routes";
 import { ProfilePicture } from "@shared/user/ProfilePicture";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
@@ -353,6 +354,11 @@ export const Profile = (): JSX.Element => {
                   <EditProfileButton type="button" onClick={() => setIsPasswordDialogOpen(true)}>
                     Change password
                   </EditProfileButton>
+                )}
+                {/* Only on someone else's profile: reporting yourself is noise
+                    for the moderation queue. */}
+                {!isEditable && Number.isFinite(resolvedProfileId) && (
+                  <ReportAction targetType="USER" targetId={resolvedProfileId} />
                 )}
               </HorizontalBox>
             </TextInfo>

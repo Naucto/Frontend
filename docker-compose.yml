@@ -1,7 +1,7 @@
 networks:
+  # Created by the Backend stack, which must be up first.
   naucto:
-    name: naucto
-    driver: bridge
+    external: true
 
 services:
   frontend:
@@ -17,13 +17,8 @@ services:
         VITE_GOOGLE_REDIRECT_URI: ${VITE_GOOGLE_REDIRECT_URI:-}
         VITE_GITHUB_CLIENT_ID: ${VITE_GITHUB_CLIENT_ID:-}
         VITE_GITHUB_REDIRECT_URI: ${VITE_GITHUB_REDIRECT_URI:-}
-    volumes:
-      - .:/app:cached
-      - node_modules:/app/node_modules:cached
     ports:
-      - "3001:80"
+      - "${FRONTEND_PORT:-3001}:80"
+    restart: unless-stopped
     networks:
       - naucto
-
-volumes:
-  node_modules: {}

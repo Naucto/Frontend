@@ -1,5 +1,6 @@
 import { CommentResponseDto } from "@api";
 import { useUser } from "@providers/UserProvider";
+import { ReportAction } from "@shared/moderation/ReportAction";
 import { UserProfileLink } from "@shared/user/UserProfileLink";
 
 import CommentComposer from "./CommentComposer";
@@ -123,6 +124,14 @@ const CommentItem: React.FC<CommentItemProps> = ({
             <CommentDate>{formatTimeAgo(comment.createdAt)}</CommentDate>
           </CommentAuthorMeta>
           <Box display="flex" alignItems="center">
+            {user && !comment.deleted && (
+              <ReportAction
+                targetType="COMMENT"
+                targetId={comment.id}
+                ownerId={comment.author?.id ?? null}
+                compact
+              />
+            )}
             {user && !comment.deleted && (
               <IconButton
                 size="small"
