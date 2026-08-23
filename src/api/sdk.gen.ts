@@ -31,6 +31,30 @@ import type {
   AuthControllerRegisterData,
   AuthControllerRegisterErrors,
   AuthControllerRegisterResponses,
+  FriendControllerAcceptFriendRequestData,
+  FriendControllerAcceptFriendRequestErrors,
+  FriendControllerAcceptFriendRequestResponses,
+  FriendControllerCancelOrRejectFriendRequestData,
+  FriendControllerCancelOrRejectFriendRequestErrors,
+  FriendControllerCancelOrRejectFriendRequestResponses,
+  FriendControllerGetFriendCountData,
+  FriendControllerGetFriendCountResponses,
+  FriendControllerGetFriendshipStatusData,
+  FriendControllerGetFriendshipStatusResponses,
+  FriendControllerGetMyFriendCountData,
+  FriendControllerGetMyFriendCountResponses,
+  FriendControllerGetMyFriendsData,
+  FriendControllerGetMyFriendsResponses,
+  FriendControllerGetReceivedRequestsData,
+  FriendControllerGetReceivedRequestsResponses,
+  FriendControllerGetSentRequestsData,
+  FriendControllerGetSentRequestsResponses,
+  FriendControllerRemoveFriendData,
+  FriendControllerRemoveFriendErrors,
+  FriendControllerRemoveFriendResponses,
+  FriendControllerSendFriendRequestData,
+  FriendControllerSendFriendRequestErrors,
+  FriendControllerSendFriendRequestResponses,
   MultiplayerControllerCloseHostData,
   MultiplayerControllerCloseHostErrors,
   MultiplayerControllerCloseHostResponses,
@@ -162,9 +186,6 @@ import type {
   UserControllerGetProfilePictureErrors,
   UserControllerGetProfilePictureResponses,
   UserControllerGetProfileResponses,
-  UserControllerGetPublicProfilePictureData,
-  UserControllerGetPublicProfilePictureErrors,
-  UserControllerGetPublicProfilePictureResponses,
   UserControllerRemoveData,
   UserControllerRemoveErrors,
   UserControllerRemoveResponses,
@@ -785,7 +806,7 @@ export const projectControllerUnlikeProject = <
   });
 
 /**
- * Like a published project (toggle for authenticated users, increment for anonymous)
+ * Like a published project (idempotent, authenticated users only)
  */
 export const projectControllerLikeProject = <
   ThrowOnError extends boolean = false
@@ -1130,6 +1151,196 @@ export const notificationsControllerMarkAsRead = <
   });
 
 /**
+ * Send a friend request to another user
+ */
+export const friendControllerSendFriendRequest = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<FriendControllerSendFriendRequestData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    FriendControllerSendFriendRequestResponses,
+    FriendControllerSendFriendRequestErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/friends/request/{userId}",
+    ...options
+  });
+
+/**
+ * Cancel a sent request or decline a received request
+ */
+export const friendControllerCancelOrRejectFriendRequest = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<
+    FriendControllerCancelOrRejectFriendRequestData,
+    ThrowOnError
+  >
+) =>
+  (options.client ?? client).delete<
+    FriendControllerCancelOrRejectFriendRequestResponses,
+    FriendControllerCancelOrRejectFriendRequestErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/friends/request/{requestId}",
+    ...options
+  });
+
+/**
+ * Accept a received friend request
+ */
+export const friendControllerAcceptFriendRequest = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<FriendControllerAcceptFriendRequestData, ThrowOnError>
+) =>
+  (options.client ?? client).patch<
+    FriendControllerAcceptFriendRequestResponses,
+    FriendControllerAcceptFriendRequestErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/friends/request/{requestId}/accept",
+    ...options
+  });
+
+/**
+ * Get my friend list
+ */
+export const friendControllerGetMyFriends = <
+  ThrowOnError extends boolean = false
+>(
+  options?: Options<FriendControllerGetMyFriendsData, ThrowOnError>
+) =>
+  (options?.client ?? client).get<
+    FriendControllerGetMyFriendsResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/friends",
+    ...options
+  });
+
+/**
+ * Get pending friend requests received
+ */
+export const friendControllerGetReceivedRequests = <
+  ThrowOnError extends boolean = false
+>(
+  options?: Options<FriendControllerGetReceivedRequestsData, ThrowOnError>
+) =>
+  (options?.client ?? client).get<
+    FriendControllerGetReceivedRequestsResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/friends/requests/received",
+    ...options
+  });
+
+/**
+ * Get pending friend requests sent
+ */
+export const friendControllerGetSentRequests = <
+  ThrowOnError extends boolean = false
+>(
+  options?: Options<FriendControllerGetSentRequestsData, ThrowOnError>
+) =>
+  (options?.client ?? client).get<
+    FriendControllerGetSentRequestsResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/friends/requests/sent",
+    ...options
+  });
+
+/**
+ * Get my friend count
+ */
+export const friendControllerGetMyFriendCount = <
+  ThrowOnError extends boolean = false
+>(
+  options?: Options<FriendControllerGetMyFriendCountData, ThrowOnError>
+) =>
+  (options?.client ?? client).get<
+    FriendControllerGetMyFriendCountResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/friends/count",
+    ...options
+  });
+
+/**
+ * Get friend count for a given user
+ */
+export const friendControllerGetFriendCount = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<FriendControllerGetFriendCountData, ThrowOnError>
+) =>
+  (options.client ?? client).get<
+    FriendControllerGetFriendCountResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/friends/count/{userId}",
+    ...options
+  });
+
+/**
+ * Get friendship status with another user
+ */
+export const friendControllerGetFriendshipStatus = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<FriendControllerGetFriendshipStatusData, ThrowOnError>
+) =>
+  (options.client ?? client).get<
+    FriendControllerGetFriendshipStatusResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/friends/status/{userId}",
+    ...options
+  });
+
+/**
+ * Remove a friend
+ */
+export const friendControllerRemoveFriend = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<FriendControllerRemoveFriendData, ThrowOnError>
+) =>
+  (options.client ?? client).delete<
+    FriendControllerRemoveFriendResponses,
+    FriendControllerRemoveFriendErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/friends/{userId}",
+    ...options
+  });
+
+/**
  * Authenticate a user and return an access token
  */
 export const authControllerLogin = <ThrowOnError extends boolean = false>(
@@ -1169,6 +1380,75 @@ export const authControllerRegister = <ThrowOnError extends boolean = false>(
     }
   });
 
+/**
+ * Authenticate with Google authorization code + PKCE
+ */
+export const authControllerLoginWithGoogleCode = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<AuthControllerLoginWithGoogleCodeData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    AuthControllerLoginWithGoogleCodeResponses,
+    AuthControllerLoginWithGoogleCodeErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/auth/google/code",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Authenticate with GitHub OAuth authorization code
+ */
+export const authControllerLoginWithGithub = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<AuthControllerLoginWithGithubData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    AuthControllerLoginWithGithubResponses,
+    AuthControllerLoginWithGithubErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/auth/github",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Authenticate with Microsoft ID token
+ */
+export const authControllerLoginWithMicrosoft = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<AuthControllerLoginWithMicrosoftData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    AuthControllerLoginWithMicrosoftResponses,
+    AuthControllerLoginWithMicrosoftErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/auth/microsoft",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Refresh the access token using refresh token cookie
+ */
 export const authControllerRefresh = <ThrowOnError extends boolean = false>(
   options?: Options<AuthControllerRefreshData, ThrowOnError>
 ) =>
@@ -1180,6 +1460,28 @@ export const authControllerRefresh = <ThrowOnError extends boolean = false>(
     responseType: "json",
     url: "/auth/refresh",
     ...options
+  });
+
+/**
+ * Change password, OAuth users can set one without providing a current password
+ */
+export const authControllerChangePassword = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<AuthControllerChangePasswordData, ThrowOnError>
+) =>
+  (options.client ?? client).patch<
+    AuthControllerChangePasswordResponses,
+    AuthControllerChangePasswordErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/auth/password",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
   });
 
 /**
@@ -1523,81 +1825,3 @@ export const workSessionControllerGetInfo = <
     url: "/work-sessions/info/{id}",
     ...options
   });
-
-/**
- * Authenticate with Google authorization code + PKCE
- */
-export const authControllerLoginWithGoogleCode = <ThrowOnError extends boolean = false>(options: Options<AuthControllerLoginWithGoogleCodeData, ThrowOnError>) => (options.client ?? client).post<AuthControllerLoginWithGoogleCodeResponses, AuthControllerLoginWithGoogleCodeErrors, ThrowOnError>({
-    url: '/auth/google/code',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Authenticate with GitHub OAuth authorization code
- */
-
-/**
- * Authenticate with GitHub OAuth authorization code
- */
-export const authControllerLoginWithGithub = <ThrowOnError extends boolean = false>(options: Options<AuthControllerLoginWithGithubData, ThrowOnError>) => (options.client ?? client).post<AuthControllerLoginWithGithubResponses, AuthControllerLoginWithGithubErrors, ThrowOnError>({
-    url: '/auth/github',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Authenticate with Microsoft Graph access token
- */
-
-/**
- * Authenticate with Microsoft Graph access token
- */
-export const authControllerLoginWithMicrosoft = <ThrowOnError extends boolean = false>(options: Options<AuthControllerLoginWithMicrosoftData, ThrowOnError>) => (options.client ?? client).post<AuthControllerLoginWithMicrosoftResponses, AuthControllerLoginWithMicrosoftErrors, ThrowOnError>({
-    url: '/auth/microsoft',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Refresh the access token using refresh token cookie
- */
-
-/**
- * Change password, OAuth users can set one without providing a current password
- */
-export const authControllerChangePassword = <ThrowOnError extends boolean = false>(options: Options<AuthControllerChangePasswordData, ThrowOnError>) => (options.client ?? client).patch<AuthControllerChangePasswordResponses, AuthControllerChangePasswordErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/password',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Remove refresh token cookie
- */
-
-/**
- * Get public CDN URL for a user's profile picture
- */
-export const userControllerGetPublicProfilePicture = <ThrowOnError extends boolean = false>(options: Options<UserControllerGetPublicProfilePictureData, ThrowOnError>) => (options.client ?? client).get<UserControllerGetPublicProfilePictureResponses, UserControllerGetPublicProfilePictureErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/users/public/{id}/profile-picture',
-    ...options
-});
-
-/**
- * Get all released projects
- */

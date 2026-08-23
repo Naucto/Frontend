@@ -539,6 +539,93 @@ export type NotificationTestDto = {
   type: "INFO" | "WARNING";
 };
 
+export type FriendUserInfoDto = {
+  /**
+   * User ID
+   */
+  id: number;
+  /**
+   * Username
+   */
+  username: string;
+  /**
+   * Nickname
+   */
+  nickname: string | null;
+  profileImageUrl: string | null;
+};
+
+export type FriendResponseDto = {
+  /**
+   * Friendship ID
+   */
+  friendshipId: number;
+  user: FriendUserInfoDto;
+  /**
+   * Date the friendship was created
+   */
+  since: string;
+};
+
+export type FriendListResponseDto = {
+  statusCode: number;
+  message: string;
+  data: Array<FriendResponseDto>;
+};
+
+export type FriendRequestResponseDto = {
+  /**
+   * Friend request ID
+   */
+  id: number;
+  from: FriendUserInfoDto;
+  to: FriendUserInfoDto;
+  createdAt: string;
+};
+
+export type FriendRequestListResponseDto = {
+  statusCode: number;
+  message: string;
+  data: Array<FriendRequestResponseDto>;
+};
+
+export type FriendRequestSingleResponseDto = {
+  statusCode: number;
+  message: string;
+  data: FriendRequestResponseDto;
+};
+
+export type FriendshipStatusDto = {
+  status: "NONE" | "REQUEST_SENT" | "REQUEST_RECEIVED" | "FRIENDS";
+  /**
+   * Request ID (when REQUEST_SENT or REQUEST_RECEIVED)
+   */
+  requestId: number | null;
+  /**
+   * Friendship ID (when FRIENDS)
+   */
+  friendshipId: number | null;
+};
+
+export type FriendshipStatusResponseDto = {
+  statusCode: number;
+  message: string;
+  data: FriendshipStatusDto;
+};
+
+export type FriendCountDto = {
+  /**
+   * Number of friends
+   */
+  count: number;
+};
+
+export type FriendCountResponseDto = {
+  statusCode: number;
+  message: string;
+  data: FriendCountDto;
+};
+
 export type LoginDto = {
   /**
    * User email address
@@ -548,10 +635,6 @@ export type LoginDto = {
    * User password
    */
   password: string;
-};
-
-export type AuthResponseDto = {
-  access_token: string;
 };
 
 export type CreateUserDto = {
@@ -571,6 +654,42 @@ export type CreateUserDto = {
    * User password
    */
   password: string;
+};
+
+export type GoogleCodeDto = {
+  /**
+   * Google authorization code
+   */
+  code: string;
+  /**
+   * PKCE code verifier
+   */
+  codeVerifier: string;
+};
+
+export type GithubLoginDto = {
+  /**
+   * GitHub OAuth authorization code
+   */
+  code: string;
+};
+
+export type MicrosoftLoginDto = {
+  /**
+   * Microsoft ID token
+   */
+  token: string;
+};
+
+export type ChangePasswordDto = {
+  /**
+   * Current password (not required for OAuth accounts)
+   */
+  currentPassword?: string;
+  /**
+   * New password
+   */
+  newPassword: string;
 };
 
 export type UserRoleDto = {
@@ -1968,6 +2087,222 @@ export type NotificationsControllerMarkAsReadResponses = {
   200: unknown;
 };
 
+export type FriendControllerSendFriendRequestData = {
+  body?: never;
+  path: {
+    /**
+     * Target user ID
+     */
+    userId: number;
+  };
+  query?: never;
+  url: "/friends/request/{userId}";
+};
+
+export type FriendControllerSendFriendRequestErrors = {
+  /**
+   * Already friends or request already exists
+   */
+  400: unknown;
+  /**
+   * Target user not found
+   */
+  404: unknown;
+};
+
+export type FriendControllerSendFriendRequestResponses = {
+  201: FriendRequestSingleResponseDto;
+};
+
+export type FriendControllerSendFriendRequestResponse =
+  FriendControllerSendFriendRequestResponses[keyof FriendControllerSendFriendRequestResponses];
+
+export type FriendControllerCancelOrRejectFriendRequestData = {
+  body?: never;
+  path: {
+    /**
+     * Friend request ID
+     */
+    requestId: number;
+  };
+  query?: never;
+  url: "/friends/request/{requestId}";
+};
+
+export type FriendControllerCancelOrRejectFriendRequestErrors = {
+  /**
+   * Not part of this request
+   */
+  403: unknown;
+  /**
+   * Request not found
+   */
+  404: unknown;
+};
+
+export type FriendControllerCancelOrRejectFriendRequestResponses = {
+  /**
+   * Request deleted
+   */
+  204: void;
+};
+
+export type FriendControllerCancelOrRejectFriendRequestResponse =
+  FriendControllerCancelOrRejectFriendRequestResponses[keyof FriendControllerCancelOrRejectFriendRequestResponses];
+
+export type FriendControllerAcceptFriendRequestData = {
+  body?: never;
+  path: {
+    /**
+     * Friend request ID
+     */
+    requestId: number;
+  };
+  query?: never;
+  url: "/friends/request/{requestId}/accept";
+};
+
+export type FriendControllerAcceptFriendRequestErrors = {
+  /**
+   * Only the recipient can accept
+   */
+  403: unknown;
+  /**
+   * Request not found
+   */
+  404: unknown;
+};
+
+export type FriendControllerAcceptFriendRequestResponses = {
+  /**
+   * Friendship created
+   */
+  200: unknown;
+};
+
+export type FriendControllerGetMyFriendsData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/friends";
+};
+
+export type FriendControllerGetMyFriendsResponses = {
+  200: FriendListResponseDto;
+};
+
+export type FriendControllerGetMyFriendsResponse =
+  FriendControllerGetMyFriendsResponses[keyof FriendControllerGetMyFriendsResponses];
+
+export type FriendControllerGetReceivedRequestsData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/friends/requests/received";
+};
+
+export type FriendControllerGetReceivedRequestsResponses = {
+  200: FriendRequestListResponseDto;
+};
+
+export type FriendControllerGetReceivedRequestsResponse =
+  FriendControllerGetReceivedRequestsResponses[keyof FriendControllerGetReceivedRequestsResponses];
+
+export type FriendControllerGetSentRequestsData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/friends/requests/sent";
+};
+
+export type FriendControllerGetSentRequestsResponses = {
+  200: FriendRequestListResponseDto;
+};
+
+export type FriendControllerGetSentRequestsResponse =
+  FriendControllerGetSentRequestsResponses[keyof FriendControllerGetSentRequestsResponses];
+
+export type FriendControllerGetMyFriendCountData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/friends/count";
+};
+
+export type FriendControllerGetMyFriendCountResponses = {
+  200: FriendCountResponseDto;
+};
+
+export type FriendControllerGetMyFriendCountResponse =
+  FriendControllerGetMyFriendCountResponses[keyof FriendControllerGetMyFriendCountResponses];
+
+export type FriendControllerGetFriendCountData = {
+  body?: never;
+  path: {
+    /**
+     * User ID
+     */
+    userId: number;
+  };
+  query?: never;
+  url: "/friends/count/{userId}";
+};
+
+export type FriendControllerGetFriendCountResponses = {
+  200: FriendCountResponseDto;
+};
+
+export type FriendControllerGetFriendCountResponse =
+  FriendControllerGetFriendCountResponses[keyof FriendControllerGetFriendCountResponses];
+
+export type FriendControllerGetFriendshipStatusData = {
+  body?: never;
+  path: {
+    /**
+     * Target user ID
+     */
+    userId: number;
+  };
+  query?: never;
+  url: "/friends/status/{userId}";
+};
+
+export type FriendControllerGetFriendshipStatusResponses = {
+  200: FriendshipStatusResponseDto;
+};
+
+export type FriendControllerGetFriendshipStatusResponse =
+  FriendControllerGetFriendshipStatusResponses[keyof FriendControllerGetFriendshipStatusResponses];
+
+export type FriendControllerRemoveFriendData = {
+  body?: never;
+  path: {
+    /**
+     * Friend user ID
+     */
+    userId: number;
+  };
+  query?: never;
+  url: "/friends/{userId}";
+};
+
+export type FriendControllerRemoveFriendErrors = {
+  /**
+   * Friendship not found
+   */
+  404: unknown;
+};
+
+export type FriendControllerRemoveFriendResponses = {
+  /**
+   * Friend removed
+   */
+  204: void;
+};
+
+export type FriendControllerRemoveFriendResponse =
+  FriendControllerRemoveFriendResponses[keyof FriendControllerRemoveFriendResponses];
+
 export type AuthControllerLoginData = {
   body: LoginDto;
   path?: never;
@@ -1981,20 +2316,18 @@ export type AuthControllerLoginErrors = {
    */
   400: unknown;
   /**
-   * Cannot register as an admin
+   * Invalid credentials
    */
-  403: unknown;
-  /**
-   * Email or username already in use
-   */
-  409: unknown;
+  401: unknown;
 };
 
 export type AuthControllerLoginResponses = {
   /**
-   * User registered successfully
+   * User logged in successfully
    */
-  201: AuthResponseDto;
+  201: {
+    access_token: string;
+  };
 };
 
 export type AuthControllerLoginResponse =
@@ -2026,11 +2359,91 @@ export type AuthControllerRegisterResponses = {
   /**
    * User registered successfully
    */
-  201: AuthResponseDto;
+  201: {
+    access_token: string;
+  };
 };
 
 export type AuthControllerRegisterResponse =
   AuthControllerRegisterResponses[keyof AuthControllerRegisterResponses];
+
+export type AuthControllerLoginWithGoogleCodeData = {
+  body: GoogleCodeDto;
+  path?: never;
+  query?: never;
+  url: "/auth/google/code";
+};
+
+export type AuthControllerLoginWithGoogleCodeErrors = {
+  /**
+   * Invalid Google code or code_verifier
+   */
+  401: unknown;
+};
+
+export type AuthControllerLoginWithGoogleCodeResponses = {
+  /**
+   * Login successful with Google
+   */
+  201: {
+    access_token: string;
+  };
+};
+
+export type AuthControllerLoginWithGoogleCodeResponse =
+  AuthControllerLoginWithGoogleCodeResponses[keyof AuthControllerLoginWithGoogleCodeResponses];
+
+export type AuthControllerLoginWithGithubData = {
+  body: GithubLoginDto;
+  path?: never;
+  query?: never;
+  url: "/auth/github";
+};
+
+export type AuthControllerLoginWithGithubErrors = {
+  /**
+   * Invalid or expired GitHub code
+   */
+  401: unknown;
+};
+
+export type AuthControllerLoginWithGithubResponses = {
+  /**
+   * Login successful with GitHub
+   */
+  201: {
+    access_token: string;
+  };
+};
+
+export type AuthControllerLoginWithGithubResponse =
+  AuthControllerLoginWithGithubResponses[keyof AuthControllerLoginWithGithubResponses];
+
+export type AuthControllerLoginWithMicrosoftData = {
+  body: MicrosoftLoginDto;
+  path?: never;
+  query?: never;
+  url: "/auth/microsoft";
+};
+
+export type AuthControllerLoginWithMicrosoftErrors = {
+  /**
+   * Invalid Microsoft ID token
+   */
+  401: unknown;
+};
+
+export type AuthControllerLoginWithMicrosoftResponses = {
+  /**
+   * Login successful with Microsoft
+   */
+  201: {
+    access_token: string;
+  };
+};
+
+export type AuthControllerLoginWithMicrosoftResponse =
+  AuthControllerLoginWithMicrosoftResponses[keyof AuthControllerLoginWithMicrosoftResponses];
 
 export type AuthControllerRefreshData = {
   body?: never;
@@ -2050,11 +2463,38 @@ export type AuthControllerRefreshResponses = {
   /**
    * Access token refreshed successfully
    */
-  201: AuthResponseDto;
+  201: {
+    access_token: string;
+  };
 };
 
 export type AuthControllerRefreshResponse =
   AuthControllerRefreshResponses[keyof AuthControllerRefreshResponses];
+
+export type AuthControllerChangePasswordData = {
+  body: ChangePasswordDto;
+  path?: never;
+  query?: never;
+  url: "/auth/password";
+};
+
+export type AuthControllerChangePasswordErrors = {
+  /**
+   * Current password required for non-OAuth accounts
+   */
+  400: unknown;
+  /**
+   * Current password incorrect
+   */
+  401: unknown;
+};
+
+export type AuthControllerChangePasswordResponses = {
+  /**
+   * Password updated successfully
+   */
+  200: unknown;
+};
 
 export type AuthControllerLogoutData = {
   body?: never;
@@ -2599,152 +3039,3 @@ export type WorkSessionControllerGetInfoResponses = {
 
 export type WorkSessionControllerGetInfoResponse =
   WorkSessionControllerGetInfoResponses[keyof WorkSessionControllerGetInfoResponses];
-
-export type AuthControllerChangePasswordData = {
-    body: ChangePasswordDto;
-    path?: never;
-    query?: never;
-    url: '/auth/password';
-};
-
-export type AuthControllerChangePasswordErrors = {
-    /**
-     * Current password required for non-OAuth accounts
-     */
-    400: unknown;
-    /**
-     * Current password incorrect
-     */
-    401: unknown;
-};
-
-export type AuthControllerChangePasswordResponses = {
-    /**
-     * Password updated successfully
-     */
-    200: unknown;
-};
-
-export type AuthControllerLoginWithGithubData = {
-    body: GithubLoginDto;
-    path?: never;
-    query?: never;
-    url: '/auth/github';
-};
-
-export type AuthControllerLoginWithGithubErrors = {
-    /**
-     * Invalid or expired GitHub code
-     */
-    401: unknown;
-};
-
-export type AuthControllerLoginWithGithubResponse = AuthControllerLoginWithGithubResponses[keyof AuthControllerLoginWithGithubResponses];
-
-export type AuthControllerLoginWithGithubResponses = {
-    /**
-     * Login successful with GitHub
-     */
-    201: AuthResponseDto;
-};
-
-export type AuthControllerLoginWithGoogleCodeData = {
-    body: GoogleCodeDto;
-    path?: never;
-    query?: never;
-    url: '/auth/google/code';
-};
-
-export type AuthControllerLoginWithGoogleCodeErrors = {
-    /**
-     * Invalid Google code or code_verifier
-     */
-    401: unknown;
-};
-
-export type AuthControllerLoginWithGoogleCodeResponse = AuthControllerLoginWithGoogleCodeResponses[keyof AuthControllerLoginWithGoogleCodeResponses];
-
-export type AuthControllerLoginWithGoogleCodeResponses = {
-    /**
-     * Login successful with Google
-     */
-    201: AuthResponseDto;
-};
-
-export type AuthControllerLoginWithMicrosoftData = {
-    body: MicrosoftLoginDto;
-    path?: never;
-    query?: never;
-    url: '/auth/microsoft';
-};
-
-export type AuthControllerLoginWithMicrosoftErrors = {
-    /**
-     * Invalid Microsoft token
-     */
-    401: unknown;
-};
-
-export type AuthControllerLoginWithMicrosoftResponse = AuthControllerLoginWithMicrosoftResponses[keyof AuthControllerLoginWithMicrosoftResponses];
-
-export type AuthControllerLoginWithMicrosoftResponses = {
-    /**
-     * Login successful with Microsoft
-     */
-    201: AuthResponseDto;
-};
-
-export type ChangePasswordDto = {
-    /**
-     * Current password (not required for OAuth accounts)
-     */
-    currentPassword?: string;
-    /**
-     * New password
-     */
-    newPassword: string;
-};
-
-export type GithubLoginDto = {
-    /**
-     * GitHub OAuth authorization code
-     */
-    code: string;
-};
-
-export type GoogleCodeDto = {
-    code: string;
-    codeVerifier: string;
-};
-
-export type MicrosoftLoginDto = {
-    token: string;
-};
-
-export type UserControllerGetPublicProfilePictureData = {
-    body?: never;
-    path: {
-        /**
-         * User ID
-         */
-        id: number;
-    };
-    query?: never;
-    url: '/users/public/{id}/profile-picture';
-};
-
-export type UserControllerGetPublicProfilePictureErrors = {
-    /**
-     * User not found or has no profile picture
-     */
-    404: unknown;
-};
-
-export type UserControllerGetPublicProfilePictureResponse = UserControllerGetPublicProfilePictureResponses[keyof UserControllerGetPublicProfilePictureResponses];
-
-export type UserControllerGetPublicProfilePictureResponses = {
-    /**
-     * Returns the CDN URL for the profile picture
-     */
-    200: ImageUrlResponseDto;
-};
