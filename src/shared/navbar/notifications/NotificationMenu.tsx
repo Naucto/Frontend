@@ -11,6 +11,7 @@ type NotificationMenuProps = {
   onClose: () => void;
   notifications: NotificationItem[];
   onMarkAsRead: (notificationId: string) => void;
+  onAcceptFriendRequest?: (requestId: number, notificationId: string) => Promise<void>;
 };
 
 const StyledMenu = styled(Menu)(({ theme }) => ({
@@ -37,6 +38,7 @@ export const NotificationMenu = ({
   onClose,
   notifications,
   onMarkAsRead,
+  onAcceptFriendRequest,
 }: NotificationMenuProps): JSX.Element => {
   return (
     <StyledMenu anchorEl={anchorEl} open={open} onClose={onClose}>
@@ -49,6 +51,7 @@ export const NotificationMenu = ({
             key={notification.id}
             notification={notification}
             onMarkAsRead={onMarkAsRead}
+            onAcceptFriendRequest={onAcceptFriendRequest}
           />
         ))
       )}

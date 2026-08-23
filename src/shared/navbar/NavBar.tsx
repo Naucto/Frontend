@@ -109,8 +109,12 @@ const NavBar: React.FC = () => {
             </NavActionButton>
           )}
         </FeedbackLanguagePicker>
-        <NavElem to="/friends">Friends</NavElem>
-        <NotificationBox />
+        {user ? (
+          <>
+            <NavElem to="/friends">Friends</NavElem>
+            <NotificationBox />
+          </>
+        ) : null}
         {user ? <NavProfile /> : <Login forceShowAuthOverlay={forceShowAuthOverlay} setForceShowAuthOverlay={setForceShowAuthOverlay} />}
       </Right>
     </Nav >

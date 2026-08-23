@@ -39,6 +39,7 @@ const ProjectCategoryPage = lazy(() => import("@modules/projects/ProjectCategory
 const Project = lazy(() => import("@modules/project/Project"));
 const Help = lazy(() => import("@modules/help/Help"));
 const HubCategoryPage = lazy(() => import("@modules/hub/HubCategoryPage"));
+const Friends = lazy(() => import("@modules/friends/Friends"));
 
 type RouterState = {
   backgroundLocation?: Location;
@@ -70,6 +71,7 @@ const AppRoutes: React.FC = () => {
             <Route path="/profile/:username" element={<Profile />} />
             <Route path="/profile/:username/published-games" element={<ProfilePublishedGames />} />
             <Route path="/profile/:username/liked-games" element={<ProfileLikedGames />} />
+            <Route path="/friends" element={<Friends />} />
             <Route path="/oauth/callback" element={<OAuthCallback />} />
             <Route path="/oauth/google/callback" element={<GoogleOAuthCallback />} />
             <Route path="/oauth/microsoft/callback" element={<MicrosoftOAuthCallback />} />

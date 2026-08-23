@@ -9,3 +9,5 @@ export const toProfilePublishedGamesByUsername = (username: string): string =>
   `/profile/${encodeURIComponent(username)}/published-games`;
 export const toProfileLikedGamesByUsername = (username: string): string =>
   `/profile/${encodeURIComponent(username)}/liked-games`;
+
+export const toFriends = (): string => "/friends";

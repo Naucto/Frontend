@@ -16,6 +16,7 @@ import * as urls from "@shared/navigation/routes";
 import { LocalStorageManager } from "@utils/LocalStorageManager";
 
 import { ChangePasswordDialog } from "./ChangePasswordDialog";
+import { ProfileFriendActions } from "./ProfileFriendActions";
 
 import { JSX, useEffect, useMemo, useRef, useState } from "react";
 
@@ -183,6 +184,8 @@ export const Profile = (): JSX.Element => {
   );
 
   const isEditable = Number.isFinite(resolvedProfileId) && resolvedProfileId === userId;
+  const isLoggedIn = Number.isFinite(userId) && userId > 0;
+  const isOtherProfile = isLoggedIn && Number.isFinite(resolvedProfileId) && !isEditable;
 
   useEffect(() => {
     if (profileData) {
@@ -378,6 +381,7 @@ export const Profile = (): JSX.Element => {
                     Change password
                   </EditProfileButton>
                 )}
+                <ProfileFriendActions profileId={resolvedProfileId} isOtherProfile={isOtherProfile} />
               </HorizontalBox>
             </TextInfo>
           </ProfileInfo>

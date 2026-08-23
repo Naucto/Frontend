@@ -6,4 +6,5 @@ export type NotificationItem = {
   type: string;
   read: boolean;
   createdAt: string;
+  metadata?: Record<string, unknown>;
 };
