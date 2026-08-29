@@ -9,11 +9,10 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
     "isolatedModules": true,
     "skipLibCheck": true,
     "allowJs": false,
-    "types": []
+    "types": ["vitest/globals"]
   },
   "include": ["src/**/*.ts"]
 }

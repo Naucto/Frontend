@@ -5,3 +5,4 @@ docs
 coverage
 patches
 apps/web/src/assets/docs
+packages/engine/src/sound/worklet/synth.worklet.generated.ts
