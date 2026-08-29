@@ -9,11 +9,23 @@ import {
   input,
   Optional,
   output,
+  signal,
   SkipSelf,
+  untracked,
   viewChild,
 } from '@angular/core';
-import type { Game, NetPermissions, NetUi } from '@naucto/engine';
-import { ButtonDirective, IconComponent } from '@naucto/ui';
+import { NetUiBridgeService } from '@app/core/net/net-bridge.service';
+import { netPermissionsOf } from '@app/core/net/net-permissions';
+import { HostDialogComponent } from '@app/shared/netplay/host.dialog';
+import { JoinDialogComponent } from '@app/shared/netplay/join.dialog';
+import type { Game } from '@naucto/engine';
+import {
+  ButtonDirective,
+  DialogService,
+  IconComponent,
+  PopoverDirective,
+  PopoverPanelComponent,
+} from '@naucto/ui';
 
 import { RuntimeHostService } from './runtime-host.service';
 
@@ -23,7 +35,7 @@ import { RuntimeHostService } from './runtime-host.service';
  */
 @Component({
   selector: 'nc-game-screen',
-  imports: [ButtonDirective, IconComponent],
+  imports: [ButtonDirective, IconComponent, PopoverDirective, PopoverPanelComponent],
   providers: [
     {
       // Reuse the runtime an ancestor already provides — the editor shell owns one so its CODE and
@@ -34,6 +46,8 @@ import { RuntimeHostService } from './runtime-host.service';
         parent ?? new RuntimeHostService(),
       deps: [[new Optional(), new SkipSelf(), RuntimeHostService]],
     },
+    // Each screen keeps its own netplay bridge: the editor's test rig is a second, separate client.
+    NetUiBridgeService,
   ],
   template: `
     <div
@@ -151,6 +165,45 @@ import { RuntimeHostService } from './runtime-host.service';
           ncButton
           variant="ghost"
           size="sm"
+          [ncPopover]="pads"
+          popoverAlign="end"
+          (popoverOpenChange)="refreshPads()"
+          aria-label="Gamepads"
+          iconOnly
+        >
+          <nc-icon name="gamepad" [size]="12" />
+        </button>
+        <ng-template #pads>
+          <nc-popover-panel title="Gamepads" class="w-[280px]">
+            <div class="p-1.5">
+              @for (p of padList(); track p.index) {
+                <div class="flex items-center gap-1 py-0.5">
+                  <span class="min-w-0 flex-1 truncate text-meta text-ink">{{ p.id }}</span>
+                  @for (slot of [0, 1, 2, 3]; track slot) {
+                    <button
+                      type="button"
+                      class="label rounded-xs border px-0.5"
+                      [class]="
+                        p.player === slot
+                          ? 'border-gold text-gold-ink'
+                          : 'border-line text-ink-3 hover:text-ink'
+                      "
+                      (click)="assign(p.index, slot)"
+                    >
+                      P{{ slot + 1 }}
+                    </button>
+                  }
+                </div>
+              } @empty {
+                <p class="text-meta text-ink-3">No gamepad connected. Press any button on one.</p>
+              }
+            </div>
+          </nc-popover-panel>
+        </ng-template>
+        <button
+          ncButton
+          variant="ghost"
+          size="sm"
           iconOnly
           aria-label="Fullscreen"
           (click)="fullscreen()"
@@ -174,10 +227,18 @@ export class GameScreenComponent {
   /** CPU beside the FPS badge, and the frame-step button: editor affordances, not player ones. */
   readonly debug = input(false, { transform: booleanAttribute });
   readonly autoPlay = input(false);
-  readonly netUi = input<NetUi>();
-  readonly netPermissions = input<NetPermissions>();
+  /** Backend project id, needed to host or join netplay sessions. */
+  readonly projectId = input<number | null>(null);
+  /**
+   * Test rig: when the mounted game calls `net.join()`, join this session straight away instead of
+   * asking the player which one. `editorTest` tells the backend the extra client is the author's
+   * own second window, so it does not count against the project's player quota.
+   */
+  readonly autoJoin = input<{ uuid: string; code: string | null } | null>(null);
   readonly mounted = output();
   protected readonly host = inject(RuntimeHostService);
+  protected readonly bridge = inject(NetUiBridgeService);
+  private readonly dialogs = inject(DialogService);
   protected readonly showCpu = computed(() => this.debug());
   /** Occupied player slots: the local keyboard, then one per connected pad. */
   protected readonly players = computed(() => {
@@ -188,20 +249,67 @@ export class GameScreenComponent {
     ];
   });
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
+  protected readonly padList = signal<{ index: number; id: string; player: number }[]>([]);
 
   constructor() {
     effect(() => {
       const game = this.game();
       const canvas = this.canvas().nativeElement;
       if (!game) return;
-      this.host.mount(canvas, game, { netUi: this.netUi(), netPermissions: this.netPermissions() });
+      this.bridge.permissions.set(netPermissionsOf(game));
+      this.host.mount(canvas, game, { netUi: this.bridge, netPermissions: netPermissionsOf(game) });
       this.mounted.emit();
       if (this.autoPlay()) this.host.play();
+    });
+    // net.host() / net.join() from the game open the matching dialog.
+    effect(() => {
+      const req = this.bridge.request();
+      if (!req) return;
+      untracked(() => {
+        const projectId = this.projectId();
+        if (projectId === null) {
+          this.bridge.cancel();
+          return;
+        }
+        const target = this.autoJoin();
+        if (target && req.kind === 'join') {
+          void this.bridge.joinSession(target.uuid, target.code ?? undefined, true).catch(() => {
+            this.bridge.cancel();
+          });
+          return;
+        }
+        const ref =
+          req.kind === 'host'
+            ? this.dialogs.open(HostDialogComponent, {
+                data: {
+                  bridge: this.bridge,
+                  projectId,
+                  options: req.hostOptions ?? { maxPlayers: 2 },
+                },
+              })
+            : this.dialogs.open(JoinDialogComponent, { data: { bridge: this.bridge, projectId } });
+        ref.closed.subscribe((ok) => {
+          if (!ok) this.bridge.cancel();
+        });
+      });
     });
   }
 
   get runtime(): RuntimeHostService {
     return this.host;
+  }
+
+  get netBridge(): NetUiBridgeService {
+    return this.bridge;
+  }
+
+  protected refreshPads(): void {
+    this.padList.set(this.host.gamepads());
+  }
+
+  protected assign(index: number, player: number): void {
+    this.host.assignGamepad(index, player);
+    this.refreshPads();
   }
 
   focus(): void {

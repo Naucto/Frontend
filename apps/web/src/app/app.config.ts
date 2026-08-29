@@ -2,8 +2,6 @@ import { provideHttpClient } from '@angular/common/http';
 import {
   type ApplicationConfig,
   ErrorHandler,
-  inject,
-  provideAppInitializer,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
 import { provideRouter, withComponentInputBinding, withInMemoryScrolling } from '@angular/router';
@@ -12,8 +10,6 @@ import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-exper
 
 import { routes } from './app.routes';
 import { provideApiClient } from './core/api/api-client.provider';
-import { AuthStore } from './core/auth/auth.store';
-import { AppConfigService } from './core/config/app-config';
 import { GlobalErrorHandler } from './core/errors/global-error-handler';
 import { TranslocoHttpLoader } from './core/i18n/transloco-loader';
 
@@ -48,9 +44,7 @@ export const appConfig: ApplicationConfig = {
         },
       }),
     ),
-    // Order matters: config → api client → auth bootstrap.
-    provideAppInitializer(() => inject(AppConfigService).load()),
+    // Boots config → api client → session in one ordered initializer.
     provideApiClient(),
-    provideAppInitializer(() => inject(AuthStore).bootstrap()),
   ],
 };

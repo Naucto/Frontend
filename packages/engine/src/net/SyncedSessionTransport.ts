@@ -92,43 +92,66 @@ export class SyncedSessionTransport implements SessionTransport {
     this._signaling.destroy();
   }
 
+  /** Test-rig impairment: added latency (ms) and drop probability (0..1) on outgoing game frames. */
+  private _impairment = { latencyMs: 0, loss: 0 };
+
+  setImpairment(i: { latencyMs: number; loss: number }): void {
+    this._impairment = {
+      latencyMs: Math.max(0, i.latencyMs),
+      loss: Math.min(1, Math.max(0, i.loss)),
+    };
+  }
+
+  private _impaired(send: () => void): void {
+    const { latencyMs, loss } = this._impairment;
+    if (loss > 0 && Math.random() < loss) return;
+    if (latencyMs > 0) setTimeout(send, latencyMs);
+    else send();
+  }
+
   broadcastState(data: unknown): void {
-    let anyRelay = false;
+    this._impaired(() => {
+      let anyRelay = false;
 
-    for (const peer of this._peers.values()) {
-      if (peer.channelOpen) {
-        this._safeSend(peer, { type: 'state', data });
-      } else {
-        anyRelay = true;
+      for (const peer of this._peers.values()) {
+        if (peer.channelOpen) {
+          this._safeSend(peer, { type: 'state', data });
+        } else {
+          anyRelay = true;
+        }
       }
-    }
 
-    // Relay state is broadcast to every slave; channel-connected ones drop it.
-    if (anyRelay || this._peers.size === 0) {
-      this._signaling.send({ type: 'state', data });
-    }
+      // Relay state is broadcast to every slave; channel-connected ones drop it.
+      if (anyRelay || this._peers.size === 0) {
+        this._signaling.send({ type: 'state', data });
+      }
+    });
   }
 
   respondTo(userId: UserId, data: unknown): void {
-    const peer = this._peers.get(userId);
+    this._impaired(() => {
+      const peer = this._peers.get(userId);
 
-    if (peer?.channelOpen) {
-      this._safeSend(peer, { type: 'response', data });
-      return;
-    }
+      if (peer?.channelOpen) {
+        this._safeSend(peer, { type: 'response', data });
+        return;
+      }
 
-    this._signaling.send({ type: 'response', to: userId, data });
+      this._signaling.send({ type: 'response', to: userId, data });
+    });
   }
 
   sendRequest(data: unknown): void {
-    const host = this._hostPeer();
+    this._impaired(() => {
+      const host = this._hostPeer();
 
-    if (host?.channelOpen) {
-      this._safeSend(host, { type: 'request', data });
-      return;
-    }
+      if (host?.channelOpen) {
+        this._safeSend(host, { type: 'request', data });
+        return;
+      }
 
-    this._signaling.send({ type: 'request', data });
+      this._signaling.send({ type: 'request', data });
+    });
   }
 
   on<E extends keyof SessionTransportEvents>(event: E, listener: SessionTransportEvents[E]): void {

@@ -18,6 +18,7 @@ import { GameLoop, type LoopDriver, STEP_MS } from '../loop/GameLoop';
 import { Stats } from '../loop/Stats';
 import type { NetPermissions } from '../net/NetPermissions';
 import type { NetUi } from '../net/NetUi';
+import type { SharedTableSession } from '../net/SharedTableSession';
 import { LuaEnvironment, LuaError } from '../vm/LuaEnvironment';
 import type { EngineError, EnginePhase } from './EngineError';
 
@@ -53,6 +54,7 @@ export class Engine {
 
   private lua: LuaEnvironment | null = null;
   private modules: EngineModule[] = [];
+  private netApi: NetAPI | null = null;
   private readonly loop: GameLoop;
   private state: EngineState = 'idle';
   private elapsed = 0;
@@ -90,6 +92,11 @@ export class Engine {
   }
 
   // ---- lifecycle ------------------------------------------------------------
+
+  /** The netplay session the game is in, if any. */
+  get net(): SharedTableSession | null {
+    return this.netApi?.session ?? null;
+  }
 
   get currentState(): EngineState {
     return this.state;
@@ -143,13 +150,14 @@ export class Engine {
         this.log('log', line);
       },
     };
+    this.netApi = new NetAPI(ctx);
     this.modules = [
       new SysAPI(ctx),
       new GfxAPI(ctx),
       new MapAPI(ctx),
       new InputAPI(ctx),
       new SoundAPI(ctx),
-      new NetAPI(ctx),
+      this.netApi,
     ];
 
     const { entry, modules, entryName } = this.opts.game.sources();

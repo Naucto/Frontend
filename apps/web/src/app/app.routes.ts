@@ -74,6 +74,18 @@ export const routes: Routes = [
         title: 'New game — Naucto',
       },
       {
+        path: 'friends',
+        loadComponent: () => import('./features/friends/friends.page').then((m) => m.FriendsPage),
+        canActivate: [authGuard],
+        title: 'Friends — Naucto',
+      },
+      {
+        path: 'u/:username',
+        loadComponent: () => import('./features/profile/profile.page').then((m) => m.ProfilePage),
+        title: 'Profile — Naucto',
+      },
+      { path: 'profile/:username', redirectTo: 'u/:username' },
+      {
         path: 'sign-in',
         loadComponent: () => import('./features/auth/sign-in.page').then((m) => m.SignInPage),
         canActivate: [guestGuard],

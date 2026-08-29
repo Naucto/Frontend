@@ -11,6 +11,7 @@ import {
   EmptyStateComponent,
   ErrorStateComponent,
   FieldComponent,
+  FriendCodeComponent,
   HelpDotComponent,
   IconComponent,
   InputDirective,
@@ -27,14 +28,18 @@ import {
   SearchComponent,
   SectionComponent,
   SegmentedComponent,
+  SettingRowComponent,
   SkeletonComponent,
   SliderComponent,
   StatComponent,
+  StepperComponent,
   TabsComponent,
   TagInputComponent,
   ToastHostComponent,
   ToastService,
+  ToggleButtonComponent,
   ToggleComponent,
+  ToolGroupComponent,
   TooltipDirective,
 } from '@naucto/ui';
 
@@ -66,6 +71,11 @@ import {
     SliderComponent,
     TabsComponent,
     ToggleComponent,
+    StepperComponent,
+    ToolGroupComponent,
+    ToggleButtonComponent,
+    FriendCodeComponent,
+    SettingRowComponent,
     HelpDotComponent,
     PopoverDirective,
     PopoverPanelComponent,
@@ -216,6 +226,56 @@ import {
         </nc-panel>
       </div>
 
+      <!-- The editor and settings primitives. They were the only part of the kit with no gallery
+           entry, which is how the stepper shipped twice with its tick track painted over: nothing
+           rendered one anywhere a person would look. -->
+      <nc-panel title="Editor &amp; settings primitives">
+        <div class="grid gap-3 md:grid-cols-2">
+          <nc-section title="Stepper">
+            <nc-stepper [(value)]="spriteSize" [options]="sizes" />
+          </nc-section>
+          <nc-section title="Tool group">
+            <nc-tool-group [items]="tools" [(value)]="tool" />
+          </nc-section>
+          <nc-section title="Toggle button">
+            <div class="flex gap-1">
+              <nc-toggle-button [(checked)]="grid">
+                <nc-icon name="grid" [size]="12" />
+                Grid
+              </nc-toggle-button>
+              <nc-toggle-button [(checked)]="onion">
+                <nc-icon name="duplicate" [size]="12" />
+                Onion
+              </nc-toggle-button>
+            </div>
+          </nc-section>
+          <nc-section title="Friend code">
+            <nc-friend-code
+              class="w-[210px]"
+              code="ALEXIS01"
+              [regenerable]="true"
+              copyLabel="Copy"
+              regenerateLabel="Regenerate"
+            />
+          </nc-section>
+        </div>
+        <nc-section title="Setting row" class="mt-2">
+          <nc-setting-row
+            title="Reduce motion"
+            hint="Turns off scanlines and screen shake in the UI"
+          >
+            <nc-toggle [(checked)]="reduceMotion" label="Reduce motion" />
+          </nc-setting-row>
+          <nc-setting-row
+            title="Delete account"
+            hint="Your published games stay up"
+            [danger]="true"
+          >
+            <button ncButton variant="danger" size="sm">Delete</button>
+          </nc-setting-row>
+        </nc-section>
+      </nc-panel>
+
       <nc-panel title="Overlays &amp; inputs">
         <div class="flex flex-wrap items-center gap-2">
           <button ncButton variant="secondary" ncTooltip="Kick this player from the session">
@@ -290,6 +350,18 @@ export class UiKitPage {
   private readonly dialogs = inject(DialogService);
   private readonly toasts = inject(ToastService);
   protected readonly autoRun = signal(true);
+  protected readonly spriteSize = signal(1);
+  protected readonly sizes = ['1×1', '2×2', '3×3', '4×4', '5×5', '6×6', '7×7', '8×8'];
+  protected readonly tool = signal('pen');
+  protected readonly tools = [
+    { value: 'pen', icon: 'sliders' as const, label: 'Pen' },
+    { value: 'fill', icon: 'paint-bucket' as const, label: 'Fill' },
+    { value: 'line', icon: 'line' as const, label: 'Line' },
+    { value: 'rect', icon: 'frame' as const, label: 'Rect' },
+  ];
+  protected readonly grid = signal(true);
+  protected readonly onion = signal(false);
+  protected readonly reduceMotion = signal(false);
   protected readonly theme = signal<'dark' | 'light'>('dark');
   protected readonly themes = [
     { value: 'dark', label: 'Dark' },
