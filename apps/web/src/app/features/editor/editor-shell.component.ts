@@ -33,6 +33,8 @@ import {
 import { filter } from 'rxjs';
 
 import { ConsoleColumnComponent } from './console/console-column.component';
+import { DocPaneComponent } from './docs/doc-pane.component';
+import { DocRequestService } from './docs/doc-request.service';
 import { PUBLISH_CEILING, PublishDialogComponent } from './game/publish.dialog';
 import { ShareDialogComponent } from './game/share.dialog';
 import { VersionsPopoverComponent } from './game/versions-popover.component';
@@ -70,6 +72,7 @@ const RAIL: RailItem<EditorTab>[] = [
     AccountMenuComponent,
     NotificationsBellComponent,
     ConsoleColumnComponent,
+    DocPaneComponent,
     VersionsPopoverComponent,
   ],
   providers: [WorkSessionService, EditorUiStore, RuntimeHostService, EditorRuntimeService],
@@ -116,7 +119,10 @@ const RAIL: RailItem<EditorTab>[] = [
 
       @switch (session.status()) {
         @case ('ready') {
-          <div [class]="gridClass" [style.--console-w.px]="ui.collapsed() ? 12 : ui.consoleWidth()">
+          <div
+            [class]="gridClass()"
+            [style.--console-w.px]="ui.collapsed() ? 12 : ui.consoleWidth()"
+          >
             <nc-rail
               [items]="rail"
               [value]="ui.activeTab()"
@@ -124,6 +130,12 @@ const RAIL: RailItem<EditorTab>[] = [
               [label]="t('editor.tools')"
             />
             <section class="min-h-0 overflow-auto"><router-outlet /></section>
+            <!-- Wide enough, and DOC gets a column of its own instead of evicting the screen.
+                 Split mode was computed from the first version of this store and templated by
+                 nobody, so the docs always took the screen's place however wide the window was. -->
+            @if (ui.columnMode() === 'split') {
+              <nc-doc-pane class="min-h-0 w-[400px] overflow-auto border-l border-line" />
+            }
             <!-- The column stays docked in every tab; only the viewer inside it can float. -->
             <nc-console-column class="min-h-0 border-l border-line" />
           </div>
@@ -154,11 +166,15 @@ const RAIL: RailItem<EditorTab>[] = [
       }
     </div>
   `,
+  // F1 and Ctrl-K are declared all over the design's chrome and were bound by nobody.
+  host: { '(document:keydown)': 'onShortcut($event)' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EditorShellComponent implements OnInit {
   readonly id = input.required({ transform: numberAttribute });
   private readonly presence = inject(PresenceStore);
+  private readonly docRequests = inject(DocRequestService);
+  private readonly editorRuntime = inject(EditorRuntimeService);
   protected readonly session = inject(WorkSessionService);
   protected readonly ui = inject(EditorUiStore);
   protected readonly auth = inject(AuthStore);
@@ -168,7 +184,37 @@ export class EditorShellComponent implements OnInit {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   protected readonly rail = RAIL;
   /** 80px rail, the workspace, and the console column — which is present in every tab. */
-  protected readonly gridClass = 'grid min-h-0 grid-cols-[80px_minmax(0,1fr)_var(--console-w)]';
+  /** The doc column only exists in split mode, so the template has to change with it. */
+  protected readonly gridClass = computed(() =>
+    this.ui.columnMode() === 'split'
+      ? 'grid min-h-0 grid-cols-[80px_minmax(0,1fr)_400px_var(--console-w)]'
+      : 'grid min-h-0 grid-cols-[80px_minmax(0,1fr)_var(--console-w)]',
+  );
+
+  /**
+   * F1 shows the docs for the symbol under the cursor; Ctrl/⌘-K puts the caret in the doc search.
+   * Both open the DOC tab first, because the pane has to exist before it can be asked anything.
+   */
+  protected onShortcut(e: KeyboardEvent): void {
+    const meta = e.ctrlKey || e.metaKey;
+    if (e.key === 'F1') {
+      e.preventDefault();
+      this.ui.setConsoleTab('doc');
+      const symbol = this.codeEditorSymbol();
+      if (symbol) this.docRequests.show(symbol);
+      return;
+    }
+    if (meta && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      this.ui.setConsoleTab('doc');
+      this.docRequests.focusSearch();
+    }
+  }
+
+  /** The code editor is inside a routed tab, so it is reached through the shared runtime. */
+  private codeEditorSymbol(): string | null {
+    return this.editorRuntime.symbolAtCursor?.() ?? null;
+  }
 
   constructor() {
     // BUILDING presence, so a friend sees "building Ferry Click" while the editor is open.

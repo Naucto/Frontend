@@ -17,6 +17,7 @@ import {
   ToggleComponent,
 } from '@naucto/ui';
 
+import { DocPaneComponent } from '../docs/doc-pane.component';
 import { EditorRuntimeService } from '../state/editor-runtime.service';
 import { EditorUiStore } from '../state/editor-ui.store';
 import { WorkSessionService } from '../work-session/work-session.service';
@@ -32,20 +33,39 @@ import { WorkSessionService } from '../work-session/work-session.service';
     TabsComponent,
     ToggleComponent,
     GameScreenComponent,
+    DocPaneComponent,
   ],
   template: `
     <div *transloco="let t" class="relative flex h-full flex-col bg-panel">
-      <!-- The pill on the column's edge: collapse it, or bring it back. -->
+      <!-- The column's edge does two jobs: the pill collapses it, the strip beside it resizes.
+           The store has had a setConsoleWidth since its first version, with no caller. -->
+      @if (!ui.collapsed()) {
+        <div
+          class="absolute inset-y-0 -left-0.5 z-10 w-1 cursor-col-resize hover:bg-gold/40"
+          role="separator"
+          aria-orientation="vertical"
+          [attr.aria-label]="t('editor.resizeConsole')"
+          (pointerdown)="startResize($event)"
+        ></div>
+      }
       <button
         type="button"
-        class="absolute top-1/2 -left-1 z-10 flex h-[52px] w-2 -translate-y-1/2 items-center justify-center rounded-[8px] border border-line-strong bg-raised text-ink-2 hover:text-ink"
+        class="absolute top-1/2 -left-1 z-20 flex h-[52px] w-2 -translate-y-1/2 items-center justify-center rounded-[8px] border border-line-strong bg-raised text-ink-2 hover:text-ink"
         [attr.aria-label]="ui.collapsed() ? t('editor.expandConsole') : t('editor.collapseConsole')"
         (click)="ui.toggleCollapsed()"
       >
         <nc-icon [name]="ui.collapsed() ? 'prev' : 'next'" [size]="12" />
       </button>
       @if (!ui.collapsed()) {
-        @if (ui.columnMode() !== 'doc') {
+        <!-- The screen is never torn down to make room for the docs: unmounting it cold-started
+             the game and dropped any netplay session. In doc mode it is hidden and paused. -->
+        @if (ui.columnMode() === 'doc') {
+          <div class="m-1.5 flex items-center gap-1 rounded-sm border border-line bg-inset p-1.5">
+            <nc-icon name="pause" [size]="12" class="text-gold-ink" />
+            <span class="label text-gold-ink">{{ t('editor.gamePaused') }}</span>
+          </div>
+        }
+        <div [class.hidden]="ui.columnMode() === 'doc'">
           <!-- Size, scale and the viewer controls, as one 40px band above the screen. -->
           <div class="flex h-5 items-center gap-1 border-b border-line px-1.5">
             <span class="font-mono text-meta tracking-wide text-ink">
@@ -98,7 +118,7 @@ import { WorkSessionService } from '../work-session/work-session.service';
               </nc-toggle>
             </nc-game-screen>
           </div>
-        }
+        </div>
         <nc-tabs
           [tabs]="tabs()"
           [value]="ui.consoleTab()"
@@ -148,12 +168,7 @@ import { WorkSessionService } from '../work-session/work-session.service';
               </nc-lcd>
             }
             @case ('doc') {
-              <div class="flex h-full items-center justify-center text-center text-body text-ink-3">
-                <div>
-                  <nc-icon name="book-open" [size]="24" class="mx-auto mb-1" />
-                  {{ t('editor.docSoon') }}
-                </div>
-              </div>
+              <nc-doc-pane class="h-full" />
             }
           }
         </div>
@@ -233,6 +248,46 @@ export class ConsoleColumnComponent {
         if (on) this.screen()?.runtime.play();
       });
     });
+    // Swapping to the docs pauses the game rather than rendering it to a hidden canvas, and
+    // swapping back resumes it — but only if the pause was ours, so a game the author had
+    // deliberately paused does not start itself when they close the docs.
+    let pausedByDoc = false;
+    effect(() => {
+      const hidden = this.ui.columnMode() === 'doc';
+      untracked(() => {
+        const runtime = this.screen()?.runtime;
+        if (!runtime) return;
+        if (hidden) {
+          if (runtime.state() === 'running') {
+            runtime.pause();
+            pausedByDoc = true;
+          }
+          return;
+        }
+        if (pausedByDoc) {
+          pausedByDoc = false;
+          runtime.resume();
+        }
+      });
+    });
+  }
+
+  /** Drag the edge: the column grows as the pointer moves left, so width is distance from the right. */
+  protected startResize(e: PointerEvent): void {
+    e.preventDefault();
+    const target = e.target as HTMLElement;
+    target.setPointerCapture(e.pointerId);
+    const move = (ev: PointerEvent): void => {
+      this.ui.setConsoleWidth(window.innerWidth - ev.clientX);
+    };
+    const up = (): void => {
+      target.removeEventListener('pointermove', move);
+      target.removeEventListener('pointerup', up);
+      target.removeEventListener('pointercancel', up);
+    };
+    target.addEventListener('pointermove', move);
+    target.addEventListener('pointerup', up);
+    target.addEventListener('pointercancel', up);
   }
 
   protected onMounted(): void {

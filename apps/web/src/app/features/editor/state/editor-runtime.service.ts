@@ -7,4 +7,8 @@ import type { RuntimeHostService } from '@app/shared/game-screen/runtime-host.se
 export class EditorRuntimeService {
   readonly host = signal<RuntimeHostService | null>(null);
   readonly bridge = signal<NetUiBridgeService | null>(null);
+  /** Set by the CODE tab while it is open: inserts text at the caret, returns false when no editor. */
+  insertAtCursor: ((text: string) => boolean) | null = null;
+  /** Also set by the CODE tab: the dotted name under the caret, for F1. */
+  symbolAtCursor: (() => string | null) | null = null;
 }

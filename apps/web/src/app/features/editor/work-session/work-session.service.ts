@@ -13,7 +13,7 @@ import {
   workSessionControllerKick,
   workSessionControllerLeave,
 } from '@naucto/api-client';
-import { Game, migrateGame, needsMigration } from '@naucto/engine';
+import { Game, LOCAL_ORIGIN, migrateGame, needsMigration } from '@naucto/engine';
 import type { PresenceColour } from '@naucto/ui';
 import type { Awareness } from 'y-protocols/awareness';
 import { WebrtcProvider } from 'y-webrtc';
@@ -138,6 +138,7 @@ export class WorkSessionService {
         }
       }
       this.game.seedDefaults();
+      this.applySeedCode();
 
       const details = unwrap(await projectControllerFindOne({ path: { id: projectId } }));
       this.project.set(details);
@@ -257,6 +258,20 @@ export class WorkSessionService {
   }
 
   // ---- internals ------------------------------------------------------------
+
+  /** "Copy to new game" from the docs: the tutorial's main.lua replaces the starter code once. */
+  private applySeedCode(): void {
+    if (!this.isHost()) return;
+    const code = sessionStorage.getItem('naucto.seed-code');
+    if (!code) return;
+    sessionStorage.removeItem('naucto.seed-code');
+    const entry = this.game.entryFile;
+    if (!entry) return;
+    this.doc.transact(() => {
+      entry.text.delete(0, entry.text.length);
+      entry.text.insert(0, code);
+    }, LOCAL_ORIGIN);
+  }
 
   private meta(): { name: string; shortDesc: string; longDesc: string; tags: string[] } {
     const d = this.doc;

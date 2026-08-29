@@ -1,0 +1,32 @@
+networks:
+  naucto-dev:
+    name: naucto-dev
+    driver: bridge
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    environment:
+      APP_API_URL: ${APP_API_URL:-http://localhost:3000}
+    networks:
+      - naucto-dev
+    ports:
+      - '3001:4200'
+    develop:
+      watch:
+        - action: rebuild
+          path: package.json
+        - action: rebuild
+          path: package-lock.json
+        - action: sync
+          path: apps
+          target: /app/apps
+          ignore: [apps/web/dist, apps/web/.angular]
+        - action: sync
+          path: packages
+          target: /app/packages
+        - action: sync
+          path: docs
+          target: /app/docs

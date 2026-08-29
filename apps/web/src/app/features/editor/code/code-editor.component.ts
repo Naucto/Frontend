@@ -3,11 +3,13 @@ import {
   Component,
   effect,
   type ElementRef,
+  inject,
   input,
   output,
   untracked,
   viewChild,
 } from '@angular/core';
+import { DocsService } from '@app/shared/docs/docs.service';
 import { closeBrackets } from '@codemirror/autocomplete';
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
 import { bracketMatching, indentOnInput, syntaxHighlighting } from '@codemirror/language';
@@ -31,7 +33,8 @@ import { yCollab } from 'y-codemirror.next';
 import type { Awareness } from 'y-protocols/awareness';
 import type * as Y from 'yjs';
 
-import { luaAutocomplete, luaLanguage } from './lua-language';
+import { luaHover } from './lua-docs';
+import { luaAutocomplete, luaLanguage, setDocsLookup } from './lua-language';
 import { naucto_highlight, nauctoTheme } from './theme';
 
 export interface CursorInfo {
@@ -47,6 +50,20 @@ export interface CursorInfo {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CodeEditorComponent {
+  private readonly docs = inject(DocsService);
+
+  /** Insert text at the caret (DOC pane → "insert at cursor"). */
+  insert(text: string): boolean {
+    const view = this.view;
+    if (!view) return false;
+    const { from, to } = view.state.selection.main;
+    view.dispatch({
+      changes: { from, to, insert: text },
+      selection: { anchor: from + text.length },
+    });
+    view.focus();
+    return true;
+  }
   readonly text = input.required<Y.Text>();
   readonly awareness = input<Awareness | null>(null);
   readonly colour = input<PresenceColour>('sky');
@@ -66,6 +83,25 @@ export class CodeEditorComponent {
     if (!view) return;
     view.focus();
     openSearchPanel(view);
+  }
+
+  /**
+   * The dotted name under the cursor, for F1. Walks outward over identifier characters and dots,
+   * so the caret anywhere in `gfx.spr` yields the whole call rather than half of it.
+   */
+  symbolAtCursor(): string | null {
+    const view = this.view;
+    if (!view) return null;
+    const pos = view.state.selection.main.head;
+    const line = view.state.doc.lineAt(pos);
+    const text = line.text;
+    const isWord = (c: string): boolean => /[A-Za-z0-9_.]/.test(c);
+    let start = pos - line.from;
+    let end = start;
+    while (start > 0 && isWord(text[start - 1] ?? '')) start--;
+    while (end < text.length && isWord(text[end] ?? '')) end++;
+    const word = text.slice(start, end).replace(/^\.+|\.+$/g, '');
+    return word || null;
   }
   private readonly lintCompartment = new Compartment();
 
@@ -129,7 +165,13 @@ export class CodeEditorComponent {
     name: string,
   ): void {
     this.view?.destroy();
-    const hex = { sky: '#68aed4', blush: '#ff80a4', jade: '#10d275' }[colour];
+    // y-codemirror.next writes the caret colour into an inline style, so it needs a literal —
+    // but the literal comes from the token, not from a copy of it kept here. Three raw hexes in a
+    // component were a second source of truth for --color-presence-*, and the kind that goes
+    // stale silently.
+    const hex = getComputedStyle(document.documentElement)
+      .getPropertyValue(`--color-presence-${colour}`)
+      .trim();
     const extensions = [
       lineNumbers(),
       highlightActiveLineGutter(),
@@ -145,6 +187,10 @@ export class CodeEditorComponent {
       this.errorLineCompartment.of(errorLineHighlight(this.error()?.line ?? null)),
       luaLanguage,
       luaAutocomplete,
+      luaHover(
+        (name) => this.docs.lookup(name),
+        (ns) => this.docs.peers(ns),
+      ),
       syntaxHighlighting(naucto_highlight),
       nauctoTheme,
       keymap.of([...defaultKeymap, ...historyKeymap, ...searchKeymap, indentWithTab]),
@@ -163,6 +209,8 @@ export class CodeEditorComponent {
     } else {
       extensions.push(yCollab(text, null));
     }
+    setDocsLookup((name) => this.docs.lookup(name));
+    void this.docs.load();
     this.view = new EditorView({
       state: EditorState.create({ doc: text.toString(), extensions }),
       parent: this.host().nativeElement,

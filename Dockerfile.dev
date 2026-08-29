@@ -1,0 +1,19 @@
+# Dev image: Angular dev server with hot reload, sources bind-mounted by docker-compose.dev.yml.
+FROM node:22-alpine
+WORKDIR /app
+COPY package.json package-lock.json .npmrc ./
+COPY patches ./patches
+COPY apps/web/package.json apps/web/
+COPY packages/engine/package.json packages/engine/
+COPY packages/ui/package.json packages/ui/
+COPY packages/api-client/package.json packages/api-client/
+# The engine's `prepare` script bundles the audio worklet, so its scripts have to be in the layer
+# before `npm ci` runs them — the same trap the production image hit.
+COPY packages/engine/scripts packages/engine/scripts
+RUN NPM_TOKEN="${NPM_TOKEN:-}" npm ci --no-audit --no-fund
+COPY . .
+EXPOSE 4200
+# `ng` directly, not through `npm start`: the root script is `npm run start -w apps/web`, and npm
+# swallows the flag names of anything appended to it — the container was being handed
+# `ng serve web --port 3001 0.0.0.0 4200 1000`, which binds the wrong port on the wrong host.
+CMD ["npx", "ng", "serve", "web", "--host", "0.0.0.0", "--port", "4200", "--poll", "1000"]

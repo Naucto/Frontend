@@ -23,9 +23,10 @@ export class NewGamePage implements OnInit {
   }
 
   private async create(): Promise<void> {
-    const project = unwrap(
-      await projectControllerCreate({ body: { name: 'Untitled game', shortDesc: '' } }),
-    );
+    // A tutorial's "copy to new game" leaves its title here; the editor picks up the code.
+    const name = sessionStorage.getItem('naucto.seed-name') ?? 'Untitled game';
+    sessionStorage.removeItem('naucto.seed-name');
+    const project = unwrap(await projectControllerCreate({ body: { name, shortDesc: '' } }));
     await this.qc.invalidateQueries({ queryKey: ['projects'] });
     await this.router.navigate(['/edit', project.id], { replaceUrl: true });
   }

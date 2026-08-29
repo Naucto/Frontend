@@ -55,6 +55,14 @@ const KEYWORDS = [
   'while',
 ].map((k): Completion => ({ label: k, type: 'keyword' }));
 
+type Lookup = (name: string) => { summary: string; signature: string } | null;
+let docsLookup: Lookup = () => null;
+
+/** The code editor plugs the built documentation in so completions carry the real summaries. */
+export function setDocsLookup(lookup: Lookup): void {
+  docsLookup = lookup;
+}
+
 /** Completions for the namespaced API: `gfx.` lists members, bare words offer namespaces, keywords and callbacks. */
 export function luaCompletions(context: CompletionContext): CompletionResult | null {
   const member = context.matchBefore(/\b([a-z]+)\.([a-z_]*)$/);
@@ -65,7 +73,7 @@ export function luaCompletions(context: CompletionContext): CompletionResult | n
       label: e.name,
       type: 'function',
       detail: e.signature,
-      info: e.summary,
+      info: docsLookup(`${e.ns}.${e.name}`)?.summary ?? e.summary,
       apply: e.signature.includes('()') ? `${e.name}()` : `${e.name}(`,
     }));
     return options.length ? { from, options, validFor: /^[a-z_]*$/ } : null;
