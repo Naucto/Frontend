@@ -3,6 +3,8 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
+  effect,
   inject,
   signal,
   viewChild,
@@ -13,6 +15,7 @@ import { TranslocoDirective } from '@jsverse/transloco';
 import { MAIN_FILE } from '@naucto/engine';
 import { ButtonDirective, IconComponent } from '@naucto/ui';
 
+import { EditorRuntimeService } from '../state/editor-runtime.service';
 import { WorkSessionService } from '../work-session/work-session.service';
 import { CodeEditorComponent, type CursorInfo } from './code-editor.component';
 
@@ -113,6 +116,20 @@ export class CodeTabPage implements OnInit {
   protected readonly runtime = inject(RuntimeHostService);
   protected readonly main = MAIN_FILE;
   private readonly editor = viewChild<CodeEditorComponent>('editor');
+  private readonly editorRuntime = inject(EditorRuntimeService);
+
+  constructor() {
+    // The DOC pane inserts snippets at the caret while this tab is open.
+    effect(() => {
+      const ed = this.editor();
+      this.editorRuntime.insertAtCursor = ed ? (text): boolean => ed.insert(text) : null;
+      this.editorRuntime.symbolAtCursor = ed ? (): string | null => ed.symbolAtCursor() : null;
+    });
+    inject(DestroyRef).onDestroy(() => {
+      this.editorRuntime.insertAtCursor = null;
+      this.editorRuntime.symbolAtCursor = null;
+    });
+  }
 
   protected readonly files = ySignal(
     () => this.session.game.files,

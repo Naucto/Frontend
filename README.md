@@ -26,3 +26,17 @@ See `AGENTS.md` for architecture and conventions, `CONTRIBUTING.md` for the work
 ## License
 
 GPL-3.0 — see `license.txt`.
+
+## Running it
+
+```sh
+git submodule update --init       # docs
+npm install
+npm run docs:build
+npm start                         # http://localhost:3001 against http://localhost:3000
+```
+
+Or in Docker next to the Backend's dev compose: `./dev.sh`. The production image is built by the
+`Dockerfile`; configure it at runtime with `APP_API_URL` and the OAuth `APP_*` variables (see
+`docker-compose.yml`). Documentation lives in the `docs/` submodule (Markdown + Lua API manifest) and
+is served at `/learn`.

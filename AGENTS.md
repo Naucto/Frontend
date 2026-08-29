@@ -10,14 +10,15 @@ games, real-time collaborative editing via Yjs, netplay). This repo holds the we
 the UI kit, implementing the "Naucto Redesign" design (HD44780 character-LCD typeface on an 8 px grid,
 Pixelarticons, Bubblegum-16 palette, dark + light themes).
 
-| Path              | Package          | Purpose                                                                                                                                                  |
-| ----------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `apps/web`        | `web`            | Angular 22 app (standalone, signals, zoneless). Dev server on `localhost:3001`.                                                                          |
-| `packages/engine` | `@naucto/engine` | Pure-TypeScript engine: fengari Lua VM, gfx (WebGL2), sound (AudioWorklet synth), input, map, net, game document + migrations. **No framework imports.** |
-| `packages/ui`     | `@naucto/ui`     | Design tokens (`tokens.css`) and the `nc-*` pixel-grid component library (Angular + CDK + Tailwind).                                                     |
-| `docs/`           | git submodule    | `Naucto/Engine-Documentation` — Markdown + API manifest rendered in-app at `/learn`.                                                                     |
-| `tools/`          | —                | Build scripts (`docs-build.mjs`, icon sprite).                                                                                                           |
-| `e2e/`            | —                | Playwright end-to-end tests.                                                                                                                             |
+| Path              | Package          | Purpose                                                                                                                                                                                              |
+| ----------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/web`        | `web`            | Angular 22 app (standalone, signals, zoneless). Dev server on `localhost:3001`.                                                                                                                      |
+| `packages/engine` | `@naucto/engine` | Pure-TypeScript engine: fengari Lua VM, gfx (WebGL2), sound (AudioWorklet synth), input, map, net, game document + migrations. **No framework imports.**                                             |
+| `packages/ui`     | `@naucto/ui`     | Design tokens (`tokens.css`) and the `nc-*` pixel-grid component library (Angular + CDK + Tailwind).                                                                                                 |
+| `docs/`           | git submodule    | `Naucto/Engine-Documentation` — Markdown pages + `api/*.yaml` manifest, built by `tools/docs-build.mjs` into `apps/web/public/docs/index.json` and rendered at `/learn` and in the editor's DOC tab. |
+| `tools/`          | —                | Build scripts (`docs-build.mjs`, `build-icons.mjs`).                                                                                                                                                 |
+| `nginx/`          | —                | Production nginx config + the entrypoint that writes `/config.json` from `APP_*` env vars.                                                                                                           |
+| `e2e/`            | —                | Playwright end-to-end tests.                                                                                                                                                                         |
 
 ## Commands (run from the repo root)
 
@@ -31,7 +32,9 @@ Pixelarticons, Bubblegum-16 palette, dark + light themes).
 | `npm run typecheck`                       | `tsc --noEmit` per workspace.                                                                                 |
 | `npm test`                                | Vitest in every workspace (`ng test` for the app).                                                            |
 | `npm run e2e`                             | Playwright (starts the dev server unless `E2E_BASE_URL` is set).                                              |
-| `npm run docs:build`                      | Builds the docs submodule into `apps/web/src/assets/docs`.                                                    |
+| `npm run docs:build`                      | Builds the docs submodule into `apps/web/public/docs` (run it before `start`/`build`/`e2e`).                  |
+| `./dev.sh`                                | Dev server in Docker against the Backend on the `naucto-dev` network (hot reload, port 3001).                 |
+| `docker compose up --build`               | Production-style image on port 3001; `APP_*` env vars configure it at runtime.                                |
 
 ## How to work in this repo
 
@@ -61,6 +64,18 @@ Pixelarticons, Bubblegum-16 palette, dark + light themes).
   manifest parity, editor completions). Old games are migrated transparently on load.
 - **Theming**: every colour comes from a token in `packages/ui/src/tokens.css`; never write raw hex in
   components. Dark is the default; light is `[data-theme=light]` or `prefers-color-scheme`.
+- **Editor layout**: the shell is rail + routed workspace + console column. Tabs listed in
+  `PANEL_TABS` (`editor-ui.store.ts`) own the right column as a tool panel and the runtime floats
+  as the VIEWER pip. `EditorRuntimeService` exposes the one runtime (host, net bridge, insert-at-
+  cursor) to every tab.
+- **Netplay**: every `nc-game-screen` owns a `NetUiBridgeService`; `net.host()` / `net.join()`
+  open the dialogs in `shared/netplay`. Permissions come from the game's `net.permissions` map
+  (`core/net/net-permissions.ts`, bits CLIENT_READ=1 / CLIENT_WRITE=2, allow-by-default).
+- **Planned backend endpoints** (friends, presence, `/users/me`) are hand-typed in
+  `core/api/planned.api.ts` until the Backend stack ships them in `@naucto/api-client`; pages
+  degrade to an honest empty state on 404.
+- **Boot order**: `provideApiClient()` runs one initializer — load `/config.json`, configure the
+  client, bootstrap auth — because Angular initializers otherwise run concurrently.
 - **Mobile** is out of scope for now but must not be blocked: measure widths with `ResizeObserver`
   into stores, keep `InputSource` pluggable, no desktop-only assumptions baked into layout code.
 
@@ -86,7 +101,12 @@ redirect targets. Do not disable security lint rules. See `SECURITY.md`.
 - `fengari` needs `patches/fengari+0.1.5.patch` (applied by `patch-package` on `postinstall`).
 - npm 12 gates install scripts: approved packages are listed under `allowScripts` in `package.json`.
 - `@ngrx/signals` is pinned to Angular via an `overrides` entry until ngrx ships an Angular 22 range.
-- The `docs/` submodule must be checked out (`git submodule update --init`) before `docs:build`.
+- The `docs/` submodule must be checked out (`git submodule update --init`) before `docs:build`;
+  the engine test `luaApiTable.docs.test.ts` fails when a function is missing from `docs/api`.
+- `viewChild.required` inside `*transloco` throws NG0951 — use `viewChild` and guard, or query from
+  the host (`ElementRef`).
+- Tailwind class bindings with brackets (`[class.grid-cols-[…]]`) do not bind; compute the class
+  string in a signal instead.
 - The `label` utility sets its own `color`, so a parent's state colour (`aria-checked:text-gold-ink`
   and friends) never reaches a `.label` _child_ — the selected oscillator card kept a dim word under
   a gold border for exactly this reason. On the stateful element itself it is fine; on a child,

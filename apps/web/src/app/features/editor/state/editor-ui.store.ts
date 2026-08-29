@@ -33,10 +33,11 @@ export const EditorUiStore = signalStore(
     activeTab: 'game',
     collapsedByTab: readJson<Partial<Record<EditorTab, boolean>>>(STORAGE_KEYS.editorCollapsed, {}),
     consoleTab: 'console',
-    docCollapsed: false,
+    docCollapsed: readJson<boolean>(STORAGE_KEYS.editorDocCollapsed, false),
     autoRun: true,
     viewportWidth: 1280,
-    consoleWidth: 420,
+    // A column the author dragged to their preferred width should still be that width tomorrow.
+    consoleWidth: readJson<number>(STORAGE_KEYS.editorConsoleWidth, 420),
     pipOpen: true,
   }),
   withComputed((s) => ({
@@ -67,7 +68,9 @@ export const EditorUiStore = signalStore(
       patchState(store, { consoleTab: tab });
     },
     toggleDoc(): void {
-      patchState(store, { docCollapsed: !store.docCollapsed() });
+      const docCollapsed = !store.docCollapsed();
+      patchState(store, { docCollapsed });
+      writeJson(STORAGE_KEYS.editorDocCollapsed, docCollapsed);
     },
     setAutoRun(on: boolean): void {
       patchState(store, { autoRun: on });
@@ -76,7 +79,9 @@ export const EditorUiStore = signalStore(
       patchState(store, { viewportWidth: w });
     },
     setConsoleWidth(w: number): void {
-      patchState(store, { consoleWidth: Math.max(320, Math.min(720, w)) });
+      const consoleWidth = Math.max(320, Math.min(720, w));
+      patchState(store, { consoleWidth });
+      writeJson(STORAGE_KEYS.editorConsoleWidth, consoleWidth);
     },
     setPipOpen(on: boolean): void {
       patchState(store, { pipOpen: on });

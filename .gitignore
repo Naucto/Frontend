@@ -12,3 +12,6 @@ memories/
 playwright-report/
 test-results/
 apps/web/src/assets/docs/
+
+# built from the docs submodule (npm run docs:build)
+apps/web/public/docs/

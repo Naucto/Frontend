@@ -462,7 +462,9 @@
       "hostOnly": "Only the host can change the shape of the tree.",
       "actions": "Actions",
       "needHost": "Host a session first — run the game and call net.host()."
-    }
+    },
+    "gamePaused": "Game paused — swap back to resume",
+    "resizeConsole": "Resize the console column"
   },
   "net": {
     "cancel": "Cancel",
@@ -535,6 +537,33 @@
       "collabsHint": "Games someone else owns but built together show up on this shelf.",
       "remixesTitle": "Nobody has remixed anything yet",
       "remixesHint": "When someone forks one of these games, their version lands here."
+    }
+  },
+  "docs": {
+    "title": "Learn",
+    "reference": "Reference",
+    "search": "Search the docs",
+    "back": "Back",
+    "insert": "Insert at cursor",
+    "since": "since {{v}}",
+    "returns": "Returns",
+    "example": "Example",
+    "legacy": "Legacy name: {{names}}",
+    "seeAlso": "See also",
+    "onThisPage": "On this page",
+    "copyToNewGame": "Copy to new game",
+    "unavailable": "The docs are not built",
+    "unavailableHint": "Run npm run docs:build (the docs submodule must be checked out).",
+    "notFound": "No such page",
+    "notFoundHint": "The page moved or never existed. Use the tree on the left.",
+    "tutorialHint": "Tutorials open with a Copy to new game button.",
+    "sections": {
+      "start": "Getting started",
+      "concepts": "Core concepts",
+      "tutorials": "Tutorials",
+      "api": "API reference",
+      "editors": "Editors",
+      "reference": "Reference"
     }
   }
 }

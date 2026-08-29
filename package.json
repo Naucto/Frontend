@@ -23,7 +23,7 @@
     "format:check": "prettier --check .",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "e2e": "playwright test",
+    "e2e": "npm run docs:build && playwright test",
     "docs:build": "node tools/docs-build.mjs",
     "icons:check": "node tools/build-icons.mjs --check"
   },
@@ -40,11 +40,13 @@
     "globals": "^16.5.0",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.7",
+    "marked": "^18.0.10",
     "patch-package": "^8.0.1",
     "prettier": "^3.8.1",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.56.1",
-    "vitest": "^4.0.8"
+    "vitest": "^4.0.8",
+    "yaml": "^2.9.0"
   },
   "overrides": {
     "@ngrx/signals": {

@@ -1,3 +1,214 @@
 @import 'tailwindcss';
 @import '@naucto/ui/tokens.css';
 @source '../../../packages/ui/src';
+
+/* ---- documentation (built from the docs submodule) ---- */
+@layer components {
+  .doc-html {
+    color: var(--nc-ink-body);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+  }
+  .doc-html h1 {
+    font-size: var(--text-display);
+    line-height: 1.1;
+    color: var(--nc-ink);
+    margin: 0 0 16px;
+  }
+  .doc-html h2 {
+    font-size: var(--text-title);
+    color: var(--nc-ink);
+    margin: 32px 0 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--nc-line);
+  }
+  .doc-html h3 {
+    font-size: var(--text-ui);
+    color: var(--nc-ink);
+    margin: 24px 0 8px;
+  }
+  .doc-html p,
+  .doc-html ul,
+  .doc-html ol,
+  .doc-html table {
+    margin: 0 0 12px;
+  }
+  .doc-html ul,
+  .doc-html ol {
+    padding-left: 20px;
+  }
+  .doc-html li {
+    margin: 2px 0;
+  }
+  .doc-html a {
+    color: var(--nc-gold-ink);
+  }
+  .doc-html a:hover {
+    text-decoration: underline;
+  }
+  .doc-html code {
+    font-family: var(--font-mono);
+    font-size: var(--text-meta);
+    color: var(--nc-ink);
+    background: var(--nc-inset);
+    padding: 0 4px;
+    border-radius: var(--radius-xs);
+  }
+  .doc-html pre {
+    background: var(--nc-inset);
+    border: 1px solid var(--nc-line);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    overflow: auto;
+    margin: 0 0 12px;
+  }
+  .doc-html pre code {
+    background: none;
+    padding: 0;
+    font-size: var(--text-meta);
+    line-height: 1.5;
+  }
+  .doc-html table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: var(--text-meta);
+  }
+  .doc-html th,
+  .doc-html td {
+    text-align: left;
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--nc-line);
+    vertical-align: top;
+  }
+  .doc-html th {
+    color: var(--nc-ink-3);
+    font-weight: normal;
+    text-transform: uppercase;
+    font-size: var(--text-label);
+    letter-spacing: var(--tracking-label);
+  }
+  .doc-html strong {
+    color: var(--nc-ink);
+  }
+  .doc-html .callout {
+    border-left: 2px solid var(--nc-sky);
+    background: var(--nc-raised);
+    padding: 8px 12px;
+    margin: 0 0 12px;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  }
+  .doc-html .callout.warning {
+    border-color: var(--nc-orange);
+  }
+  .doc-html .callout.tip {
+    border-color: var(--nc-jade);
+  }
+  .doc-html .callout.important {
+    border-color: var(--nc-hot);
+  }
+  .doc-html .callout > p:last-child {
+    margin-bottom: 0;
+  }
+  .doc-html .api-ref code {
+    color: var(--nc-gold-ink);
+  }
+  .tok-kw {
+    color: var(--nc-hot-ink);
+  }
+  .tok-str {
+    color: var(--nc-jade-ink);
+  }
+  .tok-num {
+    color: var(--nc-orange);
+  }
+  .tok-cmt {
+    color: var(--nc-ink-4);
+    font-style: italic;
+  }
+  .tok-api {
+    color: var(--nc-gold-ink);
+  }
+  .tok-cb {
+    color: var(--nc-sky-ink);
+  }
+
+  /* Box art the docs build turned into vectors. It keeps the character grid it was drawn on, so
+     it sits on the same rhythm as the prose and stays crisp at any zoom. */
+  .doc-html .doc-diagram {
+    margin: 0 0 16px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    background: var(--nc-inset);
+    border: 1px solid var(--nc-line);
+    border-radius: var(--radius-sm);
+  }
+  .doc-html .doc-diagram svg {
+    display: block;
+  }
+  .doc-html .doc-diagram .d-stroke line {
+    stroke: var(--nc-ink-4);
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+  }
+  .doc-html .doc-diagram .d-head polygon {
+    fill: var(--nc-gold);
+  }
+  .doc-html .doc-diagram .d-label text {
+    fill: var(--nc-ink-body);
+    font-family: var(--font-mono);
+    font-size: var(--text-meta);
+  }
+
+  /* A heading that names a function is still a heading: without this the inline-code rule below
+     drops `_init()` to 11px and it stops looking like one. */
+  .doc-html h1 code,
+  .doc-html h2 code,
+  .doc-html h3 code {
+    font-size: inherit;
+    padding: 0;
+    background: none;
+    color: var(--nc-gold-ink);
+  }
+}
+
+/* CodeMirror hover card fed by the docs manifest */
+.cm-tooltip.cm-tooltip-hover {
+  background: var(--nc-raised);
+  border: 1px solid var(--nc-line-strong);
+  border-radius: var(--radius-sm);
+  max-width: 360px;
+}
+.nc-doc-card {
+  padding: 8px 10px;
+  font-family: var(--font-ui);
+  color: var(--nc-ink-body);
+  font-size: var(--text-meta);
+}
+.nc-doc-card__sig {
+  font-family: var(--font-mono);
+  color: var(--nc-gold-ink);
+}
+.nc-doc-card__summary {
+  margin-top: 4px;
+}
+.nc-doc-card__params {
+  margin: 6px 0 0;
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 2px 8px;
+}
+.nc-doc-card__params dt {
+  font-family: var(--font-mono);
+  color: var(--nc-ink-3);
+}
+.nc-doc-card__params dd {
+  margin: 0;
+  color: var(--nc-ink-2);
+}
+.nc-doc-card__more {
+  margin-top: 6px;
+  font-size: var(--text-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--nc-ink-4);
+}

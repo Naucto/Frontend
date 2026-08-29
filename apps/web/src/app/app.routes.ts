@@ -74,6 +74,22 @@ export const routes: Routes = [
         title: 'New game — Naucto',
       },
       {
+        path: 'learn',
+        loadComponent: () => import('./features/learn/learn.page').then((m) => m.LearnPage),
+        title: 'Learn — Naucto',
+      },
+      {
+        path: 'learn/:path',
+        loadComponent: () => import('./features/learn/learn.page').then((m) => m.LearnPage),
+        title: 'Learn — Naucto',
+      },
+      {
+        path: 'learn/:a/:b',
+        loadComponent: () =>
+          import('./features/learn/learn-nested.page').then((m) => m.LearnNestedPage),
+        title: 'Learn — Naucto',
+      },
+      {
         path: 'friends',
         loadComponent: () => import('./features/friends/friends.page').then((m) => m.FriendsPage),
         canActivate: [authGuard],

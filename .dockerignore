@@ -1,0 +1,15 @@
+.git
+.github
+.husky
+.angular
+.idea
+node_modules
+**/node_modules
+apps/web/dist
+apps/web/.angular
+test-results
+playwright-report
+e2e
+.env
+*.md
+!README.md
