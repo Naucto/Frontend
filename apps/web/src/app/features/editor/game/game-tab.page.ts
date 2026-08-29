@@ -29,7 +29,6 @@ import {
 import { injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import * as Y from 'yjs';
 
-import { EditorUiStore } from '../state/editor-ui.store';
 import { WorkSessionService } from '../work-session/work-session.service';
 
 const NAME_MAX = 60;
@@ -287,7 +286,6 @@ const SUMMARY_MAX = 80;
 })
 export class GameTabPage implements OnInit {
   protected readonly session = inject(WorkSessionService);
-  private readonly ui = inject(EditorUiStore);
   private readonly runtime = inject(RuntimeHostService);
   private readonly toasts = inject(ToastService);
   private readonly qc = inject(QueryClient);
@@ -338,7 +336,6 @@ export class GameTabPage implements OnInit {
   }));
 
   ngOnInit(): void {
-    this.ui.setTab('game');
     const p = this.session.project();
     if (p) {
       this.status.set(p.status);

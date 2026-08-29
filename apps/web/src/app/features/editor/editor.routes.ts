@@ -16,13 +16,11 @@ export const EDITOR_ROUTES: Routes = [
       },
       {
         path: 'art',
-        loadComponent: () => import('./placeholder-tab.page').then((m) => m.PlaceholderTabPage),
-        data: { tab: 'art' },
+        loadComponent: () => import('./art/art-tab.page').then((m) => m.ArtTabPage),
       },
       {
         path: 'map',
-        loadComponent: () => import('./placeholder-tab.page').then((m) => m.PlaceholderTabPage),
-        data: { tab: 'map' },
+        loadComponent: () => import('./map/map-tab.page').then((m) => m.MapTabPage),
       },
       {
         path: 'sound',

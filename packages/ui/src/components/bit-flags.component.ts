@@ -12,7 +12,7 @@ import { ChangeDetectionStrategy, Component, input, model } from '@angular/core'
           [attr.aria-checked]="isSet(bit)"
           [attr.aria-label]="'Flag ' + bit"
           (click)="toggle(bit)"
-          class="h-[26px] w-[30px] flex-none rounded-xs border border-line bg-inset font-mono text-label text-ink-3 hover:border-line-strong aria-checked:border-jade aria-checked:bg-jade aria-checked:text-on-accent"
+          class="h-[26px] w-[30px] flex-none rounded-xs border border-line bg-raised font-mono text-label text-ink-3 hover:border-line-strong aria-checked:border-jade aria-checked:bg-jade aria-checked:text-on-accent"
         >
           {{ bit }}
         </button>

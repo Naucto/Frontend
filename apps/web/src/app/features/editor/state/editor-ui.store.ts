@@ -19,8 +19,11 @@ interface EditorUiState {
   autoRun: boolean;
   viewportWidth: number;
   consoleWidth: number;
-  pip: boolean;
+  pipOpen: boolean;
 }
+
+/** Tabs whose right column is a tool panel; the screen floats as a viewer there. */
+const PANEL_TABS: readonly EditorTab[] = ['art', 'map', 'sound'];
 
 export const DOC_SPLIT_BREAKPOINT = 1600;
 
@@ -34,7 +37,7 @@ export const EditorUiStore = signalStore(
     autoRun: true,
     viewportWidth: 1280,
     consoleWidth: 420,
-    pip: false,
+    pipOpen: true,
   }),
   withComputed((s) => ({
     /**
@@ -50,6 +53,10 @@ export const EditorUiStore = signalStore(
         : s.viewportWidth() < DOC_SPLIT_BREAKPOINT
           ? 'doc'
           : 'split',
+    ),
+    /** Where the runtime lives: the right column, or a floating viewer over a panel tab. */
+    consoleMode: computed<'column' | 'pip'>(() =>
+      PANEL_TABS.includes(s.activeTab()) ? 'pip' : 'column',
     ),
   })),
   withMethods((store) => ({
@@ -71,11 +78,11 @@ export const EditorUiStore = signalStore(
     setConsoleWidth(w: number): void {
       patchState(store, { consoleWidth: Math.max(320, Math.min(720, w)) });
     },
-    setPip(on: boolean): void {
-      patchState(store, { pip: on });
+    setPipOpen(on: boolean): void {
+      patchState(store, { pipOpen: on });
     },
     togglePip(): void {
-      patchState(store, { pip: !store.pip() });
+      patchState(store, { pipOpen: !store.pipOpen() });
     },
     toggleCollapsed(): void {
       const next = { ...store.collapsedByTab(), [store.activeTab()]: !store.collapsed() };

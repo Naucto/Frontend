@@ -24,12 +24,19 @@ import { assignColours } from './presence-colours';
 export type SessionStatus =
   'joining' | 'loading' | 'upgrading' | 'ready' | 'error' | 'kicked' | 'closed';
 
+export interface CanvasCursor {
+  tab: string;
+  x: number;
+  y: number;
+}
+
 export interface Collaborator {
   clientId: number;
   userId: number;
   name: string;
   colour: PresenceColour;
   tab?: string;
+  cursor?: CanvasCursor;
   isSelf: boolean;
 }
 
@@ -37,6 +44,7 @@ interface AwarenessState {
   userId?: number;
   name?: string;
   tab?: string;
+  cursor?: CanvasCursor;
 }
 
 const AUTOSAVE_MS = 5 * 60 * 1000;
@@ -169,6 +177,15 @@ export class WorkSessionService {
 
   setTab(tab: string): void {
     this.provider?.awareness.setLocalStateField('tab', tab);
+  }
+
+  /** Share where this user's pointer is on an editor canvas (null when it leaves). */
+  setCursor(cursor: CanvasCursor | null): void {
+    const aw = this.provider?.awareness;
+    if (!aw) return;
+    const prev = (aw.getLocalState() as AwarenessState | null)?.cursor;
+    if (prev?.tab === cursor?.tab && prev?.x === cursor?.x && prev?.y === cursor?.y) return;
+    aw.setLocalStateField('cursor', cursor ?? undefined);
   }
 
   /** Persist the document (host only) and any changed project metadata. */
@@ -311,6 +328,7 @@ export class WorkSessionService {
         name: s.name ?? `user ${String(s.userId)}`,
         colour: colours.get(s.userId) ?? 'sky',
         tab: s.tab,
+        cursor: s.cursor,
         isSelf: clientId === aw.clientID,
       });
     });

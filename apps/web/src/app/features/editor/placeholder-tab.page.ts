@@ -1,9 +1,8 @@
-import type { OnInit } from '@angular/core';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { EmptyStateComponent } from '@naucto/ui';
 
-import { type EditorTab, EditorUiStore } from './state/editor-ui.store';
+import { type EditorTab } from './state/editor-ui.store';
 
 /** Stand-in for tabs that ship in later stack layers. */
 @Component({
@@ -18,11 +17,7 @@ import { type EditorTab, EditorUiStore } from './state/editor-ui.store';
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PlaceholderTabPage implements OnInit {
+export class PlaceholderTabPage {
   private readonly route = inject(ActivatedRoute);
-  private readonly ui = inject(EditorUiStore);
   protected readonly tab = this.route.snapshot.data.tab as EditorTab;
-  ngOnInit(): void {
-    this.ui.setTab(this.tab);
-  }
 }

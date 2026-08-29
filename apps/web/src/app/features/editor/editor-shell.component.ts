@@ -11,7 +11,8 @@ import {
   numberAttribute,
   untracked,
 } from '@angular/core';
-import { Router, RouterLink, RouterOutlet } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { AuthStore } from '@app/core/auth/auth.store';
 import { PresenceStore } from '@app/core/presence/presence.store';
 import { AccountMenuComponent } from '@app/features/shell/account-menu.component';
@@ -24,12 +25,12 @@ import {
   ButtonDirective,
   DialogService,
   ErrorStateComponent,
-  IconComponent,
   LcdComponent,
   RailComponent,
   type RailItem,
   ToastService,
 } from '@naucto/ui';
+import { filter } from 'rxjs';
 
 import { ConsoleColumnComponent } from './console/console-column.component';
 import { PUBLISH_CEILING, PublishDialogComponent } from './game/publish.dialog';
@@ -37,6 +38,9 @@ import { ShareDialogComponent } from './game/share.dialog';
 import { VersionsPopoverComponent } from './game/versions-popover.component';
 import { type EditorTab, EditorUiStore } from './state/editor-ui.store';
 import { WorkSessionService } from './work-session/work-session.service';
+
+const TABS: readonly EditorTab[] = ['game', 'code', 'art', 'map', 'sound', 'net'];
+const isTab = (s: string | undefined): s is EditorTab => TABS.includes(s as EditorTab);
 
 const RAIL: RailItem<EditorTab>[] = [
   { value: 'game', label: 'Game', icon: 'save' },
@@ -60,7 +64,6 @@ const RAIL: RailItem<EditorTab>[] = [
     AvatarComponent,
     ButtonDirective,
     ErrorStateComponent,
-    IconComponent,
     LcdComponent,
     RailComponent,
     AccountMenuComponent,
@@ -71,7 +74,7 @@ const RAIL: RailItem<EditorTab>[] = [
   providers: [WorkSessionService, EditorUiStore, RuntimeHostService],
   template: `
     <div *transloco="let t" class="grid h-dvh grid-rows-[50px_1fr] bg-page text-ink">
-      <header class="flex items-center gap-1.5 border-b border-line bg-panel pr-2">
+      <header class="flex items-center gap-2 border-b border-line bg-panel px-2">
         <a
           routerLink="/games"
           class="flex w-10 shrink-0 items-center justify-center"
@@ -90,12 +93,15 @@ const RAIL: RailItem<EditorTab>[] = [
               <nc-avatar [name]="c.name" [colour]="c.colour" [size]="38" overlap />
             }
           </div>
-          <button ncButton variant="secondary" (click)="share()">
+          <!-- No "show viewer" button here: the viewer is docked and popped from the console
+               column's own header, which is where the design puts that control. -->
+          <button ncButton variant="secondary" size="sm" (click)="share()">
             {{ t('editor.share') }}
           </button>
           <button
             ncButton
             variant="primary"
+            size="sm"
             (click)="publish()"
             [disabled]="!session.isHost() || !!publishBlockedBy()"
             [attr.title]="publishBlockedBy() ? t(publishBlockedBy()!) : null"
@@ -109,10 +115,7 @@ const RAIL: RailItem<EditorTab>[] = [
 
       @switch (session.status()) {
         @case ('ready') {
-          <div
-            class="grid min-h-0 grid-cols-[80px_minmax(0,1fr)_var(--console-w)]"
-            [style.--console-w.px]="ui.collapsed() ? 12 : ui.consoleWidth()"
-          >
+          <div [class]="gridClass" [style.--console-w.px]="ui.collapsed() ? 12 : ui.consoleWidth()">
             <nc-rail
               [items]="rail"
               [value]="ui.activeTab()"
@@ -120,6 +123,7 @@ const RAIL: RailItem<EditorTab>[] = [
               [label]="t('editor.tools')"
             />
             <section class="min-h-0 overflow-auto"><router-outlet /></section>
+            <!-- The column stays docked in every tab; only the viewer inside it can float. -->
             <nc-console-column class="min-h-0 border-l border-line" />
           </div>
         }
@@ -162,6 +166,8 @@ export class EditorShellComponent implements OnInit {
   private readonly toasts = inject(ToastService);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   protected readonly rail = RAIL;
+  /** 80px rail, the workspace, and the console column — which is present in every tab. */
+  protected readonly gridClass = 'grid min-h-0 grid-cols-[80px_minmax(0,1fr)_var(--console-w)]';
 
   constructor() {
     // BUILDING presence, so a friend sees "building Ferry Click" while the editor is open.
@@ -180,6 +186,18 @@ export class EditorShellComponent implements OnInit {
     inject(DestroyRef).onDestroy(() => {
       ro.disconnect();
     });
+    // The active tab follows the URL so deep links and back/forward stay in sync.
+    const syncTab = (): void => {
+      const seg = this.router.url.split('?')[0]?.split('/').pop();
+      if (isTab(seg)) this.ui.setTab(seg);
+    };
+    syncTab();
+    this.router.events
+      .pipe(
+        filter((e) => e instanceof NavigationEnd),
+        takeUntilDestroyed(),
+      )
+      .subscribe(syncTab);
     effect(() => {
       const tab = this.ui.activeTab();
       untracked(() => {
@@ -194,7 +212,6 @@ export class EditorShellComponent implements OnInit {
 
   protected go(tab: EditorTab | undefined): void {
     if (!tab) return;
-    this.ui.setTab(tab);
     void this.router.navigate(['/edit', this.id(), tab]);
   }
 

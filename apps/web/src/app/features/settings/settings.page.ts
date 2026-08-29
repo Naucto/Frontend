@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { Router } from '@angular/router';
-import { TranslocoDirective } from '@jsverse/transloco';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { PanelComponent, TabsComponent } from '@naucto/ui';
 
 import { AccountSettingsComponent } from './account-settings.component';
@@ -43,7 +43,10 @@ export class SettingsPage {
   protected readonly current = computed<Tab>(() =>
     TABS.includes(this.tab() as Tab) ? (this.tab() as Tab) : 'account',
   );
-  protected readonly tabs = computed(() => TABS.map((value) => ({ value, label: value })));
+  private readonly i18n = inject(TranslocoService);
+  protected readonly tabs = computed(() =>
+    TABS.map((value) => ({ value, label: this.i18n.translate(`settings.${value}`) })),
+  );
 
   protected go(tab: Tab | undefined): void {
     if (tab) void this.router.navigate(['/settings', tab]);
