@@ -221,7 +221,10 @@ import {
           <button ncButton variant="secondary" ncTooltip="Kick this player from the session">
             Hover me
           </button>
-          <button ncButton variant="secondary" [ncPopover]="versions">Platformer v3 ▾</button>
+          <button ncButton variant="secondary" [ncPopover]="versions">
+            Platformer v3
+            <nc-icon name="chevron-down" [size]="12" />
+          </button>
           <ng-template #versions>
             <nc-popover-panel title="Versions">
               <ul class="p-2 text-body text-ink">
