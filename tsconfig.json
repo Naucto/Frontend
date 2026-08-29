@@ -1,35 +1,17 @@
 {
-  "extends": "./tsconfig.paths.json",
   "compilerOptions": {
-    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
-    "composite": true,
     "target": "ES2022",
-    "useDefineForClassFields": true,
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "moduleDetection": "force",
-    "jsx": "react-jsx",
-    "allowJs": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
     "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "resolveJsonModule": true,
-    "allowImportingTsExtensions": true
+    "skipLibCheck": true,
+    "types": ["node"]
   },
   "include": [
-    "src/**/*",
-    "src/theme/theme.d.ts",
-    "lib/**/*"
+    "*.config.ts",
+    "*.config.js",
+    "tools/**/*",
+    "e2e/**/*.ts",
+    "packages/*/vitest.config.ts"
   ]
 }
