@@ -25,7 +25,8 @@
     "test": "npm run test --workspaces --if-present",
     "e2e": "npm run docs:build && playwright test",
     "docs:build": "node tools/docs-build.mjs",
-    "icons:check": "node tools/build-icons.mjs --check"
+    "icons:check": "node tools/build-icons.mjs --check",
+    "seed:content": "node tools/seed-content.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.0.2",
