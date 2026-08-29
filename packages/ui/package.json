@@ -10,7 +10,8 @@
     "./tokens.css": "./src/tokens.css"
   },
   "scripts": {
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "ng test ui"
   },
   "peerDependencies": {
     "@angular/cdk": "^22.0.0",

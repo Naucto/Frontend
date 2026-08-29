@@ -1,8 +1,7 @@
 {
-  "extends": "../../apps/web/tsconfig.json",
+  "extends": "./tsconfig.json",
   "compilerOptions": {
-    "strict": true,
     "types": ["node", "vitest/globals", "@testing-library/jest-dom"]
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "../../apps/web/src/test-setup.ts"]
 }

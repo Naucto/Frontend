@@ -87,4 +87,18 @@ redirect targets. Do not disable security lint rules. See `SECURITY.md`.
 - npm 12 gates install scripts: approved packages are listed under `allowScripts` in `package.json`.
 - `@ngrx/signals` is pinned to Angular via an `overrides` entry until ngrx ships an Angular 22 range.
 - The `docs/` submodule must be checked out (`git submodule update --init`) before `docs:build`.
+- Icons the design draws differently from pixelarticons live in `CUSTOM` in `tools/build-icons.mjs`
+  and override the generated glyph of the same name. `tools/design-icons.mjs` compares the two sets
+  by rasterising each path, which is how a hollow play was found under a name that reads as correct.
+  Most of `CUSTOM` is generated from the foundations artboard, which captions each glyph it shows;
+  the rest are marks the design draws but never captions, and those are settled by **slot** — the
+  glyph goes in under the name whose one call site is the button the design draws it on, never by
+  nearest-neighbour, which finds a match for glyphs the design does not draw at all. Where the app
+  deliberately disagrees with a caption, say so in `EXCEPTIONS` in `tools/design-icons.mjs` so the
+  report's "names that disagree" stays at zero and keeps working as a regression signal.
+- Anything the app draws that is not in `ICON_PATHS` — the oscillator waves are the current case —
+  has to be taught to `design-icons.mjs` as well, or the report lists it as missing forever.
+- `IconSize` is `12 | 24 | 48` on purpose: a 24-grid glyph only stays crisp under
+  `shape-rendering: crispEdges` at exact halves and doubles. Where an artboard renders one at 16,
+  take the nearest legal step rather than widening the union.
 - TypeScript 6: `baseUrl` is deprecated; path aliases are relative to each `tsconfig.json`.

@@ -24,7 +24,8 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "e2e": "playwright test",
-    "docs:build": "node tools/docs-build.mjs"
+    "docs:build": "node tools/docs-build.mjs",
+    "icons:check": "node tools/build-icons.mjs --check"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.0.2",
