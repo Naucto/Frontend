@@ -96,6 +96,21 @@ No secrets in the repo (`NPM_TOKEN` lives in `.env`, never in `.npmrc` values or
 Sanitise any HTML that does not come from our own build (docs are built at compile time). Validate
 redirect targets. Do not disable security lint rules. See `SECURITY.md`.
 
+## Deliberate divergences from the design
+
+Where the artboards draw something the product cannot honestly do yet, we leave it out and say why
+here rather than shipping a control that does nothing. A button that toasts "not yet" reads as
+broken; an absence reads as not built.
+
+- **`FORMAT` in the CODE tab.** The artboard pairs it with `FIND` in the file strip. There is no Lua
+  formatter behind it, and `luaparse` parses but does not print. Revisit when there is one.
+- **`+ ADD ACTION` on the controls page.** `ACTIONS` in `packages/engine/src/input/ActionMap.ts` is
+  nine fixed bits, and the input path is a bitmask — a game _names_ those actions with
+  `input.declare{}`, it cannot invent new ones. There is nothing for the button to add. If custom
+  actions ever land, this is the surface for them.
+- **Drag-to-reposition in the touch pad panel.** SIZE and OPACITY are real and drive the pad; moving
+  individual buttons is not built, and the panel's copy does not claim it.
+
 ## Gotchas
 
 - `fengari` needs `patches/fengari+0.1.5.patch` (applied by `patch-package` on `postinstall`).

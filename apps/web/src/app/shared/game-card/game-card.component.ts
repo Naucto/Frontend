@@ -26,7 +26,7 @@ import { GameCoverComponent } from './game-cover.component';
           [iconSize]="dense() ? 12 : 48"
         />
       </div>
-      <div [class]="dense() ? 'p-1' : 'p-1.5'">
+      <div [class]="dense() ? 'p-1' : 'px-1.5 pt-[11px] pb-1.5'">
         <div class="flex items-center gap-1">
           <span
             class="min-w-0 flex-1 truncate text-ink group-hover:text-gold-ink"
@@ -38,7 +38,7 @@ import { GameCoverComponent } from './game-cover.component';
             <nc-chip>Draft</nc-chip>
           }
         </div>
-        <div class="mt-0.5 flex items-center gap-0.5">
+        <div class="mt-0.5 flex items-center gap-[6px]">
           <nc-avatar
             [name]="game().creator.username"
             [id]="game().creator.id"
@@ -54,7 +54,7 @@ import { GameCoverComponent } from './game-cover.component';
             <span class="label ml-0.5 text-ink-4">+{{ extra() }}</span>
           }
         </div>
-        <div class="mt-1 flex gap-2">
+        <div class="mt-1 flex gap-1.5">
           <nc-stat icon="play" [value]="game().viewCount" />
           <nc-stat icon="heart" [value]="game().likes" tone="hot" />
           <nc-stat icon="git-branch" [value]="game().forkCount ?? 0" />
@@ -70,7 +70,7 @@ export class GameCardComponent {
   protected readonly cardClass = computed(() =>
     [
       'group block overflow-hidden border border-line hover:border-line-strong focus-visible:outline-2',
-      this.dense() ? 'rounded-sm bg-page' : 'rounded-md bg-raised',
+      this.dense() ? 'rounded-sm bg-page' : 'rounded-md bg-panel',
     ].join(' '),
   );
   /** Draft cards link to the editor instead of the play page. */

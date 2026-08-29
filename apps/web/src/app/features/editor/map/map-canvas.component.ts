@@ -68,7 +68,7 @@ const FLAG_VARS = [
       ></canvas>
       <canvas
         #overlay
-        class="pixelated absolute inset-0 touch-none"
+        class="pixelated absolute inset-0 cursor-crosshair touch-none"
         [width]="cssW()"
         [height]="cssH()"
         role="img"
@@ -113,6 +113,14 @@ export class MapCanvasComponent {
   readonly collaborators = input<readonly Collaborator[]>([]);
   readonly label = input('Map canvas');
   readonly hover = output<Pt | null>();
+  /**
+   * Where the pointer actually is, in fractional tiles.
+   *
+   * `hover` is snapped to whole tiles because that is the tile you are about to stamp. A cursor
+   * shown to somebody else wants the opposite: a snapped position makes a peer's cursor jump a
+   * whole tile at a time instead of moving.
+   */
+  readonly pointer = output<{ x: number; y: number } | null>();
   readonly viewport = output<TileViewport>();
   /** Ctrl/⌘ + wheel over the map zooms it, the way every other canvas surface in the app does. */
   readonly zoomBy = output<number>();
@@ -231,12 +239,18 @@ export class MapCanvasComponent {
   // ---- pointer --------------------------------------------------------------
 
   private cellOf(e: PointerEvent): Pt {
+    const p = this.pointOf(e);
+    return {
+      x: Math.max(0, Math.min(MAP_WIDTH - 1, Math.floor(p.x))),
+      y: Math.max(0, Math.min(MAP_HEIGHT - 1, Math.floor(p.y))),
+    };
+  }
+
+  /** The same position, unsnapped — see `pointer`. */
+  private pointOf(e: PointerEvent): { x: number; y: number } {
     const r = this.overlay().nativeElement.getBoundingClientRect();
     const t = this.tilePx();
-    return {
-      x: Math.max(0, Math.min(MAP_WIDTH - 1, Math.floor((e.clientX - r.left) / t))),
-      y: Math.max(0, Math.min(MAP_HEIGHT - 1, Math.floor((e.clientY - r.top) / t))),
-    };
+    return { x: (e.clientX - r.left) / t, y: (e.clientY - r.top) / t };
   }
 
   private stamp(cell: Pt, erase: boolean): void {
@@ -283,6 +297,7 @@ export class MapCanvasComponent {
     const cell = this.cellOf(e);
     this.hoverCell.set(cell);
     this.hover.emit(cell);
+    this.pointer.emit(this.pointOf(e));
     const d = this.drag;
     if (!d || (cell.x === d.last.x && cell.y === d.last.y)) return;
     if (this.tool() === 'stamp' || this.tool() === 'erase') {
@@ -305,6 +320,7 @@ export class MapCanvasComponent {
   protected onLeave(): void {
     this.hoverCell.set(null);
     this.hover.emit(null);
+    this.pointer.emit(null);
   }
 
   // ---- drawing --------------------------------------------------------------

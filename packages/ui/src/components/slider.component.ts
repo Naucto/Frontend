@@ -31,10 +31,10 @@ import {
       [disabled]="disabled()"
       [attr.aria-label]="label()"
       (input)="onInput($event)"
-      class="nc-range h-[4px] flex-1 cursor-pointer appearance-none rounded-xs disabled:opacity-40"
+      class="nc-range h-[4px] flex-1 cursor-pointer appearance-none rounded-xs disabled:cursor-not-allowed disabled:opacity-40"
       [class]="compact() ? 'bg-line-soft' : 'bg-line-strong'"
       [style.--nc-accent]="'var(--nc-' + accent() + ')'"
-      [style.--nc-fill]="fill()"
+      [style.--nc-fill.%]="fill()"
     />
     @if (readout()) {
       <span
@@ -80,10 +80,12 @@ export class SliderComponent {
   readonly disabled = input(false);
   readonly compact = input(false, { transform: booleanAttribute });
 
+  /** Percentage of the track covered by the accent, derived from value/min/max. */
   protected readonly fill = computed(() => {
     const span = this.max() - this.min();
-    const pct = span === 0 ? 0 : ((this.value() - this.min()) / span) * 100;
-    return `${String(Math.max(0, Math.min(100, pct)))}%`;
+    if (span <= 0) return 0;
+    const pct = ((this.value() - this.min()) / span) * 100;
+    return Math.min(100, Math.max(0, pct));
   });
 
   protected onInput(e: Event): void {

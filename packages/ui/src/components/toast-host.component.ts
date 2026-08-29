@@ -18,13 +18,15 @@ const TONE: Record<ToastTone, string> = {
     <div class="fixed right-2 bottom-2 z-50 flex w-[320px] flex-col gap-1" aria-live="polite">
       @for (t of toasts.toasts(); track t.id) {
         <div
-          class="flex items-start gap-1 rounded-md border-l-2 border border-line bg-raised px-2 py-1.5 text-body shadow-[0_2px_0_var(--nc-inset)]"
+          class="nc-toast flex items-start gap-1 rounded-md border-l-2 border border-line bg-raised px-2 py-1.5 text-body shadow-[0_2px_0_var(--nc-inset)]"
           [class]="tone(t.tone)"
+          animate.enter="nc-toast-enter"
+          animate.leave="nc-toast-leave"
         >
           <span class="flex-1">{{ t.text }}</span>
           <button
             type="button"
-            class="text-ink-3 hover:text-ink"
+            class="cursor-pointer text-ink-3 transition-colors duration-100 hover:text-ink"
             aria-label="Dismiss"
             (click)="toasts.dismiss(t.id)"
           >
@@ -33,6 +35,34 @@ const TONE: Record<ToastTone, string> = {
         </div>
       }
     </div>
+  `,
+  styles: `
+    @keyframes nc-toast-in {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    @keyframes nc-toast-out {
+      from {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      to {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+    }
+    .nc-toast-enter {
+      animation: nc-toast-in 150ms ease-out;
+    }
+    .nc-toast-leave {
+      animation: nc-toast-out 150ms ease-in forwards;
+    }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

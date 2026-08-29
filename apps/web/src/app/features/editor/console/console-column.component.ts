@@ -4,6 +4,7 @@ import {
   computed,
   effect,
   inject,
+  signal,
   untracked,
   viewChild,
 } from '@angular/core';
@@ -19,10 +20,14 @@ import {
 
 import { DocPaneComponent } from '../docs/doc-pane.component';
 import { EditorRuntimeService } from '../state/editor-runtime.service';
-import { EditorUiStore } from '../state/editor-ui.store';
+import { CONSOLE_WIDTH, EditorUiStore } from '../state/editor-ui.store';
 import { WorkSessionService } from '../work-session/work-session.service';
 
-/** Right column: the always-on screen, transport, and CONSOLE / DOC / PERF below it. */
+/** The card's own width, so its corner can be computed rather than measured. Keep in step with the
+ *  `.nc-pip` rule below: it clamps the drag, so a stale value lets the card leave the viewport. */
+const PIP_WIDTH = 304;
+
+/** Right column: the always-on screen, its transport, and CONSOLE / PERF below it. */
 @Component({
   selector: 'nc-console-column',
   imports: [
@@ -37,89 +42,109 @@ import { WorkSessionService } from '../work-session/work-session.service';
   ],
   template: `
     <div *transloco="let t" class="relative flex h-full flex-col bg-panel">
-      <!-- The column's edge does two jobs: the pill collapses it, the strip beside it resizes.
-           The store has had a setConsoleWidth since its first version, with no caller. -->
-      @if (!ui.collapsed()) {
-        <div
-          class="absolute inset-y-0 -left-0.5 z-10 w-1 cursor-col-resize hover:bg-gold/40"
-          role="separator"
-          aria-orientation="vertical"
-          [attr.aria-label]="t('editor.resizeConsole')"
-          (pointerdown)="startResize($event)"
-        ></div>
+      <!-- No resize strip: the console is a fixed 421 track, like the reference beside it and
+           every tab inspector. -->
+      @if (ui.columnMode() !== 'swap') {
+        <button
+          type="button"
+          class="absolute top-1/2 -left-1 z-20 flex h-[52px] w-2 -translate-y-1/2 items-center justify-center rounded-[8px] border border-line-strong bg-raised text-ink-2 hover:text-ink"
+          [attr.aria-label]="
+            ui.collapsed() ? t('editor.expandConsole') : t('editor.collapseConsole')
+          "
+          (click)="ui.toggleCollapsed()"
+        >
+          <nc-icon [name]="ui.collapsed() ? 'prev' : 'next'" [size]="12" />
+        </button>
       }
-      <button
-        type="button"
-        class="absolute top-1/2 -left-1 z-20 flex h-[52px] w-2 -translate-y-1/2 items-center justify-center rounded-[8px] border border-line-strong bg-raised text-ink-2 hover:text-ink"
-        [attr.aria-label]="ui.collapsed() ? t('editor.expandConsole') : t('editor.collapseConsole')"
-        (click)="ui.toggleCollapsed()"
-      >
-        <nc-icon [name]="ui.collapsed() ? 'prev' : 'next'" [size]="12" />
-      </button>
-      @if (!ui.collapsed()) {
-        <!-- The screen is never torn down to make room for the docs: unmounting it cold-started
-             the game and dropped any netplay session. In doc mode it is hidden and paused. -->
-        @if (ui.columnMode() === 'doc') {
-          <div class="m-1.5 flex items-center gap-1 rounded-sm border border-line bg-inset p-1.5">
-            <nc-icon name="pause" [size]="12" class="text-gold-ink" />
-            <span class="label text-gold-ink">{{ t('editor.gamePaused') }}</span>
-          </div>
-        }
-        <div [class.hidden]="ui.columnMode() === 'doc'">
-          <!-- Size, scale and the viewer controls, as one 40px band above the screen. -->
+      @if (!ui.collapsed() && ui.columnMode() !== 'swap' && popped()) {
+        <!-- The slot the viewer left behind says where it went. -->
+        <div class="m-1.5 rounded-sm border border-dashed border-line-strong p-2 text-center">
+          <p class="label text-ink-3">{{ t('editor.viewerPopped') }}</p>
+          <p class="mt-0.5 text-meta text-ink-4">{{ t('editor.viewerPoppedHint') }}</p>
+          <button ncButton variant="secondary" size="sm" class="mt-1" (click)="ui.togglePip()">
+            <nc-icon name="dock" [size]="12" />
+            {{ t('editor.dockViewer') }}
+          </button>
+        </div>
+      }
+      <!-- The screen is never torn down — not to make room for the docs, and not when the column
+           collapses. Unmounting it cold-starts the game and drops any netplay session, and the
+           canvas tabs collapse the column by default, which is exactly where the viewer floats. -->
+      <div [class.hidden]="screenHidden()">
+        <!-- Docked, this is the column's own 40px band. Popped out it is the card's title bar,
+               and dragging it moves the card — the design draws a window, so it behaves like one. -->
+        @if (!popped()) {
           <div class="flex h-5 items-center gap-1 border-b border-line px-1.5">
-            <span class="font-mono text-meta tracking-wide text-ink">
-              {{ popped() ? t('editor.viewer') : '320×180' }}
-            </span>
-            @if (!popped()) {
-              <span class="font-mono text-meta text-ink-3">×{{ scale() }}</span>
-            }
+            <span class="font-mono text-meta tracking-wide text-ink">320×180</span>
+            <span class="font-mono text-meta text-ink-3">×{{ scale() }}</span>
             <span class="flex-1"></span>
             <button
               ncButton
               variant="ghost"
               size="sm"
               iconOnly
-              [attr.aria-pressed]="popped()"
-              [class.text-gold-ink]="popped()"
-              [attr.aria-label]="popped() ? t('editor.dockViewer') : t('editor.popOut')"
+              [attr.aria-pressed]="false"
+              [attr.aria-label]="t('editor.popOut')"
               (click)="ui.togglePip()"
             >
-              <nc-icon [name]="popped() ? 'collapse' : 'expand'" [size]="12" />
+              <nc-icon name="pip" [size]="12" />
             </button>
           </div>
-          <!-- Popped out, the screen floats but keeps running: the same canvas, moved, never
-               remounted. The slot it leaves behind says where it went. -->
+        }
+        <div
+          [class]="popped() ? 'nc-pip' : 'p-1.5'"
+          [style.left.px]="pip()?.x ?? null"
+          [style.top.px]="pip()?.y ?? null"
+          [style.right]="pip() ? 'auto' : null"
+          [style.bottom]="pip() ? 'auto' : null"
+        >
           @if (popped()) {
-            <div class="m-1.5 rounded-sm border border-dashed border-line-strong p-2 text-center">
-              <p class="label text-ink-3">{{ t('editor.viewerPopped') }}</p>
-              <p class="mt-0.5 text-meta text-ink-4">{{ t('editor.viewerPoppedHint') }}</p>
-              <button ncButton variant="secondary" size="sm" class="mt-1" (click)="ui.togglePip()">
-                {{ t('editor.dockViewer') }}
+            <div
+              class="flex h-[31px] cursor-grab items-center gap-1 border-b border-line bg-raised px-1.25 active:cursor-grabbing"
+              (pointerdown)="startDrag($event)"
+            >
+              <nc-icon name="pip" [size]="12" class="text-ink-4" />
+              <span class="font-mono text-micro tracking-strip text-ink-3 uppercase">
+                {{ t('editor.viewer') }} · 320×180
+              </span>
+              <span class="flex-1"></span>
+              <button
+                ncButton
+                variant="ghost"
+                size="sm"
+                iconOnly
+                class="-me-0.5"
+                [attr.aria-pressed]="true"
+                [attr.aria-label]="t('editor.dockViewer')"
+                (click)="ui.togglePip()"
+              >
+                <nc-icon name="collapse" [size]="12" />
               </button>
             </div>
           }
-          <div class="p-1.5" [class.nc-pip]="popped()">
-            <nc-game-screen
-              #screen
-              [game]="session.game"
-              [projectId]="session.id"
-              fit="width"
-              compact
-              [showFps]="true"
-              (mounted)="onMounted()"
+          <nc-game-screen
+            #screen
+            [game]="session.game"
+            [projectId]="session.id"
+            fit="width"
+            compact
+            [overlay]="popped()"
+            [showFps]="true"
+            (mounted)="onMounted()"
+          >
+            <nc-toggle
+              transport-extra
+              [checked]="ui.autoRun()"
+              (checkedChange)="ui.setAutoRun($event)"
             >
-              <nc-toggle
-                transport-extra
-                [checked]="ui.autoRun()"
-                (checkedChange)="ui.setAutoRun($event)"
-              >
-                {{ t('editor.autoRun') }}
-              </nc-toggle>
-            </nc-game-screen>
-          </div>
+              {{ t('editor.autoRun') }}
+            </nc-toggle>
+          </nc-game-screen>
         </div>
+      </div>
+      @if (!ui.collapsed()) {
         <nc-tabs
+          [class.hidden]="ui.columnMode() === 'swap'"
           [tabs]="tabs()"
           [value]="ui.consoleTab()"
           (valueChange)="setTab($event)"
@@ -139,7 +164,20 @@ import { WorkSessionService } from '../work-session/work-session.service';
           }
         </nc-tabs>
         <div class="min-h-0 flex-1 overflow-hidden" [class.p-1.5]="ui.consoleTab() !== 'console'">
-          @switch (ui.consoleTab()) {
+          @if (ui.columnMode() === 'swap') {
+            <div class="flex h-full min-h-0 flex-col">
+              <nc-doc-pane class="min-h-0 flex-1 overflow-auto" />
+              <!-- The artboard puts this at the foot of the reference, in the swap arrangement
+                   only — the one case where the game really has been put away. -->
+              <div
+                class="flex shrink-0 items-center gap-1 border-t border-line bg-inset px-1.5 py-1"
+              >
+                <nc-icon name="pause" [size]="12" class="text-gold-ink" />
+                <span class="label text-gold-ink">{{ t('editor.gamePaused') }}</span>
+              </div>
+            </div>
+          }
+          @switch (ui.columnMode() === 'swap' ? '' : ui.consoleTab()) {
             @case ('console') {
               <nc-lcd variant="flush" class="h-full leading-[1.85] tracking-[0.03em]">
                 @for (l of lines(); track l.id) {
@@ -167,9 +205,6 @@ import { WorkSessionService } from '../work-session/work-session.service';
                 <div>SYNC {{ session.synced() ? 'synced' : 'pending' }}</div>
               </nc-lcd>
             }
-            @case ('doc') {
-              <nc-doc-pane class="h-full" />
-            }
           }
         </div>
       }
@@ -177,13 +212,15 @@ import { WorkSessionService } from '../work-session/work-session.service';
   `,
   host: { class: 'block' },
   styles: `
-    /* The floating viewer: 302px in the bottom-right, over everything, per the design. */
+    /* The floating viewer: a 302px card the design draws as a window, so it is one. It starts in
+       the bottom-right corner the artboard puts it in and stays wherever it is dragged. */
     .nc-pip {
       position: fixed;
       right: 22px;
       bottom: 22px;
       z-index: 40;
-      width: 302px;
+      width: 304px;
+      overflow: hidden;
       border: 1px solid var(--nc-line-strong);
       border-radius: 4px;
       background: var(--nc-panel);
@@ -196,13 +233,19 @@ export class ConsoleColumnComponent {
   protected readonly ui = inject(EditorUiStore);
   /** The viewer floats over the editor instead of sitting in the column. */
   protected readonly popped = computed(() => this.ui.consoleMode() === 'pip' && this.ui.pipOpen());
-  /** How many screen pixels one console pixel takes, at the column's current width. */
+  /** Docked in a collapsed column, or standing in for the docs: either way there is nowhere to be. */
+  protected readonly screenHidden = computed(
+    () => this.ui.columnMode() === 'swap' || (this.ui.collapsed() && !this.popped()),
+  );
+  /** How many screen pixels one console pixel takes. The column is a fixed track, so this is too. */
   protected readonly scale = computed(() => {
-    const inner = this.ui.consoleWidth() - 24;
+    const inner = CONSOLE_WIDTH - 24;
     return Math.max(1, Math.round((inner / 320) * 10) / 10);
   });
   protected readonly session = inject(WorkSessionService);
   private readonly editorRuntime = inject(EditorRuntimeService);
+  /** Top-left of the floating card. Null until it is placed, which is the design's corner. */
+  private readonly pipAt = signal<{ x: number; y: number } | null>(null);
   private readonly screen = viewChild<GameScreenComponent>('screen');
   protected readonly tabs = computed(() => [
     {
@@ -211,7 +254,6 @@ export class ConsoleColumnComponent {
       icon: 'command' as const,
       badge: this.errorCount() || undefined,
     },
-    { value: 'doc', label: 'Doc', icon: 'file' as const },
     { value: 'perf', label: 'Perf', icon: 'chart' as const },
   ]);
 
@@ -242,9 +284,18 @@ export class ConsoleColumnComponent {
         files.unobserveDeep(onChange);
       });
     });
+    // Turning AUTO-RUN on starts the game; *opening the editor* does not. Reading the signal for
+    // the first time is the initial state, not somebody asking for anything, and treating it as a
+    // request is what booted the game on entry — which called net.host, which threw the host
+    // dialog over the editor every single time you navigated into it.
+    let autoRunSettled = false;
     effect(() => {
       const on = this.ui.autoRun();
       untracked(() => {
+        if (!autoRunSettled) {
+          autoRunSettled = true;
+          return;
+        }
         if (on) this.screen()?.runtime.play();
       });
     });
@@ -253,7 +304,7 @@ export class ConsoleColumnComponent {
     // deliberately paused does not start itself when they close the docs.
     let pausedByDoc = false;
     effect(() => {
-      const hidden = this.ui.columnMode() === 'doc';
+      const hidden = this.ui.columnMode() === 'swap';
       untracked(() => {
         const runtime = this.screen()?.runtime;
         if (!runtime) return;
@@ -272,22 +323,40 @@ export class ConsoleColumnComponent {
     });
   }
 
-  /** Drag the edge: the column grows as the pointer moves left, so width is distance from the right. */
-  protected startResize(e: PointerEvent): void {
+  /**
+   * Where the card sits, once it has been moved. Until then it is null and the stylesheet's own
+   * bottom-right corner — the one the artboard draws it in — stands. Clamped on the x so a window
+   * that narrows cannot leave the card, and its title bar, off the side.
+   */
+  protected readonly pip = computed(() => {
+    const at = this.pipAt();
+    if (!at) return null;
+    const w = this.ui.viewportWidth();
+    return { x: Math.min(Math.max(0, at.x), Math.max(0, w - PIP_WIDTH)), y: Math.max(0, at.y) };
+  });
+
+  /** Drag the card by its title bar. Buttons in the bar keep their own clicks. */
+  protected startDrag(e: PointerEvent): void {
+    if ((e.target as HTMLElement).closest('button')) return;
     e.preventDefault();
-    const target = e.target as HTMLElement;
-    target.setPointerCapture(e.pointerId);
+    const bar = e.currentTarget as HTMLElement;
+    const card = bar.parentElement;
+    if (!card) return;
+    const box = card.getBoundingClientRect();
+    const dx = e.clientX - box.left;
+    const dy = e.clientY - box.top;
+    bar.setPointerCapture(e.pointerId);
     const move = (ev: PointerEvent): void => {
-      this.ui.setConsoleWidth(window.innerWidth - ev.clientX);
+      this.pipAt.set({ x: ev.clientX - dx, y: ev.clientY - dy });
     };
     const up = (): void => {
-      target.removeEventListener('pointermove', move);
-      target.removeEventListener('pointerup', up);
-      target.removeEventListener('pointercancel', up);
+      bar.removeEventListener('pointermove', move);
+      bar.removeEventListener('pointerup', up);
+      bar.removeEventListener('pointercancel', up);
     };
-    target.addEventListener('pointermove', move);
-    target.addEventListener('pointerup', up);
-    target.addEventListener('pointercancel', up);
+    bar.addEventListener('pointermove', move);
+    bar.addEventListener('pointerup', up);
+    bar.addEventListener('pointercancel', up);
   }
 
   protected onMounted(): void {
@@ -295,10 +364,9 @@ export class ConsoleColumnComponent {
     if (!screen) return;
     this.editorRuntime.host.set(screen.runtime);
     this.editorRuntime.bridge.set(screen.netBridge);
-    if (this.ui.autoRun()) screen.runtime.play();
   }
 
   protected setTab(tab: string | undefined): void {
-    if (tab === 'console' || tab === 'doc' || tab === 'perf') this.ui.setConsoleTab(tab);
+    if (tab === 'console' || tab === 'perf') this.ui.setConsoleTab(tab);
   }
 }

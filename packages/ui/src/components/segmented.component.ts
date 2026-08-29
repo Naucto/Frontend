@@ -84,13 +84,13 @@ export class SegmentedComponent<T extends string = string> {
 
   protected readonly itemClass = computed(() =>
     [
-      'rounded-xs whitespace-nowrap uppercase transition-colors disabled:opacity-40',
+      'cursor-pointer rounded-xs whitespace-nowrap uppercase transition-colors duration-100 disabled:cursor-not-allowed disabled:opacity-40',
       this.fill() ? 'flex-1 text-center' : '',
       this.variant() === 'chips'
         ? this.small()
           ? 'bg-raised px-[7px] py-[3px] font-mono text-micro tracking-button text-ink-3 hover:text-ink'
           : 'bg-raised px-[11px] py-[6px] font-mono text-label tracking-button text-ink-3 hover:text-ink'
-        : 'h-[26px] px-1.5 text-meta tracking-button text-ink-3 hover:text-ink',
+        : 'h-[26px] px-1.5 font-mono text-meta tracking-button text-ink-3 hover:text-ink',
       SELECTED[this.resolvedTone()],
     ].join(' '),
   );

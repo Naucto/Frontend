@@ -17,6 +17,8 @@ export type ThemePreference = 'dark' | 'light' | 'system';
 export class ThemeService {
   readonly theme = signal<ThemePreference>(readTheme());
   readonly reduceMotion = signal<boolean>(readJson<boolean>(STORAGE_KEYS.reduceMotion, false));
+  /** The FPS readout on every game screen, in the editor's viewer as much as on a game page. */
+  readonly showFps = signal<boolean>(readJson<boolean>(STORAGE_KEYS.showFps, true));
 
   /** Tracks the OS preference so `effective` is right while the theme is `system`. */
   private readonly systemLight = signal(false);
@@ -58,6 +60,9 @@ export class ThemeService {
       if (reduce) root.dataset.reduceMotion = '';
       else delete root.dataset.reduceMotion;
       writeJson(STORAGE_KEYS.reduceMotion, this.reduceMotion());
+    });
+    effect(() => {
+      writeJson(STORAGE_KEYS.showFps, this.showFps());
     });
   }
 
