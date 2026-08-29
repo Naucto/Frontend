@@ -75,7 +75,7 @@ export class WebGL2Backend implements GfxBackend {
   private destroyed = false;
 
   constructor(
-    private readonly canvas: HTMLCanvasElement,
+    canvas: HTMLCanvasElement,
     private readonly game: Game,
   ) {
     canvas.width = SCREEN_WIDTH;

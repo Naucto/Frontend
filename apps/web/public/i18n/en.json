@@ -1,0 +1,75 @@
+{
+  "nav": {
+    "main": "Main navigation",
+    "hub": "Hub",
+    "myGames": "My games",
+    "friends": "Friends",
+    "learn": "Learn",
+    "search": "Search games, people, tags…",
+    "newGame": "New game",
+    "signIn": "Sign in"
+  },
+  "account": {
+    "menu": "Account",
+    "profile": "Profile",
+    "settings": "Settings",
+    "theme": "Theme",
+    "signOut": "Sign out"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "empty": "Nothing yet. Likes, comments and session invites land here."
+  },
+  "auth": {
+    "insertGame": "Insert game",
+    "tagline": "Sign in to save, publish and play with friends.",
+    "email": "Email",
+    "password": "Password",
+    "username": "Username",
+    "signIn": "Sign in",
+    "register": "Make one",
+    "noAccount": "No account?",
+    "takes20": "— it takes 20 seconds.",
+    "haveAccount": "Already have one?",
+    "or": "or",
+    "create": "Create account",
+    "failed": "Could not sign you in. Check your email and password.",
+    "registerFailed": "Could not create the account.",
+    "oauthFailed": "The sign-in with {{provider}} did not complete.",
+    "finishing": "Finishing sign-in…",
+    "sessionExpired": "You have been signed out",
+    "sessionExpiredBody": "Your session expired. Sign in again to keep working.",
+    "ok": "OK"
+  },
+  "settings": {
+    "title": "Settings",
+    "account": "Account",
+    "editor": "Editor",
+    "controls": "Controls",
+    "privacy": "Privacy",
+    "soon": "Coming in a later step.",
+    "saved": "Saved",
+    "saveFailed": "Could not save that. Nothing changed."
+  },
+  "notFound": {
+    "title": "Nothing here",
+    "body": "That page does not exist — or it moved.",
+    "back": "Back to the hub"
+  },
+  "hub": {
+    "title": "Hub",
+    "soon": "The hub lands in the next step."
+  },
+  "footer": {
+    "tagline": "A browser fantasy console. Make tiny Lua games together and play them with friends.",
+    "product": "Product",
+    "community": "Community",
+    "legal": "Legal",
+    "makeGame": "Make a game",
+    "feedback": "Send feedback",
+    "privacy": "Privacy",
+    "security": "Report a vulnerability",
+    "toggleTheme": "Toggle theme"
+  }
+}

@@ -12,6 +12,7 @@
     "*.config.js",
     "tools/**/*",
     "e2e/**/*.ts",
-    "packages/*/vitest.config.ts"
+    "packages/*/vitest.config.ts",
+    "packages/*/openapi-ts.config.ts"
   ]
 }

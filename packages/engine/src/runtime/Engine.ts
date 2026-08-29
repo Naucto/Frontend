@@ -55,7 +55,6 @@ export class Engine {
   private modules: EngineModule[] = [];
   private readonly loop: GameLoop;
   private state: EngineState = 'idle';
-  private startTime = 0;
   private elapsed = 0;
   private readonly tileOverrides = new Map<number, number>();
   private readonly errorListeners = new Set<(e: EngineError) => void>();
@@ -168,7 +167,6 @@ export class Engine {
     } catch (e) {
       return this.fail('load', e);
     }
-    this.startTime = performance.now();
     this.opts.gfx.begin();
     try {
       lua.callGlobal('_init');
