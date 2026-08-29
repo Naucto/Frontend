@@ -3,5 +3,10 @@
   "compilerOptions": {
     "types": ["vitest/globals", "@testing-library/jest-dom"]
   },
-  "include": ["src/**/*.spec.ts", "src/**/*.d.ts", "src/test-setup.ts"]
+  "include": [
+    "src/**/*.spec.ts",
+    "src/**/*.d.ts",
+    "src/test-setup.ts",
+    "../../packages/engine/src/simple-peer.d.ts"
+  ]
 }

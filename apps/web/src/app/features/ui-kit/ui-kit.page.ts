@@ -66,7 +66,6 @@ import {
     SliderComponent,
     TabsComponent,
     ToggleComponent,
-    ConfirmDialogComponent,
     HelpDotComponent,
     PopoverDirective,
     PopoverPanelComponent,
@@ -408,6 +407,6 @@ export class UiKitPage {
   }
 
   protected applyTheme(t: 'dark' | 'light' | undefined): void {
-    if (t) document.documentElement.dataset['theme'] = t;
+    if (t) document.documentElement.dataset.theme = t;
   }
 }

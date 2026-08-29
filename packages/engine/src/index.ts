@@ -1,5 +1,3 @@
-export const ENGINE_VERSION = '2.0.0-dev';
-
 export type { ApiContext } from './api/ApiContext';
 export { buildCompatPrelude } from './api/compatPrelude';
 export { LEGACY_ALIASES, LUA_API, type LuaApiEntry } from './api/luaApiTable';
@@ -67,4 +65,5 @@ export { SynthCore } from './sound/SynthCore';
 export { type AudioBackend, WebAudioBackend } from './sound/WebAudioBackend';
 export type { SynthCommand, SynthEvent } from './sound/worklet/protocol';
 export type { Destroyable, Maybe, Point2D, Size } from './types';
+export { ENGINE_VERSION } from './version';
 export { LuaEnvironment, LuaError, parseLuaErrorLocation } from './vm/LuaEnvironment';
