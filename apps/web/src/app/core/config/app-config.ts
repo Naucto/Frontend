@@ -20,9 +20,16 @@ const FALLBACK: AppConfig = {
 @Injectable({ providedIn: 'root' })
 export class AppConfigService {
   private readonly state = signal<AppConfig>(FALLBACK);
+  private loading: Promise<void> | null = null;
   readonly config = this.state.asReadonly();
 
-  async load(): Promise<void> {
+  /** Fetches /config.json once; later callers await the same promise. */
+  load(): Promise<void> {
+    this.loading ??= this.fetchConfig();
+    return this.loading;
+  }
+
+  private async fetchConfig(): Promise<void> {
     try {
       const res = await fetch('/config.json', { cache: 'no-store' });
       if (!res.ok) return;

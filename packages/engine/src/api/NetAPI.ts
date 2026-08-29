@@ -31,6 +31,11 @@ export class NetAPI extends EngineModule {
   // A host/join modal is open but not yet resolved — also blocks a second one.
   private _pending = false;
 
+  /** The live session, for editor tooling (null when the game is not in one). */
+  get session(): SharedTableSession | null {
+    return this._session;
+  }
+
   constructor(ctx: ApiContext) {
     super(ctx);
 

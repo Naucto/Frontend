@@ -17,6 +17,7 @@ import {
   ToggleComponent,
 } from '@naucto/ui';
 
+import { EditorRuntimeService } from '../state/editor-runtime.service';
 import { EditorUiStore } from '../state/editor-ui.store';
 import { WorkSessionService } from '../work-session/work-session.service';
 
@@ -82,6 +83,7 @@ import { WorkSessionService } from '../work-session/work-session.service';
             <nc-game-screen
               #screen
               [game]="session.game"
+              [projectId]="session.id"
               fit="width"
               compact
               [showFps]="true"
@@ -185,6 +187,7 @@ export class ConsoleColumnComponent {
     return Math.max(1, Math.round((inner / 320) * 10) / 10);
   });
   protected readonly session = inject(WorkSessionService);
+  private readonly editorRuntime = inject(EditorRuntimeService);
   private readonly screen = viewChild<GameScreenComponent>('screen');
   protected readonly tabs = computed(() => [
     {
@@ -233,7 +236,11 @@ export class ConsoleColumnComponent {
   }
 
   protected onMounted(): void {
-    if (this.ui.autoRun()) this.screen()?.runtime.play();
+    const screen = this.screen();
+    if (!screen) return;
+    this.editorRuntime.host.set(screen.runtime);
+    this.editorRuntime.bridge.set(screen.netBridge);
+    if (this.ui.autoRun()) screen.runtime.play();
   }
 
   protected setTab(tab: string | undefined): void {

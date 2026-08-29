@@ -28,8 +28,7 @@ export const EDITOR_ROUTES: Routes = [
       },
       {
         path: 'net',
-        loadComponent: () => import('./placeholder-tab.page').then((m) => m.PlaceholderTabPage),
-        data: { tab: 'net' },
+        loadComponent: () => import('./net/net-tab.page').then((m) => m.NetTabPage),
       },
     ],
   },

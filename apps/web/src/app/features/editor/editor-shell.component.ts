@@ -36,6 +36,7 @@ import { ConsoleColumnComponent } from './console/console-column.component';
 import { PUBLISH_CEILING, PublishDialogComponent } from './game/publish.dialog';
 import { ShareDialogComponent } from './game/share.dialog';
 import { VersionsPopoverComponent } from './game/versions-popover.component';
+import { EditorRuntimeService } from './state/editor-runtime.service';
 import { type EditorTab, EditorUiStore } from './state/editor-ui.store';
 import { WorkSessionService } from './work-session/work-session.service';
 
@@ -71,7 +72,7 @@ const RAIL: RailItem<EditorTab>[] = [
     ConsoleColumnComponent,
     VersionsPopoverComponent,
   ],
-  providers: [WorkSessionService, EditorUiStore, RuntimeHostService],
+  providers: [WorkSessionService, EditorUiStore, RuntimeHostService, EditorRuntimeService],
   template: `
     <div *transloco="let t" class="grid h-dvh grid-rows-[50px_1fr] bg-page text-ink">
       <header class="flex items-center gap-2 border-b border-line bg-panel px-2">

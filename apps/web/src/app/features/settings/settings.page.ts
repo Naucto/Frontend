@@ -4,31 +4,48 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { PanelComponent, TabsComponent } from '@naucto/ui';
 
 import { AccountSettingsComponent } from './account-settings.component';
+import { ControlsSettingsComponent } from './controls-settings.component';
+import { EditorSettingsComponent } from './editor-settings.component';
 
-type Tab = 'account' | 'editor' | 'controls' | 'privacy';
-const TABS: Tab[] = ['account', 'editor', 'controls', 'privacy'];
+// PRIVACY is gone: its three rows (friend code, who can join, delete account) moved to ACCOUNT,
+// where the artboard draws them, and nothing was left on the tab but a placeholder.
+type Tab = 'account' | 'editor' | 'controls';
+const TABS: Tab[] = ['account', 'editor', 'controls'];
 
 @Component({
   selector: 'nc-settings-page',
-  imports: [TranslocoDirective, PanelComponent, TabsComponent, AccountSettingsComponent],
+  imports: [
+    TranslocoDirective,
+    PanelComponent,
+    TabsComponent,
+    AccountSettingsComponent,
+    ControlsSettingsComponent,
+    EditorSettingsComponent,
+  ],
   template: `
-    <section *transloco="let t" class="mx-auto w-full max-w-[880px]">
+    <section *transloco="let t" class="mx-auto w-full max-w-[1000px]">
       <nc-panel [padded]="false">
-        <h1 class="px-2.75 pt-2.5 text-title text-ink">{{ t('settings.title') }}</h1>
+        <h1 class="px-2.75 pt-2.75 text-title text-ink">{{ t('settings.title') }}</h1>
+        <!-- No padding on the host: the panel variant already insets the tabs by the same 2.75,
+             so setting it here too indented them twice as far as the title above and pulled the
+             rule in from both panel edges. -->
         <nc-tabs
           [tabs]="tabs()"
           [value]="current()"
           (valueChange)="go($event)"
           [label]="t('settings.title')"
-          class="mt-1.75 block px-2.75"
+          class="mt-2 block"
         />
-        <div class="px-2.75 py-2.5">
+        <div class="px-2.75 py-2.75">
           @switch (current()) {
             @case ('account') {
               <nc-account-settings />
             }
-            @default {
-              <p class="text-body text-ink-2">{{ t('settings.soon') }}</p>
+            @case ('editor') {
+              <nc-editor-settings />
+            }
+            @case ('controls') {
+              <nc-controls-settings />
             }
           }
         </div>

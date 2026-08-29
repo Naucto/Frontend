@@ -18,9 +18,11 @@ const RETRIED = new WeakSet<Request>();
  */
 export function provideApiClient(): EnvironmentProviders {
   return makeEnvironmentProviders([
-    provideAppInitializer(() => {
+    provideAppInitializer(async () => {
       const config = inject(AppConfigService);
       const auth = inject(AuthStore);
+      // One ordered boot: runtime config → client → session. Initializers otherwise run concurrently.
+      await config.load();
       client.setConfig({
         baseUrl: config.config().apiUrl,
         credentials: 'include',
@@ -45,6 +47,8 @@ export function provideApiClient(): EnvironmentProviders {
         RETRIED.add(retry);
         return fetch(retry);
       });
+
+      await auth.bootstrap();
     }),
   ]);
 }

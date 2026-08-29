@@ -859,6 +859,11 @@ export class SharedTableSession implements Destroyable {
     else if (reqId !== undefined) this._transport.respondTo(userId, { kind: 'lock-grant', reqId });
   }
 
+  /** Who holds the lock at `path` (editor tooling). */
+  lockOwner(path: string): UserId | null {
+    return this._lockOwnerOf(path);
+  }
+
   private _lockOwnerOf(path: string): UserId | null {
     const owner = this.getValue(path + OWNER_SUFFIX);
     return typeof owner === 'number' ? owner : null;

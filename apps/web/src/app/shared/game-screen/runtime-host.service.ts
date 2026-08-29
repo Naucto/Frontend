@@ -1,4 +1,5 @@
-import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
+import { computed, DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
+import { InputBindingsStore } from '@app/core/input/input-bindings.store';
 import type { DeclaredAction, Game } from '@naucto/engine';
 import {
   type ConsoleEntry,
@@ -21,6 +22,8 @@ import {
 @Injectable()
 export class RuntimeHostService {
   private engine: Engine | null = null;
+  private keyboard: KeyboardSource | null = null;
+  private gamepad: GamepadSource | null = null;
   private gfx: WebGL2Backend | null = null;
   private audio: WebAudioBackend | null = null;
   private sound: SoundEngine | null = null;
@@ -39,10 +42,36 @@ export class RuntimeHostService {
   readonly frame = signal(0);
   readonly ready = computed(() => this.engine !== null);
 
+  private readonly bindings = inject(InputBindingsStore);
+
   constructor() {
     inject(DestroyRef).onDestroy(() => {
       this.destroy();
     });
+    effect(() => {
+      const b = this.bindings.bindings();
+      this.keyboard?.setBindings(b);
+      this.gamepad?.setBindings(b);
+    });
+  }
+
+  /** The live engine (null before mount). */
+  get current(): Engine | null {
+    return this.engine;
+  }
+
+  /** Connected gamepads and the player slot each one drives. */
+  gamepads(): { index: number; id: string; player: number }[] {
+    const pads = typeof navigator.getGamepads === 'function' ? navigator.getGamepads() : [];
+    const out: { index: number; id: string; player: number }[] = [];
+    pads.forEach((p, i) => {
+      if (p) out.push({ index: i, id: p.id, player: this.gamepad?.slots[i] ?? i });
+    });
+    return out;
+  }
+
+  assignGamepad(index: number, player: number): void {
+    this.gamepad?.assign(index, player);
   }
 
   /** Creates the runtime on a canvas. Safe to call again with a new game (tears the previous one down). */
@@ -55,8 +84,10 @@ export class RuntimeHostService {
     this.gfx = new WebGL2Backend(canvas, game);
     this.audio = new WebAudioBackend();
     this.sound = new SoundEngine(this.audio, game);
-    const keyboard = new KeyboardSource();
-    const gamepad = new GamepadSource();
+    const keyboard = new KeyboardSource({ bindings: this.bindings.bindings() });
+    const gamepad = new GamepadSource({ bindings: this.bindings.bindings() });
+    this.keyboard = keyboard;
+    this.gamepad = gamepad;
     const engine = new Engine({
       game,
       gfx: this.gfx,

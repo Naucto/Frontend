@@ -23,7 +23,7 @@ interface EditorUiState {
 }
 
 /** Tabs whose right column is a tool panel; the screen floats as a viewer there. */
-const PANEL_TABS: readonly EditorTab[] = ['art', 'map', 'sound'];
+const PANEL_TABS: readonly EditorTab[] = ['art', 'map', 'sound', 'net'];
 
 export const DOC_SPLIT_BREAKPOINT = 1600;
 
