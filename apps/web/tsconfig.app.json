@@ -1,7 +1,8 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "types": []
+    "types": [],
+    "resolveJsonModule": true
   },
   "include": ["src/**/*.ts", "../../packages/engine/src/simple-peer.d.ts"],
   "exclude": ["src/**/*.spec.ts"]

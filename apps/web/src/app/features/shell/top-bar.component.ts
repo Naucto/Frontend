@@ -17,10 +17,15 @@ import { map } from 'rxjs';
 import { AccountMenuComponent } from './account-menu.component';
 import { NotificationsBellComponent } from './notifications-bell.component';
 
-// 12px UI on a tight line box: the design's nav link measures 30px tall inside 8px/12px padding,
-// which `text-body`'s 1.65 line-height overshoots by six.
+// 12px UI in a 20px line box inside 8px/12px padding: the design's nav link measures 36px tall,
+// which `text-body`'s 1.65 line-height overshoots and a bare `leading-[1.2]` undershoots by six.
+/**
+ * The current page is marked through `aria-current`, not by adding a second colour class.
+ * `routerLinkActive="text-ink"` left both `text-ink-3` and `text-ink` on the element, and with both
+ * present the later rule in the stylesheet wins — so the active link was never highlighted at all.
+ */
 const NAV_LINK =
-  'rounded-xs px-1.5 py-1 text-body leading-[1.2] uppercase tracking-button text-ink-3 transition-colors hover:text-ink';
+  'rounded-xs px-1.5 py-1 text-body leading-[20px] uppercase tracking-button text-ink-3 transition-colors hover:text-ink aria-[current]:text-ink';
 
 /** App-wide top bar: HUB / MY GAMES / FRIENDS / LEARN, search, NEW GAME, bell, account. */
 @Component({
@@ -40,7 +45,7 @@ const NAV_LINK =
       *transloco="let t"
       class="flex min-h-7 flex-wrap items-center gap-2 border-b border-line bg-panel px-2.5 py-1 md:flex-nowrap md:py-0"
     >
-      <a routerLink="/hub" class="mr-[6px] flex items-center" aria-label="Naucto">
+      <a routerLink="/hub" class="mr-[6px] flex shrink-0 items-center" aria-label="Naucto">
         <img src="/img/logo.png" alt="" width="32" height="32" class="pixelated" />
       </a>
 
@@ -61,16 +66,18 @@ const NAV_LINK =
         [class.hidden]="!menuOpen()"
         [attr.aria-label]="t('nav.main')"
       >
-        <a routerLink="/hub" routerLinkActive="text-ink" [class]="navLink">{{ t('nav.hub') }}</a>
+        <a routerLink="/hub" routerLinkActive ariaCurrentWhenActive="page" [class]="navLink">
+          {{ t('nav.hub') }}
+        </a>
         @if (auth.isAuthenticated()) {
-          <a routerLink="/games" routerLinkActive="text-ink" [class]="navLink">
+          <a routerLink="/games" routerLinkActive ariaCurrentWhenActive="page" [class]="navLink">
             {{ t('nav.myGames') }}
           </a>
-          <a routerLink="/friends" routerLinkActive="text-ink" [class]="navLink">
+          <a routerLink="/friends" routerLinkActive ariaCurrentWhenActive="page" [class]="navLink">
             {{ t('nav.friends') }}
           </a>
         }
-        <a routerLink="/learn" routerLinkActive="text-ink" [class]="navLink">
+        <a routerLink="/learn" routerLinkActive ariaCurrentWhenActive="page" [class]="navLink">
           {{ t('nav.learn') }}
         </a>
       </nav>
@@ -87,16 +94,19 @@ const NAV_LINK =
         <span class="hidden flex-1 md:block"></span>
       }
 
-      <div class="flex flex-1 items-center justify-end gap-1.5 md:min-w-[384px]">
+      <div class="flex flex-1 items-center justify-end gap-1 md:min-w-[384px]">
         @if (auth.isAuthenticated()) {
-          <a ncButton variant="primary" routerLink="/games/new">
-            <nc-icon name="plus" [size]="12" />
-            <span class="hidden sm:inline">{{ t('nav.newGame') }}</span>
+          <!-- The design writes the plus, rather than drawing it: at this size the glyph and the
+               icon are the same mark, and the glyph keeps the button at its 120px. Narrow enough
+               and the label goes instead, leaving the icon to stand for it. -->
+          <a ncButton variant="primary" size="bar" routerLink="/games/new">
+            <nc-icon name="plus" [size]="12" class="sm:hidden" />
+            <span class="hidden sm:inline">+ {{ t('nav.newGame') }}</span>
           </a>
           <nc-notifications-bell />
-          <nc-account-menu />
+          <nc-account-menu class="ms-1" />
         } @else {
-          <a ncButton variant="primary" routerLink="/sign-in">
+          <a ncButton variant="primary" size="bar" routerLink="/sign-in">
             {{ t('nav.signIn') }}
           </a>
         }
