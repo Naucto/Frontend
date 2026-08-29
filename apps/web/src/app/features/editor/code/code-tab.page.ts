@@ -13,7 +13,6 @@ import { TranslocoDirective } from '@jsverse/transloco';
 import { MAIN_FILE } from '@naucto/engine';
 import { ButtonDirective, IconComponent } from '@naucto/ui';
 
-import { EditorUiStore } from '../state/editor-ui.store';
 import { WorkSessionService } from '../work-session/work-session.service';
 import { CodeEditorComponent, type CursorInfo } from './code-editor.component';
 
@@ -112,7 +111,6 @@ import { CodeEditorComponent, type CursorInfo } from './code-editor.component';
 export class CodeTabPage implements OnInit {
   protected readonly session = inject(WorkSessionService);
   protected readonly runtime = inject(RuntimeHostService);
-  private readonly ui = inject(EditorUiStore);
   protected readonly main = MAIN_FILE;
   private readonly editor = viewChild<CodeEditorComponent>('editor');
 
@@ -133,7 +131,6 @@ export class CodeTabPage implements OnInit {
   protected readonly cursor = signal<CursorInfo>({ line: 1, col: 1 });
 
   ngOnInit(): void {
-    this.ui.setTab('code');
     this.activeId.set(this.session.game.entryFile?.id ?? null);
   }
 

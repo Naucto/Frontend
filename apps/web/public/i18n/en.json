@@ -50,7 +50,18 @@
     "privacy": "Privacy",
     "soon": "Coming in a later step.",
     "saved": "Saved",
-    "saveFailed": "Could not save that. Nothing changed."
+    "saveFailed": "Could not save that. Nothing changed.",
+    "displayName": "Display name",
+    "displayNameHint": "Shown on your games and in sessions",
+    "reduceMotion": "Reduce motion",
+    "reduceMotionHint": "Turns off scanlines and screen shake in the UI",
+    "theme": "Appearance",
+    "themeHint": "Dark is the default; light follows daylight",
+    "themes": {
+      "dark": "Dark",
+      "light": "Light",
+      "system": "System"
+    }
   },
   "notFound": {
     "title": "Nothing here",
@@ -83,7 +94,19 @@
     "playedAgo": "played {{when}}",
     "editedAgo": "edited {{when}}",
     "rowError": "Could not load these games. Check your connection and try again.",
-    "heroErrorTitle": "Could not load the hub"
+    "heroErrorTitle": "Could not load the hub",
+    "seeAllCount": "See all {{n}}",
+    "showMore": "Show {{n}} more",
+    "sort": {
+      "newest": "Newest",
+      "trending": "Trending",
+      "mostPlayed": "Most played",
+      "multiplayer": "Multiplayer",
+      "solo": "Solo"
+    },
+    "seeAll": "See all",
+    "remixFailed": "Could not remix that game.",
+    "remixable": "remixable"
   },
   "footer": {
     "tagline": "A browser fantasy console. Make tiny Lua games together and play them with friends.",
@@ -124,7 +147,11 @@
     "loadFailedTitle": "This game would not start",
     "loadFailedRelease": "We could not reach the server to look it up. It may be a connection problem at your end, or ours.",
     "loadFailedContent": "The game was found, but its content could not be downloaded.",
-    "retry": "Try again"
+    "retry": "Try again",
+    "forkedFromNamed": "Forked from",
+    "remixesOf": "Remixes of this game",
+    "seeAllRemixes": "See all {{n}} remixes",
+    "similarTag": "Similar · {{tag}}"
   },
   "comments": {
     "title": "Comments",
@@ -211,6 +238,74 @@
     "collapseConsole": "Collapse the panel",
     "expandConsole": "Show the panel",
     "popOut": "Pop the viewer out",
-    "cannotOpen": "This project would not open"
+    "cannotOpen": "This project would not open",
+    "viewer": "Viewer · 320×180",
+    "closeViewer": "Close the viewer",
+    "showViewer": "Viewer",
+    "undo": "Undo",
+    "redo": "Redo",
+    "art": {
+      "sprite": "Sprite",
+      "px": "{{n}}×{{n}} px",
+      "tools": {
+        "pen": "Pen",
+        "fill": "Fill",
+        "line": "Line",
+        "rect": "Rect",
+        "circle": "Circle",
+        "select": "Select",
+        "eyedropper": "Pick",
+        "move": "Move"
+      },
+      "grid": "Grid",
+      "onion": "Onion",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "zoomFit": "Fit to the panel",
+      "sheet": "Sheet",
+      "used": "{{used}} / {{total}} used",
+      "spriteSize": "Sprite size",
+      "sizeReadout": "{{n}}×{{n}} · {{px}}×{{px}} px",
+      "flags": "Flags",
+      "flagsHelp": "Eight bits per sprite. The engine ignores them — your game reads them with map.flag(index, bit). Flag 0 can mean solid, flag 2 water — you decide.",
+      "palette": "Palette",
+      "presets": "Presets",
+      "reset": "Reset",
+      "slot": "Slot",
+      "hex": "Hex colour",
+      "preview": "Preview",
+      "status": "X {{x}} Y {{y}} · COL {{col}}",
+      "canvas": "Sprite canvas",
+      "pickSprite": "Pick a sprite"
+    },
+    "map": {
+      "title": "Map 0",
+      "tiles": "{{w}} × {{h}} tiles",
+      "tools": {
+        "stamp": "Stamp",
+        "fill": "Fill",
+        "select": "Select",
+        "erase": "Erase"
+      },
+      "grid": "Grid",
+      "flags": "Flags",
+      "tilePicker": "Tile picker",
+      "brush": "Brush",
+      "autotile": "Autotile",
+      "autotileSoon": "Autotile needs a tileset convention — coming with the docs step.",
+      "wholeMap": "Whole map",
+      "camera": "Camera 320×180",
+      "status": "TILE {{x}},{{y}} · SPR {{spr}}",
+      "flagsOf": "flags {{bits}}",
+      "noFlags": "no flags",
+      "canvas": "Map canvas",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "gridHelp": "Fine grid every tile, sky rule every eight — the screen is 20×11 tiles.",
+      "flagsHelp": "Tints each tile by the first flag set on its sprite. Flags are per sprite, not per tile."
+    },
+    "viewerPopped": "Viewer is popped out",
+    "viewerPoppedHint": "The game keeps running in the floating panel and follows you across editors.",
+    "dockViewer": "Bring it back"
   }
 }

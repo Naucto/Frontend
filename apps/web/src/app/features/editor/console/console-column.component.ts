@@ -45,25 +45,40 @@ import { WorkSessionService } from '../work-session/work-session.service';
       </button>
       @if (!ui.collapsed()) {
         @if (ui.columnMode() !== 'doc') {
-          <!-- Size, scale and the two viewer controls, as one 40px band above the screen. -->
+          <!-- Size, scale and the viewer controls, as one 40px band above the screen. -->
           <div class="flex h-5 items-center gap-1 border-b border-line px-1.5">
-            <span class="font-mono text-meta tracking-wide text-ink">320×180</span>
-            <span class="font-mono text-meta text-ink-3">×{{ scale() }}</span>
+            <span class="font-mono text-meta tracking-wide text-ink">
+              {{ popped() ? t('editor.viewer') : '320×180' }}
+            </span>
+            @if (!popped()) {
+              <span class="font-mono text-meta text-ink-3">×{{ scale() }}</span>
+            }
             <span class="flex-1"></span>
             <button
               ncButton
               variant="ghost"
               size="sm"
               iconOnly
-              [attr.aria-pressed]="ui.pip()"
-              [class.text-gold-ink]="ui.pip()"
-              [attr.aria-label]="t('editor.popOut')"
+              [attr.aria-pressed]="popped()"
+              [class.text-gold-ink]="popped()"
+              [attr.aria-label]="popped() ? t('editor.dockViewer') : t('editor.popOut')"
               (click)="ui.togglePip()"
             >
-              <nc-icon name="expand" [size]="12" />
+              <nc-icon [name]="popped() ? 'collapse' : 'expand'" [size]="12" />
             </button>
           </div>
-          <div class="p-1.5">
+          <!-- Popped out, the screen floats but keeps running: the same canvas, moved, never
+               remounted. The slot it leaves behind says where it went. -->
+          @if (popped()) {
+            <div class="m-1.5 rounded-sm border border-dashed border-line-strong p-2 text-center">
+              <p class="label text-ink-3">{{ t('editor.viewerPopped') }}</p>
+              <p class="mt-0.5 text-meta text-ink-4">{{ t('editor.viewerPoppedHint') }}</p>
+              <button ncButton variant="secondary" size="sm" class="mt-1" (click)="ui.togglePip()">
+                {{ t('editor.dockViewer') }}
+              </button>
+            </div>
+          }
+          <div class="p-1.5" [class.nc-pip]="popped()">
             <nc-game-screen
               #screen
               [game]="session.game"
@@ -144,10 +159,26 @@ import { WorkSessionService } from '../work-session/work-session.service';
     </div>
   `,
   host: { class: 'block' },
+  styles: `
+    /* The floating viewer: 302px in the bottom-right, over everything, per the design. */
+    .nc-pip {
+      position: fixed;
+      right: 22px;
+      bottom: 22px;
+      z-index: 40;
+      width: 302px;
+      border: 1px solid var(--nc-line-strong);
+      border-radius: 4px;
+      background: var(--nc-panel);
+      box-shadow: 0 14px 34px rgb(0 0 0 / 0.65);
+    }
+  `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ConsoleColumnComponent {
   protected readonly ui = inject(EditorUiStore);
+  /** The viewer floats over the editor instead of sitting in the column. */
+  protected readonly popped = computed(() => this.ui.consoleMode() === 'pip' && this.ui.pipOpen());
   /** How many screen pixels one console pixel takes, at the column's current width. */
   protected readonly scale = computed(() => {
     const inner = this.ui.consoleWidth() - 24;

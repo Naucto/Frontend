@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { unwrap } from '@app/core/api/api-errors';
 import { HubRowComponent } from '@app/features/hub/hub-row.component';
 import { GameCardComponent } from '@app/shared/game-card/game-card.component';
@@ -22,7 +22,6 @@ import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-quer
 @Component({
   selector: 'nc-my-games-page',
   imports: [
-    RouterLink,
     TranslocoDirective,
     ButtonDirective,
     EmptyStateComponent,

@@ -17,8 +17,11 @@ import {
   type ProjectExResponseDto,
 } from '@naucto/api-client';
 import {
+  type CreateInfiniteQueryResult,
   type CreateMutationResult,
   type CreateQueryResult,
+  type InfiniteData,
+  injectInfiniteQuery,
   injectMutation,
   injectQuery,
   QueryClient,
@@ -28,7 +31,8 @@ import { qk } from './query-keys';
 
 export const RELEASE_PAGE_SIZE = 24;
 
-export type SortMetric = 'viewCount' | 'likes' | 'commentCount' | 'forkCount' | 'publishedAt';
+export type SortMetric =
+  'viewCount' | 'likes' | 'commentCount' | 'forkCount' | 'publishedAt' | 'uniquePlayers';
 
 /** How the backend orders a release page; `trending` is plays weighted by recency. */
 export type ReleaseSort = 'newest' | 'trending' | 'plays' | 'likes';
@@ -44,6 +48,11 @@ export interface ReleaseQuery {
 interface ReleasePage {
   items: ProjectExResponseDto[];
   total: number;
+}
+
+/** A page that knows its own index, for the "show N more" shelf. */
+interface NumberedReleasePage extends ReleasePage {
+  page: number;
 }
 
 /**
@@ -116,7 +125,37 @@ export function injectReleasesByIds(
 export function injectRelease(id: () => number): CreateQueryResult<ProjectExResponseDto> {
   return injectQuery(() => ({
     queryKey: qk.release(id()),
+    enabled: id() > 0,
     queryFn: async () => unwrap(await projectControllerGetRelease({ path: { id: String(id()) } })),
+  }));
+}
+
+/** Every released game, page after page ("SHOW N MORE"), searched and sorted by the backend. */
+export function injectReleasesInfinite(
+  limit = RELEASE_PAGE_SIZE,
+  query: () => ReleaseQuery = () => ({}),
+): CreateInfiniteQueryResult<InfiniteData<NumberedReleasePage, number>> {
+  return injectInfiniteQuery(() => ({
+    queryKey: qk.releases({ page: 'all', limit, ...query() }),
+    initialPageParam: 1,
+    queryFn: async ({ pageParam }): Promise<NumberedReleasePage> => {
+      const { q, sort, tag } = query();
+      const res = await take<{ projects: ProjectExResponseDto[]; total: number }>(
+        client.get({
+          url: '/projects/releases/paginated',
+          query: {
+            page: pageParam,
+            limit,
+            ...(q ? { q } : {}),
+            ...(sort ? { sort } : {}),
+            ...(tag ? { tag } : {}),
+          },
+        }),
+      );
+      return { items: res.projects, total: res.total, page: pageParam };
+    },
+    getNextPageParam: (last: NumberedReleasePage): number | undefined =>
+      last.page * limit < last.total ? last.page + 1 : undefined,
   }));
 }
 
@@ -206,6 +245,7 @@ export const SORTERS: Record<
   commentCount: (a, b) => (b.commentCount ?? 0) - (a.commentCount ?? 0),
   forkCount: (a, b) => (b.forkCount ?? 0) - (a.forkCount ?? 0),
   publishedAt: (a, b) => (b.publishedAt ?? '').localeCompare(a.publishedAt ?? ''),
+  uniquePlayers: (a, b) => b.uniquePlayers - a.uniquePlayers,
 };
 
 export const matchesSearch = (p: ProjectExResponseDto, q: string): boolean => {
