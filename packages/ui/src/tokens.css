@@ -1,1 +1,390 @@
-/* filled in F2 */
+/* Naucto design tokens — the only place colours, fonts and grid values are defined.
+   Dark is the default; light applies with [data-theme="light"] or the OS preference when no
+   explicit theme is set. Every component consumes these through Tailwind utilities. */
+
+@font-face {
+  font-family: 'HD44780';
+  src: url('/fonts/hd44780-variable.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+@font-face {
+  font-family: 'HD44780 Mono';
+  src: url('/fonts/hd44780-mono.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+
+@theme {
+  /* Reset Tailwind's default palette so only Naucto tokens exist. */
+  --color-*: initial;
+  --font-*: initial;
+  --spacing: 8px;
+  --radius-*: initial;
+  --radius-xs: 2px;
+  --radius-sm: 3px;
+  /* The design's ladder is 2 / 3 / 4 — 4px is the card and the panel, 5px barely appears. */
+  --radius-md: 4px;
+  /* Type scale lifted from the design: labels and meta live in the mono face, copy in the UI face. */
+  --tracking-label: 0.14em;
+  --tracking-button: 0.06em;
+  /* Codes, LCD readouts and keycaps: the widest step the design uses. */
+  --tracking-wide: 0.1em;
+  /* Chips and presence tags sit between label and button tracking. */
+  --tracking-tag: 0.08em;
+  /* 11px strip headings — CONSOLE/DOC/PERF, SPRITE 001, MAP 0, INSTRUMENTS, PUBLISHING, GAME.
+     A step of its own in the design, one notch tighter than `label`. */
+  --tracking-strip: 0.12em;
+  /* One step below `label`, for the micro-meta the design sets at 9px mono ("2 DAYS AGO"). */
+  --text-micro: 9px;
+  --text-micro--line-height: 1.2;
+  --text-label: 10px;
+  --text-label--line-height: 1.2;
+  --text-meta: 11px;
+  --text-meta--line-height: 1.4;
+  --text-body: 12px;
+  --text-body--line-height: 1.65;
+  --text-ui: 13px;
+  --text-ui--line-height: 1.5;
+  --text-title: 16px;
+  --text-title--line-height: 1.25;
+  --text-display: 24px;
+  --text-display--line-height: 1.15;
+  --text-hero: 30px;
+  --text-hero--line-height: 1.1;
+  --breakpoint-*: initial;
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-doc: 1600px;
+
+  --font-ui: 'HD44780', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'HD44780 Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  /* Surfaces */
+  --color-page: var(--nc-page);
+  --color-panel: var(--nc-panel);
+  --color-raised: var(--nc-raised);
+  --color-inset: var(--nc-inset);
+  --color-lcd: var(--nc-lcd);
+  --color-lcd-ink: var(--nc-lcd-ink);
+  --color-lcd-dim: var(--nc-lcd-dim);
+  --color-lcd-hot: var(--nc-lcd-hot);
+  --color-lcd-veil: var(--nc-lcd-veil);
+  --color-paper: var(--nc-paper);
+  --color-sunken: var(--nc-sunken);
+  --color-line: var(--nc-line);
+  --color-line-strong: var(--nc-line-strong);
+  --color-line-soft: var(--nc-line-soft);
+  --color-line-faint: var(--nc-line-faint);
+  /* Text steps */
+  --color-ink: var(--nc-ink);
+  --color-ink-body: var(--nc-ink-body);
+  --color-ink-2: var(--nc-ink-2);
+  --color-ink-3: var(--nc-ink-3);
+  --color-ink-4: var(--nc-ink-4);
+  --color-gutter: var(--nc-gutter);
+  /* Accents (fill) and their ink variants */
+  --color-gold: var(--nc-gold);
+  --color-gold-ink: var(--nc-gold-ink);
+  --color-hot: var(--nc-hot);
+  --color-hot-ink: var(--nc-hot-ink);
+  --color-jade: var(--nc-jade);
+  --color-jade-ink: var(--nc-jade-ink);
+  --color-sky: var(--nc-sky);
+  --color-sky-ink: var(--nc-sky-ink);
+  --color-orange: var(--nc-orange);
+  --color-blush: var(--nc-blush);
+  --color-lime: var(--nc-lime);
+  --color-magenta: var(--nc-magenta);
+  --color-gold-wash: var(--nc-gold-wash);
+  --color-jade-wash: var(--nc-jade-wash);
+  --color-hot-soft: var(--nc-hot-soft);
+  /* Ink drawn ON an accent fill */
+  /* Ink on a bright fill. Measured across the whole design file: gold, sky and jade carry
+     #0B0A09 in 108 of 111 filled elements. #16171A is the palette's near-black — one of the
+     *dark* fills that take light ink — not the ink itself. */
+  --color-on-accent: #0b0a09;
+  --color-on-accent-dark: #fafdff;
+  /* Scrims laid over artwork, so that --color-on-accent-dark stays legible on top of whatever the
+     art happens to be. Deliberately identical in both themes: the ink over them does not flip
+     either, and theming the hero's scrim to the page colour is what left its title near-white on
+     near-white in daylight. */
+  --nc-scrim-hero: linear-gradient(
+    to top,
+    rgb(11 10 9 / 0.96) 0%,
+    rgb(11 10 9 / 0.55) 42%,
+    transparent 72%
+  );
+  --nc-scrim-video: linear-gradient(
+    to top,
+    rgb(8 7 6 / 0.88) 0%,
+    rgb(8 7 6 / 0.55) 55%,
+    transparent 100%
+  );
+  /* Presence */
+  --color-presence-sky: #68aed4;
+  --color-presence-blush: #ff80a4;
+  --color-presence-jade: #10d275;
+}
+
+:root {
+  color-scheme: dark;
+  --nc-page: #0b0a09;
+  --nc-panel: #131110;
+  --nc-raised: #1c1917;
+  --nc-inset: #0a0806;
+  --nc-lcd: #071108;
+  --nc-lcd-ink: #10d275;
+  --nc-lcd-dim: #0e8a5a;
+  --nc-lcd-hot: #ff2674;
+  /* The phosphor veil: the design rules every LCD surface with its own ink at low alpha, which is
+     a different thing from the black scanline it lays over the game canvas. */
+  --nc-lcd-veil: rgb(16 210 117 / 0.05);
+  /* The surface code is written on, and the section well beneath a panel. */
+  --nc-paper: #0a0806;
+  --nc-sunken: #0f0d0c;
+  --nc-line: #2a2621;
+  --nc-line-strong: #35302a;
+  --nc-line-soft: #241f1b;
+  --nc-line-faint: #17140f;
+  --nc-ink: #ede6da;
+  --nc-ink-body: #c8bfb3;
+  --nc-ink-2: #9c9287;
+  --nc-ink-3: #8a8177;
+  --nc-ink-4: #756c61;
+  --nc-gutter: #756c61;
+  --nc-gold: #ffd100;
+  --nc-gold-ink: #ffd100;
+  --nc-hot: #ff2674;
+  --nc-hot-ink: #ff2674;
+  --nc-jade: #10d275;
+  --nc-jade-ink: #10d275;
+  --nc-sky: #68aed4;
+  --nc-sky-ink: #68aed4;
+  --nc-orange: #ff8426;
+  --nc-blush: #ff80a4;
+  /* Two more palette hues, so all eight tile-flag bits are told apart by colour. */
+  --nc-lime: #bfff3c;
+  --nc-magenta: #94216a;
+  --nc-gold-wash: #332a0c;
+  /* The ground a granted permission chip sits on in the NET tree: jade at the depth of the page,
+     so the chip reads as filled without the border disappearing into it. */
+  --nc-jade-wash: #0b2417;
+  --nc-hot-soft: #ffa0bc;
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+  --nc-page: #e8e4da;
+  --nc-panel: #f6f3ec;
+  --nc-raised: #ffffff;
+  --nc-inset: #ded8cb;
+  --nc-lcd: #a9c79b;
+  --nc-lcd-ink: #12300f;
+  --nc-lcd-dim: #3e5a34;
+  --nc-lcd-hot: #7a0a22;
+  --nc-lcd-veil: rgb(18 48 15 / 0.07);
+  --nc-paper: #fffdf8;
+  --nc-sunken: #eee9de;
+  --nc-line: #cfc7b7;
+  --nc-line-strong: #b9b0a0;
+  --nc-line-soft: #ddd6c7;
+  --nc-line-faint: #e4ded1;
+  --nc-ink: #17140f;
+  --nc-ink-body: #3a342c;
+  --nc-ink-2: #5c544a;
+  --nc-ink-3: #726a5e;
+  --nc-ink-4: #7a7166;
+  --nc-gutter: #7f7669;
+  --nc-gold-ink: #7a5a00;
+  --nc-hot-ink: #c41e5c;
+  --nc-jade-ink: #0a7a4a;
+  --nc-sky-ink: #1f6285;
+  --nc-gold-wash: #f7ecc0;
+  --nc-jade-wash: #cfe9dc;
+  --nc-hot-soft: #c41e5c;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    color-scheme: light;
+    --nc-page: #e8e4da;
+    --nc-panel: #f6f3ec;
+    --nc-raised: #ffffff;
+    --nc-inset: #ded8cb;
+    --nc-lcd: #a9c79b;
+    --nc-lcd-ink: #12300f;
+    --nc-lcd-dim: #3e5a34;
+    --nc-lcd-hot: #7a0a22;
+    --nc-lcd-veil: rgb(18 48 15 / 0.07);
+    --nc-paper: #fffdf8;
+    --nc-sunken: #eee9de;
+    --nc-line: #cfc7b7;
+    --nc-line-strong: #b9b0a0;
+    --nc-line-soft: #ddd6c7;
+    --nc-line-faint: #e4ded1;
+    --nc-ink: #17140f;
+    --nc-ink-body: #3a342c;
+    --nc-ink-2: #5c544a;
+    --nc-ink-3: #726a5e;
+    --nc-ink-4: #7a7166;
+    --nc-gutter: #7f7669;
+    --nc-gold-ink: #7a5a00;
+    --nc-hot-ink: #c41e5c;
+    --nc-jade-ink: #0a7a4a;
+    --nc-sky-ink: #1f6285;
+    --nc-gold-wash: #f7ecc0;
+    --nc-jade-wash: #cfe9dc;
+    --nc-hot-soft: #c41e5c;
+  }
+}
+
+@layer base {
+  html {
+    background: var(--nc-page);
+    color: var(--nc-ink);
+    font-family: var(--font-ui);
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: geometricPrecision;
+  }
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background: var(--nc-page);
+  }
+  /* Interactive elements: pointer cursor and a short colour transition for hover states. */
+  button,
+  [role='button'],
+  [role='tab'],
+  [role='switch'],
+  [role='radio'],
+  [role='option'],
+  a[ncButton],
+  label[ncButton],
+  select,
+  summary {
+    cursor: pointer;
+  }
+  button:disabled,
+  select:disabled,
+  [aria-disabled='true'] {
+    cursor: not-allowed;
+  }
+  a,
+  button,
+  [role='button'],
+  [role='tab'],
+  [role='switch'],
+  [role='radio'],
+  [role='option'] {
+    transition-property: color, background-color, border-color, opacity;
+    transition-duration: 100ms;
+    transition-timing-function: ease-out;
+  }
+  [data-reduce-motion] *,
+  [data-reduce-motion] *::before,
+  [data-reduce-motion] *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+  :focus-visible {
+    outline: 2px solid var(--nc-gold);
+    outline-offset: 1px;
+  }
+  ::selection {
+    background: var(--nc-gold);
+    color: #17140f;
+  }
+}
+
+@utility label {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  line-height: var(--text-label--line-height);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--nc-ink-3);
+}
+
+@utility pixel-border {
+  border: 1px solid var(--nc-line);
+  border-radius: var(--radius-md);
+}
+
+@utility pixelated {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* The scanline veil the design lays over the game canvas and phosphor surfaces. */
+@utility scanlines {
+  background-image: repeating-linear-gradient(0deg, rgb(0 0 0 / 0.16) 0 1px, transparent 1px 3px);
+}
+[data-reduce-motion] .scanlines {
+  background-image: none;
+}
+
+/* Diagonal hatch behind a game card that has no cover yet.
+   One step of ink into the inset surface: that lands on the design's #100E0C in the dark, and
+   inverts to a quiet step *down* in daylight. Mixing panel into page instead put near-white
+   stripes on beige — the loudest thing on a light hub. */
+@utility no-cover {
+  background-image: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--nc-ink) 3%, var(--nc-inset)) 0 6px,
+    var(--nc-inset) 6px 12px
+  );
+}
+
+/* CDK overlay hooks */
+@layer components {
+  .nc-dialog-backdrop {
+    background: color-mix(in srgb, var(--nc-page) 70%, transparent);
+  }
+  .nc-dialog-panel {
+    outline: none;
+  }
+  .cdk-overlay-container,
+  .cdk-global-overlay-wrapper {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    pointer-events: none;
+  }
+  .cdk-overlay-pane,
+  .cdk-overlay-backdrop {
+    pointer-events: auto;
+  }
+  .cdk-overlay-pane {
+    position: absolute;
+    display: flex;
+    max-height: 100%;
+    max-width: 100%;
+  }
+  .cdk-overlay-backdrop {
+    position: absolute;
+    inset: 0;
+  }
+  .cdk-overlay-transparent-backdrop {
+    background: transparent;
+  }
+  .cdk-overlay-connected-position-bounding-box {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    min-width: 1px;
+    min-height: 1px;
+  }
+  .cdk-visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+}

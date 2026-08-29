@@ -30,6 +30,9 @@ jobs:
         if: github.event_name == 'pull_request'
       - run: npm run format:check
       - run: npm run lint
+      # Catches a regenerate that lost the design's glyph overrides, which would otherwise put
+      # every one of them back to its pixelarticons lookalike under the same name, silently.
+      - run: npm run icons:check
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
