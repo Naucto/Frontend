@@ -2,12 +2,12 @@
 export const STORAGE_KEYS = {
   theme: 'naucto.theme',
   reduceMotion: 'naucto.reduce-motion',
-  playedProjects: 'naucto.played',
+  showFps: 'naucto.show-fps',
   inputBindings: 'naucto.input',
   editorCollapsed: 'naucto.editor.collapsed',
-  editorConsoleWidth: 'naucto.editor.console-width',
-  editorDocCollapsed: 'naucto.editor.doc-collapsed',
+  editorReferenceOpen: 'naucto.editor.reference-open',
   editorPrefs: 'naucto.editor',
+  padLayout: 'naucto.pad-layout',
   oauthState: 'naucto.oauth.state',
   pkceVerifier: 'naucto.oauth.verifier',
 } as const;

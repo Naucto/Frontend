@@ -13,7 +13,7 @@ import { ChangeDetectionStrategy, Component, input, model } from '@angular/core'
           [attr.aria-label]="'Colour ' + $index + ' ' + hex"
           [style.background]="hex"
           (click)="value.set($index)"
-          class="aspect-[5/3] cursor-pointer rounded-xs outline-offset-1 aria-checked:outline-2 aria-checked:outline-gold"
+          class="aspect-[5/3] cursor-pointer rounded-xs outline-offset-1 transition-[outline-color] duration-100 aria-checked:outline-2 aria-checked:outline-gold"
         ></button>
       }
     </div>

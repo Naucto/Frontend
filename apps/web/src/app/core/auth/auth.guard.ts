@@ -16,6 +16,13 @@ export const guestGuard: CanActivateFn = () => {
   return auth.isAuthenticated() ? inject(Router).createUrlTree(['/hub']) : true;
 };
 
-/** The editor needs a desktop-sized viewport for now (phone layouts are a later milestone). */
-export const desktopOnlyGuard: CanMatchFn = () =>
-  typeof window === 'undefined' ? true : window.innerWidth >= 1024;
+/**
+ * The editor needs a desktop-sized viewport for now (phone layouts are a later milestone).
+ * Falling through to the router's 404 told a phone user their game did not exist, so a narrow
+ * viewport is sent to a page that explains the gate and keeps the link.
+ */
+export const desktopOnlyGuard: CanMatchFn = (_route, segments) => {
+  if (typeof window === 'undefined' || window.innerWidth >= 1024) return true;
+  const id = segments[1]?.path ?? '';
+  return inject(Router).createUrlTree(['/open-on-desktop'], { queryParams: { id } });
+};

@@ -114,7 +114,11 @@
     "addKey": "Add a key",
     "pressButton": "Press a button",
     "rebindPad": "Rebind the gamepad button",
-    "escapeCancels": "Escape cancels"
+    "escapeCancels": "Escape cancels",
+    "padLayout": "Touch pad layout",
+    "padSize": "Size",
+    "padOpacity": "Opacity",
+    "padHint": "Sized for the thumbs that actually hold the device. Opacity applies to the landscape overlay, where the pad sits on the game."
   },
   "notFound": {
     "title": "Nothing here",
@@ -192,6 +196,7 @@
     "forkedFrom": "Forked from another game",
     "likes": "likes",
     "remix": "Remix",
+    "edit": "Edit",
     "howToPlay": "How to play",
     "gamepad": "d-pad + A",
     "readFromMap": "Read from the game's action map",
@@ -292,7 +297,7 @@
     "expandConsole": "Show the panel",
     "popOut": "Pop the viewer out",
     "cannotOpen": "This project would not open",
-    "viewer": "Viewer · 320×180",
+    "viewer": "Viewer",
     "closeViewer": "Close the viewer",
     "showViewer": "Viewer",
     "undo": "Undo",
@@ -464,7 +469,14 @@
       "needHost": "Host a session first — run the game and call net.host()."
     },
     "gamePaused": "Game paused — swap back to resume",
-    "resizeConsole": "Resize the console column"
+    "desktopOnly": {
+      "title": "The editor needs a bigger screen",
+      "hint": "Sprite sheets, a piano roll and a code column do not fit a phone yet. Open this link on a laptop and it will pick up where you left off.",
+      "copy": "Copy link",
+      "copied": "Copied",
+      "play": "Play it instead",
+      "hub": "Back to the hub"
+    }
   },
   "net": {
     "cancel": "Cancel",
@@ -564,6 +576,8 @@
       "api": "API reference",
       "editors": "Editors",
       "reference": "Reference"
-    }
+    },
+    "close": "Close the reference",
+    "swapBack": "Swap back to the game"
   }
 }

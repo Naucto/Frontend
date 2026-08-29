@@ -18,10 +18,10 @@ import { ChangeDetectionStrategy, Component, computed, input, model } from '@ang
       [class]="buttonClass()"
     >
       <span
-        class="nc-track relative inline-block h-2 w-[30px] bg-line-strong transition-colors group-aria-checked:bg-jade"
+        class="nc-track relative inline-block h-2 w-[30px] bg-line-strong transition-colors duration-100 group-aria-checked:bg-jade"
       >
         <span
-          class="absolute top-[3px] left-[3px] h-[10px] w-[10px] bg-ink-3 transition-transform group-aria-checked:translate-x-[14px] group-aria-checked:bg-page"
+          class="absolute top-[3px] left-[3px] h-[10px] w-[10px] bg-ink-3 transition-[transform,background-color] duration-100 group-aria-checked:translate-x-[14px] group-aria-checked:bg-page"
         ></span>
       </span>
       <ng-content />
@@ -53,8 +53,8 @@ export class ToggleComponent {
 
   protected readonly buttonClass = computed(() =>
     [
-      'group inline-flex items-center gap-[9px] font-mono text-meta uppercase tracking-button',
-      'text-ink-3 aria-checked:text-ink-body disabled:opacity-40',
+      'group inline-flex cursor-pointer items-center gap-[9px] font-mono text-meta uppercase tracking-button',
+      'text-ink-3 transition-colors duration-100 aria-checked:text-ink-body disabled:cursor-not-allowed disabled:opacity-40',
       this.variant() === 'chip'
         ? 'h-4 rounded-sm border border-line bg-inset px-[10px] hover:border-line-strong'
         : '',

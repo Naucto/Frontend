@@ -11,6 +11,7 @@ import {
   type NetPermissions,
   type NetUi,
   SoundEngine,
+  TouchSource,
   WebAudioBackend,
   WebGL2Backend,
 } from '@naucto/engine';
@@ -72,6 +73,20 @@ export class RuntimeHostService {
 
   assignGamepad(index: number, player: number): void {
     this.gamepad?.assign(index, player);
+  }
+
+  /**
+   * Adds the on-screen pad as a third source. Kept out of `mount` because the pad's element only
+   * exists while the pad is rendered, and the same runtime outlives an orientation change.
+   */
+  attachPad(root: HTMLElement): () => void {
+    const engine = this.engine;
+    if (!engine) return () => undefined;
+    const source = new TouchSource(root);
+    engine.addInputSource(source);
+    return () => {
+      engine.removeInputSource(source);
+    };
   }
 
   /** Creates the runtime on a canvas. Safe to call again with a new game (tears the previous one down). */

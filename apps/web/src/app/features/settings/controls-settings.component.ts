@@ -8,9 +8,18 @@ import {
   signal,
 } from '@angular/core';
 import { InputBindingsStore } from '@app/core/input/input-bindings.store';
+import { PadSettingsStore } from '@app/shared/game-screen/pad-settings.store';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { type Action, ACTIONS, type DeclaredAction, type GamepadButtonRef } from '@naucto/engine';
-import { ButtonDirective, IconComponent, KeycapComponent, SegmentedComponent } from '@naucto/ui';
+import {
+  ButtonDirective,
+  IconComponent,
+  KeycapComponent,
+  SegmentedComponent,
+  SliderComponent,
+} from '@naucto/ui';
+
+import { GamepadArtComponent } from './gamepad-art.component';
 
 /** Face of a standard-mapping button, so a captured binding reads as the pad's own label. */
 const PAD_BUTTON: Record<number, string> = {
@@ -38,10 +47,12 @@ const AXIS_LABEL = (a: GamepadButtonRef): string => {
 };
 
 const KEY_LABEL: Record<string, string> = {
-  ArrowLeft: '←',
-  ArrowRight: '→',
-  ArrowUp: '↑',
-  ArrowDown: '↓',
+  // Words, not ←→↑↓: HD44780 has no arrows, so those four fell back to a smooth face in the
+  // middle of a table set in the pixel one. The rest of this map already spells things out.
+  ArrowLeft: 'LEFT',
+  ArrowRight: 'RIGHT',
+  ArrowUp: 'UP',
+  ArrowDown: 'DOWN',
   ' ': 'SPACE',
   Escape: 'ESC',
   Enter: 'ENTER',
@@ -72,9 +83,11 @@ interface Capture {
   imports: [
     TranslocoDirective,
     ButtonDirective,
+    GamepadArtComponent,
     IconComponent,
     KeycapComponent,
     SegmentedComponent,
+    SliderComponent,
   ],
   template: `
     <div *transloco="let t" class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_300px]">
@@ -203,25 +216,106 @@ interface Capture {
         </div>
       </div>
 
-      <div class="rounded-sm border border-line bg-panel p-2">
-        <div class="flex items-center justify-between">
-          <span
-            class="label flex items-center gap-0.5"
-            [class]="pad() ? 'text-jade-ink' : 'text-ink-4'"
+      <div class="grid content-start gap-2">
+        <div class="rounded-sm border border-line bg-panel p-1.5">
+          <div class="flex items-center justify-between">
+            <span
+              class="label flex items-center gap-0.5"
+              [class]="pad() ? 'text-jade-ink' : 'text-ink-4'"
+            >
+              <span
+                class="inline-block h-1 w-1 rounded-xs"
+                [class]="pad() ? 'bg-jade' : 'bg-ink-4'"
+              ></span>
+              {{ pad() ? t('settings.connected') : t('settings.noPad') }}
+            </span>
+            <span class="label">{{ t('settings.slot', { n: 1 }) }}</span>
+          </div>
+          <div class="my-2 flex justify-center">
+            <nc-gamepad-art />
+          </div>
+          <div class="text-center text-body text-ink">{{ pad()?.id ?? '—' }}</div>
+          <div class="label text-center">{{ t('settings.pressAny') }}</div>
+        </div>
+
+        <!-- The on-screen pad, for the device that has no keyboard and no gamepad. The preview is
+           live: both sliders drive the same store the pad itself reads. -->
+        <div class="rounded-sm border border-line bg-panel p-1.5">
+          <!-- Icon-only reset: spelled out, it did not fit beside the label in a 236px column, and
+               the label wrapped to two lines and fell out of line with it. The artboard draws this
+               header as the label alone. -->
+          <div class="mb-1 flex items-center justify-between gap-1">
+            <span class="label whitespace-nowrap">{{ t('settings.padLayout') }}</span>
+            <button
+              ncButton
+              variant="ghost"
+              size="sm"
+              iconOnly
+              [attr.aria-label]="t('settings.resetDefaults')"
+              (click)="padSettings.reset()"
+              [disabled]="padSettings.isDefault()"
+            >
+              <nc-icon name="undo" [size]="12" />
+            </button>
+          </div>
+          <div
+            class="relative flex h-[84px] items-center justify-between rounded-sm border border-line bg-inset px-1.5"
+            [style.opacity]="padSettings.opacity() / 100"
+            aria-hidden="true"
           >
             <span
-              class="inline-block h-1 w-1 rounded-xs"
-              [class]="pad() ? 'bg-jade' : 'bg-ink-4'"
-            ></span>
-            {{ pad() ? t('settings.connected') : t('settings.noPad') }}
-          </span>
-          <span class="label">{{ t('settings.slot', { n: 1 }) }}</span>
+              class="grid grid-cols-3 grid-rows-3 gap-px"
+              [style.--nc-preview]="padSettings.scale()"
+            >
+              <span></span>
+              <span
+                class="h-[calc(12px*var(--nc-preview,1))] w-[calc(12px*var(--nc-preview,1))] rounded-t-xs bg-ink-4"
+              ></span>
+              <span></span>
+              <span
+                class="h-[calc(12px*var(--nc-preview,1))] w-[calc(12px*var(--nc-preview,1))] rounded-l-xs bg-ink-4"
+              ></span>
+              <span
+                class="h-[calc(12px*var(--nc-preview,1))] w-[calc(12px*var(--nc-preview,1))] bg-ink-3"
+              ></span>
+              <span
+                class="h-[calc(12px*var(--nc-preview,1))] w-[calc(12px*var(--nc-preview,1))] rounded-r-xs bg-ink-4"
+              ></span>
+              <span></span>
+              <span
+                class="h-[calc(12px*var(--nc-preview,1))] w-[calc(12px*var(--nc-preview,1))] rounded-b-xs bg-ink-4"
+              ></span>
+              <span></span>
+            </span>
+            <span class="flex items-center gap-1" [style.--nc-preview]="padSettings.scale()">
+              <span
+                class="h-[calc(22px*var(--nc-preview,1))] w-[calc(22px*var(--nc-preview,1))] rounded-full bg-sky/45"
+              ></span>
+              <span
+                class="h-[calc(24px*var(--nc-preview,1))] w-[calc(24px*var(--nc-preview,1))] rounded-full bg-hot/50"
+              ></span>
+            </span>
+          </div>
+          <div class="mt-1.5 grid gap-1">
+            <nc-slider
+              [label]="t('settings.padSize')"
+              [min]="60"
+              [max]="140"
+              [value]="padSettings.size()"
+              [readout]="padSettings.size() + '%'"
+              (valueChange)="padSettings.setSize($event)"
+            />
+            <nc-slider
+              [label]="t('settings.padOpacity')"
+              [min]="30"
+              [max]="100"
+              [value]="padSettings.opacity()"
+              [readout]="padSettings.opacity() + '%'"
+              (valueChange)="padSettings.setOpacity($event)"
+            />
+          </div>
+          <p class="mt-1 text-meta leading-[1.6] text-ink-3">{{ t('settings.padHint') }}</p>
         </div>
-        <div class="my-2 flex justify-center text-ink-3">
-          <nc-icon name="gamepad" [size]="48" />
-        </div>
-        <div class="text-center text-body text-ink">{{ pad()?.id ?? '—' }}</div>
-        <div class="label text-center">{{ t('settings.pressAny') }}</div>
       </div>
     </div>
   `,
@@ -236,6 +330,7 @@ export class ControlsSettingsComponent {
   readonly gameName = input('');
 
   protected readonly bindings = inject(InputBindingsStore);
+  protected readonly padSettings = inject(PadSettingsStore);
   protected readonly String = String;
   protected readonly player = signal(0);
   protected readonly capturing = signal<Capture | null>(null);

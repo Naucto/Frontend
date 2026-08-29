@@ -44,6 +44,12 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/shell/app-shell.component').then((m) => m.AppShellComponent),
     children: [
+      {
+        path: 'open-on-desktop',
+        loadComponent: () =>
+          import('./features/editor/open-on-desktop.page').then((m) => m.OpenOnDesktopPage),
+        title: 'Open on a desktop — Naucto',
+      },
       { path: '', redirectTo: 'hub', pathMatch: 'full' },
       {
         path: 'hub',

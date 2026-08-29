@@ -24,6 +24,7 @@ import {
 import * as Y from 'yjs';
 
 import { SheetViewComponent } from '../art/sheet-view.component';
+import { PresenceSurfaceComponent } from '../work-session/presence-surface.component';
 import { WorkSessionService } from '../work-session/work-session.service';
 import { MapStore, type MapTool } from './map.store';
 import { MapCanvasComponent, type TileViewport } from './map-canvas.component';
@@ -46,6 +47,7 @@ const BRUSHES = ['1×1', '2×2', '3×3', '4×4', '5×5', '6×6', '7×7', '8×8']
     SheetViewComponent,
     MapCanvasComponent,
     MinimapComponent,
+    PresenceSurfaceComponent,
   ],
   providers: [MapStore],
   template: `
@@ -105,6 +107,7 @@ const BRUSHES = ['1×1', '2×2', '3×3', '4×4', '5×5', '6×6', '7×7', '8×8']
             [collaborators]="session.collaborators()"
             [label]="t('editor.map.canvas')"
             (hover)="onHover($event)"
+            (pointer)="onPointer($event)"
             (zoomBy)="map.zoomBy($event)"
             (viewport)="viewport.set($event)"
           />
@@ -123,7 +126,11 @@ const BRUSHES = ['1×1', '2×2', '3×3', '4×4', '5×5', '6×6', '7×7', '8×8']
         </div>
       </section>
 
-      <aside class="flex min-h-0 flex-col overflow-auto border-l border-line bg-panel">
+      <aside class="relative flex min-h-0 flex-col overflow-auto border-l border-line bg-panel">
+        <!-- Isolated: everyone is on their own corner of the map, so a tracked pointer over the tile
+               picker says nothing you can act on. The flag says
+             somebody is working in here and fades when they leave; it does not chase them. -->
+        <nc-presence-surface surface="map:inspector" mode="isolated" />
         <div class="flex h-5 items-center gap-1 border-b border-line px-1.5">
           <nc-toggle-button
             [checked]="map.grid()"
@@ -285,6 +292,15 @@ export class MapTabPage {
     if (tool) this.map.setTool(tool);
   }
 
+  /** Presence follows the pointer, not the tile it is over — see `pointer` on the canvas. */
+  protected onPointer(p: { x: number; y: number } | null): void {
+    // Rounded to a hundredth of a cell: finer than a screen pixel at any zoom the editor
+    // offers, and coarse enough that the service's dedupe still collapses a still pointer.
+    this.session.setCursor(
+      p ? { tab: 'map', x: Math.round(p.x * 100) / 100, y: Math.round(p.y * 100) / 100 } : null,
+    );
+  }
+
   protected onHover(p: Pt | null): void {
     if (!p) {
       this.hover.set(null);
@@ -297,7 +313,6 @@ export class MapTabPage {
     const bits: number[] = [];
     for (let b = 0; b < 8; b++) if (f & (1 << b)) bits.push(b);
     this.hover.set({ x: p.x, y: p.y, spr, bits: bits.join(',') });
-    this.session.setCursor({ tab: 'map', x: p.x, y: p.y });
   }
 
   protected onKey(e: KeyboardEvent): void {

@@ -39,7 +39,12 @@ import { PUBLISH_CEILING, PublishDialogComponent } from './game/publish.dialog';
 import { ShareDialogComponent } from './game/share.dialog';
 import { VersionsPopoverComponent } from './game/versions-popover.component';
 import { EditorRuntimeService } from './state/editor-runtime.service';
-import { type EditorTab, EditorUiStore } from './state/editor-ui.store';
+import {
+  CONSOLE_WIDTH,
+  type EditorTab,
+  EditorUiStore,
+  REFERENCE_WIDTH,
+} from './state/editor-ui.store';
 import { WorkSessionService } from './work-session/work-session.service';
 
 const TABS: readonly EditorTab[] = ['game', 'code', 'art', 'map', 'sound', 'net'];
@@ -77,11 +82,15 @@ const RAIL: RailItem<EditorTab>[] = [
   ],
   providers: [WorkSessionService, EditorUiStore, RuntimeHostService, EditorRuntimeService],
   template: `
-    <div *transloco="let t" class="grid h-dvh grid-rows-[50px_1fr] bg-page text-ink">
-      <header class="flex items-center gap-2 border-b border-line bg-panel px-2">
+    <div *transloco="let t" class="grid h-dvh grid-rows-[56px_1fr] bg-page text-ink">
+      <!-- Same bar as the hub's: same height, same mark, same inset. It used to be 50px tall with a
+           28px mark centred in a 40px slot, so the logo jumped both down and sideways whenever you
+           crossed between the hub and the editor. Aligning the mark to the 81px rail below would
+           reintroduce exactly that shift, so it takes the top bar's placement instead. -->
+      <header class="flex items-center gap-1.5 border-b border-line bg-panel pr-2 pl-2.5">
         <a
           routerLink="/games"
-          class="flex w-10 shrink-0 items-center justify-center"
+          class="mr-[6px] flex shrink-0 items-center"
           [attr.aria-label]="t('nav.myGames')"
         >
           <img src="/img/logo.png" alt="" width="32" height="32" class="pixelated" />
@@ -99,13 +108,13 @@ const RAIL: RailItem<EditorTab>[] = [
           </div>
           <!-- No "show viewer" button here: the viewer is docked and popped from the console
                column's own header, which is where the design puts that control. -->
-          <button ncButton variant="secondary" size="sm" (click)="share()">
+          <button ncButton variant="secondary" size="bar" (click)="share()">
             {{ t('editor.share') }}
           </button>
           <button
             ncButton
             variant="primary"
-            size="sm"
+            size="bar"
             (click)="publish()"
             [disabled]="!session.isHost() || !!publishBlockedBy()"
             [attr.title]="publishBlockedBy() ? t(publishBlockedBy()!) : null"
@@ -119,10 +128,7 @@ const RAIL: RailItem<EditorTab>[] = [
 
       @switch (session.status()) {
         @case ('ready') {
-          <div
-            [class]="gridClass()"
-            [style.--console-w.px]="ui.collapsed() ? 12 : ui.consoleWidth()"
-          >
+          <div [class]="gridClass()" [style.--console-w.px]="ui.collapsed() ? 12 : CONSOLE_WIDTH">
             <nc-rail
               [items]="rail"
               [value]="ui.activeTab()"
@@ -130,11 +136,14 @@ const RAIL: RailItem<EditorTab>[] = [
               [label]="t('editor.tools')"
             />
             <section class="min-h-0 overflow-auto"><router-outlet /></section>
-            <!-- Wide enough, and DOC gets a column of its own instead of evicting the screen.
-                 Split mode was computed from the first version of this store and templated by
-                 nobody, so the docs always took the screen's place however wide the window was. -->
+            <!-- Wide enough, and the reference gets a column of its own rather than evicting the
+                 screen — "the screen is always on". Below that it takes the console's place, and
+                 the console column renders it there so the runtime is never torn down. -->
             @if (ui.columnMode() === 'split') {
-              <nc-doc-pane class="min-h-0 w-[400px] overflow-auto border-l border-line" />
+              <nc-doc-pane
+                class="min-h-0 border-l border-line"
+                [style.width.px]="REFERENCE_WIDTH"
+              />
             }
             <!-- The column stays docked in every tab; only the viewer inside it can float. -->
             <nc-console-column class="min-h-0 border-l border-line" />
@@ -167,7 +176,11 @@ const RAIL: RailItem<EditorTab>[] = [
     </div>
   `,
   // F1 and Ctrl-K are declared all over the design's chrome and were bound by nobody.
-  host: { '(document:keydown)': 'onShortcut($event)' },
+  //
+  // `block` is load-bearing: a ResizeObserver reports a 0-wide content box for an inline element,
+  // so the width this shell measures into the store stayed at its 1280 default no matter how wide
+  // the window was — and the docs could never earn a column of their own.
+  host: { class: 'block', '(document:keydown)': 'onShortcut($event)' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EditorShellComponent implements OnInit {
@@ -185,11 +198,18 @@ export class EditorShellComponent implements OnInit {
   protected readonly rail = RAIL;
   /** 80px rail, the workspace, and the console column — which is present in every tab. */
   /** The doc column only exists in split mode, so the template has to change with it. */
+  // The rail is 81 on the artboard, not 80, and the reference and console are fixed tracks —
+  // neither is draggable, any more than a tab inspector is.
+  // Spelled out, never interpolated: Tailwind generates utilities by scanning source text, so a
+  // class built at runtime is a class that does not exist — the columns silently stack.
   protected readonly gridClass = computed(() =>
     this.ui.columnMode() === 'split'
-      ? 'grid min-h-0 grid-cols-[80px_minmax(0,1fr)_400px_var(--console-w)]'
-      : 'grid min-h-0 grid-cols-[80px_minmax(0,1fr)_var(--console-w)]',
+      ? 'grid min-h-0 grid-cols-[81px_minmax(0,1fr)_401px_var(--console-w)]'
+      : 'grid min-h-0 grid-cols-[81px_minmax(0,1fr)_var(--console-w)]',
   );
+
+  protected readonly CONSOLE_WIDTH = CONSOLE_WIDTH;
+  protected readonly REFERENCE_WIDTH = REFERENCE_WIDTH;
 
   /**
    * F1 shows the docs for the symbol under the cursor; Ctrl/⌘-K puts the caret in the doc search.
@@ -199,14 +219,14 @@ export class EditorShellComponent implements OnInit {
     const meta = e.ctrlKey || e.metaKey;
     if (e.key === 'F1') {
       e.preventDefault();
-      this.ui.setConsoleTab('doc');
+      this.ui.setReferenceOpen(true);
       const symbol = this.codeEditorSymbol();
       if (symbol) this.docRequests.show(symbol);
       return;
     }
     if (meta && e.key.toLowerCase() === 'k') {
       e.preventDefault();
-      this.ui.setConsoleTab('doc');
+      this.ui.setReferenceOpen(true);
       this.docRequests.focusSearch();
     }
   }
