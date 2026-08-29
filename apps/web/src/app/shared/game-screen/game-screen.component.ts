@@ -7,7 +7,9 @@ import {
   effect,
   inject,
   input,
+  Optional,
   output,
+  SkipSelf,
   viewChild,
 } from '@angular/core';
 import type { Game, NetPermissions, NetUi } from '@naucto/engine';
@@ -22,7 +24,17 @@ import { RuntimeHostService } from './runtime-host.service';
 @Component({
   selector: 'nc-game-screen',
   imports: [ButtonDirective, IconComponent],
-  providers: [RuntimeHostService],
+  providers: [
+    {
+      // Reuse the runtime an ancestor already provides — the editor shell owns one so its CODE and
+      // GAME tabs read the same engine the console column mounts. Standalone hosts (the play page)
+      // have no ancestor and get their own.
+      provide: RuntimeHostService,
+      useFactory: (parent: RuntimeHostService | null): RuntimeHostService =>
+        parent ?? new RuntimeHostService(),
+      deps: [[new Optional(), new SkipSelf(), RuntimeHostService]],
+    },
+  ],
   template: `
     <div
       class="relative mx-auto flex max-w-[1600px] items-center justify-center overflow-hidden rounded-t-sm border border-line bg-black"
@@ -62,9 +74,17 @@ import { RuntimeHostService } from './runtime-host.service';
     </div>
     @if (transport()) {
       <div
-        class="mx-auto -mt-px flex h-[44px] max-w-[1600px] items-center gap-1 rounded-b-sm border border-t-0 border-line bg-panel px-1"
+        class="mx-auto -mt-px flex max-w-[1600px] items-center bg-panel"
+        [class]="
+          compact()
+            ? 'h-[36px] gap-1.5 border-y border-line px-1.75'
+            : 'h-[44px] gap-1 rounded-b-sm border border-t-0 border-line px-1'
+        "
       >
-        <span class="flex items-center gap-0.5 rounded-sm border border-line bg-inset p-0.5">
+        <span
+          class="flex items-center"
+          [class]="compact() ? 'gap-px' : 'gap-0.5 rounded-sm border border-line bg-inset p-0.5'"
+        >
           @if (host.state() === 'running') {
             <button
               ncButton
@@ -111,13 +131,17 @@ import { RuntimeHostService } from './runtime-host.service';
             </button>
           }
         </span>
-        <span class="ml-1 hidden font-mono text-label text-ink-4 md:inline">
-          320×180 · {{ fit() === 'width' ? 'FIT TO WIDTH' : 'INTEGER SCALE' }}
-        </span>
+        <!-- The column already says 320×180 in its own header; repeating it here is what made the
+             420px transport wrap onto four lines and collide with the buttons. -->
+        @if (!compact()) {
+          <span class="ml-1 hidden font-mono text-label whitespace-nowrap text-ink-4 md:inline">
+            320×180 · {{ fit() === 'width' ? 'FIT TO WIDTH' : 'INTEGER SCALE' }}
+          </span>
+        }
         <span class="flex-1"></span>
         <!-- Who is on the game, and on what: the design keeps this in the bar, not behind a popover. -->
         @for (p of players(); track p.slot) {
-          <span class="flex items-center gap-0.5 font-mono text-label text-ink-3">
+          <span class="flex items-center gap-0.5 font-mono text-label whitespace-nowrap text-ink-3">
             <nc-icon [name]="p.pad ? 'gamepad' : 'keyboard'" [size]="12" />
             P{{ p.slot }}
           </span>
@@ -143,6 +167,9 @@ export class GameScreenComponent {
   readonly game = input.required<Game | null>();
   readonly fit = input<'width' | 'integer'>('width');
   readonly transport = input(true);
+  /** The editor column's transport: a 36px band, no frame around the buttons, nothing repeated
+   *  from the header above it. The public game page keeps the full one. */
+  readonly compact = input(false, { transform: booleanAttribute });
   readonly showFps = input(true);
   /** CPU beside the FPS badge, and the frame-step button: editor affordances, not player ones. */
   readonly debug = input(false, { transform: booleanAttribute });

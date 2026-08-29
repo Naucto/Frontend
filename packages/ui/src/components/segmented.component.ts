@@ -73,6 +73,7 @@ export class SegmentedComponent<T extends string = string> {
   protected readonly trackClass = computed(() =>
     [
       this.fill() ? 'flex w-full' : 'inline-flex',
+      'max-w-full flex-wrap',
       this.variant() === 'chips'
         ? this.small()
           ? 'gap-[3px]'
@@ -83,7 +84,7 @@ export class SegmentedComponent<T extends string = string> {
 
   protected readonly itemClass = computed(() =>
     [
-      'rounded-xs uppercase transition-colors disabled:opacity-40',
+      'rounded-xs whitespace-nowrap uppercase transition-colors disabled:opacity-40',
       this.fill() ? 'flex-1 text-center' : '',
       this.variant() === 'chips'
         ? this.small()

@@ -1,6 +1,6 @@
 import { type Routes } from '@angular/router';
 
-import { authGuard, guestGuard } from './core/auth/auth.guard';
+import { authGuard, desktopOnlyGuard, guestGuard } from './core/auth/auth.guard';
 
 export const routes: Routes = [
   {
@@ -33,6 +33,13 @@ export const routes: Routes = [
     ],
   },
   {
+    path: 'edit/:id',
+    canActivate: [authGuard],
+    canMatch: [desktopOnlyGuard],
+    loadChildren: () => import('./features/editor/editor.routes').then((m) => m.EDITOR_ROUTES),
+    title: 'Editor — Naucto',
+  },
+  {
     path: '',
     loadComponent: () =>
       import('./features/shell/app-shell.component').then((m) => m.AppShellComponent),
@@ -42,6 +49,29 @@ export const routes: Routes = [
         path: 'hub',
         loadComponent: () => import('./features/hub/hub.page').then((m) => m.HubPage),
         title: 'Naucto',
+      },
+      {
+        path: 'hub/all/:row',
+        loadComponent: () => import('./features/hub/see-all.page').then((m) => m.SeeAllPage),
+        title: 'Naucto',
+      },
+      {
+        path: 'play/:id',
+        loadComponent: () => import('./features/game/game.page').then((m) => m.GamePage),
+        title: 'Play — Naucto',
+      },
+      { path: 'project/:id/play', redirectTo: 'play/:id' },
+      {
+        path: 'games',
+        loadComponent: () => import('./features/games/my-games.page').then((m) => m.MyGamesPage),
+        canActivate: [authGuard],
+        title: 'My games — Naucto',
+      },
+      {
+        path: 'games/new',
+        loadComponent: () => import('./features/games/new-game.page').then((m) => m.NewGamePage),
+        canActivate: [authGuard],
+        title: 'New game — Naucto',
       },
       {
         path: 'sign-in',
