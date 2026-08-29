@@ -24,8 +24,7 @@ export const EDITOR_ROUTES: Routes = [
       },
       {
         path: 'sound',
-        loadComponent: () => import('./placeholder-tab.page').then((m) => m.PlaceholderTabPage),
-        data: { tab: 'sound' },
+        loadComponent: () => import('./sound/sound-tab.page').then((m) => m.SoundTabPage),
       },
       {
         path: 'net',

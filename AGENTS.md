@@ -87,6 +87,11 @@ redirect targets. Do not disable security lint rules. See `SECURITY.md`.
 - npm 12 gates install scripts: approved packages are listed under `allowScripts` in `package.json`.
 - `@ngrx/signals` is pinned to Angular via an `overrides` entry until ngrx ships an Angular 22 range.
 - The `docs/` submodule must be checked out (`git submodule update --init`) before `docs:build`.
+- The `label` utility sets its own `color`, so a parent's state colour (`aria-checked:text-gold-ink`
+  and friends) never reaches a `.label` _child_ — the selected oscillator card kept a dim word under
+  a gold border for exactly this reason. On the stateful element itself it is fine; on a child,
+  write the type utilities out (`font-mono text-micro tracking-wide uppercase`) and let colour
+  inherit.
 - Icons the design draws differently from pixelarticons live in `CUSTOM` in `tools/build-icons.mjs`
   and override the generated glyph of the same name. `tools/design-icons.mjs` compares the two sets
   by rasterising each path, which is how a hollow play was found under a name that reads as correct.
