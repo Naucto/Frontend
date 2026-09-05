@@ -265,21 +265,38 @@
     min-height: 100dvh;
     background: var(--nc-page);
   }
-  /* `letter-spacing` in `em` resolves against the font size of the element that declares it, and
-     then inherits as a computed length. Declared once on the root, every descendant would carry the
-     root's tracking whatever its own size. */
-  * {
-    letter-spacing: var(--tracking-copy);
+  /* Tracking travels as a custom property, and the universal rule is the only thing that spends it.
+     Two constraints meet here. `letter-spacing` in `em` resolves against the font size of the
+     element that *declares* it and inherits as a fixed length, so a single declaration on the root
+     would print the root's tracking on every size below it — which is why the value is spent by a
+     rule that matches each element. But a rule that matches each element also outranks inheritance,
+     so a tracking set on a container would be overwritten on the very children that draw its text.
+     A custom property is subject to neither: it inherits as the unresolved token, and each element
+     resolves the `em` against its own size. Setting it is how anything below states its tracking. */
+  :root {
+    --nc-tracking: var(--tracking-copy);
   }
-  /* The mono face is set solid; an element that wants tracking on it says so. The subtree has to be
-     named as well as the element, because the universal rule reaches every descendant — a child of a
-     mono container would take the tracking back instead of inheriting none. */
-  :is(.font-mono, code, pre, kbd, samp),
-  :is(.font-mono, code, pre, kbd, samp) * {
-    letter-spacing: normal;
+  * {
+    letter-spacing: var(--nc-tracking);
+  }
+  /* Form controls are reset to `letter-spacing: inherit`, which outranks the universal rule and
+     hands them the parent's tracking as a length — wrong the moment the two differ in size. Naming
+     them again is what puts them back on the property every other element reads. */
+  button,
+  input,
+  optgroup,
+  select,
+  textarea,
+  ::file-selector-button {
+    letter-spacing: var(--nc-tracking);
+  }
+  /* The mono face is set solid; an element that wants tracking on it says so. Naming the element
+     alone is enough now that the subtree inherits the property rather than matching a rule. */
+  :is(.font-mono, code, pre, kbd, samp) {
+    --nc-tracking: normal;
   }
   .font-ui {
-    letter-spacing: var(--tracking-copy);
+    --nc-tracking: var(--tracking-copy);
   }
   /* Interactive elements: pointer cursor and a short colour transition for hover states. */
   button,
@@ -326,10 +343,19 @@
   }
 }
 
+/* The kit's tracking travels as a property, so the utility that names a tracking has to set that
+   property rather than the declaration — otherwise a tracking put on a container is lost on the
+   children that draw its text. Overrides the generated utility of the same name. */
+@utility tracking-* {
+  --nc-tracking: --value(--tracking-*, [*]);
+  letter-spacing: --value(--tracking-*, [*]);
+}
+
 @utility label {
   font-family: var(--font-mono);
   font-size: var(--text-label);
   line-height: var(--text-label--line-height);
+  --nc-tracking: var(--tracking-label);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
   color: var(--nc-ink-3);
