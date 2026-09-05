@@ -26,6 +26,7 @@
     "e2e": "npm run docs:build && playwright test",
     "docs:build": "node tools/docs-build.mjs",
     "icons:check": "node tools/build-icons.mjs --check",
+    "design:check": "HERE=$PWD; D2C=${D2C:-../Design2Code}; cd \"$D2C\" && npm run d2c -- harvest --canvas fixtures/naucto-redesign.html --out out/design.ir.json --no-png && npm run d2c -- report --ir out/design.ir.json --target naucto-angular --repo \"$HERE\" --gallery 1a --expect \"$HERE/tools/design-coverage.json\"",
     "seed:content": "node tools/seed-content.mjs"
   },
   "devDependencies": {

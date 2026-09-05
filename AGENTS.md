@@ -128,16 +128,27 @@ broken; an absence reads as not built.
   write the type utilities out (`font-mono text-micro tracking-wide uppercase`) and let colour
   inherit.
 - Icons the design draws differently from pixelarticons live in `CUSTOM` in `tools/build-icons.mjs`
-  and override the generated glyph of the same name. `tools/design-icons.mjs` compares the two sets
-  by rasterising each path, which is how a hollow play was found under a name that reads as correct.
+  and override the generated glyph of the same name. `npm run design:check` compares the two sets by
+  rasterising each path, which is how a hollow play was found under a name that reads as correct —
+  and it now checks the colours against `tokens.css`, the type scale and the corner ladder in the
+  same pass. It drives `d2c report` from a Design2Code checkout beside this one
+  (`Naucto/Design2Code`, private; point elsewhere with `D2C=<path> npm run design:check`).
   Most of `CUSTOM` is generated from the foundations artboard, which captions each glyph it shows;
   the rest are marks the design draws but never captions, and those are settled by **slot** — the
   glyph goes in under the name whose one call site is the button the design draws it on, never by
-  nearest-neighbour, which finds a match for glyphs the design does not draw at all. Where the app
-  deliberately disagrees with a caption, say so in `EXCEPTIONS` in `tools/design-icons.mjs` so the
-  report's "names that disagree" stays at zero and keeps working as a regression signal.
-- Anything the app draws that is not in `ICON_PATHS` — the oscillator waves are the current case —
-  has to be taught to `design-icons.mjs` as well, or the report lists it as missing forever.
+  nearest-neighbour, which finds a match for glyphs the design does not draw at all.
+- **"I know about that one" has two forms and they live in different places.** A caption the app
+  contradicts _on purpose_ goes in `DISAGREEMENTS` in the target profile
+  (`Design2Code/packages/targets/naucto-angular/src/profile.ts`), with the reason the design's own
+  usage outranks its gallery sheet. Something the design draws that the app simply has not got round
+  to goes in `tools/design-coverage.json` with a note, and the change that finally draws it deletes
+  that line in the same diff. Both exist so the report says nothing when nothing moved, which is the
+  only state in which anyone keeps running it.
+- Anything the app draws that is not in `ICON_PATHS` — the oscillator waves and the controller are
+  the current cases — has to be listed in `EXTRA_SOURCES` in
+  `Design2Code/packages/targets/naucto-angular/src/glyphs.ts`, or the report lists it as missing
+  forever. `packages/ui/src/components/presence-flag.component.ts` draws its own path too and is not
+  listed; nothing reports it today, so it stays out until something does.
 - `IconSize` is `12 | 24 | 48` on purpose: a 24-grid glyph only stays crisp under
   `shape-rendering: crispEdges` at exact halves and doubles. Where an artboard renders one at 16,
   take the nearest legal step rather than widening the union.
