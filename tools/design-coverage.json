@@ -58,19 +58,19 @@
     {
       "id": "0d5955332416",
       "sample": "M2 0H3V1H2Z M3 0H4V1H3Z M4 0H5V1H4Z M5 0H6V1H5Z M1 1H2V2H1Z M6 1",
-      "note": "To draw: the GOOGLE mark on the sign-in artboard. The app labels its provider buttons with words only.",
+      "note": "The app draws this: `nc-brand-mark` builds it rect-for-rect on the same grid, and the two rasterise identically (verified 2026-09-05). The reader cannot see it because that component builds its rects from a TypeScript table rather than from markup, so it stays listed until a reader that renders the component exists. — GOOGLE",
       "reconstructed": true
     },
     {
       "id": "973dd8a8e91f",
       "sample": "M1 0H2V1H1Z M2 0H3V1H2Z M7 0H8V1H7Z M8 0H9V1H8Z M1 1H2V2H1Z M2 1",
-      "note": "To draw: the GITHUB mark on the sign-in artboard. Same as GOOGLE.",
+      "note": "The app draws this: `nc-brand-mark` builds it rect-for-rect on the same grid, and the two rasterise identically (verified 2026-09-05). The reader cannot see it because that component builds its rects from a TypeScript table rather than from markup, so it stays listed until a reader that renders the component exists. — GITHUB",
       "reconstructed": true
     },
     {
       "id": "ab03d4d2c7f3",
       "sample": "M0 0H3V3H0Z M4 0H7V3H4Z M0 4H3V7H0Z M4 4H7V7H4Z",
-      "note": "To draw: the MICROSOFT mark on the sign-in artboard. Same as GOOGLE.",
+      "note": "The app draws this: `nc-brand-mark` builds it rect-for-rect on the same grid, and the two rasterise identically (verified 2026-09-05). The reader cannot see it because that component builds its rects from a TypeScript table rather than from markup, so it stays listed until a reader that renders the component exists. — MICROSOFT",
       "reconstructed": true
     }
   ]
