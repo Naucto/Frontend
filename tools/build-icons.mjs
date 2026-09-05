@@ -93,6 +93,12 @@ const CUSTOM = {
   move: 'M13 0h-2v2H9v2H7v2h2V4h2v7H4V9h2V7H4v2H2v2H0v2h2v2h2v2h2v-2H4v-2h7v7H9v-2H7v2h2v2h2v2h2v-2h2v-2h2v-2h-2v2h-2v-7h7v2h-2v2h2v-2h2v-2h2v-2h-2V9h-2V7h-2v2h2v2h-7V4h2v2h2V4h-2V2h-2V0z',
   music: 'M8 4h12v16h-8v-8h6V8h-8v12H2v-8h6V4zm0 10H4v4h4v-4zm10 0h-4v4h4v-4z',
   next: 'M6 4h2v2h2v2h2v2h2v4h-2v2h-2v2H8v2H6V4zm12 0h-2v16h2V4z',
+  // The gallery has no cell for this one. The design draws it on the doc pane's REFERENCE header,
+  // a plain envelope over a base — where pixelarticons' bulb of the same name throws rays, which at
+  // 12px reads as a notification rather than a section. Settled by slot: the one place the app
+  // spends this name is that header.
+  lightbulb:
+    'M8 2h8v2H8V2ZM6 6V4h2v2H6Zm0 6H4V6h2v6Zm2 2H6v-2h2v2Zm8 0v4H8v-4h2v2h4v-2h2Zm2-2v2h-2v-2h2Zm0-6h2v6h-2V6Zm0 0V4h-2v2h2Zm-2 14H8v2h8v-2Z',
   // The only entry here that does NOT come from the gallery cell of the same name. The gallery
   // draws an outline bell once; every one of the design's 24 actual bells — hub header and editor
   // header alike, 16px in ink-3 — is the solid one below. Usage wins over the library sheet, since

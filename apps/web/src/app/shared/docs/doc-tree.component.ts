@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
-import { IconComponent } from '@naucto/ui';
+import { IconComponent, type IconName } from '@naucto/ui';
 
 import { DocsService } from './docs.service';
 
@@ -57,8 +57,14 @@ export class DocTreeComponent {
     return this.counts().get(ns) ?? 0;
   }
 
-  protected iconOf(section: string): 'zap' | 'lightbulb' | 'play' | 'code' | 'sliders' | 'book-open' {
-    return section === 'start' ? 'zap' : section === 'concepts' ? 'lightbulb' : section === 'tutorials' ? 'play' : section === 'api' ? 'code' : section === 'editors' ? 'sliders' : 'book-open';
+  /** Each section header takes the glyph the artboard draws on it. */
+  protected iconOf(section: string): IconName {
+    if (section === 'start') return 'zap';
+    if (section === 'concepts') return 'grid';
+    if (section === 'tutorials') return 'play';
+    if (section === 'api') return 'code';
+    if (section === 'editors') return 'sliders';
+    return 'lightbulb';
   }
 
   protected toggle(id: string): void {
