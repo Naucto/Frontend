@@ -101,7 +101,7 @@ import { CodeEditorComponent, type CursorInfo } from './code-editor.component';
         <span class="flex-1"></span>
         <span
           class="flex items-center gap-0.5"
-          [class]="session.synced() ? 'text-jade-ink' : 'text-orange'"
+          [class]="session.synced() ? 'text-jade-ink' : 'text-orange-ink'"
         >
           <span class="inline-block h-1 w-1 bg-current"></span>
           {{ session.synced() ? t('editor.synced') : t('editor.syncing') }}

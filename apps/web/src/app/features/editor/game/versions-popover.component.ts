@@ -99,7 +99,7 @@ const toRows = (raw: unknown, key: 'versions' | 'checkpoints', release: boolean)
       <span
         class="ml-1 flex items-center gap-0.5 font-mono text-label"
         [class.text-hot-ink]="tone === 'over'"
-        [class.text-orange]="tone === 'near'"
+        [class.text-orange-ink]="tone === 'near'"
       >
         <nc-icon name="save" [size]="12" />
         {{ kb(size().total) }}

@@ -611,7 +611,7 @@ export class NetTabPage {
 
   protected valueClass(kind: Row['kind']): string {
     return kind === 'number'
-      ? 'text-orange'
+      ? 'text-orange-ink'
       : kind === 'string'
         ? 'text-jade-ink'
         : kind === 'boolean'

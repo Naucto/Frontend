@@ -89,10 +89,10 @@ export const naucto_highlight = HighlightStyle.define([
   { tag: [t.controlKeyword, t.operatorKeyword], color: 'var(--nc-hot-ink)' },
   { tag: [t.function(t.variableName), t.function(t.propertyName)], color: 'var(--nc-sky-ink)' },
   { tag: [t.variableName, t.propertyName], color: 'var(--nc-ink)' },
-  { tag: t.number, color: 'var(--nc-orange)' },
+  { tag: t.number, color: 'var(--nc-orange-ink)' },
   { tag: t.string, color: 'var(--nc-jade-ink)' },
   { tag: t.comment, color: 'var(--nc-ink-4)', fontStyle: 'italic' },
   { tag: [t.operator, t.punctuation], color: 'var(--nc-ink-2)' },
-  { tag: t.bool, color: 'var(--nc-orange)' },
-  { tag: t.null, color: 'var(--nc-orange)' },
+  { tag: t.bool, color: 'var(--nc-orange-ink)' },
+  { tag: t.null, color: 'var(--nc-orange-ink)' },
 ]);

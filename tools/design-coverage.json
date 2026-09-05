@@ -5,9 +5,9 @@
   "coverage": {
     "colour": {
       "distinct": 103,
-      "distinctResolved": 48,
+      "distinctResolved": 49,
       "uses": 5266,
-      "usesResolved": 5040
+      "usesResolved": 5051
     },
     "type": {
       "distinct": 144,
