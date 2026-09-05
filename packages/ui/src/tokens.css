@@ -34,6 +34,9 @@
   --tracking-wide: 0.1em;
   /* Chips and presence tags sit between label and button tracking. */
   --tracking-tag: 0.08em;
+  /* The UI face is set with a hair of tracking. The design varies how much from screen to screen,
+     so this is the middle of what it draws rather than a value read off one element. */
+  --tracking-copy: 0.03em;
   /* 11px strip headings — CONSOLE/DOC/PERF, SPRITE 001, MAP 0, INSTRUMENTS, PUBLISHING, GAME.
      A step of its own in the design, one notch tighter than `label`. */
   --tracking-strip: 0.12em;
@@ -260,6 +263,22 @@
     margin: 0;
     min-height: 100dvh;
     background: var(--nc-page);
+  }
+  /* `letter-spacing` in `em` resolves against the font size of the element that declares it, and
+     then inherits as a computed length. Declared once on the root, every descendant would carry the
+     root's tracking whatever its own size. */
+  * {
+    letter-spacing: var(--tracking-copy);
+  }
+  /* The mono face is set solid; an element that wants tracking on it says so. The subtree has to be
+     named as well as the element, because the universal rule reaches every descendant — a child of a
+     mono container would take the tracking back instead of inheriting none. */
+  :is(.font-mono, code, pre, kbd, samp),
+  :is(.font-mono, code, pre, kbd, samp) * {
+    letter-spacing: normal;
+  }
+  .font-ui {
+    letter-spacing: var(--tracking-copy);
   }
   /* Interactive elements: pointer cursor and a short colour transition for hover states. */
   button,

@@ -112,13 +112,13 @@ const SHELF_SIZE = 10;
                      ink-2 both go dark in daylight, which put dark text on a dark wash. -->
                 <div class="label mb-[9px] text-gold">{{ t('hub.gameOfTheWeek') }}</div>
                 <div
-                  class="mb-1 text-[22px] leading-[1.1] tracking-[0.03em] text-on-accent-dark md:text-hero"
+                  class="mb-1 text-[22px] leading-[1.1] tracking-copy text-on-accent-dark md:text-hero"
                 >
                   {{ g.name }}
                 </div>
                 <!-- The byline is a step up from meta here: the design sets it at 12px so the
                      "· remixable" it carries is readable rather than fine print. -->
-                <div class="text-body tracking-[0.02em] text-on-accent-dark/75">
+                <div class="text-body tracking-copy text-on-accent-dark/75">
                   {{ t('hub.by', { name: g.creator.username }) }} · {{ plays(g.viewCount) }}
                   {{ t('hub.plays') }}
                   @if (g.tags.includes('remixable')) {
