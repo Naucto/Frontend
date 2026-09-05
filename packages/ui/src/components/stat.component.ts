@@ -32,7 +32,7 @@ import { IconComponent } from './icon.component';
     }
   `,
   host: {
-    class: 'inline-flex items-center font-mono text-label uppercase tracking-button',
+    class: 'inline-flex items-center font-mono text-label uppercase tracking-data',
     '[class]':
       '(tone() === "hot" ? "text-hot-ink" : "text-ink-3") + (label() ? " gap-[7px]" : " gap-[5px]")',
   },

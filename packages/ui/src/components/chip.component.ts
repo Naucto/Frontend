@@ -47,7 +47,7 @@ export class ChipComponent {
   protected readonly classes = computed(() => {
     const shape =
       this.kind() === 'tag'
-        ? 'h-[29px] px-[10px] [text-transform:none]'
+        ? 'h-[29px] px-[10px] tracking-data [text-transform:none]'
         : 'h-[22px] px-1 uppercase tracking-tag';
     return `inline-flex items-center gap-0.5 rounded-xs border font-mono text-label ${shape} ${TONES[this.tone()]}`;
   });

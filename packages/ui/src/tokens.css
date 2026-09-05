@@ -38,6 +38,8 @@
      it gives names and titles a shade more than running copy — so this is the value it reaches for
      most, spent on both rather than split into two steps nobody could tell apart. */
   --tracking-copy: 0.02em;
+  /* Tags and figures: a hair tighter than a button's, which is a word to press rather than read. */
+  --tracking-data: 0.04em;
   /* 11px strip headings — CONSOLE/DOC/PERF, SPRITE 001, MAP 0, INSTRUMENTS, PUBLISHING, GAME.
      A step of its own in the design, one notch tighter than `label`. */
   --tracking-strip: 0.12em;
@@ -103,6 +105,7 @@
   --color-orange: var(--nc-orange);
   --color-orange-ink: var(--nc-orange-ink);
   --color-blush: var(--nc-blush);
+  --color-blush-ink: var(--nc-blush-ink);
   --color-lime: var(--nc-lime);
   --color-magenta: var(--nc-magenta);
   --color-gold-wash: var(--nc-gold-wash);
@@ -173,6 +176,7 @@
   --nc-orange: #ff8426;
   --nc-orange-ink: #ff8426;
   --nc-blush: #ff80a4;
+  --nc-blush-ink: #ff80a4;
   /* Two more palette hues, so all eight tile-flag bits are told apart by colour. */
   --nc-lime: #bfff3c;
   --nc-magenta: #94216a;
@@ -211,6 +215,7 @@
   --nc-jade-ink: #0a7a4a;
   --nc-sky-ink: #1f6285;
   --nc-orange-ink: #a34e10;
+  --nc-blush-ink: #b03a5e;
   --nc-gold-wash: #f7ecc0;
   --nc-jade-wash: #cfe9dc;
   --nc-hot-soft: #c41e5c;
@@ -245,6 +250,7 @@
     --nc-jade-ink: #0a7a4a;
     --nc-sky-ink: #1f6285;
     --nc-orange-ink: #a34e10;
+    --nc-blush-ink: #b03a5e;
     --nc-gold-wash: #f7ecc0;
     --nc-jade-wash: #cfe9dc;
     --nc-hot-soft: #c41e5c;

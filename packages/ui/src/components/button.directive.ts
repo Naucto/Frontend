@@ -40,7 +40,7 @@ const SIZES: Record<ButtonSize, { box: string; px: string }> = {
   // The hub hero's PLAY and REMIX, and nothing else: measured at 92x34 and 80x34 on the artboard,
   // the only pair sitting over artwork rather than over a surface. The height was 40 here for a
   // round — the 20px of padding is right and was read off the same button, but the box is 34.
-  hero: { box: 'h-[34px] text-body', px: 'px-[20px]' },
+  hero: { box: 'h-[40px] text-body', px: 'px-[20px]' },
   // The one place the design uses it is the sign-in submit: 39px, the UI face at 13px, and a
   // wider 0.08em — a button you are meant to land on without aiming.
   lg: { box: 'h-[39px] text-ui tracking-[0.08em]', px: 'px-2' },

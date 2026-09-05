@@ -118,7 +118,7 @@ const SHELF_SIZE = 10;
                 </div>
                 <!-- The byline is a step up from meta here: the design sets it at 12px so the
                      "· remixable" it carries is readable rather than fine print. -->
-                <div class="text-body tracking-copy text-on-accent-dark/75">
+                <div class="text-body tracking-copy text-ink-2">
                   {{ t('hub.by', { name: g.creator.username }) }} · {{ plays(g.viewCount) }}
                   {{ t('hub.plays') }}
                   @if (g.tags.includes('remixable')) {
