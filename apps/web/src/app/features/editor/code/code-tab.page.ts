@@ -31,7 +31,7 @@ import { CodeEditorComponent, type CursorInfo } from './code-editor.component';
             role="tab"
             tabindex="0"
             [attr.aria-selected]="f.id === activeId()"
-            class="group flex cursor-pointer items-center gap-1 border-t-2 border-r border-r-line px-[15px] font-ui text-body tracking-[0.03em] hover:text-ink"
+            class="group flex cursor-pointer items-center gap-1 border-t-2 border-r border-r-line px-[15px] font-ui text-body tracking-copy hover:text-ink"
             [class]="
               f.id === activeId()
                 ? 'border-t-gold bg-paper text-ink'

@@ -11,9 +11,9 @@
     },
     "type": {
       "distinct": 144,
-      "distinctResolved": 71,
+      "distinctResolved": 77,
       "uses": 2512,
-      "usesResolved": 1763
+      "usesResolved": 1883
     },
     "radius": {
       "distinct": 18,

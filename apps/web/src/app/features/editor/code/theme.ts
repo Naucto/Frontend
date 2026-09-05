@@ -13,7 +13,7 @@ export const nauctoTheme = EditorView.theme({
   },
   // 22px, not a ratio: the artboard sets 13/22 and 1.6 lands on 20.8, so every screenful of code
   // drifted a little further off the design's baseline the further down you read.
-  '.cm-scroller': { fontFamily: 'var(--font-mono)', lineHeight: '22px' },
+  '.cm-scroller': { fontFamily: 'var(--font-mono)', letterSpacing: 'normal', lineHeight: '22px' },
   '.cm-content': { caretColor: 'var(--nc-gold)', padding: '8px 0' },
   '.cm-cursor, .cm-dropCursor': { borderLeftColor: 'var(--nc-gold)', borderLeftWidth: '2px' },
   '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection': {
