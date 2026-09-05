@@ -156,6 +156,7 @@
   .doc-html .doc-diagram .d-label text {
     fill: var(--nc-ink-body);
     font-family: var(--font-mono);
+    letter-spacing: normal;
     font-size: var(--text-meta);
   }
 
@@ -186,6 +187,7 @@
 }
 .nc-doc-card__sig {
   font-family: var(--font-mono);
+  letter-spacing: normal;
   color: var(--nc-gold-ink);
 }
 .nc-doc-card__summary {
@@ -199,6 +201,7 @@
 }
 .nc-doc-card__params dt {
   font-family: var(--font-mono);
+  letter-spacing: normal;
   color: var(--nc-ink-3);
 }
 .nc-doc-card__params dd {

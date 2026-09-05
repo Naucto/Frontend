@@ -87,7 +87,7 @@ interface ProfileExtras {
             <h1 class="text-display text-ink">{{ p.nickname || p.username }}</h1>
             <!-- One line, the way the design writes it: what this person says about themselves,
                  then the year they arrived. The handle is in the address bar. -->
-            <div class="mt-[6px] max-w-[560px] text-body tracking-[0.02em] text-ink-3">
+            <div class="mt-[6px] max-w-[560px] text-body tracking-copy text-ink-3">
               {{ p.description || '@' + p.username }}
               @if (joined(); as year) {
                 · {{ t('profile.joined', { year: year }) }}

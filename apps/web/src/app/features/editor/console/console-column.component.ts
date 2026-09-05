@@ -179,7 +179,7 @@ const PIP_WIDTH = 304;
           }
           @switch (ui.columnMode() === 'swap' ? '' : ui.consoleTab()) {
             @case ('console') {
-              <nc-lcd variant="flush" class="h-full leading-[1.85] tracking-[0.03em]">
+              <nc-lcd variant="flush" class="h-full leading-[1.85] tracking-copy">
                 @for (l of lines(); track l.id) {
                   <div
                     [class.text-hot]="l.level === 'error'"
