@@ -1,0 +1,125 @@
+{
+  "//": "Which screen each artboard is compared against, and what the app needs before it will render one. Read by e2e/screens.ts and by `d2c verify --screens`. Routes are registered in the order given and Playwright resolves the most recently registered first, so a pattern that would shadow a more specific one goes after it.",
+  "shared": {
+    "//": "Two of these are the whole session: the app's boot calls refresh then profile, and nothing else. The project stubs sit here too rather than on each editor screen — a screen that never asks for project 7 is unaffected by a route it does not hit, and repeating ten stubs six times would bury the one line per screen that actually differs.",
+    "localStorage": { "naucto.theme": "dark" },
+    "routes": [
+      { "pattern": "**/auth/refresh", "json": { "access_token": "tok" } },
+      {
+        "pattern": "**/users/profile",
+        "json": {
+          "id": 1,
+          "email": "a@x",
+          "username": "alexis",
+          "nickname": "alexis",
+          "roles": [],
+          "createdAt": "",
+          "updatedAt": "",
+          "message": ""
+        }
+      },
+      {
+        "pattern": "**/notifications/webrtc-offer",
+        "json": { "data": { "signaling": ["ws://127.0.0.1:9"] } }
+      },
+      {
+        "pattern": "**/work-sessions/join/7",
+        "json": {
+          "roomId": "room-7",
+          "hostId": 1,
+          "webrtcOffer": {
+            "signaling": ["ws://127.0.0.1:9"],
+            "maxConns": 10,
+            "peerOpts": { "config": { "iceServers": [] } }
+          }
+        }
+      },
+      { "pattern": "**/work-sessions/leave/7", "status": 204, "body": "" },
+      {
+        "//": "Empty rather than absent: the engine falls back to the starter game, which is what the artboards draw.",
+        "pattern": "**/projects/7/fetchContent",
+        "status": 200,
+        "body": "",
+        "contentType": "application/octet-stream"
+      },
+      { "pattern": "**/projects/7/saveContent", "json": { "id": 7 } },
+      { "pattern": "**/projects/7/image", "status": 204, "body": "" },
+      { "pattern": "**/projects/7/versions", "json": [] },
+      { "pattern": "**/projects/7/checkpoints", "json": [] },
+      {
+        "pattern": "**/projects/7",
+        "json": {
+          "id": 7,
+          "name": "Platformer",
+          "shortDesc": "A tiny run-and-jump built as a tutorial.",
+          "longDesc": "Move the moon with the arrow keys or a gamepad.",
+          "tags": ["action", "adventure"],
+          "iconUrl": null,
+          "status": "IN_PROGRESS",
+          "monetization": "NONE",
+          "price": null,
+          "userId": 1,
+          "createdAt": "",
+          "updatedAt": "",
+          "publishedAt": null,
+          "viewCount": 0,
+          "uniquePlayers": 0,
+          "activePlayers": 0,
+          "likes": 0,
+          "forkCount": 4,
+          "forkedFromId": 3
+        }
+      }
+    ]
+  },
+  "screens": [
+    {
+      "id": "editor-game",
+      "board": "1b",
+      "url": "http://localhost:3001/edit/7/game",
+      "waitFor": "nc-game-tab-page"
+    },
+    {
+      "id": "editor-code",
+      "board": "1c",
+      "url": "http://localhost:3001/edit/7/code",
+      "waitFor": "nc-code-tab-page"
+    },
+    {
+      "id": "editor-art",
+      "board": "1d",
+      "url": "http://localhost:3001/edit/7/art",
+      "waitFor": "nc-art-tab-page"
+    },
+    {
+      "id": "editor-map",
+      "board": "1e",
+      "url": "http://localhost:3001/edit/7/map",
+      "waitFor": "nc-map-tab-page"
+    },
+    {
+      "id": "editor-sound",
+      "board": "1f",
+      "url": "http://localhost:3001/edit/7/sound",
+      "waitFor": "nc-sound-tab-page"
+    },
+    {
+      "id": "editor-net",
+      "board": "1g",
+      "url": "http://localhost:3001/edit/7/net",
+      "waitFor": "nc-net-tab-page"
+    },
+    {
+      "id": "settings-controls",
+      "board": "1k",
+      "url": "http://localhost:3001/settings/controls",
+      "waitFor": "nc-settings-page"
+    },
+    {
+      "id": "friends",
+      "board": "1l",
+      "url": "http://localhost:3001/friends",
+      "waitFor": "nc-friends-page"
+    }
+  ]
+}
