@@ -119,7 +119,7 @@
     color: var(--nc-jade-ink);
   }
   .tok-num {
-    color: var(--nc-orange);
+    color: var(--nc-orange-ink);
   }
   .tok-cmt {
     color: var(--nc-ink-4);

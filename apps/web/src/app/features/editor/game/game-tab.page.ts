@@ -187,7 +187,7 @@ const SUMMARY_MAX = 80;
 
         <aside class="overflow-auto border-l border-line bg-panel p-2">
           @if (!canPublish()) {
-            <p class="mb-2 text-meta text-orange">{{ t('editor.game.publishBlocked') }}</p>
+            <p class="mb-2 text-meta text-orange-ink">{{ t('editor.game.publishBlocked') }}</p>
           }
           <div class="grid min-w-0 gap-3">
             <nc-section [title]="t('editor.game.status')">

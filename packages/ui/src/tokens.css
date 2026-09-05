@@ -97,6 +97,7 @@
   --color-sky: var(--nc-sky);
   --color-sky-ink: var(--nc-sky-ink);
   --color-orange: var(--nc-orange);
+  --color-orange-ink: var(--nc-orange-ink);
   --color-blush: var(--nc-blush);
   --color-lime: var(--nc-lime);
   --color-magenta: var(--nc-magenta);
@@ -166,6 +167,7 @@
   --nc-sky: #68aed4;
   --nc-sky-ink: #68aed4;
   --nc-orange: #ff8426;
+  --nc-orange-ink: #ff8426;
   --nc-blush: #ff80a4;
   /* Two more palette hues, so all eight tile-flag bits are told apart by colour. */
   --nc-lime: #bfff3c;
@@ -204,6 +206,7 @@
   --nc-hot-ink: #c41e5c;
   --nc-jade-ink: #0a7a4a;
   --nc-sky-ink: #1f6285;
+  --nc-orange-ink: #a34e10;
   --nc-gold-wash: #f7ecc0;
   --nc-jade-wash: #cfe9dc;
   --nc-hot-soft: #c41e5c;
@@ -237,6 +240,7 @@
     --nc-hot-ink: #c41e5c;
     --nc-jade-ink: #0a7a4a;
     --nc-sky-ink: #1f6285;
+    --nc-orange-ink: #a34e10;
     --nc-gold-wash: #f7ecc0;
     --nc-jade-wash: #cfe9dc;
     --nc-hot-soft: #c41e5c;

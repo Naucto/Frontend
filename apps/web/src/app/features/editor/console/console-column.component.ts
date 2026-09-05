@@ -183,7 +183,7 @@ const PIP_WIDTH = 304;
                 @for (l of lines(); track l.id) {
                   <div
                     [class.text-hot]="l.level === 'error'"
-                    [class.text-orange]="l.level === 'warn'"
+                    [class.text-orange-ink]="l.level === 'warn'"
                   >
                     {{ l.level === 'error' ? '! ' : l.level === 'warn' ? '? ' : '> ' }}{{ l.text }}
                   </div>
