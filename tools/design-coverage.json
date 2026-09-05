@@ -1,0 +1,77 @@
+{
+  "//": "What the target is allowed not to have yet. Counts come from computed styles and are stable across machines; glyphs are listed by identity because matching one means rasterising it. Re-record with `d2c report --write-expect <this file>`; every entry wants a note saying why.",
+  "design": "naucto-redesign.html",
+  "target": "naucto-angular",
+  "coverage": {
+    "colour": {
+      "distinct": 103,
+      "distinctResolved": 48,
+      "uses": 5266,
+      "usesResolved": 5040
+    },
+    "type": {
+      "distinct": 144,
+      "distinctResolved": 71,
+      "uses": 2512,
+      "usesResolved": 1763
+    },
+    "radius": {
+      "distinct": 18,
+      "distinctResolved": 10,
+      "uses": 1203,
+      "usesResolved": 1131
+    }
+  },
+  "unresolvedGlyphs": [
+    {
+      "id": "dc6fc12ecb80",
+      "sample": "M0 0H1V1H0Z M0 1H2V2H0Z M0 2H3V3H0Z M0 3H4V4H0Z M0 4H5V5H0Z M0 5",
+      "note": "A player's generated pixel-art avatar. Artwork the design draws per name, not an icon with an identity; `nc-avatar` fills the slot.",
+      "reconstructed": true
+    },
+    {
+      "id": "f4b081d6d479",
+      "sample": "M0.7 7.5H2.5A0.7 0.7 0 0 1 3.2 8.2V11.3A0.7 0.7 0 0 1 2.5 12H0.7",
+      "note": "Mobile status bar, cellular bars. The two mobile artboards are drawn for reference and the app has no status bar of its own.",
+      "reconstructed": true
+    },
+    {
+      "id": "7d0c5d9da50b",
+      "sample": "M8.5 3.2C10.8 3.2 12.9 4.1 14.4 5.6L15.5 4.5C13.7 2.7 11.2 1.5 8",
+      "note": "Mobile status bar, wifi. Same reason as the cellular bars."
+    },
+    {
+      "id": "72951bd6c174",
+      "sample": "M4 0.5H20A3.5 3.5 0 0 1 23.5 4V9A3.5 3.5 0 0 1 20 12.5H4A3.5 3.5",
+      "note": "Mobile status bar, battery. Same reason as the cellular bars."
+    },
+    {
+      "id": "fdff41a561fe",
+      "sample": "M8 2h8v2H8V2ZM6 6V4h2v2H6Zm0 6H4V6h2v6Zm2 2H6v-2h2v2Zm8 0v4H8v-4",
+      "note": "The tutorial marker the design puts on REFERENCE pages. Drawing it needs the docs manifest to say which pages are tutorials first."
+    },
+    {
+      "id": "ca4dcf9f8d31",
+      "sample": "M14 4V2h-4v2H5v2h14V4h-5zm5 12H5v-4H3v6h5v4h2v-4h4v2h-4v2h6v-4h5",
+      "note": "The foundations gallery's own outline bell. Every bell the design actually places is the solid one, which is what the app draws — see DISAGREEMENTS in the target profile."
+    },
+    {
+      "id": "0d5955332416",
+      "sample": "M2 0H3V1H2Z M3 0H4V1H3Z M4 0H5V1H4Z M5 0H6V1H5Z M1 1H2V2H1Z M6 1",
+      "note": "The app draws this: `nc-brand-mark` builds it rect-for-rect on the same grid, and the two rasterise identically (verified 2026-09-05). The reader cannot see it because that component builds its rects from a TypeScript table rather than from markup, so it stays listed until a reader that renders the component exists. — GOOGLE",
+      "reconstructed": true
+    },
+    {
+      "id": "973dd8a8e91f",
+      "sample": "M1 0H2V1H1Z M2 0H3V1H2Z M7 0H8V1H7Z M8 0H9V1H8Z M1 1H2V2H1Z M2 1",
+      "note": "The app draws this: `nc-brand-mark` builds it rect-for-rect on the same grid, and the two rasterise identically (verified 2026-09-05). The reader cannot see it because that component builds its rects from a TypeScript table rather than from markup, so it stays listed until a reader that renders the component exists. — GITHUB",
+      "reconstructed": true
+    },
+    {
+      "id": "ab03d4d2c7f3",
+      "sample": "M0 0H3V3H0Z M4 0H7V3H4Z M0 4H3V7H0Z M4 4H7V7H4Z",
+      "note": "The app draws this: `nc-brand-mark` builds it rect-for-rect on the same grid, and the two rasterise identically (verified 2026-09-05). The reader cannot see it because that component builds its rects from a TypeScript table rather than from markup, so it stays listed until a reader that renders the component exists. — MICROSOFT",
+      "reconstructed": true
+    }
+  ]
+}
