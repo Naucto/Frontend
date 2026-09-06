@@ -515,7 +515,7 @@ async function seedComments(projectId: number, seed: SeedGame): Promise<void> {
 /**
  * Writes one game's document to a file instead of publishing it.
  *
- * A design comparison serves the document straight to the app over a stubbed route, and serving
+ * Design2Code serves the document straight to the app over a stubbed route, and serving
  * nothing there is not neutral: the engine falls back to its starter game, which renders the empty
  * state of every tab it does not fill — and that is then measured against an artboard drawn full.
  * The same builders that seed the local stack produce the fixture, so the two cannot drift apart.
