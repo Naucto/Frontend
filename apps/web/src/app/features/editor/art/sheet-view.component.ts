@@ -1,9 +1,9 @@
+import type { ElementRef } from '@angular/core';
 import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
   effect,
-  ElementRef,
   inject,
   input,
   model,
@@ -24,6 +24,7 @@ const SCALE = 3;
     <canvas
       #canvas
       class="pixelated block w-full cursor-crosshair"
+      [style.transform]="'translateY(' + -25 * band() + '%)'"
       [width]="width"
       [height]="height"
       role="listbox"
@@ -31,11 +32,10 @@ const SCALE = 3;
       (click)="onClick($event)"
     ></canvas>
   `,
-  // The sheet fits the panel's width and scrolls vertically: a horizontal scrollbar under a
-  // sprite sheet hides the very cells you are trying to pick.
+  // The sheet is square and a band is a quarter of it, so a 4:1 window holds one band — and a whole
+  // number of sprite rows at any panel width, which a fixed height cannot promise.
   host: {
-    class:
-      'block h-[192px] overflow-x-hidden overflow-y-auto rounded-xs border border-line bg-inset',
+    class: 'block aspect-[4/1] overflow-hidden rounded-xs border border-line bg-inset',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -49,7 +49,6 @@ export class SheetViewComponent {
   protected readonly width = SHEET_WIDTH * SCALE;
   protected readonly height = SHEET_HEIGHT * SCALE;
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
-  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly theme = inject(ThemeService);
   private raf = 0;
 
@@ -68,17 +67,6 @@ export class SheetViewComponent {
         this.raf = requestAnimationFrame(() => {
           this.draw();
         });
-      });
-    });
-    effect(() => {
-      const band = this.band();
-      const el = this.canvas().nativeElement;
-      // The canvas is width-fitted, so a band offset in sheet pixels has to be converted through
-      // the rendered width before it means anything to scrollTo.
-      const rendered = el.getBoundingClientRect().width || this.width;
-      this.host.nativeElement.scrollTo({
-        top: (band * 32 * rendered) / SHEET_WIDTH,
-        behavior: 'smooth',
       });
     });
   }

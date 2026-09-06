@@ -82,6 +82,47 @@ export const nauctoTheme = EditorView.theme({
   '.cm-ySelection': { opacity: '0.35' },
   '.cm-panels': { backgroundColor: 'var(--nc-panel)', color: 'var(--nc-ink)' },
   '.cm-searchMatch': { backgroundColor: 'color-mix(in srgb, var(--nc-gold) 30%, transparent)' },
+
+  // The markup here is the library's, so the kit cannot reach it and its fields would otherwise be
+  // the browser's own. The kit's values are restated against the library's class names instead.
+  '.cm-panel.cm-search': {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '8px 12px',
+    borderTop: '1px solid var(--nc-line)',
+    fontFamily: 'var(--font-ui)',
+    fontSize: '12px',
+    color: 'var(--nc-ink-3)',
+  },
+  '.cm-panel.cm-search label': { display: 'inline-flex', alignItems: 'center', gap: '4px' },
+  '.cm-panel.cm-search input[type=checkbox]': { accentColor: 'var(--nc-gold)', margin: 0 },
+  '.cm-panel.cm-search br': { display: 'none' },
+  '.cm-textfield': {
+    backgroundColor: 'var(--nc-inset)',
+    border: '1px solid var(--nc-line-strong)',
+    borderRadius: '2px',
+    color: 'var(--nc-ink)',
+    fontFamily: 'var(--font-mono)',
+    fontSize: '12px',
+    padding: '4px 8px',
+  },
+  '.cm-textfield:focus': { outline: 'none', borderColor: 'var(--nc-gold)' },
+  '.cm-button': {
+    backgroundColor: 'var(--nc-raised)',
+    backgroundImage: 'none',
+    border: '1px solid var(--nc-line-strong)',
+    borderRadius: '2px',
+    color: 'var(--nc-ink-2)',
+    cursor: 'pointer',
+    fontFamily: 'var(--font-mono)',
+    fontSize: '10px',
+    letterSpacing: '.08em',
+    padding: '4px 8px',
+    textTransform: 'uppercase',
+  },
+  '.cm-button:hover': { color: 'var(--nc-ink)', borderColor: 'var(--nc-gold)' },
 });
 
 export const naucto_highlight = HighlightStyle.define([

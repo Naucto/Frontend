@@ -176,6 +176,7 @@ import { VirtualPadComponent } from './virtual-pad.component';
             </span>
           }
           <span class="flex-1"></span>
+          <ng-content select="[transport-extra]" />
           <!-- Who is on the game, and on what: the design keeps this in the bar, not behind a popover. -->
           @for (p of players(); track p.slot) {
             <span
@@ -185,7 +186,6 @@ import { VirtualPadComponent } from './virtual-pad.component';
               P{{ p.slot }}
             </span>
           }
-          <ng-content select="[transport-extra]" />
           <button
             ncButton
             variant="ghost"
