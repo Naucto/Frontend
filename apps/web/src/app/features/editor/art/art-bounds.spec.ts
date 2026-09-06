@@ -67,13 +67,11 @@ describe('ArtStore region', () => {
   });
 });
 
-/** The one piece of arithmetic in the zoom, and the one with a case that silently does nothing. */
 describe('zoom steps', () => {
   it('climbs and falls through whole scales', () => {
     expect(stepZoom(10, 1)).toBe(12);
     expect(stepZoom(12, 1)).toBe(15);
     expect(stepZoom(15, 1)).toBe(18);
-    // Down rounds towards where you are, as up does, so one press each way is a round trip.
     expect(stepZoom(18, -1)).toBe(15);
     expect(stepZoom(15, -1)).toBe(12);
   });

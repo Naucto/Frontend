@@ -32,8 +32,9 @@ import { type Collaborator } from '../work-session/work-session.service';
 import { type ArtTool, type PixelRect, type SpriteRect } from './art.store';
 
 /**
- * Screen pixels per art pixel, at the ends. The ceiling is what the backing store can afford: the
- * whole sheet is drawn, so its side times the scale is squared into a canvas.
+ * Screen pixels per art pixel, at the ends. The whole sheet is drawn at once rather than the part
+ * on screen, so the ceiling is set by what a canvas that large costs, not by how far into a sprite
+ * anybody would want to go.
  */
 export const MIN_ZOOM = 1;
 export const MAX_ZOOM = 32;
@@ -42,8 +43,10 @@ export const MAX_ZOOM = 32;
  * One press of a magnifier: a quarter more or less, landing on a whole scale.
  *
  * Whole, because that is where nothing is resampled and the art is at its crispest — the buttons
- * are how you get back to a clean multiple, and the track is how you get everywhere else. The
- * floor of one whole step is not tidiness: a quarter more than a small scale rounds back onto
+ * are how you get back to a clean multiple, and the track is how you get everywhere else. Each
+ * direction rounds towards where it started, so one press each way is a round trip.
+ *
+ * The floor of one whole step is not tidiness: a quarter more than a small scale rounds back onto
  * itself, which would leave the buttons dead at the bottom of the range.
  */
 export function stepZoom(scale: number, delta: number): number {
