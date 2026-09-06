@@ -85,7 +85,7 @@ test.describe('editor', () => {
 
   test('CODE tab runs the starter game', async ({ page }) => {
     await page.goto('/edit/7/code');
-    await expect(page.getByRole('tab', { name: 'main.lua' })).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
     await expect(page.getByText('Welcome to Naucto!').first()).toBeVisible();
     await page.screenshot({ path: 'test-results/v-editor-code.png' });
   });
@@ -97,7 +97,7 @@ test.describe('editor', () => {
    */
   test('the active file tab wears its gold cap', async ({ page }) => {
     await page.goto('/edit/7/code');
-    const tab = page.getByRole('tab', { name: 'main.lua' });
+    const tab = page.getByRole('tab', { name: 'main', exact: true });
     await expect(tab).toBeVisible();
 
     // Scoped to this tab, not to `[role=tab][aria-selected=true]`: the console strip carries a
@@ -198,7 +198,7 @@ test.describe('editor', () => {
   test('the reference opens beside the game when there is room', async ({ page }) => {
     await page.setViewportSize({ width: 1920, height: 1030 });
     await page.goto('/edit/7/code');
-    await expect(page.getByRole('tab', { name: 'main.lua' })).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
 
     // Closed: the console column has the screen and there is no reference.
     await expect(page.locator('nc-doc-pane')).toHaveCount(0);
@@ -230,7 +230,7 @@ test.describe('editor', () => {
   test('the reference takes the console’s place when there is not', async ({ page }) => {
     await page.setViewportSize({ width: 1400, height: 1030 });
     await page.goto('/edit/7/code');
-    await expect(page.getByRole('tab', { name: 'main.lua' })).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
 
     await page.keyboard.press('F1');
 
@@ -245,7 +245,7 @@ test.describe('editor', () => {
   test('the reference is closed from its own edge, not from a tab', async ({ page }) => {
     await page.setViewportSize({ width: 1920, height: 1030 });
     await page.goto('/edit/7/code');
-    await expect(page.getByRole('tab', { name: 'main.lua' })).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
 
     await expect(page.getByRole('button', { name: 'DOC' })).toHaveCount(0);
     await expect(page.getByRole('tab', { name: 'DOC' })).toHaveCount(0);

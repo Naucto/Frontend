@@ -108,6 +108,10 @@ broken; an absence reads as not built.
   nine fixed bits, and the input path is a bitmask — a game _names_ those actions with
   `input.declare{}`, it cannot invent new ones. There is nothing for the button to add. If custom
   actions ever land, this is the surface for them.
+- **File extensions on the CODE tabs.** The artboard writes `main.lua` and `player.lua`; the tabs
+  print `main` and `player`. A tab is named for what it holds, and every one of them is Lua, so the
+  suffix repeats the one thing they all share. The stored name keeps its extension — it is the
+  module name, and it is how the entry file is recognised — so this is a display decision only.
 - **Drag-to-reposition in the touch pad panel.** SIZE and OPACITY are real and drive the pad; moving
   individual buttons is not built, and the panel's copy does not claim it.
 

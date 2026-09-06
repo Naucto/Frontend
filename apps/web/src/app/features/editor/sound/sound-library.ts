@@ -10,6 +10,8 @@ import {
   SFX_SLOTS,
 } from '@naucto/engine';
 
+import { ACCENT_SLOTS } from '../accent-slots';
+
 const NAMES = ['lead', 'bass', 'drum', 'pad', 'clap', 'arp', 'pluck', 'kick', 'snare', 'bell'];
 
 /** Reactive view of the game's sound library (instruments, patterns, sfx slots) with edit helpers. */
@@ -74,7 +76,7 @@ export class SoundLibrary {
     const used = new Set([...this.instruments().values()].map((i) => i.name));
     const name = NAMES.find((n) => !used.has(n)) ?? `inst ${String(this.instruments().size + 1)}`;
     const inst = defaultInstrument(uid(), name);
-    inst.colour = [4, 11, 3, 6, 13, 7][this.instruments().size % 6] ?? 4;
+    inst.colour = ACCENT_SLOTS[this.instruments().size % ACCENT_SLOTS.length] ?? ACCENT_SLOTS[0];
     this.game.transact(() => {
       this.game.setInstrument(inst);
     });

@@ -1,3 +1,4 @@
+import { CdkDrag, type CdkDragDrop, CdkDropList } from '@angular/cdk/drag-drop';
 import type { OnInit } from '@angular/core';
 import {
   ChangeDetectionStrategy,
@@ -12,9 +13,15 @@ import {
 import { RuntimeHostService } from '@app/shared/game-screen/runtime-host.service';
 import { ySignal } from '@app/shared/yjs/y-signal';
 import { TranslocoDirective } from '@jsverse/transloco';
-import { MAIN_FILE } from '@naucto/engine';
-import { ButtonDirective, IconComponent } from '@naucto/ui';
+import { type CodeFile, MAIN_FILE } from '@naucto/engine';
+import {
+  ButtonDirective,
+  IconComponent,
+  PopoverDirective,
+  PopoverPanelComponent,
+} from '@naucto/ui';
 
+import { ACCENT_SLOTS } from '../accent-slots';
 import { EditorRuntimeService } from '../state/editor-runtime.service';
 import { WorkSessionService } from '../work-session/work-session.service';
 import { CodeEditorComponent, type CursorInfo } from './code-editor.component';
@@ -22,12 +29,27 @@ import { CodeEditorComponent, type CursorInfo } from './code-editor.component';
 /** CODE tab: file tabs, the collaborative editor, status bar. */
 @Component({
   selector: 'nc-code-tab-page',
-  imports: [TranslocoDirective, ButtonDirective, IconComponent, CodeEditorComponent],
+  imports: [
+    CdkDropList,
+    CdkDrag,
+    TranslocoDirective,
+    ButtonDirective,
+    IconComponent,
+    PopoverDirective,
+    PopoverPanelComponent,
+    CodeEditorComponent,
+  ],
   template: `
     <div *transloco="let t" class="flex h-full flex-col">
-      <div class="flex h-5 items-stretch border-b border-line bg-panel">
+      <div
+        class="flex h-5 items-stretch border-b border-line bg-panel"
+        cdkDropList
+        cdkDropListOrientation="horizontal"
+        (cdkDropListDropped)="moved($event)"
+      >
         @for (f of files(); track f.id) {
           <div
+            cdkDrag
             role="tab"
             tabindex="0"
             [attr.aria-selected]="f.id === activeId()"
@@ -37,14 +59,50 @@ import { CodeEditorComponent, type CursorInfo } from './code-editor.component';
                 ? 'border-t-gold bg-paper text-ink'
                 : 'border-t-transparent text-ink-3'
             "
+            [style.borderTopColor]="capOf(f)"
             (click)="activeId.set(f.id)"
             (keydown.enter)="activeId.set(f.id)"
             (dblclick)="rename(f.id, f.name)"
           >
-            {{ f.name }}
+            {{ stem(f.name) }}
             @if (f.id === activeId() && session.dirty()) {
               <span class="h-[6px] w-[6px] rounded-full bg-orange" aria-hidden="true"></span>
             }
+            <button
+              type="button"
+              class="ml-0.5 h-[12px] w-[12px] shrink-0 rounded-xs border border-line-strong"
+              [class.hidden]="f.colour === null"
+              [class.group-hover:block]="true"
+              [style.background]="f.colour === null ? 'transparent' : palette()[f.colour]"
+              [attr.aria-label]="t('editor.code.colour')"
+              [ncPopover]="swatches"
+              (click)="$event.stopPropagation()"
+            ></button>
+            <ng-template #swatches>
+              <nc-popover-panel [title]="t('editor.code.colour')">
+                <div class="flex gap-0.5 p-1">
+                  @for (c of accents; track c) {
+                    <button
+                      type="button"
+                      class="h-[18px] w-[18px] rounded-xs outline-offset-2"
+                      [class]="f.colour === c ? 'outline-2 outline-ink' : ''"
+                      [style.background]="palette()[c]"
+                      [attr.aria-label]="t('editor.code.colourN', { n: c })"
+                      [attr.aria-pressed]="f.colour === c"
+                      (click)="setColour(f.id, c)"
+                    ></button>
+                  }
+                  <button
+                    type="button"
+                    class="h-[18px] w-[18px] rounded-xs border border-line-strong text-ink-4"
+                    [attr.aria-label]="t('editor.code.colourNone')"
+                    (click)="setColour(f.id, null)"
+                  >
+                    <nc-icon name="close" [size]="12" />
+                  </button>
+                </div>
+              </nc-popover-panel>
+            </ng-template>
             @if (files().length > 1 && f.name !== main) {
               <button
                 type="button"
@@ -115,6 +173,7 @@ export class CodeTabPage implements OnInit {
   protected readonly session = inject(WorkSessionService);
   protected readonly runtime = inject(RuntimeHostService);
   protected readonly main = MAIN_FILE;
+  protected readonly accents = ACCENT_SLOTS;
   private readonly editor = viewChild<CodeEditorComponent>('editor');
   private readonly editorRuntime = inject(EditorRuntimeService);
 
@@ -130,6 +189,17 @@ export class CodeTabPage implements OnInit {
       this.editorRuntime.symbolAtCursor = null;
     });
   }
+
+  protected readonly palette = ySignal(
+    () => this.session.game.palette,
+    (cb) => {
+      const a = this.session.game.paletteArray;
+      a.observe(cb);
+      return () => {
+        a.unobserve(cb);
+      };
+    },
+  );
 
   protected readonly files = ySignal(
     () => this.session.game.files,
@@ -149,6 +219,28 @@ export class CodeTabPage implements OnInit {
 
   ngOnInit(): void {
     this.activeId.set(this.session.game.entryFile?.id ?? null);
+  }
+
+  protected stem(name: string): string {
+    return name.replace(/\.lua$/i, '');
+  }
+
+  /** The cap over an unselected tab is its colour; the selected one keeps the gold that says so. */
+  protected capOf(file: CodeFile): string | null {
+    if (file.id === this.activeId() || file.colour === null) return null;
+    return this.palette()[file.colour] ?? null;
+  }
+
+  protected moved(e: CdkDragDrop<unknown>): void {
+    const ids = this.files().map((f) => f.id);
+    const [moved] = ids.splice(e.previousIndex, 1);
+    if (moved === undefined) return;
+    ids.splice(e.currentIndex, 0, moved);
+    this.session.game.reorderFiles(ids);
+  }
+
+  protected setColour(id: string, colour: number | null): void {
+    this.session.game.setFileColour(id, colour);
   }
 
   protected addFile(): void {

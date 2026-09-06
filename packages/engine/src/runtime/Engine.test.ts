@@ -56,6 +56,39 @@ describe('Engine', () => {
     expect(engine.error?.file).toBe('main.lua');
   });
 
+  it('runs the tabs in the order they are in, and follows when they are reordered', () => {
+    const game = new Game(new Y.Doc());
+    game.seedDefaults();
+    const main = game.files[0];
+    main?.text.delete(0, main.text.length);
+    main?.text.insert(0, 'print("main")');
+    const a = game.addFile('a.lua', 'print("a")');
+    const b = game.addFile('b.lua', 'print("b")');
+
+    const first = new Engine({ game, gfx: new RecordingBackend(), driver });
+    expect(first.load()).toBeNull();
+    expect(first.console.lines.map((l) => l.text)).toEqual(['main', 'a', 'b']);
+
+    game.reorderFiles([b.id, a.id, main?.id ?? '']);
+    const second = new Engine({ game, gfx: new RecordingBackend(), driver });
+    expect(second.load()).toBeNull();
+    expect(second.console.lines.map((l) => l.text)).toEqual(['b', 'a', 'main']);
+  });
+
+  it('blames the tab an error is written in, at the line it is written on', () => {
+    const game = new Game(new Y.Doc());
+    game.seedDefaults();
+    const main = game.files[0];
+    main?.text.delete(0, main.text.length);
+    main?.text.insert(0, '-- nothing wrong here');
+    game.addFile('broken.lua', '\n\nerror("deliberate")');
+
+    const engine = new Engine({ game, gfx: new RecordingBackend(), driver });
+    const failure = engine.load();
+    expect(failure?.file).toBe('broken.lua');
+    expect(failure?.line).toBe(3);
+  });
+
   it('loads extra tabs as modules', () => {
     const doc = new Y.Doc();
     const game = new Game(doc);

@@ -35,8 +35,7 @@ describe('Game document', () => {
     game.renameFile(util.id, 'helpers.lua');
     expect(game.files.map((f) => f.name)).toEqual(['main.lua', 'helpers.lua']);
     expect(game.entryFile?.name).toBe('main.lua');
-    const src = game.sources();
-    expect([...src.modules.keys()]).toEqual(['helpers']);
+    expect(game.sources().map((f) => f.module)).toEqual(['main', 'helpers']);
     game.removeFile(util.id);
     expect(game.files).toHaveLength(1);
     game.removeFile(game.files[0]?.id ?? '');
@@ -56,7 +55,7 @@ describe('Game document', () => {
     const merged = new Game(a);
     expect(merged.files.map((f) => f.name)).toEqual(['main.lua']);
     expect(merged.entryFile?.name).toBe('main.lua');
-    expect(merged.sources().entry.length).toBeGreaterThan(0);
+    expect(merged.sources()[0]?.source.length).toBeGreaterThan(0);
     expect(new Game(b).files).toHaveLength(1);
   });
 

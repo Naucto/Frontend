@@ -292,6 +292,9 @@
       "restoreFailed": "Could not restore that version."
     },
     "code": {
+      "colour": "Tab colour",
+      "colourN": "Palette slot {{n}}",
+      "colourNone": "No colour",
       "addFile": "New file",
       "find": "Find"
     },

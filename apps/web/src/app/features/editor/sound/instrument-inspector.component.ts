@@ -20,6 +20,7 @@ import {
   SliderComponent,
 } from '@naucto/ui';
 
+import { ACCENT_SLOTS } from '../accent-slots';
 import { PresenceSurfaceComponent } from '../work-session/presence-surface.component';
 import { EnvelopeGraphComponent } from './envelope-graph.component';
 import { WaveGlyphComponent } from './wave-glyph.component';
@@ -32,8 +33,7 @@ const OSCS: { value: OscType; label: string }[] = [
   { value: 'noise', label: 'Noise' },
   { value: 'sample', label: 'PCM' },
 ];
-/** Palette slots offered as instrument colours: gold, sky, orange, blush, jade, hot. */
-const COLOURS = [4, 11, 3, 6, 13, 7];
+
 const FILTERS = [
   { value: 'off', label: 'Off' },
   { value: 'lp', label: 'LP' },
@@ -375,7 +375,7 @@ export class InstrumentInspectorComponent {
   /** Emitted with the encoded PCM (or null to drop it); the library owns the document write. */
   readonly sampleChange = output<{ id: string; pcm: string | null }>();
   protected readonly oscs = OSCS;
-  protected readonly colours = COLOURS;
+  protected readonly colours = ACCENT_SLOTS;
   protected readonly filters = FILTERS;
   protected readonly envKeys = ['attack', 'decay', 'sustain', 'release'] as const;
   protected readonly envValues = computed(() => this.inst().env);

@@ -160,18 +160,29 @@ export class Engine {
       this.netApi,
     ];
 
-    const { entry, modules, entryName } = this.opts.game.sources();
     try {
       if (this.opts.game.compat) lua.evaluate(buildCompatPrelude(), 'compat.lua');
-      for (const [name, src] of modules) {
-        // Other tabs are available through require("name"); loaded lazily by Lua.
-        lua.setGlobalWith('__naucto_module_src_' + name, src);
+      // Registering everything before running anything is what lets a file name one that comes
+      // after it: the order says when a file runs if nothing asks for it sooner, not when it is
+      // allowed to exist. Running through `require` then does the rest — a file pulled in early is
+      // not run again in its turn, and one written as a module still answers with what it returns.
+      //
+      // Each file keeps its own chunk under its own name, which is what makes a Lua error name the
+      // tab it came from and count lines from that tab's first line.
+      const files = this.opts.game.sources();
+      for (const file of files) {
+        lua.setGlobalWith('__naucto_src', file.source);
         lua.evaluate(
-          `package.preload[${JSON.stringify(name)}] = function(...) return load(__naucto_module_src_${name}, "=${name}.lua")(...) end`,
+          `local src = __naucto_src\n` +
+            `package.preload[${JSON.stringify(file.module)}] = function(...)\n` +
+            `  return load(src, ${JSON.stringify(`=${file.name}`)})(...)\n` +
+            `end`,
           'loader.lua',
         );
       }
-      lua.evaluate(entry, entryName);
+      for (const file of files) {
+        lua.evaluate(`require(${JSON.stringify(file.module)})`, 'loader.lua');
+      }
     } catch (e) {
       return this.fail('load', e);
     }

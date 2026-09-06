@@ -40,6 +40,8 @@ export interface CodeFile {
   id: string;
   name: string;
   order: number;
+  /** Palette slot this file is labelled with, or null when it takes none. */
+  colour: number | null;
   text: Y.Text;
 }
 
@@ -374,6 +376,7 @@ export class Game {
         id,
         name: typeof f.get('name') === 'string' ? (f.get('name') as string) : id,
         order: Number(f.get('order') ?? 0),
+        colour: typeof f.get('colour') === 'number' ? (f.get('colour') as number) : null,
         text,
       });
     });
@@ -404,11 +407,34 @@ export class Game {
       if (source) text.insert(0, source);
       if (!this.codeMeta.has('entry') && name === MAIN_FILE) this.codeMeta.set('entry', id);
     }, LOCAL_ORIGIN);
-    return { id, name, order, text: this.codeFiles.get(id)?.get('text') as Y.Text };
+    return { id, name, order, colour: null, text: this.codeFiles.get(id)?.get('text') as Y.Text };
   }
 
   renameFile(id: string, name: string): void {
     this.codeFiles.get(id)?.set('name', name);
+  }
+
+  /**
+   * Ids first to last; anything not named keeps its place after them.
+   *
+   * One transaction rather than one write per file: the order decides what runs when, so every
+   * observer downstream reloads the game on it, and N writes would mean N reloads of an order that
+   * was only ever moved once.
+   */
+  reorderFiles(ids: readonly string[]): void {
+    const ranked = new Map(ids.map((id, i) => [id, i]));
+    const rest = this.files.filter((f) => !ranked.has(f.id));
+    this.doc.transact(() => {
+      ids.forEach((id, i) => this.codeFiles.get(id)?.set('order', i));
+      rest.forEach((f, i) => this.codeFiles.get(f.id)?.set('order', ids.length + i));
+    }, LOCAL_ORIGIN);
+  }
+
+  setFileColour(id: string, colour: number | null): void {
+    const f = this.codeFiles.get(id);
+    if (!f) return;
+    if (colour === null) f.delete('colour');
+    else f.set('colour', colour);
   }
 
   removeFile(id: string): void {
@@ -419,20 +445,17 @@ export class Game {
     }, LOCAL_ORIGIN);
   }
 
-  /** Sources keyed by module name (file name without .lua) — what the VM loads. */
-  sources(): { entry: string; modules: Map<string, string>; entryName: string } {
-    const modules = new Map<string, string>();
-    let entry = '';
-    let entryName = MAIN_FILE;
-    const e = this.entryFile;
-    for (const f of this.files) {
-      const src = f.text.toString();
-      if (f.id === e?.id) {
-        entry = src;
-        entryName = f.name;
-      } else modules.set(f.name.replace(/\.lua$/i, ''), src);
-    }
-    return { entry, modules, entryName };
+  /**
+   * Every file's source in the order the tabs are in — which is the order they are evaluated.
+   *
+   * `module` is the name without its extension, the name a leftover `require` would ask for.
+   */
+  sources(): { name: string; module: string; source: string }[] {
+    return this.files.map((f) => ({
+      name: f.name,
+      module: f.name.replace(/\.lua$/i, ''),
+      source: f.text.toString(),
+    }));
   }
 
   // ---- sound ----------------------------------------------------------------
