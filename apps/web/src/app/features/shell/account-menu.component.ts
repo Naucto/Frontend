@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { unwrap } from '@app/core/api/api-errors';
-import { meApi } from '@app/core/api/planned.api';
+import { friendsApi, meApi } from '@app/core/api/planned.api';
 import { AuthStore } from '@app/core/auth/auth.store';
 import { ThemeService } from '@app/core/theme/theme.service';
 import { TranslocoDirective } from '@jsverse/transloco';
@@ -47,7 +47,7 @@ import { injectQuery } from '@tanstack/angular-query-experimental';
             <div class="min-w-0">
               <div class="truncate text-ui text-ink">{{ auth.displayName() }}</div>
               <div class="label text-ink-4">
-                {{ t('account.gamesFriends', { g: games.data() ?? 0, f: '—' }) }}
+                {{ t('account.gamesFriends', { g: games.data() ?? 0, f: friends.data() ?? 0 }) }}
               </div>
             </div>
           </div>
@@ -124,6 +124,19 @@ export class AccountMenuComponent {
     queryFn: async () =>
       unwrap(await projectControllerFindAll({ query: { page: 1, limit: 1 } })).total,
     enabled: this.auth.isAuthenticated() && this.open(),
+  }));
+
+  /**
+   * Both counts fall back to zero rather than to a dash. A dash reads as "we could not ask", which
+   * is a story the popover cannot tell — the friends endpoint is one the Backend has not shipped,
+   * so an empty answer and a refused one arrive the same way, and zero is the honest one of the two
+   * for somebody who has just made an account.
+   */
+  protected readonly friends = injectQuery(() => ({
+    queryKey: ['friends', 'count'],
+    queryFn: async () => (await friendsApi.list()).length,
+    enabled: this.auth.isAuthenticated() && this.open(),
+    retry: false,
   }));
 
   protected async copy(): Promise<void> {

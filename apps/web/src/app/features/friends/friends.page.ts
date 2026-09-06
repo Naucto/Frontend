@@ -53,12 +53,12 @@ const ACCENT: Record<string, { rule: string; name: string }> = {
       @if (!friends().length && !requests().length && !recent().length) {
         <div class="flex min-h-[60vh] items-center justify-center">
           <nc-empty-state icon="users" [title]="t('friends.emptyTitle')">
+            <!-- Formatted by hand, and kept that way: a newline between the code and the stop that
+                 follows it collapses to a space, so the sentence read "…R9VTKD3P ." Reformatting
+                 this block puts the space back, which is why the formatter is held off it. -->
+            <!-- prettier-ignore -->
             <p hint class="max-w-[420px] text-meta leading-[1.6] text-ink-3">
-              {{ t('friends.emptyBefore') }}
-              <span class="font-mono text-meta tracking-strip text-gold-ink">
-                {{ myCode() || '—' }}
-              </span>
-              {{ t('friends.emptyAfter') }}
+              {{ t('friends.emptyBefore') }} <span class="font-mono text-meta tracking-strip text-gold-ink">{{ myCode() || '—' }}</span>{{ t('friends.emptyAfter') }}
             </p>
             <button ncButton variant="primary" (click)="openAdd()">
               <nc-icon name="plus" [size]="12" />

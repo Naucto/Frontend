@@ -41,9 +41,13 @@ const NAV_LINK =
     NotificationsBellComponent,
   ],
   template: `
+    <!-- The mark starts at the window edge so it lands in the rail's column and lines up with the
+         rail's icons underneath, which is what the design draws. The band's height and its bottom
+         rule are deliberately not the design's: they match the hub's header, and one shell that
+         changes shape between hub and editor was the worse of the two. -->
     <header
       *transloco="let t"
-      class="flex min-h-7 flex-wrap items-center gap-2 border-b border-line bg-panel px-2.5 py-1 md:flex-nowrap md:py-0"
+      class="flex min-h-7 flex-wrap items-center gap-2 border-b border-line bg-panel py-1 pr-2 pl-0 md:flex-nowrap md:py-0"
     >
       <a routerLink="/hub" class="mr-[6px] flex shrink-0 items-center" aria-label="Naucto">
         <img src="/img/logo.png" alt="" width="32" height="32" class="pixelated" />
