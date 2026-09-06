@@ -96,7 +96,7 @@ const SUMMARY_MAX = 80;
             <div>
               <nc-label class="mb-1">{{ t('editor.game.icon') }}</nc-label>
               <div
-                class="relative aspect-video overflow-hidden rounded-sm border border-line bg-inset"
+                class="relative aspect-video overflow-hidden rounded-sm border border-line-strong bg-inset"
               >
                 @if (cover.data(); as url) {
                   <img [src]="url" alt="" class="pixelated h-full w-full object-cover" />
@@ -107,7 +107,7 @@ const SUMMARY_MAX = 80;
                   </div>
                 }
                 <span
-                  class="absolute top-1 right-1 rounded-xs bg-page/80 px-0.5 text-label text-ink-2"
+                  class="absolute top-1 right-1 rounded-xs border border-line-strong bg-page/80 px-[6px] py-[3px] font-mono text-micro tracking-tag text-ink"
                 >
                   320×180
                 </span>
@@ -155,6 +155,7 @@ const SUMMARY_MAX = 80;
                 for="g-summary"
                 [counter]="summary().length + ' / ' + summaryMax"
               >
+                <nc-help-dot actions [text]="t('editor.game.summaryHelp')" />
                 <input
                   ncInput
                   id="g-summary"

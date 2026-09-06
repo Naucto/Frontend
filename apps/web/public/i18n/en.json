@@ -256,6 +256,7 @@
       "name": "Name",
       "namePlaceholder": "Untitled game",
       "summary": "Summary",
+      "summaryHelp": "One line, shown under the game on its hub card and in search results.",
       "summaryPlaceholder": "What is it, in one line?",
       "description": "Description",
       "descriptionPlaceholder": "The long version. Markdown is fine.",

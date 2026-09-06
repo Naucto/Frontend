@@ -4,11 +4,14 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 @Component({
   selector: 'nc-field',
   template: `
-    <div class="mb-1 flex items-baseline justify-between">
+    <div class="mb-1 flex items-center justify-between gap-1">
       <label [attr.for]="for()" class="label">{{ label() }}</label>
-      @if (counter()) {
-        <span class="text-label text-ink-4">{{ counter() }}</span>
-      }
+      <span class="flex items-center gap-0.75">
+        @if (counter()) {
+          <span class="text-label text-ink-4">{{ counter() }}</span>
+        }
+        <ng-content select="[actions]" />
+      </span>
     </div>
     <ng-content />
     @if (error()) {
