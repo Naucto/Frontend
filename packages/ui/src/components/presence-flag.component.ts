@@ -14,7 +14,8 @@ const FILL: Record<PresenceColour, string> = {
 };
 
 /**
- * Collaborator cursor: pixel arrow with the name welded to its elbow.
+ * Collaborator cursor: pixel arrow with the name hung off its elbow — the ninth of the arrow's
+ * fifteen grid rows, which is where the staircase turns.
  *
  * 16x24, measured off the cursors on the ART canvas in artboard 1d — the arrow keeps its 10x15
  * grid and is scaled whole, so every edge still lands on a device pixel. It used to render at that
@@ -22,6 +23,11 @@ const FILL: Record<PresenceColour, string> = {
  *
  * (Artboard 1a draws it at 32x48, but 1a is the foundations specimen sheet — a component shown at
  * a size nothing uses. Every real occurrence in the design is this one.)
+ *
+ * The arrow carries a halo of `paper` behind its own fill, because it is laid over somebody's
+ * artwork rather than over a surface: a sky arrow on a sky sprite had nothing separating it from
+ * the pixels underneath. The halo follows the theme, so it is a dark edge in the dark and a light
+ * one in daylight.
  *
  * Position it from the parent (`left`/`top`, or a translate); the host smooths whatever moves, so
  * a cursor arriving over the network glides instead of teleporting. `[data-reduce-motion]` turns
@@ -41,11 +47,15 @@ const FILL: Record<PresenceColour, string> = {
     >
       <path
         fill="currentColor"
+        stroke="var(--nc-paper)"
+        stroke-width="1"
+        stroke-linejoin="miter"
+        paint-order="stroke fill"
         d="M0 0h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1H6v1h1v1h1v1H7v-1H6v-1H5v-1H4v1H3v1H2v1H1v1H0z"
       />
     </svg>
     <span
-      class="mt-[14px] ml-px inline-block px-[5px] py-[2px] font-mono text-micro whitespace-nowrap uppercase tracking-tag text-on-accent"
+      class="mt-[calc(24px*9/15)] ml-px inline-block px-[5px] py-[2px] font-mono text-micro whitespace-nowrap uppercase tracking-tag text-on-accent"
       [class]="fill()"
     >
       {{ name() }}

@@ -23,6 +23,7 @@ export * from './components/panel.component';
 export * from './components/popover.directive';
 export * from './components/popover-panel.component';
 export * from './components/presence-flag.component';
+export * from './components/presence-layer.component';
 export * from './components/rail.component';
 export * from './components/readout.component';
 export * from './components/search.component';
