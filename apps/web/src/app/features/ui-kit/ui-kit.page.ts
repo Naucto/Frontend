@@ -199,8 +199,8 @@ import {
           </nc-section>
           <nc-section title="Console" class="mt-2">
             <nc-lcd [minHeight]="72">
-              &gt; RUN main.lua &gt; Welcome to Naucto! ! main.lua:39 attempt to index a nil value
-              (field 'sprites')
+              &gt; RUN main &gt; Welcome to Naucto! ! main:39 attempt to index a nil value (field
+              'sprites')
             </nc-lcd>
             <nc-lcd variant="flush" [minHeight]="48" class="mt-1">
               &gt; flush: the console fills its column, no frame

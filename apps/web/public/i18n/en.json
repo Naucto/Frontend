@@ -294,6 +294,12 @@
       "restoreFailed": "Could not restore that version."
     },
     "code": {
+      "name": {
+        "taken": "A tab already goes by that name.",
+        "tooLong": "{{n}} characters at most.",
+        "badCharacter": "A name cannot hold a colon.",
+        "reserved": "That name belongs to Lua itself."
+      },
       "fileName": "Tab name",
       "newFile": "New tab",
       "renameFile": "Rename tab",

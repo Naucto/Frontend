@@ -59,7 +59,7 @@ import {
             role="tab"
             tabindex="0"
             [attr.aria-selected]="f.id === activeId()"
-            [attr.aria-label]="stem(f.name)"
+            [attr.aria-label]="f.name"
             class="group flex cursor-pointer items-center gap-1 border-t-2 border-r border-r-line px-[15px] font-ui text-body tracking-copy hover:text-ink"
             [class]="
               f.id === activeId()
@@ -71,7 +71,7 @@ import {
             (keydown.enter)="activeId.set(f.id)"
             (dblclick)="edit(f.id, f.name)"
           >
-            {{ stem(f.name) }}
+            {{ f.name }}
             @if (f.id === activeId() && session.dirty()) {
               <span class="h-[6px] w-[6px] rounded-full bg-orange" aria-hidden="true"></span>
             }
@@ -203,14 +203,7 @@ export class CodeTabPage implements OnInit {
     this.activeId.set(this.session.game.entryFile?.id ?? null);
   }
 
-  protected stem(name: string): string {
-    return name.replace(/\.lua$/i, '');
-  }
-
-  /**
-   * The cap is not what says a tab is the current one, so the current tab is not a case here: gold
-   * is only what a cap shows when no colour was chosen.
-   */
+  /** The cap does not say which tab is current, so the current one is not a case here. */
   protected capOf(file: CodeFile): string | null {
     if (file.colour === null) return null;
     return this.palette()[file.colour] ?? null;
@@ -238,7 +231,7 @@ export class CodeTabPage implements OnInit {
       })
       .closed.subscribe((r) => {
         if (!r) return;
-        const f = this.session.game.addFile(this.withSuffix(r.name));
+        const f = this.session.game.addFile(r.name);
         this.session.game.setFileColour(f.id, r.colour);
         this.activeId.set(f.id);
       });
@@ -260,7 +253,7 @@ export class CodeTabPage implements OnInit {
       })
       .closed.subscribe((r) => {
         if (!r) return;
-        this.session.game.renameFile(id, this.withSuffix(r.name));
+        this.session.game.renameFile(id, r.name);
         this.session.game.setFileColour(id, r.colour);
       });
   }
@@ -281,11 +274,6 @@ export class CodeTabPage implements OnInit {
         this.session.game.removeFile(id);
         if (this.activeId() === id) this.activeId.set(this.session.game.entryFile?.id ?? null);
       });
-  }
-
-  /** The stored name carries the extension; nobody has to type it. */
-  private withSuffix(name: string): string {
-    return /\.lua$/i.test(name) ? name : `${name}.lua`;
   }
 
   protected find(): void {

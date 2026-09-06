@@ -1,6 +1,6 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { TranslocoDirective } from '@jsverse/transloco';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import {
   ButtonDirective,
   DialogShellComponent,
@@ -21,6 +21,27 @@ export interface CodeFileDialogData {
   /** Names already in the project, so a clash is refused here rather than made and then found. */
   taken: readonly string[];
 }
+
+const NAME_MAX = 24;
+
+/** A colon separates a chunk's name from its line in a Lua message, so a name may not hold one. */
+const FORBIDDEN = /[:\n\r]/;
+
+/**
+ * A file is reachable by its own name, so one named after a standard library module would be found
+ * where that module is expected — by anything asking for it, including code nobody here wrote.
+ */
+const RESERVED = new Set([
+  'coroutine',
+  'debug',
+  'io',
+  'math',
+  'os',
+  'package',
+  'string',
+  'table',
+  'utf8',
+]);
 
 export interface CodeFileDialogResult {
   name: string;
@@ -46,6 +67,7 @@ export interface CodeFileDialogResult {
           id="file-name"
           autocomplete="off"
           spellcheck="false"
+          [attr.maxlength]="nameMax"
           [value]="name()"
           (input)="name.set($any($event.target).value)"
           (keydown.enter)="submit()"
@@ -98,15 +120,22 @@ export class CodeFileDialog {
   protected readonly data = inject<CodeFileDialogData>(DIALOG_DATA);
   protected readonly ref = inject<DialogRef<CodeFileDialogResult | undefined>>(DialogRef);
   protected readonly accents = ACCENT_SLOTS;
+  protected readonly nameMax = NAME_MAX;
+  private readonly transloco = inject(TranslocoService);
 
   protected readonly name = signal(this.data.name);
   protected readonly colour = signal<number | null>(this.data.colour);
 
   protected readonly error = computed(() => {
-    const wanted = this.stem(this.name());
+    const wanted = this.name().trim();
     if (!wanted) return null;
-    const clash = this.data.taken.some((t) => this.stem(t) === wanted && t !== this.data.name);
-    return clash ? 'A tab already goes by that name.' : null;
+    if (wanted.length > NAME_MAX) return this.say('tooLong', { n: NAME_MAX });
+    if (FORBIDDEN.test(wanted)) return this.say('badCharacter');
+    if (RESERVED.has(wanted.toLowerCase())) return this.say('reserved');
+    const clash = this.data.taken.some(
+      (t) => t.toLowerCase() === wanted.toLowerCase() && t !== this.data.name,
+    );
+    return clash ? this.say('taken') : null;
   });
 
   protected submit(): void {
@@ -114,10 +143,7 @@ export class CodeFileDialog {
     this.ref.close({ name: this.name().trim(), colour: this.colour() });
   }
 
-  private stem(name: string): string {
-    return name
-      .trim()
-      .replace(/\.lua$/i, '')
-      .toLowerCase();
+  private say(key: string, params?: Record<string, unknown>): string {
+    return this.transloco.translate(`editor.code.name.${key}`, params);
   }
 }
