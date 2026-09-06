@@ -16,3 +16,22 @@ for (const theme of ['dark', 'light'] as const) {
     }
   });
 }
+
+for (const [stored, marked] of [
+  ['false', true],
+  ['true', false],
+] as const) {
+  test(`the screen effect is ${marked ? 'off' : 'on'} when the preference says so`, async ({
+    page,
+  }) => {
+    await page.addInitScript((v) => {
+      localStorage.setItem('naucto.screen-veil', v);
+    }, stored);
+    await page.goto('/ui-kit');
+    await expect(page.getByRole('heading', { name: 'Naucto UI kit' })).toBeVisible();
+    // One assertion for two veils: the attribute is the only thing they share.
+    const html = page.locator('html');
+    if (marked) await expect(html).toHaveAttribute('data-no-veil', '');
+    else await expect(html).not.toHaveAttribute('data-no-veil', '');
+  });
+}

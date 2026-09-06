@@ -19,6 +19,8 @@ export class ThemeService {
   readonly reduceMotion = signal<boolean>(readJson<boolean>(STORAGE_KEYS.reduceMotion, false));
   /** The FPS readout on every game screen, in the editor's viewer as much as on a game page. */
   readonly showFps = signal<boolean>(readJson<boolean>(STORAGE_KEYS.showFps, true));
+  /** The scanline and phosphor veils the design lays over anything that reads as a screen. */
+  readonly screenVeil = signal<boolean>(readJson<boolean>(STORAGE_KEYS.screenVeil, true));
 
   /** Tracks the OS preference so `effective` is right while the theme is `system`. */
   private readonly systemLight = signal(false);
@@ -63,6 +65,12 @@ export class ThemeService {
     });
     effect(() => {
       writeJson(STORAGE_KEYS.showFps, this.showFps());
+    });
+    effect(() => {
+      const root = document.documentElement;
+      if (this.screenVeil()) delete root.dataset.noVeil;
+      else root.dataset.noVeil = '';
+      writeJson(STORAGE_KEYS.screenVeil, this.screenVeil());
     });
   }
 

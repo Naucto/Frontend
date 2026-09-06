@@ -3,6 +3,7 @@ export const STORAGE_KEYS = {
   theme: 'naucto.theme',
   reduceMotion: 'naucto.reduce-motion',
   showFps: 'naucto.show-fps',
+  screenVeil: 'naucto.screen-veil',
   inputBindings: 'naucto.input',
   editorCollapsed: 'naucto.editor.collapsed',
   editorReferenceOpen: 'naucto.editor.reference-open',

@@ -82,7 +82,6 @@ import { VirtualPadComponent } from './virtual-pad.component';
           [style.width]="fit() === 'width' ? '100%' : null"
           [style.imageRendering]="'pixelated'"
         ></canvas>
-        <span class="scanlines pointer-events-none absolute inset-0"></span>
         @if (fpsVisible()) {
           <span
             class="absolute top-1.5 left-1.5 rounded-xs border border-line-strong bg-page/80 px-1 py-0.5 font-mono text-[10px] text-jade-ink"
@@ -103,6 +102,7 @@ import { VirtualPadComponent } from './virtual-pad.component';
             <nc-icon name="play" [size]="48" />
           </button>
         }
+        <span class="scanlines pointer-events-none absolute inset-0"></span>
         @if (showPad()) {
           <nc-virtual-pad #padOverlay [overlay]="true" class="hidden landscape:block" />
         }

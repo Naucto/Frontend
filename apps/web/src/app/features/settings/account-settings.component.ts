@@ -97,6 +97,13 @@ const POLICIES: JoinPolicy[] = ['ANYONE', 'FRIENDS', 'CODE_ONLY'];
           [label]="t('settings.reduceMotion')"
         />
       </nc-setting-row>
+      <nc-setting-row [title]="t('settings.screenVeil')" [hint]="t('settings.screenVeilHint')">
+        <nc-toggle
+          [checked]="theme.screenVeil()"
+          (checkedChange)="theme.screenVeil.set($event)"
+          [label]="t('settings.screenVeil')"
+        />
+      </nc-setting-row>
       <nc-setting-row [title]="t('settings.showFps')" [hint]="t('settings.showFpsHint')">
         <nc-toggle
           [checked]="theme.showFps()"

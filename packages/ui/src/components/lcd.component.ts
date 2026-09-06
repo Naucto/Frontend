@@ -9,12 +9,13 @@ const VARIANT: Record<LcdVariant, string> = {
 };
 
 /**
- * Phosphor LCD surface: what the machine says back (console, netplay status, scopes).
+ * Phosphor LCD surface: what the machine says back.
  *
- * The design rules *every* LCD with a veil of its own ink — `rgb(16 210 117 / .05)` on the dark
- * module, `rgb(18 48 15 / .07)` on the daylight one — down to the 58×32 swatch on the foundations
- * board. That is a different thing from the black scanline laid over the game canvas, so it lives
- * here and is not optional. There is no glow: `text-shadow` appears zero times in the design file.
+ * The design rules *every* LCD with a veil of its own ink, down to the smallest swatch on the
+ * foundations board. That is a different thing from the black scanline laid over the game canvas —
+ * a different colour and a different owner — so it lives here rather than in that utility, and both
+ * answer to the same preference for anyone who would rather have neither. There is no glow:
+ * `text-shadow` appears zero times in the design file.
  */
 @Component({
   selector: 'nc-lcd',
@@ -31,6 +32,9 @@ const VARIANT: Record<LcdVariant, string> = {
         var(--nc-lcd-veil) 0 1px,
         transparent 1px 3px
       );
+    }
+    :host-context([data-no-veil]) {
+      background-image: none;
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

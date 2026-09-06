@@ -262,7 +262,7 @@ import {
         <nc-section title="Setting row" class="mt-2">
           <nc-setting-row
             title="Reduce motion"
-            hint="Turns off scanlines and screen shake in the UI"
+            hint="Stills the animations and the screen shake in the UI"
           >
             <nc-toggle [(checked)]="reduceMotion" label="Reduce motion" />
           </nc-setting-row>

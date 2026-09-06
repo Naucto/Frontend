@@ -381,7 +381,7 @@
 @utility scanlines {
   background-image: repeating-linear-gradient(0deg, rgb(0 0 0 / 0.16) 0 1px, transparent 1px 3px);
 }
-[data-reduce-motion] .scanlines {
+[data-no-veil] .scanlines {
   background-image: none;
 }
 
