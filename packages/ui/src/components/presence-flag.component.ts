@@ -17,10 +17,11 @@ const FILL: Record<PresenceColour, string> = {
  * Where a collaborator's pointer is, with their name hung at the ninth of the mark's fifteen rows —
  * which is what the fraction in the tag's offset counts.
  *
- * Measured off the ART canvas in artboard 1d; the foundations sheet shows the same component at a
- * size nothing in the design uses. The design builds the mark one bar per row rather than as one
- * outline, and the path keeps that, so a row that is wrong reads as a wrong row instead of hiding
- * in a seam. `crispEdges` is load-bearing: the rendered size is not a whole multiple of the grid.
+ * The size is the one it is used at, on the ART canvas in artboard 1d; the shape is read off the
+ * foundations sheet, which specimens it larger than anything uses it. The design builds the mark
+ * one bar per row rather than as one outline, and the path keeps that, so a row that is wrong
+ * reads as a wrong row instead of hiding in a seam. `crispEdges` is load-bearing: the rendered
+ * size is not a whole multiple of the grid.
  *
  * No stroke. At this size a stroke is a different silhouette, not the same one made legible.
  *
