@@ -44,7 +44,6 @@ import { PaletteEditorComponent } from './palette-editor.component';
 import { SheetViewComponent } from './sheet-view.component';
 import { MAX_ZOOM, MIN_ZOOM, SpriteCanvasComponent } from './sprite-canvas.component';
 
-/** How many doublings the track spans, from MIN_ZOOM to MAX_ZOOM. */
 const ZOOM_OCTAVES = Math.log2(MAX_ZOOM / MIN_ZOOM);
 const PRESETS: { name: string; colours: readonly string[] }[] = [
   { name: 'Bubblegum 16', colours: BUBBLEGUM_16 },
@@ -358,14 +357,11 @@ export class ArtTabPage {
   });
   protected readonly px = computed(() => Math.max(this.regionPx().w, this.regionPx().h));
   /**
-   * Where the thumb sits, from 0 to 1.
-   *
-   * The track is geometric — the same travel is the same ratio of magnification wherever you are
-   * on it. A linear one would spend a third of its length between ×1 and ×4, where there is
-   * nothing to do, and crush ×24 to ×32 into three pixels.
+   * Where the thumb sits, from 0 to 1. Geometric, so the same travel is the same ratio of
+   * magnification wherever on the track it is spent — a linear one would give most of its length
+   * to the low scales, where there is nothing to do, and crush the high ones together.
    */
   protected readonly zoomAt = computed(() => Math.log2(this.zoom() / MIN_ZOOM) / ZOOM_OCTAVES);
-  /** One decimal where there is one, and none where there is not: ×5.4 against ×10. */
   protected readonly zoomLabel = computed(() => {
     const z = this.zoom();
     return Number.isInteger(z) ? String(z) : z.toFixed(1);

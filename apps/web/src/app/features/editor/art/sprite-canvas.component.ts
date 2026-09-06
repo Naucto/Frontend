@@ -33,7 +33,7 @@ import { type ArtTool, type PixelRect, type SpriteRect } from './art.store';
 
 /**
  * Screen pixels per art pixel, at the ends. The ceiling is what the backing store can afford: the
- * sheet is drawn whole, so ×32 is already a 4096² canvas.
+ * whole sheet is drawn, so its side times the scale is squared into a canvas.
  */
 export const MIN_ZOOM = 1;
 export const MAX_ZOOM = 32;
@@ -41,10 +41,10 @@ export const MAX_ZOOM = 32;
 /**
  * One press of a magnifier: a quarter more or less, landing on a whole scale.
  *
- * Whole, because that is where no resampling happens and the art is at its crispest — the buttons
+ * Whole, because that is where nothing is resampled and the art is at its crispest — the buttons
  * are how you get back to a clean multiple, and the track is how you get everywhere else. The
- * floor of one step matters: a quarter more than ×2 rounds back to ×2, and the button would do
- * nothing at the bottom of the range.
+ * floor of one whole step is not tidiness: a quarter more than a small scale rounds back onto
+ * itself, which would leave the buttons dead at the bottom of the range.
  */
 export function stepZoom(scale: number, delta: number): number {
   const next =
@@ -463,7 +463,7 @@ export class SpriteCanvasComponent {
   private requestRedraw(): void {
     cancelAnimationFrame(this.raf);
     // Writing a canvas's width clears it, so a repaint that follows a size change one frame later
-    // leaves a blank frame on screen. When the size is about to move, paint now.
+    // leaves a blank frame on screen.
     if (this.canvas().nativeElement.width !== this.px * Math.ceil(this.scale())) {
       this.draw();
       return;
@@ -478,12 +478,9 @@ export class SpriteCanvasComponent {
     const ctx = el.getContext('2d');
     if (!ctx) return;
     const scale = this.scale();
-    /**
-     * Drawn at the whole scale above, shown at the real one. At the whole scale every art pixel is
-     * exactly as wide as its neighbour and the cell guides land on hard edges; the browser then
-     * resamples the finished picture once, evenly, on its way down to the size actually asked for.
-     * When the two agree — which the magnifiers always land on — nothing is resampled at all.
-     */
+    // Drawn at the whole scale above, shown at the real one. At a whole scale every art pixel is
+    // exactly as wide as its neighbour and the cell guides land on hard edges; the browser then
+    // resamples the finished picture once, evenly, on its way down to the size asked for.
     const s = Math.ceil(scale);
     const px = this.px;
     const css = px * s;

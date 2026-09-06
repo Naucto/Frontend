@@ -67,18 +67,13 @@ describe('ArtStore region', () => {
   });
 });
 
-/**
- * The magnifiers are how you get back to a whole scale, where nothing is resampled. A quarter more
- * than a small number rounds back onto itself, so the naive `×1.25` leaves the buttons dead at the
- * bottom of the range — the floor of one whole step is what stops that.
- */
+/** The one piece of arithmetic in the zoom, and the one with a case that silently does nothing. */
 describe('zoom steps', () => {
   it('climbs and falls through whole scales', () => {
     expect(stepZoom(10, 1)).toBe(12);
     expect(stepZoom(12, 1)).toBe(15);
     expect(stepZoom(15, 1)).toBe(18);
-    // Down rounds towards where you are, as up does, so the two directions are each other's undo
-    // over one press: ×15 up is ×18, and ×18 down is ×15.
+    // Down rounds towards where you are, as up does, so one press each way is a round trip.
     expect(stepZoom(18, -1)).toBe(15);
     expect(stepZoom(15, -1)).toBe(12);
   });
