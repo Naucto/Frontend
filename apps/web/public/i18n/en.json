@@ -294,6 +294,15 @@
       "restoreFailed": "Could not restore that version."
     },
     "code": {
+      "fileName": "Tab name",
+      "newFile": "New tab",
+      "renameFile": "Rename tab",
+      "create": "Create",
+      "rename": "Rename",
+      "cancel": "Cancel",
+      "removeTitle": "Remove this tab?",
+      "removeMessage": "The tab and its code go, for everyone in the session. This cannot be undone.",
+      "remove": "Remove",
       "colour": "Tab colour",
       "colourN": "Palette slot {{n}}",
       "colourNone": "No colour",

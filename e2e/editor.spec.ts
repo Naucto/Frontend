@@ -294,3 +294,26 @@ test.describe('editor', () => {
     await page.screenshot({ path: 'test-results/v-editor-sound.png' });
   });
 });
+
+test('a tab is named and coloured in a dialog, and the last one cannot be removed', async ({
+  page,
+}) => {
+  await mockEditor(page);
+  await page.goto('/edit/7/code');
+  await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+
+  // Counted in the DOM rather than by role: the close button is hidden until its tab is hovered,
+  // so a count through the accessibility tree would read zero whether the guard held or not.
+  const closers = page.locator('[role=tab] button[aria-label="Remove file"]');
+  await expect(closers).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'New file' }).click();
+  await expect(page.getByRole('heading', { name: 'New tab' })).toBeVisible();
+  await page.getByLabel('Tab name').fill('player');
+  await page.getByRole('button', { name: 'Palette slot 4' }).click();
+  await page.getByRole('button', { name: 'Create' }).click();
+
+  await expect(page.getByRole('tab', { name: 'player', exact: true })).toBeVisible();
+  // The entry is among them: what a project keeps is a tab, not that one.
+  await expect(closers).toHaveCount(2);
+});

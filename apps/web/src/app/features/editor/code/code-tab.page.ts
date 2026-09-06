@@ -12,10 +12,13 @@ import {
 } from '@angular/core';
 import { RuntimeHostService } from '@app/shared/game-screen/runtime-host.service';
 import { ySignal } from '@app/shared/yjs/y-signal';
-import { TranslocoDirective } from '@jsverse/transloco';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { type CodeFile, MAIN_FILE } from '@naucto/engine';
 import {
   ButtonDirective,
+  ConfirmDialogComponent,
+  type ConfirmDialogData,
+  DialogService,
   IconComponent,
   PopoverDirective,
   PopoverPanelComponent,
@@ -25,6 +28,11 @@ import { ACCENT_SLOTS } from '../accent-slots';
 import { EditorRuntimeService } from '../state/editor-runtime.service';
 import { WorkSessionService } from '../work-session/work-session.service';
 import { CodeEditorComponent, type CursorInfo } from './code-editor.component';
+import {
+  CodeFileDialog,
+  type CodeFileDialogData,
+  type CodeFileDialogResult,
+} from './code-file.dialog';
 
 /** CODE tab: file tabs, the collaborative editor, status bar. */
 @Component({
@@ -48,11 +56,14 @@ import { CodeEditorComponent, type CursorInfo } from './code-editor.component';
         (cdkDropListDropped)="moved($event)"
       >
         @for (f of files(); track f.id) {
+          <!-- Named rather than read from its contents: what a tab is called must not change
+               because it grew a colour swatch, a dirty mark or a button to close it. -->
           <div
             cdkDrag
             role="tab"
             tabindex="0"
             [attr.aria-selected]="f.id === activeId()"
+            [attr.aria-label]="stem(f.name)"
             class="group flex cursor-pointer items-center gap-1 border-t-2 border-r border-r-line px-[15px] font-ui text-body tracking-copy hover:text-ink"
             [class]="
               f.id === activeId()
@@ -70,9 +81,8 @@ import { CodeEditorComponent, type CursorInfo } from './code-editor.component';
             }
             <button
               type="button"
-              class="ml-0.5 h-[12px] w-[12px] shrink-0 rounded-xs border border-line-strong"
-              [class.hidden]="f.colour === null"
-              [class.group-hover:block]="true"
+              class="ml-0.5 hidden h-[12px] w-[12px] shrink-0 border border-line-strong group-hover:block"
+              [class.!block]="f.colour !== null"
               [style.background]="f.colour === null ? 'transparent' : palette()[f.colour]"
               [attr.aria-label]="t('editor.code.colour')"
               [ncPopover]="swatches"
@@ -80,30 +90,30 @@ import { CodeEditorComponent, type CursorInfo } from './code-editor.component';
             ></button>
             <ng-template #swatches>
               <nc-popover-panel [title]="t('editor.code.colour')">
-                <div class="flex gap-0.5 p-1">
-                  @for (c of accents; track c) {
-                    <button
-                      type="button"
-                      class="h-[18px] w-[18px] rounded-xs outline-offset-2"
-                      [class]="f.colour === c ? 'outline-2 outline-ink' : ''"
-                      [style.background]="palette()[c]"
-                      [attr.aria-label]="t('editor.code.colourN', { n: c })"
-                      [attr.aria-pressed]="f.colour === c"
-                      (click)="setColour(f.id, c)"
-                    ></button>
-                  }
+                <div class="flex gap-0.75 p-1">
                   <button
                     type="button"
-                    class="h-[18px] w-[18px] rounded-xs border border-line-strong text-ink-4"
+                    class="flex h-[18px] w-[18px] items-center justify-center border border-line-strong text-ink-4 outline-offset-2"
+                    [class]="f.colour === null ? 'outline-2 outline-ink' : ''"
                     [attr.aria-label]="t('editor.code.colourNone')"
                     (click)="setColour(f.id, null)"
                   >
                     <nc-icon name="close" [size]="12" />
                   </button>
+                  @for (c of accents; track c) {
+                    <button
+                      type="button"
+                      class="h-[18px] w-[18px] outline-offset-2"
+                      [class]="f.colour === c ? 'outline-2 outline-ink' : ''"
+                      [style.background]="palette()[c]"
+                      [attr.aria-label]="t('editor.code.colourN', { n: c })"
+                      (click)="setColour(f.id, c)"
+                    ></button>
+                  }
                 </div>
               </nc-popover-panel>
             </ng-template>
-            @if (files().length > 1 && f.name !== main) {
+            @if (files().length > 1) {
               <button
                 type="button"
                 class="ml-0.5 hidden text-ink-4 group-hover:inline hover:text-hot-ink"
@@ -176,6 +186,8 @@ export class CodeTabPage implements OnInit {
   protected readonly accents = ACCENT_SLOTS;
   private readonly editor = viewChild<CodeEditorComponent>('editor');
   private readonly editorRuntime = inject(EditorRuntimeService);
+  private readonly dialogs = inject(DialogService);
+  private readonly transloco = inject(TranslocoService);
 
   constructor() {
     // The DOC pane inserts snippets at the caret while this tab is open.
@@ -244,23 +256,66 @@ export class CodeTabPage implements OnInit {
   }
 
   protected addFile(): void {
-    const name = prompt('File name', `file${String(this.files().length)}.lua`)?.trim();
-    if (!name) return;
-    const f = this.session.game.addFile(name.endsWith('.lua') ? name : `${name}.lua`);
-    this.activeId.set(f.id);
+    this.dialogs
+      .open<CodeFileDialog, CodeFileDialogData, CodeFileDialogResult | undefined>(CodeFileDialog, {
+        data: {
+          title: this.transloco.translate('editor.code.newFile'),
+          confirmLabel: this.transloco.translate('editor.code.create'),
+          name: '',
+          colour: null,
+          palette: this.palette(),
+          taken: this.files().map((f) => f.name),
+        },
+      })
+      .closed.subscribe((r) => {
+        if (!r) return;
+        const f = this.session.game.addFile(this.withSuffix(r.name));
+        this.session.game.setFileColour(f.id, r.colour);
+        this.activeId.set(f.id);
+      });
   }
 
   protected rename(id: string, current: string): void {
-    if (current === MAIN_FILE) return;
-    const name = prompt('Rename file', current)?.trim();
-    if (name) this.session.game.renameFile(id, name.endsWith('.lua') ? name : `${name}.lua`);
+    const file = this.files().find((f) => f.id === id);
+    this.dialogs
+      .open<CodeFileDialog, CodeFileDialogData, CodeFileDialogResult | undefined>(CodeFileDialog, {
+        data: {
+          title: this.transloco.translate('editor.code.renameFile'),
+          confirmLabel: this.transloco.translate('editor.code.rename'),
+          name: current,
+          colour: file?.colour ?? null,
+          palette: this.palette(),
+          taken: this.files().map((f) => f.name),
+        },
+      })
+      .closed.subscribe((r) => {
+        if (!r) return;
+        this.session.game.renameFile(id, this.withSuffix(r.name));
+        this.session.game.setFileColour(id, r.colour);
+      });
   }
 
   protected remove(id: string, e: Event): void {
     e.stopPropagation();
-    if (!confirm('Remove this file? Collaborators lose it too.')) return;
-    this.session.game.removeFile(id);
-    if (this.activeId() === id) this.activeId.set(this.session.game.entryFile?.id ?? null);
+    this.dialogs
+      .open<ConfirmDialogComponent, ConfirmDialogData, boolean>(ConfirmDialogComponent, {
+        data: {
+          title: this.transloco.translate('editor.code.removeTitle'),
+          message: this.transloco.translate('editor.code.removeMessage'),
+          confirmLabel: this.transloco.translate('editor.code.remove'),
+          danger: true,
+        },
+      })
+      .closed.subscribe((ok) => {
+        if (!ok) return;
+        this.session.game.removeFile(id);
+        if (this.activeId() === id) this.activeId.set(this.session.game.entryFile?.id ?? null);
+      });
+  }
+
+  /** The stored name carries the extension; nobody has to type it. */
+  private withSuffix(name: string): string {
+    return /\.lua$/i.test(name) ? name : `${name}.lua`;
   }
 
   protected find(): void {
