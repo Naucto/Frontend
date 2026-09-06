@@ -18,7 +18,7 @@ import {
   selector: 'nc-slider',
   template: `
     @if (label()) {
-      <span class="label shrink-0" [class]="compact() ? 'w-[16px]' : 'w-[56px]'">
+      <span class="label tracking-tag shrink-0" [class]="compact() ? 'w-[16px]' : 'w-[56px]'">
         {{ label() }}
       </span>
     }
