@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { ArtStore } from './art.store';
-import { toolBounds, withinBounds } from './sprite-canvas.component';
+import { MAX_ZOOM, MIN_ZOOM, stepZoom, toolBounds, withinBounds } from './sprite-canvas.component';
 
 /**
  * The canvas draws all 128×128 now, so nothing about what you can see says what you may paint.
@@ -64,5 +64,39 @@ describe('ArtStore region', () => {
     store.setSelection({ x: 8, y: 8, w: 4, h: 4 });
     store.setRegion({ x: 5, y: 5, w: 1, h: 1 });
     expect(store.selection()).toBeNull();
+  });
+});
+
+/**
+ * The magnifiers are how you get back to a whole scale, where nothing is resampled. A quarter more
+ * than a small number rounds back onto itself, so the naive `×1.25` leaves the buttons dead at the
+ * bottom of the range — the floor of one whole step is what stops that.
+ */
+describe('zoom steps', () => {
+  it('climbs and falls through whole scales', () => {
+    expect(stepZoom(10, 1)).toBe(12);
+    expect(stepZoom(12, 1)).toBe(15);
+    expect(stepZoom(15, 1)).toBe(18);
+    // Down rounds towards where you are, as up does, so the two directions are each other's undo
+    // over one press: ×15 up is ×18, and ×18 down is ×15.
+    expect(stepZoom(18, -1)).toBe(15);
+    expect(stepZoom(15, -1)).toBe(12);
+  });
+
+  it('always moves, even where a quarter is less than one', () => {
+    expect(stepZoom(1, 1)).toBe(2);
+    expect(stepZoom(2, 1)).toBe(3);
+    expect(stepZoom(3, -1)).toBe(2);
+    expect(stepZoom(2, -1)).toBe(1);
+  });
+
+  it('lands on a whole scale from a fractional one, on the way it was going', () => {
+    expect(stepZoom(5.4, 1)).toBe(6);
+    expect(stepZoom(5.4, -1)).toBe(5);
+  });
+
+  it('stops at the ends', () => {
+    expect(stepZoom(MIN_ZOOM, -1)).toBe(MIN_ZOOM);
+    expect(stepZoom(MAX_ZOOM, 1)).toBe(MAX_ZOOM);
   });
 });

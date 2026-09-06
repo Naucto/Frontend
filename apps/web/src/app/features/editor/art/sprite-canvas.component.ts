@@ -32,11 +32,27 @@ import { type Collaborator } from '../work-session/work-session.service';
 import { type ArtTool, type PixelRect, type SpriteRect } from './art.store';
 
 /**
- * The zoom ladder, in screen pixels per art pixel. Whole numbers only, so a drawn cell is never a
- * fraction wide, and coarse at the top so the far end of the track is not twenty indistinguishable
- * stops.
+ * Screen pixels per art pixel, at the ends. The ceiling is what the backing store can afford: the
+ * sheet is drawn whole, so ×32 is already a 4096² canvas.
  */
-export const ZOOM_STEPS = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32] as const;
+export const MIN_ZOOM = 1;
+export const MAX_ZOOM = 32;
+
+/**
+ * One press of a magnifier: a quarter more or less, landing on a whole scale.
+ *
+ * Whole, because that is where no resampling happens and the art is at its crispest — the buttons
+ * are how you get back to a clean multiple, and the track is how you get everywhere else. The
+ * floor of one step matters: a quarter more than ×2 rounds back to ×2, and the button would do
+ * nothing at the bottom of the range.
+ */
+export function stepZoom(scale: number, delta: number): number {
+  const next =
+    delta > 0
+      ? Math.max(Math.floor(scale * 1.25), Math.floor(scale) + 1)
+      : Math.min(Math.ceil(scale / 1.25), Math.ceil(scale) - 1);
+  return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, next));
+}
 
 /** How far a tool may reach: the region while the lock holds, the whole sheet once it is off. */
 export function toolBounds(region: SpriteRect, clip: boolean): PixelRect {
@@ -74,12 +90,10 @@ interface Drag {
   selector: 'nc-sprite-canvas',
   imports: [PresenceLayerComponent],
   template: `
-    <div class="relative m-auto" [style.width.px]="cssSize()" [style.height.px]="cssSize()">
+    <div #wrap class="relative m-auto">
       <canvas
         #canvas
-        class="pixelated block cursor-crosshair touch-none"
-        [width]="cssSize()"
-        [height]="cssSize()"
+        class="block cursor-crosshair touch-none"
         [attr.aria-label]="label()"
         role="img"
         (pointerdown)="onDown($event)"
@@ -134,16 +148,12 @@ export class SpriteCanvasComponent {
   /** What of the sheet is on screen, in fractional cells — for whatever draws a map of it. */
   readonly view = signal<SpriteRect>({ x: 0, y: 0, w: SPRITES_PER_ROW, h: SPRITES_PER_ROW });
 
-  /** Nearest rung of the ladder, one step along. */
   zoomBy(delta: number): void {
-    const current = this.scale();
-    const at = ZOOM_STEPS.findIndex((s) => s >= current);
-    const i = at < 0 ? ZOOM_STEPS.length - 1 : at;
-    this.setZoom(ZOOM_STEPS[Math.max(0, Math.min(ZOOM_STEPS.length - 1, i + delta))] ?? current);
+    this.setZoom(stepZoom(this.scale(), delta));
   }
 
   setZoom(scale: number): void {
-    this.userScale.set(scale);
+    this.userScale.set(Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, scale)));
   }
 
   /** Back to fitting the sheet, and back to following it when the panel resizes. */
@@ -158,6 +168,7 @@ export class SpriteCanvasComponent {
   }
 
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
+  private readonly wrap = viewChild.required<ElementRef<HTMLElement>>('wrap');
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly theme = inject(ThemeService);
   /** The well, as the ResizeObserver last measured it. */
@@ -166,7 +177,7 @@ export class SpriteCanvasComponent {
   private readonly fitScale = computed(() => {
     const { w, h } = this.well();
     if (!w || !h) return 4;
-    return Math.max(1, Math.floor((Math.min(w, h) - 16) / SHEET_WIDTH));
+    return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.floor((Math.min(w, h) - 16) / SHEET_WIDTH)));
   });
   /**
    * Null until somebody zooms, and from then on theirs. Because the sheet is the whole subject,
@@ -182,7 +193,6 @@ export class SpriteCanvasComponent {
   private raf = 0;
 
   protected readonly px = SHEET_WIDTH;
-  protected readonly cssSize = computed(() => this.px * this.scale());
   /** The region in sheet pixels: what the tools are held to, and what is outlined on the canvas. */
   private readonly regionPx = computed<PixelRect>(() => {
     const r = this.region();
@@ -452,6 +462,12 @@ export class SpriteCanvasComponent {
 
   private requestRedraw(): void {
     cancelAnimationFrame(this.raf);
+    // Writing a canvas's width clears it, so a repaint that follows a size change one frame later
+    // leaves a blank frame on screen. When the size is about to move, paint now.
+    if (this.canvas().nativeElement.width !== this.px * Math.ceil(this.scale())) {
+      this.draw();
+      return;
+    }
     this.raf = requestAnimationFrame(() => {
       this.draw();
     });
@@ -461,14 +477,37 @@ export class SpriteCanvasComponent {
     const el = this.canvas().nativeElement;
     const ctx = el.getContext('2d');
     if (!ctx) return;
-    const s = this.scale();
+    const scale = this.scale();
+    /**
+     * Drawn at the whole scale above, shown at the real one. At the whole scale every art pixel is
+     * exactly as wide as its neighbour and the cell guides land on hard edges; the browser then
+     * resamples the finished picture once, evenly, on its way down to the size actually asked for.
+     * When the two agree — which the magnifiers always land on — nothing is resampled at all.
+     */
+    const s = Math.ceil(scale);
     const px = this.px;
     const css = px * s;
+    const shown = px * scale;
+    if (el.width !== css) el.width = css;
+    if (el.height !== css) el.height = css;
+    el.style.width = `${String(shown)}px`;
+    el.style.height = `${String(shown)}px`;
+    el.style.imageRendering = s === scale ? 'pixelated' : 'auto';
+    const wrap = this.wrap().nativeElement;
+    wrap.style.width = `${String(shown)}px`;
+    wrap.style.height = `${String(shown)}px`;
     ctx.imageSmoothingEnabled = false;
     // 8px squares, fixed in viewport pixels: the transparency check should not zoom with the art,
     // or it reads as part of the sprite. Inset against sunken is the one-step pair the design
     // draws, and it inverts correctly in daylight.
-    checkerboard(ctx, css, css, 8, cssVar(el, '--nc-inset'), cssVar(el, '--nc-sunken'));
+    checkerboard(
+      ctx,
+      css,
+      css,
+      Math.round((8 * s) / scale),
+      cssVar(el, '--nc-inset'),
+      cssVar(el, '--nc-sunken'),
+    );
 
     const sheet = this.painter().canvas;
     const r = this.regionPx();

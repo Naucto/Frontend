@@ -42,8 +42,10 @@ import { WorkSessionService } from '../work-session/work-session.service';
 import { ArtStore, type ArtTool } from './art.store';
 import { PaletteEditorComponent } from './palette-editor.component';
 import { SheetViewComponent } from './sheet-view.component';
-import { SpriteCanvasComponent, ZOOM_STEPS } from './sprite-canvas.component';
+import { MAX_ZOOM, MIN_ZOOM, SpriteCanvasComponent } from './sprite-canvas.component';
 
+/** How many doublings the track spans, from MIN_ZOOM to MAX_ZOOM. */
+const ZOOM_OCTAVES = Math.log2(MAX_ZOOM / MIN_ZOOM);
 const PRESETS: { name: string; colours: readonly string[] }[] = [
   { name: 'Bubblegum 16', colours: BUBBLEGUM_16 },
   { name: 'PICO-8', colours: PICO8_PALETTE },
@@ -209,9 +211,10 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
           <nc-slider
             class="w-[88px] min-w-[40px] shrink"
             [min]="0"
-            [max]="zoomSteps.length - 1"
-            [value]="zoomStep()"
-            (valueChange)="setZoomStep($event)"
+            [max]="1"
+            [step]="0.001"
+            [value]="zoomAt()"
+            (valueChange)="setZoomAt($event)"
             [label]="t('editor.art.zoom')"
             compact
             hideLabel
@@ -233,7 +236,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
             [attr.aria-label]="t('editor.art.zoomFit')"
             (click)="canvas.resetZoom()"
           >
-            ×{{ zoom() }}
+            ×{{ zoomLabel() }}
           </button>
         </div>
 
@@ -331,7 +334,6 @@ export class ArtTabPage {
   private readonly i18n = inject(TranslocoService);
   protected readonly painter = new SheetPainter(this.session.game);
   protected readonly undo: Y.UndoManager;
-  protected readonly zoomSteps = ZOOM_STEPS;
   protected readonly presetList = PRESETS;
   protected readonly defaultPalette = BUBBLEGUM_16;
   protected readonly total = SPRITE_COUNT;
@@ -355,10 +357,18 @@ export class ArtTabPage {
     };
   });
   protected readonly px = computed(() => Math.max(this.regionPx().w, this.regionPx().h));
-  /** The rung of the ladder the canvas is on, for the track. */
-  protected readonly zoomStep = computed(() => {
-    const at = ZOOM_STEPS.findIndex((s) => s >= this.zoom());
-    return at < 0 ? ZOOM_STEPS.length - 1 : at;
+  /**
+   * Where the thumb sits, from 0 to 1.
+   *
+   * The track is geometric — the same travel is the same ratio of magnification wherever you are
+   * on it. A linear one would spend a third of its length between ×1 and ×4, where there is
+   * nothing to do, and crush ×24 to ×32 into three pixels.
+   */
+  protected readonly zoomAt = computed(() => Math.log2(this.zoom() / MIN_ZOOM) / ZOOM_OCTAVES);
+  /** One decimal where there is one, and none where there is not: ×5.4 against ×10. */
+  protected readonly zoomLabel = computed(() => {
+    const z = this.zoom();
+    return Number.isInteger(z) ? String(z) : z.toFixed(1);
   });
   /** 50px in the design — a 1:1 8×8 preview is too small to judge a sprite by. */
   protected readonly previewCss = computed(() => {
@@ -450,9 +460,8 @@ export class ArtTabPage {
     return String(n).padStart(3, '0');
   }
 
-  protected setZoomStep(i: number): void {
-    const scale = ZOOM_STEPS[i];
-    if (scale) this.canvas()?.setZoom(scale);
+  protected setZoomAt(t: number): void {
+    this.canvas()?.setZoom(MIN_ZOOM * Math.pow(2, t * ZOOM_OCTAVES));
   }
 
   protected setTool(tool: ArtTool | undefined): void {
