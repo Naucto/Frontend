@@ -24,6 +24,7 @@ import {
   IconComponent,
   InputDirective,
   LabelComponent,
+  ReadoutComponent,
   SearchComponent,
   SectionComponent,
   SegmentedComponent,
@@ -52,6 +53,7 @@ const SUMMARY_MAX = 80;
     IconComponent,
     InputDirective,
     LabelComponent,
+    ReadoutComponent,
     SearchComponent,
     SectionComponent,
     SegmentedComponent,
@@ -226,17 +228,27 @@ const SUMMARY_MAX = 80;
                 (valueChange)="setMonetization($event)"
                 label="Monetization"
               />
-              <nc-field [label]="t('editor.game.price')" for="g-price" class="mt-1">
-                <input
-                  ncInput
-                  id="g-price"
-                  type="number"
-                  min="0"
-                  step="0.5"
-                  [disabled]="monetization() !== 'PAID'"
-                  [ngModel]="price()"
-                  (ngModelChange)="setPrice($event)"
-                />
+              <nc-field
+                [label]="t('editor.game.price')"
+                for="g-price"
+                class="mt-1"
+                [class.opacity-40]="monetization() !== 'PAID'"
+              >
+                @if (monetization() === 'PAID') {
+                  <input
+                    ncInput
+                    id="g-price"
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    [ngModel]="price()"
+                    (ngModelChange)="setPrice($event)"
+                  />
+                } @else {
+                  <div class="flex justify-end">
+                    <nc-readout size="sm" value="–" class="w-[64px]" />
+                  </div>
+                }
               </nc-field>
             </nc-section>
             <nc-section [title]="t('editor.game.inSession')">
@@ -321,7 +333,7 @@ export class GameTabPage implements OnInit {
   protected readonly monetization = signal<'NONE' | 'ADS' | 'PAID'>('NONE');
   protected readonly price = signal<number | null>(null);
   protected readonly statuses = [
-    { value: 'IN_PROGRESS', label: 'In progress' },
+    { value: 'IN_PROGRESS', label: 'In progress', tone: 'orange' },
     { value: 'COMPLETED', label: 'Completed' },
     { value: 'ARCHIVED', label: 'Archived' },
   ] as const;

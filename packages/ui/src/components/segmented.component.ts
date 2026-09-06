@@ -10,6 +10,13 @@ import {
 export interface SegmentOption<T extends string> {
   value: T;
   label: string;
+  /**
+   * Fill this one takes when chosen, for a control whose options are not equivalent.
+   *
+   * One tone for the whole control says which of several equals is current. Where the options are
+   * states rather than equals, the colour carries the state, and only some states have one.
+   */
+  tone?: SegmentTone;
 }
 
 /** Fill of the selected segment. Gold is a primary action in this design, never a selection. */
@@ -38,7 +45,7 @@ const SELECTED: Record<SegmentTone, string> = {
           [attr.aria-checked]="o.value === value()"
           [disabled]="disabled()"
           (click)="value.set(o.value)"
-          [class]="itemClass()"
+          [class]="itemClass(o)"
         >
           {{ o.label }}
         </button>
@@ -82,7 +89,7 @@ export class SegmentedComponent<T extends string = string> {
     ].join(' '),
   );
 
-  protected readonly itemClass = computed(() =>
+  protected readonly baseItemClass = computed(() =>
     [
       'cursor-pointer rounded-xs whitespace-nowrap uppercase transition-colors duration-100 disabled:cursor-not-allowed disabled:opacity-40',
       this.fill() ? 'flex-1 text-center' : '',
@@ -91,7 +98,10 @@ export class SegmentedComponent<T extends string = string> {
           ? 'bg-raised px-[7px] py-[3px] font-mono text-micro tracking-button text-ink-3 hover:text-ink'
           : 'bg-raised px-[11px] py-[6px] font-mono text-label tracking-button text-ink-3 hover:text-ink'
         : 'h-[26px] px-1.5 font-mono text-meta tracking-button text-ink-3 hover:text-ink',
-      SELECTED[this.resolvedTone()],
     ].join(' '),
   );
+
+  protected itemClass(option: SegmentOption<T>): string {
+    return `${this.baseItemClass()} ${SELECTED[option.tone ?? this.resolvedTone()]}`;
+  }
 }

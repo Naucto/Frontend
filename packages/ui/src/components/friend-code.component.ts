@@ -9,6 +9,7 @@ import {
 
 import { ButtonDirective } from './button.directive';
 import { IconComponent } from './icon.component';
+import { ReadoutComponent } from './readout.component';
 
 /**
  * The code someone hands out so a friend can add them, with copy and (optionally) regenerate.
@@ -23,12 +24,9 @@ import { IconComponent } from './icon.component';
  */
 @Component({
   selector: 'nc-friend-code',
-  imports: [ButtonDirective, IconComponent],
+  imports: [ButtonDirective, IconComponent, ReadoutComponent],
   template: `
-    <div
-      class="flex items-center gap-1.25 rounded-sm border border-line-strong bg-inset px-[11px] py-[9px]"
-    >
-      <span class="flex-1 font-mono text-[14px] tracking-strip text-gold-ink">{{ shown() }}</span>
+    <nc-readout [value]="shown()" tone="gold">
       @if (regenerable()) {
         <button
           type="button"
@@ -57,7 +55,7 @@ import { IconComponent } from './icon.component';
       >
         <nc-icon name="copy" [size]="12" />
       </button>
-    </div>
+    </nc-readout>
   `,
   host: { class: 'block' },
   changeDetection: ChangeDetectionStrategy.OnPush,
