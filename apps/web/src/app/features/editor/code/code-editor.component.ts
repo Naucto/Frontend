@@ -14,7 +14,16 @@ import { closeBrackets } from '@codemirror/autocomplete';
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
 import { bracketMatching, indentOnInput, syntaxHighlighting } from '@codemirror/language';
 import { type Diagnostic, linter, lintGutter } from '@codemirror/lint';
-import { highlightSelectionMatches, openSearchPanel, searchKeymap } from '@codemirror/search';
+import {
+  findNext,
+  findPrevious,
+  highlightSelectionMatches,
+  replaceAll,
+  replaceNext,
+  SearchQuery,
+  selectMatches,
+  setSearchQuery,
+} from '@codemirror/search';
 import { Compartment, EditorState, type Extension, RangeSet } from '@codemirror/state';
 import {
   Decoration,
@@ -75,14 +84,44 @@ export class CodeEditorComponent {
   private view: EditorView | null = null;
 
   /**
-   * Open CodeMirror's find panel. The keymap lives on the editor's own content element, so a
-   * synthetic keydown dispatched at the document never reaches it — call the command directly.
+   * What to look for. The searching itself stays the library's — cursors over a document several
+   * people are editing at once is not a thing to write twice.
    */
-  openSearch(): void {
+  setSearch(q: {
+    search: string;
+    replace: string;
+    caseSensitive: boolean;
+    regexp: boolean;
+    wholeWord: boolean;
+  }): void {
+    this.view?.dispatch({ effects: setSearchQuery.of(new SearchQuery(q)) });
+  }
+
+  findNext(): void {
+    this.run(findNext);
+  }
+
+  findPrevious(): void {
+    this.run(findPrevious);
+  }
+
+  selectAllMatches(): void {
+    this.run(selectMatches);
+  }
+
+  replaceOne(): void {
+    this.run(replaceNext);
+  }
+
+  replaceEvery(): void {
+    this.run(replaceAll);
+  }
+
+  private run(command: (view: EditorView) => boolean): void {
     const view = this.view;
     if (!view) return;
     view.focus();
-    openSearchPanel(view);
+    command(view);
   }
 
   /**
@@ -193,7 +232,7 @@ export class CodeEditorComponent {
       ),
       syntaxHighlighting(naucto_highlight),
       nauctoTheme,
-      keymap.of([...defaultKeymap, ...historyKeymap, ...searchKeymap, indentWithTab]),
+      keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
       EditorState.tabSize.of(2),
       EditorView.updateListener.of((u) => {
         if (u.selectionSet || u.docChanged) {

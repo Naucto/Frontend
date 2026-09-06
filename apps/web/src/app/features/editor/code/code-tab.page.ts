@@ -31,6 +31,7 @@ import {
   type CodeFileDialogData,
   type CodeFileDialogResult,
 } from './code-file.dialog';
+import { SearchBarComponent } from './search-bar.component';
 
 /** CODE tab: file tabs, the collaborative editor, status bar. */
 @Component({
@@ -41,6 +42,7 @@ import {
     TranslocoDirective,
     ButtonDirective,
     IconComponent,
+    SearchBarComponent,
     CodeEditorComponent,
   ],
   template: `
@@ -106,7 +108,13 @@ import {
           <nc-icon name="plus" [size]="12" />
         </button>
         <span class="flex-1"></span>
-        <button ncButton variant="ghost" size="sm" (click)="find()">
+        <button
+          ncButton
+          variant="ghost"
+          size="sm"
+          [attr.aria-expanded]="searching()"
+          (click)="find()"
+        >
           {{ t('editor.code.find') }}
         </button>
       </div>
@@ -123,6 +131,17 @@ import {
           />
         }
       </div>
+      @if (searching()) {
+        <nc-search-bar
+          #bar
+          (next)="editor()?.findNext()"
+          (previous)="editor()?.findPrevious()"
+          (selectAll)="editor()?.selectAllMatches()"
+          (replaceOne)="editor()?.replaceOne()"
+          (replaceEvery)="editor()?.replaceEvery()"
+          (closed)="searching.set(false)"
+        />
+      }
       <div
         class="flex h-3 items-center gap-3 border-t border-line bg-panel px-2 font-mono text-meta tracking-tag text-ink-3 uppercase"
       >
@@ -154,7 +173,7 @@ export class CodeTabPage implements OnInit {
   protected readonly runtime = inject(RuntimeHostService);
   protected readonly main = MAIN_FILE;
   protected readonly accents = ACCENT_SLOTS;
-  private readonly editor = viewChild<CodeEditorComponent>('editor');
+  protected readonly editor = viewChild<CodeEditorComponent>('editor');
   private readonly editorRuntime = inject(EditorRuntimeService);
   private readonly dialogs = inject(DialogService);
   private readonly transloco = inject(TranslocoService);
@@ -165,6 +184,10 @@ export class CodeTabPage implements OnInit {
       const ed = this.editor();
       this.editorRuntime.insertAtCursor = ed ? (text): boolean => ed.insert(text) : null;
       this.editorRuntime.symbolAtCursor = ed ? (): string | null => ed.symbolAtCursor() : null;
+    });
+    effect(() => {
+      const terms = this.bar()?.terms();
+      if (terms) this.editor()?.setSearch(terms);
     });
     inject(DestroyRef).onDestroy(() => {
       this.editorRuntime.insertAtCursor = null;
@@ -194,6 +217,8 @@ export class CodeTabPage implements OnInit {
     },
   );
   protected readonly activeId = signal<string | null>(null);
+  protected readonly searching = signal(false);
+  private readonly bar = viewChild<SearchBarComponent>('bar');
   protected readonly active = computed(
     () => this.files().find((f) => f.id === this.activeId()) ?? this.session.game.entryFile ?? null,
   );
@@ -277,6 +302,6 @@ export class CodeTabPage implements OnInit {
   }
 
   protected find(): void {
-    this.editor()?.openSearch();
+    this.searching.set(!this.searching());
   }
 }
