@@ -73,6 +73,12 @@ import { SearchBarComponent } from './search-bar.component';
             (keydown.enter)="activeId.set(f.id)"
             (dblclick)="edit(f.id, f.name)"
           >
+            <!-- The rank the engine will load this file in. The strip's order is the evaluation
+                 order, so the number is the position in the strip rather than a stored field —
+                 dragging a tab renumbers it and changes what runs first. -->
+            <span class="font-mono text-meta tabular-nums" [style.color]="capOf(f)">
+              {{ $index + 1 }}
+            </span>
             {{ f.name }}
             @if (f.id === activeId() && session.dirty()) {
               <span class="h-[6px] w-[6px] rounded-full bg-orange" aria-hidden="true"></span>
