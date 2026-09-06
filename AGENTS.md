@@ -114,6 +114,14 @@ broken; an absence reads as not built.
   chunk name a Lua error blames and the name anything asking for the file by name uses — so a name
   may hold spaces, is capped at 24 characters, and may not hold a colon, which is what separates a
   chunk from its line in a Lua message.
+- **The SPRITE SIZE stepper in the ART tab.** The artboard draws a 1×1…8×8 stepper and a canvas
+  showing one block of that size. The canvas shows the whole 128×128 sheet instead, and the block is
+  a rectangle dragged on the sheet map — a size selector and a position picker were two controls for
+  one thing, and neither could say where on the sheet you were. What the stepper set is now read off
+  the region (`region.w`×`region.h` beside the sprite number), and the LOCK toggle is what keeps a
+  stroke inside it. The design's own sheet map, drawn as a wide band with 0/1/2/3 tabs, is square
+  for the same reason: it has to show where the canvas is looking, which a quarter of it cannot.
+
 - **Drag-to-reposition in the touch pad panel.** SIZE and OPACITY are real and drive the pad; moving
   individual buttons is not built, and the panel's copy does not claim it.
 

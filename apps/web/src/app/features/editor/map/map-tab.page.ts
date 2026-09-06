@@ -11,7 +11,7 @@ import {
 import { type Pt } from '@app/shared/pixel/pixel-tools';
 import { SheetPainter } from '@app/shared/pixel/sheet-painter';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
-import { LOCAL_ORIGIN, MAP_HEIGHT, MAP_WIDTH } from '@naucto/engine';
+import { LOCAL_ORIGIN, MAP_HEIGHT, MAP_WIDTH, SPRITES_PER_ROW } from '@naucto/engine';
 import {
   ButtonDirective,
   IconComponent,
@@ -23,6 +23,7 @@ import {
 } from '@naucto/ui';
 import * as Y from 'yjs';
 
+import { type SpriteRect } from '../art/art.store';
 import { SheetViewComponent } from '../art/sheet-view.component';
 import { PresenceSurfaceComponent } from '../work-session/presence-surface.component';
 import { WorkSessionService } from '../work-session/work-session.service';
@@ -177,9 +178,8 @@ const BRUSHES = ['1×1', '2×2', '3×3', '4×4', '5×5', '6×6', '7×7', '8×8']
           <span class="label mb-1 block text-ink-3">{{ t('editor.map.tilePicker') }}</span>
           <nc-sheet-view
             [painter]="painter"
-            [value]="map.sprite()"
-            (valueChange)="map.setSprite($event)"
-            [size]="map.brush()"
+            [region]="tileRegion()"
+            (regionChange)="map.setSprite($event.y * spritesPerRow + $event.x)"
             [label]="t('editor.map.tilePicker')"
           />
         </div>
@@ -231,6 +231,13 @@ export class MapTabPage {
   protected readonly brushes = BRUSHES;
   protected readonly mapW = MAP_WIDTH;
   protected readonly mapH = MAP_HEIGHT;
+  protected readonly spritesPerRow = SPRITES_PER_ROW;
+  /** The picked tile as the sheet map's rectangle: brush-sized, since that is what a press stamps. */
+  protected readonly tileRegion = computed<SpriteRect>(() => {
+    const i = this.map.sprite();
+    const n = this.map.brush();
+    return { x: i % SPRITES_PER_ROW, y: Math.floor(i / SPRITES_PER_ROW), w: n, h: n };
+  });
   protected readonly canvas = viewChild<MapCanvasComponent>('canvas');
   protected readonly viewport = signal<TileViewport | null>(null);
   protected readonly hover = signal<{ x: number; y: number; spr: number; bits: string } | null>(

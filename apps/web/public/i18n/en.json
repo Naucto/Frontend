@@ -340,7 +340,7 @@
     "redo": "Redo",
     "art": {
       "sprite": "Sprite",
-      "px": "{{n}}×{{n}} px",
+      "px": "{{w}}×{{h}} px",
       "tools": {
         "pen": "Pen",
         "fill": "Fill",
@@ -355,11 +355,9 @@
       "onion": "Onion",
       "zoomIn": "Zoom in",
       "zoomOut": "Zoom out",
-      "zoomFit": "Fit to the panel",
+      "zoomFit": "Fit the sheet to the panel",
       "sheet": "Sheet",
       "used": "{{used}} / {{total}} used",
-      "spriteSize": "Sprite size",
-      "sizeReadout": "{{n}}×{{n}} · {{px}}×{{px}} px",
       "flags": "Flags",
       "flagsHelp": "Eight bits per sprite. The engine ignores them — your game reads them with map.flag(index, bit). Flag 0 can mean solid, flag 2 water — you decide.",
       "palette": "Palette",
@@ -370,7 +368,9 @@
       "preview": "Preview",
       "status": "X {{x}} Y {{y}} · COL {{col}}",
       "canvas": "Sprite canvas",
-      "pickSprite": "Pick a sprite"
+      "pickSprite": "Sheet map — drag to pick the cells you are working on",
+      "clip": "Lock",
+      "zoom": "Zoom"
     },
     "map": {
       "title": "Map 0",

@@ -20,6 +20,7 @@ import {
   LOCAL_ORIGIN,
   PICO8_PALETTE,
   SPRITE_COUNT,
+  SPRITE_SIZE,
   SPRITES_PER_ROW,
 } from '@naucto/engine';
 import {
@@ -29,8 +30,7 @@ import {
   IconComponent,
   PopoverDirective,
   PopoverPanelComponent,
-  SegmentedComponent,
-  StepperComponent,
+  SliderComponent,
   ToggleButtonComponent,
   ToolGroupComponent,
   type ToolItem,
@@ -42,15 +42,14 @@ import { WorkSessionService } from '../work-session/work-session.service';
 import { ArtStore, type ArtTool } from './art.store';
 import { PaletteEditorComponent } from './palette-editor.component';
 import { SheetViewComponent } from './sheet-view.component';
-import { SpriteCanvasComponent } from './sprite-canvas.component';
+import { SpriteCanvasComponent, ZOOM_STEPS } from './sprite-canvas.component';
 
-const SIZES = ['1×1', '2×2', '3×3', '4×4', '5×5', '6×6', '7×7', '8×8'] as const;
 const PRESETS: { name: string; colours: readonly string[] }[] = [
   { name: 'Bubblegum 16', colours: BUBBLEGUM_16 },
   { name: 'PICO-8', colours: PICO8_PALETTE },
 ];
 
-/** ART tab: sprite canvas + tools on the left, sheet / size / flags / palette panel on the right. */
+/** ART tab: the sheet and the tools on the left, sheet map / flags / palette panel on the right. */
 @Component({
   selector: 'nc-art-tab-page',
   imports: [
@@ -60,8 +59,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
     IconComponent,
     HelpDotComponent,
     BitFlagsComponent,
-    SegmentedComponent,
-    StepperComponent,
+    SliderComponent,
     ToggleButtonComponent,
     ToolGroupComponent,
     PopoverDirective,
@@ -87,10 +85,27 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
             <span class="font-mono text-meta whitespace-nowrap tracking-strip text-ink">
               {{ t('editor.art.sprite') | uppercase }} {{ pad3(art.sprite()) }}
             </span>
-            <span class="label truncate text-ink-4">{{ t('editor.art.px', { n: px() }) }}</span>
+            @if (art.region().w > 1 || art.region().h > 1) {
+              <span class="label whitespace-nowrap text-gold-ink">
+                {{ art.region().w }}×{{ art.region().h }}
+              </span>
+            }
+            <span class="label truncate text-ink-4">
+              {{ t('editor.art.px', { w: regionPx().w, h: regionPx().h }) }}
+            </span>
           </div>
           <nc-tool-group [items]="tools()" [value]="art.tool()" (valueChange)="setTool($event)" />
-          <div class="flex items-center justify-end gap-0.5">
+          <div class="flex min-w-0 items-center justify-end gap-0.5">
+            <!-- With the whole sheet on the canvas, this is what keeps a stroke off the sprite
+                 next door. Off, the tools reach the sheet's own edges. -->
+            <nc-toggle-button
+              class="mr-1 shrink-0"
+              [checked]="art.clip()"
+              (checkedChange)="art.setClip($event)"
+            >
+              <nc-icon name="lock" [size]="12" />
+              {{ t('editor.art.clip') }}
+            </nc-toggle-button>
             <button
               ncButton
               variant="ghost"
@@ -121,8 +136,8 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
             class="absolute inset-0"
             [game]="session.game"
             [painter]="painter"
-            [sprite]="art.sprite()"
-            [size]="art.size()"
+            [region]="art.region()"
+            [clip]="art.clip()"
             [tool]="art.tool()"
             [colour]="art.colour()"
             [grid]="art.grid()"
@@ -144,7 +159,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
             <div
               class="pointer-events-none absolute bottom-1.5 left-1.5 font-mono text-micro tracking-[0.1em] text-ink-4"
             >
-              {{ t('editor.art.status', { x: pad2(h.x), y: pad2(h.y), col: pad2(h.col) }) }}
+              {{ t('editor.art.status', { x: pad3(h.x), y: pad3(h.y), col: pad2(h.col) }) }}
             </div>
           }
           <div class="pointer-events-none absolute right-1.5 bottom-1.5 flex items-center gap-1.25">
@@ -152,10 +167,10 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
             <canvas
               #preview
               class="pixelated rounded-xs border border-line"
-              [width]="px()"
-              [height]="px()"
-              [style.width.px]="previewCss()"
-              [style.height.px]="previewCss()"
+              [width]="regionPx().w"
+              [height]="regionPx().h"
+              [style.width.px]="previewCss().w"
+              [style.height.px]="previewCss().h"
             ></canvas>
           </div>
         </div>
@@ -167,59 +182,68 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
              somebody is working in here and fades when they leave; it does not chase them. -->
         <nc-presence-surface surface="art:inspector" mode="isolated" />
         <div class="flex h-5 items-center gap-1 border-b border-line px-1.5">
-          <nc-toggle-button [checked]="art.grid()" (checkedChange)="art.setGrid($event)">
+          <nc-toggle-button
+            class="shrink-0"
+            [checked]="art.grid()"
+            (checkedChange)="art.setGrid($event)"
+          >
             <nc-icon name="grid" [size]="12" />
             {{ t('editor.art.grid') }}
           </nc-toggle-button>
-          <nc-toggle-button [checked]="art.onion()" (checkedChange)="art.setOnion($event)">
+          <nc-toggle-button
+            class="shrink-0"
+            [checked]="art.onion()"
+            (checkedChange)="art.setOnion($event)"
+          >
             <nc-icon name="duplicate" [size]="12" />
             {{ t('editor.art.onion') }}
           </nc-toggle-button>
           <span class="flex-1"></span>
-          <!-- A real control, the same one the MAP tab has. This used to be a zoom-in glyph that
-               was not a button next to a number nothing could change. -->
           <button
             ncButton
             variant="ghost"
             size="sm"
             iconOnly
+            class="shrink-0"
             [attr.aria-label]="t('editor.art.zoomOut')"
             (click)="canvas.zoomBy(-1)"
           >
             <nc-icon name="zoom-out" [size]="12" />
           </button>
-          <button
-            type="button"
-            class="font-mono text-label text-ink-3 hover:text-ink"
-            [attr.aria-label]="t('editor.art.zoomFit')"
-            (click)="canvas.resetZoom()"
-          >
-            ×{{ zoom() }}
-          </button>
+          <nc-slider
+            class="w-[88px] min-w-[40px] shrink"
+            [min]="0"
+            [max]="zoomSteps.length - 1"
+            [value]="zoomStep()"
+            (valueChange)="setZoomStep($event)"
+            [label]="t('editor.art.zoom')"
+            compact
+            hideLabel
+          />
           <button
             ncButton
             variant="ghost"
             size="sm"
             iconOnly
+            class="shrink-0"
             [attr.aria-label]="t('editor.art.zoomIn')"
             (click)="canvas.zoomBy(1)"
           >
             <nc-icon name="zoom-in" [size]="12" />
+          </button>
+          <button
+            type="button"
+            class="w-[38px] shrink-0 text-right font-mono text-label text-ink-3 hover:text-ink"
+            [attr.aria-label]="t('editor.art.zoomFit')"
+            (click)="canvas.resetZoom()"
+          >
+            ×{{ zoom() }}
           </button>
         </div>
 
         <div class="border-b border-line px-1.75 py-1.5">
           <div class="mb-1 flex items-center gap-1">
             <span class="label text-ink-3">{{ t('editor.art.sheet') }}</span>
-            <!-- The densest strip in the app: 20 tall on 7px of padding, against the 24 a hub
-                 filter gets. Same component, half the air. -->
-            <nc-segmented
-              variant="chips"
-              size="sm"
-              [options]="bands"
-              [value]="String(art.band())"
-              (valueChange)="art.setBand(Number($event))"
-            />
             <span class="flex-1"></span>
             <span class="label text-ink-4">
               {{ t('editor.art.used', { used: used(), total: total }) }}
@@ -227,26 +251,11 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
           </div>
           <nc-sheet-view
             [painter]="painter"
-            [value]="art.sprite()"
-            (valueChange)="art.setSprite($event)"
-            [size]="art.size()"
-            [band]="art.band()"
+            [region]="art.region()"
+            (regionChange)="art.setRegion($event)"
+            [viewport]="canvas.view()"
+            resizable
             [label]="t('editor.art.pickSprite')"
-          />
-        </div>
-
-        <div class="border-b border-line px-1.75 py-1.5">
-          <div class="mb-1 flex items-center justify-between">
-            <span class="label text-ink-3">{{ t('editor.art.spriteSize') }}</span>
-            <span class="font-mono text-label text-ink">
-              {{ t('editor.art.sizeReadout', { n: art.size(), px: px() }) }}
-            </span>
-          </div>
-          <nc-stepper
-            [options]="sizes"
-            [value]="art.size() - 1"
-            (valueChange)="art.setSize($event + 1)"
-            [label]="t('editor.art.spriteSize')"
           />
         </div>
 
@@ -321,13 +330,10 @@ export class ArtTabPage {
   private readonly i18n = inject(TranslocoService);
   protected readonly painter = new SheetPainter(this.session.game);
   protected readonly undo: Y.UndoManager;
-  protected readonly sizes = SIZES;
-  protected readonly bands = ['0', '1', '2', '3'].map((v) => ({ value: v, label: v }));
+  protected readonly zoomSteps = ZOOM_STEPS;
   protected readonly presetList = PRESETS;
   protected readonly defaultPalette = BUBBLEGUM_16;
   protected readonly total = SPRITE_COUNT;
-  protected readonly String = String;
-  protected readonly Number = Number;
 
   protected readonly zoom = signal(1);
   protected readonly hover = signal<{ x: number; y: number; col: number } | null>(null);
@@ -337,11 +343,27 @@ export class ArtTabPage {
   private readonly canvas = viewChild<SpriteCanvasComponent>('canvas');
   private readonly preview = viewChild<ElementRef<HTMLCanvasElement>>('preview');
 
-  protected readonly px = computed(() => this.art.size() * 8);
+  /** The region in sheet pixels — what the preview shows and what the flags are written over. */
+  protected readonly regionPx = computed(() => {
+    const r = this.art.region();
+    return {
+      x: r.x * SPRITE_SIZE,
+      y: r.y * SPRITE_SIZE,
+      w: r.w * SPRITE_SIZE,
+      h: r.h * SPRITE_SIZE,
+    };
+  });
+  protected readonly px = computed(() => Math.max(this.regionPx().w, this.regionPx().h));
+  /** The rung of the ladder the canvas is on, for the track. */
+  protected readonly zoomStep = computed(() => {
+    const at = ZOOM_STEPS.findIndex((s) => s >= this.zoom());
+    return at < 0 ? ZOOM_STEPS.length - 1 : at;
+  });
   /** 50px in the design — a 1:1 8×8 preview is too small to judge a sprite by. */
   protected readonly previewCss = computed(() => {
-    const px = this.px();
-    return px <= 50 ? px * Math.floor(50 / px) : 50;
+    const { w, h } = this.regionPx();
+    const n = Math.max(1, Math.floor(50 / Math.max(w, h)));
+    return { w: Math.min(50, w * n), h: Math.min(50, h * n) };
   });
   protected readonly palette = computed(() => {
     this.painter.version();
@@ -412,8 +434,7 @@ export class ArtTabPage {
     });
     effect(() => {
       this.painter.version();
-      this.art.sprite();
-      this.art.size();
+      this.art.region();
       this.preview();
       untracked(() => {
         this.drawPreview();
@@ -428,18 +449,24 @@ export class ArtTabPage {
     return String(n).padStart(3, '0');
   }
 
+  protected setZoomStep(i: number): void {
+    const scale = ZOOM_STEPS[i];
+    if (scale) this.canvas()?.setZoom(scale);
+  }
+
   protected setTool(tool: ArtTool | undefined): void {
     if (tool) this.art.setTool(tool);
   }
 
+  /** Sheet coordinates: the canvas is the whole sheet now, so a region-local pair would go negative
+   * the moment the pointer left the outline. */
   protected onHover(p: Pt | null): void {
     if (!p) {
       this.hover.set(null);
       this.session.setCursor(null);
       return;
     }
-    const o = this.session.game.spriteOrigin(this.art.sprite());
-    this.hover.set({ x: p.x - o.x, y: p.y - o.y, col: this.session.game.getPixel(p.x, p.y) });
+    this.hover.set({ x: p.x, y: p.y, col: this.session.game.getPixel(p.x, p.y) });
   }
 
   /** Presence follows the pointer, not the cell it is over — see `pointer` on the canvas. */
@@ -451,15 +478,14 @@ export class ArtTabPage {
     );
   }
 
-  /** Flags apply to every cell of the current block so multi-cell sprites stay consistent. */
+  /** Flags apply to every cell of the region so a multi-cell sprite stays consistent. */
   protected setFlags(value: number): void {
     const game = this.session.game;
-    const base = this.art.sprite();
-    const n = this.art.size();
+    const r = this.art.region();
     game.transact(() => {
-      for (let j = 0; j < n; j++)
-        for (let i = 0; i < n; i++) {
-          const idx = base + i + j * SPRITES_PER_ROW;
+      for (let j = 0; j < r.h; j++)
+        for (let i = 0; i < r.w; i++) {
+          const idx = (r.y + j) * SPRITES_PER_ROW + r.x + i;
           if (idx < SPRITE_COUNT) game.setFlag(idx, value);
         }
     });
@@ -506,10 +532,9 @@ export class ArtTabPage {
     const el = this.preview()?.nativeElement;
     const ctx = el?.getContext('2d');
     if (!ctx) return;
-    const px = this.px();
-    const o = this.session.game.spriteOrigin(this.art.sprite());
+    const r = this.regionPx();
     ctx.imageSmoothingEnabled = false;
-    ctx.clearRect(0, 0, px, px);
-    ctx.drawImage(this.painter.canvas, o.x, o.y, px, px, 0, 0, px, px);
+    ctx.clearRect(0, 0, r.w, r.h);
+    ctx.drawImage(this.painter.canvas, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
   }
 }

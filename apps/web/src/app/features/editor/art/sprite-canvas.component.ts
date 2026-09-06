@@ -1,4 +1,5 @@
 import {
+  booleanAttribute,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -24,11 +25,33 @@ import {
   rectPoints,
 } from '@app/shared/pixel/pixel-tools';
 import { type SheetPainter } from '@app/shared/pixel/sheet-painter';
-import { type Game, SPRITE_SIZE, SPRITES_PER_ROW } from '@naucto/engine';
+import { type Game, SHEET_WIDTH, SPRITE_SIZE, SPRITES_PER_ROW } from '@naucto/engine';
 import { PresenceFlagComponent } from '@naucto/ui';
 
 import { type Collaborator } from '../work-session/work-session.service';
-import { type ArtTool, type PixelRect } from './art.store';
+import { type ArtTool, type PixelRect, type SpriteRect } from './art.store';
+
+/**
+ * The zoom ladder, in screen pixels per art pixel. Whole numbers only, so a drawn cell is never a
+ * fraction wide, and coarse at the top so the far end of the track is not twenty indistinguishable
+ * stops.
+ */
+export const ZOOM_STEPS = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32] as const;
+
+/** How far a tool may reach: the region while the lock holds, the whole sheet once it is off. */
+export function toolBounds(region: SpriteRect, clip: boolean): PixelRect {
+  if (!clip) return { x: 0, y: 0, w: SHEET_WIDTH, h: SHEET_WIDTH };
+  return {
+    x: region.x * SPRITE_SIZE,
+    y: region.y * SPRITE_SIZE,
+    w: region.w * SPRITE_SIZE,
+    h: region.h * SPRITE_SIZE,
+  };
+}
+
+export function withinBounds(b: PixelRect, p: Pt): boolean {
+  return p.x >= b.x && p.y >= b.y && p.x < b.x + b.w && p.y < b.y + b.h;
+}
 
 interface Drag {
   tool: ArtTool;
@@ -40,14 +63,18 @@ interface Drag {
 }
 
 /**
- * The big pixel canvas: one sprite block (size×size cells) zoomed to fit.
- * Applies the active tool straight to the game document.
+ * The whole 128×128 sheet, zoomed and scrolled, with the worked-on region marked on it.
+ *
+ * The canvas shows everything; the region says what the flags, the preview and the onion refer to,
+ * and — while `clip` holds — how far a tool may reach. Panning is the host's own scrollbars: the
+ * content is the sheet at its full drawn size, so there is no second scrolling model to keep in
+ * step with the first.
  */
 @Component({
   selector: 'nc-sprite-canvas',
   imports: [PresenceFlagComponent],
   template: `
-    <div class="relative" [style.width.px]="cssSize()" [style.height.px]="cssSize()">
+    <div class="relative m-auto" [style.width.px]="cssSize()" [style.height.px]="cssSize()">
       <canvas
         #canvas
         class="pixelated block cursor-crosshair touch-none"
@@ -73,22 +100,29 @@ interface Drag {
       }
     </div>
   `,
+  // `m-auto` on the content rather than `justify-center` on the host: centring a flex child that
+  // overflows its container makes the overflowing start unreachable by scrolling, which at any
+  // zoom past the fit is most of the sheet.
   host: {
-    class: 'flex items-center justify-center overflow-auto',
+    class: 'flex overflow-auto',
     tabindex: '0',
     '(wheel)': 'onWheel($event)',
+    '(scroll)': 'measure()',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SpriteCanvasComponent {
   readonly game = input.required<Game>();
   readonly painter = input.required<SheetPainter>();
-  readonly sprite = input.required<number>();
-  readonly size = input(1);
+  /** The cells being worked on, in whole 8×8 units. */
+  readonly region = input.required<SpriteRect>();
+  /** Whether a tool stops at the region's edge or may paint anywhere on the sheet. */
+  readonly clip = input(true, { transform: booleanAttribute });
   readonly tool = input<ArtTool>('pen');
   readonly colour = input(4);
   readonly grid = input(true);
   readonly onion = input(false);
+  /** In sheet pixels, like everything else the tools speak. */
   readonly selection = model<PixelRect | null>(null);
   readonly collaborators = input<readonly Collaborator[]>([]);
   readonly label = input('Sprite canvas');
@@ -105,18 +139,22 @@ export class SpriteCanvasComponent {
   readonly pick = output<number>();
   readonly zoom = model(1);
 
-  /**
-   * One step of zoom. Multiplicative rather than ±1: the scale is screen pixels per art pixel, so
-   * it sits anywhere from 4 to well over 100 depending on the sprite size and the panel width, and
-   * a fixed step would be imperceptible at one end and violent at the other.
-   */
+  /** What of the sheet is on screen, in fractional cells — for whatever draws a map of it. */
+  readonly view = signal<SpriteRect>({ x: 0, y: 0, w: SPRITES_PER_ROW, h: SPRITES_PER_ROW });
+
+  /** Nearest rung of the ladder, one step along. */
   zoomBy(delta: number): void {
     const current = this.scale();
-    const next = delta > 0 ? Math.ceil(current * 1.25) : Math.floor(current / 1.25);
-    this.userScale.set(Math.max(1, Math.min(256, next)));
+    const at = ZOOM_STEPS.findIndex((s) => s >= current);
+    const i = at < 0 ? ZOOM_STEPS.length - 1 : at;
+    this.setZoom(ZOOM_STEPS[Math.max(0, Math.min(ZOOM_STEPS.length - 1, i + delta))] ?? current);
   }
 
-  /** Back to filling the well, and back to following it when the panel resizes. */
+  setZoom(scale: number): void {
+    this.userScale.set(scale);
+  }
+
+  /** Back to fitting the sheet, and back to following it when the panel resizes. */
   resetZoom(): void {
     this.userScale.set(null);
   }
@@ -130,26 +168,18 @@ export class SpriteCanvasComponent {
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly theme = inject(ThemeService);
-  /**
-   * The well, as the ResizeObserver last measured it. The fit used to be computed *inside* that
-   * callback, so it only ever changed when the host resized — and switching to a 4x4 sprite does
-   * not resize the host. The canvas stayed at the 1x1 sprite's zoom, which put a 32x32 block at
-   * 79px a cell and pushed most of it out of the panel.
-   */
+  /** The well, as the ResizeObserver last measured it. */
   private readonly well = signal({ w: 0, h: 0 });
-  /**
-   * What the sprite would take to fill the well. Whole pixels only, so a drawn cell is never a
-   * fraction wide.
-   */
+  /** What the whole sheet would take to fill the well. Whole pixels only. */
   private readonly fitScale = computed(() => {
     const { w, h } = this.well();
-    if (!w || !h) return 8;
-    return Math.max(1, Math.floor((Math.min(w, h) - 16) / this.px()));
+    if (!w || !h) return 4;
+    return Math.max(1, Math.floor((Math.min(w, h) - 16) / SHEET_WIDTH));
   });
   /**
-   * Null until somebody zooms, and from then on theirs. The scale used to be the fit and nothing
-   * else — the readout beside the canvas showed whatever number the panel width happened to
-   * produce (×116 for an 8×8 sprite), and there was no way to change it.
+   * Null until somebody zooms, and from then on theirs. Because the sheet is the whole subject,
+   * this number means one thing at all times — it used to divide by the sprite-block size, so the
+   * same picture on screen read ×85 at one block size and ×10 at another.
    */
   private readonly userScale = signal<number | null>(null);
   private readonly scale = computed(() => this.userScale() ?? this.fitScale());
@@ -159,12 +189,20 @@ export class SpriteCanvasComponent {
   private drag: Drag | null = null;
   private raf = 0;
 
-  /** Pixel size of the block (8, 16 … 64). */
-  protected readonly px = computed(() => this.size() * SPRITE_SIZE);
-  protected readonly cssSize = computed(() => this.px() * this.scale());
+  protected readonly px = SHEET_WIDTH;
+  protected readonly cssSize = computed(() => this.px * this.scale());
+  /** The region in sheet pixels: what the tools are held to, and what is outlined on the canvas. */
+  private readonly regionPx = computed<PixelRect>(() => {
+    const r = this.region();
+    return {
+      x: r.x * SPRITE_SIZE,
+      y: r.y * SPRITE_SIZE,
+      w: r.w * SPRITE_SIZE,
+      h: r.h * SPRITE_SIZE,
+    };
+  });
+  private readonly bounds = computed(() => toolBounds(this.region(), this.clip()));
   protected readonly flags = computed(() => {
-    const { x: ox, y: oy } = this.game().spriteOrigin(this.sprite());
-    const px = this.px();
     const s = this.scale();
     return this.collaborators()
       .filter((c) => !c.isSelf && c.cursor?.tab === 'art')
@@ -172,10 +210,9 @@ export class SpriteCanvasComponent {
         clientId: c.clientId,
         name: c.name,
         colour: c.colour,
-        x: ((c.cursor?.x ?? 0) - ox) * s,
-        y: ((c.cursor?.y ?? 0) - oy) * s,
-      }))
-      .filter((f) => f.x >= 0 && f.y >= 0 && f.x < px * s && f.y < px * s);
+        x: (c.cursor?.x ?? 0) * s,
+        y: (c.cursor?.y ?? 0) * s,
+      }));
   });
 
   constructor() {
@@ -183,6 +220,7 @@ export class SpriteCanvasComponent {
       const r = entries[0]?.contentRect;
       if (!r) return;
       this.well.set({ w: r.width, h: r.height });
+      this.measure();
     });
     ro.observe(this.host.nativeElement);
     inject(DestroyRef).onDestroy(() => {
@@ -192,10 +230,19 @@ export class SpriteCanvasComponent {
     effect(() => {
       this.zoom.set(this.scale());
     });
+    // Picking a region off screen — in the sheet map, or with the arrow keys — has to bring it back
+    // into view, or the pick silently does nothing you can see.
+    effect(() => {
+      const r = this.regionPx();
+      const s = this.scale();
+      untracked(() => {
+        this.reveal(r, s);
+      });
+    });
     effect(() => {
       this.painter().version();
-      this.sprite();
-      this.size();
+      this.region();
+      this.clip();
       this.grid();
       this.onion();
       this.selection();
@@ -212,13 +259,47 @@ export class SpriteCanvasComponent {
     });
   }
 
+  /** Publishes what is on screen, in cells. */
+  measure(): void {
+    const el = this.host.nativeElement;
+    const s = this.scale();
+    const css = this.px * s;
+    const span = (client: number, scroll: number): [number, number] =>
+      css <= client ? [0, this.px] : [scroll / s, client / s];
+    const [x, w] = span(el.clientWidth, el.scrollLeft);
+    const [y, h] = span(el.clientHeight, el.scrollTop);
+    this.view.set({
+      x: x / SPRITE_SIZE,
+      y: y / SPRITE_SIZE,
+      w: w / SPRITE_SIZE,
+      h: h / SPRITE_SIZE,
+    });
+  }
+
+  private reveal(r: PixelRect, s: number): void {
+    const el = this.host.nativeElement;
+    if (this.px * s <= el.clientWidth && this.px * s <= el.clientHeight) return;
+    const axis = (start: number, size: number, scroll: number, client: number): number => {
+      const a = start * s;
+      const b = (start + size) * s;
+      if (a < scroll) return a - 8;
+      if (b > scroll + client) return b - client + 8;
+      return scroll;
+    };
+    el.scrollTo({
+      left: axis(r.x, r.w, el.scrollLeft, el.clientWidth),
+      top: axis(r.y, r.h, el.scrollTop, el.clientHeight),
+      behavior: 'smooth',
+    });
+  }
+
   // ---- pointer --------------------------------------------------------------
 
   private cellOf(e: PointerEvent): Pt {
     const p = this.pointOf(e);
     return {
-      x: Math.max(0, Math.min(this.px() - 1, Math.floor(p.x))),
-      y: Math.max(0, Math.min(this.px() - 1, Math.floor(p.y))),
+      x: Math.max(0, Math.min(this.px - 1, Math.floor(p.x))),
+      y: Math.max(0, Math.min(this.px - 1, Math.floor(p.y))),
     };
   }
 
@@ -229,30 +310,24 @@ export class SpriteCanvasComponent {
     return { x: (e.clientX - r.left) / s, y: (e.clientY - r.top) / s };
   }
 
-  private origin(): Pt {
-    return this.game().spriteOrigin(this.sprite());
-  }
-
-  private getLocal(x: number, y: number): number {
-    const o = this.origin();
-    return this.game().getPixel(o.x + x, o.y + y);
+  private inBounds(p: Pt): boolean {
+    return withinBounds(this.bounds(), p);
   }
 
   private paint(points: readonly Pt[], colour: number): void {
-    const o = this.origin();
-    const px = this.px();
     this.game().transact(() => {
-      for (const p of points)
-        if (p.x >= 0 && p.y >= 0 && p.x < px && p.y < px)
-          this.game().setPixel(o.x + p.x, o.y + p.y, colour);
+      for (const p of points) if (this.inBounds(p)) this.game().setPixel(p.x, p.y, colour);
     });
   }
 
   protected onDown(e: PointerEvent): void {
     if (e.button !== 0 && e.button !== 2) return;
     this.host.nativeElement.focus({ preventScroll: true });
-    this.canvas().nativeElement.setPointerCapture(e.pointerId);
     const cell = this.cellOf(e);
+    // A press outside what the tools may touch is not the start of a stroke — silently clamping it
+    // to the nearest legal pixel would paint somewhere nobody aimed.
+    if (!this.inBounds(cell)) return;
+    this.canvas().nativeElement.setPointerCapture(e.pointerId);
     const colour = e.button === 2 ? 0 : this.colour();
     const tool = this.tool();
     this.drag = { tool, start: cell, last: cell, colour };
@@ -261,24 +336,29 @@ export class SpriteCanvasComponent {
         this.paint([cell], colour);
         break;
       case 'fill': {
-        const px = this.px();
+        const b = this.bounds();
         this.paint(
-          floodFill((x, y) => this.getLocal(x, y), cell, px, px),
+          floodFill(
+            (x, y) => this.game().getPixel(b.x + x, b.y + y),
+            { x: cell.x - b.x, y: cell.y - b.y },
+            b.w,
+            b.h,
+          ).map((p) => ({ x: p.x + b.x, y: p.y + b.y })),
           colour,
         );
         this.drag = null;
         break;
       }
       case 'eyedropper':
-        this.pick.emit(this.getLocal(cell.x, cell.y));
+        this.pick.emit(this.game().getPixel(cell.x, cell.y));
         this.drag = null;
         break;
       case 'move': {
-        const rect = this.selection() ?? { x: 0, y: 0, w: this.px(), h: this.px() };
+        const rect = this.selection() ?? this.bounds();
         const pixels = new Uint8Array(rect.w * rect.h);
         for (let y = 0; y < rect.h; y++)
           for (let x = 0; x < rect.w; x++)
-            pixels[y * rect.w + x] = this.getLocal(rect.x + x, rect.y + y);
+            pixels[y * rect.w + x] = this.game().getPixel(rect.x + x, rect.y + y);
         this.drag.lifted = { rect, pixels };
         this.moveOffset.set({ x: 0, y: 0 });
         break;
@@ -294,10 +374,9 @@ export class SpriteCanvasComponent {
   protected onMove(e: PointerEvent): void {
     const cell = this.cellOf(e);
     this.hoverCell.set(cell);
-    const o = this.origin();
-    this.hover.emit({ x: o.x + cell.x, y: o.y + cell.y });
+    this.hover.emit(cell);
     const pt = this.pointOf(e);
-    this.pointer.emit({ x: o.x + pt.x, y: o.y + pt.y });
+    this.pointer.emit(pt);
     const d = this.drag;
     if (!d) return;
     if (cell.x === d.last.x && cell.y === d.last.y) return;
@@ -315,7 +394,7 @@ export class SpriteCanvasComponent {
         this.preview.set(ellipsePoints(d.start, cell));
         break;
       case 'select':
-        this.selection.set(normalise(d.start, cell));
+        this.selection.set(clampRect(normalise(d.start, cell), this.bounds()));
         break;
       case 'move':
         this.moveOffset.set({ x: cell.x - d.start.x, y: cell.y - d.start.y });
@@ -342,18 +421,13 @@ export class SpriteCanvasComponent {
       this.moveOffset.set(null);
       if (off.x === 0 && off.y === 0) return;
       const { rect, pixels } = d.lifted;
-      const o = this.origin();
-      const px = this.px();
       this.game().transact(() => {
         for (let y = 0; y < rect.h; y++)
-          for (let x = 0; x < rect.w; x++)
-            this.game().setPixel(o.x + rect.x + x, o.y + rect.y + y, 0);
+          for (let x = 0; x < rect.w; x++) this.game().setPixel(rect.x + x, rect.y + y, 0);
         for (let y = 0; y < rect.h; y++)
           for (let x = 0; x < rect.w; x++) {
-            const tx = rect.x + x + off.x;
-            const ty = rect.y + y + off.y;
-            if (tx >= 0 && ty >= 0 && tx < px && ty < px)
-              this.game().setPixel(o.x + tx, o.y + ty, pixels[y * rect.w + x] ?? 0);
+            const p = { x: rect.x + x + off.x, y: rect.y + y + off.y };
+            if (this.inBounds(p)) this.game().setPixel(p.x, p.y, pixels[y * rect.w + x] ?? 0);
           }
       });
       if (this.selection()) this.selection.set({ ...rect, x: rect.x + off.x, y: rect.y + off.y });
@@ -390,9 +464,8 @@ export class SpriteCanvasComponent {
     const ctx = el.getContext('2d');
     if (!ctx) return;
     const s = this.scale();
-    const px = this.px();
+    const px = this.px;
     const css = px * s;
-    const o = this.origin();
     ctx.imageSmoothingEnabled = false;
     // 8px squares, fixed in viewport pixels: the transparency check should not zoom with the art,
     // or it reads as part of the sprite. Inset against sunken is the one-step pair the design
@@ -400,17 +473,18 @@ export class SpriteCanvasComponent {
     checkerboard(ctx, css, css, 8, cssVar(el, '--nc-inset'), cssVar(el, '--nc-sunken'));
 
     const sheet = this.painter().canvas;
-    if (this.onion() && this.sprite() > 0) {
-      const prev = this.game().spriteOrigin(this.sprite() - 1);
+    const r = this.regionPx();
+    if (this.onion() && r.x >= SPRITE_SIZE) {
+      // The cell before the region, ghosted underneath it — an animation's previous frame.
       ctx.globalAlpha = 0.3;
-      ctx.drawImage(sheet, prev.x, prev.y, px, px, 0, 0, css, css);
+      ctx.drawImage(sheet, r.x - SPRITE_SIZE, r.y, r.w, r.h, r.x * s, r.y * s, r.w * s, r.h * s);
       ctx.globalAlpha = 1;
     }
     const lifted = this.drag?.lifted;
     const off = this.moveOffset();
+    ctx.drawImage(sheet, 0, 0, px, px, 0, 0, css, css);
     if (lifted && off) {
-      // Draw the sheet with the lifted region hidden, then the lifted pixels at their offset.
-      ctx.drawImage(sheet, o.x, o.y, px, px, 0, 0, css, css);
+      // Hide the lifted region where it was, then draw its pixels at their offset.
       ctx.clearRect(lifted.rect.x * s, lifted.rect.y * s, lifted.rect.w * s, lifted.rect.h * s);
       checkerboardRegion(ctx, lifted.rect, s, el);
       const pal = this.painter().palette;
@@ -421,8 +495,6 @@ export class SpriteCanvasComponent {
           ctx.fillStyle = pal[c] ?? '#000';
           ctx.fillRect((lifted.rect.x + x + off.x) * s, (lifted.rect.y + y + off.y) * s, s, s);
         }
-    } else {
-      ctx.drawImage(sheet, o.x, o.y, px, px, 0, 0, css, css);
     }
 
     const preview = this.preview();
@@ -433,23 +505,28 @@ export class SpriteCanvasComponent {
       for (const p of preview) ctx.fillRect(p.x * s, p.y * s, s, s);
     }
 
-    if (this.grid() && s >= 4) {
+    if (this.grid()) {
       // A veil of ink rather than the line colour: the guides sit *over* the art, so they have to
-      // stay faint at every zoom and follow the theme without becoming a drawn border.
-      ctx.strokeStyle = cssVar(el, '--nc-ink');
-      ctx.globalAlpha = 0.07;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      for (let i = 1; i < px; i++) {
-        if (i % SPRITE_SIZE === 0) continue;
-        ctx.moveTo(i * s + 0.5, 0);
-        ctx.lineTo(i * s + 0.5, css);
-        ctx.moveTo(0, i * s + 0.5);
-        ctx.lineTo(css, i * s + 0.5);
+      // stay faint at every zoom and follow the theme without becoming a drawn border. The finest
+      // ones only appear once an art pixel is big enough for a line between two of them to read as
+      // a gap — across a whole 128px sheet at the fitted zoom they would be a grey wash.
+      if (s >= 8) {
+        ctx.strokeStyle = cssVar(el, '--nc-ink');
+        ctx.globalAlpha = 0.07;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let i = 1; i < px; i++) {
+          if (i % SPRITE_SIZE === 0) continue;
+          ctx.moveTo(i * s + 0.5, 0);
+          ctx.lineTo(i * s + 0.5, css);
+          ctx.moveTo(0, i * s + 0.5);
+          ctx.lineTo(css, i * s + 0.5);
+        }
+        ctx.stroke();
       }
-      ctx.stroke();
       ctx.strokeStyle = cssVar(el, '--nc-gold');
       ctx.globalAlpha = 0.35;
+      ctx.lineWidth = 1;
       ctx.beginPath();
       for (let i = SPRITE_SIZE; i < px; i += SPRITE_SIZE) {
         ctx.moveTo(i * s + 0.5, 0);
@@ -460,8 +537,17 @@ export class SpriteCanvasComponent {
       ctx.stroke();
       ctx.globalAlpha = 1;
     }
-    // The frame is a neutral hairline; gold on this screen means the 8px cell guides and the
-    // selected sheet cell, not the canvas edge.
+
+    // What is being worked on. Gold, two pixels, over everything: at the fitted zoom a whole sheet
+    // is on screen and this outline is the only thing saying which part of it the flags, the
+    // preview and — unless the lock is off — the tools are about.
+    ctx.strokeStyle = cssVar(el, '--nc-gold');
+    ctx.lineWidth = 2;
+    ctx.strokeRect(r.x * s + 1, r.y * s + 1, r.w * s - 2, r.h * s - 2);
+    ctx.lineWidth = 1;
+
+    // The sheet's own edge is a neutral hairline; gold on this screen means the cell guides and the
+    // region, not the canvas edge.
     ctx.strokeStyle = cssVar(el, '--nc-line-strong');
     ctx.strokeRect(0.5, 0.5, css - 1, css - 1);
 
@@ -486,6 +572,18 @@ function normalise(a: Pt, b: Pt): PixelRect {
   const x = Math.min(a.x, b.x);
   const y = Math.min(a.y, b.y);
   return { x, y, w: Math.abs(a.x - b.x) + 1, h: Math.abs(a.y - b.y) + 1 };
+}
+
+/** A selection never reaches further than the tools that will act on it. */
+function clampRect(r: PixelRect, b: PixelRect): PixelRect {
+  const x = Math.max(b.x, r.x);
+  const y = Math.max(b.y, r.y);
+  return {
+    x,
+    y,
+    w: Math.max(1, Math.min(b.x + b.w, r.x + r.w) - x),
+    h: Math.max(1, Math.min(b.y + b.h, r.y + r.h) - y),
+  };
 }
 
 function checkerboardRegion(
