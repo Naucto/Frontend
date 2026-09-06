@@ -35,7 +35,7 @@ import {
         <!-- The artboard draws the bell at 16, which a 24-grid glyph cannot land on: only the
              exact halves and doubles in IconSize stay crisp under shape-rendering: crispEdges.
              12 is the nearest one that does. -->
-        <nc-icon name="notification" [size]="12" />
+        <nc-icon name="notification" [size]="12" class="text-ink-3" />
         @if (store.unread() > 0) {
           <!-- Over the bell's shoulder, not in the corner of its box: the design hangs the badge
                off the glyph, which only reads once the button is the 38px the bar gives it. -->

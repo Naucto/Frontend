@@ -144,7 +144,7 @@ import { CodeEditorComponent, type CursorInfo } from './code-editor.component';
         }
       </div>
       <div
-        class="flex h-3 items-center gap-3 border-t border-line bg-panel px-2 font-mono text-label text-ink-3 uppercase"
+        class="flex h-3 items-center gap-3 border-t border-line bg-panel px-2 font-mono text-meta tracking-tag text-ink-3 uppercase"
       >
         <span>LN {{ cursor().line }} · COL {{ cursor().col }}</span>
         <span>SPACES 2</span>

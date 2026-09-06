@@ -208,7 +208,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
           </button>
         </div>
 
-        <div class="border-b border-line p-1.5">
+        <div class="border-b border-line px-1.75 py-1.5">
           <div class="mb-1 flex items-center gap-1">
             <span class="label text-ink-3">{{ t('editor.art.sheet') }}</span>
             <!-- The densest strip in the app: 20 tall on 7px of padding, against the 24 a hub
@@ -235,7 +235,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
           />
         </div>
 
-        <div class="border-b border-line p-1.5">
+        <div class="border-b border-line px-1.75 py-1.5">
           <div class="mb-1 flex items-center justify-between">
             <span class="label text-ink-3">{{ t('editor.art.spriteSize') }}</span>
             <span class="font-mono text-label text-ink">
@@ -250,7 +250,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
           />
         </div>
 
-        <div class="border-b border-line p-1.5">
+        <div class="border-b border-line px-1.75 py-1.5">
           <div class="mb-1 flex items-center justify-between">
             <span class="label text-ink-3">{{ t('editor.art.flags') }}</span>
             <nc-help-dot [text]="t('editor.art.flagsHelp')" />
@@ -264,11 +264,9 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
 
         <!-- The palette sits in a sunken well: it is the one section of the panel you edit
              colours in, not just pick from. -->
-        <div class="bg-sunken p-1.5">
+        <div class="bg-sunken px-1.75 py-1.5">
           <div class="mb-1 flex items-center gap-1">
-            <!-- Gold, as the design writes it: the palette is the one thing on this panel that
-                 changes what every other tab draws. -->
-            <span class="label text-gold-ink">{{ t('editor.art.palette') }}</span>
+            <span class="label">{{ t('editor.art.palette') }}</span>
             <span class="flex-1"></span>
             <button ncButton variant="ghost" size="sm" [ncPopover]="presets" popoverAlign="end">
               {{ t('editor.art.presets') }}
