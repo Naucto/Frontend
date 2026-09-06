@@ -16,12 +16,12 @@ import { SliderComponent } from '@naucto/ui';
         <span class="font-mono text-meta text-ink">{{ slotLabel() }} {{ pad(slot()) }}</span>
         <input
           type="text"
-          [value]="hex().toUpperCase()"
+          [value]="digits()"
           [attr.aria-label]="hexLabel()"
-          maxlength="7"
+          maxlength="6"
           spellcheck="false"
           (change)="onHex($event)"
-          class="ml-auto min-w-0 flex-1 rounded-xs border border-line-strong bg-inset px-1 py-0.5 text-right font-mono text-meta text-ink outline-none focus:border-gold"
+          class="ml-auto w-[calc(6ch+1.25rem)] rounded-xs border border-line-strong bg-inset px-1 py-0.5 text-center font-mono text-meta text-ink outline-none focus:border-gold"
         />
       </div>
       <div class="mt-1 grid gap-0.5">
@@ -67,6 +67,7 @@ export class PaletteEditorComponent {
   protected readonly String = String;
   protected readonly hex = computed(() => this.colours()[this.slot()] ?? '#000000');
   protected readonly rgb = computed(() => hexToRgb(this.hex()));
+  protected readonly digits = computed(() => this.hex().slice(1).toUpperCase());
 
   protected pad(n: number): string {
     return String(n).padStart(2, '0');
@@ -75,7 +76,7 @@ export class PaletteEditorComponent {
   protected onHex(e: Event): void {
     const raw = (e.target as HTMLInputElement).value.trim().replace(/^#/, '');
     if (!/^[0-9a-fA-F]{6}$/.test(raw)) {
-      (e.target as HTMLInputElement).value = this.hex().toUpperCase();
+      (e.target as HTMLInputElement).value = this.digits();
       return;
     }
     this.colourChange.emit({ slot: this.slot(), hex: `#${raw.toLowerCase()}` });

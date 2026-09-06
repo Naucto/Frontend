@@ -11,7 +11,7 @@ import { ChipComponent } from './chip.component';
       class="flex min-h-5 flex-wrap items-center gap-0.5 rounded-sm border border-line bg-inset px-1 py-0.5 focus-within:border-gold"
     >
       @for (t of tags(); track t) {
-        <nc-chip [removable]="!disabled()" (removed)="remove(t)">{{ t }}</nc-chip>
+        <nc-chip kind="tag" [removable]="!disabled()" (removed)="remove(t)">{{ t }}</nc-chip>
       }
       <input
         type="text"

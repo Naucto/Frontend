@@ -2,19 +2,23 @@ import { SlicePipe } from '@angular/common';
 import type { OnInit } from '@angular/core';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { unwrap } from '@app/core/api/api-errors';
 import { RuntimeHostService } from '@app/shared/game-screen/runtime-host.service';
 import { qk } from '@app/shared/queries/query-keys';
 import { yTextField } from '@app/shared/yjs/y-signal';
-import { TranslocoDirective } from '@jsverse/transloco';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import {
   projectControllerGetProjectImage,
+  projectControllerRemove,
   projectControllerUpdate,
   projectControllerUploadProjectImage,
 } from '@naucto/api-client';
 import {
   AvatarComponent,
   ButtonDirective,
+  ConfirmDialogComponent,
+  DialogService,
   FieldComponent,
   HelpDotComponent,
   IconComponent,
@@ -78,6 +82,10 @@ const SUMMARY_MAX = 80;
           <button ncButton variant="secondary" size="sm" (click)="exportGame()">
             <nc-icon name="download" [size]="12" />
             {{ t('editor.game.export') }}
+          </button>
+          <button ncButton variant="secondary" size="sm" (click)="confirmDelete()">
+            <nc-icon name="trash" [size]="12" />
+            {{ t('editor.game.delete') }}
           </button>
         </div>
       </div>
@@ -156,11 +164,7 @@ const SUMMARY_MAX = 80;
                   [placeholder]="t('editor.game.summaryPlaceholder')"
                 />
               </nc-field>
-              <nc-field
-                [label]="t('editor.game.description')"
-                for="g-desc"
-                [hint]="t('editor.game.markdown')"
-              >
+              <nc-field [label]="t('editor.game.description')" for="g-desc">
                 <textarea
                   ncInput
                   id="g-desc"
@@ -289,6 +293,9 @@ export class GameTabPage implements OnInit {
   private readonly runtime = inject(RuntimeHostService);
   private readonly toasts = inject(ToastService);
   private readonly qc = inject(QueryClient);
+  private readonly dialogs = inject(DialogService);
+  private readonly transloco = inject(TranslocoService);
+  private readonly router = inject(Router);
   protected readonly nameMax = NAME_MAX;
   protected readonly summaryMax = SUMMARY_MAX;
 
@@ -436,6 +443,32 @@ export class GameTabPage implements OnInit {
    * A Yjs update is the same bytes the server stores for a release and the same bytes
    * `seed:content` writes, so an export can be re-imported or inspected without a special format.
    */
+  protected confirmDelete(): void {
+    this.dialogs
+      .open(ConfirmDialogComponent, {
+        data: {
+          title: this.transloco.translate('editor.game.deleteConfirmTitle'),
+          message: this.transloco.translate('editor.game.deleteConfirmHint'),
+          confirmLabel: this.transloco.translate('editor.game.delete'),
+          danger: true,
+        },
+      })
+      .closed.subscribe((ok) => {
+        if (ok) void this.deleteGame();
+      });
+  }
+
+  private async deleteGame(): Promise<void> {
+    try {
+      unwrap(await projectControllerRemove({ path: { id: this.session.id } }));
+    } catch {
+      this.toasts.show(this.transloco.translate('editor.game.deleteFailed'), 'error');
+      return;
+    }
+    await this.qc.invalidateQueries({ queryKey: ['projects'] });
+    await this.router.navigate(['/my-games']);
+  }
+
   protected exportGame(): void {
     const name = this.session.project()?.name ?? 'game';
     const file = name
