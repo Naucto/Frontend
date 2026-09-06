@@ -18,7 +18,7 @@ const FILL: Record<PresenceColour, string> = {
  * which is what the fraction in the tag's offset counts.
  *
  * The size is the one it is used at, on the ART canvas in artboard 1d; the shape is read off the
- * foundations sheet, which specimens it larger than anything uses it. The design builds the mark
+ * foundations sheet, which draws it larger. The design builds the mark
  * one bar per row rather than as one outline, and the path keeps that, so a row that is wrong
  * reads as a wrong row instead of hiding in a seam. `crispEdges` is load-bearing: the rendered
  * size is not a whole multiple of the grid.
