@@ -14,14 +14,13 @@ const FILL: Record<PresenceColour, string> = {
 };
 
 /**
- * Collaborator cursor: a pixel arrow with the name hung off its elbow, which is the ninth of its
- * fifteen rows — that is what the fraction in the tag's offset counts.
+ * Where a collaborator's pointer is, with their name hung at the ninth of the mark's fifteen rows —
+ * which is what the fraction in the tag's offset counts.
  *
- * Measured off the cursors on the ART canvas in artboard 1d. The foundations sheet specimens the
- * same component larger, at a size nothing in the design uses. The design builds the arrow one bar
- * per row rather than as one outline and the path keeps that, so a row that is wrong reads as a
- * wrong row instead of hiding in a seam. `crispEdges` is load-bearing: the rendered size is not a
- * whole multiple of the grid it is drawn on.
+ * Measured off the ART canvas in artboard 1d; the foundations sheet shows the same component at a
+ * size nothing in the design uses. The design builds the mark one bar per row rather than as one
+ * outline, and the path keeps that, so a row that is wrong reads as a wrong row instead of hiding
+ * in a seam. `crispEdges` is load-bearing: the rendered size is not a whole multiple of the grid.
  *
  * No stroke. At this size a stroke is a different silhouette, not the same one made legible.
  *
