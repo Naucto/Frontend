@@ -14,6 +14,7 @@ import { type Action, ACTIONS, type DeclaredAction, type GamepadButtonRef } from
 import {
   ButtonDirective,
   IconComponent,
+  type IconName,
   KeycapComponent,
   SegmentedComponent,
   SliderComponent,
@@ -35,16 +36,34 @@ const PAD_BUTTON: Record<number, string> = {
   9: 'START',
   10: 'L3',
   11: 'R3',
-  12: 'D-PAD ↑',
-  13: 'D-PAD ↓',
-  14: 'D-PAD ←',
-  15: 'D-PAD →',
+  12: 'D-PAD',
+  13: 'D-PAD',
+  14: 'D-PAD',
+  15: 'D-PAD',
 };
 
-const AXIS_LABEL = (a: GamepadButtonRef): string => {
-  const arrow = a.axis === 0 ? (a.direction === -1 ? '←' : '→') : a.direction === -1 ? '↑' : '↓';
-  return `AXIS ${String(a.axis ?? 0)} ${arrow}`;
+/**
+ * The direction a pad binding points, as a glyph rather than an arrow character.
+ *
+ * For the same reason the keyboard arrows above are spelled out: the face this table is set in has
+ * no arrows, so `←→↑↓` fall back to whatever else the system can find and print smooth in the
+ * middle of a pixel table. The icon set draws them on the same grid as everything around them.
+ */
+const PAD_ARROW: Record<number, IconName> = {
+  12: 'arrow-up',
+  13: 'arrow-down',
+  14: 'arrow-left',
+  15: 'arrow-right',
 };
+
+const AXIS_ARROW = (a: GamepadButtonRef): IconName =>
+  a.axis === 0
+    ? a.direction === -1
+      ? 'arrow-left'
+      : 'arrow-right'
+    : a.direction === -1
+      ? 'arrow-up'
+      : 'arrow-down';
 
 const KEY_LABEL: Record<string, string> = {
   // Words, not ←→↑↓: HD44780 has no arrows, so those four fell back to a smooth face in the
@@ -189,7 +208,13 @@ interface Capture {
                           [attr.aria-label]="t('settings.rebindPad')"
                           (click)="capture(r.action, 'gamepad')"
                         >
-                          <nc-keycap>{{ padLabel(r.pad) }}</nc-keycap>
+                          @let pad = padLabel(r.pad);
+                          <nc-keycap>
+                            {{ pad.text }}
+                            @if (pad.icon; as arrow) {
+                              <nc-icon [name]="arrow" [size]="12" />
+                            }
+                          </nc-keycap>
                         </button>
                       }
                     </div>
@@ -423,12 +448,16 @@ export class ControlsSettingsComponent {
     return KEY_LABEL[key] ?? key.toUpperCase();
   }
 
-  protected padLabel(refs: readonly GamepadButtonRef[]): string {
+  protected padLabel(refs: readonly GamepadButtonRef[]): { text: string; icon?: IconName } {
     const first = refs[0];
-    if (!first) return '—';
-    return first.button !== undefined
-      ? (PAD_BUTTON[first.button] ?? `B${String(first.button)}`)
-      : AXIS_LABEL(first);
+    if (!first) return { text: '—' };
+    if (first.button !== undefined) {
+      return {
+        text: PAD_BUTTON[first.button] ?? `B${String(first.button)}`,
+        icon: PAD_ARROW[first.button],
+      };
+    }
+    return { text: `AXIS ${String(first.axis ?? 0)}`, icon: AXIS_ARROW(first) };
   }
 
   /** `a` and `A` are one binding; the map stores both so a shifted key still matches. */
