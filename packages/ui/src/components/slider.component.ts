@@ -13,11 +13,14 @@ import {
  * `compact` is the geometry the design uses where the label is a single letter and the groove is
  * what the row is for — the RGB channels in the palette editor. The default columns are sized for
  * a word (LATENCY, OPACITY) and swallow most of a narrow panel when the label is one character.
+ *
+ * `hideLabel` keeps the accessible name and drops the printed one, for a groove sitting between two
+ * glyphs that already say what it does — a zoom track between its two magnifiers.
  */
 @Component({
   selector: 'nc-slider',
   template: `
-    @if (label()) {
+    @if (label() && !hideLabel()) {
       <span class="label tracking-tag shrink-0" [class]="compact() ? 'w-[16px]' : 'w-[56px]'">
         {{ label() }}
       </span>
@@ -79,6 +82,7 @@ export class SliderComponent {
   readonly accent = input<'gold' | 'hot' | 'jade' | 'sky' | 'blush' | 'orange'>('gold');
   readonly disabled = input(false);
   readonly compact = input(false, { transform: booleanAttribute });
+  readonly hideLabel = input(false, { transform: booleanAttribute });
 
   /** Percentage of the track covered by the accent, derived from value/min/max. */
   protected readonly fill = computed(() => {
