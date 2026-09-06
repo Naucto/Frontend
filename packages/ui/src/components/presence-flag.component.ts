@@ -14,20 +14,16 @@ const FILL: Record<PresenceColour, string> = {
 };
 
 /**
- * Collaborator cursor: pixel arrow with the name hung off its elbow — the ninth of the arrow's
- * fifteen grid rows, which is where the staircase turns.
+ * Collaborator cursor: a pixel arrow with the name hung off its elbow, which is the ninth of its
+ * fifteen rows — that is what the fraction in the tag's offset counts.
  *
- * 16x24, measured off the cursors on the ART canvas in artboard 1d — the arrow keeps its 10x15
- * grid and is scaled whole, so every edge still lands on a device pixel. It used to render at that
- * grid's own size, which is why it read as a stray mark rather than as somebody's cursor.
+ * Measured off the cursors on the ART canvas in artboard 1d. The foundations sheet specimens the
+ * same component larger, at a size nothing in the design uses. The design builds the arrow one bar
+ * per row rather than as one outline and the path keeps that, so a row that is wrong reads as a
+ * wrong row instead of hiding in a seam. `crispEdges` is load-bearing: the rendered size is not a
+ * whole multiple of the grid it is drawn on.
  *
- * (Artboard 1a draws it at 32x48, but 1a is the foundations specimen sheet — a component shown at
- * a size nothing uses. Every real occurrence in the design is this one.)
- *
- * The arrow carries a halo of `paper` behind its own fill, because it is laid over somebody's
- * artwork rather than over a surface: a sky arrow on a sky sprite had nothing separating it from
- * the pixels underneath. The halo follows the theme, so it is a dark edge in the dark and a light
- * one in daylight.
+ * No stroke. At this size a stroke is a different silhouette, not the same one made legible.
  *
  * Position it from the parent (`left`/`top`, or a translate); the host smooths whatever moves, so
  * a cursor arriving over the network glides instead of teleporting. `[data-reduce-motion]` turns
@@ -47,11 +43,7 @@ const FILL: Record<PresenceColour, string> = {
     >
       <path
         fill="currentColor"
-        stroke="var(--nc-paper)"
-        stroke-width="1"
-        stroke-linejoin="miter"
-        paint-order="stroke fill"
-        d="M0 0h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1H6v1h1v1h1v1H7v-1H6v-1H5v-1H4v1H3v1H2v1H1v1H0z"
+        d="M0 0H1V1H0ZM0 1H2V2H0ZM0 2H3V3H0ZM0 3H4V4H0ZM0 4H5V5H0ZM0 5H6V6H0ZM0 6H7V7H0ZM0 7H8V8H0ZM0 8H9V9H0ZM0 9H10V10H0ZM0 10H6V11H0ZM0 11H4V12H0ZM0 12H3V13H0ZM0 13H2V14H0ZM0 14H1V15H0Z"
       />
     </svg>
     <span
