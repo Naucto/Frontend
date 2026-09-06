@@ -16,6 +16,10 @@ import {
  *
  * `hideLabel` keeps the accessible name and drops the printed one, for a groove sitting between two
  * glyphs that already say what it does — a zoom track between its two magnifiers.
+ *
+ * `min-w-0` on the groove is load-bearing: a range input has an intrinsic width of about 129px and
+ * a flex child will not go under its own min-content size, so in a narrow row the groove used to
+ * overflow its own box and slide under whatever sat next to it.
  */
 @Component({
   selector: 'nc-slider',
@@ -34,7 +38,7 @@ import {
       [disabled]="disabled()"
       [attr.aria-label]="label()"
       (input)="onInput($event)"
-      class="nc-range h-[4px] flex-1 cursor-pointer appearance-none rounded-xs disabled:cursor-not-allowed disabled:opacity-40"
+      class="nc-range h-[4px] min-w-0 flex-1 cursor-pointer appearance-none rounded-xs disabled:cursor-not-allowed disabled:opacity-40"
       [class]="compact() ? 'bg-line-soft' : 'bg-line-strong'"
       [style.--nc-accent]="'var(--nc-' + accent() + ')'"
       [style.--nc-fill.%]="fill()"
