@@ -303,6 +303,7 @@
       "removeTitle": "Remove this tab?",
       "removeMessage": "The tab and its code go, for everyone in the session. This cannot be undone.",
       "remove": "Remove",
+      "edit": "Edit tab",
       "colour": "Tab colour",
       "colourN": "Palette slot {{n}}",
       "colourNone": "No colour",

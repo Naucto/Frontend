@@ -20,8 +20,6 @@ import {
   type ConfirmDialogData,
   DialogService,
   IconComponent,
-  PopoverDirective,
-  PopoverPanelComponent,
 } from '@naucto/ui';
 
 import { ACCENT_SLOTS } from '../accent-slots';
@@ -43,8 +41,6 @@ import {
     TranslocoDirective,
     ButtonDirective,
     IconComponent,
-    PopoverDirective,
-    PopoverPanelComponent,
     CodeEditorComponent,
   ],
   template: `
@@ -73,7 +69,7 @@ import {
             [style.borderTopColor]="capOf(f)"
             (click)="activeId.set(f.id)"
             (keydown.enter)="activeId.set(f.id)"
-            (dblclick)="rename(f.id, f.name)"
+            (dblclick)="edit(f.id, f.name)"
           >
             {{ stem(f.name) }}
             @if (f.id === activeId() && session.dirty()) {
@@ -81,38 +77,12 @@ import {
             }
             <button
               type="button"
-              class="ml-0.5 hidden h-[12px] w-[12px] shrink-0 border border-line-strong group-hover:block"
-              [class.!block]="f.colour !== null"
-              [style.background]="f.colour === null ? 'transparent' : palette()[f.colour]"
-              [attr.aria-label]="t('editor.code.colour')"
-              [ncPopover]="swatches"
-              (click)="$event.stopPropagation()"
-            ></button>
-            <ng-template #swatches>
-              <nc-popover-panel [title]="t('editor.code.colour')">
-                <div class="flex gap-0.75 p-1">
-                  <button
-                    type="button"
-                    class="flex h-[18px] w-[18px] items-center justify-center border border-line-strong text-ink-4 outline-offset-2"
-                    [class]="f.colour === null ? 'outline-2 outline-ink' : ''"
-                    [attr.aria-label]="t('editor.code.colourNone')"
-                    (click)="setColour(f.id, null)"
-                  >
-                    <nc-icon name="close" [size]="12" />
-                  </button>
-                  @for (c of accents; track c) {
-                    <button
-                      type="button"
-                      class="h-[18px] w-[18px] outline-offset-2"
-                      [class]="f.colour === c ? 'outline-2 outline-ink' : ''"
-                      [style.background]="palette()[c]"
-                      [attr.aria-label]="t('editor.code.colourN', { n: c })"
-                      (click)="setColour(f.id, c)"
-                    ></button>
-                  }
-                </div>
-              </nc-popover-panel>
-            </ng-template>
+              class="ml-0.5 hidden text-ink-4 group-hover:inline hover:text-ink"
+              [attr.aria-label]="t('editor.code.edit')"
+              (click)="edit(f.id, f.name, $event)"
+            >
+              <nc-icon name="edit" [size]="12" />
+            </button>
             @if (files().length > 1) {
               <button
                 type="button"
@@ -237,9 +207,12 @@ export class CodeTabPage implements OnInit {
     return name.replace(/\.lua$/i, '');
   }
 
-  /** The cap over an unselected tab is its colour; the selected one keeps the gold that says so. */
+  /**
+   * The cap is not what says a tab is the current one, so the current tab is not a case here: gold
+   * is only what a cap shows when no colour was chosen.
+   */
   protected capOf(file: CodeFile): string | null {
-    if (file.id === this.activeId() || file.colour === null) return null;
+    if (file.colour === null) return null;
     return this.palette()[file.colour] ?? null;
   }
 
@@ -249,10 +222,6 @@ export class CodeTabPage implements OnInit {
     if (moved === undefined) return;
     ids.splice(e.currentIndex, 0, moved);
     this.session.game.reorderFiles(ids);
-  }
-
-  protected setColour(id: string, colour: number | null): void {
-    this.session.game.setFileColour(id, colour);
   }
 
   protected addFile(): void {
@@ -275,7 +244,8 @@ export class CodeTabPage implements OnInit {
       });
   }
 
-  protected rename(id: string, current: string): void {
+  protected edit(id: string, current: string, e?: Event): void {
+    e?.stopPropagation();
     const file = this.files().find((f) => f.id === id);
     this.dialogs
       .open<CodeFileDialog, CodeFileDialogData, CodeFileDialogResult | undefined>(CodeFileDialog, {
