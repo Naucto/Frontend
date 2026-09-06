@@ -16,11 +16,14 @@ import { ChangeDetectionStrategy, Component, computed, input, model } from '@ang
       class="nc-range h-[4px] w-full cursor-pointer appearance-none rounded-xs bg-line-soft"
       [style.--nc-stops]="stops()"
     />
-    <div class="mt-[7px] flex justify-between">
+    <!-- Each caption is placed on its own stop rather than spread edge to edge: laid out by the
+         box, the outer two sit flush and every centre between them lands off the tick it names. -->
+    <div class="relative mt-[7px] h-[14px]">
       @for (o of options(); track $index) {
         <button
           type="button"
-          class="cursor-pointer font-mono text-label text-ink-4 transition-colors duration-100 hover:text-ink"
+          class="absolute -translate-x-1/2 cursor-pointer font-mono text-label whitespace-nowrap text-ink-4 transition-colors duration-100 hover:text-ink"
+          [style.left]="'calc(3px + ' + $index + ' * ' + stops() + ')'"
           [class.text-gold-ink]="$index === value()"
           (click)="value.set($index)"
         >
@@ -46,7 +49,7 @@ import { ChangeDetectionStrategy, Component, computed, input, model } from '@ang
         var(--nc-stops, 100%) 4px;
       background-position:
         left center,
-        2px center;
+        calc(3px - var(--nc-stops, 0px) / 2) center;
     }
     .nc-range::-webkit-slider-thumb {
       appearance: none;
@@ -70,10 +73,16 @@ export class StepperComponent {
   readonly options = input.required<readonly string[]>();
   readonly label = input<string>();
 
-  /** Tick spacing: one dot per step, so the groove shows where the stops are. */
+  /**
+   * Distance between two stops, which is what the tick layer tiles by.
+   *
+   * The thumb travels between its own half-widths rather than edge to edge, so the stops are spaced
+   * across the track minus one thumb — and the layer is then pulled back by half a tile, because a
+   * tiled radial sits at the middle of its tile and a stop is at the end of one.
+   */
   protected readonly stops = computed(() => {
     const steps = Math.max(1, this.options().length - 1);
-    return `calc((100% - 4px) / ${String(steps)})`;
+    return `calc((100% - 6px) / ${String(steps)})`;
   });
 
   protected onInput(e: Event): void {

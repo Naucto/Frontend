@@ -27,21 +27,6 @@ import { ChangeDetectionStrategy, Component, computed, input, model } from '@ang
       <ng-content />
     </button>
   `,
-  styles: `
-    /* Corners clipped rather than rounded — the switch is drawn on the pixel grid. */
-    .nc-track {
-      clip-path: polygon(
-        3px 0,
-        calc(100% - 3px) 0,
-        100% 3px,
-        100% calc(100% - 3px),
-        calc(100% - 3px) 100%,
-        3px 100%,
-        0 calc(100% - 3px),
-        0 3px
-      );
-    }
-  `,
   host: { class: 'inline-flex' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
