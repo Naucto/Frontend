@@ -5,6 +5,7 @@ import {
   BitFlagsComponent,
   BrandMarkComponent,
   ButtonDirective,
+  CheckboxComponent,
   ChipComponent,
   ConfirmDialogComponent,
   DialogService,
@@ -50,6 +51,7 @@ import {
     AvatarComponent,
     BitFlagsComponent,
     ButtonDirective,
+    CheckboxComponent,
     ChipComponent,
     EmptyStateComponent,
     ErrorStateComponent,
@@ -122,6 +124,9 @@ import {
         <div class="mt-2 flex flex-wrap items-center gap-2">
           <nc-toggle [(checked)]="autoRun">Auto-run</nc-toggle>
           <nc-toggle>Haptics</nc-toggle>
+          <nc-checkbox [(checked)]="matchCase">Match case</nc-checkbox>
+          <nc-checkbox>Regexp</nc-checkbox>
+          <nc-checkbox disabled>Disabled</nc-checkbox>
           <nc-segmented [options]="visibility" value="draft" label="Visibility" />
           <nc-segmented [options]="monetization" value="none" label="Monetization" fill />
           <nc-segmented [options]="shelves" value="games" label="Shelf" variant="chips" />
@@ -362,6 +367,7 @@ export class UiKitPage {
   protected readonly grid = signal(true);
   protected readonly onion = signal(false);
   protected readonly reduceMotion = signal(false);
+  protected readonly matchCase = signal(true);
   protected readonly theme = signal<'dark' | 'light'>('dark');
   protected readonly themes = [
     { value: 'dark', label: 'Dark' },
