@@ -12,6 +12,8 @@
  * Run the Backend's `npm run seed:dev` first, then `npm run seed:content`. Idempotent: a game whose
  * name already exists for that author is updated in place, not duplicated.
  */
+import { writeFileSync } from 'node:fs';
+
 import * as Y from 'yjs';
 
 import { BUBBLEGUM_16 } from '../packages/engine/src/game/defaults';
@@ -510,7 +512,31 @@ async function seedComments(projectId: number, seed: SeedGame): Promise<void> {
   }
 }
 
+/**
+ * Writes one game's document to a file instead of publishing it.
+ *
+ * A design comparison serves the document straight to the app over a stubbed route, and a project
+ * with no instruments and four sprites renders every empty state — which is then measured against
+ * an artboard drawn full. The same builders that seed the local stack produce the fixture, so the
+ * two cannot drift apart.
+ */
+function writeContent(name: string, file: string): void {
+  const seed = GAMES.find((g) => g.name === name);
+  if (!seed)
+    throw new Error(`no seed game named ${name}; have ${GAMES.map((g) => g.name).join(', ')}`);
+  writeFileSync(file, buildContent(seed));
+  console.log(`wrote ${file} from ${seed.name}`);
+}
+
 async function main(): Promise<void> {
+  const at = process.argv.indexOf('--content-only');
+  if (at !== -1) {
+    const file = process.argv[at + 1];
+    if (!file) throw new Error('--content-only needs a file to write');
+    writeContent(process.argv[at + 2] ?? 'Platformer Tutorial', file);
+    return;
+  }
+
   if (!API.includes('localhost') && !API.includes('127.0.0.1')) {
     throw new Error(`seed:content refuses to write to ${API}; it is a local development fixture.`);
   }
