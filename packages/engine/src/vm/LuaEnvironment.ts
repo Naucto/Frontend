@@ -1,6 +1,8 @@
 // @ts-expect-error This is a pure JS library.
 import fengari from 'fengari';
 
+import { MAIN_FILE } from '../game/keys';
+
 export type LuaCallable = (...args: unknown[]) => unknown;
 
 // Method returns are marshalled with pushObject, so `index` returning another
@@ -74,14 +76,38 @@ export interface LuaErrorLocation {
   line?: number;
 }
 
-// Parses "file:line: message" produced by the Lua runtime for the main chunk.
-export const parseLuaErrorLocation = (message: string): LuaErrorLocation => {
-  const m =
-    /^(?:Runtime error: |Failed to load code fragment: )?\[?(?:string )?"?([\w./-]+\.lua)"?\]?:(\d+):/.exec(
-      message,
-    );
-  if (!m) return {};
-  return { file: m[1], line: Number(m[2]) };
+const WRAPPERS = ['Runtime error: ', 'Failed to load code fragment: '];
+const QUOTED = /^\[(?:string )?"([^"]*)"\]:(\d+):/;
+
+/**
+ * Which chunk a Lua message blames, and at what line.
+ *
+ * The runtime writes the chunk's name back verbatim, and a name may hold spaces, so nothing in the
+ * message itself marks where the name ends — only the list of names that were loaded does. Longest
+ * first, so a name that begins with another is not read as the shorter one; and a name nobody
+ * loaded is left unattributed rather than guessed at.
+ */
+export const parseLuaErrorLocation = (
+  message: string,
+  known: readonly string[] = [],
+): LuaErrorLocation => {
+  let rest = message;
+  for (const w of WRAPPERS) {
+    if (rest.startsWith(w)) {
+      rest = rest.slice(w.length);
+      break;
+    }
+  }
+  const quoted = QUOTED.exec(rest);
+  if (quoted?.[1] !== undefined && quoted[2] !== undefined) {
+    return { file: quoted[1], line: Number(quoted[2]) };
+  }
+  for (const name of [...known].sort((a, b) => b.length - a.length)) {
+    if (!rest.startsWith(`${name}:`)) continue;
+    const line = /^(\d+):/.exec(rest.slice(name.length + 1));
+    if (line?.[1] !== undefined) return { file: name, line: Number(line[1]) };
+  }
+  return {};
 };
 
 class LuaError extends Error {
@@ -89,10 +115,10 @@ class LuaError extends Error {
   readonly line: number | undefined;
   readonly traceback: string | undefined;
 
-  constructor(message: string, traceback?: string) {
+  constructor(message: string, traceback?: string, known: readonly string[] = []) {
     super(message);
     this.name = 'LuaError';
-    const loc = parseLuaErrorLocation(message);
+    const loc = parseLuaErrorLocation(message, known);
     this.file = loc.file;
     this.line = loc.line;
     this.traceback = traceback;
@@ -195,7 +221,7 @@ class LuaEnvironment {
 
           if (!success) {
             const errorMessage = this._getErrorMessage();
-            throw new LuaError(`Runtime error: ${errorMessage}`);
+            throw new LuaError(`Runtime error: ${errorMessage}`, undefined, this.chunkNames);
           }
 
           const results: unknown[] = [];
@@ -407,7 +433,17 @@ class LuaEnvironment {
    * and tracebacks as "main.lua:12:"). Runtime errors carry the traceback
    * produced by debug.traceback so the console can show the call chain.
    */
-  public evaluate(code: string, chunkName = 'main.lua'): unknown[] {
+  /**
+   * The names a message may blame. Nothing in a Lua message says where a chunk name ends, so the
+   * only thing that can tell one from the rest of the text is knowing which names exist.
+   */
+  private chunkNames: readonly string[] = [];
+
+  public knowChunks(names: readonly string[]): void {
+    this.chunkNames = names;
+  }
+
+  public evaluate(code: string, chunkName = MAIN_FILE): unknown[] {
     this._instructionsUsed = 0;
 
     const L = this._L;
@@ -431,7 +467,11 @@ class LuaEnvironment {
     if (!loaded) {
       const errorMessage = this._getErrorMessage();
       fengari.lua.lua_settop(L, stackTop);
-      throw new LuaError(`Failed to load code fragment: ${errorMessage}`);
+      throw new LuaError(
+        `Failed to load code fragment: ${errorMessage}`,
+        undefined,
+        this.chunkNames,
+      );
     }
 
     const success =
@@ -443,7 +483,7 @@ class LuaEnvironment {
       const nl = full.indexOf('\nstack traceback:');
       const message = nl === -1 ? full : full.slice(0, nl);
       const traceback = nl === -1 ? undefined : full.slice(nl + 1);
-      throw new LuaError(`Runtime error: ${message}`, traceback);
+      throw new LuaError(`Runtime error: ${message}`, traceback, this.chunkNames);
     }
 
     const results: unknown[] = [];
@@ -476,7 +516,11 @@ class LuaEnvironment {
       fengari.lua.lua_settop(L, stackTop);
       const nl = full.indexOf('\nstack traceback:');
       const message = nl === -1 ? full : full.slice(0, nl);
-      throw new LuaError(`Runtime error: ${message}`, nl === -1 ? undefined : full.slice(nl + 1));
+      throw new LuaError(
+        `Runtime error: ${message}`,
+        nl === -1 ? undefined : full.slice(nl + 1),
+        this.chunkNames,
+      );
     }
     const results: unknown[] = [];
     for (let i = msgh + 1; i <= fengari.lua.lua_gettop(L); i++) results.push(this.getObject(i));

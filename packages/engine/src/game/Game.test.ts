@@ -31,18 +31,18 @@ describe('Game document', () => {
   it('manages nameable code tabs with a stable entry', () => {
     const game = new Game(new Y.Doc());
     game.seedDefaults();
-    const util = game.addFile('util.lua', 'return 1');
-    game.renameFile(util.id, 'helpers.lua');
-    expect(game.files.map((f) => f.name)).toEqual(['main.lua', 'helpers.lua']);
-    expect(game.entryFile?.name).toBe('main.lua');
-    expect(game.sources().map((f) => f.module)).toEqual(['main', 'helpers']);
+    const util = game.addFile('util', 'return 1');
+    game.renameFile(util.id, 'helpers');
+    expect(game.files.map((f) => f.name)).toEqual(['main', 'helpers']);
+    expect(game.entryFile?.name).toBe('main');
+    expect(game.sources().map((f) => f.name)).toEqual(['main', 'helpers']);
     game.removeFile(util.id);
     expect(game.files).toHaveLength(1);
     game.removeFile(game.files[0]?.id ?? '');
     expect(game.files).toHaveLength(1);
   });
 
-  it('converges on one main.lua when two clients seed the same empty document', () => {
+  it('converges on one entry when two clients seed the same empty document', () => {
     // What the editor actually does: a local doc seeds before the server's history arrives, and
     // both halves then merge. With a random id per client the merge kept both files.
     const a = new Y.Doc();
@@ -53,8 +53,8 @@ describe('Game document', () => {
     Y.applyUpdate(b, Y.encodeStateAsUpdate(a));
 
     const merged = new Game(a);
-    expect(merged.files.map((f) => f.name)).toEqual(['main.lua']);
-    expect(merged.entryFile?.name).toBe('main.lua');
+    expect(merged.files.map((f) => f.name)).toEqual(['main']);
+    expect(merged.entryFile?.name).toBe('main');
     expect(merged.sources()[0]?.source.length).toBeGreaterThan(0);
     expect(new Game(b).files).toHaveLength(1);
   });
@@ -64,17 +64,17 @@ describe('Game document', () => {
     game.seedDefaults();
     const source = game.entryFile?.text.toString() ?? '';
     // Two strays: one empty, one an exact copy. Both are safe to drop.
-    game.addFile('main.lua', '');
-    game.addFile('main.lua', source);
+    game.addFile('main', '');
+    game.addFile('main', source);
     // And one that diverged, which must survive under a different name rather than be tidied away.
-    const diverged = game.addFile('main.lua', 'print("mine")');
-    expect(game.files.filter((f) => f.name === 'main.lua')).toHaveLength(4);
+    const diverged = game.addFile('main', 'print("mine")');
+    expect(game.files.filter((f) => f.name === 'main')).toHaveLength(4);
 
     game.seedDefaults();
 
-    expect(game.files.filter((f) => f.name === 'main.lua')).toHaveLength(1);
+    expect(game.files.filter((f) => f.name === 'main')).toHaveLength(1);
     expect(game.entryFile?.text.toString()).toBe(source);
-    expect(game.files.find((f) => f.id === diverged.id)?.name).toMatch(/^main\.recovered-/);
+    expect(game.files.find((f) => f.id === diverged.id)?.name).toMatch(/^main recovered /);
   });
 
   describe('restoreFrom', () => {
@@ -111,17 +111,17 @@ describe('Game document', () => {
       const doc = new Y.Doc();
       const game = new Game(doc);
       game.seedDefaults();
-      const kept = game.addFile('helper.lua', 'return 1');
+      const kept = game.addFile('helper', 'return 1');
       const snapshot = snapshotOf(doc);
 
-      game.addFile('scratch.lua', 'oops');
+      game.addFile('scratch', 'oops');
       game.removeFile(kept.id);
 
       game.restoreFrom(snapshot);
 
       const names = game.files.map((f) => f.name).sort();
-      expect(names).toEqual(['helper.lua', 'main.lua']);
-      expect(game.files.find((f) => f.name === 'helper.lua')?.text.toString()).toBe('return 1');
+      expect(names).toEqual(['helper', 'main']);
+      expect(game.files.find((f) => f.name === 'helper')?.text.toString()).toBe('return 1');
     });
 
     it('restores as edits, so everyone else in the session sees the same document', () => {

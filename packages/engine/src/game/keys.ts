@@ -44,12 +44,12 @@ export const SPRITE_COUNT = SPRITES_PER_ROW * (SHEET_HEIGHT / SPRITE_SIZE);
 export const MAP_WIDTH = 128;
 export const MAP_HEIGHT = 32;
 export const PALETTE_SIZE = 16;
-export const MAIN_FILE = 'main.lua';
+export const MAIN_FILE = 'main';
 /**
  * The entry file's key in `code.files` is fixed rather than a fresh UUID.
  *
  * Two clients that open the same still-empty document both run `seedDefaults`, and with a random id
- * each the Yjs merge keeps *both* — which is how the editor ended up showing two `main.lua` tabs.
+ * each the Yjs merge keeps *both* — which is how the editor ended up showing the entry twice.
  * A constant key makes the two writes the same write, so the CRDT converges on one file.
  */
 export const MAIN_FILE_ID = 'main';

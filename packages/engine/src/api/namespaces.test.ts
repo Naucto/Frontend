@@ -54,7 +54,7 @@ describe('Lua API namespaces', () => {
     const { lua, declared, logs } = setup();
     lua.evaluate(
       'input.declare{ pause = "pause", a = "jump", left = "left", x = "action", nope = "bad" }',
-      'main.lua',
+      'main',
     );
     expect(declared).toHaveLength(1);
     expect(declared[0]).toEqual([
@@ -154,10 +154,11 @@ describe('Lua API namespaces', () => {
   it('reports structured errors with file and line', () => {
     const { lua } = setup();
     try {
-      lua.evaluate('local x = 1\nerror("boom")', 'main.lua');
+      lua.knowChunks(['main']);
+      lua.evaluate('local x = 1\nerror("boom")', 'main');
       expect.unreachable();
     } catch (e) {
-      expect(e).toMatchObject({ file: 'main.lua', line: 2 });
+      expect(e).toMatchObject({ file: 'main', line: 2 });
       expect((e as { traceback?: string }).traceback).toContain('stack traceback');
     }
   });

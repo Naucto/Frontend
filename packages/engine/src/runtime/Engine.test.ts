@@ -53,7 +53,7 @@ describe('Engine', () => {
     expect(engine.tick(STEP_MS)).toBe(false);
     expect(engine.currentState).toBe('halted');
     expect(errors).toEqual(['update:3']);
-    expect(engine.error?.file).toBe('main.lua');
+    expect(engine.error?.file).toBe('main');
   });
 
   it('runs the tabs in the order they are in, and follows when they are reordered', () => {
@@ -93,12 +93,26 @@ describe('Engine', () => {
     const doc = new Y.Doc();
     const game = new Game(doc);
     game.seedDefaults();
-    game.addFile('util.lua', 'local M = {}\nfunction M.twice(x) return x * 2 end\nreturn M');
-    const f = game.files.find((x) => x.name === 'main.lua');
+    game.addFile('util', 'local M = {}\nfunction M.twice(x) return x * 2 end\nreturn M');
+    const f = game.files.find((x) => x.name === 'main');
     f?.text.delete(0, f.text.length);
     f?.text.insert(0, 'local util = require("util")\nfunction _init() print(util.twice(21)) end');
     const engine = new Engine({ game, gfx: new RecordingBackend(), driver });
     expect(engine.load()).toBeNull();
     expect(engine.console.lines[0]?.text).toBe('42');
+  });
+
+  it('blames a tab whose name holds a space, which no shape of the name could tell apart', () => {
+    const game = new Game(new Y.Doc());
+    game.seedDefaults();
+    const main = game.files[0];
+    main?.text.delete(0, main.text.length);
+    main?.text.insert(0, '-- nothing wrong here');
+    game.addFile('my helpers', '\n\nerror("deliberate")');
+
+    const engine = new Engine({ game, gfx: new RecordingBackend(), driver });
+    const failure = engine.load();
+    expect(failure?.file).toBe('my helpers');
+    expect(failure?.line).toBe(3);
   });
 });

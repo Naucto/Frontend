@@ -393,7 +393,7 @@ export class Game {
 
   /**
    * `id` is only passed when the key has to be reproducible across clients — the entry file, so a
-   * concurrent seed converges instead of merging into two `main.lua`. Everything else gets a UUID.
+   * concurrent seed converges instead of merging into two entries. Everything else gets a UUID.
    */
   addFile(name: string, source = '', id: string = crypto.randomUUID()): CodeFile {
     const order = this.files.reduce((m, f) => Math.max(m, f.order), -1) + 1;
@@ -448,14 +448,10 @@ export class Game {
   /**
    * Every file's source in the order the tabs are in — which is the order they are evaluated.
    *
-   * `module` is the name without its extension, the name a leftover `require` would ask for.
+   * A file's name is also the name anything asking for it by name would use.
    */
-  sources(): { name: string; module: string; source: string }[] {
-    return this.files.map((f) => ({
-      name: f.name,
-      module: f.name.replace(/\.lua$/i, ''),
-      source: f.text.toString(),
-    }));
+  sources(): { name: string; source: string }[] {
+    return this.files.map((f) => ({ name: f.name, source: f.text.toString() }));
   }
 
   // ---- sound ----------------------------------------------------------------
@@ -595,7 +591,7 @@ export class Game {
   /**
    * Repairs a document seeded twice before {@link MAIN_FILE_ID} existed.
    *
-   * Conservative on purpose: it keeps whichever `main.lua` holds the most text and drops the others
+   * Conservative on purpose: it keeps whichever entry holds the most text and drops the others
    * only when they are empty or hold exactly the same source. A duplicate that somehow diverged is
    * left alone and renamed out of the way, because losing a line of someone's Lua to a tidy-up is
    * worse than an odd file name.
@@ -609,7 +605,7 @@ export class Game {
       if (f.id === keep.id) continue;
       const source = f.text.toString();
       if (source === '' || source === kept) this.codeFiles.delete(f.id);
-      else this.codeFiles.get(f.id)?.set('name', `main.recovered-${f.id.slice(0, 6)}.lua`);
+      else this.codeFiles.get(f.id)?.set('name', `main recovered ${f.id.slice(0, 6)}`);
     }
     this.codeMeta.set('entry', keep.id);
   }

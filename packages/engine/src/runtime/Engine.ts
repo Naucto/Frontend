@@ -170,18 +170,19 @@ export class Engine {
       // Each file keeps its own chunk under its own name, which is what makes a Lua error name the
       // tab it came from and count lines from that tab's first line.
       const files = this.opts.game.sources();
+      lua.knowChunks(files.map((f) => f.name));
       for (const file of files) {
         lua.setGlobalWith('__naucto_src', file.source);
         lua.evaluate(
           `local src = __naucto_src\n` +
-            `package.preload[${JSON.stringify(file.module)}] = function(...)\n` +
+            `package.preload[${JSON.stringify(file.name)}] = function(...)\n` +
             `  return load(src, ${JSON.stringify(`=${file.name}`)})(...)\n` +
             `end`,
           'loader.lua',
         );
       }
       for (const file of files) {
-        lua.evaluate(`require(${JSON.stringify(file.module)})`, 'loader.lua');
+        lua.evaluate(`require(${JSON.stringify(file.name)})`, 'loader.lua');
       }
     } catch (e) {
       return this.fail('load', e);
