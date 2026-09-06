@@ -162,7 +162,8 @@ broken; an absence reads as not built.
   the current cases — has to be listed in `EXTRA_SOURCES` in
   `Design2Code/packages/targets/naucto-angular/src/glyphs.ts`, or the report lists it as missing
   forever. `packages/ui/src/components/presence-flag.component.ts` draws its own path too and is not
-  listed; nothing reports it today, so it stays out until something does.
+  listed; nothing reports it today, so it stays out until something does. The edge chips in
+  `presence-layer.component.ts` beside it use `nc-icon`, so they are covered.
 - `IconSize` is `12 | 24 | 48` on purpose: a 24-grid glyph only stays crisp under
   `shape-rendering: crispEdges` at exact halves and doubles. Where an artboard renders one at 16,
   take the nearest legal step rather than widening the union.

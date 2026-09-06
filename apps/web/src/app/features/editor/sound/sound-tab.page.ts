@@ -254,7 +254,7 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
             [label]="t('editor.sound.pianoRoll')"
             (notesChange)="library.setNotes(p.id, $event)"
             (audition)="audition($event)"
-            (hover)="onHover($event)"
+            (pointer)="onPointer($event)"
           />
           <nc-voices-lane
             [pattern]="p"
@@ -568,8 +568,13 @@ export class SoundTabPage {
     });
   }
 
-  protected onHover(cell: { step: number; pitch: number } | null): void {
-    this.session.setCursor(cell ? { tab: 'sound', x: cell.step, y: cell.pitch } : null);
+  /** Presence follows the pointer, not the cell it is over — see `pointer` on the roll. */
+  protected onPointer(p: { x: number; y: number } | null): void {
+    // Rounded to a hundredth of a step: finer than a screen pixel at any zoom the roll offers,
+    // and coarse enough that the service's dedupe still collapses a still pointer.
+    this.session.setCursor(
+      p ? { tab: 'sound', x: Math.round(p.x * 100) / 100, y: Math.round(p.y * 100) / 100 } : null,
+    );
   }
 
   protected onKey(e: KeyboardEvent): void {

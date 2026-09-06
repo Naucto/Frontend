@@ -309,12 +309,12 @@ function formatScalar(value: TableScalar | undefined): string {
           }
         </section>
 
-        <aside class="relative flex min-h-0 flex-col overflow-auto border-l border-line bg-panel">
-          <!-- Shared: the join policy and the per-path permissions are one set of switches that
+        <aside class="flex min-h-0 flex-col overflow-auto border-l border-line bg-panel">
+          <!-- Shared: the roster, the join code and who holds which slot are one set of facts that
                everyone in the session is looking at, so a peer's pointer says what is about to
-               change for all of you. -->
-          <nc-presence-surface surface="net:session" mode="shared" />
-          <section class="border-b border-line p-1.5">
+               change for all of you. The test rig below is not — see there. -->
+          <section class="relative border-b border-line p-1.5">
+            <nc-presence-surface surface="net:session" />
             <div class="mb-1 flex items-center justify-between">
               <span class="label text-ink-3">{{ t('editor.net.whoCanJoin') }}</span>
               <nc-help-dot [text]="t('editor.net.whoHelp')" />
@@ -357,7 +357,8 @@ function formatScalar(value: TableScalar | undefined): string {
             }
           </section>
 
-          <section class="border-b border-line p-1.5">
+          <section class="relative border-b border-line p-1.5">
+            <nc-presence-surface surface="net:players" />
             <div class="mb-1 flex items-center justify-between">
               <span class="label text-ink-3">
                 {{ t('editor.net.players') }} · {{ players().length }} /
@@ -390,6 +391,9 @@ function formatScalar(value: TableScalar | undefined): string {
             }
           </section>
 
+          <!-- No presence: the rig spawns a client in this browser and the impairment sliders
+               shape that client alone. Nobody else sees what these do, so nobody else needs to see
+               a pointer over them. -->
           <section class="p-1.5">
             <div class="mb-1 flex items-center justify-between">
               <span class="label text-ink-3">{{ t('editor.net.testRig') }}</span>

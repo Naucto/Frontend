@@ -26,7 +26,7 @@ import {
   SPRITE_SIZE,
   SPRITES_PER_ROW,
 } from '@naucto/engine';
-import { PresenceFlagComponent } from '@naucto/ui';
+import { PresenceLayerComponent, type PresenceMark, type PresenceViewport } from '@naucto/ui';
 
 import { type Collaborator } from '../work-session/work-session.service';
 import { type MapTool, type TileRect } from './map.store';
@@ -56,7 +56,7 @@ const FLAG_VARS = [
 /** The whole 128×32 tile map in a scrollable surface; stamps tiles from the sheet. */
 @Component({
   selector: 'nc-map-canvas',
-  imports: [PresenceFlagComponent],
+  imports: [PresenceLayerComponent],
   template: `
     <div class="relative" [style.width.px]="cssW()" [style.height.px]="cssH()">
       <canvas
@@ -81,15 +81,7 @@ const FLAG_VARS = [
         (wheel)="onWheel($event)"
         (contextmenu)="$event.preventDefault()"
       ></canvas>
-      @for (f of flagsOf(); track f.clientId) {
-        <nc-presence-flag
-          class="absolute"
-          [style.left.px]="f.x"
-          [style.top.px]="f.y"
-          [name]="f.name"
-          [colour]="f.colour"
-        />
-      }
+      <nc-presence-layer [marks]="marks()" [viewport]="viewPx()" />
     </div>
   `,
   // A map smaller than the viewport is centred rather than pinned to the top-left; `safe` keeps
@@ -138,18 +130,23 @@ export class MapCanvasComponent {
   protected readonly tilePx = computed(() => SPRITE_SIZE * this.zoom());
   protected readonly cssW = computed(() => MAP_WIDTH * this.tilePx());
   protected readonly cssH = computed(() => MAP_HEIGHT * this.tilePx());
-  protected readonly flagsOf = computed(() => {
+  protected readonly marks = computed<PresenceMark[]>(() => {
     const t = this.tilePx();
     return this.collaborators()
       .filter((c) => !c.isSelf && c.cursor?.tab === 'map')
       .map((c) => ({
-        clientId: c.clientId,
+        id: c.clientId,
         name: c.name,
         colour: c.colour,
         x: (c.cursor?.x ?? 0) * t,
         y: (c.cursor?.y ?? 0) * t,
       }));
   });
+  /**
+   * What is on screen, in the drawn pixels the marks are placed in. A map smaller than its well
+   * reports a frame wider than itself, which is right: every mark is then inside it.
+   */
+  protected readonly viewPx = signal<PresenceViewport>({ x: 0, y: 0, w: 0, h: 0 });
 
   constructor() {
     effect((onCleanup) => {
@@ -228,6 +225,7 @@ export class MapCanvasComponent {
   private emitViewport(): void {
     const el = this.host.nativeElement;
     const t = this.tilePx();
+    this.viewPx.set({ x: el.scrollLeft, y: el.scrollTop, w: el.clientWidth, h: el.clientHeight });
     this.viewport.emit({
       x: el.scrollLeft / t,
       y: el.scrollTop / t,

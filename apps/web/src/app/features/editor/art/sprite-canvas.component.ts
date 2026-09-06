@@ -26,7 +26,7 @@ import {
 } from '@app/shared/pixel/pixel-tools';
 import { type SheetPainter } from '@app/shared/pixel/sheet-painter';
 import { type Game, SHEET_WIDTH, SPRITE_SIZE, SPRITES_PER_ROW } from '@naucto/engine';
-import { PresenceFlagComponent } from '@naucto/ui';
+import { PresenceLayerComponent, type PresenceMark, type PresenceViewport } from '@naucto/ui';
 
 import { type Collaborator } from '../work-session/work-session.service';
 import { type ArtTool, type PixelRect, type SpriteRect } from './art.store';
@@ -72,7 +72,7 @@ interface Drag {
  */
 @Component({
   selector: 'nc-sprite-canvas',
-  imports: [PresenceFlagComponent],
+  imports: [PresenceLayerComponent],
   template: `
     <div class="relative m-auto" [style.width.px]="cssSize()" [style.height.px]="cssSize()">
       <canvas
@@ -89,15 +89,7 @@ interface Drag {
         (pointerleave)="onLeave()"
         (contextmenu)="$event.preventDefault()"
       ></canvas>
-      @for (f of flags(); track f.clientId) {
-        <nc-presence-flag
-          class="absolute"
-          [style.left.px]="f.x"
-          [style.top.px]="f.y"
-          [name]="f.name"
-          [colour]="f.colour"
-        />
-      }
+      <nc-presence-layer [marks]="marks()" [viewport]="viewPx()" />
     </div>
   `,
   // `m-auto` on the content rather than `justify-center` on the host: centring a flex child that
@@ -202,17 +194,23 @@ export class SpriteCanvasComponent {
     };
   });
   private readonly bounds = computed(() => toolBounds(this.region(), this.clip()));
-  protected readonly flags = computed(() => {
+  protected readonly marks = computed<PresenceMark[]>(() => {
     const s = this.scale();
     return this.collaborators()
       .filter((c) => !c.isSelf && c.cursor?.tab === 'art')
       .map((c) => ({
-        clientId: c.clientId,
+        id: c.clientId,
         name: c.name,
         colour: c.colour,
         x: (c.cursor?.x ?? 0) * s,
         y: (c.cursor?.y ?? 0) * s,
       }));
+  });
+  /** The same frame `view` reports, in the drawn pixels the marks are placed in. */
+  protected readonly viewPx = computed<PresenceViewport>(() => {
+    const v = this.view();
+    const k = SPRITE_SIZE * this.scale();
+    return { x: v.x * k, y: v.y * k, w: v.w * k, h: v.h * k };
   });
 
   constructor() {

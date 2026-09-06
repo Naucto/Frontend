@@ -8,9 +8,9 @@ import {
   input,
   signal,
 } from '@angular/core';
-import { PresenceFlagComponent } from '@naucto/ui';
+import { PresenceLayerComponent, type PresenceMark, type PresenceViewport } from '@naucto/ui';
 
-import { type Collaborator, WorkSessionService } from './work-session.service';
+import { WorkSessionService } from './work-session.service';
 
 /**
  * How much a peer's pointer position means to you on this panel.
@@ -24,14 +24,6 @@ import { type Collaborator, WorkSessionService } from './work-session.service';
  */
 export type PresenceMode = 'shared' | 'isolated';
 
-interface Flag {
-  clientId: number;
-  name: string;
-  colour: Collaborator['colour'];
-  x: number;
-  y: number;
-}
-
 /**
  * Peers' cursors over a panel.
  *
@@ -44,17 +36,9 @@ interface Flag {
  */
 @Component({
   selector: 'nc-presence-surface',
-  imports: [PresenceFlagComponent],
+  imports: [PresenceLayerComponent],
   template: `
-    @for (f of flags(); track f.clientId) {
-      <nc-presence-flag
-        class="absolute"
-        [style.left.px]="f.x"
-        [style.top.px]="f.y"
-        [name]="f.name"
-        [colour]="f.colour"
-      />
-    }
+    <nc-presence-layer [marks]="marks()" [viewport]="viewPx()" />
   `,
   host: { class: 'pointer-events-none absolute inset-0 overflow-hidden' },
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -72,8 +56,9 @@ export class PresenceSurfaceComponent {
    * scrolled sees everyone else's cursor displaced by however far they scrolled.
    */
   private readonly scroll = signal({ x: 0, y: 0 });
+  private readonly box = signal({ w: 0, h: 0 });
 
-  protected readonly flags = computed<Flag[]>(() => {
+  protected readonly marks = computed<PresenceMark[]>(() => {
     const here = this.session
       .collaborators()
       .filter((c) => !c.isSelf && c.cursor?.tab === this.surface());
@@ -84,7 +69,7 @@ export class PresenceSurfaceComponent {
         .slice()
         .sort((a, b) => a.clientId - b.clientId)
         .map((c, i) => ({
-          clientId: c.clientId,
+          id: c.clientId,
           name: c.name,
           colour: c.colour,
           x: 0,
@@ -93,13 +78,20 @@ export class PresenceSurfaceComponent {
     }
     const s = this.scroll();
     return here.map((c) => ({
-      clientId: c.clientId,
+      id: c.clientId,
       name: c.name,
       colour: c.colour,
       x: (c.cursor?.x ?? 0) - s.x,
       y: (c.cursor?.y ?? 0) - s.y,
     }));
   });
+  /**
+   * The panel as it is seen. Positions are already relative to it, so the frame starts at zero;
+   * an isolated surface has no frame, because its marks are a list rather than a place.
+   */
+  protected readonly viewPx = computed<PresenceViewport | null>(() =>
+    this.mode() === 'isolated' ? null : { x: 0, y: 0, ...this.box() },
+  );
 
   constructor() {
     const parent = this.host.nativeElement.parentElement;
@@ -127,10 +119,17 @@ export class PresenceSurfaceComponent {
       this.scroll.set({ x: parent.scrollLeft, y: parent.scrollTop });
     };
 
+    const ro = new ResizeObserver((entries) => {
+      const r = entries[0]?.contentRect;
+      if (r) this.box.set({ w: r.width, h: r.height });
+    });
+    ro.observe(parent);
+
     parent.addEventListener('pointermove', move);
     parent.addEventListener('pointerleave', leave);
     parent.addEventListener('scroll', scrolled, { passive: true });
     inject(DestroyRef).onDestroy(() => {
+      ro.disconnect();
       parent.removeEventListener('pointermove', move);
       parent.removeEventListener('pointerleave', leave);
       parent.removeEventListener('scroll', scrolled);

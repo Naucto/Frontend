@@ -25,7 +25,6 @@ import * as Y from 'yjs';
 
 import { type SpriteRect } from '../art/art.store';
 import { SheetViewComponent } from '../art/sheet-view.component';
-import { PresenceSurfaceComponent } from '../work-session/presence-surface.component';
 import { WorkSessionService } from '../work-session/work-session.service';
 import { MapStore, type MapTool } from './map.store';
 import { MapCanvasComponent, type TileViewport } from './map-canvas.component';
@@ -48,7 +47,6 @@ const BRUSHES = ['1×1', '2×2', '3×3', '4×4', '5×5', '6×6', '7×7', '8×8']
     SheetViewComponent,
     MapCanvasComponent,
     MinimapComponent,
-    PresenceSurfaceComponent,
   ],
   providers: [MapStore],
   template: `
@@ -127,11 +125,10 @@ const BRUSHES = ['1×1', '2×2', '3×3', '4×4', '5×5', '6×6', '7×7', '8×8']
         </div>
       </section>
 
-      <aside class="relative flex min-h-0 flex-col overflow-auto border-l border-line bg-panel">
-        <!-- Isolated: everyone is on their own corner of the map, so a tracked pointer over the tile
-               picker says nothing you can act on. The flag says
-             somebody is working in here and fades when they leave; it does not chase them. -->
-        <nc-presence-surface surface="map:inspector" mode="isolated" />
+      <!-- No presence: every control in this column is the reader's own — the grid, the flag
+           overlay, the zoom, the brush, the minimap. Nothing here writes the document, so a peer's
+           pointer over it would say nothing about what they are doing. -->
+      <aside class="flex min-h-0 flex-col overflow-auto border-l border-line bg-panel">
         <div class="flex h-5 items-center gap-1 border-b border-line px-1.5">
           <nc-toggle-button
             [checked]="map.grid()"

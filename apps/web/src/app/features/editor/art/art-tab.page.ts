@@ -176,11 +176,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
         </div>
       </section>
 
-      <aside class="relative flex min-h-0 flex-col overflow-auto border-l border-line bg-panel">
-        <!-- Isolated: everyone is on their own sprite, so a peer's pointer over the palette or the
-               sheet is a coordinate that means something different to each of you. The flag says
-             somebody is working in here and fades when they leave; it does not chase them. -->
-        <nc-presence-surface surface="art:inspector" mode="isolated" />
+      <aside class="flex min-h-0 flex-col overflow-auto border-l border-line bg-panel">
         <div class="flex h-5 items-center gap-1 border-b border-line px-1.5">
           <nc-toggle-button
             class="shrink-0"
@@ -259,7 +255,11 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
           />
         </div>
 
-        <div class="border-b border-line px-1.75 py-1.5">
+        <!-- Presence follows what is shared. A flag is written into the document everyone has, so
+             a peer's pointer here says what is about to change; the sheet map and the zoom above
+             are each person's own view, and a cursor over them would mean nothing. -->
+        <div class="relative border-b border-line px-1.75 py-1.5">
+          <nc-presence-surface surface="art:flags" />
           <div class="mb-1 flex items-center justify-between">
             <span class="label text-ink-3">{{ t('editor.art.flags') }}</span>
             <nc-help-dot [text]="t('editor.art.flagsHelp')" />
@@ -273,7 +273,8 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
 
         <!-- The palette sits in a sunken well: it is the one section of the panel you edit
              colours in, not just pick from. -->
-        <div class="bg-sunken px-1.75 py-1.5">
+        <div class="relative bg-sunken px-1.75 py-1.5">
+          <nc-presence-surface surface="art:palette" />
           <div class="mb-1 flex items-center gap-1">
             <span class="label">{{ t('editor.art.palette') }}</span>
             <span class="flex-1"></span>

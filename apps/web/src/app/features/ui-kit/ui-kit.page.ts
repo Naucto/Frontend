@@ -25,6 +25,8 @@ import {
   PopoverDirective,
   PopoverPanelComponent,
   PresenceFlagComponent,
+  PresenceLayerComponent,
+  type PresenceMark,
   RailComponent,
   SearchComponent,
   SectionComponent,
@@ -65,6 +67,7 @@ import {
     OnlineDotComponent,
     PanelComponent,
     PresenceFlagComponent,
+    PresenceLayerComponent,
     RailComponent,
     SectionComponent,
     BrandMarkComponent,
@@ -224,6 +227,14 @@ import {
               <nc-online-dot [online]="true" />
               <nc-online-dot />
             </div>
+            <!-- The frame is the box; the marks are given in its coordinates. Thea is inside it and
+                 is drawn where she is; the other two are past its edges and come back as chips on
+                 the rim, pointing the way to them. -->
+            <div
+              class="relative mt-1.5 h-[120px] w-[320px] overflow-hidden rounded-sm border border-line bg-inset"
+            >
+              <nc-presence-layer [marks]="presenceMarks" [viewport]="presenceFrame" />
+            </div>
           </nc-section>
           <nc-section title="Label" class="mt-2">
             <nc-label>In this work session</nc-label>
@@ -356,6 +367,12 @@ export class UiKitPage {
   private readonly toasts = inject(ToastService);
   protected readonly autoRun = signal(true);
   protected readonly spriteSize = signal(1);
+  protected readonly presenceFrame = { x: 0, y: 0, w: 320, h: 120 };
+  protected readonly presenceMarks: PresenceMark[] = [
+    { id: 1, name: 'thea', colour: 'jade', x: 120, y: 40 },
+    { id: 2, name: 'louis', colour: 'sky', x: 900, y: 70 },
+    { id: 3, name: 'edgar', colour: 'blush', x: 60, y: -400 },
+  ];
   protected readonly sizes = ['1×1', '2×2', '3×3', '4×4', '5×5', '6×6', '7×7', '8×8'];
   protected readonly tool = signal('pen');
   protected readonly tools = [

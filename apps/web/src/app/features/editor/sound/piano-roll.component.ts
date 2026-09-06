@@ -14,7 +14,7 @@ import {
 } from '@angular/core';
 import { cssVar } from '@app/shared/pixel/pixel-tools';
 import { type Instrument, midiToNoteName, type Note, type Pattern } from '@naucto/engine';
-import { PresenceFlagComponent } from '@naucto/ui';
+import { PresenceLayerComponent, type PresenceMark, type PresenceViewport } from '@naucto/ui';
 
 import { type Collaborator } from '../work-session/work-session.service';
 
@@ -46,7 +46,7 @@ interface Drag {
 /** The pattern grid: pitches down, steps across; notes are painted with their instrument's colour. */
 @Component({
   selector: 'nc-piano-roll',
-  imports: [PresenceFlagComponent],
+  imports: [PresenceLayerComponent],
   template: `
     <div class="relative" [style.width.px]="width()" [style.height.px]="height()">
       <canvas
@@ -63,15 +63,7 @@ interface Drag {
         (pointerleave)="onLeave()"
         (contextmenu)="$event.preventDefault()"
       ></canvas>
-      @for (f of flags(); track f.clientId) {
-        <nc-presence-flag
-          class="absolute"
-          [style.left.px]="f.x"
-          [style.top.px]="f.y"
-          [name]="f.name"
-          [colour]="f.colour"
-        />
-      }
+      <nc-presence-layer [marks]="marks()" [viewport]="viewPx()" />
     </div>
   `,
   host: { class: 'block overflow-auto', tabindex: '0' },
@@ -94,6 +86,14 @@ export class PianoRollComponent {
   readonly notesChange = output<Note[]>();
   readonly audition = output<{ instrument: string; pitch: number }>();
   readonly hover = output<{ step: number; pitch: number } | null>();
+  /**
+   * Where the pointer actually is, in fractional steps and pitches.
+   *
+   * `hover` is snapped to a whole cell because that is the note you are about to place. A cursor
+   * shown to somebody else wants the opposite: snapped, a peer's cursor crosses the roll in
+   * row-high jumps instead of moving.
+   */
+  readonly pointer = output<{ x: number; y: number } | null>();
 
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -102,7 +102,7 @@ export class PianoRollComponent {
   private drag: Drag | null = null;
   private raf = 0;
 
-  private readonly hostWidth = signal(0);
+  private readonly hostBox = signal({ w: 0, h: 0 });
   /** Scroll offsets, so the ruler and the key column can be redrawn where they stay in view. */
   private readonly scrollX = signal(0);
   private readonly scrollY = signal(0);
@@ -110,22 +110,32 @@ export class PianoRollComponent {
   readonly stepW = computed(() =>
     Math.max(
       24 * this.zoom(),
-      Math.floor(((this.hostWidth() - KEY_W - 2) * this.zoom()) / this.pattern().steps),
+      Math.floor(((this.hostBox().w - KEY_W - 2) * this.zoom()) / this.pattern().steps),
     ),
   );
   protected readonly width = computed(() => KEY_W + this.pattern().steps * this.stepW());
   protected readonly height = computed(() => RULER_H + (PITCH_MAX - PITCH_MIN + 1) * ROW_H);
-  protected readonly flags = computed(() =>
+  protected readonly marks = computed<PresenceMark[]>(() =>
     this.collaborators()
       .filter((c) => !c.isSelf && c.cursor?.tab === 'sound')
       .map((c) => ({
-        clientId: c.clientId,
+        id: c.clientId,
         name: c.name,
         colour: c.colour,
         x: KEY_W + (c.cursor?.x ?? 0) * this.stepW(),
         y: RULER_H + (PITCH_MAX - (c.cursor?.y ?? 0)) * ROW_H,
       })),
   );
+  /**
+   * What is on screen, in the drawn pixels the marks are placed in. The roll is taller than any
+   * panel that holds it, so somebody an octave away is off the frame far more often than not.
+   */
+  protected readonly viewPx = computed<PresenceViewport>(() => ({
+    x: this.scrollX(),
+    y: this.scrollY(),
+    w: this.hostBox().w,
+    h: this.hostBox().h,
+  }));
 
   constructor() {
     const onScroll = (): void => {
@@ -135,8 +145,8 @@ export class PianoRollComponent {
     };
     this.host.nativeElement.addEventListener('scroll', onScroll, { passive: true });
     const ro = new ResizeObserver((entries) => {
-      const w = entries[0]?.contentRect.width;
-      if (w) this.hostWidth.set(w);
+      const r = entries[0]?.contentRect;
+      if (r) this.hostBox.set({ w: r.width, h: r.height });
     });
     ro.observe(this.host.nativeElement);
     inject(DestroyRef).onDestroy(() => {
@@ -181,6 +191,15 @@ export class PianoRollComponent {
       Math.min(PITCH_MAX, PITCH_MAX - Math.floor((y - RULER_H) / ROW_H)),
     );
     return { step, pitch, x };
+  }
+
+  /** The same position as `cellOf`, unsnapped on both axes. */
+  private pointOf(e: PointerEvent): { x: number; y: number } {
+    const r = this.canvas().nativeElement.getBoundingClientRect();
+    return {
+      x: Math.max(0, (e.clientX - r.left - KEY_W) / this.stepW()),
+      y: PITCH_MAX - (e.clientY - r.top - RULER_H) / ROW_H,
+    };
   }
 
   /** One snap unit in steps, given the pattern's own steps-per-beat. */
@@ -258,6 +277,7 @@ export class PianoRollComponent {
     const cell = x < KEY_W ? null : { step: Math.floor(step), pitch };
     this.hoverCell.set(cell);
     this.hover.emit(cell);
+    this.pointer.emit(x < KEY_W ? null : this.pointOf(e));
     const d = this.drag;
     if (!d) return;
     const notes = [...this.notes()];
@@ -302,6 +322,7 @@ export class PianoRollComponent {
   protected onLeave(): void {
     this.hoverCell.set(null);
     this.hover.emit(null);
+    this.pointer.emit(null);
   }
 
   // ---- drawing --------------------------------------------------------------
