@@ -78,6 +78,23 @@ interface Drag {
           (pointerleave)="onLeave()"
           (contextmenu)="$event.preventDefault()"
         ></canvas>
+        @let head = playheadAt();
+        @if (head !== null) {
+          <!-- Out of the canvas so that moving it costs a style rather than a repaint of the whole
+               roll, and so the flag can be pinned by the browser instead of redrawn at the scroll
+               offset on every frame. -->
+          <div
+            class="pointer-events-none absolute top-0 bottom-0 w-px bg-hot"
+            [style.left.px]="head.x"
+            aria-hidden="true"
+          >
+            <div
+              class="sticky top-[4px] -ml-[9px] flex h-[16px] w-[18px] items-center justify-center bg-hot font-mono text-[10px] text-on-accent-dark"
+            >
+              {{ head.step }}
+            </div>
+          </div>
+        }
         <nc-presence-layer [marks]="marks()" [viewport]="viewPx()" />
       </div>
     </div>
@@ -116,6 +133,12 @@ export class PianoRollComponent {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly working = signal<Note[] | null>(null);
   private readonly hoverCell = signal<{ step: number; pitch: number } | null>(null);
+
+  /** Where the head sits and which step it is over, or null while nothing is playing. */
+  protected readonly playheadAt = computed(() => {
+    const ph = this.playhead();
+    return ph === null ? null : { x: Math.floor(ph * this.stepW()), step: Math.floor(ph) + 1 };
+  });
   /**
    * Device pixels per CSS pixel, followed rather than read once. It changes on a page zoom and on a
    * move to another screen, and a canvas that missed the change goes on drawing at the old
@@ -211,7 +234,6 @@ export class PianoRollComponent {
       this.palette();
       this.instrumentId();
       this.zoom();
-      this.playhead();
       this.working();
       this.hoverCell();
       this.scrollX();
@@ -519,19 +541,6 @@ export class PianoRollComponent {
         (this.snapUnit() || 1 / SUBSTEPS) * sw - 1,
         ROW_H - 1,
       );
-    }
-
-    // Playhead.
-    const ph = this.playhead();
-    if (ph !== null) {
-      const x = ph * sw;
-      ctx.fillStyle = cssVar(el, '--nc-hot');
-      ctx.fillRect(Math.floor(x), 0, 1, h);
-      ctx.fillRect(Math.floor(x) - 9, this.scrollY() + 4, 18, RULER_H - 8);
-      ctx.fillStyle = cssVar(el, '--nc-on-accent-dark');
-      ctx.textAlign = 'center';
-      ctx.fillText(String(Math.floor(ph) + 1), Math.floor(x), this.scrollY() + RULER_H / 2);
-      ctx.textAlign = 'left';
     }
   }
 }
