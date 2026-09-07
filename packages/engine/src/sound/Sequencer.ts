@@ -82,13 +82,14 @@ export class Sequencer {
   }
 
   /**
-   * Reported in whole steps even though the clock runs finer, because this drives a playhead and a
-   * metronome — a step is the reading they want, and the editor repaints the whole roll on it.
+   * Where the clock stands, in steps and fractions of one — the sub-steps elapsed, which is finer
+   * than any note position and is what a playhead has to follow to move rather than jump.
+   *
+   * A caller that needs a step *index* has to round it up itself: whole steps are what a note sits
+   * on, and this sits between them for most of a step's length.
    */
   position(): SequencerPosition | null {
-    return this.playing
-      ? { pattern: this.seqIndex, step: Math.ceil(this.subStep / SUBSTEPS) }
-      : null;
+    return this.playing ? { pattern: this.seqIndex, step: this.subStep / SUBSTEPS } : null;
   }
 
   get isPlaying(): boolean {

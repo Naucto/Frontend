@@ -39,7 +39,9 @@ export class SoundAPI extends EngineModule {
       },
       music_position: () => {
         const p = s()?.musicPosition();
-        return p ? [p.pattern, p.step] : [undefined, undefined];
+        // Rounded up to a whole step, because a game compares this against a note's own step and
+        // the clock spends most of each step between two of them.
+        return p ? [p.pattern, Math.ceil(p.step)] : [undefined, undefined];
       },
       is_playing: (ch: unknown) => s()?.isPlaying(Math.floor(num(ch))) ?? false,
     });

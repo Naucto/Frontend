@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { defaultInstrument, defaultPattern } from './model';
+import { defaultInstrument, defaultPattern, SUBSTEPS } from './model';
 import { Sequencer } from './Sequencer';
 import { SynthCore } from './SynthCore';
 
@@ -123,9 +123,11 @@ describe('Sequencer', () => {
         .map((v) => v.pitch)
         .sort(),
     ).toEqual([60, 64]);
-    expect(seq.position()).toEqual({ pattern: 0, step: 3 });
+    // Between two steps, which is where the clock spends most of its time: sub-step 16 fired the
+    // note on step 2 and one sub-step has gone by since.
+    expect(seq.position()).toEqual({ pattern: 0, step: 17 / SUBSTEPS });
     seq.advance(stepSamples * 2);
-    expect(seq.position()?.step).toBe(1);
+    expect(seq.position()?.step).toBe(1 / SUBSTEPS);
     seq.stopMusic(0);
     expect(seq.position()).toBeNull();
   });
