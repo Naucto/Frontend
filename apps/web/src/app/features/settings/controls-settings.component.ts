@@ -113,9 +113,7 @@ interface Capture {
       <div>
         <p class="mb-2 max-w-[640px] text-body text-ink-2">
           {{ t('settings.controlsIntroBefore') }}
-          <!-- Gold, as the docs card sets an API name: sky is this design's link colour, and a
-               fragment of Lua is not somewhere to click. -->
-          <code class="font-mono text-meta text-gold-ink">btn("left")</code>
+          <code class="font-mono text-meta text-sky-ink">btn("left")</code>
           {{ t('settings.controlsIntroAfter') }}
         </p>
         <div class="mb-1 flex flex-wrap items-center gap-1">
