@@ -85,7 +85,8 @@ const toRows = (raw: unknown, key: 'versions' | 'checkpoints', release: boolean)
       type="button"
       [ncPopover]="panel"
       [(popoverOpen)]="open"
-      class="-ms-[11px] flex items-center gap-1.25 rounded-sm border border-line bg-raised px-1.5 py-0.75 text-ui tracking-[0.04em] text-ink hover:border-line-strong"
+      class="-ms-[11px] flex items-center gap-1.25 rounded-sm border bg-raised px-1.5 py-0.75 text-ui tracking-[0.04em] text-ink"
+      [class]="open() ? 'border-gold' : 'border-line hover:border-line-strong'"
     >
       <span class="max-w-[24ch] truncate">{{ session.project()?.name || 'Untitled game' }}</span>
       <!-- The chip counted named versions only, so it read "v0" on every project that had never
