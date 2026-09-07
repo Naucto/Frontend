@@ -51,11 +51,6 @@ describe('EditorUiStore', () => {
     expect(ui.referenceOpen()).toBe(false);
   });
 
-  /**
-   * The reference is CODE's, beside the console. Leaving CODE has to put it away without forgetting
-   * it was wanted — a reader who opens it, goes to draw a sprite and comes back should find it
-   * where they left it, and should not meet it over the sprite.
-   */
   it('shows the reference on CODE only, and remembers it was asked for', () => {
     const ui = store();
     ui.setTab('code');

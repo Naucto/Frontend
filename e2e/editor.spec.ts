@@ -293,13 +293,6 @@ test.describe('editor', () => {
     await expect(page.getByText('320×180').first()).toBeVisible();
   });
 
-  /**
-   * The reference belongs to CODE, beside the console. It used to follow the reader onto every
-   * other tab — remembered from a previous visit, drawn as a third column beside that tab's own
-   * inspector, and on a narrow window it took 421px and hung a "game paused" banner over the
-   * drawing board. F1 and Ctrl-K reached it from anywhere too, swallowing both keys on every
-   * screen in the editor.
-   */
   test('the reference stays on CODE and does not follow the reader to a canvas', async ({
     page,
   }) => {
@@ -314,7 +307,6 @@ test.describe('editor', () => {
       await expect(page.locator('nc-edge-handle')).toHaveCount(0);
       await expect(page.getByText('Game paused')).toHaveCount(0);
 
-      // Inert rather than merely ineffective: a key that opens nothing must not be taken either.
       await page.keyboard.press('F1');
       await expect(page.locator('nc-doc-pane')).toHaveCount(0);
     }

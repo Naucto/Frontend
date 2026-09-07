@@ -87,9 +87,8 @@ export const EditorUiStore = signalStore(
       /**
        * Where the runtime lives: docked in the right column, or floating over the workspace.
        *
-       * The reader decides, on every tab. It used to be the tab that decided — the canvases floated
-       * it and CODE and GAME did not — so on those two the control that pops it out changed the
-       * stored preference and nothing moved, which is an affordance that lies.
+       * The reader decides, and on every tab alike — a control that pops the viewer out has to move
+       * something wherever it is offered, or it is an affordance that lies.
        */
       consoleMode: computed<'column' | 'pip'>(() => (s.pipOpen() ? 'pip' : 'column')),
     };

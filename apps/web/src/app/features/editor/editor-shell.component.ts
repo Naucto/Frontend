@@ -228,7 +228,7 @@ export class EditorShellComponent implements OnInit {
    * What the control on the region's edge does next — empty on a tab that has no reference, which
    * is what leaves the control out.
    *
-   * Three of these name the reference; the fourth names what its arrival costs.
+   * One of these names the game rather than the reference, because that is what its arrival costs.
    */
   protected readonly switchKey = computed(() => {
     if (this.ui.activeTab() !== 'code') return '';
@@ -237,7 +237,6 @@ export class EditorShellComponent implements OnInit {
     return wide ? 'editor.openReference' : 'editor.swapToReference';
   });
 
-  /** Wide in the swap too, because a track has to have a width for the reference to borrow it. */
   protected readonly consoleWidth = computed(() =>
     this.ui.activeTab() === 'code' ? CONSOLE_WIDTH : 0,
   );
@@ -258,9 +257,9 @@ export class EditorShellComponent implements OnInit {
    * F1 shows the docs for the symbol under the cursor; Ctrl/⌘-K puts the caret in the doc search.
    *
    * Both are bound on the document, so they fire wherever the focus is — including a canvas or a
-   * form field on a tab that has no reference to show. There they do nothing and, in particular,
-   * do not swallow the keystroke: taking Ctrl-K from every screen in the editor to open a panel
-   * that cannot appear is worse than not binding it.
+   * form field on a tab that has no reference to show. Taking a key from every screen in the editor
+   * to open a panel that cannot appear is worse than not binding it, so they return the keystroke
+   * rather than merely doing nothing with it.
    */
   protected onShortcut(e: KeyboardEvent): void {
     if (this.ui.activeTab() !== 'code') return;
