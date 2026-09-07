@@ -147,6 +147,8 @@ const RAIL: RailItem<EditorTab>[] = [
               [splitAt]="REFERENCE_SPLIT_BREAKPOINT"
               [primaryWidth]="consoleWidth()"
               [secondaryWidth]="REFERENCE_WIDTH"
+              [switchLabel]="t(switchKey())"
+              (switched)="ui.toggleReference()"
             >
               <!-- Built only while it is open: the reference has nothing running in it, so unlike
                    the console it costs nothing to rebuild and something to keep. -->
@@ -223,6 +225,16 @@ export class EditorShellComponent implements OnInit {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   protected readonly rail = RAIL;
   /** Wide in the swap too, because a track has to have a width for the reference to borrow it. */
+  /**
+   * The reference is the only thing on this side that comes and goes, so the wording is about it —
+   * except where it arrives in the game's place, which is a thing said about the game.
+   */
+  protected readonly switchKey = computed(() => {
+    const wide = this.ui.viewportWidth() >= REFERENCE_SPLIT_BREAKPOINT;
+    if (this.ui.referenceOpen()) return wide ? 'docs.close' : 'docs.swapBack';
+    return wide ? 'editor.openReference' : 'editor.swapToReference';
+  });
+
   protected readonly consoleWidth = computed(() =>
     this.ui.columnMode() === 'swap' || this.ui.activeTab() === 'code' ? CONSOLE_WIDTH : 0,
   );

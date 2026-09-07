@@ -169,7 +169,6 @@ test.describe('editor', () => {
     // The console is CODE's own sidebar: on a canvas tab there is nothing to unfold.
     await expect(page.getByRole('button', { name: 'Clear' })).toHaveCount(0);
     await expect(page.getByText('Viewer · 320×180')).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Open the reference' })).toHaveCount(0);
 
     // The viewer is floated from the console's own header, so it is opened where the console is.
     await page.goto('/edit/7/code');

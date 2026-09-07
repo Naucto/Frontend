@@ -31,6 +31,7 @@ import {
   PanelColumnComponent,
   PopoverDirective,
   PopoverPanelComponent,
+  SectionComponent,
   SliderComponent,
   ToggleButtonComponent,
   ToolGroupComponent,
@@ -61,6 +62,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
     ButtonDirective,
     IconComponent,
     PanelColumnComponent,
+    SectionComponent,
     HelpDotComponent,
     BitFlagsComponent,
     SliderComponent,
@@ -252,14 +254,10 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
           </button>
         </div>
 
-        <div class="border-b border-line px-1.75 py-1.5">
-          <div class="mb-1 flex items-center gap-1">
-            <span class="label text-ink-3">{{ t('editor.art.sheet') }}</span>
-            <span class="flex-1"></span>
-            <span class="label text-ink-4">
-              {{ t('editor.art.used', { used: used(), total: total }) }}
-            </span>
-          </div>
+        <nc-section banded [title]="t('editor.art.sheet')">
+          <span actions class="label text-ink-4">
+            {{ t('editor.art.used', { used: used(), total: total }) }}
+          </span>
           <nc-sheet-view
             [painter]="painter"
             [region]="art.region()"
@@ -268,31 +266,25 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
             resizable
             [label]="t('editor.art.pickSprite')"
           />
-        </div>
+        </nc-section>
 
         <!-- Presence follows what is shared. A flag is written into the document everyone has, so
              a peer's pointer here says what is about to change; the sheet map and the zoom above
              are each person's own view, and a cursor over them would mean nothing. -->
-        <div class="relative border-b border-line px-1.75 py-1.5">
+        <nc-section banded [title]="t('editor.art.flags')">
+          <nc-help-dot actions [text]="t('editor.art.flagsHelp')" />
           <nc-presence-surface surface="art:flags" />
-          <div class="mb-1 flex items-center justify-between">
-            <span class="label text-ink-3">{{ t('editor.art.flags') }}</span>
-            <nc-help-dot [text]="t('editor.art.flagsHelp')" />
-          </div>
           <nc-bit-flags
             [value]="flags()"
             (valueChange)="setFlags($event)"
             [label]="t('editor.art.flags')"
           />
-        </div>
+        </nc-section>
 
         <!-- The palette sits in a sunken well: it is the one section of the panel you edit
              colours in, not just pick from. -->
-        <div class="relative bg-sunken px-1.75 py-1.5">
-          <nc-presence-surface surface="art:palette" />
-          <div class="mb-1 flex items-center gap-1">
-            <span class="label">{{ t('editor.art.palette') }}</span>
-            <span class="flex-1"></span>
+        <nc-section banded class="bg-sunken" [title]="t('editor.art.palette')">
+          <span actions class="flex items-center gap-1">
             <button ncButton variant="ghost" size="sm" [ncPopover]="presets" popoverAlign="end">
               {{ t('editor.art.presets') }}
               <nc-icon name="chevron-down" [size]="12" />
@@ -300,7 +292,8 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
             <button ncButton variant="ghost" size="sm" (click)="applyPalette(defaultPalette)">
               {{ t('editor.art.reset') }}
             </button>
-          </div>
+          </span>
+          <nc-presence-surface surface="art:palette" />
           <ng-template #presets>
             <nc-popover-panel>
               @for (p of presetList; track p.name) {
@@ -333,7 +326,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
             [hexLabel]="t('editor.art.hex')"
             (colourChange)="session.game.setPaletteColour($event.slot, $event.hex)"
           />
-        </div>
+        </nc-section>
       </nc-panel-column>
     </div>
   `,

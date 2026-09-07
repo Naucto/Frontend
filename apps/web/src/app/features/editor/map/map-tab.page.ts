@@ -16,6 +16,7 @@ import {
   ButtonDirective,
   IconComponent,
   PanelColumnComponent,
+  SectionComponent,
   SliderComponent,
   StepperComponent,
   ToggleButtonComponent,
@@ -47,6 +48,7 @@ const BRUSHES = ['1×1', '2×2', '3×3', '4×4', '5×5', '6×6', '7×7', '8×8']
     IconComponent,
     SliderComponent,
     PanelColumnComponent,
+    SectionComponent,
     StepperComponent,
     ToggleButtonComponent,
     ToolGroupComponent,
@@ -194,40 +196,36 @@ const BRUSHES = ['1×1', '2×2', '3×3', '4×4', '5×5', '6×6', '7×7', '8×8']
           </span>
         </div>
 
-        <div class="border-b border-line p-1.5">
-          <span class="label mb-1 block text-ink-3">{{ t('editor.map.tilePicker') }}</span>
+        <nc-section banded [title]="t('editor.map.tilePicker')">
           <nc-sheet-view
             [painter]="painter"
             [region]="tileRegion()"
             (regionChange)="map.setSprite($event.y * spritesPerRow + $event.x)"
             [label]="t('editor.map.tilePicker')"
           />
-        </div>
+        </nc-section>
 
-        <div class="border-b border-line p-1.5">
-          <div class="mb-1 flex items-center justify-between">
-            <span class="label text-ink-3">{{ t('editor.map.brush') }}</span>
-            <button
-              ncButton
-              variant="secondary"
-              size="sm"
-              disabled
-              [ncTooltip]="t('editor.map.autotileSoon')"
-            >
-              <nc-icon name="layout" [size]="12" />
-              {{ t('editor.map.autotile') }}
-            </button>
-          </div>
+        <nc-section banded [title]="t('editor.map.brush')">
+          <button
+            actions
+            ncButton
+            variant="secondary"
+            size="sm"
+            disabled
+            [ncTooltip]="t('editor.map.autotileSoon')"
+          >
+            <nc-icon name="layout" [size]="12" />
+            {{ t('editor.map.autotile') }}
+          </button>
           <nc-stepper
             [options]="brushes"
             [value]="map.brush() - 1"
             (valueChange)="map.setBrush($event + 1)"
             [label]="t('editor.map.brush')"
           />
-        </div>
+        </nc-section>
 
-        <div class="p-1.5">
-          <span class="label mb-1 block text-ink-3">{{ t('editor.map.wholeMap') }}</span>
+        <nc-section banded [title]="t('editor.map.wholeMap')">
           <nc-minimap
             [game]="session.game"
             [painter]="painter"
@@ -235,7 +233,7 @@ const BRUSHES = ['1×1', '2×2', '3×3', '4×4', '5×5', '6×6', '7×7', '8×8']
             [label]="t('editor.map.wholeMap')"
             (jump)="canvas.scrollToTile($event.x, $event.y)"
           />
-        </div>
+        </nc-section>
       </nc-panel-column>
     </div>
   `,

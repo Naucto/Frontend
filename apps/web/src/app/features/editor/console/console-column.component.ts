@@ -13,7 +13,6 @@ import { GameScreenComponent } from '@app/shared/game-screen/game-screen.compone
 import { TranslocoDirective } from '@jsverse/transloco';
 import {
   ButtonDirective,
-  EdgeHandleComponent,
   IconComponent,
   LcdComponent,
   TabsComponent,
@@ -21,7 +20,7 @@ import {
 } from '@naucto/ui';
 
 import { EditorRuntimeService } from '../state/editor-runtime.service';
-import { CONSOLE_WIDTH, EditorUiStore, REFERENCE_SPLIT_BREAKPOINT } from '../state/editor-ui.store';
+import { CONSOLE_WIDTH, EditorUiStore } from '../state/editor-ui.store';
 import { WorkSessionService } from '../work-session/work-session.service';
 
 /** The card's own width, so its corner can be computed rather than measured. Keep in step with the
@@ -32,7 +31,6 @@ const PIP_WIDTH = 304;
 @Component({
   selector: 'nc-console-column',
   imports: [
-    EdgeHandleComponent,
     TranslocoDirective,
     ButtonDirective,
     IconComponent,
@@ -45,16 +43,6 @@ const PIP_WIDTH = 304;
     <div *transloco="let t" class="relative flex h-full flex-col bg-panel">
       <!-- No resize strip: the console is a fixed 421 track, like the reference beside it and
            every tab inspector. -->
-      @if (shown() && !ui.referenceOpen()) {
-        <!-- This grip only ever brings the reference; the column itself does not fold away. What
-             arriving costs the reference is the room there is: beside the console where it fits,
-             in its place where it does not, which is what the glyph says. -->
-        <nc-edge-handle
-          [icon]="swaps() ? 'sync' : 'chevron-left'"
-          [label]="swaps() ? t('editor.swapToReference') : t('editor.openReference')"
-          (pressed)="ui.setReferenceOpen(true)"
-        />
-      }
       @if (shown() && popped()) {
         <!-- The slot the viewer left behind says where it went, and holds its shape while it is
              away: at the viewer's own 16:9 the column keeps the same height whether the picture is
@@ -228,8 +216,6 @@ export class ConsoleColumnComponent {
   protected readonly popped = computed(() => this.ui.consoleMode() === 'pip' && this.ui.pipOpen());
   /** Told rather than worked out: what shows in the track is the region's to decide, not a column's. */
   readonly shown = input(true);
-
-  protected readonly swaps = computed(() => this.ui.viewportWidth() < REFERENCE_SPLIT_BREAKPOINT);
 
   protected readonly screenHidden = computed(
     () => this.ui.columnMode() === 'swap' || (!this.popped() && this.ui.activeTab() !== 'code'),

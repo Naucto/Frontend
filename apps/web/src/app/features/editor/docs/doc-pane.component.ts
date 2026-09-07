@@ -15,7 +15,6 @@ import { type ApiEntry, DocsService, type SearchHit } from '@app/shared/docs/doc
 import { TranslocoDirective } from '@jsverse/transloco';
 import {
   ButtonDirective,
-  EdgeHandleComponent,
   IconComponent,
   SearchComponent,
   ToastService,
@@ -29,7 +28,6 @@ import { DocRequestService } from './doc-request.service';
 @Component({
   selector: 'nc-doc-pane',
   imports: [
-    EdgeHandleComponent,
     TranslocoDirective,
     ButtonDirective,
     IconComponent,
@@ -40,14 +38,6 @@ import { DocRequestService } from './doc-request.service';
   ],
   template: `
     <div *transloco="let t" class="relative flex h-full flex-col">
-      <!-- The artboard hangs the control on the pane's own edge: a chevron when the reference sits
-           beside the console, and a swap glyph when it has taken the console's place. Either way
-           the one button puts it away — F1 and Ctrl-K bring it back. -->
-      <nc-edge-handle
-        [icon]="ui.columnMode() === 'swap' ? 'sync' : 'chevron-right'"
-        [label]="ui.columnMode() === 'swap' ? t('docs.swapBack') : t('docs.close')"
-        (pressed)="ui.setReferenceOpen(false)"
-      />
       <!-- The head of every column on this side of the editor is one height; this one was 32. -->
       <div class="flex h-5 shrink-0 items-center gap-1 border-b border-line px-1.5">
         @if (view() !== 'tree') {

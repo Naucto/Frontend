@@ -1,4 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+
+import { EdgeHandleComponent } from './edge-handle.component';
 
 /**
  * How a region is showing its two panels.
@@ -17,7 +19,11 @@ export type PanelRegionMode = 'primary' | 'beside' | 'instead';
  */
 @Component({
   selector: 'nc-panel-region',
+  imports: [EdgeHandleComponent],
   template: `
+    @if (switchLabel()) {
+      <nc-edge-handle [icon]="switchIcon()" [label]="switchLabel()" (pressed)="switched.emit()" />
+    }
     <div
       class="grid min-h-0"
       [class.hidden]="mode() === 'primary'"
@@ -29,7 +35,7 @@ export type PanelRegionMode = 'primary' | 'beside' | 'instead';
       <ng-content select="[primary]" />
     </div>
   `,
-  host: { class: 'flex h-full min-h-0' },
+  host: { class: 'relative flex h-full min-h-0' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PanelRegionComponent {
@@ -39,10 +45,30 @@ export class PanelRegionComponent {
   readonly splitAt = input.required<number>();
   readonly primaryWidth = input(0);
   readonly secondaryWidth = input(0);
+  /**
+   * What the control on the region's edge does next, in the caller's own words. Empty for a region
+   * with nothing to switch to, which is what leaves the control out.
+   *
+   * The wording is the caller's because only it knows what the two panels are, and the four
+   * crossings do not read alike: arriving beside the primary costs nothing, arriving in its place
+   * costs the primary.
+   */
+  readonly switchLabel = input('');
+  readonly switched = output();
 
   readonly mode = computed<PanelRegionMode>(() => {
     if (!this.secondaryOpen()) return 'primary';
     return this.viewportWidth() >= this.splitAt() ? 'beside' : 'instead';
+  });
+
+  /**
+   * Along the track where there is room for two, across it where there is not — which is the whole
+   * difference the reader is being asked to accept, so it is the one the glyph carries.
+   */
+  protected readonly switchIcon = computed(() => {
+    if (this.mode() === 'instead') return 'sync';
+    if (this.mode() === 'beside') return 'chevron-right';
+    return this.viewportWidth() >= this.splitAt() ? 'chevron-left' : 'sync';
   });
 
   protected readonly primaryTrack = computed(() =>

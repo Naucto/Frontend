@@ -25,6 +25,7 @@ import {
   IconComponent,
   PanelColumnComponent,
   SearchComponent,
+  SectionComponent,
   SliderComponent,
   ToastService,
 } from '@naucto/ui';
@@ -70,6 +71,7 @@ function formatScalar(value: TableScalar | undefined): string {
     HelpDotComponent,
     IconComponent,
     PanelColumnComponent,
+    SectionComponent,
     SearchComponent,
     SliderComponent,
     GameScreenComponent,
@@ -312,12 +314,9 @@ function formatScalar(value: TableScalar | undefined): string {
         <!-- Shared: the roster, the join code and who holds which slot are one set of facts that
                everyone in the session is looking at, so a peer's pointer says what is about to
                change for all of you. The test rig below is not — see there. -->
-        <section class="relative border-b border-line px-2 py-[14px]">
+        <nc-section banded [title]="t('editor.net.whoCanJoin')">
+          <nc-help-dot actions [text]="t('editor.net.whoHelp')" />
           <nc-presence-surface surface="net:session" />
-          <div class="mb-1 flex items-center justify-between">
-            <span class="label text-ink-3">{{ t('editor.net.whoCanJoin') }}</span>
-            <nc-help-dot [text]="t('editor.net.whoHelp')" />
-          </div>
           <span class="font-mono text-micro uppercase tracking-strip text-ink-4">
             {{ t('editor.net.inWorkSession') }}
           </span>
@@ -356,17 +355,16 @@ function formatScalar(value: TableScalar | undefined): string {
               {{ i.role === 'host' ? t('editor.net.endSession') : t('editor.net.leaveSession') }}
             </button>
           }
-        </section>
+        </nc-section>
 
-        <section class="relative border-b border-line px-2 py-[14px]">
+        <nc-section
+          banded
+          [title]="
+            t('editor.net.players') + ' · ' + players().length + ' / ' + (info()?.maxPlayers || '—')
+          "
+        >
+          <nc-help-dot actions [text]="t('editor.net.playersHelp')" />
           <nc-presence-surface surface="net:players" />
-          <div class="mb-1 flex items-center justify-between">
-            <span class="label text-ink-3">
-              {{ t('editor.net.players') }} · {{ players().length }} /
-              {{ info()?.maxPlayers || '—' }}
-            </span>
-            <nc-help-dot [text]="t('editor.net.playersHelp')" />
-          </div>
           @for (p of slots(); track p.slot) {
             <div class="flex items-center gap-1 py-0.5">
               @if (p.userId !== null) {
@@ -390,16 +388,13 @@ function formatScalar(value: TableScalar | undefined): string {
               }
             </div>
           }
-        </section>
+        </nc-section>
 
         <!-- No presence: the rig spawns a client in this browser and the impairment sliders
                shape that client alone. Nobody else sees what these do, so nobody else needs to see
                a pointer over them. -->
-        <section class="px-2 py-[14px]">
-          <div class="mb-1 flex items-center justify-between">
-            <span class="label text-ink-3">{{ t('editor.net.testRig') }}</span>
-            <nc-help-dot [text]="t('editor.net.testHelp')" />
-          </div>
+        <nc-section banded [title]="t('editor.net.testRig')">
+          <nc-help-dot actions [text]="t('editor.net.testHelp')" />
           @if (rig()) {
             <button ncButton variant="secondary" class="w-full" (click)="rig.set(false)">
               {{ t('editor.net.closeRig') }}
@@ -456,7 +451,7 @@ function formatScalar(value: TableScalar | undefined): string {
               (valueChange)="setLoss($event)"
             />
           </div>
-        </section>
+        </nc-section>
       </nc-panel-column>
     </div>
   `,

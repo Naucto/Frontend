@@ -15,7 +15,7 @@ import { booleanAttribute, ChangeDetectionStrategy, Component, input } from '@an
   host: {
     '[class]':
       'banded()' +
-      " ? 'block border-b border-line px-[14px] py-2 last:border-b-0'" +
+      " ? 'relative block border-b border-line px-[14px] py-1.5 last:border-b-0'" +
       " : 'block border-t border-line pt-2 first:border-t-0 first:pt-0'",
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -23,6 +23,11 @@ import { booleanAttribute, ChangeDetectionStrategy, Component, input } from '@an
 export class SectionComponent {
   readonly title = input.required<string>();
   readonly tone = input<'default' | 'gold'>('default');
-  /** Full-bleed band with its own padding, as the editor inspectors are drawn. */
+  /**
+   * Full-bleed band with its own padding, as the editor inspectors are drawn.
+   *
+   * A positioning context, because a band is where a presence surface goes: the overlay that shows
+   * a peer working in this group has to be able to cover it and nothing else.
+   */
   readonly banded = input(false, { transform: booleanAttribute });
 }
