@@ -24,7 +24,7 @@ const ACTIVE: Record<ToggleAccent, string> = {
       [attr.aria-label]="label()"
       [disabled]="disabled()"
       (click)="checked.set(!checked())"
-      class="label tracking-tag inline-flex h-[26px] cursor-pointer items-center gap-0.5 rounded-sm border border-line bg-transparent px-1 text-ink-4 transition-colors duration-100 hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
+      class="label tracking-tag inline-flex h-[26px] cursor-pointer items-center gap-0.5 rounded-sm border border-line bg-transparent px-1 text-ink-4 transition-[color] duration-100 hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
       [class]="active()"
     >
       <ng-content />
