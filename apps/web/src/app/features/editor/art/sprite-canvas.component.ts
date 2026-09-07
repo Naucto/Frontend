@@ -494,8 +494,7 @@ export class SpriteCanvasComponent {
     // resamples the finished picture once, evenly, on its way down to the size asked for.
     const s = Math.ceil(scale);
     const px = this.px;
-    // The whole sheet, in canvas units. Everything below draws in sheet coordinates; what the
-    // cropped view does is move the origin, not change what anything means.
+    // Everything below draws in sheet coordinates; cropping moves the origin and nothing else.
     const sheetPx = px * s;
     const view = this.regionPx();
     const cropped = this.crop();
