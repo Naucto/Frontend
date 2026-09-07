@@ -32,10 +32,9 @@ interface Bar {
 /**
  * VOICES lane under the piano roll: five rows, one bar per note in its voice.
  *
- * Laid out in the document rather than drawn, unlike the roll above it. The roll has a mark on
- * every step and a note on every pitch, which is more elements than a document wants to hold; this
- * has five rows and one bar per note. Left to the browser it stays sharp at any zoom and follows a
- * change of theme on its own, both of which a canvas has to be told about.
+ * Few enough elements to lay out rather than draw, which is the point of doing so: laid out it
+ * stays sharp at any zoom and follows a change of theme on its own, where a canvas has to be told
+ * about both.
  */
 @Component({
   selector: 'nc-voices-lane',
@@ -77,8 +76,9 @@ interface Bar {
             [style.background]="b.colour"
           ></div>
         }
-        @if (playheadX(); as x) {
-          <div class="absolute top-0 bottom-0 w-px bg-hot" [style.left.px]="x - 1"></div>
+        @let x = playheadX();
+        @if (x !== null) {
+          <div class="absolute top-0 bottom-0 w-px bg-hot" [style.left.px]="x"></div>
         }
       </div>
     </div>
@@ -126,9 +126,8 @@ export class VoicesLaneComponent {
     }));
   });
 
-  /** Null while stopped, and never 0 — a falsy left edge would read as "no playhead". */
   protected readonly playheadX = computed(() => {
     const ph = this.playhead();
-    return ph === null ? null : Math.floor(ph * this.stepWidth()) + 1;
+    return ph === null ? null : Math.floor(ph * this.stepWidth());
   });
 }
