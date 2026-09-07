@@ -28,6 +28,7 @@ import {
   ButtonDirective,
   HelpDotComponent,
   IconComponent,
+  PanelColumnComponent,
   PopoverDirective,
   PopoverPanelComponent,
   SliderComponent,
@@ -37,6 +38,7 @@ import {
 } from '@naucto/ui';
 import * as Y from 'yjs';
 
+import { PANEL_WIDTH } from '../state/editor-ui.store';
 import { PresenceSurfaceComponent } from '../work-session/presence-surface.component';
 import { WorkSessionService } from '../work-session/work-session.service';
 import { ArtStore, type ArtTool } from './art.store';
@@ -58,6 +60,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
     TranslocoDirective,
     ButtonDirective,
     IconComponent,
+    PanelColumnComponent,
     HelpDotComponent,
     BitFlagsComponent,
     SliderComponent,
@@ -72,7 +75,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
     PresenceSurfaceComponent,
   ],
   template: `
-    <div *transloco="let t" class="grid h-full grid-cols-[minmax(0,1fr)_420px]">
+    <div *transloco="let t" class="grid h-full grid-cols-[minmax(0,1fr)_auto]">
       <section class="flex min-h-0 flex-col">
         <!-- Three tracks, so the tool group is centred on the header rather than on whatever is
              left over between the title and the undo pair. -->
@@ -187,8 +190,8 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
         </div>
       </section>
 
-      <aside class="flex min-h-0 flex-col overflow-auto border-l border-line bg-panel">
-        <div class="flex h-5 items-center gap-1 border-b border-line px-1.5">
+      <nc-panel-column [width]="PANEL_WIDTH">
+        <div actions class="flex min-w-0 items-center gap-1">
           <nc-toggle-button
             class="shrink-0"
             [checked]="art.grid()"
@@ -331,13 +334,14 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
             (colourChange)="session.game.setPaletteColour($event.slot, $event.hex)"
           />
         </div>
-      </aside>
+      </nc-panel-column>
     </div>
   `,
   host: { class: 'block h-full', '(keydown)': 'onKey($event)' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ArtTabPage {
+  protected readonly PANEL_WIDTH = PANEL_WIDTH;
   protected readonly session = inject(WorkSessionService);
   protected readonly art = inject(ArtStore);
   private readonly i18n = inject(TranslocoService);

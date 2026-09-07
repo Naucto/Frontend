@@ -25,6 +25,7 @@ import {
   ButtonDirective,
   EmptyStateComponent,
   IconComponent,
+  PanelColumnComponent,
   PopoverDirective,
   PopoverPanelComponent,
   ReadoutComponent,
@@ -33,6 +34,7 @@ import {
 } from '@naucto/ui';
 import * as Y from 'yjs';
 
+import { PANEL_WIDTH } from '../state/editor-ui.store';
 import { WorkSessionService } from '../work-session/work-session.service';
 import { InstrumentInspectorComponent } from './instrument-inspector.component';
 import { InstrumentListComponent } from './instrument-list.component';
@@ -63,6 +65,7 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
     ButtonDirective,
     EmptyStateComponent,
     IconComponent,
+    PanelColumnComponent,
     PopoverDirective,
     ReadoutComponent,
     PopoverPanelComponent,
@@ -75,10 +78,7 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
     VoicesLaneComponent,
   ],
   template: `
-    <div
-      *transloco="let t"
-      class="grid h-full grid-cols-[236px_minmax(0,1fr)_236px] xl:grid-cols-[236px_minmax(0,1fr)_420px]"
-    >
+    <div *transloco="let t" class="grid h-full grid-cols-[237px_minmax(0,1fr)_auto]">
       <aside class="min-h-0 border-r border-line bg-panel">
         <nc-instrument-list
           [list]="instrumentList()"
@@ -320,13 +320,13 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
         }
       </section>
 
-      <aside class="flex min-h-0 flex-col overflow-auto border-l border-line bg-panel">
+      <nc-panel-column [width]="PANEL_WIDTH">
         <!-- The strip first, then the scope. All three columns head with a 40px row, and a scope
              above this one pushed its head below the other two — three heads at three heights on a
              screen the design gives one baseline. The scope keeps the top of what it belongs to:
              it is the only place you see what the synth is doing rather than what the pattern says
              it should. -->
-        <div class="flex h-5 shrink-0 items-center gap-1 border-b border-line px-1.5">
+        <div actions class="flex min-w-0 items-center gap-1">
           <!-- One button carrying its current resolution, not six chips: the row is 340px and
                the chips wrapped onto a second line, out of the bar and over the scope. -->
           <nc-toggle-button
@@ -369,13 +369,14 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
             {{ t('editor.sound.noInstrument') }}
           </p>
         }
-      </aside>
+      </nc-panel-column>
     </div>
   `,
   host: { class: 'block h-full', '(keydown)': 'onKey($event)' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SoundTabPage {
+  protected readonly PANEL_WIDTH = PANEL_WIDTH;
   protected readonly session = inject(WorkSessionService);
   protected readonly sound = inject(SoundStore);
   protected readonly library = new SoundLibrary(this.session.game);

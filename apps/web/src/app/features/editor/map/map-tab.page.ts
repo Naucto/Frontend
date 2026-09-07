@@ -15,6 +15,7 @@ import { LOCAL_ORIGIN, MAP_HEIGHT, MAP_WIDTH, SPRITES_PER_ROW } from '@naucto/en
 import {
   ButtonDirective,
   IconComponent,
+  PanelColumnComponent,
   StepperComponent,
   ToggleButtonComponent,
   ToolGroupComponent,
@@ -25,6 +26,7 @@ import * as Y from 'yjs';
 
 import { type SpriteRect } from '../art/art.store';
 import { SheetViewComponent } from '../art/sheet-view.component';
+import { PANEL_WIDTH } from '../state/editor-ui.store';
 import { WorkSessionService } from '../work-session/work-session.service';
 import { MapStore, type MapTool } from './map.store';
 import { MapCanvasComponent, type TileViewport } from './map-canvas.component';
@@ -40,6 +42,7 @@ const BRUSHES = ['1×1', '2×2', '3×3', '4×4', '5×5', '6×6', '7×7', '8×8']
     TranslocoDirective,
     ButtonDirective,
     IconComponent,
+    PanelColumnComponent,
     StepperComponent,
     ToggleButtonComponent,
     ToolGroupComponent,
@@ -49,7 +52,7 @@ const BRUSHES = ['1×1', '2×2', '3×3', '4×4', '5×5', '6×6', '7×7', '8×8']
     MinimapComponent,
   ],
   template: `
-    <div *transloco="let t" class="grid h-full grid-cols-[minmax(0,1fr)_420px]">
+    <div *transloco="let t" class="grid h-full grid-cols-[minmax(0,1fr)_auto]">
       <section class="flex min-h-0 flex-col">
         <!-- Three tracks, so the tool group is centred on the header rather than on whatever is
              left over between the title and the undo pair. -->
@@ -129,8 +132,8 @@ const BRUSHES = ['1×1', '2×2', '3×3', '4×4', '5×5', '6×6', '7×7', '8×8']
       <!-- No presence: every control in this column is the reader's own — the grid, the flag
            overlay, the zoom, the brush, the minimap. Nothing here writes the document, so a peer's
            pointer over it would say nothing about what they are doing. -->
-      <aside class="flex min-h-0 flex-col overflow-auto border-l border-line bg-panel">
-        <div class="flex h-5 items-center gap-1 border-b border-line px-1.5">
+      <nc-panel-column [width]="PANEL_WIDTH">
+        <div actions class="flex min-w-0 items-center gap-1">
           <nc-toggle-button
             [checked]="map.grid()"
             (checkedChange)="map.setGrid($event)"
@@ -214,13 +217,14 @@ const BRUSHES = ['1×1', '2×2', '3×3', '4×4', '5×5', '6×6', '7×7', '8×8']
             (jump)="canvas.scrollToTile($event.x, $event.y)"
           />
         </div>
-      </aside>
+      </nc-panel-column>
     </div>
   `,
   host: { class: 'block h-full', '(keydown)': 'onKey($event)' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MapTabPage {
+  protected readonly PANEL_WIDTH = PANEL_WIDTH;
   protected readonly session = inject(WorkSessionService);
   protected readonly map = inject(MapStore);
   private readonly i18n = inject(TranslocoService);

@@ -64,10 +64,12 @@ Pixelarticons, Bubblegum-16 palette, dark + light themes).
   manifest parity, editor completions). Old games are migrated transparently on load.
 - **Theming**: every colour comes from a token in `packages/ui/src/tokens.css`; never write raw hex in
   components. Dark is the default; light is `[data-theme=light]` or `prefers-color-scheme`.
-- **Editor layout**: the shell is rail + routed workspace + console column. Tabs listed in
-  `PANEL_TABS` (`editor-ui.store.ts`) own the right column as a tool panel and the runtime floats
-  as the VIEWER pip. `EditorRuntimeService` exposes the one runtime (host, net bridge, insert-at-
-  cursor) to every tab.
+- **Editor layout**: the shell is rail + routed workspace + one `nc-panel-region` on the right. Each
+  tab draws its own inspector as an `nc-panel-column` at `PANEL_WIDTH`; the console column is CODE's
+  own, and the region either unfolds the reference beside it or lends it that track when the window
+  is too narrow for both. A panel there is never unmounted — it may hold a running game or the
+  floating VIEWER pip. `EditorRuntimeService` exposes the one runtime (host, net bridge,
+  insert-at-cursor) to every tab.
 - **Netplay**: every `nc-game-screen` owns a `NetUiBridgeService`; `net.host()` / `net.join()`
   open the dialogs in `shared/netplay`. Permissions come from the game's `net.permissions` map
   (`core/net/net-permissions.ts`, bits CLIENT_READ=1 / CLIENT_WRITE=2, allow-by-default).

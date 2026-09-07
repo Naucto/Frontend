@@ -46,8 +46,17 @@ interface EditorUiState {
  */
 export const REFERENCE_SPLIT_BREAKPOINT = 1602;
 
+/**
+ * Every panel on the right of the editor, the console among them.
+ *
+ * One number for the six because a tab inspector and the console are the same piece of furniture;
+ * five hand-written literals had drifted to four different values. GAME's sheet draws its own at
+ * 381 and this widens it, which is a decision recorded against the design rather than a correction.
+ */
+export const PANEL_WIDTH = 421;
+
 /** The console column is a fixed track, like the reference and every tab inspector. */
-export const CONSOLE_WIDTH = 421;
+export const CONSOLE_WIDTH = PANEL_WIDTH;
 /** The reference beside the console. On its own it takes the console's 421 instead. */
 export const REFERENCE_WIDTH = 401;
 

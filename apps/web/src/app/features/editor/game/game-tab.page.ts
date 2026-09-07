@@ -26,6 +26,7 @@ import {
   InputDirective,
   LabelComponent,
   NoticeComponent,
+  PanelColumnComponent,
   ReadoutComponent,
   SearchComponent,
   SectionComponent,
@@ -36,6 +37,7 @@ import {
 import { injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import * as Y from 'yjs';
 
+import { PANEL_WIDTH } from '../state/editor-ui.store';
 import { WorkSessionService } from '../work-session/work-session.service';
 
 const NAME_MAX = 60;
@@ -56,6 +58,7 @@ const SUMMARY_MAX = 80;
     InputDirective,
     LabelComponent,
     NoticeComponent,
+    PanelColumnComponent,
     ReadoutComponent,
     SearchComponent,
     SectionComponent,
@@ -63,11 +66,11 @@ const SUMMARY_MAX = 80;
     TagInputComponent,
   ],
   template: `
-    <div *transloco="let t" class="grid h-full grid-rows-[40px_minmax(0,1fr)]">
-      <!-- One strip across both columns: the tab says what it is and when it last saved, and the
-           inspector's own heading sits over the inspector, as the artboard draws them. -->
-      <div class="grid grid-cols-[minmax(0,1fr)_381px] border-b border-line bg-panel">
-        <div class="flex min-w-0 items-center gap-1.5 pr-1.5 pl-2">
+    <div *transloco="let t" class="grid h-full grid-cols-[minmax(0,1fr)_auto]">
+      <section class="flex min-h-0 flex-col">
+        <div
+          class="flex h-5 min-w-0 shrink-0 items-center gap-1.5 border-b border-line bg-panel pr-1.5 pl-2"
+        >
           <span class="font-mono text-meta tracking-strip text-ink uppercase">
             {{ t('editor.game.title') }}
           </span>
@@ -79,23 +82,6 @@ const SUMMARY_MAX = 80;
             }}
           </span>
         </div>
-        <div class="flex items-center gap-1 border-l border-line px-1.75">
-          <span class="font-mono text-meta tracking-strip text-ink uppercase">
-            {{ t('editor.game.publishing') }}
-          </span>
-          <span class="flex-1"></span>
-          <button ncButton variant="secondary" size="sm" (click)="exportGame()">
-            <nc-icon name="download" [size]="12" />
-            {{ t('editor.game.export') }}
-          </button>
-          <button ncButton variant="secondary" size="sm" (click)="confirmDelete()">
-            <nc-icon name="trash" [size]="12" />
-            {{ t('editor.game.delete') }}
-          </button>
-        </div>
-      </div>
-
-      <div class="grid min-h-0 grid-cols-[minmax(0,1fr)_381px]">
         <div class="overflow-auto bg-inset px-2.75 py-2.5">
           <div class="grid grid-cols-[320px_minmax(0,1fr)] gap-2.75">
             <div>
@@ -194,8 +180,18 @@ const SUMMARY_MAX = 80;
             </div>
           </div>
         </div>
+      </section>
 
-        <aside class="overflow-auto border-l border-line bg-panel p-2">
+      <nc-panel-column [width]="PANEL_WIDTH" [title]="t('editor.game.publishing')">
+        <button actions ncButton variant="secondary" size="sm" (click)="exportGame()">
+          <nc-icon name="download" [size]="12" />
+          {{ t('editor.game.export') }}
+        </button>
+        <button actions ncButton variant="secondary" size="sm" (click)="confirmDelete()">
+          <nc-icon name="trash" [size]="12" />
+          {{ t('editor.game.delete') }}
+        </button>
+        <div class="p-2">
           @if (!canPublish()) {
             <nc-notice class="mb-2">{{ t('editor.game.publishBlocked') }}</nc-notice>
           }
@@ -314,13 +310,14 @@ const SUMMARY_MAX = 80;
               }
             </nc-section>
           </div>
-        </aside>
-      </div>
+        </div>
+      </nc-panel-column>
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GameTabPage implements OnInit {
+  protected readonly PANEL_WIDTH = PANEL_WIDTH;
   protected readonly session = inject(WorkSessionService);
   private readonly runtime = inject(RuntimeHostService);
   private readonly toasts = inject(ToastService);

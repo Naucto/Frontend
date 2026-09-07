@@ -23,12 +23,14 @@ import {
   formatCount,
   HelpDotComponent,
   IconComponent,
+  PanelColumnComponent,
   SearchComponent,
   SliderComponent,
   ToastService,
 } from '@naucto/ui';
 
 import { EditorRuntimeService } from '../state/editor-runtime.service';
+import { PANEL_WIDTH } from '../state/editor-ui.store';
 import { PresenceSurfaceComponent } from '../work-session/presence-surface.component';
 import { WorkSessionService } from '../work-session/work-session.service';
 
@@ -67,16 +69,18 @@ function formatScalar(value: TableScalar | undefined): string {
     EmptyStateComponent,
     HelpDotComponent,
     IconComponent,
+    PanelColumnComponent,
     SearchComponent,
     SliderComponent,
     GameScreenComponent,
     PresenceSurfaceComponent,
   ],
   template: `
-    <div *transloco="let t" class="grid h-full grid-rows-[39px_minmax(0,1fr)]">
-      <!-- One strip across both columns, split where the inspector starts, as the artboard draws it. -->
-      <div class="grid grid-cols-[minmax(0,1fr)_421px] border-b border-line bg-panel">
-        <div class="@container relative flex items-center gap-1.25 pr-1.5 pl-2">
+    <div *transloco="let t" class="grid h-full grid-cols-[minmax(0,1fr)_auto]">
+      <section class="flex min-h-0 flex-col bg-paper">
+        <div
+          class="@container relative flex h-5 shrink-0 items-center gap-1.25 border-b border-line bg-panel pr-1.5 pl-2"
+        >
           <span class="font-mono text-[11px] uppercase tracking-strip text-ink">
             {{ t('editor.net.sharedState') }}
           </span>
@@ -123,354 +127,344 @@ function formatScalar(value: TableScalar | undefined): string {
             <nc-icon name="collapse" [size]="12" />
           </button>
         </div>
-        <div class="flex items-center border-l border-line px-1.75">
-          <span class="font-mono text-[11px] uppercase tracking-strip text-ink">
-            {{ t('editor.net.session') }}
-          </span>
-          <span class="flex-1"></span>
-          <!-- Hosting is sky in the design, joined is jade: the two roles are told apart by hue. -->
-          <span
-            class="font-mono text-[10px] uppercase tracking-[0.08em]"
-            [class]="
-              info()?.role === 'host' ? 'text-sky-ink' : session() ? 'text-jade-ink' : 'text-ink-4'
-            "
-          >
-            {{
-              info()?.role === 'host'
-                ? t('editor.net.hosting')
-                : info()
-                  ? t('editor.net.joined')
-                  : t('editor.net.idle')
-            }}
-          </span>
-        </div>
-      </div>
-
-      <div class="grid min-h-0 grid-cols-[minmax(0,1fr)_421px]">
-        <section class="flex min-h-0 flex-col bg-paper">
-          <!-- No rule under this one: the header above it already carries one, and the table's own
+        <!-- No rule under this one: the header above it already carries one, and the table's own
                heading row carries a third — the design draws none of the three, and a caption on a
                path does not need a line to separate it from the table it captions. -->
-          <div class="flex items-center gap-1 px-[18px] py-[10px]">
-            <span class="font-mono text-[9px] tracking-[0.14em] text-ink-3">net.state</span>
-            <span class="flex-1"></span>
-            <nc-help-dot [text]="t('editor.net.helpState')" />
-          </div>
-          @if (rows().length) {
-            <div class="min-h-0 flex-1 overflow-auto">
-              <table class="w-full table-fixed border-collapse font-mono text-[12px]">
-                <colgroup>
-                  <col />
-                  <col class="w-[110px]" />
-                  <col class="w-[88px]" />
-                  <col class="w-[74px]" />
-                  <col class="w-[76px]" />
-                </colgroup>
-                <thead>
-                  <tr class="text-[9px] uppercase tracking-strip text-ink-4">
-                    <th class="border-b border-line-faint py-[9px] pl-[18px] text-left font-normal">
-                      {{ t('editor.net.path') }}
-                    </th>
-                    <th class="border-b border-line-faint py-[9px] text-left font-normal">
-                      {{ t('editor.net.value') }}
-                    </th>
-                    <th class="border-b border-line-faint py-[9px] text-left font-normal">
-                      {{ t('editor.net.owner') }}
-                    </th>
-                    <th class="border-b border-line-faint py-[9px] text-left font-normal">
-                      {{ t('editor.net.perms') }}
-                    </th>
-                    <th class="border-b border-line-faint py-[9px] pr-[18px] text-left font-normal">
-                      <span class="sr-only">{{ t('editor.net.actions') }}</span>
-                    </th>
+        <div class="flex items-center gap-1 px-[18px] py-[10px]">
+          <span class="font-mono text-[9px] tracking-[0.14em] text-ink-3">net.state</span>
+          <span class="flex-1"></span>
+          <nc-help-dot [text]="t('editor.net.helpState')" />
+        </div>
+        @if (rows().length) {
+          <div class="min-h-0 flex-1 overflow-auto">
+            <table class="w-full table-fixed border-collapse font-mono text-[12px]">
+              <colgroup>
+                <col />
+                <col class="w-[110px]" />
+                <col class="w-[88px]" />
+                <col class="w-[74px]" />
+                <col class="w-[76px]" />
+              </colgroup>
+              <thead>
+                <tr class="text-[9px] uppercase tracking-strip text-ink-4">
+                  <th class="border-b border-line-faint py-[9px] pl-[18px] text-left font-normal">
+                    {{ t('editor.net.path') }}
+                  </th>
+                  <th class="border-b border-line-faint py-[9px] text-left font-normal">
+                    {{ t('editor.net.value') }}
+                  </th>
+                  <th class="border-b border-line-faint py-[9px] text-left font-normal">
+                    {{ t('editor.net.owner') }}
+                  </th>
+                  <th class="border-b border-line-faint py-[9px] text-left font-normal">
+                    {{ t('editor.net.perms') }}
+                  </th>
+                  <th class="border-b border-line-faint py-[9px] pr-[18px] text-left font-normal">
+                    <span class="sr-only">{{ t('editor.net.actions') }}</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (r of rows(); track r.path) {
+                  <tr class="h-[35px] border-b border-line-faint hover:bg-sunken">
+                    <td
+                      class="py-[7px]"
+                      [class]="r.depth ? 'text-ink-body' : 'text-ink'"
+                      [style.paddingLeft.px]="18 + r.depth * 20"
+                    >
+                      @if (r.container) {
+                        <button
+                          type="button"
+                          class="mr-1 text-ink-4 hover:text-ink"
+                          (click)="toggle(r.path)"
+                          [attr.aria-label]="r.name"
+                        >
+                          <nc-icon
+                            [name]="collapsed().has(r.path) ? 'chevron-right' : 'chevron-down'"
+                            [size]="12"
+                          />
+                        </button>
+                      }
+                      @if (renaming() === r.path) {
+                        <input
+                          #editInput
+                          class="w-[180px] rounded-xs border border-gold bg-inset px-1 font-mono text-[12px] text-ink outline-none"
+                          [value]="draft()"
+                          (input)="onDraft($event)"
+                          (keydown.enter)="commitRename(r)"
+                          (keydown.escape)="cancelEdit()"
+                          (blur)="cancelEdit()"
+                        />
+                      } @else {
+                        {{ r.name }}
+                      }
+                    </td>
+                    <td class="py-[7px]" [class]="valueClass(r.kind)">{{ r.value }}</td>
+                    <td class="py-[7px]" [class]="ownerClass(r.owner)">
+                      {{ ownerName(r.owner) }}
+                    </td>
+                    <td class="py-[7px]">
+                      <span class="flex items-center gap-0.5">
+                        <button
+                          type="button"
+                          class="inline-flex h-[20px] w-[22px] items-center justify-center rounded-xs border text-[10px]"
+                          [class]="permClass(r.read)"
+                          [attr.aria-pressed]="r.read"
+                          [attr.title]="t('editor.net.readHelp')"
+                          (click)="setPerm(r, 'read', !r.read)"
+                        >
+                          {{ t('editor.net.read') }}
+                        </button>
+                        <button
+                          type="button"
+                          class="inline-flex h-[20px] w-[22px] items-center justify-center rounded-xs border text-[10px]"
+                          [class]="permClass(r.write)"
+                          [attr.aria-pressed]="r.write"
+                          [attr.title]="t('editor.net.writeHelp')"
+                          (click)="setPerm(r, 'write', !r.write)"
+                        >
+                          {{ t('editor.net.write') }}
+                        </button>
+                      </span>
+                    </td>
+                    <td class="py-[7px] pr-[18px]">
+                      <span class="flex items-center justify-end gap-[2px]">
+                        <button
+                          type="button"
+                          class="flex h-[20px] w-[18px] items-center justify-center rounded-xs text-[12px] leading-none text-ink-4 hover:text-ink disabled:opacity-40 disabled:hover:text-ink-4"
+                          [disabled]="!canEdit() || !r.container"
+                          [attr.title]="editHint(t, t('editor.net.addChild'))"
+                          (click)="startAdd(r)"
+                        >
+                          +
+                        </button>
+                        <button
+                          type="button"
+                          class="flex h-[20px] w-[18px] items-center justify-center rounded-xs text-ink-4 hover:text-ink disabled:opacity-40 disabled:hover:text-ink-4"
+                          [disabled]="!canEdit() || !r.path"
+                          [attr.title]="editHint(t, t('editor.net.renameNode'))"
+                          (click)="startRename(r)"
+                        >
+                          <nc-icon name="edit" [size]="12" />
+                        </button>
+                        <button
+                          type="button"
+                          class="flex h-[20px] w-[18px] items-center justify-center rounded-xs text-ink-4 hover:text-hot-ink disabled:opacity-40 disabled:hover:text-ink-4"
+                          [disabled]="!canEdit() || !r.path"
+                          [attr.title]="editHint(t, t('editor.net.deleteNode'))"
+                          (click)="remove(r)"
+                        >
+                          <nc-icon name="trash" [size]="12" />
+                        </button>
+                      </span>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  @for (r of rows(); track r.path) {
-                    <tr class="h-[35px] border-b border-line-faint hover:bg-sunken">
-                      <td
-                        class="py-[7px]"
-                        [class]="r.depth ? 'text-ink-body' : 'text-ink'"
-                        [style.paddingLeft.px]="18 + r.depth * 20"
-                      >
-                        @if (r.container) {
-                          <button
-                            type="button"
-                            class="mr-1 text-ink-4 hover:text-ink"
-                            (click)="toggle(r.path)"
-                            [attr.aria-label]="r.name"
-                          >
-                            <nc-icon
-                              [name]="collapsed().has(r.path) ? 'chevron-right' : 'chevron-down'"
-                              [size]="12"
-                            />
-                          </button>
-                        }
-                        @if (renaming() === r.path) {
-                          <input
-                            #editInput
-                            class="w-[180px] rounded-xs border border-gold bg-inset px-1 font-mono text-[12px] text-ink outline-none"
-                            [value]="draft()"
-                            (input)="onDraft($event)"
-                            (keydown.enter)="commitRename(r)"
-                            (keydown.escape)="cancelEdit()"
-                            (blur)="cancelEdit()"
-                          />
-                        } @else {
-                          {{ r.name }}
-                        }
+                  @if (adding() === r.path) {
+                    <tr class="h-[35px] border-b border-line-faint">
+                      <td class="py-[7px]" [style.paddingLeft.px]="18 + (r.depth + 1) * 20">
+                        <input
+                          #editInput
+                          class="w-[180px] rounded-xs border border-gold bg-inset px-1 font-mono text-[12px] text-ink outline-none"
+                          [placeholder]="t('editor.net.newKey')"
+                          [value]="draft()"
+                          (input)="onDraft($event)"
+                          (keydown.enter)="commitAdd(r)"
+                          (keydown.escape)="cancelEdit()"
+                          (blur)="cancelEdit()"
+                        />
                       </td>
-                      <td class="py-[7px]" [class]="valueClass(r.kind)">{{ r.value }}</td>
-                      <td class="py-[7px]" [class]="ownerClass(r.owner)">
-                        {{ ownerName(r.owner) }}
-                      </td>
-                      <td class="py-[7px]">
-                        <span class="flex items-center gap-0.5">
-                          <button
-                            type="button"
-                            class="inline-flex h-[20px] w-[22px] items-center justify-center rounded-xs border text-[10px]"
-                            [class]="permClass(r.read)"
-                            [attr.aria-pressed]="r.read"
-                            [attr.title]="t('editor.net.readHelp')"
-                            (click)="setPerm(r, 'read', !r.read)"
-                          >
-                            {{ t('editor.net.read') }}
-                          </button>
-                          <button
-                            type="button"
-                            class="inline-flex h-[20px] w-[22px] items-center justify-center rounded-xs border text-[10px]"
-                            [class]="permClass(r.write)"
-                            [attr.aria-pressed]="r.write"
-                            [attr.title]="t('editor.net.writeHelp')"
-                            (click)="setPerm(r, 'write', !r.write)"
-                          >
-                            {{ t('editor.net.write') }}
-                          </button>
-                        </span>
-                      </td>
-                      <td class="py-[7px] pr-[18px]">
-                        <span class="flex items-center justify-end gap-[2px]">
-                          <button
-                            type="button"
-                            class="flex h-[20px] w-[18px] items-center justify-center rounded-xs text-[12px] leading-none text-ink-4 hover:text-ink disabled:opacity-40 disabled:hover:text-ink-4"
-                            [disabled]="!canEdit() || !r.container"
-                            [attr.title]="editHint(t, t('editor.net.addChild'))"
-                            (click)="startAdd(r)"
-                          >
-                            +
-                          </button>
-                          <button
-                            type="button"
-                            class="flex h-[20px] w-[18px] items-center justify-center rounded-xs text-ink-4 hover:text-ink disabled:opacity-40 disabled:hover:text-ink-4"
-                            [disabled]="!canEdit() || !r.path"
-                            [attr.title]="editHint(t, t('editor.net.renameNode'))"
-                            (click)="startRename(r)"
-                          >
-                            <nc-icon name="edit" [size]="12" />
-                          </button>
-                          <button
-                            type="button"
-                            class="flex h-[20px] w-[18px] items-center justify-center rounded-xs text-ink-4 hover:text-hot-ink disabled:opacity-40 disabled:hover:text-ink-4"
-                            [disabled]="!canEdit() || !r.path"
-                            [attr.title]="editHint(t, t('editor.net.deleteNode'))"
-                            (click)="remove(r)"
-                          >
-                            <nc-icon name="trash" [size]="12" />
-                          </button>
-                        </span>
-                      </td>
+                      <td colspan="4"></td>
                     </tr>
-                    @if (adding() === r.path) {
-                      <tr class="h-[35px] border-b border-line-faint">
-                        <td class="py-[7px]" [style.paddingLeft.px]="18 + (r.depth + 1) * 20">
-                          <input
-                            #editInput
-                            class="w-[180px] rounded-xs border border-gold bg-inset px-1 font-mono text-[12px] text-ink outline-none"
-                            [placeholder]="t('editor.net.newKey')"
-                            [value]="draft()"
-                            (input)="onDraft($event)"
-                            (keydown.enter)="commitAdd(r)"
-                            (keydown.escape)="cancelEdit()"
-                            (blur)="cancelEdit()"
-                          />
-                        </td>
-                        <td colspan="4"></td>
-                      </tr>
-                    }
                   }
-                </tbody>
-              </table>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="flex flex-1 items-center justify-center">
+            <nc-empty-state
+              icon="users"
+              [title]="t('editor.net.idle')"
+              [hint]="t('editor.net.noSession')"
+            />
+          </div>
+        }
+      </section>
+
+      <nc-panel-column [width]="PANEL_WIDTH" [title]="t('editor.net.session')">
+        <!-- Hosting is sky in the design, joined is jade: the two roles are told apart by hue. -->
+        <span
+          actions
+          class="font-mono text-[10px] uppercase tracking-[0.08em]"
+          [class]="
+            info()?.role === 'host' ? 'text-sky-ink' : session() ? 'text-jade-ink' : 'text-ink-4'
+          "
+        >
+          {{
+            info()?.role === 'host'
+              ? t('editor.net.hosting')
+              : info()
+                ? t('editor.net.joined')
+                : t('editor.net.idle')
+          }}
+        </span>
+
+        <!-- Shared: the roster, the join code and who holds which slot are one set of facts that
+               everyone in the session is looking at, so a peer's pointer says what is about to
+               change for all of you. The test rig below is not — see there. -->
+        <section class="relative border-b border-line px-2 py-[14px]">
+          <nc-presence-surface surface="net:session" />
+          <div class="mb-1 flex items-center justify-between">
+            <span class="label text-ink-3">{{ t('editor.net.whoCanJoin') }}</span>
+            <nc-help-dot [text]="t('editor.net.whoHelp')" />
+          </div>
+          <span class="font-mono text-micro uppercase tracking-strip text-ink-4">
+            {{ t('editor.net.inWorkSession') }}
+          </span>
+          @for (c of work.collaborators(); track c.clientId) {
+            <div class="flex items-center gap-1 py-0.5">
+              <nc-avatar [name]="c.name" [id]="c.userId" [size]="16" />
+              <span class="text-ui text-ink">{{ c.name }}</span>
+              @if (c.isSelf) {
+                <span class="font-mono text-micro lowercase tracking-button text-ink-3">
+                  {{ t('editor.net.you') }}
+                </span>
+              }
+              <span class="flex-1"></span>
+              @if (slotOf(c.userId); as slot) {
+                <span class="label text-jade-ink">{{ t('editor.net.inGame') }} · P{{ slot }}</span>
+              } @else if (info()?.joinCode && !c.isSelf) {
+                <span class="label text-ink-4">{{ t('editor.net.invite') }}</span>
+              }
             </div>
-          } @else {
-            <div class="flex flex-1 items-center justify-center">
-              <nc-empty-state
-                icon="users"
-                [title]="t('editor.net.idle')"
-                [hint]="t('editor.net.noSession')"
-              />
+          }
+          @if (info(); as i) {
+            <span class="label mt-1 block text-ink-4">{{ t('editor.net.anyoneElse') }}</span>
+            <div
+              class="mt-0.5 flex items-center rounded-sm border border-line bg-inset px-1.5 py-1"
+            >
+              <span class="flex-1 font-mono text-ui tracking-[.2em] text-gold-ink">
+                {{ i.joinCode ?? '—' }}
+              </span>
+              @if (i.joinCode) {
+                <button ncButton variant="ghost" size="sm" (click)="copy(i.joinCode)">
+                  {{ t('editor.net.copy') }}
+                </button>
+              }
+            </div>
+            <button ncButton variant="secondary" class="mt-1 w-full" (click)="end()">
+              {{ i.role === 'host' ? t('editor.net.endSession') : t('editor.net.leaveSession') }}
+            </button>
+          }
+        </section>
+
+        <section class="relative border-b border-line px-2 py-[14px]">
+          <nc-presence-surface surface="net:players" />
+          <div class="mb-1 flex items-center justify-between">
+            <span class="label text-ink-3">
+              {{ t('editor.net.players') }} · {{ players().length }} /
+              {{ info()?.maxPlayers || '—' }}
+            </span>
+            <nc-help-dot [text]="t('editor.net.playersHelp')" />
+          </div>
+          @for (p of slots(); track p.slot) {
+            <div class="flex items-center gap-1 py-0.5">
+              @if (p.userId !== null) {
+                <nc-avatar [name]="p.name" [id]="p.userId" [size]="16" />
+                <span class="text-ui text-ink">{{ p.name }}</span>
+                @if (p.host) {
+                  <span class="label text-gold-ink">{{ t('editor.net.host') }}</span>
+                }
+                <span class="flex-1"></span>
+                @if (p.ping !== null) {
+                  <span class="font-mono text-label text-ink-4">{{ p.ping }}ms</span>
+                }
+                <span class="label text-jade-ink">P{{ p.slot }}</span>
+              } @else {
+                <span
+                  class="inline-block h-2 w-2 rounded-xs border border-dashed border-line"
+                ></span>
+                <span class="text-ui text-ink-4">{{ t('editor.net.openSlot') }}</span>
+                <span class="flex-1"></span>
+                <span class="label text-ink-4">P{{ p.slot }}</span>
+              }
             </div>
           }
         </section>
 
-        <aside class="flex min-h-0 flex-col overflow-auto border-l border-line bg-panel">
-          <!-- Shared: the roster, the join code and who holds which slot are one set of facts that
-               everyone in the session is looking at, so a peer's pointer says what is about to
-               change for all of you. The test rig below is not — see there. -->
-          <section class="relative border-b border-line px-2 py-[14px]">
-            <nc-presence-surface surface="net:session" />
-            <div class="mb-1 flex items-center justify-between">
-              <span class="label text-ink-3">{{ t('editor.net.whoCanJoin') }}</span>
-              <nc-help-dot [text]="t('editor.net.whoHelp')" />
-            </div>
-            <span class="font-mono text-micro uppercase tracking-strip text-ink-4">
-              {{ t('editor.net.inWorkSession') }}
-            </span>
-            @for (c of work.collaborators(); track c.clientId) {
-              <div class="flex items-center gap-1 py-0.5">
-                <nc-avatar [name]="c.name" [id]="c.userId" [size]="16" />
-                <span class="text-ui text-ink">{{ c.name }}</span>
-                @if (c.isSelf) {
-                  <span class="font-mono text-micro lowercase tracking-button text-ink-3">
-                    {{ t('editor.net.you') }}
-                  </span>
-                }
-                <span class="flex-1"></span>
-                @if (slotOf(c.userId); as slot) {
-                  <span class="label text-jade-ink">
-                    {{ t('editor.net.inGame') }} · P{{ slot }}
-                  </span>
-                } @else if (info()?.joinCode && !c.isSelf) {
-                  <span class="label text-ink-4">{{ t('editor.net.invite') }}</span>
-                }
-              </div>
-            }
-            @if (info(); as i) {
-              <span class="label mt-1 block text-ink-4">{{ t('editor.net.anyoneElse') }}</span>
-              <div
-                class="mt-0.5 flex items-center rounded-sm border border-line bg-inset px-1.5 py-1"
-              >
-                <span class="flex-1 font-mono text-ui tracking-[.2em] text-gold-ink">
-                  {{ i.joinCode ?? '—' }}
-                </span>
-                @if (i.joinCode) {
-                  <button ncButton variant="ghost" size="sm" (click)="copy(i.joinCode)">
-                    {{ t('editor.net.copy') }}
-                  </button>
-                }
-              </div>
-              <button ncButton variant="secondary" class="mt-1 w-full" (click)="end()">
-                {{ i.role === 'host' ? t('editor.net.endSession') : t('editor.net.leaveSession') }}
-              </button>
-            }
-          </section>
-
-          <section class="relative border-b border-line px-2 py-[14px]">
-            <nc-presence-surface surface="net:players" />
-            <div class="mb-1 flex items-center justify-between">
-              <span class="label text-ink-3">
-                {{ t('editor.net.players') }} · {{ players().length }} /
-                {{ info()?.maxPlayers || '—' }}
-              </span>
-              <nc-help-dot [text]="t('editor.net.playersHelp')" />
-            </div>
-            @for (p of slots(); track p.slot) {
-              <div class="flex items-center gap-1 py-0.5">
-                @if (p.userId !== null) {
-                  <nc-avatar [name]="p.name" [id]="p.userId" [size]="16" />
-                  <span class="text-ui text-ink">{{ p.name }}</span>
-                  @if (p.host) {
-                    <span class="label text-gold-ink">{{ t('editor.net.host') }}</span>
-                  }
-                  <span class="flex-1"></span>
-                  @if (p.ping !== null) {
-                    <span class="font-mono text-label text-ink-4">{{ p.ping }}ms</span>
-                  }
-                  <span class="label text-jade-ink">P{{ p.slot }}</span>
-                } @else {
-                  <span
-                    class="inline-block h-2 w-2 rounded-xs border border-dashed border-line"
-                  ></span>
-                  <span class="text-ui text-ink-4">{{ t('editor.net.openSlot') }}</span>
-                  <span class="flex-1"></span>
-                  <span class="label text-ink-4">P{{ p.slot }}</span>
-                }
-              </div>
-            }
-          </section>
-
-          <!-- No presence: the rig spawns a client in this browser and the impairment sliders
+        <!-- No presence: the rig spawns a client in this browser and the impairment sliders
                shape that client alone. Nobody else sees what these do, so nobody else needs to see
                a pointer over them. -->
-          <section class="px-2 py-[14px]">
-            <div class="mb-1 flex items-center justify-between">
-              <span class="label text-ink-3">{{ t('editor.net.testRig') }}</span>
-              <nc-help-dot [text]="t('editor.net.testHelp')" />
+        <section class="px-2 py-[14px]">
+          <div class="mb-1 flex items-center justify-between">
+            <span class="label text-ink-3">{{ t('editor.net.testRig') }}</span>
+            <nc-help-dot [text]="t('editor.net.testHelp')" />
+          </div>
+          @if (rig()) {
+            <button ncButton variant="secondary" class="w-full" (click)="rig.set(false)">
+              {{ t('editor.net.closeRig') }}
+            </button>
+            <div class="mt-1 rounded-sm border border-line bg-inset p-1">
+              <nc-game-screen
+                [game]="work.game"
+                [projectId]="work.id"
+                [autoJoin]="rigTarget()"
+                fit="width"
+                [autoPlay]="true"
+                [showFps]="false"
+                [transport]="false"
+              />
             </div>
-            @if (rig()) {
-              <button ncButton variant="secondary" class="w-full" (click)="rig.set(false)">
-                {{ t('editor.net.closeRig') }}
-              </button>
-              <div class="mt-1 rounded-sm border border-line bg-inset p-1">
-                <nc-game-screen
-                  [game]="work.game"
-                  [projectId]="work.id"
-                  [autoJoin]="rigTarget()"
-                  fit="width"
-                  [autoPlay]="true"
-                  [showFps]="false"
-                  [transport]="false"
-                />
-              </div>
-              <p class="mt-1 text-meta text-ink-4">
-                {{ rigJoined() ? t('editor.net.rigJoined') : t('editor.net.rigWaiting') }}
-              </p>
-            } @else {
-              <button
-                ncButton
-                variant="primary"
-                class="w-full"
-                (click)="spawn()"
-                [disabled]="!info()"
-              >
-                <nc-icon name="plus" [size]="12" />
-                {{ t('editor.net.spawn') }}
-              </button>
-              @if (!info()) {
-                <p class="mt-1 text-meta text-ink-4">{{ t('editor.net.needHost') }}</p>
-              }
+            <p class="mt-1 text-meta text-ink-4">
+              {{ rigJoined() ? t('editor.net.rigJoined') : t('editor.net.rigWaiting') }}
+            </p>
+          } @else {
+            <button
+              ncButton
+              variant="primary"
+              class="w-full"
+              (click)="spawn()"
+              [disabled]="!info()"
+            >
+              <nc-icon name="plus" [size]="12" />
+              {{ t('editor.net.spawn') }}
+            </button>
+            @if (!info()) {
+              <p class="mt-1 text-meta text-ink-4">{{ t('editor.net.needHost') }}</p>
             }
-            <div class="mt-1.5 grid gap-0.5">
-              <!-- Impairment belongs to the spawned client, not to us: degrading the host's own
+          }
+          <div class="mt-1.5 grid gap-0.5">
+            <!-- Impairment belongs to the spawned client, not to us: degrading the host's own
                  transport would slow every real player down instead of simulating one bad line. -->
-              <nc-slider
-                [label]="t('editor.net.latency')"
-                [max]="400"
-                [step]="10"
-                [value]="latency()"
-                [readout]="latency() + 'ms'"
-                [disabled]="!rig()"
-                accent="sky"
-                (valueChange)="setLatency($event)"
-              />
-              <nc-slider
-                [label]="t('editor.net.loss')"
-                [max]="30"
-                [value]="loss()"
-                [readout]="loss() + '%'"
-                [disabled]="!rig()"
-                accent="hot"
-                (valueChange)="setLoss($event)"
-              />
-            </div>
-          </section>
-        </aside>
-      </div>
+            <nc-slider
+              [label]="t('editor.net.latency')"
+              [max]="400"
+              [step]="10"
+              [value]="latency()"
+              [readout]="latency() + 'ms'"
+              [disabled]="!rig()"
+              accent="sky"
+              (valueChange)="setLatency($event)"
+            />
+            <nc-slider
+              [label]="t('editor.net.loss')"
+              [max]="30"
+              [value]="loss()"
+              [readout]="loss() + '%'"
+              [disabled]="!rig()"
+              accent="hot"
+              (valueChange)="setLoss($event)"
+            />
+          </div>
+        </section>
+      </nc-panel-column>
     </div>
   `,
   host: { class: 'block h-full' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NetTabPage {
+  protected readonly PANEL_WIDTH = PANEL_WIDTH;
   protected readonly work = inject(WorkSessionService);
   private readonly runtime = inject(EditorRuntimeService);
   private readonly auth = inject(AuthStore);
