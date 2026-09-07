@@ -232,16 +232,19 @@ const SUMMARY_MAX = 80;
                 (valueChange)="setMonetization($event)"
                 label="Monetization"
               />
-              <nc-field
-                [label]="t('editor.game.price')"
-                for="g-price"
-                class="mt-1"
+              <!-- Label and control on one line, like every other key and value in this column.
+                   Stacked, a field with one short number under a one-word label spent two rows on
+                   what the rows around it say in one. -->
+              <div
+                class="mt-1 flex items-center justify-between gap-1.75"
                 [class.opacity-40]="monetization() !== 'PAID'"
               >
+                <label class="label text-ink-3" for="g-price">{{ t('editor.game.price') }}</label>
                 @if (monetization() === 'PAID') {
                   <input
                     ncInput
                     id="g-price"
+                    class="w-[96px]"
                     type="number"
                     min="0"
                     step="0.5"
@@ -249,11 +252,9 @@ const SUMMARY_MAX = 80;
                     (ngModelChange)="setPrice($event)"
                   />
                 } @else {
-                  <div class="flex justify-end">
-                    <nc-readout size="sm" value="–" class="w-[64px]" />
-                  </div>
+                  <nc-readout size="sm" value="–" class="w-[64px]" />
                 }
-              </nc-field>
+              </div>
             </nc-section>
             <nc-section [title]="t('editor.game.inSession')">
               <span actions class="label text-ink-4">{{ session.collaborators().length }}</span>
