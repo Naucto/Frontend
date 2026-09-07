@@ -352,6 +352,34 @@ test.describe('editor', () => {
     await expect(onion).toBeVisible();
   });
 
+  /**
+   * The content is laid out from its own origin and scales about it, so leaving the scroll offsets
+   * alone makes the top-left the one fixed point — the part you were looking at is the part that
+   * leaves. Read as a fraction of the content, which is the thing that changes size.
+   */
+  test('zooming the sheet keeps what was in the middle', async ({ page }) => {
+    await page.goto('/edit/7/art');
+    const well = page.locator('nc-sprite-canvas');
+    await expect(page.getByRole('img', { name: 'Sprite canvas' })).toBeVisible();
+
+    // Far enough in that the sheet overflows the well, and away from the middle so holding it means
+    // something.
+    for (let i = 0; i < 5; i++) await page.getByRole('button', { name: 'Zoom in' }).click();
+    await well.evaluate((el) => {
+      el.scrollLeft = el.scrollWidth * 0.7;
+      el.scrollTop = el.scrollHeight * 0.7;
+    });
+
+    const middle = async (): Promise<number> =>
+      well.evaluate((el) =>
+        Math.round(((el.scrollLeft + el.clientWidth / 2) / el.scrollWidth) * 100),
+      );
+    const before = await middle();
+    await page.getByRole('button', { name: 'Zoom in' }).click();
+
+    await expect.poll(middle).toBe(before);
+  });
+
   test('the sheet map follows a zoom, not only a scroll', async ({ page }) => {
     await page.goto('/edit/7/art');
     await expect(page.getByRole('img', { name: 'Sprite canvas' })).toBeVisible();

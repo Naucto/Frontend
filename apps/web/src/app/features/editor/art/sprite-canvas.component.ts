@@ -163,6 +163,7 @@ export class SpriteCanvasComponent {
   }
 
   setZoom(scale: number): void {
+    this.holdCentre();
     this.userScale.set(Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, scale)));
   }
 
@@ -178,14 +179,40 @@ export class SpriteCanvasComponent {
 
   /** Back to fitting the sheet, and back to following it when the panel resizes. */
   resetZoom(): void {
+    this.holdCentre();
     this.userScale.set(null);
   }
 
-  /** Zoom rather than scroll: moving this surface is the middle button's, not the wheel's. */
+  /**
+   * Remembers what is in the middle of the well, so the next draw can put it back there.
+   *
+   * The content is laid out from its own origin and scales about it, so leaving the scroll offsets
+   * alone makes the top-left corner the one fixed point: zooming in walks the view off towards it,
+   * and the part you were looking at is the part that leaves. Taken here rather than after, because
+   * it has to be read at the scale it was seen at.
+   */
+  private holdCentre(): void {
+    const el = this.host.nativeElement;
+    const s = this.scale();
+    this.centre = {
+      x: (el.scrollLeft + el.clientWidth / 2) / s,
+      y: (el.scrollTop + el.clientHeight / 2) / s,
+    };
+  }
+
+  /**
+   * The wheel scrolls, as it does everywhere else; zooming asks for the modifier the browser
+   * already reserves for it. A surface this size is moved far more often than it is scaled, and
+   * taking the plain wheel for the rarer of the two costs the commoner one its usual gesture.
+   */
   protected onWheel(e: WheelEvent): void {
+    if (!e.ctrlKey && !e.metaKey) return;
     e.preventDefault();
     this.zoomBy(e.deltaY < 0 ? 1 : -1);
   }
+
+  /** Content point to put back in the middle, once a new scale has resized the content. */
+  private centre: { x: number; y: number } | null = null;
 
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
   private readonly wrap = viewChild.required<ElementRef<HTMLElement>>('wrap');
@@ -643,8 +670,15 @@ export class SpriteCanvasComponent {
       ctx.lineWidth = 1;
     }
 
-    // Measured against the content, so it can only be taken once the content has its size — and
-    // taken here rather than on scrolling alone, because a zoom moves the view without moving it.
+    // Both of these are measured against the content, so they can only run once the content has
+    // its size, which the lines above are what give it.
+    const centre = this.centre;
+    if (centre) {
+      this.centre = null;
+      const well = this.host.nativeElement;
+      well.scrollLeft = centre.x * scale - well.clientWidth / 2;
+      well.scrollTop = centre.y * scale - well.clientHeight / 2;
+    }
     this.measure();
   }
 }
