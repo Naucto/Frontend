@@ -8,6 +8,7 @@ import {
   type LikeResponseDto,
   projectControllerFork,
   projectControllerGetLikeStatus,
+  projectControllerGetProjectImage,
   projectControllerGetPublishedProjectImage,
   projectControllerGetRelease,
   projectControllerGetReleaseContentUrl,
@@ -169,6 +170,29 @@ export function injectReleaseImage(id: () => number | null): CreateQueryResult<s
       const current = id();
       if (current === null) return null;
       const res = await projectControllerGetPublishedProjectImage({ path: { id: current } });
+      if (!(res.response?.ok ?? false)) return null;
+      const data = res.data as { url?: string } | undefined;
+      return data?.url ?? null;
+    },
+  }));
+}
+
+/**
+ * Cover of a project at any stage, which is what a draft has: its release twin answers only for a
+ * game that has been published, so a card built on that one shows the empty hatch for the whole of
+ * a project's life until it ships.
+ *
+ * Authenticated, so it is for a reader looking at their own work rather than for the shelves.
+ */
+export function injectProjectImage(id: () => number | null): CreateQueryResult<string | null> {
+  return injectQuery(() => ({
+    queryKey: qk.projectImage(id() ?? -1),
+    enabled: id() !== null,
+    staleTime: 10 * 60 * 1000,
+    queryFn: async () => {
+      const current = id();
+      if (current === null) return null;
+      const res = await projectControllerGetProjectImage({ path: { id: current } });
       if (!(res.response?.ok ?? false)) return null;
       const data = res.data as { url?: string } | undefined;
       return data?.url ?? null;

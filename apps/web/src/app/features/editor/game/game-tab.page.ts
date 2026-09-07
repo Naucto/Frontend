@@ -6,11 +6,10 @@ import { Router } from '@angular/router';
 import { unwrap } from '@app/core/api/api-errors';
 import { RuntimeHostService } from '@app/shared/game-screen/runtime-host.service';
 import { qk } from '@app/shared/queries/query-keys';
-import { injectRelease } from '@app/shared/queries/releases.queries';
+import { injectProjectImage, injectRelease } from '@app/shared/queries/releases.queries';
 import { yTextField } from '@app/shared/yjs/y-signal';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import {
-  projectControllerGetProjectImage,
   projectControllerRemove,
   projectControllerUpdate,
   projectControllerUploadProjectImage,
@@ -34,7 +33,7 @@ import {
   TagInputComponent,
   ToastService,
 } from '@naucto/ui';
-import { injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
+import { QueryClient } from '@tanstack/angular-query-experimental';
 import * as Y from 'yjs';
 
 import { PANEL_WIDTH } from '../state/editor-ui.store';
@@ -363,14 +362,7 @@ export class GameTabPage implements OnInit {
   /** The game this one was forked from, so the lineage can name it rather than number it. */
   protected readonly parent = injectRelease(() => this.session.project()?.forkedFromId ?? 0);
 
-  protected readonly cover = injectQuery(() => ({
-    queryKey: qk.projectImage(this.session.id),
-    queryFn: async () => {
-      const res = await projectControllerGetProjectImage({ path: { id: this.session.id } });
-      const data = res.data as { url?: string } | undefined;
-      return res.response?.status === 200 ? (data?.url ?? null) : null;
-    },
-  }));
+  protected readonly cover = injectProjectImage(() => this.session.id);
 
   ngOnInit(): void {
     const p = this.session.project();

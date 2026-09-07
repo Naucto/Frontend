@@ -21,6 +21,7 @@ import { GameCoverComponent } from './game-cover.component';
         <nc-game-cover
           class="h-full w-full"
           [releaseId]="draft() ? null : game().id"
+          [projectId]="draft() ? game().id : null"
           [alt]="game().name"
           [label]="dense() ? undefined : 'No cover yet'"
           [iconSize]="dense() ? 12 : 48"
