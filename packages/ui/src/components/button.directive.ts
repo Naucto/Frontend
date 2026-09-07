@@ -18,15 +18,11 @@ const DISABLED =
   'disabled:hover:brightness-100';
 
 /**
- * Nothing fades.
+ * No transition here.
  *
- * A class binding is applied one class at a time, so for part of a frame the element holds some of
- * its colours and not the rest. That single frame is imperceptible on its own; a transition stretches
- * whichever colour landed last into a tenth of a second of the wrong one. Narrowing it to the text
- * only moved which colour flickered.
- *
- * Nothing is lost: this design is drawn in whole pixels, and a state that eases into existence was
- * never part of it.
+ * A class binding lands one class at a time, so for part of a frame the element holds some of its
+ * colours and not the rest. That frame is imperceptible on its own; a transition stretches whichever
+ * colour arrived last into a visible flash of the wrong one.
  */
 const BASE =
   'inline-flex cursor-pointer items-center justify-center gap-1 select-none whitespace-nowrap rounded-sm border font-ui uppercase tracking-button ' +
