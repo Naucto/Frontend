@@ -52,11 +52,15 @@ interface Drag {
     <div class="flex" [style.width.px]="width()" [style.height.px]="height()">
       <nc-piano-keys [style.width.px]="KEY_W" (pressed)="playKey($event)" />
       <div class="relative">
+        <!-- Sized in device pixels and shown at CSS ones: this canvas is drawn, not sampled, so at
+             any zoom but a whole one an upscaled backing store turns its ruler into mush. -->
         <canvas
           #canvas
-          class="pixelated block cursor-crosshair touch-none"
-          [width]="width()"
-          [height]="height()"
+          class="block cursor-crosshair touch-none"
+          [width]="width() * dpr()"
+          [height]="height() * dpr()"
+          [style.width.px]="width()"
+          [style.height.px]="height()"
           role="img"
           [attr.aria-label]="label()"
           (pointerdown)="onDown($event)"
@@ -162,6 +166,21 @@ export class PianoRollComponent {
       ro.disconnect();
       cancelAnimationFrame(this.raf);
     });
+    // A page zoom is the only thing that changes this, and it fires once per change: the query is
+    // rebuilt each time because it only ever matches the ratio it was made with.
+    const watchDpr = (): void => {
+      const m = window.matchMedia(`(resolution: ${String(window.devicePixelRatio)}dppx)`);
+      m.addEventListener(
+        'change',
+        () => {
+          this.dpr.set(window.devicePixelRatio);
+          watchDpr();
+        },
+        { once: true },
+      );
+    };
+    if (typeof window !== 'undefined') watchDpr();
+
     effect(() => {
       this.pattern();
       this.instruments();
@@ -173,6 +192,7 @@ export class PianoRollComponent {
       this.hoverCell();
       this.scrollX();
       this.scrollY();
+      this.dpr();
       untracked(() => {
         this.requestRedraw();
       });
@@ -222,6 +242,13 @@ export class PianoRollComponent {
     if (!div) return 0;
     return Math.max(0.125, this.pattern().stepsPerBeat / div);
   }
+
+  /**
+   * Device pixels per CSS pixel, tracked rather than read once: it changes when the page is zoomed
+   * or the window moves to another screen, and a canvas that missed the change draws at the wrong
+   * resolution until something else happens to redraw it.
+   */
+  protected readonly dpr = signal(typeof window === 'undefined' ? 1 : window.devicePixelRatio);
 
   private snapStep(s: number): number {
     const unit = this.snapUnit();
@@ -356,6 +383,7 @@ export class PianoRollComponent {
     const el = this.canvas().nativeElement;
     const ctx = el.getContext('2d');
     if (!ctx) return;
+    ctx.setTransform(this.dpr(), 0, 0, this.dpr(), 0, 0);
     const p = this.pattern();
     const sw = this.stepW();
     const w = this.width();
@@ -394,14 +422,27 @@ export class PianoRollComponent {
     }
     ctx.stroke();
 
-    // Past the pattern's last step the grid is still there to be drawn on, dimmed so the end of
-    // what the pattern currently holds stays legible, and closed by a rule.
+    // Past the pattern's last step, the same hatch a game with no cover wears: a dim wash reads as
+    // shadow, and shadow reads as something you could still draw on. A hatch reads as "not a
+    // surface", which is what this is until the pattern is lengthened to reach it.
     const endX = p.steps * sw;
     if (endX < w) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(endX, RULER_H, w - endX, h - RULER_H);
+      ctx.clip();
       ctx.fillStyle = cssVar(el, '--nc-page');
-      ctx.globalAlpha = 0.55;
       ctx.fillRect(endX, RULER_H, w - endX, h - RULER_H);
-      ctx.globalAlpha = 1;
+      ctx.strokeStyle = cssVar(el, '--nc-line');
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      for (let x = endX - h; x < w + h; x += 12) {
+        ctx.moveTo(x, h);
+        ctx.lineTo(x + h, 0);
+      }
+      ctx.stroke();
+      ctx.restore();
+      ctx.lineWidth = 1;
       ctx.strokeStyle = cssVar(el, '--nc-line-strong');
       ctx.beginPath();
       ctx.moveTo(endX + 0.5, RULER_H);
@@ -435,16 +476,12 @@ export class PianoRollComponent {
     for (let s = 0; s < p.steps; s += p.stepsPerBeat)
       ctx.fillText(String(s / p.stepsPerBeat + 1), s * sw + 4, sy + RULER_H / 2);
 
-    // The end, named on the ruler: the wash below says where the pattern stops, not what it stops
-    // at, and a length is worth reading where you are working rather than only in a header.
+    // The length, written just past the end rather than just before it: inside the pattern it reads
+    // as a mark on the last bar, outside it labels the ground it names.
     const end = p.steps * sw;
     if (end < w) {
-      const text = `${String(p.steps)} STEPS`;
-      const chipW = ctx.measureText(text).width + 10;
-      ctx.fillStyle = cssVar(el, '--nc-line-strong');
-      ctx.fillRect(end - chipW, sy, chipW, RULER_H);
-      ctx.fillStyle = cssVar(el, '--nc-ink-2');
-      ctx.fillText(text, end - chipW + 5, sy + RULER_H / 2);
+      ctx.fillStyle = cssVar(el, '--nc-ink-3');
+      ctx.fillText(`${String(p.steps)} STEPS`, end + 6, sy + RULER_H / 2);
     }
 
     // Hover cell.
