@@ -209,8 +209,8 @@ export class SpriteCanvasComponent {
       h: r.h * SPRITE_SIZE,
     };
   });
-  // Cropped, a stroke is confined whatever the lock says: the sheet outside the region is not on
-  // screen, and a drag that leaves the canvas would otherwise still reach it.
+  // A drag that leaves the canvas still lands on the sheet, so cropping has to confine the tools
+  // as well as the view. The smaller canvas alone does not.
   private readonly bounds = computed(() => toolBounds(this.region(), this.clip() || this.crop()));
   protected readonly marks = computed<PresenceMark[]>(() => {
     const s = this.scale();
