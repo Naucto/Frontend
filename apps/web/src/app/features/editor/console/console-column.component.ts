@@ -91,8 +91,11 @@ const PIP_WIDTH = 304;
             </button>
           </div>
         }
+        <!-- No inset while it is docked: the screen is the column's own content, and a gutter
+             around it read as a second rule a pixel inside the column's. Floating, it is a window
+             of its own and keeps its frame. -->
         <div
-          [class]="popped() ? 'nc-pip' : 'p-1.5'"
+          [class]="popped() ? 'nc-pip' : ''"
           [style.left.px]="pip()?.x ?? null"
           [style.top.px]="pip()?.y ?? null"
           [style.right]="pip() ? 'auto' : null"
