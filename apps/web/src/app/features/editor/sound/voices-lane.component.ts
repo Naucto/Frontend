@@ -1,16 +1,4 @@
-import type { ElementRef } from '@angular/core';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  DestroyRef,
-  effect,
-  inject,
-  input,
-  untracked,
-  viewChild,
-} from '@angular/core';
-import { cssVar } from '@app/shared/pixel/pixel-tools';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { type Instrument, type Note, type Pattern, VOICES } from '@naucto/engine';
 
 import { KEY_W, MAX_STEPS } from './piano-roll.component';
@@ -18,6 +6,7 @@ import { KEY_W, MAX_STEPS } from './piano-roll.component';
 const RULER_H = 16;
 /** 118px of lane in the design; the voice rows share what is left under the ruler. */
 export const LANE_TOTAL_H = 118;
+const LANE_H = (LANE_TOTAL_H - RULER_H) / VOICES;
 
 /** Which of the five voices each note lands on, the way the synth allocates them. */
 export function allocateVoices(notes: readonly Note[]): { note: Note; voice: number }[] {
@@ -32,18 +21,67 @@ export function allocateVoices(notes: readonly Note[]): { note: Note; voice: num
   return out;
 }
 
-/** VOICES lane under the piano roll: five rows, one bar per note in its voice. */
+interface Bar {
+  key: string;
+  left: number;
+  top: number;
+  width: number;
+  colour: string;
+}
+
+/**
+ * VOICES lane under the piano roll: five rows, one bar per note in its voice.
+ *
+ * Laid out in the document rather than drawn, unlike the roll above it. The roll has a mark on
+ * every step and a note on every pitch, which is more elements than a document wants to hold; this
+ * has five rows and one bar per note. Left to the browser it stays sharp at any zoom and follows a
+ * change of theme on its own, both of which a canvas has to be told about.
+ */
 @Component({
   selector: 'nc-voices-lane',
   template: `
-    <canvas
-      #canvas
-      class="pixelated block"
-      [width]="width()"
-      [height]="height"
-      role="img"
-      [attr.aria-label]="label()"
-    ></canvas>
+    <div class="relative flex" [style.height.px]="height">
+      <div class="sticky left-0 z-10 shrink-0 bg-panel" [style.width.px]="KEY_W">
+        <div
+          class="font-mono text-[10px] leading-none text-ink-4"
+          [style.height.px]="RULER_H"
+          [style.padding-left.px]="4"
+          [style.padding-top.px]="3"
+        >
+          VOICES
+        </div>
+        @for (v of voices(); track v.index) {
+          <div
+            class="flex items-center font-mono text-[10px] leading-none"
+            [class]="v.active ? 'text-jade-ink' : 'text-ink-4'"
+            [style.height.px]="LANE_H"
+            [style.padding-left.px]="4"
+          >
+            V{{ v.index + 1 }}
+          </div>
+        }
+      </div>
+      <div
+        class="relative shrink-0"
+        [style.width.px]="trackWidth()"
+        role="img"
+        [attr.aria-label]="label()"
+      >
+        @for (b of bars(); track b.key) {
+          <div
+            class="absolute"
+            [style.left.px]="b.left"
+            [style.top.px]="b.top"
+            [style.width.px]="b.width"
+            [style.height.px]="LANE_H - 4"
+            [style.background]="b.colour"
+          ></div>
+        }
+        @if (playheadX(); as x) {
+          <div class="absolute top-0 bottom-0 w-px bg-hot" [style.left.px]="x - 1"></div>
+        }
+      </div>
+    </div>
   `,
   // No vertical overflow here, so height this strip loses is height it cuts. It keeps its own and
   // leaves the squeeze to whatever it is stacked against.
@@ -59,65 +97,38 @@ export class VoicesLaneComponent {
   readonly playhead = input<number | null>(null);
   readonly active = input<readonly boolean[]>([]);
   readonly label = input('Voices');
+
   protected readonly height = LANE_TOTAL_H;
-  private readonly laneH = (LANE_TOTAL_H - RULER_H) / VOICES;
+  protected readonly KEY_W = KEY_W;
+  protected readonly RULER_H = RULER_H;
+  protected readonly LANE_H = LANE_H;
+
   /** The roll's whole placeable grid, so a voice lines up with the note that lit it. */
-  protected readonly width = computed(() => KEY_W + MAX_STEPS * this.stepWidth());
-  private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
-  private raf = 0;
+  protected readonly trackWidth = computed(() => MAX_STEPS * this.stepWidth());
 
-  constructor() {
-    inject(DestroyRef).onDestroy(() => {
-      cancelAnimationFrame(this.raf);
-    });
-    effect(() => {
-      this.pattern();
-      this.instruments();
-      this.palette();
-      this.stepWidth();
-      this.playhead();
-      this.active();
-      untracked(() => {
-        cancelAnimationFrame(this.raf);
-        this.raf = requestAnimationFrame(() => {
-          this.draw();
-        });
-      });
-    });
-  }
+  protected readonly voices = computed(() =>
+    Array.from({ length: VOICES }, (_, index) => ({
+      index,
+      active: this.active()[index] ?? false,
+    })),
+  );
 
-  private draw(): void {
-    const el = this.canvas().nativeElement;
-    const ctx = el.getContext('2d');
-    if (!ctx) return;
+  protected readonly bars = computed<Bar[]>(() => {
     const sw = this.stepWidth();
-    const w = this.width();
-    ctx.fillStyle = cssVar(el, '--nc-panel');
-    ctx.fillRect(0, 0, w, this.height);
-    ctx.font = `10px ${cssVar(el, '--font-mono')}`;
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = cssVar(el, '--nc-ink-4');
-    ctx.fillText('VOICES', 4, 8);
-    const active = this.active();
-    for (let v = 0; v < VOICES; v++) {
-      ctx.fillStyle = active[v] ? cssVar(el, '--nc-jade-ink') : cssVar(el, '--nc-ink-4');
-      ctx.fillText(`V${String(v + 1)}`, 4, RULER_H + v * this.laneH + this.laneH / 2);
-    }
     const pal = this.palette();
     const insts = this.instruments();
-    for (const { note, voice } of allocateVoices(this.pattern().notes)) {
-      ctx.fillStyle = pal[insts.get(note.instrument)?.colour ?? 4] ?? '#fff';
-      ctx.fillRect(
-        KEY_W + note.step * sw,
-        RULER_H + voice * this.laneH + 2,
-        Math.max(2, note.length * sw - 1),
-        this.laneH - 4,
-      );
-    }
+    return allocateVoices(this.pattern().notes).map(({ note, voice }, i) => ({
+      key: `${String(i)}:${String(note.step)}:${String(note.pitch)}`,
+      left: note.step * sw,
+      top: RULER_H + voice * LANE_H + 2,
+      width: Math.max(2, note.length * sw - 1),
+      colour: pal[insts.get(note.instrument)?.colour ?? 4] ?? pal[0] ?? 'transparent',
+    }));
+  });
+
+  /** Null while stopped, and never 0 — a falsy left edge would read as "no playhead". */
+  protected readonly playheadX = computed(() => {
     const ph = this.playhead();
-    if (ph !== null) {
-      ctx.fillStyle = cssVar(el, '--nc-hot');
-      ctx.fillRect(Math.floor(KEY_W + ph * sw), 0, 1, this.height);
-    }
-  }
+    return ph === null ? null : Math.floor(ph * this.stepWidth()) + 1;
+  });
 }

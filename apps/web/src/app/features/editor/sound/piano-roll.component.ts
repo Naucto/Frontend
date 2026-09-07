@@ -12,6 +12,7 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
+import { ThemeService } from '@app/core/theme/theme.service';
 import { cssVar } from '@app/shared/pixel/pixel-tools';
 import { type Instrument, type Note, type Pattern, SUBSTEPS } from '@naucto/engine';
 import { PresenceLayerComponent, type PresenceMark, type PresenceViewport } from '@naucto/ui';
@@ -115,6 +116,13 @@ export class PianoRollComponent {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly working = signal<Note[] | null>(null);
   private readonly hoverCell = signal<{ step: number; pitch: number } | null>(null);
+  /**
+   * Device pixels per CSS pixel, followed rather than read once. It changes on a page zoom and on a
+   * move to another screen, and a canvas that missed the change goes on drawing at the old
+   * resolution until something unrelated happens to redraw it.
+   */
+  protected readonly dpr = signal(typeof window === 'undefined' ? 1 : window.devicePixelRatio);
+  private readonly theme = inject(ThemeService);
   private drag: Drag | null = null;
   private raf = 0;
 
@@ -198,6 +206,7 @@ export class PianoRollComponent {
       this.pattern();
       this.hostBox();
       this.snap();
+      this.theme.effective();
       this.instruments();
       this.palette();
       this.instrumentId();
@@ -239,7 +248,7 @@ export class PianoRollComponent {
   /** Where a note dropped at `step` would start, and how long it would come out. */
   private newNote(step: number): { step: number; length: number } {
     const unit = this.snapUnit();
-    const length = unit || 1;
+    const length = unit || 1 / SUBSTEPS;
     // Floored, not rounded to the nearest line: a note starts in the cell you clicked, and at a
     // coarse grain the nearest line can be a whole bar away. Free placement has no cell to start
     // in, so there it follows the pointer onto the finest position that will sound.
@@ -271,13 +280,6 @@ export class PianoRollComponent {
     if (!div) return 0;
     return Math.max(1 / SUBSTEPS, (4 * this.pattern().stepsPerBeat) / div);
   }
-
-  /**
-   * Device pixels per CSS pixel, followed rather than read once. It changes on a page zoom and on a
-   * move to another screen, and a canvas that missed the change goes on drawing at the old
-   * resolution until something unrelated happens to redraw it.
-   */
-  protected readonly dpr = signal(typeof window === 'undefined' ? 1 : window.devicePixelRatio);
 
   private snapStep(s: number): number {
     const unit = this.snapUnit();
@@ -362,8 +364,8 @@ export class PianoRollComponent {
       case 'create':
       case 'resize': {
         const end = Math.max(
-          o.step + (this.snapUnit() || 1),
-          this.snapStep(step) + (this.snapUnit() || 1),
+          o.step + (this.snapUnit() || 1 / SUBSTEPS),
+          this.snapStep(step) + (this.snapUnit() || 1 / SUBSTEPS),
         );
         n = { ...o, length: Math.min(max - o.step, end - o.step) };
         break;
@@ -514,7 +516,7 @@ export class PianoRollComponent {
       ctx.strokeRect(
         hv.step * sw + 0.5,
         RULER_H + (PITCH_MAX - hv.pitch) * ROW_H + 0.5,
-        (this.snapUnit() || 1) * sw - 1,
+        (this.snapUnit() || 1 / SUBSTEPS) * sw - 1,
         ROW_H - 1,
       );
     }
