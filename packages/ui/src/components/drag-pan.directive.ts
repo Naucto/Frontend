@@ -11,6 +11,7 @@ import { Directive, ElementRef, inject } from '@angular/core';
 @Directive({
   selector: '[ncDragPan]',
   host: {
+    '[class.cursor-grabbing]': 'from !== null',
     '(pointerdown)': 'onDown($event)',
     '(pointermove)': 'onMove($event)',
     '(pointerup)': 'onUp($event)',
@@ -19,7 +20,7 @@ import { Directive, ElementRef, inject } from '@angular/core';
 })
 export class DragPanDirective {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
-  private from: { x: number; y: number; left: number; top: number } | null = null;
+  protected from: { x: number; y: number; left: number; top: number } | null = null;
 
   protected onDown(e: PointerEvent): void {
     if (e.button !== 1) return;

@@ -202,14 +202,18 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
             <nc-icon name="grid" [size]="12" />
             {{ t('editor.art.grid') }}
           </nc-toggle-button>
-          <nc-toggle-button
-            class="shrink-0"
-            [checked]="art.onion()"
-            (checkedChange)="art.setOnion($event)"
-          >
-            <nc-icon name="duplicate" [size]="12" />
-            {{ t('editor.art.onion') }}
-          </nc-toggle-button>
+          <!-- Only where the sheet is cropped away. Uncropped, the previous frame is already on
+               screen beside this one, and ghosting a copy of it underneath says nothing. -->
+          @if (art.crop()) {
+            <nc-toggle-button
+              class="shrink-0"
+              [checked]="art.onion()"
+              (checkedChange)="art.setOnion($event)"
+            >
+              <nc-icon name="duplicate" [size]="12" />
+              {{ t('editor.art.onion') }}
+            </nc-toggle-button>
+          }
           <span class="flex-1"></span>
           <button
             ncButton

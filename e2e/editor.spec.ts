@@ -337,6 +337,21 @@ test.describe('editor', () => {
    * answers to zoom, the region it also draws being unchanged by it, so a difference here is the
    * frame or nothing.
    */
+  /**
+   * Onion ghosts the frame before this one underneath it. Uncropped, that frame is already on
+   * screen beside the current one, so the control has nothing to offer and is not drawn.
+   */
+  test('ONION is offered only where the sheet is cropped away', async ({ page }) => {
+    await page.goto('/edit/7/art');
+    await expect(page.getByRole('img', { name: 'Sprite canvas' })).toBeVisible();
+
+    const onion = page.getByRole('switch', { name: /Onion/ });
+    await expect(onion).toHaveCount(0);
+
+    await page.getByRole('switch', { name: /Crop/ }).click();
+    await expect(onion).toBeVisible();
+  });
+
   test('the sheet map follows a zoom, not only a scroll', async ({ page }) => {
     await page.goto('/edit/7/art');
     await expect(page.getByRole('img', { name: 'Sprite canvas' })).toBeVisible();

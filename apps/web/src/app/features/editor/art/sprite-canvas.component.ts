@@ -166,6 +166,16 @@ export class SpriteCanvasComponent {
     this.userScale.set(Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, scale)));
   }
 
+  /** Scrolls so the given sheet cell is centred. */
+  scrollToCell(x: number, y: number): void {
+    const el = this.host.nativeElement;
+    const s = this.scale();
+    el.scrollTo({
+      left: (x + 0.5) * SPRITE_SIZE * s - el.clientWidth / 2,
+      top: (y + 0.5) * SPRITE_SIZE * s - el.clientHeight / 2,
+    });
+  }
+
   /** Back to fitting the sheet, and back to following it when the panel resizes. */
   resetZoom(): void {
     this.userScale.set(null);
@@ -538,10 +548,11 @@ export class SpriteCanvasComponent {
 
     const sheet = this.painter().canvas;
     const r = this.regionPx();
-    if (this.onion() && r.x >= SPRITE_SIZE) {
-      // The cell before the region, ghosted underneath it — an animation's previous frame.
+    if (this.onion() && r.x >= r.w) {
+      // The frame before this one, ghosted underneath it — a step of the region's own width, since
+      // an animation drawn two cells wide has its previous frame two cells back.
       ctx.globalAlpha = 0.3;
-      ctx.drawImage(sheet, r.x - SPRITE_SIZE, r.y, r.w, r.h, r.x * s, r.y * s, r.w * s, r.h * s);
+      ctx.drawImage(sheet, r.x - r.w, r.y, r.w, r.h, r.x * s, r.y * s, r.w * s, r.h * s);
       ctx.globalAlpha = 1;
     }
     const lifted = this.drag?.lifted;
