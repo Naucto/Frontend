@@ -207,7 +207,9 @@ const SUMMARY_MAX = 80;
                 (valueChange)="setStatus($event)"
                 label="Status"
               />
-              <div class="mt-1 flex justify-between text-label text-ink-3">
+              <div
+                class="mt-1 flex justify-between font-mono text-micro tracking-wide uppercase text-ink-3"
+              >
                 <span>{{ t('editor.game.published') }}</span>
                 <span>
                   {{
@@ -285,11 +287,14 @@ const SUMMARY_MAX = 80;
                 <div class="flex items-center gap-0.5 text-body text-ink-2">
                   <nc-icon name="git-branch" [size]="12" />
                   {{ t('editor.game.forkedFrom') }}
-                  <a [href]="'/play/' + from" class="text-gold-ink">#{{ from }}</a>
+                  <a [href]="'/play/' + from" class="text-sky-ink">#{{ from }}</a>
                 </div>
               }
+              <!-- Not the branch mark: that one says this game came off another, and this line says
+                   the opposite — others took copies of it. One glyph for both directions made the
+                   two rows read as one statement. -->
               <div class="flex items-center gap-0.5 text-body text-ink-2">
-                <nc-icon name="git-branch" [size]="12" />
+                <nc-icon name="duplicate" [size]="12" />
                 {{ t('editor.game.remixedBy', { n: session.project()?.forkCount ?? 0 }) }}
               </div>
               @if (!session.project()?.publishedAt) {
