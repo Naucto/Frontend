@@ -4,6 +4,7 @@ import {
   computed,
   effect,
   inject,
+  input,
   signal,
   untracked,
   viewChild,
@@ -12,13 +13,13 @@ import { GameScreenComponent } from '@app/shared/game-screen/game-screen.compone
 import { TranslocoDirective } from '@jsverse/transloco';
 import {
   ButtonDirective,
+  EdgeHandleComponent,
   IconComponent,
   LcdComponent,
   TabsComponent,
   ToggleComponent,
 } from '@naucto/ui';
 
-import { DocPaneComponent } from '../docs/doc-pane.component';
 import { EditorRuntimeService } from '../state/editor-runtime.service';
 import { CONSOLE_WIDTH, EditorUiStore } from '../state/editor-ui.store';
 import { WorkSessionService } from '../work-session/work-session.service';
@@ -31,6 +32,7 @@ const PIP_WIDTH = 304;
 @Component({
   selector: 'nc-console-column',
   imports: [
+    EdgeHandleComponent,
     TranslocoDirective,
     ButtonDirective,
     IconComponent,
@@ -38,25 +40,19 @@ const PIP_WIDTH = 304;
     TabsComponent,
     ToggleComponent,
     GameScreenComponent,
-    DocPaneComponent,
   ],
   template: `
     <div *transloco="let t" class="relative flex h-full flex-col bg-panel">
       <!-- No resize strip: the console is a fixed 421 track, like the reference beside it and
            every tab inspector. -->
-      @if (docked() && ui.columnMode() !== 'swap') {
-        <button
-          type="button"
-          class="absolute top-1/2 -left-1 z-20 flex h-[52px] w-2 -translate-y-1/2 items-center justify-center rounded-[8px] border border-line-strong bg-raised text-ink-2 hover:text-ink"
-          [attr.aria-label]="
-            ui.collapsed() ? t('editor.expandConsole') : t('editor.collapseConsole')
-          "
-          (click)="ui.toggleCollapsed()"
-        >
-          <nc-icon [name]="ui.collapsed() ? 'prev' : 'next'" [size]="12" />
-        </button>
+      @if (shown()) {
+        <nc-edge-handle
+          [icon]="ui.collapsed() ? 'prev' : 'next'"
+          [label]="ui.collapsed() ? t('editor.expandConsole') : t('editor.collapseConsole')"
+          (pressed)="ui.toggleCollapsed()"
+        />
       }
-      @if (docked() && !ui.collapsed() && ui.columnMode() !== 'swap' && popped()) {
+      @if (shown() && !ui.collapsed() && popped()) {
         <!-- The slot the viewer left behind says where it went, and holds its shape while it is
              away: at the viewer's own 16:9 the column keeps the same height whether the picture is
              docked or floating, so popping it out and back does not shove the console up and down
@@ -150,9 +146,8 @@ const PIP_WIDTH = 304;
           </nc-game-screen>
         </div>
       </div>
-      @if (docked() && !ui.collapsed()) {
+      @if (shown() && !ui.collapsed()) {
         <nc-tabs
-          [class.hidden]="ui.columnMode() === 'swap'"
           [tabs]="tabs()"
           [value]="ui.consoleTab()"
           (valueChange)="setTab($event)"
@@ -172,20 +167,7 @@ const PIP_WIDTH = 304;
           }
         </nc-tabs>
         <div class="min-h-0 flex-1 overflow-hidden" [class.p-1.5]="ui.consoleTab() !== 'console'">
-          @if (ui.columnMode() === 'swap') {
-            <div class="flex h-full min-h-0 flex-col">
-              <nc-doc-pane class="min-h-0 flex-1 overflow-auto" />
-              <!-- The artboard puts this at the foot of the reference, in the swap arrangement
-                   only — the one case where the game really has been put away. -->
-              <div
-                class="flex shrink-0 items-center gap-1 border-t border-line bg-inset px-1.5 py-1"
-              >
-                <nc-icon name="pause" [size]="12" class="text-gold-ink" />
-                <span class="label text-gold-ink">{{ t('editor.gamePaused') }}</span>
-              </div>
-            </div>
-          }
-          @switch (ui.columnMode() === 'swap' ? '' : ui.consoleTab()) {
+          @switch (ui.consoleTab()) {
             @case ('console') {
               <nc-lcd variant="flush" class="h-full leading-[1.85] tracking-copy">
                 @for (l of lines(); track l.id) {
@@ -241,11 +223,8 @@ export class ConsoleColumnComponent {
   protected readonly ui = inject(EditorUiStore);
   /** The viewer floats over the editor instead of sitting in the column. */
   protected readonly popped = computed(() => this.ui.consoleMode() === 'pip' && this.ui.pipOpen());
-  /** Docked in a collapsed column, or standing in for the docs: either way there is nowhere to be. */
-  /** CODE's own sidebar, as every other tab has one — and the track the reference borrows. */
-  protected readonly docked = computed(
-    () => this.ui.activeTab() === 'code' || this.ui.columnMode() === 'swap',
-  );
+  /** Told rather than worked out: what shows in the track is the region's to decide, not a column's. */
+  readonly shown = input(true);
 
   protected readonly screenHidden = computed(
     () =>

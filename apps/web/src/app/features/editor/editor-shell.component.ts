@@ -25,7 +25,9 @@ import {
   ButtonDirective,
   DialogService,
   ErrorStateComponent,
+  IconComponent,
   LcdComponent,
+  PanelRegionComponent,
   RailComponent,
   type RailItem,
   ToastService,
@@ -43,6 +45,7 @@ import {
   CONSOLE_WIDTH,
   type EditorTab,
   EditorUiStore,
+  REFERENCE_SPLIT_BREAKPOINT,
   REFERENCE_WIDTH,
 } from './state/editor-ui.store';
 import { WorkSessionService } from './work-session/work-session.service';
@@ -72,7 +75,9 @@ const RAIL: RailItem<EditorTab>[] = [
     AvatarComponent,
     ButtonDirective,
     ErrorStateComponent,
+    IconComponent,
     LcdComponent,
+    PanelRegionComponent,
     RailComponent,
     AccountMenuComponent,
     NotificationsBellComponent,
@@ -128,7 +133,7 @@ const RAIL: RailItem<EditorTab>[] = [
 
       @switch (session.status()) {
         @case ('ready') {
-          <div [class]="gridClass()" [style.--console-w.px]="consoleWidth()">
+          <div class="grid min-h-0 grid-cols-[81px_minmax(0,1fr)_auto]">
             <nc-rail
               [items]="rail"
               [value]="ui.activeTab()"
@@ -136,18 +141,34 @@ const RAIL: RailItem<EditorTab>[] = [
               [label]="t('editor.tools')"
             />
             <section class="min-h-0 overflow-auto"><router-outlet /></section>
-            <!-- Wide enough, and the reference gets a column of its own rather than evicting the
-                 screen — "the screen is always on". Below that it takes the console's place, and
-                 the console column renders it there so the runtime is never torn down. -->
-            @if (ui.columnMode() === 'split') {
-              <nc-doc-pane
-                class="min-h-0 border-l border-line"
-                [style.width.px]="REFERENCE_WIDTH"
+            <nc-panel-region
+              [secondaryOpen]="ui.referenceOpen()"
+              [viewportWidth]="ui.viewportWidth()"
+              [splitAt]="REFERENCE_SPLIT_BREAKPOINT"
+              [primaryWidth]="consoleWidth()"
+              [secondaryWidth]="REFERENCE_WIDTH"
+            >
+              <div secondary class="flex min-h-0 flex-col border-l border-line">
+                <nc-doc-pane class="min-h-0 flex-1 overflow-auto" />
+                <!-- The artboard puts this at the foot of the reference, and only where the
+                     reference has taken the game's place — the one arrangement in which the game
+                     really has been put away. -->
+                @if (ui.columnMode() === 'swap') {
+                  <div
+                    class="flex shrink-0 items-center gap-1 border-t border-line bg-inset px-1.5 py-1"
+                  >
+                    <nc-icon name="pause" [size]="12" class="text-gold-ink" />
+                    <span class="label text-gold-ink">{{ t('editor.gamePaused') }}</span>
+                  </div>
+                }
+              </div>
+              <nc-console-column
+                primary
+                class="min-h-0"
+                [shown]="consoleShown()"
+                [class.border-l]="consoleShown()"
               />
-            }
-            <!-- Rendered on every tab even where its track is zero: unmounting it cold-starts the
-                 game, drops any netplay session, and takes the floating window with it. -->
-            <nc-console-column class="min-h-0" [class.border-l]="consoleWidth() > 0" />
+            </nc-panel-region>
           </div>
         }
         @case ('error') {
@@ -197,25 +218,24 @@ export class EditorShellComponent implements OnInit {
   private readonly toasts = inject(ToastService);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   protected readonly rail = RAIL;
-  /** 80px rail, the workspace, and the console column — which is present in every tab. */
-  /** The doc column only exists in split mode, so the template has to change with it. */
-  // The rail is 81 on the artboard, not 80, and the reference and console are fixed tracks —
-  // neither is draggable, any more than a tab inspector is.
-  // Spelled out, never interpolated: Tailwind generates utilities by scanning source text, so a
-  // class built at runtime is a class that does not exist — the columns silently stack.
-  protected readonly gridClass = computed(() =>
-    this.ui.columnMode() === 'split'
-      ? 'grid min-h-0 grid-cols-[81px_minmax(0,1fr)_401px_var(--console-w)]'
-      : 'grid min-h-0 grid-cols-[81px_minmax(0,1fr)_var(--console-w)]',
-  );
-
+  /** Wide in the swap too, because a track has to have a width for the reference to borrow it. */
   protected readonly consoleWidth = computed(() => {
-    if (this.ui.activeTab() !== 'code' && this.ui.columnMode() !== 'swap') return 0;
+    if (this.ui.columnMode() === 'swap') return CONSOLE_WIDTH;
+    if (this.ui.activeTab() !== 'code') return 0;
     return this.ui.collapsed() ? 12 : CONSOLE_WIDTH;
   });
 
+  /**
+   * Not the same question as whether the track has a width. Where the reference has borrowed it the
+   * track is as wide as ever, and the console is not the thing standing in it.
+   */
+  protected readonly consoleShown = computed(
+    () => this.ui.activeTab() === 'code' && this.ui.columnMode() !== 'swap',
+  );
+
   protected readonly CONSOLE_WIDTH = CONSOLE_WIDTH;
   protected readonly REFERENCE_WIDTH = REFERENCE_WIDTH;
+  protected readonly REFERENCE_SPLIT_BREAKPOINT = REFERENCE_SPLIT_BREAKPOINT;
 
   /**
    * F1 shows the docs for the symbol under the cursor; Ctrl/⌘-K puts the caret in the doc search.

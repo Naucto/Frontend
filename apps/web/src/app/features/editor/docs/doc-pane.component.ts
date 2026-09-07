@@ -13,7 +13,13 @@ import { DocArticleComponent } from '@app/shared/docs/doc-article.component';
 import { DocTreeComponent } from '@app/shared/docs/doc-tree.component';
 import { type ApiEntry, DocsService, type SearchHit } from '@app/shared/docs/docs.service';
 import { TranslocoDirective } from '@jsverse/transloco';
-import { ButtonDirective, IconComponent, SearchComponent, ToastService } from '@naucto/ui';
+import {
+  ButtonDirective,
+  EdgeHandleComponent,
+  IconComponent,
+  SearchComponent,
+  ToastService,
+} from '@naucto/ui';
 
 import { EditorRuntimeService } from '../state/editor-runtime.service';
 import { EditorUiStore } from '../state/editor-ui.store';
@@ -23,6 +29,7 @@ import { DocRequestService } from './doc-request.service';
 @Component({
   selector: 'nc-doc-pane',
   imports: [
+    EdgeHandleComponent,
     TranslocoDirective,
     ButtonDirective,
     IconComponent,
@@ -36,14 +43,11 @@ import { DocRequestService } from './doc-request.service';
       <!-- The artboard hangs the control on the pane's own edge: a chevron when the reference sits
            beside the console, and a swap glyph when it has taken the console's place. Either way
            the one button puts it away — F1 and Ctrl-K bring it back. -->
-      <button
-        type="button"
-        class="absolute top-1/2 -left-1 z-20 flex h-[52px] w-2 -translate-y-1/2 items-center justify-center rounded-[8px] border border-line-strong bg-raised text-ink-2 hover:text-ink"
-        [attr.aria-label]="ui.columnMode() === 'swap' ? t('docs.swapBack') : t('docs.close')"
-        (click)="ui.setReferenceOpen(false)"
-      >
-        <nc-icon [name]="ui.columnMode() === 'swap' ? 'sync' : 'chevron-right'" [size]="12" />
-      </button>
+      <nc-edge-handle
+        [icon]="ui.columnMode() === 'swap' ? 'sync' : 'chevron-right'"
+        [label]="ui.columnMode() === 'swap' ? t('docs.swapBack') : t('docs.close')"
+        (pressed)="ui.setReferenceOpen(false)"
+      />
       <div class="flex h-4 items-center gap-1 border-b border-line px-1.5">
         @if (view() !== 'tree') {
           <button ncButton variant="ghost" size="sm" iconOnly [attr.aria-label]="t('docs.back')" (click)="back()">
