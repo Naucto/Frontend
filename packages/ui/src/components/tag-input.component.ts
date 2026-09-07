@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, model, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, model, signal } from '@angular/core';
 
 import { ChipComponent } from './chip.component';
 
@@ -16,7 +16,7 @@ import { ChipComponent } from './chip.component';
       <input
         type="text"
         [value]="draft()"
-        [placeholder]="tags().length ? '' : placeholder()"
+        [placeholder]="prompt()"
         [disabled]="disabled() || tags().length >= max()"
         [attr.aria-label]="placeholder()"
         (input)="draft.set($any($event.target).value)"
@@ -33,7 +33,22 @@ export class TagInputComponent {
   readonly tags = model<string[]>([]);
   readonly max = input(10);
   readonly placeholder = input('Type a tag and press enter');
+  /** The short standing invitation, once the long one has been answered at least once. */
+  readonly hint = input('+ tag');
   readonly disabled = input(false);
+  /**
+   * The field keeps saying it takes another one until it cannot.
+   *
+   * The placeholder used to be blanked as soon as the first tag landed, which left an empty input
+   * with no text sitting among the chips: at two tags of ten the field read as finished, and there
+   * was nothing to tell anyone the tenth was still on offer. The long sentence would crowd the
+   * chips, so it shortens rather than disappears, and goes only at the ceiling — where the input is
+   * disabled and the invitation would be a lie.
+   */
+  protected readonly prompt = computed(() => {
+    if (this.tags().length >= this.max()) return '';
+    return this.tags().length ? this.hint() : this.placeholder();
+  });
   protected readonly draft = signal('');
 
   protected onKey(e: KeyboardEvent): void {
