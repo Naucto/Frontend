@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 import { unwrap } from '@app/core/api/api-errors';
 import { RuntimeHostService } from '@app/shared/game-screen/runtime-host.service';
 import { qk } from '@app/shared/queries/query-keys';
+import { injectRelease } from '@app/shared/queries/releases.queries';
 import { yTextField } from '@app/shared/yjs/y-signal';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import {
@@ -285,10 +286,20 @@ const SUMMARY_MAX = 80;
             </nc-section>
             <nc-section [title]="t('editor.game.lineage')">
               @if (session.project()?.forkedFromId; as from) {
+                <!-- The parent is an id in the project payload and nothing more, so its name is
+                     fetched from the public route the link already points at. Until it arrives —
+                     and if the parent has since been unpublished or deleted, which is a state a
+                     fork outlives — the id stands in, because a lineage that says nothing is worse
+                     than one that says a number. -->
                 <div class="flex items-center gap-0.5 text-body text-ink-2">
                   <nc-icon name="git-branch" [size]="12" />
                   {{ t('editor.game.forkedFrom') }}
-                  <a [href]="'/play/' + from" class="text-sky-ink">#{{ from }}</a>
+                  <a [href]="'/play/' + from" class="text-sky-ink">
+                    {{ parent.data()?.name ?? '#' + from }}
+                  </a>
+                  @if (parent.data()?.creator?.username; as who) {
+                    <span class="text-ink-3">{{ t('editor.game.by', { who }) }}</span>
+                  }
                 </div>
               }
               <!-- Not the branch mark: that one says this game came off another, and this line says
@@ -353,6 +364,9 @@ export class GameTabPage implements OnInit {
   protected readonly canPublish = computed(
     () => this.name().trim().length > 0 && this.summary().trim().length > 0,
   );
+
+  /** The game this one was forked from, so the lineage can name it rather than number it. */
+  protected readonly parent = injectRelease(() => this.session.project()?.forkedFromId ?? 0);
 
   protected readonly cover = injectQuery(() => ({
     queryKey: qk.projectImage(this.session.id),

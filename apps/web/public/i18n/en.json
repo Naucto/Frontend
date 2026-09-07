@@ -285,6 +285,7 @@
       "inviteByName": "invite by name…",
       "lineage": "Lineage",
       "forkedFrom": "Forked from",
+      "by": "by {{who}}",
       "remixedBy": "{{n}} people have remixed this",
       "notForkable": "Nobody can remix it until it is published.",
       "versionSaved": "Saved version \"{{name}}\"",
