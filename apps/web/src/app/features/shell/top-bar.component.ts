@@ -47,7 +47,7 @@ const NAV_LINK =
          shape between hub and editor was the worse of the two. -->
     <header
       *transloco="let t"
-      class="flex min-h-7 flex-wrap items-center gap-2 border-b border-line bg-panel py-1 pr-2 pl-0 md:flex-nowrap md:py-0"
+      class="relative flex min-h-7 flex-wrap items-center gap-2 border-b border-line bg-panel py-1 pr-2 pl-0 md:flex-nowrap md:py-0"
     >
       <a
         routerLink="/hub"
@@ -91,9 +91,14 @@ const NAV_LINK =
       </nav>
 
       @if (search()) {
+        <!-- On the window's axis, not the leftover gutter's. Three flex columns cannot put it there:
+             the mark takes an 81px cell on the left with nothing to answer it on the right, so an
+             evenly-shared row lands the field half that width off-centre. The design centres it
+             absolutely and lets the two clusters flank it unevenly, which is what they measure. It
+             only leaves the flow once there is room for 420 between two 384-wide clusters. -->
         <nc-search
           #search
-          class="min-w-0 flex-1 md:flex-[0_1_420px]"
+          class="min-w-0 flex-1 md:flex-[0_1_420px] xl:absolute xl:top-1/2 xl:left-1/2 xl:w-[420px] xl:flex-none xl:-translate-x-1/2 xl:-translate-y-1/2"
           [placeholder]="t('nav.search')"
           [value]="query()"
           (submitted)="submit($event)"
