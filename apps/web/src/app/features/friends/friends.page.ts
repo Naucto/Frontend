@@ -187,7 +187,13 @@ const ACCENT: Record<string, { rule: string; name: string }> = {
                       <div class="truncate text-meta text-ink-body">
                         {{ p.nickname || p.username }}
                       </div>
-                      <div class="label">{{ p.game }} · {{ p.playedAt | ncRelativeTime }}</div>
+                      <!-- The name in its own case, the age in the label step: set whole in micro
+                           uppercase, a title as ordinary as "Moon Lander" ran wider than the panel
+                           and took a second line for want of its lower case. -->
+                      <div class="truncate text-meta text-ink-3">
+                        {{ p.game }}
+                        <span class="label">· {{ p.playedAt | ncRelativeTime }}</span>
+                      </div>
                     </div>
                     @if (!p.friend) {
                       <button ncButton variant="secondary" size="sm" (click)="addUser(p.id)">
