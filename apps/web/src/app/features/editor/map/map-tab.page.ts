@@ -16,6 +16,7 @@ import {
   ButtonDirective,
   IconComponent,
   PanelColumnComponent,
+  SliderComponent,
   StepperComponent,
   ToggleButtonComponent,
   ToolGroupComponent,
@@ -27,8 +28,10 @@ import * as Y from 'yjs';
 import { type SpriteRect } from '../art/art.store';
 import { SheetViewComponent } from '../art/sheet-view.component';
 import { PANEL_WIDTH } from '../state/editor-ui.store';
+
+const MAP_ZOOM_OCTAVES = Math.log2(MAP_MAX_ZOOM / MAP_MIN_ZOOM);
 import { WorkSessionService } from '../work-session/work-session.service';
-import { MapStore, type MapTool } from './map.store';
+import { MAP_MAX_ZOOM, MAP_MIN_ZOOM, MapStore, type MapTool } from './map.store';
 import { MapCanvasComponent, type TileViewport } from './map-canvas.component';
 import { MinimapComponent } from './minimap.component';
 
@@ -42,6 +45,7 @@ const BRUSHES = ['1×1', '2×2', '3×3', '4×4', '5×5', '6×6', '7×7', '8×8']
     TranslocoDirective,
     ButtonDirective,
     IconComponent,
+    SliderComponent,
     PanelColumnComponent,
     StepperComponent,
     ToggleButtonComponent,
@@ -157,22 +161,39 @@ const BRUSHES = ['1×1', '2×2', '3×3', '4×4', '5×5', '6×6', '7×7', '8×8']
             variant="ghost"
             size="sm"
             iconOnly
+            class="shrink-0"
             [attr.aria-label]="t('editor.map.zoomOut')"
             (click)="map.zoomBy(-1)"
           >
             <nc-icon name="zoom-out" [size]="12" />
           </button>
-          <span class="font-mono text-meta text-ink">×{{ map.zoom() }}</span>
+          <!-- Geometric, as on the drawing board: a given travel of the thumb is the same change
+               of magnification wherever it starts, which a linear track is not. -->
+          <nc-slider
+            class="w-[88px] min-w-[40px] shrink"
+            [min]="0"
+            [max]="1"
+            [step]="0.001"
+            [value]="zoomAt()"
+            (valueChange)="setZoomAt($event)"
+            [label]="t('editor.map.zoom')"
+            compact
+            hideLabel
+          />
           <button
             ncButton
             variant="ghost"
             size="sm"
             iconOnly
+            class="shrink-0"
             [attr.aria-label]="t('editor.map.zoomIn')"
             (click)="map.zoomBy(1)"
           >
             <nc-icon name="zoom-in" [size]="12" />
           </button>
+          <span class="w-[38px] shrink-0 text-right font-mono text-label text-ink-3">
+            ×{{ zoomLabel() }}
+          </span>
         </div>
 
         <div class="border-b border-line p-1.5">
@@ -224,6 +245,19 @@ const BRUSHES = ['1×1', '2×2', '3×3', '4×4', '5×5', '6×6', '7×7', '8×8']
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MapTabPage {
+  /** The thumb's travel as a fraction of the range, so equal travel is equal magnification. */
+  protected readonly zoomAt = computed(
+    () => Math.log2(this.map.zoom() / MAP_MIN_ZOOM) / MAP_ZOOM_OCTAVES,
+  );
+  protected readonly zoomLabel = computed(() => {
+    const z = this.map.zoom();
+    return Number.isInteger(z) ? String(z) : z.toFixed(1);
+  });
+
+  protected setZoomAt(at: number): void {
+    this.map.setZoom(MAP_MIN_ZOOM * Math.pow(2, at * MAP_ZOOM_OCTAVES));
+  }
+
   protected readonly PANEL_WIDTH = PANEL_WIDTH;
   protected readonly session = inject(WorkSessionService);
   protected readonly map = inject(MapStore);

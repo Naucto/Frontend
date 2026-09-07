@@ -397,6 +397,7 @@
       "canvas": "Map canvas",
       "zoomIn": "Zoom in",
       "zoomOut": "Zoom out",
+      "zoom": "Zoom",
       "gridHelp": "Fine grid every tile, sky rule every eight — the screen is 20×11 tiles.",
       "flagsHelp": "Tints each tile by the first flag set on its sprite. Flags are per sprite, not per tile."
     },

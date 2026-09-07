@@ -1,6 +1,8 @@
 import { SPRITE_COUNT, SPRITES_PER_ROW } from '@naucto/engine';
 import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
 
+import { stepZoom } from '../art/sprite-canvas.component';
+
 export type MapTool = 'stamp' | 'fill' | 'select' | 'erase';
 
 /** Keep an n×n brush inside the sheet: no wrapping onto the next row, no running off the bottom. */
@@ -29,6 +31,15 @@ interface MapState {
   zoom: number;
   selection: TileRect | null;
 }
+
+/**
+ * Screen pixels per art pixel, as on the drawing board — one number meaning one thing on both.
+ *
+ * The ceiling is lower than the sheet's because a map is thirty-two times the area: what a canvas
+ * that size costs is the limit, not how far into a tile anybody wants to go.
+ */
+export const MAP_MIN_ZOOM = 1;
+export const MAP_MAX_ZOOM = 8;
 
 /** MAP tab state (per editor route). */
 export const MapStore = signalStore(
@@ -61,7 +72,12 @@ export const MapStore = signalStore(
       patchState(store, { flags });
     },
     zoomBy(delta: number): void {
-      patchState(store, { zoom: Math.max(1, Math.min(4, store.zoom() + delta)) });
+      patchState(store, { zoom: stepZoom(store.zoom(), delta, MAP_MIN_ZOOM, MAP_MAX_ZOOM) });
+    },
+    setZoom(zoom: number): void {
+      patchState(store, {
+        zoom: Math.max(MAP_MIN_ZOOM, Math.min(MAP_MAX_ZOOM, zoom)),
+      });
     },
     setSelection(selection: TileRect | null): void {
       patchState(store, { selection });

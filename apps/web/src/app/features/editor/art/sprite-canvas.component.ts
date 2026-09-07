@@ -49,12 +49,12 @@ export const MAX_ZOOM = 32;
  * The floor of one whole step is not tidiness: a quarter more than a small scale rounds back onto
  * itself, which would leave the buttons dead at the bottom of the range.
  */
-export function stepZoom(scale: number, delta: number): number {
+export function stepZoom(scale: number, delta: number, min = MIN_ZOOM, max = MAX_ZOOM): number {
   const next =
     delta > 0
       ? Math.max(Math.floor(scale * 1.25), Math.floor(scale) + 1)
       : Math.min(Math.ceil(scale / 1.25), Math.ceil(scale) - 1);
-  return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, next));
+  return Math.max(min, Math.min(max, next));
 }
 
 /** How far a tool may reach: the region while the lock holds, the whole sheet once it is off. */
