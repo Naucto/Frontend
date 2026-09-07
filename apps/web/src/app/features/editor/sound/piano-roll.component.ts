@@ -34,6 +34,13 @@ export const RULER_H = 24;
  * left nowhere to place it.
  */
 export const MAX_STEPS = 64;
+
+/**
+ * Hatched ground drawn past the ceiling, so the longest a pattern may be still has something after
+ * it. Without it a full-length pattern ends at the edge of its own canvas, which says the drawing
+ * stopped rather than that the pattern cannot go further.
+ */
+const TAIL_STEPS = 4;
 const BLACK = new Set([1, 3, 6, 8, 10]);
 
 interface Drag {
@@ -125,7 +132,7 @@ export class PianoRollComponent {
    * only ever for going closer.
    */
   readonly stepW = computed(() => 24 * this.zoom());
-  protected readonly width = computed(() => MAX_STEPS * this.stepW());
+  protected readonly width = computed(() => (MAX_STEPS + TAIL_STEPS) * this.stepW());
   protected readonly height = computed(() => RULER_H + (PITCH_MAX - PITCH_MIN + 1) * ROW_H);
   protected readonly marks = computed<PresenceMark[]>(() =>
     this.collaborators()
