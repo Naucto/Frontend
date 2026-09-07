@@ -18,6 +18,7 @@ import {
   IconComponent,
   SegmentedComponent,
   SliderComponent,
+  SwatchPickerComponent,
 } from '@naucto/ui';
 
 import { ACCENT_SLOTS } from '../accent-slots';
@@ -50,6 +51,7 @@ const FILTERS = [
     ChipComponent,
     HelpDotComponent,
     IconComponent,
+    SwatchPickerComponent,
     SegmentedComponent,
     SliderComponent,
     EnvelopeGraphComponent,
@@ -80,19 +82,12 @@ const FILTERS = [
       <div class="flex items-center gap-1 border-b border-line p-1.5">
         <span class="label text-ink-3">{{ t('editor.sound.colour') }}</span>
         <span class="flex-1"></span>
-        @for (c of colours; track c) {
-          <!-- 22px, and the selection is an outline *outside* the swatch: an inset border eats
-               the very colour you are choosing. -->
-          <button
-            type="button"
-            class="h-[22px] w-[22px] rounded-xs outline-offset-2"
-            [class]="inst().colour === c ? 'outline-2 outline-ink' : ''"
-            [style.background]="palette()[c]"
-            [attr.aria-label]="t('editor.sound.colourN', { n: c })"
-            [attr.aria-pressed]="inst().colour === c"
-            (click)="patched.emit({ colour: c })"
-          ></button>
-        }
+        <nc-swatch-picker
+          [colours]="palette()"
+          [slots]="colours"
+          [value]="inst().colour"
+          (valueChange)="patched.emit({ colour: $event ?? 0 })"
+        />
       </div>
 
       <section class="border-b border-line p-1.5">

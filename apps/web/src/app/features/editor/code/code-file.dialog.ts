@@ -5,8 +5,8 @@ import {
   ButtonDirective,
   DialogShellComponent,
   FieldComponent,
-  IconComponent,
   InputDirective,
+  SwatchPickerComponent,
 } from '@naucto/ui';
 
 import { ACCENT_SLOTS } from '../accent-slots';
@@ -56,7 +56,7 @@ export interface CodeFileDialogResult {
     ButtonDirective,
     DialogShellComponent,
     FieldComponent,
-    IconComponent,
+    SwatchPickerComponent,
     InputDirective,
   ],
   template: `
@@ -75,29 +75,13 @@ export interface CodeFileDialogResult {
       </nc-field>
 
       <p class="mt-1.5 mb-1 label text-ink-3">{{ t('editor.code.colour') }}</p>
-      <div class="flex flex-wrap items-center gap-0.75">
-        <button
-          type="button"
-          class="flex h-[22px] w-[22px] items-center justify-center border border-line-strong text-ink-4 outline-offset-2"
-          [class]="colour() === null ? 'outline-2 outline-ink' : ''"
-          [attr.aria-label]="t('editor.code.colourNone')"
-          [attr.aria-pressed]="colour() === null"
-          (click)="colour.set(null)"
-        >
-          <nc-icon name="close" [size]="12" />
-        </button>
-        @for (c of accents; track c) {
-          <button
-            type="button"
-            class="h-[22px] w-[22px] outline-offset-2"
-            [class]="colour() === c ? 'outline-2 outline-ink' : ''"
-            [style.background]="data.palette[c]"
-            [attr.aria-label]="t('editor.code.colourN', { n: c })"
-            [attr.aria-pressed]="colour() === c"
-            (click)="colour.set(c)"
-          ></button>
-        }
-      </div>
+      <nc-swatch-picker
+        allowNone
+        [colours]="data.palette"
+        [slots]="accents"
+        [(value)]="colour"
+        [noneLabel]="t('editor.code.colourNone')"
+      />
 
       <ng-container footer>
         <button ncButton variant="ghost" (click)="ref.close()">

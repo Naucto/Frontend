@@ -38,6 +38,7 @@ export * from './components/skeleton.component';
 export * from './components/slider.component';
 export * from './components/stat.component';
 export * from './components/stepper.component';
+export * from './components/swatch-picker.component';
 export * from './components/tabs.component';
 export * from './components/tag-input.component';
 export * from './components/toast.service';
