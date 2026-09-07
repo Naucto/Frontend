@@ -130,7 +130,16 @@ interface Capture {
 
         <!-- The design cards the table rather than letting it run edge to edge. -->
         <div class="overflow-hidden rounded-[6px] border border-line bg-sunken">
-          <table class="w-full border-collapse text-body">
+          <!-- The action names take the widest column and the bindings share what is left: read
+               down the table, the thing being bound is what the eye follows, and letting the key
+               caps size their own column pushed the caps a third of the table away from the names
+               they belong to. Proportions off the sheet, whose table is 580 wide. -->
+          <table class="w-full table-fixed border-collapse text-body">
+            <colgroup>
+              <col class="w-[43%]" />
+              <col class="w-[26%]" />
+              <col class="w-[31%]" />
+            </colgroup>
             <thead>
               <tr class="label bg-inset">
                 <th class="border-b border-line px-1.75 py-1.5 text-left font-normal">
