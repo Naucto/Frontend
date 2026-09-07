@@ -103,11 +103,15 @@ import { SearchBarComponent } from './search-bar.component';
             }
           </div>
         }
+        <!-- Centred by hand: the strip stretches its children so a tab can carry its coloured cap
+             the full height of the row, and a button with a height of its own then sits at the top
+             of it instead of on the tabs' own line. -->
         <button
           ncButton
           variant="ghost"
           size="sm"
           iconOnly
+          class="ml-1.5 self-center"
           [attr.aria-label]="t('editor.code.addFile')"
           (click)="addFile()"
         >
@@ -118,6 +122,7 @@ import { SearchBarComponent } from './search-bar.component';
           ncButton
           variant="ghost"
           size="sm"
+          class="mr-1.5 self-center"
           [attr.aria-expanded]="searching()"
           (click)="find()"
         >
