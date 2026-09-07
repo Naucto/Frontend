@@ -11,12 +11,7 @@ import { colourOf, IDENTITY_COLOURS, inkFor } from '../palette';
 /** The three colours reserved for live collaboration cursors and carets. */
 export type PresenceColour = 'sky' | 'blush' | 'jade';
 
-/**
- * How a call site may pin an avatar's fill when the identity colour is not what it means.
- *
- * `gold` marks the row of a roster that is the viewer's own. Being told apart is the whole of what
- * it does, so it buys nothing on an avatar that stands alone with no list to be picked out of.
- */
+/** How a call site may pin an avatar's fill when the identity colour is not what it means. */
 export type AvatarColour = PresenceColour | 'neutral' | 'gold' | number | `#${string}`;
 
 const PRESENCE_FILL: Record<PresenceColour, string> = {
@@ -59,7 +54,7 @@ export class AvatarComponent {
   readonly src = input<string | null>();
   /** Identity key for the stable colour; falls back to the name. */
   readonly id = input<string | number>();
-  /** A presence colour, `gold` for the signed-in person, `neutral`, a palette index, or a hex. */
+  /** A presence colour, `gold` for the viewer's own row of a roster, `neutral`, an index, or a hex. */
   readonly colour = input<AvatarColour>();
   readonly size = input(24);
   /** Overlap the previous avatar, for presence stacks. */
