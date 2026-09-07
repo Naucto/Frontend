@@ -26,6 +26,14 @@ export const PITCH_MAX = 95;
 export const ROW_H = 20;
 export const KEY_W = 52;
 export const RULER_H = 24;
+/**
+ * The longest a pattern may be.
+ *
+ * The grid is always this wide, whatever the pattern currently holds: a note has to be placed
+ * somewhere before the pattern can be asked to reach it, and a grid that stopped at the last step
+ * left nowhere to place it.
+ */
+export const MAX_STEPS = 64;
 const BLACK = new Set([1, 3, 6, 8, 10]);
 
 interface Drag {
@@ -113,7 +121,7 @@ export class PianoRollComponent {
    * only ever for going closer.
    */
   readonly stepW = computed(() => 24 * this.zoom());
-  protected readonly width = computed(() => this.pattern().steps * this.stepW());
+  protected readonly width = computed(() => MAX_STEPS * this.stepW());
   protected readonly height = computed(() => RULER_H + (PITCH_MAX - PITCH_MIN + 1) * ROW_H);
   protected readonly marks = computed<PresenceMark[]>(() =>
     this.collaborators()
@@ -375,6 +383,21 @@ export class PianoRollComponent {
       ctx.lineTo(s * sw + 0.5, h);
     }
     ctx.stroke();
+
+    // Past the pattern's last step the grid is still there to be drawn on, dimmed so the end of
+    // what the pattern currently holds stays legible, and closed by a rule.
+    const endX = p.steps * sw;
+    if (endX < w) {
+      ctx.fillStyle = cssVar(el, '--nc-page');
+      ctx.globalAlpha = 0.55;
+      ctx.fillRect(endX, RULER_H, w - endX, h - RULER_H);
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = cssVar(el, '--nc-line-strong');
+      ctx.beginPath();
+      ctx.moveTo(endX + 0.5, RULER_H);
+      ctx.lineTo(endX + 0.5, h);
+      ctx.stroke();
+    }
 
     // Notes.
     const pal = this.palette();

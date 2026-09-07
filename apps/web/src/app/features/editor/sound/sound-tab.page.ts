@@ -290,7 +290,7 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
             [playhead]="playhead()"
             [collaborators]="session.collaborators()"
             [label]="t('editor.sound.pianoRoll')"
-            (notesChange)="library.setNotes(p.id, $event)"
+            (notesChange)="setNotes(p, $event)"
             (audition)="audition($event)"
             (pointer)="onPointer($event)"
           />
@@ -510,6 +510,20 @@ export class SoundTabPage {
     const order: SnapDivision[] = [0, ...SNAP_DIVISIONS];
     const i = order.indexOf(this.sound.snap());
     this.sound.setSnap(order[(i + 1) % order.length] ?? 0);
+  }
+
+  /**
+   * A note dropped past the last step lengthens the pattern to reach it.
+   *
+   * The grid runs to the ceiling whatever the pattern holds, so somewhere to place the note always
+   * exists; what does not exist yet is a pattern long enough to keep it. Growth goes to the next
+   * length that fits, and a note beyond every length is refused rather than silently dropped.
+   */
+  protected setNotes(p: Pattern, notes: Note[]): void {
+    const needed = notes.reduce((n, note) => Math.max(n, note.step + note.length), 0);
+    const grown = STEP_OPTIONS.map((o) => Number(o.value)).find((n) => n >= needed);
+    if (grown === undefined) return;
+    this.library.updatePattern(p.id, grown > p.steps ? { notes, steps: grown } : { notes });
   }
 
   protected setSteps(v: string | undefined): void {
