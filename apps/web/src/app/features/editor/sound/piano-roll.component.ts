@@ -13,24 +13,17 @@ import {
   viewChild,
 } from '@angular/core';
 import { cssVar } from '@app/shared/pixel/pixel-tools';
-import { type Instrument, midiToNoteName, type Note, type Pattern } from '@naucto/engine';
+import { type Instrument, type Note, type Pattern } from '@naucto/engine';
 import { PresenceLayerComponent, type PresenceMark, type PresenceViewport } from '@naucto/ui';
 
 import { type Collaborator } from '../work-session/work-session.service';
+import { PianoKeysComponent } from './piano-keys.component';
 
 export const PITCH_MIN = 24;
 export const PITCH_MAX = 95;
 // Measured off the artboard: a 20px row is tall enough to grab a note by its edge, and 52px of
 // key column fits "C#4" without crowding the grid.
 export const ROW_H = 20;
-/**
- * The black key, measured off the artboard: 34 of the 52-wide column, leaving the white bed showing
- * to its right. Fixed rather than themed — see the note in `draw()`.
- */
-const BLACK_KEY_W = 34;
-const BLACK_KEY = '#17140f';
-/** The artboard insets the note name this far into the key. */
-const KEY_LABEL_X = 7;
 export const KEY_W = 52;
 export const RULER_H = 24;
 const BLACK = new Set([1, 3, 6, 8, 10]);
@@ -46,30 +39,34 @@ interface Drag {
 /** The pattern grid: pitches down, steps across; notes are painted with their instrument's colour. */
 @Component({
   selector: 'nc-piano-roll',
-  imports: [PresenceLayerComponent],
+  imports: [PianoKeysComponent, PresenceLayerComponent],
   template: `
-    <div class="relative" [style.width.px]="width()" [style.height.px]="height()">
-      <canvas
-        #canvas
-        class="pixelated block cursor-crosshair touch-none"
-        [width]="width()"
-        [height]="height()"
-        role="img"
-        [attr.aria-label]="label()"
-        (pointerdown)="onDown($event)"
-        (pointermove)="onMove($event)"
-        (pointerup)="onUp()"
-        (pointercancel)="onUp()"
-        (pointerleave)="onLeave()"
-        (contextmenu)="$event.preventDefault()"
-      ></canvas>
-      <nc-presence-layer [marks]="marks()" [viewport]="viewPx()" />
+    <div class="flex" [style.width.px]="width()" [style.height.px]="height()">
+      <nc-piano-keys [style.width.px]="KEY_W" (pressed)="playKey($event)" />
+      <div class="relative">
+        <canvas
+          #canvas
+          class="pixelated block cursor-crosshair touch-none"
+          [width]="width()"
+          [height]="height()"
+          role="img"
+          [attr.aria-label]="label()"
+          (pointerdown)="onDown($event)"
+          (pointermove)="onMove($event)"
+          (pointerup)="onUp()"
+          (pointercancel)="onUp()"
+          (pointerleave)="onLeave()"
+          (contextmenu)="$event.preventDefault()"
+        ></canvas>
+        <nc-presence-layer [marks]="marks()" [viewport]="viewPx()" />
+      </div>
     </div>
   `,
   host: { class: 'block overflow-auto', tabindex: '0' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PianoRollComponent {
+  protected readonly KEY_W = KEY_W;
   readonly pattern = input.required<Pattern>();
   readonly instruments = input.required<Map<string, Instrument>>();
   readonly palette = input.required<readonly string[]>();
@@ -116,7 +113,7 @@ export class PianoRollComponent {
    * only ever for going closer.
    */
   readonly stepW = computed(() => 24 * this.zoom());
-  protected readonly width = computed(() => KEY_W + this.pattern().steps * this.stepW());
+  protected readonly width = computed(() => this.pattern().steps * this.stepW());
   protected readonly height = computed(() => RULER_H + (PITCH_MAX - PITCH_MIN + 1) * ROW_H);
   protected readonly marks = computed<PresenceMark[]>(() =>
     this.collaborators()
@@ -125,7 +122,7 @@ export class PianoRollComponent {
         id: c.clientId,
         name: c.name,
         colour: c.colour,
-        x: KEY_W + (c.cursor?.x ?? 0) * this.stepW(),
+        x: (c.cursor?.x ?? 0) * this.stepW(),
         y: RULER_H + (PITCH_MAX - (c.cursor?.y ?? 0)) * ROW_H,
       })),
   );
@@ -184,23 +181,23 @@ export class PianoRollComponent {
     return this.working() ?? this.pattern().notes;
   }
 
-  private cellOf(e: PointerEvent): { step: number; pitch: number; x: number } {
+  private cellOf(e: PointerEvent): { step: number; pitch: number } {
     const r = this.canvas().nativeElement.getBoundingClientRect();
     const x = e.clientX - r.left;
     const y = e.clientY - r.top;
-    const step = Math.max(0, (x - KEY_W) / this.stepW());
+    const step = Math.max(0, x / this.stepW());
     const pitch = Math.max(
       PITCH_MIN,
       Math.min(PITCH_MAX, PITCH_MAX - Math.floor((y - RULER_H) / ROW_H)),
     );
-    return { step, pitch, x };
+    return { step, pitch };
   }
 
   /** The same position as `cellOf`, unsnapped on both axes. */
   private pointOf(e: PointerEvent): { x: number; y: number } {
     const r = this.canvas().nativeElement.getBoundingClientRect();
     return {
-      x: Math.max(0, (e.clientX - r.left - KEY_W) / this.stepW()),
+      x: Math.max(0, (e.clientX - r.left) / this.stepW()),
       y: PITCH_MAX - (e.clientY - r.top - RULER_H) / ROW_H,
     };
   }
@@ -226,13 +223,14 @@ export class PianoRollComponent {
     return -1;
   }
 
+  /** A key sounds the instrument in hand; with none chosen there is nothing to sound it with. */
+  protected playKey(pitch: number): void {
+    const inst = this.instrumentId();
+    if (inst) this.audition.emit({ instrument: inst, pitch });
+  }
+
   protected onDown(e: PointerEvent): void {
-    const { step, pitch, x } = this.cellOf(e);
-    if (x < KEY_W) {
-      const inst = this.instrumentId();
-      if (inst) this.audition.emit({ instrument: inst, pitch });
-      return;
-    }
+    const { step, pitch } = this.cellOf(e);
     this.host.nativeElement.focus({ preventScroll: true });
     const index = this.hit(step, pitch);
     const notes = [...this.notes()];
@@ -276,11 +274,11 @@ export class PianoRollComponent {
   }
 
   protected onMove(e: PointerEvent): void {
-    const { step, pitch, x } = this.cellOf(e);
-    const cell = x < KEY_W ? null : { step: Math.floor(step), pitch };
+    const { step, pitch } = this.cellOf(e);
+    const cell = { step: Math.floor(step), pitch };
     this.hoverCell.set(cell);
     this.hover.emit(cell);
-    this.pointer.emit(x < KEY_W ? null : this.pointOf(e));
+    this.pointer.emit(this.pointOf(e));
     const d = this.drag;
     if (!d) return;
     const notes = [...this.notes()];
@@ -355,7 +353,7 @@ export class PianoRollComponent {
       const y = RULER_H + r * ROW_H;
       if (BLACK.has(pitch % 12)) {
         ctx.fillStyle = cssVar(el, '--nc-inset');
-        ctx.fillRect(KEY_W, y, w - KEY_W, ROW_H);
+        ctx.fillRect(0, y, w, ROW_H);
       }
     }
     // Grid.
@@ -363,19 +361,19 @@ export class PianoRollComponent {
     ctx.beginPath();
     for (let s = 0; s <= p.steps; s++) {
       if (s % p.stepsPerBeat === 0) continue;
-      ctx.moveTo(KEY_W + s * sw + 0.5, RULER_H);
-      ctx.lineTo(KEY_W + s * sw + 0.5, h);
+      ctx.moveTo(s * sw + 0.5, RULER_H);
+      ctx.lineTo(s * sw + 0.5, h);
     }
     for (let r = 0; r <= rows; r++) {
-      ctx.moveTo(KEY_W, RULER_H + r * ROW_H + 0.5);
+      ctx.moveTo(0, RULER_H + r * ROW_H + 0.5);
       ctx.lineTo(w, RULER_H + r * ROW_H + 0.5);
     }
     ctx.stroke();
     ctx.strokeStyle = cssVar(el, '--nc-line-strong');
     ctx.beginPath();
     for (let s = 0; s <= p.steps; s += p.stepsPerBeat) {
-      ctx.moveTo(KEY_W + s * sw + 0.5, 0);
-      ctx.lineTo(KEY_W + s * sw + 0.5, h);
+      ctx.moveTo(s * sw + 0.5, 0);
+      ctx.lineTo(s * sw + 0.5, h);
     }
     ctx.stroke();
 
@@ -386,7 +384,7 @@ export class PianoRollComponent {
     for (const n of this.notes()) {
       const inst = insts.get(n.instrument);
       const colour = pal[inst?.colour ?? 4] ?? '#fff';
-      const x = KEY_W + n.step * sw;
+      const x = n.step * sw;
       const y = RULER_H + (PITCH_MAX - n.pitch) * ROW_H;
       ctx.globalAlpha = selected && n.instrument !== selected ? 0.55 : 1;
       ctx.fillStyle = colour;
@@ -396,57 +394,21 @@ export class PianoRollComponent {
 
     // Ruler and key column are drawn at the current scroll offset, so they stay pinned while the
     // grid scrolls under them — the same effect as position:sticky, on one canvas.
-    const sx = this.scrollX();
     const sy = this.scrollY();
     ctx.fillStyle = cssVar(el, '--nc-panel');
-    ctx.fillRect(KEY_W, sy, w - KEY_W, RULER_H);
+    ctx.fillRect(0, sy, w, RULER_H);
     ctx.font = `10px ${cssVar(el, '--font-mono')}`;
     ctx.textBaseline = 'middle';
     ctx.fillStyle = cssVar(el, '--nc-ink-4');
     for (let s = 0; s < p.steps; s += p.stepsPerBeat)
-      ctx.fillText(String(s / p.stepsPerBeat + 1), KEY_W + s * sw + 4, sy + RULER_H / 2);
-
-    // Keys column: a continuous white bed with the black keys laid over it, which is how a keyboard
-    // is built and how the artboard draws it. Painting a dark bed and stamping only the white keys
-    // onto it left a full-width gap wherever a black key sat, so the column read as a list of note
-    // names floating on darkness rather than as a keyboard.
-    //
-    // The black key is a fixed near-black, not `--nc-sunken`: that token is #eee9de in daylight, so
-    // a themed black key turned near-white on a near-white bed and the keyboard disappeared.
-    for (let r = 0; r < rows; r++) {
-      const pitch = PITCH_MAX - r;
-      const y = RULER_H + r * ROW_H;
-      const isC = pitch % 12 === 0;
-      ctx.fillStyle = cssVar(el, isC ? '--nc-ink' : '--nc-ink-body');
-      ctx.fillRect(sx, y, KEY_W, ROW_H);
-    }
-    for (let r = 0; r < rows; r++) {
-      const pitch = PITCH_MAX - r;
-      if (!BLACK.has(pitch % 12)) continue;
-      const y = RULER_H + r * ROW_H;
-      ctx.fillStyle = BLACK_KEY;
-      ctx.fillRect(sx, y, BLACK_KEY_W, ROW_H - 1);
-    }
-    // 9px on every key, C included: the octave is marked by the brighter fill, not by bigger type.
-    ctx.textBaseline = 'middle';
-    ctx.font = `9px ${cssVar(el, '--font-mono')}`;
-    ctx.fillStyle = cssVar(el, '--nc-page');
-    for (let r = 0; r < rows; r++) {
-      const pitch = PITCH_MAX - r;
-      if (BLACK.has(pitch % 12)) continue;
-      const y = RULER_H + r * ROW_H;
-      ctx.fillText(midiToNoteName(pitch), sx + KEY_LABEL_X, y + ROW_H / 2);
-    }
-    // The corner where they meet belongs to neither.
-    ctx.fillStyle = cssVar(el, '--nc-panel');
-    ctx.fillRect(sx, sy, KEY_W, RULER_H);
+      ctx.fillText(String(s / p.stepsPerBeat + 1), s * sw + 4, sy + RULER_H / 2);
 
     // Hover cell.
     const hv = this.hoverCell();
     if (hv && !this.drag) {
       ctx.strokeStyle = cssVar(el, '--nc-ink');
       ctx.strokeRect(
-        KEY_W + hv.step * sw + 0.5,
+        hv.step * sw + 0.5,
         RULER_H + (PITCH_MAX - hv.pitch) * ROW_H + 0.5,
         sw - 1,
         ROW_H - 1,
@@ -456,7 +418,7 @@ export class PianoRollComponent {
     // Playhead.
     const ph = this.playhead();
     if (ph !== null) {
-      const x = KEY_W + ph * sw;
+      const x = ph * sw;
       ctx.fillStyle = cssVar(el, '--nc-hot');
       ctx.fillRect(Math.floor(x), 0, 1, h);
       ctx.fillRect(Math.floor(x) - 9, this.scrollY() + 4, 18, RULER_H - 8);
