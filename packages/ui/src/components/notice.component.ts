@@ -11,6 +11,21 @@ const TONES: Record<NoticeTone, string> = {
 };
 
 /**
+ * Where the notice sits: in the flow of a body, or as a band of the panel it belongs to.
+ *
+ * A band is a section like any other — full width, its own ground and its own closing rule — so it
+ * reads as part of the panel's structure rather than as a line someone slipped in. The tone then
+ * belongs to the mark alone: a whole sentence in the warning colour on a raised ground is a second
+ * emphasis competing with the first.
+ */
+export type NoticeVariant = 'inline' | 'band';
+
+const VARIANTS: Record<NoticeVariant, string> = {
+  inline: 'gap-0.75 py-1',
+  band: 'gap-[9px] border-b border-line bg-raised px-[18px] py-[14px] text-ink-body',
+};
+
+/**
  * A short line the product needs to say about the state of something, marked so it is not mistaken
  * for the copy around it.
  *
@@ -22,14 +37,22 @@ const TONES: Record<NoticeTone, string> = {
   selector: 'nc-notice',
   imports: [IconComponent],
   template: `
-    <nc-icon name="alert" [size]="12" class="mt-[1px] shrink-0" />
+    <nc-icon name="alert" [size]="12" class="mt-[1px] shrink-0" [class]="markClass()" />
     <span class="min-w-0"><ng-content /></span>
   `,
-  host: { class: 'flex items-start gap-0.75 py-1 text-meta', '[class]': 'toneClass()' },
+  host: { class: 'flex items-start text-meta', '[class]': 'shellClass()' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NoticeComponent {
   readonly tone = input<NoticeTone>('warn');
+  readonly variant = input<NoticeVariant>('inline');
 
-  protected readonly toneClass = computed(() => TONES[this.tone()]);
+  protected readonly shellClass = computed(
+    () => `${VARIANTS[this.variant()]} ${this.variant() === 'inline' ? TONES[this.tone()] : ''}`,
+  );
+
+  /** In a band the mark carries the tone on its own; inline it takes the colour of the sentence. */
+  protected readonly markClass = computed(() =>
+    this.variant() === 'band' ? TONES[this.tone()] : '',
+  );
 }

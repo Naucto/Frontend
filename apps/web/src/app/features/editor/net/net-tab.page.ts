@@ -28,6 +28,7 @@ import {
   SectionComponent,
   SliderComponent,
   ToastService,
+  TooltipDirective,
 } from '@naucto/ui';
 
 import { EditorRuntimeService } from '../state/editor-runtime.service';
@@ -74,6 +75,7 @@ function formatScalar(value: TableScalar | undefined): string {
     SectionComponent,
     SearchComponent,
     SliderComponent,
+    TooltipDirective,
     GameScreenComponent,
     PresenceSurfaceComponent,
   ],
@@ -113,17 +115,25 @@ function formatScalar(value: TableScalar | undefined): string {
             (valueChange)="filter.set($event)"
           />
           <button
-            type="button"
-            class="flex h-[26px] w-[26px] items-center justify-center rounded-sm text-ink-3 hover:text-ink"
+            ncButton
+            variant="ghost"
+            size="tool"
+            iconOnly
+            [disabled]="!collapsed().size"
             [attr.aria-label]="t('editor.net.expandAll')"
+            [ncTooltip]="t('editor.net.expandAll')"
             (click)="expandAll()"
           >
             <nc-icon name="expand" [size]="12" />
           </button>
           <button
-            type="button"
-            class="flex h-[26px] w-[26px] items-center justify-center rounded-sm text-ink-3 hover:text-ink"
+            ncButton
+            variant="ghost"
+            size="tool"
+            iconOnly
+            [disabled]="allCollapsed()"
             [attr.aria-label]="t('editor.net.collapseAll')"
+            [ncTooltip]="t('editor.net.collapseAll')"
             (click)="collapseAll()"
           >
             <nc-icon name="collapse" [size]="12" />
@@ -661,6 +671,18 @@ export class NetTabPage {
       return next;
     });
   }
+
+  /**
+   * Whether there is anything left to fold. Also true of a tree with no containers at all, and of
+   * no tree — the panel keeps its header while the game is not in a session, and a control that
+   * cannot act is better drawn as unavailable than left looking inert.
+   */
+  protected readonly allCollapsed = computed(() => {
+    const shut = this.collapsed();
+    return this.rows()
+      .filter((r) => r.container && r.path)
+      .every((r) => shut.has(r.path));
+  });
 
   protected expandAll(): void {
     this.collapsed.set(new Set());

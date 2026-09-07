@@ -119,10 +119,14 @@ const toRows = (raw: unknown, key: 'versions' | 'checkpoints', release: boolean)
           <span class="label text-ink-3">Versions</span>
           <span class="label text-ink-4">name one to release it</span>
         </header>
+        <!-- The list is the one part that grows without bound — a project saves as often as its
+             author presses the key — so it is what is allowed to scroll, and the head, the totals
+             and the budget below stay where they were put. The ceiling is the window's, because a
+             fixed one is either short on a large screen or too tall on a small one. -->
         <div class="p-2">
           <!-- No rules between the rows: the sheet separates them by giving the current one a
                ground of its own, and a list that also ruled every gap read as a table. -->
-          <ul>
+          <ul class="max-h-[min(52vh,420px)] overflow-y-auto">
             <!-- One list, newest first: releases and autosaves interleaved, as the design shows. -->
             @for (v of history(); track v.name; let i = $index) {
               <li class="flex h-[52px] items-center gap-1 px-1" [class.bg-line-soft]="i === 0">
@@ -182,31 +186,32 @@ const toRows = (raw: unknown, key: 'versions' | 'checkpoints', release: boolean)
           <div class="label mt-1">
             {{ releases().length }} releases · {{ autosaves().length }} autosaves
           </div>
-          <form class="mt-2 flex gap-1" (ngSubmit)="checkpoint()">
+          <form class="mt-2 flex items-stretch gap-1" (ngSubmit)="checkpoint()">
             <input ncInput name="cp" [(ngModel)]="cpName" placeholder="Name this version" />
             <button
               ncButton
               variant="secondary"
-              size="sm"
+              size="md"
               type="submit"
+              class="h-auto shrink-0"
               [disabled]="!cpName.trim() || !session.isHost() || saving()"
             >
               Save
             </button>
           </form>
-          <div class="mt-3 border-t border-line pt-2">
-            <div class="mb-1 flex justify-between text-label">
-              <span>Game size</span>
-              <span class="font-mono text-ink">{{ kb(size().total) }} / 1 MB</span>
-            </div>
-            <nc-meter size="md" [segments]="segments()" [max]="ceiling" label="Game size" />
-            @if (size().total > ceiling) {
-              <p class="mt-1 text-meta text-hot-ink">
-                Over by {{ kb(size().total - ceiling) }}, so publishing is blocked. Everything else
-                still saves, and the game still runs.
-              </p>
-            }
+        </div>
+        <div class="border-t border-line p-2">
+          <div class="mb-1 flex justify-between text-label">
+            <span>Game size</span>
+            <span class="font-mono text-ink">{{ kb(size().total) }} / 1 MB</span>
           </div>
+          <nc-meter size="md" [segments]="segments()" [max]="ceiling" label="Game size" />
+          @if (size().total > ceiling) {
+            <p class="mt-1 text-meta text-hot-ink">
+              Over by {{ kb(size().total - ceiling) }}, so publishing is blocked. Everything else
+              still saves, and the game still runs.
+            </p>
+          }
         </div>
       </nc-popover-panel>
     </ng-template>

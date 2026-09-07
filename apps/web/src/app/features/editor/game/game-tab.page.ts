@@ -82,7 +82,7 @@ const SUMMARY_MAX = 80;
             }}
           </span>
         </div>
-        <div class="overflow-auto bg-inset px-2.75 py-2.5">
+        <div class="min-h-0 flex-1 overflow-auto bg-inset px-2.75 py-2.5">
           <div class="grid grid-cols-[320px_minmax(0,1fr)] gap-2.75">
             <div>
               <nc-label class="mb-1">{{ t('editor.game.icon') }}</nc-label>
@@ -191,125 +191,123 @@ const SUMMARY_MAX = 80;
           <nc-icon name="trash" [size]="12" />
           {{ t('editor.game.delete') }}
         </button>
-        <div class="p-2">
-          @if (!canPublish()) {
-            <nc-notice class="mb-2">{{ t('editor.game.publishBlocked') }}</nc-notice>
-          }
-          <div class="grid min-w-0 gap-3">
-            <nc-section [title]="t('editor.game.status')">
-              <nc-help-dot actions [text]="t('editor.game.statusHelp')" />
-              <nc-segmented
-                [options]="statuses"
-                [value]="status()"
-                (valueChange)="setStatus($event)"
-                label="Status"
-              />
-              <div class="mt-1 flex justify-between font-mono text-micro tracking-wide uppercase">
-                <!-- Dim key, bright value, like every other pair in the column: at one weight the
-                     row said nothing about which half was the answer. -->
-                <span class="text-ink-3">{{ t('editor.game.published') }}</span>
-                <span class="text-ink">
-                  {{
-                    session.project()?.publishedAt
-                      ? (session.project()?.publishedAt | slice: 0 : 10)
-                      : t('editor.game.never')
-                  }}
-                </span>
-              </div>
-            </nc-section>
-            <nc-section [title]="t('editor.game.monetization')">
-              <nc-help-dot actions [text]="t('editor.game.monetizationHelp')" />
-              <!-- Full width, and neutral where STATUS carries a meaning colour: two filled cells
-                   stacked make the neutral choice read as a second state colour. The width and the
-                   tone are separate settings and only the tone was at issue. -->
-              <nc-segmented
-                fill
-                [options]="monetizations"
-                [value]="monetization()"
-                (valueChange)="setMonetization($event)"
-                label="Monetization"
-              />
-              <!-- Label and control on one line, like every other key and value in this column.
-                   Stacked, a field with one short number under a one-word label spent two rows on
-                   what the rows around it say in one. -->
-              <div
-                class="mt-1 flex items-center justify-between gap-1.75"
-                [class.opacity-40]="monetization() !== 'PAID'"
-              >
-                <label class="label text-ink-3" for="g-price">{{ t('editor.game.price') }}</label>
-                @if (monetization() === 'PAID') {
-                  <input
-                    ncInput
-                    id="g-price"
-                    class="w-[96px]"
-                    type="number"
-                    min="0"
-                    step="0.5"
-                    [ngModel]="price()"
-                    (ngModelChange)="setPrice($event)"
-                  />
-                } @else {
-                  <nc-readout size="sm" value="–" class="w-[64px]" />
+        @if (!canPublish()) {
+          <nc-notice variant="band">{{ t('editor.game.publishBlocked') }}</nc-notice>
+        }
+        <div class="grid min-w-0">
+          <nc-section banded [title]="t('editor.game.status')">
+            <nc-help-dot actions [text]="t('editor.game.statusHelp')" />
+            <nc-segmented
+              [options]="statuses"
+              [value]="status()"
+              (valueChange)="setStatus($event)"
+              label="Status"
+            />
+            <div class="mt-1 flex justify-between font-mono text-micro tracking-wide uppercase">
+              <!-- Dim key, bright value, like every other pair in the column: at one weight the
+                   row said nothing about which half was the answer. -->
+              <span class="text-ink-3">{{ t('editor.game.published') }}</span>
+              <span class="text-ink">
+                {{
+                  session.project()?.publishedAt
+                    ? (session.project()?.publishedAt | slice: 0 : 10)
+                    : t('editor.game.never')
+                }}
+              </span>
+            </div>
+          </nc-section>
+          <nc-section banded [title]="t('editor.game.monetization')">
+            <nc-help-dot actions [text]="t('editor.game.monetizationHelp')" />
+            <!-- Full width, and neutral where STATUS carries a meaning colour: two filled cells
+                 stacked make the neutral choice read as a second state colour. The width and the
+                 tone are separate settings and only the tone was at issue. -->
+            <nc-segmented
+              fill
+              [options]="monetizations"
+              [value]="monetization()"
+              (valueChange)="setMonetization($event)"
+              label="Monetization"
+            />
+            <!-- Label and control on one line, like every other key and value in this column.
+                 Stacked, a field with one short number under a one-word label spent two rows on
+                 what the rows around it say in one. -->
+            <div
+              class="mt-1 flex items-center justify-between gap-1.75"
+              [class.opacity-40]="monetization() !== 'PAID'"
+            >
+              <label class="label text-ink-3" for="g-price">{{ t('editor.game.price') }}</label>
+              @if (monetization() === 'PAID') {
+                <input
+                  ncInput
+                  id="g-price"
+                  class="w-[96px]"
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  [ngModel]="price()"
+                  (ngModelChange)="setPrice($event)"
+                />
+              } @else {
+                <nc-readout size="sm" value="–" class="w-[64px]" />
+              }
+            </div>
+          </nc-section>
+          <nc-section banded [title]="t('editor.game.inSession')">
+            <span actions class="label text-ink-4">{{ session.collaborators().length }}</span>
+            @for (c of session.collaborators(); track c.clientId) {
+              <div class="flex items-center gap-1 py-0.5">
+                <nc-avatar [name]="c.name" [colour]="c.isSelf ? 'gold' : c.colour" [size]="24" />
+                <span class="text-ui text-ink">{{ c.name }}</span>
+                @if (c.isSelf) {
+                  <span class="label text-ink-4">{{ t('editor.game.you') }}</span>
+                }
+                <span class="flex-1"></span>
+                @if (!c.isSelf && session.isHost()) {
+                  <button ncButton variant="ghost" size="sm" (click)="session.kick(c.userId)">
+                    {{ t('editor.game.kick') }}
+                  </button>
                 }
               </div>
-            </nc-section>
-            <nc-section [title]="t('editor.game.inSession')">
-              <span actions class="label text-ink-4">{{ session.collaborators().length }}</span>
-              @for (c of session.collaborators(); track c.clientId) {
-                <div class="flex items-center gap-1 py-0.5">
-                  <nc-avatar [name]="c.name" [colour]="c.isSelf ? 'gold' : c.colour" [size]="24" />
-                  <span class="text-ui text-ink">{{ c.name }}</span>
-                  @if (c.isSelf) {
-                    <span class="label text-ink-4">{{ t('editor.game.you') }}</span>
-                  }
-                  <span class="flex-1"></span>
-                  @if (!c.isSelf && session.isHost()) {
-                    <button ncButton variant="ghost" size="sm" (click)="session.kick(c.userId)">
-                      {{ t('editor.game.kick') }}
-                    </button>
-                  }
-                </div>
-              }
-              @if (session.collaborators().length <= 1) {
-                <p class="text-meta text-ink-3">{{ t('editor.game.justYou') }}</p>
-              }
-              <nc-search
-                class="mt-1"
-                [placeholder]="t('editor.game.inviteByName')"
-                hint=""
-                (submitted)="invite($event)"
-              />
-            </nc-section>
-            <nc-section [title]="t('editor.game.lineage')">
-              @if (session.project()?.forkedFromId; as from) {
-                <!-- The parent is an id in the project payload and nothing more, so its name is
-                     fetched from the public route the link already points at. Until it arrives —
-                     and if the parent has since been unpublished or deleted, which is a state a
-                     fork outlives — the id stands in, because a lineage that says nothing is worse
-                     than one that says a number. -->
-                <div class="flex items-center gap-0.5 text-body text-ink-2">
-                  <nc-icon name="git-branch" [size]="12" />
-                  {{ t('editor.game.forkedFrom') }}
-                  <a [href]="'/play/' + from" class="text-sky-ink">
-                    {{ parent.data()?.name ?? '#' + from }}
-                  </a>
-                  @if (parent.data()?.creator?.username; as who) {
-                    <span class="text-ink-3">{{ t('editor.game.by', { who }) }}</span>
-                  }
-                </div>
-              }
-              <!-- Not the branch mark: that one says this game came off another, and this line says
-                   the opposite — others took copies of it. One glyph for both directions made the
-                   two rows read as one statement. -->
+            }
+            @if (session.collaborators().length <= 1) {
+              <p class="text-meta text-ink-3">{{ t('editor.game.justYou') }}</p>
+            }
+            <nc-search
+              class="mt-1"
+              [placeholder]="t('editor.game.inviteByName')"
+              hint=""
+              (submitted)="invite($event)"
+            />
+          </nc-section>
+          <nc-section banded [title]="t('editor.game.lineage')">
+            @if (session.project()?.forkedFromId; as from) {
+              <!-- The parent is an id in the project payload and nothing more, so its name is
+                   fetched from the public route the link already points at. Until it arrives —
+                   and if the parent has since been unpublished or deleted, which is a state a
+                   fork outlives — the id stands in, because a lineage that says nothing is worse
+                   than one that says a number. -->
               <div class="flex items-center gap-0.5 text-body text-ink-2">
-                <nc-icon name="duplicate" [size]="12" />
-                {{ t('editor.game.remixedBy', { n: session.project()?.forkCount ?? 0 }) }}
+                <nc-icon name="git-branch" [size]="12" />
+                {{ t('editor.game.forkedFrom') }}
+                <a [href]="'/play/' + from" class="text-sky-ink">
+                  {{ parent.data()?.name ?? '#' + from }}
+                </a>
+                @if (parent.data()?.creator?.username; as who) {
+                  <span class="text-ink-3">{{ t('editor.game.by', { who }) }}</span>
+                }
               </div>
-              @if (!session.project()?.publishedAt) {
-                <p class="text-meta text-ink-3">{{ t('editor.game.notForkable') }}</p>
-              }
-            </nc-section>
-          </div>
+            }
+            <!-- Not the branch mark: that one says this game came off another, and this line says
+                 the opposite — others took copies of it. One glyph for both directions made the
+                 two rows read as one statement. -->
+            <div class="flex items-center gap-0.5 text-body text-ink-2">
+              <nc-icon name="duplicate" [size]="12" />
+              {{ t('editor.game.remixedBy', { n: session.project()?.forkCount ?? 0 }) }}
+            </div>
+            @if (!session.project()?.publishedAt) {
+              <p class="text-meta text-ink-3">{{ t('editor.game.notForkable') }}</p>
+            }
+          </nc-section>
         </div>
       </nc-panel-column>
     </div>
