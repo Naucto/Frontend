@@ -18,10 +18,9 @@ const DISABLED =
   'disabled:hover:brightness-100';
 
 /**
- * No `border` here: a width with no colour of its own draws in the inherited ink, which on this
- * design is nearly white. Any frame that has the base without a variant would flash a white box —
- * so the width travels with the colour, in the variants below, and a button with neither is simply
- * unbordered.
+ * No `border` here: a width with no colour of its own falls back to the inherited ink, so a button
+ * holding the base and not yet its variant would draw a rule nobody chose. The width travels with
+ * the colour, in the variants below.
  */
 const BASE =
   'inline-flex cursor-pointer items-center justify-center gap-1 select-none whitespace-nowrap rounded-sm font-ui uppercase tracking-button ' +
