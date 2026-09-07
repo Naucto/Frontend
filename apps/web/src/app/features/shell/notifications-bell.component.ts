@@ -35,7 +35,14 @@ import {
         <!-- The artboard draws the bell at 16, which a 24-grid glyph cannot land on: only the
              exact halves and doubles in IconSize stay crisp under shape-rendering: crispEdges.
              12 is the nearest one that does. -->
-        <nc-icon name="notification" [size]="12" class="text-ink-3" />
+        <!-- Gold with something waiting, and only then. The design draws the bell gold beside its
+             badge, and gold on this design means state — the active rail item, the current version,
+             YOU. A bell that is gold at rest would say "there is something" on an empty inbox. -->
+        <nc-icon
+          name="notification"
+          [size]="12"
+          [class]="store.unread() > 0 ? 'text-gold-ink' : 'text-ink-3'"
+        />
         @if (store.unread() > 0) {
           <!-- Over the bell's shoulder, not in the corner of its box: the design hangs the badge
                off the glyph, which only reads once the button is the 38px the bar gives it. -->
