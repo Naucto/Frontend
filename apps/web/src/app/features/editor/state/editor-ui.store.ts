@@ -63,7 +63,7 @@ export const EditorUiStore = signalStore(
     referenceOpen: readJson<boolean>(STORAGE_KEYS.editorReferenceOpen, false),
     autoRun: true,
     viewportWidth: 1280,
-    pipOpen: true,
+    pipOpen: readJson<boolean>(STORAGE_KEYS.editorViewerFloating, false),
   }),
   withComputed((s) => ({
     /**
@@ -105,11 +105,19 @@ export const EditorUiStore = signalStore(
     setViewportWidth(w: number): void {
       patchState(store, { viewportWidth: w });
     },
+    /**
+     * Whether the runtime floats over a canvas tab.
+     *
+     * Closed until somebody opens it, and remembered after that. It used to arrive open on every
+     * canvas tab: switching from CODE to ART, MAP, SOUND or NET dropped a panel over the lower
+     * right of whatever you had come to work on, and you had to dismiss it each time.
+     */
     setPipOpen(on: boolean): void {
       patchState(store, { pipOpen: on });
+      writeJson(STORAGE_KEYS.editorViewerFloating, on);
     },
     togglePip(): void {
-      patchState(store, { pipOpen: !store.pipOpen() });
+      this.setPipOpen(!store.pipOpen());
     },
     toggleCollapsed(): void {
       const next = { ...store.collapsedByTab(), [store.activeTab()]: !store.collapsed() };
