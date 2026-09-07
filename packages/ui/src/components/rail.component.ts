@@ -16,7 +16,7 @@ export interface RailItem<T extends string> {
   selector: 'nc-rail',
   imports: [IconComponent],
   template: `
-    <nav [attr.aria-label]="label()" class="flex h-full w-full flex-col border-r border-line">
+    <nav [attr.aria-label]="label()" class="flex h-full w-full flex-col">
       @for (it of items(); track it.value) {
         <button
           type="button"
@@ -37,12 +37,10 @@ export interface RailItem<T extends string> {
       }
     </nav>
   `,
-  // One column, one lot of headroom. The nav used to carry its own `pt-1` and a fixed width inside
-  // this host's, which doubled the top padding and — because the nav was only as tall as its
-  // buttons — stopped the right-hand hairline a third of the way down.
-  // The seam is the rail's own: a rail is the edge of the workspace beside it, and left to the
-  // consumer it is drawn by whatever happens to have an edge there — which on one tab was the
-  // editor rather than its tab strip, so the line started below the strip.
+  // The host owns the column: its headroom, its ground, and its seam. Nothing inside adds any of
+  // the three — a nav is only as tall as its buttons, so a rule drawn on it stops where they do.
+  // And the seam is the rail's rather than the workspace's: a rail is the edge of what sits beside
+  // it, which is not a thing each caller should have to remember to draw.
   host: { class: 'block h-full border-r border-line bg-panel pt-1' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
