@@ -31,6 +31,14 @@ interface ArtState {
   region: SpriteRect;
   /** Whether a tool stops at the region's edge or may paint the whole sheet. */
   clip: boolean;
+  /**
+   * Whether the canvas shows only the region.
+   *
+   * Off, the whole sheet is on screen and the region is an outline on it — good for placing a
+   * sprite among its neighbours. On, everything outside the region is covered and the view fits it,
+   * which is what you want once the neighbours stop being the subject.
+   */
+  crop: boolean;
   grid: boolean;
   onion: boolean;
   selection: PixelRect | null;
@@ -55,6 +63,7 @@ export const ArtStore = signalStore(
     colour: 4,
     region: { x: 1, y: 0, w: 1, h: 1 },
     clip: true,
+    crop: false,
     grid: true,
     onion: false,
     selection: null,
@@ -75,6 +84,9 @@ export const ArtStore = signalStore(
     },
     setClip(clip: boolean): void {
       patchState(store, { clip });
+    },
+    setCrop(crop: boolean): void {
+      patchState(store, { crop });
     },
     setGrid(grid: boolean): void {
       patchState(store, { grid });

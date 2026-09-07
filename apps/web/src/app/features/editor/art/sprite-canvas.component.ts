@@ -127,6 +127,8 @@ export class SpriteCanvasComponent {
   readonly region = input.required<SpriteRect>();
   /** Whether a tool stops at the region's edge or may paint anywhere on the sheet. */
   readonly clip = input(true, { transform: booleanAttribute });
+  /** Whether everything outside the region is covered, and the fit follows the region. */
+  readonly crop = input(false, { transform: booleanAttribute });
   readonly tool = input<ArtTool>('pen');
   readonly colour = input(4);
   readonly grid = input(true);
@@ -180,7 +182,9 @@ export class SpriteCanvasComponent {
   private readonly fitScale = computed(() => {
     const { w, h } = this.well();
     if (!w || !h) return 4;
-    return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.floor((Math.min(w, h) - 16) / SHEET_WIDTH)));
+    const r = this.regionPx();
+    const subject = this.crop() ? Math.max(r.w, r.h) : SHEET_WIDTH;
+    return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.floor((Math.min(w, h) - 16) / subject)));
   });
   /**
    * Null until somebody zooms, and from then on theirs. Because the sheet is the whole subject,
@@ -573,6 +577,17 @@ export class SpriteCanvasComponent {
       }
       ctx.stroke();
       ctx.globalAlpha = 1;
+    }
+
+    // Cropped, the sheet around the region is covered rather than cut away: the canvas keeps one
+    // coordinate system, so every tool, every guide and every peer's cursor goes on meaning what it
+    // meant. What changes is what you can see.
+    if (this.crop()) {
+      ctx.fillStyle = cssVar(el, '--nc-page');
+      ctx.fillRect(0, 0, css, r.y * s);
+      ctx.fillRect(0, (r.y + r.h) * s, css, css - (r.y + r.h) * s);
+      ctx.fillRect(0, r.y * s, r.x * s, r.h * s);
+      ctx.fillRect((r.x + r.w) * s, r.y * s, css - (r.x + r.w) * s, r.h * s);
     }
 
     // What is being worked on. Gold, two pixels, over everything: at the fitted zoom a whole sheet

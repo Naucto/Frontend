@@ -99,12 +99,22 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
             <!-- With the whole sheet on the canvas, this is what keeps a stroke off the sprite
                  next door. Off, the tools reach the sheet's own edges. -->
             <nc-toggle-button
-              class="mr-1 shrink-0"
+              class="shrink-0"
               [checked]="art.clip()"
               (checkedChange)="art.setClip($event)"
             >
               <nc-icon name="lock" [size]="12" />
               {{ t('editor.art.clip') }}
+            </nc-toggle-button>
+            <!-- The other half of what the region means: the lock says how far a tool reaches,
+                 this says whether the rest of the sheet is on screen at all. -->
+            <nc-toggle-button
+              class="mr-1 shrink-0"
+              [checked]="art.crop()"
+              (checkedChange)="art.setCrop($event)"
+            >
+              <nc-icon name="frame" [size]="12" />
+              {{ t('editor.art.crop') }}
             </nc-toggle-button>
             <button
               ncButton
@@ -138,6 +148,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
             [painter]="painter"
             [region]="art.region()"
             [clip]="art.clip()"
+            [crop]="art.crop()"
             [tool]="art.tool()"
             [colour]="art.colour()"
             [grid]="art.grid()"
