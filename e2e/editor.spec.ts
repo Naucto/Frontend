@@ -281,9 +281,6 @@ test.describe('editor', () => {
     await expect(page.getByText('320×180').first()).toBeVisible();
   });
 
-  /** Wide enough for both, the same grip folds the column away instead. */
-  // The console is the CODE tab's own inspector and stays put; the grip on its edge is what the
-  // reference unfolds from, and there is no arrangement in which it folds the console away.
   test('the console grip unfolds the reference where both fit', async ({ page }) => {
     await page.setViewportSize({ width: 1920, height: 1030 });
     await page.goto('/edit/7/code');
