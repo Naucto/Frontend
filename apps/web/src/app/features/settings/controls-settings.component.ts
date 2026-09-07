@@ -128,6 +128,14 @@ interface Capture {
           />
         </div>
 
+        <!-- The sheet captions the table from outside its border, on the page's own ground and
+             with no band of its own. Drawn here rather than in the head row, which stays for the
+             sake of the column association a screen reader needs and is taken out of the picture. -->
+        <div aria-hidden="true" class="label mx-[1px] grid grid-cols-[43%_26%_31%] text-ink-3">
+          <span class="px-1.75 pb-1.5">{{ t('settings.action') }}</span>
+          <span class="px-1.75 pb-1.5">{{ t('settings.keyboard') }}</span>
+          <span class="px-1.75 pb-1.5">{{ t('settings.gamepad') }}</span>
+        </div>
         <!-- The design cards the table rather than letting it run edge to edge. -->
         <div class="overflow-hidden rounded-[6px] border border-line bg-sunken">
           <!-- The action names take the widest column and the bindings share what is left: read
@@ -141,16 +149,10 @@ interface Capture {
               <col class="w-[31%]" />
             </colgroup>
             <thead>
-              <tr class="label bg-inset">
-                <th class="border-b border-line px-1.75 py-1.5 text-left font-normal">
-                  {{ t('settings.action') }}
-                </th>
-                <th class="border-b border-line px-1.75 py-1.5 text-left font-normal">
-                  {{ t('settings.keyboard') }}
-                </th>
-                <th class="border-b border-line px-1.75 py-1.5 text-left font-normal">
-                  {{ t('settings.gamepad') }}
-                </th>
+              <tr>
+                <th scope="col" class="sr-only">{{ t('settings.action') }}</th>
+                <th scope="col" class="sr-only">{{ t('settings.keyboard') }}</th>
+                <th scope="col" class="sr-only">{{ t('settings.gamepad') }}</th>
               </tr>
             </thead>
             <tbody>
