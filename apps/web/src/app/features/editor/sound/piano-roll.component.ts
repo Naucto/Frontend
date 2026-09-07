@@ -223,7 +223,6 @@ export class PianoRollComponent {
     return -1;
   }
 
-  /** A key sounds the instrument in hand; with none chosen there is nothing to sound it with. */
   protected playKey(pitch: number): void {
     const inst = this.instrumentId();
     if (inst) this.audition.emit({ instrument: inst, pitch });

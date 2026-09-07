@@ -3,7 +3,7 @@ import { midiToNoteName } from '@naucto/engine';
 
 import { KEY_W, PITCH_MAX, PITCH_MIN, ROW_H, RULER_H } from './piano-roll.component';
 
-/** The black key, measured off the artboard: 34 of the 52-wide column. */
+/** Measured off the artboard; the white bed shows to its right. */
 const BLACK_KEY_W = 34;
 const BLACK = new Set([1, 3, 6, 8, 10]);
 
@@ -11,17 +11,15 @@ interface Key {
   pitch: number;
   name: string;
   black: boolean;
-  /** Brighter for a C, which is how the octave is marked — not by larger type. */
+  /** A C, which the keyboard marks with a brighter key rather than with a label of its own. */
   c: boolean;
 }
 
 /**
- * The keyboard beside the roll: a white bed with the black keys laid over it, as a keyboard is
- * built and as the artboard draws it.
+ * The keyboard beside the roll: a white bed with the black keys laid over it.
  *
- * In the document rather than on the canvas, so the browser pins it while the roll scrolls under
- * it. Painted at the scroll offset it repainted a frame behind every scroll, which reads as a
- * keyboard sliding about — and a painted key can be neither hovered nor pressed.
+ * In the document rather than drawn, for two things a drawing cannot do — hold still while what is
+ * beside it scrolls, without being repainted to keep up, and answer a pointer.
  */
 @Component({
   selector: 'nc-piano-keys',
