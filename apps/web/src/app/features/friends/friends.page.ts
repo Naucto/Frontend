@@ -31,10 +31,9 @@ type Friend = FriendDto & { presence: PresenceDto | null };
 /**
  * Left border and game-name colour of a row, by what the person is doing.
  *
- * The two are one accent said twice, which is what the design draws: the rule down the edge and the
- * game's name carry the same colour, so the eye ties the title to the card without reading a label.
- * Two of the three lifted the name to ink instead, and a card whose edge was jade named its game in
- * the same near-white as every other line on the screen.
+ * One accent said twice, and it has to stay that way: the rule down the edge and the game's name
+ * carry the same colour, which is what ties the title to the card without a label saying they
+ * belong together.
  */
 const ACCENT: Record<string, { rule: string; name: string }> = {
   PLAYING: { rule: 'border-l-jade', name: 'text-jade-ink' },
