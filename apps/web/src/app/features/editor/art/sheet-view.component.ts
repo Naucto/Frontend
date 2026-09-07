@@ -46,9 +46,10 @@ const SCALE = 3;
     ></canvas>
   `,
   // Square, because the sheet is: a band of it would hide wherever the view is not, which is the
-  // one thing this is here to show.
+  // one thing this is here to show. Flush left, because its label is: centred in a panel wider than
+  // 198px the two took different left edges and stopped reading as one control.
   host: {
-    class: 'mx-auto block aspect-square max-h-[198px] rounded-xs border border-line bg-inset',
+    class: 'block aspect-square max-h-[198px] rounded-xs border border-line bg-inset',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
