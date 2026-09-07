@@ -110,41 +110,34 @@ const toRows = (raw: unknown, key: 'versions' | 'checkpoints', release: boolean)
       </span>
     }
     <ng-template #panel>
-      <nc-popover-panel title="Versions" class="w-[360px]">
+      <nc-popover-panel title="Versions" class="w-[354px]">
         <span actions class="label text-ink-4">name one to release it</span>
         <div class="p-2">
-          <ul class="divide-y divide-line-soft">
+          <!-- No rules between the rows: the sheet separates them by giving the current one a
+               ground of its own, and a list that also ruled every gap read as a table. -->
+          <ul>
             <!-- One list, newest first: releases and autosaves interleaved, as the design shows. -->
             @for (v of history(); track v.name; let i = $index) {
-              <li
-                class="flex items-center gap-1 py-1"
-                [class.bg-line-soft]="i === 0"
-                [class.border-l-2]="i === 0"
-                [class.border-gold]="i === 0"
-                [class.pl-1]="i === 0"
-              >
+              <li class="flex h-[52px] items-center gap-1 px-1" [class.bg-line-soft]="i === 0">
+                <!-- Gold marks which one the game is, not which ones were released. -->
                 <span
                   class="w-[22px] shrink-0 font-mono text-label"
-                  [class.text-gold-ink]="v.release"
+                  [class]="i === 0 ? 'text-gold-ink' : v.release ? 'text-ink-body' : 'text-ink-4'"
                 >
-                  {{ v.release ? 'v' + v.index : '·' }}
+                  {{ v.release ? 'v' + v.index : '—' }}
                 </span>
                 <div class="min-w-0 flex-1">
-                  <div
-                    class="truncate text-ui"
-                    [class.text-ink]="v.release"
-                    [class.text-ink-3]="!v.release"
-                  >
+                  <div class="truncate text-ui" [class]="i === 0 ? 'text-ink' : 'text-ink-3'">
                     {{ v.release ? v.name : 'Autosave' }}
                   </div>
                   @if (v.when) {
-                    <div class="label">{{ v.when | ncRelativeTime }}</div>
+                    <div class="label text-ink-4">{{ v.when | ncRelativeTime }}</div>
                   }
                 </div>
                 <!-- "Current" is only true while nothing has been typed since: the newest save
                      stops describing the document the moment anyone edits it. -->
                 @if (i === 0 && !session.dirty()) {
-                  <span class="label text-gold-ink">Current</span>
+                  <span class="label shrink-0 text-gold-ink">Current</span>
                 } @else {
                   <button
                     ncButton
@@ -158,17 +151,22 @@ const toRows = (raw: unknown, key: 'versions' | 'checkpoints', release: boolean)
                     <nc-icon name="undo" [size]="12" />
                   </button>
                 }
-                <button
-                  ncButton
-                  variant="ghost"
-                  size="sm"
-                  iconOnly
-                  [attr.aria-label]="v.release ? 'Delete this release' : 'Delete this autosave'"
-                  [disabled]="!v.release || !session.isHost()"
-                  (click)="remove(v)"
-                >
-                  <nc-icon name="trash" [size]="12" />
-                </button>
+                <!-- The row the game currently is offers nothing to do to it: the sheet gives it
+                     its badge and no actions, and restoring or deleting what you are already on
+                     are both the same nothing. -->
+                @if (i !== 0 || session.dirty()) {
+                  <button
+                    ncButton
+                    variant="ghost"
+                    size="sm"
+                    iconOnly
+                    [attr.aria-label]="v.release ? 'Delete this release' : 'Delete this autosave'"
+                    [disabled]="!v.release || !session.isHost()"
+                    (click)="remove(v)"
+                  >
+                    <nc-icon name="trash" [size]="12" />
+                  </button>
+                }
               </li>
             } @empty {
               <li class="py-2 text-meta text-ink-3">Nothing saved yet.</li>
