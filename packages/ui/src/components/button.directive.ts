@@ -17,18 +17,24 @@ const DISABLED =
   'disabled:hover:bg-transparent disabled:hover:border-line disabled:hover:text-ink-4 ' +
   'disabled:hover:brightness-100';
 
+/**
+ * No `border` here: a width with no colour of its own draws in the inherited ink, which on this
+ * design is nearly white. Any frame that has the base without a variant would flash a white box —
+ * so the width travels with the colour, in the variants below, and a button with neither is simply
+ * unbordered.
+ */
 const BASE =
-  'inline-flex cursor-pointer items-center justify-center gap-1 select-none whitespace-nowrap rounded-sm border font-ui uppercase tracking-button ' +
+  'inline-flex cursor-pointer items-center justify-center gap-1 select-none whitespace-nowrap rounded-sm font-ui uppercase tracking-button ' +
   `transition-colors duration-100 focus-visible:outline-2 ${DISABLED}`;
 
 const VARIANTS: Record<ButtonVariant, string> = {
-  primary: 'bg-gold border-gold text-on-accent hover:bg-orange hover:border-orange',
-  run: 'bg-hot border-hot text-on-accent-dark hover:brightness-110',
-  secondary: 'bg-raised border-line-strong text-ink-body hover:text-ink hover:border-ink-4',
-  sky: 'bg-sky border-sky text-on-accent hover:brightness-110',
-  ghost: 'bg-transparent border-transparent text-ink-2 hover:text-ink hover:bg-raised',
+  primary: 'border bg-gold border-gold text-on-accent hover:bg-orange hover:border-orange',
+  run: 'border bg-hot border-hot text-on-accent-dark hover:brightness-110',
+  secondary: 'border bg-raised border-line-strong text-ink-body hover:text-ink hover:border-ink-4',
+  sky: 'border bg-sky border-sky text-on-accent hover:brightness-110',
+  ghost: 'border bg-transparent border-transparent text-ink-2 hover:text-ink hover:bg-raised',
   danger:
-    'bg-transparent border-hot-ink text-hot-ink hover:bg-hot hover:text-on-accent-dark hover:border-hot',
+    'border bg-transparent border-hot-ink text-hot-ink hover:bg-hot hover:text-on-accent-dark hover:border-hot',
 };
 
 // Measured off the artboards: a row action is 24px, the default is 32px, and the one button a
