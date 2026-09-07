@@ -18,22 +18,24 @@ const DISABLED =
   'disabled:hover:brightness-100';
 
 /**
- * No `border` here: a width with no colour of its own falls back to the inherited ink, so a button
- * holding the base and not yet its variant would draw a rule nobody chose. The width travels with
- * the colour, in the variants below.
+ * Only the text fades.
+ *
+ * A class binding is applied one class at a time, so an element exists for part of a frame with a
+ * border width and not yet the colour that goes with it — and a colour transition turns that single
+ * frame into a tenth of a second of a rule nobody chose. Text cannot draw a box, so it may fade.
  */
 const BASE =
-  'inline-flex cursor-pointer items-center justify-center gap-1 select-none whitespace-nowrap rounded-sm font-ui uppercase tracking-button ' +
-  `transition-colors duration-100 focus-visible:outline-2 ${DISABLED}`;
+  'inline-flex cursor-pointer items-center justify-center gap-1 select-none whitespace-nowrap rounded-sm border font-ui uppercase tracking-button ' +
+  `transition-[color] duration-100 focus-visible:outline-2 ${DISABLED}`;
 
 const VARIANTS: Record<ButtonVariant, string> = {
-  primary: 'border bg-gold border-gold text-on-accent hover:bg-orange hover:border-orange',
-  run: 'border bg-hot border-hot text-on-accent-dark hover:brightness-110',
-  secondary: 'border bg-raised border-line-strong text-ink-body hover:text-ink hover:border-ink-4',
-  sky: 'border bg-sky border-sky text-on-accent hover:brightness-110',
-  ghost: 'border bg-transparent border-transparent text-ink-2 hover:text-ink hover:bg-raised',
+  primary: 'bg-gold border-gold text-on-accent hover:bg-orange hover:border-orange',
+  run: 'bg-hot border-hot text-on-accent-dark hover:brightness-110',
+  secondary: 'bg-raised border-line-strong text-ink-body hover:text-ink hover:border-ink-4',
+  sky: 'bg-sky border-sky text-on-accent hover:brightness-110',
+  ghost: 'bg-transparent border-transparent text-ink-2 hover:text-ink hover:bg-raised',
   danger:
-    'border bg-transparent border-hot-ink text-hot-ink hover:bg-hot hover:text-on-accent-dark hover:border-hot',
+    'bg-transparent border-hot-ink text-hot-ink hover:bg-hot hover:text-on-accent-dark hover:border-hot',
 };
 
 // Measured off the artboards: a row action is 24px, the default is 32px, and the one button a
