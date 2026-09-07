@@ -80,9 +80,6 @@ import { SearchBarComponent } from './search-bar.component';
               {{ $index + 1 }}
             </span>
             {{ f.name }}
-            @if (f.id === activeId() && session.dirty()) {
-              <span class="h-[6px] w-[6px] rounded-full bg-orange" aria-hidden="true"></span>
-            }
             <button
               type="button"
               class="ml-0.5 hidden text-ink-4 group-hover:inline hover:text-ink"
