@@ -318,10 +318,15 @@ export class SpriteCanvasComponent {
   }
 
   /** The same position, unsnapped. */
+  /** Sheet coordinates, whatever the view is showing: cropped, its own origin is the region's. */
   private pointOf(e: PointerEvent): { x: number; y: number } {
-    const r = this.canvas().nativeElement.getBoundingClientRect();
+    const box = this.canvas().nativeElement.getBoundingClientRect();
     const s = this.scale();
-    return { x: (e.clientX - r.left) / s, y: (e.clientY - r.top) / s };
+    const origin = this.crop() ? this.regionPx() : { x: 0, y: 0 };
+    return {
+      x: origin.x + (e.clientX - box.left) / s,
+      y: origin.y + (e.clientY - box.top) / s,
+    };
   }
 
   private inBounds(p: Pt): boolean {
@@ -489,28 +494,36 @@ export class SpriteCanvasComponent {
     // resamples the finished picture once, evenly, on its way down to the size asked for.
     const s = Math.ceil(scale);
     const px = this.px;
-    const css = px * s;
-    const shown = px * scale;
-    if (el.width !== css) el.width = css;
-    if (el.height !== css) el.height = css;
-    el.style.width = `${String(shown)}px`;
-    el.style.height = `${String(shown)}px`;
+    // The whole sheet, in canvas units. Everything below draws in sheet coordinates; what the
+    // cropped view does is move the origin, not change what anything means.
+    const sheetPx = px * s;
+    const view = this.regionPx();
+    const cropped = this.crop();
+    const viewW = cropped ? view.w : px;
+    const viewH = cropped ? view.h : px;
+    const cw = viewW * s;
+    const ch = viewH * s;
+    if (el.width !== cw) el.width = cw;
+    if (el.height !== ch) el.height = ch;
+    el.style.width = `${String(viewW * scale)}px`;
+    el.style.height = `${String(viewH * scale)}px`;
     el.style.imageRendering = s === scale ? 'pixelated' : 'auto';
     const wrap = this.wrap().nativeElement;
-    wrap.style.width = `${String(shown)}px`;
-    wrap.style.height = `${String(shown)}px`;
+    wrap.style.width = `${String(viewW * scale)}px`;
+    wrap.style.height = `${String(viewH * scale)}px`;
     ctx.imageSmoothingEnabled = false;
     // 8px squares, fixed in viewport pixels: the transparency check should not zoom with the art,
     // or it reads as part of the sprite. Inset against sunken is the one-step pair the design
     // draws, and it inverts correctly in daylight.
     checkerboard(
       ctx,
-      css,
-      css,
+      cw,
+      ch,
       Math.round((8 * s) / scale),
       cssVar(el, '--nc-inset'),
       cssVar(el, '--nc-sunken'),
     );
+    if (cropped) ctx.translate(-view.x * s, -view.y * s);
 
     const sheet = this.painter().canvas;
     const r = this.regionPx();
@@ -522,7 +535,7 @@ export class SpriteCanvasComponent {
     }
     const lifted = this.drag?.lifted;
     const off = this.moveOffset();
-    ctx.drawImage(sheet, 0, 0, px, px, 0, 0, css, css);
+    ctx.drawImage(sheet, 0, 0, px, px, 0, 0, sheetPx, sheetPx);
     if (lifted && off) {
       // Hide the lifted region where it was, then draw its pixels at their offset.
       ctx.clearRect(lifted.rect.x * s, lifted.rect.y * s, lifted.rect.w * s, lifted.rect.h * s);
@@ -558,9 +571,9 @@ export class SpriteCanvasComponent {
         for (let i = 1; i < px; i++) {
           if (i % SPRITE_SIZE === 0) continue;
           ctx.moveTo(i * s + 0.5, 0);
-          ctx.lineTo(i * s + 0.5, css);
+          ctx.lineTo(i * s + 0.5, sheetPx);
           ctx.moveTo(0, i * s + 0.5);
-          ctx.lineTo(css, i * s + 0.5);
+          ctx.lineTo(sheetPx, i * s + 0.5);
         }
         ctx.stroke();
       }
@@ -573,23 +586,12 @@ export class SpriteCanvasComponent {
       ctx.beginPath();
       for (let i = SPRITE_SIZE; i < px; i += SPRITE_SIZE) {
         ctx.moveTo(i * s + 0.5, 0);
-        ctx.lineTo(i * s + 0.5, css);
+        ctx.lineTo(i * s + 0.5, sheetPx);
         ctx.moveTo(0, i * s + 0.5);
-        ctx.lineTo(css, i * s + 0.5);
+        ctx.lineTo(sheetPx, i * s + 0.5);
       }
       ctx.stroke();
       ctx.globalAlpha = 1;
-    }
-
-    // Cropped, the sheet around the region is covered rather than cut away: the canvas keeps one
-    // coordinate system, so every tool, every guide and every peer's cursor goes on meaning what it
-    // meant. What changes is what you can see.
-    if (this.crop()) {
-      ctx.fillStyle = cssVar(el, '--nc-page');
-      ctx.fillRect(0, 0, css, r.y * s);
-      ctx.fillRect(0, (r.y + r.h) * s, css, css - (r.y + r.h) * s);
-      ctx.fillRect(0, r.y * s, r.x * s, r.h * s);
-      ctx.fillRect((r.x + r.w) * s, r.y * s, css - (r.x + r.w) * s, r.h * s);
     }
 
     // What is being worked on. Gold, two pixels, over everything: at the fitted zoom a whole sheet
@@ -602,7 +604,7 @@ export class SpriteCanvasComponent {
 
     // The sheet's own edge is a neutral hairline; gold on this screen means the region alone.
     ctx.strokeStyle = cssVar(el, '--nc-line-strong');
-    ctx.strokeRect(0.5, 0.5, css - 1, css - 1);
+    ctx.strokeRect(0.5, 0.5, sheetPx - 1, sheetPx - 1);
 
     const sel = this.selection();
     if (sel) {
