@@ -148,7 +148,10 @@ function formatScalar(value: TableScalar | undefined): string {
 
       <div class="grid min-h-0 grid-cols-[minmax(0,1fr)_421px]">
         <section class="flex min-h-0 flex-col bg-paper">
-          <div class="flex items-center gap-1 border-b border-line-faint px-[18px] py-[10px]">
+          <!-- No rule under this one: the header above it already carries one, and the table's own
+               heading row carries a third — the design draws none of the three, and a caption on a
+               path does not need a line to separate it from the table it captions. -->
+          <div class="flex items-center gap-1 px-[18px] py-[10px]">
             <span class="font-mono text-[9px] tracking-[0.14em] text-ink-3">net.state</span>
             <span class="flex-1"></span>
             <nc-help-dot [text]="t('editor.net.helpState')" />
