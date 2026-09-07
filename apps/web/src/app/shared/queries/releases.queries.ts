@@ -178,9 +178,8 @@ export function injectReleaseImage(id: () => number | null): CreateQueryResult<s
 }
 
 /**
- * Cover of a project at any stage, which is what a draft has: its release twin answers only for a
- * game that has been published, so a card built on that one shows the empty hatch for the whole of
- * a project's life until it ships.
+ * Cover of a project at any stage, which is the one a draft has — its release twin answers only
+ * once the game has been published.
  *
  * Authenticated, so it is for a reader looking at their own work rather than for the shelves.
  */
