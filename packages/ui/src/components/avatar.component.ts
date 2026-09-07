@@ -14,10 +14,8 @@ export type PresenceColour = 'sky' | 'blush' | 'jade';
 /**
  * How a call site may pin an avatar's fill when the identity colour is not what it means.
  *
- * `gold` is for the row of a roster that is you. Gold marks state on this design — the active rail
- * item, the current version, the cell being edited — and among a list of people, which one is you is
- * the state worth marking. It is not the account menu's square, which the design leaves neutral: the
- * top bar has nobody to tell you apart from.
+ * `gold` marks the row of a roster that is the viewer's own. Being told apart is the whole of what
+ * it does, so it buys nothing on an avatar that stands alone with no list to be picked out of.
  */
 export type AvatarColour = PresenceColour | 'neutral' | 'gold' | number | `#${string}`;
 
