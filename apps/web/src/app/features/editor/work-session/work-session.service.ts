@@ -79,19 +79,16 @@ export class WorkSessionService {
   /**
    * Set when the last write to the server did not land, and cleared by the next one that does.
    *
-   * Autosave runs from a timer and nothing awaits it, so without this a refused write is silent:
-   * the work stays in the document, the reader is told nothing, and the first they hear of it is a
-   * reload that has lost an afternoon.
+   * Autosave runs from a timer with nothing awaiting it, so a refusal has nowhere else to surface:
+   * the work stays in the document and the reader would otherwise never be told.
    */
   readonly saveFailed = signal(false);
   /**
    * What the editor's status bar says, and it is about the collaboration rather than the server.
    *
-   * Edits reach everyone else the moment they are typed; reaching the server is a separate cycle on
-   * a timer, reported on the GAME tab as when the project was last saved. Reading `dirty` here made
-   * the bar claim a sync was under way from the first keystroke until that timer next fired —
-   * minutes of a word that means "wait", while nothing at all was happening — and on a client, who
-   * never saves and whose flag therefore never clears, for as long as the editor stayed open.
+   * Edits reach everyone else the moment they are typed, so nothing is pending between keystroke
+   * and share. Reaching the server is a separate cycle on a timer, and how long ago that last
+   * happened is reported elsewhere, on the project's own tab.
    */
   readonly synced = computed(
     () => this.status() === 'ready' && !this.saving() && !this.saveFailed(),
@@ -344,8 +341,8 @@ export class WorkSessionService {
   private startAutosave(): void {
     if (this.autosave) return;
     this.autosave = setInterval(() => {
-      // Nothing is waiting on this, so a refusal has to be recorded rather than thrown into the
-      // void — `save` marks it, and the status bar is what says so.
+      // Swallowed here because `save` has already recorded it; rethrowing would only reach a
+      // timer, which has nobody to tell.
       if (this.dirty()) void this.save().catch(() => undefined);
     }, AUTOSAVE_MS);
   }
