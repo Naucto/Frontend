@@ -673,9 +673,11 @@ export class NetTabPage {
   }
 
   /**
-   * Whether there is anything left to fold. Also true of a tree with no containers at all, and of
-   * no tree — the panel keeps its header while the game is not in a session, and a control that
-   * cannot act is better drawn as unavailable than left looking inert.
+   * True when nothing is left to fold — including a tree of no containers, and no tree at all.
+   *
+   * Those two cases matter because the header outlives the tree: it is drawn while the game is not
+   * in a session, when there is nothing to act on, and a control that cannot act reads better as
+   * unavailable than as one that does nothing when pressed.
    */
   protected readonly allCollapsed = computed(() => {
     const shut = this.collapsed();
