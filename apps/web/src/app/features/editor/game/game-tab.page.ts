@@ -220,11 +220,11 @@ const SUMMARY_MAX = 80;
             </nc-section>
             <nc-section [title]="t('editor.game.monetization')">
               <nc-help-dot actions [text]="t('editor.game.monetizationHelp')" />
-              <!-- The design fills the chosen tier in ink, not the neutral raised: it is a
-                   statement about the game, not a passive selection. -->
+              <!-- Neutral, where STATUS carries a meaning colour. An earlier pass read the design
+                   as filling the chosen tier and said so here; measuring the two controls against
+                   the sheet says otherwise, and two filled cells stacked make the neutral choice
+                   look like a second state colour. -->
               <nc-segmented
-                fill
-                tone="ink"
                 [options]="monetizations"
                 [value]="monetization()"
                 (valueChange)="setMonetization($event)"
