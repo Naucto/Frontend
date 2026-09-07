@@ -57,8 +57,13 @@ const PIP_WIDTH = 304;
         </button>
       }
       @if (!ui.collapsed() && ui.columnMode() !== 'swap' && popped()) {
-        <!-- The slot the viewer left behind says where it went. -->
-        <div class="m-1.5 rounded-sm border border-dashed border-line-strong p-2 text-center">
+        <!-- The slot the viewer left behind says where it went, and holds its shape while it is
+             away: at the viewer's own 16:9 the column keeps the same height whether the picture is
+             docked or floating, so popping it out and back does not shove the console up and down
+             the page. -->
+        <div
+          class="m-1.5 flex aspect-video flex-col items-center justify-center rounded-sm border border-dashed border-line-strong p-2 text-center"
+        >
           <p class="label text-ink-3">{{ t('editor.viewerPopped') }}</p>
           <p class="mt-0.5 text-meta text-ink-4">{{ t('editor.viewerPoppedHint') }}</p>
           <button ncButton variant="secondary" size="sm" class="mt-1" (click)="ui.togglePip()">
