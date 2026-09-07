@@ -20,6 +20,7 @@ import {
   LabelComponent,
   LcdComponent,
   MeterComponent,
+  NoticeComponent,
   OnlineDotComponent,
   PanelComponent,
   PopoverDirective,
@@ -62,6 +63,7 @@ import {
     InputDirective,
     KeycapComponent,
     LabelComponent,
+    NoticeComponent,
     LcdComponent,
     MeterComponent,
     OnlineDotComponent,
@@ -235,6 +237,10 @@ import {
             >
               <nc-presence-layer [marks]="presenceMarks" [viewport]="presenceFrame" />
             </div>
+          </nc-section>
+          <nc-section title="Notice" class="mt-2">
+            <nc-notice>The game is over the size ceiling, so publishing is blocked.</nc-notice>
+            <nc-notice tone="danger">This release could not be reached.</nc-notice>
           </nc-section>
           <nc-section title="Label" class="mt-2">
             <nc-label>In this work session</nc-label>

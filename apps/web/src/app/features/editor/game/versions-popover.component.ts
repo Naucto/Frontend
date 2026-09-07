@@ -95,13 +95,16 @@ const toRows = (raw: unknown, key: 'versions' | 'checkpoints', release: boolean)
     </button>
     <!-- The design only shows the size when the game is near its ceiling. -->
     @if (sizeTone(); as tone) {
-      <!-- An icon, not a literal glyph: HD44780 has no diamond, so it came out as a stray mark. -->
+      <!-- The diamond the design puts here. It was a save glyph, chosen because nobody found a
+           diamond in the set — the alert glyph is one, and comparing the two drawings settled it,
+           which comparing their names never would: both sides already used the same word. A disk
+           beside a size also read as a save affordance, and nothing on this screen saves. -->
       <span
         class="ml-1 flex items-center gap-0.5 font-mono text-label"
         [class.text-hot-ink]="tone === 'over'"
         [class.text-orange-ink]="tone === 'near'"
       >
-        <nc-icon name="save" [size]="12" />
+        <nc-icon name="alert" [size]="12" />
         {{ kb(size().total) }}
       </span>
     }
