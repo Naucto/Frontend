@@ -26,7 +26,12 @@ import {
   SPRITE_SIZE,
   SPRITES_PER_ROW,
 } from '@naucto/engine';
-import { PresenceLayerComponent, type PresenceMark, type PresenceViewport } from '@naucto/ui';
+import {
+  DragPanDirective,
+  PresenceLayerComponent,
+  type PresenceMark,
+  type PresenceViewport,
+} from '@naucto/ui';
 
 import { type Collaborator } from '../work-session/work-session.service';
 import { type MapTool, type TileRect } from './map.store';
@@ -78,7 +83,6 @@ const FLAG_VARS = [
         (pointerup)="onUp()"
         (pointercancel)="onUp()"
         (pointerleave)="onLeave()"
-        (wheel)="onWheel($event)"
         (contextmenu)="$event.preventDefault()"
       ></canvas>
       <nc-presence-layer [marks]="marks()" [viewport]="viewPx()" />
@@ -86,9 +90,13 @@ const FLAG_VARS = [
   `,
   // A map smaller than the viewport is centred rather than pinned to the top-left; `safe` keeps
   // the origin reachable once it is larger.
+  hostDirectives: [DragPanDirective],
+  // The wheel is bound here rather than on the canvas so it is answered over the gutter a map
+  // smaller than its well is centred in — where it used to fall through and zoom the page instead.
   host: {
     class: 'flex overflow-auto [align-items:safe_center] [justify-content:safe_center]',
     tabindex: '0',
+    '(wheel)': 'onWheel($event)',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -195,8 +203,11 @@ export class MapCanvasComponent {
     });
   }
 
+  /**
+   * The wheel zooms rather than scrolls, which is what a surface you work *into* wants, and is why
+   * the middle button pans instead. Ctrl still zooms, so the browser's own gesture lands here too.
+   */
   protected onWheel(e: WheelEvent): void {
-    if (!e.ctrlKey && !e.metaKey) return;
     e.preventDefault();
     this.zoomBy.emit(e.deltaY < 0 ? 1 : -1);
   }

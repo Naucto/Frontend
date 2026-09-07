@@ -26,7 +26,12 @@ import {
 } from '@app/shared/pixel/pixel-tools';
 import { type SheetPainter } from '@app/shared/pixel/sheet-painter';
 import { type Game, SHEET_WIDTH, SPRITE_SIZE, SPRITES_PER_ROW } from '@naucto/engine';
-import { PresenceLayerComponent, type PresenceMark, type PresenceViewport } from '@naucto/ui';
+import {
+  DragPanDirective,
+  PresenceLayerComponent,
+  type PresenceMark,
+  type PresenceViewport,
+} from '@naucto/ui';
 
 import { type Collaborator } from '../work-session/work-session.service';
 import { type ArtTool, type PixelRect, type SpriteRect } from './art.store';
@@ -112,6 +117,7 @@ interface Drag {
   // `m-auto` on the content rather than `justify-center` on the host: centring a flex child that
   // overflows its container makes the overflowing start unreachable by scrolling, which at any
   // zoom past the fit is most of the sheet.
+  hostDirectives: [DragPanDirective],
   host: {
     class: 'flex overflow-auto',
     tabindex: '0',
@@ -165,8 +171,11 @@ export class SpriteCanvasComponent {
     this.userScale.set(null);
   }
 
+  /**
+   * The wheel zooms rather than scrolls, which is what a surface you work *into* wants, and is why
+   * the middle button pans instead. Ctrl still zooms, so the browser's own gesture lands here too.
+   */
   protected onWheel(e: WheelEvent): void {
-    if (!e.ctrlKey && !e.metaKey) return;
     e.preventDefault();
     this.zoomBy(e.deltaY < 0 ? 1 : -1);
   }
@@ -625,6 +634,11 @@ export class SpriteCanvasComponent {
       ctx.strokeRect(h.x * s + 1, h.y * s + 1, s - 2, s - 2);
       ctx.lineWidth = 1;
     }
+
+    // The frame this publishes is measured against the content, and the line above is where the
+    // content takes its size. Zooming moves the frame without scrolling anything, so a scroll
+    // listener alone leaves whatever draws a map of the view showing where the view used to be.
+    this.measure();
   }
 }
 

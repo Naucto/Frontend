@@ -7,6 +7,7 @@ export * from './components/chip.component';
 export * from './components/confirm-dialog.component';
 export * from './components/dialog.service';
 export * from './components/dialog-shell.component';
+export * from './components/drag-pan.directive';
 export * from './components/edge-handle.component';
 export * from './components/empty-state.component';
 export * from './components/error-state.component';

@@ -332,6 +332,28 @@ test.describe('editor', () => {
     await expect(page.getByText('320×180').first()).toBeVisible();
   });
 
+  /**
+   * The sheet map draws a frame of what the canvas is showing. It was published from a scroll
+   * listener alone, so zooming — which moves the frame without scrolling anything — left it
+   * describing a view that had gone.
+   *
+   * Read as pixels because the frame is drawn rather than laid out, and nothing else on this map
+   * answers to zoom: the region it also draws is unchanged by it, so a difference here is the
+   * frame or nothing.
+   */
+  test('the sheet map follows a zoom, not only a scroll', async ({ page }) => {
+    await page.goto('/edit/7/art');
+    await expect(page.getByRole('img', { name: 'Sprite canvas' })).toBeVisible();
+
+    const map = page.getByRole('img', { name: /Sheet map/ });
+    const painted = async (): Promise<string> =>
+      map.evaluate((el) => (el as HTMLCanvasElement).toDataURL());
+
+    const before = await painted();
+    await page.getByRole('button', { name: 'Zoom in' }).click();
+    await expect.poll(painted).not.toBe(before);
+  });
+
   test('MAP tab stamps tiles', async ({ page }) => {
     await page.goto('/edit/7/map');
     const canvas = page.getByRole('img', { name: 'Map canvas' });
