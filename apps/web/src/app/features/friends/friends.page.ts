@@ -57,7 +57,10 @@ const ACCENT: Record<string, { rule: string; name: string }> = {
   template: `
     <ng-container *transloco="let t">
       @if (!friends().length && !requests().length && !recent().length) {
-        <div class="flex min-h-[60vh] items-center justify-center">
+        <!-- The height left over, not a fraction of the window: 60vh centred the column on a box
+             that has nothing to do with what is actually free below the bar, so it sat high on a
+             tall screen and low on a short one. -->
+        <div class="flex flex-1 items-center justify-center">
           <nc-empty-state icon="users" [title]="t('friends.emptyTitle')">
             <!-- Formatted by hand, and kept that way: a newline between the code and the stop that
                  follows it collapses to a space, so the sentence read "…R9VTKD3P ." Reformatting
