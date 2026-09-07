@@ -25,9 +25,9 @@ import {
   ButtonDirective,
   EmptyStateComponent,
   IconComponent,
-  LcdComponent,
   PopoverDirective,
   PopoverPanelComponent,
+  ReadoutComponent,
   SegmentedComponent,
   ToggleButtonComponent,
 } from '@naucto/ui';
@@ -63,8 +63,8 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
     ButtonDirective,
     EmptyStateComponent,
     IconComponent,
-    LcdComponent,
     PopoverDirective,
+    ReadoutComponent,
     PopoverPanelComponent,
     SegmentedComponent,
     ToggleButtonComponent,
@@ -194,27 +194,52 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
             <span class="flex-1"></span>
             <!-- BPM and STEPS are chip rows like every other exclusive choice in the design; the
                  bespoke number input this used to be broke the "compose the kit" rule. -->
-            <!-- The chip rows wrap by default, which is right on a shelf header and wrong in a
-                 40px strip: they have to keep their line and let the strip scroll instead. -->
+            <!-- A value in a well, with what changes it behind the well rather than beside it.
+                 Laid out as strips of presets the two of them spent over half the strip's right
+                 half on choices the design never offers on the surface. -->
             <div class="flex shrink-0 items-center gap-0.5">
               <span class="label">{{ t('editor.sound.bpm') }}</span>
-              <nc-segmented
-                variant="chips"
-                [options]="bpmOptions"
-                [value]="String(p.bpm)"
-                (valueChange)="setBpm($event)"
-                [label]="t('editor.sound.bpm')"
-              />
+              <button type="button" [ncPopover]="bpmMenu" [attr.aria-label]="t('editor.sound.bpm')">
+                <nc-readout size="sm" [value]="String(p.bpm)" tone="gold" />
+              </button>
+              <ng-template #bpmMenu>
+                <nc-popover-panel>
+                  @for (o of bpmOptions; track o.value) {
+                    <button
+                      type="button"
+                      class="flex w-full items-center px-1 py-0.5 text-left font-mono text-body hover:bg-raised"
+                      [class]="String(p.bpm) === o.value ? 'text-gold-ink' : 'text-ink'"
+                      (click)="setBpm(o.value)"
+                    >
+                      {{ o.label }}
+                    </button>
+                  }
+                </nc-popover-panel>
+              </ng-template>
             </div>
             <div class="flex shrink-0 items-center gap-0.5">
               <span class="label">{{ t('editor.sound.steps') }}</span>
-              <nc-segmented
-                variant="chips"
-                [options]="stepOptions"
-                [value]="String(p.steps)"
-                (valueChange)="setSteps($event)"
-                [label]="t('editor.sound.steps')"
-              />
+              <button
+                type="button"
+                [ncPopover]="stepMenu"
+                [attr.aria-label]="t('editor.sound.steps')"
+              >
+                <nc-readout size="sm" [value]="String(p.steps)" tone="gold" />
+              </button>
+              <ng-template #stepMenu>
+                <nc-popover-panel>
+                  @for (o of stepOptions; track o.value) {
+                    <button
+                      type="button"
+                      class="flex w-full items-center px-1 py-0.5 text-left font-mono text-body hover:bg-raised"
+                      [class]="String(p.steps) === o.value ? 'text-gold-ink' : 'text-ink'"
+                      (click)="setSteps(o.value)"
+                    >
+                      {{ o.label }}
+                    </button>
+                  }
+                </nc-popover-panel>
+              </ng-template>
             </div>
             <button
               ncButton
@@ -288,17 +313,6 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
              it is the only place you see what the synth is doing rather than what the pattern says
              it should. -->
         <div class="flex h-5 shrink-0 items-center gap-1 border-b border-line px-1.5">
-          <nc-lcd class="w-[140px]" [minHeight]="24">
-            <span class="flex items-center gap-0.5 whitespace-nowrap">
-              @for (v of voices(); track $index) {
-                <span
-                  class="inline-block h-1.5 w-1"
-                  [class]="v ? 'bg-lcd-ink' : 'bg-lcd-ink/25'"
-                ></span>
-              }
-              <span class="ml-1">{{ t('editor.sound.liveOut') }}</span>
-            </span>
-          </nc-lcd>
           <!-- One button carrying its current resolution, not six chips: the row is 340px and
                the chips wrapped onto a second line, out of the bar and over the scope. -->
           <nc-toggle-button
