@@ -313,19 +313,23 @@ function formatScalar(value: TableScalar | undefined): string {
           <!-- Shared: the roster, the join code and who holds which slot are one set of facts that
                everyone in the session is looking at, so a peer's pointer says what is about to
                change for all of you. The test rig below is not — see there. -->
-          <section class="relative border-b border-line p-1.5">
+          <section class="relative border-b border-line px-2 py-[14px]">
             <nc-presence-surface surface="net:session" />
             <div class="mb-1 flex items-center justify-between">
               <span class="label text-ink-3">{{ t('editor.net.whoCanJoin') }}</span>
               <nc-help-dot [text]="t('editor.net.whoHelp')" />
             </div>
-            <span class="label text-ink-4">{{ t('editor.net.inWorkSession') }}</span>
+            <span class="font-mono text-micro uppercase tracking-strip text-ink-4">
+              {{ t('editor.net.inWorkSession') }}
+            </span>
             @for (c of work.collaborators(); track c.clientId) {
               <div class="flex items-center gap-1 py-0.5">
                 <nc-avatar [name]="c.name" [id]="c.userId" [size]="16" />
                 <span class="text-ui text-ink">{{ c.name }}</span>
                 @if (c.isSelf) {
-                  <span class="label text-ink-4">{{ t('editor.net.you') }}</span>
+                  <span class="font-mono text-micro lowercase tracking-button text-ink-3">
+                    {{ t('editor.net.you') }}
+                  </span>
                 }
                 <span class="flex-1"></span>
                 @if (slotOf(c.userId); as slot) {
@@ -357,7 +361,7 @@ function formatScalar(value: TableScalar | undefined): string {
             }
           </section>
 
-          <section class="relative border-b border-line p-1.5">
+          <section class="relative border-b border-line px-2 py-[14px]">
             <nc-presence-surface surface="net:players" />
             <div class="mb-1 flex items-center justify-between">
               <span class="label text-ink-3">
@@ -394,7 +398,7 @@ function formatScalar(value: TableScalar | undefined): string {
           <!-- No presence: the rig spawns a client in this browser and the impairment sliders
                shape that client alone. Nobody else sees what these do, so nobody else needs to see
                a pointer over them. -->
-          <section class="p-1.5">
+          <section class="px-2 py-[14px]">
             <div class="mb-1 flex items-center justify-between">
               <span class="label text-ink-3">{{ t('editor.net.testRig') }}</span>
               <nc-help-dot [text]="t('editor.net.testHelp')" />
