@@ -13,8 +13,6 @@ export type IconSize = 12 | 24 | 48;
  * exists, and snapping each edge to the nearest pixel then thickens some strokes and thins others
  * within the same glyph. Smoothing is the lesser of the two there: it loses the hard edge, but it
  * loses it evenly.
- *
- * One signal for every icon on the page, because the answer is the screen's and not each glyph's.
  */
 const rendering = signal('crispEdges');
 

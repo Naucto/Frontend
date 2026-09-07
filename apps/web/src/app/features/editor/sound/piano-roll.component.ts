@@ -166,8 +166,8 @@ export class PianoRollComponent {
       ro.disconnect();
       cancelAnimationFrame(this.raf);
     });
-    // A page zoom is the only thing that changes this, and it fires once per change: the query is
-    // rebuilt each time because it only ever matches the ratio it was made with.
+    // Re-armed after each change, because a resolution query only ever matches the ratio it was
+    // built with.
     const watchDpr = (): void => {
       const m = window.matchMedia(`(resolution: ${String(window.devicePixelRatio)}dppx)`);
       m.addEventListener(
@@ -244,9 +244,9 @@ export class PianoRollComponent {
   }
 
   /**
-   * Device pixels per CSS pixel, tracked rather than read once: it changes when the page is zoomed
-   * or the window moves to another screen, and a canvas that missed the change draws at the wrong
-   * resolution until something else happens to redraw it.
+   * Device pixels per CSS pixel, followed rather than read once. It changes on a page zoom and on a
+   * move to another screen, and a canvas that missed the change goes on drawing at the old
+   * resolution until something unrelated happens to redraw it.
    */
   protected readonly dpr = signal(typeof window === 'undefined' ? 1 : window.devicePixelRatio);
 
@@ -422,9 +422,8 @@ export class PianoRollComponent {
     }
     ctx.stroke();
 
-    // Past the pattern's last step, the same hatch a game with no cover wears: a dim wash reads as
-    // shadow, and shadow reads as something you could still draw on. A hatch reads as "not a
-    // surface", which is what this is until the pattern is lengthened to reach it.
+    // Past the last step, the hatch a game with no cover wears — the app's mark for ground that is
+    // not a surface, which is what this is until the pattern is lengthened to reach it.
     const endX = p.steps * sw;
     if (endX < w) {
       ctx.save();
@@ -476,8 +475,8 @@ export class PianoRollComponent {
     for (let s = 0; s < p.steps; s += p.stepsPerBeat)
       ctx.fillText(String(s / p.stepsPerBeat + 1), s * sw + 4, sy + RULER_H / 2);
 
-    // The length, written just past the end rather than just before it: inside the pattern it reads
-    // as a mark on the last bar, outside it labels the ground it names.
+    // Written past the end, where it labels the hatch. Inside, it would read as a mark on the
+    // last bar.
     const end = p.steps * sw;
     if (end < w) {
       ctx.fillStyle = cssVar(el, '--nc-ink-3');
