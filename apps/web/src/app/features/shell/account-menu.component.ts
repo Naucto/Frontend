@@ -38,12 +38,12 @@ import { injectQuery } from '@tanstack/angular-query-experimental';
         class="flex items-center rounded-xs"
         [attr.aria-label]="t('account.menu')"
       >
-        <nc-avatar [name]="auth.displayName()" colour="gold" [size]="38" />
+        <nc-avatar [name]="auth.displayName()" colour="neutral" [size]="38" />
       </button>
       <ng-template #menu>
         <nc-popover-panel class="w-[280px]">
           <div class="flex items-center gap-1.5 p-2">
-            <nc-avatar [name]="auth.displayName()" colour="gold" [size]="32" />
+            <nc-avatar [name]="auth.displayName()" [size]="32" />
             <div class="min-w-0">
               <div class="truncate text-ui text-ink">{{ auth.displayName() }}</div>
               <div class="label text-ink-4">

@@ -261,7 +261,7 @@ const SUMMARY_MAX = 80;
               <span actions class="label text-ink-4">{{ session.collaborators().length }}</span>
               @for (c of session.collaborators(); track c.clientId) {
                 <div class="flex items-center gap-1 py-0.5">
-                  <nc-avatar [name]="c.name" [colour]="c.colour" [size]="24" />
+                  <nc-avatar [name]="c.name" [colour]="c.isSelf ? 'gold' : c.colour" [size]="24" />
                   <span class="text-ui text-ink">{{ c.name }}</span>
                   @if (c.isSelf) {
                     <span class="label text-ink-4">{{ t('editor.game.you') }}</span>
