@@ -267,6 +267,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
             [region]="art.region()"
             (regionChange)="art.setRegion($event)"
             [viewport]="canvas.view()"
+            (panTo)="canvas.scrollToCell($event.x, $event.y)"
             resizable
             [label]="t('editor.art.pickSprite')"
           />

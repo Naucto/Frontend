@@ -26,12 +26,17 @@ const SCALE = 3;
   template: `
     <canvas
       #canvas
-      class="pixelated block w-full cursor-pointer"
+      class="pixelated block w-full"
+      [class]="dragging() ? 'cursor-grabbing' : 'cursor-pointer'"
       [width]="width"
       [height]="height"
       role="img"
       [attr.aria-label]="label()"
-      (click)="onClick($event)"
+      (pointerdown)="onDown($event)"
+      (pointermove)="onMove($event)"
+      (pointerup)="onUp($event)"
+      (pointercancel)="onUp($event)"
+      (contextmenu)="$event.preventDefault()"
     ></canvas>
   `,
   host: { class: 'block rounded-xs border border-line bg-inset' },
@@ -48,6 +53,7 @@ export class MinimapComponent {
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
   private readonly theme = inject(ThemeService);
   private readonly tilesVersion = signal(0);
+  protected readonly dragging = signal(false);
   private raf = 0;
 
   constructor() {
@@ -76,12 +82,38 @@ export class MinimapComponent {
     });
   }
 
-  protected onClick(e: MouseEvent): void {
+  protected onDown(e: PointerEvent): void {
+    if (e.button !== 0 && e.button !== 1) return;
+    // The middle button is the pan gesture everywhere else on this screen, so it works here too.
+    e.preventDefault();
+    this.canvas().nativeElement.setPointerCapture(e.pointerId);
+    this.dragging.set(true);
+    this.aim(e);
+  }
+
+  protected onMove(e: PointerEvent): void {
+    if (this.dragging()) this.aim(e);
+  }
+
+  protected onUp(e: PointerEvent): void {
+    if (!this.dragging()) return;
+    this.dragging.set(false);
+    const el = this.canvas().nativeElement;
+    if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
+  }
+
+  /**
+   * The tile under the pointer.
+   *
+   * Each axis takes its own factor. The element is stretched to the panel's width while its height
+   * stays at what it was drawn, so one factor for both put every vertical aim short of where it was
+   * pointed, by more the further down it was.
+   */
+  private aim(e: PointerEvent): void {
     const r = this.canvas().nativeElement.getBoundingClientRect();
-    const sx = this.width / r.width;
     this.jump.emit({
-      x: Math.floor(((e.clientX - r.left) * sx) / SCALE),
-      y: Math.floor(((e.clientY - r.top) * sx) / SCALE),
+      x: Math.floor(((e.clientX - r.left) * this.width) / r.width / SCALE),
+      y: Math.floor(((e.clientY - r.top) * this.height) / r.height / SCALE),
     });
   }
 

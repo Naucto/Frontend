@@ -8,6 +8,7 @@ import {
   inject,
   input,
   model,
+  output,
   untracked,
   viewChild,
 } from '@angular/core';
@@ -63,10 +64,13 @@ export class SheetViewComponent {
   /** Whether dragging outside the region draws a new one, or just moves the one there is. */
   readonly resizable = input(false, { transform: booleanAttribute });
   readonly label = input('Sprite sheet');
+  /** Where a middle-button drag has reached, in cells, for a caller that can move its own view. */
+  readonly panTo = output<{ x: number; y: number }>();
   protected readonly width = SHEET_WIDTH * SCALE;
   protected readonly height = SHEET_HEIGHT * SCALE;
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
   private readonly theme = inject(ThemeService);
+  private panning = false;
   private drag: { anchor: { x: number; y: number }; grab: { x: number; y: number } | null } | null =
     null;
   private raf = 0;
@@ -101,6 +105,15 @@ export class SheetViewComponent {
   }
 
   protected onDown(e: PointerEvent): void {
+    if (e.button === 1) {
+      // The middle button is the pan gesture everywhere else on this screen. Here it aims the
+      // caller's own view rather than moving anything of ours, since this map does not scroll.
+      e.preventDefault();
+      this.canvas().nativeElement.setPointerCapture(e.pointerId);
+      this.panning = true;
+      this.panTo.emit(this.cellOf(e));
+      return;
+    }
     if (e.button !== 0) return;
     this.canvas().nativeElement.setPointerCapture(e.pointerId);
     const c = this.cellOf(e);
@@ -118,6 +131,10 @@ export class SheetViewComponent {
   }
 
   protected onMove(e: PointerEvent): void {
+    if (this.panning) {
+      this.panTo.emit(this.cellOf(e));
+      return;
+    }
     const d = this.drag;
     if (!d) return;
     const c = this.cellOf(e);
@@ -126,7 +143,8 @@ export class SheetViewComponent {
   }
 
   protected onUp(e: PointerEvent): void {
-    if (this.drag) this.canvas().nativeElement.releasePointerCapture(e.pointerId);
+    if (this.drag || this.panning) this.canvas().nativeElement.releasePointerCapture(e.pointerId);
+    this.panning = false;
     this.drag = null;
   }
 
