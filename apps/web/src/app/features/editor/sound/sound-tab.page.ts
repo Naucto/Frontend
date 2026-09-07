@@ -282,9 +282,11 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
       </section>
 
       <aside class="flex min-h-0 flex-col overflow-auto border-l border-line bg-panel">
-        <!-- The scope earns the top of the panel: it is the only place you see what the synth is
-             actually doing, as opposed to what the pattern says it should. -->
-        <nc-oscilloscope class="h-4 shrink-0 border-b border-line" [peaks]="peaks" />
+        <!-- The strip first, then the scope. All three columns head with a 40px row, and a scope
+             above this one pushed its head below the other two — three heads at three heights on a
+             screen the design gives one baseline. The scope keeps the top of what it belongs to:
+             it is the only place you see what the synth is doing rather than what the pattern says
+             it should. -->
         <div class="flex h-5 shrink-0 items-center gap-1 border-b border-line px-1.5">
           <nc-lcd class="w-[140px]" [minHeight]="24">
             <span class="flex items-center gap-0.5 whitespace-nowrap">
@@ -319,6 +321,7 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
             ×{{ sound.zoom() }}
           </button>
         </div>
+        <nc-oscilloscope class="h-4 shrink-0 border-b border-line" [peaks]="peaks" />
         @if (instrument(); as inst) {
           <nc-instrument-inspector
             [inst]="inst"
