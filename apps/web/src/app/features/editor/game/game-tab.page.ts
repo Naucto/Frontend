@@ -207,11 +207,11 @@ const SUMMARY_MAX = 80;
                 (valueChange)="setStatus($event)"
                 label="Status"
               />
-              <div
-                class="mt-1 flex justify-between font-mono text-micro tracking-wide uppercase text-ink-3"
-              >
-                <span>{{ t('editor.game.published') }}</span>
-                <span>
+              <div class="mt-1 flex justify-between font-mono text-micro tracking-wide uppercase">
+                <!-- Dim key, bright value, like every other pair in the column: at one weight the
+                     row said nothing about which half was the answer. -->
+                <span class="text-ink-3">{{ t('editor.game.published') }}</span>
+                <span class="text-ink">
                   {{
                     session.project()?.publishedAt
                       ? (session.project()?.publishedAt | slice: 0 : 10)
