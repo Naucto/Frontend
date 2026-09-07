@@ -83,14 +83,14 @@ const RAIL: RailItem<EditorTab>[] = [
   providers: [WorkSessionService, EditorUiStore, RuntimeHostService, EditorRuntimeService],
   template: `
     <div *transloco="let t" class="grid h-dvh grid-rows-[56px_1fr] bg-page text-ink">
-      <!-- Same bar as the hub's: same height, same mark, same inset. It used to be 50px tall with a
-           28px mark centred in a 40px slot, so the logo jumped both down and sideways whenever you
-           crossed between the hub and the editor. Aligning the mark to the 81px rail below would
-           reintroduce exactly that shift, so it takes the top bar's placement instead. -->
-      <header class="flex items-center gap-1.5 border-b border-line bg-panel pr-2 pl-2.5">
+      <!-- The mark sits in the rail's own column, so the vertical seam runs unbroken from the logo
+           down past every rail item. The hub's bar gives it the same cell, which is what makes that
+           safe: aligning only one of the two is what used to make the logo jump sideways whenever
+           you crossed between them. -->
+      <header class="flex items-center gap-1.5 border-b border-line bg-panel pr-2 pl-0">
         <a
           routerLink="/games"
-          class="mr-[6px] flex shrink-0 items-center"
+          class="flex w-[81px] shrink-0 items-center justify-center"
           [attr.aria-label]="t('nav.myGames')"
         >
           <img src="/img/logo.png" alt="" width="32" height="32" class="pixelated" />
