@@ -28,10 +28,17 @@ import { type AddFriendData, AddFriendDialog } from './add-friend.dialog';
 
 type Friend = FriendDto & { presence: PresenceDto | null };
 
-/** Left border and game-name colour of a row, by what the person is doing. */
+/**
+ * Left border and game-name colour of a row, by what the person is doing.
+ *
+ * The two are one accent said twice, which is what the design draws: the rule down the edge and the
+ * game's name carry the same colour, so the eye ties the title to the card without reading a label.
+ * Two of the three lifted the name to ink instead, and a card whose edge was jade named its game in
+ * the same near-white as every other line on the screen.
+ */
 const ACCENT: Record<string, { rule: string; name: string }> = {
-  PLAYING: { rule: 'border-l-jade', name: 'text-ink-body' },
-  BUILDING: { rule: 'border-l-gold', name: 'text-ink-body' },
+  PLAYING: { rule: 'border-l-jade', name: 'text-jade-ink' },
+  BUILDING: { rule: 'border-l-gold', name: 'text-gold-ink' },
   HOSTING: { rule: 'border-l-sky', name: 'text-sky-ink' },
 };
 
