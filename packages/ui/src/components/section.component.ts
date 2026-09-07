@@ -4,7 +4,9 @@ import { booleanAttribute, ChangeDetectionStrategy, Component, input } from '@an
 @Component({
   selector: 'nc-section',
   template: `
-    <div class="mb-[10px] flex items-center justify-between gap-1">
+    <!-- As tall as a help dot whether or not one is projected, so stacked sections keep one
+         rhythm instead of stepping 6px wherever a heading happens to explain itself. -->
+    <div class="mb-[10px] flex min-h-[18px] items-center justify-between gap-1">
       <span class="label" [class.text-gold-ink]="tone() === 'gold'">{{ title() }}</span>
       <ng-content select="[actions]" />
     </div>

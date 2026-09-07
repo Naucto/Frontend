@@ -4,7 +4,10 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 @Component({
   selector: 'nc-field',
   template: `
-    <div class="mb-1 flex items-center justify-between gap-1">
+    <!-- The row stands as tall as a help dot whether or not it carries one, so two fields side by
+         side start their controls on the same line. The dot is a click target before it is a mark
+         and does not shrink to fit a label. -->
+    <div class="mb-1 flex min-h-[18px] items-center justify-between gap-1">
       <label [attr.for]="for()" class="label">{{ label() }}</label>
       <span class="flex items-center gap-0.75">
         @if (counter()) {
