@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, model } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
 
 /** Accent of the checked state; gold is the neutral "on", jade and sky carry meaning. */
 export type ToggleAccent = 'gold' | 'jade' | 'sky';
@@ -23,7 +23,7 @@ const ACTIVE: Record<ToggleAccent, string> = {
       [attr.aria-checked]="checked()"
       [attr.aria-label]="label()"
       [disabled]="disabled()"
-      (click)="checked.set(!checked())"
+      (click)="press()"
       class="label tracking-tag inline-flex h-[26px] cursor-pointer items-center gap-0.5 rounded-sm border border-line bg-transparent px-1 text-ink-4 transition-[color] duration-100 hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
       [class]="active()"
     >
@@ -38,5 +38,25 @@ export class ToggleButtonComponent {
   readonly disabled = input(false);
   readonly label = input<string>();
   readonly accent = input<ToggleAccent>('gold');
+
+  /**
+   * Whether the lit state is decided elsewhere.
+   *
+   * Left to itself the button writes its own state on every press, which is right for the ones that
+   * are only on or off. It is wrong for a button that cycles through several values: there the
+   * press means "next", and whether the lamp stays lit is the caller's answer, not the button's.
+   * Worse, an input binding that works out to the same value it already had has nothing to correct
+   * the button with — so the lamp would go out while the setting was still on.
+   */
+  readonly controlled = input(false);
+
+  /** Pressed. For a button that is not controlled, `checkedChange` already says as much. */
+  readonly activated = output();
+
   protected readonly active = computed(() => ACTIVE[this.accent()]);
+
+  protected press(): void {
+    this.activated.emit();
+    if (!this.controlled()) this.checked.set(!this.checked());
+  }
 }

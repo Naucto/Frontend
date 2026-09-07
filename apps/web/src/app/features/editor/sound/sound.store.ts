@@ -3,7 +3,11 @@ import { patchState, signalStore, withComputed, withMethods, withState } from '@
 
 /**
  * Snap is a resolution, not an on/off: "1/16" and "1/8" place notes on different grids, and OFF
- * is one of the choices rather than a separate switch. The value is the denominator in beats.
+ * is one of the choices rather than a separate switch.
+ *
+ * The value is the denominator of a note value, read the way every sequencer reads it — 1/16 is a
+ * sixteenth note. A step is a sixteenth at the default four steps per beat, so 1/16 is one step,
+ * and that is the default here for the same reason.
  */
 export const SNAP_DIVISIONS = [4, 8, 16, 32] as const;
 export type SnapDivision = (typeof SNAP_DIVISIONS)[number] | 0;
@@ -11,7 +15,7 @@ export type SnapDivision = (typeof SNAP_DIVISIONS)[number] | 0;
 interface SoundState {
   instrumentId: string | null;
   patternId: string | null;
-  /** Notes per beat the grid snaps to; 0 is free placement. */
+  /** Note value the grid snaps to, as its denominator; 0 is free placement. */
   snap: SnapDivision;
   zoom: 1 | 2;
   loop: boolean;
@@ -25,7 +29,7 @@ export const SoundStore = signalStore(
   withState<SoundState>({
     instrumentId: null,
     patternId: null,
-    snap: 4,
+    snap: 16,
     zoom: 1,
     loop: true,
     metronome: false,

@@ -13,7 +13,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { cssVar } from '@app/shared/pixel/pixel-tools';
-import { type Instrument, type Note, type Pattern } from '@naucto/engine';
+import { type Instrument, type Note, type Pattern, SUBSTEPS } from '@naucto/engine';
 import { PresenceLayerComponent, type PresenceMark, type PresenceViewport } from '@naucto/ui';
 
 import { type Collaborator } from '../work-session/work-session.service';
@@ -35,6 +35,12 @@ export const RULER_H = 24;
  */
 export const MAX_STEPS = 64;
 
+/**
+ * Closest two grid lines may sit before they stop being a grid. Under it the ground between them is
+ * thinner than the lines themselves and the lot reads as a filled band, which says the opposite of
+ * what a grid is for.
+ */
+const MIN_GRID_PX = 6;
 const BLACK = new Set([1, 3, 6, 8, 10]);
 
 interface Drag {
@@ -85,10 +91,10 @@ export class PianoRollComponent {
   readonly palette = input.required<readonly string[]>();
   readonly instrumentId = input<string | null>(null);
   /**
-   * Notes per beat the grid snaps to; 0 places notes freely. A resolution, not a switch: the
-   * denominator decides the step, so 1/8 and 1/16 are different grids rather than "on".
+   * Note value the grid snaps to, as its denominator; 0 places notes freely. A resolution, not a
+   * switch: the denominator decides the grain, so 1/8 and 1/16 are different grids rather than "on".
    */
-  readonly snap = input<number>(4);
+  readonly snap = input<number>(16);
   readonly zoom = input<1 | 2>(1);
   readonly playhead = input<number | null>(null);
   readonly collaborators = input<readonly Collaborator[]>([]);
@@ -191,6 +197,7 @@ export class PianoRollComponent {
     effect(() => {
       this.pattern();
       this.hostBox();
+      this.snap();
       this.instruments();
       this.palette();
       this.instrumentId();
@@ -241,14 +248,17 @@ export class PianoRollComponent {
   /**
    * One snap unit in steps, given the pattern's own steps-per-beat.
    *
-   * The floor has to reach what the finest division the control offers works out to. Any coarser
-   * and that division rounds back onto the one above it, leaving two settings that do the same
-   * thing and nothing on screen to say so.
+   * A beat is a quarter note, so a 1/`div` note lasts `4 / div` beats and a beat is `stepsPerBeat`
+   * steps. At the default four steps per beat that puts 1/16 on one step, which is what a
+   * sixteenth note is — the grain the labels have always named.
+   *
+   * The floor is what the sequencer can sound. Below it a note has a position nothing will ever
+   * play from, which is worse than a coarser grid.
    */
   private snapUnit(): number {
     const div = this.snap();
     if (!div) return 0;
-    return Math.max(0.125, this.pattern().stepsPerBeat / div);
+    return Math.max(1 / SUBSTEPS, (4 * this.pattern().stepsPerBeat) / div);
   }
 
   /**
@@ -260,7 +270,8 @@ export class PianoRollComponent {
 
   private snapStep(s: number): number {
     const unit = this.snapUnit();
-    return unit ? Math.round(s / unit) * unit : Math.round(s * 4) / 4;
+    // Free still lands on the sub-step lattice: past it the sequencer has no tick to sound from.
+    return unit ? Math.round(s / unit) * unit : Math.round(s * SUBSTEPS) / SUBSTEPS;
   }
 
   private hit(step: number, pitch: number): number {
@@ -308,7 +319,7 @@ export class PianoRollComponent {
     }
     const inst = this.instrumentId();
     if (!inst) return;
-    const unit = this.snapUnit() || 0.25;
+    const unit = this.snapUnit() || 1;
     const start = Math.min(this.snapStep(step), MAX_STEPS - unit);
     const note: Note = { step: start, pitch, length: unit, instrument: inst, volume: 1 };
     notes.push(note);
@@ -341,8 +352,8 @@ export class PianoRollComponent {
       case 'create':
       case 'resize': {
         const end = Math.max(
-          o.step + (this.snapUnit() || 0.25),
-          this.snapStep(step) + (this.snapUnit() || 0.25),
+          o.step + (this.snapUnit() || 1),
+          this.snapStep(step) + (this.snapUnit() || 1),
         );
         n = { ...o, length: Math.min(max - o.step, end - o.step) };
         break;
@@ -409,13 +420,19 @@ export class PianoRollComponent {
         ctx.fillRect(0, y, w, ROW_H);
       }
     }
-    // Grid.
+    // Grid. The fine lines are the snap resolution rather than the step: they say where the next
+    // note will land, so they thin out as the grain coarsens and are absent in OFF, where nothing
+    // holds a note to anything. The beat lines below them stay whatever the snap, since the ruler
+    // numbers bars and has to keep something to number.
     ctx.strokeStyle = cssVar(el, '--nc-line');
     ctx.beginPath();
-    for (let s = 0; s <= MAX_STEPS; s++) {
-      if (s % p.stepsPerBeat === 0) continue;
-      ctx.moveTo(s * sw + 0.5, RULER_H);
-      ctx.lineTo(s * sw + 0.5, h);
+    const unit = this.snapUnit();
+    if (unit * sw >= MIN_GRID_PX) {
+      for (let s = unit; s < MAX_STEPS; s += unit) {
+        if (s % p.stepsPerBeat === 0) continue;
+        ctx.moveTo(s * sw + 0.5, RULER_H);
+        ctx.lineTo(s * sw + 0.5, h);
+      }
     }
     for (let r = 0; r <= rows; r++) {
       ctx.moveTo(0, RULER_H + r * ROW_H + 0.5);

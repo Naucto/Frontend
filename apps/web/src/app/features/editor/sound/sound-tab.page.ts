@@ -336,10 +336,13 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
              it should. -->
         <div actions class="flex min-w-0 items-center gap-1">
           <!-- One button carrying its current resolution, not six chips: the row is 340px and
-               the chips wrapped onto a second line, out of the bar and over the scope. -->
+               the chips wrapped onto a second line, out of the bar and over the scope. Controlled,
+               because a press means "next resolution" and only the store knows whether the answer
+               is still lit — left to itself the button would put its own lamp out on every press. -->
           <nc-toggle-button
+            [controlled]="true"
             [checked]="sound.snap() !== 0"
-            (checkedChange)="cycleSnap()"
+            (activated)="cycleSnap()"
             [label]="t('editor.sound.snap')"
           >
             <nc-icon name="grid" [size]="12" />
