@@ -12,19 +12,10 @@ export type PanelRegionMode = 'primary' | 'beside' | 'instead';
 /**
  * A panel and the optional second one that either unfolds beside it or takes its place.
  *
- * Which of the two happens is a question of room, so the region is told the viewport's width and
- * the width below which two tracks stop fitting. Everything else — what the panels hold, when the
- * secondary opens — belongs to the caller.
- *
- * **The primary is never torn down and never taken out of the layout.** Where it is not showing it
- * is a track of zero width, because it may hold something that cannot survive being rebuilt — a
- * running game, a live connection — and because `display: none` on an ancestor takes any window
- * floating out of the flow with it. A panel in a zero-width track must therefore fold its own
- * contents away; the region only sets the track.
- *
- * The secondary only leaves the layout; whether it also leaves the document is the caller's to
- * decide, and worth deciding — a panel built at every boot for a track nobody has opened is a cost
- * paid by everyone who never opens it.
+ * Where the primary is not showing, its track is narrowed to nothing rather than hidden: taking it
+ * out of the layout would take anything floating out of the flow beneath it with it. So the region
+ * only sets the track, and a panel that finds itself in a track of no width has to fold its own
+ * contents away.
  */
 @Component({
   selector: 'nc-panel-region',

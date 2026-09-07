@@ -166,15 +166,13 @@ test.describe('editor', () => {
     const canvas = page.getByRole('img', { name: 'Sprite canvas' });
     await expect(canvas).toBeVisible();
 
-    // The console is CODE's own sidebar, the way this tab's inspector is its own — so on a canvas
-    // tab it is not collapsed, it is not there, and there is no grip to bring it back. The runtime
-    // is reachable here as the floating viewer instead.
+    // The console is CODE's own sidebar, so here it is not collapsed — it is not there at all, and
+    // there is no grip to bring it back.
     await expect(page.getByRole('button', { name: 'Clear' })).toHaveCount(0);
     await expect(page.getByText('Viewer · 320×180')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Show the panel' })).toHaveCount(0);
 
-    // The viewer is floated from the console's own header, so it is opened where the console is and
-    // followed here — which is the whole of what "it follows you across editors" claims.
+    // The viewer is floated from the console's own header, so it is opened where the console is.
     await page.goto('/edit/7/code');
     await page.getByRole('button', { name: 'Pop the viewer out' }).click();
     await page.goto('/edit/7/art');
