@@ -10,8 +10,6 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 export type PanelRegionMode = 'primary' | 'beside' | 'instead';
 
 /**
- * A panel and the optional second one that either unfolds beside it or takes its place.
- *
  * Where the primary is not showing, its track is narrowed to nothing rather than hidden: taking it
  * out of the layout would take anything floating out of the flow beneath it with it. So the region
  * only sets the track, and a panel that finds itself in a track of no width has to fold its own

@@ -166,8 +166,7 @@ test.describe('editor', () => {
     const canvas = page.getByRole('img', { name: 'Sprite canvas' });
     await expect(canvas).toBeVisible();
 
-    // The console is CODE's own sidebar, so here it is not collapsed — it is not there at all, and
-    // there is no grip to bring it back.
+    // The console is CODE's own sidebar: on a canvas tab there is nothing to unfold.
     await expect(page.getByRole('button', { name: 'Clear' })).toHaveCount(0);
     await expect(page.getByText('Viewer · 320×180')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Show the panel' })).toHaveCount(0);
