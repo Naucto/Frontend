@@ -350,6 +350,26 @@ test.describe('editor', () => {
     await expect.poll(painted).not.toBe(before);
   });
 
+  /**
+   * The bar reports the collaboration, not the server. It used to read a flag meaning "there is
+   * work the server has not got", which a keystroke raises and only the autosave timer lowers —
+   * so one character put the editor into a state named after waiting, for minutes at a time.
+   */
+  test('typing does not put the editor into a syncing state', async ({ page }) => {
+    await page.goto('/edit/7/code');
+    const bar = page.getByRole('status');
+    // Opening writes once, and that write really is in flight — wait it out, so what follows is
+    // measured against a settled editor rather than against the arrival.
+    await expect(bar).toHaveText(/Synced/, { timeout: 15_000 });
+
+    await page.locator('.cm-content').click();
+    await page.keyboard.type('-- a note');
+    // The keystrokes have to have landed, or what follows says nothing.
+    await expect(page.locator('.cm-content')).toContainText('-- a note');
+
+    await expect(bar).toHaveText(/Synced/);
+  });
+
   test('MAP tab stamps tiles', async ({ page }) => {
     await page.goto('/edit/7/map');
     const canvas = page.getByRole('img', { name: 'Map canvas' });

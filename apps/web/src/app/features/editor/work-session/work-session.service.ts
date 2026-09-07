@@ -76,7 +76,26 @@ export class WorkSessionService {
   readonly dirty = signal(false);
   readonly lastSavedAt = signal<Date | null>(null);
   readonly saving = signal(false);
-  readonly synced = computed(() => this.status() === 'ready' && !this.dirty());
+  /**
+   * Set when the last write to the server did not land, and cleared by the next one that does.
+   *
+   * Autosave runs from a timer and nothing awaits it, so without this a refused write is silent:
+   * the work stays in the document, the reader is told nothing, and the first they hear of it is a
+   * reload that has lost an afternoon.
+   */
+  readonly saveFailed = signal(false);
+  /**
+   * What the editor's status bar says, and it is about the collaboration rather than the server.
+   *
+   * Edits reach everyone else the moment they are typed; reaching the server is a separate cycle on
+   * a timer, reported on the GAME tab as when the project was last saved. Reading `dirty` here made
+   * the bar claim a sync was under way from the first keystroke until that timer next fired —
+   * minutes of a word that means "wait", while nothing at all was happening — and on a client, who
+   * never saves and whose flag therefore never clears, for as long as the editor stayed open.
+   */
+  readonly synced = computed(
+    () => this.status() === 'ready' && !this.saving() && !this.saveFailed(),
+  );
   readonly myColour = computed<PresenceColour>(
     () => this.collaborators().find((c) => c.isSelf)?.colour ?? 'sky',
   );
@@ -223,7 +242,11 @@ export class WorkSessionService {
         ...(opts.keepalive ? { keepalive: true } : {}),
       });
       this.dirty.set(false);
+      this.saveFailed.set(false);
       this.lastSavedAt.set(new Date());
+    } catch (e) {
+      this.saveFailed.set(true);
+      throw e;
     } finally {
       this.saving.set(false);
     }
@@ -321,7 +344,9 @@ export class WorkSessionService {
   private startAutosave(): void {
     if (this.autosave) return;
     this.autosave = setInterval(() => {
-      if (this.dirty()) void this.save();
+      // Nothing is waiting on this, so a refusal has to be recorded rather than thrown into the
+      // void — `save` marks it, and the status bar is what says so.
+      if (this.dirty()) void this.save().catch(() => undefined);
     }, AUTOSAVE_MS);
   }
 

@@ -167,12 +167,11 @@ import { SearchBarComponent } from './search-bar.component';
           </span>
         }
         <span class="flex-1"></span>
-        <span
-          class="flex items-center gap-0.5"
-          [class]="session.synced() ? 'text-jade-ink' : 'text-orange-ink'"
-        >
+        <!-- Three states, because a write in flight and a write that was refused are not the same
+             news: one is worth waiting through, the other is worth acting on. -->
+        <span role="status" class="flex items-center gap-0.5" [class]="syncTone()">
           <span class="inline-block h-1 w-1 bg-current"></span>
-          {{ session.synced() ? t('editor.synced') : t('editor.syncing') }}
+          {{ t(syncLabel()) }}
         </span>
       </div>
     </div>
@@ -180,6 +179,15 @@ import { SearchBarComponent } from './search-bar.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CodeTabPage implements OnInit {
+  protected readonly syncLabel = computed(() => {
+    if (this.session.saveFailed()) return 'editor.notSaved';
+    return this.session.saving() ? 'editor.syncing' : 'editor.synced';
+  });
+
+  protected readonly syncTone = computed(() => {
+    if (this.session.saveFailed()) return 'text-hot-ink';
+    return this.session.saving() ? 'text-orange-ink' : 'text-jade-ink';
+  });
   protected readonly session = inject(WorkSessionService);
   protected readonly runtime = inject(RuntimeHostService);
   protected readonly main = MAIN_FILE;

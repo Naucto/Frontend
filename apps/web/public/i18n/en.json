@@ -237,6 +237,7 @@
     "oneError": "1 error",
     "synced": "Synced",
     "syncing": "Syncing",
+    "notSaved": "Not saved",
     "consoleEmpty": "The machine says nothing yet. Run the game.",
     "clear": "Clear",
     "docSoon": "The reference pane arrives with the docs step.",
