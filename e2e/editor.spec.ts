@@ -352,11 +352,7 @@ test.describe('editor', () => {
     await expect(onion).toBeVisible();
   });
 
-  /**
-   * The content is laid out from its own origin and scales about it, so leaving the scroll offsets
-   * alone makes the top-left the one fixed point — the part you were looking at is the part that
-   * leaves. Read as a fraction of the content, which is the thing that changes size.
-   */
+  /** Read as a fraction of the content, which is the thing a zoom changes the size of. */
   test('zooming the sheet keeps what was in the middle', async ({ page }) => {
     await page.goto('/edit/7/art');
     const well = page.locator('nc-sprite-canvas');

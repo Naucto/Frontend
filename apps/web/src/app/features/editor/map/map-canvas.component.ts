@@ -203,11 +203,7 @@ export class MapCanvasComponent {
     });
   }
 
-  /**
-   * The wheel scrolls, as it does everywhere else; zooming asks for the modifier the browser
-   * already reserves for it. A surface this size is moved far more often than it is scaled, and
-   * taking the plain wheel for the rarer of the two costs the commoner one its usual gesture.
-   */
+  /** Scrolling is the wheel's; zooming asks for the modifier the browser reserves for it. */
   protected onWheel(e: WheelEvent): void {
     if (!e.ctrlKey && !e.metaKey) return;
     e.preventDefault();
@@ -217,10 +213,8 @@ export class MapCanvasComponent {
   /**
    * Puts back in the middle of the well whatever was there at the previous scale.
    *
-   * The map is laid out from its own origin and scales about it, so leaving the scroll offsets
-   * alone makes the top-left corner the one fixed point: zooming in walks the view towards it, and
-   * the part you were looking at is the part that leaves. Below the well's size the host centres
-   * the map itself, and there is nothing to hold.
+   * The map scales about its own origin, so offsets left alone hold the top-left corner and nothing
+   * else. Below the well's size the host centres the map itself, and there is nothing to hold.
    */
   private holdCentre(): void {
     const t = this.tilePx();
@@ -359,8 +353,8 @@ export class MapCanvasComponent {
   private requestBase(): void {
     cancelAnimationFrame(this.rafBase);
     this.rafBase = requestAnimationFrame(() => {
-      // Inside the frame, because the map's size is a template binding: before it, the element is
-      // still the width it had, and any scroll offset written here would be clamped to it.
+      // Inside the frame: the map's size is a template binding, and an offset written before it
+      // lands is clamped against the width the element still has.
       this.holdCentre();
       this.drawBase();
       this.emitViewport();

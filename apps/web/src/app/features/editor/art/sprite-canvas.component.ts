@@ -184,12 +184,10 @@ export class SpriteCanvasComponent {
   }
 
   /**
-   * Remembers what is in the middle of the well, so the next draw can put it back there.
+   * Remembers what is in the middle of the well, for the next draw to put back there.
    *
-   * The content is laid out from its own origin and scales about it, so leaving the scroll offsets
-   * alone makes the top-left corner the one fixed point: zooming in walks the view off towards it,
-   * and the part you were looking at is the part that leaves. Taken here rather than after, because
-   * it has to be read at the scale it was seen at.
+   * The content scales about its own origin, so offsets left alone hold the top-left corner and
+   * nothing else. Read here rather than after, because it means nothing at the new scale.
    */
   private holdCentre(): void {
     const el = this.host.nativeElement;
@@ -200,18 +198,14 @@ export class SpriteCanvasComponent {
     };
   }
 
-  /**
-   * The wheel scrolls, as it does everywhere else; zooming asks for the modifier the browser
-   * already reserves for it. A surface this size is moved far more often than it is scaled, and
-   * taking the plain wheel for the rarer of the two costs the commoner one its usual gesture.
-   */
+  /** Scrolling is the wheel's; zooming asks for the modifier the browser reserves for it. */
   protected onWheel(e: WheelEvent): void {
     if (!e.ctrlKey && !e.metaKey) return;
     e.preventDefault();
     this.zoomBy(e.deltaY < 0 ? 1 : -1);
   }
 
-  /** Content point to put back in the middle, once a new scale has resized the content. */
+  /** Consumed by the draw that follows a scale change, once the content has its new size. */
   private centre: { x: number; y: number } | null = null;
 
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
@@ -670,8 +664,7 @@ export class SpriteCanvasComponent {
       ctx.lineWidth = 1;
     }
 
-    // Both of these are measured against the content, so they can only run once the content has
-    // its size, which the lines above are what give it.
+    // Both are measured against the content, so neither can run before it has been given its size.
     const centre = this.centre;
     if (centre) {
       this.centre = null;
