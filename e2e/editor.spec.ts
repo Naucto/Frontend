@@ -449,11 +449,6 @@ test.describe('editor', () => {
     await expect(page.getByText('SPR 020')).toBeVisible();
   });
 
-  /**
-   * A note dropped past the last step is what asks a pattern to grow. It used to be held to the
-   * length the pattern already had, so it came out with none at all — invisible to the hit test,
-   * and impossible to grab back.
-   */
   test('a note dragged past the end lengthens the pattern', async ({ page }) => {
     await page.goto('/edit/7/sound');
     await page.getByRole('button', { name: 'Add instrument' }).first().click();

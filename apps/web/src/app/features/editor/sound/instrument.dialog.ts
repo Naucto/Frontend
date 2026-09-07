@@ -14,7 +14,7 @@ import { ACCENT_SLOTS } from '../accent-slots';
 export interface InstrumentDialogData {
   name: string;
   colour: number;
-  /** The project's own palette, since a slot means nothing without the colours it indexes. */
+  /** What the slots below index into, which the instrument stores a number of rather than a colour. */
   palette: readonly string[];
 }
 

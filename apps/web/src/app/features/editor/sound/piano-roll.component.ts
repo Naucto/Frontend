@@ -213,9 +213,9 @@ export class PianoRollComponent {
   /**
    * One snap unit in steps, given the pattern's own steps-per-beat.
    *
-   * The floor is an eighth of a step, which is what the finest division the control offers works
-   * out to on a pattern of four steps to the beat. A coarser floor would silently round that
-   * division back onto the one above it, leaving two settings that do the same thing.
+   * The floor has to reach what the finest division the control offers works out to. Any coarser
+   * and that division rounds back onto the one above it, leaving two settings that do the same
+   * thing and nothing on screen to say so.
    */
   private snapUnit(): number {
     const div = this.snap();
@@ -298,9 +298,8 @@ export class PianoRollComponent {
     if (!d) return;
     const notes = [...this.notes()];
     const o = d.original;
-    // The grid's ceiling, not the pattern's current length: a note dropped past the end is what
-    // asks the pattern to grow, and holding it to the length that is makes that impossible — it
-    // came out with no length at all, which is a note nothing can grab again.
+    // The grid's ceiling, not the pattern's. Held to the pattern's, a note begun past its end has
+    // no room to have any length, and a note of no length is one nothing can grab again.
     const max = MAX_STEPS;
     let n: Note;
     switch (d.mode) {
@@ -436,8 +435,8 @@ export class PianoRollComponent {
     for (let s = 0; s < p.steps; s += p.stepsPerBeat)
       ctx.fillText(String(s / p.stepsPerBeat + 1), s * sw + 4, sy + RULER_H / 2);
 
-    // The end, named on the ruler. The wash below says where the pattern stops, but not what it
-    // stops at, and the only other statement of that is a field at the top of the screen.
+    // The end, named on the ruler: the wash below says where the pattern stops, not what it stops
+    // at, and a length is worth reading where you are working rather than only in a header.
     const end = p.steps * sw;
     if (end < w) {
       const text = `${String(p.steps)} STEPS`;
