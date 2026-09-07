@@ -11,8 +11,15 @@ import { colourOf, IDENTITY_COLOURS, inkFor } from '../palette';
 /** The three colours reserved for live collaboration cursors and carets. */
 export type PresenceColour = 'sky' | 'blush' | 'jade';
 
-/** How a call site may pin an avatar's fill when the identity colour is not what it means. */
-export type AvatarColour = PresenceColour | 'neutral' | number | `#${string}`;
+/**
+ * How a call site may pin an avatar's fill when the identity colour is not what it means.
+ *
+ * `gold` is the signed-in person's own face. Gold marks state on this design — the active rail
+ * item, the current version, the cell being edited — and "this one is you" is the state the account
+ * avatar carries. Everyone else keeps their identity colour, which is the point: yours is the only
+ * one that does not have to be recognised.
+ */
+export type AvatarColour = PresenceColour | 'neutral' | 'gold' | number | `#${string}`;
 
 const PRESENCE_FILL: Record<PresenceColour, string> = {
   sky: 'var(--color-presence-sky)',
@@ -54,7 +61,7 @@ export class AvatarComponent {
   readonly src = input<string | null>();
   /** Identity key for the stable colour; falls back to the name. */
   readonly id = input<string | number>();
-  /** A presence colour, `neutral`, a palette index, or an explicit hex. */
+  /** A presence colour, `gold` for the signed-in person, `neutral`, a palette index, or a hex. */
   readonly colour = input<AvatarColour>();
   readonly size = input(24);
   /** Overlap the previous avatar, for presence stacks. */
@@ -66,6 +73,7 @@ export class AvatarComponent {
   protected readonly fill = computed(() => {
     const chosen = this.colour();
     if (chosen === 'neutral') return 'var(--color-line)';
+    if (chosen === 'gold') return 'var(--color-gold)';
     if (typeof chosen === 'number')
       return IDENTITY_COLOURS[chosen % IDENTITY_COLOURS.length] as string;
     if (chosen && chosen in PRESENCE_FILL) return PRESENCE_FILL[chosen as PresenceColour];
