@@ -45,7 +45,9 @@ export function allocateVoices(notes: readonly Note[]): { note: Note; voice: num
       [attr.aria-label]="label()"
     ></canvas>
   `,
-  host: { class: 'block overflow-x-auto border-t border-line bg-panel' },
+  // No vertical overflow here, so height this strip loses is height it cuts. It keeps its own and
+  // leaves the squeeze to whatever it is stacked against.
+  host: { class: 'block shrink-0 overflow-x-auto border-t border-line bg-panel' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class VoicesLaneComponent {
