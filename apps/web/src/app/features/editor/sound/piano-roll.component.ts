@@ -236,19 +236,13 @@ export class PianoRollComponent {
     return { step, pitch };
   }
 
-  /**
-   * Where a note dropped at `step` would start, and how long it would come out.
-   *
-   * The hover outline reads this too, so what it draws is the note the next click makes rather than
-   * a whole step: at a coarse grain the note is wider than a step, at a fine one it is narrower, and
-   * an outline that ignored the grain promised neither.
-   */
+  /** Where a note dropped at `step` would start, and how long it would come out. */
   private newNote(step: number): { step: number; length: number } {
     const unit = this.snapUnit();
     const length = unit || 1;
-    // Floored rather than rounded to the nearest line: a note starts in the cell you clicked, and
-    // at a coarse grain rounding put it a whole bar from the pointer. Free placement has no cell to
-    // start in, so there it follows the pointer onto the finest position that will sound.
+    // Floored, not rounded to the nearest line: a note starts in the cell you clicked, and at a
+    // coarse grain the nearest line can be a whole bar away. Free placement has no cell to start
+    // in, so there it follows the pointer onto the finest position that will sound.
     const start = unit ? Math.floor(step / unit) * unit : this.snapStep(step);
     return { step: Math.min(start, MAX_STEPS - length), length };
   }
@@ -436,10 +430,9 @@ export class PianoRollComponent {
         ctx.fillRect(0, y, w, ROW_H);
       }
     }
-    // Grid. Every vertical line is the snap resolution rather than the step: they say where the
-    // next note will land, so they thin out as the grain coarsens and go entirely in OFF — a line
-    // there would mark a position with no more claim on a note than the space beside it. The bars
-    // stay readable off the ruler, which numbers them.
+    // Grid. Every vertical line stands for the snap grain — where the next note will land — so in
+    // OFF there are none at all, bars included: a line there would mark a position with no more
+    // claim on a note than the space beside it. The bars stay readable off the ruler above.
     ctx.strokeStyle = cssVar(el, '--nc-line');
     ctx.beginPath();
     const unit = this.snapUnit();

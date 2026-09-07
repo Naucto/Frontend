@@ -67,13 +67,10 @@ export interface Song {
 /**
  * Positions a step is divided into for playback.
  *
- * A note's `step` is a number, not an index: the editor lets one be dropped between two steps, and
- * before this the sequencer only ever compared against whole steps, so such a note was written,
- * drawn, and silent. The clock therefore ticks at this resolution, and it is also the finest
- * position anything may write — past it a note has nowhere to sound.
- *
- * Eight of them: a step is a sixteenth note at the default four steps per beat, so an eighth of one
- * is a hundred-and-twenty-eighth — as fine as free placement has any use for.
+ * A note's `step` is a number, not an index — one may be dropped between two steps. The clock ticks
+ * at this resolution, so it is also the finest position anything may write: past it a note has
+ * nowhere to sound. Chosen to reach a hundred-and-twenty-eighth note at the default steps per beat,
+ * which is as fine as free placement has any use for.
  */
 export const SUBSTEPS = 8;
 
