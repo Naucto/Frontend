@@ -3,11 +3,11 @@ import { booleanAttribute, ChangeDetectionStrategy, Component, input, model } fr
 import { IconComponent } from './icon.component';
 
 /**
- * Pick one colour out of a palette, by the slot it sits in rather than by its value.
+ * A slot is what gets stored, not the colour in it, so repainting the palette repaints everything
+ * wearing it.
  *
- * A slot is what gets stored, so repainting the palette repaints everything wearing it. The
- * selection is drawn as an outline outside the swatch: an inset border would eat the very colour
- * being chosen.
+ * The selection is an outline outside the swatch: an inset border would eat the very colour being
+ * chosen.
  */
 @Component({
   selector: 'nc-swatch-picker',
@@ -41,13 +41,10 @@ import { IconComponent } from './icon.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SwatchPickerComponent {
-  /** The palette the slots index into. */
   readonly colours = input.required<readonly string[]>();
-  /** Which of the palette's slots are on offer, in the order they are drawn. */
   readonly slots = input.required<readonly number[]>();
   readonly value = model<number | null>(null);
   readonly allowNone = input(false, { transform: booleanAttribute });
-  /** Prefixes each swatch's name; the slot's own number follows it. */
   readonly slotLabel = input('Palette slot');
   readonly noneLabel = input('No colour');
 }
