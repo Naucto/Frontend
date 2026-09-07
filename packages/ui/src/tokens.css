@@ -75,9 +75,9 @@
   --color-panel: var(--nc-panel);
   --color-raised: var(--nc-raised);
   --color-inset: var(--nc-inset);
-  /* The piano keyboard, and the only colours here with no theme twin: a key stands for ivory or
-     ebony, and neither depends on how the room is lit. Written out rather than pointing at a
-     private name for that same reason — the private layer is there so a theme can swap it. */
+  /* The piano keyboard, which has no theme twin: a key stands for ivory or ebony, and neither
+     depends on how the room is lit. Written out rather than pointing at a private name for the
+     same reason — the private layer is there so a theme can swap it. */
   --color-key: #c8bfb3;
   --color-key-lit: #ede6da;
   --color-key-sharp: #17140f;

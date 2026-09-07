@@ -69,8 +69,7 @@ export interface Song {
  *
  * A note's `step` is a number, not an index — one may be dropped between two steps. The clock ticks
  * at this resolution, so it is also the finest position anything may write: past it a note has
- * nowhere to sound. Chosen to reach a hundred-and-twenty-eighth note at the default steps per beat,
- * which is as fine as free placement has any use for.
+ * nowhere to sound. Chosen to reach a hundred-and-twenty-eighth note at the default steps per beat.
  */
 export const SUBSTEPS = 8;
 
