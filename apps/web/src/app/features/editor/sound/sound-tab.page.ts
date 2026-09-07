@@ -74,7 +74,6 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
     OscilloscopeComponent,
     VoicesLaneComponent,
   ],
-  providers: [SoundStore],
   template: `
     <div
       *transloco="let t"

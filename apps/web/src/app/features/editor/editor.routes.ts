@@ -1,9 +1,22 @@
 import { type Routes } from '@angular/router';
 
+import { ArtStore } from './art/art.store';
+import { MapStore } from './map/map.store';
+import { SoundStore } from './sound/sound.store';
+
 export const EDITOR_ROUTES: Routes = [
   {
     path: '',
     loadComponent: () => import('./editor-shell.component').then((m) => m.EditorShellComponent),
+    /**
+     * A tab's state belongs to the editing session, not to the tab's own lifetime.
+     *
+     * Provided on each page, these were destroyed and rebuilt on every navigation: turning the flag
+     * overlay off, going to CODE and coming back turned it on again, and so did the grid, the onion,
+     * the zoom, the tool in hand and the sprite being worked on. Provided here they live exactly as
+     * long as the project is open, and are gone when it is closed.
+     */
+    providers: [ArtStore, MapStore, SoundStore],
     children: [
       { path: '', redirectTo: 'game', pathMatch: 'full' },
       {

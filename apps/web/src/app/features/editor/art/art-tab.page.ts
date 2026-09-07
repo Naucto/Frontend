@@ -71,7 +71,6 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
     SpriteCanvasComponent,
     PresenceSurfaceComponent,
   ],
-  providers: [ArtStore],
   template: `
     <div *transloco="let t" class="grid h-full grid-cols-[minmax(0,1fr)_420px]">
       <section class="flex min-h-0 flex-col">

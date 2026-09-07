@@ -48,7 +48,6 @@ const BRUSHES = ['1×1', '2×2', '3×3', '4×4', '5×5', '6×6', '7×7', '8×8']
     MapCanvasComponent,
     MinimapComponent,
   ],
-  providers: [MapStore],
   template: `
     <div *transloco="let t" class="grid h-full grid-cols-[minmax(0,1fr)_420px]">
       <section class="flex min-h-0 flex-col">
