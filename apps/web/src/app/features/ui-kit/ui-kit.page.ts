@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { inject } from '@angular/core';
+import { BUBBLEGUM_16 } from '@naucto/engine';
 import {
   AvatarComponent,
   BitFlagsComponent,
@@ -9,6 +10,7 @@ import {
   ChipComponent,
   ConfirmDialogComponent,
   DialogService,
+  EdgeHandleComponent,
   EmptyStateComponent,
   ErrorStateComponent,
   FieldComponent,
@@ -22,7 +24,9 @@ import {
   MeterComponent,
   NoticeComponent,
   OnlineDotComponent,
+  PanelColumnComponent,
   PanelComponent,
+  PanelRegionComponent,
   PopoverDirective,
   PopoverPanelComponent,
   PresenceFlagComponent,
@@ -37,6 +41,7 @@ import {
   SliderComponent,
   StatComponent,
   StepperComponent,
+  SwatchPickerComponent,
   TabsComponent,
   TagInputComponent,
   ToastHostComponent,
@@ -46,6 +51,8 @@ import {
   ToolGroupComponent,
   TooltipDirective,
 } from '@naucto/ui';
+
+import { ACCENT_SLOTS } from '../editor/accent-slots';
 
 /** Dev-only gallery of every UI primitive, used for visual goldens in light and dark. */
 @Component({
@@ -60,6 +67,10 @@ import {
     ErrorStateComponent,
     FieldComponent,
     IconComponent,
+    SwatchPickerComponent,
+    PanelRegionComponent,
+    PanelColumnComponent,
+    EdgeHandleComponent,
     InputDirective,
     KeycapComponent,
     LabelComponent,
@@ -242,6 +253,34 @@ import {
             <nc-notice>The game is over the size ceiling, so publishing is blocked.</nc-notice>
             <nc-notice tone="danger">This release could not be reached.</nc-notice>
           </nc-section>
+          <nc-section title="Swatch picker" class="mt-2">
+            <nc-swatch-picker allowNone [colours]="palette" [slots]="accents" [(value)]="swatch" />
+          </nc-section>
+          <nc-section title="Panel column" class="mt-2">
+            <!-- A region holding one column and the second that unfolds beside it. Its own height,
+                 because a region takes the one it is given and there is no editor here to give it. -->
+            <div class="h-[168px] border border-line">
+              <nc-panel-region
+                [secondaryOpen]="regionOpen()"
+                [viewportWidth]="1920"
+                [splitAt]="1602"
+                [primaryWidth]="140"
+                [secondaryWidth]="110"
+              >
+                <nc-panel-column secondary edge="none" title="Reference">
+                  <p class="p-1.5 text-meta text-ink-3">Unfolded beside.</p>
+                </nc-panel-column>
+                <nc-panel-column primary title="Console">
+                  <nc-edge-handle
+                    icon="prev"
+                    label="Fold the column away"
+                    (pressed)="regionOpen.set(!regionOpen())"
+                  />
+                  <p class="p-1.5 text-meta text-ink-3">The grip folds the other one out.</p>
+                </nc-panel-column>
+              </nc-panel-region>
+            </div>
+          </nc-section>
           <nc-section title="Label" class="mt-2">
             <nc-label>In this work session</nc-label>
           </nc-section>
@@ -369,6 +408,10 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UiKitPage {
+  protected readonly palette = [...BUBBLEGUM_16];
+  protected readonly accents = ACCENT_SLOTS;
+  protected readonly swatch = signal<number | null>(4);
+  protected readonly regionOpen = signal(true);
   private readonly dialogs = inject(DialogService);
   private readonly toasts = inject(ToastService);
   protected readonly autoRun = signal(true);
