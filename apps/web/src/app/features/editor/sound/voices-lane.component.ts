@@ -13,7 +13,7 @@ import {
 import { cssVar } from '@app/shared/pixel/pixel-tools';
 import { type Instrument, type Note, type Pattern, VOICES } from '@naucto/engine';
 
-import { KEY_W } from './piano-roll.component';
+import { KEY_W, MAX_STEPS } from './piano-roll.component';
 
 const RULER_H = 16;
 /** 118px of lane in the design; the voice rows share what is left under the ruler. */
@@ -61,7 +61,8 @@ export class VoicesLaneComponent {
   readonly label = input('Voices');
   protected readonly height = LANE_TOTAL_H;
   private readonly laneH = (LANE_TOTAL_H - RULER_H) / VOICES;
-  protected readonly width = computed(() => KEY_W + this.pattern().steps * this.stepWidth());
+  /** The roll's whole placeable grid, so a voice lines up with the note that lit it. */
+  protected readonly width = computed(() => KEY_W + MAX_STEPS * this.stepWidth());
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
   private raf = 0;
 

@@ -35,12 +35,6 @@ export const RULER_H = 24;
  */
 export const MAX_STEPS = 64;
 
-/**
- * Hatched ground drawn past the ceiling, so the longest a pattern may be still has something after
- * it. Without it a full-length pattern ends at the edge of its own canvas, which says the drawing
- * stopped rather than that the pattern cannot go further.
- */
-const TAIL_STEPS = 4;
 const BLACK = new Set([1, 3, 6, 8, 10]);
 
 interface Drag {
@@ -132,7 +126,10 @@ export class PianoRollComponent {
    * only ever for going closer.
    */
   readonly stepW = computed(() => 24 * this.zoom());
-  protected readonly width = computed(() => (MAX_STEPS + TAIL_STEPS) * this.stepW());
+  /** The whole placeable grid, widened to the window when the window is the roomier of the two. */
+  protected readonly width = computed(() =>
+    Math.max(MAX_STEPS * this.stepW(), this.hostBox().w - KEY_W),
+  );
   protected readonly height = computed(() => RULER_H + (PITCH_MAX - PITCH_MIN + 1) * ROW_H);
   protected readonly marks = computed<PresenceMark[]>(() =>
     this.collaborators()
@@ -188,8 +185,12 @@ export class PianoRollComponent {
     };
     if (typeof window !== 'undefined') watchDpr();
 
+    // Spelled out rather than left to `draw()`'s own reads, because the redraw is deferred to a
+    // frame and would otherwise track nothing. Anything new that `draw()` reads has to be added
+    // here too — a missing entry does not fail, it just stops repainting.
     effect(() => {
       this.pattern();
+      this.hostBox();
       this.instruments();
       this.palette();
       this.instrumentId();
@@ -411,7 +412,7 @@ export class PianoRollComponent {
     // Grid.
     ctx.strokeStyle = cssVar(el, '--nc-line');
     ctx.beginPath();
-    for (let s = 0; s <= p.steps; s++) {
+    for (let s = 0; s <= MAX_STEPS; s++) {
       if (s % p.stepsPerBeat === 0) continue;
       ctx.moveTo(s * sw + 0.5, RULER_H);
       ctx.lineTo(s * sw + 0.5, h);
@@ -423,15 +424,16 @@ export class PianoRollComponent {
     ctx.stroke();
     ctx.strokeStyle = cssVar(el, '--nc-line-strong');
     ctx.beginPath();
-    for (let s = 0; s <= p.steps; s += p.stepsPerBeat) {
+    for (let s = 0; s <= MAX_STEPS; s += p.stepsPerBeat) {
       ctx.moveTo(s * sw + 0.5, 0);
       ctx.lineTo(s * sw + 0.5, h);
     }
     ctx.stroke();
 
-    // Past the last step, the hatch a game with no cover wears — the app's mark for ground that is
-    // not a surface, which is what this is until the pattern is lengthened to reach it.
-    const endX = p.steps * sw;
+    // Past the last step a note may be placed on, the hatch a game with no cover wears — the app's
+    // mark for ground that is not a surface. It exists only to fill a window wider than the grid;
+    // the pattern's own end is not hatched, since a note placed after it lengthens the pattern.
+    const endX = MAX_STEPS * sw;
     if (endX < w) {
       ctx.save();
       ctx.beginPath();
@@ -449,11 +451,6 @@ export class PianoRollComponent {
       ctx.stroke();
       ctx.restore();
       ctx.lineWidth = 1;
-      ctx.strokeStyle = cssVar(el, '--nc-line-strong');
-      ctx.beginPath();
-      ctx.moveTo(endX + 0.5, RULER_H);
-      ctx.lineTo(endX + 0.5, h);
-      ctx.stroke();
     }
 
     // Notes.
@@ -479,16 +476,8 @@ export class PianoRollComponent {
     ctx.font = `10px ${cssVar(el, '--font-mono')}`;
     ctx.textBaseline = 'middle';
     ctx.fillStyle = cssVar(el, '--nc-ink-4');
-    for (let s = 0; s < p.steps; s += p.stepsPerBeat)
+    for (let s = 0; s < MAX_STEPS; s += p.stepsPerBeat)
       ctx.fillText(String(s / p.stepsPerBeat + 1), s * sw + 4, sy + RULER_H / 2);
-
-    // Written past the end, where it labels the hatch. Inside, it would read as a mark on the
-    // last bar.
-    const end = p.steps * sw;
-    if (end < w) {
-      ctx.fillStyle = cssVar(el, '--nc-ink-3');
-      ctx.fillText(`${String(p.steps)} STEPS`, end + 6, sy + RULER_H / 2);
-    }
 
     // Hover cell.
     const hv = this.hoverCell();
