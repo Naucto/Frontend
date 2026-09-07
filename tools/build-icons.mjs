@@ -30,6 +30,13 @@ const CUSTOM = {
   'audio-device':
     'M4 4h4v2H4v8h4v2H2V4h2zm6 0h10v2h-8v12h8v2H10V4zm12 0h-2v16h2V4zm-7 4h2v2h-2V8zm3 4h-4v4h4v-4zM8 18H4v2h4v-2z',
   bug: 'M8 2h2v4h4V2h2v4h2v3h2v2h-2v2h4v2h-4v2h2v2h-2v3H6v-3H4v-2h2v-2H2v-2h4v-2H4V9h2V6h2V2Zm8 6H8v3h8V8Zm-5 5H8v7h3v-7Zm2 7h3v-7h-3v7ZM4 9H2V7h2v2Zm0 10v2H2v-2h2Zm16 0h2v2h-2v-2Zm0-10V7h2v2h-2Z',
+  // The direction mark on a rim puck: the sheet's 4x7 filled triangle at x3, so every step of its
+  // edge stays a whole pixel. Not a chevron — a chevron is an outline and reads as "more this way",
+  // where this says "they are that way".
+  'caret-down': 'M2 6h21v3H2z M5 9h15v3H5z M8 12h9v3H8z M11 15h3v3h-3z',
+  'caret-left': 'M15 2h3v21h-3z M12 5h3v15h-3z M9 8h3v9H9z M6 11h3v3H6z',
+  'caret-right': 'M6 2h3v21H6z M9 5h3v15H9z M12 8h3v9h-3z M15 11h3v3h-3z',
+  'caret-up': 'M2 15h21v3H2z M5 12h15v3H5z M8 9h9v3H8z M11 6h3v3h-3z',
   'chart-bar': 'M13 5h2v14h-2V5zm-2 4H9v10h2V9zm-4 4H5v6h2v-6zm12 0h-2v6h2v-6z',
   check:
     'M18 6h2v2h-2V6zm-2 4V8h2v2h-2zm-2 2v-2h2v2h-2zm-2 2h2v-2h-2v2zm-2 2h2v-2h-2v2zm-2 0v2h2v-2H8zm-2-2h2v2H6v-2zm0 0H4v-2h2v2z',

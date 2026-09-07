@@ -26,11 +26,20 @@ type Edge = 'up' | 'down' | 'left' | 'right';
 type Placed = PresenceMark & { edge: Edge | null };
 
 const ARROW: Record<Edge, IconName> = {
-  up: 'arrow-up',
-  down: 'arrow-down',
-  left: 'arrow-left',
-  right: 'arrow-right',
+  up: 'caret-up',
+  down: 'caret-down',
+  left: 'caret-left',
+  right: 'caret-right',
 };
+
+/**
+ * Which side of the name the mark sits on.
+ *
+ * It points out of the frame, at the person, so it belongs on the outward side: leading on the left
+ * rim, trailing on the right. Top and bottom carry no left-or-right meaning, so they lead and the
+ * pucks stay one shape.
+ */
+const TRAILS: Record<Edge, boolean> = { up: false, down: false, left: false, right: true };
 
 const FILL: Record<PresenceColour, string> = {
   sky: 'bg-presence-sky',
@@ -65,8 +74,13 @@ const PAD_Y = 14;
           [style.left.px]="m.x"
           [style.top.px]="m.y"
         >
-          <nc-icon [name]="arrow(dir)" [size]="12" />
+          @if (!trails(dir)) {
+            <nc-icon [name]="arrow(dir)" [size]="12" />
+          }
           <span class="max-w-[84px] overflow-hidden text-ellipsis">{{ m.name }}</span>
+          @if (trails(dir)) {
+            <nc-icon [name]="arrow(dir)" [size]="12" />
+          }
         </div>
       } @else {
         <nc-presence-flag
@@ -95,6 +109,10 @@ export class PresenceLayerComponent {
 
   protected arrow(edge: Edge): IconName {
     return ARROW[edge];
+  }
+
+  protected trails(edge: Edge): boolean {
+    return TRAILS[edge];
   }
 }
 
