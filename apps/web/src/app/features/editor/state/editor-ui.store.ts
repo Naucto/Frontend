@@ -23,13 +23,6 @@ export type ColumnMode = 'screen' | 'split' | 'swap';
 
 interface EditorUiState {
   activeTab: EditorTab;
-  /**
-   * Per-tab override of the console column's collapsed state, remembered per user.
-   *
-   * Only what the reader has actually changed is stored, so the default below keeps working for
-   * every tab they have not touched.
-   */
-  collapsedByTab: Partial<Record<EditorTab, boolean>>;
   consoleTab: ConsoleTab;
   referenceOpen: boolean;
   autoRun: boolean;
@@ -64,7 +57,6 @@ export const REFERENCE_WIDTH = 401;
 export const EditorUiStore = signalStore(
   withState<EditorUiState>({
     activeTab: 'game',
-    collapsedByTab: readJson<Partial<Record<EditorTab, boolean>>>(STORAGE_KEYS.editorCollapsed, {}),
     consoleTab: 'console',
     referenceOpen: readJson<boolean>(STORAGE_KEYS.editorReferenceOpen, false),
     autoRun: true,
@@ -72,12 +64,6 @@ export const EditorUiStore = signalStore(
     pipOpen: readJson<boolean>(STORAGE_KEYS.editorViewerFloating, false),
   }),
   withComputed((s) => ({
-    /**
-     * CODE keeps the console beside it — that is where the machine talks back while you type. The
-     * other tabs are canvases and the design gives them the full width, with the runtime available
-     * as the floating viewer instead. Either way the reader's own choice wins.
-     */
-    collapsed: computed(() => s.collapsedByTab()[s.activeTab()] ?? s.activeTab() !== 'code'),
     /** Wide enough and the reference gets a column of its own; below that it takes the console's. */
     columnMode: computed<ColumnMode>(() =>
       !s.referenceOpen()
@@ -128,11 +114,6 @@ export const EditorUiStore = signalStore(
     },
     togglePip(): void {
       this.setPipOpen(!store.pipOpen());
-    },
-    toggleCollapsed(): void {
-      const next = { ...store.collapsedByTab(), [store.activeTab()]: !store.collapsed() };
-      patchState(store, { collapsedByTab: next });
-      writeJson(STORAGE_KEYS.editorCollapsed, next);
     },
   })),
 );

@@ -223,11 +223,9 @@ export class EditorShellComponent implements OnInit {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   protected readonly rail = RAIL;
   /** Wide in the swap too, because a track has to have a width for the reference to borrow it. */
-  protected readonly consoleWidth = computed(() => {
-    if (this.ui.columnMode() === 'swap') return CONSOLE_WIDTH;
-    if (this.ui.activeTab() !== 'code') return 0;
-    return this.ui.collapsed() ? 12 : CONSOLE_WIDTH;
-  });
+  protected readonly consoleWidth = computed(() =>
+    this.ui.columnMode() === 'swap' || this.ui.activeTab() === 'code' ? CONSOLE_WIDTH : 0,
+  );
 
   /**
    * Not the same question as whether the track has a width. Where the reference has borrowed it the

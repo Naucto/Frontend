@@ -45,23 +45,17 @@ const PIP_WIDTH = 304;
     <div *transloco="let t" class="relative flex h-full flex-col bg-panel">
       <!-- No resize strip: the console is a fixed 421 track, like the reference beside it and
            every tab inspector. -->
-      @if (shown()) {
-        <!-- Too narrow for both, and this grip is the switch between them rather than a way to
-             fold the column away: with the reference reachable only by a keystroke from here, the
-             pair could be left and not come back. -->
+      @if (shown() && !ui.referenceOpen()) {
+        <!-- This grip only ever brings the reference; the column itself does not fold away. What
+             arriving costs the reference is the room there is: beside the console where it fits,
+             in its place where it does not, which is what the glyph says. -->
         <nc-edge-handle
-          [icon]="swaps() ? 'sync' : ui.collapsed() ? 'prev' : 'next'"
-          [label]="
-            swaps()
-              ? t('editor.swapToReference')
-              : ui.collapsed()
-                ? t('editor.expandConsole')
-                : t('editor.collapseConsole')
-          "
-          (pressed)="swaps() ? ui.setReferenceOpen(true) : ui.toggleCollapsed()"
+          [icon]="swaps() ? 'sync' : 'chevron-left'"
+          [label]="swaps() ? t('editor.swapToReference') : t('editor.openReference')"
+          (pressed)="ui.setReferenceOpen(true)"
         />
       }
-      @if (shown() && !ui.collapsed() && popped()) {
+      @if (shown() && popped()) {
         <!-- The slot the viewer left behind says where it went, and holds its shape while it is
              away: at the viewer's own 16:9 the column keeps the same height whether the picture is
              docked or floating, so popping it out and back does not shove the console up and down
@@ -155,7 +149,7 @@ const PIP_WIDTH = 304;
           </nc-game-screen>
         </div>
       </div>
-      @if (shown() && !ui.collapsed()) {
+      @if (shown()) {
         <nc-tabs
           [tabs]="tabs()"
           [value]="ui.consoleTab()"
@@ -238,10 +232,7 @@ export class ConsoleColumnComponent {
   protected readonly swaps = computed(() => this.ui.viewportWidth() < REFERENCE_SPLIT_BREAKPOINT);
 
   protected readonly screenHidden = computed(
-    () =>
-      this.ui.columnMode() === 'swap' ||
-      (this.ui.collapsed() && !this.popped()) ||
-      (!this.popped() && this.ui.activeTab() !== 'code'),
+    () => this.ui.columnMode() === 'swap' || (!this.popped() && this.ui.activeTab() !== 'code'),
   );
   /** How many screen pixels one console pixel takes. The column is a fixed track, so this is too. */
   protected readonly scale = computed(() => {

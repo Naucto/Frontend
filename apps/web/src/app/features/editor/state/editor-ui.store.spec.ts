@@ -7,33 +7,6 @@ describe('EditorUiStore', () => {
   const store = (): InstanceType<typeof EditorUiStore> =>
     TestBed.configureTestingModule({ providers: [EditorUiStore] }).inject(EditorUiStore);
 
-  it('keeps the console beside CODE and gives the other tabs their full width', () => {
-    const ui = store();
-
-    ui.setTab('code');
-    expect(ui.collapsed()).toBe(false);
-
-    for (const tab of ['game', 'art', 'map', 'sound', 'net'] as const) {
-      ui.setTab(tab);
-      expect(ui.collapsed()).toBe(true);
-    }
-  });
-
-  it('remembers the reader’s own choice per tab', () => {
-    const ui = store();
-
-    ui.setTab('art');
-    ui.toggleCollapsed();
-    expect(ui.collapsed()).toBe(false);
-
-    // The override is per tab: MAP is untouched, so it still follows the default.
-    ui.setTab('map');
-    expect(ui.collapsed()).toBe(true);
-
-    ui.setTab('art');
-    expect(ui.collapsed()).toBe(false);
-  });
-
   /**
    * The whole point of artboard 1c: the running game is not evicted to make room for the
    * reference unless the window genuinely cannot hold both.
