@@ -91,8 +91,8 @@ const FLAG_VARS = [
   // A map smaller than the viewport is centred rather than pinned to the top-left; `safe` keeps
   // the origin reachable once it is larger.
   hostDirectives: [DragPanDirective],
-  // The wheel is bound here rather than on the canvas so it is answered over the gutter a map
-  // smaller than its well is centred in — where it used to fall through and zoom the page instead.
+  // The wheel is bound on the well rather than on the canvas, so it is answered over the gutter a
+  // map smaller than the well is centred in.
   host: {
     class: 'flex overflow-auto [align-items:safe_center] [justify-content:safe_center]',
     tabindex: '0',
@@ -203,10 +203,7 @@ export class MapCanvasComponent {
     });
   }
 
-  /**
-   * The wheel zooms rather than scrolls, which is what a surface you work *into* wants, and is why
-   * the middle button pans instead. Ctrl still zooms, so the browser's own gesture lands here too.
-   */
+  /** Zoom rather than scroll: moving this surface is the middle button's, not the wheel's. */
   protected onWheel(e: WheelEvent): void {
     e.preventDefault();
     this.zoomBy.emit(e.deltaY < 0 ? 1 : -1);

@@ -333,12 +333,8 @@ test.describe('editor', () => {
   });
 
   /**
-   * The sheet map draws a frame of what the canvas is showing. It was published from a scroll
-   * listener alone, so zooming — which moves the frame without scrolling anything — left it
-   * describing a view that had gone.
-   *
-   * Read as pixels because the frame is drawn rather than laid out, and nothing else on this map
-   * answers to zoom: the region it also draws is unchanged by it, so a difference here is the
+   * Read as pixels because the frame is drawn rather than laid out — and nothing else on this map
+   * answers to zoom, the region it also draws being unchanged by it, so a difference here is the
    * frame or nothing.
    */
   test('the sheet map follows a zoom, not only a scroll', async ({ page }) => {

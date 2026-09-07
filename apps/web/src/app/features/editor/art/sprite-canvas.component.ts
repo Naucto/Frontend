@@ -171,10 +171,7 @@ export class SpriteCanvasComponent {
     this.userScale.set(null);
   }
 
-  /**
-   * The wheel zooms rather than scrolls, which is what a surface you work *into* wants, and is why
-   * the middle button pans instead. Ctrl still zooms, so the browser's own gesture lands here too.
-   */
+  /** Zoom rather than scroll: moving this surface is the middle button's, not the wheel's. */
   protected onWheel(e: WheelEvent): void {
     e.preventDefault();
     this.zoomBy(e.deltaY < 0 ? 1 : -1);
@@ -635,9 +632,8 @@ export class SpriteCanvasComponent {
       ctx.lineWidth = 1;
     }
 
-    // The frame this publishes is measured against the content, and the line above is where the
-    // content takes its size. Zooming moves the frame without scrolling anything, so a scroll
-    // listener alone leaves whatever draws a map of the view showing where the view used to be.
+    // Measured against the content, so it can only be taken once the content has its size — and
+    // taken here rather than on scrolling alone, because a zoom moves the view without moving it.
     this.measure();
   }
 }

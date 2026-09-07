@@ -3,9 +3,7 @@ import { Directive, ElementRef, inject } from '@angular/core';
 /**
  * Drag a scrolling element around with the middle mouse button.
  *
- * The middle button because the left one is the tool in hand on the surfaces that want this, and
- * because what it replaces is the browser's own autoscroll on that same button — a gesture people
- * already aim there, and one that is useless over a canvas.
+ * The middle button, because the left one is the tool in hand on the surfaces that want this.
  *
  * It moves the element's own scroll offsets rather than a transform, so it composes with the
  * scrollbars and the keyboard instead of competing with them.
