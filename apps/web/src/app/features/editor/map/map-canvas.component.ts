@@ -20,8 +20,6 @@ import {
   type Game,
   MAP_HEIGHT,
   MAP_WIDTH,
-  SCREEN_HEIGHT,
-  SCREEN_WIDTH,
   SPRITE_COUNT,
   SPRITE_SIZE,
   SPRITES_PER_ROW,
@@ -414,30 +412,7 @@ export class MapCanvasComponent {
     const ctx = el.getContext('2d');
     if (!ctx) return;
     const t = this.tilePx();
-    const z = this.zoom();
     ctx.clearRect(0, 0, this.cssW(), this.cssH());
-    // Camera bounds: what the screen shows at the origin. Everything outside it is scrimmed, so
-    // the first screen of the map reads as the one the player will actually see.
-    const camW = SCREEN_WIDTH * z;
-    const camH = SCREEN_HEIGHT * z;
-    ctx.fillStyle = cssVar(el, '--nc-page');
-    ctx.globalAlpha = 0.45;
-    ctx.fillRect(camW, 0, this.cssW() - camW, this.cssH());
-    ctx.fillRect(0, camH, camW, this.cssH() - camH);
-    ctx.globalAlpha = 1;
-    ctx.strokeStyle = cssVar(el, '--nc-gold');
-    ctx.lineWidth = 2;
-    ctx.strokeRect(1, 1, camW - 2, camH - 2);
-    ctx.lineWidth = 1;
-    // The label is a chip sitting *above* the rect, not text floating inside the play area.
-    const text = `CAMERA ${String(SCREEN_WIDTH)}×${String(SCREEN_HEIGHT)}`;
-    ctx.font = `10px ${cssVar(el, '--font-mono')}`;
-    ctx.textBaseline = 'top';
-    const chipW = ctx.measureText(text).width + 12;
-    ctx.fillStyle = cssVar(el, '--nc-gold');
-    ctx.fillRect(0, 0, chipW, 18);
-    ctx.fillStyle = cssVar(el, '--color-on-accent');
-    ctx.fillText(text, 6, 5);
 
     const sel = this.selection();
     if (sel) {
