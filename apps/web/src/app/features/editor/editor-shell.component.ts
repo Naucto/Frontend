@@ -168,7 +168,7 @@ const RAIL: RailItem<EditorTab>[] = [
               </div>
               <nc-console-column
                 primary
-                class="min-h-0"
+                class="min-h-0 border-line"
                 [shown]="consoleShown()"
                 [class.border-l]="consoleShown()"
               />
