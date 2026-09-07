@@ -14,14 +14,13 @@ const FILL: Record<PresenceColour, string> = {
 };
 
 /**
- * Where a collaborator's pointer is, with their name hung at the ninth of the mark's fifteen rows —
+ * Where a collaborator's pointer is, with their name hung at the row where the mark stops widening —
  * which is what the fraction in the tag's offset counts.
  *
- * The size is the one it is used at, on the ART canvas in artboard 1d; the shape is read off the
- * foundations sheet, which draws it larger. The design builds the mark one bar per row rather than
- * as one outline, and the path keeps that, so a row that is wrong reads as a wrong row instead of
- * hiding in a seam. `crispEdges` is load-bearing: the rendered size is not a whole multiple of the
- * grid.
+ * The shape is read off the foundations sheet, one bar per row, and the path keeps that division so
+ * a row that is wrong reads as a wrong row instead of hiding in a seam. The left edge is a diagonal,
+ * not a straight side: that is what makes it a kite rather than a flag on a staff, and it is what
+ * the design was redrawn to say — a presence mark is not the system pointer.
  *
  * No stroke. At this size a stroke is a different silhouette, not the same one made legible.
  *
@@ -33,9 +32,9 @@ const FILL: Record<PresenceColour, string> = {
   selector: 'nc-presence-flag',
   template: `
     <svg
-      viewBox="0 0 10 15"
+      viewBox="0 0 12 12"
       width="16"
-      height="24"
+      height="16"
       shape-rendering="crispEdges"
       aria-hidden="true"
       class="block flex-none"
@@ -43,11 +42,11 @@ const FILL: Record<PresenceColour, string> = {
     >
       <path
         fill="currentColor"
-        d="M0 0H1V1H0ZM0 1H2V2H0ZM0 2H3V3H0ZM0 3H4V4H0ZM0 4H5V5H0ZM0 5H6V6H0ZM0 6H7V7H0ZM0 7H8V8H0ZM0 8H9V9H0ZM0 9H10V10H0ZM0 10H6V11H0ZM0 11H4V12H0ZM0 12H3V13H0ZM0 13H2V14H0ZM0 14H1V15H0Z"
+        d="M0 0H2V1H0ZM0 1H5V2H0ZM1 2H7V3H1ZM1 3H10V4H1ZM1 4H12V5H1ZM2 5H10V6H2ZM2 6H9V7H2ZM3 7H8V8H3ZM3 8H7V9H3ZM3 9H6V10H3ZM4 10H5V11H4ZM4 11H5V12H4Z"
       />
     </svg>
     <span
-      class="mt-[calc(24px*9/15)] ml-px inline-block px-[5px] py-[2px] font-mono text-micro whitespace-nowrap uppercase tracking-tag text-on-accent"
+      class="mt-[calc(16px*5/12)] ml-px inline-block px-[5px] py-[2px] font-mono text-micro whitespace-nowrap uppercase tracking-tag text-on-accent"
       [class]="fill()"
     >
       {{ name() }}
