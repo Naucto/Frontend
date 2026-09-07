@@ -23,6 +23,7 @@ import {
 } from '@naucto/engine';
 import {
   ButtonDirective,
+  DialogService,
   EmptyStateComponent,
   IconComponent,
   PanelColumnComponent,
@@ -34,6 +35,11 @@ import * as Y from 'yjs';
 
 import { PANEL_WIDTH } from '../state/editor-ui.store';
 import { WorkSessionService } from '../work-session/work-session.service';
+import {
+  InstrumentDialog,
+  type InstrumentDialogData,
+  type InstrumentDialogResult,
+} from './instrument.dialog';
 import { InstrumentInspectorComponent } from './instrument-inspector.component';
 import { InstrumentListComponent } from './instrument-list.component';
 import { OscilloscopeComponent } from './oscilloscope.component';
@@ -85,6 +91,8 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
           (selected)="sound.selectInstrument($event)"
           (add)="addInstrument()"
           (remove)="removeInstrument($event)"
+          (duplicate)="duplicateInstrument($event)"
+          (edit)="editInstrument($event)"
           (sfxToggle)="toggleSfx($event)"
         />
       </aside>
@@ -362,8 +370,6 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
             [samples]="library.samples()"
             (patched)="library.updateInstrument(inst.id, $event)"
             (sampleChange)="library.setSample($event.id, $event.pcm)"
-            (duplicate)="duplicateInstrument(inst.id)"
-            (removed)="removeInstrument(inst.id)"
           />
         } @else {
           <p class="label m-auto max-w-[220px] text-center text-ink-4">
@@ -380,6 +386,7 @@ export class SoundTabPage {
   protected readonly PANEL_WIDTH = PANEL_WIDTH;
   protected readonly session = inject(WorkSessionService);
   protected readonly sound = inject(SoundStore);
+  private readonly dialogs = inject(DialogService);
   protected readonly library = new SoundLibrary(this.session.game);
   protected readonly undo: Y.UndoManager;
   protected readonly stepOptions = STEP_OPTIONS;
@@ -470,6 +477,21 @@ export class SoundTabPage {
   protected duplicateInstrument(id: string): void {
     const copy = this.library.duplicateInstrument(id);
     if (copy) this.sound.selectInstrument(copy.id);
+  }
+
+  /** Renaming and recolouring travel together: they are the two things about an instrument that
+   * are only a label, and the list is where a name is read. */
+  protected editInstrument(id: string): void {
+    const inst = this.library.instruments().get(id);
+    if (!inst) return;
+    this.dialogs
+      .open<InstrumentDialog, InstrumentDialogData, InstrumentDialogResult | undefined>(
+        InstrumentDialog,
+        { data: { name: inst.name, colour: inst.colour, palette: this.palette() } },
+      )
+      .closed.subscribe((r: InstrumentDialogResult | undefined) => {
+        if (r) this.library.updateInstrument(id, { name: r.name, colour: r.colour });
+      });
   }
 
   protected removeInstrument(id: string): void {

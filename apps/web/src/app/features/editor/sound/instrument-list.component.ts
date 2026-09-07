@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { type Instrument, SFX_SLOTS } from '@naucto/engine';
-import { ButtonDirective, HelpDotComponent, IconComponent } from '@naucto/ui';
+import { ButtonDirective, HelpDotComponent, IconComponent, TooltipDirective } from '@naucto/ui';
 
 import { WaveGlyphComponent } from './wave-glyph.component';
 
@@ -13,6 +13,7 @@ import { WaveGlyphComponent } from './wave-glyph.component';
     ButtonDirective,
     IconComponent,
     HelpDotComponent,
+    TooltipDirective,
     WaveGlyphComponent,
   ],
   template: `
@@ -57,7 +58,32 @@ import { WaveGlyphComponent } from './wave-glyph.component';
               size="sm"
               iconOnly
               class="opacity-0 group-hover:opacity-100"
+              [attr.aria-label]="t('editor.sound.duplicate')"
+              [ncTooltip]="t('editor.sound.duplicate')"
+              (click)="$event.stopPropagation(); duplicate.emit(i.id)"
+            >
+              <nc-icon name="copy" [size]="12" />
+            </button>
+            <button
+              ncButton
+              variant="ghost"
+              size="sm"
+              iconOnly
+              class="opacity-0 group-hover:opacity-100"
+              [attr.aria-label]="t('editor.sound.editInstrument')"
+              [ncTooltip]="t('editor.sound.editInstrument')"
+              (click)="$event.stopPropagation(); edit.emit(i.id)"
+            >
+              <nc-icon name="edit" [size]="12" />
+            </button>
+            <button
+              ncButton
+              variant="ghost"
+              size="sm"
+              iconOnly
+              class="opacity-0 group-hover:opacity-100"
               [attr.aria-label]="t('editor.sound.removeInstrument', { name: i.name })"
+              [ncTooltip]="t('editor.sound.removeInstrument', { name: i.name })"
               (click)="$event.stopPropagation(); remove.emit(i.id)"
             >
               <nc-icon name="trash" [size]="12" />
@@ -105,6 +131,8 @@ export class InstrumentListComponent {
   readonly selected = output<string>();
   readonly add = output();
   readonly remove = output<string>();
+  readonly duplicate = output<string>();
+  readonly edit = output<string>();
   readonly sfxToggle = output<number>();
   protected readonly slots = Array.from({ length: SFX_SLOTS }, (_, i) => i);
   protected readonly String = String;
