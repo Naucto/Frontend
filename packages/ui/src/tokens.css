@@ -75,9 +75,14 @@
   --color-panel: var(--nc-panel);
   --color-raised: var(--nc-raised);
   --color-inset: var(--nc-inset);
-  --color-key: var(--nc-key);
-  --color-key-lit: var(--nc-key-lit);
-  --color-key-sharp: var(--nc-key-sharp);
+  /* The piano keyboard, and the only colours here with no theme twin: a key stands for ivory or
+     ebony, and neither depends on how the room is lit. Drawn out of the ink steps it inverted with
+     the theme, and since the light theme's own ink is the very black the sharps are written in, the
+     whole keyboard collapsed to one colour there. Declared outright rather than pointing at a
+     private name, because the private layer exists so a theme can swap it and nothing swaps these. */
+  --color-key: #c8bfb3;
+  --color-key-lit: #ede6da;
+  --color-key-sharp: #17140f;
   --color-lcd: var(--nc-lcd);
   --color-lcd-ink: var(--nc-lcd-ink);
   --color-lcd-dim: var(--nc-lcd-dim);
@@ -140,21 +145,6 @@
   --color-presence-sky: #68aed4;
   --color-presence-blush: #ff80a4;
   --color-presence-jade: #10d275;
-}
-
-/*
-  The piano keyboard, and the one set of surfaces the theme does not touch.
-
-  A key stands for a physical thing, and that thing is ivory or ebony whichever way the room is lit.
-  Drawn out of the ink steps it inverted with the theme, and since the light theme's own ink is the
-  very black the sharps were written in, the whole keyboard collapsed to one colour there.
-*/
-:root,
-[data-theme='light'],
-[data-theme='dark'] {
-  --nc-key: #c8bfb3;
-  --nc-key-lit: #ede6da;
-  --nc-key-sharp: #17140f;
 }
 
 :root {

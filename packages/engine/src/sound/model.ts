@@ -71,6 +71,9 @@ export interface Song {
  * before this the sequencer only ever compared against whole steps, so such a note was written,
  * drawn, and silent. The clock therefore ticks at this resolution, and it is also the finest
  * position anything may write — past it a note has nowhere to sound.
+ *
+ * Eight of them: a step is a sixteenth note at the default four steps per beat, so an eighth of one
+ * is a hundred-and-twenty-eighth — as fine as free placement has any use for.
  */
 export const SUBSTEPS = 8;
 

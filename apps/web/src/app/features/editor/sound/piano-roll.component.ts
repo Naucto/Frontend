@@ -236,6 +236,23 @@ export class PianoRollComponent {
     return { step, pitch };
   }
 
+  /**
+   * Where a note dropped at `step` would start, and how long it would come out.
+   *
+   * The hover outline reads this too, so what it draws is the note the next click makes rather than
+   * a whole step: at a coarse grain the note is wider than a step, at a fine one it is narrower, and
+   * an outline that ignored the grain promised neither.
+   */
+  private newNote(step: number): { step: number; length: number } {
+    const unit = this.snapUnit();
+    const length = unit || 1;
+    // Floored rather than rounded to the nearest line: a note starts in the cell you clicked, and
+    // at a coarse grain rounding put it a whole bar from the pointer. Free placement has no cell to
+    // start in, so there it follows the pointer onto the finest position that will sound.
+    const start = unit ? Math.floor(step / unit) * unit : this.snapStep(step);
+    return { step: Math.min(start, MAX_STEPS - length), length };
+  }
+
   /** The same position as `cellOf`, unsnapped on both axes. */
   private pointOf(e: PointerEvent): { x: number; y: number } {
     const r = this.canvas().nativeElement.getBoundingClientRect();
@@ -319,9 +336,8 @@ export class PianoRollComponent {
     }
     const inst = this.instrumentId();
     if (!inst) return;
-    const unit = this.snapUnit() || 1;
-    const start = Math.min(this.snapStep(step), MAX_STEPS - unit);
-    const note: Note = { step: start, pitch, length: unit, instrument: inst, volume: 1 };
+    const { step: start, length } = this.newNote(step);
+    const note: Note = { step: start, pitch, length, instrument: inst, volume: 1 };
     notes.push(note);
     this.drag = {
       mode: 'create',
@@ -336,7 +352,7 @@ export class PianoRollComponent {
 
   protected onMove(e: PointerEvent): void {
     const { step, pitch } = this.cellOf(e);
-    const cell = { step: Math.floor(step), pitch };
+    const cell = { step: this.newNote(step).step, pitch };
     this.hoverCell.set(cell);
     this.hover.emit(cell);
     this.pointer.emit(this.pointOf(e));
@@ -420,10 +436,10 @@ export class PianoRollComponent {
         ctx.fillRect(0, y, w, ROW_H);
       }
     }
-    // Grid. The fine lines are the snap resolution rather than the step: they say where the next
-    // note will land, so they thin out as the grain coarsens and are absent in OFF, where nothing
-    // holds a note to anything. The beat lines below them stay whatever the snap, since the ruler
-    // numbers bars and has to keep something to number.
+    // Grid. Every vertical line is the snap resolution rather than the step: they say where the
+    // next note will land, so they thin out as the grain coarsens and go entirely in OFF — a line
+    // there would mark a position with no more claim on a note than the space beside it. The bars
+    // stay readable off the ruler, which numbers them.
     ctx.strokeStyle = cssVar(el, '--nc-line');
     ctx.beginPath();
     const unit = this.snapUnit();
@@ -439,13 +455,15 @@ export class PianoRollComponent {
       ctx.lineTo(w, RULER_H + r * ROW_H + 0.5);
     }
     ctx.stroke();
-    ctx.strokeStyle = cssVar(el, '--nc-line-strong');
-    ctx.beginPath();
-    for (let s = 0; s <= MAX_STEPS; s += p.stepsPerBeat) {
-      ctx.moveTo(s * sw + 0.5, 0);
-      ctx.lineTo(s * sw + 0.5, h);
+    if (unit) {
+      ctx.strokeStyle = cssVar(el, '--nc-line-strong');
+      ctx.beginPath();
+      for (let s = 0; s <= MAX_STEPS; s += p.stepsPerBeat) {
+        ctx.moveTo(s * sw + 0.5, 0);
+        ctx.lineTo(s * sw + 0.5, h);
+      }
+      ctx.stroke();
     }
-    ctx.stroke();
 
     // Past the last step a note may be placed on, the hatch a game with no cover wears — the app's
     // mark for ground that is not a surface. It exists only to fill a window wider than the grid;
@@ -503,7 +521,7 @@ export class PianoRollComponent {
       ctx.strokeRect(
         hv.step * sw + 0.5,
         RULER_H + (PITCH_MAX - hv.pitch) * ROW_H + 0.5,
-        sw - 1,
+        (this.snapUnit() || 1) * sw - 1,
         ROW_H - 1,
       );
     }

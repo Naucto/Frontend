@@ -59,7 +59,7 @@ interface Key {
           is the one thing a screen made of whole pixels cannot draw.
         -->
         <span
-          class="absolute inset-0 hover:bg-gold/15 hover:shadow-[inset_0_1px_0_var(--nc-key-lit),inset_0_-2px_0_var(--nc-key-sharp)] active:bg-gold/30 active:shadow-[inset_0_2px_0_var(--nc-key-sharp),inset_0_-1px_0_var(--nc-key-lit)]"
+          class="absolute inset-0 hover:bg-gold/15 hover:shadow-[inset_0_1px_0_var(--color-key-lit),inset_0_-2px_0_var(--color-key-sharp)] active:bg-gold/30 active:shadow-[inset_0_2px_0_var(--color-key-sharp),inset_0_-1px_0_var(--color-key-lit)]"
         ></span>
       </button>
     }
