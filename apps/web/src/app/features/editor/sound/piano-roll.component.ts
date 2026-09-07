@@ -106,13 +106,16 @@ export class PianoRollComponent {
   /** Scroll offsets, so the ruler and the key column can be redrawn where they stay in view. */
   private readonly scrollX = signal(0);
   private readonly scrollY = signal(0);
-  /** Steps stretch to fill the roll; zoom doubles that. */
-  readonly stepW = computed(() =>
-    Math.max(
-      24 * this.zoom(),
-      Math.floor(((this.hostBox().w - KEY_W - 2) * this.zoom()) / this.pattern().steps),
-    ),
-  );
+  /**
+   * A step is 24px wide at ×1, whatever the pattern's length, and zoom multiplies that.
+   *
+   * The width used to stretch to fill the roll, which made every pattern look the same size: a
+   * sixteen-step sketch filled the screen with four enormous bars and read as a finished piece,
+   * while zoom was left doing the job of getting back OUT to see it whole. At a fixed scale the
+   * roll says how long the pattern actually is — four bars occupy four bars' worth — and zoom is
+   * only ever for going closer.
+   */
+  readonly stepW = computed(() => 24 * this.zoom());
   protected readonly width = computed(() => KEY_W + this.pattern().steps * this.stepW());
   protected readonly height = computed(() => RULER_H + (PITCH_MAX - PITCH_MIN + 1) * ROW_H);
   protected readonly marks = computed<PresenceMark[]>(() =>
