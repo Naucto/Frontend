@@ -324,8 +324,10 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
             {{ t('editor.sound.snap') }} {{ snapLabel() }}
           </nc-toggle-button>
           <!-- On the head row, beside the controls, rather than in a band of its own beneath it:
-               it is a reading and not a section, and given a band it took the height of one. -->
-          <nc-oscilloscope class="h-2.5 w-[96px] shrink-0" [peaks]="peaks" />
+               it is a reading and not a section, and given a band it took the height of one. It
+               takes the height and the outline of the control beside it, so the row reads as one
+               set of things rather than a control and a stripe. -->
+          <nc-oscilloscope class="h-[26px] w-[96px] shrink-0 border border-line" [peaks]="peaks" />
           <span class="flex-1"></span>
           <button
             ncButton
