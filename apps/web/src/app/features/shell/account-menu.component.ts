@@ -51,7 +51,11 @@ import { injectQuery } from '@tanstack/angular-query-experimental';
               </div>
             </div>
           </div>
-          <div class="border-t border-line p-2">
+          <!-- No rule under the identity: the padding on either side of it already reads as a
+               break, and a second one so close to the panel's own edge made the name look like a
+               header bolted to the menu rather than the top of it. The nav below keeps its rule,
+               where the panel really does change from telling to offering. -->
+          <div class="px-2 pb-2">
             <div class="label mb-1 text-ink-3">{{ t('account.friendCode') }}</div>
             <nc-friend-code
               [code]="me.data()?.friendCode"
