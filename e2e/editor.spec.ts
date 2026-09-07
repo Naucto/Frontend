@@ -168,11 +168,9 @@ test.describe('editor', () => {
 
     // The design gives the canvas tabs three columns, not four: the console belongs beside CODE,
     // where the machine talks back while you type. So it starts collapsed here — and the viewer
-    // stays shut with it. Arriving open, it landed over the lower right of whatever you had come
-    // to work on, and you dismissed it on every tab, every time.
+    // stays shut with it, rather than arriving over the canvas unasked.
     await expect(page.getByRole('button', { name: 'Clear' })).toHaveCount(0);
     await expect(page.getByText('Viewer · 320×180')).toHaveCount(0);
-    // Both come back when asked, and the viewer is reached through the column that holds it.
     await page.getByRole('button', { name: 'Show the panel' }).click();
     await expect(page.getByRole('button', { name: 'Clear' })).toBeVisible();
     await page.getByRole('button', { name: 'Pop the viewer out' }).click();
