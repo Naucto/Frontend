@@ -36,11 +36,7 @@ for (const [stored, marked] of [
   });
 }
 
-/**
- * The sheet draws the editors' undo and redo pair three times with the second unavailable, and its
- * border stays fully transparent — only the ink drops a step. A filled button keeps a line, which
- * is how a blocked PUBLISH is drawn. So an unavailable button gains a border only where it had one.
- */
+/** Read as a computed colour, because the border is always there and only its alpha carries this. */
 test('an unavailable button gains a border only where it had one', async ({ page }) => {
   await page.goto('/ui-kit');
   const border = async (variant: string): Promise<string> =>

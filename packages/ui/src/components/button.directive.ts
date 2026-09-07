@@ -28,14 +28,13 @@ const BASE =
   `focus-visible:outline-2 ${DISABLED}`;
 
 /**
- * Each variant says what its own border becomes when the button is unavailable, because that is not
+ * What an unavailable button's border becomes is the variant's own business, because there is no
  * one answer.
  *
  * A filled button loses its fill and keeps a line, which is the shape the sheet draws a blocked
- * PUBLISH in. A borderless one keeps no border at all: the sheet draws the editors' undo and redo
- * pair three times with the second unavailable, and its border stays fully transparent — only the
- * ink drops a step. Giving every variant the line meant a ghost button had a visible shape in the
- * one state where it can do nothing, and none at all the rest of the time.
+ * PUBLISH in. A borderless one keeps no border at all: wherever an editor board draws its undo and
+ * redo pair with the second unavailable, that border stays fully transparent and only the ink drops
+ * a step. Otherwise a ghost button has a visible shape in the one state where it can do nothing.
  */
 const DISABLED_BORDER = 'disabled:border-line disabled:hover:border-line';
 const NO_DISABLED_BORDER = 'disabled:border-transparent disabled:hover:border-transparent';
