@@ -128,7 +128,7 @@ const RAIL: RailItem<EditorTab>[] = [
 
       @switch (session.status()) {
         @case ('ready') {
-          <div [class]="gridClass()" [style.--console-w.px]="ui.collapsed() ? 12 : CONSOLE_WIDTH">
+          <div [class]="gridClass()" [style.--console-w.px]="consoleWidth()">
             <nc-rail
               [items]="rail"
               [value]="ui.activeTab()"
@@ -145,8 +145,9 @@ const RAIL: RailItem<EditorTab>[] = [
                 [style.width.px]="REFERENCE_WIDTH"
               />
             }
-            <!-- The column stays docked in every tab; only the viewer inside it can float. -->
-            <nc-console-column class="min-h-0 border-l border-line" />
+            <!-- Rendered on every tab even where its track is zero: unmounting it cold-starts the
+                 game, drops any netplay session, and takes the floating window with it. -->
+            <nc-console-column class="min-h-0" [class.border-l]="consoleWidth() > 0" />
           </div>
         }
         @case ('error') {
@@ -207,6 +208,15 @@ export class EditorShellComponent implements OnInit {
       ? 'grid min-h-0 grid-cols-[81px_minmax(0,1fr)_401px_var(--console-w)]'
       : 'grid min-h-0 grid-cols-[81px_minmax(0,1fr)_var(--console-w)]',
   );
+
+  /**
+   * Zero where the column has nothing to be: it is CODE's own sidebar, the way every other tab has
+   * one of its own, and it also stands in for the reference on a window too narrow for both.
+   */
+  protected readonly consoleWidth = computed(() => {
+    if (this.ui.activeTab() !== 'code' && this.ui.columnMode() !== 'swap') return 0;
+    return this.ui.collapsed() ? 12 : CONSOLE_WIDTH;
+  });
 
   protected readonly CONSOLE_WIDTH = CONSOLE_WIDTH;
   protected readonly REFERENCE_WIDTH = REFERENCE_WIDTH;

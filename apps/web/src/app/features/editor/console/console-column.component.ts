@@ -44,7 +44,7 @@ const PIP_WIDTH = 304;
     <div *transloco="let t" class="relative flex h-full flex-col bg-panel">
       <!-- No resize strip: the console is a fixed 421 track, like the reference beside it and
            every tab inspector. -->
-      @if (ui.columnMode() !== 'swap') {
+      @if (docked() && ui.columnMode() !== 'swap') {
         <button
           type="button"
           class="absolute top-1/2 -left-1 z-20 flex h-[52px] w-2 -translate-y-1/2 items-center justify-center rounded-[8px] border border-line-strong bg-raised text-ink-2 hover:text-ink"
@@ -56,7 +56,7 @@ const PIP_WIDTH = 304;
           <nc-icon [name]="ui.collapsed() ? 'prev' : 'next'" [size]="12" />
         </button>
       }
-      @if (!ui.collapsed() && ui.columnMode() !== 'swap' && popped()) {
+      @if (docked() && !ui.collapsed() && ui.columnMode() !== 'swap' && popped()) {
         <!-- The slot the viewer left behind says where it went, and holds its shape while it is
              away: at the viewer's own 16:9 the column keeps the same height whether the picture is
              docked or floating, so popping it out and back does not shove the console up and down
@@ -150,7 +150,7 @@ const PIP_WIDTH = 304;
           </nc-game-screen>
         </div>
       </div>
-      @if (!ui.collapsed()) {
+      @if (docked() && !ui.collapsed()) {
         <nc-tabs
           [class.hidden]="ui.columnMode() === 'swap'"
           [tabs]="tabs()"
@@ -242,8 +242,24 @@ export class ConsoleColumnComponent {
   /** The viewer floats over the editor instead of sitting in the column. */
   protected readonly popped = computed(() => this.ui.consoleMode() === 'pip' && this.ui.pipOpen());
   /** Docked in a collapsed column, or standing in for the docs: either way there is nowhere to be. */
+  /**
+   * Whether the column takes its track.
+   *
+   * It is CODE's own sidebar, the way every other tab has one of its own, and it also stands in
+   * for the reference on a window too narrow to give that a column of its own.
+   *
+   * It stays mounted where it does not show, because unmounting cold-starts the game, drops any
+   * netplay session, and takes the floating window with it.
+   */
+  protected readonly docked = computed(
+    () => this.ui.activeTab() === 'code' || this.ui.columnMode() === 'swap',
+  );
+
   protected readonly screenHidden = computed(
-    () => this.ui.columnMode() === 'swap' || (this.ui.collapsed() && !this.popped()),
+    () =>
+      this.ui.columnMode() === 'swap' ||
+      (this.ui.collapsed() && !this.popped()) ||
+      (!this.popped() && this.ui.activeTab() !== 'code'),
   );
   /** How many screen pixels one console pixel takes. The column is a fixed track, so this is too. */
   protected readonly scale = computed(() => {
