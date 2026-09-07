@@ -256,6 +256,7 @@ export class SpriteCanvasComponent {
     effect(() => {
       this.painter().version();
       this.region();
+      this.crop();
       this.clip();
       this.grid();
       this.onion();
@@ -510,6 +511,9 @@ export class SpriteCanvasComponent {
     const wrap = this.wrap().nativeElement;
     wrap.style.width = `${String(viewW * scale)}px`;
     wrap.style.height = `${String(viewH * scale)}px`;
+    // Assigning a size resets the transform and nothing else does, so a view whose size has not
+    // changed would translate again on top of the last one and walk off the canvas.
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.imageSmoothingEnabled = false;
     // 8px squares, fixed in viewport pixels: the transparency check should not zoom with the art,
     // or it reads as part of the sprite. Inset against sunken is the one-step pair the design
