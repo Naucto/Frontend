@@ -222,11 +222,11 @@ const SUMMARY_MAX = 80;
             </nc-section>
             <nc-section [title]="t('editor.game.monetization')">
               <nc-help-dot actions [text]="t('editor.game.monetizationHelp')" />
-              <!-- Neutral, where STATUS carries a meaning colour. An earlier pass read the design
-                   as filling the chosen tier and said so here; measuring the two controls against
-                   the sheet says otherwise, and two filled cells stacked make the neutral choice
-                   look like a second state colour. -->
+              <!-- Full width, and neutral where STATUS carries a meaning colour: two filled cells
+                   stacked make the neutral choice read as a second state colour. The width and the
+                   tone are separate settings and only the tone was at issue. -->
               <nc-segmented
+                fill
                 [options]="monetizations"
                 [value]="monetization()"
                 (valueChange)="setMonetization($event)"
