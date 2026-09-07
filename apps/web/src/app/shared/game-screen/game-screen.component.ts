@@ -194,7 +194,8 @@ import { VirtualPadComponent } from './virtual-pad.component';
           <!-- Who is on the game, and on what: the design keeps this in the bar, not behind a popover. -->
           @for (p of players(); track p.slot) {
             <span
-              class="flex items-center gap-0.5 font-mono text-label whitespace-nowrap text-ink-3"
+              class="flex items-center gap-0.5 font-mono text-label whitespace-nowrap"
+              [class]="p.here ? 'text-ink-3' : 'text-ink-4'"
             >
               <nc-icon [name]="p.pad ? 'gamepad' : 'keyboard'" [size]="12" />
               P{{ p.slot }}
@@ -320,13 +321,22 @@ export class GameScreenComponent {
   protected readonly fpsVisible = computed(
     () => this.showFps() && this.theme.showFps() && this.host.state() !== 'idle',
   );
-  /** Occupied player slots: the local keyboard, then one per connected pad. */
+  /**
+   * The player slots, occupied or not.
+   *
+   * Two are always drawn, because the strip's job is to say how many seats there are as much as who
+   * is in them: with only the taken ones listed, a game nobody has joined shows a lone `P1` and
+   * reads as single-player. The empty seat is drawn in the dimmer ink and takes the pad glyph — a
+   * second player arrives on a controller, the keyboard being already spoken for.
+   */
   protected readonly players = computed(() => {
     const pads = this.host.gamepadCount();
-    return [
-      { slot: 1, pad: pads > 0 },
-      ...Array.from({ length: Math.max(0, pads - 1) }, (_, i) => ({ slot: i + 2, pad: true })),
-    ];
+    const taken = Math.max(2, pads > 1 ? pads : 2);
+    return Array.from({ length: taken }, (_, i) => ({
+      slot: i + 1,
+      pad: i === 0 ? pads > 0 : true,
+      here: i === 0 || pads > i,
+    }));
   });
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
   private readonly frame = viewChild.required<ElementRef<HTMLElement>>('frame');
