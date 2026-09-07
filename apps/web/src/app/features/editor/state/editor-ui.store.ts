@@ -37,9 +37,6 @@ interface EditorUiState {
   pipOpen: boolean;
 }
 
-/** Tabs whose right column is a tool panel; the screen floats as a viewer there. */
-const PANEL_TABS: readonly EditorTab[] = ['art', 'map', 'sound', 'net'];
-
 /**
  * Below this the reference cannot sit beside the console, so it takes its place.
  *
@@ -80,10 +77,14 @@ export const EditorUiStore = signalStore(
           ? 'split'
           : 'swap',
     ),
-    /** Where the runtime lives: the right column, or a floating viewer over a panel tab. */
-    consoleMode: computed<'column' | 'pip'>(() =>
-      PANEL_TABS.includes(s.activeTab()) ? 'pip' : 'column',
-    ),
+    /**
+     * Where the runtime lives: docked in the right column, or floating over the workspace.
+     *
+     * The reader decides, on every tab. It used to be the tab that decided — the canvases floated
+     * it and CODE and GAME did not — so on those two the control that pops it out changed the
+     * stored preference and nothing moved, which is an affordance that lies.
+     */
+    consoleMode: computed<'column' | 'pip'>(() => (s.pipOpen() ? 'pip' : 'column')),
   })),
   withMethods((store) => ({
     setTab(tab: EditorTab): void {
