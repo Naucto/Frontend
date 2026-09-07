@@ -40,7 +40,10 @@ export interface RailItem<T extends string> {
   // One column, one lot of headroom. The nav used to carry its own `pt-1` and a fixed width inside
   // this host's, which doubled the top padding and — because the nav was only as tall as its
   // buttons — stopped the right-hand hairline a third of the way down.
-  host: { class: 'block h-full bg-panel pt-1' },
+  // The seam is the rail's own: a rail is the edge of the workspace beside it, and left to the
+  // consumer it is drawn by whatever happens to have an edge there — which on one tab was the
+  // editor rather than its tab strip, so the line started below the strip.
+  host: { class: 'block h-full border-r border-line bg-panel pt-1' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RailComponent<T extends string = string> {

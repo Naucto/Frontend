@@ -129,12 +129,7 @@ const RAIL: RailItem<EditorTab>[] = [
       @switch (session.status()) {
         @case ('ready') {
           <div [class]="gridClass()" [style.--console-w.px]="ui.collapsed() ? 12 : CONSOLE_WIDTH">
-            <!-- The seam belongs to the rail, so it is unbroken whatever the tab puts beside it.
-                 Left to the workspace it was drawn by whatever happened to have a left edge there,
-                 and on CODE that is the editor rather than its tab strip — so the line started
-                 forty pixels down. -->
             <nc-rail
-              class="border-r border-line"
               [items]="rail"
               [value]="ui.activeTab()"
               (valueChange)="go($event)"
