@@ -29,12 +29,7 @@ interface Bar {
   colour: string;
 }
 
-/**
- * VOICES lane under the piano roll: five rows, one bar per note in its voice.
- *
- * Laid out rather than drawn: in the document it stays sharp at any zoom and follows a change of
- * theme without being told, and there are few enough elements here to afford it.
- */
+/** VOICES lane under the piano roll: five rows, one bar per note in its voice. */
 @Component({
   selector: 'nc-voices-lane',
   template: `
