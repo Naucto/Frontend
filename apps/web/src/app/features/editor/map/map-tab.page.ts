@@ -167,8 +167,6 @@ const BRUSHES = ['1×1', '2×2', '3×3', '4×4', '5×5', '6×6', '7×7', '8×8']
           >
             <nc-icon name="zoom-out" [size]="12" />
           </button>
-          <!-- Geometric, as on the drawing board: a given travel of the thumb is the same change
-               of magnification wherever it starts, which a linear track is not. -->
           <nc-slider
             class="w-[88px] min-w-[40px] shrink"
             [min]="0"

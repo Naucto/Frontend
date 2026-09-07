@@ -33,10 +33,10 @@ interface MapState {
 }
 
 /**
- * Screen pixels per art pixel, as on the drawing board — one number meaning one thing on both.
+ * Screen pixels per art pixel, the unit the drawing board's zoom is in.
  *
- * The ceiling is lower than the sheet's because a map is thirty-two times the area: what a canvas
- * that size costs is the limit, not how far into a tile anybody wants to go.
+ * The ceiling is the lower of the two: a map covers far more area than a sheet, and what a canvas
+ * that size costs is what sets it.
  */
 export const MAP_MIN_ZOOM = 1;
 export const MAP_MAX_ZOOM = 8;
