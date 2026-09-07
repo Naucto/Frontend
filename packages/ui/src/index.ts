@@ -18,6 +18,7 @@ export * from './components/keycap.component';
 export * from './components/label.component';
 export * from './components/lcd.component';
 export * from './components/meter.component';
+export * from './components/notice.component';
 export * from './components/online-dot.component';
 export * from './components/panel.component';
 export * from './components/popover.directive';
