@@ -22,9 +22,6 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 })
 export class PopoverPanelComponent {
   readonly title = input<string>();
-  /**
-   * Off where the caller draws its own head row, which still needs the title for the label a
-   * screen reader reads out.
-   */
+  /** Keep the title with this off: the panel's accessible name comes from it, not from the row. */
   readonly header = input(true);
 }
