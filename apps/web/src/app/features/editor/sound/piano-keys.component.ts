@@ -29,30 +29,37 @@ interface Key {
     @for (k of keys(); track k.pitch) {
       <button
         type="button"
-        class="relative block w-full shrink-0 cursor-pointer border-b border-b-page text-left"
+        class="relative block w-full shrink-0 cursor-pointer border-b border-b-key-sharp text-left"
         [style.height.px]="ROW_H"
-        [class]="k.black ? 'bg-ink-body' : k.c ? 'bg-ink' : 'bg-ink-body'"
+        [class]="k.c ? 'bg-key-lit' : 'bg-key'"
         [attr.aria-label]="k.name"
         (pointerdown)="pressed.emit(k.pitch)"
       >
         @if (k.black) {
           <span
-            class="absolute top-0 left-0 block bg-[#17140f]"
+            class="absolute top-0 left-0 block bg-key-sharp"
             [style.width.px]="BLACK_KEY_W"
             [style.height.px]="ROW_H - 1"
           ></span>
         } @else {
-          <span class="absolute top-1/2 left-[7px] -translate-y-1/2 font-mono text-[9px] text-page">
+          <span
+            class="absolute top-1/2 left-[7px] -translate-y-1/2 font-mono text-[9px] text-key-sharp"
+          >
             {{ k.name }}
           </span>
         }
         <!--
-          The one inset shadow the design allows, and it is here because a key is the one control
-          in the app that stands for a physical thing you push. Hover lights it; pressing sinks it,
-          which is the whole of the feedback — a key that only changes colour reads as a swatch.
+          The one shaded control the design allows, and it is here because a key is the one thing in
+          the app that stands for something you physically push. Hover raises it — lit along the top
+          edge, shadowed under the bottom one; pressing swaps the two and it sinks. That is the whole
+          of the feedback: a key that only changes colour reads as a swatch.
+
+          Both edges are hard, with no blur radius. Everything else that casts a shadow here does the
+          same — two pixels down on the tooltip and the toast, four on the popover — since a gradient
+          is the one thing a screen made of whole pixels cannot draw.
         -->
         <span
-          class="absolute inset-0 hover:bg-gold/15 hover:shadow-[inset_0_1px_3px_rgba(0,0,0,0.5)] active:bg-gold/30 active:shadow-[inset_0_3px_7px_rgba(0,0,0,0.75)]"
+          class="absolute inset-0 hover:bg-gold/15 hover:shadow-[inset_0_1px_0_var(--nc-key-lit),inset_0_-2px_0_var(--nc-key-sharp)] active:bg-gold/30 active:shadow-[inset_0_2px_0_var(--nc-key-sharp),inset_0_-1px_0_var(--nc-key-lit)]"
         ></span>
       </button>
     }

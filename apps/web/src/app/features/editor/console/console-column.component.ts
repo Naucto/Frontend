@@ -205,7 +205,7 @@ const PIP_WIDTH = 304;
       border: 1px solid var(--nc-line-strong);
       border-radius: 4px;
       background: var(--nc-panel);
-      box-shadow: 0 14px 34px rgb(0 0 0 / 0.65);
+      box-shadow: 0 6px 0 var(--nc-inset);
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
