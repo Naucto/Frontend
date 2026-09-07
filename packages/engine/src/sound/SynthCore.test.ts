@@ -129,4 +129,20 @@ describe('Sequencer', () => {
     seq.stopMusic(0);
     expect(seq.position()).toBeNull();
   });
+
+  it('triggers a note that falls between two steps', () => {
+    const synth = new SynthCore(SR);
+    const seq = new Sequencer(synth, SR);
+    const ins = defaultInstrument('i');
+    const p = defaultPattern('p0');
+    p.bpm = 120;
+    p.stepsPerBeat = 4;
+    p.steps = 4;
+    p.notes = [{ step: 2.5, pitch: 67, length: 0.5, instrument: 'i', volume: 1 }];
+    seq.setLibrary(new Map([['i', ins]]), new Map([['p0', p]]));
+    seq.playSong({ name: 's', sequence: ['p0'], loop: false, loopStart: 0 }, false, 0);
+    const stepSamples = Math.round((60 / 120 / 4) * SR);
+    seq.advance(stepSamples * 3);
+    expect(synth.voices.filter((v) => v.active).map((v) => v.pitch)).toEqual([67]);
+  });
 });

@@ -1,4 +1,4 @@
-import { type Instrument, type Pattern, type Song } from './model';
+import { type Instrument, type Pattern, type Song, SUBSTEPS } from './model';
 import type { SynthCore } from './SynthCore';
 
 export interface SequencerPosition {
@@ -16,8 +16,9 @@ export class Sequencer {
   private patterns = new Map<string, Pattern>();
   private instruments = new Map<string, Instrument>();
   private seqIndex = 0;
-  private stepInPattern = 0;
-  private samplesToNextStep = 0;
+  /** Position in the current pattern, counted in sub-steps rather than steps. */
+  private subStep = 0;
+  private samplesToNextSubStep = 0;
   private playing = false;
   private fade = 1;
   private fadeRate = 0;
@@ -25,7 +26,8 @@ export class Sequencer {
   private stopWhenFaded = false;
   private readonly sfx: {
     pattern: Pattern;
-    step: number;
+    /** Counted in sub-steps, like the song lane's. */
+    subStep: number;
     samplesToNext: number;
     pitchOffset: number;
     volume: number;
@@ -45,8 +47,8 @@ export class Sequencer {
   playSong(song: Song, loop: boolean, fadeIn: number): void {
     this.song = { ...song, loop };
     this.seqIndex = 0;
-    this.stepInPattern = 0;
-    this.samplesToNextStep = 0;
+    this.subStep = 0;
+    this.samplesToNextSubStep = 0;
     this.playing = song.sequence.length > 0;
     this.fade = fadeIn > 0 ? 0 : 1;
     this.fadeTarget = 1;
@@ -69,7 +71,7 @@ export class Sequencer {
   }
 
   playSfx(pattern: Pattern, pitchOffset: number, volume: number, channel?: number): void {
-    this.sfx.push({ pattern, step: 0, samplesToNext: 0, pitchOffset, volume, channel });
+    this.sfx.push({ pattern, subStep: 0, samplesToNext: 0, pitchOffset, volume, channel });
   }
 
   stopAll(): void {
@@ -79,8 +81,14 @@ export class Sequencer {
     this.synth.stopAll();
   }
 
+  /**
+   * Reported in whole steps even though the clock runs finer, because this drives a playhead and a
+   * metronome — a step is the reading they want, and the editor repaints the whole roll on it.
+   */
   position(): SequencerPosition | null {
-    return this.playing ? { pattern: this.seqIndex, step: this.stepInPattern } : null;
+    return this.playing
+      ? { pattern: this.seqIndex, step: Math.ceil(this.subStep / SUBSTEPS) }
+      : null;
   }
 
   get isPlaying(): boolean {
@@ -107,13 +115,20 @@ export class Sequencer {
       let left = frames;
       while (left > 0) {
         if (lane.samplesToNext <= 0) {
-          if (lane.step >= lane.pattern.steps) {
+          if (lane.subStep >= lane.pattern.steps * SUBSTEPS) {
             this.sfx.splice(i, 1);
             break;
           }
-          this.triggerStep(lane.pattern, lane.step, lane.pitchOffset, lane.volume, 1, lane.channel);
-          lane.samplesToNext = this.stepSamples(lane.pattern);
-          lane.step++;
+          this.triggerSubStep(
+            lane.pattern,
+            lane.subStep,
+            lane.pitchOffset,
+            lane.volume,
+            1,
+            lane.channel,
+          );
+          lane.samplesToNext = this.subStepSamples(lane.pattern, lane.subStep);
+          lane.subStep++;
         }
         const consume = Math.min(left, lane.samplesToNext);
         lane.samplesToNext -= consume;
@@ -132,24 +147,24 @@ export class Sequencer {
         if (!this.nextPattern(song)) return;
         continue;
       }
-      if (this.samplesToNextStep <= 0) {
-        if (this.stepInPattern >= pattern.steps) {
+      if (this.samplesToNextSubStep <= 0) {
+        if (this.subStep >= pattern.steps * SUBSTEPS) {
           if (!this.nextPattern(song)) return;
           continue;
         }
-        this.triggerStep(pattern, this.stepInPattern, 0, 1, 0);
-        this.samplesToNextStep = this.stepSamples(pattern);
-        this.stepInPattern++;
+        this.triggerSubStep(pattern, this.subStep, 0, 1, 0);
+        this.samplesToNextSubStep = this.subStepSamples(pattern, this.subStep);
+        this.subStep++;
       }
-      const consume = Math.min(left, this.samplesToNextStep);
-      this.samplesToNextStep -= consume;
+      const consume = Math.min(left, this.samplesToNextSubStep);
+      this.samplesToNextSubStep -= consume;
       left -= consume;
     }
   }
 
   private nextPattern(song: Song): boolean {
     this.seqIndex++;
-    this.stepInPattern = 0;
+    this.subStep = 0;
     if (this.seqIndex >= song.sequence.length) {
       if (!song.loop) {
         this.playing = false;
@@ -165,9 +180,21 @@ export class Sequencer {
     return Math.max(1, Math.round((60 / p.bpm / p.stepsPerBeat) * this.sampleRate));
   }
 
-  private triggerStep(
+  /**
+   * Samples from one sub-step to the next, spread so that the sub-steps of a step add up to exactly
+   * the samples that step has always taken. A whole step therefore still falls on the sample it
+   * used to; only the positions between two of them are new.
+   */
+  private subStepSamples(p: Pattern, subStep: number): number {
+    const step = this.stepSamples(p);
+    const base = Math.floor(step / SUBSTEPS);
+    const spread = step - base * SUBSTEPS;
+    return base + (subStep % SUBSTEPS < spread ? 1 : 0);
+  }
+
+  private triggerSubStep(
     p: Pattern,
-    step: number,
+    subStep: number,
     pitchOffset: number,
     volume: number,
     priority: number,
@@ -175,7 +202,7 @@ export class Sequencer {
   ): void {
     const secondsPerStep = 60 / p.bpm / p.stepsPerBeat;
     for (const n of p.notes) {
-      if (n.step !== step) continue;
+      if (Math.round(n.step * SUBSTEPS) !== subStep) continue;
       const ins = this.instruments.get(n.instrument);
       if (!ins) continue;
       this.synth.noteOn(

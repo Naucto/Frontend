@@ -64,6 +64,16 @@ export interface Song {
   loopStart: number;
 }
 
+/**
+ * Positions a step is divided into for playback.
+ *
+ * A note's `step` is a number, not an index: the editor lets one be dropped between two steps, and
+ * before this the sequencer only ever compared against whole steps, so such a note was written,
+ * drawn, and silent. The clock therefore ticks at this resolution, and it is also the finest
+ * position anything may write — past it a note has nowhere to sound.
+ */
+export const SUBSTEPS = 8;
+
 export const VOICES = 5;
 export const SFX_SLOTS = 16;
 export const SONG_SLOTS = 16;
