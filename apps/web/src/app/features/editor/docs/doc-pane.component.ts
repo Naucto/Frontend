@@ -48,7 +48,8 @@ import { DocRequestService } from './doc-request.service';
         [label]="ui.columnMode() === 'swap' ? t('docs.swapBack') : t('docs.close')"
         (pressed)="ui.setReferenceOpen(false)"
       />
-      <div class="flex h-4 items-center gap-1 border-b border-line px-1.5">
+      <!-- The head of every column on this side of the editor is one height; this one was 32. -->
+      <div class="flex h-5 shrink-0 items-center gap-1 border-b border-line px-1.5">
         @if (view() !== 'tree') {
           <button ncButton variant="ghost" size="sm" iconOnly [attr.aria-label]="t('docs.back')" (click)="back()">
             <nc-icon name="chevron-left" [size]="12" />
