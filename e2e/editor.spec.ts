@@ -190,9 +190,8 @@ test.describe('editor', () => {
   });
 
   /**
-   * Cropped, the canvas is the region rather than the whole sheet with the rest covered, so every
-   * coordinate in it is offset by where the region sits. A stroke landing on the wrong pixels is
-   * the kind of thing that looks right and paints somewhere else.
+   * Cropped, the canvas is the region, so every coordinate in it carries the region's origin. A
+   * stroke that lands on the wrong pixels looks right while it happens and paints out of sight.
    */
   test('ART paints the pixel under the pointer while cropped', async ({ page }) => {
     await page.goto('/edit/7/art');
