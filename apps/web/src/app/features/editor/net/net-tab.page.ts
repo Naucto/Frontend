@@ -673,11 +673,9 @@ export class NetTabPage {
   }
 
   /**
-   * True when nothing is left to fold — including a tree of no containers, and no tree at all.
-   *
-   * Those two cases matter because the header outlives the tree: it is drawn while the game is not
-   * in a session, when there is nothing to act on, and a control that cannot act reads better as
-   * unavailable than as one that does nothing when pressed.
+   * True when nothing is left to fold, and so also of a tree of no containers and of no tree at
+   * all — which are reachable states, because the header is drawn while the game is not in a
+   * session.
    */
   protected readonly allCollapsed = computed(() => {
     const shut = this.collapsed();

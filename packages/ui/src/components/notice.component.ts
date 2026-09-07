@@ -51,7 +51,6 @@ export class NoticeComponent {
     () => `${VARIANTS[this.variant()]} ${this.variant() === 'inline' ? TONES[this.tone()] : ''}`,
   );
 
-  /** Empty inline, where the mark inherits the tone the whole notice is already set in. */
   protected readonly markClass = computed(() =>
     this.variant() === 'band' ? TONES[this.tone()] : '',
   );
