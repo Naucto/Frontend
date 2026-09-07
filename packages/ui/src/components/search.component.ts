@@ -14,13 +14,14 @@ import { IconComponent } from './icon.component';
 /**
  * How tall the box is. `md` is the top bar's — the design draws it 43px on 9/13 of padding, the
  * tallest control in that bar and deliberately taller than the 38px buttons beside it. `sm` is the
- * one the editor's toolbars carry, sized to sit inside a 38px strip.
+ * one the editor's toolbars carry: 31 inside a 38px strip, five taller than the icon buttons beside
+ * it, which the design lines up on a shared median rather than on a shared height.
  */
 export type SearchSize = 'sm' | 'md';
 
 const SIZE: Record<SearchSize, { host: string; input: string; icon: string }> = {
   sm: {
-    host: 'h-[26px] gap-1 px-[10px]',
+    host: 'h-[31px] gap-1 px-[10px]',
     input: 'font-mono text-[11px]',
     icon: 'text-ink-4',
   },
