@@ -260,12 +260,14 @@
 @layer base {
   /*
    * A button carries this attribute from its first render and its classes arrive after, so between
-   * the two it would take the inherited ink for its border and its text. Anything that forces a
-   * paint inside that window draws it. In `base`, so every utility still wins.
+   * the two it takes whatever these say. They say what the quiet variant settles on, so the common
+   * button changes nothing at all on the way in and there is no moment to see. In `base`, so every
+   * utility still wins.
    */
   [ncButton] {
+    background-color: transparent;
     border-color: transparent;
-    color: var(--nc-ink-3);
+    color: var(--nc-ink-2);
   }
   html {
     background: var(--nc-page);
