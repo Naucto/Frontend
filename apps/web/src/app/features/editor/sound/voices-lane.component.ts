@@ -32,9 +32,8 @@ interface Bar {
 /**
  * VOICES lane under the piano roll: five rows, one bar per note in its voice.
  *
- * Few enough elements to lay out rather than draw, which is the point of doing so: laid out it
- * stays sharp at any zoom and follows a change of theme on its own, where a canvas has to be told
- * about both.
+ * Laid out rather than drawn: in the document it stays sharp at any zoom and follows a change of
+ * theme without being told, and there are few enough elements here to afford it.
  */
 @Component({
   selector: 'nc-voices-lane',
