@@ -5,8 +5,9 @@ import { TooltipDirective } from './tooltip.directive';
 /**
  * The small "?" square next to section labels; shows its text as a tooltip.
  *
- * Quiet on purpose. Gold is what a screen leads with, and these sit beside every section heading —
- * a page carrying four of them spends its loudest colour on the thing a reader needs least.
+ * Quiet on purpose: gold is what a screen leads with, and one of these sits beside every section
+ * heading. Spending the loudest colour on the most repeated and least urgent mark on a panel leaves
+ * nothing to lead with.
  */
 @Component({
   selector: 'nc-help-dot',
