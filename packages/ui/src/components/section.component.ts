@@ -23,11 +23,6 @@ import { booleanAttribute, ChangeDetectionStrategy, Component, input } from '@an
 export class SectionComponent {
   readonly title = input.required<string>();
   readonly tone = input<'default' | 'gold'>('default');
-  /**
-   * Full-bleed band with its own padding, as the editor inspectors are drawn.
-   *
-   * A positioning context, because a band is where a presence surface goes: the overlay that shows
-   * a peer working in this group has to be able to cover it and nothing else.
-   */
+  /** Full-bleed band with its own padding, as the editor inspectors are drawn. */
   readonly banded = input(false, { transform: booleanAttribute });
 }

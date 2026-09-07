@@ -48,10 +48,6 @@ export class PanelRegionComponent {
   /**
    * What the control on the region's edge does next, in the caller's own words. Empty for a region
    * with nothing to switch to, which is what leaves the control out.
-   *
-   * The wording is the caller's because only it knows what the two panels are, and the four
-   * crossings do not read alike: arriving beside the primary costs nothing, arriving in its place
-   * costs the primary.
    */
   readonly switchLabel = input('');
   readonly switched = output();
@@ -61,10 +57,7 @@ export class PanelRegionComponent {
     return this.viewportWidth() >= this.splitAt() ? 'beside' : 'instead';
   });
 
-  /**
-   * Along the track where there is room for two, across it where there is not — which is the whole
-   * difference the reader is being asked to accept, so it is the one the glyph carries.
-   */
+  /** A chevron where the secondary can arrive beside the primary, a swap where it cannot. */
   protected readonly switchIcon = computed(() => {
     if (this.mode() === 'instead') return 'sync';
     if (this.mode() === 'beside') return 'chevron-right';
