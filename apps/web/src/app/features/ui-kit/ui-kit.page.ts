@@ -136,6 +136,7 @@ import { ACCENT_SLOTS } from '../editor/accent-slots';
             <nc-icon name="sliders" />
           </button>
           <button ncButton variant="primary" disabled>Disabled</button>
+          <button ncButton variant="ghost" disabled>Disabled ghost</button>
         </div>
         <div class="mt-2 flex flex-wrap items-center gap-2">
           <nc-toggle [(checked)]="autoRun">Auto-run</nc-toggle>

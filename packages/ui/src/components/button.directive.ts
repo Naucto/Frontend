@@ -13,9 +13,8 @@ export type ButtonSize = 'xs' | 'tool' | 'sm' | 'md' | 'bar' | 'hero' | 'lg';
  * because the button carries the reason in its title.
  */
 const DISABLED =
-  'disabled:cursor-not-allowed disabled:bg-transparent disabled:border-line disabled:text-ink-4 ' +
-  'disabled:hover:bg-transparent disabled:hover:border-line disabled:hover:text-ink-4 ' +
-  'disabled:hover:brightness-100';
+  'disabled:cursor-not-allowed disabled:bg-transparent disabled:text-ink-4 ' +
+  'disabled:hover:bg-transparent disabled:hover:text-ink-4 disabled:hover:brightness-100';
 
 /**
  * No transition here.
@@ -28,14 +27,26 @@ const BASE =
   'inline-flex cursor-pointer items-center justify-center gap-1 select-none whitespace-nowrap rounded-sm border font-ui uppercase tracking-button ' +
   `focus-visible:outline-2 ${DISABLED}`;
 
+/**
+ * Each variant says what its own border becomes when the button is unavailable, because that is not
+ * one answer.
+ *
+ * A filled button loses its fill and keeps a line, which is the shape the sheet draws a blocked
+ * PUBLISH in. A borderless one keeps no border at all: the sheet draws the editors' undo and redo
+ * pair three times with the second unavailable, and its border stays fully transparent — only the
+ * ink drops a step. Giving every variant the line meant a ghost button had a visible shape in the
+ * one state where it can do nothing, and none at all the rest of the time.
+ */
+const DISABLED_BORDER = 'disabled:border-line disabled:hover:border-line';
+const NO_DISABLED_BORDER = 'disabled:border-transparent disabled:hover:border-transparent';
+
 const VARIANTS: Record<ButtonVariant, string> = {
-  primary: 'bg-gold border-gold text-on-accent hover:bg-orange hover:border-orange',
-  run: 'bg-hot border-hot text-on-accent-dark hover:brightness-110',
-  secondary: 'bg-raised border-line-strong text-ink-body hover:text-ink hover:border-ink-4',
-  sky: 'bg-sky border-sky text-on-accent hover:brightness-110',
-  ghost: 'bg-transparent border-transparent text-ink-2 hover:text-ink hover:bg-raised',
-  danger:
-    'bg-transparent border-hot-ink text-hot-ink hover:bg-hot hover:text-on-accent-dark hover:border-hot',
+  primary: `bg-gold border-gold text-on-accent hover:bg-orange hover:border-orange ${DISABLED_BORDER}`,
+  run: `bg-hot border-hot text-on-accent-dark hover:brightness-110 ${DISABLED_BORDER}`,
+  secondary: `bg-raised border-line-strong text-ink-body hover:text-ink hover:border-ink-4 ${DISABLED_BORDER}`,
+  sky: `bg-sky border-sky text-on-accent hover:brightness-110 ${DISABLED_BORDER}`,
+  ghost: `bg-transparent border-transparent text-ink-2 hover:text-ink hover:bg-raised ${NO_DISABLED_BORDER}`,
+  danger: `bg-transparent border-hot-ink text-hot-ink hover:bg-hot hover:text-on-accent-dark hover:border-hot ${DISABLED_BORDER}`,
 };
 
 // Measured off the artboards: a row action is 24px, the default is 32px, and the one button a

@@ -35,3 +35,20 @@ for (const [stored, marked] of [
     else await expect(html).not.toHaveAttribute('data-no-veil', '');
   });
 }
+
+/**
+ * The sheet draws the editors' undo and redo pair three times with the second unavailable, and its
+ * border stays fully transparent — only the ink drops a step. A filled button keeps a line, which
+ * is how a blocked PUBLISH is drawn. So an unavailable button gains a border only where it had one.
+ */
+test('an unavailable button gains a border only where it had one', async ({ page }) => {
+  await page.goto('/ui-kit');
+  const border = async (variant: string): Promise<string> =>
+    page
+      .locator(`button[data-variant="${variant}"]:disabled`)
+      .first()
+      .evaluate((el) => getComputedStyle(el).borderTopColor);
+
+  expect(await border('ghost')).toBe('rgba(0, 0, 0, 0)');
+  expect(await border('primary')).not.toBe('rgba(0, 0, 0, 0)');
+});

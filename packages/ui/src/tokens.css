@@ -268,8 +268,11 @@
     border-color: transparent;
     color: var(--nc-ink-2);
   }
+  /*
+   * No border colour here: what an unavailable button's border becomes is the variant's to say, and
+   * the variants no longer agree. Transparent above is the quieter of the two to arrive on.
+   */
   [ncButton]:disabled {
-    border-color: var(--nc-line);
     color: var(--nc-ink-4);
   }
   html {
