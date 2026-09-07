@@ -28,8 +28,6 @@ import {
   PanelColumnComponent,
   PopoverDirective,
   PopoverPanelComponent,
-  ReadoutComponent,
-  SegmentedComponent,
   ToggleButtonComponent,
 } from '@naucto/ui';
 import * as Y from 'yjs';
@@ -67,9 +65,7 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
     IconComponent,
     PanelColumnComponent,
     PopoverDirective,
-    ReadoutComponent,
     PopoverPanelComponent,
-    SegmentedComponent,
     ToggleButtonComponent,
     InstrumentInspectorComponent,
     InstrumentListComponent,
@@ -206,15 +202,18 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
               {{ t('editor.sound.metronome') }}
             </nc-toggle-button>
             <span class="flex-1"></span>
-            <!-- BPM and STEPS are chip rows like every other exclusive choice in the design; the
-                 bespoke number input this used to be broke the "compose the kit" rule. -->
-            <!-- A value in a well, with what changes it behind the well rather than beside it.
-                 Laid out as strips of presets the two of them spent over half the strip's right
-                 half on choices the design never offers on the surface. -->
-            <div class="flex shrink-0 items-center gap-0.5">
-              <span class="label">{{ t('editor.sound.bpm') }}</span>
-              <button type="button" [ncPopover]="bpmMenu" [attr.aria-label]="t('editor.sound.bpm')">
-                <nc-readout size="sm" [value]="String(p.bpm)" tone="gold" />
+            <!-- Label and value share one sunken box, as the sheet draws them: the pair reads as
+                 something you can type into, and it fits where a strip of presets or a well with a
+                 label beside it did not. Each is as wide as what it holds. -->
+            <div class="shrink-0">
+              <button
+                type="button"
+                class="flex h-4 items-center gap-1.25 rounded-xs border border-line bg-inset px-1.25 whitespace-nowrap"
+                [ncPopover]="bpmMenu"
+                [attr.aria-label]="t('editor.sound.bpm')"
+              >
+                <span class="label text-ink-3">{{ t('editor.sound.bpm') }}</span>
+                <span class="font-mono text-body text-ink">{{ p.bpm }}</span>
               </button>
               <ng-template #bpmMenu>
                 <nc-popover-panel>
@@ -231,14 +230,15 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
                 </nc-popover-panel>
               </ng-template>
             </div>
-            <div class="flex shrink-0 items-center gap-0.5">
-              <span class="label">{{ t('editor.sound.steps') }}</span>
+            <div class="shrink-0">
               <button
                 type="button"
+                class="flex h-4 items-center gap-1.25 rounded-xs border border-line bg-inset px-1.25 whitespace-nowrap"
                 [ncPopover]="stepMenu"
                 [attr.aria-label]="t('editor.sound.steps')"
               >
-                <nc-readout size="sm" [value]="String(p.steps)" tone="gold" />
+                <span class="label text-ink-3">{{ t('editor.sound.steps') }}</span>
+                <span class="font-mono text-body text-ink">{{ p.steps }}</span>
               </button>
               <ng-template #stepMenu>
                 <nc-popover-panel>
