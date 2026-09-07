@@ -479,8 +479,6 @@ export class SoundTabPage {
     if (copy) this.sound.selectInstrument(copy.id);
   }
 
-  /** Renaming and recolouring travel together: they are the two things about an instrument that
-   * are only a label, and the list is where a name is read. */
   protected editInstrument(id: string): void {
     const inst = this.library.instruments().get(id);
     if (!inst) return;
