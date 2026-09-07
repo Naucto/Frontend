@@ -109,10 +109,12 @@ const BRUSHES = ['1×1', '2×2', '3×3', '4×4', '5×5', '6×6', '7×7', '8×8']
             (zoomBy)="map.zoomBy($event)"
             (viewport)="viewport.set($event)"
           />
-          <!-- The readout floats over the canvas instead of taking a strip off the bottom of it. -->
+          <!-- Bottom left, over the artwork, on a scrim rather than in a bordered chip: a rule
+               around it makes a reading look like a control, and the far corner is where the
+               canvas's own furniture already is. -->
           @if (hover(); as h) {
             <div
-              class="pointer-events-none absolute right-1.5 bottom-1.5 flex items-center gap-1 rounded-sm border border-line bg-panel/90 px-1 py-0.5 font-mono text-label text-ink-3"
+              class="pointer-events-none absolute bottom-1.5 left-1.5 flex items-center gap-1 rounded-xs bg-page/80 px-1 py-0.5 font-mono text-label text-ink-3"
             >
               <span>{{ t('editor.map.status', { x: h.x, y: h.y, spr: pad3(h.spr) }) }}</span>
               <span class="text-ink-4">·</span>
