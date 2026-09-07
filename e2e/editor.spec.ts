@@ -366,6 +366,40 @@ test.describe('editor', () => {
     await page.screenshot({ path: 'test-results/v-editor-map.png' });
   });
 
+  /**
+   * The brush is chosen by drawing a rectangle on the tile picker, the way the drawing board's own
+   * sheet map is drawn on. It used to be a square whose side came from a separate slider, so the
+   * picker could only be pressed, and its width and height were thrown away where it reports them.
+   */
+  test('MAP picks a brush by dragging a rectangle on the sheet', async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 1030 });
+    await page.goto('/edit/7/map');
+    const picker = page.getByRole('img', { name: 'Tile picker' });
+    await expect(picker).toBeVisible();
+
+    const box = await picker.boundingBox();
+    expect(box).not.toBeNull();
+    if (box) {
+      // Cells 2..4 across and 1..2 down: three wide by two tall, a shape no square brush could take.
+      const cell = box.width / 16;
+      await page.mouse.move(box.x + cell * 2.5, box.y + cell * 1.5);
+      await page.mouse.down();
+      await page.mouse.move(box.x + cell * 4.5, box.y + cell * 2.5, { steps: 8 });
+      await page.mouse.up();
+    }
+
+    const map = page.getByRole('img', { name: 'Map canvas' });
+    const mapBox = await map.boundingBox();
+    expect(mapBox).not.toBeNull();
+    if (mapBox) {
+      // One press, then read the tile two columns along: it holds the brush's third sprite only if
+      // the press put down a block. A 1x1 brush leaves it empty.
+      await page.mouse.click(mapBox.x + 40, mapBox.y + 40);
+      await page.mouse.move(mapBox.x + 72, mapBox.y + 40);
+    }
+    await expect(page.getByText('SPR 020')).toBeVisible();
+  });
+
   test('SOUND tab adds an instrument and paints notes', async ({ page }) => {
     await page.goto('/edit/7/sound');
     await page.getByRole('button', { name: 'Add instrument' }).first().click();

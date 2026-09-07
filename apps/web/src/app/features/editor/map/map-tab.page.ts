@@ -11,14 +11,13 @@ import {
 import { type Pt } from '@app/shared/pixel/pixel-tools';
 import { SheetPainter } from '@app/shared/pixel/sheet-painter';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
-import { LOCAL_ORIGIN, MAP_HEIGHT, MAP_WIDTH, SPRITES_PER_ROW } from '@naucto/engine';
+import { LOCAL_ORIGIN, MAP_HEIGHT, MAP_WIDTH } from '@naucto/engine';
 import {
   ButtonDirective,
   IconComponent,
   PanelColumnComponent,
   SectionComponent,
   SliderComponent,
-  StepperComponent,
   ToggleButtonComponent,
   ToolGroupComponent,
   type ToolItem,
@@ -26,7 +25,6 @@ import {
 } from '@naucto/ui';
 import * as Y from 'yjs';
 
-import { type SpriteRect } from '../art/art.store';
 import { SheetViewComponent } from '../art/sheet-view.component';
 import { PANEL_WIDTH } from '../state/editor-ui.store';
 
@@ -35,8 +33,6 @@ import { WorkSessionService } from '../work-session/work-session.service';
 import { MAP_MAX_ZOOM, MAP_MIN_ZOOM, MapStore, type MapTool } from './map.store';
 import { MapCanvasComponent, type TileViewport } from './map-canvas.component';
 import { MinimapComponent } from './minimap.component';
-
-const BRUSHES = ['1×1', '2×2', '3×3', '4×4', '5×5', '6×6', '7×7', '8×8'] as const;
 
 /** MAP tab: the tile map on the left, tile picker / brush / minimap panel on the right. */
 @Component({
@@ -49,7 +45,6 @@ const BRUSHES = ['1×1', '2×2', '3×3', '4×4', '5×5', '6×6', '7×7', '8×8']
     SliderComponent,
     PanelColumnComponent,
     SectionComponent,
-    StepperComponent,
     ToggleButtonComponent,
     ToolGroupComponent,
     TooltipDirective,
@@ -104,7 +99,6 @@ const BRUSHES = ['1×1', '2×2', '3×3', '4×4', '5×5', '6×6', '7×7', '8×8']
             [game]="session.game"
             [painter]="painter"
             [tool]="map.tool()"
-            [sprite]="map.sprite()"
             [brush]="map.brush()"
             [grid]="map.grid()"
             [flags]="map.flags()"
@@ -197,15 +191,6 @@ const BRUSHES = ['1×1', '2×2', '3×3', '4×4', '5×5', '6×6', '7×7', '8×8']
         </div>
 
         <nc-section banded [title]="t('editor.map.tilePicker')">
-          <nc-sheet-view
-            [painter]="painter"
-            [region]="tileRegion()"
-            (regionChange)="map.setSprite($event.y * spritesPerRow + $event.x)"
-            [label]="t('editor.map.tilePicker')"
-          />
-        </nc-section>
-
-        <nc-section banded [title]="t('editor.map.brush')">
           <button
             actions
             ncButton
@@ -217,11 +202,12 @@ const BRUSHES = ['1×1', '2×2', '3×3', '4×4', '5×5', '6×6', '7×7', '8×8']
             <nc-icon name="layout" [size]="12" />
             {{ t('editor.map.autotile') }}
           </button>
-          <nc-stepper
-            [options]="brushes"
-            [value]="map.brush() - 1"
-            (valueChange)="map.setBrush($event + 1)"
-            [label]="t('editor.map.brush')"
+          <nc-sheet-view
+            [painter]="painter"
+            [region]="map.brush()"
+            (regionChange)="map.setBrush($event)"
+            [resizable]="true"
+            [label]="t('editor.map.tilePicker')"
           />
         </nc-section>
 
@@ -260,16 +246,8 @@ export class MapTabPage {
   private readonly i18n = inject(TranslocoService);
   protected readonly painter = new SheetPainter(this.session.game);
   protected readonly undo: Y.UndoManager;
-  protected readonly brushes = BRUSHES;
   protected readonly mapW = MAP_WIDTH;
   protected readonly mapH = MAP_HEIGHT;
-  protected readonly spritesPerRow = SPRITES_PER_ROW;
-  /** The picked tile as the sheet map's rectangle: brush-sized, since that is what a press stamps. */
-  protected readonly tileRegion = computed<SpriteRect>(() => {
-    const i = this.map.sprite();
-    const n = this.map.brush();
-    return { x: i % SPRITES_PER_ROW, y: Math.floor(i / SPRITES_PER_ROW), w: n, h: n };
-  });
   protected readonly canvas = viewChild<MapCanvasComponent>('canvas');
   protected readonly viewport = signal<TileViewport | null>(null);
   protected readonly hover = signal<{ x: number; y: number; spr: number; bits: string } | null>(

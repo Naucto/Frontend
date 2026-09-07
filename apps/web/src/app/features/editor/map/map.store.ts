@@ -5,14 +5,6 @@ import { stepZoom } from '../art/sprite-canvas.component';
 
 export type MapTool = 'stamp' | 'fill' | 'select' | 'erase';
 
-/** Keep an n×n brush inside the sheet: no wrapping onto the next row, no running off the bottom. */
-function clampToSheet(sprite: number, brush: number): number {
-  const rows = SPRITE_COUNT / SPRITES_PER_ROW;
-  const column = Math.min(sprite % SPRITES_PER_ROW, SPRITES_PER_ROW - brush);
-  const row = Math.min(Math.floor(sprite / SPRITES_PER_ROW), rows - brush);
-  return Math.max(0, row) * SPRITES_PER_ROW + Math.max(0, column);
-}
-
 export interface TileRect {
   x: number;
   y: number;
@@ -20,11 +12,37 @@ export interface TileRect {
   h: number;
 }
 
+/** The widest and tallest a brush may be, in sprites. */
+const MAX_BRUSH = 8;
+
+/**
+ * Keep a brush whole and inside the sheet, whichever corner was dragged.
+ *
+ * Both axes are clamped separately: a brush that overhangs the right edge would wrap onto the next
+ * row when stamped, and one that overhangs the bottom would ask for sprites the sheet has not got.
+ */
+function clampToSheet(r: TileRect): TileRect {
+  const rows = SPRITE_COUNT / SPRITES_PER_ROW;
+  const w = Math.max(1, Math.min(MAX_BRUSH, SPRITES_PER_ROW, r.w));
+  const h = Math.max(1, Math.min(MAX_BRUSH, rows, r.h));
+  return {
+    x: Math.max(0, Math.min(r.x, SPRITES_PER_ROW - w)),
+    y: Math.max(0, Math.min(r.y, rows - h)),
+    w,
+    h,
+  };
+}
+
 interface MapState {
   tool: MapTool;
-  sprite: number;
-  /** Brush footprint in tiles (1..8). */
-  brush: number;
+  /**
+   * The block of the sheet a press stamps, as a rectangle on it.
+   *
+   * One value rather than an origin and a size, because it is one gesture: the tile picker is drawn
+   * on by dragging, exactly as the drawing board's sheet map is. A size chosen apart from a
+   * position was two controls for one thing, and only one of them could be a rectangle.
+   */
+  brush: TileRect;
   grid: boolean;
   flags: boolean;
   /** Pixels per sprite pixel (1..4). */
@@ -45,8 +63,7 @@ export const MAP_MAX_ZOOM = 8;
 export const MapStore = signalStore(
   withState<MapState>({
     tool: 'stamp',
-    sprite: 1,
-    brush: 1,
+    brush: { x: 1, y: 0, w: 1, h: 1 },
     grid: true,
     flags: false,
     zoom: 2,
@@ -56,14 +73,8 @@ export const MapStore = signalStore(
     setTool(tool: MapTool): void {
       patchState(store, { tool });
     },
-    setSprite(sprite: number): void {
-      patchState(store, { sprite: clampToSheet(sprite, store.brush()) });
-    },
-    setBrush(brush: number): void {
-      const next = Math.max(1, Math.min(8, brush));
-      // Widening the brush can push the picked sprite past the right edge of the sheet, and the
-      // extra columns would then wrap onto the next row when stamping. Pull it back instead.
-      patchState(store, { brush: next, sprite: clampToSheet(store.sprite(), next) });
+    setBrush(brush: TileRect): void {
+      patchState(store, { brush: clampToSheet(brush) });
     },
     setGrid(grid: boolean): void {
       patchState(store, { grid });

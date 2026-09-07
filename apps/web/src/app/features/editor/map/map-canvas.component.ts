@@ -102,8 +102,8 @@ export class MapCanvasComponent {
   readonly game = input.required<Game>();
   readonly painter = input.required<SheetPainter>();
   readonly tool = input<MapTool>('stamp');
-  readonly sprite = input(1);
-  readonly brush = input(1);
+  /** The block of the sheet a press stamps, as a rectangle on it. */
+  readonly brush = input<TileRect>({ x: 1, y: 0, w: 1, h: 1 });
   readonly grid = input(true);
   readonly flags = input(false);
   readonly zoom = input(2);
@@ -258,12 +258,11 @@ export class MapCanvasComponent {
   }
 
   private stamp(cell: Pt, erase: boolean): void {
-    const n = this.brush();
-    const base = this.sprite();
+    const b = this.brush();
     this.game().transact(() => {
-      for (let j = 0; j < n; j++)
-        for (let i = 0; i < n; i++) {
-          const spr = erase ? 0 : base + i + j * SPRITES_PER_ROW;
+      for (let j = 0; j < b.h; j++)
+        for (let i = 0; i < b.w; i++) {
+          const spr = erase ? 0 : (b.y + j) * SPRITES_PER_ROW + b.x + i;
           if (spr < SPRITE_COUNT) this.game().setTile(cell.x + i, cell.y + j, spr);
         }
     });
@@ -284,7 +283,7 @@ export class MapCanvasComponent {
       case 'fill': {
         const g = this.game();
         const pts = floodFill((x, y) => g.getTile(x, y), cell, MAP_WIDTH, MAP_HEIGHT);
-        const spr = erase ? 0 : this.sprite();
+        const spr = erase ? 0 : this.brush().y * SPRITES_PER_ROW + this.brush().x;
         g.transact(() => {
           for (const p of pts) g.setTile(p.x, p.y, spr);
         });
@@ -423,10 +422,15 @@ export class MapCanvasComponent {
     }
     const h = this.hoverCell();
     if (h) {
-      const n = this.tool() === 'stamp' || this.tool() === 'erase' ? this.brush() : 1;
+      // What a press would put down, so it is the brush's own shape where a press stamps one and a
+      // single tile where it does anything else.
+      const stamps = this.tool() === 'stamp' || this.tool() === 'erase';
+      const b = this.brush();
+      const w = stamps ? b.w : 1;
+      const bh = stamps ? b.h : 1;
       ctx.strokeStyle = cssVar(el, '--nc-ink');
       ctx.lineWidth = 2;
-      ctx.strokeRect(h.x * t + 1, h.y * t + 1, n * t - 2, n * t - 2);
+      ctx.strokeRect(h.x * t + 1, h.y * t + 1, w * t - 2, bh * t - 2);
       ctx.lineWidth = 1;
     }
   }
