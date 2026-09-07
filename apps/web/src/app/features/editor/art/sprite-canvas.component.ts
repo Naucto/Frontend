@@ -564,8 +564,11 @@ export class SpriteCanvasComponent {
         }
         ctx.stroke();
       }
-      ctx.strokeStyle = cssVar(el, '--nc-gold');
-      ctx.globalAlpha = 0.35;
+      // The cell guides are a stronger veil of the same ink, not gold. Gold on this screen means
+      // what is being worked on, and a permanent grid wearing it left the region outline competing
+      // with a hundred lines of its own colour for the eye.
+      ctx.strokeStyle = cssVar(el, '--nc-ink');
+      ctx.globalAlpha = 0.2;
       ctx.lineWidth = 1;
       ctx.beginPath();
       for (let i = SPRITE_SIZE; i < px; i += SPRITE_SIZE) {
@@ -597,8 +600,7 @@ export class SpriteCanvasComponent {
     ctx.strokeRect(r.x * s + 1, r.y * s + 1, r.w * s - 2, r.h * s - 2);
     ctx.lineWidth = 1;
 
-    // The sheet's own edge is a neutral hairline; gold on this screen means the cell guides and the
-    // region, not the canvas edge.
+    // The sheet's own edge is a neutral hairline; gold on this screen means the region alone.
     ctx.strokeStyle = cssVar(el, '--nc-line-strong');
     ctx.strokeRect(0.5, 0.5, css - 1, css - 1);
 
