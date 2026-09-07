@@ -63,24 +63,37 @@ export const EditorUiStore = signalStore(
     viewportWidth: 1280,
     pipOpen: readJson<boolean>(STORAGE_KEYS.editorViewerFloating, false),
   }),
-  withComputed((s) => ({
-    /** Wide enough and the reference gets a column of its own; below that it takes the console's. */
-    columnMode: computed<ColumnMode>(() =>
-      !s.referenceOpen()
-        ? 'screen'
-        : s.viewportWidth() >= REFERENCE_SPLIT_BREAKPOINT
-          ? 'split'
-          : 'swap',
-    ),
+  withComputed((s) => {
     /**
-     * Where the runtime lives: docked in the right column, or floating over the workspace.
+     * Whether the reference is actually standing somewhere, against whether the reader would like
+     * it to be.
      *
-     * The reader decides, on every tab. It used to be the tab that decided — the canvases floated
-     * it and CODE and GAME did not — so on those two the control that pops it out changed the
-     * stored preference and nothing moved, which is an affordance that lies.
+     * It belongs to CODE, beside the console, and neither has anywhere to stand on a canvas tab:
+     * those draw their own inspector, and a reference arriving there is a third column about a
+     * screen that is not on. The wish is kept while they are away, so it is waiting on their return.
      */
-    consoleMode: computed<'column' | 'pip'>(() => (s.pipOpen() ? 'pip' : 'column')),
-  })),
+    const referenceShown = computed(() => s.activeTab() === 'code' && s.referenceOpen());
+
+    return {
+      referenceShown,
+      /** Wide enough and the reference gets a column of its own; below that it takes the console's. */
+      columnMode: computed<ColumnMode>(() =>
+        !referenceShown()
+          ? 'screen'
+          : s.viewportWidth() >= REFERENCE_SPLIT_BREAKPOINT
+            ? 'split'
+            : 'swap',
+      ),
+      /**
+       * Where the runtime lives: docked in the right column, or floating over the workspace.
+       *
+       * The reader decides, on every tab. It used to be the tab that decided — the canvases floated
+       * it and CODE and GAME did not — so on those two the control that pops it out changed the
+       * stored preference and nothing moved, which is an affordance that lies.
+       */
+      consoleMode: computed<'column' | 'pip'>(() => (s.pipOpen() ? 'pip' : 'column')),
+    };
+  }),
   withMethods((store) => ({
     setTab(tab: EditorTab): void {
       patchState(store, { activeTab: tab });

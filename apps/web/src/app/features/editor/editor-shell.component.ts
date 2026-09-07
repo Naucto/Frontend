@@ -142,18 +142,18 @@ const RAIL: RailItem<EditorTab>[] = [
             />
             <section class="min-h-0 overflow-auto"><router-outlet /></section>
             <nc-panel-region
-              [secondaryOpen]="ui.referenceOpen()"
+              [secondaryOpen]="ui.referenceShown()"
               [viewportWidth]="ui.viewportWidth()"
               [splitAt]="REFERENCE_SPLIT_BREAKPOINT"
               [primaryWidth]="consoleWidth()"
               [secondaryWidth]="REFERENCE_WIDTH"
-              [switchLabel]="t(switchKey())"
+              [switchLabel]="switchKey() ? t(switchKey()) : ''"
               (switched)="ui.toggleReference()"
             >
               <!-- Built only while it is open: the reference has nothing running in it, so unlike
                    the console it costs nothing to rebuild and something to keep. -->
               <div secondary class="flex min-h-0 flex-col border-l border-line">
-                @if (ui.referenceOpen()) {
+                @if (ui.referenceShown()) {
                   <nc-doc-pane class="min-h-0 flex-1 overflow-auto" />
                   <!-- The artboard puts this at the foot of the reference, and only where the
                        reference has taken the game's place — the one arrangement in which the game
@@ -224,16 +224,22 @@ export class EditorShellComponent implements OnInit {
   private readonly toasts = inject(ToastService);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   protected readonly rail = RAIL;
-  /** Wide in the swap too, because a track has to have a width for the reference to borrow it. */
-  /** Three of these name the reference; the fourth names what its arrival costs. */
+  /**
+   * What the control on the region's edge does next — empty on a tab that has no reference, which
+   * is what leaves the control out.
+   *
+   * Three of these name the reference; the fourth names what its arrival costs.
+   */
   protected readonly switchKey = computed(() => {
+    if (this.ui.activeTab() !== 'code') return '';
     const wide = this.ui.viewportWidth() >= REFERENCE_SPLIT_BREAKPOINT;
     if (this.ui.referenceOpen()) return wide ? 'docs.close' : 'docs.swapBack';
     return wide ? 'editor.openReference' : 'editor.swapToReference';
   });
 
+  /** Wide in the swap too, because a track has to have a width for the reference to borrow it. */
   protected readonly consoleWidth = computed(() =>
-    this.ui.columnMode() === 'swap' || this.ui.activeTab() === 'code' ? CONSOLE_WIDTH : 0,
+    this.ui.activeTab() === 'code' ? CONSOLE_WIDTH : 0,
   );
 
   /**
@@ -250,9 +256,14 @@ export class EditorShellComponent implements OnInit {
 
   /**
    * F1 shows the docs for the symbol under the cursor; Ctrl/⌘-K puts the caret in the doc search.
-   * Both open the DOC tab first, because the pane has to exist before it can be asked anything.
+   *
+   * Both are bound on the document, so they fire wherever the focus is — including a canvas or a
+   * form field on a tab that has no reference to show. There they do nothing and, in particular,
+   * do not swallow the keystroke: taking Ctrl-K from every screen in the editor to open a panel
+   * that cannot appear is worse than not binding it.
    */
   protected onShortcut(e: KeyboardEvent): void {
+    if (this.ui.activeTab() !== 'code') return;
     const meta = e.ctrlKey || e.metaKey;
     if (e.key === 'F1') {
       e.preventDefault();

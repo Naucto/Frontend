@@ -13,6 +13,7 @@ describe('EditorUiStore', () => {
    */
   it('puts the reference beside the console when there is room, and in its place when there is not', () => {
     const ui = store();
+    ui.setTab('code');
 
     expect(ui.columnMode()).toBe('screen');
 
@@ -32,6 +33,7 @@ describe('EditorUiStore', () => {
 
   it('holds the reference open across a resize rather than forgetting it', () => {
     const ui = store();
+    ui.setTab('code');
 
     ui.setReferenceOpen(true);
     ui.setViewportWidth(1280);
@@ -47,5 +49,26 @@ describe('EditorUiStore', () => {
     expect(ui.referenceOpen()).toBe(true);
     ui.toggleReference();
     expect(ui.referenceOpen()).toBe(false);
+  });
+
+  /**
+   * The reference is CODE's, beside the console. Leaving CODE has to put it away without forgetting
+   * it was wanted — a reader who opens it, goes to draw a sprite and comes back should find it
+   * where they left it, and should not meet it over the sprite.
+   */
+  it('shows the reference on CODE only, and remembers it was asked for', () => {
+    const ui = store();
+    ui.setTab('code');
+    ui.setReferenceOpen(true);
+    expect(ui.referenceShown()).toBe(true);
+
+    for (const tab of ['game', 'art', 'map', 'sound', 'net'] as const) {
+      ui.setTab(tab);
+      expect(ui.referenceShown()).toBe(false);
+      expect(ui.columnMode()).toBe('screen');
+    }
+
+    ui.setTab('code');
+    expect(ui.referenceShown()).toBe(true);
   });
 });
