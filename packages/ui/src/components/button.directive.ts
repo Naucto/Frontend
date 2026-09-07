@@ -3,9 +3,23 @@ import { computed, Directive, input } from '@angular/core';
 export type ButtonVariant = 'primary' | 'run' | 'secondary' | 'sky' | 'ghost' | 'danger';
 export type ButtonSize = 'xs' | 'tool' | 'sm' | 'md' | 'bar' | 'hero' | 'lg';
 
+/**
+ * Unavailable is a different shape, not the same one faded.
+ *
+ * It used to be the variant at 40% opacity, which on a filled gold button left the brightest thing
+ * on the bar: three separate readers called a disabled PUBLISH the screen's only solid button, and
+ * so did the two people checking their work. Stripping the fill is what the design does — a blocked
+ * PUBLISH is drawn as the ghost twin of SHARE — and it cannot be misread. The ink stays legible
+ * because the button carries the reason in its title.
+ */
+const DISABLED =
+  'disabled:cursor-not-allowed disabled:bg-transparent disabled:border-line disabled:text-ink-4 ' +
+  'disabled:hover:bg-transparent disabled:hover:border-line disabled:hover:text-ink-4 ' +
+  'disabled:hover:brightness-100';
+
 const BASE =
   'inline-flex cursor-pointer items-center justify-center gap-1 select-none whitespace-nowrap rounded-sm border font-ui uppercase tracking-button ' +
-  'transition-colors duration-100 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2';
+  `transition-colors duration-100 focus-visible:outline-2 ${DISABLED}`;
 
 const VARIANTS: Record<ButtonVariant, string> = {
   primary: 'bg-gold border-gold text-on-accent hover:bg-orange hover:border-orange',
