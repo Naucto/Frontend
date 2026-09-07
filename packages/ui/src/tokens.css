@@ -258,6 +258,16 @@
 }
 
 @layer base {
+  /*
+   * A button carries this attribute from its first render, and its classes arrive one at a time
+   * afterwards. Between the two it would otherwise take the inherited ink for both its border and
+   * its text — the brightest colour on the page — and any paint forced in that window (a canvas
+   * measuring itself, a resize observer) shows it. In `base`, so every utility still wins.
+   */
+  [ncButton] {
+    border-color: transparent;
+    color: var(--nc-ink-3);
+  }
   html {
     background: var(--nc-page);
     color: var(--nc-ink);
