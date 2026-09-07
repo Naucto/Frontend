@@ -167,6 +167,20 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
                   <nc-icon name="play" [size]="12" class="text-hot-ink" />
                 </button>
               }
+              <!-- Back to the top without stopping, which is what you want when you are listening
+                   to a bar again rather than putting the pattern down. Stopping also returns to the
+                   start, so without this the only way back was to end the take. -->
+              <button
+                ncButton
+                variant="ghost"
+                size="sm"
+                iconOnly
+                [attr.aria-label]="t('editor.sound.toStart')"
+                (click)="toStart()"
+                [disabled]="playhead() === null"
+              >
+                <nc-icon name="prev" [size]="12" />
+              </button>
               <button
                 ncButton
                 variant="ghost"
@@ -533,6 +547,10 @@ export class SoundTabPage {
   }
 
   /** Halts and rewinds. */
+  protected toStart(): void {
+    this.playhead.set(0);
+  }
+
   protected stop(): void {
     this.pause();
     this.playhead.set(null);

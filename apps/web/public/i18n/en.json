@@ -448,7 +448,8 @@
       "addSample": "Import a sample",
       "replaceSample": "Replace",
       "removeSample": "Remove the sample",
-      "sampleHint": "Any audio file. Mixed to mono and resampled to 8-bit / 8 kHz — {{seconds}} s fits the budget."
+      "sampleHint": "Any audio file. Mixed to mono and resampled to 8-bit / 8 kHz — {{seconds}} s fits the budget.",
+      "toStart": "Back to the start"
     },
     "net": {
       "sharedState": "Shared state",
