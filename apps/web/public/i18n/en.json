@@ -407,6 +407,8 @@
       "instruments": "Instruments",
       "addInstrument": "Add instrument",
       "removeInstrument": "Remove {{name}}",
+      "renameInstrument": "Rename instrument",
+      "editInstrument": "Rename or recolour this instrument",
       "sfxSlots": "SFX slots",
       "sfxSlot": "SFX slot {{n}}",
       "sfxHelp": "Sixteen slots your game plays with sound.play_sfx(slot). Click a slot to put the current pattern in it; click again to clear it.",

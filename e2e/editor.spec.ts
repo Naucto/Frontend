@@ -449,6 +449,45 @@ test.describe('editor', () => {
     await expect(page.getByText('SPR 020')).toBeVisible();
   });
 
+  /**
+   * A note dropped past the last step is what asks a pattern to grow. It used to be held to the
+   * length the pattern already had, so it came out with none at all — invisible to the hit test,
+   * and impossible to grab back.
+   */
+  test('a note dragged past the end lengthens the pattern', async ({ page }) => {
+    await page.goto('/edit/7/sound');
+    await page.getByRole('button', { name: 'Add instrument' }).first().click();
+    const roll = page.getByRole('img', { name: 'Piano roll' });
+    await expect(roll).toBeVisible();
+
+    // Shortened first, so the end of the pattern falls where the pointer can still reach it.
+    await page.getByRole('button', { name: /Steps/ }).first().click();
+    await page.getByRole('button', { name: '16', exact: true }).click();
+    await page.keyboard.press('Escape');
+
+    const steps = async (): Promise<string | null> =>
+      page.getByRole('button', { name: /Steps/ }).first().textContent();
+    await expect.poll(steps).toContain('16');
+
+    // The canvas is taller than its well and starts above it, so the vertical aim comes from the
+    // well and only the horizontal one from the drawing.
+    const box = await roll.boundingBox();
+    const well = await page.locator('nc-piano-roll').boundingBox();
+    expect(box).not.toBeNull();
+    expect(well).not.toBeNull();
+    if (box && well) {
+      // Past the sixteenth step, which is where the grid keeps running and the pattern does not.
+      const x = box.x + 20 * 24 + 6;
+      const y = well.y + well.height / 2;
+      await page.mouse.move(x, y);
+      await page.mouse.down();
+      await page.mouse.move(x + 40, y, { steps: 6 });
+      await page.mouse.up();
+    }
+
+    await expect.poll(steps).toContain('32');
+  });
+
   test('SOUND tab adds an instrument and paints notes', async ({ page }) => {
     await page.goto('/edit/7/sound');
     await page.getByRole('button', { name: 'Add instrument' }).first().click();

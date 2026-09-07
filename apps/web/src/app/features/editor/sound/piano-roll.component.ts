@@ -210,11 +210,17 @@ export class PianoRollComponent {
     };
   }
 
-  /** One snap unit in steps, given the pattern's own steps-per-beat. */
+  /**
+   * One snap unit in steps, given the pattern's own steps-per-beat.
+   *
+   * The floor is an eighth of a step, which is what the finest division the control offers works
+   * out to on a pattern of four steps to the beat. A coarser floor would silently round that
+   * division back onto the one above it, leaving two settings that do the same thing.
+   */
   private snapUnit(): number {
     const div = this.snap();
     if (!div) return 0;
-    return Math.max(0.25, this.pattern().stepsPerBeat / div);
+    return Math.max(0.125, this.pattern().stepsPerBeat / div);
   }
 
   private snapStep(s: number): number {
@@ -267,7 +273,9 @@ export class PianoRollComponent {
     }
     const inst = this.instrumentId();
     if (!inst) return;
-    const note: Note = { step: this.snapStep(step), pitch, length: 1, instrument: inst, volume: 1 };
+    const unit = this.snapUnit() || 0.25;
+    const start = Math.min(this.snapStep(step), MAX_STEPS - unit);
+    const note: Note = { step: start, pitch, length: unit, instrument: inst, volume: 1 };
     notes.push(note);
     this.drag = {
       mode: 'create',
@@ -290,7 +298,10 @@ export class PianoRollComponent {
     if (!d) return;
     const notes = [...this.notes()];
     const o = d.original;
-    const max = this.pattern().steps;
+    // The grid's ceiling, not the pattern's current length: a note dropped past the end is what
+    // asks the pattern to grow, and holding it to the length that is makes that impossible — it
+    // came out with no length at all, which is a note nothing can grab again.
+    const max = MAX_STEPS;
     let n: Note;
     switch (d.mode) {
       case 'create':
@@ -424,6 +435,18 @@ export class PianoRollComponent {
     ctx.fillStyle = cssVar(el, '--nc-ink-4');
     for (let s = 0; s < p.steps; s += p.stepsPerBeat)
       ctx.fillText(String(s / p.stepsPerBeat + 1), s * sw + 4, sy + RULER_H / 2);
+
+    // The end, named on the ruler. The wash below says where the pattern stops, but not what it
+    // stops at, and the only other statement of that is a field at the top of the screen.
+    const end = p.steps * sw;
+    if (end < w) {
+      const text = `${String(p.steps)} STEPS`;
+      const chipW = ctx.measureText(text).width + 10;
+      ctx.fillStyle = cssVar(el, '--nc-line-strong');
+      ctx.fillRect(end - chipW, sy, chipW, RULER_H);
+      ctx.fillStyle = cssVar(el, '--nc-ink-2');
+      ctx.fillText(text, end - chipW + 5, sy + RULER_H / 2);
+    }
 
     // Hover cell.
     const hv = this.hoverCell();

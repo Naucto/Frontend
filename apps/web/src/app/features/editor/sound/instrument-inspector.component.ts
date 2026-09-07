@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
 import {
   encodeSample,
@@ -14,16 +22,21 @@ import {
 import {
   ButtonDirective,
   ChipComponent,
+  DialogService,
   HelpDotComponent,
   IconComponent,
   SegmentedComponent,
   SliderComponent,
-  SwatchPickerComponent,
+  TooltipDirective,
 } from '@naucto/ui';
 
-import { ACCENT_SLOTS } from '../accent-slots';
 import { PresenceSurfaceComponent } from '../work-session/presence-surface.component';
 import { EnvelopeGraphComponent } from './envelope-graph.component';
+import {
+  InstrumentDialog,
+  type InstrumentDialogData,
+  type InstrumentDialogResult,
+} from './instrument.dialog';
 import { WaveGlyphComponent } from './wave-glyph.component';
 
 const OSCS: { value: OscType; label: string }[] = [
@@ -51,9 +64,9 @@ const FILTERS = [
     ChipComponent,
     HelpDotComponent,
     IconComponent,
-    SwatchPickerComponent,
     SegmentedComponent,
     SliderComponent,
+    TooltipDirective,
     EnvelopeGraphComponent,
     WaveGlyphComponent,
     PresenceSurfaceComponent,
@@ -63,31 +76,54 @@ const FILTERS = [
       <!-- Shared: everyone editing this instrument sees the same envelope and the same filter, so
            where a peer's pointer is says what they are about to change. -->
       <nc-presence-surface surface="sound:inspector" mode="shared" />
-      <div class="flex items-center gap-1 border-b border-line p-1.5">
-        <nc-wave-glyph [type]="inst().osc" [width]="26" [style.color]="palette()[inst().colour]" />
-        <input
-          type="text"
-          [value]="inst().name"
-          maxlength="16"
-          spellcheck="false"
-          [attr.aria-label]="t('editor.sound.name')"
-          (change)="rename($event)"
-          class="min-w-0 flex-1 bg-transparent text-ui text-ink outline-none focus:text-gold-ink"
-        />
-        <button ncButton variant="ghost" size="sm" (click)="duplicate.emit()">
-          {{ t('editor.sound.duplicate') }}
-        </button>
-      </div>
+      <!--
+        Named the way a code tab is: the name is text until you reach for it, and the one control
+        that changes it carries its colour too — which is why no colour row follows this one.
 
-      <div class="flex items-center gap-1 border-b border-line p-1.5">
-        <span class="label text-ink-3">{{ t('editor.sound.colour') }}</span>
-        <span class="flex-1"></span>
-        <nc-swatch-picker
-          [colours]="palette()"
-          [slots]="colours"
-          [value]="inst().colour"
-          (valueChange)="patched.emit({ colour: $event ?? 0 })"
-        />
+        The three affordances are hidden by visibility, not by display: a kit button already sets a
+        display of its own, and with two such classes on one element the later rule in the
+        stylesheet wins — so hiding that way never applied at all. It also keeps the row from
+        reflowing under the pointer.
+      -->
+      <div class="group flex items-center gap-1 border-b border-line p-1.5">
+        <nc-wave-glyph [type]="inst().osc" [width]="26" [style.color]="palette()[inst().colour]" />
+        <span class="min-w-0 flex-1 truncate text-ui text-ink">{{ inst().name }}</span>
+        <button
+          ncButton
+          variant="ghost"
+          size="sm"
+          iconOnly
+          class="invisible group-hover:visible"
+          [attr.aria-label]="t('editor.sound.duplicate')"
+          [ncTooltip]="t('editor.sound.duplicate')"
+          (click)="duplicate.emit()"
+        >
+          <nc-icon name="copy" [size]="12" />
+        </button>
+        <button
+          ncButton
+          variant="ghost"
+          size="sm"
+          iconOnly
+          class="invisible group-hover:visible"
+          [attr.aria-label]="t('editor.sound.editInstrument')"
+          [ncTooltip]="t('editor.sound.editInstrument')"
+          (click)="edit()"
+        >
+          <nc-icon name="edit" [size]="12" />
+        </button>
+        <button
+          ncButton
+          variant="ghost"
+          size="sm"
+          iconOnly
+          class="invisible group-hover:visible"
+          [attr.aria-label]="t('editor.sound.removeInstrument', { name: inst().name })"
+          [ncTooltip]="t('editor.sound.removeInstrument', { name: inst().name })"
+          (click)="removed.emit()"
+        >
+          <nc-icon name="trash" [size]="12" />
+        </button>
       </div>
 
       <section class="border-b border-line p-1.5">
@@ -363,14 +399,16 @@ export class InstrumentInspectorComponent {
   readonly inst = input.required<Instrument>();
   readonly palette = input.required<readonly string[]>();
   readonly usedBy = input.required<{ patterns: Pattern[]; sfx: number[] }>();
+  private readonly dialogs = inject(DialogService);
+
   readonly patched = output<Partial<Instrument>>();
   readonly duplicate = output();
+  readonly removed = output();
   /** Base64 PCM keyed by sample id — the game document's own `samples` map. */
   readonly samples = input.required<Map<string, string>>();
   /** Emitted with the encoded PCM (or null to drop it); the library owns the document write. */
   readonly sampleChange = output<{ id: string; pcm: string | null }>();
   protected readonly oscs = OSCS;
-  protected readonly colours = ACCENT_SLOTS;
   protected readonly filters = FILTERS;
   protected readonly envKeys = ['attack', 'decay', 'sustain', 'release'] as const;
   protected readonly envValues = computed(() => this.inst().env);
@@ -432,9 +470,16 @@ export class InstrumentInspectorComponent {
     this.patched.emit({ sampleId: undefined });
   }
 
-  protected rename(e: Event): void {
-    const name = (e.target as HTMLInputElement).value.trim();
-    if (name) this.patched.emit({ name });
+  protected edit(): void {
+    const inst = this.inst();
+    this.dialogs
+      .open<InstrumentDialog, InstrumentDialogData, InstrumentDialogResult | undefined>(
+        InstrumentDialog,
+        { data: { name: inst.name, colour: inst.colour, palette: this.palette() } },
+      )
+      .closed.subscribe((r: InstrumentDialogResult | undefined) => {
+        if (r) this.patched.emit({ name: r.name, colour: r.colour });
+      });
   }
   /** "+3 st" reads as a pitch offset; a bare number reads as anything. */
   protected semis(n: number): string {

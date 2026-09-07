@@ -5,7 +5,7 @@ import { patchState, signalStore, withComputed, withMethods, withState } from '@
  * Snap is a resolution, not an on/off: "1/16" and "1/8" place notes on different grids, and OFF
  * is one of the choices rather than a separate switch. The value is the denominator in beats.
  */
-export const SNAP_DIVISIONS = [1, 2, 4, 8, 16] as const;
+export const SNAP_DIVISIONS = [4, 8, 16, 32] as const;
 export type SnapDivision = (typeof SNAP_DIVISIONS)[number] | 0;
 
 interface SoundState {

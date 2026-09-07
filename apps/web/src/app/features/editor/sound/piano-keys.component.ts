@@ -29,7 +29,7 @@ interface Key {
     @for (k of keys(); track k.pitch) {
       <button
         type="button"
-        class="relative block w-full shrink-0 cursor-pointer text-left"
+        class="relative block w-full shrink-0 cursor-pointer border-b border-b-page text-left"
         [style.height.px]="ROW_H"
         [class]="k.black ? 'bg-ink-body' : k.c ? 'bg-ink' : 'bg-ink-body'"
         [attr.aria-label]="k.name"
@@ -46,7 +46,14 @@ interface Key {
             {{ k.name }}
           </span>
         }
-        <span class="absolute inset-0 hover:bg-gold/20 active:bg-gold/35"></span>
+        <!--
+          The one inset shadow the design allows, and it is here because a key is the one control
+          in the app that stands for a physical thing you push. Hover lights it; pressing sinks it,
+          which is the whole of the feedback — a key that only changes colour reads as a swatch.
+        -->
+        <span
+          class="absolute inset-0 hover:bg-gold/15 hover:shadow-[inset_0_1px_3px_rgba(0,0,0,0.5)] active:bg-gold/30 active:shadow-[inset_0_3px_7px_rgba(0,0,0,0.75)]"
+        ></span>
       </button>
     }
   `,
