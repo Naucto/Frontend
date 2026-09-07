@@ -47,7 +47,7 @@ const NAV_LINK =
          shape between hub and editor was the worse of the two. -->
     <header
       *transloco="let t"
-      class="relative flex min-h-7 flex-wrap items-center gap-2 border-b border-line bg-panel py-1 pr-2 pl-0 md:flex-nowrap md:py-0"
+      class="relative flex min-h-7 flex-wrap items-center gap-x-0 gap-y-2 border-b border-line bg-panel py-1 pr-2 pl-0 md:flex-nowrap md:py-0"
     >
       <a
         routerLink="/hub"
@@ -60,7 +60,7 @@ const NAV_LINK =
       <!-- Below md the links collapse behind the menu button; the header never scrolls sideways. -->
       <button
         type="button"
-        class="inline-flex h-4 w-4 items-center justify-center rounded-xs text-ink-3 hover:text-ink md:hidden"
+        class="ms-1 inline-flex h-4 w-4 items-center justify-center rounded-xs text-ink-3 hover:text-ink md:hidden"
         [attr.aria-expanded]="menuOpen()"
         [attr.aria-label]="t('nav.main')"
         (click)="menuOpen.set(!menuOpen())"
@@ -98,16 +98,16 @@ const NAV_LINK =
              only leaves the flow once there is room for 420 between two 384-wide clusters. -->
         <nc-search
           #search
-          class="min-w-0 flex-1 md:flex-[0_1_420px] xl:absolute xl:top-1/2 xl:left-1/2 xl:w-[420px] xl:flex-none xl:-translate-x-1/2 xl:-translate-y-1/2"
+          class="ms-2 min-w-0 flex-1 md:flex-[0_1_420px] xl:absolute xl:top-1/2 xl:left-1/2 xl:ms-0 xl:w-[420px] xl:flex-none xl:-translate-x-1/2 xl:-translate-y-1/2"
           [placeholder]="t('nav.search')"
           [value]="query()"
           (submitted)="submit($event)"
         />
       } @else {
-        <span class="hidden flex-1 md:block"></span>
+        <span class="ms-2 hidden flex-1 md:block"></span>
       }
 
-      <div class="flex flex-1 items-center justify-end gap-1 md:min-w-[384px]">
+      <div class="ms-2 flex flex-1 items-center justify-end gap-1 md:min-w-[384px]">
         @if (auth.isAuthenticated()) {
           <!-- The design writes the plus, rather than drawing it: at this size the glyph and the
                icon are the same mark, and the glyph keeps the button at its 120px. Narrow enough
