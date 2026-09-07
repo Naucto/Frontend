@@ -45,11 +45,13 @@ const SCALE = 3;
       tabindex="0"
     ></canvas>
   `,
-  // Square, because the sheet is: a band of it would hide wherever the view is not, which is the
-  // one thing this is here to show. Flush left, because its label is: centred in a panel wider than
-  // 198px the two took different left edges and stopped reading as one control.
+  // Drawn at the size it is painted: one art pixel has to be a whole number of screen pixels, or
+  // the grid of sprite boundaries falls between them. Where there is not room, the panel scrolls
+  // rather than the drawing shrinking.
   host: {
-    class: 'block aspect-square max-h-[198px] rounded-xs border border-line bg-inset',
+    class: 'box-content block shrink-0 rounded-xs border border-line bg-inset',
+    '[style.width.px]': 'width',
+    '[style.height.px]': 'height',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
