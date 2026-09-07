@@ -148,18 +148,22 @@ const RAIL: RailItem<EditorTab>[] = [
               [primaryWidth]="consoleWidth()"
               [secondaryWidth]="REFERENCE_WIDTH"
             >
+              <!-- Built only while it is open: the reference has nothing running in it, so unlike
+                   the console it costs nothing to rebuild and something to keep. -->
               <div secondary class="flex min-h-0 flex-col border-l border-line">
-                <nc-doc-pane class="min-h-0 flex-1 overflow-auto" />
-                <!-- The artboard puts this at the foot of the reference, and only where the
-                     reference has taken the game's place — the one arrangement in which the game
-                     really has been put away. -->
-                @if (ui.columnMode() === 'swap') {
-                  <div
-                    class="flex shrink-0 items-center gap-1 border-t border-line bg-inset px-1.5 py-1"
-                  >
-                    <nc-icon name="pause" [size]="12" class="text-gold-ink" />
-                    <span class="label text-gold-ink">{{ t('editor.gamePaused') }}</span>
-                  </div>
+                @if (ui.referenceOpen()) {
+                  <nc-doc-pane class="min-h-0 flex-1 overflow-auto" />
+                  <!-- The artboard puts this at the foot of the reference, and only where the
+                       reference has taken the game's place — the one arrangement in which the game
+                       really has been put away. -->
+                  @if (ui.columnMode() === 'swap') {
+                    <div
+                      class="flex shrink-0 items-center gap-1 border-t border-line bg-inset px-1.5 py-1"
+                    >
+                      <nc-icon name="pause" [size]="12" class="text-gold-ink" />
+                      <span class="label text-gold-ink">{{ t('editor.gamePaused') }}</span>
+                    </div>
+                  }
                 }
               </div>
               <nc-console-column

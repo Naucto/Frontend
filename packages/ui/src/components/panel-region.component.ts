@@ -22,7 +22,9 @@ export type PanelRegionMode = 'primary' | 'beside' | 'instead';
  * floating out of the flow with it. A panel in a zero-width track must therefore fold its own
  * contents away; the region only sets the track.
  *
- * The secondary has no such tenant, so it leaves the layout when it is closed.
+ * The secondary only leaves the layout; whether it also leaves the document is the caller's to
+ * decide, and worth deciding — a panel built at every boot for a track nobody has opened is a cost
+ * paid by everyone who never opens it.
  */
 @Component({
   selector: 'nc-panel-region',

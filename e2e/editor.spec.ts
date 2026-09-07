@@ -166,17 +166,19 @@ test.describe('editor', () => {
     const canvas = page.getByRole('img', { name: 'Sprite canvas' });
     await expect(canvas).toBeVisible();
 
-    // The design gives the canvas tabs three columns, not four: the console belongs beside CODE,
-    // where the machine talks back while you type. So it starts collapsed here — and the viewer
-    // stays shut with it, rather than arriving over the canvas unasked.
+    // The console is CODE's own sidebar, the way this tab's inspector is its own — so on a canvas
+    // tab it is not collapsed, it is not there, and there is no grip to bring it back. The runtime
+    // is reachable here as the floating viewer instead.
     await expect(page.getByRole('button', { name: 'Clear' })).toHaveCount(0);
     await expect(page.getByText('Viewer · 320×180')).toHaveCount(0);
-    await page.getByRole('button', { name: 'Show the panel' }).click();
-    await expect(page.getByRole('button', { name: 'Clear' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Show the panel' })).toHaveCount(0);
+
+    // The viewer is floated from the console's own header, so it is opened where the console is and
+    // followed here — which is the whole of what "it follows you across editors" claims.
+    await page.goto('/edit/7/code');
     await page.getByRole('button', { name: 'Pop the viewer out' }).click();
+    await page.goto('/edit/7/art');
     await expect(page.getByText('Viewer · 320×180')).toBeVisible();
-    await page.getByRole('button', { name: 'Collapse the panel' }).click();
-    await expect(page.getByRole('button', { name: 'Clear' })).toHaveCount(0);
 
     const box = await canvas.boundingBox();
     expect(box).not.toBeNull();
@@ -213,7 +215,7 @@ test.describe('editor', () => {
 
     // Beside, not above. Presence alone passed happily while a runtime-built grid class Tailwind
     // had never generated left all four columns stacked down the page.
-    const pane = await page.locator('nc-doc-pane').boundingBox();
+    const pane = await page.locator('nc-panel-region > div').first().boundingBox();
     const console_ = await page.locator('nc-console-column').boundingBox();
     expect(pane).not.toBeNull();
     expect(console_).not.toBeNull();
