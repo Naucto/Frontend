@@ -177,15 +177,8 @@ import { VirtualPadComponent } from './virtual-pad.component';
           }
           <span class="flex-1"></span>
           <ng-content select="[transport-extra]" />
-          <!-- Who is on the game, and on what: the design keeps this in the bar, not behind a popover. -->
-          @for (p of players(); track p.slot) {
-            <span
-              class="flex items-center gap-0.5 font-mono text-label whitespace-nowrap text-ink-3"
-            >
-              <nc-icon [name]="p.pad ? 'gamepad' : 'keyboard'" [size]="12" />
-              P{{ p.slot }}
-            </span>
-          }
+          <!-- What the game is played on comes before who is playing: the strip reads left to
+               right as settings, then people, and the two were the other way round. -->
           <button
             ncButton
             variant="ghost"
@@ -198,6 +191,15 @@ import { VirtualPadComponent } from './virtual-pad.component';
           >
             <nc-icon name="gamepad" [size]="12" />
           </button>
+          <!-- Who is on the game, and on what: the design keeps this in the bar, not behind a popover. -->
+          @for (p of players(); track p.slot) {
+            <span
+              class="flex items-center gap-0.5 font-mono text-label whitespace-nowrap text-ink-3"
+            >
+              <nc-icon [name]="p.pad ? 'gamepad' : 'keyboard'" [size]="12" />
+              P{{ p.slot }}
+            </span>
+          }
           <ng-template #pads>
             <nc-popover-panel title="Gamepads" class="w-[280px]">
               <div class="p-1.5">
