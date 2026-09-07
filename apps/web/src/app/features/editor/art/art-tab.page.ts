@@ -99,18 +99,18 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
           </div>
           <nc-tool-group [items]="tools()" [value]="art.tool()" (valueChange)="setTool($event)" />
           <div class="flex min-w-0 items-center justify-end gap-0.5">
-            <!-- With the whole sheet on the canvas, this is what keeps a stroke off the sprite
-                 next door. Off, the tools reach the sheet's own edges. -->
-            <nc-toggle-button
-              class="shrink-0"
-              [checked]="art.clip()"
-              (checkedChange)="art.setClip($event)"
-            >
-              <nc-icon name="lock" [size]="12" />
-              {{ t('editor.art.clip') }}
-            </nc-toggle-button>
-            <!-- The other half of what the region means: the lock says how far a tool reaches,
-                 this says whether the rest of the sheet is on screen at all. -->
+            <!-- Only where there is something to keep a stroke off: with the sheet cropped away
+                 there is no sprite next door to reach, so the choice has no subject. -->
+            @if (!art.crop()) {
+              <nc-toggle-button
+                class="shrink-0"
+                [checked]="art.clip()"
+                (checkedChange)="art.setClip($event)"
+              >
+                <nc-icon name="lock" [size]="12" />
+                {{ t('editor.art.clip') }}
+              </nc-toggle-button>
+            }
             <nc-toggle-button
               class="mr-1 shrink-0"
               [checked]="art.crop()"

@@ -209,7 +209,9 @@ export class SpriteCanvasComponent {
       h: r.h * SPRITE_SIZE,
     };
   });
-  private readonly bounds = computed(() => toolBounds(this.region(), this.clip()));
+  // Cropped, a stroke is confined whatever the lock says: the sheet outside the region is not on
+  // screen, and a drag that leaves the canvas would otherwise still reach it.
+  private readonly bounds = computed(() => toolBounds(this.region(), this.clip() || this.crop()));
   protected readonly marks = computed<PresenceMark[]>(() => {
     const s = this.scale();
     return this.collaborators()
