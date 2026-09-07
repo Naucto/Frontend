@@ -21,7 +21,7 @@ import {
 } from '@naucto/ui';
 
 import { EditorRuntimeService } from '../state/editor-runtime.service';
-import { CONSOLE_WIDTH, EditorUiStore } from '../state/editor-ui.store';
+import { CONSOLE_WIDTH, EditorUiStore, REFERENCE_SPLIT_BREAKPOINT } from '../state/editor-ui.store';
 import { WorkSessionService } from '../work-session/work-session.service';
 
 /** The card's own width, so its corner can be computed rather than measured. Keep in step with the
@@ -46,10 +46,19 @@ const PIP_WIDTH = 304;
       <!-- No resize strip: the console is a fixed 421 track, like the reference beside it and
            every tab inspector. -->
       @if (shown()) {
+        <!-- Too narrow for both, and this grip is the switch between them rather than a way to
+             fold the column away: with the reference reachable only by a keystroke from here, the
+             pair could be left and not come back. -->
         <nc-edge-handle
-          [icon]="ui.collapsed() ? 'prev' : 'next'"
-          [label]="ui.collapsed() ? t('editor.expandConsole') : t('editor.collapseConsole')"
-          (pressed)="ui.toggleCollapsed()"
+          [icon]="swaps() ? 'sync' : ui.collapsed() ? 'prev' : 'next'"
+          [label]="
+            swaps()
+              ? t('editor.swapToReference')
+              : ui.collapsed()
+                ? t('editor.expandConsole')
+                : t('editor.collapseConsole')
+          "
+          (pressed)="swaps() ? ui.setReferenceOpen(true) : ui.toggleCollapsed()"
         />
       }
       @if (shown() && !ui.collapsed() && popped()) {
@@ -225,6 +234,8 @@ export class ConsoleColumnComponent {
   protected readonly popped = computed(() => this.ui.consoleMode() === 'pip' && this.ui.pipOpen());
   /** Told rather than worked out: what shows in the track is the region's to decide, not a column's. */
   readonly shown = input(true);
+
+  protected readonly swaps = computed(() => this.ui.viewportWidth() < REFERENCE_SPLIT_BREAKPOINT);
 
   protected readonly screenHidden = computed(
     () =>

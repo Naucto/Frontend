@@ -331,6 +331,7 @@
     "publishBlockedFields": "Blocked — a game needs a name and a summary",
     "collapseConsole": "Collapse the panel",
     "expandConsole": "Show the panel",
+    "swapToReference": "Swap to the reference",
     "popOut": "Pop the viewer out",
     "cannotOpen": "This project would not open",
     "viewer": "Viewer",

@@ -263,6 +263,34 @@ test.describe('editor', () => {
   });
 
   /** There is no DOC tab and no DOC button — the design has neither. */
+  /**
+   * Too narrow for both, the sidebar holds one or the other and its grip is the way across. It used
+   * to be a one-way door: the reference could be dismissed and only a keystroke brought it back.
+   */
+  test('the sidebar swaps both ways where there is room for one', async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 1030 });
+    await page.goto('/edit/7/code');
+    await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+
+    await expect(page.locator('nc-doc-pane')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Swap to the reference' }).click();
+    await expect(page.locator('nc-doc-pane')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Swap back to the game' }).click();
+    await expect(page.locator('nc-doc-pane')).toHaveCount(0);
+    await expect(page.getByText('320×180').first()).toBeVisible();
+  });
+
+  /** Wide enough for both, the same grip folds the column away instead. */
+  test('the console grip folds where both fit', async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 1030 });
+    await page.goto('/edit/7/code');
+    await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+
+    await expect(page.getByRole('button', { name: 'Swap to the reference' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Collapse the panel' })).toBeVisible();
+  });
+
   test('the reference is closed from its own edge, not from a tab', async ({ page }) => {
     await page.setViewportSize({ width: 1920, height: 1030 });
     await page.goto('/edit/7/code');
