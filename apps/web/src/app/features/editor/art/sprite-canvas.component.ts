@@ -127,7 +127,6 @@ export class SpriteCanvasComponent {
   readonly region = input.required<SpriteRect>();
   /** Whether a tool stops at the region's edge or may paint anywhere on the sheet. */
   readonly clip = input(true, { transform: booleanAttribute });
-  /** Whether everything outside the region is covered, and the fit follows the region. */
   readonly crop = input(false, { transform: booleanAttribute });
   readonly tool = input<ArtTool>('pen');
   readonly colour = input(4);
