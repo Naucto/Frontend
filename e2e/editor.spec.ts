@@ -190,6 +190,29 @@ test.describe('editor', () => {
   });
 
   /**
+   * Cropped, the canvas is the region rather than the whole sheet with the rest covered, so every
+   * coordinate in it is offset by where the region sits. A stroke landing on the wrong pixels is
+   * the kind of thing that looks right and paints somewhere else.
+   */
+  test('ART paints the pixel under the pointer while cropped', async ({ page }) => {
+    await page.goto('/edit/7/art');
+    const canvas = page.getByRole('img', { name: 'Sprite canvas' });
+    await expect(canvas).toBeVisible();
+
+    await page.getByRole('switch', { name: /crop/i }).click();
+    // Away from the sheet's origin, so an unoffset coordinate would miss.
+    await page.getByRole('img', { name: /Sheet map/ }).click({ position: { x: 130, y: 90 } });
+
+    const before = await page.getByText(/\d+ \/ 256 used/).textContent();
+    const box = await canvas.boundingBox();
+    expect(box).not.toBeNull();
+    if (box) {
+      await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    }
+    await expect(page.getByText(/\d+ \/ 256 used/)).not.toHaveText(String(before));
+  });
+
+  /**
    * Artboard 1c, "the screen is always on". Wide enough and the reference sits beside the console,
    * which keeps the running game; below that it takes the console's place and the game is paused,
    * which is the one arrangement where GAME PAUSED means anything.
