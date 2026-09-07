@@ -4,7 +4,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 @Component({
   selector: 'nc-popover-panel',
   template: `
-    @if (title()) {
+    @if (title() && header()) {
       <header class="flex h-4 items-center justify-between border-b border-line px-2">
         <span class="label">{{ title() }}</span>
         <ng-content select="[actions]" />
@@ -22,4 +22,9 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 })
 export class PopoverPanelComponent {
   readonly title = input<string>();
+  /**
+   * Off where the caller draws its own head row, which still needs the title for the label a
+   * screen reader reads out.
+   */
+  readonly header = input(true);
 }

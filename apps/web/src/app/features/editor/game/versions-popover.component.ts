@@ -110,8 +110,15 @@ const toRows = (raw: unknown, key: 'versions' | 'checkpoints', release: boolean)
       </span>
     }
     <ng-template #panel>
-      <nc-popover-panel title="Versions" class="w-[354px]">
-        <span actions class="label text-ink-4">name one to release it</span>
+      <nc-popover-panel title="Versions" [header]="false" class="w-[354px]">
+        <!-- Its own head row: the sheet gives this one a raised band where every other popover in
+             the app has a plain rule, and it is the only one the sheet draws open. -->
+        <header
+          class="flex h-[38px] items-center justify-between border-b border-line bg-raised px-2"
+        >
+          <span class="label text-ink-3">Versions</span>
+          <span class="label text-ink-4">name one to release it</span>
+        </header>
         <div class="p-2">
           <!-- No rules between the rows: the sheet separates them by giving the current one a
                ground of its own, and a list that also ruled every gap read as a table. -->

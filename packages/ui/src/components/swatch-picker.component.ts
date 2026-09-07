@@ -16,7 +16,7 @@ import { IconComponent } from './icon.component';
     @if (allowNone()) {
       <button
         type="button"
-        class="flex h-[22px] w-[22px] items-center justify-center rounded-xs border border-line-strong text-ink-4 outline-offset-2"
+        class="flex h-[22px] w-[22px] items-center justify-center rounded-sm border border-line-strong text-ink-4 outline-offset-2"
         [class]="value() === null ? 'outline-2 outline-ink' : ''"
         [attr.aria-label]="noneLabel()"
         [attr.aria-pressed]="value() === null"
@@ -28,7 +28,7 @@ import { IconComponent } from './icon.component';
     @for (slot of slots(); track slot) {
       <button
         type="button"
-        class="h-[22px] w-[22px] rounded-xs outline-offset-2"
+        class="h-[22px] w-[22px] rounded-sm outline-offset-2"
         [class]="value() === slot ? 'outline-2 outline-ink' : ''"
         [style.background]="colours()[slot]"
         [attr.aria-label]="slotLabel() + ' ' + slot"
@@ -37,7 +37,7 @@ import { IconComponent } from './icon.component';
       ></button>
     }
   `,
-  host: { class: 'flex flex-wrap items-center gap-0.75' },
+  host: { class: 'flex flex-wrap items-center gap-[5px]' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SwatchPickerComponent {
