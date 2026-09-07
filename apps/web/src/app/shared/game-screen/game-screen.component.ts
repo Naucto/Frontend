@@ -175,10 +175,25 @@ import { VirtualPadComponent } from './virtual-pad.component';
               320×180 · {{ fit() === 'width' ? 'FIT TO WIDTH' : 'INTEGER SCALE' }}
             </span>
           }
-          <span class="flex-1"></span>
+          <!-- The switch belongs to the left half: the strip reads as what the game runs on, then
+               who is running it, and the break goes between those two. Sitting before the switch,
+               the spacer put the break inside the first half and left the switch adrift beside the
+               player markers. -->
           <ng-content select="[transport-extra]" />
-          <!-- What the game is played on comes before who is playing: the strip reads left to
-               right as settings, then people, and the two were the other way round. -->
+          <span class="flex-1"></span>
+          <!-- Who is on the game, and on what: the design keeps this in the bar, not behind a popover. -->
+          @for (p of players(); track p.slot) {
+            <span
+              class="flex items-center gap-0.5 font-mono text-label whitespace-nowrap"
+              [class]="p.here ? 'text-ink-3' : 'text-ink-4'"
+            >
+              <nc-icon [name]="p.pad ? 'gamepad' : 'keyboard'" [size]="12" />
+              P{{ p.slot }}
+            </span>
+          }
+          <!-- Last, where the design puts it. Wedged between the switch and the player markers it
+               split the people from their own labels and read as a stray glyph among captioned ones:
+               every other item in that half of the strip says what it is. -->
           <button
             ncButton
             variant="ghost"
@@ -191,16 +206,6 @@ import { VirtualPadComponent } from './virtual-pad.component';
           >
             <nc-icon name="gamepad" [size]="12" />
           </button>
-          <!-- Who is on the game, and on what: the design keeps this in the bar, not behind a popover. -->
-          @for (p of players(); track p.slot) {
-            <span
-              class="flex items-center gap-0.5 font-mono text-label whitespace-nowrap"
-              [class]="p.here ? 'text-ink-3' : 'text-ink-4'"
-            >
-              <nc-icon [name]="p.pad ? 'gamepad' : 'keyboard'" [size]="12" />
-              P{{ p.slot }}
-            </span>
-          }
           <ng-template #pads>
             <nc-popover-panel title="Gamepads" class="w-[280px]">
               <div class="p-1.5">
@@ -300,7 +305,11 @@ export class GameScreenComponent {
   protected readonly transportClass = computed(() => {
     if (this.overlay() || this.isFullscreen())
       return (
-        'absolute inset-x-0 bottom-0 flex h-[50px] items-end gap-px px-0.75 pb-0.75 ' +
+        // Centred on one median with one gap. Bottom-aligned on a 1px gap, the strip's spacing came
+        // from whatever padding each child happened to carry — a button's, the switch's, a label
+        // pair's — so no two neighbours sat the same distance apart, and a 16px switch, a 12px glyph
+        // and a line of text ended up on three different baselines.
+        'absolute inset-x-0 bottom-0 flex h-[36px] items-center gap-0.75 px-1.25 ' +
         'bg-[image:var(--nc-scrim-video)]'
       );
     const shape = this.compact()
