@@ -268,7 +268,6 @@
     border-color: transparent;
     color: var(--nc-ink-2);
   }
-  /* Unavailable settles somewhere else, so the gap has to hold that instead. */
   [ncButton]:disabled {
     border-color: var(--nc-line);
     color: var(--nc-ink-4);
