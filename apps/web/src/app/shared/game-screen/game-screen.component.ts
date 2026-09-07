@@ -67,10 +67,10 @@ import { VirtualPadComponent } from './virtual-pad.component';
     >
       <div
         class="relative mx-auto flex max-w-[1600px] items-center justify-center overflow-hidden bg-black"
-        [class.rounded-t-sm]="!overlay()"
-        [class.border]="!overlay()"
-        [class.border-line]="!overlay()"
-        [class.rounded-b-sm]="!transport() && !overlay()"
+        [class.rounded-t-sm]="!overlay() && !compact()"
+        [class.border]="!overlay() && !compact()"
+        [class.border-line]="!overlay() && !compact()"
+        [class.rounded-b-sm]="!transport() && !overlay() && !compact()"
         [class.aspect-video]="fit() === 'width'"
       >
         <canvas
@@ -233,7 +233,7 @@ import { VirtualPadComponent } from './virtual-pad.component';
             aria-label="Fullscreen"
             (click)="fullscreen()"
           >
-            <nc-icon name="expand" [size]="12" />
+            <nc-icon name="fullscreen" [size]="12" />
           </button>
         </div>
       }
