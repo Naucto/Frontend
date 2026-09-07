@@ -242,15 +242,7 @@ export class ConsoleColumnComponent {
   /** The viewer floats over the editor instead of sitting in the column. */
   protected readonly popped = computed(() => this.ui.consoleMode() === 'pip' && this.ui.pipOpen());
   /** Docked in a collapsed column, or standing in for the docs: either way there is nowhere to be. */
-  /**
-   * Whether the column takes its track.
-   *
-   * It is CODE's own sidebar, the way every other tab has one of its own, and it also stands in
-   * for the reference on a window too narrow to give that a column of its own.
-   *
-   * It stays mounted where it does not show, because unmounting cold-starts the game, drops any
-   * netplay session, and takes the floating window with it.
-   */
+  /** CODE's own sidebar, as every other tab has one — and the track the reference borrows. */
   protected readonly docked = computed(
     () => this.ui.activeTab() === 'code' || this.ui.columnMode() === 'swap',
   );

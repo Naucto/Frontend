@@ -209,10 +209,6 @@ export class EditorShellComponent implements OnInit {
       : 'grid min-h-0 grid-cols-[81px_minmax(0,1fr)_var(--console-w)]',
   );
 
-  /**
-   * Zero where the column has nothing to be: it is CODE's own sidebar, the way every other tab has
-   * one of its own, and it also stands in for the reference on a window too narrow for both.
-   */
   protected readonly consoleWidth = computed(() => {
     if (this.ui.activeTab() !== 'code' && this.ui.columnMode() !== 'swap') return 0;
     return this.ui.collapsed() ? 12 : CONSOLE_WIDTH;
