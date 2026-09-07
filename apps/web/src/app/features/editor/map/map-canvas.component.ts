@@ -102,7 +102,7 @@ export class MapCanvasComponent {
   readonly game = input.required<Game>();
   readonly painter = input.required<SheetPainter>();
   readonly tool = input<MapTool>('stamp');
-  /** The block of the sheet a press stamps, as a rectangle on it. */
+  /** In sheet cells, not map cells: where the tiles come from, not where they land. */
   readonly brush = input<TileRect>({ x: 1, y: 0, w: 1, h: 1 });
   readonly grid = input(true);
   readonly flags = input(false);
@@ -422,8 +422,6 @@ export class MapCanvasComponent {
     }
     const h = this.hoverCell();
     if (h) {
-      // What a press would put down, so it is the brush's own shape where a press stamps one and a
-      // single tile where it does anything else.
       const stamps = this.tool() === 'stamp' || this.tool() === 'erase';
       const b = this.brush();
       const w = stamps ? b.w : 1;

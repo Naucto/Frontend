@@ -38,9 +38,8 @@ interface MapState {
   /**
    * The block of the sheet a press stamps, as a rectangle on it.
    *
-   * One value rather than an origin and a size, because it is one gesture: the tile picker is drawn
-   * on by dragging, exactly as the drawing board's sheet map is. A size chosen apart from a
-   * position was two controls for one thing, and only one of them could be a rectangle.
+   * One value rather than an origin and a size, because the picker is drawn on: where to take from
+   * and how much to take are the same gesture.
    */
   brush: TileRect;
   grid: boolean;
