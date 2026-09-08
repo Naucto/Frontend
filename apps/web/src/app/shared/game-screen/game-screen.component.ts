@@ -96,7 +96,7 @@ import { VirtualPadComponent } from './virtual-pad.component';
           <button
             type="button"
             class="absolute inset-0 flex items-center justify-center bg-page/60 text-ink hover:text-gold-ink"
-            (click)="host.play()"
+            (click)="play()"
             aria-label="Play"
           >
             <nc-icon name="play" [size]="48" />
@@ -140,7 +140,7 @@ import { VirtualPadComponent } from './virtual-pad.component';
                 size="sm"
                 iconOnly
                 aria-label="Play"
-                (click)="host.state() === 'paused' ? host.resume() : host.play()"
+                (click)="host.state() === 'paused' ? resume() : play()"
               >
                 <nc-icon name="play" [size]="12" class="text-hot-ink" />
               </button>
@@ -454,6 +454,21 @@ export class GameScreenComponent {
 
   focus(): void {
     this.canvas().nativeElement.focus({ preventScroll: true });
+  }
+
+  /**
+   * Starting the game hands it the keyboard. The canvas is what listens, so without this a player
+   * pressed PLAY and then pressed arrow keys at whatever the browser had focused — the button they
+   * had just clicked — and the game did not move.
+   */
+  play(): void {
+    this.host.play();
+    this.focus();
+  }
+
+  resume(): void {
+    this.host.resume();
+    this.focus();
   }
 
   /**
