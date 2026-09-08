@@ -54,7 +54,7 @@ const NAV_LINK =
         class="flex w-[81px] shrink-0 items-center justify-center"
         aria-label="Naucto"
       >
-        <img src="/img/logo.png" alt="" width="32" height="32" class="pixelated" />
+        <img src="/img/logo.svg" alt="" width="32" height="32" />
       </a>
 
       <!-- Below md the links collapse behind the menu button; the header never scrolls sideways. -->

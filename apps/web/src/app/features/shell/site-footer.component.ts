@@ -16,7 +16,7 @@ import { IconComponent } from '@naucto/ui';
       >
         <div>
           <div class="flex items-center gap-1">
-            <img src="/img/logo.png" alt="" width="24" height="24" />
+            <img src="/img/logo.svg" alt="" width="24" height="24" />
             <span class="text-title text-ink">Naucto</span>
           </div>
           <p class="mt-1 max-w-[38ch] text-body text-ink-2">{{ t('footer.tagline') }}</p>

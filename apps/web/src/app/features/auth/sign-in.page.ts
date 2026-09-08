@@ -25,7 +25,7 @@ import { BrandMarkComponent, ButtonDirective, FieldComponent, InputDirective } f
       <!-- A wordmark, as the artboard has it: the bare glyph reads as decoration on a card that is
            otherwise all field labels. Same pairing the footer uses. -->
       <div class="mb-2 flex items-center gap-1">
-        <img src="/img/logo.png" alt="" width="22" height="22" class="pixelated" />
+        <img src="/img/logo.svg" alt="" width="22" height="22" />
         <span class="text-title text-ink">Naucto</span>
       </div>
       <h1 class="mt-2 text-[22px] leading-[1.2] text-ink">{{ t('auth.insertGame') }}</h1>

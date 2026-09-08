@@ -100,7 +100,7 @@ const RAIL: RailItem<EditorTab>[] = [
           class="flex w-[81px] shrink-0 items-center justify-center"
           [attr.aria-label]="t('nav.myGames')"
         >
-          <img src="/img/logo.png" alt="" width="32" height="32" class="pixelated" />
+          <img src="/img/logo.svg" alt="" width="32" height="32" />
         </a>
         @if (live()) {
           <nc-versions-popover />
