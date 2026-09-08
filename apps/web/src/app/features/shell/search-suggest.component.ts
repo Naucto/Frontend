@@ -17,6 +17,7 @@ import { type ProjectExResponseDto } from '@naucto/api-client';
 import {
   AvatarComponent,
   HighlightComponent,
+  IconComponent,
   OnlineDotComponent,
   SearchComponent,
   SuggestPanelComponent,
@@ -49,6 +50,7 @@ type Target =
     SuggestRowComponent,
     HighlightComponent,
     AvatarComponent,
+    IconComponent,
     OnlineDotComponent,
     GameCoverComponent,
   ],
@@ -195,7 +197,11 @@ type Target =
             @if (parsed().tagsOnly) {
               <span>{{ t('search.footerTags', { tag: parsed().term }) }}</span>
             } @else {
-              <span>{{ t('search.move') }}</span>
+              <span class="flex items-center gap-1">
+                <nc-icon name="arrow-up" [size]="12" />
+                <nc-icon name="arrow-down" [size]="12" />
+                {{ t('search.move') }}
+              </span>
               <span>{{ t('search.enterOpen') }}</span>
               <span>{{ t('search.tabResults') }}</span>
             }

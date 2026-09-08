@@ -129,9 +129,9 @@
   "hub": {
     "title": "Hub",
     "soon": "The hub lands in the next step.",
-    "results": "Results for “{{q}}”",
+    "results": "Results for \"{{q}}\"",
     "noMatch": "Nothing matches that",
-    "noMatchHint": "No games, people or tags for “{{q}}”. Drop a word — or be the first to make one.",
+    "noMatchHint": "No games, people or tags for \"{{q}}\". Drop a word — or be the first to make one.",
     "makeIt": "Make it yourself",
     "gameOfTheWeek": "Game of the week",
     "by": "by {{name}}",
@@ -177,7 +177,7 @@
     "nothingYet": "NOTHING YET",
     "enterAnyway": "— ENTER searches everything anyway",
     "footerTags": "ENTER — ALL GAMES TAGGED {{tag}}",
-    "move": "↑↓ MOVE",
+    "move": "MOVE",
     "enterOpen": "ENTER OPEN",
     "tabResults": "TAB FULL RESULTS",
     "escClose": "ESC CLOSE"
@@ -594,7 +594,7 @@
     "sent": "Request sent",
     "remove": "Remove friend",
     "search": "Search",
-    "noMatch": "Nobody called “{{q}}”.",
+    "noMatch": "Nobody called \"{{q}}\".",
     "emptyHint": "Search someone by name and ask. Friends show what they are building, not follower counts."
   },
   "profile": {
@@ -632,7 +632,7 @@
       "banner": "PROFILE BANNER",
       "spec": {
         "picture": "1:1 · SAVED AT 256",
-        "banner": "1918×220 · ≈8.7:1 — THE ZONE’S TRUE RATIO"
+        "banner": "1918×220 · ≈8.7:1 — THE ZONE'S TRUE RATIO"
       },
       "clear": {
         "picture": "RESET",
@@ -642,7 +642,11 @@
       "limits": "PNG · JPG · GIF — UP TO 2 MB",
       "browse": "BROWSE",
       "save": "SAVE",
-      "zoom": "Zoom"
+      "zoom": "Zoom",
+      "clearHint": {
+        "picture": "returns the coloured initial",
+        "banner": "back to SET A BANNER"
+      }
     }
   },
   "docs": {

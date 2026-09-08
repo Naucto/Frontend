@@ -115,24 +115,27 @@ interface ProfileExtras {
         >
           @if (p.backgroundImageUrl) {
             <img [src]="p.backgroundImageUrl" alt="" class="pixelated h-full w-full object-cover" />
-          } @else if (isSelf()) {
-            <!-- An instruction, not an absence: on your own profile the empty strip says what to
-                 do with it, and it never borrows the hatch, which means "no cover" elsewhere. -->
+          }
+          @if (isSelf()) {
+            <!-- The whole band is the target, not just the pencil in its corner: a chip that only
+                 exists on hover, on a strip this wide, is a control you have to already know about.
+                 Empty, it says what to do with itself — and never borrows the hatch, which means
+                 "no cover" on someone else's profile. -->
             <button
               type="button"
-              class="flex h-full w-full items-center justify-center gap-1 text-ink-3 hover:text-ink-2"
+              class="absolute inset-0 flex items-center justify-center gap-1 text-ink-3 hover:text-ink-2"
+              [attr.aria-label]="t('profile.image.banner')"
               (click)="editImage('banner', !!p.backgroundImageUrl)"
             >
-              <nc-icon name="image" [size]="24" />
-              <span class="label">{{ t('profile.setBanner') }}</span>
+              @if (!p.backgroundImageUrl) {
+                <nc-icon name="image" [size]="24" />
+                <span class="label">{{ t('profile.setBanner') }}</span>
+              }
             </button>
-          }
-          @if (isSelf() && p.backgroundImageUrl) {
-            <span class="absolute top-2 right-2 z-10">
+            <span class="pointer-events-none absolute top-2 right-2">
               <nc-edit-chip
                 [label]="t('profile.image.banner')"
                 [caption]="t('profile.zones.banner')"
-                (click)="editImage('banner', true)"
               />
             </span>
           }
