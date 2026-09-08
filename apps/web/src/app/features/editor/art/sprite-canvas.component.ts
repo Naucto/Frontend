@@ -42,7 +42,7 @@ import { type ArtTool, type PixelRect, type SpriteRect } from './art.store';
  * anybody would want to go.
  */
 export const MIN_ZOOM = 1;
-export const MAX_ZOOM = 32;
+export const MAX_ZOOM = 64;
 
 /**
  * One press of a magnifier: a quarter more or less, landing on a whole scale.
@@ -313,18 +313,26 @@ export class SpriteCanvasComponent {
     });
   }
 
-  /** Publishes what is on screen, in cells. */
+  /**
+   * Publishes what is on screen, in sheet cells.
+   *
+   * Cropped, the canvas holds the region rather than the sheet: what it scrolls over is that much
+   * smaller and starts at the region's own corner. Measured against the sheet either way, the
+   * rectangle handed to the sheet map described a place on it nobody was looking at.
+   */
   measure(): void {
     const el = this.host.nativeElement;
     const s = this.scale();
-    const css = this.px * s;
-    const span = (client: number, scroll: number): [number, number] =>
-      css <= client ? [0, this.px] : [scroll / s, client / s];
-    const [x, w] = span(el.clientWidth, el.scrollLeft);
-    const [y, h] = span(el.clientHeight, el.scrollTop);
+    const cropped = this.crop();
+    const r = this.regionPx();
+    const content = cropped ? r : { x: 0, y: 0, w: this.px, h: this.px };
+    const span = (client: number, scroll: number, size: number): [number, number] =>
+      size * s <= client ? [0, size] : [scroll / s, client / s];
+    const [x, w] = span(el.clientWidth, el.scrollLeft, content.w);
+    const [y, h] = span(el.clientHeight, el.scrollTop, content.h);
     this.view.set({
-      x: x / SPRITE_SIZE,
-      y: y / SPRITE_SIZE,
+      x: (content.x + x) / SPRITE_SIZE,
+      y: (content.y + y) / SPRITE_SIZE,
       w: w / SPRITE_SIZE,
       h: h / SPRITE_SIZE,
     });
