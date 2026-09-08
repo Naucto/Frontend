@@ -23,7 +23,7 @@ FROM deps AS build
 COPY . .
 ENV NODE_OPTIONS=--max-old-space-size=4096
 RUN npm run build:worklet -w @naucto/engine && npm run docs:build && npm run build -w web -- --configuration production \
-  && find apps/web/dist/browser -type f \( -name '*.js' -o -name '*.css' -o -name '*.html' -o -name '*.json' -o -name '*.svg' -o -name '*.ttf' \) -exec gzip -9 -k {} \;
+  && find apps/web/dist/browser -type f \( -name '*.js' -o -name '*.css' -o -name '*.html' -o -name '*.json' -o -name '*.svg' -o -name '*.ttf' \) ! -name 'config.json' -exec gzip -9 -k {} \;
 
 FROM nginx:1.27-alpine AS runtime
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
