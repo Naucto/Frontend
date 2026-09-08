@@ -12,12 +12,21 @@ import { patchState, signalStore, withComputed, withMethods, withState } from '@
 export const SNAP_DIVISIONS = [4, 8, 16, 32] as const;
 export type SnapDivision = (typeof SNAP_DIVISIONS)[number] | 0;
 
+/**
+ * How wide a step is drawn, as a multiple of its own width.
+ *
+ * Below one a sixty-four step pattern fits on a screen whole, which is the only way to see its
+ * shape; above it a note can be placed against a grain finer than the eye can aim at unaided.
+ */
+export const MIN_ZOOM = 0.5;
+export const MAX_ZOOM = 4;
+
 interface SoundState {
   instrumentId: string | null;
   patternId: string | null;
   /** Note value the grid snaps to, as its denominator; 0 is free placement. */
   snap: SnapDivision;
-  zoom: 1 | 2;
+  zoom: number;
   loop: boolean;
   metronome: boolean;
   /** Selected sfx slot for assignment, null when none. */
@@ -48,8 +57,8 @@ export const SoundStore = signalStore(
     setSnap(snap: SnapDivision): void {
       patchState(store, { snap });
     },
-    toggleZoom(): void {
-      patchState(store, { zoom: store.zoom() === 1 ? 2 : 1 });
+    setZoom(zoom: number): void {
+      patchState(store, { zoom: Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom)) });
     },
     setLoop(loop: boolean): void {
       patchState(store, { loop });

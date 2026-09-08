@@ -127,7 +127,6 @@ export class VoicesLaneComponent {
   readonly pattern = input.required<Pattern>();
   readonly instruments = input.required<Map<string, Instrument>>();
   readonly palette = input.required<readonly string[]>();
-  readonly zoom = input<1 | 2>(1);
   readonly stepWidth = input(24);
   readonly playhead = input<number | null>(null);
   readonly active = input<readonly boolean[]>([]);

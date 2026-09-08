@@ -29,6 +29,7 @@ import {
   PanelColumnComponent,
   PopoverDirective,
   PopoverPanelComponent,
+  SliderComponent,
   ToggleButtonComponent,
 } from '@naucto/ui';
 import * as Y from 'yjs';
@@ -44,9 +45,11 @@ import { InstrumentInspectorComponent } from './instrument-inspector.component';
 import { InstrumentListComponent } from './instrument-list.component';
 import { OscilloscopeComponent } from './oscilloscope.component';
 import { PianoRollComponent } from './piano-roll.component';
-import { SNAP_DIVISIONS, type SnapDivision, SoundStore } from './sound.store';
+import { MAX_ZOOM, MIN_ZOOM, SNAP_DIVISIONS, type SnapDivision, SoundStore } from './sound.store';
 import { SoundLibrary } from './sound-library';
 import { VoicesLaneComponent } from './voices-lane.component';
+
+const ZOOM_OCTAVES = Math.log2(MAX_ZOOM / MIN_ZOOM);
 
 const STEP_OPTIONS = [
   { value: '16', label: '16' },
@@ -72,6 +75,7 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
     PanelColumnComponent,
     PopoverDirective,
     PopoverPanelComponent,
+    SliderComponent,
     ToggleButtonComponent,
     InstrumentInspectorComponent,
     InstrumentListComponent,
@@ -307,7 +311,6 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
             [pattern]="p"
             [instruments]="library.instruments()"
             [palette]="palette()"
-            [zoom]="sound.zoom()"
             [stepWidth]="roll.stepW()"
             [scrollLeft]="roll.scrollX()"
             [playhead]="playhead()"
@@ -360,11 +363,42 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
             ncButton
             variant="ghost"
             size="sm"
-            [attr.aria-label]="t('editor.sound.zoom')"
-            (click)="sound.toggleZoom()"
+            iconOnly
+            class="shrink-0"
+            [attr.aria-label]="t('editor.sound.zoomOut')"
+            (click)="stepZoom(-1)"
+          >
+            <nc-icon name="zoom-out" [size]="12" />
+          </button>
+          <nc-slider
+            class="w-[88px] min-w-[40px] shrink"
+            [min]="0"
+            [max]="1"
+            [step]="0.001"
+            [value]="zoomAt()"
+            (valueChange)="setZoomAt($event)"
+            [label]="t('editor.sound.zoom')"
+            compact
+            hideLabel
+          />
+          <button
+            ncButton
+            variant="ghost"
+            size="sm"
+            iconOnly
+            class="shrink-0"
+            [attr.aria-label]="t('editor.sound.zoomIn')"
+            (click)="stepZoom(1)"
           >
             <nc-icon name="zoom-in" [size]="12" />
-            ×{{ sound.zoom() }}
+          </button>
+          <button
+            type="button"
+            class="w-[38px] shrink-0 text-right font-mono text-label text-ink-3 hover:text-ink"
+            [attr.aria-label]="t('editor.sound.zoomReset')"
+            (click)="sound.setZoom(1)"
+          >
+            ×{{ zoomLabel() }}
           </button>
         </div>
         @if (instrument(); as inst) {
@@ -523,6 +557,29 @@ export class SoundTabPage {
     const p = this.pattern();
     const bpm = Number(v);
     if (p && bpm >= 40 && bpm <= 240) this.library.updatePattern(p.id, { bpm });
+  }
+
+  /**
+   * The slider's own position, from nothing to all of it.
+   *
+   * Logarithmic, because a step of the same size at either end of the range is a different amount
+   * of zoom: half a step to a whole one is the same move as two to four.
+   */
+  protected readonly zoomAt = computed(
+    () => Math.log2(this.sound.zoom() / MIN_ZOOM) / ZOOM_OCTAVES,
+  );
+  protected readonly zoomLabel = computed(() => {
+    const z = this.sound.zoom();
+    return Number.isInteger(z) ? String(z) : z.toFixed(2).replace(/0$/, '');
+  });
+
+  protected setZoomAt(t: number): void {
+    this.sound.setZoom(MIN_ZOOM * Math.pow(2, t * ZOOM_OCTAVES));
+  }
+
+  /** A button moves by a whole octave, so it lands where somebody would have aimed the slider. */
+  protected stepZoom(delta: number): void {
+    this.sound.setZoom(this.sound.zoom() * Math.pow(2, delta));
   }
 
   /** The resolution the button is showing: `OFF`, or `1/8` for a division of 8. */

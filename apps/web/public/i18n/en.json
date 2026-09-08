@@ -446,7 +446,10 @@
       "replaceSample": "Replace",
       "removeSample": "Remove the sample",
       "sampleHint": "Any audio file. Mixed to mono and resampled to 8-bit / 8 kHz — {{seconds}} s fits the budget.",
-      "toStart": "Back to the start"
+      "toStart": "Back to the start",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "zoomReset": "Back to one step per cell"
     },
     "net": {
       "sharedState": "Shared state",

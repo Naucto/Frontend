@@ -114,7 +114,7 @@ export class PianoRollComponent {
    * switch: the denominator decides the grain, so 1/8 and 1/16 are different grids rather than "on".
    */
   readonly snap = input<number>(16);
-  readonly zoom = input<1 | 2>(1);
+  readonly zoom = input(1);
   readonly playhead = input<number | null>(null);
   readonly collaborators = input<readonly Collaborator[]>([]);
   readonly label = input('Piano roll');
@@ -158,7 +158,9 @@ export class PianoRollComponent {
   readonly scrollX = signal(0);
   private readonly scrollY = signal(0);
   /**
-   * A step is 24px wide at ×1, whatever the pattern's length, and zoom multiplies that.
+   * A step is 24px wide at ×1, whatever the pattern's length, and zoom multiplies that. Rounded to
+   * a whole pixel, because the canvas is sized in screen pixels and a grid line landing on half of
+   * one is the mush that sizing is there to avoid.
    *
    * The width used to stretch to fill the roll, which made every pattern look the same size: a
    * sixteen-step sketch filled the screen with four enormous bars and read as a finished piece,
@@ -166,7 +168,7 @@ export class PianoRollComponent {
    * roll says how long the pattern actually is — four bars occupy four bars' worth — and zoom is
    * only ever for going closer.
    */
-  readonly stepW = computed(() => 24 * this.zoom());
+  readonly stepW = computed(() => Math.round(24 * this.zoom()));
   /** As wide as the pattern, widened to the window when the window is the roomier of the two. */
   protected readonly width = computed(() =>
     Math.max(this.pattern().steps * this.stepW(), this.hostBox().w - KEY_W),
