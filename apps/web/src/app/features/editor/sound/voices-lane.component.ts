@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  inject,
+  input,
+  untracked,
+} from '@angular/core';
 import { type Instrument, type Note, type Pattern, VOICES } from '@naucto/engine';
 
 import { KEY_W, MAX_STEPS } from './piano-roll.component';
@@ -111,7 +120,7 @@ interface Bar {
   `,
   // No vertical overflow here, so height this strip loses is height it cuts. It keeps its own and
   // leaves the squeeze to whatever it is stacked against.
-  host: { class: 'block shrink-0 overflow-x-auto border-t border-line bg-panel' },
+  host: { class: 'block shrink-0 overflow-x-hidden border-t border-line bg-panel' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class VoicesLaneComponent {
@@ -123,6 +132,13 @@ export class VoicesLaneComponent {
   readonly playhead = input<number | null>(null);
   readonly active = input<readonly boolean[]>([]);
   readonly label = input('Voices');
+  /**
+   * Where the roll above has been scrolled to, in pixels.
+   *
+   * The lane has no scrollbar of its own: a bar has to sit under the note that lit it, and two
+   * boxes a person can scroll independently cannot promise that.
+   */
+  readonly scrollLeft = input(0);
 
   protected readonly height = LANE_TOTAL_H;
   protected readonly KEY_W = KEY_W;
@@ -138,6 +154,17 @@ export class VoicesLaneComponent {
       active: this.active()[index] ?? false,
     })),
   );
+
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  constructor() {
+    effect(() => {
+      const x = this.scrollLeft();
+      untracked(() => {
+        this.host.nativeElement.scrollLeft = x;
+      });
+    });
+  }
 
   protected readonly bars = computed<Bar[]>(() => {
     const sw = this.stepWidth();

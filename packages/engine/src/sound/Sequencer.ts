@@ -44,10 +44,11 @@ export class Sequencer {
     this.patterns = patterns;
   }
 
-  playSong(song: Song, loop: boolean, fadeIn: number): void {
+  /** `from` is where in the first pattern to begin, in steps; the clock rounds it onto its lattice. */
+  playSong(song: Song, loop: boolean, fadeIn: number, from = 0): void {
     this.song = { ...song, loop };
     this.seqIndex = 0;
-    this.subStep = 0;
+    this.subStep = Math.max(0, Math.round(from * SUBSTEPS));
     this.samplesToNextSubStep = 0;
     this.playing = song.sequence.length > 0;
     this.fade = fadeIn > 0 ? 0 : 1;

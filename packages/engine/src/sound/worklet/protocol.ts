@@ -14,7 +14,7 @@ export type SynthCommand =
     }
   | { type: 'note_off'; channel: number }
   | { type: 'play_sfx'; pattern: string; pitchOffset: number; volume: number; channel?: number }
-  | { type: 'play_song'; song: Song; loop: boolean; fadeIn: number }
+  | { type: 'play_song'; song: Song; loop: boolean; fadeIn: number; from?: number }
   | { type: 'stop_music'; fadeOut: number }
   | { type: 'stop_all' }
   | { type: 'mixer'; master: number; music?: number; sfx?: number };

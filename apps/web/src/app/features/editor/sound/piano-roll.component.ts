@@ -128,6 +128,8 @@ export class PianoRollComponent {
    * row-high jumps instead of moving.
    */
   readonly pointer = output<{ x: number; y: number } | null>();
+  /** A step the head was put on, from a press in the ruler. */
+  readonly seek = output<number>();
 
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -151,7 +153,8 @@ export class PianoRollComponent {
 
   private readonly hostBox = signal({ w: 0, h: 0 });
   /** Scroll offsets, so the ruler and the key column can be redrawn where they stay in view. */
-  private readonly scrollX = signal(0);
+  /** Read by whatever has to sit under this roll and stay under it. */
+  readonly scrollX = signal(0);
   private readonly scrollY = signal(0);
   /**
    * A step is 24px wide at ×1, whatever the pattern's length, and zoom multiplies that.
@@ -323,9 +326,22 @@ export class PianoRollComponent {
     if (inst) this.audition.emit({ instrument: inst, pitch });
   }
 
+  /** Whether the pointer is over the ruler, which rides at the top of the view rather than the roll. */
+  private inRuler(e: PointerEvent): boolean {
+    const r = this.canvas().nativeElement.getBoundingClientRect();
+    return e.clientY - r.top - this.scrollY() < RULER_H;
+  }
+
   protected onDown(e: PointerEvent): void {
     const { step, pitch } = this.cellOf(e);
     this.host.nativeElement.focus({ preventScroll: true });
+    // The ruler is where the head is read, so it is where the head is put. Left to the roll's own
+    // handling a press up here wrote a note, since a pitch above the top of the grid is clamped
+    // back onto the highest one.
+    if (this.inRuler(e)) {
+      if (e.button === 0) this.seek.emit(this.snapStep(step));
+      return;
+    }
     const index = this.hit(step, pitch);
     const notes = [...this.notes()];
     if (e.button === 2) {
@@ -370,7 +386,7 @@ export class PianoRollComponent {
 
   protected onMove(e: PointerEvent): void {
     const { step, pitch } = this.cellOf(e);
-    const cell = { step: this.newNote(step).step, pitch };
+    const cell = this.drag || !this.inRuler(e) ? { step: this.newNote(step).step, pitch } : null;
     this.hoverCell.set(cell);
     this.hover.emit(cell);
     this.pointer.emit(this.pointOf(e));

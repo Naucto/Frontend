@@ -10,6 +10,10 @@ import type { SynthEvent } from './worklet/protocol';
  * and the editor (live instrument preview, pattern playback). Mirrors the game
  * document's sound library into the worklet whenever it changes.
  */
+/** Long enough that one gesture's document events arrive as a single push, short enough to be the
+ *  next bar rather than the next minute. */
+const RESYNC_MS = 50;
+
 export class SoundEngine implements SoundPort {
   private position: { pattern: number; step: number } | null = null;
   private readonly voices: boolean[] = Array.from({ length: VOICES }, () => false);
@@ -19,6 +23,9 @@ export class SoundEngine implements SoundPort {
   private sfxSlots = new Map<string, string>();
   private songs = new Map<string, Song>();
   private librarySent = false;
+  /** Whether the worklet has music to play, which is what makes a stale library worth resending. */
+  private playing = false;
+  private pendingSync: ReturnType<typeof setTimeout> | null = null;
   private scope: Float32Array = new Float32Array(0);
   private readonly samplesSent = new Set<string>();
 
@@ -33,6 +40,14 @@ export class SoundEngine implements SoundPort {
     );
     const resync = (): void => {
       this.librarySent = false;
+      // Nothing asks for the library between the calls that begin a sound, so a pattern edited
+      // while it loops would go on playing the copy taken when it started. Sent on a delay rather
+      // than at once, because one gesture can land as a run of document events.
+      if (!this.playing || this.pendingSync !== null) return;
+      this.pendingSync = setTimeout(() => {
+        this.pendingSync = null;
+        this.syncLibrary();
+      }, RESYNC_MS);
     };
     game.instruments.observe(resync);
     game.patterns.observe(resync);
@@ -94,17 +109,19 @@ export class SoundEngine implements SoundPort {
     this.backend.post({ type: 'note_on', instrument: instrument.id, pitch, velocity: 1, length });
   }
 
-  previewPattern(pattern: Pattern, loop: boolean): void {
+  previewPattern(pattern: Pattern, loop: boolean, from = 0): void {
     this.syncLibrary();
     const tmp = new Map(this.patterns);
     tmp.set(pattern.id, pattern);
     this.backend.post({ type: 'library', instruments: [...this.instruments], patterns: [...tmp] });
     this.librarySent = false;
+    this.playing = true;
     this.backend.post({
       type: 'play_song',
       song: { name: pattern.name, sequence: [pattern.id], loop, loopStart: 0 },
       loop,
       fadeIn: 0,
+      from,
     });
   }
 
@@ -149,14 +166,17 @@ export class SoundEngine implements SoundPort {
     if (song < 0 || song >= SONG_SLOTS) return;
     const s = this.songs.get(String(song));
     if (!s) return;
+    this.playing = true;
     this.backend.post({ type: 'play_song', song: s, loop, fadeIn });
   }
 
   stopMusic(fadeOut: number): void {
+    this.playing = false;
     this.backend.post({ type: 'stop_music', fadeOut });
   }
 
   stopAll(): void {
+    this.playing = false;
     this.backend.post({ type: 'stop_all' });
     this.position = null;
   }
@@ -178,14 +198,17 @@ export class SoundEngine implements SoundPort {
   }
 
   destroy(): void {
+    if (this.pendingSync !== null) clearTimeout(this.pendingSync);
     for (const u of this.unsub) u();
     this.stopAll();
   }
 
   private onEvent(e: SynthEvent): void {
     if (e.type === 'position') this.position = { pattern: e.pattern, step: e.step };
-    else if (e.type === 'stopped') this.position = null;
-    else if (e.type === 'scope') this.scope = e.peaks;
+    else if (e.type === 'stopped') {
+      this.position = null;
+      this.playing = false;
+    } else if (e.type === 'scope') this.scope = e.peaks;
     else
       e.active.forEach((a, i) => {
         this.voices[i] = a;

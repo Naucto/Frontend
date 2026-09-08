@@ -301,6 +301,7 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
             (notesChange)="setNotes(p, $event)"
             (audition)="audition($event)"
             (pointer)="onPointer($event)"
+            (seek)="onSeek($event)"
           />
           <nc-voices-lane
             [pattern]="p"
@@ -308,6 +309,7 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
             [palette]="palette()"
             [zoom]="sound.zoom()"
             [stepWidth]="roll.stepW()"
+            [scrollLeft]="roll.scrollX()"
             [playhead]="playhead()"
             [active]="voices()"
             [label]="t('editor.sound.voices')"
@@ -580,9 +582,16 @@ export class SoundTabPage {
     const p = this.pattern();
     if (!p) return;
     await this.engine.unlock();
-    this.engine.previewPattern(p, this.sound.loop());
+    // From wherever the head stands, which is where PAUSE left it or where it was put in the ruler.
+    this.engine.previewPattern(p, this.sound.loop(), this.playhead() ?? 0);
     this.playing.set(true);
     this.tick();
+  }
+
+  /** Moving the head while it is running moves the music with it, rather than waiting for a stop. */
+  protected onSeek(step: number): void {
+    this.playhead.set(step);
+    if (this.playing()) void this.play();
   }
 
   /** Halts where it is; the playhead stays so PLAY resumes from the same bar. */

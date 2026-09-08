@@ -62,7 +62,7 @@ class NauctoSynthProcessor extends AudioWorkletProcessor {
         break;
       }
       case 'play_song':
-        this.seq.playSong(cmd.song, cmd.loop, cmd.fadeIn);
+        this.seq.playSong(cmd.song, cmd.loop, cmd.fadeIn, cmd.from);
         break;
       case 'stop_music':
         this.seq.stopMusic(cmd.fadeOut);
