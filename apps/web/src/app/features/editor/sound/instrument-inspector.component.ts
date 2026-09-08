@@ -42,9 +42,9 @@ const OSCS: { value: OscType; label: string }[] = [
   { value: 'sample', label: 'PCM' },
 ];
 
-/** Two octaves either way, past which an offset is a mistake rather than a chord. */
+/** Past which an offset is a slip of the keyboard rather than a chord. */
 const SEMI_RANGE = 24;
-/** A major triad, for an arpeggio switched on before anything was put in it. */
+/** A major triad. */
 const DEFAULT_ARP = [0, 4, 7];
 
 const FILTERS = [
@@ -470,7 +470,6 @@ export class InstrumentInspectorComponent {
     this.patched.emit({ arp: { ...this.inst().arp, steps: semis } });
   }
 
-  /** Zero turns the arpeggio off; above it, the list it cycles is yours unless you have given none. */
   protected arp(rate: number): void {
     const steps = this.inst().arp.steps;
     this.patched.emit(
