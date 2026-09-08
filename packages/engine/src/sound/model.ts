@@ -25,7 +25,13 @@ export interface Instrument {
   sampleRoot?: number;
   env: Envelope;
   vibrato: { rate: number; depth: number; delay: number };
-  arp: { steps: number[]; rate: number };
+  /**
+   * Speed the voice walks a chord at, in cycles a second; zero holds every note of it at once.
+   *
+   * The shape is the chord itself — the notes written on the same step — rather than a list the
+   * instrument carries, so an arpeggio is something you play instead of something you configure.
+   */
+  arp: { rate: number };
   filter: { type: FilterType; cutoff: number; resonance: number; envAmount: number };
   /** 0..1 */
   volume: number;
@@ -116,7 +122,7 @@ export const defaultInstrument = (id: string, name = 'lead'): Instrument => ({
   glide: 0,
   env: { attack: 0.01, decay: 0.1, sustain: 0.6, release: 0.15 },
   vibrato: { rate: 5, depth: 0, delay: 0.2 },
-  arp: { steps: [], rate: 15 },
+  arp: { rate: 0 },
   filter: { type: 'off', cutoff: 8000, resonance: 0.2, envAmount: 0 },
   volume: 0.8,
   pan: 0,

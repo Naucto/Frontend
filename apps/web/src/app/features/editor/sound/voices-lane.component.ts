@@ -8,11 +8,43 @@ const RULER_H = 16;
 export const LANE_TOTAL_H = 118;
 const LANE_H = (LANE_TOTAL_H - RULER_H) / VOICES;
 
+/**
+ * Notes as the synth will actually sound them: a chord under an arpeggiating instrument is one
+ * voice walking it, so it counts once, from its lowest note and for as long as its longest.
+ */
+function sounds(
+  notes: readonly Note[],
+  instruments: ReadonlyMap<string, Instrument>,
+): readonly Note[] {
+  const groups = new Map<string, Note[]>();
+  for (const n of notes) {
+    const key = `${n.instrument}:${String(n.step)}`;
+    const held = groups.get(key);
+    if (held) held.push(n);
+    else groups.set(key, [n]);
+  }
+  const out: Note[] = [];
+  for (const group of groups.values()) {
+    const first = group[0];
+    if (!first) continue;
+    if (group.length < 2 || !((instruments.get(first.instrument)?.arp.rate ?? 0) > 0)) {
+      out.push(...group);
+      continue;
+    }
+    const root = group.reduce((low, n) => (n.pitch < low.pitch ? n : low), first);
+    out.push({ ...root, length: Math.max(...group.map((n) => n.length)) });
+  }
+  return out;
+}
+
 /** Which of the five voices each note lands on, the way the synth allocates them. */
-export function allocateVoices(notes: readonly Note[]): { note: Note; voice: number }[] {
+export function allocateVoices(
+  notes: readonly Note[],
+  instruments: ReadonlyMap<string, Instrument>,
+): { note: Note; voice: number }[] {
   const ends = Array.from({ length: VOICES }, () => -1);
   const out: { note: Note; voice: number }[] = [];
-  for (const note of [...notes].sort((a, b) => a.step - b.step)) {
+  for (const note of [...sounds(notes, instruments)].sort((a, b) => a.step - b.step)) {
     let voice = ends.findIndex((e) => e <= note.step);
     if (voice < 0) voice = ends.indexOf(Math.min(...ends));
     ends[voice] = note.step + note.length;
@@ -111,7 +143,7 @@ export class VoicesLaneComponent {
     const sw = this.stepWidth();
     const pal = this.palette();
     const insts = this.instruments();
-    return allocateVoices(this.pattern().notes).map(({ note, voice }, i) => ({
+    return allocateVoices(this.pattern().notes, insts).map(({ note, voice }, i) => ({
       key: `${String(i)}:${String(note.step)}:${String(note.pitch)}`,
       left: note.step * sw,
       top: RULER_H + voice * LANE_H + 2,

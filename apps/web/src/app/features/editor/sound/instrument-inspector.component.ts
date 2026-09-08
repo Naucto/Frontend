@@ -1,12 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  input,
-  linkedSignal,
-  output,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
 import {
   encodeSample,
@@ -26,7 +18,6 @@ import {
   IconComponent,
   SegmentedComponent,
   SliderComponent,
-  TagInputComponent,
 } from '@naucto/ui';
 
 import { PresenceSurfaceComponent } from '../work-session/presence-surface.component';
@@ -41,10 +32,6 @@ const OSCS: { value: OscType; label: string }[] = [
   { value: 'noise', label: 'Noise' },
   { value: 'sample', label: 'PCM' },
 ];
-
-/** Past which an offset is a slip of the keyboard rather than a chord. */
-const SEMI_RANGE = 24;
-const DEFAULT_ARP = [0, 4, 7];
 
 const FILTERS = [
   { value: 'off', label: 'Off' },
@@ -64,7 +51,6 @@ const FILTERS = [
     IconComponent,
     SegmentedComponent,
     SliderComponent,
-    TagInputComponent,
     EnvelopeGraphComponent,
     WaveGlyphComponent,
     PresenceSurfaceComponent,
@@ -266,22 +252,11 @@ const FILTERS = [
             label="ARP"
             [min]="0"
             [max]="30"
-            [value]="inst().arp.steps.length ? inst().arp.rate : 0"
-            [readout]="inst().arp.steps.length ? inst().arp.rate + ' Hz' : 'OFF'"
+            [value]="inst().arp.rate"
+            [readout]="inst().arp.rate ? inst().arp.rate + ' Hz' : 'OFF'"
             accent="hot"
             (valueChange)="arp($event)"
           />
-          <div class="flex items-start gap-1.5">
-            <span class="label w-[6ch] shrink-0 pt-0.5">SEMI</span>
-            <nc-tag-input
-              class="min-w-0 flex-1"
-              [tags]="arpSemis()"
-              (tagsChange)="setArpSemis($event)"
-              [max]="8"
-              [placeholder]="t('editor.sound.arpSemi')"
-              [hint]="t('editor.sound.arpSemiHint')"
-            />
-          </div>
           <div class="flex items-center gap-1.5">
             <span class="label w-[6ch] shrink-0">FILT</span>
             <nc-segmented
@@ -452,30 +427,8 @@ export class InstrumentInspectorComponent {
   protected filter(patch: Partial<Instrument['filter']>): void {
     this.patched.emit({ filter: { ...this.inst().filter, ...patch } });
   }
-  /**
-   * What the field shows, which is the instrument's list until something invalid is typed into it.
-   *
-   * Held here as well as on the instrument because the field owns what it displays: an entry that
-   * does not survive `setArpSemis` leaves the emitted list identical to the one already stored, so
-   * nothing about the instrument changes and the binding has nothing to take the chip back off with.
-   */
-  protected readonly arpSemis = linkedSignal(() => this.inst().arp.steps.map(String));
-
-  protected setArpSemis(entries: readonly string[]): void {
-    const semis = entries
-      .map((e) => Number(e.trim()))
-      .filter((n) => Number.isInteger(n) && Math.abs(n) <= SEMI_RANGE);
-    this.arpSemis.set(semis.map(String));
-    this.patched.emit({ arp: { ...this.inst().arp, steps: semis } });
-  }
-
   protected arp(rate: number): void {
-    const steps = this.inst().arp.steps;
-    this.patched.emit(
-      rate > 0
-        ? { arp: { steps: steps.length ? steps : [...DEFAULT_ARP], rate } }
-        : { arp: { steps: [], rate: this.inst().arp.rate } },
-    );
+    this.patched.emit({ arp: { rate } });
   }
   protected asFilter(v: string | undefined): FilterType {
     return v === 'lp' || v === 'hp' || v === 'bp' ? v : 'off';

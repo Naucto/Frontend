@@ -132,6 +132,50 @@ describe('Sequencer', () => {
     expect(seq.position()).toBeNull();
   });
 
+  const chord = (): {
+    synth: SynthCore;
+    seq: Sequencer;
+    ins: ReturnType<typeof defaultInstrument>;
+  } => {
+    const synth = new SynthCore(SR);
+    const seq = new Sequencer(synth, SR);
+    const ins = defaultInstrument('i');
+    const p = defaultPattern('p0');
+    p.bpm = 120;
+    p.stepsPerBeat = 4;
+    p.steps = 4;
+    p.notes = [0, 4, 7].map((semi) => ({
+      step: 0,
+      pitch: 60 + semi,
+      length: 2,
+      instrument: 'i',
+      volume: 1,
+    }));
+    seq.setLibrary(new Map([['i', ins]]), new Map([['p0', p]]));
+    return { synth, seq, ins };
+  };
+
+  const play = (seq: Sequencer): void => {
+    seq.playSong({ name: 's', sequence: ['p0'], loop: false, loopStart: 0 }, false, 0);
+    seq.advance(1);
+  };
+
+  it('walks a chord with one voice when the instrument arpeggiates', () => {
+    const { synth, seq, ins } = chord();
+    ins.arp.rate = 12;
+    play(seq);
+    const sounding = synth.voices.filter((v) => v.active);
+    expect(sounding).toHaveLength(1);
+    // The lowest note of the chord, with the rest of it as intervals above.
+    expect(sounding[0]?.pitch).toBe(60);
+  });
+
+  it('holds a chord on a voice each when the instrument does not', () => {
+    const { synth, seq } = chord();
+    play(seq);
+    expect(synth.voices.filter((v) => v.active)).toHaveLength(3);
+  });
+
   it('triggers a note that falls between two steps', () => {
     const synth = new SynthCore(SR);
     const seq = new Sequencer(synth, SR);

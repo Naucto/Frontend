@@ -438,7 +438,7 @@
       "envelope": "Envelope",
       "envHelp": "Attack, decay, sustain, release — how loud the note is over its life.",
       "modFilter": "Modulation & filter",
-      "modHelp": "Vibrato wobbles the pitch, arp cycles the note through the semitones you list, the filter shapes the tone.",
+      "modHelp": "Vibrato wobbles the pitch, arp walks a chord with one voice, the filter shapes the tone.",
       "mix": "Mix",
       "mixHelp": "Per-instrument level and stereo position.",
       "usedBy": "Used by",
@@ -451,9 +451,7 @@
       "replaceSample": "Replace",
       "removeSample": "Remove the sample",
       "sampleHint": "Any audio file. Mixed to mono and resampled to 8-bit / 8 kHz — {{seconds}} s fits the budget.",
-      "toStart": "Back to the start",
-      "arpSemi": "Semitones from the note",
-      "arpSemiHint": "+ semitone"
+      "toStart": "Back to the start"
     },
     "net": {
       "sharedState": "Shared state",

@@ -46,7 +46,7 @@ import {
     @if (readout()) {
       <span
         class="shrink-0 text-right font-mono text-meta text-ink-body"
-        [class]="compact() ? 'w-[30px]' : 'w-[42px]'"
+        [class]="compact() ? 'w-[30px]' : 'w-[52px]'"
       >
         {{ readout() }}
       </span>

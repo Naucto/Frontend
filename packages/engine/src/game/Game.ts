@@ -475,6 +475,11 @@ export class Game {
     for (const [, i] of out) {
       i.detune ??= 0;
       i.glide ??= 0;
+      // Saved when the arpeggio carried its own list of intervals, an empty list was what "off"
+      // meant and the rate said nothing on its own. The rate is the whole switch now, so one of
+      // those instruments would arpeggiate every chord under it if we took the rate at face value.
+      const legacy = (i.arp as { steps?: unknown }).steps;
+      if (Array.isArray(legacy) && legacy.length === 0) i.arp = { rate: 0 };
     }
     return out;
   }

@@ -25,6 +25,8 @@ interface Voice {
   sample: Float32Array | null;
   samplePos: number;
   priority: number;
+  /** Semitones above this voice's own note that it cycles through, empty when it holds one note. */
+  arp: readonly number[];
 }
 
 const newVoice = (): Voice => ({
@@ -47,6 +49,7 @@ const newVoice = (): Voice => ({
   sample: null,
   samplePos: 0,
   priority: 0,
+  arp: [],
 });
 
 /**
@@ -71,6 +74,7 @@ export class SynthCore {
     lengthSeconds: number,
     channel?: number,
     priority = 0,
+    arp: readonly number[] = [],
   ): number {
     const idx =
       channel !== undefined ? Math.max(0, Math.min(VOICES - 1, channel)) : this.allocate(priority);
@@ -93,6 +97,7 @@ export class SynthCore {
     v.low = 0;
     v.band = 0;
     v.priority = priority;
+    v.arp = arp;
     v.sample =
       instrument.osc === 'sample' && instrument.sampleId
         ? (this.samples.get(instrument.sampleId) ?? null)
@@ -166,7 +171,7 @@ export class SynthCore {
     const gain = ins.volume * v.velocity * (v.priority > 0 ? this.sfxGain : this.musicGain);
     const panL = Math.cos(((ins.pan + 1) / 2) * (Math.PI / 2));
     const panR = Math.sin(((ins.pan + 1) / 2) * (Math.PI / 2));
-    const arpSteps = ins.arp.steps;
+    const arpSteps = v.arp;
     const arpLen = arpSteps.length;
     const arpSamples = arpLen ? Math.max(1, Math.round(sr / Math.max(1, ins.arp.rate))) : 0;
     const vib = ins.vibrato;

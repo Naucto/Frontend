@@ -1,4 +1,4 @@
-import { type Instrument, type Pattern, type Song, SUBSTEPS } from './model';
+import { type Instrument, type Note, type Pattern, type Song, SUBSTEPS } from './model';
 import type { SynthCore } from './SynthCore';
 
 export interface SequencerPosition {
@@ -202,18 +202,44 @@ export class Sequencer {
     channel?: number,
   ): void {
     const secondsPerStep = 60 / p.bpm / p.stepsPerBeat;
+    const byInstrument = new Map<string, Note[]>();
     for (const n of p.notes) {
       if (Math.round(n.step * SUBSTEPS) !== subStep) continue;
-      const ins = this.instruments.get(n.instrument);
+      const held = byInstrument.get(n.instrument);
+      if (held) held.push(n);
+      else byInstrument.set(n.instrument, [n]);
+    }
+    for (const [id, notes] of byInstrument) {
+      const ins = this.instruments.get(id);
       if (!ins) continue;
-      this.synth.noteOn(
-        ins,
-        n.pitch + pitchOffset,
-        n.volume * volume,
-        n.length * secondsPerStep,
-        channel,
-        priority,
-      );
+      // An arpeggio is one voice walking the chord that was written, so several notes starting
+      // together on an arpeggiating instrument cost one voice rather than one each. Below two
+      // there is nothing to walk.
+      if (ins.arp.rate > 0 && notes.length > 1) {
+        const chord = [...notes].sort((a, b) => a.pitch - b.pitch);
+        const root = chord[0];
+        if (!root) continue;
+        this.synth.noteOn(
+          ins,
+          root.pitch + pitchOffset,
+          Math.max(...notes.map((n) => n.volume)) * volume,
+          Math.max(...notes.map((n) => n.length)) * secondsPerStep,
+          channel,
+          priority,
+          chord.map((n) => n.pitch - root.pitch),
+        );
+        continue;
+      }
+      for (const n of notes) {
+        this.synth.noteOn(
+          ins,
+          n.pitch + pitchOffset,
+          n.volume * volume,
+          n.length * secondsPerStep,
+          channel,
+          priority,
+        );
+      }
     }
   }
 
