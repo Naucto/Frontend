@@ -1,4 +1,6 @@
 export const qk = {
+  /** Every releases query at once — what the hub invalidates when you come back to it. */
+  releasesAll: () => ['releases'] as const,
   releases: (params: Record<string, unknown>) => ['releases', params] as const,
   releaseCount: (params: Record<string, unknown>) => ['releases', 'count', params] as const,
   release: (id: number) => ['release', id] as const,

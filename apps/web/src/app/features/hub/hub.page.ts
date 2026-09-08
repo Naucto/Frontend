@@ -36,9 +36,10 @@ import {
   SkeletonComponent,
   ToastService,
 } from '@naucto/ui';
+import { QueryClient } from '@tanstack/angular-query-experimental';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 
-import { FILTER_TAGS, type HubFilter, HubFiltersStore } from './hub-filters.store';
+import { FILTER_TAGS, type HubFilter } from './hub-filters';
 import { HubRowComponent, type ShelfState } from './hub-row.component';
 
 const SHELF_SIZE = 10;
@@ -247,7 +248,7 @@ const SHELF_SIZE = 10;
             actions
             variant="chips"
             [options]="filterOptions"
-            [value]="filters.popular()"
+            [value]="popularFilter()"
             (valueChange)="setFilter($event)"
             label="Filter"
           />
@@ -274,7 +275,6 @@ export class HubPage {
   private readonly router = inject(Router);
   private readonly toasts = inject(ToastService);
   protected readonly fork = injectFork();
-  protected readonly filters = inject(HubFiltersStore);
   private readonly presence = inject(PresenceStore);
   private readonly transloco = inject(TranslocoService);
   protected readonly term = computed(() => this.q()?.trim() ?? '');
@@ -282,6 +282,19 @@ export class HubPage {
   /** Either narrows the shelves down to one row; neither leaves them as they are. */
   protected readonly narrowed = computed(() => this.term() !== '' || this.tagFilter() !== '');
   private readonly page = signal(1);
+  /**
+   * Component state, deliberately: the shelf filter is a look you took at the catalogue, not a
+   * setting you made. Leaving the hub ends it, and coming back starts over on every game.
+   */
+  protected readonly popularFilter = signal<HubFilter>('all');
+
+  constructor() {
+    // Arriving at the hub is the moment its answer matters, and the catalogue moves underneath it:
+    // a game published, remixed or liked elsewhere in the app should be here when you come back.
+    // The cached shelves stay on screen while the refetch runs, so this costs a request, not a
+    // flash of empty page.
+    void inject(QueryClient).invalidateQueries({ queryKey: qk.releasesAll() });
+  }
 
   protected readonly filterOptions = [
     { value: 'all', label: 'All' },
@@ -295,7 +308,7 @@ export class HubPage {
   // whatever page happened to load.
   private readonly popularQuery = computed<ReleaseQuery>(() => ({
     sort: 'popular',
-    tags: FILTER_TAGS[this.filters.popular()] ?? undefined,
+    tags: FILTER_TAGS[this.popularFilter()] ?? undefined,
   }));
   private readonly popularPage = injectReleasesPage(() => 1, SHELF_SIZE, this.popularQuery);
   private readonly freshPage = injectReleasesPage(
@@ -387,6 +400,6 @@ export class HubPage {
   }
 
   protected setFilter(f: HubFilter | undefined): void {
-    if (f) this.filters.setPopular(f);
+    if (f) this.popularFilter.set(f);
   }
 }
