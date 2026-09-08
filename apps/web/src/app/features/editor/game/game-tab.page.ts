@@ -4,6 +4,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { unwrap } from '@app/core/api/api-errors';
+import { FeaturesService } from '@app/core/config/features.service';
 import { RuntimeHostService } from '@app/shared/game-screen/runtime-host.service';
 import { qk } from '@app/shared/queries/query-keys';
 import { injectProjectImage, injectRelease } from '@app/shared/queries/releases.queries';
@@ -216,41 +217,43 @@ const SUMMARY_MAX = 80;
               </span>
             </div>
           </nc-section>
-          <nc-section banded [title]="t('editor.game.monetization')">
-            <nc-help-dot actions [text]="t('editor.game.monetizationHelp')" />
-            <!-- Neutral where STATUS carries a meaning colour: two filled cells stacked make the
-                 neutral choice read as a second state colour. -->
-            <nc-segmented
-              fill
-              [options]="monetizations"
-              [value]="monetization()"
-              (valueChange)="setMonetization($event)"
-              label="Monetization"
-            />
-            <!-- Label and control on one line, like every other key and value in this column.
-                 Stacked, a field with one short number under a one-word label spent two rows on
-                 what the rows around it say in one. -->
-            <div
-              class="mt-1 flex items-center justify-between gap-1.75"
-              [class.opacity-40]="monetization() !== 'PAID'"
-            >
-              <label class="label text-ink-3" for="g-price">{{ t('editor.game.price') }}</label>
-              @if (monetization() === 'PAID') {
-                <input
-                  ncInput
-                  id="g-price"
-                  class="w-[96px]"
-                  type="number"
-                  min="0"
-                  step="0.5"
-                  [ngModel]="price()"
-                  (ngModelChange)="setPrice($event)"
-                />
-              } @else {
-                <nc-readout size="sm" value="–" class="w-[64px]" />
-              }
-            </div>
-          </nc-section>
+          @if (features.monetization()) {
+            <nc-section banded [title]="t('editor.game.monetization')">
+              <nc-help-dot actions [text]="t('editor.game.monetizationHelp')" />
+              <!-- Neutral where STATUS carries a meaning colour: two filled cells stacked make the
+                   neutral choice read as a second state colour. -->
+              <nc-segmented
+                fill
+                [options]="monetizations"
+                [value]="monetization()"
+                (valueChange)="setMonetization($event)"
+                label="Monetization"
+              />
+              <!-- Label and control on one line, like every other key and value in this column.
+                   Stacked, a field with one short number under a one-word label spent two rows on
+                   what the rows around it say in one. -->
+              <div
+                class="mt-1 flex items-center justify-between gap-1.75"
+                [class.opacity-40]="monetization() !== 'PAID'"
+              >
+                <label class="label text-ink-3" for="g-price">{{ t('editor.game.price') }}</label>
+                @if (monetization() === 'PAID') {
+                  <input
+                    ncInput
+                    id="g-price"
+                    class="w-[96px]"
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    [ngModel]="price()"
+                    (ngModelChange)="setPrice($event)"
+                  />
+                } @else {
+                  <nc-readout size="sm" value="–" class="w-[64px]" />
+                }
+              </div>
+            </nc-section>
+          }
           <nc-section banded [title]="t('editor.game.inSession')">
             <span actions class="label text-ink-4">{{ session.collaborators().length }}</span>
             @for (c of session.collaborators(); track c.clientId) {
@@ -315,6 +318,11 @@ const SUMMARY_MAX = 80;
 })
 export class GameTabPage implements OnInit {
   protected readonly PANEL_WIDTH = PANEL_WIDTH;
+  /**
+   * Whether this deployment sells games at all. Off, the section is not rendered rather than
+   * disabled: a control nobody can use is a question nobody can answer.
+   */
+  protected readonly features = inject(FeaturesService);
   protected readonly session = inject(WorkSessionService);
   private readonly runtime = inject(RuntimeHostService);
   private readonly toasts = inject(ToastService);

@@ -8,6 +8,7 @@ import { client } from '@naucto/api-client';
 
 import { AuthStore } from '../auth/auth.store';
 import { AppConfigService } from '../config/app-config';
+import { FeaturesService } from '../config/features.service';
 
 const RETRIED = new WeakSet<Request>();
 
@@ -21,7 +22,9 @@ export function provideApiClient(): EnvironmentProviders {
     provideAppInitializer(async () => {
       const config = inject(AppConfigService);
       const auth = inject(AuthStore);
-      // One ordered boot: runtime config → client → session. Initializers otherwise run concurrently.
+      const features = inject(FeaturesService);
+      // One ordered boot: runtime config → client → session → features. Initializers otherwise run
+      // concurrently, and the last two both need the client already pointed somewhere.
       await config.load();
       client.setConfig({
         baseUrl: config.config().apiUrl,
@@ -49,6 +52,7 @@ export function provideApiClient(): EnvironmentProviders {
       });
 
       await auth.bootstrap();
+      await features.load();
     }),
   ]);
 }

@@ -51,6 +51,11 @@
       "reconstructed": true
     },
     {
+      "id": "6b46aa629d2c",
+      "sample": "M22 10h52v4h6v4h4v6h4v18h-4v6h-4v4h-8v-4h-6v-4H30v4h-6v4h-8v-4h-",
+      "note": "The controller on the CONTROLS card. The design shades a body and paints its four face buttons in four accents; the app draws one monochrome line instead. Deliberate: the picture sits beside a table that names those same four faces, so two things competed for one glance, and colouring the faces asserts which face is which colour — something no two controllers agree on."
+    },
+    {
       "id": "0d5955332416",
       "sample": "M2 0H3V1H2Z M3 0H4V1H3Z M4 0H5V1H4Z M5 0H6V1H5Z M1 1H2V2H1Z M6 1",
       "note": "The app draws this: `nc-brand-mark` builds it rect-for-rect on the same grid, and the two rasterise identically (verified 2026-09-05). The reader cannot see it because that component builds its rects from a TypeScript table rather than from markup, so it stays listed until a reader that renders the component exists. — GOOGLE",
