@@ -351,7 +351,7 @@ export class VersionsPopoverComponent {
             path: { ...path, version: row.name },
             parseAs: 'blob',
           });
-      const blob = res.data as Blob | undefined;
+      const blob = res.data;
       if (!blob || blob.size === 0) throw new Error('empty version');
       this.session.game.restoreFrom(new Uint8Array(await blob.arrayBuffer()));
       this.toasts.show(

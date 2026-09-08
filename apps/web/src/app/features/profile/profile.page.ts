@@ -523,9 +523,7 @@ export class ProfilePage {
     return (this.all.data()?.items ?? []).filter((g) => g.forkedFromId && mine.has(g.forkedFromId));
   });
   /** Totals come from the profile when it carries them; otherwise they are summed here. */
-  private readonly extras = computed<ProfileExtras>(
-    () => (this.profile.data() ?? {}) as ProfileExtras,
-  );
+  private readonly extras = computed<ProfileExtras>(() => this.profile.data() ?? {});
   protected readonly counts = computed(() => {
     const p = this.extras();
     return {

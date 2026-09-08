@@ -37,10 +37,10 @@ export type Field =
 
 export interface Fields {
   allowExtra?: Partial<Record<Slot, boolean>>;
-  args?: readonly Field[];
+  args?: ReadonlyArray<Field>;
 }
 
-export type FieldsConfig = readonly (Field | Fields)[];
+export type FieldsConfig = ReadonlyArray<Field | Fields>;
 
 const extraPrefixesMap: Record<string, Slot> = {
   $body_: 'body',
@@ -103,7 +103,7 @@ function stripEmptySlots(params: Params): void {
   }
 }
 
-export function buildClientParams(args: readonly unknown[], fields: FieldsConfig): Params {
+export function buildClientParams(args: ReadonlyArray<unknown>, fields: FieldsConfig): Params {
   const params: Params = {
     headers: Object.create(null),
     path: Object.create(null),

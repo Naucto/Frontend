@@ -175,15 +175,17 @@ export const mergeConfigs = (a: Config, b: Config): Config => {
   return config;
 };
 
-const headersEntries = (headers: Headers): [string, string][] => {
-  const entries: [string, string][] = [];
+const headersEntries = (headers: Headers): Array<[string, string]> => {
+  const entries: Array<[string, string]> = [];
   headers.forEach((value, key) => {
     entries.push([key, value]);
   });
   return entries;
 };
 
-export const mergeHeaders = (...headers: (Required<Config>['headers'] | undefined)[]): Headers => {
+export const mergeHeaders = (
+  ...headers: Array<Required<Config>['headers'] | undefined>
+): Headers => {
   const mergedHeaders = new Headers();
   for (const header of headers) {
     if (!header) {
@@ -230,7 +232,7 @@ type ResInterceptor<Res, Req, Options> = (
 ) => Res | Promise<Res>;
 
 class Interceptors<Interceptor> {
-  fns: (Interceptor | null)[] = [];
+  fns: Array<Interceptor | null> = [];
 
   clear(): void {
     this.fns = [];

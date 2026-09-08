@@ -149,7 +149,7 @@ export class WorkSessionService {
         path: { id: String(projectId) },
         parseAs: 'blob',
       });
-      const blob = content.data as Blob | undefined;
+      const blob = content.data;
       if (blob && blob.size > 0)
         Y.applyUpdate(this.doc, new Uint8Array(await blob.arrayBuffer()), 'remote-init');
 

@@ -6,11 +6,11 @@ export type QuerySerializer = (query: Record<string, unknown>) => string;
 
 export type BodySerializer = (body: unknown) => unknown;
 
-interface QuerySerializerOptionsObject {
+type QuerySerializerOptionsObject = {
   allowReserved?: boolean;
   array?: Partial<SerializerOptions<ArrayStyle>>;
   object?: Partial<SerializerOptions<ObjectStyle>>;
-}
+};
 
 export type QuerySerializerOptions = QuerySerializerOptionsObject & {
   /**
@@ -47,9 +47,7 @@ export const formDataBodySerializer = {
         return;
       }
       if (Array.isArray(value)) {
-        value.forEach((v) => {
-          serializeFormDataPair(data, key, v);
-        });
+        value.forEach((v) => serializeFormDataPair(data, key, v));
       } else {
         serializeFormDataPair(data, key, value);
       }
@@ -73,9 +71,7 @@ export const urlSearchParamsBodySerializer = {
         return;
       }
       if (Array.isArray(value)) {
-        value.forEach((v) => {
-          serializeUrlSearchParamsPair(data, key, v);
-        });
+        value.forEach((v) => serializeUrlSearchParamsPair(data, key, v));
       } else {
         serializeUrlSearchParamsPair(data, key, value);
       }

@@ -20,7 +20,7 @@
       "@naucto/ui": ["../../packages/ui/src/index.ts"],
       "@naucto/ui/*": ["../../packages/ui/src/*"],
       "@app/*": ["./src/app/*"],
-      "@naucto/api-client": ["../../packages/api-client/src/index.ts"]
+      "@naucto/api-client": ["../../packages/api-client/entry.ts"]
     }
   },
   "angularCompilerOptions": {

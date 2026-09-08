@@ -10,6 +10,15 @@ import {
 } from './client';
 import { client } from './client.gen';
 import type {
+  AdminFeaturedReleaseControllerClearFeaturedData,
+  AdminFeaturedReleaseControllerClearFeaturedErrors,
+  AdminFeaturedReleaseControllerClearFeaturedResponses,
+  AdminFeaturedReleaseControllerGetHistoryData,
+  AdminFeaturedReleaseControllerGetHistoryErrors,
+  AdminFeaturedReleaseControllerGetHistoryResponses,
+  AdminFeaturedReleaseControllerSetFeaturedData,
+  AdminFeaturedReleaseControllerSetFeaturedErrors,
+  AdminFeaturedReleaseControllerSetFeaturedResponses,
   AuthControllerChangePasswordData,
   AuthControllerChangePasswordErrors,
   AuthControllerChangePasswordResponses,
@@ -33,10 +42,32 @@ import type {
   AuthControllerRegisterData,
   AuthControllerRegisterErrors,
   AuthControllerRegisterResponses,
+  FeaturedReleaseControllerGetFeaturedData,
+  FeaturedReleaseControllerGetFeaturedResponses,
+  FriendsControllerAcceptData,
+  FriendsControllerAcceptErrors,
+  FriendsControllerAcceptResponses,
+  FriendsControllerDeclineData,
+  FriendsControllerDeclineErrors,
+  FriendsControllerDeclineResponses,
+  FriendsControllerListData,
+  FriendsControllerListResponses,
+  FriendsControllerRecentPlayersData,
+  FriendsControllerRecentPlayersResponses,
+  FriendsControllerRemoveData,
+  FriendsControllerRemoveErrors,
+  FriendsControllerRemoveResponses,
+  FriendsControllerRequestsData,
+  FriendsControllerRequestsResponses,
+  FriendsControllerSendData,
+  FriendsControllerSendErrors,
+  FriendsControllerSendResponses,
   MultiplayerControllerCreateData,
   MultiplayerControllerCreateResponses,
   MultiplayerControllerGetData,
   MultiplayerControllerGetResponses,
+  MultiplayerControllerInviteData,
+  MultiplayerControllerInviteResponses,
   MultiplayerControllerJoinByCodeData,
   MultiplayerControllerJoinByCodeResponses,
   MultiplayerControllerJoinData,
@@ -45,6 +76,8 @@ import type {
   MultiplayerControllerLeaveResponses,
   MultiplayerControllerListData,
   MultiplayerControllerListResponses,
+  MultiplayerControllerPlayersData,
+  MultiplayerControllerPlayersResponses,
   MultiplayerControllerRefreshTicketData,
   MultiplayerControllerRefreshTicketResponses,
   MultiplayerControllerRemoveData,
@@ -53,10 +86,14 @@ import type {
   MultiplayerControllerUpdateResponses,
   NotificationsControllerGetWebRtcOfferData,
   NotificationsControllerGetWebRtcOfferResponses,
+  NotificationsControllerMarkAllAsReadData,
+  NotificationsControllerMarkAllAsReadResponses,
   NotificationsControllerMarkAsReadData,
   NotificationsControllerMarkAsReadResponses,
   NotificationsControllerSendTestNotificationData,
   NotificationsControllerSendTestNotificationResponses,
+  PresenceControllerFriendsData,
+  PresenceControllerFriendsResponses,
   ProjectCommentControllerCreateCommentData,
   ProjectCommentControllerCreateCommentResponses,
   ProjectCommentControllerCreateReplyData,
@@ -80,6 +117,9 @@ import type {
   ProjectControllerDeleteCheckpointData,
   ProjectControllerDeleteCheckpointErrors,
   ProjectControllerDeleteCheckpointResponses,
+  ProjectControllerDeleteVersionData,
+  ProjectControllerDeleteVersionErrors,
+  ProjectControllerDeleteVersionResponses,
   ProjectControllerFetchProjectContentData,
   ProjectControllerFetchProjectContentErrors,
   ProjectControllerFetchProjectContentResponses,
@@ -102,6 +142,8 @@ import type {
   ProjectControllerGetCheckpointsResponses,
   ProjectControllerGetLikeStatusData,
   ProjectControllerGetLikeStatusResponses,
+  ProjectControllerGetLimitsData,
+  ProjectControllerGetLimitsResponses,
   ProjectControllerGetPaginatedReleasesData,
   ProjectControllerGetPaginatedReleasesResponses,
   ProjectControllerGetProjectImageData,
@@ -116,6 +158,11 @@ import type {
   ProjectControllerGetReleaseContentUrlResponses,
   ProjectControllerGetReleaseData,
   ProjectControllerGetReleaseResponses,
+  ProjectControllerGetReleaseTagsData,
+  ProjectControllerGetReleaseTagsResponses,
+  ProjectControllerGetSizeData,
+  ProjectControllerGetSizeErrors,
+  ProjectControllerGetSizeResponses,
   ProjectControllerGetVersionData,
   ProjectControllerGetVersionErrors,
   ProjectControllerGetVersionResponses,
@@ -155,23 +202,41 @@ import type {
   ProjectControllerUploadProjectImageData,
   ProjectControllerUploadProjectImageErrors,
   ProjectControllerUploadProjectImageResponses,
+  UserControllerDeleteMeData,
+  UserControllerDeleteMeErrors,
+  UserControllerDeleteMeResponses,
   UserControllerFindAllData,
   UserControllerFindAllErrors,
   UserControllerFindAllResponses,
   UserControllerFindOneData,
   UserControllerFindOneErrors,
   UserControllerFindOneResponses,
+  UserControllerGetMeData,
+  UserControllerGetMeErrors,
+  UserControllerGetMeResponses,
   UserControllerGetProfileData,
   UserControllerGetProfileErrors,
   UserControllerGetProfilePictureData,
   UserControllerGetProfilePictureErrors,
   UserControllerGetProfilePictureResponses,
   UserControllerGetProfileResponses,
+  UserControllerRegenerateFriendCodeData,
+  UserControllerRegenerateFriendCodeErrors,
+  UserControllerRegenerateFriendCodeResponses,
   UserControllerRemoveData,
   UserControllerRemoveErrors,
+  UserControllerRemoveProfileBackgroundData,
+  UserControllerRemoveProfileBackgroundErrors,
+  UserControllerRemoveProfileBackgroundResponses,
+  UserControllerRemoveProfilePictureData,
+  UserControllerRemoveProfilePictureErrors,
+  UserControllerRemoveProfilePictureResponses,
   UserControllerRemoveResponses,
   UserControllerUpdateData,
   UserControllerUpdateErrors,
+  UserControllerUpdateMeData,
+  UserControllerUpdateMeErrors,
+  UserControllerUpdateMeResponses,
   UserControllerUpdateMyProfileData,
   UserControllerUpdateMyProfileErrors,
   UserControllerUpdateMyProfileResponses,
@@ -182,6 +247,13 @@ import type {
   UserControllerUploadProfilePictureData,
   UserControllerUploadProfilePictureErrors,
   UserControllerUploadProfilePictureResponses,
+  UserFriendshipControllerFriendshipData,
+  UserFriendshipControllerFriendshipResponses,
+  UserPresenceControllerPresenceData,
+  UserPresenceControllerPresenceErrors,
+  UserPresenceControllerPresenceResponses,
+  UserPublicControllerGetCollaborationsData,
+  UserPublicControllerGetCollaborationsResponses,
   UserPublicControllerGetLikedGamesData,
   UserPublicControllerGetLikedGamesResponses,
   UserPublicControllerGetPublicProfileByUsernameData,
@@ -192,6 +264,10 @@ import type {
   UserPublicControllerGetPublicProfileResponses,
   UserPublicControllerGetPublishedGamesData,
   UserPublicControllerGetPublishedGamesResponses,
+  UserPublicControllerGetRemixesData,
+  UserPublicControllerGetRemixesResponses,
+  UserPublicControllerSearchData,
+  UserPublicControllerSearchResponses,
   WorkSessionControllerGetInfoData,
   WorkSessionControllerGetInfoErrors,
   WorkSessionControllerGetInfoResponses,
@@ -253,6 +329,18 @@ export const projectControllerGetPaginatedReleases = <ThrowOnError extends boole
   });
 
 /**
+ * List the tags published games carry
+ */
+export const projectControllerGetReleaseTags = <ThrowOnError extends boolean = false>(
+  options?: Options<ProjectControllerGetReleaseTagsData, ThrowOnError>,
+): RequestResult<ProjectControllerGetReleaseTagsResponses, unknown, ThrowOnError> =>
+  (options?.client ?? client).get<ProjectControllerGetReleaseTagsResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/projects/releases/tags',
+    ...options,
+  });
+
+/**
  * Count released projects with filters
  */
 export const projectControllerCountReleasedProjects = <ThrowOnError extends boolean = false>(
@@ -309,6 +397,18 @@ export const projectControllerGetReleaseContentUrl = <ThrowOnError extends boole
   >({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/projects/releases/{id}/content-url',
+    ...options,
+  });
+
+/**
+ * Get the project size limits
+ */
+export const projectControllerGetLimits = <ThrowOnError extends boolean = false>(
+  options?: Options<ProjectControllerGetLimitsData, ThrowOnError>,
+): RequestResult<ProjectControllerGetLimitsResponses, unknown, ThrowOnError> =>
+  (options?.client ?? client).get<ProjectControllerGetLimitsResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/projects/limits',
     ...options,
   });
 
@@ -410,6 +510,24 @@ export const projectControllerUpdate = <ThrowOnError extends boolean = false>(
       'Content-Type': 'application/json',
       ...options.headers,
     },
+  });
+
+/**
+ * Get the size breakdown of the project's latest save
+ *
+ * Logical content size per category (code, sprites, flags, map, sound, palette) computed from the decoded game document, compared against the publishing budget.
+ */
+export const projectControllerGetSize = <ThrowOnError extends boolean = false>(
+  options: Options<ProjectControllerGetSizeData, ThrowOnError>,
+): RequestResult<ProjectControllerGetSizeResponses, ProjectControllerGetSizeErrors, ThrowOnError> =>
+  (options.client ?? client).get<
+    ProjectControllerGetSizeResponses,
+    ProjectControllerGetSizeErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/projects/{id}/size',
+    ...options,
   });
 
 /**
@@ -712,6 +830,26 @@ export const projectControllerGetCheckpoints = <ThrowOnError extends boolean = f
   });
 
 /**
+ * Delete a project autosave
+ */
+export const projectControllerDeleteVersion = <ThrowOnError extends boolean = false>(
+  options: Options<ProjectControllerDeleteVersionData, ThrowOnError>,
+): RequestResult<
+  ProjectControllerDeleteVersionResponses,
+  ProjectControllerDeleteVersionErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).delete<
+    ProjectControllerDeleteVersionResponses,
+    ProjectControllerDeleteVersionErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/projects/{id}/versions/{version}',
+    ...options,
+  });
+
+/**
  * Fetch a project version
  */
 export const projectControllerGetVersion = <ThrowOnError extends boolean = false>(
@@ -826,12 +964,12 @@ export const projectControllerUpdateRelease = <ThrowOnError extends boolean = fa
   });
 
 /**
- * List game sessions for a project, from the caller's perspective
+ * List open game sessions from the caller's perspective, one game's or every game's
  */
 export const multiplayerControllerList = <ThrowOnError extends boolean = false>(
-  options: Options<MultiplayerControllerListData, ThrowOnError>,
+  options?: Options<MultiplayerControllerListData, ThrowOnError>,
 ): RequestResult<MultiplayerControllerListResponses, unknown, ThrowOnError> =>
-  (options.client ?? client).get<MultiplayerControllerListResponses, unknown, ThrowOnError>({
+  (options?.client ?? client).get<MultiplayerControllerListResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/game-sessions',
     ...options,
@@ -902,6 +1040,34 @@ export const multiplayerControllerUpdate = <ThrowOnError extends boolean = false
   (options.client ?? client).patch<MultiplayerControllerUpdateResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/game-sessions/{sessionId}',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Who is in a game session
+ */
+export const multiplayerControllerPlayers = <ThrowOnError extends boolean = false>(
+  options: Options<MultiplayerControllerPlayersData, ThrowOnError>,
+): RequestResult<MultiplayerControllerPlayersResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).get<MultiplayerControllerPlayersResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/game-sessions/{sessionId}/players',
+    ...options,
+  });
+
+/**
+ * Invite someone to a session (host only)
+ */
+export const multiplayerControllerInvite = <ThrowOnError extends boolean = false>(
+  options: Options<MultiplayerControllerInviteData, ThrowOnError>,
+): RequestResult<MultiplayerControllerInviteResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<MultiplayerControllerInviteResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/game-sessions/{sessionId}/invite',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -1078,6 +1244,22 @@ export const notificationsControllerSendTestNotification = <ThrowOnError extends
   });
 
 /**
+ * Mark every unread notification of the current user as read
+ */
+export const notificationsControllerMarkAllAsRead = <ThrowOnError extends boolean = false>(
+  options?: Options<NotificationsControllerMarkAllAsReadData, ThrowOnError>,
+): RequestResult<NotificationsControllerMarkAllAsReadResponses, unknown, ThrowOnError> =>
+  (options?.client ?? client).patch<
+    NotificationsControllerMarkAllAsReadResponses,
+    unknown,
+    ThrowOnError
+  >({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/notifications/read-all',
+    ...options,
+  });
+
+/**
  * set one notification as read
  */
 export const notificationsControllerMarkAsRead = <ThrowOnError extends boolean = false>(
@@ -1090,6 +1272,234 @@ export const notificationsControllerMarkAsRead = <ThrowOnError extends boolean =
   >({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/notifications/{id}/read',
+    ...options,
+  });
+
+/**
+ * List the caller's friends
+ */
+export const friendsControllerList = <ThrowOnError extends boolean = false>(
+  options?: Options<FriendsControllerListData, ThrowOnError>,
+): RequestResult<FriendsControllerListResponses, unknown, ThrowOnError> =>
+  (options?.client ?? client).get<FriendsControllerListResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/friends',
+    ...options,
+  });
+
+/**
+ * List pending friend requests (incoming and outgoing)
+ */
+export const friendsControllerRequests = <ThrowOnError extends boolean = false>(
+  options?: Options<FriendsControllerRequestsData, ThrowOnError>,
+): RequestResult<FriendsControllerRequestsResponses, unknown, ThrowOnError> =>
+  (options?.client ?? client).get<FriendsControllerRequestsResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/friends/requests',
+    ...options,
+  });
+
+/**
+ * Send a friend request by user id or friend code; a crossed request is accepted instead
+ */
+export const friendsControllerSend = <ThrowOnError extends boolean = false>(
+  options: Options<FriendsControllerSendData, ThrowOnError>,
+): RequestResult<FriendsControllerSendResponses, FriendsControllerSendErrors, ThrowOnError> =>
+  (options.client ?? client).post<
+    FriendsControllerSendResponses,
+    FriendsControllerSendErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/friends/requests',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Accept an incoming friend request
+ */
+export const friendsControllerAccept = <ThrowOnError extends boolean = false>(
+  options: Options<FriendsControllerAcceptData, ThrowOnError>,
+): RequestResult<FriendsControllerAcceptResponses, FriendsControllerAcceptErrors, ThrowOnError> =>
+  (options.client ?? client).post<
+    FriendsControllerAcceptResponses,
+    FriendsControllerAcceptErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/friends/requests/{id}/accept',
+    ...options,
+  });
+
+/**
+ * Decline an incoming or cancel an outgoing friend request
+ */
+export const friendsControllerDecline = <ThrowOnError extends boolean = false>(
+  options: Options<FriendsControllerDeclineData, ThrowOnError>,
+): RequestResult<FriendsControllerDeclineResponses, FriendsControllerDeclineErrors, ThrowOnError> =>
+  (options.client ?? client).delete<
+    FriendsControllerDeclineResponses,
+    FriendsControllerDeclineErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/friends/requests/{id}',
+    ...options,
+  });
+
+/**
+ * People the caller recently played with
+ */
+export const friendsControllerRecentPlayers = <ThrowOnError extends boolean = false>(
+  options?: Options<FriendsControllerRecentPlayersData, ThrowOnError>,
+): RequestResult<FriendsControllerRecentPlayersResponses, unknown, ThrowOnError> =>
+  (options?.client ?? client).get<FriendsControllerRecentPlayersResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/friends/recent-players',
+    ...options,
+  });
+
+/**
+ * Remove a friend
+ */
+export const friendsControllerRemove = <ThrowOnError extends boolean = false>(
+  options: Options<FriendsControllerRemoveData, ThrowOnError>,
+): RequestResult<FriendsControllerRemoveResponses, FriendsControllerRemoveErrors, ThrowOnError> =>
+  (options.client ?? client).delete<
+    FriendsControllerRemoveResponses,
+    FriendsControllerRemoveErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/friends/{userId}',
+    ...options,
+  });
+
+/**
+ * Friendship status between the caller and a user
+ */
+export const userFriendshipControllerFriendship = <ThrowOnError extends boolean = false>(
+  options: Options<UserFriendshipControllerFriendshipData, ThrowOnError>,
+): RequestResult<UserFriendshipControllerFriendshipResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).get<
+    UserFriendshipControllerFriendshipResponses,
+    unknown,
+    ThrowOnError
+  >({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/users/{id}/friendship',
+    ...options,
+  });
+
+/**
+ * Presence of the caller's online friends
+ */
+export const presenceControllerFriends = <ThrowOnError extends boolean = false>(
+  options?: Options<PresenceControllerFriendsData, ThrowOnError>,
+): RequestResult<PresenceControllerFriendsResponses, unknown, ThrowOnError> =>
+  (options?.client ?? client).get<PresenceControllerFriendsResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/presence/friends',
+    ...options,
+  });
+
+/**
+ * Presence of a user (404 when offline)
+ */
+export const userPresenceControllerPresence = <ThrowOnError extends boolean = false>(
+  options: Options<UserPresenceControllerPresenceData, ThrowOnError>,
+): RequestResult<
+  UserPresenceControllerPresenceResponses,
+  UserPresenceControllerPresenceErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).get<
+    UserPresenceControllerPresenceResponses,
+    UserPresenceControllerPresenceErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/users/{id}/presence',
+    ...options,
+  });
+
+/**
+ * Get the current featured release (game of the week)
+ */
+export const featuredReleaseControllerGetFeatured = <ThrowOnError extends boolean = false>(
+  options?: Options<FeaturedReleaseControllerGetFeaturedData, ThrowOnError>,
+): RequestResult<FeaturedReleaseControllerGetFeaturedResponses, unknown, ThrowOnError> =>
+  (options?.client ?? client).get<
+    FeaturedReleaseControllerGetFeaturedResponses,
+    unknown,
+    ThrowOnError
+  >({ url: '/releases/featured', ...options });
+
+/**
+ * Clear the current featured release
+ */
+export const adminFeaturedReleaseControllerClearFeatured = <ThrowOnError extends boolean = false>(
+  options?: Options<AdminFeaturedReleaseControllerClearFeaturedData, ThrowOnError>,
+): RequestResult<
+  AdminFeaturedReleaseControllerClearFeaturedResponses,
+  AdminFeaturedReleaseControllerClearFeaturedErrors,
+  ThrowOnError
+> =>
+  (options?.client ?? client).delete<
+    AdminFeaturedReleaseControllerClearFeaturedResponses,
+    AdminFeaturedReleaseControllerClearFeaturedErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/featured-release',
+    ...options,
+  });
+
+/**
+ * Feature a published project (replaces the current pick)
+ */
+export const adminFeaturedReleaseControllerSetFeatured = <ThrowOnError extends boolean = false>(
+  options: Options<AdminFeaturedReleaseControllerSetFeaturedData, ThrowOnError>,
+): RequestResult<
+  AdminFeaturedReleaseControllerSetFeaturedResponses,
+  AdminFeaturedReleaseControllerSetFeaturedErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).put<
+    AdminFeaturedReleaseControllerSetFeaturedResponses,
+    AdminFeaturedReleaseControllerSetFeaturedErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/featured-release',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * List past and current featured releases
+ */
+export const adminFeaturedReleaseControllerGetHistory = <ThrowOnError extends boolean = false>(
+  options?: Options<AdminFeaturedReleaseControllerGetHistoryData, ThrowOnError>,
+): RequestResult<
+  AdminFeaturedReleaseControllerGetHistoryResponses,
+  AdminFeaturedReleaseControllerGetHistoryErrors,
+  ThrowOnError
+> =>
+  (options?.client ?? client).get<
+    AdminFeaturedReleaseControllerGetHistoryResponses,
+    AdminFeaturedReleaseControllerGetHistoryErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/featured-release/history',
     ...options,
   });
 
@@ -1237,12 +1647,13 @@ export const authControllerChangePassword = <ThrowOnError extends boolean = fals
   });
 
 /**
- * Remove refresh token cookie
+ * End the session and clear the refresh token cookie
  */
 export const authControllerLogout = <ThrowOnError extends boolean = false>(
   options?: Options<AuthControllerLogoutData, ThrowOnError>,
 ): RequestResult<AuthControllerLogoutResponses, unknown, ThrowOnError> =>
   (options?.client ?? client).post<AuthControllerLogoutResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/auth/logout',
     ...options,
   });
@@ -1264,7 +1675,7 @@ export const userControllerGetProfile = <ThrowOnError extends boolean = false>(
   });
 
 /**
- * Update current user profile
+ * Update the parts of your own profile you write: names, description, accent
  */
 export const userControllerUpdateMyProfile = <ThrowOnError extends boolean = false>(
   options: Options<UserControllerUpdateMyProfileData, ThrowOnError>,
@@ -1285,6 +1696,102 @@ export const userControllerUpdateMyProfile = <ThrowOnError extends boolean = fal
       'Content-Type': 'application/json',
       ...options.headers,
     },
+  });
+
+/**
+ * Delete the current account (soft-delete + anonymise; purges sessions, tokens, friends, notifications, unpublished games)
+ */
+export const userControllerDeleteMe = <ThrowOnError extends boolean = false>(
+  options: Options<UserControllerDeleteMeData, ThrowOnError>,
+): RequestResult<UserControllerDeleteMeResponses, UserControllerDeleteMeErrors, ThrowOnError> =>
+  (options.client ?? client).delete<
+    UserControllerDeleteMeResponses,
+    UserControllerDeleteMeErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/users/me',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Get the current user's account settings
+ */
+export const userControllerGetMe = <ThrowOnError extends boolean = false>(
+  options?: Options<UserControllerGetMeData, ThrowOnError>,
+): RequestResult<UserControllerGetMeResponses, UserControllerGetMeErrors, ThrowOnError> =>
+  (options?.client ?? client).get<
+    UserControllerGetMeResponses,
+    UserControllerGetMeErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/users/me',
+    ...options,
+  });
+
+/**
+ * Update the current user's account settings
+ */
+export const userControllerUpdateMe = <ThrowOnError extends boolean = false>(
+  options: Options<UserControllerUpdateMeData, ThrowOnError>,
+): RequestResult<UserControllerUpdateMeResponses, UserControllerUpdateMeErrors, ThrowOnError> =>
+  (options.client ?? client).patch<
+    UserControllerUpdateMeResponses,
+    UserControllerUpdateMeErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/users/me',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Replace the current user's friend code
+ */
+export const userControllerRegenerateFriendCode = <ThrowOnError extends boolean = false>(
+  options?: Options<UserControllerRegenerateFriendCodeData, ThrowOnError>,
+): RequestResult<
+  UserControllerRegenerateFriendCodeResponses,
+  UserControllerRegenerateFriendCodeErrors,
+  ThrowOnError
+> =>
+  (options?.client ?? client).post<
+    UserControllerRegenerateFriendCodeResponses,
+    UserControllerRegenerateFriendCodeErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/users/me/friend-code/regenerate',
+    ...options,
+  });
+
+/**
+ * Remove your own profile picture
+ */
+export const userControllerRemoveProfilePicture = <ThrowOnError extends boolean = false>(
+  options: Options<UserControllerRemoveProfilePictureData, ThrowOnError>,
+): RequestResult<
+  UserControllerRemoveProfilePictureResponses,
+  UserControllerRemoveProfilePictureErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).delete<
+    UserControllerRemoveProfilePictureResponses,
+    UserControllerRemoveProfilePictureErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/users/{id}/profile-picture',
+    ...options,
   });
 
 /**
@@ -1330,6 +1837,26 @@ export const userControllerUploadProfilePicture = <ThrowOnError extends boolean 
       'Content-Type': null,
       ...options.headers,
     },
+  });
+
+/**
+ * Remove your own profile background
+ */
+export const userControllerRemoveProfileBackground = <ThrowOnError extends boolean = false>(
+  options: Options<UserControllerRemoveProfileBackgroundData, ThrowOnError>,
+): RequestResult<
+  UserControllerRemoveProfileBackgroundResponses,
+  UserControllerRemoveProfileBackgroundErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).delete<
+    UserControllerRemoveProfileBackgroundResponses,
+    UserControllerRemoveProfileBackgroundErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/users/{id}/profile-background',
+    ...options,
   });
 
 /**
@@ -1426,6 +1953,17 @@ export const userControllerUpdate = <ThrowOnError extends boolean = false>(
   });
 
 /**
+ * Find people by handle or display name
+ */
+export const userPublicControllerSearch = <ThrowOnError extends boolean = false>(
+  options: Options<UserPublicControllerSearchData, ThrowOnError>,
+): RequestResult<UserPublicControllerSearchResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).get<UserPublicControllerSearchResponses, unknown, ThrowOnError>({
+    url: '/users/public/search',
+    ...options,
+  });
+
+/**
  * Get a public user profile by ID
  */
 export const userPublicControllerGetPublicProfile = <ThrowOnError extends boolean = false>(
@@ -1480,6 +2018,29 @@ export const userPublicControllerGetPublishedGames = <ThrowOnError extends boole
     unknown,
     ThrowOnError
   >({ url: '/users/public/{id}/published-games', ...options });
+
+/**
+ * Get published games the user collaborated on
+ */
+export const userPublicControllerGetCollaborations = <ThrowOnError extends boolean = false>(
+  options: Options<UserPublicControllerGetCollaborationsData, ThrowOnError>,
+): RequestResult<UserPublicControllerGetCollaborationsResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).get<
+    UserPublicControllerGetCollaborationsResponses,
+    unknown,
+    ThrowOnError
+  >({ url: '/users/public/{id}/collaborations', ...options });
+
+/**
+ * Get published games remixed from this user's
+ */
+export const userPublicControllerGetRemixes = <ThrowOnError extends boolean = false>(
+  options: Options<UserPublicControllerGetRemixesData, ThrowOnError>,
+): RequestResult<UserPublicControllerGetRemixesResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).get<UserPublicControllerGetRemixesResponses, unknown, ThrowOnError>({
+    url: '/users/public/{id}/remixes',
+    ...options,
+  });
 
 /**
  * Join a work session

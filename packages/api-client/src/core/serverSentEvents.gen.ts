@@ -71,13 +71,13 @@ export interface StreamEvent<TData = unknown> {
   retry?: number;
 }
 
-export interface ServerSentEventsResult<TData = unknown, TReturn = void, TNext = unknown> {
+export type ServerSentEventsResult<TData = unknown, TReturn = void, TNext = unknown> = {
   stream: AsyncGenerator<
     TData extends Record<string, unknown> ? TData[keyof TData] : TData,
     TReturn,
     TNext
   >;
-}
+};
 
 export function createSseClient<TData = unknown>({
   onRequest,
@@ -107,7 +107,9 @@ export function createSseClient<TData = unknown>({
       attempt++;
 
       const headers =
-        options.headers instanceof Headers ? options.headers : new Headers(options.headers);
+        options.headers instanceof Headers
+          ? options.headers
+          : new Headers(options.headers as Record<string, string> | undefined);
 
       if (lastEventId !== undefined) {
         headers.set('Last-Event-ID', lastEventId);
@@ -160,7 +162,7 @@ export function createSseClient<TData = unknown>({
 
             for (const chunk of chunks) {
               const lines = chunk.split('\n');
-              const dataLines: string[] = [];
+              const dataLines: Array<string> = [];
               let eventName: string | undefined;
 
               for (const line of lines) {
