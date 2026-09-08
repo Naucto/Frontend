@@ -20,7 +20,13 @@ import {
   type SearchHit,
 } from '@app/shared/docs/docs.service';
 import { TranslocoDirective } from '@jsverse/transloco';
-import { ButtonDirective, EmptyStateComponent, IconComponent, SearchComponent } from '@naucto/ui';
+import {
+  ButtonDirective,
+  EmptyStateComponent,
+  IconComponent,
+  SearchComponent,
+  shortcutLabel,
+} from '@naucto/ui';
 
 /** /learn: the documentation, rendered in the app with the tree, search and "copy to new game". */
 @Component({
@@ -41,7 +47,7 @@ import { ButtonDirective, EmptyStateComponent, IconComponent, SearchComponent } 
           #search
           class="mb-2"
           [placeholder]="t('docs.search')"
-          hint="⌘K"
+          [hint]="searchHint"
           [value]="query()"
           (valueChange)="query.set($event)"
         />
@@ -136,6 +142,7 @@ import { ButtonDirective, EmptyStateComponent, IconComponent, SearchComponent } 
 export class LearnPage {
   /** Doc slug: "api/gfx", "tutorials/pong" … (empty = index). */
   readonly path = input<string | undefined>();
+  protected readonly searchHint = shortcutLabel('K');
   private readonly searchBox = viewChild<SearchComponent>('search');
   protected readonly docs = inject(DocsService);
   protected readonly auth = inject(AuthStore);

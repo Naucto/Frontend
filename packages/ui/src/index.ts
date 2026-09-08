@@ -55,3 +55,4 @@ export * from './format';
 export { ICON_PATHS, type IconName } from './icons/paths';
 export * from './palette';
 export * from './pipes/relative-time.pipe';
+export * from './platform';
