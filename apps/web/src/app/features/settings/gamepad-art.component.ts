@@ -7,8 +7,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
  * that shaded them would compete for the same glance — and would have to claim which face is which
  * colour, which no two controllers agree on.
  *
- * Its interior is not filled. The outlines are rings, so whatever the card is painted in shows
- * through the body.
+ * Its outlines are rings, so whatever the card is painted in shows through the body.
  *
  * Hidden from assistive tech: the card around it already carries the words.
  */
