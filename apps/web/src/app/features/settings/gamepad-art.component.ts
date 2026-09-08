@@ -1,19 +1,16 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 
 /**
- * The controller drawn on the CONTROLS tab, beside the slot and the prompt to press a button.
+ * The controller drawn on the CONTROLS tab.
  *
- * A line, not a picture. It stands for "a gamepad" next to a table of bindings, and a shaded object
- * with coloured buttons competed with the four real ones in that table for the same glance — it
- * also had to claim which face is which colour, something no two controllers agree on. Drawn in the
- * current ink, so it follows the theme rather than staying dark on a light page.
+ * A line rather than an object: it sits beside a table naming the four face buttons, so a drawing
+ * that shaded them would compete for the same glance — and would have to claim which face is which
+ * colour, which no two controllers agree on.
  *
- * The outlines are filled shapes rather than strokes, which is how the artwork it comes from is
- * built: the body is a ring, and what looks like the inside of the controller is the card showing
- * through it.
+ * Its interior is not filled. The outlines are rings, so whatever the card is painted in shows
+ * through the body.
  *
- * Hidden from assistive tech: the card around it already announces the status, the slot, the pad's
- * name and the prompt.
+ * Hidden from assistive tech: the card around it already carries the words.
  */
 @Component({
   selector: 'nc-gamepad-art',
