@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { Router } from '@angular/router';
 import { unwrap } from '@app/core/api/api-errors';
 import { HubRowComponent } from '@app/features/hub/hub-row.component';
-import { GameCardComponent } from '@app/shared/game-card/game-card.component';
 import { qk } from '@app/shared/queries/query-keys';
 import { TranslocoDirective } from '@jsverse/transloco';
 import {
@@ -14,7 +13,6 @@ import {
   ButtonDirective,
   EmptyStateComponent,
   ErrorStateComponent,
-  IconComponent,
   SkeletonComponent,
 } from '@naucto/ui';
 import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
@@ -27,19 +25,10 @@ import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-quer
     EmptyStateComponent,
     ErrorStateComponent,
     SkeletonComponent,
-    IconComponent,
     HubRowComponent,
-    GameCardComponent,
   ],
   template: `
     <div *transloco="let t" class="grid gap-4">
-      <div class="flex items-center justify-between">
-        <h1 class="text-display text-ink">{{ t('games.title') }}</h1>
-        <button ncButton variant="primary" (click)="create()" [disabled]="creating.isPending()">
-          <nc-icon name="plus" [size]="12" />
-          {{ t('nav.newGame') }}
-        </button>
-      </div>
       @if (query.isError()) {
         <!-- Never the "you have no games" copy: someone with a shelf full of them would read that
              as having lost the lot. -->
@@ -64,22 +53,13 @@ import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-quer
           <button ncButton variant="primary" (click)="create()">+ {{ t('nav.newGame') }}</button>
         </nc-empty-state>
       } @else {
-        <section>
-          <h2 class="mb-1.5 text-title text-ink">
-            {{ t('games.drafts') }}
-            <span class="label">{{ drafts().length }}</span>
-          </h2>
-          <div
-            class="grid gap-2"
-            [style.gridTemplateColumns]="'repeat(auto-fill, minmax(200px, 1fr))'"
-          >
-            @for (g of drafts(); track g.id) {
-              <nc-game-card [game]="g" [draft]="true" />
-            } @empty {
-              <p class="text-body text-ink-3">{{ t('games.noDrafts') }}</p>
-            }
-          </div>
-        </section>
+        <nc-hub-row
+          [title]="t('games.drafts')"
+          [games]="drafts()"
+          [count]="drafts().length"
+          [empty]="t('games.noDrafts')"
+          [drafts]="true"
+        />
         <nc-hub-row
           [title]="t('games.published')"
           [games]="published()"

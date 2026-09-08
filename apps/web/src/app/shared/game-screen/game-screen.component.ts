@@ -79,7 +79,7 @@ import { VirtualPadComponent } from './virtual-pad.component';
           role="application"
           aria-label="Game screen. Click to focus, then use the keyboard or a gamepad."
           class="pixelated block touch-none outline-none"
-          [style.width]="fit() === 'width' ? '100%' : null"
+          [style.width]="isFullscreen() ? null : fit() === 'width' ? '100%' : null"
           [style.imageRendering]="'pixelated'"
         ></canvas>
         @if (fpsVisible()) {
@@ -261,9 +261,20 @@ import { VirtualPadComponent } from './virtual-pad.component';
       height: 100vh;
       background: #000;
     }
+    /* Given no width of its own, this centred flex child measured itself on the canvas — whose own
+       width was a percentage of it — and the picture came out at the size the canvas happened to
+       be intrinsically. It takes the surface, and the canvas is fitted inside it at its own
+       proportions rather than stretched to a width. */
     .game-frame:fullscreen > div:first-child {
       max-width: none;
-      max-height: 100vh;
+      width: 100vw;
+      height: 100vh;
+      aspect-ratio: auto;
+    }
+    .game-frame:fullscreen canvas {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
