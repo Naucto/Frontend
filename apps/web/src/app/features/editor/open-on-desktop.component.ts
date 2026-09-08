@@ -4,9 +4,10 @@ import { TranslocoDirective } from '@jsverse/transloco';
 import { ButtonDirective, EmptyStateComponent, IconComponent, ToastService } from '@naucto/ui';
 
 /**
- * What `/edit/:id` shows while the window is too narrow for the editor. Held in place of the
- * workspace rather than routed to, so widening the window gives the editor back without the person
- * having to find their way here again — a link to the editor stays a link to a real game.
+ * What stands in for the editor's workspace while the window is too narrow to lay it out.
+ *
+ * It offers the game and the link rather than an apology, because someone reaching this has
+ * followed a link to something real and should leave with a way to it.
  */
 @Component({
   selector: 'nc-open-on-desktop',
@@ -44,7 +45,6 @@ import { ButtonDirective, EmptyStateComponent, IconComponent, ToastService } fro
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OpenOnDesktopComponent {
-  /** The game being opened, so this can offer to play it and hand back its editor link. */
   readonly id = input('');
   private readonly toasts = inject(ToastService);
   protected readonly copied = signal(false);
