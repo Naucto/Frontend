@@ -17,7 +17,6 @@ import {
   ButtonDirective,
   ConfirmDialogComponent,
   DialogService,
-  FriendCodeComponent,
   InputDirective,
   SegmentedComponent,
   SettingRowComponent,
@@ -32,15 +31,13 @@ const POLICIES: JoinPolicy[] = ['ANYONE', 'FRIENDS', 'CODE_ONLY'];
  * ACCOUNT tab: one row per setting, saved as you leave the field.
  *
  * Identity, reach and destruction all live here, in the artboard's order. They used to be split
- * across a second PRIVACY tab, which put the friend code two clicks from the display name it
- * belongs beside and left nothing else on the tab worth showing.
+ * across a second PRIVACY tab, which left nothing on either worth a click of its own.
  */
 @Component({
   selector: 'nc-account-settings',
   imports: [
     TranslocoDirective,
     ButtonDirective,
-    FriendCodeComponent,
     InputDirective,
     SegmentedComponent,
     SettingRowComponent,
@@ -62,17 +59,6 @@ const POLICIES: JoinPolicy[] = ['ANYONE', 'FRIENDS', 'CODE_ONLY'];
       @if (me.isError()) {
         <p class="py-2 text-body text-ink-3">{{ t('settings.privacySoon') }}</p>
       } @else {
-        <nc-setting-row [title]="t('settings.friendCode')" [hint]="t('settings.friendCodeHint')">
-          <nc-friend-code
-            class="w-[210px]"
-            [code]="me.data()?.friendCode"
-            [regenerable]="true"
-            [copyLabel]="t('settings.copy')"
-            [regenerateLabel]="t('settings.regenerate')"
-            (copied)="copy()"
-            (regenerate)="regenerate()"
-          />
-        </nc-setting-row>
         <nc-setting-row [title]="t('settings.joinPolicy')" [hint]="t('settings.joinPolicyHint')">
           <nc-segmented
             [options]="policies()"
@@ -168,18 +154,6 @@ export class AccountSettingsComponent {
 
   protected setPolicy(v: string | undefined): void {
     if (POLICIES.includes(v as JoinPolicy)) this.update.mutate(v as JoinPolicy);
-  }
-
-  protected async regenerate(): Promise<void> {
-    await meApi.regenerateFriendCode();
-    await this.qc.invalidateQueries({ queryKey: ['me'] });
-  }
-
-  protected async copy(): Promise<void> {
-    const code = this.me.data()?.friendCode;
-    if (!code) return;
-    await navigator.clipboard.writeText(code.toUpperCase());
-    this.toasts.show('Copied', 'success');
   }
 
   protected confirmDelete(): void {

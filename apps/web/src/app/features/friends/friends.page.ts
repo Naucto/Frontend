@@ -4,7 +4,6 @@ import {
   type FriendDto,
   type FriendRequestDto,
   friendsApi,
-  meApi,
   type RecentPlayerDto,
 } from '@app/core/api/planned.api';
 import { AuthStore } from '@app/core/auth/auth.store';
@@ -24,7 +23,7 @@ import {
 } from '@naucto/ui';
 import { injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
 
-import { type AddFriendData, AddFriendDialog } from './add-friend.dialog';
+import { AddFriendDialog } from './add-friend.dialog';
 
 type Friend = FriendDto & { presence: PresenceDto | null };
 
@@ -62,12 +61,8 @@ const ACCENT: Record<string, { rule: string; name: string }> = {
              tall screen and low on a short one. -->
         <div class="flex flex-1 items-center justify-center">
           <nc-empty-state icon="users" [title]="t('friends.emptyTitle')">
-            <!-- Formatted by hand, and kept that way: a newline between the code and the stop that
-                 follows it collapses to a space, so the sentence read "…R9VTKD3P ." Reformatting
-                 this block puts the space back, which is why the formatter is held off it. -->
-            <!-- prettier-ignore -->
             <p hint class="max-w-[420px] text-meta leading-[1.6] text-ink-3">
-              {{ t('friends.emptyBefore') }} <span class="font-mono text-meta tracking-strip text-gold-ink">{{ myCode() || '—' }}</span>{{ t('friends.emptyAfter') }}
+              {{ t('friends.emptyHint') }}
             </p>
             <button ncButton variant="primary" (click)="openAdd()">
               <nc-icon name="plus" [size]="12" />
@@ -280,14 +275,7 @@ export class FriendsPage {
     queryFn: () => friendsApi.recentPlayers(),
     enabled: this.auth.isAuthenticated(),
   }));
-  private readonly meQuery = injectQuery(() => ({
-    queryKey: ['me'],
-    queryFn: () => meApi.get(),
-    enabled: this.auth.isAuthenticated(),
-  }));
 
-  /** Uppercase wherever it is shown, as the design writes it and add-friend sends it. */
-  protected readonly myCode = computed(() => (this.meQuery.data()?.friendCode ?? '').toUpperCase());
   /** Presence is pushed over the notifications socket, so these rows change without a refetch. */
   protected readonly friends = computed<Friend[]>(() =>
     (this.friendsQuery.data() ?? []).map((f) => ({ ...f, presence: this.presence.of(f.id) })),
@@ -367,9 +355,7 @@ export class FriendsPage {
 
   protected openAdd(): void {
     this.dialogs
-      .open<AddFriendDialog, AddFriendData, boolean>(AddFriendDialog, {
-        data: { friendCode: this.myCode() },
-      })
+      .open<AddFriendDialog, undefined, boolean>(AddFriendDialog)
       .closed.subscribe((sent) => {
         if (sent) void this.qc.invalidateQueries({ queryKey: ['friends'] });
       });

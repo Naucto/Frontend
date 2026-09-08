@@ -16,8 +16,6 @@
     "theme": "Theme",
     "signOut": "Sign out",
     "gamesFriends": "{{g}} games · {{f}} friends",
-    "friendCode": "Friend code",
-    "codeHint": "Hand this out when your nickname is taken twice over. Most people will just search for you.",
     "appearance": "Appearance",
     "copy": "Copy friend code"
   },
@@ -86,9 +84,6 @@
     "noPad": "No gamepad",
     "slot": "Slot P{{n}}",
     "pressAny": "Press any button to identify",
-    "friendCode": "Friend code",
-    "friendCodeHint": "People can add you with this",
-    "regenerate": "New code",
     "copy": "Copy",
     "joinPolicy": "Who can join my sessions",
     "joinPolicyHint": "Applies to every game you host",
@@ -558,14 +553,12 @@
     "accept": "Accept",
     "decline": "Decline",
     "emptyTitle": "Nobody here yet",
-    "codePlaceholder": "nickname or friend code",
+    "codePlaceholder": "username or nickname",
     "sent": "Request sent",
     "remove": "Remove friend",
-    "emptyBefore": "Search a nickname, or hand out your code",
-    "emptyAfter": ". Friends show what they are building, not follower counts.",
     "search": "Search",
     "noMatch": "Nobody called “{{q}}”.",
-    "yourCodeIs": "Your code:"
+    "emptyHint": "Search someone by name and ask. Friends show what they are building, not follower counts."
   },
   "profile": {
     "games": "Games",

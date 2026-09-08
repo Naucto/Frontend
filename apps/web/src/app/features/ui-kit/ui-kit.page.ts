@@ -14,7 +14,6 @@ import {
   EmptyStateComponent,
   ErrorStateComponent,
   FieldComponent,
-  FriendCodeComponent,
   HelpDotComponent,
   IconComponent,
   InputDirective,
@@ -37,6 +36,7 @@ import {
   SectionComponent,
   SegmentedComponent,
   SettingRowComponent,
+  ShareCodeComponent,
   SkeletonComponent,
   SliderComponent,
   StatComponent,
@@ -92,7 +92,7 @@ import { ACCENT_SLOTS } from '../editor/accent-slots';
     StepperComponent,
     ToolGroupComponent,
     ToggleButtonComponent,
-    FriendCodeComponent,
+    ShareCodeComponent,
     SettingRowComponent,
     HelpDotComponent,
     PopoverDirective,
@@ -311,8 +311,8 @@ import { ACCENT_SLOTS } from '../editor/accent-slots';
               </nc-toggle-button>
             </div>
           </nc-section>
-          <nc-section title="Friend code">
-            <nc-friend-code
+          <nc-section title="Share code">
+            <nc-share-code
               class="w-[210px]"
               code="ALEXIS01"
               [regenerable]="true"

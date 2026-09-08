@@ -1,29 +1,26 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { unwrap } from '@app/core/api/api-errors';
-import { friendsApi, meApi } from '@app/core/api/planned.api';
+import { friendsApi } from '@app/core/api/planned.api';
 import { AuthStore } from '@app/core/auth/auth.store';
 import { ThemeService } from '@app/core/theme/theme.service';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { projectControllerFindAll } from '@naucto/api-client';
 import {
   AvatarComponent,
-  FriendCodeComponent,
   IconComponent,
   PopoverDirective,
   PopoverPanelComponent,
-  ToastService,
 } from '@naucto/ui';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 
-/** Account popover: identity, friend code, Profile / Settings / Appearance / Sign out. */
+/** Account popover: identity, then Profile / Settings / Appearance / Sign out. */
 @Component({
   selector: 'nc-account-menu',
   imports: [
     RouterLink,
     TranslocoDirective,
     AvatarComponent,
-    FriendCodeComponent,
     IconComponent,
     PopoverDirective,
     PopoverPanelComponent,
@@ -55,15 +52,6 @@ import { injectQuery } from '@tanstack/angular-query-experimental';
                break, and a second one so close to the panel's own edge made the name look like a
                header bolted to the menu rather than the top of it. The nav below keeps its rule,
                where the panel really does change from telling to offering. -->
-          <div class="px-2 pb-2">
-            <div class="label mb-1 text-ink-3">{{ t('account.friendCode') }}</div>
-            <nc-friend-code
-              [code]="me.data()?.friendCode"
-              [copyLabel]="t('account.copy')"
-              (copied)="copy()"
-            />
-            <p class="mt-1 text-label leading-[1.5] text-ink-4">{{ t('account.codeHint') }}</p>
-          </div>
           <div class="flex flex-col border-t border-line p-1">
             @if (auth.user()?.username; as username) {
               <a
@@ -115,14 +103,7 @@ export class AccountMenuComponent {
   protected readonly auth = inject(AuthStore);
   protected readonly theme = inject(ThemeService);
   private readonly router = inject(Router);
-  private readonly toasts = inject(ToastService);
   protected readonly open = signal(false);
-  protected readonly me = injectQuery(() => ({
-    queryKey: ['me'],
-    queryFn: () => meApi.get(),
-    enabled: this.auth.isAuthenticated() && this.open(),
-    retry: false,
-  }));
   protected readonly games = injectQuery(() => ({
     queryKey: ['projects', 'count'],
     queryFn: async () =>
@@ -142,13 +123,6 @@ export class AccountMenuComponent {
     enabled: this.auth.isAuthenticated() && this.open(),
     retry: false,
   }));
-
-  protected async copy(): Promise<void> {
-    const code = this.me.data()?.friendCode;
-    if (!code) return;
-    await navigator.clipboard.writeText(code.toUpperCase());
-    this.toasts.show('Copied', 'success');
-  }
 
   protected async logout(): Promise<void> {
     this.open.set(false);

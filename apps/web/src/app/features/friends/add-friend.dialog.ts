@@ -1,5 +1,5 @@
-import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { DialogRef } from '@angular/cdk/dialog';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { friendsApi, usersApi, type UserSummaryDto } from '@app/core/api/planned.api';
 import { TranslocoDirective } from '@jsverse/transloco';
 import {
@@ -11,18 +11,11 @@ import {
   ToastService,
 } from '@naucto/ui';
 
-export interface AddFriendData {
-  /** Shown so the person can hand it out instead of searching. */
-  friendCode: string;
-}
-
-/** Eight characters, letters and digits — what `meApi.get().friendCode` mints. */
-const FRIEND_CODE = /^[a-z0-9]{8}$/i;
-
 /**
- * "Search a nickname, or hand out your code." Both halves of the design's copy are real here: a
- * code goes straight to the request, and anything else is resolved to a person you pick, rather
- * than being posted as a code and coming back 404.
+ * Find a person, then ask them.
+ *
+ * What is typed is resolved to somebody you pick rather than posted as an identifier and coming
+ * back 404: a name is not unique, and the request has to go to a person.
  */
 @Component({
   selector: 'nc-add-friend-dialog',
@@ -48,12 +41,12 @@ const FRIEND_CODE = /^[a-z0-9]{8}$/i;
             (keydown.enter)="submit()"
           />
           <button ncButton variant="primary" (click)="submit()" [disabled]="!query().trim()">
-            {{ isCode() ? t('friends.addFriend') : t('friends.search') }}
+            {{ t('friends.search') }}
           </button>
         </div>
       </nc-field>
 
-      @if (!isCode() && searched()) {
+      @if (searched()) {
         <div class="mt-1.5 grid gap-0.5" role="list">
           @for (u of results(); track u.id) {
             <div
@@ -75,11 +68,6 @@ const FRIEND_CODE = /^[a-z0-9]{8}$/i;
         </div>
       }
 
-      <p class="mt-1.5 text-body text-ink-3">
-        {{ t('friends.yourCodeIs') }}
-        <span class="font-mono text-meta tracking-strip text-gold-ink">{{ myCode() || '—' }}</span>
-      </p>
-
       <button ncButton variant="ghost" footer (click)="ref.close()">
         {{ t('net.cancel') }}
       </button>
@@ -90,11 +78,9 @@ const FRIEND_CODE = /^[a-z0-9]{8}$/i;
 export class AddFriendDialog {
   readonly ref = inject<DialogRef<boolean>>(DialogRef);
   private readonly toasts = inject(ToastService);
-  protected readonly myCode = signal(inject<AddFriendData>(DIALOG_DATA).friendCode.toUpperCase());
   protected readonly query = signal('');
   protected readonly results = signal<UserSummaryDto[]>([]);
   protected readonly searched = signal(false);
-  protected readonly isCode = computed(() => FRIEND_CODE.test(this.query().trim()));
 
   protected onQuery(v: string): void {
     this.query.set(v);
@@ -103,12 +89,7 @@ export class AddFriendDialog {
 
   protected submit(): void {
     const v = this.query().trim();
-    if (!v) return;
-    if (this.isCode()) {
-      this.send({ friendCode: v.toUpperCase() });
-      return;
-    }
-    void this.search(v);
+    if (v) void this.search(v);
   }
 
   private async search(nickname: string): Promise<void> {
@@ -120,7 +101,7 @@ export class AddFriendDialog {
     this.searched.set(true);
   }
 
-  protected send(body: { userId?: number; friendCode?: string }): void {
+  protected send(body: { userId: number }): void {
     void friendsApi
       .send(body)
       .then(() => {

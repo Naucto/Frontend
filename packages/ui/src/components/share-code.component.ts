@@ -12,18 +12,18 @@ import { IconComponent } from './icon.component';
 import { ReadoutComponent } from './readout.component';
 
 /**
- * The code someone hands out so a friend can add them, with copy and (optionally) regenerate.
+ * A short code to hand to somebody, with copy and — where the caller can mint a new one — regenerate.
  *
- * One component because the app had grown four renderings of the same `friendCode` field — three
- * sizes, two tracking values, two placeholders and three different boxes — so the code looked like
- * a different kind of thing depending on where you met it. The design draws one box in both places
- * it appears: sunken well, strong border, 10px gap, 22px ghost affordances, the code in gold mono.
+ * One component because the app had grown four renderings of the same field — three sizes, two
+ * tracking values, two placeholders and three different boxes — so a code looked like a different
+ * kind of thing depending on where you met it. The design draws one box: sunken well, strong
+ * border, 10px gap, 22px ghost affordances, the code in gold mono.
  *
- * It is shown uppercase because that is how the design writes it and how the add-friend field
- * sends it; a lowercase code and its uppercase twin are the same code.
+ * It is shown uppercase because that is how the design writes one, and because a lowercase code
+ * and its uppercase twin are the same code.
  */
 @Component({
-  selector: 'nc-friend-code',
+  selector: 'nc-share-code',
   imports: [ButtonDirective, IconComponent, ReadoutComponent],
   template: `
     <nc-readout [value]="shown()" tone="gold">
@@ -60,12 +60,12 @@ import { ReadoutComponent } from './readout.component';
   host: { class: 'block' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class FriendCodeComponent {
+export class ShareCodeComponent {
   readonly code = input<string | null | undefined>(null);
   /** Show the regenerate action. Only the owner's own settings offer it. */
   readonly regenerable = input(false, { transform: booleanAttribute });
-  readonly copyLabel = input('Copy friend code');
-  readonly regenerateLabel = input('Generate a new friend code');
+  readonly copyLabel = input('Copy code');
+  readonly regenerateLabel = input('Generate a new code');
 
   readonly copied = output();
   readonly regenerate = output();

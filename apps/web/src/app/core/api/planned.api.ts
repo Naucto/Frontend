@@ -70,7 +70,6 @@ export interface RecentPlayerDto extends UserSummaryDto {
 export type JoinPolicy = 'ANYONE' | 'FRIENDS' | 'CODE_ONLY';
 
 export interface MeDto {
-  friendCode: string;
   sessionJoinPolicy: JoinPolicy;
 }
 
@@ -78,7 +77,7 @@ export const friendsApi = {
   list: async (): Promise<FriendDto[]> => take<FriendDto[]>(client.get({ url: '/friends' })),
   requests: async (): Promise<FriendRequestDto[]> =>
     take<FriendRequestDto[]>(client.get({ url: '/friends/requests' })),
-  send: async (body: { userId?: number; friendCode?: string }): Promise<void> => {
+  send: async (body: { userId: number }): Promise<void> => {
     await take<unknown>(client.post({ url: '/friends/requests', body }));
   },
   accept: async (id: number): Promise<void> => {
@@ -133,8 +132,6 @@ export const meApi = {
   get: async (): Promise<MeDto> => take<MeDto>(client.get({ url: '/users/me' })),
   update: async (patch: Partial<MeDto>): Promise<MeDto> =>
     take<MeDto>(client.patch({ url: '/users/me', body: patch })),
-  regenerateFriendCode: async (): Promise<MeDto> =>
-    take<MeDto>(client.post({ url: '/users/me/friend-code/regenerate' })),
   deleteAccount: async (body: {
     confirmation: 'DELETE';
     removePublishedGames: boolean;
