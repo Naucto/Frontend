@@ -103,7 +103,7 @@ type Target =
                     <nc-highlight [text]="g.name" [match]="parsed().term" />
                   </span>
                   <span class="label min-w-0 flex-[0_1_auto] truncate text-ink-4">
-                    {{ t('search.byPlays', { name: creatorOf(g), plays: g.viewCount ?? 0 }) }}
+                    {{ t('search.byPlays', { name: creatorOf(g), plays: g.viewCount }) }}
                   </span>
                 </nc-suggest-row>
               }

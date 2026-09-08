@@ -46,9 +46,13 @@ const NAV_LINK =
          and the seam under it runs straight down. The band's height and its bottom rule are
          deliberately not the design's: they match the hub's header, and one shell that changes
          shape between hub and editor was the worse of the two. -->
+    <!-- Positioned above the page because the bar opens things over it. A z-index on the dropdown
+         itself cannot do this: it would only order it inside this subtree, which is painted at the
+         bar's own place in the document — behind every positioned element that comes later. Above
+         the editor's edge handles (20), below the toasts (50). -->
     <header
       *transloco="let t"
-      class="relative flex min-h-7 flex-wrap items-center gap-x-0 gap-y-2 border-b border-line bg-panel py-1 pr-2 pl-0 md:flex-nowrap md:py-0"
+      class="relative z-30 flex min-h-7 flex-wrap items-center gap-x-0 gap-y-2 border-b border-line bg-panel py-1 pr-2 pl-0 md:flex-nowrap md:py-0"
     >
       <a
         routerLink="/hub"

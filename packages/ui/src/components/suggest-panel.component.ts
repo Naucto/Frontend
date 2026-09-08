@@ -6,6 +6,10 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
  * It and the box are one piece: the box loses its bottom corners while this is open and this loses
  * its top border, so the pair reads as a single bordered well rather than a card floating under a
  * field. Its own scroll is capped, because what it lists is unbounded and the box under it is not.
+ *
+ * It carries no z-index on purpose. Being positioned already lifts it over its static siblings, and
+ * clearing the *page* is not something it can settle from in here — a z-index on a child only
+ * orders it inside its parent's subtree. That belongs to whatever bar this drops out of.
  */
 @Component({
   selector: 'nc-suggest-panel',
@@ -18,7 +22,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
     </div>
   `,
   host: {
-    class: 'absolute inset-x-0 top-full z-40 rounded-b-sm border-x border-b border-line bg-panel',
+    class: 'absolute inset-x-0 top-full rounded-b-sm border-x border-b border-line bg-panel',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
