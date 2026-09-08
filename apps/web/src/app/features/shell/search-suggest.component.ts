@@ -94,6 +94,7 @@ type Target =
               @for (g of s.games; track g.id) {
                 <nc-suggest-row
                   [selected]="cursor() === indexOf({ kind: 'game', id: g.id })"
+                  (pointerenter)="cursor.set(indexOf({ kind: 'game', id: g.id }))"
                   (click)="go({ kind: 'game', id: g.id })"
                 >
                   <nc-game-cover
@@ -117,6 +118,7 @@ type Target =
               @for (p of s.people; track p.id) {
                 <nc-suggest-row
                   [selected]="cursor() === indexOf({ kind: 'person', username: p.username })"
+                  (pointerenter)="cursor.set(indexOf({ kind: 'person', username: p.username }))"
                   (click)="go({ kind: 'person', username: p.username })"
                 >
                   <nc-avatar
@@ -145,6 +147,7 @@ type Target =
               @for (v of s.sessions; track v.sessionUuid) {
                 <nc-suggest-row
                   [selected]="cursor() === indexOf({ kind: 'session', projectId: v.projectId })"
+                  (pointerenter)="cursor.set(indexOf({ kind: 'session', projectId: v.projectId }))"
                   (click)="go({ kind: 'session', projectId: v.projectId })"
                 >
                   <nc-online-dot class="shrink-0" [online]="true" />
