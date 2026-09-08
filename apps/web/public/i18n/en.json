@@ -7,7 +7,8 @@
     "learn": "Learn",
     "search": "Search games, people, tags…",
     "newGame": "New game",
-    "signIn": "Sign in"
+    "signIn": "Sign in",
+    "suggestions": "Suggestions"
   },
   "account": {
     "menu": "Account",
@@ -161,6 +162,22 @@
     "seeAll": "See all",
     "remixFailed": "Could not remix that game.",
     "remixable": "remixable"
+  },
+  "search": {
+    "games": "GAMES",
+    "people": "PEOPLE",
+    "liveNow": "LIVE NOW",
+    "tags": "TAGS",
+    "tagsOnly": "TAGS ONLY",
+    "byPlays": "BY {{name}} · {{plays}} PLAYS",
+    "slotsHost": "{{players}}/{{max}} SLOTS · HOSTED BY {{name}}",
+    "nothingYet": "NOTHING YET",
+    "enterAnyway": "— ENTER searches everything anyway",
+    "footerTags": "ENTER — ALL GAMES TAGGED {{tag}}",
+    "move": "↑↓ MOVE",
+    "enterOpen": "ENTER OPEN",
+    "tabResults": "TAB FULL RESULTS",
+    "escClose": "ESC CLOSE"
   },
   "footer": {
     "tagline": "A browser fantasy console. Make tiny Lua games together and play them with friends.",

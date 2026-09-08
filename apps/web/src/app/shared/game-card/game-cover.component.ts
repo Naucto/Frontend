@@ -24,7 +24,9 @@ import { injectProjectImage, injectReleaseImage } from '../queries/releases.quer
       </span>
     }
   `,
-  host: { class: 'block overflow-hidden border-b border-line' },
+  host: {
+    '[class]': '"block overflow-hidden " + (bordered() ? "border-b border-line" : "")',
+  },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GameCoverComponent {
@@ -36,6 +38,8 @@ export class GameCoverComponent {
   /** Shown under the icon on the larger placeholders. */
   readonly label = input<string>();
   readonly iconSize = input<12 | 24 | 48>(24);
+  /** The rule under a card. A thumbnail small enough to sit in a row has nothing to rule off. */
+  readonly bordered = input(true);
 
   private readonly released = injectReleaseImage(() => this.releaseId());
   private readonly draft = injectProjectImage(() => this.projectId());

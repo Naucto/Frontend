@@ -8,14 +8,15 @@ import {
   viewChild,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { ActivatedRoute, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthStore } from '@app/core/auth/auth.store';
 import { TranslocoDirective } from '@jsverse/transloco';
-import { ButtonDirective, IconComponent, SearchComponent } from '@naucto/ui';
+import { ButtonDirective, IconComponent } from '@naucto/ui';
 import { map } from 'rxjs';
 
 import { AccountMenuComponent } from './account-menu.component';
 import { NotificationsBellComponent } from './notifications-bell.component';
+import { SearchSuggestComponent } from './search-suggest.component';
 
 // 12px UI in a 20px line box inside 8px/12px padding: the design's nav link measures 36px tall,
 // which `text-body`'s 1.65 line-height overshoots and a bare `leading-[1.2]` undershoots by six.
@@ -36,7 +37,7 @@ const NAV_LINK =
     TranslocoDirective,
     ButtonDirective,
     IconComponent,
-    SearchComponent,
+    SearchSuggestComponent,
     AccountMenuComponent,
     NotificationsBellComponent,
   ],
@@ -96,12 +97,11 @@ const NAV_LINK =
              evenly-shared row lands the field half that width off-centre. The design centres it
              absolutely and lets the two clusters flank it unevenly, which is what they measure. It
              only leaves the flow once there is room for 420 between two 384-wide clusters. -->
-        <nc-search
+        <nc-search-suggest
           #search
           class="ms-2 min-w-0 flex-1 md:flex-[0_1_420px] xl:absolute xl:top-1/2 xl:left-1/2 xl:ms-0 xl:w-[420px] xl:flex-none xl:-translate-x-1/2 xl:-translate-y-1/2"
           [placeholder]="t('nav.search')"
-          [value]="query()"
-          (submitted)="submit($event)"
+          [query]="query()"
         />
       } @else {
         <span class="ms-2 hidden flex-1 md:block"></span>
@@ -131,11 +131,11 @@ const NAV_LINK =
 })
 export class TopBarComponent {
   protected readonly auth = inject(AuthStore);
-  private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  private readonly searchBox = viewChild<SearchComponent, ElementRef<HTMLElement>>('search', {
-    read: ElementRef,
-  });
+  private readonly searchBox = viewChild<SearchSuggestComponent, ElementRef<HTMLElement>>(
+    'search',
+    { read: ElementRef },
+  );
   readonly search = input(true);
 
   protected readonly navLink = NAV_LINK;
@@ -145,11 +145,6 @@ export class TopBarComponent {
   protected readonly query = toSignal(this.route.queryParamMap.pipe(map((p) => p.get('q') ?? '')), {
     initialValue: '',
   });
-
-  protected submit(q: string): void {
-    void this.router.navigate(['/hub'], { queryParams: { q: q.trim() || null } });
-    this.menuOpen.set(false);
-  }
 
   /** "/" focuses the search from anywhere that is not already a text field. */
   protected onKey(e: KeyboardEvent): void {
