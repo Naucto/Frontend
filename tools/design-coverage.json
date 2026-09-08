@@ -24,6 +24,11 @@
   },
   "unresolvedGlyphs": [
     {
+      "id": "559827cce519",
+      "sample": "M16 2h4v2h2v4h-2v2h-2V8h-2V6h-2V4h2V2zM14 6h2v2h-2v2h-2v2h-2v2H8",
+      "note": "The second pencil the design draws for the profile's edit chips. Transcribed faithfully, then dropped again: its reading depends on single pixels of a 24 grid, and both the design and the app place it at 12, where those pixels are gone and it reads as a diagonal arrow. The chips wear `edit`, which the app already draws at 12 in five other places for the same meaning."
+    },
+    {
       "id": "ad354565257d",
       "sample": "M10 10h4v4h-4v-4zM11 2h2v2h2v2H9V4h2V2zM11 22h2v-2h2v-2H9v2h2v2z",
       "note": "The camera viewfinder's frame on the MAP board. The design added the held-frame panel on 2026-09-08; the app draws no camera rectangle yet."

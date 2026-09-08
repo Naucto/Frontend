@@ -14,7 +14,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
     role: 'option',
     '[attr.aria-selected]': 'selected()',
     '[class]':
-      '"flex w-full items-center gap-2 py-[7px] pr-[14px] text-left " + ' +
+      '"flex w-full cursor-pointer items-center gap-2 py-[7px] pr-[14px] text-left active:bg-inset " + ' +
       '(selected() ? "border-l-2 border-gold bg-raised pl-[12px]" : "pl-[14px]")',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,

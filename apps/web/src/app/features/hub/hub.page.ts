@@ -62,10 +62,10 @@ const SHELF_SIZE = 10;
   ],
   template: `
     <div *transloco="let t" class="grid gap-3.5">
-      @if (term()) {
+      @if (narrowed()) {
         @if (searchResults().length) {
           <nc-hub-row
-            [title]="t('hub.results', { q: term() })"
+            [title]="t('hub.results', { q: term() || tagFilter() })"
             [games]="searchResults()"
             [count]="searchTotal()"
           />
@@ -74,7 +74,7 @@ const SHELF_SIZE = 10;
             class="py-12"
             icon="search"
             [title]="t('hub.noMatch')"
-            [hint]="t('hub.noMatchHint', { q: term() })"
+            [hint]="t('hub.noMatchHint', { q: term() || tagFilter() })"
           >
             <a ncButton variant="primary" routerLink="/games/new">
               <nc-icon name="plus" [size]="12" />
@@ -267,6 +267,8 @@ const SHELF_SIZE = 10;
 export class HubPage {
   /** `?q=` from the top-bar search. */
   readonly q = input<string>();
+  /** `?tags=` — what a tag in the suggestion panel lands on. Comma-separated; a game carries all. */
+  readonly tags = input<string>();
   /** Trimmed `?q=`; empty means the shelves are shown rather than results. */
   protected readonly auth = inject(AuthStore);
   private readonly router = inject(Router);
@@ -276,6 +278,9 @@ export class HubPage {
   private readonly presence = inject(PresenceStore);
   private readonly transloco = inject(TranslocoService);
   protected readonly term = computed(() => this.q()?.trim() ?? '');
+  protected readonly tagFilter = computed(() => this.tags()?.trim() ?? '');
+  /** Either narrows the shelves down to one row; neither leaves them as they are. */
+  protected readonly narrowed = computed(() => this.term() !== '' || this.tagFilter() !== '');
   private readonly page = signal(1);
 
   protected readonly filterOptions = [
@@ -301,7 +306,10 @@ export class HubPage {
   private readonly searchPage = injectReleasesPage(
     () => this.page(),
     24,
-    (): ReleaseQuery => ({ search: this.term() }),
+    (): ReleaseQuery => ({
+      ...(this.term() ? { search: this.term() } : {}),
+      ...(this.tagFilter() ? { tags: this.tagFilter() } : {}),
+    }),
   );
 
   private readonly featured = injectFeaturedRelease();

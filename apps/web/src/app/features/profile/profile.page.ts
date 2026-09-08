@@ -139,8 +139,10 @@ interface ProfileExtras {
               />
             </span>
           }
+          <!-- Decorative, and drawn last, so it lies over the whole band: without this it swallows
+               every click meant for what is underneath. -->
           <span
-            class="absolute inset-0"
+            class="pointer-events-none absolute inset-0"
             style="background:linear-gradient(to bottom,color-mix(in srgb,var(--color-page) 10%,transparent) 0%,color-mix(in srgb,var(--color-page) 55%,transparent) 55%,var(--color-page) 100%)"
           ></span>
         </div>

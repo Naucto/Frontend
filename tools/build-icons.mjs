@@ -132,12 +132,6 @@ const CUSTOM = {
   // affordance, which is the app's `edit` in all three of its slots. Pixelarticons' pencil carries
   // sparkles the design's does not.
   edit: 'M18 2h-2v2h-2v2h-2v2h-2v2H8v2H6v2H4v2H2v6h6v-2h2v-2h2v-2h2v-2h2v-2h2v-2h2V8h2V6h-2V4h-2V2zm0 8h-2v2h-2v2h-2v2h-2v2H8v-2H6v-2h2v-2h2v-2h2V8h2V6h2v2h2v2zM6 16H4v4h4v-2H6v-2z',
-  // The design draws a second, smaller pencil for the edit chips that surface on your own profile
-  // — six of them on that board, and not the ART tab's pen above: no sparkle, and the nib runs to
-  // the corner rather than sitting inside a stroke. Uncaptioned, so settled by slot: the chip is
-  // the one place the app spends this name.
-  pencil:
-    'M16 2h4v2h2v4h-2v2h-2V8h-2V6h-2V4h2V2zM14 6h2v2h-2v2h-2v2h-2v2H8v2H6v2H4v-2h2v-2h2v-2h2v-2h2V8h2V6zM4 16h2v2H6v2H4v2H2v-4h2v-2z',
   // Uncaptioned like the pen, and settled the same way -- each sits in the slot the app already
   // spends the name on. download / camera / upload are the GAME tab's EXPORT, GRAB FRAME and
   // UPLOAD, all three on the same artboard as the app's row; line is the ART tab's line tool; and

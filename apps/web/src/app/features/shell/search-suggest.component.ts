@@ -79,6 +79,7 @@ type Target =
             @for (tag of s.tags; track tag.tag; let i = $index) {
               <nc-suggest-row
                 [selected]="cursor() === i"
+                (pointerenter)="cursor.set(i)"
                 (click)="go({ kind: 'tag', tag: tag.tag })"
               >
                 <span class="font-mono text-[10px] tracking-wide">
@@ -174,9 +175,10 @@ type Target =
                 @for (tag of s.tags; track tag.tag) {
                   <button
                     type="button"
-                    class="rounded-xs bg-raised px-2 py-1 font-mono text-[10px] tracking-wide text-ink-2"
+                    class="cursor-pointer rounded-xs bg-raised px-2 py-1 font-mono text-[10px] tracking-wide text-ink-2 hover:text-ink active:bg-inset"
                     [class.outline]="cursor() === indexOf({ kind: 'tag', tag: tag.tag })"
                     [class.outline-gold]="cursor() === indexOf({ kind: 'tag', tag: tag.tag })"
+                    (pointerenter)="cursor.set(indexOf({ kind: 'tag', tag: tag.tag }))"
                     (click)="go({ kind: 'tag', tag: tag.tag })"
                   >
                     <nc-highlight [text]="tag.tag" [match]="parsed().term" />
@@ -254,7 +256,12 @@ export class SearchSuggestComponent {
     ];
   });
 
-  /** Reset to the first row whenever the list changes — the design pre-selects it. */
+  /**
+   * Reset to the first row whenever the list changes — the design pre-selects it.
+   *
+   * One highlight, moved by either device: the pointer sets it on hover and the arrows step it, so
+   * a row is never lit under the mouse while a different one answers to ENTER.
+   */
   protected readonly cursor = linkedSignal<Target[], number>({
     source: this.targets,
     computation: (rows, prev) =>
@@ -315,10 +322,11 @@ export class SearchSuggestComponent {
     this.dismissed.set(true);
     switch (target.kind) {
       case 'game':
-        void this.router.navigate(['/games', target.id]);
+        void this.router.navigate(['/play', target.id]);
         return;
       case 'session':
-        void this.router.navigate(['/games', target.projectId]);
+        // A session is joined from the game it is of; there is no screen for a room on its own.
+        void this.router.navigate(['/play', target.projectId]);
         return;
       case 'person':
         void this.router.navigate(['/u', target.username]);

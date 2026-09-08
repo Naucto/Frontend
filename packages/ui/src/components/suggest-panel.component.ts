@@ -23,6 +23,9 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   `,
   host: {
     class: 'absolute inset-x-0 top-full rounded-b-sm border-x border-b border-line bg-panel',
+    // A press in here must not take the caret out of the field: whatever watches the field for a
+    // blur closes this, and the panel would be gone before the click landed on anything.
+    '(mousedown)': '$event.preventDefault()',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
