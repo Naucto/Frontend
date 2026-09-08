@@ -197,6 +197,7 @@ const SUMMARY_MAX = 80;
           <nc-section banded [title]="t('editor.game.status')">
             <nc-help-dot actions [text]="t('editor.game.statusHelp')" />
             <nc-segmented
+              fill
               [options]="statuses"
               [value]="status()"
               (valueChange)="setStatus($event)"
@@ -217,9 +218,8 @@ const SUMMARY_MAX = 80;
           </nc-section>
           <nc-section banded [title]="t('editor.game.monetization')">
             <nc-help-dot actions [text]="t('editor.game.monetizationHelp')" />
-            <!-- Full width, and neutral where STATUS carries a meaning colour: two filled cells
-                 stacked make the neutral choice read as a second state colour. The width and the
-                 tone are separate settings and only the tone was at issue. -->
+            <!-- Neutral where STATUS carries a meaning colour: two filled cells stacked make the
+                 neutral choice read as a second state colour. -->
             <nc-segmented
               fill
               [options]="monetizations"

@@ -145,7 +145,6 @@ export class InstrumentListComponent {
     const parts = [
       i.osc === 'sample' ? 'PCM' : i.osc === 'triangle' ? 'TRIANGLE' : i.osc.toUpperCase(),
     ];
-    if (i.osc === 'square') parts.push(`${String(Math.round(i.duty * 100))}%`);
     if (i.filter.type !== 'off') parts.push(`${i.filter.type.toUpperCase()}F`);
     return parts.join(' · ');
   }

@@ -29,7 +29,7 @@ import { BrandMarkComponent, ButtonDirective, FieldComponent, InputDirective } f
         <span class="text-title text-ink">Naucto</span>
       </div>
       <h1 class="mt-2 text-[22px] leading-[1.2] text-ink">{{ t('auth.insertGame') }}</h1>
-      <p class="mb-3 text-body text-ink-3">{{ t('auth.tagline') }}</p>
+      <p class="mt-1 mb-3 text-body text-ink-3">{{ t('auth.tagline') }}</p>
 
       <form class="grid gap-2" (ngSubmit)="submit()" novalidate>
         @if (mode() === 'register') {

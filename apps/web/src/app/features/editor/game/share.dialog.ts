@@ -62,7 +62,15 @@ export async function addCollaborator(projectId: number, handle: string): Promis
             placeholder="louis or louis@naucto.dev"
           />
         </nc-field>
-        <button ncButton variant="primary" type="submit" [disabled]="!handle.trim() || busy()">
+        <!-- Sized to the field beside it: the default step is six pixels shorter, which left the
+             button floating above the line its own input sits on. -->
+        <button
+          ncButton
+          size="bar"
+          variant="primary"
+          type="submit"
+          [disabled]="!handle.trim() || busy()"
+        >
           Invite
         </button>
       </form>
