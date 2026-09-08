@@ -193,7 +193,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
       </section>
 
       <nc-panel-column [width]="PANEL_WIDTH">
-        <div actions class="flex min-w-0 items-center gap-1">
+        <div actions class="flex min-w-0 flex-1 items-center gap-1">
           <nc-toggle-button
             class="shrink-0"
             [checked]="art.grid()"

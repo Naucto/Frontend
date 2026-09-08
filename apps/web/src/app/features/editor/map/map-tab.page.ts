@@ -133,7 +133,7 @@ import { MinimapComponent } from './minimap.component';
            overlay, the zoom, the brush, the minimap. Nothing here writes the document, so a peer's
            pointer over it would say nothing about what they are doing. -->
       <nc-panel-column [width]="PANEL_WIDTH">
-        <div actions class="flex min-w-0 items-center gap-1">
+        <div actions class="flex min-w-0 flex-1 items-center gap-1">
           <nc-toggle-button
             [checked]="map.grid()"
             (checkedChange)="map.setGrid($event)"

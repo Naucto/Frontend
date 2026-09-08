@@ -336,7 +336,7 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
              screen the design gives one baseline. The scope keeps the top of what it belongs to:
              it is the only place you see what the synth is doing rather than what the pattern says
              it should. -->
-        <div actions class="flex min-w-0 items-center gap-1">
+        <div actions class="flex min-w-0 flex-1 items-center gap-1">
           <!-- One button carrying its current resolution, not six chips: the row is 340px and
                the chips wrapped onto a second line, out of the bar and over the scope. Controlled,
                because a press means "next resolution" and only the store knows whether the answer
