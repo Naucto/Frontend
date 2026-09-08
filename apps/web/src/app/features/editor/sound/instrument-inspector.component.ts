@@ -44,7 +44,6 @@ const OSCS: { value: OscType; label: string }[] = [
 
 /** Past which an offset is a slip of the keyboard rather than a chord. */
 const SEMI_RANGE = 24;
-/** A major triad. */
 const DEFAULT_ARP = [0, 4, 7];
 
 const FILTERS = [
