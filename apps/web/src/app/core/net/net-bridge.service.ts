@@ -9,6 +9,7 @@ import {
   multiplayerControllerList,
   multiplayerControllerRefreshTicket,
   multiplayerControllerRemove,
+  multiplayerControllerUpdate,
 } from '@naucto/api-client';
 import {
   type NetHostOptions,
@@ -36,6 +37,18 @@ export interface NetSessionInfo {
   joinCode: string | null;
   maxPlayers: number;
   title: string;
+}
+
+/** A room someone else has open, as the join dialog lists it. */
+export interface OpenSession {
+  uuid: string;
+  title: string;
+  host: string;
+  hostId: number;
+  players: number;
+  max: number;
+  /** Reachable by code only — it is not in anyone's browse list. */
+  code: boolean;
 }
 
 /**
@@ -122,20 +135,32 @@ export class NetUiBridgeService implements NetUi, OnDestroy {
     this.presence.announce({ kind: 'HOSTING', projectId, sessionId: conn.sessionUuid });
   }
 
-  async listSessions(
-    projectId: number,
-  ): Promise<
-    { uuid: string; title: string; host: string; players: number; max: number; code: boolean }[]
-  > {
+  async listSessions(projectId: number): Promise<OpenSession[]> {
     const res = unwrap(await multiplayerControllerList({ query: { projectId } }));
     return res.sessions.map((s) => ({
       uuid: s.sessionUuid,
       title: s.title,
       host: s.hostNickname ?? s.hostUsername,
+      hostId: s.hostId,
       players: s.playerCount,
       max: s.maxPlayers,
       code: s.visibility === 'INVITE_CODE',
     }));
+  }
+
+  /**
+   * Whether the room shows up in the browse list.
+   *
+   * Off is not the same as private: the code still works, so the room is reachable by whoever was
+   * handed it and by nobody who was not.
+   */
+  async setListed(uuid: string, listed: boolean): Promise<void> {
+    unwrap(
+      await multiplayerControllerUpdate({
+        path: { sessionId: uuid },
+        body: { visibility: listed ? 'PUBLIC' : 'INVITE_CODE' },
+      }),
+    );
   }
 
   async joinSession(uuid: string, joinCode?: string, editorTest = false): Promise<void> {

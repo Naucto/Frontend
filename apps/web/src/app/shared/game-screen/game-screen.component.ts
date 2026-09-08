@@ -417,13 +417,17 @@ export class GameScreenComponent {
         const ref =
           req.kind === 'host'
             ? this.dialogs.open(HostDialogComponent, {
+                width: '400px',
                 data: {
                   bridge: this.bridge,
                   projectId,
                   options: req.hostOptions ?? { maxPlayers: 2 },
                 },
               })
-            : this.dialogs.open(JoinDialogComponent, { data: { bridge: this.bridge, projectId } });
+            : this.dialogs.open(JoinDialogComponent, {
+                width: '400px',
+                data: { bridge: this.bridge, projectId },
+              });
         ref.closed.subscribe((ok) => {
           if (!ok) this.bridge.cancel();
         });

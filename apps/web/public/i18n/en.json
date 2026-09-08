@@ -537,9 +537,18 @@
     "cancel": "Cancel",
     "host": {
       "title": "Host a session",
-      "hint": "The game asked for up to {{n}} players. Name the session and open it.",
-      "name": "Session name",
-      "start": "Start hosting"
+      "hint": "The game asked for up to {{n}} players. Name the room so people recognise it.",
+      "name": "SESSION NAME",
+      "start": "Start hosting",
+      "open": "SESSION OPEN",
+      "code": "JOIN CODE",
+      "codeHint": "Anyone with the code lands straight in the room.",
+      "listed": "Listed in browse",
+      "listedHint": "Turn it off for a code-only room",
+      "inTheRoom": "IN THE ROOM · {{players}}/{{max}}",
+      "end": "END SESSION",
+      "done": "DONE",
+      "hintNamed": "{{game}} asked for up to {{n}} players. Name the room so people recognise it."
     },
     "join": {
       "title": "Join a session",
@@ -547,7 +556,12 @@
       "join": "Join",
       "loading": "Looking for sessions…",
       "none": "Nobody is hosting this game right now. Ask for a code.",
-      "code": "Or enter a code"
+      "code": "HAVE A CODE?",
+      "filter": "Filter by room, host or friend…",
+      "friends": "FRIENDS",
+      "public": "PUBLIC",
+      "full": "FULL",
+      "noMatch": "No room matches that."
     }
   },
   "friends": {

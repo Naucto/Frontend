@@ -1,24 +1,29 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import type { NetUiBridgeService } from '@app/core/net/net-bridge.service';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { friendsApi } from '@app/core/api/planned.api';
+import type { NetUiBridgeService, OpenSession } from '@app/core/net/net-bridge.service';
 import { TranslocoDirective } from '@jsverse/transloco';
-import { ButtonDirective, DialogShellComponent, FieldComponent, InputDirective } from '@naucto/ui';
+import {
+  ButtonDirective,
+  DialogShellComponent,
+  FieldComponent,
+  InputDirective,
+  SearchComponent,
+} from '@naucto/ui';
+import { injectQuery } from '@tanstack/angular-query-experimental';
 
 export interface JoinDialogData {
   bridge: NetUiBridgeService;
   projectId: number;
 }
 
-interface SessionRow {
-  uuid: string;
-  title: string;
-  host: string;
-  players: number;
-  max: number;
-  code: boolean;
-}
-
-/** The game called net.join(): pick an open session or enter a code. */
+/**
+ * The game called net.join(): pick an open room or type the code you were given.
+ *
+ * Rooms a friend is hosting sit above the rest and stay there while the list scrolls: a friend
+ * hosting is the row you came for, so it never queues behind strangers. A full room says so
+ * rather than disappearing — a room that vanishes as it fills reads as a room that closed.
+ */
 @Component({
   selector: 'nc-join-dialog',
   imports: [
@@ -27,37 +32,47 @@ interface SessionRow {
     DialogShellComponent,
     FieldComponent,
     InputDirective,
+    SearchComponent,
   ],
   template: `
     <nc-dialog-shell *transloco="let t" [title]="t('net.join.title')">
-      <div class="grid gap-1" role="list">
-        @for (s of sessions(); track s.uuid) {
-          <div
-            role="listitem"
-            class="flex items-center gap-2 rounded-sm border border-line bg-raised px-1.5 py-1"
-          >
-            <div class="min-w-0 flex-1">
-              <div class="truncate text-ui text-ink">{{ s.title }}</div>
-              <div class="label text-ink-3">
-                {{ t('net.join.hostedBy', { name: s.host }) }} · {{ s.players }} / {{ s.max }}
+      <nc-search size="sm" [placeholder]="t('net.join.filter')" [hint]="''" [(value)]="filter" />
+
+      <div class="mt-1.5 max-h-[190px] overflow-y-auto" role="list">
+        @for (group of groups(); track group.key) {
+          @if (group.rows.length) {
+            <p class="label px-0.5 pt-1.5 pb-1 text-ink-4">{{ t(group.key) }}</p>
+            @for (s of group.rows; track s.uuid) {
+              <div
+                role="listitem"
+                class="flex items-center gap-2 rounded-sm border border-line bg-raised px-1.5 py-1"
+              >
+                <div class="min-w-0 flex-1">
+                  <div class="truncate text-ui text-ink">{{ s.title }}</div>
+                  <div class="label text-ink-3">
+                    {{ t('net.join.hostedBy', { name: s.host }) }} · {{ s.players }} / {{ s.max }}
+                  </div>
+                </div>
+                @if (s.players >= s.max) {
+                  <span class="label shrink-0 text-ink-4">{{ t('net.join.full') }}</span>
+                } @else {
+                  <button ncButton variant="run" size="sm" (click)="join(s)" [disabled]="busy()">
+                    {{ t('net.join.join') }}
+                  </button>
+                }
               </div>
-            </div>
-            <button
-              ncButton
-              variant="run"
-              size="sm"
-              (click)="join(s)"
-              [disabled]="busy() || s.players >= s.max"
-            >
-              {{ t('net.join.join') }}
-            </button>
-          </div>
-        } @empty {
+            }
+          }
+        }
+        @if (pending()) {
+          <p class="text-body text-ink-3">{{ t('net.join.loading') }}</p>
+        } @else if (matching().length === 0) {
           <p class="text-body text-ink-3">
-            {{ loading() ? t('net.join.loading') : t('net.join.none') }}
+            {{ filter() ? t('net.join.noMatch') : t('net.join.none') }}
           </p>
         }
       </div>
+
       <nc-field [label]="t('net.join.code')" for="join-code" class="mt-2">
         <div class="flex gap-1">
           <input
@@ -67,6 +82,7 @@ interface SessionRow {
             maxlength="12"
             [value]="code()"
             (input)="code.set($any($event.target).value)"
+            (keydown.enter)="joinCode()"
           />
           <button
             ncButton
@@ -91,27 +107,46 @@ interface SessionRow {
 export class JoinDialogComponent {
   protected readonly data = inject<JoinDialogData>(DIALOG_DATA);
   protected readonly ref = inject<DialogRef<boolean>>(DialogRef);
-  protected readonly sessions = signal<SessionRow[]>([]);
-  protected readonly loading = signal(true);
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly code = signal('');
+  protected readonly filter = signal('');
 
-  constructor() {
-    void this.data.bridge
-      .listSessions(this.data.projectId)
-      .then((list) => {
-        this.sessions.set(list);
-      })
-      .catch(() => {
-        this.sessions.set([]);
-      })
-      .finally(() => {
-        this.loading.set(false);
-      });
-  }
+  protected readonly sessions = injectQuery(() => ({
+    queryKey: ['sessions', this.data.projectId],
+    queryFn: () => this.data.bridge.listSessions(this.data.projectId),
+    refetchInterval: 5_000,
+  }));
 
-  protected async join(s: SessionRow): Promise<void> {
+  /** Whose rooms go in the first group. A 404 here means no friends list yet, not no friends. */
+  private readonly friends = injectQuery(() => ({
+    queryKey: ['friends'],
+    queryFn: () => friendsApi.list(),
+    retry: false,
+  }));
+
+  protected readonly pending = computed(() => this.sessions.isPending());
+
+  /** The filter matches the room, its host, or both — people remember a session by either. */
+  protected readonly matching = computed(() => {
+    const needle = this.filter().trim().toLowerCase();
+    const rows = this.sessions.data() ?? [];
+    if (!needle) return rows;
+    return rows.filter(
+      (s) => s.title.toLowerCase().includes(needle) || s.host.toLowerCase().includes(needle),
+    );
+  });
+
+  protected readonly groups = computed(() => {
+    const friendIds = new Set((this.friends.data() ?? []).map((f) => f.id));
+    const rows = this.matching();
+    return [
+      { key: 'net.join.friends', rows: rows.filter((s) => friendIds.has(s.hostId)) },
+      { key: 'net.join.public', rows: rows.filter((s) => !friendIds.has(s.hostId)) },
+    ];
+  });
+
+  protected async join(s: OpenSession): Promise<void> {
     await this.run(() => this.data.bridge.joinSession(s.uuid));
   }
 
