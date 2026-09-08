@@ -116,7 +116,10 @@
     "padLayout": "Touch pad layout",
     "padSize": "Size",
     "padOpacity": "Opacity",
-    "padHint": "Sized for the thumbs that actually hold the device. Opacity applies to the landscape overlay, where the pad sits on the game."
+    "padHint": "Sized for the thumbs that actually hold the device. Opacity applies to the landscape overlay, where the pad sits on the game.",
+    "handle": "Handle",
+    "handleHint": "Unique — people add you as a friend with it",
+    "handleTaken": "That handle belongs to someone else."
   },
   "notFound": {
     "title": "Nothing here",
@@ -616,6 +619,30 @@
       "collabsHint": "Games someone else owns but built together show up on this shelf.",
       "remixesTitle": "Nobody has remixed anything yet",
       "remixesHint": "When someone forks one of these games, their version lands here."
+    },
+    "settings": "Settings",
+    "setBanner": "SET A BANNER",
+    "status": "Status",
+    "colour": "COLOUR",
+    "zones": {
+      "banner": "BANNER"
+    },
+    "image": {
+      "picture": "PROFILE PICTURE",
+      "banner": "PROFILE BANNER",
+      "spec": {
+        "picture": "1:1 · SAVED AT 256",
+        "banner": "1918×220 · ≈8.7:1 — THE ZONE’S TRUE RATIO"
+      },
+      "clear": {
+        "picture": "RESET",
+        "banner": "REMOVE"
+      },
+      "drop": "DROP AN IMAGE HERE",
+      "limits": "PNG · JPG · GIF — UP TO 2 MB",
+      "browse": "BROWSE",
+      "save": "SAVE",
+      "zoom": "Zoom"
     }
   },
   "docs": {

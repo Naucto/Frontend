@@ -4,8 +4,14 @@
  * refresh) and get replaced by the generated SDK once those PRs land.
  * TODO(NCTO-redesign): delete when @naucto/api-client ships these operations.
  */
-import { client, type ProjectExResponseDto } from '@naucto/api-client';
+import {
+  client,
+  type ProjectExResponseDto,
+  userControllerUploadProfileBackground,
+  userControllerUploadProfilePicture,
+} from '@naucto/api-client';
 
+import { unwrap } from './api-errors';
 import { ApiError } from './api-errors';
 
 /** Narrow a raw client result to its payload, or throw the API error. */
@@ -125,6 +131,47 @@ export const usersApi = {
       client.get({ url: '/users', query: { nickname, limit: 10 } }),
     );
     return Array.isArray(page) ? page : (page.data ?? []);
+  },
+};
+
+export type PersonalColour = 'SKY' | 'BLUSH' | 'JADE' | 'GOLD' | 'ORANGE' | 'HOT';
+
+export interface ProfileEdit {
+  nickname?: string;
+  description?: string;
+  username?: string;
+  colour?: PersonalColour;
+}
+
+/**
+ * The parts of a profile its owner writes.
+ *
+ * Hand-typed for the same reason as the rest of this file: the generated client is built from a
+ * committed contract, and these operations arrive with the Backend PR that carries them.
+ * TODO(NCTO-redesign): fold into the generated SDK once the contract is regenerated.
+ */
+export const profileApi = {
+  update: async (patch: ProfileEdit): Promise<unknown> =>
+    take<unknown>(client.patch({ url: '/users/profile', body: patch })),
+
+  /**
+   * Store the image a zone was cropped for.
+   *
+   * Through the generated operation rather than a hand-rolled `POST`, because multipart needs the
+   * serializer that comes with it — a `FormData` handed to the raw client arrives as an empty body
+   * and the server answers 400.
+   */
+  uploadImage: async (
+    userId: number,
+    zone: 'picture' | 'background',
+    blob: Blob,
+  ): Promise<void> => {
+    const options = { path: { id: userId }, body: { file: new File([blob], `${zone}.png`) } };
+    unwrap(
+      await (zone === 'picture'
+        ? userControllerUploadProfilePicture(options)
+        : userControllerUploadProfileBackground(options)),
+    );
   },
 };
 

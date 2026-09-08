@@ -11,13 +11,24 @@ import { colourOf, IDENTITY_COLOURS, inkFor } from '../palette';
 /** The three colours reserved for live collaboration cursors and carets. */
 export type PresenceColour = 'sky' | 'blush' | 'jade';
 
-/** How a call site may pin an avatar's fill when the identity colour is not what it means. */
-export type AvatarColour = PresenceColour | 'neutral' | 'gold' | number | `#${string}`;
+/**
+ * The six a person may choose to be drawn in: the presence three, plus the three accents.
+ *
+ * Wider than `PresenceColour` on purpose — a collaboration cursor has to be one of three that never
+ * collide, whereas a person picking their own colour is choosing a label and may pick any of six.
+ */
+export type IdentityAccent = PresenceColour | 'gold' | 'orange' | 'hot';
 
-const PRESENCE_FILL: Record<PresenceColour, string> = {
+/** How a call site may pin an avatar's fill when the identity colour is not what it means. */
+export type AvatarColour = IdentityAccent | 'neutral' | number | `#${string}`;
+
+const ACCENT_FILL: Record<IdentityAccent, string> = {
   sky: 'var(--color-presence-sky)',
   blush: 'var(--color-presence-blush)',
   jade: 'var(--color-presence-jade)',
+  gold: 'var(--color-gold)',
+  orange: 'var(--color-orange)',
+  hot: 'var(--color-hot)',
 };
 
 /**
@@ -66,10 +77,9 @@ export class AvatarComponent {
   protected readonly fill = computed(() => {
     const chosen = this.colour();
     if (chosen === 'neutral') return 'var(--color-line)';
-    if (chosen === 'gold') return 'var(--color-gold)';
     if (typeof chosen === 'number')
       return IDENTITY_COLOURS[chosen % IDENTITY_COLOURS.length] as string;
-    if (chosen && chosen in PRESENCE_FILL) return PRESENCE_FILL[chosen as PresenceColour];
+    if (chosen && chosen in ACCENT_FILL) return ACCENT_FILL[chosen as IdentityAccent];
     if (chosen) return chosen;
     return colourOf(this.id() ?? this.name());
   });
