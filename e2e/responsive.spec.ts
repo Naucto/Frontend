@@ -40,9 +40,9 @@ test.describe('editor gate', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   /**
-   * The narrow-window notice is a state of the editor now, not a page of its own, so it sits behind
-   * the same sign-in every other editor visit does. What this still guards is the reason it was
-   * written: a phone opening a link to a game must not be told the game does not exist.
+   * Sign-in is what this asserts because the narrow-window notice is a state of the editor, reached
+   * through the editor's own route and so behind its guard. What matters is the thing that must
+   * never happen: a phone opening a link to a game being told the game does not exist.
    */
   test('a phone keeps its way into the editor, and is not 404ed out of it', async ({ page }) => {
     await page.goto('/edit/1');
