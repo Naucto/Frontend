@@ -162,6 +162,8 @@ export const ICON_PATHS = {
   'paint-bucket':
     'M8 3h8v2H8V3zm0 2H6v4H4v12h16V9h-2V5h-2v4H8V5zm8 6h2v8H6v-8h2v6h2v-4h2v2h2v-2h2v-2z',
   pause: 'M10 4H5v16h5V4zm9 0h-5v16h5V4z',
+  pencil:
+    'M16 2h4v2h2v4h-2v2h-2V8h-2V6h-2V4h2V2zM14 6h2v2h-2v2h-2v2h-2v2H8v2H6v2H4v-2h2v-2h2v-2h2v-2h2V8h2V6zM4 16h2v2H6v2H4v2H2v-4h2v-2z',
   pip: 'M2 4h20v6h-2V6H4v12h8v2H2V4zm10 8h10v8H12v-8z',
   play: 'M10 20H8V4h2v2h2v3h2v2h2v2h-2v2h-2v3h-2v2z',
   plus: 'M11 4h2v7h7v2h-7v7h-2v-7H4v-2h7V4z',

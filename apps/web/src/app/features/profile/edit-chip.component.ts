@@ -18,7 +18,7 @@ import { IconComponent } from '@naucto/ui';
       [attr.aria-label]="label()"
       [attr.title]="label()"
     >
-      <nc-icon name="edit" [size]="12" />
+      <nc-icon name="pencil" [size]="12" />
       @if (caption()) {
         <span>{{ caption() }}</span>
       }
