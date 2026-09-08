@@ -7,6 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
+import { ApiError } from '@app/core/api/api-errors';
 import { type JoinPolicy, meApi, profileApi } from '@app/core/api/planned.api';
 import { AuthStore } from '@app/core/auth/auth.store';
 import { ThemeService } from '@app/core/theme/theme.service';
@@ -53,6 +54,22 @@ const POLICIES: JoinPolicy[] = ['ANYONE', 'FRIENDS', 'CODE_ONLY'];
           [disabled]="saving()"
           (change)="save($event)"
         />
+      </nc-setting-row>
+      <nc-setting-row [title]="t('settings.handle')" [hint]="t('settings.handleHint')">
+        <span class="flex items-center gap-1">
+          <span class="font-mono text-ui text-ink-4">&#64;</span>
+          <input
+            ncInput
+            class="w-[184px]"
+            [value]="handle()"
+            maxlength="24"
+            spellcheck="false"
+            autocomplete="off"
+            [attr.aria-label]="t('settings.handle')"
+            [disabled]="saving()"
+            (change)="saveHandle($event)"
+          />
+        </span>
       </nc-setting-row>
       @if (me.isError()) {
         <p class="py-2 text-body text-ink-3">{{ t('settings.privacySoon') }}</p>
@@ -124,6 +141,7 @@ export class AccountSettingsComponent {
   protected readonly nickname = linkedSignal(
     () => this.auth.user()?.nickname ?? this.auth.user()?.username ?? '',
   );
+  protected readonly handle = linkedSignal(() => this.auth.user()?.username ?? '');
   protected readonly saving = signal(false);
   protected readonly themes = [
     { value: 'dark', label: 'Dark' },
@@ -176,6 +194,35 @@ export class AccountSettingsComponent {
       await this.router.navigateByUrl('/hub');
     } catch (e) {
       this.toasts.show(e instanceof Error ? e.message : 'Could not delete the account', 'error');
+    }
+  }
+
+  /**
+   * The handle is what people type to find you, so the server may refuse it: another account
+   * already answers to it. Put the field back and say which, rather than leaving a name on screen
+   * that nobody would reach you by.
+   */
+  protected async saveHandle(e: Event): Promise<void> {
+    const value = (e.target as HTMLInputElement).value.trim();
+    if (!value || value === this.handle()) return;
+    this.saving.set(true);
+    const previous = this.handle();
+    try {
+      await profileApi.update({ username: value });
+      await this.auth.refreshProfile();
+      this.handle.set(value);
+      this.toasts.show(this.transloco.translate('settings.saved'), 'success');
+    } catch (error) {
+      this.handle.set(previous);
+      (e.target as HTMLInputElement).value = previous;
+      this.toasts.show(
+        error instanceof ApiError && error.status === 409
+          ? this.transloco.translate('settings.handleTaken')
+          : this.transloco.translate('settings.saveFailed'),
+        'error',
+      );
+    } finally {
+      this.saving.set(false);
     }
   }
 

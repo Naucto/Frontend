@@ -154,7 +154,6 @@ export const profileApi = {
   update: async (patch: ProfileEdit): Promise<unknown> =>
     take<unknown>(client.patch({ url: '/users/profile', body: patch })),
 
-  /** Put a zone back to the initial, or to the empty strip. */
   removeImage: async (userId: number, zone: 'picture' | 'background'): Promise<void> => {
     await take<unknown>(
       client.delete({

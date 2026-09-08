@@ -116,7 +116,10 @@
     "padLayout": "Touch pad layout",
     "padSize": "Size",
     "padOpacity": "Opacity",
-    "padHint": "Sized for the thumbs that actually hold the device. Opacity applies to the landscape overlay, where the pad sits on the game."
+    "padHint": "Sized for the thumbs that actually hold the device. Opacity applies to the landscape overlay, where the pad sits on the game.",
+    "handle": "Handle",
+    "handleHint": "Unique — people add you as a friend with it",
+    "handleTaken": "That handle belongs to someone else."
   },
   "notFound": {
     "title": "Nothing here",

@@ -308,7 +308,7 @@ export class ProfileImageDialogComponent {
       const canvas = new OffscreenCanvas(w, h);
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
-      // The source is a photograph and the output is smaller than it, so it is resampled.
+      // A photograph, unlike everything else this console draws, is resampled rather than stepped.
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(el, (c.x - fit.x) * k, (c.y - fit.y) * k, c.w * k, c.h * k, 0, 0, w, h);

@@ -2,11 +2,11 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { IconComponent, type IconName } from '@naucto/ui';
 
 /**
- * One action on a zone you own, surfacing on hover.
+ * One action on a zone you own.
  *
- * It also appears on keyboard focus, because a control only a mouse can find is a control half the
- * people using this cannot reach. Its parent carries `group` and `relative`; the chip places
- * itself against that corner.
+ * It answers to focus as well as to hover, because a control only a mouse can find is a control
+ * half the people using this cannot reach. Expects a parent that opens the group it hides behind,
+ * and that places it.
  */
 @Component({
   selector: 'nc-edit-chip',
