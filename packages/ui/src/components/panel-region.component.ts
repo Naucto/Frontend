@@ -24,14 +24,18 @@ export type PanelRegionMode = 'primary' | 'beside' | 'instead';
     @if (switchLabel()) {
       <nc-edge-handle [icon]="switchIcon()" [label]="switchLabel()" (pressed)="switched.emit()" />
     }
+    <!-- An explicit minmax track rather than the implicit auto one: a grid item whose min track
+       sizing function is auto takes an automatic minimum size of its min-content width, and so
+       refuses the track this region just set for it — the panel keeps its content's width and
+       hangs off the side of the viewport, where the window clips it. -->
     <div
-      class="grid min-h-0"
+      class="grid min-h-0 grid-cols-[minmax(0,1fr)]"
       [class.hidden]="mode() === 'primary'"
       [style.width.px]="secondaryTrack()"
     >
       <ng-content select="[secondary]" />
     </div>
-    <div class="grid min-h-0" [style.width.px]="primaryTrack()">
+    <div class="grid min-h-0 grid-cols-[minmax(0,1fr)]" [style.width.px]="primaryTrack()">
       <ng-content select="[primary]" />
     </div>
   `,
