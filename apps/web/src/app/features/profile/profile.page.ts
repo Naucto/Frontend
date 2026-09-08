@@ -114,7 +114,9 @@ interface ProfileExtras {
           [class.no-cover]="!p.backgroundImageUrl && !isSelf()"
         >
           @if (p.backgroundImageUrl) {
-            <img [src]="p.backgroundImageUrl" alt="" class="pixelated h-full w-full object-cover" />
+            <!-- A photograph being scaled: nearest-neighbour tears it, so it is resampled. The
+                 console's own art is drawn on a grid and keeps that rule elsewhere. -->
+            <img [src]="p.backgroundImageUrl" alt="" class="h-full w-full object-cover" />
           }
           @if (isSelf()) {
             <!-- The whole band is the target, not just the pencil in its corner: a chip that only
@@ -125,18 +127,24 @@ interface ProfileExtras {
               type="button"
               class="absolute inset-0 flex items-center justify-center gap-1 text-ink-3 hover:text-ink-2"
               [attr.aria-label]="t('profile.image.banner')"
-              (click)="editImage('banner', !!p.backgroundImageUrl)"
+              (click)="editImage('banner')"
             >
               @if (!p.backgroundImageUrl) {
                 <nc-icon name="image" [size]="24" />
                 <span class="label">{{ t('profile.setBanner') }}</span>
               }
             </button>
-            <span class="pointer-events-none absolute top-2 right-2">
-              <nc-edit-chip
-                [label]="t('profile.image.banner')"
-                [caption]="t('profile.zones.banner')"
-              />
+            <span class="absolute top-2 right-2 flex gap-1">
+              <span class="pointer-events-none">
+                <nc-edit-chip [label]="t('profile.image.banner')" />
+              </span>
+              @if (p.backgroundImageUrl) {
+                <nc-edit-chip
+                  icon="trash"
+                  [label]="t('profile.image.clear.banner')"
+                  (click)="clearImage('banner')"
+                />
+              }
             </span>
           }
           <!-- Decorative, and drawn last, so it lies over the whole band: without this it swallows
@@ -160,11 +168,15 @@ interface ProfileExtras {
               [size]="88"
             />
             @if (isSelf()) {
-              <span class="absolute right-1 bottom-1">
-                <nc-edit-chip
-                  [label]="t('profile.image.picture')"
-                  (click)="editImage('picture', !!p.profileImageUrl)"
-                />
+              <span class="absolute right-1 bottom-1 flex gap-1">
+                <nc-edit-chip [label]="t('profile.image.picture')" (click)="editImage('picture')" />
+                @if (p.profileImageUrl) {
+                  <nc-edit-chip
+                    icon="trash"
+                    [label]="t('profile.image.clear.picture')"
+                    (click)="clearImage('picture')"
+                  />
+                }
               </span>
             }
           </span>
@@ -407,18 +419,29 @@ export class ProfilePage {
     }
   }
 
-  protected editImage(zone: ProfileImageZone, hasImage: boolean): void {
+  protected editImage(zone: ProfileImageZone): void {
     const id = this.userId();
     if (!id) return;
     this.dialogs
       .open<ProfileImageDialogComponent, unknown, ProfileImageResult | undefined>(
         ProfileImageDialogComponent,
-        { width: '520px', data: { zone, hasImage } },
+        { width: '520px', data: { zone } },
       )
       .closed.subscribe((result) => {
         if (result?.kind !== 'save') return;
         void this.upload(id, zone, result.blob);
       });
+  }
+
+  protected async clearImage(zone: ProfileImageZone): Promise<void> {
+    const id = this.userId();
+    if (!id) return;
+    try {
+      await profileApi.removeImage(id, zone === 'picture' ? 'picture' : 'background');
+      await this.refresh();
+    } catch {
+      this.toasts.show(this.transloco.translate('settings.saveFailed'));
+    }
   }
 
   private async upload(id: number, zone: ProfileImageZone, blob: Blob): Promise<void> {

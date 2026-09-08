@@ -42,7 +42,9 @@ const ACCENT_FILL: Record<IdentityAccent, string> = {
   selector: 'nc-avatar',
   template: `
     @if (src()) {
-      <img [src]="src()" [alt]="name()" class="pixelated h-full w-full object-cover" />
+      <!-- A person's picture is a photograph, so it is resampled rather than stepped; the
+           console's own grid art keeps nearest-neighbour where that belongs. -->
+      <img [src]="src()" [alt]="name()" class="h-full w-full object-cover" />
     } @else {
       <span aria-hidden="true">{{ initial() }}</span>
     }

@@ -1,12 +1,12 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { IconComponent } from '@naucto/ui';
+import { IconComponent, type IconName } from '@naucto/ui';
 
 /**
- * The pencil that surfaces on a zone you own.
+ * One action on a zone you own, surfacing on hover.
  *
- * It appears on hover and on keyboard focus, because a control only a mouse can find is a control
- * half the people using this cannot reach. Its parent carries `group` and `relative`; the chip
- * places itself against that corner.
+ * It also appears on keyboard focus, because a control only a mouse can find is a control half the
+ * people using this cannot reach. Its parent carries `group` and `relative`; the chip places
+ * itself against that corner.
  */
 @Component({
   selector: 'nc-edit-chip',
@@ -14,14 +14,11 @@ import { IconComponent } from '@naucto/ui';
   template: `
     <button
       type="button"
-      class="flex items-center gap-1 rounded-xs border border-line-strong bg-panel/85 px-[10px] py-[5px] label text-ink opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+      class="flex size-[26px] items-center justify-center rounded-xs border border-line-strong bg-panel/85 text-ink opacity-0 transition-opacity group-hover:opacity-100 hover:bg-raised focus-visible:opacity-100"
       [attr.aria-label]="label()"
       [attr.title]="label()"
     >
-      <nc-icon name="edit" [size]="12" />
-      @if (caption()) {
-        <span>{{ caption() }}</span>
-      }
+      <nc-icon [name]="icon()" [size]="12" />
     </button>
   `,
   host: { class: 'contents' },
@@ -29,6 +26,5 @@ import { IconComponent } from '@naucto/ui';
 })
 export class EditChipComponent {
   readonly label = input.required<string>();
-  /** Shown beside the pencil where the zone is large enough to carry a word. */
-  readonly caption = input<string>();
+  readonly icon = input<IconName>('edit');
 }

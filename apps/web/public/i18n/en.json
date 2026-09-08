@@ -116,10 +116,7 @@
     "padLayout": "Touch pad layout",
     "padSize": "Size",
     "padOpacity": "Opacity",
-    "padHint": "Sized for the thumbs that actually hold the device. Opacity applies to the landscape overlay, where the pad sits on the game.",
-    "handle": "Handle",
-    "handleHint": "Unique — people add you as a friend with it",
-    "handleTaken": "That handle belongs to someone else."
+    "padHint": "Sized for the thumbs that actually hold the device. Opacity applies to the landscape overlay, where the pad sits on the game."
   },
   "notFound": {
     "title": "Nothing here",
@@ -624,9 +621,6 @@
     "setBanner": "SET A BANNER",
     "status": "Status",
     "colour": "COLOUR",
-    "zones": {
-      "banner": "BANNER"
-    },
     "image": {
       "picture": "PROFILE PICTURE",
       "banner": "PROFILE BANNER",
@@ -635,18 +629,14 @@
         "banner": "1918×220 · ≈8.7:1 — THE ZONE'S TRUE RATIO"
       },
       "clear": {
-        "picture": "RESET",
-        "banner": "REMOVE"
+        "picture": "Remove the picture",
+        "banner": "Remove the banner"
       },
       "drop": "DROP AN IMAGE HERE",
       "limits": "PNG · JPG · GIF — UP TO 2 MB",
       "browse": "BROWSE",
       "save": "SAVE",
-      "zoom": "Zoom",
-      "clearHint": {
-        "picture": "returns the coloured initial",
-        "banner": "back to SET A BANNER"
-      }
+      "zoom": "Zoom"
     }
   },
   "docs": {

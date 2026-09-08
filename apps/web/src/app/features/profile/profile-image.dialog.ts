@@ -16,11 +16,12 @@ export type ProfileImageZone = 'picture' | 'banner';
 
 export interface ProfileImageDialogData {
   zone: ProfileImageZone;
-  /** Whether there is something to take away — RESET and REMOVE are drawn only then. */
-  hasImage: boolean;
 }
 
-export type ProfileImageResult = { kind: 'save'; blob: Blob } | { kind: 'clear' };
+export interface ProfileImageResult {
+  kind: 'save';
+  blob: Blob;
+}
 
 /**
  * The window each zone is cropped through.
@@ -69,7 +70,7 @@ type Grip = 'move' | 'nw' | 'ne' | 'sw' | 'se' | 'w' | 'e';
             #img
             [src]="src"
             alt=""
-            class="pixelated absolute"
+            class="absolute"
             [style.left.px]="fit().x"
             [style.top.px]="fit().y"
             [style.width.px]="fit().w"
@@ -90,7 +91,7 @@ type Grip = 'move' | 'nw' | 'ne' | 'sw' | 'se' | 'w' | 'e';
             <img
               [src]="src"
               alt=""
-              class="pixelated absolute max-w-none"
+              class="absolute max-w-none"
               [style.left.px]="fit().x - c.x"
               [style.top.px]="fit().y - c.y"
               [style.width.px]="fit().w"
@@ -145,16 +146,6 @@ type Grip = 'move' | 'nw' | 'ne' | 'sw' | 'se' | 'w' | 'e';
       />
 
       <ng-container footer>
-        @if (data.hasImage) {
-          <span class="me-auto flex items-center gap-1.5">
-            <button ncButton variant="danger" size="sm" (click)="ref.close({ kind: 'clear' })">
-              {{ t('profile.image.clear.' + data.zone) }}
-            </button>
-            <span class="text-meta text-ink-3">
-              {{ t('profile.image.clearHint.' + data.zone) }}
-            </span>
-          </span>
-        }
         <button ncButton variant="ghost" (click)="ref.close()">
           {{ t('editor.code.cancel') }}
         </button>
@@ -317,7 +308,9 @@ export class ProfileImageDialogComponent {
       const canvas = new OffscreenCanvas(w, h);
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
-      ctx.imageSmoothingEnabled = false;
+      // The source is a photograph and the output is smaller than it, so it is resampled.
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(el, (c.x - fit.x) * k, (c.y - fit.y) * k, c.w * k, c.h * k, 0, 0, w, h);
       this.ref.close({ kind: 'save', blob: await canvas.convertToBlob({ type: 'image/png' }) });
     } finally {
