@@ -1,11 +1,9 @@
 #!/bin/sh
 # Writes /config.json from APP_* environment variables so the same image serves every environment.
-#
-# The `.gz` beside it goes first: nginx serves a precompressed twin in preference to the file
-# itself, so one left over would shadow everything written below — the configuration would sit on
-# disk and never reach a browser.
 set -e
 OUT=/usr/share/nginx/html/config.json
+# nginx serves a precompressed twin in preference to the file itself, so one left from an older
+# build shadows everything written below and the configuration never reaches a browser.
 rm -f "$OUT.gz"
 json_escape() { printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'; }
 cat > "$OUT" <<JSON
