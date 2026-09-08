@@ -16,6 +16,7 @@ import { friendsApi, type PersonalColour, profileApi, usersApi } from '@app/core
 import { AuthStore } from '@app/core/auth/auth.store';
 import { PresenceStore } from '@app/core/presence/presence.store';
 import { HubRowComponent } from '@app/features/hub/hub-row.component';
+import { qk } from '@app/shared/queries/query-keys';
 import { injectReleasesPage } from '@app/shared/queries/releases.queries';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import {
@@ -456,7 +457,10 @@ export class ProfilePage {
   /** Read the profile back rather than patching it here — the server owns what it stored. */
   private async refresh(): Promise<void> {
     await this.auth.refreshProfile();
-    await this.queries.invalidateQueries({ queryKey: ['profile'] });
+    await Promise.all([
+      this.queries.invalidateQueries({ queryKey: ['profile'] }),
+      this.queries.invalidateQueries({ queryKey: qk.userAvatar(this.userId()) }),
+    ]);
   }
   private readonly published = injectQuery(() => ({
     queryKey: ['profile', this.userId(), 'games'],

@@ -25,10 +25,6 @@ export class UserAvatarComponent {
   readonly colour = input<AvatarColour>();
   readonly size = input(24);
   readonly overlap = input(false, { transform: booleanAttribute });
-  /**
-   * Layout classes for the avatar itself. This host is `display: contents`, so a class written on
-   * the element would have nothing to act on.
-   */
   readonly avatarClass = input('');
 
   protected readonly avatar = injectUserAvatar(() => this.userId());
