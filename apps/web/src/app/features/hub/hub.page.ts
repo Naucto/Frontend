@@ -289,19 +289,19 @@ export class HubPage {
   // Each shelf is its own server-side query: "fresh" really is the newest game, not the newest of
   // whatever page happened to load.
   private readonly popularQuery = computed<ReleaseQuery>(() => ({
-    sort: 'trending',
-    tag: FILTER_TAGS[this.filters.popular()] ?? undefined,
+    sort: 'popular',
+    tags: FILTER_TAGS[this.filters.popular()] ?? undefined,
   }));
   private readonly popularPage = injectReleasesPage(() => 1, SHELF_SIZE, this.popularQuery);
   private readonly freshPage = injectReleasesPage(
     () => 1,
     SHELF_SIZE,
-    () => ({ sort: 'newest' }),
+    () => ({ sort: 'fresh' }),
   );
   private readonly searchPage = injectReleasesPage(
     () => this.page(),
     24,
-    (): ReleaseQuery => ({ q: this.term() }),
+    (): ReleaseQuery => ({ search: this.term() }),
   );
 
   private readonly featured = injectFeaturedRelease();

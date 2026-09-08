@@ -36,15 +36,28 @@ export type SortMetric =
   'viewCount' | 'likes' | 'commentCount' | 'forkCount' | 'publishedAt' | 'uniquePlayers';
 
 /** How the backend orders a release page; `trending` is plays weighted by recency. */
-export type ReleaseSort = 'newest' | 'trending' | 'plays' | 'likes';
+/** Shelf orderings the endpoint knows; anything else it silently reads as `fresh`. */
+export type ReleaseSort = 'fresh' | 'popular' | 'liked' | 'discussed' | 'name';
 
 export interface ReleaseQuery {
   /** Free text over name, summary, tags and creator. */
-  q?: string;
+  search?: string;
   sort?: ReleaseSort;
-  /** Only games carrying this tag. */
-  tag?: string;
+  /** Comma-separated; a game must carry all of them. */
+  tags?: string;
 }
+
+/**
+ * What a release query looks like on the wire.
+ *
+ * One place knows these names, because the endpoint answers a wrong one by ignoring it: a filter
+ * that never applied looked exactly like a catalogue with nothing to filter.
+ */
+export const releaseParams = (q: ReleaseQuery): Record<string, string> => ({
+  ...(q.search ? { search: q.search } : {}),
+  ...(q.sort ? { sort: q.sort } : {}),
+  ...(q.tags ? { tags: q.tags } : {}),
+});
 
 interface ReleasePage {
   items: ProjectExResponseDto[];
@@ -68,17 +81,10 @@ export function injectReleasesPage(
   return injectQuery(() => ({
     queryKey: qk.releases({ page: page(), limit, ...query() }),
     queryFn: async () => {
-      const { q, sort, tag } = query();
       const res = await take<{ projects: ProjectExResponseDto[]; total: number }>(
         client.get({
           url: '/projects/releases/paginated',
-          query: {
-            page: page(),
-            limit,
-            ...(q ? { q } : {}),
-            ...(sort ? { sort } : {}),
-            ...(tag ? { tag } : {}),
-          },
+          query: { page: page(), limit, ...releaseParams(query()) },
         }),
       );
       return { items: res.projects, total: res.total };
@@ -140,17 +146,10 @@ export function injectReleasesInfinite(
     queryKey: qk.releases({ page: 'all', limit, ...query() }),
     initialPageParam: 1,
     queryFn: async ({ pageParam }): Promise<NumberedReleasePage> => {
-      const { q, sort, tag } = query();
       const res = await take<{ projects: ProjectExResponseDto[]; total: number }>(
         client.get({
           url: '/projects/releases/paginated',
-          query: {
-            page: pageParam,
-            limit,
-            ...(q ? { q } : {}),
-            ...(sort ? { sort } : {}),
-            ...(tag ? { tag } : {}),
-          },
+          query: { page: pageParam, limit, ...releaseParams(query()) },
         }),
       );
       return { items: res.projects, total: res.total, page: pageParam };
