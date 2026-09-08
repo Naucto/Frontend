@@ -24,10 +24,10 @@ import { GamepadArtComponent } from './gamepad-art.component';
 
 /** Face of a standard-mapping button, so a captured binding reads as the pad's own label. */
 const PAD_BUTTON: Record<number, string> = {
-  0: 'A / ✕',
-  1: 'B / ○',
-  2: 'X / □',
-  3: 'Y / △',
+  0: 'A',
+  1: 'B',
+  2: 'X',
+  3: 'Y',
   4: 'L1',
   5: 'R1',
   6: 'L2',
@@ -49,6 +49,21 @@ const PAD_BUTTON: Record<number, string> = {
  * no arrows, so `←→↑↓` fall back to whatever else the system can find and print smooth in the
  * middle of a pixel table. The icon set draws them on the same grid as everything around them.
  */
+/**
+ * The other name of a face button, as the shape a controller prints on it.
+ *
+ * For the reason the arrows below are drawn rather than typed: the face this table is set in has
+ * no cross, circle, square or triangle, so the characters fell back to a smooth glyph in the
+ * middle of a pixel table. These are the shapes, not the meanings — a set has one cross and one
+ * circle, and what they are called elsewhere does not change what they draw.
+ */
+const PAD_FACE: Record<number, IconName> = {
+  0: 'close',
+  1: 'circle',
+  2: 'square',
+  3: 'triangle',
+};
+
 const PAD_ARROW: Record<number, IconName> = {
   12: 'arrow-up',
   13: 'arrow-down',
@@ -131,22 +146,22 @@ interface Capture {
         <!-- The sheet captions the table from outside its border, on the page's own ground and
              with no band of its own. Drawn here rather than in the head row, which stays for the
              sake of the column association a screen reader needs and is taken out of the picture. -->
-        <div aria-hidden="true" class="label mx-[1px] grid grid-cols-[43%_26%_31%] text-ink-3">
+        <div aria-hidden="true" class="label mx-[1px] grid grid-cols-[24%_40%_36%] text-ink-3">
           <span class="px-1.75 pb-1.5">{{ t('settings.action') }}</span>
           <span class="px-1.75 pb-1.5">{{ t('settings.keyboard') }}</span>
           <span class="px-1.75 pb-1.5">{{ t('settings.gamepad') }}</span>
         </div>
         <!-- The design cards the table rather than letting it run edge to edge. -->
         <div class="overflow-hidden rounded-[6px] border border-line bg-sunken">
-          <!-- The action names take the widest column and the bindings share what is left: read
-               down the table, the thing being bound is what the eye follows, and letting the key
-               caps size their own column pushed the caps a third of the table away from the names
-               they belong to. Proportions off the sheet, whose table is 580 wide. -->
+          <!-- The action names lead, so the eye follows what is being bound down the table; but
+               they are one word each, and a share taken from a sheet 580 wide turns into half a
+               table on a screen twice that, with the key caps wrapping beside all that empty. The
+               two columns carrying the matter get the room instead. -->
           <table class="w-full table-fixed border-collapse text-body">
             <colgroup>
-              <col class="w-[43%]" />
-              <col class="w-[26%]" />
-              <col class="w-[31%]" />
+              <col class="w-[24%]" />
+              <col class="w-[40%]" />
+              <col class="w-[36%]" />
             </colgroup>
             <thead>
               <tr>
@@ -275,7 +290,12 @@ interface Capture {
         </div>
 
         <!-- The on-screen pad, for the device that has no keyboard and no gamepad. The preview is
-           live: both sliders drive the same store the pad itself reads. -->
+           live: both sliders drive the same store the pad itself reads.
+
+           TODO(NCTO-mobile): nothing reads these yet. A phone cannot open the editor and does not
+           get the pad on a game page either, so the two sliders below set a size and an opacity for
+           a control nobody is shown. They stay because the store and the pad are built and this is
+           where they will be tuned; until a phone can play, they tune nothing. -->
         <div class="rounded-sm border border-line bg-panel p-1.5">
           <!-- Icon-only reset: spelled out, it did not fit beside the label in a 236px column, and
                the label wrapped to two lines and fell out of line with it. The artboard draws this
@@ -465,7 +485,7 @@ export class ControlsSettingsComponent {
     if (first.button !== undefined) {
       return {
         text: PAD_BUTTON[first.button] ?? `B${String(first.button)}`,
-        icon: PAD_ARROW[first.button],
+        icon: PAD_ARROW[first.button] ?? PAD_FACE[first.button],
       };
     }
     return { text: `AXIS ${String(first.axis ?? 0)}`, icon: AXIS_ARROW(first) };

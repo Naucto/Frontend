@@ -98,6 +98,13 @@ const CUSTOM = {
   'more-horizontal':
     'M1 9h6v6H1V9zm2 2v2h2v-2H3zm6-2h6v6H9V9zm2 2v2h2v-2h-2zm6-2h6v6h-6V9zm2 2v2h2v-2h-2z',
   move: 'M13 0h-2v2H9v2H7v2h2V4h2v7H4V9h2V7H4v2H2v2H0v2h2v2h2v2h2v-2H4v-2h7v7H9v-2H7v2h2v2h2v2h2v-2h2v-2h2v-2h-2v2h-2v-7h7v2h-2v2h2v-2h2v-2h2v-2h-2V9h-2V7h-2v2h2v2h-7V4h2v2h2V4h-2V2h-2V0z',
+  // Two shapes pixelarticons has no cell for, drawn here on the same 24 grid as everything else.
+  // The settings table names a gamepad's face buttons, and two of the four faces are a square and
+  // a triangle; the other two are the cross and circle already in the set. Spelling them with the
+  // characters instead put a smooth glyph from a fallback face in the middle of a pixel table.
+  square: 'M4 4h16v16H4V4zm2 2v12h12V6H6z',
+  triangle:
+    'M10 6h4v2h-4z M8 8h2v2H8z M14 8h2v2h-2z M6 10h2v2H6z M16 10h2v2h-2z M4 12h2v2H4z M18 12h2v2h-2z M4 14h16v2H4z',
   music: 'M8 4h12v16h-8v-8h6V8h-8v12H2v-8h6V4zm0 10H4v4h4v-4zm10 0h-4v4h4v-4z',
   next: 'M6 4h2v2h2v2h2v2h2v4h-2v2h-2v2H8v2H6V4zm12 0h-2v16h2V4z',
   // The gallery has no cell for this one. The design draws it on the doc pane's REFERENCE header,
