@@ -37,7 +37,7 @@ const MAX_BYTES = 2 * 1024 * 1024;
 const ACCEPT = 'image/png,image/jpeg,image/gif';
 /** Below this the handles would sit on top of each other and the rectangle stops reading as one. */
 const MIN_SIDE = 32;
-/** A ratio this wide leaves no room for corner handles; the design puts them on the sides instead. */
+/** Past this, the rectangle is too short for a corner handle to sit in without covering the next. */
 const SIDE_HANDLES_ABOVE = 3;
 
 /** The selection, in the coordinates of the image as it is displayed. */
@@ -185,7 +185,6 @@ export class ProfileImageDialogComponent {
   protected readonly fit = signal<Crop>({ x: 0, y: 0, w: 0, h: 0 });
   protected readonly crop = signal<Crop>({ x: 0, y: 0, w: 0, h: 0 });
 
-  /** Corners, or the two sides where a ratio too wide leaves no room for them. */
   protected readonly grips = computed<{ grip: Grip; left: string; top: string; cursor: string }[]>(
     () => {
       const edge = '-4px';
@@ -205,7 +204,6 @@ export class ProfileImageDialogComponent {
     },
   );
 
-  /** The whole image, letterboxed into the frame, and the largest selection centred on it. */
   protected reset(): void {
     const el = this.img()?.nativeElement;
     const box = this.frame().nativeElement.getBoundingClientRect();
@@ -244,7 +242,6 @@ export class ProfileImageDialogComponent {
     el.addEventListener('pointercancel', up);
   }
 
-  /** Slid, never pushed out: the selection stays inside the image it is selecting from. */
   private moved(start: Crop, dx: number, dy: number): Crop {
     const fit = this.fit();
     return {
@@ -255,10 +252,8 @@ export class ProfileImageDialogComponent {
   }
 
   /**
-   * Resized from the opposite corner, with the ratio kept.
-   *
-   * One drag decides one number — the width — and the height follows from the zone's ratio, so the
-   * selection cannot be dragged into a shape the zone would then have to distort.
+   * One drag decides one number — the width — and the height follows from the zone's ratio, so a
+   * selection can never be dragged into a shape the zone would then have to distort.
    */
   private resized(start: Crop, grip: Grip, dx: number): Crop {
     const fit = this.fit();
@@ -309,7 +304,6 @@ export class ProfileImageDialogComponent {
     this.url.set(URL.createObjectURL(file));
   }
 
-  /** Cut the selected region out of the source at the size the zone is stored in. */
   protected async save(): Promise<void> {
     const el = this.img()?.nativeElement;
     const fit = this.fit();
