@@ -462,7 +462,7 @@ test.describe('editor', () => {
     // stay in step with it.
     const track = page.locator('nc-voices-lane').getByRole('img');
     const laneWidth = async (): Promise<number> =>
-      (await track.evaluate((el: HTMLElement) => el.offsetWidth));
+      await track.evaluate((el: HTMLElement) => el.offsetWidth);
 
     const long = await laneWidth();
     await page.getByRole('button', { name: /Steps/ }).first().click();

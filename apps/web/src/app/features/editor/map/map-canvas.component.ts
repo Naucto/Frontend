@@ -26,6 +26,7 @@ import {
 } from '@naucto/engine';
 import {
   DragPanDirective,
+  FLAG_ACCENTS,
   PresenceLayerComponent,
   type PresenceMark,
   type PresenceViewport,
@@ -41,20 +42,8 @@ export interface TileViewport {
   h: number;
 }
 
-/**
- * One colour per flag bit. Bits 6 and 7 used to repeat bits 0 and 1, which made "solid" and
- * "hazard" indistinguishable from two unrelated flags in the overlay.
- */
-const FLAG_VARS = [
-  '--nc-jade',
-  '--nc-sky',
-  '--nc-orange',
-  '--nc-blush',
-  '--nc-hot',
-  '--nc-gold',
-  '--nc-lime',
-  '--nc-magenta',
-];
+/** The chips that set these bits carry the same eight, so a marked tile and its flag agree. */
+const FLAG_VARS = FLAG_ACCENTS.map((a) => `--nc-${a}`);
 
 /** The whole 128×32 tile map in a scrollable surface; stamps tiles from the sheet. */
 @Component({
