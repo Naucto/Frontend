@@ -198,9 +198,8 @@ export class AccountSettingsComponent {
   }
 
   /**
-   * The handle is what people type to find you, so the server may refuse it: another account
-   * already answers to it. Put the field back and say which, rather than leaving a name on screen
-   * that nobody would reach you by.
+   * Rolled back on refusal rather than left as typed: a handle is what someone types to reach you,
+   * so a name on screen that answers to nobody is worse than the one you had.
    */
   protected async saveHandle(e: Event): Promise<void> {
     const value = (e.target as HTMLInputElement).value.trim();
