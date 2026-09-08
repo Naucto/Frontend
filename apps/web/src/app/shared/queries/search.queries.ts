@@ -42,6 +42,21 @@ export interface Suggestions {
 const EMPTY: Suggestions = { games: [], people: [], sessions: [], tags: [] };
 
 /**
+ * One kind's answer, or none of it.
+ *
+ * The four are asked for together, and a rejection used to take the other three down with it: a
+ * refused list and a list with nothing in it both came out as "nothing yet", which is the one
+ * wrong answer that looks like a real one. A section that cannot be had is absent; the rest stand.
+ */
+async function section<T, R>(request: Promise<T>, read: (value: T) => R[]): Promise<R[]> {
+  try {
+    return read(await request);
+  } catch {
+    return [];
+  }
+}
+
+/**
  * What was typed, read as either a search or the literal-tag operator.
  *
  * A leading `#` is the operator rather than a character: the panel narrows to tags and ENTER lands
@@ -78,38 +93,45 @@ export function injectSuggestions(query: Signal<string>): CreateQueryResult<Sugg
       enabled: term.length > 0,
       staleTime: 30_000,
       queryFn: async (): Promise<Suggestions> => {
-        const tags = take<{ tags: TagHit[] }>(
-          client.get({
-            url: '/projects/releases/tags',
-            query: { q: term, limit: tagsOnly ? TAGS_ONLY_SHOWN : TAGS_SHOWN },
-          }),
+        const tags = section(
+          take<{ tags: TagHit[] }>(
+            client.get({
+              url: '/projects/releases/tags',
+              query: { q: term, limit: tagsOnly ? TAGS_ONLY_SHOWN : TAGS_SHOWN },
+            }),
+          ),
+          (r) => r.tags,
         );
 
-        if (tagsOnly) return { ...EMPTY, tags: (await tags).tags };
+        if (tagsOnly) return { ...EMPTY, tags: await tags };
 
-        const games = take<{ projects: ProjectExResponseDto[] }>(
-          client.get({
-            url: '/projects/releases/paginated',
-            query: { search: term, limit: PER_SECTION, page: 1, sort: 'popular' },
-          }),
+        const games = section(
+          take<{ projects: ProjectExResponseDto[] }>(
+            client.get({
+              url: '/projects/releases/paginated',
+              query: { search: term, limit: PER_SECTION, page: 1, sort: 'popular' },
+            }),
+          ),
+          (r) => r.projects.slice(0, PER_SECTION),
         );
-        const people = take<{ data: PersonHit[] }>(
-          client.get({ url: '/users/public/search', query: { q: term, limit: PER_SECTION } }),
+        const people = section(
+          take<{ data: PersonHit[] }>(
+            client.get({ url: '/users/public/search', query: { q: term, limit: PER_SECTION } }),
+          ),
+          (r) => r.data.slice(0, PER_SECTION),
         );
         // A visitor is not refused this list, they are simply not shown one.
         const sessions = signedIn
-          ? take<{ sessions: SessionHit[] }>(
-              client.get({ url: '/game-sessions', query: { q: term } }),
+          ? section(
+              take<{ sessions: SessionHit[] }>(
+                client.get({ url: '/game-sessions', query: { q: term } }),
+              ),
+              (r) => r.sessions.slice(0, PER_SECTION),
             )
-          : Promise.resolve({ sessions: [] });
+          : Promise.resolve([]);
 
         const [g, p, s, t] = await Promise.all([games, people, sessions, tags]);
-        return {
-          games: g.projects.slice(0, PER_SECTION),
-          people: p.data.slice(0, PER_SECTION),
-          sessions: s.sessions.slice(0, PER_SECTION),
-          tags: t.tags,
-        };
+        return { games: g, people: p, sessions: s, tags: t };
       },
     };
   });
