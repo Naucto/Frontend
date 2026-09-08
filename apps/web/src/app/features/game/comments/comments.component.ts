@@ -49,7 +49,12 @@ const MAX_LEN = 500;
 
       @if (auth.isAuthenticated()) {
         <form class="mb-3 flex gap-1" (ngSubmit)="post()">
-          <nc-avatar [name]="auth.displayName()" [id]="auth.userId() ?? undefined" [size]="28" />
+          <nc-avatar
+            [name]="auth.displayName()"
+            [src]="auth.user()?.profileImageUrl ?? null"
+            [id]="auth.userId() ?? undefined"
+            [size]="28"
+          />
           <div class="flex-1">
             <textarea
               ncInput

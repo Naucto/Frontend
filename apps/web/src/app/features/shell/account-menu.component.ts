@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { unwrap } from '@app/core/api/api-errors';
 import { friendsApi } from '@app/core/api/planned.api';
@@ -35,12 +35,12 @@ import { injectQuery } from '@tanstack/angular-query-experimental';
         class="flex items-center rounded-xs"
         [attr.aria-label]="t('account.menu')"
       >
-        <nc-avatar [name]="auth.displayName()" colour="neutral" [size]="38" />
+        <nc-avatar [name]="auth.displayName()" [src]="avatar()" colour="neutral" [size]="38" />
       </button>
       <ng-template #menu>
         <nc-popover-panel class="w-[280px]">
           <div class="flex items-center gap-1.5 p-2">
-            <nc-avatar [name]="auth.displayName()" [size]="32" />
+            <nc-avatar [name]="auth.displayName()" [src]="avatar()" [size]="32" />
             <div class="min-w-0">
               <div class="truncate text-ui text-ink">{{ auth.displayName() }}</div>
               <div class="label text-ink-4">
@@ -101,6 +101,7 @@ import { injectQuery } from '@tanstack/angular-query-experimental';
 })
 export class AccountMenuComponent {
   protected readonly auth = inject(AuthStore);
+  protected readonly avatar = computed(() => this.auth.user()?.profileImageUrl ?? null);
   protected readonly theme = inject(ThemeService);
   private readonly router = inject(Router);
   protected readonly open = signal(false);
