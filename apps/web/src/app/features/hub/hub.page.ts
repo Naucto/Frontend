@@ -21,10 +21,10 @@ import {
   injectReleasesPage,
   type ReleaseQuery,
 } from '@app/shared/queries/releases.queries';
+import { UserAvatarComponent } from '@app/shared/user-avatar.component';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { projectControllerFindAll, type ProjectExResponseDto } from '@naucto/api-client';
 import {
-  AvatarComponent,
   ButtonDirective,
   EmptyStateComponent,
   ErrorStateComponent,
@@ -49,7 +49,6 @@ const SHELF_SIZE = 10;
   imports: [
     RouterLink,
     TranslocoDirective,
-    AvatarComponent,
     ButtonDirective,
     EmptyStateComponent,
     ErrorStateComponent,
@@ -60,6 +59,7 @@ const SHELF_SIZE = 10;
     RelativeTimePipe,
     SegmentedComponent,
     HubRowComponent,
+    UserAvatarComponent,
   ],
   template: `
     <div *transloco="let t" class="grid gap-3.5">
@@ -202,11 +202,11 @@ const SHELF_SIZE = 10;
                     [routerLink]="p.releaseId ? ['/play', p.releaseId] : ['/friends']"
                     class="flex items-center gap-1 text-meta text-ink-body hover:text-ink"
                   >
-                    <nc-avatar
+                    <nc-user-avatar
                       [name]="p.username ?? '?'"
-                      [id]="p.userId"
+                      [userId]="p.userId"
                       [size]="20"
-                      class="shrink-0"
+                      avatarClass="shrink-0"
                     />
                     <span class="truncate">
                       {{ p.nickname ?? p.username }} {{ verb(p) }}

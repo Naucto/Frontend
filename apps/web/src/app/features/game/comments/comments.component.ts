@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { unwrap } from '@app/core/api/api-errors';
 import { AuthStore } from '@app/core/auth/auth.store';
 import { qk } from '@app/shared/queries/query-keys';
+import { UserAvatarComponent } from '@app/shared/user-avatar.component';
 import { TranslocoDirective } from '@jsverse/transloco';
 import {
   type CommentResponseDto,
@@ -39,6 +40,7 @@ const MAX_LEN = 500;
     InputDirective,
     LabelComponent,
     SkeletonComponent,
+    UserAvatarComponent,
   ],
   template: `
     <section *transloco="let t">
@@ -116,7 +118,11 @@ const MAX_LEN = 500;
                jade for the game's author and sky for everybody else spent two of the three
                reserved presence colours on a role, and painted every other commenter the same
                shade — five different people arrived wearing one chip. -->
-          <nc-avatar [name]="c.author.username" [id]="c.author.id" [size]="depth ? 22 : 28" />
+          <nc-user-avatar
+            [name]="c.author.username"
+            [userId]="c.author.id"
+            [size]="depth ? 22 : 28"
+          />
           <div class="min-w-0 flex-1">
             <div class="flex items-center gap-1">
               <span class="text-ui text-ink">{{ c.author.nickname || c.author.username }}</span>

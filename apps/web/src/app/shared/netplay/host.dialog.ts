@@ -2,10 +2,10 @@ import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { AuthStore } from '@app/core/auth/auth.store';
 import type { NetUiBridgeService } from '@app/core/net/net-bridge.service';
+import { UserAvatarComponent } from '@app/shared/user-avatar.component';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { type NetHostOptions } from '@naucto/engine';
 import {
-  AvatarComponent,
   ButtonDirective,
   DialogShellComponent,
   FieldComponent,
@@ -35,7 +35,6 @@ export interface HostDialogData {
   selector: 'nc-host-dialog',
   imports: [
     TranslocoDirective,
-    AvatarComponent,
     ButtonDirective,
     DialogShellComponent,
     FieldComponent,
@@ -43,6 +42,7 @@ export interface HostDialogData {
     SettingRowComponent,
     ShareCodeComponent,
     ToggleComponent,
+    UserAvatarComponent,
   ],
   template: `
     <nc-dialog-shell *transloco="let t" [title]="open() ? t('net.host.open') : t('net.host.title')">
@@ -86,7 +86,7 @@ export interface HostDialogData {
         <div class="mt-1 flex flex-wrap gap-2">
           @for (seat of seats().slots; track $index) {
             @if (seat) {
-              <nc-avatar [size]="26" [id]="seat.id" [name]="seat.name" />
+              <nc-user-avatar [size]="26" [userId]="seat.id" [name]="seat.name" />
             } @else {
               <span class="size-[26px] rounded-xs border border-dashed border-line-strong"></span>
             }

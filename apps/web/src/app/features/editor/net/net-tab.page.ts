@@ -14,10 +14,10 @@ import { AuthStore } from '@app/core/auth/auth.store';
 import type { NetUiBridgeService } from '@app/core/net/net-bridge.service';
 import { PERM_CLIENT_READ, PERM_CLIENT_WRITE, resolveFlags } from '@app/core/net/net-permissions';
 import { GameScreenComponent } from '@app/shared/game-screen/game-screen.component';
+import { UserAvatarComponent } from '@app/shared/user-avatar.component';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { type SharedTableSession, type TableScalar } from '@naucto/engine';
 import {
-  AvatarComponent,
   ButtonDirective,
   EmptyStateComponent,
   formatCount,
@@ -66,7 +66,6 @@ function formatScalar(value: TableScalar | undefined): string {
   selector: 'nc-net-tab-page',
   imports: [
     TranslocoDirective,
-    AvatarComponent,
     ButtonDirective,
     EmptyStateComponent,
     HelpDotComponent,
@@ -78,6 +77,7 @@ function formatScalar(value: TableScalar | undefined): string {
     TooltipDirective,
     GameScreenComponent,
     PresenceSurfaceComponent,
+    UserAvatarComponent,
   ],
   template: `
     <div *transloco="let t" class="grid h-full grid-cols-[minmax(0,1fr)_auto]">
@@ -332,7 +332,7 @@ function formatScalar(value: TableScalar | undefined): string {
           </span>
           @for (c of work.collaborators(); track c.clientId) {
             <div class="flex items-center gap-1 py-0.5">
-              <nc-avatar [name]="c.name" [id]="c.userId" [size]="16" />
+              <nc-user-avatar [name]="c.name" [userId]="c.userId" [size]="16" />
               <span class="text-ui text-ink">{{ c.name }}</span>
               @if (c.isSelf) {
                 <span class="font-mono text-micro lowercase tracking-button text-ink-3">
@@ -378,7 +378,7 @@ function formatScalar(value: TableScalar | undefined): string {
           @for (p of slots(); track p.slot) {
             <div class="flex items-center gap-1 py-0.5">
               @if (p.userId !== null) {
-                <nc-avatar [name]="p.name" [id]="p.userId" [size]="16" />
+                <nc-user-avatar [name]="p.name" [userId]="p.userId" [size]="16" />
                 <span class="text-ui text-ink">{{ p.name }}</span>
                 @if (p.host) {
                   <span class="label text-gold-ink">{{ t('editor.net.host') }}</span>

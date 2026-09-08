@@ -1,9 +1,9 @@
 import { DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { friendsApi, usersApi, type UserSummaryDto } from '@app/core/api/planned.api';
+import { UserAvatarComponent } from '@app/shared/user-avatar.component';
 import { TranslocoDirective } from '@jsverse/transloco';
 import {
-  AvatarComponent,
   ButtonDirective,
   DialogShellComponent,
   FieldComponent,
@@ -21,11 +21,11 @@ import {
   selector: 'nc-add-friend-dialog',
   imports: [
     TranslocoDirective,
-    AvatarComponent,
     ButtonDirective,
     DialogShellComponent,
     FieldComponent,
     InputDirective,
+    UserAvatarComponent,
   ],
   template: `
     <nc-dialog-shell *transloco="let t" [title]="t('friends.addFriend')">
@@ -53,7 +53,7 @@ import {
               role="listitem"
               class="flex items-center gap-1.5 rounded-sm border border-line bg-raised px-1.5 py-1"
             >
-              <nc-avatar [name]="u.nickname || u.username" [id]="u.id" [size]="28" />
+              <nc-user-avatar [name]="u.nickname || u.username" [userId]="u.id" [size]="28" />
               <div class="min-w-0 flex-1">
                 <div class="truncate text-meta text-ink">{{ u.nickname || u.username }}</div>
                 <div class="text-micro text-ink-4">{{ '@' + u.username }}</div>

@@ -14,5 +14,6 @@ export const qk = {
   project: (id: number) => ['project', id] as const,
   projectImage: (id: number) => ['project', id, 'image'] as const,
   publicProfile: (username: string) => ['user', username] as const,
+  userAvatar: (id: number) => ['user', id, 'avatar'] as const,
   userGames: (id: number, kind: 'published' | 'liked') => ['user', id, kind] as const,
 };

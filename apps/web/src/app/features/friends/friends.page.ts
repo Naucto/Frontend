@@ -9,9 +9,9 @@ import {
 import { AuthStore } from '@app/core/auth/auth.store';
 import { PresenceStore } from '@app/core/presence/presence.store';
 import { type PresenceDto } from '@app/core/presence/presence.types';
+import { UserAvatarComponent } from '@app/shared/user-avatar.component';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import {
-  AvatarComponent,
   ButtonDirective,
   DialogService,
   EmptyStateComponent,
@@ -46,12 +46,12 @@ const ACCENT: Record<string, { rule: string; name: string }> = {
   imports: [
     RouterLink,
     TranslocoDirective,
-    AvatarComponent,
     ButtonDirective,
     EmptyStateComponent,
     IconComponent,
     RelativeTimePipe,
     SegmentedComponent,
+    UserAvatarComponent,
   ],
   template: `
     <ng-container *transloco="let t">
@@ -112,10 +112,10 @@ const ACCENT: Record<string, { rule: string; name: string }> = {
                       ></span>
                     </span>
                   }
-                  <nc-avatar
-                    class="relative"
+                  <nc-user-avatar
+                    avatarClass="relative"
                     [name]="f.nickname || f.username"
-                    [id]="f.id"
+                    [userId]="f.id"
                     [size]="40"
                   />
                   <div class="relative min-w-0">
@@ -158,7 +158,7 @@ const ACCENT: Record<string, { rule: string; name: string }> = {
                     [routerLink]="['/u', f.username]"
                     class="flex items-center gap-1.25 rounded-md border border-line-soft bg-panel px-1.5 py-[11px] opacity-60 transition-opacity hover:opacity-100"
                   >
-                    <nc-avatar [name]="f.nickname || f.username" [id]="f.id" [size]="28" />
+                    <nc-user-avatar [name]="f.nickname || f.username" [userId]="f.id" [size]="28" />
                     <div class="min-w-0">
                       <div class="truncate text-meta text-ink-body">
                         {{ f.nickname || f.username }}
@@ -177,7 +177,7 @@ const ACCENT: Record<string, { rule: string; name: string }> = {
                 <div class="label mb-0.75">{{ t('friends.playedRecently') }}</div>
                 @for (p of recent(); track p.id) {
                   <div class="flex items-center gap-1.25 py-1">
-                    <nc-avatar [name]="p.nickname || p.username" [id]="p.id" [size]="28" />
+                    <nc-user-avatar [name]="p.nickname || p.username" [userId]="p.id" [size]="28" />
                     <div class="min-w-0 flex-1">
                       <div class="truncate text-meta text-ink-body">
                         {{ p.nickname || p.username }}
@@ -206,9 +206,9 @@ const ACCENT: Record<string, { rule: string; name: string }> = {
                 </div>
                 @for (r of requests(); track r.id) {
                   <div class="flex items-center gap-[11px] not-last:mb-1.5">
-                    <nc-avatar
+                    <nc-user-avatar
                       [name]="r.from.nickname || r.from.username"
-                      [id]="r.from.id"
+                      [userId]="r.from.id"
                       [size]="30"
                     />
                     <div class="min-w-0 flex-1">

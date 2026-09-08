@@ -6,15 +6,16 @@ import {
   input,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { UserAvatarComponent } from '@app/shared/user-avatar.component';
 import type { ProjectExResponseDto } from '@naucto/api-client';
-import { AvatarComponent, ChipComponent, StatComponent } from '@naucto/ui';
+import { ChipComponent, StatComponent } from '@naucto/ui';
 
 import { GameCoverComponent } from './game-cover.component';
 
 /** Hub card: cover, title, author chips, plays / likes / remixes. */
 @Component({
   selector: 'nc-game-card',
-  imports: [RouterLink, AvatarComponent, ChipComponent, GameCoverComponent, StatComponent],
+  imports: [RouterLink, ChipComponent, GameCoverComponent, StatComponent, UserAvatarComponent],
   template: `
     <a [routerLink]="link()" [class]="cardClass()">
       <div class="relative aspect-video w-full">
@@ -40,16 +41,16 @@ import { GameCoverComponent } from './game-cover.component';
           }
         </div>
         <div class="mt-0.5 flex items-center gap-[6px]">
-          <nc-avatar
+          <nc-user-avatar
             [name]="game().creator.username"
-            [id]="game().creator.id"
+            [userId]="game().creator.id"
             [size]="14"
-            class="mr-0.5"
+            avatarClass="mr-0.5"
           />
           <span class="label truncate">{{ game().creator.username }}</span>
           <!-- Collaborators overlap the way the design stacks them, then a +N for the rest. -->
           @for (c of stacked(); track c.id) {
-            <nc-avatar [name]="c.username" [id]="c.id" [size]="14" overlap />
+            <nc-user-avatar [name]="c.username" [userId]="c.id" [size]="14" overlap />
           }
           @if (extra()) {
             <span class="label ml-0.5 text-ink-4">+{{ extra() }}</span>

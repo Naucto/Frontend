@@ -26,10 +26,10 @@ import {
   registerView,
   SORTERS,
 } from '@app/shared/queries/releases.queries';
+import { UserAvatarComponent } from '@app/shared/user-avatar.component';
 import { TranslocoDirective } from '@jsverse/transloco';
 import type { Game } from '@naucto/engine';
 import {
-  AvatarComponent,
   ButtonDirective,
   ChipComponent,
   ErrorStateComponent,
@@ -51,7 +51,6 @@ import { ReleaseGameService } from './release-game.service';
     DatePipe,
     RouterLink,
     TranslocoDirective,
-    AvatarComponent,
     ButtonDirective,
     ChipComponent,
     ErrorStateComponent,
@@ -63,6 +62,7 @@ import { ReleaseGameService } from './release-game.service';
     GameScreenComponent,
     CommentsComponent,
     HowToPlayComponent,
+    UserAvatarComponent,
   ],
   template: `
     <div *transloco="let t" class="flex flex-col items-stretch lg:-mx-3 lg:-my-3 lg:flex-row">
@@ -103,7 +103,7 @@ import { ReleaseGameService } from './release-game.service';
           <div>
             <h1 class="text-display text-ink">{{ r.name }}</h1>
             <div class="mt-1 flex items-center gap-1 text-meta text-ink-2">
-              <nc-avatar [name]="r.creator.username" [id]="r.creator.id" [size]="24" />
+              <nc-user-avatar [name]="r.creator.username" [userId]="r.creator.id" [size]="24" />
               <a [routerLink]="['/u', r.creator.username]" class="hover:text-ink">
                 {{ t('hub.by', { name: r.creator.username }) }}
               </a>
