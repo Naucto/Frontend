@@ -26,6 +26,13 @@ export type SessionStatus =
 
 export interface CanvasCursor {
   tab: string;
+  /**
+   * Which surface inside the tab, where a tab has more than one.
+   *
+   * SOUND holds a pattern each; without this, two people on two different patterns watch each
+   * other's pointer move over a roll neither of them is looking at.
+   */
+  scope?: string;
   x: number;
   y: number;
 }
@@ -201,7 +208,13 @@ export class WorkSessionService {
     const aw = this.provider?.awareness;
     if (!aw) return;
     const prev = (aw.getLocalState() as AwarenessState | null)?.cursor;
-    if (prev?.tab === cursor?.tab && prev?.x === cursor?.x && prev?.y === cursor?.y) return;
+    if (
+      prev?.tab === cursor?.tab &&
+      prev?.scope === cursor?.scope &&
+      prev?.x === cursor?.x &&
+      prev?.y === cursor?.y
+    )
+      return;
     aw.setLocalStateField('cursor', cursor ?? undefined);
   }
 

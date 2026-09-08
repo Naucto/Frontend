@@ -34,6 +34,7 @@ export const RULER_H = 24;
  * somewhere before the pattern can be asked to reach it, and a grid that stopped at the last step
  * left nowhere to place it.
  */
+/** The longest a pattern may be asked to run, which is the last of the lengths STEPS offers. */
 export const MAX_STEPS = 64;
 
 /**
@@ -166,14 +167,14 @@ export class PianoRollComponent {
    * only ever for going closer.
    */
   readonly stepW = computed(() => 24 * this.zoom());
-  /** The whole placeable grid, widened to the window when the window is the roomier of the two. */
+  /** As wide as the pattern, widened to the window when the window is the roomier of the two. */
   protected readonly width = computed(() =>
-    Math.max(MAX_STEPS * this.stepW(), this.hostBox().w - KEY_W),
+    Math.max(this.pattern().steps * this.stepW(), this.hostBox().w - KEY_W),
   );
   protected readonly height = computed(() => RULER_H + (PITCH_MAX - PITCH_MIN + 1) * ROW_H);
   protected readonly marks = computed<PresenceMark[]>(() =>
     this.collaborators()
-      .filter((c) => !c.isSelf && c.cursor?.tab === 'sound')
+      .filter((c) => !c.isSelf && c.cursor?.tab === 'sound' && c.cursor.scope === this.pattern().id)
       .map((c) => ({
         id: c.clientId,
         name: c.name,
@@ -189,7 +190,10 @@ export class PianoRollComponent {
   protected readonly viewPx = computed<PresenceViewport>(() => ({
     x: this.scrollX(),
     y: this.scrollY(),
-    w: this.hostBox().w,
+    // The key column rides over the canvas rather than beside it, so the width it takes is width
+    // the roll does not show. Counted in, a chip on the right rim was placed past the edge that
+    // clips it, and came out sliced down the middle.
+    w: Math.max(0, this.hostBox().w - KEY_W),
     h: this.hostBox().h,
   }));
 
@@ -278,7 +282,7 @@ export class PianoRollComponent {
     // coarse grain the nearest line can be a whole bar away. Free placement has no cell to start
     // in, so there it follows the pointer onto the finest position that will sound.
     const start = unit ? Math.floor(step / unit) * unit : this.snapStep(step);
-    return { step: Math.min(start, MAX_STEPS - length), length };
+    return { step: Math.min(start, this.pattern().steps - length), length };
   }
 
   /** The same position as `cellOf`, unsnapped on both axes. */
@@ -396,7 +400,7 @@ export class PianoRollComponent {
     const o = d.original;
     // The grid's ceiling, not the pattern's. Held to the pattern's, a note begun past its end has
     // no room to have any length, and a note of no length is one nothing can grab again.
-    const max = MAX_STEPS;
+    const max = this.pattern().steps;
     let n: Note;
     switch (d.mode) {
       case 'create':
@@ -477,7 +481,7 @@ export class PianoRollComponent {
     ctx.beginPath();
     const unit = this.snapUnit();
     if (unit * sw >= MIN_GRID_PX) {
-      for (let s = unit; s < MAX_STEPS; s += unit) {
+      for (let s = unit; s < p.steps; s += unit) {
         if (s % p.stepsPerBeat === 0) continue;
         ctx.moveTo(s * sw + 0.5, RULER_H);
         ctx.lineTo(s * sw + 0.5, h);
@@ -491,17 +495,16 @@ export class PianoRollComponent {
     if (unit) {
       ctx.strokeStyle = cssVar(el, '--nc-line-strong');
       ctx.beginPath();
-      for (let s = 0; s <= MAX_STEPS; s += p.stepsPerBeat) {
+      for (let s = 0; s <= p.steps; s += p.stepsPerBeat) {
         ctx.moveTo(s * sw + 0.5, 0);
         ctx.lineTo(s * sw + 0.5, h);
       }
       ctx.stroke();
     }
 
-    // Past the last step a note may be placed on, the hatch a game with no cover wears — the app's
-    // mark for ground that is not a surface. It exists only to fill a window wider than the grid;
-    // the pattern's own end is not hatched, since a note placed after it lengthens the pattern.
-    const endX = MAX_STEPS * sw;
+    // Past the pattern's last step, the hatch a game with no cover wears — the app's mark for
+    // ground that is not a surface. Nothing can be written there; STEPS is what moves the edge.
+    const endX = p.steps * sw;
     if (endX < w) {
       ctx.save();
       ctx.beginPath();
@@ -544,7 +547,7 @@ export class PianoRollComponent {
     ctx.font = `10px ${cssVar(el, '--font-mono')}`;
     ctx.textBaseline = 'middle';
     ctx.fillStyle = cssVar(el, '--nc-ink-4');
-    for (let s = 0; s < MAX_STEPS; s += p.stepsPerBeat)
+    for (let s = 0; s < p.steps; s += p.stepsPerBeat)
       ctx.fillText(String(s / p.stepsPerBeat + 1), s * sw + 4, sy + RULER_H / 2);
 
     // Hover cell.

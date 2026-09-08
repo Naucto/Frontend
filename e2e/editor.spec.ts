@@ -449,38 +449,28 @@ test.describe('editor', () => {
     await expect(page.getByText('SPR 020')).toBeVisible();
   });
 
-  test('a note dragged past the end lengthens the pattern', async ({ page }) => {
+  test('the roll ends where the pattern ends', async ({ page }) => {
     await page.goto('/edit/7/sound');
     await page.getByRole('button', { name: 'Add instrument' }).first().click();
     const roll = page.getByRole('img', { name: 'Piano roll' });
     await expect(roll).toBeVisible();
 
-    // Shortened first, so the end of the pattern falls where the pointer can still reach it.
+    const steps = async (): Promise<string | null> =>
+      page.getByRole('button', { name: /Steps/ }).first().textContent();
+    // The roll's own canvas is floored at the width of its window, so it does not shrink on a
+    // wide screen. The track of voices under it is exactly as wide as the pattern, and has to
+    // stay in step with it.
+    const track = page.locator('nc-voices-lane').getByRole('img');
+    const laneWidth = async (): Promise<number> =>
+      (await track.evaluate((el: HTMLElement) => el.offsetWidth));
+
+    const long = await laneWidth();
     await page.getByRole('button', { name: /Steps/ }).first().click();
     await page.getByRole('button', { name: '16', exact: true }).click();
     await page.keyboard.press('Escape');
-
-    const steps = async (): Promise<string | null> =>
-      page.getByRole('button', { name: /Steps/ }).first().textContent();
     await expect.poll(steps).toContain('16');
 
-    // The canvas is taller than its well and starts above it, so the vertical aim comes from the
-    // well and only the horizontal one from the drawing.
-    const box = await roll.boundingBox();
-    const well = await page.locator('nc-piano-roll').boundingBox();
-    expect(box).not.toBeNull();
-    expect(well).not.toBeNull();
-    if (box && well) {
-      // Past the sixteenth step, which is where the grid keeps running and the pattern does not.
-      const x = box.x + 20 * 24 + 6;
-      const y = well.y + well.height / 2;
-      await page.mouse.move(x, y);
-      await page.mouse.down();
-      await page.mouse.move(x + 40, y, { steps: 6 });
-      await page.mouse.up();
-    }
-
-    await expect.poll(steps).toContain('32');
+    await expect.poll(laneWidth).toBeLessThan(long);
   });
 
   test('SOUND tab adds an instrument and paints notes', async ({ page }) => {

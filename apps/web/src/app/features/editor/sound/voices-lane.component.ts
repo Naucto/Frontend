@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { type Instrument, type Note, type Pattern, VOICES } from '@naucto/engine';
 
-import { KEY_W, MAX_STEPS } from './piano-roll.component';
+import { KEY_W } from './piano-roll.component';
 
 const RULER_H = 16;
 /** 118px of lane in the design; the voice rows share what is left under the ruler. */
@@ -145,8 +145,8 @@ export class VoicesLaneComponent {
   protected readonly RULER_H = RULER_H;
   protected readonly LANE_H = LANE_H;
 
-  /** The roll's whole placeable grid, so a voice lines up with the note that lit it. */
-  protected readonly trackWidth = computed(() => MAX_STEPS * this.stepWidth());
+  /** The roll's own width, so a voice lines up with the note that lit it. */
+  protected readonly trackWidth = computed(() => this.pattern().steps * this.stepWidth());
 
   protected readonly voices = computed(() =>
     Array.from({ length: VOICES }, (_, index) => ({

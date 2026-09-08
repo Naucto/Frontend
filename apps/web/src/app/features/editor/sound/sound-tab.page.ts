@@ -538,25 +538,8 @@ export class SoundTabPage {
     this.sound.setSnap(order[(i + 1) % order.length] ?? 0);
   }
 
-  /**
-   * A note dropped past the last step lengthens the pattern to reach it.
-   *
-   * The grid runs to the ceiling whatever the pattern holds, so there is always somewhere to put
-   * the note; what does not exist yet is a pattern long enough to keep it. Growth goes to the next
-   * offered length that fits.
-   *
-   * Nothing here can ask for more than the grid allows, so the fallback keeps the notes and leaves
-   * the length alone rather than dropping the write — the array carries every edit of the gesture,
-   * and refusing it would throw away moves and deletions that had nothing to do with the offender.
-   */
   protected setNotes(p: Pattern, notes: Note[]): void {
-    const needed = notes.reduce((n, note) => Math.max(n, note.step + note.length), 0);
-    const grown = STEP_OPTIONS.map((o) => Number(o.value)).find((n) => n >= needed);
-    if (grown === undefined || grown <= p.steps) {
-      this.library.updatePattern(p.id, { notes });
-      return;
-    }
-    this.library.updatePattern(p.id, { notes, steps: grown });
+    this.library.updatePattern(p.id, { notes });
   }
 
   protected setSteps(v: string | undefined): void {
@@ -666,7 +649,14 @@ export class SoundTabPage {
     // Rounded to a hundredth of a step: finer than a screen pixel at any zoom the roll offers,
     // and coarse enough that the service's dedupe still collapses a still pointer.
     this.session.setCursor(
-      p ? { tab: 'sound', x: Math.round(p.x * 100) / 100, y: Math.round(p.y * 100) / 100 } : null,
+      p
+        ? {
+            tab: 'sound',
+            scope: this.pattern()?.id,
+            x: Math.round(p.x * 100) / 100,
+            y: Math.round(p.y * 100) / 100,
+          }
+        : null,
     );
   }
 
