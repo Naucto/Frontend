@@ -14,7 +14,7 @@ const VIEWPORTS = [
   { name: 'ultrawide', width: 2560, height: 1440 },
 ] as const;
 
-const ROUTES = ['/hub', '/learn', '/friends', '/sign-in', '/u/nobody', '/open-on-desktop'] as const;
+const ROUTES = ['/hub', '/learn', '/friends', '/sign-in', '/u/nobody'] as const;
 
 for (const vp of VIEWPORTS) {
   test.describe(`${vp.name} (${String(vp.width)}px)`, () => {
@@ -39,9 +39,14 @@ for (const vp of VIEWPORTS) {
 test.describe('editor gate', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test('a phone gets the open-on-desktop page, not a 404', async ({ page }) => {
+  /**
+   * The narrow-window notice is a state of the editor now, not a page of its own, so it sits behind
+   * the same sign-in every other editor visit does. What this still guards is the reason it was
+   * written: a phone opening a link to a game must not be told the game does not exist.
+   */
+  test('a phone keeps its way into the editor, and is not 404ed out of it', async ({ page }) => {
     await page.goto('/edit/1');
-    await expect(page).toHaveURL(/open-on-desktop/);
-    await expect(page.getByRole('heading', { name: /bigger screen/i })).toBeVisible();
+    await expect(page).toHaveURL(/\/sign-in\?next=%2Fedit%2F1/);
+    await expect(page.getByRole('heading', { name: /insert game/i })).toBeVisible();
   });
 });

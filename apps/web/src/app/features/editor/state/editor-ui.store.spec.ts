@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
 
-import { EditorUiStore, REFERENCE_SPLIT_BREAKPOINT } from './editor-ui.store';
+import { EDITOR_MIN_WIDTH, EditorUiStore, REFERENCE_SPLIT_BREAKPOINT } from './editor-ui.store';
 
 describe('EditorUiStore', () => {
   const store = (): InstanceType<typeof EditorUiStore> =>
@@ -11,6 +11,14 @@ describe('EditorUiStore', () => {
    * The whole point of artboard 1c: the running game is not evicted to make room for the
    * reference unless the window genuinely cannot hold both.
    */
+  it('holds the editor back when the window is too narrow to lay it out', () => {
+    const ui = store();
+    ui.setViewportWidth(EDITOR_MIN_WIDTH);
+    expect(ui.tooNarrow()).toBe(false);
+    ui.setViewportWidth(EDITOR_MIN_WIDTH - 1);
+    expect(ui.tooNarrow()).toBe(true);
+  });
+
   it('puts the reference beside the console when there is room, and in its place when there is not', () => {
     const ui = store();
     ui.setTab('code');

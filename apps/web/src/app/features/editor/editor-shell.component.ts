@@ -40,6 +40,7 @@ import { DocRequestService } from './docs/doc-request.service';
 import { PUBLISH_CEILING, PublishDialogComponent } from './game/publish.dialog';
 import { ShareDialogComponent } from './game/share.dialog';
 import { VersionsPopoverComponent } from './game/versions-popover.component';
+import { OpenOnDesktopComponent } from './open-on-desktop.component';
 import { EditorRuntimeService } from './state/editor-runtime.service';
 import {
   CONSOLE_WIDTH,
@@ -82,6 +83,7 @@ const RAIL: RailItem<EditorTab>[] = [
     AccountMenuComponent,
     NotificationsBellComponent,
     ConsoleColumnComponent,
+    OpenOnDesktopComponent,
     DocPaneComponent,
     VersionsPopoverComponent,
   ],
@@ -131,74 +133,81 @@ const RAIL: RailItem<EditorTab>[] = [
         <nc-account-menu />
       </header>
 
-      @switch (session.status()) {
-        @case ('ready') {
-          <div class="grid min-h-0 grid-cols-[81px_minmax(0,1fr)_auto]">
-            <nc-rail
-              [items]="rail"
-              [value]="ui.activeTab()"
-              (valueChange)="go($event)"
-              [label]="t('editor.tools')"
-            />
-            <section class="min-h-0 overflow-auto"><router-outlet /></section>
-            <nc-panel-region
-              [secondaryOpen]="ui.referenceShown()"
-              [viewportWidth]="ui.viewportWidth()"
-              [splitAt]="REFERENCE_SPLIT_BREAKPOINT"
-              [primaryWidth]="consoleWidth()"
-              [secondaryWidth]="REFERENCE_WIDTH"
-              [switchLabel]="switchKey() ? t(switchKey()) : ''"
-              (switched)="ui.toggleReference()"
-            >
-              <!-- Built only while it is open: the reference has nothing running in it, so unlike
+      @if (ui.tooNarrow()) {
+        <nc-open-on-desktop [id]="String(id())" />
+      } @else {
+        @switch (session.status()) {
+          @case ('ready') {
+            <div class="grid min-h-0 grid-cols-[81px_minmax(0,1fr)_auto]">
+              <nc-rail
+                [items]="rail"
+                [value]="ui.activeTab()"
+                (valueChange)="go($event)"
+                [label]="t('editor.tools')"
+              />
+              <section class="min-h-0 overflow-auto"><router-outlet /></section>
+              <nc-panel-region
+                [secondaryOpen]="ui.referenceShown()"
+                [viewportWidth]="ui.viewportWidth()"
+                [splitAt]="REFERENCE_SPLIT_BREAKPOINT"
+                [primaryWidth]="consoleWidth()"
+                [secondaryWidth]="REFERENCE_WIDTH"
+                [switchLabel]="switchKey() ? t(switchKey()) : ''"
+                (switched)="ui.toggleReference()"
+              >
+                <!-- Built only while it is open: the reference has nothing running in it, so unlike
                    the console it costs nothing to rebuild and something to keep. -->
-              <div secondary class="flex min-h-0 flex-col border-l border-line">
-                @if (ui.referenceShown()) {
-                  <nc-doc-pane class="min-h-0 flex-1 overflow-auto" />
-                  <!-- The artboard puts this at the foot of the reference, and only where the
+                <div secondary class="flex min-h-0 flex-col border-l border-line">
+                  @if (ui.referenceShown()) {
+                    <nc-doc-pane class="min-h-0 flex-1 overflow-auto" />
+                    <!-- The artboard puts this at the foot of the reference, and only where the
                        reference has taken the game's place — the one arrangement in which the game
                        really has been put away. -->
-                  @if (ui.columnMode() === 'swap') {
-                    <div
-                      class="flex shrink-0 items-center gap-1 border-t border-line bg-inset px-1.5 py-1"
-                    >
-                      <nc-icon name="pause" [size]="12" class="text-gold-ink" />
-                      <span class="label text-gold-ink">{{ t('editor.gamePaused') }}</span>
-                    </div>
+                    @if (ui.columnMode() === 'swap') {
+                      <div
+                        class="flex shrink-0 items-center gap-1 border-t border-line bg-inset px-1.5 py-1"
+                      >
+                        <nc-icon name="pause" [size]="12" class="text-gold-ink" />
+                        <span class="label text-gold-ink">{{ t('editor.gamePaused') }}</span>
+                      </div>
+                    }
                   }
-                }
-              </div>
-              <nc-console-column
-                primary
-                class="min-h-0 border-line"
-                [shown]="consoleShown()"
-                [class.border-l]="consoleShown()"
-              />
-            </nc-panel-region>
-          </div>
-        }
-        @case ('error') {
-          <!-- The console surface is where the machine talks during a session; a project that
+                </div>
+                <nc-console-column
+                  primary
+                  class="min-h-0 border-line"
+                  [shown]="consoleShown()"
+                  [class.border-l]="consoleShown()"
+                />
+              </nc-panel-region>
+            </div>
+          }
+          @case ('error') {
+            <!-- The console surface is where the machine talks during a session; a project that
                never opened is a page-level failure and takes the page-level state. -->
-          <div class="flex items-center justify-center p-6">
-            <nc-error-state [title]="t('editor.cannotOpen')" [hint]="session.error() ?? undefined">
-              <a ncButton variant="secondary" routerLink="/games">{{ t('nav.myGames') }}</a>
-            </nc-error-state>
-          </div>
-        }
-        @case ('kicked') {
-          <div class="flex items-center justify-center p-6">
-            <nc-error-state tone="neutral" icon="users" [title]="t('editor.kicked')">
-              <a ncButton variant="secondary" routerLink="/games">{{ t('nav.myGames') }}</a>
-            </nc-error-state>
-          </div>
-        }
-        @default {
-          <div class="flex items-center justify-center p-6">
-            <nc-lcd class="w-[420px]" [minHeight]="80">
-              > {{ t('editor.status.' + session.status()) }}
-            </nc-lcd>
-          </div>
+            <div class="flex items-center justify-center p-6">
+              <nc-error-state
+                [title]="t('editor.cannotOpen')"
+                [hint]="session.error() ?? undefined"
+              >
+                <a ncButton variant="secondary" routerLink="/games">{{ t('nav.myGames') }}</a>
+              </nc-error-state>
+            </div>
+          }
+          @case ('kicked') {
+            <div class="flex items-center justify-center p-6">
+              <nc-error-state tone="neutral" icon="users" [title]="t('editor.kicked')">
+                <a ncButton variant="secondary" routerLink="/games">{{ t('nav.myGames') }}</a>
+              </nc-error-state>
+            </div>
+          }
+          @default {
+            <div class="flex items-center justify-center p-6">
+              <nc-lcd class="w-[420px]" [minHeight]="80">
+                > {{ t('editor.status.' + session.status()) }}
+              </nc-lcd>
+            </div>
+          }
         }
       }
     </div>
@@ -213,6 +222,7 @@ const RAIL: RailItem<EditorTab>[] = [
 })
 export class EditorShellComponent implements OnInit {
   readonly id = input.required({ transform: numberAttribute });
+  protected readonly String = String;
   private readonly presence = inject(PresenceStore);
   private readonly docRequests = inject(DocRequestService);
   private readonly editorRuntime = inject(EditorRuntimeService);
@@ -292,6 +302,7 @@ export class EditorShellComponent implements OnInit {
         this.presence.announce({ kind: 'IDLE' });
       });
     });
+    if (typeof window !== 'undefined') this.ui.setViewportWidth(window.innerWidth);
     const ro = new ResizeObserver((entries) => {
       const w = entries[0]?.contentRect.width;
       if (w) this.ui.setViewportWidth(w);

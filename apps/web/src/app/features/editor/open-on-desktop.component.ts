@@ -4,11 +4,12 @@ import { TranslocoDirective } from '@jsverse/transloco';
 import { ButtonDirective, EmptyStateComponent, IconComponent, ToastService } from '@naucto/ui';
 
 /**
- * Where `/edit/:id` lands on a phone. The editor is desktop-only for now, but a link to it is
- * still a link to a real game — this keeps it, rather than telling the person it does not exist.
+ * What `/edit/:id` shows while the window is too narrow for the editor. Held in place of the
+ * workspace rather than routed to, so widening the window gives the editor back without the person
+ * having to find their way here again — a link to the editor stays a link to a real game.
  */
 @Component({
-  selector: 'nc-open-on-desktop-page',
+  selector: 'nc-open-on-desktop',
   imports: [RouterLink, TranslocoDirective, ButtonDirective, EmptyStateComponent, IconComponent],
   template: `
     <div *transloco="let t" class="flex min-h-[70vh] items-center justify-center">
@@ -42,8 +43,8 @@ import { ButtonDirective, EmptyStateComponent, IconComponent, ToastService } fro
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class OpenOnDesktopPage {
-  /** Bound from `?id=`, so the page can offer to play the game and hand back its editor link. */
+export class OpenOnDesktopComponent {
+  /** The game being opened, so this can offer to play it and hand back its editor link. */
   readonly id = input('');
   private readonly toasts = inject(ToastService);
   protected readonly copied = signal(false);

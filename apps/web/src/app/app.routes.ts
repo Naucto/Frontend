@@ -1,6 +1,6 @@
 import { type Routes } from '@angular/router';
 
-import { authGuard, desktopOnlyGuard, guestGuard } from './core/auth/auth.guard';
+import { authGuard, guestGuard } from './core/auth/auth.guard';
 
 export const routes: Routes = [
   {
@@ -35,7 +35,6 @@ export const routes: Routes = [
   {
     path: 'edit/:id',
     canActivate: [authGuard],
-    canMatch: [desktopOnlyGuard],
     loadChildren: () => import('./features/editor/editor.routes').then((m) => m.EDITOR_ROUTES),
     title: 'Editor — Naucto',
   },
@@ -44,12 +43,6 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/shell/app-shell.component').then((m) => m.AppShellComponent),
     children: [
-      {
-        path: 'open-on-desktop',
-        loadComponent: () =>
-          import('./features/editor/open-on-desktop.page').then((m) => m.OpenOnDesktopPage),
-        title: 'Open on a desktop — Naucto',
-      },
       { path: '', redirectTo: 'hub', pathMatch: 'full' },
       {
         path: 'hub',

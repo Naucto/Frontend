@@ -38,6 +38,14 @@ interface EditorUiState {
  * screenshot of the arrangement by two pixels.
  */
 export const REFERENCE_SPLIT_BREAKPOINT = 1602;
+/**
+ * Narrower than this and the editor is not shown at all.
+ *
+ * A rail, a workspace and a panel column do not fit on a phone, and the alternative to saying so is
+ * a layout that cannot be used. It is a width rather than a device: a window dragged narrow on a
+ * desktop is in the same position as a phone, and gets the same answer.
+ */
+export const EDITOR_MIN_WIDTH = 1024;
 
 /**
  * Every panel on the right of the editor, the console among them.
@@ -76,6 +84,8 @@ export const EditorUiStore = signalStore(
 
     return {
       referenceShown,
+      /** Whether the window is too narrow to lay the editor out at all. */
+      tooNarrow: computed(() => s.viewportWidth() < EDITOR_MIN_WIDTH),
       /** Wide enough and the reference gets a column of its own; below that it takes the console's. */
       columnMode: computed<ColumnMode>(() =>
         !referenceShown()
