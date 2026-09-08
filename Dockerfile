@@ -13,10 +13,11 @@ COPY packages/api-client/package.json packages/api-client/
 # The engine's prepare script bundles the AudioWorklet; ship it so npm ci can run
 # it (it no-ops here because the worklet source only arrives in the build stage).
 COPY packages/engine/scripts packages/engine/scripts
-# NPM_TOKEN (read:packages) is only needed once @naucto/api-client is consumed from GitHub Packages;
-# the BuildKit secret is optional so local builds work without it.
-RUN --mount=type=secret,id=npm_token \
-    NPM_TOKEN="$(cat /run/secrets/npm_token 2>/dev/null || true)" npm ci --no-audit --no-fund
+# No registry credential is mounted: `@naucto/api-client` is a workspace package in this repo, so
+# `npm ci` resolves it from the tree. A secret mount is a BuildKit-only instruction, and the builder
+# this image is deployed by runs classic — an optional credential that buys nothing today is not
+# worth being unbuildable there for. It comes back the day the package is published.
+RUN npm ci --no-audit --no-fund
 
 FROM deps AS build
 COPY . .
