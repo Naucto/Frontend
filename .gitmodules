@@ -1,4 +1,4 @@
 [submodule "docs"]
 	path = docs
-	url = git@github.com:Naucto/Engine-Documentation.git
+	url = https://github.com/Naucto/Engine-Documentation.git
 	branch = docs-markdown
