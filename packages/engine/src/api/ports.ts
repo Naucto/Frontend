@@ -35,7 +35,8 @@ export interface GfxBackend {
     flipH: boolean,
     flipV: boolean,
     scale: number,
-    opaque?: boolean,
+    /** The palette index kept clear, or null to draw every colour. */
+    keyColour: number | null,
   ): void;
   drawRegion(
     sx: number,
@@ -48,7 +49,7 @@ export interface GfxBackend {
     dh: number,
     flipH: boolean,
     flipV: boolean,
-    opaque?: boolean,
+    keyColour: number | null,
   ): void;
   drawMap(x: number, y: number, tx: number, ty: number, tw: number, th: number): void;
   /**

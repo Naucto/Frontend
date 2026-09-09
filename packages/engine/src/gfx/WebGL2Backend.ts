@@ -15,13 +15,11 @@ import { buildFontAtlas, FONT_HEIGHT, FONT_WIDTH, glyphIndex } from './Font';
 import { createGLContext, createTexture, hexToRgb, linkProgram, rgbToHex } from './glUtils';
 import { DRAW_FS, DRAW_VS, PRESENT_FS, PRESENT_VS } from './shaders';
 
-/**
- * Which palette indices a sheet draw keeps clear, as a bitmask over the sixteen.
- *
- * The first colour alone, because that is what a sprite sheet's transparency channel is: without
- * it every sprite is a square.
- */
-const KEYED_OUT = 1;
+/** One colour kept clear, as the bitmask the shader reads. */
+const keyed = (colour: number | null): number => (colour === null ? 0 : 1 << (colour & 15));
+
+/** The map is drawn without a call to ask, so it takes the default a sprite would. */
+const MAP_KEY = 0;
 
 const UNIT_SHEET = 0;
 const UNIT_MAP = 1;
@@ -334,14 +332,14 @@ export class WebGL2Backend implements GfxBackend {
     flipH: boolean,
     flipV: boolean,
     scale: number,
-    opaque = false,
+    keyColour: number | null,
   ): void {
     n = Math.floor(n);
     const sx = (n % SPRITES_PER_ROW) * SPRITE_SIZE;
     const sy = Math.floor(n / SPRITES_PER_ROW) * SPRITE_SIZE;
     const sw = Math.floor(w) * SPRITE_SIZE;
     const sh = Math.floor(h) * SPRITE_SIZE;
-    this.drawRegion(sx, sy, sw, sh, x, y, sw * scale, sh * scale, flipH, flipV, opaque);
+    this.drawRegion(sx, sy, sw, sh, x, y, sw * scale, sh * scale, flipH, flipV, keyColour);
   }
 
   drawRegion(
@@ -355,9 +353,9 @@ export class WebGL2Backend implements GfxBackend {
     dh: number,
     flipH: boolean,
     flipV: boolean,
-    opaque = false,
+    keyColour: number | null,
   ): void {
-    this.useBatch('sheet', -1, -1, opaque ? 0 : KEYED_OUT);
+    this.useBatch('sheet', -1, -1, keyed(keyColour));
     let u0 = sx / SHEET_WIDTH;
     let v0 = sy / SHEET_HEIGHT;
     let u1 = (sx + sw) / SHEET_WIDTH;
@@ -381,7 +379,7 @@ export class WebGL2Backend implements GfxBackend {
 
   drawMap(x: number, y: number, tx: number, ty: number, tw: number, th: number): void {
     if (this.mapDirty) this.rebuildMap();
-    this.useBatch('map', -1, -1, KEYED_OUT);
+    this.useBatch('map', -1, -1, keyed(MAP_KEY));
     const px = tx * SPRITE_SIZE;
     const py = ty * SPRITE_SIZE;
     const pw = tw * SPRITE_SIZE;

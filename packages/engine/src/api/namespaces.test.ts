@@ -72,15 +72,18 @@ describe('Lua API namespaces', () => {
       'gfx.clear() gfx.draw_sprite(5, 10, 20) gfx.line(0, 0, 10, 10, 7) gfx.print("hi", 1, 2)',
     );
     expect(gfx.ops('clear')[0]?.args).toEqual([0]);
-    expect(gfx.ops('drawSprite')[0]?.args).toEqual([5, 10, 20, 1, 1, false, false, 1, false]);
+    expect(gfx.ops('drawSprite')[0]?.args).toEqual([5, 10, 20, 1, 1, false, false, 1, 0]);
     expect(gfx.ops('line')[0]?.args).toEqual([0, 0, 10, 10, 7]);
     expect(gfx.ops('print')[0]?.args).toEqual(['hi', 1, 2, 5]);
   });
 
-  it('gfx.draw_sprite carries the opaque flag through', () => {
+  it('gfx.draw_sprite reads the colour it keeps clear from what was actually passed', () => {
     const { lua, gfx } = setup();
-    lua.evaluate('gfx.draw_sprite(5, 0, 0, 1, 1, false, false, 1, true)');
-    expect(gfx.ops('drawSprite')[0]?.args.at(-1)).toBe(true);
+    lua.evaluate(
+      'gfx.draw_sprite(5, 0, 0) gfx.draw_sprite(5, 0, 0, 1, 1, false, false, 1, 7) ' +
+        'gfx.draw_sprite(5, 0, 0, 1, 1, false, false, 1, nil)',
+    );
+    expect(gfx.ops('drawSprite').map((c) => c.args.at(-1))).toEqual([0, 7, null]);
   });
 
   it('gfx.scanline parses effect tables and scanline_fn calls once per row', () => {

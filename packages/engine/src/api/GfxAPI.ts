@@ -6,6 +6,23 @@ const num = (v: unknown, d = 0): number => (typeof v === 'number' && Number.isFi
 const bool = (v: unknown, d = false): boolean =>
   typeof v === 'boolean' ? v : v === undefined ? d : Boolean(v);
 
+/** The first colour, which is what a sprite sheet's transparency channel is. */
+const DEFAULT_KEY = 0;
+
+/**
+ * Which colour a draw keeps clear, read from the arguments as Lua pushed them.
+ *
+ * "The usual" and "none" are different answers, and inside a Lua function they could not be: an
+ * absent argument and an explicit nil both read as nil. They differ here only because the binding
+ * takes what was pushed rather than a fixed arity — omitted is absent from the list, nil is
+ * present and undefined — so this must keep reading the list, not a parameter.
+ */
+const keyColour = (args: readonly unknown[], at: number): number | null => {
+  if (args.length <= at) return DEFAULT_KEY;
+  const v = args[at];
+  return typeof v === 'number' && Number.isFinite(v) ? v & 15 : null;
+};
+
 const toEffect = (opts: unknown): ScanlineEffect => {
   if (typeof opts !== 'object' || opts === null) return {};
   const o = opts as Record<string, unknown>;
@@ -36,54 +53,32 @@ export class GfxAPI extends EngineModule {
       clear: (c?: unknown) => {
         g.clear(num(c));
       },
-      draw_sprite: (
-        n: unknown,
-        x: unknown,
-        y: unknown,
-        w?: unknown,
-        h?: unknown,
-        fh?: unknown,
-        fv?: unknown,
-        s?: unknown,
-        opaque?: unknown,
-      ) => {
+      draw_sprite: (...a: unknown[]) => {
         g.drawSprite(
-          num(n),
-          num(x),
-          num(y),
-          num(w, 1),
-          num(h, 1),
-          bool(fh),
-          bool(fv),
-          num(s, 1),
-          bool(opaque),
+          num(a[0]),
+          num(a[1]),
+          num(a[2]),
+          num(a[3], 1),
+          num(a[4], 1),
+          bool(a[5]),
+          bool(a[6]),
+          num(a[7], 1),
+          keyColour(a, 8),
         );
       },
-      draw_region: (
-        sx: unknown,
-        sy: unknown,
-        sw: unknown,
-        sh: unknown,
-        dx: unknown,
-        dy: unknown,
-        dw?: unknown,
-        dh?: unknown,
-        fh?: unknown,
-        fv?: unknown,
-        opaque?: unknown,
-      ) => {
+      draw_region: (...a: unknown[]) => {
         g.drawRegion(
-          num(sx),
-          num(sy),
-          num(sw),
-          num(sh),
-          num(dx),
-          num(dy),
-          num(dw, num(sw)),
-          num(dh, num(sh)),
-          bool(fh),
-          bool(fv),
-          bool(opaque),
+          num(a[0]),
+          num(a[1]),
+          num(a[2]),
+          num(a[3]),
+          num(a[4]),
+          num(a[5]),
+          num(a[6], num(a[2])),
+          num(a[7], num(a[3])),
+          bool(a[8]),
+          bool(a[9]),
+          keyColour(a, 10),
         );
       },
       pixel: (x: unknown, y: unknown, c: unknown) => {
