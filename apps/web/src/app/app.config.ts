@@ -1,3 +1,4 @@
+import { FullscreenOverlayContainer, OverlayContainer } from '@angular/cdk/overlay';
 import { provideHttpClient } from '@angular/common/http';
 import {
   type ApplicationConfig,
@@ -17,6 +18,9 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
+    // A fullscreen element is the only thing the browser paints, and the default overlay container
+    // sits outside this application's tree — so no overlay can be seen over anything fullscreen.
+    { provide: OverlayContainer, useClass: FullscreenOverlayContainer },
     provideHttpClient(),
     provideRouter(
       routes,

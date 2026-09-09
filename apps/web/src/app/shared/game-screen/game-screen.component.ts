@@ -498,11 +498,14 @@ export class GameScreenComponent {
    * The frame, not the canvas. Fullscreening the canvas alone left every control behind in the
    * document, so the game filled the screen with no transport, no exit and nothing on hover — the
    * only way back out was the browser's own Escape, which nothing on screen mentioned.
+   *
+   * A page may hold several of these, and this button speaks for the one it is in: what the
+   * document has fullscreen is not necessarily this screen.
    */
   protected fullscreen(): void {
-    const frame = this.frame();
-    if (document.fullscreenElement) void document.exitFullscreen();
-    else void frame.nativeElement.requestFullscreen();
+    const frame = this.frame().nativeElement;
+    if (document.fullscreenElement === frame) void document.exitFullscreen();
+    else void frame.requestFullscreen();
   }
 }
 

@@ -44,7 +44,6 @@ import {
   SwatchPickerComponent,
   TabsComponent,
   TagInputComponent,
-  ToastHostComponent,
   ToastService,
   ToggleButtonComponent,
   ToggleComponent,
@@ -100,11 +99,12 @@ import { ACCENT_SLOTS } from '../editor/accent-slots';
     SearchComponent,
     StatComponent,
     TagInputComponent,
-    ToastHostComponent,
     TooltipDirective,
   ],
   template: `
-    <nc-toast-host />
+    <!-- No toast host here: it is mounted once in the app shell, and the buttons below raise
+         toasts through the service, so that one shows them. A second one drew the same toasts in
+         the same corner, on top of the first, where it swallowed the clicks meant for it. -->
     <div class="mx-auto grid max-w-[1100px] gap-4 p-6">
       <header class="flex items-end justify-between">
         <div>

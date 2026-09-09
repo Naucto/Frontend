@@ -48,3 +48,19 @@ test('an unavailable button gains a border only where it had one', async ({ page
   expect(await border('ghost')).toBe('rgba(0, 0, 0, 0)');
   expect(await border('primary')).not.toBe('rgba(0, 0, 0, 0)');
 });
+
+/** The container the host reports from takes no pointer events; the row with the button must. */
+test('a toast is shown from the overlay container and can be dismissed', async ({ page }) => {
+  await page.goto('/ui-kit');
+  await page.getByRole('button', { name: 'Toast', exact: true }).click();
+  const toast = page.getByText('Saved 2 minutes ago — 942 KB');
+  await expect(toast).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.querySelectorAll('.cdk-overlay-container nc-toast-host').length,
+    ),
+  ).toBe(1);
+
+  await page.getByRole('button', { name: 'Dismiss' }).click();
+  await expect(toast).toHaveCount(0);
+});
