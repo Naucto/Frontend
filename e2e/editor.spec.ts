@@ -417,6 +417,46 @@ test.describe('editor', () => {
     await expect(bar).toHaveText(/Unsaved changes/);
   });
 
+  /**
+   * The documentation of the call being written, which is the moment it is worth reading. Pinned
+   * on the argument too: the card is only useful if it tracks which one the caret is on.
+   */
+  test('the signature card follows the caret through a call', async ({ page }) => {
+    await page.goto('/edit/7/code');
+    await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+    await page.locator('.cm-content').click();
+    await page.keyboard.press('Control+End');
+    await page.keyboard.type('\ngfx.draw_sprite(');
+
+    const card = page.locator('.nc-doc-card');
+    await expect(card).toBeVisible();
+    await expect(card.locator('.nc-doc-card__sig')).toHaveText(/gfx\.draw_sprite/);
+    await expect(card.locator('.nc-doc-card__params dt[data-active]')).toHaveText(/^n /);
+
+    await page.keyboard.type('0, ');
+    await expect(card.locator('.nc-doc-card__params dt[data-active]')).toHaveText(/^x /);
+
+    // Closing the call ends the question, so the card goes.
+    await page.keyboard.press('End');
+    await page.keyboard.type(')');
+    await expect(card).toHaveCount(0);
+  });
+
+  /** The documentation cannot answer for a project's own function; its arguments have names. */
+  test('the signature card answers for a function the project declares', async ({ page }) => {
+    await page.goto('/edit/7/code');
+    await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+    await page.locator('.cm-content').click();
+    await page.keyboard.press('Control+End');
+    await page.keyboard.type('\nfunction spawn_coin(tile_x, tile_y)\nend\n');
+    await page.keyboard.type('spawn_coin(');
+
+    const sig = page.locator('.nc-doc-card__sig');
+    await expect(sig).toBeVisible();
+    await expect(sig).toHaveText('spawn_coin(tile_x, tile_y)');
+    await expect(sig.locator('[data-active]')).toHaveText('tile_x');
+  });
+
   test('MAP tab stamps tiles', async ({ page }) => {
     await page.goto('/edit/7/map');
     const canvas = page.getByRole('img', { name: 'Map canvas' });

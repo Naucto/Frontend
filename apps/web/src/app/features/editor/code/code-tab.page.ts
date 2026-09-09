@@ -32,6 +32,7 @@ import {
   type CodeFileDialogResult,
 } from './code-file.dialog';
 import { SearchBarComponent } from './search-bar.component';
+import { localSignatures } from './signature-help';
 
 /** CODE tab: file tabs, the collaborative editor, status bar. */
 @Component({
@@ -135,6 +136,7 @@ import { SearchBarComponent } from './search-bar.component';
             [colour]="session.myColour()"
             [userName]="session.displayName"
             [error]="runtime.error()"
+            [locals]="locals()"
             (cursor)="cursor.set($event)"
             (findRequested)="openSearch()"
           />
@@ -243,6 +245,13 @@ export class CodeTabPage implements OnInit {
         m.unobserveDeep(cb);
       };
     },
+  );
+  /**
+   * The project's own functions, read from every tab rather than the open one: a helper is
+   * routinely called from a file other than the one that declares it.
+   */
+  protected readonly locals = computed(() =>
+    localSignatures(this.files().map((f) => ({ name: f.name, text: f.text.toString() }))),
   );
   protected readonly activeId = signal<string | null>(null);
   protected readonly searching = signal(false);

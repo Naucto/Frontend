@@ -44,6 +44,7 @@ import type * as Y from 'yjs';
 
 import { luaHover } from './lua-docs';
 import { luaAutocomplete, luaLanguage, setDocsLookup } from './lua-language';
+import { type LocalSignature, luaSignatureHelp } from './signature-help';
 import { naucto_highlight, nauctoTheme } from './theme';
 
 export interface CursorInfo {
@@ -78,6 +79,8 @@ export class CodeEditorComponent {
   readonly colour = input<PresenceColour>('sky');
   readonly userName = input('you');
   readonly error = input<EngineError | null>(null);
+  /** What the project declares, for calls the documentation has never heard of. */
+  readonly locals = input<readonly LocalSignature[]>([]);
   readonly cursor = output<CursorInfo>();
   /** Mod-f, which the page answers by opening its own find bar rather than CodeMirror's panel. */
   readonly findRequested = output();
@@ -231,6 +234,11 @@ export class CodeEditorComponent {
       luaHover(
         (name) => this.docs.lookup(name),
         (ns) => this.docs.peers(ns),
+      ),
+      luaSignatureHelp(
+        (name) => this.docs.lookup(name),
+        (ns) => this.docs.peers(ns),
+        () => this.locals(),
       ),
       syntaxHighlighting(naucto_highlight),
       nauctoTheme,
