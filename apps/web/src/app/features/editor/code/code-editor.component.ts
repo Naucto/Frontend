@@ -79,6 +79,8 @@ export class CodeEditorComponent {
   readonly userName = input('you');
   readonly error = input<EngineError | null>(null);
   readonly cursor = output<CursorInfo>();
+  /** Mod-f, which the page answers by opening its own find bar rather than CodeMirror's panel. */
+  readonly findRequested = output();
   readonly host = viewChild.required<ElementRef<HTMLDivElement>>('host');
 
   private view: EditorView | null = null;
@@ -232,7 +234,23 @@ export class CodeEditorComponent {
       ),
       syntaxHighlighting(naucto_highlight),
       nauctoTheme,
-      keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
+      // Ours first: the array is tried in order, and Mod-f has to be claimed before the browser's
+      // own find bar takes it — which is what a reader in this editor was getting until now.
+      keymap.of([
+        {
+          key: 'Mod-f',
+          preventDefault: true,
+          run: () => {
+            this.findRequested.emit();
+            return true;
+          },
+        },
+        { key: 'Mod-g', preventDefault: true, run: findNext },
+        { key: 'Shift-Mod-g', preventDefault: true, run: findPrevious },
+        ...defaultKeymap,
+        ...historyKeymap,
+        indentWithTab,
+      ]),
       EditorState.tabSize.of(2),
       EditorView.updateListener.of((u) => {
         if (u.selectionSet || u.docChanged) {

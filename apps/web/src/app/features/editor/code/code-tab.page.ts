@@ -136,6 +136,7 @@ import { SearchBarComponent } from './search-bar.component';
             [userName]="session.displayName"
             [error]="runtime.error()"
             (cursor)="cursor.set($event)"
+            (findRequested)="openSearch()"
           />
         }
       </div>
@@ -204,6 +205,10 @@ export class CodeTabPage implements OnInit {
     effect(() => {
       const terms = this.bar()?.terms();
       if (terms) this.editor()?.setSearch(terms);
+    });
+    // The bar is created by the @if above, so nothing can focus it in the same turn that opens it.
+    effect(() => {
+      if (this.searching()) this.bar()?.focus();
     });
     inject(DestroyRef).onDestroy(() => {
       this.editorRuntime.insertAtCursor = null;
@@ -319,5 +324,11 @@ export class CodeTabPage implements OnInit {
 
   protected find(): void {
     this.searching.set(!this.searching());
+  }
+
+  /** Mod-f asks for a search, never for the absence of one, so it opens where the button toggles. */
+  protected openSearch(): void {
+    this.searching.set(true);
+    this.bar()?.focus();
   }
 }

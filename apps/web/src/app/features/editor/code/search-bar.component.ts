@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, model, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  type ElementRef,
+  model,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { ButtonDirective, CheckboxComponent, IconComponent, InputDirective } from '@naucto/ui';
 
@@ -32,6 +41,7 @@ export interface SearchTerms {
           <nc-icon [name]="replacing() ? 'chevron-down' : 'chevron-right'" [size]="12" />
         </button>
         <input
+          #field
           ncInput
           class="min-w-0 flex-1 font-mono"
           [attr.aria-label]="t('editor.code.find')"
@@ -145,6 +155,15 @@ export class SearchBarComponent {
   readonly replaceOne = output();
   readonly replaceEvery = output();
   readonly closed = output();
+
+  private readonly field = viewChild<ElementRef<HTMLInputElement>>('field');
+
+  /** Whoever opens the bar puts the caret in it; a search box you still have to click is a step. */
+  focus(): void {
+    const el = this.field()?.nativeElement;
+    el?.focus();
+    el?.select();
+  }
 
   readonly terms = computed<SearchTerms>(() => ({
     search: this.search(),
