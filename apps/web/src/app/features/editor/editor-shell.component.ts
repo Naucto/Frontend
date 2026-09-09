@@ -217,7 +217,9 @@ const RAIL: RailItem<EditorTab>[] = [
   // `block` is load-bearing: a ResizeObserver reports a 0-wide content box for an inline element,
   // so the width this shell measures into the store stayed at its 1280 default no matter how wide
   // the window was — and the docs could never earn a column of their own.
-  host: { class: 'block', '(document:keydown)': 'onShortcut($event)' },
+  // The editor asks for the big density; the hub and the pages around it match the artboards and
+  // are left at the default. Named here rather than at the root so it is a choice, not a setting.
+  host: { class: 'nc-density-big block', '(document:keydown)': 'onShortcut($event)' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EditorShellComponent implements OnInit {

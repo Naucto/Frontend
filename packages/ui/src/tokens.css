@@ -468,3 +468,60 @@
     clip: rect(0 0 0 0);
   }
 }
+
+/*
+ * Density: how big a bar and the controls in it are drawn.
+ *
+ * `small` is the default and is the artboards' own measurements. `big` is the editor's own strips,
+ * which carry more controls than any artboard drew in them and were read as cramped at the drawn
+ * size. One class names the choice, so a screen either asks for it or does not, and nothing in
+ * between is scattered across thirty class strings.
+ *
+ * Two of the three things it changes cannot be a multiplication:
+ *
+ * - the **type step**, because the face is a pixel face and 10 × 1.25 is 12.5. It moves up the
+ *   design's own ladder instead, to the step the page's header bar already uses — which is what
+ *   makes a button in an editor strip read as the same kind of button as SHARE and PUBLISH.
+ * - the **icon step**, which is not a CSS length at all but an attribute on an SVG, and is
+ *   12 | 24 | 48 on purpose: a glyph drawn on a 24 grid only stays crisp at exact halves and
+ *   doubles of it. A bar at `big` takes 24; there is no rung between.
+ *
+ * The boxes do multiply, and the factor stays a single declaration because it is the thing we
+ * iterate on. 1.25 was chosen on nine screenshots against the drawn size.
+ */
+:root,
+.nc-density-small {
+  --nc-density: 1;
+  --nc-control-text: var(--text-label);
+  --nc-control-leading: var(--text-label--line-height);
+}
+
+.nc-density-big {
+  --nc-density: 1.25;
+  --nc-control-text: var(--text-body);
+  --nc-control-leading: var(--text-body--line-height);
+}
+
+/*
+ * Declared on all three selectors, and that is not redundant: a custom property is substituted
+ * where it is *declared*, so a --nc-bar-h written only on :root would compute against the root's
+ * density and inherit that number — naming a density deeper down would then change nothing.
+ */
+:root,
+.nc-density-small,
+.nc-density-big {
+  /* The strip every editor tab and every panel puts its title in. */
+  --nc-bar-h: calc(40px * var(--nc-density));
+  /* A tool button in that strip: the icon-only box, and the width the active one keeps. */
+  --nc-control-h: calc(26px * var(--nc-density));
+  --nc-tool-w: calc(30px * var(--nc-density));
+  /* The two shorter buttons that appear in a strip rather than in a form. */
+  --nc-control-h-xs: calc(22px * var(--nc-density));
+  --nc-control-h-sm: calc(24px * var(--nc-density));
+}
+
+/** The type a control in a bar is set in, which is the density's to decide. */
+@utility control-type {
+  font-size: var(--nc-control-text);
+  line-height: var(--nc-control-leading);
+}

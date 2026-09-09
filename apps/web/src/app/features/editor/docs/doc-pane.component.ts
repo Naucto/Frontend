@@ -39,13 +39,13 @@ import { DocRequestService } from './doc-request.service';
   template: `
     <div *transloco="let t" class="relative flex h-full flex-col">
       <!-- The head of every column on this side of the editor is one height; this one was 32. -->
-      <div class="flex h-5 shrink-0 items-center gap-1 border-b border-line px-1.5">
+      <div class="flex h-(--nc-bar-h) shrink-0 items-center gap-1 border-b border-line px-1.5">
         @if (view() !== 'tree') {
           <button ncButton variant="ghost" size="sm" iconOnly [attr.aria-label]="t('docs.back')" (click)="back()">
-            <nc-icon name="chevron-left" [size]="12" />
+            <nc-icon name="chevron-left" [size]="24" />
           </button>
         }
-        <nc-icon name="reference" [size]="12" class="text-ink" />
+        <nc-icon name="reference" [size]="24" class="text-ink" />
         <span class="label text-ink">{{ t('docs.reference') }}</span>
         <span class="flex-1"></span>
         <span class="label text-ink-4">F1</span>

@@ -18,7 +18,7 @@ import { WaveGlyphComponent } from './wave-glyph.component';
   ],
   template: `
     <div *transloco="let t" class="flex h-full flex-col">
-      <div class="flex h-5 items-center border-b border-line px-1.5">
+      <div class="flex h-(--nc-bar-h) items-center border-b border-line px-1.5">
         <span class="label text-ink-3">{{ t('editor.sound.instruments') }}</span>
         <span class="flex-1"></span>
         <button
@@ -29,7 +29,7 @@ import { WaveGlyphComponent } from './wave-glyph.component';
           [attr.aria-label]="t('editor.sound.addInstrument')"
           (click)="add.emit()"
         >
-          <nc-icon name="plus" [size]="12" />
+          <nc-icon name="plus" [size]="24" />
         </button>
       </div>
       <div

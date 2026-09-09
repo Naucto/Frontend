@@ -83,7 +83,7 @@ function formatScalar(value: TableScalar | undefined): string {
     <div *transloco="let t" class="grid h-full grid-cols-[minmax(0,1fr)_auto]">
       <section class="flex min-h-0 flex-col bg-paper">
         <div
-          class="@container relative flex h-5 shrink-0 items-center gap-1.25 border-b border-line bg-panel pr-1.5 pl-2"
+          class="@container relative flex h-(--nc-bar-h) shrink-0 items-center gap-1.25 border-b border-line bg-panel pr-1.5 pl-2"
         >
           <span class="font-mono text-[11px] uppercase tracking-strip text-ink">
             {{ t('editor.net.sharedState') }}
@@ -124,7 +124,7 @@ function formatScalar(value: TableScalar | undefined): string {
             [ncTooltip]="t('editor.net.expandAll')"
             (click)="expandAll()"
           >
-            <nc-icon name="expand" [size]="12" />
+            <nc-icon name="expand" [size]="24" />
           </button>
           <button
             ncButton
@@ -136,7 +136,7 @@ function formatScalar(value: TableScalar | undefined): string {
             [ncTooltip]="t('editor.net.collapseAll')"
             (click)="collapseAll()"
           >
-            <nc-icon name="collapse" [size]="12" />
+            <nc-icon name="collapse" [size]="24" />
           </button>
         </div>
         <!-- No rule under this one: the header above it already carries one, and the table's own

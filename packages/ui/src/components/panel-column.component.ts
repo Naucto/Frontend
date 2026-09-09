@@ -22,7 +22,7 @@ const EDGE: Record<PanelEdge, string> = {
 @Component({
   selector: 'nc-panel-column',
   template: `
-    <div class="flex h-5 shrink-0 items-center gap-1 border-b border-line px-1.5">
+    <div class="flex h-(--nc-bar-h) shrink-0 items-center gap-1 border-b border-line px-1.5">
       @if (title()) {
         <span class="label text-ink">{{ title() }}</span>
         <span class="flex-1"></span>

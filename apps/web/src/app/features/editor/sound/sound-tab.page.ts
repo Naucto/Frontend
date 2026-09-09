@@ -104,11 +104,11 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
       <section class="flex min-h-0 flex-col">
         @if (pattern(); as p) {
           <header
-            class="flex h-5 shrink-0 items-center gap-1 overflow-x-auto border-b border-line bg-panel px-2"
+            class="flex h-(--nc-bar-h) shrink-0 items-center gap-1 overflow-x-auto border-b border-line bg-panel px-2"
           >
             <button ncButton variant="secondary" size="sm" [ncPopover]="patterns">
               {{ t('editor.sound.pattern') | uppercase }} {{ patternIndex() }}
-              <nc-icon name="chevron-down" [size]="12" />
+              <nc-icon name="chevron-down" [size]="24" />
             </button>
             <ng-template #patterns>
               <nc-popover-panel [title]="t('editor.sound.patterns')">
@@ -132,7 +132,7 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
                 }
                 <div class="mt-1 flex gap-1 border-t border-line pt-1">
                   <button ncButton variant="ghost" size="sm" (click)="addPattern()">
-                    <nc-icon name="plus" [size]="12" />
+                    <nc-icon name="plus" [size]="24" />
                     {{ t('editor.sound.newPattern') }}
                   </button>
                   <button
@@ -142,7 +142,7 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
                     [disabled]="patternList().length < 2"
                     (click)="removePattern()"
                   >
-                    <nc-icon name="trash" [size]="12" />
+                    <nc-icon name="trash" [size]="24" />
                     {{ t('editor.sound.removePattern') }}
                   </button>
                 </div>
@@ -161,7 +161,7 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
                   [attr.aria-label]="t('editor.sound.pause')"
                   (click)="pause()"
                 >
-                  <nc-icon name="pause" [size]="12" />
+                  <nc-icon name="pause" [size]="24" />
                 </button>
               } @else {
                 <button
@@ -172,7 +172,7 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
                   [attr.aria-label]="t('editor.sound.play')"
                   (click)="play()"
                 >
-                  <nc-icon name="play" [size]="12" class="text-hot-ink" />
+                  <nc-icon name="play" [size]="24" class="text-hot-ink" />
                 </button>
               }
               <!-- Back to the top without stopping, which is what you want when you are listening
@@ -187,7 +187,7 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
                 (click)="toStart()"
                 [disabled]="playhead() === null"
               >
-                <nc-icon name="prev" [size]="12" />
+                <nc-icon name="prev" [size]="24" />
               </button>
               <button
                 ncButton
@@ -198,11 +198,11 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
                 (click)="stop()"
                 [disabled]="!playing() && playhead() === null"
               >
-                <nc-icon name="stop" [size]="12" />
+                <nc-icon name="stop" [size]="24" />
               </button>
             </span>
             <nc-toggle-button [checked]="sound.loop()" (checkedChange)="sound.setLoop($event)">
-              <nc-icon name="repeat" [size]="12" />
+              <nc-icon name="repeat" [size]="24" />
               {{ t('editor.sound.loop') }}
             </nc-toggle-button>
             <nc-toggle-button
@@ -210,7 +210,7 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
               (checkedChange)="sound.setMetronome($event)"
               accent="jade"
             >
-              <nc-icon name="metronome" [size]="12" />
+              <nc-icon name="metronome" [size]="24" />
               {{ t('editor.sound.metronome') }}
             </nc-toggle-button>
             <span class="flex-1"></span>
@@ -276,7 +276,7 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
               (click)="undo.undo()"
               [disabled]="!canUndo()"
             >
-              <nc-icon name="undo" [size]="12" />
+              <nc-icon name="undo" [size]="24" />
             </button>
             <button
               ncButton
@@ -287,7 +287,7 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
               (click)="undo.redo()"
               [disabled]="!canRedo()"
             >
-              <nc-icon name="redo" [size]="12" />
+              <nc-icon name="redo" [size]="24" />
             </button>
           </header>
           <nc-piano-roll
@@ -350,14 +350,17 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
             (activated)="cycleSnap()"
             [label]="t('editor.sound.snap')"
           >
-            <nc-icon name="grid" [size]="12" />
+            <nc-icon name="grid" [size]="24" />
             {{ t('editor.sound.snap') }} {{ snapLabel() }}
           </nc-toggle-button>
           <!-- On the head row, beside the controls, rather than in a band of its own beneath it:
                it is a reading and not a section, and given a band it took the height of one. It
                takes the height and the outline of the control beside it, so the row reads as one
                set of things rather than a control and a stripe. -->
-          <nc-oscilloscope class="h-[26px] w-[96px] shrink-0 border border-line" [peaks]="peaks" />
+          <nc-oscilloscope
+            class="h-(--nc-control-h) w-[88px] shrink-0 border border-line"
+            [peaks]="peaks"
+          />
           <span class="flex-1"></span>
           <button
             ncButton
@@ -368,10 +371,10 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
             [attr.aria-label]="t('editor.sound.zoomOut')"
             (click)="stepZoom(-1)"
           >
-            <nc-icon name="zoom-out" [size]="12" />
+            <nc-icon name="zoom-out" [size]="24" />
           </button>
           <nc-slider
-            class="w-[88px] min-w-[40px] shrink"
+            class="w-[88px] min-w-[32px] shrink"
             [min]="0"
             [max]="1"
             [step]="0.001"
@@ -390,11 +393,11 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
             [attr.aria-label]="t('editor.sound.zoomIn')"
             (click)="stepZoom(1)"
           >
-            <nc-icon name="zoom-in" [size]="12" />
+            <nc-icon name="zoom-in" [size]="24" />
           </button>
           <button
             type="button"
-            class="w-[38px] shrink-0 text-right font-mono text-label text-ink-3 hover:text-ink"
+            class="control-type w-[38px] shrink-0 text-right font-mono text-ink-3 hover:text-ink"
             [attr.aria-label]="t('editor.sound.zoomReset')"
             (click)="sound.setZoom(1)"
           >

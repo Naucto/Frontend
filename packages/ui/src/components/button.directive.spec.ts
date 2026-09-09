@@ -20,6 +20,6 @@ describe('ButtonDirective', () => {
     expect(primary.className).toContain('bg-gold');
     const danger = screen.getByRole('button', { name: 'Delete' });
     expect(danger.className).toContain('aspect-square');
-    expect(danger.className).toContain('h-[24px]');
+    expect(danger.className).toContain('h-(--nc-control-h-sm)');
   });
 });

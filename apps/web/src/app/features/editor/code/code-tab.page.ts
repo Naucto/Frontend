@@ -48,7 +48,7 @@ import { SearchBarComponent } from './search-bar.component';
   template: `
     <div *transloco="let t" class="flex h-full flex-col">
       <div
-        class="flex h-5 items-stretch border-b border-line bg-panel"
+        class="flex h-(--nc-bar-h) items-stretch border-b border-line bg-panel"
         cdkDropList
         cdkDropListOrientation="horizontal"
         (cdkDropListDropped)="moved($event)"
@@ -86,7 +86,7 @@ import { SearchBarComponent } from './search-bar.component';
               [attr.aria-label]="t('editor.code.edit')"
               (click)="edit(f.id, f.name, $event)"
             >
-              <nc-icon name="edit" [size]="12" />
+              <nc-icon name="edit" [size]="24" />
             </button>
             @if (files().length > 1) {
               <button
@@ -95,7 +95,7 @@ import { SearchBarComponent } from './search-bar.component';
                 aria-label="Remove file"
                 (click)="remove(f.id, $event)"
               >
-                <nc-icon name="close" [size]="12" />
+                <nc-icon name="close" [size]="24" />
               </button>
             }
           </div>
@@ -112,7 +112,7 @@ import { SearchBarComponent } from './search-bar.component';
           [attr.aria-label]="t('editor.code.addFile')"
           (click)="addFile()"
         >
-          <nc-icon name="plus" [size]="12" />
+          <nc-icon name="plus" [size]="24" />
         </button>
         <span class="flex-1"></span>
         <button

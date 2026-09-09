@@ -35,6 +35,37 @@ describe('tokens.css', () => {
     }
   });
 
+  /**
+   * The bars are drawn from the artboards' own measurements times a dial, and the dial starts at
+   * one — so these are the measurements, and they are what the button sizes used to spell out
+   * inline. Pinned here because the class that used to carry the number now carries a name.
+   */
+  it('keeps the bar ladder on the measured pixels, times the density', () => {
+    expect(tokensOf('\n:root,\n.nc-density-small,\n.nc-density-big {')).toMatchObject({
+      '--nc-bar-h': 'calc(40px * var(--nc-density))',
+      '--nc-control-h': 'calc(26px * var(--nc-density))',
+      '--nc-tool-w': 'calc(30px * var(--nc-density))',
+      '--nc-control-h-xs': 'calc(22px * var(--nc-density))',
+      '--nc-control-h-sm': 'calc(24px * var(--nc-density))',
+    });
+  });
+
+  /**
+   * The two densities, pinned because both numbers are decisions rather than tidy-ups: `small` is
+   * what the artboards draw, and `big` was chosen on screenshots against it. A change to either
+   * has to come past a test.
+   */
+  it('names two densities and no more', () => {
+    expect(tokensOf('\n:root,\n.nc-density-small {')).toMatchObject({
+      '--nc-density': '1',
+      '--nc-control-text': 'var(--text-label)',
+    });
+    expect(tokensOf('\n.nc-density-big {')).toMatchObject({
+      '--nc-density': '1.25',
+      '--nc-control-text': 'var(--text-body)',
+    });
+  });
+
   it('gives every text step a distinct value in both themes', () => {
     const steps = ['--nc-ink', '--nc-ink-body', '--nc-ink-2', '--nc-ink-3', '--nc-ink-4'];
     for (const theme of [dark, { ...dark, ...light }]) {

@@ -82,7 +82,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
         <!-- Three tracks, so the tool group is centred on the header rather than on whatever is
              left over between the title and the undo pair. -->
         <header
-          class="grid h-5 grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-line bg-panel px-2"
+          class="grid h-(--nc-bar-h) grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-line bg-panel px-2"
         >
           <!-- One line, always: in a 39px strip the readout wrapping to two lines pushes the
                tool group off centre and the strip out of its own height. -->
@@ -99,7 +99,12 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
               {{ t('editor.art.px', { w: regionPx().w, h: regionPx().h }) }}
             </span>
           </div>
-          <nc-tool-group [items]="tools()" [value]="art.tool()" (valueChange)="setTool($event)" />
+          <nc-tool-group
+            [items]="tools()"
+            [value]="art.tool()"
+            (valueChange)="setTool($event)"
+            [iconSize]="24"
+          />
           <div class="flex min-w-0 items-center justify-end gap-0.5">
             <!-- Only where there is something to keep a stroke off: with the sheet cropped away
                  there is no sprite next door to reach, so the choice has no subject. -->
@@ -109,7 +114,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
                 [checked]="art.clip()"
                 (checkedChange)="art.setClip($event)"
               >
-                <nc-icon name="lock" [size]="12" />
+                <nc-icon name="lock" [size]="24" />
                 {{ t('editor.art.clip') }}
               </nc-toggle-button>
             }
@@ -118,7 +123,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
               [checked]="art.crop()"
               (checkedChange)="art.setCrop($event)"
             >
-              <nc-icon name="frame" [size]="12" />
+              <nc-icon name="frame" [size]="24" />
               {{ t('editor.art.crop') }}
             </nc-toggle-button>
             <button
@@ -130,7 +135,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
               (click)="undo.undo()"
               [disabled]="!canUndo()"
             >
-              <nc-icon name="undo" [size]="12" />
+              <nc-icon name="undo" [size]="24" />
             </button>
             <button
               ncButton
@@ -141,7 +146,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
               (click)="undo.redo()"
               [disabled]="!canRedo()"
             >
-              <nc-icon name="redo" [size]="12" />
+              <nc-icon name="redo" [size]="24" />
             </button>
           </div>
         </header>
@@ -199,7 +204,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
             [checked]="art.grid()"
             (checkedChange)="art.setGrid($event)"
           >
-            <nc-icon name="grid" [size]="12" />
+            <nc-icon name="grid" [size]="24" />
             {{ t('editor.art.grid') }}
           </nc-toggle-button>
           <!-- Only where the sheet is cropped away. Uncropped, the previous frame is already on
@@ -210,7 +215,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
               [checked]="art.onion()"
               (checkedChange)="art.setOnion($event)"
             >
-              <nc-icon name="duplicate" [size]="12" />
+              <nc-icon name="duplicate" [size]="24" />
               {{ t('editor.art.onion') }}
             </nc-toggle-button>
           }
@@ -224,7 +229,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
             [attr.aria-label]="t('editor.art.zoomOut')"
             (click)="canvas.zoomBy(-1)"
           >
-            <nc-icon name="zoom-out" [size]="12" />
+            <nc-icon name="zoom-out" [size]="24" />
           </button>
           <nc-slider
             class="w-[88px] min-w-[40px] shrink"
@@ -246,11 +251,11 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
             [attr.aria-label]="t('editor.art.zoomIn')"
             (click)="canvas.zoomBy(1)"
           >
-            <nc-icon name="zoom-in" [size]="12" />
+            <nc-icon name="zoom-in" [size]="24" />
           </button>
           <button
             type="button"
-            class="w-[38px] shrink-0 text-right font-mono text-label text-ink-3 hover:text-ink"
+            class="control-type w-[38px] shrink-0 text-right font-mono text-ink-3 hover:text-ink"
             [attr.aria-label]="t('editor.art.zoomFit')"
             (click)="canvas.resetZoom()"
           >

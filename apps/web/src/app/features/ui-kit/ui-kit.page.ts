@@ -296,19 +296,30 @@ import { ACCENT_SLOTS } from '../editor/accent-slots';
           <nc-section title="Stepper">
             <nc-stepper [(value)]="spriteSize" [options]="sizes" />
           </nc-section>
-          <nc-section title="Tool group">
-            <nc-tool-group [items]="tools" [(value)]="tool" />
-          </nc-section>
-          <nc-section title="Toggle button">
-            <div class="flex gap-1">
-              <nc-toggle-button [(checked)]="grid">
-                <nc-icon name="grid" [size]="12" />
-                Grid
-              </nc-toggle-button>
-              <nc-toggle-button [(checked)]="onion">
-                <nc-icon name="duplicate" [size]="12" />
-                Onion
-              </nc-toggle-button>
+          <!-- Both densities, side by side, because that is the only way to see what the class
+               actually decides: the bar's height, the boxes in it, the type they are set in, and
+               the one step the glyphs are allowed to take. -->
+          <nc-section title="Density">
+            <div class="grid gap-2">
+              @for (d of densities; track d.klass) {
+                <div [class]="d.klass">
+                  <div class="label mb-1">{{ d.name }}</div>
+                  <div class="flex h-(--nc-bar-h) items-center gap-1 rounded-xs bg-panel px-1.5">
+                    <nc-tool-group [items]="tools" [(value)]="tool" [iconSize]="d.icon" />
+                    <nc-toggle-button [(checked)]="grid">
+                      <nc-icon name="grid" [size]="d.icon" />
+                      Grid
+                    </nc-toggle-button>
+                    <button ncButton variant="secondary" size="tool">
+                      <nc-icon name="frame" [size]="d.icon" />
+                      Crop
+                    </button>
+                    <button ncButton variant="ghost" size="sm" iconOnly aria-label="Undo">
+                      <nc-icon name="undo" [size]="d.icon" />
+                    </button>
+                  </div>
+                </div>
+              }
             </div>
           </nc-section>
           <nc-section title="Share code">
@@ -433,6 +444,11 @@ export class UiKitPage {
   ];
   protected readonly grid = signal(true);
   protected readonly onion = signal(false);
+  /** The two densities a bar may ask for, and the glyph step each one takes. */
+  protected readonly densities = [
+    { name: 'Small — the drawn size', klass: 'nc-density-small', icon: 12 as const },
+    { name: 'Big — the editor strips', klass: 'nc-density-big', icon: 24 as const },
+  ];
   protected readonly reduceMotion = signal(false);
   protected readonly matchCase = signal(true);
   protected readonly theme = signal<'dark' | 'light'>('dark');

@@ -106,7 +106,7 @@ const PIP_GRIPS: readonly { grip: PipGrip; box: string; cursor: string }[] = [
               [attr.aria-label]="t('editor.popOut')"
               (click)="ui.togglePip()"
             >
-              <nc-icon name="pip" [size]="12" />
+              <nc-icon name="pip" [size]="24" />
             </button>
           </div>
         }

@@ -58,7 +58,7 @@ import { MinimapComponent } from './minimap.component';
         <!-- Three tracks, so the tool group is centred on the header rather than on whatever is
              left over between the title and the undo pair. -->
         <header
-          class="grid h-5 grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-line bg-panel px-2"
+          class="grid h-(--nc-bar-h) grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-line bg-panel px-2"
         >
           <div class="flex min-w-0 items-center gap-2">
             <span class="font-mono text-meta text-ink">
@@ -66,7 +66,12 @@ import { MinimapComponent } from './minimap.component';
             </span>
             <span class="label text-ink-4">{{ t('editor.map.tiles', { w: mapW, h: mapH }) }}</span>
           </div>
-          <nc-tool-group [items]="tools()" [value]="map.tool()" (valueChange)="setTool($event)" />
+          <nc-tool-group
+            [items]="tools()"
+            [value]="map.tool()"
+            (valueChange)="setTool($event)"
+            [iconSize]="24"
+          />
           <div class="flex items-center justify-end gap-0.5">
             <button
               ncButton
@@ -77,7 +82,7 @@ import { MinimapComponent } from './minimap.component';
               (click)="undo.undo()"
               [disabled]="!canUndo()"
             >
-              <nc-icon name="undo" [size]="12" />
+              <nc-icon name="undo" [size]="24" />
             </button>
             <button
               ncButton
@@ -88,7 +93,7 @@ import { MinimapComponent } from './minimap.component';
               (click)="undo.redo()"
               [disabled]="!canRedo()"
             >
-              <nc-icon name="redo" [size]="12" />
+              <nc-icon name="redo" [size]="24" />
             </button>
           </div>
         </header>
@@ -139,7 +144,7 @@ import { MinimapComponent } from './minimap.component';
             (checkedChange)="map.setGrid($event)"
             [ncTooltip]="t('editor.map.gridHelp')"
           >
-            <nc-icon name="grid" [size]="12" />
+            <nc-icon name="grid" [size]="24" />
             {{ t('editor.map.grid') }}
           </nc-toggle-button>
           <nc-toggle-button
@@ -148,7 +153,7 @@ import { MinimapComponent } from './minimap.component';
             accent="jade"
             [ncTooltip]="t('editor.map.flagsHelp')"
           >
-            <nc-icon name="label" [size]="12" />
+            <nc-icon name="label" [size]="24" />
             {{ t('editor.map.flags') }}
           </nc-toggle-button>
           <span class="flex-1"></span>
@@ -161,7 +166,7 @@ import { MinimapComponent } from './minimap.component';
             [attr.aria-label]="t('editor.map.zoomOut')"
             (click)="map.zoomBy(-1)"
           >
-            <nc-icon name="zoom-out" [size]="12" />
+            <nc-icon name="zoom-out" [size]="24" />
           </button>
           <nc-slider
             class="w-[88px] min-w-[40px] shrink"
@@ -183,7 +188,7 @@ import { MinimapComponent } from './minimap.component';
             [attr.aria-label]="t('editor.map.zoomIn')"
             (click)="map.zoomBy(1)"
           >
-            <nc-icon name="zoom-in" [size]="12" />
+            <nc-icon name="zoom-in" [size]="24" />
           </button>
           <span class="w-[38px] shrink-0 text-right font-mono text-label text-ink-3">
             ×{{ zoomLabel() }}

@@ -97,7 +97,7 @@ export class SegmentedComponent<T extends string = string> {
         ? this.small()
           ? 'inline-flex h-[23px] items-center bg-raised px-[7px] font-mono text-micro tracking-button text-ink-3 hover:text-ink'
           : 'bg-raised px-[11px] py-[6px] font-mono text-label tracking-button text-ink-3 hover:text-ink'
-        : 'h-[26px] px-1.5 font-mono text-meta tracking-button text-ink-3 hover:text-ink',
+        : 'h-(--nc-control-h) px-1.5 font-mono text-meta tracking-button text-ink-3 hover:text-ink',
     ].join(' '),
   );
 

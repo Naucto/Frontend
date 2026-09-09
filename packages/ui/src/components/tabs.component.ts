@@ -62,7 +62,7 @@ const VARIANT: Record<TabsVariant, { list: string; item: string }> = {
           }
           {{ t.label }}
           @if (t.badge !== undefined) {
-            <span class="rounded-xs bg-raised px-0.5 text-[10px] text-ink-2">{{ t.badge }}</span>
+            <span class="rounded-xs bg-raised px-0.5 text-label text-ink-2">{{ t.badge }}</span>
           }
         </button>
       }

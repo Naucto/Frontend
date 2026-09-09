@@ -192,11 +192,11 @@ const DESCRIPTION_MAX = 300;
 
       <nc-panel-column [width]="PANEL_WIDTH" [title]="t('editor.game.publishing')">
         <button actions ncButton variant="secondary" size="sm" (click)="exportGame()">
-          <nc-icon name="download" [size]="12" />
+          <nc-icon name="download" [size]="24" />
           {{ t('editor.game.export') }}
         </button>
         <button actions ncButton variant="secondary" size="sm" (click)="confirmDelete()">
-          <nc-icon name="trash" [size]="12" />
+          <nc-icon name="trash" [size]="24" />
           {{ t('editor.game.delete') }}
         </button>
         @if (!canPublish()) {

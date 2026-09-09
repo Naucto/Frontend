@@ -59,11 +59,11 @@ const SIZES: Record<ButtonSize, { box: string; px: string }> = {
   // ONION, SPR 001. The kit had nothing between 24 and 32, so those strips were built out of `md`
   // and came out a third taller than the artboards. That, more than any single value, is why the
   // editors read as an approximation of the design rather than the design.
-  tool: { box: 'h-[26px] text-label', px: 'px-1.25' },
+  tool: { box: 'h-(--nc-control-h) control-type', px: 'px-1.25' },
   // The inline affordance that sits inside another control rather than beside it: the copy and
   // regenerate icons in a share-code field, the viewer's dock button, AUTOTILE.
-  xs: { box: 'h-[22px] text-micro', px: 'px-1' },
-  sm: { box: 'h-[24px] text-label', px: 'px-1.25' },
+  xs: { box: 'h-(--nc-control-h-xs) text-micro', px: 'px-1' },
+  sm: { box: 'h-(--nc-control-h-sm) control-type', px: 'px-1.25' },
   md: { box: 'h-[32px] text-body', px: 'px-2' },
   // The header bars only. Every control up there is 38px tall — button, bell and avatar alike —
   // so the one thing that is not, the 43px search box, reads as deliberate rather than as drift.

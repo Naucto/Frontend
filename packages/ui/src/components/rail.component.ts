@@ -32,7 +32,7 @@ export interface RailItem<T extends string> {
             [class]="it.value === value() ? 'bg-gold' : 'bg-transparent'"
           ></span>
           <nc-icon [name]="it.icon" [size]="24" />
-          <span class="font-mono text-[9px] uppercase tracking-wide">{{ it.label }}</span>
+          <span class="font-mono text-micro uppercase tracking-wide">{{ it.label }}</span>
         </button>
       }
     </nav>

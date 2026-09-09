@@ -9,7 +9,7 @@ import { IconComponent } from './icon.component';
   selector: 'nc-dialog-shell',
   imports: [ButtonDirective, IconComponent],
   template: `
-    <header class="flex h-5 items-center justify-between border-b border-line px-2">
+    <header class="flex h-(--nc-bar-h) items-center justify-between border-b border-line px-2">
       <h2 class="label text-ink">{{ title() }}</h2>
       <button ncButton variant="ghost" size="sm" iconOnly aria-label="Close" (click)="close()">
         <nc-icon name="close" [size]="12" />
