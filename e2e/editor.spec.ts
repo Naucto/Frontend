@@ -482,10 +482,9 @@ test.describe('editor', () => {
   });
 
   /**
-   * The head is a control, not a readout: it can be dragged, it can be rewound while the music is
-   * running, and it survives a resume. Each of the three is a separate mechanism — the ruler's own
-   * pointer, a rewind that reaches the graph rather than only the signal the next frame overwrites,
-   * and a frame loop that tells a graph which has not started yet from a pattern that has ended.
+   * Three independent mechanisms, so none of these assertions stands in for another: the ruler's
+   * own pointer, a rewind that reaches the audio graph and not only the signal a frame later
+   * overwrites, and a frame loop that tells a graph yet to start from a pattern already over.
    */
   test('the head can be dragged, rewound and resumed', async ({ page }) => {
     await page.goto('/edit/7/sound');

@@ -672,8 +672,8 @@ export class SoundTabPage {
     cancelAnimationFrame(this.raf);
     let lastBeat = -1;
     // The graph reports no position for the first frames after it is asked to start, so silence
-    // only means the end of the pattern once a position has been seen. A start that never arrives
-    // therefore leaves the head where it is — which STOP answers, and a vanished head does not.
+    // only means the end of the pattern once a position has been seen. The cost is that a start
+    // which never arrives leaves the head standing rather than clearing it.
     let begun = false;
     const loop = (): void => {
       const pos = this.engine.musicPosition();
