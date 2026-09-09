@@ -79,9 +79,11 @@ const DESCRIPTION_MAX = 300;
           </span>
           <span class="label truncate text-ink-4">
             {{
-              session.lastSavedAt()
-                ? t('editor.game.lastSaved', { when: ago(session.lastSavedAt()) })
-                : t('editor.game.notSaved')
+              session.dirty()
+                ? t('editor.game.unsavedChanges')
+                : session.lastSavedAt()
+                  ? t('editor.game.lastSaved', { when: ago(session.lastSavedAt()) })
+                  : t('editor.game.notSaved')
             }}
           </span>
         </div>

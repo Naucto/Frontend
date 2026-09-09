@@ -253,6 +253,7 @@
     "autoRun": "Auto",
     "oneError": "1 error",
     "synced": "Synced",
+    "unsaved": "Unsaved changes",
     "syncing": "Syncing",
     "notSaved": "Not saved",
     "consoleEmpty": "The machine says nothing yet. Run the game.",
@@ -268,6 +269,7 @@
       "title": "Game",
       "lastSaved": "last saved {{when}}",
       "notSaved": "not saved yet",
+      "unsavedChanges": "unsaved changes",
       "icon": "Icon",
       "noCover": "No cover yet",
       "grabFrame": "Grab frame",
@@ -309,6 +311,7 @@
       "versionSaved": "Saved version \"{{name}}\"",
       "versionSaveFailed": "Could not save that version. Nothing was lost — the game is still autosaving.",
       "versionDeleteFailed": "Could not delete that version.",
+      "versionNothingToSave": "Nothing has changed since the last save, so there is no new version to name.",
       "restored": "Restored {{name}}",
       "restoreFailed": "Could not restore that version."
     },

@@ -177,14 +177,21 @@ import { SearchBarComponent } from './search-bar.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CodeTabPage implements OnInit {
+  /**
+   * Synced is a claim about the server, so it may only be made when nothing is waiting to go there.
+   * The strip said it on a document with unwritten edits, which is the one reading that matters:
+   * a reader closing the tab trusts this word.
+   */
   protected readonly syncLabel = computed(() => {
     if (this.session.saveFailed()) return 'editor.notSaved';
-    return this.session.saving() ? 'editor.syncing' : 'editor.synced';
+    if (this.session.saving()) return 'editor.syncing';
+    return this.session.dirty() ? 'editor.unsaved' : 'editor.synced';
   });
 
   protected readonly syncTone = computed(() => {
     if (this.session.saveFailed()) return 'text-hot-ink';
-    return this.session.saving() ? 'text-orange-ink' : 'text-jade-ink';
+    if (this.session.saving()) return 'text-orange-ink';
+    return this.session.dirty() ? 'text-orange-ink' : 'text-jade-ink';
   });
   protected readonly session = inject(WorkSessionService);
   protected readonly runtime = inject(RuntimeHostService);
