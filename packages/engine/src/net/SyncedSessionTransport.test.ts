@@ -119,6 +119,25 @@ describe('SyncedSessionTransport', () => {
     transport.destroy();
   });
 
+  it('announces a peer it is signalling with, told about it or not', () => {
+    const transport = new SyncedSessionTransport(options('host', 1));
+    const joined: number[] = [];
+    transport.on('peerJoined', (id) => joined.push(id));
+
+    // No `peer-joined` first: that frame is sent once, when the slave's socket is accepted, so a
+    // slave whose socket drops and comes back arrives with nothing but its signal.
+    signaling().opts.onFrame({ type: 'signal', from: 2, data: { sdp: 'x' } });
+
+    expect(joined).toEqual([2]);
+    expect(peer(0).signal).toHaveBeenCalledWith({ sdp: 'x' });
+
+    // And only once, however many signals the handshake takes.
+    signaling().opts.onFrame({ type: 'signal', from: 2, data: { sdp: 'y' } });
+    expect(joined).toEqual([2]);
+
+    transport.destroy();
+  });
+
   it("sends over the data channel once a slave's P2P connects", () => {
     const transport = new SyncedSessionTransport(options('slave', 2));
 

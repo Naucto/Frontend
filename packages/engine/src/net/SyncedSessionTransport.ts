@@ -242,10 +242,16 @@ export class SyncedSessionTransport implements SessionTransport {
   private _onSignal(userId: UserId, data: unknown): void {
     const peer = this._ensurePeer(userId);
 
+    // Signalling with somebody is knowing they are there, so this is where the host learns it —
+    // not only from the control frame that says so. That frame is sent once, when the slave's
+    // socket is accepted, and a slave whose socket drops and comes back is never announced again:
+    // the host would go on exchanging signals with a player its game had never been told about.
+    this._announce(userId);
+
     try {
       peer.conn.signal(data as PeerSignalData);
     } catch {
-      this._announce(userId);
+      /* Announced above; a peer that cannot take a signal still has to reach the game. */
     }
   }
 
