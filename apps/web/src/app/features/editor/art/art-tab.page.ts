@@ -286,9 +286,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
           />
         </nc-section>
 
-        <!-- The palette sits in a sunken well: it is the one section of the panel you edit
-             colours in, not just pick from. -->
-        <nc-section banded class="bg-sunken" [title]="t('editor.art.palette')">
+        <nc-section banded [title]="t('editor.art.palette')">
           <span actions class="flex items-center gap-1">
             <button ncButton variant="ghost" size="sm" [ncPopover]="presets" popoverAlign="end">
               {{ t('editor.art.presets') }}

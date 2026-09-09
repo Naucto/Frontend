@@ -7,7 +7,7 @@ import { SliderComponent } from '@naucto/ui';
   selector: 'nc-palette-editor',
   imports: [SliderComponent],
   template: `
-    <div class="rounded-sm border border-line bg-panel p-1.5">
+    <div class="rounded-sm border border-line p-1.5">
       <div class="flex items-center gap-1">
         <span
           class="h-[26px] w-[26px] rounded-xs border border-line-strong"
