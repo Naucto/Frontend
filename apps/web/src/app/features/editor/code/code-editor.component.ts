@@ -163,6 +163,11 @@ export class CodeEditorComponent {
         this.view = null;
       });
     });
+    // The manifest is fetched once for the whole app and may land after the reader has stopped
+    // typing. Nothing else would ask the signature help to look again.
+    effect(() => {
+      if (this.docs.ready()) this.view?.dispatch({});
+    });
     effect(() => {
       const err = this.error();
       const view = this.view;

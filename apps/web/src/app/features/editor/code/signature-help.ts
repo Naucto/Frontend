@@ -115,7 +115,10 @@ export function luaSignatureHelp(
 
   return StateField.define<Tooltip | null>({
     create: tooltipAt,
-    update: (value, tr) => (tr.docChanged || tr.selection ? tooltipAt(tr.state) : value),
+    // Every transaction, not only the ones that move the caret: what the card can say also
+    // depends on the manifest, which arrives on its own schedule and is announced with a
+    // transaction that changes nothing.
+    update: (_value, tr) => tooltipAt(tr.state),
     provide: (field) => showTooltip.from(field),
   });
 }
