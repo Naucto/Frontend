@@ -481,6 +481,71 @@ test.describe('editor', () => {
     await expect.poll(laneWidth).toBeLessThan(long);
   });
 
+  /**
+   * The head is a control, not just a readout, and the three ways it was not:
+   *
+   * A press in the ruler put it down and let go, so it could not be scrubbed. The rewind button
+   * only wrote the signal, which the next frame overwrote from the running graph, so it did
+   * nothing while the music was playing. And the frame loop read the silence between asking the
+   * graph to start and it answering as the end of the pattern, so resuming took the head away.
+   */
+  test('the head can be dragged, rewound and resumed', async ({ page }) => {
+    await page.goto('/edit/7/sound');
+    await page.getByRole('button', { name: 'Add instrument' }).first().click();
+    const roll = page.getByRole('img', { name: 'Piano roll' });
+    await expect(roll).toBeVisible();
+    const box = await roll.boundingBox();
+    expect(box).not.toBeNull();
+    if (!box) return;
+
+    // The ruler rides at the top of the *view*, so it sits at the canvas top plus however far the
+    // roll has been scrolled — which is not zero: the roll opens on the middle of the keyboard.
+    const rulerY =
+      box.y +
+      (await page.evaluate(() => {
+        let el = document.querySelector('nc-piano-roll canvas')?.parentElement ?? null;
+        while (el && el.scrollHeight <= el.clientHeight) el = el.parentElement;
+        return (el?.scrollTop ?? 0) + 12;
+      }));
+
+    const head = async (): Promise<number | null> =>
+      page.evaluate(() => {
+        const line = document.querySelector('nc-piano-roll div.bg-hot.w-px');
+        return line ? Math.round(line.getBoundingClientRect().left) : null;
+      });
+
+    await page.mouse.move(box.x + 200, rulerY);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 320, rulerY, { steps: 8 });
+    await page.mouse.up();
+    const dragged = await head();
+    expect(dragged).not.toBeNull();
+
+    const rewind = page.getByRole('button', { name: 'Back to the start' });
+    await rewind.click();
+    await expect.poll(head).toBeLessThan(dragged ?? 0);
+
+    // Running: the head leaves the start on its own.
+    await page.getByRole('button', { name: 'Play', exact: true }).click();
+    await expect.poll(head).toBeGreaterThan(0);
+    await page.getByRole('button', { name: 'Pause', exact: true }).click();
+    const paused = await head();
+    expect(paused).not.toBeNull();
+
+    // The one this was written for: the head used to vanish here.
+    await page.getByRole('button', { name: 'Play', exact: true }).click();
+    await page.waitForTimeout(600);
+    expect(await head()).not.toBeNull();
+
+    // And rewinding while it runs used to be overwritten by the next frame. Read with the head
+    // held still: rewound, the music keeps going, so a poll left to converge follows it back out
+    // past where it started and says nothing about where the rewind put it.
+    const running = await head();
+    await rewind.click();
+    await page.getByRole('button', { name: 'Pause', exact: true }).click();
+    await expect.poll(head).toBeLessThan(running ?? 0);
+  });
+
   test('SOUND tab adds an instrument and paints notes', async ({ page }) => {
     await page.goto('/edit/7/sound');
     await page.getByRole('button', { name: 'Add instrument' }).first().click();

@@ -129,8 +129,10 @@ export class PianoRollComponent {
    * row-high jumps instead of moving.
    */
   readonly pointer = output<{ x: number; y: number } | null>();
-  /** A step the head was put on, from a press in the ruler. */
+  /** A step the head was put on, from a press or a drag in the ruler. */
   readonly seek = output<number>();
+  /** The ruler gesture is over, so whatever was following the head can pick it up again. */
+  readonly seekEnd = output();
 
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -150,6 +152,8 @@ export class PianoRollComponent {
   protected readonly dpr = signal(typeof window === 'undefined' ? 1 : window.devicePixelRatio);
   private readonly theme = inject(ThemeService);
   private drag: Drag | null = null;
+  /** A press in the ruler, held. Not a `Drag`: there is no note behind it to carry. */
+  private seeking = false;
   private raf = 0;
 
   private readonly hostBox = signal({ w: 0, h: 0 });
@@ -345,7 +349,11 @@ export class PianoRollComponent {
     // handling a press up here wrote a note, since a pitch above the top of the grid is clamped
     // back onto the highest one.
     if (this.inRuler(e)) {
-      if (e.button === 0) this.seek.emit(this.snapStep(step));
+      if (e.button === 0) {
+        this.canvas().nativeElement.setPointerCapture(e.pointerId);
+        this.seeking = true;
+        this.seek.emit(this.snapStep(step));
+      }
       return;
     }
     const index = this.hit(step, pitch);
@@ -392,6 +400,10 @@ export class PianoRollComponent {
 
   protected onMove(e: PointerEvent): void {
     const { step, pitch } = this.cellOf(e);
+    if (this.seeking) {
+      this.seek.emit(this.snapStep(step));
+      return;
+    }
     const cell = this.drag || !this.inRuler(e) ? { step: this.newNote(step).step, pitch } : null;
     this.hoverCell.set(cell);
     this.hover.emit(cell);
@@ -432,6 +444,11 @@ export class PianoRollComponent {
   }
 
   protected onUp(): void {
+    if (this.seeking) {
+      this.seeking = false;
+      this.seekEnd.emit();
+      return;
+    }
     if (!this.drag) return;
     this.drag = null;
     const notes = this.working();

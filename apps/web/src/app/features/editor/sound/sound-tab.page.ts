@@ -306,6 +306,7 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
             (audition)="audition($event)"
             (pointer)="onPointer($event)"
             (seek)="onSeek($event)"
+            (seekEnd)="onSeekEnd()"
           />
           <nc-voices-lane
             [pattern]="p"
@@ -440,6 +441,8 @@ export class SoundTabPage {
   /** Handed to the scope as a getter so it can pull at frame rate without a signal per frame. */
   protected readonly peaks = (): Float32Array => this.engine.peaks();
   protected readonly playhead = signal<number | null>(null);
+  /** Whether the music was running when the head was grabbed, and so should be when it is let go. */
+  private resumeAfterSeek = false;
   protected readonly voices = signal<boolean[]>(Array.from({ length: VOICES }, () => false));
   protected readonly canUndo = signal(false);
   protected readonly canRedo = signal(false);
@@ -630,10 +633,26 @@ export class SoundTabPage {
     this.tick();
   }
 
-  /** Moving the head while it is running moves the music with it, rather than waiting for a stop. */
+  /**
+   * Moving the head while it is running moves the music with it, rather than waiting for a stop.
+   *
+   * The music stops for the length of the gesture rather than restarting at every step the head
+   * crosses: a drag crosses dozens, and starting the graph over on each one is a stutter, not a
+   * scrub. A head moved while nothing was playing just moves.
+   */
   protected onSeek(step: number): void {
+    if (this.playing()) {
+      this.resumeAfterSeek = true;
+      this.pause();
+    }
     this.playhead.set(step);
-    if (this.playing()) void this.play();
+  }
+
+  /** The gesture is over, so the music picks up from wherever the head was left. */
+  protected onSeekEnd(): void {
+    if (!this.resumeAfterSeek) return;
+    this.resumeAfterSeek = false;
+    void this.play();
   }
 
   /** Halts where it is; the playhead stays so PLAY resumes from the same bar. */
@@ -643,9 +662,11 @@ export class SoundTabPage {
     cancelAnimationFrame(this.raf);
   }
 
-  /** Halts and rewinds. */
+  /** Rewinds, and takes the music with it where there is music to take. */
   protected toStart(): void {
+    const running = this.playing();
     this.playhead.set(0);
+    if (running) void this.play();
   }
 
   protected stop(): void {
@@ -656,15 +677,16 @@ export class SoundTabPage {
   private tick(): void {
     cancelAnimationFrame(this.raf);
     let lastBeat = -1;
+    // The graph reports no position for the first frames after it is asked to start, and reading
+    // that silence as the end of the pattern is what took the head away on every resume. Nothing
+    // is over until something has begun. A start that never arrives leaves the head where it is
+    // rather than clearing it, which STOP answers and a vanishing cursor does not.
+    let begun = false;
     const loop = (): void => {
       const pos = this.engine.musicPosition();
       this.voices.set(Array.from({ length: VOICES }, (_, i) => this.engine.isPlaying(i)));
-      if (!pos && this.playing() && this.playhead() !== null) {
-        this.playing.set(false);
-        this.playhead.set(null);
-        return;
-      }
       if (pos) {
+        begun = true;
         this.playhead.set(pos.step);
         const p = this.pattern();
         if (this.sound.metronome() && p) {
@@ -674,6 +696,10 @@ export class SoundTabPage {
             this.click(beat % 4 === 0);
           }
         }
+      } else if (begun && this.playing() && this.playhead() !== null) {
+        this.playing.set(false);
+        this.playhead.set(null);
+        return;
       }
       this.raf = requestAnimationFrame(loop);
     };
