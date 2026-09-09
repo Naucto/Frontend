@@ -1,6 +1,7 @@
 import { DialogRef } from '@angular/cdk/dialog';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { friendsApi, usersApi, type UserSummaryDto } from '@app/core/api/planned.api';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { friendsApi } from '@app/core/api/planned.api';
+import { type PersonHit, searchPeople } from '@app/shared/queries/search.queries';
 import { UserAvatarComponent } from '@app/shared/user-avatar.component';
 import { TranslocoDirective } from '@jsverse/transloco';
 import {
@@ -10,6 +11,10 @@ import {
   InputDirective,
   ToastService,
 } from '@naucto/ui';
+import { injectQuery } from '@tanstack/angular-query-experimental';
+
+/** As many people as the panel can show without the dialog growing a scrollbar of its own. */
+const RESULTS_SHOWN = 8;
 
 /**
  * Find a person, then ask them.
@@ -30,40 +35,40 @@ import {
   template: `
     <nc-dialog-shell *transloco="let t" [title]="t('friends.addFriend')">
       <nc-field [label]="t('friends.codePlaceholder')" for="friend-query">
-        <div class="flex gap-1">
-          <input
-            ncInput
-            id="friend-query"
-            class="flex-1"
-            autocomplete="off"
-            [value]="query()"
-            (input)="onQuery($any($event.target).value)"
-            (keydown.enter)="submit()"
-          />
-          <button ncButton variant="primary" (click)="submit()" [disabled]="!query().trim()">
-            {{ t('friends.search') }}
-          </button>
-        </div>
+        <input
+          ncInput
+          id="friend-query"
+          class="w-full"
+          autocomplete="off"
+          [value]="query()"
+          (input)="query.set($any($event.target).value)"
+        />
       </nc-field>
 
-      @if (searched()) {
+      @if (term()) {
         <div class="mt-1.5 grid gap-0.5" role="list">
-          @for (u of results(); track u.id) {
-            <div
-              role="listitem"
-              class="flex items-center gap-1.5 rounded-sm border border-line bg-raised px-1.5 py-1"
-            >
-              <nc-user-avatar [name]="u.nickname || u.username" [userId]="u.id" [size]="28" />
-              <div class="min-w-0 flex-1">
-                <div class="truncate text-meta text-ink">{{ u.nickname || u.username }}</div>
-                <div class="text-micro text-ink-4">{{ '@' + u.username }}</div>
+          @if (hits.isError()) {
+            <p class="text-body text-hot-ink">{{ searchError() }}</p>
+          } @else if (hits.isPending()) {
+            <p class="text-body text-ink-3">{{ t('friends.searching') }}</p>
+          } @else {
+            @for (u of hits.data(); track u.id) {
+              <div
+                role="listitem"
+                class="flex items-center gap-1.5 rounded-sm border border-line bg-raised px-1.5 py-1"
+              >
+                <nc-user-avatar [name]="u.nickname || u.username" [userId]="u.id" [size]="28" />
+                <div class="min-w-0 flex-1">
+                  <div class="truncate text-meta text-ink">{{ u.nickname || u.username }}</div>
+                  <div class="text-micro text-ink-4">{{ '@' + u.username }}</div>
+                </div>
+                <button ncButton variant="secondary" size="sm" (click)="send(u.id)">
+                  {{ t('friends.add') }}
+                </button>
               </div>
-              <button ncButton variant="secondary" size="sm" (click)="send({ userId: u.id })">
-                {{ t('friends.add') }}
-              </button>
-            </div>
-          } @empty {
-            <p class="text-body text-ink-3">{{ t('friends.noMatch', { q: query() }) }}</p>
+            } @empty {
+              <p class="text-body text-ink-3">{{ t('friends.noMatch', { q: term() }) }}</p>
+            }
           }
         </div>
       }
@@ -79,31 +84,28 @@ export class AddFriendDialog {
   readonly ref = inject<DialogRef<boolean>>(DialogRef);
   private readonly toasts = inject(ToastService);
   protected readonly query = signal('');
-  protected readonly results = signal<UserSummaryDto[]>([]);
-  protected readonly searched = signal(false);
+  protected readonly term = computed(() => this.query().trim());
 
-  protected onQuery(v: string): void {
-    this.query.set(v);
-    this.searched.set(false);
-  }
+  /**
+   * The hub's suggestion panel is the model: results from the first character, and the asking
+   * amortised by the cache rather than by a timer, which is why nothing here debounces.
+   */
+  protected readonly hits = injectQuery(() => ({
+    queryKey: ['search', 'people', this.term()],
+    queryFn: (): Promise<PersonHit[]> => searchPeople(this.term(), RESULTS_SHOWN),
+    enabled: this.term().length > 0,
+    staleTime: 30_000,
+  }));
 
-  protected submit(): void {
-    const v = this.query().trim();
-    if (v) void this.search(v);
-  }
+  /** A refused search is not an empty one: saying "nobody called that" would be a made-up answer. */
+  protected readonly searchError = computed(() => {
+    const e: unknown = this.hits.error();
+    return e instanceof Error ? e.message : 'Could not search for people just now';
+  });
 
-  private async search(nickname: string): Promise<void> {
-    try {
-      this.results.set(await usersApi.search(nickname));
-    } catch {
-      this.results.set([]);
-    }
-    this.searched.set(true);
-  }
-
-  protected send(body: { userId: number }): void {
+  protected send(userId: number): void {
     void friendsApi
-      .send(body)
+      .send({ userId })
       .then(() => {
         this.toasts.show('Request sent', 'success');
         this.ref.close(true);

@@ -120,18 +120,6 @@ export const usersApi = {
   /** Games other people forked from theirs. */
   remixes: async (userId: number): Promise<ProjectExResponseDto[]> =>
     take<ProjectExResponseDto[]>(client.get({ url: `/users/public/${String(userId)}/remixes` })),
-
-  /**
-   * People matching a nickname. `GET /users` filters on nickname today; the free-text `q` that
-   * covers usernames and tags arrives with the release-search PR, and this is the one call site
-   * that has to change when it does.
-   */
-  search: async (nickname: string): Promise<UserSummaryDto[]> => {
-    const page = await take<{ data?: UserSummaryDto[] } | UserSummaryDto[]>(
-      client.get({ url: '/users', query: { nickname, limit: 10 } }),
-    );
-    return Array.isArray(page) ? page : (page.data ?? []);
-  },
 };
 
 export type PersonalColour = 'SKY' | 'BLUSH' | 'JADE' | 'GOLD' | 'ORANGE' | 'HOT';

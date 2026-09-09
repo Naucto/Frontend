@@ -42,6 +42,20 @@ export interface Suggestions {
 const EMPTY: Suggestions = { games: [], people: [], sessions: [], tags: [] };
 
 /**
+ * People matching what was typed, handle and display name alike, case-insensitively.
+ *
+ * The one place that knows this endpoint, because the alternative -- `GET /users?nickname=` --
+ * matches the display name only and matches it case-sensitively, which is indistinguishable from
+ * a search that does not work.
+ */
+export async function searchPeople(term: string, limit: number): Promise<PersonHit[]> {
+  const page = await take<{ data: PersonHit[] }>(
+    client.get({ url: '/users/public/search', query: { q: term, limit } }),
+  );
+  return page.data.slice(0, limit);
+}
+
+/**
  * One kind's answer, or none of it.
  *
  * The four are asked for together, and a rejection used to take the other three down with it: a
@@ -114,12 +128,7 @@ export function injectSuggestions(query: Signal<string>): CreateQueryResult<Sugg
           ),
           (r) => r.projects.slice(0, PER_SECTION),
         );
-        const people = section(
-          take<{ data: PersonHit[] }>(
-            client.get({ url: '/users/public/search', query: { q: term, limit: PER_SECTION } }),
-          ),
-          (r) => r.data.slice(0, PER_SECTION),
-        );
+        const people = section(searchPeople(term, PER_SECTION), (r) => r);
         // A visitor is not refused this list, they are simply not shown one.
         const sessions = signedIn
           ? section(

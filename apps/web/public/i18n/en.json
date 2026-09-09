@@ -599,7 +599,7 @@
     "codePlaceholder": "username or nickname",
     "sent": "Request sent",
     "remove": "Remove friend",
-    "search": "Search",
+    "searching": "Looking…",
     "noMatch": "Nobody called \"{{q}}\".",
     "emptyHint": "Search someone by name and ask. Friends show what they are building, not follower counts."
   },
