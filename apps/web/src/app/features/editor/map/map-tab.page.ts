@@ -196,17 +196,14 @@ import { MinimapComponent } from './minimap.component';
         </div>
 
         <nc-section banded [title]="t('editor.map.tilePicker')">
-          <button
-            actions
-            ncButton
-            variant="secondary"
-            size="sm"
-            disabled
-            [ncTooltip]="t('editor.map.autotileSoon')"
-          >
-            <nc-icon name="layout" [size]="12" />
-            {{ t('editor.map.autotile') }}
-          </button>
+          <!-- A disabled button emits no pointer events in Chrome, so the tooltip that says why it
+               is disabled has to hang off something that does. -->
+          <span actions class="inline-flex" [ncTooltip]="t('editor.map.autotileSoon')">
+            <button ncButton variant="secondary" size="sm" disabled>
+              <nc-icon name="layout" [size]="12" />
+              {{ t('editor.map.autotile') }}
+            </button>
+          </span>
           <nc-sheet-view
             [painter]="painter"
             [region]="map.brush()"

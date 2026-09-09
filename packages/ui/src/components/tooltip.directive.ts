@@ -52,7 +52,11 @@ export class TooltipDirective {
   }
 
   protected show(): void {
-    if (this.ref || !this.ncTooltip()) return;
+    // A pointer that lands on the host fires mouseenter and then focus, so two of the listeners
+    // above open the same tooltip on one gesture. Without the timer in the guard the second call
+    // overwrites the handle of the first, which nothing can then clear — not hide(), not the
+    // teardown below — and it attaches an overlay no one holds a reference to.
+    if (this.ref || this.timer || !this.ncTooltip()) return;
     this.timer = setTimeout(() => {
       const position = this.overlay
         .position()
@@ -67,7 +71,11 @@ export class TooltipDirective {
             offsetY: -6,
           },
         ]);
-      this.ref = this.overlay.create({ positionStrategy: position, panelClass: 'nc-overlay' });
+      this.ref = this.overlay.create({
+        positionStrategy: position,
+        panelClass: 'nc-overlay',
+        scrollStrategy: this.overlay.scrollStrategies.reposition(),
+      });
       const panel = this.ref.attach(new ComponentPortal(TooltipPanelComponent));
       panel.instance.text.set(this.ncTooltip());
     }, this.tooltipDelay());
