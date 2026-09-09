@@ -556,7 +556,8 @@
       "inTheRoom": "IN THE ROOM · {{players}}/{{max}}",
       "end": "END SESSION",
       "done": "DONE",
-      "hintNamed": "{{game}} asked for up to {{n}} players. Name the room so people recognise it."
+      "hintNamed": "{{game}} asked for up to {{n}} players. Name the room so people recognise it.",
+      "failed": "Could not open the session."
     },
     "join": {
       "title": "Join a session",
@@ -570,7 +571,8 @@
       "friends": "FRIENDS",
       "public": "PUBLIC",
       "full": "FULL",
-      "noMatch": "No room matches that."
+      "noMatch": "No room matches that.",
+      "failed": "Could not join that session."
     }
   },
   "friends": {

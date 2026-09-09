@@ -1,13 +1,21 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
+import type { IconName } from '../icons/paths';
 import { IconComponent } from './icon.component';
 import { ToastService, type ToastTone } from './toast.service';
 
-const TONE: Record<ToastTone, string> = {
-  info: 'border-sky text-ink',
-  success: 'border-jade text-ink',
-  warning: 'border-orange text-ink',
-  error: 'border-hot text-ink',
+/**
+ * How loud the toast is, said twice.
+ *
+ * The edge alone carried it, and an edge is two pixels of colour at the far left of a 320px box:
+ * it is the last thing read and the first thing a colour-blind reader loses. The mark leads,
+ * the way every notice in the kit leads with one.
+ */
+const TONE: Record<ToastTone, { shell: string; mark: string; icon: IconName }> = {
+  info: { shell: 'border-sky text-ink', mark: 'text-sky-ink', icon: 'info-box' },
+  success: { shell: 'border-jade text-ink', mark: 'text-jade-ink', icon: 'check' },
+  warning: { shell: 'border-orange text-ink', mark: 'text-orange-ink', icon: 'warning-box' },
+  error: { shell: 'border-hot text-ink', mark: 'text-hot-ink', icon: 'alert' },
 };
 
 /** Mount once in the app shell. Announces politely. */
@@ -19,10 +27,16 @@ const TONE: Record<ToastTone, string> = {
       @for (t of toasts.toasts(); track t.id) {
         <div
           class="nc-toast flex items-start gap-1 rounded-md border-l-2 border border-line bg-raised px-2 py-1.5 text-body shadow-[0_2px_0_var(--nc-inset)]"
-          [class]="tone(t.tone)"
+          [class]="TONE[t.tone].shell"
           animate.enter="nc-toast-enter"
           animate.leave="nc-toast-leave"
         >
+          <nc-icon
+            [name]="TONE[t.tone].icon"
+            [size]="12"
+            class="mt-[1px] shrink-0"
+            [class]="TONE[t.tone].mark"
+          />
           <span class="flex-1">{{ t.text }}</span>
           <button
             type="button"
@@ -68,7 +82,5 @@ const TONE: Record<ToastTone, string> = {
 })
 export class ToastHostComponent {
   protected readonly toasts = inject(ToastService);
-  protected tone(t: ToastTone): string {
-    return TONE[t];
-  }
+  protected readonly TONE = TONE;
 }

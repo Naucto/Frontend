@@ -2,7 +2,7 @@ import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { friendsApi } from '@app/core/api/planned.api';
 import type { NetUiBridgeService, OpenSession } from '@app/core/net/net-bridge.service';
-import { TranslocoDirective } from '@jsverse/transloco';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import {
   ButtonDirective,
   DialogShellComponent,
@@ -10,6 +10,7 @@ import {
   IconComponent,
   InputDirective,
   SearchComponent,
+  ToastService,
   TooltipDirective,
 } from '@naucto/ui';
 import { injectQuery } from '@tanstack/angular-query-experimental';
@@ -118,9 +119,6 @@ export interface JoinDialogData {
           </button>
         </div>
       </nc-field>
-      @if (error(); as e) {
-        <p class="mt-1 text-meta text-hot-ink">{{ e }}</p>
-      }
       <ng-container footer>
         <button ncButton variant="ghost" (click)="ref.close(false)">{{ t('net.cancel') }}</button>
       </ng-container>
@@ -131,8 +129,9 @@ export interface JoinDialogData {
 export class JoinDialogComponent {
   protected readonly data = inject<JoinDialogData>(DIALOG_DATA);
   protected readonly ref = inject<DialogRef<boolean>>(DialogRef);
+  private readonly toasts = inject(ToastService);
+  private readonly transloco = inject(TranslocoService);
   protected readonly busy = signal(false);
-  protected readonly error = signal<string | null>(null);
   protected readonly code = signal('');
   protected readonly filter = signal('');
 
@@ -180,12 +179,16 @@ export class JoinDialogComponent {
 
   private async run(fn: () => Promise<void>): Promise<void> {
     this.busy.set(true);
-    this.error.set(null);
     try {
       await fn();
       this.ref.close(true);
-    } catch (e) {
-      this.error.set(e instanceof Error ? e.message : 'Could not join');
+    } catch (e: unknown) {
+      // The corner, not the modal: joining closes this dialog on success, so an error printed
+      // inside it is a message living in the one place the reader is about to leave.
+      this.toasts.show(
+        e instanceof Error ? e.message : this.transloco.translate('net.join.failed'),
+        'error',
+      );
     } finally {
       this.busy.set(false);
     }

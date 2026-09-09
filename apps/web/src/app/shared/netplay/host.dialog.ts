@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { AuthStore } from '@app/core/auth/auth.store';
 import type { NetUiBridgeService } from '@app/core/net/net-bridge.service';
 import { UserAvatarComponent } from '@app/shared/user-avatar.component';
-import { TranslocoDirective } from '@jsverse/transloco';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { type NetHostOptions } from '@naucto/engine';
 import {
   ButtonDirective,
@@ -93,9 +93,6 @@ export interface HostDialogData {
           }
         </div>
       }
-      @if (error(); as e) {
-        <p class="mt-1 text-meta text-hot-ink">{{ e }}</p>
-      }
       <ng-container footer>
         @if (!open()) {
           <button ncButton variant="ghost" (click)="ref.close(false)">{{ t('net.cancel') }}</button>
@@ -117,11 +114,11 @@ export class HostDialogComponent {
   protected readonly data = inject<HostDialogData>(DIALOG_DATA);
   protected readonly ref = inject<DialogRef<boolean>>(DialogRef);
   private readonly toasts = inject(ToastService);
+  private readonly transloco = inject(TranslocoService);
   private readonly auth = inject(AuthStore);
 
   protected readonly title = signal(this.data.options.title ?? '');
   protected readonly busy = signal(false);
-  protected readonly error = signal<string | null>(null);
   protected readonly listed = signal(false);
 
   /** The room exists once the server has answered; until then this dialog is still a form. */
@@ -147,14 +144,16 @@ export class HostDialogComponent {
 
   protected async start(): Promise<void> {
     this.busy.set(true);
-    this.error.set(null);
     try {
       await this.data.bridge.createSession(this.data.projectId, {
         ...this.data.options,
         title: this.title().trim() || (this.data.options.title ?? 'Session'),
       });
-    } catch (e) {
-      this.error.set(e instanceof Error ? e.message : 'Could not open the session');
+    } catch (e: unknown) {
+      this.toasts.show(
+        e instanceof Error ? e.message : this.transloco.translate('net.host.failed'),
+        'error',
+      );
     } finally {
       this.busy.set(false);
     }
