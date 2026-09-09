@@ -226,7 +226,9 @@
     "forkedFromNamed": "Forked from",
     "remixesOf": "Remixes of this game",
     "seeAllRemixes": "See all {{n}} remixes",
-    "similarTag": "Similar · {{tag}}"
+    "similarTag": "Similar · {{tag}}",
+    "showMore": "Show more",
+    "showLess": "Show less"
   },
   "comments": {
     "title": "Comments",

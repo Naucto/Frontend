@@ -1,8 +1,11 @@
 import { DatePipe } from '@angular/common';
+import type { ElementRef } from '@angular/core';
 import {
+  afterRenderEffect,
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   effect,
   inject,
   input,
@@ -96,12 +99,17 @@ import { ReleaseGameService } from './release-game.service';
         }
       </div>
 
+      <!-- Two guards against the same thing, and both are needed. The zero minimum stops the
+           panel's own automatic minimum — its min-content width — from widening the flex track;
+           the explicit minmax column stops the rows inside it from doing the same to the column,
+           which is what actually pushed the buttons off screen: the panel measured 380 and the
+           title inside it measured 689. -->
       <aside
-        class="grid content-start gap-2 lg:w-[380px] lg:shrink-0 lg:border-l lg:border-b lg:border-line lg:bg-panel lg:px-2.5 lg:pt-2.75 lg:pb-2.5"
+        class="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-2 lg:w-[380px] lg:shrink-0 lg:border-l lg:border-b lg:border-line lg:bg-panel lg:px-2.5 lg:pt-2.75 lg:pb-2.5"
       >
         @if (release.data(); as r) {
           <div>
-            <h1 class="text-display text-ink">{{ r.name }}</h1>
+            <h1 class="truncate text-display text-ink">{{ r.name }}</h1>
             <div class="mt-1 flex items-center gap-1 text-meta text-ink-2">
               <nc-user-avatar [name]="r.creator.username" [userId]="r.creator.id" [size]="24" />
               <a [routerLink]="['/u', r.creator.username]" class="hover:text-ink">
@@ -133,11 +141,27 @@ import { ReleaseGameService } from './release-game.service';
               </a>
             }
             <!-- Bound, not interpolated: see the comment body in comments.component.ts — under
-                 whitespace-pre-wrap a template newline renders as a leading space. -->
+                 whitespace-pre-wrap a template newline renders as a leading space.
+                 wrap-anywhere on top of the clamp: a clamp counts lines, and a 300-character word
+                 with nowhere to break is one line as wide as it is long. -->
             <p
-              class="mt-2 text-body text-ink-body whitespace-pre-wrap"
+              #desc
+              class="mt-2 text-body text-ink-body whitespace-pre-wrap wrap-anywhere"
+              [class.line-clamp-6]="!descOpen()"
               [textContent]="r.longDesc || r.shortDesc"
             ></p>
+            @if (descClamped()) {
+              <button
+                ncButton
+                variant="ghost"
+                size="sm"
+                class="mt-0.5"
+                [attr.aria-expanded]="descOpen()"
+                (click)="descOpen.set(!descOpen())"
+              >
+                {{ descOpen() ? t('game.showLess') : t('game.showMore') }}
+              </button>
+            }
             <div class="mt-2 grid grid-cols-2 gap-1">
               <button
                 ncButton
@@ -241,6 +265,15 @@ export class GamePage {
   protected readonly fork = injectFork();
   private readonly all = injectReleasesPage(() => 1, 48);
 
+  /** Whether the description is shown in full, rather than clamped to its first lines. */
+  protected readonly descOpen = signal(false);
+  /**
+   * Whether the clamp is actually hiding something — measured, because the alternative is a
+   * character count, and how many characters fit in six lines depends on the width and the text.
+   */
+  protected readonly descClamped = signal(false);
+  private readonly descEl = viewChild<ElementRef<HTMLElement>>('desc');
+
   protected readonly game = signal<Game | null>(null);
   /** Set when the content blob itself fails; the queries carry their own failures. */
   private readonly contentFailed = signal(false);
@@ -336,6 +369,36 @@ export class GamePage {
           });
       });
     });
+    // Measured after render, and again whenever the paragraph's own width changes: the clamp is a
+    // line count, and how many lines the text takes is a property of the box it landed in.
+    let observed: HTMLElement | undefined;
+    const ro = new ResizeObserver(() => {
+      this.measureClamp();
+    });
+    inject(DestroyRef).onDestroy(() => {
+      ro.disconnect();
+    });
+    afterRenderEffect(() => {
+      const el = this.descEl()?.nativeElement;
+      this.descOpen();
+      if (el !== observed) {
+        if (observed) ro.unobserve(observed);
+        if (el) ro.observe(el);
+        observed = el;
+      }
+      this.measureClamp();
+    });
+  }
+
+  /**
+   * Whether the clamped paragraph is taller than the box showing it. Only meaningful while it is
+   * clamped — unfolded, the box is the text, so the answer would always be no and the control
+   * that folds it back would disappear under the reader.
+   */
+  private measureClamp(): void {
+    const el = this.descEl()?.nativeElement;
+    if (!el || untracked(this.descOpen)) return;
+    this.descClamped.set(el.scrollHeight > el.clientHeight + 1);
   }
 
   /** What the running game called its actions, once it has declared them. */
