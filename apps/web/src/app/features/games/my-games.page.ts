@@ -58,12 +58,13 @@ import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-quer
           [games]="drafts()"
           [count]="drafts().length"
           [empty]="t('games.noDrafts')"
-          [drafts]="true"
+          [opensEditor]="true"
         />
         <nc-hub-row
           [title]="t('games.published')"
           [games]="published()"
           [empty]="t('games.noPublished')"
+          [opensEditor]="true"
         />
       }
     </div>

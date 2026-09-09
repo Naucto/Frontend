@@ -61,7 +61,7 @@ export type ShelfState = 'ready' | 'pending' | 'error';
           }
           @default {
             @for (g of games(); track g.id) {
-              <nc-game-card [game]="g" [draft]="drafts()" />
+              <nc-game-card [game]="g" [opensEditor]="opensEditor()" />
             } @empty {
               <p class="col-span-full text-body text-ink-3">{{ empty() }}</p>
             }
@@ -80,8 +80,8 @@ export class HubRowComponent {
   readonly empty = input('Nothing here yet.');
   /** How many games the shelf has in total, shown beside "see all". */
   readonly count = input(0);
-  /** Render the cards as drafts, linking to the editor. */
-  readonly drafts = input(false);
+  /** Whether this shelf's cards open the editor rather than the play page. */
+  readonly opensEditor = input(false);
   readonly state = input<ShelfState>('ready');
   protected readonly placeholders = [0, 1, 2, 3, 4];
 }

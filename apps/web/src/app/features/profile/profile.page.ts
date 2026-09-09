@@ -331,7 +331,7 @@ interface ProfileExtras {
           (valueChange)="setShelf($event)"
         />
         @if (current().length) {
-          <nc-hub-row [games]="current()" [drafts]="false" />
+          <nc-hub-row [games]="current()" [opensEditor]="false" />
         } @else {
           <nc-empty-state
             class="py-12"

@@ -21,8 +21,8 @@ import { GameCoverComponent } from './game-cover.component';
       <div class="relative aspect-video w-full">
         <nc-game-cover
           class="h-full w-full"
-          [releaseId]="draft() ? null : game().id"
-          [projectId]="draft() ? game().id : null"
+          [releaseId]="isDraft() ? null : game().id"
+          [projectId]="isDraft() ? game().id : null"
           [alt]="game().name"
           [label]="dense() ? undefined : 'No cover yet'"
           [iconSize]="dense() ? 12 : 48"
@@ -36,7 +36,7 @@ import { GameCoverComponent } from './game-cover.component';
           >
             {{ game().name }}
           </span>
-          @if (draft()) {
+          @if (isDraft()) {
             <nc-chip>Draft</nc-chip>
           }
         </div>
@@ -75,10 +75,25 @@ export class GameCardComponent {
       this.dense() ? 'rounded-sm bg-page' : 'rounded-md bg-panel',
     ].join(' '),
   );
-  /** Draft cards link to the editor instead of the play page. */
-  readonly draft = input(false);
+  /**
+   * Whether the game has been published, which the game itself answers.
+   *
+   * It decides the chip and which of the two covers to ask for — a draft has no release to take one
+   * from. This used to be an input, set only by the drafts shelf, and it was the same input that
+   * decided where the card led.
+   */
+  protected readonly isDraft = computed(() => !this.game().publishedAt);
+
+  /**
+   * Where the card goes, which the shelf answers instead.
+   *
+   * The same published game is a thing to play on the hub and a thing to open on your own games
+   * page. While the two questions shared one input, a finished game of your own had no way into
+   * its editor from the page that lists it.
+   */
+  readonly opensEditor = input(false);
   protected readonly link = computed(() =>
-    this.draft() ? ['/edit', this.game().id] : ['/play', this.game().id],
+    this.opensEditor() ? ['/edit', this.game().id] : ['/play', this.game().id],
   );
   /** Tighter type and padding for the sidebar lists on the play page. */
   readonly dense = input(false, { transform: booleanAttribute });
