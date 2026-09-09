@@ -15,12 +15,14 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
+import { AuthStore } from '@app/core/auth/auth.store';
 import { NetUiBridgeService } from '@app/core/net/net-bridge.service';
 import { netPermissionsOf } from '@app/core/net/net-permissions';
 import { ThemeService } from '@app/core/theme/theme.service';
+import { SignInDialogComponent } from '@app/shared/auth/sign-in.dialog';
 import { HostDialogComponent } from '@app/shared/netplay/host.dialog';
 import { JoinDialogComponent } from '@app/shared/netplay/join.dialog';
-import type { Game } from '@naucto/engine';
+import { type Game, type NetHostOptions } from '@naucto/engine';
 import {
   ButtonDirective,
   DialogService,
@@ -331,6 +333,7 @@ export class GameScreenComponent {
   protected readonly host = inject(RuntimeHostService);
   protected readonly bridge = inject(NetUiBridgeService);
   private readonly dialogs = inject(DialogService);
+  private readonly auth = inject(AuthStore);
   private readonly theme = inject(ThemeService);
   protected readonly showCpu = computed(() => this.debug());
   /**
@@ -407,6 +410,21 @@ export class GameScreenComponent {
           this.bridge.cancel();
           return;
         }
+        // Hosting and joining both need an account, and the server says so with a 401 the
+        // anonymous path cannot even retry -- there is no token to refresh. Asking here, over the
+        // game, keeps the runtime and the document alive; sending the reader to /sign-in would
+        // tear down the very session they were opening.
+        if (!this.auth.isAuthenticated()) {
+          this.dialogs
+            .open<SignInDialogComponent, undefined, boolean>(SignInDialogComponent, {
+              width: '436px',
+            })
+            .closed.subscribe((signedIn) => {
+              if (signedIn) this.openNetDialog(req.kind, projectId, req.hostOptions);
+              else this.bridge.cancel();
+            });
+          return;
+        }
         const target = this.autoJoin();
         if (target && req.kind === 'join') {
           void this.bridge.joinSession(target.uuid, target.code ?? undefined, true).catch(() => {
@@ -414,24 +432,29 @@ export class GameScreenComponent {
           });
           return;
         }
-        const ref =
-          req.kind === 'host'
-            ? this.dialogs.open(HostDialogComponent, {
-                width: '400px',
-                data: {
-                  bridge: this.bridge,
-                  projectId,
-                  options: req.hostOptions ?? { maxPlayers: 2 },
-                },
-              })
-            : this.dialogs.open(JoinDialogComponent, {
-                width: '400px',
-                data: { bridge: this.bridge, projectId },
-              });
-        ref.closed.subscribe((ok) => {
-          if (!ok) this.bridge.cancel();
-        });
+        this.openNetDialog(req.kind, projectId, req.hostOptions);
       });
+    });
+  }
+
+  /** Opened either straight away or once the reader has signed in, which is why it has a name. */
+  private openNetDialog(
+    kind: 'host' | 'join',
+    projectId: number,
+    hostOptions: NetHostOptions | undefined,
+  ): void {
+    const ref =
+      kind === 'host'
+        ? this.dialogs.open(HostDialogComponent, {
+            width: '400px',
+            data: { bridge: this.bridge, projectId, options: hostOptions ?? { maxPlayers: 2 } },
+          })
+        : this.dialogs.open(JoinDialogComponent, {
+            width: '400px',
+            data: { bridge: this.bridge, projectId },
+          });
+    ref.closed.subscribe((ok) => {
+      if (!ok) this.bridge.cancel();
     });
   }
 
