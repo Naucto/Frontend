@@ -585,12 +585,6 @@ export class SoundTabPage {
     this.sound.setZoom(this.sound.zoom() * Math.pow(2, delta));
   }
 
-  /**
-   * What the button says: the word while snapping is off, and only the resolution once it is on.
-   *
-   * Both at once is a control naming itself and answering at the same time, in a bar that has no
-   * room for either extra — and the icon has said which control this is all along.
-   */
   protected snapLabel(off: string): string {
     const n = this.sound.snap();
     return n === 0 ? off : `1/${String(n)}`;
