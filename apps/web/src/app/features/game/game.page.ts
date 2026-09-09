@@ -188,7 +188,7 @@ import { ReleaseGameService } from './release-game.service';
               </button>
               <!-- Publishing used to be a one-way door: your own game's only route back into the
                    editor was REMIX, which forks it. Owners get the door back. -->
-              @if (isOwner()) {
+              @if (canEdit()) {
                 <a ncButton variant="secondary" class="col-span-2" [routerLink]="['/edit', r.id]">
                   <nc-icon name="edit" [size]="12" />
                   {{ t('game.edit') }}
@@ -309,10 +309,19 @@ export class GamePage {
 
   protected readonly parent = injectRelease(() => this.release.data()?.forkedFromId ?? 0);
 
-  /** The owner may go straight back into the editor; everyone else only gets REMIX. */
-  protected readonly isOwner = computed(
-    () => !!this.auth.userId() && this.release.data()?.creator.id === this.auth.userId(),
-  );
+  /**
+   * Who may go straight back into the editor; everyone else only gets REMIX.
+   *
+   * Being a collaborator is what the work-session endpoint checks, so it is what this has to
+   * check. Reading the creator alone left an invited collaborator with no way in but typing
+   * /edit/:id by hand — a right the backend grants and the page hid.
+   */
+  protected readonly canEdit = computed(() => {
+    const me = this.auth.userId();
+    const r = this.release.data();
+    if (!me || !r) return false;
+    return r.creator.id === me || r.collaborators.some((c) => c.id === me);
+  });
   protected readonly remixes = computed(() => {
     const r = this.release.data();
     return r
