@@ -156,18 +156,28 @@ export class RuntimeHostService {
     return engine;
   }
 
+  /**
+   * Starting the game is itself the gesture that may open an AudioContext.
+   *
+   * The canvas listeners below cover playing with the game; they cannot cover starting it, because
+   * the control that does is the overlay button beside the canvas, not inside it. So a game whose
+   * `_init` asked for music had asked before anything had unlocked, every time.
+   */
   play(): void {
+    void this.audio?.unlock();
     this.engine?.run();
   }
   pause(): void {
     this.engine?.pause();
   }
   resume(): void {
+    void this.audio?.unlock();
     this.engine?.resume();
   }
   restart(): void {
     const e = this.engine;
     if (!e) return;
+    void this.audio?.unlock();
     e.stop();
     e.run();
   }
