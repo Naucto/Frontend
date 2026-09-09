@@ -135,16 +135,21 @@ interface ProfileExtras {
                 <span class="label">{{ t('profile.setBanner') }}</span>
               }
             </button>
-            <span class="absolute top-2 right-2 flex gap-1">
-              <span class="pointer-events-none">
-                <nc-edit-chip [label]="t('profile.image.banner')" />
-              </span>
+            <!-- Inert as a group, so a press on the pencil reaches the band-wide button under it:
+                 what the group must not do is catch that press itself, which is what an element
+                 with a box of its own over that button does. Only the bin takes its own. -->
+            <span class="pointer-events-none absolute top-2 right-2 flex gap-1">
+              <nc-edit-chip [label]="t('profile.image.banner')" />
               @if (p.backgroundImageUrl) {
-                <nc-edit-chip
-                  icon="trash"
-                  [label]="t('profile.image.clear.banner')"
-                  (click)="clearImage('banner')"
-                />
+                <!-- A chip's own host is display:contents, so the class that takes the press
+                     back has to sit on something that has a box. -->
+                <span class="pointer-events-auto">
+                  <nc-edit-chip
+                    icon="trash"
+                    [label]="t('profile.image.clear.banner')"
+                    (click)="clearImage('banner')"
+                  />
+                </span>
               }
             </span>
           }
