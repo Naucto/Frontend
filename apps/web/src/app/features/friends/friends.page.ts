@@ -225,19 +225,21 @@ const ACCENT: Record<string, { rule: string; name: string }> = {
                     </div>
                     <button
                       type="button"
-                      class="px-[3px] text-jade-ink hover:brightness-125"
+                      class="px-[3px] text-jade-ink hover:brightness-125 disabled:text-ink-4"
                       [attr.aria-label]="t('friends.accept')"
+                      [disabled]="answering() !== null"
                       (click)="accept(r.id)"
                     >
-                      <nc-icon name="check" [size]="12" />
+                      <nc-icon name="check" [size]="24" />
                     </button>
                     <button
                       type="button"
-                      class="px-[3px] text-ink-3 hover:text-ink"
+                      class="px-[3px] text-ink-3 hover:text-ink disabled:text-ink-4"
                       [attr.aria-label]="t('friends.decline')"
+                      [disabled]="answering() !== null"
                       (click)="decline(r.id)"
                     >
-                      <nc-icon name="close" [size]="12" />
+                      <nc-icon name="close" [size]="24" />
                     </button>
                   </div>
                 }
@@ -259,6 +261,8 @@ export class FriendsPage {
   private readonly transloco = inject(TranslocoService);
   protected readonly ACCENT = ACCENT;
   protected readonly tab = signal<'online' | 'all'>('online');
+  /** The request being answered, so a second click cannot answer a row that is already leaving. */
+  protected readonly answering = signal<number | null>(null);
 
   private readonly friendsQuery = injectQuery(() => ({
     queryKey: ['friends'],
@@ -373,13 +377,28 @@ export class FriendsPage {
       });
   }
 
+  /**
+   * Answering a request is the one action on this page whose failure has to be visible: the row
+   * disappears on success, so a silent error leaves the sender listed and the reader believing they
+   * answered.
+   */
+  private async answer(id: number, call: () => Promise<unknown>): Promise<void> {
+    this.answering.set(id);
+    try {
+      await call();
+      await this.qc.invalidateQueries({ queryKey: ['friends'] });
+    } catch (e: unknown) {
+      this.toasts.show(e instanceof Error ? e.message : 'Could not answer that request', 'error');
+    } finally {
+      this.answering.set(null);
+    }
+  }
+
   protected async accept(id: number): Promise<void> {
-    await friendsApi.accept(id);
-    await this.qc.invalidateQueries({ queryKey: ['friends'] });
+    await this.answer(id, () => friendsApi.accept(id));
   }
 
   protected async decline(id: number): Promise<void> {
-    await friendsApi.decline(id);
-    await this.qc.invalidateQueries({ queryKey: ['friends'] });
+    await this.answer(id, () => friendsApi.decline(id));
   }
 }
