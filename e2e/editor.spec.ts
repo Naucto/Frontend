@@ -481,11 +481,7 @@ test.describe('editor', () => {
     await expect.poll(laneWidth).toBeLessThan(long);
   });
 
-  /**
-   * Three independent mechanisms, so none of these assertions stands in for another: the ruler's
-   * own pointer, a rewind that reaches the audio graph and not only the signal a frame later
-   * overwrites, and a frame loop that tells a graph yet to start from a pattern already over.
-   */
+  /** Three independent mechanisms, so none of these assertions stands in for another. */
   test('the head can be dragged, rewound and resumed', async ({ page }) => {
     await page.goto('/edit/7/sound');
     await page.getByRole('button', { name: 'Add instrument' }).first().click();
