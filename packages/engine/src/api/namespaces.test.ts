@@ -72,9 +72,15 @@ describe('Lua API namespaces', () => {
       'gfx.clear() gfx.draw_sprite(5, 10, 20) gfx.line(0, 0, 10, 10, 7) gfx.print("hi", 1, 2)',
     );
     expect(gfx.ops('clear')[0]?.args).toEqual([0]);
-    expect(gfx.ops('drawSprite')[0]?.args).toEqual([5, 10, 20, 1, 1, false, false, 1]);
+    expect(gfx.ops('drawSprite')[0]?.args).toEqual([5, 10, 20, 1, 1, false, false, 1, false]);
     expect(gfx.ops('line')[0]?.args).toEqual([0, 0, 10, 10, 7]);
     expect(gfx.ops('print')[0]?.args).toEqual(['hi', 1, 2, 5]);
+  });
+
+  it('gfx.draw_sprite carries the opaque flag through', () => {
+    const { lua, gfx } = setup();
+    lua.evaluate('gfx.draw_sprite(5, 0, 0, 1, 1, false, false, 1, true)');
+    expect(gfx.ops('drawSprite')[0]?.args.at(-1)).toBe(true);
   });
 
   it('gfx.scanline parses effect tables and scanline_fn calls once per row', () => {

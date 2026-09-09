@@ -27,14 +27,14 @@ export const LUA_API: readonly LuaApiEntry[] = [
   {
     ns: 'gfx',
     name: 'draw_sprite',
-    signature: 'gfx.draw_sprite(n, x, y[, w, h, flip_h, flip_v, scale])',
-    summary: 'Draw w×h tiles starting at sprite n. Index 0 is transparent.',
+    signature: 'gfx.draw_sprite(n, x, y[, w, h, flip_h, flip_v, scale, opaque])',
+    summary: 'Draw w×h tiles starting at sprite n. Index 0 is transparent unless opaque.',
     legacy: 'sprite',
   },
   {
     ns: 'gfx',
     name: 'draw_region',
-    signature: 'gfx.draw_region(sx, sy, sw, sh, dx, dy[, dw, dh, flip_h, flip_v])',
+    signature: 'gfx.draw_region(sx, sy, sw, sh, dx, dy[, dw, dh, flip_h, flip_v, opaque])',
     summary: 'Draw a pixel rectangle of the sprite sheet, optionally scaled.',
   },
   {

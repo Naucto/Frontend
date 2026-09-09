@@ -35,6 +35,7 @@ export interface GfxBackend {
     flipH: boolean,
     flipV: boolean,
     scale: number,
+    opaque?: boolean,
   ): void;
   drawRegion(
     sx: number,
@@ -47,6 +48,7 @@ export interface GfxBackend {
     dh: number,
     flipH: boolean,
     flipV: boolean,
+    opaque?: boolean,
   ): void;
   drawMap(x: number, y: number, tx: number, ty: number, tw: number, th: number): void;
   pixel(x: number, y: number, colour: number): void;

@@ -53,6 +53,7 @@ export class WebGL2Backend implements GfxBackend {
   private batchSource: BatchSource = 'sheet';
   private batchSolid = -1;
   private batchTextColour = -1;
+  private batchTransparent = 1;
 
   private cameraX = 0;
   private cameraY = 0;
@@ -319,13 +320,14 @@ export class WebGL2Backend implements GfxBackend {
     flipH: boolean,
     flipV: boolean,
     scale: number,
+    opaque = false,
   ): void {
     n = Math.floor(n);
     const sx = (n % SPRITES_PER_ROW) * SPRITE_SIZE;
     const sy = Math.floor(n / SPRITES_PER_ROW) * SPRITE_SIZE;
     const sw = Math.floor(w) * SPRITE_SIZE;
     const sh = Math.floor(h) * SPRITE_SIZE;
-    this.drawRegion(sx, sy, sw, sh, x, y, sw * scale, sh * scale, flipH, flipV);
+    this.drawRegion(sx, sy, sw, sh, x, y, sw * scale, sh * scale, flipH, flipV, opaque);
   }
 
   drawRegion(
@@ -339,8 +341,9 @@ export class WebGL2Backend implements GfxBackend {
     dh: number,
     flipH: boolean,
     flipV: boolean,
+    opaque = false,
   ): void {
-    this.useBatch('sheet', -1, -1);
+    this.useBatch('sheet', -1, -1, opaque ? 0 : this.transparentMask);
     let u0 = sx / SHEET_WIDTH;
     let v0 = sy / SHEET_HEIGHT;
     let u1 = (sx + sw) / SHEET_WIDTH;
@@ -352,7 +355,7 @@ export class WebGL2Backend implements GfxBackend {
 
   drawMap(x: number, y: number, tx: number, ty: number, tw: number, th: number): void {
     if (this.mapDirty) this.rebuildMap();
-    this.useBatch('map', -1, -1);
+    this.useBatch('map', -1, -1, this.transparentMask);
     const px = tx * SPRITE_SIZE;
     const py = ty * SPRITE_SIZE;
     const pw = tw * SPRITE_SIZE;
@@ -370,7 +373,7 @@ export class WebGL2Backend implements GfxBackend {
   }
 
   pixel(x: number, y: number, colour: number): void {
-    this.useBatch('solid', colour & 15, -1);
+    this.useBatch('solid', colour & 15, -1, 0);
     this.pushQuad(Math.floor(x), Math.floor(y), 1, 1, 0, 0, 0, 0);
   }
 
@@ -387,7 +390,7 @@ export class WebGL2Backend implements GfxBackend {
   }
 
   line(x0: number, y0: number, x1: number, y1: number, colour: number): void {
-    this.useBatch('solid', colour & 15, -1);
+    this.useBatch('solid', colour & 15, -1, 0);
     x0 = Math.floor(x0);
     y0 = Math.floor(y0);
     x1 = Math.floor(x1);
@@ -418,7 +421,7 @@ export class WebGL2Backend implements GfxBackend {
     w = Math.floor(w);
     h = Math.floor(h);
     if (w <= 0 || h <= 0) return;
-    this.useBatch('solid', colour & 15, -1);
+    this.useBatch('solid', colour & 15, -1, 0);
     this.pushQuad(x, y, w, 1, 0, 0, 0, 0);
     if (h > 1) this.pushQuad(x, y + h - 1, w, 1, 0, 0, 0, 0);
     if (h > 2) {
@@ -431,7 +434,7 @@ export class WebGL2Backend implements GfxBackend {
     w = Math.floor(w);
     h = Math.floor(h);
     if (w <= 0 || h <= 0) return;
-    this.useBatch('solid', colour & 15, -1);
+    this.useBatch('solid', colour & 15, -1, 0);
     this.pushQuad(Math.floor(x), Math.floor(y), w, h, 0, 0, 0, 0);
   }
 
@@ -440,7 +443,7 @@ export class WebGL2Backend implements GfxBackend {
     cy = Math.floor(cy);
     r = Math.floor(r);
     if (r < 0) return;
-    this.useBatch('solid', colour & 15, -1);
+    this.useBatch('solid', colour & 15, -1, 0);
     let x = r;
     let y = 0;
     let err = 1 - r;
@@ -470,7 +473,7 @@ export class WebGL2Backend implements GfxBackend {
     cy = Math.floor(cy);
     r = Math.floor(r);
     if (r < 0) return;
-    this.useBatch('solid', colour & 15, -1);
+    this.useBatch('solid', colour & 15, -1, 0);
     for (let dy = -r; dy <= r; dy++) {
       const dx = Math.floor(Math.sqrt(r * r - dy * dy));
       this.pushQuad(cx - dx, cy + dy, dx * 2 + 1, 1, 0, 0, 0, 0);
@@ -478,7 +481,7 @@ export class WebGL2Backend implements GfxBackend {
   }
 
   print(text: string, x: number, y: number, colour: number): number {
-    this.useBatch('font', -1, colour & 15);
+    this.useBatch('font', -1, colour & 15, 1);
     x = Math.floor(x);
     y = Math.floor(y);
     let cx = x;
@@ -630,17 +633,29 @@ export class WebGL2Backend implements GfxBackend {
     } else gl.disable(gl.SCISSOR_TEST);
   }
 
-  private useBatch(source: BatchSource, solid: number, textColour: number): void {
+  /**
+   * Every quad queued since the last flush is drawn with the uniforms current at that flush. A value
+   * those uniforms are built from therefore has to end the batch when it changes, or it reaches
+   * backwards over everything already waiting.
+   */
+  private useBatch(
+    source: BatchSource,
+    solid: number,
+    textColour: number,
+    transparent: number,
+  ): void {
     if (
       source === this.batchSource &&
       solid === this.batchSolid &&
-      textColour === this.batchTextColour
+      textColour === this.batchTextColour &&
+      transparent === this.batchTransparent
     )
       return;
     this.flush();
     this.batchSource = source;
     this.batchSolid = solid;
     this.batchTextColour = textColour;
+    this.batchTransparent = transparent;
   }
 
   private pushQuad(
@@ -677,21 +692,17 @@ export class WebGL2Backend implements GfxBackend {
             : UNIT_SHEET;
     gl.uniform1i(this.uSrc, unit);
     gl.uniform1i(this.uSolid, this.batchSource === 'solid' ? this.batchSolid : -1);
+    gl.uniform1i(this.uTransparent, this.batchTransparent);
     if (this.batchSource === 'font') {
       // Glyph atlas holds 0/1: map 1 → colour, and hide 0.
       const r = new Int32Array(16);
       r.set(this.remap);
       r[1] = this.remap[this.batchTextColour] ?? this.batchTextColour;
       gl.uniform1iv(this.uRemap, r);
-      gl.uniform1i(this.uTransparent, 1);
       this.remapDirty = true;
     } else if (this.remapDirty) {
       gl.uniform1iv(this.uRemap, this.remap);
-      gl.uniform1i(this.uTransparent, this.batchSource === 'solid' ? 0 : this.transparentMask);
       this.remapDirty = false;
-    } else if (this.batchSource === 'solid') {
-      gl.uniform1i(this.uTransparent, 0);
-      this.remapDirty = true;
     }
     gl.bindBuffer(gl.ARRAY_BUFFER, this.posBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.verts), gl.STREAM_DRAW);

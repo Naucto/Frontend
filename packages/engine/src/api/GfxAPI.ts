@@ -45,8 +45,19 @@ export class GfxAPI extends EngineModule {
         fh?: unknown,
         fv?: unknown,
         s?: unknown,
+        opaque?: unknown,
       ) => {
-        g.drawSprite(num(n), num(x), num(y), num(w, 1), num(h, 1), bool(fh), bool(fv), num(s, 1));
+        g.drawSprite(
+          num(n),
+          num(x),
+          num(y),
+          num(w, 1),
+          num(h, 1),
+          bool(fh),
+          bool(fv),
+          num(s, 1),
+          bool(opaque),
+        );
       },
       draw_region: (
         sx: unknown,
@@ -59,6 +70,7 @@ export class GfxAPI extends EngineModule {
         dh?: unknown,
         fh?: unknown,
         fv?: unknown,
+        opaque?: unknown,
       ) => {
         g.drawRegion(
           num(sx),
@@ -71,6 +83,7 @@ export class GfxAPI extends EngineModule {
           num(dh, num(sh)),
           bool(fh),
           bool(fv),
+          bool(opaque),
         );
       },
       pixel: (x: unknown, y: unknown, c: unknown) => {
