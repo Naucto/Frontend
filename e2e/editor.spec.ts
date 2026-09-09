@@ -20,7 +20,10 @@ const project = {
   likes: 0,
   forkCount: 4,
   forkedFromId: 3,
-  collaborators: [{ id: 1, username: 'alexis', email: 'a@x' }],
+  collaborators: [
+    { id: 1, username: 'alexis', email: 'a@x' },
+    { id: 4, username: 'priax', email: 'p@x' },
+  ],
   creator: { id: 1, username: 'alexis', email: 'a@x' },
 };
 
@@ -68,6 +71,9 @@ async function mockEditor(page: Page): Promise<void> {
   await page.route('**/projects/7/image', (r) => r.fulfill({ status: 204, body: '' }));
   await page.route('**/projects/7/versions', (r) => r.fulfill({ json: [] }));
   await page.route('**/projects/7/checkpoints', (r) => r.fulfill({ json: [] }));
+  await page.route('**/users/public/4/profile', (r) =>
+    r.fulfill({ json: { data: { id: 4, username: 'priax', profileImageUrl: '/img/logo.svg' } } }),
+  );
   await page.route('**/projects/7', (r) => r.fulfill({ json: project }));
 }
 
@@ -529,6 +535,58 @@ test.describe('editor', () => {
 
     await page.keyboard.press('Control+z');
     await expect.poll(() => sprUnder(target.x, target.y)).toBe('000');
+  });
+
+  /**
+   * A running game's map.set writes a runtime layer, not the document, so the map texture -- which
+   * is built from the document -- has no way to learn about it on its own.
+   */
+  test('a map.set at runtime reaches the screen, not only the data', async ({ page }) => {
+    await page.goto('/edit/7/code');
+    await expect(page.getByText('Welcome to Naucto!').first()).toBeVisible();
+
+    const lit = (x: number, y: number): Promise<boolean> =>
+      page.evaluate(
+        ([px, py]) => {
+          const screen = document.querySelector('canvas');
+          if (!screen) throw new Error('no canvas');
+          const copy = document.createElement('canvas');
+          copy.width = screen.width;
+          copy.height = screen.height;
+          const ctx = copy.getContext('2d');
+          if (!ctx) throw new Error('no 2d context');
+          ctx.drawImage(screen, 0, 0);
+          const [r, g, b] = ctx.getImageData(px ?? 0, py ?? 0, 1, 1).data;
+          return (r ?? 0) + (g ?? 0) + (b ?? 0) > 120;
+        },
+        [x, y],
+      );
+
+    await page.locator('.cm-content').click();
+    await page.keyboard.press('Control+a');
+    await page.keyboard.type(
+      'local t = 0\nfunction _update()\nt = t + 1\nif t == 40 then map.set(0, 0, 1) end\nif t == 60 then print("TILE=" .. map.get(0, 0)) end\nend\nfunction _draw()\ngfx.clear(0)\nmap.draw(0, 0)\nend\n',
+    );
+    await page.getByRole('button', { name: 'Play' }).first().click();
+
+    // Nothing on the map to start with, so the corner is the cleared colour.
+    expect(await lit(3, 3)).toBe(false);
+    // The document took the write: this is the half that already worked.
+    await expect(page.getByText('TILE=1')).toBeVisible({ timeout: 10_000 });
+    // And the screen has to agree with it.
+    await expect.poll(() => lit(3, 3), { timeout: 10_000 }).toBe(true);
+  });
+
+  /**
+   * A collaborator is a person the app knows the id of, so their picture is something it can go and
+   * get. Listing them by initial and colour is what it does when nothing looked it up.
+   */
+  test('a collaborator is shown with their picture, not their initial', async ({ page }) => {
+    await page.goto('/edit/7/game');
+    await page.getByRole('button', { name: /share/i }).first().click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('img', { name: 'priax' }).locator('img')).toBeVisible();
   });
 
   test('MAP tab stamps tiles', async ({ page }) => {

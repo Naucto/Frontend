@@ -22,6 +22,12 @@ export class RecordingBackend implements GfxBackend {
   clear(c: number): void {
     this.rec('clear', c);
   }
+  setTileOverride(x: number, y: number, sprite: number): void {
+    this.rec('setTileOverride', x, y, sprite);
+  }
+  clearTileOverrides(): void {
+    this.rec('clearTileOverrides');
+  }
   camera(x: number, y: number): void {
     this.rec('camera', x, y);
   }

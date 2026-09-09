@@ -51,6 +51,15 @@ export interface GfxBackend {
     opaque?: boolean,
   ): void;
   drawMap(x: number, y: number, tx: number, ty: number, tw: number, th: number): void;
+  /**
+   * A tile the running game changed, which the document does not hold.
+   *
+   * The map is drawn from a texture built out of the document, so a change nothing writes there is
+   * a change the screen cannot find on its own.
+   */
+  setTileOverride(x: number, y: number, sprite: number): void;
+  /** Back to the document's own map, for a game starting over. */
+  clearTileOverrides(): void;
   pixel(x: number, y: number, colour: number): void;
   getPixel(x: number, y: number): number;
   line(x0: number, y0: number, x1: number, y1: number, colour: number): void;

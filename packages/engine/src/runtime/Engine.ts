@@ -112,6 +112,7 @@ export class Engine {
     this.console.clear();
     this.stats.reset();
     this.tileOverrides.clear();
+    this.opts.gfx.clearTileOverrides();
     this.elapsed = 0;
     this.lastError = null;
 
@@ -135,6 +136,7 @@ export class Engine {
           this.tileOverrides.get(y * MAP_WIDTH + x) ?? this.opts.game.getTile(x, y),
         setTile: (x, y, n) => {
           this.tileOverrides.set(y * MAP_WIDTH + x, n & 0xff);
+          this.opts.gfx.setTileOverride(x, y, n & 0xff);
         },
       },
       sys: {

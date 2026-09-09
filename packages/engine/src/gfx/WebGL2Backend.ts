@@ -71,6 +71,13 @@ export class WebGL2Backend implements GfxBackend {
   private gamePalette: string[];
 
   private mapDirty = true;
+  /**
+   * The tiles the running game has changed, which the document does not hold.
+   *
+   * A cache of what the engine wrote, kept here because the map texture is rebuilt from the whole
+   * document and would otherwise paint over them on the next rebuild.
+   */
+  private readonly tileOverrides = new Map<number, number>();
   private readonly mapPixels = new Uint8Array(MAP_PX_W * MAP_PX_H);
   private readonly unsubscribes: (() => void)[] = [];
   private destroyed = false;
@@ -351,6 +358,18 @@ export class WebGL2Backend implements GfxBackend {
     if (flipH) [u0, u1] = [u1, u0];
     if (flipV) [v0, v1] = [v1, v0];
     this.pushQuad(Math.floor(dx), Math.floor(dy), Math.floor(dw), Math.floor(dh), u0, v0, u1, v1);
+  }
+
+  setTileOverride(x: number, y: number, sprite: number): void {
+    if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT) return;
+    this.tileOverrides.set(y * MAP_WIDTH + x, sprite & 0xff);
+    this.mapDirty = true;
+  }
+
+  clearTileOverrides(): void {
+    if (this.tileOverrides.size === 0) return;
+    this.tileOverrides.clear();
+    this.mapDirty = true;
   }
 
   drawMap(x: number, y: number, tx: number, ty: number, tw: number, th: number): void {
@@ -747,7 +766,8 @@ export class WebGL2Backend implements GfxBackend {
     const tiles = this.game.tiles;
     for (let ty = 0; ty < MAP_HEIGHT; ty++) {
       for (let tx = 0; tx < MAP_WIDTH; tx++) {
-        const n = tiles[ty * MAP_WIDTH + tx] ?? 0;
+        const i = ty * MAP_WIDTH + tx;
+        const n = this.tileOverrides.get(i) ?? tiles[i] ?? 0;
         const sx = (n % SPRITES_PER_ROW) * SPRITE_SIZE;
         const sy = Math.floor(n / SPRITES_PER_ROW) * SPRITE_SIZE;
         for (let y = 0; y < SPRITE_SIZE; y++) {
