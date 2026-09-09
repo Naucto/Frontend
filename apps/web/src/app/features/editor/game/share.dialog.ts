@@ -3,13 +3,13 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { unwrap } from '@app/core/api/api-errors';
 import { PersonSearchComponent } from '@app/shared/person-search.component';
 import type { PersonHit } from '@app/shared/queries/search.queries';
+import { UserAvatarComponent } from '@app/shared/user-avatar.component';
 import { TranslocoDirective } from '@jsverse/transloco';
 import {
   projectControllerAddCollaborator,
   projectControllerRemoveCollaborator,
 } from '@naucto/api-client';
 import {
-  AvatarComponent,
   ButtonDirective,
   DialogShellComponent,
   OnlineDotComponent,
@@ -28,7 +28,7 @@ export async function addCollaborator(projectId: number, handle: string): Promis
   selector: 'nc-share-dialog',
   imports: [
     TranslocoDirective,
-    AvatarComponent,
+    UserAvatarComponent,
     ButtonDirective,
     DialogShellComponent,
     OnlineDotComponent,
@@ -40,7 +40,7 @@ export async function addCollaborator(projectId: number, handle: string): Promis
       <ul class="mb-2 divide-y divide-line">
         @for (c of people(); track c.id) {
           <li class="flex items-center gap-1 py-1">
-            <nc-avatar [name]="c.username" [id]="c.id" [size]="24" />
+            <nc-user-avatar [userId]="c.id" [name]="c.username" [size]="24" />
             <span class="text-ui text-ink">{{ c.username }}</span>
             @if (c.isCreator) {
               <span class="label text-gold-ink">{{ t('share.creator') }}</span>

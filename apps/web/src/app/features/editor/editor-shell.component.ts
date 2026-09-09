@@ -18,10 +18,10 @@ import { PresenceStore } from '@app/core/presence/presence.store';
 import { AccountMenuComponent } from '@app/features/shell/account-menu.component';
 import { NotificationsBellComponent } from '@app/features/shell/notifications-bell.component';
 import { RuntimeHostService } from '@app/shared/game-screen/runtime-host.service';
+import { UserAvatarComponent } from '@app/shared/user-avatar.component';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { computeSizeReport } from '@naucto/engine';
 import {
-  AvatarComponent,
   ButtonDirective,
   DialogService,
   ErrorStateComponent,
@@ -73,7 +73,7 @@ const RAIL: RailItem<EditorTab>[] = [
     RouterLink,
     RouterOutlet,
     TranslocoDirective,
-    AvatarComponent,
+    UserAvatarComponent,
     ButtonDirective,
     ErrorStateComponent,
     IconComponent,
@@ -110,7 +110,13 @@ const RAIL: RailItem<EditorTab>[] = [
           <div class="flex items-center" [attr.aria-label]="t('editor.inSession')">
             <!-- Other people only: you are already the account button at the far right. -->
             @for (c of others(); track c.clientId) {
-              <nc-avatar [name]="c.name" [colour]="c.colour" [size]="38" overlap />
+              <nc-user-avatar
+                [userId]="c.userId"
+                [name]="c.name"
+                [colour]="c.colour"
+                [size]="38"
+                overlap
+              />
             }
           </div>
           <!-- No "show viewer" button here: the viewer is docked and popped from the console

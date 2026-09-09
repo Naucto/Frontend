@@ -10,6 +10,7 @@ import { PersonSearchComponent } from '@app/shared/person-search.component';
 import { qk } from '@app/shared/queries/query-keys';
 import { injectProjectImage, injectRelease } from '@app/shared/queries/releases.queries';
 import type { PersonHit } from '@app/shared/queries/search.queries';
+import { UserAvatarComponent } from '@app/shared/user-avatar.component';
 import { yTextField } from '@app/shared/yjs/y-signal';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import {
@@ -18,7 +19,6 @@ import {
   projectControllerUploadProjectImage,
 } from '@naucto/api-client';
 import {
-  AvatarComponent,
   ButtonDirective,
   ConfirmDialogComponent,
   DialogService,
@@ -54,7 +54,7 @@ const DESCRIPTION_MAX = 300;
     SlicePipe,
     FormsModule,
     TranslocoDirective,
-    AvatarComponent,
+    UserAvatarComponent,
     ButtonDirective,
     FieldComponent,
     HelpDotComponent,
@@ -269,7 +269,12 @@ const DESCRIPTION_MAX = 300;
             <span actions class="label text-ink-4">{{ session.collaborators().length }}</span>
             @for (c of session.collaborators(); track c.clientId) {
               <div class="flex items-center gap-1 py-0.5">
-                <nc-avatar [name]="c.name" [colour]="c.isSelf ? 'gold' : c.colour" [size]="24" />
+                <nc-user-avatar
+                  [userId]="c.userId"
+                  [name]="c.name"
+                  [colour]="c.isSelf ? 'gold' : c.colour"
+                  [size]="24"
+                />
                 <span class="text-ui text-ink">{{ c.name }}</span>
                 @if (c.isSelf) {
                   <span class="label text-ink-4">{{ t('editor.game.you') }}</span>
