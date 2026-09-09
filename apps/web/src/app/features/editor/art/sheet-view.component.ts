@@ -21,6 +21,22 @@ import { type SpriteRect } from './art.store';
 
 const SCALE = 3;
 
+/** The grip's leg, in canvas pixels. Half a cell, so a 1×1 region still has room to be moved. */
+const GRIP = 12;
+
+/**
+ * What a press started.
+ *
+ * `move` slides the region and keeps the cell it was grabbed by; `span` draws a new region from
+ * the cell pressed; `resize` holds one corner still and spans to the pointer — which is the only
+ * one of the three a region covering the whole sheet leaves reachable, since every cell of it is
+ * then a cell you would rather move than redraw.
+ */
+type Drag =
+  | { kind: 'move'; grab: { x: number; y: number } }
+  | { kind: 'span'; anchor: { x: number; y: number } }
+  | { kind: 'resize'; anchor: { x: number; y: number } };
+
 /**
  * The whole 128×128 sheet, with the worked-on region on it and — where the caller has one — the
  * frame of what its canvas is currently showing.
@@ -71,8 +87,7 @@ export class SheetViewComponent {
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
   private readonly theme = inject(ThemeService);
   private panning = false;
-  private drag: { anchor: { x: number; y: number }; grab: { x: number; y: number } | null } | null =
-    null;
+  private drag: Drag | null = null;
   private raf = 0;
 
   constructor() {
@@ -104,6 +119,26 @@ export class SheetViewComponent {
     return { x: clamp((e.clientX - r.left) / cell), y: clamp((e.clientY - r.top) / cell) };
   }
 
+  /** Pointer position in canvas pixels, which is what the grip is measured in. */
+  private pixelOf(e: PointerEvent): { x: number; y: number } {
+    const r = this.canvas().nativeElement.getBoundingClientRect();
+    const k = this.width / (r.width || this.width);
+    return { x: (e.clientX - r.left) * k, y: (e.clientY - r.top) * k };
+  }
+
+  /** Whether the pointer is on the grip in the region's bottom-right corner. */
+  private onGrip(e: PointerEvent): boolean {
+    if (!this.resizable()) return false;
+    const r = this.region();
+    const cell = SPRITE_SIZE * SCALE;
+    const p = this.pixelOf(e);
+    const dx = (r.x + r.w) * cell - 1 - p.x;
+    const dy = (r.y + r.h) * cell - 1 - p.y;
+    // The grip is drawn as a triangle, so its hit area is one too: the square's far half would
+    // claim pixels that show the sheet.
+    return dx >= 0 && dy >= 0 && dx + dy <= GRIP;
+  }
+
   protected onDown(e: PointerEvent): void {
     if (e.button === 1) {
       // The middle button is the pan gesture everywhere else on this screen. Here it aims the
@@ -116,17 +151,23 @@ export class SheetViewComponent {
     }
     if (e.button !== 0) return;
     this.canvas().nativeElement.setPointerCapture(e.pointerId);
-    const c = this.cellOf(e);
     const r = this.region();
+    // Tested before anything else: once the region covers the sheet there is no cell outside it
+    // to start a new span from, and without this the selection could never be made smaller again.
+    if (this.onGrip(e)) {
+      this.drag = { kind: 'resize', anchor: { x: r.x, y: r.y } };
+      return;
+    }
+    const c = this.cellOf(e);
     const inside = c.x >= r.x && c.y >= r.y && c.x < r.x + r.w && c.y < r.y + r.h;
     if (inside || !this.resizable()) {
       // Move: keep the size, and keep hold of the cell that was grabbed so the rectangle does not
       // jump its own width on the first move.
-      this.drag = { anchor: c, grab: inside ? { x: c.x - r.x, y: c.y - r.y } : { x: 0, y: 0 } };
+      this.drag = { kind: 'move', grab: inside ? { x: c.x - r.x, y: c.y - r.y } : { x: 0, y: 0 } };
       this.moveTo(c);
       return;
     }
-    this.drag = { anchor: c, grab: null };
+    this.drag = { kind: 'span', anchor: c };
     this.region.set({ x: c.x, y: c.y, w: 1, h: 1 });
   }
 
@@ -136,9 +177,14 @@ export class SheetViewComponent {
       return;
     }
     const d = this.drag;
-    if (!d) return;
+    if (!d) {
+      // The grip has to say it is one before it is pressed, and a canvas has no element to hang a
+      // cursor rule on.
+      this.canvas().nativeElement.style.cursor = this.onGrip(e) ? 'nwse-resize' : '';
+      return;
+    }
     const c = this.cellOf(e);
-    if (d.grab) this.moveTo(c);
+    if (d.kind === 'move') this.moveTo(c);
     else this.region.set(spanning(d.anchor, c));
   }
 
@@ -150,7 +196,8 @@ export class SheetViewComponent {
 
   private moveTo(c: { x: number; y: number }): void {
     const r = this.region();
-    const g = this.drag?.grab ?? { x: 0, y: 0 };
+    const d = this.drag;
+    const g = d?.kind === 'move' ? d.grab : { x: 0, y: 0 };
     this.region.set({
       x: Math.max(0, Math.min(SPRITES_PER_ROW - r.w, c.x - g.x)),
       y: Math.max(0, Math.min(SPRITES_PER_ROW - r.h, c.y - g.y)),
@@ -224,6 +271,25 @@ export class SheetViewComponent {
     ctx.lineWidth = 2;
     ctx.strokeRect(r.x * cell + 1, r.y * cell + 1, r.w * cell - 2, r.h * cell - 2);
     ctx.lineWidth = 1;
+
+    if (this.resizable()) {
+      // Inside the frame's own corner, so the grip never covers a sprite outside the region — and
+      // outlined, because gold on gold art is exactly where a gold grip disappears, and the sheet
+      // is full of gold art.
+      const gx = (r.x + r.w) * cell - 1;
+      const gy = (r.y + r.h) * cell - 1;
+      // Backed before it is drawn: the sheet's own art is behind it, and the console's brightest
+      // colour is the same gold the frame is drawn in.
+      ctx.fillStyle = cssVar(el, '--nc-inset');
+      ctx.fillRect(gx - GRIP, gy - GRIP, GRIP, GRIP);
+      ctx.beginPath();
+      ctx.moveTo(gx, gy);
+      ctx.lineTo(gx - GRIP, gy);
+      ctx.lineTo(gx, gy - GRIP);
+      ctx.closePath();
+      ctx.fillStyle = cssVar(el, '--nc-gold');
+      ctx.fill();
+    }
   }
 }
 
