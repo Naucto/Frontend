@@ -27,7 +27,9 @@ interface EditorUiState {
   referenceOpen: boolean;
   autoRun: boolean;
   viewportWidth: number;
+  viewportHeight: number;
   pipOpen: boolean;
+  pipWidth: number;
 }
 
 /**
@@ -61,6 +63,21 @@ export const CONSOLE_WIDTH = PANEL_WIDTH;
 /** The reference beside the console. On its own it takes the console's 421 instead. */
 export const REFERENCE_WIDTH = 401;
 
+/** The floating viewer's width in the artboard, and so where it starts before it is resized. */
+export const PIP_DEFAULT_WIDTH = 304;
+
+/** Under this the title bar's own name and button no longer fit side by side. */
+export const PIP_MIN_WIDTH = 200;
+
+/**
+ * The most of the window the floating viewer may take.
+ *
+ * A share of the *area*, not of either edge: a third of the width means something quite different
+ * on a 16:9 and on a 21:9, and the card keeps a fixed ratio, so one number over the area is the
+ * only bound that says the same thing on both.
+ */
+export const PIP_MAX_AREA_SHARE = 1 / 3;
+
 /** Layout state of the editor shell (per editor route). */
 export const EditorUiStore = signalStore(
   withState<EditorUiState>({
@@ -69,7 +86,9 @@ export const EditorUiStore = signalStore(
     referenceOpen: readJson<boolean>(STORAGE_KEYS.editorReferenceOpen, false),
     autoRun: true,
     viewportWidth: 1280,
+    viewportHeight: 800,
     pipOpen: readJson<boolean>(STORAGE_KEYS.editorViewerFloating, false),
+    pipWidth: readJson<number>(STORAGE_KEYS.editorViewerWidth, PIP_DEFAULT_WIDTH),
   }),
   withComputed((s) => {
     /**
@@ -122,6 +141,9 @@ export const EditorUiStore = signalStore(
     setViewportWidth(w: number): void {
       patchState(store, { viewportWidth: w });
     },
+    setViewportHeight(h: number): void {
+      patchState(store, { viewportHeight: h });
+    },
     /**
      * Whether the runtime floats over a canvas tab.
      *
@@ -135,6 +157,18 @@ export const EditorUiStore = signalStore(
     },
     togglePip(): void {
       this.setPipOpen(!store.pipOpen());
+    },
+    /**
+     * How wide the floating viewer is, remembered like whether it floats at all.
+     *
+     * A size chosen by hand is a preference, not a window position: the corner it was dragged to
+     * is where this window sits today, but how big you want to watch the game is how big you want
+     * to watch it tomorrow. Clamped on read as well as on write, because the screen it was sized
+     * against may not be the screen it comes back on.
+     */
+    setPipWidth(w: number): void {
+      patchState(store, { pipWidth: w });
+      writeJson(STORAGE_KEYS.editorViewerWidth, w);
     },
   })),
 );

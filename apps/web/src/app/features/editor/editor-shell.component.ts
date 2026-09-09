@@ -302,10 +302,14 @@ export class EditorShellComponent implements OnInit {
         this.presence.announce({ kind: 'IDLE' });
       });
     });
-    if (typeof window !== 'undefined') this.ui.setViewportWidth(window.innerWidth);
+    if (typeof window !== 'undefined') {
+      this.ui.setViewportWidth(window.innerWidth);
+      this.ui.setViewportHeight(window.innerHeight);
+    }
     const ro = new ResizeObserver((entries) => {
-      const w = entries[0]?.contentRect.width;
-      if (w) this.ui.setViewportWidth(w);
+      const box = entries[0]?.contentRect;
+      if (box?.width) this.ui.setViewportWidth(box.width);
+      if (box?.height) this.ui.setViewportHeight(box.height);
     });
     ro.observe(this.host.nativeElement);
     inject(DestroyRef).onDestroy(() => {

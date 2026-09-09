@@ -8,6 +8,7 @@ export const STORAGE_KEYS = {
   editorCollapsed: 'naucto.editor.collapsed',
   editorReferenceOpen: 'naucto.editor.reference-open',
   editorViewerFloating: 'naucto.editor.viewer-floating',
+  editorViewerWidth: 'naucto.editor.viewer-width',
   editorPrefs: 'naucto.editor',
   padLayout: 'naucto.pad-layout',
   oauthState: 'naucto.oauth.state',
