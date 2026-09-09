@@ -5,7 +5,7 @@ import { ButtonDirective, IconComponent } from '@naucto/ui';
 
 import { type ApiEntry } from './docs.service';
 
-/** One Lua API function: signature, description, params, notes, examples. Used by /learn, the DOC pane and hover cards. */
+/** One Lua API function: signature, description, params, notes, examples. Used by /learn and the DOC pane. */
 @Component({
   selector: 'nc-api-card',
   imports: [TranslocoDirective, ButtonDirective, IconComponent],

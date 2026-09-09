@@ -172,14 +172,10 @@
   }
 }
 
-/* CodeMirror hover card fed by the docs manifest */
-.cm-tooltip.cm-tooltip-hover {
-  background: var(--nc-raised);
-  border: 1px solid var(--nc-line-strong);
-  border-radius: var(--radius-sm);
-  max-width: 360px;
-}
+/* CodeMirror card fed by the docs manifest. The frame is the editor theme's, on every .cm-tooltip;
+   the width belongs to the card, which is shown from more than one kind of tooltip. */
 .nc-doc-card {
+  max-width: 360px;
   padding: 8px 10px;
   font-family: var(--font-ui);
   color: var(--nc-ink-body);
@@ -203,6 +199,13 @@
   font-family: var(--font-mono);
   letter-spacing: normal;
   color: var(--nc-ink-3);
+}
+/* The argument the caret is on. Gold is what this design uses for "the one you are on". */
+.nc-doc-card__params dt[data-active] {
+  color: var(--nc-gold-ink);
+}
+.nc-doc-card__params dd[data-active] {
+  color: var(--nc-ink);
 }
 .nc-doc-card__params dd {
   margin: 0;
