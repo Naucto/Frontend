@@ -563,6 +563,7 @@
       "none": "Nobody is hosting this game right now. Ask for a code.",
       "code": "HAVE A CODE?",
       "filter": "Filter by room, host or friend…",
+      "refresh": "Refresh the list",
       "friends": "FRIENDS",
       "public": "PUBLIC",
       "full": "FULL",

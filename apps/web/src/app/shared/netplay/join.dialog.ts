@@ -7,8 +7,10 @@ import {
   ButtonDirective,
   DialogShellComponent,
   FieldComponent,
+  IconComponent,
   InputDirective,
   SearchComponent,
+  TooltipDirective,
 } from '@naucto/ui';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 
@@ -31,12 +33,34 @@ export interface JoinDialogData {
     ButtonDirective,
     DialogShellComponent,
     FieldComponent,
+    IconComponent,
     InputDirective,
     SearchComponent,
+    TooltipDirective,
   ],
   template: `
     <nc-dialog-shell *transloco="let t" [title]="t('net.join.title')">
-      <nc-search size="sm" [placeholder]="t('net.join.filter')" [hint]="''" [(value)]="filter" />
+      <div class="flex items-stretch gap-1">
+        <nc-search
+          size="sm"
+          class="flex-1"
+          [placeholder]="t('net.join.filter')"
+          [hint]="''"
+          [(value)]="filter"
+        />
+        <button
+          ncButton
+          variant="ghost"
+          size="sm"
+          iconOnly
+          [attr.aria-label]="t('net.join.refresh')"
+          [ncTooltip]="t('net.join.refresh')"
+          [disabled]="sessions.isFetching()"
+          (click)="sessions.refetch()"
+        >
+          <nc-icon name="reload" [size]="12" />
+        </button>
+      </div>
 
       <div class="mt-1.5 max-h-[190px] overflow-y-auto" role="list">
         @for (group of groups(); track group.key) {
