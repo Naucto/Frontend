@@ -8,7 +8,7 @@ import {
   projectControllerFindOne,
   projectControllerSaveProjectContent,
   projectControllerUpdate,
-  type ProjectResponseDto,
+  type ProjectExResponseDto,
   workSessionControllerGetInfo,
   workSessionControllerJoin,
   workSessionControllerKick,
@@ -81,7 +81,7 @@ export class WorkSessionService {
   readonly status = signal<SessionStatus>('joining');
   readonly error = signal<string | null>(null);
   readonly isHost = signal(false);
-  readonly project = signal<ProjectResponseDto | null>(null);
+  readonly project = signal<ProjectExResponseDto | null>(null);
   readonly collaborators = signal<Collaborator[]>([]);
   readonly dirty = signal(false);
   readonly lastSavedAt = signal<Date | null>(null);
@@ -134,6 +134,10 @@ export class WorkSessionService {
   /** y-protocols awareness of the live session (null until connected). */
   get awareness(): Awareness | null {
     return this.provider?.awareness ?? null;
+  }
+
+  get myUserId(): number | null {
+    return this.auth.userId();
   }
 
   get displayName(): string {
@@ -263,7 +267,7 @@ export class WorkSessionService {
             },
           }),
         );
-        this.project.set({ ...details, ...(updated as Partial<ProjectResponseDto>) });
+        this.project.set({ ...details, ...(updated as Partial<ProjectExResponseDto>) });
         await this.invalidateProjectEverywhere();
       }
       const bytes = Y.encodeStateAsUpdate(this.doc);
@@ -346,7 +350,7 @@ export class WorkSessionService {
     };
   }
 
-  private seedMeta(details: ProjectResponseDto): void {
+  private seedMeta(details: ProjectExResponseDto): void {
     const set = (key: string, value: string): void => {
       const t = this.doc.getText(key);
       if (t.length === 0 && value) t.insert(0, value);

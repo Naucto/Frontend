@@ -183,6 +183,19 @@
     "tabResults": "TAB FULL RESULTS",
     "escClose": "ESC CLOSE"
   },
+  "share": {
+    "people": "PEOPLE",
+    "searchFailed": "Could not search for people just now.",
+    "title": "Share",
+    "invite": "Invite someone by name…",
+    "collaborators": "COLLABORATORS",
+    "blurb": "Collaborators can edit everything in real time. Only the creator can publish.",
+    "creator": "CREATOR",
+    "remove": "Remove",
+    "justYou": "Just you so far.",
+    "creatorOnly": "Only the creator can add or remove collaborators.",
+    "done": "Done"
+  },
   "footer": {
     "tagline": "A browser fantasy console. Make tiny Lua games together and play them with friends.",
     "product": "Product",

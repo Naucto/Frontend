@@ -6,8 +6,10 @@ import { Router } from '@angular/router';
 import { unwrap } from '@app/core/api/api-errors';
 import { FeaturesService } from '@app/core/config/features.service';
 import { RuntimeHostService } from '@app/shared/game-screen/runtime-host.service';
+import { PersonSearchComponent } from '@app/shared/person-search.component';
 import { qk } from '@app/shared/queries/query-keys';
 import { injectProjectImage, injectRelease } from '@app/shared/queries/releases.queries';
+import type { PersonHit } from '@app/shared/queries/search.queries';
 import { yTextField } from '@app/shared/yjs/y-signal';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import {
@@ -28,7 +30,6 @@ import {
   NoticeComponent,
   PanelColumnComponent,
   ReadoutComponent,
-  SearchComponent,
   SectionComponent,
   SegmentedComponent,
   TagInputComponent,
@@ -63,7 +64,7 @@ const DESCRIPTION_MAX = 300;
     NoticeComponent,
     PanelColumnComponent,
     ReadoutComponent,
-    SearchComponent,
+    PersonSearchComponent,
     SectionComponent,
     SegmentedComponent,
     TagInputComponent,
@@ -284,11 +285,11 @@ const DESCRIPTION_MAX = 300;
             @if (session.collaborators().length <= 1) {
               <p class="text-meta text-ink-3">{{ t('editor.game.justYou') }}</p>
             }
-            <nc-search
+            <nc-person-search
               class="mt-1"
               [placeholder]="t('editor.game.inviteByName')"
-              hint=""
-              (submitted)="invite($event)"
+              [exclude]="memberIds()"
+              (picked)="invite($event)"
             />
           </nc-section>
           <nc-section banded [title]="t('editor.game.lineage')">
@@ -334,6 +335,10 @@ export class GameTabPage implements OnInit {
    */
   protected readonly features = inject(FeaturesService);
   protected readonly session = inject(WorkSessionService);
+  /** Nobody already on the project is worth offering: the endpoint answers them with a 400. */
+  protected readonly memberIds = computed(
+    () => this.session.project()?.collaborators.map((c) => c.id) ?? [],
+  );
   private readonly runtime = inject(RuntimeHostService);
   private readonly toasts = inject(ToastService);
   private readonly qc = inject(QueryClient);
@@ -471,19 +476,21 @@ export class GameTabPage implements OnInit {
     this.toasts.show('Cover updated', 'success');
   }
 
-  protected invite(name: string): void {
-    if (!name.trim()) return;
+  protected invite(person: PersonHit): void {
     void import('./share.dialog').then(({ addCollaborator }) =>
-      addCollaborator(this.session.id, name.trim())
+      addCollaborator(this.session.id, person.username)
         .then(async () => {
           // The invite changes who the project belongs to, which is read on the hub, on the
           // profile and in this session's own copy of it — refreshing here is what makes those
           // three agree without a reload.
           await this.session.refreshProject();
-          this.toasts.show(`Invited ${name}`, 'success');
+          this.toasts.show(`Invited ${person.username}`, 'success');
         })
         .catch((e: unknown) => {
-          this.toasts.show(e instanceof Error ? e.message : `Could not invite ${name}`, 'error');
+          this.toasts.show(
+            e instanceof Error ? e.message : `Could not invite ${person.username}`,
+            'error',
+          );
         }),
     );
   }

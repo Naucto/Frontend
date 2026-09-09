@@ -1748,7 +1748,7 @@ export type ProjectControllerFindOneResponses = {
   /**
    * Project object
    */
-  200: ProjectResponseDto;
+  200: ProjectExResponseDto;
 };
 
 export type ProjectControllerFindOneResponse =

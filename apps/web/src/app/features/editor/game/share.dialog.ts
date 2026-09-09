@@ -1,7 +1,9 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { unwrap } from '@app/core/api/api-errors';
+import { PersonSearchComponent } from '@app/shared/person-search.component';
+import type { PersonHit } from '@app/shared/queries/search.queries';
+import { TranslocoDirective } from '@jsverse/transloco';
 import {
   projectControllerAddCollaborator,
   projectControllerRemoveCollaborator,
@@ -10,8 +12,7 @@ import {
   AvatarComponent,
   ButtonDirective,
   DialogShellComponent,
-  FieldComponent,
-  InputDirective,
+  OnlineDotComponent,
   ToastService,
 } from '@naucto/ui';
 
@@ -22,60 +23,54 @@ export async function addCollaborator(projectId: number, handle: string): Promis
   unwrap(await projectControllerAddCollaborator({ path: { id: projectId }, body }));
 }
 
-/** SHARE: collaborators list + invite by username or email. */
+/** SHARE: who the project belongs to, and adding somebody to it. */
 @Component({
   selector: 'nc-share-dialog',
   imports: [
-    FormsModule,
+    TranslocoDirective,
     AvatarComponent,
     ButtonDirective,
     DialogShellComponent,
-    FieldComponent,
-    InputDirective,
+    OnlineDotComponent,
+    PersonSearchComponent,
   ],
   template: `
-    <nc-dialog-shell title="Share">
-      <p class="mb-2 text-body text-ink-2">
-        Collaborators can edit everything in real time. Only the creator can publish.
-      </p>
+    <nc-dialog-shell *transloco="let t" [title]="t('share.title')">
+      <p class="mb-2 text-body text-ink-2">{{ t('share.blurb') }}</p>
       <ul class="mb-2 divide-y divide-line">
-        @for (c of data.session.collaborators(); track c.clientId) {
+        @for (c of people(); track c.id) {
           <li class="flex items-center gap-1 py-1">
-            <nc-avatar [name]="c.name" [colour]="c.colour" [size]="24" />
-            <span class="text-ui text-ink">{{ c.name }}</span>
+            <nc-avatar [name]="c.username" [id]="c.id" [size]="24" />
+            <span class="text-ui text-ink">{{ c.username }}</span>
+            @if (c.isCreator) {
+              <span class="label text-gold-ink">{{ t('share.creator') }}</span>
+            }
+            @if (c.here) {
+              <nc-online-dot [online]="true" />
+            }
             <span class="flex-1"></span>
-            @if (!c.isSelf && data.session.isHost()) {
-              <button ncButton variant="ghost" size="sm" (click)="remove(c.userId)">Remove</button>
+            @if (!c.isCreator && isCreator()) {
+              <button ncButton variant="ghost" size="sm" (click)="remove(c.id)">
+                {{ t('share.remove') }}
+              </button>
             }
           </li>
         } @empty {
-          <li class="py-1 text-meta text-ink-3">Just you so far.</li>
+          <li class="py-1 text-meta text-ink-3">{{ t('share.justYou') }}</li>
         }
       </ul>
-      <form class="flex items-end gap-1" (ngSubmit)="invite()">
-        <nc-field label="Invite by username or email" for="share-handle" class="flex-1">
-          <input
-            ncInput
-            id="share-handle"
-            name="handle"
-            [(ngModel)]="handle"
-            placeholder="louis or louis@naucto.dev"
-          />
-        </nc-field>
-        <!-- Sized to the field beside it: the default step is six pixels shorter, which left the
-             button floating above the line its own input sits on. -->
-        <button
-          ncButton
-          size="bar"
-          variant="primary"
-          type="submit"
-          [disabled]="!handle.trim() || busy()"
-        >
-          Invite
-        </button>
-      </form>
+      @if (isCreator()) {
+        <nc-person-search
+          size="md"
+          [placeholder]="t('share.invite')"
+          [exclude]="memberIds()"
+          (picked)="invite($event)"
+        />
+      } @else {
+        <p class="text-meta text-ink-3">{{ t('share.creatorOnly') }}</p>
+      }
       <ng-container footer>
-        <button ncButton variant="ghost" (click)="ref.close()">Done</button>
+        <button ncButton variant="ghost" (click)="ref.close()">{{ t('share.done') }}</button>
       </ng-container>
     </nc-dialog-shell>
   `,
@@ -85,22 +80,42 @@ export class ShareDialogComponent {
   protected readonly data = inject<{ session: WorkSessionService }>(DIALOG_DATA);
   protected readonly ref = inject(DialogRef);
   private readonly toasts = inject(ToastService);
-  protected handle = '';
-  protected readonly busy = signal(false);
 
-  protected async invite(): Promise<void> {
-    this.busy.set(true);
+  /**
+   * The project's collaborators, not the session's.
+   *
+   * This listed the awareness states, which is who is connected right now -- so somebody invited
+   * an hour ago and not currently in the editor was simply absent from the list of people the
+   * project belongs to, and inviting them again answered "already a collaborator".
+   */
+  protected readonly people = computed(() => {
+    const project = this.data.session.project();
+    if (!project) return [];
+    const here = new Set(this.data.session.collaborators().map((c) => c.userId));
+    return project.collaborators.map((c) => ({
+      id: c.id,
+      username: c.username,
+      isCreator: c.id === project.creator.id,
+      here: here.has(c.id),
+    }));
+  });
+
+  protected readonly memberIds = computed(() => this.people().map((c) => c.id));
+
+  /** Only the creator may add or remove; the endpoint is behind a guard that says so. */
+  protected readonly isCreator = computed(
+    () => this.data.session.project()?.creator.id === this.data.session.myUserId,
+  );
+
+  protected async invite(person: PersonHit): Promise<void> {
     try {
-      await addCollaborator(this.data.session.id, this.handle.trim());
+      await addCollaborator(this.data.session.id, person.username);
       await this.data.session.refreshProject();
-      this.toasts.show(`Invited ${this.handle}`, 'success');
-      this.handle = '';
+      this.toasts.show(`Invited ${person.username}`, 'success');
     } catch (e: unknown) {
       // The server distinguishes no such user from already a collaborator from not your project,
       // and one generic sentence made all three read as the same mystery.
       this.toasts.show(e instanceof Error ? e.message : 'Could not invite that person', 'error');
-    } finally {
-      this.busy.set(false);
     }
   }
 
