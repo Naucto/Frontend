@@ -1,6 +1,10 @@
 import { SlicePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { NotificationsStore } from '@app/core/notifications/notifications.store';
+import { Router } from '@angular/router';
+import {
+  type NotificationItem,
+  NotificationsStore,
+} from '@app/core/notifications/notifications.store';
 import { TranslocoDirective } from '@jsverse/transloco';
 import {
   ButtonDirective,
@@ -83,7 +87,7 @@ import {
                   [class.bg-sky]="n.type === 'INFO'"
                   [class.bg-orange]="n.type === 'WARNING'"
                 ></span>
-                <button type="button" class="flex-1 text-left" (click)="store.markRead(n.id)">
+                <button type="button" class="flex-1 text-left" (click)="act(n)">
                   <div class="text-ui text-ink">{{ n.title }}</div>
                   <div class="text-meta text-ink-2">{{ n.message }}</div>
                   <div class="label mt-0.5 text-ink-4">{{ n.createdAt | slice: 0 : 10 }}</div>
@@ -105,4 +109,37 @@ import {
 export class NotificationsBellComponent {
   protected readonly store = inject(NotificationsStore);
   protected readonly open = signal(false);
+  private readonly router = inject(Router);
+
+  /**
+   * Where a notification leads, or nowhere.
+   *
+   * The kinds the server actually sends: a friend request and its acceptance both put the answer
+   * on the friends page, being added to a project opens that project's editor, and a session
+   * invite arrives as GENERIC carrying the project it is a session of.
+   */
+  private destinationOf(n: NotificationItem): string[] | null {
+    const projectId = n.data?.projectId;
+    switch (n.kind) {
+      case 'FRIEND_REQUEST':
+      case 'FRIEND_ACCEPTED':
+        return ['/friends'];
+      case 'COLLABORATOR_ADDED':
+        return typeof projectId === 'number' ? ['/edit', String(projectId)] : null;
+      default:
+        return typeof projectId === 'number' ? ['/play', String(projectId)] : null;
+    }
+  }
+
+  /**
+   * Marking it read was all a click did, which is the one thing the reader was not asking for:
+   * they clicked the sentence that told them something happened, to go to the thing.
+   */
+  protected act(n: NotificationItem): void {
+    void this.store.markRead(n.id);
+    const to = this.destinationOf(n);
+    if (!to) return;
+    this.open.set(false);
+    void this.router.navigate(to);
+  }
 }

@@ -1,6 +1,7 @@
 import { computed, effect, inject, untracked } from '@angular/core';
 import {
   notificationsControllerGetWebRtcOffer,
+  notificationsControllerMarkAllAsRead,
   notificationsControllerMarkAsRead,
 } from '@naucto/api-client';
 import {
@@ -12,15 +13,29 @@ import {
   withProps,
   withState,
 } from '@ngrx/signals';
+import { QueryClient } from '@tanstack/angular-query-experimental';
 
 import { AuthStore } from '../auth/auth.store';
 import { AppConfigService } from '../config/app-config';
 
+/**
+ * What the notification is about, which is what decides where clicking it goes.
+ *
+ * The server has sent this and its payload since notifications shipped; the client declared
+ * neither, so every one of them was a line of text with nowhere to lead. FEATURED is in the
+ * server's enum and nothing sends it yet.
+ */
+export type NotificationKind =
+  'GENERIC' | 'FRIEND_REQUEST' | 'FRIEND_ACCEPTED' | 'FEATURED' | 'COLLABORATOR_ADDED';
+
 export interface NotificationItem {
-  id: number;
+  /** A string on the wire, and it was declared a number here: the two never met, so nothing broke. */
+  id: string;
   title: string;
   message: string;
   type: 'INFO' | 'WARNING';
+  kind: NotificationKind;
+  data: Record<string, unknown> | null;
   read: boolean;
   createdAt: string;
 }
@@ -56,6 +71,7 @@ export const NotificationsStore = signalStore(
     backoff: 1000,
     auth: inject(AuthStore),
     config: inject(AppConfigService),
+    queries: inject(QueryClient),
     listeners: new Set<(msg: Inbound) => void>(),
   })),
   withComputed((s) => ({
@@ -109,10 +125,17 @@ export const NotificationsStore = signalStore(
             const n =
               (msg as { payload?: NotificationItem; data?: NotificationItem }).payload ??
               (msg as { data?: NotificationItem }).data;
-            if (n)
+            if (n) {
               patchState(store, {
                 items: [n, ...store.items().filter((x) => x.id !== n.id)].slice(0, MAX_ITEMS),
               });
+              // Someone else accepting your request changes your friend list, and until now
+              // nothing here knew it had: the list was refetched when *you* mutated it, so a
+              // request answered on the other side only appeared after a reload. That is the
+              // "friends need to refresh to invite" everyone hit.
+              if (n.kind === 'FRIEND_REQUEST' || n.kind === 'FRIEND_ACCEPTED')
+                void store.queries.invalidateQueries({ queryKey: ['friends'] });
+            }
           }
           store.listeners.forEach((l) => {
             l(msg);
@@ -160,18 +183,15 @@ export const NotificationsStore = signalStore(
       togglePanel(open?: boolean): void {
         patchState(store, { panelOpen: open ?? !store.panelOpen() });
       },
-      async markRead(id: number): Promise<void> {
+      async markRead(id: string): Promise<void> {
         patchState(store, {
           items: store.items().map((n) => (n.id === id ? { ...n, read: true } : n)),
         });
-        await notificationsControllerMarkAsRead({ path: { id: String(id) } });
+        await notificationsControllerMarkAsRead({ path: { id } });
       },
       async markAllRead(): Promise<void> {
-        const unread = store.items().filter((n) => !n.read);
         patchState(store, { items: store.items().map((n) => ({ ...n, read: true })) });
-        await Promise.allSettled(
-          unread.map((n) => notificationsControllerMarkAsRead({ path: { id: String(n.id) } })),
-        );
+        await notificationsControllerMarkAllAsRead();
       },
     };
   }),
