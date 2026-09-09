@@ -95,18 +95,26 @@ export class ShareDialogComponent {
       await this.data.session.refreshProject();
       this.toasts.show(`Invited ${this.handle}`, 'success');
       this.handle = '';
-    } catch {
-      this.toasts.show('Could not invite that person', 'error');
+    } catch (e: unknown) {
+      // The server distinguishes no such user from already a collaborator from not your project,
+      // and one generic sentence made all three read as the same mystery.
+      this.toasts.show(e instanceof Error ? e.message : 'Could not invite that person', 'error');
     } finally {
       this.busy.set(false);
     }
   }
 
   protected async remove(userId: number): Promise<void> {
-    await projectControllerRemoveCollaborator({
-      path: { id: this.data.session.id },
-      body: { userId },
-    });
-    await this.data.session.refreshProject();
+    try {
+      unwrap(
+        await projectControllerRemoveCollaborator({
+          path: { id: this.data.session.id },
+          body: { userId },
+        }),
+      );
+      await this.data.session.refreshProject();
+    } catch (e: unknown) {
+      this.toasts.show(e instanceof Error ? e.message : 'Could not remove that person', 'error');
+    }
   }
 }

@@ -475,11 +475,15 @@ export class GameTabPage implements OnInit {
     if (!name.trim()) return;
     void import('./share.dialog').then(({ addCollaborator }) =>
       addCollaborator(this.session.id, name.trim())
-        .then(() => {
+        .then(async () => {
+          // The invite changes who the project belongs to, which is read on the hub, on the
+          // profile and in this session's own copy of it — refreshing here is what makes those
+          // three agree without a reload.
+          await this.session.refreshProject();
           this.toasts.show(`Invited ${name}`, 'success');
         })
-        .catch(() => {
-          this.toasts.show(`Could not invite ${name}`, 'error');
+        .catch((e: unknown) => {
+          this.toasts.show(e instanceof Error ? e.message : `Could not invite ${name}`, 'error');
         }),
     );
   }
