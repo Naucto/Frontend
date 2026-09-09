@@ -20,6 +20,8 @@ const project = {
   likes: 0,
   forkCount: 4,
   forkedFromId: 3,
+  collaborators: [{ id: 1, username: 'alexis', email: 'a@x' }],
+  creator: { id: 1, username: 'alexis', email: 'a@x' },
 };
 
 /** Mocks enough of the API for the editor to open project 7 as its host. */
@@ -409,7 +411,10 @@ test.describe('editor', () => {
     // The keystrokes have to have landed, or what follows says nothing.
     await expect(page.locator('.cm-content')).toContainText('-- a note');
 
-    await expect(bar).toHaveText(/Synced/);
+    // Neither of the two things the strip must not say here: not syncing, which would mean a
+    // request per keystroke, and not synced, which would claim the server holds text it has never
+    // been sent.
+    await expect(bar).toHaveText(/Unsaved changes/);
   });
 
   test('MAP tab stamps tiles', async ({ page }) => {

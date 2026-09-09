@@ -17,7 +17,6 @@ import {
 import { ThemeService } from '@app/core/theme/theme.service';
 import {
   checkerboard,
-  cssVar,
   ellipsePoints,
   floodFill,
   linePoints,
@@ -536,6 +535,10 @@ export class SpriteCanvasComponent {
     const el = this.canvas().nativeElement;
     const ctx = el.getContext('2d');
     if (!ctx) return;
+    // One style object for the whole frame: reading a token is a getComputedStyle, which makes the
+    // browser settle pending style work before it answers, and this frame also writes styles.
+    const tokens = getComputedStyle(el);
+    const token = (name: string): string => tokens.getPropertyValue(name).trim();
     const scale = this.scale();
     // Drawn at the whole scale above, shown at the real one. At a whole scale every art pixel is
     // exactly as wide as its neighbour and the cell guides land on hard edges; the browser then
@@ -570,8 +573,8 @@ export class SpriteCanvasComponent {
       cw,
       ch,
       Math.round((8 * s) / scale),
-      cssVar(el, '--nc-inset'),
-      cssVar(el, '--nc-sunken'),
+      token('--nc-inset'),
+      token('--nc-sunken'),
     );
     if (cropped) ctx.translate(-view.x * s, -view.y * s);
 
@@ -590,7 +593,7 @@ export class SpriteCanvasComponent {
     if (lifted && off) {
       // Hide the lifted region where it was, then draw its pixels at their offset.
       ctx.clearRect(lifted.rect.x * s, lifted.rect.y * s, lifted.rect.w * s, lifted.rect.h * s);
-      checkerboardRegion(ctx, lifted.rect, s, el);
+      checkerboardRegion(ctx, lifted.rect, s, token('--nc-inset'), token('--nc-sunken'));
       const pal = this.painter().palette;
       for (let y = 0; y < lifted.rect.h; y++)
         for (let x = 0; x < lifted.rect.w; x++) {
@@ -605,7 +608,7 @@ export class SpriteCanvasComponent {
     if (preview) {
       const colour = this.drag?.colour ?? this.colour();
       ctx.fillStyle =
-        colour === 0 ? cssVar(el, '--nc-inset') : (this.painter().palette[colour] ?? '#fff');
+        colour === 0 ? token('--nc-inset') : (this.painter().palette[colour] ?? '#fff');
       for (const p of preview) ctx.fillRect(p.x * s, p.y * s, s, s);
     }
 
@@ -615,7 +618,7 @@ export class SpriteCanvasComponent {
       // ones only appear once an art pixel is big enough for a line between two of them to read as
       // a gap — across a whole 128px sheet at the fitted zoom they would be a grey wash.
       if (s >= 8) {
-        ctx.strokeStyle = cssVar(el, '--nc-ink');
+        ctx.strokeStyle = token('--nc-ink');
         ctx.globalAlpha = 0.07;
         ctx.lineWidth = 1;
         ctx.beginPath();
@@ -631,7 +634,7 @@ export class SpriteCanvasComponent {
       // The cell guides are a stronger veil of the same ink, not gold. Gold on this screen means
       // what is being worked on, and a permanent grid wearing it left the region outline competing
       // with a hundred lines of its own colour for the eye.
-      ctx.strokeStyle = cssVar(el, '--nc-ink');
+      ctx.strokeStyle = token('--nc-ink');
       ctx.globalAlpha = 0.2;
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -648,25 +651,25 @@ export class SpriteCanvasComponent {
     // What is being worked on. Gold, two pixels, over everything: at the fitted zoom a whole sheet
     // is on screen and this outline is the only thing saying which part of it the flags, the
     // preview and — unless the lock is off — the tools are about.
-    ctx.strokeStyle = cssVar(el, '--nc-gold');
+    ctx.strokeStyle = token('--nc-gold');
     ctx.lineWidth = 2;
     ctx.strokeRect(r.x * s + 1, r.y * s + 1, r.w * s - 2, r.h * s - 2);
     ctx.lineWidth = 1;
 
     // The sheet's own edge is a neutral hairline; gold on this screen means the region alone.
-    ctx.strokeStyle = cssVar(el, '--nc-line-strong');
+    ctx.strokeStyle = token('--nc-line-strong');
     ctx.strokeRect(0.5, 0.5, sheetPx - 1, sheetPx - 1);
 
     const sel = this.selection();
     if (sel) {
       ctx.setLineDash([s / 2, s / 2]);
-      ctx.strokeStyle = cssVar(el, '--nc-ink');
+      ctx.strokeStyle = token('--nc-ink');
       ctx.strokeRect(sel.x * s + 0.5, sel.y * s + 0.5, sel.w * s - 1, sel.h * s - 1);
       ctx.setLineDash([]);
     }
     const h = this.hoverCell();
     if (h) {
-      ctx.strokeStyle = cssVar(el, '--nc-ink');
+      ctx.strokeStyle = token('--nc-ink');
       ctx.lineWidth = 2;
       ctx.strokeRect(h.x * s + 1, h.y * s + 1, s - 2, s - 2);
       ctx.lineWidth = 1;
@@ -706,11 +709,12 @@ function checkerboardRegion(
   ctx: CanvasRenderingContext2D,
   r: PixelRect,
   s: number,
-  el: Element,
+  a: string,
+  b: string,
 ): void {
   ctx.save();
   ctx.translate(r.x * s, r.y * s);
-  checkerboard(ctx, r.w * s, r.h * s, 8, cssVar(el, '--nc-inset'), cssVar(el, '--nc-sunken'));
+  checkerboard(ctx, r.w * s, r.h * s, 8, a, b);
   ctx.restore();
 }
 

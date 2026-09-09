@@ -100,7 +100,39 @@ export function floodFill(
   return out;
 }
 
-/** Paint a checkerboard (transparent indicator) on a 2d context. */
+/**
+ * One tile of the check, kept per size and colour pair.
+ *
+ * The board is two colours repeating on a fixed grid, which is what a pattern is: the browser
+ * repeats it from a single fill, where naming each square costs a call per square of the surface.
+ */
+const TILES = new Map<string, HTMLCanvasElement>();
+
+function checkerTile(cell: number, a: string, b: string): HTMLCanvasElement {
+  const key = `${String(cell)}|${a}|${b}`;
+  const cached = TILES.get(key);
+  if (cached) return cached;
+  const tile = document.createElement('canvas');
+  tile.width = cell * 2;
+  tile.height = cell * 2;
+  const tctx = tile.getContext('2d');
+  if (tctx) {
+    tctx.fillStyle = a;
+    tctx.fillRect(0, 0, cell * 2, cell * 2);
+    tctx.fillStyle = b;
+    tctx.fillRect(0, 0, cell, cell);
+    tctx.fillRect(cell, cell, cell, cell);
+  }
+  TILES.set(key, tile);
+  return tile;
+}
+
+/**
+ * Paint a checkerboard (transparent indicator) on a 2d context.
+ *
+ * Anchored to the current origin, so a caller that has translated gets the board lined up with
+ * what it translated to rather than with the canvas.
+ */
 export function checkerboard(
   ctx: CanvasRenderingContext2D,
   w: number,
@@ -109,12 +141,14 @@ export function checkerboard(
   a: string,
   b: string,
 ): void {
-  ctx.fillStyle = a;
+  const pattern = cell > 0 ? ctx.createPattern(checkerTile(cell, a, b), 'repeat') : null;
+  if (!pattern) {
+    ctx.fillStyle = a;
+    ctx.fillRect(0, 0, w, h);
+    return;
+  }
+  ctx.fillStyle = pattern;
   ctx.fillRect(0, 0, w, h);
-  ctx.fillStyle = b;
-  for (let y = 0; y < h; y += cell)
-    for (let x = (y / cell) % 2 === 0 ? 0 : cell; x < w; x += cell * 2)
-      ctx.fillRect(x, y, cell, cell);
 }
 
 export function cssVar(el: Element, name: string): string {
