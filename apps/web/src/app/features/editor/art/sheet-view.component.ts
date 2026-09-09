@@ -103,10 +103,10 @@ type Drag =
       @if (grip(); as g) {
         <polygon [attr.points]="g.triangle" fill="var(--nc-gold)" />
         <line
-          [attr.x1]="g.x"
+          [attr.x1]="g.x - GRIP"
           [attr.y1]="g.y"
-          [attr.x2]="g.x - GRIP"
-          [attr.y2]="g.y + GRIP"
+          [attr.x2]="g.x"
+          [attr.y2]="g.y - GRIP"
           stroke="var(--nc-inset)"
         />
       }
