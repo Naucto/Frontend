@@ -3,6 +3,7 @@ import {
   booleanAttribute,
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   effect,
   inject,
@@ -12,16 +13,15 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
-import { ThemeService } from '@app/core/theme/theme.service';
-import { cssVar } from '@app/shared/pixel/pixel-tools';
 import { type SheetPainter } from '@app/shared/pixel/sheet-painter';
 import { SHEET_HEIGHT, SHEET_WIDTH, SPRITE_SIZE, SPRITES_PER_ROW } from '@naucto/engine';
 
 import { type SpriteRect } from './art.store';
 
 const SCALE = 3;
+const CELL = SPRITE_SIZE * SCALE;
 
-/** The grip's leg, in canvas pixels. Half a cell, so a 1×1 region still has room to be moved. */
+/** The grip's leg, in drawing units. Half a cell, so a 1×1 region still has room to be moved. */
 const GRIP = 12;
 
 /**
@@ -47,26 +47,76 @@ type Drag =
 @Component({
   selector: 'nc-sheet-view',
   template: `
+    <!-- The sheet's own pixels, and nothing else: a canvas is how image data is shown, and every
+         mark laid over it below is a piece of interface, which SVG draws at whatever the page is
+         zoomed to instead of at the one size it was rasterised for. -->
     <canvas
       #canvas
-      class="pixelated block h-full w-full cursor-crosshair touch-none"
+      class="pixelated absolute inset-0 h-full w-full"
       [width]="width"
       [height]="height"
+      aria-hidden="true"
+    ></canvas>
+    <svg
+      #surface
+      class="absolute inset-0 cursor-crosshair touch-none"
+      [attr.viewBox]="'0 0 ' + width + ' ' + height"
       role="img"
       [attr.aria-label]="label()"
+      tabindex="0"
       (pointerdown)="onDown($event)"
       (pointermove)="onMove($event)"
       (pointerup)="onUp($event)"
       (pointercancel)="onUp($event)"
       (keydown)="onKey($event)"
-      tabindex="0"
-    ></canvas>
+    >
+      <path [attr.d]="gridPath" fill="none" stroke="var(--nc-line)" shape-rendering="crispEdges" />
+      <!-- The view frame goes under the region: the region is what you are editing, and it has to
+           stay legible when the two overlap — which, at a fitted zoom, they always do. -->
+      @if (viewport(); as v) {
+        <rect
+          [attr.x]="v.x * CELL + 0.5"
+          [attr.y]="v.y * CELL + 0.5"
+          [attr.width]="v.w * CELL - 1"
+          [attr.height]="v.h * CELL - 1"
+          fill="none"
+          stroke="var(--nc-ink)"
+          stroke-opacity="0.45"
+          stroke-dasharray="3 3"
+          shape-rendering="crispEdges"
+        />
+      }
+      <rect
+        [attr.x]="region().x * CELL + 1"
+        [attr.y]="region().y * CELL + 1"
+        [attr.width]="region().w * CELL - 2"
+        [attr.height]="region().h * CELL - 2"
+        fill="none"
+        stroke="var(--nc-gold)"
+        stroke-width="2"
+        shape-rendering="crispEdges"
+      />
+      <!-- Its long edge is ruled rather than the whole corner being backed: what has to be told
+           apart from the sheet is where the grip ends, and the sheet behind it is often the same
+           gold the frame is drawn in. No crispEdges here — snapping a diagonal is the staircase
+           this grip was moved out of the canvas to be rid of. -->
+      @if (grip(); as g) {
+        <polygon [attr.points]="g.triangle" fill="var(--nc-gold)" />
+        <line
+          [attr.x1]="g.x"
+          [attr.y1]="g.y"
+          [attr.x2]="g.x - GRIP"
+          [attr.y2]="g.y + GRIP"
+          stroke="var(--nc-inset)"
+        />
+      }
+    </svg>
   `,
   // Drawn at the size it is painted: one art pixel has to be a whole number of screen pixels, or
   // the grid of sprite boundaries falls between them. Where there is not room, the panel scrolls
   // rather than the drawing shrinking.
   host: {
-    class: 'box-content block shrink-0 rounded-xs border border-line bg-inset',
+    class: 'relative box-content block shrink-0 rounded-xs border border-line bg-inset',
     '[style.width.px]': 'width',
     '[style.height.px]': 'height',
   },
@@ -82,10 +132,40 @@ export class SheetViewComponent {
   readonly label = input('Sprite sheet');
   /** Where a middle-button drag has reached, in cells, for a caller that can move its own view. */
   readonly panTo = output<{ x: number; y: number }>();
+  protected readonly GRIP = GRIP;
+  protected readonly CELL = CELL;
+  /** The 15 interior sprite boundaries each way. Fixed, so it is built once. */
+  protected readonly gridPath = Array.from(
+    { length: SPRITES_PER_ROW - 1 },
+    (_, i) => (i + 1) * CELL + 0.5,
+  )
+    .flatMap((at) => [
+      `M${String(at)} 0V${String(SHEET_HEIGHT * SCALE)}`,
+      `M0 ${String(at)}H${String(SHEET_WIDTH * SCALE)}`,
+    ])
+    .join('');
+
+  /**
+   * The grip in the region's bottom-right corner, or null where a new span cannot be dragged.
+   *
+   * `x`/`y` is that corner itself, which is where its long edge starts; the triangle runs from
+   * there up and left, so it stays inside the frame it belongs to.
+   */
+  protected readonly grip = computed(() => {
+    if (!this.resizable()) return null;
+    const r = this.region();
+    const x = (r.x + r.w) * CELL - 1;
+    const y = (r.y + r.h) * CELL - 1;
+    return {
+      x,
+      y,
+      triangle: `${String(x)},${String(y)} ${String(x - GRIP)},${String(y)} ${String(x)},${String(y - GRIP)}`,
+    };
+  });
   protected readonly width = SHEET_WIDTH * SCALE;
   protected readonly height = SHEET_HEIGHT * SCALE;
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
-  private readonly theme = inject(ThemeService);
+  private readonly surface = viewChild.required<ElementRef<SVGSVGElement>>('surface');
   private panning = false;
   private drag: Drag | null = null;
   private raf = 0;
@@ -96,10 +176,6 @@ export class SheetViewComponent {
     });
     effect(() => {
       this.painter().version();
-      this.region();
-      this.viewport();
-      // Colours are read from CSS custom properties at paint time; repaint when the theme flips.
-      this.theme.effective();
       untracked(() => {
         cancelAnimationFrame(this.raf);
         this.raf = requestAnimationFrame(() => {
@@ -113,15 +189,15 @@ export class SheetViewComponent {
 
   /** Whole cell under the pointer. */
   private cellOf(e: PointerEvent): { x: number; y: number } {
-    const r = this.canvas().nativeElement.getBoundingClientRect();
+    const r = this.surface().nativeElement.getBoundingClientRect();
     const cell = (r.width || this.width) / SPRITES_PER_ROW;
     const clamp = (v: number): number => Math.max(0, Math.min(SPRITES_PER_ROW - 1, Math.floor(v)));
     return { x: clamp((e.clientX - r.left) / cell), y: clamp((e.clientY - r.top) / cell) };
   }
 
-  /** Pointer position in canvas pixels, which is what the grip is measured in. */
+  /** Pointer position in drawing units, which is what the grip is measured in. */
   private pixelOf(e: PointerEvent): { x: number; y: number } {
-    const r = this.canvas().nativeElement.getBoundingClientRect();
+    const r = this.surface().nativeElement.getBoundingClientRect();
     const k = this.width / (r.width || this.width);
     return { x: (e.clientX - r.left) * k, y: (e.clientY - r.top) * k };
   }
@@ -130,10 +206,9 @@ export class SheetViewComponent {
   private onGrip(e: PointerEvent): boolean {
     if (!this.resizable()) return false;
     const r = this.region();
-    const cell = SPRITE_SIZE * SCALE;
     const p = this.pixelOf(e);
-    const dx = (r.x + r.w) * cell - 1 - p.x;
-    const dy = (r.y + r.h) * cell - 1 - p.y;
+    const dx = (r.x + r.w) * CELL - 1 - p.x;
+    const dy = (r.y + r.h) * CELL - 1 - p.y;
     // The grip is drawn as a triangle, so its hit area is one too: the square's far half would
     // claim pixels that show the sheet.
     return dx >= 0 && dy >= 0 && dx + dy <= GRIP;
@@ -144,13 +219,13 @@ export class SheetViewComponent {
       // The middle button is the pan gesture everywhere else on this screen. Here it aims the
       // caller's own view rather than moving anything of ours, since this map does not scroll.
       e.preventDefault();
-      this.canvas().nativeElement.setPointerCapture(e.pointerId);
+      this.surface().nativeElement.setPointerCapture(e.pointerId);
       this.panning = true;
       this.panTo.emit(this.cellOf(e));
       return;
     }
     if (e.button !== 0) return;
-    this.canvas().nativeElement.setPointerCapture(e.pointerId);
+    this.surface().nativeElement.setPointerCapture(e.pointerId);
     const r = this.region();
     // Tested before anything else: once the region covers the sheet there is no cell outside it
     // to start a new span from, and without this the selection could never be made smaller again.
@@ -178,9 +253,9 @@ export class SheetViewComponent {
     }
     const d = this.drag;
     if (!d) {
-      // The grip has to say it is one before it is pressed, and a canvas has no element to hang a
-      // cursor rule on.
-      this.canvas().nativeElement.style.cursor = this.onGrip(e) ? 'nwse-resize' : '';
+      // A grip has to say it is one before it is pressed, and which corner it is depends on where
+      // the region has got to — so it is set here rather than by a class.
+      this.surface().nativeElement.style.cursor = this.onGrip(e) ? 'nwse-resize' : '';
       return;
     }
     const c = this.cellOf(e);
@@ -189,7 +264,7 @@ export class SheetViewComponent {
   }
 
   protected onUp(e: PointerEvent): void {
-    if (this.drag || this.panning) this.canvas().nativeElement.releasePointerCapture(e.pointerId);
+    if (this.drag || this.panning) this.surface().nativeElement.releasePointerCapture(e.pointerId);
     this.panning = false;
     this.drag = null;
   }
@@ -235,61 +310,14 @@ export class SheetViewComponent {
 
   // ---- drawing --------------------------------------------------------------
 
+  /** The sheet itself. Everything drawn over it is in the SVG above, and needs no repaint. */
   private draw(): void {
-    const el = this.canvas().nativeElement;
-    const ctx = el.getContext('2d');
+    const ctx = this.canvas().nativeElement.getContext('2d');
     if (!ctx) return;
     ctx.imageSmoothingEnabled = false;
-    ctx.fillStyle = cssVar(el, '--nc-inset');
-    ctx.fillRect(0, 0, this.width, this.height);
+    // Cleared rather than filled: the host carries the inset ground, so an empty cell shows it.
+    ctx.clearRect(0, 0, this.width, this.height);
     ctx.drawImage(this.painter().canvas, 0, 0, this.width, this.height);
-    ctx.strokeStyle = cssVar(el, '--nc-line');
-    ctx.beginPath();
-    const cell = SPRITE_SIZE * SCALE;
-    for (let i = cell; i < this.width; i += cell) {
-      ctx.moveTo(i + 0.5, 0);
-      ctx.lineTo(i + 0.5, this.height);
-      ctx.moveTo(0, i + 0.5);
-      ctx.lineTo(this.width, i + 0.5);
-    }
-    ctx.stroke();
-
-    // The view frame goes under the region: the region is what you are editing, and it has to stay
-    // legible when the two overlap — which, at a fitted zoom, they always do.
-    const v = this.viewport();
-    if (v) {
-      ctx.strokeStyle = cssVar(el, '--nc-ink');
-      ctx.globalAlpha = 0.45;
-      ctx.setLineDash([3, 3]);
-      ctx.strokeRect(v.x * cell + 0.5, v.y * cell + 0.5, v.w * cell - 1, v.h * cell - 1);
-      ctx.setLineDash([]);
-      ctx.globalAlpha = 1;
-    }
-
-    const r = this.region();
-    ctx.strokeStyle = cssVar(el, '--nc-gold');
-    ctx.lineWidth = 2;
-    ctx.strokeRect(r.x * cell + 1, r.y * cell + 1, r.w * cell - 2, r.h * cell - 2);
-    ctx.lineWidth = 1;
-
-    if (this.resizable()) {
-      // Inside the frame's own corner, so the grip never covers a sprite outside the region — and
-      // outlined, because gold on gold art is exactly where a gold grip disappears, and the sheet
-      // is full of gold art.
-      const gx = (r.x + r.w) * cell - 1;
-      const gy = (r.y + r.h) * cell - 1;
-      // Backed before it is drawn: the sheet's own art is behind it, and the console's brightest
-      // colour is the same gold the frame is drawn in.
-      ctx.fillStyle = cssVar(el, '--nc-inset');
-      ctx.fillRect(gx - GRIP, gy - GRIP, GRIP, GRIP);
-      ctx.beginPath();
-      ctx.moveTo(gx, gy);
-      ctx.lineTo(gx - GRIP, gy);
-      ctx.lineTo(gx, gy - GRIP);
-      ctx.closePath();
-      ctx.fillStyle = cssVar(el, '--nc-gold');
-      ctx.fill();
-    }
   }
 }
 
