@@ -58,7 +58,7 @@ import { IconComponent } from '@naucto/ui';
             </li>
             <li>
               <a
-                href="https://forms.gle/naucto-feedback"
+                href="https://docs.google.com/forms/d/e/1FAIpQLSdOuqKBWdCL3JO5Lftcrqs3D_mc6clB_KwoSl8uy-dEbQlZWA/viewform"
                 target="_blank"
                 rel="noopener"
                 class="text-ink-2 hover:text-ink"
