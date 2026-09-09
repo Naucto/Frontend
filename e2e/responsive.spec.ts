@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 /**
  * The design's 1920 and 1400 frames simulate one screen size; they are not a maximum. Every

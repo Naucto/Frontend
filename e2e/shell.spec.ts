@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 test.describe('app shell', () => {
   test('hub renders with navigation and footer', async ({ page }) => {
