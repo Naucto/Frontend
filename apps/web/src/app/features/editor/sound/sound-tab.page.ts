@@ -441,7 +441,6 @@ export class SoundTabPage {
   /** Handed to the scope as a getter so it can pull at frame rate without a signal per frame. */
   protected readonly peaks = (): Float32Array => this.engine.peaks();
   protected readonly playhead = signal<number | null>(null);
-  /** Whether the music was running when the head was grabbed, and so should be when it is let go. */
   private resumeAfterSeek = false;
   protected readonly voices = signal<boolean[]>(Array.from({ length: VOICES }, () => false));
   protected readonly canUndo = signal(false);
@@ -634,11 +633,8 @@ export class SoundTabPage {
   }
 
   /**
-   * Moving the head while it is running moves the music with it, rather than waiting for a stop.
-   *
-   * The music stops for the length of the gesture rather than restarting at every step the head
-   * crosses: a drag crosses dozens, and starting the graph over on each one is a stutter, not a
-   * scrub. A head moved while nothing was playing just moves.
+   * Stopped for the length of the gesture rather than restarted at every step the head crosses: a
+   * drag crosses dozens, and starting the graph over on each one is a stutter, not a scrub.
    */
   protected onSeek(step: number): void {
     if (this.playing()) {
@@ -648,7 +644,6 @@ export class SoundTabPage {
     this.playhead.set(step);
   }
 
-  /** The gesture is over, so the music picks up from wherever the head was left. */
   protected onSeekEnd(): void {
     if (!this.resumeAfterSeek) return;
     this.resumeAfterSeek = false;
@@ -662,7 +657,6 @@ export class SoundTabPage {
     cancelAnimationFrame(this.raf);
   }
 
-  /** Rewinds, and takes the music with it where there is music to take. */
   protected toStart(): void {
     const running = this.playing();
     this.playhead.set(0);
@@ -677,10 +671,9 @@ export class SoundTabPage {
   private tick(): void {
     cancelAnimationFrame(this.raf);
     let lastBeat = -1;
-    // The graph reports no position for the first frames after it is asked to start, and reading
-    // that silence as the end of the pattern is what took the head away on every resume. Nothing
-    // is over until something has begun. A start that never arrives leaves the head where it is
-    // rather than clearing it, which STOP answers and a vanishing cursor does not.
+    // The graph reports no position for the first frames after it is asked to start, so silence
+    // only means the end of the pattern once a position has been seen. A start that never arrives
+    // therefore leaves the head where it is — which STOP answers, and a vanished head does not.
     let begun = false;
     const loop = (): void => {
       const pos = this.engine.musicPosition();

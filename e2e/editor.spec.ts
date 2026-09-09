@@ -482,12 +482,10 @@ test.describe('editor', () => {
   });
 
   /**
-   * The head is a control, not just a readout, and the three ways it was not:
-   *
-   * A press in the ruler put it down and let go, so it could not be scrubbed. The rewind button
-   * only wrote the signal, which the next frame overwrote from the running graph, so it did
-   * nothing while the music was playing. And the frame loop read the silence between asking the
-   * graph to start and it answering as the end of the pattern, so resuming took the head away.
+   * The head is a control, not a readout: it can be dragged, it can be rewound while the music is
+   * running, and it survives a resume. Each of the three is a separate mechanism — the ruler's own
+   * pointer, a rewind that reaches the graph rather than only the signal the next frame overwrites,
+   * and a frame loop that tells a graph which has not started yet from a pattern that has ended.
    */
   test('the head can be dragged, rewound and resumed', async ({ page }) => {
     await page.goto('/edit/7/sound');
@@ -525,21 +523,18 @@ test.describe('editor', () => {
     await rewind.click();
     await expect.poll(head).toBeLessThan(dragged ?? 0);
 
-    // Running: the head leaves the start on its own.
     await page.getByRole('button', { name: 'Play', exact: true }).click();
     await expect.poll(head).toBeGreaterThan(0);
     await page.getByRole('button', { name: 'Pause', exact: true }).click();
     const paused = await head();
     expect(paused).not.toBeNull();
 
-    // The one this was written for: the head used to vanish here.
     await page.getByRole('button', { name: 'Play', exact: true }).click();
     await page.waitForTimeout(600);
     expect(await head()).not.toBeNull();
 
-    // And rewinding while it runs used to be overwritten by the next frame. Read with the head
-    // held still: rewound, the music keeps going, so a poll left to converge follows it back out
-    // past where it started and says nothing about where the rewind put it.
+    // Read with the head held still: rewound, the music keeps going, so a poll left to converge
+    // follows it back out past where it started and says nothing about where the rewind put it.
     const running = await head();
     await rewind.click();
     await page.getByRole('button', { name: 'Pause', exact: true }).click();
