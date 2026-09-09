@@ -10,7 +10,9 @@ import { IconComponent } from '@naucto/ui';
   selector: 'nc-site-footer',
   imports: [RouterLink, TranslocoDirective, IconComponent],
   template: `
-    <footer *transloco="let t" class="mt-6 border-t border-line bg-panel">
+    <!-- No top margin: a page whose own panel runs to the bottom edge has to meet this rule, and
+         one that ends on its content is already held off it by the shell's padding. -->
+    <footer *transloco="let t" class="border-t border-line bg-panel">
       <div
         class="mx-auto grid w-full max-w-[1400px] grid-cols-2 gap-4 px-3 py-5 md:grid-cols-[1.4fr_1fr_1fr_1fr]"
       >

@@ -68,7 +68,10 @@ import { ReleaseGameService } from './release-game.service';
     UserAvatarComponent,
   ],
   template: `
-    <div *transloco="let t" class="flex flex-col items-stretch lg:-mx-3 lg:-my-3 lg:flex-row">
+    <div
+      *transloco="let t"
+      class="flex flex-1 flex-col items-stretch lg:-mx-3 lg:-my-3 lg:flex-row"
+    >
       <div class="min-w-0 flex-1 lg:px-3 lg:pt-2.75 lg:pb-3.25">
         <!-- A game that did not load gets a state that says so, not the transport of a dead black
              rectangle with the raw Error.message underneath it. -->
@@ -247,6 +250,9 @@ import { ReleaseGameService } from './release-game.service';
       </aside>
     </div>
   `,
+  // A column that fills what the shell left it, so the panel's own surface reaches the footer
+  // instead of stopping at the height of whatever the sidebar happens to hold.
+  host: { class: 'flex flex-1 flex-col' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GamePage {
