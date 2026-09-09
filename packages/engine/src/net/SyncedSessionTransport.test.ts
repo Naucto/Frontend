@@ -124,8 +124,7 @@ describe('SyncedSessionTransport', () => {
     const joined: number[] = [];
     transport.on('peerJoined', (id) => joined.push(id));
 
-    // No `peer-joined` first: that frame is sent once, when the slave's socket is accepted, so a
-    // slave whose socket drops and comes back arrives with nothing but its signal.
+    // A signal and nothing else, which is all a peer whose control frame went missing arrives with.
     signaling().opts.onFrame({ type: 'signal', from: 2, data: { sdp: 'x' } });
 
     expect(joined).toEqual([2]);
