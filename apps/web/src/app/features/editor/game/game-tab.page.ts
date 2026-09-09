@@ -459,7 +459,13 @@ export class GameTabPage implements OnInit {
         body: { file: blob },
       }),
     );
-    await this.qc.invalidateQueries({ queryKey: qk.projectImage(this.session.id) });
+    // A card resolves its cover from the release's picture first and the draft's second, so
+    // dropping only the draft's key leaves a published game showing its old cover everywhere it
+    // is listed — for the length of that key's staleTime, on a screen you have already left.
+    await Promise.all([
+      this.qc.invalidateQueries({ queryKey: qk.projectImage(this.session.id) }),
+      this.qc.invalidateQueries({ queryKey: qk.releaseImage(this.session.id) }),
+    ]);
     this.toasts.show('Cover updated', 'success');
   }
 

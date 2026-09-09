@@ -2,6 +2,7 @@ import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core'
 import { unwrap } from '@app/core/api/api-errors';
 import { AuthStore } from '@app/core/auth/auth.store';
 import { AppConfigService } from '@app/core/config/app-config';
+import { qk } from '@app/shared/queries/query-keys';
 import {
   projectControllerFetchProjectContent,
   projectControllerFindOne,
@@ -15,6 +16,7 @@ import {
 } from '@naucto/api-client';
 import { Game, LOCAL_ORIGIN, migrateGame, needsMigration } from '@naucto/engine';
 import type { PresenceColour } from '@naucto/ui';
+import { QueryClient } from '@tanstack/angular-query-experimental';
 import type { Awareness } from 'y-protocols/awareness';
 import { WebrtcProvider } from 'y-webrtc';
 import * as Y from 'yjs';
@@ -66,6 +68,7 @@ const AUTOSAVE_MS = 5 * 60 * 1000;
 export class WorkSessionService {
   private readonly auth = inject(AuthStore);
   private readonly config = inject(AppConfigService);
+  private readonly queries = inject(QueryClient);
   readonly doc = new Y.Doc();
   readonly game = new Game(this.doc);
 
@@ -218,6 +221,23 @@ export class WorkSessionService {
     aw.setLocalStateField('cursor', cursor ?? undefined);
   }
 
+  /**
+   * Drop every cached copy of this project's metadata, not just the one the editor reads.
+   *
+   * The editor holds the project in a signal of its own, so a save that only refreshed that
+   * signal left the name and the summary stale wherever else they are shown — the game page reads
+   * `release`, the hub and the profile read their own lists, and none of them share a key with
+   * `project`. What a mutation owns is never the whole of what it changed.
+   */
+  private async invalidateProjectEverywhere(): Promise<void> {
+    await Promise.all([
+      this.queries.invalidateQueries({ queryKey: qk.release(this.projectId) }),
+      this.queries.invalidateQueries({ queryKey: qk.releasesAll() }),
+      this.queries.invalidateQueries({ queryKey: ['projects'] }),
+      this.queries.invalidateQueries({ queryKey: ['profile'] }),
+    ]);
+  }
+
   /** Persist the document (host only) and any changed project metadata. */
   async save(opts: { keepalive?: boolean } = {}): Promise<void> {
     if (!this.isHost() || this.status() !== 'ready') return;
@@ -244,6 +264,7 @@ export class WorkSessionService {
           }),
         );
         this.project.set({ ...details, ...(updated as Partial<ProjectResponseDto>) });
+        await this.invalidateProjectEverywhere();
       }
       const bytes = Y.encodeStateAsUpdate(this.doc);
       await projectControllerSaveProjectContent({
@@ -268,6 +289,7 @@ export class WorkSessionService {
 
   async refreshProject(): Promise<void> {
     this.project.set(unwrap(await projectControllerFindOne({ path: { id: this.projectId } })));
+    await this.invalidateProjectEverywhere();
   }
 
   async close(): Promise<void> {

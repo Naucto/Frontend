@@ -11,7 +11,6 @@ export const qk = {
   likeStatus: (id: number) => ['release', id, 'like'] as const,
   comments: (id: number, page: number) => ['release', id, 'comments', page] as const,
   myProjects: (params: Record<string, unknown>) => ['projects', 'mine', params] as const,
-  project: (id: number) => ['project', id] as const,
   projectImage: (id: number) => ['project', id, 'image'] as const,
   publicProfile: (username: string) => ['user', username] as const,
   userAvatar: (id: number) => ['user', id, 'avatar'] as const,
