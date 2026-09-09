@@ -380,13 +380,21 @@ test.describe('editor', () => {
     await page.goto('/edit/7/art');
     await expect(page.getByRole('img', { name: 'Sprite canvas' })).toBeVisible();
 
-    const map = page.getByRole('img', { name: /Sheet map/ });
-    const painted = async (): Promise<string> =>
-      map.evaluate((el) => (el as HTMLCanvasElement).toDataURL());
+    // The frame of what the canvas is showing: the one dashed rectangle on the map, and the only
+    // mark on it that a zoom moves. Read off its own geometry rather than off the painted pixels —
+    // the map's canvas holds the sheet and nothing else, and a zoom does not touch the sheet.
+    //
+    // Its area, not either side: the well is wider than it is tall, so the first step in takes the
+    // frame off the bottom of the sheet while it still spans the full width.
+    const frame = page.locator('nc-sheet-view rect[stroke-dasharray]');
+    const area = async (): Promise<number> =>
+      Number(await frame.getAttribute('width')) * Number(await frame.getAttribute('height'));
 
-    const before = await painted();
+    const before = await area();
+    expect(before).toBeGreaterThan(0);
     await page.getByRole('button', { name: 'Zoom in' }).click();
-    await expect.poll(painted).not.toBe(before);
+    // In, so it shows less of the sheet, so the frame covers less of the map.
+    await expect.poll(area).toBeLessThan(before);
   });
 
   test('typing does not put the editor into a syncing state', async ({ page }) => {
