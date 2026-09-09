@@ -365,10 +365,16 @@ pages.sort(
 );
 
 await mkdir(out, { recursive: true });
-await writeFile(
-  resolve(out, 'index.json'),
-  JSON.stringify({ builtAt: new Date().toISOString(), pages, manifest: { namespaces, index } }),
-);
+const file = resolve(out, 'index.json');
+const built = JSON.stringify({ pages, manifest: { namespaces, index } });
+// Only when it differs, and with nothing in it that differs on its own.
+//
+// This lands inside the directory the dev server watches, so a write is a reload — and the build
+// runs ahead of the e2e suite, against a server the suite is already using. A stamped, always
+// rewritten file therefore invalidated the module graph in the middle of a run, which surfaces as
+// tests failing on modules that stopped resolving rather than on anything they assert.
+const current = await readFile(file, 'utf8').catch(() => null);
+if (current !== built) await writeFile(file, built);
 console.warn(
   `docs-build: ${pages.length} pages, ${Object.keys(index).length} api entries → ${relative(root, out)}/index.json`,
 );

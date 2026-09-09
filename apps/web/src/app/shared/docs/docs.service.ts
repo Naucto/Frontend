@@ -52,7 +52,6 @@ export interface ApiNamespace {
 }
 
 export interface DocsIndex {
-  builtAt: string;
   pages: DocPage[];
   manifest: { namespaces: ApiNamespace[]; index: Record<string, ApiEntry> };
 }
