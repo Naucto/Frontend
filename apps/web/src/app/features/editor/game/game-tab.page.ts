@@ -40,8 +40,11 @@ import * as Y from 'yjs';
 import { PANEL_WIDTH } from '../state/editor-ui.store';
 import { WorkSessionService } from '../work-session/work-session.service';
 
-const NAME_MAX = 60;
-const SUMMARY_MAX = 80;
+// The API rejects anything longer, so these are its limits, not a house style: the field has
+// to stop the typing rather than let a save fail on it.
+const NAME_MAX = 25;
+const SUMMARY_MAX = 50;
+const DESCRIPTION_MAX = 300;
 
 /** GAME tab: what this thing is, who it's for, where it goes. */
 @Component({
@@ -69,7 +72,7 @@ const SUMMARY_MAX = 80;
     <div *transloco="let t" class="grid h-full grid-cols-[minmax(0,1fr)_auto]">
       <section class="flex min-h-0 flex-col">
         <div
-          class="flex h-5 min-w-0 shrink-0 items-center gap-1.5 border-b border-line bg-panel pr-1.5 pl-2"
+          class="flex h-(--nc-bar-h) min-w-0 shrink-0 items-center gap-1.5 border-b border-line bg-panel pr-1.5 pl-2"
         >
           <span class="font-mono text-meta tracking-strip text-ink uppercase">
             {{ t('editor.game.title') }}
@@ -156,13 +159,18 @@ const SUMMARY_MAX = 80;
                   [placeholder]="t('editor.game.summaryPlaceholder')"
                 />
               </nc-field>
-              <nc-field [label]="t('editor.game.description')" for="g-desc">
+              <nc-field
+                [label]="t('editor.game.description')"
+                for="g-desc"
+                [counter]="description().length + ' / ' + descriptionMax"
+              >
                 <textarea
                   ncInput
                   id="g-desc"
                   rows="4"
                   [ngModel]="description()"
                   (ngModelChange)="description.set($event)"
+                  [maxlength]="descriptionMax"
                   [placeholder]="t('editor.game.descriptionPlaceholder')"
                 ></textarea>
               </nc-field>
@@ -332,6 +340,7 @@ export class GameTabPage implements OnInit {
   private readonly router = inject(Router);
   protected readonly nameMax = NAME_MAX;
   protected readonly summaryMax = SUMMARY_MAX;
+  protected readonly descriptionMax = DESCRIPTION_MAX;
 
   protected readonly name = yTextField(this.session.doc.getText('projectName'));
   protected readonly summary = yTextField(this.session.doc.getText('shortDescription'));
