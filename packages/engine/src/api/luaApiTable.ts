@@ -120,12 +120,6 @@ export const LUA_API: readonly LuaApiEntry[] = [
   },
   {
     ns: 'gfx',
-    name: 'set_transparent',
-    signature: 'gfx.set_transparent(colour[, on])',
-    summary: 'Toggle transparency of a palette index when drawing sprites (default: only 0).',
-  },
-  {
-    ns: 'gfx',
     name: 'set_color',
     signature: 'gfx.set_color(index, hex | r, g, b)',
     summary: 'Change a screen colour at runtime.',

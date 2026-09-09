@@ -15,6 +15,14 @@ import { buildFontAtlas, FONT_HEIGHT, FONT_WIDTH, glyphIndex } from './Font';
 import { createGLContext, createTexture, hexToRgb, linkProgram, rgbToHex } from './glUtils';
 import { DRAW_FS, DRAW_VS, PRESENT_FS, PRESENT_VS } from './shaders';
 
+/**
+ * Which palette indices a sheet draw keeps clear, as a bitmask over the sixteen.
+ *
+ * The first colour alone, because that is what a sprite sheet's transparency channel is: without
+ * it every sprite is a square.
+ */
+const KEYED_OUT = 1;
+
 const UNIT_SHEET = 0;
 const UNIT_MAP = 1;
 const UNIT_FONT = 2;
@@ -59,7 +67,6 @@ export class WebGL2Backend implements GfxBackend {
   private cameraY = 0;
   private clipRect: [number, number, number, number] | null = null;
   private readonly remap = new Int32Array(16);
-  private transparentMask = 1;
   private remapDirty = true;
 
   private readonly effects = new Int16Array(SCREEN_HEIGHT * 4);
@@ -350,7 +357,7 @@ export class WebGL2Backend implements GfxBackend {
     flipV: boolean,
     opaque = false,
   ): void {
-    this.useBatch('sheet', -1, -1, opaque ? 0 : this.transparentMask);
+    this.useBatch('sheet', -1, -1, opaque ? 0 : KEYED_OUT);
     let u0 = sx / SHEET_WIDTH;
     let v0 = sy / SHEET_HEIGHT;
     let u1 = (sx + sw) / SHEET_WIDTH;
@@ -374,7 +381,7 @@ export class WebGL2Backend implements GfxBackend {
 
   drawMap(x: number, y: number, tx: number, ty: number, tw: number, th: number): void {
     if (this.mapDirty) this.rebuildMap();
-    this.useBatch('map', -1, -1, this.transparentMask);
+    this.useBatch('map', -1, -1, KEYED_OUT);
     const px = tx * SPRITE_SIZE;
     const py = ty * SPRITE_SIZE;
     const pw = tw * SPRITE_SIZE;
@@ -532,13 +539,6 @@ export class WebGL2Backend implements GfxBackend {
   resetCol(): void {
     this.flush();
     for (let i = 0; i < 16; i++) this.remap[i] = i;
-    this.remapDirty = true;
-  }
-
-  setTransparent(index: number, on: boolean): void {
-    this.flush();
-    if (on) this.transparentMask |= 1 << (index & 15);
-    else this.transparentMask &= ~(1 << (index & 15));
     this.remapDirty = true;
   }
 

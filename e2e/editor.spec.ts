@@ -589,6 +589,41 @@ test.describe('editor', () => {
     await expect(dialog.getByRole('img', { name: 'priax' }).locator('img')).toBeVisible();
   });
 
+  test('the first colour is clear in a sprite, and a colour when the call asks', async ({
+    page,
+  }) => {
+    await page.goto('/edit/7/code');
+    await expect(page.getByText('Welcome to Naucto!').first()).toBeVisible();
+
+    const pixel = (): Promise<string> =>
+      page.evaluate(() => {
+        const screen = document.querySelector('canvas');
+        if (!screen) throw new Error('no canvas');
+        const copy = document.createElement('canvas');
+        copy.width = screen.width;
+        copy.height = screen.height;
+        const ctx = copy.getContext('2d');
+        if (!ctx) throw new Error('no 2d context');
+        ctx.drawImage(screen, 0, 0);
+        const [r, g, b] = ctx.getImageData(3, 3, 1, 1).data;
+        return `${String(r)},${String(g)},${String(b)}`;
+      });
+
+    // Sprite 0 is empty, so every one of its pixels is the first colour.
+    await page.locator('.cm-content').click();
+    await page.keyboard.press('Control+a');
+    await page.keyboard.type(
+      'local o = false\nfunction _update() o = sys.frame() > 40 end\nfunction _draw()\ngfx.clear(8)\ngfx.draw_sprite(0, 0, 0, 1, 1, false, false, 1, o)\nend\n',
+    );
+    await page.getByRole('button', { name: 'Play' }).first().click();
+
+    const filled = await (async () => {
+      await expect.poll(pixel).not.toBe('0,0,0');
+      return pixel();
+    })();
+    await expect.poll(pixel, { timeout: 10_000 }).not.toBe(filled);
+  });
+
   test('MAP tab stamps tiles', async ({ page }) => {
     await page.goto('/edit/7/map');
     const canvas = page.getByRole('img', { name: 'Map canvas' });

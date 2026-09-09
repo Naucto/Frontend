@@ -71,7 +71,6 @@ export interface GfxBackend {
   print(text: string, x: number, y: number, colour: number): number;
   setCol(from: number, to: number): void;
   resetCol(): void;
-  setTransparent(index: number, on: boolean): void;
   setColour(index: number, hex: string): void;
   getColour(index: number): string;
   resetPalette(): void;

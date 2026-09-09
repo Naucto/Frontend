@@ -79,9 +79,6 @@ export class RecordingBackend implements GfxBackend {
   resetCol(): void {
     this.rec('resetCol');
   }
-  setTransparent(i: number, on: boolean): void {
-    this.rec('setTransparent', i, on);
-  }
   setColour(i: number, hex: string): void {
     this.rec('setColour', i, hex);
   }

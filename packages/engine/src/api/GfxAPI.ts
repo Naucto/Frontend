@@ -125,9 +125,6 @@ export class GfxAPI extends EngineModule {
       reset_col: () => {
         g.resetCol();
       },
-      set_transparent: (i: unknown, on?: unknown) => {
-        g.setTransparent(num(i), bool(on, true));
-      },
       set_color: (i: unknown, r: unknown, gg?: unknown, b?: unknown) => {
         g.setColour(num(i), toHex(r, gg, b));
       },
