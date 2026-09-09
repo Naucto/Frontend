@@ -32,6 +32,7 @@ import {
   type PresenceViewport,
 } from '@naucto/ui';
 
+import { type Clip } from '../state/clipboard.store';
 import { type Collaborator } from '../work-session/work-session.service';
 import { type MapTool, type TileRect } from './map.store';
 
@@ -227,6 +228,32 @@ export class MapCanvasComponent {
       top: y * t - el.clientHeight / 2,
       behavior: 'smooth',
     });
+  }
+
+  /** Nothing selected is nothing to copy: a map has no region in hand to fall back on. */
+  copySelection(): Clip | null {
+    const sel = this.selection();
+    if (!sel) return null;
+    const cells = new Uint8Array(sel.w * sel.h);
+    const game = this.game();
+    for (let y = 0; y < sel.h; y++)
+      for (let x = 0; x < sel.w; x++) cells[y * sel.w + x] = game.getTile(sel.x + x, sel.y + y);
+    return { kind: 'tiles', w: sel.w, h: sel.h, cells };
+  }
+
+  pasteClip(clip: Clip): void {
+    const at = this.hoverCell() ?? this.selection() ?? { x: 0, y: 0 };
+    const game = this.game();
+    game.transact(() => {
+      for (let y = 0; y < clip.h; y++)
+        for (let x = 0; x < clip.w; x++) {
+          const tx = at.x + x;
+          const ty = at.y + y;
+          if (tx < MAP_WIDTH && ty < MAP_HEIGHT)
+            game.setTile(tx, ty, clip.cells[y * clip.w + x] ?? 0);
+        }
+    });
+    this.selection.set({ x: at.x, y: at.y, w: clip.w, h: clip.h });
   }
 
   /** Clears the selected tiles (Delete / Backspace). */

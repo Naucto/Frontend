@@ -32,6 +32,7 @@ import {
   type PresenceViewport,
 } from '@naucto/ui';
 
+import { type Clip } from '../state/clipboard.store';
 import { type Collaborator } from '../work-session/work-session.service';
 import { type ArtTool, type PixelRect, type SpriteRect } from './art.store';
 
@@ -504,6 +505,35 @@ export class SpriteCanvasComponent {
     this.hoverCell.set(null);
     this.hover.emit(null);
     this.pointer.emit(null);
+  }
+
+  /** Falls back to what a tool may reach, so copying the sprite in hand needs no selection. */
+  copySelection(): Clip {
+    const rect = this.selection() ?? this.bounds();
+    const cells = new Uint8Array(rect.w * rect.h);
+    const game = this.game();
+    for (let y = 0; y < rect.h; y++)
+      for (let x = 0; x < rect.w; x++)
+        cells[y * rect.w + x] = game.getPixel(rect.x + x, rect.y + y);
+    return { kind: 'pixels', w: rect.w, h: rect.h, cells };
+  }
+
+  /**
+   * The pointer decides where this lands, because aiming is what moving it is for. The selection is
+   * only the fallback for a pointer off the canvas: a copy leaves its own selection standing, so
+   * preferring it would put every paste back exactly where it came from.
+   */
+  pasteClip(clip: Clip): void {
+    const at = this.hoverCell() ?? this.selection() ?? { x: 0, y: 0 };
+    const game = this.game();
+    game.transact(() => {
+      for (let y = 0; y < clip.h; y++)
+        for (let x = 0; x < clip.w; x++) {
+          const p = { x: at.x + x, y: at.y + y };
+          if (this.inBounds(p)) game.setPixel(p.x, p.y, clip.cells[y * clip.w + x] ?? 0);
+        }
+    });
+    this.selection.set(clampRect({ x: at.x, y: at.y, w: clip.w, h: clip.h }, this.bounds()));
   }
 
   /** Clears the selected pixels (Delete / Backspace). */

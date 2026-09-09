@@ -39,6 +39,7 @@ import {
 } from '@naucto/ui';
 import * as Y from 'yjs';
 
+import { ClipboardStore } from '../state/clipboard.store';
 import { PANEL_WIDTH } from '../state/editor-ui.store';
 import { PresenceSurfaceComponent } from '../work-session/presence-surface.component';
 import { WorkSessionService } from '../work-session/work-session.service';
@@ -345,6 +346,7 @@ export class ArtTabPage {
   protected readonly PANEL_WIDTH = PANEL_WIDTH;
   protected readonly session = inject(WorkSessionService);
   protected readonly art = inject(ArtStore);
+  private readonly clipboard = inject(ClipboardStore);
   private readonly i18n = inject(TranslocoService);
   protected readonly painter = new SheetPainter(this.session.game);
   protected readonly undo: Y.UndoManager;
@@ -534,6 +536,10 @@ export class ArtTabPage {
       this.canvas()?.clearSelection();
       return;
     }
+    if (mod && this.transfer(e.key.toLowerCase())) {
+      e.preventDefault();
+      return;
+    }
     const tool = (
       {
         p: 'pen',
@@ -547,6 +553,35 @@ export class ArtTabPage {
       } as Record<string, ArtTool>
     )[e.key.toLowerCase()];
     if (tool && !mod) this.art.setTool(tool);
+  }
+
+  /**
+   * Copy falls back to the region when nothing is selected; cut does not. Without the crop or the
+   * lock that region is the whole sheet, and a keystroke that empties it has to have been aimed.
+   *
+   * The paste is bracketed because transactions landing close together merge into one undo step,
+   * and a paste has to be its own.
+   */
+  private transfer(key: string): boolean {
+    const canvas = this.canvas();
+    if (!canvas) return false;
+    if (key === 'c') {
+      this.clipboard.put(canvas.copySelection());
+      return true;
+    }
+    if (key === 'x') {
+      if (!this.art.selection()) return true;
+      this.clipboard.put(canvas.copySelection());
+      canvas.clearSelection();
+      return true;
+    }
+    if (key !== 'v') return false;
+    const clip = this.clipboard.take('pixels');
+    if (!clip) return true;
+    this.undo.stopCapturing();
+    canvas.pasteClip(clip);
+    this.undo.stopCapturing();
+    return true;
   }
 
   private drawPreview(): void {

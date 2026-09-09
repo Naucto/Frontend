@@ -3,6 +3,7 @@ import { type Routes } from '@angular/router';
 import { ArtStore } from './art/art.store';
 import { MapStore } from './map/map.store';
 import { SoundStore } from './sound/sound.store';
+import { ClipboardStore } from './state/clipboard.store';
 
 export const EDITOR_ROUTES: Routes = [
   {
@@ -16,7 +17,7 @@ export const EDITOR_ROUTES: Routes = [
      * the zoom, the tool in hand and the sprite being worked on. Provided here they live exactly as
      * long as the project is open, and are gone when it is closed.
      */
-    providers: [ArtStore, MapStore, SoundStore],
+    providers: [ArtStore, ClipboardStore, MapStore, SoundStore],
     children: [
       { path: '', redirectTo: 'game', pathMatch: 'full' },
       {

@@ -457,6 +457,80 @@ test.describe('editor', () => {
     await expect(sig.locator('[data-active]')).toHaveText('tile_x');
   });
 
+  /** A paste that merged with the stroke before it would take both back at once. */
+  test('ART copies a selection and pastes it as one undo step', async ({ page }) => {
+    await page.goto('/edit/7/art');
+    const canvas = page.getByRole('img', { name: 'Sprite canvas' });
+    await expect(canvas).toBeVisible();
+    const used = page.getByText(/\d+ \/ 256 used/);
+    await expect(used).toBeVisible();
+
+    // Off, or the paste below is clipped to the sprite in hand: the lock stops a paste where it
+    // stops a stroke.
+    await page.getByRole('switch', { name: 'Lock' }).click();
+
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('no canvas');
+    await page.mouse.move(box.x + 40, box.y + 40);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 90, box.y + 90, { steps: 6 });
+    await page.mouse.up();
+    const painted = await used.textContent();
+
+    await page.getByRole('radio', { name: 'Select' }).click();
+    await page.mouse.move(box.x + 30, box.y + 30);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 100, box.y + 100, { steps: 4 });
+    await page.mouse.up();
+    await page.keyboard.press('Control+c');
+
+    await page.mouse.move(box.x + 200, box.y + 160);
+    await page.keyboard.press('Control+v');
+    await expect(used).not.toHaveText(String(painted));
+    const pasted = await used.textContent();
+
+    await page.keyboard.press('Control+z');
+    await expect(used).toHaveText(String(painted));
+    expect(pasted).not.toBe(painted);
+  });
+
+  test('MAP copies a selection of tiles and pastes it as one undo step', async ({ page }) => {
+    await page.goto('/edit/7/map');
+    const canvas = page.getByRole('img', { name: 'Map canvas' });
+    await expect(canvas).toBeVisible();
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('no canvas');
+
+    /** The status line is the only reading of a single tile the page offers. */
+    const sprUnder = async (x: number, y: number): Promise<string> => {
+      await page.mouse.move(x, y);
+      const text = await page.getByText(/TILE \d+,\d+/).textContent();
+      return /SPR (\d+)/.exec(text ?? '')?.[1] ?? '';
+    };
+
+    await page.mouse.move(box.x + 60, box.y + 60);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 120, box.y + 100, { steps: 6 });
+    await page.mouse.up();
+    expect(await sprUnder(box.x + 90, box.y + 80)).not.toBe('000');
+
+    await page.getByRole('radio', { name: 'Select' }).click();
+    await page.mouse.move(box.x + 50, box.y + 50);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 130, box.y + 110, { steps: 4 });
+    await page.mouse.up();
+    await page.keyboard.press('Control+c');
+
+    // Out of the stamp's reach, so what turns up there can only be the paste.
+    const target = { x: box.x + 340, y: box.y + 220 };
+    expect(await sprUnder(target.x, target.y)).toBe('000');
+    await page.keyboard.press('Control+v');
+    await expect.poll(() => sprUnder(target.x, target.y)).not.toBe('000');
+
+    await page.keyboard.press('Control+z');
+    await expect.poll(() => sprUnder(target.x, target.y)).toBe('000');
+  });
+
   test('MAP tab stamps tiles', async ({ page }) => {
     await page.goto('/edit/7/map');
     const canvas = page.getByRole('img', { name: 'Map canvas' });

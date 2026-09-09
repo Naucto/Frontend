@@ -26,6 +26,7 @@ import {
 import * as Y from 'yjs';
 
 import { SheetViewComponent } from '../art/sheet-view.component';
+import { ClipboardStore } from '../state/clipboard.store';
 import { PANEL_WIDTH } from '../state/editor-ui.store';
 
 const MAP_ZOOM_OCTAVES = Math.log2(MAP_MAX_ZOOM / MAP_MIN_ZOOM);
@@ -245,6 +246,7 @@ export class MapTabPage {
   protected readonly PANEL_WIDTH = PANEL_WIDTH;
   protected readonly session = inject(WorkSessionService);
   protected readonly map = inject(MapStore);
+  private readonly clipboard = inject(ClipboardStore);
   private readonly i18n = inject(TranslocoService);
   protected readonly painter = new SheetPainter(this.session.game);
   protected readonly undo: Y.UndoManager;
@@ -347,9 +349,35 @@ export class MapTabPage {
       this.canvas()?.clearSelection();
       return;
     }
+    if (mod && this.transfer(e.key.toLowerCase())) {
+      e.preventDefault();
+      return;
+    }
     const tool = ({ s: 'stamp', f: 'fill', m: 'select', e: 'erase' } as Record<string, MapTool>)[
       e.key.toLowerCase()
     ];
     if (tool && !mod) this.map.setTool(tool);
+  }
+
+  /**
+   * All three want a selection, there being no region in hand to fall back on. The paste is
+   * bracketed because transactions landing close together merge into one undo step.
+   */
+  private transfer(key: string): boolean {
+    const canvas = this.canvas();
+    if (!canvas) return false;
+    if (key === 'c' || key === 'x') {
+      const clip = canvas.copySelection();
+      if (clip) this.clipboard.put(clip);
+      if (key === 'x' && clip) canvas.clearSelection();
+      return true;
+    }
+    if (key !== 'v') return false;
+    const clip = this.clipboard.take('tiles');
+    if (!clip) return true;
+    this.undo.stopCapturing();
+    canvas.pasteClip(clip);
+    this.undo.stopCapturing();
+    return true;
   }
 }
