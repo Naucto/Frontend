@@ -111,7 +111,12 @@ interface Drag {
         (pointerleave)="onLeave()"
         (contextmenu)="$event.preventDefault()"
       ></canvas>
-      <nc-presence-layer [marks]="marks()" [viewport]="viewPx()" />
+      <!-- Clipped to the drawn surface: a chip is half a chip wide past the point it marks, and
+           an absolute child hanging over the edge is scrollable overflow — which showed up as
+           scrollbars on a cropped canvas that fits its frame. -->
+      <div class="pointer-events-none absolute inset-0 overflow-hidden">
+        <nc-presence-layer [marks]="marks()" [viewport]="viewPx()" />
+      </div>
     </div>
   `,
   // `m-auto` on the content rather than `justify-center` on the host: centring a flex child that
@@ -249,23 +254,35 @@ export class SpriteCanvasComponent {
   // A drag that leaves the canvas still lands on the sheet, so cropping has to confine the tools
   // as well as the view. The smaller canvas alone does not.
   private readonly bounds = computed(() => toolBounds(this.region(), this.clip() || this.crop()));
+  /**
+   * Where the drawn surface starts, in drawn pixels. Cropped, the canvas holds the region alone
+   * and takes the region's corner as its own origin, so anything laid over it in sheet
+   * coordinates has to come back to that corner before it means anything.
+   */
+  private readonly originPx = computed(() => {
+    const s = this.scale();
+    const r = this.crop() ? this.regionPx() : { x: 0, y: 0 };
+    return { x: r.x * s, y: r.y * s };
+  });
   protected readonly marks = computed<PresenceMark[]>(() => {
     const s = this.scale();
+    const o = this.originPx();
     return this.collaborators()
       .filter((c) => !c.isSelf && c.cursor?.tab === 'art')
       .map((c) => ({
         id: c.clientId,
         name: c.name,
         colour: c.colour,
-        x: (c.cursor?.x ?? 0) * s,
-        y: (c.cursor?.y ?? 0) * s,
+        x: (c.cursor?.x ?? 0) * s - o.x,
+        y: (c.cursor?.y ?? 0) * s - o.y,
       }));
   });
   /** The same frame `view` reports, in the drawn pixels the marks are placed in. */
   protected readonly viewPx = computed<PresenceViewport>(() => {
     const v = this.view();
+    const o = this.originPx();
     const k = SPRITE_SIZE * this.scale();
-    return { x: v.x * k, y: v.y * k, w: v.w * k, h: v.h * k };
+    return { x: v.x * k - o.x, y: v.y * k - o.y, w: v.w * k, h: v.h * k };
   });
 
   constructor() {

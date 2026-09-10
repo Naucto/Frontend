@@ -372,7 +372,11 @@ export class GameScreenComponent {
     // Also fires when the viewer leaves fullscreen by Escape or the browser's own control, which
     // no click handler would see.
     const onFullscreenChange = (): void => {
-      this.isFullscreen.set(document.fullscreenElement === this.frame().nativeElement);
+      const mine = document.fullscreenElement === this.frame().nativeElement;
+      this.isFullscreen.set(mine);
+      // The click that asked for fullscreen left the keyboard on the button it came from, so a
+      // player who filled the screen and then pressed an arrow moved nothing.
+      if (mine) this.focus();
     };
     document.addEventListener('fullscreenchange', onFullscreenChange);
     inject(DestroyRef).onDestroy(() => {
