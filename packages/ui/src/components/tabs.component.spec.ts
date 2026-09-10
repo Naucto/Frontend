@@ -55,3 +55,25 @@ it('offers no trash on the last tab, since a list of none is nothing to choose f
 
   expect(screen.queryByRole('button', { name: 'Remove' })).toBeNull();
 });
+
+/**
+ * A strip has one line and never folds, so when it runs out of room it runs out sideways. The
+ * arrows are how somebody without a trackpad gesture reaches what has gone past the edge, and they
+ * only appear where there is something to reach.
+ */
+describe('TabsComponent, overflowing', () => {
+  it('offers no arrows while every tab is in view', async () => {
+    await render(TabsComponent, { inputs: { tabs, value: 'account' } });
+    expect(screen.queryByRole('button', { name: 'Earlier tabs' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Later tabs' })).toBeNull();
+  });
+
+  it('keeps what the owner hangs on the strip out of the part that scrolls', async () => {
+    await render(TabsComponent, { inputs: { tabs, value: 'account' } });
+    const list = screen.getByRole('tablist');
+    // The actions slot and the spacer are the strip's, not the tabs': inside the scroller they
+    // would slide away with them.
+    expect(list.querySelector('.flex-1')).toBeNull();
+    expect(list.className).toContain('overflow-x-auto');
+  });
+});

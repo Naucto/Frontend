@@ -912,6 +912,43 @@ test.describe('editor', () => {
     await expect.poll(head).toBeLessThan(running ?? 0);
   });
 
+  /**
+   * A strip is one line and never folds, so where it runs out of room it runs out sideways, and
+   * what went past the edge used to be unreachable to a pointer with no horizontal wheel. The
+   * console's own strip is the narrowest in the editor, which is why it is the one measured here.
+   */
+  test('a strip that runs past its edge can be walked with arrows', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/edit/7/code');
+    await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+
+    const console_ = page.locator('nc-console-column');
+    const strip = console_.getByRole('tablist');
+    await expect
+      .poll(() => strip.evaluate((el) => el.scrollWidth - el.clientWidth))
+      .toBeGreaterThan(1);
+
+    const later = console_.getByRole('button', { name: 'Later tabs' });
+    await expect(later).toBeVisible();
+    await expect(console_.getByRole('button', { name: 'Earlier tabs' })).toHaveCount(0);
+
+    await later.click();
+    await expect.poll(() => strip.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);
+    await expect(console_.getByRole('button', { name: 'Earlier tabs' })).toBeVisible();
+  });
+
+  /** The file strip fits at this width, so it says nothing about a scroll it does not need. */
+  test('a strip that fits offers no arrows', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/edit/7/code');
+    const files = page
+      .locator('nc-tabs')
+      .filter({ has: page.getByRole('tablist', { name: 'Files' }) });
+    await expect(files.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+    await expect(files.getByRole('button', { name: 'Later tabs' })).toHaveCount(0);
+    await expect(files.getByRole('button', { name: 'Earlier tabs' })).toHaveCount(0);
+  });
+
   test('the sound column reaches its last row on a short screen', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 700 });
     await page.goto('/edit/7/sound');

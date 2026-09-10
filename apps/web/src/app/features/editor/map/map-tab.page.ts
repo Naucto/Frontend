@@ -275,6 +275,18 @@ import { MinimapComponent } from './minimap.component';
             [label]="t('editor.map.maps')"
           >
             <span actions class="flex items-center gap-0.5">
+              <!-- First, because adding one is what you do to the strip; the sizes are
+                   what you do to the one that is chosen, so they come after it. -->
+              <button
+                ncButton
+                variant="ghost"
+                size="sm"
+                iconOnly
+                [attr.aria-label]="t('editor.map.addMap')"
+                (click)="addMap()"
+              >
+                <nc-icon name="plus" [size]="12" />
+              </button>
               <nc-number-field
                 size="sm"
                 [label]="t('editor.map.width')"
@@ -293,16 +305,6 @@ import { MinimapComponent } from './minimap.component';
                 [step]="1"
                 (requested)="resizeMap(mapW(), $event)"
               />
-              <button
-                ncButton
-                variant="ghost"
-                size="sm"
-                iconOnly
-                [attr.aria-label]="t('editor.map.addMap')"
-                (click)="addMap()"
-              >
-                <nc-icon name="plus" [size]="12" />
-              </button>
             </span>
           </nc-tabs>
           <nc-minimap

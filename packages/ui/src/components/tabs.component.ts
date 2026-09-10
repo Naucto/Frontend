@@ -2,6 +2,7 @@ import type { CdkDragDrop } from '@angular/cdk/drag-drop';
 import { CdkDrag, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
 import type { ElementRef } from '@angular/core';
 import {
+  afterRenderEffect,
   booleanAttribute,
   ChangeDetectionStrategy,
   Component,
@@ -10,6 +11,8 @@ import {
   input,
   model,
   output,
+  signal,
+  viewChild,
   viewChildren,
 } from '@angular/core';
 
@@ -30,11 +33,17 @@ export interface TabItem<T extends string> {
 /** Which strip this is; the design draws them quite differently. */
 export type TabsVariant = 'panel' | 'console' | 'small' | 'bar';
 
-const VARIANT: Record<TabsVariant, { list: string; item: string; icon: 12 | 24 }> = {
+/**
+ * `frame` dresses the strip as a whole — its rule, its height, its ground — and `list` dresses the
+ * run of tabs inside it, which is the part that scrolls. Anything that must stay put when the tabs
+ * slide belongs to the frame.
+ */
+const VARIANT: Record<TabsVariant, { frame: string; list: string; item: string; icon: 12 | 24 }> = {
   // Settings and other page-level strips: the UI face, inset from the edge, and the active tab
   // marked in ink. Gold is a primary action here, not a selection.
   panel: {
-    list: 'border-b border-line gap-[6px] px-2.75',
+    frame: 'border-b border-line',
+    list: 'gap-[6px] px-2.75',
     item: [
       '-mb-px flex items-center gap-1 border-b-2 border-transparent px-1.5 pt-1 pb-1.25',
       'font-ui text-meta uppercase tracking-tag text-ink-3 transition-colors hover:text-ink',
@@ -46,6 +55,7 @@ const VARIANT: Record<TabsVariant, { list: string; item: string; icon: 12 | 24 }
   // reads as the top of a second box rather than as the edge of this one. Gold rather than ink,
   // because here the selection *is* what everything below it is about.
   small: {
+    frame: '',
     list: 'gap-px',
     item: [
       '-mb-px flex h-2.5 min-w-0 shrink items-center gap-0.5 border-b-2 border-transparent px-1',
@@ -61,7 +71,8 @@ const VARIANT: Record<TabsVariant, { list: string; item: string; icon: 12 | 24 }
   },
   // A bar of its own, full height, where the tabs are the primary subject of the screen below.
   bar: {
-    list: 'h-(--nc-bar-h) items-stretch border-b border-line bg-panel',
+    frame: 'h-(--nc-bar-h) border-b border-line bg-panel',
+    list: 'items-stretch',
     item: [
       'flex shrink-0 items-center gap-1 border-t-2 border-r border-r-line border-t-transparent px-[15px]',
       'font-ui text-body tracking-copy text-ink-3 transition-colors hover:text-ink',
@@ -71,7 +82,8 @@ const VARIANT: Record<TabsVariant, { list: string; item: string; icon: 12 | 24 }
   },
   // The editor console: mono, full-bleed in its column, and jade — the colour the machine talks in.
   console: {
-    list: 'border-b border-line',
+    frame: 'border-b border-line',
+    list: '',
     item: [
       '-mb-px flex h-4 items-center gap-1 border-b-2 border-transparent px-[14px]',
       'font-mono text-meta uppercase tracking-strip text-ink-3 transition-colors hover:text-ink',
@@ -95,67 +107,95 @@ const VARIANT: Record<TabsVariant, { list: string; item: string; icon: 12 | 24 }
   selector: 'nc-tabs',
   imports: [IconComponent, CdkDrag, CdkDropList],
   template: `
-    <div
-      role="tablist"
-      [attr.aria-label]="label()"
-      class="flex items-center"
-      [class]="listClass()"
-      cdkDropList
-      cdkDropListOrientation="horizontal"
-      [cdkDropListDisabled]="!reorderable()"
-      (cdkDropListDropped)="dropped($event)"
-    >
-      @for (t of tabs(); track t.value; let i = $index) {
-        <div
-          #tab
-          cdkDrag
-          [cdkDragDisabled]="!reorderable()"
-          role="tab"
-          [attr.aria-selected]="t.value === value()"
-          [attr.aria-label]="t.label"
-          [attr.tabindex]="t.value === value() ? 0 : -1"
-          [attr.data-index]="i"
-          class="group cursor-pointer"
-          [class]="itemClass()"
-          (click)="value.set(t.value)"
-          (dblclick)="edit.emit(t.value)"
-          (keydown)="onKey($event)"
+    <div class="flex items-center" [class]="frameClass()">
+      <!-- Shown only where there is something to reach: a strip that fits has nowhere to go, and a
+           pair of dead arrows on either end of it is two more things to read. -->
+      @if (canScrollBack()) {
+        <button
+          type="button"
+          class="flex h-full shrink-0 items-center px-0.5 text-ink-3 hover:text-ink"
+          [attr.aria-label]="backLabel()"
+          (click)="page(-1)"
         >
-          @if (t.icon) {
-            <nc-icon [name]="t.icon" [size]="iconSize()" />
-          }
-          @if (t.colour) {
-            <span class="size-1 shrink-0 rounded-xs" [style.background]="t.colour"></span>
-          }
-          @if (t.index !== undefined) {
-            <span class="text-ink-4">{{ t.index }}</span>
-          }
-          {{ t.label }}
-          @if (t.badge !== undefined) {
-            <span class="rounded-xs bg-raised px-0.5 text-label text-ink-2">{{ t.badge }}</span>
-          }
-          @if (editable()) {
-            <button
-              type="button"
-              class="hidden shrink-0 text-ink-4 group-hover:inline-flex hover:text-ink"
-              [attr.aria-label]="editLabel()"
-              (click)="act(edit, t.value, $event)"
-            >
-              <nc-icon name="edit" [size]="iconSize()" />
-            </button>
-          }
-          @if (removable() && tabs().length > 1) {
-            <button
-              type="button"
-              class="hidden shrink-0 text-ink-4 group-hover:inline-flex hover:text-hot-ink"
-              [attr.aria-label]="removeLabel()"
-              (click)="act(remove, t.value, $event)"
-            >
-              <nc-icon name="trash" [size]="iconSize()" />
-            </button>
-          }
-        </div>
+          <nc-icon name="chevron-left" [size]="12" />
+        </button>
       }
+      <div
+        #scroller
+        role="tablist"
+        [attr.aria-label]="label()"
+        class="flex min-w-0 flex-1 items-center overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        [class]="listClass()"
+        cdkDropList
+        cdkDropListOrientation="horizontal"
+        [cdkDropListDisabled]="!reorderable()"
+        (cdkDropListDropped)="dropped($event)"
+        (scroll)="measure()"
+      >
+        @for (t of tabs(); track t.value; let i = $index) {
+          <div
+            #tab
+            cdkDrag
+            [cdkDragDisabled]="!reorderable()"
+            role="tab"
+            [attr.aria-selected]="t.value === value()"
+            [attr.aria-label]="t.label"
+            [attr.tabindex]="t.value === value() ? 0 : -1"
+            [attr.data-index]="i"
+            class="group cursor-pointer"
+            [class]="itemClass()"
+            (click)="value.set(t.value)"
+            (dblclick)="edit.emit(t.value)"
+            (keydown)="onKey($event)"
+          >
+            @if (t.icon) {
+              <nc-icon [name]="t.icon" [size]="iconSize()" />
+            }
+            @if (t.colour) {
+              <span class="size-1 shrink-0 rounded-xs" [style.background]="t.colour"></span>
+            }
+            @if (t.index !== undefined) {
+              <span class="text-ink-4">{{ t.index }}</span>
+            }
+            {{ t.label }}
+            @if (t.badge !== undefined) {
+              <span class="rounded-xs bg-raised px-0.5 text-label text-ink-2">{{ t.badge }}</span>
+            }
+            @if (editable()) {
+              <button
+                type="button"
+                class="hidden shrink-0 text-ink-4 group-hover:inline-flex hover:text-ink"
+                [attr.aria-label]="editLabel()"
+                (click)="act(edit, t.value, $event)"
+              >
+                <nc-icon name="edit" [size]="iconSize()" />
+              </button>
+            }
+            @if (removable() && tabs().length > 1) {
+              <button
+                type="button"
+                class="hidden shrink-0 text-ink-4 group-hover:inline-flex hover:text-hot-ink"
+                [attr.aria-label]="removeLabel()"
+                (click)="act(remove, t.value, $event)"
+              >
+                <nc-icon name="trash" [size]="iconSize()" />
+              </button>
+            }
+          </div>
+        }
+      </div>
+      @if (canScrollOn()) {
+        <button
+          type="button"
+          class="flex h-full shrink-0 items-center px-0.5 text-ink-3 hover:text-ink"
+          [attr.aria-label]="onLabel()"
+          (click)="page(1)"
+        >
+          <nc-icon name="chevron-right" [size]="12" />
+        </button>
+      }
+      <!-- Outside the scroller: what the owner hangs here belongs to the strip, not to the tabs,
+           and inside it it would slide away with them. -->
       <span class="flex-1"></span>
       <ng-content select="[actions]" />
     </div>
@@ -176,6 +216,8 @@ export class TabsComponent<T extends string = string> {
   readonly reorderable = input(false, { transform: booleanAttribute });
   readonly editLabel = input('Rename');
   readonly removeLabel = input('Remove');
+  readonly backLabel = input('Earlier tabs');
+  readonly onLabel = input('Later tabs');
 
   /** Renaming or configuring a tab: a double-click, or the pencil. */
   readonly edit = output<T>();
@@ -184,10 +226,17 @@ export class TabsComponent<T extends string = string> {
   readonly reorder = output<T[]>();
 
   private readonly tabEls = viewChildren<ElementRef<HTMLElement>>('tab');
+  private readonly scroller = viewChild<ElementRef<HTMLElement>>('scroller');
 
+  protected readonly frameClass = computed(() => VARIANT[this.variant()].frame);
   protected readonly listClass = computed(() => VARIANT[this.variant()].list);
   protected readonly itemClass = computed(() => VARIANT[this.variant()].item);
   protected readonly iconSize = computed(() => VARIANT[this.variant()].icon);
+  /** How far the run of tabs is scrolled, and how far it could be. Measured, not derived. */
+  private readonly scrolled = signal(0);
+  private readonly overflow = signal(0);
+  protected readonly canScrollBack = computed(() => this.scrolled() > 1);
+  protected readonly canScrollOn = computed(() => this.scrolled() < this.overflow() - 1);
 
   constructor() {
     // A tab chosen from somewhere else — a keyboard shortcut, a freshly added one — may be off the
@@ -197,6 +246,39 @@ export class TabsComponent<T extends string = string> {
       // Called through an optional: a test environment has no layout and does not implement it.
       this.tabEls()[at]?.nativeElement.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
     });
+    // The strip runs out of room for two reasons — a tab was added, or the window narrowed — and
+    // only one of them is a change to anything this component holds. The window is the observer's;
+    // the tabs are read after the render that draws them, because measuring before it reports the
+    // layout the strip had a moment ago.
+    afterRenderEffect(() => {
+      this.tabs();
+      this.variant();
+      this.measure();
+    });
+    effect((onCleanup) => {
+      const box = this.scroller()?.nativeElement;
+      if (!box || typeof ResizeObserver === 'undefined') return;
+      const watch = new ResizeObserver(() => {
+        this.measure();
+      });
+      watch.observe(box);
+      onCleanup(() => {
+        watch.disconnect();
+      });
+    });
+  }
+
+  protected measure(): void {
+    const box = this.scroller()?.nativeElement;
+    if (!box) return;
+    this.scrolled.set(box.scrollLeft);
+    this.overflow.set(box.scrollWidth - box.clientWidth);
+  }
+
+  /** A screenful at a time, which is the move somebody clicking an arrow is asking for. */
+  protected page(direction: number): void {
+    const box = this.scroller()?.nativeElement;
+    box?.scrollBy?.({ left: direction * box.clientWidth, behavior: 'smooth' });
   }
 
   /** A tab's own button, without also choosing the tab it sits on. */
