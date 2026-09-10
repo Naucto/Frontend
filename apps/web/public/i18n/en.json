@@ -276,8 +276,8 @@
   },
   "editor": {
     "size": {
-      "width": "W",
-      "height": "H",
+      "width": "Width",
+      "height": "Height",
       "cancel": "Cancel"
     },
     "inSession": "In this work session",
@@ -423,7 +423,7 @@
       "sheetWidth": "W",
       "sheetHeight": "H",
       "sheetSize": "Sheet size",
-      "renumberMessage": "Sprite numbers run across the sheet row by row, so changing its width gives every cell a different number — and shifts every sheet after this one. Your map tiles and the calls in your code are brought along.",
+      "renumberMessage": "Changing the width renumbers every sprite. Your map tiles and the calls in your code are rewritten to match.",
       "renumberTiles": "{{n}} map tiles follow.",
       "renumberCalls": "{{n}} calls in your code are rewritten.",
       "renumberUnsure": "{{n}} calls name a sprite with something other than a plain number, so nothing can follow those — check them yourself.",
@@ -476,7 +476,7 @@
       "width": "W",
       "height": "H",
       "mapSize": "Map size",
-      "sizeNote": "A map is a grid of positions, so this changes how much grid there is and renumbers nothing. Anything outside the new size stays in the file and comes back if you grow it again.",
+      "sizeNote": "Tiles keep their place, so nothing is renumbered and no code is rewritten.",
       "shrinkTitle": "Shrink the map?",
       "shrinkMessage": "{{n}} placed tiles fall outside a map that size. They stay in the file and come back if you grow it again, but nothing can reach them meanwhile.",
       "shrinkConfirm": "Shrink",

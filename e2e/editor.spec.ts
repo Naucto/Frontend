@@ -992,7 +992,7 @@ test.describe('editor', () => {
     await page.getByRole('button', { name: 'Sheet size' }).click();
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
-    const width = dialog.getByRole('textbox', { name: 'W' });
+    const width = dialog.getByRole('textbox', { name: 'Width' });
     await expect(width).toHaveValue('128');
     await expect(dialog.getByRole('button', { name: 'Renumber' })).toBeDisabled();
 
@@ -1005,7 +1005,9 @@ test.describe('editor', () => {
     await expect(dialog).toHaveCount(0);
 
     await page.getByRole('button', { name: 'Sheet size' }).click();
-    await expect(page.getByRole('dialog').getByRole('textbox', { name: 'W' })).toHaveValue('192');
+    await expect(page.getByRole('dialog').getByRole('textbox', { name: 'Width' })).toHaveValue(
+      '192',
+    );
   });
 
   /**
