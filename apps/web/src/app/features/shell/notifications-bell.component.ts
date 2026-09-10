@@ -117,6 +117,9 @@ export class NotificationsBellComponent {
    * The kinds the server actually sends: a friend request and its acceptance both put the answer
    * on the friends page, being added to a project opens that project's editor, and a session
    * invite arrives as GENERIC carrying the project it is a session of.
+   *
+   * Being removed from one leads nowhere on purpose — the editor it would open is the one door
+   * that just closed, and the notification is the whole of the news.
    */
   private destinationOf(n: NotificationItem): string[] | null {
     const projectId = n.data?.projectId;
@@ -126,6 +129,8 @@ export class NotificationsBellComponent {
         return ['/friends'];
       case 'COLLABORATOR_ADDED':
         return typeof projectId === 'number' ? ['/edit', String(projectId)] : null;
+      case 'COLLABORATOR_REMOVED':
+        return null;
       default:
         return typeof projectId === 'number' ? ['/play', String(projectId)] : null;
     }

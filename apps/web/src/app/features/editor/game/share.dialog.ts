@@ -4,7 +4,7 @@ import { unwrap } from '@app/core/api/api-errors';
 import { PersonSearchComponent } from '@app/shared/person-search.component';
 import type { PersonHit } from '@app/shared/queries/search.queries';
 import { UserAvatarComponent } from '@app/shared/user-avatar.component';
-import { TranslocoDirective } from '@jsverse/transloco';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import {
   projectControllerAddCollaborator,
   projectControllerRemoveCollaborator,
@@ -50,7 +50,7 @@ export async function addCollaborator(projectId: number, handle: string): Promis
             }
             <span class="flex-1"></span>
             @if (!c.isCreator && isCreator()) {
-              <button ncButton variant="ghost" size="sm" (click)="remove(c.id)">
+              <button ncButton variant="ghost" size="sm" (click)="remove(c)">
                 {{ t('share.remove') }}
               </button>
             }
@@ -80,6 +80,7 @@ export class ShareDialogComponent {
   protected readonly data = inject<{ session: WorkSessionService }>(DIALOG_DATA);
   protected readonly ref = inject(DialogRef);
   private readonly toasts = inject(ToastService);
+  private readonly transloco = inject(TranslocoService);
 
   /**
    * The project's collaborators, not the session's.
@@ -111,25 +112,40 @@ export class ShareDialogComponent {
     try {
       await addCollaborator(this.data.session.id, person.username);
       await this.data.session.refreshProject();
-      this.toasts.show(`Invited ${person.username}`, 'success');
+      this.toasts.show(
+        this.transloco.translate('share.invited', { name: person.username }),
+        'success',
+      );
     } catch (e: unknown) {
       // The server distinguishes no such user from already a collaborator from not your project,
       // and one generic sentence made all three read as the same mystery.
-      this.toasts.show(e instanceof Error ? e.message : 'Could not invite that person', 'error');
+      this.toasts.show(
+        e instanceof Error ? e.message : this.transloco.translate('share.inviteFailed'),
+        'error',
+      );
     }
   }
 
-  protected async remove(userId: number): Promise<void> {
+  protected async remove(person: { id: number; username: string }): Promise<void> {
     try {
       unwrap(
         await projectControllerRemoveCollaborator({
           path: { id: this.data.session.id },
-          body: { userId },
+          body: { userId: person.id },
         }),
       );
       await this.data.session.refreshProject();
+      // Said out loud, like the invitation: the row leaving the list is the only other sign, and
+      // a list that was two rows long now just looks like a list.
+      this.toasts.show(
+        this.transloco.translate('share.removed', { name: person.username }),
+        'success',
+      );
     } catch (e: unknown) {
-      this.toasts.show(e instanceof Error ? e.message : 'Could not remove that person', 'error');
+      this.toasts.show(
+        e instanceof Error ? e.message : this.transloco.translate('share.removeFailed'),
+        'error',
+      );
     }
   }
 }

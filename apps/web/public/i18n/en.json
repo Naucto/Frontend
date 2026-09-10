@@ -194,7 +194,11 @@
     "remove": "Remove",
     "justYou": "Just you so far.",
     "creatorOnly": "Only the creator can add or remove collaborators.",
-    "done": "Done"
+    "done": "Done",
+    "invited": "Invited {{name}}",
+    "inviteFailed": "Could not invite that person.",
+    "removed": "Removed {{name}}",
+    "removeFailed": "Could not remove that person."
   },
   "footer": {
     "tagline": "A browser fantasy console. Make tiny Lua games together and play them with friends.",

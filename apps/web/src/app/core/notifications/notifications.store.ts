@@ -26,7 +26,12 @@ import { AppConfigService } from '../config/app-config';
  * server's enum and nothing sends it yet.
  */
 export type NotificationKind =
-  'GENERIC' | 'FRIEND_REQUEST' | 'FRIEND_ACCEPTED' | 'FEATURED' | 'COLLABORATOR_ADDED';
+  | 'GENERIC'
+  | 'FRIEND_REQUEST'
+  | 'FRIEND_ACCEPTED'
+  | 'FEATURED'
+  | 'COLLABORATOR_ADDED'
+  | 'COLLABORATOR_REMOVED';
 
 export interface NotificationItem {
   /** A string on the wire, and it was declared a number here: the two never met, so nothing broke. */
