@@ -9,6 +9,7 @@ import {
   DEFAULT_PLAYER_SPRITE_INDICES,
   DEFAULT_SPRITE_COLOUR,
 } from './defaults';
+import { GameMap } from './GameMap';
 import {
   clampMapSize,
   clampSheetSize,
@@ -17,6 +18,8 @@ import {
   readGeometry,
 } from './geometry';
 import {
+  FIRST_MAP_ID,
+  FIRST_SHEET_ID,
   GAME_SCHEMA_VERSION,
   KEYS,
   MAIN_FILE,
@@ -24,6 +27,7 @@ import {
   PALETTE_SIZE,
   SPRITE_SIZE,
 } from './keys';
+import { Sheet } from './Sheet';
 
 export interface PixelChange {
   x: number;
@@ -103,6 +107,27 @@ function replaceText(target: Y.Text, wanted: string): void {
   if (added) target.insert(head, added);
 }
 
+interface SheetMirror {
+  pixels: Uint8Array;
+  flags: Uint8Array;
+}
+
+/** What the first sheet and the first map are called before anybody renames them. */
+const MAIN_SHEET = 'sheet 1';
+const MAIN_MAP = 'map 1';
+
+function numberOf(entry: Y.Map<unknown>, key: string, fallback: number): number {
+  const v = entry.get(key);
+
+  return typeof v === 'number' && Number.isFinite(v) ? v : fallback;
+}
+
+function stringOf(entry: Y.Map<unknown>, key: string, fallback: string): string {
+  const v = entry.get(key);
+
+  return typeof v === 'string' ? v : fallback;
+}
+
 /**
  * Typed, observable access to a game document (Yjs). Materialises the sprite
  * sheet, flags and tile map as typed arrays kept in sync from Yjs events so the
@@ -117,6 +142,14 @@ export class Game {
   readonly spritesMap: Y.Map<number>;
   readonly flagsMap: Y.Map<number>;
   readonly tilesMap: Y.Map<number>;
+  /**
+   * The sheets and the maps a game has, beyond the first of each.
+   *
+   * The first entry of either names the content already under `gfx.sprites`, `gfx.flags` and
+   * `map.tiles` rather than holding its own -- see {@link FIRST_SHEET_ID}.
+   */
+  readonly sheetsMap: Y.Map<Y.Map<unknown>>;
+  readonly mapsMap: Y.Map<Y.Map<unknown>>;
   readonly instruments: Y.Map<string>;
   readonly patterns: Y.Map<string>;
   readonly sfx: Y.Map<string>;
@@ -143,6 +176,8 @@ export class Game {
 
   private _geometry: Geometry;
   private readonly geometryListeners = new Set<() => void>();
+  private readonly sheetMirrors = new Map<string, SheetMirror>();
+  private readonly mapMirrors = new Map<string, Uint16Array>();
 
   private readonly pixelListeners = new Set<(changes: PixelChange[]) => void>();
   private readonly tileListeners = new Set<(changes: TileChange[]) => void>();
@@ -158,6 +193,8 @@ export class Game {
     this.spritesMap = doc.getMap(KEYS.sprites);
     this.flagsMap = doc.getMap(KEYS.flags);
     this.tilesMap = doc.getMap(KEYS.tiles);
+    this.sheetsMap = doc.getMap(KEYS.sheets);
+    this.mapsMap = doc.getMap(KEYS.maps);
     this.instruments = doc.getMap(KEYS.instruments);
     this.patterns = doc.getMap(KEYS.patterns);
     this.sfx = doc.getMap(KEYS.sfx);
@@ -223,6 +260,145 @@ export class Game {
         l();
       });
     });
+  }
+
+  // ---- sheets and maps ------------------------------------------------------
+
+  /** Entries of a collection, sorted the way code files are: by order, then by name. */
+  private orderedEntries(from: Y.Map<Y.Map<unknown>>): [string, Y.Map<unknown>][] {
+    const out: [string, Y.Map<unknown>][] = [];
+    from.forEach((entry, id) => {
+      out.push([id, entry]);
+    });
+
+    return out.sort(
+      (a, b) => numberOf(a[1], 'order', 0) - numberOf(b[1], 'order', 0) || a[0].localeCompare(b[0]),
+    );
+  }
+
+  /**
+   * The live pixel and flag mirrors of one sheet, made on first ask and reshaped when it resizes.
+   *
+   * The first sheet's are the game's own, because its content never moved out of the roots it has
+   * always lived in.
+   */
+  private sheetMirror(id: string, width: number, height: number): SheetMirror {
+    if (id === FIRST_SHEET_ID) return { pixels: this.sheet, flags: this.flags };
+    const held = this.sheetMirrors.get(id);
+    const count = (width / SPRITE_SIZE) * (height / SPRITE_SIZE);
+    if (held?.pixels.length === width * height) return held;
+
+    const made: SheetMirror = {
+      pixels: new Uint8Array(width * height),
+      flags: new Uint8Array(count),
+    };
+    const entry = this.sheetsMap.get(id);
+    const pixels = entry?.get('pixels');
+    if (pixels instanceof Y.Map)
+      (pixels as Y.Map<number>).forEach((v, k) => {
+        const [x, y] = parseCoord(k);
+        if (x >= 0 && x < width && y >= 0 && y < height) made.pixels[y * width + x] = v & 0xf;
+      });
+    const flags = entry?.get('flags');
+    if (flags instanceof Y.Map)
+      (flags as Y.Map<number>).forEach((v, k) => {
+        const i = Number(k);
+        if (i >= 0 && i < count) made.flags[i] = v & 0xff;
+      });
+    this.sheetMirrors.set(id, made);
+
+    return made;
+  }
+
+  private mapMirror(id: string, width: number, height: number): Uint16Array {
+    if (id === FIRST_MAP_ID) return this.tiles;
+    const held = this.mapMirrors.get(id);
+    if (held?.length === width * height) return held;
+
+    const made = new Uint16Array(width * height);
+    const tiles = this.mapsMap.get(id)?.get('tiles');
+    if (tiles instanceof Y.Map)
+      (tiles as Y.Map<number>).forEach((v, k) => {
+        const [x, y] = parseCoord(k);
+        if (x >= 0 && x < width && y >= 0 && y < height) made[y * width + x] = v & 0xffff;
+      });
+    this.mapMirrors.set(id, made);
+
+    return made;
+  }
+
+  /**
+   * Every sheet, in order, with its sprite numbers already worked out.
+   *
+   * A document that names none is a game from before a game could have several: it has exactly the
+   * one sheet, at the size its geometry records, and this says so rather than making the callers
+   * check.
+   */
+  get sheets(): Sheet[] {
+    const { sheetWidth, sheetHeight } = this._geometry;
+    const entries = this.orderedEntries(this.sheetsMap);
+    if (entries.length === 0)
+      return [
+        new Sheet(
+          FIRST_SHEET_ID,
+          MAIN_SHEET,
+          0,
+          sheetWidth,
+          sheetHeight,
+          0,
+          this.sheet,
+          this.flags,
+        ),
+      ];
+
+    let base = 0;
+    return entries.map(([id, e], i) => {
+      const width = clampSheetSize(numberOf(e, 'w', sheetWidth));
+      const height = clampSheetSize(numberOf(e, 'h', sheetHeight));
+      const mirror = this.sheetMirror(id, width, height);
+      const sheet = new Sheet(
+        id,
+        stringOf(e, 'name', id),
+        numberOf(e, 'order', i),
+        width,
+        height,
+        base,
+        mirror.pixels,
+        mirror.flags,
+      );
+      base += sheet.count;
+      return sheet;
+    });
+  }
+
+  get maps(): GameMap[] {
+    const { mapWidth, mapHeight } = this._geometry;
+    const entries = this.orderedEntries(this.mapsMap);
+    if (entries.length === 0)
+      return [new GameMap(FIRST_MAP_ID, MAIN_MAP, 0, mapWidth, mapHeight, this.tiles)];
+
+    return entries.map(([id, e], i) => {
+      const width = clampMapSize(numberOf(e, 'w', mapWidth));
+      const height = clampMapSize(numberOf(e, 'h', mapHeight));
+      return new GameMap(
+        id,
+        stringOf(e, 'name', id),
+        numberOf(e, 'order', i),
+        width,
+        height,
+        this.mapMirror(id, width, height),
+      );
+    });
+  }
+
+  /** Which sheet answers to a sprite number, or nothing where the number names no cell. */
+  sheetOf(sprite: number): Sheet | undefined {
+    return this.sheets.find((s) => s.holds(sprite));
+  }
+
+  /** One past the highest sprite number any sheet claims. */
+  get spriteTotal(): number {
+    return this.sheets.reduce((n, s) => n + s.count, 0);
   }
 
   // ---- geometry -------------------------------------------------------------
@@ -403,27 +579,23 @@ export class Game {
   }
 
   /**
-   * Where a sprite number starts on the sheet.
+   * Where a sprite number starts, on the sheet that answers to it.
    *
    * The one authority on how a number becomes a position: the renderer and both editors used to
-   * each carry their own copy of this arithmetic, and a sheet whose width is no longer a constant
-   * makes four copies four chances to disagree.
+   * each carry their own copy of this arithmetic, and four copies are four chances to disagree the
+   * day a number no longer names a place on one fixed sheet.
+   *
+   * A number no sheet claims lands at the origin of the first, which is what every caller did with
+   * an out-of-range number before there was anywhere else for one to be.
    */
   spriteOrigin(index: number): { x: number; y: number } {
-    const { spritesPerRow } = this._geometry;
-    return {
-      x: (index % spritesPerRow) * SPRITE_SIZE,
-      y: Math.floor(index / spritesPerRow) * SPRITE_SIZE,
-    };
+    const sheet = this.sheetOf(index);
+
+    return sheet ? sheet.originOf(index) : { x: 0, y: 0 };
   }
 
   isSpriteEmpty(index: number): boolean {
-    const { x: ox, y: oy } = this.spriteOrigin(index);
-    const { sheetWidth } = this._geometry;
-    for (let y = 0; y < SPRITE_SIZE; y++)
-      for (let x = 0; x < SPRITE_SIZE; x++)
-        if (this.sheet[(oy + y) * sheetWidth + ox + x] !== 0) return false;
-    return true;
+    return this.sheetOf(index)?.isEmpty(index) ?? true;
   }
 
   // ---- flags ----------------------------------------------------------------

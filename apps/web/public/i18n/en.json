@@ -384,6 +384,7 @@
     "swapToReference": "Swap to the reference",
     "popOut": "Pop the viewer out",
     "cannotOpen": "This project would not open",
+    "tooNew": "This game was saved by a newer version of Naucto. Reload the page to get it; until then, opening the game here could lose part of it.",
     "viewer": "Viewer",
     "closeViewer": "Close the viewer",
     "showViewer": "Viewer",

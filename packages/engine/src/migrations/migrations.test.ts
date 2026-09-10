@@ -5,7 +5,7 @@ import { PICO8_PALETTE } from '../game/defaults';
 import { Game } from '../game/Game';
 import { KEYS, LEGACY_KEYS } from '../game/keys';
 import { GAME_SCHEMA_VERSION } from '../game/keys';
-import { migrateGame, needsMigration, schemaVersionOf } from './index';
+import { isFromFutureSchema, migrateGame, needsMigration, schemaVersionOf } from './index';
 import type { MigrationReport } from './types';
 import { computeCodeSplices } from './v0_to_v1/code';
 
@@ -148,5 +148,28 @@ describe('schemaVersionOf', () => {
     doc.getMap(KEYS.meta).set('schemaVersion', GAME_SCHEMA_VERSION - 1);
 
     expect(needsMigration(doc)).toBe(true);
+  });
+});
+
+describe('a document from a newer build', () => {
+  /**
+   * The one case nothing can recover from: there is no migration backwards, so a reader that went
+   * ahead would show a game with pieces missing and — as the host, which saves on open — write that
+   * reading back over the whole.
+   */
+  it('is refused rather than half-read', () => {
+    const doc = new Y.Doc();
+    doc.getMap(KEYS.meta).set('schemaVersion', GAME_SCHEMA_VERSION + 1);
+
+    expect(isFromFutureSchema(doc)).toBe(true);
+    expect(needsMigration(doc)).toBe(false);
+    expect(migrateGame(doc).applied).toBe(false);
+  });
+
+  it('does not mistake the current schema for a newer one', () => {
+    const doc = new Y.Doc();
+    doc.getMap(KEYS.meta).set('schemaVersion', GAME_SCHEMA_VERSION);
+
+    expect(isFromFutureSchema(doc)).toBe(false);
   });
 });

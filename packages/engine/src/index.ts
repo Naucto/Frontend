@@ -29,11 +29,14 @@ export { ConsoleBuffer, type ConsoleEntry, type ConsoleEvent } from './loop/Cons
 export { GameLoop, type LoopDriver, STEP_MS } from './loop/GameLoop';
 export { Stats } from './loop/Stats';
 export {
+  isFromFutureSchema,
   migrateGame,
   MIGRATION_ORIGIN,
   type MigrationReport,
+  type MigrationStep,
   type MigrationWarning,
   needsMigration,
+  schemaVersionOf,
 } from './migrations';
 export type { InboundFrame, OutboundFrame } from './net/frames';
 export { ALLOW_ALL, type NetPermissions } from './net/NetPermissions';

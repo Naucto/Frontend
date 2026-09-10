@@ -3,6 +3,7 @@ import { unwrap } from '@app/core/api/api-errors';
 import { AuthStore } from '@app/core/auth/auth.store';
 import { AppConfigService } from '@app/core/config/app-config';
 import { qk } from '@app/shared/queries/query-keys';
+import { TranslocoService } from '@jsverse/transloco';
 import {
   projectControllerFetchProjectContent,
   projectControllerFindOne,
@@ -14,7 +15,14 @@ import {
   workSessionControllerKick,
   workSessionControllerLeave,
 } from '@naucto/api-client';
-import { Game, LOCAL_ORIGIN, migrateGame, needsMigration } from '@naucto/engine';
+import {
+  Game,
+  GAME_SCHEMA_VERSION,
+  isFromFutureSchema,
+  LOCAL_ORIGIN,
+  migrateGame,
+  needsMigration,
+} from '@naucto/engine';
 import type { PresenceColour } from '@naucto/ui';
 import { QueryClient } from '@tanstack/angular-query-experimental';
 import type { Awareness } from 'y-protocols/awareness';
@@ -69,6 +77,7 @@ export class WorkSessionService {
   private readonly auth = inject(AuthStore);
   private readonly config = inject(AppConfigService);
   private readonly queries = inject(QueryClient);
+  private readonly i18n = inject(TranslocoService);
   readonly doc = new Y.Doc();
   readonly game = new Game(this.doc);
 
@@ -160,6 +169,7 @@ export class WorkSessionService {
       if (blob && blob.size > 0)
         Y.applyUpdate(this.doc, new Uint8Array(await blob.arrayBuffer()), 'remote-init');
 
+      if (isFromFutureSchema(this.doc)) throw new Error(this.i18n.translate('editor.tooNew'));
       if (needsMigration(this.doc)) {
         if (this.isHost()) migrateGame(this.doc);
         else {
@@ -366,8 +376,12 @@ export class WorkSessionService {
   private waitForSchema(): Promise<void> {
     return new Promise((resolve) => {
       const meta = this.doc.getMap('game.meta');
+      // Against the current schema, not merely against "a number": on a document one schema behind,
+      // any-number is true from the start, so a peer would sail past this and start editing the old
+      // shape while the host is still bringing it forward.
       const check = (): void => {
-        if (typeof meta.get('schemaVersion') === 'number') {
+        const v = meta.get('schemaVersion');
+        if (typeof v === 'number' && v >= GAME_SCHEMA_VERSION) {
           meta.unobserve(check);
           resolve();
         }

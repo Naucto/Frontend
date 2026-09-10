@@ -45,6 +45,18 @@ export function needsMigration(doc: Y.Doc): boolean {
 }
 
 /**
+ * A document written by a newer build than this one.
+ *
+ * There is no migration backwards and no way to guess what a later schema meant, so the only safe
+ * answer is to refuse it. Reading it anyway would show a game with pieces missing, and editing it
+ * -- which the host does automatically, since opening a session saves -- would write that partial
+ * reading back over the whole.
+ */
+export function isFromFutureSchema(doc: Y.Doc): boolean {
+  return schemaVersionOf(doc) > GAME_SCHEMA_VERSION;
+}
+
+/**
  * Brings a game document up to the current schema, in one transaction.
  *
  * One transaction for however many steps it takes: a document halfway between two schemas is a

@@ -6,8 +6,10 @@ export const KEYS = {
   codeFiles: 'code.files',
   codeMeta: 'code.meta',
   palette: 'gfx.palette',
+  sheets: 'gfx.sheets',
   sprites: 'gfx.sprites',
   flags: 'gfx.flags',
+  maps: 'map.maps',
   tiles: 'map.tiles',
   instruments: 'sound.instruments',
   patterns: 'sound.patterns',
@@ -53,3 +55,15 @@ export const MAIN_FILE = 'main';
  * A constant key makes the two writes the same write, so the CRDT converges on one file.
  */
 export const MAIN_FILE_ID = 'main';
+
+/**
+ * The first sheet's and the first map's keys, fixed for the reason {@link MAIN_FILE_ID} is.
+ *
+ * They also mean something the others do not: these two entries describe the pixels and tiles that
+ * already live under `gfx.sprites`, `gfx.flags` and `map.tiles`, and keep living there. Moving that
+ * content under the collection would rewrite every non-empty cell of every game in existence, cost
+ * a tombstone apiece, and leave a client that predates the collection looking at an empty game.
+ * Left where it is, such a client sees the first sheet and the first map exactly as it always did.
+ */
+export const FIRST_SHEET_ID = '0';
+export const FIRST_MAP_ID = '0';
