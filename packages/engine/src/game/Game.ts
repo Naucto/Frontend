@@ -1003,6 +1003,8 @@ export class Game {
         replaceMap(this.netPermissions, from.netPermissions);
         replaceArray(this.paletteArray, from.paletteArray);
         this.restoreFiles(from);
+        this.restoreCollection(this.sheetsMap, from.sheetsMap);
+        this.restoreCollection(this.mapsMap, from.mapsMap);
         for (const key of RESTORED_TEXTS) {
           replaceText(this.doc.getText(key), scratch.getText(key).toString());
         }
@@ -1010,6 +1012,30 @@ export class Game {
     } finally {
       scratch.destroy();
     }
+  }
+
+  /**
+   * Sheets and maps are entries holding their own nested maps of cells, so — like files — they
+   * cannot be copied by value. An entry the snapshot does not have goes, or restoring an old
+   * version would leave today's sheets standing beside it and the game would be two states at once.
+   */
+  private restoreCollection(into: Y.Map<Y.Map<unknown>>, from: Y.Map<Y.Map<unknown>>): void {
+    for (const id of [...into.keys()]) if (!from.has(id)) into.delete(id);
+    from.forEach((entry, id) => {
+      const made = new Y.Map<unknown>();
+      into.set(id, made);
+      entry.forEach((value, key) => {
+        if (value instanceof Y.Map) {
+          const cells = new Y.Map<number>();
+          made.set(key, cells);
+          (value as Y.Map<number>).forEach((v, k) => {
+            cells.set(k, v);
+          });
+          return;
+        }
+        made.set(key, value);
+      });
+    });
   }
 
   /** Files are maps of maps holding a `Y.Text`, so they cannot be copied by value. */

@@ -3,6 +3,7 @@ import * as Y from 'yjs';
 
 import { Game } from './Game';
 import { FIRST_MAP_ID, FIRST_SHEET_ID, KEYS } from './keys';
+import { computeSizeReport } from './size';
 
 /** Declares a sheet the way the collection holds one, without its own pixels. */
 function declareSheet(doc: Y.Doc, id: string, order: number, w: number, h: number): void {
@@ -148,5 +149,47 @@ describe('adding and drawing on a second sheet', () => {
 
     game.removeSheet(FIRST_SHEET_ID);
     expect(game.sheets).toHaveLength(1);
+  });
+});
+
+describe('the rest of the document keeping up', () => {
+  it('weighs every sheet, not only the first', () => {
+    const game = new Game(new Y.Doc());
+    const alone = computeSizeReport(game).sprites;
+    game.addSheet('extra', 64, 64, 'x');
+    game.sheets[1]?.setPixel(0, 0, 3);
+
+    expect(computeSizeReport(game).sprites).toBe(alone + 1);
+  });
+
+  /** Restoring an old version must not leave today's sheets standing beside it. */
+  it('takes a snapshot back to the sheets it was taken with', () => {
+    const game = new Game(new Y.Doc());
+    game.sheets[0]?.setPixel(1, 1, 4);
+    const snapshot = Y.encodeStateAsUpdate(game.doc);
+
+    game.addSheet('extra', 64, 64, 'x');
+    game.sheets[1]?.setPixel(2, 2, 6);
+    expect(game.sheets).toHaveLength(2);
+
+    game.restoreFrom(snapshot);
+
+    expect(game.sheets).toHaveLength(1);
+    expect(game.getPixel(1, 1)).toBe(4);
+  });
+
+  it('brings a sheet back with its pixels when the snapshot had one', () => {
+    const game = new Game(new Y.Doc());
+    game.addSheet('extra', 64, 64, 'x');
+    game.sheets[1]?.setPixel(2, 2, 6);
+    const snapshot = Y.encodeStateAsUpdate(game.doc);
+
+    game.removeSheet('x');
+    expect(game.sheets).toHaveLength(1);
+
+    game.restoreFrom(snapshot);
+
+    expect(game.sheets).toHaveLength(2);
+    expect(game.sheets[1]?.getPixel(2, 2)).toBe(6);
   });
 });

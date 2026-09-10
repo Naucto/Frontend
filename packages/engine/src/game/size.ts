@@ -19,11 +19,15 @@ const utf8 = (s: string): number => new TextEncoder().encode(s).length;
 export function computeSizeReport(game: Game): SizeReport {
   let code = 0;
   for (const f of game.files) code += utf8(f.text.toString());
+  // Every sheet and every map, not the first of each: a game's second sheet weighs as much as its
+  // first, and a meter that only counted one would let somebody past the publish gate.
   let sprites = 0;
-  for (const v of game.sheet) if (v !== 0) sprites++;
-  sprites += game.flags.reduce((n, f) => n + (f !== 0 ? 1 : 0), 0);
+  for (const sheet of game.sheets) {
+    for (const v of sheet.pixels) if (v !== 0) sprites++;
+    sprites += sheet.flags.reduce((n, f) => n + (f !== 0 ? 1 : 0), 0);
+  }
   let map = 0;
-  for (const v of game.tiles) if (v !== 0) map++;
+  for (const m of game.maps) for (const v of m.tiles) if (v !== 0) map++;
   let sound = 0;
   for (const m of [game.instruments, game.patterns, game.songs, game.sfx, game.samples])
     m.forEach((v) => (sound += utf8(v)));
