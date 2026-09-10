@@ -140,7 +140,7 @@ const VARIANT: Record<TabsVariant, { frame: string; list: string; item: string; 
             [cdkDragDisabled]="!reorderable()"
             role="tab"
             [attr.aria-selected]="t.value === value()"
-            [attr.aria-label]="t.label"
+            [attr.aria-label]="nameOf(t)"
             [attr.tabindex]="t.value === value() ? 0 : -1"
             [attr.data-index]="i"
             class="group cursor-pointer"
@@ -280,6 +280,19 @@ export class TabsComponent<T extends string = string> {
   protected page(direction: number): void {
     const box = this.scroller()?.nativeElement;
     box?.scrollBy?.({ left: direction * box.clientWidth, behavior: 'smooth' });
+  }
+
+  /**
+   * What a tab is called, out loud.
+   *
+   * Its number where it carries no name, because a tab may carry none at all — a sheet and a map
+   * are reached by their number, and a name is something their author adds. A tab announced as
+   * nothing is a tab nobody using a screen reader can choose.
+   */
+  protected nameOf(t: TabItem<T>): string {
+    if (t.label) return t.label;
+
+    return t.index === undefined ? '' : String(t.index);
   }
 
   /** A tab's own button, without also choosing the tab it sits on. */

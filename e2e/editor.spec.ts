@@ -762,7 +762,8 @@ test.describe('editor', () => {
     await expect(canvas).toBeVisible();
 
     await page.getByRole('button', { name: 'Add a sheet' }).click();
-    await expect(page.getByRole('tab', { name: 'extra sprites' })).toBeVisible();
+    // Nameless, so it answers to its number.
+    await expect(page.getByRole('tab', { name: '2' })).toBeVisible();
     // Off, or the stroke is held inside the single sprite the region starts on.
     await page.getByRole('switch', { name: 'Lock' }).click();
 
@@ -1024,7 +1025,7 @@ test.describe('editor', () => {
     await expect(later).toHaveCount(0);
 
     const add = page.getByRole('button', { name: 'Add a sheet' });
-    for (let i = 0; i < 8 && (await later.count()) === 0; i++) await add.click();
+    for (let i = 0; i < 30 && (await later.count()) === 0; i++) await add.click();
     await expect(later).toBeVisible();
 
     // Back to the first sheet, so the strip is at its start and forward is the way that moves.

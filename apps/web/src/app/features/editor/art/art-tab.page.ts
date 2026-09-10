@@ -706,21 +706,11 @@ export class ArtTabPage {
    *
    * The dialog refuses a duplicate, so proposing one would only make somebody type over it.
    */
-  private freeName(base: string): string {
-    const taken = new Set(this.session.game.sheets.map((x) => x.name));
-    if (!taken.has(base)) return base;
-    let n = 2;
-    while (taken.has(`${base} ${String(n)}`)) n += 1;
-    return `${base} ${String(n)}`;
-  }
-
   protected addSheet(): void {
     const { sheetWidth, sheetHeight } = this.geometry();
-    this.session.game.addSheet(
-      this.freeName(this.i18n.translate('editor.art.sheetName')),
-      sheetWidth,
-      sheetHeight,
-    );
+    // Nameless, like the first one: a sheet is reached by its number, and a name is something its
+    // author gives it when the number stops being enough.
+    this.session.game.addSheet('', sheetWidth, sheetHeight);
     const added = this.session.game.sheets.at(-1);
     if (added) this.art.setSheet(added.id);
   }

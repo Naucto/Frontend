@@ -76,12 +76,7 @@ const NAME_MAX = 24;
         <button ncButton variant="ghost" (click)="ref.close()">
           {{ t('editor.resource.cancel') }}
         </button>
-        <button
-          ncButton
-          variant="primary"
-          [disabled]="!!error() || !name().trim()"
-          (click)="submit()"
-        >
+        <button ncButton variant="primary" [disabled]="!!error()" (click)="submit()">
           {{ data.confirmLabel }}
         </button>
       </ng-container>
@@ -104,14 +99,17 @@ export class ResourceDialog {
     if (!wanted) return null;
     if (wanted.length > NAME_MAX)
       return this.transloco.translate('editor.resource.tooLong', { n: NAME_MAX });
+    // Empty names never clash: a sheet and a map are reached by number, and having no name is the
+    // state they are all in until somebody types one.
     const clash = this.data.taken.some(
-      (t) => t.toLowerCase() === wanted.toLowerCase() && t !== this.data.name,
+      (t) => t.trim() && t.toLowerCase() === wanted.toLowerCase() && t !== this.data.name,
     );
     return clash ? this.transloco.translate('editor.resource.taken') : null;
   });
 
+  /** An empty name is a name being taken away, which is a thing somebody may want to do. */
   protected submit(): void {
-    if (this.error() ?? !this.name().trim()) return;
+    if (this.error()) return;
     this.ref.close({ name: this.name().trim(), colour: this.colour() });
   }
 }

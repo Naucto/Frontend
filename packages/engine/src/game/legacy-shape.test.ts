@@ -44,8 +44,9 @@ describe('a document written before sheets were a collection', () => {
 
     expect(game.sheets).toHaveLength(1);
     expect(game.maps).toHaveLength(1);
-    expect(game.sheets[0]?.name).toBe('sprites');
-    expect(game.maps[0]?.name).toBe('map');
+    // Nameless, like every sheet and map that nobody has named: the strip shows the number.
+    expect(game.sheets[0]?.name).toBe('');
+    expect(game.maps[0]?.name).toBe('');
     expect(game.sheets[0]?.width).toBe(SHEET_WIDTH);
     expect(game.sheets[0]?.height).toBe(SHEET_HEIGHT);
     expect(game.maps[0]?.width).toBe(MAP_WIDTH);

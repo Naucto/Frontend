@@ -139,8 +139,6 @@ interface SheetMirror {
 }
 
 /** What the first sheet and the first map are called before anybody renames them. */
-const MAIN_SHEET = 'sprites';
-const MAIN_MAP = 'map';
 
 function numberOf(entry: Y.Map<unknown>, key: string, fallback: number): number {
   const v = entry.get(key);
@@ -403,7 +401,7 @@ export class Game {
       return [
         new Sheet(
           FIRST_SHEET_ID,
-          MAIN_SHEET,
+          '',
           0,
           sheetWidth,
           sheetHeight,
@@ -422,7 +420,7 @@ export class Game {
       const mirror = this.sheetMirror(id, width, height);
       const sheet = new Sheet(
         id,
-        stringOf(e, 'name', id),
+        stringOf(e, 'name', ''),
         numberOf(e, 'order', i),
         width,
         height,
@@ -441,14 +439,14 @@ export class Game {
     const { mapWidth, mapHeight } = this._geometry;
     const entries = this.orderedEntries(this.mapsMap);
     if (entries.length === 0)
-      return [new GameMap(FIRST_MAP_ID, MAIN_MAP, 0, mapWidth, mapHeight, null, this.tiles)];
+      return [new GameMap(FIRST_MAP_ID, '', 0, mapWidth, mapHeight, null, this.tiles)];
 
     return entries.map(([id, e], i) => {
       const width = clampMapSize(numberOf(e, 'w', mapWidth));
       const height = clampMapSize(numberOf(e, 'h', mapHeight));
       return new GameMap(
         id,
-        stringOf(e, 'name', id),
+        stringOf(e, 'name', ''),
         numberOf(e, 'order', i),
         width,
         height,
@@ -805,7 +803,6 @@ export class Game {
     if (this.sheetsMap.size > 0) return;
     const entry = new Y.Map<unknown>();
     this.sheetsMap.set(FIRST_SHEET_ID, entry);
-    entry.set('name', MAIN_SHEET);
     entry.set('order', 0);
     entry.set('w', this._geometry.sheetWidth);
     entry.set('h', this._geometry.sheetHeight);
@@ -815,7 +812,6 @@ export class Game {
     if (this.mapsMap.size > 0) return;
     const entry = new Y.Map<unknown>();
     this.mapsMap.set(FIRST_MAP_ID, entry);
-    entry.set('name', MAIN_MAP);
     entry.set('order', 0);
     entry.set('w', this._geometry.mapWidth);
     entry.set('h', this._geometry.mapHeight);

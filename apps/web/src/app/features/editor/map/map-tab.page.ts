@@ -487,17 +487,11 @@ export class MapTabPage {
    *
    * The dialog refuses a duplicate, so proposing one would only make somebody type over it.
    */
-  private freeName(base: string): string {
-    const taken = new Set(this.session.game.maps.map((x) => x.name));
-    if (!taken.has(base)) return base;
-    let n = 2;
-    while (taken.has(`${base} ${String(n)}`)) n += 1;
-    return `${base} ${String(n)}`;
-  }
-
   protected addMap(): void {
     const game = this.session.game;
-    game.addMap(this.freeName(this.i18n.translate('editor.map.mapName')), this.mapW(), this.mapH());
+    // Nameless, like the first one: a map is reached by its number, and a name is something its
+    // author gives it when the number stops being enough.
+    game.addMap('', this.mapW(), this.mapH());
     const added = game.maps.at(-1);
     if (added) this.map.setMap(added.id);
   }
