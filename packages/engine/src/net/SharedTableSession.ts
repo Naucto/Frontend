@@ -167,6 +167,7 @@ export class SharedTableSession implements Destroyable {
   private readonly _errorSubs = new Set<(path: string, reason: string) => void>();
   private readonly _peerSubs = new Map<PeerEvent, Set<(userId: UserId) => void>>();
   private readonly _endedSubs = new Set<() => void>();
+  private readonly _closedSubs = new Set<() => void>();
 
   // Host-internal lock grant order (carries the reqId/callback to wake a waiter).
   // The authoritative lock owner and queue contents themselves live in `_store`
@@ -213,12 +214,16 @@ export class SharedTableSession implements Destroyable {
   }
 
   destroy(): void {
+    this._closedSubs.forEach((cb) => {
+      cb();
+    });
     this._transport.destroy();
     this._changeSubs.length = 0;
     this._eventSubs.clear();
     this._errorSubs.clear();
     this._peerSubs.clear();
     this._endedSubs.clear();
+    this._closedSubs.clear();
     this._lockWaiters.clear();
     this._pendingLocks.clear();
     this._pendingPops.clear();
@@ -386,6 +391,20 @@ export class SharedTableSession implements Destroyable {
 
   onEnded(cb: () => void): void {
     this._endedSubs.add(cb);
+  }
+
+  /**
+   * The session object going away, as against the room ending.
+   *
+   * Two different audiences, which is why this is not `onEnded`. `ended` is news for the game and
+   * fires from the transport, so a game's own handler runs while there is still a session to run
+   * it in. This one is for whoever holds the object: the engine destroys the session on every
+   * restart and every auto-run reload, and without a word the app went on showing a room that was
+   * not there. Running a game's Lua handler at that moment is the thing to avoid, not the thing to
+   * do -- the VM is about to be closed.
+   */
+  onClosed(cb: () => void): void {
+    this._closedSubs.add(cb);
   }
 
   acquireLock(path: string, onGranted: () => void): void {

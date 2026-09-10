@@ -239,11 +239,16 @@ export class NetUiBridgeService implements NetUi, OnDestroy {
     session.onPeer('left', (id) => {
       this.peers.update((p) => p.filter((x) => x !== id));
     });
-    session.onEnded(() => {
+    // Two ways for a room to stop being ours: the host leaves, or the engine tears the session
+    // down under us -- which is what every restart and every auto-run reload does. Only the first
+    // used to be heard, so a reload left this panel describing a session nobody was in.
+    const forget = (): void => {
       this.session.set(null);
       this.info.set(null);
       this.peers.set([]);
-    });
+    };
+    session.onEnded(forget);
+    session.onClosed(forget);
     this.transport = transport;
     this.session.set(session);
     this.info.set({
