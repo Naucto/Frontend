@@ -17,6 +17,7 @@ import {
   midiToNoteName,
   type Note,
   type Pattern,
+  type Song,
   SoundEngine,
   VOICES,
   WebAudioBackend,
@@ -48,6 +49,7 @@ import { InstrumentInspectorComponent } from './instrument-inspector.component';
 import { InstrumentListComponent } from './instrument-list.component';
 import { OscilloscopeComponent } from './oscilloscope.component';
 import { PianoRollComponent } from './piano-roll.component';
+import { SongListComponent } from './song-list.component';
 import { MAX_ZOOM, MIN_ZOOM, SNAP_DIVISIONS, type SnapDivision, SoundStore } from './sound.store';
 import { SoundLibrary } from './sound-library';
 import { VoicesLaneComponent } from './voices-lane.component';
@@ -83,14 +85,18 @@ const STEP_MAX = 64;
     ToggleButtonComponent,
     InstrumentInspectorComponent,
     InstrumentListComponent,
+    SongListComponent,
     PianoRollComponent,
     OscilloscopeComponent,
     VoicesLaneComponent,
   ],
   template: `
     <div *transloco="let t" class="grid h-full grid-cols-[237px_minmax(0,1fr)_auto]">
-      <aside class="min-h-0 border-r border-line bg-panel">
+      <!-- A column, not a stack: the instrument list takes what is left after the music, so the
+           order list keeps its place at the bottom however many instruments there are. -->
+      <aside class="flex min-h-0 flex-col border-r border-line bg-panel">
         <nc-instrument-list
+          class="min-h-0 flex-1"
           [list]="instrumentList()"
           [selectedId]="sound.instrumentId()"
           [palette]="palette()"
@@ -103,6 +109,16 @@ const STEP_MAX = 64;
           (edit)="editInstrument($event)"
           (sfxToggle)="toggleSfx($event)"
         />
+        <nc-song-list
+          [slot]="sound.songSlot()"
+          [song]="song()"
+          [patterns]="library.patterns()"
+          [current]="pattern()"
+          [playingIndex]="songPosition()"
+          (slotChange)="sound.selectSong($event)"
+          (removeRow)="removeSongRow($event)"
+          (appendCurrent)="appendToSong()"
+        />
       </aside>
 
       <section class="flex min-h-0 flex-col">
@@ -111,26 +127,22 @@ const STEP_MAX = 64;
             class="flex h-(--nc-bar-h) shrink-0 items-center gap-1 overflow-x-auto border-b border-line bg-panel px-2"
           >
             <button ncButton variant="secondary" size="sm" [ncPopover]="patterns">
-              {{ t('editor.sound.pattern') | uppercase }} {{ patternIndex() }}
+              {{ t('editor.sound.pattern') | uppercase }} {{ pad(p.slot) }}
               <nc-icon name="chevron-down" [size]="24" />
             </button>
             <ng-template #patterns>
+              <!-- A pattern is a number, like an SFX slot and like a music. It is what a song's
+                   order list shows, so a name beside it would be a second thing to read to know
+                   the same one. -->
               <nc-popover-panel [title]="t('editor.sound.patterns')">
-                <input
-                  type="text"
-                  [value]="p.name"
-                  [attr.aria-label]="t('editor.sound.patternName')"
-                  (change)="renamePattern($event)"
-                  class="mb-1 w-full rounded-xs border border-line bg-inset px-1 py-0.5 text-ui text-ink outline-none focus:border-gold"
-                />
                 @for (q of patternList(); track q.id) {
                   <button
                     type="button"
-                    class="flex w-full items-center gap-1 px-1 py-0.5 text-left text-body hover:bg-raised"
+                    class="flex w-full items-center gap-1 px-1 py-0.5 text-left font-mono text-body hover:bg-raised"
                     [class.text-gold-ink]="q.id === p.id"
                     (click)="sound.selectPattern(q.id)"
                   >
-                    {{ q.name }}
+                    {{ pad(q.slot) }}
                     <span class="label ml-auto text-ink-4">{{ q.notes.length }}</span>
                   </button>
                 }
@@ -437,11 +449,11 @@ export class SoundTabPage {
     const id = this.sound.patternId();
     return (id ? this.library.patterns().get(id) : null) ?? this.patternList()[0] ?? null;
   });
-  protected readonly patternIndex = computed(() => {
-    const p = this.pattern();
-    const i = p ? this.patternList().findIndex((q) => q.id === p.id) : 0;
-    return String(Math.max(0, i)).padStart(2, '0');
-  });
+  protected readonly song = computed<Song | null>(
+    () => this.library.songs().get(String(this.sound.songSlot())) ?? null,
+  );
+  /** Which link of the chain is sounding, so the order list can say where the music has got to. */
+  protected readonly songPosition = signal<number | null>(null);
   protected readonly usedBy = computed(() => {
     const inst = this.instrument();
     this.library.patterns();
@@ -450,6 +462,15 @@ export class SoundTabPage {
   });
 
   constructor() {
+    // A write to the shared document, so the host does it and the others watch it arrive. Idempotent
+    // by construction: it does nothing once every pattern has a number.
+    effect(() => {
+      if (this.session.isHost() && this.library.patterns().size > 0) {
+        untracked(() => {
+          this.library.numberExistingPatterns();
+        });
+      }
+    });
     const game = this.session.game;
     this.undo = new Y.UndoManager([game.instruments, game.patterns, game.sfx], {
       trackedOrigins: new Set([LOCAL_ORIGIN, null]),
@@ -526,10 +547,23 @@ export class SoundTabPage {
     this.sound.selectPattern(null);
   }
 
-  protected renamePattern(e: Event): void {
+  protected pad(n: number): string {
+    return String(n).padStart(2, '0');
+  }
+
+  protected appendToSong(): void {
     const p = this.pattern();
-    const name = (e.target as HTMLInputElement).value.trim();
-    if (p && name) this.library.updatePattern(p.id, { name });
+    if (!p) return;
+    const slot = this.sound.songSlot();
+    const sequence = [...(this.song()?.sequence ?? []), p.id];
+    this.library.setSongSequence(slot, sequence);
+  }
+
+  protected removeSongRow(index: number): void {
+    const sequence = [...(this.song()?.sequence ?? [])];
+    if (index < 0 || index >= sequence.length) return;
+    sequence.splice(index, 1);
+    this.library.setSongSequence(this.sound.songSlot(), sequence);
   }
 
   protected setBpm(bpm: number): void {
@@ -615,12 +649,24 @@ export class SoundTabPage {
 
   // ---- playback -------------------------------------------------------------
 
+  /**
+   * A music if this one has anything in it, otherwise the pattern in front of you.
+   *
+   * The order list is the thing you are working on the moment it is not empty, and auditioning a
+   * chain a pattern at a time is not auditioning the chain -- each link has its own tempo and its
+   * own length, and where they meet is most of what there is to hear.
+   */
   protected async play(): Promise<void> {
     const p = this.pattern();
     if (!p) return;
     await this.engine.unlock();
-    // From wherever the head stands, which is where PAUSE left it or where it was put in the ruler.
-    this.engine.previewPattern(p, this.sound.loop(), this.playhead() ?? 0);
+    const chain = this.song();
+    if (chain && chain.sequence.length > 0) {
+      this.engine.playMusic(this.sound.songSlot(), this.sound.loop(), 0);
+    } else {
+      // From wherever the head stands: where PAUSE left it, or where it was put in the ruler.
+      this.engine.previewPattern(p, this.sound.loop(), this.playhead() ?? 0);
+    }
     this.playing.set(true);
     this.tick();
   }
@@ -674,6 +720,9 @@ export class SoundTabPage {
       if (pos) {
         begun = true;
         this.playhead.set(pos.step);
+        // `pattern` is the position in the chain, not a pattern id. Nothing is highlighted while a
+        // bare pattern is being auditioned, because no row is playing.
+        this.songPosition.set(this.song()?.sequence.length ? pos.pattern : null);
         const p = this.pattern();
         if (this.sound.metronome() && p) {
           const beat = Math.floor(pos.step / p.stepsPerBeat);
@@ -685,6 +734,7 @@ export class SoundTabPage {
       } else if (begun && this.playing() && this.playhead() !== null) {
         this.playing.set(false);
         this.playhead.set(null);
+        this.songPosition.set(null);
         return;
       }
       this.raf = requestAnimationFrame(loop);

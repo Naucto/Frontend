@@ -55,6 +55,13 @@ export interface Note {
 
 export interface Pattern {
   id: string;
+  /**
+   * What a pattern is called, which is a number.
+   *
+   * A song's order list is a column of these, so it has to be something a reader can see; the id
+   * identifies the pattern but says nothing to anybody.
+   */
+  slot: number;
   name: string;
   bpm: number;
   stepsPerBeat: 1 | 2 | 4 | 8;
@@ -129,11 +136,19 @@ export const defaultInstrument = (id: string, name = 'lead'): Instrument => ({
   colour: 4,
 });
 
-export const defaultPattern = (id: string, name = 'pattern 00'): Pattern => ({
+export const defaultPattern = (id: string, slot = 0, name = 'pattern 00'): Pattern => ({
   id,
+  slot,
   name,
   bpm: 124,
   stepsPerBeat: 4,
   steps: 32,
   notes: [],
+});
+
+export const defaultSong = (): Song => ({
+  name: '',
+  sequence: [],
+  loop: true,
+  loopStart: 0,
 });

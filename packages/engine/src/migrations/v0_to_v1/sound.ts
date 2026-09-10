@@ -155,6 +155,9 @@ export function migrateSound(doc: Y.Doc, report: MigrationReport): void {
     });
     const pattern: Pattern = {
       id,
+      // The music slot names the pattern too, so a migrated game's order list reads the way its
+      // author already knew it.
+      slot: i,
       name: `music ${String(i).padStart(2, '0')}`,
       bpm: Math.max(20, (m.bpm || 240) / 4),
       stepsPerBeat: 4,

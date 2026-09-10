@@ -119,7 +119,7 @@ import { WaveGlyphComponent } from './wave-glyph.component';
       </div>
     </div>
   `,
-  host: { class: 'block h-full' },
+  host: { class: 'block min-h-0' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class InstrumentListComponent {

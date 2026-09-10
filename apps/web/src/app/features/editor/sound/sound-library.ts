@@ -2,12 +2,15 @@ import { type Signal, signal } from '@angular/core';
 import {
   defaultInstrument,
   defaultPattern,
+  defaultSong,
   type Game,
   type Instrument,
   LOCAL_ORIGIN,
   type Note,
   type Pattern,
   SFX_SLOTS,
+  type Song,
+  SONG_SLOTS,
 } from '@naucto/engine';
 
 import { ACCENT_SLOTS } from '../accent-slots';
@@ -19,6 +22,7 @@ export class SoundLibrary {
   private readonly instrumentsSig = signal<Map<string, Instrument>>(new Map());
   private readonly patternsSig = signal<Map<string, Pattern>>(new Map());
   private readonly sfxSig = signal<Map<string, string>>(new Map());
+  private readonly songsSig = signal<Map<string, Song>>(new Map());
   private readonly samplesSig = signal<Map<string, string>>(new Map());
   private readonly unsub: (() => void)[] = [];
 
@@ -26,6 +30,8 @@ export class SoundLibrary {
   readonly patterns: Signal<Map<string, Pattern>> = this.patternsSig.asReadonly();
   /** sfx slot ("0".."15") → pattern id */
   readonly sfx: Signal<Map<string, string>> = this.sfxSig.asReadonly();
+  /** music slot → the chain of patterns it plays */
+  readonly songs: Signal<Map<string, Song>> = this.songsSig.asReadonly();
   /** sample id → base64 PCM */
   readonly samples: Signal<Map<string, string>> = this.samplesSig.asReadonly();
 
@@ -39,16 +45,21 @@ export class SoundLibrary {
     const refreshSfx = (): void => {
       this.sfxSig.set(game.getSfxSlots());
     };
+    const refreshSongs = (): void => {
+      this.songsSig.set(game.getSongs());
+    };
     const refreshSamples = (): void => {
       this.samplesSig.set(new Map(game.samples.entries()));
     };
     refreshInstruments();
     refreshPatterns();
     refreshSfx();
+    refreshSongs();
     refreshSamples();
     game.instruments.observe(refreshInstruments);
     game.patterns.observe(refreshPatterns);
     game.sfx.observe(refreshSfx);
+    game.songs.observe(refreshSongs);
     game.samples.observe(refreshSamples);
     this.unsub.push(
       () => {
@@ -59,6 +70,9 @@ export class SoundLibrary {
       },
       () => {
         game.sfx.unobserve(refreshSfx);
+      },
+      () => {
+        game.songs.unobserve(refreshSongs);
       },
       () => {
         game.samples.unobserve(refreshSamples);
@@ -113,13 +127,43 @@ export class SoundLibrary {
 
   // ---- patterns -------------------------------------------------------------
 
+  /** The lowest number nothing is using, so a deleted pattern's number comes back into service. */
+  private freeSlot(): number {
+    const taken = new Set([...this.patterns().values()].map((p) => p.slot));
+    let n = 0;
+    while (taken.has(n)) n += 1;
+    return n;
+  }
+
   addPattern(): Pattern {
-    const n = this.patterns().size;
-    const p = defaultPattern(uid(), `pattern ${String(n).padStart(2, '0')}`);
+    const slot = this.freeSlot();
+    const p = defaultPattern(uid(), slot, `pattern ${String(slot).padStart(2, '0')}`);
     this.game.transact(() => {
       this.game.setPattern(p);
     });
     return p;
+  }
+
+  /**
+   * Gives a number to any pattern that has none, in the order the map hands them over.
+   *
+   * Arbitrary, and stable from then on, which is all a number has to be. One transaction, so a
+   * collaborator sees the numbering as a single change rather than one per pattern.
+   */
+  numberExistingPatterns(): void {
+    const missing = [...this.patterns().values()].filter((p) => typeof p.slot !== 'number');
+    if (missing.length === 0) return;
+    const taken = new Set(
+      [...this.patterns().values()].map((p) => p.slot).filter((n) => typeof n === 'number'),
+    );
+    this.game.transact(() => {
+      let next = 0;
+      for (const p of missing) {
+        while (taken.has(next)) next += 1;
+        taken.add(next);
+        this.game.setPattern({ ...p, slot: next });
+      }
+    });
   }
 
   updatePattern(id: string, patch: Partial<Pattern>): void {
@@ -156,6 +200,26 @@ export class SoundLibrary {
     this.game.transact(() => {
       if (patternId) this.game.sfx.set(String(slot), patternId);
       else this.game.sfx.delete(String(slot));
+    });
+  }
+
+  // ---- songs ----------------------------------------------------------------
+
+  /**
+   * A music is a chain of patterns. Each link keeps its own tempo and its own length, so a chain
+   * can change speed halfway.
+   */
+  setSongSequence(slot: number, sequence: string[]): void {
+    if (slot < 0 || slot >= SONG_SLOTS) return;
+    const current = this.songs().get(String(slot)) ?? defaultSong();
+    this.game.transact(() => {
+      this.game.setSong(slot, { ...current, sequence });
+    });
+  }
+
+  removeSong(slot: number): void {
+    this.game.transact(() => {
+      this.game.songs.delete(String(slot));
     });
   }
 

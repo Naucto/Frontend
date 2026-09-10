@@ -456,7 +456,6 @@
       "patterns": "Patterns",
       "newPattern": "New pattern",
       "removePattern": "Remove pattern",
-      "patternName": "Pattern name",
       "play": "Play",
       "stop": "Stop",
       "loop": "Loop",
@@ -497,7 +496,13 @@
       "zoomReset": "Back to one step per cell",
       "shortenTitle": "Shorten this pattern?",
       "shortenMessage": "{{n}} note(s) past the new end will go. This cannot be undone.",
-      "shorten": "Shorten"
+      "shorten": "Shorten",
+      "music": "Music",
+      "musicSlot": "No",
+      "musicHelp": "A music is a list of patterns, played top to bottom. Each keeps its own tempo and its own length, so a chain can change speed halfway. The game reaches one by its number: sound.play_music(0).",
+      "musicEmpty": "Nothing in this music yet.",
+      "addRow": "Add",
+      "removeRow": "Remove row {{n}}"
     },
     "net": {
       "sharedState": "Shared state",

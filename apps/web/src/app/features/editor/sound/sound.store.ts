@@ -24,6 +24,8 @@ export const MAX_ZOOM = 4;
 interface SoundState {
   instrumentId: string | null;
   patternId: string | null;
+  /** Which music the order list is showing. */
+  songSlot: number;
   /** Note value the grid snaps to, as its denominator; 0 is free placement. */
   snap: SnapDivision;
   zoom: number;
@@ -38,6 +40,7 @@ export const SoundStore = signalStore(
   withState<SoundState>({
     instrumentId: null,
     patternId: null,
+    songSlot: 0,
     snap: 16,
     zoom: 1,
     loop: true,
@@ -50,6 +53,9 @@ export const SoundStore = signalStore(
   withMethods((store) => ({
     selectInstrument(id: string | null): void {
       patchState(store, { instrumentId: id });
+    },
+    selectSong(slot: number): void {
+      patchState(store, { songSlot: slot });
     },
     selectPattern(id: string | null): void {
       patchState(store, { patternId: id });

@@ -674,7 +674,7 @@ test.describe('editor', () => {
     await expect(roll).toBeVisible();
 
     const steps = async (): Promise<string | null> =>
-      page.getByRole('button', { name: /Steps/ }).first().textContent();
+      page.getByRole('textbox', { name: 'Steps' }).inputValue();
     // The roll's own canvas is floored at the width of its window, so it does not shrink on a
     // wide screen. The track of voices under it is exactly as wide as the pattern, and has to
     // stay in step with it.
@@ -683,10 +683,9 @@ test.describe('editor', () => {
       await track.evaluate((el: HTMLElement) => el.offsetWidth);
 
     const long = await laneWidth();
-    await page.getByRole('button', { name: /Steps/ }).first().click();
-    await page.getByRole('button', { name: '16', exact: true }).click();
-    await page.keyboard.press('Escape');
-    await expect.poll(steps).toContain('16');
+    // The pattern is fresh, so nothing is past the new end and the field shortens without asking.
+    await page.getByRole('button', { name: 'Steps -16' }).click();
+    await expect.poll(steps).toBe('16');
 
     await expect.poll(laneWidth).toBeLessThan(long);
   });
