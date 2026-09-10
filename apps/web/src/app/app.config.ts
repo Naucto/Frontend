@@ -3,6 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import {
   type ApplicationConfig,
   ErrorHandler,
+  isDevMode,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
 import { provideRouter, withComponentInputBinding, withInMemoryScrolling } from '@angular/router';
@@ -33,7 +34,10 @@ export const appConfig: ApplicationConfig = {
         defaultLang: 'en',
         fallbackLang: 'en',
         reRenderOnLangChange: false,
-        prodMode: true,
+        // Not a constant: on `true` Transloco's missing-key handler returns the key in silence, so
+        // a key that never made it into the catalogue reads as a screaming SOME.DOTTED.NAME in the
+        // UI and says nothing in the console. In dev it should complain.
+        prodMode: !isDevMode(),
       },
       loader: TranslocoHttpLoader,
     }),
