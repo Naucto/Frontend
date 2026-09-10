@@ -196,7 +196,9 @@ const PIP_GRIPS: readonly { grip: PipGrip; box: string; cursor: string }[] = [
             </button>
           }
         </nc-tabs>
-        <div class="min-h-0 flex-1 overflow-hidden" [class.p-1.5]="ui.consoleTab() !== 'console'">
+        <!-- Both tabs are the same box: a reading of what the machine is doing, full-bleed in the
+             column. Whatever comes to this one later starts from the console's shape. -->
+        <div class="min-h-0 flex-1 overflow-hidden">
           @switch (ui.consoleTab()) {
             @case ('console') {
               <nc-lcd variant="flush" class="h-full leading-[1.85] tracking-copy">
@@ -216,7 +218,7 @@ const PIP_GRIPS: readonly { grip: PipGrip; box: string; cursor: string }[] = [
               </nc-lcd>
             }
             @case ('perf') {
-              <nc-lcd class="h-full">
+              <nc-lcd variant="flush" class="h-full">
                 <div>FPS {{ runtime.fps() }}</div>
                 <div>CPU {{ runtime.cpu() }}%</div>
                 <div>FRAME {{ runtime.frame() }}</div>

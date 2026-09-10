@@ -123,13 +123,15 @@ const toRows = (raw: unknown, key: 'versions' | 'checkpoints', release: boolean)
              author presses the key — so it is what is allowed to scroll, and the head, the totals
              and the budget below stay where they were put. The ceiling is the window's, because a
              fixed one is either short on a large screen or too tall on a small one. -->
-        <div class="p-2">
-          <!-- No rules between the rows: the sheet separates them by giving the current one a
-               ground of its own, and a list that also ruled every gap read as a table. -->
+        <div>
+          <!-- Edge to edge: the current row carries a ground of its own, and inset from the panel
+               it read as a card inside a card. No rules between the rows either — the sheet
+               separates them by that ground, and a list that also ruled every gap read as a
+               table. -->
           <ul class="max-h-[min(52vh,420px)] overflow-y-auto">
             <!-- One list, newest first: releases and autosaves interleaved, as the design shows. -->
             @for (v of history(); track v.name; let i = $index) {
-              <li class="flex h-[52px] items-center gap-1 px-1" [class.bg-line-soft]="i === 0">
+              <li class="flex h-[52px] items-center gap-1 px-2" [class.bg-line-soft]="i === 0">
                 <!-- Gold marks which one the game is, not which ones were released. -->
                 <span
                   class="w-[22px] shrink-0 font-mono text-label"
@@ -180,13 +182,13 @@ const toRows = (raw: unknown, key: 'versions' | 'checkpoints', release: boolean)
                 }
               </li>
             } @empty {
-              <li class="py-2 text-meta text-ink-3">Nothing saved yet.</li>
+              <li class="px-2 py-2 text-meta text-ink-3">Nothing saved yet.</li>
             }
           </ul>
-          <div class="label mt-1">
+          <div class="label mt-1 px-2">
             {{ releases().length }} releases · {{ autosaves().length }} autosaves
           </div>
-          <form class="mt-2 flex items-stretch gap-1" (ngSubmit)="checkpoint()">
+          <form class="mt-2 flex items-stretch gap-1 px-2 pb-2" (ngSubmit)="checkpoint()">
             <input ncInput name="cp" [(ngModel)]="cpName" placeholder="Name this version" />
             <button
               ncButton

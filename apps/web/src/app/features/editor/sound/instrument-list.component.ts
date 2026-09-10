@@ -53,21 +53,21 @@ const COLUMNS = 4;
             role="option"
             tabindex="0"
             [attr.aria-selected]="i.id === selectedId()"
-            class="group flex cursor-pointer items-center gap-[11px] border-l-[3px] border-transparent px-[14px] py-[9px] hover:bg-raised aria-selected:border-gold aria-selected:bg-raised"
+            class="group flex cursor-pointer items-center gap-1 border-l-[3px] border-transparent px-[14px] py-[9px] hover:bg-raised aria-selected:border-gold aria-selected:bg-raised"
             [style.color]="palette()[i.colour]"
             (click)="selected.emit(i.id)"
             (keydown.enter)="selected.emit(i.id)"
           >
             <!-- The wave keeps the row's accent colour, which is the instrument's own: it is the
                  one thing in the list that says what the name sounds like. -->
-            <nc-wave-glyph [type]="i.osc" />
+            <nc-wave-glyph [type]="i.osc" class="mr-1" />
             <div class="min-w-0 flex-1 truncate text-body text-ink">{{ i.name }}</div>
             <button
               ncButton
               variant="ghost"
               size="sm"
               iconOnly
-              class="opacity-0 group-hover:opacity-100"
+              class="hidden group-hover:inline-flex"
               [attr.aria-label]="t('editor.sound.duplicate')"
               [ncTooltip]="t('editor.sound.duplicate')"
               (click)="$event.stopPropagation(); duplicate.emit(i.id)"
@@ -79,7 +79,7 @@ const COLUMNS = 4;
               variant="ghost"
               size="sm"
               iconOnly
-              class="opacity-0 group-hover:opacity-100"
+              class="hidden group-hover:inline-flex"
               [attr.aria-label]="t('editor.sound.editInstrument')"
               [ncTooltip]="t('editor.sound.editInstrument')"
               (click)="$event.stopPropagation(); edit.emit(i.id)"
@@ -91,7 +91,7 @@ const COLUMNS = 4;
               variant="ghost"
               size="sm"
               iconOnly
-              class="opacity-0 group-hover:opacity-100"
+              class="hidden group-hover:inline-flex"
               [attr.aria-label]="t('editor.sound.removeInstrument', { name: i.name })"
               [ncTooltip]="t('editor.sound.removeInstrument', { name: i.name })"
               (click)="$event.stopPropagation(); remove.emit(i.id)"

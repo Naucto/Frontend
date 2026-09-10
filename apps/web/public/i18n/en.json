@@ -464,8 +464,6 @@
       "grid": "Grid",
       "flags": "Flags",
       "tilePicker": "Tile picker",
-      "autotile": "Autotile",
-      "autotileSoon": "Autotile needs a tileset convention — coming with the docs step.",
       "wholeMap": "Whole map",
       "width": "W",
       "height": "H",

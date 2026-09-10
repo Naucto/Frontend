@@ -106,6 +106,11 @@ broken; an absence reads as not built.
 
 - **`FORMAT` in the CODE tab.** The artboard pairs it with `FIND` in the file strip. There is no Lua
   formatter behind it, and `luaparse` parses but does not print. Revisit when there is one.
+- **`AUTOTILE` in the MAP tab.** The idea is real: lay a scene's edges and corners from what sits
+  next to a tile. It needs a tileset convention first — which cell of a sheet is a top edge, which
+  is an inner corner — and the engine has none, so there is nothing behind the button to call. It
+  stood there permanently disabled, promising itself, which is the shape this list exists to stop.
+
 - **`+ ADD ACTION` on the controls page.** `ACTIONS` in `packages/engine/src/input/ActionMap.ts` is
   nine fixed bits, and the input path is a bitmask — a game _names_ those actions with
   `input.declare{}`, it cannot invent new ones. There is nothing for the button to add. If custom

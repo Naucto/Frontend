@@ -61,7 +61,7 @@ const SIZES: Record<ButtonSize, { box: string; px: string }> = {
   // editors read as an approximation of the design rather than the design.
   tool: { box: 'h-(--nc-control-h) control-type', px: 'px-1.25' },
   // The inline affordance that sits inside another control rather than beside it: the copy and
-  // regenerate icons in a share-code field, the viewer's dock button, AUTOTILE.
+  // regenerate icons in a share-code field, the viewer's dock button.
   xs: { box: 'h-(--nc-control-h-xs) text-micro', px: 'px-1' },
   sm: { box: 'h-(--nc-control-h-sm) control-type', px: 'px-1.25' },
   md: { box: 'h-[32px] text-body', px: 'px-2' },
