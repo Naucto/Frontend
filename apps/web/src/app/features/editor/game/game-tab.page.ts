@@ -198,10 +198,12 @@ const DESCRIPTION_MAX = 300;
           <nc-icon name="download" [size]="24" />
           {{ t('editor.game.export') }}
         </button>
-        <button actions ncButton variant="secondary" size="sm" (click)="confirmDelete()">
-          <nc-icon name="trash" [size]="24" />
-          {{ t('editor.game.delete') }}
-        </button>
+        @if (isCreator()) {
+          <button actions ncButton variant="secondary" size="sm" (click)="confirmDelete()">
+            <nc-icon name="trash" [size]="24" />
+            {{ t('editor.game.delete') }}
+          </button>
+        }
         @if (!canPublish()) {
           <nc-notice variant="band">{{ t('editor.game.publishBlocked') }}</nc-notice>
         }
@@ -503,12 +505,11 @@ export class GameTabPage implements OnInit {
     );
   }
 
-  /**
-   * Hands back the whole game document as one file.
-   *
-   * A Yjs update is the same bytes the server stores for a release and the same bytes
-   * `seed:content` writes, so an export can be re-imported or inspected without a special format.
-   */
+  /** Only the creator may delete; the endpoint is behind a guard that answers 403 to everyone else. */
+  protected readonly isCreator = computed(
+    () => this.session.project()?.creator.id === this.session.myUserId,
+  );
+
   protected confirmDelete(): void {
     this.dialogs
       .open(ConfirmDialogComponent, {
@@ -525,6 +526,10 @@ export class GameTabPage implements OnInit {
   }
 
   private async deleteGame(): Promise<void> {
+    // Before the request, not after: the autosave interval is still running against a project that
+    // is about to stop existing, and a save landing after the delete is a 404 in the console at
+    // best.
+    await this.session.close();
     try {
       unwrap(await projectControllerRemove({ path: { id: this.session.id } }));
     } catch {
@@ -532,9 +537,15 @@ export class GameTabPage implements OnInit {
       return;
     }
     await this.qc.invalidateQueries({ queryKey: ['projects'] });
-    await this.router.navigate(['/my-games']);
+    await this.router.navigate(['/games']);
   }
 
+  /**
+   * Hands back the whole game document as one file.
+   *
+   * A Yjs update is the same bytes the server stores for a release and the same bytes
+   * `seed:content` writes, so an export can be re-imported or inspected without a special format.
+   */
   protected exportGame(): void {
     const name = this.session.project()?.name ?? 'game';
     const file = name
