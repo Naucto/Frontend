@@ -31,6 +31,7 @@ import {
   type PresenceMark,
   type PresenceViewport,
 } from '@naucto/ui';
+import type * as Y from 'yjs';
 
 import { type Clip } from '../state/clipboard.store';
 import { type Collaborator } from '../work-session/work-session.service';
@@ -84,6 +85,8 @@ interface Drag {
   colour: number;
   /** For MOVE: the lifted pixels and where they came from. */
   lifted?: { rect: PixelRect; pixels: Uint8Array };
+  /** MOVE, on a pasted layer: the drag carries the layer, and the sheet under it is untouched. */
+  carrying?: boolean;
 }
 
 /**
@@ -146,6 +149,13 @@ export class SpriteCanvasComponent {
   /** In sheet pixels, like everything else the tools speak. */
   readonly selection = model<PixelRect | null>(null);
   readonly collaborators = input<readonly Collaborator[]>([]);
+  /**
+   * The manager the tab owns, so settling a paste is its own step.
+   *
+   * Settling happens on the press that starts the next stroke, and a stroke landing in the same
+   * breath would otherwise be undone together with the paste it was drawn over.
+   */
+  readonly undo = input<Y.UndoManager | null>(null);
   readonly label = input('Sprite canvas');
   /** Pointer cell in sheet coordinates, null when outside. */
   readonly hover = output<Pt | null>();
@@ -159,9 +169,19 @@ export class SpriteCanvasComponent {
   readonly pointer = output<{ x: number; y: number } | null>();
   readonly pick = output<number>();
   readonly zoom = model(1);
+  /** A paste has been placed and wants the tool that can move it. */
+  readonly pasted = output();
 
   /** What of the sheet is on screen, in fractional cells — for whatever draws a map of it. */
   readonly view = signal<SpriteRect>({ x: 0, y: 0, w: SPRITES_PER_ROW, h: SPRITES_PER_ROW });
+
+  /**
+   * A pasted clip, placed but not written.
+   *
+   * While it exists the sheet is exactly as it was, so backing out costs nothing and the pixels it
+   * covers are still there underneath. It becomes part of the drawing only when it is settled.
+   */
+  private readonly floating = signal<{ rect: PixelRect; cells: Uint8Array } | null>(null);
 
   zoomBy(delta: number): void {
     this.setZoom(stepZoom(this.scale(), delta));
@@ -300,6 +320,23 @@ export class SpriteCanvasComponent {
     effect(() => {
       this.zoom.set(this.scale());
     });
+    /**
+     * A placed paste settles when attention moves off it — another tool, another region.
+     *
+     * The layer is read untracked, because placing one must not settle it in the same breath; and
+     * the region is compared rather than merely watched, because the effect re-runs for the tool
+     * too and only an actual change of region means the layer has been left behind.
+     */
+    let lastRegion: SpriteRect | undefined;
+    effect(() => {
+      const movable = this.tool() === 'move';
+      const region = this.region();
+      untracked(() => {
+        const leftBehind = lastRegion !== undefined && region !== lastRegion;
+        lastRegion = region;
+        if (!movable || leftBehind) this.settleFloating();
+      });
+    });
     // Picking a region off screen — in the sheet map, or with the arrow keys — has to bring it back
     // into view, or the pick silently does nothing you can see.
     effect(() => {
@@ -414,6 +451,14 @@ export class SpriteCanvasComponent {
     this.canvas().nativeElement.setPointerCapture(e.pointerId);
     const colour = e.button === 2 ? 0 : this.colour();
     const tool = this.tool();
+    const layer = this.floating();
+    if (layer && tool === 'move' && withinBounds(layer.rect, cell)) {
+      this.drag = { tool, start: cell, last: cell, colour, carrying: true };
+      this.moveOffset.set({ x: 0, y: 0 });
+      return;
+    }
+    // Anything else is done with the layer: a press elsewhere settles it rather than losing it.
+    this.settleFloating();
     this.drag = { tool, start: cell, last: cell, colour };
     switch (tool) {
       case 'pen':
@@ -500,6 +545,19 @@ export class SpriteCanvasComponent {
       if (preview) this.paint(preview, d.colour);
       return;
     }
+    if (d.carrying) {
+      const layer = this.floating();
+      this.moveOffset.set(null);
+      if (!layer) return;
+      const off = { x: cell.x - d.start.x, y: cell.y - d.start.y };
+      const rect = clampRect(
+        { ...layer.rect, x: layer.rect.x + off.x, y: layer.rect.y + off.y },
+        this.bounds(),
+      );
+      this.floating.set({ ...layer, rect });
+      this.selection.set(rect);
+      return;
+    }
     if (d.tool === 'move' && d.lifted) {
       const off = { x: cell.x - d.start.x, y: cell.y - d.start.y };
       this.moveOffset.set(null);
@@ -536,21 +594,57 @@ export class SpriteCanvasComponent {
   }
 
   /**
-   * The pointer decides where this lands, because aiming is what moving it is for. The selection is
-   * only the fallback for a pointer off the canvas: a copy leaves its own selection standing, so
-   * preferring it would put every paste back exactly where it came from.
+   * Lands in the middle of what the tools may reach, and writes nothing yet.
+   *
+   * The pointer used to decide, which is right for a keystroke and impossible for a button: the
+   * click that asks for the paste is the same gesture that takes the pointer off the canvas, so
+   * the aim was always null and the paste fell back onto the selection it came from. The middle is
+   * somewhere it will be seen, and it is only a starting point -- the layer is there to be moved.
    */
   pasteClip(clip: Clip): void {
-    const at = this.hoverCell() ?? this.selection() ?? { x: 0, y: 0 };
+    // A second paste settles the first rather than dropping it: work already placed is work.
+    this.settleFloating();
+    // The middle of what is on screen, not of the sheet: at a zoom where most of the sheet is
+    // scrolled away, the sheet's middle is somewhere nobody is looking.
+    const v = this.view();
+    const rect = clampRect(
+      {
+        x: Math.round((v.x + v.w / 2) * SPRITE_SIZE - clip.w / 2),
+        y: Math.round((v.y + v.h / 2) * SPRITE_SIZE - clip.h / 2),
+        w: clip.w,
+        h: clip.h,
+      },
+      this.bounds(),
+    );
+    this.floating.set({ rect, cells: clip.cells });
+    this.selection.set(rect);
+    this.pasted.emit();
+  }
+
+  /** Writes the placed layer into the sheet, as one undo step. Silent when there is none. */
+  settleFloating(): void {
+    const layer = this.floating();
+    if (!layer) return;
+    this.floating.set(null);
+    const { rect, cells } = layer;
     const game = this.game();
+    this.undo()?.stopCapturing();
     game.transact(() => {
-      for (let y = 0; y < clip.h; y++)
-        for (let x = 0; x < clip.w; x++) {
-          const p = { x: at.x + x, y: at.y + y };
-          if (this.inBounds(p)) game.setPixel(p.x, p.y, clip.cells[y * clip.w + x] ?? 0);
+      for (let y = 0; y < rect.h; y++)
+        for (let x = 0; x < rect.w; x++) {
+          const p = { x: rect.x + x, y: rect.y + y };
+          if (this.inBounds(p)) game.setPixel(p.x, p.y, cells[y * rect.w + x] ?? 0);
         }
     });
-    this.selection.set(clampRect({ x: at.x, y: at.y, w: clip.w, h: clip.h }, this.bounds()));
+    this.undo()?.stopCapturing();
+    this.selection.set(rect);
+  }
+
+  /** Drops the placed layer. Nothing was written, so there is nothing to undo. */
+  discardFloating(): boolean {
+    if (!this.floating()) return false;
+    this.floating.set(null);
+    return true;
   }
 
   /** Clears the selected pixels (Delete / Backspace). */
@@ -648,6 +742,20 @@ export class SpriteCanvasComponent {
           if (!c) continue;
           ctx.fillStyle = pal[c] ?? '#000';
           ctx.fillRect((lifted.rect.x + x + off.x) * s, (lifted.rect.y + y + off.y) * s, s, s);
+        }
+    }
+
+    const layer = this.floating();
+    if (layer) {
+      // Over the sheet, not into it: what it covers is still there, and still there if it moves on.
+      const pal = this.painter().palette;
+      const carry = this.drag?.carrying === true ? (off ?? { x: 0, y: 0 }) : { x: 0, y: 0 };
+      for (let y = 0; y < layer.rect.h; y++)
+        for (let x = 0; x < layer.rect.w; x++) {
+          const c = layer.cells[y * layer.rect.w + x] ?? 0;
+          if (!c) continue;
+          ctx.fillStyle = pal[c] ?? '#000';
+          ctx.fillRect((layer.rect.x + x + carry.x) * s, (layer.rect.y + y + carry.y) * s, s, s);
         }
     }
 

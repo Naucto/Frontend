@@ -3,7 +3,7 @@ import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
 
 import { stepZoom } from '../art/sprite-canvas.component';
 
-export type MapTool = 'stamp' | 'fill' | 'select' | 'erase';
+export type MapTool = 'stamp' | 'fill' | 'select' | 'erase' | 'move';
 
 export interface TileRect {
   x: number;

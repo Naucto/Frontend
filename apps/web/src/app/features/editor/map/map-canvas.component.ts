@@ -31,6 +31,7 @@ import {
   type PresenceMark,
   type PresenceViewport,
 } from '@naucto/ui';
+import type * as Y from 'yjs';
 
 import { type Clip } from '../state/clipboard.store';
 import { type Collaborator } from '../work-session/work-session.service';
@@ -47,6 +48,11 @@ export interface TileViewport {
 const FLAG_VARS = FLAG_ACCENTS.map((a) => `--nc-${a}`);
 
 /** The whole 128×32 tile map in a scrollable surface; stamps tiles from the sheet. */
+/** Whether a tile sits inside a rectangle of tiles. */
+function withinRect(r: TileRect, p: Pt): boolean {
+  return p.x >= r.x && p.y >= r.y && p.x < r.x + r.w && p.y < r.y + r.h;
+}
+
 @Component({
   selector: 'nc-map-canvas',
   imports: [PresenceLayerComponent],
@@ -112,6 +118,15 @@ export class MapCanvasComponent {
   readonly viewport = output<TileViewport>();
   /** Ctrl/⌘ + wheel over the map zooms it, the way every other canvas surface in the app does. */
   readonly zoomBy = output<number>();
+  /** A paste has been placed and wants the tool that can move it. */
+  readonly pasted = output();
+  /**
+   * The manager the tab owns, so settling a paste is its own step.
+   *
+   * Settling happens on the press that starts the next stroke, and a stamp landing in the same
+   * breath would otherwise be undone together with the paste it was laid over.
+   */
+  readonly undo = input<Y.UndoManager | null>(null);
 
   private readonly base = viewChild.required<ElementRef<HTMLCanvasElement>>('base');
   private readonly overlay = viewChild.required<ElementRef<HTMLCanvasElement>>('overlay');
@@ -119,7 +134,23 @@ export class MapCanvasComponent {
   private readonly theme = inject(ThemeService);
   private readonly tilesVersion = signal(0);
   private readonly hoverCell = signal<Pt | null>(null);
-  private drag: { start: Pt; last: Pt; erase: boolean } | null = null;
+  private drag: {
+    start: Pt;
+    last: Pt;
+    erase: boolean;
+    /** MOVE: the tiles taken off the map, and where they were. */
+    lifted?: { rect: TileRect; cells: Uint8Array };
+    /** MOVE, on a pasted layer: the drag carries the layer and the map beneath is untouched. */
+    carrying?: boolean;
+  } | null = null;
+  private readonly moveOffset = signal<Pt | null>(null);
+  /**
+   * A pasted clip, placed but not written.
+   *
+   * While it exists the map is exactly as it was, so backing out costs nothing and the tiles it
+   * covers are still there underneath. It becomes part of the map only when it is settled.
+   */
+  private readonly floating = signal<{ rect: TileRect; cells: Uint8Array } | null>(null);
   private rafBase = 0;
   private rafOverlay = 0;
   /** Tile size the view was last laid out at, so a change of scale can be anchored on its middle. */
@@ -186,9 +217,22 @@ export class MapCanvasComponent {
       this.zoom();
       this.brush();
       this.tool();
+      this.floating();
+      this.moveOffset();
       this.theme.effective();
       untracked(() => {
         this.requestOverlay();
+      });
+    });
+    /**
+     * A placed paste settles when attention moves off it — any tool that is not the one that moves
+     * it. Read untracked, because placing one must not settle it in the same breath, and the tool
+     * changing *to* move is how a paste asks to be movable.
+     */
+    effect(() => {
+      const movable = this.tool() === 'move';
+      untracked(() => {
+        if (!movable) this.settleFloating();
       });
     });
   }
@@ -241,19 +285,83 @@ export class MapCanvasComponent {
     return { kind: 'tiles', w: sel.w, h: sel.h, cells };
   }
 
+  /**
+   * Lands in the middle of the map, and writes nothing yet.
+   *
+   * The pointer used to decide, which is right for a keystroke and impossible for a button: the
+   * click that asks for the paste is the same gesture that takes the pointer off the canvas, so
+   * the aim was always null and the paste fell back onto the selection it came from -- writing the
+   * same tiles over themselves. The middle is somewhere it will be seen, and it is only a starting
+   * point, the layer being there to be moved.
+   */
   pasteClip(clip: Clip): void {
-    const at = this.hoverCell() ?? this.selection() ?? { x: 0, y: 0 };
+    // A second paste settles the first rather than dropping it: work already placed is work.
+    this.settleFloating();
+    const centre = this.visibleCentre();
+    const rect = this.clampToMap({
+      x: Math.round(centre.x - clip.w / 2),
+      y: Math.round(centre.y - clip.h / 2),
+      w: clip.w,
+      h: clip.h,
+    });
+    this.floating.set({ rect, cells: clip.cells });
+    this.selection.set(rect);
+    this.pasted.emit();
+  }
+
+  /**
+   * The tile in the middle of what is on screen. The map is far wider than its well, so the map's
+   * own middle is usually scrolled away.
+   *
+   * Measured off the canvas, exactly as a pointer is: the well centres content smaller than
+   * itself, so its scroll offset is not the canvas's origin and reading one for the other puts the
+   * answer a screenful out.
+   */
+  private visibleCentre(): { x: number; y: number } {
+    const well = this.host.nativeElement;
+    const box = well.getBoundingClientRect();
+    const canvas = this.overlay().nativeElement.getBoundingClientRect();
+    const t = this.tilePx();
+    return {
+      x: (box.left + well.clientWidth / 2 - canvas.left) / t,
+      y: (box.top + well.clientHeight / 2 - canvas.top) / t,
+    };
+  }
+
+  /** Keeps a rectangle whole and on the map, whichever way it was pushed. */
+  private clampToMap(r: TileRect): TileRect {
+    return {
+      ...r,
+      x: Math.max(0, Math.min(r.x, MAP_WIDTH - r.w)),
+      y: Math.max(0, Math.min(r.y, MAP_HEIGHT - r.h)),
+    };
+  }
+
+  /** Writes the placed layer into the map, as one undo step. Silent when there is none. */
+  settleFloating(): void {
+    const layer = this.floating();
+    if (!layer) return;
+    this.floating.set(null);
+    const { rect, cells } = layer;
     const game = this.game();
+    this.undo()?.stopCapturing();
     game.transact(() => {
-      for (let y = 0; y < clip.h; y++)
-        for (let x = 0; x < clip.w; x++) {
-          const tx = at.x + x;
-          const ty = at.y + y;
-          if (tx < MAP_WIDTH && ty < MAP_HEIGHT)
-            game.setTile(tx, ty, clip.cells[y * clip.w + x] ?? 0);
+      for (let y = 0; y < rect.h; y++)
+        for (let x = 0; x < rect.w; x++) {
+          const tx = rect.x + x;
+          const ty = rect.y + y;
+          if (tx < MAP_WIDTH && ty < MAP_HEIGHT) game.setTile(tx, ty, cells[y * rect.w + x] ?? 0);
         }
     });
-    this.selection.set({ x: at.x, y: at.y, w: clip.w, h: clip.h });
+    this.undo()?.stopCapturing();
+    this.selection.set(rect);
+  }
+
+  /** Drops the placed layer. Nothing was written, so there is nothing to undo. */
+  discardFloating(): boolean {
+    if (!this.floating()) return false;
+    this.floating.set(null);
+    return true;
   }
 
   /** Clears the selected tiles (Delete / Backspace). */
@@ -312,6 +420,14 @@ export class MapCanvasComponent {
     this.overlay().nativeElement.setPointerCapture(e.pointerId);
     const cell = this.cellOf(e);
     const erase = e.button === 2 || this.tool() === 'erase';
+    const layer = this.floating();
+    if (layer && this.tool() === 'move' && withinRect(layer.rect, cell)) {
+      this.drag = { start: cell, last: cell, erase, carrying: true };
+      this.moveOffset.set({ x: 0, y: 0 });
+      return;
+    }
+    // Anything else is done with the layer: a press elsewhere settles it rather than losing it.
+    this.settleFloating();
     this.drag = { start: cell, last: cell, erase };
     switch (this.tool()) {
       case 'stamp':
@@ -331,6 +447,21 @@ export class MapCanvasComponent {
       case 'select':
         this.selection.set(null);
         break;
+      case 'move': {
+        const rect = this.selection();
+        if (!rect || !withinRect(rect, cell)) {
+          this.drag = null;
+          break;
+        }
+        const game = this.game();
+        const cells = new Uint8Array(rect.w * rect.h);
+        for (let y = 0; y < rect.h; y++)
+          for (let x = 0; x < rect.w; x++)
+            cells[y * rect.w + x] = game.getTile(rect.x + x, rect.y + y);
+        this.drag.lifted = { rect, cells };
+        this.moveOffset.set({ x: 0, y: 0 });
+        break;
+      }
     }
   }
 
@@ -343,6 +474,8 @@ export class MapCanvasComponent {
     if (!d || (cell.x === d.last.x && cell.y === d.last.y)) return;
     if (this.tool() === 'stamp' || this.tool() === 'erase') {
       for (const p of linePoints(d.last, cell)) this.stamp(p, d.erase);
+    } else if (d.carrying === true || d.lifted) {
+      this.moveOffset.set({ x: cell.x - d.start.x, y: cell.y - d.start.y });
     } else if (this.tool() === 'select') {
       this.selection.set({
         x: Math.min(d.start.x, cell.x),
@@ -355,7 +488,39 @@ export class MapCanvasComponent {
   }
 
   protected onUp(): void {
+    const d = this.drag;
     this.drag = null;
+    const off = this.moveOffset();
+    this.moveOffset.set(null);
+    if (!d || !off) return;
+    if (d.carrying === true) {
+      const layer = this.floating();
+      if (!layer) return;
+      const rect = this.clampToMap({
+        ...layer.rect,
+        x: layer.rect.x + off.x,
+        y: layer.rect.y + off.y,
+      });
+      this.floating.set({ ...layer, rect });
+      this.selection.set(rect);
+      return;
+    }
+    if (!d.lifted || (off.x === 0 && off.y === 0)) return;
+    // Cut and lay down together, so a move is one step to undo and never leaves a copy behind.
+    const { rect, cells } = d.lifted;
+    const game = this.game();
+    game.transact(() => {
+      for (let y = 0; y < rect.h; y++)
+        for (let x = 0; x < rect.w; x++) game.setTile(rect.x + x, rect.y + y, 0);
+      for (let y = 0; y < rect.h; y++)
+        for (let x = 0; x < rect.w; x++) {
+          const tx = rect.x + x + off.x;
+          const ty = rect.y + y + off.y;
+          if (tx >= 0 && ty >= 0 && tx < MAP_WIDTH && ty < MAP_HEIGHT)
+            game.setTile(tx, ty, cells[y * rect.w + x] ?? 0);
+        }
+    });
+    this.selection.set(this.clampToMap({ ...rect, x: rect.x + off.x, y: rect.y + off.y }));
   }
 
   protected onLeave(): void {
@@ -448,6 +613,35 @@ export class MapCanvasComponent {
     }
   }
 
+  /** Draws a rectangle of tiles at an offset, from the same sheet the map is drawn from. */
+  private drawTiles(
+    ctx: CanvasRenderingContext2D,
+    rect: TileRect,
+    cells: Uint8Array,
+    off: Pt,
+    t: number,
+  ): void {
+    const game = this.game();
+    const sheet = this.painter().canvas;
+    for (let y = 0; y < rect.h; y++)
+      for (let x = 0; x < rect.w; x++) {
+        const spr = cells[y * rect.w + x] ?? 0;
+        if (!spr) continue;
+        const o = game.spriteOrigin(spr);
+        ctx.drawImage(
+          sheet,
+          o.x,
+          o.y,
+          SPRITE_SIZE,
+          SPRITE_SIZE,
+          (rect.x + x + off.x) * t,
+          (rect.y + y + off.y) * t,
+          t,
+          t,
+        );
+      }
+  }
+
   private drawOverlay(): void {
     const el = this.overlay().nativeElement;
     const ctx = el.getContext('2d');
@@ -462,6 +656,21 @@ export class MapCanvasComponent {
       ctx.strokeRect(sel.x * t + 0.5, sel.y * t + 0.5, sel.w * t - 1, sel.h * t - 1);
       ctx.setLineDash([]);
     }
+    // Over the map, not into it: what a layer covers is still there, and still there if it moves on.
+    const carried = this.drag?.carrying === true ? this.moveOffset() : null;
+    const layer = this.floating();
+    if (layer) {
+      this.drawTiles(ctx, layer.rect, layer.cells, carried ?? { x: 0, y: 0 }, t);
+    }
+    const lifted = this.drag?.lifted;
+    const off = this.moveOffset();
+    if (lifted && off) {
+      // Blank where they were, so a move reads as a move rather than a copy.
+      ctx.fillStyle = cssVar(el, '--nc-inset');
+      ctx.fillRect(lifted.rect.x * t, lifted.rect.y * t, lifted.rect.w * t, lifted.rect.h * t);
+      this.drawTiles(ctx, lifted.rect, lifted.cells, off, t);
+    }
+
     const h = this.hoverCell();
     if (h) {
       const stamps = this.tool() === 'stamp' || this.tool() === 'erase';

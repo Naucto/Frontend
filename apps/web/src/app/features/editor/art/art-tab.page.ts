@@ -193,6 +193,8 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
             (pointer)="onPointer($event)"
             (pick)="art.setColour($event)"
             (zoomChange)="zoom.set($event)"
+            [undo]="undo"
+            (pasted)="art.setTool('move')"
           />
           <!-- Status and preview float over the canvas: the design gives the drawing surface the
                whole column rather than shaving a strip off the bottom of it. -->
@@ -556,6 +558,14 @@ export class ArtTabPage {
       this.undo.redo();
       return;
     }
+    if (e.key === 'Escape' && this.canvas()?.discardFloating() === true) {
+      e.preventDefault();
+      return;
+    }
+    if (e.key === 'Enter') {
+      this.canvas()?.settleFloating();
+      return;
+    }
     if (e.key === 'Delete' || e.key === 'Backspace') {
       this.canvas()?.clearSelection();
       return;
@@ -582,9 +592,6 @@ export class ArtTabPage {
   /**
    * Copy falls back to the region when nothing is selected; cut does not. Without the crop or the
    * lock that region is the whole sheet, and a keystroke that empties it has to have been aimed.
-   *
-   * The paste is bracketed because transactions landing close together merge into one undo step,
-   * and a paste has to be its own.
    */
   protected transfer(key: string): boolean {
     const canvas = this.canvas();
@@ -602,9 +609,7 @@ export class ArtTabPage {
     if (key !== 'v') return false;
     const clip = this.clipboard.take('pixels');
     if (!clip) return true;
-    this.undo.stopCapturing();
     canvas.pasteClip(clip);
-    this.undo.stopCapturing();
     return true;
   }
 

@@ -492,12 +492,77 @@ test.describe('editor', () => {
 
     await page.mouse.move(box.x + 200, box.y + 160);
     await page.keyboard.press('Control+v');
+    // Placed, not written: what it covers is still underneath until it is settled.
+    await expect(used).toHaveText(String(painted));
+
+    await page.keyboard.press('Enter');
     await expect(used).not.toHaveText(String(painted));
     const pasted = await used.textContent();
 
     await page.keyboard.press('Control+z');
     await expect(used).toHaveText(String(painted));
     expect(pasted).not.toBe(painted);
+  });
+
+  /**
+   * The gesture the keyboard tests cannot make. Clicking a toolbar button is what takes the pointer
+   * off the canvas, and the paste used to anchor on the pointer -- so by the only route a button
+   * can take, it landed on the selection it came from, or nowhere at all.
+   */
+  test('ART pastes from the toolbar, with no pointer on the canvas', async ({ page }) => {
+    await page.goto('/edit/7/art');
+    const canvas = page.getByRole('img', { name: 'Sprite canvas' });
+    await expect(canvas).toBeVisible();
+    const used = page.getByText(/\d+ \/ 256 used/);
+    await expect(used).toBeVisible();
+    await page.getByRole('switch', { name: 'Lock' }).click();
+
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('no canvas');
+    await page.mouse.move(box.x + 40, box.y + 40);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 90, box.y + 90, { steps: 6 });
+    await page.mouse.up();
+
+    await page.getByRole('radio', { name: 'Select' }).click();
+    await page.mouse.move(box.x + 30, box.y + 30);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 100, box.y + 100, { steps: 4 });
+    await page.mouse.up();
+    const painted = await used.textContent();
+
+    await page.getByRole('button', { name: 'Copy', exact: true }).click();
+    await page.getByRole('button', { name: 'Paste', exact: true }).click();
+    await expect(used).toHaveText(String(painted));
+
+    await page.keyboard.press('Enter');
+    await expect(used).not.toHaveText(String(painted));
+  });
+
+  test('ART throws a placed paste away on Escape, leaving nothing to undo', async ({ page }) => {
+    await page.goto('/edit/7/art');
+    const canvas = page.getByRole('img', { name: 'Sprite canvas' });
+    await expect(canvas).toBeVisible();
+    const used = page.getByText(/\d+ \/ 256 used/);
+    await expect(used).toBeVisible();
+    await page.getByRole('switch', { name: 'Lock' }).click();
+
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('no canvas');
+    await page.mouse.move(box.x + 40, box.y + 40);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 90, box.y + 90, { steps: 6 });
+    await page.mouse.up();
+    const painted = await used.textContent();
+
+    await page.getByRole('button', { name: 'Copy', exact: true }).click();
+    await page.getByRole('button', { name: 'Paste', exact: true }).click();
+    await page.keyboard.press('Escape');
+    await expect(used).toHaveText(String(painted));
+
+    // Nothing was written, so the undo reaches past the paste to the stroke before it.
+    await page.keyboard.press('Control+z');
+    await expect(used).not.toHaveText(String(painted));
   });
 
   test('MAP copies a selection of tiles and pastes it as one undo step', async ({ page }) => {
@@ -513,6 +578,18 @@ test.describe('editor', () => {
       const text = await page.getByText(/TILE \d+,\d+/).textContent();
       return /SPR (\d+)/.exec(text ?? '')?.[1] ?? '';
     };
+
+    /**
+     * Where the paste lands: the middle of the well, not of the map. `boundingBox()` on the canvas
+     * gives the whole map, most of which is scrolled out of sight.
+     */
+    const wellMiddle = async (): Promise<{ x: number; y: number }> =>
+      page.evaluate(() => {
+        const el = document.querySelector('nc-map-canvas');
+        if (!el) throw new Error('no well');
+        const r = el.getBoundingClientRect();
+        return { x: r.x + el.clientWidth / 2, y: r.y + el.clientHeight / 2 };
+      });
 
     await page.mouse.move(box.x + 60, box.y + 60);
     await page.mouse.down();
@@ -530,11 +607,78 @@ test.describe('editor', () => {
     // Out of the stamp's reach, so what turns up there can only be the paste.
     const target = { x: box.x + 340, y: box.y + 220 };
     expect(await sprUnder(target.x, target.y)).toBe('000');
+
     await page.keyboard.press('Control+v');
+    // Placed, not written: the map is untouched until the layer is settled.
+    expect(await sprUnder(target.x, target.y)).toBe('000');
+
+    // Placed in the middle of the well, and the move tool is already in hand: drag it out to a
+    // spot the stamp never reached, which is the only way what lands there can be the paste.
+    const middle = await wellMiddle();
+    await page.mouse.move(middle.x, middle.y);
+    await page.mouse.down();
+    await page.mouse.move(target.x, target.y, { steps: 6 });
+    await page.mouse.up();
+    await page.keyboard.press('Enter');
     await expect.poll(() => sprUnder(target.x, target.y)).not.toBe('000');
 
     await page.keyboard.press('Control+z');
     await expect.poll(() => sprUnder(target.x, target.y)).toBe('000');
+  });
+
+  /**
+   * The gesture the keyboard test cannot make. Clicking a toolbar button is what takes the pointer
+   * off the canvas, and the paste used to anchor on the pointer -- so by the only route a button
+   * can take, it wrote the tiles back exactly where they came from and nothing appeared to happen.
+   */
+  test('MAP pastes from the toolbar, with no pointer on the canvas', async ({ page }) => {
+    await page.goto('/edit/7/map');
+    const canvas = page.getByRole('img', { name: 'Map canvas' });
+    await expect(canvas).toBeVisible();
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('no canvas');
+
+    const sprUnder = async (x: number, y: number): Promise<string> => {
+      await page.mouse.move(x, y);
+      const text = await page.getByText(/TILE \d+,\d+/).textContent();
+      return /SPR (\d+)/.exec(text ?? '')?.[1] ?? '';
+    };
+
+    /**
+     * Where the paste lands: the middle of the well, not of the map. `boundingBox()` on the canvas
+     * gives the whole map, most of which is scrolled out of sight.
+     */
+    const wellMiddle = async (): Promise<{ x: number; y: number }> =>
+      page.evaluate(() => {
+        const el = document.querySelector('nc-map-canvas');
+        if (!el) throw new Error('no well');
+        const r = el.getBoundingClientRect();
+        return { x: r.x + el.clientWidth / 2, y: r.y + el.clientHeight / 2 };
+      });
+
+    await page.mouse.move(box.x + 60, box.y + 60);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 120, box.y + 100, { steps: 6 });
+    await page.mouse.up();
+
+    await page.getByRole('radio', { name: 'Select' }).click();
+    await page.mouse.move(box.x + 50, box.y + 50);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 130, box.y + 110, { steps: 4 });
+    await page.mouse.up();
+
+    await page.getByRole('button', { name: 'Copy', exact: true }).click();
+    await page.getByRole('button', { name: 'Paste', exact: true }).click();
+
+    const target = { x: box.x + 340, y: box.y + 220 };
+    const middle = await wellMiddle();
+    await page.mouse.move(middle.x, middle.y);
+    await page.mouse.down();
+    await page.mouse.move(target.x, target.y, { steps: 6 });
+    await page.mouse.up();
+    await page.keyboard.press('Enter');
+
+    await expect.poll(() => sprUnder(target.x, target.y)).not.toBe('000');
   });
 
   /**

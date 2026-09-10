@@ -139,6 +139,8 @@ import { MinimapComponent } from './minimap.component';
             (pointer)="onPointer($event)"
             (zoomBy)="map.zoomBy($event)"
             (viewport)="viewport.set($event)"
+            [undo]="undo"
+            (pasted)="map.setTool('move')"
           />
           <!-- Bottom left, over the artwork, on a scrim rather than in a bordered chip: a rule
                around it makes a reading look like a control, and the far corner is where the
@@ -309,6 +311,7 @@ export class MapTabPage {
       label: this.i18n.translate('editor.map.tools.erase'),
       key: 'E',
     },
+    { value: 'move', icon: 'move', label: this.i18n.translate('editor.map.tools.move'), key: 'V' },
   ]);
 
   constructor() {
@@ -374,20 +377,25 @@ export class MapTabPage {
       this.canvas()?.clearSelection();
       return;
     }
+    if (e.key === 'Escape' && this.canvas()?.discardFloating() === true) {
+      e.preventDefault();
+      return;
+    }
+    if (e.key === 'Enter') {
+      this.canvas()?.settleFloating();
+      return;
+    }
     if (mod && this.transfer(e.key.toLowerCase())) {
       e.preventDefault();
       return;
     }
-    const tool = ({ s: 'stamp', f: 'fill', m: 'select', e: 'erase' } as Record<string, MapTool>)[
-      e.key.toLowerCase()
-    ];
+    const tool = (
+      { s: 'stamp', f: 'fill', m: 'select', e: 'erase', v: 'move' } as Record<string, MapTool>
+    )[e.key.toLowerCase()];
     if (tool && !mod) this.map.setTool(tool);
   }
 
-  /**
-   * All three want a selection, there being no region in hand to fall back on. The paste is
-   * bracketed because transactions landing close together merge into one undo step.
-   */
+  /** All three want a selection, there being no region in hand to fall back on. */
   protected transfer(key: string): boolean {
     const canvas = this.canvas();
     if (!canvas) return false;
@@ -400,9 +408,7 @@ export class MapTabPage {
     if (key !== 'v') return false;
     const clip = this.clipboard.take('tiles');
     if (!clip) return true;
-    this.undo.stopCapturing();
     canvas.pasteClip(clip);
-    this.undo.stopCapturing();
     return true;
   }
 }

@@ -433,7 +433,8 @@
         "stamp": "Stamp",
         "fill": "Fill",
         "select": "Select",
-        "erase": "Erase"
+        "erase": "Erase",
+        "move": "Move"
       },
       "grid": "Grid",
       "flags": "Flags",
