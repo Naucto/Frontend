@@ -18,6 +18,33 @@ test.describe('app shell', () => {
   });
 
   /**
+   * The rule is the API's, not this app's, so the numbers here are deliberately not the ones the
+   * backend actually publishes: a form that went back to stating a constant of its own would pass
+   * against realistic values and fail against these.
+   */
+  test('the password field states the rule the API publishes', async ({ page }) => {
+    await page.route('**/auth/password-policy', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          minLength: 11,
+          minCharacterClasses: 3,
+          characterClasses: ['letters', 'digits', 'symbols'],
+        }),
+      }),
+    );
+
+    await page.goto('/sign-in');
+    await page.getByRole('button', { name: 'Make one' }).click();
+
+    await expect(
+      page.getByText('At least 11 characters, mixing 3 of', { exact: false }),
+    ).toBeVisible();
+    await expect(page.getByLabel('Password')).toHaveAttribute('minlength', '11');
+  });
+
+  /**
    * Tailwind resolves a conflict by stylesheet order, not by attribute order, so `text-ink-3 …
    * text-ink` on one element silently keeps the dim one. That is invisible in review and obvious
    * on screen, which is the worst combination — so the current page's colour is pinned here.

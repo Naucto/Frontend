@@ -182,3 +182,14 @@ export const meApi = {
     await take<unknown>(client.delete({ url: '/users/me', body }));
   },
 };
+
+/** What a password must satisfy, so this app stops keeping a second copy of the rule. */
+export interface PasswordPolicyDto {
+  minLength: number;
+  minCharacterClasses: number;
+  characterClasses: string[];
+}
+
+export function getPasswordPolicy(): Promise<PasswordPolicyDto> {
+  return take<PasswordPolicyDto>(client.get({ url: '/auth/password-policy' }));
+}

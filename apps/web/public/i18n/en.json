@@ -36,6 +36,7 @@
     "needAccount": "Playing online needs an account. Sign in here and carry on where you were.",
     "email": "Email",
     "password": "Password",
+    "passwordHint": "At least {{length}} characters, mixing {{classes}} of letters, digits and symbols",
     "username": "Username",
     "signIn": "Sign in",
     "register": "Make one",
@@ -50,7 +51,18 @@
     "finishing": "Finishing sign-in…",
     "sessionExpired": "You have been signed out",
     "sessionExpiredBody": "Your session expired. Sign in again to keep working.",
-    "ok": "OK"
+    "ok": "OK",
+    "errors": {
+      "EMAIL_INVALID": "That does not look like an email address.",
+      "EMAIL_REQUIRED": "An email address is required.",
+      "EMAIL_TAKEN": "That email address already has an account. Sign in instead?",
+      "USERNAME_LENGTH": "A username is between 3 and 20 characters.",
+      "USERNAME_TAKEN": "That username is taken. Try another.",
+      "NICKNAME_LENGTH": "A nickname is between 3 and 30 characters.",
+      "PASSWORD_REQUIRED": "A password is required.",
+      "PASSWORD_TOO_SHORT": "That password is too short.",
+      "PASSWORD_TOO_WEAK": "That password uses only one kind of character. Mix in digits or symbols."
+    }
   },
   "settings": {
     "title": "Settings",

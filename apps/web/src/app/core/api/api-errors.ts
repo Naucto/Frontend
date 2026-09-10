@@ -41,3 +41,29 @@ export function unwrap<R extends { data?: unknown; error?: unknown; response?: R
     throw ApiError.from(status, result.error);
   return result.data as Payload<NonNullable<R['data']>>;
 }
+
+/** One rule a request broke, as the API names it. */
+export interface Violation {
+  field: string;
+  code: string;
+}
+
+/**
+ * What the API refused, in codes rather than prose.
+ *
+ * Empty for anything that is not a rejected request, so a caller reads it and falls back to the
+ * message without asking what kind of failure it is holding.
+ */
+export function violationsOf(error: unknown): Violation[] {
+  if (!(error instanceof ApiError) || typeof error.body !== 'object' || error.body === null)
+    return [];
+  const raw: unknown = (error.body as { violations?: unknown }).violations;
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(
+    (v): v is Violation =>
+      typeof v === 'object' &&
+      v !== null &&
+      typeof (v as Violation).field === 'string' &&
+      typeof (v as Violation).code === 'string',
+  );
+}
