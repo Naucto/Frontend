@@ -16,7 +16,11 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { LOCAL_ORIGIN } from '@naucto/engine';
 import {
   ButtonDirective,
+  ConfirmDialogComponent,
+  type ConfirmDialogData,
+  DialogService,
   IconComponent,
+  NumberFieldComponent,
   PanelColumnComponent,
   SectionComponent,
   SliderComponent,
@@ -33,6 +37,7 @@ import { PANEL_WIDTH } from '../state/editor-ui.store';
 
 const MAP_ZOOM_OCTAVES = Math.log2(MAP_MAX_ZOOM / MAP_MIN_ZOOM);
 import { geometrySignal } from '@app/shared/pixel/geometry.signal';
+import { MAX_MAP_SIZE } from '@naucto/engine';
 
 import { WorkSessionService } from '../work-session/work-session.service';
 import { MAP_MAX_ZOOM, MAP_MIN_ZOOM, MapStore, type MapTool } from './map.store';
@@ -49,6 +54,7 @@ import { MinimapComponent } from './minimap.component';
     IconComponent,
     SliderComponent,
     PanelColumnComponent,
+    NumberFieldComponent,
     SectionComponent,
     ToggleButtonComponent,
     ToolGroupComponent,
@@ -245,6 +251,24 @@ import { MinimapComponent } from './minimap.component';
         </nc-section>
 
         <nc-section banded [title]="t('editor.map.wholeMap')">
+          <div class="mb-1 flex items-end gap-1">
+            <nc-number-field
+              [label]="t('editor.map.width')"
+              [value]="mapW()"
+              [min]="1"
+              [max]="MAX_MAP_SIZE"
+              [step]="1"
+              (requested)="resizeMap($event, mapH())"
+            />
+            <nc-number-field
+              [label]="t('editor.map.height')"
+              [value]="mapH()"
+              [min]="1"
+              [max]="MAX_MAP_SIZE"
+              [step]="1"
+              (requested)="resizeMap(mapW(), $event)"
+            />
+          </div>
           <nc-minimap
             [game]="session.game"
             [painter]="painter"
@@ -278,9 +302,11 @@ export class MapTabPage {
   protected readonly map = inject(MapStore);
   private readonly clipboard = inject(ClipboardStore);
   private readonly i18n = inject(TranslocoService);
+  private readonly dialogs = inject(DialogService);
   protected readonly painter = new SheetPainter(this.session.game);
   protected readonly undo: Y.UndoManager;
   private readonly geometry = geometrySignal(signal(this.session.game));
+  protected readonly MAX_MAP_SIZE = MAX_MAP_SIZE;
   protected readonly mapW = computed(() => this.geometry().mapWidth);
   protected readonly mapH = computed(() => this.geometry().mapHeight);
   protected readonly canvas = viewChild<MapCanvasComponent>('canvas');
@@ -376,6 +402,37 @@ export class MapTabPage {
     const bits: number[] = [];
     for (let b = 0; b < 8; b++) if (f & (1 << b)) bits.push(b);
     this.hover.set({ x: p.x, y: p.y, spr, bits: bits.join(',') });
+  }
+
+  /** Asks first when tiles would fall outside, then records the size. See ART's, which is its twin. */
+  protected resizeMap(width: number, height: number): void {
+    const lost = this.tilesOutside(width, height);
+    if (lost === 0) {
+      this.session.game.resize({ mapWidth: width, mapHeight: height });
+      return;
+    }
+    this.dialogs
+      .open<ConfirmDialogComponent, ConfirmDialogData, boolean>(ConfirmDialogComponent, {
+        data: {
+          title: this.i18n.translate('editor.map.shrinkTitle'),
+          message: this.i18n.translate('editor.map.shrinkMessage', { n: lost }),
+          confirmLabel: this.i18n.translate('editor.map.shrinkConfirm'),
+          danger: true,
+        },
+      })
+      .closed.subscribe((ok) => {
+        if (ok === true) this.session.game.resize({ mapWidth: width, mapHeight: height });
+      });
+  }
+
+  /** How many placed tiles a map this size would put out of reach. */
+  private tilesOutside(width: number, height: number): number {
+    const game = this.session.game;
+    let n = 0;
+    for (let y = 0; y < this.mapH(); y++)
+      for (let x = 0; x < this.mapW(); x++)
+        if ((x >= width || y >= height) && game.getTile(x, y) !== 0) n++;
+    return n;
   }
 
   protected onKey(e: KeyboardEvent): void {

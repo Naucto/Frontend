@@ -16,12 +16,17 @@ import { PaletteGridComponent } from '@app/shared/pixel/palette-grid.component';
 import { type Pt } from '@app/shared/pixel/pixel-tools';
 import { SheetPainter } from '@app/shared/pixel/sheet-painter';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
+import { MAX_SHEET_SIZE, SIZE_STEP } from '@naucto/engine';
 import { BUBBLEGUM_16, LOCAL_ORIGIN, PICO8_PALETTE, SPRITE_SIZE } from '@naucto/engine';
 import {
   BitFlagsComponent,
   ButtonDirective,
+  ConfirmDialogComponent,
+  type ConfirmDialogData,
+  DialogService,
   HelpDotComponent,
   IconComponent,
+  NumberFieldComponent,
   PanelColumnComponent,
   PopoverDirective,
   PopoverPanelComponent,
@@ -57,6 +62,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
     ButtonDirective,
     IconComponent,
     PanelColumnComponent,
+    NumberFieldComponent,
     SectionComponent,
     HelpDotComponent,
     BitFlagsComponent,
@@ -285,6 +291,24 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
           <span actions class="label text-ink-4">
             {{ t('editor.art.used', { used: used(), total: total() }) }}
           </span>
+          <div class="mb-1 flex items-end gap-1">
+            <nc-number-field
+              [label]="t('editor.art.sheetWidth')"
+              [value]="geometry().sheetWidth"
+              [min]="SIZE_STEP"
+              [max]="MAX_SHEET_SIZE"
+              [step]="SIZE_STEP"
+              (requested)="resizeSheet($event, geometry().sheetHeight)"
+            />
+            <nc-number-field
+              [label]="t('editor.art.sheetHeight')"
+              [value]="geometry().sheetHeight"
+              [min]="SIZE_STEP"
+              [max]="MAX_SHEET_SIZE"
+              [step]="SIZE_STEP"
+              (requested)="resizeSheet(geometry().sheetWidth, $event)"
+            />
+          </div>
           <nc-sheet-view
             [painter]="painter"
             [region]="art.region()"
@@ -365,8 +389,11 @@ export class ArtTabPage {
   protected readonly art = inject(ArtStore);
   private readonly clipboard = inject(ClipboardStore);
   private readonly i18n = inject(TranslocoService);
+  private readonly dialogs = inject(DialogService);
   protected readonly painter = new SheetPainter(this.session.game);
-  private readonly geometry = geometrySignal(signal(this.session.game));
+  protected readonly geometry = geometrySignal(signal(this.session.game));
+  protected readonly SIZE_STEP = SIZE_STEP;
+  protected readonly MAX_SHEET_SIZE = MAX_SHEET_SIZE;
   protected readonly undo: Y.UndoManager;
   protected readonly presetList = PRESETS;
   protected readonly defaultPalette = BUBBLEGUM_16;
@@ -545,6 +572,49 @@ export class ArtTabPage {
 
   protected applyPalette(colours: readonly string[]): void {
     this.session.game.setPalette(colours);
+  }
+
+  /**
+   * Asks first when the sheet would lose art, then records the size.
+   *
+   * Pixels outside a smaller sheet stay in the document and come back if it grows again, so this
+   * is not destruction -- but they stop being reachable, and a count of what goes quiet is the
+   * only way to tell the difference before it happens rather than after.
+   */
+  protected resizeSheet(width: number, height: number): void {
+    const lost = this.spritesOutside(width, height);
+    if (lost === 0) {
+      this.session.game.resize({ sheetWidth: width, sheetHeight: height });
+      return;
+    }
+    this.dialogs
+      .open<ConfirmDialogComponent, ConfirmDialogData, boolean>(ConfirmDialogComponent, {
+        data: {
+          title: this.i18n.translate('editor.art.shrinkTitle'),
+          message: this.i18n.translate('editor.art.shrinkMessage', { n: lost }),
+          confirmLabel: this.i18n.translate('editor.art.shrinkConfirm'),
+          danger: true,
+        },
+      })
+      .closed.subscribe((ok) => {
+        if (ok === true) this.session.game.resize({ sheetWidth: width, sheetHeight: height });
+      });
+  }
+
+  /** How many drawn sprites a sheet this size would put out of reach. */
+  private spritesOutside(width: number, height: number): number {
+    const game = this.session.game;
+    const { spritesPerRow, spriteCount } = this.geometry();
+    const cols = width / SPRITE_SIZE;
+    const rows = height / SPRITE_SIZE;
+    let n = 0;
+    for (let i = 0; i < spriteCount; i++) {
+      const col = i % spritesPerRow;
+      const row = Math.floor(i / spritesPerRow);
+      if (col < cols && row < rows) continue;
+      if (!game.isSpriteEmpty(i)) n++;
+    }
+    return n;
   }
 
   protected onKey(e: KeyboardEvent): void {
