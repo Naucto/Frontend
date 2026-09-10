@@ -22,6 +22,7 @@ export * from './components/lcd.component';
 export * from './components/logo.component';
 export * from './components/meter.component';
 export * from './components/notice.component';
+export * from './components/number-field.component';
 export * from './components/online-dot.component';
 export * from './components/panel.component';
 export * from './components/panel-column.component';

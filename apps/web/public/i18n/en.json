@@ -494,7 +494,10 @@
       "toStart": "Back to the start",
       "zoomIn": "Zoom in",
       "zoomOut": "Zoom out",
-      "zoomReset": "Back to one step per cell"
+      "zoomReset": "Back to one step per cell",
+      "shortenTitle": "Shorten this pattern?",
+      "shortenMessage": "{{n}} note(s) past the new end will go. This cannot be undone.",
+      "shorten": "Shorten"
     },
     "net": {
       "sharedState": "Shared state",

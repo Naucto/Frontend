@@ -9,7 +9,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { TranslocoDirective } from '@jsverse/transloco';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import {
   defaultInstrument,
   type Instrument,
@@ -23,9 +23,12 @@ import {
 } from '@naucto/engine';
 import {
   ButtonDirective,
+  ConfirmDialogComponent,
+  type ConfirmDialogData,
   DialogService,
   EmptyStateComponent,
   IconComponent,
+  NumberFieldComponent,
   PanelColumnComponent,
   PopoverDirective,
   PopoverPanelComponent,
@@ -51,17 +54,17 @@ import { VoicesLaneComponent } from './voices-lane.component';
 
 const ZOOM_OCTAVES = Math.log2(MAX_ZOOM / MIN_ZOOM);
 
-const STEP_OPTIONS = [
-  { value: '16', label: '16' },
-  { value: '32', label: '32' },
-  { value: '64', label: '64' },
-];
+const BPM_MIN = 40;
+const BPM_MAX = 240;
 
-/** The tempos worth a chip; anything else is reachable by holding one and typing is not a thing. */
-const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
-  value: String(n),
-  label: String(n),
-}));
+/**
+ * A pattern's length moves a bar at a time.
+ *
+ * The sheet's tooltip says 4 to 64 by 4, which is finer than a pattern is ever cut: four steps is
+ * not a phrase, and it puts fifteen stops between the two lengths anybody uses.
+ */
+const STEP_SIZE = 16;
+const STEP_MAX = 64;
 
 /** SOUND tab: instruments on the left, the piano roll in the middle, the inspector on the right. */
 @Component({
@@ -72,6 +75,7 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
     ButtonDirective,
     EmptyStateComponent,
     IconComponent,
+    NumberFieldComponent,
     PanelColumnComponent,
     PopoverDirective,
     PopoverPanelComponent,
@@ -214,59 +218,26 @@ const BPM_OPTIONS = [90, 100, 110, 120, 124, 140, 160].map((n) => ({
               {{ t('editor.sound.metronome') }}
             </nc-toggle-button>
             <span class="flex-1"></span>
-            <!-- Label and value share one sunken box, as the sheet draws them: the pair reads as
-                 something you can type into, and it fits where a strip of presets or a well with a
-                 label beside it did not. Each is as wide as what it holds. -->
-            <div class="shrink-0">
-              <button
-                type="button"
-                class="flex h-4 items-center gap-1.25 rounded-xs border border-line bg-inset px-1.25 whitespace-nowrap"
-                [ncPopover]="bpmMenu"
-                [attr.aria-label]="t('editor.sound.bpm')"
-              >
-                <span class="label text-ink-3">{{ t('editor.sound.bpm') }}</span>
-                <span class="font-mono text-body text-ink">{{ p.bpm }}</span>
-              </button>
-              <ng-template #bpmMenu>
-                <nc-popover-panel>
-                  @for (o of bpmOptions; track o.value) {
-                    <button
-                      type="button"
-                      class="flex w-full items-center px-1 py-0.5 text-left font-mono text-body hover:bg-raised"
-                      [class]="String(p.bpm) === o.value ? 'text-gold-ink' : 'text-ink'"
-                      (click)="setBpm(o.value)"
-                    >
-                      {{ o.label }}
-                    </button>
-                  }
-                </nc-popover-panel>
-              </ng-template>
-            </div>
-            <div class="shrink-0">
-              <button
-                type="button"
-                class="flex h-4 items-center gap-1.25 rounded-xs border border-line bg-inset px-1.25 whitespace-nowrap"
-                [ncPopover]="stepMenu"
-                [attr.aria-label]="t('editor.sound.steps')"
-              >
-                <span class="label text-ink-3">{{ t('editor.sound.steps') }}</span>
-                <span class="font-mono text-body text-ink">{{ p.steps }}</span>
-              </button>
-              <ng-template #stepMenu>
-                <nc-popover-panel>
-                  @for (o of stepOptions; track o.value) {
-                    <button
-                      type="button"
-                      class="flex w-full items-center px-1 py-0.5 text-left font-mono text-body hover:bg-raised"
-                      [class]="String(p.steps) === o.value ? 'text-gold-ink' : 'text-ink'"
-                      (click)="setSteps(o.value)"
-                    >
-                      {{ o.label }}
-                    </button>
-                  }
-                </nc-popover-panel>
-              </ng-template>
-            </div>
+            <!-- Number fields, not menus of blessed values: the sheet says so in its own words,
+                 "type a value or step with the arrows. Not a dropdown." A strip of seven tempos
+                 read as the only seven anyone was allowed. -->
+            <nc-number-field
+              class="shrink-0"
+              [label]="t('editor.sound.bpm')"
+              [value]="p.bpm"
+              [min]="BPM_MIN"
+              [max]="BPM_MAX"
+              (requested)="setBpm($event)"
+            />
+            <nc-number-field
+              class="shrink-0"
+              [label]="t('editor.sound.steps')"
+              [value]="p.steps"
+              [min]="STEP_SIZE"
+              [max]="STEP_MAX"
+              [step]="STEP_SIZE"
+              (requested)="setSteps($event)"
+            />
             <button
               ncButton
               variant="ghost"
@@ -430,10 +401,13 @@ export class SoundTabPage {
   protected readonly session = inject(WorkSessionService);
   protected readonly sound = inject(SoundStore);
   private readonly dialogs = inject(DialogService);
+  private readonly transloco = inject(TranslocoService);
   protected readonly library = new SoundLibrary(this.session.game);
   protected readonly undo: Y.UndoManager;
-  protected readonly stepOptions = STEP_OPTIONS;
-  protected readonly bpmOptions = BPM_OPTIONS;
+  protected readonly BPM_MIN = BPM_MIN;
+  protected readonly BPM_MAX = BPM_MAX;
+  protected readonly STEP_SIZE = STEP_SIZE;
+  protected readonly STEP_MAX = STEP_MAX;
   protected readonly String = String;
   private readonly backend = new WebAudioBackend();
   private readonly engine = new SoundEngine(this.backend, this.session.game);
@@ -558,10 +532,9 @@ export class SoundTabPage {
     if (p && name) this.library.updatePattern(p.id, { name });
   }
 
-  protected setBpm(v: string | undefined): void {
+  protected setBpm(bpm: number): void {
     const p = this.pattern();
-    const bpm = Number(v);
-    if (p && bpm >= 40 && bpm <= 240) this.library.updatePattern(p.id, { bpm });
+    if (p) this.library.updatePattern(p.id, { bpm });
   }
 
   /**
@@ -603,14 +576,34 @@ export class SoundTabPage {
     this.library.updatePattern(p.id, { notes });
   }
 
-  protected setSteps(v: string | undefined): void {
+  /**
+   * Shortening a pattern drops what is past its new end, so it asks first -- and only when there is
+   * something to lose. A note that merely runs over the edge is shortened rather than dropped: the
+   * note was placed inside the pattern, only its tail was not.
+   */
+  protected setSteps(steps: number): void {
     const p = this.pattern();
-    const steps = Number(v);
-    if (!p || !(steps === 16 || steps === 32 || steps === 64)) return;
-    const notes: Note[] = p.notes
+    if (!p) return;
+    const kept: Note[] = p.notes
       .filter((n) => n.step < steps)
       .map((n) => ({ ...n, length: Math.min(n.length, steps - n.step) }));
-    this.library.updatePattern(p.id, { steps, notes });
+    if (kept.length === p.notes.length) {
+      this.library.updatePattern(p.id, { steps, notes: kept });
+      return;
+    }
+    const lost = p.notes.length - kept.length;
+    this.dialogs
+      .open<ConfirmDialogComponent, ConfirmDialogData, boolean>(ConfirmDialogComponent, {
+        data: {
+          title: this.transloco.translate('editor.sound.shortenTitle'),
+          message: this.transloco.translate('editor.sound.shortenMessage', { n: lost }),
+          confirmLabel: this.transloco.translate('editor.sound.shorten'),
+          danger: true,
+        },
+      })
+      .closed.subscribe((ok) => {
+        if (ok) this.library.updatePattern(p.id, { steps, notes: kept });
+      });
   }
 
   protected toggleSfx(slot: number): void {

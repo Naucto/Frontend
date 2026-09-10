@@ -127,6 +127,12 @@ broken; an absence reads as not built.
 - **Drag-to-reposition in the touch pad panel.** SIZE and OPACITY are real and drive the pad; moving
   individual buttons is not built, and the panel's copy does not claim it.
 
+- **The STEPS field moves by 16, not by 4.** The sheet's own tooltip says `4-64, step 4`, and the
+  same box's buttons are captioned `+1`/`-1` — the sheet does not agree with itself. Four steps is
+  not a phrase, so a pattern is never cut there, and by-4 puts fifteen stops between the two lengths
+  anybody uses. BPM keeps the sheet's `40-240, step 1`, which is a tempo and is asked for one at a
+  time.
+
 ## Gotchas
 
 - `fengari` needs `patches/fengari+0.1.5.patch` (applied by `patch-package` on `postinstall`).
