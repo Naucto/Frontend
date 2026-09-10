@@ -15,6 +15,7 @@ import {
 import { ThemeService } from '@app/core/theme/theme.service';
 import { geometrySignal } from '@app/shared/pixel/geometry.signal';
 import { cssVar, type Pt } from '@app/shared/pixel/pixel-tools';
+import { type SheetAtlas } from '@app/shared/pixel/sheet-atlas';
 import { type SheetPainter } from '@app/shared/pixel/sheet-painter';
 import { type Game, SPRITE_SIZE } from '@naucto/engine';
 
@@ -47,6 +48,8 @@ const SCALE = 3;
 export class MinimapComponent {
   readonly game = input.required<Game>();
   readonly painter = input.required<SheetPainter>();
+  /** Every sheet's pixels, because a map's tiles may come from any of them. */
+  readonly atlas = input.required<SheetAtlas>();
   readonly viewport = input<TileViewport | null>(null);
   readonly label = input('Whole map');
   readonly jump = output<Pt>();
@@ -71,7 +74,7 @@ export class MinimapComponent {
       cancelAnimationFrame(this.raf);
     });
     effect(() => {
-      this.painter().version();
+      this.atlas().version();
       this.tilesVersion();
       this.viewport();
       // Colours are read from CSS custom properties at paint time; repaint when the theme flips.
@@ -128,16 +131,17 @@ export class MinimapComponent {
     ctx.fillStyle = cssVar(el, '--nc-inset');
     ctx.fillRect(0, 0, this.width(), this.height());
     const game = this.game();
-    const sheet = this.painter().canvas;
+    const atlas = this.atlas();
     const tiles = game.tiles;
     const { mapWidth, mapHeight } = this.geometry();
     for (let y = 0; y < mapHeight; y++)
       for (let x = 0; x < mapWidth; x++) {
         const spr = tiles[y * mapWidth + x] ?? 0;
         if (!spr) continue;
-        const o = game.spriteOrigin(spr);
+        const o = atlas.sourceOf(spr);
+        if (!o) continue;
         ctx.drawImage(
-          sheet,
+          o.canvas,
           o.x,
           o.y,
           SPRITE_SIZE,

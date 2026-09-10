@@ -16,6 +16,7 @@ import {
 import { ThemeService } from '@app/core/theme/theme.service';
 import { geometrySignal } from '@app/shared/pixel/geometry.signal';
 import { cssVar, floodFill, linePoints, type Pt } from '@app/shared/pixel/pixel-tools';
+import { type SheetAtlas } from '@app/shared/pixel/sheet-atlas';
 import { type SheetPainter } from '@app/shared/pixel/sheet-painter';
 import { type Game, SPRITE_SIZE } from '@naucto/engine';
 import {
@@ -91,6 +92,8 @@ function withinRect(r: TileRect, p: Pt): boolean {
 export class MapCanvasComponent {
   readonly game = input.required<Game>();
   readonly painter = input.required<SheetPainter>();
+  /** Every sheet's pixels, because a map's tiles may come from any of them. */
+  readonly atlas = input.required<SheetAtlas>();
   readonly tool = input<MapTool>('stamp');
   /** In sheet cells, not map cells: where the tiles come from, not where they land. */
   readonly brush = input<TileRect>({ x: 1, y: 0, w: 1, h: 1 });
@@ -152,6 +155,19 @@ export class MapCanvasComponent {
 
   protected readonly tilePx = computed(() => SPRITE_SIZE * this.zoom());
   private readonly geometry = geometrySignal(this.game);
+  /**
+   * The sheet the brush is picked from, as the picker beside it draws it.
+   *
+   * Read off the painter rather than taken as an input: the picker already follows the choice, and
+   * a second way in would be a second thing to keep in step with it.
+   */
+  private readonly sheet = computed(() => {
+    this.atlas().version();
+    const id = this.painter().sheetId();
+    const sheets = this.game().sheets;
+
+    return sheets.find((sh) => sh.id === id) ?? sheets[0];
+  });
   protected readonly mapW = computed(() => this.geometry().mapWidth);
   protected readonly mapH = computed(() => this.geometry().mapHeight);
   protected readonly cssW = computed(() => this.mapW() * this.tilePx());
@@ -196,7 +212,7 @@ export class MapCanvasComponent {
       cancelAnimationFrame(this.rafOverlay);
     });
     effect(() => {
-      this.painter().version();
+      this.atlas().version();
       this.tilesVersion();
       this.grid();
       this.flags();
@@ -404,11 +420,14 @@ export class MapCanvasComponent {
   private stamp(cell: Pt, erase: boolean): void {
     const b = this.brush();
     this.game().transact(() => {
+      const sheet = this.sheet();
+      if (!sheet) return;
       for (let j = 0; j < b.h; j++)
         for (let i = 0; i < b.w; i++) {
-          const { spritesPerRow, spriteCount } = this.geometry();
-          const spr = erase ? 0 : (b.y + j) * spritesPerRow + b.x + i;
-          if (spr < spriteCount) this.game().setTile(cell.x + i, cell.y + j, spr);
+          // Through the sheet the brush was picked from: a cell of it is only a sprite number once
+          // the sheet's own width and its place in the run of them are both taken into account.
+          const spr = erase ? 0 : sheet.base + (b.y + j) * sheet.cols + b.x + i;
+          if (spr < sheet.base + sheet.count) this.game().setTile(cell.x + i, cell.y + j, spr);
         }
     });
   }
@@ -436,7 +455,9 @@ export class MapCanvasComponent {
       case 'fill': {
         const g = this.game();
         const pts = floodFill((x, y) => g.getTile(x, y), cell, this.mapW(), this.mapH());
-        const spr = erase ? 0 : this.brush().y * this.geometry().spritesPerRow + this.brush().x;
+        const sheet = this.sheet();
+        if (!sheet) return;
+        const spr = erase ? 0 : sheet.base + this.brush().y * sheet.cols + this.brush().x;
         g.transact(() => {
           for (const p of pts) g.setTile(p.x, p.y, spr);
         });
@@ -559,7 +580,7 @@ export class MapCanvasComponent {
     ctx.fillStyle = cssVar(el, '--nc-inset');
     ctx.fillRect(0, 0, w, h);
     const game = this.game();
-    const sheet = this.painter().canvas;
+    const atlas = this.atlas();
     const tiles = game.tiles;
     const showFlags = this.flags();
     const flagColours = FLAG_VARS.map((v) => cssVar(el, v));
@@ -568,8 +589,11 @@ export class MapCanvasComponent {
       for (let x = 0; x < mapW; x++) {
         const spr = tiles[y * mapW + x] ?? 0;
         if (!spr) continue;
-        const o = game.spriteOrigin(spr);
-        ctx.drawImage(sheet, o.x, o.y, SPRITE_SIZE, SPRITE_SIZE, x * t, y * t, t, t);
+        // Through the sheet that answers to this number: a map mixes them freely, and read off one
+        // sheet a tile from another lands on whatever pixels happen to sit at that offset.
+        const o = atlas.sourceOf(spr);
+        if (!o) continue;
+        ctx.drawImage(o.canvas, o.x, o.y, SPRITE_SIZE, SPRITE_SIZE, x * t, y * t, t, t);
         if (showFlags) {
           const f = game.getFlag(spr);
           if (f) {
@@ -621,15 +645,15 @@ export class MapCanvasComponent {
     off: Pt,
     t: number,
   ): void {
-    const game = this.game();
-    const sheet = this.painter().canvas;
+    const atlas = this.atlas();
     for (let y = 0; y < rect.h; y++)
       for (let x = 0; x < rect.w; x++) {
         const spr = cells[y * rect.w + x] ?? 0;
         if (!spr) continue;
-        const o = game.spriteOrigin(spr);
+        const o = atlas.sourceOf(spr);
+        if (!o) continue;
         ctx.drawImage(
-          sheet,
+          o.canvas,
           o.x,
           o.y,
           SPRITE_SIZE,

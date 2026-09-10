@@ -813,6 +813,66 @@ test.describe('editor', () => {
       .toBe(true);
   });
 
+  /**
+   * A map's tiles are sprite numbers, and those run across every sheet. Choosing a sheet in the
+   * picker is only half of it: the number a stamp writes has to carry that sheet's place in the
+   * run, and the tile has to be drawn from that sheet's pixels. Read off the first sheet, a tile
+   * from the second is not a wrong colour — it is a different picture.
+   */
+  test('MAP stamps and draws a tile from the sheet its picker is on', async ({ page }) => {
+    await page.goto('/edit/7/art');
+    const canvas = page.getByRole('img', { name: 'Sprite canvas' });
+    await expect(canvas).toBeVisible();
+
+    // A second sheet with something on its very first cell, and nothing on the first sheet's.
+    await page.getByRole('button', { name: 'Add a sheet' }).click();
+    await expect(page.getByRole('tab', { name: '2' })).toBeVisible();
+    await page.getByRole('switch', { name: 'Lock' }).click();
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('no canvas');
+    await page.mouse.move(box.x + 4, box.y + 4);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 12, box.y + 12, { steps: 4 });
+    await page.mouse.up();
+    const readout = await page
+      .getByText(/SPRITE \d+/)
+      .first()
+      .textContent();
+    const n = Number(/\d+/.exec(readout ?? '')?.[0] ?? '0');
+    expect(n).toBeGreaterThan(0);
+
+    await page.locator('nc-rail').getByRole('button', { name: 'Map' }).click();
+    const picker = page.getByRole('img', { name: 'Tile picker' });
+    await expect(picker).toBeVisible();
+
+    // The picker starts on the first sheet, whose first cell is empty here.
+    await page.getByRole('tablist', { name: 'Tilesets' }).getByRole('tab', { name: '2' }).click();
+
+    // Choosing a sheet puts the brush back on its first cell, which is the one just painted.
+    const map = page.getByRole('img', { name: 'Map canvas' });
+    const box2 = await map.boundingBox();
+    if (!box2) throw new Error('no map');
+    await page.mouse.click(box2.x + 20, box2.y + 20);
+
+    // The first sheet's first cell is blank in this project, so anything drawn here came from the
+    // second — which is the whole of what this test is for.
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const el = document.querySelector('nc-map-canvas canvas');
+          if (!(el instanceof HTMLCanvasElement)) return 0;
+          const ctx = el.getContext('2d');
+          if (!ctx) return 0;
+          const { data } = ctx.getImageData(0, 0, 48, 48);
+          let lit = 0;
+          for (let i = 0; i < data.length; i += 4)
+            if ((data[i] ?? 0) + (data[i + 1] ?? 0) + (data[i + 2] ?? 0) > 120) lit += 1;
+          return lit;
+        }),
+      )
+      .toBeGreaterThan(0);
+  });
+
   test('a collaborator is shown with their picture, not their initial', async ({ page }) => {
     await page.goto('/edit/7/game');
     await page.getByRole('button', { name: /share/i }).first().click();
@@ -1024,13 +1084,16 @@ test.describe('editor', () => {
     const later = page.getByRole('button', { name: 'Later tabs' });
     await expect(later).toHaveCount(0);
 
+    // Enough to run past the edge with room to spare -- a nameless tab is barely wider than its
+    // number -- and no more: every sheet added is a document write the whole page reacts to.
     const add = page.getByRole('button', { name: 'Add a sheet' });
-    for (let i = 0; i < 30 && (await later.count()) === 0; i++) await add.click();
-    await expect(later).toBeVisible();
+    for (let i = 0; i < 16; i++) await add.click();
 
-    // Back to the first sheet, so the strip is at its start and forward is the way that moves.
+    // Back to the first sheet before looking: each new one is selected and scrolled to, so the
+    // strip ends up at its far end, where the only way left to go is back.
     await page.getByRole('tab').first().click();
     await expect.poll(() => strip.evaluate((el) => el.scrollLeft)).toBe(0);
+    await expect(later).toBeVisible();
 
     await later.click();
     await expect.poll(() => strip.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);

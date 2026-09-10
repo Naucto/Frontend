@@ -11,6 +11,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { type Pt } from '@app/shared/pixel/pixel-tools';
+import { SheetAtlas } from '@app/shared/pixel/sheet-atlas';
 import { SheetPainter } from '@app/shared/pixel/sheet-painter';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { LOCAL_ORIGIN } from '@naucto/engine';
@@ -38,7 +39,7 @@ import { PANEL_WIDTH } from '../state/editor-ui.store';
 
 const MAP_ZOOM_OCTAVES = Math.log2(MAP_MAX_ZOOM / MAP_MIN_ZOOM);
 import { geometrySignal } from '@app/shared/pixel/geometry.signal';
-import { FIRST_MAP_ID, MAX_MAP_SIZE } from '@naucto/engine';
+import { FIRST_MAP_ID, MAX_MAP_SIZE, SPRITE_SIZE } from '@naucto/engine';
 
 import {
   ResourceDialog,
@@ -145,6 +146,7 @@ import { MinimapComponent } from './minimap.component';
             class="h-full bg-page"
             [game]="session.game"
             [painter]="painter"
+            [atlas]="atlas"
             [tool]="map.tool()"
             [brush]="map.brush()"
             [grid]="map.grid()"
@@ -240,6 +242,17 @@ import { MinimapComponent } from './minimap.component';
         </div>
 
         <nc-section banded [title]="t('editor.map.tilePicker')">
+          <!-- Which sheet the tiles come from. A map's tiles are sprite numbers, and those run
+               across every sheet, so this is the one thing the picker could not say. Read-only:
+               a sheet is named, coloured and deleted in ART, and offering it here as well would be
+               a second place to do the same thing. -->
+          <nc-tabs
+            variant="small"
+            [tabs]="sheetTabs()"
+            [value]="map.sheetId()"
+            (valueChange)="chooseSheet($event)"
+            [label]="t('editor.map.tilesets')"
+          />
           <nc-sheet-view
             [painter]="painter"
             [region]="map.brush()"
@@ -293,6 +306,7 @@ import { MinimapComponent } from './minimap.component';
           <nc-minimap
             [game]="session.game"
             [painter]="painter"
+            [atlas]="atlas"
             [viewport]="viewport()"
             [label]="t('editor.map.wholeMap')"
             (jump)="canvas.scrollToTile($event.x, $event.y)"
@@ -325,10 +339,18 @@ export class MapTabPage {
   private readonly i18n = inject(TranslocoService);
   private readonly dialogs = inject(DialogService);
   protected readonly painter = new SheetPainter(this.session.game);
+  /**
+   * Every sheet's pixels, for the canvas and the minimap.
+   *
+   * The painter above holds one sheet, which is what the picker shows. A map draws tiles from all
+   * of them at once, so it cannot be served by the same buffer.
+   */
+  protected readonly atlas = new SheetAtlas(this.session.game);
   protected readonly undo: Y.UndoManager;
   private readonly geometry = geometrySignal(signal(this.session.game));
   protected readonly MAX_MAP_SIZE = MAX_MAP_SIZE;
-  private readonly mapsVersion = signal(0);
+  /** Ticked when a sheet or a map is added, dropped or renamed — neither is a signal. */
+  private readonly collectionsVersion = signal(0);
   /**
    * The map being drawn on, by name where it has one and by number where it has not.
    *
@@ -336,7 +358,7 @@ export class MapTabPage {
    * called.
    */
   protected readonly mapTitle = computed(() => {
-    this.mapsVersion();
+    this.collectionsVersion();
     const maps = this.session.game.maps;
     const at = maps.findIndex((m) => m.id === this.map.mapId());
     const found = maps[at] ?? maps[0];
@@ -347,9 +369,32 @@ export class MapTabPage {
     return name === '' ? `#${String((at === -1 ? 0 : at) + 1)}` : name;
   });
 
+  /** Every sheet, as the picker offers them. Numbered and coloured like the strip in ART. */
+  protected readonly sheetTabs = computed<TabItem<string>[]>(() => {
+    this.collectionsVersion();
+    return this.session.game.sheets.map((sh, i) => ({
+      value: sh.id,
+      label: sh.name,
+      index: i + 1,
+      colour: sh.colour === null ? undefined : this.session.game.palette[sh.colour],
+    }));
+  });
+
+  /** The sheet the brush is picked from, or the first where the chosen one is gone. */
+  protected readonly sheet = computed(() => {
+    this.collectionsVersion();
+    const sheets = this.session.game.sheets;
+
+    return sheets.find((sh) => sh.id === this.map.sheetId()) ?? sheets[0];
+  });
+
+  protected chooseSheet(id: string | undefined): void {
+    if (id !== undefined) this.map.setSheet(id);
+  }
+
   protected readonly mapTabs = computed<TabItem<string>[]>(() => {
     this.geometry();
-    this.mapsVersion();
+    this.collectionsVersion();
     return this.session.game.maps.map((m, i) => ({
       value: m.id,
       label: m.name,
@@ -398,15 +443,19 @@ export class MapTabPage {
   ]);
 
   constructor() {
-    // The store clamps the brush against the sheet, so it has to be told when the sheet changes.
+    // The brush is bounded by the sheet it is picked from, and the picker draws that sheet: both
+    // follow the choice rather than the document's own shape, which is only ever the first sheet's.
     effect(() => {
-      const g = this.geometry();
+      const sheet = this.sheet();
+      if (!sheet) return;
       untracked(() => {
-        this.map.setSheetSize(g.spritesPerRow, g.spriteRows);
+        this.map.setSheetSize(sheet.width / SPRITE_SIZE, sheet.height / SPRITE_SIZE);
+        this.painter.sheetId.set(sheet.id);
+        this.painter.follow();
       });
     });
     const off = this.session.game.onCollectionsChange(() => {
-      this.mapsVersion.update((v) => v + 1);
+      this.collectionsVersion.update((v) => v + 1);
     });
     inject(DestroyRef).onDestroy(off);
     this.undo = new Y.UndoManager([this.session.game.tilesMap], {
@@ -423,6 +472,7 @@ export class MapTabPage {
     inject(DestroyRef).onDestroy(() => {
       this.undo.destroy();
       this.painter.destroy();
+      this.atlas.destroy();
       this.session.setCursor(null);
     });
   }

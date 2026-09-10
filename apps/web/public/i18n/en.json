@@ -469,6 +469,7 @@
       },
       "grid": "Grid",
       "flags": "Flags",
+      "tilesets": "Tilesets",
       "tilePicker": "Tile picker",
       "wholeMap": "Whole map",
       "width": "W",

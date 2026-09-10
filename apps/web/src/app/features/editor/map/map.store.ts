@@ -1,4 +1,4 @@
-import { DEFAULT_GEOMETRY, FIRST_MAP_ID } from '@naucto/engine';
+import { DEFAULT_GEOMETRY, FIRST_MAP_ID, FIRST_SHEET_ID } from '@naucto/engine';
 import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
 
 import { stepZoom } from '../art/sprite-canvas.component';
@@ -46,7 +46,9 @@ interface MapState {
   /** Pixels per sprite pixel (1..4). */
   zoom: number;
   selection: TileRect | null;
-  /** The sheet the brush is picked from, in cells. Mirrored from the document, like ART's. */
+  /** Which sheet the brush is picked from. A map may take its tiles from any of them. */
+  sheetId: string;
+  /** That sheet's size in cells. Mirrored from the document, like ART's. */
   cols: number;
   rows: number;
   mapId: string;
@@ -70,6 +72,7 @@ export const MapStore = signalStore(
     flags: false,
     zoom: 2,
     selection: null,
+    sheetId: FIRST_SHEET_ID,
     cols: DEFAULT_GEOMETRY.spritesPerRow,
     rows: DEFAULT_GEOMETRY.spriteRows,
     mapId: FIRST_MAP_ID,
@@ -85,7 +88,11 @@ export const MapStore = signalStore(
     setMap(mapId: string): void {
       patchState(store, { mapId, selection: null });
     },
-    /** Follows the document's sheet, pulling the brush back onto it when it shrinks. */
+    /** A different sheet is a different set of cells, so the brush goes back to its first one. */
+    setSheet(sheetId: string): void {
+      patchState(store, { sheetId, brush: { x: 0, y: 0, w: 1, h: 1 } });
+    },
+    /** Follows the chosen sheet, pulling the brush back onto it when it shrinks. */
     setSheetSize(cols: number, rows: number): void {
       patchState(store, { cols, rows, brush: clampToSheet(store.brush(), cols, rows) });
     },

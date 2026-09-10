@@ -28,7 +28,11 @@ export class SheetPainter {
     this.paintAll();
     this.unsub.push(
       game.onPixelsChange((changes) => {
-        for (const c of changes) this.paintPixel(c.x, c.y, c.colour);
+        // Only this sheet's: a coordinate names a place on a sheet, not in the game, so a stroke on
+        // another one would land here at the same x and y and paint over something else entirely.
+        const mine = changes.filter((c) => c.sheet === this.shown);
+        if (mine.length === 0) return;
+        for (const c of mine) this.paintPixel(c.x, c.y, c.colour);
         this.flush();
       }),
       game.onPaletteChange(() => {
