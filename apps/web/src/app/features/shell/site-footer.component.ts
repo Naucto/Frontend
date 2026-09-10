@@ -3,12 +3,12 @@ import { RouterLink } from '@angular/router';
 import { ThemeService } from '@app/core/theme/theme.service';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { ENGINE_VERSION } from '@naucto/engine/version';
-import { IconComponent } from '@naucto/ui';
+import { IconComponent, LogoComponent } from '@naucto/ui';
 
 /** Hub/learn pages only — never rendered in the editor. */
 @Component({
   selector: 'nc-site-footer',
-  imports: [RouterLink, TranslocoDirective, IconComponent],
+  imports: [RouterLink, TranslocoDirective, IconComponent, LogoComponent],
   template: `
     <!-- No top margin: a page whose own panel runs to the bottom edge has to meet this rule, and
          one that ends on its content is already held off it by the shell's padding. -->
@@ -18,7 +18,7 @@ import { IconComponent } from '@naucto/ui';
       >
         <div>
           <div class="flex items-center gap-1">
-            <img src="/img/logo.svg" alt="" width="24" height="24" />
+            <nc-logo [size]="24" />
             <span class="text-title text-ink">Naucto</span>
           </div>
           <p class="mt-1 max-w-[38ch] text-body text-ink-2">{{ t('footer.tagline') }}</p>

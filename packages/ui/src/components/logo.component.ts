@@ -1,0 +1,50 @@
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+
+/** The crescent, in the two subpaths it is drawn from: the body, and the dot inside the bite. */
+const BODY =
+  'M240.787 19.002C195.926 46.5197 166 96.0145 166 152.5C166 192.586 181.073 229.149 205.857 ' +
+  '256.838C202.946 257.693 199.862 258.156 196.667 258.156C188.831 258.156 181.669 255.398 ' +
+  '176.077 250.807C172.663 248.003 167.621 248.498 164.817 251.912C162.014 255.327 162.509 ' +
+  '260.368 165.923 263.172C174.278 270.033 185.002 274.156 196.667 274.156C204.384 274.156 ' +
+  '211.683 272.35 218.161 269.143L217.353 268.414C213.324 264.757 209.487 260.892 205.857 ' +
+  '256.838C219.258 252.902 229 240.582 229 226.051C229 218.526 226.402 211.62 222.036 ' +
+  '206.144C219.282 202.689 219.85 197.655 223.305 194.9C226.759 192.146 231.793 192.715 ' +
+  '234.547 196.169C241.085 204.371 245 214.765 245 226.051C245 244.954 234.055 261.272 ' +
+  '218.163 269.141C245.852 293.925 282.414 309 322.5 309C382.274 309 434.218 275.487 ' +
+  '460.576 226.227C460.856 230.782 461 235.374 461 240C461 362.055 362.055 461 240 ' +
+  '461C117.945 461 19 362.055 19 240C19 117.945 117.945 19 240 19C240.262 19 240.525 ' +
+  '19.001 240.787 19.002ZM108 215C83.6995 215 64 234.699 64 259C64 283.301 83.6995 303 108 ' +
+  '303C132.301 303 152 283.301 152 259C152 234.699 132.301 215 108 215Z';
+
+/**
+ * The Naucto mark.
+ *
+ * Inline rather than an `<img>`, because the mark has to change colour with the theme and an image
+ * cannot read a token. It is drawn in `gold-ink` — gold as something to read on the page, which is
+ * the bright gold in the dark theme and a dark one in the light theme. As an image it kept the
+ * bright gold on both, and on cream that is a contrast of about 1.2 to 1: the mark all but
+ * disappeared, and its counter-forms — which are holes, so they take whatever is behind — stopped
+ * reading as shapes at all.
+ */
+@Component({
+  selector: 'nc-logo',
+  template: `
+    <svg
+      [attr.width]="size()"
+      [attr.height]="size()"
+      viewBox="0 0 480 480"
+      fill="currentColor"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path [attr.d]="body" />
+      <circle cx="229" cy="138" r="44" />
+    </svg>
+  `,
+  host: { class: 'inline-flex shrink-0 items-center justify-center leading-none text-gold-ink' },
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class LogoComponent {
+  readonly size = input(32);
+  protected readonly body = BODY;
+}

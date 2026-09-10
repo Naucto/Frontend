@@ -19,6 +19,7 @@ export * from './components/input.directive';
 export * from './components/keycap.component';
 export * from './components/label.component';
 export * from './components/lcd.component';
+export * from './components/logo.component';
 export * from './components/meter.component';
 export * from './components/notice.component';
 export * from './components/online-dot.component';

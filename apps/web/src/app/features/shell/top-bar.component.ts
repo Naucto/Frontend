@@ -11,7 +11,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthStore } from '@app/core/auth/auth.store';
 import { TranslocoDirective } from '@jsverse/transloco';
-import { ButtonDirective, IconComponent } from '@naucto/ui';
+import { ButtonDirective, IconComponent, LogoComponent } from '@naucto/ui';
 import { map } from 'rxjs';
 
 import { AccountMenuComponent } from './account-menu.component';
@@ -40,6 +40,7 @@ const NAV_LINK =
     SearchSuggestComponent,
     AccountMenuComponent,
     NotificationsBellComponent,
+    LogoComponent,
   ],
   template: `
     <!-- The mark takes a cell the width of the editor's rail, so it lands in the same place on both
@@ -59,7 +60,7 @@ const NAV_LINK =
         class="flex w-[81px] shrink-0 items-center justify-center"
         aria-label="Naucto"
       >
-        <img src="/img/logo.svg" alt="" width="32" height="32" />
+        <nc-logo />
       </a>
 
       <!-- Below md the links collapse behind the menu button; the header never scrolls sideways. -->

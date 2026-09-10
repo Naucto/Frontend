@@ -2,11 +2,12 @@ import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core
 import { Router } from '@angular/router';
 import { SignInFormComponent } from '@app/shared/auth/sign-in-form.component';
 import { TranslocoDirective } from '@jsverse/transloco';
+import { LogoComponent } from '@naucto/ui';
 
 /** "Insert game" — the sign-in form on its own page, which then goes wherever it was sent from. */
 @Component({
   selector: 'nc-sign-in-page',
-  imports: [TranslocoDirective, SignInFormComponent],
+  imports: [TranslocoDirective, SignInFormComponent, LogoComponent],
   template: `
     <section
       *transloco="let t"
@@ -15,7 +16,7 @@ import { TranslocoDirective } from '@jsverse/transloco';
       <!-- A wordmark, as the artboard has it: the bare glyph reads as decoration on a card that is
            otherwise all field labels. Same pairing the footer uses. -->
       <div class="mb-2 flex items-center gap-1">
-        <img src="/img/logo.svg" alt="" width="22" height="22" />
+        <nc-logo [size]="22" />
         <span class="text-title text-ink">Naucto</span>
       </div>
       <h1 class="mt-2 text-[22px] leading-[1.2] text-ink">{{ t('auth.insertGame') }}</h1>

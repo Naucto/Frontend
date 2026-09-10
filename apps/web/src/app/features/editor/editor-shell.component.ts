@@ -27,6 +27,7 @@ import {
   ErrorStateComponent,
   IconComponent,
   LcdComponent,
+  LogoComponent,
   PanelRegionComponent,
   RailComponent,
   type RailItem,
@@ -86,6 +87,7 @@ const RAIL: RailItem<EditorTab>[] = [
     OpenOnDesktopComponent,
     DocPaneComponent,
     VersionsPopoverComponent,
+    LogoComponent,
   ],
   providers: [WorkSessionService, EditorUiStore, RuntimeHostService, EditorRuntimeService],
   template: `
@@ -100,7 +102,7 @@ const RAIL: RailItem<EditorTab>[] = [
           class="flex w-[81px] shrink-0 items-center justify-center"
           [attr.aria-label]="t('nav.myGames')"
         >
-          <img src="/img/logo.svg" alt="" width="32" height="32" />
+          <nc-logo />
         </a>
         @if (live()) {
           <nc-versions-popover />
