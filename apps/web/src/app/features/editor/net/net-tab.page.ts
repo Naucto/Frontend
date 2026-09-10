@@ -47,7 +47,17 @@ interface Row {
   read: boolean;
   write: boolean;
   configured: boolean;
+  /** Whether a running session has this path, as against the document merely declaring it. */
+  live: boolean;
 }
+
+/** One key of a path. */
+const SEGMENT = /^[a-z0-9_]+$/i;
+/**
+ * A path, which a declaration may give whole: building `players.score` a segment at a time means
+ * declaring a node only to reopen it, and the name people say out loud is the dotted one.
+ */
+const PATH = /^[a-z0-9_]+(\.[a-z0-9_]+)*$/i;
 
 /**
  * The design's value column is a Lua literal, not a `toString()`: strings keep their quotes so an
@@ -147,7 +157,7 @@ function formatScalar(value: TableScalar | undefined): string {
           <span class="flex-1"></span>
           <nc-help-dot [text]="t('editor.net.helpState')" />
         </div>
-        @if (rows().length) {
+        @if (!bare()) {
           <div class="min-h-0 flex-1 overflow-auto">
             <table class="w-full table-fixed border-collapse font-mono text-[12px]">
               <colgroup>
@@ -180,7 +190,8 @@ function formatScalar(value: TableScalar | undefined): string {
                 @for (r of rows(); track r.path) {
                   <tr class="h-[35px] border-b border-line-faint hover:bg-sunken">
                     <td
-                      class="py-[7px]"
+                      class="truncate py-[7px] pr-2"
+                      [attr.title]="r.name"
                       [class]="r.depth ? 'text-ink-body' : 'text-ink'"
                       [style.paddingLeft.px]="18 + r.depth * 20"
                     >
@@ -211,8 +222,21 @@ function formatScalar(value: TableScalar | undefined): string {
                         {{ r.name }}
                       }
                     </td>
-                    <td class="py-[7px]" [class]="valueClass(r.kind)">{{ r.value }}</td>
-                    <td class="py-[7px]" [class]="ownerClass(r.owner)">
+                    <!-- The table is fixed, but a cell does not clip on its own: a long string ran
+                         straight over OWNER and PERMS, so a row read as two columns of one value.
+                         The whole of it is on the cell, for a reader who needs it. -->
+                    <td
+                      class="truncate py-[7px]"
+                      [attr.title]="r.value"
+                      [class]="valueClass(r.kind)"
+                    >
+                      {{ r.value }}
+                    </td>
+                    <td
+                      class="truncate py-[7px]"
+                      [attr.title]="ownerName(r.owner)"
+                      [class]="ownerClass(r.owner)"
+                    >
                       {{ ownerName(r.owner) }}
                     </td>
                     <td class="py-[7px]">
@@ -244,8 +268,8 @@ function formatScalar(value: TableScalar | undefined): string {
                         <button
                           type="button"
                           class="flex h-[20px] w-[18px] items-center justify-center rounded-xs text-[12px] leading-none text-ink-4 hover:text-ink disabled:opacity-40 disabled:hover:text-ink-4"
-                          [disabled]="!canEdit() || !r.container"
-                          [attr.title]="editHint(t, t('editor.net.addChild'))"
+                          [disabled]="!canShape(r) || (r.live && !r.container)"
+                          [attr.title]="editHint(t, r, t('editor.net.addChild'))"
                           (click)="startAdd(r)"
                         >
                           +
@@ -253,8 +277,8 @@ function formatScalar(value: TableScalar | undefined): string {
                         <button
                           type="button"
                           class="flex h-[20px] w-[18px] items-center justify-center rounded-xs text-ink-4 hover:text-ink disabled:opacity-40 disabled:hover:text-ink-4"
-                          [disabled]="!canEdit() || !r.path"
-                          [attr.title]="editHint(t, t('editor.net.renameNode'))"
+                          [disabled]="!canShape(r) || !r.path"
+                          [attr.title]="editHint(t, r, t('editor.net.renameNode'))"
                           (click)="startRename(r)"
                         >
                           <nc-icon name="edit" [size]="12" />
@@ -262,8 +286,8 @@ function formatScalar(value: TableScalar | undefined): string {
                         <button
                           type="button"
                           class="flex h-[20px] w-[18px] items-center justify-center rounded-xs text-ink-4 hover:text-hot-ink disabled:opacity-40 disabled:hover:text-ink-4"
-                          [disabled]="!canEdit() || !r.path"
-                          [attr.title]="editHint(t, t('editor.net.deleteNode'))"
+                          [disabled]="!canShape(r) || !r.path"
+                          [attr.title]="editHint(t, r, t('editor.net.deleteNode'))"
                           (click)="remove(r)"
                         >
                           <nc-icon name="trash" [size]="12" />
@@ -298,7 +322,11 @@ function formatScalar(value: TableScalar | undefined): string {
               icon="users"
               [title]="t('editor.net.idle')"
               [hint]="t('editor.net.noSession')"
-            />
+            >
+              <button ncButton variant="secondary" size="sm" (click)="startAdd(root)">
+                {{ t('editor.net.declarePath') }}
+              </button>
+            </nc-empty-state>
           </div>
         }
       </section>
@@ -501,10 +529,17 @@ export class NetTabPage {
   });
   protected readonly rigJoined = computed(() => this.rigScreen()?.netBridge.session() !== null);
   /**
-   * Only the host may reshape the tree. A client's write goes through the host anyway, but a
+   * Only the host may reshape the *live* tree. A client's write goes through the host anyway, but a
    * rename is a delete plus a write, and half of that arriving is worse than neither.
    */
   protected readonly canEdit = computed(() => this.session()?.isHost ?? false);
+  /**
+   * The declared tree is the game document, which everyone in the work session edits; only a path a
+   * session has actually reached carries the host's restriction with it.
+   */
+  protected canShape(r: Row): boolean {
+    return !r.live || this.canEdit();
+  }
   protected readonly players = computed(() => {
     const s = this.session();
     if (!s) return [] as number[];
@@ -536,41 +571,97 @@ export class NetTabPage {
     this.tick();
     this.permsVersion();
     const s = this.session();
-    if (!s) return [];
     const perms = new Map<string, number>();
     this.work.game.netPermissions.forEach((v, k) => perms.set(k, v.flags));
+
+    // What the document declares, with every ancestor a name implies. This is the half that makes
+    // the tree editable with nothing running: a permission is set on a path, so the path is a node
+    // whether or not a session has ever put a value there.
+    const declared = new Map<string, Set<string>>();
+    for (const path of perms.keys()) {
+      if (!path) continue;
+      const parts = path.split('.');
+      for (let i = 0; i < parts.length; i++) {
+        const parent = parts.slice(0, i).join('.');
+        let kids = declared.get(parent);
+        if (!kids) declared.set(parent, (kids = new Set<string>()));
+        kids.add(parts[i] ?? '');
+      }
+    }
+
     const q = this.filter().trim().toLowerCase();
     const out: Row[] = [];
     const visit = (path: string, depth: number): void => {
-      const container = path === '' || s.isContainer(path);
-      const keys = container ? s.childKeys(path) : [];
-      const value = container ? undefined : s.getValue(path);
-      const objectKind = path ? s.objectKindAt(path) : undefined;
+      const root = path === '';
+      const liveContainer = s !== null && (root || s.isContainer(path));
+      const value = liveContainer || s === null ? undefined : s.getValue(path);
+      const live = s !== null && (root || liveContainer || value !== undefined);
+      const keys = [
+        ...new Set([
+          ...(liveContainer && s ? s.childKeys(path) : []),
+          ...(declared.get(path) ?? []),
+        ]),
+      ];
+      const container = root || liveContainer || keys.length > 0;
+      const objectKind = path && s ? s.objectKindAt(path) : undefined;
       const flags = resolveFlags(perms, path);
       const row: Row = {
         path,
         depth,
-        name: path === '' ? '<root>' : path,
+        name: root ? '<root>' : path,
         container,
-        // The design labels the root by its type and every other container by its size.
+        // The design labels the root by its type and every other container by its size. A node the
+        // document declares and no session has reached carries a dash: it has no value yet, which
+        // is not the same as holding nil.
         value:
           objectKind ??
-          (path === '' ? 'table' : container ? this.entries(keys.length) : formatScalar(value)),
-        kind: objectKind ? 'object' : container ? 'table' : (typeof value as Row['kind']),
-        owner: path
-          ? (s.lockOwner(path) ?? (depth > 0 ? (s.isHost ? s.selfUserId : null) : null))
-          : null,
+          (root
+            ? 'table'
+            : container
+              ? this.entries(keys.length)
+              : live
+                ? formatScalar(value)
+                : '—'),
+        kind: objectKind ? 'object' : container || !live ? 'table' : (typeof value as Row['kind']),
+        owner:
+          path && s && live
+            ? (s.lockOwner(path) ?? (depth > 0 ? (s.isHost ? s.selfUserId : null) : null))
+            : null,
         read: flags === null ? true : (flags & PERM_CLIENT_READ) !== 0,
         write: flags === null ? true : (flags & PERM_CLIENT_WRITE) !== 0,
         configured: perms.has(path),
+        live,
       };
-      if (!q || path.toLowerCase().includes(q) || path === '') out.push(row);
+      if (!q || path.toLowerCase().includes(q) || root) out.push(row);
       if (container && !this.collapsed().has(path))
         for (const k of keys) visit(path ? `${path}.${k}` : k, depth + 1);
     };
     visit('', 0);
     return out;
   });
+
+  /**
+   * Nothing to show: no session, and no path declared either. The root row alone is a table with a
+   * plus button in it, which is not an invitation — the empty state is. It steps aside the moment a
+   * name is being typed, because the field that takes it lives in the table.
+   */
+  /** The root, for the button that offers to declare the first path — there is no table row yet. */
+  protected readonly root: Row = {
+    path: '',
+    depth: 0,
+    name: '<root>',
+    container: true,
+    value: 'table',
+    kind: 'table',
+    owner: null,
+    read: true,
+    write: true,
+    configured: false,
+    live: false,
+  };
+  protected readonly bare = computed(
+    () => this.session() === null && this.adding() === null && this.rows().length <= 1,
+  );
 
   constructor() {
     let timer: ReturnType<typeof setInterval> | null = null;
@@ -641,8 +732,8 @@ export class NetTabPage {
   }
 
   /** The action buttons say what they do, or why they cannot. */
-  protected editHint(t: (key: string) => string, label: string): string {
-    return this.canEdit() ? label : t('editor.net.hostOnly');
+  protected editHint(t: (key: string) => string, r: Row, label: string): string {
+    return this.canShape(r) ? label : t('editor.net.hostOnly');
   }
 
   protected ownerName(userId: number | null): string {
@@ -742,25 +833,73 @@ export class NetTabPage {
 
   protected commitAdd(r: Row): void {
     const key = this.draft().trim();
-    const session = this.session();
     this.cancelEdit();
-    if (!key || key.includes('.') || !session) return;
-    // A new node has to hold something for the tree to carry it; the empty string is the one
+    if (!PATH.test(key)) return;
+    const path = r.path ? `${r.path}.${key}` : key;
+    // Declaring it is what makes it a node with nothing running behind it. Open both ways, which is
+    // what an unconfigured path already resolves to: the entry names the path, it does not close it.
+    this.work.game.transact(() => {
+      this.work.game.netPermissions.set(path, { flags: PERM_CLIENT_READ | PERM_CLIENT_WRITE });
+    });
+    // A new node has to hold something for the live tree to carry it; the empty string is the one
     // value that is visibly a placeholder rather than a number someone meant.
-    session.setValue(r.path ? `${r.path}.${key}` : key, '');
+    if (this.canEdit()) this.session()?.setValue(path, '');
   }
 
   protected commitRename(r: Row): void {
     const key = this.draft().trim();
-    const session = this.session();
     const parent = r.path.slice(0, Math.max(0, r.path.lastIndexOf('.')));
     this.cancelEdit();
-    if (!key || key.includes('.') || !session || key === r.path.split('.').pop()) return;
-    this.movePath(session, r.path, parent ? `${parent}.${key}` : key);
+    if (!SEGMENT.test(key) || key === r.path.split('.').pop()) return;
+    const to = parent ? `${parent}.${key}` : key;
+    this.movePermissions(r.path, to);
+    const session = this.session();
+    if (session && r.live && this.canEdit()) this.movePath(session, r.path, to);
   }
 
   protected remove(r: Row): void {
-    this.session()?.deleteSubtree(r.path);
+    this.dropPermissions(r.path);
+    if (r.live && this.canEdit()) this.session()?.deleteSubtree(r.path);
+  }
+
+  /** Every permission on a path and under it, as [old key, new key, flags]. */
+  private permissionsUnder(path: string): [string, string, number][] {
+    const moved: [string, string, number][] = [];
+    this.work.game.netPermissions.forEach((value, key) => {
+      if (key === path || key.startsWith(`${path}.`)) moved.push([key, key, value.flags]);
+    });
+    return moved;
+  }
+
+  /**
+   * A rename takes the permissions with the name.
+   *
+   * Without this they stayed on a path the tree no longer has: the node came back fully open, and
+   * the orphaned entry sat in the document naming a branch nobody could see. One transaction,
+   * because everything downstream reloads on this map and a tree with two names for one branch is
+   * worse than either name.
+   */
+  private movePermissions(from: string, to: string): void {
+    const map = this.work.game.netPermissions;
+    const moved = this.permissionsUnder(from).map(([key, , flags]): [string, string, number] => [
+      key,
+      to + key.slice(from.length),
+      flags,
+    ]);
+    if (!moved.length) return;
+    this.work.game.transact(() => {
+      for (const [key] of moved) map.delete(key);
+      for (const [, key, flags] of moved) map.set(key, { flags });
+    });
+  }
+
+  private dropPermissions(path: string): void {
+    const map = this.work.game.netPermissions;
+    const gone = this.permissionsUnder(path);
+    if (!gone.length) return;
+    this.work.game.transact(() => {
+      for (const [key] of gone) map.delete(key);
+    });
   }
 
   /** Rename is a move: every leaf under the old path is written under the new one, then dropped. */

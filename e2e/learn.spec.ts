@@ -22,7 +22,7 @@ test.describe('learn', () => {
 
   test('searches functions', async ({ page }) => {
     await page.goto('/learn');
-    await page.getByPlaceholder('Search the docs').fill('play_sfx');
+    await page.getByPlaceholder('Search', { exact: true }).fill('play_sfx');
     await expect(page.getByRole('option').first()).toContainText('sound.play_sfx');
   });
 
@@ -32,7 +32,7 @@ test.describe('learn', () => {
    */
   test('Ctrl-K focuses the docs search, and "/" still focuses the top bar', async ({ page }) => {
     await page.goto('/learn');
-    const docs = page.getByPlaceholder('Search the docs');
+    const docs = page.getByPlaceholder('Search', { exact: true });
     const global = page.getByPlaceholder('Search games, people, tags…');
     await expect(docs).toBeVisible();
 

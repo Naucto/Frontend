@@ -509,8 +509,8 @@
       "entry": "{{n}} entry",
       "entries": "{{n}} entries",
       "host": "host",
-      "helpState": "Everything the game put in net.state, as the host sees it. R / W say whether joined clients may read or write a path; the host is never restricted.",
-      "noSession": "The tree fills in when the game calls net.host() or net.join(). Run it and try.",
+      "helpState": "Every path the game declares, and — while a session runs — what it holds. R / W say whether joined clients may read or write a path; the host is never restricted.",
+      "noSession": "Set a path up here before you run anything, and the flags travel with the game. The values fill in when it calls net.host() or net.join().",
       "session": "Session",
       "hosting": "hosting",
       "joined": "joined",
@@ -547,9 +547,10 @@
       "renameNode": "Rename node",
       "deleteNode": "Delete this node and its children",
       "newKey": "key",
-      "hostOnly": "Only the host can change the shape of the tree.",
+      "hostOnly": "Only the host can change the shape of a path a session is holding.",
       "actions": "Actions",
-      "needHost": "Host a session first — run the game and call net.host()."
+      "needHost": "Host a session first — run the game and call net.host().",
+      "declarePath": "Declare a path"
     },
     "gamePaused": "Game paused — swap back to resume",
     "desktopOnly": {
