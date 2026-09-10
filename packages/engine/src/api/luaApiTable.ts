@@ -208,8 +208,8 @@ export const LUA_API: readonly LuaApiEntry[] = [
     summary: 'Flags byte of sprite n, or one bit of it.',
     legacy: 'fget',
   },
-  { ns: 'map', name: 'width', signature: 'map.width()', summary: 'Map width in tiles (128).' },
-  { ns: 'map', name: 'height', signature: 'map.height()', summary: 'Map height in tiles (32).' },
+  { ns: 'map', name: 'width', signature: 'map.width()', summary: 'Map width in tiles.' },
+  { ns: 'map', name: 'height', signature: 'map.height()', summary: 'Map height in tiles.' },
   // input
   {
     ns: 'input',
