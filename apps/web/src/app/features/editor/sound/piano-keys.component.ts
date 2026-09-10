@@ -27,13 +27,17 @@ interface Key {
     <!-- The corner belongs to neither the keys nor the ruler, and holds its own place at the top. -->
     <div class="sticky top-0 z-10 shrink-0 bg-panel" [style.height.px]="RULER_H"></div>
     @for (k of keys(); track k.pitch) {
+      <!-- Captured on the way down, so the note is let go even when the pointer has wandered off
+           the key -- or out of the window -- before it is lifted. -->
       <button
         type="button"
         class="relative block w-full shrink-0 cursor-pointer border-b border-b-key-sharp text-left"
         [style.height.px]="ROW_H"
         [class]="k.c ? 'bg-key-lit' : 'bg-key'"
         [attr.aria-label]="k.name"
-        (pointerdown)="pressed.emit(k.pitch)"
+        (pointerdown)="onDown($event, k.pitch)"
+        (pointerup)="released.emit()"
+        (pointercancel)="released.emit()"
       >
         @if (k.black) {
           <span
@@ -69,11 +73,18 @@ interface Key {
 })
 export class PianoKeysComponent {
   readonly pressed = output<number>();
+  /** The key was let go. The note it started sounds until this arrives. */
+  readonly released = output();
 
   protected readonly ROW_H = ROW_H;
   protected readonly RULER_H = RULER_H;
   protected readonly BLACK_KEY_W = BLACK_KEY_W;
   protected readonly KEY_W = KEY_W;
+
+  protected onDown(e: PointerEvent, pitch: number): void {
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    this.pressed.emit(pitch);
+  }
 
   protected readonly keys = computed<Key[]>(() =>
     Array.from({ length: PITCH_MAX - PITCH_MIN + 1 }, (_, r) => {

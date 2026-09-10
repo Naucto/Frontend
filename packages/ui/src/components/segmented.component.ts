@@ -65,9 +65,12 @@ export class SegmentedComponent<T extends string = string> {
   /** Stretch the segments to share the full width, as the publishing rows do. */
   readonly fill = input(false, { transform: booleanAttribute });
   /**
-   * Chip density, and `chips` only — the framed track is 26 everywhere the design draws it, so
-   * there is no small framed variant to offer. `sm` is the ART sheet band: 20 tall on 7px of
-   * padding, against the 24 a page-level filter gets.
+   * Control density.
+   *
+   * For `chips` this is the ART sheet band: 20 tall on 7px of padding, against the 24 a page-level
+   * filter gets. For `framed` it is the row of an inspector, where the track stands among sliders
+   * a third of its height and has to come down to meet them: the segments take the `xs` control
+   * height on a hairline of padding, so the whole track lands where the `sm` token is.
    */
   readonly size = input<'sm' | 'md'>('md');
 
@@ -76,6 +79,7 @@ export class SegmentedComponent<T extends string = string> {
   );
 
   private readonly small = computed(() => this.variant() === 'chips' && this.size() === 'sm');
+  private readonly shortFrame = computed(() => this.variant() === 'framed' && this.size() === 'sm');
 
   protected readonly trackClass = computed(() =>
     [
@@ -85,7 +89,9 @@ export class SegmentedComponent<T extends string = string> {
         ? this.small()
           ? 'gap-[3px]'
           : 'gap-[6px]'
-        : 'gap-[3px] rounded-sm border border-line bg-inset p-[3px]',
+        : this.shortFrame()
+          ? 'gap-[1px] rounded-sm border border-line bg-inset p-[1px]'
+          : 'gap-[3px] rounded-sm border border-line bg-inset p-[3px]',
     ].join(' '),
   );
 
@@ -97,7 +103,9 @@ export class SegmentedComponent<T extends string = string> {
         ? this.small()
           ? 'inline-flex h-[23px] items-center bg-raised px-[7px] font-mono text-micro tracking-button text-ink-3 hover:text-ink'
           : 'bg-raised px-[11px] py-[6px] font-mono text-label tracking-button text-ink-3 hover:text-ink'
-        : 'h-(--nc-control-h) px-1.5 font-mono text-meta tracking-button text-ink-3 hover:text-ink',
+        : this.shortFrame()
+          ? 'inline-flex h-(--nc-control-h-xs) items-center justify-center px-1 font-mono text-micro tracking-button text-ink-3 hover:text-ink'
+          : 'h-(--nc-control-h) px-1.5 font-mono text-meta tracking-button text-ink-3 hover:text-ink',
     ].join(' '),
   );
 

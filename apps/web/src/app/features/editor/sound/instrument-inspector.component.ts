@@ -33,6 +33,14 @@ const OSCS: { value: OscType; label: string }[] = [
   { value: 'sample', label: 'PCM' },
 ];
 
+/**
+ * Longest attack, decay or release an instrument may be given, in seconds.
+ *
+ * A pad wants a second or more to open, and the slider's square curve keeps the short end usable:
+ * half the travel is still under a quarter of the range.
+ */
+const ENV_MAX = 3;
+
 const FILTERS = [
   { value: 'off', label: 'Off' },
   { value: 'lp', label: 'LP' },
@@ -171,7 +179,9 @@ const FILTERS = [
           @for (k of envKeys; track k) {
             <div>
               <div class="font-mono text-meta text-ink">{{ envReadout(k) }}</div>
-              <div class="label text-ink-4">{{ k }}</div>
+              <!-- The grid's gap sets the columns apart and says nothing about the rows, so the
+                   word sat against the number above it. -->
+              <div class="label mt-0.75 text-ink-4">{{ k }}</div>
             </div>
           }
         </div>
@@ -181,8 +191,8 @@ const FILTERS = [
             compact
             [min]="0"
             [max]="100"
-            [value]="toSlider(inst().env.attack, 1)"
-            (valueChange)="env({ attack: fromSlider($event, 1) })"
+            [value]="toSlider(inst().env.attack, ENV_MAX)"
+            (valueChange)="env({ attack: fromSlider($event, ENV_MAX) })"
             accent="jade"
           />
           <nc-slider
@@ -190,8 +200,8 @@ const FILTERS = [
             compact
             [min]="0"
             [max]="100"
-            [value]="toSlider(inst().env.decay, 1)"
-            (valueChange)="env({ decay: fromSlider($event, 1) })"
+            [value]="toSlider(inst().env.decay, ENV_MAX)"
+            (valueChange)="env({ decay: fromSlider($event, ENV_MAX) })"
             accent="jade"
           />
           <nc-slider
@@ -208,8 +218,8 @@ const FILTERS = [
             compact
             [min]="0"
             [max]="100"
-            [value]="toSlider(inst().env.release, 2)"
-            (valueChange)="env({ release: fromSlider($event, 2) })"
+            [value]="toSlider(inst().env.release, ENV_MAX)"
+            (valueChange)="env({ release: fromSlider($event, ENV_MAX) })"
             accent="jade"
           />
         </div>
@@ -257,13 +267,17 @@ const FILTERS = [
             accent="hot"
             (valueChange)="arp($event)"
           />
+          <!-- The slider's own geometry, written out: same gap, same 56px label column. A row
+               that sets its label in ch sets it in the width of a zero, which is not the width the
+               sliders above and below it use. -->
           <div class="flex items-center gap-1.5">
-            <span class="label w-[6ch] shrink-0">FILT</span>
+            <span class="label tracking-tag w-[56px] shrink-0">FILT</span>
             <nc-segmented
               [options]="filters"
               [value]="inst().filter.type"
               (valueChange)="filter({ type: asFilter($event) })"
               size="sm"
+              fill
             />
           </div>
           <nc-slider
@@ -348,6 +362,7 @@ export class InstrumentInspectorComponent {
   /** Emitted with the encoded PCM (or null to drop it); the library owns the document write. */
   readonly sampleChange = output<{ id: string; pcm: string | null }>();
   protected readonly oscs = OSCS;
+  protected readonly ENV_MAX = ENV_MAX;
   protected readonly filters = FILTERS;
   protected readonly envKeys = ['attack', 'decay', 'sustain', 'release'] as const;
   protected readonly envValues = computed(() => this.inst().env);
@@ -457,7 +472,8 @@ export class InstrumentInspectorComponent {
   }
   protected envReadout(k: 'attack' | 'decay' | 'sustain' | 'release'): string {
     const v = this.inst().env[k];
-    return k === 'sustain' ? this.pct(v) : `${String(Math.round(v * 1000))} ms`;
+    if (k === 'sustain') return this.pct(v);
+    return v >= 1 ? `${v.toFixed(2)} s` : `${String(Math.round(v * 1000))} ms`;
   }
   /** Seconds → 0..100 on a square curve so short times get room. */
   protected toSlider(seconds: number, max: number): number {

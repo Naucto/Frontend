@@ -68,6 +68,15 @@ const BPM_MAX = 240;
 const STEP_SIZE = 16;
 const STEP_MAX = 64;
 
+/**
+ * Voice the side keyboard sounds on.
+ *
+ * Named rather than allocated, because a held note has to be stoppable and the worklet never says
+ * which voice it chose. The last one, which is the last the allocator reaches for, so a pattern
+ * playing underneath keeps the voices it was already using.
+ */
+const HELD_CHANNEL = VOICES - 1;
+
 /** SOUND tab: instruments on the left, the piano roll in the middle, the inspector on the right. */
 @Component({
   selector: 'nc-sound-tab-page',
@@ -287,6 +296,8 @@ const STEP_MAX = 64;
             [label]="t('editor.sound.pianoRoll')"
             (notesChange)="setNotes(p, $event)"
             (audition)="audition($event)"
+            (keyPressed)="holdKey($event)"
+            (keyReleased)="releaseKey()"
             (pointer)="onPointer($event)"
             (seek)="onSeek($event)"
             (seekEnd)="onSeekEnd()"
@@ -763,6 +774,24 @@ export class SoundTabPage {
     void this.engine.unlock().then(() => {
       this.engine.preview(inst, e.pitch, 0.3);
     });
+  }
+
+  /**
+   * A key of the side keyboard, held for as long as it is pressed.
+   *
+   * Length zero, so the note settles at the instrument's sustain and waits — an envelope that
+   * sustains at nothing still dies away on its own, which is what that instrument does.
+   */
+  protected holdKey(e: { instrument: string; pitch: number }): void {
+    const inst = this.library.instruments().get(e.instrument);
+    if (!inst) return;
+    void this.engine.unlock().then(() => {
+      this.engine.preview(inst, e.pitch, 0, HELD_CHANNEL);
+    });
+  }
+
+  protected releaseKey(): void {
+    this.engine.stopNote(HELD_CHANNEL);
   }
 
   /** Presence follows the pointer, not the cell it is over — see `pointer` on the roll. */

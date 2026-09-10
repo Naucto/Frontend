@@ -99,14 +99,27 @@ export class SoundEngine implements SoundPort {
     this.librarySent = true;
   }
 
-  /** Editor preview: play an instrument that may not be saved yet. */
-  preview(instrument: Instrument, pitch: number, length = 0.5): void {
+  /**
+   * Editor preview: play an instrument that may not be saved yet.
+   *
+   * A `length` of zero holds the note at the instrument's sustain level until {@link stopNote},
+   * which is what a keyboard key does — and that needs a `channel`, since the voice a note lands
+   * on is otherwise chosen inside the worklet and never named back here.
+   */
+  preview(instrument: Instrument, pitch: number, length = 0.5, channel?: number): void {
     this.syncLibrary();
     const tmp = new Map(this.instruments);
     tmp.set(instrument.id, instrument);
     this.backend.post({ type: 'library', instruments: [...tmp], patterns: [...this.patterns] });
     this.librarySent = false;
-    this.backend.post({ type: 'note_on', instrument: instrument.id, pitch, velocity: 1, length });
+    this.backend.post({
+      type: 'note_on',
+      instrument: instrument.id,
+      pitch,
+      velocity: 1,
+      length,
+      channel,
+    });
   }
 
   previewPattern(pattern: Pattern, loop: boolean, from = 0): void {

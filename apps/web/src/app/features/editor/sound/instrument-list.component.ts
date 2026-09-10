@@ -3,19 +3,10 @@ import { TranslocoDirective } from '@jsverse/transloco';
 import { type Instrument, SFX_SLOTS } from '@naucto/engine';
 import { ButtonDirective, HelpDotComponent, IconComponent, TooltipDirective } from '@naucto/ui';
 
-import { WaveGlyphComponent } from './wave-glyph.component';
-
 /** Left column of the SOUND tab: the instruments and the 16 sfx slots. */
 @Component({
   selector: 'nc-instrument-list',
-  imports: [
-    TranslocoDirective,
-    ButtonDirective,
-    IconComponent,
-    HelpDotComponent,
-    TooltipDirective,
-    WaveGlyphComponent,
-  ],
+  imports: [TranslocoDirective, ButtonDirective, IconComponent, HelpDotComponent, TooltipDirective],
   template: `
     <div *transloco="let t" class="flex h-full flex-col">
       <div class="flex h-(--nc-bar-h) items-center border-b border-line px-1.5">
@@ -47,11 +38,7 @@ import { WaveGlyphComponent } from './wave-glyph.component';
             (click)="selected.emit(i.id)"
             (keydown.enter)="selected.emit(i.id)"
           >
-            <nc-wave-glyph [type]="i.osc" />
-            <div class="min-w-0 flex-1">
-              <div class="truncate text-body text-ink">{{ i.name }}</div>
-              <div class="label text-ink-3">{{ meta(i) }}</div>
-            </div>
+            <div class="min-w-0 flex-1 truncate text-body text-ink">{{ i.name }}</div>
             <button
               ncButton
               variant="ghost"
@@ -139,14 +126,6 @@ export class InstrumentListComponent {
 
   protected pad(n: number): string {
     return String(n).padStart(2, '0');
-  }
-
-  protected meta(i: Instrument): string {
-    const parts = [
-      i.osc === 'sample' ? 'PCM' : i.osc === 'triangle' ? 'TRIANGLE' : i.osc.toUpperCase(),
-    ];
-    if (i.filter.type !== 'off') parts.push(`${i.filter.type.toUpperCase()}F`);
-    return parts.join(' · ');
   }
 
   protected slotClass(s: number): string {

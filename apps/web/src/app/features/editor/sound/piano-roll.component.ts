@@ -59,7 +59,11 @@ interface Drag {
   imports: [PianoKeysComponent, PresenceLayerComponent],
   template: `
     <div class="flex" [style.width.px]="width()" [style.height.px]="height()">
-      <nc-piano-keys [style.width.px]="KEY_W" (pressed)="playKey($event)" />
+      <nc-piano-keys
+        [style.width.px]="KEY_W"
+        (pressed)="playKey($event)"
+        (released)="keyReleased.emit()"
+      />
       <div class="relative">
         <!-- Sized in device pixels and shown at CSS ones: this canvas is drawn, not sampled, so at
              any zoom but a whole one an upscaled backing store turns its ruler into mush. -->
@@ -120,6 +124,14 @@ export class PianoRollComponent {
   readonly label = input('Piano roll');
   readonly notesChange = output<Note[]>();
   readonly audition = output<{ instrument: string; pitch: number }>();
+  /**
+   * A key of the side keyboard was pressed, and holds until {@link keyReleased}.
+   *
+   * Separate from `audition`, which is the blip a note in the roll makes when it is placed or
+   * dragged: that one is over as soon as it is heard, and has no gesture to end it.
+   */
+  readonly keyPressed = output<{ instrument: string; pitch: number }>();
+  readonly keyReleased = output();
   readonly hover = output<{ step: number; pitch: number } | null>();
   /**
    * Where the pointer actually is, in fractional steps and pitches.
@@ -333,7 +345,7 @@ export class PianoRollComponent {
 
   protected playKey(pitch: number): void {
     const inst = this.instrumentId();
-    if (inst) this.audition.emit({ instrument: inst, pitch });
+    if (inst) this.keyPressed.emit({ instrument: inst, pitch });
   }
 
   /** Whether the pointer is over the ruler, which rides at the top of the view rather than the roll. */

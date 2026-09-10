@@ -87,6 +87,30 @@ describe('SynthCore', () => {
     expect(synth.isPlaying(0)).toBe(false);
   });
 
+  /** What a held keyboard key asks for: no length, so the note waits at its sustain level. */
+  it('holds a note of no length until the channel is let go', () => {
+    const synth = new SynthCore(SR);
+    const ins = defaultInstrument('i');
+    ins.osc = 'sine';
+    ins.env = { attack: 0.01, decay: 0.05, sustain: 0.5, release: 0.05 };
+    synth.noteOn(ins, 60, 1, 0, 3);
+    const held = render(synth, 2);
+    const peak = (buf: Float32Array, from: number, to: number): number => {
+      let p = 0;
+      for (let i = Math.round(from * SR); i < Math.round(to * SR); i++)
+        p = Math.max(p, Math.abs(buf[i] ?? 0));
+      return p;
+    };
+    // Two seconds in, long past attack, decay and release put together.
+    expect(peak(held, 1.9, 2)).toBeGreaterThan(0);
+    expect(synth.isPlaying(3)).toBe(true);
+
+    synth.noteOff(3);
+    const after = render(synth, 0.2);
+    expect(peak(after, 0.15, 0.2)).toBe(0);
+    expect(synth.isPlaying(3)).toBe(false);
+  });
+
   it('steals the oldest lowest-priority voice when full', () => {
     const synth = new SynthCore(SR);
     const ins = defaultInstrument('i');
