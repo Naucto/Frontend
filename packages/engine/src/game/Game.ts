@@ -550,7 +550,7 @@ export class Game {
     }, LOCAL_ORIGIN);
   }
 
-  /** Renames or recolours an entry of either collection; a colour of null takes none. */
+  /** A colour of null takes none, rather than taking slot zero. */
   describeSheet(id: string, name: string, colour: number | null): void {
     this.describe(this.sheetsMap, id, name, colour);
   }

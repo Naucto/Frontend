@@ -146,7 +146,7 @@ interface Drag {
 })
 export class SpriteCanvasComponent {
   readonly game = input.required<Game>();
-  /** Which sheet is being drawn on. Every read and write below goes to this one. */
+  /** Every pixel read and written below goes to this sheet. */
   readonly sheetId = input(FIRST_SHEET_ID);
   readonly painter = input.required<SheetPainter>();
   /** The cells being worked on, in whole 8×8 units. */

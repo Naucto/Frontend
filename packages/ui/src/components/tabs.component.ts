@@ -8,7 +8,7 @@ export interface TabItem<T extends string> {
   label: string;
   badge?: string | number;
   icon?: IconName;
-  /** Its place in the list, drawn before the name the way a code tab draws one. */
+  /** Its place in the list, drawn before the name. */
   index?: number;
   /** A colour the tab is marked with, as a CSS colour. Nothing is drawn without one. */
   colour?: string;
@@ -28,11 +28,9 @@ const VARIANT: Record<TabsVariant, { list: string; item: string }> = {
       'aria-selected:border-ink aria-selected:text-ink',
     ].join(' '),
   },
-  // Inside an inspector panel, over the thing the tabs choose between: the panel's own strip is
-  // too tall to sit above a preview and still leave the preview room. Gold rather than ink,
-  // because here the selection *is* what everything below is about.
-  // No rule under it: the strip sits directly on the thing it chooses between, and a line there
-  // would read as the top of a second box rather than as the edge of this one.
+  // Sits directly on the thing it chooses between, so it carries no rule of its own: a line there
+  // reads as the top of a second box rather than as the edge of this one. Gold rather than ink,
+  // because here the selection *is* what everything below it is about.
   small: {
     list: 'gap-px',
     item: [
@@ -100,7 +98,7 @@ export class TabsComponent<T extends string = string> {
   readonly value = model<T>();
   readonly label = input<string>();
   readonly variant = input<TabsVariant>('panel');
-  /** A double-click on a tab, which is how the code strip has always offered a rename. */
+  /** A double-click on a tab: whatever renaming or configuring one means to the owner. */
   readonly edit = output<T>();
 
   protected readonly listClass = computed(() => VARIANT[this.variant()].list);

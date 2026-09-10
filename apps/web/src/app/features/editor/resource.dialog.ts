@@ -18,7 +18,6 @@ export interface ResourceDialogData {
   colour: number | null;
   /** The project's own palette, since a slot means nothing without the colours it indexes. */
   palette: readonly string[];
-  /** Names already in use, so a clash is refused here rather than made and then found. */
   taken: readonly string[];
   /** Offered only where there is more than one left; a game needs a sheet and a map. */
   removable?: boolean;

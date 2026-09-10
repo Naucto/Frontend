@@ -50,7 +50,6 @@ interface ArtState {
    */
   cols: number;
   rows: number;
-  /** Which sheet is being worked on. */
   sheetId: string;
 }
 

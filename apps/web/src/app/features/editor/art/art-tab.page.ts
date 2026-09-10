@@ -426,7 +426,6 @@ export class ArtTabPage {
   protected readonly painter = new SheetPainter(this.session.game);
   protected readonly geometry = geometrySignal(signal(this.session.game));
   protected readonly SIZE_STEP = SIZE_STEP;
-  /** One per sheet, named as the document names them. */
   protected readonly sheetTabs = computed<TabItem<string>[]>(() => {
     this.geometry();
     this.sheetsVersion();
@@ -667,7 +666,7 @@ export class ArtTabPage {
     inject(DestroyRef).onDestroy(off);
   }
 
-  /** Double-clicking a tab names it, colours it, or drops it — as the code strip has always done. */
+  /** Double-clicking a tab names it, colours it, or drops it. */
   protected describeSheet(id: string): void {
     const game = this.session.game;
     const sheet = game.sheets.find((s) => s.id === id);

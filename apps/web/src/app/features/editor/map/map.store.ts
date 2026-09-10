@@ -49,7 +49,6 @@ interface MapState {
   /** The sheet the brush is picked from, in cells. Mirrored from the document, like ART's. */
   cols: number;
   rows: number;
-  /** Which map is being worked on. */
   mapId: string;
 }
 

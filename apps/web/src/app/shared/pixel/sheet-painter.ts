@@ -7,7 +7,7 @@ import { FIRST_SHEET_ID, type Game, hexToRgb, type Sheet } from '@naucto/engine'
  * minimap) can `drawImage` from one source. Colour 0 is transparent.
  */
 export class SheetPainter {
-  /** Which sheet this mirrors. Set it and the canvas repaints from that one. */
+  /** Which sheet this mirrors. Setting it takes effect on the next {@link follow}. */
   readonly sheetId = signal(FIRST_SHEET_ID);
   private shown = FIRST_SHEET_ID;
   readonly canvas = document.createElement('canvas');
@@ -39,7 +39,7 @@ export class SheetPainter {
         this.resize();
         this.paintAll();
       }),
-      // A sheet added or renamed elsewhere changes what this is looking at, or what it is called.
+      // A sheet resized or removed elsewhere changes the shape of what this is looking at.
       game.onCollectionsChange(() => {
         this.follow();
       }),
@@ -57,10 +57,10 @@ export class SheetPainter {
   }
 
   /**
-   * Repaints when the sheet in hand has changed.
+   * Repaints if the sheet in hand has changed.
    *
-   * Setting the id is not enough on its own: nothing else here watches it, and the buffer would go
-   * on showing the sheet it was last filled from.
+   * Nothing here watches the id, so without this the buffer goes on showing whichever sheet it was
+   * last filled from.
    */
   follow(): void {
     const id = this.sheetId();
