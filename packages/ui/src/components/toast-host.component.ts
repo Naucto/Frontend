@@ -31,8 +31,12 @@ const TONE: Record<ToastTone, { shell: string; mark: string; icon: IconName }> =
   selector: 'nc-toast-host',
   imports: [IconComponent],
   template: `
+    <!-- Above the overlay wrapper, not merely above the backdrop wash. Both sit in the same
+         stacking context at 1000, so a dialog pane that reaches the bottom-right corner -- which a
+         480px one does the moment the window is narrow -- simply covered the toast, and the news it
+         carried was usually about the dialog that was hiding it. -->
     <div
-      class="pointer-events-auto fixed right-2 bottom-2 z-50 flex w-[320px] flex-col gap-1"
+      class="pointer-events-auto fixed right-2 bottom-2 z-[1001] flex w-[320px] flex-col gap-1"
       aria-live="polite"
     >
       @for (t of toasts.toasts(); track t.id) {
