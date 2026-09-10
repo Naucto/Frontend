@@ -984,7 +984,7 @@ test.describe('editor', () => {
   test('the sheet size is chosen in a dialog that says what it will move', async ({ page }) => {
     await page.goto('/edit/7/art');
     await expect(page.getByRole('img', { name: 'Sprite canvas' })).toBeVisible();
-    // The strip carries no size any more: adding a sheet and resizing one are not the same weight.
+    // No size in the strip: adding a sheet and resizing one are not the same weight.
     await expect(page.getByRole('tablist', { name: 'Sheets' }).getByRole('spinbutton')).toHaveCount(
       0,
     );
@@ -994,7 +994,6 @@ test.describe('editor', () => {
     await expect(dialog).toBeVisible();
     const width = dialog.getByRole('textbox', { name: 'W' });
     await expect(width).toHaveValue('128');
-    // Nothing to apply until something changes.
     await expect(dialog.getByRole('button', { name: 'Renumber' })).toBeDisabled();
 
     await width.fill('192');

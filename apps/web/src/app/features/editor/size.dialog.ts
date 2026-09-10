@@ -30,9 +30,9 @@ export interface SizeDialogResult {
 /**
  * How big a sheet or a map is.
  *
- * Behind a dialog rather than in the strip, because of what it costs: resizing a sheet moves every
- * sprite number in the game and rewrites the calls that named one, and that is not a thing to hand
- * to a caret somebody can nudge by accident. The account of what will move is shown while the
+ * Behind a dialog rather than in the strip, because of what the heavier of the two costs: a sheet's
+ * size moves every sprite number in the game and rewrites the calls that named one, which is not a
+ * thing to hand to a caret somebody can nudge by accident. Whatever it costs is shown while the
  * numbers are being chosen, so it is read before it happens rather than after.
  */
 @Component({

@@ -754,7 +754,6 @@ export class ArtTabPage {
       });
   }
 
-  /** One line per thing that moves, and one for what nothing can follow. */
   private renumberLines(cost: ResizePreview): string[] {
     const lines: string[] = [];
     if (cost.tiles > 0)
