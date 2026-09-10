@@ -30,10 +30,11 @@ describe('Engine', () => {
     expect(engine.console.lines.map((l) => l.text)).toEqual(['Welcome to Naucto!']);
     engine.run();
     engine.tick(STEP_MS);
-    const first = gfx.ops('drawSprite')[0]?.args[1];
+    // The moon is one region, so its fifth argument is where it was put on screen.
+    const first = gfx.ops('drawRegion')[0]?.args[4];
     held = true;
     engine.tick(STEP_MS * 5);
-    const last = gfx.ops('drawSprite').at(-4)?.args[1];
+    const last = gfx.ops('drawRegion').at(-1)?.args[4];
     expect(last).toBe((first as number) + 2 * 5);
     expect(engine.stats.frame).toBe(6);
     expect(gfx.frames).toBeGreaterThan(1);
@@ -233,6 +234,33 @@ describe('Engine', () => {
     expect(stopped).toBe(0);
 
     engine.stop();
+    expect(stopped).toBe(1);
+    engine.destroy();
+  });
+
+  /**
+   * A crash is an end too, and the noisier one: the music runs in an audio graph of its own, so a
+   * looping track outlives the game that started it for as long as the tab is open.
+   */
+  it('silences a run that halts on an error', () => {
+    let stopped = 0;
+    const sound = {
+      flush: () => undefined,
+      stopAll: () => {
+        stopped += 1;
+      },
+    } as unknown as SoundPort;
+    const game = new Game(new Y.Doc());
+    game.seedDefaults();
+    const f = game.files[0];
+    f?.text.delete(0, f.text.length);
+    f?.text.insert(0, 'function _update()\n  local t = nil\n  t.x = 1\nend');
+
+    const engine = new Engine({ game, gfx: new RecordingBackend(), sound, driver });
+    engine.run();
+    expect(engine.tick(STEP_MS)).toBe(false);
+
+    expect(engine.currentState).toBe('halted');
     expect(stopped).toBe(1);
     engine.destroy();
   });

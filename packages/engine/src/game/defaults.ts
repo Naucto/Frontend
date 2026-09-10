@@ -44,7 +44,6 @@ export const DEFAULT_GAME_CODE = `-- Naucto starter game
 local player = {
   x = 152,
   y = 82,
-  sprites = { tl = 1, tr = 2, bl = 17, br = 18 },
   speed = 2,
 }
 
@@ -61,10 +60,8 @@ end
 
 function _draw()
   gfx.clear(0)
-  gfx.draw_sprite(player.sprites.tl, player.x, player.y)
-  gfx.draw_sprite(player.sprites.tr, player.x + 8, player.y)
-  gfx.draw_sprite(player.sprites.bl, player.x, player.y + 8)
-  gfx.draw_sprite(player.sprites.br, player.x + 8, player.y + 8)
+  -- The moon is a 16x16 block of the sheet, drawn in one go.
+  gfx.draw_region(8, 0, 16, 16, player.x, player.y)
 end
 `;
 

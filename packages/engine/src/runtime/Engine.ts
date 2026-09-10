@@ -341,6 +341,11 @@ export class Engine {
     this.lastError = err;
     this.log('error', `${phase}: ${message}`);
     this.loop.stop();
+    // A halted run is silent. The music plays in an audio graph of its own, not in the Lua VM, so
+    // stopping the loop leaves it going -- and a looping track outlives the game that started it,
+    // for as long as the tab is open. The ordinary stop says so by tearing the VM down; this one
+    // keeps the VM for the error to be read against, so it has to say so itself.
+    this.opts.sound?.stopAll();
     this.setState('halted');
     this.errorListeners.forEach((l) => {
       l(err);
