@@ -24,6 +24,30 @@ export class InputState {
 
   connectedPlayers = 1;
 
+  /**
+   * Forget what is held, for a run that is starting.
+   *
+   * A key held when the last game halted was already down on the new one's first step -- and
+   * `btnp` did not fire for it, because the previous frame carried over too, so the press had no
+   * edge to be found on. `connectedPlayers` is not touched: it counts the pads that are plugged
+   * in, which is not something a game left behind.
+   */
+  reset(): void {
+    this.buttons.fill(0);
+    this.prevButtons.fill(0);
+    this.nextButtons.fill(0);
+    this.keys.clear();
+    this.prevKeys.clear();
+    this.nextKeys.clear();
+    this.mouseX = null;
+    this.mouseY = null;
+    this.mouseButtons = 0;
+    this.prevMouseButtons = 0;
+    this.nextMouseX = null;
+    this.nextMouseY = null;
+    this.nextMouseButtons = 0;
+  }
+
   // ---- written by sources ---------------------------------------------------
 
   setKey(key: string, down: boolean): void {

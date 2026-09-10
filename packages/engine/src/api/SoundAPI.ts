@@ -46,4 +46,9 @@ export class SoundAPI extends EngineModule {
       is_playing: (ch: unknown) => s()?.isPlaying(Math.floor(num(ch))) ?? false,
     });
   }
+
+  /** A run that is over is silent: its music does not play under the next one, or after STOP. */
+  override destroy(): void {
+    this.ctx.sound?.stopAll();
+  }
 }

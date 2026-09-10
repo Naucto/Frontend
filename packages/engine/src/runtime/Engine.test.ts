@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
 
+import type { SoundPort } from '../api/ports';
 import { Game } from '../game/Game';
 import { RecordingBackend } from '../gfx/RecordingBackend';
 import type { InputSource } from '../input/InputSource';
@@ -116,6 +117,142 @@ describe('Engine', () => {
     const failure = engine.load();
     expect(failure?.file).toBe('main');
     expect(failure?.message).toContain('require is not available');
+  });
+
+  it('re-reads the tabs, and their order, on every load and not only the first', () => {
+    const game = new Game(new Y.Doc());
+    game.seedDefaults();
+    const main = game.files[0];
+    main?.text.delete(0, main.text.length);
+    main?.text.insert(0, 'print("main")');
+    const a = game.addFile('a', 'print("a")');
+
+    const engine = new Engine({ game, gfx: new RecordingBackend(), driver });
+    expect(engine.load()).toBeNull();
+    expect(engine.console.lines.map((l) => l.text)).toEqual(['main', 'a']);
+
+    const edited = game.files.find((f) => f.name === 'a');
+    edited?.text.delete(0, edited.text.length);
+    edited?.text.insert(0, 'print("edited")');
+    game.reorderFiles([a.id]);
+
+    expect(engine.load()).toBeNull();
+    expect(engine.console.lines.map((l) => l.text)).toEqual(['edited', 'main']);
+    engine.destroy();
+  });
+
+  it('starts the second run on an empty global table', () => {
+    const game = new Game(new Y.Doc());
+    game.seedDefaults();
+    const main = game.files[0];
+    main?.text.delete(0, main.text.length);
+    main?.text.insert(0, 'leftover = 1');
+
+    const engine = new Engine({ game, gfx: new RecordingBackend(), driver });
+    expect(engine.load()).toBeNull();
+
+    main?.text.delete(0, main.text.length);
+    main?.text.insert(0, 'print(tostring(leftover))');
+    expect(engine.load()).toBeNull();
+    expect(engine.console.lines[0]?.text).toBe('nil');
+    engine.destroy();
+  });
+
+  it('forgets the actions a game declared once that game is no longer the one running', () => {
+    const game = new Game(new Y.Doc());
+    game.seedDefaults();
+    const main = game.files[0];
+    main?.text.delete(0, main.text.length);
+    main?.text.insert(0, 'input.declare{ left = "Port", right = "Starboard" }');
+
+    const engine = new Engine({ game, gfx: new RecordingBackend(), driver });
+    expect(engine.load()).toBeNull();
+    expect(engine.declaredActions).toHaveLength(2);
+
+    main?.text.delete(0, main.text.length);
+    main?.text.insert(0, '-- the declaration is gone');
+    expect(engine.load()).toBeNull();
+    expect(engine.declaredActions).toEqual([]);
+    engine.destroy();
+  });
+
+  it('does not hand the next run the button the last one was holding', () => {
+    const game = new Game(new Y.Doc());
+    game.seedDefaults();
+    const engine = new Engine({ game, gfx: new RecordingBackend(), driver });
+    expect(engine.load()).toBeNull();
+
+    engine.input.setAction(0, 'right', true);
+    engine.run();
+    engine.tick(STEP_MS);
+    expect(engine.input.btn('right', 0)).toBe(true);
+
+    expect(engine.load()).toBeNull();
+    expect(engine.input.btn('right', 0)).toBe(false);
+    engine.destroy();
+  });
+
+  it('hands the screen back to the document when a run ends', () => {
+    const gfx = new RecordingBackend();
+    const game = new Game(new Y.Doc());
+    game.seedDefaults();
+    const main = game.files[0];
+    main?.text.delete(0, main.text.length);
+    main?.text.insert(
+      0,
+      'gfx.camera(40, 40)\ngfx.clip(0, 0, 32, 32)\ngfx.set_col(1, 2)\ngfx.set_color(0, "#ff0000")',
+    );
+
+    const engine = new Engine({ game, gfx, driver });
+    expect(engine.load()).toBeNull();
+    expect(gfx.ops('resetPalette')).toHaveLength(0);
+
+    engine.stop();
+    expect(gfx.ops('resetPalette')).toHaveLength(1);
+    expect(gfx.ops('resetCol')).toHaveLength(1);
+    expect(gfx.ops('resetClip')).toHaveLength(1);
+    expect(gfx.ops('resetScanlines')).toHaveLength(1);
+    expect(gfx.ops('persistEffects').at(-1)?.args).toEqual([false]);
+    expect(gfx.ops('camera').at(-1)?.args).toEqual([0, 0]);
+    engine.destroy();
+  });
+
+  it('silences a run that is over', () => {
+    let stopped = 0;
+    const sound = {
+      flush: () => undefined,
+      stopAll: () => {
+        stopped += 1;
+      },
+    } as unknown as SoundPort;
+    const game = new Game(new Y.Doc());
+    game.seedDefaults();
+
+    const engine = new Engine({ game, gfx: new RecordingBackend(), sound, driver });
+    expect(engine.load()).toBeNull();
+    expect(stopped).toBe(0);
+
+    engine.stop();
+    expect(stopped).toBe(1);
+    engine.destroy();
+  });
+
+  it('keeps what a running game changes out of the document the editors read', () => {
+    const game = new Game(new Y.Doc());
+    game.seedDefaults();
+    const palette = [...game.palette];
+    const main = game.files[0];
+    main?.text.delete(0, main.text.length);
+    main?.text.insert(
+      0,
+      'map.set(3, 4, 9)\ngfx.set_color(0, "#ff0000")\ngfx.set_palette_row(0, {})',
+    );
+
+    const engine = new Engine({ game, gfx: new RecordingBackend(), driver });
+    expect(engine.load()).toBeNull();
+    expect(game.palette).toEqual(palette);
+    expect(game.tilesMap.size).toBe(0);
+    engine.destroy();
   });
 
   it('blames a tab whose name holds a space, which no shape of the name could tell apart', () => {

@@ -166,4 +166,22 @@ export class GfxAPI extends EngineModule {
       height: () => 180,
     });
   }
+
+  /**
+   * Hand the screen back the way the document describes it.
+   *
+   * None of this lives in the Lua state, so none of it died with the VM: a game that faded out by
+   * rewriting palette row 0, or scrolled the camera and then crashed, was handing the next run a
+   * black screen or an offset one. The last presented frame is not repainted — those pixels are
+   * already out, and the palette is only read at present time.
+   */
+  override destroy(): void {
+    const g = this.ctx.gfx;
+    g.persistEffects(false);
+    g.resetScanlines();
+    g.resetPalette();
+    g.resetCol();
+    g.resetClip();
+    g.camera(0, 0);
+  }
 }

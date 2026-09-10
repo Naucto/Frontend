@@ -39,4 +39,16 @@ export class InputAPI extends EngineModule {
       },
     });
   }
+
+  /**
+   * A run does not hand the next one what it was holding, nor the names it gave its actions.
+   *
+   * The declaration is the case that bites: it is only ever written when a game calls
+   * `input.declare`, so deleting that call left the last one standing on the controls page until
+   * the whole editor was reloaded.
+   */
+  override destroy(): void {
+    this.ctx.input.reset();
+    this.ctx.onActionsDeclared?.([]);
+  }
 }
