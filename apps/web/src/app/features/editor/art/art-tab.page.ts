@@ -297,18 +297,20 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
         </div>
 
         <nc-section banded [title]="t('editor.art.sheet')">
-          <span actions class="label text-ink-4">
-            {{ t('editor.art.used', { used: used(), total: total() }) }}
-          </span>
           <!-- The strip the design draws over the sheet map, now that there is more than one
                sheet to put on it. The sizes ride in it rather than under it: a row of their own
                between the tabs and the map would read as a box the map is not part of. -->
           <nc-tabs
             variant="small"
+            [editable]="true"
+            [removable]="true"
             [tabs]="sheetTabs()"
             [value]="art.sheetId()"
             (valueChange)="chooseSheet($event)"
             (edit)="describeSheet($event)"
+            (remove)="removeSheet($event)"
+            [editLabel]="t('editor.art.renameSheet')"
+            [removeLabel]="t('editor.art.deleteSheet')"
             [label]="t('editor.art.sheets')"
           >
             <span actions class="flex items-center gap-0.5">
@@ -680,25 +682,49 @@ export class ArtTabPage {
           colour: sheet.colour,
           palette: game.palette,
           taken: game.sheets.map((s) => s.name),
-          removable: game.sheets.length > 1,
         },
       })
       .closed.subscribe((r) => {
         if (!r) return;
-        if (r.removed === true) {
-          game.removeSheet(id);
-          if (this.art.sheetId() === id) this.art.setSheet(game.sheets[0]?.id ?? FIRST_SHEET_ID);
-          return;
-        }
         game.describeSheet(id, r.name, r.colour);
       });
   }
 
+  protected removeSheet(id: string): void {
+    const game = this.session.game;
+    this.dialogs
+      .open<ConfirmDialogComponent, ConfirmDialogData, boolean>(ConfirmDialogComponent, {
+        data: {
+          title: this.i18n.translate('editor.art.deleteSheetTitle'),
+          message: this.i18n.translate('editor.art.deleteSheetMessage'),
+          confirmLabel: this.i18n.translate('editor.art.deleteSheet'),
+          danger: true,
+        },
+      })
+      .closed.subscribe((ok) => {
+        if (ok !== true) return;
+        game.removeSheet(id);
+        if (this.art.sheetId() === id) this.art.setSheet(game.sheets[0]?.id ?? FIRST_SHEET_ID);
+      });
+  }
+
+  /**
+   * A name nothing else has yet.
+   *
+   * The dialog refuses a duplicate, so proposing one would only make somebody type over it.
+   */
+  private freeName(base: string): string {
+    const taken = new Set(this.session.game.sheets.map((x) => x.name));
+    if (!taken.has(base)) return base;
+    let n = 2;
+    while (taken.has(`${base} ${String(n)}`)) n += 1;
+    return `${base} ${String(n)}`;
+  }
+
   protected addSheet(): void {
-    const n = this.session.game.sheets.length + 1;
     const { sheetWidth, sheetHeight } = this.geometry();
     this.session.game.addSheet(
-      this.i18n.translate('editor.art.sheetName', { n }),
+      this.freeName(this.i18n.translate('editor.art.sheetName')),
       sheetWidth,
       sheetHeight,
     );

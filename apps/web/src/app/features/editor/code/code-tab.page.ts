@@ -1,5 +1,4 @@
-import { CdkDrag, type CdkDragDrop, CdkDropList } from '@angular/cdk/drag-drop';
-import type { ElementRef, OnInit } from '@angular/core';
+import type { OnInit } from '@angular/core';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -9,18 +8,19 @@ import {
   inject,
   signal,
   viewChild,
-  viewChildren,
 } from '@angular/core';
 import { RuntimeHostService } from '@app/shared/game-screen/runtime-host.service';
 import { ySignal } from '@app/shared/yjs/y-signal';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
-import { type CodeFile, MAIN_FILE } from '@naucto/engine';
+import { MAIN_FILE } from '@naucto/engine';
 import {
   ButtonDirective,
   ConfirmDialogComponent,
   type ConfirmDialogData,
   DialogService,
   IconComponent,
+  type TabItem,
+  TabsComponent,
 } from '@naucto/ui';
 
 import { ACCENT_SLOTS } from '../accent-slots';
@@ -39,8 +39,7 @@ import { localSignatures } from './signature-help';
 @Component({
   selector: 'nc-code-tab-page',
   imports: [
-    CdkDropList,
-    CdkDrag,
+    TabsComponent,
     TranslocoDirective,
     ButtonDirective,
     IconComponent,
@@ -49,90 +48,43 @@ import { localSignatures } from './signature-help';
   ],
   template: `
     <div *transloco="let t" class="flex h-full flex-col">
-      <div class="flex h-(--nc-bar-h) items-stretch border-b border-line bg-panel">
-        <!-- The tabs scroll, the two buttons do not: past nine or ten files the strip used to
-             shrink every tab until its name was cut, and the last one disappeared under FIND. -->
-        <div
-          class="flex min-w-0 items-stretch overflow-x-auto"
-          cdkDropList
-          cdkDropListOrientation="horizontal"
-          (cdkDropListDropped)="moved($event)"
-        >
-          @for (f of files(); track f.id) {
-            <!-- Named rather than read from its contents: what a tab is called must not change
-                 because it grew a colour swatch, a dirty mark or a button to close it. -->
-            <div
-              #tab
-              cdkDrag
-              role="tab"
-              tabindex="0"
-              [attr.aria-selected]="f.id === activeId()"
-              [attr.aria-label]="f.name"
-              class="group flex shrink-0 cursor-pointer items-center gap-1 border-t-2 border-r border-r-line px-[15px] font-ui text-body tracking-copy hover:text-ink"
-              [class]="
-                f.id === activeId()
-                  ? 'border-t-gold bg-paper text-ink'
-                  : 'border-t-transparent text-ink-3'
-              "
-              [style.borderTopColor]="capOf(f)"
-              (click)="activeId.set(f.id)"
-              (keydown.enter)="activeId.set(f.id)"
-              (dblclick)="edit(f.id, f.name)"
-            >
-              <!-- The rank the engine will load this file in. The strip's order is the evaluation
-                   order, so the number is the position in the strip rather than a stored field —
-                   dragging a tab renumbers it and changes what runs first. -->
-              <span class="font-mono text-meta tabular-nums" [style.color]="capOf(f)">
-                {{ $index + 1 }}
-              </span>
-              {{ f.name }}
-              <button
-                type="button"
-                class="ml-0.5 hidden text-ink-4 group-hover:inline hover:text-ink"
-                [attr.aria-label]="t('editor.code.edit')"
-                (click)="edit(f.id, f.name, $event)"
-              >
-                <nc-icon name="edit" [size]="24" />
-              </button>
-              @if (files().length > 1) {
-                <button
-                  type="button"
-                  class="ml-0.5 hidden text-ink-4 group-hover:inline hover:text-hot-ink"
-                  aria-label="Remove file"
-                  (click)="remove(f.id, $event)"
-                >
-                  <nc-icon name="close" [size]="24" />
-                </button>
-              }
-            </div>
-          }
-        </div>
-        <!-- Centred by hand: the strip stretches its children so a tab can carry its coloured cap
-             the full height of the row, and a button with a height of its own then sits at the top
-             of it instead of on the tabs' own line. -->
-        <button
-          ncButton
-          variant="ghost"
-          size="sm"
-          iconOnly
-          class="ml-1.5 shrink-0 self-center"
-          [attr.aria-label]="t('editor.code.addFile')"
-          (click)="addFile()"
-        >
-          <nc-icon name="plus" [size]="24" />
-        </button>
-        <span class="flex-1"></span>
-        <button
-          ncButton
-          variant="ghost"
-          size="sm"
-          class="mr-1.5 shrink-0 self-center"
-          [attr.aria-expanded]="searching()"
-          (click)="find()"
-        >
-          {{ t('editor.code.find') }}
-        </button>
-      </div>
+      <nc-tabs
+        variant="bar"
+        [editable]="true"
+        [removable]="true"
+        [reorderable]="true"
+        [tabs]="fileTabs()"
+        [value]="activeId() ?? ''"
+        (valueChange)="activeId.set($event ?? null)"
+        (edit)="editTab($event)"
+        (remove)="remove($event)"
+        (reorder)="session.game.reorderFiles($event)"
+        [label]="t('editor.code.files')"
+        [editLabel]="t('editor.code.edit')"
+        [removeLabel]="t('editor.code.removeFile')"
+      >
+        <span actions class="flex items-center gap-1.5 pr-1.5">
+          <button
+            ncButton
+            variant="ghost"
+            size="sm"
+            iconOnly
+            [attr.aria-label]="t('editor.code.addFile')"
+            (click)="addFile()"
+          >
+            <nc-icon name="plus" [size]="24" />
+          </button>
+          <button
+            ncButton
+            variant="ghost"
+            size="sm"
+            [attr.aria-expanded]="searching()"
+            (click)="find()"
+          >
+            {{ t('editor.code.find') }}
+          </button>
+        </span>
+      </nc-tabs>
       <div class="min-h-0 flex-1">
         @if (active(); as file) {
           <nc-code-editor
@@ -206,7 +158,6 @@ export class CodeTabPage implements OnInit {
   protected readonly main = MAIN_FILE;
   protected readonly accents = ACCENT_SLOTS;
   protected readonly editor = viewChild<CodeEditorComponent>('editor');
-  private readonly tabs = viewChildren<ElementRef<HTMLElement>>('tab');
   private readonly editorRuntime = inject(EditorRuntimeService);
   private readonly dialogs = inject(DialogService);
   private readonly transloco = inject(TranslocoService);
@@ -225,14 +176,6 @@ export class CodeTabPage implements OnInit {
     // The bar is created by the @if above, so nothing can focus it in the same turn that opens it.
     effect(() => {
       if (this.searching()) this.bar()?.focus();
-    });
-    // The tab that is active is not always the one that was clicked: adding a file, removing one or
-    // dropping a drag can leave it outside the track, and a strip you have to scroll to find the
-    // file you are editing is not telling you where you are.
-    effect(() => {
-      const active = this.activeId();
-      const index = this.files().findIndex((f) => f.id === active);
-      this.tabs()[index]?.nativeElement.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     });
     inject(DestroyRef).onDestroy(() => {
       this.editorRuntime.insertAtCursor = null;
@@ -280,18 +223,23 @@ export class CodeTabPage implements OnInit {
     this.activeId.set(this.session.game.entryFile?.id ?? null);
   }
 
-  /** The cap does not say which tab is current, so the current one is not a case here. */
-  protected capOf(file: CodeFile): string | null {
-    if (file.colour === null) return null;
-    return this.palette()[file.colour] ?? null;
-  }
+  /**
+   * The rank the engine loads a file in. It is the position in the strip rather than a stored
+   * field, so dragging a tab renumbers it and changes what runs first.
+   */
+  protected readonly fileTabs = computed<TabItem<string>[]>(() =>
+    this.files().map((f, i) => ({
+      value: f.id,
+      label: f.name,
+      index: i + 1,
+      colour: f.colour === null ? undefined : (this.palette()[f.colour] ?? undefined),
+    })),
+  );
 
-  protected moved(e: CdkDragDrop<unknown>): void {
-    const ids = this.files().map((f) => f.id);
-    const [moved] = ids.splice(e.previousIndex, 1);
-    if (moved === undefined) return;
-    ids.splice(e.currentIndex, 0, moved);
-    this.session.game.reorderFiles(ids);
+  /** The strip knows an id; the dialog wants the name that goes with it. */
+  protected editTab(id: string): void {
+    const file = this.files().find((f) => f.id === id);
+    if (file) this.edit(file.id, file.name);
   }
 
   protected addFile(): void {
@@ -314,8 +262,7 @@ export class CodeTabPage implements OnInit {
       });
   }
 
-  protected edit(id: string, current: string, e?: Event): void {
-    e?.stopPropagation();
+  private edit(id: string, current: string): void {
     const file = this.files().find((f) => f.id === id);
     this.dialogs
       .open<CodeFileDialog, CodeFileDialogData, CodeFileDialogResult | undefined>(CodeFileDialog, {
@@ -335,8 +282,7 @@ export class CodeTabPage implements OnInit {
       });
   }
 
-  protected remove(id: string, e: Event): void {
-    e.stopPropagation();
+  protected remove(id: string): void {
     this.dialogs
       .open<ConfirmDialogComponent, ConfirmDialogData, boolean>(ConfirmDialogComponent, {
         data: {

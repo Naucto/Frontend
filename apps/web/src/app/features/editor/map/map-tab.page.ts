@@ -263,10 +263,15 @@ import { MinimapComponent } from './minimap.component';
                under it, so the whole-map view keeps the row a second one would have taken. -->
           <nc-tabs
             variant="small"
+            [editable]="true"
+            [removable]="true"
             [tabs]="mapTabs()"
             [value]="map.mapId()"
             (valueChange)="chooseMap($event)"
             (edit)="describeMap($event)"
+            (remove)="removeMap($event)"
+            [editLabel]="t('editor.map.renameMap')"
+            [removeLabel]="t('editor.map.deleteMap')"
             [label]="t('editor.map.maps')"
           >
             <span actions class="flex items-center gap-0.5">
@@ -485,12 +490,42 @@ export class MapTabPage {
     if (id !== undefined) this.map.setMap(id);
   }
 
+  /**
+   * A name nothing else has yet.
+   *
+   * The dialog refuses a duplicate, so proposing one would only make somebody type over it.
+   */
+  private freeName(base: string): string {
+    const taken = new Set(this.session.game.maps.map((x) => x.name));
+    if (!taken.has(base)) return base;
+    let n = 2;
+    while (taken.has(`${base} ${String(n)}`)) n += 1;
+    return `${base} ${String(n)}`;
+  }
+
   protected addMap(): void {
     const game = this.session.game;
-    const n = game.maps.length + 1;
-    game.addMap(this.i18n.translate('editor.map.mapName', { n }), this.mapW(), this.mapH());
+    game.addMap(this.freeName(this.i18n.translate('editor.map.mapName')), this.mapW(), this.mapH());
     const added = game.maps.at(-1);
     if (added) this.map.setMap(added.id);
+  }
+
+  protected removeMap(id: string): void {
+    const game = this.session.game;
+    this.dialogs
+      .open<ConfirmDialogComponent, ConfirmDialogData, boolean>(ConfirmDialogComponent, {
+        data: {
+          title: this.i18n.translate('editor.map.deleteMapTitle'),
+          message: this.i18n.translate('editor.map.deleteMapMessage'),
+          confirmLabel: this.i18n.translate('editor.map.deleteMap'),
+          danger: true,
+        },
+      })
+      .closed.subscribe((ok) => {
+        if (ok !== true) return;
+        game.removeMap(id);
+        if (this.map.mapId() === id) this.map.setMap(game.maps[0]?.id ?? FIRST_MAP_ID);
+      });
   }
 
   protected describeMap(id: string): void {
@@ -506,16 +541,10 @@ export class MapTabPage {
           colour: found.colour,
           palette: game.palette,
           taken: game.maps.map((m) => m.name),
-          removable: game.maps.length > 1,
         },
       })
       .closed.subscribe((r) => {
         if (!r) return;
-        if (r.removed === true) {
-          game.removeMap(id);
-          if (this.map.mapId() === id) this.map.setMap(game.maps[0]?.id ?? FIRST_MAP_ID);
-          return;
-        }
         game.describeMap(id, r.name, r.colour);
       });
   }

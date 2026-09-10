@@ -362,6 +362,8 @@
       "removeMessage": "The tab and its code go, for everyone in the session. This cannot be undone.",
       "remove": "Remove",
       "edit": "Edit tab",
+      "files": "Files",
+      "removeFile": "Delete file",
       "colour": "Tab colour",
       "colourNone": "No colour",
       "addFile": "New file",
@@ -413,7 +415,7 @@
       "sheet": "Sheet",
       "sheets": "Sheets",
       "addSheet": "Add a sheet",
-      "sheetName": "sheet {{n}}",
+      "sheetName": "extra sprites",
       "sheetWidth": "W",
       "sheetHeight": "H",
       "shrinkTitle": "Shrink the sheet?",
@@ -434,7 +436,11 @@
       "clip": "Lock",
       "zoom": "Zoom",
       "crop": "Crop",
-      "sheetDialog": "Sheet"
+      "sheetDialog": "Sheet",
+      "renameSheet": "Rename this sheet",
+      "deleteSheet": "Delete sheet",
+      "deleteSheetTitle": "Delete this sheet?",
+      "deleteSheetMessage": "Its art goes with it, and the sprite numbers after it shift down."
     },
     "resource": {
       "name": "Name",
@@ -442,7 +448,6 @@
       "colourNone": "None",
       "save": "Save",
       "cancel": "Cancel",
-      "remove": "Delete",
       "taken": "That name is taken",
       "tooLong": "At most {{n}} characters"
     },
@@ -480,7 +485,11 @@
       "mapDialog": "Map",
       "maps": "Maps",
       "addMap": "Add a map",
-      "mapName": "map {{n}}"
+      "mapName": "extra map",
+      "renameMap": "Rename this map",
+      "deleteMap": "Delete map",
+      "deleteMapTitle": "Delete this map?",
+      "deleteMapMessage": "Its tiles go with it."
     },
     "viewerPopped": "Viewer is popped out",
     "viewerPoppedHint": "The game keeps running in the floating panel and follows you across editors.",

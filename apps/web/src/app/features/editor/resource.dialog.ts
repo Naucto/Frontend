@@ -19,14 +19,11 @@ export interface ResourceDialogData {
   /** The project's own palette, since a slot means nothing without the colours it indexes. */
   palette: readonly string[];
   taken: readonly string[];
-  /** Offered only where there is more than one left; a game needs a sheet and a map. */
-  removable?: boolean;
 }
 
 export interface ResourceDialogResult {
   name: string;
   colour: number | null;
-  removed?: boolean;
 }
 
 const NAME_MAX = 24;
@@ -76,11 +73,6 @@ const NAME_MAX = 24;
       />
 
       <ng-container footer>
-        @if (data.removable) {
-          <button ncButton variant="danger" (click)="remove()">
-            {{ t('editor.resource.remove') }}
-          </button>
-        }
         <button ncButton variant="ghost" (click)="ref.close()">
           {{ t('editor.resource.cancel') }}
         </button>
@@ -121,9 +113,5 @@ export class ResourceDialog {
   protected submit(): void {
     if (this.error() ?? !this.name().trim()) return;
     this.ref.close({ name: this.name().trim(), colour: this.colour() });
-  }
-
-  protected remove(): void {
-    this.ref.close({ name: this.data.name, colour: this.data.colour, removed: true });
   }
 }

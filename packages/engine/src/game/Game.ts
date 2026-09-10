@@ -113,8 +113,8 @@ interface SheetMirror {
 }
 
 /** What the first sheet and the first map are called before anybody renames them. */
-const MAIN_SHEET = 'sheet 1';
-const MAIN_MAP = 'map 1';
+const MAIN_SHEET = 'sprites';
+const MAIN_MAP = 'map';
 
 function numberOf(entry: Y.Map<unknown>, key: string, fallback: number): number {
   const v = entry.get(key);

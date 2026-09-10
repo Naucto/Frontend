@@ -79,6 +79,26 @@ async function mockEditor(page: Page): Promise<void> {
 
 test.use({ viewport: { width: 1920, height: 1030 } });
 
+/**
+ * How much art the sheet holds, read off the navigator.
+ *
+ * The panel used to print a count of used sprites and no longer does — a slot count was never what
+ * the ART tab was about, and the size gauge says what a game weighs. Counting the opaque pixels of
+ * the map it draws observes the same thing without asking the page to say it in words.
+ */
+async function inked(page: Page): Promise<number> {
+  return page.evaluate(() => {
+    const canvas = document.querySelector('nc-sheet-view canvas');
+    if (!(canvas instanceof HTMLCanvasElement)) return -1;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return -1;
+    const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    let n = 0;
+    for (let i = 3; i < data.length; i += 4) if (data[i] !== 0) n += 1;
+    return n;
+  });
+}
+
 test.describe('editor', () => {
   test.beforeEach(async ({ page }) => {
     await mockEditor(page);
@@ -178,12 +198,14 @@ test.describe('editor', () => {
     await expect(page.getByRole('button', { name: 'Clear' })).toHaveCount(0);
     await expect(page.getByText('Viewer · 320×180')).toHaveCount(0);
 
-    // The viewer is floated from the console's own header, so it is opened where the console is.
-    await page.goto('/edit/7/code');
-    await page.getByRole('button', { name: 'Pop the viewer out' }).click();
-    await page.goto('/edit/7/art');
-    await expect(page.getByText('Viewer · 320×180')).toBeVisible();
+    // Off, or the stroke never reaches the sheet: the lock holds a stroke inside the region, which
+    // starts as the single sprite in hand. The old assertion here counted used slots and passed
+    // with the stroke clipped away, so the test never checked the half of its name that paints.
+    await page.getByRole('switch', { name: 'Lock' }).click();
 
+    // Drawn before the viewer is floated, because the pip lands over the canvas and would take
+    // the stroke instead.
+    const before = await inked(page);
     const box = await canvas.boundingBox();
     expect(box).not.toBeNull();
     if (box) {
@@ -192,7 +214,14 @@ test.describe('editor', () => {
       await page.mouse.move(box.x + 300, box.y + 200, { steps: 10 });
       await page.mouse.up();
     }
-    await expect(page.getByText(/\d+ \/ 256 used/)).toBeVisible();
+    await expect.poll(() => inked(page)).not.toBe(before);
+
+    // The viewer is floated from the console's own header, so it is opened where the console is.
+    await page.goto('/edit/7/code');
+    await page.getByRole('button', { name: 'Pop the viewer out' }).click();
+    await page.goto('/edit/7/art');
+    await expect(page.getByText('Viewer · 320×180')).toBeVisible();
+
     await page.screenshot({ path: 'test-results/v-editor-art.png' });
   });
 
@@ -209,13 +238,13 @@ test.describe('editor', () => {
     // Away from the sheet's origin, so an unoffset coordinate would miss.
     await page.getByRole('img', { name: /Sheet map/ }).click({ position: { x: 130, y: 90 } });
 
-    const before = await page.getByText(/\d+ \/ 256 used/).textContent();
+    const before = await inked(page);
     const box = await canvas.boundingBox();
     expect(box).not.toBeNull();
     if (box) {
       await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
     }
-    await expect(page.getByText(/\d+ \/ 256 used/)).not.toHaveText(String(before));
+    await expect.poll(() => inked(page)).not.toBe(before);
   });
 
   /**
@@ -468,8 +497,6 @@ test.describe('editor', () => {
     await page.goto('/edit/7/art');
     const canvas = page.getByRole('img', { name: 'Sprite canvas' });
     await expect(canvas).toBeVisible();
-    const used = page.getByText(/\d+ \/ 256 used/);
-    await expect(used).toBeVisible();
 
     // Off, or the paste below is clipped to the sprite in hand: the lock stops a paste where it
     // stops a stroke.
@@ -481,7 +508,7 @@ test.describe('editor', () => {
     await page.mouse.down();
     await page.mouse.move(box.x + 90, box.y + 90, { steps: 6 });
     await page.mouse.up();
-    const painted = await used.textContent();
+    const painted = await inked(page);
 
     await page.getByRole('radio', { name: 'Select' }).click();
     await page.mouse.move(box.x + 30, box.y + 30);
@@ -493,14 +520,14 @@ test.describe('editor', () => {
     await page.mouse.move(box.x + 200, box.y + 160);
     await page.keyboard.press('Control+v');
     // Placed, not written: what it covers is still underneath until it is settled.
-    await expect(used).toHaveText(String(painted));
+    await expect.poll(() => inked(page)).toBe(painted);
 
     await page.keyboard.press('Enter');
-    await expect(used).not.toHaveText(String(painted));
-    const pasted = await used.textContent();
+    await expect.poll(() => inked(page)).not.toBe(painted);
+    const pasted = await inked(page);
 
     await page.keyboard.press('Control+z');
-    await expect(used).toHaveText(String(painted));
+    await expect.poll(() => inked(page)).toBe(painted);
     expect(pasted).not.toBe(painted);
   });
 
@@ -513,8 +540,6 @@ test.describe('editor', () => {
     await page.goto('/edit/7/art');
     const canvas = page.getByRole('img', { name: 'Sprite canvas' });
     await expect(canvas).toBeVisible();
-    const used = page.getByText(/\d+ \/ 256 used/);
-    await expect(used).toBeVisible();
     await page.getByRole('switch', { name: 'Lock' }).click();
 
     const box = await canvas.boundingBox();
@@ -529,22 +554,20 @@ test.describe('editor', () => {
     await page.mouse.down();
     await page.mouse.move(box.x + 100, box.y + 100, { steps: 4 });
     await page.mouse.up();
-    const painted = await used.textContent();
+    const painted = await inked(page);
 
     await page.getByRole('button', { name: 'Copy', exact: true }).click();
     await page.getByRole('button', { name: 'Paste', exact: true }).click();
-    await expect(used).toHaveText(String(painted));
+    await expect.poll(() => inked(page)).toBe(painted);
 
     await page.keyboard.press('Enter');
-    await expect(used).not.toHaveText(String(painted));
+    await expect.poll(() => inked(page)).not.toBe(painted);
   });
 
   test('ART throws a placed paste away on Escape, leaving nothing to undo', async ({ page }) => {
     await page.goto('/edit/7/art');
     const canvas = page.getByRole('img', { name: 'Sprite canvas' });
     await expect(canvas).toBeVisible();
-    const used = page.getByText(/\d+ \/ 256 used/);
-    await expect(used).toBeVisible();
     await page.getByRole('switch', { name: 'Lock' }).click();
 
     const box = await canvas.boundingBox();
@@ -553,16 +576,16 @@ test.describe('editor', () => {
     await page.mouse.down();
     await page.mouse.move(box.x + 90, box.y + 90, { steps: 6 });
     await page.mouse.up();
-    const painted = await used.textContent();
+    const painted = await inked(page);
 
     await page.getByRole('button', { name: 'Copy', exact: true }).click();
     await page.getByRole('button', { name: 'Paste', exact: true }).click();
     await page.keyboard.press('Escape');
-    await expect(used).toHaveText(String(painted));
+    await expect.poll(() => inked(page)).toBe(painted);
 
     // Nothing was written, so the undo reaches past the paste to the stroke before it.
     await page.keyboard.press('Control+z');
-    await expect(used).not.toHaveText(String(painted));
+    await expect.poll(() => inked(page)).not.toBe(painted);
   });
 
   test('MAP copies a selection of tiles and pastes it as one undo step', async ({ page }) => {
@@ -919,7 +942,7 @@ test('a tab is named and coloured in a dialog, and the last one cannot be remove
 
   // Counted in the DOM rather than by role: the close button is hidden until its tab is hovered,
   // so a count through the accessibility tree would read zero whether the guard held or not.
-  const closers = page.locator('[role=tab] button[aria-label="Remove file"]');
+  const closers = page.locator('[role=tab] button[aria-label="Delete file"]');
   await expect(closers).toHaveCount(0);
 
   await page.getByRole('button', { name: 'New file' }).click();
