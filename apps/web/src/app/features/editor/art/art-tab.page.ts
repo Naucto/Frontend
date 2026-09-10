@@ -26,7 +26,6 @@ import {
   DialogService,
   HelpDotComponent,
   IconComponent,
-  NumberFieldComponent,
   PanelColumnComponent,
   PopoverDirective,
   PopoverPanelComponent,
@@ -45,6 +44,7 @@ import {
   type ResourceDialogData,
   type ResourceDialogResult,
 } from '../resource.dialog';
+import { SizeDialog, type SizeDialogData, type SizeDialogResult } from '../size.dialog';
 import { ClipboardStore } from '../state/clipboard.store';
 import { PANEL_WIDTH } from '../state/editor-ui.store';
 import { PresenceSurfaceComponent } from '../work-session/presence-surface.component';
@@ -69,7 +69,6 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
     ButtonDirective,
     IconComponent,
     PanelColumnComponent,
-    NumberFieldComponent,
     SectionComponent,
     TabsComponent,
     HelpDotComponent,
@@ -314,8 +313,8 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
             [label]="t('editor.art.sheets')"
           >
             <span actions class="flex items-center gap-0.5">
-              <!-- First, because adding one is what you do to the strip; the sizes are
-                   what you do to the one that is chosen, so they come after it. -->
+              <!-- Adding one is what you do to the strip, so it stays with the tabs; the size is
+                   what you do to the one that is chosen, and it is behind a door. -->
               <button
                 ncButton
                 variant="ghost"
@@ -326,24 +325,16 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
               >
                 <nc-icon name="plus" [size]="12" />
               </button>
-              <nc-number-field
+              <button
+                ncButton
+                variant="ghost"
                 size="sm"
-                [label]="t('editor.art.sheetWidth')"
-                [value]="sheet()?.width ?? 0"
-                [min]="SIZE_STEP"
-                [max]="MAX_SHEET_SIZE"
-                [step]="SIZE_STEP"
-                (requested)="resizeSheet($event, sheet()?.height ?? 0)"
-              />
-              <nc-number-field
-                size="sm"
-                [label]="t('editor.art.sheetHeight')"
-                [value]="sheet()?.height ?? 0"
-                [min]="SIZE_STEP"
-                [max]="MAX_SHEET_SIZE"
-                [step]="SIZE_STEP"
-                (requested)="resizeSheet(sheet()?.width ?? 0, $event)"
-              />
+                iconOnly
+                [attr.aria-label]="t('editor.art.sheetSize')"
+                (click)="openSheetSize()"
+              >
+                <nc-icon name="gear" [size]="12" />
+              </button>
             </span>
           </nc-tabs>
           <nc-sheet-view
@@ -737,35 +728,35 @@ export class ArtTabPage {
   /**
    * Resizing a sheet is not only a size: the picture stays where it is and the grid of numbers
    * re-flows over it, so a sprite number comes to mean a different cell — and so does every number
-   * on every sheet after this one. Everything that wrote one by hand is brought along, and this
-   * says how much that is before it happens.
+   * on every sheet after this one. Everything that wrote one by hand is brought along, and the
+   * dialog says how much that is while the size is being chosen.
    */
-  protected resizeSheet(width: number, height: number): void {
-    if (width <= 0 || height <= 0) return;
+  protected openSheetSize(): void {
     const sheet = this.sheet();
     if (!sheet) return;
-    const cost = this.session.game.previewResize(sheet.id, width, height);
-    if (cost.moves === 0 && cost.lost === 0) {
-      this.applySheetSize(width, height);
-      return;
-    }
     this.dialogs
-      .open<ConfirmDialogComponent, ConfirmDialogData, boolean>(ConfirmDialogComponent, {
+      .open<SizeDialog, SizeDialogData, SizeDialogResult | undefined>(SizeDialog, {
         data: {
-          title: this.i18n.translate('editor.art.renumberTitle'),
-          message: this.renumberMessage(cost),
+          title: this.i18n.translate('editor.art.sheetSize'),
+          note: this.i18n.translate('editor.art.renumberMessage'),
           confirmLabel: this.i18n.translate('editor.art.renumberConfirm'),
-          danger: cost.lost > 0 || cost.unsure > 0,
+          width: sheet.width,
+          height: sheet.height,
+          min: SIZE_STEP,
+          max: MAX_SHEET_SIZE,
+          step: SIZE_STEP,
+          consequences: (w, h) =>
+            this.renumberLines(this.session.game.previewResize(sheet.id, w, h)),
         },
       })
-      .closed.subscribe((ok) => {
-        if (ok === true) this.applySheetSize(width, height);
+      .closed.subscribe((size) => {
+        if (size) this.applySheetSize(size.width, size.height);
       });
   }
 
-  /** One sentence per thing that moves, and one for what nothing can follow. */
-  private renumberMessage(cost: ResizePreview): string {
-    const lines = [this.i18n.translate('editor.art.renumberMessage')];
+  /** One line per thing that moves, and one for what nothing can follow. */
+  private renumberLines(cost: ResizePreview): string[] {
+    const lines: string[] = [];
     if (cost.tiles > 0)
       lines.push(this.i18n.translate('editor.art.renumberTiles', { n: cost.tiles }));
     if (cost.calls > 0)
@@ -775,7 +766,7 @@ export class ArtTabPage {
     if (cost.unsure > 0)
       lines.push(this.i18n.translate('editor.art.renumberUnsure', { n: cost.unsure }));
 
-    return lines.join(' ');
+    return lines;
   }
 
   /**

@@ -977,6 +977,39 @@ test.describe('editor', () => {
   });
 
   /**
+   * The size of a sheet moves every sprite number in the game and rewrites the calls that named
+   * one, so it sits behind a door rather than on a caret in the strip — and the door says what it
+   * is about to cost while the numbers are still being chosen.
+   */
+  test('the sheet size is chosen in a dialog that says what it will move', async ({ page }) => {
+    await page.goto('/edit/7/art');
+    await expect(page.getByRole('img', { name: 'Sprite canvas' })).toBeVisible();
+    // The strip carries no size any more: adding a sheet and resizing one are not the same weight.
+    await expect(page.getByRole('tablist', { name: 'Sheets' }).getByRole('spinbutton')).toHaveCount(
+      0,
+    );
+
+    await page.getByRole('button', { name: 'Sheet size' }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    const width = dialog.getByRole('textbox', { name: 'W' });
+    await expect(width).toHaveValue('128');
+    // Nothing to apply until something changes.
+    await expect(dialog.getByRole('button', { name: 'Renumber' })).toBeDisabled();
+
+    await width.fill('192');
+    await width.press('Enter');
+    // Widening re-flows the grid, so the calls that named a sprite are counted before it happens.
+    await expect(dialog.getByText(/calls in your code/)).toBeVisible();
+
+    await dialog.getByRole('button', { name: 'Renumber' }).click();
+    await expect(dialog).toHaveCount(0);
+
+    await page.getByRole('button', { name: 'Sheet size' }).click();
+    await expect(page.getByRole('dialog').getByRole('textbox', { name: 'W' })).toHaveValue('192');
+  });
+
+  /**
    * A strip is one line and never folds, so where it runs out of room it runs out sideways, and
    * what went past the edge used to be unreachable to a pointer with no horizontal wheel. The
    * sheet strip is the one that fills up in ordinary use, a sheet at a time.

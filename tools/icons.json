@@ -65,6 +65,7 @@
   "frame": "frame",
   "fullscreen": "scale",
   "gamepad": "gamepad",
+  "gear": "gear",
   "git-branch": "git-branch",
   "git-commit": "git-commit",
   "git-merge": "git-merge",

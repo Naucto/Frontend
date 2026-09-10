@@ -20,7 +20,6 @@ import {
   type ConfirmDialogData,
   DialogService,
   IconComponent,
-  NumberFieldComponent,
   PanelColumnComponent,
   SectionComponent,
   SliderComponent,
@@ -46,6 +45,7 @@ import {
   type ResourceDialogData,
   type ResourceDialogResult,
 } from '../resource.dialog';
+import { SizeDialog, type SizeDialogData, type SizeDialogResult } from '../size.dialog';
 import { WorkSessionService } from '../work-session/work-session.service';
 import { MAP_MAX_ZOOM, MAP_MIN_ZOOM, MapStore, type MapTool } from './map.store';
 import { MapCanvasComponent, type TileViewport } from './map-canvas.component';
@@ -61,7 +61,6 @@ import { MinimapComponent } from './minimap.component';
     IconComponent,
     SliderComponent,
     PanelColumnComponent,
-    NumberFieldComponent,
     SectionComponent,
     TabsComponent,
     ToggleButtonComponent,
@@ -267,8 +266,8 @@ import { MinimapComponent } from './minimap.component';
             [label]="t('editor.map.maps')"
           >
             <span actions class="flex items-center gap-0.5">
-              <!-- First, because adding one is what you do to the strip; the sizes are
-                   what you do to the one that is chosen, so they come after it. -->
+              <!-- Adding one is what you do to the strip, so it stays with the tabs; the size is
+                   what you do to the one that is chosen, and it is behind a door. -->
               <button
                 ncButton
                 variant="ghost"
@@ -279,24 +278,16 @@ import { MinimapComponent } from './minimap.component';
               >
                 <nc-icon name="plus" [size]="12" />
               </button>
-              <nc-number-field
+              <button
+                ncButton
+                variant="ghost"
                 size="sm"
-                [label]="t('editor.map.width')"
-                [value]="mapW()"
-                [min]="1"
-                [max]="MAX_MAP_SIZE"
-                [step]="1"
-                (requested)="resizeMap($event, mapH())"
-              />
-              <nc-number-field
-                size="sm"
-                [label]="t('editor.map.height')"
-                [value]="mapH()"
-                [min]="1"
-                [max]="MAX_MAP_SIZE"
-                [step]="1"
-                (requested)="resizeMap(mapW(), $event)"
-              />
+                iconOnly
+                [attr.aria-label]="t('editor.map.mapSize')"
+                (click)="openMapSize()"
+              >
+                <nc-icon name="gear" [size]="12" />
+              </button>
             </span>
           </nc-tabs>
           <nc-minimap
@@ -450,27 +441,34 @@ export class MapTabPage {
   }
 
   /** Asks first when tiles would fall outside, then records the size. See ART's, which is its twin. */
-  protected resizeMap(width: number, height: number): void {
-    const lost = this.tilesOutside(width, height);
-    if (lost === 0) {
-      this.session.game.resize({ mapWidth: width, mapHeight: height });
-      return;
-    }
+  /**
+   * A map is a grid of positions, so resizing one renumbers nothing — it only decides how much of
+   * the grid there is. What falls outside stays in the file and comes back if it grows again.
+   */
+  protected openMapSize(): void {
     this.dialogs
-      .open<ConfirmDialogComponent, ConfirmDialogData, boolean>(ConfirmDialogComponent, {
+      .open<SizeDialog, SizeDialogData, SizeDialogResult | undefined>(SizeDialog, {
         data: {
-          title: this.i18n.translate('editor.map.shrinkTitle'),
-          message: this.i18n.translate('editor.map.shrinkMessage', { n: lost }),
+          title: this.i18n.translate('editor.map.mapSize'),
+          note: this.i18n.translate('editor.map.sizeNote'),
           confirmLabel: this.i18n.translate('editor.map.shrinkConfirm'),
-          danger: true,
+          width: this.mapW(),
+          height: this.mapH(),
+          min: 1,
+          max: MAX_MAP_SIZE,
+          step: 1,
+          consequences: (w, h) => {
+            const lost = this.tilesOutside(w, h);
+
+            return lost > 0 ? [this.i18n.translate('editor.map.shrinkMessage', { n: lost })] : [];
+          },
         },
       })
-      .closed.subscribe((ok) => {
-        if (ok === true) this.session.game.resize({ mapWidth: width, mapHeight: height });
+      .closed.subscribe((size) => {
+        if (size) this.session.game.resize({ mapWidth: size.width, mapHeight: size.height });
       });
   }
 
-  /** How many placed tiles a map this size would put out of reach. */
   private tilesOutside(width: number, height: number): number {
     const game = this.session.game;
     let n = 0;
