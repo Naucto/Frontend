@@ -105,7 +105,7 @@ const PATTERN_MAX = 99;
     VoicesLaneComponent,
   ],
   template: `
-    <div *transloco="let t" class="grid h-full grid-cols-[237px_minmax(0,1fr)_auto]">
+    <div *transloco="let t" class="grid h-full grid-cols-[276px_minmax(0,1fr)_auto]">
       <!-- A column, not a stack: the instrument list takes what is left after the two banks, so
            they keep their place at the bottom however many instruments there are. The banks stand
            at a fixed height, so on a screen too short for all three the column scrolls rather than
