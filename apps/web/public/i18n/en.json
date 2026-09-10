@@ -667,7 +667,7 @@
   "docs": {
     "title": "Learn",
     "reference": "Reference",
-    "search": "Search the docs",
+    "search": "Search",
     "back": "Back",
     "insert": "Insert at cursor",
     "since": "since {{v}}",

@@ -49,9 +49,12 @@ const SIZE: Record<SearchSize, { host: string; input: string; icon: string }> = 
       class="min-w-0 flex-1 bg-transparent text-ink outline-none placeholder:text-ink-4"
       [class]="chrome().input"
     />
+    <!-- The badge never gives ground: squeezed, it wrapped onto two lines inside a one-line box.
+         What it leaves the input is the input's problem — a placeholder has no ellipsis, so a box
+         this narrow needs a placeholder written for it. -->
     @if (hint()) {
       <kbd
-        class="rounded-xs border border-line px-[5px] py-[2px] font-mono text-[10px] leading-[normal] text-ink-4"
+        class="shrink-0 rounded-xs border border-line px-[5px] py-[2px] font-mono text-[10px] leading-[normal] text-ink-4"
       >
         {{ hint() }}
       </kbd>

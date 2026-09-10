@@ -200,7 +200,7 @@ const SHELF_SIZE = 10;
                 @for (p of friendsPlaying(); track p.userId) {
                   <a
                     [routerLink]="p.releaseId ? ['/play', p.releaseId] : ['/friends']"
-                    class="flex items-center gap-1 text-meta text-ink-body hover:text-ink"
+                    class="flex min-w-0 items-center gap-1 text-meta text-ink-body hover:text-ink"
                   >
                     <nc-user-avatar
                       [name]="p.username ?? '?'"
@@ -208,7 +208,7 @@ const SHELF_SIZE = 10;
                       [size]="20"
                       avatarClass="shrink-0"
                     />
-                    <span class="truncate">
+                    <span class="min-w-0 truncate">
                       {{ p.nickname ?? p.username }} {{ verb(p) }}
                       <span class="text-ink">{{ p.title }}</span>
                     </span>

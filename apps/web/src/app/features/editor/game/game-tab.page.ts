@@ -265,7 +265,10 @@ const DESCRIPTION_MAX = 300;
               </div>
             </nc-section>
           }
-          <nc-section banded [title]="t('editor.game.inSession')">
+          <!-- Lifted over the sections that follow it: the person search drops a panel out of this
+               one, and a positioned sibling later in the column paints over anything positioned
+               earlier — LINEAGE came through the list and read as a menu with no background. -->
+          <nc-section banded class="z-10" [title]="t('editor.game.inSession')">
             <span actions class="label text-ink-4">{{ session.collaborators().length }}</span>
             @for (c of session.collaborators(); track c.clientId) {
               <div class="flex items-center gap-1 py-0.5">
