@@ -128,6 +128,25 @@ describe('adding and drawing on a second sheet', () => {
     expect(seen).toBe(1);
   });
 
+  /**
+   * A coordinate names a place on a sheet, not in the game: the same pair is a different pixel on
+   * each one, so a change that does not say which sheet it happened on cannot be drawn.
+   */
+  it('says which sheet a change happened on', () => {
+    const game = new Game(new Y.Doc());
+    game.addSheet('extra', 64, 64, 'x');
+    const seen: { sheet: string; x: number; y: number }[] = [];
+    game.onPixelsChange((changes) => {
+      seen.push(...changes);
+    });
+
+    game.sheets[0]?.setPixel(1, 1, 5);
+    game.sheets[1]?.setPixel(1, 1, 7);
+
+    expect(seen.map((c) => c.sheet)).toEqual([game.sheets[0]?.id, game.sheets[1]?.id]);
+    expect(new Set(seen.map((c) => c.sheet)).size).toBe(2);
+  });
+
   it('numbers flags within the sheet that holds them', () => {
     const game = new Game(new Y.Doc());
     game.addSheet('extra', 64, 64, 'x');

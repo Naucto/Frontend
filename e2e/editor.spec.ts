@@ -748,6 +748,70 @@ test.describe('editor', () => {
    * A collaborator is a person the app knows the id of, so their picture is something it can go and
    * get. Listing them by initial and colour is what it does when nothing looked it up.
    */
+  /**
+   * The one thing a second sheet is for. The editor held several long before the renderer did, so a
+   * game could be drawn with sprites it could not be played with: the engine knew one texture, and
+   * every number past the first sheet read off the wrong pixels.
+   *
+   * Moved between tabs through the rail rather than by navigating: a fresh page load takes the
+   * document back from the server, and the sheet added here has never been saved.
+   */
+  test('a running game draws a sprite from the second sheet', async ({ page }) => {
+    await page.goto('/edit/7/art');
+    const canvas = page.getByRole('img', { name: 'Sprite canvas' });
+    await expect(canvas).toBeVisible();
+
+    await page.getByRole('button', { name: 'Add a sheet' }).click();
+    await expect(page.getByRole('tab', { name: 'extra sprites' })).toBeVisible();
+    // Off, or the stroke is held inside the single sprite the region starts on.
+    await page.getByRole('switch', { name: 'Lock' }).click();
+
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('no canvas');
+    await page.mouse.move(box.x + 4, box.y + 4);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 12, box.y + 12, { steps: 4 });
+    await page.mouse.up();
+
+    // The first cell of the new sheet, which is the number the code below names.
+    const readout = await page
+      .getByText(/SPRITE \d+/)
+      .first()
+      .textContent();
+    const n = Number(/\d+/.exec(readout ?? '')?.[0] ?? '0');
+    expect(n).toBeGreaterThan(0);
+
+    await page.locator('nc-rail').getByRole('button', { name: 'Code' }).click();
+    await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+    await page.locator('.cm-content').click();
+    await page.keyboard.press('Control+a');
+    await page.keyboard.type(
+      `function _draw()\ngfx.clear(0)\ngfx.draw_sprite(${String(n)}, 0, 0)\nend\n`,
+    );
+    await page.getByRole('button', { name: 'Play' }).first().click();
+
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            const screen = document.querySelector('canvas');
+            if (!screen) return false;
+            const copy = document.createElement('canvas');
+            copy.width = screen.width;
+            copy.height = screen.height;
+            const ctx = copy.getContext('2d');
+            if (!ctx) return false;
+            ctx.drawImage(screen, 0, 0);
+            const { data } = ctx.getImageData(0, 0, 8, 8);
+            for (let i = 0; i < data.length; i += 4)
+              if ((data[i] ?? 0) + (data[i + 1] ?? 0) + (data[i + 2] ?? 0) > 120) return true;
+            return false;
+          }),
+        { timeout: 10_000 },
+      )
+      .toBe(true);
+  });
+
   test('a collaborator is shown with their picture, not their initial', async ({ page }) => {
     await page.goto('/edit/7/game');
     await page.getByRole('button', { name: /share/i }).first().click();

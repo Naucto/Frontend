@@ -58,9 +58,10 @@ const VARIANT: Record<TabsVariant, { frame: string; list: string; item: string; 
     frame: '',
     list: 'gap-px',
     item: [
-      '-mb-px flex h-2.5 min-w-0 shrink items-center gap-0.5 border-b-2 border-transparent px-1',
-      // Cut rather than wrapped: the strip shares its row with whatever else the owner puts there,
-      // and a name folding onto a second line pushes all of it down.
+      '-mb-px flex h-2.5 max-w-[14ch] shrink-0 items-center gap-0.5 border-b-2 border-transparent px-1',
+      // Cut rather than wrapped, and only past a name nobody writes: the strip shares its row with
+      // whatever else the owner puts there, and a name folding onto a second line pushes all of it
+      // down. What does not fit is reached by scrolling, not by squeezing every name to nothing.
       'overflow-hidden text-ellipsis whitespace-nowrap',
       // Set like any other name, not shouted: these are things somebody typed, and a strip of
       // capitals reads as a row of headings rather than a row of names.
@@ -124,7 +125,7 @@ const VARIANT: Record<TabsVariant, { frame: string; list: string; item: string; 
         #scroller
         role="tablist"
         [attr.aria-label]="label()"
-        class="flex min-w-0 flex-1 items-center overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        class="flex h-full min-w-0 flex-1 items-center overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         [class]="listClass()"
         cdkDropList
         cdkDropListOrientation="horizontal"

@@ -30,6 +30,8 @@ import {
 import { Sheet, type SheetWriter } from './Sheet';
 
 export interface PixelChange {
+  /** Which sheet the pixel is on. Without it a change on the second lands on the first. */
+  sheet: string;
   x: number;
   y: number;
   colour: number;
@@ -259,7 +261,7 @@ export class Game {
         if (x < 0 || x >= sheetWidth || y < 0 || y >= sheetHeight) return;
         const colour = (this.spritesMap.get(key) ?? 0) & 0xf;
         this.sheet[y * sheetWidth + x] = colour;
-        changes.push({ x, y, colour });
+        changes.push({ sheet: FIRST_SHEET_ID, x, y, colour });
       });
       if (changes.length)
         this.pixelListeners.forEach((l) => {
@@ -491,7 +493,7 @@ export class Game {
         if (x < 0 || x >= sheet.width || y < 0 || y >= sheet.height) return;
         const colour = (cells.get(k) ?? 0) & 0xf;
         sheet.pixels[y * sheet.width + x] = colour;
-        changes.push({ x, y, colour });
+        changes.push({ sheet: sheetId, x, y, colour });
       });
       if (key === 'flags')
         this.flagListeners.forEach((l) => {

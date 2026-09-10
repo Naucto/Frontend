@@ -1,5 +1,5 @@
 import type { GfxBackend, ScanlineEffect } from '../api/ports';
-import type { Game } from '../game/Game';
+import type { Game, PixelChange } from '../game/Game';
 import { PALETTE_SIZE, SCREEN_HEIGHT, SCREEN_WIDTH, SPRITE_SIZE } from '../game/keys';
 import { buildFontAtlas, FONT_HEIGHT, FONT_WIDTH, glyphIndex } from './Font';
 import { createGLContext, createTexture, hexToRgb, linkProgram, rgbToHex } from './glUtils';
@@ -51,6 +51,9 @@ export class WebGL2Backend implements GfxBackend {
   private verts: number[] = [];
   private uvs: number[] = [];
   private batchSource: BatchSource = 'sheet';
+  private batchSheet = '';
+  /** One per sheet, keyed by its id. They take turns on the sheet texture unit. */
+  private readonly sheetTextures = new Map<string, WebGLTexture>();
   private batchSolid = -1;
   private batchTextColour = -1;
   private batchTransparent = 1;
@@ -217,30 +220,56 @@ export class WebGL2Backend implements GfxBackend {
         this.allocateTextures();
         this.mapDirty = true;
       }),
+      // A sheet added, dropped or resized changes the set of textures without changing the shape
+      // the geometry records, so the two are watched separately.
+      game.onCollectionsChange(() => {
+        this.allocateTextures();
+        this.mapDirty = true;
+      }),
     );
     this.clear(0);
     this.present();
   }
 
-  /** Gives the sheet and the map textures the size the game says they are, and fills the sheet. */
+  /**
+   * Gives every sheet a texture of its own at its own size, and the map one at the size the game
+   * says it is.
+   *
+   * One per sheet rather than one atlas: the sheets are no longer the same shape as each other, so
+   * there is no grid to lay them out on, and a texture is allocated at one size and cannot be
+   * resized. They share a single texture *unit* — which one is bound is decided per batch.
+   */
   private allocateTextures(): void {
     const gl = this.gl;
-    const { sheetWidth, sheetHeight } = this.game.geometry;
     const map = mapTextureSize(this.game);
+    const sheets = this.game.sheets;
+
+    for (const [id, tex] of this.sheetTextures)
+      if (!sheets.some((s) => s.id === id)) {
+        gl.deleteTexture(tex);
+        this.sheetTextures.delete(id);
+      }
 
     gl.activeTexture(gl.TEXTURE0 + UNIT_SHEET);
-    gl.bindTexture(gl.TEXTURE_2D, this.textures[UNIT_SHEET] ?? null);
-    gl.texImage2D(
-      gl.TEXTURE_2D,
-      0,
-      gl.R8,
-      sheetWidth,
-      sheetHeight,
-      0,
-      gl.RED,
-      gl.UNSIGNED_BYTE,
-      this.game.sheet,
-    );
+    for (const sheet of sheets) {
+      let tex = this.sheetTextures.get(sheet.id);
+      if (!tex) {
+        tex = createTexture(gl, UNIT_SHEET);
+        this.sheetTextures.set(sheet.id, tex);
+      }
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texImage2D(
+        gl.TEXTURE_2D,
+        0,
+        gl.R8,
+        sheet.width,
+        sheet.height,
+        0,
+        gl.RED,
+        gl.UNSIGNED_BYTE,
+        sheet.pixels,
+      );
+    }
 
     gl.activeTexture(gl.TEXTURE0 + UNIT_MAP);
     gl.bindTexture(gl.TEXTURE_2D, this.textures[UNIT_MAP] ?? null);
@@ -353,10 +382,29 @@ export class WebGL2Backend implements GfxBackend {
     keyColour: number | null,
   ): void {
     n = Math.floor(n);
-    const { x: sx, y: sy } = this.game.spriteOrigin(n);
+    // Through the sheet that answers to this number, not through the first one: sprite numbers run
+    // on from one sheet to the next, and the sheets are no longer the same size as each other.
+    const sheet = this.game.sheetOf(n) ?? this.game.sheets[0];
+    if (!sheet) return;
+    const { x: sx, y: sy } = sheet.originOf(n);
     const sw = Math.floor(w) * SPRITE_SIZE;
     const sh = Math.floor(h) * SPRITE_SIZE;
-    this.drawRegion(sx, sy, sw, sh, x, y, sw * scale, sh * scale, flipH, flipV, keyColour);
+    this.pushSheetQuad(
+      sheet.id,
+      sheet.width,
+      sheet.height,
+      sx,
+      sy,
+      sw,
+      sh,
+      x,
+      y,
+      sw * scale,
+      sh * scale,
+      flipH,
+      flipV,
+      keyColour,
+    );
   }
 
   drawRegion(
@@ -372,8 +420,45 @@ export class WebGL2Backend implements GfxBackend {
     flipV: boolean,
     keyColour: number | null,
   ): void {
-    this.useBatch('sheet', -1, -1, keyed(keyColour));
-    const { sheetWidth, sheetHeight } = this.game.geometry;
+    // A rectangle in sheet pixels names no sheet, so it reads the first one — which is the only
+    // sheet a game written before there were several could have meant.
+    const sheet = this.game.sheets[0];
+    if (!sheet) return;
+    this.pushSheetQuad(
+      sheet.id,
+      sheet.width,
+      sheet.height,
+      sx,
+      sy,
+      sw,
+      sh,
+      dx,
+      dy,
+      dw,
+      dh,
+      flipH,
+      flipV,
+      keyColour,
+    );
+  }
+
+  private pushSheetQuad(
+    sheetId: string,
+    sheetWidth: number,
+    sheetHeight: number,
+    sx: number,
+    sy: number,
+    sw: number,
+    sh: number,
+    dx: number,
+    dy: number,
+    dw: number,
+    dh: number,
+    flipH: boolean,
+    flipV: boolean,
+    keyColour: number | null,
+  ): void {
+    this.useBatch('sheet', -1, -1, keyed(keyColour), sheetId);
     let u0 = sx / sheetWidth;
     let v0 = sy / sheetHeight;
     let u1 = (sx + sw) / sheetWidth;
@@ -680,12 +765,16 @@ export class WebGL2Backend implements GfxBackend {
     solid: number,
     textColour: number,
     transparent: number,
+    /** Which sheet a `sheet` batch reads. A batch draws with one texture bound, so a second sheet
+        is a second batch. */
+    sheet = '',
   ): void {
     if (
       source === this.batchSource &&
       solid === this.batchSolid &&
       textColour === this.batchTextColour &&
-      transparent === this.batchTransparent
+      transparent === this.batchTransparent &&
+      sheet === this.batchSheet
     )
       return;
     this.flush();
@@ -693,6 +782,7 @@ export class WebGL2Backend implements GfxBackend {
     this.batchSolid = solid;
     this.batchTextColour = textColour;
     this.batchTransparent = transparent;
+    this.batchSheet = sheet;
   }
 
   private pushQuad(
@@ -727,6 +817,10 @@ export class WebGL2Backend implements GfxBackend {
           : this.batchSource === 'font'
             ? UNIT_FONT
             : UNIT_SHEET;
+    if (this.batchSource === 'sheet') {
+      gl.activeTexture(gl.TEXTURE0 + UNIT_SHEET);
+      gl.bindTexture(gl.TEXTURE_2D, this.sheetTextures.get(this.batchSheet) ?? null);
+    }
     gl.uniform1i(this.uSrc, unit);
     gl.uniform1i(this.uSolid, this.batchSource === 'solid' ? this.batchSolid : -1);
     gl.uniform1i(this.uTransparent, this.batchTransparent);
@@ -750,51 +844,67 @@ export class WebGL2Backend implements GfxBackend {
     this.uvs = [];
   }
 
-  private uploadSheetRegion(changes: { x: number; y: number }[]): void {
-    const { sheetWidth, sheetHeight } = this.game.geometry;
-    let minX = sheetWidth,
-      minY = sheetHeight,
-      maxX = -1,
-      maxY = -1;
+  /** Sorted by sheet first: one rectangle covering two sheets is not a rectangle on either. */
+  private uploadSheetRegion(changes: PixelChange[]): void {
+    const bySheet = new Map<string, PixelChange[]>();
     for (const c of changes) {
-      if (c.x < minX) minX = c.x;
-      if (c.x > maxX) maxX = c.x;
-      if (c.y < minY) minY = c.y;
-      if (c.y > maxY) maxY = c.y;
+      const list = bySheet.get(c.sheet);
+      if (list) list.push(c);
+      else bySheet.set(c.sheet, [c]);
     }
-    if (maxX < 0) return;
-    const w = maxX - minX + 1;
-    const h = maxY - minY + 1;
-    const region = new Uint8Array(w * h);
-    for (let y = 0; y < h; y++)
-      region.set(
-        this.game.sheet.subarray(
-          (minY + y) * sheetWidth + minX,
-          (minY + y) * sheetWidth + minX + w,
-        ),
-        y * w,
-      );
     const gl = this.gl;
-    gl.activeTexture(gl.TEXTURE0 + UNIT_SHEET);
-    gl.bindTexture(gl.TEXTURE_2D, this.tex(UNIT_SHEET));
-    gl.texSubImage2D(gl.TEXTURE_2D, 0, minX, minY, w, h, gl.RED, gl.UNSIGNED_BYTE, region);
+    for (const [id, list] of bySheet) {
+      const sheet = this.game.sheets.find((s) => s.id === id);
+      const tex = this.sheetTextures.get(id);
+      if (!sheet || !tex) continue;
+      let minX = sheet.width,
+        minY = sheet.height,
+        maxX = -1,
+        maxY = -1;
+      for (const c of list) {
+        if (c.x < minX) minX = c.x;
+        if (c.x > maxX) maxX = c.x;
+        if (c.y < minY) minY = c.y;
+        if (c.y > maxY) maxY = c.y;
+      }
+      if (maxX < 0) continue;
+      const w = maxX - minX + 1;
+      const h = maxY - minY + 1;
+      const region = new Uint8Array(w * h);
+      for (let y = 0; y < h; y++)
+        region.set(
+          sheet.pixels.subarray(
+            (minY + y) * sheet.width + minX,
+            (minY + y) * sheet.width + minX + w,
+          ),
+          y * w,
+        );
+      gl.activeTexture(gl.TEXTURE0 + UNIT_SHEET);
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texSubImage2D(gl.TEXTURE_2D, 0, minX, minY, w, h, gl.RED, gl.UNSIGNED_BYTE, region);
+    }
   }
 
   private rebuildMap(): void {
-    const sheet = this.game.sheet;
     const tiles = this.game.tiles;
-    const { mapWidth, mapHeight, sheetWidth } = this.game.geometry;
+    const { mapWidth, mapHeight } = this.game.geometry;
     const map = mapTextureSize(this.game);
+    // Each tile through the sheet its own number belongs to: a map is free to mix them, and read
+    // off one sheet a tile from another lands on whatever pixels happen to be at that offset.
     for (let ty = 0; ty < mapHeight; ty++) {
       for (let tx = 0; tx < mapWidth; tx++) {
         const i = ty * mapWidth + tx;
         const n = this.tileOverrides.get(i) ?? tiles[i] ?? 0;
-        const { x: sx, y: sy } = this.game.spriteOrigin(n);
+        const sheet = this.game.sheetOf(n);
+        const { x: sx, y: sy } = sheet?.originOf(n) ?? { x: 0, y: 0 };
         for (let y = 0; y < SPRITE_SIZE; y++) {
-          const src = (sy + y) * sheetWidth + sx;
           const dst = (ty * SPRITE_SIZE + y) * map.w + tx * SPRITE_SIZE;
-          if (n === 0) this.mapPixels.fill(0, dst, dst + SPRITE_SIZE);
-          else this.mapPixels.set(sheet.subarray(src, src + SPRITE_SIZE), dst);
+          if (n === 0 || !sheet) {
+            this.mapPixels.fill(0, dst, dst + SPRITE_SIZE);
+            continue;
+          }
+          const src = (sy + y) * sheet.width + sx;
+          this.mapPixels.set(sheet.pixels.subarray(src, src + SPRITE_SIZE), dst);
         }
       }
     }
