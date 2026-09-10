@@ -15,15 +15,16 @@ export interface AudioBackend {
  *
  * A browser will not start an AudioContext without a user gesture, and a game's `_init` runs
  * before the gesture that started it has finished unlocking one. What that call asks for is kept
- * rather than dropped: the library it will play out of, and the last thing it said to do with the
- * transport. Notes are not kept, because a note that was due before there was any sound is not due
- * once there is.
+ * rather than dropped: the library it will play out of, the last thing it said to do with the
+ * transport, and the last one-shot it fired. Held notes are not kept, because a note that was due
+ * before there was any sound is not due once there is.
  */
 export class WebAudioBackend implements AudioBackend {
   private ctx: AudioContext | null = null;
   private node: AudioWorkletNode | null = null;
   private readonly queue: SynthCommand[] = [];
   private pendingTransport: SynthCommand | null = null;
+  private pendingSfx: SynthCommand | null = null;
   private readonly listeners = new Set<(e: SynthEvent) => void>();
   private unlocking: Promise<void> | null = null;
 
@@ -56,6 +57,11 @@ export class WebAudioBackend implements AudioBackend {
     // then stops it wants silence, not both in the order they were asked for.
     else if (cmd.type === 'play_song' || cmd.type === 'stop_music' || cmd.type === 'stop_all')
       this.pendingTransport = cmd;
+    // A game that opens on a jingle plays it from `_init`, which is always ahead of the unlock, so
+    // dropping this one meant the opening sound of a game simply never existed. Only the last, for
+    // the reason above: the loop keeps running while the context comes up, and a game firing one
+    // every frame would otherwise play the lot at once.
+    else if (cmd.type === 'play_sfx') this.pendingSfx = cmd;
   }
 
   onEvent(l: (e: SynthEvent) => void): () => void {
@@ -71,6 +77,7 @@ export class WebAudioBackend implements AudioBackend {
     this.listeners.clear();
     this.queue.length = 0;
     this.pendingTransport = null;
+    this.pendingSfx = null;
     this.unlocking = null;
   }
 
@@ -101,6 +108,10 @@ export class WebAudioBackend implements AudioBackend {
     if (this.pendingTransport) {
       node.port.postMessage(this.pendingTransport);
       this.pendingTransport = null;
+    }
+    if (this.pendingSfx) {
+      node.port.postMessage(this.pendingSfx);
+      this.pendingSfx = null;
     }
   }
 }
