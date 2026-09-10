@@ -59,9 +59,8 @@ export class SlotGridComponent {
   /**
    * Rows the bank stands at, whatever it holds.
    *
-   * A bank has no last slot, so left to its content it would grow until it pushed whatever is
-   * under it off the panel — and shift everything under it every time a row was added. It keeps
-   * its height and scrolls instead.
+   * A bank has no last slot, so left to its content it would grow without bound and shift
+   * everything under it every time a row was added. It keeps its height and scrolls instead.
    */
   readonly rows = input(5);
   readonly pick = output<number>();
@@ -70,7 +69,6 @@ export class SlotGridComponent {
     () => `repeat(${String(this.columns())}, minmax(0, 1fr))`,
   );
 
-  /** Rows of cells plus the gaps between them — the gap is `0.5`, which Tailwind sets at 2px. */
   protected readonly height = computed(
     () =>
       `calc(${String(this.rows())} * var(--nc-control-h-xs) + ${String((this.rows() - 1) * 2)}px)`,

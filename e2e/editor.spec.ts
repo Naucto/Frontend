@@ -912,6 +912,18 @@ test.describe('editor', () => {
     await expect.poll(head).toBeLessThan(running ?? 0);
   });
 
+  test('the sound column reaches its last row on a short screen', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 700 });
+    await page.goto('/edit/7/sound');
+    const boxes = page.locator('nc-song-list [role=group] input');
+    await expect(boxes).toHaveCount(20);
+    // The two banks stand at a fixed height, so on a screen too short for both the column has to
+    // be scrollable: a row of the music that cannot be reached is a row that cannot be written.
+    const last = boxes.nth(19);
+    await last.scrollIntoViewIfNeeded();
+    await expect(last).toBeInViewport();
+  });
+
   test('SOUND tab adds an instrument and paints notes', async ({ page }) => {
     await page.goto('/edit/7/sound');
     await page.getByRole('button', { name: 'Add instrument' }).first().click();
@@ -920,9 +932,8 @@ test.describe('editor', () => {
     const box = await roll.boundingBox();
     expect(box).not.toBeNull();
     if (box) {
-      // Halfway down the roll: the ruler rides at the top of the view and a press there moves the
-      // playhead instead of writing a note, so a y measured from the top of the element -- which
-      // is what this used to do -- painted nothing and said nothing about it.
+      // Halfway down the roll: the ruler rides at the top of the view, and a press there moves
+      // the playhead instead of writing a note.
       const x = box.x + 56 + 30;
       const y = box.y + box.height / 2;
       await page.mouse.move(x, y);
@@ -932,8 +943,8 @@ test.describe('editor', () => {
     }
     await expect(page.getByText('Not used yet — paint some notes.')).toHaveCount(0);
 
-    // The bank no longer counts what it holds -- there is no last slot to count against -- so the
-    // slot itself says it took the pattern.
+    // There is no last slot, so nothing counts what the bank holds: the slot itself is what says
+    // it took the pattern.
     const slot = page.getByRole('button', { name: 'SFX slot 0' });
     await slot.click();
     await expect(slot).toHaveAttribute('aria-pressed', 'true');

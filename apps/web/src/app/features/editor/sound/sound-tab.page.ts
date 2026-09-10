@@ -78,8 +78,8 @@ const HELD_CHANNEL = VOICES - 1;
 /**
  * Highest pattern number there is.
  *
- * Two digits, because that is how a pattern is written everywhere it appears — the field, the
- * music grid, a chip in the inspector — and a third would not fit any of them.
+ * A pattern is written as two digits wherever it is shown, and the boxes it is shown in are sized
+ * for two.
  */
 const PATTERN_MAX = 99;
 
@@ -104,11 +104,15 @@ const PATTERN_MAX = 99;
   ],
   template: `
     <div *transloco="let t" class="grid h-full grid-cols-[237px_minmax(0,1fr)_auto]">
-      <!-- A column, not a stack: the instrument list takes what is left after the music, so the
-           order list keeps its place at the bottom however many instruments there are. -->
-      <aside class="flex min-h-0 flex-col border-r border-line bg-panel">
+      <!-- A column, not a stack: the instrument list takes what is left after the two banks, so
+           they keep their place at the bottom however many instruments there are. The banks stand
+           at a fixed height, so on a screen too short for all three the column scrolls rather than
+           cutting a row of the last one in half. -->
+      <aside class="flex min-h-0 flex-col overflow-y-auto border-r border-line bg-panel">
+        <!-- A floor rather than nothing: left free to shrink it would give up every one of its
+             rows to the banks below before the column ever scrolled. -->
         <nc-instrument-list
-          class="min-h-0 flex-1"
+          class="min-h-[120px] flex-1"
           [list]="instrumentList()"
           [selectedId]="sound.instrumentId()"
           [palette]="palette()"
@@ -430,9 +434,8 @@ export class SoundTabPage {
   /**
    * Which of the two transports is running.
    *
-   * A chain and the pattern in front of you are two things to listen to, and one button could not
-   * be both: it played the music the moment the chain was not empty, so a pattern in a music could
-   * not be auditioned on its own at all.
+   * A chain and the pattern in front of you are two things to listen to, and a single button could
+   * not be both: a pattern that a music happens to use would have no way to be heard on its own.
    */
   protected readonly playingWhat = signal<'pattern' | 'song' | null>(null);
   protected readonly playing = computed(() => this.playingWhat() !== null);

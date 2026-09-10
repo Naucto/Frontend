@@ -143,7 +143,7 @@ export class SoundEngine implements SoundPort {
   playSfx(slot: number, channel: number | undefined, pitchOffset: number, volume: number): void {
     this.syncLibrary();
     // Any number at all: an empty slot is silent, and there is no number past which they stop
-    // being empty. 0 to 15 mean what they always meant.
+    // being empty.
     const pattern = this.sfxSlots.get(String(slot));
     if (!pattern) return;
     this.backend.post({ type: 'play_sfx', pattern, pitchOffset, volume, channel });

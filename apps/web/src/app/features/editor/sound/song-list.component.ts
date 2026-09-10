@@ -3,14 +3,14 @@ import { TranslocoDirective } from '@jsverse/transloco';
 import { type Pattern, type Song, SONG_SLOTS } from '@naucto/engine';
 import { ButtonDirective, HelpDotComponent, IconComponent, NumberFieldComponent } from '@naucto/ui';
 
-/** How wide the grid is. Four numbers across is what the 237px column fits. */
+/** How wide the grid is drawn, in boxes. */
 const COLUMNS = 4;
 
 /**
  * Rows the grid stands at, whatever the music holds.
  *
- * Left to its content it would grow a row at a time and shift the section under it on every one.
- * It keeps its height and scrolls, which is also the height of the bank of sound effects above it.
+ * Left to its content it would grow a row at a time and shift everything under it on every one.
+ * It keeps its height and scrolls instead.
  */
 const ROWS = 5;
 
@@ -125,7 +125,6 @@ export class SongListComponent {
 
   protected readonly MAX_SLOT = SONG_SLOTS - 1;
   protected readonly columnTrack = `repeat(${String(COLUMNS)}, minmax(0, 1fr))`;
-  /** Rows of boxes plus the gaps between them — the gap is `0.5`, which Tailwind sets at 2px. */
   protected readonly height = `calc(${String(ROWS)} * var(--nc-control-h-xs) + ${String(
     (ROWS - 1) * 2,
   )}px)`;
