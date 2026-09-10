@@ -459,7 +459,6 @@
       "tooLong": "At most {{n}} characters"
     },
     "map": {
-      "title": "Map 0",
       "tiles": "{{w}} × {{h}} tiles",
       "tools": {
         "stamp": "Stamp",

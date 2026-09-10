@@ -79,9 +79,9 @@ import { MinimapComponent } from './minimap.component';
           class="grid h-(--nc-bar-h) grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-line bg-panel px-2"
         >
           <div class="flex min-w-0 items-center gap-2">
-            <span class="font-mono text-meta text-ink">
-              {{ t('editor.map.title') | uppercase }}
-            </span>
+            <!-- Which map, by name where it has one. The header used to print a fixed string that
+                 followed nothing, back when there was only ever one map to follow. -->
+            <span class="font-mono text-meta truncate text-ink">{{ mapTitle() }}</span>
             <span class="label text-ink-4">
               {{ t('editor.map.tiles', { w: mapW(), h: mapH() }) }}
             </span>
@@ -329,6 +329,24 @@ export class MapTabPage {
   private readonly geometry = geometrySignal(signal(this.session.game));
   protected readonly MAX_MAP_SIZE = MAX_MAP_SIZE;
   private readonly mapsVersion = signal(0);
+  /**
+   * The map being drawn on, by name where it has one and by number where it has not.
+   *
+   * A map is born nameless, so the number is not a fallback for a mistake: it is what most maps are
+   * called.
+   */
+  protected readonly mapTitle = computed(() => {
+    this.mapsVersion();
+    const maps = this.session.game.maps;
+    const at = maps.findIndex((m) => m.id === this.map.mapId());
+    const found = maps[at] ?? maps[0];
+    // Written out rather than left to `||`: an unnamed map holds the empty string, which nullish
+    // coalescing would hand back as a name.
+    const name = found?.name ?? '';
+
+    return name === '' ? `#${String((at === -1 ? 0 : at) + 1)}` : name;
+  });
+
   protected readonly mapTabs = computed<TabItem<string>[]>(() => {
     this.geometry();
     this.mapsVersion();

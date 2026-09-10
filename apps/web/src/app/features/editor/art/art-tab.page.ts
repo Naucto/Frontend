@@ -95,8 +95,10 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
           <!-- One line, always: in a 39px strip the readout wrapping to two lines pushes the
                tool group off centre and the strip out of its own height. -->
           <div class="flex min-w-0 items-center gap-2 overflow-hidden">
-            <span class="font-mono text-meta whitespace-nowrap tracking-strip text-ink">
-              {{ t('editor.art.sprite') | uppercase }} {{ pad3(spriteNumber()) }}
+            <!-- Which sheet, not which sprite: the sprite number rides under the preview, beside
+                 the picture it names. What the header could not say was where you were. -->
+            <span class="font-mono text-meta truncate tracking-strip text-ink">
+              {{ sheetTitle() }}
             </span>
             @if (art.region().w > 1 || art.region().h > 1) {
               <span class="label whitespace-nowrap text-gold-ink">
@@ -215,16 +217,25 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
               {{ t('editor.art.status', { x: pad3(h.x), y: pad3(h.y), col: pad2(h.col) }) }}
             </div>
           }
-          <div class="pointer-events-none absolute right-1.5 bottom-1.5 flex items-center gap-1.25">
-            <span class="label">{{ t('editor.art.preview') }}</span>
-            <canvas
-              #preview
-              class="pixelated rounded-xs border border-line"
-              [width]="regionPx().w"
-              [height]="regionPx().h"
-              [style.width.px]="previewCss().w"
-              [style.height.px]="previewCss().h"
-            ></canvas>
+          <div
+            class="pointer-events-none absolute right-1.5 bottom-1.5 flex flex-col items-end gap-0.5"
+          >
+            <div class="flex items-center gap-1.25">
+              <span class="label">{{ t('editor.art.preview') }}</span>
+              <canvas
+                #preview
+                class="pixelated rounded-xs border border-line"
+                [width]="regionPx().w"
+                [height]="regionPx().h"
+                [style.width.px]="previewCss().w"
+                [style.height.px]="previewCss().h"
+              ></canvas>
+            </div>
+            <!-- Under the picture it names, which is the number a game writes into
+                 gfx.draw_sprite. It is a reading nothing else on the screen carries. -->
+            <span class="font-mono text-micro whitespace-nowrap tracking-[0.1em] text-ink-3">
+              {{ t('editor.art.sprite') | uppercase }} {{ pad3(spriteNumber()) }}
+            </span>
           </div>
         </div>
       </section>
@@ -421,6 +432,23 @@ export class ArtTabPage {
   protected readonly painter = new SheetPainter(this.session.game);
   protected readonly geometry = geometrySignal(signal(this.session.game));
   protected readonly SIZE_STEP = SIZE_STEP;
+  /**
+   * The sheet being drawn on, by name where it has one and by number where it has not.
+   *
+   * A sheet is born nameless, so the number is not a fallback for a mistake: it is what most sheets
+   * are called.
+   */
+  protected readonly sheetTitle = computed(() => {
+    const sheets = this.session.game.sheets;
+    const at = sheets.findIndex((s) => s.id === this.art.sheetId());
+    const sheet = sheets[at] ?? sheets[0];
+    // Written out rather than left to `||`: an unnamed sheet holds the empty string, which nullish
+    // coalescing would hand back as a name.
+    const name = sheet?.name ?? '';
+
+    return name === '' ? `#${String((at === -1 ? 0 : at) + 1)}` : name;
+  });
+
   protected readonly sheetTabs = computed<TabItem<string>[]>(() => {
     this.geometry();
     this.sheetsVersion();
