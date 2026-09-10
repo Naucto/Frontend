@@ -1,5 +1,5 @@
 import { computed } from '@angular/core';
-import { SPRITES_PER_ROW } from '@naucto/engine';
+import { DEFAULT_GEOMETRY } from '@naucto/engine';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 
 export type ArtTool =
@@ -42,15 +42,28 @@ interface ArtState {
   grid: boolean;
   onion: boolean;
   selection: PixelRect | null;
+  /**
+   * The sheet's size in cells, kept here because the region is clamped against it.
+   *
+   * Mirrored from the document rather than read from it: a store holds intent, and giving it the
+   * game would make every tab that touches a region depend on the whole document.
+   */
+  cols: number;
+  rows: number;
 }
 
-/** Keeps a region whole and inside the sheet, whichever corner was dragged. */
-function clampRegion(r: SpriteRect): SpriteRect {
-  const w = Math.max(1, Math.min(SPRITES_PER_ROW, Math.round(r.w)));
-  const h = Math.max(1, Math.min(SPRITES_PER_ROW, Math.round(r.h)));
+/**
+ * Keeps a region whole and inside the sheet, whichever corner was dragged.
+ *
+ * Each axis against its own bound. They were both clamped against the width, which was only ever
+ * right because the sheet happened to be square.
+ */
+function clampRegion(r: SpriteRect, cols: number, rows: number): SpriteRect {
+  const w = Math.max(1, Math.min(cols, Math.round(r.w)));
+  const h = Math.max(1, Math.min(rows, Math.round(r.h)));
   return {
-    x: Math.max(0, Math.min(SPRITES_PER_ROW - w, Math.round(r.x))),
-    y: Math.max(0, Math.min(SPRITES_PER_ROW - h, Math.round(r.y))),
+    x: Math.max(0, Math.min(cols - w, Math.round(r.x))),
+    y: Math.max(0, Math.min(rows - h, Math.round(r.y))),
     w,
     h,
   };
@@ -67,10 +80,12 @@ export const ArtStore = signalStore(
     grid: true,
     onion: false,
     selection: null,
+    cols: DEFAULT_GEOMETRY.spritesPerRow,
+    rows: DEFAULT_GEOMETRY.spriteRows,
   }),
-  withComputed(({ region }) => ({
+  withComputed(({ region, cols }) => ({
     /** Index of the region's first cell — what the header names and what the flags are read from. */
-    sprite: computed(() => region().y * SPRITES_PER_ROW + region().x),
+    sprite: computed(() => region().y * cols() + region().x),
   })),
   withMethods((store) => ({
     setTool(tool: ArtTool): void {
@@ -80,7 +95,14 @@ export const ArtStore = signalStore(
       patchState(store, { colour: Math.max(0, Math.min(15, colour)) });
     },
     setRegion(region: SpriteRect): void {
-      patchState(store, { region: clampRegion(region), selection: null });
+      patchState(store, {
+        region: clampRegion(region, store.cols(), store.rows()),
+        selection: null,
+      });
+    },
+    /** Follows the document's sheet, pulling the region back inside it when it shrinks. */
+    setSheetSize(cols: number, rows: number): void {
+      patchState(store, { cols, rows, region: clampRegion(store.region(), cols, rows) });
     },
     setClip(clip: boolean): void {
       patchState(store, { clip });

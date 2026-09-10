@@ -4,14 +4,16 @@ import {
   Component,
   computed,
   DestroyRef,
+  effect,
   inject,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { type Pt } from '@app/shared/pixel/pixel-tools';
 import { SheetPainter } from '@app/shared/pixel/sheet-painter';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
-import { LOCAL_ORIGIN, MAP_HEIGHT, MAP_WIDTH } from '@naucto/engine';
+import { LOCAL_ORIGIN } from '@naucto/engine';
 import {
   ButtonDirective,
   IconComponent,
@@ -30,6 +32,8 @@ import { ClipboardStore } from '../state/clipboard.store';
 import { PANEL_WIDTH } from '../state/editor-ui.store';
 
 const MAP_ZOOM_OCTAVES = Math.log2(MAP_MAX_ZOOM / MAP_MIN_ZOOM);
+import { geometrySignal } from '@app/shared/pixel/geometry.signal';
+
 import { WorkSessionService } from '../work-session/work-session.service';
 import { MAP_MAX_ZOOM, MAP_MIN_ZOOM, MapStore, type MapTool } from './map.store';
 import { MapCanvasComponent, type TileViewport } from './map-canvas.component';
@@ -65,7 +69,9 @@ import { MinimapComponent } from './minimap.component';
             <span class="font-mono text-meta text-ink">
               {{ t('editor.map.title') | uppercase }}
             </span>
-            <span class="label text-ink-4">{{ t('editor.map.tiles', { w: mapW, h: mapH }) }}</span>
+            <span class="label text-ink-4">
+              {{ t('editor.map.tiles', { w: mapW(), h: mapH() }) }}
+            </span>
           </div>
           <nc-tool-group
             [items]="tools()"
@@ -274,8 +280,9 @@ export class MapTabPage {
   private readonly i18n = inject(TranslocoService);
   protected readonly painter = new SheetPainter(this.session.game);
   protected readonly undo: Y.UndoManager;
-  protected readonly mapW = MAP_WIDTH;
-  protected readonly mapH = MAP_HEIGHT;
+  private readonly geometry = geometrySignal(signal(this.session.game));
+  protected readonly mapW = computed(() => this.geometry().mapWidth);
+  protected readonly mapH = computed(() => this.geometry().mapHeight);
   protected readonly canvas = viewChild<MapCanvasComponent>('canvas');
   protected readonly viewport = signal<TileViewport | null>(null);
   protected readonly hover = signal<{ x: number; y: number; spr: number; bits: string } | null>(
@@ -315,6 +322,13 @@ export class MapTabPage {
   ]);
 
   constructor() {
+    // The store clamps the brush against the sheet, so it has to be told when the sheet changes.
+    effect(() => {
+      const g = this.geometry();
+      untracked(() => {
+        this.map.setSheetSize(g.spritesPerRow, g.spriteRows);
+      });
+    });
     this.undo = new Y.UndoManager([this.session.game.tilesMap], {
       trackedOrigins: new Set([LOCAL_ORIGIN, null]),
       captureTimeout: 300,

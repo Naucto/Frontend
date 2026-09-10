@@ -15,6 +15,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { ThemeService } from '@app/core/theme/theme.service';
+import { geometrySignal } from '@app/shared/pixel/geometry.signal';
 import {
   checkerboard,
   ellipsePoints,
@@ -24,7 +25,7 @@ import {
   rectPoints,
 } from '@app/shared/pixel/pixel-tools';
 import { type SheetPainter } from '@app/shared/pixel/sheet-painter';
-import { type Game, SHEET_WIDTH, SPRITE_SIZE, SPRITES_PER_ROW } from '@naucto/engine';
+import { DEFAULT_GEOMETRY, type Game, SPRITE_SIZE } from '@naucto/engine';
 import {
   DragPanDirective,
   PresenceLayerComponent,
@@ -63,9 +64,18 @@ export function stepZoom(scale: number, delta: number, min = MIN_ZOOM, max = MAX
   return Math.max(min, Math.min(max, next));
 }
 
-/** How far a tool may reach: the region while the lock holds, the whole sheet once it is off. */
-export function toolBounds(region: SpriteRect, clip: boolean): PixelRect {
-  if (!clip) return { x: 0, y: 0, w: SHEET_WIDTH, h: SHEET_WIDTH };
+/**
+ * How far a tool may reach: the region while the lock holds, the whole sheet once it is off.
+ *
+ * The sheet's two dimensions are both given because they are no longer the same number.
+ */
+export function toolBounds(
+  region: SpriteRect,
+  clip: boolean,
+  sheetWidth: number,
+  sheetHeight: number,
+): PixelRect {
+  if (!clip) return { x: 0, y: 0, w: sheetWidth, h: sheetHeight };
   return {
     x: region.x * SPRITE_SIZE,
     y: region.y * SPRITE_SIZE,
@@ -90,7 +100,7 @@ interface Drag {
 }
 
 /**
- * The whole 128×128 sheet, zoomed and scrolled, with the worked-on region marked on it.
+ * The whole sheet, zoomed and scrolled, with the worked-on region marked on it.
  *
  * The canvas shows everything; the region says what the flags, the preview and the onion refer to,
  * and — while `clip` holds — how far a tool may reach. Panning is the host's own scrollbars: the
@@ -173,7 +183,12 @@ export class SpriteCanvasComponent {
   readonly pasted = output();
 
   /** What of the sheet is on screen, in fractional cells — for whatever draws a map of it. */
-  readonly view = signal<SpriteRect>({ x: 0, y: 0, w: SPRITES_PER_ROW, h: SPRITES_PER_ROW });
+  readonly view = signal<SpriteRect>({
+    x: 0,
+    y: 0,
+    w: DEFAULT_GEOMETRY.spritesPerRow,
+    h: DEFAULT_GEOMETRY.spriteRows,
+  });
 
   /**
    * A pasted clip, placed but not written.
@@ -244,7 +259,7 @@ export class SpriteCanvasComponent {
     const { w, h } = this.well();
     if (!w || !h) return 4;
     const r = this.regionPx();
-    const subject = this.crop() ? Math.max(r.w, r.h) : SHEET_WIDTH;
+    const subject = this.crop() ? Math.max(r.w, r.h) : Math.max(this.pxW(), this.pxH());
     return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.floor((Math.min(w, h) - 16) / subject)));
   });
   /**
@@ -260,7 +275,10 @@ export class SpriteCanvasComponent {
   private drag: Drag | null = null;
   private raf = 0;
 
-  protected readonly px = SHEET_WIDTH;
+  private readonly geometry = geometrySignal(this.game);
+  /** The sheet in pixels. Two of them, because a sheet is no longer square by construction. */
+  protected readonly pxW = computed(() => this.geometry().sheetWidth);
+  protected readonly pxH = computed(() => this.geometry().sheetHeight);
   /** The region in sheet pixels: what the tools are held to, and what is outlined on the canvas. */
   private readonly regionPx = computed<PixelRect>(() => {
     const r = this.region();
@@ -273,7 +291,9 @@ export class SpriteCanvasComponent {
   });
   // A drag that leaves the canvas still lands on the sheet, so cropping has to confine the tools
   // as well as the view. The smaller canvas alone does not.
-  private readonly bounds = computed(() => toolBounds(this.region(), this.clip() || this.crop()));
+  private readonly bounds = computed(() =>
+    toolBounds(this.region(), this.clip() || this.crop(), this.pxW(), this.pxH()),
+  );
   /**
    * Where the drawn surface starts, in drawn pixels. Cropped, the canvas holds the region alone
    * and takes the region's corner as its own origin, so anything laid over it in sheet
@@ -379,7 +399,7 @@ export class SpriteCanvasComponent {
     const s = this.scale();
     const cropped = this.crop();
     const r = this.regionPx();
-    const content = cropped ? r : { x: 0, y: 0, w: this.px, h: this.px };
+    const content = cropped ? r : { x: 0, y: 0, w: this.pxW(), h: this.pxH() };
     const span = (client: number, scroll: number, size: number): [number, number] =>
       size * s <= client ? [0, size] : [scroll / s, client / s];
     const [x, w] = span(el.clientWidth, el.scrollLeft, content.w);
@@ -394,7 +414,7 @@ export class SpriteCanvasComponent {
 
   private reveal(r: PixelRect, s: number): void {
     const el = this.host.nativeElement;
-    if (this.px * s <= el.clientWidth && this.px * s <= el.clientHeight) return;
+    if (this.pxW() * s <= el.clientWidth && this.pxH() * s <= el.clientHeight) return;
     const axis = (start: number, size: number, scroll: number, client: number): number => {
       const a = start * s;
       const b = (start + size) * s;
@@ -414,8 +434,8 @@ export class SpriteCanvasComponent {
   private cellOf(e: PointerEvent): Pt {
     const p = this.pointOf(e);
     return {
-      x: Math.max(0, Math.min(this.px - 1, Math.floor(p.x))),
-      y: Math.max(0, Math.min(this.px - 1, Math.floor(p.y))),
+      x: Math.max(0, Math.min(this.pxW() - 1, Math.floor(p.x))),
+      y: Math.max(0, Math.min(this.pxH() - 1, Math.floor(p.y))),
     };
   }
 
@@ -663,7 +683,7 @@ export class SpriteCanvasComponent {
     cancelAnimationFrame(this.raf);
     // Writing a canvas's width clears it, so a repaint that follows a size change one frame later
     // leaves a blank frame on screen.
-    if (this.canvas().nativeElement.width !== this.px * Math.ceil(this.scale())) {
+    if (this.canvas().nativeElement.width !== this.pxW() * Math.ceil(this.scale())) {
       this.draw();
       return;
     }
@@ -685,13 +705,15 @@ export class SpriteCanvasComponent {
     // exactly as wide as its neighbour and the cell guides land on hard edges; the browser then
     // resamples the finished picture once, evenly, on its way down to the size asked for.
     const s = Math.ceil(scale);
-    const px = this.px;
+    const pxW = this.pxW();
+    const pxH = this.pxH();
     // Everything below draws in sheet coordinates; cropping moves the origin and nothing else.
-    const sheetPx = px * s;
+    const sheetW = pxW * s;
+    const sheetH = pxH * s;
     const view = this.regionPx();
     const cropped = this.crop();
-    const viewW = cropped ? view.w : px;
-    const viewH = cropped ? view.h : px;
+    const viewW = cropped ? view.w : pxW;
+    const viewH = cropped ? view.h : pxH;
     const cw = viewW * s;
     const ch = viewH * s;
     if (el.width !== cw) el.width = cw;
@@ -730,7 +752,7 @@ export class SpriteCanvasComponent {
     }
     const lifted = this.drag?.lifted;
     const off = this.moveOffset();
-    ctx.drawImage(sheet, 0, 0, px, px, 0, 0, sheetPx, sheetPx);
+    ctx.drawImage(sheet, 0, 0, pxW, pxH, 0, 0, sheetW, sheetH);
     if (lifted && off) {
       // Hide the lifted region where it was, then draw its pixels at their offset.
       ctx.clearRect(lifted.rect.x * s, lifted.rect.y * s, lifted.rect.w * s, lifted.rect.h * s);
@@ -777,12 +799,15 @@ export class SpriteCanvasComponent {
         ctx.globalAlpha = 0.07;
         ctx.lineWidth = 1;
         ctx.beginPath();
-        for (let i = 1; i < px; i++) {
+        for (let i = 1; i < pxW; i++) {
           if (i % SPRITE_SIZE === 0) continue;
           ctx.moveTo(i * s + 0.5, 0);
-          ctx.lineTo(i * s + 0.5, sheetPx);
+          ctx.lineTo(i * s + 0.5, sheetH);
+        }
+        for (let i = 1; i < pxH; i++) {
+          if (i % SPRITE_SIZE === 0) continue;
           ctx.moveTo(0, i * s + 0.5);
-          ctx.lineTo(sheetPx, i * s + 0.5);
+          ctx.lineTo(sheetW, i * s + 0.5);
         }
         ctx.stroke();
       }
@@ -793,11 +818,13 @@ export class SpriteCanvasComponent {
       ctx.globalAlpha = 0.2;
       ctx.lineWidth = 1;
       ctx.beginPath();
-      for (let i = SPRITE_SIZE; i < px; i += SPRITE_SIZE) {
+      for (let i = SPRITE_SIZE; i < pxW; i += SPRITE_SIZE) {
         ctx.moveTo(i * s + 0.5, 0);
-        ctx.lineTo(i * s + 0.5, sheetPx);
+        ctx.lineTo(i * s + 0.5, sheetH);
+      }
+      for (let i = SPRITE_SIZE; i < pxH; i += SPRITE_SIZE) {
         ctx.moveTo(0, i * s + 0.5);
-        ctx.lineTo(sheetPx, i * s + 0.5);
+        ctx.lineTo(sheetW, i * s + 0.5);
       }
       ctx.stroke();
       ctx.globalAlpha = 1;
@@ -813,7 +840,7 @@ export class SpriteCanvasComponent {
 
     // The sheet's own edge is a neutral hairline; gold on this screen means the region alone.
     ctx.strokeStyle = token('--nc-line-strong');
-    ctx.strokeRect(0.5, 0.5, sheetPx - 1, sheetPx - 1);
+    ctx.strokeRect(0.5, 0.5, sheetW - 1, sheetH - 1);
 
     const sel = this.selection();
     if (sel) {
@@ -872,5 +899,3 @@ function checkerboardRegion(
   checkerboard(ctx, r.w * s, r.h * s, 8, a, b);
   ctx.restore();
 }
-
-export const SPRITE_COLUMNS = SPRITES_PER_ROW;

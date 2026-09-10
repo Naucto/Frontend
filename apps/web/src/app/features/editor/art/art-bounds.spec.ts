@@ -1,19 +1,21 @@
 import { TestBed } from '@angular/core/testing';
+import { DEFAULT_GEOMETRY } from '@naucto/engine';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { ArtStore } from './art.store';
 import { MAX_ZOOM, MIN_ZOOM, stepZoom, toolBounds, withinBounds } from './sprite-canvas.component';
 
 /**
- * The canvas draws all 128×128 now, so nothing about what you can see says what you may paint.
+ * The canvas draws the whole sheet, so nothing about what you can see says what you may paint.
  * The lock is the only thing that does, and it is arithmetic — the drawing itself needs a 2d
  * context the test environment has not got, so the rule is tested where it is decided.
  */
 describe('tool bounds', () => {
   const region = { x: 2, y: 3, w: 2, h: 1 };
+  const { sheetWidth, sheetHeight } = DEFAULT_GEOMETRY;
 
   it('holds a tool to the region while the lock is on', () => {
-    const b = toolBounds(region, true);
+    const b = toolBounds(region, true, sheetWidth, sheetHeight);
     expect(b).toEqual({ x: 16, y: 24, w: 16, h: 8 });
     expect(withinBounds(b, { x: 16, y: 24 })).toBe(true);
     expect(withinBounds(b, { x: 31, y: 31 })).toBe(true);
@@ -24,12 +26,20 @@ describe('tool bounds', () => {
   });
 
   it('opens the whole sheet once the lock is off, and no further', () => {
-    const b = toolBounds(region, false);
+    const b = toolBounds(region, false, sheetWidth, sheetHeight);
     expect(b).toEqual({ x: 0, y: 0, w: 128, h: 128 });
     expect(withinBounds(b, { x: 15, y: 24 })).toBe(true);
     expect(withinBounds(b, { x: 127, y: 127 })).toBe(true);
     expect(withinBounds(b, { x: 128, y: 0 })).toBe(false);
     expect(withinBounds(b, { x: -1, y: 0 })).toBe(false);
+  });
+
+  /** Both axes used to be measured against the width, which only ever worked on a square sheet. */
+  it('opens a sheet that is not square to its real corners', () => {
+    const b = toolBounds(region, false, 256, 64);
+    expect(b).toEqual({ x: 0, y: 0, w: 256, h: 64 });
+    expect(withinBounds(b, { x: 255, y: 63 })).toBe(true);
+    expect(withinBounds(b, { x: 255, y: 64 })).toBe(false);
   });
 });
 
@@ -51,6 +61,25 @@ describe('ArtStore region', () => {
 
     store.setRegion({ x: 0, y: 0, w: 0, h: 99 });
     expect(store.region()).toEqual({ x: 0, y: 0, w: 1, h: 16 });
+  });
+
+  /** A sheet can shrink under a region, and a region off the sheet names sprites that are gone. */
+  it('pulls the region back on when the sheet gets smaller', () => {
+    const store = TestBed.inject(ArtStore);
+    store.setRegion({ x: 12, y: 12, w: 2, h: 2 });
+
+    store.setSheetSize(8, 8);
+
+    expect(store.region()).toEqual({ x: 6, y: 6, w: 2, h: 2 });
+    expect(store.sprite()).toBe(6 * 8 + 6);
+  });
+
+  it('names a region by its first cell on a sheet of any width', () => {
+    const store = TestBed.inject(ArtStore);
+    store.setSheetSize(32, 8);
+    store.setRegion({ x: 3, y: 2, w: 1, h: 1 });
+
+    expect(store.sprite()).toBe(2 * 32 + 3);
   });
 
   it('names the region by its first cell', () => {

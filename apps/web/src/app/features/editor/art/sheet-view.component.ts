@@ -14,12 +14,19 @@ import {
   viewChild,
 } from '@angular/core';
 import { type SheetPainter } from '@app/shared/pixel/sheet-painter';
-import { SHEET_HEIGHT, SHEET_WIDTH, SPRITE_SIZE, SPRITES_PER_ROW } from '@naucto/engine';
+import { SPRITE_SIZE } from '@naucto/engine';
 
 import { type SpriteRect } from './art.store';
 
-const SCALE = 3;
-const CELL = SPRITE_SIZE * SCALE;
+/**
+ * The navigator's box, in drawing units.
+ *
+ * A cap rather than a size: the map has to fit the panel it sits in, and a sheet twice as wide as
+ * the one this was drawn for would otherwise push it out. Three units per art pixel is what a
+ * 128-pixel sheet gets, which is what it has always been drawn at.
+ */
+const MAX_BOX = 384;
+const MAX_SCALE = 3;
 
 /** The grip's leg, in drawing units. Half a cell, so a 1×1 region still has room to be moved. */
 const GRIP = 12;
@@ -38,7 +45,7 @@ type Drag =
   | { kind: 'resize'; anchor: { x: number; y: number } };
 
 /**
- * The whole 128×128 sheet, with the worked-on region on it and — where the caller has one — the
+ * The whole sheet, with the worked-on region on it and — where the caller has one — the
  * frame of what its canvas is currently showing.
  *
  * Used by ART, where the region is drawn by dragging, and by MAP, where a press just moves a
@@ -53,14 +60,14 @@ type Drag =
     <canvas
       #canvas
       class="pixelated absolute inset-0 h-full w-full"
-      [width]="width"
-      [height]="height"
+      [width]="width()"
+      [height]="height()"
       aria-hidden="true"
     ></canvas>
     <svg
       #surface
       class="absolute inset-0 cursor-crosshair touch-none"
-      [attr.viewBox]="'0 0 ' + width + ' ' + height"
+      [attr.viewBox]="'0 0 ' + width() + ' ' + height()"
       role="img"
       [attr.aria-label]="label()"
       tabindex="0"
@@ -70,15 +77,20 @@ type Drag =
       (pointercancel)="onUp($event)"
       (keydown)="onKey($event)"
     >
-      <path [attr.d]="gridPath" fill="none" stroke="var(--nc-line)" shape-rendering="crispEdges" />
+      <path
+        [attr.d]="gridPath()"
+        fill="none"
+        stroke="var(--nc-line)"
+        shape-rendering="crispEdges"
+      />
       <!-- The view frame goes under the region: the region is what you are editing, and it has to
            stay legible when the two overlap — which, at a fitted zoom, they always do. -->
       @if (viewport(); as v) {
         <rect
-          [attr.x]="v.x * CELL + 0.5"
-          [attr.y]="v.y * CELL + 0.5"
-          [attr.width]="v.w * CELL - 1"
-          [attr.height]="v.h * CELL - 1"
+          [attr.x]="v.x * CELL() + 0.5"
+          [attr.y]="v.y * CELL() + 0.5"
+          [attr.width]="v.w * CELL() - 1"
+          [attr.height]="v.h * CELL() - 1"
           fill="none"
           stroke="var(--nc-ink)"
           stroke-opacity="0.45"
@@ -87,10 +99,10 @@ type Drag =
         />
       }
       <rect
-        [attr.x]="region().x * CELL + 1"
-        [attr.y]="region().y * CELL + 1"
-        [attr.width]="region().w * CELL - 2"
-        [attr.height]="region().h * CELL - 2"
+        [attr.x]="region().x * CELL() + 1"
+        [attr.y]="region().y * CELL() + 1"
+        [attr.width]="region().w * CELL() - 2"
+        [attr.height]="region().h * CELL() - 2"
         fill="none"
         stroke="var(--nc-gold)"
         stroke-width="2"
@@ -117,8 +129,8 @@ type Drag =
   // rather than the drawing shrinking.
   host: {
     class: 'relative box-content block shrink-0 rounded-xs border border-line bg-inset',
-    '[style.width.px]': 'width',
-    '[style.height.px]': 'height',
+    '[style.width.px]': 'width()',
+    '[style.height.px]': 'height()',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -133,17 +145,37 @@ export class SheetViewComponent {
   /** Where a middle-button drag has reached, in cells, for a caller that can move its own view. */
   readonly panTo = output<{ x: number; y: number }>();
   protected readonly GRIP = GRIP;
-  protected readonly CELL = CELL;
-  /** The 15 interior sprite boundaries each way. Fixed, so it is built once. */
-  protected readonly gridPath = Array.from(
-    { length: SPRITES_PER_ROW - 1 },
-    (_, i) => (i + 1) * CELL + 0.5,
-  )
-    .flatMap((at) => [
-      `M${String(at)} 0V${String(SHEET_HEIGHT * SCALE)}`,
-      `M0 ${String(at)}H${String(SHEET_WIDTH * SCALE)}`,
-    ])
-    .join('');
+  /** Cells across and down, read through the painter's version so a resize is noticed. */
+  private readonly cols = computed(() => {
+    this.painter().version();
+    return this.painter().cols;
+  });
+  private readonly rows = computed(() => {
+    this.painter().version();
+    return this.painter().rows;
+  });
+  private readonly scale = computed(() =>
+    Math.max(
+      1,
+      Math.min(MAX_SCALE, Math.floor(MAX_BOX / (SPRITE_SIZE * Math.max(this.cols(), this.rows())))),
+    ),
+  );
+  protected readonly CELL = computed(() => SPRITE_SIZE * this.scale());
+  /** Every interior sprite boundary, each way. */
+  protected readonly gridPath = computed(() => {
+    const cell = this.CELL();
+    const w = this.cols() * cell;
+    const h = this.rows() * cell;
+    const down = Array.from(
+      { length: this.cols() - 1 },
+      (_, i) => `M${String((i + 1) * cell + 0.5)} 0V${String(h)}`,
+    );
+    const across = Array.from(
+      { length: this.rows() - 1 },
+      (_, i) => `M0 ${String((i + 1) * cell + 0.5)}H${String(w)}`,
+    );
+    return [...down, ...across].join('');
+  });
 
   /**
    * The grip in the region's bottom-right corner, or null where a new span cannot be dragged.
@@ -154,16 +186,17 @@ export class SheetViewComponent {
   protected readonly grip = computed(() => {
     if (!this.resizable()) return null;
     const r = this.region();
-    const x = (r.x + r.w) * CELL - 1;
-    const y = (r.y + r.h) * CELL - 1;
+    const cell = this.CELL();
+    const x = (r.x + r.w) * cell - 1;
+    const y = (r.y + r.h) * cell - 1;
     return {
       x,
       y,
       triangle: `${String(x)},${String(y)} ${String(x - GRIP)},${String(y)} ${String(x)},${String(y - GRIP)}`,
     };
   });
-  protected readonly width = SHEET_WIDTH * SCALE;
-  protected readonly height = SHEET_HEIGHT * SCALE;
+  protected readonly width = computed(() => this.cols() * this.CELL());
+  protected readonly height = computed(() => this.rows() * this.CELL());
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
   private readonly surface = viewChild.required<ElementRef<SVGSVGElement>>('surface');
   private panning = false;
@@ -190,15 +223,19 @@ export class SheetViewComponent {
   /** Whole cell under the pointer. */
   private cellOf(e: PointerEvent): { x: number; y: number } {
     const r = this.surface().nativeElement.getBoundingClientRect();
-    const cell = (r.width || this.width) / SPRITES_PER_ROW;
-    const clamp = (v: number): number => Math.max(0, Math.min(SPRITES_PER_ROW - 1, Math.floor(v)));
-    return { x: clamp((e.clientX - r.left) / cell), y: clamp((e.clientY - r.top) / cell) };
+    const cellW = (r.width || this.width()) / this.cols();
+    const cellH = (r.height || this.height()) / this.rows();
+    const clamp = (v: number, n: number): number => Math.max(0, Math.min(n - 1, Math.floor(v)));
+    return {
+      x: clamp((e.clientX - r.left) / cellW, this.cols()),
+      y: clamp((e.clientY - r.top) / cellH, this.rows()),
+    };
   }
 
   /** Pointer position in drawing units, which is what the grip is measured in. */
   private pixelOf(e: PointerEvent): { x: number; y: number } {
     const r = this.surface().nativeElement.getBoundingClientRect();
-    const k = this.width / (r.width || this.width);
+    const k = this.width() / (r.width || this.width());
     return { x: (e.clientX - r.left) * k, y: (e.clientY - r.top) * k };
   }
 
@@ -207,8 +244,9 @@ export class SheetViewComponent {
     if (!this.resizable()) return false;
     const r = this.region();
     const p = this.pixelOf(e);
-    const dx = (r.x + r.w) * CELL - 1 - p.x;
-    const dy = (r.y + r.h) * CELL - 1 - p.y;
+    const cell = this.CELL();
+    const dx = (r.x + r.w) * cell - 1 - p.x;
+    const dy = (r.y + r.h) * cell - 1 - p.y;
     // The grip is drawn as a triangle, so its hit area is one too: the square's far half would
     // claim pixels that show the sheet.
     return dx >= 0 && dy >= 0 && dx + dy <= GRIP;
@@ -274,8 +312,8 @@ export class SheetViewComponent {
     const d = this.drag;
     const g = d?.kind === 'move' ? d.grab : { x: 0, y: 0 };
     this.region.set({
-      x: Math.max(0, Math.min(SPRITES_PER_ROW - r.w, c.x - g.x)),
-      y: Math.max(0, Math.min(SPRITES_PER_ROW - r.h, c.y - g.y)),
+      x: Math.max(0, Math.min(this.cols() - r.w, c.x - g.x)),
+      y: Math.max(0, Math.min(this.rows() - r.h, c.y - g.y)),
       w: r.w,
       h: r.h,
     });
@@ -296,15 +334,15 @@ export class SheetViewComponent {
     if (e.shiftKey && this.resizable()) {
       this.region.set({
         ...r,
-        w: Math.max(1, Math.min(SPRITES_PER_ROW - r.x, r.w + dx)),
-        h: Math.max(1, Math.min(SPRITES_PER_ROW - r.y, r.h + dy)),
+        w: Math.max(1, Math.min(this.cols() - r.x, r.w + dx)),
+        h: Math.max(1, Math.min(this.rows() - r.y, r.h + dy)),
       });
       return;
     }
     this.region.set({
       ...r,
-      x: Math.max(0, Math.min(SPRITES_PER_ROW - r.w, r.x + dx)),
-      y: Math.max(0, Math.min(SPRITES_PER_ROW - r.h, r.y + dy)),
+      x: Math.max(0, Math.min(this.cols() - r.w, r.x + dx)),
+      y: Math.max(0, Math.min(this.rows() - r.h, r.y + dy)),
     });
   }
 
@@ -316,8 +354,8 @@ export class SheetViewComponent {
     if (!ctx) return;
     ctx.imageSmoothingEnabled = false;
     // Cleared rather than filled: the host carries the inset ground, so an empty cell shows it.
-    ctx.clearRect(0, 0, this.width, this.height);
-    ctx.drawImage(this.painter().canvas, 0, 0, this.width, this.height);
+    ctx.clearRect(0, 0, this.width(), this.height());
+    ctx.drawImage(this.painter().canvas, 0, 0, this.width(), this.height());
   }
 }
 

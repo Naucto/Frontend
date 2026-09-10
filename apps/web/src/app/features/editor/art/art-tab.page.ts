@@ -11,18 +11,12 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
+import { geometrySignal } from '@app/shared/pixel/geometry.signal';
 import { PaletteGridComponent } from '@app/shared/pixel/palette-grid.component';
 import { type Pt } from '@app/shared/pixel/pixel-tools';
 import { SheetPainter } from '@app/shared/pixel/sheet-painter';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
-import {
-  BUBBLEGUM_16,
-  LOCAL_ORIGIN,
-  PICO8_PALETTE,
-  SPRITE_COUNT,
-  SPRITE_SIZE,
-  SPRITES_PER_ROW,
-} from '@naucto/engine';
+import { BUBBLEGUM_16, LOCAL_ORIGIN, PICO8_PALETTE, SPRITE_SIZE } from '@naucto/engine';
 import {
   BitFlagsComponent,
   ButtonDirective,
@@ -289,7 +283,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
 
         <nc-section banded [title]="t('editor.art.sheet')">
           <span actions class="label text-ink-4">
-            {{ t('editor.art.used', { used: used(), total: total }) }}
+            {{ t('editor.art.used', { used: used(), total: total() }) }}
           </span>
           <nc-sheet-view
             [painter]="painter"
@@ -372,10 +366,12 @@ export class ArtTabPage {
   private readonly clipboard = inject(ClipboardStore);
   private readonly i18n = inject(TranslocoService);
   protected readonly painter = new SheetPainter(this.session.game);
+  private readonly geometry = geometrySignal(signal(this.session.game));
   protected readonly undo: Y.UndoManager;
   protected readonly presetList = PRESETS;
   protected readonly defaultPalette = BUBBLEGUM_16;
-  protected readonly total = SPRITE_COUNT;
+  /** How many sprites the sheet holds — no longer a constant, so read per use. */
+  protected readonly total = computed(() => this.geometry().spriteCount);
 
   protected readonly zoom = signal(1);
   protected readonly hover = signal<{ x: number; y: number; col: number } | null>(null);
@@ -422,7 +418,7 @@ export class ArtTabPage {
   protected readonly used = computed(() => {
     this.painter.version();
     let n = 0;
-    for (let i = 0; i < SPRITE_COUNT; i++) if (!this.session.game.isSpriteEmpty(i)) n++;
+    for (let i = 0; i < this.total(); i++) if (!this.session.game.isSpriteEmpty(i)) n++;
     return n;
   });
   protected readonly flags = computed(() => {
@@ -461,6 +457,13 @@ export class ArtTabPage {
   ]);
 
   constructor() {
+    // The store clamps the region against the sheet, so it has to be told when the sheet changes.
+    effect(() => {
+      const g = this.geometry();
+      untracked(() => {
+        this.art.setSheetSize(g.spritesPerRow, g.spriteRows);
+      });
+    });
     const game = this.session.game;
     this.undo = new Y.UndoManager([game.spritesMap, game.flagsMap, game.paletteArray], {
       trackedOrigins: new Set([LOCAL_ORIGIN, null]),
@@ -534,8 +537,8 @@ export class ArtTabPage {
     game.transact(() => {
       for (let j = 0; j < r.h; j++)
         for (let i = 0; i < r.w; i++) {
-          const idx = (r.y + j) * SPRITES_PER_ROW + r.x + i;
-          if (idx < SPRITE_COUNT) game.setFlag(idx, value);
+          const idx = (r.y + j) * this.geometry().spritesPerRow + r.x + i;
+          if (idx < this.total()) game.setFlag(idx, value);
         }
     });
   }

@@ -14,16 +14,10 @@ import {
   viewChild,
 } from '@angular/core';
 import { ThemeService } from '@app/core/theme/theme.service';
+import { geometrySignal } from '@app/shared/pixel/geometry.signal';
 import { cssVar, floodFill, linePoints, type Pt } from '@app/shared/pixel/pixel-tools';
 import { type SheetPainter } from '@app/shared/pixel/sheet-painter';
-import {
-  type Game,
-  MAP_HEIGHT,
-  MAP_WIDTH,
-  SPRITE_COUNT,
-  SPRITE_SIZE,
-  SPRITES_PER_ROW,
-} from '@naucto/engine';
+import { type Game, SPRITE_SIZE } from '@naucto/engine';
 import {
   DragPanDirective,
   FLAG_ACCENTS,
@@ -47,7 +41,7 @@ export interface TileViewport {
 /** The chips that set these bits carry the same eight, so a marked tile and its flag agree. */
 const FLAG_VARS = FLAG_ACCENTS.map((a) => `--nc-${a}`);
 
-/** The whole 128×32 tile map in a scrollable surface; stamps tiles from the sheet. */
+/** The whole tile map in a scrollable surface; stamps tiles from the sheet. */
 /** Whether a tile sits inside a rectangle of tiles. */
 function withinRect(r: TileRect, p: Pt): boolean {
   return p.x >= r.x && p.y >= r.y && p.x < r.x + r.w && p.y < r.y + r.h;
@@ -157,8 +151,11 @@ export class MapCanvasComponent {
   private lastTilePx = 0;
 
   protected readonly tilePx = computed(() => SPRITE_SIZE * this.zoom());
-  protected readonly cssW = computed(() => MAP_WIDTH * this.tilePx());
-  protected readonly cssH = computed(() => MAP_HEIGHT * this.tilePx());
+  private readonly geometry = geometrySignal(this.game);
+  protected readonly mapW = computed(() => this.geometry().mapWidth);
+  protected readonly mapH = computed(() => this.geometry().mapHeight);
+  protected readonly cssW = computed(() => this.mapW() * this.tilePx());
+  protected readonly cssH = computed(() => this.mapH() * this.tilePx());
   protected readonly marks = computed<PresenceMark[]>(() => {
     const t = this.tilePx();
     return this.collaborators()
@@ -332,8 +329,8 @@ export class MapCanvasComponent {
   private clampToMap(r: TileRect): TileRect {
     return {
       ...r,
-      x: Math.max(0, Math.min(r.x, MAP_WIDTH - r.w)),
-      y: Math.max(0, Math.min(r.y, MAP_HEIGHT - r.h)),
+      x: Math.max(0, Math.min(r.x, this.mapW() - r.w)),
+      y: Math.max(0, Math.min(r.y, this.mapH() - r.h)),
     };
   }
 
@@ -350,7 +347,8 @@ export class MapCanvasComponent {
         for (let x = 0; x < rect.w; x++) {
           const tx = rect.x + x;
           const ty = rect.y + y;
-          if (tx < MAP_WIDTH && ty < MAP_HEIGHT) game.setTile(tx, ty, cells[y * rect.w + x] ?? 0);
+          if (tx < this.mapW() && ty < this.mapH())
+            game.setTile(tx, ty, cells[y * rect.w + x] ?? 0);
         }
     });
     this.undo()?.stopCapturing();
@@ -391,8 +389,8 @@ export class MapCanvasComponent {
   private cellOf(e: PointerEvent): Pt {
     const p = this.pointOf(e);
     return {
-      x: Math.max(0, Math.min(MAP_WIDTH - 1, Math.floor(p.x))),
-      y: Math.max(0, Math.min(MAP_HEIGHT - 1, Math.floor(p.y))),
+      x: Math.max(0, Math.min(this.mapW() - 1, Math.floor(p.x))),
+      y: Math.max(0, Math.min(this.mapH() - 1, Math.floor(p.y))),
     };
   }
 
@@ -408,8 +406,9 @@ export class MapCanvasComponent {
     this.game().transact(() => {
       for (let j = 0; j < b.h; j++)
         for (let i = 0; i < b.w; i++) {
-          const spr = erase ? 0 : (b.y + j) * SPRITES_PER_ROW + b.x + i;
-          if (spr < SPRITE_COUNT) this.game().setTile(cell.x + i, cell.y + j, spr);
+          const { spritesPerRow, spriteCount } = this.geometry();
+          const spr = erase ? 0 : (b.y + j) * spritesPerRow + b.x + i;
+          if (spr < spriteCount) this.game().setTile(cell.x + i, cell.y + j, spr);
         }
     });
   }
@@ -436,8 +435,8 @@ export class MapCanvasComponent {
         break;
       case 'fill': {
         const g = this.game();
-        const pts = floodFill((x, y) => g.getTile(x, y), cell, MAP_WIDTH, MAP_HEIGHT);
-        const spr = erase ? 0 : this.brush().y * SPRITES_PER_ROW + this.brush().x;
+        const pts = floodFill((x, y) => g.getTile(x, y), cell, this.mapW(), this.mapH());
+        const spr = erase ? 0 : this.brush().y * this.geometry().spritesPerRow + this.brush().x;
         g.transact(() => {
           for (const p of pts) g.setTile(p.x, p.y, spr);
         });
@@ -516,7 +515,7 @@ export class MapCanvasComponent {
         for (let x = 0; x < rect.w; x++) {
           const tx = rect.x + x + off.x;
           const ty = rect.y + y + off.y;
-          if (tx >= 0 && ty >= 0 && tx < MAP_WIDTH && ty < MAP_HEIGHT)
+          if (tx >= 0 && ty >= 0 && tx < this.mapW() && ty < this.mapH())
             game.setTile(tx, ty, cells[y * rect.w + x] ?? 0);
         }
     });
@@ -564,9 +563,10 @@ export class MapCanvasComponent {
     const tiles = game.tiles;
     const showFlags = this.flags();
     const flagColours = FLAG_VARS.map((v) => cssVar(el, v));
-    for (let y = 0; y < MAP_HEIGHT; y++)
-      for (let x = 0; x < MAP_WIDTH; x++) {
-        const spr = tiles[y * MAP_WIDTH + x] ?? 0;
+    const mapW = this.mapW();
+    for (let y = 0; y < this.mapH(); y++)
+      for (let x = 0; x < mapW; x++) {
+        const spr = tiles[y * mapW + x] ?? 0;
         if (!spr) continue;
         const o = game.spriteOrigin(spr);
         ctx.drawImage(sheet, o.x, o.y, SPRITE_SIZE, SPRITE_SIZE, x * t, y * t, t, t);
@@ -586,12 +586,12 @@ export class MapCanvasComponent {
       ctx.globalAlpha = 0.06;
       ctx.strokeStyle = cssVar(el, '--nc-ink');
       ctx.beginPath();
-      for (let x = 1; x < MAP_WIDTH; x++) {
+      for (let x = 1; x < this.mapW(); x++) {
         if (x % 8 === 0) continue;
         ctx.moveTo(x * t + 0.5, 0);
         ctx.lineTo(x * t + 0.5, h);
       }
-      for (let y = 1; y < MAP_HEIGHT; y++) {
+      for (let y = 1; y < this.mapH(); y++) {
         if (y % 8 === 0) continue;
         ctx.moveTo(0, y * t + 0.5);
         ctx.lineTo(w, y * t + 0.5);
@@ -600,11 +600,11 @@ export class MapCanvasComponent {
       ctx.strokeStyle = cssVar(el, '--nc-sky');
       ctx.globalAlpha = 0.28;
       ctx.beginPath();
-      for (let x = 8; x < MAP_WIDTH; x += 8) {
+      for (let x = 8; x < this.mapW(); x += 8) {
         ctx.moveTo(x * t + 0.5, 0);
         ctx.lineTo(x * t + 0.5, h);
       }
-      for (let y = 8; y < MAP_HEIGHT; y += 8) {
+      for (let y = 8; y < this.mapH(); y += 8) {
         ctx.moveTo(0, y * t + 0.5);
         ctx.lineTo(w, y * t + 0.5);
       }

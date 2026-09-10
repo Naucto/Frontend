@@ -2,6 +2,7 @@ import type { ElementRef } from '@angular/core';
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   effect,
   inject,
@@ -12,9 +13,10 @@ import {
   viewChild,
 } from '@angular/core';
 import { ThemeService } from '@app/core/theme/theme.service';
+import { geometrySignal } from '@app/shared/pixel/geometry.signal';
 import { cssVar, type Pt } from '@app/shared/pixel/pixel-tools';
 import { type SheetPainter } from '@app/shared/pixel/sheet-painter';
-import { type Game, MAP_HEIGHT, MAP_WIDTH, SPRITE_SIZE } from '@naucto/engine';
+import { type Game, SPRITE_SIZE } from '@naucto/engine';
 
 import { type TileViewport } from './map-canvas.component';
 
@@ -28,8 +30,8 @@ const SCALE = 3;
       #canvas
       class="pixelated block w-full"
       [class]="dragging() ? 'cursor-grabbing' : 'cursor-pointer'"
-      [width]="width"
-      [height]="height"
+      [width]="width()"
+      [height]="height()"
       role="img"
       [attr.aria-label]="label()"
       (pointerdown)="onDown($event)"
@@ -48,8 +50,9 @@ export class MinimapComponent {
   readonly viewport = input<TileViewport | null>(null);
   readonly label = input('Whole map');
   readonly jump = output<Pt>();
-  protected readonly width = MAP_WIDTH * SCALE;
-  protected readonly height = MAP_HEIGHT * SCALE;
+  private readonly geometry = geometrySignal(this.game);
+  protected readonly width = computed(() => this.geometry().mapWidth * SCALE);
+  protected readonly height = computed(() => this.geometry().mapHeight * SCALE);
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
   private readonly theme = inject(ThemeService);
   private readonly tilesVersion = signal(0);
@@ -112,8 +115,8 @@ export class MinimapComponent {
   private aim(e: PointerEvent): void {
     const r = this.canvas().nativeElement.getBoundingClientRect();
     this.jump.emit({
-      x: Math.floor(((e.clientX - r.left) * this.width) / r.width / SCALE),
-      y: Math.floor(((e.clientY - r.top) * this.height) / r.height / SCALE),
+      x: Math.floor(((e.clientX - r.left) * this.width()) / r.width / SCALE),
+      y: Math.floor(((e.clientY - r.top) * this.height()) / r.height / SCALE),
     });
   }
 
@@ -123,13 +126,14 @@ export class MinimapComponent {
     if (!ctx) return;
     ctx.imageSmoothingEnabled = false;
     ctx.fillStyle = cssVar(el, '--nc-inset');
-    ctx.fillRect(0, 0, this.width, this.height);
+    ctx.fillRect(0, 0, this.width(), this.height());
     const game = this.game();
     const sheet = this.painter().canvas;
     const tiles = game.tiles;
-    for (let y = 0; y < MAP_HEIGHT; y++)
-      for (let x = 0; x < MAP_WIDTH; x++) {
-        const spr = tiles[y * MAP_WIDTH + x] ?? 0;
+    const { mapWidth, mapHeight } = this.geometry();
+    for (let y = 0; y < mapHeight; y++)
+      for (let x = 0; x < mapWidth; x++) {
+        const spr = tiles[y * mapWidth + x] ?? 0;
         if (!spr) continue;
         const o = game.spriteOrigin(spr);
         ctx.drawImage(
@@ -150,8 +154,8 @@ export class MinimapComponent {
       ctx.strokeRect(
         v.x * SCALE + 0.5,
         v.y * SCALE + 0.5,
-        Math.min(v.w, MAP_WIDTH) * SCALE - 1,
-        Math.min(v.h, MAP_HEIGHT) * SCALE - 1,
+        Math.min(v.w, this.geometry().mapWidth) * SCALE - 1,
+        Math.min(v.h, this.geometry().mapHeight) * SCALE - 1,
       );
     }
   }

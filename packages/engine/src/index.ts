@@ -12,6 +12,7 @@ export type {
 } from './api/ports';
 export * from './game/defaults';
 export { type CodeFile, Game, LOCAL_ORIGIN, type PixelChange, type TileChange } from './game/Game';
+export * from './game/geometry';
 export * from './game/keys';
 export { computeSizeReport, type SizeReport } from './game/size';
 export { buildFontAtlas, FONT_HEIGHT, FONT_WIDTH } from './gfx/Font';

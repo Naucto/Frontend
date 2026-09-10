@@ -1,4 +1,4 @@
-import { SPRITE_COUNT, SPRITES_PER_ROW } from '@naucto/engine';
+import { DEFAULT_GEOMETRY } from '@naucto/engine';
 import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
 
 import { stepZoom } from '../art/sprite-canvas.component';
@@ -21,12 +21,11 @@ const MAX_BRUSH = 8;
  * Both axes are clamped separately: a brush that overhangs the right edge would wrap onto the next
  * row when stamped, and one that overhangs the bottom would ask for sprites the sheet has not got.
  */
-function clampToSheet(r: TileRect): TileRect {
-  const rows = SPRITE_COUNT / SPRITES_PER_ROW;
-  const w = Math.max(1, Math.min(MAX_BRUSH, SPRITES_PER_ROW, r.w));
+function clampToSheet(r: TileRect, cols: number, rows: number): TileRect {
+  const w = Math.max(1, Math.min(MAX_BRUSH, cols, r.w));
   const h = Math.max(1, Math.min(MAX_BRUSH, rows, r.h));
   return {
-    x: Math.max(0, Math.min(r.x, SPRITES_PER_ROW - w)),
+    x: Math.max(0, Math.min(r.x, cols - w)),
     y: Math.max(0, Math.min(r.y, rows - h)),
     w,
     h,
@@ -47,6 +46,9 @@ interface MapState {
   /** Pixels per sprite pixel (1..4). */
   zoom: number;
   selection: TileRect | null;
+  /** The sheet the brush is picked from, in cells. Mirrored from the document, like ART's. */
+  cols: number;
+  rows: number;
 }
 
 /**
@@ -67,13 +69,19 @@ export const MapStore = signalStore(
     flags: false,
     zoom: 2,
     selection: null,
+    cols: DEFAULT_GEOMETRY.spritesPerRow,
+    rows: DEFAULT_GEOMETRY.spriteRows,
   }),
   withMethods((store) => ({
     setTool(tool: MapTool): void {
       patchState(store, { tool });
     },
     setBrush(brush: TileRect): void {
-      patchState(store, { brush: clampToSheet(brush) });
+      patchState(store, { brush: clampToSheet(brush, store.cols(), store.rows()) });
+    },
+    /** Follows the document's sheet, pulling the brush back onto it when it shrinks. */
+    setSheetSize(cols: number, rows: number): void {
+      patchState(store, { cols, rows, brush: clampToSheet(store.brush(), cols, rows) });
     },
     setGrid(grid: boolean): void {
       patchState(store, { grid });
