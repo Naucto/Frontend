@@ -510,6 +510,8 @@
       "clear": "Clear",
       "playMusic": "Play the music",
       "pauseMusic": "Pause the music",
+      "musicToStart": "Back to the first pattern",
+      "stopMusic": "Stop the music",
       "play": "Play",
       "stop": "Stop",
       "loop": "Loop",

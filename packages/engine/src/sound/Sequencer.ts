@@ -58,6 +58,16 @@ export class Sequencer {
     this.synth.musicGain = this.fade;
   }
 
+  /**
+   * Whether what is playing carries on past its last pattern.
+   *
+   * Asked mid-take: the chain was handed over with its own answer when playback started, and
+   * without this the box could be unticked to no effect until the next start.
+   */
+  setLoop(loop: boolean): void {
+    if (this.song) this.song = { ...this.song, loop };
+  }
+
   stopMusic(fadeOut: number): void {
     if (!this.playing) return;
     if (fadeOut <= 0) {

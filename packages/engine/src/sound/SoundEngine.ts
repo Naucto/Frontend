@@ -184,6 +184,11 @@ export class SoundEngine implements SoundPort {
     this.backend.post({ type: 'play_song', song: s, loop, fadeIn });
   }
 
+  /** Whether what is already playing loops; nothing happens when nothing is. */
+  setLoop(loop: boolean): void {
+    this.backend.post({ type: 'set_loop', loop });
+  }
+
   stopMusic(fadeOut: number): void {
     this.playing = false;
     this.backend.post({ type: 'stop_music', fadeOut });

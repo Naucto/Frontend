@@ -197,6 +197,27 @@ describe('Sequencer', () => {
     expect(orphan.synth.voices.some((v) => v.active && v.pitch === 72)).toBe(true);
   });
 
+  /** Unticking LOOP has to reach a take that is already running, not only the next one. */
+  it('stops looping when told so mid-take', () => {
+    const synth = new SynthCore(SR);
+    const seq = new Sequencer(synth, SR);
+    const ins = defaultInstrument('i');
+    const p = defaultPattern('p0');
+    p.bpm = 120;
+    p.stepsPerBeat = 4;
+    p.steps = 1;
+    seq.setLibrary(new Map([['i', ins]]), new Map([['p0', p]]));
+    seq.playSong({ name: 's', sequence: ['p0'], loop: true, loopStart: 0 }, true, 0);
+    const stepSamples = Math.round((60 / 120 / 4) * SR);
+
+    seq.advance(stepSamples * 2);
+    expect(seq.position()).not.toBeNull();
+
+    seq.setLoop(false);
+    seq.advance(stepSamples * 2);
+    expect(seq.position()).toBeNull();
+  });
+
   const chord = (): {
     synth: SynthCore;
     seq: Sequencer;

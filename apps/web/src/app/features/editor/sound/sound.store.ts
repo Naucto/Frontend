@@ -50,7 +50,7 @@ export const SoundStore = signalStore(
     songSlot: 0,
     snap: 16,
     zoom: 1,
-    loop: true,
+    loop: false,
     metronome: false,
     sfxSlot: null,
   }),

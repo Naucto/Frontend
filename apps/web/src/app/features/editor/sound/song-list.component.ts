@@ -1,9 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { type Pattern, type Song, SONG_SLOTS } from '@naucto/engine';
-import { ButtonDirective, HelpDotComponent, IconComponent, NumberFieldComponent } from '@naucto/ui';
+import { HelpDotComponent, NumberFieldComponent, TransportComponent } from '@naucto/ui';
 
-/** How wide the grid is drawn, in boxes. */
 const COLUMNS = 4;
 
 /**
@@ -33,43 +32,28 @@ interface Cell {
  */
 @Component({
   selector: 'nc-song-list',
-  imports: [
-    TranslocoDirective,
-    ButtonDirective,
-    IconComponent,
-    HelpDotComponent,
-    NumberFieldComponent,
-  ],
+  imports: [TranslocoDirective, HelpDotComponent, NumberFieldComponent, TransportComponent],
   template: `
     <div *transloco="let t" class="border-t border-line px-1.5 py-1.25">
       <div class="mb-1 flex items-center gap-1">
         <span class="label text-ink-3">{{ t('editor.sound.music') }}</span>
         <!-- The music has a transport of its own: playing a chain and auditioning the pattern in
-             front of you are two things to listen to, and one button cannot be both. -->
-        @if (playing()) {
-          <button
-            ncButton
-            variant="ghost"
-            size="sm"
-            iconOnly
-            [attr.aria-label]="t('editor.sound.pauseMusic')"
-            (click)="paused.emit()"
-          >
-            <nc-icon name="pause" [size]="12" />
-          </button>
-        } @else {
-          <button
-            ncButton
-            variant="ghost"
-            size="sm"
-            iconOnly
-            [disabled]="!cells().some((c) => c.state === 'set' || c.state === 'playing')"
-            [attr.aria-label]="t('editor.sound.playMusic')"
-            (click)="started.emit()"
-          >
-            <nc-icon name="play" [size]="12" class="text-hot-ink" />
-          </button>
-        }
+             front of you are two things to listen to, and one button cannot be both. At the drawn
+             density, because this is a section head and not the tab's own bar. -->
+        <nc-transport
+          class="nc-density-small"
+          [playing]="playing()"
+          [canRewind]="playing()"
+          [canStop]="playing()"
+          [playLabel]="t('editor.sound.playMusic')"
+          [pauseLabel]="t('editor.sound.pauseMusic')"
+          [rewindLabel]="t('editor.sound.musicToStart')"
+          [stopLabel]="t('editor.sound.stopMusic')"
+          (started)="started.emit()"
+          (paused)="paused.emit()"
+          (rewound)="rewound.emit()"
+          (stopped)="stopped.emit()"
+        />
         <span class="flex-1"></span>
         <nc-number-field
           [label]="t('editor.sound.musicSlot')"
@@ -122,6 +106,8 @@ export class SongListComponent {
   readonly assign = output<{ index: number; slot: number | null }>();
   readonly started = output();
   readonly paused = output();
+  readonly rewound = output();
+  readonly stopped = output();
 
   protected readonly MAX_SLOT = SONG_SLOTS - 1;
   protected readonly columnTrack = `repeat(${String(COLUMNS)}, minmax(0, 1fr))`;

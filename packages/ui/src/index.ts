@@ -54,6 +54,7 @@ export * from './components/toggle.component';
 export * from './components/toggle-button.component';
 export * from './components/tool-group.component';
 export * from './components/tooltip.directive';
+export * from './components/transport.component';
 export * from './format';
 export { ICON_PATHS, type IconName } from './icons/paths';
 export * from './palette';

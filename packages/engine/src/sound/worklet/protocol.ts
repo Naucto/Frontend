@@ -16,6 +16,8 @@ export type SynthCommand =
   | { type: 'play_sfx'; pattern: string; pitchOffset: number; volume: number; channel?: number }
   | { type: 'play_song'; song: Song; loop: boolean; fadeIn: number; from?: number }
   | { type: 'stop_music'; fadeOut: number }
+  /** Changes whether what is already playing loops. A setting reached mid-take, not a new take. */
+  | { type: 'set_loop'; loop: boolean }
   | { type: 'stop_all' }
   | { type: 'mixer'; master: number; music?: number; sfx?: number };
 

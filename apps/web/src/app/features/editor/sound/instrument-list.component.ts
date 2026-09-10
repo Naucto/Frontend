@@ -13,7 +13,6 @@ import {
 
 import { WaveGlyphComponent } from './wave-glyph.component';
 
-/** How wide the bank is drawn, in cells. */
 const COLUMNS = 4;
 
 /** Left column of the SOUND tab: the instruments and the bank of sound effects. */

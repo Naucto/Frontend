@@ -33,6 +33,7 @@ import {
   PanelColumnComponent,
   SliderComponent,
   ToggleButtonComponent,
+  TransportComponent,
 } from '@naucto/ui';
 import * as Y from 'yjs';
 
@@ -95,6 +96,7 @@ const PATTERN_MAX = 99;
     PanelColumnComponent,
     SliderComponent,
     ToggleButtonComponent,
+    TransportComponent,
     InstrumentInspectorComponent,
     InstrumentListComponent,
     SongListComponent,
@@ -137,6 +139,8 @@ const PATTERN_MAX = 99;
           (assign)="assignSongPlace($event)"
           (started)="playSong()"
           (paused)="pause()"
+          (rewound)="songToStart()"
+          (stopped)="stop()"
         />
       </aside>
 
@@ -170,59 +174,20 @@ const PATTERN_MAX = 99;
               <nc-icon name="trash" [size]="24" />
             </button>
             <span class="flex-1"></span>
-            <!-- Play, pause and an explicit stop that rewinds — pausing on the last bar and
-                 pressing play again should not be the only way back to the start. -->
-            <span class="flex items-center gap-0.5 rounded-sm border border-line bg-inset p-0.5">
-              @if (playingWhat() === 'pattern') {
-                <button
-                  ncButton
-                  variant="ghost"
-                  size="sm"
-                  iconOnly
-                  [attr.aria-label]="t('editor.sound.pause')"
-                  (click)="pause()"
-                >
-                  <nc-icon name="pause" [size]="24" />
-                </button>
-              } @else {
-                <button
-                  ncButton
-                  variant="ghost"
-                  size="sm"
-                  iconOnly
-                  [attr.aria-label]="t('editor.sound.play')"
-                  (click)="play()"
-                >
-                  <nc-icon name="play" [size]="24" class="text-hot-ink" />
-                </button>
-              }
-              <!-- Back to the top without stopping, which is what you want when you are listening
-                   to a bar again rather than putting the pattern down. Stopping also returns to the
-                   start, so without this the only way back was to end the take. -->
-              <button
-                ncButton
-                variant="ghost"
-                size="sm"
-                iconOnly
-                [attr.aria-label]="t('editor.sound.toStart')"
-                (click)="toStart()"
-                [disabled]="playhead() === null"
-              >
-                <nc-icon name="prev" [size]="24" />
-              </button>
-              <button
-                ncButton
-                variant="ghost"
-                size="sm"
-                iconOnly
-                [attr.aria-label]="t('editor.sound.stop')"
-                (click)="stop()"
-                [disabled]="!playing() && playhead() === null"
-              >
-                <nc-icon name="stop" [size]="24" />
-              </button>
-            </span>
-            <nc-toggle-button [checked]="sound.loop()" (checkedChange)="sound.setLoop($event)">
+            <nc-transport
+              [playing]="playingWhat() === 'pattern'"
+              [canRewind]="playhead() !== null"
+              [canStop]="playing() || playhead() !== null"
+              [playLabel]="t('editor.sound.play')"
+              [pauseLabel]="t('editor.sound.pause')"
+              [rewindLabel]="t('editor.sound.toStart')"
+              [stopLabel]="t('editor.sound.stop')"
+              (started)="play()"
+              (paused)="pause()"
+              (rewound)="toStart()"
+              (stopped)="stop()"
+            />
+            <nc-toggle-button [checked]="sound.loop()" (checkedChange)="setLoop($event)">
               <nc-icon name="repeat" [size]="24" />
               {{ t('editor.sound.loop') }}
             </nc-toggle-button>
@@ -657,6 +622,15 @@ export class SoundTabPage {
     this.sound.setZoom(this.sound.zoom() * Math.pow(2, delta));
   }
 
+  /**
+   * Looping is not only a setting: something may already be playing, and the graph was told once,
+   * when it was asked to start. Told again, it changes its mind mid-take.
+   */
+  protected setLoop(loop: boolean): void {
+    this.sound.setLoop(loop);
+    this.engine.setLoop(loop);
+  }
+
   protected snapLabel(off: string): string {
     const n = this.sound.snap();
     return n === 0 ? off : `1/${String(n)}`;
@@ -736,7 +710,10 @@ export class SoundTabPage {
    */
   protected async playSong(): Promise<void> {
     await this.engine.unlock();
-    this.engine.playMusic(this.sound.songSlot(), this.sound.loop(), 0);
+    // LOOP belongs to the pattern in the bar above, and putting it out is the plainest way to say
+    // it does not apply to the chain you are about to hear.
+    this.sound.setLoop(false);
+    this.engine.playMusic(this.sound.songSlot(), false, 0);
     this.playingWhat.set('song');
     this.tick();
   }
@@ -759,22 +736,34 @@ export class SoundTabPage {
     void this.play();
   }
 
-  /** Halts where it is; the playhead stays so PLAY resumes from the same bar. */
+  /**
+   * Halts where it is; the playhead stays, and so does the place a chain had reached, so PLAY
+   * resumes from the same bar and the music grid keeps saying where you are.
+   */
   protected pause(): void {
     this.engine.stopMusic(0);
     this.playingWhat.set(null);
     cancelAnimationFrame(this.raf);
   }
 
+  /** Back to the top of whichever of the two is running, rather than always the pattern. */
   protected toStart(): void {
-    const running = this.playing();
+    const was = this.playingWhat();
     this.playhead.set(0);
-    if (running) void this.play();
+    if (was === 'song') void this.playSong();
+    else if (was === 'pattern') void this.play();
   }
 
+  protected songToStart(): void {
+    this.songPosition.set(null);
+    void this.playSong();
+  }
+
+  /** Ends the take: nothing is playing and nothing is anywhere, so both marks go out. */
   protected stop(): void {
     this.pause();
     this.playhead.set(null);
+    this.songPosition.set(null);
   }
 
   private tick(): void {
