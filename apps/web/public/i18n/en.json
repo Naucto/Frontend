@@ -558,7 +558,12 @@
       "hostOnly": "Only the host can change the shape of a path a session is holding.",
       "actions": "Actions",
       "needHost": "Host a session first — run the game and call net.host().",
-      "declarePath": "Declare a path"
+      "declarePath": "Declare a path",
+      "route": "Route",
+      "relayed": "relayed",
+      "direct": "direct",
+      "relayOnly": "Force a relay",
+      "relayOnlyHelp": "Refuses the direct path, to measure what a relayed session costs. Real traffic through the provider, so it spends the allowance. Applies to the next session."
     },
     "gamePaused": "Game paused — swap back to resume",
     "desktopOnly": {

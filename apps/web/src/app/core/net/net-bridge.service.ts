@@ -15,6 +15,7 @@ import {
   type NetHostOptions,
   type NetPermissions,
   type NetUi,
+  type RelayUsage,
   type SessionRole,
   SharedTableSession,
   SyncedSessionTransport,
@@ -112,6 +113,13 @@ export class NetUiBridgeService implements NetUi, OnDestroy {
   setImpairment(latencyMs: number, loss: number): void {
     this.transport?.setImpairment({ latencyMs, loss });
   }
+
+  relayUsage(): RelayUsage[] {
+    return this.transport?.relayUsage() ?? [];
+  }
+
+  /** Read when a session opens, so it takes effect on the next one, not the one already running. */
+  readonly relayOnly = signal(false);
 
   // ---- REST flows (called by the dialogs) -------------------------------------
 
@@ -221,6 +229,7 @@ export class NetUiBridgeService implements NetUi, OnDestroy {
       ticket: conn.connectionTicket,
       ticketIssuedAt: Date.now(),
       iceServers,
+      relayOnly: this.relayOnly(),
       refreshTicket: async () => {
         try {
           const fresh = unwrap(

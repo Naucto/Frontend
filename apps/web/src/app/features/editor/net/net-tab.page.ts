@@ -20,6 +20,7 @@ import { type SharedTableSession, type TableScalar } from '@naucto/engine';
 import {
   ButtonDirective,
   EmptyStateComponent,
+  formatBytes,
   formatCount,
   HelpDotComponent,
   IconComponent,
@@ -28,6 +29,7 @@ import {
   SectionComponent,
   SliderComponent,
   ToastService,
+  ToggleButtonComponent,
   TooltipDirective,
 } from '@naucto/ui';
 
@@ -84,6 +86,7 @@ function formatScalar(value: TableScalar | undefined): string {
     SectionComponent,
     SearchComponent,
     SliderComponent,
+    ToggleButtonComponent,
     TooltipDirective,
     GameScreenComponent,
     PresenceSurfaceComponent,
@@ -426,6 +429,22 @@ function formatScalar(value: TableScalar | undefined): string {
               }
             </div>
           }
+          <!-- What the session is costing, and by which route. A relayed connection is the one that
+               is paid for by the gigabyte, so the figure that decides a provider is here rather
+               than in a dashboard nobody opens while playing. -->
+          @if (traffic(); as t2) {
+            <div class="flex items-center gap-1 border-t border-line-faint pt-0.5 text-label">
+              <span class="label text-ink-3">{{ t('editor.net.route') }}</span>
+              <span [class]="t2.relayed ? 'text-orange-ink' : 'text-jade-ink'">
+                {{ t2.relayed ? t('editor.net.relayed') : t('editor.net.direct') }}
+              </span>
+              <span class="flex-1"></span>
+              <span class="font-mono text-ink-4">{{ t2.total }}</span>
+              @if (t2.rate) {
+                <span class="font-mono text-ink-body">{{ t2.rate }}</span>
+              }
+            </div>
+          }
         </nc-section>
 
         <!-- No presence: the rig spawns a client in this browser and the impairment sliders
@@ -489,6 +508,17 @@ function formatScalar(value: TableScalar | undefined): string {
               (valueChange)="setLoss($event)"
             />
           </div>
+          <!-- Off by default and said out loud: this one sends real traffic through a real relay,
+               which is metered. It takes effect on the next session, not the one running. -->
+          <nc-toggle-button
+            class="mt-1"
+            accent="gold"
+            [checked]="relayOnly()"
+            (checkedChange)="setRelayOnly($event)"
+          >
+            {{ t('editor.net.relayOnly') }}
+          </nc-toggle-button>
+          <p class="mt-0.5 text-meta text-ink-3">{{ t('editor.net.relayOnlyHelp') }}</p>
         </nc-section>
       </nc-panel-column>
     </div>
@@ -514,6 +544,11 @@ export class NetTabPage {
   protected readonly latency = signal(0);
   protected readonly loss = signal(0);
   private readonly tick = signal(0);
+  /**
+   * Where the counting started, so the rate is an average over the whole observation and not the
+   * jitter between two heartbeats. Dropped with the session, so the next one counts from itself.
+   */
+  private observed: { at: number; bytes: number } | null = null;
   private readonly permsVersion = signal(0);
   protected readonly me = computed(() => this.auth.userId());
   private readonly bridge = computed<NetUiBridgeService | null>(() => this.runtime.bridge());
@@ -567,6 +602,31 @@ export class NetTabPage {
       };
     });
   });
+  /**
+   * Every connection counted together, because what a relay bills is the total: a host with three
+   * players relays three connections and pays for all of them.
+   */
+  protected readonly traffic = computed(() => {
+    this.tick();
+    const usage = this.bridge()?.relayUsage() ?? [];
+    if (usage.length === 0) {
+      this.observed = null;
+      return null;
+    }
+
+    const bytes = usage.reduce((sum, u) => sum + u.bytesSent + u.bytesReceived, 0);
+    const relayed = usage.some((u) => u.relayed);
+    const now = Date.now();
+    this.observed ??= { at: now, bytes };
+
+    const seconds = (now - this.observed.at) / 1000;
+    const since = bytes - this.observed.bytes;
+    // Under a few seconds the rate is noise, and a number that swings by a factor of ten while you
+    // read it is worse than no number.
+    const rate = seconds >= 5 && since > 0 ? `${formatBytes((since / seconds) * 3600)}/h` : null;
+    return { relayed, total: formatBytes(bytes), rate };
+  });
+
   protected readonly rows = computed<Row[]>(() => {
     this.tick();
     this.permsVersion();
@@ -932,6 +992,12 @@ export class NetTabPage {
 
   protected setLatency(v: number): void {
     this.latency.set(Math.round(v));
+  }
+
+  protected readonly relayOnly = computed(() => this.bridge()?.relayOnly() ?? false);
+
+  protected setRelayOnly(on: boolean): void {
+    this.bridge()?.relayOnly.set(on);
   }
 
   protected setLoss(v: number): void {

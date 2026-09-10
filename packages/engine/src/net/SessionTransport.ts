@@ -2,6 +2,19 @@ export type SessionRole = 'host' | 'slave';
 
 export type UserId = number;
 
+export interface RelayUsage {
+  /**
+   * Whether our own end of the chosen pair holds a TURN allocation.
+   *
+   * Only our end counts. A pair can be relayed on one side alone, and the side holding the
+   * allocation is the side a provider bills — counting the other end too would say a session cost
+   * twice what it did.
+   */
+  relayed: boolean;
+  bytesSent: number;
+  bytesReceived: number;
+}
+
 // Frames are delivered identically whether they travelled a direct P2P data
 // channel or the relay fallback, so SharedTableSession is unaware of the pipe.
 export interface SessionTransportEvents {
@@ -28,6 +41,9 @@ export interface SessionTransport {
    * that cannot measure it (the in-memory test transport) simply omit it.
    */
   pingTo?(userId: UserId): number | null;
+
+  /** Optional for the same reason as `pingTo`: with no peer connection under it, nothing to measure. */
+  relayUsage?(): RelayUsage[];
 
   on<E extends keyof SessionTransportEvents>(event: E, listener: SessionTransportEvents[E]): void;
   off<E extends keyof SessionTransportEvents>(event: E, listener: SessionTransportEvents[E]): void;

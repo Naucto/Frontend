@@ -39,6 +39,7 @@ export { ALLOW_ALL, type NetPermissions } from './net/NetPermissions';
 export type { NetHostOptions, NetUi } from './net/NetUi';
 export { type RefreshedTicket, SessionSignalingSocket } from './net/SessionSignalingSocket';
 export type {
+  RelayUsage,
   SessionRole,
   SessionTransport,
   SessionTransportEvents,

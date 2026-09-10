@@ -4,6 +4,7 @@ import type { InboundFrame } from './frames';
 import type { RefreshedTicket } from './SessionSignalingSocket';
 import { SessionSignalingSocket } from './SessionSignalingSocket';
 import type {
+  RelayUsage,
   SessionRole,
   SessionTransport,
   SessionTransportEvents,
@@ -23,6 +24,14 @@ export interface SyncedSessionTransportOptions {
   ticket: string;
   ticketIssuedAt: number;
   iceServers: RTCIceServer[];
+  /**
+   * Refuse everything but a relay when gathering candidates.
+   *
+   * For measuring what a relayed session costs: wherever the direct path works ICE takes it, and
+   * there is nothing to measure. It sends real traffic through a real relay, and spends whatever
+   * that relay's allowance is priced in.
+   */
+  relayOnly?: boolean;
 
   refreshTicket: () => Promise<RefreshedTicket | null>;
 }
@@ -35,10 +44,57 @@ interface Peer {
   announced: boolean;
   /** Last measured round-trip time in ms, null until the first pong lands. */
   rttMs: number | null;
+  usage: RelayUsage | null;
 }
 
 /** How often each open channel is pinged. */
 const PING_INTERVAL_MS = 2000;
+
+/**
+ * `getStats` is real on the peer and absent from its typings, so the shape it answers with is
+ * declared here rather than assumed.
+ */
+interface StatsCapable {
+  getStats(cb: (err: Error | null, reports: Record<string, unknown>[]) => void): void;
+}
+
+function str(report: Record<string, unknown>, key: string): string {
+  const value = report[key];
+  return typeof value === 'string' ? value : '';
+}
+
+function num(report: Record<string, unknown>, key: string): number {
+  const value = report[key];
+  return typeof value === 'number' ? value : 0;
+}
+
+/**
+ * The chosen pair's cost, or null while ICE has not settled on one.
+ *
+ * Each report type is matched under two spellings: browsers named these without the hyphen before
+ * the standard settled, and the library passes back whatever it was handed.
+ */
+export function readRelayUsage(reports: Record<string, unknown>[]): RelayUsage | null {
+  const locals = new Map<string, Record<string, unknown>>();
+  let chosen: Record<string, unknown> | null = null;
+
+  for (const report of reports) {
+    const type = str(report, 'type');
+    if (type === 'local-candidate' || type === 'localcandidate')
+      locals.set(str(report, 'id'), report);
+    else if (type === 'candidate-pair' || type === 'candidatepair') {
+      if (report.selected === true || report.nominated === true) chosen = report;
+    }
+  }
+  if (!chosen) return null;
+
+  const local = locals.get(str(chosen, 'localCandidateId'));
+  return {
+    relayed: local !== undefined && str(local, 'candidateType') === 'relay',
+    bytesSent: num(chosen, 'bytesSent'),
+    bytesReceived: num(chosen, 'bytesReceived'),
+  };
+}
 
 // Star-to-host P2P with relay fallback. The same `{type,data}` frames ride a
 // direct data channel when one is up and the WS relay otherwise; a slave whose
@@ -50,6 +106,7 @@ export class SyncedSessionTransport implements SessionTransport {
 
   private readonly _signaling: SessionSignalingSocket;
   private readonly _iceServers: RTCIceServer[];
+  private readonly _relayOnly: boolean;
   private readonly _listeners = new Map<keyof SessionTransportEvents, Set<AnyListener>>();
 
   // host: one peer per slave userId. slave: a single entry keyed by the host.
@@ -61,6 +118,7 @@ export class SyncedSessionTransport implements SessionTransport {
     this.role = opts.role;
     this.selfUserId = opts.selfUserId;
     this._iceServers = opts.iceServers;
+    this._relayOnly = opts.relayOnly ?? false;
 
     this._signaling = new SessionSignalingSocket({
       url: opts.signalingUrl,
@@ -267,10 +325,13 @@ export class SyncedSessionTransport implements SessionTransport {
     const conn = new SimplePeer({
       initiator,
       trickle: true,
-      config: { iceServers: this._iceServers },
+      config: {
+        iceServers: this._iceServers,
+        ...(this._relayOnly ? { iceTransportPolicy: 'relay' as const } : {}),
+      },
     });
 
-    const peer: Peer = { conn, channelOpen: false, announced: false, rttMs: null };
+    const peer: Peer = { conn, channelOpen: false, announced: false, rttMs: null, usage: null };
     this._peers.set(userId, peer);
 
     conn.on('signal', (data) => {
@@ -330,12 +391,35 @@ export class SyncedSessionTransport implements SessionTransport {
     return this._peers.get(userId)?.rttMs ?? null;
   }
 
+  relayUsage(): RelayUsage[] {
+    const out: RelayUsage[] = [];
+    for (const peer of this._peers.values()) if (peer.usage) out.push(peer.usage);
+    return out;
+  }
+
+  /**
+   * Kept from the heartbeat rather than read when a connection ends.
+   *
+   * `destroy` is synchronous and takes the peer connection down with it, while stats are answered a
+   * turn later — so a reading asked for at the end resolves once there is nothing left to answer
+   * it. It also means a peer that leaves mid-session keeps the figure it had reached.
+   */
+  private _sampleUsage(peer: Peer): void {
+    (peer.conn as unknown as StatsCapable).getStats((err, reports) => {
+      if (err) return;
+      const usage = readRelayUsage(reports);
+      if (usage) peer.usage = usage;
+    });
+  }
+
   private _startPinging(): void {
     if (this._pingTimer !== null) return;
     this._pingTimer = setInterval(() => {
       const now = Date.now();
       for (const peer of this._peers.values()) {
-        if (peer.channelOpen) this._safeSend(peer, { type: 'ping', data: now });
+        if (!peer.channelOpen) continue;
+        this._safeSend(peer, { type: 'ping', data: now });
+        this._sampleUsage(peer);
       }
     }, PING_INTERVAL_MS);
     // Never hold a Node process open for a heartbeat (tests, headless runs).

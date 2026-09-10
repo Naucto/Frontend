@@ -4,7 +4,7 @@ import { type Mock, vi } from 'vitest';
 import { SessionSignalingSocket } from './SessionSignalingSocket';
 import type { SessionRole } from './SessionTransport';
 import type { SyncedSessionTransportOptions } from './SyncedSessionTransport';
-import { SyncedSessionTransport } from './SyncedSessionTransport';
+import { readRelayUsage, SyncedSessionTransport } from './SyncedSessionTransport';
 
 vi.mock('./SessionSignalingSocket', () => ({
   SessionSignalingSocket: vi.fn().mockImplementation(function (
@@ -150,5 +150,47 @@ describe('SyncedSessionTransport', () => {
     );
     expect(signaling().send).not.toHaveBeenCalled();
     transport.destroy();
+  });
+});
+
+describe('readRelayUsage', () => {
+  const pair = (extra: Record<string, unknown>): Record<string, unknown> => ({
+    type: 'candidate-pair',
+    localCandidateId: 'L',
+    bytesSent: 1000,
+    bytesReceived: 2000,
+    ...extra,
+  });
+  const local = (candidateType: string, id = 'L'): Record<string, unknown> => ({
+    type: 'local-candidate',
+    id,
+    candidateType,
+  });
+
+  it('reads the pair ICE settled on and leaves the others alone', () => {
+    expect(
+      readRelayUsage([
+        pair({ localCandidateId: 'other', bytesSent: 99, bytesReceived: 99 }),
+        pair({ selected: true }),
+        local('host'),
+      ]),
+    ).toEqual({ relayed: false, bytesSent: 1000, bytesReceived: 2000 });
+  });
+
+  it('calls a session relayed when our own end holds the allocation', () => {
+    expect(readRelayUsage([pair({ nominated: true }), local('relay')])?.relayed).toBe(true);
+  });
+
+  it('does not call a session relayed for the other end alone', () => {
+    const reports = [
+      pair({ selected: true, remoteCandidateId: 'R' }),
+      local('host'),
+      { type: 'remote-candidate', id: 'R', candidateType: 'relay' },
+    ];
+    expect(readRelayUsage(reports)?.relayed).toBe(false);
+  });
+
+  it('answers nothing while ICE has not settled', () => {
+    expect(readRelayUsage([pair({}), local('relay')])).toBeNull();
   });
 });

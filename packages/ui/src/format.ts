@@ -16,6 +16,13 @@ export function formatCompact(value: number): string {
   return COMPACT.format(value).toLowerCase();
 }
 
+/** `964608` → `942 KB`. Whole kilobytes until a megabyte, where two decimals start to mean something. */
+export function formatBytes(value: number): string {
+  return value >= 1024 * 1024
+    ? `${(value / 1024 / 1024).toFixed(2)} MB`
+    : `${String(Math.round(value / 1024))} KB`;
+}
+
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
