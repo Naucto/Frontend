@@ -341,7 +341,6 @@
       "versionSaved": "Saved version \"{{name}}\"",
       "versionSaveFailed": "Could not save that version. Nothing was lost — the game is still autosaving.",
       "versionDeleteFailed": "Could not delete that version.",
-      "versionNothingToSave": "Nothing has changed since the last save, so there is no new version to name.",
       "restored": "Restored {{name}}",
       "restoreFailed": "Could not restore that version."
     },

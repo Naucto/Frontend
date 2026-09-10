@@ -3,15 +3,20 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { unwrap } from '@app/core/api/api-errors';
 import {
   projectControllerPublish,
+  projectControllerSaveCheckpoint,
   projectControllerUnpublish,
   projectControllerUpdateRelease,
 } from '@naucto/api-client';
 import { computeSizeReport } from '@naucto/engine';
 import { ButtonDirective, DialogShellComponent, MeterComponent } from '@naucto/ui';
+import * as Y from 'yjs';
 
 import type { WorkSessionService } from '../work-session/work-session.service';
 
 export const PUBLISH_CEILING = 1024 * 1024;
+
+/** What the history calls the version that is on the hub. */
+export const PUBLISHED_VERSION = 'published';
 
 /** PUBLISH: save, then publish / update the release / unpublish, with the size budget in view. */
 @Component({
@@ -90,6 +95,25 @@ export class PublishDialogComponent {
       : `${String(Math.round(n / 1024))} KB`;
   }
 
+  /**
+   * Publishing leaves a named version behind.
+   *
+   * What is on the hub is otherwise nowhere in the history: the panel would show a run of
+   * autosaves and a date in another panel, and no way to go back to the state people are playing.
+   * The name is written once and rewritten on each release, so the history carries the version
+   * that is live and not one per attempt.
+   */
+  private async markPublished(id: string): Promise<void> {
+    await projectControllerSaveCheckpoint({
+      path: { id, name: PUBLISHED_VERSION },
+      body: {
+        file: new Blob([Y.encodeStateAsUpdate(this.data.session.doc) as BlobPart], {
+          type: 'application/octet-stream',
+        }),
+      },
+    });
+  }
+
   protected async publish(update: boolean): Promise<void> {
     this.busy.set(true);
     this.error.set(null);
@@ -101,6 +125,9 @@ export class PublishDialogComponent {
           ? await projectControllerUpdateRelease({ path: { id } })
           : await projectControllerPublish({ path: { id } }),
       );
+      // After the release, not before: a version named for something that did not happen is worse
+      // than no version at all.
+      await this.markPublished(id);
       await this.data.session.refreshProject();
       this.ref.close(true);
     } catch (e) {

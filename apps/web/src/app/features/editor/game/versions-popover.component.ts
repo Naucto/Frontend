@@ -310,16 +310,12 @@ export class VersionsPopoverComponent {
   protected async checkpoint(): Promise<void> {
     const name = this.cpName.trim();
     if (!name || this.saving()) return;
-    // A version is a name given to a change. With nothing written since the last save, the blob
-    // below would be byte-identical to one already in the list, and the reader would be told a
-    // version was saved and then not find one worth keeping.
-    if (!this.session.dirty()) {
-      this.toasts.show(this.transloco.translate('editor.game.versionNothingToSave'), 'info');
-      return;
-    }
     this.saving.set(true);
     try {
-      await this.session.save();
+      // Only where something has been written since: naming the state you are already saved at is
+      // exactly what somebody marking a milestone is doing, and refusing it there sent them off to
+      // make a pointless edit first.
+      if (this.session.dirty()) await this.session.save();
       const res = await projectControllerSaveCheckpoint({
         path: { id: String(this.session.id), name },
         body: {

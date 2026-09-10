@@ -19,6 +19,7 @@ import { AccountMenuComponent } from '@app/features/shell/account-menu.component
 import { NotificationsBellComponent } from '@app/features/shell/notifications-bell.component';
 import { RuntimeHostService } from '@app/shared/game-screen/runtime-host.service';
 import { UserAvatarComponent } from '@app/shared/user-avatar.component';
+import { yTextField } from '@app/shared/yjs/y-signal';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { computeSizeReport } from '@naucto/engine';
 import {
@@ -362,13 +363,21 @@ export class EditorShellComponent implements OnInit {
    * Why publishing is not possible, as an i18n key — the design puts the reason on the button
    * itself rather than letting the click open a dialog that refuses.
    */
+  /**
+   * The name and the summary as the GAME tab edits them.
+   *
+   * They live in the document long before they reach the server, so a gate reading the server's
+   * copy called a summary missing while its author was looking at the one they had just typed.
+   */
+  private readonly draftName = yTextField(this.session.doc.getText('projectName'));
+  private readonly draftSummary = yTextField(this.session.doc.getText('shortDescription'));
+
   protected readonly publishBlockedBy = computed<string | null>(() => {
     const game = this.session.game;
     if (!game) return null;
     if (computeSizeReport(game).total > PUBLISH_CEILING) return 'editor.publishBlockedSize';
-    const named =
-      (game.meta.get('projectName') as string | undefined) ?? this.session.project()?.name ?? '';
-    const summary = this.session.project()?.shortDesc ?? '';
+    const named = this.draftName() || (this.session.project()?.name ?? '');
+    const summary = this.draftSummary() || (this.session.project()?.shortDesc ?? '');
     return named.trim() && summary.trim() ? null : 'editor.publishBlockedFields';
   });
 
