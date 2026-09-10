@@ -27,7 +27,7 @@ import {
   PALETTE_SIZE,
   SPRITE_SIZE,
 } from './keys';
-import { Sheet } from './Sheet';
+import { Sheet, type SheetWriter } from './Sheet';
 
 export interface PixelChange {
   x: number;
@@ -177,7 +177,24 @@ export class Game {
   private _geometry: Geometry;
   private readonly geometryListeners = new Set<() => void>();
   private readonly sheetMirrors = new Map<string, SheetMirror>();
+  /**
+   * How a Sheet reaches the document.
+   *
+   * A separate object rather than the game itself: Game already has setPixel and setFlag, and they
+   * mean the first sheet's -- two things called the same thing, one of which silently ignores the
+   * sheet you meant, is the sort of collision that only shows up in someone's lost art.
+   */
+  private readonly sheetWriter: SheetWriter = {
+    setPixel: (id, x, y, colour) => {
+      this.writeSheetPixel(id, x, y, colour);
+    },
+    setFlag: (id, local, value) => {
+      this.writeSheetFlag(id, local, value);
+    },
+  };
   private readonly mapMirrors = new Map<string, Uint16Array>();
+  /** Cell maps already watched, so a second pass over the collection does not double up. */
+  private readonly watchedCells = new WeakSet<Y.Map<number>>();
 
   private readonly pixelListeners = new Set<(changes: PixelChange[]) => void>();
   private readonly tileListeners = new Set<(changes: TileChange[]) => void>();
@@ -208,6 +225,11 @@ export class Game {
     this.tiles = new Uint16Array(this._geometry.mapWidth * this._geometry.mapHeight);
     this.hydrate();
 
+    this.attachSheetObservers();
+    // Sheets a peer adds arrive after this constructor, and their cells need watching too.
+    this.sheetsMap.observe(() => {
+      this.attachSheetObservers();
+    });
     // A size is the shape of every mirror above, so a peer changing one has to be caught here
     // rather than left to whoever happens to read next.
     this.meta.observe((e) => {
@@ -348,6 +370,7 @@ export class Game {
           0,
           this.sheet,
           this.flags,
+          this.sheetWriter,
         ),
       ];
 
@@ -365,6 +388,7 @@ export class Game {
         base,
         mirror.pixels,
         mirror.flags,
+        this.sheetWriter,
       );
       base += sheet.count;
       return sheet;
@@ -389,6 +413,168 @@ export class Game {
         this.mapMirror(id, width, height),
       );
     });
+  }
+
+  /**
+   * Where a sheet's pixels live: its own map, or the roots the first sheet never left.
+   *
+   * Made on the first write rather than at creation, so a sheet nobody has drawn on costs the
+   * document nothing.
+   */
+  private sheetCells(sheetId: string, key: 'pixels' | 'flags'): Y.Map<number> {
+    if (sheetId === FIRST_SHEET_ID) return key === 'pixels' ? this.spritesMap : this.flagsMap;
+    const entry = this.sheetsMap.get(sheetId);
+    if (!entry) throw new Error(`no sheet ${sheetId}`);
+    const held = entry.get(key);
+    if (held instanceof Y.Map) return held as Y.Map<number>;
+    const made = new Y.Map<number>();
+    entry.set(key, made);
+    this.watchedCells.add(made);
+    this.observeSheetCells(sheetId, key, made);
+
+    return made;
+  }
+
+  /** Watches the cell maps of every sheet that has any, once each. */
+  private attachSheetObservers(): void {
+    this.sheetsMap.forEach((entry, id) => {
+      if (id === FIRST_SHEET_ID) return;
+      for (const key of ['pixels', 'flags'] as const) {
+        const cells: unknown = entry.get(key);
+        if (!(cells instanceof Y.Map)) continue;
+        const typed = cells as Y.Map<number>;
+        if (this.watchedCells.has(typed)) continue;
+        this.watchedCells.add(typed);
+        this.observeSheetCells(id, key, typed);
+      }
+    });
+  }
+
+  /**
+   * Keeps one extra sheet's mirror in step with its map.
+   *
+   * The first sheet's maps are observed with the rest of the document; these are made and attached
+   * as they appear, and the listeners hear about them the same way -- a peer drawing on a sheet
+   * nobody has opened still has to reach the screen.
+   */
+  private observeSheetCells(sheetId: string, key: 'pixels' | 'flags', cells: Y.Map<number>): void {
+    cells.observe((e) => {
+      const sheet = this.sheets.find((s) => s.id === sheetId);
+      if (!sheet) return;
+      const changes: PixelChange[] = [];
+      e.changes.keys.forEach((_c, k) => {
+        if (key === 'flags') {
+          const i = Number(k);
+          if (i >= 0 && i < sheet.count) sheet.flags[i] = (cells.get(k) ?? 0) & 0xff;
+          return;
+        }
+        const [x, y] = parseCoord(k);
+        if (x < 0 || x >= sheet.width || y < 0 || y >= sheet.height) return;
+        const colour = (cells.get(k) ?? 0) & 0xf;
+        sheet.pixels[y * sheet.width + x] = colour;
+        changes.push({ x, y, colour });
+      });
+      if (key === 'flags')
+        this.flagListeners.forEach((l) => {
+          l();
+        });
+      else if (changes.length)
+        this.pixelListeners.forEach((l) => {
+          l(changes);
+        });
+    });
+  }
+
+  private writeSheetPixel(sheetId: string, x: number, y: number, colour: number): void {
+    const cells = this.sheetCells(sheetId, 'pixels');
+    const key = coordKey(x, y);
+    if (colour === 0) {
+      if (cells.has(key)) cells.delete(key);
+    } else cells.set(key, colour & 0xf);
+  }
+
+  private writeSheetFlag(sheetId: string, local: number, value: number): void {
+    const cells = this.sheetCells(sheetId, 'flags');
+    const key = String(local);
+    const v = value & 0xff;
+    if (v === 0) {
+      if (cells.has(key)) cells.delete(key);
+    } else cells.set(key, v);
+  }
+
+  /**
+   * Adds a sheet after the ones there are, and gives it the numbers that follow theirs.
+   *
+   * The first call also writes the entry for the sheet that was already there, because a document
+   * cannot hold a second sheet without saying what the first one is.
+   */
+  addSheet(name: string, width: number, height: number, id: string = crypto.randomUUID()): void {
+    this.doc.transact(() => {
+      this.declareFirstSheet();
+      const order = this.sheets.reduce((m, sh) => Math.max(m, sh.order), -1) + 1;
+      const entry = new Y.Map<unknown>();
+      this.sheetsMap.set(id, entry);
+      entry.set('name', name);
+      entry.set('order', order);
+      entry.set('w', clampSheetSize(width));
+      entry.set('h', clampSheetSize(height));
+    }, LOCAL_ORIGIN);
+  }
+
+  /** Refuses the last one, the way a code file does: a game with no sheet has nowhere to draw. */
+  removeSheet(id: string): void {
+    if (this.sheetsMap.size <= 1) return;
+    this.doc.transact(() => {
+      this.sheetsMap.delete(id);
+      this.sheetMirrors.delete(id);
+    }, LOCAL_ORIGIN);
+  }
+
+  addMap(name: string, width: number, height: number, id: string = crypto.randomUUID()): void {
+    this.doc.transact(() => {
+      this.declareFirstMap();
+      const order = this.maps.reduce((m, mp) => Math.max(m, mp.order), -1) + 1;
+      const entry = new Y.Map<unknown>();
+      this.mapsMap.set(id, entry);
+      entry.set('name', name);
+      entry.set('order', order);
+      entry.set('w', clampMapSize(width));
+      entry.set('h', clampMapSize(height));
+    }, LOCAL_ORIGIN);
+  }
+
+  removeMap(id: string): void {
+    if (this.mapsMap.size <= 1) return;
+    this.doc.transact(() => {
+      this.mapsMap.delete(id);
+      this.mapMirrors.delete(id);
+    }, LOCAL_ORIGIN);
+  }
+
+  /**
+   * Writes the entry describing the sheet a document already had.
+   *
+   * Its key is fixed rather than fresh, so two clients doing this at once write the same entry
+   * instead of splitting one sheet into two -- the same reason the entry file's key is fixed.
+   */
+  private declareFirstSheet(): void {
+    if (this.sheetsMap.size > 0) return;
+    const entry = new Y.Map<unknown>();
+    this.sheetsMap.set(FIRST_SHEET_ID, entry);
+    entry.set('name', MAIN_SHEET);
+    entry.set('order', 0);
+    entry.set('w', this._geometry.sheetWidth);
+    entry.set('h', this._geometry.sheetHeight);
+  }
+
+  private declareFirstMap(): void {
+    if (this.mapsMap.size > 0) return;
+    const entry = new Y.Map<unknown>();
+    this.mapsMap.set(FIRST_MAP_ID, entry);
+    entry.set('name', MAIN_MAP);
+    entry.set('order', 0);
+    entry.set('w', this._geometry.mapWidth);
+    entry.set('h', this._geometry.mapHeight);
   }
 
   /** Which sheet answers to a sprite number, or nothing where the number names no cell. */

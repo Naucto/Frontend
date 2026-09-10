@@ -88,3 +88,65 @@ describe('sprite numbers across several sheets', () => {
     expect(game.sheets[1]?.base).toBe(64);
   });
 });
+
+describe('adding and drawing on a second sheet', () => {
+  it('writes the first sheet down before it can hold a second', () => {
+    const game = new Game(new Y.Doc());
+
+    game.addSheet('extra', 64, 64, 'x');
+
+    expect(game.sheetsMap.size).toBe(2);
+    expect(game.sheets.map((s) => s.id)).toEqual([FIRST_SHEET_ID, 'x']);
+    // The first sheet keeps the numbers it had, and the new one carries on.
+    expect(game.sheets[0]?.base).toBe(0);
+    expect(game.sheets[1]?.base).toBe(256);
+  });
+
+  it('keeps a second sheet apart from the first', () => {
+    const game = new Game(new Y.Doc());
+    game.addSheet('extra', 64, 64, 'x');
+
+    game.sheets[1]?.setPixel(3, 4, 9);
+
+    expect(game.sheets[1]?.getPixel(3, 4)).toBe(9);
+    // The pixel went to the new sheet's own map, not into the roots the first sheet lives in.
+    expect(game.getPixel(3, 4)).toBe(0);
+    expect(game.spritesMap.size).toBe(0);
+  });
+
+  it('tells the drawing listeners, so a stroke from a peer reaches the screen', () => {
+    const game = new Game(new Y.Doc());
+    game.addSheet('extra', 64, 64, 'x');
+    let seen = 0;
+    game.onPixelsChange((changes) => {
+      seen += changes.length;
+    });
+
+    game.sheets[1]?.setPixel(1, 1, 5);
+
+    expect(seen).toBe(1);
+  });
+
+  it('numbers flags within the sheet that holds them', () => {
+    const game = new Game(new Y.Doc());
+    game.addSheet('extra', 64, 64, 'x');
+    const second = game.sheets[1];
+
+    second?.setFlag(256, 0b11);
+
+    expect(second?.getFlag(256)).toBe(0b11);
+    // The first sheet's flag 0 is a different thing entirely.
+    expect(game.getFlag(0)).toBe(0);
+  });
+
+  it('refuses to remove the only sheet a game has', () => {
+    const game = new Game(new Y.Doc());
+    game.addSheet('extra', 64, 64, 'x');
+
+    game.removeSheet('x');
+    expect(game.sheets).toHaveLength(1);
+
+    game.removeSheet(FIRST_SHEET_ID);
+    expect(game.sheets).toHaveLength(1);
+  });
+});

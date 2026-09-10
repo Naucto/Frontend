@@ -21,6 +21,12 @@ export interface SheetShape {
   readonly base: number;
 }
 
+/** How a sheet reaches the document. The game supplies it; nothing else needs to know the shape. */
+export interface SheetWriter {
+  setPixel(sheetId: string, x: number, y: number, colour: number): void;
+  setFlag(sheetId: string, local: number, value: number): void;
+}
+
 export class Sheet implements SheetShape {
   readonly cols: number;
   readonly rows: number;
@@ -37,6 +43,8 @@ export class Sheet implements SheetShape {
     readonly pixels: Uint8Array,
     /** One byte per cell, indexed from 0 within this sheet rather than by sprite number. */
     readonly flags: Uint8Array,
+    /** Writes reach the document through the game, which owns the Yjs side of every sheet. */
+    private readonly writer: SheetWriter,
   ) {
     this.cols = width / SPRITE_SIZE;
     this.rows = height / SPRITE_SIZE;
@@ -62,6 +70,21 @@ export class Sheet implements SheetShape {
     if (x < 0 || x >= this.width || y < 0 || y >= this.height) return 0;
 
     return this.pixels[y * this.width + x] ?? 0;
+  }
+
+  setPixel(x: number, y: number, colour: number): void {
+    if (x < 0 || x >= this.width || y < 0 || y >= this.height) return;
+    this.writer.setPixel(this.id, x, y, colour);
+  }
+
+  getFlag(sprite: number): number {
+    return this.flags[sprite - this.base] ?? 0;
+  }
+
+  setFlag(sprite: number, value: number): void {
+    const local = sprite - this.base;
+    if (local < 0 || local >= this.count) return;
+    this.writer.setFlag(this.id, local, value);
   }
 
   isEmpty(sprite: number): boolean {
