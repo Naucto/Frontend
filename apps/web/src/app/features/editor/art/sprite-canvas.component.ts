@@ -25,7 +25,7 @@ import {
   rectPoints,
 } from '@app/shared/pixel/pixel-tools';
 import { type SheetPainter } from '@app/shared/pixel/sheet-painter';
-import { DEFAULT_GEOMETRY, type Game, SPRITE_SIZE } from '@naucto/engine';
+import { DEFAULT_GEOMETRY, FIRST_SHEET_ID, type Game, SPRITE_SIZE } from '@naucto/engine';
 import {
   DragPanDirective,
   PresenceLayerComponent,
@@ -146,6 +146,8 @@ interface Drag {
 })
 export class SpriteCanvasComponent {
   readonly game = input.required<Game>();
+  /** Which sheet is being drawn on. Every read and write below goes to this one. */
+  readonly sheetId = input(FIRST_SHEET_ID);
   readonly painter = input.required<SheetPainter>();
   /** The cells being worked on, in whole 8×8 units. */
   readonly region = input.required<SpriteRect>();
@@ -276,9 +278,21 @@ export class SpriteCanvasComponent {
   private raf = 0;
 
   private readonly geometry = geometrySignal(this.game);
+  /**
+   * The sheet in hand.
+   *
+   * Resolved per use rather than held: the projection is rebuilt whenever the collection changes,
+   * and a stale one would point at a pixel buffer that has been replaced.
+   */
+  protected readonly sheet = computed(() => {
+    this.geometry();
+    const id = this.sheetId();
+    const sheets = this.game().sheets;
+    return sheets.find((s) => s.id === id) ?? sheets[0];
+  });
   /** The sheet in pixels. Two of them, because a sheet is no longer square by construction. */
-  protected readonly pxW = computed(() => this.geometry().sheetWidth);
-  protected readonly pxH = computed(() => this.geometry().sheetHeight);
+  protected readonly pxW = computed(() => this.sheet()?.width ?? this.geometry().sheetWidth);
+  protected readonly pxH = computed(() => this.sheet()?.height ?? this.geometry().sheetHeight);
   /** The region in sheet pixels: what the tools are held to, and what is outlined on the canvas. */
   private readonly regionPx = computed<PixelRect>(() => {
     const r = this.region();
@@ -457,7 +471,7 @@ export class SpriteCanvasComponent {
 
   private paint(points: readonly Pt[], colour: number): void {
     this.game().transact(() => {
-      for (const p of points) if (this.inBounds(p)) this.game().setPixel(p.x, p.y, colour);
+      for (const p of points) if (this.inBounds(p)) this.sheet()?.setPixel(p.x, p.y, colour);
     });
   }
 
@@ -488,7 +502,7 @@ export class SpriteCanvasComponent {
         const b = this.bounds();
         this.paint(
           floodFill(
-            (x, y) => this.game().getPixel(b.x + x, b.y + y),
+            (x, y) => this.sheet()?.getPixel(b.x + x, b.y + y) ?? 0,
             { x: cell.x - b.x, y: cell.y - b.y },
             b.w,
             b.h,
@@ -499,7 +513,7 @@ export class SpriteCanvasComponent {
         break;
       }
       case 'eyedropper':
-        this.pick.emit(this.game().getPixel(cell.x, cell.y));
+        this.pick.emit(this.sheet()?.getPixel(cell.x, cell.y) ?? 0);
         this.drag = null;
         break;
       case 'move': {
@@ -507,7 +521,7 @@ export class SpriteCanvasComponent {
         const pixels = new Uint8Array(rect.w * rect.h);
         for (let y = 0; y < rect.h; y++)
           for (let x = 0; x < rect.w; x++)
-            pixels[y * rect.w + x] = this.game().getPixel(rect.x + x, rect.y + y);
+            pixels[y * rect.w + x] = this.sheet()?.getPixel(rect.x + x, rect.y + y) ?? 0;
         this.drag.lifted = { rect, pixels };
         this.moveOffset.set({ x: 0, y: 0 });
         break;
@@ -585,11 +599,11 @@ export class SpriteCanvasComponent {
       const { rect, pixels } = d.lifted;
       this.game().transact(() => {
         for (let y = 0; y < rect.h; y++)
-          for (let x = 0; x < rect.w; x++) this.game().setPixel(rect.x + x, rect.y + y, 0);
+          for (let x = 0; x < rect.w; x++) this.sheet()?.setPixel(rect.x + x, rect.y + y, 0);
         for (let y = 0; y < rect.h; y++)
           for (let x = 0; x < rect.w; x++) {
             const p = { x: rect.x + x + off.x, y: rect.y + y + off.y };
-            if (this.inBounds(p)) this.game().setPixel(p.x, p.y, pixels[y * rect.w + x] ?? 0);
+            if (this.inBounds(p)) this.sheet()?.setPixel(p.x, p.y, pixels[y * rect.w + x] ?? 0);
           }
       });
       if (this.selection()) this.selection.set({ ...rect, x: rect.x + off.x, y: rect.y + off.y });

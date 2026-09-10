@@ -1,5 +1,5 @@
 import { signal } from '@angular/core';
-import { type Game, hexToRgb } from '@naucto/engine';
+import { FIRST_SHEET_ID, type Game, hexToRgb, type Sheet } from '@naucto/engine';
 
 /**
  * Keeps an RGBA copy of the sprite sheet on an offscreen canvas, patched from
@@ -7,6 +7,9 @@ import { type Game, hexToRgb } from '@naucto/engine';
  * minimap) can `drawImage` from one source. Colour 0 is transparent.
  */
 export class SheetPainter {
+  /** Which sheet this mirrors. Set it and the canvas repaints from that one. */
+  readonly sheetId = signal(FIRST_SHEET_ID);
+  private shown = FIRST_SHEET_ID;
   readonly canvas = document.createElement('canvas');
   /** Bumps on every repaint so views can redraw in an effect. */
   readonly version = signal(0);
@@ -36,16 +39,41 @@ export class SheetPainter {
         this.resize();
         this.paintAll();
       }),
+      // A sheet added or renamed elsewhere changes what this is looking at, or what it is called.
+      game.onCollectionsChange(() => {
+        this.follow();
+      }),
     );
   }
 
   /** Matches the buffer to the sheet. Setting a canvas dimension also clears it, so a repaint follows. */
   private resize(): void {
-    const { sheetWidth, sheetHeight } = this.game.geometry;
+    const sheetWidth = this.sheet?.width ?? this.game.geometry.sheetWidth;
+    const sheetHeight = this.sheet?.height ?? this.game.geometry.sheetHeight;
     if (this.canvas.width === sheetWidth && this.canvas.height === sheetHeight) return;
     this.canvas.width = sheetWidth;
     this.canvas.height = sheetHeight;
     this.image = this.ctx.createImageData(sheetWidth, sheetHeight);
+  }
+
+  /**
+   * Repaints when the sheet in hand has changed.
+   *
+   * Setting the id is not enough on its own: nothing else here watches it, and the buffer would go
+   * on showing the sheet it was last filled from.
+   */
+  follow(): void {
+    const id = this.sheetId();
+    const sheet = this.sheet;
+    if (
+      id === this.shown &&
+      sheet?.width === this.canvas.width &&
+      sheet.height === this.canvas.height
+    )
+      return;
+    this.shown = id;
+    this.resize();
+    this.paintAll();
   }
 
   get palette(): string[] {
@@ -54,11 +82,17 @@ export class SheetPainter {
 
   /** The sheet this mirrors, in cells. Views hold a painter, not the game it came from. */
   get cols(): number {
-    return this.game.geometry.spritesPerRow;
+    return this.sheet?.cols ?? this.game.geometry.spritesPerRow;
   }
 
   get rows(): number {
-    return this.game.geometry.spriteRows;
+    return this.sheet?.rows ?? this.game.geometry.spriteRows;
+  }
+
+  private get sheet(): Sheet | undefined {
+    const id = this.sheetId();
+    const sheets = this.game.sheets;
+    return sheets.find((s) => s.id === id) ?? sheets[0];
   }
 
   destroy(): void {
@@ -77,7 +111,7 @@ export class SheetPainter {
   }
 
   private paintPixel(x: number, y: number, colour: number): void {
-    const i = (y * this.game.geometry.sheetWidth + x) * 4;
+    const i = (y * this.canvas.width + x) * 4;
     const d = this.image.data;
     if (colour === 0) {
       d[i + 3] = 0;
@@ -90,10 +124,10 @@ export class SheetPainter {
   }
 
   private paintAll(): void {
-    const sheet = this.game.sheet;
-    const { sheetWidth, sheetHeight } = this.game.geometry;
-    for (let y = 0; y < sheetHeight; y++)
-      for (let x = 0; x < sheetWidth; x++) this.paintPixel(x, y, sheet[y * sheetWidth + x] ?? 0);
+    const sheet = this.sheet;
+    if (!sheet) return;
+    for (let y = 0; y < sheet.height; y++)
+      for (let x = 0; x < sheet.width; x++) this.paintPixel(x, y, sheet.getPixel(x, y));
     this.flush();
   }
 

@@ -411,6 +411,9 @@
       "zoomOut": "Zoom out",
       "zoomFit": "Fit the sheet to the panel",
       "sheet": "Sheet",
+      "sheets": "Sheets",
+      "addSheet": "Add a sheet",
+      "sheetName": "sheet {{n}}",
       "sheetWidth": "W",
       "sheetHeight": "H",
       "shrinkTitle": "Shrink the sheet?",
@@ -430,7 +433,18 @@
       "pickSprite": "Sheet map — drag to pick the cells you are working on",
       "clip": "Lock",
       "zoom": "Zoom",
-      "crop": "Crop"
+      "crop": "Crop",
+      "sheetDialog": "Sheet"
+    },
+    "resource": {
+      "name": "Name",
+      "colour": "Colour",
+      "colourNone": "None",
+      "save": "Save",
+      "cancel": "Cancel",
+      "remove": "Delete",
+      "taken": "That name is taken",
+      "tooLong": "At most {{n}} characters"
     },
     "map": {
       "title": "Map 0",
@@ -462,7 +476,11 @@
       "zoomOut": "Zoom out",
       "zoom": "Zoom",
       "gridHelp": "Fine grid every tile, sky rule every eight — the screen is 20×11 tiles.",
-      "flagsHelp": "Tints each tile by the first flag set on its sprite. Flags are per sprite, not per tile."
+      "flagsHelp": "Tints each tile by the first flag set on its sprite. Flags are per sprite, not per tile.",
+      "mapDialog": "Map",
+      "maps": "Maps",
+      "addMap": "Add a map",
+      "mapName": "map {{n}}"
     },
     "viewerPopped": "Viewer is popped out",
     "viewerPoppedHint": "The game keeps running in the floating panel and follows you across editors.",

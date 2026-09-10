@@ -24,6 +24,8 @@ import {
   PanelColumnComponent,
   SectionComponent,
   SliderComponent,
+  type TabItem,
+  TabsComponent,
   ToggleButtonComponent,
   ToolGroupComponent,
   type ToolItem,
@@ -37,8 +39,13 @@ import { PANEL_WIDTH } from '../state/editor-ui.store';
 
 const MAP_ZOOM_OCTAVES = Math.log2(MAP_MAX_ZOOM / MAP_MIN_ZOOM);
 import { geometrySignal } from '@app/shared/pixel/geometry.signal';
-import { MAX_MAP_SIZE } from '@naucto/engine';
+import { FIRST_MAP_ID, MAX_MAP_SIZE } from '@naucto/engine';
 
+import {
+  ResourceDialog,
+  type ResourceDialogData,
+  type ResourceDialogResult,
+} from '../resource.dialog';
 import { WorkSessionService } from '../work-session/work-session.service';
 import { MAP_MAX_ZOOM, MAP_MIN_ZOOM, MapStore, type MapTool } from './map.store';
 import { MapCanvasComponent, type TileViewport } from './map-canvas.component';
@@ -56,6 +63,7 @@ import { MinimapComponent } from './minimap.component';
     PanelColumnComponent,
     NumberFieldComponent,
     SectionComponent,
+    TabsComponent,
     ToggleButtonComponent,
     ToolGroupComponent,
     TooltipDirective,
@@ -251,24 +259,47 @@ import { MinimapComponent } from './minimap.component';
         </nc-section>
 
         <nc-section banded [title]="t('editor.map.wholeMap')">
-          <div class="mb-1 flex items-end gap-1">
-            <nc-number-field
-              [label]="t('editor.map.width')"
-              [value]="mapW()"
-              [min]="1"
-              [max]="MAX_MAP_SIZE"
-              [step]="1"
-              (requested)="resizeMap($event, mapH())"
-            />
-            <nc-number-field
-              [label]="t('editor.map.height')"
-              [value]="mapH()"
-              [min]="1"
-              [max]="MAX_MAP_SIZE"
-              [step]="1"
-              (requested)="resizeMap(mapW(), $event)"
-            />
-          </div>
+          <!-- Same strip as the sheets', for the same reason: the sizes ride in it rather than
+               under it, so the whole-map view keeps the row a second one would have taken. -->
+          <nc-tabs
+            variant="small"
+            [tabs]="mapTabs()"
+            [value]="map.mapId()"
+            (valueChange)="chooseMap($event)"
+            (edit)="describeMap($event)"
+            [label]="t('editor.map.maps')"
+          >
+            <span actions class="flex items-center gap-0.5">
+              <nc-number-field
+                size="sm"
+                [label]="t('editor.map.width')"
+                [value]="mapW()"
+                [min]="1"
+                [max]="MAX_MAP_SIZE"
+                [step]="1"
+                (requested)="resizeMap($event, mapH())"
+              />
+              <nc-number-field
+                size="sm"
+                [label]="t('editor.map.height')"
+                [value]="mapH()"
+                [min]="1"
+                [max]="MAX_MAP_SIZE"
+                [step]="1"
+                (requested)="resizeMap(mapW(), $event)"
+              />
+              <button
+                ncButton
+                variant="ghost"
+                size="sm"
+                iconOnly
+                [attr.aria-label]="t('editor.map.addMap')"
+                (click)="addMap()"
+              >
+                <nc-icon name="plus" [size]="12" />
+              </button>
+            </span>
+          </nc-tabs>
           <nc-minimap
             [game]="session.game"
             [painter]="painter"
@@ -307,6 +338,17 @@ export class MapTabPage {
   protected readonly undo: Y.UndoManager;
   private readonly geometry = geometrySignal(signal(this.session.game));
   protected readonly MAX_MAP_SIZE = MAX_MAP_SIZE;
+  private readonly mapsVersion = signal(0);
+  protected readonly mapTabs = computed<TabItem<string>[]>(() => {
+    this.geometry();
+    this.mapsVersion();
+    return this.session.game.maps.map((m, i) => ({
+      value: m.id,
+      label: m.name,
+      index: i + 1,
+      colour: m.colour === null ? undefined : this.session.game.palette[m.colour],
+    }));
+  });
   protected readonly mapW = computed(() => this.geometry().mapWidth);
   protected readonly mapH = computed(() => this.geometry().mapHeight);
   protected readonly canvas = viewChild<MapCanvasComponent>('canvas');
@@ -355,6 +397,10 @@ export class MapTabPage {
         this.map.setSheetSize(g.spritesPerRow, g.spriteRows);
       });
     });
+    const off = this.session.game.onCollectionsChange(() => {
+      this.mapsVersion.update((v) => v + 1);
+    });
+    inject(DestroyRef).onDestroy(off);
     this.undo = new Y.UndoManager([this.session.game.tilesMap], {
       trackedOrigins: new Set([LOCAL_ORIGIN, null]),
       captureTimeout: 300,
@@ -433,6 +479,45 @@ export class MapTabPage {
       for (let x = 0; x < this.mapW(); x++)
         if ((x >= width || y >= height) && game.getTile(x, y) !== 0) n++;
     return n;
+  }
+
+  protected chooseMap(id: string | undefined): void {
+    if (id !== undefined) this.map.setMap(id);
+  }
+
+  protected addMap(): void {
+    const game = this.session.game;
+    const n = game.maps.length + 1;
+    game.addMap(this.i18n.translate('editor.map.mapName', { n }), this.mapW(), this.mapH());
+    const added = game.maps.at(-1);
+    if (added) this.map.setMap(added.id);
+  }
+
+  protected describeMap(id: string): void {
+    const game = this.session.game;
+    const found = game.maps.find((m) => m.id === id);
+    if (!found) return;
+    this.dialogs
+      .open<ResourceDialog, ResourceDialogData, ResourceDialogResult>(ResourceDialog, {
+        data: {
+          title: this.i18n.translate('editor.map.mapDialog'),
+          confirmLabel: this.i18n.translate('editor.resource.save'),
+          name: found.name,
+          colour: found.colour,
+          palette: game.palette,
+          taken: game.maps.map((m) => m.name),
+          removable: game.maps.length > 1,
+        },
+      })
+      .closed.subscribe((r) => {
+        if (!r) return;
+        if (r.removed === true) {
+          game.removeMap(id);
+          if (this.map.mapId() === id) this.map.setMap(game.maps[0]?.id ?? FIRST_MAP_ID);
+          return;
+        }
+        game.describeMap(id, r.name, r.colour);
+      });
   }
 
   protected onKey(e: KeyboardEvent): void {

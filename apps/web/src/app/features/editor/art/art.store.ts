@@ -1,5 +1,5 @@
 import { computed } from '@angular/core';
-import { DEFAULT_GEOMETRY } from '@naucto/engine';
+import { DEFAULT_GEOMETRY, FIRST_SHEET_ID } from '@naucto/engine';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 
 export type ArtTool =
@@ -50,6 +50,8 @@ interface ArtState {
    */
   cols: number;
   rows: number;
+  /** Which sheet is being worked on. */
+  sheetId: string;
 }
 
 /**
@@ -82,6 +84,7 @@ export const ArtStore = signalStore(
     selection: null,
     cols: DEFAULT_GEOMETRY.spritesPerRow,
     rows: DEFAULT_GEOMETRY.spriteRows,
+    sheetId: FIRST_SHEET_ID,
   }),
   withComputed(({ region, cols }) => ({
     /** Index of the region's first cell — what the header names and what the flags are read from. */
@@ -99,6 +102,10 @@ export const ArtStore = signalStore(
         region: clampRegion(region, store.cols(), store.rows()),
         selection: null,
       });
+    },
+    /** A different sheet is a different set of cells, so nothing selected on the old one survives. */
+    setSheet(sheetId: string): void {
+      patchState(store, { sheetId, region: { x: 0, y: 0, w: 1, h: 1 }, selection: null });
     },
     /** Follows the document's sheet, pulling the region back inside it when it shrinks. */
     setSheetSize(cols: number, rows: number): void {

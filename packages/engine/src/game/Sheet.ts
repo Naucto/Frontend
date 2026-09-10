@@ -19,6 +19,7 @@ export interface SheetShape {
    * `base + count - 1`. Nothing outside this file should do that addition itself.
    */
   readonly base: number;
+  readonly colour: number | null;
 }
 
 /** How a sheet reaches the document. The game supplies it; nothing else needs to know the shape. */
@@ -39,6 +40,8 @@ export class Sheet implements SheetShape {
     readonly width: number,
     readonly height: number,
     readonly base: number,
+    /** Palette slot this sheet is marked with, or null where it takes none. */
+    readonly colour: number | null,
     /** Palette indices, row-major. Replaced when the sheet is resized, so do not hold it. */
     readonly pixels: Uint8Array,
     /** One byte per cell, indexed from 0 within this sheet rather than by sprite number. */

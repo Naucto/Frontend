@@ -122,6 +122,12 @@ function numberOf(entry: Y.Map<unknown>, key: string, fallback: number): number 
   return typeof v === 'number' && Number.isFinite(v) ? v : fallback;
 }
 
+function colourOf(entry: Y.Map<unknown>): number | null {
+  const v = entry.get('colour');
+
+  return typeof v === 'number' ? v : null;
+}
+
 function stringOf(entry: Y.Map<unknown>, key: string, fallback: string): string {
   const v = entry.get(key);
 
@@ -176,6 +182,7 @@ export class Game {
 
   private _geometry: Geometry;
   private readonly geometryListeners = new Set<() => void>();
+  private readonly collectionListeners = new Set<() => void>();
   private readonly sheetMirrors = new Map<string, SheetMirror>();
   /**
    * How a Sheet reaches the document.
@@ -227,9 +234,16 @@ export class Game {
 
     this.attachSheetObservers();
     // Sheets a peer adds arrive after this constructor, and their cells need watching too.
-    this.sheetsMap.observe(() => {
+    const told = (): void => {
+      this.collectionListeners.forEach((l) => {
+        l();
+      });
+    };
+    this.sheetsMap.observeDeep(() => {
       this.attachSheetObservers();
+      told();
     });
+    this.mapsMap.observeDeep(told);
     // A size is the shape of every mirror above, so a peer changing one has to be caught here
     // rather than left to whoever happens to read next.
     this.meta.observe((e) => {
@@ -368,6 +382,7 @@ export class Game {
           sheetWidth,
           sheetHeight,
           0,
+          null,
           this.sheet,
           this.flags,
           this.sheetWriter,
@@ -386,6 +401,7 @@ export class Game {
         width,
         height,
         base,
+        colourOf(e),
         mirror.pixels,
         mirror.flags,
         this.sheetWriter,
@@ -399,7 +415,7 @@ export class Game {
     const { mapWidth, mapHeight } = this._geometry;
     const entries = this.orderedEntries(this.mapsMap);
     if (entries.length === 0)
-      return [new GameMap(FIRST_MAP_ID, MAIN_MAP, 0, mapWidth, mapHeight, this.tiles)];
+      return [new GameMap(FIRST_MAP_ID, MAIN_MAP, 0, mapWidth, mapHeight, null, this.tiles)];
 
     return entries.map(([id, e], i) => {
       const width = clampMapSize(numberOf(e, 'w', mapWidth));
@@ -410,6 +426,7 @@ export class Game {
         numberOf(e, 'order', i),
         width,
         height,
+        colourOf(e),
         this.mapMirror(id, width, height),
       );
     });
@@ -428,9 +445,11 @@ export class Game {
     const held = entry.get(key);
     if (held instanceof Y.Map) return held as Y.Map<number>;
     const made = new Y.Map<number>();
-    entry.set(key, made);
+    // Marked before it is attached: inserting it ends a transaction, and the collection's own
+    // observer runs then -- it would find an unmarked map and subscribe to it a second time.
     this.watchedCells.add(made);
     this.observeSheetCells(sheetId, key, made);
+    entry.set(key, made);
 
     return made;
   }
@@ -521,6 +540,40 @@ export class Game {
     }, LOCAL_ORIGIN);
   }
 
+  /** Resizes a sheet other than the first, whose size is the document's own. */
+  resizeSheet(id: string, width: number, height: number): void {
+    const entry = this.sheetsMap.get(id);
+    if (!entry) return;
+    this.doc.transact(() => {
+      entry.set('w', clampSheetSize(width));
+      entry.set('h', clampSheetSize(height));
+    }, LOCAL_ORIGIN);
+  }
+
+  /** Renames or recolours an entry of either collection; a colour of null takes none. */
+  describeSheet(id: string, name: string, colour: number | null): void {
+    this.describe(this.sheetsMap, id, name, colour);
+  }
+
+  describeMap(id: string, name: string, colour: number | null): void {
+    this.describe(this.mapsMap, id, name, colour);
+  }
+
+  private describe(
+    from: Y.Map<Y.Map<unknown>>,
+    id: string,
+    name: string,
+    colour: number | null,
+  ): void {
+    const entry = from.get(id);
+    if (!entry) return;
+    this.doc.transact(() => {
+      entry.set('name', name);
+      if (colour === null) entry.delete('colour');
+      else entry.set('colour', colour);
+    }, LOCAL_ORIGIN);
+  }
+
   /** Refuses the last one, the way a code file does: a game with no sheet has nowhere to draw. */
   removeSheet(id: string): void {
     if (this.sheetsMap.size <= 1) return;
@@ -597,6 +650,18 @@ export class Game {
   onGeometryChange(fn: () => void): () => void {
     this.geometryListeners.add(fn);
     return () => this.geometryListeners.delete(fn);
+  }
+
+  /**
+   * Told when a sheet or a map is added, removed or renamed.
+   *
+   * The collections are Yjs maps, not signals, so anything derived from them has no way of its own
+   * to know it has gone stale -- and two things derived from the same collection at different
+   * moments will disagree, which is how a panel came to show three sheets beside a count of one.
+   */
+  onCollectionsChange(fn: () => void): () => void {
+    this.collectionListeners.add(fn);
+    return () => this.collectionListeners.delete(fn);
   }
 
   /**

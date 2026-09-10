@@ -21,3 +21,15 @@ describe('TabsComponent', () => {
     expect(screen.getByRole('tab', { name: 'Account' })).toHaveAttribute('aria-selected', 'true');
   });
 });
+
+/** The panel strip is too tall to sit over a preview and leave the preview any room. */
+it('draws a small strip more tightly than the panel one', async () => {
+  const { fixture } = await render(TabsComponent, {
+    inputs: { tabs, value: 'account', variant: 'small' },
+  });
+  const tab = screen.getByRole('tab', { name: 'Account' });
+
+  expect(tab.className).toContain('text-micro');
+  expect(tab.className).toContain('aria-selected:border-gold');
+  fixture.detectChanges();
+});

@@ -11,6 +11,8 @@ export class GameMap {
     readonly order: number,
     readonly width: number,
     readonly height: number,
+    /** Palette slot this map is marked with, or null where it takes none. */
+    readonly colour: number | null,
     /** Sprite numbers, row-major. Replaced when the map is resized, so do not hold it. */
     readonly tiles: Uint16Array,
   ) {}

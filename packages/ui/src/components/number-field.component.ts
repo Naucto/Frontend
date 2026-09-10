@@ -17,7 +17,7 @@ import { IconComponent } from './icon.component';
   imports: [IconComponent],
   template: `
     <div class="flex items-stretch overflow-hidden rounded-sm border border-line bg-inset">
-      <div class="flex items-center gap-1 px-1.25 py-[5px]">
+      <div class="flex items-center gap-1" [class]="padClass()">
         <span class="label">{{ label() }}</span>
         <!-- A field, not a readout: the arrows are the coarse way in and typing is the exact one.
              Committed on blur and on Enter rather than per keystroke, so a half-typed 4 on the way
@@ -28,14 +28,14 @@ import { IconComponent } from './icon.component';
           [attr.aria-label]="label()"
           [value]="value()"
           [style.width.ch]="String(max()).length"
-          class="bg-transparent text-right font-mono text-body text-ink outline-none"
+          [class]="'bg-transparent text-right font-mono text-ink outline-none ' + textClass()"
           (keydown.enter)="commit($event)"
           (keydown.arrowUp)="nudge(1, $event)"
           (keydown.arrowDown)="nudge(-1, $event)"
           (blur)="commit($event)"
         />
       </div>
-      <div class="flex w-[18px] flex-none flex-col border-l border-line">
+      <div class="flex flex-none flex-col border-l border-line" [class]="caretsClass()">
         <button
           type="button"
           class="flex flex-1 items-center justify-center text-ink-3 hover:text-ink disabled:opacity-40 disabled:hover:text-ink-3"
@@ -66,6 +66,21 @@ export class NumberFieldComponent {
   readonly min = input(0);
   readonly max = input(100);
   readonly step = input(1);
+  /**
+   * How much room it takes.
+   *
+   * `sm` exists for a strip already carrying something else — a row of tabs, a toolbar — where the
+   * standing size would set the height of the whole row for the sake of one field.
+   */
+  readonly size = input<'md' | 'sm'>('md');
+
+  protected readonly padClass = computed(() =>
+    this.size() === 'sm' ? 'px-0.75 py-[1px]' : 'px-1.25 py-[5px]',
+  );
+  protected readonly textClass = computed(() =>
+    this.size() === 'sm' ? 'text-micro' : 'text-body',
+  );
+  protected readonly caretsClass = computed(() => (this.size() === 'sm' ? 'w-[14px]' : 'w-[18px]'));
   /**
    * The field proposes; the owner disposes.
    *

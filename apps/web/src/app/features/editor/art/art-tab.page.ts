@@ -16,7 +16,7 @@ import { PaletteGridComponent } from '@app/shared/pixel/palette-grid.component';
 import { type Pt } from '@app/shared/pixel/pixel-tools';
 import { SheetPainter } from '@app/shared/pixel/sheet-painter';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
-import { MAX_SHEET_SIZE, SIZE_STEP } from '@naucto/engine';
+import { FIRST_SHEET_ID, MAX_SHEET_SIZE, SIZE_STEP } from '@naucto/engine';
 import { BUBBLEGUM_16, LOCAL_ORIGIN, PICO8_PALETTE, SPRITE_SIZE } from '@naucto/engine';
 import {
   BitFlagsComponent,
@@ -32,12 +32,19 @@ import {
   PopoverPanelComponent,
   SectionComponent,
   SliderComponent,
+  type TabItem,
+  TabsComponent,
   ToggleButtonComponent,
   ToolGroupComponent,
   type ToolItem,
 } from '@naucto/ui';
 import * as Y from 'yjs';
 
+import {
+  ResourceDialog,
+  type ResourceDialogData,
+  type ResourceDialogResult,
+} from '../resource.dialog';
 import { ClipboardStore } from '../state/clipboard.store';
 import { PANEL_WIDTH } from '../state/editor-ui.store';
 import { PresenceSurfaceComponent } from '../work-session/presence-surface.component';
@@ -64,6 +71,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
     PanelColumnComponent,
     NumberFieldComponent,
     SectionComponent,
+    TabsComponent,
     HelpDotComponent,
     BitFlagsComponent,
     SliderComponent,
@@ -89,7 +97,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
                tool group off centre and the strip out of its own height. -->
           <div class="flex min-w-0 items-center gap-2 overflow-hidden">
             <span class="font-mono text-meta whitespace-nowrap tracking-strip text-ink">
-              {{ t('editor.art.sprite') | uppercase }} {{ pad3(art.sprite()) }}
+              {{ t('editor.art.sprite') | uppercase }} {{ pad3(spriteNumber()) }}
             </span>
             @if (art.region().w > 1 || art.region().h > 1) {
               <span class="label whitespace-nowrap text-gold-ink">
@@ -177,6 +185,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
             #canvas
             class="absolute inset-0"
             [game]="session.game"
+            [sheetId]="art.sheetId()"
             [painter]="painter"
             [region]="art.region()"
             [clip]="art.clip()"
@@ -291,24 +300,48 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
           <span actions class="label text-ink-4">
             {{ t('editor.art.used', { used: used(), total: total() }) }}
           </span>
-          <div class="mb-1 flex items-end gap-1">
-            <nc-number-field
-              [label]="t('editor.art.sheetWidth')"
-              [value]="geometry().sheetWidth"
-              [min]="SIZE_STEP"
-              [max]="MAX_SHEET_SIZE"
-              [step]="SIZE_STEP"
-              (requested)="resizeSheet($event, geometry().sheetHeight)"
-            />
-            <nc-number-field
-              [label]="t('editor.art.sheetHeight')"
-              [value]="geometry().sheetHeight"
-              [min]="SIZE_STEP"
-              [max]="MAX_SHEET_SIZE"
-              [step]="SIZE_STEP"
-              (requested)="resizeSheet(geometry().sheetWidth, $event)"
-            />
-          </div>
+          <!-- The strip the design draws over the sheet map, now that there is more than one
+               sheet to put on it. The sizes ride in it rather than under it: a row of their own
+               between the tabs and the map would read as a box the map is not part of. -->
+          <nc-tabs
+            variant="small"
+            [tabs]="sheetTabs()"
+            [value]="art.sheetId()"
+            (valueChange)="chooseSheet($event)"
+            (edit)="describeSheet($event)"
+            [label]="t('editor.art.sheets')"
+          >
+            <span actions class="flex items-center gap-0.5">
+              <nc-number-field
+                size="sm"
+                [label]="t('editor.art.sheetWidth')"
+                [value]="sheet()?.width ?? 0"
+                [min]="SIZE_STEP"
+                [max]="MAX_SHEET_SIZE"
+                [step]="SIZE_STEP"
+                (requested)="resizeSheet($event, sheet()?.height ?? 0)"
+              />
+              <nc-number-field
+                size="sm"
+                [label]="t('editor.art.sheetHeight')"
+                [value]="sheet()?.height ?? 0"
+                [min]="SIZE_STEP"
+                [max]="MAX_SHEET_SIZE"
+                [step]="SIZE_STEP"
+                (requested)="resizeSheet(sheet()?.width ?? 0, $event)"
+              />
+              <button
+                ncButton
+                variant="ghost"
+                size="sm"
+                iconOnly
+                [attr.aria-label]="t('editor.art.addSheet')"
+                (click)="addSheet()"
+              >
+                <nc-icon name="plus" [size]="12" />
+              </button>
+            </span>
+          </nc-tabs>
           <nc-sheet-view
             [painter]="painter"
             [region]="art.region()"
@@ -393,12 +426,41 @@ export class ArtTabPage {
   protected readonly painter = new SheetPainter(this.session.game);
   protected readonly geometry = geometrySignal(signal(this.session.game));
   protected readonly SIZE_STEP = SIZE_STEP;
+  /** One per sheet, named as the document names them. */
+  protected readonly sheetTabs = computed<TabItem<string>[]>(() => {
+    this.geometry();
+    this.sheetsVersion();
+    return this.session.game.sheets.map((s, i) => ({
+      value: s.id,
+      label: s.name,
+      index: i + 1,
+      colour: s.colour === null ? undefined : this.capOf(s.colour),
+    }));
+  });
+  /** A palette slot as a colour, since a slot number means nothing to a swatch. */
+  private capOf(slot: number): string | undefined {
+    return this.session.game.palette[slot];
+  }
+  /** Ticks when the document's sheets change, so everything derived from them agrees. */
+  private readonly sheetsVersion = signal(0);
+  /** The sheet the tabs chose. Everything the panel shows is about this one. */
+  protected readonly sheet = computed(() => {
+    this.geometry();
+    this.sheetsVersion();
+    const sheets = this.session.game.sheets;
+    return sheets.find((s) => s.id === this.art.sheetId()) ?? sheets[0];
+  });
   protected readonly MAX_SHEET_SIZE = MAX_SHEET_SIZE;
   protected readonly undo: Y.UndoManager;
   protected readonly presetList = PRESETS;
   protected readonly defaultPalette = BUBBLEGUM_16;
   /** How many sprites the sheet holds — no longer a constant, so read per use. */
-  protected readonly total = computed(() => this.geometry().spriteCount);
+  /** Across every sheet, because a sprite number does. */
+  protected readonly total = computed(() => {
+    this.geometry();
+    this.sheetsVersion();
+    return this.session.game.spriteTotal;
+  });
 
   protected readonly zoom = signal(1);
   protected readonly hover = signal<{ x: number; y: number; col: number } | null>(null);
@@ -450,8 +512,10 @@ export class ArtTabPage {
   });
   protected readonly flags = computed(() => {
     this.flagsVersion();
-    return this.session.game.getFlag(this.art.sprite());
+    return this.sheet()?.getFlag(this.spriteNumber()) ?? 0;
   });
+  /** The region's first cell as a sprite number, which counts from the sheet's own first. */
+  protected readonly spriteNumber = computed(() => (this.sheet()?.base ?? 0) + this.art.sprite());
   protected readonly tools = computed<ToolItem<ArtTool>[]>(() => [
     { value: 'pen', icon: 'edit', label: this.i18n.translate('editor.art.tools.pen'), key: 'P' },
     {
@@ -484,11 +548,22 @@ export class ArtTabPage {
   ]);
 
   constructor() {
+    this.watchSheets();
+    // One painter, pointed at whichever sheet the tabs chose: it is the source every view here
+    // draws from, so switching it is what makes the canvas, the map and the preview follow.
+    effect(() => {
+      const id = this.art.sheetId();
+      this.sheetsVersion();
+      untracked(() => {
+        this.painter.sheetId.set(id);
+        this.painter.follow();
+      });
+    });
     // The store clamps the region against the sheet, so it has to be told when the sheet changes.
     effect(() => {
-      const g = this.geometry();
+      const sheet = this.sheet();
       untracked(() => {
-        this.art.setSheetSize(g.spritesPerRow, g.spriteRows);
+        if (sheet) this.art.setSheetSize(sheet.cols, sheet.rows);
       });
     });
     const game = this.session.game;
@@ -559,14 +634,13 @@ export class ArtTabPage {
 
   /** Flags apply to every cell of the region so a multi-cell sprite stays consistent. */
   protected setFlags(value: number): void {
-    const game = this.session.game;
+    const sheet = this.sheet();
+    if (!sheet) return;
     const r = this.art.region();
-    game.transact(() => {
+    this.session.game.transact(() => {
       for (let j = 0; j < r.h; j++)
-        for (let i = 0; i < r.w; i++) {
-          const idx = (r.y + j) * this.geometry().spritesPerRow + r.x + i;
-          if (idx < this.total()) game.setFlag(idx, value);
-        }
+        for (let i = 0; i < r.w; i++)
+          sheet.setFlag(sheet.base + (r.y + j) * sheet.cols + r.x + i, value);
     });
   }
 
@@ -581,10 +655,63 @@ export class ArtTabPage {
    * is not destruction -- but they stop being reachable, and a count of what goes quiet is the
    * only way to tell the difference before it happens rather than after.
    */
+  /** The strip's value is optional because a tab list may be empty; a game's sheet list is not. */
+  protected chooseSheet(id: string | undefined): void {
+    if (id !== undefined) this.art.setSheet(id);
+  }
+
+  private watchSheets(): void {
+    const off = this.session.game.onCollectionsChange(() => {
+      this.sheetsVersion.update((v) => v + 1);
+    });
+    inject(DestroyRef).onDestroy(off);
+  }
+
+  /** Double-clicking a tab names it, colours it, or drops it — as the code strip has always done. */
+  protected describeSheet(id: string): void {
+    const game = this.session.game;
+    const sheet = game.sheets.find((s) => s.id === id);
+    if (!sheet) return;
+    this.dialogs
+      .open<ResourceDialog, ResourceDialogData, ResourceDialogResult>(ResourceDialog, {
+        data: {
+          title: this.i18n.translate('editor.art.sheetDialog'),
+          confirmLabel: this.i18n.translate('editor.resource.save'),
+          name: sheet.name,
+          colour: sheet.colour,
+          palette: game.palette,
+          taken: game.sheets.map((s) => s.name),
+          removable: game.sheets.length > 1,
+        },
+      })
+      .closed.subscribe((r) => {
+        if (!r) return;
+        if (r.removed === true) {
+          game.removeSheet(id);
+          if (this.art.sheetId() === id) this.art.setSheet(game.sheets[0]?.id ?? FIRST_SHEET_ID);
+          return;
+        }
+        game.describeSheet(id, r.name, r.colour);
+      });
+  }
+
+  protected addSheet(): void {
+    const n = this.session.game.sheets.length + 1;
+    const { sheetWidth, sheetHeight } = this.geometry();
+    this.session.game.addSheet(
+      this.i18n.translate('editor.art.sheetName', { n }),
+      sheetWidth,
+      sheetHeight,
+    );
+    const added = this.session.game.sheets.at(-1);
+    if (added) this.art.setSheet(added.id);
+  }
+
   protected resizeSheet(width: number, height: number): void {
+    if (width <= 0 || height <= 0) return;
     const lost = this.spritesOutside(width, height);
     if (lost === 0) {
-      this.session.game.resize({ sheetWidth: width, sheetHeight: height });
+      this.applySheetSize(width, height);
       return;
     }
     this.dialogs
@@ -597,22 +724,34 @@ export class ArtTabPage {
         },
       })
       .closed.subscribe((ok) => {
-        if (ok === true) this.session.game.resize({ sheetWidth: width, sheetHeight: height });
+        if (ok === true) this.applySheetSize(width, height);
       });
+  }
+
+  /**
+   * The first sheet's size is the document's own, because that is where its pixels live; any other
+   * carries its size in its entry.
+   */
+  private applySheetSize(width: number, height: number): void {
+    const sheet = this.sheet();
+    if (!sheet) return;
+    if (sheet.id === FIRST_SHEET_ID) {
+      this.session.game.resize({ sheetWidth: width, sheetHeight: height });
+      return;
+    }
+    this.session.game.resizeSheet(sheet.id, width, height);
   }
 
   /** How many drawn sprites a sheet this size would put out of reach. */
   private spritesOutside(width: number, height: number): number {
-    const game = this.session.game;
-    const { spritesPerRow, spriteCount } = this.geometry();
+    const sheet = this.sheet();
+    if (!sheet) return 0;
     const cols = width / SPRITE_SIZE;
     const rows = height / SPRITE_SIZE;
     let n = 0;
-    for (let i = 0; i < spriteCount; i++) {
-      const col = i % spritesPerRow;
-      const row = Math.floor(i / spritesPerRow);
-      if (col < cols && row < rows) continue;
-      if (!game.isSpriteEmpty(i)) n++;
+    for (let i = 0; i < sheet.count; i++) {
+      if (i % sheet.cols < cols && Math.floor(i / sheet.cols) < rows) continue;
+      if (!sheet.isEmpty(sheet.base + i)) n++;
     }
     return n;
   }
