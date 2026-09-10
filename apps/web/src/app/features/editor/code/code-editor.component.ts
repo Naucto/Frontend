@@ -20,6 +20,7 @@ import {
   highlightSelectionMatches,
   replaceAll,
   replaceNext,
+  search,
   SearchQuery,
   selectMatches,
   setSearchQuery,
@@ -87,6 +88,11 @@ export class CodeEditorComponent {
   readonly host = viewChild.required<ElementRef<HTMLDivElement>>('host');
 
   private view: EditorView | null = null;
+  /**
+   * The last query handed to the library, kept because its commands answer an unset or
+   * unparseable one by opening CodeMirror's own search panel — a second find bar under ours.
+   */
+  private query: SearchQuery | null = null;
 
   /**
    * What to look for. The searching itself stays the library's — cursors over a document several
@@ -99,7 +105,8 @@ export class CodeEditorComponent {
     regexp: boolean;
     wholeWord: boolean;
   }): void {
-    this.view?.dispatch({ effects: setSearchQuery.of(new SearchQuery(q)) });
+    this.query = new SearchQuery(q);
+    this.view?.dispatch({ effects: setSearchQuery.of(this.query) });
   }
 
   findNext(): void {
@@ -124,7 +131,7 @@ export class CodeEditorComponent {
 
   private run(command: (view: EditorView) => boolean): void {
     const view = this.view;
-    if (!view) return;
+    if (!view || !this.query?.valid) return;
     view.focus();
     command(view);
   }
@@ -231,6 +238,12 @@ export class CodeEditorComponent {
       bracketMatching(),
       closeBrackets(),
       highlightSelectionMatches(),
+      // The library's search *state*, without the library's search *bar*. Every one of its find and
+      // replace commands is wrapped in a guard that opens its own panel when that state is absent —
+      // so leaving the extension out did not keep the panel away, it guaranteed it: the page's own
+      // find bar drew one, and CodeMirror's drew another right above it. The panel this names is
+      // never built, because a query that reaches a command is a valid one.
+      search({ createPanel: () => ({ dom: document.createElement('div') }) }),
       lintGutter(),
       this.lintCompartment.of(this.lintSource(this.error())),
       this.errorLineCompartment.of(errorLineHighlight(this.error()?.line ?? null)),
