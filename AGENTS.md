@@ -62,6 +62,12 @@ Pixelarticons, Bubblegum-16 palette, dark + light themes).
 - **Engine**: the Lua API is namespaced (`gfx`, `input`, `sound`, `map`, `net`, `sys`).
   `packages/engine/src/api/luaApiTable.ts` is the single source of truth (prelude, migrations, docs
   manifest parity, editor completions). Old games are migrated transparently on load.
+- **Several sheets and several maps were added without a schema bump**, on purpose. A document that
+  declares no collection and records no size still reads as one sheet called `sprites` and one map
+  called `map`, at the default geometry, and the first of each keeps its pixels in the root maps
+  even after a second is added. So the shape grew by addition: a game saved by this build still
+  opens in one from before it, in both directions. A version bump would have refused both for a
+  document that reads correctly as it stands — see `game/legacy-shape.test.ts`, which pins it.
 - **Theming**: every colour comes from a token in `packages/ui/src/tokens.css`; never write raw hex in
   components. Dark is the default; light is `[data-theme=light]` or `prefers-color-scheme`.
 - **Editor layout**: the shell is rail + routed workspace + one `nc-panel-region` on the right. Each
