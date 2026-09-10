@@ -96,6 +96,28 @@ import { MinimapComponent } from './minimap.component';
             >
               <nc-icon name="redo" [size]="24" />
             </button>
+            <button
+              ncButton
+              variant="ghost"
+              size="sm"
+              iconOnly
+              [attr.aria-label]="t('editor.copy')"
+              (click)="transfer('c')"
+              [disabled]="!canCopy()"
+            >
+              <nc-icon name="copy" [size]="24" />
+            </button>
+            <button
+              ncButton
+              variant="ghost"
+              size="sm"
+              iconOnly
+              [attr.aria-label]="t('editor.paste')"
+              (click)="transfer('v')"
+              [disabled]="!canPaste()"
+            >
+              <nc-icon name="clipboard" [size]="24" />
+            </button>
           </div>
         </header>
         <div class="relative min-h-0 flex-1">
@@ -259,6 +281,9 @@ export class MapTabPage {
   );
   protected readonly canUndo = signal(false);
   protected readonly canRedo = signal(false);
+  /** Both want a selection to work on, there being no region here to fall back to. */
+  protected readonly canCopy = computed(() => this.canvas()?.selection() != null);
+  protected readonly canPaste = computed(() => this.clipboard.take('tiles') !== null);
   protected readonly tools = computed<ToolItem<MapTool>[]>(() => [
     {
       value: 'stamp',
@@ -363,7 +388,7 @@ export class MapTabPage {
    * All three want a selection, there being no region in hand to fall back on. The paste is
    * bracketed because transactions landing close together merge into one undo step.
    */
-  private transfer(key: string): boolean {
+  protected transfer(key: string): boolean {
     const canvas = this.canvas();
     if (!canvas) return false;
     if (key === 'c' || key === 'x') {

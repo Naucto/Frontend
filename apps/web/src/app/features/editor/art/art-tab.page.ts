@@ -149,6 +149,27 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
             >
               <nc-icon name="redo" [size]="24" />
             </button>
+            <button
+              ncButton
+              variant="ghost"
+              size="sm"
+              iconOnly
+              [attr.aria-label]="t('editor.copy')"
+              (click)="transfer('c')"
+            >
+              <nc-icon name="copy" [size]="24" />
+            </button>
+            <button
+              ncButton
+              variant="ghost"
+              size="sm"
+              iconOnly
+              [attr.aria-label]="t('editor.paste')"
+              (click)="transfer('v')"
+              [disabled]="!canPaste()"
+            >
+              <nc-icon name="clipboard" [size]="24" />
+            </button>
           </div>
         </header>
         <div class="relative min-h-0 flex-1 bg-inset">
@@ -358,6 +379,9 @@ export class ArtTabPage {
   protected readonly hover = signal<{ x: number; y: number; col: number } | null>(null);
   protected readonly canUndo = signal(false);
   protected readonly canRedo = signal(false);
+  /** Copy has no button state to carry: with nothing selected it takes the region, which is always
+   * there. Paste has one, because a clip of colours is not a clip of tiles. */
+  protected readonly canPaste = computed(() => this.clipboard.take('pixels') !== null);
   private readonly flagsVersion = signal(0);
   private readonly canvas = viewChild<SpriteCanvasComponent>('canvas');
   private readonly preview = viewChild<ElementRef<HTMLCanvasElement>>('preview');
@@ -562,7 +586,7 @@ export class ArtTabPage {
    * The paste is bracketed because transactions landing close together merge into one undo step,
    * and a paste has to be its own.
    */
-  private transfer(key: string): boolean {
+  protected transfer(key: string): boolean {
     const canvas = this.canvas();
     if (!canvas) return false;
     if (key === 'c') {

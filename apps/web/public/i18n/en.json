@@ -373,6 +373,8 @@
     "showViewer": "Viewer",
     "undo": "Undo",
     "redo": "Redo",
+    "copy": "Copy",
+    "paste": "Paste",
     "art": {
       "sprite": "Sprite",
       "px": "{{w}}×{{h}} px",
