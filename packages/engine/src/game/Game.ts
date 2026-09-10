@@ -27,7 +27,31 @@ import {
   PALETTE_SIZE,
   SPRITE_SIZE,
 } from './keys';
-import { Sheet, type SheetWriter } from './Sheet';
+import { remapSprites, rewriteSpriteNumbers, survives } from './renumber';
+import { Sheet, type SheetShape, type SheetWriter } from './Sheet';
+
+/** A number that names no cell any more. Not a sprite anybody can draw, so nothing keeps it. */
+const NOT_A_SPRITE = -1;
+
+/** What named a sprite by number before the sizes moved. */
+interface HeldNumbers {
+  flags: { id: string; base: number; values: number[] }[];
+  tiles: number[];
+}
+
+/** What a resize would move, and what it would cost. */
+export interface ResizePreview {
+  /** Sprite numbers that would come to mean a different cell. */
+  moves: number;
+  /** Map tiles that name one of them. */
+  tiles: number;
+  /** Calls in the project's code that would be rewritten. */
+  calls: number;
+  /** Calls that name a sprite through something other than a plain number, so nothing can follow. */
+  unsure: number;
+  /** Cells with something drawn on them that would fall outside the new shape. */
+  lost: number;
+}
 
 export interface PixelChange {
   /** Which sheet the pixel is on. Without it a change on the second lands on the first. */
@@ -543,13 +567,178 @@ export class Game {
   }
 
   /** Resizes a sheet other than the first, whose size is the document's own. */
+  /**
+   * What resizing a sheet would cost, without doing it.
+   *
+   * A sheet's pixels are kept by position, so a resize keeps the picture and re-flows the grid of
+   * numbers over it: the same cell answers to a different number afterwards, and so does every cell
+   * of every sheet after this one. Anything that named a number by hand has to follow.
+   */
+  previewResize(id: string, width: number, height: number): ResizePreview {
+    const before = this.sheets;
+    const after = this.shapesAfterResize(id, width, height);
+    const moves = remapSprites(before, after);
+    let tiles = 0;
+    for (const n of this.tiles)
+      if (n !== 0 && (moves.has(n) || !survives(n, before, after))) tiles++;
+    let calls = 0;
+    let unsure = 0;
+    for (const f of this.files) {
+      const out = rewriteSpriteNumbers(f.text.toString(), moves);
+      calls += out.changed;
+      unsure += out.unsure;
+    }
+    let lost = 0;
+    for (const sh of before)
+      for (let n = sh.base; n < sh.base + sh.count; n++)
+        if (!survives(n, before, after) && !sh.isEmpty(n)) lost++;
+
+    return { moves: moves.size, tiles, calls, unsure, lost };
+  }
+
+  /**
+   * Resizes a sheet and brings everything that named a sprite number along with it.
+   *
+   * One transaction for the sizes, the flags, the tiles and the code: a document caught halfway is
+   * one where a number means two things at once, and a peer joining then would read exactly that.
+   */
   resizeSheet(id: string, width: number, height: number): void {
     const entry = this.sheetsMap.get(id);
-    if (!entry) return;
+    // The first sheet takes its size from the geometry until a second one exists, and that path
+    // renumbers as well.
+    if (!entry) {
+      if (id === FIRST_SHEET_ID) this.resize({ sheetWidth: width, sheetHeight: height });
+      return;
+    }
+    const before = this.sheets;
+    const after = this.shapesAfterResize(id, width, height);
+    const held = this.holdNumbered();
     this.doc.transact(() => {
       entry.set('w', clampSheetSize(width));
       entry.set('h', clampSheetSize(height));
+      this.renumber(before, after, held);
     }, LOCAL_ORIGIN);
+  }
+
+  /**
+   * Everything that names a sprite by number, copied out before the sizes move.
+   *
+   * Read first because the projections below are rebuilt from the document on every access: once
+   * the sizes have changed they describe the new arrangement, and what has to be moved is what the
+   * old one said.
+   */
+  private holdNumbered(): HeldNumbers {
+    return {
+      flags: this.sheets.map((sh) => ({ id: sh.id, base: sh.base, values: Array.from(sh.flags) })),
+      // The first map only, which is the only one anything writes to: the editor's brush and every
+      // Lua call go through `setTile`, and that is the root map.
+      tiles: Array.from(this.tiles),
+    };
+  }
+
+  /**
+   * Moves the tiles, the flags and the code onto the numbers the new shape gives them.
+   *
+   * Written straight into the document's maps rather than through `setFlag` and `setTile`: this
+   * runs inside the same transaction as the resize, and until that transaction ends the observers
+   * have not fired, so those two are still guarding against the sizes the game had a moment ago.
+   * The new shape is passed in for the same reason.
+   */
+  private renumber(
+    before: readonly SheetShape[],
+    after: readonly SheetShape[],
+    held: HeldNumbers,
+  ): void {
+    const moves = remapSprites(before, after);
+    if (moves.size === 0) return;
+    const kept = (n: number): number =>
+      moves.get(n) ?? (survives(n, before, after) ? n : NOT_A_SPRITE);
+
+    for (const sh of held.flags) {
+      const now = after.find((s) => s.id === sh.id);
+      if (!now) continue;
+      const cells = (now.width / SPRITE_SIZE) * (now.height / SPRITE_SIZE);
+      const next = new Map<number, number>();
+      sh.values.forEach((v, local) => {
+        if (v === 0) return;
+        const to = kept(sh.base + local);
+        if (to !== NOT_A_SPRITE) next.set(to - now.base, v);
+      });
+      const target = now.id === FIRST_SHEET_ID ? this.flagsMap : this.sheetCells(now.id, 'flags');
+      target.forEach((_v, k) => {
+        target.delete(k);
+      });
+      for (let i = 0; i < cells; i++) {
+        const v = next.get(i);
+        if (v) target.set(String(i), v);
+      }
+    }
+
+    const { mapWidth } = this._geometry;
+    held.tiles.forEach((n, at) => {
+      if (n === 0) return;
+      const to = kept(n);
+      const key = coordKey(at % mapWidth, Math.floor(at / mapWidth));
+      if (to === NOT_A_SPRITE || to === 0) this.tilesMap.delete(key);
+      else this.tilesMap.set(key, to & 0xffff);
+    });
+
+    for (const f of this.files) {
+      const out = rewriteSpriteNumbers(f.text.toString(), moves);
+      if (out.changed === 0) continue;
+      f.text.delete(0, f.text.length);
+      f.text.insert(0, out.text);
+    }
+  }
+
+  /**
+   * The sheets as they would be if the geometry took these sizes.
+   *
+   * A declared sheet carries its own size and does not move; one that carries none — which is the
+   * first sheet until a second exists — takes the geometry's.
+   */
+  private shapesAfterGeometry(width: number, height: number): SheetShape[] {
+    let base = 0;
+
+    return this.sheets.map((sh) => {
+      const entry = this.sheetsMap.get(sh.id);
+      const w = typeof entry?.get('w') === 'number' ? sh.width : clampSheetSize(width);
+      const h = typeof entry?.get('h') === 'number' ? sh.height : clampSheetSize(height);
+      const at = base;
+      base += (w / SPRITE_SIZE) * (h / SPRITE_SIZE);
+
+      return {
+        id: sh.id,
+        name: sh.name,
+        order: sh.order,
+        colour: sh.colour,
+        width: w,
+        height: h,
+        base: at,
+      };
+    });
+  }
+
+  /** The sheets as they would be, in order, if this one took that size. */
+  private shapesAfterResize(id: string, width: number, height: number): SheetShape[] {
+    let base = 0;
+
+    return this.sheets.map((sh) => {
+      const w = sh.id === id ? clampSheetSize(width) : sh.width;
+      const h = sh.id === id ? clampSheetSize(height) : sh.height;
+      const at = base;
+      base += (w / SPRITE_SIZE) * (h / SPRITE_SIZE);
+
+      return {
+        id: sh.id,
+        name: sh.name,
+        order: sh.order,
+        colour: sh.colour,
+        width: w,
+        height: h,
+        base: at,
+      };
+    });
   }
 
   /** A colour of null takes none, rather than taking slot zero. */
@@ -722,6 +911,12 @@ export class Game {
     mapWidth?: number;
     mapHeight?: number;
   }): void {
+    const before = this.sheets;
+    const after = this.shapesAfterGeometry(
+      size.sheetWidth ?? this._geometry.sheetWidth,
+      size.sheetHeight ?? this._geometry.sheetHeight,
+    );
+    const held = this.holdNumbered();
     this.doc.transact(() => {
       const set = (key: string, value: number | undefined, clamp: (n: number) => number): void => {
         if (value !== undefined) this.meta.set(key, clamp(value));
@@ -730,6 +925,9 @@ export class Game {
       set(GEOMETRY_KEYS.sheetHeight, size.sheetHeight, clampSheetSize);
       set(GEOMETRY_KEYS.mapWidth, size.mapWidth, clampMapSize);
       set(GEOMETRY_KEYS.mapHeight, size.mapHeight, clampMapSize);
+      // The first sheet takes its size from here, so this is one of the two ways a sprite number
+      // comes to mean a different cell.
+      this.renumber(before, after, held);
     }, LOCAL_ORIGIN);
   }
 

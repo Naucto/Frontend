@@ -196,8 +196,8 @@ const VARIANT: Record<TabsVariant, { frame: string; list: string; item: string; 
         </button>
       }
       <!-- Outside the scroller: what the owner hangs here belongs to the strip, not to the tabs,
-           and inside it it would slide away with them. -->
-      <span class="flex-1"></span>
+           and inside it it would slide away with them. No spacer between the two — the run of tabs
+           already takes the free width, and a second thing claiming it halved what the names had. -->
       <ng-content select="[actions]" />
     </div>
   `,

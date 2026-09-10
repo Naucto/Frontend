@@ -979,26 +979,27 @@ test.describe('editor', () => {
   /**
    * A strip is one line and never folds, so where it runs out of room it runs out sideways, and
    * what went past the edge used to be unreachable to a pointer with no horizontal wheel. The
-   * console's own strip is the narrowest in the editor, which is why it is the one measured here.
+   * sheet strip is the one that fills up in ordinary use, a sheet at a time.
    */
   test('a strip that runs past its edge can be walked with arrows', async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto('/edit/7/code');
-    await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+    await page.goto('/edit/7/art');
+    await expect(page.getByRole('img', { name: 'Sprite canvas' })).toBeVisible();
 
-    const console_ = page.locator('nc-console-column');
-    const strip = console_.getByRole('tablist');
-    await expect
-      .poll(() => strip.evaluate((el) => el.scrollWidth - el.clientWidth))
-      .toBeGreaterThan(1);
+    const strip = page.getByRole('tablist', { name: 'Sheets' });
+    const later = page.getByRole('button', { name: 'Later tabs' });
+    await expect(later).toHaveCount(0);
 
-    const later = console_.getByRole('button', { name: 'Later tabs' });
+    const add = page.getByRole('button', { name: 'Add a sheet' });
+    for (let i = 0; i < 8 && (await later.count()) === 0; i++) await add.click();
     await expect(later).toBeVisible();
-    await expect(console_.getByRole('button', { name: 'Earlier tabs' })).toHaveCount(0);
+
+    // Back to the first sheet, so the strip is at its start and forward is the way that moves.
+    await page.getByRole('tab').first().click();
+    await expect.poll(() => strip.evaluate((el) => el.scrollLeft)).toBe(0);
 
     await later.click();
     await expect.poll(() => strip.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);
-    await expect(console_.getByRole('button', { name: 'Earlier tabs' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Earlier tabs' })).toBeVisible();
   });
 
   /** The file strip fits at this width, so it says nothing about a scroll it does not need. */

@@ -11,7 +11,14 @@ export type {
   SysPort,
 } from './api/ports';
 export * from './game/defaults';
-export { type CodeFile, Game, LOCAL_ORIGIN, type PixelChange, type TileChange } from './game/Game';
+export {
+  type CodeFile,
+  Game,
+  LOCAL_ORIGIN,
+  type PixelChange,
+  type ResizePreview,
+  type TileChange,
+} from './game/Game';
 export { GameMap } from './game/GameMap';
 export * from './game/geometry';
 export * from './game/keys';

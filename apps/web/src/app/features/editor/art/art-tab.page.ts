@@ -16,7 +16,7 @@ import { PaletteGridComponent } from '@app/shared/pixel/palette-grid.component';
 import { type Pt } from '@app/shared/pixel/pixel-tools';
 import { SheetPainter } from '@app/shared/pixel/sheet-painter';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
-import { FIRST_SHEET_ID, MAX_SHEET_SIZE, SIZE_STEP } from '@naucto/engine';
+import { FIRST_SHEET_ID, MAX_SHEET_SIZE, type ResizePreview, SIZE_STEP } from '@naucto/engine';
 import { BUBBLEGUM_16, LOCAL_ORIGIN, PICO8_PALETTE, SPRITE_SIZE } from '@naucto/engine';
 import {
   BitFlagsComponent,
@@ -734,25 +734,48 @@ export class ArtTabPage {
     if (added) this.art.setSheet(added.id);
   }
 
+  /**
+   * Resizing a sheet is not only a size: the picture stays where it is and the grid of numbers
+   * re-flows over it, so a sprite number comes to mean a different cell — and so does every number
+   * on every sheet after this one. Everything that wrote one by hand is brought along, and this
+   * says how much that is before it happens.
+   */
   protected resizeSheet(width: number, height: number): void {
     if (width <= 0 || height <= 0) return;
-    const lost = this.spritesOutside(width, height);
-    if (lost === 0) {
+    const sheet = this.sheet();
+    if (!sheet) return;
+    const cost = this.session.game.previewResize(sheet.id, width, height);
+    if (cost.moves === 0 && cost.lost === 0) {
       this.applySheetSize(width, height);
       return;
     }
     this.dialogs
       .open<ConfirmDialogComponent, ConfirmDialogData, boolean>(ConfirmDialogComponent, {
         data: {
-          title: this.i18n.translate('editor.art.shrinkTitle'),
-          message: this.i18n.translate('editor.art.shrinkMessage', { n: lost }),
-          confirmLabel: this.i18n.translate('editor.art.shrinkConfirm'),
-          danger: true,
+          title: this.i18n.translate('editor.art.renumberTitle'),
+          message: this.renumberMessage(cost),
+          confirmLabel: this.i18n.translate('editor.art.renumberConfirm'),
+          danger: cost.lost > 0 || cost.unsure > 0,
         },
       })
       .closed.subscribe((ok) => {
         if (ok === true) this.applySheetSize(width, height);
       });
+  }
+
+  /** One sentence per thing that moves, and one for what nothing can follow. */
+  private renumberMessage(cost: ResizePreview): string {
+    const lines = [this.i18n.translate('editor.art.renumberMessage')];
+    if (cost.tiles > 0)
+      lines.push(this.i18n.translate('editor.art.renumberTiles', { n: cost.tiles }));
+    if (cost.calls > 0)
+      lines.push(this.i18n.translate('editor.art.renumberCalls', { n: cost.calls }));
+    if (cost.lost > 0)
+      lines.push(this.i18n.translate('editor.art.shrinkMessage', { n: cost.lost }));
+    if (cost.unsure > 0)
+      lines.push(this.i18n.translate('editor.art.renumberUnsure', { n: cost.unsure }));
+
+    return lines.join(' ');
   }
 
   /**
@@ -770,19 +793,6 @@ export class ArtTabPage {
   }
 
   /** How many drawn sprites a sheet this size would put out of reach. */
-  private spritesOutside(width: number, height: number): number {
-    const sheet = this.sheet();
-    if (!sheet) return 0;
-    const cols = width / SPRITE_SIZE;
-    const rows = height / SPRITE_SIZE;
-    let n = 0;
-    for (let i = 0; i < sheet.count; i++) {
-      if (i % sheet.cols < cols && Math.floor(i / sheet.cols) < rows) continue;
-      if (!sheet.isEmpty(sheet.base + i)) n++;
-    }
-    return n;
-  }
-
   protected onKey(e: KeyboardEvent): void {
     if ((e.target as HTMLElement | null)?.tagName === 'INPUT') return;
     const mod = e.ctrlKey || e.metaKey;
