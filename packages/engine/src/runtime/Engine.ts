@@ -9,7 +9,6 @@ import type { ConsoleLevel, GfxBackend, SoundPort } from '../api/ports';
 import { SoundAPI } from '../api/SoundAPI';
 import { SysAPI } from '../api/SysAPI';
 import type { Game } from '../game/Game';
-import { MAP_WIDTH } from '../game/keys';
 import type { DeclaredAction } from '../input/ActionMap';
 import type { InputSource } from '../input/InputSource';
 import { InputState } from '../input/InputState';
@@ -147,13 +146,18 @@ export class Engine {
         this.opts.onActionsDeclared?.(actions);
       },
       data: {
+        mapWidth: () => this.opts.game.geometry.mapWidth,
+        mapHeight: () => this.opts.game.geometry.mapHeight,
         getFlag: (i) => this.opts.game.getFlag(i),
         getFlagBit: (i, b) => this.opts.game.getFlagBit(i, b),
+        // Keyed on the map's own width: a key computed from a constant would collide the moment a
+        // game's map was not that wide.
         getTile: (x, y) =>
-          this.tileOverrides.get(y * MAP_WIDTH + x) ?? this.opts.game.getTile(x, y),
+          this.tileOverrides.get(y * this.opts.game.geometry.mapWidth + x) ??
+          this.opts.game.getTile(x, y),
         setTile: (x, y, n) => {
-          this.tileOverrides.set(y * MAP_WIDTH + x, n & 0xff);
-          this.opts.gfx.setTileOverride(x, y, n & 0xff);
+          this.tileOverrides.set(y * this.opts.game.geometry.mapWidth + x, n & 0xffff);
+          this.opts.gfx.setTileOverride(x, y, n & 0xffff);
         },
       },
       sys: {

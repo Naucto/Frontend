@@ -1,20 +1,23 @@
 import type * as Y from 'yjs';
 
-import { Game } from '../game/Game';
 import { GAME_SCHEMA_VERSION, KEYS, LEGACY_KEYS } from '../game/keys';
-import type { MigrationReport } from './types';
-import { migrateCode } from './v0_to_v1/code';
-import { migrateData } from './v0_to_v1/data';
-import { migrateSound } from './v0_to_v1/sound';
+import type { MigrationReport, MigrationStep } from './types';
+import { migrateV0ToV1 } from './v0_to_v1';
 
-export type { MigrationReport, MigrationWarning } from './types';
+export type { MigrationReport, MigrationStep, MigrationWarning } from './types';
 
 export const MIGRATION_ORIGIN = 'migration';
 
-/** True when the document carries v0 content and no v1 schema marker. */
-export function needsMigration(doc: Y.Doc): boolean {
-  const meta = doc.getMap(KEYS.meta);
-  if (typeof meta.get('schemaVersion') === 'number') return false;
+/**
+ * One entry per schema version, in order, each picking up where the previous left off.
+ *
+ * A document is brought forward by running every step from the version it holds, so a game written
+ * two schemas ago crosses both rather than needing a step of its own.
+ */
+const STEPS: readonly MigrationStep[] = [{ from: 0, to: 1, run: migrateV0ToV1 }];
+
+/** Content only the first schema ever wrote, and the only evidence a document predates the marker. */
+function hasLegacyContent(doc: Y.Doc): boolean {
   return (
     doc.getText(LEGACY_KEYS.code).length > 0 ||
     doc.getMap(LEGACY_KEYS.sprites).size > 0 ||
@@ -24,34 +27,49 @@ export function needsMigration(doc: Y.Doc): boolean {
 }
 
 /**
- * Upgrades a game document to the current schema in one transaction. Runs
- * only when needed; a fresh document is seeded by Game.seedDefaults instead.
+ * Which schema a document is written in.
+ *
+ * An unmarked document is the first schema only if it holds content from it. Unmarked and empty is
+ * a document nobody has written yet, and it is about to be seeded at the current schema -- calling
+ * that one out of date would run every migration over an empty document and seed it twice.
+ */
+export function schemaVersionOf(doc: Y.Doc): number {
+  const marked = doc.getMap(KEYS.meta).get('schemaVersion');
+  if (typeof marked === 'number') return marked;
+
+  return hasLegacyContent(doc) ? 0 : GAME_SCHEMA_VERSION;
+}
+
+export function needsMigration(doc: Y.Doc): boolean {
+  return schemaVersionOf(doc) < GAME_SCHEMA_VERSION;
+}
+
+/**
+ * Brings a game document up to the current schema, in one transaction.
+ *
+ * One transaction for however many steps it takes: a document halfway between two schemas is a
+ * document no reader knows how to hold, and a peer joining mid-migration would see exactly that.
  */
 export function migrateGame(doc: Y.Doc, opts: { apply?: boolean } = {}): MigrationReport {
+  const from = schemaVersionOf(doc);
   const report: MigrationReport = {
-    from: 0,
+    from,
     to: GAME_SCHEMA_VERSION,
     applied: false,
     counts: {},
     warnings: [],
   };
-  const meta = doc.getMap(KEYS.meta);
-  const current =
-    typeof meta.get('schemaVersion') === 'number' ? (meta.get('schemaVersion') as number) : 0;
-  report.from = current;
-  if (current >= GAME_SCHEMA_VERSION || !needsMigration(doc)) return report;
+  if (from >= GAME_SCHEMA_VERSION) return report;
   if (opts.apply === false) return report;
 
+  const meta = doc.getMap(KEYS.meta);
   doc.transact(() => {
-    migrateData(doc, report);
-    migrateSound(doc, report);
-    const game = new Game(doc);
-    for (const f of game.files) migrateCode(f.text, report, f.name);
+    for (const step of STEPS) if (step.from >= from) step.run(doc, report);
     meta.set('schemaVersion', GAME_SCHEMA_VERSION);
-    meta.set('migratedFrom', current);
+    meta.set('migratedFrom', from);
     meta.set('migratedAt', new Date().toISOString());
-    meta.set('compat', true);
   }, MIGRATION_ORIGIN);
   report.applied = true;
+
   return report;
 }

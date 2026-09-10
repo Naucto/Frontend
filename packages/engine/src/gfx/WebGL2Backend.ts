@@ -1,16 +1,6 @@
 import type { GfxBackend, ScanlineEffect } from '../api/ports';
 import type { Game } from '../game/Game';
-import {
-  MAP_HEIGHT,
-  MAP_WIDTH,
-  PALETTE_SIZE,
-  SCREEN_HEIGHT,
-  SCREEN_WIDTH,
-  SHEET_HEIGHT,
-  SHEET_WIDTH,
-  SPRITE_SIZE,
-  SPRITES_PER_ROW,
-} from '../game/keys';
+import { PALETTE_SIZE, SCREEN_HEIGHT, SCREEN_WIDTH, SPRITE_SIZE } from '../game/keys';
 import { buildFontAtlas, FONT_HEIGHT, FONT_WIDTH, glyphIndex } from './Font';
 import { createGLContext, createTexture, hexToRgb, linkProgram, rgbToHex } from './glUtils';
 import { DRAW_FS, DRAW_VS, PRESENT_FS, PRESENT_VS } from './shaders';
@@ -28,8 +18,12 @@ const UNIT_FRAME = 3;
 const UNIT_EFFECTS = 4;
 const UNIT_PALETTES = 5;
 
-const MAP_PX_W = MAP_WIDTH * SPRITE_SIZE;
-const MAP_PX_H = MAP_HEIGHT * SPRITE_SIZE;
+/** The map texture, in pixels. Derived per game, since a map is no longer one fixed size. */
+function mapTextureSize(game: Game): { w: number; h: number } {
+  const { mapWidth, mapHeight } = game.geometry;
+
+  return { w: mapWidth * SPRITE_SIZE, h: mapHeight * SPRITE_SIZE };
+}
 const FX_WRAP = 1;
 const FX_BLANK = 2;
 
@@ -83,7 +77,7 @@ export class WebGL2Backend implements GfxBackend {
    * document and would otherwise paint over them on the next rebuild.
    */
   private readonly tileOverrides = new Map<number, number>();
-  private readonly mapPixels = new Uint8Array(MAP_PX_W * MAP_PX_H);
+  private mapPixels: Uint8Array;
   private readonly unsubscribes: (() => void)[] = [];
   private destroyed = false;
 
@@ -104,20 +98,11 @@ export class WebGL2Backend implements GfxBackend {
 
     // sheet
     this.textures[UNIT_SHEET] = createTexture(gl, UNIT_SHEET);
-    gl.texImage2D(
-      gl.TEXTURE_2D,
-      0,
-      gl.R8,
-      SHEET_WIDTH,
-      SHEET_HEIGHT,
-      0,
-      gl.RED,
-      gl.UNSIGNED_BYTE,
-      game.sheet,
-    );
     // map (built lazily)
     this.textures[UNIT_MAP] = createTexture(gl, UNIT_MAP);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, MAP_PX_W, MAP_PX_H, 0, gl.RED, gl.UNSIGNED_BYTE, null);
+    const map = mapTextureSize(game);
+    this.mapPixels = new Uint8Array(map.w * map.h);
+    this.allocateTextures();
     // font
     const font = buildFontAtlas();
     this.textures[UNIT_FONT] = createTexture(gl, UNIT_FONT);
@@ -224,9 +209,42 @@ export class WebGL2Backend implements GfxBackend {
         this.gamePalette = game.palette;
         this.resetPalette();
       }),
+      // A texture is allocated at one size and cannot be resized, so a game that changes shape gets
+      // new ones. Rare enough to redo wholesale rather than track.
+      game.onGeometryChange(() => {
+        const size = mapTextureSize(this.game);
+        this.mapPixels = new Uint8Array(size.w * size.h);
+        this.allocateTextures();
+        this.mapDirty = true;
+      }),
     );
     this.clear(0);
     this.present();
+  }
+
+  /** Gives the sheet and the map textures the size the game says they are, and fills the sheet. */
+  private allocateTextures(): void {
+    const gl = this.gl;
+    const { sheetWidth, sheetHeight } = this.game.geometry;
+    const map = mapTextureSize(this.game);
+
+    gl.activeTexture(gl.TEXTURE0 + UNIT_SHEET);
+    gl.bindTexture(gl.TEXTURE_2D, this.textures[UNIT_SHEET] ?? null);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.R8,
+      sheetWidth,
+      sheetHeight,
+      0,
+      gl.RED,
+      gl.UNSIGNED_BYTE,
+      this.game.sheet,
+    );
+
+    gl.activeTexture(gl.TEXTURE0 + UNIT_MAP);
+    gl.bindTexture(gl.TEXTURE_2D, this.textures[UNIT_MAP] ?? null);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, map.w, map.h, 0, gl.RED, gl.UNSIGNED_BYTE, null);
   }
 
   // ---- frame ----------------------------------------------------------------
@@ -335,8 +353,7 @@ export class WebGL2Backend implements GfxBackend {
     keyColour: number | null,
   ): void {
     n = Math.floor(n);
-    const sx = (n % SPRITES_PER_ROW) * SPRITE_SIZE;
-    const sy = Math.floor(n / SPRITES_PER_ROW) * SPRITE_SIZE;
+    const { x: sx, y: sy } = this.game.spriteOrigin(n);
     const sw = Math.floor(w) * SPRITE_SIZE;
     const sh = Math.floor(h) * SPRITE_SIZE;
     this.drawRegion(sx, sy, sw, sh, x, y, sw * scale, sh * scale, flipH, flipV, keyColour);
@@ -356,18 +373,20 @@ export class WebGL2Backend implements GfxBackend {
     keyColour: number | null,
   ): void {
     this.useBatch('sheet', -1, -1, keyed(keyColour));
-    let u0 = sx / SHEET_WIDTH;
-    let v0 = sy / SHEET_HEIGHT;
-    let u1 = (sx + sw) / SHEET_WIDTH;
-    let v1 = (sy + sh) / SHEET_HEIGHT;
+    const { sheetWidth, sheetHeight } = this.game.geometry;
+    let u0 = sx / sheetWidth;
+    let v0 = sy / sheetHeight;
+    let u1 = (sx + sw) / sheetWidth;
+    let v1 = (sy + sh) / sheetHeight;
     if (flipH) [u0, u1] = [u1, u0];
     if (flipV) [v0, v1] = [v1, v0];
     this.pushQuad(Math.floor(dx), Math.floor(dy), Math.floor(dw), Math.floor(dh), u0, v0, u1, v1);
   }
 
   setTileOverride(x: number, y: number, sprite: number): void {
-    if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT) return;
-    this.tileOverrides.set(y * MAP_WIDTH + x, sprite & 0xff);
+    const { mapWidth, mapHeight } = this.game.geometry;
+    if (x < 0 || x >= mapWidth || y < 0 || y >= mapHeight) return;
+    this.tileOverrides.set(y * mapWidth + x, sprite & 0xffff);
     this.mapDirty = true;
   }
 
@@ -380,6 +399,7 @@ export class WebGL2Backend implements GfxBackend {
   drawMap(x: number, y: number, tx: number, ty: number, tw: number, th: number): void {
     if (this.mapDirty) this.rebuildMap();
     this.useBatch('map', -1, -1, keyed(MAP_KEY));
+    const map = mapTextureSize(this.game);
     const px = tx * SPRITE_SIZE;
     const py = ty * SPRITE_SIZE;
     const pw = tw * SPRITE_SIZE;
@@ -389,10 +409,10 @@ export class WebGL2Backend implements GfxBackend {
       Math.floor(y),
       pw,
       ph,
-      px / MAP_PX_W,
-      py / MAP_PX_H,
-      (px + pw) / MAP_PX_W,
-      (py + ph) / MAP_PX_H,
+      px / map.w,
+      py / map.h,
+      (px + pw) / map.w,
+      (py + ph) / map.h,
     );
   }
 
@@ -731,8 +751,9 @@ export class WebGL2Backend implements GfxBackend {
   }
 
   private uploadSheetRegion(changes: { x: number; y: number }[]): void {
-    let minX = SHEET_WIDTH,
-      minY = SHEET_HEIGHT,
+    const { sheetWidth, sheetHeight } = this.game.geometry;
+    let minX = sheetWidth,
+      minY = sheetHeight,
       maxX = -1,
       maxY = -1;
     for (const c of changes) {
@@ -748,8 +769,8 @@ export class WebGL2Backend implements GfxBackend {
     for (let y = 0; y < h; y++)
       region.set(
         this.game.sheet.subarray(
-          (minY + y) * SHEET_WIDTH + minX,
-          (minY + y) * SHEET_WIDTH + minX + w,
+          (minY + y) * sheetWidth + minX,
+          (minY + y) * sheetWidth + minX + w,
         ),
         y * w,
       );
@@ -762,15 +783,16 @@ export class WebGL2Backend implements GfxBackend {
   private rebuildMap(): void {
     const sheet = this.game.sheet;
     const tiles = this.game.tiles;
-    for (let ty = 0; ty < MAP_HEIGHT; ty++) {
-      for (let tx = 0; tx < MAP_WIDTH; tx++) {
-        const i = ty * MAP_WIDTH + tx;
+    const { mapWidth, mapHeight, sheetWidth } = this.game.geometry;
+    const map = mapTextureSize(this.game);
+    for (let ty = 0; ty < mapHeight; ty++) {
+      for (let tx = 0; tx < mapWidth; tx++) {
+        const i = ty * mapWidth + tx;
         const n = this.tileOverrides.get(i) ?? tiles[i] ?? 0;
-        const sx = (n % SPRITES_PER_ROW) * SPRITE_SIZE;
-        const sy = Math.floor(n / SPRITES_PER_ROW) * SPRITE_SIZE;
+        const { x: sx, y: sy } = this.game.spriteOrigin(n);
         for (let y = 0; y < SPRITE_SIZE; y++) {
-          const src = (sy + y) * SHEET_WIDTH + sx;
-          const dst = (ty * SPRITE_SIZE + y) * MAP_PX_W + tx * SPRITE_SIZE;
+          const src = (sy + y) * sheetWidth + sx;
+          const dst = (ty * SPRITE_SIZE + y) * map.w + tx * SPRITE_SIZE;
           if (n === 0) this.mapPixels.fill(0, dst, dst + SPRITE_SIZE);
           else this.mapPixels.set(sheet.subarray(src, src + SPRITE_SIZE), dst);
         }
@@ -784,8 +806,8 @@ export class WebGL2Backend implements GfxBackend {
       0,
       0,
       0,
-      MAP_PX_W,
-      MAP_PX_H,
+      map.w,
+      map.h,
       gl.RED,
       gl.UNSIGNED_BYTE,
       this.mapPixels,

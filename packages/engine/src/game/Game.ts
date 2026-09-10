@@ -10,18 +10,19 @@ import {
   DEFAULT_SPRITE_COLOUR,
 } from './defaults';
 import {
+  clampMapSize,
+  clampSheetSize,
+  type Geometry,
+  GEOMETRY_KEYS,
+  readGeometry,
+} from './geometry';
+import {
   GAME_SCHEMA_VERSION,
   KEYS,
   MAIN_FILE,
   MAIN_FILE_ID,
-  MAP_HEIGHT,
-  MAP_WIDTH,
   PALETTE_SIZE,
-  SHEET_HEIGHT,
-  SHEET_WIDTH,
-  SPRITE_COUNT,
   SPRITE_SIZE,
-  SPRITES_PER_ROW,
 } from './keys';
 
 export interface PixelChange {
@@ -123,12 +124,25 @@ export class Game {
   readonly samples: Y.Map<string>;
   readonly netPermissions: Y.Map<{ flags: number }>;
 
-  /** 128×128 palette indices, row-major. */
-  readonly sheet = new Uint8Array(SHEET_WIDTH * SHEET_HEIGHT);
+  /**
+   * Palette indices, row-major, one byte a pixel.
+   *
+   * Reallocated when the sheet is resized, so hold `game.sheet` for the length of a draw and no
+   * longer -- a reference kept across a resize points at the old size.
+   */
+  sheet: Uint8Array;
   /** One byte of flags per sprite. */
-  readonly flags = new Uint8Array(SPRITE_COUNT);
-  /** 128×32 sprite indices, row-major. */
-  readonly tiles = new Uint8Array(MAP_WIDTH * MAP_HEIGHT);
+  flags: Uint8Array;
+  /**
+   * Sprite numbers, row-major, one per tile.
+   *
+   * Sixteen bits rather than eight: a sheet may hold more than 256 sprites, and a tile that could
+   * not name them would put most of a sheet out of a map's reach.
+   */
+  tiles: Uint16Array;
+
+  private _geometry: Geometry;
+  private readonly geometryListeners = new Set<() => void>();
 
   private readonly pixelListeners = new Set<(changes: PixelChange[]) => void>();
   private readonly tileListeners = new Set<(changes: TileChange[]) => void>();
@@ -151,28 +165,27 @@ export class Game {
     this.samples = doc.getMap(KEYS.samples);
     this.netPermissions = doc.getMap(KEYS.netPermissions);
 
-    this.spritesMap.forEach((v, k) => {
-      const [x, y] = parseCoord(k);
-      if (x >= 0 && x < SHEET_WIDTH && y >= 0 && y < SHEET_HEIGHT)
-        this.sheet[y * SHEET_WIDTH + x] = v & 0xf;
-    });
-    this.flagsMap.forEach((v, k) => {
-      const i = Number(k);
-      if (i >= 0 && i < SPRITE_COUNT) this.flags[i] = v & 0xff;
-    });
-    this.tilesMap.forEach((v, k) => {
-      const [x, y] = parseCoord(k);
-      if (x >= 0 && x < MAP_WIDTH && y >= 0 && y < MAP_HEIGHT)
-        this.tiles[y * MAP_WIDTH + x] = v & 0xff;
+    this._geometry = readGeometry(this.meta);
+    this.sheet = new Uint8Array(this._geometry.sheetWidth * this._geometry.sheetHeight);
+    this.flags = new Uint8Array(this._geometry.spriteCount);
+    this.tiles = new Uint16Array(this._geometry.mapWidth * this._geometry.mapHeight);
+    this.hydrate();
+
+    // A size is the shape of every mirror above, so a peer changing one has to be caught here
+    // rather than left to whoever happens to read next.
+    this.meta.observe((e) => {
+      const sized = Object.values(GEOMETRY_KEYS).some((k) => e.changes.keys.has(k));
+      if (sized) this.applyGeometry();
     });
 
     this.spritesMap.observe((e) => {
       const changes: PixelChange[] = [];
+      const { sheetWidth, sheetHeight } = this._geometry;
       e.changes.keys.forEach((_c, key) => {
         const [x, y] = parseCoord(key);
-        if (x < 0 || x >= SHEET_WIDTH || y < 0 || y >= SHEET_HEIGHT) return;
+        if (x < 0 || x >= sheetWidth || y < 0 || y >= sheetHeight) return;
         const colour = (this.spritesMap.get(key) ?? 0) & 0xf;
-        this.sheet[y * SHEET_WIDTH + x] = colour;
+        this.sheet[y * sheetWidth + x] = colour;
         changes.push({ x, y, colour });
       });
       if (changes.length)
@@ -183,7 +196,8 @@ export class Game {
     this.flagsMap.observe((e) => {
       e.changes.keys.forEach((_c, key) => {
         const i = Number(key);
-        if (i >= 0 && i < SPRITE_COUNT) this.flags[i] = (this.flagsMap.get(key) ?? 0) & 0xff;
+        if (i >= 0 && i < this._geometry.spriteCount)
+          this.flags[i] = (this.flagsMap.get(key) ?? 0) & 0xff;
       });
       this.flagListeners.forEach((l) => {
         l();
@@ -191,11 +205,12 @@ export class Game {
     });
     this.tilesMap.observe((e) => {
       const changes: TileChange[] = [];
+      const { mapWidth, mapHeight } = this._geometry;
       e.changes.keys.forEach((_c, key) => {
         const [x, y] = parseCoord(key);
-        if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT) return;
-        const sprite = (this.tilesMap.get(key) ?? 0) & 0xff;
-        this.tiles[y * MAP_WIDTH + x] = sprite;
+        if (x < 0 || x >= mapWidth || y < 0 || y >= mapHeight) return;
+        const sprite = (this.tilesMap.get(key) ?? 0) & 0xffff;
+        this.tiles[y * mapWidth + x] = sprite;
         changes.push({ x, y, sprite });
       });
       if (changes.length)
@@ -208,6 +223,85 @@ export class Game {
         l();
       });
     });
+  }
+
+  // ---- geometry -------------------------------------------------------------
+
+  /** How big this game's sheet and map are. Read it per use; a resize replaces it. */
+  get geometry(): Geometry {
+    return this._geometry;
+  }
+
+  onGeometryChange(fn: () => void): () => void {
+    this.geometryListeners.add(fn);
+    return () => this.geometryListeners.delete(fn);
+  }
+
+  /**
+   * Fills the mirrors from the document, dropping anything outside the current size.
+   *
+   * Dropping rather than refusing: a document written at a larger size and opened at a smaller one
+   * is not corrupt, it is a document this reader can only show part of -- and since nothing here
+   * writes back, the rest survives untouched in the document.
+   */
+  private hydrate(): void {
+    const { sheetWidth, sheetHeight, spriteCount, mapWidth, mapHeight } = this._geometry;
+    this.spritesMap.forEach((v, k) => {
+      const [x, y] = parseCoord(k);
+      if (x >= 0 && x < sheetWidth && y >= 0 && y < sheetHeight)
+        this.sheet[y * sheetWidth + x] = v & 0xf;
+    });
+    this.flagsMap.forEach((v, k) => {
+      const i = Number(k);
+      if (i >= 0 && i < spriteCount) this.flags[i] = v & 0xff;
+    });
+    this.tilesMap.forEach((v, k) => {
+      const [x, y] = parseCoord(k);
+      if (x >= 0 && x < mapWidth && y >= 0 && y < mapHeight)
+        this.tiles[y * mapWidth + x] = v & 0xffff;
+    });
+  }
+
+  /** Reshapes the mirrors around a size the document now states, and says so. */
+  private applyGeometry(): void {
+    const next = readGeometry(this.meta);
+    if (
+      next.sheetWidth === this._geometry.sheetWidth &&
+      next.sheetHeight === this._geometry.sheetHeight &&
+      next.mapWidth === this._geometry.mapWidth &&
+      next.mapHeight === this._geometry.mapHeight
+    )
+      return;
+
+    this._geometry = next;
+    this.sheet = new Uint8Array(next.sheetWidth * next.sheetHeight);
+    this.flags = new Uint8Array(next.spriteCount);
+    this.tiles = new Uint16Array(next.mapWidth * next.mapHeight);
+    this.hydrate();
+    this.geometryListeners.forEach((l) => {
+      l();
+    });
+  }
+
+  /**
+   * Records a new size. Pixels and tiles outside it stay in the document but stop being reachable,
+   * so growing back finds them again -- which is what makes a mis-click survivable.
+   */
+  resize(size: {
+    sheetWidth?: number;
+    sheetHeight?: number;
+    mapWidth?: number;
+    mapHeight?: number;
+  }): void {
+    this.doc.transact(() => {
+      const set = (key: string, value: number | undefined, clamp: (n: number) => number): void => {
+        if (value !== undefined) this.meta.set(key, clamp(value));
+      };
+      set(GEOMETRY_KEYS.sheetWidth, size.sheetWidth, clampSheetSize);
+      set(GEOMETRY_KEYS.sheetHeight, size.sheetHeight, clampSheetSize);
+      set(GEOMETRY_KEYS.mapWidth, size.mapWidth, clampMapSize);
+      set(GEOMETRY_KEYS.mapHeight, size.mapHeight, clampMapSize);
+    }, LOCAL_ORIGIN);
   }
 
   // ---- meta -----------------------------------------------------------------
@@ -284,12 +378,14 @@ export class Game {
   // ---- sprites --------------------------------------------------------------
 
   getPixel(x: number, y: number): number {
-    if (x < 0 || x >= SHEET_WIDTH || y < 0 || y >= SHEET_HEIGHT) return 0;
-    return this.sheet[y * SHEET_WIDTH + x] ?? 0;
+    const { sheetWidth, sheetHeight } = this._geometry;
+    if (x < 0 || x >= sheetWidth || y < 0 || y >= sheetHeight) return 0;
+    return this.sheet[y * sheetWidth + x] ?? 0;
   }
 
   setPixel(x: number, y: number, colour: number): void {
-    if (x < 0 || x >= SHEET_WIDTH || y < 0 || y >= SHEET_HEIGHT) return;
+    const { sheetWidth, sheetHeight } = this._geometry;
+    if (x < 0 || x >= sheetWidth || y < 0 || y >= sheetHeight) return;
     const key = coordKey(x, y);
     if (colour === 0) {
       if (this.spritesMap.has(key)) this.spritesMap.delete(key);
@@ -306,18 +402,27 @@ export class Game {
     return () => this.pixelListeners.delete(l);
   }
 
+  /**
+   * Where a sprite number starts on the sheet.
+   *
+   * The one authority on how a number becomes a position: the renderer and both editors used to
+   * each carry their own copy of this arithmetic, and a sheet whose width is no longer a constant
+   * makes four copies four chances to disagree.
+   */
   spriteOrigin(index: number): { x: number; y: number } {
+    const { spritesPerRow } = this._geometry;
     return {
-      x: (index % SPRITES_PER_ROW) * SPRITE_SIZE,
-      y: Math.floor(index / SPRITES_PER_ROW) * SPRITE_SIZE,
+      x: (index % spritesPerRow) * SPRITE_SIZE,
+      y: Math.floor(index / spritesPerRow) * SPRITE_SIZE,
     };
   }
 
   isSpriteEmpty(index: number): boolean {
     const { x: ox, y: oy } = this.spriteOrigin(index);
+    const { sheetWidth } = this._geometry;
     for (let y = 0; y < SPRITE_SIZE; y++)
       for (let x = 0; x < SPRITE_SIZE; x++)
-        if (this.sheet[(oy + y) * SHEET_WIDTH + ox + x] !== 0) return false;
+        if (this.sheet[(oy + y) * sheetWidth + ox + x] !== 0) return false;
     return true;
   }
 
@@ -332,7 +437,7 @@ export class Game {
   }
 
   setFlag(index: number, value: number): void {
-    if (index < 0 || index >= SPRITE_COUNT) return;
+    if (index < 0 || index >= this._geometry.spriteCount) return;
     const key = String(index);
     const v = value & 0xff;
     if (v === 0) {
@@ -348,16 +453,18 @@ export class Game {
   // ---- map ------------------------------------------------------------------
 
   getTile(x: number, y: number): number {
-    if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT) return 0;
-    return this.tiles[y * MAP_WIDTH + x] ?? 0;
+    const { mapWidth, mapHeight } = this._geometry;
+    if (x < 0 || x >= mapWidth || y < 0 || y >= mapHeight) return 0;
+    return this.tiles[y * mapWidth + x] ?? 0;
   }
 
   setTile(x: number, y: number, sprite: number): void {
-    if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT) return;
+    const { mapWidth, mapHeight } = this._geometry;
+    if (x < 0 || x >= mapWidth || y < 0 || y >= mapHeight) return;
     const key = coordKey(x, y);
     if (sprite === 0) {
       if (this.tilesMap.has(key)) this.tilesMap.delete(key);
-    } else this.tilesMap.set(key, sprite & 0xff);
+    } else this.tilesMap.set(key, sprite & 0xffff);
   }
 
   onTilesChange(l: (changes: TileChange[]) => void): Unsubscribe {

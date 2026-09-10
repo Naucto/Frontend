@@ -3,8 +3,9 @@ import * as Y from 'yjs';
 
 import { PICO8_PALETTE } from '../game/defaults';
 import { Game } from '../game/Game';
-import { LEGACY_KEYS } from '../game/keys';
-import { migrateGame, needsMigration } from './index';
+import { KEYS, LEGACY_KEYS } from '../game/keys';
+import { GAME_SCHEMA_VERSION } from '../game/keys';
+import { migrateGame, needsMigration, schemaVersionOf } from './index';
 import type { MigrationReport } from './types';
 import { computeCodeSplices } from './v0_to_v1/code';
 
@@ -110,5 +111,42 @@ describe('migrateGame v0 → v1', () => {
     const code = new Game(doc).files[0]?.text.toString();
     expect(code).toContain('gfx.clear(0');
     expect(code).toContain('gfx.draw_sprite(1, 2, 3)');
+  });
+});
+
+/**
+ * The gate every future schema step hangs off. It used to answer "no" the moment a version marker
+ * existed, whatever the number was -- so a second migration could never have run at all.
+ */
+describe('schemaVersionOf', () => {
+  it('reads the marker a document carries', () => {
+    const doc = new Y.Doc();
+    doc.getMap(KEYS.meta).set('schemaVersion', 1);
+
+    expect(schemaVersionOf(doc)).toBe(1);
+    expect(needsMigration(doc)).toBe(GAME_SCHEMA_VERSION > 1);
+  });
+
+  it('calls an unmarked document with first-schema content the first schema', () => {
+    const doc = v0Doc();
+
+    expect(schemaVersionOf(doc)).toBe(0);
+    expect(needsMigration(doc)).toBe(true);
+  });
+
+  /** Nobody has written it yet; it is about to be seeded at the current schema, not migrated. */
+  it('calls an empty document current', () => {
+    const doc = new Y.Doc();
+
+    expect(schemaVersionOf(doc)).toBe(GAME_SCHEMA_VERSION);
+    expect(needsMigration(doc)).toBe(false);
+    expect(migrateGame(doc).applied).toBe(false);
+  });
+
+  it('leaves a document behind the current schema needing to be brought forward', () => {
+    const doc = new Y.Doc();
+    doc.getMap(KEYS.meta).set('schemaVersion', GAME_SCHEMA_VERSION - 1);
+
+    expect(needsMigration(doc)).toBe(true);
   });
 });

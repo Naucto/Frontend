@@ -113,6 +113,9 @@ export interface SysPort {
 }
 
 export interface GameData {
+  /** The map's size, which a game may ask for and which is no longer the same for every game. */
+  mapWidth(): number;
+  mapHeight(): number;
   getFlag(index: number): number;
   getFlagBit(index: number, bit: number): boolean;
   getTile(x: number, y: number): number;

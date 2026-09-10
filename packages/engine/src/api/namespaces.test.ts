@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { DEFAULT_GEOMETRY } from '../game/geometry';
 import { RecordingBackend } from '../gfx/RecordingBackend';
 import type { DeclaredAction } from '../input/ActionMap';
 import { InputState } from '../input/InputState';
@@ -31,6 +32,8 @@ function setup(): {
     gfx,
     input,
     data: {
+      mapWidth: () => DEFAULT_GEOMETRY.mapWidth,
+      mapHeight: () => DEFAULT_GEOMETRY.mapHeight,
       getFlag: (i) => (i === 3 ? 0b101 : 0),
       getFlagBit: (i, b) => i === 3 && (b === 0 || b === 2),
       getTile: (x, y) => tiles.get(`${String(x)},${String(y)}`) ?? 0,
