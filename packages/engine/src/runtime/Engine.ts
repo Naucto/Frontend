@@ -24,6 +24,23 @@ import type { EngineError, EnginePhase } from './EngineError';
 
 export type EngineState = 'idle' | 'running' | 'paused' | 'halted';
 
+/**
+ * Takes the module system out of the globals a game can see, keeping a private handle on the two
+ * pieces the loader needs.
+ *
+ * A tab is not a module: the strip's order is the evaluation order, and `require` says the opposite
+ * — that a file runs when somebody asks for it and never again. The loader still runs on it, which
+ * is why the handles are kept; what a game reaches for now answers with a sentence instead of a
+ * module.
+ */
+const HIDE_MODULE_SYSTEM = `
+__naucto_preload, __naucto_require = package.preload, require
+package, dofile, loadfile = nil, nil, nil
+require = function()
+  error('require is not available: files run in the order of their tabs', 2)
+end
+`;
+
 export interface EngineOptions {
   game: Game;
   gfx: GfxBackend;
@@ -173,19 +190,24 @@ export class Engine {
       // tab it came from and count lines from that tab's first line.
       const files = this.opts.game.sources();
       lua.knowChunks(files.map((f) => f.name));
+      lua.evaluate(HIDE_MODULE_SYSTEM, 'loader.lua');
       for (const file of files) {
         lua.setGlobalWith('__naucto_src', file.source);
         lua.evaluate(
           `local src = __naucto_src\n` +
-            `package.preload[${JSON.stringify(file.name)}] = function(...)\n` +
+            `__naucto_preload[${JSON.stringify(file.name)}] = function(...)\n` +
             `  return load(src, ${JSON.stringify(`=${file.name}`)})(...)\n` +
             `end`,
           'loader.lua',
         );
       }
       for (const file of files) {
-        lua.evaluate(`require(${JSON.stringify(file.name)})`, 'loader.lua');
+        lua.evaluate(`__naucto_require(${JSON.stringify(file.name)})`, 'loader.lua');
       }
+      lua.evaluate(
+        '__naucto_preload, __naucto_require, __naucto_src = nil, nil, nil',
+        'loader.lua',
+      );
     } catch (e) {
       return this.fail('load', e);
     }
