@@ -1,7 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { type Pattern, type Song, SONG_SLOTS } from '@naucto/engine';
-import { HelpDotComponent, NumberFieldComponent, TransportComponent } from '@naucto/ui';
+import {
+  HelpDotComponent,
+  NumberFieldComponent,
+  type NumberFieldTone,
+  TransportComponent,
+} from '@naucto/ui';
 
 const COLUMNS = 4;
 
@@ -15,9 +20,9 @@ const ROWS = 5;
 
 interface Cell {
   index: number;
-  /** What the box shows: a pattern number, `--` where the pattern it named is gone, or nothing. */
-  text: string;
-  state: 'empty' | 'gap' | 'set' | 'playing';
+  /** The pattern's number, or nothing where the place is empty. */
+  slot: number | null;
+  tone: NumberFieldTone;
 }
 
 /**
@@ -34,9 +39,22 @@ interface Cell {
   selector: 'nc-song-list',
   imports: [TranslocoDirective, HelpDotComponent, NumberFieldComponent, TransportComponent],
   template: `
-    <div *transloco="let t" class="border-t border-line px-1.5 py-1.25">
-      <div class="mb-1 flex items-center gap-1">
-        <span class="label text-ink-3">{{ t('editor.sound.music') }}</span>
+    <div *transloco="let t" class="border-t border-line p-1.5">
+      <!-- A head of the same fixed height as the bank of sound effects above it: both hold five
+           rows of boxes, so the only thing that could make the two sections differ is this row,
+           and left to its contents it does. -->
+      <div class="mb-1 flex h-(--nc-control-h) items-center gap-1">
+        <span class="label shrink-0 text-ink-3">{{ t('editor.sound.music') }}</span>
+        <!-- Beside its own name rather than at the far end of the row: pushed there it was the one
+             thing with nowhere to go when the row ran out of width. -->
+        <nc-number-field
+          class="shrink-0"
+          [label]="t('editor.sound.musicSlot')"
+          [value]="slot()"
+          [max]="MAX_SLOT"
+          size="sm"
+          (requested)="slotChange.emit($event)"
+        />
         <!-- The music has a transport of its own: playing a chain and auditioning the pattern in
              front of you are two things to listen to, and one button cannot be both. At the drawn
              density, because this is a section head and not the tab's own bar. -->
@@ -55,32 +73,25 @@ interface Cell {
           (stopped)="stopped.emit()"
         />
         <span class="flex-1"></span>
-        <nc-number-field
-          [label]="t('editor.sound.musicSlot')"
-          [value]="slot()"
-          [max]="MAX_SLOT"
-          size="sm"
-          (requested)="slotChange.emit($event)"
-        />
         <nc-help-dot [text]="t('editor.sound.musicHelp')" />
       </div>
 
       <div class="overflow-y-auto" [style.height]="height" [style.scrollbar-gutter]="'stable'">
         <div class="grid gap-0.5" [style.grid-template-columns]="columnTrack" role="group">
           @for (c of cells(); track c.index) {
-            <input
-              type="text"
-              inputmode="numeric"
-              maxlength="2"
+            <nc-number-field
+              class="h-(--nc-control-h-xs) w-full"
+              size="sm"
+              fill
+              clearable
+              [pad]="2"
               placeholder="--"
-              class="h-(--nc-control-h-xs) w-full rounded-xs border text-center font-mono text-label outline-none placeholder:text-ink-4"
-              [class]="cellClass(c)"
-              [value]="c.text"
-              [attr.aria-label]="rowLabel(c.index)"
-              (keydown.enter)="commit($event, c.index)"
-              (keydown.arrowUp)="step($event, c, 1)"
-              (keydown.arrowDown)="step($event, c, -1)"
-              (blur)="commit($event, c.index)"
+              [ariaLabel]="rowLabel(c.index)"
+              [value]="c.slot"
+              [max]="maxSlot()"
+              [tone]="c.tone"
+              (requested)="assign.emit({ index: c.index, slot: $event })"
+              (cleared)="assign.emit({ index: c.index, slot: null })"
             />
           }
         </div>
@@ -129,57 +140,18 @@ export class SongListComponent {
       const pattern = id ? patterns.get(id) : undefined;
       // A place whose pattern is gone keeps its place rather than closing up: every place after it
       // would otherwise shift, and where a pattern sits in the chain is what the reader is reading.
-      const text = !id ? '' : pattern ? pad(pattern.slot) : '--';
-      const state = index === playingAt ? 'playing' : id ? 'set' : index < last ? 'gap' : 'empty';
-      return { index, text, state };
+      // A place whose pattern has been deleted is as wrong as an empty one with music after it,
+      // and reads the same way: a box with nothing in it where something was meant to play.
+      const missing = id !== null && pattern === undefined;
+      // Orange for both of those — a mistake, not a rest, and the music stops before it. Pink for
+      // the place that is sounding.
+      const tone: NumberFieldTone =
+        index === playingAt ? 'accent' : missing || (!id && index < last) ? 'warn' : 'default';
+      return { index, slot: pattern?.slot ?? null, tone };
     });
   });
 
   protected rowLabel(index: number): string {
-    return pad(index);
+    return String(index).padStart(2, '0');
   }
-
-  protected cellClass(c: Cell): string {
-    if (c.state === 'playing') return 'border-hot bg-hot text-on-accent';
-    if (c.state === 'set') return 'border-line-strong bg-raised text-ink-body';
-    // Orange, because it is a mistake and not a rest: the music stops before it.
-    if (c.state === 'gap') return 'border-orange bg-inset text-orange-ink';
-    return 'border-line bg-inset text-ink-body focus:border-line-strong';
-  }
-
-  /** What was typed, read as a pattern number. Nothing typed empties the place. */
-  protected commit(event: Event, index: number): void {
-    const box = event.target as HTMLInputElement;
-    const typed = box.value.replace(/[^\d]/g, '');
-    if (typed === '') {
-      this.assign.emit({ index, slot: null });
-      return;
-    }
-    this.assign.emit({ index, slot: Math.min(this.maxSlot(), Number(typed)) });
-  }
-
-  /**
-   * The arrows walk the numbers, which is how you find the pattern you meant without leaving the
-   * box. An empty place starts at zero going up and stays empty going down.
-   */
-  protected step(event: Event, cell: Cell, direction: number): void {
-    event.preventDefault();
-    const current = this.slotOf(cell.index);
-    if (current === null) {
-      if (direction > 0) this.assign.emit({ index: cell.index, slot: 0 });
-      return;
-    }
-    const next = current + direction;
-    this.assign.emit({ index: cell.index, slot: next < 0 ? null : Math.min(this.maxSlot(), next) });
-  }
-
-  private slotOf(index: number): number | null {
-    const id = this.song()?.sequence[index] ?? null;
-    const pattern = id ? this.patterns().get(id) : undefined;
-    return pattern?.slot ?? null;
-  }
-}
-
-function pad(n: number): string {
-  return String(n).padStart(2, '0');
 }

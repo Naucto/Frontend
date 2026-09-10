@@ -104,7 +104,10 @@ const COLUMNS = 4;
       <!-- Never squeezed: the bank stands five rows tall, and it is the list of instruments above
            it that gives up the room on a short screen. -->
       <div class="shrink-0 border-t border-line p-1.5">
-        <div class="mb-1 flex items-center gap-1">
+        <!-- The same fixed head as the music below it: both sections hold five rows of boxes, so
+             this row is the only thing that could make the two differ, and left to its contents it
+             does. -->
+        <div class="mb-1 flex h-(--nc-control-h) items-center gap-1">
           <span class="label text-ink-3">{{ t('editor.sound.sfxSlots') }}</span>
           <span class="flex-1"></span>
           <nc-help-dot [text]="t('editor.sound.sfxHelp')" />

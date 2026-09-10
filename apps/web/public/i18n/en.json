@@ -554,7 +554,7 @@
       "shortenMessage": "{{n}} note(s) past the new end will go. This cannot be undone.",
       "shorten": "Shorten",
       "music": "Music",
-      "musicSlot": "No",
+      "musicSlot": "#",
       "musicHelp": "A music is a grid of pattern numbers, played left to right and top to bottom. Each pattern keeps its own tempo and its own length, so a chain can change speed halfway. An empty box with music after it is a hole, drawn in orange, and playing stops before it. The game reaches a music by its number: sound.play_music(0)."
     },
     "net": {
