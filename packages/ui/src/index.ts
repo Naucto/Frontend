@@ -40,6 +40,7 @@ export * from './components/setting-row.component';
 export * from './components/share-code.component';
 export * from './components/skeleton.component';
 export * from './components/slider.component';
+export * from './components/slot-grid.component';
 export * from './components/stat.component';
 export * from './components/stepper.component';
 export * from './components/suggest-panel.component';

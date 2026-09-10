@@ -144,7 +144,15 @@ export class Sequencer {
     if (!song) return;
     let left = frames;
     while (left > 0 && this.playing) {
-      const pattern = this.patterns.get(song.sequence[this.seqIndex] ?? '');
+      const entry = song.sequence[this.seqIndex] ?? null;
+      // An empty place ends the music where it stands. A pattern that has since been deleted does
+      // not: the place was filled, so the chain carries on to the next one.
+      if (entry === null) {
+        this.playing = false;
+        this.song = null;
+        return;
+      }
+      const pattern = this.patterns.get(entry);
       if (!pattern) {
         if (!this.nextPattern(song)) return;
         continue;

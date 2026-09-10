@@ -71,8 +71,14 @@ export interface Pattern {
 
 export interface Song {
   name: string;
-  /** Pattern ids played in order. */
-  sequence: string[];
+  /**
+   * Pattern ids played in order, with `null` for a place nothing has been put in.
+   *
+   * A place may be empty because a music is written by filling a grid, not by pushing onto a list —
+   * and an empty place is where the music ends, never a rest. A pattern carries its own length and
+   * an empty place has none, so there is no answer to how long a silence there would last.
+   */
+  sequence: (string | null)[];
   loop: boolean;
   loopStart: number;
 }
@@ -87,7 +93,6 @@ export interface Song {
 export const SUBSTEPS = 8;
 
 export const VOICES = 5;
-export const SFX_SLOTS = 16;
 export const SONG_SLOTS = 16;
 export const MAX_SAMPLE_BYTES = 8 * 1024;
 

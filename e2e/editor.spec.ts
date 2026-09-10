@@ -920,15 +920,23 @@ test.describe('editor', () => {
     const box = await roll.boundingBox();
     expect(box).not.toBeNull();
     if (box) {
+      // Halfway down the roll: the ruler rides at the top of the view and a press there moves the
+      // playhead instead of writing a note, so a y measured from the top of the element -- which
+      // is what this used to do -- painted nothing and said nothing about it.
       const x = box.x + 56 + 30;
-      const y = box.y + 24 + 23 * 12 + 6;
+      const y = box.y + box.height / 2;
       await page.mouse.move(x, y);
       await page.mouse.down();
       await page.mouse.move(x + 60, y, { steps: 4 });
       await page.mouse.up();
     }
-    await page.getByRole('button', { name: 'SFX slot 0' }).click();
-    await expect(page.getByText('1 / 16')).toBeVisible();
+    await expect(page.getByText('Not used yet — paint some notes.')).toHaveCount(0);
+
+    // The bank no longer counts what it holds -- there is no last slot to count against -- so the
+    // slot itself says it took the pattern.
+    const slot = page.getByRole('button', { name: 'SFX slot 0' });
+    await slot.click();
+    await expect(slot).toHaveAttribute('aria-pressed', 'true');
     await page.screenshot({ path: 'test-results/v-editor-sound.png' });
   });
 });

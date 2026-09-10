@@ -156,6 +156,47 @@ describe('Sequencer', () => {
     expect(seq.position()).toBeNull();
   });
 
+  /**
+   * A hole is an error, not a rest. Nothing could say how long the silence lasts — a pattern
+   * carries its own length and an empty place has none — so the music ends where the hole is.
+   */
+  it('stops a music at the first empty place, and plays past a pattern that is gone', () => {
+    const build = (sequence: (string | null)[]): { synth: SynthCore; seq: Sequencer } => {
+      const synth = new SynthCore(SR);
+      const seq = new Sequencer(synth, SR);
+      const ins = defaultInstrument('i');
+      const first = defaultPattern('p0');
+      const third = defaultPattern('p2');
+      for (const p of [first, third]) {
+        p.bpm = 120;
+        p.stepsPerBeat = 4;
+        p.steps = 1;
+        p.notes = [{ step: 0, pitch: 60, length: 1, instrument: 'i', volume: 1 }];
+      }
+      third.notes = [{ step: 0, pitch: 72, length: 1, instrument: 'i', volume: 1 }];
+      seq.setLibrary(
+        new Map([['i', ins]]),
+        new Map([
+          ['p0', first],
+          ['p2', third],
+        ]),
+      );
+      seq.playSong({ name: 's', sequence, loop: false, loopStart: 0 }, false, 0);
+      return { synth, seq };
+    };
+    const stepSamples = Math.round((60 / 120 / 4) * SR);
+
+    const hole = build(['p0', null, 'p2']);
+    hole.seq.advance(stepSamples * 2);
+    expect(hole.seq.position()).toBeNull();
+    expect(hole.synth.voices.some((v) => v.active && v.pitch === 72)).toBe(false);
+
+    // The place was filled; only the pattern it named has since been deleted.
+    const orphan = build(['p0', 'gone', 'p2']);
+    orphan.seq.advance(stepSamples * 2);
+    expect(orphan.synth.voices.some((v) => v.active && v.pitch === 72)).toBe(true);
+  });
+
   const chord = (): {
     synth: SynthCore;
     seq: Sequencer;

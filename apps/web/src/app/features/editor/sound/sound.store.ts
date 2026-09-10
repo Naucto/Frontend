@@ -23,7 +23,14 @@ export const MAX_ZOOM = 4;
 
 interface SoundState {
   instrumentId: string | null;
-  patternId: string | null;
+  /**
+   * Which pattern number the roll is showing.
+   *
+   * A number rather than an id, because every number is a pattern: most of them hold nothing, and
+   * a pattern that holds nothing is one nobody is using. There is nothing to create and nothing to
+   * pick from — you go to a number the way you go to a page.
+   */
+  patternSlot: number;
   /** Which music the order list is showing. */
   songSlot: number;
   /** Note value the grid snaps to, as its denominator; 0 is free placement. */
@@ -39,7 +46,7 @@ interface SoundState {
 export const SoundStore = signalStore(
   withState<SoundState>({
     instrumentId: null,
-    patternId: null,
+    patternSlot: 0,
     songSlot: 0,
     snap: 16,
     zoom: 1,
@@ -57,8 +64,8 @@ export const SoundStore = signalStore(
     selectSong(slot: number): void {
       patchState(store, { songSlot: slot });
     },
-    selectPattern(id: string | null): void {
-      patchState(store, { patternId: id });
+    selectPattern(slot: number): void {
+      patchState(store, { patternSlot: Math.max(0, Math.round(slot)) });
     },
     setSnap(snap: SnapDivision): void {
       patchState(store, { snap });

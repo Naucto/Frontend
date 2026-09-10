@@ -8,7 +8,6 @@ import {
   LOCAL_ORIGIN,
   type Note,
   type Pattern,
-  SFX_SLOTS,
   type Song,
   SONG_SLOTS,
 } from '@naucto/engine';
@@ -127,16 +126,28 @@ export class SoundLibrary {
 
   // ---- patterns -------------------------------------------------------------
 
-  /** The lowest number nothing is using, so a deleted pattern's number comes back into service. */
+  /**
+   * The lowest number nothing is using, so a deleted pattern's number comes back into service.
+   *
+   * Read off the document rather than off the signal beside it: the signal is refreshed by an
+   * observer, so between a peer's change arriving and that observer running it is a picture of a
+   * moment that has passed — and the number handed out here would collide with theirs.
+   */
   private freeSlot(): number {
-    const taken = new Set([...this.patterns().values()].map((p) => p.slot));
+    const taken = new Set([...this.game.getPatterns().values()].map((p) => p.slot));
     let n = 0;
     while (taken.has(n)) n += 1;
     return n;
   }
 
-  addPattern(): Pattern {
-    const slot = this.freeSlot();
+  /**
+   * A new pattern, at the number asked for or at the lowest free one.
+   *
+   * Two clients may still land on the same number — nothing in a CRDT stops them, since neither
+   * has seen the other's write yet. Both patterns survive, because a pattern is keyed by its id;
+   * it is {@link reconcilePatternSlots} that pulls the numbers apart afterwards.
+   */
+  addPattern(slot = this.freeSlot()): Pattern {
     const p = defaultPattern(uid(), slot, `pattern ${String(slot).padStart(2, '0')}`);
     this.game.transact(() => {
       this.game.setPattern(p);
@@ -145,24 +156,36 @@ export class SoundLibrary {
   }
 
   /**
-   * Gives a number to any pattern that has none, in the order the map hands them over.
+   * Gives every pattern a number of its own: one to those that have none, a new one to the second
+   * of two that ended up sharing.
    *
-   * Arbitrary, and stable from then on, which is all a number has to be. One transaction, so a
-   * collaborator sees the numbering as a single change rather than one per pattern.
+   * The one that keeps the number is the one whose id sorts first — arbitrary, but the same
+   * arbitrary answer on every client, which is what stops two of them from repairing the same
+   * clash in opposite directions. One transaction, so a collaborator sees a single change.
    */
-  numberExistingPatterns(): void {
-    const missing = [...this.patterns().values()].filter((p) => typeof p.slot !== 'number');
-    if (missing.length === 0) return;
-    const taken = new Set(
-      [...this.patterns().values()].map((p) => p.slot).filter((n) => typeof n === 'number'),
-    );
+  reconcilePatternSlots(): void {
+    const all = [...this.game.getPatterns().values()].sort((a, b) => (a.id < b.id ? -1 : 1));
+    const taken = new Set<number>();
+    const wrong: Pattern[] = [];
+    for (const p of all) {
+      if (typeof p.slot === 'number' && !taken.has(p.slot)) taken.add(p.slot);
+      else wrong.push(p);
+    }
+    if (wrong.length === 0) return;
     this.game.transact(() => {
       let next = 0;
-      for (const p of missing) {
+      for (const p of wrong) {
         while (taken.has(next)) next += 1;
         taken.add(next);
         this.game.setPattern({ ...p, slot: next });
       }
+    });
+  }
+
+  /** Writes a pattern whole, whether or not the document already holds one under that id. */
+  putPattern(p: Pattern): void {
+    this.game.transact(() => {
+      this.game.setPattern(p);
     });
   }
 
@@ -196,7 +219,7 @@ export class SoundLibrary {
   }
 
   assignSfx(slot: number, patternId: string | null): void {
-    if (slot < 0 || slot >= SFX_SLOTS) return;
+    if (slot < 0) return;
     this.game.transact(() => {
       if (patternId) this.game.sfx.set(String(slot), patternId);
       else this.game.sfx.delete(String(slot));
@@ -209,7 +232,7 @@ export class SoundLibrary {
    * A music is a chain of patterns. Each link keeps its own tempo and its own length, so a chain
    * can change speed halfway.
    */
-  setSongSequence(slot: number, sequence: string[]): void {
+  setSongSequence(slot: number, sequence: (string | null)[]): void {
     if (slot < 0 || slot >= SONG_SLOTS) return;
     const current = this.songs().get(String(slot)) ?? defaultSong();
     this.game.transact(() => {
