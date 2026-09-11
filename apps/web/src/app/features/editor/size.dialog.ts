@@ -14,12 +14,23 @@ export interface SizeDialogData {
   max: number;
   step: number;
   /**
-   * What this size would cost, one line each, or nothing where it costs nothing.
-   *
-   * The caller's own words: a sheet renumbers every sprite and rewrites the code, a map only drops
-   * what falls outside, and neither of those is something a size dialog should know.
+   * What this size would cost, in the caller's own words: a sheet renumbers every sprite and
+   * rewrites the code, a map only drops what falls outside, and neither of those is something a
+   * size dialog should know.
    */
-  consequences: (width: number, height: number) => string[];
+  consequences: (width: number, height: number) => SizeCost;
+}
+
+export interface SizeCost {
+  /** What the change moves, one line each, or nothing where it moves nothing. */
+  lines: string[];
+  /**
+   * What the change loses, in one line, or nothing where it loses nothing.
+   *
+   * Apart from the rest because it is the only one that is not reversible, and among the others
+   * it read as a fourth count.
+   */
+  loss: string | null;
 }
 
 export interface SizeDialogResult {
@@ -61,12 +72,17 @@ export interface SizeDialogResult {
 
       <p class="mt-1.5 text-meta text-ink-3">{{ data.note }}</p>
 
-      @if (lines().length) {
+      @if (cost().lines.length) {
         <ul class="mt-1.5 grid gap-0.5">
-          @for (line of lines(); track line) {
+          @for (line of cost().lines; track line) {
             <li class="text-meta text-orange-ink">{{ line }}</li>
           }
         </ul>
+      }
+      <!-- Last thing above the buttons, and on one line: it is what is read just before the one
+           that goes through with it. The whole sentence is on the element, for a pointer. -->
+      @if (cost().loss; as loss) {
+        <p class="mt-1.5 truncate text-meta text-hot-ink" [title]="loss">{{ loss }}</p>
       }
 
       <ng-container footer>
@@ -91,8 +107,10 @@ export class SizeDialog {
   protected readonly changed = computed(
     () => this.width() !== this.data.width || this.height() !== this.data.height,
   );
-  protected readonly lines = computed(() =>
-    this.changed() ? this.data.consequences(this.width(), this.height()) : [],
+  protected readonly cost = computed<SizeCost>(() =>
+    this.changed()
+      ? this.data.consequences(this.width(), this.height())
+      : { lines: [], loss: null },
   );
 
   protected submit(): void {

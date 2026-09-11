@@ -74,14 +74,19 @@ import { localSignatures } from './signature-help';
           >
             <nc-icon name="plus" [size]="24" />
           </button>
+          <!-- A glyph, beside the plus: it was the one control in this strip still spelled out,
+               which read as a label rather than as the pair of buttons it belongs to. The word
+               stays as its accessible name. -->
           <button
             ncButton
             variant="ghost"
             size="sm"
+            iconOnly
             [attr.aria-expanded]="searching()"
+            [attr.aria-label]="t('editor.code.find')"
             (click)="find()"
           >
-            {{ t('editor.code.find') }}
+            <nc-icon name="search" [size]="24" />
           </button>
         </span>
       </nc-tabs>

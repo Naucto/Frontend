@@ -1,6 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { unwrap } from '@app/core/api/api-errors';
 import { AuthStore } from '@app/core/auth/auth.store';
 import { qk } from '@app/shared/queries/query-keys';
@@ -32,6 +33,7 @@ const MAX_LEN = 500;
   imports: [
     NgTemplateOutlet,
     FormsModule,
+    RouterLink,
     TranslocoDirective,
     AvatarComponent,
     ButtonDirective,
@@ -118,14 +120,24 @@ const MAX_LEN = 500;
                jade for the game's author and sky for everybody else spent two of the three
                reserved presence colours on a role, and painted every other commenter the same
                shade — five different people arrived wearing one chip. -->
-          <nc-user-avatar
-            [name]="c.author.username"
-            [userId]="c.author.id"
-            [size]="depth ? 22 : 28"
-          />
+          <!-- The picture and the name both lead to the person, as the game's own byline just
+               above this list does. Whoever wrote a comment is somebody you might want to read
+               the rest of. -->
+          <a [routerLink]="['/u', c.author.username]" class="shrink-0">
+            <nc-user-avatar
+              [name]="c.author.username"
+              [userId]="c.author.id"
+              [size]="depth ? 22 : 28"
+            />
+          </a>
           <div class="min-w-0 flex-1">
             <div class="flex items-center gap-1">
-              <span class="text-ui text-ink">{{ c.author.nickname || c.author.username }}</span>
+              <a
+                [routerLink]="['/u', c.author.username]"
+                class="truncate text-ui text-ink hover:text-gold-ink"
+              >
+                {{ c.author.nickname || c.author.username }}
+              </a>
               @if (c.author.id === authorId()) {
                 <nc-chip tone="gold">{{ t('comments.author') }}</nc-chip>
               }

@@ -1107,9 +1107,29 @@ test.describe('editor', () => {
     await expect(dialog).toHaveCount(0);
 
     await page.getByRole('button', { name: 'Sheet size' }).click();
-    await expect(page.getByRole('dialog').getByRole('textbox', { name: 'Width' })).toHaveValue(
-      '192',
-    );
+    const again = page.getByRole('dialog');
+    await expect(again.getByRole('textbox', { name: 'Width' })).toHaveValue('192');
+
+    // What is lost is said apart from what merely moves: last of the lines, right above the
+    // buttons, and on one line rather than the three the sentence takes.
+    await again.getByRole('textbox', { name: 'Width' }).fill('64');
+    await again.getByRole('textbox', { name: 'Width' }).press('Enter');
+    // Narrower re-flows the grid, shorter drops the row the lower half of the moon is drawn on:
+    // one change that moves things and one that loses them, which is the pair being told apart.
+    await again.getByRole('textbox', { name: 'Height' }).fill('8');
+    await again.getByRole('textbox', { name: 'Height' }).press('Enter');
+    const loss = again.getByText(/fall outside a sheet that size/);
+    const moved = again.getByText(/calls in your code/);
+    await expect(loss).toBeVisible();
+    const lossBox = await loss.boundingBox();
+    const movedBox = await moved.boundingBox();
+    const buttons = await again.getByRole('button', { name: 'Renumber' }).boundingBox();
+    expect(lossBox && movedBox && buttons).toBeTruthy();
+    if (!lossBox || !movedBox || !buttons) return;
+    expect(lossBox.y).toBeGreaterThan(movedBox.y);
+    expect(lossBox.y + lossBox.height).toBeLessThanOrEqual(buttons.y);
+    // One line: the sentence is longer than the box, and the box does not grow to hold it.
+    expect(lossBox.height).toBeLessThan(24);
   });
 
   /**
@@ -1265,4 +1285,40 @@ test('a pause in the typing is what saves the game', async ({ page }) => {
   // could not have fired in the time this waits.
   await expect(page.getByText('last saved')).toBeVisible({ timeout: 15000 });
   expect(saves).toBe(opened + 1);
+});
+
+/**
+ * Both banners say what they are the name of, and half of them are a bare number — a sheet and a
+ * map are both born nameless. The rename is in the same test because the banner used not to
+ * notice one until the tab was changed and back.
+ */
+test('each editor names what it is on, and follows a rename', async ({ page }) => {
+  await mockEditor(page);
+  await page.goto('/edit/7/map');
+  await expect(page.getByText('map #1')).toBeVisible();
+
+  await page.locator('nc-rail').getByRole('button', { name: 'Art' }).click();
+  await expect(page.getByRole('img', { name: 'Sprite canvas' })).toBeVisible();
+  await expect(page.getByText('tileset #1')).toBeVisible();
+
+  await page.getByRole('tablist', { name: 'Sheets' }).getByRole('tab').first().dblclick();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('textbox', { name: 'Name' }).fill('clouds');
+  await dialog.getByRole('button', { name: 'Save' }).click();
+
+  // Without leaving the tab: the banner used to read the sheet list without reading anything that
+  // said it had changed, so it stayed on the old name until something else rebuilt it.
+  await expect(page.getByText('tileset clouds')).toBeVisible();
+});
+
+/** The one control in the CODE strip still spelled out, beside a plus that was already a glyph. */
+test('FIND is a magnifier beside the plus', async ({ page }) => {
+  await mockEditor(page);
+  await page.goto('/edit/7/code');
+  await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+
+  const find = page.getByRole('button', { name: 'Find' });
+  await expect(find).toBeVisible();
+  await expect(find).toHaveText('');
+  await expect(find.locator('nc-icon')).toBeVisible();
 });

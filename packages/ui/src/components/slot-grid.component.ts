@@ -24,6 +24,14 @@ export function slotRange(taken: Iterable<number>, columns: number): number[] {
 }
 
 /**
+ * Room under the last row, past the gaps between them.
+ *
+ * Measured to the pixel, the bank ends flush with its own scrolling edge, and the last row reads
+ * as cut off rather than as the last one.
+ */
+const TAIL = 4;
+
+/**
  * A bank of numbered slots, as a tracker draws one: patterns, sound effects.
  *
  * The number is the whole of what a cell says. What lives at that number is named nowhere, because
@@ -71,7 +79,7 @@ export class SlotGridComponent {
 
   protected readonly height = computed(
     () =>
-      `calc(${String(this.rows())} * var(--nc-control-h-xs) + ${String((this.rows() - 1) * 2)}px)`,
+      `calc(${String(this.rows())} * var(--nc-control-h-xs) + ${String((this.rows() - 1) * 2 + TAIL)}px)`,
   );
 
   protected pad(n: number): string {

@@ -365,8 +365,10 @@ export class MapTabPage {
     // Written out rather than left to `||`: an unnamed map holds the empty string, which nullish
     // coalescing would hand back as a name.
     const name = found?.name ?? '';
+    const called = name === '' ? `#${String((at === -1 ? 0 : at) + 1)}` : name;
 
-    return name === '' ? `#${String((at === -1 ? 0 : at) + 1)}` : name;
+    // The word in front, for the reason ART's carries one: a bare `#1` names nothing.
+    return this.i18n.translate('editor.map.mapTitle', { name: called });
   });
 
   /** Every sheet, as the picker offers them. Numbered and coloured like the strip in ART. */
@@ -528,7 +530,10 @@ export class MapTabPage {
           consequences: (w, h) => {
             const lost = this.tilesOutside(w, h);
 
-            return lost > 0 ? [this.i18n.translate('editor.map.shrinkMessage', { n: lost })] : [];
+            return {
+              lines: [],
+              loss: lost > 0 ? this.i18n.translate('editor.map.shrinkMessage', { n: lost }) : null,
+            };
           },
         },
       })

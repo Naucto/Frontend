@@ -18,6 +18,9 @@ const COLUMNS = 4;
  */
 const ROWS = 5;
 
+/** Room under the last row, for the reason the bank of sound effects keeps the same. */
+const TAIL = 4;
+
 interface Cell {
   index: number;
   /** The pattern's number, or nothing where the place is empty. */
@@ -123,7 +126,7 @@ export class SongListComponent {
   protected readonly MAX_SLOT = SONG_SLOTS - 1;
   protected readonly columnTrack = `repeat(${String(COLUMNS)}, minmax(0, 1fr))`;
   protected readonly height = `calc(${String(ROWS)} * var(--nc-control-h-xs) + ${String(
-    (ROWS - 1) * 2,
+    (ROWS - 1) * 2 + TAIL,
   )}px)`;
 
   /** The chain, padded out to whole rows with a free row past the last thing in it. */
