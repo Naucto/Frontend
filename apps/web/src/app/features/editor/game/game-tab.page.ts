@@ -433,7 +433,17 @@ export class GameTabPage implements OnInit {
     unwrap(
       await projectControllerUpdate({
         path: { id: this.session.id },
-        body: { name: this.name() || p.name, shortDesc: this.summary() || p.shortDesc, ...body },
+        // The three texts go along with whatever changed, out of the editor's own copy rather than
+        // the server's: the route asks for a whole project, and the words on this page are ahead of
+        // the ones the server holds until the next save.
+        body: {
+          name: this.name() || p.name,
+          shortDesc: this.summary() || p.shortDesc,
+          // Cast as the session's own save does: the generated client types this one as an object,
+          // because the API describes it without saying it is a string.
+          longDesc: (this.description() || p.longDesc) as unknown as Record<string, unknown>,
+          ...body,
+        },
       }),
     );
     await this.session.refreshProject();
