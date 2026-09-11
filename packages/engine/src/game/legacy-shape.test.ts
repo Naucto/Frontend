@@ -81,10 +81,11 @@ describe('a document written before sheets were a collection', () => {
 });
 
 /**
- * Reading such a document is one thing; editing it is the other, and it is the half that was never
- * pinned. Its cells are the document's own roots, and what keeps a stroke on them reaching the
- * screen is the observer every sheet's cells are watched by — so a change there is a change to
- * every game written before collections, which is all of them.
+ * The same document, written to rather than read.
+ *
+ * Its pixels, flags and tiles are the document's own root maps rather than anything a sheet holds,
+ * and every game written before collections is in that shape — so these are the paths the existing
+ * games draw through, and an edit that never reached a listener would be one nobody saw happen.
  */
 describe('a document written before sheets were a collection, once it is edited', () => {
   function withFlags(): Y.Doc {
