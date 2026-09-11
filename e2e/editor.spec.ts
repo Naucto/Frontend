@@ -1174,3 +1174,30 @@ test('a tab is named and coloured in a dialog, and the last one cannot be remove
   // The entry is among them: what a project keeps is a tab, not that one.
   await expect(closers).toHaveCount(2);
 });
+
+test('an autosave is deleted from the versions panel', async ({ page }) => {
+  await mockEditor(page);
+  // Two of them, because the newest row is the one the game currently is and offers nothing to do
+  // to itself. The mock above answers with an empty list, so this route goes on top of it.
+  let saves = [
+    { name: 'save-2', date: '2026-09-11T09:00:00.000Z' },
+    { name: 'save-1', date: '2026-09-11T08:00:00.000Z' },
+  ];
+  await page.route('**/projects/7/versions', (r) => r.fulfill({ json: { versions: saves } }));
+  const deletes: string[] = [];
+  await page.route('**/projects/7/versions/*', (r) => {
+    const name = new URL(r.request().url()).pathname.split('/').pop() ?? '';
+    deletes.push(name);
+    saves = saves.filter((s) => s.name !== name);
+    return r.fulfill({ json: { message: 'Version deleted successfully', name } });
+  });
+
+  await page.goto('/edit/7/game');
+  await page.getByRole('button', { name: 'Platformer' }).click();
+  const rows = page.locator('nc-popover-panel li', { hasText: 'Autosave' });
+  await expect(rows).toHaveCount(2);
+
+  await rows.nth(1).getByRole('button', { name: 'Delete this autosave' }).click();
+  await expect(rows).toHaveCount(1);
+  expect(deletes).toEqual(['save-1']);
+});

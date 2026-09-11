@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { TranslocoService } from '@jsverse/transloco';
 import {
   projectControllerDeleteCheckpoint,
+  projectControllerDeleteVersion,
   projectControllerGetCheckpoint,
   projectControllerGetCheckpoints,
   projectControllerGetVersion,
@@ -174,7 +175,7 @@ const toRows = (raw: unknown, key: 'versions' | 'checkpoints', release: boolean)
                     size="sm"
                     iconOnly
                     [attr.aria-label]="v.release ? 'Delete this release' : 'Delete this autosave'"
-                    [disabled]="!v.release || !session.isHost()"
+                    [disabled]="!session.isHost()"
                     (click)="remove(v)"
                   >
                     <nc-icon name="trash" [size]="12" />
@@ -372,17 +373,23 @@ export class VersionsPopoverComponent {
   }
 
   /**
-   * Only named versions delete from here. Autosaves have a backend route of their own now, but the
-   * generated client predates it — TODO(NCTO-23): wire it once `@naucto/api-client` is rebuilt.
+   * Drop a saved version, each kind by its own route.
+   *
+   * An autosave is the one worth being able to drop: there are many of them and none was asked
+   * for. A release goes too, since a name given by mistake is still a mistake.
    */
   protected async remove(row: HistoryRow): Promise<void> {
-    const res = await projectControllerDeleteCheckpoint({
-      path: { id: String(this.session.id), name: row.name },
-    });
+    if (!this.session.isHost()) return;
+    const path = { id: String(this.session.id) };
+    const res = row.release
+      ? await projectControllerDeleteCheckpoint({ path: { ...path, name: row.name } })
+      : await projectControllerDeleteVersion({ path: { ...path, version: row.name } });
     if (res.error) {
       this.toasts.show(this.transloco.translate('editor.game.versionDeleteFailed'), 'error');
       return;
     }
-    await this.qc.invalidateQueries({ queryKey: ['project', this.session.id, 'checkpoints'] });
+    await this.qc.invalidateQueries({
+      queryKey: ['project', this.session.id, row.release ? 'checkpoints' : 'versions'],
+    });
   }
 }
