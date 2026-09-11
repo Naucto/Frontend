@@ -1201,3 +1201,27 @@ test('an autosave is deleted from the versions panel', async ({ page }) => {
   await expect(rows).toHaveCount(1);
   expect(deletes).toEqual(['save-1']);
 });
+
+test('a pause in the typing is what saves the game', async ({ page }) => {
+  await mockEditor(page);
+  let saves = 0;
+  await page.route('**/projects/7/saveContent', (r) => {
+    saves += 1;
+    return r.fulfill({ json: { id: 7 } });
+  });
+
+  await page.goto('/edit/7/game');
+  const name = page.getByRole('textbox', { name: 'Name' });
+  await expect(name).toHaveValue('Platformer');
+  // Opening a session as its host writes the document out once. Waited for rather than assumed,
+  // so the count below is taken with that one already through.
+  await expect(page.getByText('last saved')).toBeVisible();
+  const opened = saves;
+  await name.fill('Platformer II');
+  await expect(page.getByText('unsaved changes')).toBeVisible();
+
+  // Nothing else is done to the page: the pause is the whole trigger. The five-minute interval
+  // could not have fired in the time this waits.
+  await expect(page.getByText('last saved')).toBeVisible({ timeout: 15000 });
+  expect(saves).toBe(opened + 1);
+});

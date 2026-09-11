@@ -65,6 +65,15 @@ interface AwarenessState {
 }
 
 const AUTOSAVE_MS = 5 * 60 * 1000;
+/**
+ * How long the document has to sit still before it is written out.
+ *
+ * The interval above covers someone who never stops; this covers everyone else, who stops all the
+ * time. Three seconds is long enough that a line being typed is one save rather than twenty, and
+ * short enough that stepping away from the keyboard leaves nothing unsaved behind. The server
+ * groups saves that follow each other closely, so a quiet pause costs no extra history.
+ */
+const QUIET_SAVE_MS = 3000;
 
 /**
  * One editing session on one project: joins the work session, loads and
@@ -84,6 +93,7 @@ export class WorkSessionService {
   private provider: WebrtcProvider | null = null;
   private projectId = 0;
   private autosave: ReturnType<typeof setInterval> | null = null;
+  private quiet: ReturnType<typeof setTimeout> | null = null;
   private kicking = false;
   private readonly known = new Map<number, AwarenessState>();
 
@@ -118,7 +128,9 @@ export class WorkSessionService {
 
   constructor() {
     const onUpdate = (_u: Uint8Array, origin: unknown): void => {
-      if (origin !== 'remote-init') this.dirty.set(true);
+      if (origin === 'remote-init') return;
+      this.dirty.set(true);
+      this.saveWhenQuiet();
     };
     this.doc.on('update', onUpdate);
     const onBeforeUnload = (e: BeforeUnloadEvent): void => {
@@ -310,6 +322,8 @@ export class WorkSessionService {
     if (this.status() === 'closed') return;
     if (this.autosave) clearInterval(this.autosave);
     this.autosave = null;
+    if (this.quiet) clearTimeout(this.quiet);
+    this.quiet = null;
     try {
       if (this.isHost() && this.dirty()) await this.save();
     } catch {
@@ -389,6 +403,22 @@ export class WorkSessionService {
       meta.observe(check);
       check();
     });
+  }
+
+  /**
+   * Write the document out once the edits stop.
+   *
+   * Pushed back by every change, so it fires on the pause rather than during the typing. Guarded
+   * by `save` itself, which is a no-op for a guest and before the session is ready.
+   */
+  private saveWhenQuiet(): void {
+    if (this.quiet) clearTimeout(this.quiet);
+    this.quiet = setTimeout(() => {
+      this.quiet = null;
+      // Swallowed for the same reason the interval swallows it: `save` has recorded the failure,
+      // and a timer has nobody to rethrow to.
+      if (this.dirty()) void this.save().catch(() => undefined);
+    }, QUIET_SAVE_MS);
   }
 
   private startAutosave(): void {
