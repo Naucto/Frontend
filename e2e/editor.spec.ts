@@ -1322,3 +1322,43 @@ test('FIND is a magnifier beside the plus', async ({ page }) => {
   await expect(find).toHaveText('');
   await expect(find.locator('nc-icon')).toBeVisible();
 });
+
+/**
+ * The navigator takes the width it is given and keeps the sheet's proportions, which is what makes
+ * a cell square whatever shape the sheet is. It used to be sized from its own pixel count against a
+ * fixed cap: a small sheet took half the panel, a wide one pushed past it, and nothing bounded its
+ * height.
+ */
+test('the sheet navigator fits its panel and keeps its tiles square', async ({ page }) => {
+  await mockEditor(page);
+  await page.goto('/edit/7/art');
+  await expect(page.getByRole('img', { name: 'Sprite canvas' })).toBeVisible();
+  const view = page.locator('nc-sheet-view');
+
+  const resize = async (w: string, h: string): Promise<void> => {
+    await page.getByRole('button', { name: 'Sheet size' }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByRole('textbox', { name: 'Width' }).fill(w);
+    await dialog.getByRole('textbox', { name: 'Height' }).fill(h);
+    await dialog.getByRole('textbox', { name: 'Height' }).press('Enter');
+    await dialog.getByRole('button', { name: 'Renumber' }).click();
+    await expect(dialog).toHaveCount(0);
+  };
+
+  // Four times as wide as it is tall: the box has to be too, or the cells are not squares.
+  await resize('256', '64');
+  await expect.poll(async () => (await view.boundingBox())?.height).toBeLessThan(200);
+  const wide = await view.boundingBox();
+  expect(wide).not.toBeNull();
+  if (!wide) return;
+  expect(wide.width / wide.height).toBeCloseTo(4, 1);
+
+  // And the other way up, where the height is what runs out first.
+  await resize('64', '256');
+  await expect.poll(async () => (await view.boundingBox())?.width).toBeLessThan(200);
+  const tall = await view.boundingBox();
+  expect(tall).not.toBeNull();
+  if (!tall) return;
+  expect(tall.height / tall.width).toBeCloseTo(4, 1);
+  expect(tall.height).toBeLessThanOrEqual(384);
+});
