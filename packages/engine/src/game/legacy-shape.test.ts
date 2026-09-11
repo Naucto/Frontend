@@ -79,3 +79,75 @@ describe('a document written before sheets were a collection', () => {
     expect(doc.getMap<number>(KEYS.sprites).get('3,4')).toBe(9);
   });
 });
+
+/**
+ * Reading such a document is one thing; editing it is the other, and it is the half that was never
+ * pinned. Its cells are the document's own roots, and what keeps a stroke on them reaching the
+ * screen is the observer every sheet's cells are watched by — so a change there is a change to
+ * every game written before collections, which is all of them.
+ */
+describe('a document written before sheets were a collection, once it is edited', () => {
+  function withFlags(): Y.Doc {
+    const doc = writtenBeforeCollections();
+    doc.getMap<number>(KEYS.flags).set('7', 3);
+
+    return doc;
+  }
+
+  it('reads the flags it was written with', () => {
+    expect(new Game(withFlags()).getFlag(7)).toBe(3);
+  });
+
+  it('tells the drawing listeners about a stroke on it', () => {
+    const game = new Game(withFlags());
+    let seen = 0;
+    game.onPixelsChange((changes) => {
+      seen += changes.length;
+    });
+
+    game.setPixel(5, 5, 2);
+
+    expect(seen).toBe(1);
+    expect(game.getPixel(5, 5)).toBe(2);
+  });
+
+  it('tells the flag listeners', () => {
+    const game = new Game(withFlags());
+    let told = 0;
+    game.onFlagsChange(() => {
+      told += 1;
+    });
+
+    game.setFlag(9, 5);
+
+    expect(told).toBeGreaterThan(0);
+    expect(game.getFlag(9)).toBe(5);
+  });
+
+  it('tells the tile listeners', () => {
+    const game = new Game(withFlags());
+    const seen: number[] = [];
+    game.onTilesChange((changes) => {
+      seen.push(...changes.map((c) => c.sprite));
+    });
+
+    game.setTile(2, 2, 11);
+
+    expect(seen).toEqual([11]);
+    expect(game.getTile(2, 2)).toBe(11);
+  });
+
+  it('carries all of it to another client over the wire', () => {
+    const doc = withFlags();
+    new Game(doc).setPixel(5, 5, 2);
+
+    const remote = new Y.Doc();
+    Y.applyUpdate(remote, Y.encodeStateAsUpdate(doc));
+    const there = new Game(remote);
+
+    expect(there.getPixel(3, 4)).toBe(9);
+    expect(there.getPixel(5, 5)).toBe(2);
+    expect(there.getFlag(7)).toBe(3);
+    expect(there.getTile(1, 1)).toBe(7);
+  });
+});
