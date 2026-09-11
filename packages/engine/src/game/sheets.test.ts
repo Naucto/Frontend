@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
 
 import { Game } from './Game';
-import { FIRST_MAP_ID, FIRST_SHEET_ID, KEYS } from './keys';
+import { FIRST_MAP_ID, FIRST_SHEET_ID, KEYS, SHEET_HEIGHT, SHEET_WIDTH } from './keys';
 import { computeSizeReport } from './size';
 
 /** Declares a sheet the way the collection holds one, without its own pixels. */
@@ -309,5 +309,41 @@ describe('the first sheet, once a second one exists', () => {
     expect(game.sheets[0]?.count).toBe(64);
     expect(game.sheets[1]?.base).toBe(64);
     expect(game.sheets[1]?.base).not.toBe(was);
+  });
+});
+
+/**
+ * A document left by the build whose two writers disagreed: its first sheet's entry states one
+ * size and the geometry another.
+ *
+ * Worth pinning rather than migrating. A sheet's pixels are keyed by coordinate, not by position
+ * in a row, so the size a document is read at decides how the grid falls over the picture and
+ * never what the picture is. The entry is the size somebody asked for, so reading at it is reading
+ * what they meant -- and the pixels were never touched by the disagreement, only mis-indexed on
+ * the way to the screen.
+ */
+describe('a document whose two sizes disagree', () => {
+  it('reads at the size that was asked for, with its art intact', () => {
+    const doc = new Y.Doc();
+    // The geometry the sheet was created at, which the buggy resize left behind.
+    doc.getMap(KEYS.meta).set('sheetWidth', SHEET_WIDTH);
+    doc.getMap(KEYS.meta).set('sheetHeight', SHEET_HEIGHT);
+    // Two pixels, at the coordinates they are stored by.
+    doc.getMap<number>(KEYS.sprites).set('3,4', 9);
+    doc.getMap<number>(KEYS.sprites).set('200,4', 6);
+    const entry = new Y.Map<unknown>();
+    doc.getMap<Y.Map<unknown>>(KEYS.sheets).set(FIRST_SHEET_ID, entry);
+    entry.set('order', 0);
+    // The size the resize dialog wrote, and the one the author meant.
+    entry.set('w', 256);
+    entry.set('h', 64);
+
+    const game = new Game(doc);
+    const [sheet] = game.sheets;
+
+    expect(sheet?.width).toBe(256);
+    expect(sheet?.getPixel(3, 4)).toBe(9);
+    // Past the old width: unreachable while the picture was read at 128, and there all along.
+    expect(sheet?.getPixel(200, 4)).toBe(6);
   });
 });
