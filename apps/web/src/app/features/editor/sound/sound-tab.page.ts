@@ -252,7 +252,7 @@ const PATTERN_MAX = 99;
             [instrumentId]="sound.instrumentId()"
             [snap]="sound.snap()"
             [zoom]="sound.zoom()"
-            [playhead]="playhead()"
+            [playhead]="rollHead()"
             [collaborators]="session.collaborators()"
             [label]="t('editor.sound.pianoRoll')"
             (notesChange)="setNotes(p, $event)"
@@ -269,7 +269,7 @@ const PATTERN_MAX = 99;
             [palette]="palette()"
             [stepWidth]="roll.stepW()"
             [scrollLeft]="roll.scrollX()"
-            [playhead]="playhead()"
+            [playhead]="rollHead()"
             [active]="voices()"
             [label]="t('editor.sound.voices')"
           />
@@ -442,6 +442,24 @@ export class SoundTabPage {
   );
   /** Which link of the chain is sounding, so the order list can say where the music has got to. */
   protected readonly songPosition = signal<number | null>(null);
+
+  /**
+   * Where the head goes on the roll, or nothing where the roll is not showing what is sounding.
+   *
+   * A music plays one pattern at a time while the roll shows whichever the number in the header
+   * asks for. Run on any other, the head marks a step nothing is playing -- it reads as this
+   * pattern's notes going past, on a pattern that is silent. Changing the number back to the one
+   * sounding brings it straight back, because this is read again.
+   */
+  protected readonly rollHead = computed(() => {
+    const at = this.songPosition();
+    // Nothing in the chain is sounding: either a pattern is being auditioned on its own, which is
+    // this one, or nothing is playing and the head is null anyway.
+    if (at === null) return this.playhead();
+    const sounding = this.song()?.sequence[at] ?? null;
+
+    return sounding !== null && sounding === this.pattern()?.id ? this.playhead() : null;
+  });
   protected readonly usedBy = computed(() => {
     const inst = this.instrument();
     this.library.patterns();

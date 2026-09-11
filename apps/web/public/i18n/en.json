@@ -400,7 +400,7 @@
     "paste": "Paste",
     "art": {
       "sprite": "Sprite",
-      "tilesetTitle": "tileset {{name}}",
+      "tilesetTitle": "Tileset {{name}}",
       "px": "{{w}}×{{h}} px",
       "tools": {
         "pen": "Pen",
@@ -461,7 +461,7 @@
     },
     "map": {
       "tiles": "{{w}} × {{h}} tiles",
-      "mapTitle": "map {{name}}",
+      "mapTitle": "Map {{name}}",
       "tools": {
         "stamp": "Stamp",
         "fill": "Fill",

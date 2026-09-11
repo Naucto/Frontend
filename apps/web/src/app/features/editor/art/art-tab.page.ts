@@ -220,7 +220,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
               {{ t('editor.art.status', { x: pad3(h.x), y: pad3(h.y), col: pad2(h.col) }) }}
             </div>
           }
-          <div class="pointer-events-none absolute right-1.5 bottom-1.5 flex items-end gap-1.25">
+          <div class="pointer-events-none absolute right-1.5 bottom-1.5 flex items-center gap-1.25">
             <!-- The number goes under the word, not under the picture: beneath the thumbnail it
                  read as a caption of the drawing, and what it names is the number a game writes
                  into gfx.draw_sprite. -->

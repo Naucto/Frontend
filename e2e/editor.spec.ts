@@ -1295,11 +1295,11 @@ test('a pause in the typing is what saves the game', async ({ page }) => {
 test('each editor names what it is on, and follows a rename', async ({ page }) => {
   await mockEditor(page);
   await page.goto('/edit/7/map');
-  await expect(page.getByText('map #1')).toBeVisible();
+  await expect(page.getByText('Map #1')).toBeVisible();
 
   await page.locator('nc-rail').getByRole('button', { name: 'Art' }).click();
   await expect(page.getByRole('img', { name: 'Sprite canvas' })).toBeVisible();
-  await expect(page.getByText('tileset #1')).toBeVisible();
+  await expect(page.getByText('Tileset #1')).toBeVisible();
 
   await page.getByRole('tablist', { name: 'Sheets' }).getByRole('tab').first().dblclick();
   const dialog = page.getByRole('dialog');
@@ -1308,7 +1308,7 @@ test('each editor names what it is on, and follows a rename', async ({ page }) =
 
   // Without leaving the tab: the banner used to read the sheet list without reading anything that
   // said it had changed, so it stayed on the old name until something else rebuilt it.
-  await expect(page.getByText('tileset clouds')).toBeVisible();
+  await expect(page.getByText('Tileset clouds')).toBeVisible();
 });
 
 /** The one control in the CODE strip still spelled out, beside a plus that was already a glyph. */
