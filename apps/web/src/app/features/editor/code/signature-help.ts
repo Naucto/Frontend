@@ -105,7 +105,23 @@ export function luaSignatureHelp(
       return {
         pos: range.head,
         above: true,
-        create: () => ({ dom: docCard(entry, peers, call.arg) }),
+        create: () => {
+          const dom = docCard(entry, peers, call.arg);
+          return {
+            dom,
+            // The card is bounded and scrolls, so on a call with eight arguments the one being
+            // typed is below the fold — and it is the only line the reader opened this for. Once
+            // mounted, because nothing scrolls before it is in the document.
+            mount: () => {
+              const active = dom.querySelector('[data-active]');
+              if (!active) return;
+              dom.scrollTop +=
+                active.getBoundingClientRect().top -
+                dom.getBoundingClientRect().top -
+                dom.clientHeight / 3;
+            },
+          };
+        },
       };
     // A project's own function has names for its arguments and nothing else to say about them.
     const local = locals().find((l) => l.name === call.name);

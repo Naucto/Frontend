@@ -477,6 +477,47 @@ test.describe('editor', () => {
     await expect(card).toHaveCount(0);
   });
 
+  /**
+   * A call with eight documented arguments writes a paragraph for each, and the card used to be
+   * taller than the window and leave by the top of it.
+   */
+  test('the signature card stays on screen and shows the argument being typed', async ({
+    page,
+  }) => {
+    await page.goto('/edit/7/code');
+    await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+    await page.locator('.cm-content').click();
+    await page.keyboard.press('Control+End');
+    await page.keyboard.type('\ngfx.draw_sprite(0, 0, 0, 0, 0, ');
+
+    const card = page.locator('.nc-doc-card');
+    const active = card.locator('.nc-doc-card__params dt[data-active]');
+    await expect(active).toBeVisible();
+
+    // The card is its own tooltip element, and CodeMirror parks one at -10000px until the measure
+    // pass that places it. Waited for, or the box read below is the parked one.
+    await expect.poll(async () => (await card.boundingBox())?.y ?? -1).toBeGreaterThanOrEqual(0);
+
+    const box = await card.boundingBox();
+    const arg = await active.boundingBox();
+    const height = page.viewportSize()?.height ?? 0;
+    expect(box).not.toBeNull();
+    expect(arg).not.toBeNull();
+    if (!box || !arg) return;
+    expect(box.y).toBeGreaterThanOrEqual(0);
+    expect(box.y + box.height).toBeLessThanOrEqual(height);
+    // Scrolled to, not merely present: the sixth of eight arguments is past the fold, which the
+    // scroll offset below is what proves.
+    expect(arg.y).toBeGreaterThanOrEqual(box.y);
+    expect(arg.y + arg.height).toBeLessThanOrEqual(box.y + box.height);
+    const scroll = await card.evaluate((el) => ({
+      top: el.scrollTop,
+      hidden: el.scrollHeight - el.clientHeight,
+    }));
+    expect(scroll.hidden).toBeGreaterThan(0);
+    expect(scroll.top).toBeGreaterThan(0);
+  });
+
   /** The documentation cannot answer for a project's own function; its arguments have names. */
   test('the signature card answers for a function the project declares', async ({ page }) => {
     await page.goto('/edit/7/code');

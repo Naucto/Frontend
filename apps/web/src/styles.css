@@ -176,6 +176,11 @@
    the width belongs to the card, which is shown from more than one kind of tooltip. */
 .nc-doc-card {
   max-width: 360px;
+  /* A call with eight arguments writes a paragraph for each, which was twice the height of the
+     window and left by the top of it. Bounded against the viewport rather than at a fixed height,
+     so a small screen gets a card that fits it. */
+  max-height: min(40vh, 320px);
+  overflow-y: auto;
   padding: 8px 10px;
   font-family: var(--font-ui);
   color: var(--nc-ink-body);
