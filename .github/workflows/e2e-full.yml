@@ -1,0 +1,55 @@
+name: E2E (full stack)
+# Nightly / on demand: the real backend image against this frontend, no mocks.
+on:
+  schedule: [{ cron: '0 3 * * *' }]
+  workflow_dispatch:
+permissions: { contents: read, packages: read }
+jobs:
+  e2e-full:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env: { POSTGRES_USER: naucto, POSTGRES_PASSWORD: naucto, POSTGRES_DB: naucto }
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U naucto" --health-interval 5s --health-timeout 5s --health-retries 20
+      minio:
+        image: minio/minio:latest
+        env: { MINIO_ROOT_USER: minio, MINIO_ROOT_PASSWORD: minio123 }
+        ports: ['9000:9000']
+        options: --health-cmd "mc ready local || curl -f http://127.0.0.1:9000/minio/health/live" --health-interval 5s --health-timeout 5s --health-retries 20
+      backend:
+        image: ghcr.io/naucto/backend:main
+        env:
+          DATABASE_URL: postgresql://naucto:naucto@postgres:5432/naucto
+          JWT_SECRET: e2e-secret
+          JWT_REFRESH_SECRET: e2e-refresh
+          S3_ENDPOINT: http://minio:9000
+          S3_ACCESS_KEY: minio
+          S3_SECRET_KEY: minio123
+          S3_BUCKET: naucto
+          FRONTEND_URL: http://localhost:3001
+          BACKEND_WEBRTC_HOSTNAME: localhost
+          NODE_ENV: test
+        ports: ['3000:3000', '10000-10002:10000-10002']
+        credentials: { username: '${{ github.actor }}', password: '${{ secrets.GITHUB_TOKEN }}' }
+    steps:
+      - uses: actions/checkout@v5
+        with: { submodules: recursive }
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          registry-url: https://npm.pkg.github.com
+          scope: '@naucto'
+      - run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: npx playwright install --with-deps chromium
+      - run: npm run docs:build
+      - run: npm run e2e -- --project=chromium e2e/full
+        env: { CI: true, E2E_FULL: 'true', APP_API_URL: http://localhost:3000 }
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with: { name: playwright-report-full, path: playwright-report }

@@ -1,16 +1,11 @@
-## Jira ticket  
-<!-- Add the link to the Jira ticket here. -->
+## What
 
-## What does your MR do ?  
-<!-- A short description of what your MR does. -->
+## Why
 
-## How to test it  
+## How to test
 
+## Checklist
 
-## Screenshot  
-
-
-## Notes  
-<!-- Any other things the reviewers should know ? -->
-
-
+- [ ] `npm run lint && npm run typecheck && npm test` pass locally
+- [ ] Screens match the "Naucto Redesign" design (attach screenshots for UI changes)
+- [ ] Docs / API manifest updated if the engine API changed

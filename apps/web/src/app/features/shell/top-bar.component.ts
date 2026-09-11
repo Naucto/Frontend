@@ -1,0 +1,169 @@
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  inject,
+  input,
+  signal,
+  viewChild,
+} from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, RouterLink, RouterLinkActive } from '@angular/router';
+import { AuthStore } from '@app/core/auth/auth.store';
+import { TranslocoDirective } from '@jsverse/transloco';
+import { ButtonDirective, IconComponent, LogoComponent } from '@naucto/ui';
+import { map } from 'rxjs';
+
+import { AccountMenuComponent } from './account-menu.component';
+import { NotificationsBellComponent } from './notifications-bell.component';
+import { SearchSuggestComponent } from './search-suggest.component';
+
+// 12px UI in a 20px line box inside 8px/12px padding: the design's nav link measures 36px tall,
+// which `text-body`'s 1.65 line-height overshoots and a bare `leading-[1.2]` undershoots by six.
+/**
+ * The current page is marked through `aria-current`, not by adding a second colour class.
+ * `routerLinkActive="text-ink"` left both `text-ink-3` and `text-ink` on the element, and with both
+ * present the later rule in the stylesheet wins — so the active link was never highlighted at all.
+ */
+const NAV_LINK =
+  'rounded-xs px-1.5 py-1 text-body leading-[20px] uppercase tracking-button text-ink-3 transition-colors hover:text-ink aria-[current]:text-ink';
+
+/** App-wide top bar: HUB / MY GAMES / FRIENDS / LEARN, search, NEW GAME, bell, account. */
+@Component({
+  selector: 'nc-top-bar',
+  imports: [
+    RouterLink,
+    RouterLinkActive,
+    TranslocoDirective,
+    ButtonDirective,
+    IconComponent,
+    SearchSuggestComponent,
+    AccountMenuComponent,
+    NotificationsBellComponent,
+    LogoComponent,
+  ],
+  template: `
+    <!-- The mark takes a cell the width of the editor's rail, so it lands in the same place on both
+         and the seam under it runs straight down. The band's height and its bottom rule are
+         deliberately not the design's: they match the hub's header, and one shell that changes
+         shape between hub and editor was the worse of the two. -->
+    <!-- Positioned above the page because the bar opens things over it. A z-index on the dropdown
+         itself cannot do this: it would only order it inside this subtree, which is painted at the
+         bar's own place in the document — behind every positioned element that comes later. Above
+         the editor's edge handles (20), below the toasts (50). -->
+    <header
+      *transloco="let t"
+      class="relative z-30 flex min-h-7 flex-wrap items-center gap-x-0 gap-y-2 border-b border-line bg-panel py-1 pr-2 pl-0 md:flex-nowrap md:py-0"
+    >
+      <a
+        routerLink="/hub"
+        class="flex w-[81px] shrink-0 items-center justify-center"
+        aria-label="Naucto"
+      >
+        <nc-logo />
+      </a>
+
+      <!-- Below md the links collapse behind the menu button; the header never scrolls sideways. -->
+      <button
+        type="button"
+        class="ms-1 inline-flex h-4 w-4 items-center justify-center rounded-xs text-ink-3 hover:text-ink md:hidden"
+        [attr.aria-expanded]="menuOpen()"
+        [attr.aria-label]="t('nav.main')"
+        (click)="menuOpen.set(!menuOpen())"
+      >
+        <nc-icon [name]="menuOpen() ? 'close' : 'menu'" [size]="24" />
+      </button>
+
+      <nav
+        class="order-last w-full flex-wrap items-center gap-1 md:order-none md:flex md:w-auto md:min-w-[384px] md:flex-1"
+        [class.flex]="menuOpen()"
+        [class.hidden]="!menuOpen()"
+        [attr.aria-label]="t('nav.main')"
+      >
+        <a routerLink="/hub" routerLinkActive ariaCurrentWhenActive="page" [class]="navLink">
+          {{ t('nav.hub') }}
+        </a>
+        @if (auth.isAuthenticated()) {
+          <a routerLink="/games" routerLinkActive ariaCurrentWhenActive="page" [class]="navLink">
+            {{ t('nav.myGames') }}
+          </a>
+          <a routerLink="/friends" routerLinkActive ariaCurrentWhenActive="page" [class]="navLink">
+            {{ t('nav.friends') }}
+          </a>
+        }
+        <a routerLink="/learn" routerLinkActive ariaCurrentWhenActive="page" [class]="navLink">
+          {{ t('nav.learn') }}
+        </a>
+      </nav>
+
+      @if (search()) {
+        <!-- On the window's axis, not the leftover gutter's. Three flex columns cannot put it there:
+             the mark takes an 81px cell on the left with nothing to answer it on the right, so an
+             evenly-shared row lands the field half that width off-centre. The design centres it
+             absolutely and lets the two clusters flank it unevenly, which is what they measure. It
+             only leaves the flow once there is room for 420 between two 384-wide clusters. -->
+        <nc-search-suggest
+          #search
+          class="ms-2 min-w-0 flex-1 md:flex-[0_1_420px] xl:absolute xl:top-1/2 xl:left-1/2 xl:ms-0 xl:w-[420px] xl:flex-none xl:-translate-x-1/2 xl:-translate-y-1/2"
+          [placeholder]="t('nav.search')"
+          [query]="query()"
+        />
+      } @else {
+        <span class="ms-2 hidden flex-1 md:block"></span>
+      }
+
+      <div class="ms-2 flex flex-1 items-center justify-end gap-1 md:min-w-[384px]">
+        @if (auth.isAuthenticated()) {
+          <!-- The design writes the plus, rather than drawing it: at this size the glyph and the
+               icon are the same mark, and the glyph keeps the button at its 120px. Narrow enough
+               and the label goes instead, leaving the icon to stand for it. -->
+          <a ncButton variant="primary" size="bar" routerLink="/games/new">
+            <nc-icon name="plus" [size]="12" class="sm:hidden" />
+            <span class="hidden sm:inline">+ {{ t('nav.newGame') }}</span>
+          </a>
+          <nc-notifications-bell />
+          <nc-account-menu class="ms-1" />
+        } @else {
+          <a ncButton variant="primary" size="bar" routerLink="/sign-in">
+            {{ t('nav.signIn') }}
+          </a>
+        }
+      </div>
+    </header>
+  `,
+  host: { class: 'block', '(document:keydown)': 'onKey($event)' },
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class TopBarComponent {
+  protected readonly auth = inject(AuthStore);
+  private readonly route = inject(ActivatedRoute);
+  private readonly searchBox = viewChild<SearchSuggestComponent, ElementRef<HTMLElement>>(
+    'search',
+    { read: ElementRef },
+  );
+  readonly search = input(true);
+
+  protected readonly navLink = NAV_LINK;
+  protected readonly menuOpen = signal(false);
+
+  /** Echo the active query, so a shared `?q=` link shows what was searched for. */
+  protected readonly query = toSignal(this.route.queryParamMap.pipe(map((p) => p.get('q') ?? '')), {
+    initialValue: '',
+  });
+
+  /** "/" focuses the search from anywhere that is not already a text field. */
+  protected onKey(e: KeyboardEvent): void {
+    if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
+    const tag = (e.target as HTMLElement | null)?.tagName;
+    if (
+      tag === 'INPUT' ||
+      tag === 'TEXTAREA' ||
+      (e.target as HTMLElement | null)?.isContentEditable
+    )
+      return;
+    const input = this.searchBox()?.nativeElement.querySelector('input');
+    if (!input) return;
+    e.preventDefault();
+    input.focus();
+  }
+}

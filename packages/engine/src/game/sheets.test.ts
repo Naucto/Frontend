@@ -1,0 +1,349 @@
+import { describe, expect, it } from 'vitest';
+import * as Y from 'yjs';
+
+import { Game } from './Game';
+import { FIRST_MAP_ID, FIRST_SHEET_ID, KEYS, SHEET_HEIGHT, SHEET_WIDTH } from './keys';
+import { computeSizeReport } from './size';
+
+/** Declares a sheet the way the collection holds one, without its own pixels. */
+function declareSheet(doc: Y.Doc, id: string, order: number, w: number, h: number): void {
+  const entry = new Y.Map<unknown>();
+  doc.getMap<Y.Map<unknown>>(KEYS.sheets).set(id, entry);
+  entry.set('name', id);
+  entry.set('order', order);
+  entry.set('w', w);
+  entry.set('h', h);
+}
+
+describe('a document that names no sheets', () => {
+  /** Every game written so far. It has one sheet, and saying otherwise would strand its art. */
+  it('has exactly the sheet and the map its geometry describes', () => {
+    const game = new Game(new Y.Doc());
+
+    expect(game.sheets).toHaveLength(1);
+    const [sheet] = game.sheets;
+    expect(sheet?.id).toBe(FIRST_SHEET_ID);
+    expect(sheet?.base).toBe(0);
+    expect(sheet?.count).toBe(256);
+    expect(sheet?.pixels).toBe(game.sheet);
+
+    expect(game.maps).toHaveLength(1);
+    expect(game.maps[0]?.id).toBe(FIRST_MAP_ID);
+    expect(game.maps[0]?.tiles).toBe(game.tiles);
+  });
+
+  it('numbers its sprites exactly as it always did', () => {
+    const game = new Game(new Y.Doc());
+
+    expect(game.spriteOrigin(0)).toEqual({ x: 0, y: 0 });
+    expect(game.spriteOrigin(17)).toEqual({ x: 8, y: 8 });
+    expect(game.spriteTotal).toBe(256);
+  });
+});
+
+describe('sprite numbers across several sheets', () => {
+  it('runs on from one sheet to the next', () => {
+    const doc = new Y.Doc();
+    declareSheet(doc, FIRST_SHEET_ID, 0, 128, 128);
+    declareSheet(doc, 'b', 1, 64, 64);
+    const game = new Game(doc);
+
+    const [first, second] = game.sheets;
+    expect(first?.base).toBe(0);
+    expect(first?.count).toBe(256);
+    // What the promise is: the next sheet starts where the previous one stopped.
+    expect(second?.base).toBe(256);
+    expect(second?.count).toBe(64);
+    expect(game.spriteTotal).toBe(320);
+  });
+
+  it('sends a number to the sheet that claims it, and to its own corner', () => {
+    const doc = new Y.Doc();
+    declareSheet(doc, FIRST_SHEET_ID, 0, 128, 128);
+    declareSheet(doc, 'b', 1, 64, 64);
+    const game = new Game(doc);
+
+    expect(game.sheetOf(255)?.id).toBe(FIRST_SHEET_ID);
+    expect(game.sheetOf(256)?.id).toBe('b');
+    // 256 is the second sheet's first cell, so it sits at its origin rather than 32 rows down.
+    expect(game.spriteOrigin(256)).toEqual({ x: 0, y: 0 });
+    expect(game.spriteOrigin(265)).toEqual({ x: 8, y: 8 });
+  });
+
+  it('claims nothing for a number past the last sheet', () => {
+    const doc = new Y.Doc();
+    declareSheet(doc, FIRST_SHEET_ID, 0, 128, 128);
+    const game = new Game(doc);
+
+    expect(game.sheetOf(256)).toBeUndefined();
+    expect(game.isSpriteEmpty(256)).toBe(true);
+  });
+
+  it('orders sheets the way it orders code files', () => {
+    const doc = new Y.Doc();
+    declareSheet(doc, 'z', 0, 64, 64);
+    declareSheet(doc, FIRST_SHEET_ID, 1, 128, 128);
+    const game = new Game(doc);
+
+    expect(game.sheets.map((s) => s.id)).toEqual(['z', FIRST_SHEET_ID]);
+    expect(game.sheets[1]?.base).toBe(64);
+  });
+});
+
+describe('adding and drawing on a second sheet', () => {
+  it('writes the first sheet down before it can hold a second', () => {
+    const game = new Game(new Y.Doc());
+
+    game.addSheet('extra', 64, 64, 'x');
+
+    expect(game.sheetsMap.size).toBe(2);
+    expect(game.sheets.map((s) => s.id)).toEqual([FIRST_SHEET_ID, 'x']);
+    // The first sheet keeps the numbers it had, and the new one carries on.
+    expect(game.sheets[0]?.base).toBe(0);
+    expect(game.sheets[1]?.base).toBe(256);
+  });
+
+  it('keeps a second sheet apart from the first', () => {
+    const game = new Game(new Y.Doc());
+    game.addSheet('extra', 64, 64, 'x');
+
+    game.sheets[1]?.setPixel(3, 4, 9);
+
+    expect(game.sheets[1]?.getPixel(3, 4)).toBe(9);
+    // The pixel went to the new sheet's own map, not into the roots the first sheet lives in.
+    expect(game.getPixel(3, 4)).toBe(0);
+    expect(game.spritesMap.size).toBe(0);
+  });
+
+  it('tells the drawing listeners, so a stroke from a peer reaches the screen', () => {
+    const game = new Game(new Y.Doc());
+    game.addSheet('extra', 64, 64, 'x');
+    let seen = 0;
+    game.onPixelsChange((changes) => {
+      seen += changes.length;
+    });
+
+    game.sheets[1]?.setPixel(1, 1, 5);
+
+    expect(seen).toBe(1);
+  });
+
+  /**
+   * A coordinate names a place on a sheet, not in the game: the same pair is a different pixel on
+   * each one, so a change that does not say which sheet it happened on cannot be drawn.
+   */
+  it('says which sheet a change happened on', () => {
+    const game = new Game(new Y.Doc());
+    game.addSheet('extra', 64, 64, 'x');
+    const seen: { sheet: string; x: number; y: number }[] = [];
+    game.onPixelsChange((changes) => {
+      seen.push(...changes);
+    });
+
+    game.sheets[0]?.setPixel(1, 1, 5);
+    game.sheets[1]?.setPixel(1, 1, 7);
+
+    expect(seen.map((c) => c.sheet)).toEqual([game.sheets[0]?.id, game.sheets[1]?.id]);
+    expect(new Set(seen.map((c) => c.sheet)).size).toBe(2);
+  });
+
+  it('numbers flags within the sheet that holds them', () => {
+    const game = new Game(new Y.Doc());
+    game.addSheet('extra', 64, 64, 'x');
+    const second = game.sheets[1];
+
+    second?.setFlag(256, 0b11);
+
+    expect(second?.getFlag(256)).toBe(0b11);
+    // The first sheet's flag 0 is a different thing entirely.
+    expect(game.getFlag(0)).toBe(0);
+  });
+
+  it('refuses to remove the only sheet a game has', () => {
+    const game = new Game(new Y.Doc());
+    game.addSheet('extra', 64, 64, 'x');
+
+    game.removeSheet('x');
+    expect(game.sheets).toHaveLength(1);
+
+    game.removeSheet(FIRST_SHEET_ID);
+    expect(game.sheets).toHaveLength(1);
+  });
+});
+
+describe('the rest of the document keeping up', () => {
+  it('weighs every sheet, not only the first', () => {
+    const game = new Game(new Y.Doc());
+    const alone = computeSizeReport(game).sprites;
+    game.addSheet('extra', 64, 64, 'x');
+    game.sheets[1]?.setPixel(0, 0, 3);
+
+    expect(computeSizeReport(game).sprites).toBe(alone + 1);
+  });
+
+  /** Restoring an old version must not leave today's sheets standing beside it. */
+  it('takes a snapshot back to the sheets it was taken with', () => {
+    const game = new Game(new Y.Doc());
+    game.sheets[0]?.setPixel(1, 1, 4);
+    const snapshot = Y.encodeStateAsUpdate(game.doc);
+
+    game.addSheet('extra', 64, 64, 'x');
+    game.sheets[1]?.setPixel(2, 2, 6);
+    expect(game.sheets).toHaveLength(2);
+
+    game.restoreFrom(snapshot);
+
+    expect(game.sheets).toHaveLength(1);
+    expect(game.getPixel(1, 1)).toBe(4);
+  });
+
+  it('brings a sheet back with its pixels when the snapshot had one', () => {
+    const game = new Game(new Y.Doc());
+    game.addSheet('extra', 64, 64, 'x');
+    game.sheets[1]?.setPixel(2, 2, 6);
+    const snapshot = Y.encodeStateAsUpdate(game.doc);
+
+    game.removeSheet('x');
+    expect(game.sheets).toHaveLength(1);
+
+    game.restoreFrom(snapshot);
+
+    expect(game.sheets).toHaveLength(2);
+    expect(game.sheets[1]?.getPixel(2, 2)).toBe(6);
+  });
+});
+
+/**
+ * The one sheet and the one map a document starts with are read off its geometry, not held as
+ * entries. Naming one has to write the entry it is going to be written on, or the rename lands
+ * nowhere and reports nothing.
+ */
+describe('naming the first of each', () => {
+  it('names the sheet a document never declared', () => {
+    const game = new Game(new Y.Doc());
+
+    game.describeSheet(FIRST_SHEET_ID, 'clouds', null);
+
+    expect(game.sheets[0]?.name).toBe('clouds');
+    expect(game.sheets).toHaveLength(1);
+    expect(game.sheets[0]?.pixels).toBe(game.sheet);
+  });
+
+  it('names the map a document never declared', () => {
+    const game = new Game(new Y.Doc());
+
+    game.describeMap(FIRST_MAP_ID, 'overworld', 3);
+
+    expect(game.maps[0]?.name).toBe('overworld');
+    expect(game.maps[0]?.colour).toBe(3);
+    expect(game.maps).toHaveLength(1);
+  });
+
+  it('tells whoever is watching, so a banner made of it follows', () => {
+    const game = new Game(new Y.Doc());
+    let told = 0;
+    game.onCollectionsChange(() => {
+      told += 1;
+    });
+
+    game.describeSheet(FIRST_SHEET_ID, 'clouds', null);
+
+    expect(told).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * The first sheet's pixels are the document's own roots, and that buffer is laid out at the
+ * geometry. Its entry existing -- which it does the moment a second sheet is added -- must not
+ * give it a second size: the picture was read at one width out of a buffer written at another,
+ * which shreds it.
+ */
+describe('the first sheet, once a second one exists', () => {
+  it('resizes through the geometry, buffer and all', () => {
+    const game = new Game(new Y.Doc());
+    game.addSheet('extra', 64, 64, 'x');
+    game.sheets[0]?.setPixel(3, 1, 5);
+
+    game.resizeSheet(FIRST_SHEET_ID, 64, 64);
+
+    expect(game.sheets[0]?.width).toBe(64);
+    expect(game.sheet.length).toBe(64 * 64);
+    expect(game.sheets[0]?.pixels).toBe(game.sheet);
+    // Pixels are kept by position, so the one drawn is still where it was drawn.
+    expect(game.sheets[0]?.getPixel(3, 1)).toBe(5);
+  });
+
+  it('writes its size to the geometry and to its entry at once', () => {
+    const game = new Game(new Y.Doc());
+    game.addSheet('extra', 64, 64, 'x');
+
+    game.resizeSheet(FIRST_SHEET_ID, 64, 96);
+
+    // The two used to be written by different paths, and a picture read at the width one of them
+    // gave, out of a buffer laid out at the width the other gave, is a shredded picture.
+    expect(game.sheetsMap.get(FIRST_SHEET_ID)?.get('w')).toBe(64);
+    expect(game.meta.get('sheetWidth')).toBe(64);
+    expect(game.sheetsMap.get(FIRST_SHEET_ID)?.get('h')).toBe(96);
+    expect(game.meta.get('sheetHeight')).toBe(96);
+    expect(game.sheets[0]?.pixels.length).toBe(64 * 96);
+  });
+
+  it('says the same size whichever way the document was written', () => {
+    // The legacy path: a size recorded only in the geometry, by a build that had no collections.
+    const game = new Game(new Y.Doc());
+    game.resize({ sheetWidth: 64, sheetHeight: 96 });
+    game.addSheet('extra', 64, 64, 'x');
+
+    expect(game.sheets[0]?.width).toBe(64);
+    expect(game.sheets[0]?.height).toBe(96);
+    expect(game.sheets[0]?.pixels.length).toBe(64 * 96);
+  });
+
+  it('moves the sheets after it, so their sprite numbers follow', () => {
+    const game = new Game(new Y.Doc());
+    game.addSheet('extra', 64, 64, 'x');
+    const was = game.sheets[1]?.base;
+
+    game.resizeSheet(FIRST_SHEET_ID, 64, 64);
+
+    expect(game.sheets[0]?.count).toBe(64);
+    expect(game.sheets[1]?.base).toBe(64);
+    expect(game.sheets[1]?.base).not.toBe(was);
+  });
+});
+
+/**
+ * A document left by the build whose two writers disagreed: its first sheet's entry states one
+ * size and the geometry another.
+ *
+ * Worth pinning rather than migrating. A sheet's pixels are keyed by coordinate, not by position
+ * in a row, so the size a document is read at decides how the grid falls over the picture and
+ * never what the picture is. The entry is the size somebody asked for, so reading at it is reading
+ * what they meant -- and the pixels were never touched by the disagreement, only mis-indexed on
+ * the way to the screen.
+ */
+describe('a document whose two sizes disagree', () => {
+  it('reads at the size that was asked for, with its art intact', () => {
+    const doc = new Y.Doc();
+    // The geometry the sheet was created at, which the buggy resize left behind.
+    doc.getMap(KEYS.meta).set('sheetWidth', SHEET_WIDTH);
+    doc.getMap(KEYS.meta).set('sheetHeight', SHEET_HEIGHT);
+    // Two pixels, at the coordinates they are stored by.
+    doc.getMap<number>(KEYS.sprites).set('3,4', 9);
+    doc.getMap<number>(KEYS.sprites).set('200,4', 6);
+    const entry = new Y.Map<unknown>();
+    doc.getMap<Y.Map<unknown>>(KEYS.sheets).set(FIRST_SHEET_ID, entry);
+    entry.set('order', 0);
+    // The size the resize dialog wrote, and the one the author meant.
+    entry.set('w', 256);
+    entry.set('h', 64);
+
+    const game = new Game(doc);
+    const [sheet] = game.sheets;
+
+    expect(sheet?.width).toBe(256);
+    expect(sheet?.getPixel(3, 4)).toBe(9);
+    // Past the old width: unreachable while the picture was read at 128, and there all along.
+    expect(sheet?.getPixel(200, 4)).toBe(6);
+  });
+});
