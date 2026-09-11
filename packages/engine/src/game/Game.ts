@@ -33,6 +33,15 @@ import { Sheet, type SheetShape, type SheetWriter } from './Sheet';
 /** A number that names no cell any more. Not a sprite anybody can draw, so nothing keeps it. */
 const NOT_A_SPRITE = -1;
 
+/**
+ * What the accessors below answer with when a game somehow has no sheets at all.
+ *
+ * It cannot: a document that declares none still reads as one. They exist so the accessors can
+ * state a length rather than an optional, which every caller of theirs would have to unwrap.
+ */
+const NO_PIXELS = new Uint8Array(0);
+const NO_TILES = new Uint16Array(0);
+
 /** What named a sprite by number before the sizes moved. */
 interface HeldNumbers {
   flags: { id: string; base: number; values: number[] }[];
@@ -133,12 +142,25 @@ function replaceText(target: Y.Text, wanted: string): void {
   if (added) target.insert(head, added);
 }
 
+/**
+ * A sheet's cells as typed arrays, with the shape they were built at.
+ *
+ * The shape is kept rather than inferred from the length: 128x128 and 64x256 hold the same number
+ * of pixels and are not the same picture, so a mirror cannot say whether it is still current by
+ * counting.
+ */
 interface SheetMirror {
   pixels: Uint8Array;
   flags: Uint8Array;
+  width: number;
+  height: number;
 }
 
-/** What the first sheet and the first map are called before anybody renames them. */
+interface MapMirror {
+  tiles: Uint16Array;
+  width: number;
+  height: number;
+}
 
 function numberOf(entry: Y.Map<unknown>, key: string, fallback: number): number {
   const v = entry.get(key);
@@ -188,21 +210,30 @@ export class Game {
   readonly netPermissions: Y.Map<{ flags: number }>;
 
   /**
-   * Palette indices, row-major, one byte a pixel.
+   * Palette indices of the first sheet, row-major, one byte a pixel.
    *
-   * Reallocated when the sheet is resized, so hold `game.sheet` for the length of a draw and no
-   * longer -- a reference kept across a resize points at the old size.
+   * The first sheet's mirror under an older name, and nothing more: it is built, hydrated and
+   * reshaped by exactly the code that does it for every other sheet. Replaced when the sheet is
+   * resized, so hold it for the length of a draw and no longer.
    */
-  sheet: Uint8Array;
-  /** One byte of flags per sprite. */
-  flags: Uint8Array;
+  get sheet(): Uint8Array {
+    return this.sheets[0]?.pixels ?? NO_PIXELS;
+  }
+
+  /** One byte of flags per sprite, for the first sheet. */
+  get flags(): Uint8Array {
+    return this.sheets[0]?.flags ?? NO_PIXELS;
+  }
+
   /**
-   * Sprite numbers, row-major, one per tile.
+   * Sprite numbers of the first map, row-major, one per tile.
    *
    * Sixteen bits rather than eight: a sheet may hold more than 256 sprites, and a tile that could
    * not name them would put most of a sheet out of a map's reach.
    */
-  tiles: Uint16Array;
+  get tiles(): Uint16Array {
+    return this.maps[0]?.tiles ?? NO_TILES;
+  }
 
   private _geometry: Geometry;
   private readonly geometryListeners = new Set<() => void>();
@@ -223,7 +254,7 @@ export class Game {
       this.writeSheetFlag(id, local, value);
     },
   };
-  private readonly mapMirrors = new Map<string, Uint16Array>();
+  private readonly mapMirrors = new Map<string, MapMirror>();
   /** Cell maps already watched, so a second pass over the collection does not double up. */
   private readonly watchedCells = new WeakSet<Y.Map<number>>();
 
@@ -251,12 +282,9 @@ export class Game {
     this.netPermissions = doc.getMap(KEYS.netPermissions);
 
     this._geometry = readGeometry(this.meta);
-    this.sheet = new Uint8Array(this._geometry.sheetWidth * this._geometry.sheetHeight);
-    this.flags = new Uint8Array(this._geometry.spriteCount);
-    this.tiles = new Uint16Array(this._geometry.mapWidth * this._geometry.mapHeight);
-    this.hydrate();
 
     this.attachSheetObservers();
+    this.attachMapObservers();
     // Sheets a peer adds arrive after this constructor, and their cells need watching too.
     const told = (): void => {
       this.collectionListeners.forEach((l) => {
@@ -275,46 +303,6 @@ export class Game {
       if (sized) this.applyGeometry();
     });
 
-    this.spritesMap.observe((e) => {
-      const changes: PixelChange[] = [];
-      const { sheetWidth, sheetHeight } = this._geometry;
-      e.changes.keys.forEach((_c, key) => {
-        const [x, y] = parseCoord(key);
-        if (x < 0 || x >= sheetWidth || y < 0 || y >= sheetHeight) return;
-        const colour = (this.spritesMap.get(key) ?? 0) & 0xf;
-        this.sheet[y * sheetWidth + x] = colour;
-        changes.push({ sheet: FIRST_SHEET_ID, x, y, colour });
-      });
-      if (changes.length)
-        this.pixelListeners.forEach((l) => {
-          l(changes);
-        });
-    });
-    this.flagsMap.observe((e) => {
-      e.changes.keys.forEach((_c, key) => {
-        const i = Number(key);
-        if (i >= 0 && i < this._geometry.spriteCount)
-          this.flags[i] = (this.flagsMap.get(key) ?? 0) & 0xff;
-      });
-      this.flagListeners.forEach((l) => {
-        l();
-      });
-    });
-    this.tilesMap.observe((e) => {
-      const changes: TileChange[] = [];
-      const { mapWidth, mapHeight } = this._geometry;
-      e.changes.keys.forEach((_c, key) => {
-        const [x, y] = parseCoord(key);
-        if (x < 0 || x >= mapWidth || y < 0 || y >= mapHeight) return;
-        const sprite = (this.tilesMap.get(key) ?? 0) & 0xffff;
-        this.tiles[y * mapWidth + x] = sprite;
-        changes.push({ x, y, sprite });
-      });
-      if (changes.length)
-        this.tileListeners.forEach((l) => {
-          l(changes);
-        });
-    });
     this.paletteArray.observe(() => {
       this.paletteListeners.forEach((l) => {
         l();
@@ -339,49 +327,46 @@ export class Game {
   /**
    * The live pixel and flag mirrors of one sheet, made on first ask and reshaped when it resizes.
    *
-   * The first sheet's are the game's own, because its content never moved out of the roots it has
-   * always lived in.
+   * Every sheet the same, the first one included: its cells are at the document's roots rather
+   * than under its entry, and `cellsOf` is the one place that knows it. Anything outside the shape
+   * is dropped rather than refused -- a document written larger and opened smaller is not corrupt,
+   * it is one this reader can only show part of, and nothing here writes back.
    */
-  private sheetMirror(id: string, width: number, height: number): SheetMirror {
-    if (id === FIRST_SHEET_ID) return { pixels: this.sheet, flags: this.flags };
+  private sheetMirror(id: string, size: { width: number; height: number }): SheetMirror {
+    const { width, height } = size;
     const held = this.sheetMirrors.get(id);
-    const count = (width / SPRITE_SIZE) * (height / SPRITE_SIZE);
-    if (held?.pixels.length === width * height) return held;
+    if (held?.width === width && held.height === height) return held;
 
+    const count = (width / SPRITE_SIZE) * (height / SPRITE_SIZE);
     const made: SheetMirror = {
       pixels: new Uint8Array(width * height),
       flags: new Uint8Array(count),
+      width,
+      height,
     };
-    const entry = this.sheetsMap.get(id);
-    const pixels = entry?.get('pixels');
-    if (pixels instanceof Y.Map)
-      (pixels as Y.Map<number>).forEach((v, k) => {
-        const [x, y] = parseCoord(k);
-        if (x >= 0 && x < width && y >= 0 && y < height) made.pixels[y * width + x] = v & 0xf;
-      });
-    const flags = entry?.get('flags');
-    if (flags instanceof Y.Map)
-      (flags as Y.Map<number>).forEach((v, k) => {
-        const i = Number(k);
-        if (i >= 0 && i < count) made.flags[i] = v & 0xff;
-      });
+    this.cellsOf(id, 'pixels')?.forEach((v, k) => {
+      const [x, y] = parseCoord(k);
+      if (x >= 0 && x < width && y >= 0 && y < height) made.pixels[y * width + x] = v & 0xf;
+    });
+    this.cellsOf(id, 'flags')?.forEach((v, k) => {
+      const i = Number(k);
+      if (i >= 0 && i < count) made.flags[i] = v & 0xff;
+    });
     this.sheetMirrors.set(id, made);
 
     return made;
   }
 
-  private mapMirror(id: string, width: number, height: number): Uint16Array {
-    if (id === FIRST_MAP_ID) return this.tiles;
+  private mapMirror(id: string, size: { width: number; height: number }): MapMirror {
+    const { width, height } = size;
     const held = this.mapMirrors.get(id);
-    if (held?.length === width * height) return held;
+    if (held?.width === width && held.height === height) return held;
 
-    const made = new Uint16Array(width * height);
-    const tiles = this.mapsMap.get(id)?.get('tiles');
-    if (tiles instanceof Y.Map)
-      (tiles as Y.Map<number>).forEach((v, k) => {
-        const [x, y] = parseCoord(k);
-        if (x >= 0 && x < width && y >= 0 && y < height) made[y * width + x] = v & 0xffff;
-      });
+    const made: MapMirror = { tiles: new Uint16Array(width * height), width, height };
+    this.mapCellsOf(id)?.forEach((v, k) => {
+      const [x, y] = parseCoord(k);
+      if (x >= 0 && x < width && y >= 0 && y < height) made.tiles[y * width + x] = v & 0xffff;
+    });
     this.mapMirrors.set(id, made);
 
     return made;
@@ -390,34 +375,16 @@ export class Game {
   /**
    * Every sheet, in order, with its sprite numbers already worked out.
    *
-   * A document that names none is a game from before a game could have several: it has exactly the
-   * one sheet, at the size its geometry records, and this says so rather than making the callers
-   * check.
+   * A document that declares none has one all the same: an empty entry, which takes the document's
+   * geometry the way any sheet that states no size of its own does. Written that way rather than as
+   * a sheet built by hand, so the one below is the only place a sheet is ever made.
    */
   get sheets(): Sheet[] {
-    const { sheetWidth, sheetHeight } = this._geometry;
-    const entries = this.orderedEntries(this.sheetsMap);
-    if (entries.length === 0)
-      return [
-        new Sheet(
-          FIRST_SHEET_ID,
-          '',
-          0,
-          sheetWidth,
-          sheetHeight,
-          0,
-          null,
-          this.sheet,
-          this.flags,
-          this.sheetWriter,
-        ),
-      ];
-
     let base = 0;
-    return entries.map(([id, e], i) => {
-      const width = clampSheetSize(numberOf(e, 'w', sheetWidth));
-      const height = clampSheetSize(numberOf(e, 'h', sheetHeight));
-      const mirror = this.sheetMirror(id, width, height);
+
+    return this.entriesOrDefault(this.sheetsMap, FIRST_SHEET_ID).map(([id, e], i) => {
+      const { width, height } = this.sizeOf(id);
+      const mirror = this.sheetMirror(id, { width, height });
       const sheet = new Sheet(
         id,
         stringOf(e, 'name', ''),
@@ -431,19 +398,15 @@ export class Game {
         this.sheetWriter,
       );
       base += sheet.count;
+
       return sheet;
     });
   }
 
   get maps(): GameMap[] {
-    const { mapWidth, mapHeight } = this._geometry;
-    const entries = this.orderedEntries(this.mapsMap);
-    if (entries.length === 0)
-      return [new GameMap(FIRST_MAP_ID, '', 0, mapWidth, mapHeight, null, this.tiles)];
+    return this.entriesOrDefault(this.mapsMap, FIRST_MAP_ID).map(([id, e], i) => {
+      const { width, height } = this.mapSizeOf(id);
 
-    return entries.map(([id, e], i) => {
-      const width = clampMapSize(numberOf(e, 'w', mapWidth));
-      const height = clampMapSize(numberOf(e, 'h', mapHeight));
       return new GameMap(
         id,
         stringOf(e, 'name', ''),
@@ -451,23 +414,127 @@ export class Game {
         width,
         height,
         colourOf(e),
-        this.mapMirror(id, width, height),
+        this.mapMirror(id, { width, height }).tiles,
       );
     });
   }
 
   /**
-   * Where a sheet's pixels live: its own map, or the roots the first sheet never left.
+   * A collection's entries, or the one every game has when it declares nothing.
+   *
+   * The empty entry is not written to the document -- reading a game must not change it -- it only
+   * stands in so that the first sheet and the first map are built by the same code as the rest.
+   */
+  private entriesOrDefault(
+    from: Y.Map<Y.Map<unknown>>,
+    firstId: string,
+  ): [string, Y.Map<unknown>][] {
+    const entries = this.orderedEntries(from);
+
+    return entries.length ? entries : [[firstId, new Y.Map<unknown>()]];
+  }
+
+  /**
+   * Where a sheet's cells are, or nothing where it has none yet.
+   *
+   * The first sheet's are the document's own roots -- `gfx.sprites` and `gfx.flags` -- because a
+   * game written before a game could have several put them there, and moving them would make this
+   * build's documents unreadable to that one. **This is the one place that knows it**, and its
+   * twin below is the one place that knows where its size is. Everything else treats every sheet
+   * alike.
+   */
+  private cellsOf(sheetId: string, key: 'pixels' | 'flags'): Y.Map<number> | null {
+    if (sheetId === FIRST_SHEET_ID) return key === 'pixels' ? this.spritesMap : this.flagsMap;
+    const held = this.sheetsMap.get(sheetId)?.get(key);
+
+    return held instanceof Y.Map ? (held as Y.Map<number>) : null;
+  }
+
+  /** Where the first map's tiles are, and where any other map's would be. */
+  private mapCellsOf(mapId: string): Y.Map<number> | null {
+    if (mapId === FIRST_MAP_ID) return this.tilesMap;
+    const held = this.mapsMap.get(mapId)?.get('tiles');
+
+    return held instanceof Y.Map ? (held as Y.Map<number>) : null;
+  }
+
+  /**
+   * How big a sheet is: what its entry states, or the document's geometry where it states nothing.
+   *
+   * The same rule for every sheet. The geometry is not the first sheet's private size, it is the
+   * default a sheet takes when it names none -- which is the state every sheet of every game
+   * written before collections is in.
+   */
+  private sizeOf(sheetId: string): { width: number; height: number } {
+    const { sheetWidth, sheetHeight } = this._geometry;
+    const entry = this.sheetsMap.get(sheetId);
+
+    return {
+      width: clampSheetSize(entry ? numberOf(entry, 'w', sheetWidth) : sheetWidth),
+      height: clampSheetSize(entry ? numberOf(entry, 'h', sheetHeight) : sheetHeight),
+    };
+  }
+
+  /**
+   * Writes a sheet's size where `sizeOf` reads it -- on its entry, for every sheet alike.
+   *
+   * The first sheet's is mirrored into the geometry as well, and that is the whole of what is
+   * special about it: `meta.sheetWidth` is where a build from before collections reads the size of
+   * the only sheet it knows about, and where this one takes its default from. Mirrored rather than
+   * chosen between, because a size written in one of the two places and read from the other is how
+   * a picture comes to be read at one width out of a buffer laid out at another.
+   */
+  private writeSheetSize(sheetId: string, width: number, height: number): void {
+    const w = clampSheetSize(width);
+    const h = clampSheetSize(height);
+    if (sheetId === FIRST_SHEET_ID) {
+      this.declareFirstSheet();
+      this.meta.set(GEOMETRY_KEYS.sheetWidth, w);
+      this.meta.set(GEOMETRY_KEYS.sheetHeight, h);
+    }
+    const entry = this.sheetsMap.get(sheetId);
+    if (!entry) return;
+    entry.set('w', w);
+    entry.set('h', h);
+  }
+
+  /** The same, for a map. */
+  private writeMapSize(mapId: string, width: number, height: number): void {
+    const w = clampMapSize(width);
+    const h = clampMapSize(height);
+    if (mapId === FIRST_MAP_ID) {
+      this.declareFirstMap();
+      this.meta.set(GEOMETRY_KEYS.mapWidth, w);
+      this.meta.set(GEOMETRY_KEYS.mapHeight, h);
+    }
+    const entry = this.mapsMap.get(mapId);
+    if (!entry) return;
+    entry.set('w', w);
+    entry.set('h', h);
+  }
+
+  /** The same, for a map. */
+  private mapSizeOf(mapId: string): { width: number; height: number } {
+    const { mapWidth, mapHeight } = this._geometry;
+    const entry = this.mapsMap.get(mapId);
+
+    return {
+      width: clampMapSize(entry ? numberOf(entry, 'w', mapWidth) : mapWidth),
+      height: clampMapSize(entry ? numberOf(entry, 'h', mapHeight) : mapHeight),
+    };
+  }
+
+  /**
+   * Where a sheet's cells go when something writes to them.
    *
    * Made on the first write rather than at creation, so a sheet nobody has drawn on costs the
    * document nothing.
    */
   private sheetCells(sheetId: string, key: 'pixels' | 'flags'): Y.Map<number> {
-    if (sheetId === FIRST_SHEET_ID) return key === 'pixels' ? this.spritesMap : this.flagsMap;
+    const held = this.cellsOf(sheetId, key);
+    if (held) return held;
     const entry = this.sheetsMap.get(sheetId);
     if (!entry) throw new Error(`no sheet ${sheetId}`);
-    const held = entry.get(key);
-    if (held instanceof Y.Map) return held as Y.Map<number>;
     const made = new Y.Map<number>();
     // Marked before it is attached: inserting it ends a transaction, and the collection's own
     // observer runs then -- it would find an unmarked map and subscribe to it a second time.
@@ -480,25 +547,30 @@ export class Game {
 
   /** Watches the cell maps of every sheet that has any, once each. */
   private attachSheetObservers(): void {
-    this.sheetsMap.forEach((entry, id) => {
-      if (id === FIRST_SHEET_ID) return;
+    for (const id of [FIRST_SHEET_ID, ...this.sheetsMap.keys()])
       for (const key of ['pixels', 'flags'] as const) {
-        const cells: unknown = entry.get(key);
-        if (!(cells instanceof Y.Map)) continue;
-        const typed = cells as Y.Map<number>;
-        if (this.watchedCells.has(typed)) continue;
-        this.watchedCells.add(typed);
-        this.observeSheetCells(id, key, typed);
+        const cells = this.cellsOf(id, key);
+        if (!cells || this.watchedCells.has(cells)) continue;
+        this.watchedCells.add(cells);
+        this.observeSheetCells(id, key, cells);
       }
-    });
+  }
+
+  /** The same for the maps, whose tiles the first one keeps at the document's root. */
+  private attachMapObservers(): void {
+    for (const id of [FIRST_MAP_ID, ...this.mapsMap.keys()]) {
+      const cells = this.mapCellsOf(id);
+      if (!cells || this.watchedCells.has(cells)) continue;
+      this.watchedCells.add(cells);
+      this.observeMapCells(id, cells);
+    }
   }
 
   /**
-   * Keeps one extra sheet's mirror in step with its map.
+   * Keeps one sheet's mirror in step with its cells.
    *
-   * The first sheet's maps are observed with the rest of the document; these are made and attached
-   * as they appear, and the listeners hear about them the same way -- a peer drawing on a sheet
-   * nobody has opened still has to reach the screen.
+   * Attached as the cell maps appear, so the listeners hear about them the same way -- a peer
+   * drawing on a sheet nobody has opened still has to reach the screen.
    */
   private observeSheetCells(sheetId: string, key: 'pixels' | 'flags', cells: Y.Map<number>): void {
     cells.observe((e) => {
@@ -523,6 +595,26 @@ export class Game {
         });
       else if (changes.length)
         this.pixelListeners.forEach((l) => {
+          l(changes);
+        });
+    });
+  }
+
+  /** The tile twin of `observeSheetCells`. */
+  private observeMapCells(mapId: string, cells: Y.Map<number>): void {
+    cells.observe((e) => {
+      const map = this.maps.find((m) => m.id === mapId);
+      if (!map) return;
+      const changes: TileChange[] = [];
+      e.changes.keys.forEach((_c, k) => {
+        const [x, y] = parseCoord(k);
+        if (x < 0 || x >= map.width || y < 0 || y >= map.height) return;
+        const sprite = (cells.get(k) ?? 0) & 0xffff;
+        map.tiles[y * map.width + x] = sprite;
+        changes.push({ x, y, sprite });
+      });
+      if (changes.length)
+        this.tileListeners.forEach((l) => {
           l(changes);
         });
     });
@@ -601,19 +693,12 @@ export class Game {
    * one where a number means two things at once, and a peer joining then would read exactly that.
    */
   resizeSheet(id: string, width: number, height: number): void {
-    const entry = this.sheetsMap.get(id);
-    // The first sheet takes its size from the geometry until a second one exists, and that path
-    // renumbers as well.
-    if (!entry) {
-      if (id === FIRST_SHEET_ID) this.resize({ sheetWidth: width, sheetHeight: height });
-      return;
-    }
     const before = this.sheets;
+    if (!before.some((sh) => sh.id === id)) return;
     const after = this.shapesAfterResize(id, width, height);
     const held = this.holdNumbered();
     this.doc.transact(() => {
-      entry.set('w', clampSheetSize(width));
-      entry.set('h', clampSheetSize(height));
+      this.writeSheetSize(id, width, height);
       this.renumber(before, after, held);
     }, LOCAL_ORIGIN);
   }
@@ -662,7 +747,7 @@ export class Game {
         const to = kept(sh.base + local);
         if (to !== NOT_A_SPRITE) next.set(to - now.base, v);
       });
-      const target = now.id === FIRST_SHEET_ID ? this.flagsMap : this.sheetCells(now.id, 'flags');
+      const target = this.sheetCells(now.id, 'flags');
       target.forEach((_v, k) => {
         target.delete(k);
       });
@@ -672,14 +757,17 @@ export class Game {
       }
     }
 
-    const { mapWidth } = this._geometry;
-    held.tiles.forEach((n, at) => {
-      if (n === 0) return;
-      const to = kept(n);
-      const key = coordKey(at % mapWidth, Math.floor(at / mapWidth));
-      if (to === NOT_A_SPRITE || to === 0) this.tilesMap.delete(key);
-      else this.tilesMap.set(key, to & 0xffff);
-    });
+    const first = this.maps[0];
+    const mapWidth = first?.width ?? 0;
+    const tiles = first && this.mapCellsOf(first.id);
+    if (tiles)
+      held.tiles.forEach((n, at) => {
+        if (n === 0) return;
+        const to = kept(n);
+        const key = coordKey(at % mapWidth, Math.floor(at / mapWidth));
+        if (to === NOT_A_SPRITE || to === 0) tiles.delete(key);
+        else tiles.set(key, to & 0xffff);
+      });
 
     for (const f of this.files) {
       const out = rewriteSpriteNumbers(f.text.toString(), moves);
@@ -687,34 +775,6 @@ export class Game {
       f.text.delete(0, f.text.length);
       f.text.insert(0, out.text);
     }
-  }
-
-  /**
-   * The sheets as they would be if the geometry took these sizes.
-   *
-   * A declared sheet carries its own size and does not move; one that carries none — which is the
-   * first sheet until a second exists — takes the geometry's.
-   */
-  private shapesAfterGeometry(width: number, height: number): SheetShape[] {
-    let base = 0;
-
-    return this.sheets.map((sh) => {
-      const entry = this.sheetsMap.get(sh.id);
-      const w = typeof entry?.get('w') === 'number' ? sh.width : clampSheetSize(width);
-      const h = typeof entry?.get('h') === 'number' ? sh.height : clampSheetSize(height);
-      const at = base;
-      base += (w / SPRITE_SIZE) * (h / SPRITE_SIZE);
-
-      return {
-        id: sh.id,
-        name: sh.name,
-        order: sh.order,
-        colour: sh.colour,
-        width: w,
-        height: h,
-        base: at,
-      };
-    });
   }
 
   /** The sheets as they would be, in order, if this one took that size. */
@@ -861,31 +921,11 @@ export class Game {
   }
 
   /**
-   * Fills the mirrors from the document, dropping anything outside the current size.
+   * Takes a size the document now states, and says so.
    *
-   * Dropping rather than refusing: a document written at a larger size and opened at a smaller one
-   * is not corrupt, it is a document this reader can only show part of -- and since nothing here
-   * writes back, the rest survives untouched in the document.
+   * Nothing is reshaped here: a mirror carries the shape it was built at and `sheetMirror` makes a
+   * new one the moment it is asked for a different one, so the next read does it.
    */
-  private hydrate(): void {
-    const { sheetWidth, sheetHeight, spriteCount, mapWidth, mapHeight } = this._geometry;
-    this.spritesMap.forEach((v, k) => {
-      const [x, y] = parseCoord(k);
-      if (x >= 0 && x < sheetWidth && y >= 0 && y < sheetHeight)
-        this.sheet[y * sheetWidth + x] = v & 0xf;
-    });
-    this.flagsMap.forEach((v, k) => {
-      const i = Number(k);
-      if (i >= 0 && i < spriteCount) this.flags[i] = v & 0xff;
-    });
-    this.tilesMap.forEach((v, k) => {
-      const [x, y] = parseCoord(k);
-      if (x >= 0 && x < mapWidth && y >= 0 && y < mapHeight)
-        this.tiles[y * mapWidth + x] = v & 0xffff;
-    });
-  }
-
-  /** Reshapes the mirrors around a size the document now states, and says so. */
   private applyGeometry(): void {
     const next = readGeometry(this.meta);
     if (
@@ -897,10 +937,6 @@ export class Game {
       return;
 
     this._geometry = next;
-    this.sheet = new Uint8Array(next.sheetWidth * next.sheetHeight);
-    this.flags = new Uint8Array(next.spriteCount);
-    this.tiles = new Uint16Array(next.mapWidth * next.mapHeight);
-    this.hydrate();
     this.geometryListeners.forEach((l) => {
       l();
     });
@@ -916,22 +952,22 @@ export class Game {
     mapWidth?: number;
     mapHeight?: number;
   }): void {
+    const sheetWidth = size.sheetWidth ?? this._geometry.sheetWidth;
+    const sheetHeight = size.sheetHeight ?? this._geometry.sheetHeight;
     const before = this.sheets;
-    const after = this.shapesAfterGeometry(
-      size.sheetWidth ?? this._geometry.sheetWidth,
-      size.sheetHeight ?? this._geometry.sheetHeight,
-    );
+    const after = this.shapesAfterResize(FIRST_SHEET_ID, sheetWidth, sheetHeight);
     const held = this.holdNumbered();
     this.doc.transact(() => {
-      const set = (key: string, value: number | undefined, clamp: (n: number) => number): void => {
-        if (value !== undefined) this.meta.set(key, clamp(value));
-      };
-      set(GEOMETRY_KEYS.sheetWidth, size.sheetWidth, clampSheetSize);
-      set(GEOMETRY_KEYS.sheetHeight, size.sheetHeight, clampSheetSize);
-      set(GEOMETRY_KEYS.mapWidth, size.mapWidth, clampMapSize);
-      set(GEOMETRY_KEYS.mapHeight, size.mapHeight, clampMapSize);
-      // The first sheet takes its size from here, so this is one of the two ways a sprite number
-      // comes to mean a different cell.
+      // Through the same writer `resizeSheet` uses, so the geometry and the first sheet's entry
+      // cannot come to say different things -- which is what shredded the picture when they did.
+      if (size.sheetWidth !== undefined || size.sheetHeight !== undefined)
+        this.writeSheetSize(FIRST_SHEET_ID, sheetWidth, sheetHeight);
+      if (size.mapWidth !== undefined || size.mapHeight !== undefined)
+        this.writeMapSize(
+          FIRST_MAP_ID,
+          size.mapWidth ?? this._geometry.mapWidth,
+          size.mapHeight ?? this._geometry.mapHeight,
+        );
       this.renumber(before, after, held);
     }, LOCAL_ORIGIN);
   }
@@ -1009,19 +1045,18 @@ export class Game {
 
   // ---- sprites --------------------------------------------------------------
 
+  /**
+   * The first sheet's pixels, which is what `gfx.pixel` and the like have always meant.
+   *
+   * Asked of the sheet rather than worked out here: a second copy of "where is pixel x,y" is a
+   * second chance to disagree with the first the day a sheet is not 128 wide.
+   */
   getPixel(x: number, y: number): number {
-    const { sheetWidth, sheetHeight } = this._geometry;
-    if (x < 0 || x >= sheetWidth || y < 0 || y >= sheetHeight) return 0;
-    return this.sheet[y * sheetWidth + x] ?? 0;
+    return this.sheets[0]?.getPixel(x, y) ?? 0;
   }
 
   setPixel(x: number, y: number, colour: number): void {
-    const { sheetWidth, sheetHeight } = this._geometry;
-    if (x < 0 || x >= sheetWidth || y < 0 || y >= sheetHeight) return;
-    const key = coordKey(x, y);
-    if (colour === 0) {
-      if (this.spritesMap.has(key)) this.spritesMap.delete(key);
-    } else this.spritesMap.set(key, colour & 0xf);
+    this.sheets[0]?.setPixel(x, y, colour);
   }
 
   /** Batch pixel writes into one transaction (one undo step, one network update). */
@@ -1065,12 +1100,9 @@ export class Game {
   }
 
   setFlag(index: number, value: number): void {
-    if (index < 0 || index >= this._geometry.spriteCount) return;
-    const key = String(index);
-    const v = value & 0xff;
-    if (v === 0) {
-      if (this.flagsMap.has(key)) this.flagsMap.delete(key);
-    } else this.flagsMap.set(key, v);
+    const first = this.sheets[0];
+    if (!first || index < 0 || index >= first.count) return;
+    first.setFlag(index, value);
   }
 
   onFlagsChange(l: () => void): Unsubscribe {
@@ -1081,18 +1113,18 @@ export class Game {
   // ---- map ------------------------------------------------------------------
 
   getTile(x: number, y: number): number {
-    const { mapWidth, mapHeight } = this._geometry;
-    if (x < 0 || x >= mapWidth || y < 0 || y >= mapHeight) return 0;
-    return this.tiles[y * mapWidth + x] ?? 0;
+    return this.maps[0]?.getTile(x, y) ?? 0;
   }
 
   setTile(x: number, y: number, sprite: number): void {
-    const { mapWidth, mapHeight } = this._geometry;
-    if (x < 0 || x >= mapWidth || y < 0 || y >= mapHeight) return;
+    const map = this.maps[0];
+    const cells = map && this.mapCellsOf(map.id);
+    if (!map || !cells) return;
+    if (x < 0 || x >= map.width || y < 0 || y >= map.height) return;
     const key = coordKey(x, y);
     if (sprite === 0) {
-      if (this.tilesMap.has(key)) this.tilesMap.delete(key);
-    } else this.tilesMap.set(key, sprite & 0xffff);
+      if (cells.has(key)) cells.delete(key);
+    } else cells.set(key, sprite & 0xffff);
   }
 
   onTilesChange(l: (changes: TileChange[]) => void): Unsubscribe {

@@ -251,3 +251,63 @@ describe('naming the first of each', () => {
     expect(told).toBeGreaterThan(0);
   });
 });
+
+/**
+ * The first sheet's pixels are the document's own roots, and that buffer is laid out at the
+ * geometry. Its entry existing -- which it does the moment a second sheet is added -- must not
+ * give it a second size: the picture was read at one width out of a buffer written at another,
+ * which shreds it.
+ */
+describe('the first sheet, once a second one exists', () => {
+  it('resizes through the geometry, buffer and all', () => {
+    const game = new Game(new Y.Doc());
+    game.addSheet('extra', 64, 64, 'x');
+    game.sheets[0]?.setPixel(3, 1, 5);
+
+    game.resizeSheet(FIRST_SHEET_ID, 64, 64);
+
+    expect(game.sheets[0]?.width).toBe(64);
+    expect(game.sheet.length).toBe(64 * 64);
+    expect(game.sheets[0]?.pixels).toBe(game.sheet);
+    // Pixels are kept by position, so the one drawn is still where it was drawn.
+    expect(game.sheets[0]?.getPixel(3, 1)).toBe(5);
+  });
+
+  it('writes its size to the geometry and to its entry at once', () => {
+    const game = new Game(new Y.Doc());
+    game.addSheet('extra', 64, 64, 'x');
+
+    game.resizeSheet(FIRST_SHEET_ID, 64, 96);
+
+    // The two used to be written by different paths, and a picture read at the width one of them
+    // gave, out of a buffer laid out at the width the other gave, is a shredded picture.
+    expect(game.sheetsMap.get(FIRST_SHEET_ID)?.get('w')).toBe(64);
+    expect(game.meta.get('sheetWidth')).toBe(64);
+    expect(game.sheetsMap.get(FIRST_SHEET_ID)?.get('h')).toBe(96);
+    expect(game.meta.get('sheetHeight')).toBe(96);
+    expect(game.sheets[0]?.pixels.length).toBe(64 * 96);
+  });
+
+  it('says the same size whichever way the document was written', () => {
+    // The legacy path: a size recorded only in the geometry, by a build that had no collections.
+    const game = new Game(new Y.Doc());
+    game.resize({ sheetWidth: 64, sheetHeight: 96 });
+    game.addSheet('extra', 64, 64, 'x');
+
+    expect(game.sheets[0]?.width).toBe(64);
+    expect(game.sheets[0]?.height).toBe(96);
+    expect(game.sheets[0]?.pixels.length).toBe(64 * 96);
+  });
+
+  it('moves the sheets after it, so their sprite numbers follow', () => {
+    const game = new Game(new Y.Doc());
+    game.addSheet('extra', 64, 64, 'x');
+    const was = game.sheets[1]?.base;
+
+    game.resizeSheet(FIRST_SHEET_ID, 64, 64);
+
+    expect(game.sheets[0]?.count).toBe(64);
+    expect(game.sheets[1]?.base).toBe(64);
+    expect(game.sheets[1]?.base).not.toBe(was);
+  });
+});
