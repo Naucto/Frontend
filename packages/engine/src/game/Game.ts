@@ -741,11 +741,20 @@ export class Game {
 
   /** A colour of null takes none, rather than taking slot zero. */
   describeSheet(id: string, name: string, colour: number | null): void {
-    this.describe(this.sheetsMap, id, name, colour);
+    // Declared first, because a game that never added a second sheet has no entry for the one it
+    // has -- it is read off the geometry -- and there would be nothing to write the name on. The
+    // rename went nowhere and said so nowhere either.
+    this.doc.transact(() => {
+      this.declareFirstSheet();
+      this.describe(this.sheetsMap, id, name, colour);
+    }, LOCAL_ORIGIN);
   }
 
   describeMap(id: string, name: string, colour: number | null): void {
-    this.describe(this.mapsMap, id, name, colour);
+    this.doc.transact(() => {
+      this.declareFirstMap();
+      this.describe(this.mapsMap, id, name, colour);
+    }, LOCAL_ORIGIN);
   }
 
   private describe(

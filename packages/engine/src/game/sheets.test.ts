@@ -212,3 +212,42 @@ describe('the rest of the document keeping up', () => {
     expect(game.sheets[1]?.getPixel(2, 2)).toBe(6);
   });
 });
+
+/**
+ * The one sheet and the one map a document starts with are read off its geometry, not held as
+ * entries. Naming one has to write the entry it is going to be written on, or the rename lands
+ * nowhere and reports nothing.
+ */
+describe('naming the first of each', () => {
+  it('names the sheet a document never declared', () => {
+    const game = new Game(new Y.Doc());
+
+    game.describeSheet(FIRST_SHEET_ID, 'clouds', null);
+
+    expect(game.sheets[0]?.name).toBe('clouds');
+    expect(game.sheets).toHaveLength(1);
+    expect(game.sheets[0]?.pixels).toBe(game.sheet);
+  });
+
+  it('names the map a document never declared', () => {
+    const game = new Game(new Y.Doc());
+
+    game.describeMap(FIRST_MAP_ID, 'overworld', 3);
+
+    expect(game.maps[0]?.name).toBe('overworld');
+    expect(game.maps[0]?.colour).toBe(3);
+    expect(game.maps).toHaveLength(1);
+  });
+
+  it('tells whoever is watching, so a banner made of it follows', () => {
+    const game = new Game(new Y.Doc());
+    let told = 0;
+    game.onCollectionsChange(() => {
+      told += 1;
+    });
+
+    game.describeSheet(FIRST_SHEET_ID, 'clouds', null);
+
+    expect(told).toBeGreaterThan(0);
+  });
+});
