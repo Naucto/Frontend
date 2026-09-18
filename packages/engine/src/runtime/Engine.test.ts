@@ -265,6 +265,46 @@ describe('Engine', () => {
     engine.destroy();
   });
 
+  /**
+   * The music plays in an audio graph of its own, so stopping the loop leaves it going. A pause
+   * holds it rather than stopping it, and only the transitions say anything: a second pause, or a
+   * resume of a game that is not paused, is not a request.
+   */
+  it('holds the music with the game and lets it go on with it', () => {
+    const calls: string[] = [];
+    const sound = {
+      flush: () => undefined,
+      stopAll: () => {
+        calls.push('stopAll');
+      },
+      pause: () => {
+        calls.push('pause');
+      },
+      resume: () => {
+        calls.push('resume');
+      },
+    } as unknown as SoundPort;
+    const game = new Game(new Y.Doc());
+    game.seedDefaults();
+
+    const engine = new Engine({ game, gfx: new RecordingBackend(), sound, driver });
+    engine.resume();
+    engine.run();
+    expect(calls).toEqual([]);
+
+    engine.pause();
+    engine.pause();
+    expect(calls).toEqual(['pause']);
+
+    engine.resume();
+    engine.resume();
+    expect(calls).toEqual(['pause', 'resume']);
+
+    engine.stop();
+    expect(calls).toEqual(['pause', 'resume', 'stopAll']);
+    engine.destroy();
+  });
+
   it('keeps what a running game changes out of the document the editors read', () => {
     const game = new Game(new Y.Doc());
     game.seedDefaults();

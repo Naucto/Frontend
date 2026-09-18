@@ -246,11 +246,15 @@ export class Engine {
   pause(): void {
     if (this.state !== 'running') return;
     this.loop.stop();
+    // The music plays in an audio graph of its own, not in the loop, so stopping the loop leaves
+    // it going. Held rather than stopped: a paused game goes on from the note it was on.
+    this.opts.sound?.pause();
     this.setState('paused');
   }
 
   resume(): void {
     if (this.state !== 'paused') return;
+    this.opts.sound?.resume();
     this.setState('running');
     this.loop.start();
   }

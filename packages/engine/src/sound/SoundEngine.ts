@@ -200,6 +200,14 @@ export class SoundEngine implements SoundPort {
     this.position = null;
   }
 
+  pause(): void {
+    this.backend.post({ type: 'pause' });
+  }
+
+  resume(): void {
+    this.backend.post({ type: 'resume' });
+  }
+
   setVolume(master: number, music?: number, sfx?: number): void {
     this.backend.post({ type: 'mixer', master, music, sfx });
   }

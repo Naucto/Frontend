@@ -99,6 +99,9 @@ export interface SoundPort {
   playMusic(song: number, loop: boolean, fadeIn: number): void;
   stopMusic(fadeOut: number): void;
   stopAll(): void;
+  /** Holds the transport where it stands, and lets it go on from there. A stop resets it. */
+  pause(): void;
+  resume(): void;
   setVolume(master: number, music?: number, sfx?: number): void;
   musicPosition(): { pattern: number; step: number } | null;
   isPlaying(channel: number): boolean;

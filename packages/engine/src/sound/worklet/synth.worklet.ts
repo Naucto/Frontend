@@ -23,6 +23,8 @@ class NauctoSynthProcessor extends AudioWorkletProcessor {
   private patterns = new Map<string, Pattern>();
   private tick = 0;
   private lastPos: string | null = null;
+  /** Frozen, not silenced: the clock and the voices stay where they are, to go on from there. */
+  private paused = false;
   /** Rolling peak envelope for the editor's oscilloscope; one bucket per render quantum. */
   private readonly scope = new Float32Array(SCOPE_BUCKETS);
   private scopeAt = 0;
@@ -72,6 +74,15 @@ class NauctoSynthProcessor extends AudioWorkletProcessor {
         break;
       case 'stop_all':
         this.seq.stopAll();
+        // A stop is a reset of the whole transport, the hold included: a game stopped while paused
+        // and run again would otherwise start into a worklet still frozen.
+        this.paused = false;
+        break;
+      case 'pause':
+        this.paused = true;
+        break;
+      case 'resume':
+        this.paused = false;
         break;
       case 'mixer':
         this.synth.master = cmd.master;
@@ -86,8 +97,12 @@ class NauctoSynthProcessor extends AudioWorkletProcessor {
     const left = out[0] as Float32Array;
     const right = out[1] ?? left;
     const frames = left.length;
-    this.seq.advance(frames);
-    this.synth.render(left, right, frames);
+    // Held, nothing advances and nothing renders. The output arrives zeroed, so leaving it alone is
+    // silence, and the scope's bucket below reads that silence off it like any other quantum.
+    if (!this.paused) {
+      this.seq.advance(frames);
+      this.synth.render(left, right, frames);
+    }
 
     // One bucket per quantum: the loudest sample in it, signed, so the trace keeps its shape.
     let peak = 0;

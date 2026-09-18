@@ -19,6 +19,9 @@ export type SynthCommand =
   /** Changes whether what is already playing loops. A setting reached mid-take, not a new take. */
   | { type: 'set_loop'; loop: boolean }
   | { type: 'stop_all' }
+  /** Holds the transport where it stands, and lets it go on from there. A stop resets it. */
+  | { type: 'pause' }
+  | { type: 'resume' }
   | { type: 'mixer'; master: number; music?: number; sfx?: number };
 
 /** Messages from the worklet back to the main thread. */
