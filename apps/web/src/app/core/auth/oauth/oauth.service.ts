@@ -1,160 +1,136 @@
 import { inject, Injectable } from '@angular/core';
-import {
-  authControllerLoginWithGithub,
-  authControllerLoginWithGoogleCode,
-  authControllerLoginWithMicrosoft,
-} from '@naucto/api-client';
 
-import { unwrap } from '../../api/api-errors';
 import { AppConfigService } from '../../config/app-config';
 import { readJson, remove, STORAGE_KEYS, writeJson } from '../../storage/local-storage';
 import { AuthStore } from '../auth.store';
 import { pkceChallenge, randomString } from '../pkce';
-
-export type OAuthProvider = 'google' | 'github' | 'microsoft';
+import {
+  OAuthError,
+  type OAuthProviderFlow,
+  type OAuthProviderId,
+  type OAuthStartContext,
+} from './oauth-provider';
+import { OAUTH_PROVIDERS } from './providers';
 
 interface PendingOAuth {
-  provider: OAuthProvider;
+  provider: OAuthProviderId;
   state: string;
   next: string;
 }
 
+/** What a popup's callback page hands back to the page that opened it. */
+export type OAuthHandBack = { token: string } | { error: string };
+
+type PopupMessage =
+  { type: 'naucto:oauth:success'; token: string } | { type: 'naucto:oauth:error'; error: string };
+
+/** Resolves with the token the popup's callback posts back — from this origin only. */
+function awaitPopup(): Promise<string> {
+  return new Promise<string>((resolve, reject) => {
+    const onMessage = (e: MessageEvent<Partial<PopupMessage>>): void => {
+      if (e.origin !== location.origin) return;
+      if (e.data.type === 'naucto:oauth:success' && e.data.token !== undefined) {
+        window.removeEventListener('message', onMessage);
+        resolve(e.data.token);
+      } else if (e.data.type === 'naucto:oauth:error') {
+        window.removeEventListener('message', onMessage);
+        reject(new Error(e.data.error ?? 'oauth_failed'));
+      }
+    };
+    window.addEventListener('message', onMessage);
+  });
+}
+
 /**
- * The three OAuth flows. Google and GitHub redirect the whole page; Microsoft
- * runs in a popup that exchanges the code itself (SPA registration) and posts
- * the id_token back. State/verifier live in sessionStorage only.
+ * Sends someone off to an OAuth provider and takes them back in.
+ *
+ * State and verifier live in sessionStorage only, which a popup inherits a copy of when it opens.
  */
 @Injectable({ providedIn: 'root' })
 export class OAuthService {
   private readonly config = inject(AppConfigService);
   private readonly auth = inject(AuthStore);
+  private readonly flows = inject(OAUTH_PROVIDERS);
 
-  async start(provider: OAuthProvider, next = '/hub'): Promise<void> {
-    const cfg = this.config.config();
+  providers(): readonly OAuthProviderFlow[] {
+    return this.flows;
+  }
+
+  provider(id: OAuthProviderId): OAuthProviderFlow {
+    const flow = this.flows.find((f) => f.id === id);
+    if (!flow) throw new OAuthError('oauth_unknown_provider');
+    return flow;
+  }
+
+  isConfigured(id: OAuthProviderId): boolean {
+    return this.provider(id).configured(this.config.config());
+  }
+
+  /**
+   * Resolves `'left-page'` when the browser is being redirected — the session will be completed
+   * by the callback page — and `'signed-in'` when a popup flow completed it here.
+   */
+  async start(id: OAuthProviderId, next = '/hub'): Promise<'left-page' | 'signed-in'> {
+    const flow = this.provider(id);
+    const config = this.config.config();
+    if (!flow.configured(config)) throw new OAuthError('oauth_not_configured');
     const state = randomString(16);
     writeJson(
       STORAGE_KEYS.oauthState,
-      { provider, state, next } satisfies PendingOAuth,
+      { provider: id, state, next } satisfies PendingOAuth,
       sessionStorage,
     );
-
-    if (provider === 'github') {
-      const url = new URL('https://github.com/login/oauth/authorize');
-      url.searchParams.set('client_id', cfg.github.clientId);
-      url.searchParams.set('redirect_uri', cfg.github.redirectUri);
-      url.searchParams.set('scope', 'user:email');
-      url.searchParams.set('state', state);
-      location.assign(url.toString());
-      return;
-    }
-
-    const verifier = randomString(48);
-    writeJson(STORAGE_KEYS.pkceVerifier, verifier, sessionStorage);
-    const challenge = await pkceChallenge(verifier);
-
-    if (provider === 'google') {
-      const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-      url.searchParams.set('client_id', cfg.google.clientId);
-      url.searchParams.set('redirect_uri', cfg.google.redirectUri);
-      url.searchParams.set('response_type', 'code');
-      url.searchParams.set('scope', 'openid email profile');
-      url.searchParams.set('code_challenge', challenge);
-      url.searchParams.set('code_challenge_method', 'S256');
-      url.searchParams.set('state', state);
-      location.assign(url.toString());
-      return;
-    }
-
-    const url = new URL(
-      `https://login.microsoftonline.com/${cfg.microsoft.tenantId}/oauth2/v2.0/authorize`,
-    );
-    url.searchParams.set('client_id', cfg.microsoft.clientId);
-    url.searchParams.set('redirect_uri', cfg.microsoft.redirectUri);
-    url.searchParams.set('response_type', 'code');
-    url.searchParams.set('scope', 'openid email profile');
-    url.searchParams.set('code_challenge', challenge);
-    url.searchParams.set('code_challenge_method', 'S256');
-    url.searchParams.set('state', state);
-    url.searchParams.set('prompt', 'select_account');
-    const popup = window.open(url.toString(), 'naucto-microsoft', 'width=520,height=640');
-    if (!popup) throw new Error('popup_blocked');
-    await new Promise<void>((resolve, reject) => {
-      const onMessage = (
-        e: MessageEvent<{ type?: string; token?: string; error?: string }>,
-      ): void => {
-        if (e.origin !== location.origin) return;
-        if (e.data.type === 'naucto:oauth:success' && e.data.token !== undefined) {
-          window.removeEventListener('message', onMessage);
-          this.auth.completeOAuth(e.data.token).then(resolve, reject);
-        } else if (e.data.type === 'naucto:oauth:error') {
-          window.removeEventListener('message', onMessage);
-          reject(new Error(e.data.error ?? 'oauth_failed'));
-        }
-      };
-      window.addEventListener('message', onMessage);
-    });
+    const ctx: OAuthStartContext = {
+      config,
+      state,
+      pkceChallenge: () => {
+        const verifier = randomString(48);
+        writeJson(STORAGE_KEYS.pkceVerifier, verifier, sessionStorage);
+        return pkceChallenge(verifier);
+      },
+      popup: (url) => {
+        const popup = window.open(url, 'naucto-oauth', 'width=520,height=640');
+        if (!popup) throw new OAuthError('popup_blocked');
+        return awaitPopup();
+      },
+    };
+    const started = await flow.start(ctx);
+    if (started === 'left-page') return 'left-page';
+    await this.auth.completeOAuth(started.token);
+    return 'signed-in';
   }
 
   /** Validates state and returns where to go next; throws on mismatch. */
-  consume(provider: OAuthProvider, state: string | null): PendingOAuth {
+  consume(provider: OAuthProviderId, state: string | null): PendingOAuth {
     const pending = readJson<PendingOAuth | null>(STORAGE_KEYS.oauthState, null, sessionStorage);
     remove(STORAGE_KEYS.oauthState, sessionStorage);
     if (pending?.provider !== provider || pending.state !== state)
-      throw new Error('oauth_state_mismatch');
+      throw new OAuthError('oauth_state_mismatch');
     return pending;
   }
 
-  takeVerifier(): string {
+  private takeVerifier(): string {
     const v = readJson<string>(STORAGE_KEYS.pkceVerifier, '', sessionStorage);
     remove(STORAGE_KEYS.pkceVerifier, sessionStorage);
-    if (!v) throw new Error('oauth_verifier_missing');
+    if (!v) throw new OAuthError('oauth_verifier_missing');
     return v;
   }
 
-  async finishGoogle(code: string): Promise<void> {
-    const res = unwrap(
-      await authControllerLoginWithGoogleCode({
-        body: { code, codeVerifier: this.takeVerifier() },
-        credentials: 'include',
-      }),
-    );
-    await this.auth.completeOAuth(res.access_token);
-  }
-
-  async finishGithub(code: string): Promise<void> {
-    const res = unwrap(
-      await authControllerLoginWithGithub({ body: { code }, credentials: 'include' }),
-    );
-    await this.auth.completeOAuth(res.access_token);
-  }
-
-  /** Runs inside the popup: exchange the code with Microsoft, then with our backend; returns the access token. */
-  async finishMicrosoftInPopup(code: string): Promise<string> {
-    const cfg = this.config.config();
-    const body = new URLSearchParams({
-      client_id: cfg.microsoft.clientId,
-      grant_type: 'authorization_code',
+  /** On the callback page: this app's access token for the code the provider sent back. */
+  finish(id: OAuthProviderId, code: string): Promise<string> {
+    return this.provider(id).finish({
+      config: this.config.config(),
       code,
-      redirect_uri: cfg.microsoft.redirectUri,
-      code_verifier: this.takeVerifier(),
-      scope: 'openid email profile',
+      verifier: () => this.takeVerifier(),
     });
-    const tokenRes = await fetch(
-      `https://login.microsoftonline.com/${cfg.microsoft.tenantId}/oauth2/v2.0/token`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body,
-      },
-    );
-    const json = (await tokenRes.json()) as { id_token?: string; error_description?: string };
-    if (!json.id_token) throw new Error(json.error_description ?? 'microsoft_token_failed');
-    const res = unwrap(
-      await authControllerLoginWithMicrosoft({
-        body: { token: json.id_token },
-        credentials: 'include',
-      }),
-    );
-    return res.access_token;
+  }
+
+  /** On a popup's callback page: gives the outcome to the page that opened it. */
+  handBack(result: OAuthHandBack): void {
+    const message: PopupMessage =
+      'token' in result
+        ? { type: 'naucto:oauth:success', token: result.token }
+        : { type: 'naucto:oauth:error', error: result.error };
+    (window.opener as Window | null)?.postMessage(message, location.origin);
   }
 }

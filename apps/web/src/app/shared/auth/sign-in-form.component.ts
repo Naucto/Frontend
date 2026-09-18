@@ -6,7 +6,8 @@ import {
   type PasswordPolicyDto as PasswordPolicy,
 } from '@app/core/api/planned.api';
 import { AuthStore } from '@app/core/auth/auth.store';
-import { type OAuthProvider, OAuthService } from '@app/core/auth/oauth/oauth.service';
+import { OAuthService } from '@app/core/auth/oauth/oauth.service';
+import { type OAuthProviderFlow } from '@app/core/auth/oauth/oauth-provider';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import {
   BrandMarkComponent,
@@ -93,39 +94,19 @@ import {
         <span class="h-px flex-1 bg-line-soft"></span>
       </div>
       <div class="grid grid-cols-1 gap-1 sm:grid-cols-3">
-        <button
-          ncButton
-          variant="secondary"
-          size="sm"
-          class="h-[36px] text-ink-body"
-          (click)="oauth('google')"
-          [disabled]="busy()"
-        >
-          <nc-brand-mark name="google" [size]="12" />
-          Google
-        </button>
-        <button
-          ncButton
-          variant="secondary"
-          size="sm"
-          class="h-[36px] text-ink-body"
-          (click)="oauth('github')"
-          [disabled]="busy()"
-        >
-          <nc-brand-mark name="github" [size]="12" />
-          GitHub
-        </button>
-        <button
-          ncButton
-          variant="secondary"
-          size="sm"
-          class="h-[36px] text-ink-body"
-          (click)="oauth('microsoft')"
-          [disabled]="busy()"
-        >
-          <nc-brand-mark name="microsoft" [size]="12" />
-          Microsoft
-        </button>
+        @for (p of providers; track p.id) {
+          <button
+            ncButton
+            variant="secondary"
+            size="sm"
+            class="h-[36px] text-ink-body"
+            (click)="oauth(p)"
+            [disabled]="busy()"
+          >
+            <nc-brand-mark [name]="p.mark" [size]="12" />
+            {{ p.label }}
+          </button>
+        }
       </div>
 
       <p class="mt-3 text-center text-meta text-ink-3">
@@ -147,7 +128,7 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SignInFormComponent {
-  /** Where an OAuth provider should return to; it is a full page redirect for two of the three. */
+  /** Where a provider that leaves the page should bring the reader back to. */
   readonly next = input<string>();
   readonly succeeded = output();
 
@@ -156,6 +137,7 @@ export class SignInFormComponent {
   private readonly i18n = inject(TranslocoService);
   private readonly toasts = inject(ToastService);
 
+  protected readonly providers = this.oauthService.providers();
   protected readonly mode = signal<'login' | 'register'>('login');
   protected readonly busy = signal(false);
   protected readonly policy = signal<PasswordPolicy | null>(null);
@@ -217,14 +199,16 @@ export class SignInFormComponent {
     return this.i18n.translate(this.mode() === 'register' ? 'auth.registerFailed' : 'auth.failed');
   }
 
-  protected async oauth(provider: OAuthProvider): Promise<void> {
+  protected async oauth(provider: OAuthProviderFlow): Promise<void> {
     this.busy.set(true);
     try {
-      await this.oauthService.start(provider, this.next() ?? '/hub');
-      // Google and GitHub leave the page entirely; only the popup provider returns to this one.
-      if (provider === 'microsoft') this.succeeded.emit();
+      const outcome = await this.oauthService.start(provider.id, this.next() ?? '/hub');
+      if (outcome === 'signed-in') this.succeeded.emit();
     } catch {
-      this.toasts.show(this.i18n.translate('auth.oauthFailed', { provider }), 'error');
+      this.toasts.show(
+        this.i18n.translate('auth.oauthFailed', { provider: provider.label }),
+        'error',
+      );
       this.busy.set(false);
     }
   }
