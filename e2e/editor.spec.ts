@@ -629,6 +629,56 @@ test.describe('editor', () => {
     await expect.poll(() => inked(page)).not.toBe(painted);
   });
 
+  test('ART flips a selection horizontally as one undo step', async ({ page }) => {
+    await page.goto('/edit/7/art');
+    const canvas = page.getByRole('img', { name: 'Sprite canvas' });
+    await expect(canvas).toBeVisible();
+    // Off, so the selection below is not clipped to the sprite in hand.
+    await page.getByRole('switch', { name: 'Lock' }).click();
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('no canvas');
+    const bar = page.getByRole('toolbar', { name: 'Transform the selection' });
+
+    /** The centre of a sheet pixel: the canvas is the whole sheet, drawn at a whole scale. */
+    const s = box.width / 128;
+    const at = (cx: number, cy: number): { x: number; y: number } => ({
+      x: box.x + (cx + 0.5) * s,
+      y: box.y + (cy + 0.5) * s,
+    });
+    /** The status line is the only reading of a single pixel the page offers. */
+    const colUnder = async (cx: number, cy: number): Promise<string> => {
+      const p = at(cx, cy);
+      await page.mouse.move(p.x, p.y);
+      // The readout follows the pointer, not the sheet: a nudge makes it read the pixel again.
+      await page.mouse.move(p.x + 1, p.y);
+      const text = await page.getByText(/X \d+ Y \d+/).textContent();
+      return /COL (\d+)/.exec(text ?? '')?.[1] ?? '';
+    };
+
+    // Two pixels on the left of a 4×2 region, so a flip has somewhere to send them.
+    await page.mouse.click(at(2, 4).x, at(2, 4).y);
+    await page.mouse.click(at(3, 4).x, at(3, 4).y);
+    expect(await colUnder(2, 4)).not.toBe('00');
+    expect(await colUnder(5, 4)).toBe('00');
+    await expect(bar).toHaveCount(0);
+
+    await page.getByRole('radio', { name: 'Select' }).click();
+    await page.mouse.move(at(2, 4).x, at(2, 4).y);
+    await page.mouse.down();
+    await page.mouse.move(at(5, 5).x, at(5, 5).y, { steps: 4 });
+    await page.mouse.up();
+    await expect(bar).toBeVisible();
+
+    await bar.getByRole('button', { name: 'Flip horizontally' }).click();
+    await expect.poll(() => colUnder(5, 4)).not.toBe('00');
+    expect(await colUnder(4, 4)).not.toBe('00');
+    expect(await colUnder(2, 4)).toBe('00');
+
+    await page.keyboard.press('Control+z');
+    await expect.poll(() => colUnder(2, 4)).not.toBe('00');
+    expect(await colUnder(5, 4)).toBe('00');
+  });
+
   test('MAP copies a selection of tiles and pastes it as one undo step', async ({ page }) => {
     await page.goto('/edit/7/map');
     const canvas = page.getByRole('img', { name: 'Map canvas' });
@@ -743,6 +793,68 @@ test.describe('editor', () => {
     await page.keyboard.press('Enter');
 
     await expect.poll(() => sprUnder(target.x, target.y)).not.toBe('000');
+  });
+
+  /**
+   * A tile is a sprite number, so a turn moves tiles and never turns their pictures: the tile that
+   * was to the right ends up below, wearing the same number.
+   */
+  test('MAP rotates the arrangement of a selection', async ({ page }) => {
+    await page.goto('/edit/7/map');
+    const canvas = page.getByRole('img', { name: 'Map canvas' });
+    await expect(canvas).toBeVisible();
+    const bar = page.getByRole('toolbar', { name: 'Transform the selection' });
+
+    // A two-wide brush lays two different sprites in one press, which a rotation can be seen on.
+    const picker = page.getByRole('img', { name: 'Tile picker' });
+    const pick = await picker.boundingBox();
+    if (!pick) throw new Error('no picker');
+    const cell = pick.width / 16;
+    await page.mouse.move(pick.x + cell * 2.5, pick.y + cell * 1.5);
+    await page.mouse.down();
+    await page.mouse.move(pick.x + cell * 3.5, pick.y + cell * 1.5, { steps: 4 });
+    await page.mouse.up();
+
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('no canvas');
+    const t = box.width / 128;
+    const at = (tx: number, ty: number): { x: number; y: number } => ({
+      x: box.x + (tx + 0.5) * t,
+      y: box.y + (ty + 0.5) * t,
+    });
+    const sprUnder = async (tx: number, ty: number): Promise<string> => {
+      const p = at(tx, ty);
+      await page.mouse.move(p.x, p.y);
+      // The readout follows the pointer, not the map: a nudge makes it read the tile again.
+      await page.mouse.move(p.x + 1, p.y);
+      const text = await page.getByText(/TILE \d+,\d+ · SPR \d+/).textContent();
+      return /SPR (\d+)/.exec(text ?? '')?.[1] ?? '';
+    };
+
+    await page.mouse.click(at(2, 2).x, at(2, 2).y);
+    const left = await sprUnder(2, 2);
+    const right = await sprUnder(3, 2);
+    expect(left).not.toBe('000');
+    expect(right).not.toBe(left);
+    expect(await sprUnder(2, 3)).toBe('000');
+    await expect(bar).toHaveCount(0);
+
+    await page.getByRole('radio', { name: 'Select' }).click();
+    await page.mouse.move(at(2, 2).x, at(2, 2).y);
+    await page.mouse.down();
+    await page.mouse.move(at(3, 2).x, at(3, 2).y, { steps: 4 });
+    await page.mouse.up();
+    await expect(bar).toBeVisible();
+
+    await bar.getByRole('button', { name: 'Rotate clockwise' }).click();
+    await expect.poll(() => sprUnder(2, 3)).toBe(right);
+    expect(await sprUnder(2, 2)).toBe(left);
+    expect(await sprUnder(3, 2)).toBe('000');
+    await expect(page.getByText('128 × 32 tiles')).toBeVisible();
+
+    await page.keyboard.press('Control+z');
+    await expect.poll(() => sprUnder(3, 2)).toBe(right);
+    expect(await sprUnder(2, 3)).toBe('000');
   });
 
   /**

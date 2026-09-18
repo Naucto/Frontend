@@ -13,8 +13,9 @@ import {
 } from '@angular/core';
 import { geometrySignal } from '@app/shared/pixel/geometry.signal';
 import { PaletteGridComponent } from '@app/shared/pixel/palette-grid.component';
-import { type Pt } from '@app/shared/pixel/pixel-tools';
+import { type Pt, type Transform } from '@app/shared/pixel/pixel-tools';
 import { SheetPainter } from '@app/shared/pixel/sheet-painter';
+import { TransformBarComponent } from '@app/shared/pixel/transform-bar.component';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { FIRST_SHEET_ID, MAX_SHEET_SIZE, type ResizePreview, SIZE_STEP } from '@naucto/engine';
 import { BUBBLEGUM_16, LOCAL_ORIGIN, PICO8_PALETTE, SPRITE_SIZE } from '@naucto/engine';
@@ -87,6 +88,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
     PaletteEditorComponent,
     SheetViewComponent,
     SpriteCanvasComponent,
+    TransformBarComponent,
     PresenceSurfaceComponent,
   ],
   template: `
@@ -209,6 +211,17 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
             [undo]="undo"
             (pasted)="art.setTool('move')"
           />
+          <!-- In the corner rather than beside the selection: at a zoom worth turning a sprite at,
+               the selection's edge is as often as not scrolled out of view. -->
+          @if (art.tool() === 'select' && art.selection()) {
+            <nc-transform-bar
+              class="absolute top-1.5 right-1.5 rounded-xs bg-page/80"
+              (flipH)="canvas.transformSelection('flipH')"
+              (flipV)="canvas.transformSelection('flipV')"
+              (rotateCw)="canvas.transformSelection('rotateCw')"
+              (rotateCcw)="canvas.transformSelection('rotateCcw')"
+            />
+          }
           <!-- Status and preview float over the canvas: the design gives the drawing surface the
                whole column rather than shaving a strip off the bottom of it. -->
           @if (hover(); as h) {
@@ -846,6 +859,15 @@ export class ArtTabPage {
     }
     if (mod && this.transfer(e.key.toLowerCase())) {
       e.preventDefault();
+      return;
+    }
+    // Capitals, so the flips are one rule in both tabs: a bare `v` is MOVE on the map.
+    const op = (
+      { H: 'flipH', V: 'flipV', ']': 'rotateCw', '[': 'rotateCcw' } as Record<string, Transform>
+    )[e.key];
+    if (op && !mod && this.art.tool() === 'select' && this.art.selection()) {
+      e.preventDefault();
+      this.canvas()?.transformSelection(op);
       return;
     }
     const tool = (

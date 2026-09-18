@@ -10,9 +10,10 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
-import { type Pt } from '@app/shared/pixel/pixel-tools';
+import { type Pt, type Transform } from '@app/shared/pixel/pixel-tools';
 import { SheetAtlas } from '@app/shared/pixel/sheet-atlas';
 import { SheetPainter } from '@app/shared/pixel/sheet-painter';
+import { TransformBarComponent } from '@app/shared/pixel/transform-bar.component';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { LOCAL_ORIGIN } from '@naucto/engine';
 import {
@@ -69,6 +70,7 @@ import { MinimapComponent } from './minimap.component';
     TooltipDirective,
     SheetViewComponent,
     MapCanvasComponent,
+    TransformBarComponent,
     MinimapComponent,
   ],
   template: `
@@ -164,6 +166,17 @@ import { MinimapComponent } from './minimap.component';
             [undo]="undo"
             (pasted)="map.setTool('move')"
           />
+          <!-- In the corner rather than beside the selection: the map is far wider than its well,
+               so the selection's edge is as often as not scrolled out of view. -->
+          @if (map.tool() === 'select' && map.selection()) {
+            <nc-transform-bar
+              class="absolute top-1.5 right-1.5 rounded-xs bg-page/80"
+              (flipH)="canvas.transformSelection('flipH')"
+              (flipV)="canvas.transformSelection('flipV')"
+              (rotateCw)="canvas.transformSelection('rotateCw')"
+              (rotateCcw)="canvas.transformSelection('rotateCcw')"
+            />
+          }
           <!-- Bottom left, over the artwork, on a scrim rather than in a bordered chip: a rule
                around it makes a reading look like a control, and the far corner is where the
                canvas's own furniture already is. -->
@@ -645,6 +658,15 @@ export class MapTabPage {
     }
     if (mod && this.transfer(e.key.toLowerCase())) {
       e.preventDefault();
+      return;
+    }
+    // Capitals, so the flips are one rule in both tabs: a bare `v` is MOVE here.
+    const op = (
+      { H: 'flipH', V: 'flipV', ']': 'rotateCw', '[': 'rotateCcw' } as Record<string, Transform>
+    )[e.key];
+    if (op && !mod && this.map.tool() === 'select' && this.map.selection()) {
+      e.preventDefault();
+      this.canvas()?.transformSelection(op);
       return;
     }
     const tool = (

@@ -23,6 +23,8 @@ import {
   linePoints,
   type Pt,
   rectPoints,
+  type Transform,
+  transformBlock,
 } from '@app/shared/pixel/pixel-tools';
 import { type SheetPainter } from '@app/shared/pixel/sheet-painter';
 import { DEFAULT_GEOMETRY, FIRST_SHEET_ID, type Game, SPRITE_SIZE } from '@naucto/engine';
@@ -475,6 +477,16 @@ export class SpriteCanvasComponent {
     });
   }
 
+  /** The pixels under a rectangle, row-major, as the sheet holds them now. */
+  private lift(rect: PixelRect): Uint8Array {
+    const sheet = this.sheet();
+    const pixels = new Uint8Array(rect.w * rect.h);
+    for (let y = 0; y < rect.h; y++)
+      for (let x = 0; x < rect.w; x++)
+        pixels[y * rect.w + x] = sheet?.getPixel(rect.x + x, rect.y + y) ?? 0;
+    return pixels;
+  }
+
   protected onDown(e: PointerEvent): void {
     if (e.button !== 0 && e.button !== 2) return;
     this.host.nativeElement.focus({ preventScroll: true });
@@ -518,11 +530,7 @@ export class SpriteCanvasComponent {
         break;
       case 'move': {
         const rect = this.selection() ?? this.bounds();
-        const pixels = new Uint8Array(rect.w * rect.h);
-        for (let y = 0; y < rect.h; y++)
-          for (let x = 0; x < rect.w; x++)
-            pixels[y * rect.w + x] = this.sheet()?.getPixel(rect.x + x, rect.y + y) ?? 0;
-        this.drag.lifted = { rect, pixels };
+        this.drag.lifted = { rect, pixels: this.lift(rect) };
         this.moveOffset.set({ x: 0, y: 0 });
         break;
       }
@@ -619,12 +627,7 @@ export class SpriteCanvasComponent {
   /** Falls back to what a tool may reach, so copying the sprite in hand needs no selection. */
   copySelection(): PixelClip {
     const rect = this.selection() ?? this.bounds();
-    const cells = new Uint8Array(rect.w * rect.h);
-    const sheet = this.sheet();
-    for (let y = 0; y < rect.h; y++)
-      for (let x = 0; x < rect.w; x++)
-        cells[y * rect.w + x] = sheet?.getPixel(rect.x + x, rect.y + y) ?? 0;
-    return { kind: 'pixels', w: rect.w, h: rect.h, cells };
+    return { kind: 'pixels', w: rect.w, h: rect.h, cells: this.lift(rect) };
   }
 
   /**
@@ -689,6 +692,34 @@ export class SpriteCanvasComponent {
       rectPoints({ x: sel.x, y: sel.y }, { x: sel.x + sel.w - 1, y: sel.y + sel.h - 1 }, true),
       0,
     );
+  }
+
+  /**
+   * Turns the selected pixels over in place, as one undo step.
+   *
+   * A rotation swaps the selection's sides, and the turned block keeps its top-left corner and is
+   * cut to what the tools may reach -- the rule a paste follows -- so a selection turned against an
+   * edge loses what would land past it rather than sliding away from where it was.
+   */
+  transformSelection(op: Transform): void {
+    // Done with the layer, as any other edit is: the turn reads the sheet, and a placed paste is
+    // not in it until it is settled.
+    this.settleFloating();
+    const sel = this.selection();
+    if (!sel) return;
+    const out = transformBlock({ cells: this.lift(sel), w: sel.w, h: sel.h }, op);
+    const rect = clampRect({ x: sel.x, y: sel.y, w: out.w, h: out.h }, this.bounds());
+    const sheet = this.sheet();
+    this.undo()?.stopCapturing();
+    this.game().transact(() => {
+      for (let y = 0; y < sel.h; y++)
+        for (let x = 0; x < sel.w; x++) sheet?.setPixel(sel.x + x, sel.y + y, 0);
+      for (let y = 0; y < rect.h; y++)
+        for (let x = 0; x < rect.w; x++)
+          sheet?.setPixel(rect.x + x, rect.y + y, out.cells[y * out.w + x] ?? 0);
+    });
+    this.undo()?.stopCapturing();
+    this.selection.set(rect);
   }
 
   // ---- drawing --------------------------------------------------------------

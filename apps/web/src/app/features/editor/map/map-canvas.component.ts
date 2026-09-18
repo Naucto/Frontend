@@ -16,10 +16,17 @@ import {
 import { ThemeService } from '@app/core/theme/theme.service';
 import { collectionsSignal } from '@app/shared/pixel/collections.signal';
 import { geometrySignal } from '@app/shared/pixel/geometry.signal';
-import { cssVar, floodFill, linePoints, type Pt } from '@app/shared/pixel/pixel-tools';
+import {
+  cssVar,
+  floodFill,
+  linePoints,
+  type Pt,
+  type Transform,
+  transformBlock,
+} from '@app/shared/pixel/pixel-tools';
 import { type SheetAtlas } from '@app/shared/pixel/sheet-atlas';
 import { type SheetPainter } from '@app/shared/pixel/sheet-painter';
-import { FIRST_MAP_ID, type Game, SPRITE_SIZE } from '@naucto/engine';
+import { FIRST_MAP_ID, type Game, type GameMap, SPRITE_SIZE } from '@naucto/engine';
 import {
   DragPanDirective,
   FLAG_ACCENTS,
@@ -301,16 +308,21 @@ export class MapCanvasComponent {
     });
   }
 
+  /** The tiles under a rectangle, row-major, as the map holds them now. */
+  private lift(map: GameMap, rect: TileRect): Uint16Array {
+    const cells = new Uint16Array(rect.w * rect.h);
+    for (let y = 0; y < rect.h; y++)
+      for (let x = 0; x < rect.w; x++) cells[y * rect.w + x] = map.getTile(rect.x + x, rect.y + y);
+    return cells;
+  }
+
   /** Nothing selected is nothing to copy: a map has no region in hand to fall back on. */
   copySelection(): TileClip | null {
     const sel = this.selection();
     if (!sel) return null;
     const map = this.gameMap();
     if (!map) return null;
-    const cells = new Uint16Array(sel.w * sel.h);
-    for (let y = 0; y < sel.h; y++)
-      for (let x = 0; x < sel.w; x++) cells[y * sel.w + x] = map.getTile(sel.x + x, sel.y + y);
-    return { kind: 'tiles', w: sel.w, h: sel.h, cells };
+    return { kind: 'tiles', w: sel.w, h: sel.h, cells: this.lift(map, sel) };
   }
 
   /**
@@ -402,6 +414,38 @@ export class MapCanvasComponent {
       for (let y = sel.y; y < sel.y + sel.h; y++)
         for (let x = sel.x; x < sel.x + sel.w; x++) map.setTile(x, y, 0);
     });
+  }
+
+  /**
+   * Turns the selected tiles over in place, as one undo step.
+   *
+   * It is the arrangement that turns: each tile changes place and keeps its own picture, since a
+   * tile is a sprite number and the sheet has no mirrored copy to point it at. A rotation swaps the
+   * selection's sides, and the turned block is kept whole and on the map -- the rule a paste
+   * follows -- so it slides away from an edge rather than losing what would land past it.
+   */
+  transformSelection(op: Transform): void {
+    // Done with the layer, as any other edit is: the turn reads the map, and a placed paste is not
+    // in it until it is settled.
+    this.settleFloating();
+    const sel = this.selection();
+    const map = this.gameMap();
+    if (!sel || !map) return;
+    const out = transformBlock({ cells: this.lift(map, sel), w: sel.w, h: sel.h }, op);
+    const rect = this.clampToMap({ x: sel.x, y: sel.y, w: out.w, h: out.h });
+    this.undo()?.stopCapturing();
+    this.game().transact(() => {
+      for (let y = 0; y < sel.h; y++)
+        for (let x = 0; x < sel.w; x++) map.setTile(sel.x + x, sel.y + y, 0);
+      for (let y = 0; y < rect.h; y++)
+        for (let x = 0; x < rect.w; x++) {
+          const tx = rect.x + x;
+          const ty = rect.y + y;
+          if (tx < map.width && ty < map.height) map.setTile(tx, ty, out.cells[y * out.w + x] ?? 0);
+        }
+    });
+    this.undo()?.stopCapturing();
+    this.selection.set(rect);
   }
 
   private emitViewport(): void {
@@ -496,11 +540,7 @@ export class MapCanvasComponent {
           this.drag = null;
           break;
         }
-        const cells = new Uint16Array(rect.w * rect.h);
-        for (let y = 0; y < rect.h; y++)
-          for (let x = 0; x < rect.w; x++)
-            cells[y * rect.w + x] = map.getTile(rect.x + x, rect.y + y);
-        this.drag.lifted = { rect, cells };
+        this.drag.lifted = { rect, cells: this.lift(map, rect) };
         this.moveOffset.set({ x: 0, y: 0 });
         break;
       }
