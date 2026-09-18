@@ -51,9 +51,14 @@ const NAV_LINK =
          itself cannot do this: it would only order it inside this subtree, which is painted at the
          bar's own place in the document — behind every positioned element that comes later. Above
          the editor's edge handles (20), below the toasts (50). -->
+    <!-- From md, a grid of mark | nav | search | actions. The search's track is what is left once
+         the clusters on either side have measured themselves, so the box shrinks before anything
+         can overlap it and centres in the room that exists. Centring it on the window's axis only
+         held for two clusters of equal width, which they are not: the mark and the nav on one side,
+         NEW GAME and the account on the other. -->
     <header
       *transloco="let t"
-      class="relative z-30 flex min-h-7 flex-wrap items-center gap-x-0 gap-y-2 border-b border-line bg-panel py-1 pr-2 pl-0 md:flex-nowrap md:py-0"
+      class="relative z-30 flex min-h-7 flex-wrap items-center gap-x-0 gap-y-2 border-b border-line bg-panel py-1 pr-2 pl-0 md:grid md:grid-cols-[auto_auto_minmax(0,1fr)_auto] md:gap-x-2 md:py-0"
     >
       <a
         routerLink="/hub"
@@ -75,7 +80,7 @@ const NAV_LINK =
       </button>
 
       <nav
-        class="order-last w-full flex-wrap items-center gap-1 md:order-none md:flex md:w-auto md:min-w-[384px] md:flex-1"
+        class="order-last w-full flex-wrap items-center gap-1 md:order-none md:flex md:w-auto"
         [class.flex]="menuOpen()"
         [class.hidden]="!menuOpen()"
         [attr.aria-label]="t('nav.main')"
@@ -97,22 +102,20 @@ const NAV_LINK =
       </nav>
 
       @if (search()) {
-        <!-- On the window's axis, not the leftover gutter's. Three flex columns cannot put it there:
-             the mark takes an 81px cell on the left with nothing to answer it on the right, so an
-             evenly-shared row lands the field half that width off-centre. The design centres it
-             absolutely and lets the two clusters flank it unevenly, which is what they measure. It
-             only leaves the flow once there is room for 420 between two 384-wide clusters. -->
         <nc-search-suggest
           #search
-          class="ms-2 min-w-0 flex-1 md:flex-[0_1_420px] xl:absolute xl:top-1/2 xl:left-1/2 xl:ms-0 xl:w-[420px] xl:flex-none xl:-translate-x-1/2 xl:-translate-y-1/2"
+          class="ms-2 min-w-0 flex-1 md:ms-0 md:w-full md:max-w-[420px] md:justify-self-center"
           [placeholder]="t('nav.search')"
           [query]="query()"
         />
       } @else {
-        <span class="ms-2 hidden flex-1 md:block"></span>
+        <span class="hidden md:block"></span>
       }
 
-      <div class="ms-2 flex flex-1 items-center justify-end gap-1 md:min-w-[384px]">
+      <div
+        class="ms-2 flex flex-1 items-center justify-end gap-1 md:ms-0 md:justify-self-end"
+        data-testid="top-bar-actions"
+      >
         @if (auth.isAuthenticated()) {
           <!-- The design writes the plus, rather than drawing it: at this size the glyph and the
                icon are the same mark, and the glyph keeps the button at its 120px. Narrow enough

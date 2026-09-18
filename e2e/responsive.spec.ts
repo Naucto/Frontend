@@ -1,4 +1,4 @@
-import { expect, test } from './fixtures';
+import { expect, type Page, test } from './fixtures';
 
 /**
  * The design's 1920 and 1400 frames simulate one screen size; they are not a maximum. Every
@@ -50,3 +50,47 @@ test.describe('editor gate', () => {
     await expect(page.getByRole('heading', { name: /insert game/i })).toBeVisible();
   });
 });
+
+/**
+ * Signed in, because that is the bar at its widest: four nav links on one side, NEW GAME, the bell
+ * and the account on the other. The search sits between them and has to give way before either
+ * cluster does — at these widths it used to be centred on the window and run under the nav.
+ */
+async function signIn(page: Page): Promise<void> {
+  await page.route('**/auth/refresh', (r) => r.fulfill({ json: { access_token: 'tok' } }));
+  await page.route('**/users/profile', (r) =>
+    r.fulfill({
+      json: {
+        id: 1,
+        email: 'a@x',
+        username: 'alexis',
+        nickname: 'alexis',
+        roles: [],
+        createdAt: '',
+        updatedAt: '',
+        message: '',
+      },
+    }),
+  );
+}
+
+for (const width of [1100, 1280]) {
+  test.describe(`top bar search (${String(width)}px)`, () => {
+    test.use({ viewport: { width, height: 800 } });
+
+    test('sits clear of both clusters and keeps a usable width', async ({ page }) => {
+      await signIn(page);
+      await page.goto('/hub');
+      await expect(page.getByRole('link', { name: /new game/i })).toBeVisible();
+
+      const nav = await page.getByRole('navigation', { name: 'Main navigation' }).boundingBox();
+      const search = await page.locator('nc-search-suggest').boundingBox();
+      const actions = await page.getByTestId('top-bar-actions').boundingBox();
+      if (!nav || !search || !actions) throw new Error('top bar is not laid out');
+
+      expect(nav.x + nav.width).toBeLessThanOrEqual(search.x);
+      expect(search.x + search.width).toBeLessThanOrEqual(actions.x);
+      expect(search.width).toBeGreaterThanOrEqual(240);
+    });
+  });
+}
