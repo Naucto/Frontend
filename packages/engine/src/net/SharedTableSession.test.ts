@@ -561,6 +561,29 @@ describe('SharedTableSession', () => {
     expect(slave.isLocked('turn')).toBe(true);
   });
 
+  it('parses a queue once until it changes', async () => {
+    const hub = new Hub();
+    const host = makeSession('host', 1, hub);
+    const slave = makeSession('slave', 2, hub);
+
+    host.queuePush('events', 'a');
+    await flush();
+
+    const parse = vi.spyOn(JSON, 'parse');
+    expect(slave.queueLength('events')).toBe(1);
+    expect(slave.queuePeek('events')).toBe('a');
+    expect(parse).toHaveBeenCalledTimes(1);
+
+    host.queuePush('events', 'b');
+    await flush();
+    parse.mockClear();
+
+    expect(slave.queueLength('events')).toBe(2);
+    expect(slave.queuePeek('events')).toBe('a');
+    expect(parse).toHaveBeenCalledTimes(1);
+    parse.mockRestore();
+  });
+
   it('bootstraps object contents to a late-joining slave via the snapshot', async () => {
     const hub = new Hub();
     const host = makeSession('host', 1, hub);

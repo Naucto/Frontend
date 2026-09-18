@@ -176,6 +176,9 @@ export class SharedTableSession implements Destroyable {
   private readonly _lockWaiters = new Map<string, LockWaiter[]>();
   private readonly _pendingLocks = new Map<string, () => void>();
   private readonly _pendingPops = new Map<string, (value: unknown) => void>();
+  // The queue string is parsed once per distinct value, not once per read: a game polls length
+  // and head every frame, and the string only changes when something is pushed or popped.
+  private readonly _queueCache = new Map<string, { raw: string; items: unknown[] }>();
 
   constructor(transport: SessionTransport, permissions: NetPermissions = ALLOW_ALL) {
     this._transport = transport;
@@ -911,12 +914,18 @@ export class SharedTableSession implements Destroyable {
     const raw = this.getValue(path + QUEUE_SUFFIX);
     if (typeof raw !== 'string') return [];
 
+    const cached = this._queueCache.get(path);
+    if (cached?.raw === raw) return cached.items;
+
+    let items: unknown[] = [];
     try {
-      const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed : [];
+      const parsed: unknown = JSON.parse(raw);
+      if (Array.isArray(parsed)) items = parsed;
     } catch {
-      return [];
+      /* Not a queue; reads as an empty one, as it did before. */
     }
+    this._queueCache.set(path, { raw, items });
+    return items;
   }
 
   private _sendSnapshot(userId: UserId): void {

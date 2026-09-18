@@ -137,6 +137,26 @@ describe('SyncedSessionTransport', () => {
     transport.destroy();
   });
 
+  it('serialises a broadcast once, however many channels it goes down', () => {
+    const transport = new SyncedSessionTransport(options('host', 1));
+    signaling().opts.onFrame({ type: 'peer-joined', userId: 2 });
+    signaling().opts.onFrame({ type: 'peer-joined', userId: 3 });
+    peer(0).fire('connect');
+    peer(1).fire('connect');
+
+    const wire = JSON.stringify({ type: 'state', data: { x: 1 } });
+    const stringify = vi.spyOn(JSON, 'stringify');
+    transport.broadcastState({ x: 1 });
+
+    expect(peer(0).send).toHaveBeenCalledWith(wire);
+    expect(peer(1).send).toHaveBeenCalledWith(wire);
+    expect(stringify).toHaveBeenCalledTimes(1);
+    expect(signaling().send).not.toHaveBeenCalled();
+
+    stringify.mockRestore();
+    transport.destroy();
+  });
+
   it("sends over the data channel once a slave's P2P connects", () => {
     const transport = new SyncedSessionTransport(options('slave', 2));
 

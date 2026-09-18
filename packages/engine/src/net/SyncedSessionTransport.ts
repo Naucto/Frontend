@@ -170,10 +170,14 @@ export class SyncedSessionTransport implements SessionTransport {
   broadcastState(data: unknown): void {
     this._impaired(() => {
       let anyRelay = false;
+      // The same frame goes down every channel, so it is serialised once for all of them: this
+      // runs once per game frame on the host, and its cost was the state times the player count.
+      let wire: string | null = null;
 
       for (const peer of this._peers.values()) {
         if (peer.channelOpen) {
-          this._safeSend(peer, { type: 'state', data });
+          wire ??= JSON.stringify({ type: 'state', data });
+          this._safeSend(peer, wire);
         } else {
           anyRelay = true;
         }
@@ -191,7 +195,7 @@ export class SyncedSessionTransport implements SessionTransport {
       const peer = this._peers.get(userId);
 
       if (peer?.channelOpen) {
-        this._safeSend(peer, { type: 'response', data });
+        this._safeSend(peer, JSON.stringify({ type: 'response', data }));
         return;
       }
 
@@ -204,7 +208,7 @@ export class SyncedSessionTransport implements SessionTransport {
       const host = this._hostPeer();
 
       if (host?.channelOpen) {
-        this._safeSend(host, { type: 'request', data });
+        this._safeSend(host, JSON.stringify({ type: 'request', data }));
         return;
       }
 
@@ -378,7 +382,7 @@ export class SyncedSessionTransport implements SessionTransport {
     else if (frame.type === 'response') this._emit('response', frame.data);
     else if (frame.type === 'ping') {
       const peer = this._peers.get(userId);
-      if (peer) this._safeSend(peer, { type: 'pong', data: frame.data });
+      if (peer) this._safeSend(peer, JSON.stringify({ type: 'pong', data: frame.data }));
     } else if (frame.type === 'pong') {
       const peer = this._peers.get(userId);
       const sentAt = typeof frame.data === 'number' ? frame.data : null;
@@ -418,7 +422,7 @@ export class SyncedSessionTransport implements SessionTransport {
       const now = Date.now();
       for (const peer of this._peers.values()) {
         if (!peer.channelOpen) continue;
-        this._safeSend(peer, { type: 'ping', data: now });
+        this._safeSend(peer, JSON.stringify({ type: 'ping', data: now }));
         this._sampleUsage(peer);
       }
     }, PING_INTERVAL_MS);
@@ -437,9 +441,9 @@ export class SyncedSessionTransport implements SessionTransport {
     if (this.role === 'host') this._emit('peerJoined', userId);
   }
 
-  private _safeSend(peer: Peer, frame: { type: string; data?: unknown }): void {
+  private _safeSend(peer: Peer, wire: string): void {
     try {
-      peer.conn.send(JSON.stringify(frame));
+      peer.conn.send(wire);
     } catch {
       peer.channelOpen = false;
     }
