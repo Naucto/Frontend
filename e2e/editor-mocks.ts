@@ -21,10 +21,10 @@ const project = {
   forkCount: 4,
   forkedFromId: 3,
   collaborators: [
-    { id: 1, username: 'alexis', email: 'a@x' },
-    { id: 4, username: 'priax', email: 'p@x' },
+    { id: 1, username: 'alexis' },
+    { id: 4, username: 'priax' },
   ],
-  creator: { id: 1, username: 'alexis', email: 'a@x' },
+  creator: { id: 1, username: 'alexis' },
 };
 
 /** Mocks enough of the API for the editor to open project 7 as its host. */

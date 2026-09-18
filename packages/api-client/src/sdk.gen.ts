@@ -22,6 +22,8 @@ import type {
   AuthControllerChangePasswordData,
   AuthControllerChangePasswordErrors,
   AuthControllerChangePasswordResponses,
+  AuthControllerGetPasswordPolicyData,
+  AuthControllerGetPasswordPolicyResponses,
   AuthControllerLoginData,
   AuthControllerLoginErrors,
   AuthControllerLoginResponses,
@@ -1520,6 +1522,17 @@ export const authControllerLogin = <ThrowOnError extends boolean = false>(
       'Content-Type': 'application/json',
       ...options.headers,
     },
+  });
+
+/**
+ * The password rule this deployment enforces, so a form can enforce the same one
+ */
+export const authControllerGetPasswordPolicy = <ThrowOnError extends boolean = false>(
+  options?: Options<AuthControllerGetPasswordPolicyData, ThrowOnError>,
+): RequestResult<AuthControllerGetPasswordPolicyResponses, unknown, ThrowOnError> =>
+  (options?.client ?? client).get<AuthControllerGetPasswordPolicyResponses, unknown, ThrowOnError>({
+    url: '/auth/password-policy',
+    ...options,
   });
 
 /**

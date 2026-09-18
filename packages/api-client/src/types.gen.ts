@@ -19,10 +19,6 @@ export type UserBasicInfoDto = {
    * The username
    */
   username: string;
-  /**
-   * The email address
-   */
-  email: string;
 };
 
 export type ProjectExResponseDto = {
@@ -180,6 +176,84 @@ export type ProjectLimitsDto = {
    * Maximum size (bytes) of an uploaded project blob
    */
   maxBlobBytes: number;
+  /**
+   * Named versions a project may hold; saving under an existing name rewrites it
+   */
+  maxCheckpoints: number;
+  /**
+   * Autosave slots kept per project, oldest pruned
+   */
+  maxAutosaves: number;
+};
+
+export type ContentSizeBreakdownDto = {
+  /**
+   * UTF-8 bytes of Lua source
+   */
+  code: number;
+  /**
+   * Painted sprite-sheet pixels
+   */
+  sprites: number;
+  /**
+   * Sprites with at least one flag set
+   */
+  flags: number;
+  /**
+   * Map tiles set
+   */
+  map: number;
+  /**
+   * UTF-8 bytes of instruments, patterns, songs, sfx and samples
+   */
+  sound: number;
+  /**
+   * Bytes of the colour palette
+   */
+  palette: number;
+  /**
+   * Sum of every category
+   */
+  total: number;
+  /**
+   * Game document schema version (0 = legacy document)
+   */
+  schemaVersion: number;
+};
+
+export type ProjectSizeDto = {
+  /**
+   * Project ID
+   */
+  projectId: number;
+  contentSize: ContentSizeBreakdownDto;
+  /**
+   * Maximum logical content size (bytes) a game can be published at
+   */
+  maxContentBytes: number;
+  /**
+   * Whether the project fits within the publishing budget
+   */
+  withinBudget: boolean;
+};
+
+export type CreateProjectDto = {
+  /**
+   * The name of the project
+   */
+  name: string;
+  /**
+   * A short description of the project
+   */
+  shortDesc: string;
+  /**
+   * URL to the project icon
+   */
+  iconUrl?: string;
+  /**
+   * Tags attached to the project
+   */
+  tags?: Array<string>;
 };
 
 export type ProjectResponseDto = {
@@ -267,76 +341,6 @@ export type ProjectResponseDto = {
    * The project this was forked from, by name — lineage renders a title and an author rather than an id
    */
   forkedFrom?: ForkedFromDto | null;
-};
-
-export type ContentSizeBreakdownDto = {
-  /**
-   * UTF-8 bytes of Lua source
-   */
-  code: number;
-  /**
-   * Painted sprite-sheet pixels
-   */
-  sprites: number;
-  /**
-   * Sprites with at least one flag set
-   */
-  flags: number;
-  /**
-   * Map tiles set
-   */
-  map: number;
-  /**
-   * UTF-8 bytes of instruments, patterns, songs, sfx and samples
-   */
-  sound: number;
-  /**
-   * Bytes of the colour palette
-   */
-  palette: number;
-  /**
-   * Sum of every category
-   */
-  total: number;
-  /**
-   * Game document schema version (0 = legacy document)
-   */
-  schemaVersion: number;
-};
-
-export type ProjectSizeDto = {
-  /**
-   * Project ID
-   */
-  projectId: number;
-  contentSize: ContentSizeBreakdownDto;
-  /**
-   * Maximum logical content size (bytes) a game can be published at
-   */
-  maxContentBytes: number;
-  /**
-   * Whether the project fits within the publishing budget
-   */
-  withinBudget: boolean;
-};
-
-export type CreateProjectDto = {
-  /**
-   * The name of the project
-   */
-  name: string;
-  /**
-   * A short description of the project
-   */
-  shortDesc: string;
-  /**
-   * URL to the project icon
-   */
-  iconUrl?: string;
-  /**
-   * Tags attached to the project
-   */
-  tags?: Array<string>;
 };
 
 export type ForkProjectResponseDto = {
@@ -508,6 +512,21 @@ export type ImageUrlResponseDto = {
   url: string;
 };
 
+export type CheckpointLimitDto = {
+  statusCode: number;
+  error: string;
+  code: string;
+  message: string;
+  /**
+   * Named versions the project holds
+   */
+  count: number;
+  /**
+   * Named versions it may hold
+   */
+  max: number;
+};
+
 export type ProjectTooLargeDto = {
   statusCode: number;
   error: string;
@@ -577,7 +596,7 @@ export type CreateGameSessionDto = {
 };
 
 export type WebRtcOfferPeerIceServerConfig = {
-  urls: string;
+  urls: Array<string>;
   username?: {
     [key: string]: unknown;
   };
@@ -996,6 +1015,21 @@ export type LoginDto = {
   password: string;
 };
 
+export type PasswordPolicyDto = {
+  /**
+   * Fewest characters a password may hold
+   */
+  minLength: number;
+  /**
+   * How many of the character classes below a password must draw on
+   */
+  minCharacterClasses: number;
+  /**
+   * The classes that count towards minCharacterClasses
+   */
+  characterClasses: Array<'letters' | 'digits' | 'symbols'>;
+};
+
 export type CreateUserDto = {
   /**
    * User email address
@@ -1013,6 +1047,31 @@ export type CreateUserDto = {
    * User password
    */
   password: string;
+};
+
+export type ViolationDto = {
+  /**
+   * Dotted path of the rejected field, array indices included
+   */
+  field: string;
+  /**
+   * Stable identifier for the rule it broke
+   */
+  code: string;
+};
+
+export type ValidationErrorResponseDto = {
+  statusCode: number;
+  error: string;
+  message: Array<string>;
+  violations: Array<ViolationDto>;
+};
+
+export type ConflictErrorResponseDto = {
+  statusCode: number;
+  error: string;
+  message: string;
+  violations: Array<ViolationDto>;
 };
 
 export type GoogleCodeDto = {
@@ -2095,6 +2154,10 @@ export type ProjectControllerSaveCheckpointData = {
 
 export type ProjectControllerSaveCheckpointErrors = {
   /**
+   * The project holds as many named versions as it may
+   */
+  400: CheckpointLimitDto;
+  /**
    * Forbidden
    */
   403: unknown;
@@ -2103,6 +2166,9 @@ export type ProjectControllerSaveCheckpointErrors = {
    */
   422: unknown;
 };
+
+export type ProjectControllerSaveCheckpointError =
+  ProjectControllerSaveCheckpointErrors[keyof ProjectControllerSaveCheckpointErrors];
 
 export type ProjectControllerSaveCheckpointResponses = {
   /**
@@ -3098,6 +3164,20 @@ export type AuthControllerLoginResponses = {
 export type AuthControllerLoginResponse =
   AuthControllerLoginResponses[keyof AuthControllerLoginResponses];
 
+export type AuthControllerGetPasswordPolicyData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/auth/password-policy';
+};
+
+export type AuthControllerGetPasswordPolicyResponses = {
+  200: PasswordPolicyDto;
+};
+
+export type AuthControllerGetPasswordPolicyResponse =
+  AuthControllerGetPasswordPolicyResponses[keyof AuthControllerGetPasswordPolicyResponses];
+
 export type AuthControllerRegisterData = {
   body: CreateUserDto;
   path?: never;
@@ -3109,16 +3189,15 @@ export type AuthControllerRegisterErrors = {
   /**
    * Bad request
    */
-  400: unknown;
+  400: ValidationErrorResponseDto;
   /**
-   * Cannot register as an admin
+   * Email or username already in use
    */
-  403: unknown;
-  /**
-   * Email already in use
-   */
-  409: unknown;
+  409: ConflictErrorResponseDto;
 };
+
+export type AuthControllerRegisterError =
+  AuthControllerRegisterErrors[keyof AuthControllerRegisterErrors];
 
 export type AuthControllerRegisterResponses = {
   /**
