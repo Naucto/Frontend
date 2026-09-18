@@ -239,6 +239,9 @@ export class Game {
   private readonly geometryListeners = new Set<() => void>();
   private readonly collectionListeners = new Set<() => void>();
   private readonly sheetMirrors = new Map<string, SheetMirror>();
+  /** The projections as last built, or null once the document has moved under them. */
+  private sheetsHeld: Sheet[] | null = null;
+  private mapsHeld: GameMap[] | null = null;
   /**
    * How a Sheet reaches the document.
    *
@@ -292,10 +295,14 @@ export class Game {
       });
     };
     this.sheetsMap.observeDeep(() => {
+      this.forgetProjections();
       this.attachSheetObservers();
       told();
     });
-    this.mapsMap.observeDeep(told);
+    this.mapsMap.observeDeep(() => {
+      this.forgetProjections();
+      told();
+    });
     // A size is the shape of every mirror above, so a peer changing one has to be caught here
     // rather than left to whoever happens to read next.
     this.meta.observe((e) => {
@@ -373,38 +380,62 @@ export class Game {
   }
 
   /**
+   * Drops the held projections, so the next read builds them from the document.
+   *
+   * Called from the collection observers and from a geometry change, which between them see every
+   * write that can alter a projection: an entry added, removed, renamed, reordered or resized,
+   * locally or from a peer, and a first sheet or map resized through the document's meta. A cell
+   * written into a mirror is not one of them -- the mirror is the same buffer the projection holds.
+   */
+  private forgetProjections(): void {
+    this.sheetsHeld = null;
+    this.mapsHeld = null;
+  }
+
+  /**
    * Every sheet, in order, with its sprite numbers already worked out.
    *
    * A document that declares none has one all the same: an empty entry, which takes the document's
    * geometry the way any sheet that states no size of its own does. Written that way rather than as
    * a sheet built by hand, so the one below is the only place a sheet is ever made.
+   *
+   * Held between document changes: the renderer asks for the sheet of every sprite it draws, and
+   * walking Yjs for each would cost a frame its budget. Inside a local transaction the held array
+   * lags the write until the observers run at its end; the two reads that happen there -- the
+   * order an added entry takes, and the shape a renumbering started from -- want exactly the
+   * answer from before the write.
    */
   get sheets(): Sheet[] {
+    if (this.sheetsHeld) return this.sheetsHeld;
     let base = 0;
 
-    return this.entriesOrDefault(this.sheetsMap, FIRST_SHEET_ID).map(([id, e], i) => {
-      const { width, height } = this.sizeOf(id);
-      const mirror = this.sheetMirror(id, { width, height });
-      const sheet = new Sheet(
-        id,
-        stringOf(e, 'name', ''),
-        numberOf(e, 'order', i),
-        width,
-        height,
-        base,
-        colourOf(e),
-        mirror.pixels,
-        mirror.flags,
-        this.sheetWriter,
-      );
-      base += sheet.count;
+    return (this.sheetsHeld = this.entriesOrDefault(this.sheetsMap, FIRST_SHEET_ID).map(
+      ([id, e], i) => {
+        const { width, height } = this.sizeOf(id);
+        const mirror = this.sheetMirror(id, { width, height });
+        const sheet = new Sheet(
+          id,
+          stringOf(e, 'name', ''),
+          numberOf(e, 'order', i),
+          width,
+          height,
+          base,
+          colourOf(e),
+          mirror.pixels,
+          mirror.flags,
+          this.sheetWriter,
+        );
+        base += sheet.count;
 
-      return sheet;
-    });
+        return sheet;
+      },
+    ));
   }
 
   get maps(): GameMap[] {
-    return this.entriesOrDefault(this.mapsMap, FIRST_MAP_ID).map(([id, e], i) => {
+    if (this.mapsHeld) return this.mapsHeld;
+
+    return (this.mapsHeld = this.entriesOrDefault(this.mapsMap, FIRST_MAP_ID).map(([id, e], i) => {
       const { width, height } = this.mapSizeOf(id);
 
       return new GameMap(
@@ -416,7 +447,7 @@ export class Game {
         colourOf(e),
         this.mapMirror(id, { width, height }).tiles,
       );
-    });
+    }));
   }
 
   /**
@@ -937,6 +968,7 @@ export class Game {
       return;
 
     this._geometry = next;
+    this.forgetProjections();
     this.geometryListeners.forEach((l) => {
       l();
     });
