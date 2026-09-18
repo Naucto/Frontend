@@ -121,10 +121,28 @@ export class RuntimeHostService {
     };
     canvas.addEventListener('pointerdown', unlock);
     canvas.addEventListener('keydown', unlock);
+    // A hidden tab gets no animation frames, so the loop stands still there of its own accord;
+    // the audio graph gets its quanta regardless, and the music went on alone. The engine has no
+    // DOM to notice from, so this is where the tab's visibility reaches it: paused while hidden,
+    // resumed on return — unless the pause was the author's, which stays a pause.
+    let pausedByVisibility = false;
+    const onVisibility = (): void => {
+      if (document.hidden) {
+        if (engine.currentState === 'running') {
+          engine.pause();
+          pausedByVisibility = true;
+        }
+      } else if (pausedByVisibility) {
+        pausedByVisibility = false;
+        engine.resume();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
     this.unsub.push(
       () => {
         canvas.removeEventListener('pointerdown', unlock);
         canvas.removeEventListener('keydown', unlock);
+        document.removeEventListener('visibilitychange', onVisibility);
       },
       engine.onStateChange((s) => {
         this.state.set(s);

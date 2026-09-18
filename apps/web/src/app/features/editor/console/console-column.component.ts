@@ -331,24 +331,26 @@ export class ConsoleColumnComponent {
         if (on) this.screen()?.runtime.play();
       });
     });
-    // Swapping to the docs pauses the game rather than rendering it to a hidden canvas, and
-    // swapping back resumes it — but only if the pause was ours, so a game the author had
-    // deliberately paused does not start itself when they close the docs.
-    let pausedByDoc = false;
+    // Hiding the screen pauses the game rather than rendering it to a canvas nobody sees — the
+    // docs taking its place, a canvas tab with the viewer docked — and showing it again resumes
+    // it, but only if the pause was ours, so a game the author had deliberately paused does not
+    // start itself when the screen comes back. Paused, never stopped: a stop ends the netplay
+    // session this column stays mounted to keep.
+    let pausedByHiding = false;
     effect(() => {
-      const hidden = this.ui.columnMode() === 'swap';
+      const hidden = this.screenHidden();
       untracked(() => {
         const runtime = this.screen()?.runtime;
         if (!runtime) return;
         if (hidden) {
           if (runtime.state() === 'running') {
             runtime.pause();
-            pausedByDoc = true;
+            pausedByHiding = true;
           }
           return;
         }
-        if (pausedByDoc) {
-          pausedByDoc = false;
+        if (pausedByHiding) {
+          pausedByHiding = false;
           runtime.resume();
         }
       });

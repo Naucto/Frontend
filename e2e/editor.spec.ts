@@ -1668,3 +1668,80 @@ test('the sheet navigator fits its panel and keeps its tiles square', async ({ p
   expect(tall.height / tall.width).toBeCloseTo(4, 1);
   expect(tall.height).toBeLessThanOrEqual(384);
 });
+
+/**
+ * What the synth was told, in the order it was told. The music plays in an audio graph a test
+ * cannot listen to, so the commands on their way there are the one place the transport shows.
+ */
+async function recordSynthCommands(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    const log: string[] = [];
+    (window as unknown as { __synthLog: string[] }).__synthLog = log;
+    const port: { postMessage(...args: [unknown, ...unknown[]]): void } = MessagePort.prototype;
+    const post = port.postMessage;
+    port.postMessage = function (this: MessagePort, ...args) {
+      const [msg] = args;
+      if (typeof msg === 'object' && msg !== null && 'type' in msg && typeof msg.type === 'string')
+        log.push(msg.type);
+      post.apply(this, args);
+    };
+  });
+}
+
+const lastSynthCommand = (page: Page): Promise<string | undefined> =>
+  page.evaluate(() => (window as unknown as { __synthLog: string[] }).__synthLog.at(-1));
+
+test('pausing the game holds the music', async ({ page }) => {
+  await mockEditor(page);
+  await recordSynthCommands(page);
+  await page.goto('/edit/7/code');
+  await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Play' }).first().click();
+  await page.getByRole('button', { name: 'Pause' }).click();
+  await expect.poll(() => lastSynthCommand(page)).toBe('pause');
+
+  await page.getByRole('button', { name: 'Play' }).click();
+  await expect.poll(() => lastSynthCommand(page)).toBe('resume');
+});
+
+/**
+ * Docked, the viewer is only on screen on the CODE tab; the canvas tabs collapse its column. A
+ * game nobody can see is paused, not stopped -- stopping would end the netplay session the column
+ * stays mounted to keep -- and comes back with the tab.
+ */
+test('hiding the viewer holds the music', async ({ page }) => {
+  await mockEditor(page);
+  await recordSynthCommands(page);
+  await page.goto('/edit/7/code');
+  await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Play' }).first().click();
+  await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
+
+  await page.locator('nc-rail').getByRole('button', { name: 'Art' }).click();
+  await expect.poll(() => lastSynthCommand(page)).toBe('pause');
+
+  await page.locator('nc-rail').getByRole('button', { name: 'Code' }).click();
+  await expect.poll(() => lastSynthCommand(page)).toBe('resume');
+});
+
+/** A background tab gets no frames, so the game stood still there while its music went on. */
+test('a hidden tab holds the music', async ({ page }) => {
+  await mockEditor(page);
+  await recordSynthCommands(page);
+  await page.goto('/edit/7/code');
+  await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Play' }).first().click();
+  await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
+
+  const setHidden = (hidden: boolean): Promise<void> =>
+    page.evaluate((h) => {
+      Object.defineProperty(document, 'hidden', { configurable: true, get: () => h });
+      document.dispatchEvent(new Event('visibilitychange'));
+    }, hidden);
+
+  await setHidden(true);
+  await expect.poll(() => lastSynthCommand(page)).toBe('pause');
+  await setHidden(false);
+  await expect.poll(() => lastSynthCommand(page)).toBe('resume');
+});
