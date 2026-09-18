@@ -14,11 +14,12 @@ import {
   viewChild,
 } from '@angular/core';
 import { ThemeService } from '@app/core/theme/theme.service';
+import { collectionsSignal } from '@app/shared/pixel/collections.signal';
 import { geometrySignal } from '@app/shared/pixel/geometry.signal';
 import { cssVar, floodFill, linePoints, type Pt } from '@app/shared/pixel/pixel-tools';
 import { type SheetAtlas } from '@app/shared/pixel/sheet-atlas';
 import { type SheetPainter } from '@app/shared/pixel/sheet-painter';
-import { type Game, SPRITE_SIZE } from '@naucto/engine';
+import { FIRST_MAP_ID, type Game, SPRITE_SIZE } from '@naucto/engine';
 import {
   DragPanDirective,
   FLAG_ACCENTS,
@@ -91,6 +92,8 @@ function withinRect(r: TileRect, p: Pt): boolean {
 })
 export class MapCanvasComponent {
   readonly game = input.required<Game>();
+  /** Which of the game's maps is drawn on. The first is what a game has before it adds any. */
+  readonly mapId = input(FIRST_MAP_ID);
   readonly painter = input.required<SheetPainter>();
   /** Every sheet's pixels, because a map's tiles may come from any of them. */
   readonly atlas = input.required<SheetAtlas>();
@@ -168,8 +171,17 @@ export class MapCanvasComponent {
 
     return sheets.find((sh) => sh.id === id) ?? sheets[0];
   });
-  protected readonly mapW = computed(() => this.geometry().mapWidth);
-  protected readonly mapH = computed(() => this.geometry().mapHeight);
+  private readonly collections = collectionsSignal(this.game);
+  /** The map in hand, or the first when the one asked for is gone -- a deleted map's id lingers. */
+  protected readonly gameMap = computed(() => {
+    this.collections();
+    this.geometry();
+    const maps = this.game().maps;
+
+    return maps.find((m) => m.id === this.mapId()) ?? maps[0];
+  });
+  protected readonly mapW = computed(() => this.gameMap()?.width ?? 0);
+  protected readonly mapH = computed(() => this.gameMap()?.height ?? 0);
   protected readonly cssW = computed(() => this.mapW() * this.tilePx());
   protected readonly cssH = computed(() => this.mapH() * this.tilePx());
   protected readonly marks = computed<PresenceMark[]>(() => {
@@ -192,8 +204,9 @@ export class MapCanvasComponent {
 
   constructor() {
     effect((onCleanup) => {
-      const unsub = this.game().onTilesChange(() => {
-        this.tilesVersion.update((v) => v + 1);
+      const unsub = this.game().onTilesChange((changes) => {
+        if (changes.some((c) => c.map === this.gameMap()?.id))
+          this.tilesVersion.update((v) => v + 1);
       });
       this.tilesVersion.update((v) => v + 1);
       onCleanup(unsub);
@@ -214,6 +227,7 @@ export class MapCanvasComponent {
     effect(() => {
       this.atlas().version();
       this.tilesVersion();
+      this.gameMap();
       this.grid();
       this.flags();
       this.zoom();
@@ -291,10 +305,11 @@ export class MapCanvasComponent {
   copySelection(): TileClip | null {
     const sel = this.selection();
     if (!sel) return null;
+    const map = this.gameMap();
+    if (!map) return null;
     const cells = new Uint16Array(sel.w * sel.h);
-    const game = this.game();
     for (let y = 0; y < sel.h; y++)
-      for (let x = 0; x < sel.w; x++) cells[y * sel.w + x] = game.getTile(sel.x + x, sel.y + y);
+      for (let x = 0; x < sel.w; x++) cells[y * sel.w + x] = map.getTile(sel.x + x, sel.y + y);
     return { kind: 'tiles', w: sel.w, h: sel.h, cells };
   }
 
@@ -356,15 +371,15 @@ export class MapCanvasComponent {
     if (!layer) return;
     this.floating.set(null);
     const { rect, cells } = layer;
-    const game = this.game();
+    const map = this.gameMap();
+    if (!map) return;
     this.undo()?.stopCapturing();
-    game.transact(() => {
+    this.game().transact(() => {
       for (let y = 0; y < rect.h; y++)
         for (let x = 0; x < rect.w; x++) {
           const tx = rect.x + x;
           const ty = rect.y + y;
-          if (tx < this.mapW() && ty < this.mapH())
-            game.setTile(tx, ty, cells[y * rect.w + x] ?? 0);
+          if (tx < map.width && ty < map.height) map.setTile(tx, ty, cells[y * rect.w + x] ?? 0);
         }
     });
     this.undo()?.stopCapturing();
@@ -381,10 +396,11 @@ export class MapCanvasComponent {
   /** Clears the selected tiles (Delete / Backspace). */
   clearSelection(): void {
     const sel = this.selection();
-    if (!sel) return;
+    const map = this.gameMap();
+    if (!sel || !map) return;
     this.game().transact(() => {
       for (let y = sel.y; y < sel.y + sel.h; y++)
-        for (let x = sel.x; x < sel.x + sel.w; x++) this.game().setTile(x, y, 0);
+        for (let x = sel.x; x < sel.x + sel.w; x++) map.setTile(x, y, 0);
     });
   }
 
@@ -421,13 +437,14 @@ export class MapCanvasComponent {
     const b = this.brush();
     this.game().transact(() => {
       const sheet = this.sheet();
-      if (!sheet) return;
+      const map = this.gameMap();
+      if (!sheet || !map) return;
       for (let j = 0; j < b.h; j++)
         for (let i = 0; i < b.w; i++) {
           // Through the sheet the brush was picked from: a cell of it is only a sprite number once
           // the sheet's own width and its place in the run of them are both taken into account.
           const spr = erase ? 0 : sheet.base + (b.y + j) * sheet.cols + b.x + i;
-          if (spr < sheet.base + sheet.count) this.game().setTile(cell.x + i, cell.y + j, spr);
+          if (spr < sheet.base + sheet.count) map.setTile(cell.x + i, cell.y + j, spr);
         }
     });
   }
@@ -453,13 +470,14 @@ export class MapCanvasComponent {
         this.stamp(cell, erase);
         break;
       case 'fill': {
-        const g = this.game();
-        const pts = floodFill((x, y) => g.getTile(x, y), cell, this.mapW(), this.mapH());
+        const map = this.gameMap();
         const sheet = this.sheet();
-        if (!sheet) return;
+        if (!sheet || !map) return;
+        const tiles = map.tiles;
+        const pts = floodFill((x, y) => tiles[y * map.width + x] ?? 0, cell, map.width, map.height);
         const spr = erase ? 0 : sheet.base + this.brush().y * sheet.cols + this.brush().x;
-        g.transact(() => {
-          for (const p of pts) g.setTile(p.x, p.y, spr);
+        this.game().transact(() => {
+          for (const p of pts) map.setTile(p.x, p.y, spr);
         });
         this.drag = null;
         break;
@@ -473,11 +491,15 @@ export class MapCanvasComponent {
           this.drag = null;
           break;
         }
-        const game = this.game();
+        const map = this.gameMap();
+        if (!map) {
+          this.drag = null;
+          break;
+        }
         const cells = new Uint16Array(rect.w * rect.h);
         for (let y = 0; y < rect.h; y++)
           for (let x = 0; x < rect.w; x++)
-            cells[y * rect.w + x] = game.getTile(rect.x + x, rect.y + y);
+            cells[y * rect.w + x] = map.getTile(rect.x + x, rect.y + y);
         this.drag.lifted = { rect, cells };
         this.moveOffset.set({ x: 0, y: 0 });
         break;
@@ -528,16 +550,17 @@ export class MapCanvasComponent {
     if (!d.lifted || (off.x === 0 && off.y === 0)) return;
     // Cut and lay down together, so a move is one step to undo and never leaves a copy behind.
     const { rect, cells } = d.lifted;
-    const game = this.game();
-    game.transact(() => {
+    const map = this.gameMap();
+    if (!map) return;
+    this.game().transact(() => {
       for (let y = 0; y < rect.h; y++)
-        for (let x = 0; x < rect.w; x++) game.setTile(rect.x + x, rect.y + y, 0);
+        for (let x = 0; x < rect.w; x++) map.setTile(rect.x + x, rect.y + y, 0);
       for (let y = 0; y < rect.h; y++)
         for (let x = 0; x < rect.w; x++) {
           const tx = rect.x + x + off.x;
           const ty = rect.y + y + off.y;
-          if (tx >= 0 && ty >= 0 && tx < this.mapW() && ty < this.mapH())
-            game.setTile(tx, ty, cells[y * rect.w + x] ?? 0);
+          if (tx >= 0 && ty >= 0 && tx < map.width && ty < map.height)
+            map.setTile(tx, ty, cells[y * rect.w + x] ?? 0);
         }
     });
     this.selection.set(this.clampToMap({ ...rect, x: rect.x + off.x, y: rect.y + off.y }));
@@ -581,7 +604,9 @@ export class MapCanvasComponent {
     ctx.fillRect(0, 0, w, h);
     const game = this.game();
     const atlas = this.atlas();
-    const tiles = game.tiles;
+    const map = this.gameMap();
+    if (!map) return;
+    const tiles = map.tiles;
     const showFlags = this.flags();
     const flagColours = FLAG_VARS.map((v) => cssVar(el, v));
     const mapW = this.mapW();

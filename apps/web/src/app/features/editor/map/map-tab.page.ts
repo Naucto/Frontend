@@ -145,6 +145,7 @@ import { MinimapComponent } from './minimap.component';
             #canvas
             class="h-full bg-page"
             [game]="session.game"
+            [mapId]="map.mapId()"
             [painter]="painter"
             [atlas]="atlas"
             [tool]="map.tool()"
@@ -305,6 +306,7 @@ import { MinimapComponent } from './minimap.component';
           </nc-tabs>
           <nc-minimap
             [game]="session.game"
+            [mapId]="map.mapId()"
             [painter]="painter"
             [atlas]="atlas"
             [viewport]="viewport()"
@@ -357,6 +359,14 @@ export class MapTabPage {
    * A map is born nameless, so the number is not a fallback for a mistake: it is what most maps are
    * called.
    */
+  /** The map in hand, or the first when the one chosen is gone. */
+  private readonly gameMap = computed(() => {
+    this.collectionsVersion();
+    this.geometry();
+    const maps = this.session.game.maps;
+
+    return maps.find((m) => m.id === this.map.mapId()) ?? maps[0];
+  });
   protected readonly mapTitle = computed(() => {
     this.collectionsVersion();
     const maps = this.session.game.maps;
@@ -404,8 +414,8 @@ export class MapTabPage {
       colour: m.colour === null ? undefined : this.session.game.palette[m.colour],
     }));
   });
-  protected readonly mapW = computed(() => this.geometry().mapWidth);
-  protected readonly mapH = computed(() => this.geometry().mapHeight);
+  protected readonly mapW = computed(() => this.gameMap()?.width ?? 0);
+  protected readonly mapH = computed(() => this.gameMap()?.height ?? 0);
   protected readonly canvas = viewChild<MapCanvasComponent>('canvas');
   protected readonly viewport = signal<TileViewport | null>(null);
   protected readonly hover = signal<{ x: number; y: number; spr: number; bits: string } | null>(
@@ -460,7 +470,9 @@ export class MapTabPage {
       this.collectionsVersion.update((v) => v + 1);
     });
     inject(DestroyRef).onDestroy(off);
-    this.undo = new Y.UndoManager([this.session.game.tilesMap], {
+    // The collection map as well as the root tiles: every other map keeps its tiles nested under
+    // its entry, and adding, naming or dropping a map is an edit worth taking back too.
+    this.undo = new Y.UndoManager([this.session.game.tilesMap, this.session.game.mapsMap], {
       trackedOrigins: new Set([LOCAL_ORIGIN, null]),
       captureTimeout: 300,
     });
@@ -503,7 +515,7 @@ export class MapTabPage {
       return;
     }
     const game = this.session.game;
-    const spr = game.getTile(p.x, p.y);
+    const spr = this.gameMap()?.getTile(p.x, p.y) ?? 0;
     const f = game.getFlag(spr);
     const bits: number[] = [];
     for (let b = 0; b < 8; b++) if (f & (1 << b)) bits.push(b);
@@ -538,16 +550,18 @@ export class MapTabPage {
         },
       })
       .closed.subscribe((size) => {
-        if (size) this.session.game.resize({ mapWidth: size.width, mapHeight: size.height });
+        const map = this.gameMap();
+        if (size && map) this.session.game.resizeMap(map.id, size.width, size.height);
       });
   }
 
   private tilesOutside(width: number, height: number): number {
-    const game = this.session.game;
+    const map = this.gameMap();
+    if (!map) return 0;
     let n = 0;
-    for (let y = 0; y < this.mapH(); y++)
-      for (let x = 0; x < this.mapW(); x++)
-        if ((x >= width || y >= height) && game.getTile(x, y) !== 0) n++;
+    for (let y = 0; y < map.height; y++)
+      for (let x = 0; x < map.width; x++)
+        if ((x >= width || y >= height) && map.getTile(x, y) !== 0) n++;
     return n;
   }
 

@@ -971,6 +971,100 @@ test.describe('editor', () => {
     await page.screenshot({ path: 'test-results/v-editor-map.png' });
   });
 
+  /**
+   * A second map used to be the first one wearing another number: the canvas drew and wrote the
+   * root map whatever the strip said, and the size dialog resized that one too.
+   */
+  test('MAP stamps on the second map and leaves the first untouched', async ({ page }) => {
+    await page.goto('/edit/7/map');
+    const canvas = page.getByRole('img', { name: 'Map canvas' });
+    await expect(canvas).toBeVisible();
+    const maps = page.getByRole('tablist', { name: 'Maps' });
+
+    await page.getByRole('button', { name: 'Add a map' }).click();
+    await expect(maps.getByRole('tab', { name: '2' })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByText('Map #2')).toBeVisible();
+
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('no map');
+    await page.mouse.click(box.x + 20, box.y + 20);
+    // The readout follows the pointer, not the stamp: a nudge makes it read the tile again.
+    await page.mouse.move(box.x + 21, box.y + 21);
+    const readout = page.getByText(/TILE \d+,\d+ · SPR \d+/);
+    await expect(readout).not.toHaveText(/SPR 000/);
+
+    await maps.getByRole('tab', { name: '1' }).click();
+    await expect(page.getByText('Map #1')).toBeVisible();
+    await page.mouse.move(box.x + 21, box.y + 21);
+    await expect(readout).toHaveText(/SPR 000/);
+
+    await maps.getByRole('tab', { name: '2' }).click();
+    await page.mouse.move(box.x + 20, box.y + 20);
+    await expect(readout).not.toHaveText(/SPR 000/);
+
+    // Sizing the second leaves the first at what it was.
+    await page.getByRole('button', { name: 'Map size' }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByRole('textbox', { name: 'Width' }).fill('16');
+    await dialog.getByRole('textbox', { name: 'Width' }).press('Enter');
+    await dialog.getByRole('textbox', { name: 'Height' }).fill('16');
+    await dialog.getByRole('textbox', { name: 'Height' }).press('Enter');
+    await dialog.getByRole('button', { name: 'Shrink' }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByText('16 × 16 tiles')).toBeVisible();
+    await maps.getByRole('tab', { name: '1' }).click();
+    await expect(page.getByText('128 × 32 tiles')).toBeVisible();
+  });
+
+  /** The map number is what the runtime reads; without it a second map was for looking at. */
+  test('a running game draws map 2 with map.draw(..., 2)', async ({ page }) => {
+    await page.goto('/edit/7/map');
+    const canvas = page.getByRole('img', { name: 'Map canvas' });
+    await expect(canvas).toBeVisible();
+    await page.getByRole('button', { name: 'Add a map' }).click();
+    await expect(page.getByText('Map #2')).toBeVisible();
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('no map');
+    // The first tile of the second map, so the top-left corner of the screen shows it.
+    await page.mouse.click(box.x + 4, box.y + 4);
+    await page.mouse.move(box.x + 5, box.y + 5);
+    await expect(page.getByText(/TILE 0,0 · SPR \d+/)).not.toHaveText(/SPR 000/);
+
+    const lit = (x: number, y: number): Promise<boolean> =>
+      page.evaluate(
+        ([px, py]) => {
+          const screen = document.querySelector('canvas');
+          if (!screen) throw new Error('no canvas');
+          const copy = document.createElement('canvas');
+          copy.width = screen.width;
+          copy.height = screen.height;
+          const ctx = copy.getContext('2d');
+          if (!ctx) throw new Error('no 2d context');
+          ctx.drawImage(screen, 0, 0);
+          const [r, g, b] = ctx.getImageData(px ?? 0, py ?? 0, 1, 1).data;
+          return (r ?? 0) + (g ?? 0) + (b ?? 0) > 120;
+        },
+        [x, y],
+      );
+
+    await page.locator('nc-rail').getByRole('button', { name: 'Code' }).click();
+    await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+    await page.locator('.cm-content').click();
+    await page.keyboard.press('Control+a');
+    await page.keyboard.type('function _draw()\ngfx.clear(0)\nmap.draw(0, 0)\nend\n');
+    await page.getByRole('button', { name: 'Play' }).first().click();
+    // The first map is empty in this project: nothing at the corner.
+    await expect.poll(() => lit(3, 3), { timeout: 10_000 }).toBe(false);
+
+    await page.locator('.cm-content').click();
+    await page.keyboard.press('Control+a');
+    await page.keyboard.type(
+      'function _draw()\ngfx.clear(0)\nmap.draw(0, 0, 0, 0, 4, 4, 2)\nend\n',
+    );
+    await page.getByRole('button', { name: 'Restart' }).click();
+    await expect.poll(() => lit(3, 3), { timeout: 10_000 }).toBe(true);
+  });
+
   test('MAP picks a brush by dragging a rectangle on the sheet', async ({ page }) => {
     await page.setViewportSize({ width: 1920, height: 1030 });
     await page.goto('/edit/7/map');

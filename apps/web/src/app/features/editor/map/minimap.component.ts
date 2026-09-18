@@ -13,11 +13,12 @@ import {
   viewChild,
 } from '@angular/core';
 import { ThemeService } from '@app/core/theme/theme.service';
+import { collectionsSignal } from '@app/shared/pixel/collections.signal';
 import { geometrySignal } from '@app/shared/pixel/geometry.signal';
 import { cssVar, type Pt } from '@app/shared/pixel/pixel-tools';
 import { type SheetAtlas } from '@app/shared/pixel/sheet-atlas';
 import { type SheetPainter } from '@app/shared/pixel/sheet-painter';
-import { type Game, SPRITE_SIZE } from '@naucto/engine';
+import { FIRST_MAP_ID, type Game, SPRITE_SIZE } from '@naucto/engine';
 
 import { type TileViewport } from './map-canvas.component';
 
@@ -47,6 +48,8 @@ const SCALE = 3;
 })
 export class MinimapComponent {
   readonly game = input.required<Game>();
+  /** Which of the game's maps is shown, as the canvas beside it. */
+  readonly mapId = input(FIRST_MAP_ID);
   readonly painter = input.required<SheetPainter>();
   /** Every sheet's pixels, because a map's tiles may come from any of them. */
   readonly atlas = input.required<SheetAtlas>();
@@ -54,8 +57,16 @@ export class MinimapComponent {
   readonly label = input('Whole map');
   readonly jump = output<Pt>();
   private readonly geometry = geometrySignal(this.game);
-  protected readonly width = computed(() => this.geometry().mapWidth * SCALE);
-  protected readonly height = computed(() => this.geometry().mapHeight * SCALE);
+  private readonly collections = collectionsSignal(this.game);
+  private readonly gameMap = computed(() => {
+    this.collections();
+    this.geometry();
+    const maps = this.game().maps;
+
+    return maps.find((m) => m.id === this.mapId()) ?? maps[0];
+  });
+  protected readonly width = computed(() => (this.gameMap()?.width ?? 0) * SCALE);
+  protected readonly height = computed(() => (this.gameMap()?.height ?? 0) * SCALE);
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
   private readonly theme = inject(ThemeService);
   private readonly tilesVersion = signal(0);
@@ -64,8 +75,9 @@ export class MinimapComponent {
 
   constructor() {
     effect((onCleanup) => {
-      const unsub = this.game().onTilesChange(() => {
-        this.tilesVersion.update((v) => v + 1);
+      const unsub = this.game().onTilesChange((changes) => {
+        if (changes.some((c) => c.map === this.gameMap()?.id))
+          this.tilesVersion.update((v) => v + 1);
       });
       this.tilesVersion.update((v) => v + 1);
       onCleanup(unsub);
@@ -76,6 +88,7 @@ export class MinimapComponent {
     effect(() => {
       this.atlas().version();
       this.tilesVersion();
+      this.gameMap();
       this.viewport();
       // Colours are read from CSS custom properties at paint time; repaint when the theme flips.
       this.theme.effective();
@@ -130,10 +143,11 @@ export class MinimapComponent {
     ctx.imageSmoothingEnabled = false;
     ctx.fillStyle = cssVar(el, '--nc-inset');
     ctx.fillRect(0, 0, this.width(), this.height());
-    const game = this.game();
     const atlas = this.atlas();
-    const tiles = game.tiles;
-    const { mapWidth, mapHeight } = this.geometry();
+    const map = this.gameMap();
+    if (!map) return;
+    const tiles = map.tiles;
+    const { width: mapWidth, height: mapHeight } = map;
     for (let y = 0; y < mapHeight; y++)
       for (let x = 0; x < mapWidth; x++) {
         const spr = tiles[y * mapWidth + x] ?? 0;
@@ -158,8 +172,8 @@ export class MinimapComponent {
       ctx.strokeRect(
         v.x * SCALE + 0.5,
         v.y * SCALE + 0.5,
-        Math.min(v.w, this.geometry().mapWidth) * SCALE - 1,
-        Math.min(v.h, this.geometry().mapHeight) * SCALE - 1,
+        Math.min(v.w, mapWidth) * SCALE - 1,
+        Math.min(v.h, mapHeight) * SCALE - 1,
       );
     }
   }
