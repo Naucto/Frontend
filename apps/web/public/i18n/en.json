@@ -346,6 +346,7 @@
       "remixedBy": "{{n}} people have remixed this",
       "notForkable": "Nobody can remix it until it is published.",
       "unversioned": "draft",
+      "versionLimit": "{{count}} versions out of {{max}} — delete one to save another",
       "versionSaved": "Saved version \"{{name}}\"",
       "versionSaveFailed": "Could not save that version. Nothing was lost — the game is still autosaving.",
       "versionDeleteFailed": "Could not delete that version.",
