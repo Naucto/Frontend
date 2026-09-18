@@ -34,7 +34,7 @@ import {
 } from '@naucto/ui';
 import type * as Y from 'yjs';
 
-import { type Clip } from '../state/clipboard.store';
+import { type PixelClip } from '../state/clipboard.store';
 import { type Collaborator } from '../work-session/work-session.service';
 import { type ArtTool, type PixelRect, type SpriteRect } from './art.store';
 
@@ -617,13 +617,13 @@ export class SpriteCanvasComponent {
   }
 
   /** Falls back to what a tool may reach, so copying the sprite in hand needs no selection. */
-  copySelection(): Clip {
+  copySelection(): PixelClip {
     const rect = this.selection() ?? this.bounds();
     const cells = new Uint8Array(rect.w * rect.h);
-    const game = this.game();
+    const sheet = this.sheet();
     for (let y = 0; y < rect.h; y++)
       for (let x = 0; x < rect.w; x++)
-        cells[y * rect.w + x] = game.getPixel(rect.x + x, rect.y + y);
+        cells[y * rect.w + x] = sheet?.getPixel(rect.x + x, rect.y + y) ?? 0;
     return { kind: 'pixels', w: rect.w, h: rect.h, cells };
   }
 
@@ -635,7 +635,7 @@ export class SpriteCanvasComponent {
    * the aim was always null and the paste fell back onto the selection it came from. The middle is
    * somewhere it will be seen, and it is only a starting point -- the layer is there to be moved.
    */
-  pasteClip(clip: Clip): void {
+  pasteClip(clip: PixelClip): void {
     // A second paste settles the first rather than dropping it: work already placed is work.
     this.settleFloating();
     // The middle of what is on screen, not of the sheet: at a zoom where most of the sheet is
@@ -661,13 +661,13 @@ export class SpriteCanvasComponent {
     if (!layer) return;
     this.floating.set(null);
     const { rect, cells } = layer;
-    const game = this.game();
+    const sheet = this.sheet();
     this.undo()?.stopCapturing();
-    game.transact(() => {
+    this.game().transact(() => {
       for (let y = 0; y < rect.h; y++)
         for (let x = 0; x < rect.w; x++) {
           const p = { x: rect.x + x, y: rect.y + y };
-          if (this.inBounds(p)) game.setPixel(p.x, p.y, cells[y * rect.w + x] ?? 0);
+          if (this.inBounds(p)) sheet?.setPixel(p.x, p.y, cells[y * rect.w + x] ?? 0);
         }
     });
     this.undo()?.stopCapturing();

@@ -28,7 +28,7 @@ import {
 } from '@naucto/ui';
 import type * as Y from 'yjs';
 
-import { type Clip } from '../state/clipboard.store';
+import { type TileClip } from '../state/clipboard.store';
 import { type Collaborator } from '../work-session/work-session.service';
 import { type MapTool, type TileRect } from './map.store';
 
@@ -136,7 +136,7 @@ export class MapCanvasComponent {
     last: Pt;
     erase: boolean;
     /** MOVE: the tiles taken off the map, and where they were. */
-    lifted?: { rect: TileRect; cells: Uint8Array };
+    lifted?: { rect: TileRect; cells: Uint16Array };
     /** MOVE, on a pasted layer: the drag carries the layer and the map beneath is untouched. */
     carrying?: boolean;
   } | null = null;
@@ -147,7 +147,7 @@ export class MapCanvasComponent {
    * While it exists the map is exactly as it was, so backing out costs nothing and the tiles it
    * covers are still there underneath. It becomes part of the map only when it is settled.
    */
-  private readonly floating = signal<{ rect: TileRect; cells: Uint8Array } | null>(null);
+  private readonly floating = signal<{ rect: TileRect; cells: Uint16Array } | null>(null);
   private rafBase = 0;
   private rafOverlay = 0;
   /** Tile size the view was last laid out at, so a change of scale can be anchored on its middle. */
@@ -288,10 +288,10 @@ export class MapCanvasComponent {
   }
 
   /** Nothing selected is nothing to copy: a map has no region in hand to fall back on. */
-  copySelection(): Clip | null {
+  copySelection(): TileClip | null {
     const sel = this.selection();
     if (!sel) return null;
-    const cells = new Uint8Array(sel.w * sel.h);
+    const cells = new Uint16Array(sel.w * sel.h);
     const game = this.game();
     for (let y = 0; y < sel.h; y++)
       for (let x = 0; x < sel.w; x++) cells[y * sel.w + x] = game.getTile(sel.x + x, sel.y + y);
@@ -307,7 +307,7 @@ export class MapCanvasComponent {
    * same tiles over themselves. The middle is somewhere it will be seen, and it is only a starting
    * point, the layer being there to be moved.
    */
-  pasteClip(clip: Clip): void {
+  pasteClip(clip: TileClip): void {
     // A second paste settles the first rather than dropping it: work already placed is work.
     this.settleFloating();
     const centre = this.visibleCentre();
@@ -474,7 +474,7 @@ export class MapCanvasComponent {
           break;
         }
         const game = this.game();
-        const cells = new Uint8Array(rect.w * rect.h);
+        const cells = new Uint16Array(rect.w * rect.h);
         for (let y = 0; y < rect.h; y++)
           for (let x = 0; x < rect.w; x++)
             cells[y * rect.w + x] = game.getTile(rect.x + x, rect.y + y);
@@ -641,7 +641,7 @@ export class MapCanvasComponent {
   private drawTiles(
     ctx: CanvasRenderingContext2D,
     rect: TileRect,
-    cells: Uint8Array,
+    cells: Uint16Array,
     off: Pt,
     t: number,
   ): void {

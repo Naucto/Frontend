@@ -597,10 +597,17 @@ export class ArtTabPage {
       });
     });
     const game = this.session.game;
-    this.undo = new Y.UndoManager([game.spritesMap, game.flagsMap, game.paletteArray], {
-      trackedOrigins: new Set([LOCAL_ORIGIN, null]),
-      captureTimeout: 300,
-    });
+    // The root maps hold the first sheet only; every other sheet keeps its pixels and flags in
+    // maps nested under its `sheetsMap` entry, and an undo manager reaches nested types through
+    // the collection they hang from. Scoping the collection also makes adding, renaming and
+    // removing a sheet undoable, which is wanted.
+    this.undo = new Y.UndoManager(
+      [game.spritesMap, game.flagsMap, game.paletteArray, game.sheetsMap],
+      {
+        trackedOrigins: new Set([LOCAL_ORIGIN, null]),
+        captureTimeout: 300,
+      },
+    );
     const onStack = (): void => {
       this.canUndo.set(this.undo.canUndo());
       this.canRedo.set(this.undo.canRedo());
@@ -650,7 +657,7 @@ export class ArtTabPage {
       this.session.setCursor(null);
       return;
     }
-    this.hover.set({ x: p.x, y: p.y, col: this.session.game.getPixel(p.x, p.y) });
+    this.hover.set({ x: p.x, y: p.y, col: this.sheet()?.getPixel(p.x, p.y) ?? 0 });
   }
 
   /** Presence follows the pointer, not the cell it is over — see `pointer` on the canvas. */
