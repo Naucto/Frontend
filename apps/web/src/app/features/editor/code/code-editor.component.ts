@@ -17,6 +17,7 @@ import { type Diagnostic, linter, lintGutter } from '@codemirror/lint';
 import {
   findNext,
   findPrevious,
+  getSearchQuery,
   highlightSelectionMatches,
   replaceAll,
   replaceNext,
@@ -25,9 +26,16 @@ import {
   selectMatches,
   setSearchQuery,
 } from '@codemirror/search';
-import { Compartment, EditorState, type Extension, RangeSet } from '@codemirror/state';
+import {
+  Compartment,
+  EditorState,
+  type Extension,
+  RangeSet,
+  RangeSetBuilder,
+} from '@codemirror/state';
 import {
   Decoration,
+  type DecorationSet,
   drawSelection,
   EditorView,
   gutterLineClass,
@@ -36,6 +44,8 @@ import {
   highlightActiveLineGutter,
   keymap,
   lineNumbers,
+  ViewPlugin,
+  type ViewUpdate,
 } from '@codemirror/view';
 import type { EngineError } from '@naucto/engine';
 import type { PresenceColour } from '@naucto/ui';
@@ -129,10 +139,14 @@ export class CodeEditorComponent {
     this.run(replaceAll);
   }
 
+  /**
+   * Without taking the focus: the caret stays in the find bar, so the next arrow, or the next
+   * letter, goes where the reader is looking. drawSelection() paints the match it lands on
+   * whether the editor is focused or not.
+   */
   private run(command: (view: EditorView) => boolean): void {
     const view = this.view;
     if (!view || !this.query?.valid) return;
-    view.focus();
     command(view);
   }
 
@@ -244,6 +258,7 @@ export class CodeEditorComponent {
       // find bar drew one, and CodeMirror's drew another right above it. The panel this names is
       // never built, because a query that reaches a command is a valid one.
       search({ createPanel: () => ({ dom: document.createElement('div') }) }),
+      searchMatchHighlight,
       lintGutter(),
       this.lintCompartment.of(this.lintSource(this.error())),
       this.errorLineCompartment.of(errorLineHighlight(this.error()?.line ?? null)),
@@ -298,8 +313,57 @@ export class CodeEditorComponent {
       state: EditorState.create({ doc: text.toString(), extensions }),
       parent: this.host().nativeElement,
     });
+    // A fresh state knows no query, and the bar above only hands one over when its terms change —
+    // so after a switch of file the arrows would have found the library's empty query and opened
+    // its panel instead of walking the matches.
+    if (this.query) this.view.dispatch({ effects: setSearchQuery.of(this.query) });
   }
 }
+
+/**
+ * The library draws its matches only while its own panel is open, and that panel is the one thing
+ * this editor never shows. The same query is read back from the state and marked here instead,
+ * over what is on screen, with the match the caret sits on told apart from the others.
+ */
+const searchMatchHighlight: Extension = ViewPlugin.fromClass(
+  class {
+    decorations: DecorationSet;
+
+    constructor(private readonly view: EditorView) {
+      this.decorations = this.highlight();
+    }
+
+    update(u: ViewUpdate): void {
+      if (
+        u.docChanged ||
+        u.selectionSet ||
+        u.viewportChanged ||
+        getSearchQuery(u.state) !== getSearchQuery(u.startState)
+      )
+        this.decorations = this.highlight();
+    }
+
+    private highlight(): DecorationSet {
+      const { state } = this.view;
+      const query = getSearchQuery(state);
+      if (!query.valid) return Decoration.none;
+      const { from: selFrom, to: selTo } = state.selection.main;
+      const builder = new RangeSetBuilder<Decoration>();
+      for (const { from, to } of this.view.visibleRanges) {
+        const matches = query.getCursor(state, from, to);
+        for (let m = matches.next(); !m.done; m = matches.next()) {
+          const selected = m.value.from === selFrom && m.value.to === selTo;
+          builder.add(m.value.from, m.value.to, selected ? selectedMatchMark : matchMark);
+        }
+      }
+      return builder.finish();
+    }
+  },
+  { decorations: (v) => v.decorations },
+);
+
+const matchMark = Decoration.mark({ class: 'cm-searchMatch' });
+const selectedMatchMark = Decoration.mark({ class: 'cm-searchMatch cm-searchMatch-selected' });
 
 /**
  * Tints the failing line and its gutter number, which is what makes an error legible at a glance;

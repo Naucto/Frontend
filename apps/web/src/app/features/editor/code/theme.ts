@@ -82,6 +82,12 @@ export const nauctoTheme = EditorView.theme({
   '.cm-ySelection': { opacity: '0.35' },
   '.cm-panels': { backgroundColor: 'var(--nc-panel)', color: 'var(--nc-ink)' },
   '.cm-searchMatch': { backgroundColor: 'color-mix(in srgb, var(--nc-gold) 30%, transparent)' },
+  // The one the arrows just landed on, over a selection wash of the same gold: the outline is what
+  // still tells it apart once the two tints have added up.
+  '.cm-searchMatch-selected': {
+    backgroundColor: 'color-mix(in srgb, var(--nc-gold) 45%, transparent)',
+    outline: '1px solid var(--nc-gold)',
+  },
 
   // The markup here is the library's, so the kit cannot reach it and its fields would otherwise be
   // the browser's own. The kit's values are restated against the library's class names instead.

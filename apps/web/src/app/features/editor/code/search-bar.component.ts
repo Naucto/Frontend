@@ -51,14 +51,19 @@ export interface SearchTerms {
           [value]="search()"
           (input)="search.set($any($event.target).value)"
           (keydown.enter)="next.emit()"
+          (keydown.shift.enter)="previous.emit()"
           (keydown.escape)="closed.emit()"
         />
+        <!-- The buttons refuse the focus, so a click leaves the caret in the field it came from:
+             the editor no longer takes it either, and a bar you have to click back into after
+             every arrow is a bar nobody keeps open. -->
         <button
           ncButton
           variant="secondary"
           size="sm"
           iconOnly
           [attr.aria-label]="t('editor.code.previous')"
+          (mousedown)="$event.preventDefault()"
           (click)="previous.emit()"
         >
           <nc-icon name="chevron-up" [size]="12" />
@@ -69,6 +74,7 @@ export interface SearchTerms {
           size="sm"
           iconOnly
           [attr.aria-label]="t('editor.code.next')"
+          (mousedown)="$event.preventDefault()"
           (click)="next.emit()"
         >
           <nc-icon name="chevron-down" [size]="12" />
@@ -79,6 +85,7 @@ export interface SearchTerms {
           size="sm"
           iconOnly
           [attr.aria-label]="t('editor.code.selectAll')"
+          (mousedown)="$event.preventDefault()"
           (click)="selectAll.emit()"
         >
           <nc-icon name="list" [size]="12" />
@@ -120,6 +127,7 @@ export interface SearchTerms {
             size="sm"
             iconOnly
             [attr.aria-label]="t('editor.code.replaceOne')"
+            (mousedown)="$event.preventDefault()"
             (click)="replaceOne.emit()"
           >
             <nc-icon name="edit" [size]="12" />
@@ -130,6 +138,7 @@ export interface SearchTerms {
             size="sm"
             iconOnly
             [attr.aria-label]="t('editor.code.replaceAll')"
+            (mousedown)="$event.preventDefault()"
             (click)="replaceEvery.emit()"
           >
             <nc-icon name="repeat" [size]="12" />

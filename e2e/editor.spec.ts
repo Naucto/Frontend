@@ -1569,6 +1569,46 @@ test('FIND is a magnifier beside the plus', async ({ page }) => {
 });
 
 /**
+ * Three things the arrows used to get wrong at once. They took the focus with them, so every match
+ * cost a click back into the bar. They showed nothing, because the library only paints its matches
+ * while its own panel is open, and that panel is the one this editor never shows. And a switch of
+ * file left them opening that hidden panel instead of moving, since the new editor state had never
+ * been told the query.
+ */
+test('FIND arrows walk the matches and leave the caret in the bar', async ({ page }) => {
+  await mockEditor(page);
+  await page.goto('/edit/7/code');
+  await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Find' }).click();
+
+  const field = page.getByRole('textbox', { name: 'Find' });
+  const next = page.getByRole('button', { name: 'Next match' });
+  const line = page.getByText(/^LN \d+/);
+  await field.fill('function');
+  await next.click();
+  await expect(line).toHaveText(/LN 10 /);
+  await next.click();
+  await expect(line).toHaveText(/LN 14 /);
+  await expect(field).toBeFocused();
+  await expect(page.locator('.cm-searchMatch').count()).resolves.toBeGreaterThanOrEqual(2);
+  await expect(page.locator('.cm-searchMatch-selected')).toHaveText('function');
+
+  // A word that only a comment holds: the highlighter reads the text, not the syntax tree.
+  await field.fill('starter');
+  await expect(page.locator('.cm-searchMatch').count()).resolves.toBeGreaterThanOrEqual(1);
+
+  await field.fill('function');
+  await page.getByRole('button', { name: 'New file' }).click();
+  await page.getByLabel('Tab name').fill('player');
+  await page.getByRole('button', { name: 'Create' }).click();
+  await expect(page.getByRole('tab', { name: 'player', exact: true })).toBeVisible();
+  await page.getByRole('tab', { name: 'main', exact: true }).click();
+  await expect(page.locator('.cm-content')).toContainText('_init');
+  await next.click();
+  await expect(line).toHaveText(/LN 10 /);
+});
+
+/**
  * The navigator takes the width it is given and keeps the sheet's proportions, which is what makes
  * a cell square whatever shape the sheet is. It used to be sized from its own pixel count against a
  * fixed cap: a small sheet took half the panel, a wide one pushed past it, and nothing bounded its
