@@ -10,7 +10,12 @@ export default defineConfig({
     baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:3001',
     trace: 'on-first-retry',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    // A second engine only for the frame-rate baseline; the rest of the suite pins DOM contracts
+    // that do not depend on which browser renders them.
+    { name: 'firefox', testMatch: /perf\.spec\.ts/, use: { ...devices['Desktop Firefox'] } },
+  ],
   webServer: process.env.E2E_BASE_URL
     ? undefined
     : {
