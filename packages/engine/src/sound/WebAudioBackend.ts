@@ -54,7 +54,12 @@ export class WebAudioBackend implements AudioBackend {
       this.node.port.postMessage(cmd);
       return;
     }
-    if (cmd.type === 'library' || cmd.type === 'mixer' || cmd.type === 'sample')
+    if (
+      cmd.type === 'library' ||
+      cmd.type === 'mixer' ||
+      cmd.type === 'sample' ||
+      cmd.type === 'monitor'
+    )
       this.queue.push(cmd);
     // Only the last of these, because they contradict each other: a game that starts a song and
     // then stops it wants silence, not both in the order they were asked for.

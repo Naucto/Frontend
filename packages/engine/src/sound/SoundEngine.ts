@@ -216,6 +216,11 @@ export class SoundEngine implements SoundPort {
     return this.position;
   }
 
+  /** Whether {@link peaks} is being drawn; the worklet only reports a trace while it is. */
+  monitor(on: boolean): void {
+    this.backend.post({ type: 'monitor', on });
+  }
+
   isPlaying(channel: number): boolean {
     return this.voices[channel] ?? false;
   }

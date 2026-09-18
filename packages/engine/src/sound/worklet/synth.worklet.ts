@@ -25,6 +25,9 @@ class NauctoSynthProcessor extends AudioWorkletProcessor {
   private lastPos: string | null = null;
   /** Frozen, not silenced: the clock and the voices stay where they are, to go on from there. */
   private paused = false;
+  /** Bit per voice; `voices` is posted when it changes, which is what `sound.is_playing` reads. */
+  private lastVoices = 0;
+  private monitor = false;
   /** Rolling peak envelope for the editor's oscilloscope; one bucket per render quantum. */
   private readonly scope = new Float32Array(SCOPE_BUCKETS);
   private scopeAt = 0;
@@ -88,6 +91,9 @@ class NauctoSynthProcessor extends AudioWorkletProcessor {
         this.synth.master = cmd.master;
         if (cmd.sfx !== undefined) this.synth.sfxGain = cmd.sfx;
         break;
+      case 'monitor':
+        this.monitor = cmd.on;
+        break;
     }
   }
 
@@ -121,13 +127,24 @@ class NauctoSynthProcessor extends AudioWorkletProcessor {
         if (pos) this.send({ type: 'position', pattern: pos.pattern, step: pos.step });
         else this.send({ type: 'stopped' });
       }
-      this.send({ type: 'voices', active: this.synth.voices.map((v) => v.active) });
-      // Unrolled so the oldest bucket is first — the consumer draws left to right.
-      const peaks = new Float32Array(SCOPE_BUCKETS);
-      for (let i = 0; i < SCOPE_BUCKETS; i++) {
-        peaks[i] = this.scope[(this.scopeAt + i) % SCOPE_BUCKETS] ?? 0;
+      let voices = 0;
+      this.synth.voices.forEach((v, i) => {
+        if (v.active) voices |= 1 << i;
+      });
+      if (voices !== this.lastVoices) {
+        this.lastVoices = voices;
+        this.send({ type: 'voices', active: this.synth.voices.map((v) => v.active) });
       }
-      this.send({ type: 'scope', peaks });
+      // Every game plays through this processor, and a scope trace is a structured clone of
+      // 200 floats ~47 times a second; nothing but the editor's oscilloscope ever reads one.
+      if (this.monitor) {
+        // Unrolled so the oldest bucket is first — the consumer draws left to right.
+        const peaks = new Float32Array(SCOPE_BUCKETS);
+        for (let i = 0; i < SCOPE_BUCKETS; i++) {
+          peaks[i] = this.scope[(this.scopeAt + i) % SCOPE_BUCKETS] ?? 0;
+        }
+        this.send({ type: 'scope', peaks });
+      }
     }
     return true;
   }

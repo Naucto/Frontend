@@ -22,7 +22,9 @@ export type SynthCommand =
   /** Holds the transport where it stands, and lets it go on from there. A stop resets it. */
   | { type: 'pause' }
   | { type: 'resume' }
-  | { type: 'mixer'; master: number; music?: number; sfx?: number };
+  | { type: 'mixer'; master: number; music?: number; sfx?: number }
+  /** Whether anything is looking at the oscilloscope; `scope` events are only posted while it is. */
+  | { type: 'monitor'; on: boolean };
 
 /** Messages from the worklet back to the main thread. */
 export type SynthEvent =

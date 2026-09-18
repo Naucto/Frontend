@@ -711,12 +711,21 @@ export class SoundTabPage {
 
   // ---- playback -------------------------------------------------------------
 
+  /**
+   * Unlocked, and watched: the scope on this page is the one place a trace is drawn, so the graph
+   * is told to report one here and nowhere else.
+   */
+  private async ready(): Promise<void> {
+    await this.engine.unlock();
+    this.engine.monitor(true);
+  }
+
   /** The pattern in front of you, from wherever the head stands -- where PAUSE left it, or where
    * it was put in the ruler. */
   protected async play(): Promise<void> {
     const p = this.pattern();
     if (!p) return;
-    await this.engine.unlock();
+    await this.ready();
     this.engine.previewPattern(p, this.sound.loop(), this.playhead() ?? 0);
     this.playingWhat.set('pattern');
     this.tick();
@@ -727,7 +736,7 @@ export class SoundTabPage {
    * its own tempo and its own length, and where they meet is most of what there is to hear.
    */
   protected async playSong(): Promise<void> {
-    await this.engine.unlock();
+    await this.ready();
     // LOOP belongs to the pattern in the bar above, and putting it out is the plainest way to say
     // it does not apply to the chain you are about to hear.
     this.sound.setLoop(false);
@@ -837,7 +846,7 @@ export class SoundTabPage {
   protected audition(e: { instrument: string; pitch: number }): void {
     const inst = this.library.instruments().get(e.instrument);
     if (!inst) return;
-    void this.engine.unlock().then(() => {
+    void this.ready().then(() => {
       this.engine.preview(inst, e.pitch, 0.3);
     });
   }
@@ -851,7 +860,7 @@ export class SoundTabPage {
   protected holdKey(e: { instrument: string; pitch: number }): void {
     const inst = this.library.instruments().get(e.instrument);
     if (!inst) return;
-    void this.engine.unlock().then(() => {
+    void this.ready().then(() => {
       this.engine.preview(inst, e.pitch, 0, HELD_CHANNEL);
     });
   }
