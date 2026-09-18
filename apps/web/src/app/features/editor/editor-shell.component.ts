@@ -132,7 +132,7 @@ const RAIL: RailItem<EditorTab>[] = [
             variant="primary"
             size="bar"
             (click)="publish()"
-            [disabled]="!session.isHost() || !!publishBlockedBy()"
+            [disabled]="!session.isCollaborator() || !!publishBlockedBy()"
             [attr.title]="publishBlockedBy() ? t(publishBlockedBy()!) : null"
           >
             {{ t('editor.publish') }}

@@ -27,8 +27,14 @@ const project = {
   creator: { id: 1, username: 'alexis' },
 };
 
-/** Mocks enough of the API for the editor to open project 7 as its host. */
-export async function mockEditor(page: Page): Promise<void> {
+/**
+ * Mocks enough of the API for the editor to open project 7 — as its host unless `hostId` names
+ * someone else, in which case user 1 is a collaborator in a room somebody else hosts.
+ */
+export async function mockEditor(
+  page: Page,
+  { hostId = 1 }: { hostId?: number } = {},
+): Promise<void> {
   await page.addInitScript(() => {
     localStorage.setItem('naucto.theme', 'dark');
   });
@@ -54,7 +60,7 @@ export async function mockEditor(page: Page): Promise<void> {
     r.fulfill({
       json: {
         roomId: 'room-7',
-        hostId: 1,
+        hostId,
         webrtcOffer: {
           signaling: ['ws://127.0.0.1:9'],
           maxConns: 10,

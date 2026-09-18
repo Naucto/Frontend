@@ -121,7 +121,7 @@ export class PublishDialogComponent {
     this.busy.set(true);
     this.error.set(null);
     try {
-      await this.data.session.save();
+      await this.data.session.save({ force: true });
       const id = String(this.data.session.id);
       unwrap(
         update

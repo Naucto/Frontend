@@ -139,7 +139,7 @@ const byWhen = (a: VersionRow, b: VersionRow): number => (b.when ?? '').localeCo
                       [attr.aria-label]="
                         v.release ? 'Restore this release' : 'Restore this autosave'
                       "
-                      [disabled]="!session.isHost() || restoring()"
+                      [disabled]="!session.isCollaborator() || restoring()"
                       (click)="restore(v)"
                     >
                       <nc-icon name="undo" [size]="12" />
@@ -155,7 +155,7 @@ const byWhen = (a: VersionRow, b: VersionRow): number => (b.when ?? '').localeCo
                       size="sm"
                       iconOnly
                       [attr.aria-label]="v.release ? 'Delete this release' : 'Delete this autosave'"
-                      [disabled]="!session.isHost()"
+                      [disabled]="!session.isCollaborator()"
                       (click)="remove(v)"
                     >
                       <nc-icon name="trash" [size]="12" />
@@ -186,7 +186,10 @@ const byWhen = (a: VersionRow, b: VersionRow): number => (b.when ?? '').localeCo
                   type="submit"
                   class="h-auto shrink-0"
                   [disabled]="
-                    !cpName().trim() || !session.isHost() || saving() || (atCap() && !overwriting())
+                    !cpName().trim() ||
+                    !session.isCollaborator() ||
+                    saving() ||
+                    (atCap() && !overwriting())
                   "
                 >
                   Save
@@ -312,7 +315,7 @@ export class VersionsPopoverComponent {
       // Only where something has been written since: naming the state you are already saved at is
       // exactly what somebody marking a milestone is doing, and refusing it there sent them off to
       // make a pointless edit first.
-      if (this.session.dirty()) await this.session.save();
+      if (this.session.dirty()) await this.session.save({ force: true });
       unwrap(
         await projectControllerSaveCheckpoint({
           path: { id: String(this.session.id), name },
@@ -349,12 +352,13 @@ export class VersionsPopoverComponent {
   /**
    * Put a saved version back into the live document.
    *
-   * Host only, because the host is the one that writes the blob back. `Game.restoreFrom` does the
-   * work: this used to call `Y.applyUpdate`, which cannot undo anything — the blob is this same
-   * document's own history, so re-applying it is by definition a no-op.
+   * The restored state enters the shared document like any edit, so it reaches every peer at once
+   * and the host's autosave like any edit — nothing here has to write it out. `Game.restoreFrom`
+   * does the work: this used to call `Y.applyUpdate`, which cannot undo anything — the blob is
+   * this same document's own history, so re-applying it is by definition a no-op.
    */
   protected async restore(row: HistoryRow): Promise<void> {
-    if (!this.session.isHost() || this.restoring()) return;
+    if (!this.session.isCollaborator() || this.restoring()) return;
     this.restoring.set(true);
     try {
       const path = { id: String(this.session.id) };
@@ -389,7 +393,7 @@ export class VersionsPopoverComponent {
    * for. A release goes too, since a name given by mistake is still a mistake.
    */
   protected async remove(row: HistoryRow): Promise<void> {
-    if (!this.session.isHost()) return;
+    if (!this.session.isCollaborator()) return;
     const path = { id: String(this.session.id) };
     const res = row.release
       ? await projectControllerDeleteCheckpoint({ path: { ...path, name: row.name } })

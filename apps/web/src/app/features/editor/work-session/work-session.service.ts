@@ -79,8 +79,9 @@ const QUIET_SAVE_MS = 3000;
 /**
  * One editing session on one project: joins the work session, loads and
  * migrates the game document, connects y-webrtc, tracks presence and host
- * election, and saves (host only). Provided at the editor route so all tabs
- * share it; closing the route leaves the session.
+ * election, and saves (the host on a timer, any collaborator on a click).
+ * Provided at the editor route so all tabs share it; closing the route leaves
+ * the session.
  */
 @Injectable()
 export class WorkSessionService {
@@ -93,6 +94,8 @@ export class WorkSessionService {
 
   private provider: WebrtcProvider | null = null;
   private projectId = 0;
+  /** Who the server last said hosts — what a departure is compared against. */
+  private hostId: number | null = null;
   private autosave: ReturnType<typeof setInterval> | null = null;
   private quiet: ReturnType<typeof setTimeout> | null = null;
   private kicking = false;
@@ -100,9 +103,22 @@ export class WorkSessionService {
 
   readonly status = signal<SessionStatus>('joining');
   readonly error = signal<string | null>(null);
+  /**
+   * Whoever the server elected to write the document out on the timer.
+   *
+   * That is the host's one job. Everyone holds the same document, so N peers each uploading it
+   * on every pause would be N copies of one state; the rest — publish, name a version, restore —
+   * is a click, and a click is one write whoever makes it.
+   */
   readonly isHost = signal(false);
   readonly project = signal<ProjectExResponseDto | null>(null);
   readonly collaborators = signal<Collaborator[]>([]);
+  /** On the project, as its creator or one of its collaborators — not merely in the room. */
+  readonly isCollaborator = computed(() => {
+    const me = this.auth.userId();
+    const p = this.project();
+    return me !== null && !!p && (p.creator.id === me || p.collaborators.some((c) => c.id === me));
+  });
   readonly dirty = signal(false);
   readonly lastSavedAt = signal<Date | null>(null);
   readonly saving = signal(false);
@@ -171,6 +187,7 @@ export class WorkSessionService {
     try {
       const session = unwrap(await workSessionControllerJoin({ path: { id: projectId } }));
       const me = this.auth.userId();
+      this.hostId = session.hostId;
       this.isHost.set(session.hostId === me);
 
       this.status.set('loading');
@@ -269,9 +286,14 @@ export class WorkSessionService {
     ]);
   }
 
-  /** Persist the document (host only) and any changed project metadata. */
-  async save(opts: { keepalive?: boolean } = {}): Promise<void> {
-    if (!this.isHost() || this.status() !== 'ready') return;
+  /**
+   * Persist the document and any changed project metadata.
+   *
+   * One writer on the timer; anyone on a click. `force` is that click: a publish or a named
+   * version has to carry the state it names, whoever pressed the button.
+   */
+  async save(opts: { keepalive?: boolean; force?: boolean } = {}): Promise<void> {
+    if ((!this.isHost() && !opts.force) || this.status() !== 'ready') return;
     this.saving.set(true);
     try {
       const details = this.project();
@@ -476,13 +498,23 @@ export class WorkSessionService {
     if (gone.length) void this.onPeersLeft(gone);
   }
 
-  /** Port of the legacy host election: when peers drop, ask the backend who hosts now and clean up stale members. */
+  /**
+   * When peers drop, tell the server who is gone, then ask it who hosts now.
+   *
+   * The server elects a new host only once it knows the old one has left, and a peer that closed
+   * its tab told nobody — so the ones still here kick it, and the answer that follows may name one
+   * of them. Any collaborator may kick, which is what lets a room outlive its first host.
+   */
   private async onPeersLeft(gone: AwarenessState[]): Promise<void> {
     if (this.kicking) return;
     this.kicking = true;
     try {
       const me = this.auth.userId();
+      const host = this.hostId;
+      if (host !== null && host !== me && gone.some((s) => s.userId === host))
+        await this.kick(host);
       const info = unwrap(await workSessionControllerGetInfo({ path: { id: this.projectId } }));
+      this.hostId = info.hostId;
       if (info.hostId === me && !this.isHost()) this.becomeHost();
       if (this.isHost()) {
         for (const s of gone)
@@ -501,6 +533,7 @@ export class WorkSessionService {
   }
 
   private becomeHost(): void {
+    this.hostId = this.auth.userId();
     this.isHost.set(true);
     if (needsMigration(this.doc)) migrateGame(this.doc);
     this.startAutosave();

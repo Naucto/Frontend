@@ -1479,6 +1479,42 @@ test('a pause in the typing is what saves the game', async ({ page }) => {
 });
 
 /**
+ * The host's one job is the autosave. Publishing and naming a version are a click, and a click is
+ * one write whoever makes it — so a collaborator in a room somebody else hosts has both buttons,
+ * and naming a version writes the document out once, from that click and from nothing else.
+ */
+test('a collaborator who is not the host may publish and name a version', async ({ page }) => {
+  await mockEditor(page, { hostId: 4 });
+  let saves = 0;
+  await page.route('**/projects/7/saveContent', (r) => {
+    saves += 1;
+    return r.fulfill({ json: { id: 7 } });
+  });
+  await page.route('**/projects/7/saveCheckpoint/*', (r) =>
+    r.fulfill({ status: 201, json: { message: 'Checkpoint saved' } }),
+  );
+
+  await page.goto('/edit/7/game');
+  const name = page.getByRole('textbox', { name: 'Name' });
+  await expect(name).toHaveValue('Platformer');
+  await expect(page.getByRole('button', { name: /^publish$/i })).toBeEnabled();
+  // A guest opens without writing anything out, and an edit makes the state worth naming.
+  expect(saves).toBe(0);
+  await name.fill('Platformer II');
+  await expect(page.getByText('unsaved changes')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Platformer' }).click();
+  const panel = page.locator('nc-popover-panel');
+  await panel.getByPlaceholder('Name this version').fill('v1');
+  const save = panel.getByRole('button', { name: 'Save' });
+  await expect(save).toBeEnabled();
+  await save.click();
+  await expect(page.getByText('Saved version "v1"')).toBeVisible();
+  await expect(page.getByText('last saved')).toBeVisible();
+  expect(saves).toBe(1);
+});
+
+/**
  * Both banners say what they are the name of, and half of them are a bare number — a sheet and a
  * map are both born nameless. The rename is in the same test because the banner used not to
  * notice one until the tab was changed and back.
