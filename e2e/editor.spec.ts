@@ -1126,6 +1126,67 @@ test.describe('editor', () => {
     await expect(page.getByText('SPR 020')).toBeVisible();
   });
 
+  /**
+   * The largest map at the largest zoom is 16384 pixels a side, and every stamp used to repaint
+   * all of it. A long task is the browser's own word for a frame that was dropped.
+   */
+  test('MAP stamps on a 256×256 map at zoom 8 without a long task', async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(browserName !== 'chromium', 'longtask entries are only observed in Chromium');
+    // A budget in milliseconds holds on a machine, not on a shared runner drawing through a
+    // software GPU, where the same drag crosses it on the code it was written to prove.
+    test.skip(!!process.env.CI, 'a frame budget is measured locally, not on a shared runner');
+    await page.goto('/edit/7/map');
+    const canvas = page.getByRole('img', { name: 'Map canvas' });
+    await expect(canvas).toBeVisible();
+
+    await page.getByRole('button', { name: 'Map size' }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByRole('textbox', { name: 'Width' }).fill('256');
+    await dialog.getByRole('textbox', { name: 'Width' }).press('Enter');
+    await dialog.getByRole('textbox', { name: 'Height' }).fill('256');
+    await dialog.getByRole('textbox', { name: 'Height' }).press('Enter');
+    await dialog.getByRole('button', { name: 'Shrink' }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByText('256 × 256 tiles')).toBeVisible();
+
+    const zoomIn = page.getByRole('button', { name: 'Zoom in' });
+    for (let i = 0; i < 8 && !(await page.getByText('×8', { exact: true }).isVisible()); i++)
+      await zoomIn.click();
+    await expect(page.getByText('×8', { exact: true })).toBeVisible();
+
+    // Only tasks of 50 ms and up are reported at all, so the list is the verdict.
+    await page.evaluate(() => {
+      const long: number[] = [];
+      Object.assign(window, { __long: long });
+      new PerformanceObserver((list) => {
+        for (const e of list.getEntries()) long.push(Math.round(e.duration));
+      }).observe({ type: 'longtask' });
+    });
+    // The resize and the zoom above have their own frames to settle; they are not the stamp's.
+    await page.evaluate(
+      () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))),
+    );
+
+    // Across the well, not the canvas: a canvas the size of the map starts a screenful off it.
+    const well = await page.locator('nc-map-canvas').boundingBox();
+    if (!well) throw new Error('no well');
+    await page.mouse.move(well.x + 32, well.y + 32);
+    await page.mouse.down();
+    await page.mouse.move(well.x + well.width - 32, well.y + 32, { steps: 20 });
+    await page.mouse.up();
+    await page.mouse.move(well.x + 40, well.y + 40);
+    await expect(page.getByText(/TILE \d+,\d+ · SPR \d+/)).not.toHaveText(/SPR 000/);
+    await page.evaluate(
+      () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))),
+    );
+
+    const long = await page.evaluate(() => (window as unknown as { __long: number[] }).__long);
+    expect(long.filter((ms) => ms >= 50)).toEqual([]);
+  });
+
   test('the roll ends where the pattern ends', async ({ page }) => {
     await page.goto('/edit/7/sound');
     await page.getByRole('button', { name: 'Add instrument' }).first().click();

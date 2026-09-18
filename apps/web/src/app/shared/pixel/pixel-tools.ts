@@ -70,32 +70,44 @@ export function ellipsePoints(a: Pt, b: Pt): Pt[] {
   return out;
 }
 
-/** 4-connected flood fill inside a w×h region; returns the points to paint. */
+/**
+ * 4-connected flood fill inside a w×h region; returns the points to paint.
+ *
+ * The frontier is a stack of cell indices, not of points: a region is visited once per cell but
+ * pushed once per edge into it, and an object for each of those is most of what a fill of a
+ * 256×256 map used to cost. A cell is marked when pushed, so the stack never holds more cells
+ * than the region has.
+ */
 export function floodFill(
   get: (x: number, y: number) => number,
   start: Pt,
   w: number,
   h: number,
 ): Pt[] {
+  if (start.x < 0 || start.y < 0 || start.x >= w || start.y >= h) return [];
   const target = get(start.x, start.y);
   const seen = new Uint8Array(w * h);
+  const stack = new Int32Array(w * h);
   const out: Pt[] = [];
-  const stack: Pt[] = [start];
-  while (stack.length) {
-    const p = stack.pop();
-    if (!p) break;
-    if (p.x < 0 || p.y < 0 || p.x >= w || p.y >= h) continue;
-    const i = p.y * w + p.x;
-    if (seen[i]) continue;
-    seen[i] = 1;
-    if (get(p.x, p.y) !== target) continue;
-    out.push(p);
-    stack.push(
-      { x: p.x + 1, y: p.y },
-      { x: p.x - 1, y: p.y },
-      { x: p.x, y: p.y + 1 },
-      { x: p.x, y: p.y - 1 },
-    );
+  let top = 0;
+  stack[top++] = start.y * w + start.x;
+  seen[start.y * w + start.x] = 1;
+  const visit = (i: number): void => {
+    if (!seen[i]) {
+      seen[i] = 1;
+      stack[top++] = i;
+    }
+  };
+  while (top > 0) {
+    const i = stack[--top] ?? 0;
+    const x = i % w;
+    const y = (i - x) / w;
+    if (get(x, y) !== target) continue;
+    out.push({ x, y });
+    if (x + 1 < w) visit(i + 1);
+    if (x > 0) visit(i - 1);
+    if (y + 1 < h) visit(i + w);
+    if (y > 0) visit(i - w);
   }
   return out;
 }

@@ -50,29 +50,44 @@ export interface TileViewport {
 /** The chips that set these bits carry the same eight, so a marked tile and its flag agree. */
 const FLAG_VARS = FLAG_ACCENTS.map((a) => `--nc-${a}`);
 
-/** The whole tile map in a scrollable surface; stamps tiles from the sheet. */
+/** Every eighth grid line is the bold one, in the sky colour; the design draws the fine ones at 6%. */
+const GRID_BOLD_EVERY = 8;
+const GRID_FINE_ALPHA = 0.06;
+const GRID_BOLD_ALPHA = 0.28;
+
+/**
+ * What painting any number of cells needs, read once rather than once per cell: a token is a
+ * `getComputedStyle`, which settles pending style work before it answers.
+ */
+interface Paint {
+  ctx: CanvasRenderingContext2D;
+  /** Drawn pixels per tile. */
+  t: number;
+  map: GameMap;
+  game: Game;
+  atlas: SheetAtlas;
+  inset: string;
+  ink: string;
+  sky: string;
+  /** One per flag bit, or null when flags are not shown. */
+  flagColours: string[] | null;
+}
+
 /** Whether a tile sits inside a rectangle of tiles. */
 function withinRect(r: TileRect, p: Pt): boolean {
   return p.x >= r.x && p.y >= r.y && p.x < r.x + r.w && p.y < r.y + r.h;
 }
 
+/** The whole tile map in a scrollable surface; stamps tiles from the sheet. */
 @Component({
   selector: 'nc-map-canvas',
   imports: [PresenceLayerComponent],
   template: `
-    <div class="relative" [style.width.px]="cssW()" [style.height.px]="cssH()">
-      <canvas
-        #base
-        class="pixelated absolute inset-0"
-        [width]="cssW()"
-        [height]="cssH()"
-        aria-hidden="true"
-      ></canvas>
+    <div #spacer class="relative shrink-0" [style.width.px]="cssW()" [style.height.px]="cssH()">
+      <canvas #base class="pixelated absolute" aria-hidden="true"></canvas>
       <canvas
         #overlay
-        class="pixelated absolute inset-0 cursor-crosshair touch-none"
-        [width]="cssW()"
-        [height]="cssH()"
+        class="pixelated absolute cursor-crosshair touch-none"
         role="img"
         [attr.aria-label]="label()"
         (pointerdown)="onDown($event)"
@@ -85,8 +100,12 @@ function withinRect(r: TileRect, p: Pt): boolean {
       <nc-presence-layer [marks]="marks()" [viewport]="viewPx()" />
     </div>
   `,
-  // A map smaller than the viewport is centred rather than pinned to the top-left; `safe` keeps
-  // the origin reachable once it is larger.
+  // The spacer is the map's full size and is what the well scrolls over; the canvases are laid at
+  // the part of it on screen and sized to that, so the backing store is bounded by the well and
+  // not by the map -- see `win`. `shrink-0` is what keeps the spacer that size: a flex item gives
+  // way to its container unless told not to, and canvases taken out of the flow no longer hold it
+  // open from inside. A map smaller than the viewport is centred rather than pinned to the
+  // top-left; `safe` keeps the origin reachable once it is larger.
   hostDirectives: [DragPanDirective],
   // The wheel is bound on the well rather than on the canvas, so it is answered over the gutter a
   // map smaller than the well is centred in.
@@ -135,11 +154,21 @@ export class MapCanvasComponent {
    */
   readonly undo = input<Y.UndoManager | null>(null);
 
+  private readonly spacer = viewChild.required<ElementRef<HTMLDivElement>>('spacer');
   private readonly base = viewChild.required<ElementRef<HTMLCanvasElement>>('base');
   private readonly overlay = viewChild.required<ElementRef<HTMLCanvasElement>>('overlay');
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly theme = inject(ThemeService);
-  private readonly tilesVersion = signal(0);
+  /**
+   * The part of the map the canvases hold, in drawn pixels: what the well shows, and no more.
+   *
+   * Written by `measure` and applied by `place`, in the same frame as the paint that follows: a
+   * canvas is cleared by a change of size, so a size bound in the template would land a tick
+   * apart from the pixels drawn for it. A map the well contains whole gets the map itself.
+   */
+  private win = { x: 0, y: 0, w: 0, h: 0 };
+  /** Cells to repaint on the next frame, or null when every cell in the window is. */
+  private dirty: Set<number> | null = null;
   private readonly hoverCell = signal<Pt | null>(null);
   private drag: {
     start: Pt;
@@ -212,15 +241,21 @@ export class MapCanvasComponent {
   constructor() {
     effect((onCleanup) => {
       const unsub = this.game().onTilesChange((changes) => {
-        if (changes.some((c) => c.map === this.gameMap()?.id))
-          this.tilesVersion.update((v) => v + 1);
+        const map = this.gameMap();
+        if (!map) return;
+        let any = false;
+        for (const c of changes) {
+          if (c.map !== map.id) continue;
+          this.dirty?.add(c.y * map.width + c.x);
+          any = true;
+        }
+        if (any) this.requestBase();
       });
-      this.tilesVersion.update((v) => v + 1);
       onCleanup(unsub);
     });
     const el = this.host.nativeElement;
     const onScroll = (): void => {
-      this.emitViewport();
+      if (this.measure()) this.requestBase();
     };
     el.addEventListener('scroll', onScroll, { passive: true });
     const ro = new ResizeObserver(onScroll);
@@ -233,7 +268,6 @@ export class MapCanvasComponent {
     });
     effect(() => {
       this.atlas().version();
-      this.tilesVersion();
       this.gameMap();
       this.grid();
       this.flags();
@@ -241,8 +275,8 @@ export class MapCanvasComponent {
       // Colours come from CSS custom properties read at paint time, so a theme flip has to repaint.
       this.theme.effective();
       untracked(() => {
+        this.dirty = null;
         this.requestBase();
-        this.emitViewport();
       });
     });
     effect(() => {
@@ -353,14 +387,14 @@ export class MapCanvasComponent {
    * The tile in the middle of what is on screen. The map is far wider than its well, so the map's
    * own middle is usually scrolled away.
    *
-   * Measured off the canvas, exactly as a pointer is: the well centres content smaller than
-   * itself, so its scroll offset is not the canvas's origin and reading one for the other puts the
+   * Measured off the spacer, exactly as a pointer is: the well centres content smaller than
+   * itself, so its scroll offset is not the map's origin and reading one for the other puts the
    * answer a screenful out.
    */
   private visibleCentre(): { x: number; y: number } {
     const well = this.host.nativeElement;
     const box = well.getBoundingClientRect();
-    const canvas = this.overlay().nativeElement.getBoundingClientRect();
+    const canvas = this.spacer().nativeElement.getBoundingClientRect();
     const t = this.tilePx();
     return {
       x: (box.left + well.clientWidth / 2 - canvas.left) / t,
@@ -448,7 +482,14 @@ export class MapCanvasComponent {
     this.selection.set(rect);
   }
 
-  private emitViewport(): void {
+  /**
+   * Reads where the well is over the map, and says whether the window moved.
+   *
+   * Moved, every cell in it is to be painted again, and the overlay -- laid at the same window --
+   * along with it; the base layer is the caller's to request, because the frame that paints it
+   * measures first and would otherwise ask for a second one.
+   */
+  private measure(): boolean {
     const el = this.host.nativeElement;
     const t = this.tilePx();
     this.viewPx.set({ x: el.scrollLeft, y: el.scrollTop, w: el.clientWidth, h: el.clientHeight });
@@ -458,6 +499,20 @@ export class MapCanvasComponent {
       w: el.clientWidth / t,
       h: el.clientHeight / t,
     });
+    const cssW = this.cssW();
+    const cssH = this.cssH();
+    // One pixel over: a scroll offset is not always whole, and the window starts on the whole
+    // pixel below it.
+    const w = Math.min(cssW, el.clientWidth + 1);
+    const h = Math.min(cssH, el.clientHeight + 1);
+    const x = Math.max(0, Math.min(Math.floor(el.scrollLeft), cssW - w));
+    const y = Math.max(0, Math.min(Math.floor(el.scrollTop), cssH - h));
+    const was = this.win;
+    if (was.x === x && was.y === y && was.w === w && was.h === h) return false;
+    this.win = { x, y, w, h };
+    this.dirty = null;
+    this.requestOverlay();
+    return true;
   }
 
   // ---- pointer --------------------------------------------------------------
@@ -470,9 +525,9 @@ export class MapCanvasComponent {
     };
   }
 
-  /** The same position, unsnapped — see `pointer`. */
+  /** The same position, unsnapped — see `pointer`. Off the spacer: the canvases cover a window of it. */
   private pointOf(e: PointerEvent): { x: number; y: number } {
-    const r = this.overlay().nativeElement.getBoundingClientRect();
+    const r = this.spacer().nativeElement.getBoundingClientRect();
     const t = this.tilePx();
     return { x: (e.clientX - r.left) / t, y: (e.clientY - r.top) / t };
   }
@@ -620,8 +675,11 @@ export class MapCanvasComponent {
       // Inside the frame: the map's size is a template binding, and an offset written before it
       // lands is clamped against the width the element still has.
       this.holdCentre();
-      this.drawBase();
-      this.emitViewport();
+      this.measure();
+      const cells = this.dirty;
+      this.dirty = new Set();
+      if (cells) this.paintTiles(cells);
+      else this.drawBase();
     });
   }
 
@@ -632,70 +690,161 @@ export class MapCanvasComponent {
     });
   }
 
-  private drawBase(): void {
+  /** Lays a canvas at the window. A size is written only when it changed: writing one clears it. */
+  private place(el: HTMLCanvasElement): void {
+    const { x, y, w, h } = this.win;
+    if (el.width !== w) el.width = w;
+    if (el.height !== h) el.height = h;
+    el.style.left = `${String(x)}px`;
+    el.style.top = `${String(y)}px`;
+  }
+
+  private paintOf(ctx: CanvasRenderingContext2D, map: GameMap): Paint {
+    const style = getComputedStyle(ctx.canvas);
+    const token = (name: string): string => style.getPropertyValue(name).trim();
+    return {
+      ctx,
+      t: this.tilePx(),
+      map,
+      game: this.game(),
+      atlas: this.atlas(),
+      inset: token('--nc-inset'),
+      ink: token('--nc-ink'),
+      sky: token('--nc-sky'),
+      flagColours: this.flags() ? FLAG_VARS.map(token) : null,
+    };
+  }
+
+  /**
+   * One cell, in map pixels: its floor, its sprite, the tint of its flag. Painted onto the floor
+   * rather than over what was there, so a cell whose tile went is blank again.
+   */
+  private paintTile(p: Paint, x: number, y: number): void {
+    const { ctx, t } = p;
+    const px = x * t;
+    const py = y * t;
+    ctx.fillStyle = p.inset;
+    ctx.fillRect(px, py, t, t);
+    const spr = p.map.tiles[y * p.map.width + x] ?? 0;
+    if (!spr) return;
+    // Through the sheet that answers to this number: a map mixes them freely, and read off one
+    // sheet a tile from another lands on whatever pixels happen to sit at that offset.
+    const o = p.atlas.sourceOf(spr);
+    if (!o) return;
+    ctx.drawImage(o.canvas, o.x, o.y, SPRITE_SIZE, SPRITE_SIZE, px, py, t, t);
+    if (!p.flagColours) return;
+    const f = p.game.getFlag(spr);
+    if (!f) return;
+    const bit = Math.log2(f & -f);
+    ctx.globalAlpha = 0.4;
+    ctx.fillStyle = p.flagColours[bit] ?? '#fff';
+    ctx.fillRect(px, py, t, t);
+    ctx.globalAlpha = 1;
+  }
+
+  /**
+   * The cells changed since the last frame, and only those.
+   *
+   * Each also gets its own two grid lines back, the one on its left and the one on its top: a
+   * line at n·t + 0.5 lies in the first pixel column of cell n, so no cell paints over another's.
+   * Fine lines in one stroke and bold in another, in that order, as the full draw layers them --
+   * a pixel two lines cross is composited once per stroke, and the count has to agree.
+   */
+  private paintTiles(cells: Set<number>): void {
     const el = this.base().nativeElement;
     const ctx = el.getContext('2d');
-    if (!ctx) return;
-    const t = this.tilePx();
-    const w = this.cssW();
-    const h = this.cssH();
-    ctx.imageSmoothingEnabled = false;
-    ctx.fillStyle = cssVar(el, '--nc-inset');
-    ctx.fillRect(0, 0, w, h);
-    const game = this.game();
-    const atlas = this.atlas();
     const map = this.gameMap();
-    if (!map) return;
-    const tiles = map.tiles;
-    const showFlags = this.flags();
-    const flagColours = FLAG_VARS.map((v) => cssVar(el, v));
-    const mapW = this.mapW();
-    for (let y = 0; y < this.mapH(); y++)
-      for (let x = 0; x < mapW; x++) {
-        const spr = tiles[y * mapW + x] ?? 0;
-        if (!spr) continue;
-        // Through the sheet that answers to this number: a map mixes them freely, and read off one
-        // sheet a tile from another lands on whatever pixels happen to sit at that offset.
-        const o = atlas.sourceOf(spr);
-        if (!o) continue;
-        ctx.drawImage(o.canvas, o.x, o.y, SPRITE_SIZE, SPRITE_SIZE, x * t, y * t, t, t);
-        if (showFlags) {
-          const f = game.getFlag(spr);
-          if (f) {
-            const bit = Math.log2(f & -f);
-            ctx.globalAlpha = 0.4;
-            ctx.fillStyle = flagColours[bit] ?? '#fff';
-            ctx.fillRect(x * t, y * t, t, t);
-            ctx.globalAlpha = 1;
-          }
+    if (!ctx || !map) return;
+    const win = this.win;
+    const p = this.paintOf(ctx, map);
+    const t = p.t;
+    const x0 = Math.floor(win.x / t);
+    const y0 = Math.floor(win.y / t);
+    const x1 = Math.min(map.width, Math.ceil((win.x + win.w) / t));
+    const y1 = Math.min(map.height, Math.ceil((win.y + win.h) / t));
+    ctx.setTransform(1, 0, 0, 1, -win.x, -win.y);
+    ctx.imageSmoothingEnabled = false;
+    const grid = this.grid();
+    for (const i of cells) {
+      const x = i % map.width;
+      const y = (i - x) / map.width;
+      if (x < x0 || x >= x1 || y < y0 || y >= y1) continue;
+      this.paintTile(p, x, y);
+      if (!grid) continue;
+      const px = x * t;
+      const py = y * t;
+      for (const bold of [false, true]) {
+        ctx.beginPath();
+        if (x > 0 && (x % GRID_BOLD_EVERY === 0) === bold) {
+          ctx.moveTo(px + 0.5, py);
+          ctx.lineTo(px + 0.5, py + t);
         }
+        if (y > 0 && (y % GRID_BOLD_EVERY === 0) === bold) {
+          ctx.moveTo(px, py + 0.5);
+          ctx.lineTo(px + t, py + 0.5);
+        }
+        ctx.strokeStyle = bold ? p.sky : p.ink;
+        ctx.globalAlpha = bold ? GRID_BOLD_ALPHA : GRID_FINE_ALPHA;
+        ctx.stroke();
       }
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  /** Every cell in the window, then the grid over them as lines the length of the window. */
+  private drawBase(): void {
+    const el = this.base().nativeElement;
+    this.place(el);
+    const ctx = el.getContext('2d');
+    if (!ctx) return;
+    const win = this.win;
+    // Everything below draws in map pixels; the window moves the origin and nothing else.
+    ctx.setTransform(1, 0, 0, 1, -win.x, -win.y);
+    ctx.imageSmoothingEnabled = false;
+    const map = this.gameMap();
+    if (!map) {
+      ctx.fillStyle = cssVar(el, '--nc-inset');
+      ctx.fillRect(win.x, win.y, win.w, win.h);
+      return;
+    }
+    const p = this.paintOf(ctx, map);
+    const t = p.t;
+    const x0 = Math.floor(win.x / t);
+    const y0 = Math.floor(win.y / t);
+    const x1 = Math.min(map.width, Math.ceil((win.x + win.w) / t));
+    const y1 = Math.min(map.height, Math.ceil((win.y + win.h) / t));
+    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) this.paintTile(p, x, y);
     if (this.grid()) {
-      // The design draws the fine grid at 6% — legible over dark tiles without hatching them.
-      ctx.globalAlpha = 0.06;
-      ctx.strokeStyle = cssVar(el, '--nc-ink');
+      const left = win.x;
+      const right = win.x + win.w;
+      const top = win.y;
+      const bottom = win.y + win.h;
+      ctx.globalAlpha = GRID_FINE_ALPHA;
+      ctx.strokeStyle = p.ink;
       ctx.beginPath();
-      for (let x = 1; x < this.mapW(); x++) {
-        if (x % 8 === 0) continue;
-        ctx.moveTo(x * t + 0.5, 0);
-        ctx.lineTo(x * t + 0.5, h);
+      for (let x = Math.max(1, x0); x < x1; x++) {
+        if (x % GRID_BOLD_EVERY === 0) continue;
+        ctx.moveTo(x * t + 0.5, top);
+        ctx.lineTo(x * t + 0.5, bottom);
       }
-      for (let y = 1; y < this.mapH(); y++) {
-        if (y % 8 === 0) continue;
-        ctx.moveTo(0, y * t + 0.5);
-        ctx.lineTo(w, y * t + 0.5);
+      for (let y = Math.max(1, y0); y < y1; y++) {
+        if (y % GRID_BOLD_EVERY === 0) continue;
+        ctx.moveTo(left, y * t + 0.5);
+        ctx.lineTo(right, y * t + 0.5);
       }
       ctx.stroke();
-      ctx.strokeStyle = cssVar(el, '--nc-sky');
-      ctx.globalAlpha = 0.28;
+      ctx.strokeStyle = p.sky;
+      ctx.globalAlpha = GRID_BOLD_ALPHA;
       ctx.beginPath();
-      for (let x = 8; x < this.mapW(); x += 8) {
-        ctx.moveTo(x * t + 0.5, 0);
-        ctx.lineTo(x * t + 0.5, h);
+      for (let x = Math.max(1, x0); x < x1; x++) {
+        if (x % GRID_BOLD_EVERY !== 0) continue;
+        ctx.moveTo(x * t + 0.5, top);
+        ctx.lineTo(x * t + 0.5, bottom);
       }
-      for (let y = 8; y < this.mapH(); y += 8) {
-        ctx.moveTo(0, y * t + 0.5);
-        ctx.lineTo(w, y * t + 0.5);
+      for (let y = Math.max(1, y0); y < y1; y++) {
+        if (y % GRID_BOLD_EVERY !== 0) continue;
+        ctx.moveTo(left, y * t + 0.5);
+        ctx.lineTo(right, y * t + 0.5);
       }
       ctx.stroke();
       ctx.globalAlpha = 1;
@@ -733,10 +882,13 @@ export class MapCanvasComponent {
 
   private drawOverlay(): void {
     const el = this.overlay().nativeElement;
+    this.place(el);
     const ctx = el.getContext('2d');
     if (!ctx) return;
     const t = this.tilePx();
-    ctx.clearRect(0, 0, this.cssW(), this.cssH());
+    const win = this.win;
+    ctx.setTransform(1, 0, 0, 1, -win.x, -win.y);
+    ctx.clearRect(win.x, win.y, win.w, win.h);
 
     const sel = this.selection();
     if (sel) {
