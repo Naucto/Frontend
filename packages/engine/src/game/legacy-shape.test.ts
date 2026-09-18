@@ -78,6 +78,19 @@ describe('a document written before sheets were a collection', () => {
     expect(game.sheets[0]?.getPixel(3, 4)).toBe(9);
     expect(doc.getMap<number>(KEYS.sprites).get('3,4')).toBe(9);
   });
+
+  it('keeps its tiles where they were when a second map arrives', () => {
+    const doc = writtenBeforeCollections();
+    const game = new Game(doc);
+
+    game.addMap('cave', 16, 16);
+    game.maps[1]?.setTile(0, 0, 2);
+
+    expect(game.maps).toHaveLength(2);
+    expect(game.maps[0]?.getTile(1, 1)).toBe(7);
+    expect(doc.getMap<number>(KEYS.tiles).get('1,1')).toBe(7);
+    expect(doc.getMap<number>(KEYS.tiles).size).toBe(1);
+  });
 });
 
 /**

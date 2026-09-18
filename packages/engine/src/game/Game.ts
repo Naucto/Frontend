@@ -9,7 +9,7 @@ import {
   DEFAULT_PLAYER_SPRITE_INDICES,
   DEFAULT_SPRITE_COLOUR,
 } from './defaults';
-import { GameMap } from './GameMap';
+import { GameMap, type MapWriter } from './GameMap';
 import {
   clampMapSize,
   clampSheetSize,
@@ -45,7 +45,8 @@ const NO_TILES = new Uint16Array(0);
 /** What named a sprite by number before the sizes moved. */
 interface HeldNumbers {
   flags: { id: string; base: number; values: number[] }[];
-  tiles: number[];
+  /** Every map's tiles, with the width they were laid out at. */
+  tiles: { id: string; width: number; values: number[] }[];
 }
 
 /** What a resize would move, and what it would cost. */
@@ -70,6 +71,8 @@ export interface PixelChange {
   colour: number;
 }
 export interface TileChange {
+  /** Which map the tile is on. Without it a change on the second lands on the first. */
+  map: string;
   x: number;
   y: number;
   sprite: number;
@@ -258,6 +261,11 @@ export class Game {
     },
   };
   private readonly mapMirrors = new Map<string, MapMirror>();
+  private readonly mapWriter: MapWriter = {
+    setTile: (id, x, y, sprite) => {
+      this.writeMapTile(id, x, y, sprite);
+    },
+  };
   /** Cell maps already watched, so a second pass over the collection does not double up. */
   private readonly watchedCells = new WeakSet<Y.Map<number>>();
 
@@ -301,6 +309,7 @@ export class Game {
     });
     this.mapsMap.observeDeep(() => {
       this.forgetProjections();
+      this.attachMapObservers();
       told();
     });
     // A size is the shape of every mirror above, so a peer changing one has to be caught here
@@ -446,6 +455,7 @@ export class Game {
         height,
         colourOf(e),
         this.mapMirror(id, { width, height }).tiles,
+        this.mapWriter,
       );
     }));
   }
@@ -575,6 +585,23 @@ export class Game {
 
     return made;
   }
+  /**
+   * The tile twin of `sheetCells`: a map's cells, made the first time something writes one.
+   *
+   * Not watched here: a map made and written in one transaction fires no event of its own, Yjs
+   * only reporting on types that were there when the transaction began. The collection observer
+   * watches it once the transaction ends, and tells the tiles it arrived with.
+   */
+  private mapCells(mapId: string): Y.Map<number> {
+    const held = this.mapCellsOf(mapId);
+    if (held) return held;
+    const entry = this.mapsMap.get(mapId);
+    if (!entry) throw new Error(`no map ${mapId}`);
+    const made = new Y.Map<number>();
+    entry.set('tiles', made);
+
+    return made;
+  }
 
   /** Watches the cell maps of every sheet that has any, once each. */
   private attachSheetObservers(): void {
@@ -594,6 +621,9 @@ export class Game {
       if (!cells || this.watchedCells.has(cells)) continue;
       this.watchedCells.add(cells);
       this.observeMapCells(id, cells);
+      // A cell map that arrives already holding tiles -- made and written in one transaction,
+      // here or by a peer -- fired no event for them, so its tiles are told now.
+      this.tellTiles(id, cells, cells.keys());
     }
   }
 
@@ -631,23 +661,28 @@ export class Game {
     });
   }
 
+  /** Brings the mirror in step with these cells and tells the listeners which tiles moved. */
+  private tellTiles(mapId: string, cells: Y.Map<number>, keys: Iterable<string>): void {
+    const map = this.maps.find((m) => m.id === mapId);
+    if (!map) return;
+    const changes: TileChange[] = [];
+    for (const k of keys) {
+      const [x, y] = parseCoord(k);
+      if (x < 0 || x >= map.width || y < 0 || y >= map.height) continue;
+      const sprite = (cells.get(k) ?? 0) & 0xffff;
+      map.tiles[y * map.width + x] = sprite;
+      changes.push({ map: mapId, x, y, sprite });
+    }
+    if (changes.length)
+      this.tileListeners.forEach((l) => {
+        l(changes);
+      });
+  }
+
   /** The tile twin of `observeSheetCells`. */
   private observeMapCells(mapId: string, cells: Y.Map<number>): void {
     cells.observe((e) => {
-      const map = this.maps.find((m) => m.id === mapId);
-      if (!map) return;
-      const changes: TileChange[] = [];
-      e.changes.keys.forEach((_c, k) => {
-        const [x, y] = parseCoord(k);
-        if (x < 0 || x >= map.width || y < 0 || y >= map.height) return;
-        const sprite = (cells.get(k) ?? 0) & 0xffff;
-        map.tiles[y * map.width + x] = sprite;
-        changes.push({ x, y, sprite });
-      });
-      if (changes.length)
-        this.tileListeners.forEach((l) => {
-          l(changes);
-        });
+      this.tellTiles(mapId, cells, e.changes.keys.keys());
     });
   }
 
@@ -666,6 +701,13 @@ export class Game {
     if (v === 0) {
       if (cells.has(key)) cells.delete(key);
     } else cells.set(key, v);
+  }
+  private writeMapTile(mapId: string, x: number, y: number, sprite: number): void {
+    const cells = this.mapCells(mapId);
+    const key = coordKey(x, y);
+    if (sprite === 0) {
+      if (cells.has(key)) cells.delete(key);
+    } else cells.set(key, sprite & 0xffff);
   }
 
   /**
@@ -700,8 +742,9 @@ export class Game {
     const after = this.shapesAfterResize(id, width, height);
     const moves = remapSprites(before, after);
     let tiles = 0;
-    for (const n of this.tiles)
-      if (n !== 0 && (moves.has(n) || !survives(n, before, after))) tiles++;
+    for (const m of this.maps)
+      for (const n of m.tiles)
+        if (n !== 0 && (moves.has(n) || !survives(n, before, after))) tiles++;
     let calls = 0;
     let unsure = 0;
     for (const f of this.files) {
@@ -733,6 +776,16 @@ export class Game {
       this.renumber(before, after, held);
     }, LOCAL_ORIGIN);
   }
+  /**
+   * Resizes one map. Nothing is renumbered: a tile keeps its place, and the first map's size
+   * reaches the geometry through the writer, as it always did.
+   */
+  resizeMap(id: string, width: number, height: number): void {
+    if (!this.maps.some((m) => m.id === id)) return;
+    this.doc.transact(() => {
+      this.writeMapSize(id, width, height);
+    }, LOCAL_ORIGIN);
+  }
 
   /**
    * Everything that names a sprite by number, copied out before the sizes move.
@@ -744,9 +797,7 @@ export class Game {
   private holdNumbered(): HeldNumbers {
     return {
       flags: this.sheets.map((sh) => ({ id: sh.id, base: sh.base, values: Array.from(sh.flags) })),
-      // The first map only, which is the only one anything writes to: the editor's brush and every
-      // Lua call go through `setTile`, and that is the root map.
-      tiles: Array.from(this.tiles),
+      tiles: this.maps.map((m) => ({ id: m.id, width: m.width, values: Array.from(m.tiles) })),
     };
   }
 
@@ -788,17 +839,17 @@ export class Game {
       }
     }
 
-    const first = this.maps[0];
-    const mapWidth = first?.width ?? 0;
-    const tiles = first && this.mapCellsOf(first.id);
-    if (tiles)
-      held.tiles.forEach((n, at) => {
+    for (const m of held.tiles) {
+      if (!m.values.some((n) => n !== 0)) continue;
+      const tiles = this.mapCells(m.id);
+      m.values.forEach((n, at) => {
         if (n === 0) return;
         const to = kept(n);
-        const key = coordKey(at % mapWidth, Math.floor(at / mapWidth));
+        const key = coordKey(at % m.width, Math.floor(at / m.width));
         if (to === NOT_A_SPRITE || to === 0) tiles.delete(key);
         else tiles.set(key, to & 0xffff);
       });
+    }
 
     for (const f of this.files) {
       const out = rewriteSpriteNumbers(f.text.toString(), moves);
@@ -920,6 +971,10 @@ export class Game {
   /** Which sheet answers to a sprite number, or nothing where the number names no cell. */
   sheetOf(sprite: number): Sheet | undefined {
     return this.sheets.find((s) => s.holds(sprite));
+  }
+
+  mapOf(id: string): GameMap | undefined {
+    return this.maps.find((m) => m.id === id);
   }
 
   /** One past the highest sprite number any sheet claims. */
@@ -1144,19 +1199,13 @@ export class Game {
 
   // ---- map ------------------------------------------------------------------
 
+  /** The first map's tile, as `getPixel` is the first sheet's pixel: the one every game has. */
   getTile(x: number, y: number): number {
     return this.maps[0]?.getTile(x, y) ?? 0;
   }
 
   setTile(x: number, y: number, sprite: number): void {
-    const map = this.maps[0];
-    const cells = map && this.mapCellsOf(map.id);
-    if (!map || !cells) return;
-    if (x < 0 || x >= map.width || y < 0 || y >= map.height) return;
-    const key = coordKey(x, y);
-    if (sprite === 0) {
-      if (cells.has(key)) cells.delete(key);
-    } else cells.set(key, sprite & 0xffff);
+    this.maps[0]?.setTile(x, y, sprite);
   }
 
   onTilesChange(l: (changes: TileChange[]) => void): Unsubscribe {

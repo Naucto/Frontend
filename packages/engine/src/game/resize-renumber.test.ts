@@ -51,6 +51,20 @@ describe('resizing a sheet renumbers what named its sprites', () => {
     expect(game.getPixel(0, 8)).toBe(7);
   });
 
+  it('brings a tile on a second map along too', () => {
+    const { game } = drawn();
+    game.addMap('cave', 16, 16, 'm');
+    game.maps[1]?.setTile(1, 1, 16);
+    const sheet = game.sheets[0];
+    if (!sheet) throw new Error('no sheet');
+
+    expect(game.previewResize(sheet.id, 192, 128).tiles).toBe(2);
+    game.resizeSheet(sheet.id, 192, 128);
+
+    expect(game.maps[1]?.getTile(1, 1)).toBe(24);
+    expect(game.getTile(2, 2)).toBe(24);
+  });
+
   /** A number with nowhere left to point is not guessed at: the tile is cleared. */
   it('clears a tile whose cell falls outside the new shape', () => {
     const { game } = drawn();

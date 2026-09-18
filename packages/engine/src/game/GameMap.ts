@@ -1,3 +1,8 @@
+/** How a map reaches the document. The game supplies it, as it does a sheet's. */
+export interface MapWriter {
+  setTile(mapId: string, x: number, y: number, sprite: number): void;
+}
+
 /**
  * One tile map of a game.
  *
@@ -15,11 +20,17 @@ export class GameMap {
     readonly colour: number | null,
     /** Sprite numbers, row-major. Replaced when the map is resized, so do not hold it. */
     readonly tiles: Uint16Array,
+    private readonly writer: MapWriter,
   ) {}
 
   getTile(x: number, y: number): number {
     if (x < 0 || x >= this.width || y < 0 || y >= this.height) return 0;
 
     return this.tiles[y * this.width + x] ?? 0;
+  }
+
+  setTile(x: number, y: number, sprite: number): void {
+    if (x < 0 || x >= this.width || y < 0 || y >= this.height) return;
+    this.writer.setTile(this.id, x, y, sprite);
   }
 }
