@@ -1440,13 +1440,18 @@ test('an autosave is deleted from the versions panel', async ({ page }) => {
   });
 
   await page.goto('/edit/7/game');
-  await page.getByRole('button', { name: 'Platformer' }).click();
+  const chip = page.getByRole('button', { name: 'Platformer' });
+  // The chip names the newest named version, and this project has none: an autosave coming or
+  // going is not something it can show, so it reads the same before and after the delete.
+  await expect(chip).toContainText('draft');
+  await chip.click();
   const rows = page.locator('nc-popover-panel li', { hasText: 'Autosave' });
   await expect(rows).toHaveCount(2);
 
   await rows.nth(1).getByRole('button', { name: 'Delete this autosave' }).click();
   await expect(rows).toHaveCount(1);
   expect(deletes).toEqual(['save-1']);
+  await expect(chip).toHaveText(/^\s*Platformer\s+draft\s*$/);
 });
 
 test('a pause in the typing is what saves the game', async ({ page }) => {

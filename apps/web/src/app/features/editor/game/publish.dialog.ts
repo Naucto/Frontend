@@ -1,6 +1,7 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { unwrap } from '@app/core/api/api-errors';
+import { invalidateProjectHistory } from '@app/shared/queries/projects.queries';
 import {
   projectControllerPublish,
   projectControllerSaveCheckpoint,
@@ -9,6 +10,7 @@ import {
 } from '@naucto/api-client';
 import { computeSizeReport } from '@naucto/engine';
 import { ButtonDirective, DialogShellComponent, MeterComponent } from '@naucto/ui';
+import { QueryClient } from '@tanstack/angular-query-experimental';
 import * as Y from 'yjs';
 
 import type { WorkSessionService } from '../work-session/work-session.service';
@@ -75,6 +77,7 @@ export const PUBLISHED_VERSION = 'published';
 export class PublishDialogComponent {
   protected readonly data = inject<{ session: WorkSessionService }>(DIALOG_DATA);
   protected readonly ref = inject<DialogRef<boolean>>(DialogRef);
+  private readonly qc = inject(QueryClient);
   protected readonly ceiling = PUBLISH_CEILING;
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -128,6 +131,7 @@ export class PublishDialogComponent {
       // After the release, not before: a version named for something that did not happen is worse
       // than no version at all.
       await this.markPublished(id);
+      await invalidateProjectHistory(this.qc, this.data.session.id, 'checkpoints');
       await this.data.session.refreshProject();
       this.ref.close(true);
     } catch (e) {

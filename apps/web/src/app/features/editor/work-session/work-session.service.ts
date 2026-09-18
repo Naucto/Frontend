@@ -2,6 +2,7 @@ import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core'
 import { unwrap } from '@app/core/api/api-errors';
 import { AuthStore } from '@app/core/auth/auth.store';
 import { AppConfigService } from '@app/core/config/app-config';
+import { invalidateProjectHistory } from '@app/shared/queries/projects.queries';
 import { qk } from '@app/shared/queries/query-keys';
 import { TranslocoService } from '@jsverse/transloco';
 import {
@@ -254,10 +255,14 @@ export class WorkSessionService {
    * signal left the name and the summary stale wherever else they are shown — the game page reads
    * `release`, the hub and the profile read their own lists, and none of them share a key with
    * `project`. What a mutation owns is never the whole of what it changed.
+   *
+   * The play page's download is here for the same reason: a publish or a release update swaps
+   * the blob its signed URL points at, and it is fetched under a key of its own.
    */
   private async invalidateProjectEverywhere(): Promise<void> {
     await Promise.all([
       this.queries.invalidateQueries({ queryKey: qk.release(this.projectId) }),
+      this.queries.invalidateQueries({ queryKey: qk.releaseContentUrl(this.projectId) }),
       this.queries.invalidateQueries({ queryKey: qk.releasesAll() }),
       this.queries.invalidateQueries({ queryKey: ['projects'] }),
       this.queries.invalidateQueries({ queryKey: ['profile'] }),
@@ -301,6 +306,9 @@ export class WorkSessionService {
       this.dirty.set(false);
       this.saveFailed.set(false);
       this.lastSavedAt.set(new Date());
+      // Every save is a new autosave on the server, and the panel listing them would otherwise
+      // hold the list as it stood when the editor opened.
+      await invalidateProjectHistory(this.queries, this.projectId, 'versions');
     } catch (e) {
       this.saveFailed.set(true);
       throw e;
