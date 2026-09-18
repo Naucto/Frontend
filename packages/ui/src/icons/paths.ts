@@ -94,6 +94,10 @@ export const ICON_PATHS = {
   'file-plus':
     'M9 3H7v14h2zM5 7H3v14h2zm12-6H9v2h8zm4 4h-2v12h2zm-2 12H9v2h10zm-4 4H5v2h10zm2-18h2v2h-2zm-4 0h2v6h-2z M13 7h6v2h-6zM5 5h2v2H5zm10 14h2v2h-2z',
   flag: 'M3 2h10v2h8v14H11v-2H5v6H3V2zm2 12h8v2h6V6h-8V4H5v10z',
+  'flip-horizontal':
+    'M11 7h2v4h-2zm0-6h2v4h-2zm0 12h2v4h-2zm0 6h2v4h-2zm-4-8h2v2H7zm10 0h-2v2h2zM5 13h2v2H5zm14 0h-2v2h2zM5 9h2v4H5zm14 0h-2v4h2zM3 7h2v10H3zm18 0h-2v10h2z',
+  'flip-vertical':
+    'M17 11v2h-4v-2zm6 0v2h-4v-2zm-12 0v2H7v-2zm-6 0v2H1v-2zm8-4v2h-2V7zm0 10v-2h-2v2zm0-12v2H9V5zm0 14v-2H9v2zm2-14v2h-2V5zm0 14v-2h-2v2zm2-16v2H7V3zm0 18v-2H7v2z',
   folder: 'M4 4h6v2H4zm0 14h16v2H4zM20 8h2v10h-2zM2 6h2v12H2zm8 0h10v2H10z',
   'folder-plus':
     'M4 4h6v2H4zm0 14h10v2H4zM20 8h2v6h-2zM2 6h2v12H2zm8 0h10v2H10zm12 12v2h-6v-2z M18 16h2v6h-2z',
@@ -178,6 +182,8 @@ export const ICON_PATHS = {
     'M16 2h-2v2h2v2H4v2H2v5h2V8h12v2h-2v2h2v-2h2V8h2V6h-2V4h-2V2zM6 20h2v2h2v-2H8v-2h12v-2h2v-5h-2v5H8v-2h2v-2H8v2H6v2H4v2h2v2z',
   repeat:
     'M11 1H9v2h2v2H5v2H3v10h2v2h2v-2H5V7h6v2H9v2h2V9h2V7h2V5h-2V3h-2V1zm8 4h-2v2h2v10h-6v-2h2v-2h-2v2h-2v2H9v2h2v2h2v2h2v-2h-2v-2h6v-2h2V7h-2V5z',
+  'rotate-cw':
+    'M16 4h2v6h-2zm-2-2h2v2h-2zm0 2h2v8h-2zM4 8H2v5h2z M4 6h16v2H4zm4 14H6v-6h2zm2 2H8v-2h2zm0-2H8v-8h2zm10-4h2v-5h-2z M20 18H4v-2h16z',
   save: 'M4 2h14v2H4v16h2v-6h12v6h2V6h2v16H2V2h2zm4 18h8v-4H8v4zM20 6h-2V4h2v2zM6 6h9v4H6V6z',
   script: 'M16 19h2v2H4v-2h10v-2h2v2ZM6 15h8v2H4v2H2v-4h2V5h2v10ZM20 5h2v6h-2v8h-2V5H6V3h14v2Z',
   search:

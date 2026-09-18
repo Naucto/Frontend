@@ -100,6 +100,48 @@ export function floodFill(
   return out;
 }
 
+export type Transform = 'flipH' | 'flipV' | 'rotateCw' | 'rotateCcw';
+
+/** A rectangle of cells in row-major order: the pixels of a sheet or the tiles of a map alike. */
+export interface Block<T extends Uint8Array | Uint16Array> {
+  cells: T;
+  w: number;
+  h: number;
+}
+
+/**
+ * The block flipped, or turned by a quarter.
+ *
+ * A rotation swaps `w` and `h`, and the result says nothing about where it lands: a turned
+ * selection no longer fits the rectangle it was lifted from, and where the new one goes -- kept
+ * to its top-left corner, clamped to the sheet -- is the caller's decision. Allocated through the
+ * input's own constructor so 8-bit pixels and 16-bit tiles go through the one loop.
+ */
+export function transformBlock<T extends Uint8Array | Uint16Array>(
+  b: Block<T>,
+  op: Transform,
+): Block<T> {
+  const turned = op === 'rotateCw' || op === 'rotateCcw';
+  const w = turned ? b.h : b.w;
+  const h = turned ? b.w : b.h;
+  const cells = new (b.cells.constructor as new (n: number) => T)(w * h);
+  const dest = (x: number, y: number): number => {
+    switch (op) {
+      case 'flipH':
+        return y * w + (b.w - 1 - x);
+      case 'flipV':
+        return (b.h - 1 - y) * w + x;
+      case 'rotateCw':
+        return x * w + (b.h - 1 - y);
+      case 'rotateCcw':
+        return (b.w - 1 - x) * w + y;
+    }
+  };
+  for (let y = 0; y < b.h; y++)
+    for (let x = 0; x < b.w; x++) cells[dest(x, y)] = b.cells[y * b.w + x] ?? 0;
+  return { cells, w, h };
+}
+
 /**
  * One tile of the check, kept per size and colour pair.
  *

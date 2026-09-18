@@ -398,6 +398,13 @@
     "redo": "Redo",
     "copy": "Copy",
     "paste": "Paste",
+    "transform": {
+      "label": "Transform the selection",
+      "flipH": "Flip horizontally",
+      "flipV": "Flip vertically",
+      "rotateCw": "Rotate clockwise",
+      "rotateCcw": "Rotate counter-clockwise"
+    },
     "art": {
       "sprite": "Sprite",
       "tilesetTitle": "Tileset {{name}}",
