@@ -30,6 +30,11 @@ interface MapTexture {
 const FX_WRAP = 1;
 const FX_BLANK = 2;
 
+/** Quads one draw call carries; a batch that grows past it is drawn in two. */
+const MAX_QUADS = 4096;
+/** Two triangles: six vertices of two floats. */
+const FLOATS_PER_QUAD = 12;
+
 type BatchSource = 'sheet' | 'map' | 'font' | 'solid';
 
 /**
@@ -51,8 +56,13 @@ export class WebGL2Backend implements GfxBackend {
   private readonly uSolid: WebGLUniformLocation | null;
   private readonly uSrc: WebGLUniformLocation | null;
 
-  private verts: number[] = [];
-  private uvs: number[] = [];
+  /**
+   * Vertex scratch, written in place and uploaded up to `quadCount`. A flush happens several times
+   * a frame, so the arrays and the GL buffers behind them are sized once for the largest batch.
+   */
+  private readonly verts = new Float32Array(MAX_QUADS * FLOATS_PER_QUAD);
+  private readonly uvs = new Float32Array(MAX_QUADS * FLOATS_PER_QUAD);
+  private quadCount = 0;
   private batchSource: BatchSource = 'sheet';
   private batchTexture = '';
   /** One per sheet, keyed by its id. They take turns on the sheet texture unit. */
@@ -84,6 +94,8 @@ export class WebGL2Backend implements GfxBackend {
    * from the whole document and would otherwise paint over them on the next rebuild.
    */
   private readonly tileOverrides = new Map<string, Map<number, number>>();
+  /** Where a screenshot is presented, made the first time one is asked for. */
+  private grab: { fbo: WebGLFramebuffer; rbo: WebGLRenderbuffer } | null = null;
   private readonly unsubscribes: (() => void)[] = [];
   private destroyed = false;
 
@@ -179,9 +191,11 @@ export class WebGL2Backend implements GfxBackend {
     const aPos = gl.getAttribLocation(this.drawProgram, 'a_pos');
     const aUv = gl.getAttribLocation(this.drawProgram, 'a_uv');
     gl.bindBuffer(gl.ARRAY_BUFFER, this.posBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, this.verts.byteLength, gl.STREAM_DRAW);
     gl.enableVertexAttribArray(aPos);
     gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
     gl.bindBuffer(gl.ARRAY_BUFFER, this.uvBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, this.uvs.byteLength, gl.STREAM_DRAW);
     gl.enableVertexAttribArray(aUv);
     gl.vertexAttribPointer(aUv, 2, gl.FLOAT, false, 0, 0);
     gl.bindVertexArray(null);
@@ -310,13 +324,23 @@ export class WebGL2Backend implements GfxBackend {
     this.applyClip();
   }
 
+  /**
+   * Pass 2 onto `target`: the index frame through the effect table and the palette. It reads
+   * nothing but textures, so the same picture can be drawn again onto another target.
+   */
+  private presentTo(target: WebGLFramebuffer | null, w: number, h: number): void {
+    const gl = this.gl;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, target);
+    gl.disable(gl.SCISSOR_TEST);
+    gl.viewport(0, 0, w, h);
+    gl.useProgram(this.presentProgram);
+    gl.bindVertexArray(null);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+
   present(): void {
     const gl = this.gl;
     this.flush();
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    gl.disable(gl.SCISSOR_TEST);
-    gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-    gl.useProgram(this.presentProgram);
     if (this.effectsDirty) {
       gl.activeTexture(gl.TEXTURE0 + UNIT_EFFECTS);
       gl.bindTexture(gl.TEXTURE_2D, this.tex(UNIT_EFFECTS));
@@ -349,8 +373,7 @@ export class WebGL2Backend implements GfxBackend {
       );
       this.palettesDirty = false;
     }
-    gl.bindVertexArray(null);
-    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    this.presentTo(null, gl.drawingBufferWidth, gl.drawingBufferHeight);
     if (!this.persist && this.effectsUsed) this.resetScanlines();
   }
 
@@ -732,13 +755,30 @@ export class WebGL2Backend implements GfxBackend {
     this.persist = on;
   }
 
+  /**
+   * The drawing buffer is not kept past compositing, so the picture is presented a second time,
+   * into a target of its own. Everything that pass reads — the index frame, the effect table, the
+   * palettes — is retained on the GPU exactly as the last `present()` left it, so what comes back
+   * is the frame on screen. Keeping the drawing buffer instead would cost a copy of it on every
+   * composited frame, for a grab that happens once.
+   */
   screenshot(): Uint8ClampedArray | null {
     const gl = this.gl;
-    const w = gl.drawingBufferWidth;
-    const h = gl.drawingBufferHeight;
+    const w = SCREEN_WIDTH;
+    const h = SCREEN_HEIGHT;
+    if (!this.grab) {
+      const rbo = gl.createRenderbuffer();
+      gl.bindRenderbuffer(gl.RENDERBUFFER, rbo);
+      gl.renderbufferStorage(gl.RENDERBUFFER, gl.RGBA8, w, h);
+      const fbo = gl.createFramebuffer();
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+      gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.RENDERBUFFER, rbo);
+      this.grab = { fbo, rbo };
+    }
+    this.presentTo(this.grab.fbo, w, h);
     const buf = new Uint8Array(w * h * 4);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, buf);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     const out = new Uint8ClampedArray(w * h * 4);
     for (let y = 0; y < h; y++)
       out.set(buf.subarray((h - 1 - y) * w * 4, (h - y) * w * 4), y * w * 4);
@@ -756,6 +796,10 @@ export class WebGL2Backend implements GfxBackend {
     gl.deleteVertexArray(this.vao);
     gl.deleteBuffer(this.posBuffer);
     gl.deleteBuffer(this.uvBuffer);
+    if (this.grab) {
+      gl.deleteFramebuffer(this.grab.fbo);
+      gl.deleteRenderbuffer(this.grab.rbo);
+    }
     for (const t of this.textures) gl.deleteTexture(t);
     for (const t of this.sheetTextures.values()) gl.deleteTexture(t);
     for (const held of this.mapTextures.values()) gl.deleteTexture(held.tex);
@@ -830,13 +874,39 @@ export class WebGL2Backend implements GfxBackend {
   ): void {
     const x1 = x + w;
     const y1 = y + h;
-    this.verts.push(x, y, x1, y, x, y1, x, y1, x1, y, x1, y1);
-    this.uvs.push(u0, v0, u1, v0, u0, v1, u0, v1, u1, v0, u1, v1);
-    if (this.verts.length > 12 * 4096) this.flush();
+    const o = this.quadCount * FLOATS_PER_QUAD;
+    const p = this.verts;
+    const t = this.uvs;
+    p[o] = x;
+    p[o + 1] = y;
+    p[o + 2] = x1;
+    p[o + 3] = y;
+    p[o + 4] = x;
+    p[o + 5] = y1;
+    p[o + 6] = x;
+    p[o + 7] = y1;
+    p[o + 8] = x1;
+    p[o + 9] = y;
+    p[o + 10] = x1;
+    p[o + 11] = y1;
+    t[o] = u0;
+    t[o + 1] = v0;
+    t[o + 2] = u1;
+    t[o + 3] = v0;
+    t[o + 4] = u0;
+    t[o + 5] = v1;
+    t[o + 6] = u0;
+    t[o + 7] = v1;
+    t[o + 8] = u1;
+    t[o + 9] = v0;
+    t[o + 10] = u1;
+    t[o + 11] = v1;
+    this.quadCount++;
+    if (this.quadCount === MAX_QUADS) this.flush();
   }
 
   private flush(): void {
-    if (this.verts.length === 0) return;
+    if (this.quadCount === 0) return;
     const gl = this.gl;
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
     gl.viewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -871,13 +941,13 @@ export class WebGL2Backend implements GfxBackend {
       gl.uniform1iv(this.uRemap, this.remap);
       this.remapDirty = false;
     }
+    const n = this.quadCount * FLOATS_PER_QUAD;
     gl.bindBuffer(gl.ARRAY_BUFFER, this.posBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.verts), gl.STREAM_DRAW);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.verts, 0, n);
     gl.bindBuffer(gl.ARRAY_BUFFER, this.uvBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.uvs), gl.STREAM_DRAW);
-    gl.drawArrays(gl.TRIANGLES, 0, this.verts.length / 2);
-    this.verts = [];
-    this.uvs = [];
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.uvs, 0, n);
+    gl.drawArrays(gl.TRIANGLES, 0, this.quadCount * 6);
+    this.quadCount = 0;
   }
 
   /** Sorted by sheet first: one rectangle covering two sheets is not a rectangle on either. */

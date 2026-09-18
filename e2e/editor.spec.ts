@@ -99,6 +99,49 @@ async function inked(page: Page): Promise<number> {
   });
 }
 
+/**
+ * The RGB of a rectangle of the frame the game last presented, read back the way a cover grab
+ * reads it: through the engine, which presents the frame again into a target of its own.
+ *
+ * Copying the canvas is not an option. Its drawing buffer is not kept past compositing, and the
+ * loop presents only on the frames it stepped, so there is no animation frame in which a copy
+ * reliably holds the picture.
+ */
+async function screenPixels(
+  page: Page,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+): Promise<number[]> {
+  return page.evaluate(
+    (rect: { x: number; y: number; w: number; h: number }) => {
+      const screen = document.querySelector('nc-game-screen');
+      if (!screen) throw new Error('no game screen');
+      const { ng } = window as unknown as { ng: { getComponent(el: Element): unknown } };
+      const view = ng.getComponent(screen) as {
+        host: { screenshot(): Uint8ClampedArray | null };
+      } | null;
+      const rgba = view?.host.screenshot();
+      if (!rgba) throw new Error('no frame');
+      const out: number[] = [];
+      for (let j = 0; j < rect.h; j++)
+        for (let i = 0; i < rect.w; i++) {
+          const o = ((rect.y + j) * 320 + rect.x + i) * 4;
+          out.push(rgba[o] ?? 0, rgba[o + 1] ?? 0, rgba[o + 2] ?? 0);
+        }
+      return out;
+    },
+    { x, y, w, h },
+  );
+}
+
+/** Whether the screen pixel at (x, y) is brighter than the cleared background. */
+async function lit(page: Page, x: number, y: number): Promise<boolean> {
+  const [r = 0, g = 0, b = 0] = await screenPixels(page, x, y, 1, 1);
+  return r + g + b > 120;
+}
+
 test.describe('editor', () => {
   test.beforeEach(async ({ page }) => {
     await mockEditor(page);
@@ -148,29 +191,11 @@ test.describe('editor', () => {
    * samples — so every game came out mirrored top to bottom, for as long as there have been games.
    *
    * The starter draws a 16x16 moon at (152, 82). Its top row is solid and its bottom row is empty,
-   * which is the cheapest asymmetry there is to read back, and the WebGL context keeps its drawing
-   * buffer, so the last frame can be copied out at any time.
+   * which is the cheapest asymmetry there is to read back.
    */
   test('the screen is not mirrored top to bottom', async ({ page }) => {
     await page.goto('/edit/7/code');
     await expect(page.getByText('Welcome to Naucto!').first()).toBeVisible();
-
-    const lit = (x: number, y: number): Promise<boolean> =>
-      page.evaluate(
-        ([px, py]) => {
-          const screen = document.querySelector('canvas');
-          if (!screen) throw new Error('no canvas');
-          const copy = document.createElement('canvas');
-          copy.width = screen.width;
-          copy.height = screen.height;
-          const ctx = copy.getContext('2d');
-          if (!ctx) throw new Error('no 2d context');
-          ctx.drawImage(screen, 0, 0);
-          const [r, g, b] = ctx.getImageData(px ?? 0, py ?? 0, 1, 1).data;
-          return (r ?? 0) + (g ?? 0) + (b ?? 0) > 120;
-        },
-        [x, y],
-      );
 
     // Opening the editor mounts the game and runs `_init` — which is what prints the greeting —
     // but does not start it, so nothing has called `_draw` yet and the screen is still blank.
@@ -178,10 +203,12 @@ test.describe('editor', () => {
 
     // Wait for the moon to be somewhere — either end will do — so that a blank canvas cannot pass
     // for a mirrored one.
-    await expect.poll(async () => (await lit(159, 82)) || (await lit(159, 97))).toBe(true);
+    await expect
+      .poll(async () => (await lit(page, 159, 82)) || (await lit(page, 159, 97)))
+      .toBe(true);
 
     // Row 0 of the sprite is solid and row 15 is empty. Mirrored, these swap.
-    expect({ top: await lit(159, 82), bottom: await lit(159, 97) }).toEqual({
+    expect({ top: await lit(page, 159, 82), bottom: await lit(page, 159, 97) }).toEqual({
       top: true,
       bottom: false,
     });
@@ -886,23 +913,6 @@ test.describe('editor', () => {
     await page.goto('/edit/7/code');
     await expect(page.getByText('Welcome to Naucto!').first()).toBeVisible();
 
-    const lit = (x: number, y: number): Promise<boolean> =>
-      page.evaluate(
-        ([px, py]) => {
-          const screen = document.querySelector('canvas');
-          if (!screen) throw new Error('no canvas');
-          const copy = document.createElement('canvas');
-          copy.width = screen.width;
-          copy.height = screen.height;
-          const ctx = copy.getContext('2d');
-          if (!ctx) throw new Error('no 2d context');
-          ctx.drawImage(screen, 0, 0);
-          const [r, g, b] = ctx.getImageData(px ?? 0, py ?? 0, 1, 1).data;
-          return (r ?? 0) + (g ?? 0) + (b ?? 0) > 120;
-        },
-        [x, y],
-      );
-
     await page.locator('.cm-content').click();
     await page.keyboard.press('Control+a');
     await page.keyboard.type(
@@ -911,11 +921,11 @@ test.describe('editor', () => {
     await page.getByRole('button', { name: 'Play' }).first().click();
 
     // Nothing on the map to start with, so the corner is the cleared colour.
-    expect(await lit(3, 3)).toBe(false);
+    expect(await lit(page, 3, 3)).toBe(false);
     // The document took the write: this is the half that already worked.
     await expect(page.getByText('TILE=1')).toBeVisible({ timeout: 10_000 });
     // And the screen has to agree with it.
-    await expect.poll(() => lit(3, 3), { timeout: 10_000 }).toBe(true);
+    await expect.poll(() => lit(page, 3, 3), { timeout: 10_000 }).toBe(true);
   });
 
   /**
@@ -967,21 +977,12 @@ test.describe('editor', () => {
 
     await expect
       .poll(
-        () =>
-          page.evaluate(() => {
-            const screen = document.querySelector('canvas');
-            if (!screen) return false;
-            const copy = document.createElement('canvas');
-            copy.width = screen.width;
-            copy.height = screen.height;
-            const ctx = copy.getContext('2d');
-            if (!ctx) return false;
-            ctx.drawImage(screen, 0, 0);
-            const { data } = ctx.getImageData(0, 0, 8, 8);
-            for (let i = 0; i < data.length; i += 4)
-              if ((data[i] ?? 0) + (data[i + 1] ?? 0) + (data[i + 2] ?? 0) > 120) return true;
-            return false;
-          }),
+        async () => {
+          const data = await screenPixels(page, 0, 0, 8, 8);
+          for (let i = 0; i < data.length; i += 3)
+            if ((data[i] ?? 0) + (data[i + 1] ?? 0) + (data[i + 2] ?? 0) > 120) return true;
+          return false;
+        },
         { timeout: 10_000 },
       )
       .toBe(true);
@@ -1059,19 +1060,10 @@ test.describe('editor', () => {
     await page.goto('/edit/7/code');
     await expect(page.getByText('Welcome to Naucto!').first()).toBeVisible();
 
-    const pixel = (): Promise<string> =>
-      page.evaluate(() => {
-        const screen = document.querySelector('canvas');
-        if (!screen) throw new Error('no canvas');
-        const copy = document.createElement('canvas');
-        copy.width = screen.width;
-        copy.height = screen.height;
-        const ctx = copy.getContext('2d');
-        if (!ctx) throw new Error('no 2d context');
-        ctx.drawImage(screen, 0, 0);
-        const [r, g, b] = ctx.getImageData(3, 3, 1, 1).data;
-        return `${String(r)},${String(g)},${String(b)}`;
-      });
+    const pixel = async (): Promise<string> => {
+      const [r, g, b] = await screenPixels(page, 3, 3, 1, 1);
+      return `${String(r)},${String(g)},${String(b)}`;
+    };
 
     // Sprite 0 is empty, so every one of its pixels is the first colour.
     await page.locator('.cm-content').click();
@@ -1163,23 +1155,6 @@ test.describe('editor', () => {
     await page.mouse.move(box.x + 5, box.y + 5);
     await expect(page.getByText(/TILE 0,0 · SPR \d+/)).not.toHaveText(/SPR 000/);
 
-    const lit = (x: number, y: number): Promise<boolean> =>
-      page.evaluate(
-        ([px, py]) => {
-          const screen = document.querySelector('canvas');
-          if (!screen) throw new Error('no canvas');
-          const copy = document.createElement('canvas');
-          copy.width = screen.width;
-          copy.height = screen.height;
-          const ctx = copy.getContext('2d');
-          if (!ctx) throw new Error('no 2d context');
-          ctx.drawImage(screen, 0, 0);
-          const [r, g, b] = ctx.getImageData(px ?? 0, py ?? 0, 1, 1).data;
-          return (r ?? 0) + (g ?? 0) + (b ?? 0) > 120;
-        },
-        [x, y],
-      );
-
     await page.locator('nc-rail').getByRole('button', { name: 'Code' }).click();
     await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
     await page.locator('.cm-content').click();
@@ -1187,7 +1162,7 @@ test.describe('editor', () => {
     await page.keyboard.type('function _draw()\ngfx.clear(0)\nmap.draw(0, 0)\nend\n');
     await page.getByRole('button', { name: 'Play' }).first().click();
     // The first map is empty in this project: nothing at the corner.
-    await expect.poll(() => lit(3, 3), { timeout: 10_000 }).toBe(false);
+    await expect.poll(() => lit(page, 3, 3), { timeout: 10_000 }).toBe(false);
 
     await page.locator('.cm-content').click();
     await page.keyboard.press('Control+a');
@@ -1195,7 +1170,7 @@ test.describe('editor', () => {
       'function _draw()\ngfx.clear(0)\nmap.draw(0, 0, 0, 0, 4, 4, 2)\nend\n',
     );
     await page.getByRole('button', { name: 'Restart' }).click();
-    await expect.poll(() => lit(3, 3), { timeout: 10_000 }).toBe(true);
+    await expect.poll(() => lit(page, 3, 3), { timeout: 10_000 }).toBe(true);
   });
 
   test('MAP picks a brush by dragging a rectangle on the sheet', async ({ page }) => {

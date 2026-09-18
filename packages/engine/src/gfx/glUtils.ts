@@ -17,11 +17,7 @@ export function rgbToHex(r: number, g: number, b: number): string {
 }
 
 export function createGLContext(canvas: HTMLCanvasElement): WebGL2RenderingContext {
-  const gl = canvas.getContext('webgl2', {
-    antialias: false,
-    alpha: false,
-    preserveDrawingBuffer: true,
-  });
+  const gl = canvas.getContext('webgl2', { antialias: false, alpha: false });
   if (!gl) throw new WebGlError('WebGL2 is not supported');
   return gl;
 }
