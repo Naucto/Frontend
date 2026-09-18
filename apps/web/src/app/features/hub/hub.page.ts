@@ -4,6 +4,7 @@ import {
   computed,
   inject,
   input,
+  linkedSignal,
   type Signal,
   signal,
 } from '@angular/core';
@@ -242,6 +243,7 @@ const SHELF_SIZE = 10;
           [games]="popular()"
           [state]="popularState()"
           [count]="popularTotal()"
+          [reserve]="shelfSize"
           [seeAll]="['/hub/all', 'popular']"
           [empty]="t('hub.empty')"
         >
@@ -298,6 +300,7 @@ export class HubPage {
     void inject(QueryClient).invalidateQueries({ queryKey: qk.releasesAll() });
   }
 
+  protected readonly shelfSize = SHELF_SIZE;
   protected readonly filterOptions = [
     { value: 'all', label: 'All' },
     { value: 'arcade', label: 'Arcade' },
@@ -328,11 +331,25 @@ export class HubPage {
   );
 
   private readonly featured = injectFeaturedRelease();
-  protected readonly hero = computed(
-    // `?.items?.[0]`, not `?.items[0]`: an error response still resolves `data()` to a value whose
-    // `items` is absent, and indexing it threw inside the computed on every hub render.
-    () => this.featured.data() ?? this.popularPage.data()?.items?.[0] ?? null,
-  );
+  /**
+   * The hero is the game of the week, not the head of whichever filter is lit: with nothing
+   * featured it takes the most popular game overall and holds it while the shelf is narrowed,
+   * rather than swapping on every chip.
+   */
+  protected readonly hero = linkedSignal<
+    { featured: ProjectExResponseDto | null; all: boolean; first: ProjectExResponseDto | null },
+    ProjectExResponseDto | null
+  >({
+    source: () => ({
+      featured: this.featured.data() ?? null,
+      all: this.popularFilter() === 'all',
+      // `?.items?.[0]`, not `?.items[0]`: an error response still resolves `data()` to a value
+      // whose `items` is absent, and indexing it threw inside the computed on every hub render.
+      first: this.popularPage.data()?.items?.[0] ?? null,
+    }),
+    computation: ({ featured, all, first }, prev) =>
+      featured ?? (all ? first : (prev?.value ?? null)),
+  });
   protected readonly heroCover = injectReleaseImage(() => this.hero()?.id ?? null);
 
   /**

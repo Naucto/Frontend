@@ -1,9 +1,9 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { GameCardComponent } from '@app/shared/game-card/game-card.component';
 import { TranslocoDirective } from '@jsverse/transloco';
 import type { ProjectExResponseDto } from '@naucto/api-client';
-import { IconComponent, SkeletonComponent } from '@naucto/ui';
+import { IconComponent, SkeletonComponent, StatComponent } from '@naucto/ui';
 
 /** Whether the shelf has its games, is still asking, or could not find out. */
 export type ShelfState = 'ready' | 'pending' | 'error';
@@ -11,7 +11,14 @@ export type ShelfState = 'ready' | 'pending' | 'error';
 /** A titled shelf of game cards, five to a row at full width, with a "see all" link and actions. */
 @Component({
   selector: 'nc-hub-row',
-  imports: [RouterLink, TranslocoDirective, GameCardComponent, IconComponent, SkeletonComponent],
+  imports: [
+    RouterLink,
+    TranslocoDirective,
+    GameCardComponent,
+    IconComponent,
+    SkeletonComponent,
+    StatComponent,
+  ],
   template: `
     <ng-container *transloco="let t">
       @if (title() || seeAll()) {
@@ -63,7 +70,32 @@ export type ShelfState = 'ready' | 'pending' | 'error';
             @for (g of games(); track g.id) {
               <nc-game-card [game]="g" [opensEditor]="opensEditor()" />
             } @empty {
-              <p class="col-span-full text-body text-ink-3">{{ empty() }}</p>
+              <!-- A shelf that reserves room keeps the copy to one cell rather than a row of its
+                   own: the cells the ghosts fill behind it are what hold the height. -->
+              <p class="text-body text-ink-3" [class.col-span-full]="!reserve()">{{ empty() }}</p>
+            }
+            <!-- The card's own structure with nothing in it, not a fixed height: a card is as tall
+                 as its cover at the column's width plus three lines of type, and only the same
+                 boxes come out to the same pixel at every column count. -->
+            @for (i of ghosts(); track i) {
+              <div
+                class="invisible overflow-hidden rounded-md border border-line"
+                aria-hidden="true"
+              >
+                <div class="aspect-video w-full"></div>
+                <div class="px-1.5 pt-[11px] pb-1.5">
+                  <div class="flex items-center gap-1">
+                    <span class="min-w-0 flex-1 truncate text-ui">&nbsp;</span>
+                  </div>
+                  <div class="mt-0.5 flex items-center gap-[6px]">
+                    <span class="mr-0.5 inline-block h-[14px] w-[14px] shrink-0"></span>
+                    <span class="label truncate">&nbsp;</span>
+                  </div>
+                  <div class="mt-1 flex gap-1.5">
+                    <nc-stat icon="play" [value]="0" />
+                  </div>
+                </div>
+              </div>
             }
           }
         }
@@ -83,5 +115,18 @@ export class HubRowComponent {
   /** Whether this shelf's cards open the editor rather than the play page. */
   readonly opensEditor = input(false);
   readonly state = input<ShelfState>('ready');
+  /**
+   * How many cells the shelf keeps whatever it holds. A filter that narrows ten games to four
+   * used to take a row away from the page and give it back on the next click; the cells the games
+   * do not fill stay, invisible, at a card's geometry.
+   */
+  readonly reserve = input(0);
   protected readonly placeholders = [0, 1, 2, 3, 4];
+  /** An empty shelf still takes one cell for its copy, so the ghosts start after it. */
+  protected readonly ghosts = computed(() =>
+    Array.from(
+      { length: Math.max(0, this.reserve() - Math.max(1, this.games().length)) },
+      (_, i) => i,
+    ),
+  );
 }
