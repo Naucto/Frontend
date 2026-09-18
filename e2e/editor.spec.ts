@@ -389,6 +389,27 @@ test.describe('editor', () => {
     await expect(onion).toBeVisible();
   });
 
+  test('the palette fold survives a reload', async ({ page }) => {
+    await page.goto('/edit/7/art');
+    const fold = page.getByRole('button', { name: 'Palette' });
+    const colours = page.getByRole('radiogroup', { name: 'Palette' });
+    await expect(fold).toHaveAttribute('aria-expanded', 'true');
+    await expect(colours).toBeVisible();
+
+    await fold.click();
+    await expect(fold).toHaveAttribute('aria-expanded', 'false');
+    await expect(colours).toBeHidden();
+    // Folded is not gone: the section's own actions stay in reach.
+    await expect(page.getByRole('button', { name: 'Presets' })).toBeVisible();
+
+    await page.reload();
+    await expect(page.getByRole('button', { name: 'Palette' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+    await expect(page.getByRole('radiogroup', { name: 'Palette' })).toBeHidden();
+  });
+
   /** Read as a fraction of the content, which is the thing a zoom changes the size of. */
   test('zooming the sheet keeps what was in the middle', async ({ page }) => {
     await page.goto('/edit/7/art');
