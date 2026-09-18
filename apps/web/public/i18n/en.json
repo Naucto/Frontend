@@ -547,6 +547,7 @@
       "colour": "Colour",
       "oscillator": "Oscillator",
       "oscHelp": "The raw wave. Square has a duty cycle; noise ignores pitch; PCM plays a sample.",
+      "presets": "Presets",
       "envelope": "Envelope",
       "envHelp": "Attack, decay, sustain, release — how loud the note is over its life.",
       "modFilter": "Modulation & filter",

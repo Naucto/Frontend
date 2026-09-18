@@ -1477,6 +1477,27 @@ test.describe('editor', () => {
     await expect(slot).toHaveAttribute('aria-pressed', 'true');
     await page.screenshot({ path: 'test-results/v-editor-sound.png' });
   });
+
+  test('a preset changes the sound and keeps the name', async ({ page }) => {
+    await page.goto('/edit/7/sound');
+    await page.getByRole('button', { name: 'Add instrument' }).first().click();
+    await expect(page.getByRole('radio', { name: 'Square' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+
+    await page.getByRole('button', { name: 'Presets' }).click();
+    await page.screenshot({ path: 'test-results/v-editor-sound-presets.png' });
+    await page.getByRole('button', { name: 'Noise hat' }).click();
+    await expect(page.getByRole('radio', { name: 'Noise' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    // The preset is the sound, not the instrument: what the list calls it is untouched.
+    const rows = page.getByRole('listbox', { name: 'Instruments' }).getByRole('option');
+    await expect(rows).toHaveCount(1);
+    await expect(rows.first()).toContainText('lead');
+  });
 });
 
 test('a tab is named and coloured in a dialog, and the last one cannot be removed', async ({
