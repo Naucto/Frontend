@@ -33,7 +33,7 @@
   "auth": {
     "insertGame": "Insert game",
     "tagline": "Sign in to save, publish and play with friends.",
-    "needAccount": "Playing online needs an account. Sign in here and carry on where you were.",
+    "needAccount": "This needs an account. Sign in here and carry on where you were.",
     "email": "Email",
     "password": "Password",
     "passwordHint": "At least {{length}} characters, mixing {{classes}} of letters, digits and symbols",

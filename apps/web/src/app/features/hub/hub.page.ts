@@ -12,6 +12,7 @@ import { unwrap } from '@app/core/api/api-errors';
 import { AuthStore } from '@app/core/auth/auth.store';
 import { PresenceStore } from '@app/core/presence/presence.store';
 import { type PresenceDto } from '@app/core/presence/presence.types';
+import { SignedInAction } from '@app/shared/auth/signed-in-action';
 import { GameCoverComponent } from '@app/shared/game-card/game-cover.component';
 import { qk } from '@app/shared/queries/query-keys';
 import {
@@ -136,7 +137,7 @@ const SHELF_SIZE = 10;
                     variant="secondary"
                     size="hero"
                     (click)="remix(g.id, $event)"
-                    [disabled]="!auth.isAuthenticated() || fork.isPending()"
+                    [disabled]="fork.isPending()"
                   >
                     {{ t('hub.remix') }}
                   </button>
@@ -277,6 +278,7 @@ export class HubPage {
   protected readonly fork = injectFork();
   private readonly presence = inject(PresenceStore);
   private readonly transloco = inject(TranslocoService);
+  private readonly signedIn = inject(SignedInAction);
   protected readonly term = computed(() => this.q()?.trim() ?? '');
   protected readonly tagFilter = computed(() => this.tags()?.trim() ?? '');
   /** Either narrows the shelves down to one row; neither leaves them as they are. */
@@ -391,11 +393,13 @@ export class HubPage {
   protected remix(id: number, e: Event): void {
     e.preventDefault();
     e.stopPropagation();
-    this.fork.mutate(id, {
-      onSuccess: (r) => void this.router.navigate(['/edit', r.id]),
-      onError: () => {
-        this.toasts.show(this.transloco.translate('hub.remixFailed'), 'error');
-      },
+    this.signedIn.run(() => {
+      this.fork.mutate(id, {
+        onSuccess: (r) => void this.router.navigate(['/edit', r.id]),
+        onError: () => {
+          this.toasts.show(this.transloco.translate('hub.remixFailed'), 'error');
+        },
+      });
     });
   }
 

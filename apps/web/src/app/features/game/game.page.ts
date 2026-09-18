@@ -17,6 +17,7 @@ import {
 import { Router, RouterLink } from '@angular/router';
 import { AuthStore } from '@app/core/auth/auth.store';
 import { PresenceStore } from '@app/core/presence/presence.store';
+import { SignedInAction } from '@app/shared/auth/signed-in-action';
 import { GameCardComponent } from '@app/shared/game-card/game-card.component';
 import { GameScreenComponent } from '@app/shared/game-screen/game-screen.component';
 import {
@@ -171,7 +172,6 @@ import { ReleaseGameService } from './release-game.service';
                 size="bar"
                 [variant]="likes.data()?.liked ? 'run' : 'secondary'"
                 (click)="toggleLike()"
-                [disabled]="!auth.isAuthenticated()"
               >
                 <nc-icon name="heart" [size]="12" />
                 {{ count(likes.data()?.likes ?? r.likes) }} {{ t('game.likes') }}
@@ -181,7 +181,7 @@ import { ReleaseGameService } from './release-game.service';
                 size="bar"
                 variant="secondary"
                 (click)="remix(r.id)"
-                [disabled]="!auth.isAuthenticated() || fork.isPending()"
+                [disabled]="fork.isPending()"
               >
                 <nc-icon name="git-branch" [size]="12" />
                 {{ t('game.remix') }}
@@ -257,12 +257,13 @@ import { ReleaseGameService } from './release-game.service';
 })
 export class GamePage {
   readonly id = input.required({ transform: numberAttribute });
-  protected readonly auth = inject(AuthStore);
+  private readonly auth = inject(AuthStore);
   private readonly screen = viewChild(GameScreenComponent);
   private readonly router = inject(Router);
   private readonly toasts = inject(ToastService);
   private readonly loader = inject(ReleaseGameService);
   private readonly presence = inject(PresenceStore);
+  private readonly signedIn = inject(SignedInAction);
 
   protected readonly release = injectRelease(() => this.id());
   protected readonly contentUrl = injectReleaseContentUrl(() => this.id());
@@ -425,16 +426,24 @@ export class GamePage {
     return formatCount(n);
   }
 
+  /**
+   * Straight after signing in the like status is still on its way, so the reader is taken not to
+   * have liked yet; a game they had already liked settles on the refetch the toggle triggers.
+   */
   protected toggleLike(): void {
-    this.toggle.mutate(this.likes.data()?.liked ?? false);
+    this.signedIn.run(() => {
+      this.toggle.mutate(this.likes.data()?.liked ?? false);
+    });
   }
 
   protected remix(id: number): void {
-    this.fork.mutate(id, {
-      onSuccess: (p) => {
-        this.toasts.show('Remixed into your games', 'success');
-        void this.router.navigate(['/edit', p.id]);
-      },
+    this.signedIn.run(() => {
+      this.fork.mutate(id, {
+        onSuccess: (p) => {
+          this.toasts.show('Remixed into your games', 'success');
+          void this.router.navigate(['/edit', p.id]);
+        },
+      });
     });
   }
 }
