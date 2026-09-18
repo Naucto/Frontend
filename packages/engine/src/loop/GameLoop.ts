@@ -5,7 +5,6 @@ const MAX_STEPS_PER_FRAME = 5;
 export interface LoopDriver {
   request(cb: (now: number) => void): number;
   cancel(handle: number): void;
-  now(): number;
 }
 
 const rafDriver: LoopDriver = {
@@ -13,7 +12,6 @@ const rafDriver: LoopDriver = {
   cancel: (h) => {
     cancelAnimationFrame(h);
   },
-  now: () => performance.now(),
 };
 
 /**
@@ -24,7 +22,8 @@ const rafDriver: LoopDriver = {
 export class GameLoop {
   private handle = 0;
   private running = false;
-  private last = 0;
+  /** Timestamp of the previous frame; negative until one has been seen. */
+  private last = -1;
   private acc = 0;
 
   constructor(
@@ -40,7 +39,10 @@ export class GameLoop {
   start(): void {
     if (this.running) return;
     this.running = true;
-    this.last = this.driver.now();
+    // The clock starts at the first frame the driver hands over, not here. What the page does
+    // between the two -- the rest of the gesture that called run(), the paint that follows it --
+    // is not time the game was running, and charging it would open on a burst of catch-up steps.
+    this.last = -1;
     this.acc = 0;
     this.schedule();
   }
@@ -77,7 +79,7 @@ export class GameLoop {
   private schedule(): void {
     this.handle = this.driver.request((now) => {
       if (!this.running) return;
-      const elapsed = now - this.last;
+      const elapsed = this.last < 0 ? 0 : now - this.last;
       this.last = now;
       if (!this.tick(elapsed)) {
         this.stop();
