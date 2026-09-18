@@ -9,7 +9,9 @@ export type OAuthErrorCode =
   | 'oauth_unknown_provider'
   | 'oauth_state_mismatch'
   | 'oauth_verifier_missing'
-  | 'popup_blocked';
+  | 'popup_blocked'
+  | 'popup_closed'
+  | 'popup_timeout';
 
 /** A failure this app can name, as a code rather than a sentence, so nothing shows a provider's prose. */
 export class OAuthError extends Error {

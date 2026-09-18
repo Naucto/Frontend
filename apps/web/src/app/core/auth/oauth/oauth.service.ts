@@ -24,19 +24,50 @@ export type OAuthHandBack = { token: string } | { error: string };
 type PopupMessage =
   { type: 'naucto:oauth:success'; token: string } | { type: 'naucto:oauth:error'; error: string };
 
-/** Resolves with the token the popup's callback posts back — from this origin only. */
-function awaitPopup(): Promise<string> {
+const POPUP_TIMEOUT_MS = 2 * 60_000;
+const POPUP_CLOSED_POLL_MS = 500;
+
+/**
+ * Resolves with the token the popup's callback posts back — from this origin only.
+ *
+ * A message is the only thing the popup can send, and two of its endings send none: a window
+ * closed by hand, and the provider's own error page, where nothing of ours ever runs. Either
+ * would leave the caller waiting for good, so the window is watched as well as listened to.
+ */
+function awaitPopup(popup: Window, timeoutMs = POPUP_TIMEOUT_MS): Promise<string> {
   return new Promise<string>((resolve, reject) => {
+    const settle = (outcome: () => void): void => {
+      clearInterval(closedPoll);
+      clearTimeout(timer);
+      window.removeEventListener('message', onMessage);
+      outcome();
+    };
     const onMessage = (e: MessageEvent<Partial<PopupMessage>>): void => {
       if (e.origin !== location.origin) return;
       if (e.data.type === 'naucto:oauth:success' && e.data.token !== undefined) {
-        window.removeEventListener('message', onMessage);
-        resolve(e.data.token);
+        const { token } = e.data;
+        settle(() => {
+          resolve(token);
+        });
       } else if (e.data.type === 'naucto:oauth:error') {
-        window.removeEventListener('message', onMessage);
-        reject(new Error(e.data.error ?? 'oauth_failed'));
+        const reason = e.data.error ?? 'oauth_failed';
+        settle(() => {
+          reject(new Error(reason));
+        });
       }
     };
+    const closedPoll = setInterval(() => {
+      if (popup.closed)
+        settle(() => {
+          reject(new OAuthError('popup_closed'));
+        });
+    }, POPUP_CLOSED_POLL_MS);
+    const timer = setTimeout(() => {
+      popup.close();
+      settle(() => {
+        reject(new OAuthError('popup_timeout'));
+      });
+    }, timeoutMs);
     window.addEventListener('message', onMessage);
   });
 }
@@ -91,13 +122,19 @@ export class OAuthService {
       popup: (url) => {
         const popup = window.open(url, 'naucto-oauth', 'width=520,height=640');
         if (!popup) throw new OAuthError('popup_blocked');
-        return awaitPopup();
+        return awaitPopup(popup);
       },
     };
     const started = await flow.start(ctx);
     if (started === 'left-page') return 'left-page';
     await this.auth.completeOAuth(started.token);
     return 'signed-in';
+  }
+
+  /** Forgets a flow that left and never came back, so no later callback can match its state. */
+  abandon(): void {
+    remove(STORAGE_KEYS.oauthState, sessionStorage);
+    remove(STORAGE_KEYS.pkceVerifier, sessionStorage);
   }
 
   /** Validates state and returns where to go next; throws on mismatch. */

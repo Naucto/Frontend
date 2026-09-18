@@ -72,6 +72,17 @@ test.describe('app shell', () => {
     expect(active).toBe(ink);
   });
 
+  /**
+   * The dev config.json registers no client with any provider. A button that sends someone to a
+   * provider's own error page reads as broken; one that is down, and says why, reads as not set up.
+   */
+  test('sign-in buttons for unconfigured providers are down and say why', async ({ page }) => {
+    await page.goto('/sign-in');
+    const down = page.getByTitle('Not configured on this server.');
+    await expect(down).toHaveCount(3);
+    for (const button of await down.all()) await expect(button).toBeDisabled();
+  });
+
   test('unknown routes show the not-found page', async ({ page }) => {
     await page.goto('/definitely-not-here');
     await expect(page.getByRole('heading', { name: 'Nothing here' })).toBeVisible();

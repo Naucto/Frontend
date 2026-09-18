@@ -22,7 +22,7 @@ import { LcdComponent } from '@naucto/ui';
   imports: [TranslocoDirective, LcdComponent],
   template: `
     <div *transloco="let t" class="mx-auto mt-8 w-[360px]">
-      <nc-lcd [minHeight]="64">{{ status() }}</nc-lcd>
+      <nc-lcd [minHeight]="64">{{ t(status()) }}</nc-lcd>
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -35,7 +35,7 @@ export class OAuthCallbackPage implements OnInit {
   private readonly router = inject(Router);
   private readonly auth = inject(AuthStore);
   private readonly oauth = inject(OAuthService);
-  protected readonly status = signal('> connecting…');
+  protected readonly status = signal('auth.finishing');
 
   ngOnInit(): void {
     void this.run();
@@ -44,28 +44,31 @@ export class OAuthCallbackPage implements OnInit {
   private async run(): Promise<void> {
     const provider = this.route.snapshot.data.provider as OAuthProviderId;
     const inPopup = this.oauth.provider(provider).kind === 'popup';
-    const code = this.code();
+    let next: string | null = null;
     try {
+      next = this.oauth.consume(provider, this.state() ?? null).next;
+      const code = this.code();
       if (this.error() !== undefined || code === undefined)
         throw new Error(this.error() ?? 'missing_code');
-      const pending = this.oauth.consume(provider, this.state() ?? null);
       const token = await this.oauth.finish(provider, code);
       if (inPopup) {
         this.oauth.handBack({ token });
-        this.status.set('> signed in — you can close this window');
+        this.status.set('auth.oauthDone');
         window.close();
         return;
       }
       await this.auth.completeOAuth(token);
-      await this.router.navigateByUrl(pending.next);
+      await this.router.navigateByUrl(next);
     } catch (e) {
-      const message = e instanceof Error ? e.message : 'oauth_failed';
-      this.status.set(`! ${message}`);
+      // The provider's own wording stays off the screen: it is theirs, and it may say anything.
+      this.status.set('auth.oauthFailed');
       if (inPopup) {
-        this.oauth.handBack({ error: message });
+        this.oauth.handBack({ error: e instanceof Error ? e.message : 'oauth_failed' });
         return;
       }
-      setTimeout(() => void this.router.navigateByUrl('/sign-in'), 1500);
+      setTimeout(() => {
+        void this.router.navigate(['/sign-in'], { queryParams: next === null ? {} : { next } });
+      }, 1500);
     }
   }
 }

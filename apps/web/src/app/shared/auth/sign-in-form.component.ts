@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiError, violationsOf } from '@app/core/api/api-errors';
 import {
@@ -94,17 +102,18 @@ import {
         <span class="h-px flex-1 bg-line-soft"></span>
       </div>
       <div class="grid grid-cols-1 gap-1 sm:grid-cols-3">
-        @for (p of providers; track p.id) {
+        @for (p of providers(); track p.flow.id) {
           <button
             ncButton
             variant="secondary"
             size="sm"
             class="h-[36px] text-ink-body"
-            (click)="oauth(p)"
-            [disabled]="busy()"
+            (click)="oauth(p.flow)"
+            [disabled]="busy() || !p.configured"
+            [attr.title]="p.configured ? null : t('auth.notConfigured')"
           >
-            <nc-brand-mark [name]="p.mark" [size]="12" />
-            {{ p.label }}
+            <nc-brand-mark [name]="p.flow.mark" [size]="12" />
+            {{ p.flow.label }}
           </button>
         }
       </div>
@@ -125,6 +134,7 @@ import {
       </p>
     </ng-container>
   `,
+  host: { '(window:pageshow)': 'onPageShow($event)' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SignInFormComponent {
@@ -137,7 +147,12 @@ export class SignInFormComponent {
   private readonly i18n = inject(TranslocoService);
   private readonly toasts = inject(ToastService);
 
-  protected readonly providers = this.oauthService.providers();
+  /** A provider the server registered no client with is drawn, but down: it says what is missing. */
+  protected readonly providers = computed(() =>
+    this.oauthService
+      .providers()
+      .map((flow) => ({ flow, configured: this.oauthService.isConfigured(flow.id) })),
+  );
   protected readonly mode = signal<'login' | 'register'>('login');
   protected readonly busy = signal(false);
   protected readonly policy = signal<PasswordPolicy | null>(null);
@@ -201,15 +216,26 @@ export class SignInFormComponent {
 
   protected async oauth(provider: OAuthProviderFlow): Promise<void> {
     this.busy.set(true);
+    let leftPage = false;
     try {
-      const outcome = await this.oauthService.start(provider.id, this.next() ?? '/hub');
-      if (outcome === 'signed-in') this.succeeded.emit();
+      leftPage =
+        (await this.oauthService.start(provider.id, this.next() ?? '/hub')) === 'left-page';
+      if (!leftPage) this.succeeded.emit();
     } catch {
-      this.toasts.show(
-        this.i18n.translate('auth.oauthFailed', { provider: provider.label }),
-        'error',
-      );
-      this.busy.set(false);
+      this.toasts.show(this.i18n.translate('auth.oauthFailed'), 'error');
+    } finally {
+      // A page on its way out keeps its buttons down; every other ending gives them back.
+      if (!leftPage) this.busy.set(false);
     }
+  }
+
+  /**
+   * The back button on a provider's page restores this one from the browser's cache as it was
+   * left: buttons down, and a state in sessionStorage that no callback will ever answer.
+   */
+  protected onPageShow(e: PageTransitionEvent): void {
+    if (!e.persisted) return;
+    this.busy.set(false);
+    this.oauthService.abandon();
   }
 }
