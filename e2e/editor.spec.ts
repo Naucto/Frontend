@@ -1379,6 +1379,45 @@ test.describe('editor', () => {
     await expect(files.getByRole('button', { name: 'Earlier tabs' })).toHaveCount(0);
   });
 
+  /**
+   * The 14ch budget is the name's alone. It used to be the tab's, cut as a whole, and a long name
+   * pushed its pencil and trash past the edge of the box, where they were clipped away.
+   */
+  test('a long map name keeps its pencil and trash inside the tab', async ({ page }) => {
+    await page.goto('/edit/7/map');
+    const maps = page.getByRole('tablist', { name: 'Maps' });
+    await expect(maps.getByRole('tab')).toHaveCount(1);
+    // A second map, or the first offers no trash.
+    await page.getByRole('button', { name: 'Add a map' }).click();
+    await expect(maps.getByRole('tab')).toHaveCount(2);
+
+    const name = 'the overworld after dark';
+    await maps.getByRole('tab').first().dblclick();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByRole('textbox', { name: 'Name' }).fill(name);
+    await dialog.getByRole('button', { name: 'Save' }).click();
+
+    const tab = maps.getByRole('tab', { name });
+    await expect(tab).toBeVisible();
+    await tab.hover();
+    const box = await tab.boundingBox();
+    expect(box).not.toBeNull();
+    for (const label of ['Rename this map', 'Delete map']) {
+      const button = tab.getByRole('button', { name: label });
+      await expect(button).toBeVisible();
+      const b = await button.boundingBox();
+      expect(b).not.toBeNull();
+      if (box && b) {
+        expect(b.x).toBeGreaterThanOrEqual(box.x);
+        expect(b.x + b.width).toBeLessThanOrEqual(box.x + box.width);
+      }
+    }
+    // Nothing in the tab runs past it: the name is what gives, and it gives before the buttons.
+    expect(await tab.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+    const label = tab.locator('span', { hasText: name });
+    expect(await label.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+  });
+
   test('the sound column reaches its last row on a short screen', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 700 });
     await page.goto('/edit/7/sound');

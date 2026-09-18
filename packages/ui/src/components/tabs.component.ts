@@ -36,9 +36,13 @@ export type TabsVariant = 'panel' | 'console' | 'small' | 'bar';
 /**
  * `frame` dresses the strip as a whole — its rule, its height, its ground — and `list` dresses the
  * run of tabs inside it, which is the part that scrolls. Anything that must stay put when the tabs
- * slide belongs to the frame.
+ * slide belongs to the frame. `label` dresses the name alone, apart from the number, the swatch and
+ * the buttons beside it.
  */
-const VARIANT: Record<TabsVariant, { frame: string; list: string; item: string; icon: 12 | 24 }> = {
+const VARIANT: Record<
+  TabsVariant,
+  { frame: string; list: string; item: string; label: string; icon: 12 | 24 }
+> = {
   // Settings and other page-level strips: the UI face, inset from the edge, and the active tab
   // marked in ink. Gold is a primary action here, not a selection.
   panel: {
@@ -49,6 +53,7 @@ const VARIANT: Record<TabsVariant, { frame: string; list: string; item: string; 
       'font-ui text-meta uppercase tracking-tag text-ink-3 transition-colors hover:text-ink',
       'aria-selected:border-ink aria-selected:text-ink',
     ].join(' '),
+    label: '',
     icon: 12,
   },
   // Sits directly on the thing it chooses between, so it carries no rule of its own: a line there
@@ -58,16 +63,18 @@ const VARIANT: Record<TabsVariant, { frame: string; list: string; item: string; 
     frame: '',
     list: 'gap-px',
     item: [
-      '-mb-px flex h-2.5 max-w-[14ch] shrink-0 items-center gap-0.5 border-b-2 border-transparent px-1',
-      // Cut rather than wrapped, and only past a name nobody writes: the strip shares its row with
-      // whatever else the owner puts there, and a name folding onto a second line pushes all of it
-      // down. What does not fit is reached by scrolling, not by squeezing every name to nothing.
-      'overflow-hidden text-ellipsis whitespace-nowrap',
+      '-mb-px flex h-2.5 shrink-0 items-center gap-0.5 border-b-2 border-transparent px-1',
       // Set like any other name, not shouted: these are things somebody typed, and a strip of
       // capitals reads as a row of headings rather than a row of names.
       'font-ui text-body tracking-copy text-ink-3 transition-colors hover:text-ink',
       'aria-selected:border-gold aria-selected:text-gold-ink',
     ].join(' '),
+    // Cut rather than wrapped, and only past a name nobody writes: the strip shares its row with
+    // whatever else the owner puts there, and a name folding onto a second line pushes all of it
+    // down. What does not fit is reached by scrolling, not by squeezing every name to nothing.
+    // The cut falls on the name and never on the tab: the number, the swatch, the pencil and the
+    // trash keep their own width beside it, so what a long name loses is its own tail.
+    label: 'max-w-[14ch] truncate',
     icon: 12,
   },
   // A bar of its own, full height, where the tabs are the primary subject of the screen below.
@@ -79,6 +86,7 @@ const VARIANT: Record<TabsVariant, { frame: string; list: string; item: string; 
       'font-ui text-body tracking-copy text-ink-3 transition-colors hover:text-ink',
       'aria-selected:border-t-gold aria-selected:bg-paper aria-selected:text-ink',
     ].join(' '),
+    label: '',
     icon: 24,
   },
   // The editor console: mono, full-bleed in its column, and jade — the colour the machine talks in.
@@ -90,6 +98,7 @@ const VARIANT: Record<TabsVariant, { frame: string; list: string; item: string; 
       'font-mono text-meta uppercase tracking-strip text-ink-3 transition-colors hover:text-ink',
       'aria-selected:border-jade aria-selected:text-jade-ink',
     ].join(' '),
+    label: '',
     icon: 12,
   },
 };
@@ -158,7 +167,11 @@ const VARIANT: Record<TabsVariant, { frame: string; list: string; item: string; 
             @if (t.index !== undefined) {
               <span class="text-ink-4">{{ t.index }}</span>
             }
-            {{ t.label }}
+            <!-- Only where there is one: a tab may carry no name, and an empty box in a flex row
+                 still takes a gap, which is a name-sized hole beside every bare number. -->
+            @if (t.label) {
+              <span [class]="labelClass()">{{ t.label }}</span>
+            }
             @if (t.badge !== undefined) {
               <span class="rounded-xs bg-raised px-0.5 text-label text-ink-2">{{ t.badge }}</span>
             }
@@ -232,6 +245,7 @@ export class TabsComponent<T extends string = string> {
   protected readonly frameClass = computed(() => VARIANT[this.variant()].frame);
   protected readonly listClass = computed(() => VARIANT[this.variant()].list);
   protected readonly itemClass = computed(() => VARIANT[this.variant()].item);
+  protected readonly labelClass = computed(() => VARIANT[this.variant()].label);
   protected readonly iconSize = computed(() => VARIANT[this.variant()].icon);
   /** How far the run of tabs is scrolled, and how far it could be. Measured, not derived. */
   private readonly scrolled = signal(0);

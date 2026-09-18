@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/angular';
+import { render, screen, within } from '@testing-library/angular';
 import userEvent from '@testing-library/user-event';
 
 import { TabsComponent } from './tabs.component';
@@ -46,6 +46,31 @@ it('gives the per-tab buttons no room until they show', async () => {
 
   expect(pencil?.className).toContain('hidden');
   expect(pencil?.className).toContain('group-hover:inline-flex');
+});
+
+/**
+ * The 14ch budget is the name's, not the tab's. Cut as a whole, a tab whose name ran past it lost
+ * whatever the name had pushed over the edge -- its pencil and its trash.
+ */
+it('cuts a long name before its pencil and trash, not around them', async () => {
+  const long = 'the overworld after dark';
+  await render(TabsComponent, {
+    inputs: {
+      tabs: [{ value: 'a', label: long }, ...tabs],
+      value: 'a',
+      variant: 'small',
+      editable: true,
+      removable: true,
+    },
+  });
+  const tab = screen.getByRole('tab', { name: long });
+  const name = tab.querySelector('.truncate');
+
+  expect(tab.className).not.toContain('overflow-hidden');
+  expect(name?.textContent).toBe(long);
+  expect(name?.className).toContain('max-w-[14ch]');
+  expect(within(tab).getByRole('button', { name: 'Rename' })).toBeInTheDocument();
+  expect(within(tab).getByRole('button', { name: 'Remove' })).toBeInTheDocument();
 });
 
 it('offers no trash on the last tab, since a list of none is nothing to choose from', async () => {
