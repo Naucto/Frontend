@@ -67,6 +67,12 @@ export { Engine, type EngineOptions, type EngineState } from './runtime/Engine';
 export type { EngineError, EnginePhase } from './runtime/EngineError';
 export * from './sound/model';
 export {
+  type Bound,
+  INSTRUMENT_BOUNDS,
+  INSTRUMENT_PRESETS,
+  type InstrumentPreset,
+} from './sound/presets';
+export {
   decodeSample,
   encodeSample,
   MAX_SAMPLE_SECONDS,
