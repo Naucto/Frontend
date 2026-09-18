@@ -22,8 +22,8 @@ export class RecordingBackend implements GfxBackend {
   clear(c: number): void {
     this.rec('clear', c);
   }
-  setTileOverride(x: number, y: number, sprite: number): void {
-    this.rec('setTileOverride', x, y, sprite);
+  setTileOverride(x: number, y: number, sprite: number, map: number): void {
+    this.rec('setTileOverride', x, y, sprite, map);
   }
   clearTileOverrides(): void {
     this.rec('clearTileOverrides');
@@ -45,7 +45,7 @@ export class RecordingBackend implements GfxBackend {
   ): void {
     this.rec('drawRegion', ...a);
   }
-  drawMap(...a: [number, number, number, number, number, number]): void {
+  drawMap(...a: [number, number, number, number, number, number, number]): void {
     this.rec('drawMap', ...a);
   }
   pixel(x: number, y: number, c: number): void {

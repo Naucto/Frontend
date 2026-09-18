@@ -283,6 +283,26 @@ describe('Engine', () => {
     engine.destroy();
   });
 
+  it('lets a game write a tile on its second map for the run, and read it back', () => {
+    const game = new Game(new Y.Doc());
+    game.seedDefaults();
+    game.addMap('cave', 16, 16, 'm');
+    const main = game.files[0];
+    main?.text.delete(0, main.text.length);
+    main?.text.insert(
+      0,
+      'map.set(1, 1, 5, 2)\nprint(map.get(1, 1, 2), map.get(1, 1), map.width(2))',
+    );
+
+    const gfx = new RecordingBackend();
+    const engine = new Engine({ game, gfx, driver });
+    expect(engine.load()).toBeNull();
+    expect(engine.console.lines.map((l) => l.text)).toEqual(['5\t0\t16']);
+    expect(gfx.ops('setTileOverride').map((c) => c.args)).toEqual([[1, 1, 5, 1]]);
+    expect(game.mapsMap.get('m')?.get('tiles')).toBeUndefined();
+    engine.destroy();
+  });
+
   it('blames a tab whose name holds a space, which no shape of the name could tell apart', () => {
     const game = new Game(new Y.Doc());
     game.seedDefaults();

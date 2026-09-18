@@ -1,5 +1,6 @@
 import type { GfxBackend, ScanlineEffect } from '../api/ports';
 import type { Game, PixelChange } from '../game/Game';
+import type { GameMap } from '../game/GameMap';
 import { PALETTE_SIZE, SCREEN_HEIGHT, SCREEN_WIDTH, SPRITE_SIZE } from '../game/keys';
 import { buildFontAtlas, FONT_HEIGHT, FONT_WIDTH, glyphIndex } from './Font';
 import { createGLContext, createTexture, hexToRgb, linkProgram, rgbToHex } from './glUtils';
@@ -18,11 +19,13 @@ const UNIT_FRAME = 3;
 const UNIT_EFFECTS = 4;
 const UNIT_PALETTES = 5;
 
-/** The map texture, in pixels. Derived per game, since a map is no longer one fixed size. */
-function mapTextureSize(game: Game): { w: number; h: number } {
-  const { mapWidth, mapHeight } = game.geometry;
-
-  return { w: mapWidth * SPRITE_SIZE, h: mapHeight * SPRITE_SIZE };
+/** One map's texture and the pixels it was last built from, at that map's own size. */
+interface MapTexture {
+  tex: WebGLTexture;
+  pixels: Uint8Array;
+  width: number;
+  height: number;
+  dirty: boolean;
 }
 const FX_WRAP = 1;
 const FX_BLANK = 2;
@@ -51,9 +54,11 @@ export class WebGL2Backend implements GfxBackend {
   private verts: number[] = [];
   private uvs: number[] = [];
   private batchSource: BatchSource = 'sheet';
-  private batchSheet = '';
+  private batchTexture = '';
   /** One per sheet, keyed by its id. They take turns on the sheet texture unit. */
   private readonly sheetTextures = new Map<string, WebGLTexture>();
+  /** One per map, keyed by its id, on the map texture unit the same way. */
+  private readonly mapTextures = new Map<string, MapTexture>();
   private batchSolid = -1;
   private batchTextColour = -1;
   private batchTransparent = 1;
@@ -72,15 +77,13 @@ export class WebGL2Backend implements GfxBackend {
   private palettesDirty = true;
   private gamePalette: string[];
 
-  private mapDirty = true;
   /**
    * The tiles the running game has changed, which the document does not hold.
    *
-   * A cache of what the engine wrote, kept here because the map texture is rebuilt from the whole
-   * document and would otherwise paint over them on the next rebuild.
+   * A cache of what the engine wrote, per map by id, kept here because a map texture is rebuilt
+   * from the whole document and would otherwise paint over them on the next rebuild.
    */
-  private readonly tileOverrides = new Map<number, number>();
-  private mapPixels: Uint8Array;
+  private readonly tileOverrides = new Map<string, Map<number, number>>();
   private readonly unsubscribes: (() => void)[] = [];
   private destroyed = false;
 
@@ -101,10 +104,7 @@ export class WebGL2Backend implements GfxBackend {
 
     // sheet
     this.textures[UNIT_SHEET] = createTexture(gl, UNIT_SHEET);
-    // map (built lazily)
-    this.textures[UNIT_MAP] = createTexture(gl, UNIT_MAP);
-    const map = mapTextureSize(game);
-    this.mapPixels = new Uint8Array(map.w * map.h);
+    // maps (built lazily, one texture each)
     this.allocateTextures();
     // font
     const font = buildFontAtlas();
@@ -203,10 +203,13 @@ export class WebGL2Backend implements GfxBackend {
     this.unsubscribes.push(
       game.onPixelsChange((changes) => {
         this.uploadSheetRegion(changes);
-        this.mapDirty = true;
+        for (const held of this.mapTextures.values()) held.dirty = true;
       }),
-      game.onTilesChange(() => {
-        this.mapDirty = true;
+      game.onTilesChange((changes) => {
+        for (const c of changes) {
+          const held = this.mapTextures.get(c.map);
+          if (held) held.dirty = true;
+        }
       }),
       game.onPaletteChange(() => {
         this.gamePalette = game.palette;
@@ -215,16 +218,12 @@ export class WebGL2Backend implements GfxBackend {
       // A texture is allocated at one size and cannot be resized, so a game that changes shape gets
       // new ones. Rare enough to redo wholesale rather than track.
       game.onGeometryChange(() => {
-        const size = mapTextureSize(this.game);
-        this.mapPixels = new Uint8Array(size.w * size.h);
         this.allocateTextures();
-        this.mapDirty = true;
       }),
-      // A sheet added, dropped or resized changes the set of textures without changing the shape
-      // the geometry records, so the two are watched separately.
+      // A sheet or a map added, dropped or resized changes the set of textures without changing
+      // the shape the geometry records, so the two are watched separately.
       game.onCollectionsChange(() => {
         this.allocateTextures();
-        this.mapDirty = true;
       }),
     );
     this.clear(0);
@@ -232,16 +231,15 @@ export class WebGL2Backend implements GfxBackend {
   }
 
   /**
-   * Gives every sheet a texture of its own at its own size, and the map one at the size the game
-   * says it is.
+   * Gives every sheet, and every map, a texture of its own at its own size.
    *
    * One per sheet rather than one atlas: the sheets are no longer the same shape as each other, so
    * there is no grid to lay them out on, and a texture is allocated at one size and cannot be
-   * resized. They share a single texture *unit* — which one is bound is decided per batch.
+   * resized. They share a single texture *unit* — which one is bound is decided per batch. The
+   * maps are held the same way on their own unit.
    */
   private allocateTextures(): void {
     const gl = this.gl;
-    const map = mapTextureSize(this.game);
     const sheets = this.game.sheets;
 
     for (const [id, tex] of this.sheetTextures)
@@ -271,9 +269,34 @@ export class WebGL2Backend implements GfxBackend {
       );
     }
 
+    const maps = this.game.maps;
+    for (const [id, held] of this.mapTextures)
+      if (!maps.some((m) => m.id === id)) {
+        gl.deleteTexture(held.tex);
+        this.mapTextures.delete(id);
+        this.tileOverrides.delete(id);
+      }
+
     gl.activeTexture(gl.TEXTURE0 + UNIT_MAP);
-    gl.bindTexture(gl.TEXTURE_2D, this.textures[UNIT_MAP] ?? null);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, map.w, map.h, 0, gl.RED, gl.UNSIGNED_BYTE, null);
+    for (const map of maps) {
+      const width = map.width * SPRITE_SIZE;
+      const height = map.height * SPRITE_SIZE;
+      const held = this.mapTextures.get(map.id);
+      if (held?.width === width && held.height === height) {
+        held.dirty = true;
+        continue;
+      }
+      const tex = held?.tex ?? createTexture(gl, UNIT_MAP);
+      this.mapTextures.set(map.id, {
+        tex,
+        pixels: new Uint8Array(width * height),
+        width,
+        height,
+        dirty: true,
+      });
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, width, height, 0, gl.RED, gl.UNSIGNED_BYTE, null);
+    }
   }
 
   // ---- frame ----------------------------------------------------------------
@@ -468,23 +491,31 @@ export class WebGL2Backend implements GfxBackend {
     this.pushQuad(Math.floor(dx), Math.floor(dy), Math.floor(dw), Math.floor(dh), u0, v0, u1, v1);
   }
 
-  setTileOverride(x: number, y: number, sprite: number): void {
-    const { mapWidth, mapHeight } = this.game.geometry;
-    if (x < 0 || x >= mapWidth || y < 0 || y >= mapHeight) return;
-    this.tileOverrides.set(y * mapWidth + x, sprite & 0xffff);
-    this.mapDirty = true;
+  setTileOverride(x: number, y: number, sprite: number, map: number): void {
+    const m = this.game.maps[map];
+    const held = m && this.mapTextures.get(m.id);
+    if (!m || !held || x < 0 || x >= m.width || y < 0 || y >= m.height) return;
+    let mine = this.tileOverrides.get(m.id);
+    if (!mine) {
+      mine = new Map();
+      this.tileOverrides.set(m.id, mine);
+    }
+    mine.set(y * m.width + x, sprite & 0xffff);
+    held.dirty = true;
   }
 
   clearTileOverrides(): void {
     if (this.tileOverrides.size === 0) return;
     this.tileOverrides.clear();
-    this.mapDirty = true;
+    for (const held of this.mapTextures.values()) held.dirty = true;
   }
 
-  drawMap(x: number, y: number, tx: number, ty: number, tw: number, th: number): void {
-    if (this.mapDirty) this.rebuildMap();
-    this.useBatch('map', -1, -1, keyed(MAP_KEY));
-    const map = mapTextureSize(this.game);
+  drawMap(x: number, y: number, tx: number, ty: number, tw: number, th: number, map: number): void {
+    const m = this.game.maps[map];
+    const held = m && this.mapTextures.get(m.id);
+    if (!m || !held) return;
+    if (held.dirty) this.rebuildMap(m, held);
+    this.useBatch('map', -1, -1, keyed(MAP_KEY), m.id);
     const px = tx * SPRITE_SIZE;
     const py = ty * SPRITE_SIZE;
     const pw = tw * SPRITE_SIZE;
@@ -494,10 +525,10 @@ export class WebGL2Backend implements GfxBackend {
       Math.floor(y),
       pw,
       ph,
-      px / map.w,
-      py / map.h,
-      (px + pw) / map.w,
-      (py + ph) / map.h,
+      px / held.width,
+      py / held.height,
+      (px + pw) / held.width,
+      (py + ph) / held.height,
     );
   }
 
@@ -726,6 +757,8 @@ export class WebGL2Backend implements GfxBackend {
     gl.deleteBuffer(this.posBuffer);
     gl.deleteBuffer(this.uvBuffer);
     for (const t of this.textures) gl.deleteTexture(t);
+    for (const t of this.sheetTextures.values()) gl.deleteTexture(t);
+    for (const held of this.mapTextures.values()) gl.deleteTexture(held.tex);
   }
 
   // ---- internals ------------------------------------------------------------
@@ -765,16 +798,16 @@ export class WebGL2Backend implements GfxBackend {
     solid: number,
     textColour: number,
     transparent: number,
-    /** Which sheet a `sheet` batch reads. A batch draws with one texture bound, so a second sheet
-        is a second batch. */
-    sheet = '',
+    /** Which sheet or map the batch reads. A batch draws with one texture bound, so a second
+        sheet, or a second map, is a second batch. */
+    texture = '',
   ): void {
     if (
       source === this.batchSource &&
       solid === this.batchSolid &&
       textColour === this.batchTextColour &&
       transparent === this.batchTransparent &&
-      sheet === this.batchSheet
+      texture === this.batchTexture
     )
       return;
     this.flush();
@@ -782,7 +815,7 @@ export class WebGL2Backend implements GfxBackend {
     this.batchSolid = solid;
     this.batchTextColour = textColour;
     this.batchTransparent = transparent;
-    this.batchSheet = sheet;
+    this.batchTexture = texture;
   }
 
   private pushQuad(
@@ -819,7 +852,10 @@ export class WebGL2Backend implements GfxBackend {
             : UNIT_SHEET;
     if (this.batchSource === 'sheet') {
       gl.activeTexture(gl.TEXTURE0 + UNIT_SHEET);
-      gl.bindTexture(gl.TEXTURE_2D, this.sheetTextures.get(this.batchSheet) ?? null);
+      gl.bindTexture(gl.TEXTURE_2D, this.sheetTextures.get(this.batchTexture) ?? null);
+    } else if (this.batchSource === 'map') {
+      gl.activeTexture(gl.TEXTURE0 + UNIT_MAP);
+      gl.bindTexture(gl.TEXTURE_2D, this.mapTextures.get(this.batchTexture)?.tex ?? null);
     }
     gl.uniform1i(this.uSrc, unit);
     gl.uniform1i(this.uSolid, this.batchSource === 'solid' ? this.batchSolid : -1);
@@ -885,43 +921,42 @@ export class WebGL2Backend implements GfxBackend {
     }
   }
 
-  private rebuildMap(): void {
-    const tiles = this.game.tiles;
-    const { mapWidth, mapHeight } = this.game.geometry;
-    const map = mapTextureSize(this.game);
+  private rebuildMap(map: GameMap, held: MapTexture): void {
+    const tiles = map.tiles;
+    const overrides = this.tileOverrides.get(map.id);
     // Each tile through the sheet its own number belongs to: a map is free to mix them, and read
     // off one sheet a tile from another lands on whatever pixels happen to be at that offset.
-    for (let ty = 0; ty < mapHeight; ty++) {
-      for (let tx = 0; tx < mapWidth; tx++) {
-        const i = ty * mapWidth + tx;
-        const n = this.tileOverrides.get(i) ?? tiles[i] ?? 0;
+    for (let ty = 0; ty < map.height; ty++) {
+      for (let tx = 0; tx < map.width; tx++) {
+        const i = ty * map.width + tx;
+        const n = overrides?.get(i) ?? tiles[i] ?? 0;
         const sheet = this.game.sheetOf(n);
         const { x: sx, y: sy } = sheet?.originOf(n) ?? { x: 0, y: 0 };
         for (let y = 0; y < SPRITE_SIZE; y++) {
-          const dst = (ty * SPRITE_SIZE + y) * map.w + tx * SPRITE_SIZE;
+          const dst = (ty * SPRITE_SIZE + y) * held.width + tx * SPRITE_SIZE;
           if (n === 0 || !sheet) {
-            this.mapPixels.fill(0, dst, dst + SPRITE_SIZE);
+            held.pixels.fill(0, dst, dst + SPRITE_SIZE);
             continue;
           }
           const src = (sy + y) * sheet.width + sx;
-          this.mapPixels.set(sheet.pixels.subarray(src, src + SPRITE_SIZE), dst);
+          held.pixels.set(sheet.pixels.subarray(src, src + SPRITE_SIZE), dst);
         }
       }
     }
     const gl = this.gl;
     gl.activeTexture(gl.TEXTURE0 + UNIT_MAP);
-    gl.bindTexture(gl.TEXTURE_2D, this.tex(UNIT_MAP));
+    gl.bindTexture(gl.TEXTURE_2D, held.tex);
     gl.texSubImage2D(
       gl.TEXTURE_2D,
       0,
       0,
       0,
-      map.w,
-      map.h,
+      held.width,
+      held.height,
       gl.RED,
       gl.UNSIGNED_BYTE,
-      this.mapPixels,
+      held.pixels,
     );
-    this.mapDirty = false;
+    held.dirty = false;
   }
 }

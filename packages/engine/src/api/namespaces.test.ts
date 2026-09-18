@@ -31,13 +31,15 @@ function setup(): {
     lua,
     gfx,
     input,
+    // Two maps: the first at the default geometry, a second sixteen tiles square.
     data: {
-      mapWidth: () => DEFAULT_GEOMETRY.mapWidth,
-      mapHeight: () => DEFAULT_GEOMETRY.mapHeight,
+      mapCount: () => 2,
+      mapWidth: (m) => (m === 1 ? 16 : DEFAULT_GEOMETRY.mapWidth),
+      mapHeight: (m) => (m === 1 ? 16 : DEFAULT_GEOMETRY.mapHeight),
       getFlag: (i) => (i === 3 ? 0b101 : 0),
       getFlagBit: (i, b) => i === 3 && (b === 0 || b === 2),
-      getTile: (x, y) => tiles.get(`${String(x)},${String(y)}`) ?? 0,
-      setTile: (x, y, n) => tiles.set(`${String(x)},${String(y)}`, n),
+      getTile: (x, y, m) => tiles.get(`${String(m)}:${String(x)},${String(y)}`) ?? 0,
+      setTile: (x, y, n, m) => tiles.set(`${String(m)}:${String(x)},${String(y)}`, n),
     },
     sys: { dt: 1 / 60, frame: () => 7, time: () => 0.5, fps: () => 60 },
     onActionsDeclared: (actions) => declared.push([...actions]),
@@ -112,13 +114,41 @@ describe('Lua API namespaces', () => {
 
   it('map exposes tiles and flags', () => {
     const { lua, tiles } = setup();
-    tiles.set('2,3', 9);
+    tiles.set('0:2,3', 9);
     const [n, f, bit, w] = lua.evaluate(
       'return map.get(2, 3), map.flag(3), map.flag(3, 1), map.width()',
     );
     expect([n, f, bit, w]).toEqual([9, 5, false, 128]);
     lua.evaluate('map.set(2, 3, 4)');
-    expect(tiles.get('2,3')).toBe(4);
+    expect(tiles.get('0:2,3')).toBe(4);
+  });
+
+  it('map takes the map number last, counted from one', () => {
+    const { lua, tiles, gfx } = setup();
+    tiles.set('1:2,3', 9);
+    const [n, w, h] = lua.evaluate('return map.get(2, 3, 2), map.width(2), map.height(2)');
+    expect([n, w, h]).toEqual([9, 16, 16]);
+    lua.evaluate('map.set(2, 3, 4, 2)');
+    expect(tiles.get('1:2,3')).toBe(4);
+    expect(tiles.get('0:2,3')).toBeUndefined();
+
+    lua.evaluate('map.draw(0, 0)');
+    lua.evaluate('map.draw(0, 0, 0, 0, 4, 4, 2)');
+    expect(gfx.ops('drawMap').map((c) => c.args)).toEqual([
+      [0, 0, 0, 0, 128, 32, 0],
+      [0, 0, 0, 0, 4, 4, 1],
+    ]);
+  });
+
+  it('map answers nothing for a map the game lacks, and says so once', () => {
+    const { lua, logs, gfx } = setup();
+    const [w, n] = lua.evaluate('return map.width(9), map.get(0, 0, 9)');
+    lua.evaluate('map.width(9)');
+    lua.evaluate('map.draw(0, 0, 0, 0, 4, 4, 9)');
+    expect([w, n]).toEqual([0, 0]);
+    expect(gfx.ops('drawMap')).toHaveLength(0);
+    expect(logs.filter((l) => l.startsWith('warn:map.width'))).toHaveLength(1);
+    expect(logs).toContain('warn:map.width: this game has 2 map(s), there is no map 9');
   });
 
   it('input reads actions per player and keys', () => {
@@ -158,7 +188,7 @@ describe('Lua API namespaces', () => {
     );
     expect(gfx.ops('drawSprite')).toHaveLength(2);
     expect(gfx.ops('line')[0]?.args).toEqual([0, 0, 10, 10, 7]);
-    expect(gfx.ops('drawMap')[0]?.args).toEqual([8, 9, 0, 0, 128, 32]);
+    expect(gfx.ops('drawMap')[0]?.args).toEqual([8, 9, 0, 0, 128, 32, 0]);
     expect(logs.filter((l) => l.includes('sprite()'))).toHaveLength(1);
     expect(logs.some((l) => l.includes('map()'))).toBe(true);
   });

@@ -184,22 +184,23 @@ export const LUA_API: readonly LuaApiEntry[] = [
   {
     ns: 'map',
     name: 'draw',
-    signature: 'map.draw(x, y[, tx, ty, tw, th])',
-    summary: 'Draw the tile map (or a sub-rectangle of tiles) at a pixel position.',
+    signature: 'map.draw(x, y[, tx, ty, tw, th, m])',
+    summary:
+      'Draw a map (or a sub-rectangle of its tiles) at a pixel position. m picks the map, from 1.',
     legacy: 'map',
   },
   {
     ns: 'map',
     name: 'get',
-    signature: 'map.get(tx, ty)',
-    summary: 'Sprite index at a tile.',
+    signature: 'map.get(tx, ty[, m])',
+    summary: 'Sprite index at a tile of map m (the first by default).',
     legacy: 'mget',
   },
   {
     ns: 'map',
     name: 'set',
-    signature: 'map.set(tx, ty, n)',
-    summary: 'Change a tile for this run only.',
+    signature: 'map.set(tx, ty, n[, m])',
+    summary: 'Change a tile of map m (the first by default) for this run only.',
   },
   {
     ns: 'map',
@@ -208,8 +209,18 @@ export const LUA_API: readonly LuaApiEntry[] = [
     summary: 'Flags byte of sprite n, or one bit of it.',
     legacy: 'fget',
   },
-  { ns: 'map', name: 'width', signature: 'map.width()', summary: 'Map width in tiles.' },
-  { ns: 'map', name: 'height', signature: 'map.height()', summary: 'Map height in tiles.' },
+  {
+    ns: 'map',
+    name: 'width',
+    signature: 'map.width([m])',
+    summary: 'Width of map m (the first by default), in tiles.',
+  },
+  {
+    ns: 'map',
+    name: 'height',
+    signature: 'map.height([m])',
+    summary: 'Height of map m (the first by default), in tiles.',
+  },
   // input
   {
     ns: 'input',

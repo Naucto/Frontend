@@ -74,7 +74,8 @@ export class Engine {
   private readonly loop: GameLoop;
   private state: EngineState = 'idle';
   private elapsed = 0;
-  private readonly tileOverrides = new Map<number, number>();
+  /** Per map, by id, keyed on that map's own width. */
+  private readonly tileOverrides = new Map<string, Map<number, number>>();
   private readonly errorListeners = new Set<(e: EngineError) => void>();
   private readonly stateListeners = new Set<(s: EngineState) => void>();
   private lastError: EngineError | null = null;
@@ -146,18 +147,27 @@ export class Engine {
         this.opts.onActionsDeclared?.(actions);
       },
       data: {
-        mapWidth: () => this.opts.game.geometry.mapWidth,
-        mapHeight: () => this.opts.game.geometry.mapHeight,
+        mapCount: () => this.opts.game.maps.length,
+        mapWidth: (i) => this.opts.game.maps[i]?.width ?? 0,
+        mapHeight: (i) => this.opts.game.maps[i]?.height ?? 0,
         getFlag: (i) => this.opts.game.getFlag(i),
         getFlagBit: (i, b) => this.opts.game.getFlagBit(i, b),
-        // Keyed on the map's own width: a key computed from a constant would collide the moment a
-        // game's map was not that wide.
-        getTile: (x, y) =>
-          this.tileOverrides.get(y * this.opts.game.geometry.mapWidth + x) ??
-          this.opts.game.getTile(x, y),
-        setTile: (x, y, n) => {
-          this.tileOverrides.set(y * this.opts.game.geometry.mapWidth + x, n & 0xffff);
-          this.opts.gfx.setTileOverride(x, y, n & 0xffff);
+        getTile: (x, y, i) => {
+          const map = this.opts.game.maps[i];
+          if (!map) return 0;
+
+          return this.tileOverrides.get(map.id)?.get(y * map.width + x) ?? map.getTile(x, y);
+        },
+        setTile: (x, y, n, i) => {
+          const map = this.opts.game.maps[i];
+          if (!map || x < 0 || x >= map.width || y < 0 || y >= map.height) return;
+          let mine = this.tileOverrides.get(map.id);
+          if (!mine) {
+            mine = new Map();
+            this.tileOverrides.set(map.id, mine);
+          }
+          mine.set(y * map.width + x, n & 0xffff);
+          this.opts.gfx.setTileOverride(x, y, n & 0xffff, i);
         },
       },
       sys: {

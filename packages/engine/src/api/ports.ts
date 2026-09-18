@@ -51,14 +51,15 @@ export interface GfxBackend {
     flipV: boolean,
     keyColour: number | null,
   ): void;
-  drawMap(x: number, y: number, tx: number, ty: number, tw: number, th: number): void;
+  /** `map` is the map's index in the order the game lists them, counted from 0. */
+  drawMap(x: number, y: number, tx: number, ty: number, tw: number, th: number, map: number): void;
   /**
    * A tile the running game changed, which the document does not hold.
    *
    * The map is drawn from a texture built out of the document, so a change nothing writes there is
    * a change the screen cannot find on its own.
    */
-  setTileOverride(x: number, y: number, sprite: number): void;
+  setTileOverride(x: number, y: number, sprite: number, map: number): void;
   /** Back to the document's own map, for a game starting over. */
   clearTileOverrides(): void;
   pixel(x: number, y: number, colour: number): void;
@@ -112,15 +113,20 @@ export interface SysPort {
   fps(): number;
 }
 
+/**
+ * What the Lua `map` namespace reads. A map is named by its index in the order the game lists
+ * them, counted from 0; the namespace itself counts from 1 and does the arithmetic.
+ */
 export interface GameData {
-  /** The map's size, which a game may ask for and which is no longer the same for every game. */
-  mapWidth(): number;
-  mapHeight(): number;
+  mapCount(): number;
+  /** A map's size, which a game may ask for and which is no longer the same for every map. */
+  mapWidth(map: number): number;
+  mapHeight(map: number): number;
   getFlag(index: number): number;
   getFlagBit(index: number, bit: number): boolean;
-  getTile(x: number, y: number): number;
+  getTile(x: number, y: number, map: number): number;
   /** Runtime-only tile override (not persisted). */
-  setTile(x: number, y: number, sprite: number): void;
+  setTile(x: number, y: number, sprite: number, map: number): void;
 }
 
 export type ConsoleLevel = 'log' | 'warn' | 'error';
