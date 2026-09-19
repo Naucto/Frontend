@@ -1,4 +1,4 @@
--- scene of: pong/steps/4.lua
+-- scene of: pong/steps/5.lua
 -- A plain table stands in for net.state, so the scene needs no session.
 
 W, H      = 320, 180
@@ -12,8 +12,8 @@ COL_RIGHT = 2    -- red
 COL_BALL  = 5    -- white
 
 net.state = {
-  pads    = { left = (H - PAD_H) / 2, right = (H - PAD_H) / 2 },
-  ball    = { x = (W - BALL_SIZE) / 2, y = (H - BALL_SIZE) / 2 },
+  pads    = { left = 44, right = 108 },
+  ball    = { x = 196, y = 70 },
   playing = true,
 }
 

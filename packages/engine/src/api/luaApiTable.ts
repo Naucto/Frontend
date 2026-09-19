@@ -279,7 +279,7 @@ export const LUA_API: readonly LuaApiEntry[] = [
     ns: 'sound',
     name: 'play_music',
     signature: 'sound.play_music([song, loop, fade_in])',
-    summary: 'Start song slot 0..15 from the tracker.',
+    summary: 'Start music 0..15; loops from its start unless told otherwise.',
     legacy: 'play_music',
   },
   {

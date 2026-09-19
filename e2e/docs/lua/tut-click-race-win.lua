@@ -1,4 +1,4 @@
--- scene of: click-race/steps/4.lua
+-- scene of: click-race/steps/5.lua
 -- A plain table stands in for net.state and a stub for net.id(), so the scene needs no session.
 
 W, H        = 320, 180
@@ -13,13 +13,13 @@ COL_RING = 5   -- white
 net.id = function() return 1 end
 net.state = {
   players = {
-    ["1"] = { x = 150, y = 118, col = 2,  score = 1 },
-    ["2"] = { x = 212, y = 60,  col = 11, score = 0 },
+    ["1"] = { x = 238, y = 138, col = 2,  score = 10 },
+    ["2"] = { x = 96,  y = 52,  col = 11, score = 3 },
   },
   coins = {
     { x = 40,  y = 40,  taken = false },
-    { x = 150, y = 120, taken = true },
-    { x = 240, y = 140, taken = false },
+    { x = 150, y = 120, taken = false },
+    { x = 240, y = 140, taken = true },
     { x = 110, y = 24,  taken = false },
     { x = 280, y = 84,  taken = false },
   },

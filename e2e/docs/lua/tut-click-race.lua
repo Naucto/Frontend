@@ -1,7 +1,5 @@
--- The Coin Rush tutorial's draw_coins and draw_players before any coin is
--- taken: two players on the field, the ring on our own square, five coins.
--- The shared table stands in for net.state and me for net.id(), so the scene
--- needs no session.
+-- scene of: click-race/steps/3.lua
+-- A plain table stands in for net.state and a stub for net.id(), so the scene needs no session.
 
 W, H        = 320, 180
 PLAYER_SIZE = 8
@@ -12,8 +10,8 @@ COL_BG   = 0   -- black
 COL_COIN = 4   -- yellow
 COL_RING = 5   -- white
 
-me = 1
-shared = {
+net.id = function() return 1 end
+net.state = {
   players = {
     ["1"] = { x = 64,  y = 96,  col = 2,  score = 0 },
     ["2"] = { x = 212, y = 60,  col = 11, score = 0 },
@@ -29,10 +27,10 @@ shared = {
 
 function draw_players()
   local row = 0
-  for id, p in pairs(shared.players or {}) do
+  for id, p in pairs(net.state.players or {}) do
     gfx.fill_rect(p.x, p.y, PLAYER_SIZE, PLAYER_SIZE, p.col)
 
-    if tonumber(id) == me then
+    if tonumber(id) == net.id() then
       gfx.rect(p.x - 2, p.y - 2, PLAYER_SIZE + 4, PLAYER_SIZE + 4, COL_RING)   -- highlight yourself
     end
 
@@ -44,7 +42,7 @@ function draw_players()
 end
 
 function draw_coins()
-  local coins = shared.coins
+  local coins = net.state.coins
   if not coins then
     return
   end

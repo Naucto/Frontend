@@ -68,6 +68,18 @@ const LANDER = [
   '.8....8.',
   '8......8',
 ];
+
+/** The wall tile of the tutorials, on sprite 32 in the demo games: a floor of it reads as ground. */
+const BRICK = [
+  '33333333',
+  '31111113',
+  '33333333',
+  '11131113',
+  '33333333',
+  '31111113',
+  '33333333',
+  '11131113',
+];
 const FERRY = [
   '........',
   '..5555..',
@@ -284,11 +296,11 @@ function drawSprite(game: Game, rows: string[]): void {
 }
 
 /** A floor and a couple of platforms, so the MAP tab and the minimap are not blank. */
-function drawMap(game: Game): void {
-  for (let x = 0; x < MAP_WIDTH; x++) game.setTile(x, MAP_HEIGHT - 1, 1);
-  for (let x = 6; x < 14; x++) game.setTile(x, MAP_HEIGHT - 6, 1);
-  for (let x = 20; x < 26; x++) game.setTile(x, MAP_HEIGHT - 9, 1);
-  for (let x = 34; x < 46; x++) game.setTile(x, MAP_HEIGHT - 5, 1);
+function drawMap(game: Game, tile = 1): void {
+  for (let x = 0; x < MAP_WIDTH; x++) game.setTile(x, MAP_HEIGHT - 1, tile);
+  for (let x = 6; x < 14; x++) game.setTile(x, MAP_HEIGHT - 6, tile);
+  for (let x = 20; x < 26; x++) game.setTile(x, MAP_HEIGHT - 9, tile);
+  for (let x = 34; x < 46; x++) game.setTile(x, MAP_HEIGHT - 5, tile);
 }
 
 /**
@@ -623,9 +635,9 @@ function writeContent(name: string, file: string): void {
 /**
  * One game per Lua file, for the pictures the API reference shows.
  *
- * Each demo is the Platformer's sheet, map and sounds with the file as its whole code, so a frame
- * captured from it shows one call's effect on content the reader can see elsewhere in the docs.
- * The sprite is drawn at index 1 as well as 0, since index 0 is what a map leaves empty.
+ * Each demo is a new game's sheet with the seed's ship on sprite 0 and a brick on sprite 32, the
+ * demo map painted with that brick, and the demo sounds, with the file as its whole code. The
+ * starter moon stays where the cards' examples draw it.
  */
 function writeDemos(luaDir: string, outDir: string): void {
   const seed = GAMES.find((g) => g.name === 'Platformer Tutorial');
@@ -638,11 +650,9 @@ function writeDemos(luaDir: string, outDir: string): void {
     setMainSource(game, source);
     drawSprite(game, seed.sprite);
     for (let y = 0; y < SPRITE_SIZE; y++)
-      for (let x = 0; x < SPRITE_SIZE; x++) {
-        const ch = seed.sprite[y]?.[x] ?? '.';
-        if (ch !== '.') game.setPixel(SPRITE_SIZE + x, y, Number.parseInt(ch, 16));
-      }
-    drawMap(game);
+      for (let x = 0; x < SPRITE_SIZE; x++)
+        game.setPixel(x, 2 * SPRITE_SIZE + y, Number.parseInt(BRICK[y]?.[x] ?? '0', 16));
+    drawMap(game, 32);
     addSound(game);
     const out = join(outDir, `${basename(file, '.lua')}.bin`);
     writeFileSync(out, Y.encodeStateAsUpdate(doc));

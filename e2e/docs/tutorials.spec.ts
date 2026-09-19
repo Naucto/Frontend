@@ -23,6 +23,11 @@ const stepsOf = (tutorial: string): number[] =>
     .map((f) => Number(f.replace('.lua', '')))
     .sort((a, b) => a - b);
 
+const pictured = (tutorial: string, step: number): boolean =>
+  readFileSync(`${DOCS}/${tutorial}.md`, 'utf8').includes(
+    `img/frames/${tutorial}-step${String(step)}.png`,
+  );
+
 const shoot = async (
   page: Page,
   name: string,
@@ -34,9 +39,6 @@ const shoot = async (
   if (part) await part.screenshot({ path, animations: 'disabled' });
   else await page.screenshot({ path });
 };
-
-const section = (page: Page, title: string): Locator =>
-  page.locator('nc-section').filter({ has: page.getByText(title, { exact: true }) }).first();
 
 /**
  * Walks a sheet map's region to sprite 32, the first cell of the third row: to the corner first,
@@ -65,9 +67,10 @@ const holdBoth = async (page: Page, a: string, b: string, ms: number): Promise<v
 };
 
 /**
- * Plays the game of one step of a tutorial and keeps its frame under the page. `act` drives the
- * game to the moment the picture is of; without one the frame is what a reader sees a second
- * after Play. A game that halts is a step file that does not run, which no picture may hide.
+ * Plays the game of one step of a tutorial and, where the page shows one, keeps its frame under
+ * the page. `act` drives the game to the moment the picture is of; without one the frame is what
+ * a reader sees a second after Play. Every step is played whether or not it is pictured: a game
+ * that halts is a step file that does not run, which no picture may hide.
  */
 async function stepFrame(
   page: Page,
@@ -92,7 +95,8 @@ async function stepFrame(
     return view.host.state();
   });
   expect(state, `${tutorial} step ${String(step)} runtime state`).not.toBe('halted');
-  await grabFrame(page, `${OUT}/frames/${tutorial}-step${String(step)}.png`);
+  if (pictured(tutorial, step))
+    await grabFrame(page, `${OUT}/frames/${tutorial}-step${String(step)}.png`);
 }
 
 for (const game of GAMES)
@@ -112,7 +116,6 @@ for (const game of GAMES)
         await pickSprite32(page, page.locator('nc-sheet-view svg').first());
         await page.waitForTimeout(500);
         await shoot(page, `${game}-art`, theme);
-        await shoot(page, `${game}-flags`, theme, section(page, 'Flags'));
       });
 
       test('map: the level under the Flags overlay', async ({ page }) => {
@@ -126,16 +129,6 @@ for (const game of GAMES)
       });
     });
   }
-
-for (const game of GAMES)
-  test(`frame: ${game} as it starts`, async ({ page }) => {
-    await mockEditor(page, { content: readFileSync(contentOf(game)), name: titleOf(game) });
-    await page.goto('/edit/7/code');
-    await page.locator('nc-game-screen canvas').first().waitFor();
-    await page.getByRole('button', { name: 'Play' }).first().click();
-    await page.waitForTimeout(1200);
-    await grabFrame(page, `${OUT}/frames/${game}.png`);
-  });
 
 test('animation: the player runs and jumps', async ({ page }) => {
   await mockEditor(page, {
@@ -157,6 +150,34 @@ test('animation: the player runs and jumps', async ({ page }) => {
     await page.keyboard.up('ArrowRight');
     await page.waitForTimeout(400);
   });
+});
+
+/**
+ * The camera of Step 7, once the player is far enough right for it to move. The route is read
+ * off the level in `platformer/assets.json`: a jump from the start lands on the first platform,
+ * a second one from its end reaches the second, and running off that one drops the player on
+ * the ground past the spikes, where holding right carries it beyond x = 200. Both jumps have a
+ * window of six frames either side, so the timing survives the jitter of a key sent over the
+ * wire; the frame is taken with the camera some 100 px in, the trophy coming into view.
+ */
+test('frame: the camera follows the player', async ({ page }) => {
+  await mockEditor(page, {
+    content: readFileSync(contentOf('platformer')),
+    name: titleOf('platformer'),
+  });
+  await page.goto('/edit/7/code');
+  await page.locator('nc-game-screen canvas').first().waitFor();
+  await page.getByRole('button', { name: 'Play' }).first().click();
+  await page.waitForTimeout(800);
+  await page.locator('nc-game-screen canvas').first().click();
+  await page.keyboard.down('ArrowRight');
+  await page.waitForTimeout(83);
+  await page.keyboard.press('ArrowUp', { delay: 40 });
+  await page.waitForTimeout(544);
+  await page.keyboard.press('ArrowUp', { delay: 40 });
+  await page.waitForTimeout(1460);
+  await grabFrame(page, `${OUT}/frames/platformer-camera.png`);
+  await page.keyboard.up('ArrowRight');
 });
 
 /**
@@ -196,8 +217,9 @@ const STAGED: Record<string, Record<number, (page: Page) => Promise<void>>> = {
     },
   },
   platformer: {
-    // Still falling: a second later the player is off the bottom of the screen.
-    4: (page) => page.waitForTimeout(350),
+    // Mid-fall, just under the first platform: a second later the player is off the bottom of
+    // the screen.
+    4: (page) => page.waitForTimeout(460),
     // Into the spikes and back to the start, as a GIF: the trophy is off screen until Step 7
     // brings the camera, so the deadly tile is the one with a picture in it.
     6: async (page) => {

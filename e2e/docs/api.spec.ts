@@ -27,10 +27,9 @@ for (const name of demos) {
     await page.getByRole('button', { name: 'Play' }).first().click();
     // Enough frames for the loop to have drawn, and for a static scene that is every one of them.
     await page.waitForTimeout(1200);
-    await grabFrame(page, join(OUT, `${name}.png`));
     // The sys demos print; what they show is the console under the viewer, not the screen.
-    if (name.startsWith('sys-')) {
+    if (name.startsWith('sys-'))
       await page.locator('nc-console-column').screenshot({ path: CONSOLE_OUT, animations: 'disabled' });
-    }
+    else await grabFrame(page, join(OUT, `${name}.png`));
   });
 }

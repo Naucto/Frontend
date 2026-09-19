@@ -14,16 +14,32 @@ import { mockEditor } from '../editor-mocks';
  */
 const CONTENT_FILE = 'node_modules/.cache/docs-shots/platformer.bin';
 const OUT = 'docs/content/editors/img';
+const START_OUT = 'docs/content/img';
 const THEMES = ['dark', 'light'] as const;
+
+/**
+ * The code Step 2 of Getting Started hands out, read off the page so the picture under Step 3 is
+ * of the program the reader has just typed, whatever it becomes.
+ */
+const startCode = (): string => {
+  const page = readFileSync('docs/content/getting-started.md', 'utf8');
+  const step = page.slice(page.indexOf('## Step 2'));
+  const code = /```\s*lua\n([\s\S]*?)```/.exec(step)?.[1];
+  if (!code) throw new Error('getting-started.md: Step 2 gives no lua block');
+  return code;
+};
+
+const CHARACTER = ['...##...', '..####..', '.#.##.#.', '.######.', '.######.', '..####..', '..#..#..', '..#..#..'];
 
 const shoot = async (
   page: Page,
   name: string,
   theme: (typeof THEMES)[number],
   part?: Locator,
+  dir = OUT,
 ): Promise<void> => {
   const suffix = theme === 'light' ? '.light' : '';
-  const path = `${OUT}/${name}${suffix}.png`;
+  const path = `${dir}/${name}${suffix}.png`;
   if (part) await part.screenshot({ path, animations: 'disabled' });
   else await page.screenshot({ path });
 };
@@ -60,7 +76,6 @@ for (const theme of THEMES) {
       await shoot(page, 'art-flags', theme, section(page, 'Flags'));
       await shoot(page, 'art-palette', theme, section(page, 'Palette'));
       await page.getByRole('button', { name: 'Sheet size' }).click();
-      await shoot(page, 'art-size-dialog', theme, page.getByRole('dialog'));
       // Narrower: the sprites renumber, and the dialog says what follows them.
       const width = page.getByRole('dialog').getByRole('textbox', { name: 'Width' });
       await width.fill('64');
@@ -104,6 +119,47 @@ for (const theme of THEMES) {
       await page.waitForTimeout(200);
       await shoot(page, 'map-brush', theme, page.locator('nc-sheet-view').first());
       await shoot(page, 'map-minimap', theme, section(page, 'Whole map'));
+      await page.getByRole('switch', { name: 'Flags' }).click();
+      await page.mouse.move(0, 0);
+      await page.waitForTimeout(300);
+      await shoot(page, 'map-flags', theme);
+    });
+
+    test('getting started: the sprite and the code', async ({ page }) => {
+      await mockEditor(page, { theme, name: 'Untitled game' });
+      await page.goto('/edit/7/art');
+      const canvas = page.getByRole('img', { name: 'Sprite canvas' });
+      await canvas.waitFor();
+      await page.locator('nc-sheet-view svg').first().focus();
+      for (let i = 0; i < 4; i++) await page.keyboard.press('ArrowLeft');
+      for (let i = 0; i < 4; i++) await page.keyboard.press('ArrowUp');
+      const box = await canvas.boundingBox();
+      if (!box) throw new Error('no canvas');
+      const px = box.width / 128;
+      for (const [y, row] of CHARACTER.entries())
+        for (let x = 0; x < row.length; x++)
+          if (row[x] === '#') await page.mouse.click(box.x + (x + 0.5) * px, box.y + (y + 0.5) * px);
+      await page.mouse.move(0, 0);
+      await page.waitForTimeout(500);
+      await shoot(page, 'getting-started-art', theme, undefined, START_OUT);
+
+      // The CODE tab of the same game, reached through the rail so the sprite stays: Step 2's
+      // code pasted over the starter, then one Play.
+      await page.locator('nc-rail').getByRole('button', { name: 'Code' }).click();
+      await page.getByRole('tab', { name: 'main', exact: true }).waitFor();
+      await page.locator('.cm-content').click();
+      await page.keyboard.press('Control+a');
+      await page.evaluate((code) => {
+        const data = new DataTransfer();
+        data.setData('text/plain', code);
+        document
+          .querySelector('.cm-content')
+          ?.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }));
+      }, startCode());
+      await page.waitForTimeout(600);
+      await page.getByRole('button', { name: 'Play' }).first().click();
+      await page.waitForTimeout(800);
+      await shoot(page, 'getting-started-code', theme, undefined, START_OUT);
     });
 
     test('code: the first run', async ({ page }) => {
