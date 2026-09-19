@@ -260,8 +260,9 @@ export class Engine {
     this.loop.start();
   }
 
-  /** One fixed step while paused. */
+  /** One fixed step; a running game is paused first, so the button also serves as a pause. */
   stepOnce(): void {
+    if (this.state === 'running') this.pause();
     if (this.state !== 'paused') return;
     this.loop.stepOnce();
   }

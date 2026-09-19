@@ -41,6 +41,25 @@ describe('Engine', () => {
     engine.destroy();
   });
 
+  it('steps one frame at a time, pausing a running game first', () => {
+    const game = new Game(new Y.Doc());
+    game.seedDefaults();
+    const engine = new Engine({ game, gfx: new RecordingBackend(), driver });
+    engine.stepOnce();
+    expect(engine.currentState).toBe('idle');
+    expect(engine.stats.frame).toBe(0);
+
+    engine.run();
+    engine.tick(STEP_MS);
+    const ran = engine.stats.frame;
+    engine.stepOnce();
+    expect(engine.currentState).toBe('paused');
+    expect(engine.stats.frame).toBe(ran + 1);
+    engine.stepOnce();
+    expect(engine.stats.frame).toBe(ran + 2);
+    engine.destroy();
+  });
+
   it('halts with a structured error', () => {
     const doc = new Y.Doc();
     const game = new Game(doc);

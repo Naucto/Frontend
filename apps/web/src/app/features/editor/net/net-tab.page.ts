@@ -474,6 +474,7 @@ function formatScalar(value: TableScalar | undefined): string {
                 [projectId]="work.id"
                 [autoJoin]="rigTarget()"
                 fit="width"
+                debug
                 [autoPlay]="true"
                 [showFps]="false"
                 [transport]="false"

@@ -62,7 +62,7 @@ import { VirtualPadComponent } from './virtual-pad.component';
   template: `
     <div
       #frame
-      class="game-frame relative"
+      class="game-frame @container relative"
       [class.mx-auto]="!overlay()"
       [class.max-w-[1600px]]="!overlay()"
     >
@@ -156,13 +156,14 @@ import { VirtualPadComponent } from './virtual-pad.component';
             >
               <nc-icon name="reload" [size]="12" />
             </button>
-            @if (debug() && host.state() === 'paused') {
+            @if (debug()) {
               <button
                 ncButton
                 variant="ghost"
                 size="sm"
                 iconOnly
                 aria-label="Step one frame"
+                [disabled]="host.state() === 'idle' || host.state() === 'halted'"
                 (click)="host.step()"
               >
                 <nc-icon name="next" [size]="12" />
@@ -185,7 +186,7 @@ import { VirtualPadComponent } from './virtual-pad.component';
           <!-- Who is on the game, and on what: the design keeps this in the bar, not behind a popover. -->
           @for (p of players(); track p.slot) {
             <span
-              class="flex items-center gap-0.5 font-mono text-label whitespace-nowrap"
+              class="flex items-center gap-0.5 font-mono text-label whitespace-nowrap @max-[299px]:hidden"
               [class]="p.here ? 'text-ink-3' : 'text-ink-4'"
             >
               <nc-icon [name]="p.pad ? 'gamepad' : 'keyboard'" [size]="12" />

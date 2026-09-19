@@ -1899,3 +1899,33 @@ test('a hidden tab holds the music', async ({ page }) => {
   await setHidden(false);
   await expect.poll(() => lastSynthCommand(page)).toBe('resume');
 });
+
+test('Step one frame advances a paused game by one update, and pauses a running one', async ({
+  page,
+}) => {
+  await mockEditor(page);
+  await page.goto('/edit/7/code');
+  await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Play' }).first().click();
+  await page.getByRole('button', { name: 'Pause' }).click();
+  await page.getByRole('tab', { name: 'Perf' }).click();
+  // The readout samples the engine on a timer: let it catch up with the pause before reading.
+  const frame = page.getByText(/^FRAME \d+$/);
+  const read = async (): Promise<number> =>
+    Number((await frame.textContent())?.replace('FRAME ', ''));
+  await expect
+    .poll(async () => {
+      const a = await read();
+      await page.waitForTimeout(400);
+      return (await read()) - a;
+    })
+    .toBe(0);
+  const n = await read();
+  await page.getByRole('button', { name: 'Step one frame' }).click();
+  await expect(frame).toHaveText(`FRAME ${String(n + 1)}`);
+
+  await page.getByRole('button', { name: 'Play' }).click();
+  await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
+  await page.getByRole('button', { name: 'Step one frame' }).click();
+  await expect(page.getByRole('button', { name: 'Play' })).toBeVisible();
+});

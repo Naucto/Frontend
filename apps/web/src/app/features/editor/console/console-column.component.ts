@@ -162,6 +162,7 @@ const PIP_GRIPS: readonly { grip: PipGrip; box: string; cursor: string }[] = [
             [projectId]="session.id"
             fit="width"
             compact
+            debug
             [overlay]="popped()"
             [showFps]="true"
             (mounted)="onMounted()"

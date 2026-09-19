@@ -66,8 +66,8 @@ export const REFERENCE_WIDTH = 401;
 /** The floating viewer's width in the artboard, and so where it starts before it is resized. */
 export const PIP_DEFAULT_WIDTH = 304;
 
-/** Under this the title bar's own name and button no longer fit side by side. */
-export const PIP_MIN_WIDTH = 200;
+/** Under this the transport's own buttons no longer fit on the scrim, player chips already gone. */
+export const PIP_MIN_WIDTH = 240;
 
 /**
  * The most of the window the floating viewer may take.
