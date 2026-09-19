@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { installMemoryStorage } from '../../../testing/memory-storage';
 import { EDITOR_MIN_WIDTH, EditorUiStore, REFERENCE_SPLIT_BREAKPOINT } from './editor-ui.store';
@@ -7,6 +7,12 @@ import { EDITOR_MIN_WIDTH, EditorUiStore, REFERENCE_SPLIT_BREAKPOINT } from './e
 describe('EditorUiStore', () => {
   const store = (): InstanceType<typeof EditorUiStore> =>
     TestBed.configureTestingModule({ providers: [EditorUiStore] }).inject(EditorUiStore);
+
+  // The store now reads storage when it is made, so what one test writes must not reach the next.
+  beforeEach(() => {
+    installMemoryStorage();
+    TestBed.resetTestingModule();
+  });
 
   /**
    * The whole point of artboard 1c: the running game is not evicted to make room for the
@@ -81,15 +87,8 @@ describe('EditorUiStore and the Settings › Editor preferences', () => {
   it('starts a session with auto-run as Settings left it', () => {
     installMemoryStorage();
     localStorage.setItem('naucto.editor', JSON.stringify({ autoRun: false }));
-    try {
-      TestBed.resetTestingModule();
-      const ui = TestBed.configureTestingModule({ providers: [EditorUiStore] }).inject(
-        EditorUiStore,
-      );
-      expect(ui.autoRun()).toBe(false);
-    } finally {
-      localStorage.clear();
-      TestBed.resetTestingModule();
-    }
+    TestBed.resetTestingModule();
+    const ui = TestBed.configureTestingModule({ providers: [EditorUiStore] }).inject(EditorUiStore);
+    expect(ui.autoRun()).toBe(false);
   });
 });
