@@ -219,8 +219,8 @@ const refLink = (name) =>
 // ---- pictures ----------------------------------------------------------------
 /**
  * The page being rendered, for the pictures it shows: a picture is named relative to its page,
- * and lands in the built output under the same relative path, so `img/hero.png` beside
- * `editors/art.md` is served at `/docs/img/editors/img/hero.png`.
+ * and lands in the built output under its path from the docs root, so `img/hero.png` beside
+ * `content/editors/art.md` is served at `/docs/img/content/editors/img/hero.png`.
  */
 let currentPage = null;
 /** Every picture a page referenced, copied once the page is rendered. */
@@ -255,7 +255,7 @@ function picture(href, alt, title) {
     return `<img src="${esc(href)}" alt="${esc(alt)}">`;
   }
   const src = resolve(page.dir, href);
-  const rel = relative(resolve(docs, 'content'), src);
+  const rel = relative(docs, src);
   const light = src.replace(/(\.[a-z0-9]+)$/i, '.light$1');
   pictures.set(rel, src);
   const url = `/docs/img/${rel.split('\\').join('/')}`;
@@ -272,6 +272,21 @@ function picture(href, alt, title) {
   return `<figure class="doc-figure${frame}">${pair}${
     caption ? `<figcaption>${esc(caption)}</figcaption>` : ''
   }</figure>`;
+}
+
+/** The sizes of a page's pictures, read before rendering because the renderer is synchronous. */
+async function sizesOf(dir, hrefs) {
+  const sizes = new Map();
+  for (const href of hrefs) {
+    if (/^(https?:)?\/\//.test(href)) continue;
+    const src = resolve(dir, href);
+    for (const candidate of [src, src.replace(/(\.[a-z0-9]+)$/i, '.light$1')]) {
+      if (sizes.has(candidate) || !(await exists(candidate))) continue;
+      const size = pictureSize(await readFile(candidate));
+      if (size) sizes.set(candidate, size);
+    }
+  }
+  return sizes;
 }
 
 /** A figure is a block; the paragraph marked wrapped it in is not. */
@@ -386,18 +401,13 @@ for await (const file of walk(resolve(docs, 'content'))) {
       apis.push(n);
       return `<div class="api-card" data-api="${n}"></div>`;
     });
-  // Sizes are read before rendering because the renderer is synchronous.
-  const sizes = new Map();
-  for (const [, href] of body.matchAll(/!\[[^\]]*\]\(([^)\s]+)/g)) {
-    if (/^(https?:)?\/\//.test(href)) continue;
-    const src = resolve(dirname(file), href);
-    for (const candidate of [src, src.replace(/(\.[a-z0-9]+)$/i, '.light$1')]) {
-      if (sizes.has(candidate) || !(await exists(candidate))) continue;
-      const size = pictureSize(await readFile(candidate));
-      if (size) sizes.set(candidate, size);
-    }
-  }
-  currentPage = { dir: dirname(file), sizes };
+  currentPage = {
+    dir: dirname(file),
+    sizes: await sizesOf(
+      dirname(file),
+      [...body.matchAll(/!\[[^\]]*\]\(([^)\s]+)/g)].map((m) => m[1]),
+    ),
+  };
   const html = renderMarkdown(md).replace(LISTING_MARK, () => (code ? listing(code) : ''));
   currentPage = null;
   pages.push({
@@ -426,10 +436,21 @@ for (const file of await readdir(resolve(docs, 'api'))) {
   if (!file.endsWith('.yaml')) continue;
   const ns = parseYaml(await readFile(resolve(docs, 'api', file), 'utf8'));
   const entry = { namespace: ns.namespace, title: ns.title, functions: [], values: [] };
+  const apiDir = resolve(docs, 'api');
+  const all = [...(ns.functions ?? []), ...(ns.values ?? [])];
+  currentPage = {
+    dir: apiDir,
+    sizes: await sizesOf(
+      apiDir,
+      all.flatMap((f) => (f.picture ? [f.picture] : [])),
+    ),
+  };
   for (const kind of ['functions', 'values']) {
     for (const f of ns[kind] ?? []) {
       const full = `${ns.namespace}.${f.name}`;
       const item = {
+        // A frame beside the words: what the call draws, on content the reader has seen.
+        pictureHtml: f.picture ? picture(f.picture, f.caption ?? full, f.caption ?? '') : '',
         name: full,
         kind: kind === 'values' ? 'value' : 'function',
         signature: f.signature,
@@ -452,6 +473,7 @@ for (const file of await readdir(resolve(docs, 'api'))) {
     }
   }
   namespaces.push(entry);
+  currentPage = null;
 }
 namespaces.sort(
   (a, b) =>

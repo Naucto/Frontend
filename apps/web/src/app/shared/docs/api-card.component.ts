@@ -32,6 +32,9 @@ import { type ApiEntry } from './docs.service';
       } @else {
         <p class="mt-1 text-body text-ink-2">{{ entry().summary }}</p>
       }
+      @if (entry().pictureHtml) {
+        <div class="mt-1" [innerHTML]="trust(entry().pictureHtml)"></div>
+      }
       @if (entry().params.length) {
         <table class="mt-1 w-full text-meta">
           <tbody>

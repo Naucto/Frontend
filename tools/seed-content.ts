@@ -12,7 +12,8 @@
  * Run the Backend's `npm run seed:dev` first, then `npm run seed:content`. Idempotent: a game whose
  * name already exists for that author is updated in place, not duplicated.
  */
-import { writeFileSync } from 'node:fs';
+import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { basename, join } from 'node:path';
 
 import * as Y from 'yjs';
 
@@ -528,7 +529,45 @@ function writeContent(name: string, file: string): void {
   console.log(`wrote ${file} from ${seed.name}`);
 }
 
+/**
+ * One game per Lua file, for the pictures the API reference shows.
+ *
+ * Each demo is the Platformer's sheet, map and sounds with the file as its whole code, so a frame
+ * captured from it shows one call's effect on content the reader can see elsewhere in the docs.
+ * The sprite is drawn at index 1 as well as 0, since index 0 is what a map leaves empty.
+ */
+function writeDemos(luaDir: string, outDir: string): void {
+  const seed = GAMES.find((g) => g.name === 'Platformer Tutorial');
+  if (!seed) throw new Error('no Platformer Tutorial seed');
+  for (const file of readdirSync(luaDir).filter((f) => f.endsWith('.lua'))) {
+    const source = readFileSync(join(luaDir, file), 'utf8');
+    const doc = new Y.Doc();
+    const game = new Game(doc);
+    game.seedDefaults();
+    setMainSource(game, source);
+    drawSprite(game, seed.sprite);
+    for (let y = 0; y < SPRITE_SIZE; y++)
+      for (let x = 0; x < SPRITE_SIZE; x++) {
+        const ch = seed.sprite[y]?.[x] ?? '.';
+        if (ch !== '.') game.setPixel(SPRITE_SIZE + x, y, Number.parseInt(ch, 16));
+      }
+    drawMap(game);
+    addSound(game);
+    const out = join(outDir, `${basename(file, '.lua')}.bin`);
+    writeFileSync(out, Y.encodeStateAsUpdate(doc));
+    console.log(`wrote ${out}`);
+  }
+}
+
 async function main(): Promise<void> {
+  const demos = process.argv.indexOf('--demos');
+  if (demos !== -1) {
+    const [luaDir, outDir] = [process.argv[demos + 1], process.argv[demos + 2]];
+    if (!luaDir || !outDir)
+      throw new Error('--demos needs a Lua directory and an output directory');
+    writeDemos(luaDir, outDir);
+    return;
+  }
   const at = process.argv.indexOf('--content-only');
   if (at !== -1) {
     const file = process.argv[at + 1];

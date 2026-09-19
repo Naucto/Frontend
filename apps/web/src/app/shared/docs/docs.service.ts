@@ -36,6 +36,8 @@ export interface ApiEntry {
   signature: string;
   summary: string;
   descriptionHtml: string;
+  /** A figure of what the call draws, or nothing where there is nothing to see. */
+  pictureHtml: string;
   params: ApiParam[];
   returns: string | null;
   examples: { code: string; html: string }[];

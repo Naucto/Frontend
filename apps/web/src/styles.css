@@ -154,9 +154,11 @@
     font-size: var(--text-meta);
     color: var(--nc-ink-3);
   }
-  /* The console's own pixels, shown as pixels. */
+  /* The console's own pixels, shown as pixels, at twice their size where the column allows. */
   .doc-html figure.doc-frame img {
     image-rendering: pixelated;
+    width: min(100%, 640px);
+    height: auto;
   }
   /* A capture is taken in both themes where it can be; the page shows the one it is read in. */
   .doc-html figure.doc-figure img.doc-light {
