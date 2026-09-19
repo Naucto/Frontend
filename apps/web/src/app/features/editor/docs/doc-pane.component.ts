@@ -8,20 +8,25 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
+import { Router } from '@angular/router';
 import { ApiCardComponent } from '@app/shared/docs/api-card.component';
 import { DocArticleComponent } from '@app/shared/docs/doc-article.component';
 import { DocTreeComponent } from '@app/shared/docs/doc-tree.component';
-import { type ApiEntry, DocsService, type SearchHit } from '@app/shared/docs/docs.service';
-import { TranslocoDirective } from '@jsverse/transloco';
+import { type ApiEntry, type DocPage, DocsService, type SearchHit } from '@app/shared/docs/docs.service';
+import { seedNewGame } from '@app/shared/docs/seed-new-game';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import {
   ButtonDirective,
+  ConfirmDialogComponent,
+  type ConfirmDialogData,
+  DialogService,
+  HighlightComponent,
   IconComponent,
   SearchComponent,
   ToastService,
 } from '@naucto/ui';
 
 import { EditorRuntimeService } from '../state/editor-runtime.service';
-import { EditorUiStore } from '../state/editor-ui.store';
 import { DocRequestService } from './doc-request.service';
 
 /** The editor's DOC tab: the reference beside the code — search, tree, a page or a function card. */
@@ -35,6 +40,7 @@ import { DocRequestService } from './doc-request.service';
     ApiCardComponent,
     DocArticleComponent,
     DocTreeComponent,
+    HighlightComponent,
   ],
   template: `
     <div *transloco="let t" class="relative flex h-full flex-col">
@@ -46,9 +52,17 @@ import { DocRequestService } from './doc-request.service';
           </button>
         }
         <nc-icon name="reference" [size]="24" class="text-ink" />
-        <span class="label text-ink">{{ t('docs.reference') }}</span>
-        <span class="flex-1"></span>
-        <span class="label text-ink-4">F1</span>
+        @if (view() === 'page' && page(); as p) {
+          <button type="button" class="label text-ink-3 hover:text-ink" (click)="home()">
+            {{ t('docs.reference') }}
+          </button>
+          <span class="label text-ink-4">›</span>
+          <span class="label min-w-0 truncate text-ink">{{ p.title }}</span>
+        } @else {
+          <span class="label text-ink">{{ t('docs.reference') }}</span>
+          <span class="flex-1"></span>
+          <span class="label text-ink-4">F1</span>
+        }
       </div>
       <nc-search #search class="m-1.5" [placeholder]="t('docs.search')" hint="" [value]="query()" (valueChange)="query.set($event)" />
       <div class="min-h-0 flex-1 overflow-auto px-1.5 pb-1.5">
@@ -66,6 +80,12 @@ import { DocRequestService } from './doc-request.service';
           <div class="label mb-1 text-ink-4">API › {{ e.name.split('.')[0] }} › {{ e.name.split('.')[1] }}</div>
           <nc-api-card [entry]="e" [insertable]="true" (insert)="insert($event)" (navigate)="openApi($event)" />
         } @else if (view() === 'page' && page(); as p) {
+          @if (p.lua) {
+            <button ncButton variant="primary" size="sm" class="mb-1.5" (click)="copyToNewGame(p)">
+              <nc-icon name="file-plus" [size]="12" />
+              {{ t('docs.copyToNewGame') }}
+            </button>
+          }
           <nc-doc-article [page]="p" [insertable]="true" (insert)="insert($event)" (navigate)="navigate($event)" />
         } @else if (docs.error()) {
           <p class="p-2 text-body text-ink-3">{{ t('docs.unavailableHint') }}</p>
@@ -84,8 +104,10 @@ export class DocPaneComponent {
   private readonly requests = inject(DocRequestService);
   private readonly search = viewChild<SearchComponent>('search');
   private readonly runtime = inject(EditorRuntimeService);
-  protected readonly ui = inject(EditorUiStore);
   private readonly toasts = inject(ToastService);
+  private readonly dialogs = inject(DialogService);
+  private readonly i18n = inject(TranslocoService);
+  private readonly router = inject(Router);
   protected readonly query = signal('');
   protected readonly slug = signal<string | null>(null);
   protected readonly fragment = signal<string | null>(null);
@@ -122,6 +144,28 @@ export class DocPaneComponent {
   protected back(): void {
     if (this.apiName()) this.apiName.set(null);
     else this.slug.set(null);
+  }
+
+  protected home(): void {
+    this.apiName.set(null);
+    this.slug.set(null);
+  }
+
+  /** The pane sits in a game being edited: the copy is another game, so the editor is left. */
+  protected copyToNewGame(p: DocPage): void {
+    this.dialogs
+      .open<ConfirmDialogComponent, ConfirmDialogData, boolean>(ConfirmDialogComponent, {
+        data: {
+          title: this.i18n.translate('docs.copyFromEditorTitle'),
+          message: this.i18n.translate('docs.copyFromEditorMessage'),
+          confirmLabel: this.i18n.translate('docs.copyFromEditorConfirm'),
+        },
+      })
+      .closed.subscribe((ok) => {
+        if (ok !== true) return;
+        seedNewGame(p);
+        void this.router.navigate(['/games/new']);
+      });
   }
 
   /** A page, or a place on one (`slug#anchor`), scrolled to once it is in the pane. */

@@ -20,6 +20,7 @@ import {
   DocsService,
   type SearchHit,
 } from '@app/shared/docs/docs.service';
+import { seedNewGame } from '@app/shared/docs/seed-new-game';
 import { TranslocoDirective } from '@jsverse/transloco';
 import {
   ButtonDirective,
@@ -213,11 +214,7 @@ export class LearnPage {
 
   /** Tutorials open as a fresh game with their main.lua already in place. */
   protected copyToNewGame(p: DocPage): void {
-    if (!p.lua) return;
-    sessionStorage.setItem('naucto.seed-code', p.lua);
-    if (p.assets) sessionStorage.setItem('naucto.seed-assets', JSON.stringify(p.assets));
-    else sessionStorage.removeItem('naucto.seed-assets');
-    sessionStorage.setItem('naucto.seed-name', p.title.replace(/^Build /, ''));
+    seedNewGame(p);
     void this.router.navigate(['/games/new']);
   }
 
