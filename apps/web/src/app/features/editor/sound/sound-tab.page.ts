@@ -959,6 +959,9 @@ export class SoundTabPage {
       e.preventDefault();
       if (e.shiftKey) this.undo.redo();
       else this.undo.undo();
+    } else if (mod && e.key.toLowerCase() === 'y') {
+      e.preventDefault();
+      this.undo.redo();
     } else if (e.key === ' ') {
       e.preventDefault();
       if (this.playing()) this.stop();

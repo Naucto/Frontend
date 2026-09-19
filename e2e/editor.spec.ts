@@ -1510,6 +1510,35 @@ test.describe('editor', () => {
     await expect(page.getByRole('button', { name: 'Remove lead' })).toHaveCount(0);
   });
 
+  test('Ctrl+Y redoes in SOUND and in MAP', async ({ page }) => {
+    await page.goto('/edit/7/sound');
+    await addInstrument(page);
+    const roll = page.getByRole('img', { name: 'Piano roll' });
+    const box = await roll.boundingBox();
+    if (!box) throw new Error('no roll');
+    // Past the history's capture window, so the note is a step of its own, not the instrument's.
+    await page.waitForTimeout(400);
+    await page.mouse.click(box.x + 56 + 30, box.y + box.height / 2);
+    const unused = page.getByText('Not used yet — paint some notes.');
+    await expect(unused).toHaveCount(0);
+    await page.keyboard.press('Control+z');
+    await expect(unused).toBeVisible();
+    await page.keyboard.press('Control+y');
+    await expect(unused).toHaveCount(0);
+
+    await page.locator('nc-rail').getByRole('button', { name: 'Map' }).click();
+    const canvas = page.getByRole('img', { name: 'Map canvas' });
+    const map = await canvas.boundingBox();
+    if (!map) throw new Error('no map');
+    await page.mouse.click(map.x + 100, map.y + 100);
+    const redo = page.getByRole('button', { name: 'Redo' });
+    await expect(redo).toBeDisabled();
+    await page.keyboard.press('Control+z');
+    await expect(redo).toBeEnabled();
+    await page.keyboard.press('Control+y');
+    await expect(redo).toBeDisabled();
+  });
+
   test('a held key glides across the keyboard', async ({ page }) => {
     await page.goto('/edit/7/sound');
     await addInstrument(page);

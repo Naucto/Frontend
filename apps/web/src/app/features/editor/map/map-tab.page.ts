@@ -644,6 +644,11 @@ export class MapTabPage {
       else this.undo.undo();
       return;
     }
+    if (mod && e.key.toLowerCase() === 'y') {
+      e.preventDefault();
+      this.undo.redo();
+      return;
+    }
     if (e.key === 'Delete' || e.key === 'Backspace') {
       this.canvas()?.clearSelection();
       return;
