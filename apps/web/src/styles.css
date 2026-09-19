@@ -6,7 +6,8 @@
 @layer components {
   /* Set quiet on purpose: the running text is one shade down, and what a reader has to keep is
      what the page bolds, which comes back up to full ink. A page where everything is loud has no
-     way to point. */
+     way to point. Emphasis is ink, never weight: a bold word in this face is a heavier word, not a
+     louder one. */
   .doc-html {
     color: var(--nc-ink-2);
     font-size: var(--text-ui);
@@ -99,7 +100,9 @@
     font-size: var(--text-label);
     letter-spacing: var(--tracking-label);
   }
-  .doc-html strong {
+  .doc-html strong,
+  .doc-html b {
+    font-weight: 400;
     color: var(--nc-ink);
   }
   .doc-html h4 {
@@ -210,7 +213,7 @@
   .doc-html details.doc-listing summary {
     cursor: pointer;
     padding: 8px 12px;
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--text-label);
     letter-spacing: var(--tracking-label);
     text-transform: uppercase;
@@ -251,7 +254,7 @@
     align-items: center;
     gap: 6px;
     margin-bottom: 4px;
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--text-label);
     letter-spacing: var(--tracking-label);
     text-transform: uppercase;
@@ -259,29 +262,6 @@
   }
   .doc-html .callout > p:last-child {
     margin-bottom: 0;
-  }
-  .doc-html h2[data-step] {
-    padding-top: 12px;
-  }
-  .doc-html h2[data-step]::before {
-    content: attr(data-step) ' / ' attr(data-steps);
-    display: block;
-    margin-bottom: 8px;
-    font-family: var(--font-mono);
-    font-size: var(--text-label);
-    letter-spacing: var(--tracking-label);
-    color: var(--nc-ink-4);
-  }
-  .doc-html h2[data-step]::after {
-    content: '';
-    display: block;
-    height: 2px;
-    margin-top: 8px;
-    background: linear-gradient(
-      to right,
-      var(--nc-gold) calc(var(--step) / var(--steps) * 100%),
-      var(--nc-line) 0
-    );
   }
   .doc-html .api-ref code {
     color: var(--nc-gold-ink);
@@ -427,10 +407,8 @@
   }
   .api-meta {
     margin-top: 6px;
-    font-family: var(--font-mono);
-    font-size: var(--text-label);
-    letter-spacing: var(--tracking-label);
-    text-transform: uppercase;
+    font-family: var(--font-ui);
+    font-size: var(--text-meta);
     color: var(--nc-ink-4);
   }
   .api-prose {
@@ -447,7 +425,7 @@
   }
   .api-label {
     margin: 16px 0 6px;
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--text-label);
     letter-spacing: var(--tracking-label);
     text-transform: uppercase;
@@ -476,11 +454,42 @@
     color: var(--nc-ink);
   }
   .api-param-meta {
-    font-family: var(--font-mono);
-    font-size: var(--text-label);
-    letter-spacing: var(--tracking-label);
-    text-transform: uppercase;
+    font-family: var(--font-ui);
+    font-size: var(--text-meta);
+  }
+  /* A type name is a word, not code: it takes the UI face wherever it sits, including inside a
+     signature's mono band. One hue per type, the same on a card and in the editor's pop-over. */
+  .nc-type {
+    font-family: var(--font-ui);
+    text-transform: none;
+    --nc-tracking: normal;
+    letter-spacing: normal;
+  }
+  .nc-type--number {
     color: var(--nc-sky-ink);
+  }
+  .nc-type--string {
+    color: var(--nc-jade-ink);
+  }
+  .nc-type--boolean {
+    color: var(--nc-orange-ink);
+  }
+  .nc-type--table {
+    color: var(--nc-blush-ink);
+  }
+  .nc-type--function {
+    color: var(--nc-hot-ink);
+  }
+  .nc-type--any {
+    color: var(--nc-ink-3);
+  }
+  .nc-arg {
+    font-family: var(--font-mono);
+    --nc-tracking: normal;
+    letter-spacing: normal;
+  }
+  .nc-opt {
+    color: var(--nc-ink-4);
   }
   .api-param dd {
     margin: 2px 0 0 16px;
@@ -550,13 +559,18 @@
   gap: 2px 8px;
 }
 .nc-doc-card__params dt {
-  font-family: var(--font-mono);
-  letter-spacing: normal;
   color: var(--nc-ink-3);
 }
-/* The argument the caret is on. Gold is what this design uses for "the one you are on". */
-.nc-doc-card__params dt[data-active] {
-  color: var(--nc-gold-ink);
+.nc-doc-card__params dt code {
+  font-family: var(--font-mono);
+  letter-spacing: normal;
+}
+/* The argument the caret is on. Gold is what this design uses for "the one you are on"; it goes
+   under the name as a rule rather than over it as a colour, so the name keeps its ink step. */
+.nc-doc-card__params dt[data-active] code,
+.nc-doc-card__sig span[data-active] {
+  color: var(--nc-ink);
+  box-shadow: inset 0 -1px var(--nc-gold);
 }
 .nc-doc-card__params dd[data-active] {
   color: var(--nc-ink);

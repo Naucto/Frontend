@@ -16,11 +16,11 @@ import { type DocPage, DocsService } from './docs.service';
   selector: 'nc-doc-tree',
   imports: [TranslocoDirective, IconComponent],
   template: `
-    <nav *transloco="let t" [attr.aria-label]="t('docs.title')" class="font-mono text-meta">
+    <nav *transloco="let t" [attr.aria-label]="t('docs.title')" class="text-meta">
       @for (s of docs.sections(); track s.id) {
         <button
           type="button"
-          class="label flex w-full items-center gap-0.5 py-1 text-left text-ink-3 hover:text-ink"
+          class="font-ui text-label tracking-label flex w-full items-center gap-0.5 py-1 text-left uppercase text-ink-3 hover:text-ink"
           [attr.aria-expanded]="!collapsed().has(s.id)"
           (click)="toggle(s.id)"
         >
@@ -40,7 +40,7 @@ import { type DocPage, DocsService } from './docs.service';
               >
                 <span class="min-w-0 flex-1 truncate">{{ p.title }}</span>
                 @if (p.apis.length) {
-                  <span class="label text-ink-4">{{ p.apis.length }} fn</span>
+                  <span class="font-ui text-label tracking-label uppercase text-ink-4">{{ p.apis.length }} fn</span>
                 }
               </button>
               @if (p.slug === active()) {
