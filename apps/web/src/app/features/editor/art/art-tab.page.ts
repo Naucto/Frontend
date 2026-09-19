@@ -585,7 +585,7 @@ export class ArtTabPage {
     },
     {
       value: 'select',
-      icon: 'checkbox',
+      icon: 'marquee',
       label: this.i18n.translate('editor.art.tools.select'),
       key: 'S',
     },

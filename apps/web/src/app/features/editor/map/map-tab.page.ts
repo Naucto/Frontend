@@ -454,7 +454,7 @@ export class MapTabPage {
     },
     {
       value: 'select',
-      icon: 'checkbox',
+      icon: 'marquee',
       label: this.i18n.translate('editor.map.tools.select'),
       key: 'M',
     },

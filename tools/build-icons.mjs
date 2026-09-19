@@ -144,10 +144,8 @@ const CUSTOM = {
   line: 'M18 4h2v2h-2V4zm-2 4V6h2v2h-2zm-2 2V8h2v2h-2zm-2 2v-2h2v2h-2zm-2 2v-2h2v2h-2zm-2 2v-2h2v2H8zm-2 2v-2h2v2H6zm0 0v2H4v-2h2z',
   'corner-down-right': 'M6 16h10v2h2v-2h2v-2h-2v-2h-2v2H6V4H4v12h2zm10-4v-2h-2v2h2zm0 6v2h-2v-2h2z',
   // Same rule again: each has exactly one slot in the app, and it is the slot the design draws it
-  // in. checkbox and circle are the ART and MAP select and ellipse tools -- the design's ellipse is
-  // an octagon, which is what a circle is on this grid. copy is the friend code's, logout the
-  // account menu's.
-  checkbox: 'M5 3H3v18h18V3H5zm0 2h14v14H5V5zm4 7H7v2h2v2h2v-2h2v-2h2v-2h2V8h-2v2h-2v2h-2v2H9v-2z',
+  // in. circle is the ART and MAP ellipse tool -- the design's ellipse is an octagon, which is what
+  // a circle is on this grid. copy is the friend code's, logout the account menu's.
   circle: 'M17 3H7v2H5v2H3v10h2v2h2v2h10v-2h2v-2h2V7h-2V5h-2V3zm0 2v2h2v10h-2v2H7v-2H5V7h2V5h10z',
   copy: 'M4 2h11v2H6v13H4V2zm4 4h12v16H8V6zm2 2v12h8V8h-8z',
   logout:
