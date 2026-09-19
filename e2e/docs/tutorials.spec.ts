@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { type Locator, type Page, test } from '@playwright/test';
 
 import { mockEditor } from '../editor-mocks';
-import { grabFrame } from './frame';
+import { grabFrame, recordGif } from './frame';
 
 const CONTENT_FILE = 'node_modules/.cache/docs-shots/platformer.bin';
 const OUT = 'docs/content/tutorials/img';
@@ -63,4 +63,23 @@ test('frame: the game as it starts', async ({ page }) => {
   await page.getByRole('button', { name: 'Play' }).first().click();
   await page.waitForTimeout(1200);
   await grabFrame(page, `${OUT}/frames/platformer.png`);
+});
+
+test('animation: the player runs and jumps', async ({ page }) => {
+  await mockEditor(page, { content: readFileSync(CONTENT_FILE) });
+  await page.goto('/edit/7/code');
+  await page.locator('nc-game-screen canvas').first().waitFor();
+  await page.getByRole('button', { name: 'Play' }).first().click();
+  await page.waitForTimeout(800);
+  await page.locator('nc-game-screen canvas').first().click();
+  await recordGif(page, `${OUT}/frames/platformer-run.gif`, 80, async () => {
+    await page.keyboard.down('ArrowRight');
+    await page.waitForTimeout(900);
+    await page.keyboard.press('ArrowUp');
+    await page.waitForTimeout(900);
+    await page.keyboard.press('ArrowUp');
+    await page.waitForTimeout(900);
+    await page.keyboard.up('ArrowRight');
+    await page.waitForTimeout(400);
+  });
 });
