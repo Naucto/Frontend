@@ -15,6 +15,8 @@ export interface DocPage {
   namespace: string | null;
   legacySlugs: string[];
   lua: string | null;
+  /** The functions the page shows cards for, in page order; empty on a page of prose. */
+  apis: string[];
   headings: DocHeading[];
   html: string;
   text: string;

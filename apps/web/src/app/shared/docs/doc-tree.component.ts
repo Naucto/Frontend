@@ -1,10 +1,16 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { IconComponent, type IconName } from '@naucto/ui';
 
-import { DocsService } from './docs.service';
+import { type DocPage, DocsService } from './docs.service';
 
-/** The documentation tree: sections → pages, with the API namespaces counted. */
+/**
+ * The documentation tree: sections → pages, and under the page being read, what is on it.
+ *
+ * Only the open page unfolds — every page's sections at once is a table of contents of the whole
+ * site, and a tree nobody can scan. A page of cards lists its functions, a page of prose its
+ * sections; both are one click from the place itself.
+ */
 @Component({
   selector: 'nc-doc-tree',
   imports: [TranslocoDirective, IconComponent],
@@ -32,10 +38,23 @@ import { DocsService } from './docs.service';
                 (click)="open.emit(p.slug)"
               >
                 <span class="min-w-0 flex-1 truncate">{{ p.title }}</span>
-                @if (p.namespace && countOf(p.namespace)) {
-                  <span class="label text-ink-4">{{ countOf(p.namespace) }} fn</span>
+                @if (p.apis.length) {
+                  <span class="label text-ink-4">{{ p.apis.length }} fn</span>
                 }
               </button>
+              @if (p.slug === active()) {
+                @for (c of childrenOf(p); track c.id) {
+                  <button
+                    type="button"
+                    class="flex w-full items-center border-l-2 py-0.5 pl-3 text-left text-label hover:text-ink"
+                    [class]="c.id === fragment() ? 'border-gold text-gold-ink' : 'border-transparent text-ink-3'"
+                    [attr.aria-current]="c.id === fragment() ? 'location' : null"
+                    (click)="open.emit(p.slug + '#' + c.id)"
+                  >
+                    <span class="min-w-0 flex-1 truncate" [class.font-mono]="c.code">{{ c.text }}</span>
+                  </button>
+                }
+              }
             }
           }
         }
@@ -47,14 +66,21 @@ import { DocsService } from './docs.service';
 })
 export class DocTreeComponent {
   readonly active = input<string | null>(null);
+  /** The anchor being read on the active page, which is the child the tree marks. */
+  readonly fragment = input<string | null>(null);
+  /** A slug, with `#anchor` when a child of the page was chosen. */
   readonly open = output<string>();
   protected readonly docs = inject(DocsService);
   private readonly i18n = inject(TranslocoService);
   protected readonly collapsed = signal(new Set<string>());
-  private readonly counts = computed(() => new Map(this.docs.namespaces().map((n) => [n.namespace, n.functions.length])));
 
-  protected countOf(ns: string): number {
-    return this.counts().get(ns) ?? 0;
+  /** What a page unfolds into: its function cards, or failing those its sections. */
+  protected childrenOf(p: DocPage): { id: string; text: string; code: boolean }[] {
+    if (p.apis.length)
+      return p.apis.map((name) => ({ id: name, text: name.split('.')[1] ?? name, code: true }));
+    return p.headings
+      .filter((h) => h.level === 2)
+      .map((h) => ({ id: h.id, text: h.text, code: false }));
   }
 
   /** Each section header takes the glyph the artboard draws on it. */

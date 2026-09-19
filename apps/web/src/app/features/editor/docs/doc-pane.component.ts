@@ -70,7 +70,7 @@ import { DocRequestService } from './doc-request.service';
         } @else if (docs.error()) {
           <p class="p-2 text-body text-ink-3">{{ t('docs.unavailableHint') }}</p>
         } @else {
-          <nc-doc-tree [active]="slug()" (open)="openPage($event)" />
+          <nc-doc-tree [active]="slug()" [fragment]="fragment()" (open)="openPage($event)" />
           <p class="label mt-2 text-ink-4">{{ t('docs.tutorialHint') }}</p>
         }
       </div>
@@ -88,6 +88,7 @@ export class DocPaneComponent {
   private readonly toasts = inject(ToastService);
   protected readonly query = signal('');
   protected readonly slug = signal<string | null>(null);
+  protected readonly fragment = signal<string | null>(null);
   protected readonly apiName = signal<string | null>(null);
   protected readonly view = computed<'tree' | 'page' | 'api'>(() => (this.apiName() ? 'api' : this.slug() ? 'page' : 'tree'));
   protected readonly page = computed(() => (this.slug() ? this.docs.page(this.slug() ?? '') : null));
@@ -123,9 +124,14 @@ export class DocPaneComponent {
     else this.slug.set(null);
   }
 
-  protected openPage(slug: string): void {
+  /** A page, or a place on one (`slug#anchor`), scrolled to once it is in the pane. */
+  protected openPage(target: string): void {
+    const [slug = '', fragment = null] = target.split('#');
     this.apiName.set(null);
     this.slug.set(slug);
+    this.fragment.set(fragment);
+    if (fragment)
+      setTimeout(() => document.getElementById(fragment)?.scrollIntoView({ block: 'start' }), 50);
   }
 
   protected openApi(name: string): void {
@@ -140,7 +146,7 @@ export class DocPaneComponent {
   }
 
   protected navigate(target: string): void {
-    if (target.startsWith('/learn/')) this.openPage(target.slice('/learn/'.length).split('#')[0] ?? '');
+    if (target.startsWith('/learn/')) this.openPage(target.slice('/learn/'.length));
     else this.openApi(target);
   }
 

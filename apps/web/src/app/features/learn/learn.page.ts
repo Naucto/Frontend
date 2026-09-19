@@ -9,7 +9,8 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
-import { Router } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AuthStore } from '@app/core/auth/auth.store';
 import { DocArticleComponent } from '@app/shared/docs/doc-article.component';
 import { DocTreeComponent } from '@app/shared/docs/doc-tree.component';
@@ -72,7 +73,7 @@ import {
             }
           </div>
         }
-        <nc-doc-tree [active]="slug()" (open)="go($event)" />
+        <nc-doc-tree [active]="slug()" [fragment]="fragment()" (open)="go($event)" />
       </aside>
 
       <!-- A measure. The column had none, so on a wide screen 12px body text ran the full width
@@ -147,6 +148,7 @@ export class LearnPage {
   protected readonly docs = inject(DocsService);
   protected readonly auth = inject(AuthStore);
   private readonly router = inject(Router);
+  protected readonly fragment = toSignal(inject(ActivatedRoute).fragment, { initialValue: null });
   protected readonly query = signal('');
   protected readonly slug = computed(
     () => (this.path() ?? '').replace(/^\/+|\/+$/g, '') || 'index',
@@ -167,9 +169,20 @@ export class LearnPage {
     });
   }
 
-  protected go(slug: string): void {
+  /** A page, or a place on one: `api/gfx#gfx.clear`, `tutorials/pong#the-ball`. */
+  protected go(target: string): void {
     this.query.set('');
-    void this.router.navigate(['/learn', ...slug.split('/')]);
+    const [slug = '', fragment] = target.split('#');
+    void this.router
+      .navigate(['/learn', ...slug.split('/')], fragment ? { fragment } : undefined)
+      .then(() => {
+        if (fragment) this.reveal(fragment);
+      });
+  }
+
+  /** Once the page is in the document, which a navigation to the same page does not wait for. */
+  private reveal(id: string): void {
+    setTimeout(() => document.getElementById(id)?.scrollIntoView({ block: 'start' }), 50);
   }
 
   protected openHit(h: SearchHit): void {
@@ -182,11 +195,7 @@ export class LearnPage {
     if (target.startsWith('/')) {
       const [path, fragment] = target.split('#');
       void this.router.navigateByUrl(path ?? target).then(() => {
-        if (fragment)
-          setTimeout(
-            () => document.getElementById(fragment)?.scrollIntoView({ block: 'start' }),
-            50,
-          );
+        if (fragment) this.reveal(fragment);
       });
       return;
     }

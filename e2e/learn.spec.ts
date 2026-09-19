@@ -20,6 +20,34 @@ test.describe('learn', () => {
     await expect(page.getByText('Legacy name: sprite')).toBeVisible();
   });
 
+  /**
+   * The tree opens the page being read: a page of cards lists its functions, a page of prose its
+   * sections, and either is one click from the place itself.
+   */
+  test('the tree unfolds the open page into its functions or its sections', async ({ page }) => {
+    await page.goto('/learn/api/gfx');
+    const tree = page.getByRole('navigation', { name: 'Learn' });
+    const clear = tree.getByRole('button', { name: 'clear', exact: true });
+    await expect(clear).toBeVisible();
+    await clear.click();
+    await expect(page).toHaveURL(/#gfx\.clear$/);
+    await expect(clear).toHaveAttribute('aria-current', 'location');
+    await expect(page.locator('#gfx\\.clear')).toBeInViewport();
+    // Another page folds this one back up and unfolds its own sections.
+    await tree.getByRole('button', { name: 'Build Multiplayer Pong' }).click();
+    await expect(clear).toBeHidden();
+    await expect(tree.getByRole('button', { name: 'Complete code' })).toBeVisible();
+  });
+
+  test('a tutorial keeps its whole game folded away', async ({ page }) => {
+    await page.goto('/learn/tutorials/pong');
+    const listing = page.locator('details.doc-listing');
+    await expect(listing).toBeVisible();
+    await expect(listing.locator('pre')).toBeHidden();
+    await listing.locator('summary').click();
+    await expect(listing.locator('pre')).toBeVisible();
+  });
+
   test('searches functions', async ({ page }) => {
     await page.goto('/learn');
     await page.getByPlaceholder('Search', { exact: true }).fill('play_sfx');
