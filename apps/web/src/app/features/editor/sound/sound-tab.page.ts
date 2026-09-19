@@ -48,6 +48,7 @@ import { InstrumentInspectorComponent } from './instrument-inspector.component';
 import { InstrumentListComponent } from './instrument-list.component';
 import { OscilloscopeComponent } from './oscilloscope.component';
 import { PianoRollComponent } from './piano-roll.component';
+import { PresetsDialog, type PresetsDialogData, type PresetsDialogResult } from './presets.dialog';
 import { SongListComponent } from './song-list.component';
 import { MAX_ZOOM, MIN_ZOOM, SNAP_DIVISIONS, type SnapDivision, SoundStore } from './sound.store';
 import { SoundLibrary } from './sound-library';
@@ -367,6 +368,7 @@ const PATTERN_MAX = 99;
             [usedBy]="usedBy()"
             [samples]="library.samples()"
             (patched)="library.updateInstrument(inst.id, $event)"
+            (presetsRequested)="openPresets(inst)"
             (sampleChange)="library.setSample($event.id, $event.pcm)"
           />
         } @else {
@@ -519,6 +521,33 @@ export class SoundTabPage {
   protected duplicateInstrument(id: string): void {
     const copy = this.library.duplicateInstrument(id);
     if (copy) this.sound.selectInstrument(copy.id);
+  }
+
+  /**
+   * The sound changes and the identity stays: name and colour are how the author knows the
+   * instrument in every list, and a preset says nothing about them. The sample is let go by name
+   * only — a key the patch leaves out keeps what was there, and the bytes stay in the document
+   * because a duplicate may still be playing them.
+   *
+   * Heard through the preview under a name of its own, like the metronome: the document is not
+   * written until the choice is made, so nobody else in the session hears the browsing.
+   */
+  protected openPresets(inst: Instrument): void {
+    this.dialogs
+      .open<PresetsDialog, PresetsDialogData, PresetsDialogResult>(PresetsDialog, {
+        width: '640px',
+        ariaLabel: this.transloco.translate('editor.sound.presets'),
+        data: {
+          play: (settings, note) => {
+            void this.ready().then(() => {
+              this.engine.preview({ ...inst, ...settings, id: '__preset__' }, note, 0.6);
+            });
+          },
+        },
+      })
+      .closed.subscribe((settings: PresetsDialogResult) => {
+        if (settings) this.library.updateInstrument(inst.id, { ...settings, sampleId: undefined });
+      });
   }
 
   protected editInstrument(id: string): void {

@@ -51,8 +51,38 @@ export const INSTRUMENT_BOUNDS = {
 /** Everything that makes an instrument sound — not what it is called or shown as. */
 export type InstrumentPreset = Omit<Instrument, 'id' | 'name' | 'colour'>;
 
+/** The shelf a preset sits on when they are browsed: what kind of part it plays in a piece. */
+export type PresetFamily = 'lead' | 'bass' | 'keys' | 'pad' | 'drums' | 'fx';
+
+export const PRESET_FAMILIES: readonly PresetFamily[] = [
+  'lead',
+  'bass',
+  'keys',
+  'pad',
+  'drums',
+  'fx',
+];
+
+export interface InstrumentPresetEntry {
+  readonly name: string;
+  readonly family: PresetFamily;
+  /** What it is for, in one line — read beside the name when choosing. */
+  readonly blurb: string;
+  /** The MIDI note it is auditioned at: a kick at middle C is not a kick. */
+  readonly note: number;
+  readonly settings: InstrumentPreset;
+}
+
 const NO_VIBRATO = { rate: 5, depth: 0, delay: 0.2 };
 const NO_FILTER = { type: 'off', cutoff: 8000, resonance: 0.2, envAmount: 0 } as const;
+const NO_ARP = { rate: 0 };
+
+/** Middle C, and the octaves around it the drums and the bells live in. */
+const C4 = 60;
+const C2 = 36;
+const C3 = 48;
+const C5 = 72;
+const C6 = 84;
 
 /**
  * Starting points an author picks from before touching a slider, in the order they are offered.
@@ -60,12 +90,13 @@ const NO_FILTER = { type: 'off', cutoff: 8000, resonance: 0.2, envAmount: 0 } as
  * None of them is a sample: a sample is bytes the author brings, and a preset that named one
  * would point at nothing in every game but the one it was written in.
  */
-export const INSTRUMENT_PRESETS: readonly {
-  readonly name: string;
-  readonly settings: InstrumentPreset;
-}[] = [
+export const INSTRUMENT_PRESETS: readonly InstrumentPresetEntry[] = [
+  // ---- lead ------------------------------------------------------------------
   {
     name: 'Square lead',
+    family: 'lead',
+    blurb: 'The chiptune voice: bright, even, carries a melody over anything.',
+    note: C4,
     settings: {
       osc: 'square',
       duty: 0.5,
@@ -73,44 +104,53 @@ export const INSTRUMENT_PRESETS: readonly {
       glide: 0,
       env: { attack: 0.01, decay: 0.1, sustain: 0.6, release: 0.15 },
       vibrato: { rate: 6, depth: 0.15, delay: 0.2 },
-      arp: { rate: 0 },
+      arp: NO_ARP,
       filter: NO_FILTER,
       volume: 0.8,
       pan: 0,
     },
   },
   {
-    name: 'Pulse bass',
+    name: 'Pulse lead',
+    family: 'lead',
+    blurb: 'A thin pulse with a slow wobble — nasal, hollow, cuts through a mix.',
+    note: C4,
     settings: {
       osc: 'square',
-      duty: 0.25,
+      duty: 0.125,
       detune: 0,
       glide: 0,
-      env: { attack: 0.005, decay: 0.2, sustain: 0.4, release: 0.1 },
-      vibrato: NO_VIBRATO,
-      arp: { rate: 0 },
-      filter: { type: 'lp', cutoff: 1500, resonance: 0.3, envAmount: 0 },
-      volume: 0.85,
+      env: { attack: 0.01, decay: 0.15, sustain: 0.5, release: 0.2 },
+      vibrato: { rate: 5, depth: 0.2, delay: 0.3 },
+      arp: NO_ARP,
+      filter: NO_FILTER,
+      volume: 0.75,
       pan: 0,
     },
   },
   {
-    name: 'Triangle flute',
+    name: 'Saw lead',
+    family: 'lead',
+    blurb: 'Buzzier than the square, rounded off by a filter. Good for a solo line.',
+    note: C4,
     settings: {
-      osc: 'triangle',
+      osc: 'saw',
       duty: 0.5,
       detune: 0,
-      glide: 0,
-      env: { attack: 0.08, decay: 0.2, sustain: 0.8, release: 0.3 },
-      vibrato: { rate: 5, depth: 0.2, delay: 0.25 },
-      arp: { rate: 0 },
-      filter: NO_FILTER,
-      volume: 0.8,
+      glide: 0.02,
+      env: { attack: 0.02, decay: 0.2, sustain: 0.6, release: 0.2 },
+      vibrato: { rate: 5.5, depth: 0.1, delay: 0.25 },
+      arp: NO_ARP,
+      filter: { type: 'lp', cutoff: 6000, resonance: 0.2, envAmount: 0 },
+      volume: 0.7,
       pan: 0,
     },
   },
   {
     name: 'Saw brass',
+    family: 'lead',
+    blurb: 'A brassy stab with a soft edge — write chords and it fills the room.',
+    note: C4,
     settings: {
       osc: 'saw',
       duty: 0.5,
@@ -118,63 +158,184 @@ export const INSTRUMENT_PRESETS: readonly {
       glide: 0,
       env: { attack: 0.05, decay: 0.15, sustain: 0.7, release: 0.2 },
       vibrato: { rate: 5, depth: 0.1, delay: 0.3 },
-      arp: { rate: 0 },
+      arp: NO_ARP,
       filter: { type: 'lp', cutoff: 3000, resonance: 0.3, envAmount: 0 },
       volume: 0.7,
       pan: 0,
     },
   },
   {
-    name: 'Noise hat',
+    // The arp is the chord itself, walked fast: write three notes on one step and this plays
+    // them one after the other, the way an 8-bit game fakes a chord with one voice.
+    name: 'Chip arp',
+    family: 'lead',
+    blurb: 'Walks a chord one note at a time, fast. Write three notes on a step to hear it.',
+    note: C4,
     settings: {
-      osc: 'noise',
+      osc: 'square',
       duty: 0.5,
       detune: 0,
       glide: 0,
-      env: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.03 },
+      env: { attack: 0.005, decay: 0.1, sustain: 0.5, release: 0.1 },
       vibrato: NO_VIBRATO,
-      arp: { rate: 0 },
-      filter: { type: 'hp', cutoff: 6000, resonance: 0.2, envAmount: 0 },
-      volume: 0.6,
+      arp: { rate: 12 },
+      filter: NO_FILTER,
+      volume: 0.7,
+      pan: 0,
+    },
+  },
+  // ---- bass ------------------------------------------------------------------
+  {
+    name: 'Pulse bass',
+    family: 'bass',
+    blurb: 'A short, punchy pulse under the beat. The everyday bass.',
+    note: C3,
+    settings: {
+      osc: 'square',
+      duty: 0.25,
+      detune: 0,
+      glide: 0,
+      env: { attack: 0.005, decay: 0.2, sustain: 0.4, release: 0.1 },
+      vibrato: NO_VIBRATO,
+      arp: NO_ARP,
+      filter: { type: 'lp', cutoff: 1500, resonance: 0.3, envAmount: 0 },
+      volume: 0.85,
       pan: 0,
     },
   },
   {
-    name: 'Noise snare',
-    settings: {
-      osc: 'noise',
-      duty: 0.5,
-      detune: 0,
-      glide: 0,
-      env: { attack: 0.001, decay: 0.15, sustain: 0, release: 0.1 },
-      vibrato: NO_VIBRATO,
-      arp: { rate: 0 },
-      filter: { type: 'bp', cutoff: 2000, resonance: 0.4, envAmount: 0 },
-      volume: 0.8,
-      pan: 0,
-    },
-  },
-  {
-    // A kick is a pitch falling fast, and the model has no pitch envelope. What it has is
-    // glide, which bends a voice from the note it was sounding into the next one: so this is
-    // the thump on its own, a sine at a low note with no sustain, and the fall is there for
-    // the taking by writing a higher note just before it.
-    name: 'Kick',
+    name: 'Sub bass',
+    family: 'bass',
+    blurb: 'A pure low sine. Felt more than heard — keep it an octave under everything.',
+    note: C2,
     settings: {
       osc: 'sine',
       duty: 0.5,
       detune: 0,
-      glide: 0.06,
-      env: { attack: 0.001, decay: 0.12, sustain: 0, release: 0.08 },
+      glide: 0.03,
+      env: { attack: 0.01, decay: 0.1, sustain: 0.9, release: 0.15 },
       vibrato: NO_VIBRATO,
-      arp: { rate: 0 },
-      filter: { type: 'lp', cutoff: 400, resonance: 0.2, envAmount: 0 },
+      arp: NO_ARP,
+      filter: { type: 'lp', cutoff: 800, resonance: 0.1, envAmount: 0 },
       volume: 0.9,
       pan: 0,
     },
   },
   {
+    name: 'Acid bass',
+    family: 'bass',
+    blurb: 'A saw through a squelchy filter, sliding between notes. Nervous, rubbery.',
+    note: C3,
+    settings: {
+      osc: 'saw',
+      duty: 0.5,
+      detune: 0,
+      glide: 0.08,
+      env: { attack: 0.005, decay: 0.25, sustain: 0.3, release: 0.1 },
+      vibrato: NO_VIBRATO,
+      arp: NO_ARP,
+      filter: { type: 'lp', cutoff: 900, resonance: 0.7, envAmount: 0 },
+      volume: 0.8,
+      pan: 0,
+    },
+  },
+  {
+    name: 'Triangle bass',
+    family: 'bass',
+    blurb: 'Soft and round, the way a console bass sounds. Sits under a square lead.',
+    note: C3,
+    settings: {
+      osc: 'triangle',
+      duty: 0.5,
+      detune: 0,
+      glide: 0,
+      env: { attack: 0.005, decay: 0.15, sustain: 0.7, release: 0.1 },
+      vibrato: NO_VIBRATO,
+      arp: NO_ARP,
+      filter: NO_FILTER,
+      volume: 0.9,
+      pan: 0,
+    },
+  },
+  // ---- keys ------------------------------------------------------------------
+  {
+    name: 'Triangle flute',
+    family: 'keys',
+    blurb: 'Breathy and gentle, with a slow vibrato. For a melody that is not in a hurry.',
+    note: C5,
+    settings: {
+      osc: 'triangle',
+      duty: 0.5,
+      detune: 0,
+      glide: 0,
+      env: { attack: 0.08, decay: 0.2, sustain: 0.8, release: 0.3 },
+      vibrato: { rate: 5, depth: 0.2, delay: 0.25 },
+      arp: NO_ARP,
+      filter: NO_FILTER,
+      volume: 0.8,
+      pan: 0,
+    },
+  },
+  {
+    name: 'Bell',
+    family: 'keys',
+    blurb: 'Strikes and rings out. Best high up, one note at a time.',
+    note: C5,
+    settings: {
+      osc: 'sine',
+      duty: 0.5,
+      detune: 0,
+      glide: 0,
+      env: { attack: 0.001, decay: 0.9, sustain: 0, release: 0.6 },
+      vibrato: { rate: 6, depth: 0.05, delay: 0.4 },
+      arp: NO_ARP,
+      filter: NO_FILTER,
+      volume: 0.7,
+      pan: 0,
+    },
+  },
+  {
+    name: 'Pluck',
+    family: 'keys',
+    blurb: 'A plucked string: sharp on, quick off. Arpeggios and picked chords.',
+    note: C4,
+    settings: {
+      osc: 'saw',
+      duty: 0.5,
+      detune: 0,
+      glide: 0,
+      env: { attack: 0.002, decay: 0.25, sustain: 0, release: 0.2 },
+      vibrato: NO_VIBRATO,
+      arp: NO_ARP,
+      filter: { type: 'lp', cutoff: 4000, resonance: 0.3, envAmount: 0 },
+      volume: 0.8,
+      pan: 0,
+    },
+  },
+  {
+    name: 'Organ',
+    family: 'keys',
+    blurb: 'Holds as long as the key does, no swell and no fade. Chords and drones.',
+    note: C4,
+    settings: {
+      osc: 'square',
+      duty: 0.5,
+      detune: 0,
+      glide: 0,
+      env: { attack: 0.01, decay: 0.05, sustain: 1, release: 0.05 },
+      vibrato: NO_VIBRATO,
+      arp: NO_ARP,
+      filter: { type: 'lp', cutoff: 5000, resonance: 0.1, envAmount: 0 },
+      volume: 0.6,
+      pan: 0,
+    },
+  },
+  // ---- pad -------------------------------------------------------------------
+  {
     name: 'Pad',
+    family: 'pad',
+    blurb: 'Swells in, hangs, fades out. The bed the rest of the music lies on.',
+    note: C4,
     settings: {
       osc: 'saw',
       duty: 0.5,
@@ -182,9 +343,179 @@ export const INSTRUMENT_PRESETS: readonly {
       glide: 0,
       env: { attack: 0.6, decay: 0.5, sustain: 0.8, release: 1.2 },
       vibrato: { rate: 4, depth: 0.1, delay: 0.5 },
-      arp: { rate: 0 },
+      arp: NO_ARP,
       filter: { type: 'lp', cutoff: 1200, resonance: 0.3, envAmount: 0 },
       volume: 0.6,
+      pan: 0,
+    },
+  },
+  {
+    name: 'Strings',
+    family: 'pad',
+    blurb: 'Bowed rather than struck: a slow rise, a slow vibrato, a long tail.',
+    note: C4,
+    settings: {
+      osc: 'saw',
+      duty: 0.5,
+      detune: 0,
+      glide: 0,
+      env: { attack: 0.4, decay: 0.3, sustain: 0.85, release: 0.8 },
+      vibrato: { rate: 5, depth: 0.15, delay: 0.4 },
+      arp: NO_ARP,
+      filter: { type: 'lp', cutoff: 2500, resonance: 0.2, envAmount: 0 },
+      volume: 0.6,
+      pan: 0,
+    },
+  },
+  {
+    name: 'Choir',
+    family: 'pad',
+    blurb: 'Soft, hollow, far away. Voices without words.',
+    note: C4,
+    settings: {
+      osc: 'triangle',
+      duty: 0.5,
+      detune: 0,
+      glide: 0,
+      env: { attack: 0.5, decay: 0.4, sustain: 0.9, release: 1.0 },
+      vibrato: { rate: 4, depth: 0.1, delay: 0.6 },
+      arp: NO_ARP,
+      filter: NO_FILTER,
+      volume: 0.65,
+      pan: 0,
+    },
+  },
+  // ---- drums -----------------------------------------------------------------
+  {
+    // A kick is a pitch falling fast, and the model has no pitch envelope. What it has is
+    // glide, which bends a voice from the note it was sounding into the next one: so this is
+    // the thump on its own, a sine at a low note with no sustain, and the fall is there for
+    // the taking by writing a higher note just before it.
+    name: 'Kick',
+    family: 'drums',
+    blurb: 'The thump. Write a higher note just before it and the pitch falls into it.',
+    note: C2,
+    settings: {
+      osc: 'sine',
+      duty: 0.5,
+      detune: 0,
+      glide: 0.06,
+      env: { attack: 0.001, decay: 0.12, sustain: 0, release: 0.08 },
+      vibrato: NO_VIBRATO,
+      arp: NO_ARP,
+      filter: { type: 'lp', cutoff: 400, resonance: 0.2, envAmount: 0 },
+      volume: 0.9,
+      pan: 0,
+    },
+  },
+  {
+    name: 'Noise snare',
+    family: 'drums',
+    blurb: 'A burst of filtered noise on the backbeat.',
+    note: C4,
+    settings: {
+      osc: 'noise',
+      duty: 0.5,
+      detune: 0,
+      glide: 0,
+      env: { attack: 0.001, decay: 0.15, sustain: 0, release: 0.1 },
+      vibrato: NO_VIBRATO,
+      arp: NO_ARP,
+      filter: { type: 'bp', cutoff: 2000, resonance: 0.4, envAmount: 0 },
+      volume: 0.8,
+      pan: 0,
+    },
+  },
+  {
+    name: 'Noise hat',
+    family: 'drums',
+    blurb: 'A tick of bright noise. Closed hat on every eighth, and the beat has a pulse.',
+    note: C5,
+    settings: {
+      osc: 'noise',
+      duty: 0.5,
+      detune: 0,
+      glide: 0,
+      env: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.03 },
+      vibrato: NO_VIBRATO,
+      arp: NO_ARP,
+      filter: { type: 'hp', cutoff: 6000, resonance: 0.2, envAmount: 0 },
+      volume: 0.6,
+      pan: 0,
+    },
+  },
+  {
+    name: 'Tom',
+    family: 'drums',
+    blurb: 'A round drum with some pitch to it — a kick played higher, and longer.',
+    note: C3,
+    settings: {
+      osc: 'sine',
+      duty: 0.5,
+      detune: 0,
+      glide: 0.1,
+      env: { attack: 0.001, decay: 0.25, sustain: 0, release: 0.15 },
+      vibrato: NO_VIBRATO,
+      arp: NO_ARP,
+      filter: { type: 'lp', cutoff: 700, resonance: 0.2, envAmount: 0 },
+      volume: 0.85,
+      pan: 0,
+    },
+  },
+  {
+    name: 'Clap',
+    family: 'drums',
+    blurb: 'A slap of mid noise, shorter and boxier than the snare.',
+    note: C4,
+    settings: {
+      osc: 'noise',
+      duty: 0.5,
+      detune: 0,
+      glide: 0,
+      env: { attack: 0.001, decay: 0.12, sustain: 0, release: 0.06 },
+      vibrato: NO_VIBRATO,
+      arp: NO_ARP,
+      filter: { type: 'bp', cutoff: 1500, resonance: 0.5, envAmount: 0 },
+      volume: 0.75,
+      pan: 0,
+    },
+  },
+  // ---- fx --------------------------------------------------------------------
+  {
+    // The same trick as the kick, the other way round: the glide is what makes it a laser,
+    // and a note written a fifth or an octave under the one before it is what it falls to.
+    name: 'Laser',
+    family: 'fx',
+    blurb: 'A zap that dives. Write it one note under a higher one and it falls between them.',
+    note: C6,
+    settings: {
+      osc: 'square',
+      duty: 0.5,
+      detune: 0,
+      glide: 0.2,
+      env: { attack: 0.001, decay: 0.2, sustain: 0, release: 0.05 },
+      vibrato: NO_VIBRATO,
+      arp: NO_ARP,
+      filter: NO_FILTER,
+      volume: 0.7,
+      pan: 0,
+    },
+  },
+  {
+    name: 'Wind',
+    family: 'fx',
+    blurb: 'Noise that breathes in and out slowly. Weather, caves, a held breath.',
+    note: C4,
+    settings: {
+      osc: 'noise',
+      duty: 0.5,
+      detune: 0,
+      glide: 0,
+      env: { attack: 0.8, decay: 0.5, sustain: 0.8, release: 1.2 },
+      vibrato: NO_VIBRATO,
+      arp: NO_ARP,
+      filter: { type: 'lp', cutoff: 1200, resonance: 0.4, envAmount: 0 },
+      volume: 0.5,
       pan: 0,
     },
   },

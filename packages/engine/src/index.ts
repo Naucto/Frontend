@@ -71,6 +71,9 @@ export {
   INSTRUMENT_BOUNDS,
   INSTRUMENT_PRESETS,
   type InstrumentPreset,
+  type InstrumentPresetEntry,
+  PRESET_FAMILIES,
+  type PresetFamily,
 } from './sound/presets';
 export {
   decodeSample,

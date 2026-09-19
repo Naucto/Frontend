@@ -1449,9 +1449,20 @@ test.describe('editor', () => {
     );
 
     await page.getByRole('button', { name: 'Presets' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Presets' });
+    await expect(dialog.getByRole('radio')).toHaveCount(23);
+    // A shelf shows its own family and nothing else.
+    await dialog.getByRole('tab', { name: 'Drums' }).click();
+    await expect(dialog.getByRole('radio')).toHaveCount(5);
+    await dialog.getByRole('radio', { name: 'Noise hat' }).click();
+    await expect(dialog.getByRole('radio', { name: 'Noise hat' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
     await page.screenshot({ path: 'test-results/v-editor-sound-presets.png' });
-    await page.getByRole('button', { name: 'Noise hat' }).click();
-    await expect(page.getByRole('radio', { name: 'Noise' })).toHaveAttribute(
+    await dialog.getByRole('button', { name: 'Apply' }).click();
+    await expect(dialog).toBeHidden();
+    await expect(page.getByRole('radio', { name: 'Noise', exact: true })).toHaveAttribute(
       'aria-checked',
       'true',
     );
@@ -1579,6 +1590,32 @@ test('a collaborator who is not the host may publish and name a version', async 
 });
 
 /**
+ * The cap is said before the save is refused, and the way through it is said with it: a name the
+ * list already holds rewrites that version and does not count.
+ */
+test('the cap on named versions is explained before the save is refused', async ({ page }) => {
+  await mockEditor(page, { maxCheckpoints: 1 });
+  await page.route('**/projects/7/checkpoints', (r) =>
+    r.fulfill({ json: [{ name: 'v1', date: '2026-09-11T09:00:00.000Z' }] }),
+  );
+
+  await page.goto('/edit/7/game');
+  await page.getByRole('button', { name: 'Platformer' }).click();
+  await page.locator('nc-popover-panel').getByRole('button', { name: 'Save a version' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Save a version' });
+  await expect(dialog.getByText('1 of 1 named versions')).toBeVisible();
+  await expect(dialog.getByText('1 versions out of 1')).toBeVisible();
+  const save = dialog.getByRole('button', { name: 'Save', exact: true });
+
+  const name = dialog.getByRole('textbox', { name: 'Name' });
+  await name.fill('v2');
+  await expect(save).toBeDisabled();
+  await name.fill('v1');
+  await expect(dialog.getByText('Overwrites the version "v1"')).toBeVisible();
+  await expect(save).toBeEnabled();
+});
+
+/**
  * Both banners say what they are the name of, and half of them are a bare number — a sheet and a
  * map are both born nameless. The rename is in the same test because the banner used not to
  * notice one until the tab was changed and back.
@@ -1589,32 +1626,6 @@ test('each editor names what it is on, and follows a rename', async ({ page }) =
   await expect(page.getByText('Map #1')).toBeVisible();
 
   await page.locator('nc-rail').getByRole('button', { name: 'Art' }).click();
-  /**
-   * The cap is said before the save is refused, and the way through it is said with it: a name the
-   * list already holds rewrites that version and does not count.
-   */
-  test('the cap on named versions is explained before the save is refused', async ({ page }) => {
-    await mockEditor(page, { maxCheckpoints: 1 });
-    await page.route('**/projects/7/checkpoints', (r) =>
-      r.fulfill({ json: [{ name: 'v1', date: '2026-09-11T09:00:00.000Z' }] }),
-    );
-
-    await page.goto('/edit/7/game');
-    await page.getByRole('button', { name: 'Platformer' }).click();
-    await page.locator('nc-popover-panel').getByRole('button', { name: 'Save a version' }).click();
-    const dialog = page.getByRole('dialog', { name: 'Save a version' });
-    await expect(dialog.getByText('1 of 1 named versions')).toBeVisible();
-    await expect(dialog.getByText('1 versions out of 1')).toBeVisible();
-    const save = dialog.getByRole('button', { name: 'Save', exact: true });
-
-    const name = dialog.getByRole('textbox', { name: 'Name' });
-    await name.fill('v2');
-    await expect(save).toBeDisabled();
-    await name.fill('v1');
-    await expect(dialog.getByText('Overwrites the version "v1"')).toBeVisible();
-    await expect(save).toBeEnabled();
-  });
-
   await expect(page.getByRole('img', { name: 'Sprite canvas' })).toBeVisible();
   await expect(page.getByText('Tileset #1')).toBeVisible();
 

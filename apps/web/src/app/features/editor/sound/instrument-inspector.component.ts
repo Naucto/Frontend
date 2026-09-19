@@ -4,8 +4,6 @@ import {
   encodeSample,
   type FilterType,
   type Instrument,
-  INSTRUMENT_PRESETS,
-  type InstrumentPreset,
   MAX_SAMPLE_SECONDS,
   midiToNoteName,
   type OscType,
@@ -18,8 +16,6 @@ import {
   ChipComponent,
   HelpDotComponent,
   IconComponent,
-  PopoverDirective,
-  PopoverPanelComponent,
   SegmentedComponent,
   SliderComponent,
 } from '@naucto/ui';
@@ -61,8 +57,6 @@ const FILTERS = [
     ChipComponent,
     HelpDotComponent,
     IconComponent,
-    PopoverDirective,
-    PopoverPanelComponent,
     SegmentedComponent,
     SliderComponent,
     EnvelopeGraphComponent,
@@ -78,7 +72,7 @@ const FILTERS = [
         <div class="mb-1 flex items-center justify-between">
           <span class="label text-ink-3">{{ t('editor.sound.oscillator') }}</span>
           <span class="flex items-center gap-1">
-            <button ncButton variant="ghost" size="sm" [ncPopover]="presets" popoverAlign="end">
+            <button ncButton variant="ghost" size="sm" (click)="presetsRequested.emit()">
               {{ t('editor.sound.presets') }}
               <nc-icon name="chevron-down" [size]="12" />
             </button>
@@ -88,20 +82,6 @@ const FILTERS = [
             />
           </span>
         </div>
-        <ng-template #presets>
-          <nc-popover-panel>
-            @for (p of presetList; track p.name) {
-              <button
-                type="button"
-                class="flex w-full items-center gap-1 px-1 py-0.5 text-left text-body text-ink hover:bg-raised"
-                (click)="applyPreset(p.settings)"
-              >
-                <nc-wave-glyph [type]="p.settings.osc" [width]="24" />
-                {{ p.name }}
-              </button>
-            }
-          </nc-popover-panel>
-        </ng-template>
         <div class="grid grid-cols-3 gap-0.5" role="radiogroup">
           @for (o of oscs; track o.value) {
             <button
@@ -386,12 +366,13 @@ export class InstrumentInspectorComponent {
   readonly palette = input.required<readonly string[]>();
   readonly usedBy = input.required<{ patterns: Pattern[]; sfx: number[] }>();
   readonly patched = output<Partial<Instrument>>();
+  /** The PRESETS button: the page owns the dialog and the engine that lets one be heard. */
+  readonly presetsRequested = output();
   /** Base64 PCM keyed by sample id — the game document's own `samples` map. */
   readonly samples = input.required<Map<string, string>>();
   /** Emitted with the encoded PCM (or null to drop it); the library owns the document write. */
   readonly sampleChange = output<{ id: string; pcm: string | null }>();
   protected readonly oscs = OSCS;
-  protected readonly presetList = INSTRUMENT_PRESETS;
   protected readonly ENV_MAX = ENV_MAX;
   protected readonly filters = FILTERS;
   protected readonly envKeys = ['attack', 'decay', 'sustain', 'release'] as const;
@@ -452,16 +433,6 @@ export class InstrumentInspectorComponent {
     const id = this.inst().sampleId;
     if (id) this.sampleChange.emit({ id, pcm: null });
     this.patched.emit({ sampleId: undefined });
-  }
-
-  /**
-   * The sound changes and the identity stays: name and colour are how the author knows the
-   * instrument in every list, and a preset says nothing about them. The sample is let go by name
-   * only — a key the patch leaves out keeps what was there, and the bytes stay in the document
-   * because a duplicate may still be playing them.
-   */
-  protected applyPreset(p: InstrumentPreset): void {
-    this.patched.emit({ ...p, sampleId: undefined });
   }
 
   /** "+3 st" reads as a pitch offset; a bare number reads as anything. */

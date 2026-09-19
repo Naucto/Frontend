@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { type Bound, INSTRUMENT_BOUNDS, INSTRUMENT_PRESETS } from './presets';
+import { type Bound, INSTRUMENT_BOUNDS, INSTRUMENT_PRESETS, PRESET_FAMILIES } from './presets';
 
 const isBound = (v: unknown): v is Bound =>
   typeof v === 'object' && v !== null && 'min' in v && 'max' in v;
@@ -39,5 +39,22 @@ describe('instrument presets', () => {
   it('offers each name once', () => {
     const names = INSTRUMENT_PRESETS.map((p) => p.name);
     expect(new Set(names).size).toBe(names.length);
+  });
+
+  it('says what each one is for, and where it is heard', () => {
+    for (const p of INSTRUMENT_PRESETS) {
+      expect(p.blurb.trim().length, p.name).toBeGreaterThan(0);
+      expect(p.note, p.name).toBeGreaterThanOrEqual(24);
+      expect(p.note, p.name).toBeLessThanOrEqual(95);
+    }
+  });
+
+  it('leaves no family shelf empty', () => {
+    for (const family of PRESET_FAMILIES) {
+      expect(
+        INSTRUMENT_PRESETS.some((p) => p.family === family),
+        family,
+      ).toBe(true);
+    }
   });
 });
