@@ -347,3 +347,24 @@ describe('a document whose two sizes disagree', () => {
     expect(sheet?.getPixel(200, 4)).toBe(6);
   });
 });
+
+describe('a second sheet written in the transaction that gave it its cells', () => {
+  it('shows the pixels and tells the listeners, as the first sheet would', () => {
+    const game = new Game(new Y.Doc());
+    game.addSheet('extra', 64, 64, 'x');
+    const heard: unknown[] = [];
+    game.onPixelsChange((changes) => heard.push(...changes));
+    let flagged = 0;
+    game.onFlagsChange(() => flagged++);
+
+    game.transact(() => {
+      game.sheets[1]?.setPixel(3, 4, 9);
+      game.sheets[1]?.setFlag(256, 5);
+    });
+
+    expect(game.sheets[1]?.getPixel(3, 4)).toBe(9);
+    expect(game.sheets[1]?.getFlag(256)).toBe(5);
+    expect(heard).toEqual([{ sheet: 'x', x: 3, y: 4, colour: 9 }]);
+    expect(flagged).toBe(1);
+  });
+});

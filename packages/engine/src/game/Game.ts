@@ -577,10 +577,9 @@ export class Game {
     const entry = this.sheetsMap.get(sheetId);
     if (!entry) throw new Error(`no sheet ${sheetId}`);
     const made = new Y.Map<number>();
-    // Marked before it is attached: inserting it ends a transaction, and the collection's own
-    // observer runs then -- it would find an unmarked map and subscribe to it a second time.
-    this.watchedCells.add(made);
-    this.observeSheetCells(sheetId, key, made);
+    // Not watched here, for the reason `mapCells` gives: made and written in one transaction, the
+    // map fires no event of its own, so the collection observer attaches it afterwards and tells
+    // the cells it arrived with.
     entry.set(key, made);
 
     return made;
@@ -611,6 +610,7 @@ export class Game {
         if (!cells || this.watchedCells.has(cells)) continue;
         this.watchedCells.add(cells);
         this.observeSheetCells(id, key, cells);
+        this.tellCells(id, key, cells, cells.keys());
       }
   }
 
@@ -633,31 +633,41 @@ export class Game {
    * Attached as the cell maps appear, so the listeners hear about them the same way -- a peer
    * drawing on a sheet nobody has opened still has to reach the screen.
    */
+  /** Brings a sheet's mirror in step with these cells and tells the listeners what moved. */
+  private tellCells(
+    sheetId: string,
+    key: 'pixels' | 'flags',
+    cells: Y.Map<number>,
+    keys: Iterable<string>,
+  ): void {
+    const sheet = this.sheets.find((s) => s.id === sheetId);
+    if (!sheet) return;
+    const changes: PixelChange[] = [];
+    for (const k of keys) {
+      if (key === 'flags') {
+        const i = Number(k);
+        if (i >= 0 && i < sheet.count) sheet.flags[i] = (cells.get(k) ?? 0) & 0xff;
+        continue;
+      }
+      const [x, y] = parseCoord(k);
+      if (x < 0 || x >= sheet.width || y < 0 || y >= sheet.height) continue;
+      const colour = (cells.get(k) ?? 0) & 0xf;
+      sheet.pixels[y * sheet.width + x] = colour;
+      changes.push({ sheet: sheetId, x, y, colour });
+    }
+    if (key === 'flags')
+      this.flagListeners.forEach((l) => {
+        l();
+      });
+    else if (changes.length)
+      this.pixelListeners.forEach((l) => {
+        l(changes);
+      });
+  }
+
   private observeSheetCells(sheetId: string, key: 'pixels' | 'flags', cells: Y.Map<number>): void {
     cells.observe((e) => {
-      const sheet = this.sheets.find((s) => s.id === sheetId);
-      if (!sheet) return;
-      const changes: PixelChange[] = [];
-      e.changes.keys.forEach((_c, k) => {
-        if (key === 'flags') {
-          const i = Number(k);
-          if (i >= 0 && i < sheet.count) sheet.flags[i] = (cells.get(k) ?? 0) & 0xff;
-          return;
-        }
-        const [x, y] = parseCoord(k);
-        if (x < 0 || x >= sheet.width || y < 0 || y >= sheet.height) return;
-        const colour = (cells.get(k) ?? 0) & 0xf;
-        sheet.pixels[y * sheet.width + x] = colour;
-        changes.push({ sheet: sheetId, x, y, colour });
-      });
-      if (key === 'flags')
-        this.flagListeners.forEach((l) => {
-          l();
-        });
-      else if (changes.length)
-        this.pixelListeners.forEach((l) => {
-          l(changes);
-        });
+      this.tellCells(sheetId, key, cells, e.changes.keys.keys());
     });
   }
 
