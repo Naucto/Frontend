@@ -14,6 +14,7 @@ import { AuthStore } from '@app/core/auth/auth.store';
 import type { NetUiBridgeService } from '@app/core/net/net-bridge.service';
 import { PERM_CLIENT_READ, PERM_CLIENT_WRITE, resolveFlags } from '@app/core/net/net-permissions';
 import { GameScreenComponent } from '@app/shared/game-screen/game-screen.component';
+import { RuntimeHostService } from '@app/shared/game-screen/runtime-host.service';
 import { UserAvatarComponent } from '@app/shared/user-avatar.component';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { type SharedTableSession, type TableScalar } from '@naucto/engine';
@@ -536,6 +537,10 @@ function formatScalar(value: TableScalar | undefined): string {
       </nc-panel-column>
     </div>
   `,
+  // The rig is a second client, not a second view of ours. Without a runtime of its own its screen
+  // would resolve the shell's through nc-game-screen's SkipSelf reuse and remount the editor's
+  // engine — destroying the very session the rig was spawned to join.
+  providers: [RuntimeHostService],
   host: { class: 'block h-full' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
