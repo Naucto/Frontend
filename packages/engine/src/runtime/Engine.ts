@@ -154,7 +154,8 @@ export class Engine {
         getFlagBit: (i, b) => this.opts.game.getFlagBit(i, b),
         getTile: (x, y, i) => {
           const map = this.opts.game.maps[i];
-          if (!map) return 0;
+          // Bounds before the override lookup: its row-major key wraps across rows.
+          if (!map || x < 0 || x >= map.width || y < 0 || y >= map.height) return 0;
 
           return this.tileOverrides.get(map.id)?.get(y * map.width + x) ?? map.getTile(x, y);
         },

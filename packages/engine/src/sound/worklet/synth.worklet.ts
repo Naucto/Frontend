@@ -89,6 +89,7 @@ class NauctoSynthProcessor extends AudioWorkletProcessor {
         break;
       case 'mixer':
         this.synth.master = cmd.master;
+        if (cmd.music !== undefined) this.synth.musicLevel = cmd.music;
         if (cmd.sfx !== undefined) this.synth.sfxGain = cmd.sfx;
         break;
       case 'monitor':

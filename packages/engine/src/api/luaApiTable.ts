@@ -28,7 +28,7 @@ export const LUA_API: readonly LuaApiEntry[] = [
     ns: 'gfx',
     name: 'draw_sprite',
     signature: 'gfx.draw_sprite(n, x, y[, w, h, flip_h, flip_v, scale, transparent])',
-    summary: 'Draw w×h tiles starting at sprite n. Index 0 is the transparent one by default.',
+    summary: 'Draw w×h tiles starting at sprite n. Colour 0 is the transparent one by default.',
     legacy: 'sprite',
   },
   {
@@ -140,7 +140,7 @@ export const LUA_API: readonly LuaApiEntry[] = [
     ns: 'gfx',
     name: 'set_palette_row',
     signature: 'gfx.set_palette_row(row, colours)',
-    summary: 'Define screen palette row 1..15 (16 hex strings).',
+    summary: 'Define a screen palette row 0..15 (16 hex strings).',
   },
   {
     ns: 'gfx',
@@ -176,7 +176,7 @@ export const LUA_API: readonly LuaApiEntry[] = [
     ns: 'gfx',
     name: 'persist_effects',
     signature: 'gfx.persist_effects(on)',
-    summary: 'Keep row effects across gfx.clear().',
+    summary: 'Keep row effects from one frame to the next.',
   },
   { ns: 'gfx', name: 'width', signature: 'gfx.width()', summary: 'Screen width (320).' },
   { ns: 'gfx', name: 'height', signature: 'gfx.height()', summary: 'Screen height (180).' },
@@ -288,7 +288,7 @@ export const LUA_API: readonly LuaApiEntry[] = [
     ns: 'sound',
     name: 'play_sfx',
     signature: 'sound.play_sfx(slot[, channel, pitch_offset, volume])',
-    summary: 'Play SFX slot 0..15.',
+    summary: 'Play a numbered SFX slot.',
   },
   {
     ns: 'sound',
@@ -305,7 +305,7 @@ export const LUA_API: readonly LuaApiEntry[] = [
   {
     ns: 'sound',
     name: 'play_music',
-    signature: 'sound.play_music(song[, loop, fade_in])',
+    signature: 'sound.play_music([song, loop, fade_in])',
     summary: 'Start song slot 0..15 from the tracker.',
     legacy: 'play_music',
   },
@@ -362,8 +362,8 @@ export const LUA_API: readonly LuaApiEntry[] = [
   {
     ns: 'net',
     name: 'host',
-    signature: 'net.host([config], callback)',
-    summary: 'Open the host dialog; callback(session) when ready.',
+    signature: 'net.host([config, callback])',
+    summary: 'Open the host dialog; callback() once the session exists.',
   },
   { ns: 'net', name: 'join', signature: 'net.join(callback)', summary: 'Open the join dialog.' },
   { ns: 'net', name: 'leave', signature: 'net.leave()', summary: 'Leave the current session.' },
@@ -374,7 +374,12 @@ export const LUA_API: readonly LuaApiEntry[] = [
     signature: 'net.on(pattern, callback)',
     summary: 'React to net.state changes or events.',
   },
-  { ns: 'net', name: 'emit', signature: 'net.emit(name, payload)', summary: 'Broadcast an event.' },
+  {
+    ns: 'net',
+    name: 'emit',
+    signature: 'net.emit(name[, payload])',
+    summary: 'Broadcast an event.',
+  },
   { ns: 'net', name: 'lock', signature: 'net.lock()', summary: 'Create a replicated lock value.' },
   {
     ns: 'net',

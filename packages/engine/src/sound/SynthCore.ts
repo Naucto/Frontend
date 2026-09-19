@@ -61,7 +61,9 @@ export class SynthCore {
   readonly voices: Voice[] = Array.from({ length: VOICES }, newVoice);
   readonly samples = new Map<string, Float32Array>();
   master = 1;
+  /** The song's fade; `musicLevel` is the volume the game asks for. Both scale the music. */
   musicGain = 1;
+  musicLevel = 1;
   sfxGain = 1;
 
   constructor(readonly sampleRate: number) {}
@@ -168,7 +170,8 @@ export class SynthCore {
     const attackS = Math.max(1, env.attack * sr);
     const decayS = Math.max(1, env.decay * sr);
     const releaseS = Math.max(1, env.release * sr);
-    const gain = ins.volume * v.velocity * (v.priority > 0 ? this.sfxGain : this.musicGain);
+    const gain =
+      ins.volume * v.velocity * (v.priority > 0 ? this.sfxGain : this.musicGain * this.musicLevel);
     const panL = Math.cos(((ins.pan + 1) / 2) * (Math.PI / 2));
     const panR = Math.sin(((ins.pan + 1) / 2) * (Math.PI / 2));
     const arpSteps = v.arp;
