@@ -46,11 +46,42 @@ const MIN_GRID_PX = 6;
 const BLACK = new Set([1, 3, 6, 8, 10]);
 
 interface Drag {
-  mode: 'create' | 'move' | 'resize';
+  mode: 'create' | 'move' | 'resize-end' | 'resize-start';
   index: number;
   startStep: number;
   startPitch: number;
   original: Note;
+}
+
+/** Where a note stands after a drag reaches `pointer`, in steps; `unit` is the snap grain. */
+export interface NoteSpan {
+  step: number;
+  length: number;
+}
+
+/**
+ * How a note grows under the pointer, from the cell it was placed in or from one of its ends.
+ *
+ * A placed note is anchored on its cell: dragged right, its end follows the pointer; dragged left,
+ * its start does and the cell stays its end — so a note is drawn from either side of where it was
+ * put down. An end handle keeps the start, a start handle keeps the end, and neither lets the
+ * note shrink under a unit or leave the pattern. `pointer` is already snapped to the grid.
+ */
+export function grown(
+  o: NoteSpan,
+  pointer: number,
+  unit: number,
+  max: number,
+  mode: 'create' | 'resize-end' | 'resize-start',
+): NoteSpan {
+  const end = o.step + o.length;
+  if (mode === 'resize-start' || (mode === 'create' && pointer < o.step)) {
+    const anchor = mode === 'create' ? o.step + unit : end;
+    const step = Math.max(0, Math.min(pointer, anchor - unit));
+    return { step, length: anchor - step };
+  }
+  const to = Math.max(o.step + unit, pointer + unit);
+  return { step: o.step, length: Math.min(max - o.step, to - o.step) };
 }
 
 /** The pattern grid: pitches down, steps across; notes are painted with their instrument's colour. */
@@ -383,8 +414,9 @@ export class PianoRollComponent {
       const n = notes[index];
       if (!n) return;
       const nearEnd = (n.step + n.length - step) * this.stepW() <= 6;
+      const nearStart = !nearEnd && (step - n.step) * this.stepW() <= 6;
       this.drag = {
-        mode: nearEnd ? 'resize' : 'move',
+        mode: nearEnd ? 'resize-end' : nearStart ? 'resize-start' : 'move',
         index,
         startStep: step,
         startPitch: pitch,
@@ -430,12 +462,12 @@ export class PianoRollComponent {
     let n: Note;
     switch (d.mode) {
       case 'create':
-      case 'resize': {
-        const end = Math.max(
-          o.step + (this.snapUnit() || 1 / SUBSTEPS),
-          this.snapStep(step) + (this.snapUnit() || 1 / SUBSTEPS),
-        );
-        n = { ...o, length: Math.min(max - o.step, end - o.step) };
+      case 'resize-end':
+      case 'resize-start': {
+        n = {
+          ...o,
+          ...grown(o, this.snapStep(step), this.snapUnit() || 1 / SUBSTEPS, max, d.mode),
+        };
         break;
       }
       case 'move': {
