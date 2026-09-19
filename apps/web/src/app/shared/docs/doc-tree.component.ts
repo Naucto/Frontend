@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
-import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
+import { readJson, STORAGE_KEYS, writeJson } from '@app/core/storage/local-storage';
+import { TranslocoDirective } from '@jsverse/transloco';
 import { IconComponent, type IconName } from '@naucto/ui';
 
 import { type DocPage, DocsService } from './docs.service';
@@ -46,8 +47,11 @@ import { type DocPage, DocsService } from './docs.service';
                 @for (c of childrenOf(p); track c.id) {
                   <button
                     type="button"
-                    class="flex w-full items-center border-l-2 py-0.5 pl-3 text-left text-label hover:text-ink"
-                    [class]="c.id === fragment() ? 'border-gold text-gold-ink' : 'border-transparent text-ink-3'"
+                    class="flex w-full items-center border-l-2 py-0.5 text-left text-label hover:text-ink"
+                    [class]="
+                      (c.id === fragment() ? 'border-gold text-gold-ink' : 'border-transparent text-ink-3') +
+                      (c.sub ? ' pl-5' : ' pl-3')
+                    "
                     [attr.aria-current]="c.id === fragment() ? 'location' : null"
                     (click)="open.emit(p.slug + '#' + c.id)"
                   >
@@ -71,16 +75,39 @@ export class DocTreeComponent {
   /** A slug, with `#anchor` when a child of the page was chosen. */
   readonly open = output<string>();
   protected readonly docs = inject(DocsService);
-  private readonly i18n = inject(TranslocoService);
-  protected readonly collapsed = signal(new Set<string>());
+  protected readonly collapsed = signal(new Set(readJson<string[]>(STORAGE_KEYS.docsCollapsed, [])));
 
-  /** What a page unfolds into: its function cards, or failing those its sections. */
-  protected childrenOf(p: DocPage): { id: string; text: string; code: boolean }[] {
+  /**
+   * What a page unfolds into: its function cards, or failing those its sections, and under the
+   * section the reader is in, its sub-sections. The other sections keep theirs folded, or a long
+   * tutorial would list every step of every step.
+   */
+  protected childrenOf(p: DocPage): { id: string; text: string; code: boolean; sub: boolean }[] {
     if (p.apis.length)
-      return p.apis.map((name) => ({ id: name, text: name.split('.')[1] ?? name, code: true }));
-    return p.headings
-      .filter((h) => h.level === 2)
-      .map((h) => ({ id: h.id, text: h.text, code: false }));
+      return p.apis.map((name) => ({
+        id: name,
+        text: name.split('.')[1] ?? name,
+        code: true,
+        sub: false,
+      }));
+    const at = this.fragment();
+    let current: string | null = null;
+    for (const h of p.headings) {
+      if (h.level === 2) current = h.id;
+      if (h.id === at) break;
+    }
+    const open = p.headings.some((h) => h.id === at) ? current : null;
+    const out: { id: string; text: string; code: boolean; sub: boolean }[] = [];
+    let under: string | null = null;
+    for (const h of p.headings) {
+      if (h.level === 2) {
+        under = h.id;
+        out.push({ id: h.id, text: h.text, code: false, sub: false });
+      } else if (h.level === 3 && under === open) {
+        out.push({ id: h.id, text: h.text, code: false, sub: true });
+      }
+    }
+    return out;
   }
 
   /** Each section header takes the glyph the artboard draws on it. */
@@ -98,11 +125,8 @@ export class DocTreeComponent {
       const next = new Set(set);
       if (next.has(id)) next.delete(id);
       else next.add(id);
+      writeJson(STORAGE_KEYS.docsCollapsed, [...next]);
       return next;
     });
-  }
-
-  protected label(key: string): string {
-    return this.i18n.translate(key);
   }
 }
