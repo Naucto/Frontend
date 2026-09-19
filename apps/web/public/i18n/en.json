@@ -813,6 +813,8 @@
     "back": "Back",
     "insert": "Insert at cursor",
     "since": "since {{v}}",
+    "metaKind": "{{kind}} in {{ns}}",
+    "metaKindSince": "{{kind}} in {{ns}}, since {{v}}",
     "returns": "Returns",
     "nothing": "Nothing",
     "parameters": "Parameters",

@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
-import { DomSanitizer } from '@angular/platform-browser';
+import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { ButtonDirective, IconComponent } from '@naucto/ui';
 
 import { type ApiEntry } from './docs.service';
+import { signatureHtml, typeHtml } from './type-tone';
 
 /** One Lua API function: signature, description, params, notes, examples. Used by /learn and the DOC pane. */
 @Component({
@@ -12,10 +13,7 @@ import { type ApiEntry } from './docs.service';
   template: `
     <article *transloco="let t" class="api-card" [id]="entry().name">
       <div class="api-sig">
-        <code
-          ><span class="api-sig-name">{{ entry().name }}</span
-          ><span [innerHTML]="signatureRest()"></span
-        ></code>
+        <code [innerHTML]="signature()"></code>
         @if (insertable()) {
           <button
             ncButton
@@ -31,10 +29,13 @@ import { type ApiEntry } from './docs.service';
         }
       </div>
       <div class="api-meta">
-        {{ entry().name.split('.')[0] }} · {{ entry().kind }}
-        @if (entry().since) {
-          · {{ t('docs.since', { v: entry().since }) }}
-        }
+        {{
+          t(entry().since ? 'docs.metaKindSince' : 'docs.metaKind', {
+            kind: entry().kind,
+            ns: entry().name.split('.')[0],
+            v: entry().since,
+          })
+        }}
       </div>
       @if (entry().descriptionHtml) {
         <div class="doc-html api-prose" [innerHTML]="trust(entry().descriptionHtml)"></div>
@@ -48,12 +49,10 @@ import { type ApiEntry } from './docs.service';
             <div class="api-param">
               <dt>
                 <code>{{ p.name }}</code>
-                <span class="api-param-meta">
-                  {{ p.type }}
-                  @if (p.optional) {
-                    · {{ t('docs.optional') }}
-                  }
-                </span>
+                <span [innerHTML]="type(p.type)"></span>
+                @if (p.optional) {
+                  <span class="nc-opt">{{ t('docs.optional') }}</span>
+                }
               </dt>
               <dd class="doc-html" [innerHTML]="trust(p.descriptionHtml)"></dd>
             </div>
@@ -62,8 +61,8 @@ import { type ApiEntry } from './docs.service';
       }
       @if (entry().kind === 'function') {
         <div class="api-label">{{ t('docs.returns') }}</div>
-        @if (entry().returns) {
-          <p class="doc-html api-prose" [innerHTML]="trust(entry().returns ?? '')"></p>
+        @if (returns(); as html) {
+          <p class="doc-html api-prose" [innerHTML]="html"></p>
         } @else {
           <p class="api-prose api-quiet">{{ t('docs.nothing') }}</p>
         }
@@ -107,17 +106,21 @@ export class ApiCardComponent {
   readonly insert = output<ApiEntry>();
   readonly navigate = output<string>();
   private readonly sanitizer = inject(DomSanitizer);
-  protected readonly signatureRest = computed(() => {
-    const rest = (this.entry().signature || this.entry().name).replace(this.entry().name, '');
-    const html = rest
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/\[[^\]]*\]/g, (m) => `<span class="api-sig-opt">${m}</span>`);
-    return this.sanitizer.bypassSecurityTrustHtml(html);
-  });
 
   /** Docs HTML is built at compile time from our own repository; it never carries user input. */
-  protected trust(html: string): ReturnType<DomSanitizer['bypassSecurityTrustHtml']> {
+  protected trust(html: string): SafeHtml {
     return this.sanitizer.bypassSecurityTrustHtml(html);
   }
+
+  protected type(type: string): SafeHtml {
+    return this.trust(typeHtml(type));
+  }
+
+  protected readonly signature = computed(() => this.trust(signatureHtml(this.entry())));
+
+  protected readonly returns = computed(() => {
+    const { returns, returnType } = this.entry();
+    if (!returns) return null;
+    return this.trust(returnType ? `${typeHtml(returnType)} ${returns}` : returns);
+  });
 }

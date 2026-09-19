@@ -1,4 +1,5 @@
 import { type ApiEntry } from '@app/shared/docs/docs.service';
+import { signatureHtml, typeHtml } from '@app/shared/docs/type-tone';
 import { hoverTooltip, type Tooltip } from '@codemirror/view';
 
 export type ApiLookup = (name: string) => ApiEntry | null;
@@ -19,7 +20,8 @@ export function docCard(entry: ApiEntry, peers?: ApiPeers, active?: number): HTM
   dom.className = 'nc-doc-card';
   const sig = document.createElement('div');
   sig.className = 'nc-doc-card__sig';
-  sig.textContent = entry.signature;
+  // Markup of the repository's own docs, built at compile time: nothing a game wrote reaches it.
+  sig.innerHTML = signatureHtml(entry);
   const summary = document.createElement('div');
   summary.className = 'nc-doc-card__summary';
   summary.textContent = entry.summary;
@@ -29,7 +31,16 @@ export function docCard(entry: ApiEntry, peers?: ApiPeers, active?: number): HTM
     params.className = 'nc-doc-card__params';
     entry.params.forEach((p, i) => {
       const dt = document.createElement('dt');
-      dt.textContent = `${p.name} ${p.type}`;
+      const name = document.createElement('code');
+      name.textContent = p.name;
+      dt.append(name, ' ');
+      dt.insertAdjacentHTML('beforeend', typeHtml(p.type));
+      if (p.optional) {
+        const opt = document.createElement('span');
+        opt.className = 'nc-opt';
+        opt.textContent = 'optional';
+        dt.append(' ', opt);
+      }
       const dd = document.createElement('dd');
       dd.textContent = p.description;
       if (i === active) {
