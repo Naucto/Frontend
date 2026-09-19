@@ -380,7 +380,6 @@ const plainText = (html) =>
     .replace(/\s+/g, ' ')
     .trim();
 
-/** The page cut at its headings, so a search can say which part of it matched. */
 function sectionsOf(html) {
   const parts = html.split(/(?=<h[123] id=")/);
   const sections = [];

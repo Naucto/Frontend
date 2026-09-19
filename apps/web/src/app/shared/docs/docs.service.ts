@@ -21,7 +21,6 @@ export interface DocPage {
   /** The functions the page shows cards for, in page order; empty on a page of prose. */
   apis: string[];
   headings: DocHeading[];
-  /** The page cut at its headings: what a search can point at. */
   sections: { id: string; title: string; text: string }[];
   html: string;
   text: string;
@@ -75,7 +74,6 @@ export interface SearchHit {
   title: string;
   subtitle: string;
   slug: string;
-  /** The anchor on the page the hit points at, when it is a part of it rather than the whole. */
   fragment?: string;
   score: number;
   api?: ApiEntry;
@@ -142,10 +140,7 @@ export class DocsService {
     );
   }
 
-  /**
-   * Ranked: what the reader typed as a name beats what merely mentions it, and a page answers
-   * with the part of it that matched, so the hit lands on a heading rather than at the top.
-   */
+  /** A name typed outranks a mention of it; a page answers with the section that matched. */
   search(query: string, limit = 12): SearchHit[] {
     const q = query.trim().toLowerCase();
     if (!q) return [];
@@ -199,7 +194,6 @@ export class DocsService {
         offer({ kind: 'page', title: p.title, subtitle: snippet(p.text, q), slug: p.slug, score: 30 });
       if (best) hits.push(best);
     }
-    // A stable sort: two hits of one score keep the manifest's order.
     return hits.sort((a, b) => b.score - a.score).slice(0, limit);
   }
 }

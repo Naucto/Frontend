@@ -271,7 +271,6 @@ test.describe('editor', () => {
     await expect(dialog).toContainText('Copy to a new game?');
     await dialog.getByRole('button', { name: 'Copy', exact: true }).click();
     await expect(page).toHaveURL(/\/games\/new$/);
-    // The name is read and dropped by the page it lands on; the code waits for the editor.
     expect(await page.evaluate(() => sessionStorage.getItem('naucto.seed-code'))).toContain(
       'function _update',
     );
