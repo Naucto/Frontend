@@ -1,0 +1,11 @@
+function _draw()
+  gfx.clear(0)
+  gfx.draw_sprite(1, 48, 56, 1, 1, false, false, 4)
+  gfx.set_col(4, 5)
+  gfx.draw_sprite(1, 144, 56, 1, 1, false, false, 4)
+  gfx.reset_col()
+  gfx.draw_sprite(1, 240, 56, 1, 1, false, false, 4)
+  gfx.print("plain", 54, 100, 5)
+  gfx.print("set_col(4, 5)", 134, 100, 5)
+  gfx.print("reset_col()", 234, 100, 5)
+end

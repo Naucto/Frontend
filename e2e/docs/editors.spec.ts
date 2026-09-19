@@ -50,7 +50,29 @@ for (const theme of THEMES) {
       await shoot(page, 'art-palette', theme, section(page, 'Palette'));
       await page.getByRole('button', { name: 'Sheet size' }).click();
       await shoot(page, 'art-size-dialog', theme, page.getByRole('dialog'));
+      // Narrower: the sprites renumber, and the dialog says what follows them.
+      const width = page.getByRole('dialog').getByRole('textbox', { name: 'Width' });
+      await width.fill('64');
+      await width.press('Enter');
+      await page.getByRole('dialog').getByText(/map tiles follow/).waitFor();
+      await shoot(page, 'art-size-dialog-cost', theme, page.getByRole('dialog'));
       await page.keyboard.press('Escape');
+      await page.getByRole('button', { name: 'Presets' }).click();
+      await shoot(page, 'art-presets', theme, page.locator('nc-popover-panel'));
+      await page.keyboard.press('Escape');
+      // A selection on the player sprites, and the bar that flips and turns it.
+      await page.getByRole('switch', { name: 'Lock' }).click();
+      await page.getByRole('radio', { name: 'Select' }).click();
+      const canvas = await page.getByRole('img', { name: 'Sprite canvas' }).boundingBox();
+      if (!canvas) throw new Error('no canvas');
+      const px = canvas.width / 128;
+      await page.mouse.move(canvas.x + 1 * px, canvas.y + 1 * px);
+      await page.mouse.down();
+      await page.mouse.move(canvas.x + 30 * px, canvas.y + 7 * px, { steps: 6 });
+      await page.mouse.up();
+      const bar = page.getByRole('toolbar', { name: 'Transform the selection' });
+      await bar.waitFor();
+      await shoot(page, 'art-transform', theme, page.locator('nc-sprite-canvas'));
     });
 
     test('map', async ({ page }) => {
@@ -76,6 +98,45 @@ for (const theme of THEMES) {
       await page.waitForTimeout(300);
       await shoot(page, 'code-reference', theme);
       await shoot(page, 'code-reference-pane', theme, page.locator('nc-doc-pane'));
+      // Wide enough for the reference to stand beside the console instead of in its place.
+      await page.setViewportSize({ width: 1700, height: 900 });
+      await page.waitForTimeout(300);
+      await shoot(page, 'code-reference-split', theme);
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.getByRole('button', { name: 'Swap back to the game' }).click();
+      await page.locator('nc-doc-pane').waitFor({ state: 'hidden' });
+
+      // Find and replace, with a pattern.
+      await page.locator('.cm-content').click();
+      await page.keyboard.press('Control+f');
+      const search = page.locator('nc-search-bar');
+      await search.getByRole('checkbox', { name: 'Regexp' }).click();
+      await search.getByRole('textbox', { name: 'Find' }).fill('player\\.[xy]');
+      await search.getByRole('button', { name: 'Replace', exact: true }).click();
+      await search.getByRole('textbox', { name: 'Replace with' }).fill('me.$&');
+      await page.waitForTimeout(200);
+      await shoot(page, 'code-find', theme, search);
+      await page.keyboard.press('Escape');
+
+      // The signature of the call being written, argument in hand.
+      await page.locator('.cm-content').click();
+      await page.keyboard.press('Control+End');
+      await page.keyboard.type('\ngfx.draw_sprite(0, ');
+      const tip = page.locator('.cm-tooltip:has(.nc-doc-card__sig)');
+      await tip.waitFor();
+      await page.waitForTimeout(300);
+      await shoot(page, 'code-signature', theme, tip);
+      await page.keyboard.press('Escape');
+
+      // A runtime error: the line, the gutter, the status bar and the Console badge.
+      await page.keyboard.press('Control+a');
+      await page.keyboard.type(
+        'function _update()\n  local t = nil\n  t.x = 1\nend\nfunction _draw()\n  gfx.clear(0)\nend\n',
+      );
+      await page.getByRole('button', { name: 'Play' }).first().click();
+      await page.getByText('1 error').waitFor();
+      await page.waitForTimeout(300);
+      await shoot(page, 'code-error', theme);
     });
 
     test('sound', async ({ page }) => {
@@ -87,6 +148,13 @@ for (const theme of THEMES) {
       await shoot(page, 'sound-roll', theme, page.locator('nc-piano-roll'));
       await shoot(page, 'sound-inspector', theme, page.locator('nc-instrument-inspector'));
       await shoot(page, 'sound-sfx', theme, page.locator('nc-slot-grid').first());
+      // Five places filled with pattern 0 and one left empty: the orange hole the music stops at.
+      const cells = page.locator('nc-song-list [role="group"] input');
+      for (const i of [0, 1, 2, 4, 5]) {
+        await cells.nth(i).fill('0');
+        await cells.nth(i).press('Enter');
+      }
+      await page.waitForTimeout(200);
       await shoot(page, 'sound-music', theme, page.locator('nc-song-list'));
       await shoot(page, 'sound-transport', theme, page.locator('nc-transport').first());
       // The help bubble the "?" beside the SFX slots opens.
@@ -156,6 +224,27 @@ for (const theme of THEMES) {
       await page.getByRole('button', { name: 'Share' }).click();
       await shoot(page, 'game-share', theme, page.getByRole('dialog'));
       await page.keyboard.press('Escape');
+      await page.locator('header').getByRole('button', { name: 'Publish' }).click();
+      await shoot(page, 'game-publish', theme, page.getByRole('dialog'));
+      await page.keyboard.press('Escape');
+    });
+
+    test('the floating viewer', async ({ page }) => {
+      await page.goto('/edit/7/code');
+      await page.getByRole('tab', { name: 'main', exact: true }).waitFor();
+      await page.getByRole('button', { name: 'Play' }).first().click();
+      await page.getByRole('button', { name: 'Pop the viewer out' }).click();
+      await page.locator('nc-rail').getByRole('button', { name: 'Map' }).click();
+      await page.getByRole('img', { name: 'Map canvas' }).waitFor();
+      await page.waitForTimeout(600);
+      await shoot(page, 'viewer-floating', theme);
+    });
+
+    test('settings: controls', async ({ page }) => {
+      await page.goto('/settings/controls');
+      await page.locator('nc-controls-settings').waitFor();
+      await page.waitForTimeout(300);
+      await shoot(page, 'settings-controls', theme, page.locator('nc-controls-settings'));
     });
   });
 }
