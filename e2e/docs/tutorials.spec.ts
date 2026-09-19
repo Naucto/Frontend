@@ -5,7 +5,6 @@ import { type Locator, type Page, test } from '@playwright/test';
 import { mockEditor } from '../editor-mocks';
 import { grabFrame } from './frame';
 
-/** The pictures the Platformer tutorial shows of its own game, taken from the seeded copy of it. */
 const CONTENT_FILE = 'node_modules/.cache/docs-shots/platformer.bin';
 const OUT = 'docs/content/tutorials/img';
 const THEMES = ['dark', 'light'] as const;
