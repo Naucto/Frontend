@@ -28,7 +28,6 @@ const shoot = async (
   else await page.screenshot({ path });
 };
 
-/** A panel, found by the label it prints. */
 const section = (page: Page, title: string): Locator =>
   page.locator('nc-section').filter({ has: page.getByText(title, { exact: true }) }).first();
 
