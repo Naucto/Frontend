@@ -142,7 +142,7 @@ describe('SessionSignalingSocket', () => {
     FakeWebSocket.last().drop();
     await flushMicrotasks();
 
-    expect(refreshTicket).toHaveBeenCalled();
+    expect(refreshTicket).toHaveBeenCalledWith('ticket-1');
     expect(handle.closed).toBe(true);
   });
 });

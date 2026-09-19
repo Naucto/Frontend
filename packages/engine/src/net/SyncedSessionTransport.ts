@@ -33,7 +33,7 @@ export interface SyncedSessionTransportOptions {
    */
   relayOnly?: boolean;
 
-  refreshTicket: () => Promise<RefreshedTicket | null>;
+  refreshTicket: (current: string) => Promise<RefreshedTicket | null>;
 }
 
 type AnyListener = (...args: unknown[]) => void;

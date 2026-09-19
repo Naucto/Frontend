@@ -6,6 +6,7 @@
  */
 import {
   client,
+  type GameSessionConnectionResponseDto,
   type ProjectExResponseDto,
   userControllerUploadProfileBackground,
   userControllerUploadProfilePicture,
@@ -181,6 +182,23 @@ export const meApi = {
   }): Promise<void> => {
     await take<unknown>(client.delete({ url: '/users/me', body }));
   },
+};
+
+export const sessionsApi = {
+  /**
+   * Trade the ticket a transport holds for a fresh one.
+   *
+   * The generated operation sends no body, and the Backend then re-mints from the account: right
+   * for a player, wrong for the editor's test rig, which plays under a synthetic id that only its
+   * ticket remembers. Sending the ticket back keeps that identity across the refresh.
+   */
+  refreshTicket: async (
+    sessionId: string,
+    ticket: string,
+  ): Promise<GameSessionConnectionResponseDto> =>
+    take<GameSessionConnectionResponseDto>(
+      client.post({ url: `/game-sessions/${sessionId}/ticket`, body: { ticket } }),
+    ),
 };
 
 /** What a password must satisfy, so this app stops keeping a second copy of the rule. */

@@ -646,6 +646,7 @@
       "closeRig": "Close the second client",
       "rigWaiting": "Waiting for this client to call net.join().",
       "rigJoined": "Joined as a second player.",
+      "rigClient": "you (test client)",
       "ping": "ping",
       "latency": "Latency",
       "loss": "Loss",

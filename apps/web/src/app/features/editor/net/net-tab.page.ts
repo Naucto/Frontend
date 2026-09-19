@@ -576,6 +576,10 @@ export class NetTabPage {
     return i ? { uuid: i.uuid, code: i.joinCode } : null;
   });
   protected readonly rigJoined = computed(() => this.rigScreen()?.netBridge.session() !== null);
+  /** The id the rig plays under: its own, not the account's, so the two windows can be told apart. */
+  private readonly rigId = computed(
+    () => this.rigScreen()?.netBridge.session()?.selfUserId ?? null,
+  );
   /**
    * Only the host may reshape the *live* tree. A client's write goes through the host anyway, but a
    * rename is a delete plus a write, and half of that arriving is worse than neither.
@@ -817,6 +821,7 @@ export class NetTabPage {
 
   protected nameOf(userId: number): string {
     if (userId === this.me()) return this.auth.displayName();
+    if (userId === this.rigId()) return this.transloco.translate('editor.net.rigClient');
     return (
       this.work.collaborators().find((c) => c.userId === userId)?.name ?? `user ${String(userId)}`
     );

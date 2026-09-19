@@ -7,7 +7,6 @@ import {
   multiplayerControllerJoinByCode,
   multiplayerControllerLeave,
   multiplayerControllerList,
-  multiplayerControllerRefreshTicket,
   multiplayerControllerRemove,
   multiplayerControllerUpdate,
 } from '@naucto/api-client';
@@ -22,7 +21,7 @@ import {
 } from '@naucto/engine';
 
 import { unwrap } from '../api/api-errors';
-import { AuthStore } from '../auth/auth.store';
+import { sessionsApi } from '../api/planned.api';
 import { AppConfigService } from '../config/app-config';
 import { PresenceStore } from '../presence/presence.store';
 
@@ -59,7 +58,6 @@ export interface OpenSession {
  */
 @Injectable()
 export class NetUiBridgeService implements NetUi, OnDestroy {
-  private readonly auth = inject(AuthStore);
   private readonly config = inject(AppConfigService);
   private readonly presence = inject(PresenceStore);
   private transport: SyncedSessionTransport | null = null;
@@ -214,7 +212,6 @@ export class NetUiBridgeService implements NetUi, OnDestroy {
     role: SessionRole,
     meta: { maxPlayers: number; title: string },
   ): void {
-    const me = this.auth.userId() ?? conn.playerId;
     const signaling = conn.webrtcConfig.signaling[0];
     if (!signaling) throw new Error('session has no signaling endpoint');
     const iceServers: RTCIceServer[] = conn.webrtcConfig.peerOpts.config.iceServers.map((s) => ({
@@ -224,17 +221,20 @@ export class NetUiBridgeService implements NetUi, OnDestroy {
     }));
     const transport = new SyncedSessionTransport({
       role,
-      selfUserId: me,
+      // The id the ticket was minted for, which is what the relay addresses every frame by. It is
+      // the account id for everyone but the editor's test rig, which plays under a synthetic one.
+      selfUserId: conn.playerId,
       signalingUrl: this.config.reachable(signaling),
       ticket: conn.connectionTicket,
       ticketIssuedAt: Date.now(),
       iceServers,
       relayOnly: this.relayOnly(),
-      refreshTicket: async () => {
+      refreshTicket: async (current) => {
         try {
-          const fresh = unwrap(
-            await multiplayerControllerRefreshTicket({ path: { sessionId: conn.sessionUuid } }),
-          );
+          const fresh = await sessionsApi.refreshTicket(conn.sessionUuid, current);
+          // A ticket for another id would reconnect this transport as someone else, and the room
+          // would then hold two clients claiming one seat. Better to drop than to become them.
+          if (fresh.playerId !== conn.playerId) return null;
           return { ticket: fresh.connectionTicket, issuedAt: Date.now() };
         } catch {
           return null;

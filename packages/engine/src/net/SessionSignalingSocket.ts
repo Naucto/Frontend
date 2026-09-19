@@ -15,7 +15,12 @@ export interface SignalingSocketOptions {
   ticket: string;
   ticketIssuedAt: number;
 
-  refreshTicket: () => Promise<RefreshedTicket | null>;
+  /**
+   * Trade the ticket the socket holds for a fresh one. It is handed over because a ticket is
+   * minted for a connection, not for an account: the server can only keep this client's identity
+   * if it sees which ticket it is replacing.
+   */
+  refreshTicket: (current: string) => Promise<RefreshedTicket | null>;
   onFrame: (frame: InboundFrame) => void;
   onOpen: () => void;
   onClosed: () => void;
@@ -95,7 +100,7 @@ export class SessionSignalingSocket implements Destroyable {
 
   private async _scheduleReconnect(): Promise<void> {
     if (Date.now() - this._ticketIssuedAt >= TICKET_REFRESH_MS) {
-      const refreshed = await this._opts.refreshTicket();
+      const refreshed = await this._opts.refreshTicket(this._ticket);
 
       if (this._destroyed) return;
 
