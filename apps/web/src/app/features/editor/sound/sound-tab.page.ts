@@ -4,9 +4,11 @@ import {
   computed,
   DestroyRef,
   effect,
+  type ElementRef,
   inject,
   signal,
   untracked,
+  viewChild,
 } from '@angular/core';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import {
@@ -60,6 +62,12 @@ import { VoicesLaneComponent } from './voices-lane.component';
 
 const ZOOM_OCTAVES = Math.log2(MAX_ZOOM / MIN_ZOOM);
 
+/**
+ * The header's content width under which its captions go, the same threshold as the container
+ * query in its template: the query can hide a caption, but a number field's printed name is a
+ * binding, and a binding needs the width as a value.
+ */
+const BAR_CAPTIONS_MIN = 900;
 const BPM_MIN = 40;
 const BPM_MAX = 240;
 
@@ -151,8 +159,14 @@ const PATTERN_MAX = 99;
 
       <section class="flex min-h-0 flex-col">
         @if (pattern(); as p) {
+          <!-- The roll column is what the instrument list and the inspector leave of the window,
+               and at a laptop width that is less than this bar's captions need. Below the width in
+               BAR_CAPTIONS_MIN the toggles drop their words and the number fields their printed
+               names; both keep their accessible name. Never wrapped: the bar's single baseline is
+               the one the other two columns share. -->
           <header
-            class="flex h-(--nc-bar-h) shrink-0 items-center gap-1 overflow-x-auto border-b border-line bg-panel px-2"
+            #bar
+            class="@container flex h-(--nc-bar-h) shrink-0 items-center gap-1 overflow-x-auto border-b border-line bg-panel px-2"
           >
             <!-- A number you type or step, not a menu: the design says so in its own words for
                  BPM and STEPS, and a pattern is the same kind of thing. The arrows walk the
@@ -160,7 +174,8 @@ const PATTERN_MAX = 99;
             <nc-number-field
               class="h-(--nc-transport-h) shrink-0"
               fill
-              [label]="t('editor.sound.pattern')"
+              [label]="compactBar() ? '' : t('editor.sound.pattern')"
+              [ariaLabel]="t('editor.sound.pattern')"
               [value]="p.slot"
               [max]="PATTERN_MAX"
               (requested)="sound.selectPattern($event)"
@@ -195,20 +210,22 @@ const PATTERN_MAX = 99;
             />
             <nc-toggle-button
               size="strip"
+              [label]="t('editor.sound.loop')"
               [checked]="sound.loop()"
               (checkedChange)="setLoop($event)"
             >
               <nc-icon name="repeat" [size]="24" />
-              {{ t('editor.sound.loop') }}
+              <span class="hidden @min-[900px]:inline">{{ t('editor.sound.loop') }}</span>
             </nc-toggle-button>
             <nc-toggle-button
               size="strip"
+              [label]="t('editor.sound.metronome')"
               [checked]="sound.metronome()"
               (checkedChange)="sound.setMetronome($event)"
               accent="jade"
             >
               <nc-icon name="metronome" [size]="24" />
-              {{ t('editor.sound.metronome') }}
+              <span class="hidden @min-[900px]:inline">{{ t('editor.sound.metronome') }}</span>
             </nc-toggle-button>
             <span class="flex-1"></span>
             <!-- Number fields, not menus of blessed values: the sheet says so in its own words,
@@ -217,7 +234,8 @@ const PATTERN_MAX = 99;
             <nc-number-field
               class="h-(--nc-transport-h) shrink-0"
               fill
-              [label]="t('editor.sound.bpm')"
+              [label]="compactBar() ? '' : t('editor.sound.bpm')"
+              [ariaLabel]="t('editor.sound.bpm')"
               [value]="p.bpm"
               [min]="BPM_MIN"
               [max]="BPM_MAX"
@@ -226,7 +244,8 @@ const PATTERN_MAX = 99;
             <nc-number-field
               class="h-(--nc-transport-h) shrink-0"
               fill
-              [label]="t('editor.sound.steps')"
+              [label]="compactBar() ? '' : t('editor.sound.steps')"
+              [ariaLabel]="t('editor.sound.steps')"
               [value]="p.steps"
               [min]="STEP_SIZE"
               [max]="STEP_MAX"
@@ -406,6 +425,8 @@ export class SoundTabPage {
   protected readonly STEP_SIZE = STEP_SIZE;
   protected readonly STEP_MAX = STEP_MAX;
   protected readonly PATTERN_MAX = PATTERN_MAX;
+  private readonly bar = viewChild<ElementRef<HTMLElement>>('bar');
+  protected readonly compactBar = signal(false);
   protected readonly String = String;
   private readonly backend = new WebAudioBackend();
   private readonly engine = new SoundEngine(this.backend, this.session.game);
@@ -489,6 +510,19 @@ export class SoundTabPage {
           this.library.reconcilePatternSlots();
         });
       }
+    });
+    // The bar comes and goes with the pattern, so the observer follows the element, not the page.
+    effect((onCleanup) => {
+      const el = this.bar()?.nativeElement;
+      if (!el) return;
+      const ro = new ResizeObserver((entries) => {
+        const w = entries[0]?.contentRect.width;
+        if (w !== undefined) this.compactBar.set(w < BAR_CAPTIONS_MIN);
+      });
+      ro.observe(el);
+      onCleanup(() => {
+        ro.disconnect();
+      });
     });
     const game = this.session.game;
     this.undo = new Y.UndoManager(

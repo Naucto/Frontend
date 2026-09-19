@@ -116,3 +116,32 @@ for (const width of [1280, 1440]) {
     });
   });
 }
+
+/**
+ * The SOUND header sits in the roll column, which is what the instrument list and the inspector
+ * leave of the window. On a laptop its captions used to push the last fields past the column's
+ * edge, into a scroll nobody saw. 1920 is where the captions come back, and has to hold them.
+ */
+for (const width of [1280, 1440, 1920]) {
+  test.describe(`SOUND header (${String(width)}px)`, () => {
+    test.use({ viewport: { width, height: 900 } });
+
+    test('keeps the STEPS field inside the roll column', async ({ page }) => {
+      await mockEditor(page);
+      await page.goto('/edit/7/sound');
+      await page.getByRole('button', { name: 'Add instrument' }).first().click();
+      await page
+        .getByRole('dialog', { name: 'New instrument' })
+        .getByRole('button', { name: 'Custom' })
+        .click();
+      const steps = page.getByRole('textbox', { name: 'Steps' });
+      await expect(steps).toBeVisible();
+      const [field, bar] = await Promise.all([
+        steps.locator('xpath=ancestor::nc-number-field').boundingBox(),
+        steps.locator('xpath=ancestor::header').boundingBox(),
+      ]);
+      if (!field || !bar) throw new Error('header off screen');
+      expect(field.x + field.width).toBeLessThanOrEqual(bar.x + bar.width);
+    });
+  });
+}

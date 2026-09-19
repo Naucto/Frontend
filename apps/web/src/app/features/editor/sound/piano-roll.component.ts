@@ -60,12 +60,24 @@ export interface NoteSpan {
 }
 
 /**
+ * The cell a pointer is in, as the step it starts on: floored to the snap unit, or to the finest
+ * position the sequencer can sound when snapping is off. Floored, not rounded to the nearest line:
+ * a note starts or ends in the cell the pointer is in, and at a coarse grain the nearest line can
+ * be a whole bar away.
+ */
+export function cellStep(step: number, unit: number): number {
+  const grain = unit || 1 / SUBSTEPS;
+  return Math.floor(step / grain) * grain;
+}
+
+/**
  * How a note grows under the pointer, from the cell it was placed in or from one of its ends.
  *
  * A placed note is anchored on its cell: dragged right, its end follows the pointer; dragged left,
  * its start does and the cell stays its end — so a note is drawn from either side of where it was
  * put down. An end handle keeps the start, a start handle keeps the end, and neither lets the
- * note shrink under a unit or leave the pattern. `pointer` is already snapped to the grid.
+ * note shrink under a unit or leave the pattern. `pointer` is the cell the pointer is in (see
+ * {@link cellStep}), so a note dragged to the middle of a cell ends after that cell, not the next.
  */
 export function grown(
   o: NoteSpan,
@@ -185,6 +197,8 @@ export class PianoRollComponent {
   /** Where the head sits and which step it is over, or null while nothing is playing. */
   protected readonly playheadAt = computed(() => {
     const ph = this.playhead();
+    // `ph` is the position that is sounding, 0-based; the flag is the same step as people count
+    // them, from 1.
     return ph === null ? null : { x: Math.floor(ph * this.stepW()), step: Math.floor(ph) + 1 };
   });
   /**
@@ -327,11 +341,7 @@ export class PianoRollComponent {
   private newNote(step: number): { step: number; length: number } {
     const unit = this.snapUnit();
     const length = unit || 1 / SUBSTEPS;
-    // Floored, not rounded to the nearest line: a note starts in the cell you clicked, and at a
-    // coarse grain the nearest line can be a whole bar away. Free placement has no cell to start
-    // in, so there it follows the pointer onto the finest position that will sound.
-    const start = unit ? Math.floor(step / unit) * unit : this.snapStep(step);
-    return { step: Math.min(start, this.pattern().steps - length), length };
+    return { step: Math.min(cellStep(step, unit), this.pattern().steps - length), length };
   }
 
   /** The same position as `cellOf`, unsnapped on both axes. */
@@ -466,7 +476,13 @@ export class PianoRollComponent {
       case 'resize-start': {
         n = {
           ...o,
-          ...grown(o, this.snapStep(step), this.snapUnit() || 1 / SUBSTEPS, max, d.mode),
+          ...grown(
+            o,
+            cellStep(step, this.snapUnit()),
+            this.snapUnit() || 1 / SUBSTEPS,
+            max,
+            d.mode,
+          ),
         };
         break;
       }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { grown } from './piano-roll.component';
+import { cellStep, grown } from './piano-roll.component';
 
 const placed = { step: 8, length: 1 };
 
@@ -39,5 +39,23 @@ describe('grown', () => {
     const note = { step: 4, length: 6 };
     expect(grown(note, 2, 1, 32, 'resize-start')).toEqual({ step: 2, length: 8 });
     expect(grown(note, 20, 1, 32, 'resize-start')).toEqual({ step: 9, length: 1 });
+  });
+});
+
+describe('cellStep', () => {
+  it('floors the pointer to the cell it is in', () => {
+    expect(cellStep(3.5, 1)).toBe(3);
+    expect(cellStep(10, 4)).toBe(8);
+  });
+
+  it('floors to the finest sounding position when snapping is off', () => {
+    expect(cellStep(3.3, 0)).toBe(3.25);
+  });
+
+  it('ends a dragged note after the cell the pointer is in, not the next one', () => {
+    expect(grown({ step: 1, length: 1 }, cellStep(3.5, 1), 1, 32, 'create')).toEqual({
+      step: 1,
+      length: 3,
+    });
   });
 });
