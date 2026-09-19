@@ -374,6 +374,28 @@ function headingsOf(html) {
   }));
 }
 
+const plainText = (html) =>
+  html
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+/** The page cut at its headings, so a search can say which part of it matched. */
+function sectionsOf(html) {
+  const parts = html.split(/(?=<h[123] id=")/);
+  const sections = [];
+  for (const part of parts) {
+    const head = /^<h([123]) id="([^"]+)">(.*?)<\/h\1>/.exec(part);
+    if (!head) continue;
+    sections.push({
+      id: head[2],
+      title: stripTags(head[3]),
+      text: plainText(part.slice(head[0].length)),
+    });
+  }
+  return sections;
+}
+
 // ---- walk ---------------------------------------------------------------------
 async function* walk(dir) {
   for (const e of await readdir(dir, { withFileTypes: true })) {
@@ -425,11 +447,9 @@ for await (const file of walk(resolve(docs, 'content'))) {
     assets,
     apis,
     headings: headingsOf(html),
+    sections: sectionsOf(html),
     html,
-    text: html
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim(),
+    text: plainText(html),
   });
 }
 

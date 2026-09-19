@@ -71,7 +71,7 @@ import { DocRequestService } from './doc-request.service';
             @for (h of hits(); track h.slug + h.title) {
               <button type="button" role="option"
                 aria-selected="false" class="block w-full border-b border-line py-1 text-left hover:text-ink" (click)="openHit(h)">
-                <div class="truncate text-meta" [class]="h.kind === 'api' ? 'font-mono text-gold-ink' : 'text-ink'">{{ h.title }}</div>
+                <div class="truncate text-meta" [class]="h.kind === 'api' ? 'font-mono text-gold-ink' : 'text-ink'"><nc-highlight [text]="h.title" [match]="query()" /></div>
                 <div class="truncate text-label text-ink-4">{{ h.subtitle }}</div>
               </button>
             }
@@ -186,7 +186,7 @@ export class DocPaneComponent {
   protected openHit(h: SearchHit): void {
     this.query.set('');
     if (h.api) this.show(h.api.name);
-    else this.openPage(h.slug);
+    else this.openPage(h.fragment ? `${h.slug}#${h.fragment}` : h.slug);
   }
 
   protected navigate(target: string): void {

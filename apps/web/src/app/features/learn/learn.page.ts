@@ -25,6 +25,7 @@ import { TranslocoDirective } from '@jsverse/transloco';
 import {
   ButtonDirective,
   EmptyStateComponent,
+  HighlightComponent,
   IconComponent,
   SearchComponent,
   shortcutLabel,
@@ -41,6 +42,7 @@ import {
     SearchComponent,
     DocArticleComponent,
     DocTreeComponent,
+    HighlightComponent,
   ],
   template: `
     <div *transloco="let t" class="grid gap-4 lg:grid-cols-[240px_minmax(0,1fr)_200px]">
@@ -67,7 +69,7 @@ import {
                   class="truncate text-meta"
                   [class]="h.kind === 'api' ? 'font-mono text-gold-ink' : 'text-ink'"
                 >
-                  {{ h.title }}
+                  <nc-highlight [text]="h.title" [match]="query()" />
                 </div>
                 <div class="truncate text-label text-ink-4">{{ h.subtitle }}</div>
               </button>
@@ -188,7 +190,12 @@ export class LearnPage {
 
   protected openHit(h: SearchHit): void {
     this.query.set('');
-    void this.router.navigate(['/learn', ...h.slug.split('/')], { fragment: h.api?.name });
+    const fragment = h.fragment ?? h.api?.name;
+    void this.router
+      .navigate(['/learn', ...h.slug.split('/')], fragment ? { fragment } : undefined)
+      .then(() => {
+        if (fragment) this.reveal(fragment);
+      });
   }
 
   /** Links from rendered pages: "/learn/x#y" paths or "gfx.clear" api refs. */

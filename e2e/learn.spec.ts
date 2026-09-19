@@ -54,6 +54,36 @@ test.describe('learn', () => {
     await expect(page.getByRole('option').first()).toContainText('sound.play_sfx');
   });
 
+  test('ranks a name over a mention, and lands a page hit on its section', async ({ page }) => {
+    await page.goto('/learn');
+    const search = page.getByPlaceholder('Search', { exact: true });
+    await search.fill('camera');
+    await expect(page.getByRole('option').first()).toContainText('gfx.camera');
+
+    await search.fill('heavier one every eight');
+    const hit = page.getByRole('option').first();
+    await expect(hit).toContainText('MAP');
+    await expect(hit).toContainText('Grid and Flags');
+    await hit.click();
+    await expect(page).toHaveURL(/\/learn\/editors\/map#grid-and-flags$/);
+    await expect(page.locator('#grid-and-flags')).toBeInViewport();
+  });
+
+  test('the tree unfolds the sub-sections of the section being read, and keeps its folds', async ({
+    page,
+  }) => {
+    await page.goto('/learn/tutorials/platformer#draw-the-seven-sprites');
+    const tree = page.getByRole('navigation', { name: 'Learn' });
+    await expect(tree.getByRole('button', { name: 'Draw the seven sprites' })).toBeVisible();
+    await expect(tree.getByRole('button', { name: 'Input', exact: true })).toHaveCount(0);
+
+    await tree.getByRole('button', { name: 'API reference' }).click();
+    await expect(tree.getByRole('button', { name: 'Rendering', exact: true })).toBeHidden();
+    await page.reload();
+    await expect(tree.getByRole('button', { name: 'Build a Platformer Game' })).toBeVisible();
+    await expect(tree.getByRole('button', { name: 'Rendering', exact: true })).toBeHidden();
+  });
+
   /**
    * Both boxes used to advertise "/", and only the top bar listened for it — so the shortcut the
    * docs box showed you always put the caret somewhere else.

@@ -246,6 +246,37 @@ test.describe('editor', () => {
     await page.screenshot({ path: 'test-results/v-editor-reference-split.png' });
   });
 
+  test('the reference searches to a section, and copies a tutorial into a new game', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1920, height: 1030 });
+    await page.goto('/edit/7/code');
+    await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+    await page.keyboard.press('F1');
+    const pane = page.locator('nc-doc-pane');
+    await expect(pane).toBeVisible();
+
+    const search = pane.getByPlaceholder('Search', { exact: true });
+    await search.fill('heavier one every eight');
+    const hit = pane.getByRole('option').first();
+    await expect(hit).toContainText('Grid and Flags');
+    await hit.click();
+    await expect(pane.locator('#grid-and-flags')).toBeInViewport();
+    await expect(pane.getByText('MAP', { exact: true }).first()).toBeVisible();
+
+    await search.fill('Your First Game');
+    await pane.getByRole('option').first().click();
+    await pane.getByRole('button', { name: 'Copy to new game' }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toContainText('Copy to a new game?');
+    await dialog.getByRole('button', { name: 'Copy', exact: true }).click();
+    await expect(page).toHaveURL(/\/games\/new$/);
+    // The name is read and dropped by the page it lands on; the code waits for the editor.
+    expect(await page.evaluate(() => sessionStorage.getItem('naucto.seed-code'))).toContain(
+      'function _update',
+    );
+  });
+
   test('the reference takes the console’s place when there is not', async ({ page }) => {
     await page.setViewportSize({ width: 1400, height: 1030 });
     await page.goto('/edit/7/code');
