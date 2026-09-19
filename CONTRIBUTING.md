@@ -10,4 +10,7 @@
 5. **Pull requests**: fill the template, attach screenshots for UI work, request at least one human
    reviewer, answer each review round with a new commit (no force-push once reviewed).
 6. **Docs**: if you change the engine API, update `docs/` (the submodule) and bump its pointer in the
-   same PR; the parity test fails otherwise.
+   same PR; the parity test fails otherwise. A change under `packages/engine/src/api`,
+   `apps/web/src/app/features/editor` or `apps/web/src/app/shared/netplay` runs `ndc map <files>`
+   from the `naucto-docs` skill (`~/.claude/skills/naucto-docs/bin/ndc`) and updates the pages it
+   names; `npm run docs:shots` retakes the captures.

@@ -198,6 +198,17 @@ const GAMES: SeedGame[] = [
   },
   {
     author: 'alexis',
+    name: 'Your First Game',
+    shortDesc: 'A one-screen coin hunt, the ten-minute tutorial.',
+    longDesc: 'Walls to walk into, five coins to collect, a score and a win.',
+    tags: ['tutorial', 'remixable'],
+    sprite: LANDER,
+    tutorial: 'first-game',
+    withSound: false,
+    comments: [],
+  },
+  {
+    author: 'alexis',
     name: 'Platformer Tutorial',
     shortDesc: 'A tiny run-and-jump, built as a tutorial.',
     longDesc: 'Every system in one screen: sprites, a map, collision, and a jump that feels right.',

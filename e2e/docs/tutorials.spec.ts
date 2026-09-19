@@ -5,7 +5,9 @@ import { type Locator, type Page, test } from '@playwright/test';
 import { mockEditor } from '../editor-mocks';
 import { grabFrame, recordGif } from './frame';
 
-const CONTENT_FILE = 'node_modules/.cache/docs-shots/platformer.bin';
+/** The tutorial games the pass pictures, each seeded from its own page by `docs:shots`. */
+const GAMES = ['platformer', 'first-game'] as const;
+const contentOf = (game: string): string => `node_modules/.cache/docs-shots/${game}.bin`;
 const OUT = 'docs/content/tutorials/img';
 const THEMES = ['dark', 'light'] as const;
 
@@ -24,11 +26,12 @@ const shoot = async (
 const section = (page: Page, title: string): Locator =>
   page.locator('nc-section').filter({ has: page.getByText(title, { exact: true }) }).first();
 
-for (const theme of THEMES) {
-  test.describe(`platformer tutorial (${theme})`, () => {
-    test.beforeEach(async ({ page }) => {
-      await mockEditor(page, { theme, content: readFileSync(CONTENT_FILE) });
-    });
+for (const game of GAMES)
+  for (const theme of THEMES) {
+    test.describe(`${game} tutorial (${theme})`, () => {
+      test.beforeEach(async ({ page }) => {
+        await mockEditor(page, { theme, content: readFileSync(contentOf(game)) });
+      });
 
     test('art: the ground tile and its flag', async ({ page }) => {
       await page.goto('/edit/7/art');
@@ -41,8 +44,8 @@ for (const theme of THEMES) {
       await page.keyboard.press('ArrowDown');
       await page.keyboard.press('ArrowDown');
       await page.waitForTimeout(500);
-      await shoot(page, 'platformer-art', theme);
-      await shoot(page, 'platformer-flags', theme, section(page, 'Flags'));
+      await shoot(page, `${game}-art`, theme);
+      await shoot(page, `${game}-flags`, theme, section(page, 'Flags'));
     });
 
     test('map: the level under the Flags overlay', async ({ page }) => {
@@ -51,22 +54,23 @@ for (const theme of THEMES) {
       await page.getByRole('switch', { name: 'Flags' }).click();
       await page.mouse.move(0, 0);
       await page.waitForTimeout(500);
-      await shoot(page, 'platformer-map', theme);
+      await shoot(page, `${game}-map`, theme);
     });
   });
-}
+  }
 
-test('frame: the game as it starts', async ({ page }) => {
-  await mockEditor(page, { content: readFileSync(CONTENT_FILE) });
-  await page.goto('/edit/7/code');
-  await page.locator('nc-game-screen canvas').first().waitFor();
-  await page.getByRole('button', { name: 'Play' }).first().click();
-  await page.waitForTimeout(1200);
-  await grabFrame(page, `${OUT}/frames/platformer.png`);
-});
+for (const game of GAMES)
+  test(`frame: ${game} as it starts`, async ({ page }) => {
+    await mockEditor(page, { content: readFileSync(contentOf(game)) });
+    await page.goto('/edit/7/code');
+    await page.locator('nc-game-screen canvas').first().waitFor();
+    await page.getByRole('button', { name: 'Play' }).first().click();
+    await page.waitForTimeout(1200);
+    await grabFrame(page, `${OUT}/frames/${game}.png`);
+  });
 
 test('animation: the player runs and jumps', async ({ page }) => {
-  await mockEditor(page, { content: readFileSync(CONTENT_FILE) });
+  await mockEditor(page, { content: readFileSync(contentOf('platformer')) });
   await page.goto('/edit/7/code');
   await page.locator('nc-game-screen canvas').first().waitFor();
   await page.getByRole('button', { name: 'Play' }).first().click();
