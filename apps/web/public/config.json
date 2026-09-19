@@ -1,0 +1,11 @@
+{
+  "apiUrl": "http://localhost:3000",
+  "google": { "clientId": "", "redirectUri": "http://localhost:3001/oauth/google/callback" },
+  "github": { "clientId": "", "redirectUri": "http://localhost:3001/oauth/callback" },
+  "microsoft": {
+    "clientId": "",
+    "tenantId": "common",
+    "redirectUri": "http://localhost:3001/oauth/microsoft/callback"
+  },
+  "docsEnabled": true
+}

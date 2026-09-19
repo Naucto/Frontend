@@ -1,17 +1,17 @@
 version: 2
 updates:
-  - package-ecosystem: "npm"
-    directory: "/"
-    schedule:
-      interval: "weekly"
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: weekly }
     open-pull-requests-limit: 10
     groups:
-      production-dependencies:
-        dependency-type: "production"
-      development-dependencies:
-        dependency-type: "development"
-
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
+      angular: { patterns: ['@angular/*', 'angular-eslint', '@ngrx/*'] }
+      codemirror: { patterns: ['@codemirror/*', 'y-codemirror.next', '@lezer/*'] }
+      yjs: { patterns: ['yjs', 'y-*'] }
+      tooling: { dependency-type: development }
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+  - package-ecosystem: gitsubmodule
+    directory: /
+    schedule: { interval: weekly }

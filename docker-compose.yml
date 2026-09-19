@@ -1,3 +1,4 @@
+# Production-style run of the frontend alone (the real stack lives in Production-Environment).
 networks:
   naucto:
     name: naucto
@@ -8,22 +9,22 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        BACKEND_URL: ${VITE_BACKEND_URL}
-        VITE_MICROSOFT_CLIENT_ID: ${VITE_MICROSOFT_CLIENT_ID:-}
-        VITE_MICROSOFT_TENANT_ID: ${VITE_MICROSOFT_TENANT_ID:-}
-        VITE_MICROSOFT_REDIRECT_URI: ${VITE_MICROSOFT_REDIRECT_URI:-}
-        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
-        VITE_GOOGLE_REDIRECT_URI: ${VITE_GOOGLE_REDIRECT_URI:-}
-        VITE_GITHUB_CLIENT_ID: ${VITE_GITHUB_CLIENT_ID:-}
-        VITE_GITHUB_REDIRECT_URI: ${VITE_GITHUB_REDIRECT_URI:-}
-    volumes:
-      - .:/app:cached
-      - node_modules:/app/node_modules:cached
+      secrets:
+        - npm_token
+    environment:
+      APP_API_URL: ${APP_API_URL:-http://localhost:3000}
+      APP_GOOGLE_CLIENT_ID: ${APP_GOOGLE_CLIENT_ID:-}
+      APP_GOOGLE_REDIRECT_URI: ${APP_GOOGLE_REDIRECT_URI:-}
+      APP_GITHUB_CLIENT_ID: ${APP_GITHUB_CLIENT_ID:-}
+      APP_GITHUB_REDIRECT_URI: ${APP_GITHUB_REDIRECT_URI:-}
+      APP_MICROSOFT_CLIENT_ID: ${APP_MICROSOFT_CLIENT_ID:-}
+      APP_MICROSOFT_TENANT_ID: ${APP_MICROSOFT_TENANT_ID:-common}
+      APP_MICROSOFT_REDIRECT_URI: ${APP_MICROSOFT_REDIRECT_URI:-}
     ports:
-      - "3001:80"
+      - '3001:80'
     networks:
       - naucto
 
-volumes:
-  node_modules: {}
+secrets:
+  npm_token:
+    environment: NPM_TOKEN

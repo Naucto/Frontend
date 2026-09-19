@@ -1,0 +1,2066 @@
+import type { Locator, Page } from '@playwright/test';
+
+import { mockEditor } from './editor-mocks';
+import { expect, test } from './fixtures';
+
+test.use({ viewport: { width: 1920, height: 1030 } });
+
+/**
+ * How much art the sheet holds, read off the navigator.
+ *
+ * The panel used to print a count of used sprites and no longer does — a slot count was never what
+ * the ART tab was about, and the size gauge says what a game weighs. Counting the opaque pixels of
+ * the map it draws observes the same thing without asking the page to say it in words.
+ */
+async function inked(page: Page): Promise<number> {
+  return page.evaluate(() => {
+    const canvas = document.querySelector('nc-sheet-view canvas');
+    if (!(canvas instanceof HTMLCanvasElement)) return -1;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return -1;
+    const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    let n = 0;
+    for (let i = 3; i < data.length; i += 4) if (data[i] !== 0) n += 1;
+    return n;
+  });
+}
+
+/**
+ * The RGB of a rectangle of the frame the game last presented, read back the way a cover grab
+ * reads it: through the engine, which presents the frame again into a target of its own.
+ *
+ * Copying the canvas is not an option. Its drawing buffer is not kept past compositing, and the
+ * loop presents only on the frames it stepped, so there is no animation frame in which a copy
+ * reliably holds the picture.
+ */
+async function screenPixels(
+  page: Page,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+): Promise<number[]> {
+  return page.evaluate(
+    (rect: { x: number; y: number; w: number; h: number }) => {
+      const screen = document.querySelector('nc-game-screen');
+      if (!screen) throw new Error('no game screen');
+      const { ng } = window as unknown as { ng: { getComponent(el: Element): unknown } };
+      const view = ng.getComponent(screen) as {
+        host: { screenshot(): Uint8ClampedArray | null };
+      } | null;
+      const rgba = view?.host.screenshot();
+      if (!rgba) throw new Error('no frame');
+      const out: number[] = [];
+      for (let j = 0; j < rect.h; j++)
+        for (let i = 0; i < rect.w; i++) {
+          const o = ((rect.y + j) * 320 + rect.x + i) * 4;
+          out.push(rgba[o] ?? 0, rgba[o + 1] ?? 0, rgba[o + 2] ?? 0);
+        }
+      return out;
+    },
+    { x, y, w, h },
+  );
+}
+
+/** Whether the screen pixel at (x, y) is brighter than the cleared background. */
+async function lit(page: Page, x: number, y: number): Promise<boolean> {
+  const [r = 0, g = 0, b = 0] = await screenPixels(page, x, y, 1, 1);
+  return r + g + b > 120;
+}
+
+/** The SOUND tab's + button, answered with a blank instrument. */
+const addInstrument = async (page: Page): Promise<void> => {
+  await page.getByRole('button', { name: 'Add instrument' }).first().click();
+  await page
+    .getByRole('dialog', { name: 'New instrument' })
+    .getByRole('button', { name: 'Custom' })
+    .click();
+};
+
+test.describe('editor', () => {
+  test.beforeEach(async ({ page }) => {
+    await mockEditor(page);
+  });
+
+  test('GAME tab binds the project meta', async ({ page }) => {
+    await page.goto('/edit/7/game');
+    await expect(page.getByRole('textbox', { name: 'Name' })).toHaveValue('Platformer');
+    await expect(page.getByText('Forked from')).toBeVisible();
+    await page.screenshot({ path: 'test-results/v-editor-game.png' });
+  });
+
+  /**
+   * The names live in the document, not in the tab: leaving for CODE tears the page down, and the
+   * word is still there on the way back. Asserted in one page load because the mock holds the
+   * document in the page only.
+   */
+  test('GAME tab names the controls, and the document keeps the name across tabs', async ({
+    page,
+  }) => {
+    await page.goto('/edit/7/game');
+    const jump = page.getByRole('textbox', { name: 'a', exact: true });
+    await expect(jump).toHaveValue('');
+    await jump.fill('Jump');
+    await jump.press('Enter');
+    await page.locator('nc-rail').getByRole('button', { name: 'Code' }).click();
+    await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+    await page.locator('nc-rail').getByRole('button', { name: 'Game' }).click();
+    await expect(page.getByRole('textbox', { name: 'a', exact: true })).toHaveValue('Jump');
+  });
+
+  test('CODE tab runs the starter game', async ({ page }) => {
+    await page.goto('/edit/7/code');
+    await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+    await expect(page.getByText('Welcome to Naucto!').first()).toBeVisible();
+    await page.screenshot({ path: 'test-results/v-editor-code.png' });
+  });
+
+  /**
+   * Same class-order trap as the nav link, in the place it is hardest to see: the active file tab's
+   * gold cap resolved to `transparent` because `border-t-transparent` and `border-t-gold` were both
+   * on the element. A tab strip with no cap still looks deliberate, which is why this is pinned.
+   */
+  test('the active file tab wears its gold cap', async ({ page }) => {
+    await page.goto('/edit/7/code');
+    const tab = page.getByRole('tab', { name: 'main', exact: true });
+    await expect(tab).toBeVisible();
+
+    // Scoped to this tab, not to `[role=tab][aria-selected=true]`: the console strip carries a
+    // selected tab too, and a document-wide query reads whichever the DOM happens to order first.
+    const cap = await tab.evaluate((el) => getComputedStyle(el).borderTopColor);
+    const gold = await page.evaluate(() => {
+      const probe = document.createElement('span');
+      document.body.appendChild(probe);
+      probe.style.color = 'var(--color-gold)';
+      const value = getComputedStyle(probe).color;
+      probe.remove();
+      return value;
+    });
+
+    expect(cap).toBe(gold);
+  });
+
+  /**
+   * The present pass used one row number for two things — the scanline table and the frame it
+   * samples — so every game came out mirrored top to bottom, for as long as there have been games.
+   *
+   * The starter draws a 16x16 moon at (152, 82). Its top row is solid and its bottom row is empty,
+   * which is the cheapest asymmetry there is to read back.
+   */
+  test('the screen is not mirrored top to bottom', async ({ page }) => {
+    await page.goto('/edit/7/code');
+    await expect(page.getByText('Welcome to Naucto!').first()).toBeVisible();
+
+    // Opening the editor mounts the game and runs `_init` — which is what prints the greeting —
+    // but does not start it, so nothing has called `_draw` yet and the screen is still blank.
+    await page.getByRole('button', { name: 'Play' }).first().click();
+
+    // Wait for the moon to be somewhere — either end will do — so that a blank canvas cannot pass
+    // for a mirrored one.
+    await expect
+      .poll(async () => (await lit(page, 159, 82)) || (await lit(page, 159, 97)))
+      .toBe(true);
+
+    // Row 0 of the sprite is solid and row 15 is empty. Mirrored, these swap.
+    expect({ top: await lit(page, 159, 82), bottom: await lit(page, 159, 97) }).toEqual({
+      top: true,
+      bottom: false,
+    });
+  });
+
+  test('ART tab gives the canvas the console’s width, and paints with the pen', async ({
+    page,
+  }) => {
+    await page.goto('/edit/7/art');
+    const canvas = page.getByRole('img', { name: 'Sprite canvas' });
+    await expect(canvas).toBeVisible();
+
+    // The console is CODE's own sidebar: on a canvas tab there is nothing to unfold.
+    await expect(page.getByRole('button', { name: 'Clear' })).toHaveCount(0);
+    await expect(page.getByText('Viewer · 320×180')).toHaveCount(0);
+
+    // Off, or the stroke never reaches the sheet: the lock holds a stroke inside the region, which
+    // starts as the single sprite in hand. The old assertion here counted used slots and passed
+    // with the stroke clipped away, so the test never checked the half of its name that paints.
+    await page.getByRole('switch', { name: 'Lock' }).click();
+
+    // Drawn before the viewer is floated, because the pip lands over the canvas and would take
+    // the stroke instead.
+    const before = await inked(page);
+    const box = await canvas.boundingBox();
+    expect(box).not.toBeNull();
+    if (box) {
+      await page.mouse.move(box.x + 40, box.y + 40);
+      await page.mouse.down();
+      await page.mouse.move(box.x + 300, box.y + 200, { steps: 10 });
+      await page.mouse.up();
+    }
+    await expect.poll(() => inked(page)).not.toBe(before);
+
+    // The viewer is floated from the console's own header, so it is opened where the console is.
+    await page.goto('/edit/7/code');
+    await page.getByRole('button', { name: 'Pop the viewer out' }).click();
+    await page.goto('/edit/7/art');
+    await expect(page.getByText('Viewer · 320×180')).toBeVisible();
+
+    await page.screenshot({ path: 'test-results/v-editor-art.png' });
+  });
+
+  /**
+   * Cropped, the canvas is the region, so every coordinate in it carries the region's origin. A
+   * stroke that lands on the wrong pixels looks right while it happens and paints out of sight.
+   */
+  test('ART paints the pixel under the pointer while cropped', async ({ page }) => {
+    await page.goto('/edit/7/art');
+    const canvas = page.getByRole('img', { name: 'Sprite canvas' });
+    await expect(canvas).toBeVisible();
+
+    await page.getByRole('switch', { name: /crop/i }).click();
+    // Away from the sheet's origin, so an unoffset coordinate would miss.
+    await page.getByRole('img', { name: /Sheet map/ }).click({ position: { x: 130, y: 90 } });
+
+    const before = await inked(page);
+    const box = await canvas.boundingBox();
+    expect(box).not.toBeNull();
+    if (box) {
+      await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    }
+    await expect.poll(() => inked(page)).not.toBe(before);
+  });
+
+  /**
+   * Artboard 1c, "the screen is always on". Wide enough and the reference sits beside the console,
+   * which keeps the running game; below that it takes the console's place and the game is paused,
+   * which is the one arrangement where GAME PAUSED means anything.
+   */
+  test('the reference opens beside the game when there is room', async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 1030 });
+    await page.goto('/edit/7/code');
+    await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+
+    // Closed: the console column has the screen and there is no reference.
+    await expect(page.locator('nc-doc-pane')).toHaveCount(0);
+    await expect(page.getByText('320×180').first()).toBeVisible();
+
+    await page.keyboard.press('F1');
+
+    // Split: both. The game is NOT displaced — that is the whole point.
+    await expect(page.locator('nc-doc-pane')).toBeVisible();
+    await expect(page.getByText('320×180').first()).toBeVisible();
+    await expect(page.getByText('Game paused — swap back to resume')).toHaveCount(0);
+
+    // Beside, not above. Presence alone passed happily while a runtime-built grid class Tailwind
+    // had never generated left all four columns stacked down the page.
+    const pane = await page.locator('nc-panel-region > div').first().boundingBox();
+    const console_ = await page.locator('nc-console-column').boundingBox();
+    expect(pane).not.toBeNull();
+    expect(console_).not.toBeNull();
+    if (pane && console_) {
+      expect(pane.x + pane.width).toBeLessThanOrEqual(console_.x + 1);
+      expect(pane.y).toBeCloseTo(console_.y, 0);
+      expect(Math.round(pane.width)).toBe(401);
+      expect(Math.round(console_.width)).toBe(421);
+    }
+
+    await page.screenshot({ path: 'test-results/v-editor-reference-split.png' });
+  });
+
+  test('the reference searches to a section, and copies a tutorial into a new game', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1920, height: 1030 });
+    await page.goto('/edit/7/code');
+    await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+    await page.keyboard.press('F1');
+    const pane = page.locator('nc-doc-pane');
+    await expect(pane).toBeVisible();
+
+    const search = pane.getByPlaceholder('Search', { exact: true });
+    await search.fill('heavier one every eight');
+    const hit = pane.getByRole('option').first();
+    await expect(hit).toContainText('Grid and Flags');
+    await hit.click();
+    await expect(pane.locator('#grid-and-flags')).toBeInViewport();
+    await expect(pane.getByText('MAP', { exact: true }).first()).toBeVisible();
+
+    await search.fill('Your First Game');
+    await pane.getByRole('option').first().click();
+    await pane.getByRole('button', { name: 'Copy to new game' }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toContainText('Copy to a new game?');
+    await dialog.getByRole('button', { name: 'Copy', exact: true }).click();
+    await expect(page).toHaveURL(/\/games\/new$/);
+    expect(await page.evaluate(() => sessionStorage.getItem('naucto.seed-code'))).toContain(
+      'function _update',
+    );
+  });
+
+  test('the reference reads without a horizontal scroll at its 401 px', async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 1030 });
+    await page.goto('/edit/7/code');
+    await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+    await page.keyboard.press('F1');
+    const pane = page.locator('nc-doc-pane');
+    const search = pane.getByPlaceholder('Search', { exact: true });
+    const scroller = pane.locator('.overflow-auto').first();
+    const overflow = (): Promise<number> =>
+      scroller.evaluate((el) => Math.max(0, el.scrollWidth - el.clientWidth));
+
+    await search.fill('Rendering');
+    await pane.getByRole('option').first().click();
+    await expect(pane.locator('figure.doc-diagram--authored svg').first()).toBeVisible();
+    expect(await overflow()).toBe(0);
+    // The API card: signature band, parameters as a list, see-also chips, and no legacy line.
+    const card = pane.locator('article.api-card#gfx\\.set_color');
+    await expect(card.locator('.api-sig-name')).toHaveText('gfx.set_color');
+    await expect(card.locator('dl.api-params dt').first()).toBeVisible();
+    await expect(card.locator('.api-ref-chip').first()).toBeVisible();
+    await expect(pane.getByText('Legacy name')).toHaveCount(0);
+
+    await search.fill('SOUND');
+    await pane.getByRole('option').first().click();
+    await expect(pane.locator('figure.doc-figure img').first()).toBeVisible();
+    expect(await overflow()).toBe(0);
+  });
+
+  test('the reference takes the console’s place when there is not', async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 1030 });
+    await page.goto('/edit/7/code');
+    await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+
+    await page.keyboard.press('F1');
+
+    // Swap: the reference is here, the viewer is not, and the banner explains why.
+    await expect(page.locator('nc-doc-pane')).toBeVisible();
+    await expect(page.getByText('Game paused — swap back to resume')).toBeVisible();
+
+    await page.screenshot({ path: 'test-results/v-editor-reference-swap.png' });
+  });
+
+  /** There is no DOC tab and no DOC button — the design has neither. */
+  /**
+   * Too narrow for both, the sidebar holds one or the other and its grip is the way across. It used
+   * to be a one-way door: the reference could be dismissed and only a keystroke brought it back.
+   */
+  test('the sidebar swaps both ways where there is room for one', async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 1030 });
+    await page.goto('/edit/7/code');
+    await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+
+    await expect(page.locator('nc-doc-pane')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Swap to the reference' }).click();
+    await expect(page.locator('nc-doc-pane')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Swap back to the game' }).click();
+    await expect(page.locator('nc-doc-pane')).toHaveCount(0);
+    await expect(page.getByText('320×180').first()).toBeVisible();
+  });
+
+  test('the console grip unfolds the reference where both fit', async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 1030 });
+    await page.goto('/edit/7/code');
+    await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+
+    await expect(page.getByRole('button', { name: 'Swap to the reference' })).toHaveCount(0);
+    await page.getByRole('button', { name: 'Open the reference' }).click();
+
+    await expect(page.locator('nc-doc-pane')).toBeVisible();
+    // Beside, not instead: the running game is still there.
+    await expect(page.getByText('320×180').first()).toBeVisible();
+  });
+
+  test('the reference stays on CODE and does not follow the reader to a canvas', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1920, height: 1030 });
+    await page.goto('/edit/7/code');
+    await page.getByRole('button', { name: 'Open the reference' }).click();
+    await expect(page.locator('nc-doc-pane')).toBeVisible();
+
+    for (const tab of ['game', 'art', 'map', 'sound', 'net']) {
+      await page.goto(`/edit/7/${tab}`);
+      await expect(page.locator('nc-doc-pane')).toHaveCount(0);
+      await expect(page.locator('nc-edge-handle')).toHaveCount(0);
+      await expect(page.getByText('Game paused')).toHaveCount(0);
+
+      await page.keyboard.press('F1');
+      await expect(page.locator('nc-doc-pane')).toHaveCount(0);
+    }
+
+    // The wish survives the detour, so coming back does not mean asking again.
+    await page.goto('/edit/7/code');
+    await expect(page.locator('nc-doc-pane')).toBeVisible();
+  });
+
+  test('the reference is closed from its own edge, not from a tab', async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 1030 });
+    await page.goto('/edit/7/code');
+    await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+
+    await expect(page.getByRole('button', { name: 'DOC' })).toHaveCount(0);
+    await expect(page.getByRole('tab', { name: 'DOC' })).toHaveCount(0);
+
+    await page.keyboard.press('F1');
+    await expect(page.locator('nc-doc-pane')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Close the reference' }).click();
+    await expect(page.locator('nc-doc-pane')).toHaveCount(0);
+    await expect(page.getByText('320×180').first()).toBeVisible();
+  });
+
+  /**
+   * Read as pixels because the frame is drawn rather than laid out — and nothing else on this map
+   * answers to zoom, the region it also draws being unchanged by it, so a difference here is the
+   * frame or nothing.
+   */
+  /**
+   * Onion ghosts the frame before this one underneath it. Uncropped, that frame is already on
+   * screen beside the current one, so the control has nothing to offer and is not drawn.
+   */
+  test('ONION is offered only where the sheet is cropped away', async ({ page }) => {
+    await page.goto('/edit/7/art');
+    await expect(page.getByRole('img', { name: 'Sprite canvas' })).toBeVisible();
+
+    const onion = page.getByRole('switch', { name: /Onion/ });
+    await expect(onion).toHaveCount(0);
+
+    await page.getByRole('switch', { name: /Crop/ }).click();
+    await expect(onion).toBeVisible();
+  });
+
+  /**
+   * The middle button drags the view by exactly the pointer's own distance, on both surfaces
+   * that scroll: pixel for pixel, with nothing snapped to a cell or a tile on the way.
+   */
+  const pansByHand = async (page: Page, well: Locator): Promise<void> => {
+    // Zoomed in until there is room to move both ways, then put somewhere in the middle: a zoom
+    // lands the view wherever it keeps its centre, which is nowhere a delta can be read from.
+    const room = (): Promise<number> =>
+      well.evaluate((el) =>
+        Math.min(el.scrollWidth - el.clientWidth, el.scrollHeight - el.clientHeight),
+      );
+    for (let i = 0; i < 8 && (await room()) < 400; i++) {
+      await page.getByRole('button', { name: 'Zoom in' }).click();
+    }
+    expect(await room()).toBeGreaterThanOrEqual(400);
+    // After the frame the zoom lays the view out in, which is when it writes its own offsets.
+    await page.evaluate(
+      () =>
+        new Promise((done) => {
+          requestAnimationFrame(() => requestAnimationFrame(done));
+        }),
+    );
+    await well.evaluate((el) => {
+      el.scrollLeft = 200;
+      el.scrollTop = 150;
+    });
+    await expect.poll(() => well.evaluate((el) => el.scrollLeft)).toBe(200);
+    const box = await well.boundingBox();
+    if (!box) throw new Error('well off screen');
+    const cx = box.x + box.width / 2;
+    const cy = box.y + box.height / 2;
+    await page.mouse.move(cx, cy);
+    await page.mouse.down({ button: 'middle' });
+    await page.mouse.move(cx - 120, cy - 80, { steps: 6 });
+    await page.mouse.up({ button: 'middle' });
+    await expect.poll(() => well.evaluate((el) => el.scrollLeft)).toBe(320);
+    await expect.poll(() => well.evaluate((el) => el.scrollTop)).toBe(230);
+  };
+
+  test('a middle drag pans the sheet by the distance the pointer moved', async ({ page }) => {
+    await page.goto('/edit/7/art');
+    await expect(page.getByRole('img', { name: 'Sprite canvas' })).toBeVisible();
+    await pansByHand(page, page.locator('nc-sprite-canvas'));
+  });
+
+  test('a middle drag pans the map by the distance the pointer moved', async ({ page }) => {
+    await page.goto('/edit/7/map');
+    await expect(page.getByRole('img', { name: 'Map canvas' })).toBeVisible();
+    await pansByHand(page, page.locator('nc-map-canvas'));
+  });
+
+  /** Read as a fraction of the content, which is the thing a zoom changes the size of. */
+  test('zooming the sheet keeps what was in the middle', async ({ page }) => {
+    await page.goto('/edit/7/art');
+    const well = page.locator('nc-sprite-canvas');
+    await expect(page.getByRole('img', { name: 'Sprite canvas' })).toBeVisible();
+
+    // Far enough in that the sheet overflows the well, and away from the middle so holding it means
+    // something.
+    for (let i = 0; i < 5; i++) await page.getByRole('button', { name: 'Zoom in' }).click();
+    await well.evaluate((el) => {
+      el.scrollLeft = el.scrollWidth * 0.7;
+      el.scrollTop = el.scrollHeight * 0.7;
+    });
+
+    const middle = async (): Promise<number> =>
+      well.evaluate((el) =>
+        Math.round(((el.scrollLeft + el.clientWidth / 2) / el.scrollWidth) * 100),
+      );
+    const before = await middle();
+    await page.getByRole('button', { name: 'Zoom in' }).click();
+
+    await expect.poll(middle).toBe(before);
+  });
+
+  test('the sheet map follows a zoom, not only a scroll', async ({ page }) => {
+    await page.goto('/edit/7/art');
+    await expect(page.getByRole('img', { name: 'Sprite canvas' })).toBeVisible();
+
+    // The frame of what the canvas is showing: the one dashed rectangle on the map, and the only
+    // mark on it that a zoom moves. Read off its own geometry rather than off the painted pixels —
+    // the map's canvas holds the sheet and nothing else, and a zoom does not touch the sheet.
+    //
+    // Its area, not either side: the well is wider than it is tall, so the first step in takes the
+    // frame off the bottom of the sheet while it still spans the full width.
+    const frame = page.locator('nc-sheet-view rect[stroke-dasharray]');
+    const area = async (): Promise<number> =>
+      Number(await frame.getAttribute('width')) * Number(await frame.getAttribute('height'));
+
+    const before = await area();
+    expect(before).toBeGreaterThan(0);
+    await page.getByRole('button', { name: 'Zoom in' }).click();
+    // In, so it shows less of the sheet, so the frame covers less of the map.
+    await expect.poll(area).toBeLessThan(before);
+  });
+
+  test('typing does not put the editor into a syncing state', async ({ page }) => {
+    await page.goto('/edit/7/code');
+    const bar = page.getByRole('status');
+    // Opening writes once, and that write really is in flight: wait it out, or what follows is
+    // measured against the arrival rather than against a settled editor.
+    await expect(bar).toHaveText(/Synced/, { timeout: 15_000 });
+
+    await page.locator('.cm-content').click();
+    await page.keyboard.type('-- a note');
+    // The keystrokes have to have landed, or what follows says nothing.
+    await expect(page.locator('.cm-content')).toContainText('-- a note');
+
+    // Neither of the two things the strip must not say here: not syncing, which would mean a
+    // request per keystroke, and not synced, which would claim the server holds text it has never
+    // been sent.
+    await expect(bar).toHaveText(/Unsaved changes/);
+  });
+
+  /**
+   * The documentation of the call being written, which is the moment it is worth reading. Pinned
+   * on the argument too: the card is only useful if it tracks which one the caret is on.
+   */
+  test('the signature card follows the caret through a call', async ({ page }) => {
+    await page.goto('/edit/7/code');
+    await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+    await page.locator('.cm-content').click();
+    await page.keyboard.press('Control+End');
+    await page.keyboard.type('\ngfx.draw_sprite(');
+
+    const card = page.locator('.nc-doc-card');
+    await expect(card).toBeVisible();
+    await expect(card.locator('.nc-doc-card__sig')).toHaveText(/gfx\.draw_sprite/);
+    await expect(card.locator('.nc-doc-card__params dt[data-active]')).toHaveText(/^n /);
+
+    await page.keyboard.type('0, ');
+    await expect(card.locator('.nc-doc-card__params dt[data-active]')).toHaveText(/^x /);
+
+    // Closing the call ends the question, so the card goes.
+    await page.keyboard.press('End');
+    await page.keyboard.type(')');
+    await expect(card).toHaveCount(0);
+  });
+
+  /**
+   * A call with eight documented arguments writes a paragraph for each, and the card used to be
+   * taller than the window and leave by the top of it.
+   */
+  test('the signature card stays on screen and shows the argument being typed', async ({
+    page,
+  }) => {
+    await page.goto('/edit/7/code');
+    await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+    await page.locator('.cm-content').click();
+    await page.keyboard.press('Control+End');
+    await page.keyboard.type('\ngfx.draw_sprite(0, 0, 0, 0, 0, ');
+
+    const card = page.locator('.nc-doc-card');
+    const active = card.locator('.nc-doc-card__params dt[data-active]');
+    await expect(active).toBeVisible();
+
+    // The card is its own tooltip element, and CodeMirror parks one at -10000px until the measure
+    // pass that places it. Waited for, or the box read below is the parked one.
+    await expect.poll(async () => (await card.boundingBox())?.y ?? -1).toBeGreaterThanOrEqual(0);
+
+    const box = await card.boundingBox();
+    const arg = await active.boundingBox();
+    const height = page.viewportSize()?.height ?? 0;
+    expect(box).not.toBeNull();
+    expect(arg).not.toBeNull();
+    if (!box || !arg) return;
+    expect(box.y).toBeGreaterThanOrEqual(0);
+    expect(box.y + box.height).toBeLessThanOrEqual(height);
+    // Scrolled to, not merely present: the sixth of eight arguments is past the fold, which the
+    // scroll offset below is what proves.
+    expect(arg.y).toBeGreaterThanOrEqual(box.y);
+    expect(arg.y + arg.height).toBeLessThanOrEqual(box.y + box.height);
+    const scroll = await card.evaluate((el) => ({
+      top: el.scrollTop,
+      hidden: el.scrollHeight - el.clientHeight,
+    }));
+    expect(scroll.hidden).toBeGreaterThan(0);
+    expect(scroll.top).toBeGreaterThan(0);
+  });
+
+  /** The documentation cannot answer for a project's own function; its arguments have names. */
+  test('the signature card answers for a function the project declares', async ({ page }) => {
+    await page.goto('/edit/7/code');
+    await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+    await page.locator('.cm-content').click();
+    await page.keyboard.press('Control+End');
+    await page.keyboard.type('\nfunction spawn_coin(tile_x, tile_y)\nend\n');
+    await page.keyboard.type('spawn_coin(');
+
+    const sig = page.locator('.nc-doc-card__sig');
+    await expect(sig).toBeVisible();
+    await expect(sig).toHaveText('spawn_coin(tile_x, tile_y)');
+    await expect(sig.locator('[data-active]')).toHaveText('tile_x');
+  });
+
+  /** A paste that merged with the stroke before it would take both back at once. */
+  test('ART copies a selection and pastes it as one undo step', async ({ page }) => {
+    await page.goto('/edit/7/art');
+    const canvas = page.getByRole('img', { name: 'Sprite canvas' });
+    await expect(canvas).toBeVisible();
+
+    // Off, or the paste below is clipped to the sprite in hand: the lock stops a paste where it
+    // stops a stroke.
+    await page.getByRole('switch', { name: 'Lock' }).click();
+
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('no canvas');
+    await page.mouse.move(box.x + 40, box.y + 40);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 90, box.y + 90, { steps: 6 });
+    await page.mouse.up();
+    const painted = await inked(page);
+
+    await page.getByRole('radio', { name: 'Select' }).click();
+    await page.mouse.move(box.x + 30, box.y + 30);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 100, box.y + 100, { steps: 4 });
+    await page.mouse.up();
+    await page.keyboard.press('Control+c');
+
+    await page.mouse.move(box.x + 200, box.y + 160);
+    await page.keyboard.press('Control+v');
+    // Placed, not written: what it covers is still underneath until it is settled.
+    await expect.poll(() => inked(page)).toBe(painted);
+
+    await page.keyboard.press('Enter');
+    await expect.poll(() => inked(page)).not.toBe(painted);
+    const pasted = await inked(page);
+
+    await page.keyboard.press('Control+z');
+    await expect.poll(() => inked(page)).toBe(painted);
+    expect(pasted).not.toBe(painted);
+  });
+
+  /**
+   * The gesture the keyboard tests cannot make. Clicking a toolbar button is what takes the pointer
+   * off the canvas, and the paste used to anchor on the pointer -- so by the only route a button
+   * can take, it landed on the selection it came from, or nowhere at all.
+   */
+  test('ART pastes from the toolbar, with no pointer on the canvas', async ({ page }) => {
+    await page.goto('/edit/7/art');
+    const canvas = page.getByRole('img', { name: 'Sprite canvas' });
+    await expect(canvas).toBeVisible();
+    await page.getByRole('switch', { name: 'Lock' }).click();
+
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('no canvas');
+    await page.mouse.move(box.x + 40, box.y + 40);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 90, box.y + 90, { steps: 6 });
+    await page.mouse.up();
+
+    await page.getByRole('radio', { name: 'Select' }).click();
+    await page.mouse.move(box.x + 30, box.y + 30);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 100, box.y + 100, { steps: 4 });
+    await page.mouse.up();
+    const painted = await inked(page);
+
+    await page.getByRole('button', { name: 'Copy', exact: true }).click();
+    await page.getByRole('button', { name: 'Paste', exact: true }).click();
+    await expect.poll(() => inked(page)).toBe(painted);
+
+    await page.keyboard.press('Enter');
+    await expect.poll(() => inked(page)).not.toBe(painted);
+  });
+
+  test('ART throws a placed paste away on Escape, leaving nothing to undo', async ({ page }) => {
+    await page.goto('/edit/7/art');
+    const canvas = page.getByRole('img', { name: 'Sprite canvas' });
+    await expect(canvas).toBeVisible();
+    await page.getByRole('switch', { name: 'Lock' }).click();
+
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('no canvas');
+    await page.mouse.move(box.x + 40, box.y + 40);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 90, box.y + 90, { steps: 6 });
+    await page.mouse.up();
+    const painted = await inked(page);
+
+    await page.getByRole('button', { name: 'Copy', exact: true }).click();
+    await page.getByRole('button', { name: 'Paste', exact: true }).click();
+    await page.keyboard.press('Escape');
+    await expect.poll(() => inked(page)).toBe(painted);
+
+    // Nothing was written, so the undo reaches past the paste to the stroke before it.
+    await page.keyboard.press('Control+z');
+    await expect.poll(() => inked(page)).not.toBe(painted);
+  });
+
+  test('ART flips a selection horizontally as one undo step', async ({ page }) => {
+    await page.goto('/edit/7/art');
+    const canvas = page.getByRole('img', { name: 'Sprite canvas' });
+    await expect(canvas).toBeVisible();
+    // Off, so the selection below is not clipped to the sprite in hand.
+    await page.getByRole('switch', { name: 'Lock' }).click();
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('no canvas');
+    const bar = page.getByRole('toolbar', { name: 'Transform the selection' });
+
+    /** The centre of a sheet pixel: the canvas is the whole sheet, drawn at a whole scale. */
+    const s = box.width / 128;
+    const at = (cx: number, cy: number): { x: number; y: number } => ({
+      x: box.x + (cx + 0.5) * s,
+      y: box.y + (cy + 0.5) * s,
+    });
+    /** The status line is the only reading of a single pixel the page offers. */
+    const colUnder = async (cx: number, cy: number): Promise<string> => {
+      const p = at(cx, cy);
+      await page.mouse.move(p.x, p.y);
+      // The readout follows the pointer, not the sheet: a nudge makes it read the pixel again.
+      await page.mouse.move(p.x + 1, p.y);
+      const text = await page.getByText(/X \d+ Y \d+/).textContent();
+      return /COL (\d+)/.exec(text ?? '')?.[1] ?? '';
+    };
+
+    // Two pixels on the left of a 4×2 region, so a flip has somewhere to send them.
+    await page.mouse.click(at(2, 4).x, at(2, 4).y);
+    await page.mouse.click(at(3, 4).x, at(3, 4).y);
+    expect(await colUnder(2, 4)).not.toBe('00');
+    expect(await colUnder(5, 4)).toBe('00');
+    await expect(bar).toHaveCount(0);
+
+    await page.getByRole('radio', { name: 'Select' }).click();
+    await page.mouse.move(at(2, 4).x, at(2, 4).y);
+    await page.mouse.down();
+    await page.mouse.move(at(5, 5).x, at(5, 5).y, { steps: 4 });
+    await page.mouse.up();
+    await expect(bar).toBeVisible();
+
+    await bar.getByRole('button', { name: 'Flip horizontally' }).click();
+    await expect.poll(() => colUnder(5, 4)).not.toBe('00');
+    expect(await colUnder(4, 4)).not.toBe('00');
+    expect(await colUnder(2, 4)).toBe('00');
+
+    await page.keyboard.press('Control+z');
+    await expect.poll(() => colUnder(2, 4)).not.toBe('00');
+    expect(await colUnder(5, 4)).toBe('00');
+  });
+
+  test('MAP copies a selection of tiles and pastes it as one undo step', async ({ page }) => {
+    await page.goto('/edit/7/map');
+    const canvas = page.getByRole('img', { name: 'Map canvas' });
+    await expect(canvas).toBeVisible();
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('no canvas');
+
+    /** The status line is the only reading of a single tile the page offers. */
+    const sprUnder = async (x: number, y: number): Promise<string> => {
+      await page.mouse.move(x, y);
+      const text = await page.getByText(/TILE \d+,\d+/).textContent();
+      return /SPR (\d+)/.exec(text ?? '')?.[1] ?? '';
+    };
+
+    /**
+     * Where the paste lands: the middle of the well, not of the map. `boundingBox()` on the canvas
+     * gives the whole map, most of which is scrolled out of sight.
+     */
+    const wellMiddle = async (): Promise<{ x: number; y: number }> =>
+      page.evaluate(() => {
+        const el = document.querySelector('nc-map-canvas');
+        if (!el) throw new Error('no well');
+        const r = el.getBoundingClientRect();
+        return { x: r.x + el.clientWidth / 2, y: r.y + el.clientHeight / 2 };
+      });
+
+    await page.mouse.move(box.x + 60, box.y + 60);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 120, box.y + 100, { steps: 6 });
+    await page.mouse.up();
+    expect(await sprUnder(box.x + 90, box.y + 80)).not.toBe('000');
+
+    await page.getByRole('radio', { name: 'Select' }).click();
+    await page.mouse.move(box.x + 50, box.y + 50);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 130, box.y + 110, { steps: 4 });
+    await page.mouse.up();
+    await page.keyboard.press('Control+c');
+
+    // Out of the stamp's reach, so what turns up there can only be the paste.
+    const target = { x: box.x + 340, y: box.y + 220 };
+    expect(await sprUnder(target.x, target.y)).toBe('000');
+
+    await page.keyboard.press('Control+v');
+    // Placed, not written: the map is untouched until the layer is settled.
+    expect(await sprUnder(target.x, target.y)).toBe('000');
+
+    // Placed in the middle of the well, and the move tool is already in hand: drag it out to a
+    // spot the stamp never reached, which is the only way what lands there can be the paste.
+    const middle = await wellMiddle();
+    await page.mouse.move(middle.x, middle.y);
+    await page.mouse.down();
+    await page.mouse.move(target.x, target.y, { steps: 6 });
+    await page.mouse.up();
+    await page.keyboard.press('Enter');
+    await expect.poll(() => sprUnder(target.x, target.y)).not.toBe('000');
+
+    await page.keyboard.press('Control+z');
+    await expect.poll(() => sprUnder(target.x, target.y)).toBe('000');
+  });
+
+  /**
+   * The gesture the keyboard test cannot make. Clicking a toolbar button is what takes the pointer
+   * off the canvas, and the paste used to anchor on the pointer -- so by the only route a button
+   * can take, it wrote the tiles back exactly where they came from and nothing appeared to happen.
+   */
+  test('MAP pastes from the toolbar, with no pointer on the canvas', async ({ page }) => {
+    await page.goto('/edit/7/map');
+    const canvas = page.getByRole('img', { name: 'Map canvas' });
+    await expect(canvas).toBeVisible();
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('no canvas');
+
+    const sprUnder = async (x: number, y: number): Promise<string> => {
+      await page.mouse.move(x, y);
+      const text = await page.getByText(/TILE \d+,\d+/).textContent();
+      return /SPR (\d+)/.exec(text ?? '')?.[1] ?? '';
+    };
+
+    /**
+     * Where the paste lands: the middle of the well, not of the map. `boundingBox()` on the canvas
+     * gives the whole map, most of which is scrolled out of sight.
+     */
+    const wellMiddle = async (): Promise<{ x: number; y: number }> =>
+      page.evaluate(() => {
+        const el = document.querySelector('nc-map-canvas');
+        if (!el) throw new Error('no well');
+        const r = el.getBoundingClientRect();
+        return { x: r.x + el.clientWidth / 2, y: r.y + el.clientHeight / 2 };
+      });
+
+    await page.mouse.move(box.x + 60, box.y + 60);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 120, box.y + 100, { steps: 6 });
+    await page.mouse.up();
+
+    await page.getByRole('radio', { name: 'Select' }).click();
+    await page.mouse.move(box.x + 50, box.y + 50);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 130, box.y + 110, { steps: 4 });
+    await page.mouse.up();
+
+    await page.getByRole('button', { name: 'Copy', exact: true }).click();
+    await page.getByRole('button', { name: 'Paste', exact: true }).click();
+
+    const target = { x: box.x + 340, y: box.y + 220 };
+    const middle = await wellMiddle();
+    await page.mouse.move(middle.x, middle.y);
+    await page.mouse.down();
+    await page.mouse.move(target.x, target.y, { steps: 6 });
+    await page.mouse.up();
+    await page.keyboard.press('Enter');
+
+    await expect.poll(() => sprUnder(target.x, target.y)).not.toBe('000');
+  });
+
+  /**
+   * A tile is a sprite number, so a turn moves tiles and never turns their pictures: the tile that
+   * was to the right ends up below, wearing the same number.
+   */
+  test('MAP rotates the arrangement of a selection', async ({ page }) => {
+    await page.goto('/edit/7/map');
+    const canvas = page.getByRole('img', { name: 'Map canvas' });
+    await expect(canvas).toBeVisible();
+    const bar = page.getByRole('toolbar', { name: 'Transform the selection' });
+
+    // A two-wide brush lays two different sprites in one press, which a rotation can be seen on.
+    const picker = page.getByRole('img', { name: 'Tile picker' });
+    const pick = await picker.boundingBox();
+    if (!pick) throw new Error('no picker');
+    const cell = pick.width / 16;
+    await page.mouse.move(pick.x + cell * 2.5, pick.y + cell * 1.5);
+    await page.mouse.down();
+    await page.mouse.move(pick.x + cell * 3.5, pick.y + cell * 1.5, { steps: 4 });
+    await page.mouse.up();
+
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('no canvas');
+    const t = box.width / 128;
+    const at = (tx: number, ty: number): { x: number; y: number } => ({
+      x: box.x + (tx + 0.5) * t,
+      y: box.y + (ty + 0.5) * t,
+    });
+    const sprUnder = async (tx: number, ty: number): Promise<string> => {
+      const p = at(tx, ty);
+      await page.mouse.move(p.x, p.y);
+      // The readout follows the pointer, not the map: a nudge makes it read the tile again.
+      await page.mouse.move(p.x + 1, p.y);
+      const text = await page.getByText(/TILE \d+,\d+ · SPR \d+/).textContent();
+      return /SPR (\d+)/.exec(text ?? '')?.[1] ?? '';
+    };
+
+    await page.mouse.click(at(2, 2).x, at(2, 2).y);
+    const left = await sprUnder(2, 2);
+    const right = await sprUnder(3, 2);
+    expect(left).not.toBe('000');
+    expect(right).not.toBe(left);
+    expect(await sprUnder(2, 3)).toBe('000');
+    await expect(bar).toHaveCount(0);
+
+    await page.getByRole('radio', { name: 'Select' }).click();
+    await page.mouse.move(at(2, 2).x, at(2, 2).y);
+    await page.mouse.down();
+    await page.mouse.move(at(3, 2).x, at(3, 2).y, { steps: 4 });
+    await page.mouse.up();
+    await expect(bar).toBeVisible();
+
+    await bar.getByRole('button', { name: 'Rotate clockwise' }).click();
+    await expect.poll(() => sprUnder(2, 3)).toBe(right);
+    expect(await sprUnder(2, 2)).toBe(left);
+    expect(await sprUnder(3, 2)).toBe('000');
+    await expect(page.getByText('128 × 32 tiles')).toBeVisible();
+
+    await page.keyboard.press('Control+z');
+    await expect.poll(() => sprUnder(3, 2)).toBe(right);
+    expect(await sprUnder(2, 3)).toBe('000');
+  });
+
+  /**
+   * A running game's map.set writes a runtime layer, not the document, so the map texture -- which
+   * is built from the document -- has no way to learn about it on its own.
+   */
+  test('a map.set at runtime reaches the screen, not only the data', async ({ page }) => {
+    await page.goto('/edit/7/code');
+    await expect(page.getByText('Welcome to Naucto!').first()).toBeVisible();
+
+    await page.locator('.cm-content').click();
+    await page.keyboard.press('Control+a');
+    await page.keyboard.type(
+      'local t = 0\nfunction _update()\nt = t + 1\nif t == 40 then map.set(0, 0, 1) end\nif t == 60 then print("TILE=" .. map.get(0, 0)) end\nend\nfunction _draw()\ngfx.clear(0)\nmap.draw(0, 0)\nend\n',
+    );
+    await page.getByRole('button', { name: 'Play' }).first().click();
+
+    // Nothing on the map to start with, so the corner is the cleared colour.
+    expect(await lit(page, 3, 3)).toBe(false);
+    // The document took the write: this is the half that already worked.
+    await expect(page.getByText('TILE=1')).toBeVisible({ timeout: 10_000 });
+    // And the screen has to agree with it.
+    await expect.poll(() => lit(page, 3, 3), { timeout: 10_000 }).toBe(true);
+  });
+
+  /**
+   * A collaborator is a person the app knows the id of, so their picture is something it can go and
+   * get. Listing them by initial and colour is what it does when nothing looked it up.
+   */
+  /**
+   * The one thing a second sheet is for. The editor held several long before the renderer did, so a
+   * game could be drawn with sprites it could not be played with: the engine knew one texture, and
+   * every number past the first sheet read off the wrong pixels.
+   *
+   * Moved between tabs through the rail rather than by navigating: a fresh page load takes the
+   * document back from the server, and the sheet added here has never been saved.
+   */
+  test('a running game draws a sprite from the second sheet', async ({ page }) => {
+    await page.goto('/edit/7/art');
+    const canvas = page.getByRole('img', { name: 'Sprite canvas' });
+    await expect(canvas).toBeVisible();
+
+    await page.getByRole('button', { name: 'Add a sheet' }).click();
+    // Nameless, so it answers to its number.
+    await expect(page.getByRole('tab', { name: '2' })).toBeVisible();
+    // Off, or the stroke is held inside the single sprite the region starts on.
+    await page.getByRole('switch', { name: 'Lock' }).click();
+
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('no canvas');
+    await page.mouse.move(box.x + 4, box.y + 4);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 12, box.y + 12, { steps: 4 });
+    await page.mouse.up();
+
+    // The first cell of the new sheet, which is the number the code below names.
+    const readout = await page
+      .getByText(/SPRITE \d+/)
+      .first()
+      .textContent();
+    const n = Number(/\d+/.exec(readout ?? '')?.[0] ?? '0');
+    expect(n).toBeGreaterThan(0);
+
+    await page.locator('nc-rail').getByRole('button', { name: 'Code' }).click();
+    await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+    await page.locator('.cm-content').click();
+    await page.keyboard.press('Control+a');
+    await page.keyboard.type(
+      `function _draw()\ngfx.clear(0)\ngfx.draw_sprite(${String(n)}, 0, 0)\nend\n`,
+    );
+    await page.getByRole('button', { name: 'Play' }).first().click();
+
+    await expect
+      .poll(
+        async () => {
+          const data = await screenPixels(page, 0, 0, 8, 8);
+          for (let i = 0; i < data.length; i += 3)
+            if ((data[i] ?? 0) + (data[i + 1] ?? 0) + (data[i + 2] ?? 0) > 120) return true;
+          return false;
+        },
+        { timeout: 10_000 },
+      )
+      .toBe(true);
+  });
+
+  /**
+   * A map's tiles are sprite numbers, and those run across every sheet. Choosing a sheet in the
+   * picker is only half of it: the number a stamp writes has to carry that sheet's place in the
+   * run, and the tile has to be drawn from that sheet's pixels. Read off the first sheet, a tile
+   * from the second is not a wrong colour — it is a different picture.
+   */
+  test('MAP stamps and draws a tile from the sheet its picker is on', async ({ page }) => {
+    await page.goto('/edit/7/art');
+    const canvas = page.getByRole('img', { name: 'Sprite canvas' });
+    await expect(canvas).toBeVisible();
+
+    // A second sheet with something on its very first cell, and nothing on the first sheet's.
+    await page.getByRole('button', { name: 'Add a sheet' }).click();
+    await expect(page.getByRole('tab', { name: '2' })).toBeVisible();
+    await page.getByRole('switch', { name: 'Lock' }).click();
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('no canvas');
+    await page.mouse.move(box.x + 4, box.y + 4);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 12, box.y + 12, { steps: 4 });
+    await page.mouse.up();
+    const readout = await page
+      .getByText(/SPRITE \d+/)
+      .first()
+      .textContent();
+    const n = Number(/\d+/.exec(readout ?? '')?.[0] ?? '0');
+    expect(n).toBeGreaterThan(0);
+
+    await page.locator('nc-rail').getByRole('button', { name: 'Map' }).click();
+    const picker = page.getByRole('img', { name: 'Tile picker' });
+    await expect(picker).toBeVisible();
+
+    // The picker starts on the first sheet, whose first cell is empty here.
+    await page.getByRole('tablist', { name: 'Tilesets' }).getByRole('tab', { name: '2' }).click();
+
+    // Choosing a sheet puts the brush back on its first cell, which is the one just painted.
+    const map = page.getByRole('img', { name: 'Map canvas' });
+    const box2 = await map.boundingBox();
+    if (!box2) throw new Error('no map');
+    await page.mouse.click(box2.x + 20, box2.y + 20);
+
+    // The first sheet's first cell is blank in this project, so anything drawn here came from the
+    // second — which is the whole of what this test is for.
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const el = document.querySelector('nc-map-canvas canvas');
+          if (!(el instanceof HTMLCanvasElement)) return 0;
+          const ctx = el.getContext('2d');
+          if (!ctx) return 0;
+          const { data } = ctx.getImageData(0, 0, 48, 48);
+          let lit = 0;
+          for (let i = 0; i < data.length; i += 4)
+            if ((data[i] ?? 0) + (data[i + 1] ?? 0) + (data[i + 2] ?? 0) > 120) lit += 1;
+          return lit;
+        }),
+      )
+      .toBeGreaterThan(0);
+  });
+
+  test('a collaborator is shown with their picture, not their initial', async ({ page }) => {
+    await page.goto('/edit/7/game');
+    await page.getByRole('button', { name: /share/i }).first().click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('img', { name: 'priax' }).locator('img')).toBeVisible();
+  });
+
+  test('a sprite keeps the first colour clear, and draws it when told nil', async ({ page }) => {
+    await page.goto('/edit/7/code');
+    await expect(page.getByText('Welcome to Naucto!').first()).toBeVisible();
+
+    const pixel = async (): Promise<string> => {
+      const [r, g, b] = await screenPixels(page, 3, 3, 1, 1);
+      return `${String(r)},${String(g)},${String(b)}`;
+    };
+
+    // Sprite 0 is empty, so every one of its pixels is the first colour.
+    await page.locator('.cm-content').click();
+    await page.keyboard.press('Control+a');
+    await page.keyboard.type(
+      'local o = false\nfunction _update() o = sys.frame() > 40 end\nfunction _draw()\ngfx.clear(8)\nif o then gfx.draw_sprite(0, 0, 0, 1, 1, false, false, 1, nil)\nelse gfx.draw_sprite(0, 0, 0) end\nend\n',
+    );
+    await page.getByRole('button', { name: 'Play' }).first().click();
+
+    const filled = await (async () => {
+      await expect.poll(pixel).not.toBe('0,0,0');
+      return pixel();
+    })();
+    await expect.poll(pixel, { timeout: 10_000 }).not.toBe(filled);
+  });
+
+  test('MAP tab stamps tiles', async ({ page }) => {
+    await page.goto('/edit/7/map');
+    const canvas = page.getByRole('img', { name: 'Map canvas' });
+    await expect(canvas).toBeVisible();
+    const box = await canvas.boundingBox();
+    expect(box).not.toBeNull();
+    if (box) {
+      await page.mouse.move(box.x + 100, box.y + 100);
+      await page.mouse.down();
+      await page.mouse.move(box.x + 400, box.y + 160, { steps: 10 });
+      await page.mouse.up();
+    }
+    await expect(page.getByText(/TILE \d+,\d+/)).toBeVisible();
+    await page.screenshot({ path: 'test-results/v-editor-map.png' });
+  });
+
+  /**
+   * A second map used to be the first one wearing another number: the canvas drew and wrote the
+   * root map whatever the strip said, and the size dialog resized that one too.
+   */
+  test('MAP stamps on the second map and leaves the first untouched', async ({ page }) => {
+    await page.goto('/edit/7/map');
+    const canvas = page.getByRole('img', { name: 'Map canvas' });
+    await expect(canvas).toBeVisible();
+    const maps = page.getByRole('tablist', { name: 'Maps' });
+
+    await page.getByRole('button', { name: 'Add a map' }).click();
+    await expect(maps.getByRole('tab', { name: '2' })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByText('Map #2')).toBeVisible();
+
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('no map');
+    await page.mouse.click(box.x + 20, box.y + 20);
+    // The readout follows the pointer, not the stamp: a nudge makes it read the tile again.
+    await page.mouse.move(box.x + 21, box.y + 21);
+    const readout = page.getByText(/TILE \d+,\d+ · SPR \d+/);
+    await expect(readout).not.toHaveText(/SPR 000/);
+
+    await maps.getByRole('tab', { name: '1' }).click();
+    await expect(page.getByText('Map #1')).toBeVisible();
+    await page.mouse.move(box.x + 21, box.y + 21);
+    await expect(readout).toHaveText(/SPR 000/);
+
+    await maps.getByRole('tab', { name: '2' }).click();
+    await page.mouse.move(box.x + 20, box.y + 20);
+    await expect(readout).not.toHaveText(/SPR 000/);
+
+    // Sizing the second leaves the first at what it was.
+    await page.getByRole('button', { name: 'Map size' }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByRole('textbox', { name: 'Width' }).fill('16');
+    await dialog.getByRole('textbox', { name: 'Width' }).press('Enter');
+    await dialog.getByRole('textbox', { name: 'Height' }).fill('16');
+    await dialog.getByRole('textbox', { name: 'Height' }).press('Enter');
+    await dialog.getByRole('button', { name: 'Shrink' }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByText('16 × 16 tiles')).toBeVisible();
+    await maps.getByRole('tab', { name: '1' }).click();
+    await expect(page.getByText('128 × 32 tiles')).toBeVisible();
+  });
+
+  /** The map number is what the runtime reads; without it a second map was for looking at. */
+  test('a running game draws map 2 with map.draw(..., 2)', async ({ page }) => {
+    await page.goto('/edit/7/map');
+    const canvas = page.getByRole('img', { name: 'Map canvas' });
+    await expect(canvas).toBeVisible();
+    await page.getByRole('button', { name: 'Add a map' }).click();
+    await expect(page.getByText('Map #2')).toBeVisible();
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('no map');
+    // The first tile of the second map, so the top-left corner of the screen shows it.
+    await page.mouse.click(box.x + 4, box.y + 4);
+    await page.mouse.move(box.x + 5, box.y + 5);
+    await expect(page.getByText(/TILE 0,0 · SPR \d+/)).not.toHaveText(/SPR 000/);
+
+    await page.locator('nc-rail').getByRole('button', { name: 'Code' }).click();
+    await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+    await page.locator('.cm-content').click();
+    await page.keyboard.press('Control+a');
+    await page.keyboard.type('function _draw()\ngfx.clear(0)\nmap.draw(0, 0)\nend\n');
+    await page.getByRole('button', { name: 'Play' }).first().click();
+    // The first map is empty in this project: nothing at the corner.
+    await expect.poll(() => lit(page, 3, 3), { timeout: 10_000 }).toBe(false);
+
+    await page.locator('.cm-content').click();
+    await page.keyboard.press('Control+a');
+    await page.keyboard.type(
+      'function _draw()\ngfx.clear(0)\nmap.draw(0, 0, 0, 0, 4, 4, 2)\nend\n',
+    );
+    await page.getByRole('button', { name: 'Restart' }).click();
+    await expect.poll(() => lit(page, 3, 3), { timeout: 10_000 }).toBe(true);
+  });
+
+  test('MAP picks a brush by dragging a rectangle on the sheet', async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 1030 });
+    await page.goto('/edit/7/map');
+    const picker = page.getByRole('img', { name: 'Tile picker' });
+    await expect(picker).toBeVisible();
+
+    const box = await picker.boundingBox();
+    expect(box).not.toBeNull();
+    if (box) {
+      // Half-cell offsets so each end lands inside a cell rather than on its edge. The rectangle
+      // this draws is wider than it is tall, which no square brush could be.
+      const cell = box.width / 16;
+      await page.mouse.move(box.x + cell * 2.5, box.y + cell * 1.5);
+      await page.mouse.down();
+      await page.mouse.move(box.x + cell * 4.5, box.y + cell * 2.5, { steps: 8 });
+      await page.mouse.up();
+    }
+
+    const map = page.getByRole('img', { name: 'Map canvas' });
+    const mapBox = await map.boundingBox();
+    expect(mapBox).not.toBeNull();
+    if (mapBox) {
+      // Read a tile the press only reaches if it put down a block rather than a single sprite.
+      await page.mouse.click(mapBox.x + 40, mapBox.y + 40);
+      await page.mouse.move(mapBox.x + 72, mapBox.y + 40);
+    }
+    await expect(page.getByText('SPR 020')).toBeVisible();
+  });
+
+  /**
+   * The largest map at the largest zoom is 16384 pixels a side, and every stamp used to repaint
+   * all of it. A long task is the browser's own word for a frame that was dropped.
+   */
+  test('MAP stamps on a 256×256 map at zoom 8 without a long task', async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(browserName !== 'chromium', 'longtask entries are only observed in Chromium');
+    // A budget in milliseconds holds on a machine, not on a shared runner drawing through a
+    // software GPU, where the same drag crosses it on the code it was written to prove.
+    test.skip(!!process.env.CI, 'a frame budget is measured locally, not on a shared runner');
+    await page.goto('/edit/7/map');
+    const canvas = page.getByRole('img', { name: 'Map canvas' });
+    await expect(canvas).toBeVisible();
+
+    await page.getByRole('button', { name: 'Map size' }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByRole('textbox', { name: 'Width' }).fill('256');
+    await dialog.getByRole('textbox', { name: 'Width' }).press('Enter');
+    await dialog.getByRole('textbox', { name: 'Height' }).fill('256');
+    await dialog.getByRole('textbox', { name: 'Height' }).press('Enter');
+    await dialog.getByRole('button', { name: 'Shrink' }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByText('256 × 256 tiles')).toBeVisible();
+
+    const zoomIn = page.getByRole('button', { name: 'Zoom in' });
+    for (let i = 0; i < 8 && !(await page.getByText('×8', { exact: true }).isVisible()); i++)
+      await zoomIn.click();
+    await expect(page.getByText('×8', { exact: true })).toBeVisible();
+
+    // Only tasks of 50 ms and up are reported at all, so the list is the verdict.
+    await page.evaluate(() => {
+      const long: number[] = [];
+      Object.assign(window, { __long: long });
+      new PerformanceObserver((list) => {
+        for (const e of list.getEntries()) long.push(Math.round(e.duration));
+      }).observe({ type: 'longtask' });
+    });
+    // The resize and the zoom above have their own frames to settle; they are not the stamp's.
+    await page.evaluate(
+      () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))),
+    );
+
+    // Across the well, not the canvas: a canvas the size of the map starts a screenful off it.
+    const well = await page.locator('nc-map-canvas').boundingBox();
+    if (!well) throw new Error('no well');
+    await page.mouse.move(well.x + 32, well.y + 32);
+    await page.mouse.down();
+    await page.mouse.move(well.x + well.width - 32, well.y + 32, { steps: 20 });
+    await page.mouse.up();
+    await page.mouse.move(well.x + 40, well.y + 40);
+    await expect(page.getByText(/TILE \d+,\d+ · SPR \d+/)).not.toHaveText(/SPR 000/);
+    await page.evaluate(
+      () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))),
+    );
+
+    const long = await page.evaluate(() => (window as unknown as { __long: number[] }).__long);
+    expect(long.filter((ms) => ms >= 50)).toEqual([]);
+  });
+
+  test('the roll ends where the pattern ends', async ({ page }) => {
+    await page.goto('/edit/7/sound');
+    await addInstrument(page);
+    const roll = page.getByRole('img', { name: 'Piano roll' });
+    await expect(roll).toBeVisible();
+
+    const steps = async (): Promise<string | null> =>
+      page.getByRole('textbox', { name: 'Steps' }).inputValue();
+    // The roll's own canvas is floored at the width of its window, so it does not shrink on a
+    // wide screen. The track of voices under it is exactly as wide as the pattern, and has to
+    // stay in step with it.
+    const track = page.locator('nc-voices-lane').getByRole('img');
+    const laneWidth = async (): Promise<number> =>
+      await track.evaluate((el: HTMLElement) => el.offsetWidth);
+
+    const long = await laneWidth();
+    // The pattern is fresh, so nothing is past the new end and the field shortens without asking.
+    await page.getByRole('button', { name: 'Steps -16' }).click();
+    await expect.poll(steps).toBe('16');
+
+    await expect.poll(laneWidth).toBeLessThan(long);
+  });
+
+  /** Three independent mechanisms, so none of these assertions stands in for another. */
+  test('the head can be dragged, rewound and resumed', async ({ page }) => {
+    await page.goto('/edit/7/sound');
+    await addInstrument(page);
+    const roll = page.getByRole('img', { name: 'Piano roll' });
+    await expect(roll).toBeVisible();
+    const box = await roll.boundingBox();
+    expect(box).not.toBeNull();
+    if (!box) return;
+
+    // The ruler rides at the top of the *view*, so it sits at the canvas top plus however far the
+    // roll has been scrolled — which is not zero: the roll opens on the middle of the keyboard.
+    const rulerY =
+      box.y +
+      (await page.evaluate(() => {
+        let el = document.querySelector('nc-piano-roll canvas')?.parentElement ?? null;
+        while (el && el.scrollHeight <= el.clientHeight) el = el.parentElement;
+        return (el?.scrollTop ?? 0) + 12;
+      }));
+
+    const head = async (): Promise<number | null> =>
+      page.evaluate(() => {
+        const line = document.querySelector('nc-piano-roll div.bg-hot.w-px');
+        return line ? Math.round(line.getBoundingClientRect().left) : null;
+      });
+
+    await page.mouse.move(box.x + 200, rulerY);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 320, rulerY, { steps: 8 });
+    await page.mouse.up();
+    const dragged = await head();
+    expect(dragged).not.toBeNull();
+
+    const rewind = page.getByRole('button', { name: 'Back to the start' });
+    await rewind.click();
+    await expect.poll(head).toBeLessThan(dragged ?? 0);
+
+    await page.getByRole('button', { name: 'Play', exact: true }).click();
+    await expect.poll(head).toBeGreaterThan(0);
+    await page.getByRole('button', { name: 'Pause', exact: true }).click();
+    const paused = await head();
+    expect(paused).not.toBeNull();
+
+    await page.getByRole('button', { name: 'Play', exact: true }).click();
+    await page.waitForTimeout(600);
+    expect(await head()).not.toBeNull();
+
+    // Read with the head held still: rewound, the music keeps going, so a poll left to converge
+    // follows it back out past where it started and says nothing about where the rewind put it.
+    const running = await head();
+    await rewind.click();
+    await page.getByRole('button', { name: 'Pause', exact: true }).click();
+    await expect.poll(head).toBeLessThan(running ?? 0);
+  });
+
+  /**
+   * The size of a sheet moves every sprite number in the game and rewrites the calls that named
+   * one, so it sits behind a door rather than on a caret in the strip — and the door says what it
+   * is about to cost while the numbers are still being chosen.
+   */
+  test('the sheet size is chosen in a dialog that says what it will move', async ({ page }) => {
+    await page.goto('/edit/7/art');
+    await expect(page.getByRole('img', { name: 'Sprite canvas' })).toBeVisible();
+    // No size in the strip: adding a sheet and resizing one are not the same weight.
+    await expect(page.getByRole('tablist', { name: 'Sheets' }).getByRole('spinbutton')).toHaveCount(
+      0,
+    );
+
+    await page.getByRole('button', { name: 'Sheet size' }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    const width = dialog.getByRole('textbox', { name: 'Width' });
+    await expect(width).toHaveValue('128');
+    await expect(dialog.getByRole('button', { name: 'Renumber' })).toBeDisabled();
+
+    await width.fill('192');
+    await width.press('Enter');
+    // Widening re-flows the grid, so the calls that named a sprite are counted before it happens.
+    await expect(dialog.getByText(/calls in your code/)).toBeVisible();
+
+    await dialog.getByRole('button', { name: 'Renumber' }).click();
+    await expect(dialog).toHaveCount(0);
+
+    await page.getByRole('button', { name: 'Sheet size' }).click();
+    const again = page.getByRole('dialog');
+    await expect(again.getByRole('textbox', { name: 'Width' })).toHaveValue('192');
+
+    // What is lost is said apart from what merely moves: last of the lines, right above the
+    // buttons, and whole.
+    await again.getByRole('textbox', { name: 'Width' }).fill('64');
+    await again.getByRole('textbox', { name: 'Width' }).press('Enter');
+    // Narrower re-flows the grid, shorter drops the row the lower half of the moon is drawn on:
+    // one change that moves things and one that loses them, which is the pair being told apart.
+    await again.getByRole('textbox', { name: 'Height' }).fill('8');
+    await again.getByRole('textbox', { name: 'Height' }).press('Enter');
+    const loss = again.getByText(/fall outside a sheet that size/);
+    const moved = again.getByText(/calls in your code/);
+    await expect(loss).toBeVisible();
+    const lossBox = await loss.boundingBox();
+    const movedBox = await moved.boundingBox();
+    const buttons = await again.getByRole('button', { name: 'Renumber' }).boundingBox();
+    expect(lossBox && movedBox && buttons).toBeTruthy();
+    if (!lossBox || !movedBox || !buttons) return;
+    expect(lossBox.y).toBeGreaterThan(movedBox.y);
+    expect(lossBox.y + lossBox.height).toBeLessThanOrEqual(buttons.y);
+    // Whole: it is the one line here that cannot be taken back, so the box grows to hold it
+    // rather than cutting it short at the edge.
+    expect(await loss.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+    expect(lossBox.height).toBeGreaterThan(24);
+  });
+
+  /**
+   * A strip is one line and never folds, so where it runs out of room it runs out sideways, and
+   * what went past the edge used to be unreachable to a pointer with no horizontal wheel. The
+   * sheet strip is the one that fills up in ordinary use, a sheet at a time.
+   */
+  test('a strip that runs past its edge can be walked with arrows', async ({ page }) => {
+    await page.goto('/edit/7/art');
+    await expect(page.getByRole('img', { name: 'Sprite canvas' })).toBeVisible();
+
+    const strip = page.getByRole('tablist', { name: 'Sheets' });
+    const later = page.getByRole('button', { name: 'Later tabs' });
+    await expect(later).toHaveCount(0);
+
+    // Enough to run past the edge with room to spare -- a nameless tab is barely wider than its
+    // number -- and no more: every sheet added is a document write the whole page reacts to.
+    const add = page.getByRole('button', { name: 'Add a sheet' });
+    for (let i = 0; i < 16; i++) await add.click();
+
+    // Back to the first sheet before looking: each new one is selected and scrolled to, so the
+    // strip ends up at its far end, where the only way left to go is back.
+    await page.getByRole('tab').first().click();
+    await expect.poll(() => strip.evaluate((el) => el.scrollLeft)).toBe(0);
+    await expect(later).toBeVisible();
+
+    await later.click();
+    await expect.poll(() => strip.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);
+    await expect(page.getByRole('button', { name: 'Earlier tabs' })).toBeVisible();
+  });
+
+  /** The file strip fits at this width, so it says nothing about a scroll it does not need. */
+  test('a strip that fits offers no arrows', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/edit/7/code');
+    const files = page
+      .locator('nc-tabs')
+      .filter({ has: page.getByRole('tablist', { name: 'Files' }) });
+    await expect(files.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+    await expect(files.getByRole('button', { name: 'Later tabs' })).toHaveCount(0);
+    await expect(files.getByRole('button', { name: 'Earlier tabs' })).toHaveCount(0);
+  });
+
+  /**
+   * The 14ch budget is the name's alone. It used to be the tab's, cut as a whole, and a long name
+   * pushed its pencil and trash past the edge of the box, where they were clipped away.
+   */
+  test('a long map name keeps its pencil and trash inside the tab', async ({ page }) => {
+    await page.goto('/edit/7/map');
+    const maps = page.getByRole('tablist', { name: 'Maps' });
+    await expect(maps.getByRole('tab')).toHaveCount(1);
+    // A second map, or the first offers no trash.
+    await page.getByRole('button', { name: 'Add a map' }).click();
+    await expect(maps.getByRole('tab')).toHaveCount(2);
+
+    const name = 'the overworld after dark';
+    await maps.getByRole('tab').first().dblclick();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByRole('textbox', { name: 'Name' }).fill(name);
+    await dialog.getByRole('button', { name: 'Save' }).click();
+
+    const tab = maps.getByRole('tab', { name });
+    await expect(tab).toBeVisible();
+    await tab.hover();
+    const box = await tab.boundingBox();
+    expect(box).not.toBeNull();
+    for (const label of ['Rename this map', 'Delete map']) {
+      const button = tab.getByRole('button', { name: label });
+      await expect(button).toBeVisible();
+      const b = await button.boundingBox();
+      expect(b).not.toBeNull();
+      if (box && b) {
+        expect(b.x).toBeGreaterThanOrEqual(box.x);
+        expect(b.x + b.width).toBeLessThanOrEqual(box.x + box.width);
+      }
+    }
+    // Nothing in the tab runs past it: the name is what gives, and it gives before the buttons.
+    expect(await tab.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+    const label = tab.locator('span', { hasText: name });
+    expect(await label.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+  });
+
+  test('the sound column reaches its last row on a short screen', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 700 });
+    await page.goto('/edit/7/sound');
+    const boxes = page.locator('nc-song-list [role=group] input');
+    await expect(boxes).toHaveCount(20);
+    // The two banks stand at a fixed height, so on a screen too short for both the column has to
+    // be scrollable: a row of the music that cannot be reached is a row that cannot be written.
+    const last = boxes.nth(19);
+    await last.scrollIntoViewIfNeeded();
+    await expect(last).toBeInViewport();
+  });
+
+  test('SOUND tab adds an instrument and paints notes', async ({ page }) => {
+    await page.goto('/edit/7/sound');
+    await addInstrument(page);
+    const roll = page.getByRole('img', { name: 'Piano roll' });
+    await expect(roll).toBeVisible();
+    const box = await roll.boundingBox();
+    expect(box).not.toBeNull();
+    if (box) {
+      // Halfway down the roll: the ruler rides at the top of the view, and a press there moves
+      // the playhead instead of writing a note.
+      const x = box.x + 56 + 30;
+      const y = box.y + box.height / 2;
+      await page.mouse.move(x, y);
+      await page.mouse.down();
+      await page.mouse.move(x + 60, y, { steps: 4 });
+      await page.mouse.up();
+    }
+    await expect(page.getByText('Not used yet — paint some notes.')).toHaveCount(0);
+
+    // There is no last slot, so nothing counts what the bank holds: the slot itself is what says
+    // it took the pattern.
+    const slot = page.getByRole('button', { name: 'SFX slot 0' });
+    await slot.click();
+    await expect(slot).toHaveAttribute('aria-pressed', 'true');
+    await page.screenshot({ path: 'test-results/v-editor-sound.png' });
+  });
+
+  test('SOUND asks before removing an instrument that has notes, not an unused one', async ({
+    page,
+  }) => {
+    await page.goto('/edit/7/sound');
+    await addInstrument(page);
+    // A blank instrument goes at once: undo has it.
+    await page.getByRole('button', { name: 'Remove lead' }).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Remove lead' })).toHaveCount(0);
+
+    await addInstrument(page);
+    const roll = page.getByRole('img', { name: 'Piano roll' });
+    const box = await roll.boundingBox();
+    if (!box) throw new Error('no roll');
+    await page.mouse.click(box.x + 56 + 30, box.y + box.height / 2);
+    await expect(page.getByText('Not used yet — paint some notes.')).toHaveCount(0);
+
+    await page.getByRole('button', { name: 'Remove lead' }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toContainText('Remove lead?');
+    await expect(dialog).toContainText('1 pattern');
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
+    await expect(page.getByRole('button', { name: 'Remove lead' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Remove lead' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Remove' }).click();
+    await expect(page.getByRole('button', { name: 'Remove lead' })).toHaveCount(0);
+  });
+
+  test('Ctrl+Y redoes in SOUND and in MAP', async ({ page }) => {
+    await page.goto('/edit/7/sound');
+    await addInstrument(page);
+    const roll = page.getByRole('img', { name: 'Piano roll' });
+    const box = await roll.boundingBox();
+    if (!box) throw new Error('no roll');
+    // Past the history's capture window, so the note is a step of its own, not the instrument's.
+    await page.waitForTimeout(400);
+    await page.mouse.click(box.x + 56 + 30, box.y + box.height / 2);
+    const unused = page.getByText('Not used yet — paint some notes.');
+    await expect(unused).toHaveCount(0);
+    await page.keyboard.press('Control+z');
+    await expect(unused).toBeVisible();
+    await page.keyboard.press('Control+y');
+    await expect(unused).toHaveCount(0);
+
+    await page.locator('nc-rail').getByRole('button', { name: 'Map' }).click();
+    const canvas = page.getByRole('img', { name: 'Map canvas' });
+    const map = await canvas.boundingBox();
+    if (!map) throw new Error('no map');
+    await page.mouse.click(map.x + 100, map.y + 100);
+    const redo = page.getByRole('button', { name: 'Redo' });
+    await expect(redo).toBeDisabled();
+    await page.keyboard.press('Control+z');
+    await expect(redo).toBeEnabled();
+    await page.keyboard.press('Control+y');
+    await expect(redo).toBeDisabled();
+  });
+
+  test('a held key glides across the keyboard', async ({ page }) => {
+    await page.goto('/edit/7/sound');
+    await addInstrument(page);
+    const c4 = page.getByRole('button', { name: 'C4', exact: true });
+    const d4 = page.getByRole('button', { name: 'D4', exact: true });
+    const at = async (key: Locator): Promise<[number, number]> => {
+      const box = await key.boundingBox();
+      if (!box) throw new Error('key off screen');
+      return [box.x + 10, box.y + box.height / 2];
+    };
+
+    await page.mouse.move(...(await at(c4)));
+    await page.mouse.down();
+    await expect(c4).toHaveAttribute('aria-pressed', 'true');
+    // The button stays down: the key changes under the pointer, and the sound with it.
+    await page.mouse.move(...(await at(d4)), { steps: 4 });
+    await expect(d4).toHaveAttribute('aria-pressed', 'true');
+    await expect(c4).toHaveAttribute('aria-pressed', 'false');
+    await page.mouse.up();
+    await expect(d4).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  test('an instrument is born from a preset, under its name', async ({ page }) => {
+    await page.goto('/edit/7/sound');
+    const born = async (): Promise<void> => {
+      await page.getByRole('button', { name: 'Add instrument' }).first().click();
+      const dialog = page.getByRole('dialog', { name: 'New instrument' });
+      const tall = async (): Promise<number> => (await dialog.boundingBox())?.height ?? 0;
+      const height = await tall();
+      await dialog.getByRole('button', { name: 'From a preset' }).click();
+      await expect(dialog.getByRole('radio')).toHaveCount(23);
+      // One box, one height: the step and the shelf change what is in it and nothing else.
+      expect(await tall()).toBe(height);
+      await dialog.getByRole('tab', { name: 'Drums' }).click();
+      await expect(dialog.getByRole('radio')).toHaveCount(5);
+      expect(await tall()).toBe(height);
+      await dialog.getByRole('radio', { name: 'Noise hat' }).click();
+      await expect(dialog.getByRole('radio', { name: 'Noise hat' })).toHaveAttribute(
+        'aria-checked',
+        'true',
+      );
+      await page.screenshot({ path: 'test-results/v-editor-sound-presets.png' });
+      await dialog.getByRole('button', { name: 'Create' }).click();
+      await expect(dialog).toBeHidden();
+    };
+
+    await born();
+    await expect(page.getByRole('radio', { name: 'Noise', exact: true })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    const rows = page.getByRole('listbox', { name: 'Instruments' }).getByRole('option');
+    await expect(rows).toHaveCount(1);
+    await expect(rows.first()).toContainText('Noise hat');
+
+    // The same preset again is the same name, told apart by a number.
+    await born();
+    await expect(rows).toHaveCount(2);
+    await expect(rows.nth(1)).toContainText('Noise hat 2');
+  });
+});
+
+test('a tab is named and coloured in a dialog, and the last one cannot be removed', async ({
+  page,
+}) => {
+  await mockEditor(page);
+  await page.goto('/edit/7/code');
+  await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+
+  // Counted in the DOM rather than by role: the close button is hidden until its tab is hovered,
+  // so a count through the accessibility tree would read zero whether the guard held or not.
+  const closers = page.locator('[role=tab] button[aria-label="Delete file"]');
+  await expect(closers).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'New file' }).click();
+  await expect(page.getByRole('heading', { name: 'New tab' })).toBeVisible();
+  await page.getByLabel('Tab name').fill('player');
+  await page.getByRole('button', { name: 'Palette slot 4' }).click();
+  await page.getByRole('button', { name: 'Create' }).click();
+
+  await expect(page.getByRole('tab', { name: 'player', exact: true })).toBeVisible();
+  // The entry is among them: what a project keeps is a tab, not that one.
+  await expect(closers).toHaveCount(2);
+});
+
+test('a copied tutorial arrives with its sprites, flags and map', async ({ page }) => {
+  await mockEditor(page);
+  await page.addInitScript(() => {
+    sessionStorage.setItem(
+      'naucto.seed-code',
+      'function _draw() gfx.clear(0) print(map.get(2, 5) .. " " .. tostring(map.flag(40, 1))) end',
+    );
+    sessionStorage.setItem(
+      'naucto.seed-assets',
+      JSON.stringify({
+        sprites: { '40': ['4444....'] },
+        flags: { '40': 2 },
+        map: [{ row: 5, from: 1, to: 3, tile: 40 }],
+      }),
+    );
+  });
+  await page.goto('/edit/7/code');
+  await page.getByRole('tab', { name: 'main', exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Play' }).first().click();
+  await expect(page.getByText('40 true').first()).toBeVisible();
+});
+
+test('an autosave is deleted from the versions panel', async ({ page }) => {
+  await mockEditor(page);
+  // Two of them, because the newest row is the one the game currently is and offers nothing to do
+  // to itself. The mock above answers with an empty list, so this route goes on top of it.
+  let saves = [
+    { name: 'save-2', date: '2026-09-11T09:00:00.000Z' },
+    { name: 'save-1', date: '2026-09-11T08:00:00.000Z' },
+  ];
+  await page.route('**/projects/7/versions', (r) => r.fulfill({ json: { versions: saves } }));
+  const deletes: string[] = [];
+  await page.route('**/projects/7/versions/*', (r) => {
+    const name = new URL(r.request().url()).pathname.split('/').pop() ?? '';
+    deletes.push(name);
+    saves = saves.filter((s) => s.name !== name);
+    return r.fulfill({ json: { message: 'Version deleted successfully', name } });
+  });
+
+  await page.goto('/edit/7/game');
+  const chip = page.getByRole('button', { name: 'Platformer' });
+  // The chip names the newest named version, and this project has none: an autosave coming or
+  // going is not something it can show, so it reads the same before and after the delete.
+  await expect(chip).toContainText('draft');
+  await chip.click();
+  const rows = page.locator('nc-popover-panel li', { hasText: 'Autosave' });
+  await expect(rows).toHaveCount(2);
+
+  await rows.nth(1).getByRole('button', { name: 'Delete this autosave' }).click();
+  await expect(rows).toHaveCount(1);
+  expect(deletes).toEqual(['save-1']);
+  await expect(chip).toHaveText(/^\s*Platformer\s+draft\s*$/);
+});
+
+test('a pause in the typing is what saves the game', async ({ page }) => {
+  await mockEditor(page);
+  let saves = 0;
+  await page.route('**/projects/7/saveContent', (r) => {
+    saves += 1;
+    return r.fulfill({ json: { id: 7 } });
+  });
+
+  await page.goto('/edit/7/game');
+  const name = page.getByRole('textbox', { name: 'Name' });
+  await expect(name).toHaveValue('Platformer');
+  // Opening a session as its host writes the document out once. Waited for rather than assumed,
+  // so the count below is taken with that one already through.
+  await expect(page.getByText('last saved')).toBeVisible();
+  const opened = saves;
+  await name.fill('Platformer II');
+  await expect(page.getByText('unsaved changes')).toBeVisible();
+
+  // Nothing else is done to the page: the pause is the whole trigger. The five-minute interval
+  // could not have fired in the time this waits.
+  await expect(page.getByText('last saved')).toBeVisible({ timeout: 15000 });
+  expect(saves).toBe(opened + 1);
+});
+
+/**
+ * The host's one job is the autosave. Publishing and naming a version are a click, and a click is
+ * one write whoever makes it — so a collaborator in a room somebody else hosts has both buttons,
+ * and naming a version writes the document out once, from that click and from nothing else.
+ */
+test('a collaborator who is not the host may publish and name a version', async ({ page }) => {
+  await mockEditor(page, { hostId: 4 });
+  let saves = 0;
+  await page.route('**/projects/7/saveContent', (r) => {
+    saves += 1;
+    return r.fulfill({ json: { id: 7 } });
+  });
+  await page.route('**/projects/7/saveCheckpoint/*', (r) =>
+    r.fulfill({ status: 201, json: { message: 'Checkpoint saved' } }),
+  );
+
+  await page.goto('/edit/7/game');
+  const name = page.getByRole('textbox', { name: 'Name' });
+  await expect(name).toHaveValue('Platformer');
+  await expect(page.getByRole('button', { name: /^publish$/i })).toBeEnabled();
+  // A guest opens without writing anything out, and an edit makes the state worth naming.
+  expect(saves).toBe(0);
+  await name.fill('Platformer II');
+  await expect(page.getByText('unsaved changes')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Platformer' }).click();
+  await page.locator('nc-popover-panel').getByRole('button', { name: 'Save a version' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Save a version' });
+  await dialog.getByRole('textbox', { name: 'Name' }).fill('v1');
+  const save = dialog.getByRole('button', { name: 'Save', exact: true });
+  await expect(save).toBeEnabled();
+  await save.click();
+  await expect(page.getByText('Saved version "v1"')).toBeVisible();
+  await expect(page.getByText('last saved')).toBeVisible();
+  expect(saves).toBe(1);
+});
+
+/**
+ * The cap is said before the save is refused, and the way through it is said with it: a name the
+ * list already holds rewrites that version and does not count.
+ */
+test('the cap on named versions is explained before the save is refused', async ({ page }) => {
+  await mockEditor(page, { maxCheckpoints: 1 });
+  await page.route('**/projects/7/checkpoints', (r) =>
+    r.fulfill({ json: [{ name: 'v1', date: '2026-09-11T09:00:00.000Z' }] }),
+  );
+
+  await page.goto('/edit/7/game');
+  await page.getByRole('button', { name: 'Platformer' }).click();
+  await page.locator('nc-popover-panel').getByRole('button', { name: 'Save a version' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Save a version' });
+  await expect(dialog.getByText('1 of 1 named versions')).toBeVisible();
+  await expect(dialog.getByText('1 versions out of 1')).toBeVisible();
+  const save = dialog.getByRole('button', { name: 'Save', exact: true });
+
+  const name = dialog.getByRole('textbox', { name: 'Name' });
+  await name.fill('v2');
+  await expect(save).toBeDisabled();
+  await name.fill('v1');
+  await expect(dialog.getByText('Overwrites the version "v1"')).toBeVisible();
+  await expect(save).toBeEnabled();
+});
+
+/**
+ * Both banners say what they are the name of, and half of them are a bare number — a sheet and a
+ * map are both born nameless. The rename is in the same test because the banner used not to
+ * notice one until the tab was changed and back.
+ */
+test('each editor names what it is on, and follows a rename', async ({ page }) => {
+  await mockEditor(page);
+  await page.goto('/edit/7/map');
+  await expect(page.getByText('Map #1')).toBeVisible();
+
+  await page.locator('nc-rail').getByRole('button', { name: 'Art' }).click();
+  await expect(page.getByRole('img', { name: 'Sprite canvas' })).toBeVisible();
+  await expect(page.getByText('Tileset #1')).toBeVisible();
+
+  await page.getByRole('tablist', { name: 'Sheets' }).getByRole('tab').first().dblclick();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('textbox', { name: 'Name' }).fill('clouds');
+  await dialog.getByRole('button', { name: 'Save' }).click();
+
+  // Without leaving the tab: the banner used to read the sheet list without reading anything that
+  // said it had changed, so it stayed on the old name until something else rebuilt it.
+  await expect(page.getByText('Tileset clouds')).toBeVisible();
+});
+
+/** The one control in the CODE strip still spelled out, beside a plus that was already a glyph. */
+test('FIND is a magnifier beside the plus', async ({ page }) => {
+  await mockEditor(page);
+  await page.goto('/edit/7/code');
+  await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+
+  const find = page.getByRole('button', { name: 'Find' });
+  await expect(find).toBeVisible();
+  await expect(find).toHaveText('');
+  await expect(find.locator('nc-icon')).toBeVisible();
+});
+
+/**
+ * Three things the arrows used to get wrong at once. They took the focus with them, so every match
+ * cost a click back into the bar. They showed nothing, because the library only paints its matches
+ * while its own panel is open, and that panel is the one this editor never shows. And a switch of
+ * file left them opening that hidden panel instead of moving, since the new editor state had never
+ * been told the query.
+ */
+test('FIND arrows walk the matches and leave the caret in the bar', async ({ page }) => {
+  await mockEditor(page);
+  await page.goto('/edit/7/code');
+  await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Find' }).click();
+
+  const field = page.getByRole('textbox', { name: 'Find' });
+  const next = page.getByRole('button', { name: 'Next match' });
+  const line = page.getByText(/^LN \d+/);
+  await field.fill('function');
+  await next.click();
+  await expect(line).toHaveText(/LN 10 /);
+  await next.click();
+  await expect(line).toHaveText(/LN 14 /);
+  await expect(field).toBeFocused();
+  await expect(page.locator('.cm-searchMatch').count()).resolves.toBeGreaterThanOrEqual(2);
+  await expect(page.locator('.cm-searchMatch-selected')).toHaveText('function');
+
+  // A word that only a comment holds: the highlighter reads the text, not the syntax tree.
+  await field.fill('starter');
+  await expect(page.locator('.cm-searchMatch').count()).resolves.toBeGreaterThanOrEqual(1);
+
+  await field.fill('function');
+  await page.getByRole('button', { name: 'New file' }).click();
+  await page.getByLabel('Tab name').fill('player');
+  await page.getByRole('button', { name: 'Create' }).click();
+  await expect(page.getByRole('tab', { name: 'player', exact: true })).toBeVisible();
+  await page.getByRole('tab', { name: 'main', exact: true }).click();
+  await expect(page.locator('.cm-content')).toContainText('_init');
+  await next.click();
+  await expect(line).toHaveText(/LN 10 /);
+});
+
+/**
+ * The navigator takes the width it is given and keeps the sheet's proportions, which is what makes
+ * a cell square whatever shape the sheet is. It used to be sized from its own pixel count against a
+ * fixed cap: a small sheet took half the panel, a wide one pushed past it, and nothing bounded its
+ * height.
+ */
+test('the sheet navigator fits its panel and keeps its tiles square', async ({ page }) => {
+  await mockEditor(page);
+  await page.goto('/edit/7/art');
+  await expect(page.getByRole('img', { name: 'Sprite canvas' })).toBeVisible();
+  const view = page.locator('nc-sheet-view');
+
+  const resize = async (w: string, h: string): Promise<void> => {
+    await page.getByRole('button', { name: 'Sheet size' }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByRole('textbox', { name: 'Width' }).fill(w);
+    await dialog.getByRole('textbox', { name: 'Height' }).fill(h);
+    await dialog.getByRole('textbox', { name: 'Height' }).press('Enter');
+    await dialog.getByRole('button', { name: 'Renumber' }).click();
+    await expect(dialog).toHaveCount(0);
+  };
+
+  // Four times as wide as it is tall: the box has to be too, or the cells are not squares.
+  await resize('256', '64');
+  await expect.poll(async () => (await view.boundingBox())?.height).toBeLessThan(200);
+  const wide = await view.boundingBox();
+  expect(wide).not.toBeNull();
+  if (!wide) return;
+  expect(wide.width / wide.height).toBeCloseTo(4, 1);
+
+  // And the other way up, where the height is what runs out first.
+  await resize('64', '256');
+  await expect.poll(async () => (await view.boundingBox())?.width).toBeLessThan(200);
+  const tall = await view.boundingBox();
+  expect(tall).not.toBeNull();
+  if (!tall) return;
+  expect(tall.height / tall.width).toBeCloseTo(4, 1);
+  expect(tall.height).toBeLessThanOrEqual(384);
+});
+
+/**
+ * What the synth was told, in the order it was told. The music plays in an audio graph a test
+ * cannot listen to, so the commands on their way there are the one place the transport shows.
+ */
+async function recordSynthCommands(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    const log: string[] = [];
+    (window as unknown as { __synthLog: string[] }).__synthLog = log;
+    const port: { postMessage(...args: [unknown, ...unknown[]]): void } = MessagePort.prototype;
+    const post = port.postMessage;
+    port.postMessage = function (this: MessagePort, ...args) {
+      const [msg] = args;
+      if (typeof msg === 'object' && msg !== null && 'type' in msg && typeof msg.type === 'string')
+        log.push(msg.type);
+      post.apply(this, args);
+    };
+  });
+}
+
+const lastSynthCommand = (page: Page): Promise<string | undefined> =>
+  page.evaluate(() => (window as unknown as { __synthLog: string[] }).__synthLog.at(-1));
+
+test('pausing the game holds the music', async ({ page }) => {
+  await mockEditor(page);
+  await recordSynthCommands(page);
+  await page.goto('/edit/7/code');
+  await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Play' }).first().click();
+  await page.getByRole('button', { name: 'Pause' }).click();
+  await expect.poll(() => lastSynthCommand(page)).toBe('pause');
+
+  await page.getByRole('button', { name: 'Play' }).click();
+  await expect.poll(() => lastSynthCommand(page)).toBe('resume');
+});
+
+/**
+ * Docked, the viewer is only on screen on the CODE tab; the canvas tabs collapse its column. A
+ * game nobody can see is paused, not stopped -- stopping would end the netplay session the column
+ * stays mounted to keep -- and comes back with the tab.
+ */
+test('hiding the viewer holds the music', async ({ page }) => {
+  await mockEditor(page);
+  await recordSynthCommands(page);
+  await page.goto('/edit/7/code');
+  await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Play' }).first().click();
+  await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
+
+  await page.locator('nc-rail').getByRole('button', { name: 'Art' }).click();
+  await expect.poll(() => lastSynthCommand(page)).toBe('pause');
+
+  await page.locator('nc-rail').getByRole('button', { name: 'Code' }).click();
+  await expect.poll(() => lastSynthCommand(page)).toBe('resume');
+});
+
+/** A background tab gets no frames, so the game stood still there while its music went on. */
+test('a hidden tab holds the music', async ({ page }) => {
+  await mockEditor(page);
+  await recordSynthCommands(page);
+  await page.goto('/edit/7/code');
+  await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Play' }).first().click();
+  await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
+
+  const setHidden = (hidden: boolean): Promise<void> =>
+    page.evaluate((h) => {
+      Object.defineProperty(document, 'hidden', { configurable: true, get: () => h });
+      document.dispatchEvent(new Event('visibilitychange'));
+    }, hidden);
+
+  await setHidden(true);
+  await expect.poll(() => lastSynthCommand(page)).toBe('pause');
+  await setHidden(false);
+  await expect.poll(() => lastSynthCommand(page)).toBe('resume');
+});
+
+test('Step one frame advances a paused game by one update, and pauses a running one', async ({
+  page,
+}) => {
+  await mockEditor(page);
+  await page.goto('/edit/7/code');
+  await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Play' }).first().click();
+  await page.getByRole('button', { name: 'Pause' }).click();
+  await page.getByRole('tab', { name: 'Perf' }).click();
+  // The readout samples the engine on a timer: let it catch up with the pause before reading.
+  const frame = page.getByText(/^FRAME \d+$/);
+  const read = async (): Promise<number> =>
+    Number((await frame.textContent())?.replace('FRAME ', ''));
+  await expect
+    .poll(async () => {
+      const a = await read();
+      await page.waitForTimeout(400);
+      return (await read()) - a;
+    })
+    .toBe(0);
+  const n = await read();
+  await page.getByRole('button', { name: 'Step one frame' }).click();
+  await expect(frame).toHaveText(`FRAME ${String(n + 1)}`);
+
+  await page.getByRole('button', { name: 'Play' }).click();
+  await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
+  await page.getByRole('button', { name: 'Step one frame' }).click();
+  await expect(page.getByRole('button', { name: 'Play' })).toBeVisible();
+});

@@ -1,0 +1,172 @@
+/**
+ * Generates `e2e/docs/lua/gfx-photo.lua` from `docs/api/img/src/parrot.png`.
+ *
+ * The demo shows what `_scanline` buys: a 16-colour console showing a photograph, because every
+ * band of 12 lines re-sets its 16 colours as the beam reaches it. The quantisation happens here,
+ * once, so the Lua carries only indices and palettes and the game does no colour work at all —
+ * the picture is put down with `gfx.pixel` on the first frame and the palettes in `_scanline`.
+ */
+import { readFileSync, statSync, writeFileSync } from 'node:fs';
+
+import { decodePng } from './png-decode';
+
+const SRC = 'docs/api/img/src/parrot.png';
+const OUT = 'e2e/docs/lua/gfx-photo.lua';
+const WIDTH = 320;
+const HEIGHT = 180;
+const BAND = 12;
+const COLOURS = 16;
+
+type Rgb = [number, number, number];
+
+interface Weighted {
+  rgb: Rgb;
+  count: number;
+}
+
+/**
+ * Median cut over the distinct colours of one band, each weighted by how many pixels have it: the
+ * box with the widest channel range is split at its weighted median along that channel until
+ * there are `count` boxes, and each box yields its weighted mean. Working on distinct colours
+ * rather than pixels is what keeps a band that is mostly one colour (the black backdrop) from
+ * spending several entries on that same colour. Deterministic: the colours are met in raster
+ * order and the sort is stable.
+ */
+function medianCut(rgb: Uint8Array, count: number): Rgb[] {
+  const seen = new Map<number, Weighted>();
+  for (let at = 0; at < rgb.length; at += 3) {
+    const [r, g, b] = [rgb[at] ?? 0, rgb[at + 1] ?? 0, rgb[at + 2] ?? 0];
+    const key = (r << 16) | (g << 8) | b;
+    const w = seen.get(key);
+    if (w) w.count++;
+    else seen.set(key, { rgb: [r, g, b], count: 1 });
+  }
+  const boxes: Weighted[][] = [[...seen.values()]];
+
+  const widest = (box: Weighted[]): { channel: number; range: number } => {
+    const min = [255, 255, 255];
+    const max = [0, 0, 0];
+    for (const { rgb: c } of box)
+      for (let i = 0; i < 3; i++) {
+        if ((c[i] ?? 0) < (min[i] ?? 0)) min[i] = c[i] ?? 0;
+        if ((c[i] ?? 0) > (max[i] ?? 0)) max[i] = c[i] ?? 0;
+      }
+    let channel = 0;
+    for (let i = 1; i < 3; i++)
+      if ((max[i] ?? 0) - (min[i] ?? 0) > (max[channel] ?? 0) - (min[channel] ?? 0)) channel = i;
+    return { channel, range: (max[channel] ?? 0) - (min[channel] ?? 0) };
+  };
+
+  while (boxes.length < count) {
+    let pick = -1;
+    let pickChannel = 0;
+    let pickRange = 0;
+    boxes.forEach((box, i) => {
+      const { channel, range } = widest(box);
+      if (range > pickRange) [pick, pickChannel, pickRange] = [i, channel, range];
+    });
+    // Every box is one colour: the band has fewer distinct colours than the palette has slots.
+    if (pick === -1) break;
+    const box = boxes[pick] ?? [];
+    box.sort((a, b) => (a.rgb[pickChannel] ?? 0) - (b.rgb[pickChannel] ?? 0));
+    const total = box.reduce((n, w) => n + w.count, 0);
+    let half = 0;
+    for (let seenCount = 0; half < box.length - 1; half++) {
+      seenCount += box[half]?.count ?? 0;
+      if (seenCount * 2 >= total) {
+        half++;
+        break;
+      }
+    }
+    boxes.splice(pick, 1, box.slice(0, half), box.slice(half));
+  }
+
+  const palette = boxes.map((box): Rgb => {
+    const sum = [0, 0, 0];
+    let total = 0;
+    for (const { rgb: c, count: n } of box) {
+      total += n;
+      for (let i = 0; i < 3; i++) sum[i] = (sum[i] ?? 0) + (c[i] ?? 0) * n;
+    }
+    return [0, 1, 2].map((i) => Math.round((sum[i] ?? 0) / total)) as Rgb;
+  });
+  while (palette.length < count) palette.push([0, 0, 0]);
+  const luma = ([r, g, b]: Rgb): number => r * 0.299 + g * 0.587 + b * 0.114;
+  return palette.sort((a, b) => luma(a) - luma(b));
+}
+
+function nearest(palette: Rgb[], r: number, g: number, b: number): number {
+  let best = 0;
+  let bestDist = Infinity;
+  palette.forEach(([pr, pg, pb], i) => {
+    const d = (pr - r) ** 2 + (pg - g) ** 2 + (pb - b) ** 2;
+    if (d < bestDist) [best, bestDist] = [i, d];
+  });
+  return best;
+}
+
+const hex = ([r, g, b]: Rgb): string =>
+  `#${[r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+
+const png = decodePng(readFileSync(SRC));
+if (png.width !== WIDTH || png.height !== HEIGHT) {
+  throw new Error(
+    `${SRC} is ${String(png.width)}×${String(png.height)}, the screen is ${String(WIDTH)}×${String(HEIGHT)}`,
+  );
+}
+
+const palettes: string[][] = [];
+const rows: string[] = [];
+for (let top = 0; top < HEIGHT; top += BAND) {
+  const band = png.rgb.subarray(top * WIDTH * 3, (top + BAND) * WIDTH * 3);
+  const palette = medianCut(band, COLOURS);
+  palettes.push(palette.map(hex));
+  for (let y = 0; y < BAND; y++) {
+    let row = '';
+    for (let x = 0; x < WIDTH; x++) {
+      const at = (y * WIDTH + x) * 3;
+      row += nearest(palette, band[at] ?? 0, band[at + 1] ?? 0, band[at + 2] ?? 0).toString(16);
+    }
+    rows.push(row);
+  }
+}
+
+const lua = [
+  `-- Generated by tools/photo-demo.ts from ${SRC} (npm run demo:photo); do not edit by hand.`,
+  '-- The photo and its licence are credited in docs/api/img/src/parrot.txt.',
+  'local PALETTES = {',
+  ...palettes.map((p) => `  { ${p.map((c) => `"${c}"`).join(', ')} },`),
+  '}',
+  'local ROWS = {',
+  ...rows.map((r) => `  "${r}",`),
+  '}',
+  'local INDEX = {}',
+  `for i = 0, ${String(COLOURS - 1)} do`,
+  '  INDEX[string.byte(string.format("%x", i))] = i',
+  'end',
+  '',
+  'local drawn = false',
+  '',
+  'function _draw()',
+  '  if drawn then return end',
+  '  drawn = true',
+  `  for y = 0, ${String(HEIGHT - 1)} do`,
+  '    local row = ROWS[y + 1]',
+  `    for x = 0, ${String(WIDTH - 1)} do`,
+  '      gfx.pixel(x, y, INDEX[row:byte(x + 1)])',
+  '    end',
+  '  end',
+  'end',
+  '',
+  'function _scanline(y)',
+  `  if y % ${String(BAND)} == 0 then`,
+  `    local pal = PALETTES[y // ${String(BAND)} + 1]`,
+  `    for i = 1, ${String(COLOURS)} do`,
+  '      gfx.set_color(i - 1, pal[i])',
+  '    end',
+  '  end',
+  'end',
+  '',
+].join('\n');
+writeFileSync(OUT, lua);
+console.log(`wrote ${OUT}: ${String(palettes.length)} bands, ${String(statSync(OUT).size)} bytes`);
