@@ -101,6 +101,24 @@ import {
             }
           </div>
           <nc-doc-article [page]="p" (navigate)="navigate($event)" />
+          @if (neighbours(); as n) {
+            <nav class="mt-4 flex justify-between gap-2 border-t border-line pt-2">
+              @if (n.prev; as prev) {
+                <button ncButton variant="secondary" size="sm" (click)="go(prev.slug)">
+                  <nc-icon name="chevron-left" [size]="12" />
+                  {{ prev.title }}
+                </button>
+              } @else {
+                <span></span>
+              }
+              @if (n.next; as next) {
+                <button ncButton variant="secondary" size="sm" (click)="go(next.slug)">
+                  {{ next.title }}
+                  <nc-icon name="chevron-right" [size]="12" />
+                </button>
+              }
+            </nav>
+          }
         } @else if (docs.error()) {
           <nc-empty-state
             icon="book-open"
@@ -157,6 +175,7 @@ export class LearnPage {
     () => (this.path() ?? '').replace(/^\/+|\/+$/g, '') || 'index',
   );
   protected readonly page = computed<DocPage | null>(() => this.docs.page(this.slug()));
+  protected readonly neighbours = computed(() => this.docs.neighbours(this.slug()));
   protected readonly hits = computed<SearchHit[]>(() => this.docs.search(this.query()));
 
   constructor() {

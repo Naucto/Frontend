@@ -10,75 +10,95 @@ import { type ApiEntry } from './docs.service';
   selector: 'nc-api-card',
   imports: [TranslocoDirective, ButtonDirective, IconComponent],
   template: `
-    <article *transloco="let t" class="doc-html" [id]="entry().name">
-      <div class="flex items-baseline gap-1">
-        <code class="text-ui text-ink"><span class="text-gold-ink">{{ entry().name }}</span>{{ rest() }}</code>
-        <span class="flex-1"></span>
+    <article *transloco="let t" class="api-card" [id]="entry().name">
+      <div class="api-sig">
+        <code
+          ><span class="api-sig-name">{{ entry().name }}</span
+          ><span [innerHTML]="signatureRest()"></span
+        ></code>
         @if (insertable()) {
-          <button ncButton variant="ghost" size="sm" (click)="insert.emit(entry())">
+          <button
+            ncButton
+            variant="ghost"
+            size="sm"
+            class="api-insert"
+            [attr.aria-label]="t('docs.insert')"
+            (click)="insert.emit(entry())"
+          >
             <nc-icon name="code" [size]="12" />
-            {{ t('docs.insert') }}
+            <span class="api-insert-word">{{ t('docs.insert') }}</span>
           </button>
         }
       </div>
-      <div class="label mt-0.5 text-ink-4">
+      <div class="api-meta">
         {{ entry().name.split('.')[0] }} · {{ entry().kind }}
         @if (entry().since) {
           · {{ t('docs.since', { v: entry().since }) }}
         }
       </div>
       @if (entry().descriptionHtml) {
-        <div class="mt-1" [innerHTML]="trust(entry().descriptionHtml)"></div>
+        <div class="doc-html api-prose" [innerHTML]="trust(entry().descriptionHtml)"></div>
       } @else {
-        <p class="mt-1 text-body text-ink-2">{{ entry().summary }}</p>
-      }
-      @if (entry().pictureHtml) {
-        <div class="mt-1" [innerHTML]="trust(entry().pictureHtml)"></div>
+        <p class="api-prose">{{ entry().summary }}</p>
       }
       @if (entry().params.length) {
-        <table class="mt-1 w-full text-meta">
-          <tbody>
-            @for (p of entry().params; track p.name) {
-              <tr>
-                <td class="pr-2 font-mono text-ink">{{ p.name }}</td>
-                <td class="pr-2 font-mono text-sky-ink">{{ p.type }}</td>
-                <td class="text-ink-2" [innerHTML]="trust(p.descriptionHtml)"></td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      }
-      @if (entry().returns) {
-        <p class="mt-1 text-meta text-ink-2">
-          <span class="label text-ink-4">{{ t('docs.returns') }}</span>
-          <span [innerHTML]="trust(entry().returns ?? '')"></span>
-        </p>
-      }
-      @for (n of entry().notes; track $index) {
-        <aside class="callout" [class]="n.kind" [innerHTML]="trust(n.html)"></aside>
-      }
-      @for (ex of entry().examples; track $index) {
-        <div class="label mt-1 text-ink-4">{{ t('docs.example') }}</div>
-        <pre class="lua"><code [innerHTML]="trust(ex.html)"></code></pre>
-      }
-      @if (entry().aliases.length || entry().seeAlso.length) {
-        <div class="label mt-1 flex flex-wrap gap-2 text-ink-4">
-          @if (entry().aliases.length) {
-            <span>{{ t('docs.legacy', { names: entry().aliases.join(', ') }) }}</span>
+        <div class="api-label">{{ t('docs.parameters') }}</div>
+        <dl class="api-params">
+          @for (p of entry().params; track p.name) {
+            <div class="api-param">
+              <dt>
+                <code>{{ p.name }}</code>
+                <span class="api-param-meta">
+                  {{ p.type }}
+                  @if (p.optional) {
+                    · {{ t('docs.optional') }}
+                  }
+                </span>
+              </dt>
+              <dd class="doc-html" [innerHTML]="trust(p.descriptionHtml)"></dd>
+            </div>
           }
-          @if (entry().seeAlso.length) {
-            <span>
-              {{ t('docs.seeAlso') }}
-              @for (s of entry().seeAlso; track s) {
-                <button type="button" class="text-gold-ink hover:underline" (click)="navigate.emit(s)">{{ s }}</button>
-              }
-            </span>
+        </dl>
+      }
+      @if (entry().kind === 'function') {
+        <div class="api-label">{{ t('docs.returns') }}</div>
+        @if (entry().returns) {
+          <p class="doc-html api-prose" [innerHTML]="trust(entry().returns ?? '')"></p>
+        } @else {
+          <p class="api-prose api-quiet">{{ t('docs.nothing') }}</p>
+        }
+      }
+      @if (entry().notes.length) {
+        <div class="doc-html">
+          @for (n of entry().notes; track $index) {
+            <aside class="callout" [class]="n.kind" [innerHTML]="trust(n.html)"></aside>
+          }
+        </div>
+      }
+      @if (entry().examples.length) {
+        <div class="api-label">{{ t('docs.example') }}</div>
+        <div class="doc-html">
+          @for (ex of entry().examples; track $index) {
+            <pre class="lua"><code [innerHTML]="trust(ex.html)"></code></pre>
+          }
+          @if (entry().pictureHtml) {
+            <div [innerHTML]="trust(entry().pictureHtml)"></div>
+          }
+        </div>
+      } @else if (entry().pictureHtml) {
+        <div class="doc-html" [innerHTML]="trust(entry().pictureHtml)"></div>
+      }
+      @if (entry().seeAlso.length) {
+        <div class="api-label">{{ t('docs.seeAlso') }}</div>
+        <div class="api-refs">
+          @for (s of entry().seeAlso; track s) {
+            <button type="button" class="api-ref-chip" (click)="navigate.emit(s)">{{ s }}</button>
           }
         </div>
       }
     </article>
   `,
-  host: { class: 'block border-b border-line py-2' },
+  host: { class: 'block' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ApiCardComponent {
@@ -87,9 +107,14 @@ export class ApiCardComponent {
   readonly insert = output<ApiEntry>();
   readonly navigate = output<string>();
   private readonly sanitizer = inject(DomSanitizer);
-  protected readonly rest = computed(() =>
-    (this.entry().signature || this.entry().name).replace(this.entry().name, ''),
-  );
+  protected readonly signatureRest = computed(() => {
+    const rest = (this.entry().signature || this.entry().name).replace(this.entry().name, '');
+    const html = rest
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/\[[^\]]*\]/g, (m) => `<span class="api-sig-opt">${m}</span>`);
+    return this.sanitizer.bypassSecurityTrustHtml(html);
+  });
 
   /** Docs HTML is built at compile time from our own repository; it never carries user input. */
   protected trust(html: string): ReturnType<DomSanitizer['bypassSecurityTrustHtml']> {

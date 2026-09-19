@@ -9,13 +9,14 @@
      way to point. */
   .doc-html {
     color: var(--nc-ink-2);
-    font-size: var(--text-body);
-    line-height: var(--text-body--line-height);
+    font-size: var(--text-ui);
+    line-height: 1.6;
+    container-type: inline-size;
   }
   .doc-html h1 + p {
     color: var(--nc-ink-body);
-    font-size: var(--text-ui);
-    line-height: var(--text-ui--line-height);
+    font-size: 14px;
+    line-height: 1.6;
   }
   .doc-html em {
     color: var(--nc-ink-body);
@@ -34,7 +35,7 @@
     border-top: 1px solid var(--nc-line);
   }
   .doc-html h3 {
-    font-size: var(--text-ui);
+    font-size: 14px;
     color: var(--nc-ink);
     margin: 24px 0 8px;
   }
@@ -59,7 +60,7 @@
   }
   .doc-html code {
     font-family: var(--font-mono);
-    font-size: var(--text-meta);
+    font-size: var(--text-body);
     color: var(--nc-ink);
     background: var(--nc-inset);
     padding: 0 4px;
@@ -151,14 +152,35 @@
   }
   .doc-html figure.doc-figure figcaption {
     margin-top: 6px;
-    font-size: var(--text-meta);
+    font-size: var(--text-body);
+    line-height: 1.5;
     color: var(--nc-ink-3);
   }
-  /* The console's own pixels, shown as pixels, at twice their size where the column allows. */
+  @container (min-width: 640px) {
+    .doc-html figure.doc-figure--tall {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 12px;
+      align-items: start;
+    }
+    .doc-html figure.doc-figure--tall img {
+      max-width: min(100%, 420px);
+    }
+    .doc-html figure.doc-figure--tall figcaption {
+      margin-top: 0;
+      padding-top: 4px;
+    }
+  }
   .doc-html figure.doc-frame img {
     image-rendering: pixelated;
-    width: min(100%, 640px);
+    width: 320px;
+    max-width: 100%;
     height: auto;
+  }
+  @container (min-width: 660px) {
+    .doc-html figure.doc-frame img {
+      width: 640px;
+    }
   }
   /* A capture is taken in both themes where it can be; the page shows the one it is read in. */
   .doc-html figure.doc-figure img.doc-light {
@@ -219,8 +241,47 @@
   .doc-html .callout.important {
     border-color: var(--nc-hot);
   }
+  .doc-html .callout.try {
+    border-color: var(--nc-gold);
+    background: var(--nc-inset);
+  }
+  .doc-html .callout.try::before {
+    content: 'Try it';
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--nc-gold-ink);
+  }
   .doc-html .callout > p:last-child {
     margin-bottom: 0;
+  }
+  .doc-html h2[data-step] {
+    padding-top: 12px;
+  }
+  .doc-html h2[data-step]::before {
+    content: attr(data-step) ' / ' attr(data-steps);
+    display: block;
+    margin-bottom: 8px;
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    letter-spacing: var(--tracking-label);
+    color: var(--nc-ink-4);
+  }
+  .doc-html h2[data-step]::after {
+    content: '';
+    display: block;
+    height: 2px;
+    margin-top: 8px;
+    background: linear-gradient(
+      to right,
+      var(--nc-gold) calc(var(--step) / var(--steps) * 100%),
+      var(--nc-line) 0
+    );
   }
   .doc-html .api-ref code {
     color: var(--nc-gold-ink);
@@ -257,6 +318,60 @@
   }
   .doc-html .doc-diagram svg {
     display: block;
+    max-width: 100%;
+    height: auto;
+  }
+  .doc-html .doc-diagram--authored svg {
+    width: 100%;
+  }
+  .doc-html .doc-diagram .d-stroke rect,
+  .doc-html .doc-diagram .d-stroke path,
+  .doc-html .doc-diagram .d-stroke polyline {
+    fill: none;
+    stroke: var(--nc-ink-4);
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+  }
+  .doc-html .doc-diagram .d-box rect {
+    fill: var(--nc-raised);
+    stroke: var(--nc-line-strong);
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+  }
+  .doc-html .doc-diagram .d-fill-gold {
+    fill: var(--nc-gold);
+  }
+  .doc-html .doc-diagram .d-fill-jade {
+    fill: var(--nc-jade);
+  }
+  .doc-html .doc-diagram .d-fill-sky {
+    fill: var(--nc-sky);
+  }
+  .doc-html .doc-diagram .d-fill-hot {
+    fill: var(--nc-hot);
+  }
+  .doc-html .doc-diagram .d-fill-orange {
+    fill: var(--nc-orange);
+  }
+  .doc-html .doc-diagram .d-fill-inset {
+    fill: var(--nc-inset);
+  }
+  .doc-html .doc-diagram .d-label text {
+    fill: var(--nc-ink-body);
+    font-family: var(--font-ui);
+    letter-spacing: normal;
+    font-size: var(--text-meta);
+  }
+  /* Box art keeps the character grid it was drawn on. */
+  .doc-html .doc-diagram:not(.doc-diagram--authored) .d-label text,
+  .doc-html .doc-diagram .d-label text.d-mono {
+    font-family: var(--font-mono);
+  }
+  .doc-html .doc-diagram .d-label text.d-quiet {
+    fill: var(--nc-ink-4);
+  }
+  .doc-html .doc-diagram .d-label text.d-gold {
+    fill: var(--nc-gold-ink);
   }
   .doc-html .doc-diagram .d-stroke line {
     stroke: var(--nc-ink-4);
@@ -266,11 +381,132 @@
   .doc-html .doc-diagram .d-head polygon {
     fill: var(--nc-gold);
   }
-  .doc-html .doc-diagram .d-label text {
-    fill: var(--nc-ink-body);
+
+  .api-card {
+    padding: 8px 0 24px;
+    border-bottom: 1px solid var(--nc-line);
+  }
+  .api-card:last-child {
+    border-bottom: 0;
+  }
+  .api-sig {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 1px solid var(--nc-line);
+    border-radius: var(--radius-sm);
+    background: var(--nc-inset);
+  }
+  .api-sig code {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding-left: 16px;
+    text-indent: -16px;
     font-family: var(--font-mono);
-    letter-spacing: normal;
+    font-size: var(--text-ui);
+    line-height: 1.5;
+    color: var(--nc-ink);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .api-sig-name {
+    color: var(--nc-gold-ink);
+  }
+  .api-sig-opt {
+    color: var(--nc-ink-3);
+  }
+  .api-insert {
+    flex: none;
+    margin: -4px -6px -4px 0;
+  }
+  @container (max-width: 480px) {
+    .api-insert-word {
+      display: none;
+    }
+  }
+  .api-meta {
+    margin-top: 6px;
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--nc-ink-4);
+  }
+  .api-prose {
+    margin-top: 12px;
+    color: var(--nc-ink-2);
+    font-size: var(--text-ui);
+    line-height: 1.6;
+  }
+  .api-prose > p:last-child {
+    margin-bottom: 0;
+  }
+  .api-quiet {
+    color: var(--nc-ink-4);
+  }
+  .api-label {
+    margin: 16px 0 6px;
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--nc-ink-3);
+  }
+  .api-params {
+    margin: 0;
+  }
+  .api-param {
+    padding: 6px 0;
+    border-top: 1px solid var(--nc-line);
+  }
+  .api-param:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+  .api-param dt {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .api-param dt code {
+    font-family: var(--font-mono);
+    font-size: var(--text-body);
+    color: var(--nc-ink);
+  }
+  .api-param-meta {
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--nc-sky-ink);
+  }
+  .api-param dd {
+    margin: 2px 0 0 16px;
+    font-size: var(--text-body);
+    line-height: 1.55;
+  }
+  .api-param dd p:last-child {
+    margin-bottom: 0;
+  }
+  .api-refs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .api-ref-chip {
+    padding: 2px 8px;
+    border: 1px solid var(--nc-line-strong);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
     font-size: var(--text-meta);
+    color: var(--nc-gold-ink);
+    cursor: pointer;
+  }
+  .api-ref-chip:hover {
+    border-color: var(--nc-gold);
+    background: var(--nc-raised);
   }
 
   /* A heading that names a function is still a heading: without this the inline-code rule below

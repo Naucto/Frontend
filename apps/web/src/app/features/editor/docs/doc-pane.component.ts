@@ -77,7 +77,6 @@ import { DocRequestService } from './doc-request.service';
             }
           </div>
         } @else if (view() === 'api' && entry(); as e) {
-          <div class="label mb-1 text-ink-4">API › {{ e.name.split('.')[0] }} › {{ e.name.split('.')[1] }}</div>
           <nc-api-card [entry]="e" [insertable]="true" (insert)="insert($event)" (navigate)="openApi($event)" />
         } @else if (view() === 'page' && page(); as p) {
           @if (p.lua) {
@@ -87,6 +86,24 @@ import { DocRequestService } from './doc-request.service';
             </button>
           }
           <nc-doc-article [page]="p" [insertable]="true" (insert)="insert($event)" (navigate)="navigate($event)" />
+          @if (neighbours(); as n) {
+            <nav class="mt-3 flex justify-between gap-1 border-t border-line pt-1.5">
+              @if (n.prev; as prev) {
+                <button ncButton variant="secondary" size="sm" (click)="openPage(prev.slug)">
+                  <nc-icon name="chevron-left" [size]="12" />
+                  {{ prev.title }}
+                </button>
+              } @else {
+                <span></span>
+              }
+              @if (n.next; as next) {
+                <button ncButton variant="secondary" size="sm" (click)="openPage(next.slug)">
+                  {{ next.title }}
+                  <nc-icon name="chevron-right" [size]="12" />
+                </button>
+              }
+            </nav>
+          }
         } @else if (docs.error()) {
           <p class="p-2 text-body text-ink-3">{{ t('docs.unavailableHint') }}</p>
         } @else {
@@ -114,6 +131,7 @@ export class DocPaneComponent {
   protected readonly apiName = signal<string | null>(null);
   protected readonly view = computed<'tree' | 'page' | 'api'>(() => (this.apiName() ? 'api' : this.slug() ? 'page' : 'tree'));
   protected readonly page = computed(() => (this.slug() ? this.docs.page(this.slug() ?? '') : null));
+  protected readonly neighbours = computed(() => this.docs.neighbours(this.slug() ?? ''));
   protected readonly entry = computed<ApiEntry | null>(() => (this.apiName() ? this.docs.lookup(this.apiName() ?? '') : null));
   protected readonly hits = computed<SearchHit[]>(() => this.docs.search(this.query(), 10));
 

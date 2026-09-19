@@ -131,6 +131,14 @@ export class DocsService {
     return e.aliasOf ? (idx[e.aliasOf] ?? e) : e;
   }
 
+  neighbours(slug: string): { prev: DocPage | null; next: DocPage | null } {
+    const page = this.page(slug);
+    if (!page) return { prev: null, next: null };
+    const pages = this.sections().find((s) => s.id === page.section)?.pages ?? [];
+    const i = pages.findIndex((p) => p.slug === page.slug);
+    return { prev: pages[i - 1] ?? null, next: pages[i + 1] ?? null };
+  }
+
   /** Every function name in a namespace, in manifest order. */
   peers(namespace: string): readonly string[] {
     return (

@@ -295,6 +295,34 @@ test.describe('editor', () => {
     );
   });
 
+  test('the reference reads without a horizontal scroll at its 401 px', async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 1030 });
+    await page.goto('/edit/7/code');
+    await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+    await page.keyboard.press('F1');
+    const pane = page.locator('nc-doc-pane');
+    const search = pane.getByPlaceholder('Search', { exact: true });
+    const scroller = pane.locator('.overflow-auto').first();
+    const overflow = (): Promise<number> =>
+      scroller.evaluate((el) => Math.max(0, el.scrollWidth - el.clientWidth));
+
+    await search.fill('Rendering');
+    await pane.getByRole('option').first().click();
+    await expect(pane.locator('figure.doc-diagram--authored svg').first()).toBeVisible();
+    expect(await overflow()).toBe(0);
+    // The API card: signature band, parameters as a list, see-also chips, and no legacy line.
+    const card = pane.locator('article.api-card#gfx\\.set_color');
+    await expect(card.locator('.api-sig-name')).toHaveText('gfx.set_color');
+    await expect(card.locator('dl.api-params dt').first()).toBeVisible();
+    await expect(card.locator('.api-ref-chip').first()).toBeVisible();
+    await expect(pane.getByText('Legacy name')).toHaveCount(0);
+
+    await search.fill('SOUND');
+    await pane.getByRole('option').first().click();
+    await expect(pane.locator('figure.doc-figure img').first()).toBeVisible();
+    expect(await overflow()).toBe(0);
+  });
+
   test('the reference takes the console’s place when there is not', async ({ page }) => {
     await page.setViewportSize({ width: 1400, height: 1030 });
     await page.goto('/edit/7/code');

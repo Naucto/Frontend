@@ -17,7 +17,10 @@ test.describe('learn', () => {
   test('shows API cards and resolves references', async ({ page }) => {
     await page.goto('/learn/api/gfx');
     await expect(page.locator('#gfx\\.draw_sprite')).toBeVisible();
-    await expect(page.getByText('Legacy name: sprite')).toBeVisible();
+    await expect(page.getByText('Legacy name')).toHaveCount(0);
+    await expect(
+      page.locator('#gfx\\.draw_sprite').getByRole('button', { name: 'gfx.draw_region' }),
+    ).toBeVisible();
   });
 
   /**
