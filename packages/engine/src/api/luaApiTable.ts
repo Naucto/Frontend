@@ -307,6 +307,24 @@ export const LUA_API: readonly LuaApiEntry[] = [
     signature: 'sound.is_playing(channel)',
     summary: 'Whether a voice is sounding.',
   },
+  {
+    ns: 'sound',
+    name: 'set_instrument',
+    signature: 'sound.set_instrument(name, fields)',
+    summary: 'Change an instrument for this run.',
+  },
+  {
+    ns: 'sound',
+    name: 'set_pattern',
+    signature: 'sound.set_pattern(n, fields)',
+    summary: 'Change the tempo or length of a pattern for this run.',
+  },
+  {
+    ns: 'sound',
+    name: 'set_music',
+    signature: 'sound.set_music(n, fields)',
+    summary: 'Change whether a music loops for this run.',
+  },
   // sys
   { ns: 'sys', name: 'dt', signature: 'sys.dt()', summary: 'Fixed step length in seconds (1/60).' },
   { ns: 'sys', name: 'frame', signature: 'sys.frame()', summary: 'Frames since _init.' },

@@ -125,7 +125,18 @@ export interface SoundPort {
     channel: number | undefined,
   ): void;
   stopNote(channel: number): void;
-  playMusic(song: number, loop: boolean, fadeIn: number): void;
+  /** `loop` left undefined means what {@link setSongOverride} set for that song, else true. */
+  playMusic(song: number, loop: boolean | undefined, fadeIn: number): void;
+  /**
+   * Changes that hold for the run and never reach the document. Each is laid over the document
+   * every time the library is read from it, so an edit made while the game runs does not undo it,
+   * and each answers whether it found what it was asked to change.
+   */
+  setInstrumentOverride(name: string, patch: InstrumentPatch): boolean;
+  /** `slot` is the pattern's number as the SOUND tab shows it, not its id. */
+  setPatternOverride(slot: number, patch: PatternPatch): boolean;
+  setSongOverride(slot: number, patch: SongPatch): boolean;
+  clearOverrides(): void;
   stopMusic(fadeOut: number): void;
   stopAll(): void;
   /** Holds the transport where it stands, and lets it go on from there. A stop resets it. */

@@ -48,6 +48,16 @@ export const INSTRUMENT_BOUNDS = {
   pan: Bound;
 };
 
+/**
+ * Range a pattern's tempo and length are kept in when a game sets them from code. The tempo runs
+ * where the SOUND tab's field does; the length goes below the tab's shortest bar, because a game
+ * shortening a loop for a moment is not cutting a pattern for good.
+ */
+export const PATTERN_BOUNDS = {
+  bpm: { min: 40, max: 240 },
+  steps: { min: 1, max: 64 },
+} as const satisfies Record<'bpm' | 'steps', Bound>;
+
 /** Everything that makes an instrument sound — not what it is called or shown as. */
 export type InstrumentPreset = Omit<Instrument, 'id' | 'name' | 'colour'>;
 

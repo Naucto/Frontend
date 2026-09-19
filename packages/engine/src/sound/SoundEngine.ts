@@ -1,4 +1,4 @@
-import type { SoundPort } from '../api/ports';
+import type { InstrumentPatch, PatternPatch, SongPatch, SoundPort } from '../api/ports';
 import type { Game } from '../game/Game';
 import { type Instrument, type Pattern, type Song, SONG_SLOTS, VOICES } from './model';
 import { decodeSample } from './sample-codec';
@@ -14,6 +14,27 @@ import type { SynthEvent } from './worklet/protocol';
  *  next bar rather than the next minute. */
 const RESYNC_MS = 50;
 
+/** Later fields over earlier ones, a group at a time, so `attack` set twice keeps the `decay`. */
+const mergeInstrumentPatch = (a: InstrumentPatch, b: InstrumentPatch): InstrumentPatch => ({
+  ...a,
+  ...b,
+  ...((a.env ?? b.env) ? { env: { ...a.env, ...b.env } } : {}),
+  ...((a.vibrato ?? b.vibrato) ? { vibrato: { ...a.vibrato, ...b.vibrato } } : {}),
+  ...((a.arp ?? b.arp) ? { arp: { ...a.arp, ...b.arp } } : {}),
+  ...((a.filter ?? b.filter) ? { filter: { ...a.filter, ...b.filter } } : {}),
+});
+
+const patchInstrument = (i: Instrument, p: InstrumentPatch): Instrument => ({
+  ...i,
+  ...p,
+  env: { ...i.env, ...p.env },
+  vibrato: { ...i.vibrato, ...p.vibrato },
+  arp: { ...i.arp, ...p.arp },
+  filter: { ...i.filter, ...p.filter },
+});
+
+const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);
+
 export class SoundEngine implements SoundPort {
   private position: { pattern: number; step: number } | null = null;
   private readonly voices: boolean[] = Array.from({ length: VOICES }, () => false);
@@ -22,6 +43,12 @@ export class SoundEngine implements SoundPort {
   private patterns = new Map<string, Pattern>();
   private sfxSlots = new Map<string, string>();
   private songs = new Map<string, Song>();
+  /** By instrument id, pattern number and song slot: what a game changed for this run. */
+  private readonly instrumentOverrides = new Map<string, InstrumentPatch>();
+  private readonly patternOverrides = new Map<number, PatternPatch>();
+  private readonly songOverrides = new Map<string, SongPatch>();
+  /** Slot of the song playing, so a loop override on it reaches the transport at once. */
+  private playingSong: string | null = null;
   private librarySent = false;
   /** Whether the worklet has music to play, which is what makes a stale library worth resending. */
   private playing = false;
@@ -84,13 +111,29 @@ export class SoundEngine implements SoundPort {
     });
   }
 
+  private readLibrary(): void {
+    this.instruments = this.game.getInstruments();
+    for (const [id, patch] of this.instrumentOverrides) {
+      const i = this.instruments.get(id);
+      if (i) this.instruments.set(id, patchInstrument(i, patch));
+    }
+    this.patterns = this.game.getPatterns();
+    for (const [id, p] of this.patterns) {
+      const patch = this.patternOverrides.get(p.slot);
+      if (patch) this.patterns.set(id, { ...p, ...patch });
+    }
+    this.sfxSlots = this.game.getSfxSlots();
+    this.songs = this.game.getSongs();
+    for (const [slot, patch] of this.songOverrides) {
+      const s = this.songs.get(slot);
+      if (s) this.songs.set(slot, { ...s, ...patch });
+    }
+  }
+
   private syncLibrary(): void {
     this.syncSamples();
     if (this.librarySent) return;
-    this.instruments = this.game.getInstruments();
-    this.patterns = this.game.getPatterns();
-    this.sfxSlots = this.game.getSfxSlots();
-    this.songs = this.game.getSongs();
+    this.readLibrary();
     this.backend.post({
       type: 'library',
       instruments: [...this.instruments],
@@ -129,6 +172,7 @@ export class SoundEngine implements SoundPort {
     this.backend.post({ type: 'library', instruments: [...this.instruments], patterns: [...tmp] });
     this.librarySent = false;
     this.playing = true;
+    this.playingSong = null;
     this.backend.post({
       type: 'play_song',
       song: { name: pattern.name, sequence: [pattern.id], loop, loopStart: 0 },
@@ -136,6 +180,18 @@ export class SoundEngine implements SoundPort {
       fadeIn: 0,
       from,
     });
+  }
+
+  /** By id first, then by the name the SOUND tab shows, which is what a game knows it by. */
+  private instrumentId(instrument: string): string | undefined {
+    return this.instruments.has(instrument)
+      ? instrument
+      : [...this.instruments.values()].find((i) => i.name === instrument)?.id;
+  }
+
+  private resend(): void {
+    this.librarySent = false;
+    this.syncLibrary();
   }
 
   // ---- SoundPort ------------------------------------------------------------
@@ -157,9 +213,7 @@ export class SoundEngine implements SoundPort {
     channel: number | undefined,
   ): void {
     this.syncLibrary();
-    const id = this.instruments.has(instrument)
-      ? instrument
-      : [...this.instruments.values()].find((i) => i.name === instrument)?.id;
+    const id = this.instrumentId(instrument);
     if (!id) return;
     this.backend.post({
       type: 'note_on',
@@ -175,13 +229,20 @@ export class SoundEngine implements SoundPort {
     this.backend.post({ type: 'note_off', channel });
   }
 
-  playMusic(song: number, loop: boolean, fadeIn: number): void {
+  playMusic(song: number, loop: boolean | undefined, fadeIn: number): void {
     this.syncLibrary();
     if (song < 0 || song >= SONG_SLOTS) return;
-    const s = this.songs.get(String(song));
+    const slot = String(song);
+    const s = this.songs.get(slot);
     if (!s) return;
     this.playing = true;
-    this.backend.post({ type: 'play_song', song: s, loop, fadeIn });
+    this.playingSong = slot;
+    this.backend.post({
+      type: 'play_song',
+      song: s,
+      loop: loop ?? this.songOverrides.get(slot)?.loop ?? true,
+      fadeIn,
+    });
   }
 
   /** Whether what is already playing loops; nothing happens when nothing is. */
@@ -191,13 +252,62 @@ export class SoundEngine implements SoundPort {
 
   stopMusic(fadeOut: number): void {
     this.playing = false;
+    this.playingSong = null;
     this.backend.post({ type: 'stop_music', fadeOut });
   }
 
   stopAll(): void {
     this.playing = false;
+    this.playingSong = null;
     this.backend.post({ type: 'stop_all' });
     this.position = null;
+  }
+
+  setInstrumentOverride(name: string, patch: InstrumentPatch): boolean {
+    if (!this.librarySent) this.readLibrary();
+    const id = this.instrumentId(name);
+    if (!id) return false;
+    const prev = this.instrumentOverrides.get(id) ?? {};
+    const next = mergeInstrumentPatch(prev, patch);
+    // A game may set the same thing every frame; the library only goes out when it changes.
+    if (same(prev, next)) return true;
+    this.instrumentOverrides.set(id, next);
+    this.resend();
+    return true;
+  }
+
+  setPatternOverride(slot: number, patch: PatternPatch): boolean {
+    if (!this.librarySent) this.readLibrary();
+    if (![...this.patterns.values()].some((p) => p.slot === slot)) return false;
+    const prev = this.patternOverrides.get(slot) ?? {};
+    const next = { ...prev, ...patch };
+    if (same(prev, next)) return true;
+    this.patternOverrides.set(slot, next);
+    this.resend();
+    return true;
+  }
+
+  setSongOverride(slot: number, patch: SongPatch): boolean {
+    if (!this.librarySent) this.readLibrary();
+    const key = String(slot);
+    if (!this.songs.has(key)) return false;
+    const prev = this.songOverrides.get(key) ?? {};
+    const next = { ...prev, ...patch };
+    if (same(prev, next)) return true;
+    this.songOverrides.set(key, next);
+    this.resend();
+    // The transport took its own copy of the song when it started.
+    if (patch.loop !== undefined && this.playingSong === key) this.setLoop(patch.loop);
+    return true;
+  }
+
+  clearOverrides(): void {
+    if (!this.instrumentOverrides.size && !this.patternOverrides.size && !this.songOverrides.size)
+      return;
+    this.instrumentOverrides.clear();
+    this.patternOverrides.clear();
+    this.songOverrides.clear();
+    this.librarySent = false;
   }
 
   pause(): void {
@@ -240,6 +350,7 @@ export class SoundEngine implements SoundPort {
     else if (e.type === 'stopped') {
       this.position = null;
       this.playing = false;
+      this.playingSong = null;
     } else if (e.type === 'scope') this.scope = e.peaks;
     else
       e.active.forEach((a, i) => {
