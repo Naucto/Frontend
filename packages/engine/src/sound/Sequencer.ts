@@ -93,14 +93,17 @@ export class Sequencer {
   }
 
   /**
-   * Where the clock stands, in steps and fractions of one — the sub-steps elapsed, which is finer
-   * than any note position and is what a playhead has to follow to move rather than jump.
+   * The sub-step that is sounding, in steps and fractions of one: finer than any note position,
+   * which is what a playhead has to follow to move rather than jump.
    *
-   * A caller that needs a step *index* has to round it up itself: whole steps are what a note sits
-   * on, and this sits between them for most of a step's length.
+   * The counter is one ahead of what is heard, since a sub-step is triggered and then counted, so
+   * this reports the one before it. Whole steps are where notes sit, and a caller wanting the step
+   * a note is playing on takes the floor: the fraction is how far that step has run.
    */
   position(): SequencerPosition | null {
-    return this.playing ? { pattern: this.seqIndex, step: this.subStep / SUBSTEPS } : null;
+    if (!this.playing) return null;
+
+    return { pattern: this.seqIndex, step: Math.max(0, this.subStep - 1) / SUBSTEPS };
   }
 
   get isPlaying(): boolean {

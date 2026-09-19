@@ -82,11 +82,9 @@ export class SoundAPI extends EngineModule {
           typeof sf === 'number' ? sf : undefined,
         );
       },
-      music_position: () => {
+      music_pos: () => {
         const p = s()?.musicPosition();
-        // Rounded up to a whole step, because a game compares this against a note's own step and
-        // the clock spends most of each step between two of them.
-        return p ? [p.pattern, Math.ceil(p.step)] : [undefined, undefined];
+        return p ? [p.pattern, Math.floor(p.step)] : [undefined, undefined];
       },
       is_playing: (ch: unknown) => s()?.isPlaying(Math.floor(num(ch))) ?? false,
       set_instrument: (name: unknown, fields: unknown) => {

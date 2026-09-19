@@ -147,11 +147,11 @@ describe('Sequencer', () => {
         .map((v) => v.pitch)
         .sort(),
     ).toEqual([60, 64]);
-    // Between two steps, which is where the clock spends most of its time: sub-step 16 fired the
-    // note on step 2 and one sub-step has gone by since.
-    expect(seq.position()).toEqual({ pattern: 0, step: 17 / SUBSTEPS });
+    // Sub-step 16 fired the note on step 2 and the next one is not due yet, so that is the one
+    // sounding, however far the counter has moved past it.
+    expect(seq.position()).toEqual({ pattern: 0, step: 16 / SUBSTEPS });
     seq.advance(stepSamples * 2);
-    expect(seq.position()?.step).toBe(1 / SUBSTEPS);
+    expect(seq.position()?.step).toBe(0);
     seq.stopMusic(0);
     expect(seq.position()).toBeNull();
   });

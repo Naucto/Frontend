@@ -297,9 +297,10 @@ export const LUA_API: readonly LuaApiEntry[] = [
   },
   {
     ns: 'sound',
-    name: 'music_position',
-    signature: 'sound.music_position()',
-    summary: 'pattern_index, step of the playing song (nil when stopped).',
+    name: 'music_pos',
+    signature: 'sound.music_pos()',
+    summary:
+      "Place in the music's chain and the step now sounding, 0-based; nil when nothing plays.",
   },
   {
     ns: 'sound',

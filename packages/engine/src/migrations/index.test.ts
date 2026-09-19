@@ -3,20 +3,21 @@ import * as Y from 'yjs';
 
 import { Game } from '../game/Game';
 import { KEYS, LEGACY_KEYS } from '../game/keys';
-import { migrateGame, schemaVersionOf } from './index';
+import { migrateGame, needsMigration, schemaVersionOf } from './index';
 
-/** A game saved by a v1 build: the schema marker and one file under the v1 keys. */
-function v1Doc(code: string): Y.Doc {
+function docAt(version: number, code: string): Y.Doc {
   const doc = new Y.Doc();
   const game = new Game(doc);
   game.seedDefaults();
-  doc.getMap(KEYS.meta).set('schemaVersion', 1);
+  doc.getMap(KEYS.meta).set('schemaVersion', version);
   const main = game.files[0];
   main?.text.delete(0, main.text.length);
   main?.text.insert(0, code);
 
   return doc;
 }
+
+const v1Doc = (code: string): Y.Doc => docAt(1, code);
 
 describe('migrateGame across steps', () => {
   it('brings a v0 document to v2 through both steps', () => {
@@ -97,5 +98,46 @@ describe('migrateGame across steps', () => {
     migrateGame(doc);
 
     expect(new Game(doc).declaredActions).toEqual([{ action: 'b', label: 'Dash' }]);
+  });
+});
+
+describe('migrateGame renames past the schema', () => {
+  it('brings a current game to the current names without moving its version', () => {
+    const doc = docAt(2, 'local p, s = sound.music_position()\nif input.btn("a") then end');
+    expect(needsMigration(doc)).toBe(true);
+
+    const report = migrateGame(doc);
+
+    expect(report).toMatchObject({ from: 2, to: 2, applied: true, counts: { 'rewrites:main': 2 } });
+    const game = new Game(doc);
+    expect(game.schemaVersion).toBe(2);
+    expect(doc.getMap(KEYS.meta).has('migratedFrom')).toBe(false);
+    expect(game.files[0]?.text.toString()).toBe(
+      'local p, s = sound.music_pos()\nif input.held("a") then end',
+    );
+    expect(needsMigration(doc)).toBe(false);
+  });
+
+  it('gives a v1 game the sound rename along with the input ones', () => {
+    const doc = v1Doc('if input.btnp("a") then local p, s = sound.music_position() end');
+
+    const report = migrateGame(doc);
+
+    expect(report).toMatchObject({ from: 1, to: 2, applied: true });
+    expect(new Game(doc).files[0]?.text.toString()).toBe(
+      'if input.pressed("a") then local p, s = sound.music_pos() end',
+    );
+  });
+
+  it('leaves a current game with nothing to rename untouched', () => {
+    const doc = docAt(2, 'local p, s = sound.music_pos()\n-- sound.music_position() was its name');
+    const updates: unknown[] = [];
+    doc.on('update', (u: unknown) => updates.push(u));
+
+    expect(needsMigration(doc)).toBe(false);
+    const report = migrateGame(doc);
+
+    expect(report).toMatchObject({ from: 2, to: 2, applied: false, counts: {} });
+    expect(updates).toEqual([]);
   });
 });

@@ -8,7 +8,6 @@ import { SoundAPI } from './SoundAPI';
 
 const stub = {} as unknown;
 
-/** A console holding one position, which is all `sound.music_position` reads. */
 const setup = (step: number | null): LuaEnvironment => {
   const lua = new LuaEnvironment();
   const sound = {
