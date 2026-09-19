@@ -29,6 +29,7 @@ const fn = (name: string, summary: string): ApiEntry => ({
   pictureHtml: '',
   params: [],
   returns: null,
+  returnType: null,
   examples: [],
   notes: [],
   aliases: [],

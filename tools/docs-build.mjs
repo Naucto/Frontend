@@ -508,6 +508,7 @@ for (const file of await readdir(resolve(docs, 'api'))) {
           descriptionHtml: renderMarkdown(p.description ?? '').replace(/^<p>|<\/p>\s*$/g, ''),
         })),
         returns: f.returns ? renderMarkdown(f.returns).replace(/^<p>|<\/p>\s*$/g, '') : null,
+        returnType: f.returnType ?? null,
         examples: (f.examples ?? []).map((e) => ({ code: e, html: highlightLua(e) })),
         notes: (f.notes ?? []).map((n) => ({ kind: n.kind, html: renderMarkdown(n.text ?? '') })),
         aliases: f.aliases ?? [],

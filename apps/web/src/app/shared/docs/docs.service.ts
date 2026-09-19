@@ -44,6 +44,8 @@ export interface ApiEntry {
   pictureHtml: string;
   params: ApiParam[];
   returns: string | null;
+  /** What a function returns, as a type name or a union like `number|nil`; null where `returns` is. */
+  returnType: string | null;
   examples: { code: string; html: string }[];
   notes: { kind: string; html: string }[];
   aliases: string[];
