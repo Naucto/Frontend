@@ -109,7 +109,7 @@ export class NumberFieldComponent {
    * text both mean "nothing here", and that is what {@link cleared} reports.
    */
   readonly clearable = input(false, { transform: booleanAttribute });
-  /** Whether the box takes the width and height it is given rather than the width of its digits. */
+  /** Whether the box takes the height it is given, and grows into the width of its cell. */
   readonly fill = input(false, { transform: booleanAttribute });
   /**
    * How much room it takes.
@@ -139,10 +139,8 @@ export class NumberFieldComponent {
   protected readonly caretsClass = computed(() => (this.size() === 'sm' ? 'w-[14px]' : 'w-[18px]'));
   protected readonly frameClass = computed(() => TONE[this.tone()]);
   protected readonly shown = computed(() => this.print(this.value()));
-  /** Wide enough for the largest number it may hold, or left to the box where one is given. */
-  protected readonly width = computed(() =>
-    this.fill() ? null : Math.max(String(this.max()).length, this.pad()),
-  );
+  /** Wide enough for the largest number it may hold; a box that fills its cell grows from there. */
+  protected readonly width = computed(() => Math.max(String(this.max()).length, this.pad()));
   protected readonly canRaise = computed(() => {
     const v = this.value();
     return v === null || v < this.max();
