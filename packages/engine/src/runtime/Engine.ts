@@ -48,7 +48,7 @@ export interface EngineOptions {
   /** Element that receives keyboard/mouse focus (the canvas). */
   inputTarget?: HTMLElement;
   netUi?: NetUi;
-  /** Called when the game declares its action map, so the app can persist and display it. */
+  /** Called on each load with the names the game document gives its actions, for the app to show. */
   onActionsDeclared?: (actions: readonly DeclaredAction[]) => void;
   netPermissions?: NetPermissions;
   driver?: LoopDriver;

@@ -36,7 +36,7 @@ interface Row {
 
 /**
  * How to play, read from the game's own action map: the four directions collapse into one ARROWS
- * chip, and each row is named the way the game named it with `input.declare`.
+ * chip, and each row is named the way the game's GAME tab named it.
  */
 @Component({
   selector: 'nc-how-to-play',
@@ -62,7 +62,7 @@ interface Row {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HowToPlayComponent {
-  /** What the running game declared; empty falls back to the engine's own action names. */
+  /** What the game's document names; empty falls back to the engine's own action names. */
   readonly declared = input<readonly DeclaredAction[]>([]);
 
   protected readonly rows = computed<Row[]>(() => {

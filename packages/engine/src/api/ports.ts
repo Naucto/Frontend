@@ -171,7 +171,7 @@ export interface EnginePorts {
   sys: SysPort;
   netUi?: NetUi;
   netPermissions?: NetPermissions;
-  /** Called when the running game declares its action map (`input.declare`). */
+  /** Called with the names the game document gives its actions, when a run loads them. */
   onActionsDeclared?(actions: readonly DeclaredAction[]): void;
   log(level: ConsoleLevel, text: string): void;
 }

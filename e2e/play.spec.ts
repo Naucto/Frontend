@@ -1,4 +1,4 @@
-import { type Route } from '@playwright/test';
+import { type Page, type Route } from '@playwright/test';
 import * as Y from 'yjs';
 
 import { expect, test } from './fixtures';
@@ -82,31 +82,41 @@ test.describe('play page', () => {
   });
 });
 
-/**
- * A published game that errors has no console for the player to read. The screen says it stopped,
- * names the line, and offers a restart, instead of freezing on its last frame.
- */
-test('a game that errors tells the player, and restarts from the banner', async ({ page }) => {
+/** A release whose document holds one `main` file, served as the signed content of game 42. */
+const serveGame = async (
+  page: Page,
+  code: string,
+  meta: Record<string, unknown> = {},
+): Promise<void> => {
   const doc = new Y.Doc();
   doc.getMap('game.meta').set('schemaVersion', 1);
+  for (const [key, value] of Object.entries(meta)) doc.getMap('game.meta').set(key, value);
   const main = new Y.Map<unknown>();
   const text = new Y.Text();
   doc.getMap('code.files').set('main', main);
   main.set('name', 'main');
   main.set('order', 0);
   main.set('text', text);
-  text.insert(0, 'function _update()\n  local t = nil\n  t.x = 1\nend');
+  text.insert(0, code);
   doc.getMap('code.meta').set('entry', 'main');
   const bytes = Buffer.from(Y.encodeStateAsUpdate(doc));
 
   await page.route('**/auth/refresh', answer(401, {}));
   await page.route('**/projects/releases/42', answer(200, release));
   await page.route('**/projects/releases/42/content-url', (route) =>
-    route.fulfill({ json: { signedUrl: 'http://localhost:3001/e2e/halting.bin' } }),
+    route.fulfill({ json: { signedUrl: 'http://localhost:3001/e2e/game.bin' } }),
   );
-  await page.route('**/e2e/halting.bin', (route) =>
+  await page.route('**/e2e/game.bin', (route) =>
     route.fulfill({ status: 200, body: bytes, contentType: 'application/octet-stream' }),
   );
+};
+
+/**
+ * A published game that errors has no console for the player to read. The screen says it stopped,
+ * names the line, and offers a restart, instead of freezing on its last frame.
+ */
+test('a game that errors tells the player, and restarts from the banner', async ({ page }) => {
+  await serveGame(page, 'function _update()\n  local t = nil\n  t.x = 1\nend');
 
   await page.goto('/play/42');
   await page.getByRole('button', { name: 'Play' }).first().click();
@@ -117,4 +127,18 @@ test('a game that errors tells the player, and restarts from the banner', async 
   // Restart runs the game again from the top; it errors again, so the banner comes back.
   await alert.getByRole('button', { name: 'Restart' }).click();
   await expect(alert).toContainText('main:3');
+});
+
+/**
+ * The words come from the document, so the panel is right before the game has run: nothing here
+ * presses Play.
+ */
+test('how to play shows the names the document gives its actions', async ({ page }) => {
+  await serveGame(page, 'function _update() end', {
+    actions: [{ action: 'a', label: 'Jump' }],
+  });
+
+  await page.goto('/play/42');
+  await expect(page.getByText('How to play')).toBeVisible();
+  await expect(page.getByText('Jump', { exact: true })).toBeVisible();
 });

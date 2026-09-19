@@ -89,6 +89,25 @@ test.describe('editor', () => {
     await page.screenshot({ path: 'test-results/v-editor-game.png' });
   });
 
+  /**
+   * The names live in the document, not in the tab: leaving for CODE tears the page down, and the
+   * word is still there on the way back. Asserted in one page load because the mock holds the
+   * document in the page only.
+   */
+  test('GAME tab names the controls, and the document keeps the name across tabs', async ({
+    page,
+  }) => {
+    await page.goto('/edit/7/game');
+    const jump = page.getByRole('textbox', { name: 'a', exact: true });
+    await expect(jump).toHaveValue('');
+    await jump.fill('Jump');
+    await jump.press('Enter');
+    await page.locator('nc-rail').getByRole('button', { name: 'Code' }).click();
+    await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
+    await page.locator('nc-rail').getByRole('button', { name: 'Game' }).click();
+    await expect(page.getByRole('textbox', { name: 'a', exact: true })).toHaveValue('Jump');
+  });
+
   test('CODE tab runs the starter game', async ({ page }) => {
     await page.goto('/edit/7/code');
     await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();

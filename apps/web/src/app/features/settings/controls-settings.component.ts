@@ -128,7 +128,7 @@ interface Capture {
       <div>
         <p class="mb-2 max-w-[640px] text-body text-ink-2">
           {{ t('settings.controlsIntroBefore') }}
-          <code class="font-mono text-meta text-sky-ink">btn("left")</code>
+          <code class="font-mono text-meta text-sky-ink">input.held("left")</code>
           {{ t('settings.controlsIntroAfter') }}
         </p>
         <div class="mb-1 flex flex-wrap items-center gap-1">
@@ -379,8 +379,8 @@ interface Capture {
 })
 export class ControlsSettingsComponent {
   /**
-   * Names the running game gave its actions with `input.declare{}`. The settings page has no game
-   * and shows the bare action names; the game page passes what the release declared.
+   * Names the game gave its actions in its GAME tab. The settings page has no game and shows the
+   * bare action names; the game page passes what the release's document holds.
    */
   readonly declared = input<readonly DeclaredAction[]>([]);
   readonly gameName = input('');

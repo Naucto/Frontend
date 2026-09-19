@@ -90,13 +90,7 @@ import { ReleaseGameService } from './release-game.service';
         } @else if (loading()) {
           <nc-skeleton height="60vh" radius="rounded-sm" />
         } @else {
-          <nc-game-screen
-            #screen
-            [game]="game()"
-            [projectId]="id()"
-            fit="width"
-            [autoPlay]="false"
-          />
+          <nc-game-screen [game]="game()" [projectId]="id()" fit="width" [autoPlay]="false" />
         }
         @if (release.data(); as r) {
           <nc-comments class="mt-4 block" [projectId]="r.id" [authorId]="r.creator.id" />
@@ -258,7 +252,6 @@ import { ReleaseGameService } from './release-game.service';
 export class GamePage {
   readonly id = input.required({ transform: numberAttribute });
   private readonly auth = inject(AuthStore);
-  private readonly screen = viewChild(GameScreenComponent);
   private readonly router = inject(Router);
   private readonly toasts = inject(ToastService);
   private readonly loader = inject(ReleaseGameService);
@@ -417,10 +410,8 @@ export class GamePage {
     this.descClamped.set(el.scrollHeight > el.clientHeight + 1);
   }
 
-  /** What the running game called its actions, once it has declared them. */
-  protected readonly declaredActions = computed(
-    () => this.screen()?.runtime.declaredActions() ?? [],
-  );
+  /** What the game calls its actions, read from the document so the panel is right before a run. */
+  protected readonly declaredActions = computed(() => this.game()?.declaredActions ?? []);
 
   protected count(n: number): string {
     return formatCount(n);

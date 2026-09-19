@@ -1,6 +1,6 @@
 import { computed, DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
 import { InputBindingsStore } from '@app/core/input/input-bindings.store';
-import type { DeclaredAction, Game } from '@naucto/engine';
+import type { Game } from '@naucto/engine';
 import {
   type ConsoleEntry,
   Engine,
@@ -38,8 +38,6 @@ export class RuntimeHostService {
   readonly cpu = signal(0);
   /** Connected gamepads, polled with the frame stats; drives the P1/P2 chips in the transport. */
   readonly gamepadCount = signal(0);
-  /** Action names the running game declared with `input.declare`. */
-  readonly declaredActions = signal<readonly DeclaredAction[]>([]);
   readonly frame = signal(0);
   readonly ready = computed(() => this.engine !== null);
 
@@ -108,9 +106,6 @@ export class RuntimeHostService {
       gfx: this.gfx,
       sound: this.sound,
       inputs: [keyboard, gamepad],
-      onActionsDeclared: (actions) => {
-        this.declaredActions.set(actions);
-      },
       inputTarget: canvas,
       netUi: opts.netUi,
       netPermissions: opts.netPermissions,

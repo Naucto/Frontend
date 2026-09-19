@@ -1081,8 +1081,8 @@ export class Game {
   }
 
   /**
-   * Action names the game declared with `input.declare`, persisted so the controls table and the
-   * public "how to play" can show them without running the game. Empty when it declares nothing,
+   * The names the game gives its actions, typed in the GAME tab and persisted so the controls table
+   * and the public "how to play" can show them without running the game. Empty when it names none,
    * in which case callers fall back to the engine's action ids.
    */
   get declaredActions(): readonly DeclaredAction[] {
@@ -1097,8 +1097,11 @@ export class Game {
     );
   }
 
+  /** An action with a blank label is an action left unnamed, so it is not written at all. */
   setDeclaredActions(actions: readonly DeclaredAction[]): void {
-    const next = actions.map((a) => ({ action: a.action, label: a.label }));
+    const next = actions
+      .map((a) => ({ action: a.action, label: a.label.trim() }))
+      .filter((a) => a.label.length > 0);
     if (JSON.stringify(next) === JSON.stringify(this.declaredActions)) return;
     this.doc.transact(() => {
       this.meta.set('actions', next);

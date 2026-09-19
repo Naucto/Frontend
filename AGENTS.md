@@ -118,8 +118,8 @@ broken; an absence reads as not built.
   stood there permanently disabled, promising itself, which is the shape this list exists to stop.
 
 - **`+ ADD ACTION` on the controls page.** `ACTIONS` in `packages/engine/src/input/ActionMap.ts` is
-  nine fixed bits, and the input path is a bitmask — a game _names_ those actions with
-  `input.declare{}`, it cannot invent new ones. There is nothing for the button to add. If custom
+  nine fixed bits, and the input path is a bitmask — a game _names_ those actions in its GAME tab,
+  it cannot invent new ones. There is nothing for the button to add. If custom
   actions ever land, this is the surface for them.
 - **File extensions on the CODE tabs.** The artboard writes `main.lua` and `player.lua`; a tab is
   called `main`, or `my helpers`. A tab is named for what it holds, and every one of them is Lua, so

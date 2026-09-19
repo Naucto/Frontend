@@ -1,6 +1,13 @@
 import { SlicePipe } from '@angular/common';
 import type { OnInit } from '@angular/core';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { unwrap } from '@app/core/api/api-errors';
@@ -11,13 +18,14 @@ import { qk } from '@app/shared/queries/query-keys';
 import { injectProjectImage, injectRelease } from '@app/shared/queries/releases.queries';
 import type { PersonHit } from '@app/shared/queries/search.queries';
 import { UserAvatarComponent } from '@app/shared/user-avatar.component';
-import { yTextField } from '@app/shared/yjs/y-signal';
+import { ySignal, yTextField } from '@app/shared/yjs/y-signal';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import {
   projectControllerRemove,
   projectControllerUpdate,
   projectControllerUploadProjectImage,
 } from '@naucto/api-client';
+import { type Action, ACTIONS } from '@naucto/engine';
 import {
   ButtonDirective,
   ConfirmDialogComponent,
@@ -46,6 +54,7 @@ import { WorkSessionService } from '../work-session/work-session.service';
 const NAME_MAX = 25;
 const SUMMARY_MAX = 50;
 const DESCRIPTION_MAX = 300;
+const CONTROL_LABEL_MAX = 25;
 
 /** GAME tab: what this thing is, who it's for, where it goes. */
 @Component({
@@ -191,6 +200,30 @@ const DESCRIPTION_MAX = 300;
                   (tagsChange)="setTags($event)"
                   [placeholder]="t('editor.game.tagPlaceholder')"
                 />
+              </nc-field>
+              <nc-field [label]="t('editor.game.controls')">
+                <nc-help-dot
+                  actions
+                  [title]="t('editor.game.controls')"
+                  [text]="t('editor.game.controlsHelp')"
+                />
+                <div class="grid grid-cols-[48px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
+                  @for (c of controls(); track c.action) {
+                    <label [for]="'g-ctl-' + c.action" class="font-mono text-meta text-ink-3">
+                      {{ c.action }}
+                    </label>
+                    <input
+                      ncInput
+                      [id]="'g-ctl-' + c.action"
+                      [ngModel]="c.label"
+                      (ngModelChange)="editControl(c.action, $event)"
+                      (blur)="commitControls()"
+                      (keydown.enter)="commitControls()"
+                      [maxlength]="controlLabelMax"
+                      [placeholder]="c.action"
+                    />
+                  }
+                </div>
               </nc-field>
             </div>
           </div>
@@ -388,6 +421,53 @@ export class GameTabPage implements OnInit {
     this.tagsRaw.set(JSON.stringify(v));
   }
 
+  protected readonly controlLabelMax = CONTROL_LABEL_MAX;
+  private readonly declared = ySignal(
+    () => this.session.game.declaredActions,
+    (cb) => {
+      const meta = this.session.game.meta;
+      const handler = (e: Y.YMapEvent<unknown>): void => {
+        if (e.keysChanged.has('actions')) cb();
+      };
+      meta.observe(handler);
+      return () => {
+        meta.unobserve(handler);
+      };
+    },
+  );
+  /**
+   * What is being typed, over what the document holds. A draft outlives its debounced write on
+   * purpose: the document trims, and a field rewritten to the trimmed label mid-word would eat
+   * the space just typed. It is let go on blur or Enter, when the document's word is the one to
+   * show.
+   */
+  private readonly controlDrafts = signal<Partial<Record<Action, string>>>({});
+  private controlsTimer: ReturnType<typeof setTimeout> | undefined;
+  protected readonly controls = computed(() => {
+    const drafts = this.controlDrafts();
+    const labels = new Map(this.declared().map((d) => [d.action, d.label]));
+    return ACTIONS.map((action) => ({ action, label: drafts[action] ?? labels.get(action) ?? '' }));
+  });
+
+  protected editControl(action: Action, label: string): void {
+    this.controlDrafts.update((d) => ({ ...d, [action]: label }));
+    clearTimeout(this.controlsTimer);
+    this.controlsTimer = setTimeout(() => {
+      this.writeControls();
+    }, 300);
+  }
+
+  protected commitControls(): void {
+    this.writeControls();
+    this.controlDrafts.set({});
+  }
+
+  private writeControls(): void {
+    clearTimeout(this.controlsTimer);
+    this.controlsTimer = undefined;
+    this.session.game.setDeclaredActions(this.controls());
+  }
+
   protected readonly status = signal<'IN_PROGRESS' | 'COMPLETED' | 'ARCHIVED'>('IN_PROGRESS');
   protected readonly monetization = signal<'NONE' | 'ADS' | 'PAID'>('NONE');
   protected readonly price = signal<number | null>(null);
@@ -409,6 +489,13 @@ export class GameTabPage implements OnInit {
   protected readonly parent = injectRelease(() => this.session.project()?.forkedFromId ?? 0);
 
   protected readonly cover = injectProjectImage(() => this.session.id);
+
+  constructor() {
+    // A label typed in the last 300 ms before leaving the tab is still owed to the document.
+    inject(DestroyRef).onDestroy(() => {
+      if (this.controlsTimer !== undefined) this.writeControls();
+    });
+  }
 
   ngOnInit(): void {
     const p = this.session.project();
