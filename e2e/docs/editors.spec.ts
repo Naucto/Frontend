@@ -106,7 +106,6 @@ for (const theme of THEMES) {
 
     test('net', async ({ page }) => {
       await page.goto('/edit/7/net');
-      // Declared before any session: the tree is otherwise an empty state.
       await page.getByRole('button', { name: 'Declare a path' }).click();
       await page.getByPlaceholder('key').fill('score');
       await page.keyboard.press('Enter');

@@ -5,11 +5,7 @@ import { type Locator, type Page, test } from '@playwright/test';
 import { mockEditor } from '../editor-mocks';
 import { grabFrame } from './frame';
 
-/**
- * The pictures the Platformer tutorial shows of its own game: the sprite with its flag in ART, the
- * level with the Flags overlay in MAP, and the first frame the reader sees when the game runs. The
- * game is the one the tutorial ships (`main.lua` + `assets.json`), seeded by `docs:shots`.
- */
+/** The pictures the Platformer tutorial shows of its own game, taken from the seeded copy of it. */
 const CONTENT_FILE = 'node_modules/.cache/docs-shots/platformer.bin';
 const OUT = 'docs/content/tutorials/img';
 const THEMES = ['dark', 'light'] as const;
@@ -38,8 +34,7 @@ for (const theme of THEMES) {
     test('art: the ground tile and its flag', async ({ page }) => {
       await page.goto('/edit/7/art');
       await page.getByRole('img', { name: 'Sprite canvas' }).waitFor();
-      // Sprite 32 is two rows down from sprite 0: arrows on the sheet map move the region, and
-      // the corner is reached first because a new game's region starts on the moon, not at 0.
+      // To the corner first: a new game's region starts on the moon, not on sprite 0.
       const sheetMap = page.locator('nc-sheet-view svg').first();
       await sheetMap.focus();
       for (let i = 0; i < 4; i++) await page.keyboard.press('ArrowLeft');
