@@ -25,6 +25,7 @@ import { EditorRuntimeService } from '../state/editor-runtime.service';
 import {
   CONSOLE_WIDTH,
   EditorUiStore,
+  PANEL_WIDTH,
   PIP_MAX_AREA_SHARE,
   PIP_MIN_WIDTH,
 } from '../state/editor-ui.store';
@@ -32,6 +33,9 @@ import { WorkSessionService } from '../work-session/work-session.service';
 
 /** The viewer's own picture is 16:9, which is what makes the card's height follow its width. */
 const PIP_PICTURE_RATIO = 16 / 9;
+
+/** How far in from the window's edges the artboard draws the floating card. */
+const PIP_INSET = 22;
 
 /** Which edge or corner of the floating card a press took hold of. */
 type PipGrip = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w';
@@ -118,8 +122,6 @@ const PIP_GRIPS: readonly { grip: PipGrip; box: string; cursor: string }[] = [
           [class]="popped() ? 'nc-pip' : ''"
           [style.left.px]="pip()?.x ?? null"
           [style.top.px]="pip()?.y ?? null"
-          [style.right]="pip() ? 'auto' : null"
-          [style.bottom]="pip() ? 'auto' : null"
           [style.width.px]="popped() ? ui.pipWidth() : null"
         >
           @if (popped()) {
@@ -134,6 +136,7 @@ const PIP_GRIPS: readonly { grip: PipGrip; box: string; cursor: string }[] = [
           }
           @if (popped()) {
             <div
+              #grab
               class="flex h-[31px] cursor-grab items-center gap-1 border-b border-line bg-raised px-1.25 active:cursor-grabbing"
               (pointerdown)="startDrag($event)"
             >
@@ -235,13 +238,11 @@ const PIP_GRIPS: readonly { grip: PipGrip; box: string; cursor: string }[] = [
   `,
   host: { class: 'block' },
   styles: `
-    /* The floating viewer: a card the design draws as a window, so it is one. It starts in the
-       bottom-right corner the artboard puts it in, at the artboard's width, and stays wherever it
-       is dragged and whatever size it is dragged to — the width is bound, not declared here. */
+    /* The floating viewer: a card the design draws as a window, so it is one. Where it stands and
+       how wide it is are bound, not declared here: the first pop-out places it, and it stays
+       wherever it is dragged and whatever size it is dragged to. */
     .nc-pip {
       position: fixed;
-      right: 22px;
-      bottom: 22px;
       z-index: 40;
       overflow: hidden;
       border: 1px solid var(--nc-line-strong);
@@ -269,10 +270,12 @@ export class ConsoleColumnComponent {
   });
   protected readonly session = inject(WorkSessionService);
   private readonly editorRuntime = inject(EditorRuntimeService);
-  /** Top-left of the floating card. Null until it is placed, which is the design's corner. */
   private readonly pipAt = signal<{ x: number; y: number } | null>(null);
+  /** The title bar's height as drawn, which is the least of the card that must stay in reach. */
+  private readonly grab = signal(0);
   protected readonly grips = PIP_GRIPS;
   private readonly card = viewChild<ElementRef<HTMLElement>>('card');
+  private readonly grabBar = viewChild<ElementRef<HTMLElement>>('grab');
   private readonly screen = viewChild<GameScreenComponent>('screen');
   protected readonly tabs = computed(() => [
     {
@@ -307,7 +310,7 @@ export class ConsoleColumnComponent {
       this.ui.viewportWidth();
       this.ui.viewportHeight();
       this.popped();
-      this.clampToViewport();
+      this.fitToViewport();
     });
     // AUTO-RUN: reload on code changes, debounced.
     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -367,33 +370,50 @@ export class ConsoleColumnComponent {
   }
 
   /**
-   * Where the card sits, once it has been moved. Until then it is null and the stylesheet's own
-   * bottom-right corner — the one the artboard draws it in — stands. Clamped on the x so a window
-   * that narrows cannot leave the card, and its title bar, off the side.
+   * Where the card sits while it floats. Clamped so a window that narrows or shortens cannot leave
+   * the card off the side, or its title bar — the one handle that brings it back — off the bottom.
    */
   protected readonly pip = computed(() => {
     const at = this.pipAt();
-    if (!at) return null;
+    if (!at || !this.popped()) return null;
     const w = this.ui.viewportWidth();
+    const h = this.ui.viewportHeight();
     const own = this.ui.pipWidth();
-    return { x: Math.min(Math.max(0, at.x), Math.max(0, w - own)), y: Math.max(0, at.y) };
+    return {
+      x: Math.min(Math.max(0, at.x), Math.max(0, w - own)),
+      y: Math.min(Math.max(0, at.y), Math.max(0, h - this.grab())),
+    };
   });
 
   /**
-   * Bring the card back inside the bound when the window shrinks under it.
+   * Keep the card inside the window it floats in, and place it the first time it does.
    *
    * The width outlives the window it was chosen on — it is remembered across sessions — so a card
    * sized on a large screen would come back taking most of a small one, and no drag would be
    * needed to get it there.
+   *
+   * Placed here rather than when the pop-out is asked for, because its height is measured, and
+   * there is nothing to measure until it has been drawn floating. The artboard's corner, brought
+   * in by the width of the right column: the corner the artboard draws it in is the console's own,
+   * and on a canvas tab that track holds the inspector or the test rig, which the card then covered.
    */
-  private clampToViewport(): void {
+  private fitToViewport(): void {
     const el = this.card()?.nativeElement;
     if (!el || !untracked(this.popped)) return;
     const box = el.getBoundingClientRect();
     if (!box.width) return;
     const chrome = box.height - box.width / PIP_PICTURE_RATIO;
     const max = Math.round(this.maxWidth(chrome));
-    if (untracked(this.ui.pipWidth) > max) this.ui.setPipWidth(Math.max(PIP_MIN_WIDTH, max));
+    const wanted = untracked(this.ui.pipWidth);
+    const w = wanted > max ? Math.max(PIP_MIN_WIDTH, max) : wanted;
+    if (w !== wanted) this.ui.setPipWidth(w);
+    this.grab.set(this.grabBar()?.nativeElement.offsetHeight ?? 0);
+    if (!untracked(this.pipAt)) {
+      this.pipAt.set({
+        x: untracked(this.ui.viewportWidth) - PANEL_WIDTH - PIP_INSET - w,
+        y: untracked(this.ui.viewportHeight) - (chrome + w / PIP_PICTURE_RATIO) - PIP_INSET,
+      });
+    }
   }
 
   /**
@@ -428,10 +448,6 @@ export class ConsoleColumnComponent {
     const chrome = box.height - box.width / PIP_PICTURE_RATIO;
     const handle = e.currentTarget as HTMLElement;
     handle.setPointerCapture(e.pointerId);
-
-    // The card sits in the stylesheet's corner until it is placed. Place it now, so a grip that
-    // holds the right or the bottom still is holding something this component owns.
-    this.pipAt.set({ x: box.left, y: box.top });
 
     const west = grip === 'nw' || grip === 'w' || grip === 'sw';
     const north = grip === 'nw' || grip === 'n' || grip === 'ne';

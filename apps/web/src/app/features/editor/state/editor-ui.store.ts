@@ -88,7 +88,7 @@ export const EditorUiStore = signalStore(
     autoRun: inject(EditorPrefsStore).autoRun(),
     viewportWidth: 1280,
     viewportHeight: 800,
-    pipOpen: readJson<boolean>(STORAGE_KEYS.editorViewerFloating, false),
+    pipOpen: false,
     pipWidth: readJson<number>(STORAGE_KEYS.editorViewerWidth, PIP_DEFAULT_WIDTH),
   })),
   withComputed((s) => {
@@ -148,19 +148,19 @@ export const EditorUiStore = signalStore(
     /**
      * Whether the runtime floats over a canvas tab.
      *
-     * Closed until somebody opens it, and remembered after that. It used to arrive open on every
-     * canvas tab: switching from CODE to ART, MAP, SOUND or NET dropped a panel over the lower
-     * right of whatever you had come to work on, and you had to dismiss it each time.
+     * Docked until somebody pops it out, and for this editor only: the store is provided per shell,
+     * so the next game opens docked. It used to be remembered across games, and a viewer popped out
+     * over one game arrived floating over the lower right of the next -- the same panel over
+     * whatever you had come to work on, to be dismissed each time.
      */
     setPipOpen(on: boolean): void {
       patchState(store, { pipOpen: on });
-      writeJson(STORAGE_KEYS.editorViewerFloating, on);
     },
     togglePip(): void {
       this.setPipOpen(!store.pipOpen());
     },
     /**
-     * How wide the floating viewer is, remembered like whether it floats at all.
+     * How wide the floating viewer is, remembered across games unlike whether it floats.
      *
      * A size chosen by hand is a preference, not a window position: the corner it was dragged to
      * is where this window sits today, but how big you want to watch the game is how big you want

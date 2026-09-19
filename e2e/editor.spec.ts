@@ -200,13 +200,35 @@ test.describe('editor', () => {
     }
     await expect.poll(() => inked(page)).not.toBe(before);
 
-    // The viewer is floated from the console's own header, so it is opened where the console is.
+    // The viewer is floated from the console's own header, so it is opened where the console is,
+    // and ART is reached through the rail: a fresh page load opens the editor docked.
     await page.goto('/edit/7/code');
     await page.getByRole('button', { name: 'Pop the viewer out' }).click();
-    await page.goto('/edit/7/art');
+    await page.locator('nc-rail').getByRole('button', { name: 'Art' }).click();
     await expect(page.getByText('Viewer · 320×180')).toBeVisible();
 
+    // Over the canvas, not over the inspector: the corner the artboard draws the card in is the
+    // console's, and on a canvas tab that track holds the panel you came to work in.
+    const card = await page.locator('.nc-pip').boundingBox();
+    const panel = await page.locator('nc-panel-column').first().boundingBox();
+    if (!card || !panel) throw new Error('viewer or inspector not laid out');
+    expect(card.x + card.width).toBeLessThanOrEqual(panel.x);
+
     await page.screenshot({ path: 'test-results/v-editor-art.png' });
+  });
+
+  /**
+   * Whether the viewer floats belongs to this editor, not to the browser: remembered, a viewer
+   * popped out over one game arrived floating over the next one opened.
+   */
+  test('a reload opens the editor with the viewer docked', async ({ page }) => {
+    await page.goto('/edit/7/code');
+    await page.getByRole('button', { name: 'Pop the viewer out' }).click();
+    await expect(page.getByText('Viewer · 320×180')).toBeVisible();
+
+    await page.reload();
+    await expect(page.getByRole('button', { name: 'Pop the viewer out' })).toBeVisible();
+    await expect(page.getByText('Viewer · 320×180')).toHaveCount(0);
   });
 
   /**

@@ -65,6 +65,15 @@ describe('EditorUiStore', () => {
     expect(ui.referenceOpen()).toBe(false);
   });
 
+  it('opens with the viewer docked, whatever the last editor left it', () => {
+    const ui = store();
+    ui.togglePip();
+    expect(ui.consoleMode()).toBe('pip');
+
+    TestBed.resetTestingModule();
+    expect(store().consoleMode()).toBe('column');
+  });
+
   it('shows the reference on CODE only, and remembers it was asked for', () => {
     const ui = store();
     ui.setTab('code');
