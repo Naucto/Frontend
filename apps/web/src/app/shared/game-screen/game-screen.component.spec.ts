@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, viewChild } from '@angular/core';
-import { render } from '@testing-library/angular';
+import { render, screen, within } from '@testing-library/angular';
+import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
 
 import { testProviders } from '../../testing/providers';
 import { GameScreenComponent } from './game-screen.component';
@@ -40,5 +42,44 @@ describe('GameScreenComponent runtime ownership', () => {
   it('creates its own runtime when nothing above it provides one', async () => {
     const { fixture } = await render(PlainHostHarness, { providers: testProviders() });
     expect(fixture.componentInstance.screen().runtime).toBeInstanceOf(RuntimeHostService);
+  });
+});
+
+@Component({
+  selector: 'nc-debug-host',
+  imports: [GameScreenComponent],
+  providers: [RuntimeHostService],
+  template: '<nc-game-screen [game]="null" debug />',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+class DebugHostHarness {
+  readonly own = inject(RuntimeHostService);
+}
+
+describe('GameScreenComponent on a halted game', () => {
+  const halt = (host: RuntimeHostService): void => {
+    host.state.set('halted');
+    host.error.set({ phase: 'update', message: 'boom', kind: 'runtime', file: 'main', line: 3 });
+  };
+
+  it('tells a player the game stopped, where, and offers a restart', async () => {
+    const { fixture } = await render(RuntimeOwnerHarness, { providers: testProviders() });
+    const host = fixture.componentInstance.own;
+    halt(host);
+    fixture.detectChanges();
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toContain('The game stopped on an error');
+    expect(alert.textContent).toContain('main:3 · update: boom');
+
+    const restart = vi.spyOn(host, 'restart').mockImplementation(() => undefined);
+    await userEvent.click(within(alert).getByRole('button', { name: 'Restart' }));
+    expect(restart).toHaveBeenCalledOnce();
+  });
+
+  it('leaves the editor to its console', async () => {
+    const { fixture } = await render(DebugHostHarness, { providers: testProviders() });
+    halt(fixture.componentInstance.own);
+    fixture.detectChanges();
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });

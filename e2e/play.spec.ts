@@ -1,4 +1,5 @@
 import { type Route } from '@playwright/test';
+import * as Y from 'yjs';
 
 import { expect, test } from './fixtures';
 
@@ -79,4 +80,41 @@ test.describe('play page', () => {
     await expect(dialog).toBeHidden();
     await expect(page).toHaveURL(/\/play\/42$/);
   });
+});
+
+/**
+ * A published game that errors has no console for the player to read. The screen says it stopped,
+ * names the line, and offers a restart, instead of freezing on its last frame.
+ */
+test('a game that errors tells the player, and restarts from the banner', async ({ page }) => {
+  const doc = new Y.Doc();
+  doc.getMap('game.meta').set('schemaVersion', 1);
+  const main = new Y.Map<unknown>();
+  const text = new Y.Text();
+  doc.getMap('code.files').set('main', main);
+  main.set('name', 'main');
+  main.set('order', 0);
+  main.set('text', text);
+  text.insert(0, 'function _update()\n  local t = nil\n  t.x = 1\nend');
+  doc.getMap('code.meta').set('entry', 'main');
+  const bytes = Buffer.from(Y.encodeStateAsUpdate(doc));
+
+  await page.route('**/auth/refresh', answer(401, {}));
+  await page.route('**/projects/releases/42', answer(200, release));
+  await page.route('**/projects/releases/42/content-url', (route) =>
+    route.fulfill({ json: { signedUrl: 'http://localhost:3001/e2e/halting.bin' } }),
+  );
+  await page.route('**/e2e/halting.bin', (route) =>
+    route.fulfill({ status: 200, body: bytes, contentType: 'application/octet-stream' }),
+  );
+
+  await page.goto('/play/42');
+  await page.getByRole('button', { name: 'Play' }).first().click();
+  const alert = page.getByRole('alert');
+  await expect(alert).toContainText('The game stopped on an error');
+  await expect(alert).toContainText('main:3 · update:');
+
+  // Restart runs the game again from the top; it errors again, so the banner comes back.
+  await alert.getByRole('button', { name: 'Restart' }).click();
+  await expect(alert).toContainText('main:3');
 });

@@ -238,6 +238,8 @@
     "loadFailed": "Could not load your games"
   },
   "game": {
+    "haltedTitle": "The game stopped on an error",
+    "haltedRestart": "Restart",
     "published": "published",
     "views": "views",
     "players": "players",
@@ -641,6 +643,7 @@
       "closeRig": "Close the second client",
       "rigWaiting": "Waiting for this client to call net.join().",
       "rigJoined": "Joined as a second player.",
+      "rigClient": "you (test client)",
       "ping": "ping",
       "latency": "Latency",
       "loss": "Loss",

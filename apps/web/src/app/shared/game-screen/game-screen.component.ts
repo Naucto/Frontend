@@ -21,10 +21,12 @@ import { ThemeService } from '@app/core/theme/theme.service';
 import { SignedInAction } from '@app/shared/auth/signed-in-action';
 import { HostDialogComponent } from '@app/shared/netplay/host.dialog';
 import { JoinDialogComponent } from '@app/shared/netplay/join.dialog';
+import { TranslocoDirective } from '@jsverse/transloco';
 import { type Game } from '@naucto/engine';
 import {
   ButtonDirective,
   DialogService,
+  ErrorStateComponent,
   IconComponent,
   PopoverDirective,
   PopoverPanelComponent,
@@ -45,6 +47,8 @@ import { VirtualPadComponent } from './virtual-pad.component';
     PopoverDirective,
     PopoverPanelComponent,
     VirtualPadComponent,
+    ErrorStateComponent,
+    TranslocoDirective,
   ],
   providers: [
     {
@@ -102,6 +106,20 @@ import { VirtualPadComponent } from './virtual-pad.component';
           >
             <nc-icon name="play" [size]="48" />
           </button>
+        }
+        <!-- A player has no console to read: outside the editor the screen says it stopped. -->
+        @if (!debug() && host.state() === 'halted') {
+          <div
+            *transloco="let t"
+            class="absolute inset-0 flex items-center justify-center overflow-hidden bg-page/80"
+          >
+            <nc-error-state
+              [title]="t('game.haltedTitle')"
+              [hint]="errorLine()"
+              [retryLabel]="t('game.haltedRestart')"
+              (retry)="restart()"
+            />
+          </div>
         }
         <span class="scanlines pointer-events-none absolute inset-0"></span>
         @if (showPad()) {
@@ -303,7 +321,8 @@ export class GameScreenComponent {
   /**
    * Test rig: when the mounted game calls `net.join()`, join this session straight away instead of
    * asking the player which one. `editorTest` tells the backend the extra client is the author's
-   * own second window, so it does not count against the project's player quota.
+   * own second window: it takes a live seat under an id of its own, and counts as a player, but
+   * it is never persisted as a member of the session.
    */
   readonly autoJoin = input<{ uuid: string; code: string | null } | null>(null);
   /**
@@ -336,6 +355,13 @@ export class GameScreenComponent {
   private readonly signedIn = inject(SignedInAction);
   private readonly theme = inject(ThemeService);
   protected readonly showCpu = computed(() => this.debug());
+  /** The error as the Console would print it: where, then what. */
+  protected readonly errorLine = computed(() => {
+    const e = this.host.error();
+    if (!e) return '';
+    const at = e.file ? `${e.file}${e.line === undefined ? '' : `:${String(e.line)}`} · ` : '';
+    return `${at}${e.phase}: ${e.message}`;
+  });
   /**
    * A frame counter reading `0 FPS` over a black screen was the only thing a game that had not
    * started yet said about itself, which read as a broken game rather than a waiting one. Nothing
@@ -487,6 +513,11 @@ export class GameScreenComponent {
 
   resume(): void {
     this.host.resume();
+    this.focus();
+  }
+
+  restart(): void {
+    this.host.restart();
     this.focus();
   }
 
