@@ -1,3 +1,4 @@
+import { mockEditor } from './editor-mocks';
 import { expect, type Page, test } from './fixtures';
 
 /**
@@ -91,6 +92,27 @@ for (const width of [1100, 1280]) {
       expect(nav.x + nav.width).toBeLessThanOrEqual(search.x);
       expect(search.x + search.width).toBeLessThanOrEqual(actions.x);
       expect(search.width).toBeGreaterThanOrEqual(240);
+    });
+  });
+}
+
+/**
+ * The ART header holds eight tools between a title and six controls. On a laptop the right-hand
+ * group used to spill over the tool group and hide Pick and Move under LOCK.
+ */
+for (const width of [1280, 1440]) {
+  test.describe(`ART header (${String(width)}px)`, () => {
+    test.use({ viewport: { width, height: 900 } });
+
+    test('keeps every tool clear of the toggles', async ({ page }) => {
+      await mockEditor(page);
+      await page.goto('/edit/7/art');
+      const tools = page.getByRole('radiogroup', { name: 'Tools' });
+      await expect(tools.getByRole('radio', { name: 'Move' })).toBeVisible();
+      const lock = page.getByRole('switch', { name: 'Lock' });
+      const [group, toggle] = await Promise.all([tools.boundingBox(), lock.boundingBox()]);
+      if (!group || !toggle) throw new Error('header off screen');
+      expect(group.x + group.width).toBeLessThanOrEqual(toggle.x);
     });
   });
 }

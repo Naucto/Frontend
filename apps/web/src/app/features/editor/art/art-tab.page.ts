@@ -95,9 +95,11 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
     <div *transloco="let t" class="grid h-full grid-cols-[minmax(0,1fr)_auto]">
       <section class="flex min-h-0 flex-col">
         <!-- Three tracks, so the tool group is centred on the header rather than on whatever is
-             left over between the title and the undo pair. -->
+             left over between the title and the undo pair. The right track keeps its content
+             whole and the left one gives way, since a title truncates and a button cannot; below
+             900px of header the toggles drop their words for the same reason. -->
         <header
-          class="grid h-(--nc-bar-h) grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-line bg-panel px-2"
+          class="@container grid h-(--nc-bar-h) grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-line bg-panel px-2"
         >
           <!-- One line, always: in a 39px strip the readout wrapping to two lines pushes the
                tool group off centre and the strip out of its own height. -->
@@ -110,7 +112,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
                 {{ art.region().w }}×{{ art.region().h }}
               </span>
             }
-            <span class="label truncate text-ink-4">
+            <span class="label hidden truncate text-ink-4 @min-[900px]:inline">
               {{ t('editor.art.px', { w: regionPx().w, h: regionPx().h }) }}
             </span>
           </div>
@@ -120,26 +122,28 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
             (valueChange)="setTool($event)"
             [iconSize]="24"
           />
-          <div class="flex min-w-0 items-center justify-end gap-0.5">
+          <div class="flex items-center justify-end gap-0.5">
             <!-- Only where there is something to keep a stroke off: with the sheet cropped away
                  there is no sprite next door to reach, so the choice has no subject. -->
             @if (!art.crop()) {
               <nc-toggle-button
                 class="shrink-0"
+                [label]="t('editor.art.clip')"
                 [checked]="art.clip()"
                 (checkedChange)="art.setClip($event)"
               >
                 <nc-icon name="lock" [size]="24" />
-                {{ t('editor.art.clip') }}
+                <span class="hidden @min-[900px]:inline">{{ t('editor.art.clip') }}</span>
               </nc-toggle-button>
             }
             <nc-toggle-button
               class="mr-1 shrink-0"
+              [label]="t('editor.art.crop')"
               [checked]="art.crop()"
               (checkedChange)="art.setCrop($event)"
             >
               <nc-icon name="frame" [size]="24" />
-              {{ t('editor.art.crop') }}
+              <span class="hidden @min-[900px]:inline">{{ t('editor.art.crop') }}</span>
             </nc-toggle-button>
             <button
               ncButton
