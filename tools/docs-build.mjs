@@ -1,7 +1,7 @@
-// Builds the Engine-Documentation submodule (docs/) into apps/web/src/assets/docs/index.json:
-// Markdown pages → HTML (marked + a small Lua highlighter), api/*.yaml → the function manifest,
-// plus a search index. Run: node tools/docs-build.mjs
-import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
+// Builds the Engine-Documentation submodule (docs/) into apps/web/public/docs/: index.json holds
+// the Markdown pages as HTML (marked + a small Lua highlighter), api/*.yaml as the function
+// manifest and a search index; img/ holds every picture a page shows. Run: node tools/docs-build.mjs
+import { copyFile, mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
 
 import { marked } from 'marked';
@@ -216,6 +216,67 @@ function frontMatter(src) {
 const refLink = (name) =>
   `<a class="api-ref" href="/learn/api/${name.split('.')[0]}#${name}" data-api="${name}"><code>${name}</code></a>`;
 
+// ---- pictures ----------------------------------------------------------------
+/**
+ * The page being rendered, for the pictures it shows: a picture is named relative to its page,
+ * and lands in the built output under the same relative path, so `img/hero.png` beside
+ * `editors/art.md` is served at `/docs/img/editors/img/hero.png`.
+ */
+let currentPage = null;
+/** Every picture a page referenced, copied once the page is rendered. */
+const pictures = new Map();
+
+/** Width and height from the header, so the page keeps its shape while the picture loads. */
+function pictureSize(bytes) {
+  if (bytes.length > 24 && bytes.toString('latin1', 1, 4) === 'PNG')
+    return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
+  if (bytes.length > 10 && bytes.toString('latin1', 0, 3) === 'GIF')
+    return { width: bytes.readUInt16LE(6), height: bytes.readUInt16LE(8) };
+  return null;
+}
+
+const exists = (p) =>
+  stat(p).then(
+    () => true,
+    () => false,
+  );
+
+/**
+ * A picture, as a figure.
+ *
+ * A dark capture on the light theme reads as a hole in the page, so a page may carry both: the
+ * light one is the same name with `.light` before the extension, and the two are emitted together
+ * for the stylesheet to show one of. A capture of the console itself (anything under `frames/`)
+ * is marked so it is drawn pixel for pixel rather than smoothed.
+ */
+function picture(href, alt, title) {
+  const page = currentPage;
+  if (!page || /^(https?:)?\/\//.test(href)) {
+    return `<img src="${esc(href)}" alt="${esc(alt)}">`;
+  }
+  const src = resolve(page.dir, href);
+  const rel = relative(resolve(docs, 'content'), src);
+  const light = src.replace(/(\.[a-z0-9]+)$/i, '.light$1');
+  pictures.set(rel, src);
+  const url = `/docs/img/${rel.split('\\').join('/')}`;
+  const size = page.sizes.get(src);
+  const dims = size ? ` width="${size.width}" height="${size.height}"` : '';
+  const frame = /(^|\/)frames\//.test(rel) ? ' doc-frame' : '';
+  const img = (u, cls) =>
+    `<img class="${cls}" src="${esc(u)}" alt="${esc(alt)}"${dims} loading="lazy">`;
+  const pair = page.sizes.has(light)
+    ? (pictures.set(rel.replace(/(\.[a-z0-9]+)$/i, '.light$1'), light),
+      img(url, 'doc-dark') + img(url.replace(/(\.[a-z0-9]+)$/i, '.light$1'), 'doc-light'))
+    : img(url, '');
+  const caption = title || alt;
+  return `<figure class="doc-figure${frame}">${pair}${
+    caption ? `<figcaption>${esc(caption)}</figcaption>` : ''
+  }</figure>`;
+}
+
+/** A figure is a block; the paragraph marked wrapped it in is not. */
+const unwrapFigures = (html) => html.replace(/<p>(<figure[\s\S]*?<\/figure>)<\/p>/g, '$1');
+
 marked.use({
   renderer: {
     code({ text, lang }) {
@@ -244,6 +305,9 @@ marked.use({
         .replace(/(^-|-$)/g, '');
       return `<h${depth} id="${id}">${text}</h${depth}>\n`;
     },
+    image({ href, title, text }) {
+      return picture(href, text, title ?? '');
+    },
   },
 });
 
@@ -263,7 +327,28 @@ function callouts(html) {
 
 function renderMarkdown(md) {
   const withRefs = md.replace(/\[\[([a-z]+\.[a-z_]+)\]\]/g, (_, n) => refLink(n));
-  return callouts(marked.parse(withRefs, { gfm: true }));
+  return unwrapFigures(callouts(marked.parse(withRefs, { gfm: true })));
+}
+
+/**
+ * A tutorial's whole game, folded.
+ *
+ * Three hundred lines of Lua at the foot of a page is not read, it is scrolled past; and the
+ * button at the head of the page puts the same file in a game of the reader's own. So the listing
+ * stays reachable, closed, and says how long it is.
+ *
+ * Put in after the page is rendered, not before: an HTML block ends at the first blank line for
+ * marked, and a listing is full of them — the rest came out as paragraphs and indented code.
+ */
+const LISTING_MARK = '<!--naucto:listing-->';
+const LISTING_TIP =
+  '\n> [!TIP]\n> Copy to new game, at the top of this page, puts this whole file in a game of your own.\n\n';
+function listing(code) {
+  const lines = code.split('\n').length;
+  return (
+    `<details class="doc-listing"><summary>Complete code · ${lines} lines</summary>` +
+    `<pre class="lua"><code>${highlightLua(code)}</code></pre></details>\n`
+  );
 }
 
 function headingsOf(html) {
@@ -294,13 +379,27 @@ for await (const file of walk(resolve(docs, 'content'))) {
     code = await readFile(join(dirname(file), meta.lua), 'utf8');
     lua[meta.slug] = code;
   }
+  const apis = [];
   const md = body
-    .replace(/\{\{lua:[^}]+\}\}/g, () => `\n\`\`\`lua\n${code ?? ''}\n\`\`\`\n`)
-    .replace(
-      /\{\{api:([a-z]+\.[a-z_]+)\}\}/g,
-      (_, n) => `<div class="api-card" data-api="${n}"></div>`,
-    );
-  const html = renderMarkdown(md);
+    .replace(/\{\{lua:[^}]+\}\}/g, () => `${LISTING_TIP}${LISTING_MARK}\n`)
+    .replace(/\{\{api:([a-z]+\.[a-z_]+)\}\}/g, (_, n) => {
+      apis.push(n);
+      return `<div class="api-card" data-api="${n}"></div>`;
+    });
+  // Sizes are read before rendering because the renderer is synchronous.
+  const sizes = new Map();
+  for (const [, href] of body.matchAll(/!\[[^\]]*\]\(([^)\s]+)/g)) {
+    if (/^(https?:)?\/\//.test(href)) continue;
+    const src = resolve(dirname(file), href);
+    for (const candidate of [src, src.replace(/(\.[a-z0-9]+)$/i, '.light$1')]) {
+      if (sizes.has(candidate) || !(await exists(candidate))) continue;
+      const size = pictureSize(await readFile(candidate));
+      if (size) sizes.set(candidate, size);
+    }
+  }
+  currentPage = { dir: dirname(file), sizes };
+  const html = renderMarkdown(md).replace(LISTING_MARK, () => (code ? listing(code) : ''));
+  currentPage = null;
   pages.push({
     slug: meta.slug ?? relative(resolve(docs, 'content'), file).replace(/\.md$/, ''),
     title: meta.title ?? meta.slug,
@@ -310,6 +409,7 @@ for await (const file of walk(resolve(docs, 'content'))) {
     namespace: meta.namespace ?? null,
     legacySlugs: meta.legacy_slugs ?? [],
     lua: code,
+    apis,
     headings: headingsOf(html),
     html,
     text: html
@@ -365,6 +465,17 @@ pages.sort(
 );
 
 await mkdir(out, { recursive: true });
+// Copied, not stamped: a picture whose bytes have not changed is not written again, for the same
+// reason as the index below.
+let copied = 0;
+for (const [rel, src] of pictures) {
+  const dest = resolve(out, 'img', rel);
+  await mkdir(dirname(dest), { recursive: true });
+  const [was, now] = await Promise.all([readFile(dest).catch(() => null), readFile(src)]);
+  if (was && was.equals(now)) continue;
+  await copyFile(src, dest);
+  copied += 1;
+}
 const file = resolve(out, 'index.json');
 const built = JSON.stringify({ pages, manifest: { namespaces, index } });
 // Only when it differs, and with nothing in it that differs on its own.
@@ -376,5 +487,5 @@ const built = JSON.stringify({ pages, manifest: { namespaces, index } });
 const current = await readFile(file, 'utf8').catch(() => null);
 if (current !== built) await writeFile(file, built);
 console.warn(
-  `docs-build: ${pages.length} pages, ${Object.keys(index).length} api entries → ${relative(root, out)}/index.json`,
+  `docs-build: ${pages.length} pages, ${Object.keys(index).length} api entries, ${pictures.size} pictures (${copied} copied) → ${relative(root, out)}/`,
 );

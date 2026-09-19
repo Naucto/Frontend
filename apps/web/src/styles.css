@@ -4,10 +4,21 @@
 
 /* ---- documentation (built from the docs submodule) ---- */
 @layer components {
+  /* Set quiet on purpose: the running text is one shade down, and what a reader has to keep is
+     what the page bolds, which comes back up to full ink. A page where everything is loud has no
+     way to point. */
   .doc-html {
-    color: var(--nc-ink-body);
+    color: var(--nc-ink-2);
     font-size: var(--text-body);
     line-height: var(--text-body--line-height);
+  }
+  .doc-html h1 + p {
+    color: var(--nc-ink-body);
+    font-size: var(--text-ui);
+    line-height: var(--text-ui--line-height);
+  }
+  .doc-html em {
+    color: var(--nc-ink-body);
   }
   .doc-html h1 {
     font-size: var(--text-display);
@@ -89,6 +100,106 @@
   }
   .doc-html strong {
     color: var(--nc-ink);
+  }
+  .doc-html h4 {
+    font-size: var(--text-body);
+    color: var(--nc-ink);
+    margin: 16px 0 4px;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-label);
+  }
+  .doc-html hr {
+    border: 0;
+    border-top: 1px solid var(--nc-line);
+    margin: 24px 0;
+  }
+  .doc-html blockquote:not(.callout) {
+    border-left: 2px solid var(--nc-line-strong);
+    padding-left: 12px;
+    margin: 0 0 12px;
+    color: var(--nc-ink-3);
+  }
+  .doc-html kbd {
+    display: inline-block;
+    min-width: 20px;
+    padding: 1px 6px;
+    border: 1px solid var(--nc-line-strong);
+    border-radius: var(--radius-sm);
+    background: var(--nc-line);
+    font-family: var(--font-mono);
+    font-size: var(--text-meta);
+    color: var(--nc-ink-body);
+    text-transform: uppercase;
+  }
+  .doc-html tbody tr:nth-child(even) {
+    background: color-mix(in srgb, var(--nc-raised) 50%, transparent);
+  }
+  /* A picture sits in a frame of its own, with its caption under it, and never wider than the
+     column. */
+  .doc-html figure.doc-figure {
+    margin: 0 0 16px;
+    padding: 8px;
+    border: 1px solid var(--nc-line);
+    border-radius: var(--radius-sm);
+    background: var(--nc-inset);
+  }
+  .doc-html figure.doc-figure img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-xs);
+  }
+  .doc-html figure.doc-figure figcaption {
+    margin-top: 6px;
+    font-size: var(--text-meta);
+    color: var(--nc-ink-3);
+  }
+  /* The console's own pixels, shown as pixels. */
+  .doc-html figure.doc-frame img {
+    image-rendering: pixelated;
+  }
+  /* A capture is taken in both themes where it can be; the page shows the one it is read in. */
+  .doc-html figure.doc-figure img.doc-light {
+    display: none;
+  }
+  [data-theme='light'] .doc-html figure.doc-figure img.doc-dark {
+    display: none;
+  }
+  [data-theme='light'] .doc-html figure.doc-figure img.doc-light {
+    display: block;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme]) .doc-html figure.doc-figure img.doc-dark {
+      display: none;
+    }
+    :root:not([data-theme]) .doc-html figure.doc-figure img.doc-light {
+      display: block;
+    }
+  }
+  /* A whole game's code, folded until it is asked for. */
+  .doc-html details.doc-listing {
+    margin: 0 0 12px;
+    border: 1px solid var(--nc-line);
+    border-radius: var(--radius-sm);
+    background: var(--nc-inset);
+  }
+  .doc-html details.doc-listing summary {
+    cursor: pointer;
+    padding: 8px 12px;
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--nc-ink-3);
+  }
+  .doc-html details.doc-listing summary:hover {
+    color: var(--nc-ink);
+  }
+  .doc-html details.doc-listing pre {
+    margin: 0;
+    border: 0;
+    border-top: 1px solid var(--nc-line);
+    border-radius: 0;
   }
   .doc-html .callout {
     border-left: 2px solid var(--nc-sky);
