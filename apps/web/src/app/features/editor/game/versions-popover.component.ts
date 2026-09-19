@@ -96,7 +96,6 @@ const byWhen = (a: VersionRow, b: VersionRow): number => (b.when ?? '').localeCo
             class="flex h-[38px] items-center justify-between border-b border-line bg-raised px-2"
           >
             <span class="label text-ink-3">Versions</span>
-            <span class="label text-ink-4">name one to release it</span>
           </header>
           <!-- The list is the one part that grows without bound — a project saves as often as its
                author presses the key — so it is what is allowed to scroll, and the head, the totals
@@ -167,7 +166,7 @@ const byWhen = (a: VersionRow, b: VersionRow): number => (b.when ?? '').localeCo
               }
             </ul>
             <div class="label mt-1 px-2">
-              {{ releases().length }} releases · {{ autosaves().length }} autosaves
+              {{ releases().length }} named · {{ autosaves().length }} autosaves
             </div>
             <div class="pb-2">
               <form class="mt-2 flex items-stretch gap-1 px-2" (ngSubmit)="checkpoint()">
