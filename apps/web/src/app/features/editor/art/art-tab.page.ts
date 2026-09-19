@@ -106,13 +106,15 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
           <div class="flex min-w-0 items-center gap-2 overflow-hidden">
             <!-- Which sheet, not which sprite: the sprite number rides under the preview, beside
                  the picture it names. What the header could not say was where you were. -->
-            <span class="font-mono text-meta truncate text-ink">{{ sheetTitle() }}</span>
+            <span class="font-mono text-meta truncate text-ink" [attr.title]="sheetTitle()">
+              {{ sheetTitle() }}
+            </span>
             @if (art.region().w > 1 || art.region().h > 1) {
               <span class="label whitespace-nowrap text-gold-ink">
                 {{ art.region().w }}×{{ art.region().h }}
               </span>
             }
-            <span class="label hidden truncate text-ink-4 @min-[900px]:inline">
+            <span class="label hidden shrink-0 text-ink-4 @min-[900px]:inline">
               {{ t('editor.art.px', { w: regionPx().w, h: regionPx().h }) }}
             </span>
           </div>

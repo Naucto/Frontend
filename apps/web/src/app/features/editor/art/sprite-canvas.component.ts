@@ -116,7 +116,9 @@ interface Drag {
     <div #wrap class="relative m-auto">
       <canvas
         #canvas
-        class="block cursor-crosshair touch-none"
+        class="block touch-none"
+        [class.cursor-crosshair]="hoverInBounds()"
+        [class.cursor-not-allowed]="!hoverInBounds()"
         [attr.aria-label]="label()"
         role="img"
         (pointerdown)="onDown($event)"
@@ -310,6 +312,10 @@ export class SpriteCanvasComponent {
   private readonly bounds = computed(() =>
     toolBounds(this.region(), this.clip() || this.crop(), this.pxW(), this.pxH()),
   );
+  protected readonly hoverInBounds = computed(() => {
+    const h = this.hoverCell();
+    return h === null || withinBounds(this.bounds(), h);
+  });
   /**
    * Where the drawn surface starts, in drawn pixels. Cropped, the canvas holds the region alone
    * and takes the region's corner as its own origin, so anything laid over it in sheet
@@ -895,7 +901,7 @@ export class SpriteCanvasComponent {
       ctx.setLineDash([]);
     }
     const h = this.hoverCell();
-    if (h) {
+    if (h && this.inBounds(h)) {
       ctx.strokeStyle = token('--nc-ink');
       ctx.lineWidth = 2;
       ctx.strokeRect(h.x * s + 1, h.y * s + 1, s - 2, s - 2);

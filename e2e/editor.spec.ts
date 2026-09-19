@@ -182,7 +182,10 @@ test.describe('editor', () => {
     // Off, or the stroke never reaches the sheet: the lock holds a stroke inside the region, which
     // starts as the single sprite in hand. The old assertion here counted used slots and passed
     // with the stroke clipped away, so the test never checked the half of its name that paints.
-    await page.getByRole('switch', { name: 'Lock' }).click();
+    await expect(page.getByRole('switch', { name: 'Lock' })).toHaveAttribute(
+      'aria-checked',
+      'false',
+    );
 
     // Drawn before the viewer is floated, because the pip lands over the canvas and would take
     // the stroke instead.
@@ -631,7 +634,10 @@ test.describe('editor', () => {
 
     // Off, or the paste below is clipped to the sprite in hand: the lock stops a paste where it
     // stops a stroke.
-    await page.getByRole('switch', { name: 'Lock' }).click();
+    await expect(page.getByRole('switch', { name: 'Lock' })).toHaveAttribute(
+      'aria-checked',
+      'false',
+    );
 
     const box = await canvas.boundingBox();
     if (!box) throw new Error('no canvas');
@@ -671,7 +677,6 @@ test.describe('editor', () => {
     await page.goto('/edit/7/art');
     const canvas = page.getByRole('img', { name: 'Sprite canvas' });
     await expect(canvas).toBeVisible();
-    await page.getByRole('switch', { name: 'Lock' }).click();
 
     const box = await canvas.boundingBox();
     if (!box) throw new Error('no canvas');
@@ -699,7 +704,6 @@ test.describe('editor', () => {
     await page.goto('/edit/7/art');
     const canvas = page.getByRole('img', { name: 'Sprite canvas' });
     await expect(canvas).toBeVisible();
-    await page.getByRole('switch', { name: 'Lock' }).click();
 
     const box = await canvas.boundingBox();
     if (!box) throw new Error('no canvas');
@@ -723,8 +727,6 @@ test.describe('editor', () => {
     await page.goto('/edit/7/art');
     const canvas = page.getByRole('img', { name: 'Sprite canvas' });
     await expect(canvas).toBeVisible();
-    // Off, so the selection below is not clipped to the sprite in hand.
-    await page.getByRole('switch', { name: 'Lock' }).click();
     const box = await canvas.boundingBox();
     if (!box) throw new Error('no canvas');
     const bar = page.getByRole('toolbar', { name: 'Transform the selection' });
@@ -990,9 +992,6 @@ test.describe('editor', () => {
     await page.getByRole('button', { name: 'Add a sheet' }).click();
     // Nameless, so it answers to its number.
     await expect(page.getByRole('tab', { name: '2' })).toBeVisible();
-    // Off, or the stroke is held inside the single sprite the region starts on.
-    await page.getByRole('switch', { name: 'Lock' }).click();
-
     const box = await canvas.boundingBox();
     if (!box) throw new Error('no canvas');
     await page.mouse.move(box.x + 4, box.y + 4);
@@ -1044,7 +1043,6 @@ test.describe('editor', () => {
     // A second sheet with something on its very first cell, and nothing on the first sheet's.
     await page.getByRole('button', { name: 'Add a sheet' }).click();
     await expect(page.getByRole('tab', { name: '2' })).toBeVisible();
-    await page.getByRole('switch', { name: 'Lock' }).click();
     const box = await canvas.boundingBox();
     if (!box) throw new Error('no canvas');
     await page.mouse.move(box.x + 4, box.y + 4);

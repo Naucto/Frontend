@@ -76,7 +76,7 @@ export const ArtStore = signalStore(
     tool: 'pen',
     colour: 4,
     region: { x: 1, y: 0, w: 1, h: 1 },
-    clip: true,
+    clip: false,
     crop: false,
     grid: true,
     onion: false,
