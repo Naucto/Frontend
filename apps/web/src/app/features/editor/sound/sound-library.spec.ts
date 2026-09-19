@@ -1,4 +1,4 @@
-import { Game, INSTRUMENT_PRESETS } from '@naucto/engine';
+import { Game, INSTRUMENT_PRESETS, LOCAL_ORIGIN } from '@naucto/engine';
 import { beforeEach, describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
 
@@ -88,5 +88,31 @@ describe('SoundLibrary', () => {
     const b = library.addPattern();
     library.setSongSequence(0, [a.id, null, b.id]);
     expect(library.songs().get('0')?.sequence).toEqual([a.id, null, b.id]);
+  });
+});
+
+describe('SoundLibrary under the SOUND tab history', () => {
+  it('takes a chained pattern and its place in the music back as one step, and a sample too', () => {
+    const game = new Game(new Y.Doc());
+    const library = new SoundLibrary(game);
+    const undo = new Y.UndoManager(
+      [game.instruments, game.patterns, game.sfx, game.songs, game.samples],
+      { trackedOrigins: new Set([LOCAL_ORIGIN, null]), captureTimeout: 300 },
+    );
+
+    const p = library.addPattern();
+    undo.stopCapturing();
+    library.setSongSequence(0, [p.id]);
+    expect(game.getSongs().get('0')?.sequence).toEqual([p.id]);
+    undo.undo();
+    expect(game.getSongs().size).toBe(0);
+    undo.redo();
+    expect(game.getSongs().get('0')?.sequence).toEqual([p.id]);
+
+    undo.stopCapturing();
+    library.setSample('s', 'AAAA');
+    expect(game.samples.get('s')).toBe('AAAA');
+    undo.undo();
+    expect(game.samples.has('s')).toBe(false);
   });
 });

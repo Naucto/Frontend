@@ -486,16 +486,17 @@ export class SoundTabPage {
       }
     });
     const game = this.session.game;
-    this.undo = new Y.UndoManager([game.instruments, game.patterns, game.sfx], {
-      trackedOrigins: new Set([LOCAL_ORIGIN, null]),
-      captureTimeout: 300,
-    });
+    this.undo = new Y.UndoManager(
+      [game.instruments, game.patterns, game.sfx, game.songs, game.samples],
+      { trackedOrigins: new Set([LOCAL_ORIGIN, null]), captureTimeout: 300 },
+    );
     const onStack = (): void => {
       this.canUndo.set(this.undo.canUndo());
       this.canRedo.set(this.undo.canRedo());
     };
     this.undo.on('stack-item-added', onStack);
     this.undo.on('stack-item-popped', onStack);
+    this.undo.on('stack-cleared', onStack);
     const unsubPalette = game.onPaletteChange(() => {
       this.paletteVersion.update((v) => v + 1);
     });
