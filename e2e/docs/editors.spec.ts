@@ -16,7 +16,6 @@ const CONTENT_FILE = 'node_modules/.cache/docs-shots/platformer.bin';
 const OUT = 'docs/content/editors/img';
 const THEMES = ['dark', 'light'] as const;
 
-/** The whole viewport, or one element of it, as a picture of its own. */
 const shoot = async (
   page: Page,
   name: string,
@@ -29,7 +28,7 @@ const shoot = async (
   else await page.screenshot({ path });
 };
 
-/** A panel of the right column, found by the label it prints. */
+/** A panel, found by the label it prints. */
 const section = (page: Page, title: string): Locator =>
   page.locator('nc-section').filter({ has: page.getByText(title, { exact: true }) }).first();
 
@@ -96,7 +95,6 @@ for (const theme of THEMES) {
       await page.getByRole('tooltip').waitFor();
       await shoot(page, 'sound-sfx-help', theme, page.getByRole('tooltip'));
       await page.mouse.move(0, 0);
-      // A new instrument: the choice, then the shelves of presets.
       await page.getByRole('button', { name: 'Add instrument' }).first().click();
       const dialog = page.getByRole('dialog', { name: 'New instrument' });
       await shoot(page, 'sound-new-instrument', theme, dialog);
