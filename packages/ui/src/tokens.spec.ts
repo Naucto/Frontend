@@ -47,6 +47,7 @@ describe('tokens.css', () => {
       '--nc-tool-w': 'calc(30px * var(--nc-density))',
       '--nc-control-h-xs': 'calc(22px * var(--nc-density))',
       '--nc-control-h-sm': 'calc(24px * var(--nc-density))',
+      '--nc-transport-h': 'calc(var(--nc-control-h-sm) + 10px)',
     });
   });
 

@@ -158,7 +158,8 @@ const PATTERN_MAX = 99;
                  BPM and STEPS, and a pattern is the same kind of thing. The arrows walk the
                  patterns that exist, skipping the numbers nothing is at. -->
             <nc-number-field
-              class="shrink-0"
+              class="h-(--nc-transport-h) shrink-0"
+              fill
               [label]="t('editor.sound.pattern')"
               [value]="p.slot"
               [max]="PATTERN_MAX"
@@ -209,7 +210,8 @@ const PATTERN_MAX = 99;
                  "type a value or step with the arrows. Not a dropdown." A strip of seven tempos
                  read as the only seven anyone was allowed. -->
             <nc-number-field
-              class="shrink-0"
+              class="h-(--nc-transport-h) shrink-0"
+              fill
               [label]="t('editor.sound.bpm')"
               [value]="p.bpm"
               [min]="BPM_MIN"
@@ -217,7 +219,8 @@ const PATTERN_MAX = 99;
               (requested)="setBpm($event)"
             />
             <nc-number-field
-              class="shrink-0"
+              class="h-(--nc-transport-h) shrink-0"
+              fill
               [label]="t('editor.sound.steps')"
               [value]="p.steps"
               [min]="STEP_SIZE"

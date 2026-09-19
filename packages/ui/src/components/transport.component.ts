@@ -17,7 +17,9 @@ import { IconComponent } from './icon.component';
   selector: 'nc-transport',
   imports: [ButtonDirective, IconComponent],
   template: `
-    <span class="flex items-center gap-0.5 rounded-sm border border-line bg-inset p-0.5">
+    <span
+      class="flex h-(--nc-transport-h) items-center gap-0.5 rounded-sm border border-line bg-inset p-0.5"
+    >
       @if (playing()) {
         <button
           ncButton

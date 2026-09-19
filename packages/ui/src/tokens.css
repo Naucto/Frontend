@@ -527,6 +527,9 @@
   /* The two shorter buttons that appear in a strip rather than in a form. */
   --nc-control-h-xs: calc(22px * var(--nc-density));
   --nc-control-h-sm: calc(24px * var(--nc-density));
+  /* The transport: its short buttons in a frame of their own, and what sits beside it in a bar
+     takes this height too, so a strip that holds one reads as one row. */
+  --nc-transport-h: calc(var(--nc-control-h-sm) + 10px);
 }
 
 /** The type a control in a bar is set in, which is the density's to decide. */
