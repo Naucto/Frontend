@@ -1,7 +1,12 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
-import { ButtonDirective, DialogShellComponent, NumberFieldComponent } from '@naucto/ui';
+import {
+  ButtonDirective,
+  DialogShellComponent,
+  NoticeComponent,
+  NumberFieldComponent,
+} from '@naucto/ui';
 
 export interface SizeDialogData {
   title: string;
@@ -48,9 +53,15 @@ export interface SizeDialogResult {
  */
 @Component({
   selector: 'nc-size-dialog',
-  imports: [TranslocoDirective, ButtonDirective, DialogShellComponent, NumberFieldComponent],
+  imports: [
+    TranslocoDirective,
+    ButtonDirective,
+    DialogShellComponent,
+    NoticeComponent,
+    NumberFieldComponent,
+  ],
   template: `
-    <nc-dialog-shell *transloco="let t" [title]="data.title">
+    <nc-dialog-shell *transloco="let t" [title]="data.title" [lead]="data.note">
       <div class="flex items-center gap-1.5">
         <nc-number-field
           [label]="t('editor.size.width')"
@@ -70,8 +81,6 @@ export interface SizeDialogResult {
         />
       </div>
 
-      <p class="mt-1.5 text-meta text-ink-3">{{ data.note }}</p>
-
       @if (cost().lines.length) {
         <ul class="mt-1.5 grid gap-0.5">
           @for (line of cost().lines; track line) {
@@ -79,10 +88,10 @@ export interface SizeDialogResult {
           }
         </ul>
       }
-      <!-- Last thing above the buttons, and on one line: it is what is read just before the one
-           that goes through with it. The whole sentence is on the element, for a pointer. -->
+      <!-- Last thing above the buttons, and whole: it is what is read just before the one that
+           goes through with it, and a sentence cut short there said less than it had to. -->
       @if (cost().loss; as loss) {
-        <p class="mt-1.5 truncate text-meta text-hot-ink" [title]="loss">{{ loss }}</p>
+        <nc-notice tone="danger" class="mt-1">{{ loss }}</nc-notice>
       }
 
       <ng-container footer>

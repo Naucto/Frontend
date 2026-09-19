@@ -82,7 +82,10 @@ const FILTERS = [
               {{ t('editor.sound.presets') }}
               <nc-icon name="chevron-down" [size]="12" />
             </button>
-            <nc-help-dot [text]="t('editor.sound.oscHelp')" />
+            <nc-help-dot
+              [title]="t('editor.sound.oscillator')"
+              [text]="t('editor.sound.oscHelp')"
+            />
           </span>
         </div>
         <ng-template #presets>
@@ -198,7 +201,7 @@ const FILTERS = [
       <section class="border-b border-line p-1.5">
         <div class="mb-1 flex items-center justify-between">
           <span class="label text-ink-3">{{ t('editor.sound.envelope') }}</span>
-          <nc-help-dot [text]="t('editor.sound.envHelp')" />
+          <nc-help-dot [title]="t('editor.sound.envelope')" [text]="t('editor.sound.envHelp')" />
         </div>
         <nc-envelope-graph [env]="inst().env" (envChange)="env($event)" />
         <div class="mt-1 grid grid-cols-4 gap-1 text-center">
@@ -254,7 +257,7 @@ const FILTERS = [
       <section class="border-b border-line p-1.5">
         <div class="mb-1 flex items-center justify-between">
           <span class="label text-ink-3">{{ t('editor.sound.modFilter') }}</span>
-          <nc-help-dot [text]="t('editor.sound.modHelp')" />
+          <nc-help-dot [title]="t('editor.sound.modFilter')" [text]="t('editor.sound.modHelp')" />
         </div>
         <div class="grid gap-0.5">
           <nc-slider
@@ -330,7 +333,7 @@ const FILTERS = [
       <section class="border-b border-line p-1.5">
         <div class="mb-1 flex items-center justify-between">
           <span class="label text-ink-3">{{ t('editor.sound.mix') }}</span>
-          <nc-help-dot [text]="t('editor.sound.mixHelp')" />
+          <nc-help-dot [title]="t('editor.sound.mix')" [text]="t('editor.sound.mixHelp')" />
         </div>
         <div class="grid gap-0.5">
           <nc-slider

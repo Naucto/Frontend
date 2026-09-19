@@ -35,8 +35,7 @@ export async function addCollaborator(projectId: number, handle: string): Promis
     PersonSearchComponent,
   ],
   template: `
-    <nc-dialog-shell *transloco="let t" [title]="t('share.title')">
-      <p class="mb-2 text-body text-ink-2">{{ t('share.blurb') }}</p>
+    <nc-dialog-shell *transloco="let t" [title]="t('share.title')" [lead]="t('share.blurb')">
       <ul class="mb-2 divide-y divide-line">
         @for (c of people(); track c.id) {
           <li class="flex items-center gap-1 py-1">

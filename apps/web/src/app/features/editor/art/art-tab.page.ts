@@ -379,7 +379,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
              a peer's pointer here says what is about to change; the sheet map and the zoom above
              are each person's own view, and a cursor over them would mean nothing. -->
         <nc-section banded [title]="t('editor.art.flags')">
-          <nc-help-dot actions [text]="t('editor.art.flagsHelp')" />
+          <nc-help-dot actions [title]="t('editor.art.flags')" [text]="t('editor.art.flagsHelp')" />
           <nc-presence-surface surface="art:flags" />
           <nc-bit-flags
             [value]="flags()"

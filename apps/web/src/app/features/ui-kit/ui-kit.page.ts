@@ -378,7 +378,10 @@ import { ACCENT_SLOTS } from '../editor/accent-slots';
           <button ncButton variant="danger" (click)="confirm()">End session</button>
           <button ncButton variant="ghost" (click)="toast()">Toast</button>
           <nc-help-dot
-            text="Eight bits per sprite. The engine ignores them — your game reads them."
+            title="Sprite flags"
+            text="Eight bits per sprite. The engine ignores them; your game reads them with \`map.flag(index, bit)\`.
+
+What each bit means is yours to decide."
           />
           <nc-search class="w-[280px]" placeholder="Search games, people, tags…" />
           <nc-tag-input class="w-[320px]" [tags]="['action', 'adventure']" />
@@ -565,7 +568,10 @@ export class UiKitPage {
       .open<ConfirmDialogComponent, unknown, boolean>(ConfirmDialogComponent, {
         data: {
           title: 'End session',
-          message: 'Everyone is disconnected and the slots are freed. The game keeps its state.',
+          message: [
+            'Everyone is disconnected and the slots are freed.',
+            'The game keeps its state.',
+          ],
           confirmLabel: 'End session',
           danger: true,
         },

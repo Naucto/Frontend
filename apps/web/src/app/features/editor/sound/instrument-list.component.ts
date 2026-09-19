@@ -110,7 +110,7 @@ const COLUMNS = 4;
         <div class="mb-1 flex h-(--nc-control-h) items-center gap-1">
           <span class="label text-ink-3">{{ t('editor.sound.sfxSlots') }}</span>
           <span class="flex-1"></span>
-          <nc-help-dot [text]="t('editor.sound.sfxHelp')" />
+          <nc-help-dot [title]="t('editor.sound.sfxSlots')" [text]="t('editor.sound.sfxHelp')" />
         </div>
         <!-- Five rows tall whatever it holds, and it scrolls: the bank has no last slot, and left
              to grow it would push the instruments off the top of the column and shift the music

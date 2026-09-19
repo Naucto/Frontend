@@ -152,7 +152,11 @@ const DESCRIPTION_MAX = 300;
                 for="g-summary"
                 [counter]="summary().length + ' / ' + summaryMax"
               >
-                <nc-help-dot actions [text]="t('editor.game.summaryHelp')" />
+                <nc-help-dot
+                  actions
+                  [title]="t('editor.game.summary')"
+                  [text]="t('editor.game.summaryHelp')"
+                />
                 <input
                   ncInput
                   id="g-summary"
@@ -209,7 +213,11 @@ const DESCRIPTION_MAX = 300;
         }
         <div class="grid min-w-0">
           <nc-section banded [title]="t('editor.game.status')">
-            <nc-help-dot actions [text]="t('editor.game.statusHelp')" />
+            <nc-help-dot
+              actions
+              [title]="t('editor.game.status')"
+              [text]="t('editor.game.statusHelp')"
+            />
             <nc-segmented
               fill
               [options]="statuses"
@@ -232,7 +240,11 @@ const DESCRIPTION_MAX = 300;
           </nc-section>
           @if (features.monetization()) {
             <nc-section banded [title]="t('editor.game.monetization')">
-              <nc-help-dot actions [text]="t('editor.game.monetizationHelp')" />
+              <nc-help-dot
+                actions
+                [title]="t('editor.game.monetization')"
+                [text]="t('editor.game.monetizationHelp')"
+              />
               <!-- Neutral where STATUS carries a meaning colour: two filled cells stacked make the
                    neutral choice read as a second state colour. -->
               <nc-segmented

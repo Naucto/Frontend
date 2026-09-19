@@ -2,6 +2,7 @@ import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { unwrap } from '@app/core/api/api-errors';
 import { invalidateProjectHistory } from '@app/shared/queries/projects.queries';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import {
   projectControllerPublish,
   projectControllerSaveCheckpoint,
@@ -9,7 +10,14 @@ import {
   projectControllerUpdateRelease,
 } from '@naucto/api-client';
 import { computeSizeReport } from '@naucto/engine';
-import { ButtonDirective, DialogShellComponent, MeterComponent } from '@naucto/ui';
+import {
+  ButtonDirective,
+  DialogShellComponent,
+  IconComponent,
+  type IconName,
+  MeterComponent,
+  NoticeComponent,
+} from '@naucto/ui';
 import { QueryClient } from '@tanstack/angular-query-experimental';
 import * as Y from 'yjs';
 
@@ -23,32 +31,53 @@ export const PUBLISHED_VERSION = 'published';
 /** PUBLISH: save, then publish / update the release / unpublish, with the size budget in view. */
 @Component({
   selector: 'nc-publish-dialog',
-  imports: [ButtonDirective, DialogShellComponent, MeterComponent],
+  imports: [
+    TranslocoDirective,
+    ButtonDirective,
+    DialogShellComponent,
+    IconComponent,
+    MeterComponent,
+    NoticeComponent,
+  ],
   template: `
-    <nc-dialog-shell title="Publish">
-      <p class="text-body text-ink-2">
-        Publishing puts the current save on the hub. People can play it, like it and remix it.
-      </p>
-      <div class="mt-2">
-        <div class="mb-1 flex justify-between text-label">
-          <span>Game size</span>
-          <span class="font-mono text-ink">{{ kb(size().total) }} / 1 MB</span>
+    <nc-dialog-shell
+      *transloco="let t"
+      [title]="t('editor.publishDialog.title')"
+      [lead]="t('editor.publishDialog.lead')"
+    >
+      <!-- What a release lets people do, one line each, with the mark the hub shows it under. -->
+      <ul class="grid gap-0.75 text-body leading-[1.65] text-ink-body">
+        @for (line of lines; track line.icon) {
+          <li class="flex items-start gap-1">
+            <nc-icon [name]="line.icon" [size]="12" class="mt-[3px] shrink-0 text-ink-3" />
+            <span>{{ t('editor.publishDialog.' + line.key) }}</span>
+          </li>
+        }
+      </ul>
+      <div class="mt-2 border-t border-line pt-1.5">
+        <div class="mb-1 flex justify-between">
+          <span class="label">{{ t('editor.publishDialog.size') }}</span>
+          <span class="font-mono text-label text-ink">{{ kb(size().total) }} / 1 MB</span>
         </div>
-        <nc-meter size="md" [segments]="segments()" [max]="ceiling" label="Game size" />
+        <nc-meter
+          size="md"
+          [segments]="segments()"
+          [max]="ceiling"
+          [label]="t('editor.publishDialog.size')"
+        />
       </div>
       @if (size().total > ceiling) {
-        <p class="mt-2 text-meta text-hot-ink">
-          Over by {{ kb(size().total - ceiling) }}, so publishing is blocked. Everything else still
-          saves, and the game still runs.
-        </p>
+        <nc-notice tone="danger" class="mt-1">
+          {{ t('editor.publishDialog.over', { by: kb(size().total - ceiling) }) }}
+        </nc-notice>
       }
       @if (error()) {
-        <p class="mt-2 text-meta text-hot-ink">{{ error() }}</p>
+        <nc-notice tone="danger" class="mt-1">{{ error() }}</nc-notice>
       }
       <ng-container footer>
         @if (data.session.project()?.publishedAt) {
           <button ncButton variant="danger" (click)="unpublish()" [disabled]="busy()">
-            Unpublish
+            {{ t('editor.publishDialog.unpublish') }}
           </button>
           <button
             ncButton
@@ -56,17 +85,19 @@ export const PUBLISHED_VERSION = 'published';
             (click)="publish(true)"
             [disabled]="busy() || size().total > ceiling"
           >
-            Update release
+            {{ t('editor.publishDialog.update') }}
           </button>
         } @else {
-          <button ncButton variant="ghost" (click)="ref.close(false)">Not yet</button>
+          <button ncButton variant="ghost" (click)="ref.close(false)">
+            {{ t('editor.publishDialog.notYet') }}
+          </button>
           <button
             ncButton
             variant="primary"
             (click)="publish(false)"
             [disabled]="busy() || size().total > ceiling"
           >
-            Publish
+            {{ t('editor.publishDialog.publish') }}
           </button>
         }
       </ng-container>
@@ -78,7 +109,13 @@ export class PublishDialogComponent {
   protected readonly data = inject<{ session: WorkSessionService }>(DIALOG_DATA);
   protected readonly ref = inject<DialogRef<boolean>>(DialogRef);
   private readonly qc = inject(QueryClient);
+  private readonly transloco = inject(TranslocoService);
   protected readonly ceiling = PUBLISH_CEILING;
+  protected readonly lines: readonly { icon: IconName; key: string }[] = [
+    { icon: 'play', key: 'play' },
+    { icon: 'heart', key: 'like' },
+    { icon: 'git-branch', key: 'remix' },
+  ];
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly size = computed(() => computeSizeReport(this.data.session.game));
@@ -135,7 +172,9 @@ export class PublishDialogComponent {
       await this.data.session.refreshProject();
       this.ref.close(true);
     } catch (e) {
-      this.error.set(e instanceof Error ? e.message : 'Publishing failed');
+      this.error.set(
+        e instanceof Error ? e.message : this.transloco.translate('editor.publishDialog.failed'),
+      );
     } finally {
       this.busy.set(false);
     }

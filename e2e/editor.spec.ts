@@ -1298,7 +1298,7 @@ test.describe('editor', () => {
     await expect(again.getByRole('textbox', { name: 'Width' })).toHaveValue('192');
 
     // What is lost is said apart from what merely moves: last of the lines, right above the
-    // buttons, and on one line rather than the three the sentence takes.
+    // buttons, and whole.
     await again.getByRole('textbox', { name: 'Width' }).fill('64');
     await again.getByRole('textbox', { name: 'Width' }).press('Enter');
     // Narrower re-flows the grid, shorter drops the row the lower half of the moon is drawn on:
@@ -1315,8 +1315,10 @@ test.describe('editor', () => {
     if (!lossBox || !movedBox || !buttons) return;
     expect(lossBox.y).toBeGreaterThan(movedBox.y);
     expect(lossBox.y + lossBox.height).toBeLessThanOrEqual(buttons.y);
-    // One line: the sentence is longer than the box, and the box does not grow to hold it.
-    expect(lossBox.height).toBeLessThan(24);
+    // Whole: it is the one line here that cannot be taken back, so the box grows to hold it
+    // rather than cutting it short at the edge.
+    expect(await loss.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+    expect(lossBox.height).toBeGreaterThan(24);
   });
 
   /**

@@ -76,7 +76,7 @@ interface Cell {
           (stopped)="stopped.emit()"
         />
         <span class="flex-1"></span>
-        <nc-help-dot [text]="t('editor.sound.musicHelp')" />
+        <nc-help-dot [title]="t('editor.sound.music')" [text]="t('editor.sound.musicHelp')" />
       </div>
 
       <div class="overflow-y-auto" [style.height]="height" [style.scrollbar-gutter]="'stable'">

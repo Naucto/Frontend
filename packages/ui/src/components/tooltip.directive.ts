@@ -3,6 +3,7 @@ import { ComponentPortal } from '@angular/cdk/portal';
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   Directive,
   ElementRef,
@@ -11,18 +12,74 @@ import {
   signal,
 } from '@angular/core';
 
+/** A run of a paragraph: prose, or an identifier the reader may have to type. */
+export interface TooltipRun {
+  readonly code: boolean;
+  readonly text: string;
+}
+
+/**
+ * The shape a tooltip's text is read in: paragraphs split on a blank line, and anything between
+ * backticks set as code.
+ *
+ * Kept this small on purpose. The help texts are written in a locale file, where a blank line and
+ * a backtick are things a translator can see and keep; a markup language would be a second thing
+ * to learn and a second thing to break. A text with neither renders as the one line it always was.
+ */
+export const tooltipParagraphs = (text: string): readonly (readonly TooltipRun[])[] =>
+  text
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .map((p) =>
+      p
+        .split('`')
+        .map((text, i) => ({ code: i % 2 === 1, text }))
+        .filter((run) => run.text.length > 0),
+    );
+
+/** The same text with the backticks taken out, for a place that shows text and not runs. */
+export const tooltipPlainText = (text: string): string => text.replaceAll('`', '');
+
 @Component({
   selector: 'nc-tooltip-panel',
-  template: '{{ text() }}',
+  template: `
+    @if (title(); as heading) {
+      <div class="label mb-0.75 border-b border-line pb-0.5">{{ heading }}</div>
+    }
+    @for (p of paragraphs(); track $index) {
+      <p [class.mt-1]="$index > 0">
+        @for (run of p; track $index) {
+          @if (run.code) {
+            <code class="font-mono text-ink">{{ run.text }}</code>
+          } @else {
+            {{ run.text }}
+          }
+        }
+      </p>
+    }
+  `,
   host: {
     role: 'tooltip',
     class:
-      'block max-w-[32ch] rounded-sm border border-line-strong bg-raised px-1 py-0.5 font-ui text-meta text-ink shadow-[0_2px_0_var(--nc-inset)]',
+      'block rounded-sm border border-line-strong bg-raised font-ui shadow-[0_2px_0_var(--nc-inset)]',
+    '[class]': 'shape()',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TooltipPanelComponent {
   readonly text = signal('');
+  readonly title = signal<string | undefined>(undefined);
+  protected readonly paragraphs = computed(() => tooltipParagraphs(this.text()));
+  /**
+   * A titled tooltip is a help text — read, not glanced at — so it gets the body size, more room
+   * to wrap and more air around it. The untitled one is a label for a control and stays small.
+   */
+  protected readonly shape = computed(() =>
+    this.title()
+      ? 'max-w-[44ch] px-1.5 py-1 text-body leading-[1.6] text-ink-body'
+      : 'max-w-[32ch] px-1 py-0.5 text-meta text-ink',
+  );
 }
 
 /** Hover/focus tooltip. Usage: <button ncTooltip="Kick this player">. */
@@ -38,6 +95,8 @@ export class TooltipPanelComponent {
 })
 export class TooltipDirective {
   readonly ncTooltip = input.required<string>();
+  /** Set on a help text; leaves a control's label alone. */
+  readonly tooltipTitle = input<string>();
   readonly tooltipDelay = input(400);
 
   private readonly overlay = inject(Overlay);
@@ -78,6 +137,7 @@ export class TooltipDirective {
       });
       const panel = this.ref.attach(new ComponentPortal(TooltipPanelComponent));
       panel.instance.text.set(this.ncTooltip());
+      panel.instance.title.set(this.tooltipTitle());
     }, this.tooltipDelay());
   }
 

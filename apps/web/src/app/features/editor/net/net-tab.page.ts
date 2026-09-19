@@ -158,7 +158,7 @@ function formatScalar(value: TableScalar | undefined): string {
         <div class="flex items-center gap-1 px-[18px] py-[10px]">
           <span class="font-mono text-[9px] tracking-[0.14em] text-ink-3">net.state</span>
           <span class="flex-1"></span>
-          <nc-help-dot [text]="t('editor.net.helpState')" />
+          <nc-help-dot title="net.state" [text]="t('editor.net.helpState')" />
         </div>
         @if (!bare()) {
           <div class="min-h-0 flex-1 overflow-auto">
@@ -356,7 +356,11 @@ function formatScalar(value: TableScalar | undefined): string {
                everyone in the session is looking at, so a peer's pointer says what is about to
                change for all of you. The test rig below is not — see there. -->
         <nc-section banded [title]="t('editor.net.whoCanJoin')">
-          <nc-help-dot actions [text]="t('editor.net.whoHelp')" />
+          <nc-help-dot
+            actions
+            [title]="t('editor.net.whoCanJoin')"
+            [text]="t('editor.net.whoHelp')"
+          />
           <nc-presence-surface surface="net:session" />
           <span class="font-mono text-micro uppercase tracking-strip text-ink-4">
             {{ t('editor.net.inWorkSession') }}
@@ -404,7 +408,11 @@ function formatScalar(value: TableScalar | undefined): string {
             t('editor.net.players') + ' · ' + players().length + ' / ' + (info()?.maxPlayers || '—')
           "
         >
-          <nc-help-dot actions [text]="t('editor.net.playersHelp')" />
+          <nc-help-dot
+            actions
+            [title]="t('editor.net.players')"
+            [text]="t('editor.net.playersHelp')"
+          />
           <nc-presence-surface surface="net:players" />
           @for (p of slots(); track p.slot) {
             <div class="flex items-center gap-1 py-0.5">
@@ -451,7 +459,11 @@ function formatScalar(value: TableScalar | undefined): string {
                shape that client alone. Nobody else sees what these do, so nobody else needs to see
                a pointer over them. -->
         <nc-section banded [title]="t('editor.net.testRig')">
-          <nc-help-dot actions [text]="t('editor.net.testHelp')" />
+          <nc-help-dot
+            actions
+            [title]="t('editor.net.testRig')"
+            [text]="t('editor.net.testHelp')"
+          />
           @if (rig()) {
             <button ncButton variant="secondary" class="w-full" (click)="rig.set(false)">
               {{ t('editor.net.closeRig') }}

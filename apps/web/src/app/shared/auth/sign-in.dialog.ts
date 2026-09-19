@@ -16,8 +16,7 @@ import { SignInFormComponent } from './sign-in-form.component';
   selector: 'nc-sign-in-dialog',
   imports: [TranslocoDirective, ButtonDirective, DialogShellComponent, SignInFormComponent],
   template: `
-    <nc-dialog-shell *transloco="let t" [title]="t('auth.signIn')">
-      <p class="mb-2 text-body text-ink-3">{{ t('auth.needAccount') }}</p>
+    <nc-dialog-shell *transloco="let t" [title]="t('auth.signIn')" [lead]="t('auth.needAccount')">
       <nc-sign-in-form [next]="here" (succeeded)="ref.close(true)" />
       <button ncButton variant="ghost" footer (click)="ref.close(false)">
         {{ t('net.cancel') }}

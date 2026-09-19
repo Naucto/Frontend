@@ -45,15 +45,18 @@ export interface HostDialogData {
     UserAvatarComponent,
   ],
   template: `
-    <nc-dialog-shell *transloco="let t" [title]="open() ? t('net.host.open') : t('net.host.title')">
+    <nc-dialog-shell
+      *transloco="let t"
+      [title]="open() ? t('net.host.open') : t('net.host.title')"
+      [lead]="
+        open()
+          ? undefined
+          : data.gameName
+            ? t('net.host.hintNamed', { game: data.gameName, n: data.options.maxPlayers })
+            : t('net.host.hint', { n: data.options.maxPlayers })
+      "
+    >
       @if (!open()) {
-        <p class="mb-2 text-body text-ink-2">
-          @if (data.gameName) {
-            {{ t('net.host.hintNamed', { game: data.gameName, n: data.options.maxPlayers }) }}
-          } @else {
-            {{ t('net.host.hint', { n: data.options.maxPlayers }) }}
-          }
-        </p>
         <nc-field [label]="t('net.host.name')" for="session-title">
           <input
             ncInput

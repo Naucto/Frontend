@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { render, screen } from '@testing-library/angular';
 import userEvent from '@testing-library/user-event';
 
-import { TooltipDirective } from './tooltip.directive';
+import { TooltipDirective, tooltipParagraphs } from './tooltip.directive';
 
 @Component({
   selector: 'nc-tooltip-host',
@@ -62,5 +62,58 @@ describe('TooltipDirective', () => {
     await pastTheDelay();
 
     expect(panelCount()).toBe(1);
+  });
+});
+
+@Component({
+  selector: 'nc-help-tooltip-host',
+  imports: [TooltipDirective],
+  template: `
+    <button
+      type="button"
+      ncTooltip="Slots your game plays with \`sound.play_sfx(slot)\`.
+
+Click one to fill it."
+      tooltipTitle="SFX slots"
+      [tooltipDelay]="10"
+    >
+      Help
+    </button>
+  `,
+})
+class HelpHostComponent {}
+
+describe('TooltipPanelComponent', () => {
+  it('sets a titled text as paragraphs with its identifiers in code', async () => {
+    await render(HelpHostComponent);
+    await userEvent.hover(screen.getByRole('button', { name: 'Help' }));
+    await pastTheDelay();
+
+    const panel = screen.getByRole('tooltip');
+    expect(panel).toHaveTextContent('SFX slots');
+    expect(panel.querySelectorAll('p')).toHaveLength(2);
+    expect(panel.querySelector('code')).toHaveTextContent('sound.play_sfx(slot)');
+  });
+});
+
+describe('tooltipParagraphs', () => {
+  it('keeps a plain line as one paragraph of one run', () => {
+    expect(tooltipParagraphs('Kick this player')).toEqual([
+      [{ code: false, text: 'Kick this player' }],
+    ]);
+  });
+
+  it('splits on blank lines and on backticks', () => {
+    expect(tooltipParagraphs('Read `a.b`.\n\n\nThen `c`')).toEqual([
+      [
+        { code: false, text: 'Read ' },
+        { code: true, text: 'a.b' },
+        { code: false, text: '.' },
+      ],
+      [
+        { code: false, text: 'Then ' },
+        { code: true, text: 'c' },
+      ],
+    ]);
   });
 });
