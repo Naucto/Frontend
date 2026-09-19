@@ -1,4 +1,5 @@
-import { computed } from '@angular/core';
+import { computed, inject } from '@angular/core';
+import { EditorPrefsStore } from '@app/core/prefs/editor-prefs.store';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 
 /**
@@ -44,16 +45,17 @@ interface SoundState {
 
 /** SOUND tab state (per editor route). */
 export const SoundStore = signalStore(
-  withState<SoundState>({
+  withState<SoundState>(() => ({
     instrumentId: null,
     patternSlot: 0,
     songSlot: 0,
-    snap: 16,
+    // The preference is a yes or no; yes opens on a step, the resolution most notes want.
+    snap: inject(EditorPrefsStore).soundSnap() ? 16 : 0,
     zoom: 1,
     loop: false,
     metronome: false,
     sfxSlot: null,
-  }),
+  })),
   withComputed((s) => ({
     snapLabel: computed(() => (s.snap() === 0 ? 'OFF' : `1/${String(s.snap())}`)),
   })),

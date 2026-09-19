@@ -1,4 +1,5 @@
-import { computed } from '@angular/core';
+import { computed, inject } from '@angular/core';
+import { EditorPrefsStore } from '@app/core/prefs/editor-prefs.store';
 import { readJson, STORAGE_KEYS, writeJson } from '@app/core/storage/local-storage';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 
@@ -80,16 +81,16 @@ export const PIP_MAX_AREA_SHARE = 1 / 3;
 
 /** Layout state of the editor shell (per editor route). */
 export const EditorUiStore = signalStore(
-  withState<EditorUiState>({
+  withState<EditorUiState>(() => ({
     activeTab: 'game',
     consoleTab: 'console',
     referenceOpen: readJson<boolean>(STORAGE_KEYS.editorReferenceOpen, false),
-    autoRun: true,
+    autoRun: inject(EditorPrefsStore).autoRun(),
     viewportWidth: 1280,
     viewportHeight: 800,
     pipOpen: readJson<boolean>(STORAGE_KEYS.editorViewerFloating, false),
     pipWidth: readJson<number>(STORAGE_KEYS.editorViewerWidth, PIP_DEFAULT_WIDTH),
-  }),
+  })),
   withComputed((s) => {
     /**
      * Whether the reference is actually standing somewhere, against whether the reader would like

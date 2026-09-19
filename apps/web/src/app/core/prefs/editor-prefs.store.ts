@@ -16,7 +16,7 @@ const load = (): EditorPrefs => ({
 /** Editor defaults chosen in Settings › Editor, kept per browser. */
 export const EditorPrefsStore = signalStore(
   { providedIn: 'root' },
-  withState<EditorPrefs>(load()),
+  withState<EditorPrefs>(load),
   withMethods((store) => {
     const save = (): void => {
       writeJson(STORAGE_KEYS.editorPrefs, {
