@@ -351,27 +351,6 @@ test.describe('editor', () => {
     await expect(onion).toBeVisible();
   });
 
-  test('the palette fold survives a reload', async ({ page }) => {
-    await page.goto('/edit/7/art');
-    const fold = page.getByRole('button', { name: 'Palette' });
-    const colours = page.getByRole('radiogroup', { name: 'Palette' });
-    await expect(fold).toHaveAttribute('aria-expanded', 'true');
-    await expect(colours).toBeVisible();
-
-    await fold.click();
-    await expect(fold).toHaveAttribute('aria-expanded', 'false');
-    await expect(colours).toBeHidden();
-    // Folded is not gone: the section's own actions stay in reach.
-    await expect(page.getByRole('button', { name: 'Presets' })).toBeVisible();
-
-    await page.reload();
-    await expect(page.getByRole('button', { name: 'Palette' })).toHaveAttribute(
-      'aria-expanded',
-      'false',
-    );
-    await expect(page.getByRole('radiogroup', { name: 'Palette' })).toBeHidden();
-  });
-
   /**
    * The middle button drags the view by exactly the pointer's own distance, on both surfaces
    * that scroll: pixel for pixel, with nothing snapped to a cell or a tile on the way.

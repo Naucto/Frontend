@@ -11,7 +11,6 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
-import { EditorPrefsStore } from '@app/core/prefs/editor-prefs.store';
 import { geometrySignal } from '@app/shared/pixel/geometry.signal';
 import { PaletteGridComponent } from '@app/shared/pixel/palette-grid.component';
 import { type Pt, type Transform } from '@app/shared/pixel/pixel-tools';
@@ -388,13 +387,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
           />
         </nc-section>
 
-        <nc-section
-          banded
-          collapsible
-          [title]="t('editor.art.palette')"
-          [open]="prefs.isOpen('art.palette')"
-          (openChange)="prefs.setSectionOpen('art.palette', $event)"
-        >
+        <nc-section banded [title]="t('editor.art.palette')">
           <span actions class="flex items-center gap-1">
             <button ncButton variant="ghost" size="sm" [ncPopover]="presets" popoverAlign="end">
               {{ t('editor.art.presets') }}
@@ -448,7 +441,6 @@ export class ArtTabPage {
   protected readonly PANEL_WIDTH = PANEL_WIDTH;
   protected readonly session = inject(WorkSessionService);
   protected readonly art = inject(ArtStore);
-  protected readonly prefs = inject(EditorPrefsStore);
   private readonly clipboard = inject(ClipboardStore);
   private readonly i18n = inject(TranslocoService);
   private readonly dialogs = inject(DialogService);
