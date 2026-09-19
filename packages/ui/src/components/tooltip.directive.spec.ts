@@ -93,6 +93,10 @@ describe('TooltipPanelComponent', () => {
     expect(panel).toHaveTextContent('SFX slots');
     expect(panel.querySelectorAll('p')).toHaveLength(2);
     expect(panel.querySelector('code')).toHaveTextContent('sound.play_sfx(slot)');
+    // The heading rules the whole width: it is beside the body, not inside its padding.
+    const heading = panel.firstElementChild;
+    expect(heading).toHaveTextContent('SFX slots');
+    expect(heading?.querySelector('p')).toBeNull();
   });
 });
 

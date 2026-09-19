@@ -45,24 +45,28 @@ export const tooltipPlainText = (text: string): string => text.replaceAll('`', '
   selector: 'nc-tooltip-panel',
   template: `
     @if (title(); as heading) {
-      <div class="label mb-0.75 border-b border-line pb-0.5">{{ heading }}</div>
+      <div class="label border-b border-line px-1.5 py-0.75">{{ heading }}</div>
     }
-    @for (p of paragraphs(); track $index) {
-      <p [class.mt-1]="$index > 0">
-        @for (run of p; track $index) {
-          @if (run.code) {
-            <code class="font-mono text-ink">{{ run.text }}</code>
-          } @else {
-            {{ run.text }}
+    <div [class]="title() ? 'px-1.5 py-1' : 'px-1 py-0.5'">
+      @for (p of paragraphs(); track $index) {
+        <p [class.mt-1]="$index > 0">
+          @for (run of p; track $index) {
+            @if (run.code) {
+              <code class="rounded-xs bg-inset px-0.5 font-mono text-[0.95em] text-ink">
+                {{ run.text }}
+              </code>
+            } @else {
+              {{ run.text }}
+            }
           }
-        }
-      </p>
-    }
+        </p>
+      }
+    </div>
   `,
   host: {
     role: 'tooltip',
     class:
-      'block rounded-sm border border-line-strong bg-raised font-ui shadow-[0_2px_0_var(--nc-inset)]',
+      'block overflow-hidden rounded-sm border border-line-strong bg-raised font-ui shadow-[0_2px_0_var(--nc-inset)]',
     '[class]': 'shape()',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -72,13 +76,13 @@ export class TooltipPanelComponent {
   readonly title = signal<string | undefined>(undefined);
   protected readonly paragraphs = computed(() => tooltipParagraphs(this.text()));
   /**
-   * A titled tooltip is a help text — read, not glanced at — so it gets the body size, more room
-   * to wrap and more air around it. The untitled one is a label for a control and stays small.
+   * A titled tooltip is a help text — read, not glanced at — so it gets the body size and more
+   * room to wrap. The untitled one is a label for a control and stays small.
    */
   protected readonly shape = computed(() =>
     this.title()
-      ? 'max-w-[44ch] px-1.5 py-1 text-body leading-[1.6] text-ink-body'
-      : 'max-w-[32ch] px-1 py-0.5 text-meta text-ink',
+      ? 'max-w-[44ch] text-body leading-[1.6] text-ink-body'
+      : 'max-w-[32ch] text-meta text-ink',
   );
 }
 
