@@ -262,6 +262,7 @@ function picture(href, alt, title) {
   const size = page.sizes.get(src);
   const dims = size ? ` width="${size.width}" height="${size.height}"` : '';
   const frame = /(^|\/)frames\//.test(rel) ? ' doc-frame' : '';
+  const shape = !size ? '' : size.height > size.width * 1.15 ? ' doc-figure--tall' : '';
   const img = (u, cls) =>
     `<img class="${cls}" src="${esc(u)}" alt="${esc(alt)}"${dims} loading="lazy">`;
   const pair = page.sizes.has(light)
@@ -269,9 +270,26 @@ function picture(href, alt, title) {
       img(url, 'doc-dark') + img(url.replace(/(\.[a-z0-9]+)$/i, '.light$1'), 'doc-light'))
     : img(url, '');
   const caption = title || alt;
-  return `<figure class="doc-figure${frame}">${pair}${
+  return `<figure class="doc-figure${frame}${shape}">${pair}${
     caption ? `<figcaption>${esc(caption)}</figcaption>` : ''
   }</figure>`;
+}
+
+async function inlineDiagrams(md, dir) {
+  const refs = [...md.matchAll(/\{\{svg:([^}\s]+)\}\}/g)];
+  let out = md;
+  for (const m of refs) {
+    const src = resolve(dir, m[1]);
+    const svg = (await readFile(src, 'utf8')).trim();
+    const box = /viewBox="0 0 (\d+) (\d+)"/.exec(svg);
+    if (!box) throw new Error(`${relative(docs, src)}: an authored diagram needs a viewBox`);
+    const styled = svg.replace(/^<svg\b/, `<svg style="max-width:${box[1]}px"`);
+    out = out.replace(
+      m[0],
+      `\n<figure class="doc-diagram doc-diagram--authored">${styled}</figure>\n`,
+    );
+  }
+  return out;
 }
 
 /** The sizes of a page's pictures, read before rendering because the renderer is synchronous. */
@@ -318,7 +336,11 @@ marked.use({
       const id = stripTags(text.toLowerCase())
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '');
-      return `<h${depth} id="${id}">${text}</h${depth}>\n`;
+      const step = depth === 2 && currentPage?.steps ? /^Step (\d+):/.exec(stripTags(text)) : null;
+      const stand = step
+        ? ` data-step="${step[1]}" data-steps="${currentPage.steps}" style="--step:${step[1]};--steps:${currentPage.steps}"`
+        : '';
+      return `<h${depth} id="${id}"${stand}>${text}</h${depth}>\n`;
     },
     image({ href, title, text }) {
       return picture(href, text, title ?? '');
@@ -330,7 +352,7 @@ marked.use({
 function callouts(html) {
   return html
     .replace(
-      /<blockquote>\s*<p>\[!(NOTE|WARNING|TIP|IMPORTANT)\]\s*(?:<br>)?\n?/g,
+      /<blockquote>\s*<p>\[!(NOTE|WARNING|TIP|IMPORTANT|TRY)\]\s*(?:<br>)?\n?/g,
       (_, k) => `<aside class="callout ${k.toLowerCase()}" data-kind="${k}"><p>`,
     )
     .replace(/<\/blockquote>/g, (m, off, s) =>
@@ -367,7 +389,7 @@ function listing(code) {
 }
 
 function headingsOf(html) {
-  return [...html.matchAll(/<h([123]) id="([^"]+)">(.*?)<\/h\1>/g)].map((m) => ({
+  return [...html.matchAll(/<h([123]) id="([^"]+)"[^>]*>(.*?)<\/h\1>/g)].map((m) => ({
     level: Number(m[1]),
     id: m[2],
     text: stripTags(m[3]),
@@ -384,7 +406,7 @@ function sectionsOf(html) {
   const parts = html.split(/(?=<h[123] id=")/);
   const sections = [];
   for (const part of parts) {
-    const head = /^<h([123]) id="([^"]+)">(.*?)<\/h\1>/.exec(part);
+    const head = /^<h([123]) id="([^"]+)"[^>]*>(.*?)<\/h\1>/.exec(part);
     if (!head) continue;
     sections.push({
       id: head[2],
@@ -419,7 +441,7 @@ for await (const file of walk(resolve(docs, 'content'))) {
     ? JSON.parse(await readFile(join(dirname(file), meta.assets), 'utf8'))
     : null;
   const apis = [];
-  const md = body
+  const md0 = body
     .replace(/\{\{lua:[^}]+\}\}/g, () => `${LISTING_TIP}${LISTING_MARK}\n`)
     .replace(/\{\{api:([a-z]+\.[a-z_]+)\}\}/g, (_, n) => {
       apis.push(n);
@@ -431,7 +453,9 @@ for await (const file of walk(resolve(docs, 'content'))) {
       dirname(file),
       [...body.matchAll(/!\[[^\]]*\]\(([^)\s]+)/g)].map((m) => m[1]),
     ),
+    steps: (body.match(/^## Step \d+:/gm) ?? []).length,
   };
+  const md = await inlineDiagrams(md0, dirname(file));
   const html = renderMarkdown(md).replace(LISTING_MARK, () => (code ? listing(code) : ''));
   currentPage = null;
   pages.push({
