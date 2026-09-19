@@ -39,16 +39,15 @@ test.describe('learn', () => {
     // Another page folds this one back up and unfolds its own sections.
     await tree.getByRole('button', { name: 'Build Multiplayer Pong' }).click();
     await expect(clear).toBeHidden();
-    await expect(tree.getByRole('button', { name: 'Complete code' })).toBeVisible();
+    await expect(tree.getByRole('button', { name: 'Step 1: Four states' })).toBeVisible();
   });
 
-  test('a tutorial keeps its whole game folded away', async ({ page }) => {
+  test('a tutorial counts its steps and offers its finished game', async ({ page }) => {
     await page.goto('/learn/tutorials/pong');
-    const listing = page.locator('details.doc-listing');
-    await expect(listing).toBeVisible();
-    await expect(listing.locator('pre')).toBeHidden();
-    await listing.locator('summary').click();
-    await expect(listing.locator('pre')).toBeVisible();
+    const steps = page.locator('h2[data-step]');
+    await expect(steps).toHaveCount(6);
+    await expect(steps.first()).toHaveAttribute('data-steps', '6');
+    await expect(page.getByRole('button', { name: 'Copy to new game' })).toBeVisible();
   });
 
   test('searches functions', async ({ page }) => {

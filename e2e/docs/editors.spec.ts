@@ -39,13 +39,24 @@ for (const theme of THEMES) {
       await mockEditor(page, { theme, content: readFileSync(CONTENT_FILE) });
     });
 
-    test('art', async ({ page }) => {
+    test('art: a new game', async ({ page }) => {
+      // Served nothing, the editor opens the starter game: the moon on sprites 1, 2, 17 and 18,
+      // the region on sprite 1, Lock off. The later route wins, so this stands in for the
+      // Platformer of `beforeEach`.
+      await mockEditor(page, { theme, name: 'Untitled game' });
       await page.goto('/edit/7/art');
       await page.getByRole('img', { name: 'Sprite canvas' }).waitFor();
       await page.waitForTimeout(500);
       await shoot(page, 'art', theme);
+    });
+
+    test('art', async ({ page }) => {
+      await page.goto('/edit/7/art');
+      await page.getByRole('img', { name: 'Sprite canvas' }).waitFor();
+      await page.waitForTimeout(500);
       await shoot(page, 'art-tools', theme, page.locator('nc-tool-group').first());
       await shoot(page, 'art-sheet', theme, section(page, 'Sheet'));
+      await page.getByRole('checkbox', { name: 'Flag 0' }).click();
       await shoot(page, 'art-flags', theme, section(page, 'Flags'));
       await shoot(page, 'art-palette', theme, section(page, 'Palette'));
       await page.getByRole('button', { name: 'Sheet size' }).click();
@@ -60,8 +71,8 @@ for (const theme of THEMES) {
       await page.getByRole('button', { name: 'Presets' }).click();
       await shoot(page, 'art-presets', theme, page.locator('nc-popover-panel'));
       await page.keyboard.press('Escape');
-      // A selection on the player sprites, and the bar that flips and turns it.
-      await page.getByRole('switch', { name: 'Lock' }).click();
+      // A selection on the player sprites, and the bar that flips and turns it. Lock is off by
+      // default, so the drag may cross the region.
       await page.getByRole('radio', { name: 'Select' }).click();
       const canvas = await page.getByRole('img', { name: 'Sprite canvas' }).boundingBox();
       if (!canvas) throw new Error('no canvas');
@@ -81,16 +92,34 @@ for (const theme of THEMES) {
       await page.waitForTimeout(500);
       await shoot(page, 'map', theme);
       await shoot(page, 'map-tools', theme, page.locator('nc-tool-group').first());
+      // A brush of four tiles, dragged on the picker from the first cell to the one under the
+      // second: sprites 0, 1, 16 and 17.
+      const picker = await page.getByRole('img', { name: 'Tile picker' }).boundingBox();
+      if (!picker) throw new Error('no tile picker');
+      const cell = picker.width / 16;
+      await page.mouse.move(picker.x + 0.5 * cell, picker.y + 0.5 * cell);
+      await page.mouse.down();
+      await page.mouse.move(picker.x + 1.5 * cell, picker.y + 1.5 * cell, { steps: 4 });
+      await page.mouse.up();
+      await page.waitForTimeout(200);
       await shoot(page, 'map-brush', theme, page.locator('nc-sheet-view').first());
       await shoot(page, 'map-minimap', theme, section(page, 'Whole map'));
+    });
+
+    test('code: the first run', async ({ page }) => {
+      await mockEditor(page, { theme, name: 'Untitled game' });
+      await page.goto('/edit/7/code');
+      await page.getByRole('tab', { name: 'main', exact: true }).waitFor();
+      await page.getByRole('button', { name: 'Play' }).first().click();
+      await page.locator('nc-console-column').getByText('Welcome to Naucto!').waitFor();
+      await page.waitForTimeout(500);
+      await shoot(page, 'code', theme);
     });
 
     test('code', async ({ page }) => {
       await page.goto('/edit/7/code');
       await page.getByRole('tab', { name: 'main', exact: true }).waitFor();
       await page.waitForTimeout(500);
-      await shoot(page, 'code', theme);
-      await shoot(page, 'code-tabs', theme, page.getByRole('tablist').first());
       await shoot(page, 'code-console', theme, page.locator('nc-console-column'));
       // The reference, opened beside the console the way F1 opens it.
       await page.keyboard.press('F1');
@@ -128,15 +157,29 @@ for (const theme of THEMES) {
       await shoot(page, 'code-signature', theme, tip);
       await page.keyboard.press('Escape');
 
-      // A runtime error: the line, the gutter, the status bar and the Console badge.
+      // A runtime error: the line, the gutter, the status bar, the Console badge and the halt.
+      // Auto reruns the game after an edit, so the typing is left to settle before Play, and
+      // nothing is edited between the halt and the picture.
       await page.keyboard.press('Control+a');
       await page.keyboard.type(
         'function _update()\n  local t = nil\n  t.x = 1\nend\nfunction _draw()\n  gfx.clear(0)\nend\n',
       );
+      await page.waitForTimeout(600);
       await page.getByRole('button', { name: 'Play' }).first().click();
       await page.getByText('1 error').waitFor();
+      await page.getByText('--- HALTED ---').waitFor();
       await page.waitForTimeout(300);
       await shoot(page, 'code-error', theme);
+
+      for (const name of ['player', 'enemies']) {
+        await page.getByRole('button', { name: 'New file' }).click();
+        const dialog = page.getByRole('dialog');
+        await dialog.getByRole('textbox', { name: 'Tab name' }).fill(name);
+        await dialog.getByRole('button', { name: 'Create' }).click();
+        await page.getByRole('tab', { name }).waitFor();
+      }
+      await page.waitForTimeout(300);
+      await shoot(page, 'code-tabs', theme, page.locator('nc-tabs').first());
     });
 
     test('sound', async ({ page }) => {
@@ -147,6 +190,9 @@ for (const theme of THEMES) {
       await shoot(page, 'sound-instruments', theme, page.locator('nc-instrument-list'));
       await shoot(page, 'sound-roll', theme, page.locator('nc-piano-roll'));
       await shoot(page, 'sound-inspector', theme, page.locator('nc-instrument-inspector'));
+      // A pattern no slot holds yet, put in a free one, so the bank shows its three states at once.
+      await page.getByRole('button', { name: 'SFX slot 2', exact: true }).click();
+      await page.waitForTimeout(200);
       await shoot(page, 'sound-sfx', theme, page.locator('nc-slot-grid').first());
       // Five places filled with pattern 0 and one left empty: the orange hole the music stops at.
       const cells = page.locator('nc-song-list [role="group"] input');

@@ -12,7 +12,7 @@
  * Run the Backend's `npm run seed:dev` first, then `npm run seed:content`. Idempotent: a game whose
  * name already exists for that author is updated in place, not duplicated.
  */
-import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 
 import * as Y from 'yjs';
@@ -25,7 +25,8 @@ import {
   type TutorialAssets,
 } from '../packages/engine/src/game/tutorial-assets';
 import type { Instrument, Note } from '../packages/engine/src/sound/model';
-import { defaultInstrument, defaultPattern } from '../packages/engine/src/sound/model';
+import { defaultInstrument, defaultPattern, defaultSong } from '../packages/engine/src/sound/model';
+import { INSTRUMENT_PRESETS } from '../packages/engine/src/sound/presets';
 import { encodePng } from './png';
 
 const API = process.env['NAUCTO_API'] ?? 'http://localhost:3000';
@@ -426,23 +427,84 @@ function buildCover(seed: SeedGame): Uint8Array {
 // From the working directory: the runner bundles this script into a cache directory first.
 const TUTORIALS = join(process.cwd(), 'docs', 'content', 'tutorials');
 
-function buildContent(seed: SeedGame): Uint8Array {
+function midi(note: string): number {
+  const names = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  const m = /^([A-G]#?)(\d)$/.exec(note);
+  if (!m) throw new Error(`not a note: ${note}`);
+  return (Number(m[2]) + 1) * 12 + names.indexOf(m[1]);
+}
+
+/**
+ * What the "Make it sound" tutorial has the reader do in SOUND before it reaches CODE, since its
+ * page carries no assets file: Square lead and Laser from the presets, the two bars of Steps 2
+ * and 3 chained as music 0, and the zap of Step 4 in SFX slot 0. The colours follow the accent
+ * slots the SOUND tab hands out in order, so the captures show what the reader sees.
+ */
+function addTutorialSound(game: Game): void {
+  const preset = (name: string): Instrument => {
+    const entry = INSTRUMENT_PRESETS.find((p) => p.name === name);
+    if (!entry) throw new Error(`no preset named ${name}`);
+    return { ...defaultInstrument(name, name), ...entry.settings, id: name, name };
+  };
+  const lead = { ...preset('Square lead'), colour: 4 };
+  const laser = { ...preset('Laser'), colour: 11 };
+  game.setInstrument(lead);
+  game.setInstrument(laser);
+
+  const bar = (id: string, slot: number, notes: string[]): void => {
+    game.setPattern({
+      ...defaultPattern(id, slot, `pattern ${String(slot).padStart(2, '0')}`),
+      bpm: 120,
+      steps: 16,
+      notes: notes.map((note, i) => ({
+        step: i * 2,
+        pitch: midi(note),
+        length: 2,
+        instrument: lead.id,
+        volume: 0.8,
+      })),
+    });
+  };
+  bar('p0', 0, ['C4', 'E4', 'G4', 'C5', 'G4', 'E4', 'C4', 'G3']);
+  bar('p1', 1, ['A3', 'C4', 'E4', 'A4', 'E4', 'C4', 'A3', 'G3']);
+  game.setPattern({
+    ...defaultPattern('p2', 2, 'pattern 02'),
+    bpm: 120,
+    steps: 16,
+    notes: [{ step: 0, pitch: midi('G6'), length: 1, instrument: laser.id, volume: 0.8 }],
+  });
+  game.sfx.set('0', 'p2');
+  game.setSong(0, { ...defaultSong(), sequence: ['p0', 'p1'] });
+}
+
+function buildTutorial(tutorial: string, source: string): Game {
   const doc = new Y.Doc();
   const game = new Game(doc);
   game.seedDefaults();
+  setMainSource(game, source);
+  const assetsFile = join(TUTORIALS, tutorial, 'assets.json');
+  if (existsSync(assetsFile))
+    applyTutorialAssets(game, JSON.parse(readFileSync(assetsFile, 'utf8')) as TutorialAssets);
+  if (tutorial === 'sound') addTutorialSound(game);
+  return game;
+}
+
+function buildContent(seed: SeedGame): Uint8Array {
+  let game: Game;
   if (seed.tutorial) {
-    setMainSource(game, readFileSync(join(TUTORIALS, seed.tutorial, 'main.lua'), 'utf8'));
-    const assets = JSON.parse(
-      readFileSync(join(TUTORIALS, seed.tutorial, 'assets.json'), 'utf8'),
-    ) as TutorialAssets;
-    applyTutorialAssets(game, assets);
+    game = buildTutorial(
+      seed.tutorial,
+      readFileSync(join(TUTORIALS, seed.tutorial, 'main.lua'), 'utf8'),
+    );
   } else {
+    game = new Game(new Y.Doc());
+    game.seedDefaults();
     if (seed.source !== undefined) setMainSource(game, seed.source);
     drawSprite(game, seed.sprite);
     drawMap(game);
   }
   if (seed.withSound) addSound(game);
-  return Y.encodeStateAsUpdate(doc);
+  return Y.encodeStateAsUpdate(game.doc);
 }
 
 // ---------------------------------------------------------------------------- seeding
@@ -588,7 +650,32 @@ function writeDemos(luaDir: string, outDir: string): void {
   }
 }
 
+/**
+ * One game per step of a tutorial, for the frame the page shows under each step.
+ *
+ * `steps/<n>.lua` is the game as the page has built it by the end of Step n; each is written over
+ * the tutorial's own sprites, flags and map, so a frame taken from it is what a reader who
+ * followed the page to that point sees.
+ */
+function writeSteps(tutorial: string, outDir: string): void {
+  const dir = join(TUTORIALS, tutorial, 'steps');
+  for (const file of readdirSync(dir).filter((f) => f.endsWith('.lua'))) {
+    const game = buildTutorial(tutorial, readFileSync(join(dir, file), 'utf8'));
+    const out = join(outDir, `${tutorial}-step${basename(file, '.lua')}.bin`);
+    writeFileSync(out, Y.encodeStateAsUpdate(game.doc));
+    console.log(`wrote ${out}`);
+  }
+}
+
 async function main(): Promise<void> {
+  const steps = process.argv.indexOf('--steps');
+  if (steps !== -1) {
+    const [tutorial, outDir] = [process.argv[steps + 1], process.argv[steps + 2]];
+    if (!tutorial || !outDir)
+      throw new Error('--steps needs a tutorial name and an output directory');
+    writeSteps(tutorial, outDir);
+    return;
+  }
   const demos = process.argv.indexOf('--demos');
   if (demos !== -1) {
     const [luaDir, outDir] = [process.argv[demos + 1], process.argv[demos + 2]];

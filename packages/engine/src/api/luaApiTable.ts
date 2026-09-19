@@ -148,13 +148,14 @@ export const LUA_API: readonly LuaApiEntry[] = [
     name: 'shift',
     signature: 'gfx.shift(dx[, dy][, wrap])',
     summary:
-      'Shift the display by whole pixels: the frame in `_draw`, this line on in `_scanline`.',
+      'Shift the display by whole pixels: the frame from anywhere but `_scanline`, this line on from inside it.',
   },
   {
     ns: 'gfx',
     name: 'blank',
     signature: 'gfx.blank([on])',
-    summary: 'Show black instead: the whole frame in `_draw`, this line on in `_scanline`.',
+    summary:
+      'Show black instead: the whole frame from anywhere but `_scanline`, this line on from inside it.',
   },
   { ns: 'gfx', name: 'width', signature: 'gfx.width()', summary: 'Screen width (320).' },
   { ns: 'gfx', name: 'height', signature: 'gfx.height()', summary: 'Screen height (180).' },

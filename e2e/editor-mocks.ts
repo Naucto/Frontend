@@ -31,7 +31,8 @@ const project = {
  * Mocks enough of the API for the editor to open project 7 — as its host unless `hostId` names
  * someone else, in which case user 1 is a collaborator in a room somebody else hosts. The server's
  * cap on named versions is `maxCheckpoints`, generous unless a test is about the cap. The game
- * opens empty unless `content` is a saved document, which is what a capture for the docs wants.
+ * opens empty unless `content` is a saved document, which is what a capture for the docs wants,
+ * and is called `name` in the header, which a capture of a tutorial's game sets to the page's title.
  */
 export async function mockEditor(
   page: Page,
@@ -40,7 +41,14 @@ export async function mockEditor(
     maxCheckpoints = 20,
     theme = 'dark',
     content = Buffer.alloc(0),
-  }: { hostId?: number; maxCheckpoints?: number; theme?: 'dark' | 'light'; content?: Buffer } = {},
+    name = project.name,
+  }: {
+    hostId?: number;
+    maxCheckpoints?: number;
+    theme?: 'dark' | 'light';
+    content?: Buffer;
+    name?: string;
+  } = {},
 ): Promise<void> {
   await page.addInitScript((t) => {
     localStorage.setItem('naucto.theme', t);
@@ -90,5 +98,5 @@ export async function mockEditor(
   await page.route('**/users/public/4/profile', (r) =>
     r.fulfill({ json: { data: { id: 4, username: 'priax', profileImageUrl: '/img/logo.svg' } } }),
   );
-  await page.route('**/projects/7', (r) => r.fulfill({ json: project }));
+  await page.route('**/projects/7', (r) => r.fulfill({ json: { ...project, name } }));
 }

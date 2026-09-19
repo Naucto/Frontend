@@ -1,7 +1,7 @@
 function _init()
   print("player", 12, 34)
-  sys.warn("too many enemies: ", 70)
-  sys.error("level ", 3, " is missing")
+  sys.warn("too many enemies: " .. 70)
+  sys.error("level " .. 3 .. " is missing")
 end
 
 function _draw()
