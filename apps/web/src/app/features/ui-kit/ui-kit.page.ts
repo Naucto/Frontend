@@ -223,6 +223,12 @@ import { ACCENT_SLOTS } from '../editor/accent-slots';
               &gt; flush: the console fills its column, no frame
             </nc-lcd>
           </nc-section>
+          <nc-section title="Folded away" collapsible [open]="false" class="mt-2">
+            <p class="text-body text-ink-2">
+              A section that folds keeps its content mounted, so what is inside comes back as it
+              was.
+            </p>
+          </nc-section>
           <nc-section title="Loading" class="mt-2">
             <div class="grid gap-1">
               <nc-skeleton height="96px" radius="rounded-sm" />
