@@ -320,11 +320,15 @@ export class WorkSessionService {
         await this.invalidateProjectEverywhere();
       }
       const bytes = Y.encodeStateAsUpdate(this.doc);
-      await projectControllerSaveProjectContent({
-        path: { id: this.projectId },
-        body: { file: new Blob([bytes as BlobPart], { type: 'application/octet-stream' }) },
-        ...(opts.keepalive ? { keepalive: true } : {}),
-      });
+      // The generated client resolves a refused request as a value, not a throw; a save the server
+      // turned down must not go on to clear the dirty flag below.
+      unwrap(
+        await projectControllerSaveProjectContent({
+          path: { id: this.projectId },
+          body: { file: new Blob([bytes as BlobPart], { type: 'application/octet-stream' }) },
+          ...(opts.keepalive ? { keepalive: true } : {}),
+        }),
+      );
       this.dirty.set(false);
       this.saveFailed.set(false);
       this.lastSavedAt.set(new Date());
