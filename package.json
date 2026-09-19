@@ -23,7 +23,7 @@
     "format:check": "prettier --check .",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "e2e": "npm run docs:build && playwright test",
+    "e2e": "npm run docs:build && playwright test --project chromium --project firefox",
     "docs:build": "node tools/docs-build.mjs",
     "docs:check": "node docs/scripts/validate.mjs",
     "docs:shots": "mkdir -p node_modules/.cache/docs-shots && node tools/seed-content.mjs --content-only node_modules/.cache/docs-shots/platformer.bin 'Platformer Tutorial' && playwright test --project docs-shots",

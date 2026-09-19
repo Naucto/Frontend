@@ -12,7 +12,7 @@ import { mockEditor } from '../editor-mocks';
  * Platformer the seed writes — sprites, a map, a song and code — built by `seed:content` into the
  * file `docs:shots` names, since the engine cannot be imported from a spec directly.
  */
-const CONTENT = readFileSync('node_modules/.cache/docs-shots/platformer.bin');
+const CONTENT_FILE = 'node_modules/.cache/docs-shots/platformer.bin';
 const OUT = 'docs/content/editors/img';
 const THEMES = ['dark', 'light'] as const;
 
@@ -24,7 +24,9 @@ const shoot = async (page: Page, name: string, theme: (typeof THEMES)[number]): 
 for (const theme of THEMES) {
   test.describe(`editors (${theme})`, () => {
     test.beforeEach(async ({ page }) => {
-      await mockEditor(page, { theme, content: CONTENT });
+      // Read here and not at load: a test run that lists every project loads this file too, and
+      // the game only exists once docs:shots has written it.
+      await mockEditor(page, { theme, content: readFileSync(CONTENT_FILE) });
     });
 
     test('art', async ({ page }) => {
