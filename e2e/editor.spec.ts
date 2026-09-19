@@ -1481,6 +1481,35 @@ test.describe('editor', () => {
     await page.screenshot({ path: 'test-results/v-editor-sound.png' });
   });
 
+  test('SOUND asks before removing an instrument that has notes, not an unused one', async ({
+    page,
+  }) => {
+    await page.goto('/edit/7/sound');
+    await addInstrument(page);
+    // A blank instrument goes at once: undo has it.
+    await page.getByRole('button', { name: 'Remove lead' }).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Remove lead' })).toHaveCount(0);
+
+    await addInstrument(page);
+    const roll = page.getByRole('img', { name: 'Piano roll' });
+    const box = await roll.boundingBox();
+    if (!box) throw new Error('no roll');
+    await page.mouse.click(box.x + 56 + 30, box.y + box.height / 2);
+    await expect(page.getByText('Not used yet — paint some notes.')).toHaveCount(0);
+
+    await page.getByRole('button', { name: 'Remove lead' }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toContainText('Remove lead?');
+    await expect(dialog).toContainText('1 pattern');
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
+    await expect(page.getByRole('button', { name: 'Remove lead' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Remove lead' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Remove' }).click();
+    await expect(page.getByRole('button', { name: 'Remove lead' })).toHaveCount(0);
+  });
+
   test('a held key glides across the keyboard', async ({ page }) => {
     await page.goto('/edit/7/sound');
     await addInstrument(page);

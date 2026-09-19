@@ -572,8 +572,36 @@ export class SoundTabPage {
   }
 
   protected removeInstrument(id: string): void {
-    this.library.removeInstrument(id);
-    if (this.sound.instrumentId() === id) this.sound.selectInstrument(null);
+    const inst = this.library.instruments().get(id);
+    if (!inst) return;
+    const remove = (): void => {
+      this.library.removeInstrument(id);
+      if (this.sound.instrumentId() === id) this.sound.selectInstrument(null);
+    };
+    // An unused instrument goes without a word: undo brings it back whole. One with notes takes
+    // them out of every pattern it plays in, and that is worth a look first.
+    const { patterns, sfx } = this.library.usedBy(id);
+    if (patterns.length === 0) {
+      remove();
+      return;
+    }
+    this.dialogs
+      .open<ConfirmDialogComponent, ConfirmDialogData, boolean>(ConfirmDialogComponent, {
+        data: {
+          title: this.transloco.translate('editor.sound.removeInstrumentTitle', {
+            name: inst.name,
+          }),
+          message: this.transloco.translate('editor.sound.removeInstrumentMessage', {
+            patterns: patterns.length,
+            sfx: sfx.length,
+          }),
+          confirmLabel: this.transloco.translate('editor.sound.removeInstrumentConfirm'),
+          danger: true,
+        },
+      })
+      .closed.subscribe((ok) => {
+        if (ok) remove();
+      });
   }
 
   /**
