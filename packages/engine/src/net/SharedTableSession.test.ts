@@ -631,13 +631,29 @@ describe('SharedTableSession', () => {
     };
     const host = makeSession('host', 1, hub, perms);
     const slave = makeSession('slave', 2, hub);
+    const errors: { path: string; reason: string }[] = [];
+    slave.onError((path, reason) => errors.push({ path, reason }));
 
-    // A forbidden acquire never grants; a forbidden pop still resolves with nil.
+    // A forbidden acquire never grants, and the guest hears about it.
     let granted = false;
     slave.acquireLock('gate', () => {
       granted = true;
     });
+    await flush();
+
+    expect(granted).toBe(false);
+    expect(host.isLocked('gate')).toBe(false);
+    expect(errors).toEqual([{ path: 'gate', reason: 'forbidden' }]);
+
+    // A forbidden push lands nowhere and is reported too.
     slave.queuePush('gate', 'x');
+    await flush();
+
+    expect(host.queueLength('gate')).toBe(0);
+    expect(errors).toHaveLength(2);
+    expect(errors[1]).toEqual({ path: 'gate', reason: 'forbidden' });
+
+    // A forbidden pop still resolves with nil, so game code does not hang, and is reported.
     let popResolved = false;
     let popped: unknown = 'sentinel';
     slave.queuePop('gate', (value) => {
@@ -646,11 +662,10 @@ describe('SharedTableSession', () => {
     });
     await flush();
 
-    expect(granted).toBe(false);
-    expect(host.isLocked('gate')).toBe(false);
-    expect(host.queueLength('gate')).toBe(0);
     expect(popResolved).toBe(true);
     expect(popped).toBeUndefined();
+    expect(errors).toHaveLength(3);
+    expect(errors[2]).toEqual({ path: 'gate', reason: 'forbidden' });
 
     // The host itself is always authoritative and unrestricted.
     host.acquireLock('gate', () => undefined);

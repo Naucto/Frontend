@@ -72,6 +72,7 @@ type ResponsePayload =
   | { kind: 'write-nack'; reqId: string; rejected: { path: string; reason?: string }[] }
   | { kind: 'lock-grant'; reqId: string }
   | { kind: 'queue-result'; reqId: string; value: unknown }
+  | { kind: 'reject'; path: string; reason: 'forbidden'; reqId?: string }
   | SnapshotPayload;
 
 type PeerEvent = 'joined' | 'left';
@@ -609,9 +610,19 @@ export class SharedTableSession implements Destroyable {
 
       // An object lives at a net.state path, so it obeys that path's write
       // permission: a client that cannot write the path cannot lock it either
-      // (if it can't write the value, it has nothing to protect). Silently drop
-      // a forbidden acquire — the grant simply never comes.
-      if (!this._permissions.canClientWrite(payload.path)) return;
+      // (if it can't write the value, it has nothing to protect). A forbidden
+      // acquire is refused out loud so the guest can drop its pending callback
+      // and tell the game, instead of waiting for a grant that never comes.
+      if (!this._permissions.canClientWrite(payload.path)) {
+        if (payload.action === 'acquire')
+          this._transport.respondTo(from, {
+            kind: 'reject',
+            path: payload.path,
+            reason: 'forbidden',
+            reqId: payload.reqId,
+          });
+        return;
+      }
 
       if (payload.action === 'acquire')
         this._hostAcquire(from, payload.path, payload.reqId, undefined);
@@ -623,16 +634,15 @@ export class SharedTableSession implements Destroyable {
     if (payload.kind === 'queue') {
       if (typeof payload.path !== 'string') return;
 
-      // Same authority as locks. A forbidden pop still needs a reply so the
-      // caller's pending callback resolves (with nil, as if the queue were
-      // empty) rather than dangling forever.
+      // Same authority as locks. The guest resolves a refused pop with nil
+      // itself, so the game code waiting on it does not hang.
       if (!this._permissions.canClientWrite(payload.path)) {
-        if (payload.op === 'pop')
-          this._transport.respondTo(from, {
-            kind: 'queue-result',
-            reqId: payload.reqId,
-            value: undefined,
-          });
+        this._transport.respondTo(from, {
+          kind: 'reject',
+          path: payload.path,
+          reason: 'forbidden',
+          reqId: payload.op === 'pop' ? payload.reqId : undefined,
+        });
         return;
       }
 
@@ -732,6 +742,29 @@ export class SharedTableSession implements Destroyable {
       this._snapshotApplied = true;
       const buffered = this._bufferedState.splice(0);
       for (const state of buffered) this._onState(state);
+
+      return;
+    }
+
+    if (payload.kind === 'reject') {
+      if (typeof payload.path !== 'string') return;
+
+      // A refused acquire never runs its callback; a refused pop resolves with
+      // nil, as on an empty queue, so game code waiting on it does not hang.
+      if (typeof payload.reqId === 'string') {
+        this._pendingLocks.delete(payload.reqId);
+        const onResult = this._pendingPops.get(payload.reqId);
+
+        if (onResult) {
+          this._pendingPops.delete(payload.reqId);
+          onResult(undefined);
+        }
+      }
+
+      const path = payload.path;
+      this._errorSubs.forEach((cb) => {
+        cb(path, 'forbidden');
+      });
 
       return;
     }
