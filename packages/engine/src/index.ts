@@ -24,6 +24,7 @@ export * from './game/geometry';
 export * from './game/keys';
 export { Sheet, type SheetShape } from './game/Sheet';
 export { computeSizeReport, type SizeReport } from './game/size';
+export { applyTutorialAssets, type TutorialAssets } from './game/tutorial-assets';
 export { buildFontAtlas, FONT_HEIGHT, FONT_WIDTH } from './gfx/Font';
 export { hexToRgb, rgbToHex, WebGlError } from './gfx/glUtils';
 export { RecordingBackend } from './gfx/RecordingBackend';

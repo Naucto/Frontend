@@ -394,6 +394,9 @@ for await (const file of walk(resolve(docs, 'content'))) {
     code = await readFile(join(dirname(file), meta.lua), 'utf8');
     lua[meta.slug] = code;
   }
+  const assets = meta.assets
+    ? JSON.parse(await readFile(join(dirname(file), meta.assets), 'utf8'))
+    : null;
   const apis = [];
   const md = body
     .replace(/\{\{lua:[^}]+\}\}/g, () => `${LISTING_TIP}${LISTING_MARK}\n`)
@@ -419,6 +422,7 @@ for await (const file of walk(resolve(docs, 'content'))) {
     namespace: meta.namespace ?? null,
     legacySlugs: meta.legacy_slugs ?? [],
     lua: code,
+    assets,
     apis,
     headings: headingsOf(html),
     html,

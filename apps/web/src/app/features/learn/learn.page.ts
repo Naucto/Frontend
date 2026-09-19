@@ -215,6 +215,8 @@ export class LearnPage {
   protected copyToNewGame(p: DocPage): void {
     if (!p.lua) return;
     sessionStorage.setItem('naucto.seed-code', p.lua);
+    if (p.assets) sessionStorage.setItem('naucto.seed-assets', JSON.stringify(p.assets));
+    else sessionStorage.removeItem('naucto.seed-assets');
     sessionStorage.setItem('naucto.seed-name', p.title.replace(/^Build /, ''));
     void this.router.navigate(['/games/new']);
   }

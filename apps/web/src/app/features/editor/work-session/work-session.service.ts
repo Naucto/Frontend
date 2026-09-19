@@ -17,12 +17,14 @@ import {
   workSessionControllerLeave,
 } from '@naucto/api-client';
 import {
+  applyTutorialAssets,
   Game,
   GAME_SCHEMA_VERSION,
   isFromFutureSchema,
   LOCAL_ORIGIN,
   migrateGame,
   needsMigration,
+  type TutorialAssets,
 } from '@naucto/engine';
 import type { PresenceColour } from '@naucto/ui';
 import { QueryClient } from '@tanstack/angular-query-experimental';
@@ -376,17 +378,20 @@ export class WorkSessionService {
 
   // ---- internals ------------------------------------------------------------
 
-  /** "Copy to new game" from the docs: the tutorial's main.lua replaces the starter code once. */
+  /** Code and assets a docs page left for the new game; both go in once, in one transaction. */
   private applySeedCode(): void {
     if (!this.isHost()) return;
     const code = sessionStorage.getItem('naucto.seed-code');
     if (!code) return;
     sessionStorage.removeItem('naucto.seed-code');
+    const assetsJson = sessionStorage.getItem('naucto.seed-assets');
+    sessionStorage.removeItem('naucto.seed-assets');
     const entry = this.game.entryFile;
     if (!entry) return;
     this.doc.transact(() => {
       entry.text.delete(0, entry.text.length);
       entry.text.insert(0, code);
+      if (assetsJson) applyTutorialAssets(this.game, JSON.parse(assetsJson) as TutorialAssets);
     }, LOCAL_ORIGIN);
   }
 

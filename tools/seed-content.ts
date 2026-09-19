@@ -20,6 +20,10 @@ import * as Y from 'yjs';
 import { BUBBLEGUM_16 } from '../packages/engine/src/game/defaults';
 import { Game } from '../packages/engine/src/game/Game';
 import { MAIN_FILE, MAP_HEIGHT, MAP_WIDTH, SPRITE_SIZE } from '../packages/engine/src/game/keys';
+import {
+  applyTutorialAssets,
+  type TutorialAssets,
+} from '../packages/engine/src/game/tutorial-assets';
 import type { Instrument, Note } from '../packages/engine/src/sound/model';
 import { defaultInstrument, defaultPattern } from '../packages/engine/src/sound/model';
 import { encodePng } from './png';
@@ -38,6 +42,8 @@ interface SeedGame {
   withSound: boolean;
   /** Replaces the starter `main.lua`. Only set where a tab needs the game to do something. */
   source?: string;
+  /** A docs tutorial whose code and assets this game takes, instead of `source`. */
+  tutorial?: string;
   comments: { author: string; body: string; replies?: { author: string; body: string }[] }[];
 }
 
@@ -199,6 +205,7 @@ const GAMES: SeedGame[] = [
     // music for SOUND, a conversation for the game page, and the tag the hero's byline reads.
     tags: ['tutorial', 'platformer', 'remixable'],
     sprite: LANDER,
+    tutorial: 'platformer',
     withSound: true,
     comments: [
       {
@@ -405,13 +412,24 @@ function buildCover(seed: SeedGame): Uint8Array {
   return encodePng(W, H, rgb);
 }
 
+// From the working directory: the runner bundles this script into a cache directory first.
+const TUTORIALS = join(process.cwd(), 'docs', 'content', 'tutorials');
+
 function buildContent(seed: SeedGame): Uint8Array {
   const doc = new Y.Doc();
   const game = new Game(doc);
   game.seedDefaults();
-  if (seed.source !== undefined) setMainSource(game, seed.source);
-  drawSprite(game, seed.sprite);
-  drawMap(game);
+  if (seed.tutorial) {
+    setMainSource(game, readFileSync(join(TUTORIALS, seed.tutorial, 'main.lua'), 'utf8'));
+    const assets = JSON.parse(
+      readFileSync(join(TUTORIALS, seed.tutorial, 'assets.json'), 'utf8'),
+    ) as TutorialAssets;
+    applyTutorialAssets(game, assets);
+  } else {
+    if (seed.source !== undefined) setMainSource(game, seed.source);
+    drawSprite(game, seed.sprite);
+    drawMap(game);
+  }
   if (seed.withSound) addSound(game);
   return Y.encodeStateAsUpdate(doc);
 }

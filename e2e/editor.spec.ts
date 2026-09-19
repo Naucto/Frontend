@@ -1587,6 +1587,28 @@ test('a tab is named and coloured in a dialog, and the last one cannot be remove
   await expect(closers).toHaveCount(2);
 });
 
+test('a copied tutorial arrives with its sprites, flags and map', async ({ page }) => {
+  await mockEditor(page);
+  await page.addInitScript(() => {
+    sessionStorage.setItem(
+      'naucto.seed-code',
+      'function _draw() gfx.clear(0) print(map.get(2, 5) .. " " .. tostring(map.flag(40, 1))) end',
+    );
+    sessionStorage.setItem(
+      'naucto.seed-assets',
+      JSON.stringify({
+        sprites: { '40': ['4444....'] },
+        flags: { '40': 2 },
+        map: [{ row: 5, from: 1, to: 3, tile: 40 }],
+      }),
+    );
+  });
+  await page.goto('/edit/7/code');
+  await page.getByRole('tab', { name: 'main', exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Play' }).first().click();
+  await expect(page.getByText('40 true').first()).toBeVisible();
+});
+
 test('an autosave is deleted from the versions panel', async ({ page }) => {
   await mockEditor(page);
   // Two of them, because the newest row is the one the game currently is and offers nothing to do

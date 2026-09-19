@@ -1,4 +1,5 @@
 import { computed, Injectable, signal } from '@angular/core';
+import type { TutorialAssets } from '@naucto/engine';
 
 export interface DocHeading {
   level: number;
@@ -15,6 +16,8 @@ export interface DocPage {
   namespace: string | null;
   legacySlugs: string[];
   lua: string | null;
+  /** What a tutorial's game holds besides its code; null on other pages. */
+  assets: TutorialAssets | null;
   /** The functions the page shows cards for, in page order; empty on a page of prose. */
   apis: string[];
   headings: DocHeading[];
