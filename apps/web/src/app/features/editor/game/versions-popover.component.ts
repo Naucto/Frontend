@@ -1,27 +1,22 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { ApiError, unwrap } from '@app/core/api/api-errors';
 import {
   injectProjectCheckpoints,
-  injectProjectLimits,
   injectProjectVersions,
   invalidateProjectHistory,
   type VersionRow,
 } from '@app/shared/queries/projects.queries';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import {
-  type CheckpointLimitDto,
   projectControllerDeleteCheckpoint,
   projectControllerDeleteVersion,
   projectControllerGetCheckpoint,
   projectControllerGetVersion,
-  projectControllerSaveCheckpoint,
 } from '@naucto/api-client';
 import { computeSizeReport } from '@naucto/engine';
 import {
   ButtonDirective,
+  DialogService,
   IconComponent,
-  InputDirective,
   MeterComponent,
   PopoverDirective,
   PopoverPanelComponent,
@@ -29,10 +24,10 @@ import {
   ToastService,
 } from '@naucto/ui';
 import { QueryClient } from '@tanstack/angular-query-experimental';
-import * as Y from 'yjs';
 
 import { WorkSessionService } from '../work-session/work-session.service';
 import { PUBLISH_CEILING } from './publish.dialog';
+import { SaveVersionDialog, type SaveVersionDialogData } from './save-version.dialog';
 
 interface HistoryRow extends VersionRow {
   /** v1, v2 … for releases; 0 for autosaves. */
@@ -46,11 +41,9 @@ const byWhen = (a: VersionRow, b: VersionRow): number => (b.when ?? '').localeCo
 @Component({
   selector: 'nc-versions-popover',
   imports: [
-    FormsModule,
     TranslocoDirective,
     ButtonDirective,
     IconComponent,
-    InputDirective,
     MeterComponent,
     PopoverDirective,
     PopoverPanelComponent,
@@ -95,7 +88,18 @@ const byWhen = (a: VersionRow, b: VersionRow): number => (b.when ?? '').localeCo
           <header
             class="flex h-[38px] items-center justify-between border-b border-line bg-raised px-2"
           >
-            <span class="label text-ink-3">Versions</span>
+            <span class="label text-ink-3">{{ t('editor.game.versions') }}</span>
+            <button
+              ncButton
+              variant="ghost"
+              size="sm"
+              iconOnly
+              [attr.aria-label]="t('editor.game.saveVersion')"
+              [disabled]="!session.isCollaborator()"
+              (click)="openSave()"
+            >
+              <nc-icon name="save" [size]="12" />
+            </button>
           </header>
           <!-- The list is the one part that grows without bound — a project saves as often as its
                author presses the key — so it is what is allowed to scroll, and the head, the totals
@@ -165,42 +169,8 @@ const byWhen = (a: VersionRow, b: VersionRow): number => (b.when ?? '').localeCo
                 <li class="px-2 py-2 text-meta text-ink-3">Nothing saved yet.</li>
               }
             </ul>
-            <div class="label mt-1 px-2">
+            <div class="label mt-1 px-2 pb-2">
               {{ releases().length }} named · {{ autosaves().length }} autosaves
-            </div>
-            <div class="pb-2">
-              <form class="mt-2 flex items-stretch gap-1 px-2" (ngSubmit)="checkpoint()">
-                <input
-                  ncInput
-                  name="cp"
-                  [ngModel]="cpName()"
-                  (ngModelChange)="cpName.set($event)"
-                  placeholder="Name this version"
-                />
-                <!-- A name already in the list rewrites that version, which the cap does not count. -->
-                <button
-                  ncButton
-                  variant="secondary"
-                  size="md"
-                  type="submit"
-                  class="h-auto shrink-0"
-                  [disabled]="
-                    !cpName().trim() ||
-                    !session.isCollaborator() ||
-                    saving() ||
-                    (atCap() && !overwriting())
-                  "
-                >
-                  Save
-                </button>
-              </form>
-              @if (atCap()) {
-                <p class="label mt-1 px-2 text-ink-3">
-                  {{
-                    t('editor.game.versionLimit', { count: releases().length, max: maxVersions() })
-                  }}
-                </p>
-              }
             </div>
           </div>
           <div class="border-t border-line p-2">
@@ -228,31 +198,18 @@ export class VersionsPopoverComponent {
   private readonly qc = inject(QueryClient);
   private readonly toasts = inject(ToastService);
   private readonly transloco = inject(TranslocoService);
+  private readonly dialogs = inject(DialogService);
   protected readonly open = signal(false);
   protected readonly ceiling = PUBLISH_CEILING;
-  protected readonly cpName = signal('');
   private readonly tick = signal(0);
 
   // Neither is gated on `open`: the chip names the newest version before anyone clicks it, and a
   // key that came and went with the panel refetched both lists on every opening.
   private readonly versions = injectProjectVersions(() => this.session.id);
   private readonly checkpoints = injectProjectCheckpoints(() => this.session.id);
-  private readonly limits = injectProjectLimits();
   protected readonly releases = computed(() => this.checkpoints.data() ?? []);
   protected readonly autosaves = computed(() => this.versions.data() ?? []);
   protected readonly restoring = signal(false);
-  protected readonly saving = signal(false);
-  /** Named versions a project may hold, once the server has said; it has the last word anyway. */
-  protected readonly maxVersions = computed(() => this.limits.data()?.maxCheckpoints);
-  protected readonly atCap = computed(() => {
-    const max = this.maxVersions();
-    return max !== undefined && this.releases().length >= max;
-  });
-  /** Saving under a name the list already holds rewrites that version rather than adding one. */
-  protected readonly overwriting = computed(() => {
-    const name = this.cpName().trim();
-    return this.releases().some((r) => r.name === name);
-  });
 
   /** Releases and autosaves in one list, newest first, releases numbered v1, v2, … */
   protected readonly history = computed<HistoryRow[]>(() => {
@@ -299,53 +256,13 @@ export class VersionsPopoverComponent {
       : `${String(Math.round(n / 1024))} KB`;
   }
 
-  /**
-   * Name the current state as a version.
-   *
-   * The endpoint takes the document as a file, exactly like an autosave — this sent an empty body
-   * and got a 422 back every single time. Nothing surfaced it, so the toast said the version was
-   * saved and the list it refreshed stayed empty.
-   */
-  protected async checkpoint(): Promise<void> {
-    const name = this.cpName().trim();
-    if (!name || this.saving()) return;
-    this.saving.set(true);
-    try {
-      // Only where something has been written since: naming the state you are already saved at is
-      // exactly what somebody marking a milestone is doing, and refusing it there sent them off to
-      // make a pointless edit first.
-      if (this.session.dirty()) await this.session.save({ force: true });
-      unwrap(
-        await projectControllerSaveCheckpoint({
-          path: { id: String(this.session.id), name },
-          body: {
-            file: new Blob([Y.encodeStateAsUpdate(this.session.doc) as BlobPart], {
-              type: 'application/octet-stream',
-            }),
-          },
-        }),
-      );
-      this.cpName.set('');
-      await invalidateProjectHistory(this.qc, this.session.id, 'checkpoints');
-      this.toasts.show(this.transloco.translate('editor.game.versionSaved', { name }), 'success');
-    } catch (e) {
-      // The server's count, not the list's: the list may be behind the save that filled it.
-      const limit =
-        e instanceof ApiError && e.code === 'CHECKPOINT_LIMIT'
-          ? (e.body as CheckpointLimitDto)
-          : null;
-      this.toasts.show(
-        limit
-          ? this.transloco.translate('editor.game.versionLimit', {
-              count: limit.count,
-              max: limit.max,
-            })
-          : this.transloco.translate('editor.game.versionSaveFailed'),
-        'error',
-      );
-    } finally {
-      this.saving.set(false);
-    }
+  /** The panel stays open under the dialog, so the new name is in the list when it closes. */
+  protected openSave(): void {
+    this.dialogs.open<SaveVersionDialog, SaveVersionDialogData, boolean>(SaveVersionDialog, {
+      data: { session: this.session },
+      width: '420px',
+      ariaLabel: this.transloco.translate('editor.game.saveVersion'),
+    });
   }
 
   /**

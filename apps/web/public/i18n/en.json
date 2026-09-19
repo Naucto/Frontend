@@ -351,7 +351,14 @@
       "versionSaveFailed": "Could not save that version. Nothing was lost — the game is still autosaving.",
       "versionDeleteFailed": "Could not delete that version.",
       "restored": "Restored {{name}}",
-      "restoreFailed": "Could not restore that version."
+      "restoreFailed": "Could not restore that version.",
+      "versions": "Versions",
+      "saveVersion": "Save a version",
+      "saveVersionLead": "A named version is a snapshot you can come back to. Autosaves come and go; a name stays until you delete it.",
+      "saveVersionConfirm": "Save",
+      "versionName": "Name",
+      "versionCount": "{{count}} of {{max}} named versions",
+      "versionOverwrites": "Overwrites the version \"{{name}}\" with the game as it is now."
     },
     "code": {
       "name": {

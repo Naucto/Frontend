@@ -29,11 +29,12 @@ const project = {
 
 /**
  * Mocks enough of the API for the editor to open project 7 — as its host unless `hostId` names
- * someone else, in which case user 1 is a collaborator in a room somebody else hosts.
+ * someone else, in which case user 1 is a collaborator in a room somebody else hosts. The server's
+ * cap on named versions is `maxCheckpoints`, generous unless a test is about the cap.
  */
 export async function mockEditor(
   page: Page,
-  { hostId = 1 }: { hostId?: number } = {},
+  { hostId = 1, maxCheckpoints = 20 }: { hostId?: number; maxCheckpoints?: number } = {},
 ): Promise<void> {
   await page.addInitScript(() => {
     localStorage.setItem('naucto.theme', 'dark');
@@ -77,6 +78,9 @@ export async function mockEditor(
   await page.route('**/projects/7/image', (r) => r.fulfill({ status: 204, body: '' }));
   await page.route('**/projects/7/versions', (r) => r.fulfill({ json: [] }));
   await page.route('**/projects/7/checkpoints', (r) => r.fulfill({ json: [] }));
+  await page.route('**/projects/limits', (r) =>
+    r.fulfill({ json: { maxCheckpoints, maxAutosaves: 5 } }),
+  );
   await page.route('**/users/public/4/profile', (r) =>
     r.fulfill({ json: { data: { id: 4, username: 'priax', profileImageUrl: '/img/logo.svg' } } }),
   );
