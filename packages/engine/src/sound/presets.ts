@@ -66,7 +66,7 @@ export const PRESET_FAMILIES: readonly PresetFamily[] = [
 export interface InstrumentPresetEntry {
   readonly name: string;
   readonly family: PresetFamily;
-  /** What it is for, in one line — read beside the name when choosing. */
+  /** What it is for, in one line. */
   readonly blurb: string;
   /** The MIDI note it is auditioned at: a kick at middle C is not a kick. */
   readonly note: number;
@@ -77,7 +77,7 @@ const NO_VIBRATO = { rate: 5, depth: 0, delay: 0.2 };
 const NO_FILTER = { type: 'off', cutoff: 8000, resonance: 0.2, envAmount: 0 } as const;
 const NO_ARP = { rate: 0 };
 
-/** Middle C, and the octaves around it the drums and the bells live in. */
+/** MIDI note numbers of the Cs. */
 const C4 = 60;
 const C2 = 36;
 const C3 = 48;
@@ -91,7 +91,6 @@ const C6 = 84;
  * would point at nothing in every game but the one it was written in.
  */
 export const INSTRUMENT_PRESETS: readonly InstrumentPresetEntry[] = [
-  // ---- lead ------------------------------------------------------------------
   {
     name: 'Square lead',
     family: 'lead',
@@ -165,8 +164,6 @@ export const INSTRUMENT_PRESETS: readonly InstrumentPresetEntry[] = [
     },
   },
   {
-    // The arp is the chord itself, walked fast: write three notes on one step and this plays
-    // them one after the other, the way an 8-bit game fakes a chord with one voice.
     name: 'Chip arp',
     family: 'lead',
     blurb: 'Walks a chord one note at a time, fast. Write three notes on a step to hear it.',
@@ -184,7 +181,6 @@ export const INSTRUMENT_PRESETS: readonly InstrumentPresetEntry[] = [
       pan: 0,
     },
   },
-  // ---- bass ------------------------------------------------------------------
   {
     name: 'Pulse bass',
     family: 'bass',
@@ -257,7 +253,6 @@ export const INSTRUMENT_PRESETS: readonly InstrumentPresetEntry[] = [
       pan: 0,
     },
   },
-  // ---- keys ------------------------------------------------------------------
   {
     name: 'Triangle flute',
     family: 'keys',
@@ -330,7 +325,6 @@ export const INSTRUMENT_PRESETS: readonly InstrumentPresetEntry[] = [
       pan: 0,
     },
   },
-  // ---- pad -------------------------------------------------------------------
   {
     name: 'Pad',
     family: 'pad',
@@ -385,7 +379,6 @@ export const INSTRUMENT_PRESETS: readonly InstrumentPresetEntry[] = [
       pan: 0,
     },
   },
-  // ---- drums -----------------------------------------------------------------
   {
     // A kick is a pitch falling fast, and the model has no pitch envelope. What it has is
     // glide, which bends a voice from the note it was sounding into the next one: so this is
@@ -480,10 +473,7 @@ export const INSTRUMENT_PRESETS: readonly InstrumentPresetEntry[] = [
       pan: 0,
     },
   },
-  // ---- fx --------------------------------------------------------------------
   {
-    // The same trick as the kick, the other way round: the glide is what makes it a laser,
-    // and a note written a fifth or an octave under the one before it is what it falls to.
     name: 'Laser',
     family: 'fx',
     blurb: 'A zap that dives. Write it one note under a higher one and it falls between them.',

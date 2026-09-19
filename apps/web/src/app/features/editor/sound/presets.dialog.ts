@@ -18,7 +18,6 @@ export interface PresetsDialogData {
   play: (settings: InstrumentPreset, note: number) => void;
 }
 
-/** What comes back: the sound to write into the instrument, or nothing where it was dismissed. */
 export type PresetsDialogResult = InstrumentPreset | undefined;
 
 type Shelf = PresetFamily | 'all';
@@ -27,9 +26,9 @@ const GRAPH_W = 72;
 const GRAPH_H = 20;
 
 /**
- * The envelope as a small polyline, the same picture the inspector's graph draws, without the
- * handles. Attack, decay and release share the width in proportion to their seconds, with a hold
- * in the middle so a sustained sound reads as a plateau and a plucked one as a spike.
+ * The envelope as a polyline. Attack, decay and release share the width in proportion to their
+ * seconds, with a fixed hold between decay and release so a sustained sound reads as a plateau
+ * and a plucked one as a spike.
  */
 const envelopePoints = (env: Envelope): string => {
   const hold = 0.25;
@@ -52,10 +51,9 @@ const envelopePoints = (env: Envelope): string => {
 /**
  * The presets, browsed by family and heard before they are kept.
  *
- * A dialog and not a list under the button: eight names in a column were read by their names
- * alone, and a name says less about a sound than the shape of its wave and its envelope do, and
- * nothing at all next to hearing it. Nothing here writes to the document — the sound is played
- * through the engine's preview, and the choice comes back as the result.
+ * A name says less about a sound than the shape of its wave and its envelope do, and nothing at
+ * all next to hearing it. Nothing here writes to the document: the sound is played through the
+ * caller's preview, and the choice comes back as the result.
  */
 @Component({
   selector: 'nc-presets-dialog',

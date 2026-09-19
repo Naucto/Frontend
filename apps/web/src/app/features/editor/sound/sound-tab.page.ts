@@ -529,8 +529,8 @@ export class SoundTabPage {
    * only — a key the patch leaves out keeps what was there, and the bytes stay in the document
    * because a duplicate may still be playing them.
    *
-   * Heard through the preview under a name of its own, like the metronome: the document is not
-   * written until the choice is made, so nobody else in the session hears the browsing.
+   * Heard through the preview under an id of its own: nothing reaches the document until the
+   * choice is made, so nobody else in the session hears the browsing.
    */
   protected openPresets(inst: Instrument): void {
     this.dialogs
