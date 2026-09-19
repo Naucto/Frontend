@@ -1502,7 +1502,7 @@ test.describe('editor', () => {
     await page.screenshot({ path: 'test-results/v-editor-sound.png' });
   });
 
-  test('a preset changes the sound and keeps the name', async ({ page }) => {
+  test('a held key glides across the keyboard', async ({ page }) => {
     await page.goto('/edit/7/sound');
     await addInstrument(page);
     const c4 = page.getByRole('button', { name: 'C4', exact: true });

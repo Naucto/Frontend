@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  ElementRef,
+  inject,
+  output,
+  signal,
+} from '@angular/core';
 import { midiToNoteName } from '@naucto/engine';
 
 import { KEY_W, PITCH_MAX, PITCH_MIN, ROW_H, RULER_H } from './piano-roll.component';
@@ -15,11 +23,22 @@ interface Key {
   c: boolean;
 }
 
+/** Raised on hover, sunk while held — see the note on the overlay span below. */
+const KEY_UP =
+  'absolute inset-0 hover:bg-gold/15 hover:shadow-[inset_0_1px_0_var(--color-key-lit),inset_0_-2px_0_var(--color-key-sharp)]';
+const KEY_DOWN =
+  'absolute inset-0 bg-gold/30 shadow-[inset_0_2px_0_var(--color-key-sharp),inset_0_-1px_0_var(--color-key-lit)]';
+
 /**
  * The keyboard beside the roll: a white bed with the black keys laid over it.
  *
  * In the document rather than drawn, for two things a drawing cannot do — hold still while what is
  * beside it scrolls, without being repainted to keep up, and answer a pointer.
+ *
+ * A press is a glissando as much as a note: the pointer is captured by the keyboard rather than
+ * by the key it landed on, so a drag across the keys lets each one go and sounds the next as it
+ * is crossed. Which key is down is state, not `:active`, for the same reason — capture pins the
+ * browser's own hover and active states to the key that was pressed first.
  */
 @Component({
   selector: 'nc-piano-keys',
@@ -27,17 +46,15 @@ interface Key {
     <!-- The corner belongs to neither the keys nor the ruler, and holds its own place at the top. -->
     <div class="sticky top-0 z-10 shrink-0 bg-panel" [style.height.px]="RULER_H"></div>
     @for (k of keys(); track k.pitch) {
-      <!-- Captured on the way down, so the note is let go even when the pointer has wandered off
-           the key -- or out of the window -- before it is lifted. -->
       <button
         type="button"
         class="relative block w-full shrink-0 cursor-pointer border-b border-b-key-sharp text-left"
         [style.height.px]="ROW_H"
         [class]="k.c ? 'bg-key-lit' : 'bg-key'"
         [attr.aria-label]="k.name"
+        [attr.aria-pressed]="held() === k.pitch"
+        [attr.data-pitch]="k.pitch"
         (pointerdown)="onDown($event, k.pitch)"
-        (pointerup)="released.emit()"
-        (pointercancel)="released.emit()"
       >
         @if (k.black) {
           <span
@@ -62,13 +79,17 @@ interface Key {
           same — two pixels down on the tooltip and the toast, four on the popover — since a gradient
           is the one thing a screen made of whole pixels cannot draw.
         -->
-        <span
-          class="absolute inset-0 hover:bg-gold/15 hover:shadow-[inset_0_1px_0_var(--color-key-lit),inset_0_-2px_0_var(--color-key-sharp)] active:bg-gold/30 active:shadow-[inset_0_2px_0_var(--color-key-sharp),inset_0_-1px_0_var(--color-key-lit)]"
-        ></span>
+        <span [class]="held() === k.pitch ? KEY_DOWN : KEY_UP"></span>
       </button>
     }
   `,
-  host: { class: 'sticky left-0 z-10 flex shrink-0 flex-col bg-panel' },
+  host: {
+    class: 'sticky left-0 z-10 flex shrink-0 touch-none flex-col bg-panel',
+    '(pointermove)': 'onMove($event)',
+    '(pointerup)': 'onUp()',
+    '(pointercancel)': 'onUp()',
+    '(lostpointercapture)': 'onUp()',
+  },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PianoKeysComponent {
@@ -80,10 +101,36 @@ export class PianoKeysComponent {
   protected readonly RULER_H = RULER_H;
   protected readonly BLACK_KEY_W = BLACK_KEY_W;
   protected readonly KEY_W = KEY_W;
+  protected readonly KEY_UP = KEY_UP;
+  protected readonly KEY_DOWN = KEY_DOWN;
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  /** The key under the pointer while it is down; nothing between presses. */
+  protected readonly held = signal<number | null>(null);
 
   protected onDown(e: PointerEvent, pitch: number): void {
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    if (e.button !== 0) return;
+    this.host.nativeElement.setPointerCapture(e.pointerId);
+    this.held.set(pitch);
     this.pressed.emit(pitch);
+  }
+
+  protected onMove(e: PointerEvent): void {
+    const was = this.held();
+    if (was === null) return;
+    const key = document
+      .elementFromPoint(e.clientX, e.clientY)
+      ?.closest<HTMLElement>('[data-pitch]');
+    const pitch = key ? Number(key.dataset.pitch) : null;
+    if (pitch === null || pitch === was) return;
+    this.released.emit();
+    this.held.set(pitch);
+    this.pressed.emit(pitch);
+  }
+
+  protected onUp(): void {
+    if (this.held() === null) return;
+    this.held.set(null);
+    this.released.emit();
   }
 
   protected readonly keys = computed<Key[]>(() =>
