@@ -2,13 +2,8 @@ import luaparse from 'luaparse';
 import type * as Y from 'yjs';
 
 import { LEGACY_ALIASES, type LuaApiEntry } from '../../api/luaApiTable';
+import { applySplices, type Splice } from '../splice';
 import type { MigrationReport } from '../types';
-
-interface Splice {
-  start: number;
-  end: number;
-  text: string;
-}
 
 interface AnyNode {
   type: string;
@@ -193,17 +188,6 @@ export function computeTokenSplices(
     splices.push({ start, end: start + name.length, text: `${entry.ns}.${entry.name}` });
   }
   return splices;
-}
-
-/** Applies splices to a Y.Text from the end so earlier offsets stay valid. */
-export function applySplices(text: Y.Text, splices: Splice[]): number {
-  for (let i = splices.length - 1; i >= 0; i--) {
-    const s = splices[i];
-    if (!s) continue;
-    text.delete(s.start, s.end - s.start);
-    text.insert(s.start, s.text);
-  }
-  return splices.length;
 }
 
 export function migrateCode(text: Y.Text, report: MigrationReport, file = 'main.lua'): void {

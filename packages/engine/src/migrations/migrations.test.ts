@@ -54,7 +54,7 @@ describe('migrateGame v0 → v1', () => {
     const report = migrateGame(doc);
     expect(report.applied).toBe(true);
     const game = new Game(doc);
-    expect(game.schemaVersion).toBe(1);
+    expect(game.schemaVersion).toBe(GAME_SCHEMA_VERSION);
     expect(game.palette).toEqual([...PICO8_PALETTE]);
     expect(game.getPixel(8, 0)).toBe(10);
     expect(game.getFlag(1)).toBe(3);

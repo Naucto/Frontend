@@ -1,4 +1,5 @@
 import { SPRITE_SIZE } from './keys';
+import { matchesCall, skipDead, splitArgs } from './luaScan';
 import type { SheetShape } from './Sheet';
 
 /**
@@ -141,63 +142,4 @@ export function rewriteSpriteNumbers(source: string, remap: SpriteRemap): Rewrit
   }
 
   return { text: out, changed, unsure };
-}
-
-/** How far a string or a comment runs from here, or `at` where this is neither. */
-function skipDead(s: string, at: number): number {
-  if (s.startsWith('--', at)) {
-    const end = s.indexOf('\n', at);
-
-    return end === -1 ? s.length : end;
-  }
-  const quote = s[at];
-  if (quote !== '"' && quote !== "'") return at;
-  let i = at + 1;
-  while (i < s.length && s[i] !== quote) i += s[i] === '\\' ? 2 : 1;
-
-  return Math.min(i + 1, s.length);
-}
-
-/** Whether a call by this name starts here, and is not the tail of a longer name. */
-function matchesCall(s: string, at: number, name: string): boolean {
-  if (!s.startsWith(name, at)) return false;
-  const before = s[at - 1];
-  if (before !== undefined && /[\w.]/.test(before)) return false;
-  const after = s.slice(at + name.length);
-
-  return /^\s*\(/.test(after);
-}
-
-/**
- * The arguments of a call whose opening bracket has just been passed.
- *
- * Split on the commas of this call only, so a nested call keeps its own. Returns nothing where the
- * bracket never closes, which is a source still being typed.
- */
-function splitArgs(s: string, from: number): { parts: string[]; end: number } | null {
-  const parts: string[] = [];
-  let depth = 0;
-  let start = from;
-  let i = from;
-  while (i < s.length) {
-    const skipped = skipDead(s, i);
-    if (skipped > i) {
-      i = skipped;
-      continue;
-    }
-    const c = s[i];
-    if (c === '(' || c === '[' || c === '{') depth += 1;
-    else if (c === ')' && depth === 0) {
-      parts.push(s.slice(start, i));
-
-      return { parts, end: i };
-    } else if (c === ')' || c === ']' || c === '}') depth -= 1;
-    else if (c === ',' && depth === 0) {
-      parts.push(s.slice(start, i));
-      start = i + 1;
-    }
-    i += 1;
-  }
-
-  return null;
 }

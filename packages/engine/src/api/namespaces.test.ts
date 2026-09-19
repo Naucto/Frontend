@@ -205,12 +205,12 @@ describe('Lua API namespaces', () => {
     input.setKey('ArrowUp', true);
     input.commit();
     const [l, a1, a2, k, bad] = lua.evaluate(
-      'return input.btn("left"), input.btn("a"), input.btn("a", 2), input.key_pressed("ArrowUp"), input.btn("nope")',
+      'return input.held("left"), input.held("a"), input.held("a", 2), input.key_pressed("ArrowUp"), input.held("nope")',
     );
     expect([l, a1, a2, k, bad]).toEqual([true, false, true, true, false]);
-    expect(lua.evaluate('return input.btnp("left")')[0]).toBe(true);
+    expect(lua.evaluate('return input.pressed("left")')[0]).toBe(true);
     input.commit();
-    expect(lua.evaluate('return input.btnp("left")')[0]).toBe(false);
+    expect(lua.evaluate('return input.pressed("left")')[0]).toBe(false);
   });
 
   it('sys logs with levels and print goes to log', () => {

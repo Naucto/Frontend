@@ -102,10 +102,10 @@ end
 function _update()
   if me == nil then return end
   local p = net.state.players[me]
-  if input.btn("left") then p.x = p.x - 2 end
-  if input.btn("right") then p.x = p.x + 2 end
-  if input.btn("up") then p.y = p.y - 2 end
-  if input.btn("down") then p.y = p.y + 2 end
+  if input.held("left") then p.x = p.x - 2 end
+  if input.held("right") then p.x = p.x + 2 end
+  if input.held("up") then p.y = p.y - 2 end
+  if input.held("down") then p.y = p.y + 2 end
 end
 
 function _draw()

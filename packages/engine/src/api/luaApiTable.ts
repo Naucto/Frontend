@@ -202,20 +202,20 @@ export const LUA_API: readonly LuaApiEntry[] = [
   // input
   {
     ns: 'input',
-    name: 'btn',
-    signature: 'input.btn(action[, player])',
+    name: 'held',
+    signature: 'input.held(action[, player])',
     summary: 'True while an action (left right up down a b x y pause) is held.',
   },
   {
     ns: 'input',
-    name: 'btnp',
-    signature: 'input.btnp(action[, player])',
+    name: 'pressed',
+    signature: 'input.pressed(action[, player])',
     summary: 'True on the step an action was pressed.',
   },
   {
     ns: 'input',
-    name: 'btnr',
-    signature: 'input.btnr(action[, player])',
+    name: 'released',
+    signature: 'input.released(action[, player])',
     summary: 'True on the step an action was released.',
   },
   {
@@ -248,12 +248,6 @@ export const LUA_API: readonly LuaApiEntry[] = [
     name: 'mouse_down',
     signature: 'input.mouse_down([button])',
     summary: 'True on the step a mouse button was pressed.',
-  },
-  {
-    ns: 'input',
-    name: 'declare',
-    signature: 'input.declare({ action = "label", ... })',
-    summary: 'Name the actions this game uses, e.g. { a = "jump", x = "action" }.',
   },
   {
     ns: 'input',

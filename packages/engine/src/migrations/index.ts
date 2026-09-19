@@ -3,6 +3,7 @@ import type * as Y from 'yjs';
 import { GAME_SCHEMA_VERSION, KEYS, LEGACY_KEYS } from '../game/keys';
 import type { MigrationReport, MigrationStep } from './types';
 import { migrateV0ToV1 } from './v0_to_v1';
+import { migrateV1ToV2 } from './v1_to_v2';
 
 export type { MigrationReport, MigrationStep, MigrationWarning } from './types';
 
@@ -14,7 +15,10 @@ export const MIGRATION_ORIGIN = 'migration';
  * A document is brought forward by running every step from the version it holds, so a game written
  * two schemas ago crosses both rather than needing a step of its own.
  */
-const STEPS: readonly MigrationStep[] = [{ from: 0, to: 1, run: migrateV0ToV1 }];
+const STEPS: readonly MigrationStep[] = [
+  { from: 0, to: 1, run: migrateV0ToV1 },
+  { from: 1, to: 2, run: migrateV1ToV2 },
+];
 
 /** Content only the first schema ever wrote, and the only evidence a document predates the marker. */
 function hasLegacyContent(doc: Y.Doc): boolean {

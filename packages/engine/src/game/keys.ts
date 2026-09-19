@@ -1,5 +1,10 @@
-/** Yjs key layout of a game document (schema v1) and the legacy v0 keys it replaces. */
-export const GAME_SCHEMA_VERSION = 1;
+/**
+ * Yjs key layout of a game document and the legacy v0 keys it replaces.
+ *
+ * The keys are schema v1's; v2 renamed functions in the code and moved the action labels out of
+ * it, and changed no key.
+ */
+export const GAME_SCHEMA_VERSION = 2;
 
 export const KEYS = {
   meta: 'game.meta',

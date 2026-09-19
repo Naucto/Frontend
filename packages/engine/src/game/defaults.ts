@@ -52,10 +52,10 @@ function _init()
 end
 
 function _update()
-  if input.btn("left") then player.x = player.x - player.speed end
-  if input.btn("right") then player.x = player.x + player.speed end
-  if input.btn("up") then player.y = player.y - player.speed end
-  if input.btn("down") then player.y = player.y + player.speed end
+  if input.held("left") then player.x = player.x - player.speed end
+  if input.held("right") then player.x = player.x + player.speed end
+  if input.held("up") then player.y = player.y - player.speed end
+  if input.held("down") then player.y = player.y + player.speed end
 end
 
 function _draw()
