@@ -140,7 +140,6 @@ export class DocsService {
     );
   }
 
-  /** A name typed outranks a mention of it; a page answers with the section that matched. */
   search(query: string, limit = 12): SearchHit[] {
     const q = query.trim().toLowerCase();
     if (!q) return [];
