@@ -341,6 +341,10 @@ test.describe('editor', () => {
     await expect(card.locator('dl.api-params dt').first()).toBeVisible();
     await expect(card.locator('.api-ref-chip').first()).toBeVisible();
     await expect(pane.getByText('Legacy name')).toHaveCount(0);
+    await card.evaluate((el) => {
+      el.scrollIntoView({ block: 'start' });
+    });
+    await expect(pane.getByTestId('doc-anchor')).toContainText('gfx.set_color');
 
     await search.fill('SOUND');
     await pane.getByRole('option').first().click();

@@ -1,10 +1,13 @@
+import { Location } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
   computed,
   effect,
+  ElementRef,
   inject,
   input,
+  linkedSignal,
   signal,
   untracked,
   viewChild,
@@ -12,6 +15,7 @@ import {
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthStore } from '@app/core/auth/auth.store';
+import { DocAnchorComponent } from '@app/shared/docs/doc-anchor.component';
 import { DocArticleComponent } from '@app/shared/docs/doc-article.component';
 import { DocTreeComponent } from '@app/shared/docs/doc-tree.component';
 import {
@@ -40,13 +44,18 @@ import {
     EmptyStateComponent,
     IconComponent,
     SearchComponent,
+    DocAnchorComponent,
     DocArticleComponent,
     DocTreeComponent,
     HighlightComponent,
   ],
   template: `
-    <div *transloco="let t" class="grid gap-4 lg:grid-cols-[240px_minmax(0,1fr)_200px]">
-      <aside class="lg:sticky lg:top-8 lg:self-start">
+    <div *transloco="let t" class="grid gap-4 lg:grid-cols-[240px_minmax(0,1fr)]">
+      <!-- The top bar scrolls away with the page, so the window's edge is what the index sticks
+           to, and it scrolls on its own once the tree outgrows the viewport. -->
+      <aside
+        class="lg:sticky lg:top-3 lg:max-h-[calc(100dvh-24px)] lg:self-start lg:overflow-x-hidden lg:overflow-y-auto lg:pr-1"
+      >
         <nc-search
           #search
           class="mb-2"
@@ -82,10 +91,15 @@ import {
       <!-- A measure. The column had none, so on a wide screen 12px body text ran the full width
            of 1fr — around 105 characters a line, well past what anyone reads comfortably. There is
            no artboard for /learn, so this is the typographic figure rather than a measured one. -->
-      <article class="min-w-0 max-w-[760px]">
+      <article class="relative min-w-0 max-w-[760px]">
         @if (page(); as p) {
+          <nc-doc-anchor
+            [page]="p"
+            [article]="articleEl()?.nativeElement ?? null"
+            (jump)="anchorTo($event)"
+          />
           <div class="mb-2 flex items-center gap-2">
-            <span class="label text-ink-4">{{ t('docs.sections.' + p.section) }}</span>
+            <span class="label font-ui text-ink-4">{{ t('docs.sections.' + p.section) }}</span>
             <span class="flex-1"></span>
             @if (p.lua) {
               <button
@@ -100,7 +114,7 @@ import {
               </button>
             }
           </div>
-          <nc-doc-article [page]="p" (navigate)="navigate($event)" />
+          <nc-doc-article #article [page]="p" (navigate)="navigate($event)" />
           @if (neighbours(); as n) {
             <nav class="mt-4 flex justify-between gap-2 border-t border-line pt-2">
               @if (n.prev; as prev) {
@@ -133,22 +147,6 @@ import {
           />
         }
       </article>
-
-      <aside class="hidden lg:sticky lg:top-8 lg:block lg:self-start">
-        @if (page()?.headings?.length) {
-          <div class="label mb-1 text-ink-4">{{ t('docs.onThisPage') }}</div>
-          @for (h of page()?.headings ?? []; track h.id) {
-            <a
-              [href]="'#' + h.id"
-              class="block truncate py-0.5 text-meta text-ink-3 hover:text-ink"
-              [class.pl-2]="h.level === 3"
-              (click)="jump($event, h.id)"
-            >
-              {{ h.text }}
-            </a>
-          }
-        }
-      </aside>
     </div>
   `,
   // The docs box claimed "/" while the top bar owned it, so the page showed the same shortcut
@@ -166,10 +164,18 @@ export class LearnPage {
   readonly path = input<string | undefined>();
   protected readonly searchHint = shortcutLabel('K');
   private readonly searchBox = viewChild<SearchComponent>('search');
+  protected readonly articleEl = viewChild<string, ElementRef<HTMLElement>>('article', {
+    read: ElementRef,
+  });
+  private readonly anchor = viewChild(DocAnchorComponent);
   protected readonly docs = inject(DocsService);
   protected readonly auth = inject(AuthStore);
   private readonly router = inject(Router);
-  protected readonly fragment = toSignal(inject(ActivatedRoute).fragment, { initialValue: null });
+  private readonly location = inject(Location);
+  /** The route's fragment, which the step bar moves ahead of the router. */
+  protected readonly fragment = linkedSignal(
+    toSignal(inject(ActivatedRoute).fragment, { initialValue: null }),
+  );
   protected readonly query = signal('');
   protected readonly slug = computed(
     () => (this.path() ?? '').replace(/^\/+|\/+$/g, '') || 'index',
@@ -184,11 +190,15 @@ export class LearnPage {
       const p = this.page();
       if (!p) return;
       untracked(() => {
-        const hash = location.hash.slice(1);
-        if (hash)
-          setTimeout(() => document.getElementById(hash)?.scrollIntoView({ block: 'start' }), 50);
+        const hash = window.location.hash.slice(1);
+        if (hash) this.reveal(hash);
       });
     });
+  }
+
+  /** Once the page is in the document, which a navigation to the same page does not wait for. */
+  private reveal(id: string): void {
+    setTimeout(() => this.anchor()?.reveal(id), 50);
   }
 
   /** A page, or a place on one: `api/gfx#gfx.clear`, `tutorials/pong#the-ball`. */
@@ -200,11 +210,6 @@ export class LearnPage {
       .then(() => {
         if (fragment) this.reveal(fragment);
       });
-  }
-
-  /** Once the page is in the document, which a navigation to the same page does not wait for. */
-  private reveal(id: string): void {
-    setTimeout(() => document.getElementById(id)?.scrollIntoView({ block: 'start' }), 50);
   }
 
   protected openHit(h: SearchHit): void {
@@ -233,9 +238,13 @@ export class LearnPage {
       });
   }
 
-  protected jump(e: Event, id: string): void {
-    e.preventDefault();
-    document.getElementById(id)?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  /**
+   * The step bar moved the reader; the URL and the tree follow. Not a router navigation: the
+   * router scrolls every one of those back to the top of the page.
+   */
+  protected anchorTo(fragment: string): void {
+    this.fragment.set(fragment);
+    this.location.replaceState(`${this.location.path()}#${fragment}`);
   }
 
   /** Tutorials open as a fresh game with their main.lua already in place. */

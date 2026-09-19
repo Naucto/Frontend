@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   effect,
+  ElementRef,
   inject,
   signal,
   untracked,
@@ -10,6 +11,7 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { ApiCardComponent } from '@app/shared/docs/api-card.component';
+import { DocAnchorComponent } from '@app/shared/docs/doc-anchor.component';
 import { DocArticleComponent } from '@app/shared/docs/doc-article.component';
 import { DocTreeComponent } from '@app/shared/docs/doc-tree.component';
 import { type ApiEntry, type DocPage, DocsService, type SearchHit } from '@app/shared/docs/docs.service';
@@ -38,6 +40,7 @@ import { DocRequestService } from './doc-request.service';
     IconComponent,
     SearchComponent,
     ApiCardComponent,
+    DocAnchorComponent,
     DocArticleComponent,
     DocTreeComponent,
     HighlightComponent,
@@ -53,19 +56,21 @@ import { DocRequestService } from './doc-request.service';
         }
         <nc-icon name="reference" [size]="24" class="text-ink" />
         @if (view() === 'page' && page(); as p) {
-          <button type="button" class="label text-ink-3 hover:text-ink" (click)="home()">
-            {{ t('docs.reference') }}
-          </button>
-          <span class="label text-ink-4">›</span>
-          <span class="label min-w-0 truncate text-ink">{{ p.title }}</span>
+          <nc-doc-anchor
+            bare
+            [page]="p"
+            [article]="articleEl()?.nativeElement ?? null"
+            [container]="scrollerEl()?.nativeElement ?? null"
+            (jump)="fragment.set($event)"
+          />
         } @else {
           <span class="label text-ink">{{ t('docs.reference') }}</span>
           <span class="flex-1"></span>
-          <span class="label text-ink-4">F1</span>
         }
+        <span class="label text-ink-4">F1</span>
       </div>
       <nc-search #search class="m-1.5" [placeholder]="t('docs.search')" hint="" [value]="query()" (valueChange)="query.set($event)" />
-      <div class="min-h-0 flex-1 overflow-auto px-1.5 pb-1.5">
+      <div #scroller class="min-h-0 flex-1 overflow-auto px-1.5 pb-1.5">
         @if (hits().length) {
           <div role="listbox">
             @for (h of hits(); track h.slug + h.title) {
@@ -85,7 +90,7 @@ import { DocRequestService } from './doc-request.service';
               {{ t('docs.copyToNewGame') }}
             </button>
           }
-          <nc-doc-article [page]="p" [insertable]="true" (insert)="insert($event)" (navigate)="navigate($event)" />
+          <nc-doc-article #article [page]="p" [insertable]="true" (insert)="insert($event)" (navigate)="navigate($event)" />
           @if (neighbours(); as n) {
             <nav class="mt-3 flex justify-between gap-1 border-t border-line pt-1.5">
               @if (n.prev; as prev) {
@@ -120,6 +125,8 @@ export class DocPaneComponent {
   protected readonly docs = inject(DocsService);
   private readonly requests = inject(DocRequestService);
   private readonly search = viewChild<SearchComponent>('search');
+  protected readonly scrollerEl = viewChild<string, ElementRef<HTMLElement>>('scroller', { read: ElementRef });
+  protected readonly articleEl = viewChild<string, ElementRef<HTMLElement>>('article', { read: ElementRef });
   private readonly runtime = inject(EditorRuntimeService);
   private readonly toasts = inject(ToastService);
   private readonly dialogs = inject(DialogService);
@@ -162,11 +169,6 @@ export class DocPaneComponent {
   protected back(): void {
     if (this.apiName()) this.apiName.set(null);
     else this.slug.set(null);
-  }
-
-  protected home(): void {
-    this.apiName.set(null);
-    this.slug.set(null);
   }
 
   /** The pane sits in a game being edited: the copy is another game, so the editor is left. */

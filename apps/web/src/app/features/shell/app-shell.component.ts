@@ -17,7 +17,7 @@ import { TopBarComponent } from './top-bar.component';
     </main>
     <nc-site-footer />
   `,
-  host: { class: 'flex min-h-dvh flex-col overflow-x-hidden' },
+  host: { class: 'flex min-h-dvh flex-col overflow-x-clip' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppShellComponent {}

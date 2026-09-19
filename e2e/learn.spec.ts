@@ -104,6 +104,48 @@ test.describe('learn', () => {
     await expect(global).toBeFocused();
   });
 
+  /**
+   * The reading position stays at the top of the article once its heading has scrolled away: a
+   * tutorial counts its step and steps on from there, a page of cards names the function.
+   */
+  test('a bar at the top names the step being read, and steps on', async ({ page }) => {
+    await page.goto('/learn/tutorials/first-game');
+    const bar = page.getByTestId('doc-anchor');
+    const step3 = page.locator('#step-3-walk-into-walls');
+    await expect(step3).toBeVisible();
+    await step3.evaluate((el) => {
+      el.scrollIntoView({ block: 'start' });
+    });
+    await expect(bar).toContainText('Step 3/5');
+    await expect(bar).toContainText('Walk into walls');
+
+    await bar.getByRole('button', { name: 'Next step' }).click();
+    await expect(page.locator('h2[data-step="4"]')).toBeInViewport();
+    await expect(bar).toContainText('Step 4/5');
+    await expect(page).toHaveURL(/#step-4-/);
+  });
+
+  test('the bar names the function card being read', async ({ page }) => {
+    await page.goto('/learn/api/gfx');
+    await expect(page.getByText('On this page')).toHaveCount(0);
+    const card = page.locator('#gfx\\.set_color');
+    await expect(card).toBeVisible();
+    await card.evaluate((el) => {
+      el.scrollIntoView({ block: 'start' });
+    });
+    await expect(page.getByTestId('doc-anchor')).toContainText('gfx.set_color');
+  });
+
+  test('the index scrolls on its own and never outgrows the viewport', async ({ page }) => {
+    await page.goto('/learn/reference/glossary');
+    const aside = page.locator('aside', { has: page.getByRole('navigation', { name: 'Learn' }) });
+    await expect(aside).toBeVisible();
+    expect(await aside.evaluate((el) => getComputedStyle(el).overflowY)).toBe('auto');
+    const box = await aside.boundingBox();
+    const viewport = page.viewportSize();
+    expect(box?.height ?? Infinity).toBeLessThanOrEqual(viewport?.height ?? 0);
+  });
+
   test('renders box art as a diagram, not a code block', async ({ page }) => {
     await page.goto('/learn/concepts/game-loop');
     await expect(page.locator('figure.doc-diagram svg')).toBeVisible();
