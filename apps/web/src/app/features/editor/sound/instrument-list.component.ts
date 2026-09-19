@@ -107,7 +107,7 @@ const COLUMNS = 4;
         <!-- The same fixed head as the music below it: both sections hold five rows of boxes, so
              this row is the only thing that could make the two differ, and left to its contents it
              does. -->
-        <div class="mb-1 flex h-(--nc-control-h) items-center gap-1">
+        <div class="nc-density-small mb-1 flex h-(--nc-transport-h) items-center gap-1">
           <span class="label text-ink-3">{{ t('editor.sound.sfxSlots') }}</span>
           <span class="flex-1"></span>
           <nc-help-dot [title]="t('editor.sound.sfxSlots')" [text]="t('editor.sound.sfxHelp')" />

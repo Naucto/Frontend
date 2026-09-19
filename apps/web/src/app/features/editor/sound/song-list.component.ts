@@ -45,13 +45,15 @@ interface Cell {
     <div *transloco="let t" class="border-t border-line p-1.5">
       <!-- A head of the same fixed height as the bank of sound effects above it: both hold five
            rows of boxes, so the only thing that could make the two sections differ is this row,
-           and left to its contents it does. -->
-      <div class="mb-1 flex h-(--nc-control-h) items-center gap-1">
+           and left to its contents it does. The whole row is at the drawn density, so the field
+           and the transport beside it are measured against the same frame. -->
+      <div class="nc-density-small mb-1 flex h-(--nc-transport-h) items-center gap-1">
         <span class="label shrink-0 text-ink-3">{{ t('editor.sound.music') }}</span>
         <!-- Beside its own name rather than at the far end of the row: pushed there it was the one
              thing with nowhere to go when the row ran out of width. -->
         <nc-number-field
-          class="shrink-0"
+          class="h-(--nc-transport-h) shrink-0"
+          fill
           [label]="t('editor.sound.musicSlot')"
           [value]="slot()"
           [max]="MAX_SLOT"
@@ -62,7 +64,6 @@ interface Cell {
              front of you are two things to listen to, and one button cannot be both. At the drawn
              density, because this is a section head and not the tab's own bar. -->
         <nc-transport
-          class="nc-density-small"
           [playing]="playing()"
           [canRewind]="playing()"
           [canStop]="playing()"
