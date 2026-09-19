@@ -211,7 +211,7 @@ export class RuntimeHostService {
     const was = e.currentState;
     if (was === 'idle') return;
     e.stop();
-    if (was === 'paused') e.load();
+    if (was === 'paused') e.load({ hold: true });
     else e.run();
   }
   screenshot(): Uint8ClampedArray | null {

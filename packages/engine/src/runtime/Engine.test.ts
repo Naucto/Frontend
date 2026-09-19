@@ -340,6 +340,39 @@ describe('Engine', () => {
     engine.destroy();
   });
 
+  /**
+   * A reload of a paused game stops it and loads it again, and the stop lets the music go so a
+   * game run again does not start frozen. The load then has to hold it again, before `_init`
+   * starts what the game plays.
+   */
+  it('holds the music through a reload of a paused game', () => {
+    const calls: string[] = [];
+    const sound = {
+      flush: () => undefined,
+      clearOverrides: () => undefined,
+      stopAll: () => {
+        calls.push('stopAll');
+      },
+      pause: () => {
+        calls.push('pause');
+      },
+      resume: () => {
+        calls.push('resume');
+      },
+    } as unknown as SoundPort;
+    const game = new Game(new Y.Doc());
+    game.seedDefaults();
+
+    const engine = new Engine({ game, gfx: new RecordingBackend(), sound, driver });
+    engine.run();
+    engine.pause();
+    engine.stop();
+    expect(engine.load({ hold: true })).toBeNull();
+    expect(calls).toEqual(['pause', 'stopAll', 'pause']);
+    expect(engine.currentState).toBe('paused');
+    engine.destroy();
+  });
+
   it('keeps what a running game changes out of the document the editors read', () => {
     const game = new Game(new Y.Doc());
     game.seedDefaults();

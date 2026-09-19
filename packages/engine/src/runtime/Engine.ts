@@ -124,8 +124,13 @@ export class Engine {
     return this.lastError;
   }
 
-  /** (Re)loads the game code and runs `_init`. Returns the error if any. */
-  load(): EngineError | null {
+  /**
+   * (Re)loads the game code and runs `_init`. Returns the error if any.
+   *
+   * `hold` is for reloading a paused game: the port is held before any game code runs, so what
+   * `_init` starts waits with the game instead of playing under a frozen screen.
+   */
+  load({ hold = false }: { hold?: boolean } = {}): EngineError | null {
     this.teardownVm();
     this.console.clear();
     this.stats.reset();
@@ -198,6 +203,7 @@ export class Engine {
     // The labels are the document's, not the code's, so they reach the host whether or not the
     // code loads: a game that errors on load still has a controls table to show.
     ctx.onActionsDeclared?.(this.opts.game.declaredActions);
+    if (hold) this.opts.sound?.pause();
 
     try {
       if (this.opts.game.compat) lua.evaluate(buildCompatPrelude(), 'compat.lua');
