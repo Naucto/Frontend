@@ -193,11 +193,16 @@ const PATTERN_MAX = 99;
               (rewound)="toStart()"
               (stopped)="stop()"
             />
-            <nc-toggle-button [checked]="sound.loop()" (checkedChange)="setLoop($event)">
+            <nc-toggle-button
+              size="strip"
+              [checked]="sound.loop()"
+              (checkedChange)="setLoop($event)"
+            >
               <nc-icon name="repeat" [size]="24" />
               {{ t('editor.sound.loop') }}
             </nc-toggle-button>
             <nc-toggle-button
+              size="strip"
               [checked]="sound.metronome()"
               (checkedChange)="sound.setMetronome($event)"
               accent="jade"
@@ -231,7 +236,7 @@ const PATTERN_MAX = 99;
             <button
               ncButton
               variant="ghost"
-              size="sm"
+              size="strip"
               iconOnly
               [attr.aria-label]="t('editor.undo')"
               (click)="undo.undo()"
@@ -242,7 +247,7 @@ const PATTERN_MAX = 99;
             <button
               ncButton
               variant="ghost"
-              size="sm"
+              size="strip"
               iconOnly
               [attr.aria-label]="t('editor.redo')"
               (click)="undo.redo()"

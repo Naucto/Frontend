@@ -127,6 +127,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
                  there is no sprite next door to reach, so the choice has no subject. -->
             @if (!art.crop()) {
               <nc-toggle-button
+                size="strip"
                 class="shrink-0"
                 [label]="t('editor.art.clip')"
                 [checked]="art.clip()"
@@ -137,6 +138,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
               </nc-toggle-button>
             }
             <nc-toggle-button
+              size="strip"
               class="mr-1 shrink-0"
               [label]="t('editor.art.crop')"
               [checked]="art.crop()"
@@ -148,7 +150,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
             <button
               ncButton
               variant="ghost"
-              size="sm"
+              size="strip"
               iconOnly
               [attr.aria-label]="t('editor.undo')"
               (click)="undo.undo()"
@@ -159,7 +161,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
             <button
               ncButton
               variant="ghost"
-              size="sm"
+              size="strip"
               iconOnly
               [attr.aria-label]="t('editor.redo')"
               (click)="undo.redo()"
@@ -170,7 +172,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
             <button
               ncButton
               variant="ghost"
-              size="sm"
+              size="strip"
               iconOnly
               [attr.aria-label]="t('editor.copy')"
               (click)="transfer('c')"
@@ -180,7 +182,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
             <button
               ncButton
               variant="ghost"
-              size="sm"
+              size="strip"
               iconOnly
               [attr.aria-label]="t('editor.paste')"
               (click)="transfer('v')"
@@ -262,6 +264,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
       <nc-panel-column [width]="PANEL_WIDTH">
         <div actions class="flex min-w-0 flex-1 items-center gap-1">
           <nc-toggle-button
+            size="strip"
             class="shrink-0"
             [checked]="art.grid()"
             (checkedChange)="art.setGrid($event)"
@@ -273,6 +276,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
                screen beside this one, and ghosting a copy of it underneath says nothing. -->
           @if (art.crop()) {
             <nc-toggle-button
+              size="strip"
               class="shrink-0"
               [checked]="art.onion()"
               (checkedChange)="art.setOnion($event)"
@@ -285,7 +289,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
           <button
             ncButton
             variant="ghost"
-            size="sm"
+            size="strip"
             iconOnly
             class="shrink-0"
             [attr.aria-label]="t('editor.art.zoomOut')"
@@ -307,7 +311,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
           <button
             ncButton
             variant="ghost"
-            size="sm"
+            size="strip"
             iconOnly
             class="shrink-0"
             [attr.aria-label]="t('editor.art.zoomIn')"

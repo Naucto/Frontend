@@ -99,7 +99,7 @@ import { MinimapComponent } from './minimap.component';
             <button
               ncButton
               variant="ghost"
-              size="sm"
+              size="strip"
               iconOnly
               [attr.aria-label]="t('editor.undo')"
               (click)="undo.undo()"
@@ -110,7 +110,7 @@ import { MinimapComponent } from './minimap.component';
             <button
               ncButton
               variant="ghost"
-              size="sm"
+              size="strip"
               iconOnly
               [attr.aria-label]="t('editor.redo')"
               (click)="undo.redo()"
@@ -121,7 +121,7 @@ import { MinimapComponent } from './minimap.component';
             <button
               ncButton
               variant="ghost"
-              size="sm"
+              size="strip"
               iconOnly
               [attr.aria-label]="t('editor.copy')"
               (click)="transfer('c')"
@@ -132,7 +132,7 @@ import { MinimapComponent } from './minimap.component';
             <button
               ncButton
               variant="ghost"
-              size="sm"
+              size="strip"
               iconOnly
               [attr.aria-label]="t('editor.paste')"
               (click)="transfer('v')"
@@ -200,6 +200,7 @@ import { MinimapComponent } from './minimap.component';
       <nc-panel-column [width]="PANEL_WIDTH">
         <div actions class="flex min-w-0 flex-1 items-center gap-1">
           <nc-toggle-button
+            size="strip"
             [checked]="map.grid()"
             (checkedChange)="map.setGrid($event)"
             [ncTooltip]="t('editor.map.gridHelp')"
@@ -208,6 +209,7 @@ import { MinimapComponent } from './minimap.component';
             {{ t('editor.map.grid') }}
           </nc-toggle-button>
           <nc-toggle-button
+            size="strip"
             [checked]="map.flags()"
             (checkedChange)="map.setFlags($event)"
             accent="jade"
@@ -220,7 +222,7 @@ import { MinimapComponent } from './minimap.component';
           <button
             ncButton
             variant="ghost"
-            size="sm"
+            size="strip"
             iconOnly
             class="shrink-0"
             [attr.aria-label]="t('editor.map.zoomOut')"
@@ -242,7 +244,7 @@ import { MinimapComponent } from './minimap.component';
           <button
             ncButton
             variant="ghost"
-            size="sm"
+            size="strip"
             iconOnly
             class="shrink-0"
             [attr.aria-label]="t('editor.map.zoomIn')"
