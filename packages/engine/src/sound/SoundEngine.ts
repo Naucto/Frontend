@@ -211,10 +211,10 @@ export class SoundEngine implements SoundPort {
     length: number,
     volume: number,
     channel: number | undefined,
-  ): void {
+  ): boolean {
     this.syncLibrary();
     const id = this.instrumentId(instrument);
-    if (!id) return;
+    if (!id) return false;
     this.backend.post({
       type: 'note_on',
       instrument: id,
@@ -223,6 +223,7 @@ export class SoundEngine implements SoundPort {
       length,
       channel,
     });
+    return true;
   }
 
   stopNote(channel: number): void {

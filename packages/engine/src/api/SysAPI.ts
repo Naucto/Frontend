@@ -1,8 +1,26 @@
 import type { ApiContext } from './ApiContext';
 import { EngineModule } from './EngineModule';
 
-const join = (args: unknown[]): string =>
-  args.map((a) => (typeof a === 'object' && a !== null ? JSON.stringify(a) : String(a))).join('\t');
+// A Lua value crosses the VM boundary as its JS counterpart, and `String()` of that is the JS
+// spelling: "undefined" for nil, a fengari wrapper's source for a function.
+const show = (a: unknown): string => {
+  switch (typeof a) {
+    case 'undefined':
+      return 'nil';
+    case 'boolean':
+      return a ? 'true' : 'false';
+    case 'function':
+      return 'function';
+    case 'object':
+      return a === null ? 'nil' : JSON.stringify(a);
+    case 'string':
+      return a;
+    default:
+      return String(a);
+  }
+};
+
+const join = (args: unknown[]): string => args.map(show).join('\t');
 
 /** The `sys` namespace plus the global `print`. */
 export class SysAPI extends EngineModule {

@@ -117,13 +117,14 @@ export type SongPatch = Partial<Pick<Song, 'loop'>>;
 
 export interface SoundPort {
   playSfx(slot: number, channel: number | undefined, pitchOffset: number, volume: number): void;
+  /** `instrument` is an id or a name; false when it is neither. */
   playNote(
     instrument: string,
     pitch: number,
     length: number,
     volume: number,
     channel: number | undefined,
-  ): void;
+  ): boolean;
   stopNote(channel: number): void;
   /** `loop` left undefined means what {@link setSongOverride} set for that song, else true. */
   playMusic(song: number, loop: boolean | undefined, fadeIn: number): void;

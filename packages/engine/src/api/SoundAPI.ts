@@ -6,6 +6,8 @@ import type { InstrumentPatch, PatternPatch, SongPatch } from './ports';
 
 const num = (v: unknown, d = 0): number => (typeof v === 'number' && Number.isFinite(v) ? v : d);
 const opt = (v: unknown): number | undefined => (typeof v === 'number' ? Math.floor(v) : undefined);
+// Lua truth: only nil and false are false, so `0` and `""` count as given and true.
+const truthy = (v: unknown): boolean => v !== false && v !== undefined && v !== null;
 const clamp = (v: number, b: Bound): number => Math.min(b.max, Math.max(b.min, v));
 const table = (v: unknown): Record<string, unknown> =>
   typeof v === 'object' && v !== null ? (v as Record<string, unknown>) : {};
@@ -53,7 +55,9 @@ export class SoundAPI extends EngineModule {
       },
       play_note: (inst: unknown, pitch: unknown, len?: unknown, vol?: unknown, ch?: unknown) => {
         const midi = typeof pitch === 'string' ? (noteNameToMidi(pitch) ?? 60) : num(pitch, 60);
-        s()?.playNote(String(inst), midi, num(len, 0.25), num(vol, 1), opt(ch));
+        const port = s();
+        if (port && !port.playNote(String(inst), midi, num(len, 0.25), num(vol, 1), opt(ch)))
+          warn(`sound.play_note: there is no instrument called "${String(inst)}"`);
       },
       stop_note: (ch: unknown) => {
         s()?.stopNote(Math.floor(num(ch)));
@@ -61,7 +65,7 @@ export class SoundAPI extends EngineModule {
       play_music: (song?: unknown, loop?: unknown, fade?: unknown) => {
         s()?.playMusic(
           Math.floor(num(song)),
-          loop === undefined ? undefined : Boolean(loop),
+          loop === undefined ? undefined : truthy(loop),
           num(fade),
         );
       },
@@ -122,7 +126,7 @@ export class SoundAPI extends EngineModule {
       set_music: (n: unknown, fields: unknown) => {
         const patch: SongPatch = {};
         for (const [key, v] of Object.entries(table(fields))) {
-          if (key === 'loop') patch.loop = Boolean(v);
+          if (key === 'loop') patch.loop = truthy(v);
           else warn(`sound.set_music: "${key}" is not a music field`);
         }
         const port = s();
