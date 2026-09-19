@@ -138,7 +138,7 @@ export class MinimapComponent {
   }
 
   /**
-   * The tile under the pointer.
+   * The tile under the pointer, and how far into it.
    *
    * Each axis takes its own factor. The element is stretched to the panel's width while its height
    * stays at what it was drawn, so one factor for both put every vertical aim short of where it was
@@ -147,8 +147,8 @@ export class MinimapComponent {
   private aim(e: PointerEvent): void {
     const r = this.canvas().nativeElement.getBoundingClientRect();
     this.jump.emit({
-      x: Math.floor(((e.clientX - r.left) * this.width()) / r.width / SCALE),
-      y: Math.floor(((e.clientY - r.top) * this.height()) / r.height / SCALE),
+      x: ((e.clientX - r.left) * this.width()) / r.width / SCALE,
+      y: ((e.clientY - r.top) * this.height()) / r.height / SCALE,
     });
   }
 

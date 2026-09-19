@@ -51,6 +51,8 @@ export interface TileViewport {
 const FLAG_VARS = FLAG_ACCENTS.map((a) => `--nc-${a}`);
 
 /** Every eighth grid line is the bold one, in the sky colour; the design draws the fine ones at 6%. */
+/** How much of a well the canvases hold beyond it on each side; see `win`. */
+const WINDOW_SLACK = 0.5;
 const GRID_BOLD_EVERY = 8;
 const GRID_FINE_ALPHA = 0.06;
 const GRID_BOLD_ALPHA = 0.28;
@@ -160,7 +162,13 @@ export class MapCanvasComponent {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly theme = inject(ThemeService);
   /**
-   * The part of the map the canvases hold, in drawn pixels: what the well shows, and no more.
+   * The part of the map the canvases hold, in drawn pixels: what the well shows, plus half a
+   * well on every side of it.
+   *
+   * The margin is what a pan costs nothing: the well scrolls over a canvas that is already
+   * painted, and the window only moves — and the cells in it are only painted again — once the
+   * view has come within a quarter of a well of its edge, which is once per half a well of travel.
+   * Without it every frame of a drag painted the whole well over.
    *
    * Written by `measure` and applied by `place`, in the same frame as the paint that follows: a
    * canvas is cleared by a change of size, so a size bound in the template would land a tick
@@ -331,15 +339,16 @@ export class MapCanvasComponent {
     el.scrollTop = y * t - el.clientHeight / 2;
   }
 
-  /** Scrolls so the given tile is centred. */
+  /**
+   * Scrolls so the given tile is centred.
+   *
+   * At once, not smoothly: the minimap calls this on every move of a drag, and an animation
+   * restarted on each of them never arrives — the view trailed the pointer and settled late.
+   */
   scrollToTile(x: number, y: number): void {
     const el = this.host.nativeElement;
     const t = this.tilePx();
-    el.scrollTo({
-      left: x * t - el.clientWidth / 2,
-      top: y * t - el.clientHeight / 2,
-      behavior: 'smooth',
-    });
+    el.scrollTo({ left: x * t - el.clientWidth / 2, top: y * t - el.clientHeight / 2 });
   }
 
   /** The tiles under a rectangle, row-major, as the map holds them now. */
@@ -492,22 +501,37 @@ export class MapCanvasComponent {
   private measure(): boolean {
     const el = this.host.nativeElement;
     const t = this.tilePx();
-    this.viewPx.set({ x: el.scrollLeft, y: el.scrollTop, w: el.clientWidth, h: el.clientHeight });
-    this.viewport.emit({
-      x: el.scrollLeft / t,
-      y: el.scrollTop / t,
-      w: el.clientWidth / t,
-      h: el.clientHeight / t,
-    });
+    const sx = el.scrollLeft;
+    const sy = el.scrollTop;
+    const vw = el.clientWidth;
+    const vh = el.clientHeight;
+    this.viewPx.set({ x: sx, y: sy, w: vw, h: vh });
+    this.viewport.emit({ x: sx / t, y: sy / t, w: vw / t, h: vh / t });
     const cssW = this.cssW();
     const cssH = this.cssH();
     // One pixel over: a scroll offset is not always whole, and the window starts on the whole
     // pixel below it.
-    const w = Math.min(cssW, el.clientWidth + 1);
-    const h = Math.min(cssH, el.clientHeight + 1);
-    const x = Math.max(0, Math.min(Math.floor(el.scrollLeft), cssW - w));
-    const y = Math.max(0, Math.min(Math.floor(el.scrollTop), cssH - h));
+    const w = Math.min(cssW, Math.ceil(vw * (1 + 2 * WINDOW_SLACK)) + 1);
+    const h = Math.min(cssH, Math.ceil(vh * (1 + 2 * WINDOW_SLACK)) + 1);
     const was = this.win;
+    // Settled while the view keeps a quarter of a well between itself and every edge of the
+    // window that is not also an edge of the map. Tested on the window there is rather than on
+    // the one there would be: near the map's edge the two drift apart while the view is still
+    // covered, and past it the ideal window stops moving while the view goes on.
+    const gx = (vw * WINDOW_SLACK) / 2;
+    const gy = (vh * WINDOW_SLACK) / 2;
+    if (
+      was.w === w &&
+      was.h === h &&
+      (was.x === 0 || sx >= was.x + gx) &&
+      (was.x + w >= cssW || sx + vw <= was.x + w - gx) &&
+      (was.y === 0 || sy >= was.y + gy) &&
+      (was.y + h >= cssH || sy + vh <= was.y + h - gy)
+    ) {
+      return false;
+    }
+    const x = Math.max(0, Math.min(Math.floor(sx - vw * WINDOW_SLACK), cssW - w));
+    const y = Math.max(0, Math.min(Math.floor(sy - vh * WINDOW_SLACK), cssH - h));
     if (was.x === x && was.y === y && was.w === w && was.h === h) return false;
     this.win = { x, y, w, h };
     this.dirty = null;

@@ -1,5 +1,7 @@
+import type { Locator, Page } from '@playwright/test';
+
 import { mockEditor } from './editor-mocks';
-import { expect, type Page, test } from './fixtures';
+import { expect, test } from './fixtures';
 
 test.use({ viewport: { width: 1920, height: 1030 } });
 
@@ -359,6 +361,57 @@ test.describe('editor', () => {
       'false',
     );
     await expect(page.getByRole('radiogroup', { name: 'Palette' })).toBeHidden();
+  });
+
+  /**
+   * The middle button drags the view by exactly the pointer's own distance, on both surfaces
+   * that scroll: pixel for pixel, with nothing snapped to a cell or a tile on the way.
+   */
+  const pansByHand = async (page: Page, well: Locator): Promise<void> => {
+    // Zoomed in until there is room to move both ways, then put somewhere in the middle: a zoom
+    // lands the view wherever it keeps its centre, which is nowhere a delta can be read from.
+    const room = (): Promise<number> =>
+      well.evaluate((el) =>
+        Math.min(el.scrollWidth - el.clientWidth, el.scrollHeight - el.clientHeight),
+      );
+    for (let i = 0; i < 8 && (await room()) < 400; i++) {
+      await page.getByRole('button', { name: 'Zoom in' }).click();
+    }
+    expect(await room()).toBeGreaterThanOrEqual(400);
+    // After the frame the zoom lays the view out in, which is when it writes its own offsets.
+    await page.evaluate(
+      () =>
+        new Promise((done) => {
+          requestAnimationFrame(() => requestAnimationFrame(done));
+        }),
+    );
+    await well.evaluate((el) => {
+      el.scrollLeft = 200;
+      el.scrollTop = 150;
+    });
+    await expect.poll(() => well.evaluate((el) => el.scrollLeft)).toBe(200);
+    const box = await well.boundingBox();
+    if (!box) throw new Error('well off screen');
+    const cx = box.x + box.width / 2;
+    const cy = box.y + box.height / 2;
+    await page.mouse.move(cx, cy);
+    await page.mouse.down({ button: 'middle' });
+    await page.mouse.move(cx - 120, cy - 80, { steps: 6 });
+    await page.mouse.up({ button: 'middle' });
+    await expect.poll(() => well.evaluate((el) => el.scrollLeft)).toBe(320);
+    await expect.poll(() => well.evaluate((el) => el.scrollTop)).toBe(230);
+  };
+
+  test('a middle drag pans the sheet by the distance the pointer moved', async ({ page }) => {
+    await page.goto('/edit/7/art');
+    await expect(page.getByRole('img', { name: 'Sprite canvas' })).toBeVisible();
+    await pansByHand(page, page.locator('nc-sprite-canvas'));
+  });
+
+  test('a middle drag pans the map by the distance the pointer moved', async ({ page }) => {
+    await page.goto('/edit/7/map');
+    await expect(page.getByRole('img', { name: 'Map canvas' })).toBeVisible();
+    await pansByHand(page, page.locator('nc-map-canvas'));
   });
 
   /** Read as a fraction of the content, which is the thing a zoom changes the size of. */

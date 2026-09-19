@@ -421,6 +421,15 @@
   );
 }
 
+/* A middle-button drag in progress: the cursor says so over the element and over whatever it
+   holds, since the surface under the pointer is a child that names a cursor of its own. */
+@layer components {
+  .nc-panning,
+  .nc-panning * {
+    cursor: grabbing;
+  }
+}
+
 /* CDK overlay hooks */
 @layer components {
   .nc-dialog-backdrop {

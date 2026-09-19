@@ -228,13 +228,27 @@ export class SheetViewComponent {
 
   /** Whole cell under the pointer. */
   private cellOf(e: PointerEvent): { x: number; y: number } {
+    const p = this.pointOf(e);
+    return {
+      x: Math.min(this.cols() - 1, Math.floor(p.x)),
+      y: Math.min(this.rows() - 1, Math.floor(p.y)),
+    };
+  }
+
+  /**
+   * Where the pointer is, in cells and fractions of one.
+   *
+   * The pan aims the caller's view here rather than at a whole cell: a cell of this map is a
+   * few pixels wide, and the same cell on the canvas is a sprite at whatever zoom it is drawn at,
+   * so aiming by whole cells moved the canvas in jumps of that size.
+   */
+  private pointOf(e: PointerEvent): { x: number; y: number } {
     const r = this.surface().nativeElement.getBoundingClientRect();
     const cellW = (r.width || this.width()) / this.cols();
     const cellH = (r.height || this.height()) / this.rows();
-    const clamp = (v: number, n: number): number => Math.max(0, Math.min(n - 1, Math.floor(v)));
     return {
-      x: clamp((e.clientX - r.left) / cellW, this.cols()),
-      y: clamp((e.clientY - r.top) / cellH, this.rows()),
+      x: Math.max(0, Math.min(this.cols(), (e.clientX - r.left) / cellW)),
+      y: Math.max(0, Math.min(this.rows(), (e.clientY - r.top) / cellH)),
     };
   }
 
@@ -265,7 +279,7 @@ export class SheetViewComponent {
       e.preventDefault();
       this.surface().nativeElement.setPointerCapture(e.pointerId);
       this.panning = true;
-      this.panTo.emit(this.cellOf(e));
+      this.panTo.emit(this.pointOf(e));
       return;
     }
     if (e.button !== 0) return;
@@ -292,7 +306,7 @@ export class SheetViewComponent {
 
   protected onMove(e: PointerEvent): void {
     if (this.panning) {
-      this.panTo.emit(this.cellOf(e));
+      this.panTo.emit(this.pointOf(e));
       return;
     }
     const d = this.drag;
