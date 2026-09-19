@@ -8,7 +8,7 @@ describe('EditorUiStore', () => {
   const store = (): InstanceType<typeof EditorUiStore> =>
     TestBed.configureTestingModule({ providers: [EditorUiStore] }).inject(EditorUiStore);
 
-  // The store now reads storage when it is made, so what one test writes must not reach the next.
+  // The store reads storage as it is made: what one test writes must not reach the next.
   beforeEach(() => {
     installMemoryStorage();
     TestBed.resetTestingModule();
