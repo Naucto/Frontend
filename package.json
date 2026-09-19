@@ -25,6 +25,8 @@
     "test": "npm run test --workspaces --if-present",
     "e2e": "npm run docs:build && playwright test",
     "docs:build": "node tools/docs-build.mjs",
+    "docs:check": "node docs/scripts/validate.mjs",
+    "docs:shots": "mkdir -p node_modules/.cache/docs-shots && node tools/seed-content.mjs --content-only node_modules/.cache/docs-shots/platformer.bin 'Platformer Tutorial' && playwright test --project docs-shots",
     "icons:check": "node tools/build-icons.mjs --check",
     "i18n:check": "node tools/i18n-check.mjs",
     "cache:check": "node tools/cache-check.mjs",

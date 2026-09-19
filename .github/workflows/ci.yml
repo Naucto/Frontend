@@ -29,6 +29,9 @@ jobs:
       - run: npx commitlint --from origin/${{ github.base_ref }} --to HEAD
         if: github.event_name == 'pull_request'
       - run: npm run docs:build
+      # The submodule's own checks, here too: a broken link or an undocumented parameter in the
+      # docs is a broken page in this app.
+      - run: npm run docs:check
       - run: npm run format:check
       - run: npm run lint
       # Catches a regenerate that lost the design's glyph overrides, which would otherwise put

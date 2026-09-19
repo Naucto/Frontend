@@ -30,15 +30,21 @@ const project = {
 /**
  * Mocks enough of the API for the editor to open project 7 — as its host unless `hostId` names
  * someone else, in which case user 1 is a collaborator in a room somebody else hosts. The server's
- * cap on named versions is `maxCheckpoints`, generous unless a test is about the cap.
+ * cap on named versions is `maxCheckpoints`, generous unless a test is about the cap. The game
+ * opens empty unless `content` is a saved document, which is what a capture for the docs wants.
  */
 export async function mockEditor(
   page: Page,
-  { hostId = 1, maxCheckpoints = 20 }: { hostId?: number; maxCheckpoints?: number } = {},
+  {
+    hostId = 1,
+    maxCheckpoints = 20,
+    theme = 'dark',
+    content = Buffer.alloc(0),
+  }: { hostId?: number; maxCheckpoints?: number; theme?: 'dark' | 'light'; content?: Buffer } = {},
 ): Promise<void> {
-  await page.addInitScript(() => {
-    localStorage.setItem('naucto.theme', 'dark');
-  });
+  await page.addInitScript((t) => {
+    localStorage.setItem('naucto.theme', t);
+  }, theme);
   await page.route('**/auth/refresh', (r) => r.fulfill({ json: { access_token: 'tok' } }));
   await page.route('**/users/profile', (r) =>
     r.fulfill({
@@ -72,7 +78,7 @@ export async function mockEditor(
   );
   await page.route('**/work-sessions/leave/7', (r) => r.fulfill({ status: 204, body: '' }));
   await page.route('**/projects/7/fetchContent', (r) =>
-    r.fulfill({ status: 200, body: Buffer.alloc(0), contentType: 'application/octet-stream' }),
+    r.fulfill({ status: 200, body: content, contentType: 'application/octet-stream' }),
   );
   await page.route('**/projects/7/saveContent', (r) => r.fulfill({ json: { id: 7 } }));
   await page.route('**/projects/7/image', (r) => r.fulfill({ status: 204, body: '' }));

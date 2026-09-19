@@ -11,10 +11,17 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'chromium', testIgnore: /\/docs\//, use: { ...devices['Desktop Chrome'] } },
     // A second engine only for the frame-rate baseline; the rest of the suite pins DOM contracts
     // that do not depend on which browser renders them.
     { name: 'firefox', testMatch: /perf\.spec\.ts/, use: { ...devices['Desktop Firefox'] } },
+    // Not a test run: the captures the documentation shows, taken from seeded content so they can
+    // be taken again when the app changes. Run with `npm run docs:shots`, never by `npm run e2e`.
+    {
+      name: 'docs-shots',
+      testDir: 'e2e/docs',
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
+    },
   ],
   webServer: process.env.E2E_BASE_URL
     ? undefined
