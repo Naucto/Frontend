@@ -337,7 +337,7 @@ const FILTERS = [
         </div>
         <div class="flex flex-wrap gap-0.5">
           @for (p of usedBy().patterns; track p.id) {
-            <nc-chip>{{ p.name }}</nc-chip>
+            <nc-chip>{{ t('editor.sound.pattern') }} {{ pad(p.slot) }}</nc-chip>
           }
           @for (s of usedBy().sfx; track s) {
             <nc-chip>SFX {{ pad(s) }}</nc-chip>

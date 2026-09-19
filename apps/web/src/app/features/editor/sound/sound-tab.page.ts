@@ -63,11 +63,15 @@ import { VoicesLaneComponent } from './voices-lane.component';
 const ZOOM_OCTAVES = Math.log2(MAX_ZOOM / MIN_ZOOM);
 
 /**
- * The header's content width under which its captions go, the same threshold as the container
- * query in its template: the query can hide a caption, but a number field's printed name is a
- * binding, and a binding needs the width as a value.
+ * The roll column's width under which the pattern bar is at the floor, the same threshold as the
+ * container query in its template: the query can tighten the bar's gaps, but a number field's
+ * printed name and a button's size are bindings, and a binding needs the width as a value.
+ *
+ * At the editor's own floor two rows of the bar's boxes still do not fit: the PATTERN field alone
+ * gives up its printed name, undo and redo take the trash's size, and the gaps close up. BPM and
+ * STEPS keep their names whatever the width: an unlabelled number is not a control.
  */
-const BAR_CAPTIONS_MIN = 900;
+const BAR_TIGHT_MAX = 440;
 const BPM_MIN = 40;
 const BPM_MAX = 240;
 
@@ -118,7 +122,12 @@ const PATTERN_MAX = 99;
     VoicesLaneComponent,
   ],
   template: `
-    <div *transloco="let t" class="grid h-full grid-cols-[276px_minmax(0,1fr)_auto]">
+    <!-- Under 1280 the instrument column narrows to what the two banks need, which is four boxes
+         of the music grid across, and the roll takes the difference. -->
+    <div
+      *transloco="let t"
+      class="grid h-full grid-cols-[200px_minmax(0,1fr)_auto] min-[1280px]:grid-cols-[276px_minmax(0,1fr)_auto]"
+    >
       <!-- A column, not a stack: the instrument list takes what is left after the two banks, so
            they keep their place at the bottom however many instruments there are. The banks stand
            at a fixed height, so on a screen too short for all three the column scrolls rather than
@@ -157,16 +166,20 @@ const PATTERN_MAX = 99;
         />
       </aside>
 
-      <section class="flex min-h-0 flex-col">
+      <!-- The container is the column and not the bar, because a container query answers to an
+           ancestor: the bar's own height and wrapping have to be asked of the box around it. -->
+      <section #column class="@container flex min-h-0 flex-col">
         @if (pattern(); as p) {
           <!-- The roll column is what the instrument list and the inspector leave of the window,
-               and at a laptop width that is less than this bar's captions need. Below the width in
-               BAR_CAPTIONS_MIN the toggles drop their words and the number fields their printed
-               names; both keep their accessible name. Never wrapped: the bar's single baseline is
-               the one the other two columns share. -->
+               and at a laptop width that is less than this bar needs on one line. Wide enough,
+               the bar's single baseline is the one the other two columns share, and the toggles'
+               words come back at 900. Below 780 the bar takes a second 40px row -- the transport
+               group above, the number fields and undo beside them below -- and the roll starts
+               under it. A designed second row, not a wrap inside the 40px the bar used to be
+               given: that is what once folded the inspector's chips out of their bar and over the
+               scope. Below BAR_TIGHT_MAX the rows close their gaps. -->
           <header
-            #bar
-            class="@container flex h-(--nc-bar-h) shrink-0 items-center gap-1 overflow-x-auto border-b border-line bg-panel px-2"
+            class="flex h-(--nc-bar-h) shrink-0 items-center gap-1 overflow-x-auto border-b border-line bg-panel px-2 @max-[780px]:h-[calc(2*var(--nc-bar-h))] @max-[780px]:flex-wrap @max-[780px]:content-start @max-[440px]:gap-0.5 @max-[440px]:px-1"
           >
             <!-- A number you type or step, not a menu: the design says so in its own words for
                  BPM and STEPS, and a pattern is the same kind of thing. The arrows walk the
@@ -174,7 +187,7 @@ const PATTERN_MAX = 99;
             <nc-number-field
               class="h-(--nc-transport-h) shrink-0"
               fill
-              [label]="compactBar() ? '' : t('editor.sound.pattern')"
+              [label]="tightBar() ? '' : t('editor.sound.pattern')"
               [ariaLabel]="t('editor.sound.pattern')"
               [value]="p.slot"
               [max]="PATTERN_MAX"
@@ -227,14 +240,16 @@ const PATTERN_MAX = 99;
               <nc-icon name="metronome" [size]="24" />
               <span class="hidden @min-[900px]:inline">{{ t('editor.sound.metronome') }}</span>
             </nc-toggle-button>
-            <span class="flex-1"></span>
+            <!-- The spring between the two groups on one line; on two it is the line break,
+                 taking a whole line of no height so the number fields start the next. -->
+            <span class="flex-1 @max-[780px]:basis-full"></span>
             <!-- Number fields, not menus of blessed values: the sheet says so in its own words,
                  "type a value or step with the arrows. Not a dropdown." A strip of seven tempos
                  read as the only seven anyone was allowed. -->
             <nc-number-field
               class="h-(--nc-transport-h) shrink-0"
               fill
-              [label]="compactBar() ? '' : t('editor.sound.bpm')"
+              [label]="t('editor.sound.bpm')"
               [ariaLabel]="t('editor.sound.bpm')"
               [value]="p.bpm"
               [min]="BPM_MIN"
@@ -244,7 +259,7 @@ const PATTERN_MAX = 99;
             <nc-number-field
               class="h-(--nc-transport-h) shrink-0"
               fill
-              [label]="compactBar() ? '' : t('editor.sound.steps')"
+              [label]="t('editor.sound.steps')"
               [ariaLabel]="t('editor.sound.steps')"
               [value]="p.steps"
               [min]="STEP_SIZE"
@@ -255,7 +270,7 @@ const PATTERN_MAX = 99;
             <button
               ncButton
               variant="ghost"
-              size="strip"
+              [size]="tightBar() ? 'sm' : 'strip'"
               iconOnly
               [attr.aria-label]="t('editor.undo')"
               (click)="undo.undo()"
@@ -266,7 +281,7 @@ const PATTERN_MAX = 99;
             <button
               ncButton
               variant="ghost"
-              size="strip"
+              [size]="tightBar() ? 'sm' : 'strip'"
               iconOnly
               [attr.aria-label]="t('editor.redo')"
               (click)="undo.redo()"
@@ -425,8 +440,8 @@ export class SoundTabPage {
   protected readonly STEP_SIZE = STEP_SIZE;
   protected readonly STEP_MAX = STEP_MAX;
   protected readonly PATTERN_MAX = PATTERN_MAX;
-  private readonly bar = viewChild<ElementRef<HTMLElement>>('bar');
-  protected readonly compactBar = signal(false);
+  private readonly column = viewChild<ElementRef<HTMLElement>>('column');
+  protected readonly tightBar = signal(false);
   protected readonly String = String;
   private readonly backend = new WebAudioBackend();
   private readonly engine = new SoundEngine(this.backend, this.session.game);
@@ -511,13 +526,14 @@ export class SoundTabPage {
         });
       }
     });
-    // The bar comes and goes with the pattern, so the observer follows the element, not the page.
+    // The column rather than the bar: the bar comes and goes with the pattern, and this is the box
+    // the bar's own container queries measure.
     effect((onCleanup) => {
-      const el = this.bar()?.nativeElement;
+      const el = this.column()?.nativeElement;
       if (!el) return;
       const ro = new ResizeObserver((entries) => {
         const w = entries[0]?.contentRect.width;
-        if (w !== undefined) this.compactBar.set(w < BAR_CAPTIONS_MIN);
+        if (w !== undefined) this.tightBar.set(w < BAR_TIGHT_MAX);
       });
       ro.observe(el);
       onCleanup(() => {

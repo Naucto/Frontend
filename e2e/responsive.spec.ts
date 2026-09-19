@@ -120,13 +120,14 @@ for (const width of [1280, 1440]) {
 /**
  * The SOUND header sits in the roll column, which is what the instrument list and the inspector
  * leave of the window. On a laptop its captions used to push the last fields past the column's
- * edge, into a scroll nobody saw. 1920 is where the captions come back, and has to hold them.
+ * edge, into a scroll nobody saw; then the fields kept their place by dropping their names. The
+ * narrowest width is the editor's floor; the widest is where the toggles' words come back.
  */
-for (const width of [1280, 1440, 1920]) {
+for (const width of [1024, 1152, 1280, 1440, 1920]) {
   test.describe(`SOUND header (${String(width)}px)`, () => {
     test.use({ viewport: { width, height: 900 } });
 
-    test('keeps the STEPS field inside the roll column', async ({ page }) => {
+    test('keeps the STEPS field, with its name, inside the roll column', async ({ page }) => {
       await mockEditor(page);
       await page.goto('/edit/7/sound');
       await page.getByRole('button', { name: 'Add instrument' }).first().click();
@@ -136,12 +137,15 @@ for (const width of [1280, 1440, 1920]) {
         .click();
       const steps = page.getByRole('textbox', { name: 'Steps' });
       await expect(steps).toBeVisible();
+      const box = steps.locator('xpath=ancestor::nc-number-field');
+      await expect(box.locator('.label')).toHaveText('Steps');
       const [field, bar] = await Promise.all([
-        steps.locator('xpath=ancestor::nc-number-field').boundingBox(),
+        box.boundingBox(),
         steps.locator('xpath=ancestor::header').boundingBox(),
       ]);
       if (!field || !bar) throw new Error('header off screen');
       expect(field.x + field.width).toBeLessThanOrEqual(bar.x + bar.width);
+      expect(field.y + field.height).toBeLessThanOrEqual(bar.y + bar.height);
     });
   });
 }
