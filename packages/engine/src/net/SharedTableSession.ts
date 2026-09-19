@@ -359,6 +359,16 @@ export class SharedTableSession implements Destroyable {
     this._scheduleFlush();
   }
 
+  // A guest's writes leave in a microtask batch, but a lock, queue or event request goes out
+  // as it is made. A release sent from inside a lock callback would overtake the writes made
+  // there: the host frees the lock, grants the next waiter, and only then applies the previous
+  // holder's write, so the next holder reads stale state. Push the batch first so the host
+  // sees the two in the order the game meant them.
+  private _sendOrdered(request: RequestPayload): void {
+    this._flush();
+    this._transport.sendRequest(request);
+  }
+
   emit(name: string, payload: unknown): void {
     if (this._isHost) {
       this._transport.broadcastState({
@@ -370,7 +380,7 @@ export class SharedTableSession implements Destroyable {
       return;
     }
 
-    this._transport.sendRequest({ kind: 'event', name, payload });
+    this._sendOrdered({ kind: 'event', name, payload });
   }
 
   onChange(pattern: string, cb: TableChangeListener): void {
@@ -419,7 +429,7 @@ export class SharedTableSession implements Destroyable {
 
     const reqId = `${this._transport.selfUserId}-lock-${this._reqCounter++}`;
     this._pendingLocks.set(reqId, onGranted);
-    this._transport.sendRequest({ kind: 'lock', reqId, path, action: 'acquire' });
+    this._sendOrdered({ kind: 'lock', reqId, path, action: 'acquire' });
   }
 
   releaseLock(path: string): void {
@@ -428,7 +438,7 @@ export class SharedTableSession implements Destroyable {
       return;
     }
 
-    this._transport.sendRequest({ kind: 'lock', reqId: '', path, action: 'release' });
+    this._sendOrdered({ kind: 'lock', reqId: '', path, action: 'release' });
   }
 
   queuePush(path: string, value: unknown): void {
@@ -437,7 +447,7 @@ export class SharedTableSession implements Destroyable {
       return;
     }
 
-    this._transport.sendRequest({ kind: 'queue', reqId: '', path, op: 'push', value });
+    this._sendOrdered({ kind: 'queue', reqId: '', path, op: 'push', value });
   }
 
   queuePop(path: string, onResult: (value: unknown) => void): void {
@@ -448,7 +458,7 @@ export class SharedTableSession implements Destroyable {
 
     const reqId = `${this._transport.selfUserId}-pop-${this._reqCounter++}`;
     this._pendingPops.set(reqId, onResult);
-    this._transport.sendRequest({ kind: 'queue', reqId, path, op: 'pop' });
+    this._sendOrdered({ kind: 'queue', reqId, path, op: 'pop' });
   }
 
   isLocked(path: string): boolean {
@@ -595,6 +605,10 @@ export class SharedTableSession implements Destroyable {
     if (!isRecord(payload)) return;
 
     if (payload.kind === 'event') {
+      // A write the host just applied is still waiting for its microtask to be broadcast, while
+      // the relay below leaves now; every peer would hear the event before the state it was
+      // sent about. Same for a lock grant, below.
+      this._flush();
       this._transport.broadcastState({
         kind: 'event',
         name: payload.name,
@@ -911,7 +925,10 @@ export class SharedTableSession implements Destroyable {
     grant: (() => void) | undefined,
   ): void {
     if (userId === this._transport.selfUserId) grant?.();
-    else if (reqId !== undefined) this._transport.respondTo(userId, { kind: 'lock-grant', reqId });
+    else if (reqId !== undefined) {
+      this._flush();
+      this._transport.respondTo(userId, { kind: 'lock-grant', reqId });
+    }
   }
 
   /** Who holds the lock at `path` (editor tooling). */

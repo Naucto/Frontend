@@ -513,6 +513,56 @@ describe('SharedTableSession', () => {
     expect(order).toEqual(['host', 'slave']);
   });
 
+  it("applies a guest's writes before the release it made after them", async () => {
+    const hub = new Hub();
+    const host = makeSession('host', 1, hub);
+    const slaveA = makeSession('slave', 2, hub);
+    const slaveB = makeSession('slave', 3, hub);
+
+    const order: string[] = [];
+    let seenByB: unknown = 'unread';
+    host.onChange('coins.3.taken', () => order.push('write'));
+    host.acquireLock('coins', () => order.push('host'));
+    slaveA.acquireLock('coins', () => {
+      slaveA.setValue('coins.3.taken', true);
+      slaveA.releaseLock('coins');
+    });
+    slaveB.acquireLock('coins', () => {
+      order.push('B');
+      seenByB = slaveB.getValue('coins.3.taken');
+    });
+    await flush();
+
+    expect(order).toEqual(['host']);
+
+    host.releaseLock('coins');
+    await flush();
+
+    expect(order).toEqual(['host', 'write', 'B']);
+    expect(seenByB).toBe(true);
+  });
+
+  it("delivers a guest's write before the event it emitted after it", async () => {
+    const hub = new Hub();
+    const host = makeSession('host', 1, hub);
+    const slaveA = makeSession('slave', 2, hub);
+    const slaveB = makeSession('slave', 3, hub);
+
+    const hostOrder: string[] = [];
+    const bOrder: string[] = [];
+    host.onChange('score', () => hostOrder.push('state'));
+    host.onEvent('scored', () => hostOrder.push('event'));
+    slaveB.onChange('score', () => bOrder.push('state'));
+    slaveB.onEvent('scored', () => bOrder.push('event'));
+
+    slaveA.setValue('score', 1);
+    slaveA.emit('scored', {});
+    await flush();
+
+    expect(hostOrder).toEqual(['state', 'event']);
+    expect(bOrder).toEqual(['state', 'event']);
+  });
+
   it('serializes a queue across host and slave, FIFO', async () => {
     const hub = new Hub();
     const host = makeSession('host', 1, hub);
