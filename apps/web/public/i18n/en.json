@@ -235,7 +235,8 @@
     "noPublished": "Nothing published yet.",
     "editorSoon": "The editor lands in the next stack layer.",
     "backToGames": "Back to my games",
-    "loadFailed": "Could not load your games"
+    "loadFailed": "Could not load your games",
+    "createFailed": "Could not create a new game"
   },
   "game": {
     "haltedTitle": "The game stopped on an error",

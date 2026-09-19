@@ -141,6 +141,7 @@ export class RuntimeHostService {
       },
       engine.onStateChange((s) => {
         this.state.set(s);
+        if (s === 'running') this.error.set(null);
       }),
       engine.onError((e) => {
         this.error.set(e);
@@ -200,13 +201,18 @@ export class RuntimeHostService {
   stop(): void {
     this.engine?.stop();
   }
-  /** Reload code without losing the screen (editor auto-run). */
+  /**
+   * Reload code without losing the screen (editor auto-run). A game nobody started stays that way;
+   * a running or halted one runs the new code; a paused one gets it loaded and stays paused.
+   */
   reload(): void {
     const e = this.engine;
     if (!e) return;
-    const wasRunning = e.currentState === 'running';
+    const was = e.currentState;
+    if (was === 'idle') return;
     e.stop();
-    if (wasRunning) e.run();
+    if (was === 'paused') e.load();
+    else e.run();
   }
   screenshot(): Uint8ClampedArray | null {
     return this.engine?.screenshot() ?? null;

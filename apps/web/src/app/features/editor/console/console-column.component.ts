@@ -164,7 +164,6 @@ const PIP_GRIPS: readonly { grip: PipGrip; box: string; cursor: string }[] = [
             compact
             debug
             [overlay]="popped()"
-            [showFps]="true"
             (mounted)="onMounted()"
           >
             <nc-toggle
@@ -224,7 +223,8 @@ const PIP_GRIPS: readonly { grip: PipGrip; box: string; cursor: string }[] = [
                 <div>CPU {{ runtime.cpu() }}%</div>
                 <div>FRAME {{ runtime.frame() }}</div>
                 <div>STATE {{ runtime.state() }}</div>
-                <div>PEERS {{ session.collaborators().length }}</div>
+                <div>PLAYERS {{ players() }}</div>
+                <div>EDITORS {{ session.collaborators().length }}</div>
                 <div>SYNC {{ session.synced() ? 'synced' : 'pending' }}</div>
               </nc-lcd>
             }
@@ -293,6 +293,14 @@ export class ConsoleColumnComponent {
   private readonly errorCount = computed(
     () => this.lines().filter((l) => l.level === 'error').length,
   );
+  protected readonly players = computed(() => {
+    const bridge = this.editorRuntime.bridge();
+    const session = bridge?.session();
+    const info = bridge?.info();
+    if (!bridge || !session || !info) return '—';
+    const others = bridge.peers().filter((p) => p !== session.selfUserId).length;
+    return `${String(others + 1)} / ${String(info.maxPlayers)}`;
+  });
 
   constructor() {
     afterRenderEffect(() => {
