@@ -104,6 +104,24 @@ for (const theme of THEMES) {
       await page.keyboard.press('Escape');
     });
 
+    test('net', async ({ page }) => {
+      await page.goto('/edit/7/net');
+      // Declared before any session: the tree is otherwise an empty state.
+      await page.getByRole('button', { name: 'Declare a path' }).click();
+      await page.getByPlaceholder('key').fill('score');
+      await page.keyboard.press('Enter');
+      await page.getByTitle('Add child node').first().click();
+      await page.getByPlaceholder('key').fill('winner');
+      await page.keyboard.press('Enter');
+      const winner = page.getByRole('row').filter({ hasText: 'winner' });
+      await winner.getByTitle('Clients can write this path').click();
+      await page.waitForTimeout(500);
+      await shoot(page, 'net', theme);
+      await shoot(page, 'net-state', theme, page.locator('nc-net-tab-page section').first());
+      await shoot(page, 'net-session', theme, page.locator('nc-panel-column').first());
+      await shoot(page, 'net-rig', theme, section(page, 'Test rig'));
+    });
+
     test('game', async ({ page }) => {
       // A history worth showing: the mock's empty lists would picture the panel with nothing in it.
       await page.route('**/projects/7/versions', (r) =>
