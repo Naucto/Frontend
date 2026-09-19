@@ -1,4 +1,4 @@
-import { Game } from '@naucto/engine';
+import { Game, INSTRUMENT_PRESETS } from '@naucto/engine';
 import { beforeEach, describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
 
@@ -11,6 +11,22 @@ describe('SoundLibrary', () => {
   beforeEach(() => {
     game = new Game(new Y.Doc());
     library = new SoundLibrary(game);
+  });
+
+  it('names a new instrument from the pool, and a preset-born one after the preset', () => {
+    expect(library.addInstrument().name).toBe('lead');
+    const hat = INSTRUMENT_PRESETS.find((p) => p.name === 'Noise hat');
+    if (!hat) throw new Error('no such preset');
+    const born = library.addInstrument({ name: hat.name, settings: hat.settings });
+    expect(born.name).toBe('Noise hat');
+    expect(born.osc).toBe('noise');
+    expect(born.filter.type).toBe('hp');
+    // Told apart by a number the second time, since the list shows names and nothing else.
+    expect(library.addInstrument({ name: hat.name, settings: hat.settings }).name).toBe(
+      'Noise hat 2',
+    );
+    // Each has an id of its own; the settings carry none.
+    expect(new Set([...library.instruments().keys()]).size).toBe(3);
   });
 
   it('gives a new pattern the lowest free number, and reuses one that was freed', () => {

@@ -71,16 +71,7 @@ const FILTERS = [
       <section class="border-b border-line p-1.5">
         <div class="mb-1 flex items-center justify-between">
           <span class="label text-ink-3">{{ t('editor.sound.oscillator') }}</span>
-          <span class="flex items-center gap-1">
-            <button ncButton variant="ghost" size="sm" (click)="presetsRequested.emit()">
-              {{ t('editor.sound.presets') }}
-              <nc-icon name="chevron-down" [size]="12" />
-            </button>
-            <nc-help-dot
-              [title]="t('editor.sound.oscillator')"
-              [text]="t('editor.sound.oscHelp')"
-            />
-          </span>
+          <nc-help-dot [title]="t('editor.sound.oscillator')" [text]="t('editor.sound.oscHelp')" />
         </div>
         <div class="grid grid-cols-3 gap-0.5" role="radiogroup">
           @for (o of oscs; track o.value) {
@@ -366,8 +357,6 @@ export class InstrumentInspectorComponent {
   readonly palette = input.required<readonly string[]>();
   readonly usedBy = input.required<{ patterns: Pattern[]; sfx: number[] }>();
   readonly patched = output<Partial<Instrument>>();
-  /** The PRESETS button: the page owns the dialog and the engine that lets one be heard. */
-  readonly presetsRequested = output();
   /** Base64 PCM keyed by sample id — the game document's own `samples` map. */
   readonly samples = input.required<Map<string, string>>();
   /** Emitted with the encoded PCM (or null to drop it); the library owns the document write. */

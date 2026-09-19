@@ -68,6 +68,15 @@ async function lit(page: Page, x: number, y: number): Promise<boolean> {
   return r + g + b > 120;
 }
 
+/** The SOUND tab's + button, answered with a blank instrument. */
+const addInstrument = async (page: Page): Promise<void> => {
+  await page.getByRole('button', { name: 'Add instrument' }).first().click();
+  await page
+    .getByRole('dialog', { name: 'New instrument' })
+    .getByRole('button', { name: 'Custom' })
+    .click();
+};
+
 test.describe('editor', () => {
   test.beforeEach(async ({ page }) => {
     await mockEditor(page);
@@ -1242,7 +1251,7 @@ test.describe('editor', () => {
 
   test('the roll ends where the pattern ends', async ({ page }) => {
     await page.goto('/edit/7/sound');
-    await page.getByRole('button', { name: 'Add instrument' }).first().click();
+    await addInstrument(page);
     const roll = page.getByRole('img', { name: 'Piano roll' });
     await expect(roll).toBeVisible();
 
@@ -1266,7 +1275,7 @@ test.describe('editor', () => {
   /** Three independent mechanisms, so none of these assertions stands in for another. */
   test('the head can be dragged, rewound and resumed', async ({ page }) => {
     await page.goto('/edit/7/sound');
-    await page.getByRole('button', { name: 'Add instrument' }).first().click();
+    await addInstrument(page);
     const roll = page.getByRole('img', { name: 'Piano roll' });
     await expect(roll).toBeVisible();
     const box = await roll.boundingBox();
@@ -1468,7 +1477,7 @@ test.describe('editor', () => {
 
   test('SOUND tab adds an instrument and paints notes', async ({ page }) => {
     await page.goto('/edit/7/sound');
-    await page.getByRole('button', { name: 'Add instrument' }).first().click();
+    await addInstrument(page);
     const roll = page.getByRole('img', { name: 'Piano roll' });
     await expect(roll).toBeVisible();
     const box = await roll.boundingBox();
@@ -1495,34 +1504,63 @@ test.describe('editor', () => {
 
   test('a preset changes the sound and keeps the name', async ({ page }) => {
     await page.goto('/edit/7/sound');
-    await page.getByRole('button', { name: 'Add instrument' }).first().click();
-    await expect(page.getByRole('radio', { name: 'Square' })).toHaveAttribute(
-      'aria-checked',
-      'true',
-    );
+    await addInstrument(page);
+    const c4 = page.getByRole('button', { name: 'C4', exact: true });
+    const d4 = page.getByRole('button', { name: 'D4', exact: true });
+    const at = async (key: Locator): Promise<[number, number]> => {
+      const box = await key.boundingBox();
+      if (!box) throw new Error('key off screen');
+      return [box.x + 10, box.y + box.height / 2];
+    };
 
-    await page.getByRole('button', { name: 'Presets' }).click();
-    const dialog = page.getByRole('dialog', { name: 'Presets' });
-    await expect(dialog.getByRole('radio')).toHaveCount(23);
-    // A shelf shows its own family and nothing else.
-    await dialog.getByRole('tab', { name: 'Drums' }).click();
-    await expect(dialog.getByRole('radio')).toHaveCount(5);
-    await dialog.getByRole('radio', { name: 'Noise hat' }).click();
-    await expect(dialog.getByRole('radio', { name: 'Noise hat' })).toHaveAttribute(
-      'aria-checked',
-      'true',
-    );
-    await page.screenshot({ path: 'test-results/v-editor-sound-presets.png' });
-    await dialog.getByRole('button', { name: 'Apply' }).click();
-    await expect(dialog).toBeHidden();
+    await page.mouse.move(...(await at(c4)));
+    await page.mouse.down();
+    await expect(c4).toHaveAttribute('aria-pressed', 'true');
+    // The button stays down: the key changes under the pointer, and the sound with it.
+    await page.mouse.move(...(await at(d4)), { steps: 4 });
+    await expect(d4).toHaveAttribute('aria-pressed', 'true');
+    await expect(c4).toHaveAttribute('aria-pressed', 'false');
+    await page.mouse.up();
+    await expect(d4).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  test('an instrument is born from a preset, under its name', async ({ page }) => {
+    await page.goto('/edit/7/sound');
+    const born = async (): Promise<void> => {
+      await page.getByRole('button', { name: 'Add instrument' }).first().click();
+      const dialog = page.getByRole('dialog', { name: 'New instrument' });
+      const tall = async (): Promise<number> => (await dialog.boundingBox())?.height ?? 0;
+      const height = await tall();
+      await dialog.getByRole('button', { name: 'From a preset' }).click();
+      await expect(dialog.getByRole('radio')).toHaveCount(23);
+      // One box, one height: the step and the shelf change what is in it and nothing else.
+      expect(await tall()).toBe(height);
+      await dialog.getByRole('tab', { name: 'Drums' }).click();
+      await expect(dialog.getByRole('radio')).toHaveCount(5);
+      expect(await tall()).toBe(height);
+      await dialog.getByRole('radio', { name: 'Noise hat' }).click();
+      await expect(dialog.getByRole('radio', { name: 'Noise hat' })).toHaveAttribute(
+        'aria-checked',
+        'true',
+      );
+      await page.screenshot({ path: 'test-results/v-editor-sound-presets.png' });
+      await dialog.getByRole('button', { name: 'Create' }).click();
+      await expect(dialog).toBeHidden();
+    };
+
+    await born();
     await expect(page.getByRole('radio', { name: 'Noise', exact: true })).toHaveAttribute(
       'aria-checked',
       'true',
     );
-    // The preset is the sound, not the instrument: what the list calls it is untouched.
     const rows = page.getByRole('listbox', { name: 'Instruments' }).getByRole('option');
     await expect(rows).toHaveCount(1);
-    await expect(rows.first()).toContainText('lead');
+    await expect(rows.first()).toContainText('Noise hat');
+
+    // The same preset again is the same name, told apart by a number.
+    await born();
+    await expect(rows).toHaveCount(2);
+    await expect(rows.nth(1)).toContainText('Noise hat 2');
   });
 });
 

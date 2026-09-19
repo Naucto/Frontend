@@ -5,6 +5,7 @@ import {
   defaultSong,
   type Game,
   type Instrument,
+  type InstrumentPreset,
   LOCAL_ORIGIN,
   type Note,
   type Pattern,
@@ -15,6 +16,8 @@ import {
 import { ACCENT_SLOTS } from '../accent-slots';
 
 const NAMES = ['lead', 'bass', 'drum', 'pad', 'clap', 'arp', 'pluck', 'kick', 'snare', 'bell'];
+/** As long as the rename dialog lets a name be. */
+const INSTRUMENT_NAME_MAX = 16;
 
 /** Reactive view of the game's sound library (instruments, patterns, sfx slots) with edit helpers. */
 export class SoundLibrary {
@@ -85,10 +88,26 @@ export class SoundLibrary {
 
   // ---- instruments ----------------------------------------------------------
 
-  addInstrument(): Instrument {
+  /**
+   * A new instrument: the default sound under the next free name of the pool, or a preset's
+   * sound under the preset's own name — numbered where the name is already taken, since two
+   * instruments the list calls the same thing cannot be told apart in it.
+   */
+  addInstrument(from?: { name: string; settings: InstrumentPreset }): Instrument {
     const used = new Set([...this.instruments().values()].map((i) => i.name));
-    const name = NAMES.find((n) => !used.has(n)) ?? `inst ${String(this.instruments().size + 1)}`;
-    const inst = defaultInstrument(uid(), name);
+    let name: string;
+    if (from) {
+      const base = from.name.slice(0, INSTRUMENT_NAME_MAX);
+      name = base;
+      for (let n = 2; used.has(name); n++) {
+        const suffix = ` ${String(n)}`;
+        name = base.slice(0, INSTRUMENT_NAME_MAX - suffix.length) + suffix;
+      }
+    } else {
+      name = NAMES.find((n) => !used.has(n)) ?? `inst ${String(this.instruments().size + 1)}`;
+    }
+    const inst: Instrument = { ...defaultInstrument(uid(), name), ...from?.settings, id: uid() };
+    inst.name = name;
     inst.colour = ACCENT_SLOTS[this.instruments().size % ACCENT_SLOTS.length] ?? ACCENT_SLOTS[0];
     this.game.transact(() => {
       this.game.setInstrument(inst);
