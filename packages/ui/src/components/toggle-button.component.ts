@@ -24,8 +24,8 @@ const ACTIVE: Record<ToggleAccent, string> = {
       [attr.aria-label]="label()"
       [disabled]="disabled()"
       (click)="press()"
-      class="control-type tracking-tag inline-flex h-(--nc-control-h) font-mono whitespace-nowrap uppercase cursor-pointer items-center gap-0.5 rounded-sm border border-line bg-transparent px-1 text-ink-4 transition-[color] duration-100 hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
-      [class]="active()"
+      class="control-type tracking-tag inline-flex font-mono whitespace-nowrap uppercase cursor-pointer items-center gap-0.5 rounded-sm border border-line bg-transparent px-1 text-ink-4 transition-[color] duration-100 hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
+      [class]="active() + ' ' + height()"
     >
       <ng-content />
     </button>
@@ -38,6 +38,8 @@ export class ToggleButtonComponent {
   readonly disabled = input(false);
   readonly label = input<string>();
   readonly accent = input<ToggleAccent>('gold');
+  /** `strip` stands as tall as a framed group on the same line, like a button of that size. */
+  readonly size = input<'control' | 'strip'>('control');
 
   /**
    * Whether the lit state is decided elsewhere.
@@ -54,6 +56,9 @@ export class ToggleButtonComponent {
   readonly activated = output();
 
   protected readonly active = computed(() => ACTIVE[this.accent()]);
+  protected readonly height = computed(() =>
+    this.size() === 'strip' ? 'h-(--nc-transport-h)' : 'h-(--nc-control-h)',
+  );
 
   protected press(): void {
     this.activated.emit();

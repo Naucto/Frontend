@@ -1,7 +1,7 @@
 import { computed, Directive, input } from '@angular/core';
 
 export type ButtonVariant = 'primary' | 'run' | 'secondary' | 'sky' | 'ghost' | 'danger';
-export type ButtonSize = 'xs' | 'tool' | 'sm' | 'md' | 'bar' | 'hero' | 'lg';
+export type ButtonSize = 'xs' | 'tool' | 'sm' | 'md' | 'strip' | 'bar' | 'hero' | 'lg';
 
 /**
  * Unavailable is a different shape, not the same one faded.
@@ -65,6 +65,9 @@ const SIZES: Record<ButtonSize, { box: string; px: string }> = {
   xs: { box: 'h-(--nc-control-h-xs) text-micro', px: 'px-1' },
   sm: { box: 'h-(--nc-control-h-sm) control-type', px: 'px-1.25' },
   md: { box: 'h-[32px] text-body', px: 'px-2' },
+  // An editor strip beside a framed group, the transport or a tool group: every control on that
+  // line stands as tall as the frame, or the line reads as three heights.
+  strip: { box: 'h-(--nc-transport-h) control-type', px: 'px-1.25' },
   // The header bars only. Every control up there is 38px tall — button, bell and avatar alike —
   // so the one thing that is not, the 43px search box, reads as deliberate rather than as drift.
   bar: { box: 'h-[38px] text-body', px: 'px-[16px]' },
