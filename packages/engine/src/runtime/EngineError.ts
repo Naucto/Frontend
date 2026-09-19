@@ -1,4 +1,4 @@
-export type EnginePhase = 'load' | 'init' | 'update' | 'draw' | 'callback';
+export type EnginePhase = 'load' | 'init' | 'update' | 'draw' | 'scanline' | 'callback';
 
 export interface EngineError {
   phase: EnginePhase;

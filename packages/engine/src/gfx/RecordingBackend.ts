@@ -1,14 +1,15 @@
-import type { GfxBackend, ScanlineEffect } from '../api/ports';
+import type { DisplayEffect, GfxBackend } from '../api/ports';
 
 export interface GfxCall {
   op: string;
   args: unknown[];
 }
 
-/** Test double: records every draw call. */
+/** Test double: records every draw call, and keeps a frame palette so a read gives back a write. */
 export class RecordingBackend implements GfxBackend {
   readonly calls: GfxCall[] = [];
   frames = 0;
+  private readonly palette: string[] = Array.from({ length: 16 }, () => '#000000');
   private rec(op: string, ...args: unknown[]): void {
     this.calls.push({ op, args });
   }
@@ -81,27 +82,27 @@ export class RecordingBackend implements GfxBackend {
   }
   setColour(i: number, hex: string): void {
     this.rec('setColour', i, hex);
+    this.palette[i & 15] = hex;
   }
-  getColour(): string {
-    return '#000000';
+  getColour(i: number): string {
+    return this.palette[i & 15] ?? '#000000';
   }
   resetPalette(): void {
     this.rec('resetPalette');
+    this.palette.fill('#000000');
   }
-  setPaletteRow(r: number, c: readonly string[]): void {
-    this.rec('setPaletteRow', r, c);
+  screenCol(a: number, b: number): void {
+    this.rec('screenCol', a, b);
+    this.palette[a & 15] = this.palette[b & 15] ?? '#000000';
   }
-  screenCol(a: number, b: number, r: number): void {
-    this.rec('screenCol', a, b, r);
+  setFrameEffect(fx: DisplayEffect): void {
+    this.rec('setFrameEffect', fx);
   }
-  scanline(y: number, fx: ScanlineEffect): void {
-    this.rec('scanline', y, fx);
+  setLinePalette(y: number, colours: readonly string[]): void {
+    this.rec('setLinePalette', y, colours);
   }
-  resetScanlines(): void {
-    this.rec('resetScanlines');
-  }
-  persistEffects(on: boolean): void {
-    this.rec('persistEffects', on);
+  setLineEffect(y: number, fx: DisplayEffect): void {
+    this.rec('setLineEffect', y, fx);
   }
   screenshot(): Uint8ClampedArray | null {
     return null;

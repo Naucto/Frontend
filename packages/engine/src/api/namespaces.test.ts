@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_GEOMETRY } from '../game/geometry';
 import { RecordingBackend } from '../gfx/RecordingBackend';
-import type { DeclaredAction } from '../input/ActionMap';
 import { InputState } from '../input/InputState';
 import { LuaEnvironment } from '../vm/LuaEnvironment';
 import type { ApiContext } from './ApiContext';
@@ -10,23 +9,23 @@ import { buildCompatPrelude } from './compatPrelude';
 import { GfxAPI } from './GfxAPI';
 import { InputAPI } from './InputAPI';
 import { MapAPI } from './MapAPI';
+import type { SoundPort } from './ports';
 import { SoundAPI } from './SoundAPI';
 import { SysAPI } from './SysAPI';
 
 function setup(): {
   lua: LuaEnvironment;
   gfx: RecordingBackend;
+  gfxApi: GfxAPI;
   input: InputState;
   logs: string[];
   tiles: Map<string, number>;
-  declared: DeclaredAction[][];
 } {
   const lua = new LuaEnvironment();
   const gfx = new RecordingBackend();
   const input = new InputState();
   const logs: string[] = [];
   const tiles = new Map<string, number>();
-  const declared: DeclaredAction[][] = [];
   const ctx: ApiContext = {
     lua,
     gfx,
@@ -42,35 +41,27 @@ function setup(): {
       setTile: (x, y, n, m) => tiles.set(`${String(m)}:${String(x)},${String(y)}`, n),
     },
     sys: { dt: 1 / 60, frame: () => 7, time: () => 0.5, fps: () => 60 },
-    onActionsDeclared: (actions) => declared.push([...actions]),
     log: (level, text) => logs.push(`${level}:${text}`),
     print: (l) => logs.push(`log:${l}`),
   };
   new SysAPI(ctx);
-  new GfxAPI(ctx);
+  const gfxApi = new GfxAPI(ctx);
   new MapAPI(ctx);
   new InputAPI(ctx);
   new SoundAPI(ctx);
-  return { lua, gfx, input, logs, tiles, declared };
+  return { lua, gfx, gfxApi, input, logs, tiles };
 }
 
-describe('Lua API namespaces', () => {
-  it('input.declare names the actions the game uses, in engine order', () => {
-    const { lua, declared, logs } = setup();
-    lua.evaluate(
-      'input.declare{ pause = "pause", a = "jump", left = "left", x = "action", nope = "bad" }',
-      'main',
-    );
-    expect(declared).toHaveLength(1);
-    expect(declared[0]).toEqual([
-      { action: 'left', label: 'left' },
-      { action: 'a', label: 'jump' },
-      { action: 'x', label: 'action' },
-      { action: 'pause', label: 'pause' },
-    ]);
-    expect(logs).toContain('warn:input.declare: "nope" is not an action');
-  });
+/** One beam pass over the `_scanline` the Lua code defined, the way `Engine.step()` runs it. */
+function beam(lua: LuaEnvironment, gfxApi: GfxAPI): void {
+  const fn = lua.getGlobalFunction('_scanline');
+  if (!fn) throw new Error('no _scanline');
+  gfxApi.beam(fn);
+}
 
+const NONE = { shiftX: 0, shiftY: 0, wrap: false, blank: false };
+
+describe('Lua API namespaces', () => {
   it('gfx forwards draw calls with defaults', () => {
     const { lua, gfx } = setup();
     lua.evaluate(
@@ -91,16 +82,72 @@ describe('Lua API namespaces', () => {
     expect(gfx.ops('drawSprite').map((c) => c.args.at(-1))).toEqual([0, 7, null]);
   });
 
-  it('gfx.scanline parses effect tables and scanline_fn calls once per row', () => {
+  it('gfx palette, shift and blank calls set the frame outside the beam pass', () => {
     const { lua, gfx } = setup();
     lua.evaluate(
-      'gfx.scanline(4, {shift_x = 3, wrap = true}) gfx.scanline_fn(function(y) if y < 2 then return {shift_y = y} end end)',
+      'gfx.set_color(1, "FF0000") gfx.screen_col(3, 1) gfx.shift(2, -1, true) gfx.blank() gfx.blank(false)',
     );
-    expect(gfx.ops('scanline').map((c) => c.args)).toEqual([
-      [4, { shiftX: 3, wrap: true }],
-      [0, { shiftY: 0 }],
-      [1, { shiftY: 1 }],
+    expect(gfx.ops('setColour').map((c) => c.args)).toEqual([[1, '#ff0000']]);
+    expect(gfx.ops('screenCol').map((c) => c.args)).toEqual([[3, 1]]);
+    expect(lua.evaluate('return gfx.get_color(3)')).toEqual(['#ff0000']);
+    expect(gfx.ops('setFrameEffect').map((c) => c.args[0])).toEqual([
+      { shiftX: 2, shiftY: -1, wrap: true, blank: false },
+      { shiftX: 2, shiftY: -1, wrap: true, blank: true },
+      { shiftX: 2, shiftY: -1, wrap: true, blank: false },
     ]);
+    expect(gfx.ops('setLineEffect')).toHaveLength(0);
+    expect(gfx.ops('setLinePalette')).toHaveLength(0);
+  });
+
+  it('inside _scanline, set_color changes the line and the ones below it until changed again', () => {
+    const { lua, gfx, gfxApi } = setup();
+    lua.evaluate(
+      'gfx.set_color(0, "#111111")\n' +
+        'function _scanline(y)\n' +
+        '  if y == 10 then gfx.set_color(0, "#ff0000") end\n' +
+        '  if y == 15 then gfx.screen_col(1, 0) end\n' +
+        '  if y == 20 then gfx.reset_palette() end\n' +
+        'end',
+    );
+    beam(lua, gfxApi);
+    const rows = gfx.ops('setLinePalette');
+    expect(rows.map((c) => c.args[0])).toEqual([10, 11, 12, 13, 14, 15, 16, 17, 18, 19]);
+    expect(rows.map((c) => (c.args[1] as string[]).slice(0, 2))).toEqual([
+      ...Array.from({ length: 5 }, () => ['#ff0000', '#000000']),
+      ...Array.from({ length: 5 }, () => ['#ff0000', '#ff0000']),
+    ]);
+    // The frame palette was written once, in the code before the pass; the beam never touches it.
+    expect(gfx.ops('setColour')).toHaveLength(1);
+    expect(gfx.ops('resetPalette')).toHaveLength(0);
+    expect(gfx.ops('setLineEffect')).toHaveLength(180);
+    expect(lua.evaluate('return gfx.get_color(0)')).toEqual(['#111111']);
+  });
+
+  it('inside _scanline, shift and blank set the line and carry down; the next pass starts over', () => {
+    const { lua, gfx, gfxApi } = setup();
+    lua.evaluate(
+      'gfx.shift(1)\n' +
+        'function _scanline(y)\n' +
+        '  if y == 100 then gfx.shift(3, 0, true) end\n' +
+        '  if y == 150 then gfx.blank() end\n' +
+        '  if y == 170 then gfx.blank(false) gfx.shift(0, 0) end\n' +
+        'end',
+    );
+    beam(lua, gfxApi);
+    const fx = gfx.ops('setLineEffect').map((c) => c.args[1]);
+    expect(fx[0]).toEqual({ ...NONE, shiftX: 1 });
+    expect(fx[99]).toEqual({ ...NONE, shiftX: 1 });
+    expect(fx[100]).toEqual({ ...NONE, shiftX: 3, wrap: true });
+    expect(fx[149]).toEqual({ ...NONE, shiftX: 3, wrap: true });
+    expect(fx[150]).toEqual({ ...NONE, shiftX: 3, wrap: true, blank: true });
+    expect(fx[169]).toEqual({ ...NONE, shiftX: 3, wrap: true, blank: true });
+    expect(fx[170]).toEqual(NONE);
+    expect(fx[179]).toEqual(NONE);
+    expect(gfx.ops('setFrameEffect')).toHaveLength(1);
+
+    gfx.calls.length = 0;
+    beam(lua, gfxApi);
+    expect(gfx.ops('setLineEffect')[0]?.args).toEqual([0, { ...NONE, shiftX: 1 }]);
   });
 
   it('gfx.set_color accepts hex or rgb', () => {
@@ -203,5 +250,72 @@ describe('Lua API namespaces', () => {
       expect(e).toMatchObject({ file: 'main', line: 2 });
       expect((e as { traceback?: string }).traceback).toContain('stack traceback');
     }
+  });
+});
+
+describe('sound overrides', () => {
+  /** A port that keeps what it was asked to change, and knows one instrument and no pattern. */
+  function setupSound(): { lua: LuaEnvironment; logs: string[]; patches: unknown[] } {
+    const lua = new LuaEnvironment();
+    const logs: string[] = [];
+    const patches: unknown[] = [];
+    const sound = {
+      setInstrumentOverride: (name: string, patch: unknown) => {
+        patches.push(patch);
+        return name === 'lead';
+      },
+      setPatternOverride: (slot: number, patch: unknown) => {
+        patches.push(patch);
+        return false;
+      },
+      setSongOverride: () => true,
+    } as unknown as SoundPort;
+    const ctx: ApiContext = {
+      lua,
+      gfx: new RecordingBackend(),
+      input: new InputState(),
+      sound,
+      data: {} as ApiContext['data'],
+      sys: { dt: 1 / 60, frame: () => 0, time: () => 0, fps: () => 60 },
+      log: (level, text) => logs.push(`${level}:${text}`),
+      print: () => undefined,
+    };
+    new SoundAPI(ctx);
+    return { lua, logs, patches };
+  }
+
+  it('set_instrument keeps each field in its range and maps it to the model', () => {
+    const { lua, logs, patches } = setupSound();
+    lua.evaluate(
+      'sound.set_instrument("lead", { duty = 2, attack = -1, vibrato_rate = 3, filter = "lp", osc = "saw", cutoff = 99999 })',
+    );
+    expect(patches).toEqual([
+      {
+        duty: 0.95,
+        env: { attack: 0 },
+        vibrato: { rate: 3 },
+        filter: { type: 'lp', cutoff: 12000 },
+        osc: 'saw',
+      },
+    ]);
+    expect(logs).toEqual([]);
+  });
+
+  it('set_instrument says once what it does not know', () => {
+    const { lua, logs } = setupSound();
+    lua.evaluate('for i = 1, 3 do sound.set_instrument("lead", { colour = 3, osc = "organ" }) end');
+    lua.evaluate('sound.set_instrument("bass", {})');
+    expect(logs).toEqual([
+      'warn:sound.set_instrument: "colour" is not an instrument field',
+      'warn:sound.set_instrument: osc is one of square, sine, triangle, saw, noise, sample',
+      'warn:sound.set_instrument: there is no instrument called "bass"',
+    ]);
+  });
+
+  it('set_pattern on a number no pattern has warns and changes nothing', () => {
+    const { lua, logs, patches } = setupSound();
+    lua.evaluate('sound.set_pattern(7, { bpm = 300 }) sound.set_pattern(7, { bpm = 300 })');
+    expect(patches).toEqual([{ bpm: 240 }, { bpm: 240 }]);
+    expect(logs).toEqual(['warn:sound.set_pattern: there is no pattern 7']);
   });
 });

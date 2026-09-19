@@ -1,9 +1,13 @@
+import { readdirSync, readFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
 
 import type { SoundPort } from '../api/ports';
 import { Game } from '../game/Game';
 import { RecordingBackend } from '../gfx/RecordingBackend';
+import type { DeclaredAction } from '../input/ActionMap';
 import type { InputSource } from '../input/InputSource';
 import type { InputState } from '../input/InputState';
 import { STEP_MS } from '../loop/GameLoop';
@@ -12,7 +16,7 @@ import { Engine } from './Engine';
 const driver = { request: () => 0, cancel: () => undefined, now: () => 0 };
 
 describe('Engine', () => {
-  it('runs the starter game headlessly and moves the moon with btn("right")', () => {
+  it('runs the starter game headlessly and moves the moon with held("right")', () => {
     const doc = new Y.Doc();
     const game = new Game(doc);
     game.seedDefaults();
@@ -178,21 +182,29 @@ describe('Engine', () => {
     engine.destroy();
   });
 
-  it('forgets the actions a game declared once that game is no longer the one running', () => {
+  it('hands the host the names the document gives its actions, on every load', () => {
     const game = new Game(new Y.Doc());
     game.seedDefaults();
-    const main = game.files[0];
-    main?.text.delete(0, main.text.length);
-    main?.text.insert(0, 'input.declare{ left = "Port", right = "Starboard" }');
+    game.setDeclaredActions([
+      { action: 'left', label: 'Port' },
+      { action: 'right', label: 'Starboard' },
+    ]);
+    const seen: (readonly DeclaredAction[])[] = [];
+    const engine = new Engine({
+      game,
+      gfx: new RecordingBackend(),
+      driver,
+      onActionsDeclared: (actions) => seen.push(actions),
+    });
 
-    const engine = new Engine({ game, gfx: new RecordingBackend(), driver });
     expect(engine.load()).toBeNull();
-    expect(engine.declaredActions).toHaveLength(2);
+    expect(engine.declaredActions).toEqual(game.declaredActions);
+    expect(seen).toEqual([game.declaredActions]);
 
-    main?.text.delete(0, main.text.length);
-    main?.text.insert(0, '-- the declaration is gone');
+    game.setDeclaredActions([]);
     expect(engine.load()).toBeNull();
     expect(engine.declaredActions).toEqual([]);
+    expect(seen).toHaveLength(2);
     engine.destroy();
   });
 
@@ -231,8 +243,9 @@ describe('Engine', () => {
     expect(gfx.ops('resetPalette')).toHaveLength(1);
     expect(gfx.ops('resetCol')).toHaveLength(1);
     expect(gfx.ops('resetClip')).toHaveLength(1);
-    expect(gfx.ops('resetScanlines')).toHaveLength(1);
-    expect(gfx.ops('persistEffects').at(-1)?.args).toEqual([false]);
+    expect(gfx.ops('setFrameEffect').at(-1)?.args).toEqual([
+      { shiftX: 0, shiftY: 0, wrap: false, blank: false },
+    ]);
     expect(gfx.ops('camera').at(-1)?.args).toEqual([0, 0]);
     engine.destroy();
   });
@@ -241,6 +254,7 @@ describe('Engine', () => {
     let stopped = 0;
     const sound = {
       flush: () => undefined,
+      clearOverrides: () => undefined,
       stopAll: () => {
         stopped += 1;
       },
@@ -265,6 +279,7 @@ describe('Engine', () => {
     let stopped = 0;
     const sound = {
       flush: () => undefined,
+      clearOverrides: () => undefined,
       stopAll: () => {
         stopped += 1;
       },
@@ -293,6 +308,7 @@ describe('Engine', () => {
     const calls: string[] = [];
     const sound = {
       flush: () => undefined,
+      clearOverrides: () => undefined,
       stopAll: () => {
         calls.push('stopAll');
       },
@@ -330,10 +346,7 @@ describe('Engine', () => {
     const palette = [...game.palette];
     const main = game.files[0];
     main?.text.delete(0, main.text.length);
-    main?.text.insert(
-      0,
-      'map.set(3, 4, 9)\ngfx.set_color(0, "#ff0000")\ngfx.set_palette_row(0, {})',
-    );
+    main?.text.insert(0, 'map.set(3, 4, 9)\ngfx.set_color(0, "#ff0000")\ngfx.screen_col(1, 0)');
 
     const engine = new Engine({ game, gfx: new RecordingBackend(), driver });
     expect(engine.load()).toBeNull();
@@ -374,5 +387,68 @@ describe('Engine', () => {
     const failure = engine.load();
     expect(failure?.file).toBe('my helpers');
     expect(failure?.line).toBe(3);
+  });
+
+  it('runs _scanline once per line after _draw, and a game without one gives no line its own', () => {
+    const game = new Game(new Y.Doc());
+    game.seedDefaults();
+    const main = game.files[0];
+    main?.text.delete(0, main.text.length);
+    main?.text.insert(0, 'n = 0\nfunction _draw() print(n) end');
+
+    const gfx = new RecordingBackend();
+    const engine = new Engine({ game, gfx, driver });
+    engine.run();
+    engine.tick(STEP_MS);
+    expect(gfx.ops('setLineEffect')).toHaveLength(0);
+    expect(gfx.ops('setLinePalette')).toHaveLength(0);
+
+    main?.text.insert(main.text.length, '\nfunction _scanline(y) n = n + 1 end');
+    expect(engine.load()).toBeNull();
+    engine.run();
+    engine.tick(STEP_MS);
+    engine.tick(STEP_MS);
+    // `_draw` runs before the pass, so the second frame prints what the first one counted.
+    expect(engine.console.lines.map((l) => l.text)).toEqual(['0', '180']);
+    expect(gfx.ops('setLineEffect')).toHaveLength(360);
+    engine.destroy();
+  });
+
+  it('halts on an error inside _scanline, blaming the scanline phase and the line', () => {
+    const game = new Game(new Y.Doc());
+    game.seedDefaults();
+    const main = game.files[0];
+    main?.text.delete(0, main.text.length);
+    main?.text.insert(0, 'function _scanline(y)\n  if y == 42 then error("beam") end\nend');
+
+    const gfx = new RecordingBackend();
+    const engine = new Engine({ game, gfx, driver });
+    const errors: string[] = [];
+    engine.onError((e) => errors.push(`${e.phase}:${String(e.line)}`));
+    engine.run();
+    expect(engine.tick(STEP_MS)).toBe(false);
+    expect(engine.currentState).toBe('halted');
+    expect(errors).toEqual(['scanline:2']);
+    expect(engine.error?.message).toContain('beam');
+    expect(gfx.ops('setLineEffect')).toHaveLength(42);
+    engine.destroy();
+  });
+
+  /** The scenes the API reference is illustrated with: each one has to load, draw and scan. */
+  it('runs every docs demo without error', () => {
+    const dir = resolve(import.meta.dirname, '../../../../e2e/docs/lua');
+    for (const file of readdirSync(dir).filter((f) => f.endsWith('.lua'))) {
+      const game = new Game(new Y.Doc());
+      game.seedDefaults();
+      const main = game.files[0];
+      main?.text.delete(0, main.text.length);
+      main?.text.insert(0, readFileSync(join(dir, file), 'utf8'));
+      const engine = new Engine({ game, gfx: new RecordingBackend(), driver });
+      expect(engine.load(), file).toBeNull();
+      engine.run();
+      expect(engine.tick(STEP_MS * 3), file).toBe(true);
+      expect(engine.error, file).toBeNull();
+      engine.destroy();
+    }
   });
 });

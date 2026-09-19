@@ -1,6 +1,7 @@
+import { hexToRgb, rgbToHex } from '../gfx/glUtils';
 import type { ApiContext } from './ApiContext';
 import { EngineModule } from './EngineModule';
-import type { ScanlineEffect } from './ports';
+import { type DisplayEffect, NO_EFFECT } from './ports';
 
 const num = (v: unknown, d = 0): number => (typeof v === 'number' && Number.isFinite(v) ? v : d);
 const bool = (v: unknown, d = false): boolean =>
@@ -23,29 +24,39 @@ const keyColour = (args: readonly unknown[], at: number): number | null => {
   return typeof v === 'number' && Number.isFinite(v) ? v & 15 : null;
 };
 
-const toEffect = (opts: unknown): ScanlineEffect => {
-  if (typeof opts !== 'object' || opts === null) return {};
-  const o = opts as Record<string, unknown>;
-  const fx: ScanlineEffect = {};
-  if (o.shift_x !== undefined) fx.shiftX = num(o.shift_x);
-  if (o.shift_y !== undefined) fx.shiftY = num(o.shift_y);
-  if (o.palette !== undefined) fx.palette = num(o.palette);
-  if (o.wrap !== undefined) fx.wrap = bool(o.wrap);
-  if (o.blank !== undefined) fx.blank = bool(o.blank);
-  return fx;
-};
+/** Always the lowercase `#rrggbb` form, so a colour reads back the same whichever scope holds it. */
+const toHex = (r: unknown, g: unknown, b: unknown): string =>
+  typeof r === 'string'
+    ? rgbToHex(...hexToRgb(r))
+    : rgbToHex(Math.round(num(r)), Math.round(num(g)), Math.round(num(b)));
 
-const toHex = (r: unknown, g: unknown, b: unknown): string => {
-  if (typeof r === 'string') return r;
-  const c = (v: unknown): string =>
-    Math.max(0, Math.min(255, Math.round(num(v))))
-      .toString(16)
-      .padStart(2, '0');
-  return `#${c(r)}${c(g)}${c(b)}`;
-};
+/** The screen height, which is how many times the beam calls `_scanline` per frame. */
+const LINES = 180;
 
-/** The `gfx` namespace. */
+/**
+ * What one line shows, while the beam is on it: the palette and the effect the line-scoped calls
+ * write, and whether the palette has left the frame's since the pass began. A line whose palette
+ * is the frame's is not given one of its own.
+ */
+interface LineState {
+  palette: string[];
+  effect: DisplayEffect;
+  touched: boolean;
+}
+
+/**
+ * The `gfx` namespace.
+ *
+ * The palette and shift calls have two scopes, told apart by when they are called. Outside the beam
+ * pass they set the frame: what the whole display shows, kept from frame to frame the way `camera`
+ * is. Inside `_scanline(y)` they set the line: a state copied from the frame when the pass begins,
+ * carried from one line to the next, and forgotten when the pass ends.
+ */
 export class GfxAPI extends EngineModule {
+  private frameEffect: DisplayEffect = NO_EFFECT;
+  /** Set while `_scanline` runs; the calls read it to know which scope they write. */
+  private line: LineState | null = null;
+
   constructor(ctx: ApiContext) {
     super(ctx);
     const g = ctx.gfx;
@@ -121,64 +132,94 @@ export class GfxAPI extends EngineModule {
         g.resetCol();
       },
       set_color: (i: unknown, r: unknown, gg?: unknown, b?: unknown) => {
-        g.setColour(num(i), toHex(r, gg, b));
+        const hex = toHex(r, gg, b);
+        if (this.line) {
+          this.line.palette[num(i) & 15] = hex;
+          this.line.touched = true;
+        } else g.setColour(num(i), hex);
       },
-      get_color: (i: unknown) => g.getColour(num(i)),
+      get_color: (i: unknown) =>
+        this.line ? (this.line.palette[num(i) & 15] ?? '#000000') : g.getColour(num(i)),
       reset_palette: () => {
-        g.resetPalette();
+        if (this.line) {
+          for (let i = 0; i < 16; i++) this.line.palette[i] = g.getColour(i);
+          this.line.touched = false;
+        } else g.resetPalette();
       },
-      set_palette_row: (row: unknown, colours: unknown) => {
-        const list = Array.isArray(colours)
-          ? colours
-          : typeof colours === 'object' && colours !== null
-            ? Object.values(colours)
-            : [];
-        g.setPaletteRow(
-          num(row),
-          list.map((c) => String(c)),
-        );
+      screen_col: (a: unknown, b: unknown) => {
+        if (this.line) {
+          this.line.palette[num(a) & 15] = this.line.palette[num(b) & 15] ?? '#000000';
+          this.line.touched = true;
+        } else g.screenCol(num(a), num(b));
       },
-      screen_col: (a: unknown, b: unknown, row?: unknown) => {
-        g.screenCol(num(a), num(b), num(row));
+      shift: (dx: unknown, dy?: unknown, wrap?: unknown) => {
+        this.setEffect({
+          shiftX: num(dx),
+          shiftY: num(dy),
+          wrap: bool(wrap),
+          blank: this.effect.blank,
+        });
       },
-      scanline: (y: unknown, opts: unknown) => {
-        g.scanline(num(y), toEffect(opts));
-      },
-      scanline_range: (y0: unknown, y1: unknown, opts: unknown) => {
-        const fx = toEffect(opts);
-        for (let y = num(y0); y <= num(y1); y++) g.scanline(y, fx);
-      },
-      scanline_fn: (fn: unknown) => {
-        if (typeof fn !== 'function') return;
-        for (let y = 0; y < 180; y++) {
-          const res = (fn as (y: number) => unknown)(y);
-          const first: unknown = Array.isArray(res) ? (res as unknown[])[0] : res;
-          if (first) g.scanline(y, toEffect(first));
-        }
-      },
-      reset_scanlines: () => {
-        g.resetScanlines();
-      },
-      persist_effects: (on: unknown) => {
-        g.persistEffects(bool(on, true));
+      blank: (on?: unknown) => {
+        this.setEffect({ ...this.effect, blank: bool(on, true) });
       },
       width: () => 320,
       height: () => 180,
     });
   }
 
+  private get effect(): DisplayEffect {
+    return this.line ? this.line.effect : this.frameEffect;
+  }
+
+  private setEffect(fx: DisplayEffect): void {
+    if (this.line) this.line.effect = fx;
+    else {
+      this.frameEffect = fx;
+      this.ctx.gfx.setFrameEffect(fx);
+    }
+  }
+
+  /**
+   * The beam pass: `scanline(y)` for every line of the frame just drawn, top to bottom, each line
+   * then recorded as the line state leaves it. What a call changes on one line holds for the lines
+   * after it; the next pass starts from the frame again.
+   *
+   * The line palette starts as a copy of the frame's, read back from the renderer rather than kept
+   * here, so that a `set_color` in `_draw` and a document palette edit are both seen.
+   */
+  beam(scanline: (y: number) => unknown): void {
+    const g = this.ctx.gfx;
+    const line: LineState = {
+      palette: Array.from({ length: 16 }, (_, i) => g.getColour(i)),
+      effect: this.frameEffect,
+      touched: false,
+    };
+    this.line = line;
+    try {
+      for (let y = 0; y < LINES; y++) {
+        scanline(y);
+        if (line.touched) g.setLinePalette(y, line.palette.slice());
+        g.setLineEffect(y, line.effect);
+      }
+    } finally {
+      this.line = null;
+    }
+  }
+
   /**
    * Hand the screen back the way the document describes it.
    *
    * None of this lives in the Lua state, so none of it died with the VM: a game that faded out by
-   * rewriting palette row 0, or scrolled the camera and then crashed, was handing the next run a
+   * rewriting the frame palette, or shifted the frame and then crashed, was handing the next run a
    * black screen or an offset one. The last presented frame is not repainted — those pixels are
    * already out, and the palette is only read at present time.
    */
   override destroy(): void {
     const g = this.ctx.gfx;
-    g.persistEffects(false);
-    g.resetScanlines();
+    this.line = null;
+    this.frameEffect = NO_EFFECT;
+    g.setFrameEffect(NO_EFFECT);
     g.resetPalette();
     g.resetCol();
     g.resetClip();

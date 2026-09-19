@@ -493,16 +493,12 @@ class LuaEnvironment {
     return results;
   }
 
-  /** Runs a named Lua global if it is a function; returns false when absent. */
-  public callGlobal(name: string, ...args: unknown[]): unknown[] | null {
+  /**
+   * Calls the function sitting just above `stackTop`, with the traceback handler slid under it,
+   * and leaves the stack at `stackTop` whether it returned or threw.
+   */
+  private callTop(stackTop: number, args: readonly unknown[]): unknown[] {
     const L = this._L;
-    const stackTop = fengari.lua.lua_gettop(L);
-    fengari.lua.lua_getglobal(L, fengari.to_luastring(name));
-    if (fengari.lua.lua_type(L, -1) !== fengari.lua.LUA_TFUNCTION) {
-      fengari.lua.lua_settop(L, stackTop);
-      return null;
-    }
-    this._instructionsUsed = 0;
     fengari.lua.lua_getglobal(L, fengari.to_luastring('debug'));
     fengari.lua.lua_getfield(L, -1, fengari.to_luastring('traceback'));
     fengari.lua.lua_remove(L, -2);
@@ -526,6 +522,41 @@ class LuaEnvironment {
     for (let i = msgh + 1; i <= fengari.lua.lua_gettop(L); i++) results.push(this.getObject(i));
     fengari.lua.lua_settop(L, stackTop);
     return results;
+  }
+
+  /** Runs a named Lua global if it is a function, on a fresh instruction budget; null when absent. */
+  public callGlobal(name: string, ...args: unknown[]): unknown[] | null {
+    const L = this._L;
+    const stackTop = fengari.lua.lua_gettop(L);
+    fengari.lua.lua_getglobal(L, fengari.to_luastring(name));
+    if (fengari.lua.lua_type(L, -1) !== fengari.lua.LUA_TFUNCTION) {
+      fengari.lua.lua_settop(L, stackTop);
+      return null;
+    }
+    this._instructionsUsed = 0;
+    return this.callTop(stackTop, args);
+  }
+
+  /**
+   * A named Lua global as something callable from here, or null when it is not a function.
+   *
+   * Unlike `callGlobal`, a call through it spends the budget of whatever `callGlobal` ran last:
+   * the caller is what one step's budget covers, however many times it calls.
+   */
+  public getGlobalFunction(name: string): ((...args: unknown[]) => unknown[]) | null {
+    const L = this._L;
+    fengari.lua.lua_getglobal(L, fengari.to_luastring(name));
+    if (fengari.lua.lua_type(L, -1) !== fengari.lua.LUA_TFUNCTION) {
+      fengari.lua.lua_pop(L, 1);
+      return null;
+    }
+    const push = fengari.lua.lua_toproxy(L, -1);
+    fengari.lua.lua_pop(L, 1);
+    return (...args) => {
+      const stackTop = fengari.lua.lua_gettop(L);
+      push(L);
+      return this.callTop(stackTop, args);
+    };
   }
 
   /** Releases the Lua state. The instance must not be used afterwards. */

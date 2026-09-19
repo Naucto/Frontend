@@ -2,17 +2,21 @@ import type { DeclaredAction } from '../input/ActionMap';
 import type { InputState } from '../input/InputState';
 import type { NetPermissions } from '../net/NetPermissions';
 import type { NetUi } from '../net/NetUi';
+import type { Envelope, Instrument, Pattern, Song } from '../sound/model';
 
-export interface ScanlineEffect {
-  shiftX?: number;
-  shiftY?: number;
-  /** Screen palette row 0..15 */
-  palette?: number;
-  /** Wrap horizontally instead of clamping. */
-  wrap?: boolean;
-  /** Blank the row. */
-  blank?: boolean;
+/**
+ * What the display does to the finished picture, for the whole frame or for one line of it:
+ * a whole-pixel shift in game coordinates (positive y moves the picture down), read back through
+ * the shift either wrapping sideways or uncovering colour 0, or black instead of any of it.
+ */
+export interface DisplayEffect {
+  shiftX: number;
+  shiftY: number;
+  wrap: boolean;
+  blank: boolean;
 }
+
+export const NO_EFFECT: DisplayEffect = { shiftX: 0, shiftY: 0, wrap: false, blank: false };
 
 /**
  * Everything the Lua `gfx` and `map` namespaces need from a renderer. A frame is
@@ -73,18 +77,43 @@ export interface GfxBackend {
   print(text: string, x: number, y: number, colour: number): number;
   setCol(from: number, to: number): void;
   resetCol(): void;
+  /** The frame palette: what every line shows unless it was given a palette of its own. */
   setColour(index: number, hex: string): void;
   getColour(index: number): string;
+  /** The frame palette back to the document's. */
   resetPalette(): void;
-  setPaletteRow(row: number, colours: readonly string[]): void;
-  screenCol(from: number, to: number, row: number): void;
-  scanline(y: number, fx: ScanlineEffect): void;
-  resetScanlines(): void;
-  persistEffects(on: boolean): void;
+  /** Colour `from` of the frame palette shows what colour `to` shows now. */
+  screenCol(from: number, to: number): void;
+  /** The effect of every line that is not given one of its own. Holds until set again. */
+  setFrameEffect(fx: DisplayEffect): void;
+  /**
+   * One line's own palette and effect, for the frame being drawn only: at the next `begin()` every
+   * line follows the frame again. The palette is sixteen `#rrggbb` strings, colour 0 first.
+   */
+  setLinePalette(y: number, colours: readonly string[]): void;
+  setLineEffect(y: number, fx: DisplayEffect): void;
   /** RGBA of the last presented frame, or null if unavailable. */
   screenshot(): Uint8ClampedArray | null;
   destroy(): void;
 }
+
+/** What a game may change about an instrument; a field left out keeps the document's value. */
+export interface InstrumentPatch {
+  osc?: Instrument['osc'];
+  duty?: number;
+  detune?: number;
+  glide?: number;
+  env?: Partial<Envelope>;
+  vibrato?: Partial<Instrument['vibrato']>;
+  arp?: Partial<Instrument['arp']>;
+  filter?: Partial<Pick<Instrument['filter'], 'type' | 'cutoff' | 'resonance'>>;
+  volume?: number;
+  pan?: number;
+}
+
+export type PatternPatch = Partial<Pick<Pattern, 'bpm' | 'steps'>>;
+
+export type SongPatch = Partial<Pick<Song, 'loop'>>;
 
 export interface SoundPort {
   playSfx(slot: number, channel: number | undefined, pitchOffset: number, volume: number): void;

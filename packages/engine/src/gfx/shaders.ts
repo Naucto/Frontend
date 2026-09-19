@@ -49,7 +49,7 @@ precision highp float;
 precision highp int;
 uniform sampler2D u_frame;
 uniform highp isampler2D u_effects; // 180 x 1, RGBA16I: shiftX, shiftY, palRow, flags
-uniform sampler2D u_palettes;       // 16 x 16 RGBA
+uniform sampler2D u_palettes;       // 16 x 181 RGBA: row 0 the frame, row y + 1 line y's own
 in vec2 v_uv;
 out vec4 o_color;
 void main() {
@@ -68,7 +68,7 @@ void main() {
   // A shift is expressed in game coordinates: positive y moves the line down the screen.
   ivec2 src = ivec2(p.x, scan) - fx.xy;
   if ((fx.w & 1) != 0) src.x = ((src.x % size.x) + size.x) % size.x;
-  int row = clamp(fx.z, 0, 15);
+  int row = clamp(fx.z, 0, 180);
   if (src.x < 0 || src.x >= size.x || src.y < 0 || src.y >= size.y) {
     o_color = texelFetch(u_palettes, ivec2(0, row), 0);
     return;

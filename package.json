@@ -31,7 +31,8 @@
     "i18n:check": "node tools/i18n-check.mjs",
     "cache:check": "node tools/cache-check.mjs",
     "design:check": "HERE=$PWD; D2C=${D2C:-../Design2Code}; cd \"$D2C\" && npm run d2c -- harvest --canvas fixtures/naucto-redesign.html --out out/design.ir.json --no-png && npm run d2c -- report --ir out/design.ir.json --target naucto-angular --repo \"$HERE\" --gallery 1a --expect \"$HERE/tools/design-coverage.json\"",
-    "seed:content": "node tools/seed-content.mjs"
+    "seed:content": "node tools/seed-content.mjs",
+    "demo:photo": "node tools/photo-demo.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.0.2",

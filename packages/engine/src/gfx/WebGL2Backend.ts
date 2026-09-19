@@ -1,4 +1,4 @@
-import type { GfxBackend, ScanlineEffect } from '../api/ports';
+import { type DisplayEffect, type GfxBackend, NO_EFFECT } from '../api/ports';
 import type { Game, PixelChange } from '../game/Game';
 import type { GameMap } from '../game/GameMap';
 import { PALETTE_SIZE, SCREEN_HEIGHT, SCREEN_WIDTH, SPRITE_SIZE } from '../game/keys';
@@ -29,6 +29,10 @@ interface MapTexture {
 }
 const FX_WRAP = 1;
 const FX_BLANK = 2;
+const flagsOf = (fx: DisplayEffect): number => (fx.wrap ? FX_WRAP : 0) | (fx.blank ? FX_BLANK : 0);
+
+/** The frame palette on row 0, then one row per line for the lines given a palette of their own. */
+const PALETTE_ROWS = SCREEN_HEIGHT + 1;
 
 /** Quads one draw call carries; a batch that grows past it is drawn in two. */
 const MAX_QUADS = 4096;
@@ -39,7 +43,7 @@ type BatchSource = 'sheet' | 'map' | 'font' | 'solid';
 
 /**
  * GPU renderer. Pass 1 batches textured/solid quads into an R8 index frame;
- * pass 2 presents it through the scanline effect table and the screen palette.
+ * pass 2 presents it through the per-line effect table and the palette rows.
  */
 export class WebGL2Backend implements GfxBackend {
   private readonly gl: WebGL2RenderingContext;
@@ -79,11 +83,15 @@ export class WebGL2Backend implements GfxBackend {
   private readonly remap = new Int32Array(16);
   private remapDirty = true;
 
+  /** Per line: shiftX, shiftY, palette row (0 = the frame's, y + 1 = its own), flags. */
   private readonly effects = new Int16Array(SCREEN_HEIGHT * 4);
   private effectsDirty = true;
+  /** Whether any line was given something of its own since the last `begin()`. */
   private effectsUsed = false;
-  private persist = false;
-  private readonly palettes = new Uint8Array(PALETTE_SIZE * PALETTE_SIZE * 4);
+  /** The lines given an effect of their own this frame, which a frame effect set later leaves be. */
+  private readonly lineOwn = new Uint8Array(SCREEN_HEIGHT);
+  private frameEffect: DisplayEffect = NO_EFFECT;
+  private readonly palettes = new Uint8Array(PALETTE_SIZE * PALETTE_ROWS * 4);
   private palettesDirty = true;
   private gamePalette: string[];
 
@@ -177,7 +185,7 @@ export class WebGL2Backend implements GfxBackend {
       0,
       gl.RGBA,
       PALETTE_SIZE,
-      PALETTE_SIZE,
+      PALETTE_ROWS,
       0,
       gl.RGBA,
       gl.UNSIGNED_BYTE,
@@ -316,6 +324,14 @@ export class WebGL2Backend implements GfxBackend {
   // ---- frame ----------------------------------------------------------------
 
   begin(): void {
+    // Every line follows the frame again. Done here and not after the present: the loop may step
+    // twice before it presents, and it may present a frame it has already shown.
+    if (this.effectsUsed) {
+      this.lineOwn.fill(0);
+      this.setFrameEffect(this.frameEffect);
+      for (let y = 0; y < SCREEN_HEIGHT; y++) this.effects[y * 4 + 2] = 0;
+      this.effectsUsed = false;
+    }
     const gl = this.gl;
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
     gl.viewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -366,7 +382,7 @@ export class WebGL2Backend implements GfxBackend {
         0,
         0,
         PALETTE_SIZE,
-        PALETTE_SIZE,
+        PALETTE_ROWS,
         gl.RGBA,
         gl.UNSIGNED_BYTE,
         this.palettes,
@@ -374,7 +390,6 @@ export class WebGL2Backend implements GfxBackend {
       this.palettesDirty = false;
     }
     this.presentTo(null, gl.drawingBufferWidth, gl.drawingBufferHeight);
-    if (!this.persist && this.effectsUsed) this.resetScanlines();
   }
 
   clear(colour: number): void {
@@ -708,51 +723,55 @@ export class WebGL2Backend implements GfxBackend {
     return rgbToHex(this.palettes[o] ?? 0, this.palettes[o + 1] ?? 0, this.palettes[o + 2] ?? 0);
   }
 
+  /** Row 0 only: a line's row is written whole on the frame it is used, and read on no other. */
   resetPalette(): void {
-    for (let row = 0; row < PALETTE_SIZE; row++)
-      for (let i = 0; i < PALETTE_SIZE; i++)
-        this.writePalette(row, i, this.gamePalette[i] ?? '#000000');
+    for (let i = 0; i < PALETTE_SIZE; i++)
+      this.writePalette(0, i, this.gamePalette[i] ?? '#000000');
   }
 
-  setPaletteRow(row: number, colours: readonly string[]): void {
-    row = row & 15;
-    colours.slice(0, PALETTE_SIZE).forEach((c, i) => {
-      this.writePalette(row, i, c);
-    });
-  }
-
-  screenCol(from: number, to: number, row: number): void {
-    const src = ((row & 15) * PALETTE_SIZE + (to & 15)) * 4;
-    const dst = ((row & 15) * PALETTE_SIZE + (from & 15)) * 4;
+  screenCol(from: number, to: number): void {
+    const src = (to & 15) * 4;
+    const dst = (from & 15) * 4;
     for (let k = 0; k < 4; k++) this.palettes[dst + k] = this.palettes[src + k] ?? 0;
     this.palettesDirty = true;
   }
 
   // ---- effects --------------------------------------------------------------
 
-  scanline(y: number, fx: ScanlineEffect): void {
+  setFrameEffect(fx: DisplayEffect): void {
+    this.frameEffect = fx;
+    const x = Math.round(fx.shiftX);
+    const y = Math.round(fx.shiftY);
+    const flags = flagsOf(fx);
+    for (let line = 0; line < SCREEN_HEIGHT; line++) {
+      if (this.lineOwn[line]) continue;
+      const o = line * 4;
+      this.effects[o] = x;
+      this.effects[o + 1] = y;
+      this.effects[o + 3] = flags;
+    }
+    this.effectsDirty = true;
+  }
+
+  setLinePalette(y: number, colours: readonly string[]): void {
     y = Math.floor(y);
     if (y < 0 || y >= SCREEN_HEIGHT) return;
-    const o = y * 4;
-    if (fx.shiftX !== undefined) this.effects[o] = Math.round(fx.shiftX);
-    if (fx.shiftY !== undefined) this.effects[o + 1] = Math.round(fx.shiftY);
-    if (fx.palette !== undefined) this.effects[o + 2] = fx.palette & 15;
-    let flags = this.effects[o + 3] ?? 0;
-    if (fx.wrap !== undefined) flags = fx.wrap ? flags | FX_WRAP : flags & ~FX_WRAP;
-    if (fx.blank !== undefined) flags = fx.blank ? flags | FX_BLANK : flags & ~FX_BLANK;
-    this.effects[o + 3] = flags;
+    for (let i = 0; i < PALETTE_SIZE; i++) this.writePalette(y + 1, i, colours[i] ?? '#000000');
+    this.effects[y * 4 + 2] = y + 1;
     this.effectsDirty = true;
     this.effectsUsed = true;
   }
 
-  resetScanlines(): void {
-    this.effects.fill(0);
+  setLineEffect(y: number, fx: DisplayEffect): void {
+    y = Math.floor(y);
+    if (y < 0 || y >= SCREEN_HEIGHT) return;
+    const o = y * 4;
+    this.effects[o] = Math.round(fx.shiftX);
+    this.effects[o + 1] = Math.round(fx.shiftY);
+    this.effects[o + 3] = flagsOf(fx);
+    this.lineOwn[y] = 1;
     this.effectsDirty = true;
-    this.effectsUsed = false;
-  }
-
-  persistEffects(on: boolean): void {
-    this.persist = on;
+    this.effectsUsed = true;
   }
 
   /**

@@ -65,11 +65,12 @@ export class Engine {
   readonly input = new InputState();
   /** Attached input devices; sources may be added or removed while the game runs. */
   private readonly sources = new Set<InputSource>();
-  /** Action names declared by the running game, empty until it calls `input.declare`. */
+  /** Action names the game document gives its actions, as of the last load. */
   declaredActions: readonly DeclaredAction[] = [];
 
   private lua: LuaEnvironment | null = null;
   private modules: EngineModule[] = [];
+  private gfxApi: GfxAPI | null = null;
   private netApi: NetAPI | null = null;
   private readonly loop: GameLoop;
   private state: EngineState = 'idle';
@@ -185,14 +186,18 @@ export class Engine {
       },
     };
     this.netApi = new NetAPI(ctx);
+    this.gfxApi = new GfxAPI(ctx);
     this.modules = [
       new SysAPI(ctx),
-      new GfxAPI(ctx),
+      this.gfxApi,
       new MapAPI(ctx),
       new InputAPI(ctx),
       new SoundAPI(ctx),
       this.netApi,
     ];
+    // The labels are the document's, not the code's, so they reach the host whether or not the
+    // code loads: a game that errors on load still has a controls table to show.
+    ctx.onActionsDeclared?.(this.opts.game.declaredActions);
 
     try {
       if (this.opts.game.compat) lua.evaluate(buildCompatPrelude(), 'compat.lua');
@@ -324,6 +329,17 @@ export class Engine {
       this.fail('draw', e);
       return false;
     }
+    // Looked up every step, since a game may define or replace it at any time; a game without one
+    // pays this one lookup and nothing else.
+    const scanline = lua.getGlobalFunction('_scanline');
+    if (scanline && this.gfxApi) {
+      try {
+        this.gfxApi.beam(scanline);
+      } catch (e) {
+        this.fail('scanline', e);
+        return false;
+      }
+    }
     this.opts.sound?.flush();
     this.stats.recordStep(performance.now() - t0);
     return true;
@@ -372,6 +388,7 @@ export class Engine {
   private teardownVm(): void {
     for (const m of this.modules) m.destroy();
     this.modules = [];
+    this.gfxApi = null;
     this.lua?.close();
     this.lua = null;
   }

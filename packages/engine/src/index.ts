@@ -3,10 +3,10 @@ export { buildCompatPrelude } from './api/compatPrelude';
 export { LEGACY_ALIASES, LUA_API, type LuaApiEntry } from './api/luaApiTable';
 export type {
   ConsoleLevel,
+  DisplayEffect,
   EnginePorts,
   GameData,
   GfxBackend,
-  ScanlineEffect,
   SoundPort,
   SysPort,
 } from './api/ports';
