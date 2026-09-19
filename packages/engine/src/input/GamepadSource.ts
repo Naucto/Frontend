@@ -9,7 +9,6 @@ import type { InputSource } from './InputSource';
 import type { InputState } from './InputState';
 
 const DEADZONE = 0.3;
-const ALL_BITS = ACTIONS.reduce((m, a) => m | ACTION_BIT[a], 0);
 
 /** Polls navigator.getGamepads() every step; pad i drives player i (pad 0 merges with the keyboard as player 1). */
 export class GamepadSource implements InputSource {
@@ -17,6 +16,7 @@ export class GamepadSource implements InputSource {
   private readonly getGamepads: () => (Gamepad | null)[];
   /** Player slot per gamepad index; -1 = unassigned. */
   readonly slots: number[] = [];
+  private readonly masks = new Uint16Array(MAX_PLAYERS);
 
   constructor(opts: { bindings?: ActionBindings; getGamepads?: () => (Gamepad | null)[] } = {}) {
     this.bindings = opts.bindings ?? DEFAULT_BINDINGS;
@@ -42,23 +42,18 @@ export class GamepadSource implements InputSource {
   poll(state: InputState): void {
     const pads = this.getGamepads();
     let connected = 1;
-    // Gamepad bits are rebuilt every step: clear them for players driven by pads.
-    for (let p = 0; p < MAX_PLAYERS; p++) state.resetPolled(p, this.padMask(p, pads));
+    this.masks.fill(0);
     for (let i = 0; i < pads.length; i++) {
       const pad = pads[i];
       if (!pad) continue;
       const player = this.slots[i] ?? i;
       if (player >= MAX_PLAYERS) continue;
       connected = Math.max(connected, player + 1);
-      state.orButtons(player, this.readMask(pad));
+      this.masks[player] = (this.masks[player] ?? 0) | this.readMask(pad);
     }
+    // Every player is written, so a pad that was unplugged lets go of its bits.
+    for (let p = 0; p < MAX_PLAYERS; p++) state.setPolled(p, this.masks[p] ?? 0);
     state.connectedPlayers = connected;
-  }
-
-  private padMask(player: number, pads: (Gamepad | null)[]): number {
-    for (let i = 0; i < pads.length; i++)
-      if (pads[i] && (this.slots[i] ?? i) === player) return ALL_BITS;
-    return 0;
   }
 
   private readMask(pad: Gamepad): number {

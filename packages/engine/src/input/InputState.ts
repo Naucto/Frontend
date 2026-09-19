@@ -4,11 +4,17 @@ import { type Action, ACTION_BIT, MAX_PLAYERS } from './ActionMap';
  * Snapshot of all inputs for one fixed step. Sources write into `next`; the
  * engine calls `commit()` at the top of every step so the game sees a stable
  * frame and pressed/released edges are per step, not per event.
+ *
+ * Buttons come in on two lanes that only meet at `commit()`: event sources (keyboard, touch)
+ * flip bits as they happen, and polled sources (gamepad) rewrite their whole mask every step.
+ * Kept apart, a pad's poll cannot erase a key that is still down, and a key's release cannot
+ * clear a pad's bit.
  */
 export class InputState {
   readonly buttons = new Uint16Array(MAX_PLAYERS);
   readonly prevButtons = new Uint16Array(MAX_PLAYERS);
   private readonly nextButtons = new Uint16Array(MAX_PLAYERS);
+  private readonly polledButtons = new Uint16Array(MAX_PLAYERS);
 
   readonly keys = new Set<string>();
   readonly prevKeys = new Set<string>();
@@ -36,6 +42,7 @@ export class InputState {
     this.buttons.fill(0);
     this.prevButtons.fill(0);
     this.nextButtons.fill(0);
+    this.polledButtons.fill(0);
     this.keys.clear();
     this.prevKeys.clear();
     this.nextKeys.clear();
@@ -65,14 +72,13 @@ export class InputState {
     else this.nextButtons[player] = (this.nextButtons[player] ?? 0) & ~ACTION_BIT[action];
   }
 
-  /** Replace the whole button mask of a player (used by polled sources such as gamepads). */
-  setButtons(player: number, mask: number): void {
-    if (player >= 0 && player < MAX_PLAYERS) this.nextButtons[player] = mask;
+  clearActions(player: number): void {
+    if (player >= 0 && player < MAX_PLAYERS) this.nextButtons[player] = 0;
   }
 
-  orButtons(player: number, mask: number): void {
-    if (player >= 0 && player < MAX_PLAYERS)
-      this.nextButtons[player] = (this.nextButtons[player] ?? 0) | mask;
+  /** Replace a polled source's whole mask for a player; it holds until the next poll. */
+  setPolled(player: number, mask: number): void {
+    if (player >= 0 && player < MAX_PLAYERS) this.polledButtons[player] = mask;
   }
 
   setMouse(x: number | null, y: number | null, buttons: number): void {
@@ -86,7 +92,8 @@ export class InputState {
   /** Promote pending inputs to the current step. */
   commit(): void {
     this.prevButtons.set(this.buttons);
-    this.buttons.set(this.nextButtons);
+    for (let p = 0; p < MAX_PLAYERS; p++)
+      this.buttons[p] = (this.nextButtons[p] ?? 0) | (this.polledButtons[p] ?? 0);
     this.prevKeys.clear();
     for (const k of this.keys) this.prevKeys.add(k);
     this.keys.clear();
@@ -95,12 +102,6 @@ export class InputState {
     this.mouseButtons = this.nextMouseButtons;
     this.mouseX = this.nextMouseX;
     this.mouseY = this.nextMouseY;
-  }
-
-  /** Polled sources (gamepad) rebuild their mask every step; clear before polling. */
-  resetPolled(player: number, mask: number): void {
-    if (player >= 0 && player < MAX_PLAYERS)
-      this.nextButtons[player] = (this.nextButtons[player] ?? 0) & ~mask;
   }
 
   // ---- queries --------------------------------------------------------------

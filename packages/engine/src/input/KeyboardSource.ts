@@ -56,7 +56,7 @@ export class KeyboardSource implements InputSource {
     };
     const onBlur = (): void => {
       state.clearKeys();
-      for (let p = 0; p < this.bindings.keyboard.length; p++) state.setButtons(p, 0);
+      for (let p = 0; p < this.bindings.keyboard.length; p++) state.clearActions(p);
     };
 
     target.addEventListener('pointerdown', onPointerDown);
@@ -99,7 +99,7 @@ export class KeyboardSource implements InputSource {
     };
     const onBlur = (): void => {
       state.clearKeys();
-      for (let p = 0; p < this.bindings.keyboard.length; p++) state.setButtons(p, 0);
+      for (let p = 0; p < this.bindings.keyboard.length; p++) state.clearActions(p);
     };
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
