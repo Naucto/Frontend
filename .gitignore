@@ -15,3 +15,6 @@ apps/web/src/assets/docs/
 
 # built from the docs submodule (npm run docs:build)
 apps/web/public/docs/
+
+# bundles built for another image (npm run migrate:games:build)
+dist-tools/
