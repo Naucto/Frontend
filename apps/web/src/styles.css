@@ -1,0 +1,588 @@
+@import 'tailwindcss';
+@import '@naucto/ui/tokens.css';
+@source '../../../packages/ui/src';
+
+/* ---- documentation (built from the docs submodule) ---- */
+@layer components {
+  /* Set quiet on purpose: the running text is one shade down, and what a reader has to keep is
+     what the page bolds, which comes back up to full ink. A page where everything is loud has no
+     way to point. Emphasis is ink, never weight: a bold word in this face is a heavier word, not a
+     louder one. */
+  .doc-html {
+    color: var(--nc-ink-2);
+    font-size: var(--text-ui);
+    line-height: 1.6;
+    container-type: inline-size;
+  }
+  .doc-html h1 + p {
+    color: var(--nc-ink-body);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .doc-html em {
+    color: var(--nc-ink-body);
+  }
+  .doc-html h1 {
+    font-size: var(--text-display);
+    line-height: 1.1;
+    color: var(--nc-ink);
+    margin: 0 0 16px;
+  }
+  .doc-html h2 {
+    font-size: var(--text-title);
+    color: var(--nc-ink);
+    margin: 32px 0 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--nc-line);
+  }
+  .doc-html h3 {
+    font-size: 14px;
+    color: var(--nc-ink);
+    margin: 24px 0 8px;
+  }
+  .doc-html p,
+  .doc-html ul,
+  .doc-html ol,
+  .doc-html table {
+    margin: 0 0 12px;
+  }
+  .doc-html ul,
+  .doc-html ol {
+    padding-left: 20px;
+  }
+  .doc-html li {
+    margin: 2px 0;
+  }
+  .doc-html a {
+    color: var(--nc-gold-ink);
+  }
+  .doc-html a:hover {
+    text-decoration: underline;
+  }
+  .doc-html code {
+    font-family: var(--font-mono);
+    font-size: var(--text-body);
+    color: var(--nc-ink);
+    background: var(--nc-inset);
+    padding: 0 4px;
+    border-radius: var(--radius-xs);
+  }
+  .doc-html pre {
+    background: var(--nc-inset);
+    border: 1px solid var(--nc-line);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    overflow: auto;
+    margin: 0 0 12px;
+  }
+  .doc-html pre code {
+    background: none;
+    padding: 0;
+    font-size: var(--text-meta);
+    line-height: 1.5;
+  }
+  .doc-html table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: var(--text-meta);
+  }
+  .doc-html th,
+  .doc-html td {
+    text-align: left;
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--nc-line);
+    vertical-align: top;
+  }
+  .doc-html th {
+    color: var(--nc-ink-3);
+    font-weight: normal;
+    text-transform: uppercase;
+    font-size: var(--text-label);
+    letter-spacing: var(--tracking-label);
+  }
+  .doc-html strong,
+  .doc-html b {
+    font-weight: 400;
+    color: var(--nc-ink);
+  }
+  .doc-html h4 {
+    font-size: var(--text-body);
+    color: var(--nc-ink);
+    margin: 16px 0 4px;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-label);
+  }
+  .doc-html hr {
+    border: 0;
+    border-top: 1px solid var(--nc-line);
+    margin: 24px 0;
+  }
+  .doc-html blockquote:not(.callout) {
+    border-left: 2px solid var(--nc-line-strong);
+    padding-left: 12px;
+    margin: 0 0 12px;
+    color: var(--nc-ink-3);
+  }
+  .doc-html kbd {
+    display: inline-block;
+    min-width: 20px;
+    padding: 1px 6px;
+    border: 1px solid var(--nc-line-strong);
+    border-radius: var(--radius-sm);
+    background: var(--nc-line);
+    font-family: var(--font-mono);
+    font-size: var(--text-meta);
+    color: var(--nc-ink-body);
+    text-transform: uppercase;
+  }
+  .doc-html tbody tr:nth-child(even) {
+    background: color-mix(in srgb, var(--nc-raised) 50%, transparent);
+  }
+  /* A picture sits in a frame of its own, with its caption under it, and never wider than the
+     column. */
+  .doc-html figure.doc-figure {
+    margin: 0 0 16px;
+    padding: 8px;
+    border: 1px solid var(--nc-line);
+    border-radius: var(--radius-sm);
+    background: var(--nc-inset);
+  }
+  .doc-html figure.doc-figure img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-xs);
+  }
+  .doc-html figure.doc-figure figcaption {
+    margin-top: 6px;
+    font-size: var(--text-body);
+    line-height: 1.5;
+    color: var(--nc-ink-3);
+  }
+  @container (min-width: 640px) {
+    .doc-html figure.doc-figure--tall {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 12px;
+      align-items: start;
+    }
+    .doc-html figure.doc-figure--tall img {
+      max-width: min(100%, 420px);
+    }
+    .doc-html figure.doc-figure--tall figcaption {
+      margin-top: 0;
+      padding-top: 4px;
+    }
+  }
+  .doc-html figure.doc-frame img {
+    image-rendering: pixelated;
+    width: 320px;
+    max-width: 100%;
+    height: auto;
+  }
+  @container (min-width: 660px) {
+    .doc-html figure.doc-frame img {
+      width: 640px;
+    }
+  }
+  /* A capture is taken in both themes where it can be; the page shows the one it is read in. */
+  .doc-html figure.doc-figure img.doc-light {
+    display: none;
+  }
+  [data-theme='light'] .doc-html figure.doc-figure img.doc-dark {
+    display: none;
+  }
+  [data-theme='light'] .doc-html figure.doc-figure img.doc-light {
+    display: block;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme]) .doc-html figure.doc-figure img.doc-dark {
+      display: none;
+    }
+    :root:not([data-theme]) .doc-html figure.doc-figure img.doc-light {
+      display: block;
+    }
+  }
+  /* A whole game's code, folded until it is asked for. */
+  .doc-html details.doc-listing {
+    margin: 0 0 12px;
+    border: 1px solid var(--nc-line);
+    border-radius: var(--radius-sm);
+    background: var(--nc-inset);
+  }
+  .doc-html details.doc-listing summary {
+    cursor: pointer;
+    padding: 8px 12px;
+    font-family: var(--font-ui);
+    font-size: var(--text-label);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--nc-ink-3);
+  }
+  .doc-html details.doc-listing summary:hover {
+    color: var(--nc-ink);
+  }
+  .doc-html details.doc-listing pre {
+    margin: 0;
+    border: 0;
+    border-top: 1px solid var(--nc-line);
+    border-radius: 0;
+  }
+  .doc-html .callout {
+    border-left: 2px solid var(--nc-sky);
+    background: var(--nc-raised);
+    padding: 8px 12px;
+    margin: 0 0 12px;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  }
+  .doc-html .callout.warning {
+    border-color: var(--nc-orange);
+  }
+  .doc-html .callout.tip {
+    border-color: var(--nc-jade);
+  }
+  .doc-html .callout.important {
+    border-color: var(--nc-hot);
+  }
+  .doc-html .callout.try {
+    border-color: var(--nc-gold);
+    background: var(--nc-inset);
+  }
+  .doc-html .callout.try::before {
+    content: 'Try it';
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+    font-family: var(--font-ui);
+    font-size: var(--text-label);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--nc-gold-ink);
+  }
+  .doc-html .callout > p:last-child {
+    margin-bottom: 0;
+  }
+  .doc-html .api-ref code {
+    color: var(--nc-gold-ink);
+  }
+  .tok-kw {
+    color: var(--nc-hot-ink);
+  }
+  .tok-str {
+    color: var(--nc-jade-ink);
+  }
+  .tok-num {
+    color: var(--nc-orange-ink);
+  }
+  .tok-cmt {
+    color: var(--nc-ink-4);
+    font-style: italic;
+  }
+  .tok-api {
+    color: var(--nc-gold-ink);
+  }
+  .tok-cb {
+    color: var(--nc-sky-ink);
+  }
+
+  /* Box art the docs build turned into vectors. It keeps the character grid it was drawn on, so
+     it sits on the same rhythm as the prose and stays crisp at any zoom. */
+  .doc-html .doc-diagram {
+    margin: 0 0 16px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    background: var(--nc-inset);
+    border: 1px solid var(--nc-line);
+    border-radius: var(--radius-sm);
+  }
+  .doc-html .doc-diagram svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+  .doc-html .doc-diagram--authored svg {
+    width: 100%;
+  }
+  .doc-html .doc-diagram .d-stroke rect,
+  .doc-html .doc-diagram .d-stroke path,
+  .doc-html .doc-diagram .d-stroke polyline {
+    fill: none;
+    stroke: var(--nc-ink-4);
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+  }
+  .doc-html .doc-diagram .d-box rect {
+    fill: var(--nc-raised);
+    stroke: var(--nc-line-strong);
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+  }
+  .doc-html .doc-diagram .d-fill-gold {
+    fill: var(--nc-gold);
+  }
+  .doc-html .doc-diagram .d-fill-jade {
+    fill: var(--nc-jade);
+  }
+  .doc-html .doc-diagram .d-fill-sky {
+    fill: var(--nc-sky);
+  }
+  .doc-html .doc-diagram .d-fill-hot {
+    fill: var(--nc-hot);
+  }
+  .doc-html .doc-diagram .d-fill-orange {
+    fill: var(--nc-orange);
+  }
+  .doc-html .doc-diagram .d-fill-inset {
+    fill: var(--nc-inset);
+  }
+  .doc-html .doc-diagram .d-label text {
+    fill: var(--nc-ink-body);
+    font-family: var(--font-ui);
+    letter-spacing: normal;
+    font-size: var(--text-meta);
+  }
+  /* Box art keeps the character grid it was drawn on. */
+  .doc-html .doc-diagram:not(.doc-diagram--authored) .d-label text,
+  .doc-html .doc-diagram .d-label text.d-mono {
+    font-family: var(--font-mono);
+  }
+  .doc-html .doc-diagram .d-label text.d-quiet {
+    fill: var(--nc-ink-4);
+  }
+  .doc-html .doc-diagram .d-label text.d-gold {
+    fill: var(--nc-gold-ink);
+  }
+  .doc-html .doc-diagram .d-stroke line {
+    stroke: var(--nc-ink-4);
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+  }
+  .doc-html .doc-diagram .d-head polygon {
+    fill: var(--nc-gold);
+  }
+
+  .api-card {
+    padding: 8px 0 24px;
+    border-bottom: 1px solid var(--nc-line);
+  }
+  .api-card:last-child {
+    border-bottom: 0;
+  }
+  .api-sig {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 1px solid var(--nc-line);
+    border-radius: var(--radius-sm);
+    background: var(--nc-inset);
+  }
+  .api-sig code {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding-left: 16px;
+    text-indent: -16px;
+    font-family: var(--font-mono);
+    font-size: var(--text-ui);
+    line-height: 1.5;
+    color: var(--nc-ink);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .api-sig-name {
+    color: var(--nc-gold-ink);
+  }
+  .api-sig-opt {
+    color: var(--nc-ink-3);
+  }
+  .api-insert {
+    flex: none;
+    margin: -4px -6px -4px 0;
+  }
+  @container (max-width: 480px) {
+    .api-insert-word {
+      display: none;
+    }
+  }
+  .api-meta {
+    margin-top: 6px;
+    font-family: var(--font-ui);
+    font-size: var(--text-meta);
+    color: var(--nc-ink-4);
+  }
+  .api-prose {
+    margin-top: 12px;
+    color: var(--nc-ink-2);
+    font-size: var(--text-ui);
+    line-height: 1.6;
+  }
+  .api-prose > p:last-child {
+    margin-bottom: 0;
+  }
+  .api-quiet {
+    color: var(--nc-ink-4);
+  }
+  .api-label {
+    margin: 16px 0 6px;
+    font-family: var(--font-ui);
+    font-size: var(--text-label);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--nc-ink-3);
+  }
+  .api-params {
+    margin: 0;
+  }
+  .api-param {
+    padding: 6px 0;
+    border-top: 1px solid var(--nc-line);
+  }
+  .api-param:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+  .api-param dt {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .api-param dt code {
+    font-family: var(--font-mono);
+    font-size: var(--text-body);
+    color: var(--nc-ink);
+  }
+  .api-param-meta {
+    font-family: var(--font-ui);
+    font-size: var(--text-meta);
+  }
+  /* A type name is a word, not code: it takes the UI face wherever it sits, including inside a
+     signature's mono band. One hue per type, the same on a card and in the editor's pop-over. */
+  .nc-type {
+    font-family: var(--font-ui);
+    text-transform: none;
+    --nc-tracking: normal;
+    letter-spacing: normal;
+  }
+  .nc-type--number {
+    color: var(--nc-sky-ink);
+  }
+  .nc-type--string {
+    color: var(--nc-jade-ink);
+  }
+  .nc-type--boolean {
+    color: var(--nc-orange-ink);
+  }
+  .nc-type--table {
+    color: var(--nc-blush-ink);
+  }
+  .nc-type--function {
+    color: var(--nc-hot-ink);
+  }
+  .nc-type--any {
+    color: var(--nc-ink-3);
+  }
+  .nc-arg {
+    font-family: var(--font-mono);
+    --nc-tracking: normal;
+    letter-spacing: normal;
+  }
+  .nc-opt {
+    color: var(--nc-ink-4);
+  }
+  .api-param dd {
+    margin: 2px 0 0 16px;
+    font-size: var(--text-body);
+    line-height: 1.55;
+  }
+  .api-param dd p:last-child {
+    margin-bottom: 0;
+  }
+  .api-refs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .api-ref-chip {
+    padding: 2px 8px;
+    border: 1px solid var(--nc-line-strong);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: var(--text-meta);
+    color: var(--nc-gold-ink);
+    cursor: pointer;
+  }
+  .api-ref-chip:hover {
+    border-color: var(--nc-gold);
+    background: var(--nc-raised);
+  }
+
+  /* A heading that names a function is still a heading: without this the inline-code rule below
+     drops `_init()` to 11px and it stops looking like one. */
+  .doc-html h1 code,
+  .doc-html h2 code,
+  .doc-html h3 code {
+    font-size: inherit;
+    padding: 0;
+    background: none;
+    color: var(--nc-gold-ink);
+  }
+}
+
+/* CodeMirror card fed by the docs manifest. The frame is the editor theme's, on every .cm-tooltip;
+   the width belongs to the card, which is shown from more than one kind of tooltip. */
+.nc-doc-card {
+  max-width: 360px;
+  /* A call with eight arguments writes a paragraph for each, which was twice the height of the
+     window and left by the top of it. Bounded against the viewport rather than at a fixed height,
+     so a small screen gets a card that fits it. */
+  max-height: min(40vh, 320px);
+  overflow-y: auto;
+  padding: 8px 10px;
+  font-family: var(--font-ui);
+  color: var(--nc-ink-body);
+  font-size: var(--text-meta);
+}
+.nc-doc-card__sig {
+  font-family: var(--font-mono);
+  letter-spacing: normal;
+  color: var(--nc-gold-ink);
+}
+.nc-doc-card__summary {
+  margin-top: 4px;
+}
+.nc-doc-card__params {
+  margin: 6px 0 0;
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 2px 8px;
+}
+.nc-doc-card__params dt {
+  color: var(--nc-ink-3);
+}
+.nc-doc-card__params dt code {
+  font-family: var(--font-mono);
+  letter-spacing: normal;
+}
+/* The argument the caret is on. Gold is what this design uses for "the one you are on"; it goes
+   under the name as a rule rather than over it as a colour, so the name keeps its ink step. */
+.nc-doc-card__params dt[data-active] code,
+.nc-doc-card__sig span[data-active] {
+  color: var(--nc-ink);
+  box-shadow: inset 0 -1px var(--nc-gold);
+}
+.nc-doc-card__params dd[data-active] {
+  color: var(--nc-ink);
+}
+.nc-doc-card__params dd {
+  margin: 0;
+  color: var(--nc-ink-2);
+}
+.nc-doc-card__more {
+  margin-top: 6px;
+  font-size: var(--text-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--nc-ink-4);
+}

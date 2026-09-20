@@ -1,0 +1,15 @@
+function _draw()
+  gfx.clear(0)
+  gfx.rect(8, 8, 60, 40, 4)
+  gfx.fill_rect(80, 8, 60, 40, 12)
+  gfx.circle(180, 28, 20, 7)
+  gfx.fill_circle(240, 28, 20, 11)
+  gfx.line(8, 70, 140, 100, 6)
+  for i = 0, 40 do gfx.pixel(160 + i * 3, 70 + (i % 5) * 4, 13) end
+  gfx.print("rect", 8, 52, 5)
+  gfx.print("fill_rect", 80, 52, 5)
+  gfx.print("circle", 160, 52, 5)
+  gfx.print("fill_circle", 220, 52, 5)
+  gfx.print("line", 8, 104, 5)
+  gfx.print("pixel", 160, 104, 5)
+end
