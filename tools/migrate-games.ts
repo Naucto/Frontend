@@ -32,7 +32,6 @@ import {
 // ---- pure core ------------------------------------------------------------
 
 export interface BlobMigration {
-  /** The migrated encoding, or null when the blob is to be left exactly as it is. */
   bytes: Uint8Array | null;
   from: number;
   to: number;
@@ -312,7 +311,6 @@ async function writeObject(
 
 const epochOf = (saveKey: string): number => Number(saveKey.slice(saveKey.lastIndexOf('/') + 1));
 
-/** Every object a project owns, and which autosave the `Project` row's size breakdown describes. */
 async function objectsOf(
   store: Store,
   id: number,
