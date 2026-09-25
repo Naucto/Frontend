@@ -641,22 +641,6 @@ export type ReportResponseDto = {
   createdAt: string;
 };
 
-export type AdminLoginDto = {
-  email: string;
-  password: string;
-};
-
-export type AdminMeDto = {
-  id: number;
-  email: string;
-  username: string;
-  nickname?: {
-    [key: string]: unknown;
-  } | null;
-  accountStatus: "ACTIVE" | "SUSPENDED" | "BANNED";
-  roles: Array<string>;
-};
-
 export type CreateAdminUserDto = {
   email: string;
   username: string;
@@ -697,12 +681,35 @@ export type ReportActionDto = {
   resolutionNote?: string;
 };
 
+export const Permission = {
+  MODERATE_CONTENT: "MODERATE_CONTENT",
+  MODERATE_USERS: "MODERATE_USERS",
+  MANAGE_REPORTS: "MANAGE_REPORTS",
+  VIEW_AUDIT: "VIEW_AUDIT",
+  VIEW_ACTIVITY: "VIEW_ACTIVITY",
+  VIEW_INSIGHTS: "VIEW_INSIGHTS",
+  MANAGE_USERS: "MANAGE_USERS",
+  MANAGE_ROLES: "MANAGE_ROLES"
+} as const;
+
+export type Permission = (typeof Permission)[keyof typeof Permission];
+
+export type AdminRoleResponseDto = {
+  id: number;
+  name: string;
+  userCount: number;
+  canonical: boolean;
+  permissions: Array<Permission>;
+};
+
 export type CreateRoleDto = {
+  permissions?: Array<Permission>;
   name: string;
   reason?: string;
 };
 
 export type UpdateRoleDto = {
+  permissions?: Array<Permission>;
   name: string;
   reason?: string;
 };
@@ -787,6 +794,7 @@ export type AuditLogResponseDto = {
 };
 
 export type UserRoleDto = {
+  permissions: Array<Permission>;
   /**
    * Role ID
    */
@@ -870,6 +878,55 @@ export type UserListResponseDto = {
   meta: PaginationMetaDto;
 };
 
+export type RoleDto = {
+  /**
+   * Role ID
+   */
+  id: number;
+  /**
+   * Role name
+   */
+  name: string;
+  permissions: Array<Permission>;
+};
+
+export type UserWithDetailsDto = {
+  /**
+   * User ID
+   */
+  id: number;
+  /**
+   * User email
+   */
+  email: string;
+  /**
+   * Username
+   */
+  username: string;
+  /**
+   * Optional nickname
+   */
+  nickname?: {
+    [key: string]: unknown;
+  };
+  /**
+   * Date of creation
+   */
+  createdAt: string;
+  /**
+   * Current account moderation status
+   */
+  accountStatus: "ACTIVE" | "SUSPENDED" | "BANNED";
+  /**
+   * List of user roles
+   */
+  roles?: Array<RoleDto>;
+  projectsCreatedCount: number;
+  commentsCount: number;
+  reportsFiledCount: number;
+  moderationActionsTakenCount: number;
+};
+
 export type UserSingleResponseDto = {
   /**
    * HTTP status code
@@ -882,7 +939,7 @@ export type UserSingleResponseDto = {
   /**
    * User data
    */
-  data: UserResponseDto;
+  data: UserResponseDto | UserWithDetailsDto;
 };
 
 export type UserProfileResponseDto = {
@@ -1007,6 +1064,18 @@ export type UpdateUserDto = {
    * User password
    */
   password?: string;
+};
+
+export type SessionUserDto = {
+  id: number;
+  email: string;
+  username: string;
+  nickname?: {
+    [key: string]: unknown;
+  } | null;
+  accountStatus: "ACTIVE" | "SUSPENDED" | "BANNED";
+  roles: Array<string>;
+  permissions: Array<Permission>;
 };
 
 export type LoginDto = {
@@ -2309,6 +2378,8 @@ export type CommentControllerListData = {
   query?: {
     page?: number;
     limit?: number;
+    sortBy?: "id" | "createdAt";
+    order?: "asc" | "desc";
     /**
      * Only comments on this project
      */
@@ -2325,8 +2396,6 @@ export type CommentControllerListData = {
      * Moderators only
      */
     deleted?: boolean;
-    sortBy?: "id" | "createdAt";
-    order?: "asc" | "desc";
   };
   url: "/comments";
 };
@@ -2361,69 +2430,6 @@ export type ReportControllerCreateResponses = {
 
 export type ReportControllerCreateResponse =
   ReportControllerCreateResponses[keyof ReportControllerCreateResponses];
-
-export type AdminAuthControllerLoginData = {
-  body: AdminLoginDto;
-  path?: never;
-  query?: never;
-  url: "/admin/auth/login";
-};
-
-export type AdminAuthControllerLoginErrors = {
-  401: unknown;
-  403: unknown;
-};
-
-export type AdminAuthControllerLoginResponses = {
-  200: AdminMeDto;
-};
-
-export type AdminAuthControllerLoginResponse =
-  AdminAuthControllerLoginResponses[keyof AdminAuthControllerLoginResponses];
-
-export type AdminAuthControllerRefreshData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: "/admin/auth/refresh";
-};
-
-export type AdminAuthControllerRefreshErrors = {
-  401: unknown;
-  403: unknown;
-};
-
-export type AdminAuthControllerRefreshResponses = {
-  200: AdminMeDto;
-};
-
-export type AdminAuthControllerRefreshResponse =
-  AdminAuthControllerRefreshResponses[keyof AdminAuthControllerRefreshResponses];
-
-export type AdminAuthControllerLogoutData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: "/admin/auth/logout";
-};
-
-export type AdminAuthControllerLogoutResponses = {
-  200: unknown;
-};
-
-export type AdminAuthControllerMeData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: "/admin/auth/me";
-};
-
-export type AdminAuthControllerMeResponses = {
-  200: AdminMeDto;
-};
-
-export type AdminAuthControllerMeResponse =
-  AdminAuthControllerMeResponses[keyof AdminAuthControllerMeResponses];
 
 export type AdminInsightsControllerGetDashboardData = {
   body?: never;
@@ -2514,7 +2520,7 @@ export type AdminUserControllerRevokeRoleData = {
   body: ModerationReasonDto;
   path: {
     id: number;
-    role: "Admin" | "Moderator";
+    role: string;
   };
   query?: never;
   url: "/admin/users/{id}/roles/{role}";
@@ -2538,7 +2544,7 @@ export type AdminUserControllerGrantRoleData = {
   body: ModerationReasonDto;
   path: {
     id: number;
-    role: "Admin" | "Moderator";
+    role: string;
   };
   query?: never;
   url: "/admin/users/{id}/roles/{role}";
@@ -2724,8 +2730,11 @@ export type AdminRoleControllerListData = {
 };
 
 export type AdminRoleControllerListResponses = {
-  200: unknown;
+  200: Array<AdminRoleResponseDto>;
 };
+
+export type AdminRoleControllerListResponse =
+  AdminRoleControllerListResponses[keyof AdminRoleControllerListResponses];
 
 export type AdminRoleControllerCreateData = {
   body: CreateRoleDto;
@@ -2735,8 +2744,11 @@ export type AdminRoleControllerCreateData = {
 };
 
 export type AdminRoleControllerCreateResponses = {
-  201: unknown;
+  201: AdminRoleResponseDto;
 };
+
+export type AdminRoleControllerCreateResponse =
+  AdminRoleControllerCreateResponses[keyof AdminRoleControllerCreateResponses];
 
 export type AdminRoleControllerRemoveData = {
   body: DeleteRoleDto;
@@ -2761,8 +2773,11 @@ export type AdminRoleControllerRenameData = {
 };
 
 export type AdminRoleControllerRenameResponses = {
-  200: unknown;
+  200: AdminRoleResponseDto;
 };
+
+export type AdminRoleControllerRenameResponse =
+  AdminRoleControllerRenameResponses[keyof AdminRoleControllerRenameResponses];
 
 export type NotificationsControllerGetWebRtcOfferData = {
   body?: never;
@@ -3259,7 +3274,9 @@ export type UserPublicControllerGetPublishedGamesResponse =
 export type AuthControllerLoginData = {
   body: LoginDto;
   path?: never;
-  query?: never;
+  query?: {
+    scope?: "user" | "admin";
+  };
   url: "/auth/login";
 };
 
@@ -3278,9 +3295,11 @@ export type AuthControllerLoginResponses = {
   /**
    * User logged in successfully
    */
-  201: {
-    access_token: string;
-  };
+  201:
+    | {
+        access_token: string;
+      }
+    | SessionUserDto;
 };
 
 export type AuthControllerLoginResponse =
@@ -3401,7 +3420,9 @@ export type AuthControllerLoginWithMicrosoftResponse =
 export type AuthControllerRefreshData = {
   body?: never;
   path?: never;
-  query?: never;
+  query?: {
+    scope?: "user" | "admin";
+  };
   url: "/auth/refresh";
 };
 
@@ -3416,9 +3437,11 @@ export type AuthControllerRefreshResponses = {
   /**
    * Access token refreshed successfully
    */
-  201: {
-    access_token: string;
-  };
+  201:
+    | {
+        access_token: string;
+      }
+    | SessionUserDto;
 };
 
 export type AuthControllerRefreshResponse =
@@ -3449,10 +3472,26 @@ export type AuthControllerChangePasswordResponses = {
   200: unknown;
 };
 
-export type AuthControllerLogoutData = {
+export type AuthControllerMeData = {
   body?: never;
   path?: never;
   query?: never;
+  url: "/auth/me";
+};
+
+export type AuthControllerMeResponses = {
+  200: SessionUserDto;
+};
+
+export type AuthControllerMeResponse =
+  AuthControllerMeResponses[keyof AuthControllerMeResponses];
+
+export type AuthControllerLogoutData = {
+  body?: never;
+  path?: never;
+  query?: {
+    scope?: "user" | "admin";
+  };
   url: "/auth/logout";
 };
 

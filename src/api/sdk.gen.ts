@@ -8,16 +8,6 @@ import {
 } from "./client";
 import { client } from "./client.gen";
 import type {
-  AdminAuthControllerLoginData,
-  AdminAuthControllerLoginErrors,
-  AdminAuthControllerLoginResponses,
-  AdminAuthControllerLogoutData,
-  AdminAuthControllerLogoutResponses,
-  AdminAuthControllerMeData,
-  AdminAuthControllerMeResponses,
-  AdminAuthControllerRefreshData,
-  AdminAuthControllerRefreshErrors,
-  AdminAuthControllerRefreshResponses,
   AdminInsightsControllerGetDashboardData,
   AdminInsightsControllerGetDashboardResponses,
   AdminInsightsControllerGetLiveData,
@@ -83,6 +73,8 @@ import type {
   AuthControllerLoginWithMicrosoftResponses,
   AuthControllerLogoutData,
   AuthControllerLogoutResponses,
+  AuthControllerMeData,
+  AuthControllerMeResponses,
   AuthControllerRefreshData,
   AuthControllerRefreshErrors,
   AuthControllerRefreshResponses,
@@ -1308,89 +1300,6 @@ export const reportControllerCreate = <ThrowOnError extends boolean = false>(
   });
 
 /**
- * Authenticate a staff user and set HTTP-only admin cookies
- */
-export const adminAuthControllerLogin = <ThrowOnError extends boolean = false>(
-  options: Options<AdminAuthControllerLoginData, ThrowOnError>
-) =>
-  (options.client ?? client).post<
-    AdminAuthControllerLoginResponses,
-    AdminAuthControllerLoginErrors,
-    ThrowOnError
-  >({
-    responseType: "json",
-    url: "/admin/auth/login",
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers
-    }
-  });
-
-/**
- * Rotate the admin access token via refresh cookie
- */
-export const adminAuthControllerRefresh = <
-  ThrowOnError extends boolean = false
->(
-  options?: Options<AdminAuthControllerRefreshData, ThrowOnError>
-) =>
-  (options?.client ?? client).post<
-    AdminAuthControllerRefreshResponses,
-    AdminAuthControllerRefreshErrors,
-    ThrowOnError
-  >({
-    responseType: "json",
-    url: "/admin/auth/refresh",
-    ...options
-  });
-
-/**
- * Revoke admin refresh token and clear cookies
- */
-export const adminAuthControllerLogout = <ThrowOnError extends boolean = false>(
-  options?: Options<AdminAuthControllerLogoutData, ThrowOnError>
-) =>
-  (options?.client ?? client).post<
-    AdminAuthControllerLogoutResponses,
-    unknown,
-    ThrowOnError
-  >({
-    security: [
-      {
-        in: "cookie",
-        name: "naucto_admin_access",
-        type: "apiKey"
-      }
-    ],
-    url: "/admin/auth/logout",
-    ...options
-  });
-
-/**
- * Return the current authenticated staff user
- */
-export const adminAuthControllerMe = <ThrowOnError extends boolean = false>(
-  options?: Options<AdminAuthControllerMeData, ThrowOnError>
-) =>
-  (options?.client ?? client).get<
-    AdminAuthControllerMeResponses,
-    unknown,
-    ThrowOnError
-  >({
-    responseType: "json",
-    security: [
-      {
-        in: "cookie",
-        name: "naucto_admin_access",
-        type: "apiKey"
-      }
-    ],
-    url: "/admin/auth/me",
-    ...options
-  });
-
-/**
  * Full admin dashboard payload
  */
 export const adminInsightsControllerGetDashboard = <
@@ -1571,7 +1480,7 @@ export const adminUserControllerRestore = <
   });
 
 /**
- * Revoke a staff role (Admin or Moderator)
+ * Revoke an existing role
  */
 export const adminUserControllerRevokeRole = <
   ThrowOnError extends boolean = false
@@ -1600,7 +1509,7 @@ export const adminUserControllerRevokeRole = <
   });
 
 /**
- * Grant a staff role (Admin or Moderator)
+ * Grant an existing role
  */
 export const adminUserControllerGrantRole = <
   ThrowOnError extends boolean = false
@@ -1871,6 +1780,7 @@ export const adminRoleControllerList = <ThrowOnError extends boolean = false>(
     unknown,
     ThrowOnError
   >({
+    responseType: "json",
     security: [
       {
         in: "cookie",
@@ -1893,6 +1803,7 @@ export const adminRoleControllerCreate = <ThrowOnError extends boolean = false>(
     unknown,
     ThrowOnError
   >({
+    responseType: "json",
     security: [
       {
         in: "cookie",
@@ -1935,7 +1846,7 @@ export const adminRoleControllerRemove = <ThrowOnError extends boolean = false>(
   });
 
 /**
- * Rename a non-canonical role
+ * Update a custom role name and permissions
  */
 export const adminRoleControllerRename = <ThrowOnError extends boolean = false>(
   options: Options<AdminRoleControllerRenameData, ThrowOnError>
@@ -1945,6 +1856,7 @@ export const adminRoleControllerRename = <ThrowOnError extends boolean = false>(
     unknown,
     ThrowOnError
   >({
+    responseType: "json",
     security: [
       {
         in: "cookie",
@@ -2432,6 +2344,22 @@ export const authControllerChangePassword = <
       "Content-Type": "application/json",
       ...options.headers
     }
+  });
+
+/**
+ * Return the current staff session and permissions
+ */
+export const authControllerMe = <ThrowOnError extends boolean = false>(
+  options?: Options<AuthControllerMeData, ThrowOnError>
+) =>
+  (options?.client ?? client).get<
+    AuthControllerMeResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/auth/me",
+    ...options
   });
 
 /**
