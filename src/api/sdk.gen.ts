@@ -8,6 +8,54 @@ import {
 } from "./client";
 import { client } from "./client.gen";
 import type {
+  AdminInsightsControllerGetDashboardData,
+  AdminInsightsControllerGetDashboardResponses,
+  AdminInsightsControllerGetLiveData,
+  AdminInsightsControllerGetLiveResponses,
+  AdminInsightsControllerGetSocialData,
+  AdminInsightsControllerGetSocialResponses,
+  AdminModerationLogControllerGetData,
+  AdminModerationLogControllerGetResponses,
+  AdminModerationLogControllerListData,
+  AdminModerationLogControllerListResponses,
+  AdminReportControllerDismissData,
+  AdminReportControllerDismissResponses,
+  AdminReportControllerGetData,
+  AdminReportControllerGetResponses,
+  AdminReportControllerListData,
+  AdminReportControllerListResponses,
+  AdminReportControllerResolveData,
+  AdminReportControllerResolveResponses,
+  AdminReportControllerReviewData,
+  AdminReportControllerReviewResponses,
+  AdminReportControllerUpdateData,
+  AdminReportControllerUpdateResponses,
+  AdminRoleControllerCreateData,
+  AdminRoleControllerCreateResponses,
+  AdminRoleControllerListData,
+  AdminRoleControllerListResponses,
+  AdminRoleControllerRemoveData,
+  AdminRoleControllerRemoveResponses,
+  AdminRoleControllerRenameData,
+  AdminRoleControllerRenameResponses,
+  AdminUserControllerBanData,
+  AdminUserControllerBanResponses,
+  AdminUserControllerCreateData,
+  AdminUserControllerCreateResponses,
+  AdminUserControllerGrantRoleData,
+  AdminUserControllerGrantRoleErrors,
+  AdminUserControllerGrantRoleResponses,
+  AdminUserControllerResetPasswordData,
+  AdminUserControllerResetPasswordResponses,
+  AdminUserControllerRestoreData,
+  AdminUserControllerRestoreResponses,
+  AdminUserControllerRevokeRoleData,
+  AdminUserControllerRevokeRoleErrors,
+  AdminUserControllerRevokeRoleResponses,
+  AdminUserControllerSuspendData,
+  AdminUserControllerSuspendResponses,
+  AuditControllerHistoryOfData,
+  AuditControllerHistoryOfResponses,
   AuthControllerChangePasswordData,
   AuthControllerChangePasswordErrors,
   AuthControllerChangePasswordResponses,
@@ -25,12 +73,20 @@ import type {
   AuthControllerLoginWithMicrosoftResponses,
   AuthControllerLogoutData,
   AuthControllerLogoutResponses,
+  AuthControllerMeData,
+  AuthControllerMeResponses,
   AuthControllerRefreshData,
   AuthControllerRefreshErrors,
   AuthControllerRefreshResponses,
   AuthControllerRegisterData,
   AuthControllerRegisterErrors,
   AuthControllerRegisterResponses,
+  CommentControllerFindOneData,
+  CommentControllerFindOneErrors,
+  CommentControllerFindOneResponses,
+  CommentControllerListData,
+  CommentControllerListErrors,
+  CommentControllerListResponses,
   MultiplayerControllerCreateData,
   MultiplayerControllerCreateResponses,
   MultiplayerControllerGetData,
@@ -105,6 +161,12 @@ import type {
   ProjectControllerGetProjectImageData,
   ProjectControllerGetProjectImageErrors,
   ProjectControllerGetProjectImageResponses,
+  ProjectControllerGetProjectPreviewContentData,
+  ProjectControllerGetProjectPreviewContentErrors,
+  ProjectControllerGetProjectPreviewContentResponses,
+  ProjectControllerGetProjectPreviewData,
+  ProjectControllerGetProjectPreviewErrors,
+  ProjectControllerGetProjectPreviewResponses,
   ProjectControllerGetPublishedProjectImageData,
   ProjectControllerGetPublishedProjectImageErrors,
   ProjectControllerGetPublishedProjectImageResponses,
@@ -153,6 +215,8 @@ import type {
   ProjectControllerUploadProjectImageData,
   ProjectControllerUploadProjectImageErrors,
   ProjectControllerUploadProjectImageResponses,
+  ReportControllerCreateData,
+  ReportControllerCreateResponses,
   UserControllerFindAllData,
   UserControllerFindAllErrors,
   UserControllerFindAllResponses,
@@ -594,6 +658,44 @@ export const projectControllerGetPublishedProjectImage = <
     responseType: "json",
     security: [{ scheme: "bearer", type: "http" }],
     url: "/projects/public/{id}/image",
+    ...options
+  });
+
+/**
+ * Get any project's metadata for staff preview, published or not
+ */
+export const projectControllerGetProjectPreview = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<ProjectControllerGetProjectPreviewData, ThrowOnError>
+) =>
+  (options.client ?? client).get<
+    ProjectControllerGetProjectPreviewResponses,
+    ProjectControllerGetProjectPreviewErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/projects/{id}/preview",
+    ...options
+  });
+
+/**
+ * Get any project's playable content for staff preview: the published release when there is one, otherwise the latest save
+ */
+export const projectControllerGetProjectPreviewContent = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<ProjectControllerGetProjectPreviewContentData, ThrowOnError>
+) =>
+  (options.client ?? client).get<
+    ProjectControllerGetProjectPreviewContentResponses,
+    ProjectControllerGetProjectPreviewContentErrors,
+    ThrowOnError
+  >({
+    responseType: "blob",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/projects/{id}/preview/content",
     ...options
   });
 
@@ -1143,6 +1245,634 @@ export const projectCommentControllerUpdateComment = <
   });
 
 /**
+ * Fetch one comment by id (moderators only)
+ */
+export const commentControllerFindOne = <ThrowOnError extends boolean = false>(
+  options: Options<CommentControllerFindOneData, ThrowOnError>
+) =>
+  (options.client ?? client).get<
+    CommentControllerFindOneResponses,
+    CommentControllerFindOneErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/comments/{id}",
+    ...options
+  });
+
+/**
+ * List comments across projects (moderators only)
+ */
+export const commentControllerList = <ThrowOnError extends boolean = false>(
+  options?: Options<CommentControllerListData, ThrowOnError>
+) =>
+  (options?.client ?? client).get<
+    CommentControllerListResponses,
+    CommentControllerListErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/comments",
+    ...options
+  });
+
+/**
+ * Report a user, project, or comment for moderation
+ */
+export const reportControllerCreate = <ThrowOnError extends boolean = false>(
+  options: Options<ReportControllerCreateData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    ReportControllerCreateResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/reports",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Full admin dashboard payload
+ */
+export const adminInsightsControllerGetDashboard = <
+  ThrowOnError extends boolean = false
+>(
+  options?: Options<AdminInsightsControllerGetDashboardData, ThrowOnError>
+) =>
+  (options?.client ?? client).get<
+    AdminInsightsControllerGetDashboardResponses,
+    unknown,
+    ThrowOnError
+  >({
+    security: [
+      {
+        in: "cookie",
+        name: "naucto_admin_access",
+        type: "apiKey"
+      }
+    ],
+    url: "/admin/insights/dashboard",
+    ...options
+  });
+
+/**
+ * Live activity metrics and active sessions
+ */
+export const adminInsightsControllerGetLive = <
+  ThrowOnError extends boolean = false
+>(
+  options?: Options<AdminInsightsControllerGetLiveData, ThrowOnError>
+) =>
+  (options?.client ?? client).get<
+    AdminInsightsControllerGetLiveResponses,
+    unknown,
+    ThrowOnError
+  >({
+    security: [
+      {
+        in: "cookie",
+        name: "naucto_admin_access",
+        type: "apiKey"
+      }
+    ],
+    url: "/admin/insights/live",
+    ...options
+  });
+
+/**
+ * Social engagement metrics
+ */
+export const adminInsightsControllerGetSocial = <
+  ThrowOnError extends boolean = false
+>(
+  options?: Options<AdminInsightsControllerGetSocialData, ThrowOnError>
+) =>
+  (options?.client ?? client).get<
+    AdminInsightsControllerGetSocialResponses,
+    unknown,
+    ThrowOnError
+  >({
+    security: [
+      {
+        in: "cookie",
+        name: "naucto_admin_access",
+        type: "apiKey"
+      }
+    ],
+    url: "/admin/insights/social",
+    ...options
+  });
+
+/**
+ * Create a new staff account
+ */
+export const adminUserControllerCreate = <ThrowOnError extends boolean = false>(
+  options: Options<AdminUserControllerCreateData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    AdminUserControllerCreateResponses,
+    unknown,
+    ThrowOnError
+  >({
+    security: [
+      {
+        in: "cookie",
+        name: "naucto_admin_access",
+        type: "apiKey"
+      }
+    ],
+    url: "/admin/users",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Suspend a user account
+ */
+export const adminUserControllerSuspend = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<AdminUserControllerSuspendData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    AdminUserControllerSuspendResponses,
+    unknown,
+    ThrowOnError
+  >({
+    security: [
+      {
+        in: "cookie",
+        name: "naucto_admin_access",
+        type: "apiKey"
+      }
+    ],
+    url: "/admin/users/{id}/suspend",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Ban a user account
+ */
+export const adminUserControllerBan = <ThrowOnError extends boolean = false>(
+  options: Options<AdminUserControllerBanData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    AdminUserControllerBanResponses,
+    unknown,
+    ThrowOnError
+  >({
+    security: [
+      {
+        in: "cookie",
+        name: "naucto_admin_access",
+        type: "apiKey"
+      }
+    ],
+    url: "/admin/users/{id}/ban",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Restore a suspended/banned user account
+ */
+export const adminUserControllerRestore = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<AdminUserControllerRestoreData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    AdminUserControllerRestoreResponses,
+    unknown,
+    ThrowOnError
+  >({
+    security: [
+      {
+        in: "cookie",
+        name: "naucto_admin_access",
+        type: "apiKey"
+      }
+    ],
+    url: "/admin/users/{id}/restore",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Revoke an existing role
+ */
+export const adminUserControllerRevokeRole = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<AdminUserControllerRevokeRoleData, ThrowOnError>
+) =>
+  (options.client ?? client).delete<
+    AdminUserControllerRevokeRoleResponses,
+    AdminUserControllerRevokeRoleErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [
+      {
+        in: "cookie",
+        name: "naucto_admin_access",
+        type: "apiKey"
+      }
+    ],
+    url: "/admin/users/{id}/roles/{role}",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Grant an existing role
+ */
+export const adminUserControllerGrantRole = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<AdminUserControllerGrantRoleData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    AdminUserControllerGrantRoleResponses,
+    AdminUserControllerGrantRoleErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [
+      {
+        in: "cookie",
+        name: "naucto_admin_access",
+        type: "apiKey"
+      }
+    ],
+    url: "/admin/users/{id}/roles/{role}",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Reset a user's password to a value chosen by an admin
+ */
+export const adminUserControllerResetPassword = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<AdminUserControllerResetPasswordData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    AdminUserControllerResetPasswordResponses,
+    unknown,
+    ThrowOnError
+  >({
+    security: [
+      {
+        in: "cookie",
+        name: "naucto_admin_access",
+        type: "apiKey"
+      }
+    ],
+    url: "/admin/users/{id}/reset-password",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * List reports with pagination and filters
+ */
+export const adminReportControllerList = <ThrowOnError extends boolean = false>(
+  options?: Options<AdminReportControllerListData, ThrowOnError>
+) =>
+  (options?.client ?? client).get<
+    AdminReportControllerListResponses,
+    unknown,
+    ThrowOnError
+  >({
+    security: [
+      {
+        in: "cookie",
+        name: "naucto_admin_access",
+        type: "apiKey"
+      }
+    ],
+    url: "/admin/reports",
+    ...options
+  });
+
+/**
+ * Get a single report including audit history
+ */
+export const adminReportControllerGet = <ThrowOnError extends boolean = false>(
+  options: Options<AdminReportControllerGetData, ThrowOnError>
+) =>
+  (options.client ?? client).get<
+    AdminReportControllerGetResponses,
+    unknown,
+    ThrowOnError
+  >({
+    security: [
+      {
+        in: "cookie",
+        name: "naucto_admin_access",
+        type: "apiKey"
+      }
+    ],
+    url: "/admin/reports/{id}",
+    ...options
+  });
+
+/**
+ * Update the resolution note without changing status
+ */
+export const adminReportControllerUpdate = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<AdminReportControllerUpdateData, ThrowOnError>
+) =>
+  (options.client ?? client).patch<
+    AdminReportControllerUpdateResponses,
+    unknown,
+    ThrowOnError
+  >({
+    security: [
+      {
+        in: "cookie",
+        name: "naucto_admin_access",
+        type: "apiKey"
+      }
+    ],
+    url: "/admin/reports/{id}",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Transition report to IN_REVIEW
+ */
+export const adminReportControllerReview = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<AdminReportControllerReviewData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    AdminReportControllerReviewResponses,
+    unknown,
+    ThrowOnError
+  >({
+    security: [
+      {
+        in: "cookie",
+        name: "naucto_admin_access",
+        type: "apiKey"
+      }
+    ],
+    url: "/admin/reports/{id}/review",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Transition report to RESOLVED
+ */
+export const adminReportControllerResolve = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<AdminReportControllerResolveData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    AdminReportControllerResolveResponses,
+    unknown,
+    ThrowOnError
+  >({
+    security: [
+      {
+        in: "cookie",
+        name: "naucto_admin_access",
+        type: "apiKey"
+      }
+    ],
+    url: "/admin/reports/{id}/resolve",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Transition report to DISMISSED
+ */
+export const adminReportControllerDismiss = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<AdminReportControllerDismissData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    AdminReportControllerDismissResponses,
+    unknown,
+    ThrowOnError
+  >({
+    security: [
+      {
+        in: "cookie",
+        name: "naucto_admin_access",
+        type: "apiKey"
+      }
+    ],
+    url: "/admin/reports/{id}/dismiss",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * List moderation actions
+ */
+export const adminModerationLogControllerList = <
+  ThrowOnError extends boolean = false
+>(
+  options?: Options<AdminModerationLogControllerListData, ThrowOnError>
+) =>
+  (options?.client ?? client).get<
+    AdminModerationLogControllerListResponses,
+    unknown,
+    ThrowOnError
+  >({
+    security: [
+      {
+        in: "cookie",
+        name: "naucto_admin_access",
+        type: "apiKey"
+      }
+    ],
+    url: "/admin/moderation-log",
+    ...options
+  });
+
+/**
+ * Get a single moderation action with before/after snapshots
+ */
+export const adminModerationLogControllerGet = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<AdminModerationLogControllerGetData, ThrowOnError>
+) =>
+  (options.client ?? client).get<
+    AdminModerationLogControllerGetResponses,
+    unknown,
+    ThrowOnError
+  >({
+    security: [
+      {
+        in: "cookie",
+        name: "naucto_admin_access",
+        type: "apiKey"
+      }
+    ],
+    url: "/admin/moderation-log/{id}",
+    ...options
+  });
+
+/**
+ * List roles with user counts
+ */
+export const adminRoleControllerList = <ThrowOnError extends boolean = false>(
+  options?: Options<AdminRoleControllerListData, ThrowOnError>
+) =>
+  (options?.client ?? client).get<
+    AdminRoleControllerListResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [
+      {
+        in: "cookie",
+        name: "naucto_admin_access",
+        type: "apiKey"
+      }
+    ],
+    url: "/admin/roles",
+    ...options
+  });
+
+/**
+ * Create a new role
+ */
+export const adminRoleControllerCreate = <ThrowOnError extends boolean = false>(
+  options: Options<AdminRoleControllerCreateData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    AdminRoleControllerCreateResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [
+      {
+        in: "cookie",
+        name: "naucto_admin_access",
+        type: "apiKey"
+      }
+    ],
+    url: "/admin/roles",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Delete an empty non-canonical role
+ */
+export const adminRoleControllerRemove = <ThrowOnError extends boolean = false>(
+  options: Options<AdminRoleControllerRemoveData, ThrowOnError>
+) =>
+  (options.client ?? client).delete<
+    AdminRoleControllerRemoveResponses,
+    unknown,
+    ThrowOnError
+  >({
+    security: [
+      {
+        in: "cookie",
+        name: "naucto_admin_access",
+        type: "apiKey"
+      }
+    ],
+    url: "/admin/roles/{id}",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Update a custom role name and permissions
+ */
+export const adminRoleControllerRename = <ThrowOnError extends boolean = false>(
+  options: Options<AdminRoleControllerRenameData, ThrowOnError>
+) =>
+  (options.client ?? client).patch<
+    AdminRoleControllerRenameResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [
+      {
+        in: "cookie",
+        name: "naucto_admin_access",
+        type: "apiKey"
+      }
+    ],
+    url: "/admin/roles/{id}",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
  * Get notification websocket configuration
  */
 export const notificationsControllerGetWebRtcOffer = <
@@ -1204,162 +1934,19 @@ export const notificationsControllerMarkAsRead = <
   });
 
 /**
- * Authenticate a user and return an access token
+ * Moderation history for one target
  */
-export const authControllerLogin = <ThrowOnError extends boolean = false>(
-  options: Options<AuthControllerLoginData, ThrowOnError>
+export const auditControllerHistoryOf = <ThrowOnError extends boolean = false>(
+  options: Options<AuditControllerHistoryOfData, ThrowOnError>
 ) =>
-  (options.client ?? client).post<
-    AuthControllerLoginResponses,
-    AuthControllerLoginErrors,
-    ThrowOnError
-  >({
-    responseType: "json",
-    url: "/auth/login",
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers
-    }
-  });
-
-/**
- * Register a new user and return an access token
- */
-export const authControllerRegister = <ThrowOnError extends boolean = false>(
-  options: Options<AuthControllerRegisterData, ThrowOnError>
-) =>
-  (options.client ?? client).post<
-    AuthControllerRegisterResponses,
-    AuthControllerRegisterErrors,
-    ThrowOnError
-  >({
-    responseType: "json",
-    url: "/auth/register",
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers
-    }
-  });
-
-/**
- * Authenticate with Google authorization code + PKCE
- */
-export const authControllerLoginWithGoogleCode = <
-  ThrowOnError extends boolean = false
->(
-  options: Options<AuthControllerLoginWithGoogleCodeData, ThrowOnError>
-) =>
-  (options.client ?? client).post<
-    AuthControllerLoginWithGoogleCodeResponses,
-    AuthControllerLoginWithGoogleCodeErrors,
-    ThrowOnError
-  >({
-    responseType: "json",
-    url: "/auth/google/code",
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers
-    }
-  });
-
-/**
- * Authenticate with GitHub OAuth authorization code
- */
-export const authControllerLoginWithGithub = <
-  ThrowOnError extends boolean = false
->(
-  options: Options<AuthControllerLoginWithGithubData, ThrowOnError>
-) =>
-  (options.client ?? client).post<
-    AuthControllerLoginWithGithubResponses,
-    AuthControllerLoginWithGithubErrors,
-    ThrowOnError
-  >({
-    responseType: "json",
-    url: "/auth/github",
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers
-    }
-  });
-
-/**
- * Authenticate with Microsoft ID token
- */
-export const authControllerLoginWithMicrosoft = <
-  ThrowOnError extends boolean = false
->(
-  options: Options<AuthControllerLoginWithMicrosoftData, ThrowOnError>
-) =>
-  (options.client ?? client).post<
-    AuthControllerLoginWithMicrosoftResponses,
-    AuthControllerLoginWithMicrosoftErrors,
-    ThrowOnError
-  >({
-    responseType: "json",
-    url: "/auth/microsoft",
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers
-    }
-  });
-
-/**
- * Refresh the access token using refresh token cookie
- */
-export const authControllerRefresh = <ThrowOnError extends boolean = false>(
-  options?: Options<AuthControllerRefreshData, ThrowOnError>
-) =>
-  (options?.client ?? client).post<
-    AuthControllerRefreshResponses,
-    AuthControllerRefreshErrors,
-    ThrowOnError
-  >({
-    responseType: "json",
-    url: "/auth/refresh",
-    ...options
-  });
-
-/**
- * Change password, OAuth users can set one without providing a current password
- */
-export const authControllerChangePassword = <
-  ThrowOnError extends boolean = false
->(
-  options: Options<AuthControllerChangePasswordData, ThrowOnError>
-) =>
-  (options.client ?? client).patch<
-    AuthControllerChangePasswordResponses,
-    AuthControllerChangePasswordErrors,
-    ThrowOnError
-  >({
-    security: [{ scheme: "bearer", type: "http" }],
-    url: "/auth/password",
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers
-    }
-  });
-
-/**
- * Remove refresh token cookie
- */
-export const authControllerLogout = <ThrowOnError extends boolean = false>(
-  options?: Options<AuthControllerLogoutData, ThrowOnError>
-) =>
-  (options?.client ?? client).post<
-    AuthControllerLogoutResponses,
+  (options.client ?? client).get<
+    AuditControllerHistoryOfResponses,
     unknown,
     ThrowOnError
   >({
     responseType: "json",
-    url: "/auth/logout",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/moderation-log/{targetType}/{targetId}",
     ...options
   });
 
@@ -1612,6 +2199,182 @@ export const userPublicControllerGetPublishedGames = <
   >({
     responseType: "json",
     url: "/users/public/{id}/published-games",
+    ...options
+  });
+
+/**
+ * Authenticate a user and return an access token
+ */
+export const authControllerLogin = <ThrowOnError extends boolean = false>(
+  options: Options<AuthControllerLoginData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    AuthControllerLoginResponses,
+    AuthControllerLoginErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/auth/login",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Register a new user and return an access token
+ */
+export const authControllerRegister = <ThrowOnError extends boolean = false>(
+  options: Options<AuthControllerRegisterData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    AuthControllerRegisterResponses,
+    AuthControllerRegisterErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/auth/register",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Authenticate with Google authorization code + PKCE
+ */
+export const authControllerLoginWithGoogleCode = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<AuthControllerLoginWithGoogleCodeData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    AuthControllerLoginWithGoogleCodeResponses,
+    AuthControllerLoginWithGoogleCodeErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/auth/google/code",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Authenticate with GitHub OAuth authorization code
+ */
+export const authControllerLoginWithGithub = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<AuthControllerLoginWithGithubData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    AuthControllerLoginWithGithubResponses,
+    AuthControllerLoginWithGithubErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/auth/github",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Authenticate with Microsoft ID token
+ */
+export const authControllerLoginWithMicrosoft = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<AuthControllerLoginWithMicrosoftData, ThrowOnError>
+) =>
+  (options.client ?? client).post<
+    AuthControllerLoginWithMicrosoftResponses,
+    AuthControllerLoginWithMicrosoftErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/auth/microsoft",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Refresh the access token using refresh token cookie
+ */
+export const authControllerRefresh = <ThrowOnError extends boolean = false>(
+  options?: Options<AuthControllerRefreshData, ThrowOnError>
+) =>
+  (options?.client ?? client).post<
+    AuthControllerRefreshResponses,
+    AuthControllerRefreshErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/auth/refresh",
+    ...options
+  });
+
+/**
+ * Change password, OAuth users can set one without providing a current password
+ */
+export const authControllerChangePassword = <
+  ThrowOnError extends boolean = false
+>(
+  options: Options<AuthControllerChangePasswordData, ThrowOnError>
+) =>
+  (options.client ?? client).patch<
+    AuthControllerChangePasswordResponses,
+    AuthControllerChangePasswordErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/auth/password",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+
+/**
+ * Return the current staff session and permissions
+ */
+export const authControllerMe = <ThrowOnError extends boolean = false>(
+  options?: Options<AuthControllerMeData, ThrowOnError>
+) =>
+  (options?.client ?? client).get<
+    AuthControllerMeResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/auth/me",
+    ...options
+  });
+
+/**
+ * Remove refresh token cookie
+ */
+export const authControllerLogout = <ThrowOnError extends boolean = false>(
+  options?: Options<AuthControllerLogoutData, ThrowOnError>
+) =>
+  (options?.client ?? client).post<
+    AuthControllerLogoutResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/auth/logout",
     ...options
   });
 

@@ -15,6 +15,7 @@ import React, { useCallback, useEffect, useState } from "react";
 
 import { Box, Button, CircularProgress, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
+import { useSnackbar } from "notistack";
 
 import CommentSvg from "@assets/comment.svg";
 
@@ -58,6 +59,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
   projectCreatorId,
 }) => {
   const { user } = useUser();
+  const { enqueueSnackbar } = useSnackbar();
   const [comments, setComments] = useState<CommentResponseDto[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -118,6 +120,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
       }
     } catch (error) {
       console.error("Error posting comment:", error);
+      enqueueSnackbar("Could not post comment. Your account may be suspended.", { variant: "error" });
     } finally {
       setSubmitting(false);
     }
@@ -127,29 +130,34 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     commentId: number,
     content: string
   ): Promise<void> => {
-    const { data } = await projectCommentControllerCreateReply({
-      path: { projectId, commentId },
-      body: { content },
-    });
-    if (data) {
-      // Add reply to the parent comment
-      setTotal((prev) => {
-        const next = prev + 1;
-        window.dispatchEvent(new CustomEvent("project-stats-updated", {
-          detail: {
-            projectId,
-            changes: { commentCount: next }
-          }
-        }));
-        return next;
+    try {
+      const { data } = await projectCommentControllerCreateReply({
+        path: { projectId, commentId },
+        body: { content },
       });
-      setComments((prev) =>
-        prev.map((c) =>
-          c.id === commentId
-            ? { ...c, replies: [...(c.replies || []), data] }
-            : c
-        )
-      );
+      if (data) {
+        // Add reply to the parent comment
+        setTotal((prev) => {
+          const next = prev + 1;
+          window.dispatchEvent(new CustomEvent("project-stats-updated", {
+            detail: {
+              projectId,
+              changes: { commentCount: next }
+            }
+          }));
+          return next;
+        });
+        setComments((prev) =>
+          prev.map((c) =>
+            c.id === commentId
+              ? { ...c, replies: [...(c.replies || []), data] }
+              : c
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Error replying to comment:", error);
+      enqueueSnackbar("Could not post reply. Your account may be suspended.", { variant: "error" });
     }
   };
 
@@ -199,6 +207,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
       });
     } catch (error) {
       console.error("Error deleting comment:", error);
+      enqueueSnackbar("Could not delete comment.", { variant: "error" });
     }
   };
 

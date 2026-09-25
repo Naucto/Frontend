@@ -58,7 +58,8 @@ const AuthOverlay: FC<AuthOverlayProps> = ({ isOpen, setIsOpen, onClose }): Reac
         const { email, password } = data as LoginDto;
         const { data: authResponse, error } = await authControllerLogin({ body: { email, password } });
         if (error) throw new Error((error as { message?: string })?.message ?? "Login failed");
-        accessToken = authResponse!.access_token;
+        if (!authResponse || !("access_token" in authResponse)) throw new Error("Missing access token");
+        accessToken = authResponse.access_token;
       }
 
       LocalStorageManager.setToken(accessToken);

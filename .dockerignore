@@ -1,3 +1,4 @@
+.git
 .idea
 .husky
 .github
@@ -5,3 +6,13 @@
 eslint.config.js
 README.md
 license.txt
+
+# `COPY . .` runs after `npm ci`, so the host tree must not clobber the install.
+node_modules
+dist
+dist-ssr
+coverage
+cypress/videos
+cypress/screenshots
+Session.vim
+memories

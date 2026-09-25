@@ -1,4 +1,8 @@
-import { projectControllerGetReleaseContent, projectControllerGetReleaseContentUrl } from "@api";
+import {
+  projectControllerGetProjectPreviewContent,
+  projectControllerGetReleaseContent,
+  projectControllerGetReleaseContentUrl,
+} from "@api";
 import { seedDefaultProjectContent } from "@shared/project/defaultProjectContent";
 import { decodeUpdate } from "@utils/YSerialize";
 
@@ -13,6 +17,16 @@ import * as Y from "yjs";
 export enum ProviderEventType {
   INITIALIZED
 }
+
+/**
+ * Where a game's bytes come from.
+ *
+ * "release" is the public path: the published artifact, served through the CDN.
+ * "preview" is the staff path: any project, published or not, read straight from
+ * the API. A project under moderation usually has no release to serve, so the
+ * preview endpoint falls back to its latest save.
+ */
+export type GameContentSource = "release" | "preview";
 
 class ReleaseContentFetchError extends Error {
   constructor(public readonly status: number, url: string) {
@@ -35,8 +49,11 @@ export class GameProvider implements Destroyable {
   public sound!: SoundProvider;
   public projectId: number;
 
-  constructor(projectId: number) {
+  private readonly _source: GameContentSource;
+
+  constructor(projectId: number, source: GameContentSource = "release") {
     this.projectId = projectId;
+    this._source = source;
     this.isHost = false;
     this._doc = new Y.Doc();
 
@@ -52,7 +69,35 @@ export class GameProvider implements Destroyable {
     });
   }
 
+  /**
+   * Staff preview loader. There is no signed CDN URL to try here: an unpublished
+   * project has no public release object, so the content comes from the
+   * role-guarded API endpoint directly.
+   */
+  private async initializeFromPreview(): Promise<void> {
+    try {
+      const { data: content } = await projectControllerGetProjectPreviewContent({
+        path: { id: String(this.projectId) },
+      });
+      await decodeUpdate(this._doc, content as Blob);
+    } catch (error: unknown) {
+      // A project with no save yet still opens -- as the empty default project.
+      if ((error as AxiosError)?.response?.status === 404) {
+        console.warn("No preview content for project", this.projectId);
+      } else {
+        throw error;
+      }
+    }
+
+    seedDefaultProjectContent(this._doc);
+  }
+
   private async initializeDoc(): Promise<void> {
+    if (this._source === "preview") {
+      await this.initializeFromPreview();
+      return;
+    }
+
     try {
       const signed = (await projectControllerGetReleaseContentUrl({ path: { id: String(this.projectId) } })).data;
       if (signed?.signedUrl) {

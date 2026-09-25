@@ -1,20 +1,21 @@
 networks:
+  # Created by the Backend dev stack, which dev.sh already requires to be running.
   naucto-dev:
-    name: naucto-dev
-    driver: bridge
+    external: true
 
 services:
   frontend:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    command: npm run dev --host
+    # `--` is required, otherwise npm swallows --host instead of passing it to vite.
+    command: npm run dev -- --host
     environment:
       VITE_BACKEND_PORT: ${VITE_BACKEND_PORT:-3000}
     networks:
       - naucto-dev
     ports:
-      - "3001:5173"
+      - "${FRONTEND_PORT:-3001}:5173"
     develop:
       watch:
         - action: rebuild

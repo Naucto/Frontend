@@ -51,7 +51,7 @@ const AppRoutes: React.FC = () => {
   const state = location.state as RouterState | null;
   const backgroundLocation = state?.backgroundLocation;
   const isStandalonePlayRoute =
-    !backgroundLocation && /^\/project\/\d+\/play$/.test(location.pathname);
+    !backgroundLocation && /^\/project\/\d+\/(play|preview)$/.test(location.pathname);
 
   return (
     <AppContainer>
@@ -67,7 +67,10 @@ const AppRoutes: React.FC = () => {
             <Route path="/projects/:projectId" element={<RequireAuth><Project /></RequireAuth>} />
             <Route path="/help" element={<Help />} />
             {isStandalonePlayRoute && (
-              <Route path="/project/:id/play" element={<Hub />} />
+              <>
+                <Route path="/project/:id/play" element={<Hub />} />
+                <Route path="/project/:id/preview" element={<Hub />} />
+              </>
             )}
             <Route path="/profile/:username" element={<Profile />} />
             <Route path="/profile/:username/published-games" element={<ProfilePublishedGames />} />
@@ -79,6 +82,7 @@ const AppRoutes: React.FC = () => {
           {(backgroundLocation || isStandalonePlayRoute) && (
             <Routes>
               <Route path="/project/:id/play" element={<GameViewer />} />
+              <Route path="/project/:id/preview" element={<GameViewer preview />} />
             </Routes>
           )}
         </Suspense>

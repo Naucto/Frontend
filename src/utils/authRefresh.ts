@@ -13,7 +13,7 @@ export const refreshAccessToken = (): Promise<string | null> => {
 
   inFlight = authControllerRefresh()
     .then(({ data }) => {
-      const token = data?.access_token ?? null;
+      const token = data && "access_token" in data ? data.access_token : null;
       if (token)
         LocalStorageManager.setToken(token);
       return token;

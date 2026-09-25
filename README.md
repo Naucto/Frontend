@@ -32,9 +32,16 @@ npm run cypress:run # e2e tests
 
 ## Docker
 
+Start the Backend stack first — it creates the shared `naucto` network this
+compose file joins as external.
+
 ```bash
-docker compose up
+docker compose up --build
 ```
+
+The backend URL is inlined into the bundle at build time from `VITE_BACKEND_URL`
+(default `http://localhost:3000`), so changing it requires a rebuild, not just a
+restart.
 
 ---
 
