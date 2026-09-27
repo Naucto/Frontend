@@ -19,6 +19,74 @@ import type {
   AdminFeaturedReleaseControllerSetFeaturedData,
   AdminFeaturedReleaseControllerSetFeaturedErrors,
   AdminFeaturedReleaseControllerSetFeaturedResponses,
+  AiControllerAbortData,
+  AiControllerAbortResponses,
+  AiControllerAcknowledgeData,
+  AiControllerAcknowledgeResponses,
+  AiControllerCancelJobData,
+  AiControllerCancelJobResponses,
+  AiControllerConnectData,
+  AiControllerConnectResponses,
+  AiControllerContextData,
+  AiControllerContextResponses,
+  AiControllerDeclareData,
+  AiControllerDeclareResponses,
+  AiControllerDismissData,
+  AiControllerDismissResponses,
+  AiControllerFinishData,
+  AiControllerFinishResponses,
+  AiControllerHeartbeatData,
+  AiControllerHeartbeatResponses,
+  AiControllerListData,
+  AiControllerListJobsData,
+  AiControllerListJobsResponses,
+  AiControllerListResponses,
+  AiControllerPreviewData,
+  AiControllerPreviewResponses,
+  AiControllerProvenanceData,
+  AiControllerProvenanceResponses,
+  AiControllerRevertData,
+  AiControllerRevertResponses,
+  AiControllerReviewData,
+  AiControllerReviewResponses,
+  AiControllerRevokeData,
+  AiControllerRevokeResponses,
+  AiControllerStartData,
+  AiControllerStartResponses,
+  AiControllerViolationData,
+  AiControllerViolationResponses,
+  AiKeysControllerCreateData,
+  AiKeysControllerCreateResponses,
+  AiKeysControllerGrantData,
+  AiKeysControllerGrantResponses,
+  AiKeysControllerListData,
+  AiKeysControllerListResponses,
+  AiKeysControllerRevokeData,
+  AiKeysControllerRevokeResponses,
+  AiKeysControllerUngrantData,
+  AiKeysControllerUngrantResponses,
+  AiMcpControllerCancelJobData,
+  AiMcpControllerCancelJobResponses,
+  AiMcpControllerClaimJobData,
+  AiMcpControllerClaimJobResponses,
+  AiMcpControllerCompleteJobData,
+  AiMcpControllerCompleteJobResponses,
+  AiMcpControllerConnectionData,
+  AiMcpControllerConnectionResponses,
+  AiMcpControllerContextData,
+  AiMcpControllerContextResponses,
+  AiMcpControllerCreateJobData,
+  AiMcpControllerCreateJobResponses,
+  AiMcpControllerFailJobData,
+  AiMcpControllerFailJobResponses,
+  AiMcpControllerGetJobData,
+  AiMcpControllerGetJobResponses,
+  AiMcpControllerListData,
+  AiMcpControllerListResponses,
+  AiMcpControllerProjectsData,
+  AiMcpControllerProjectsResponses,
+  AiMcpControllerProposeData,
+  AiMcpControllerProposeResponses,
   AuthControllerChangePasswordData,
   AuthControllerChangePasswordErrors,
   AuthControllerChangePasswordResponses,
@@ -301,6 +369,455 @@ export type Options<
    */
   meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
 };
+
+/**
+ * Revoke this user's AI connection and shared context
+ */
+export const aiControllerRevoke = <ThrowOnError extends boolean = false>(
+  options: Options<AiControllerRevokeData, ThrowOnError>,
+): RequestResult<AiControllerRevokeResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).delete<AiControllerRevokeResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/ai/projects/{projectId}/connection',
+    ...options,
+  });
+
+/**
+ * Create a project-scoped proposal-only AI credential
+ */
+export const aiControllerConnect = <ThrowOnError extends boolean = false>(
+  options: Options<AiControllerConnectData, ThrowOnError>,
+): RequestResult<AiControllerConnectResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<AiControllerConnectResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/ai/projects/{projectId}/connection',
+    ...options,
+  });
+
+/**
+ * Share current editor context with the user's AI connection
+ */
+export const aiControllerContext = <ThrowOnError extends boolean = false>(
+  options: Options<AiControllerContextData, ThrowOnError>,
+): RequestResult<AiControllerContextResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<AiControllerContextResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/ai/projects/{projectId}/context',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * List project AI proposals
+ */
+export const aiControllerList = <ThrowOnError extends boolean = false>(
+  options: Options<AiControllerListData, ThrowOnError>,
+): RequestResult<AiControllerListResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).get<AiControllerListResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/ai/projects/{projectId}/proposals',
+    ...options,
+  });
+
+/**
+ * Reject an immutable proposal. Approval happens by applying it.
+ */
+export const aiControllerReview = <ThrowOnError extends boolean = false>(
+  options: Options<AiControllerReviewData, ThrowOnError>,
+): RequestResult<AiControllerReviewResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<AiControllerReviewResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/ai/projects/{projectId}/proposals/{proposalId}/review',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Validate against an isolated editor snapshot; never modifies the live project
+ */
+export const aiControllerPreview = <ThrowOnError extends boolean = false>(
+  options: Options<AiControllerPreviewData, ThrowOnError>,
+): RequestResult<AiControllerPreviewResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<AiControllerPreviewResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/ai/projects/{projectId}/proposals/{proposalId}/preview',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Prepare a reviewable inverse proposal; preserves historical provenance
+ */
+export const aiControllerRevert = <ThrowOnError extends boolean = false>(
+  options: Options<AiControllerRevertData, ThrowOnError>,
+): RequestResult<AiControllerRevertResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<AiControllerRevertResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/ai/projects/{projectId}/proposals/{proposalId}/revert',
+    ...options,
+  });
+
+/**
+ * Approve the exact proposal and pause every editor
+ */
+export const aiControllerStart = <ThrowOnError extends boolean = false>(
+  options: Options<AiControllerStartData, ThrowOnError>,
+): RequestResult<AiControllerStartResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<AiControllerStartResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/ai/projects/{projectId}/proposals/{proposalId}/apply',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Register an editor and read the collaborative application state
+ */
+export const aiControllerHeartbeat = <ThrowOnError extends boolean = false>(
+  options: Options<AiControllerHeartbeatData, ThrowOnError>,
+): RequestResult<AiControllerHeartbeatResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<AiControllerHeartbeatResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/ai/projects/{projectId}/editors/heartbeat',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Acknowledge the pause with the complete local Yjs state
+ */
+export const aiControllerAcknowledge = <ThrowOnError extends boolean = false>(
+  options: Options<AiControllerAcknowledgeData, ThrowOnError>,
+): RequestResult<AiControllerAcknowledgeResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<AiControllerAcknowledgeResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/ai/projects/{projectId}/barriers/{barrierId}/ack',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Report a write after the pause: aborts before commit, flags after it
+ */
+export const aiControllerViolation = <ThrowOnError extends boolean = false>(
+  options: Options<AiControllerViolationData, ThrowOnError>,
+): RequestResult<AiControllerViolationResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<AiControllerViolationResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/ai/projects/{projectId}/barriers/{barrierId}/violation',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Dismiss a post-commit warning after checking the result
+ */
+export const aiControllerDismiss = <ThrowOnError extends boolean = false>(
+  options: Options<AiControllerDismissData, ThrowOnError>,
+): RequestResult<AiControllerDismissResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<AiControllerDismissResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/ai/projects/{projectId}/barriers/{barrierId}/violation/dismiss',
+    ...options,
+  });
+
+/**
+ * Commit, or recover, the persisted approved result
+ */
+export const aiControllerFinish = <ThrowOnError extends boolean = false>(
+  options: Options<AiControllerFinishData, ThrowOnError>,
+): RequestResult<AiControllerFinishResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<AiControllerFinishResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/ai/projects/{projectId}/barriers/{barrierId}/finish',
+    ...options,
+  });
+
+/**
+ * Cancel before the commit has started
+ */
+export const aiControllerAbort = <ThrowOnError extends boolean = false>(
+  options: Options<AiControllerAbortData, ThrowOnError>,
+): RequestResult<AiControllerAbortResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<AiControllerAbortResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/ai/projects/{projectId}/barriers/{barrierId}/abort',
+    ...options,
+  });
+
+/**
+ * List this project's specialist generation jobs
+ */
+export const aiControllerListJobs = <ThrowOnError extends boolean = false>(
+  options: Options<AiControllerListJobsData, ThrowOnError>,
+): RequestResult<AiControllerListJobsResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).get<AiControllerListJobsResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/ai/projects/{projectId}/jobs',
+    ...options,
+  });
+
+/**
+ * Cancel a pending job or discard a running one's result
+ */
+export const aiControllerCancelJob = <ThrowOnError extends boolean = false>(
+  options: Options<AiControllerCancelJobData, ThrowOnError>,
+): RequestResult<AiControllerCancelJobResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<AiControllerCancelJobResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/ai/projects/{projectId}/jobs/{jobId}/cancel',
+    ...options,
+  });
+
+/**
+ * Declare AI assistance used outside Naucto's tracked workflow
+ */
+export const aiControllerDeclare = <ThrowOnError extends boolean = false>(
+  options: Options<AiControllerDeclareData, ThrowOnError>,
+): RequestResult<AiControllerDeclareResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<AiControllerDeclareResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/ai/projects/{projectId}/declarations',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * AI categories, declarations and applied changes of this project
+ */
+export const aiControllerProvenance = <ThrowOnError extends boolean = false>(
+  options: Options<AiControllerProvenanceData, ThrowOnError>,
+): RequestResult<AiControllerProvenanceResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).get<AiControllerProvenanceResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/ai/projects/{projectId}/provenance',
+    ...options,
+  });
+
+/**
+ * List this account's keys and the projects each may reach
+ */
+export const aiKeysControllerList = <ThrowOnError extends boolean = false>(
+  options?: Options<AiKeysControllerListData, ThrowOnError>,
+): RequestResult<AiKeysControllerListResponses, unknown, ThrowOnError> =>
+  (options?.client ?? client).get<AiKeysControllerListResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/ai/keys',
+    ...options,
+  });
+
+/**
+ * Create a long-lived assistant key. No expiry unless you ask for one.
+ */
+export const aiKeysControllerCreate = <ThrowOnError extends boolean = false>(
+  options: Options<AiKeysControllerCreateData, ThrowOnError>,
+): RequestResult<AiKeysControllerCreateResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<AiKeysControllerCreateResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/ai/keys',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Revoke a key everywhere, in every project it reaches
+ */
+export const aiKeysControllerRevoke = <ThrowOnError extends boolean = false>(
+  options: Options<AiKeysControllerRevokeData, ThrowOnError>,
+): RequestResult<AiKeysControllerRevokeResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).delete<AiKeysControllerRevokeResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/ai/keys/{keyId}',
+    ...options,
+  });
+
+/**
+ * Stop a key reaching a project, keeping the key itself
+ */
+export const aiKeysControllerUngrant = <ThrowOnError extends boolean = false>(
+  options: Options<AiKeysControllerUngrantData, ThrowOnError>,
+): RequestResult<AiKeysControllerUngrantResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).delete<AiKeysControllerUngrantResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/ai/keys/{keyId}/projects/{projectId}',
+    ...options,
+  });
+
+/**
+ * Let a key reach one more project
+ */
+export const aiKeysControllerGrant = <ThrowOnError extends boolean = false>(
+  options: Options<AiKeysControllerGrantData, ThrowOnError>,
+): RequestResult<AiKeysControllerGrantResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<AiKeysControllerGrantResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/ai/keys/{keyId}/projects/{projectId}',
+    ...options,
+  });
+
+/**
+ * Validate a scoped AI connection
+ */
+export const aiMcpControllerConnection = <ThrowOnError extends boolean = false>(
+  options: Options<AiMcpControllerConnectionData, ThrowOnError>,
+): RequestResult<AiMcpControllerConnectionResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).get<AiMcpControllerConnectionResponses, unknown, ThrowOnError>({
+    url: '/ai/mcp/connection',
+    ...options,
+  });
+
+/**
+ * Every project this credential may reach, with what is waiting in each
+ */
+export const aiMcpControllerProjects = <ThrowOnError extends boolean = false>(
+  options: Options<AiMcpControllerProjectsData, ThrowOnError>,
+): RequestResult<AiMcpControllerProjectsResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).get<AiMcpControllerProjectsResponses, unknown, ThrowOnError>({
+    url: '/ai/mcp/projects',
+    ...options,
+  });
+
+/**
+ * Read the project's last shared state and how old it is
+ */
+export const aiMcpControllerContext = <ThrowOnError extends boolean = false>(
+  options: Options<AiMcpControllerContextData, ThrowOnError>,
+): RequestResult<AiMcpControllerContextResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).get<AiMcpControllerContextResponses, unknown, ThrowOnError>({
+    url: '/ai/mcp/context',
+    ...options,
+  });
+
+/**
+ * Read proposal status
+ */
+export const aiMcpControllerList = <ThrowOnError extends boolean = false>(
+  options: Options<AiMcpControllerListData, ThrowOnError>,
+): RequestResult<AiMcpControllerListResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).get<AiMcpControllerListResponses, unknown, ThrowOnError>({
+    url: '/ai/mcp/proposals',
+    ...options,
+  });
+
+/**
+ * Stage a proposal; cannot approve or apply
+ */
+export const aiMcpControllerPropose = <ThrowOnError extends boolean = false>(
+  options: Options<AiMcpControllerProposeData, ThrowOnError>,
+): RequestResult<AiMcpControllerProposeResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<AiMcpControllerProposeResponses, unknown, ThrowOnError>({
+    url: '/ai/mcp/proposals',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Queue a generation job within the project quota
+ */
+export const aiMcpControllerCreateJob = <ThrowOnError extends boolean = false>(
+  options: Options<AiMcpControllerCreateJobData, ThrowOnError>,
+): RequestResult<AiMcpControllerCreateJobResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<AiMcpControllerCreateJobResponses, unknown, ThrowOnError>({
+    url: '/ai/mcp/jobs',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Read a generation job of this project
+ */
+export const aiMcpControllerGetJob = <ThrowOnError extends boolean = false>(
+  options: Options<AiMcpControllerGetJobData, ThrowOnError>,
+): RequestResult<AiMcpControllerGetJobResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).get<AiMcpControllerGetJobResponses, unknown, ThrowOnError>({
+    url: '/ai/mcp/jobs/{jobId}',
+    ...options,
+  });
+
+/**
+ * Cancel a generation job of this project
+ */
+export const aiMcpControllerCancelJob = <ThrowOnError extends boolean = false>(
+  options: Options<AiMcpControllerCancelJobData, ThrowOnError>,
+): RequestResult<AiMcpControllerCancelJobResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<AiMcpControllerCancelJobResponses, unknown, ThrowOnError>({
+    url: '/ai/mcp/jobs/{jobId}/cancel',
+    ...options,
+  });
+
+/**
+ * Service only: start a queued job unless it was cancelled
+ */
+export const aiMcpControllerClaimJob = <ThrowOnError extends boolean = false>(
+  options: Options<AiMcpControllerClaimJobData, ThrowOnError>,
+): RequestResult<AiMcpControllerClaimJobResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<AiMcpControllerClaimJobResponses, unknown, ThrowOnError>({
+    url: '/ai/mcp/jobs/{jobId}/claim',
+    ...options,
+  });
+
+/**
+ * Service only: store a validated result and the model that produced it
+ */
+export const aiMcpControllerCompleteJob = <ThrowOnError extends boolean = false>(
+  options: Options<AiMcpControllerCompleteJobData, ThrowOnError>,
+): RequestResult<AiMcpControllerCompleteJobResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<AiMcpControllerCompleteJobResponses, unknown, ThrowOnError>({
+    url: '/ai/mcp/jobs/{jobId}/complete',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Service only: record a failure without provider details
+ */
+export const aiMcpControllerFailJob = <ThrowOnError extends boolean = false>(
+  options: Options<AiMcpControllerFailJobData, ThrowOnError>,
+): RequestResult<AiMcpControllerFailJobResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<AiMcpControllerFailJobResponses, unknown, ThrowOnError>({
+    url: '/ai/mcp/jobs/{jobId}/fail',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
 
 /**
  * Get all released projects
@@ -1119,6 +1636,10 @@ export const multiplayerControllerRefreshTicket = <ThrowOnError extends boolean 
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/game-sessions/{sessionId}/ticket',
     ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
   });
 
 /**

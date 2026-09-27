@@ -4,13 +4,14 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { PanelComponent, TabsComponent } from '@naucto/ui';
 
 import { AccountSettingsComponent } from './account-settings.component';
+import { AssistantSettings } from './assistant-settings.component';
 import { ControlsSettingsComponent } from './controls-settings.component';
 import { EditorSettingsComponent } from './editor-settings.component';
 
 // PRIVACY is gone: its three rows (friend code, who can join, delete account) moved to ACCOUNT,
 // where the artboard draws them, and nothing was left on the tab but a placeholder.
-type Tab = 'account' | 'editor' | 'controls';
-const TABS: Tab[] = ['account', 'editor', 'controls'];
+type Tab = 'account' | 'editor' | 'controls' | 'assistant';
+const TABS: Tab[] = ['account', 'editor', 'controls', 'assistant'];
 
 @Component({
   selector: 'nc-settings-page',
@@ -19,6 +20,7 @@ const TABS: Tab[] = ['account', 'editor', 'controls'];
     PanelComponent,
     TabsComponent,
     AccountSettingsComponent,
+    AssistantSettings,
     ControlsSettingsComponent,
     EditorSettingsComponent,
   ],
@@ -46,6 +48,9 @@ const TABS: Tab[] = ['account', 'editor', 'controls'];
             }
             @case ('controls') {
               <nc-controls-settings />
+            }
+            @case ('assistant') {
+              <nc-assistant-settings />
             }
           }
         </div>

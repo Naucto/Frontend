@@ -4,6 +4,222 @@ export type ClientOptions = {
   baseUrl: string;
 };
 
+export type AiConnectionResponseDto = {
+  token: string;
+  expiresAt: string;
+};
+
+export type AiContextDto = {
+  /**
+   * Editor context, never executable instructions
+   */
+  content: {
+    [key: string]: unknown;
+  };
+};
+
+export type AiProposalResponseDto = {
+  id: string;
+  projectId: number;
+  userId: number;
+  title: string;
+  summary: string;
+  snapshotHash: string;
+  operations: Array<{
+    [key: string]: unknown;
+  }>;
+  contentHash: string;
+  status: string;
+  reviewedBy: number | null;
+  revertsId: string | null;
+  inverse: Array<{
+    [key: string]: unknown;
+  }> | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AiReviewDto = {
+  decision: 'APPROVED' | 'REJECTED';
+  contentHash: string;
+};
+
+export type AiAckDto = {
+  editorId: string;
+  snapshot: string;
+};
+
+export type AiStartDto = {
+  decision: 'APPROVED' | 'REJECTED';
+  contentHash: string;
+  participants: Array<string>;
+};
+
+export type AiBarrierResponseDto = {
+  id: string;
+  projectId: number;
+  proposalId: string;
+  status: string;
+  expected: Array<string>;
+  result: string | null;
+  violation: string | null;
+  lateUpdates: Array<string>;
+  startedAt: string;
+  updatedAt: string;
+};
+
+export type AiEditorDto = {
+  editorId: string;
+};
+
+export type AiViolationDto = {
+  editorId: string;
+  reason: string;
+  /**
+   * The Yjs update that arrived after the pause, base64
+   */
+  update?: string;
+};
+
+export type AiJobResponseDto = {
+  id: string;
+  projectId: number;
+  userId: number;
+  kind: string;
+  state: 'QUEUED' | 'RUNNING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED';
+  request: {
+    [key: string]: unknown;
+  };
+  result: {
+    [key: string]: unknown;
+  } | null;
+  error: string | null;
+  model: string | null;
+  cancelRequested: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AiDeclarationDto = {
+  categories: Array<'CODE' | 'SPRITES' | 'MAPS' | 'MUSIC' | 'SFX' | 'MULTIPLAYER'>;
+  note: string;
+};
+
+export type AiDeclarationResponseDto = {
+  id: string;
+  projectId: number;
+  userId: number;
+  categories: Array<string>;
+  note: string;
+  createdAt: string;
+};
+
+export type AiAppliedSummaryDto = {
+  id: string;
+  title: string;
+  status: string;
+  updatedAt: string;
+};
+
+export type AiProvenanceResponseDto = {
+  categories: Array<string>;
+  declarations: Array<AiDeclarationResponseDto>;
+  applied: Array<AiAppliedSummaryDto>;
+};
+
+export type AiKeyCreateDto = {
+  name: string;
+  /**
+   * Days until it expires. Omit for a key that never expires.
+   */
+  expiresInDays?: number | null;
+};
+
+export type AiKeyProjectDto = {
+  projectId: number;
+  name: string;
+};
+
+export type AiKeyResponseDto = {
+  id: string;
+  name: string;
+  /**
+   * Shown once, never again
+   */
+  token: string;
+  /**
+   * null never expires
+   */
+  expiresAt: string | null;
+  createdAt: string;
+  projects: Array<AiKeyProjectDto>;
+};
+
+export type AiKeySummaryDto = {
+  id: string;
+  name: string;
+  expiresAt: string | null;
+  createdAt: string;
+  lastUsedAt: string | null;
+  projects: Array<AiKeyProjectDto>;
+};
+
+export type AiMcpConnectionDto = {
+  projectId: number;
+  userId: number;
+  /**
+   * null when the key never expires
+   */
+  expiresAt: string | null;
+};
+
+export type AiContextResponseDto = {
+  id: string;
+  projectId: number;
+  userId: number;
+  hash: string;
+  content: {
+    [key: string]: unknown;
+  };
+  updatedAt: string;
+};
+
+export type AiProposalDto = {
+  title: string;
+  summary: string;
+  snapshotHash: string;
+  /**
+   * Native operations; validated again against the editor document before preview
+   */
+  operations: Array<{
+    [key: string]: unknown;
+  }>;
+};
+
+export type AiJobCreateDto = {
+  kind: 'sprite';
+  /**
+   * Prompt and asset constraints sent to the provider
+   */
+  request: {
+    [key: string]: unknown;
+  };
+};
+
+export type AiJobCompleteDto = {
+  result: {
+    [key: string]: unknown;
+  };
+  /**
+   * Model identifier and revision that produced the result
+   */
+  model: string;
+};
+
+export type AiJobFailDto = {
+  error: string;
+};
+
 export type ForkedFromDto = {
   id: number;
   name: string;
@@ -22,6 +238,10 @@ export type UserBasicInfoDto = {
 };
 
 export type ProjectExResponseDto = {
+  /**
+   * Historical AI-assisted categories; for public releases, the published snapshot
+   */
+  aiCategories: Array<'CODE' | 'SPRITES' | 'MAPS' | 'MUSIC' | 'SFX'>;
   /**
    * The unique identifier of the project
    */
@@ -258,6 +478,10 @@ export type CreateProjectDto = {
 
 export type ProjectResponseDto = {
   /**
+   * Historical AI-assisted categories; for public releases, the published snapshot
+   */
+  aiCategories: Array<'CODE' | 'SPRITES' | 'MAPS' | 'MUSIC' | 'SFX'>;
+  /**
    * The unique identifier of the project
    */
   id: number;
@@ -344,6 +568,10 @@ export type ProjectResponseDto = {
 };
 
 export type ForkProjectResponseDto = {
+  /**
+   * Historical AI-assisted categories; for public releases, the published snapshot
+   */
+  aiCategories: Array<'CODE' | 'SPRITES' | 'MAPS' | 'MUSIC' | 'SFX'>;
   /**
    * The unique identifier of the project
    */
@@ -740,6 +968,13 @@ export type JoinGameSessionDto = {
    * Set by the game editor to allow a self-join for solo testing
    */
   editorTest?: boolean;
+};
+
+export type RefreshTicketDto = {
+  /**
+   * The ticket being replaced. When it was minted for this session, the fresh one keeps its player id and role; otherwise the caller's account decides both.
+   */
+  ticket?: string;
 };
 
 export type CommentAuthorDto = {
@@ -1498,6 +1733,556 @@ export type FetchWorkSessionDto = {
    * The ID of the room for this work session
    */
   roomId: string;
+};
+
+export type AiControllerRevokeData = {
+  body?: never;
+  path: {
+    projectId: number;
+  };
+  query?: never;
+  url: '/ai/projects/{projectId}/connection';
+};
+
+export type AiControllerRevokeResponses = {
+  200: unknown;
+};
+
+export type AiControllerConnectData = {
+  body?: never;
+  path: {
+    projectId: number;
+  };
+  query?: never;
+  url: '/ai/projects/{projectId}/connection';
+};
+
+export type AiControllerConnectResponses = {
+  201: AiConnectionResponseDto;
+};
+
+export type AiControllerConnectResponse =
+  AiControllerConnectResponses[keyof AiControllerConnectResponses];
+
+export type AiControllerContextData = {
+  body: AiContextDto;
+  path: {
+    projectId: number;
+  };
+  query?: never;
+  url: '/ai/projects/{projectId}/context';
+};
+
+export type AiControllerContextResponses = {
+  201: unknown;
+};
+
+export type AiControllerListData = {
+  body?: never;
+  path: {
+    projectId: number;
+  };
+  query?: never;
+  url: '/ai/projects/{projectId}/proposals';
+};
+
+export type AiControllerListResponses = {
+  200: Array<AiProposalResponseDto>;
+};
+
+export type AiControllerListResponse = AiControllerListResponses[keyof AiControllerListResponses];
+
+export type AiControllerReviewData = {
+  body: AiReviewDto;
+  path: {
+    projectId: number;
+    proposalId: string;
+  };
+  query?: never;
+  url: '/ai/projects/{projectId}/proposals/{proposalId}/review';
+};
+
+export type AiControllerReviewResponses = {
+  201: unknown;
+};
+
+export type AiControllerPreviewData = {
+  body: AiAckDto;
+  path: {
+    projectId: number;
+    proposalId: string;
+  };
+  query?: never;
+  url: '/ai/projects/{projectId}/proposals/{proposalId}/preview';
+};
+
+export type AiControllerPreviewResponses = {
+  201: unknown;
+};
+
+export type AiControllerRevertData = {
+  body?: never;
+  path: {
+    projectId: number;
+    proposalId: string;
+  };
+  query?: never;
+  url: '/ai/projects/{projectId}/proposals/{proposalId}/revert';
+};
+
+export type AiControllerRevertResponses = {
+  201: AiProposalResponseDto;
+};
+
+export type AiControllerRevertResponse =
+  AiControllerRevertResponses[keyof AiControllerRevertResponses];
+
+export type AiControllerStartData = {
+  body: AiStartDto;
+  path: {
+    projectId: number;
+    proposalId: string;
+  };
+  query?: never;
+  url: '/ai/projects/{projectId}/proposals/{proposalId}/apply';
+};
+
+export type AiControllerStartResponses = {
+  201: AiBarrierResponseDto;
+};
+
+export type AiControllerStartResponse =
+  AiControllerStartResponses[keyof AiControllerStartResponses];
+
+export type AiControllerHeartbeatData = {
+  body: AiEditorDto;
+  path: {
+    projectId: number;
+  };
+  query?: never;
+  url: '/ai/projects/{projectId}/editors/heartbeat';
+};
+
+export type AiControllerHeartbeatResponses = {
+  /**
+   * Current barrier, or null when none exists
+   */
+  201: AiBarrierResponseDto;
+};
+
+export type AiControllerHeartbeatResponse =
+  AiControllerHeartbeatResponses[keyof AiControllerHeartbeatResponses];
+
+export type AiControllerAcknowledgeData = {
+  body: AiAckDto;
+  path: {
+    projectId: number;
+    barrierId: string;
+  };
+  query?: never;
+  url: '/ai/projects/{projectId}/barriers/{barrierId}/ack';
+};
+
+export type AiControllerAcknowledgeResponses = {
+  201: unknown;
+};
+
+export type AiControllerViolationData = {
+  body: AiViolationDto;
+  path: {
+    projectId: number;
+    barrierId: string;
+  };
+  query?: never;
+  url: '/ai/projects/{projectId}/barriers/{barrierId}/violation';
+};
+
+export type AiControllerViolationResponses = {
+  201: AiBarrierResponseDto;
+};
+
+export type AiControllerViolationResponse =
+  AiControllerViolationResponses[keyof AiControllerViolationResponses];
+
+export type AiControllerDismissData = {
+  body?: never;
+  path: {
+    projectId: number;
+    barrierId: string;
+  };
+  query?: never;
+  url: '/ai/projects/{projectId}/barriers/{barrierId}/violation/dismiss';
+};
+
+export type AiControllerDismissResponses = {
+  201: unknown;
+};
+
+export type AiControllerFinishData = {
+  body?: never;
+  path: {
+    projectId: number;
+    barrierId: string;
+  };
+  query?: never;
+  url: '/ai/projects/{projectId}/barriers/{barrierId}/finish';
+};
+
+export type AiControllerFinishResponses = {
+  201: AiBarrierResponseDto;
+};
+
+export type AiControllerFinishResponse =
+  AiControllerFinishResponses[keyof AiControllerFinishResponses];
+
+export type AiControllerAbortData = {
+  body?: never;
+  path: {
+    projectId: number;
+    barrierId: string;
+  };
+  query?: never;
+  url: '/ai/projects/{projectId}/barriers/{barrierId}/abort';
+};
+
+export type AiControllerAbortResponses = {
+  201: unknown;
+};
+
+export type AiControllerListJobsData = {
+  body?: never;
+  path: {
+    projectId: number;
+  };
+  query?: never;
+  url: '/ai/projects/{projectId}/jobs';
+};
+
+export type AiControllerListJobsResponses = {
+  200: Array<AiJobResponseDto>;
+};
+
+export type AiControllerListJobsResponse =
+  AiControllerListJobsResponses[keyof AiControllerListJobsResponses];
+
+export type AiControllerCancelJobData = {
+  body?: never;
+  path: {
+    projectId: number;
+    jobId: string;
+  };
+  query?: never;
+  url: '/ai/projects/{projectId}/jobs/{jobId}/cancel';
+};
+
+export type AiControllerCancelJobResponses = {
+  201: AiJobResponseDto;
+};
+
+export type AiControllerCancelJobResponse =
+  AiControllerCancelJobResponses[keyof AiControllerCancelJobResponses];
+
+export type AiControllerDeclareData = {
+  body: AiDeclarationDto;
+  path: {
+    projectId: number;
+  };
+  query?: never;
+  url: '/ai/projects/{projectId}/declarations';
+};
+
+export type AiControllerDeclareResponses = {
+  201: AiDeclarationResponseDto;
+};
+
+export type AiControllerDeclareResponse =
+  AiControllerDeclareResponses[keyof AiControllerDeclareResponses];
+
+export type AiControllerProvenanceData = {
+  body?: never;
+  path: {
+    projectId: number;
+  };
+  query?: never;
+  url: '/ai/projects/{projectId}/provenance';
+};
+
+export type AiControllerProvenanceResponses = {
+  200: AiProvenanceResponseDto;
+};
+
+export type AiControllerProvenanceResponse =
+  AiControllerProvenanceResponses[keyof AiControllerProvenanceResponses];
+
+export type AiKeysControllerListData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/ai/keys';
+};
+
+export type AiKeysControllerListResponses = {
+  200: Array<AiKeySummaryDto>;
+};
+
+export type AiKeysControllerListResponse =
+  AiKeysControllerListResponses[keyof AiKeysControllerListResponses];
+
+export type AiKeysControllerCreateData = {
+  body: AiKeyCreateDto;
+  path?: never;
+  query?: never;
+  url: '/ai/keys';
+};
+
+export type AiKeysControllerCreateResponses = {
+  201: AiKeyResponseDto;
+};
+
+export type AiKeysControllerCreateResponse =
+  AiKeysControllerCreateResponses[keyof AiKeysControllerCreateResponses];
+
+export type AiKeysControllerRevokeData = {
+  body?: never;
+  path: {
+    keyId: string;
+  };
+  query?: never;
+  url: '/ai/keys/{keyId}';
+};
+
+export type AiKeysControllerRevokeResponses = {
+  200: unknown;
+};
+
+export type AiKeysControllerUngrantData = {
+  body?: never;
+  path: {
+    keyId: string;
+    projectId: number;
+  };
+  query?: never;
+  url: '/ai/keys/{keyId}/projects/{projectId}';
+};
+
+export type AiKeysControllerUngrantResponses = {
+  200: unknown;
+};
+
+export type AiKeysControllerGrantData = {
+  body?: never;
+  path: {
+    keyId: string;
+    projectId: number;
+  };
+  query?: never;
+  url: '/ai/keys/{keyId}/projects/{projectId}';
+};
+
+export type AiKeysControllerGrantResponses = {
+  201: unknown;
+};
+
+export type AiMcpControllerConnectionData = {
+  body?: never;
+  headers: {
+    authorization: string;
+    'x-naucto-project': string;
+  };
+  path?: never;
+  query?: never;
+  url: '/ai/mcp/connection';
+};
+
+export type AiMcpControllerConnectionResponses = {
+  200: AiMcpConnectionDto;
+};
+
+export type AiMcpControllerConnectionResponse =
+  AiMcpControllerConnectionResponses[keyof AiMcpControllerConnectionResponses];
+
+export type AiMcpControllerProjectsData = {
+  body?: never;
+  headers: {
+    authorization: string;
+    'x-naucto-project': string;
+  };
+  path?: never;
+  query?: never;
+  url: '/ai/mcp/projects';
+};
+
+export type AiMcpControllerProjectsResponses = {
+  200: unknown;
+};
+
+export type AiMcpControllerContextData = {
+  body?: never;
+  headers: {
+    authorization: string;
+    'x-naucto-project': string;
+  };
+  path?: never;
+  query?: never;
+  url: '/ai/mcp/context';
+};
+
+export type AiMcpControllerContextResponses = {
+  200: AiContextResponseDto;
+};
+
+export type AiMcpControllerContextResponse =
+  AiMcpControllerContextResponses[keyof AiMcpControllerContextResponses];
+
+export type AiMcpControllerListData = {
+  body?: never;
+  headers: {
+    authorization: string;
+    'x-naucto-project': string;
+  };
+  path?: never;
+  query?: never;
+  url: '/ai/mcp/proposals';
+};
+
+export type AiMcpControllerListResponses = {
+  200: Array<AiProposalResponseDto>;
+};
+
+export type AiMcpControllerListResponse =
+  AiMcpControllerListResponses[keyof AiMcpControllerListResponses];
+
+export type AiMcpControllerProposeData = {
+  body: AiProposalDto;
+  headers: {
+    authorization: string;
+    'x-naucto-project': string;
+  };
+  path?: never;
+  query?: never;
+  url: '/ai/mcp/proposals';
+};
+
+export type AiMcpControllerProposeResponses = {
+  201: AiProposalResponseDto;
+};
+
+export type AiMcpControllerProposeResponse =
+  AiMcpControllerProposeResponses[keyof AiMcpControllerProposeResponses];
+
+export type AiMcpControllerCreateJobData = {
+  body: AiJobCreateDto;
+  headers: {
+    authorization: string;
+    'x-naucto-project': string;
+  };
+  path?: never;
+  query?: never;
+  url: '/ai/mcp/jobs';
+};
+
+export type AiMcpControllerCreateJobResponses = {
+  201: AiJobResponseDto;
+};
+
+export type AiMcpControllerCreateJobResponse =
+  AiMcpControllerCreateJobResponses[keyof AiMcpControllerCreateJobResponses];
+
+export type AiMcpControllerGetJobData = {
+  body?: never;
+  headers: {
+    authorization: string;
+    'x-naucto-project': string;
+  };
+  path: {
+    jobId: string;
+  };
+  query?: never;
+  url: '/ai/mcp/jobs/{jobId}';
+};
+
+export type AiMcpControllerGetJobResponses = {
+  200: AiJobResponseDto;
+};
+
+export type AiMcpControllerGetJobResponse =
+  AiMcpControllerGetJobResponses[keyof AiMcpControllerGetJobResponses];
+
+export type AiMcpControllerCancelJobData = {
+  body?: never;
+  headers: {
+    authorization: string;
+    'x-naucto-project': string;
+  };
+  path: {
+    jobId: string;
+  };
+  query?: never;
+  url: '/ai/mcp/jobs/{jobId}/cancel';
+};
+
+export type AiMcpControllerCancelJobResponses = {
+  201: AiJobResponseDto;
+};
+
+export type AiMcpControllerCancelJobResponse =
+  AiMcpControllerCancelJobResponses[keyof AiMcpControllerCancelJobResponses];
+
+export type AiMcpControllerClaimJobData = {
+  body?: never;
+  headers: {
+    authorization: string;
+    'x-naucto-project': string;
+    'x-naucto-ai-service': string;
+  };
+  path: {
+    jobId: string;
+  };
+  query?: never;
+  url: '/ai/mcp/jobs/{jobId}/claim';
+};
+
+export type AiMcpControllerClaimJobResponses = {
+  201: unknown;
+};
+
+export type AiMcpControllerCompleteJobData = {
+  body: AiJobCompleteDto;
+  headers: {
+    authorization: string;
+    'x-naucto-project': string;
+    'x-naucto-ai-service': string;
+  };
+  path: {
+    jobId: string;
+  };
+  query?: never;
+  url: '/ai/mcp/jobs/{jobId}/complete';
+};
+
+export type AiMcpControllerCompleteJobResponses = {
+  201: AiJobResponseDto;
+};
+
+export type AiMcpControllerCompleteJobResponse =
+  AiMcpControllerCompleteJobResponses[keyof AiMcpControllerCompleteJobResponses];
+
+export type AiMcpControllerFailJobData = {
+  body: AiJobFailDto;
+  headers: {
+    authorization: string;
+    'x-naucto-project': string;
+    'x-naucto-ai-service': string;
+  };
+  path: {
+    jobId: string;
+  };
+  query?: never;
+  url: '/ai/mcp/jobs/{jobId}/fail';
+};
+
+export type AiMcpControllerFailJobResponses = {
+  201: unknown;
 };
 
 export type ProjectControllerGetAllReleasesData = {
@@ -2647,7 +3432,7 @@ export type MultiplayerControllerLeaveResponses = {
 };
 
 export type MultiplayerControllerRefreshTicketData = {
-  body?: never;
+  body?: RefreshTicketDto;
   path: {
     sessionId: string;
   };

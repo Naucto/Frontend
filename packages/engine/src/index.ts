@@ -10,6 +10,16 @@ export type {
   SoundPort,
   SysPort,
 } from './api/ports';
+export type { AiCategory, AiDiff, AiLock } from './game/ai';
+export {
+  AI_CATEGORIES,
+  AI_KEYS,
+  aiContext,
+  diffGames,
+  encodeState,
+  gameFromState,
+  readLocks,
+} from './game/ai';
 export * from './game/defaults';
 export {
   type CodeFile,
@@ -49,7 +59,15 @@ export {
   schemaVersionOf,
 } from './migrations';
 export type { InboundFrame, OutboundFrame } from './net/frames';
-export { ALLOW_ALL, type NetPermissions } from './net/NetPermissions';
+export {
+  ALLOW_ALL,
+  isNetPath,
+  isNetSegment,
+  NET_PATH_MAX,
+  type NetDeclaration,
+  type NetPermissions,
+  type NetScalar,
+} from './net/NetPermissions';
 export type { NetHostOptions, NetUi } from './net/NetUi';
 export { type RefreshedTicket, SessionSignalingSocket } from './net/SessionSignalingSocket';
 export type {
@@ -66,6 +84,7 @@ export {
 } from './net/SyncedSessionTransport';
 export { Engine, type EngineOptions, type EngineState } from './runtime/Engine';
 export type { EngineError, EnginePhase } from './runtime/EngineError';
+export * from './sound/midi';
 export * from './sound/model';
 export {
   type Bound,
@@ -86,6 +105,7 @@ export {
 export { Sequencer } from './sound/Sequencer';
 export { SoundEngine } from './sound/SoundEngine';
 export { SynthCore } from './sound/SynthCore';
+export * from './sound/transcribe';
 export { type AudioBackend, WebAudioBackend } from './sound/WebAudioBackend';
 export type { SynthCommand, SynthEvent } from './sound/worklet/protocol';
 export type { Destroyable, Maybe, Point2D, Size } from './types';

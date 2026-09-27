@@ -18,3 +18,8 @@ apps/web/public/docs/
 
 # bundles built for another image (npm run migrate:games:build)
 dist-tools/
+
+# JetBrains project files: one developer's IDE layout is not the repository's.
+.idea/
+# Local WebRTC signalling for dev; the deployed values come from the app config.
+config/providers.json

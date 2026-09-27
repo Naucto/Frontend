@@ -1,9 +1,9 @@
 import type { Destroyable } from '../types';
-import type { NetPermissions } from './NetPermissions';
+import type { NetPermissions, NetScalar } from './NetPermissions';
 import { ALLOW_ALL } from './NetPermissions';
 import type { SessionTransport, UserId } from './SessionTransport';
 
-export type TableScalar = number | string | boolean;
+export type TableScalar = NetScalar;
 
 export type TableChangeListener = (
   path: string,
@@ -181,11 +181,24 @@ export class SharedTableSession implements Destroyable {
   // and head every frame, and the string only changes when something is pushed or popped.
   private readonly _queueCache = new Map<string, { raw: string; items: unknown[] }>();
 
-  constructor(transport: SessionTransport, permissions: NetPermissions = ALLOW_ALL) {
+  constructor(
+    transport: SessionTransport,
+    permissions: NetPermissions = ALLOW_ALL,
+    /**
+     * Authored starting values, from the declarations in the game document. Seeded only into a
+     * host's store, and only at construction, so a declaration describes how a session begins
+     * rather than overwriting a game already in progress. A function rather than a map because the
+     * document keeps moving: a snapshot taken when the editor mounted would miss a default written
+     * a moment later, including one an applied proposal added.
+     */
+    defaults: () => ReadonlyMap<string, NetScalar> = () => new Map(),
+  ) {
     this._transport = transport;
     this._isHost = transport.role === 'host';
     this._permissions = permissions;
     this._snapshotApplied = this._isHost;
+    if (this._isHost)
+      for (const [path, value] of defaults()) this._store.set(path, { value, version: 0 });
 
     // The host is authoritative: it only accepts client input through the
     // permission-checked request path, never raw state/response frames (a peer

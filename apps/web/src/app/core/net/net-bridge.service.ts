@@ -13,6 +13,7 @@ import {
 import {
   type NetHostOptions,
   type NetPermissions,
+  type NetScalar,
   type NetUi,
   type RelayUsage,
   type SessionRole,
@@ -67,6 +68,8 @@ export class NetUiBridgeService implements NetUi, OnDestroy {
   readonly info = signal<NetSessionInfo | null>(null);
   readonly peers = signal<number[]>([]);
   readonly permissions = signal<NetPermissions | undefined>(undefined);
+  /** Authored starting values, read fresh when a session is built rather than snapshotted at mount. */
+  defaults: () => ReadonlyMap<string, NetScalar> = () => new Map();
   readonly role = computed(() => this.info()?.role ?? null);
 
   host(options: NetHostOptions, onReady: (session: SharedTableSession | null) => void): void {
@@ -241,7 +244,7 @@ export class NetUiBridgeService implements NetUi, OnDestroy {
         }
       },
     });
-    const session = new SharedTableSession(transport, this.permissions());
+    const session = new SharedTableSession(transport, this.permissions(), this.defaults);
     session.onPeer('joined', (id) => {
       this.peers.update((p) => (p.includes(id) ? p : [...p, id]));
     });

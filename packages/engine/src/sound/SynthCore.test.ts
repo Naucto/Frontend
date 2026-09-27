@@ -111,6 +111,71 @@ describe('SynthCore', () => {
     expect(synth.isPlaying(3)).toBe(false);
   });
 
+  it('keeps the filter stable at any cutoff, sample rate and resonance', () => {
+    for (const rate of [22050, 44100, 48000])
+      for (const type of ['lp', 'hp', 'bp'] as const)
+        for (const resonance of [0, 0.2, 0.5, 0.9, 1]) {
+          const synth = new SynthCore(rate);
+          const ins = {
+            ...defaultInstrument('i'),
+            osc: 'saw' as const,
+            filter: { type, cutoff: 20000, resonance, envAmount: 1 },
+          };
+          synth.noteOn(ins, 72, 1, 0);
+          const l = new Float32Array(rate / 2);
+          synth.render(l, new Float32Array(l.length), l.length);
+          expect(l.every(Number.isFinite), `${String(rate)} ${type} ${String(resonance)}`).toBe(
+            true,
+          );
+          // Still sounding: the fix bounds the filter, it does not mute it.
+          expect(Math.max(...l.map(Math.abs))).toBeGreaterThan(0.05);
+        }
+  });
+
+  it('survives a filter an imported file drove out of range', () => {
+    // envAmount and cutoff both come from imported MIDI and JSON, so a negative one is reachable.
+    // A negative cutoff makes the filter coefficient negative, which is unstable at any magnitude.
+    for (const envAmount of [-1, -4, -100]) {
+      const synth = new SynthCore(SR);
+      const ins = {
+        ...defaultInstrument('i'),
+        osc: 'saw' as const,
+        filter: { type: 'lp' as const, cutoff: 4000, resonance: 0.2, envAmount },
+      };
+      synth.noteOn(ins, 60, 1, 0);
+      const out = render(synth, 0.3);
+      expect(out.every(Number.isFinite), `envAmount ${String(envAmount)}`).toBe(true);
+      expect(Math.max(...out.map(Math.abs))).toBeGreaterThan(0.01);
+    }
+    const negativeCutoff = new SynthCore(SR);
+    negativeCutoff.noteOn(
+      {
+        ...defaultInstrument('i'),
+        osc: 'saw' as const,
+        filter: { type: 'lp' as const, cutoff: -2000, resonance: 0.2, envAmount: 0 },
+      },
+      60,
+      1,
+      0,
+    );
+    const out = render(negativeCutoff, 0.3);
+    expect(out.every(Number.isFinite)).toBe(true);
+  });
+
+  it('leaves a filter well inside its range exactly as it was', () => {
+    const synth = new SynthCore(SR);
+    const ins = {
+      ...defaultInstrument('i'),
+      osc: 'saw' as const,
+      filter: { type: 'lp' as const, cutoff: 1000, resonance: 0.2, envAmount: 0 },
+    };
+    synth.noteOn(ins, 60, 1, 0);
+    const out = render(synth, 0.05);
+    // A 1 kHz low-pass on a 262 Hz saw: its fundamental passes, so it still crosses zero at pitch.
+    expect(zeroCrossings(out)).toBeGreaterThanOrEqual(12);
+    expect(zeroCrossings(out)).toBeLessThanOrEqual(14);
+  });
+
   it('steals the oldest lowest-priority voice when full', () => {
     const synth = new SynthCore(SR);
     const ins = defaultInstrument('i');

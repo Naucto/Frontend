@@ -1,6 +1,7 @@
 import * as Y from 'yjs';
 
 import { type DeclaredAction, isAction } from '../input/ActionMap';
+import type { NetDeclaration } from '../net/NetPermissions';
 import type { Instrument, Pattern, Song } from '../sound/model';
 import {
   BUBBLEGUM_16,
@@ -210,7 +211,7 @@ export class Game {
   readonly sfx: Y.Map<string>;
   readonly songs: Y.Map<string>;
   readonly samples: Y.Map<string>;
-  readonly netPermissions: Y.Map<{ flags: number }>;
+  readonly netPermissions: Y.Map<NetDeclaration>;
 
   /**
    * Palette indices of the first sheet, row-major, one byte a pixel.
@@ -1397,6 +1398,10 @@ export class Game {
         replaceMap(this.songs, from.songs);
         replaceMap(this.samples, from.samples);
         replaceMap(this.netPermissions, from.netPermissions);
+        replaceMap(this.doc.getMap('ai.catalog'), scratch.getMap('ai.catalog'));
+        replaceMap(this.doc.getMap('ai.levels'), scratch.getMap('ai.levels'));
+        replaceMap(this.doc.getMap('ai.locks'), scratch.getMap('ai.locks'));
+        // ai.applied is historical provenance and is deliberately never rolled back.
         replaceArray(this.paletteArray, from.paletteArray);
         this.restoreFiles(from);
         this.restoreCollection(this.sheetsMap, from.sheetsMap);

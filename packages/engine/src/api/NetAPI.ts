@@ -179,13 +179,11 @@ export class NetAPI extends EngineModule {
         if (kind === 'lock') return this._lockHandle(path);
         if (kind === 'queue') return this._queue(path);
 
-        const value = session.getValue(path);
-
-        if (value !== undefined) return value;
-
+        // The container wins over a value at the same path. The two contradict each other, and
+        // preferring the value would make every child write fail on a number.
         if (session.isContainer(path)) return this._stateProxy(path);
 
-        return undefined;
+        return session.getValue(path);
       },
       newindex: (key, value) => {
         const session = this._require();

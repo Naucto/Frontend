@@ -17,7 +17,7 @@ import { GameScreenComponent } from '@app/shared/game-screen/game-screen.compone
 import { RuntimeHostService } from '@app/shared/game-screen/runtime-host.service';
 import { UserAvatarComponent } from '@app/shared/user-avatar.component';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
-import { type SharedTableSession, type TableScalar } from '@naucto/engine';
+import { isNetPath, isNetSegment, type SharedTableSession, type TableScalar } from '@naucto/engine';
 import {
   ButtonDirective,
   EmptyStateComponent,
@@ -53,14 +53,6 @@ interface Row {
   /** Whether a running session has this path, as against the document merely declaring it. */
   live: boolean;
 }
-
-/** One key of a path. */
-const SEGMENT = /^[a-z0-9_]+$/i;
-/**
- * A path, which a declaration may give whole: building `players.score` a segment at a time means
- * declaring a node only to reopen it, and the name people say out loud is the dotted one.
- */
-const PATH = /^[a-z0-9_]+(\.[a-z0-9_]+)*$/i;
 
 /**
  * The design's value column is a Lua literal, not a `toString()`: strings keep their quotes so an
@@ -654,7 +646,11 @@ export class NetTabPage {
     this.permsVersion();
     const s = this.session();
     const perms = new Map<string, number>();
-    this.work.game.netPermissions.forEach((v, k) => perms.set(k, v.flags));
+    const authored = new Map<string, TableScalar>();
+    this.work.game.netPermissions.forEach((v, k) => {
+      perms.set(k, v.flags);
+      if (v.default !== undefined) authored.set(k, v.default);
+    });
 
     // What the document declares, with every ancestor a name implies. This is the half that makes
     // the tree editable with nothing running: a permission is set on a path, so the path is a node
@@ -693,8 +689,8 @@ export class NetTabPage {
         name: root ? '<root>' : path,
         container,
         // The design labels the root by its type and every other container by its size. A node the
-        // document declares and no session has reached carries a dash: it has no value yet, which
-        // is not the same as holding nil.
+        // document declares and no session has reached shows its authored default if it has one,
+        // and a dash if it does not: no value yet is not the same as holding nil.
         value:
           objectKind ??
           (root
@@ -703,7 +699,9 @@ export class NetTabPage {
               ? this.entries(keys.length)
               : live
                 ? formatScalar(value)
-                : '—'),
+                : authored.has(path)
+                  ? formatScalar(authored.get(path) ?? '')
+                  : '—'),
         kind: objectKind ? 'object' : container || !live ? 'table' : (typeof value as Row['kind']),
         owner:
           path && s && live
@@ -878,7 +876,10 @@ export class NetTabPage {
     const current = (r.read ? PERM_CLIENT_READ : 0) | (r.write ? PERM_CLIENT_WRITE : 0);
     const flags = on ? current | bit : current & ~bit;
     this.work.game.transact(() => {
-      this.work.game.netPermissions.set(r.path, { flags });
+      this.work.game.netPermissions.set(r.path, {
+        ...this.work.game.netPermissions.get(r.path),
+        flags,
+      });
     });
   }
 
@@ -917,12 +918,15 @@ export class NetTabPage {
   protected commitAdd(r: Row): void {
     const key = this.draft().trim();
     this.cancelEdit();
-    if (!PATH.test(key)) return;
+    if (!isNetPath(key)) return;
     const path = r.path ? `${r.path}.${key}` : key;
     // Declaring it is what makes it a node with nothing running behind it. Open both ways, which is
     // what an unconfigured path already resolves to: the entry names the path, it does not close it.
     this.work.game.transact(() => {
-      this.work.game.netPermissions.set(path, { flags: PERM_CLIENT_READ | PERM_CLIENT_WRITE });
+      this.work.game.netPermissions.set(path, {
+        ...this.work.game.netPermissions.get(path),
+        flags: PERM_CLIENT_READ | PERM_CLIENT_WRITE,
+      });
     });
     // A new node has to hold something for the live tree to carry it; the empty string is the one
     // value that is visibly a placeholder rather than a number someone meant.
@@ -933,7 +937,7 @@ export class NetTabPage {
     const key = this.draft().trim();
     const parent = r.path.slice(0, Math.max(0, r.path.lastIndexOf('.')));
     this.cancelEdit();
-    if (!SEGMENT.test(key) || key === r.path.split('.').pop()) return;
+    if (!isNetSegment(key) || key === r.path.split('.').pop()) return;
     const to = parent ? `${parent}.${key}` : key;
     this.movePermissions(r.path, to);
     const session = this.session();
@@ -972,7 +976,8 @@ export class NetTabPage {
     if (!moved.length) return;
     this.work.game.transact(() => {
       for (const [key] of moved) map.delete(key);
-      for (const [, key, flags] of moved) map.set(key, { flags });
+      // A rename moves the declaration, authored starting value and all.
+      for (const [from, key, flags] of moved) map.set(key, { ...map.get(from), flags });
     });
   }
 

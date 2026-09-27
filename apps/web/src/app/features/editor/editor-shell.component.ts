@@ -132,7 +132,7 @@ const RAIL: RailItem<EditorTab>[] = [
             variant="primary"
             size="bar"
             (click)="publish()"
-            [disabled]="!session.isCollaborator() || !!publishBlockedBy()"
+            [disabled]="!session.isCollaborator() || !!publishBlockedBy() || session.aiPaused()"
             [attr.title]="publishBlockedBy() ? t(publishBlockedBy()!) : null"
           >
             {{ t('editor.publish') }}
@@ -147,49 +147,64 @@ const RAIL: RailItem<EditorTab>[] = [
       } @else {
         @switch (session.status()) {
           @case ('ready') {
-            <div class="grid min-h-0 grid-cols-[81px_minmax(0,1fr)_auto]">
-              <nc-rail
-                [items]="rail"
-                [value]="ui.activeTab()"
-                (valueChange)="go($event)"
-                [label]="t('editor.tools')"
-              />
-              <section class="min-h-0 overflow-auto"><router-outlet /></section>
-              <nc-panel-region
-                [secondaryOpen]="ui.referenceShown()"
-                [viewportWidth]="ui.viewportWidth()"
-                [splitAt]="REFERENCE_SPLIT_BREAKPOINT"
-                [primaryWidth]="consoleWidth()"
-                [secondaryWidth]="REFERENCE_WIDTH"
-                [switchLabel]="switchKey() ? t(switchKey()) : ''"
-                (switched)="ui.toggleReference()"
-              >
-                <!-- Built only while it is open: the reference has nothing running in it, so unlike
+            @if (session.aiPaused()) {
+              <section class="flex flex-col items-center justify-center gap-2 p-4">
+                <p class="text-ui">{{ t('ai.paused') }}</p>
+                <p class="text-meta">{{ session.aiError() }}</p>
+                <div class="flex flex-wrap justify-center gap-1">
+                  <button ncButton variant="primary" size="sm" (click)="finishAi()">
+                    {{ t('ai.finish') }}
+                  </button>
+                  <button ncButton variant="ghost" size="sm" (click)="abortAi()">
+                    {{ t('ai.abort') }}
+                  </button>
+                </div>
+              </section>
+            } @else {
+              <div class="grid min-h-0 grid-cols-[81px_minmax(0,1fr)_auto]">
+                <nc-rail
+                  [items]="rail"
+                  [value]="ui.activeTab()"
+                  (valueChange)="go($event)"
+                  [label]="t('editor.tools')"
+                />
+                <section class="min-h-0 overflow-auto"><router-outlet /></section>
+                <nc-panel-region
+                  [secondaryOpen]="ui.referenceShown()"
+                  [viewportWidth]="ui.viewportWidth()"
+                  [splitAt]="REFERENCE_SPLIT_BREAKPOINT"
+                  [primaryWidth]="consoleWidth()"
+                  [secondaryWidth]="REFERENCE_WIDTH"
+                  [switchLabel]="switchKey() ? t(switchKey()) : ''"
+                  (switched)="ui.toggleReference()"
+                >
+                  <!-- Built only while it is open: the reference has nothing running in it, so unlike
                    the console it costs nothing to rebuild and something to keep. -->
-                <div secondary class="flex min-h-0 flex-col border-l border-line">
-                  @if (ui.referenceShown()) {
-                    <nc-doc-pane class="min-h-0 flex-1 overflow-auto" />
-                    <!-- The artboard puts this at the foot of the reference, and only where the
+                  <div secondary class="flex min-h-0 flex-col border-l border-line">
+                    @if (ui.referenceShown()) {
+                      <nc-doc-pane class="min-h-0 flex-1 overflow-auto" />
+                      <!-- The artboard puts this at the foot of the reference, and only where the
                        reference has taken the game's place — the one arrangement in which the game
                        really has been put away. -->
-                    @if (ui.columnMode() === 'swap') {
-                      <div
-                        class="flex shrink-0 items-center gap-1 border-t border-line bg-inset px-1.5 py-1"
-                      >
-                        <nc-icon name="pause" [size]="12" class="text-gold-ink" />
-                        <span class="label text-gold-ink">{{ t('editor.gamePaused') }}</span>
-                      </div>
+                      @if (ui.columnMode() === 'swap') {
+                        <div
+                          class="flex shrink-0 items-center gap-1 border-t border-line bg-inset px-1.5 py-1"
+                        >
+                          <nc-icon name="pause" [size]="12" class="text-gold-ink" />
+                          <span class="label text-gold-ink">{{ t('editor.gamePaused') }}</span>
+                        </div>
+                      }
                     }
-                  }
-                </div>
-                <nc-console-column
-                  primary
-                  class="min-h-0 border-line"
-                  [shown]="consoleShown()"
-                  [class.border-l]="consoleShown()"
-                />
-              </nc-panel-region>
-            </div>
+                  </div>
+                  <nc-console-column
+                    primary
+                    class="min-h-0 border-line"
+                    [shown]="consoleShown()"
+                    [class.border-l]="consoleShown()"
+                  />
+                </nc-panel-region>
+              </div>
+            }
           }
           @case ('error') {
             <!-- The console surface is where the machine talks during a session; a project that
@@ -357,6 +372,14 @@ export class EditorShellComponent implements OnInit {
 
   protected share(): void {
     this.dialogs.open(ShareDialogComponent, { data: { session: this.session } });
+  }
+
+  protected async finishAi(): Promise<void> {
+    await this.session.finishAiApplication();
+  }
+
+  protected async abortAi(): Promise<void> {
+    await this.session.abortAiApplication();
   }
 
   /**

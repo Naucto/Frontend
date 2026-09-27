@@ -1,4 +1,4 @@
-import type { NetPermissions } from './NetPermissions';
+import type { NetPermissions, NetScalar } from './NetPermissions';
 import type {
   SessionRole,
   SessionTransport,
@@ -94,14 +94,88 @@ function makeSession(
   userId: UserId,
   hub: Hub,
   permissions?: NetPermissions,
+  defaults?: () => ReadonlyMap<string, NetScalar>,
 ): SharedTableSession {
   const transport = new MockTransport(role, userId, hub);
-  const session = new SharedTableSession(transport, permissions);
+  const session = new SharedTableSession(transport, permissions, defaults);
   hub.register(transport);
   return session;
 }
 
 describe('SharedTableSession', () => {
+  it('starts a host session from the declared defaults', () => {
+    const hub = new Hub();
+    const host = makeSession(
+      'host',
+      1,
+      hub,
+      undefined,
+      () =>
+        new Map<string, NetScalar>([
+          ['score', 0],
+          ['title', 'hi'],
+        ]),
+    );
+    expect(host.getValue('score')).toBe(0);
+    expect(host.getValue('title')).toBe('hi');
+  });
+
+  it('does not seed a slave, and never overwrites what the game sets', () => {
+    const hub = new Hub();
+    const defaults = new Map<string, NetScalar>([['score', 0]]);
+    const host = makeSession('host', 1, hub, undefined, () => defaults);
+
+    // A default describes how a session begins; the game owns it from there on.
+    host.setValue('score', 50);
+    expect(host.getValue('score')).toBe(50);
+
+    // A slave's own store is never seeded from the document: it is handed the host's table on
+    // join, and a slave that never joins has nothing. Seeding it here would let a client assert
+    // a value the host never agreed to.
+    const alone = new SharedTableSession(
+      new MockTransport('slave', 9, new Hub()),
+      undefined,
+      () => defaults,
+    );
+    expect(alone.getValue('score')).toBeUndefined();
+  });
+
+  it('never hands a joiner a default on a path they may not read', async () => {
+    // The property the whole seeding change rests on: a server-private declaration is seeded into
+    // the host's store, and must not travel. The snapshot filters on canClientRead, and so must
+    // every later broadcast, or a declared private value becomes a published one.
+    const closed = {
+      canClientRead: (path: string) => !path.startsWith('secrets'),
+      canClientWrite: () => true,
+    };
+    const hub = new Hub();
+    const defaults = (): Map<string, NetScalar> =>
+      new Map<string, NetScalar>([
+        ['secrets.code', 'the answer'],
+        ['score', 0],
+      ]);
+    const host = makeSession('host', 1, hub, closed, defaults);
+    expect(host.getValue('secrets.code')).toBe('the answer');
+
+    const late = makeSession('slave', 2, hub, closed);
+    await flush();
+    expect(late.getValue('secrets.code')).toBeUndefined();
+    expect(late.getValue('score')).toBe(0);
+
+    // And it stays out of a broadcast as well as a snapshot.
+    host.setValue('secrets.code', 'still hidden');
+    await flush();
+    expect(late.getValue('secrets.code')).toBeUndefined();
+  });
+
+  it('carries the declared defaults into the snapshot a joiner receives', async () => {
+    const hub = new Hub();
+    makeSession('host', 1, hub, undefined, () => new Map([['score', 7]]));
+    const slave = makeSession('slave', 2, hub);
+    await flush();
+    expect(slave.getValue('score')).toBe(7);
+  });
+
   it('propagates a host write to a slave as a patch', async () => {
     const hub = new Hub();
     const host = makeSession('host', 1, hub);

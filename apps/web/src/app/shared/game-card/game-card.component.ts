@@ -6,6 +6,7 @@ import {
   input,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { AiBadgeComponent } from '@app/shared/ai-badge.component';
 import { UserAvatarComponent } from '@app/shared/user-avatar.component';
 import type { ProjectExResponseDto } from '@naucto/api-client';
 import { ChipComponent, StatComponent } from '@naucto/ui';
@@ -15,7 +16,14 @@ import { GameCoverComponent } from './game-cover.component';
 /** Hub card: cover, title, author chips, plays / likes / remixes. */
 @Component({
   selector: 'nc-game-card',
-  imports: [RouterLink, ChipComponent, GameCoverComponent, StatComponent, UserAvatarComponent],
+  imports: [
+    RouterLink,
+    ChipComponent,
+    GameCoverComponent,
+    StatComponent,
+    UserAvatarComponent,
+    AiBadgeComponent,
+  ],
   template: `
     <a [routerLink]="link()" [class]="cardClass()">
       <div class="relative aspect-video w-full">
@@ -39,6 +47,7 @@ import { GameCoverComponent } from './game-cover.component';
           @if (isDraft()) {
             <nc-chip>Draft</nc-chip>
           }
+          <nc-ai-badge [project]="game()" />
         </div>
         <div class="mt-0.5 flex items-center gap-[6px]">
           <nc-user-avatar

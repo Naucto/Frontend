@@ -1,4 +1,4 @@
-import { type Game, type NetPermissions } from '@naucto/engine';
+import { type Game, type NetPermissions, type NetScalar } from '@naucto/engine';
 
 /** Bits stored in `net.permissions` entries (`{ flags }`), keyed by `net.state` path. */
 export const PERM_CLIENT_READ = 1 << 0;
@@ -46,4 +46,20 @@ export function netPermissionsOf(game: Game): NetPermissions {
       return f === null ? true : (f & PERM_CLIENT_WRITE) !== 0;
     },
   };
+}
+
+/**
+ * The authored starting values, for a session to begin from.
+ *
+ * Read from the same map as the permissions because it is the same declaration: a path that says
+ * what a client may do with it can also say what it starts at. A declaration with no default
+ * contributes nothing, so a game that has never set one behaves exactly as before — the value is
+ * the empty string the net tab writes, not a number somebody meant.
+ */
+export function netDefaultsOf(game: Game): Map<string, NetScalar> {
+  const out = new Map<string, NetScalar>();
+  game.netPermissions.forEach((v, k) => {
+    if (v.default !== undefined) out.set(k, v.default);
+  });
+  return out;
 }

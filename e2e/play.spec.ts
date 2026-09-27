@@ -142,3 +142,26 @@ test('how to play shows the names the document gives its actions', async ({ page
   await expect(page.getByText('How to play')).toBeVisible();
   await expect(page.getByText('Jump', { exact: true })).toBeVisible();
 });
+
+test.describe('play page AI provenance', () => {
+  test('names the categories AI tools were used for in this release, and nothing when none', async ({
+    page,
+  }) => {
+    await page.route('**/auth/refresh', answer(401, {}));
+    await page.route(
+      '**/projects/releases/42',
+      answer(200, { ...release, aiCategories: ['CODE', 'MUSIC'] }),
+    );
+    await page.goto('/play/42');
+    await expect(page.getByTestId('ai-badge')).toContainText('AI-assisted');
+    await expect(page.getByTestId('ai-badge')).toContainText('Code · Music');
+
+    await page.route(
+      '**/projects/releases/43',
+      answer(200, { ...release, id: 43, aiCategories: [] }),
+    );
+    await page.goto('/play/43');
+    await expect(page.getByRole('heading', { name: 'Cave Diver' })).toBeVisible();
+    await expect(page.getByTestId('ai-badge')).toHaveCount(0);
+  });
+});

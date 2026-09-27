@@ -20,6 +20,7 @@ import {
   type Note,
   type Pattern,
   type Song,
+  SONG_SLOTS,
   SoundEngine,
   VOICES,
   WebAudioBackend,
@@ -48,6 +49,11 @@ import {
 } from './instrument.dialog';
 import { InstrumentInspectorComponent } from './instrument-inspector.component';
 import { InstrumentListComponent } from './instrument-list.component';
+import {
+  MidiImportDialog,
+  type MidiImportDialogData,
+  type MidiImportResult,
+} from './midi-import.dialog';
 import {
   NewInstrumentDialog,
   type NewInstrumentDialogData,
@@ -164,6 +170,15 @@ const PATTERN_MAX = 99;
           (rewound)="songToStart()"
           (stopped)="stop()"
         />
+        <button
+          ncButton
+          variant="ghost"
+          size="sm"
+          class="m-1 shrink-0 self-start"
+          (click)="importMidi()"
+        >
+          {{ t('editor.midi.open') }}
+        </button>
       </aside>
 
       <!-- The container is the column and not the bar, because a container query answers to an
@@ -606,6 +621,54 @@ export class SoundTabPage {
             ? this.library.addInstrument({ name: r.preset.name, settings: r.preset.settings })
             : this.library.addInstrument();
         this.sound.selectInstrument(inst.id);
+      });
+  }
+
+  /**
+   * A person's MIDI file or recording, converted after they chose what to keep, written as one
+   * edit: a song, an effect made of notes, or a sample effect.
+   */
+  protected importMidi(): void {
+    const game = this.session.game;
+    const songs = game.getSongs();
+    const sfx = game.getSfxSlots();
+    const freeSongSlots = Array.from({ length: SONG_SLOTS }, (_, i) => i).filter(
+      (slot) => !songs.get(String(slot))?.sequence.length,
+    );
+    const freeSfxSlots = Array.from({ length: 16 }, (_, i) => i).filter(
+      (slot) => !sfx.has(String(slot)),
+    );
+    this.dialogs
+      .open<MidiImportDialog, MidiImportDialogData, MidiImportResult>(MidiImportDialog, {
+        width: '720px',
+        ariaLabel: this.transloco.translate('editor.midi.title'),
+        data: {
+          freeSongSlots,
+          freeSfxSlots,
+          takenPatternSlots: [...game.getPatterns().values()].map((p) => p.slot),
+          maxPatternSlot: PATTERN_MAX,
+        },
+      })
+      .closed.subscribe((result: MidiImportResult | undefined) => {
+        if (!result) return;
+        game.transact(() => {
+          if (result.target === 'sample') {
+            game.samples.set(result.sample.id, result.sample.data);
+            game.setInstrument(result.instrument);
+            game.setPattern(result.pattern);
+            game.sfx.set(String(result.slot), result.pattern.id);
+            return;
+          }
+          const { conversion, patternSlots } = result;
+          for (const instrument of conversion.instruments) game.setInstrument(instrument);
+          conversion.patterns.forEach((pattern, index) => {
+            game.setPattern({ ...pattern, slot: patternSlots[index] ?? pattern.slot });
+          });
+          if (result.target === 'song') game.setSong(result.slot, conversion.song);
+          else if (conversion.patterns[0])
+            game.sfx.set(String(result.slot), conversion.patterns[0].id);
+        });
+        if (result.target === 'song') this.sound.selectSong(result.slot);
       });
   }
 

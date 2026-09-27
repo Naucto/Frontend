@@ -48,6 +48,7 @@ import * as Y from 'yjs';
 
 import { PANEL_WIDTH } from '../state/editor-ui.store';
 import { WorkSessionService } from '../work-session/work-session.service';
+import { AssistantSection } from './assistant-section.component';
 
 // The API rejects anything longer, so these are its limits, not a house style: the field has
 // to stop the typing rather than let a save fail on it.
@@ -60,6 +61,7 @@ const CONTROL_LABEL_MAX = 25;
 @Component({
   selector: 'nc-game-tab-page',
   imports: [
+    AssistantSection,
     SlicePipe,
     FormsModule,
     TranslocoDirective,
@@ -375,6 +377,10 @@ const CONTROL_LABEL_MAX = 25;
             @if (!session.project()?.publishedAt) {
               <p class="text-meta text-ink-3">{{ t('editor.game.notForkable') }}</p>
             }
+          </nc-section>
+
+          <nc-section banded [title]="t('ai.title')">
+            <nc-assistant-section [session]="session" />
           </nc-section>
         </div>
       </nc-panel-column>

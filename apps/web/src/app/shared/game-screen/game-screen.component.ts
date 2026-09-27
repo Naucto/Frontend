@@ -16,7 +16,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { NetUiBridgeService } from '@app/core/net/net-bridge.service';
-import { netPermissionsOf } from '@app/core/net/net-permissions';
+import { netDefaultsOf, netPermissionsOf } from '@app/core/net/net-permissions';
 import { ThemeService } from '@app/core/theme/theme.service';
 import { SignedInAction } from '@app/shared/auth/signed-in-action';
 import { HostDialogComponent } from '@app/shared/netplay/host.dialog';
@@ -414,6 +414,7 @@ export class GameScreenComponent {
       const canvas = this.canvas().nativeElement;
       if (!game) return;
       this.bridge.permissions.set(netPermissionsOf(game));
+      this.bridge.defaults = () => netDefaultsOf(game);
       this.host.mount(canvas, game, { netUi: this.bridge, netPermissions: netPermissionsOf(game) });
       this.mounted.emit();
       if (this.autoPlay()) this.host.play();

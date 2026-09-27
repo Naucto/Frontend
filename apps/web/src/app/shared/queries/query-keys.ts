@@ -21,4 +21,6 @@ export const qk = {
   publicProfile: (username: string) => ['user', username] as const,
   userAvatar: (id: number) => ['user', id, 'avatar'] as const,
   userGames: (id: number, kind: 'published' | 'liked') => ['user', id, kind] as const,
+  /** Account-wide, so it carries no project id. */
+  aiKeys: () => ['ai', 'keys'] as const,
 };

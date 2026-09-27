@@ -17,6 +17,7 @@ import {
 import { Router, RouterLink } from '@angular/router';
 import { AuthStore } from '@app/core/auth/auth.store';
 import { PresenceStore } from '@app/core/presence/presence.store';
+import { AiBadgeComponent } from '@app/shared/ai-badge.component';
 import { SignedInAction } from '@app/shared/auth/signed-in-action';
 import { GameCardComponent } from '@app/shared/game-card/game-card.component';
 import { GameScreenComponent } from '@app/shared/game-screen/game-screen.component';
@@ -52,6 +53,7 @@ import { ReleaseGameService } from './release-game.service';
 @Component({
   selector: 'nc-game-page',
   imports: [
+    AiBadgeComponent,
     DatePipe,
     RouterLink,
     TranslocoDirective,
@@ -124,6 +126,7 @@ import { ReleaseGameService } from './release-game.service';
               <nc-stat icon="users" [value]="r.uniquePlayers" [label]="t('game.players')" />
               <nc-stat icon="git-branch" [value]="r.forkCount ?? 0" [label]="t('game.remixes')" />
             </div>
+            <nc-ai-badge class="mt-1 block" [project]="r" detailed />
             @if (r.forkedFromId) {
               <a
                 [routerLink]="['/play', r.forkedFromId]"

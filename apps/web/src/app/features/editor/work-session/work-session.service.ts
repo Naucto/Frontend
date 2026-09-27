@@ -6,6 +6,13 @@ import { invalidateProjectHistory } from '@app/shared/queries/projects.queries';
 import { qk } from '@app/shared/queries/query-keys';
 import { TranslocoService } from '@jsverse/transloco';
 import {
+  aiControllerAbort,
+  aiControllerConnect,
+  aiControllerContext,
+  aiControllerDismiss,
+  aiControllerFinish,
+  aiControllerRevoke,
+  aiControllerStart,
   projectControllerFetchProjectContent,
   projectControllerFindOne,
   projectControllerSaveProjectContent,
@@ -17,6 +24,7 @@ import {
   workSessionControllerLeave,
 } from '@naucto/api-client';
 import {
+  aiContext,
   applyTutorialAssets,
   Game,
   GAME_SCHEMA_VERSION,
@@ -32,6 +40,7 @@ import type { Awareness } from 'y-protocols/awareness';
 import { WebrtcProvider } from 'y-webrtc';
 import * as Y from 'yjs';
 
+import { type AiBarrier, AiBridge } from '../ai/ai-bridge';
 import { assignColours } from './presence-colours';
 
 export type SessionStatus =
@@ -61,6 +70,7 @@ export interface Collaborator {
 }
 
 interface AwarenessState {
+  aiEditorId?: string;
   userId?: number;
   name?: string;
   tab?: string;
@@ -87,6 +97,25 @@ const QUIET_SAVE_MS = 3000;
  */
 @Injectable()
 export class WorkSessionService {
+  readonly aiEditorId = crypto.randomUUID();
+  readonly aiBarrier = signal<AiBarrier | null>(null);
+  readonly aiError = signal('');
+  /**
+   * The assistant's credential for this project, and the context timer that keeps it fed.
+   *
+   * These live here rather than in the settings panel because the assistant has to keep working
+   * while the person edits. Tying them to a component meant closing the panel wiped the token and
+   * stopped the heartbeat, so the first thing the assistant met was "share fresh context".
+   */
+  readonly aiToken = signal('');
+  private aiSharing = false;
+  private aiTimer: ReturnType<typeof setInterval> | null = null;
+  readonly aiPaused = computed(() =>
+    ['PREPARING', 'COMMITTING'].includes(this.aiBarrier()?.status ?? ''),
+  );
+  private aiBridge: AiBridge | null = null;
+  private aiDriving: string | null = null;
+  private aiFinishing = false;
   private readonly auth = inject(AuthStore);
   private readonly config = inject(AppConfigService);
   private readonly queries = inject(QueryClient);
@@ -161,6 +190,7 @@ export class WorkSessionService {
     window.addEventListener('beforeunload', onBeforeUnload);
     window.addEventListener('pagehide', onPageHide);
     inject(DestroyRef).onDestroy(() => {
+      this.aiBridge?.close();
       window.removeEventListener('beforeunload', onBeforeUnload);
       window.removeEventListener('pagehide', onPageHide);
       void this.close();
@@ -169,6 +199,112 @@ export class WorkSessionService {
 
   get id(): number {
     return this.projectId;
+  }
+
+  /**
+   * Approve a proposal by applying it: pause every open editor, then commit once each has sent its
+   * state. The approver's session drives the commit; anyone can resume it after a failure.
+   */
+  /**
+   * Connects the assistant for this project, and starts the context heartbeat.
+   *
+   * Both live here rather than in a panel because the assistant has to keep working while the
+   * person edits: it used to stop the moment the panel closed, which is why the context kept
+   * expiring and the assistant kept asking for it again.
+   */
+  async connectAi(): Promise<void> {
+    if (this.status() !== 'ready') return;
+    const result = unwrap(await aiControllerConnect({ path: { projectId: this.projectId } }));
+    this.aiToken.set(result.token);
+    this.aiSharing = true;
+    await this.shareAiContext();
+    this.startAiContextTimer();
+  }
+
+  async disconnectAi(): Promise<void> {
+    unwrap(await aiControllerRevoke({ path: { projectId: this.projectId } }));
+    this.aiSharing = false;
+    this.aiToken.set('');
+  }
+
+  /** Publishes the current document so an assistant can work from it. */
+  async shareAiContext(): Promise<void> {
+    if (this.status() !== 'ready' || !this.aiSharing) return;
+    unwrap(
+      await aiControllerContext({
+        path: { projectId: this.projectId },
+        body: { content: aiContext(this.game) },
+      }),
+    );
+  }
+
+  private readonly destroyRef = inject(DestroyRef);
+
+  private startAiContextTimer(): void {
+    if (this.aiTimer !== null) return;
+    this.aiTimer = setInterval(() => {
+      void this.shareAiContext().catch(() => undefined);
+    }, 20000);
+    this.destroyRef.onDestroy(() => {
+      if (this.aiTimer !== null) clearInterval(this.aiTimer);
+    });
+  }
+
+  async applyAiProposal(id: string, contentHash: string): Promise<void> {
+    const states = [...(this.provider?.awareness.getStates().values() ?? [])] as AwarenessState[];
+    if (!states.length || states.some((state) => !state.aiEditorId))
+      throw new Error(this.i18n.translate('ai.outdatedPeer'));
+    const participants = states.flatMap((state) => (state.aiEditorId ? [state.aiEditorId] : []));
+    const barrier = unwrap(
+      await aiControllerStart({
+        path: { projectId: this.projectId, proposalId: id },
+        body: { decision: 'APPROVED', contentHash, participants },
+      }),
+    );
+    this.aiDriving = barrier.id;
+    this.aiBarrier.set(barrier);
+    await this.aiBridge?.poll();
+  }
+
+  async finishAiApplication(): Promise<void> {
+    const barrier = this.aiBarrier();
+    if (!barrier) return;
+    unwrap(
+      await aiControllerFinish({ path: { projectId: this.projectId, barrierId: barrier.id } }),
+    );
+    await this.aiBridge?.poll();
+  }
+
+  async abortAiApplication(): Promise<void> {
+    const barrier = this.aiBarrier();
+    if (!barrier) return;
+    unwrap(await aiControllerAbort({ path: { projectId: this.projectId, barrierId: barrier.id } }));
+    this.aiDriving = null;
+    await this.aiBridge?.poll();
+  }
+
+  async dismissAiWarning(): Promise<void> {
+    const barrier = this.aiBarrier();
+    if (!barrier) return;
+    unwrap(
+      await aiControllerDismiss({ path: { projectId: this.projectId, barrierId: barrier.id } }),
+    );
+    await this.aiBridge?.poll();
+  }
+
+  /** Commits as soon as every editor has paused, from the session that asked for it. */
+  private driveAiApplication(barrier: AiBarrier | null): void {
+    if (barrier?.id !== this.aiDriving || !barrier || this.aiFinishing) return;
+    if (barrier.status !== 'PREPARING' && barrier.status !== 'COMMITTING') {
+      this.aiDriving = null;
+      return;
+    }
+    this.aiFinishing = true;
+    void aiControllerFinish({ path: { projectId: this.projectId, barrierId: barrier.id } }).finally(
+      () => {
+        this.aiFinishing = false;
+      },
+    );
   }
 
   /** y-protocols awareness of the live session (null until connected). */
@@ -224,6 +360,7 @@ export class WorkSessionService {
         maxConns: offer.maxConns,
       });
       this.provider.awareness.setLocalState({
+        aiEditorId: this.aiEditorId,
         userId: me ?? undefined,
         name: this.auth.displayName(),
         tab: 'game',
@@ -235,6 +372,20 @@ export class WorkSessionService {
         },
       );
       this.refreshCollaborators();
+
+      this.aiBridge = new AiBridge(
+        this.doc,
+        projectId,
+        this.aiEditorId,
+        (barrier) => {
+          this.aiBarrier.set(barrier);
+          this.driveAiApplication(barrier);
+        },
+        (message) => {
+          this.aiError.set(message);
+        },
+      );
+      await this.aiBridge.start();
 
       this.dirty.set(false);
       this.status.set('ready');
@@ -295,6 +446,7 @@ export class WorkSessionService {
    * version has to carry the state it names, whoever pressed the button.
    */
   async save(opts: { keepalive?: boolean; force?: boolean } = {}): Promise<void> {
+    if (this.aiPaused()) return;
     if ((!this.isHost() && !opts.force) || this.status() !== 'ready') return;
     this.saving.set(true);
     try {
