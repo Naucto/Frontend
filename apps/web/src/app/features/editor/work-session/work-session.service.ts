@@ -127,7 +127,11 @@ export function computeAiMarks(
       fileId,
       title,
       from: Y.createRelativePositionFromTypeIndex(text, from),
-      to: Y.createRelativePositionFromTypeIndex(text, to),
+      // Associated with the character before, not the one after. A position at the end of a text
+      // is the same whether the index is the length or one past it, and it associates forward, so
+      // the mark grew to cover whatever was typed below the change afterwards. The character before
+      // is stable: text added after it stays outside the mark.
+      to: Y.createRelativePositionFromTypeIndex(text, to, -1),
     });
   }
   return marks;
@@ -388,12 +392,15 @@ export class WorkSessionService {
       }),
     );
     const before = codeTextFrom(snapshot);
-    Y.applyUpdate(
-      this.doc,
-      Uint8Array.from(atob(result.update), (c) => c.charCodeAt(0)),
-      WorkSessionService.APPLIED_ORIGIN,
-    );
-    this.markAiChange(id, what.title ?? '', before);
+    const update = Uint8Array.from(atob(result.update), (c) => c.charCodeAt(0));
+    Y.applyUpdate(this.doc, update, WorkSessionService.APPLIED_ORIGIN);
+    // Diffed against the state the server sent, not the live document. The live document has
+    // everything typed here, or relayed from a colleague, since the request went out, and diffing
+    // against that marked all of it as the assistant's — in files the proposal never touched, and
+    // in the change's own file, which is the place somebody looks to see what the assistant did.
+    // Relative positions carry item ids, so positions built against this document resolve in the
+    // live one.
+    this.markAiChange(id, what.title ?? '', before, update);
     // Applying a revert takes the original's lines back, so the original's marks no longer describe
     // them. Its own change is marked in its own right, under the revert's own title.
     if (what.revertsId) this.clearAiMarks(what.revertsId);
@@ -409,11 +416,22 @@ export class WorkSessionService {
    * replacement — which is what a `code` operation is — has no shared region with the old text, so
    * it is compared as lines and only the lines that actually differ are marked.
    */
-  private markAiChange(proposalId: string, title: string, before: Map<string, string>): void {
-    const marks = computeAiMarks(this.doc, before, proposalId, title);
-    if (!marks.length) return;
-    // Capped, so a long session of accepted changes does not accumulate marks nobody is reading.
-    this.aiMarks.update((current) => [...marks, ...current].slice(0, 40));
+  private markAiChange(
+    proposalId: string,
+    title: string,
+    before: Map<string, string>,
+    update: Uint8Array,
+  ): void {
+    const applied = new Y.Doc();
+    try {
+      Y.applyUpdate(applied, update);
+      const marks = computeAiMarks(applied, before, proposalId, title);
+      if (!marks.length) return;
+      // Capped, so a long session of accepted changes does not accumulate marks nobody is reading.
+      this.aiMarks.update((current) => [...marks, ...current].slice(0, 40));
+    } finally {
+      applied.destroy();
+    }
   }
 
   /** Forget a change's marks, which is what reverting it should do: the lines are no longer its. */

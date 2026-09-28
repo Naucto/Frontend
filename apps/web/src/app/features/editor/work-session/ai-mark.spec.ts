@@ -236,4 +236,54 @@ describe('marks that do not drift or overreach', () => {
       'after',
     );
   });
+  it('marks only what the assistant changed, not what was typed while the request was out', () => {
+    // The diff has to be against the state the server sent back. Diffing against the live document
+    // instead marked every keystroke made in the gap as the assistant's — most visibly in a file the
+    // proposal never opened, which is exactly where somebody looks to see what the assistant did.
+    const live = new Y.Doc();
+    addFile(live, 'main', 'before');
+    const snapshot = Y.encodeStateAsUpdate(live);
+    const before = codeTextFrom(Buffer.from(snapshot).toString('base64'));
+
+    // A person types, and opens a file the change never touches, while the request is out.
+    live.getMap<Y.Map<Y.Text>>('code.files').get('main')!.get('text')!.insert(6, ' TYPED');
+    addFile(live, 'untouched', 'their own new file');
+
+    // The server's answer: the change, and nothing of the above.
+    const applied = new Y.Doc();
+    Y.applyUpdate(applied, Buffer.from(snapshot));
+    rewrite(applied.getMap<Y.Map<Y.Text>>('code.files').get('main')!.get('text')!, 'after');
+
+    const marks = computeAiMarks(applied, before, 'p1', 'Change');
+    expect(marks.map((mark) => mark.fileId)).toEqual(['main']);
+
+    // And against the live document — what the service holds while typing continued — the marked
+    // text is the assistant's and not the person's.
+    Y.applyUpdate(live, Y.encodeStateAsUpdate(applied));
+    const text = live.getMap<Y.Map<Y.Text>>('code.files').get('main')!.get('text')!;
+    expect(text.toString().slice(resolve(live, marks[0]!.from), resolve(live, marks[0]!.to))).toBe(
+      'after',
+    );
+  });
+
+  it('does not stretch the mark over text typed below the change', () => {
+    // The end of a text is the same whether the index is its length or one past it, and a position
+    // there associates forward — so the mark quietly grew to cover everything typed afterwards, and
+    // a person editing below a change watched the highlight follow their cursor.
+    const doc = new Y.Doc();
+    addFile(doc, 'main', 'one\ntwo\nthree');
+    const text = doc.getMap<Y.Map<Y.Text>>('code.files').get('main')!.get('text')!;
+    const before = new Map([['main', 'one\ntwo\nthree']]);
+    rewrite(text, 'one\nTWO\nthree');
+
+    const [mark] = computeAiMarks(doc, before, 'p1', 'Change');
+    text.insert(text.length, '\nfour\nfive');
+
+    const marked = doc.getMap<Y.Map<Y.Text>>('code.files').get('main')!.get('text')!.toString();
+    const slice = marked.slice(resolve(doc, mark!.from), resolve(doc, mark!.to));
+    // The changed line and nothing after it: the newline belongs to the line, the rest does not.
+    expect(slice).toBe('TWO\n');
+    expect(slice).not.toContain('four');
+    expect(slice).not.toContain('five');
+  });
 });
