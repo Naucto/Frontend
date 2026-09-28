@@ -179,6 +179,11 @@ test.describe('AI assistance', () => {
     }, PROBED);
     await page.getByRole('button', { name: 'Inspect changes' }).click();
     await page.getByRole('button', { name: 'Accept change' }).click();
+    // Wait for the client to have acted on the reply, not for the server to have counted the
+    // request: the mock increments before it responds, so polling `applies` reads the nodes while
+    // the change is still in flight and the probe below would pass against a teardown that had not
+    // happened yet. The receipt is the client saying it applied it.
+    await expect(page.getByText(/^Applied:/)).toBeVisible();
     await expect.poll(() => ai.applies, { timeout: 10000 }).toBe(1);
 
     // The thing this replaced paused every editor and replaced the whole document: both tabs
