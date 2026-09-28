@@ -30,6 +30,7 @@ import {
   Compartment,
   EditorState,
   type Extension,
+  type Range,
   RangeSet,
   RangeSetBuilder,
 } from '@codemirror/state';
@@ -51,8 +52,9 @@ import type { EngineError } from '@naucto/engine';
 import type { PresenceColour } from '@naucto/ui';
 import { yCollab } from 'y-codemirror.next';
 import type { Awareness } from 'y-protocols/awareness';
-import type * as Y from 'yjs';
+import * as Y from 'yjs';
 
+import type { AiMark } from '../work-session/work-session.service';
 import { luaHover } from './lua-docs';
 import { luaAutocomplete, luaLanguage, setDocsLookup } from './lua-language';
 import { type LocalSignature, luaSignatureHelp } from './signature-help';
@@ -92,6 +94,8 @@ export class CodeEditorComponent {
   readonly error = input<EngineError | null>(null);
   /** What the project declares, for calls the documentation has never heard of. */
   readonly locals = input<readonly LocalSignature[]>([]);
+  /** Accepted assistant changes in this file, so a person can see what came from the assistant. */
+  readonly aiMarks = input<readonly AiMark[]>([]);
   readonly cursor = output<CursorInfo>();
   /** Mod-f, which the page answers by opening its own find bar rather than CodeMirror's panel. */
   readonly findRequested = output();
@@ -200,6 +204,14 @@ export class CodeEditorComponent {
         ],
       });
     });
+    effect(() => {
+      const marks = this.aiMarks();
+      const view = this.view;
+      if (!view) return;
+      view.dispatch({
+        effects: [this.aiMarkCompartment.reconfigure(aiMarkHighlight(marks, this.text()))],
+      });
+    });
   }
 
   focus(): void {
@@ -207,6 +219,7 @@ export class CodeEditorComponent {
   }
 
   private readonly errorLineCompartment = new Compartment();
+  private readonly aiMarkCompartment = new Compartment();
 
   private lintSource(err: EngineError | null): ReturnType<typeof linter> {
     return linter(
@@ -387,3 +400,37 @@ function errorLineHighlight(line: number | null): Extension {
 const errorGutterMarker = new (class extends GutterMarker {
   override elementClass = 'cm-error-line';
 })();
+
+/**
+ * Mark the lines an accepted assistant change moved.
+ *
+ * The marks are Yjs relative positions, so they follow the text they point at when a colleague
+ * types above them, and resolve to nothing once the text they covered is gone — a mark for a
+ * reverted change disappears with the change rather than pointing somewhere meaningless. Recomputed
+ * on every view update, which is what makes a concurrent edit shift the highlight correctly.
+ */
+function aiMarkHighlight(marks: readonly AiMark[], text: Y.Text): Extension {
+  const doc = text.doc;
+  return EditorView.decorations.compute([], (state) => {
+    if (!marks.length || !doc) return Decoration.none;
+    const ranges: Range<Decoration>[] = [];
+    for (const entry of marks) {
+      // Resolved against the document, since that is what a relative position names; against
+      // nothing it means the text it covered is gone, and a mark that resolved to no text would
+      // otherwise be drawn over whatever sits in its place now.
+      const from = Y.createAbsolutePositionFromRelativePosition(entry.from, doc)?.index;
+      const to = Y.createAbsolutePositionFromRelativePosition(entry.to, doc)?.index;
+      if (from === null || from === undefined || to === null || to === undefined) continue;
+      const start = Math.max(0, Math.min(from, state.doc.length));
+      const end = Math.max(start, Math.min(to, state.doc.length));
+      if (end === start) continue;
+      // The title rides on the decoration rather than on `range`, which takes only the two offsets.
+      const mark = Decoration.mark({
+        class: 'cm-ai-line',
+        attributes: { title: entry.title || 'AI' },
+      });
+      ranges.push(mark.range(start, end));
+    }
+    return ranges.length ? Decoration.set(ranges, true) : Decoration.none;
+  });
+}

@@ -100,6 +100,7 @@ import { localSignatures } from './signature-help';
             [userName]="session.displayName"
             [error]="runtime.error()"
             [locals]="locals()"
+            [aiMarks]="marksHere()"
             (cursor)="cursor.set($event)"
             (findRequested)="openSearch()"
           />
@@ -223,6 +224,16 @@ export class CodeTabPage implements OnInit {
     () => this.files().find((f) => f.id === this.activeId()) ?? this.session.game.entryFile ?? null,
   );
   protected readonly cursor = signal<CursorInfo>({ line: 1, col: 1 });
+  /**
+   * Accepted assistant changes in the open file. Filtered here rather than in the editor so the
+   * marks of a change to another file are not even offered to it.
+   */
+  protected readonly marksHere = computed(() => {
+    const id = this.active()?.id;
+    return id === null || id === undefined
+      ? []
+      : this.session.aiMarks().filter((mark) => mark.fileId === id);
+  });
 
   ngOnInit(): void {
     this.activeId.set(this.session.game.entryFile?.id ?? null);

@@ -190,6 +190,9 @@
   /* The ground a granted permission chip sits on in the NET tree: jade at the depth of the page,
      so the chip reads as filled without the border disappearing into it. */
   --nc-jade-wash: #0b2417;
+  /* What an accepted assistant change is marked with: a wash of the assistant's own hue, distinct
+     from the gold a runtime error uses so the two never read as the same kind of notice. */
+  --nc-sky-wash: #0f2634;
   --nc-hot-soft: #ffa0bc;
 }
 
@@ -223,6 +226,7 @@
   --nc-orange-ink: #a34e10;
   --nc-blush-ink: #b03a5e;
   --nc-gold-wash: #f7ecc0;
+  --nc-sky-wash: #dceaf4;
   --nc-jade-wash: #cfe9dc;
   --nc-hot-soft: #c41e5c;
 }
@@ -258,6 +262,7 @@
     --nc-orange-ink: #a34e10;
     --nc-blush-ink: #b03a5e;
     --nc-gold-wash: #f7ecc0;
+    --nc-sky-wash: #dceaf4;
     --nc-jade-wash: #cfe9dc;
     --nc-hot-soft: #c41e5c;
   }

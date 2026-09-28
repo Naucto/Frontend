@@ -45,6 +45,12 @@ export const nauctoTheme = EditorView.theme({
     marginLeft: '-14px',
     paddingLeft: '12px',
   },
+  // An accepted assistant change. A wash rather than a border, so a run of them reads as one region
+  // the assistant wrote and not as a list of separate warnings.
+  '.cm-ai-line': {
+    backgroundColor: 'var(--nc-sky-wash)',
+    boxShadow: 'inset 2px 0 0 var(--nc-sky)',
+  },
   '.cm-tooltip': {
     backgroundColor: 'var(--nc-raised)',
     border: '1px solid var(--nc-line-strong)',

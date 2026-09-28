@@ -306,7 +306,10 @@ export class AiProposalsComponent {
       this.stopAudition();
       // Nothing pauses: the change lands in the document you are already looking at, so the
       // list refreshes to say so rather than the page disappearing and coming back.
-      const categories = await this.session().applyAiProposal(proposal.id, proposal.contentHash);
+      const categories = await this.session().applyAiProposal(proposal.id, proposal.contentHash, {
+        title: proposal.title,
+        revertsId: proposal.revertsId,
+      });
       this.selectedId.set('');
       this.proposals.set(await this.load());
       this.toasts.show(
@@ -333,6 +336,8 @@ export class AiProposalsComponent {
       unwrap(
         await aiControllerRevert({ path: { projectId: this.projectId, proposalId: proposal.id } }),
       );
+      // Staging a revert is not undoing it: the change is still in the document until somebody
+      // accepts that revert. Its mark stays, because the lines it covers are still its.
       this.proposals.set(await this.load());
     });
   }

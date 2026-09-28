@@ -91,6 +91,98 @@ const QUIET_SAVE_MS = 3000;
  * Provided at the editor route so all tabs share it; closing the route leaves
  * the session.
  */
+/** A region of a file that an accepted assistant change moved. */
+export interface AiMark {
+  readonly proposalId: string;
+  readonly fileId: string;
+  readonly title: string;
+  readonly from: Y.RelativePosition;
+  readonly to: Y.RelativePosition;
+}
+
+/**
+ * The marks an accepted change leaves behind, given the text each file held before it.
+ *
+ * Separate from the service so it can be tested without a session, an API and a provider: this is
+ * where the decision of what to mark actually lives.
+ */
+export function computeAiMarks(
+  doc: Y.Doc,
+  before: Map<string, string>,
+  proposalId: string,
+  title: string,
+): AiMark[] {
+  const marks: AiMark[] = [];
+  for (const [fileId, file] of doc.getMap<Y.Map<Y.Text>>('code.files')) {
+    const text = file.get('text');
+    if (!(text instanceof Y.Text)) continue;
+    const previous = before.get(fileId);
+    // A file the change did not touch, or one that held nothing, has nothing to point at.
+    if (previous === undefined || previous === text.toString()) continue;
+    const [from, to] = changedRange(previous, text.toString());
+    if (from === to) continue;
+    marks.push({
+      proposalId,
+      fileId,
+      title,
+      from: Y.createRelativePositionFromTypeIndex(text, from),
+      to: Y.createRelativePositionFromTypeIndex(text, to),
+    });
+  }
+  return marks;
+}
+
+/**
+ * The marks left once a change is reverted. Marks of the change being undone go with it; the revert
+ * itself is marked in its own right, under its own title.
+ */
+export function withoutProposal(marks: readonly AiMark[], proposalId: string): AiMark[] {
+  return marks.filter((mark) => mark.proposalId !== proposalId);
+}
+
+/** The text of every Lua file in a document, by id. */
+function codeText(doc: Y.Doc): Map<string, string> {
+  const files = new Map<string, string>();
+  for (const [fileId, file] of doc.getMap<Y.Map<Y.Text>>('code.files')) {
+    const text = file.get('text');
+    if (text instanceof Y.Text) files.set(fileId, text.toString());
+  }
+  return files;
+}
+
+/**
+ * The line range that differs between two versions of a file, as offsets into the new text.
+ *
+ * Lines that survived the change are excluded: a whole-file replacement shares no text with what it
+ * replaced, so comparing lines is what leaves a person looking at the part that actually moved rather
+ * than at the whole file. Returns an empty range when nothing differs, which the caller treats as
+ * "nothing to mark".
+ */
+export function changedRange(before: string, after: string): [number, number] {
+  const oldLines = before.split('\n');
+  const newLines = after.split('\n');
+  let start = 0;
+  while (start < oldLines.length && start < newLines.length && oldLines[start] === newLines[start])
+    start += 1;
+  let oldEnd = oldLines.length - 1;
+  let newEnd = newLines.length - 1;
+  while (oldEnd >= start && newEnd >= start && oldLines[oldEnd] === newLines[newEnd]) {
+    oldEnd -= 1;
+    newEnd -= 1;
+  }
+  if (start > newEnd) return [0, 0];
+  // Offsets into the new text: the shared lines above the change, then the change itself, counting
+  // the newline that separates each line from the next.
+  const offsetOf = (index: number): number => {
+    let offset = 0;
+    for (let i = 0; i < index; i += 1) offset += newLines[i]?.length ?? 0;
+    return offset + index;
+  };
+  const from = offsetOf(start);
+  const to = offsetOf(newEnd + 1);
+  return [from, Math.max(from, to)];
+}
+
 @Injectable()
 export class WorkSessionService {
   /**
@@ -106,6 +198,8 @@ export class WorkSessionService {
    * person typing — the same thing the old barrier needed an origin for, without the pause.
    */
   static readonly APPLIED_ORIGIN = 'ai-applied';
+  /** Where accepted assistant changes are marked, in each file's own text. */
+  readonly aiMarks = signal<readonly AiMark[]>([]);
   private aiSharing = false;
   private aiTimer: ReturnType<typeof setInterval> | null = null;
   private readonly auth = inject(AuthStore);
@@ -247,7 +341,14 @@ export class WorkSessionService {
    * dependencies, so a colleague who is behind or has typed since is not overwritten. An operation
    * whose `before` no longer matches is refused, which is what a changed-since-review looks like.
    */
-  async applyAiProposal(id: string, contentHash: string): Promise<string[]> {
+  async applyAiProposal(
+    id: string,
+    contentHash: string,
+    what: { title?: string; revertsId?: string | null } = {},
+  ): Promise<string[]> {
+    // What each file held before, so the lines an accepted change moved can be marked afterwards
+    // rather than guessed at from the diff the server sends back.
+    const before = codeText(this.doc);
     const result = unwrap(
       await aiControllerApply({
         path: { projectId: this.projectId, proposalId: id },
@@ -259,7 +360,32 @@ export class WorkSessionService {
       Uint8Array.from(atob(result.update), (c) => c.charCodeAt(0)),
       WorkSessionService.APPLIED_ORIGIN,
     );
+    this.markAiChange(id, what.title ?? '', before);
+    // Applying a revert takes the original's lines back, so the original's marks no longer describe
+    // them. Its own change is marked in its own right, under the revert's own title.
+    if (what.revertsId) this.clearAiMarks(what.revertsId);
     return result.categories;
+  }
+
+  /**
+   * Record which lines an accepted change moved, so a person can see what came from the assistant
+   * rather than having to remember it.
+   *
+   * Positions are Yjs relative positions, not line numbers: a colleague typing above the change
+   * shifts every number, and a relative position follows the text it points at. A whole-file
+   * replacement — which is what a `code` operation is — has no shared region with the old text, so
+   * it is compared as lines and only the lines that actually differ are marked.
+   */
+  private markAiChange(proposalId: string, title: string, before: Map<string, string>): void {
+    const marks = computeAiMarks(this.doc, before, proposalId, title);
+    if (!marks.length) return;
+    // Capped, so a long session of accepted changes does not accumulate marks nobody is reading.
+    this.aiMarks.update((current) => [...marks, ...current].slice(0, 40));
+  }
+
+  /** Forget a change's marks, which is what reverting it should do: the lines are no longer its. */
+  clearAiMarks(proposalId: string): void {
+    this.aiMarks.update((current) => withoutProposal(current, proposalId));
   }
 
   /** y-protocols awareness of the live session (null until connected). */
