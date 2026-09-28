@@ -39,6 +39,7 @@ import { WebrtcProvider } from 'y-webrtc';
 import * as Y from 'yjs';
 
 import { assignColours } from './presence-colours';
+import { SaveTracker } from './save-tracker';
 
 export type SessionStatus =
   'joining' | 'loading' | 'upgrading' | 'ready' | 'error' | 'kicked' | 'closed';
@@ -223,6 +224,9 @@ export class WorkSessionService {
    * person typing — the same thing the old barrier needed an origin for, without the pause.
    */
   static readonly APPLIED_ORIGIN = 'ai-applied';
+
+  /** Tells a finished save whether it uploaded everything the document holds. */
+  private readonly tracker = new SaveTracker();
   /** Where accepted assistant changes are marked, in each file's own text. */
   readonly aiMarks = signal<readonly AiMark[]>([]);
   private aiSharing = false;
@@ -288,6 +292,7 @@ export class WorkSessionService {
   constructor() {
     const onUpdate = (_u: Uint8Array, origin: unknown): void => {
       if (origin === 'remote-init') return;
+      this.tracker.changed();
       this.dirty.set(true);
       this.saveWhenQuiet();
     };
@@ -566,6 +571,14 @@ export class WorkSessionService {
         this.project.set({ ...details, ...(updated as Partial<ProjectExResponseDto>) });
         await this.invalidateProjectEverywhere();
       }
+      // The revision is read before encoding, because the upload is a round trip and the document
+      // keeps moving while it is out. Anything applied after this line — a change accepted from the
+      // assistant, a keystroke, a peer's edit — is not in the bytes being uploaded, so the dirty
+      // flag must not be cleared on its account. Clearing it regardless lost exactly that: the
+      // change sat in the document, the flag said there was nothing to save, and closing the tab
+      // then stored nothing at all. With the assistant's changes reaching storage only through this
+      // flag, that was the only route to persistence.
+      const encodedAt = this.tracker.mark();
       const bytes = Y.encodeStateAsUpdate(this.doc);
       // The generated client resolves a refused request as a value, not a throw; a save the server
       // turned down must not go on to clear the dirty flag below.
@@ -576,7 +589,9 @@ export class WorkSessionService {
           ...(opts.keepalive ? { keepalive: true } : {}),
         }),
       );
-      this.dirty.set(false);
+      // Only what was encoded counts as saved. If the document moved on, it stays dirty and the
+      // quiet-period timer or the next pause picks it up.
+      if (this.tracker.settled(encodedAt)) this.dirty.set(false);
       this.saveFailed.set(false);
       this.lastSavedAt.set(new Date());
       // Every save is a new autosave on the server, and the panel listing them would otherwise
