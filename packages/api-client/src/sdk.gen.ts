@@ -19,10 +19,8 @@ import type {
   AdminFeaturedReleaseControllerSetFeaturedData,
   AdminFeaturedReleaseControllerSetFeaturedErrors,
   AdminFeaturedReleaseControllerSetFeaturedResponses,
-  AiControllerAbortData,
-  AiControllerAbortResponses,
-  AiControllerAcknowledgeData,
-  AiControllerAcknowledgeResponses,
+  AiControllerApplyData,
+  AiControllerApplyResponses,
   AiControllerCancelJobData,
   AiControllerCancelJobResponses,
   AiControllerConnectData,
@@ -31,12 +29,6 @@ import type {
   AiControllerContextResponses,
   AiControllerDeclareData,
   AiControllerDeclareResponses,
-  AiControllerDismissData,
-  AiControllerDismissResponses,
-  AiControllerFinishData,
-  AiControllerFinishResponses,
-  AiControllerHeartbeatData,
-  AiControllerHeartbeatResponses,
   AiControllerListData,
   AiControllerListJobsData,
   AiControllerListJobsResponses,
@@ -51,10 +43,6 @@ import type {
   AiControllerReviewResponses,
   AiControllerRevokeData,
   AiControllerRevokeResponses,
-  AiControllerStartData,
-  AiControllerStartResponses,
-  AiControllerViolationData,
-  AiControllerViolationResponses,
   AiKeysControllerCreateData,
   AiKeysControllerCreateResponses,
   AiKeysControllerGrantData,
@@ -439,7 +427,7 @@ export const aiControllerReview = <ThrowOnError extends boolean = false>(
   });
 
 /**
- * Validate against an isolated editor snapshot; never modifies the live project
+ * Validate against the caller's own document; never modifies anything
  */
 export const aiControllerPreview = <ThrowOnError extends boolean = false>(
   options: Options<AiControllerPreviewData, ThrowOnError>,
@@ -467,12 +455,12 @@ export const aiControllerRevert = <ThrowOnError extends boolean = false>(
   });
 
 /**
- * Approve the exact proposal and pause every editor
+ * Accept the proposal against the caller's own document and return the difference
  */
-export const aiControllerStart = <ThrowOnError extends boolean = false>(
-  options: Options<AiControllerStartData, ThrowOnError>,
-): RequestResult<AiControllerStartResponses, unknown, ThrowOnError> =>
-  (options.client ?? client).post<AiControllerStartResponses, unknown, ThrowOnError>({
+export const aiControllerApply = <ThrowOnError extends boolean = false>(
+  options: Options<AiControllerApplyData, ThrowOnError>,
+): RequestResult<AiControllerApplyResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<AiControllerApplyResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/ai/projects/{projectId}/proposals/{proposalId}/apply',
     ...options,
@@ -480,90 +468,6 @@ export const aiControllerStart = <ThrowOnError extends boolean = false>(
       'Content-Type': 'application/json',
       ...options.headers,
     },
-  });
-
-/**
- * Register an editor and read the collaborative application state
- */
-export const aiControllerHeartbeat = <ThrowOnError extends boolean = false>(
-  options: Options<AiControllerHeartbeatData, ThrowOnError>,
-): RequestResult<AiControllerHeartbeatResponses, unknown, ThrowOnError> =>
-  (options.client ?? client).post<AiControllerHeartbeatResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/ai/projects/{projectId}/editors/heartbeat',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Acknowledge the pause with the complete local Yjs state
- */
-export const aiControllerAcknowledge = <ThrowOnError extends boolean = false>(
-  options: Options<AiControllerAcknowledgeData, ThrowOnError>,
-): RequestResult<AiControllerAcknowledgeResponses, unknown, ThrowOnError> =>
-  (options.client ?? client).post<AiControllerAcknowledgeResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/ai/projects/{projectId}/barriers/{barrierId}/ack',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Report a write after the pause: aborts before commit, flags after it
- */
-export const aiControllerViolation = <ThrowOnError extends boolean = false>(
-  options: Options<AiControllerViolationData, ThrowOnError>,
-): RequestResult<AiControllerViolationResponses, unknown, ThrowOnError> =>
-  (options.client ?? client).post<AiControllerViolationResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/ai/projects/{projectId}/barriers/{barrierId}/violation',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Dismiss a post-commit warning after checking the result
- */
-export const aiControllerDismiss = <ThrowOnError extends boolean = false>(
-  options: Options<AiControllerDismissData, ThrowOnError>,
-): RequestResult<AiControllerDismissResponses, unknown, ThrowOnError> =>
-  (options.client ?? client).post<AiControllerDismissResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/ai/projects/{projectId}/barriers/{barrierId}/violation/dismiss',
-    ...options,
-  });
-
-/**
- * Commit, or recover, the persisted approved result
- */
-export const aiControllerFinish = <ThrowOnError extends boolean = false>(
-  options: Options<AiControllerFinishData, ThrowOnError>,
-): RequestResult<AiControllerFinishResponses, unknown, ThrowOnError> =>
-  (options.client ?? client).post<AiControllerFinishResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/ai/projects/{projectId}/barriers/{barrierId}/finish',
-    ...options,
-  });
-
-/**
- * Cancel before the commit has started
- */
-export const aiControllerAbort = <ThrowOnError extends boolean = false>(
-  options: Options<AiControllerAbortData, ThrowOnError>,
-): RequestResult<AiControllerAbortResponses, unknown, ThrowOnError> =>
-  (options.client ?? client).post<AiControllerAbortResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/ai/projects/{projectId}/barriers/{barrierId}/abort',
-    ...options,
   });
 
 /**

@@ -44,41 +44,25 @@ export type AiReviewDto = {
   contentHash: string;
 };
 
-export type AiAckDto = {
-  editorId: string;
+export type AiSnapshotDto = {
   snapshot: string;
 };
 
-export type AiStartDto = {
+export type AiAcceptDto = {
+  snapshot: string;
   decision: 'APPROVED' | 'REJECTED';
   contentHash: string;
-  participants: Array<string>;
 };
 
-export type AiBarrierResponseDto = {
-  id: string;
-  projectId: number;
-  proposalId: string;
-  status: string;
-  expected: Array<string>;
-  result: string | null;
-  violation: string | null;
-  lateUpdates: Array<string>;
-  startedAt: string;
-  updatedAt: string;
-};
-
-export type AiEditorDto = {
-  editorId: string;
-};
-
-export type AiViolationDto = {
-  editorId: string;
-  reason: string;
+export type AiApplyDto = {
   /**
-   * The Yjs update that arrived after the pause, base64
+   * A Yjs update carrying the accepted change, for the caller to apply
    */
-  update?: string;
+  update: string;
+  /**
+   * What the change touched, for the receipt
+   */
+  categories: Array<string>;
 };
 
 export type AiJobResponseDto = {
@@ -1807,7 +1791,7 @@ export type AiControllerReviewResponses = {
 };
 
 export type AiControllerPreviewData = {
-  body: AiAckDto;
+  body: AiSnapshotDto;
   path: {
     projectId: number;
     proposalId: string;
@@ -1837,8 +1821,8 @@ export type AiControllerRevertResponses = {
 export type AiControllerRevertResponse =
   AiControllerRevertResponses[keyof AiControllerRevertResponses];
 
-export type AiControllerStartData = {
-  body: AiStartDto;
+export type AiControllerApplyData = {
+  body: AiAcceptDto;
   path: {
     projectId: number;
     proposalId: string;
@@ -1847,107 +1831,12 @@ export type AiControllerStartData = {
   url: '/ai/projects/{projectId}/proposals/{proposalId}/apply';
 };
 
-export type AiControllerStartResponses = {
-  201: AiBarrierResponseDto;
+export type AiControllerApplyResponses = {
+  201: AiApplyDto;
 };
 
-export type AiControllerStartResponse =
-  AiControllerStartResponses[keyof AiControllerStartResponses];
-
-export type AiControllerHeartbeatData = {
-  body: AiEditorDto;
-  path: {
-    projectId: number;
-  };
-  query?: never;
-  url: '/ai/projects/{projectId}/editors/heartbeat';
-};
-
-export type AiControllerHeartbeatResponses = {
-  /**
-   * Current barrier, or null when none exists
-   */
-  201: AiBarrierResponseDto;
-};
-
-export type AiControllerHeartbeatResponse =
-  AiControllerHeartbeatResponses[keyof AiControllerHeartbeatResponses];
-
-export type AiControllerAcknowledgeData = {
-  body: AiAckDto;
-  path: {
-    projectId: number;
-    barrierId: string;
-  };
-  query?: never;
-  url: '/ai/projects/{projectId}/barriers/{barrierId}/ack';
-};
-
-export type AiControllerAcknowledgeResponses = {
-  201: unknown;
-};
-
-export type AiControllerViolationData = {
-  body: AiViolationDto;
-  path: {
-    projectId: number;
-    barrierId: string;
-  };
-  query?: never;
-  url: '/ai/projects/{projectId}/barriers/{barrierId}/violation';
-};
-
-export type AiControllerViolationResponses = {
-  201: AiBarrierResponseDto;
-};
-
-export type AiControllerViolationResponse =
-  AiControllerViolationResponses[keyof AiControllerViolationResponses];
-
-export type AiControllerDismissData = {
-  body?: never;
-  path: {
-    projectId: number;
-    barrierId: string;
-  };
-  query?: never;
-  url: '/ai/projects/{projectId}/barriers/{barrierId}/violation/dismiss';
-};
-
-export type AiControllerDismissResponses = {
-  201: unknown;
-};
-
-export type AiControllerFinishData = {
-  body?: never;
-  path: {
-    projectId: number;
-    barrierId: string;
-  };
-  query?: never;
-  url: '/ai/projects/{projectId}/barriers/{barrierId}/finish';
-};
-
-export type AiControllerFinishResponses = {
-  201: AiBarrierResponseDto;
-};
-
-export type AiControllerFinishResponse =
-  AiControllerFinishResponses[keyof AiControllerFinishResponses];
-
-export type AiControllerAbortData = {
-  body?: never;
-  path: {
-    projectId: number;
-    barrierId: string;
-  };
-  query?: never;
-  url: '/ai/projects/{projectId}/barriers/{barrierId}/abort';
-};
-
-export type AiControllerAbortResponses = {
-  201: unknown;
-};
+export type AiControllerApplyResponse =
+  AiControllerApplyResponses[keyof AiControllerApplyResponses];
 
 export type AiControllerListJobsData = {
   body?: never;

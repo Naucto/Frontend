@@ -7,7 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { unwrap } from '@app/core/api/api-errors';
-import { TranslocoDirective } from '@jsverse/transloco';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import {
   aiControllerList,
   aiControllerPreview,
@@ -24,7 +24,7 @@ import {
   SoundEngine,
   WebAudioBackend,
 } from '@naucto/engine';
-import { ButtonDirective, NoticeComponent } from '@naucto/ui';
+import { ButtonDirective, NoticeComponent, ToastService } from '@naucto/ui';
 
 import type { WorkSessionService } from '../work-session/work-session.service';
 import { renderResource } from './ai-preview';
@@ -71,7 +71,7 @@ interface Image {
                   ncButton
                   variant="primary"
                   size="sm"
-                  [disabled]="busy() || session().aiPaused()"
+                  [disabled]="busy()"
                   (click)="apply(proposal)"
                 >
                   {{ t('ai.approveApply') }}
@@ -194,6 +194,8 @@ export class AiProposalsComponent {
   protected readonly images = signal<Image[]>([]);
   protected readonly busy = signal(false);
   protected readonly error = signal('');
+  private readonly toasts = inject(ToastService);
+  private readonly transloco = inject(TranslocoService);
   private result: Game | null = null;
   private sound: SoundEngine | null = null;
   private audio: WebAudioBackend | null = null;
@@ -245,7 +247,7 @@ export class AiProposalsComponent {
       const { result } = unwrap(
         await aiControllerPreview({
           path: { projectId: this.projectId, proposalId: proposal.id },
-          body: { editorId: this.session().aiEditorId, snapshot: encodeState(game.doc) },
+          body: { snapshot: encodeState(game.doc) },
         }),
       );
       const after = gameFromState(result);
@@ -293,8 +295,15 @@ export class AiProposalsComponent {
   protected async apply(proposal: AiProposalResponseDto): Promise<void> {
     await this.run(async () => {
       this.stopAudition();
-      await this.session().applyAiProposal(proposal.id, proposal.contentHash);
+      // Nothing pauses: the change lands in the document you are already looking at, so the
+      // list refreshes to say so rather than the page disappearing and coming back.
+      const categories = await this.session().applyAiProposal(proposal.id, proposal.contentHash);
       this.selectedId.set('');
+      this.proposals.set(unwrap(await aiControllerList({ path: { projectId: this.projectId } })));
+      this.toasts.show(
+        this.transloco.translate('ai.applied', { what: categories.join(', ') || '—' }),
+        'success',
+      );
     });
   }
 

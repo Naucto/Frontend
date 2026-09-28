@@ -99,8 +99,5 @@ export async function mockEditor(
     r.fulfill({ json: { data: { id: 4, username: 'priax', profileImageUrl: '/img/logo.svg' } } }),
   );
   await page.route('**/projects/7', (r) => r.fulfill({ json: { ...project, name } }));
-  await page.route('**/ai/projects/7/editors/heartbeat', (r) =>
-    r.fulfill({ body: 'null', contentType: 'application/json' }),
-  );
   await page.route('**/ai/projects/7/proposals', (r) => r.fulfill({ json: [] }));
 }

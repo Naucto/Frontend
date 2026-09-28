@@ -6,13 +6,10 @@ import { invalidateProjectHistory } from '@app/shared/queries/projects.queries';
 import { qk } from '@app/shared/queries/query-keys';
 import { TranslocoService } from '@jsverse/transloco';
 import {
-  aiControllerAbort,
+  aiControllerApply,
   aiControllerConnect,
   aiControllerContext,
-  aiControllerDismiss,
-  aiControllerFinish,
   aiControllerRevoke,
-  aiControllerStart,
   projectControllerFetchProjectContent,
   projectControllerFindOne,
   projectControllerSaveProjectContent,
@@ -26,6 +23,7 @@ import {
 import {
   aiContext,
   applyTutorialAssets,
+  encodeState,
   Game,
   GAME_SCHEMA_VERSION,
   isFromFutureSchema,
@@ -40,7 +38,6 @@ import type { Awareness } from 'y-protocols/awareness';
 import { WebrtcProvider } from 'y-webrtc';
 import * as Y from 'yjs';
 
-import { type AiBarrier, AiBridge } from '../ai/ai-bridge';
 import { assignColours } from './presence-colours';
 
 export type SessionStatus =
@@ -98,8 +95,6 @@ const QUIET_SAVE_MS = 3000;
 @Injectable()
 export class WorkSessionService {
   readonly aiEditorId = crypto.randomUUID();
-  readonly aiBarrier = signal<AiBarrier | null>(null);
-  readonly aiError = signal('');
   /**
    * The assistant's credential for this project, and the context timer that keeps it fed.
    *
@@ -108,14 +103,13 @@ export class WorkSessionService {
    * stopped the heartbeat, so the first thing the assistant met was "share fresh context".
    */
   readonly aiToken = signal('');
+  /**
+   * Marks an accepted change, so a write that came from the assistant is distinguishable from a
+   * person typing — the same thing the old barrier needed an origin for, without the pause.
+   */
+  static readonly APPLIED_ORIGIN = 'ai-applied';
   private aiSharing = false;
   private aiTimer: ReturnType<typeof setInterval> | null = null;
-  readonly aiPaused = computed(() =>
-    ['PREPARING', 'COMMITTING'].includes(this.aiBarrier()?.status ?? ''),
-  );
-  private aiBridge: AiBridge | null = null;
-  private aiDriving: string | null = null;
-  private aiFinishing = false;
   private readonly auth = inject(AuthStore);
   private readonly config = inject(AppConfigService);
   private readonly queries = inject(QueryClient);
@@ -190,7 +184,6 @@ export class WorkSessionService {
     window.addEventListener('beforeunload', onBeforeUnload);
     window.addEventListener('pagehide', onPageHide);
     inject(DestroyRef).onDestroy(() => {
-      this.aiBridge?.close();
       window.removeEventListener('beforeunload', onBeforeUnload);
       window.removeEventListener('pagehide', onPageHide);
       void this.close();
@@ -250,61 +243,27 @@ export class WorkSessionService {
     });
   }
 
-  async applyAiProposal(id: string, contentHash: string): Promise<void> {
-    const states = [...(this.provider?.awareness.getStates().values() ?? [])] as AwarenessState[];
-    if (!states.length || states.some((state) => !state.aiEditorId))
-      throw new Error(this.i18n.translate('ai.outdatedPeer'));
-    const participants = states.flatMap((state) => (state.aiEditorId ? [state.aiEditorId] : []));
-    const barrier = unwrap(
-      await aiControllerStart({
+  /**
+   * Accept a proposal: send this document as it stands, apply what comes back.
+   *
+   * Nothing is paused and nobody is interrupted. The operations are merged into the state that was
+   * just sent, so unsaved work here is respected, and the reply is a Yjs update rather than a whole
+   * document, so a colleague who has typed since is not overwritten. An operation whose `before` no
+   * longer matches is refused, which is what a changed-since-review looks like.
+   */
+  async applyAiProposal(id: string, contentHash: string): Promise<string[]> {
+    const result = unwrap(
+      await aiControllerApply({
         path: { projectId: this.projectId, proposalId: id },
-        body: { decision: 'APPROVED', contentHash, participants },
+        body: { decision: 'APPROVED', contentHash, snapshot: encodeState(this.doc) },
       }),
     );
-    this.aiDriving = barrier.id;
-    this.aiBarrier.set(barrier);
-    await this.aiBridge?.poll();
-  }
-
-  async finishAiApplication(): Promise<void> {
-    const barrier = this.aiBarrier();
-    if (!barrier) return;
-    unwrap(
-      await aiControllerFinish({ path: { projectId: this.projectId, barrierId: barrier.id } }),
+    Y.applyUpdate(
+      this.doc,
+      Uint8Array.from(atob(result.update), (c) => c.charCodeAt(0)),
+      WorkSessionService.APPLIED_ORIGIN,
     );
-    await this.aiBridge?.poll();
-  }
-
-  async abortAiApplication(): Promise<void> {
-    const barrier = this.aiBarrier();
-    if (!barrier) return;
-    unwrap(await aiControllerAbort({ path: { projectId: this.projectId, barrierId: barrier.id } }));
-    this.aiDriving = null;
-    await this.aiBridge?.poll();
-  }
-
-  async dismissAiWarning(): Promise<void> {
-    const barrier = this.aiBarrier();
-    if (!barrier) return;
-    unwrap(
-      await aiControllerDismiss({ path: { projectId: this.projectId, barrierId: barrier.id } }),
-    );
-    await this.aiBridge?.poll();
-  }
-
-  /** Commits as soon as every editor has paused, from the session that asked for it. */
-  private driveAiApplication(barrier: AiBarrier | null): void {
-    if (barrier?.id !== this.aiDriving || !barrier || this.aiFinishing) return;
-    if (barrier.status !== 'PREPARING' && barrier.status !== 'COMMITTING') {
-      this.aiDriving = null;
-      return;
-    }
-    this.aiFinishing = true;
-    void aiControllerFinish({ path: { projectId: this.projectId, barrierId: barrier.id } }).finally(
-      () => {
-        this.aiFinishing = false;
-      },
-    );
+    return result.categories;
   }
 
   /** y-protocols awareness of the live session (null until connected). */
@@ -373,20 +332,6 @@ export class WorkSessionService {
       );
       this.refreshCollaborators();
 
-      this.aiBridge = new AiBridge(
-        this.doc,
-        projectId,
-        this.aiEditorId,
-        (barrier) => {
-          this.aiBarrier.set(barrier);
-          this.driveAiApplication(barrier);
-        },
-        (message) => {
-          this.aiError.set(message);
-        },
-      );
-      await this.aiBridge.start();
-
       this.dirty.set(false);
       this.status.set('ready');
       if (this.isHost()) {
@@ -446,7 +391,6 @@ export class WorkSessionService {
    * version has to carry the state it names, whoever pressed the button.
    */
   async save(opts: { keepalive?: boolean; force?: boolean } = {}): Promise<void> {
-    if (this.aiPaused()) return;
     if ((!this.isHost() && !opts.force) || this.status() !== 'ready') return;
     this.saving.set(true);
     try {

@@ -85,7 +85,7 @@ type Panel = 'changes' | 'catalog' | 'jobs' | 'provenance';
             <nc-ai-proposals [session]="session()" />
           }
           @case ('catalog') {
-            <nc-asset-catalog [game]="session().game" [paused]="session().aiPaused()" />
+            <nc-asset-catalog [game]="session().game" />
           }
           @case ('jobs') {
             <nc-ai-jobs [projectId]="session().id" />

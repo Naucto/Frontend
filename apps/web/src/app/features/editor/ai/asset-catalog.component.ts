@@ -132,23 +132,11 @@ async function fingerprint(game: Game, entry: Record<string, unknown>): Promise<
       </div>
       <p class="mt-0.5 text-meta text-ink-3">{{ t('ai.catalogScope') }}</p>
       <div class="mt-1 flex flex-wrap gap-1">
-        <button
-          ncButton
-          variant="secondary"
-          size="sm"
-          [disabled]="paused() || busy()"
-          (click)="save()"
-        >
+        <button ncButton variant="secondary" size="sm" [disabled]="busy()" (click)="save()">
           {{ t('ai.catalogSave') }}
         </button>
         @if (kind === 'tile' || kind === 'section') {
-          <button
-            ncButton
-            variant="ghost"
-            size="sm"
-            [disabled]="paused() || busy()"
-            (click)="lock()"
-          >
+          <button ncButton variant="ghost" size="sm" [disabled]="busy()" (click)="lock()">
             {{ t('ai.lockRegion') }}
           </button>
         }
@@ -169,7 +157,7 @@ async function fingerprint(game: Game, entry: Record<string, unknown>): Promise<
                 ncButton
                 variant="ghost"
                 size="sm"
-                [disabled]="paused() || busy()"
+                [disabled]="busy()"
                 (click)="relocate(item.id)"
               >
                 {{ t('ai.relocate') }}
@@ -179,7 +167,7 @@ async function fingerprint(game: Game, entry: Record<string, unknown>): Promise<
               ncButton
               variant="ghost"
               size="sm"
-              [disabled]="paused() || busy()"
+              [disabled]="busy()"
               (click)="remove(item.id)"
             >
               {{ t('ai.remove') }}
@@ -201,7 +189,7 @@ async function fingerprint(game: Game, entry: Record<string, unknown>): Promise<
               ncButton
               variant="ghost"
               size="sm"
-              [disabled]="paused() || busy()"
+              [disabled]="busy()"
               (click)="unlock(lock.id)"
             >
               {{ t('ai.unlock') }}
@@ -217,7 +205,6 @@ async function fingerprint(game: Game, entry: Record<string, unknown>): Promise<
 })
 export class AssetCatalogComponent {
   readonly game = input.required<Game>();
-  readonly paused = input(false);
   private readonly i18n = inject(TranslocoService);
   protected name = '';
   protected kind: Kind = 'tile';
@@ -324,7 +311,7 @@ export class AssetCatalogComponent {
   }
 
   private async guarded(action: () => Promise<void>): Promise<void> {
-    if (this.paused() || this.busy()) return;
+    if (this.busy()) return;
     this.busy.set(true);
     this.message.set('');
     try {
@@ -361,8 +348,6 @@ export class AssetCatalogComponent {
         entry = { kind: this.kind, resourceId: this.resourceId, ...region };
         entry.contentHash = (await fingerprint(game, entry)) ?? this.fail('ai.catalogInvalid');
       }
-      // A pause may have begun while hashing: never write after this editor has frozen.
-      if (this.paused()) return;
       const existing = [...catalog.entries()].find(([, value]) => {
         if (!value || typeof value !== 'object') return false;
         const a = value as Record<string, unknown>;
@@ -415,7 +400,6 @@ export class AssetCatalogComponent {
           }
       const found = matches[0];
       if (!found) this.fail('ai.relocateMissing');
-      if (this.paused()) return;
       game.transact(() => {
         catalog.set(id, { ...entry, ...found });
       });

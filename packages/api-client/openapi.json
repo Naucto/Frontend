@@ -205,7 +205,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AiAckDto"
+                "$ref": "#/components/schemas/AiSnapshotDto"
               }
             }
           }
@@ -220,7 +220,7 @@
             "JWT-auth": []
           }
         ],
-        "summary": "Validate against an isolated editor snapshot; never modifies the live project",
+        "summary": "Validate against the caller's own document; never modifies anything",
         "tags": ["AI"]
       }
     },
@@ -268,7 +268,7 @@
     },
     "/ai/projects/{projectId}/proposals/{proposalId}/apply": {
       "post": {
-        "operationId": "AiController_start",
+        "operationId": "AiController_apply",
         "parameters": [
           {
             "name": "projectId",
@@ -292,7 +292,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AiStartDto"
+                "$ref": "#/components/schemas/AiAcceptDto"
               }
             }
           }
@@ -303,7 +303,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AiBarrierResponseDto"
+                  "$ref": "#/components/schemas/AiApplyDto"
                 }
               }
             }
@@ -314,260 +314,7 @@
             "JWT-auth": []
           }
         ],
-        "summary": "Approve the exact proposal and pause every editor",
-        "tags": ["AI"]
-      }
-    },
-    "/ai/projects/{projectId}/editors/heartbeat": {
-      "post": {
-        "operationId": "AiController_heartbeat",
-        "parameters": [
-          {
-            "name": "projectId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AiEditorDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Current barrier, or null when none exists",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AiBarrierResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Register an editor and read the collaborative application state",
-        "tags": ["AI"]
-      }
-    },
-    "/ai/projects/{projectId}/barriers/{barrierId}/ack": {
-      "post": {
-        "operationId": "AiController_acknowledge",
-        "parameters": [
-          {
-            "name": "projectId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "barrierId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AiAckDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Acknowledge the pause with the complete local Yjs state",
-        "tags": ["AI"]
-      }
-    },
-    "/ai/projects/{projectId}/barriers/{barrierId}/violation": {
-      "post": {
-        "operationId": "AiController_violation",
-        "parameters": [
-          {
-            "name": "projectId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "barrierId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AiViolationDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AiBarrierResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Report a write after the pause: aborts before commit, flags after it",
-        "tags": ["AI"]
-      }
-    },
-    "/ai/projects/{projectId}/barriers/{barrierId}/violation/dismiss": {
-      "post": {
-        "operationId": "AiController_dismiss",
-        "parameters": [
-          {
-            "name": "projectId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "barrierId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Dismiss a post-commit warning after checking the result",
-        "tags": ["AI"]
-      }
-    },
-    "/ai/projects/{projectId}/barriers/{barrierId}/finish": {
-      "post": {
-        "operationId": "AiController_finish",
-        "parameters": [
-          {
-            "name": "projectId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "barrierId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AiBarrierResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Commit, or recover, the persisted approved result",
-        "tags": ["AI"]
-      }
-    },
-    "/ai/projects/{projectId}/barriers/{barrierId}/abort": {
-      "post": {
-        "operationId": "AiController_abort",
-        "parameters": [
-          {
-            "name": "projectId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "barrierId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Cancel before the commit has started",
+        "summary": "Accept the proposal against the caller's own document and return the difference",
         "tags": ["AI"]
       }
     },
@@ -5700,118 +5447,47 @@
         },
         "required": ["decision", "contentHash"]
       },
-      "AiAckDto": {
+      "AiSnapshotDto": {
         "type": "object",
         "properties": {
-          "editorId": {
-            "type": "string"
-          },
           "snapshot": {
             "type": "string"
           }
         },
-        "required": ["editorId", "snapshot"]
+        "required": ["snapshot"]
       },
-      "AiStartDto": {
+      "AiAcceptDto": {
         "type": "object",
         "properties": {
+          "snapshot": {
+            "type": "string"
+          },
           "decision": {
             "type": "string",
             "enum": ["APPROVED", "REJECTED"]
           },
           "contentHash": {
             "type": "string"
-          },
-          "participants": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
           }
         },
-        "required": ["decision", "contentHash", "participants"]
+        "required": ["snapshot", "decision", "contentHash"]
       },
-      "AiBarrierResponseDto": {
+      "AiApplyDto": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "projectId": {
-            "type": "number"
-          },
-          "proposalId": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string"
-          },
-          "expected": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "result": {
-            "type": "string",
-            "nullable": true
-          },
-          "violation": {
-            "type": "string",
-            "nullable": true
-          },
-          "lateUpdates": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "startedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "projectId",
-          "proposalId",
-          "status",
-          "expected",
-          "result",
-          "violation",
-          "lateUpdates",
-          "startedAt",
-          "updatedAt"
-        ]
-      },
-      "AiEditorDto": {
-        "type": "object",
-        "properties": {
-          "editorId": {
-            "type": "string"
-          }
-        },
-        "required": ["editorId"]
-      },
-      "AiViolationDto": {
-        "type": "object",
-        "properties": {
-          "editorId": {
-            "type": "string"
-          },
-          "reason": {
-            "type": "string"
-          },
           "update": {
             "type": "string",
-            "description": "The Yjs update that arrived after the pause, base64"
+            "description": "A Yjs update carrying the accepted change, for the caller to apply"
+          },
+          "categories": {
+            "description": "What the change touched, for the receipt",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
-        "required": ["editorId", "reason"]
+        "required": ["update", "categories"]
       },
       "AiJobResponseDto": {
         "type": "object",

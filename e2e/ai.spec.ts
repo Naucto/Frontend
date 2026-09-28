@@ -6,30 +6,23 @@ import { expect, test } from './fixtures';
 
 test.use({ viewport: { width: 1920, height: 1030 } });
 
-interface Barrier {
-  id: string;
-  projectId: number;
-  proposalId: string;
-  status: string;
-  expected: string[];
-  result: string | null;
-  violation: string | null;
-  lateUpdates: string[];
-}
-
 /**
  * The AI endpoints of one project, kept in memory the way the Backend keeps them in its tables,
- * shared by every tab of a test so two editors see one barrier. It stands in for the real server:
+ * shared by every tab of a test. It stands in for the real server:
  * the commit is simulated with Yjs here, and the Backend's own tests cover its validation.
  */
+/** The text of main.lua in a document, which is what a code change writes. */
+function mainText(doc: Y.Doc): Y.Text | null {
+  const file = doc.getMap<Y.Map<Y.Text>>('code.files').get('main');
+  const text = file?.get('text');
+  return text instanceof Y.Text ? text : null;
+}
+
 class AiBackend {
-  editors = new Set<string>();
-  snapshots = new Map<string, string>();
-  barrier: Barrier | null = null;
   proposals: Record<string, unknown>[] = [];
   contexts: Record<string, unknown>[] = [];
-  violations: { reason: string; update: string }[] = [];
-  /** How `finish` transforms the merged snapshots; returns false to refuse. */
+  applies = 0;
+  /** How an apply transforms the caller's own document; returns false to refuse. */
   commit: (doc: Y.Doc) => boolean = () => true;
 
   async attach(page: Page): Promise<void> {
@@ -39,10 +32,6 @@ class AiBackend {
       const url = new URL(route.request().url());
       const path = url.pathname.replace(/^.*\/ai\/projects\/7\//, '');
       const body = (route.request().postDataJSON() ?? {}) as Record<string, unknown>;
-      if (path === 'editors/heartbeat') {
-        this.editors.add(String(body.editorId));
-        return json(route, this.barrier);
-      }
       if (path === 'connection') return json(route, { token: 'naucto_ai_test', expiresAt: '' });
       if (path === 'context') {
         this.contexts.push(body.content as Record<string, unknown>);
@@ -63,70 +52,32 @@ class AiBackend {
       }
       const apply = /^proposals\/(.+)\/apply$/.exec(path);
       if (apply) {
-        expect(new Set(body.participants as string[])).toEqual(this.editors);
-        this.barrier = {
-          id: 'barrier',
-          projectId: 7,
-          proposalId: apply[1] ?? '',
-          status: 'PREPARING',
-          expected: [...this.editors],
-          result: null,
-          violation: null,
-          lateUpdates: [],
-        };
-        return json(route, this.barrier);
-      }
-      if (path === 'barriers/barrier/ack') {
-        this.snapshots.set(String(body.editorId), String(body.snapshot));
-        return json(route, { acknowledged: true });
-      }
-      if (path === 'barriers/barrier/violation') {
-        this.violations.push({ reason: String(body.reason), update: String(body.update) });
-        return json(route, this.barrier);
-      }
-      if (path === 'barriers/barrier/finish') {
-        const barrier = this.barrier;
-        if (!barrier) return route.fulfill({ status: 409, body: '{}' });
-        if (barrier.status === 'APPLIED') return json(route, barrier);
-        if (this.snapshots.size !== barrier.expected.length)
+        // The caller's own state is the base, and what comes back is only the difference: the
+        // server never asks anyone to stop editing to find out what would change.
+        const held = new Y.Doc();
+        Y.applyUpdate(held, Buffer.from(String(body.snapshot), 'base64'));
+        const merged = new Y.Doc();
+        Y.applyUpdate(merged, Y.encodeStateAsUpdate(held));
+        if (!this.commit(merged))
           return route.fulfill({
             status: 409,
             contentType: 'application/json',
-            body: JSON.stringify({ message: 'Waiting for all editors to pause' }),
+            body: JSON.stringify({ message: 'That change no longer applies to this project' }),
           });
-        const doc = new Y.Doc();
-        for (const snapshot of this.snapshots.values())
-          Y.applyUpdate(doc, Buffer.from(snapshot, 'base64'));
-        this.commit(doc);
-        barrier.result = Buffer.from(Y.encodeStateAsUpdate(doc)).toString('base64');
-        barrier.status = 'APPLIED';
-        doc.destroy();
+        this.applies += 1;
+        const update = Buffer.from(
+          Y.encodeStateAsUpdate(merged, Y.encodeStateVector(held)),
+        ).toString('base64');
+        held.destroy();
+        merged.destroy();
         for (const proposal of this.proposals)
-          if (proposal.id === barrier.proposalId) proposal.status = 'APPLIED';
-        return json(route, barrier);
+          if (proposal.id === (apply[1] ?? '')) proposal.status = 'APPLIED';
+        return json(route, { update, categories: ['CODE'] });
       }
       return route.fulfill({ status: 404, body: '{}' });
     });
   }
 }
-
-/** Reports whose update the committed result does not already hold: real late writes. */
-function unexplained(ai: AiBackend): { reason: string }[] {
-  const result = ai.barrier?.result;
-  return ai.violations.filter(({ update }) => {
-    if (!result) return true;
-    const doc = new Y.Doc();
-    Y.applyUpdate(doc, Buffer.from(result, 'base64'));
-    const before = Buffer.from(Y.encodeStateAsUpdate(doc)).toString('base64');
-    Y.applyUpdate(doc, Buffer.from(update, 'base64'));
-    const adds = Buffer.from(Y.encodeStateAsUpdate(doc)).toString('base64') !== before;
-    doc.destroy();
-    return adds;
-  });
-}
-
-const mainText = (doc: Y.Doc): Y.Text | undefined =>
-  doc.getMap<Y.Map<Y.Text>>('code.files').get('main')?.get('text');
 
 async function openEditor(page: Page, ai: AiBackend): Promise<void> {
   await mockEditor(page);
@@ -176,16 +127,16 @@ test.describe('AI assistance', () => {
     await expect(page.getByTestId('ai-preview')).toContainText('Code: main');
     await expect(page.getByTestId('ai-preview')).toContainText(after);
     await page.getByRole('button', { name: 'Accept change' }).click();
-    // The editor pauses, sends its state, and the accepting tab drives the commit itself.
-    await expect.poll(() => ai.barrier?.status, { timeout: 10000 }).toBe('APPLIED');
-    // Back on the page the person was already on; the panel that used to hold this is gone.
+    await expect.poll(() => ai.applies, { timeout: 10000 }).toBe(1);
+    // The change landed in the document behind the tab that was already open, and the editor
+    // never left it: no pause, no unmount, nothing to close and reopen.
     await expect(page.locator('nc-assistant-section')).toBeVisible();
-    await page.goto('/edit/7/code');
+    await expect(page.getByText(/^Applied:/)).toBeVisible();
+    await page.getByRole('button', { name: 'Code', exact: true }).click();
     await expect(page.locator('.cm-content')).toContainText(after);
-    expect(ai.violations).toEqual([]);
   });
 
-  test('two editors pause before acknowledging and take in the same committed update', async ({
+  test('accepting a change never interrupts the editor, with another tab open', async ({
     page,
     context,
   }) => {
@@ -194,73 +145,66 @@ test.describe('AI assistance', () => {
       const text = mainText(doc);
       if (!text) return false;
       text.delete(0, text.length);
-      text.insert(0, '-- same approved result for both editors');
+      text.insert(0, '-- accepted while both editors were open');
       return true;
     };
+    ai.proposals = [
+      {
+        id: 'proposal',
+        title: 'Pending change',
+        summary: 'Something to accept',
+        contentHash: 'b'.repeat(64),
+        status: 'PENDING',
+        operations: [{ kind: 'code' }],
+        inverse: null,
+      },
+    ];
     const peer = await context.newPage();
     await openEditor(page, ai);
     await openEditor(peer, ai);
-    await expect.poll(() => ai.editors.size).toBe(2);
-    ai.barrier = {
-      id: 'barrier',
-      projectId: 7,
-      proposalId: 'p',
-      status: 'PREPARING',
-      expected: [...ai.editors],
-      result: null,
-      violation: null,
-      lateUpdates: [],
-    };
-    await expect.poll(() => ai.snapshots.size, { timeout: 10000 }).toBe(2);
-    for (const editor of [page, peer])
-      await expect(editor.locator('nc-code-editor')).toHaveCount(0);
-    // The pause carries its own recovery now: the panel it used to point at is gone.
-    await page.getByRole('button', { name: 'Apply now' }).click();
-    for (const editor of [page, peer])
-      await expect(editor.locator('.cm-content')).toContainText(
-        '-- same approved result for both editors',
-      );
-    // Tabs relay the result to each other after it lands; the server discards what it already
-    // holds, so nothing reported may add to it.
-    expect(unexplained(ai)).toEqual([]);
+    await openAssistant(page);
+    await page.getByRole('button', { name: 'Inspect changes' }).click();
+    await page.getByRole('button', { name: 'Accept change' }).click();
+    await expect.poll(() => ai.applies, { timeout: 10000 }).toBe(1);
+
+    // The thing this replaced paused every editor and replaced the whole document: both tabs
+    // lost their workspace and had to be driven by whoever asked for the change. The accepting tab
+    // is simply still where it was, and the change reaches the other over the ordinary sync.
+    await expect(page.locator('nc-assistant-section')).toBeVisible();
+    await page.getByRole('button', { name: 'Code', exact: true }).click();
+    await expect(page.locator('.cm-content')).toContainText(
+      '-- accepted while both editors were open',
+    );
+    await expect(peer.locator('nc-code-editor')).toHaveCount(1);
+    await expect(peer.locator('.cm-content')).toContainText(
+      '-- accepted while both editors were open',
+    );
     await peer.close();
   });
 
-  test('an edit that reaches a paused editor is reported to the server', async ({ page }) => {
+  test('a change the server refuses leaves the document exactly as it was', async ({ page }) => {
     const ai = new AiBackend();
+    ai.commit = () => false;
+    ai.proposals = [
+      {
+        id: 'proposal',
+        title: 'Pending change',
+        summary: 'Something to accept',
+        contentHash: 'b'.repeat(64),
+        status: 'PENDING',
+        operations: [{ kind: 'code' }],
+        inverse: null,
+      },
+    ];
     await openEditor(page, ai);
-    ai.barrier = {
-      id: 'barrier',
-      projectId: 7,
-      proposalId: 'p',
-      status: 'PREPARING',
-      expected: [...ai.editors],
-      result: null,
-      violation: null,
-      lateUpdates: [],
-    };
-    await expect.poll(() => ai.snapshots.size, { timeout: 10000 }).toBe(1);
-    // A peer's edit arriving over the network after this editor froze.
-    await page.evaluate(() => {
-      const shell = document.querySelector('nc-editor-shell');
-      const { ng } = window as unknown as { ng: { getComponent(el: Element): unknown } };
-      const view = ng.getComponent(shell!) as {
-        session: {
-          doc: {
-            getMap(name: string): { set(k: string, v: number): void };
-            transact(fn: () => void, origin: unknown): void;
-          };
-        };
-      };
-      view.session.doc.transact(
-        () => {
-          view.session.doc.getMap('gfx.sprites').set('1,1', 3);
-        },
-        { peer: true },
-      );
-    });
-    await expect.poll(() => ai.violations.length).toBe(1);
-    expect(ai.violations[0]?.reason).toBe('peer update after pause');
+    const before = await page.locator('.cm-content').innerText();
+    await openAssistant(page);
+    await page.getByRole('button', { name: 'Inspect changes' }).click();
+    await page.getByRole('button', { name: 'Accept change' }).click();
+    await expect(page.getByRole('alert')).toBeVisible();
+    expect(ai.applies).toBe(0);
+    await page.getByRole('button', { name: 'Code', exact: true }).click();
+    expect(await page.locator('.cm-content').innerText()).toBe(before);
   });
 
   test('manual tile annotations keep their identity, lock regions, and create no proposal', async ({
