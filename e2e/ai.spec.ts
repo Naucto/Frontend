@@ -93,7 +93,7 @@ async function openAssistant(page: Page): Promise<void> {
 }
 
 test.describe('AI assistance', () => {
-  test('a code proposal is previewed from the server result, applied under the pause, and lands', async ({
+  test('a code proposal is previewed from the server result, applied, and lands', async ({
     page,
   }) => {
     const ai = new AiBackend();
@@ -197,6 +197,10 @@ test.describe('AI assistance', () => {
       },
     ];
     await openEditor(page, ai);
+    // Read once the document has actually arrived, not once the editor component exists: the first
+    // render can still be empty, and comparing an empty read against a loaded one is not a test of
+    // anything.
+    await expect(page.locator('.cm-content')).not.toBeEmpty();
     const before = await page.locator('.cm-content').innerText();
     await openAssistant(page);
     await page.getByRole('button', { name: 'Inspect changes' }).click();
@@ -204,7 +208,11 @@ test.describe('AI assistance', () => {
     await expect(page.getByRole('alert')).toBeVisible();
     expect(ai.applies).toBe(0);
     await page.getByRole('button', { name: 'Code', exact: true }).click();
-    expect(await page.locator('.cm-content').innerText()).toBe(before);
+    // innerText to innerText: toHaveText would collapse the newlines and compare against a string
+    // that has them. expect.poll retries, so a slow document load is not read as a changed document.
+    await expect
+      .poll(() => page.locator('.cm-content').innerText(), { timeout: 10000 })
+      .toBe(before);
   });
 
   test('manual tile annotations keep their identity, lock regions, and create no proposal', async ({

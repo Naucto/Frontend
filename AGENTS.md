@@ -79,10 +79,12 @@ Pixelarticons, Bubblegum-16 palette, dark + light themes).
 - **Netplay**: every `nc-game-screen` owns a `NetUiBridgeService`; `net.host()` / `net.join()`
   open the dialogs in `shared/netplay`. Permissions come from the game's `net.permissions` map
   (`core/net/net-permissions.ts`, bits CLIENT_READ=1 / CLIENT_WRITE=2, allow-by-default).
-- **AI assistance** (`features/editor/ai/`): every editor tab runs an `AiBridge` (heartbeat, freeze
-  and snapshot on a pause, report late updates, take in the committed result). Previews render the
-  _backend's_ result for the current state; nothing here re-validates operations. The catalog,
-  level briefs and locks live in the document under `ai.catalog`, `ai.levels`, `ai.locks`
+- **AI assistance** (`features/editor/ai/`): the token, the 20-second context share and the delta
+  apply live in `WorkSessionService`, not a tab, so closing the panel never blinds the assistant and
+  the assistant never interrupts the editor. Accepting sends the document as the person has it; the
+  response is only the difference, applied under `WorkSessionService.APPLIED_ORIGIN`. Previews
+  render the _backend's_ result for the current state; nothing here re-validates operations. The
+  catalog, level briefs and locks live in the document under `ai.catalog`, `ai.levels`, `ai.locks`
   (restored with version history); `ai.applied` holds provenance receipts and is never restored.
   `packages/engine/src/sound/midi.ts` is shared verbatim with `Naucto-AI` — change both together.
 - **Planned backend endpoints** (friends, presence, `/users/me`) are hand-typed in
