@@ -44,8 +44,11 @@ try {
   console.error(
     'Set NAUCTO_BACKEND_CONTRACT to its swagger.json, or run this from a checkout beside it.',
   );
-  // Distinct from 1: nothing was compared, which is a different thing from having compared and found
-  // a difference. CI warns about this rather than blocking on a contract it could not fetch.
+  // Distinct from 1, and it fails like it: nothing was compared, which is a different thing from
+  // having compared and found no difference — but for the caller the two are indistinguishable. A
+  // check that quietly stops running when the Backend branch it names moves is the same drift going
+  // unnoticed, which is the one thing this exists to prevent, so an absent contract is a failure and
+  // says so rather than passing a job that looks like it checked something.
   process.exit(2);
 }
 const ours = JSON.parse(await readFile(mine, 'utf8'));

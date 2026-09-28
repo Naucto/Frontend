@@ -43,15 +43,41 @@ jobs:
       # code changing there while the copy here is left behind — which happened three times over.
       #
       # The two branches move together, so the ref is a variable rather than a commit: point it at
-      # whatever the Backend side of the pair is on. If the contract cannot be fetched the check says
-      # so and moves on; drift itself always fails.
+      # whatever the Backend side of the pair is on.
+      #
+      # Unset falls back to the Backend's default branch, resolved here rather than written into the
+      # workflow: a branch name spelled out in this file rots the day it is merged, and then every
+      # Frontend job fails over a branch that no longer exists and has nothing to do with this app.
+      - name: Decide which Backend branch the contract comes from
+        id: contract-ref
+        run: |
+          ref="${{ vars.BACKEND_CONTRACT_REF }}"
+          if [ -z "$ref" ]; then
+            ref="$(git ls-remote --symref https://github.com/Naucto/Backend.git HEAD \
+              | sed -n 's#ref: refs/heads/\(.*\)\tHEAD#\1#p')"
+          fi
+          if [ -z "$ref" ]; then
+            echo "Cannot tell which branch of Naucto/Backend to read the contract from." >&2
+            echo "Set the BACKEND_CONTRACT_REF repository variable to a branch that exists." >&2
+            exit 1
+          fi
+          echo "Reading the contract from Naucto/Backend@$ref"
+          if [ -z "${{ vars.BACKEND_CONTRACT_REF }}" ]; then
+            echo "BACKEND_CONTRACT_REF is unset, so the Backend's default branch was used. Set it to" >&2
+            echo "the branch the Backend side of the pair is on if that is not this one." >&2
+          fi
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+      # Not continue-on-error. A contract that cannot be fetched fails this step, and that is the
+      # point: a guard that stops running when the Backend branch moves leaves drift exactly as
+      # unnoticed as it did before the guard existed, while still showing a green job.
       - uses: actions/checkout@v5
-        continue-on-error: true
         with:
           repository: Naucto/Backend
-          ref: ${{ vars.BACKEND_CONTRACT_REF || 'feat/naucto-ai' }}
+          ref: ${{ steps.contract-ref.outputs.ref }}
           path: Backend
+          # A file at the root, which is not what cone mode selects: cone mode is for directories.
           sparse-checkout: swagger.json
+          sparse-checkout-cone-mode: false
       - name: The API contract matches the Backend's
         run: node tools/contract-check.mjs
         env:
