@@ -51,6 +51,13 @@ Pixelarticons, Bubblegum-16 palette, dark + light themes).
 
 ## Architecture
 
+- **The API contract lives in two places.** `@naucto/api-client` is generated from
+  `packages/api-client/openapi.json`, which is a hand-copied copy of the Backend's generated
+  `swagger.json`. The Backend's `swagger:check` only compares its own file with itself, so nothing
+  there notices the copy going stale — which it did, across three contract changes at once.
+  `npm run check:contract` compares them and runs in CI; after a Backend DTO or status change, copy
+  `Backend/swagger.json` over `packages/api-client/openapi.json` and run
+  `npm run generate -w packages/api-client`.
 - **State**: server state via `@tanstack/angular-query-experimental` over `@naucto/api-client`
   (fetch); UI/editor state via `@ngrx/signals` SignalStores; the game document is a Yjs `Y.Doc`
   exposed through small signal adapters (`apps/web/src/app/shared/yjs`).

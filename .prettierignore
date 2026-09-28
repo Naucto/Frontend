@@ -7,3 +7,7 @@ coverage
 patches
 apps/web/src/assets/docs
 packages/engine/src/sound/worklet/synth.worklet.generated.ts
+
+# A local tool setting, not ours to format, and untracked anyway: a developer running format:check
+# would otherwise see a warning they cannot act on.
+.claude/

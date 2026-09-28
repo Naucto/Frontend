@@ -38,6 +38,24 @@ jobs:
       # every one of them back to its pixelarticons lookalike under the same name, silently.
       - run: npm run icons:check
       - run: npm run typecheck
+      # The Backend's contract is the one this app is built from, and it lives in another repository
+      # whose own drift check only compares it with itself. This is what notices a DTO or a status
+      # code changing there while the copy here is left behind — which happened three times over.
+      #
+      # The two branches move together, so the ref is a variable rather than a commit: point it at
+      # whatever the Backend side of the pair is on. If the contract cannot be fetched the check says
+      # so and moves on; drift itself always fails.
+      - uses: actions/checkout@v5
+        continue-on-error: true
+        with:
+          repository: Naucto/Backend
+          ref: ${{ vars.BACKEND_CONTRACT_REF || 'feat/naucto-ai' }}
+          path: Backend
+          sparse-checkout: swagger.json
+      - name: The API contract matches the Backend's
+        run: node tools/contract-check.mjs
+        env:
+          NAUCTO_BACKEND_CONTRACT: ${{ github.workspace }}/Backend/swagger.json
       - run: npm test
       - run: npm run build
       - uses: actions/upload-artifact@v4
