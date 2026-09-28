@@ -586,3 +586,16 @@
   text-transform: uppercase;
   color: var(--nc-ink-4);
 }
+/* The assistant's before and after, drawn on top of each other: the old version underneath at half
+   strength, so a pixel that moved shows through instead of having to be spotted between two
+   thumbnails. A pixel that is the same in both is unchanged and simply reads as one. */
+.nc-ghost {
+  opacity: 0.5;
+  filter: grayscale(1);
+}
+/* The cells a map change touches, outlined where it touched them. */
+.nc-ghost-cell {
+  border: 1px solid var(--nc-sky);
+  box-shadow: inset 0 0 0 1px var(--nc-sky-wash);
+  pointer-events: none;
+}

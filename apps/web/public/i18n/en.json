@@ -5,6 +5,8 @@
     "connect": "Connect / rotate token",
     "revoke": "Disconnect AI",
     "preview": "Inspect changes",
+    "overlay": "Overlay",
+    "sideBySide": "Side by side",
     "reject": "Reject change",
     "before": "Before",
     "after": "After",

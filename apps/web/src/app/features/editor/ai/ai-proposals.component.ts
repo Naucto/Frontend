@@ -21,6 +21,7 @@ import {
   encodeState,
   type Game,
   gameFromState,
+  type GameMap,
   SoundEngine,
   WebAudioBackend,
 } from '@naucto/engine';
@@ -34,6 +35,41 @@ interface Image {
   label: string;
   before: string | null;
   after: string | null;
+  /** The changed cells, for a map: a reviewer wants to see which ones, not two pictures to compare. */
+  changedCells?: { x: number; y: number }[];
+  /** The map's own width in tiles, so a marker can be placed on the cell it names. */
+  tileColumns?: number;
+}
+
+const mapOf = (game: Game, id: string): GameMap | undefined =>
+  game.maps.find((map) => map.id === id);
+
+/**
+ * The tiles whose sprite differs between two versions of a map, in the map's own coordinates.
+ *
+ * Takes the two maps rather than the two games, because comparing tiles is all it does and a map is
+ * a smaller thing to be handed.
+ *
+ * A tile cleared to nothing counts as changed: something drawn is something removed, and comparing
+ * only the tiles a proposal rewrote would call a removal unchanged.
+ */
+export function changedTiles(
+  first: GameMap | undefined,
+  second: GameMap | undefined,
+): { x: number; y: number }[] {
+  if (!first && !second) return [];
+  const width = second?.width ?? first?.width ?? 0;
+  const height = second?.height ?? first?.height ?? 0;
+  const at = (map: GameMap | undefined, index: number): number =>
+    map && index < map.tiles.length ? (map.tiles[index] ?? 0) : 0;
+  const changed: { x: number; y: number }[] = [];
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const index = y * width + x;
+      if (at(first, index) !== at(second, index)) changed.push({ x, y });
+    }
+  }
+  return changed;
 }
 
 /** Proposal review: every preview is the backend's own result for the current editor state. */
@@ -115,34 +151,76 @@ interface Image {
           </div>
           @if (selectedId() === proposal.id && diff(); as d) {
             <div class="mt-1 border border-line p-1" data-testid="ai-preview">
+              @if (images().length) {
+                <button
+                  ncButton
+                  variant="ghost"
+                  size="sm"
+                  class="mb-0.5"
+                  [attr.aria-pressed]="overlay()"
+                  (click)="overlay.set(!overlay())"
+                >
+                  {{ overlay() ? t('ai.sideBySide') : t('ai.overlay') }}
+                </button>
+              }
               @for (image of images(); track image.id) {
                 <p class="label">{{ image.label }}</p>
-                <div class="grid grid-cols-2 gap-1">
-                  <figure>
-                    <figcaption class="text-meta text-ink-3">{{ t('ai.before') }}</figcaption>
-                    @if (image.before) {
-                      <img
-                        [src]="image.before"
-                        [alt]="t('ai.before')"
-                        class="w-full [image-rendering:pixelated]"
-                      />
-                    } @else {
-                      <p class="text-meta">{{ t('ai.absent') }}</p>
+                @if (overlay() && image.before && image.after) {
+                  <!-- The old version underneath, so a pixel that moved shows rather than having to
+                       be spotted by comparing two thumbnails. -->
+                  <div class="relative">
+                    <img
+                      [src]="image.before"
+                      [alt]="t('ai.before')"
+                      class="nc-ghost w-full [image-rendering:pixelated]"
+                    />
+                    <img
+                      [src]="image.after"
+                      [alt]="t('ai.after')"
+                      class="absolute inset-0 w-full [image-rendering:pixelated]"
+                    />
+                    @if (image.changedCells?.length) {
+                      <div class="nc-ghost-cells absolute inset-0">
+                        @for (cell of image.changedCells; track cell.x + ':' + cell.y) {
+                          <span
+                            class="nc-ghost-cell absolute"
+                            [style.left.%]="cell.x * tilePercent(image)"
+                            [style.top.%]="cell.y * tilePercent(image)"
+                            [style.width.%]="tilePercent(image)"
+                            [style.height.%]="tilePercent(image)"
+                          ></span>
+                        }
+                      </div>
                     }
-                  </figure>
-                  <figure>
-                    <figcaption class="text-meta text-ink-3">{{ t('ai.after') }}</figcaption>
-                    @if (image.after) {
-                      <img
-                        [src]="image.after"
-                        [alt]="t('ai.after')"
-                        class="w-full [image-rendering:pixelated]"
-                      />
-                    } @else {
-                      <p class="text-meta">{{ t('ai.absent') }}</p>
-                    }
-                  </figure>
-                </div>
+                  </div>
+                } @else {
+                  <div class="grid grid-cols-2 gap-1">
+                    <figure>
+                      <figcaption class="text-meta text-ink-3">{{ t('ai.before') }}</figcaption>
+                      @if (image.before) {
+                        <img
+                          [src]="image.before"
+                          [alt]="t('ai.before')"
+                          class="w-full [image-rendering:pixelated]"
+                        />
+                      } @else {
+                        <p class="text-meta">{{ t('ai.absent') }}</p>
+                      }
+                    </figure>
+                    <figure>
+                      <figcaption class="text-meta text-ink-3">{{ t('ai.after') }}</figcaption>
+                      @if (image.after) {
+                        <img
+                          [src]="image.after"
+                          [alt]="t('ai.after')"
+                          class="w-full [image-rendering:pixelated]"
+                        />
+                      } @else {
+                        <p class="text-meta">{{ t('ai.absent') }}</p>
+                      }
+                    </figure>
+                  </div>
+                }
               }
               @for (change of d.code; track change.id) {
                 <p class="label">{{ t('ai.codeFile', { name: change.name }) }}</p>
@@ -192,6 +270,11 @@ export class AiProposalsComponent {
   protected readonly selectedId = signal('');
   protected readonly diff = signal<AiDiff | null>(null);
   protected readonly images = signal<Image[]>([]);
+  /**
+   * Overlaying the two versions beats comparing them: a pixel that moved is obvious when the old
+   * one is drawn under the new, and impossible to see in two thumbnails side by side.
+   */
+  protected readonly overlay = signal(false);
   protected readonly busy = signal(false);
   protected readonly error = signal('');
   private readonly toasts = inject(ToastService);
@@ -275,6 +358,9 @@ export class AiProposalsComponent {
           label: `${map.name || map.id} · ${String(map.changed)} tiles`,
           before: map.created ? null : renderResource(game, 'map', map.id),
           after: map.removed ? null : renderResource(after, 'map', map.id),
+          // Where the change is, in tile coordinates, so it can be drawn on the map itself.
+          changedCells: changedTiles(mapOf(game, map.id), mapOf(after, map.id)),
+          tileColumns: mapOf(after, map.id)?.width ?? mapOf(game, map.id)?.width ?? 0,
         })),
       ]);
       this.selectedId.set(proposal.id);
@@ -286,6 +372,14 @@ export class AiProposalsComponent {
    * open, so dropping a declaration and clearing a write bit both widen, and a reviewer has to be
    * told which lines those are rather than left to infer it from two strings.
    */
+  /**
+   * How wide one tile is, as a percentage of the image. The map is drawn eight pixels to a tile, so
+   * the cell a marker names is this share of the width across — measured from the map's own width
+   * rather than from the changes, which would be right only for the last changed column.
+   */
+  protected tilePercent = (image: Image): number =>
+    image.tileColumns ? 100 / image.tileColumns : 0;
+
   protected widened(diff: AiDiff): string[] {
     return diff.net.filter((n) => n.widened).map((n) => n.key);
   }

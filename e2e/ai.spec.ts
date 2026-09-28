@@ -434,8 +434,11 @@ test.describe('audio import', () => {
       .setInputFiles({
         name: 'coin.wav',
         mimeType: 'audio/wav',
-        // Short enough to default to an effect, long enough that there is something to transcribe:
-        // a fraction of a second of two tones was below what the transcriber can find notes in.
+        // Short enough to default to an effect, long enough that there is something to transcribe.
+        // The floor is around a second: below it the transcriber finds no notes at all, and the
+        // import panel then never renders its target field — so a genuinely very short recording
+        // cannot be imported this way, which is a limitation of the panel and not of this test.
+        // Anything that needs to be a sample effect has to be at least this long.
         buffer: wav(
           [
             [84, 0, 0.3],
