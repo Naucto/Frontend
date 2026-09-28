@@ -26,13 +26,11 @@
     "codeFile": "Code: {{name}}",
     "status": {
       "PENDING": "Awaiting review",
-      "APPROVED": "Applying",
       "APPLIED": "Applied",
       "REJECTED": "Rejected",
       "REVERTED": "Reverted"
     },
     "panel": {
-      "proposals": "Proposals",
       "catalog": "Catalog & locks",
       "jobs": "Generation",
       "provenance": "Provenance",

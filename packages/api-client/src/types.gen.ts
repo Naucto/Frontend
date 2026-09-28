@@ -35,6 +35,10 @@ export type AiProposalResponseDto = {
   inverse: Array<{
     [key: string]: unknown;
   }> | null;
+  /**
+   * How old the shared state this proposal was written against was, in milliseconds. An assistant may work on a project nobody has open, so this is what says how far back it reaches.
+   */
+  baseContextAgeMs: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -48,6 +52,13 @@ export type AiSnapshotDto = {
   snapshot: string;
 };
 
+export type AiPreviewDto = {
+  /**
+   * The document with the change merged in, for the person to look at. Written, never stored: the same merge a real apply would do, and nothing is kept.
+   */
+  result: string;
+};
+
 export type AiAcceptDto = {
   snapshot: string;
   decision: 'APPROVED' | 'REJECTED';
@@ -56,7 +67,7 @@ export type AiAcceptDto = {
 
 export type AiApplyDto = {
   /**
-   * A Yjs update carrying the accepted change, for the caller to apply
+   * The document as the accepting editor had it, with the change merged in: a whole Yjs state rather than a difference, because a difference is only valid for the client whose state vector it was cut against. Applied with Y.applyUpdate; merges with whatever the recipient already has.
    */
   update: string;
   /**
@@ -1801,8 +1812,11 @@ export type AiControllerPreviewData = {
 };
 
 export type AiControllerPreviewResponses = {
-  201: unknown;
+  201: AiPreviewDto;
 };
+
+export type AiControllerPreviewResponse =
+  AiControllerPreviewResponses[keyof AiControllerPreviewResponses];
 
 export type AiControllerRevertData = {
   body?: never;
@@ -1832,7 +1846,7 @@ export type AiControllerApplyData = {
 };
 
 export type AiControllerApplyResponses = {
-  201: AiApplyDto;
+  200: AiApplyDto;
 };
 
 export type AiControllerApplyResponse =

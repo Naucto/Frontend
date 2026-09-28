@@ -427,7 +427,7 @@ export const aiControllerReview = <ThrowOnError extends boolean = false>(
   });
 
 /**
- * Validate against the caller's own document; never modifies anything
+ * Validate against the caller's own document and return the merged result; never modifies anything
  */
 export const aiControllerPreview = <ThrowOnError extends boolean = false>(
   options: Options<AiControllerPreviewData, ThrowOnError>,
@@ -455,7 +455,7 @@ export const aiControllerRevert = <ThrowOnError extends boolean = false>(
   });
 
 /**
- * Accept the proposal against the caller's own document and return the difference
+ * Accept the proposal against the caller's own document and return the merged state
  */
 export const aiControllerApply = <ThrowOnError extends boolean = false>(
   options: Options<AiControllerApplyData, ThrowOnError>,

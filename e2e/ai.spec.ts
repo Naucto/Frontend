@@ -121,7 +121,9 @@ test.describe('AI assistance', () => {
     await openAssistant(page);
     await page.getByRole('button', { name: 'Connect / rotate token' }).click();
     await expect(page.getByText('naucto_ai_test', { exact: true })).toBeVisible();
-    expect(ai.contexts).toHaveLength(1);
+    // Polled, not read once: the token appearing on screen does not mean the share it triggers has
+    // reached the server yet, and a single read is a race rather than an assertion.
+    await expect.poll(() => ai.contexts.length, { timeout: 10000 }).toBe(1);
     // Applying is offered only after the preview.
     await expect(page.getByRole('button', { name: 'Accept change' })).toHaveCount(0);
     await page.getByRole('button', { name: 'Inspect changes' }).click();
@@ -164,16 +166,17 @@ test.describe('AI assistance', () => {
     await openEditor(page, ai);
     await openEditor(peer, ai);
     await openAssistant(page);
-    // Mark the shell, the rail and the panel region, so "never interrupted" is a claim about those
-    // nodes still being the same ones rather than about which elements are on screen: an
-    // implementation that tore the editor down and rebuilt it would put an identical set of
-    // elements back and pass every visibility check, while these would be different nodes. Typed
-    // text cannot be the probe — a `code` change replaces the whole file, so what was typed is
-    // meant to be gone.
-    await page.evaluate(() => {
-      for (const selector of ['nc-editor-shell', 'nc-rail', 'nc-panel-region'])
+    // Mark the nodes that have to survive, "never interrupted" being a claim about them still being
+    // the same ones rather than about which elements are on screen. The routed tab is the one that
+    // matters: a teardown of the workspace leaves the shell, the rail and the panel region in place
+    // and puts an identical set of elements back, so probing only the chrome would pass while the
+    // editor underneath was rebuilt. Typed text cannot be the probe either — a `code` change
+    // replaces the whole file, so what was typed is meant to be gone.
+    const PROBED = ['nc-editor-shell', 'nc-rail', 'nc-panel-region', 'nc-assistant-section'];
+    await page.evaluate((selectors) => {
+      for (const selector of selectors)
         Object.assign(document.querySelector(selector) as object, { __probe: 'kept' });
-    });
+    }, PROBED);
     await page.getByRole('button', { name: 'Inspect changes' }).click();
     await page.getByRole('button', { name: 'Accept change' }).click();
     await expect.poll(() => ai.applies, { timeout: 10000 }).toBe(1);
@@ -182,17 +185,20 @@ test.describe('AI assistance', () => {
     // lost their workspace and had to be driven by whoever asked for the change. The accepting tab
     // is simply still where it was, and the change reaches the other over the ordinary sync.
     await expect(page.locator('nc-assistant-section')).toBeVisible();
+    // The same nodes, still carrying their mark: the workspace was never unmounted and rebuilt.
+    const survived = await page.evaluate(
+      (selectors) =>
+        selectors.map(
+          (selector) =>
+            (document.querySelector(selector) as { __probe?: string }).__probe === 'kept',
+        ),
+      PROBED,
+    );
+    expect(survived).toEqual(PROBED.map(() => true));
     await page.getByRole('button', { name: 'Code', exact: true }).click();
     await expect(page.locator('.cm-content')).toContainText(
       '-- accepted while both editors were open',
     );
-    // The same nodes, still carrying their mark: the workspace was never unmounted and rebuilt.
-    const survived = await page.evaluate(() =>
-      ['nc-editor-shell', 'nc-rail', 'nc-panel-region'].map(
-        (selector) => (document.querySelector(selector) as { __probe?: string }).__probe === 'kept',
-      ),
-    );
-    expect(survived).toEqual([true, true, true]);
     await expect(peer.locator('nc-code-editor')).toHaveCount(1);
     await expect(peer.locator('.cm-content')).toContainText(
       '-- accepted while both editors were open',
@@ -423,12 +429,16 @@ test.describe('audio import', () => {
       .setInputFiles({
         name: 'coin.wav',
         mimeType: 'audio/wav',
+        // Short enough to default to an effect, long enough that there is something to transcribe:
+        // a fraction of a second of two tones was below what the transcriber can find notes in.
         buffer: wav(
           [
-            [84, 0, 0.12],
-            [91, 0.12, 0.2],
+            [84, 0, 0.3],
+            [91, 0.35, 0.3],
+            [88, 0.7, 0.3],
+            [84, 1.1, 0.5],
           ],
-          0.4,
+          1.8,
         ),
       });
     // Two seconds or less reads as an effect.
