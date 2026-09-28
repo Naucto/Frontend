@@ -140,6 +140,27 @@ export function withoutProposal(marks: readonly AiMark[], proposalId: string): A
   return marks.filter((mark) => mark.proposalId !== proposalId);
 }
 
+/**
+ * The text of every Lua file in an encoded document, by id.
+ *
+ * Read from the state that was sent rather than from the live document, because between sending and
+ * the reply arriving a person can type, and a colleague's keystrokes can be relayed. Read from the
+ * live document instead, all of that looks like part of the assistant's change — in files the
+ * proposal never touched.
+ */
+export function codeTextFrom(encoded: string): Map<string, string> {
+  const doc = new Y.Doc();
+  try {
+    Y.applyUpdate(
+      doc,
+      Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0)),
+    );
+    return codeText(doc);
+  } finally {
+    doc.destroy();
+  }
+}
+
 /** The text of every Lua file in a document, by id. */
 function codeText(doc: Y.Doc): Map<string, string> {
   const files = new Map<string, string>();
@@ -178,9 +199,13 @@ export function changedRange(before: string, after: string): [number, number] {
     for (let i = 0; i < index; i += 1) offset += newLines[i]?.length ?? 0;
     return offset + index;
   };
-  const from = offsetOf(start);
-  const to = offsetOf(newEnd + 1);
-  return [from, Math.max(from, to)];
+  // Clamped to the text: `offsetOf(newEnd + 1)` counts the newline after the last line, which does
+  // not exist, and an index one past the end becomes a relative position with no item, which then
+  // resolves to the end of the text — so a mark for a change at the end of a file would quietly
+  // stretch to cover whatever is typed below it.
+  const from = Math.min(offsetOf(start), after.length);
+  const to = Math.min(Math.max(from, offsetOf(newEnd + 1)), after.length);
+  return [from, to];
 }
 
 @Injectable()
@@ -346,15 +371,18 @@ export class WorkSessionService {
     contentHash: string,
     what: { title?: string; revertsId?: string | null } = {},
   ): Promise<string[]> {
-    // What each file held before, so the lines an accepted change moved can be marked afterwards
-    // rather than guessed at from the diff the server sends back.
-    const before = codeText(this.doc);
+    // Exactly what is sent, and the only thing the server had to merge into. Reading the live
+    // document instead would compare the reply against whatever the document has become in the
+    // meantime — anything typed here, or relayed from a colleague, while the request was in flight
+    // would look like part of the assistant's change, in files the proposal never touched.
+    const snapshot = encodeState(this.doc);
     const result = unwrap(
       await aiControllerApply({
         path: { projectId: this.projectId, proposalId: id },
-        body: { decision: 'APPROVED', contentHash, snapshot: encodeState(this.doc) },
+        body: { decision: 'APPROVED', contentHash, snapshot },
       }),
     );
+    const before = codeTextFrom(snapshot);
     Y.applyUpdate(
       this.doc,
       Uint8Array.from(atob(result.update), (c) => c.charCodeAt(0)),

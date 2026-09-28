@@ -409,9 +409,12 @@ const errorGutterMarker = new (class extends GutterMarker {
  * reverted change disappears with the change rather than pointing somewhere meaningless. Recomputed
  * on every view update, which is what makes a concurrent edit shift the highlight correctly.
  */
-function aiMarkHighlight(marks: readonly AiMark[], text: Y.Text): Extension {
+export function aiMarkHighlight(marks: readonly AiMark[], text: Y.Text): Extension {
   const doc = text.doc;
-  return EditorView.decorations.compute([], (state) => {
+  // Depends on 'doc', so it is recomputed on every document change. A facet with no dependencies is
+  // computed exactly once, so the highlight would stay on the same character offsets while the text
+  // above it moved — pointing at the wrong lines as soon as a colleague typed anything.
+  return EditorView.decorations.compute(['doc'], (state) => {
     if (!marks.length || !doc) return Decoration.none;
     const ranges: Range<Decoration>[] = [];
     for (const entry of marks) {

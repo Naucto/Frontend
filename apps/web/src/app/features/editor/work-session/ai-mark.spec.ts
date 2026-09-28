@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
 
-import { changedRange, computeAiMarks, withoutProposal } from './work-session.service';
+import {
+  changedRange,
+  codeTextFrom,
+  computeAiMarks,
+  withoutProposal,
+} from './work-session.service';
 
 const slice = (text: string, range: [number, number]): string => text.slice(range[0], range[1]);
 
@@ -190,5 +195,45 @@ describe('marks surviving a colleague, and leaving with a revert', () => {
     expect(kept.map((mark) => mark.proposalId)).toEqual(['p2']);
     // Undoing one change must not empty the list.
     expect(withoutProposal(all, 'p2').map((mark) => mark.proposalId)).toEqual(['p1']);
+  });
+});
+
+describe('marks that do not drift or overreach', () => {
+  it('never reaches past the end of the text', () => {
+    // `changedRange` counts the newline after the last changed line, which is not there. An index
+    // one past the end becomes a relative position with no item behind it, and that resolves to the
+    // end of the text — so a change at the end of a file would quietly stretch over whatever gets
+    // typed below it, under the assistant's name.
+    const after = 'one\ntwo\nthree';
+    for (const before of ['ONE\ntwo\nthree', 'one\nTWO\nthree', 'one\ntwo\nTHREE']) {
+      const [, to] = changedRange(before, after);
+      expect(to).toBeLessThanOrEqual(after.length);
+    }
+    const [, last] = changedRange('one\ntwo\nTHREE', after);
+    expect(last).toBe(after.length);
+  });
+
+  it('does not claim text typed after the snapshot was taken', () => {
+    // The comparison is against the state that was sent, not against the document by the time the
+    // reply comes back: anything typed here in between belongs to a person, and in a file the
+    // proposal never touched.
+    const doc = new Y.Doc();
+    addFile(doc, 'main', 'before');
+    const snapshot = Y.encodeStateAsUpdate(doc);
+
+    // What a person types while the request is in flight.
+    doc.getMap<Y.Map<Y.Text>>('code.files').get('main')!.get('text')!.insert(6, ' and more');
+    addFile(doc, 'untouched', 'a file this change never touched');
+
+    const before = codeTextFrom(Buffer.from(snapshot).toString('base64'));
+    rewrite(doc.getMap<Y.Map<Y.Text>>('code.files').get('main')!.get('text')!, 'after');
+    const marks = computeAiMarks(doc, before, 'p1', 'Change');
+
+    // Only the file the change touched, and only the line that changed in it.
+    expect(marks.map((mark) => mark.fileId)).toEqual(['main']);
+    const text = doc.getMap<Y.Map<Y.Text>>('code.files').get('main')!.get('text')!;
+    expect(text.toString().slice(resolve(doc, marks[0]!.from), resolve(doc, marks[0]!.to))).toBe(
+      'after',
+    );
   });
 });
