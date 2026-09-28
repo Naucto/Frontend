@@ -270,19 +270,23 @@ describe('marks that do not drift or overreach', () => {
     // The end of a text is the same whether the index is its length or one past it, and a position
     // there associates forward — so the mark quietly grew to cover everything typed afterwards, and
     // a person editing below a change watched the highlight follow their cursor.
+    //
+    // The last line is the one that shows it. A change to a middle line ends on a character that is
+    // still there afterwards, and both association settings give the same answer, so that case
+    // passes either way and proves nothing.
     const doc = new Y.Doc();
     addFile(doc, 'main', 'one\ntwo\nthree');
     const text = doc.getMap<Y.Map<Y.Text>>('code.files').get('main')!.get('text')!;
     const before = new Map([['main', 'one\ntwo\nthree']]);
-    rewrite(text, 'one\nTWO\nthree');
+    rewrite(text, 'one\ntwo\nTHREE');
 
     const [mark] = computeAiMarks(doc, before, 'p1', 'Change');
     text.insert(text.length, '\nfour\nfive');
 
     const marked = doc.getMap<Y.Map<Y.Text>>('code.files').get('main')!.get('text')!.toString();
     const slice = marked.slice(resolve(doc, mark!.from), resolve(doc, mark!.to));
-    // The changed line and nothing after it: the newline belongs to the line, the rest does not.
-    expect(slice).toBe('TWO\n');
+    // The changed line, and not the line typed below it.
+    expect(slice).toBe('THREE');
     expect(slice).not.toContain('four');
     expect(slice).not.toContain('five');
   });

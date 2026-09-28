@@ -401,6 +401,16 @@ export class WorkSessionService {
     // Relative positions carry item ids, so positions built against this document resolve in the
     // live one.
     this.markAiChange(id, what.title ?? '', before, update);
+    // Saved at once, and as a forced save, because anybody may accept a change — not only the host —
+    // and the server no longer writes one itself. A non-host's `save` returns early, so an accepted
+    // change was reaching storage only if y-webrtc happened to relay it to the host; where that
+    // failed the change lived in one tab until it closed, while the database already recorded it as
+    // applied. Now that saves merge, a non-host writing is harmless: it cannot lose what is stored,
+    // and it is the accepting editor that has the change.
+    void this.save({ force: true }).catch(() => {
+      // A failed forced save is not fatal: the document is still dirty, and the quiet-period timer
+      // and `pagehide` will try again.
+    });
     // Applying a revert takes the original's lines back, so the original's marks no longer describe
     // them. Its own change is marked in its own right, under the revert's own title.
     if (what.revertsId) this.clearAiMarks(what.revertsId);

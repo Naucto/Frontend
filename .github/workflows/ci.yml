@@ -53,7 +53,11 @@ jobs:
       - name: Decide which Backend branch the contract comes from
         id: contract-ref
         env:
-          THIS_BRANCH: ${{ github.ref_name }}
+          # head_ref, not ref_name: on a pull_request the ref_name is "<n>/merge", which is no
+          # branch in the Backend at all, so the lookup could never match; on a push it is the branch
+          # being pushed to, which for a release is the default branch that carries no contract.
+          # head_ref is the branch the work is on in both cases, and empty outside a pull request.
+          THIS_BRANCH: ${{ github.head_ref || github.ref_name }}
           OVERRIDE: ${{ vars.BACKEND_CONTRACT_REF }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
