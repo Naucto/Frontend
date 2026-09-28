@@ -231,6 +231,14 @@ export class WorkSessionService {
 
   /** Tells a finished save whether it uploaded everything the document holds. */
   private readonly tracker = new SaveTracker();
+  /**
+   * The revision the last successful upload was taken at, or null if nothing has been stored yet.
+   *
+   * Distinct from `lastSavedAt`, which is a time and answers "did a save succeed"; this answers "how
+   * much of the document is in storage", which is what decides whether a change the assistant made
+   * is safe. A later save that failed, or one taken before the change, leaves it behind.
+   */
+  private lastSavedFrom: number | null = null;
   /** Where accepted assistant changes are marked, in each file's own text. */
   readonly aiMarks = signal<readonly AiMark[]>([]);
   private aiSharing = false;
@@ -407,10 +415,13 @@ export class WorkSessionService {
     // failed the change lived in one tab until it closed, while the database already recorded it as
     // applied. Now that saves merge, a non-host writing is harmless: it cannot lose what is stored,
     // and it is the accepting editor that has the change.
-    void this.save({ force: true }).catch(() => {
-      // A failed forced save is not fatal: the document is still dirty, and the quiet-period timer
-      // and `pagehide` will try again.
-    });
+    // Not `save()` and not `dirty`: a non-host's `save` returns early, the quiet timer and the
+    // interval are the host's alone, and `pagehide` checks the host too. So for a non-host none of
+    // the existing paths would ever retry, and one failed save left the change in that tab alone
+    // while the database already recorded it as applied. Retried here until a save that began at or
+    // after the apply has actually succeeded — a later failure over an unrelated change must not
+    // stop the retry, so it is compared against the revision at apply time, not against `dirty`.
+    void this.persistApplied(this.tracker.mark());
     // Applying a revert takes the original's lines back, so the original's marks no longer describe
     // them. Its own change is marked in its own right, under the revert's own title.
     if (what.revertsId) this.clearAiMarks(what.revertsId);
@@ -619,6 +630,8 @@ export class WorkSessionService {
       );
       // Only what was encoded counts as saved. If the document moved on, it stays dirty and the
       // quiet-period timer or the next pause picks it up.
+      // The bytes encoded at `encodedAt` are now in storage, whatever the document did since.
+      this.lastSavedFrom = encodedAt;
       if (this.tracker.settled(encodedAt)) this.dirty.set(false);
       this.saveFailed.set(false);
       this.lastSavedAt.set(new Date());
@@ -738,6 +751,31 @@ export class WorkSessionService {
    * Pushed back by every change, so it fires on the pause rather than during the typing. Guarded
    * by `save` itself, which is a no-op for a guest and before the session is ready.
    */
+  /**
+   * Keep trying to store a change the assistant made, until a save covering it has succeeded.
+   *
+   * Backs off, because a store that is refusing saves is refusing them for a reason, and a tight
+   * retry loop against a busy queue is how one busy project becomes every other project's problem.
+   */
+  private async persistApplied(appliedAt: number, attempt = 0): Promise<void> {
+    try {
+      await this.save({ force: true });
+      // Stored at or after the change, which is the only thing that ends this. Not "a save
+      // succeeded": a save taken before the change, or one that did not reach storage, leaves the
+      // change exactly where it was.
+      if (this.lastSavedFrom !== null && this.lastSavedFrom >= appliedAt) return;
+    } catch {
+      // `save` has already recorded the failure. Falling through to the delay below.
+    }
+    // 1s, 2s, 4s, 8s, then every 30s, which is slow enough not to hammer and fast enough to still
+    // land a change while the tab is open. `appliedAt` is captured above and never re-read: a change
+    // made in the meantime must not restart the wait, or a busy document would never settle.
+    if (attempt >= 5) return;
+    const delay = Math.min(1000 * 2 ** attempt, 30000);
+    await new Promise((resolve) => setTimeout(resolve, delay));
+    void this.persistApplied(appliedAt, attempt + 1);
+  }
+
   private saveWhenQuiet(): void {
     if (this.quiet) clearTimeout(this.quiet);
     this.quiet = setTimeout(() => {
