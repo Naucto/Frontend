@@ -52,8 +52,11 @@ class AiBackend {
       }
       const apply = /^proposals\/(.+)\/apply$/.exec(path);
       if (apply) {
-        // The caller's own state is the base, and what comes back is only the difference: the
-        // server never asks anyone to stop editing to find out what would change.
+        // The caller's own state is the base, and what comes back is that merged state: the server
+        // never asks anyone to stop editing to find out what would change. A whole state, as in the
+        // real Backend — a difference is only valid for the client whose state vector it was cut
+        // against, and this update reaches every tab. Mocking a difference here would let a
+        // state-versus-delta regression through this suite untouched.
         const held = new Y.Doc();
         Y.applyUpdate(held, Buffer.from(String(body.snapshot), 'base64'));
         const merged = new Y.Doc();
@@ -65,9 +68,7 @@ class AiBackend {
             body: JSON.stringify({ message: 'That change no longer applies to this project' }),
           });
         this.applies += 1;
-        const update = Buffer.from(
-          Y.encodeStateAsUpdate(merged, Y.encodeStateVector(held)),
-        ).toString('base64');
+        const update = Buffer.from(Y.encodeStateAsUpdate(merged)).toString('base64');
         held.destroy();
         merged.destroy();
         for (const proposal of this.proposals)

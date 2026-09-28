@@ -79,10 +79,10 @@ Pixelarticons, Bubblegum-16 palette, dark + light themes).
 - **Netplay**: every `nc-game-screen` owns a `NetUiBridgeService`; `net.host()` / `net.join()`
   open the dialogs in `shared/netplay`. Permissions come from the game's `net.permissions` map
   (`core/net/net-permissions.ts`, bits CLIENT_READ=1 / CLIENT_WRITE=2, allow-by-default).
-- **AI assistance** (`features/editor/ai/`): the token, the 20-second context share and the delta
+- **AI assistance** (`features/editor/ai/`): the token, the 20-second context share and the
   apply live in `WorkSessionService`, not a tab, so closing the panel never blinds the assistant and
   the assistant never interrupts the editor. Accepting sends the document as the person has it; the
-  response is only the difference, applied under `WorkSessionService.APPLIED_ORIGIN`. Previews
+  response is the merged state, applied under `WorkSessionService.APPLIED_ORIGIN`. Previews
   render the _backend's_ result for the current state; nothing here re-validates operations. The
   catalog, level briefs and locks live in the document under `ai.catalog`, `ai.levels`, `ai.locks`
   (restored with version history); `ai.applied` holds provenance receipts and is never restored.

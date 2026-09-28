@@ -241,9 +241,11 @@ export class WorkSessionService {
    * Accept a proposal: send this document as it stands, apply what comes back.
    *
    * Nothing is paused and nobody is interrupted. The operations are merged into the state that was
-   * just sent, so unsaved work here is respected, and the reply is a Yjs update rather than a whole
-   * document, so a colleague who has typed since is not overwritten. An operation whose `before` no
-   * longer matches is refused, which is what a changed-since-review looks like.
+   * just sent, so unsaved work here is respected, and the reply is that merged state rather than a
+   * difference cut against this one: a difference is only meaningful to the client whose state
+   * vector it was cut against, and y-webrtc relays the update to every tab. A state carries its own
+   * dependencies, so a colleague who is behind or has typed since is not overwritten. An operation
+   * whose `before` no longer matches is refused, which is what a changed-since-review looks like.
    */
   async applyAiProposal(id: string, contentHash: string): Promise<string[]> {
     const result = unwrap(

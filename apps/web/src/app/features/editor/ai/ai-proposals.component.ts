@@ -308,7 +308,7 @@ export class AiProposalsComponent {
       // list refreshes to say so rather than the page disappearing and coming back.
       const categories = await this.session().applyAiProposal(proposal.id, proposal.contentHash);
       this.selectedId.set('');
-      this.proposals.set(unwrap(await aiControllerList({ path: { projectId: this.projectId } })));
+      this.proposals.set(await this.load());
       this.toasts.show(
         this.transloco.translate('ai.applied', { what: categories.join(', ') || '—' }),
         'success',
@@ -324,7 +324,7 @@ export class AiProposalsComponent {
           body: { decision: 'REJECTED', contentHash: proposal.contentHash },
         }),
       );
-      this.proposals.set(unwrap(await aiControllerList({ path: { projectId: this.projectId } })));
+      this.proposals.set(await this.load());
     });
   }
 
@@ -333,7 +333,7 @@ export class AiProposalsComponent {
       unwrap(
         await aiControllerRevert({ path: { projectId: this.projectId, proposalId: proposal.id } }),
       );
-      this.proposals.set(unwrap(await aiControllerList({ path: { projectId: this.projectId } })));
+      this.proposals.set(await this.load());
     });
   }
 
