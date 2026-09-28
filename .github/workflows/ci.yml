@@ -42,30 +42,47 @@ jobs:
       # whose own drift check only compares it with itself. This is what notices a DTO or a status
       # code changing there while the copy here is left behind — which happened three times over.
       #
-      # The two branches move together, so the ref is a variable rather than a commit: point it at
-      # whatever the Backend side of the pair is on.
+      # The Backend's contract lives only on the branch the pair is developed on — its default
+      # branch has no swagger.json at all — so which ref is read here decides whether this check
+      # runs or fails for a reason that has nothing to do with the Frontend.
       #
-      # Unset falls back to the Backend's default branch, resolved here rather than written into the
-      # workflow: a branch name spelled out in this file rots the day it is merged, and then every
-      # Frontend job fails over a branch that no longer exists and has nothing to do with this app.
+      # A branch name spelled into this file rots the day it is merged, and a repository variable
+      # goes stale just as quietly. So the Backend branch of the same name is preferred, which
+      # follows the pair wherever it goes, and the variable is only a fallback for the cases where
+      # that guess is wrong. Every step below says which ref it used.
       - name: Decide which Backend branch the contract comes from
         id: contract-ref
+        env:
+          THIS_BRANCH: ${{ github.ref_name }}
+          OVERRIDE: ${{ vars.BACKEND_CONTRACT_REF }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ref="${{ vars.BACKEND_CONTRACT_REF }}"
+          set -euo pipefail
+          # Asked of the contents API rather than of git, because what matters is whether the file
+          # is on that ref, and listing a tree means fetching it. A 404 is the answer "no contract
+          # there" — which includes a branch that does not exist, so one call covers both.
+          has_contract() {
+            # No token on a public repository is fine; an empty one is not, and asking with an
+            # empty bearer gets 401 rather than the answer.
+            if [ -n "${GH_TOKEN:-}" ]; then
+              curl -fs -o /dev/null -H "Authorization: Bearer $GH_TOKEN" \
+                "https://api.github.com/repos/Naucto/Backend/contents/swagger.json?ref=$1"
+            else
+              curl -fs -o /dev/null \
+                "https://api.github.com/repos/Naucto/Backend/contents/swagger.json?ref=$1"
+            fi
+          }
+          ref=""
+          for candidate in "$THIS_BRANCH" "$OVERRIDE"; do
+            if [ -n "$candidate" ] && has_contract "$candidate"; then ref="$candidate"; break; fi
+          done
           if [ -z "$ref" ]; then
-            ref="$(git ls-remote --symref https://github.com/Naucto/Backend.git HEAD \
-              | sed -n 's#ref: refs/heads/\(.*\)\tHEAD#\1#p')"
-          fi
-          if [ -z "$ref" ]; then
-            echo "Cannot tell which branch of Naucto/Backend to read the contract from." >&2
-            echo "Set the BACKEND_CONTRACT_REF repository variable to a branch that exists." >&2
+            echo "No branch of Naucto/Backend carries swagger.json that this job can read." >&2
+            echo "Looked for a branch named '$THIS_BRANCH' and for BACKEND_CONTRACT_REF='$OVERRIDE'." >&2
+            echo "Push the contract to a matching branch, or point the variable at one that has it." >&2
             exit 1
           fi
           echo "Reading the contract from Naucto/Backend@$ref"
-          if [ -z "${{ vars.BACKEND_CONTRACT_REF }}" ]; then
-            echo "BACKEND_CONTRACT_REF is unset, so the Backend's default branch was used. Set it to" >&2
-            echo "the branch the Backend side of the pair is on if that is not this one." >&2
-          fi
           echo "ref=$ref" >> "$GITHUB_OUTPUT"
       # Not continue-on-error. A contract that cannot be fetched fails this step, and that is the
       # point: a guard that stops running when the Backend branch moves leaves drift exactly as
