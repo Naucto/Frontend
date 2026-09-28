@@ -164,6 +164,16 @@ test.describe('AI assistance', () => {
     await openEditor(page, ai);
     await openEditor(peer, ai);
     await openAssistant(page);
+    // Mark the shell, the rail and the panel region, so "never interrupted" is a claim about those
+    // nodes still being the same ones rather than about which elements are on screen: an
+    // implementation that tore the editor down and rebuilt it would put an identical set of
+    // elements back and pass every visibility check, while these would be different nodes. Typed
+    // text cannot be the probe — a `code` change replaces the whole file, so what was typed is
+    // meant to be gone.
+    await page.evaluate(() => {
+      for (const selector of ['nc-editor-shell', 'nc-rail', 'nc-panel-region'])
+        Object.assign(document.querySelector(selector) as object, { __probe: 'kept' });
+    });
     await page.getByRole('button', { name: 'Inspect changes' }).click();
     await page.getByRole('button', { name: 'Accept change' }).click();
     await expect.poll(() => ai.applies, { timeout: 10000 }).toBe(1);
@@ -176,6 +186,13 @@ test.describe('AI assistance', () => {
     await expect(page.locator('.cm-content')).toContainText(
       '-- accepted while both editors were open',
     );
+    // The same nodes, still carrying their mark: the workspace was never unmounted and rebuilt.
+    const survived = await page.evaluate(() =>
+      ['nc-editor-shell', 'nc-rail', 'nc-panel-region'].map(
+        (selector) => (document.querySelector(selector) as { __probe?: string }).__probe === 'kept',
+      ),
+    );
+    expect(survived).toEqual([true, true, true]);
     await expect(peer.locator('nc-code-editor')).toHaveCount(1);
     await expect(peer.locator('.cm-content')).toContainText(
       '-- accepted while both editors were open',
