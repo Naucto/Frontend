@@ -220,14 +220,23 @@ export class AiProposalsComponent {
       await action();
     } catch (error) {
       this.error.set(error instanceof Error ? error.message : String(error));
+      // Re-read the list, because a failure here usually means the world moved underneath the
+      // button: another person applied this proposal first, or the server refused it as stale.
+      // Leaving the row as PENDING with a live Accept button would be a lie about its state.
+      await this.load().catch(() => undefined);
     } finally {
       this.busy.set(false);
     }
   }
 
+  /** The proposals as the server has them, without touching the busy flag or the error. */
+  private load(): Promise<AiProposalResponseDto[]> {
+    return aiControllerList({ path: { projectId: this.projectId } }).then(unwrap);
+  }
+
   async refresh(): Promise<void> {
     await this.run(async () => {
-      this.proposals.set(unwrap(await aiControllerList({ path: { projectId: this.projectId } })));
+      this.proposals.set(await this.load());
     });
   }
 

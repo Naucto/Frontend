@@ -67,7 +67,6 @@ export interface Collaborator {
 }
 
 interface AwarenessState {
-  aiEditorId?: string;
   userId?: number;
   name?: string;
   tab?: string;
@@ -94,7 +93,6 @@ const QUIET_SAVE_MS = 3000;
  */
 @Injectable()
 export class WorkSessionService {
-  readonly aiEditorId = crypto.randomUUID();
   /**
    * The assistant's credential for this project, and the context timer that keeps it fed.
    *
@@ -194,10 +192,6 @@ export class WorkSessionService {
     return this.projectId;
   }
 
-  /**
-   * Approve a proposal by applying it: pause every open editor, then commit once each has sent its
-   * state. The approver's session drives the commit; anyone can resume it after a failure.
-   */
   /**
    * Connects the assistant for this project, and starts the context heartbeat.
    *
@@ -319,7 +313,6 @@ export class WorkSessionService {
         maxConns: offer.maxConns,
       });
       this.provider.awareness.setLocalState({
-        aiEditorId: this.aiEditorId,
         userId: me ?? undefined,
         name: this.auth.displayName(),
         tab: 'game',

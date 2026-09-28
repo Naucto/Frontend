@@ -22,7 +22,6 @@
     "badge": "AI-assisted",
     "badgeHelp": "AI tools were used in this project's editing history.",
     "refreshProposals": "Refresh proposals",
-    "checked": "I checked it",
     "absent": "Not present",
     "codeFile": "Code: {{name}}",
     "status": {
@@ -153,7 +152,6 @@
     "connectedHint": "The assistant works from this state and keeps going while you edit. Anything it stages waits for you to accept or reject.",
     "disconnectedHint": "No assistant is connected to this project.",
     "applied": "Applied: {{what}}",
-    "applyFailed": "That change no longer applies — the project moved on. Look again.",
     "empty": "No changes waiting."
   },
   "nav": {

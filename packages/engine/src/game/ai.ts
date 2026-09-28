@@ -72,7 +72,7 @@ export function aiContext(game: Game): Record<string, unknown> {
   };
 }
 
-/** A document's full state as the backend and the barrier exchange it. */
+/** A document's full state as the backend and the editor exchange it. */
 export function encodeState(doc: Y.Doc): string {
   const update = Y.encodeStateAsUpdate(doc);
   let binary = '';
