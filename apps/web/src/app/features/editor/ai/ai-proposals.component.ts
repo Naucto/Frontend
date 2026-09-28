@@ -37,12 +37,44 @@ interface Image {
   after: string | null;
   /** The changed cells, for a map: a reviewer wants to see which ones, not two pictures to compare. */
   changedCells?: { x: number; y: number }[];
-  /** The map's own width in tiles, so a marker can be placed on the cell it names. */
+  /** The map's own size in tiles, so a marker can be placed on the cell it names. */
   tileColumns?: number;
+  tileRows?: number;
 }
 
 const mapOf = (game: Game, id: string): GameMap | undefined =>
   game.maps.find((map) => map.id === id);
+
+/**
+ * How much of the image one tile spans, as a percentage of the image's width or its height.
+ *
+ * The two axes need different divisors. A percentage of `left` is of the width and of `top` is of
+ * the height, so scaling both by the same number put a row near the bottom in the middle of a tall
+ * map and made each marker the wrong height — and maps are rarely square, the default one being
+ * 128 by 32. Measured from the map's own geometry rather than from the changes, which would be right
+ * only for the last changed row.
+ */
+export function tileShare(tilesAcross: number | undefined): number {
+  return tilesAcross ? 100 / tilesAcross : 0;
+}
+
+/**
+ * Where one changed cell sits on the drawn map, as percentages of the image.
+ *
+ * A percentage of `left` is of the width and of `top` is of the height, so the two axes are scaled
+ * separately. Maps are rarely square — the default is 128 by 32 — so one scale for both put a row
+ * near the bottom in the middle of the map and made every marker a quarter of the height it should
+ * be. Measured from the map's own geometry rather than from the changes, which would be right only
+ * for the last changed row.
+ */
+export function markerBox(
+  image: { tileColumns?: number; tileRows?: number },
+  cell: { x: number; y: number },
+): { left: number; top: number; width: number; height: number } {
+  const width = tileShare(image.tileColumns);
+  const height = tileShare(image.tileRows);
+  return { left: cell.x * width, top: cell.y * height, width, height };
+}
 
 /**
  * The tiles whose sprite differs between two versions of a map, in the map's own coordinates.
@@ -58,15 +90,18 @@ export function changedTiles(
   second: GameMap | undefined,
 ): { x: number; y: number }[] {
   if (!first && !second) return [];
+  // Each side is read with its own geometry. `tiles` is dense and row-major at that map's own width,
+  // so indexing the before-map with the after-map's width compares unrelated cells the moment a
+  // resize is in the proposal: a pure growth reported painted cells as changed, and a real edit
+  // further along as untouched. `resize_map` is a first-class operation, so one reaches this.
   const width = second?.width ?? first?.width ?? 0;
   const height = second?.height ?? first?.height ?? 0;
-  const at = (map: GameMap | undefined, index: number): number =>
-    map && index < map.tiles.length ? (map.tiles[index] ?? 0) : 0;
+  const at = (map: GameMap | undefined, x: number, y: number): number =>
+    !map || x >= map.width || y >= map.height ? 0 : (map.tiles[y * map.width + x] ?? 0);
   const changed: { x: number; y: number }[] = [];
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
-      const index = y * width + x;
-      if (at(first, index) !== at(second, index)) changed.push({ x, y });
+      if (at(first, x, y) !== at(second, x, y)) changed.push({ x, y });
     }
   }
   return changed;
@@ -184,10 +219,10 @@ export function changedTiles(
                         @for (cell of image.changedCells; track cell.x + ':' + cell.y) {
                           <span
                             class="nc-ghost-cell absolute"
-                            [style.left.%]="cell.x * tilePercent(image)"
-                            [style.top.%]="cell.y * tilePercent(image)"
-                            [style.width.%]="tilePercent(image)"
-                            [style.height.%]="tilePercent(image)"
+                            [style.left.%]="box(image, cell).left"
+                            [style.top.%]="box(image, cell).top"
+                            [style.width.%]="box(image, cell).width"
+                            [style.height.%]="box(image, cell).height"
                           ></span>
                         }
                       </div>
@@ -361,6 +396,7 @@ export class AiProposalsComponent {
           // Where the change is, in tile coordinates, so it can be drawn on the map itself.
           changedCells: changedTiles(mapOf(game, map.id), mapOf(after, map.id)),
           tileColumns: mapOf(after, map.id)?.width ?? mapOf(game, map.id)?.width ?? 0,
+          tileRows: mapOf(after, map.id)?.height ?? mapOf(game, map.id)?.height ?? 0,
         })),
       ]);
       this.selectedId.set(proposal.id);
@@ -372,13 +408,9 @@ export class AiProposalsComponent {
    * open, so dropping a declaration and clearing a write bit both widen, and a reviewer has to be
    * told which lines those are rather than left to infer it from two strings.
    */
-  /**
-   * How wide one tile is, as a percentage of the image. The map is drawn eight pixels to a tile, so
-   * the cell a marker names is this share of the width across — measured from the map's own width
-   * rather than from the changes, which would be right only for the last changed column.
-   */
-  protected tilePercent = (image: Image): number =>
-    image.tileColumns ? 100 / image.tileColumns : 0;
+  /** Where a cell marker goes on the drawn map. */
+  protected box = (image: Image, cell: { x: number; y: number }): ReturnType<typeof markerBox> =>
+    markerBox(image, cell);
 
   protected widened(diff: AiDiff): string[] {
     return diff.net.filter((n) => n.widened).map((n) => n.key);
