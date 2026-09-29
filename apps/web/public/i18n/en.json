@@ -2,8 +2,8 @@
   "ai": {
     "title": "Assistant",
     "description": "An assistant works on this project through its own key, and everything it stages waits for you here.",
-    "connect": "Connect / rotate token",
-    "revoke": "Disconnect AI",
+    "connect": "Share this project",
+    "revoke": "Stop sharing",
     "preview": "Inspect changes",
     "overlay": "Overlay",
     "sideBySide": "Side by side",
@@ -154,7 +154,11 @@
     "applied": "Applied: {{what}}",
     "empty": "No changes waiting.",
     "codeHunksHint": "This change edits the file in several places. Choose which of them to take; the rest stay unapplied.",
-    "codeHunk": "lines {{from}}–{{to}}"
+    "codeHunk": "lines {{from}}–{{to}}",
+    "shareTokenWhat": "A share token for this project only, good for 8 hours. It is not the credential your assistant signs in with — that one is a key on your account, and it is what reaches every project you allow it to.",
+    "disconnectedHintKeys": "Sharing lets an assistant that already has one of your keys work on this project. Create or choose a key under Settings → Assistant.",
+    "assistantKeys": "Assistant keys",
+    "assistant": "Assistant"
   },
   "nav": {
     "main": "Main navigation",

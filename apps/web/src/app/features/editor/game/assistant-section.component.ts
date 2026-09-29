@@ -39,10 +39,16 @@ type Panel = 'changes' | 'catalog' | 'jobs' | 'provenance';
   ],
   template: `
     <div *transloco="let t">
-      <nc-section banded [title]="t('ai.connected')">
+      <!-- The heading follows the state. It read "Connected" over a body saying no assistant was
+           connected, which is the sort of contradiction that makes people mistrust the panel. -->
+      <nc-section banded [title]="t(connected() ? 'ai.connected' : 'ai.assistant')">
         @if (connected()) {
           <p class="text-meta text-ink-3">{{ t('ai.connectedHint') }}</p>
           @if (token()) {
+            <!-- What this is, because it is not the credential the assistant signs in with and
+                 reading it as one is how somebody ends up pasting a share token into their assistant
+                 and wondering why it only ever sees this game. -->
+            <p class="mt-0.5 text-meta text-ink-3">{{ t('ai.shareTokenWhat') }}</p>
             <code class="mt-0.5 block font-mono text-meta break-all select-all">{{ token() }}</code>
           }
           <div class="mt-1 flex flex-wrap gap-1">
@@ -52,6 +58,9 @@ type Panel = 'changes' | 'catalog' | 'jobs' | 'provenance';
             <button ncButton variant="ghost" size="sm" [disabled]="busy()" (click)="disconnect()">
               {{ t('ai.revoke') }}
             </button>
+            <a ncButton variant="ghost" size="sm" href="/settings/assistant">
+              {{ t('ai.assistantKeys') }}
+            </a>
           </div>
         } @else {
           <p class="text-meta text-ink-3">{{ t('ai.disconnectedHint') }}</p>
@@ -65,6 +74,7 @@ type Panel = 'changes' | 'catalog' | 'jobs' | 'provenance';
           >
             {{ t('ai.connect') }}
           </button>
+          <p class="mt-0.5 text-meta text-ink-3">{{ t('ai.disconnectedHintKeys') }}</p>
         }
         @if (error()) {
           <nc-notice tone="danger" role="alert" class="mt-1">{{ error() }}</nc-notice>
