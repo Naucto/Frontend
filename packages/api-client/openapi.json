@@ -1985,11 +1985,20 @@
           "201": {
             "description": "File uploaded successfully"
           },
+          "400": {
+            "description": "The uploaded bytes are not a game document"
+          },
           "403": {
             "description": "Forbidden"
           },
+          "413": {
+            "description": "The merged document is past the maximum save size"
+          },
           "422": {
             "description": "File validation failed"
+          },
+          "503": {
+            "description": "Too many saves are already queued for this project. Transient: the same bytes succeed once the queue drains, and the client retries with backoff."
           }
         },
         "security": [
@@ -5478,6 +5487,24 @@
         },
         "required": ["result"]
       },
+      "AiHunkDto": {
+        "type": "object",
+        "properties": {
+          "fileId": {
+            "type": "string",
+            "description": "The file the range is in, as the proposal names it"
+          },
+          "from": {
+            "type": "number",
+            "description": "First chosen line, counted from zero in the proposed text"
+          },
+          "to": {
+            "type": "number",
+            "description": "One past the last chosen line"
+          }
+        },
+        "required": ["fileId", "from", "to"]
+      },
       "AiAcceptDto": {
         "type": "object",
         "properties": {
@@ -5490,6 +5517,13 @@
           },
           "contentHash": {
             "type": "string"
+          },
+          "hunks": {
+            "description": "Lines chosen out of the change, per file, counted from zero in the proposed text. Present means apply only these lines: the proposal is not claimed, and a derived row records what was applied so it can be reverted on its own and the rest applied afterwards. Omit for all of it.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AiHunkDto"
+            }
           }
         },
         "required": ["snapshot", "decision", "contentHash"]
@@ -5507,6 +5541,10 @@
             "items": {
               "type": "string"
             }
+          },
+          "appliedProposalId": {
+            "type": "string",
+            "description": "Which proposal was applied, when only part of one was. It is a derived row, so a revert of the part is its own change and the original is untouched and still applicable."
           }
         },
         "required": ["update", "categories"]

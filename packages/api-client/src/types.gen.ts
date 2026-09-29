@@ -59,10 +59,29 @@ export type AiPreviewDto = {
   result: string;
 };
 
+export type AiHunkDto = {
+  /**
+   * The file the range is in, as the proposal names it
+   */
+  fileId: string;
+  /**
+   * First chosen line, counted from zero in the proposed text
+   */
+  from: number;
+  /**
+   * One past the last chosen line
+   */
+  to: number;
+};
+
 export type AiAcceptDto = {
   snapshot: string;
   decision: 'APPROVED' | 'REJECTED';
   contentHash: string;
+  /**
+   * Lines chosen out of the change, per file, counted from zero in the proposed text. Present means apply only these lines: the proposal is not claimed, and a derived row records what was applied so it can be reverted on its own and the rest applied afterwards. Omit for all of it.
+   */
+  hunks?: Array<AiHunkDto>;
 };
 
 export type AiApplyDto = {
@@ -74,6 +93,10 @@ export type AiApplyDto = {
    * What the change touched, for the receipt
    */
   categories: Array<string>;
+  /**
+   * Which proposal was applied, when only part of one was. It is a derived row, so a revert of the part is its own change and the original is untouched and still applicable.
+   */
+  appliedProposalId?: string;
 };
 
 export type AiJobResponseDto = {
@@ -2691,13 +2714,25 @@ export type ProjectControllerSaveProjectContentData = {
 
 export type ProjectControllerSaveProjectContentErrors = {
   /**
+   * The uploaded bytes are not a game document
+   */
+  400: unknown;
+  /**
    * Forbidden
    */
   403: unknown;
   /**
+   * The merged document is past the maximum save size
+   */
+  413: unknown;
+  /**
    * File validation failed
    */
   422: unknown;
+  /**
+   * Too many saves are already queued for this project. Transient: the same bytes succeed once the queue drains, and the client retries with backoff.
+   */
+  503: unknown;
 };
 
 export type ProjectControllerSaveProjectContentResponses = {

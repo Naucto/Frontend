@@ -192,6 +192,7 @@ export {
   type AiControllerRevokeResponses,
   type AiDeclarationDto,
   type AiDeclarationResponseDto,
+  type AiHunkDto,
   type AiJobCompleteDto,
   type AiJobCreateDto,
   type AiJobFailDto,
