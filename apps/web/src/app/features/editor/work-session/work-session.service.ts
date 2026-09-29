@@ -1,5 +1,5 @@
 import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
-import { unwrap } from '@app/core/api/api-errors';
+import { isWorthRetrying, unwrap } from '@app/core/api/api-errors';
 import { AuthStore } from '@app/core/auth/auth.store';
 import { AppConfigService } from '@app/core/config/app-config';
 import { invalidateProjectHistory } from '@app/shared/queries/projects.queries';
@@ -239,6 +239,8 @@ export class WorkSessionService {
    * is safe. A later save that failed, or one taken before the change, leaves it behind.
    */
   private lastSavedFrom: number | null = null;
+  /** The oldest applied change not yet confirmed in storage, or null when there is none. */
+  private unstoredApplied: number | null = null;
   /** Where accepted assistant changes are marked, in each file's own text. */
   readonly aiMarks = signal<readonly AiMark[]>([]);
   private aiSharing = false;
@@ -310,7 +312,10 @@ export class WorkSessionService {
     };
     this.doc.on('update', onUpdate);
     const onBeforeUnload = (e: BeforeUnloadEvent): void => {
-      if (this.isHost() && this.dirty()) e.preventDefault();
+      // Anyone, not only the host. A non-host holding an applied change that has not reached storage
+      // is the case this exists for: nothing else in a non-host's lifecycle would save it, so a tab
+      // closed without this leaves the change only in the tab that accepted it.
+      if (this.dirty() && (this.isHost() || this.unstoredApplied !== null)) e.preventDefault();
     };
     const onPageHide = (): void => {
       if (this.isHost() && this.dirty()) void this.save({ keepalive: true });
@@ -421,7 +426,12 @@ export class WorkSessionService {
     // while the database already recorded it as applied. Retried here until a save that began at or
     // after the apply has actually succeeded — a later failure over an unrelated change must not
     // stop the retry, so it is compared against the revision at apply time, not against `dirty`.
-    void this.persistApplied(this.tracker.mark());
+    const appliedAt = this.tracker.mark();
+    // Kept while it is unstored, and only then. The host's `dirty` cannot be used for this: every
+    // relayed update sets it, so it says the document has changes, not that this change is missing.
+    this.unstoredApplied =
+      this.unstoredApplied === null ? appliedAt : Math.min(this.unstoredApplied, appliedAt);
+    void this.persistApplied(appliedAt);
     // Applying a revert takes the original's lines back, so the original's marks no longer describe
     // them. Its own change is marked in its own right, under the revert's own title.
     if (what.revertsId) this.clearAiMarks(what.revertsId);
@@ -631,7 +641,10 @@ export class WorkSessionService {
       // Only what was encoded counts as saved. If the document moved on, it stays dirty and the
       // quiet-period timer or the next pause picks it up.
       // The bytes encoded at `encodedAt` are now in storage, whatever the document did since.
-      this.lastSavedFrom = encodedAt;
+      // Never lowered: saves have no in-flight guard, so an older one can finish after a newer one
+      // and would otherwise report less stored than it is. That can only cause extra retries, but
+      // an extra retry is cheaper than a wrong answer.
+      this.lastSavedFrom = Math.max(this.lastSavedFrom ?? 0, encodedAt);
       if (this.tracker.settled(encodedAt)) this.dirty.set(false);
       this.saveFailed.set(false);
       this.lastSavedAt.set(new Date());
@@ -746,12 +759,6 @@ export class WorkSessionService {
   }
 
   /**
-   * Write the document out once the edits stop.
-   *
-   * Pushed back by every change, so it fires on the pause rather than during the typing. Guarded
-   * by `save` itself, which is a no-op for a guest and before the session is ready.
-   */
-  /**
    * Keep trying to store a change the assistant made, until a save covering it has succeeded.
    *
    * Backs off, because a store that is refusing saves is refusing them for a reason, and a tight
@@ -763,19 +770,36 @@ export class WorkSessionService {
       // Stored at or after the change, which is the only thing that ends this. Not "a save
       // succeeded": a save taken before the change, or one that did not reach storage, leaves the
       // change exactly where it was.
-      if (this.lastSavedFrom !== null && this.lastSavedFrom >= appliedAt) return;
-    } catch {
-      // `save` has already recorded the failure. Falling through to the delay below.
+      if (this.lastSavedFrom !== null && this.lastSavedFrom >= appliedAt) {
+        if (this.unstoredApplied !== null && this.lastSavedFrom >= this.unstoredApplied)
+          this.unstoredApplied = null;
+        return;
+      }
+    } catch (error) {
+      // The server has made a considered answer about these bytes — refused as unmergeable, too
+      // large — and sending the same bytes again will be refused the same way. Anything else is the
+      // moment rather than the message: a busy queue, a stalled store, a dropped connection. Those
+      // are retried for as long as the tab is open, which is the whole point: a stopwatch limit
+      // turns a two-minute store outage into a change that exists in one tab while the database says
+      // it was applied.
+      if (!isWorthRetrying(error)) return;
+      if (this.destroyRef.destroyed) return;
     }
-    // 1s, 2s, 4s, 8s, then every 30s, which is slow enough not to hammer and fast enough to still
-    // land a change while the tab is open. `appliedAt` is captured above and never re-read: a change
-    // made in the meantime must not restart the wait, or a busy document would never settle.
-    if (attempt >= 5) return;
+    // 1s, 2s, 4s, 8s, 16s, then a flat 30s. Capped rather than growing, so a long outage does not
+    // settle into a delay no one will wait out. `appliedAt` is captured above and never re-read: a
+    // change made in the meantime must not restart the wait, or a busy document would never settle.
     const delay = Math.min(1000 * 2 ** attempt, 30000);
     await new Promise((resolve) => setTimeout(resolve, delay));
+    if (this.destroyRef.destroyed) return;
     void this.persistApplied(appliedAt, attempt + 1);
   }
 
+  /**
+   * Write the document out once the edits stop.
+   *
+   * Pushed back by every change, so it fires on the pause rather than during the typing. Guarded
+   * by `save` itself, which is a no-op for a guest and before the session is ready.
+   */
   private saveWhenQuiet(): void {
     if (this.quiet) clearTimeout(this.quiet);
     this.quiet = setTimeout(() => {

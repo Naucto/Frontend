@@ -42,6 +42,29 @@ export function unwrap<R extends { data?: unknown; error?: unknown; response?: R
   return result.data as Payload<NonNullable<R['data']>>;
 }
 
+/**
+ * Whether a failed request is worth sending again.
+ *
+ * The distinction is not politeness but whether the same bytes could succeed. A busy queue, a
+ * stalled store or a dropped connection will pass; bytes the server has already refused as
+ * unmergeable or oversized will not, and repeating them only burns the store and the tab.
+ */
+export function isWorthRetrying(error: unknown): boolean {
+  if (!(error instanceof ApiError)) return true; // no status: a transport failure, so probably transient
+  const { status } = error;
+  if (status === 0) return true;
+  // 400 and 413 are the server's considered answer about these bytes; 4xx generally means the
+  // request is wrong rather than that the moment is wrong.
+  if (
+    status === 400 ||
+    status === 413 ||
+    (status >= 400 && status < 500 && status !== 408 && status !== 429)
+  ) {
+    return false;
+  }
+  return true;
+}
+
 /** One rule a request broke, as the API names it. */
 export interface Violation {
   field: string;
