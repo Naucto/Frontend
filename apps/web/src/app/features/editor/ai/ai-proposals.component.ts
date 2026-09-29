@@ -29,6 +29,8 @@ import {
 import { ButtonDirective, NoticeComponent, ToastService } from '@naucto/ui';
 
 import type { WorkSessionService } from '../work-session/work-session.service';
+import type { ChosenHunks, LineRange } from './ai-hunks';
+import { chosenHunkRanges } from './ai-hunks';
 import { renderResource } from './ai-preview';
 
 interface Image {
@@ -332,7 +334,7 @@ export class AiProposalsComponent {
    * change with several edits all-or-nothing. This is the choice that lets them be separate, and it
    * is only offered where the change actually edits code, since nothing else can be partly taken.
    */
-  protected readonly chosenHunks = signal<Record<string, { from: number; to: number }[]>>({});
+  protected readonly chosenHunks = signal<ChosenHunks>({});
   protected readonly images = signal<Image[]>([]);
   /**
    * Overlaying the two versions beats comparing them: a pixel that moved is obvious when the old
@@ -469,35 +471,21 @@ export class AiProposalsComponent {
     return (this.chosenHunks()[fileId] ?? []).some((hunk) => hunk.from === from);
   }
 
-  protected toggleHunk(fileId: string, hunk: { from: number; to: number }): void {
+  protected toggleHunk(fileId: string, hunk: LineRange): void {
     this.chosenHunks.update((current) => {
       const mine = current[fileId] ?? [];
       const already = mine.some((h) => h.from === hunk.from);
-      return {
+      const next: ChosenHunks = {
         ...current,
         [fileId]: already ? mine.filter((h) => h.from !== hunk.from) : [...mine, hunk],
       };
+      return next;
     });
   }
 
   /** What to send: every file fully chosen, plus the parts of the ones only partly chosen. */
   private hunksToSend(): { fileId: string; from: number; to: number }[] {
-    const diff = this.diff();
-    if (!diff) return [];
-    const out: { fileId: string; from: number; to: number }[] = [];
-    for (const file of diff.code) {
-      const chosen = this.chosenHunks()[file.id] ?? [];
-      if (!chosen.length) {
-        // Untouched means the whole file, which is what applying without hunks already means.
-        out.push({ fileId: file.id, from: 0, to: Number.MAX_SAFE_INTEGER });
-        continue;
-      }
-      for (const hunk of changedLineHunks(file.before, file.after)) {
-        if (chosen.some((c) => c.from === hunk.from))
-          out.push({ fileId: file.id, from: hunk.from, to: hunk.to });
-      }
-    }
-    return out;
+    return chosenHunkRanges(this.chosenHunks(), this.diff()?.code ?? []);
   }
 
   protected async apply(proposal: AiProposalResponseDto): Promise<void> {

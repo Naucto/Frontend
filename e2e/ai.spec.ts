@@ -135,7 +135,7 @@ test.describe('AI assistance', () => {
     ];
     await openEditor(page, ai);
     await openAssistant(page);
-    await page.getByRole('button', { name: 'Connect / rotate token' }).click();
+    await page.getByRole('button', { name: 'Share this project' }).click();
     await expect(page.getByText('naucto_ai_test', { exact: true })).toBeVisible();
     // Polled, not read once: the token appearing on screen does not mean the share it triggers has
     // reached the server yet, and a single read is a race rather than an assertion.
@@ -188,7 +188,7 @@ test.describe('AI assistance', () => {
     ];
     await openEditor(page, ai);
     await openAssistant(page);
-    await page.getByRole('button', { name: 'Connect / rotate token' }).click();
+    await page.getByRole('button', { name: 'Share this project' }).click();
     await expect.poll(() => ai.contexts.length, { timeout: 10000 }).toBe(1);
     await page.getByRole('button', { name: 'Inspect changes' }).click();
 
@@ -207,6 +207,44 @@ test.describe('AI assistance', () => {
     const applied = await page.locator('.cm-content').innerText();
     expect(applied).toContain(expected.first);
     expect(applied).not.toContain(expected.second);
+  });
+
+  test('a change with no hunks chosen applies whole', async ({ page }) => {
+    // The review offers a range for every file it shows. A file nobody picked anything in used to
+    // arrive as a selection covering all of it, which the server read as "narrow to this range",
+    // found no changed lines in a range containing every one of them, and refused the apply — so
+    // accepting a change without picking through it did not work at all.
+    const ai = new AiBackend();
+    const after = 'function _draw() gfx.cls(2) end';
+    ai.commit = (doc) => {
+      const text = mainText(doc);
+      if (!text) return false;
+      text.delete(0, text.length);
+      text.insert(0, after);
+      return true;
+    };
+    ai.proposals = [
+      {
+        id: 'proposal',
+        title: 'No hunks chosen',
+        summary: 'Applied without picking through it',
+        contentHash: 'b'.repeat(64),
+        status: 'PENDING',
+        operations: [{ kind: 'code' }],
+        inverse: null,
+      },
+    ];
+    await openEditor(page, ai);
+    await openAssistant(page);
+    await page.getByRole('button', { name: 'Share this project' }).click();
+    await expect.poll(() => ai.contexts.length, { timeout: 10000 }).toBe(1);
+    await page.getByRole('button', { name: 'Inspect changes' }).click();
+    // A single edit, so there is nothing to pick between and no toggles appear.
+    await expect(page.locator('[data-hunk]')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Accept change' }).click();
+    await expect.poll(() => ai.applies, { timeout: 10000 }).toBe(1);
+    await page.getByRole('button', { name: 'Code', exact: true }).click();
+    await expect(page.locator('.cm-content')).toContainText(after);
   });
 
   test('accepting a change never interrupts the editor, with another tab open', async ({
@@ -331,7 +369,7 @@ test.describe('AI assistance', () => {
     await page.getByRole('button', { name: 'Lock region', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Unlock', exact: true })).toBeVisible();
     await page.getByRole('radio', { name: 'Changes' }).click();
-    await page.getByRole('button', { name: 'Connect / rotate token' }).click();
+    await page.getByRole('button', { name: 'Share this project' }).click();
     await expect.poll(() => ai.contexts.length).toBe(1);
     const shared = ai.contexts.at(-1) as {
       catalog: Record<string, { name: string; contentHash: string }>;
