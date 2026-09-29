@@ -15,6 +15,7 @@ export {
   AI_CATEGORIES,
   AI_KEYS,
   aiContext,
+  changedLineHunks,
   diffGames,
   encodeState,
   gameFromState,

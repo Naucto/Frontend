@@ -152,7 +152,9 @@
     "connectedHint": "The assistant works from this state and keeps going while you edit. Anything it stages waits for you to accept or reject.",
     "disconnectedHint": "No assistant is connected to this project.",
     "applied": "Applied: {{what}}",
-    "empty": "No changes waiting."
+    "empty": "No changes waiting.",
+    "codeHunksHint": "This change edits the file in several places. Choose which of them to take; the rest stay unapplied.",
+    "codeHunk": "lines {{from}}–{{to}}"
   },
   "nav": {
     "main": "Main navigation",

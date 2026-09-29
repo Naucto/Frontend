@@ -17,6 +17,7 @@ import {
 } from '@naucto/api-client';
 import {
   type AiDiff,
+  changedLineHunks,
   diffGames,
   encodeState,
   type Game,
@@ -259,6 +260,26 @@ export function changedTiles(
               }
               @for (change of d.code; track change.id) {
                 <p class="label">{{ t('ai.codeFile', { name: change.name }) }}</p>
+                @if (hunksOf(change).length > 1) {
+                  <!-- Only worth offering when the change made more than one edit: with a single
+                       edit there is nothing to choose between, and a toggle that can only be on would
+                       be a control that does nothing. -->
+                  <p class="text-meta text-ink-3">{{ t('ai.codeHunksHint') }}</p>
+                  <div class="mb-0.5 flex flex-wrap gap-1">
+                    @for (hunk of hunksOf(change); track hunk.from) {
+                      <button
+                        ncButton
+                        variant="ghost"
+                        size="sm"
+                        [attr.aria-pressed]="hunkChosen(change.id, hunk.from)"
+                        [attr.data-hunk]="hunk.from + ':' + hunk.to"
+                        (click)="toggleHunk(change.id, hunk)"
+                      >
+                        {{ t('ai.codeHunk', { from: hunk.from + 1, to: hunk.to }) }}
+                      </button>
+                    }
+                  </div>
+                }
                 <div class="grid grid-cols-2 gap-1">
                   <pre class="max-h-64 overflow-auto border border-line p-1 text-meta">{{
                     change.before
@@ -304,6 +325,14 @@ export class AiProposalsComponent {
   protected readonly proposals = signal<AiProposalResponseDto[]>([]);
   protected readonly selectedId = signal('');
   protected readonly diff = signal<AiDiff | null>(null);
+  /**
+   * Which lines a person chose out of a code change, per file.
+   *
+   * A `code` operation carries the whole file, so applying one applies all of it — which made a
+   * change with several edits all-or-nothing. This is the choice that lets them be separate, and it
+   * is only offered where the change actually edits code, since nothing else can be partly taken.
+   */
+  protected readonly chosenHunks = signal<Record<string, { from: number; to: number }[]>>({});
   protected readonly images = signal<Image[]>([]);
   /**
    * Overlaying the two versions beats comparing them: a pixel that moved is obvious when the old
@@ -427,15 +456,62 @@ export class AiProposalsComponent {
     ].slice(0, 200);
   }
 
+  /** The runs of lines the assistant changed in one file, as the review offers them. */
+  protected hunksOf(file: {
+    id: string;
+    before: string;
+    after: string;
+  }): { from: number; to: number }[] {
+    return changedLineHunks(file.before, file.after);
+  }
+
+  protected hunkChosen(fileId: string, from: number): boolean {
+    return (this.chosenHunks()[fileId] ?? []).some((hunk) => hunk.from === from);
+  }
+
+  protected toggleHunk(fileId: string, hunk: { from: number; to: number }): void {
+    this.chosenHunks.update((current) => {
+      const mine = current[fileId] ?? [];
+      const already = mine.some((h) => h.from === hunk.from);
+      return {
+        ...current,
+        [fileId]: already ? mine.filter((h) => h.from !== hunk.from) : [...mine, hunk],
+      };
+    });
+  }
+
+  /** What to send: every file fully chosen, plus the parts of the ones only partly chosen. */
+  private hunksToSend(): { fileId: string; from: number; to: number }[] {
+    const diff = this.diff();
+    if (!diff) return [];
+    const out: { fileId: string; from: number; to: number }[] = [];
+    for (const file of diff.code) {
+      const chosen = this.chosenHunks()[file.id] ?? [];
+      if (!chosen.length) {
+        // Untouched means the whole file, which is what applying without hunks already means.
+        out.push({ fileId: file.id, from: 0, to: Number.MAX_SAFE_INTEGER });
+        continue;
+      }
+      for (const hunk of changedLineHunks(file.before, file.after)) {
+        if (chosen.some((c) => c.from === hunk.from))
+          out.push({ fileId: file.id, from: hunk.from, to: hunk.to });
+      }
+    }
+    return out;
+  }
+
   protected async apply(proposal: AiProposalResponseDto): Promise<void> {
     await this.run(async () => {
       this.stopAudition();
       // Nothing pauses: the change lands in the document you are already looking at, so the
       // list refreshes to say so rather than the page disappearing and coming back.
+      const chosen = this.hunksToSend();
       const categories = await this.session().applyAiProposal(proposal.id, proposal.contentHash, {
         title: proposal.title,
         revertsId: proposal.revertsId,
+        hunks: chosen,
       });
+      this.chosenHunks.set({});
       this.selectedId.set('');
       this.proposals.set(await this.load());
       this.toasts.show(

@@ -61,7 +61,23 @@ class AiBackend {
         Y.applyUpdate(held, Buffer.from(String(body.snapshot), 'base64'));
         const merged = new Y.Doc();
         Y.applyUpdate(merged, Y.encodeStateAsUpdate(held));
-        if (!this.commit(merged))
+        // A chosen range narrows the change the way the Backend does, so a selection that the client
+        // failed to send — or sent wrongly — shows up here rather than passing against a mock that
+        // applied everything regardless.
+        const hunks = (body.hunks ?? []) as { fileId: string; from: number; to: number }[];
+        if (hunks.length) {
+          const text = mainText(merged);
+          if (!text) return json(route, { update: '', categories: [] });
+          const whole = new Y.Doc();
+          Y.applyUpdate(whole, Buffer.from(String(body.snapshot), 'base64'));
+          this.commit(whole);
+          const after = mainText(whole)?.toString() ?? '';
+          const lines = after.split('\n');
+          const chosen = hunks.flatMap((hunk) => lines.slice(hunk.from, hunk.to));
+          text.delete(0, text.length);
+          text.insert(0, [text.toString(), ...chosen].join('\n'));
+          whole.destroy();
+        } else if (!this.commit(merged))
           return route.fulfill({
             status: 409,
             contentType: 'application/json',
@@ -137,6 +153,60 @@ test.describe('AI assistance', () => {
     await expect(page.getByText(/^Applied:/)).toBeVisible();
     await page.getByRole('button', { name: 'Code', exact: true }).click();
     await expect(page.locator('.cm-content')).toContainText(after);
+  });
+
+  test('a change that edits a file in two places can be taken one part at a time', async ({
+    page,
+  }) => {
+    // A `code` operation carries the whole file, so accepting one accepted all of it. Somebody who
+    // wanted one of the assistant's two edits had no way to say so.
+    const ai = new AiBackend();
+    // Two edits at opposite ends of the file, with the middle left alone: a change with one hunk
+    // has nothing to choose between, and the review only offers the toggles when there is a choice.
+    const expected = { first: 'local a = 9', second: 'local b = 8' };
+    ai.commit = (doc) => {
+      const text = mainText(doc);
+      if (!text) return false;
+      const lines = text.toString().split('\n');
+      if (lines.length < 4) return false;
+      lines[0] = expected.first;
+      lines[lines.length - 1] = expected.second;
+      text.delete(0, text.length);
+      text.insert(0, lines.join('\n'));
+      return true;
+    };
+    ai.proposals = [
+      {
+        id: 'proposal',
+        title: 'Two edits',
+        summary: 'Change two locals',
+        contentHash: 'b'.repeat(64),
+        status: 'PENDING',
+        operations: [{ kind: 'code' }],
+        inverse: null,
+      },
+    ];
+    await openEditor(page, ai);
+    await openAssistant(page);
+    await page.getByRole('button', { name: 'Connect / rotate token' }).click();
+    await expect.poll(() => ai.contexts.length, { timeout: 10000 }).toBe(1);
+    await page.getByRole('button', { name: 'Inspect changes' }).click();
+
+    // Two separate edits, so there is something to choose between: the hunk toggles only appear
+    // when there is more than one.
+    const hunk = page.locator('[data-hunk]').first();
+    await expect(page.locator('[data-hunk]')).toHaveCount(2);
+    await hunk.click();
+    // Only the chosen range is sent, so only that part is applied.
+    await page.getByRole('button', { name: 'Accept change' }).click();
+    await expect.poll(() => ai.applies, { timeout: 10000 }).toBe(1);
+    await expect(page.getByText(/^Applied:/)).toBeVisible();
+
+    // The part taken is in the document; the part not taken is not.
+    await page.getByRole('button', { name: 'Code', exact: true }).click();
+    const applied = await page.locator('.cm-content').innerText();
+    expect(applied).toContain(expected.first);
+    expect(applied).not.toContain(expected.second);
   });
 
   test('accepting a change never interrupts the editor, with another tab open', async ({

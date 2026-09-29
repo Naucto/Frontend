@@ -272,3 +272,66 @@ export function readLocks(game: Game): AiLock[] {
 
   return out;
 }
+
+/**
+ * The runs of lines that differ between two texts, as line numbers in the new one.
+ *
+ * A change to a file is usually several separate edits, and a person reviewing one wants to be able
+ * to take some of them. This is what the review screen offers as choices, and what the Backend
+ * diffs again when asked to apply a range — it re-finds the hunks against the file as it is now,
+ * so a hunk aimed by line number lands on the right edit even if the file moved in between.
+ */
+export function changedLineHunks(before: string, after: string): { from: number; to: number }[] {
+  const a = before.split('\n');
+  const b = after.split('\n');
+  let head = 0;
+  while (head < a.length && head < b.length && a[head] === b[head]) head += 1;
+  let tail = 0;
+  while (
+    tail < a.length - head &&
+    tail < b.length - head &&
+    a[a.length - 1 - tail] === b[b.length - 1 - tail]
+  ) {
+    tail += 1;
+  }
+  if (a.length * b.length > 4_000_000) {
+    // Too large to align: offer the one span rather than guessing at its parts.
+    return b.length - tail > head ? [{ from: head, to: b.length - tail }] : [];
+  }
+  const midA = a.slice(head, a.length - tail);
+  const midB = b.slice(head, b.length - tail);
+  // Flat rather than nested: one number per cell of a table this size, and a flat array is indexed
+  // without the assertions a nested one would need at every step.
+  const stride = midB.length + 1;
+  const lcs = new Int32Array((midA.length + 1) * stride);
+  const at = (i: number, j: number): number => lcs[i * stride + j] ?? 0;
+  for (let i = midA.length - 1; i >= 0; i -= 1) {
+    for (let j = midB.length - 1; j >= 0; j -= 1) {
+      lcs[i * stride + j] =
+        midA[i] === midB[j] ? at(i + 1, j + 1) + 1 : Math.max(at(i + 1, j), at(i, j + 1));
+    }
+  }
+  const hunks: { from: number; to: number }[] = [];
+  let open: { from: number; to: number } | null = null;
+  let i = 0;
+  let j = 0;
+  while (i < midA.length && j < midB.length) {
+    if (midA[i] === midB[j]) {
+      if (open) {
+        hunks.push(open);
+        open = null;
+      }
+      i += 1;
+      j += 1;
+      continue;
+    }
+    open ??= { from: head + j, to: head + j };
+    if (at(i + 1, j) >= at(i, j + 1)) i += 1;
+    else j += 1;
+    open.to = head + j;
+  }
+  if (open || i < midA.length || j < midB.length) {
+    hunks.push(open ?? { from: head + j, to: head + midB.length });
+  }
+  return hunks;
+}
