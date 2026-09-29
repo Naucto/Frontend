@@ -229,6 +229,9 @@ export class WorkSessionService {
    */
   static readonly APPLIED_ORIGIN = 'ai-applied';
 
+  /** The body size a browser accepts on a `keepalive` request. Above it, the request is dropped. */
+  private static readonly KEEPALIVE_LIMIT = 64 * 1024;
+
   /** Tells a finished save whether it uploaded everything the document holds. */
   private readonly tracker = new SaveTracker();
   /**
@@ -318,7 +321,21 @@ export class WorkSessionService {
       if (this.dirty() && (this.isHost() || this.unstoredApplied !== null)) e.preventDefault();
     };
     const onPageHide = (): void => {
-      if (this.isHost() && this.dirty()) void this.save({ keepalive: true });
+      if (!this.isHost() || !this.dirty()) return;
+      // `keepalive` is what lets a request outlive the page that sent it — but browsers cap a
+      // keepalive body at 64 KiB, and a real project is megabytes, so the request this was relying
+      // on was being dropped for everything that mattered. A document that fits is still sent that
+      // way, because it is the only case where it is both small enough and worth the complexity.
+      const bytes = Y.encodeStateAsUpdate(this.doc);
+      if (bytes.byteLength <= WorkSessionService.KEEPALIVE_LIMIT) {
+        void this.save({ keepalive: true });
+        return;
+      }
+      // Too big to go with the page, so send it now, while the page is still alive. It is a normal
+      // request with no deadline of its own, which is exactly what was wanted from `keepalive`, and
+      // nothing about the document is lost if the tab closes a moment later — the bytes are already
+      // on the wire. Not awaited: `pagehide` will not wait, and there is no one left to wait for.
+      void this.save();
     };
     window.addEventListener('beforeunload', onBeforeUnload);
     window.addEventListener('pagehide', onPageHide);
