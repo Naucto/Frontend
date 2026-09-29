@@ -2,9 +2,11 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  effect,
   inject,
   input,
   signal,
+  untracked,
 } from '@angular/core';
 import { unwrap } from '@app/core/api/api-errors';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
@@ -343,18 +345,40 @@ export class AiProposalsComponent {
   protected readonly overlay = signal(false);
   protected readonly busy = signal(false);
   protected readonly error = signal('');
+  /** How often to re-read the list while the editor is open, so a change appears as it is staged. */
+  private static readonly POLL_MS = 5000;
   private readonly toasts = inject(ToastService);
   private readonly transloco = inject(TranslocoService);
+  private polling: ReturnType<typeof setInterval> | null = null;
   private result: Game | null = null;
   private sound: SoundEngine | null = null;
   private audio: WebAudioBackend | null = null;
 
   constructor() {
     inject(DestroyRef).onDestroy(() => {
+      if (this.polling) clearInterval(this.polling);
       this.stopAudition();
       this.discardResult();
     });
-    queueMicrotask(() => void this.refresh());
+    // Loaded when the session knows which project it is, and re-loaded while it is open.
+    //
+    // It used to load in a microtask at construction, which is before the project id exists — that
+    // arrives asynchronously — so the request went out for project 0 and came back with nothing. To
+    // somebody the assistant had just staged a change for, that is indistinguishable from "there is
+    // nothing waiting", which is the worst possible answer to give.
+    //
+    // And then it keeps loading, because the point of the list is that a change appears while you
+    // are working rather than when you think to go and look for it.
+    effect(() => {
+      if (this.session().status() !== 'ready') return;
+      untracked(() => void this.refresh());
+      if (this.polling) return;
+      this.polling = setInterval(() => {
+        if (document.visibilityState === 'visible' && this.session().status() === 'ready') {
+          untracked(() => void this.refresh());
+        }
+      }, AiProposalsComponent.POLL_MS);
+    });
   }
 
   private get projectId(): number {
