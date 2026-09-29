@@ -335,3 +335,119 @@ export function changedLineHunks(before: string, after: string): { from: number;
   }
   return hunks;
 }
+
+/** One row of a side-by-side diff: a line on the left, a line on the right, or both. */
+export interface DiffRow {
+  /** 1-based line number in the old text, absent when the line is new. */
+  left?: { number: number; text: string };
+  /** 1-based line number in the new text, absent when the line is gone. */
+  right?: { number: number; text: string };
+  kind: 'same' | 'changed' | 'added' | 'removed';
+}
+
+/**
+ * The two texts aligned, line by line, for showing beside each other.
+ *
+ * A diff a person reads has to line the two versions up, or every line looks changed and nothing
+ * can be taken on its own. Aligned on the longest common subsequence, so the lines that did not move
+ * line up across and what is left is what actually differs — which is also the smallest unit worth
+ * offering to accept.
+ *
+ * Quadratic, so a file past the guard is aligned only on the shared prefix and suffix. That is the
+ * conservative direction: it shows more as changed rather than less, and a line wrongly offered for
+ * review is a nuisance where a change wrongly hidden is a mistake.
+ */
+export function lineDiff(before: string, after: string): DiffRow[] {
+  const a = before.split('\n');
+  const b = after.split('\n');
+  let head = 0;
+  while (head < a.length && head < b.length && a[head] === b[head]) head += 1;
+  let tail = 0;
+  while (
+    tail < a.length - head &&
+    tail < b.length - head &&
+    a[a.length - 1 - tail] === b[b.length - 1 - tail]
+  ) {
+    tail += 1;
+  }
+  const midA = a.slice(head, a.length - tail);
+  const midB = b.slice(head, b.length - tail);
+  const rows: DiffRow[] = [];
+  for (let i = 0; i < head; i += 1) {
+    rows.push({
+      left: { number: i + 1, text: a[i] ?? '' },
+      right: { number: i + 1, text: b[i] ?? '' },
+      kind: 'same',
+    });
+  }
+  if (midA.length * midB.length > 4_000_000) {
+    for (let i = 0; i < midA.length; i += 1) {
+      rows.push({ left: { number: head + i + 1, text: midA[i] ?? '' }, kind: 'removed' });
+    }
+    for (let j = 0; j < midB.length; j += 1) {
+      rows.push({ right: { number: head + j + 1, text: midB[j] ?? '' }, kind: 'added' });
+    }
+  } else {
+    const stride = midB.length + 1;
+    const lcs = new Int32Array((midA.length + 1) * stride);
+    const at = (i: number, j: number): number => lcs[i * stride + j] ?? 0;
+    for (let i = midA.length - 1; i >= 0; i -= 1) {
+      for (let j = midB.length - 1; j >= 0; j -= 1) {
+        lcs[i * stride + j] =
+          midA[i] === midB[j] ? at(i + 1, j + 1) + 1 : Math.max(at(i + 1, j), at(i, j + 1));
+      }
+    }
+    // Walked with paired removals and additions, so a replacement shows as a change rather than as a
+    // gap followed by an insertion: "this line became that line" is what a person is being asked to
+    // accept, not "a line went and a line came".
+    let i = 0;
+    let j = 0;
+    while (i < midA.length && j < midB.length) {
+      if (midA[i] === midB[j]) {
+        rows.push({
+          left: { number: head + i + 1, text: midA[i] ?? '' },
+          right: { number: head + j + 1, text: midB[j] ?? '' },
+          kind: 'same',
+        });
+        i += 1;
+        j += 1;
+        continue;
+      }
+      const drop = at(i + 1, j) >= at(i, j + 1);
+      const paired = drop ? at(i + 1, j + 1) >= Math.max(at(i + 1, j), at(i, j + 1)) : false;
+      if (paired) {
+        rows.push({
+          left: { number: head + i + 1, text: midA[i] ?? '' },
+          right: { number: head + j + 1, text: midB[j] ?? '' },
+          kind: 'changed',
+        });
+        i += 1;
+        j += 1;
+        continue;
+      }
+      if (drop) {
+        rows.push({ left: { number: head + i + 1, text: midA[i] ?? '' }, kind: 'removed' });
+        i += 1;
+      } else {
+        rows.push({ right: { number: head + j + 1, text: midB[j] ?? '' }, kind: 'added' });
+        j += 1;
+      }
+    }
+    for (; i < midA.length; i += 1) {
+      rows.push({ left: { number: head + i + 1, text: midA[i] ?? '' }, kind: 'removed' });
+    }
+    for (; j < midB.length; j += 1) {
+      rows.push({ right: { number: head + j + 1, text: midB[j] ?? '' }, kind: 'added' });
+    }
+  }
+  for (let k = 0; k < tail; k += 1) {
+    const ai = a.length - tail + k;
+    const bi = b.length - tail + k;
+    rows.push({
+      left: { number: ai + 1, text: a[ai] ?? '' },
+      right: { number: bi + 1, text: b[bi] ?? '' },
+      kind: 'same',
+    });
+  }
+  return rows;
+}

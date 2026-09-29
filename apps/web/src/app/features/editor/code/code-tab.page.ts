@@ -7,11 +7,14 @@ import {
   effect,
   inject,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
+import { unwrap } from '@app/core/api/api-errors';
 import { RuntimeHostService } from '@app/shared/game-screen/runtime-host.service';
 import { ySignal } from '@app/shared/yjs/y-signal';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
+import { aiControllerList, type AiProposalResponseDto } from '@naucto/api-client';
 import { MAIN_FILE } from '@naucto/engine';
 import {
   ButtonDirective,
@@ -24,8 +27,19 @@ import {
 } from '@naucto/ui';
 
 import { ACCENT_SLOTS } from '../accent-slots';
+import { AiCodeReviewComponent, type LineChoice } from '../ai/ai-code-review.component';
 import { EditorRuntimeService } from '../state/editor-runtime.service';
 import { WorkSessionService } from '../work-session/work-session.service';
+
+/** A staged change to one file, as the split review needs it. */
+export interface ReviewChange {
+  id: string;
+  contentHash: string;
+  title: string;
+  fileId: string;
+  before: string;
+  after: string;
+}
 import { CodeEditorComponent, type CursorInfo } from './code-editor.component';
 import {
   CodeFileDialog,
@@ -45,6 +59,7 @@ import { localSignatures } from './signature-help';
     IconComponent,
     SearchBarComponent,
     CodeEditorComponent,
+    AiCodeReviewComponent,
   ],
   template: `
     <div *transloco="let t" class="flex h-full flex-col">
@@ -90,8 +105,33 @@ import { localSignatures } from './signature-help';
           </button>
         </span>
       </nc-tabs>
+      @if (!review() && waitingFor().length) {
+        <!-- In the editor, not in a panel elsewhere: a change is judged against the file it lands
+             in, and a badge you have to go and find is a change that gets applied unread. -->
+        <div class="flex items-center gap-1.5 border-b border-line bg-line-20 px-1.5 py-1">
+          <p class="label grow truncate">
+            {{ t('ai.review.waiting', { count: waitingFor().length }) }}
+          </p>
+          @for (change of waitingFor(); track change.id + change.fileId) {
+            <button ncButton variant="secondary" size="sm" (click)="reviewChange(change)">
+              {{ t('ai.review.openNamed', { name: change.fileId }) }}
+            </button>
+          }
+        </div>
+      }
       <div class="min-h-0 flex-1">
-        @if (active(); as file) {
+        @if (review(); as underReview) {
+          <!-- The review replaces the editor rather than sitting beside it: the two panes of a
+               diff only mean something against the file they are a diff of, and half the window for
+               each is what makes a change readable at all. Closing puts the editor back. -->
+          <nc-ai-code-review
+            [before]="underReview.before"
+            [after]="underReview.after"
+            [title]="underReview.title"
+            (accepted)="take($event, underReview)"
+            (closed)="review.set(null)"
+          />
+        } @else if (active(); as file) {
           <nc-code-editor
             #editor
             [text]="file.text"
@@ -160,6 +200,74 @@ export class CodeTabPage implements OnInit {
     return this.session.dirty() ? 'text-orange-ink' : 'text-jade-ink';
   });
   protected readonly session = inject(WorkSessionService);
+
+  /**
+   * The change being reviewed, if any, as the two versions of one file.
+   *
+   * Held here rather than in the proposals panel because it is a way of reading code, not a list:
+   * an edit cannot be judged against a proposal's summary, only against the file it lands in.
+   */
+  protected readonly review = signal<ReviewChange | null>(null);
+
+  protected reviewChange(change: ReviewChange): void {
+    this.review.set(change);
+  }
+
+  /** Changes waiting on the file in front of you, so the review is offered where the code is. */
+  private readonly waiting = signal<ReviewChange[]>([]);
+  private waitingPoll: ReturnType<typeof setInterval> | null = null;
+
+  /** Only the ones for the file in front of you: a change to another file is not in this window. */
+  protected readonly waitingFor = computed(() => {
+    const file = this.activeId();
+    return this.waiting().filter((change) => change.fileId === file);
+  });
+
+  protected async loadWaiting(): Promise<void> {
+    const changes = await aiControllerList({ path: { projectId: this.session.id } })
+      .then(unwrap)
+      .then((all: AiProposalResponseDto[]) =>
+        all.filter((proposal) => proposal.status === 'PENDING'),
+      )
+      .then((all) => all.flatMap((proposal) => this.asReviewChange(proposal)));
+
+    this.waiting.set(changes);
+  }
+
+  /**
+   * A proposal as a review, for the file it touches.
+   *
+   * Only the code operations: a sprite sheet, a map or a sound has no side-by-side text to read, and
+   * pretending otherwise would put a pane of binary in front of somebody asking what changed.
+   */
+  private asReviewChange(proposal: AiProposalResponseDto): ReviewChange[] {
+    return (proposal.operations ?? [])
+      .filter(
+        (op): op is { kind: 'code'; fileId: string; before: string; after: string } =>
+          !!op && typeof op === 'object' && (op as { kind?: unknown }).kind === 'code',
+      )
+      .map((op) => ({
+        id: proposal.id,
+        contentHash: proposal.contentHash,
+        title: proposal.title,
+        fileId: op.fileId,
+        before: op.before,
+        after: op.after,
+      }));
+  }
+
+  /**
+   * Applies what was taken: null for the whole change, or the lines that were chosen.
+   *
+   * The review closes either way — the decision has been made, and leaving it up would invite a
+   * second one about the same lines.
+   */
+  protected async take(chosen: LineChoice[] | null, change: ReviewChange): Promise<void> {
+    this.review.set(null);
+    await this.session.applyAiProposal(change.id, change.contentHash, {
+      hunks: chosen?.map((range) => ({ fileId: change.fileId, ...range })) ?? [],
+    });
+  }
   protected readonly runtime = inject(RuntimeHostService);
   protected readonly main = MAIN_FILE;
   protected readonly accents = ACCENT_SLOTS;
@@ -183,7 +291,21 @@ export class CodeTabPage implements OnInit {
     effect(() => {
       if (this.searching()) this.bar()?.focus();
     });
+    // A staged change is looked for when the session is ready, and on an interval after that, for
+    // the same reason the proposals panel does: it has to turn up by itself, while you are working,
+    // rather than when you think to go and refresh something.
+    effect(() => {
+      if (this.session.status() !== 'ready') return;
+      untracked(() => void this.loadWaiting());
+      if (this.waitingPoll) return;
+      this.waitingPoll = setInterval(() => {
+        if (document.visibilityState === 'visible' && this.session.status() === 'ready') {
+          untracked(() => void this.loadWaiting());
+        }
+      }, 5000);
+    });
     inject(DestroyRef).onDestroy(() => {
+      if (this.waitingPoll) clearInterval(this.waitingPoll);
       this.editorRuntime.insertAtCursor = null;
       this.editorRuntime.symbolAtCursor = null;
     });

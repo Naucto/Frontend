@@ -10,7 +10,7 @@ export type {
   SoundPort,
   SysPort,
 } from './api/ports';
-export type { AiCategory, AiDiff, AiLock } from './game/ai';
+export type { AiCategory, AiDiff, AiLock, DiffRow } from './game/ai';
 export {
   AI_CATEGORIES,
   AI_KEYS,
@@ -19,6 +19,7 @@ export {
   diffGames,
   encodeState,
   gameFromState,
+  lineDiff,
   readLocks,
 } from './game/ai';
 export * from './game/defaults';
