@@ -46,9 +46,9 @@ import {
 import { QueryClient } from '@tanstack/angular-query-experimental';
 import * as Y from 'yjs';
 
+import { AiProvenanceComponent } from '../ai/ai-provenance.component';
 import { PANEL_WIDTH } from '../state/editor-ui.store';
 import { WorkSessionService } from '../work-session/work-session.service';
-import { AssistantSection } from './assistant-section.component';
 
 // The API rejects anything longer, so these are its limits, not a house style: the field has
 // to stop the typing rather than let a save fail on it.
@@ -61,7 +61,7 @@ const CONTROL_LABEL_MAX = 25;
 @Component({
   selector: 'nc-game-tab-page',
   imports: [
-    AssistantSection,
+    AiProvenanceComponent,
     SlicePipe,
     FormsModule,
     TranslocoDirective,
@@ -380,7 +380,7 @@ const CONTROL_LABEL_MAX = 25;
           </nc-section>
 
           <nc-section banded [title]="t('ai.title')">
-            <nc-assistant-section [session]="session" />
+            <nc-ai-provenance [projectId]="session.id" />
           </nc-section>
         </div>
       </nc-panel-column>

@@ -7,9 +7,6 @@ import { qk } from '@app/shared/queries/query-keys';
 import { TranslocoService } from '@jsverse/transloco';
 import {
   aiControllerApply,
-  aiControllerConnect,
-  aiControllerContext,
-  aiControllerRevoke,
   projectControllerFetchProjectContent,
   projectControllerFindOne,
   projectControllerSaveProjectContent,
@@ -21,7 +18,6 @@ import {
   workSessionControllerLeave,
 } from '@naucto/api-client';
 import {
-  aiContext,
   applyTutorialAssets,
   encodeState,
   Game,
@@ -38,6 +34,7 @@ import type { Awareness } from 'y-protocols/awareness';
 import { WebrtcProvider } from 'y-webrtc';
 import * as Y from 'yjs';
 
+import { seedText } from './meta-seed';
 import { assignColours } from './presence-colours';
 import { SaveTracker } from './save-tracker';
 
@@ -213,16 +210,15 @@ export function changedRange(before: string, after: string): [number, number] {
   return [from, to];
 }
 
+/**
+ * Mirrors PROJECT_NAME_MAX_LENGTH in the Backend's project-field-limits. The server is the
+ * authority; this copy exists so the editor can recognise a name it must not send rather than
+ * discovering it as a rejected save.
+ */
+const PROJECT_NAME_MAX_LENGTH = 25;
+
 @Injectable()
 export class WorkSessionService {
-  /**
-   * The assistant's credential for this project, and the context timer that keeps it fed.
-   *
-   * These live here rather than in the settings panel because the assistant has to keep working
-   * while the person edits. Tying them to a component meant closing the panel wiped the token and
-   * stopped the heartbeat, so the first thing the assistant met was "share fresh context".
-   */
-  readonly aiToken = signal('');
   /**
    * Marks an accepted change, so a write that came from the assistant is distinguishable from a
    * person typing — the same thing the old barrier needed an origin for, without the pause.
@@ -246,8 +242,6 @@ export class WorkSessionService {
   private unstoredApplied: number | null = null;
   /** Where accepted assistant changes are marked, in each file's own text. */
   readonly aiMarks = signal<readonly AiMark[]>([]);
-  private aiSharing = false;
-  private aiTimer: ReturnType<typeof setInterval> | null = null;
   private readonly auth = inject(AuthStore);
   private readonly config = inject(AppConfigService);
   private readonly queries = inject(QueryClient);
@@ -350,50 +344,7 @@ export class WorkSessionService {
     return this.projectId;
   }
 
-  /**
-   * Connects the assistant for this project, and starts the context heartbeat.
-   *
-   * Both live here rather than in a panel because the assistant has to keep working while the
-   * person edits: it used to stop the moment the panel closed, which is why the context kept
-   * expiring and the assistant kept asking for it again.
-   */
-  async connectAi(): Promise<void> {
-    if (this.status() !== 'ready') return;
-    const result = unwrap(await aiControllerConnect({ path: { projectId: this.projectId } }));
-    this.aiToken.set(result.token);
-    this.aiSharing = true;
-    await this.shareAiContext();
-    this.startAiContextTimer();
-  }
-
-  async disconnectAi(): Promise<void> {
-    unwrap(await aiControllerRevoke({ path: { projectId: this.projectId } }));
-    this.aiSharing = false;
-    this.aiToken.set('');
-  }
-
-  /** Publishes the current document so an assistant can work from it. */
-  async shareAiContext(): Promise<void> {
-    if (this.status() !== 'ready' || !this.aiSharing) return;
-    unwrap(
-      await aiControllerContext({
-        path: { projectId: this.projectId },
-        body: { content: aiContext(this.game) },
-      }),
-    );
-  }
-
   private readonly destroyRef = inject(DestroyRef);
-
-  private startAiContextTimer(): void {
-    if (this.aiTimer !== null) return;
-    this.aiTimer = setInterval(() => {
-      void this.shareAiContext().catch(() => undefined);
-    }, 20000);
-    this.destroyRef.onDestroy(() => {
-      if (this.aiTimer !== null) clearInterval(this.aiTimer);
-    });
-  }
 
   /**
    * Accept a proposal: send this document as it stands, apply what comes back.
@@ -601,6 +552,14 @@ export class WorkSessionService {
    * The play page's download is here for the same reason: a publish or a release update swaps
    * the blob its signed URL points at, and it is fetched under a key of its own.
    */
+  /**
+   * A name in the document that the API will not accept, held so the editor can say so.
+   *
+   * Silent repair would leave a person who had deliberately typed a long name with a project that
+   * quietly reverted to the server's copy and no idea why. Visible is better than either.
+   */
+  readonly strandedName = signal<string | null>(null);
+
   private async invalidateProjectEverywhere(): Promise<void> {
     await Promise.all([
       this.queries.invalidateQueries({ queryKey: qk.release(this.projectId) }),
@@ -630,11 +589,20 @@ export class WorkSessionService {
           (details.longDesc ?? '') !== meta.longDesc ||
           JSON.stringify([...details.tags].sort()) !== JSON.stringify([...meta.tags].sort()))
       ) {
+        // A name the API would refuse must not take the document down with it. This call sits in
+        // front of the upload, so a rejected name aborted the save — and a project whose own
+        // metadata had drifted too long could no longer be opened, which is the worst way for a
+        // validation message to arrive: there was nothing to open it with. The server's copy is
+        // authoritative anyway, so fall back to it and carry on saving.
+        const name = meta.name.length > PROJECT_NAME_MAX_LENGTH ? (details.name ?? '') : meta.name;
+        if (name !== meta.name) {
+          this.strandedName.set(meta.name);
+        }
         const updated = unwrap(
           await projectControllerUpdate({
             path: { id: this.projectId },
             body: {
-              name: meta.name,
+              name,
               shortDesc: meta.shortDesc,
               longDesc: meta.longDesc as unknown as Record<string, unknown>,
               tags: meta.tags,
@@ -753,8 +721,7 @@ export class WorkSessionService {
 
   private seedMeta(details: ProjectExResponseDto): void {
     const set = (key: string, value: string): void => {
-      const t = this.doc.getText(key);
-      if (t.length === 0 && value) t.insert(0, value);
+      seedText(this.doc.getText(key), value);
     };
     this.doc.transact(() => {
       set('projectName', details.name);

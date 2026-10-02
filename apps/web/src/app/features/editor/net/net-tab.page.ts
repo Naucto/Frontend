@@ -34,6 +34,7 @@ import {
   TooltipDirective,
 } from '@naucto/ui';
 
+import { AiProposalsComponent } from '../ai/ai-proposals.component';
 import { EditorRuntimeService } from '../state/editor-runtime.service';
 import { PANEL_WIDTH } from '../state/editor-ui.store';
 import { PresenceSurfaceComponent } from '../work-session/presence-surface.component';
@@ -76,6 +77,7 @@ function formatScalar(value: TableScalar | undefined): string {
     HelpDotComponent,
     IconComponent,
     PanelColumnComponent,
+    AiProposalsComponent,
     SectionComponent,
     SearchComponent,
     SliderComponent,
@@ -345,6 +347,7 @@ function formatScalar(value: TableScalar | undefined): string {
           }}
         </span>
 
+        <nc-ai-proposals [session]="work" editor="net" />
         <!-- Shared: the roster, the join code and who holds which slot are one set of facts that
                everyone in the session is looking at, so a peer's pointer says what is about to
                change for all of you. The test rig below is not — see there. -->

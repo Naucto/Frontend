@@ -14,7 +14,11 @@ import { unwrap } from '@app/core/api/api-errors';
 import { RuntimeHostService } from '@app/shared/game-screen/runtime-host.service';
 import { ySignal } from '@app/shared/yjs/y-signal';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
-import { aiControllerList, type AiProposalResponseDto } from '@naucto/api-client';
+import {
+  aiControllerList,
+  aiControllerReview,
+  type AiProposalResponseDto,
+} from '@naucto/api-client';
 import { MAIN_FILE } from '@naucto/engine';
 import {
   ButtonDirective,
@@ -22,12 +26,14 @@ import {
   type ConfirmDialogData,
   DialogService,
   IconComponent,
+  NoticeComponent,
   type TabItem,
   TabsComponent,
 } from '@naucto/ui';
 
 import { ACCENT_SLOTS } from '../accent-slots';
-import { AiCodeReviewComponent, type LineChoice } from '../ai/ai-code-review.component';
+import { AiCodeReviewComponent } from '../ai/ai-code-review.component';
+import type { LineRange } from '../ai/ai-hunks';
 import { EditorRuntimeService } from '../state/editor-runtime.service';
 import { WorkSessionService } from '../work-session/work-session.service';
 
@@ -60,6 +66,7 @@ import { localSignatures } from './signature-help';
     SearchBarComponent,
     CodeEditorComponent,
     AiCodeReviewComponent,
+    NoticeComponent,
   ],
   template: `
     <div *transloco="let t" class="flex h-full flex-col">
@@ -105,6 +112,9 @@ import { localSignatures } from './signature-help';
           </button>
         </span>
       </nc-tabs>
+      @if (reviewError()) {
+        <nc-notice tone="danger" role="alert" class="m-1">{{ reviewError() }}</nc-notice>
+      }
       @if (!review() && waitingFor().length) {
         <!-- In the editor, not in a panel elsewhere: a change is judged against the file it lands
              in, and a badge you have to go and find is a change that gets applied unread. -->
@@ -119,31 +129,37 @@ import { localSignatures } from './signature-help';
           }
         </div>
       }
-      <div class="min-h-0 flex-1">
+      <div class="flex min-h-0 flex-1">
+        <div class="min-h-0 min-w-0 flex-1">
+          @if (active(); as file) {
+            <nc-code-editor
+              #editor
+              [text]="file.text"
+              [awareness]="session.awareness"
+              [colour]="session.myColour()"
+              [userName]="session.displayName"
+              [error]="runtime.error()"
+              [locals]="locals()"
+              [aiMarks]="marksHere()"
+              (cursor)="cursor.set($event)"
+              (findRequested)="openSearch()"
+            />
+          }
+        </div>
         @if (review(); as underReview) {
-          <!-- The review replaces the editor rather than sitting beside it: the two panes of a
-               diff only mean something against the file they are a diff of, and half the window for
-               each is what makes a change readable at all. Closing puts the editor back. -->
-          <nc-ai-code-review
-            [before]="underReview.before"
-            [after]="underReview.after"
-            [title]="underReview.title"
-            (accepted)="take($event, underReview)"
-            (closed)="review.set(null)"
-          />
-        } @else if (active(); as file) {
-          <nc-code-editor
-            #editor
-            [text]="file.text"
-            [awareness]="session.awareness"
-            [colour]="session.myColour()"
-            [userName]="session.displayName"
-            [error]="runtime.error()"
-            [locals]="locals()"
-            [aiMarks]="marksHere()"
-            (cursor)="cursor.set($event)"
-            (findRequested)="openSearch()"
-          />
+          <!-- Beside the editor, as Copilot does it: the file you are working on stays where it is and
+               the change is read at its right, what goes struck through in red and what replaces it in
+               green. Closing leaves the change waiting; the strip above brings it back. -->
+          <aside class="min-h-0 w-1/2 min-w-0 border-l border-line" data-testid="ai-review-pane">
+            <nc-ai-code-review
+              [before]="underReview.before"
+              [after]="underReview.after"
+              [title]="underReview.title"
+              (accepted)="take($event, underReview)"
+              (refused)="refuse(underReview)"
+              (closed)="dismiss(underReview)"
+            />
+          </aside>
         }
       </div>
       @if (searching()) {
@@ -209,8 +225,40 @@ export class CodeTabPage implements OnInit {
    */
   protected readonly review = signal<ReviewChange | null>(null);
 
+  /** Changes whose pane was closed, so they are not put back in front of somebody who closed them. */
+  private readonly dismissed = signal<ReadonlySet<string>>(new Set());
+
   protected reviewChange(change: ReviewChange): void {
+    this.dismissed.update((current) => {
+      const next = new Set(current);
+      next.delete(`${change.id}:${change.fileId}`);
+      return next;
+    });
     this.review.set(change);
+  }
+
+  /** Closing says "not now": the change keeps waiting and the strip above can reopen it. */
+  protected dismiss(change: ReviewChange): void {
+    this.dismissed.update((current) => new Set(current).add(`${change.id}:${change.fileId}`));
+    this.review.set(null);
+  }
+
+  /**
+   * Declines the change outright, review closed or not.
+   *
+   * Refusing is not the same as closing. Closing says "not now" and leaves the change waiting to be
+   * applied; refusing is a decision, and nothing should let one be mistaken for the other — least of
+   * all by leaving a change sitting there that somebody believed they had looked at.
+   */
+  protected async refuse(change: ReviewChange): Promise<void> {
+    this.dismiss(change);
+    unwrap(
+      await aiControllerReview({
+        path: { projectId: this.session.id, proposalId: change.id },
+        body: { decision: 'REJECTED', contentHash: change.contentHash },
+      }),
+    );
+    await this.loadWaiting();
   }
 
   /** Changes waiting on the file in front of you, so the review is offered where the code is. */
@@ -262,12 +310,25 @@ export class CodeTabPage implements OnInit {
    * The review closes either way — the decision has been made, and leaving it up would invite a
    * second one about the same lines.
    */
-  protected async take(chosen: LineChoice[] | null, change: ReviewChange): Promise<void> {
-    this.review.set(null);
-    await this.session.applyAiProposal(change.id, change.contentHash, {
-      hunks: chosen?.map((range) => ({ fileId: change.fileId, ...range })) ?? [],
-    });
+  protected async take(chosen: LineRange[] | null, change: ReviewChange): Promise<void> {
+    this.dismiss(change);
+    this.reviewError.set('');
+    try {
+      await this.session.applyAiProposal(change.id, change.contentHash, {
+        title: change.title,
+        hunks: chosen?.map((range) => ({ fileId: change.fileId, ...range })) ?? [],
+      });
+    } catch (error) {
+      // Said where the change was, and put back in front of the person: a refusal usually means the
+      // file moved underneath it, and a change that vanished without a word would read as applied.
+      this.reviewError.set(error instanceof Error ? error.message : String(error));
+      this.reviewChange(change);
+    }
+    await this.loadWaiting().catch(() => undefined);
   }
+
+  /** Why the last accept did not go through, if it did not. */
+  protected readonly reviewError = signal('');
   protected readonly runtime = inject(RuntimeHostService);
   protected readonly main = MAIN_FILE;
   protected readonly accents = ACCENT_SLOTS;
@@ -290,6 +351,24 @@ export class CodeTabPage implements OnInit {
     // The bar is created by the @if above, so nothing can focus it in the same turn that opens it.
     effect(() => {
       if (this.searching()) this.bar()?.focus();
+    });
+    // A change waiting on the file in front of you opens at the right of it by itself: a change that
+    // needs a click to be seen is one that gets applied, or ignored, unread.
+    effect(() => {
+      const current = this.review();
+      const waiting = this.waitingFor();
+      const dismissed = this.dismissed();
+      untracked(() => {
+        // Still waiting: keep it. Gone (applied, refused, or another file's): move on or close.
+        if (current && waiting.some((w) => w.id === current.id && w.fileId === current.fileId)) {
+          const fresh = waiting.find((w) => w.id === current.id && w.fileId === current.fileId);
+          if (fresh && (fresh.before !== current.before || fresh.after !== current.after))
+            this.review.set(fresh);
+          return;
+        }
+        const next = waiting.find((w) => !dismissed.has(`${w.id}:${w.fileId}`));
+        this.review.set(next ?? null);
+      });
     });
     // A staged change is looked for when the session is ready, and on an interval after that, for
     // the same reason the proposals panel does: it has to turn up by itself, while you are working,

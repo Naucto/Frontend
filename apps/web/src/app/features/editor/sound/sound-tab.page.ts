@@ -40,6 +40,7 @@ import {
 } from '@naucto/ui';
 import * as Y from 'yjs';
 
+import { AiProposalsComponent } from '../ai/ai-proposals.component';
 import { PANEL_WIDTH } from '../state/editor-ui.store';
 import { WorkSessionService } from '../work-session/work-session.service';
 import {
@@ -117,6 +118,7 @@ const PATTERN_MAX = 99;
     IconComponent,
     NumberFieldComponent,
     PanelColumnComponent,
+    AiProposalsComponent,
     SliderComponent,
     ToggleButtonComponent,
     TransportComponent,
@@ -422,6 +424,7 @@ const PATTERN_MAX = 99;
             ×{{ zoomLabel() }}
           </button>
         </div>
+        <nc-ai-proposals [session]="session" editor="sound" />
         @if (instrument(); as inst) {
           <nc-instrument-inspector
             [inst]="inst"

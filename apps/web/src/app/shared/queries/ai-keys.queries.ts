@@ -1,10 +1,8 @@
 import { unwrap } from '@app/core/api/api-errors';
 import {
   aiKeysControllerCreate,
-  aiKeysControllerGrant,
   aiKeysControllerList,
   aiKeysControllerRevoke,
-  aiKeysControllerUngrant,
   type AiKeySummaryDto,
 } from '@naucto/api-client';
 import {
@@ -16,10 +14,10 @@ import {
 import { qk } from './query-keys';
 
 /**
- * The account's assistant keys, and the projects each may reach.
+ * The account's assistant keys.
  *
- * A key is the credential a service holds so nobody re-authorises a client every few hours. It
- * reaches only the projects listed against it, and a revoked one is gone from here for good.
+ * A key is the credential a service holds so nobody re-authorises a client every few hours. It is
+ * the account's: it reaches every project the account owns, and a revoked one is gone for good.
  */
 export function injectAiKeys(): CreateQueryResult<AiKeySummaryDto[]> {
   return injectQuery(() => ({
@@ -38,15 +36,7 @@ export async function createAiKey(name: string, expiresInDays: number | null): P
   return created.token;
 }
 
-export async function grantAiKeyProject(keyId: string, projectId: number): Promise<void> {
-  unwrap(await aiKeysControllerGrant({ path: { keyId, projectId } }));
-}
-
-export async function ungrantAiKeyProject(keyId: string, projectId: number): Promise<void> {
-  unwrap(await aiKeysControllerUngrant({ path: { keyId, projectId } }));
-}
-
-/** Kills a key in every project it reaches. This is the call a leak is answered with. */
+/** Kills a key everywhere. This is the call a leak is answered with. */
 export async function revokeAiKey(keyId: string): Promise<void> {
   unwrap(await aiKeysControllerRevoke({ path: { keyId } }));
 }

@@ -330,8 +330,14 @@ export function changedLineHunks(before: string, after: string): { from: number;
     else j += 1;
     open.to = head + j;
   }
+  // What is left when one side runs out belongs to the open run, to the end of the new side. The
+  // walk stops as soon as either side is exhausted, so a one-line replacement stopped having passed
+  // the old line but not the new one, and came out as an empty range: nothing to choose, and the
+  // Backend — which walks the same way — refused it as "no changed lines".
   if (open || i < midA.length || j < midB.length) {
-    hunks.push(open ?? { from: head + j, to: head + midB.length });
+    const run = open ?? { from: head + j, to: head + j };
+    run.to = head + midB.length;
+    hunks.push(run);
   }
   return hunks;
 }

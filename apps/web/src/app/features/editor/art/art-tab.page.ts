@@ -40,6 +40,7 @@ import {
 } from '@naucto/ui';
 import * as Y from 'yjs';
 
+import { AiProposalsComponent } from '../ai/ai-proposals.component';
 import {
   ResourceDialog,
   type ResourceDialogData,
@@ -75,6 +76,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
     ButtonDirective,
     IconComponent,
     PanelColumnComponent,
+    AiProposalsComponent,
     SectionComponent,
     TabsComponent,
     HelpDotComponent,
@@ -331,6 +333,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
           </button>
         </div>
 
+        <nc-ai-proposals [session]="session" editor="art" />
         <nc-section banded [title]="t('editor.art.sheet')">
           <!-- The strip the design draws over the sheet map, now that there is more than one
                sheet to put on it. The sizes ride in it rather than under it: a row of their own

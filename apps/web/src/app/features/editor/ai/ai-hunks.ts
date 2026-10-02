@@ -39,8 +39,10 @@ export function chosenHunkRanges(
     const picked = chosen[file.id];
     if (!picked?.length) continue;
     for (const hunk of changedLineHunks(file.before, file.after)) {
+      // A deletion has no new lines, so its block is empty; sent as it is, it touches nothing and
+      // the server refuses it. One line wide is how the API is told "this one".
       if (picked.some((p) => p.from === hunk.from))
-        out.push({ fileId: file.id, from: hunk.from, to: hunk.to });
+        out.push({ fileId: file.id, from: hunk.from, to: Math.max(hunk.to, hunk.from + 1) });
     }
   }
   return out;

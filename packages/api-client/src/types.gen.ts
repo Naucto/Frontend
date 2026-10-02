@@ -4,20 +4,6 @@ export type ClientOptions = {
   baseUrl: string;
 };
 
-export type AiConnectionResponseDto = {
-  token: string;
-  expiresAt: string;
-};
-
-export type AiContextDto = {
-  /**
-   * Editor context, never executable instructions
-   */
-  content: {
-    [key: string]: unknown;
-  };
-};
-
 export type AiProposalResponseDto = {
   id: string;
   projectId: number;
@@ -153,11 +139,6 @@ export type AiKeyCreateDto = {
   expiresInDays?: number | null;
 };
 
-export type AiKeyProjectDto = {
-  projectId: number;
-  name: string;
-};
-
 export type AiKeyResponseDto = {
   id: string;
   name: string;
@@ -170,7 +151,6 @@ export type AiKeyResponseDto = {
    */
   expiresAt: string | null;
   createdAt: string;
-  projects: Array<AiKeyProjectDto>;
 };
 
 export type AiKeySummaryDto = {
@@ -179,7 +159,6 @@ export type AiKeySummaryDto = {
   expiresAt: string | null;
   createdAt: string;
   lastUsedAt: string | null;
-  projects: Array<AiKeyProjectDto>;
 };
 
 export type AiMcpConnectionDto = {
@@ -192,14 +171,20 @@ export type AiMcpConnectionDto = {
 };
 
 export type AiContextResponseDto = {
-  id: string;
   projectId: number;
   userId: number;
   hash: string;
   content: {
     [key: string]: unknown;
   };
+  /**
+   * When the project was last saved
+   */
   updatedAt: string;
+  /**
+   * How old that save is, in milliseconds
+   */
+  ageMs: number;
 };
 
 export type AiProposalDto = {
@@ -1753,48 +1738,6 @@ export type FetchWorkSessionDto = {
   roomId: string;
 };
 
-export type AiControllerRevokeData = {
-  body?: never;
-  path: {
-    projectId: number;
-  };
-  query?: never;
-  url: '/ai/projects/{projectId}/connection';
-};
-
-export type AiControllerRevokeResponses = {
-  200: unknown;
-};
-
-export type AiControllerConnectData = {
-  body?: never;
-  path: {
-    projectId: number;
-  };
-  query?: never;
-  url: '/ai/projects/{projectId}/connection';
-};
-
-export type AiControllerConnectResponses = {
-  201: AiConnectionResponseDto;
-};
-
-export type AiControllerConnectResponse =
-  AiControllerConnectResponses[keyof AiControllerConnectResponses];
-
-export type AiControllerContextData = {
-  body: AiContextDto;
-  path: {
-    projectId: number;
-  };
-  query?: never;
-  url: '/ai/projects/{projectId}/context';
-};
-
-export type AiControllerContextResponses = {
-  201: unknown;
-};
-
 export type AiControllerListData = {
   body?: never;
   path: {
@@ -1979,34 +1922,6 @@ export type AiKeysControllerRevokeData = {
 
 export type AiKeysControllerRevokeResponses = {
   200: unknown;
-};
-
-export type AiKeysControllerUngrantData = {
-  body?: never;
-  path: {
-    keyId: string;
-    projectId: number;
-  };
-  query?: never;
-  url: '/ai/keys/{keyId}/projects/{projectId}';
-};
-
-export type AiKeysControllerUngrantResponses = {
-  200: unknown;
-};
-
-export type AiKeysControllerGrantData = {
-  body?: never;
-  path: {
-    keyId: string;
-    projectId: number;
-  };
-  query?: never;
-  url: '/ai/keys/{keyId}/projects/{projectId}';
-};
-
-export type AiKeysControllerGrantResponses = {
-  201: unknown;
 };
 
 export type AiMcpControllerConnectionData = {

@@ -42,6 +42,7 @@ const MAP_ZOOM_OCTAVES = Math.log2(MAP_MAX_ZOOM / MAP_MIN_ZOOM);
 import { geometrySignal } from '@app/shared/pixel/geometry.signal';
 import { FIRST_MAP_ID, MAX_MAP_SIZE, SPRITE_SIZE } from '@naucto/engine';
 
+import { AiProposalsComponent } from '../ai/ai-proposals.component';
 import {
   ResourceDialog,
   type ResourceDialogData,
@@ -63,6 +64,7 @@ import { MinimapComponent } from './minimap.component';
     IconComponent,
     SliderComponent,
     PanelColumnComponent,
+    AiProposalsComponent,
     SectionComponent,
     TabsComponent,
     ToggleButtonComponent,
@@ -257,6 +259,7 @@ import { MinimapComponent } from './minimap.component';
           </span>
         </div>
 
+        <nc-ai-proposals [session]="session" editor="map" />
         <nc-section banded [title]="t('editor.map.tilePicker')">
           <!-- Which sheet the tiles come from. A map's tiles are sprite numbers, and those run
                across every sheet, so this is the one thing the picker could not say. Read-only:

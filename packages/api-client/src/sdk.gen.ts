@@ -23,10 +23,6 @@ import type {
   AiControllerApplyResponses,
   AiControllerCancelJobData,
   AiControllerCancelJobResponses,
-  AiControllerConnectData,
-  AiControllerConnectResponses,
-  AiControllerContextData,
-  AiControllerContextResponses,
   AiControllerDeclareData,
   AiControllerDeclareResponses,
   AiControllerListData,
@@ -41,18 +37,12 @@ import type {
   AiControllerRevertResponses,
   AiControllerReviewData,
   AiControllerReviewResponses,
-  AiControllerRevokeData,
-  AiControllerRevokeResponses,
   AiKeysControllerCreateData,
   AiKeysControllerCreateResponses,
-  AiKeysControllerGrantData,
-  AiKeysControllerGrantResponses,
   AiKeysControllerListData,
   AiKeysControllerListResponses,
   AiKeysControllerRevokeData,
   AiKeysControllerRevokeResponses,
-  AiKeysControllerUngrantData,
-  AiKeysControllerUngrantResponses,
   AiMcpControllerCancelJobData,
   AiMcpControllerCancelJobResponses,
   AiMcpControllerClaimJobData,
@@ -359,46 +349,6 @@ export type Options<
 };
 
 /**
- * Revoke this user's AI connection and shared context
- */
-export const aiControllerRevoke = <ThrowOnError extends boolean = false>(
-  options: Options<AiControllerRevokeData, ThrowOnError>,
-): RequestResult<AiControllerRevokeResponses, unknown, ThrowOnError> =>
-  (options.client ?? client).delete<AiControllerRevokeResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/ai/projects/{projectId}/connection',
-    ...options,
-  });
-
-/**
- * Create a project-scoped proposal-only AI credential
- */
-export const aiControllerConnect = <ThrowOnError extends boolean = false>(
-  options: Options<AiControllerConnectData, ThrowOnError>,
-): RequestResult<AiControllerConnectResponses, unknown, ThrowOnError> =>
-  (options.client ?? client).post<AiControllerConnectResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/ai/projects/{projectId}/connection',
-    ...options,
-  });
-
-/**
- * Share current editor context with the user's AI connection
- */
-export const aiControllerContext = <ThrowOnError extends boolean = false>(
-  options: Options<AiControllerContextData, ThrowOnError>,
-): RequestResult<AiControllerContextResponses, unknown, ThrowOnError> =>
-  (options.client ?? client).post<AiControllerContextResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/ai/projects/{projectId}/context',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
  * List project AI proposals
  */
 export const aiControllerList = <ThrowOnError extends boolean = false>(
@@ -563,30 +513,6 @@ export const aiKeysControllerRevoke = <ThrowOnError extends boolean = false>(
   });
 
 /**
- * Stop a key reaching a project, keeping the key itself
- */
-export const aiKeysControllerUngrant = <ThrowOnError extends boolean = false>(
-  options: Options<AiKeysControllerUngrantData, ThrowOnError>,
-): RequestResult<AiKeysControllerUngrantResponses, unknown, ThrowOnError> =>
-  (options.client ?? client).delete<AiKeysControllerUngrantResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/ai/keys/{keyId}/projects/{projectId}',
-    ...options,
-  });
-
-/**
- * Let a key reach one more project
- */
-export const aiKeysControllerGrant = <ThrowOnError extends boolean = false>(
-  options: Options<AiKeysControllerGrantData, ThrowOnError>,
-): RequestResult<AiKeysControllerGrantResponses, unknown, ThrowOnError> =>
-  (options.client ?? client).post<AiKeysControllerGrantResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/ai/keys/{keyId}/projects/{projectId}',
-    ...options,
-  });
-
-/**
  * Validate a scoped AI connection
  */
 export const aiMcpControllerConnection = <ThrowOnError extends boolean = false>(
@@ -609,7 +535,7 @@ export const aiMcpControllerProjects = <ThrowOnError extends boolean = false>(
   });
 
 /**
- * Read the project's last shared state and how old it is
+ * Read the project as last saved, and how old that save is
  */
 export const aiMcpControllerContext = <ThrowOnError extends boolean = false>(
   options: Options<AiMcpControllerContextData, ThrowOnError>,

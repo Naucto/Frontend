@@ -1,42 +1,49 @@
-import { lineDiff } from '@naucto/engine';
 import { describe, expect, it } from 'vitest';
 
-import { chosenRanges, reviewableRows } from './ai-code-review.component';
+import { blockAnchorLine, chosenBlockRanges, reviewBlocks } from './ai-code-review.component';
 
-describe('reviewable rows', () => {
-  it('offers every changed line and nothing that did not change', () => {
-    const rows = lineDiff('a\nb\nc\nd\n', 'A\nb\nc\nD\n');
-    const offered = reviewableRows(rows);
-    expect(offered.map((e) => e.row.kind)).toEqual(['changed', 'changed']);
-    // And it keeps the index, so a choice names the row and not a position in the offered list.
-    expect(offered.map((e) => e.index)).toEqual([0, 3]);
+const before = ['one', 'A', 'two', 'three', 'gone', 'four'].join('\n');
+const after = ['one', 'A2', 'two', 'three', 'four', 'new'].join('\n');
+
+describe('reviewBlocks', () => {
+  it('offers one block per separate edit, as lines of the new text from zero', () => {
+    // A replaced line, a deleted line, and an added one at the end.
+    expect(reviewBlocks(before, after)).toEqual([
+      { from: 1, to: 2 },
+      { from: 4, to: 4 },
+      { from: 5, to: 6 },
+    ]);
   });
 });
 
-describe('chosen ranges', () => {
-  it('is a range per chosen line, 1-based in the new file', () => {
-    const rows = lineDiff('a\nb\nc\n', 'A\nb\nC\n');
-    expect(chosenRanges(new Set([0]), rows)).toEqual([{ from: 1, to: 1 }]);
-    expect(chosenRanges(new Set([0, 2]), rows)).toEqual([
-      { from: 1, to: 1 },
-      { from: 3, to: 3 },
+describe('chosenBlockRanges', () => {
+  const blocks = reviewBlocks(before, after);
+
+  it('sends the chosen blocks as the API takes them: from zero, end exclusive', () => {
+    // The old review sent 1-based inclusive lines, which the API reads as the line below — or, for
+    // a single line, as nothing at all.
+    expect(chosenBlockRanges(new Set([0, 2]), blocks)).toEqual([
+      { from: 1, to: 2 },
+      { from: 5, to: 6 },
     ]);
   });
 
-  it('merges chosen lines that sit next to each other', () => {
-    // Two adjacent additions are one thing to accept, and sending them as one range means the server
-    // narrows to a single contiguous run rather than stitching two separate ones.
-    const rows = lineDiff('a\n', 'a\nb\nc\n');
-    expect(chosenRanges(new Set([1, 2]), rows)).toEqual([{ from: 2, to: 3 }]);
+  it('sends a deletion one line wide, so the server can tell which one it is', () => {
+    expect(chosenBlockRanges(new Set([1]), blocks)).toEqual([{ from: 4, to: 5 }]);
   });
 
-  it('is empty when nothing is chosen, which means the whole file is applied', () => {
-    const rows = lineDiff('a\n', 'A\n');
-    expect(chosenRanges(new Set(), rows)).toEqual([]);
+  it('sends nothing for nothing chosen', () => {
+    expect(chosenBlockRanges(new Set(), blocks)).toEqual([]);
+  });
+});
+
+describe('blockAnchorLine', () => {
+  it("puts a block's toggle on its first new line", () => {
+    expect(blockAnchorLine({ from: 1, to: 2 }, 6)).toBe(2);
   });
 
-  it('never offers a deleted line, since there is nothing to take from it', () => {
-    const rows = lineDiff('a\nb\n', 'a\n');
-    expect(chosenRanges(new Set([1]), rows)).toEqual([]);
+  it('puts a deletion on the line that now follows it, or the last line at the end of the file', () => {
+    expect(blockAnchorLine({ from: 4, to: 4 }, 6)).toBe(5);
+    expect(blockAnchorLine({ from: 6, to: 6 }, 6)).toBe(6);
   });
 });

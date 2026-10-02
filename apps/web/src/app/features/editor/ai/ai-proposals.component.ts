@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   effect,
   inject,
@@ -28,12 +29,13 @@ import {
   SoundEngine,
   WebAudioBackend,
 } from '@naucto/engine';
-import { ButtonDirective, NoticeComponent, ToastService } from '@naucto/ui';
+import { ButtonDirective, NoticeComponent, SectionComponent, ToastService } from '@naucto/ui';
 
 import type { WorkSessionService } from '../work-session/work-session.service';
 import type { ChosenHunks, LineRange } from './ai-hunks';
 import { chosenHunkRanges } from './ai-hunks';
 import { renderResource } from './ai-preview';
+import { type AiEditor, proposalsFor } from './ai-review';
 
 interface Image {
   id: string;
@@ -112,213 +114,224 @@ export function changedTiles(
   return changed;
 }
 
-/** Proposal review: every preview is the backend's own result for the current editor state. */
+/**
+ * Proposal review for one editor: every preview is the backend's own result for the current editor
+ * state, and applying is what accepts it.
+ */
 @Component({
   selector: 'nc-ai-proposals',
-  imports: [TranslocoDirective, ButtonDirective, NoticeComponent],
+  imports: [TranslocoDirective, ButtonDirective, NoticeComponent, SectionComponent],
   template: `
     <div *transloco="let t">
-      <div class="mb-1 flex gap-1">
-        <button ncButton variant="ghost" size="sm" [disabled]="busy()" (click)="refresh()">
-          {{ t('ai.refreshProposals') }}
-        </button>
-      </div>
-      @if (error()) {
-        <nc-notice tone="danger" role="alert">{{ error() }}</nc-notice>
-      }
-      @for (proposal of proposals(); track proposal.id) {
-        <article class="border-t border-line py-1.5" [attr.data-proposal]="proposal.id">
-          <h3 class="text-ui text-ink">{{ proposal.title }}</h3>
-          <p class="text-meta text-ink-2">{{ proposal.summary }}</p>
-          <p class="label">{{ t('ai.status.' + proposal.status) }}</p>
-          <div class="mt-0.5 flex flex-wrap gap-1">
-            @if (proposal.status === 'PENDING') {
-              <button
-                ncButton
-                variant="secondary"
-                size="sm"
-                [disabled]="busy()"
-                (click)="preview(proposal)"
-              >
-                {{ t('ai.preview') }}
-              </button>
-              @if (selectedId() === proposal.id) {
-                <button
-                  ncButton
-                  variant="primary"
-                  size="sm"
-                  [disabled]="busy()"
-                  (click)="apply(proposal)"
-                >
-                  {{ t('ai.approveApply') }}
-                </button>
-              }
-              <button
-                ncButton
-                variant="ghost"
-                size="sm"
-                [disabled]="busy()"
-                (click)="reject(proposal)"
-              >
-                {{ t('ai.reject') }}
-              </button>
-            }
-            @if (proposal.status === 'APPLIED' && proposal.inverse) {
-              <button
-                ncButton
-                variant="secondary"
-                size="sm"
-                [disabled]="busy()"
-                (click)="revert(proposal)"
-              >
-                {{ t('ai.revert') }}
-              </button>
-            }
-            @if (selectedId() === proposal.id && hasSound(proposal)) {
-              <button
-                ncButton
-                variant="secondary"
-                size="sm"
-                [disabled]="busy()"
-                (click)="audition(proposal)"
-              >
-                {{ t('ai.audition') }}
-              </button>
-              <button ncButton variant="ghost" size="sm" (click)="stopAudition()">
-                {{ t('ai.stopSound') }}
-              </button>
-            }
+      @if (shown().length) {
+        <!-- Nothing at all when there is nothing for this editor: an empty "assistant" box in every tab
+           is noise, and the change turns up here by itself when one is staged. -->
+        <nc-section banded [title]="t('ai.review.section', { count: shown().length })">
+          <div class="mb-1 flex gap-1">
+            <button ncButton variant="ghost" size="sm" [disabled]="busy()" (click)="refresh()">
+              {{ t('ai.refreshProposals') }}
+            </button>
           </div>
-          @if (selectedId() === proposal.id && diff(); as d) {
-            <div class="mt-1 border border-line p-1" data-testid="ai-preview">
-              @if (images().length) {
-                <button
-                  ncButton
-                  variant="ghost"
-                  size="sm"
-                  class="mb-0.5"
-                  [attr.aria-pressed]="overlay()"
-                  (click)="overlay.set(!overlay())"
-                >
-                  {{ overlay() ? t('ai.sideBySide') : t('ai.overlay') }}
-                </button>
-              }
-              @for (image of images(); track image.id) {
-                <p class="label">{{ image.label }}</p>
-                @if (overlay() && image.before && image.after) {
-                  <!-- The old version underneath, so a pixel that moved shows rather than having to
+          @if (error()) {
+            <nc-notice tone="danger" role="alert">{{ error() }}</nc-notice>
+          }
+          @for (proposal of shown(); track proposal.id) {
+            <article class="border-t border-line py-1.5" [attr.data-proposal]="proposal.id">
+              <h3 class="text-ui text-ink">{{ proposal.title }}</h3>
+              <p class="text-meta text-ink-2">{{ proposal.summary }}</p>
+              <p class="label">{{ t('ai.status.' + proposal.status) }}</p>
+              <div class="mt-0.5 flex flex-wrap gap-1">
+                @if (proposal.status === 'PENDING') {
+                  <button
+                    ncButton
+                    variant="secondary"
+                    size="sm"
+                    [disabled]="busy()"
+                    (click)="preview(proposal)"
+                  >
+                    {{ t('ai.preview') }}
+                  </button>
+                  @if (selectedId() === proposal.id) {
+                    <button
+                      ncButton
+                      variant="primary"
+                      size="sm"
+                      [disabled]="busy()"
+                      (click)="apply(proposal)"
+                    >
+                      {{ t('ai.approveApply') }}
+                    </button>
+                  }
+                  <button
+                    ncButton
+                    variant="ghost"
+                    size="sm"
+                    [disabled]="busy()"
+                    (click)="reject(proposal)"
+                  >
+                    {{ t('ai.reject') }}
+                  </button>
+                }
+                @if (proposal.status === 'APPLIED' && proposal.inverse) {
+                  <button
+                    ncButton
+                    variant="secondary"
+                    size="sm"
+                    [disabled]="busy()"
+                    (click)="revert(proposal)"
+                  >
+                    {{ t('ai.revert') }}
+                  </button>
+                }
+                @if (selectedId() === proposal.id && hasSound(proposal)) {
+                  <button
+                    ncButton
+                    variant="secondary"
+                    size="sm"
+                    [disabled]="busy()"
+                    (click)="audition(proposal)"
+                  >
+                    {{ t('ai.audition') }}
+                  </button>
+                  <button ncButton variant="ghost" size="sm" (click)="stopAudition()">
+                    {{ t('ai.stopSound') }}
+                  </button>
+                }
+              </div>
+              @if (selectedId() === proposal.id && diff(); as d) {
+                <div class="mt-1 border border-line p-1" data-testid="ai-preview">
+                  @if (images().length) {
+                    <button
+                      ncButton
+                      variant="ghost"
+                      size="sm"
+                      class="mb-0.5"
+                      [attr.aria-pressed]="overlay()"
+                      (click)="overlay.set(!overlay())"
+                    >
+                      {{ overlay() ? t('ai.sideBySide') : t('ai.overlay') }}
+                    </button>
+                  }
+                  @for (image of images(); track image.id) {
+                    <p class="label">{{ image.label }}</p>
+                    @if (overlay() && image.before && image.after) {
+                      <!-- The old version underneath, so a pixel that moved shows rather than having to
                        be spotted by comparing two thumbnails. -->
-                  <div class="relative">
-                    <img
-                      [src]="image.before"
-                      [alt]="t('ai.before')"
-                      class="nc-ghost w-full [image-rendering:pixelated]"
-                    />
-                    <img
-                      [src]="image.after"
-                      [alt]="t('ai.after')"
-                      class="absolute inset-0 w-full [image-rendering:pixelated]"
-                    />
-                    @if (image.changedCells?.length) {
-                      <div class="nc-ghost-cells absolute inset-0">
-                        @for (cell of image.changedCells; track cell.x + ':' + cell.y) {
-                          <span
-                            class="nc-ghost-cell absolute"
-                            [style.left.%]="box(image, cell).left"
-                            [style.top.%]="box(image, cell).top"
-                            [style.width.%]="box(image, cell).width"
-                            [style.height.%]="box(image, cell).height"
-                          ></span>
-                        }
-                      </div>
-                    }
-                  </div>
-                } @else {
-                  <div class="grid grid-cols-2 gap-1">
-                    <figure>
-                      <figcaption class="text-meta text-ink-3">{{ t('ai.before') }}</figcaption>
-                      @if (image.before) {
+                      <div class="relative">
                         <img
                           [src]="image.before"
                           [alt]="t('ai.before')"
-                          class="w-full [image-rendering:pixelated]"
+                          class="nc-ghost w-full [image-rendering:pixelated]"
                         />
-                      } @else {
-                        <p class="text-meta">{{ t('ai.absent') }}</p>
-                      }
-                    </figure>
-                    <figure>
-                      <figcaption class="text-meta text-ink-3">{{ t('ai.after') }}</figcaption>
-                      @if (image.after) {
                         <img
                           [src]="image.after"
                           [alt]="t('ai.after')"
-                          class="w-full [image-rendering:pixelated]"
+                          class="absolute inset-0 w-full [image-rendering:pixelated]"
                         />
-                      } @else {
-                        <p class="text-meta">{{ t('ai.absent') }}</p>
-                      }
-                    </figure>
-                  </div>
-                }
-              }
-              @for (change of d.code; track change.id) {
-                <p class="label">{{ t('ai.codeFile', { name: change.name }) }}</p>
-                @if (hunksOf(change).length > 1) {
-                  <!-- Only worth offering when the change made more than one edit: with a single
+                        @if (image.changedCells?.length) {
+                          <div class="nc-ghost-cells absolute inset-0">
+                            @for (cell of image.changedCells; track cell.x + ':' + cell.y) {
+                              <span
+                                class="nc-ghost-cell absolute"
+                                [style.left.%]="box(image, cell).left"
+                                [style.top.%]="box(image, cell).top"
+                                [style.width.%]="box(image, cell).width"
+                                [style.height.%]="box(image, cell).height"
+                              ></span>
+                            }
+                          </div>
+                        }
+                      </div>
+                    } @else {
+                      <div class="grid grid-cols-2 gap-1">
+                        <figure>
+                          <figcaption class="text-meta text-ink-3">{{ t('ai.before') }}</figcaption>
+                          @if (image.before) {
+                            <img
+                              [src]="image.before"
+                              [alt]="t('ai.before')"
+                              class="w-full [image-rendering:pixelated]"
+                            />
+                          } @else {
+                            <p class="text-meta">{{ t('ai.absent') }}</p>
+                          }
+                        </figure>
+                        <figure>
+                          <figcaption class="text-meta text-ink-3">{{ t('ai.after') }}</figcaption>
+                          @if (image.after) {
+                            <img
+                              [src]="image.after"
+                              [alt]="t('ai.after')"
+                              class="w-full [image-rendering:pixelated]"
+                            />
+                          } @else {
+                            <p class="text-meta">{{ t('ai.absent') }}</p>
+                          }
+                        </figure>
+                      </div>
+                    }
+                  }
+                  @for (change of d.code; track change.id) {
+                    <p class="label">{{ t('ai.codeFile', { name: change.name }) }}</p>
+                    @if (hunksOf(change).length > 1) {
+                      <!-- Only worth offering when the change made more than one edit: with a single
                        edit there is nothing to choose between, and a toggle that can only be on would
                        be a control that does nothing. -->
-                  <p class="text-meta text-ink-3">{{ t('ai.codeHunksHint') }}</p>
-                  <div class="mb-0.5 flex flex-wrap gap-1">
-                    @for (hunk of hunksOf(change); track hunk.from) {
-                      <button
-                        ncButton
-                        variant="ghost"
-                        size="sm"
-                        [attr.aria-pressed]="hunkChosen(change.id, hunk.from)"
-                        [attr.data-hunk]="hunk.from + ':' + hunk.to"
-                        (click)="toggleHunk(change.id, hunk)"
-                      >
-                        {{ t('ai.codeHunk', { from: hunk.from + 1, to: hunk.to }) }}
-                      </button>
+                      <p class="text-meta text-ink-3">{{ t('ai.codeHunksHint') }}</p>
+                      <div class="mb-0.5 flex flex-wrap gap-1">
+                        @for (hunk of hunksOf(change); track hunk.from) {
+                          <button
+                            ncButton
+                            variant="ghost"
+                            size="sm"
+                            [attr.aria-pressed]="hunkChosen(change.id, hunk.from)"
+                            [attr.data-hunk]="hunk.from + ':' + hunk.to"
+                            (click)="toggleHunk(change.id, hunk)"
+                          >
+                            {{ t('ai.codeHunk', { from: hunk.from + 1, to: hunk.to }) }}
+                          </button>
+                        }
+                      </div>
                     }
-                  </div>
-                }
-                <div class="grid grid-cols-2 gap-1">
-                  <pre class="max-h-64 overflow-auto border border-line p-1 text-meta">{{
-                    change.before
-                  }}</pre>
-                  <pre class="max-h-64 overflow-auto border border-line p-1 text-meta">{{
-                    change.after
-                  }}</pre>
+                    <div class="grid grid-cols-2 gap-1">
+                      <pre class="max-h-64 overflow-auto border border-line p-1 text-meta">{{
+                        change.before
+                      }}</pre>
+                      <pre class="max-h-64 overflow-auto border border-line p-1 text-meta">{{
+                        change.after
+                      }}</pre>
+                    </div>
+                  }
+                  @if (widened(d).length) {
+                    <nc-notice tone="warn" role="alert">
+                      <p class="text-body">
+                        {{ t('ai.keys.widened', { count: widened(d).length }) }}
+                      </p>
+                      <ul class="mt-0.5 ml-3 list-disc">
+                        @for (path of widened(d); track path) {
+                          <li class="text-meta">{{ path }}</li>
+                        }
+                      </ul>
+                    </nc-notice>
+                  }
+                  @for (change of listed(d); track change.key) {
+                    <p class="label">{{ change.key }}</p>
+                    <div class="grid grid-cols-2 gap-1">
+                      <pre class="max-h-40 overflow-auto border border-line p-1 text-meta">{{
+                        change.before || '—'
+                      }}</pre>
+                      <pre class="max-h-40 overflow-auto border border-line p-1 text-meta">{{
+                        change.after || '—'
+                      }}</pre>
+                    </div>
+                  }
                 </div>
               }
-              @if (widened(d).length) {
-                <nc-notice tone="warn" role="alert">
-                  <p class="text-body">{{ t('ai.keys.widened', { count: widened(d).length }) }}</p>
-                  <ul class="mt-0.5 ml-3 list-disc">
-                    @for (path of widened(d); track path) {
-                      <li class="text-meta">{{ path }}</li>
-                    }
-                  </ul>
-                </nc-notice>
-              }
-              @for (change of listed(d); track change.key) {
-                <p class="label">{{ change.key }}</p>
-                <div class="grid grid-cols-2 gap-1">
-                  <pre class="max-h-40 overflow-auto border border-line p-1 text-meta">{{
-                    change.before || '—'
-                  }}</pre>
-                  <pre class="max-h-40 overflow-auto border border-line p-1 text-meta">{{
-                    change.after || '—'
-                  }}</pre>
-                </div>
-              }
-            </div>
+            </article>
           }
-        </article>
-      } @empty {
-        <p class="text-meta text-ink-3">{{ t('ai.empty') }}</p>
+        </nc-section>
+      } @else if (error()) {
+        <nc-notice tone="danger" role="alert">{{ error() }}</nc-notice>
       }
     </div>
   `,
@@ -326,7 +339,10 @@ export function changedTiles(
 })
 export class AiProposalsComponent {
   readonly session = input.required<WorkSessionService>();
+  /** The editor this list sits in; it shows only what has something to show there. */
+  readonly editor = input.required<AiEditor>();
   protected readonly proposals = signal<AiProposalResponseDto[]>([]);
+  protected readonly shown = computed(() => proposalsFor(this.proposals(), this.editor()));
   protected readonly selectedId = signal('');
   protected readonly diff = signal<AiDiff | null>(null);
   /**

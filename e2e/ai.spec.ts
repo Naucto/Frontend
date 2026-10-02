@@ -20,7 +20,6 @@ function mainText(doc: Y.Doc): Y.Text | null {
 
 class AiBackend {
   proposals: Record<string, unknown>[] = [];
-  contexts: Record<string, unknown>[] = [];
   applies = 0;
   /** How an apply transforms the caller's own document; returns false to refuse. */
   commit: (doc: Y.Doc) => boolean = () => true;
@@ -32,11 +31,6 @@ class AiBackend {
       const url = new URL(route.request().url());
       const path = url.pathname.replace(/^.*\/ai\/projects\/7\//, '');
       const body = (route.request().postDataJSON() ?? {}) as Record<string, unknown>;
-      if (path === 'connection') return json(route, { token: 'naucto_ai_test', expiresAt: '' });
-      if (path === 'context') {
-        this.contexts.push(body.content as Record<string, unknown>);
-        return json(route, { hash: 'a'.repeat(64) });
-      }
       if (path === 'proposals') return json(route, this.proposals);
       if (path === 'jobs') return json(route, []);
       if (path === 'provenance')
@@ -103,56 +97,59 @@ async function openEditor(page: Page, ai: AiBackend): Promise<void> {
   await expect(page.locator('nc-code-editor')).toBeVisible();
 }
 
-/** The assistant's settings, which live in the game's own configuration rather than a modal. */
-async function openAssistant(page: Page): Promise<void> {
-  await page.goto('/edit/7/game');
-  await expect(page.locator('nc-assistant-section')).toBeVisible();
+/** A proposal of one code file, as the Backend stores it: the whole file before and after. */
+function codeProposal(
+  id: string,
+  title: string,
+  before: string,
+  after: string,
+): Record<string, unknown> {
+  return {
+    id,
+    title,
+    summary: title,
+    contentHash: 'b'.repeat(64),
+    status: 'PENDING',
+    operations: [{ kind: 'code', fileId: 'main', before, after }],
+    inverse: null,
+  };
 }
 
+const replaceMain =
+  (after: string) =>
+  (doc: Y.Doc): boolean => {
+    const text = mainText(doc);
+    if (!text) return false;
+    text.delete(0, text.length);
+    text.insert(0, after);
+    return true;
+  };
+
 test.describe('AI assistance', () => {
-  test('a code proposal is previewed from the server result, applied, and lands', async ({
+  test('a staged code change appears beside the editor, is accepted, and lands', async ({
     page,
   }) => {
     const ai = new AiBackend();
     const after = 'function _draw() gfx.cls(2) end';
-    ai.commit = (doc) => {
-      const text = mainText(doc);
-      if (!text) return false;
-      text.delete(0, text.length);
-      text.insert(0, after);
-      return true;
-    };
-    ai.proposals = [
-      {
-        id: 'proposal',
-        title: 'New background',
-        summary: 'Change the background',
-        contentHash: 'b'.repeat(64),
-        status: 'PENDING',
-        operations: [{ kind: 'code' }],
-        inverse: null,
-      },
-    ];
+    ai.commit = replaceMain(after);
+    ai.proposals = [codeProposal('proposal', 'New background', 'old', after)];
     await openEditor(page, ai);
-    await openAssistant(page);
-    await page.getByRole('button', { name: 'Share this project' }).click();
-    await expect(page.getByText('naucto_ai_test', { exact: true })).toBeVisible();
-    // Polled, not read once: the token appearing on screen does not mean the share it triggers has
-    // reached the server yet, and a single read is a race rather than an assertion.
-    await expect.poll(() => ai.contexts.length, { timeout: 10000 }).toBe(1);
-    // Applying is offered only after the preview.
-    await expect(page.getByRole('button', { name: 'Accept change' })).toHaveCount(0);
-    await page.getByRole('button', { name: 'Inspect changes' }).click();
-    await expect(page.getByTestId('ai-preview')).toContainText('Code: main');
-    await expect(page.getByTestId('ai-preview')).toContainText(after);
-    await page.getByRole('button', { name: 'Accept change' }).click();
+
+    // At the right of the editor by itself, with nobody having gone looking for it, and the file
+    // being worked on still where it was.
+    const pane = page.getByTestId('ai-review-pane');
+    await expect(pane).toBeVisible();
+    await expect(pane).toContainText(after);
+    await expect(page.locator('nc-code-editor')).toBeVisible();
+    // What goes is struck through in red and what replaces it is green.
+    await expect(pane.locator('.cm-deletedChunk').first()).toBeVisible();
+    await expect(pane.locator('.cm-changedLine').first()).toBeVisible();
+
+    await page.getByRole('button', { name: 'Accept all' }).click();
     await expect.poll(() => ai.applies, { timeout: 10000 }).toBe(1);
-    // The change landed in the document behind the tab that was already open, and the editor
-    // never left it: no pause, no unmount, nothing to close and reopen.
-    await expect(page.locator('nc-assistant-section')).toBeVisible();
-    await expect(page.getByText(/^Applied:/)).toBeVisible();
-    await page.getByRole('button', { name: 'Code', exact: true }).click();
-    await expect(page.locator('.cm-content')).toContainText(after);
+    // The change landed in the document behind the editor that was already open.
+    await expect(page.locator('nc-code-editor .cm-content')).toContainText(after);
+    await expect(pane).toHaveCount(0);
   });
 
   test('a change that edits a file in two places can be taken one part at a time', async ({
@@ -161,90 +158,42 @@ test.describe('AI assistance', () => {
     // A `code` operation carries the whole file, so accepting one accepted all of it. Somebody who
     // wanted one of the assistant's two edits had no way to say so.
     const ai = new AiBackend();
-    // Two edits at opposite ends of the file, with the middle left alone: a change with one hunk
-    // has nothing to choose between, and the review only offers the toggles when there is a choice.
+    const before = ['local a = 1', 'local m = 0', 'local n = 0', 'local b = 2'].join('\n');
     const expected = { first: 'local a = 9', second: 'local b = 8' };
-    ai.commit = (doc) => {
-      const text = mainText(doc);
-      if (!text) return false;
-      const lines = text.toString().split('\n');
-      if (lines.length < 4) return false;
-      lines[0] = expected.first;
-      lines[lines.length - 1] = expected.second;
-      text.delete(0, text.length);
-      text.insert(0, lines.join('\n'));
-      return true;
-    };
-    ai.proposals = [
-      {
-        id: 'proposal',
-        title: 'Two edits',
-        summary: 'Change two locals',
-        contentHash: 'b'.repeat(64),
-        status: 'PENDING',
-        operations: [{ kind: 'code' }],
-        inverse: null,
-      },
-    ];
+    const after = [expected.first, 'local m = 0', 'local n = 0', expected.second].join('\n');
+    ai.commit = replaceMain(after);
+    ai.proposals = [codeProposal('proposal', 'Two edits', before, after)];
     await openEditor(page, ai);
-    await openAssistant(page);
-    await page.getByRole('button', { name: 'Share this project' }).click();
-    await expect.poll(() => ai.contexts.length, { timeout: 10000 }).toBe(1);
-    await page.getByRole('button', { name: 'Inspect changes' }).click();
 
-    // Two separate edits, so there is something to choose between: the hunk toggles only appear
-    // when there is more than one.
-    const hunk = page.locator('[data-hunk]').first();
-    await expect(page.locator('[data-hunk]')).toHaveCount(2);
-    await hunk.click();
+    // Two separate edits, so there is something to choose between: leave the second one out.
+    const pane = page.getByTestId('ai-review-pane');
+    // (The gutter also holds a hidden spacer, block -1, that only reserves its width.)
+    await expect(pane.locator('[data-block]:not([data-block="-1"])')).toHaveCount(2);
+    await pane.locator('[data-block="1"]').click();
     // Only the chosen range is sent, so only that part is applied.
-    await page.getByRole('button', { name: 'Accept change' }).click();
+    await page.getByRole('button', { name: 'Accept chosen (1)' }).click();
     await expect.poll(() => ai.applies, { timeout: 10000 }).toBe(1);
-    await expect(page.getByText(/^Applied:/)).toBeVisible();
 
     // The part taken is in the document; the part not taken is not.
-    await page.getByRole('button', { name: 'Code', exact: true }).click();
-    const applied = await page.locator('.cm-content').innerText();
+    const applied = await page.locator('nc-code-editor .cm-content').innerText();
     expect(applied).toContain(expected.first);
     expect(applied).not.toContain(expected.second);
   });
 
-  test('a change with no hunks chosen applies whole', async ({ page }) => {
-    // The review offers a range for every file it shows. A file nobody picked anything in used to
-    // arrive as a selection covering all of it, which the server read as "narrow to this range",
-    // found no changed lines in a range containing every one of them, and refused the apply — so
-    // accepting a change without picking through it did not work at all.
+  test('refusing a staged change removes it without touching the document', async ({ page }) => {
     const ai = new AiBackend();
-    const after = 'function _draw() gfx.cls(2) end';
-    ai.commit = (doc) => {
-      const text = mainText(doc);
-      if (!text) return false;
-      text.delete(0, text.length);
-      text.insert(0, after);
-      return true;
-    };
-    ai.proposals = [
-      {
-        id: 'proposal',
-        title: 'No hunks chosen',
-        summary: 'Applied without picking through it',
-        contentHash: 'b'.repeat(64),
-        status: 'PENDING',
-        operations: [{ kind: 'code' }],
-        inverse: null,
-      },
-    ];
+    ai.proposals = [codeProposal('proposal', 'Unwanted', 'old', 'new')];
+    await page.route('**/ai/projects/7/proposals/proposal/review', (route) => {
+      ai.proposals[0].status = 'REJECTED';
+      return route.fulfill({ contentType: 'application/json', body: '{"reviewed":true}' });
+    });
     await openEditor(page, ai);
-    await openAssistant(page);
-    await page.getByRole('button', { name: 'Share this project' }).click();
-    await expect.poll(() => ai.contexts.length, { timeout: 10000 }).toBe(1);
-    await page.getByRole('button', { name: 'Inspect changes' }).click();
-    // A single edit, so there is nothing to pick between and no toggles appear.
-    await expect(page.locator('[data-hunk]')).toHaveCount(0);
-    await page.getByRole('button', { name: 'Accept change' }).click();
-    await expect.poll(() => ai.applies, { timeout: 10000 }).toBe(1);
-    await page.getByRole('button', { name: 'Code', exact: true }).click();
-    await expect(page.locator('.cm-content')).toContainText(after);
+    await expect(page.locator('nc-code-editor .cm-content')).not.toBeEmpty();
+    const before = await page.locator('nc-code-editor .cm-content').innerText();
+    await page.getByRole('button', { name: 'Refuse' }).click();
+    await expect(page.getByTestId('ai-review-pane')).toHaveCount(0);
+    expect(ai.applies).toBe(0);
+    expect(await page.locator('nc-code-editor .cm-content').innerText()).toBe(before);
   });
 
   test('accepting a change never interrupts the editor, with another tab open', async ({
@@ -252,53 +201,28 @@ test.describe('AI assistance', () => {
     context,
   }) => {
     const ai = new AiBackend();
-    ai.commit = (doc) => {
-      const text = mainText(doc);
-      if (!text) return false;
-      text.delete(0, text.length);
-      text.insert(0, '-- accepted while both editors were open');
-      return true;
-    };
-    ai.proposals = [
-      {
-        id: 'proposal',
-        title: 'Pending change',
-        summary: 'Something to accept',
-        contentHash: 'b'.repeat(64),
-        status: 'PENDING',
-        operations: [{ kind: 'code' }],
-        inverse: null,
-      },
-    ];
+    const after = '-- accepted while both editors were open';
+    ai.commit = replaceMain(after);
+    ai.proposals = [codeProposal('proposal', 'Pending change', 'old', after)];
     const peer = await context.newPage();
     await openEditor(page, ai);
     await openEditor(peer, ai);
-    await openAssistant(page);
+    await expect(page.getByTestId('ai-review-pane')).toBeVisible();
     // Mark the nodes that have to survive, "never interrupted" being a claim about them still being
-    // the same ones rather than about which elements are on screen. The routed tab is the one that
-    // matters: a teardown of the workspace leaves the shell, the rail and the panel region in place
-    // and puts an identical set of elements back, so probing only the chrome would pass while the
-    // editor underneath was rebuilt. Typed text cannot be the probe either — a `code` change
-    // replaces the whole file, so what was typed is meant to be gone.
-    const PROBED = ['nc-editor-shell', 'nc-rail', 'nc-panel-region', 'nc-assistant-section'];
+    // the same ones rather than about which elements are on screen. The editor itself is the one
+    // that matters: a teardown of the workspace leaves the shell and the rail in place and puts an
+    // identical set of elements back, so probing only the chrome would pass while the editor
+    // underneath was rebuilt.
+    const PROBED = ['nc-editor-shell', 'nc-rail', 'nc-panel-region', 'nc-code-editor'];
     await page.evaluate((selectors) => {
       for (const selector of selectors)
         Object.assign(document.querySelector(selector) as object, { __probe: 'kept' });
     }, PROBED);
-    await page.getByRole('button', { name: 'Inspect changes' }).click();
-    await page.getByRole('button', { name: 'Accept change' }).click();
-    // Wait for the client to have acted on the reply, not for the server to have counted the
-    // request: the mock increments before it responds, so polling `applies` reads the nodes while
-    // the change is still in flight and the probe below would pass against a teardown that had not
-    // happened yet. The receipt is the client saying it applied it.
-    await expect(page.getByText(/^Applied:/)).toBeVisible();
+    await page.getByRole('button', { name: 'Accept all' }).click();
+    await expect(page.locator('nc-code-editor .cm-content')).toContainText(after);
     await expect.poll(() => ai.applies, { timeout: 10000 }).toBe(1);
 
-    // The thing this replaced paused every editor and replaced the whole document: both tabs
-    // lost their workspace and had to be driven by whoever asked for the change. The accepting tab
-    // is simply still where it was, and the change reaches the other over the ordinary sync.
-    await expect(page.locator('nc-assistant-section')).toBeVisible();
-    // The same nodes, still carrying their mark: the workspace was never unmounted and rebuilt.
+    // The same nodes, still carrying their mark: nothing was unmounted and rebuilt.
     const survived = await page.evaluate(
       (selectors) =>
         selectors.map(
@@ -308,78 +232,95 @@ test.describe('AI assistance', () => {
       PROBED,
     );
     expect(survived).toEqual(PROBED.map(() => true));
-    await page.getByRole('button', { name: 'Code', exact: true }).click();
-    await expect(page.locator('.cm-content')).toContainText(
-      '-- accepted while both editors were open',
-    );
+    // The change reaches the other tab over the ordinary sync.
     await expect(peer.locator('nc-code-editor')).toHaveCount(1);
-    await expect(peer.locator('.cm-content')).toContainText(
-      '-- accepted while both editors were open',
-    );
+    await expect(peer.locator('nc-code-editor .cm-content')).toContainText(after);
     await peer.close();
   });
 
   test('a change the server refuses leaves the document exactly as it was', async ({ page }) => {
     const ai = new AiBackend();
     ai.commit = () => false;
-    ai.proposals = [
-      {
-        id: 'proposal',
-        title: 'Pending change',
-        summary: 'Something to accept',
-        contentHash: 'b'.repeat(64),
-        status: 'PENDING',
-        operations: [{ kind: 'code' }],
-        inverse: null,
-      },
-    ];
+    ai.proposals = [codeProposal('proposal', 'Pending change', 'old', 'new')];
     await openEditor(page, ai);
     // Read once the document has actually arrived, not once the editor component exists: the first
     // render can still be empty, and comparing an empty read against a loaded one is not a test of
     // anything.
-    await expect(page.locator('.cm-content')).not.toBeEmpty();
-    const before = await page.locator('.cm-content').innerText();
-    await openAssistant(page);
-    await page.getByRole('button', { name: 'Inspect changes' }).click();
-    await page.getByRole('button', { name: 'Accept change' }).click();
+    await expect(page.locator('nc-code-editor .cm-content')).not.toBeEmpty();
+    const before = await page.locator('nc-code-editor .cm-content').innerText();
+    await page.getByRole('button', { name: 'Accept all' }).click();
+    // Said where the change was, and the change is still there to be looked at again.
     await expect(page.getByRole('alert')).toBeVisible();
+    await expect(page.getByTestId('ai-review-pane')).toBeVisible();
     expect(ai.applies).toBe(0);
-    await page.getByRole('button', { name: 'Code', exact: true }).click();
     // innerText to innerText: toHaveText would collapse the newlines and compare against a string
     // that has them. expect.poll retries, so a slow document load is not read as a changed document.
     await expect
-      .poll(() => page.locator('.cm-content').innerText(), { timeout: 10000 })
+      .poll(() => page.locator('nc-code-editor .cm-content').innerText(), { timeout: 10000 })
       .toBe(before);
   });
 
-  test('manual tile annotations keep their identity, lock regions, and create no proposal', async ({
+  test('each editor accepts its own changes, and shows nothing for the others', async ({
     page,
   }) => {
     const ai = new AiBackend();
-    await openEditor(page, ai);
-    await openAssistant(page);
-    await page.getByRole('radio', { name: 'Catalog & locks' }).click();
-    await page.getByLabel('Asset name', { exact: true }).fill('Grass');
-    await page.getByRole('button', { name: 'Register tile', exact: true }).click();
-    await expect(page.getByText('Saved Grass.')).toBeVisible();
-    await page.getByLabel('Asset name', { exact: true }).fill('Renamed grass');
-    await page.getByRole('button', { name: 'Register tile', exact: true }).click();
-    await expect(page.locator('[data-asset]')).toHaveCount(1);
-    await expect(page.locator('[data-asset]')).toContainText('Renamed grass');
-    await page.getByRole('button', { name: 'Lock region', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'Unlock', exact: true })).toBeVisible();
-    await page.getByRole('radio', { name: 'Changes' }).click();
-    await page.getByRole('button', { name: 'Share this project' }).click();
-    await expect.poll(() => ai.contexts.length).toBe(1);
-    const shared = ai.contexts.at(-1) as {
-      catalog: Record<string, { name: string; contentHash: string }>;
-      locks: Record<string, unknown>;
-    };
-    const entries = Object.values(shared.catalog);
-    expect(entries.map((entry) => entry.name)).toEqual(['Renamed grass']);
-    expect(entries[0]?.contentHash).toMatch(/^[a-f0-9]{64}$/);
-    expect(Object.keys(shared.locks)).toHaveLength(1);
-    expect(ai.proposals).toEqual([]);
+    ai.proposals = [
+      {
+        id: 'sprite',
+        title: 'New sprite',
+        summary: 'Draws a sprite',
+        contentHash: 'c'.repeat(64),
+        status: 'PENDING',
+        operations: [{ kind: 'pixels', sheetId: '0', x: 0, y: 0 }],
+        inverse: null,
+      },
+    ];
+    await mockEditor(page);
+    await ai.attach(page);
+
+    await page.goto('/edit/7/art');
+    await expect(page.getByText('Assistant changes (1)')).toBeVisible();
+    await expect(page.getByText('New sprite')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Inspect changes' })).toBeVisible();
+
+    // Code has nothing waiting: no pane, and no strip offering one.
+    await page.goto('/edit/7/code');
+    await expect(page.locator('nc-code-editor')).toBeVisible();
+    await expect(page.getByTestId('ai-review-pane')).toHaveCount(0);
+    await page.goto('/edit/7/map');
+    await expect(page.getByText('Assistant changes')).toHaveCount(0);
+  });
+
+  test('a staged sound change shows in the sound editor, whatever is selected there', async ({
+    page,
+  }) => {
+    const ai = new AiBackend();
+    ai.proposals = [
+      {
+        id: 'music',
+        title: 'New theme',
+        summary: 'A looping theme',
+        contentHash: 'd'.repeat(64),
+        status: 'PENDING',
+        operations: [{ kind: 'sound', category: 'MUSIC', slot: 0 }],
+        inverse: null,
+      },
+    ];
+    await mockEditor(page);
+    await ai.attach(page);
+    await page.goto('/edit/7/sound');
+    await expect(page.getByText('Assistant changes (1)')).toBeVisible();
+    await expect(page.getByText('New theme')).toBeVisible();
+  });
+
+  test('the game tab keeps only the AI provenance', async ({ page }) => {
+    const ai = new AiBackend();
+    await mockEditor(page);
+    await ai.attach(page);
+    await page.goto('/edit/7/game');
+    await expect(page.locator('nc-ai-provenance')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Share this project' })).toHaveCount(0);
+    await expect(page.locator('nc-assistant-section')).toHaveCount(0);
   });
 });
 

@@ -5,7 +5,7 @@ import { invalidateAiKeys } from './ai-keys.queries';
 import { qk } from './query-keys';
 
 describe('invalidateAiKeys', () => {
-  it('invalidates the account key list, so a grant or a revoke shows up', async () => {
+  it('invalidates the account key list, so a create or a revoke shows up', async () => {
     const qc = new QueryClient();
     const invalidate = vi.spyOn(qc, 'invalidateQueries').mockResolvedValue(undefined);
 
@@ -13,9 +13,8 @@ describe('invalidateAiKeys', () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: qk.aiKeys() });
   });
 
-  it('keys on the account, not on a project: a key reaches several at once', () => {
-    // A key granted to two projects is still one row in the list, so the key must not carry a
-    // project id or granting a second project would leave the first tab showing a stale list.
+  it('keys on the account, not on a project: a key belongs to the account', () => {
+    // A key reaches every project the account owns, so its list has no project in it to go stale.
     expect(qk.aiKeys()).toEqual(['ai', 'keys']);
   });
 });
