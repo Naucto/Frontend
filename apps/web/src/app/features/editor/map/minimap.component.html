@@ -1,0 +1,13 @@
+<canvas
+  #canvas
+  class="pixelated block w-full"
+  [class]="dragging() ? 'cursor-grabbing' : 'cursor-pointer'"
+  [width]="width()"
+  [height]="height()"
+  role="img"
+  [attr.aria-label]="label()"
+  (pointerdown)="onDown($event)"
+  (pointermove)="onMove($event)"
+  (pointerup)="onUp($event)"
+  (pointercancel)="onUp($event)"
+  (contextmenu)="$event.preventDefault()"></canvas>
