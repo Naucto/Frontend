@@ -1,0 +1,167 @@
+<div *transloco="let t" class="grid gap-3.5">
+  @if (narrowed()) {
+    @if (searchState() !== 'ready' || searchResults().length) {
+      <nc-hub-row
+        [title]="t('hub.results', { q: term() || tagFilter() })"
+        [games]="searchState() === 'ready' ? searchResults() : []"
+        [count]="searchState() === 'ready' ? searchTotal() : 0"
+        [state]="searchState()" />
+    } @else {
+      <nc-empty-state
+        class="py-12"
+        icon="search"
+        [title]="t('hub.noMatch')"
+        [hint]="t('hub.noMatchHint', { q: term() || tagFilter() })">
+        <a ncButton variant="primary" routerLink="/games/new">
+          <nc-icon name="plus" [size]="12" />
+          {{ t('hub.makeIt') }}
+        </a>
+      </nc-empty-state>
+    }
+  } @else {
+    <div class="grid gap-2.5 lg:grid-cols-[minmax(0,1fr)_300px]">
+      @if (hero(); as game) {
+        <div
+          class="relative min-h-[180px] overflow-hidden rounded-md border border-line bg-inset md:min-h-[300px]">
+          <a
+            [routerLink]="['/play', game.id]"
+            class="absolute inset-0"
+            [class.no-cover]="!heroCover.data()"
+            [attr.aria-label]="game.name">
+            @if (heroCover.data(); as url) {
+              <img [src]="url" alt="" class="pixelated h-full w-full object-cover" />
+            }
+          </a>
+          <!-- A fixed dark wash in both themes, because the title over it is a fixed light ink. -->
+          <div
+            class="pointer-events-none absolute inset-0 flex flex-col justify-end bg-[image:var(--nc-scrim-hero)] p-3">
+            <!-- On the fixed dark scrim, text takes the fixed on-accent inks, not the
+                 theme-aware ones, which go dark in the light theme. -->
+            <div class="label mb-[9px] text-gold">{{ t('hub.gameOfTheWeek') }}</div>
+            <div
+              class="mb-1 text-[22px] leading-[1.1] tracking-copy text-on-accent-dark md:text-hero">
+              {{ game.name }}
+            </div>
+            <div class="text-body tracking-copy text-on-accent-dark">
+              {{ t('hub.by', { name: game.creator.username }) }} · {{ plays(game.viewCount) }}
+              {{ t('hub.plays') }}
+              @if (game.tags.includes('remixable')) {
+                · {{ t('hub.remixable') }}
+              }
+            </div>
+            <div class="pointer-events-auto mt-2 flex gap-1">
+              <a ncButton variant="run" size="hero" [routerLink]="['/play', game.id]">
+                <nc-icon name="play" [size]="12" />
+                {{ t('hub.play') }}
+              </a>
+              <button
+                ncButton
+                variant="secondary"
+                size="hero"
+                (click)="remix(game.id)"
+                [disabled]="fork.isPending()">
+                {{ t('hub.remix') }}
+              </button>
+            </div>
+          </div>
+        </div>
+      } @else {
+        @if (popularState() === 'error') {
+          <div
+            class="flex min-h-[180px] items-center justify-center rounded-md border border-line bg-panel md:min-h-[300px]">
+            <nc-error-state
+              [title]="t('hub.heroErrorTitle')"
+              [hint]="t('hub.rowError')"
+              [retryLabel]="t('game.retry')"
+              (retry)="retryShelves()" />
+          </div>
+        } @else {
+          <nc-skeleton class="min-h-[180px] md:min-h-[300px]" height="100%" radius="rounded-md" />
+        }
+      }
+
+      <!-- One panel, the height of the hero, with the CTA on its bottom edge. -->
+      <nc-panel class="flex flex-col md:h-[300px]">
+        <span class="label shrink-0">{{ t('hub.jumpBackIn') }}</span>
+        <div class="mt-1 min-h-0 shrink-0">
+          @if (lastEdited(); as game) {
+            <a [routerLink]="['/edit', game.id]" class="group flex items-center gap-[11px]">
+              <nc-game-cover
+                class="h-[45px] w-[80px] shrink-0 rounded-xs"
+                [releaseId]="game.id"
+                [iconSize]="12" />
+              <span class="min-w-0">
+                <span class="block truncate text-body text-ink group-hover:text-gold-ink">
+                  {{ game.name }}
+                </span>
+                <span class="label tracking-button text-ink-4">
+                  {{ t('hub.editedAgo', { when: game.updatedAt | ncRelativeTime }) }}
+                </span>
+              </span>
+            </a>
+          } @else {
+            <p class="text-meta text-ink-3">{{ t('hub.nothingEdited') }}</p>
+          }
+        </div>
+
+        @if (auth.isAuthenticated()) {
+          <span class="label mt-2 shrink-0">{{ t('hub.friendsPlaying') }}</span>
+          <div class="mt-1 grid shrink-0 gap-1">
+            @for (friend of friendsPlaying(); track friend.userId) {
+              <a
+                [routerLink]="friend.releaseId ? ['/play', friend.releaseId] : ['/friends']"
+                class="flex min-w-0 items-center gap-1 text-meta text-ink-body hover:text-ink">
+                <nc-user-avatar
+                  [name]="friend.username"
+                  [userId]="friend.userId"
+                  [size]="20"
+                  avatarClass="shrink-0" />
+                <span class="min-w-0 truncate">
+                  {{ friend.nickname ?? friend.username }} {{ verb(friend) }}
+                  <span class="text-ink">{{ friend.title }}</span>
+                </span>
+              </a>
+            } @empty {
+              <p class="text-meta text-ink-3">{{ t('hub.friendsEmpty') }}</p>
+            }
+          </div>
+          <!-- The gap is padding on a wrapper, not margin on the button: the auto margin that pins
+               the CTA to the bottom resolves to zero when the list fills the panel. -->
+          <div class="mt-2 shrink-0 md:mt-auto md:pt-2">
+            <a
+              ncButton
+              variant="secondary"
+              size="md"
+              routerLink="/friends"
+              class="w-full justify-center">
+              {{ t('hub.seeAllFriends') }}
+            </a>
+          </div>
+        }
+      </nc-panel>
+    </div>
+
+    <nc-hub-row
+      [title]="t('hub.popular')"
+      [games]="popular()"
+      [state]="popularState()"
+      [count]="popularTotal()"
+      [reserve]="shelfSize"
+      [seeAll]="['/hub/all', 'popular']"
+      [empty]="t('hub.empty')">
+      <nc-segmented
+        actions
+        variant="chips"
+        [options]="filterOptions()"
+        [value]="popularFilter()"
+        (valueChange)="setFilter($event)"
+        [label]="t('hub.filter')" />
+    </nc-hub-row>
+    <nc-hub-row
+      [title]="t('hub.fresh')"
+      [games]="fresh()"
+      [state]="freshState()"
+      [seeAll]="['/hub/all', 'fresh']"
+      [empty]="t('hub.empty')" />
+  }
+</div>
