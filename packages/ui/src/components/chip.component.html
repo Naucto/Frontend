@@ -1,0 +1,10 @@
+<ng-content />
+@if (removable()) {
+  <button
+    type="button"
+    class="-mr-0.5 inline-flex cursor-pointer opacity-70 transition-opacity duration-100 hover:opacity-100"
+    aria-label="Remove"
+    (click)="removed.emit()">
+    <nc-icon name="close" [size]="12" />
+  </button>
+}

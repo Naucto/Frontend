@@ -1,0 +1,10 @@
+@let p = parts();
+@if (p.before) {
+  <span>{{ p.before }}</span>
+}
+@if (p.hit) {
+  <span class="text-gold">{{ p.hit }}</span>
+}
+@if (p.after) {
+  <span>{{ p.after }}</span>
+}

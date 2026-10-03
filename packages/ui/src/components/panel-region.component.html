@@ -1,0 +1,14 @@
+@if (switchLabel()) {
+  <nc-edge-handle [icon]="switchIcon()" [label]="switchLabel()" (pressed)="switched.emit()" />
+}
+<!-- minmax(0,1fr) rather than the implicit auto track: an auto track gives a grid item its min-
+     content width as an automatic minimum, so the panel would overflow the width set here. -->
+<div
+  class="grid min-h-0 grid-cols-[minmax(0,1fr)]"
+  [class.hidden]="mode() === 'primary'"
+  [style.width.px]="secondaryTrack()">
+  <ng-content select="[secondary]" />
+</div>
+<div class="grid min-h-0 grid-cols-[minmax(0,1fr)]" [style.width.px]="primaryTrack()">
+  <ng-content select="[primary]" />
+</div>

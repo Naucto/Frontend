@@ -1,0 +1,10 @@
+<nc-icon [name]="icon()" [size]="48" [class]="tone() === 'hot' ? 'text-hot-ink' : 'text-ink-4'" />
+<h3 class="text-title text-ink-body">{{ title() }}</h3>
+@if (hint()) {
+  <p class="max-w-[420px] text-meta leading-[1.6] text-ink-3">{{ hint() }}</p>
+}
+<ng-content select="[hint]" />
+@if (retryLabel(); as label) {
+  <button ncButton variant="secondary" (click)="retry.emit()">{{ label }}</button>
+}
+<ng-content />
