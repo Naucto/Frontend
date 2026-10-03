@@ -1,0 +1,16 @@
+<!-- The map's full size, which the well scrolls over; `shrink-0` because a flex item gives way to its container and the absolute canvases do not hold it open. -->
+<div #spacer class="relative shrink-0" [style.width.px]="cssW()" [style.height.px]="cssH()">
+  <canvas #base class="pixelated absolute" aria-hidden="true"></canvas>
+  <canvas
+    #overlay
+    class="pixelated absolute cursor-crosshair touch-none"
+    role="img"
+    [attr.aria-label]="label()"
+    (pointerdown)="onDown($event)"
+    (pointermove)="onMove($event)"
+    (pointerup)="onUp()"
+    (pointercancel)="onUp()"
+    (pointerleave)="onLeave()"
+    (contextmenu)="$event.preventDefault()"></canvas>
+  <nc-presence-layer [marks]="marks()" [viewport]="viewPx()" />
+</div>
