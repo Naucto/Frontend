@@ -1,0 +1,219 @@
+<div *transloco="let t" class="grid gap-3">
+  @if (profile.data(); as profile) {
+    <!-- Full-bleed banner: the shell pads the page, so the bleed has to undo exactly that
+         padding at each breakpoint rather than a fixed guess. -->
+    <div
+      class="group relative -mx-2 -mt-2 h-[220px] overflow-hidden bg-inset md:-mx-3 md:-mt-3"
+      [class.no-cover]="!profile.backgroundImageUrl && !isSelf()">
+      @if (profile.backgroundImageUrl) {
+        <!-- A photograph being scaled: nearest-neighbour tears it, so it is resampled. The
+             console's own art is drawn on a grid and keeps that rule elsewhere. -->
+        <img [src]="profile.backgroundImageUrl" alt="" class="h-full w-full object-cover" />
+      }
+      @if (isSelf()) {
+        <!-- The whole band is the target; empty, it carries its own prompt rather than the hatch,
+             which means "no cover" on someone else's profile. -->
+        <button
+          type="button"
+          class="absolute inset-0 flex items-center justify-center gap-1 text-ink-3 hover:text-ink-2"
+          [attr.aria-label]="t('profile.image.banner')"
+          (click)="editImage('banner')">
+          @if (!profile.backgroundImageUrl) {
+            <nc-icon name="image" [size]="24" />
+            <span class="label">{{ t('profile.setBanner') }}</span>
+          }
+        </button>
+        <!-- Inert as a group, so a press on the pencil reaches the band-wide button under it; only
+             the bin takes its own. -->
+        <span class="pointer-events-none absolute top-2 right-2 flex gap-1">
+          <nc-edit-chip [label]="t('profile.image.banner')" (click)="editImage('banner')" />
+          @if (profile.backgroundImageUrl) {
+            <!-- A chip's own host is display:contents, so the class that takes the press
+                 back has to sit on something that has a box. -->
+            <span class="pointer-events-auto">
+              <nc-edit-chip
+                icon="trash"
+                [label]="t('profile.image.clear.banner')"
+                (click)="clearImage('banner')" />
+            </span>
+          }
+        </span>
+      }
+      <!-- Decorative, and drawn last, so it lies over the whole band: without this it swallows
+           every click meant for what is underneath. -->
+      <span
+        class="pointer-events-none absolute inset-0"
+        style="
+          background: linear-gradient(
+            to bottom,
+            color-mix(in srgb, var(--color-page) 10%, transparent) 0%,
+            color-mix(in srgb, var(--color-page) 55%, transparent) 55%,
+            var(--color-page) 100%
+          );
+        "></span>
+    </div>
+    <!-- Positioned so it paints above the banner it overlaps: a positioned element covers a static
+         sibling whatever the DOM order. -->
+    <div class="relative -mt-6 flex flex-wrap items-start gap-2">
+      <span class="group relative">
+        <nc-avatar
+          class="rounded-sm border border-line-strong"
+          [name]="profile.nickname || profile.username"
+          [src]="profile.profileImageUrl ?? undefined"
+          [id]="profile.id"
+          [colour]="avatarColour()"
+          [size]="88" />
+        @if (isSelf()) {
+          <span class="absolute right-1 bottom-1 flex gap-1">
+            <nc-edit-chip [label]="t('profile.image.picture')" (click)="editImage('picture')" />
+            @if (profile.profileImageUrl) {
+              <nc-edit-chip
+                icon="trash"
+                [label]="t('profile.image.clear.picture')"
+                (click)="clearImage('picture')" />
+            }
+          </span>
+        }
+      </span>
+      <!-- Wide enough that the bio reads as a sentence rather than a column of two words;
+           past that the stats wrap under instead of squeezing it. -->
+      <div class="min-w-[220px] flex-1">
+        @if (editing() === 'nickname') {
+          <input
+            ncInput
+            class="w-full max-w-[360px]"
+            [value]="profile.nickname || profile.username"
+            #zoneInput
+            maxlength="32"
+            [attr.aria-label]="t('settings.displayName')"
+            (keydown.enter)="commit('nickname', $any($event.target).value)"
+            (keydown.escape)="editing.set(null)"
+            (blur)="commit('nickname', $any($event.target).value)" />
+        } @else {
+          <span class="group relative inline-flex items-center gap-1.5">
+            <h1 class="text-display text-ink">{{ profile.nickname || profile.username }}</h1>
+            @if (isSelf()) {
+              <nc-edit-chip [label]="t('settings.displayName')" (click)="editing.set('nickname')" />
+            }
+          </span>
+        }
+        @if (editing() === 'description') {
+          <input
+            ncInput
+            class="mt-[6px] w-full max-w-[560px]"
+            [value]="profile.description ?? ''"
+            #zoneInput
+            maxlength="160"
+            [attr.aria-label]="t('profile.status')"
+            (keydown.enter)="commit('description', $any($event.target).value)"
+            (keydown.escape)="editing.set(null)"
+            (blur)="commit('description', $any($event.target).value)" />
+        } @else {
+          <div
+            class="group relative mt-[6px] flex max-w-[560px] items-center gap-1.5 text-body tracking-copy text-ink-3">
+            <span>
+              {{ profile.description || '@' + profile.username }}
+              @if (joined(); as year) {
+                · {{ t('profile.joined', { year: year }) }}
+              }
+            </span>
+            @if (isSelf()) {
+              <nc-edit-chip [label]="t('profile.status')" (click)="editing.set('description')" />
+            }
+          </div>
+        }
+        @if (isSelf()) {
+          <div class="group relative mt-1 flex items-center gap-1.5">
+            @if (editing() === 'colour') {
+              <span
+                class="flex gap-[5px]"
+                role="radiogroup"
+                [attr.aria-label]="t('profile.colour')">
+                @for (colour of COLOURS; track colour) {
+                  <button
+                    type="button"
+                    role="radio"
+                    class="size-[22px] rounded-xs"
+                    [class]="swatch(colour)"
+                    [class.ring-2]="accent() === colour"
+                    [attr.aria-checked]="accent() === colour"
+                    [attr.aria-label]="colour"
+                    (click)="commit('colour', colour)"></button>
+                }
+              </span>
+            } @else {
+              <span class="label text-ink-4">{{ t('profile.colour') }}</span>
+              @if (accent(); as accent) {
+                <span class="size-[22px] rounded-xs" [class]="swatch(accent)"></span>
+              }
+              <nc-edit-chip [label]="t('profile.colour')" (click)="editing.set('colour')" />
+            }
+          </div>
+        }
+        @if (presenceLine(); as line) {
+          <div class="mt-0.5 flex items-center gap-0.5 text-meta text-jade-ink">
+            <span class="inline-block h-1 w-1 bg-jade"></span>
+            {{ line }}
+          </div>
+        }
+      </div>
+      <div class="flex flex-col items-end gap-1">
+        <div class="flex gap-2">
+          <nc-stat icon="grid" [value]="counts().games" [label]="t('profile.games')" compact />
+          <nc-stat icon="play" [value]="counts().plays" [label]="t('profile.plays')" compact />
+          <nc-stat
+            icon="heart"
+            [value]="counts().likes"
+            [label]="t('profile.likes')"
+            iconClass="text-hot-ink"
+            compact />
+        </div>
+        @if (isSelf()) {
+          <a ncButton variant="secondary" size="sm" routerLink="/settings">
+            {{ t('profile.settings') }}
+          </a>
+        } @else if (auth.isAuthenticated()) {
+          @if (friendship() === 'FRIENDS') {
+            <span class="label flex items-center gap-0.5 text-jade-ink">
+              <nc-icon name="check" [size]="12" />
+              {{ t('profile.friends') }}
+            </span>
+          } @else {
+            <button
+              ncButton
+              variant="primary"
+              size="sm"
+              (click)="addFriend(profile.id)"
+              [disabled]="adding.isPending() || friendship() === 'PENDING'">
+              <nc-icon name="plus" [size]="12" />
+              {{ friendship() === 'PENDING' ? t('profile.pending') : t('profile.addFriend') }}
+            </button>
+          }
+        }
+      </div>
+    </div>
+    <nc-segmented
+      variant="chips"
+      [options]="shelves()"
+      [value]="shelf()"
+      (valueChange)="setShelf($event)" />
+    @if (current().length) {
+      <nc-hub-row [games]="current()" />
+    } @else {
+      <nc-empty-state
+        class="py-12"
+        icon="device-tv"
+        [title]="t('profile.empty.' + shelf() + 'Title')"
+        [hint]="t('profile.empty.' + shelf() + 'Hint')">
+        @if (isSelf()) {
+          <a ncButton variant="primary" routerLink="/games/new">
+            <nc-icon name="plus" [size]="12" />
+            {{ t('nav.newGame') }}
+          </a>
+        }
+      </nc-empty-state>
+    }
+  } @else if (profile.isError()) {
+    <nc-empty-state class="py-12" icon="user" [title]="t('profile.notFound')" />
+  }
+</div>

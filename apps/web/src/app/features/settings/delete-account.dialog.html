@@ -1,0 +1,27 @@
+<nc-dialog-shell *transloco="let t" [title]="t('settings.deleteConfirmTitle')">
+  <form class="contents" (submit)="$event.preventDefault(); ref.close(password())">
+    <div class="max-w-[52ch] space-y-1 text-body leading-[1.65] text-ink-body">
+      @for (paragraph of t('settings.deleteConfirmHint').split('\n\n'); track $index) {
+        <p>{{ paragraph }}</p>
+      }
+    </div>
+    <nc-field class="mt-1.5 block" [label]="t('auth.password')" for="delete-password">
+      <input
+        ncInput
+        id="delete-password"
+        type="password"
+        autocomplete="current-password"
+        class="w-full"
+        [value]="password()"
+        (input)="password.set($any($event.target).value)" />
+    </nc-field>
+  </form>
+  <ng-container footer>
+    <button ncButton variant="ghost" (click)="ref.close()">
+      {{ t('net.cancel') }}
+    </button>
+    <button ncButton variant="danger" [disabled]="!password()" (click)="ref.close(password())">
+      {{ t('settings.delete') }}
+    </button>
+  </ng-container>
+</nc-dialog-shell>

@@ -1,0 +1,45 @@
+<nc-dialog-shell *transloco="let t" [title]="t('friends.addFriend')">
+  <nc-field [label]="t('friends.codePlaceholder')" for="friend-query">
+    <input
+      ncInput
+      id="friend-query"
+      class="w-full"
+      autocomplete="off"
+      [value]="query()"
+      (input)="query.set($any($event.target).value)" />
+  </nc-field>
+
+  @if (term()) {
+    <div class="mt-1.5 grid gap-0.5" role="list">
+      @if (hits.isError()) {
+        <p class="text-body text-hot-ink">{{ searchError() }}</p>
+      } @else if (hits.isPending()) {
+        <p class="text-body text-ink-3">{{ t('friends.searching') }}</p>
+      } @else {
+        @for (user of hits.data(); track user.id) {
+          <div
+            role="listitem"
+            class="flex items-center gap-1.5 rounded-sm border border-line bg-raised px-1.5 py-1">
+            <nc-user-avatar
+              [name]="user.nickname || user.username"
+              [userId]="user.id"
+              [size]="28" />
+            <div class="min-w-0 flex-1">
+              <div class="truncate text-meta text-ink">{{ user.nickname || user.username }}</div>
+              <div class="text-micro text-ink-4">{{ '@' + user.username }}</div>
+            </div>
+            <button ncButton variant="secondary" size="sm" (click)="send(user.id)">
+              {{ t('friends.add') }}
+            </button>
+          </div>
+        } @empty {
+          <p class="text-body text-ink-3">{{ t('friends.noMatch', { q: term() }) }}</p>
+        }
+      }
+    </div>
+  }
+
+  <button ncButton variant="ghost" footer (click)="ref.close()">
+    {{ t('net.cancel') }}
+  </button>
+</nc-dialog-shell>
