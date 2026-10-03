@@ -1,0 +1,78 @@
+<div *transloco="let t" class="flex h-full flex-col">
+  <div class="flex h-(--nc-bar-h) items-center border-b border-line px-1.5">
+    <span class="label text-ink-3">{{ t('editor.sound.instruments') }}</span>
+    <span class="flex-1"></span>
+    <button
+      ncButton
+      variant="ghost"
+      size="sm"
+      iconOnly
+      [attr.aria-label]="t('editor.sound.addInstrument')"
+      (click)="add.emit()">
+      <nc-icon name="plus" [size]="24" />
+    </button>
+  </div>
+  <div
+    class="min-h-0 flex-1 overflow-auto"
+    role="list"
+    [attr.aria-label]="t('editor.sound.instruments')">
+    @for (instrument of list(); track instrument.id) {
+      <div
+        role="listitem"
+        tabindex="0"
+        [attr.aria-current]="instrument.id === selectedId()"
+        class="group flex cursor-pointer items-center gap-1 border-l-[3px] border-transparent px-[14px] py-[9px] hover:bg-raised aria-[current=true]:border-gold aria-[current=true]:bg-raised"
+        [style.color]="palette()[instrument.colour]"
+        (click)="selected.emit(instrument.id)"
+        (keydown.enter)="selected.emit(instrument.id)"
+        (keydown.space)="$event.preventDefault(); selected.emit(instrument.id)">
+        <!-- Inherits the row's colour, which is the instrument's own. -->
+        <nc-wave-glyph [type]="instrument.osc" class="mr-1" />
+        <div class="min-w-0 flex-1 truncate text-body text-ink">{{ instrument.name }}</div>
+        <button
+          ncButton
+          variant="ghost"
+          size="sm"
+          iconOnly
+          class="hidden group-hover:inline-flex group-focus-within:inline-flex"
+          [attr.aria-label]="t('editor.sound.duplicate')"
+          [ncTooltip]="t('editor.sound.duplicate')"
+          (click)="$event.stopPropagation(); duplicate.emit(instrument.id)">
+          <nc-icon name="copy" [size]="12" />
+        </button>
+        <button
+          ncButton
+          variant="ghost"
+          size="sm"
+          iconOnly
+          class="hidden group-hover:inline-flex group-focus-within:inline-flex"
+          [attr.aria-label]="t('editor.sound.editInstrument')"
+          [ncTooltip]="t('editor.sound.editInstrument')"
+          (click)="$event.stopPropagation(); edit.emit(instrument.id)">
+          <nc-icon name="edit" [size]="12" />
+        </button>
+        <button
+          ncButton
+          variant="ghost"
+          size="sm"
+          iconOnly
+          class="hidden group-hover:inline-flex group-focus-within:inline-flex"
+          [attr.aria-label]="t('editor.sound.removeInstrument', { name: instrument.name })"
+          [ncTooltip]="t('editor.sound.removeInstrument', { name: instrument.name })"
+          (click)="$event.stopPropagation(); remove.emit(instrument.id)">
+          <nc-icon name="trash" [size]="12" />
+        </button>
+      </div>
+    }
+  </div>
+  <div class="shrink-0 border-t border-line p-1.5">
+    <!-- Fixed at the same height as the music section's head, so the two banks stay the same size.
+         Fixed at the same height as the music section's head, so the two banks stay the same size. -->
+    <div class="nc-density-small mb-1 flex h-(--nc-transport-h) items-center gap-1">
+      <span class="label text-ink-3">{{ t('editor.sound.sfxSlots') }}</span>
+      <span class="flex-1"></span>
+      <nc-help-dot [title]="t('editor.sound.sfxSlots')" [text]="t('editor.sound.sfxHelp')" />
+    </div>
+    <nc-slot-grid [cells]="cells()" (pick)="sfxToggle.emit($event)" />
+  </div>
+</div>

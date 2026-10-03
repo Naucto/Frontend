@@ -1,0 +1,26 @@
+<svg
+  viewBox="0 0 200 60"
+  class="block h-[96px] w-full touch-none rounded-xs bg-lcd"
+  role="group"
+  [attr.aria-label]="label()"
+  (pointerdown)="onDown($event)"
+  (pointermove)="onMove($event)"
+  (pointerup)="onUp($event)"
+  (pointercancel)="onUp($event)">
+  <polygon [attr.points]="points()" class="fill-lcd-ink/20" />
+  <polyline
+    [attr.points]="points()"
+    fill="none"
+    class="stroke-lcd-ink"
+    stroke-width="1.5"
+    shape-rendering="crispEdges" />
+  @for (handle of handles(); track handle.kind) {
+    <rect
+      [attr.x]="handle.x - 3"
+      [attr.y]="handle.y - 3"
+      width="6"
+      height="6"
+      class="cursor-grab fill-lcd-ink"
+      [class.cursor-grabbing]="dragging === handle.kind" />
+  }
+</svg>

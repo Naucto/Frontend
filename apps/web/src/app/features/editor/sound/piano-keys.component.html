@@ -1,0 +1,26 @@
+<!-- The corner belongs to neither the keys nor the ruler, and holds its own place at the top. -->
+<div class="sticky top-0 z-10 shrink-0 bg-panel" [style.height.px]="RULER_H"></div>
+@for (key of keys(); track key.pitch) {
+  <button
+    type="button"
+    class="relative block w-full shrink-0 cursor-pointer border-b border-b-key-sharp text-left"
+    [style.height.px]="ROW_H"
+    [class]="key.c ? 'bg-key-lit' : 'bg-key'"
+    [attr.aria-label]="key.name"
+    [attr.aria-pressed]="held() === key.pitch"
+    [attr.data-pitch]="key.pitch"
+    (pointerdown)="onDown($event, key.pitch)">
+    @if (key.black) {
+      <span
+        class="absolute top-0 left-0 block bg-key-sharp"
+        [style.width.px]="BLACK_KEY_W"
+        [style.height.px]="ROW_H - 1"></span>
+    } @else {
+      <span
+        class="absolute top-1/2 left-[7px] -translate-y-1/2 font-mono text-[9px] text-key-sharp">
+        {{ key.name }}
+      </span>
+    }
+    <span [class]="held() === key.pitch ? KEY_DOWN : KEY_UP"></span>
+  </button>
+}
