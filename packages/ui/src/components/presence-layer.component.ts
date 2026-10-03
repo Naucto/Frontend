@@ -1,0 +1,117 @@
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+
+import { type IconName } from '../icons/paths';
+import { type PresenceColour } from './avatar.component';
+import { IconComponent } from './icon.component';
+import { PresenceFlagComponent } from './presence-flag.component';
+
+/** Somebody's pointer, in the coordinates of whatever content the layer is laid over. */
+export interface PresenceMark {
+  id: number;
+  name: string;
+  colour: PresenceColour;
+  x: number;
+  y: number;
+}
+
+/** What of that content is on screen, in the same coordinates. */
+export interface PresenceViewport {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+type Edge = 'up' | 'down' | 'left' | 'right';
+type Placed = PresenceMark & { edge: Edge | null };
+
+const ARROW: Record<Edge, IconName> = {
+  up: 'caret-up',
+  down: 'caret-down',
+  left: 'caret-left',
+  right: 'caret-right',
+};
+
+/**
+ * Whether the arrow follows the name: it points out of the frame, so it sits on the outward side —
+ * trailing on the right rim, leading everywhere else.
+ */
+const TRAILS: Record<Edge, boolean> = { up: false, down: false, left: false, right: true };
+
+const FILL: Record<PresenceColour, string> = {
+  sky: 'bg-presence-sky',
+  blush: 'bg-presence-blush',
+  jade: 'bg-presence-jade',
+};
+
+/** Room for the chip itself, so it lands wholly inside the frame rather than half over its rim. */
+const PAD_X = 46;
+const PAD_Y = 14;
+
+/**
+ * Everybody else's pointers over a surface bigger than the frame that shows it.
+ *
+ * A peer inside the frame is a cursor where they are. A peer outside it is a chip on the rim,
+ * where the line from the middle of the frame to them crosses it — so the chip says which way to
+ * scroll to find them. Without it a peer working anywhere but your own corner simply is not
+ * there, which reads as nobody being in the room.
+ *
+ * The host is `display: contents`, so the marks position against whatever `relative` box the
+ * caller already has; give it coordinates in that box and nothing else.
+ */
+@Component({
+  selector: 'nc-presence-layer',
+  imports: [IconComponent, PresenceFlagComponent],
+  templateUrl: './presence-layer.component.html',
+  host: { class: 'contents' },
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class PresenceLayerComponent {
+  readonly marks = input<readonly PresenceMark[]>([]);
+  /** Null when the whole content is on screen, and every mark is therefore a cursor. */
+  readonly viewport = input<PresenceViewport | null>(null);
+
+  protected readonly placed = computed(() =>
+    this.marks().map((mark) => place(mark, this.viewport())),
+  );
+
+  protected fill(colour: PresenceColour): string {
+    return FILL[colour];
+  }
+
+  protected arrow(edge: Edge): IconName {
+    return ARROW[edge];
+  }
+
+  protected trails(edge: Edge): boolean {
+    return TRAILS[edge];
+  }
+}
+
+/** Where a mark is drawn, and whether it is drawn as a cursor or as a chip on the rim. */
+export function place(mark: PresenceMark, viewport: PresenceViewport | null): Placed {
+  if (
+    !viewport ||
+    (mark.x >= viewport.x &&
+      mark.x < viewport.x + viewport.w &&
+      mark.y >= viewport.y &&
+      mark.y < viewport.y + viewport.h)
+  ) {
+    return { ...mark, edge: null };
+  }
+  const cx = viewport.w / 2;
+  const cy = viewport.h / 2;
+  const dx = mark.x - viewport.x - cx;
+  const dy = mark.y - viewport.y - cy;
+  // How far along the ray to the peer the rim is. Whichever side it meets first wins, and a frame
+  // too small to hold the chip collapses it to the middle rather than pushing it outside.
+  const kx = Math.abs(dx) > 0.001 ? (cx - PAD_X) / Math.abs(dx) : Infinity;
+  const ky = Math.abs(dy) > 0.001 ? (cy - PAD_Y) / Math.abs(dy) : Infinity;
+  const scale = Math.max(0, Math.min(kx, ky));
+  return {
+    ...mark,
+    x: viewport.x + cx + dx * scale,
+    y: viewport.y + cy + dy * scale,
+    edge: Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : dy > 0 ? 'down' : 'up',
+  };
+}

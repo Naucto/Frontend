@@ -1,0 +1,26 @@
+<input
+  type="range"
+  min="0"
+  [max]="options().length - 1"
+  step="1"
+  [value]="value()"
+  [attr.aria-label]="label()"
+  [attr.aria-valuetext]="options()[value()]"
+  (input)="onInput($event)"
+  class="nc-range h-[4px] w-full cursor-pointer appearance-none rounded-xs bg-line-soft"
+  [style.--nc-stops]="stops()"
+  [style.--nc-fill]="'calc(3px + ' + value() + ' * ' + stops() + ')'" />
+<!-- Each caption is placed on its own stop rather than spread edge to edge: laid out by the
+     box, the outer two sit flush and every centre between them lands off the tick it names. -->
+<div class="relative mt-[7px] h-[14px]">
+  @for (option of options(); track $index) {
+    <button
+      type="button"
+      class="absolute -translate-x-1/2 cursor-pointer font-mono text-label whitespace-nowrap text-ink-4 transition-colors duration-100 hover:text-ink"
+      [style.left]="'calc(3px + ' + $index + ' * ' + stops() + ')'"
+      [class.text-gold-ink]="$index === value()"
+      (click)="value.set($index)">
+      {{ option }}
+    </button>
+  }
+</div>

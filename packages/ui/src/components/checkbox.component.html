@@ -1,0 +1,15 @@
+<button
+  type="button"
+  role="checkbox"
+  [attr.aria-checked]="checked()"
+  [attr.aria-label]="label()"
+  [disabled]="disabled()"
+  (click)="checked.set(!checked())"
+  [class]="buttonClass()">
+  <span [class]="boxClass()">
+    @if (checked()) {
+      <nc-icon name="check" [size]="12" />
+    }
+  </span>
+  <ng-content />
+</button>

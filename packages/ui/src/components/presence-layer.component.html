@@ -1,0 +1,24 @@
+@for (mark of placed(); track mark.id) {
+  @if (mark.edge; as dir) {
+    <div
+      class="pointer-events-none absolute z-10 flex -translate-x-1/2 -translate-y-1/2 items-center gap-0.5 px-[5px] py-[2px] font-mono text-micro whitespace-nowrap uppercase tracking-tag text-on-accent transition-[left,top] duration-100 ease-out"
+      [class]="fill(mark.colour)"
+      [style.left.px]="mark.x"
+      [style.top.px]="mark.y">
+      @if (!trails(dir)) {
+        <nc-icon [name]="arrow(dir)" [size]="12" />
+      }
+      <span class="max-w-[84px] overflow-hidden text-ellipsis">{{ mark.name }}</span>
+      @if (trails(dir)) {
+        <nc-icon [name]="arrow(dir)" [size]="12" />
+      }
+    </div>
+  } @else {
+    <nc-presence-flag
+      class="absolute"
+      [style.left.px]="mark.x"
+      [style.top.px]="mark.y"
+      [name]="mark.name"
+      [colour]="mark.colour" />
+  }
+}

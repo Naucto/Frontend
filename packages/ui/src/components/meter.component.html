@@ -1,0 +1,25 @@
+<div
+  role="meter"
+  [attr.aria-valuenow]="total()"
+  [attr.aria-valuemax]="max()"
+  [attr.aria-label]="label()"
+  [class]="trackClass()"
+  [class.outline]="over()"
+  [class.outline-hot]="over()">
+  @for (segment of segments(); track segment.label) {
+    <span
+      [class]="segment.color"
+      [style.width.%]="pct(segment.value)"
+      [attr.title]="segment.label"></span>
+  }
+</div>
+@if (legend()) {
+  <ul class="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-label text-ink-3">
+    @for (segment of segments(); track segment.label) {
+      <li class="flex items-center gap-0.5">
+        <span class="inline-block h-1 w-1 rounded-xs" [class]="segment.color"></span>
+        {{ segment.label }}
+      </li>
+    }
+  </ul>
+}

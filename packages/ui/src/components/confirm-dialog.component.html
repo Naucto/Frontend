@@ -1,0 +1,15 @@
+<nc-dialog-shell [title]="data.title">
+  <div class="max-w-[52ch] space-y-1 text-body leading-[1.65] text-ink-body">
+    @for (paragraph of paragraphs; track $index) {
+      <p>{{ paragraph }}</p>
+    }
+  </div>
+  <ng-container footer>
+    <button ncButton variant="ghost" (click)="ref.close(false)">
+      {{ data.cancelLabel ?? 'Cancel' }}
+    </button>
+    <button ncButton [variant]="data.danger ? 'danger' : 'primary'" (click)="ref.close(true)">
+      {{ data.confirmLabel ?? 'Confirm' }}
+    </button>
+  </ng-container>
+</nc-dialog-shell>

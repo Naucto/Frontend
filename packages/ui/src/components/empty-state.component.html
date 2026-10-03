@@ -1,0 +1,7 @@
+<nc-icon [name]="icon()" [size]="48" class="text-ink-4" />
+<h3 class="text-title text-ink-body">{{ title() }}</h3>
+@if (hint()) {
+  <p class="max-w-[420px] text-meta leading-[1.6] text-ink-3">{{ hint() }}</p>
+}
+<ng-content select="[hint]" />
+<ng-content />
