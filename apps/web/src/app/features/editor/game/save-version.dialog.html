@@ -1,0 +1,43 @@
+<nc-dialog-shell
+  *transloco="let t"
+  [title]="t('editor.game.saveVersion')"
+  [lead]="t('editor.game.saveVersionLead')">
+  <nc-field
+    [label]="t('editor.game.versionName')"
+    for="version-name"
+    [hint]="
+      maxVersions() !== undefined
+        ? t('editor.game.versionCount', { count: releases().length, max: maxVersions() })
+        : undefined
+    ">
+    <!-- The name is the whole dialog, so the caret starts in it rather than on the close. -->
+    <input
+      ncInput
+      cdkFocusInitial
+      id="version-name"
+      autocomplete="off"
+      spellcheck="false"
+      [attr.maxlength]="nameMax"
+      [value]="name()"
+      (input)="name.set($any($event.target).value)"
+      (keydown.enter)="submit()" />
+  </nc-field>
+  <!-- Reusing a name rewrites that version, which the cap does not count. -->
+  @if (overwriting()) {
+    <nc-notice class="mt-1">
+      {{ t('editor.game.versionOverwrites', { name: name().trim() }) }}
+    </nc-notice>
+  } @else if (atCap()) {
+    <nc-notice class="mt-1">
+      {{ t('editor.game.versionLimit', { count: releases().length, max: maxVersions() }) }}
+    </nc-notice>
+  }
+  <ng-container footer>
+    <button ncButton variant="ghost" (click)="ref.close()">
+      {{ t('editor.code.cancel') }}
+    </button>
+    <button ncButton variant="primary" [disabled]="!canSave()" (click)="submit()">
+      {{ t('editor.game.saveVersionConfirm') }}
+    </button>
+  </ng-container>
+</nc-dialog-shell>

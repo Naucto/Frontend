@@ -1,0 +1,38 @@
+<nc-dialog-shell *transloco="let t" [title]="data.title" [lead]="data.note">
+  <div class="flex items-center gap-1.5">
+    <nc-number-field
+      [label]="t('editor.size.width')"
+      [value]="width()"
+      [min]="data.min"
+      [max]="data.max"
+      [step]="data.step"
+      (requested)="width.set($event)" />
+    <nc-number-field
+      [label]="t('editor.size.height')"
+      [value]="height()"
+      [min]="data.min"
+      [max]="data.max"
+      [step]="data.step"
+      (requested)="height.set($event)" />
+  </div>
+
+  @if (cost().lines.length) {
+    <ul class="mt-1.5 grid gap-0.5">
+      @for (line of cost().lines; track line) {
+        <li class="text-meta text-orange-ink">{{ line }}</li>
+      }
+    </ul>
+  }
+  @if (cost().loss; as loss) {
+    <nc-notice tone="danger" class="mt-1">{{ loss }}</nc-notice>
+  }
+
+  <ng-container footer>
+    <button ncButton variant="ghost" (click)="ref.close()">
+      {{ t('editor.size.cancel') }}
+    </button>
+    <button ncButton variant="primary" [disabled]="!changed()" (click)="submit()">
+      {{ data.confirmLabel }}
+    </button>
+  </ng-container>
+</nc-dialog-shell>
