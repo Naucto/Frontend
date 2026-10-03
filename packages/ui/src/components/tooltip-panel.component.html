@@ -1,0 +1,18 @@
+@if (title(); as heading) {
+  <div class="label border-b border-line px-1.5 py-0.75">{{ heading }}</div>
+}
+<div [class]="title() ? 'px-1.5 py-1' : 'px-1 py-0.5'">
+  @for (p of paragraphs(); track $index) {
+    <p [class.mt-1]="$index > 0">
+      @for (run of p; track $index) {
+        @if (run.code) {
+          <code class="rounded-xs bg-inset px-0.5 font-mono text-[0.95em] text-ink">
+            {{ run.text }}
+          </code>
+        } @else {
+          {{ run.text }}
+        }
+      }
+    </p>
+  }
+</div>

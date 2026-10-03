@@ -1,0 +1,49 @@
+<span
+  class="flex h-(--nc-transport-h) items-center gap-0.5 rounded-sm border border-line bg-inset p-0.5"
+>
+  @if (playing()) {
+    <button
+      ncButton
+      variant="ghost"
+      size="sm"
+      iconOnly
+      [attr.aria-label]="pauseLabel()"
+      (click)="paused.emit()"
+    >
+      <nc-icon name="pause" [size]="24" />
+    </button>
+  } @else {
+    <button
+      ncButton
+      variant="ghost"
+      size="sm"
+      iconOnly
+      [attr.aria-label]="playLabel()"
+      (click)="started.emit()"
+    >
+      <nc-icon name="play" [size]="24" class="text-hot-ink" />
+    </button>
+  }
+  <button
+    ncButton
+    variant="ghost"
+    size="sm"
+    iconOnly
+    [attr.aria-label]="rewindLabel()"
+    [disabled]="!canRewind()"
+    (click)="rewound.emit()"
+  >
+    <nc-icon name="prev" [size]="24" />
+  </button>
+  <button
+    ncButton
+    variant="ghost"
+    size="sm"
+    iconOnly
+    [attr.aria-label]="stopLabel()"
+    [disabled]="!canStop()"
+    (click)="stopped.emit()"
+  >
+    <nc-icon name="stop" [size]="24" />
+  </button>
+</span>

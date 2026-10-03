@@ -1,0 +1,91 @@
+<div class="flex items-center" [class]="frameClass()">
+  @if (canScrollBack()) {
+    <button
+      type="button"
+      class="flex h-full shrink-0 items-center px-0.5 text-ink-3 hover:text-ink"
+      [attr.aria-label]="backLabel()"
+      (click)="page(-1)"
+    >
+      <nc-icon name="chevron-left" [size]="12" />
+    </button>
+  }
+  <div
+    #scroller
+    role="tablist"
+    [attr.aria-label]="label()"
+    class="flex h-full min-w-0 flex-1 items-center overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+    [class]="listClass()"
+    cdkDropList
+    cdkDropListOrientation="horizontal"
+    [cdkDropListDisabled]="!reorderable()"
+    (cdkDropListDropped)="dropped($event)"
+    (scroll)="measure()"
+  >
+    @for (t of tabs(); track t.value; let i = $index) {
+      <div
+        #tab
+        cdkDrag
+        [cdkDragDisabled]="!reorderable()"
+        role="tab"
+        [attr.aria-selected]="t.value === value()"
+        [attr.aria-label]="nameOf(t)"
+        [attr.tabindex]="t.value === value() ? 0 : -1"
+        [attr.data-index]="i"
+        class="group cursor-pointer"
+        [class]="itemClass()"
+        (click)="value.set(t.value)"
+        (dblclick)="edit.emit(t.value)"
+        (keydown)="onKey($event)"
+      >
+        @if (t.icon) {
+          <nc-icon [name]="t.icon" [size]="iconSize()" />
+        }
+        @if (t.colour) {
+          <span class="size-1 shrink-0 rounded-xs" [style.background]="t.colour"></span>
+        }
+        @if (t.index !== undefined) {
+          <span class="text-ink-4">{{ t.index }}</span>
+        }
+        <!-- A tab may carry no name, and an empty span in a flex row would still take a gap. -->
+        @if (t.label) {
+          <span [class]="labelClass()">{{ t.label }}</span>
+        }
+        @if (t.badge !== undefined) {
+          <span class="rounded-xs bg-raised px-0.5 text-label text-ink-2">{{ t.badge }}</span>
+        }
+        @if (editable()) {
+          <button
+            type="button"
+            class="hidden shrink-0 text-ink-4 group-hover:inline-flex group-focus-within:inline-flex hover:text-ink"
+            [attr.aria-label]="editLabel()"
+            (click)="act(edit, t.value, $event)"
+          >
+            <nc-icon name="edit" [size]="iconSize()" />
+          </button>
+        }
+        @if (removable() && tabs().length > 1) {
+          <button
+            type="button"
+            class="hidden shrink-0 text-ink-4 group-hover:inline-flex group-focus-within:inline-flex hover:text-hot-ink"
+            [attr.aria-label]="removeLabel()"
+            (click)="act(remove, t.value, $event)"
+          >
+            <nc-icon name="trash" [size]="iconSize()" />
+          </button>
+        }
+      </div>
+    }
+  </div>
+  @if (canScrollOn()) {
+    <button
+      type="button"
+      class="flex h-full shrink-0 items-center px-0.5 text-ink-3 hover:text-ink"
+      [attr.aria-label]="onLabel()"
+      (click)="page(1)"
+    >
+      <nc-icon name="chevron-right" [size]="12" />
+    </button>
+  }
+  <!-- Outside the scroller, so what the owner hangs here does not slide away with the tabs. -->
+  <ng-content select="[actions]" />
+</div>

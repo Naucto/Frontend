@@ -1,0 +1,28 @@
+<div *transloco="let t" class="flex min-h-[70vh] items-center justify-center">
+  <nc-empty-state icon="device-laptop" [title]="t('editor.desktopOnly.title')">
+    <p hint class="max-w-[420px] text-meta leading-[1.6] text-ink-3">
+      {{ t('editor.desktopOnly.hint') }}
+    </p>
+    @if (link(); as url) {
+      <div class="flex w-full max-w-[420px] items-center gap-1">
+        <span
+          class="min-w-0 flex-1 truncate rounded-sm border border-line bg-inset px-1.5 py-1 font-mono text-meta text-ink-body"
+        >
+          {{ url }}
+        </span>
+        <button ncButton variant="secondary" (click)="copy(url)">
+          {{ copied() ? t('editor.desktopOnly.copied') : t('editor.desktopOnly.copy') }}
+        </button>
+      </div>
+    }
+    <div class="flex flex-wrap justify-center gap-1">
+      @if (id()) {
+        <a ncButton variant="primary" [routerLink]="['/play', id()]">
+          <nc-icon name="play" [size]="12" />
+          {{ t('editor.desktopOnly.play') }}
+        </a>
+      }
+      <a ncButton variant="secondary" routerLink="/hub">{{ t('editor.desktopOnly.hub') }}</a>
+    </div>
+  </nc-empty-state>
+</div>

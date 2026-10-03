@@ -1,0 +1,79 @@
+<div *transloco="let t">
+  <nc-setting-row [title]="t('settings.displayName')" [hint]="t('settings.displayNameHint')">
+    <input
+      ncInput
+      class="w-[200px]"
+      [value]="nickname()"
+      maxlength="32"
+      [attr.aria-label]="t('settings.displayName')"
+      [disabled]="saving()"
+      (change)="save($event)"
+    />
+  </nc-setting-row>
+  <nc-setting-row [title]="t('settings.handle')" [hint]="t('settings.handleHint')">
+    <span class="flex items-center gap-1">
+      <span class="font-mono text-ui text-ink-4">&#64;</span>
+      <input
+        ncInput
+        class="w-[184px]"
+        [value]="handle()"
+        maxlength="24"
+        spellcheck="false"
+        autocomplete="off"
+        [attr.aria-label]="t('settings.handle')"
+        [disabled]="saving()"
+        (change)="saveHandle($event)"
+      />
+    </span>
+  </nc-setting-row>
+  @if (me.isError()) {
+    <p class="py-2 text-body text-ink-3">{{ t('settings.privacySoon') }}</p>
+  } @else {
+    <nc-setting-row [title]="t('settings.joinPolicy')" [hint]="t('settings.joinPolicyHint')">
+      <nc-segmented
+        [options]="policies()"
+        [value]="me.data()?.sessionJoinPolicy ?? 'ANYONE'"
+        (valueChange)="setPolicy($event)"
+        size="sm"
+      />
+    </nc-setting-row>
+  }
+  <nc-setting-row [title]="t('settings.theme')" [hint]="t('settings.themeHint')">
+    <nc-segmented
+      [options]="themes()"
+      [value]="theme.theme()"
+      (valueChange)="setTheme($event)"
+      size="sm"
+    />
+  </nc-setting-row>
+  <nc-setting-row [title]="t('settings.reduceMotion')" [hint]="t('settings.reduceMotionHint')">
+    <nc-toggle
+      [checked]="theme.reduceMotion()"
+      (checkedChange)="theme.reduceMotion.set($event)"
+      [label]="t('settings.reduceMotion')"
+    />
+  </nc-setting-row>
+  <nc-setting-row [title]="t('settings.screenVeil')" [hint]="t('settings.screenVeilHint')">
+    <nc-toggle
+      [checked]="theme.screenVeil()"
+      (checkedChange)="theme.screenVeil.set($event)"
+      [label]="t('settings.screenVeil')"
+    />
+  </nc-setting-row>
+  <nc-setting-row [title]="t('settings.showFps')" [hint]="t('settings.showFpsHint')">
+    <nc-toggle
+      [checked]="theme.showFps()"
+      (checkedChange)="theme.showFps.set($event)"
+      [label]="t('settings.showFps')"
+    />
+  </nc-setting-row>
+  <nc-setting-row
+    [title]="t('settings.deleteAccount')"
+    [hint]="t('settings.deleteHint')"
+    [danger]="true"
+  >
+    <button ncButton variant="danger" size="sm" (click)="confirmDelete()">
+      {{ t('settings.delete') }}
+    </button>
+  </nc-setting-row>
+</div>

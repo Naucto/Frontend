@@ -1,0 +1,26 @@
+<section *transloco="let t" class="mx-auto w-full max-w-[1000px]">
+  <nc-panel [padded]="false">
+    <h1 class="px-2.75 pt-2.75 text-title text-ink">{{ t('settings.title') }}</h1>
+    <!-- No horizontal padding on the host: nc-tabs insets its own list. -->
+    <nc-tabs
+      [tabs]="tabs()"
+      [value]="current()"
+      (valueChange)="go($event)"
+      [label]="t('settings.title')"
+      class="mt-2 block"
+    />
+    <div class="px-2.75 py-2.75">
+      @switch (current()) {
+        @case ('account') {
+          <nc-account-settings />
+        }
+        @case ('editor') {
+          <nc-editor-settings />
+        }
+        @case ('controls') {
+          <nc-controls-settings />
+        }
+      }
+    </div>
+  </nc-panel>
+</section>

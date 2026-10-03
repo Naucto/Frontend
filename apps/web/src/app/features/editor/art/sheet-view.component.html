@@ -1,0 +1,61 @@
+<!-- The canvas holds the sheet's pixels and nothing else; every mark over it is SVG, which is drawn
+     at whatever the page is zoomed to. -->
+<canvas
+  #canvas
+  class="pixelated absolute inset-0 h-full w-full"
+  [width]="cols() * SPRITE_SIZE"
+  [height]="rows() * SPRITE_SIZE"
+  aria-hidden="true"
+></canvas>
+<svg
+  #surface
+  class="absolute inset-0 cursor-crosshair touch-none"
+  [attr.viewBox]="'0 0 ' + width() + ' ' + height()"
+  role="img"
+  [attr.aria-label]="label()"
+  tabindex="0"
+  (pointerdown)="onDown($event)"
+  (pointermove)="onMove($event)"
+  (pointerup)="onUp($event)"
+  (pointercancel)="onUp($event)"
+  (keydown)="onKey($event)"
+>
+  <path [attr.d]="gridPath()" fill="none" stroke="var(--nc-line)" shape-rendering="crispEdges" />
+  <!-- The view frame goes under the region: the region is what you are editing, and it has to
+       stay legible when the two overlap — which, at a fitted zoom, they always do. -->
+  @if (viewport(); as v) {
+    <rect
+      [attr.x]="v.x * CELL + 0.5"
+      [attr.y]="v.y * CELL + 0.5"
+      [attr.width]="v.w * CELL - 1"
+      [attr.height]="v.h * CELL - 1"
+      fill="none"
+      stroke="var(--nc-ink)"
+      stroke-opacity="0.45"
+      stroke-dasharray="3 3"
+      shape-rendering="crispEdges"
+    />
+  }
+  <rect
+    [attr.x]="region().x * CELL + 1"
+    [attr.y]="region().y * CELL + 1"
+    [attr.width]="region().w * CELL - 2"
+    [attr.height]="region().h * CELL - 2"
+    fill="none"
+    stroke="var(--nc-gold)"
+    stroke-width="2"
+    shape-rendering="crispEdges"
+  />
+  <!-- The inset rule marks where the grip ends over art of the same gold; no crispEdges, which
+       would staircase the diagonal. -->
+  @if (grip(); as g) {
+    <polygon [attr.points]="g.triangle" fill="var(--nc-gold)" />
+    <line
+      [attr.x1]="g.x - GRIP"
+      [attr.y1]="g.y"
+      [attr.x2]="g.x"
+      [attr.y2]="g.y - GRIP"
+      stroke="var(--nc-inset)"
+    />
+  }
+</svg>

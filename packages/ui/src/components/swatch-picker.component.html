@@ -1,0 +1,23 @@
+@if (allowNone()) {
+  <button
+    type="button"
+    class="flex h-[22px] w-[22px] items-center justify-center rounded-sm border border-line-strong text-ink-4 outline-offset-2"
+    [class]="value() === null ? 'outline-2 outline-ink' : ''"
+    [attr.aria-label]="noneLabel()"
+    [attr.aria-pressed]="value() === null"
+    (click)="value.set(null)"
+  >
+    <nc-icon name="close" [size]="12" />
+  </button>
+}
+@for (slot of slots(); track slot) {
+  <button
+    type="button"
+    class="h-[22px] w-[22px] rounded-sm outline-offset-2"
+    [class]="value() === slot ? 'outline-2 outline-ink' : ''"
+    [style.background]="colours()[slot]"
+    [attr.aria-label]="slotLabel() + ' ' + slot"
+    [attr.aria-pressed]="value() === slot"
+    (click)="value.set(slot)"
+  ></button>
+}

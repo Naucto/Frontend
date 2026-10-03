@@ -1,0 +1,296 @@
+<div *transloco="let t" class="grid h-full grid-cols-[minmax(0,1fr)_auto]">
+  <section class="flex min-h-0 flex-col">
+    <div
+      class="flex h-(--nc-bar-h) min-w-0 shrink-0 items-center gap-1.5 border-b border-line bg-panel pr-1.5 pl-2"
+    >
+      <span class="font-mono text-meta tracking-strip text-ink uppercase">
+        {{ t('editor.game.title') }}
+      </span>
+      <span class="label truncate text-ink-4">
+        {{
+          session.dirty()
+            ? t('editor.game.unsavedChanges')
+            : session.lastSavedAt()
+              ? t('editor.game.lastSaved', { when: session.lastSavedAt() | ncRelativeTime })
+              : t('editor.game.notSaved')
+        }}
+      </span>
+    </div>
+    <div class="min-h-0 flex-1 overflow-auto bg-inset px-2.75 py-2.5">
+      <div class="grid grid-cols-[320px_minmax(0,1fr)] gap-2.75">
+        <div>
+          <nc-label class="mb-1">{{ t('editor.game.icon') }}</nc-label>
+          <div
+            class="relative aspect-video overflow-hidden rounded-sm border border-line-strong bg-inset"
+            (dragover)="$event.preventDefault()"
+            (drop)="dropCover($event)"
+          >
+            @if (cover.data(); as url) {
+              <img [src]="url" alt="" class="pixelated h-full w-full object-cover" />
+            } @else {
+              <div class="flex h-full flex-col items-center justify-center text-ink-4">
+                <nc-icon name="image" [size]="24" />
+                <span class="label">{{ t('editor.game.noCover') }}</span>
+              </div>
+            }
+            <span
+              class="absolute top-1 right-1 rounded-xs border border-line-strong bg-page/80 px-[6px] py-[3px] font-mono text-micro tracking-tag text-ink"
+            >
+              320×180
+            </span>
+            <div
+              class="absolute inset-x-0 bottom-0 flex h-4 border-t border-line-strong bg-page/85"
+            >
+              <button
+                type="button"
+                class="flex flex-1 cursor-pointer items-center justify-center gap-0.75 border-r border-line-strong font-ui text-label text-ink uppercase transition-colors duration-100 hover:text-gold-ink"
+                (click)="grabFrame()"
+              >
+                <nc-icon name="camera" [size]="12" />
+                {{ t('editor.game.grabFrame') }}
+              </button>
+              <label
+                class="flex flex-1 cursor-pointer items-center justify-center gap-0.75 font-ui text-label text-ink-body uppercase transition-colors duration-100 hover:text-gold-ink focus-within:text-gold-ink"
+              >
+                <nc-icon name="upload" [size]="12" />
+                {{ t('editor.game.upload') }}
+                <input
+                  type="file"
+                  [accept]="coverAccept"
+                  class="sr-only"
+                  (change)="upload($event)"
+                />
+              </label>
+            </div>
+          </div>
+          <p class="mt-1 text-label text-ink-4">{{ t('editor.game.coverHint') }}</p>
+        </div>
+        <div class="grid content-start gap-2">
+          <nc-field
+            [label]="t('editor.game.name')"
+            for="g-name"
+            [counter]="name().length + ' / ' + nameMax"
+          >
+            <input
+              ncInput
+              id="g-name"
+              [ngModel]="name()"
+              (ngModelChange)="name.set($event)"
+              [maxlength]="nameMax"
+              [placeholder]="t('editor.game.namePlaceholder')"
+            />
+          </nc-field>
+          <nc-field
+            [label]="t('editor.game.summary')"
+            for="g-summary"
+            [counter]="summary().length + ' / ' + summaryMax"
+          >
+            <nc-help-dot
+              actions
+              [title]="t('editor.game.summary')"
+              [text]="t('editor.game.summaryHelp')"
+            />
+            <input
+              ncInput
+              id="g-summary"
+              [ngModel]="summary()"
+              (ngModelChange)="summary.set($event)"
+              [maxlength]="summaryMax"
+              [placeholder]="t('editor.game.summaryPlaceholder')"
+            />
+          </nc-field>
+          <nc-field
+            [label]="t('editor.game.description')"
+            for="g-desc"
+            [counter]="description().length + ' / ' + descriptionMax"
+          >
+            <textarea
+              ncInput
+              id="g-desc"
+              rows="4"
+              [ngModel]="description()"
+              (ngModelChange)="description.set($event)"
+              [maxlength]="descriptionMax"
+              [placeholder]="t('editor.game.descriptionPlaceholder')"
+            ></textarea>
+          </nc-field>
+          <nc-field
+            [label]="t('editor.game.tags')"
+            for="g-tags"
+            [counter]="tags().length + ' / 10'"
+          >
+            <nc-tag-input
+              [tags]="tags()"
+              (tagsChange)="setTags($event)"
+              [placeholder]="t('editor.game.tagPlaceholder')"
+            />
+          </nc-field>
+          <nc-field [label]="t('editor.game.controls')">
+            <nc-help-dot
+              actions
+              [title]="t('editor.game.controls')"
+              [text]="t('editor.game.controlsHelp')"
+            />
+            <div class="grid grid-cols-[48px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
+              @for (c of controls(); track c.action) {
+                <label [for]="'g-ctl-' + c.action" class="font-mono text-meta text-ink-3">
+                  {{ c.action }}
+                </label>
+                <input
+                  ncInput
+                  [id]="'g-ctl-' + c.action"
+                  [ngModel]="c.label"
+                  (ngModelChange)="editControl(c.action, $event)"
+                  (blur)="commitControls()"
+                  (keydown.enter)="commitControls()"
+                  [maxlength]="controlLabelMax"
+                  [placeholder]="c.action"
+                />
+              }
+            </div>
+          </nc-field>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <nc-panel-column [width]="PANEL_WIDTH" [title]="t('editor.game.publishing')">
+    <button actions ncButton variant="secondary" size="sm" (click)="exportGame()">
+      <nc-icon name="download" [size]="24" />
+      {{ t('editor.game.export') }}
+    </button>
+    @if (isCreator()) {
+      <button actions ncButton variant="secondary" size="sm" (click)="confirmDelete()">
+        <nc-icon name="trash" [size]="24" />
+        {{ t('editor.game.delete') }}
+      </button>
+    }
+    @if (!canPublish()) {
+      <nc-notice variant="band">{{ t('editor.game.publishBlocked') }}</nc-notice>
+    }
+    <div class="grid min-w-0">
+      <nc-section banded [title]="t('editor.game.status')">
+        <nc-help-dot
+          actions
+          [title]="t('editor.game.status')"
+          [text]="t('editor.game.statusHelp')"
+        />
+        <nc-segmented
+          fill
+          [options]="statuses()"
+          [value]="status()"
+          (valueChange)="setStatus($event)"
+          [label]="t('editor.game.status')"
+        />
+        <div class="mt-1 flex justify-between font-mono text-micro tracking-wide uppercase">
+          <span class="text-ink-3">{{ t('editor.game.published') }}</span>
+          <span class="text-ink">
+            {{
+              session.project()?.publishedAt
+                ? (session.project()?.publishedAt | slice: 0 : 10)
+                : t('editor.game.never')
+            }}
+          </span>
+        </div>
+      </nc-section>
+      @if (features.monetization()) {
+        <nc-section banded [title]="t('editor.game.monetization')">
+          <nc-help-dot
+            actions
+            [title]="t('editor.game.monetization')"
+            [text]="t('editor.game.monetizationHelp')"
+          />
+          <nc-segmented
+            fill
+            [options]="monetizations()"
+            [value]="monetization()"
+            (valueChange)="setMonetization($event)"
+            [label]="t('editor.game.monetization')"
+          />
+          <div
+            class="mt-1 flex items-center justify-between gap-1.75"
+            [class.opacity-40]="monetization() !== 'PAID'"
+          >
+            <label class="label text-ink-3" for="g-price">{{ t('editor.game.price') }}</label>
+            @if (monetization() === 'PAID') {
+              <input
+                ncInput
+                id="g-price"
+                class="w-[96px]"
+                type="number"
+                min="0"
+                step="0.5"
+                [ngModel]="price()"
+                (ngModelChange)="price.set($event)"
+                (change)="commitPrice()"
+              />
+            } @else {
+              <nc-readout size="sm" value="–" class="w-[64px]" />
+            }
+          </div>
+        </nc-section>
+      }
+      <!-- Raised above the sections that follow, so the person-search panel that drops out of this
+           one paints over them. -->
+      <nc-section banded class="z-10" [title]="t('editor.game.inSession')">
+        <span actions class="label text-ink-4">{{ session.collaborators().length }}</span>
+        @for (c of session.collaborators(); track c.clientId) {
+          <div class="flex items-center gap-1 py-0.5">
+            <nc-user-avatar
+              [userId]="c.userId"
+              [name]="c.name"
+              [colour]="c.isSelf ? 'gold' : c.colour"
+              [size]="24"
+            />
+            <span class="text-ui text-ink">{{ c.name }}</span>
+            @if (c.isSelf) {
+              <span class="label text-ink-4">{{ t('editor.game.you') }}</span>
+            }
+            <span class="flex-1"></span>
+            @if (!c.isSelf && session.isHost()) {
+              <button ncButton variant="ghost" size="sm" (click)="session.kick(c.userId)">
+                {{ t('editor.game.kick') }}
+              </button>
+            }
+          </div>
+        }
+        @if (session.collaborators().length <= 1) {
+          <p class="text-meta text-ink-3">{{ t('editor.game.justYou') }}</p>
+        }
+        @if (isCreator()) {
+          <nc-person-search
+            class="mt-1"
+            [placeholder]="t('editor.game.inviteByName')"
+            [exclude]="memberIds()"
+            (picked)="invite($event)"
+          />
+        }
+      </nc-section>
+      <nc-section banded [title]="t('editor.game.lineage')">
+        @if (session.project()?.forkedFromId; as from) {
+          <!-- The id stands in until the parent's name arrives, and for good once the parent is
+               unpublished or deleted. -->
+          <div class="flex items-center gap-0.5 text-body text-ink-2">
+            <nc-icon name="git-branch" [size]="12" />
+            {{ t('editor.game.forkedFrom') }}
+            <a [href]="'/play/' + from" class="text-sky-ink">
+              {{ parent.data()?.name ?? '#' + from }}
+            </a>
+            @if (parent.data()?.creator?.username; as who) {
+              <span class="text-ink-3">{{ t('editor.game.by', { who }) }}</span>
+            }
+          </div>
+        }
+        <!-- A different mark from the fork line above, which points the other way: these are copies
+             taken of this game. -->
+        <div class="flex items-center gap-0.5 text-body text-ink-2">
+          <nc-icon name="duplicate" [size]="12" />
+          {{ t('editor.game.remixedBy', { n: session.project()?.forkCount ?? 0 }) }}
+        </div>
+        @if (!session.project()?.publishedAt) {
+          <p class="text-meta text-ink-3">{{ t('editor.game.notForkable') }}</p>
+        }
+      </nc-section>
+    </div>
+  </nc-panel-column>
+</div>

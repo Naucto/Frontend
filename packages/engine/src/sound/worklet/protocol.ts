@@ -1,0 +1,38 @@
+import type { Instrument, Pattern, Song } from '../model';
+
+/** Messages from the main thread to the worklet. */
+export type SynthCommand =
+  | { type: 'library'; instruments: [string, Instrument][]; patterns: [string, Pattern][] }
+  | { type: 'sample'; id: string; data: Float32Array }
+  | {
+      type: 'note_on';
+      instrument: string;
+      pitch: number;
+      velocity: number;
+      length: number;
+      channel?: number;
+    }
+  | { type: 'note_off'; channel: number }
+  | { type: 'play_sfx'; pattern: string; pitchOffset: number; volume: number; channel?: number }
+  | { type: 'play_song'; song: Song; loop: boolean; fadeIn: number; from?: number }
+  | { type: 'stop_music'; fadeOut: number }
+  /** Changes whether what is already playing loops, without restarting it. */
+  | { type: 'set_loop'; loop: boolean }
+  | { type: 'stop_all' }
+  /** Holds the transport where it stands, and lets it go on from there. A stop resets it. */
+  | { type: 'pause' }
+  | { type: 'resume' }
+  | { type: 'mixer'; master: number; music?: number; sfx?: number }
+  /** Whether anything is looking at the oscilloscope; `scope` events are only posted while it is. */
+  | { type: 'monitor'; on: boolean };
+
+/** Messages from the worklet back to the main thread. */
+export type SynthEvent =
+  | { type: 'position'; pattern: number; step: number }
+  | { type: 'stopped' }
+  | { type: 'voices'; active: boolean[] }
+  /**
+   * Downsampled signed peak envelope of the latest output, oldest first, for the editor's
+   * oscilloscope.
+   */
+  | { type: 'scope'; peaks: Float32Array };

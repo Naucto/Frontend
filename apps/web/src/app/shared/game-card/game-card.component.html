@@ -1,0 +1,45 @@
+<a [routerLink]="link()" [class]="cardClass()">
+  <div class="relative aspect-video w-full">
+    <nc-game-cover
+      class="h-full w-full"
+      [releaseId]="isDraft() ? null : game().id"
+      [projectId]="isDraft() ? game().id : null"
+      [alt]="game().name"
+      [label]="dense() ? undefined : 'No cover yet'"
+      [iconSize]="dense() ? 12 : 48"
+    />
+  </div>
+  <div [class]="dense() ? 'p-1' : 'px-1.5 pt-[11px] pb-1.5'">
+    <div class="flex items-center gap-1">
+      <span
+        class="min-w-0 flex-1 truncate text-ink group-hover:text-gold-ink"
+        [class]="dense() ? 'text-meta' : 'text-ui'"
+      >
+        {{ game().name }}
+      </span>
+      @if (isDraft()) {
+        <nc-chip>Draft</nc-chip>
+      }
+    </div>
+    <div class="mt-0.5 flex items-center gap-[6px]">
+      <nc-user-avatar
+        [name]="game().creator.username"
+        [userId]="game().creator.id"
+        [size]="14"
+        avatarClass="mr-0.5"
+      />
+      <span class="label truncate">{{ game().creator.username }}</span>
+      @for (c of stacked(); track c.id) {
+        <nc-user-avatar [name]="c.username" [userId]="c.id" [size]="14" overlap />
+      }
+      @if (extra()) {
+        <span class="label ml-0.5 text-ink-4">+{{ extra() }}</span>
+      }
+    </div>
+    <div class="mt-1 flex gap-1.5">
+      <nc-stat icon="play" [value]="game().viewCount" />
+      <nc-stat icon="heart" [value]="game().likes" tone="hot" />
+      <nc-stat icon="git-branch" [value]="game().forkCount ?? 0" />
+    </div>
+  </div>
+</a>

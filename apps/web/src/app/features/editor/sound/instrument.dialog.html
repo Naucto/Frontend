@@ -1,0 +1,25 @@
+<nc-dialog-shell *transloco="let t" [title]="t('editor.sound.renameInstrument')">
+  <nc-field [label]="t('editor.sound.name')" for="instrument-name">
+    <input
+      ncInput
+      id="instrument-name"
+      autocomplete="off"
+      spellcheck="false"
+      [attr.maxlength]="nameMax"
+      [value]="name()"
+      (input)="name.set($any($event.target).value)"
+      (keydown.enter)="submit()"
+    />
+  </nc-field>
+  <nc-field [label]="t('editor.sound.colour')" class="mt-2">
+    <nc-swatch-picker [colours]="data.palette" [slots]="slots" [(value)]="colour" />
+  </nc-field>
+  <ng-container footer>
+    <button ncButton variant="ghost" (click)="ref.close()">
+      {{ t('editor.code.cancel') }}
+    </button>
+    <button ncButton variant="primary" [disabled]="!valid()" (click)="submit()">
+      {{ t('editor.code.rename') }}
+    </button>
+  </ng-container>
+</nc-dialog-shell>

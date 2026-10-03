@@ -1,0 +1,16 @@
+<div class="overflow-y-auto" [style.height]="height()" [style.scrollbar-gutter]="'stable'">
+  <div class="grid" [style.gap.px]="gap" [style.grid-template-columns]="columnTrack()" role="group">
+    @for (c of cells(); track c.n) {
+      <button
+        type="button"
+        class="h-(--nc-control-h-xs) rounded-xs border font-mono text-label"
+        [class]="cellClass(c)"
+        [attr.aria-pressed]="c.state === 'current'"
+        [attr.aria-label]="c.label ?? pad(c.n)"
+        (click)="pick.emit(c.n)"
+      >
+        {{ pad(c.n) }}
+      </button>
+    }
+  </div>
+</div>

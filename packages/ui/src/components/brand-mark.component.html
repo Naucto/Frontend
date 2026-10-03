@@ -1,0 +1,19 @@
+<svg
+  [attr.viewBox]="'0 0 ' + mark().grid[0] + ' ' + mark().grid[1]"
+  [attr.width]="width()"
+  [attr.height]="height()"
+  shape-rendering="crispEdges"
+  aria-hidden="true"
+  focusable="false"
+  class="block"
+>
+  @for (r of mark().rects; track $index) {
+    <rect
+      [attr.x]="r[0]"
+      [attr.y]="r[1]"
+      [attr.width]="r[2]"
+      [attr.height]="r[3]"
+      [attr.fill]="r[4]"
+    />
+  }
+</svg>

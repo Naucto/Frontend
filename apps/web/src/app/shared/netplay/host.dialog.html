@@ -1,0 +1,55 @@
+<nc-dialog-shell
+  *transloco="let t"
+  [title]="open() ? t('net.host.open') : t('net.host.title')"
+  [lead]="open() ? undefined : t('net.host.hint', { n: data.options.maxPlayers })"
+>
+  @if (!open()) {
+    <nc-field [label]="t('net.host.name')" for="session-title">
+      <input
+        ncInput
+        id="session-title"
+        [value]="title()"
+        maxlength="40"
+        (input)="title.set($any($event.target).value)"
+        (keydown.enter)="start()"
+      />
+    </nc-field>
+  } @else {
+    <nc-field [label]="t('net.host.code')">
+      <nc-share-code [code]="code()" (copied)="copy()" />
+      <p class="mt-1 text-meta text-ink-3">{{ t('net.host.codeHint') }}</p>
+    </nc-field>
+    <nc-setting-row class="mt-2" [title]="t('net.host.listed')" [hint]="t('net.host.listedHint')">
+      <nc-toggle
+        [checked]="listed()"
+        (checkedChange)="setListed($event)"
+        [label]="t('net.host.listed')"
+      />
+    </nc-setting-row>
+    <p class="mt-2 label text-ink-4">
+      {{ t('net.host.inTheRoom', { players: seats().taken, max: seats().max }) }}
+    </p>
+    <div class="mt-1 flex flex-wrap gap-2">
+      @for (seat of seats().slots; track $index) {
+        @if (seat) {
+          <nc-user-avatar [size]="26" [userId]="seat.id" [name]="seat.name" />
+        } @else {
+          <span class="size-[26px] rounded-xs border border-dashed border-line-strong"></span>
+        }
+      }
+    </div>
+  }
+  <ng-container footer>
+    @if (!open()) {
+      <button ncButton variant="ghost" (click)="ref.close(false)">{{ t('net.cancel') }}</button>
+      <button ncButton variant="primary" (click)="start()" [disabled]="busy()">
+        {{ t('net.host.start') }}
+      </button>
+    } @else {
+      <button ncButton variant="danger" (click)="end()">{{ t('net.host.end') }}</button>
+      <button ncButton variant="primary" (click)="ref.close(true)">
+        {{ t('net.host.done') }}
+      </button>
+    }
+  </ng-container>
+</nc-dialog-shell>

@@ -1,0 +1,95 @@
+<div *transloco="let t" class="grid gap-4 lg:grid-cols-[240px_minmax(0,1fr)]">
+  <!-- Sticks to the window's edge: the top bar scrolls away with the page. -->
+  <aside
+    class="lg:sticky lg:top-3 lg:max-h-[calc(100dvh-24px)] lg:self-start lg:overflow-x-hidden lg:overflow-y-auto lg:pr-1"
+  >
+    <nc-search
+      #search
+      class="mb-2"
+      [placeholder]="t('docs.search')"
+      [hint]="searchHint"
+      [value]="query()"
+      (valueChange)="query.set($event)"
+    />
+    @if (hits().length) {
+      <div class="mb-2 rounded-sm border border-line bg-raised" role="listbox">
+        @for (h of hits(); track h.slug + h.title) {
+          <button
+            type="button"
+            role="option"
+            aria-selected="false"
+            class="block w-full border-b border-line px-1.5 py-1 text-left last:border-b-0 hover:bg-inset"
+            (click)="openHit(h)"
+          >
+            <div
+              class="truncate text-meta"
+              [class]="h.kind === 'api' ? 'font-mono text-gold-ink' : 'text-ink'"
+            >
+              <nc-highlight [text]="h.title" [match]="query()" />
+            </div>
+            <div class="truncate text-label text-ink-4">{{ h.subtitle }}</div>
+          </button>
+        }
+      </div>
+    }
+    <nc-doc-tree [active]="slug()" [fragment]="fragment()" (open)="go($event)" />
+  </aside>
+
+  <!-- A reading measure. No artboard draws /learn, so the figure is typographic, not measured. -->
+  <article class="relative min-w-0 max-w-[760px]">
+    @if (page(); as p) {
+      <nc-doc-anchor
+        [page]="p"
+        [article]="articleEl()?.nativeElement ?? null"
+        (jump)="anchorTo($event)"
+      />
+      <div class="mb-2 flex items-center gap-2">
+        <span class="label font-ui text-ink-4">{{ t('docs.sections.' + p.section) }}</span>
+        <span class="flex-1"></span>
+        @if (p.lua) {
+          <button
+            ncButton
+            variant="primary"
+            size="sm"
+            (click)="copyToNewGame(p)"
+            [disabled]="!auth.isAuthenticated()"
+          >
+            <nc-icon name="file-plus" [size]="12" />
+            {{ t('docs.copyToNewGame') }}
+          </button>
+        }
+      </div>
+      <nc-doc-article #article [page]="p" (navigate)="navigate($event)" />
+      @if (neighbours(); as n) {
+        <nav class="mt-4 flex justify-between gap-2 border-t border-line pt-2">
+          @if (n.prev; as prev) {
+            <button ncButton variant="secondary" size="sm" (click)="go(prev.slug)">
+              <nc-icon name="chevron-left" [size]="12" />
+              {{ prev.title }}
+            </button>
+          } @else {
+            <span></span>
+          }
+          @if (n.next; as next) {
+            <button ncButton variant="secondary" size="sm" (click)="go(next.slug)">
+              {{ next.title }}
+              <nc-icon name="chevron-right" [size]="12" />
+            </button>
+          }
+        </nav>
+      }
+    } @else if (docs.error()) {
+      <nc-empty-state
+        icon="book-open"
+        [title]="t('docs.unavailable')"
+        [hint]="t('docs.unavailableHint')"
+      />
+    } @else if (docs.ready()) {
+      <nc-empty-state
+        icon="book-open"
+        [title]="t('docs.notFound')"
+        [hint]="t('docs.notFoundHint')"
+      />
+    }
+  </article>
+</div>

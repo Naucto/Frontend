@@ -1,0 +1,31 @@
+<!-- Above the CDK overlay wrapper (z-index 1000), not merely above the backdrop: a dialog pane can
+     reach this corner, and a toast is often about the dialog that would cover it. -->
+<div
+  class="pointer-events-auto fixed right-2 bottom-2 z-[1001] flex w-[320px] flex-col gap-1"
+  aria-live="polite"
+>
+  @for (t of toasts.toasts(); track t.id) {
+    <div
+      class="flex items-start gap-1 rounded-md border-l-2 border border-line bg-raised px-2 py-1.5 text-body shadow-[0_2px_0_var(--nc-inset)]"
+      [class]="TONE[t.tone].shell"
+      animate.enter="nc-toast-enter"
+      animate.leave="nc-toast-leave"
+    >
+      <nc-icon
+        [name]="TONE[t.tone].icon"
+        [size]="12"
+        class="mt-[1px] shrink-0"
+        [class]="TONE[t.tone].mark"
+      />
+      <span class="flex-1">{{ t.text }}</span>
+      <button
+        type="button"
+        class="cursor-pointer text-ink-3 transition-colors duration-100 hover:text-ink"
+        aria-label="Dismiss"
+        (click)="toasts.dismiss(t.id)"
+      >
+        <nc-icon name="close" [size]="12" />
+      </button>
+    </div>
+  }
+</div>

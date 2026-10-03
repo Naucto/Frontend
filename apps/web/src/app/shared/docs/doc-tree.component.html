@@ -1,0 +1,53 @@
+<nav *transloco="let t" [attr.aria-label]="t('docs.title')" class="text-meta">
+  @for (s of docs.sections(); track s.id) {
+    <button
+      type="button"
+      class="font-ui text-label tracking-label flex w-full items-center gap-0.5 py-1 text-left uppercase text-ink-3 hover:text-ink"
+      [attr.aria-expanded]="!collapsed().has(s.id)"
+      (click)="toggle(s.id)"
+    >
+      <nc-icon [name]="collapsed().has(s.id) ? 'chevron-right' : 'chevron-down'" [size]="12" />
+      <nc-icon [name]="iconOf(s.id)" [size]="12" class="text-ink-4" />
+      {{ t('docs.sections.' + s.id) }}
+    </button>
+    @if (!collapsed().has(s.id)) {
+      @for (p of s.pages; track p.slug) {
+        @if (!p.slug.endsWith('/index')) {
+          <button
+            type="button"
+            class="flex w-full items-center gap-1 border-l-2 py-0.5 pl-2 text-left hover:text-ink"
+            [class]="
+              p.slug === active() ? 'border-gold text-gold-ink' : 'border-transparent text-ink-2'
+            "
+            [attr.aria-current]="p.slug === active() ? 'page' : null"
+            (click)="open.emit(p.slug)"
+          >
+            <span class="min-w-0 flex-1 truncate">{{ p.title }}</span>
+            @if (p.apis.length) {
+              <span class="font-ui text-label tracking-label uppercase text-ink-4">
+                {{ p.apis.length }} fn
+              </span>
+            }
+          </button>
+          @if (p.slug === active()) {
+            @for (c of childrenOf(p); track c.id) {
+              <button
+                type="button"
+                class="flex w-full items-center border-l-2 py-0.5 text-left text-label hover:text-ink"
+                [class]="
+                  (c.id === fragment()
+                    ? 'border-gold text-gold-ink'
+                    : 'border-transparent text-ink-3') + (c.sub ? ' pl-5' : ' pl-3')
+                "
+                [attr.aria-current]="c.id === fragment() ? 'location' : null"
+                (click)="open.emit(p.slug + '#' + c.id)"
+              >
+                <span class="min-w-0 flex-1 truncate" [class.font-mono]="c.code">{{ c.text }}</span>
+              </button>
+            }
+          }
+        }
+      }
+    }
+  }
+</nav>

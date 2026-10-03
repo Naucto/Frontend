@@ -1,0 +1,32 @@
+<nc-dialog-shell *transloco="let t" [title]="data.title">
+  <nc-field [label]="t('editor.resource.name')" for="resource-name" [error]="error() ?? undefined">
+    <input
+      ncInput
+      id="resource-name"
+      autocomplete="off"
+      spellcheck="false"
+      [attr.maxlength]="nameMax"
+      [value]="name()"
+      (input)="name.set($any($event.target).value)"
+      (keydown.enter)="submit()"
+    />
+  </nc-field>
+
+  <p class="mt-1.5 mb-1 label text-ink-3">{{ t('editor.resource.colour') }}</p>
+  <nc-swatch-picker
+    allowNone
+    [colours]="data.palette"
+    [slots]="accents"
+    [(value)]="colour"
+    [noneLabel]="t('editor.resource.colourNone')"
+  />
+
+  <ng-container footer>
+    <button ncButton variant="ghost" (click)="ref.close()">
+      {{ t('editor.resource.cancel') }}
+    </button>
+    <button ncButton variant="primary" [disabled]="!!error()" (click)="submit()">
+      {{ data.confirmLabel }}
+    </button>
+  </ng-container>
+</nc-dialog-shell>

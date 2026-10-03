@@ -1,0 +1,148 @@
+<div *transloco="let t" class="relative flex h-full flex-col bg-panel">
+  @if (shown() && popped()) {
+    <!-- Placeholder at the viewer's own ratio, so the column keeps its height while the viewer
+         floats. -->
+    <div
+      class="m-1.5 flex aspect-video flex-col items-center justify-center rounded-sm border border-dashed border-line-strong p-2 text-center"
+    >
+      <p class="label text-ink-3">{{ t('editor.viewerPopped') }}</p>
+      <p class="mt-0.5 text-meta text-ink-4">{{ t('editor.viewerPoppedHint') }}</p>
+      <button ncButton variant="secondary" size="sm" class="mt-1" (click)="ui.togglePip()">
+        <nc-icon name="dock" [size]="12" />
+        {{ t('editor.dockViewer') }}
+      </button>
+    </div>
+  }
+  <!-- Hidden, never unmounted: unmounting cold-starts the game and drops any netplay session. -->
+  <div [class.hidden]="screenHidden()">
+    @if (!popped()) {
+      <div class="flex h-(--nc-bar-h) items-center gap-1 border-b border-line px-1.5">
+        <span class="font-mono text-meta tracking-wide text-ink">320×180</span>
+        <span class="font-mono text-meta text-ink-3">×{{ scale() }}</span>
+        <span class="flex-1"></span>
+        <button
+          ncButton
+          variant="ghost"
+          size="sm"
+          iconOnly
+          [attr.aria-pressed]="false"
+          [attr.aria-label]="t('editor.popOut')"
+          (click)="ui.togglePip()"
+        >
+          <nc-icon name="pip" [size]="24" />
+        </button>
+      </div>
+    }
+    <div
+      #card
+      [class]="popped() ? 'nc-pip' : ''"
+      [style.left.px]="pip()?.x ?? null"
+      [style.top.px]="pip()?.y ?? null"
+      [style.width.px]="popped() ? ui.pipWidth() : null"
+    >
+      @if (popped()) {
+        <!-- Drawn over the card's own edges rather than straddling them: the card clips its
+             overflow, so half of a grip hung outside would not be there to grab. -->
+        @for (g of grips; track g.grip) {
+          <span
+            class="absolute z-10 {{ g.box }} {{ g.cursor }}"
+            (pointerdown)="startResize($event, g.grip)"
+          ></span>
+        }
+      }
+      @if (popped()) {
+        <div
+          #grab
+          class="flex h-[31px] cursor-grab items-center gap-1 border-b border-line bg-raised px-1.25 active:cursor-grabbing"
+          (pointerdown)="startDrag($event)"
+        >
+          <nc-icon name="pip" [size]="12" class="text-ink-4" />
+          <span class="font-mono text-micro tracking-strip text-ink-3 uppercase">
+            {{ t('editor.viewer') }} · 320×180
+          </span>
+          <span class="flex-1"></span>
+          <button
+            ncButton
+            variant="ghost"
+            size="sm"
+            iconOnly
+            class="-me-0.5"
+            [attr.aria-pressed]="true"
+            [attr.aria-label]="t('editor.dockViewer')"
+            (click)="ui.togglePip()"
+          >
+            <nc-icon name="collapse" [size]="12" />
+          </button>
+        </div>
+      }
+      <nc-game-screen
+        #screen
+        [game]="session.game"
+        [projectId]="session.id"
+        fit="width"
+        compact
+        debug
+        [overlay]="popped()"
+        (mounted)="onMounted()"
+      >
+        <nc-toggle transport-extra [checked]="ui.autoRun()" (checkedChange)="ui.setAutoRun($event)">
+          {{ t('editor.autoRun') }}
+        </nc-toggle>
+      </nc-game-screen>
+    </div>
+  </div>
+  @if (shown()) {
+    <nc-tabs
+      [tabs]="tabs()"
+      [value]="ui.consoleTab()"
+      (valueChange)="setTab($event)"
+      variant="console"
+      [label]="t('editor.consoleTabs')"
+    >
+      @if (ui.consoleTab() === 'console') {
+        <button
+          actions
+          ncButton
+          variant="ghost"
+          size="sm"
+          class="mr-0.25"
+          (click)="runtime.lines.set([])"
+        >
+          {{ t('editor.clear') }}
+        </button>
+      }
+    </nc-tabs>
+    <div class="min-h-0 flex-1 overflow-hidden">
+      @switch (ui.consoleTab()) {
+        @case ('console') {
+          <nc-lcd variant="flush" class="h-full leading-[1.85] tracking-copy">
+            @for (l of lines(); track l.id) {
+              <div
+                [class.text-hot]="l.level === 'error'"
+                [class.text-orange-ink]="l.level === 'warn'"
+              >
+                {{ l.level === 'error' ? '! ' : l.level === 'warn' ? '? ' : '> ' }}{{ l.text }}
+              </div>
+            } @empty {
+              <div class="opacity-60">{{ t('editor.consoleEmpty') }}</div>
+            }
+            @if (runtime.state() === 'halted') {
+              <div class="mt-1 text-hot">--- HALTED ---</div>
+            }
+          </nc-lcd>
+        }
+        @case ('perf') {
+          <nc-lcd variant="flush" class="h-full">
+            <div>FPS {{ runtime.fps() }}</div>
+            <div>CPU {{ runtime.cpu() }}%</div>
+            <div>FRAME {{ runtime.frame() }}</div>
+            <div>STATE {{ runtime.state() }}</div>
+            <div>PLAYERS {{ players() }}</div>
+            <div>EDITORS {{ session.collaborators().length }}</div>
+            <div>SYNC {{ session.synced() ? 'synced' : 'pending' }}</div>
+          </nc-lcd>
+        }
+      }
+    </div>
+  }
+</div>

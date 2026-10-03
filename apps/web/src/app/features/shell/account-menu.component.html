@@ -1,0 +1,66 @@
+<ng-container *transloco="let t">
+  <button
+    type="button"
+    [ncPopover]="menu"
+    popoverAlign="end"
+    [(popoverOpen)]="open"
+    class="flex items-center rounded-xs"
+    [attr.aria-label]="t('account.menu')"
+  >
+    <nc-avatar [name]="auth.displayName()" [src]="avatar()" colour="neutral" [size]="38" />
+  </button>
+  <ng-template #menu>
+    <nc-popover-panel class="w-[280px]">
+      <div class="flex items-center gap-1.5 p-2">
+        <nc-avatar [name]="auth.displayName()" [src]="avatar()" [size]="32" />
+        <div class="min-w-0">
+          <div class="truncate text-ui text-ink">{{ auth.displayName() }}</div>
+          <div class="label text-ink-4">
+            {{ t('account.gamesFriends', { g: games.data() ?? 0, f: friends.data() ?? 0 }) }}
+          </div>
+        </div>
+      </div>
+      <div class="flex flex-col border-t border-line p-1">
+        @if (auth.user()?.username; as username) {
+          <a
+            [routerLink]="['/u', username]"
+            class="flex items-center gap-1 rounded-xs px-1 py-0.5 text-body text-ink hover:bg-raised"
+            (click)="open.set(false)"
+          >
+            <nc-icon name="user" [size]="12" class="text-ink-3" />
+            {{ t('account.profile') }}
+          </a>
+        }
+        <a
+          routerLink="/settings"
+          class="flex items-center gap-1 rounded-xs px-1 py-0.5 text-body text-ink hover:bg-raised"
+          (click)="open.set(false)"
+        >
+          <nc-icon name="sliders" [size]="12" class="text-ink-3" />
+          {{ t('account.settings') }}
+        </a>
+        <button
+          type="button"
+          class="flex items-center gap-1 rounded-xs px-1 py-0.5 text-left text-body text-ink hover:bg-raised"
+          (click)="theme.toggle()"
+        >
+          <nc-icon
+            [name]="theme.theme() === 'light' ? 'sun' : 'moon'"
+            [size]="12"
+            class="text-ink-3"
+          />
+          {{ t('account.appearance') }}
+          <span class="label ml-auto text-ink-4">{{ theme.theme() }}</span>
+        </button>
+        <button
+          type="button"
+          class="flex items-center gap-1 rounded-xs px-1 py-0.5 text-left text-body text-ink hover:bg-raised"
+          (click)="logout()"
+        >
+          <nc-icon name="logout" [size]="12" class="text-ink-3" />
+          {{ t('account.signOut') }}
+        </button>
+      </div>
+    </nc-popover-panel>
+  </ng-template>
+</ng-container>

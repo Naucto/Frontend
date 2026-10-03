@@ -1,0 +1,199 @@
+<ng-container *transloco="let t">
+  @if (!friends().length && !requests().length && !recent().length) {
+    <!-- Centred in the height the shell leaves, not in a fraction of the viewport. -->
+    <div class="flex flex-1 items-center justify-center">
+      <nc-empty-state icon="users" [title]="t('friends.emptyTitle')">
+        <p hint class="max-w-[420px] text-meta leading-[1.6] text-ink-3">
+          {{ t('friends.emptyHint') }}
+        </p>
+        <button ncButton variant="primary" (click)="openAdd()">
+          <nc-icon name="plus" [size]="12" />
+          {{ t('friends.addFriend') }}
+        </button>
+      </nc-empty-state>
+    </div>
+  } @else {
+    <header class="flex flex-wrap items-end gap-2">
+      <h1 class="text-display text-ink">{{ t('friends.title') }}</h1>
+      <nc-segmented
+        class="pb-0.5"
+        variant="chips"
+        [options]="tabs()"
+        [value]="tab()"
+        (valueChange)="setTab($event)"
+      />
+      <span class="flex-1"></span>
+      <button ncButton variant="primary" (click)="openAdd()">
+        <nc-icon name="plus" [size]="12" />
+        {{ t('friends.addFriend') }}
+      </button>
+    </header>
+
+    <div class="mt-2.5 flex flex-col gap-2.5 xl:flex-row">
+      <div class="min-w-0 flex-1">
+        <div class="label mb-[11px] text-jade-ink">{{ t('friends.onlineNow') }}</div>
+        <div class="grid gap-[9px] md:grid-cols-2">
+          @for (f of online(); track f.id) {
+            <div
+              class="relative flex items-center gap-1.75 overflow-hidden rounded-md border border-line border-l-2 bg-panel px-2 py-1.75"
+              [class]="ACCENT[f.presence?.kind ?? '']?.rule ?? 'border-l-line'"
+            >
+              <!-- The game they are in, bled in from the right and scrimmed back to the panel
+                   colour so the name and the action stay readable over it. -->
+              @if (f.presence?.coverUrl; as cover) {
+                <span class="pointer-events-none absolute inset-y-0 right-0 w-[220px]">
+                  <img
+                    [src]="cover"
+                    alt=""
+                    aria-hidden="true"
+                    class="pixelated block h-full w-full object-cover opacity-55"
+                  />
+                  <span
+                    class="absolute inset-0"
+                    style="
+                      background: linear-gradient(
+                        to right,
+                        var(--color-panel) 0%,
+                        color-mix(in srgb, var(--color-panel) 55%, transparent) 45%,
+                        color-mix(in srgb, var(--color-panel) 10%, transparent) 100%
+                      );
+                    "
+                  ></span>
+                </span>
+              }
+              <nc-user-avatar
+                avatarClass="relative"
+                [name]="f.nickname || f.username"
+                [userId]="f.id"
+                [size]="40"
+              />
+              <div class="relative min-w-0">
+                <a
+                  [routerLink]="['/u', f.username]"
+                  class="block truncate text-ui text-ink hover:text-gold-ink"
+                >
+                  {{ f.nickname || f.username }}
+                </a>
+                <div class="truncate text-meta text-ink-3">
+                  {{ line(f).verb }}
+                  <span [class]="line(f).nameClass">{{ line(f).name }}</span>
+                  {{ line(f).tail }}
+                </div>
+              </div>
+              <span class="flex-1"></span>
+              @if (playable(f); as target) {
+                <a
+                  ncButton
+                  class="relative"
+                  [variant]="target.variant"
+                  [routerLink]="['/play', target.releaseId]"
+                >
+                  {{ t(target.label) }}
+                </a>
+              }
+            </div>
+          } @empty {
+            <p class="text-meta text-ink-4">{{ t('hub.friendsEmpty') }}</p>
+          }
+        </div>
+
+        <!-- Also shown when the ONLINE view is empty, so having only offline friends does not read
+             as having none. -->
+        @if (offline().length && (tab() === 'all' || !online().length)) {
+          <div class="label mt-2.75 mb-[11px]">{{ t('friends.offline') }}</div>
+          <div class="grid grid-cols-2 gap-[9px] md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            @for (f of offline(); track f.id) {
+              <a
+                [routerLink]="['/u', f.username]"
+                class="flex items-center gap-1.25 rounded-md border border-line-soft bg-panel px-1.5 py-[11px] opacity-60 transition-opacity hover:opacity-100"
+              >
+                <nc-user-avatar [name]="f.nickname || f.username" [userId]="f.id" [size]="28" />
+                <div class="min-w-0">
+                  <div class="truncate text-meta text-ink-body">
+                    {{ f.nickname || f.username }}
+                  </div>
+                  <div class="label">{{ f.since | ncRelativeTime }}</div>
+                </div>
+              </a>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="grid content-start gap-1.75 xl:w-[330px] xl:flex-none">
+        @if (recent().length) {
+          <section class="rounded-md border border-line bg-panel px-2 pt-1.75 pb-1">
+            <div class="label mb-0.75">{{ t('friends.playedRecently') }}</div>
+            @for (p of recent(); track p.id) {
+              <div class="flex items-center gap-1.25 py-1">
+                <nc-user-avatar [name]="p.nickname || p.username" [userId]="p.id" [size]="28" />
+                <div class="min-w-0 flex-1">
+                  <div class="truncate text-meta text-ink-body">
+                    {{ p.nickname || p.username }}
+                  </div>
+                  <!-- The game name keeps its own case: uppercase micro runs wider than the panel.
+                       The game name keeps its own case: uppercase micro runs wider than the panel. -->
+                  <div class="truncate text-meta text-ink-3">
+                    {{ p.game }}
+                    <span class="label">· {{ p.playedAt | ncRelativeTime }}</span>
+                  </div>
+                </div>
+                @if (!p.friend) {
+                  <button ncButton variant="secondary" size="sm" (click)="addUser(p.id)">
+                    {{ t('friends.add') }}
+                  </button>
+                }
+              </div>
+            }
+          </section>
+        }
+        @if (requests().length) {
+          <section class="rounded-md border border-line bg-panel p-2">
+            <div class="label mb-[13px] text-gold-ink">
+              {{ t('friends.requests') }} · {{ requests().length }}
+            </div>
+            @for (r of requests(); track r.id) {
+              <div class="flex items-center gap-[11px] not-last:mb-1.5">
+                <nc-user-avatar
+                  [name]="r.from.nickname || r.from.username"
+                  [userId]="r.from.id"
+                  [size]="30"
+                />
+                <div class="min-w-0 flex-1">
+                  <div class="truncate text-meta text-ink">
+                    {{ r.from.nickname || r.from.username }}
+                  </div>
+                  <div class="label">
+                    {{
+                      r.playedYourGame
+                        ? t('friends.playedYourGame')
+                        : t('friends.mutuals', { n: r.mutuals ?? 0 })
+                    }}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  class="px-[3px] text-jade-ink hover:brightness-125 disabled:text-ink-4"
+                  [attr.aria-label]="t('friends.accept')"
+                  [disabled]="answering() !== null"
+                  (click)="accept(r.id)"
+                >
+                  <nc-icon name="check" [size]="24" />
+                </button>
+                <button
+                  type="button"
+                  class="px-[3px] text-ink-3 hover:text-ink disabled:text-ink-4"
+                  [attr.aria-label]="t('friends.decline')"
+                  [disabled]="answering() !== null"
+                  (click)="decline(r.id)"
+                >
+                  <nc-icon name="close" [size]="24" />
+                </button>
+              </div>
+            }
+          </section>
+        }
+      </div>
+    </div>
+  }
+</ng-container>

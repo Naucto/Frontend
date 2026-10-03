@@ -1,0 +1,27 @@
+@if (label() && !hideLabel()) {
+  <span class="label tracking-tag shrink-0" [class]="compact() ? 'w-[16px]' : 'w-[56px]'">
+    {{ label() }}
+  </span>
+}
+<input
+  type="range"
+  [min]="min()"
+  [max]="max()"
+  [step]="step()"
+  [value]="value()"
+  [disabled]="disabled()"
+  [attr.aria-label]="label()"
+  (input)="onInput($event)"
+  class="nc-range h-[4px] min-w-0 flex-1 cursor-pointer appearance-none rounded-xs disabled:cursor-not-allowed disabled:opacity-40"
+  [class]="compact() ? 'bg-line-soft' : 'bg-line-strong'"
+  [style.--nc-accent]="'var(--nc-' + accent() + ')'"
+  [style.--nc-fill.%]="fill()"
+/>
+@if (readout()) {
+  <span
+    class="shrink-0 text-right font-mono text-meta text-ink-body"
+    [class]="compact() ? 'w-[30px]' : 'w-[52px]'"
+  >
+    {{ readout() }}
+  </span>
+}

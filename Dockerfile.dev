@@ -1,14 +1,17 @@
+# Dev image: Angular dev server with hot reload, sources bind-mounted by docker-compose.dev.yml.
 FROM node:22-alpine
 WORKDIR /app
-
-COPY ./patches ./patches
-COPY package.json ./
-COPY package-lock.json ./
-RUN npm ci
-
+COPY package.json package-lock.json .npmrc ./
+COPY patches ./patches
+COPY apps/web/package.json apps/web/
+COPY packages/engine/package.json packages/engine/
+COPY packages/ui/package.json packages/ui/
+# The client's sources are generated from openapi.json by the root postinstall.
+COPY packages/api-client/package.json packages/api-client/openapi.json packages/api-client/openapi-ts.config.ts packages/api-client/
+# The engine's `prepare` script bundles the audio worklet, so its scripts must be in the layer before `npm ci`.
+COPY packages/engine/scripts packages/engine/scripts
+RUN npm ci --no-audit --no-fund
 COPY . .
-
-EXPOSE 5173
-
-CMD ["npm", "run", "dev", "--host"]
-
+EXPOSE 4200
+# `ng` directly: npm drops the flag names of arguments appended to a workspace script.
+CMD ["npx", "ng", "serve", "web", "--host", "0.0.0.0", "--port", "4200", "--poll", "1000"]

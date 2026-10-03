@@ -1,0 +1,30 @@
+<nc-readout [value]="shown()" tone="gold">
+  @if (regenerable()) {
+    <button
+      type="button"
+      ncButton
+      variant="ghost"
+      size="xs"
+      iconOnly
+      [attr.aria-label]="regenerateLabel()"
+      [attr.title]="regenerateLabel()"
+      [disabled]="!code()"
+      (click)="regenerate.emit()"
+    >
+      <nc-icon name="sync" [size]="12" />
+    </button>
+  }
+  <button
+    type="button"
+    ncButton
+    variant="ghost"
+    size="xs"
+    iconOnly
+    [attr.aria-label]="copyLabel()"
+    [attr.title]="copyLabel()"
+    [disabled]="!code()"
+    (click)="copied.emit()"
+  >
+    <nc-icon name="copy" [size]="12" />
+  </button>
+</nc-readout>

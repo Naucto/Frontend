@@ -1,0 +1,43 @@
+<ng-container *transloco="let t">
+  <span class="label truncate text-ink-3">{{ page().title }}</span>
+  @if (current(); as c) {
+    <span class="label shrink-0 text-ink-4">›</span>
+    @if (c.kind === 'api') {
+      <span class="min-w-0 truncate font-mono text-meta text-gold-ink">{{ c.title }}</span>
+    } @else if (c.step) {
+      <span class="label shrink-0 text-ink-3">
+        {{ t('docs.stepOf', { n: c.step, m: c.steps }) }}
+      </span>
+      <span class="label min-w-0 truncate text-ink">{{ c.title }}</span>
+      <span class="flex-1"></span>
+      <span
+        class="absolute -bottom-px left-0 h-[2px] bg-gold"
+        [style.width.%]="(c.step / c.steps) * 100"
+      ></span>
+      <button
+        ncButton
+        variant="ghost"
+        size="sm"
+        iconOnly
+        [attr.aria-label]="t('docs.prevStep')"
+        [disabled]="c.step <= 1"
+        (click)="stepTo(c.step - 1)"
+      >
+        <nc-icon name="chevron-left" [size]="24" />
+      </button>
+      <button
+        ncButton
+        variant="ghost"
+        size="sm"
+        iconOnly
+        [attr.aria-label]="t('docs.nextStep')"
+        [disabled]="c.step >= c.steps"
+        (click)="stepTo(c.step + 1)"
+      >
+        <nc-icon name="chevron-right" [size]="24" />
+      </button>
+    } @else {
+      <span class="label min-w-0 truncate text-ink">{{ c.title }}</span>
+    }
+  }
+</ng-container>

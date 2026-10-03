@@ -1,8 +1,42 @@
-diff --git a/node_modules/fengari/.bun-tag-e962097406933241 b/node_modules/fengari/.bun-tag-e962097406933241
-new file mode 100644
-index 0000000..e69de29
+diff --git a/node_modules/fengari/src/lauxlib.js b/node_modules/fengari/src/lauxlib.js
+--- a/node_modules/fengari/src/lauxlib.js
++++ b/node_modules/fengari/src/lauxlib.js
+@@ -1,4 +1,6 @@
+ "use strict";
++/* patched: keep Node-only modules away from browser bundlers */
++const nodeRequire = (typeof process !== 'undefined' && process.versions && process.versions.node) ? eval('require') : (() => null);
+ 
+ const {
+     LUAL_BUFFERSIZE
+@@ -898,7 +900,7 @@
+         return status;
+     };
+ } else {
+-    const fs = require('fs');
++    const fs = nodeRequire('fs');
+ 
+     class LoadF {
+         constructor() {
+diff --git a/node_modules/fengari/src/ldblib.js b/node_modules/fengari/src/ldblib.js
+--- a/node_modules/fengari/src/ldblib.js
++++ b/node_modules/fengari/src/ldblib.js
+@@ -1,4 +1,6 @@
+ "use strict";
++/* patched: keep Node-only modules away from browser bundlers */
++const nodeRequire = (typeof process !== 'undefined' && process.versions && process.versions.node) ? eval('require') : (() => null);
+ 
+ const {
+     LUA_MASKCALL,
+@@ -470,7 +472,7 @@
+ 
+ let getinput;
+ if (typeof process !== "undefined") { // Only with Node
+-    const readlineSync = require('readline-sync');
++    const readlineSync = nodeRequire('readline-sync');
+     readlineSync.setDefaultOptions({
+         prompt: 'lua_debug> '
+     });
 diff --git a/node_modules/fengari/src/liolib.js b/node_modules/fengari/src/liolib.js
-index 92dda58..7326692 100644
 --- a/node_modules/fengari/src/liolib.js
 +++ b/node_modules/fengari/src/liolib.js
 @@ -1,6 +1,5 @@
@@ -12,7 +46,7 @@ index 92dda58..7326692 100644
  
  const {
      LUA_REGISTRYINDEX,
-@@ -130,10 +129,6 @@ const io_output = function(L) {
+@@ -130,10 +129,6 @@
      return g_iofile(L, IO_OUTPUT, "w");
  };
  
@@ -23,7 +57,7 @@ index 92dda58..7326692 100644
  
  const g_write = function(L, f, arg) {
      let nargs = lua_gettop(L) - arg;
-@@ -142,7 +137,8 @@ const g_write = function(L, f, arg) {
+@@ -142,7 +137,8 @@
      for (; nargs--; arg++) {
          let s = luaL_checklstring(L, arg);
          try {
@@ -33,7 +67,7 @@ index 92dda58..7326692 100644
          } catch (e) {
              status = false;
              err = e;
-@@ -221,9 +217,9 @@ const luaopen_io = function(L) {
+@@ -221,9 +217,9 @@
      luaL_newlib(L, iolib);
      createmeta(L);
      /* create (and set) default files */
@@ -46,8 +80,58 @@ index 92dda58..7326692 100644
      return 1;
  };
  
+diff --git a/node_modules/fengari/src/loadlib.js b/node_modules/fengari/src/loadlib.js
+--- a/node_modules/fengari/src/loadlib.js
++++ b/node_modules/fengari/src/loadlib.js
+@@ -1,4 +1,6 @@
+ "use strict";
++/* patched: keep Node-only modules away from browser bundlers */
++const nodeRequire = (typeof process !== 'undefined' && process.versions && process.versions.node) ? eval('require') : (() => null);
+ 
+ const {
+     LUA_DIRSEP,
+@@ -154,7 +156,7 @@
+         }
+     };
+ } else {
+-    const pathlib = require('path');
++    const pathlib = nodeRequire('path');
+     lsys_load = function(L, path, seeglb) {
+         path = to_jsstring(path);
+         /* relative paths should be relative to cwd, not this js file */
+@@ -196,7 +198,7 @@
+ 
+ let readable;
+ if (typeof process !== "undefined") { // Only with Node
+-    const fs = require('fs');
++    const fs = nodeRequire('fs');
+ 
+     readable = function(filename) {
+         try {
+diff --git a/node_modules/fengari/src/loslib.js b/node_modules/fengari/src/loslib.js
+--- a/node_modules/fengari/src/loslib.js
++++ b/node_modules/fengari/src/loslib.js
+@@ -1,4 +1,6 @@
+ "use strict";
++/* patched: keep Node-only modules away from browser bundlers */
++const nodeRequire = (typeof process !== 'undefined' && process.versions && process.versions.node) ? eval('require') : (() => null);
+ 
+ const {
+     LUA_TNIL,
+@@ -484,9 +486,9 @@
+     };
+ } else {
+     /* Only with Node */
+-    const fs = require('fs');
+-    const tmp = require('tmp');
+-    const child_process = require('child_process');
++    const fs = nodeRequire('fs');
++    const tmp = nodeRequire('tmp');
++    const child_process = nodeRequire('child_process');
+ 
+     syslib.exit = function(L) {
+         let status;
 diff --git a/node_modules/fengari/src/luaconf.js b/node_modules/fengari/src/luaconf.js
-index 5fb91cd..2975320 100644
 --- a/node_modules/fengari/src/luaconf.js
 +++ b/node_modules/fengari/src/luaconf.js
 @@ -1,6 +1,6 @@
@@ -58,7 +142,7 @@ index 5fb91cd..2975320 100644
  
  const {
      LUA_VERSION_MAJOR,
-@@ -57,37 +57,6 @@ if (typeof process === "undefined") {
+@@ -57,37 +57,6 @@
          LUA_JSDIR + "?.js;" + LUA_JSDIR + "loadall.js;./?.js"
      );
      module.exports.LUA_JSPATH_DEFAULT = LUA_JSPATH_DEFAULT;
@@ -97,10 +181,9 @@ index 5fb91cd..2975320 100644
      const LUA_DIRSEP = "/";
      module.exports.LUA_DIRSEP = LUA_DIRSEP;
 diff --git a/node_modules/fengari/src/lualib.js b/node_modules/fengari/src/lualib.js
-index fa30268..8a06150 100644
 --- a/node_modules/fengari/src/lualib.js
 +++ b/node_modules/fengari/src/lualib.js
-@@ -20,11 +20,6 @@ const LUA_TABLIBNAME = "table";
+@@ -20,11 +20,6 @@
  module.exports.LUA_TABLIBNAME = LUA_TABLIBNAME;
  module.exports.luaopen_table = require("./ltablib.js").luaopen_table;
  

@@ -1,0 +1,115 @@
+<div *transloco="let t" class="grid h-dvh grid-rows-[56px_1fr] bg-page text-ink">
+  <!-- The mark sits in the rail's own column, so the vertical seam runs unbroken from the logo
+       down past every rail item. The hub's bar gives it the same cell, which is what makes that
+       safe. -->
+  <header class="flex items-center gap-1.5 border-b border-line bg-panel pr-2 pl-0">
+    <a
+      routerLink="/games"
+      class="flex w-[81px] shrink-0 items-center justify-center"
+      [attr.aria-label]="t('nav.myGames')"
+    >
+      <nc-logo />
+    </a>
+    @if (live()) {
+      <nc-versions-popover />
+    }
+    <span class="flex-1"></span>
+    @if (live()) {
+      <div class="flex items-center" [attr.aria-label]="t('editor.inSession')">
+        <!-- Other people only: you are already the account button at the far right. -->
+        @for (c of others(); track c.clientId) {
+          <nc-user-avatar
+            [userId]="c.userId"
+            [name]="c.name"
+            [colour]="c.colour"
+            [size]="38"
+            overlap
+          />
+        }
+      </div>
+      <button ncButton variant="secondary" size="bar" (click)="share()">
+        {{ t('editor.share') }}
+      </button>
+      <button
+        ncButton
+        variant="primary"
+        size="bar"
+        (click)="publish()"
+        [disabled]="!session.isCollaborator() || !!publishBlockedBy()"
+        [attr.title]="publishBlockedBy() ? t(publishBlockedBy()!) : null"
+      >
+        {{ t('editor.publish') }}
+      </button>
+    }
+    <nc-notifications-bell />
+    <nc-account-menu />
+  </header>
+
+  @if (ui.tooNarrow()) {
+    <nc-open-on-desktop [id]="String(id())" />
+  }
+  @if (!ui.tooNarrow() || workspaceBuilt()) {
+    <div [class.contents]="!ui.tooNarrow()" [class.hidden]="ui.tooNarrow()">
+      @switch (session.status()) {
+        @case ('ready') {
+          <div class="grid min-h-0 grid-cols-[81px_minmax(0,1fr)_auto]">
+            <nc-rail
+              [items]="rail()"
+              [value]="ui.activeTab()"
+              (valueChange)="go($event)"
+              [label]="t('editor.tools')"
+            />
+            <section class="min-h-0 overflow-auto"><router-outlet /></section>
+            <nc-panel-region
+              [secondaryOpen]="ui.referenceShown()"
+              [viewportWidth]="ui.viewportWidth()"
+              [splitAt]="REFERENCE_SPLIT_BREAKPOINT"
+              [primaryWidth]="consoleWidth()"
+              [secondaryWidth]="REFERENCE_WIDTH"
+              [switchLabel]="switchKey() ? t(switchKey()) : ''"
+              (switched)="ui.toggleReference()"
+            >
+              <!-- Built only while it is open: the reference has nothing running in it, so unlike
+               the console it costs nothing to rebuild and something to keep. -->
+              <div secondary class="flex min-h-0 flex-col border-l border-line">
+                @if (ui.referenceShown()) {
+                  <nc-doc-pane class="min-h-0 flex-1 overflow-auto" />
+                  <!-- Only where the reference has taken the console's place: the one arrangement
+                     that pauses the game. -->
+                  @if (ui.columnMode() === 'swap') {
+                    <div
+                      class="flex shrink-0 items-center gap-1 border-t border-line bg-inset px-1.5 py-1"
+                    >
+                      <nc-icon name="pause" [size]="12" class="text-gold-ink" />
+                      <span class="label text-gold-ink">{{ t('editor.gamePaused') }}</span>
+                    </div>
+                  }
+                }
+              </div>
+              <nc-console-column
+                primary
+                class="min-h-0 border-line"
+                [shown]="consoleShown()"
+                [class.border-l]="consoleShown()"
+              />
+            </nc-panel-region>
+          </div>
+        }
+        @case ('error') {
+          <div class="flex items-center justify-center p-6">
+            <nc-error-state [title]="t('editor.cannotOpen')" [hint]="session.error() ?? undefined">
+              <a ncButton variant="secondary" routerLink="/games">{{ t('nav.myGames') }}</a>
+            </nc-error-state>
+          </div>
+        }
+        @default {
+          <div class="flex items-center justify-center p-6">
+            <nc-lcd class="w-[420px]" [minHeight]="80">
+              > {{ t('editor.status.' + session.status()) }}
+            </nc-lcd>
+          </div>
+        }
+      }
+    </div>
+  }
+</div>

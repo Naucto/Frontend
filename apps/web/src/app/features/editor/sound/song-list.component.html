@@ -1,0 +1,52 @@
+<div *transloco="let t" class="border-t border-line p-1.5">
+  <!-- Fixed at the same height as the sound-effect bank's head, so the two sections stay the same
+       size. -->
+  <div class="nc-density-small mb-1 flex h-(--nc-transport-h) items-center gap-1">
+    <span class="label shrink-0 text-ink-3">{{ t('editor.sound.music') }}</span>
+    <nc-number-field
+      class="h-(--nc-transport-h) shrink-0"
+      fill
+      [label]="t('editor.sound.musicSlot')"
+      [value]="slot()"
+      [max]="MAX_SONG_SLOT"
+      size="sm"
+      (requested)="slotChange.emit($event)"
+    />
+    <nc-transport
+      [playing]="playing()"
+      [canRewind]="playing()"
+      [canStop]="playing()"
+      [playLabel]="t('editor.sound.playMusic')"
+      [pauseLabel]="t('editor.sound.pauseMusic')"
+      [rewindLabel]="t('editor.sound.musicToStart')"
+      [stopLabel]="t('editor.sound.stopMusic')"
+      (started)="started.emit()"
+      (paused)="paused.emit()"
+      (rewound)="rewound.emit()"
+      (stopped)="stopped.emit()"
+    />
+    <span class="flex-1"></span>
+    <nc-help-dot [title]="t('editor.sound.music')" [text]="t('editor.sound.musicHelp')" />
+  </div>
+
+  <div class="overflow-y-auto" [style.height]="height" [style.scrollbar-gutter]="'stable'">
+    <div class="grid gap-0.5" [style.grid-template-columns]="columnTrack" role="group">
+      @for (c of cells(); track c.index) {
+        <nc-number-field
+          class="h-(--nc-control-h-xs) w-full"
+          size="sm"
+          fill
+          clearable
+          [pad]="2"
+          placeholder="--"
+          [ariaLabel]="placeLabel(c.index)"
+          [value]="c.slot"
+          [max]="maxPattern()"
+          [tone]="c.tone"
+          (requested)="assign.emit({ index: c.index, slot: $event })"
+          (cleared)="assign.emit({ index: c.index, slot: null })"
+        />
+      }
+    </div>
+  </div>
+</div>

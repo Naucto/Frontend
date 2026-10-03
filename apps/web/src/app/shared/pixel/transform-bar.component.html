@@ -1,0 +1,48 @@
+<div
+  *transloco="let t"
+  role="toolbar"
+  [attr.aria-label]="t('editor.transform.label')"
+  class="flex items-center gap-0.5"
+>
+  <button
+    ncButton
+    variant="ghost"
+    size="sm"
+    iconOnly
+    [attr.aria-label]="t('editor.transform.flipH')"
+    (click)="flipH.emit()"
+  >
+    <nc-icon name="flip-horizontal" [size]="24" />
+  </button>
+  <button
+    ncButton
+    variant="ghost"
+    size="sm"
+    iconOnly
+    [attr.aria-label]="t('editor.transform.flipV')"
+    (click)="flipV.emit()"
+  >
+    <nc-icon name="flip-vertical" [size]="24" />
+  </button>
+  <button
+    ncButton
+    variant="ghost"
+    size="sm"
+    iconOnly
+    [attr.aria-label]="t('editor.transform.rotateCw')"
+    (click)="rotateCw.emit()"
+  >
+    <nc-icon name="rotate-cw" [size]="24" />
+  </button>
+  <!-- Pixelarticons draws one arrow; the other direction is the same glyph mirrored. -->
+  <button
+    ncButton
+    variant="ghost"
+    size="sm"
+    iconOnly
+    [attr.aria-label]="t('editor.transform.rotateCcw')"
+    (click)="rotateCcw.emit()"
+  >
+    <nc-icon name="rotate-cw" [size]="24" class="-scale-x-100" />
+  </button>
+</div>

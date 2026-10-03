@@ -1,0 +1,32 @@
+<div *transloco="let t" class="grid gap-3">
+  <!-- Heading at shelf-title size rather than the artboard's: this page is a hub shelf opened out. -->
+  <div class="flex items-center gap-1.75">
+    <a routerLink="/hub" class="label flex items-center gap-0.5 text-ink-3 hover:text-ink">
+      <nc-icon name="arrow-left" [size]="12" />
+      {{ t('nav.hub') }}
+    </a>
+    <h1 class="text-title text-ink">
+      {{ row() === 'fresh' ? t('hub.fresh') : t('hub.popular') }}
+    </h1>
+    <span class="label">{{ total() }} {{ t('hub.games') }}</span>
+    <span class="flex-1"></span>
+    <nc-segmented
+      [options]="sortOptions()"
+      [value]="effectiveSort()"
+      (valueChange)="setSort($event)"
+    />
+  </div>
+  <nc-hub-row [games]="visible()" [state]="state()" [empty]="t('hub.empty')" />
+  @if (visible().length < sorted().length || releases.hasNextPage()) {
+    <div class="flex justify-center">
+      <button
+        ncButton
+        variant="secondary"
+        (click)="more()"
+        [disabled]="releases.isFetchingNextPage()"
+      >
+        {{ t('hub.showMore', { n: step }) }}
+      </button>
+    </div>
+  }
+</div>

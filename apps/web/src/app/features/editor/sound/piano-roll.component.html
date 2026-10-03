@@ -1,0 +1,45 @@
+<div class="flex" [style.width.px]="width()" [style.height.px]="height()">
+  <nc-piano-keys
+    [style.width.px]="KEY_W"
+    (pressed)="playKey($event)"
+    (released)="keyReleased.emit()"
+  />
+  <div class="relative">
+    <!-- Sized in device pixels and shown at CSS ones: this canvas is drawn, not sampled, so at
+         any zoom but a whole one an upscaled backing store turns its ruler into mush. -->
+    <canvas
+      #canvas
+      class="block cursor-crosshair touch-none"
+      [width]="width() * dpr()"
+      [height]="height() * dpr()"
+      [style.width.px]="width()"
+      [style.height.px]="height()"
+      role="img"
+      [attr.aria-label]="label()"
+      (pointerdown)="onDown($event)"
+      (pointermove)="onMove($event)"
+      (pointerup)="onUp()"
+      (pointercancel)="onUp()"
+      (pointerleave)="onLeave()"
+      (contextmenu)="$event.preventDefault()"
+    ></canvas>
+    @let head = playheadAt();
+    @if (head !== null) {
+      <!-- Out of the canvas so that moving it costs a style rather than a repaint of the whole
+           roll, and so the flag can be pinned by the browser instead of redrawn at the scroll
+           offset on every frame. -->
+      <div
+        class="pointer-events-none absolute top-0 bottom-0 w-px bg-hot"
+        [style.left.px]="head.x"
+        aria-hidden="true"
+      >
+        <div
+          class="sticky top-[4px] -ml-[9px] flex h-[16px] w-[18px] items-center justify-center bg-hot font-mono text-[10px] text-on-accent-dark"
+        >
+          {{ head.step }}
+        </div>
+      </div>
+    }
+    <nc-presence-layer [marks]="marks()" [viewport]="viewPx()" />
+  </div>
+</div>
