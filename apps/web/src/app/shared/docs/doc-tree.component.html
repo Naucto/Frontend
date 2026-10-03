@@ -1,0 +1,54 @@
+<nav *transloco="let t" [attr.aria-label]="t('docs.title')" class="text-meta">
+  @for (section of docs.sections(); track section.id) {
+    <button
+      type="button"
+      class="font-ui text-label tracking-label flex w-full items-center gap-0.5 py-1 text-left uppercase text-ink-3 hover:text-ink"
+      [attr.aria-expanded]="!collapsed().has(section.id)"
+      (click)="toggle(section.id)">
+      <nc-icon
+        [name]="collapsed().has(section.id) ? 'chevron-right' : 'chevron-down'"
+        [size]="12" />
+      <nc-icon [name]="iconOf(section.id)" [size]="12" class="text-ink-4" />
+      {{ t('docs.sections.' + section.id) }}
+    </button>
+    @if (!collapsed().has(section.id)) {
+      @for (page of section.pages; track page.slug) {
+        @if (!page.slug.endsWith('/index')) {
+          <button
+            type="button"
+            class="flex w-full items-center gap-1 border-l-2 py-0.5 pl-2 text-left hover:text-ink"
+            [class]="
+              page.slug === active() ? 'border-gold text-gold-ink' : 'border-transparent text-ink-2'
+            "
+            [attr.aria-current]="page.slug === active() ? 'page' : null"
+            (click)="open.emit(page.slug)">
+            <span class="min-w-0 flex-1 truncate">{{ page.title }}</span>
+            @if (page.apis.length) {
+              <span class="font-ui text-label tracking-label uppercase text-ink-4">
+                {{ page.apis.length }} fn
+              </span>
+            }
+          </button>
+          @if (page.slug === active()) {
+            @for (child of childrenOf(page); track child.id) {
+              <button
+                type="button"
+                class="flex w-full items-center border-l-2 py-0.5 text-left text-label hover:text-ink"
+                [class]="
+                  (child.id === fragment()
+                    ? 'border-gold text-gold-ink'
+                    : 'border-transparent text-ink-3') + (child.sub ? ' pl-5' : ' pl-3')
+                "
+                [attr.aria-current]="child.id === fragment() ? 'location' : null"
+                (click)="open.emit(page.slug + '#' + child.id)">
+                <span class="min-w-0 flex-1 truncate" [class.font-mono]="child.code">
+                  {{ child.text }}
+                </span>
+              </button>
+            }
+          }
+        }
+      }
+    }
+  }
+</nav>

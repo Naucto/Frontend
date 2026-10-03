@@ -1,0 +1,13 @@
+<div class="doc-html">
+  @for (segment of segments(); track $index) {
+    @if (segment.kind === 'html') {
+      <div [innerHTML]="segment.html"></div>
+    } @else {
+      <nc-api-card
+        [entry]="segment.entry"
+        [insertable]="insertable()"
+        (insert)="insert.emit($event)"
+        (navigate)="navigate.emit($event)" />
+    }
+  }
+</div>
