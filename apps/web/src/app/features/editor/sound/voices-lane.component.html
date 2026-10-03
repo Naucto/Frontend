@@ -1,0 +1,39 @@
+<div class="relative flex" [style.height.px]="height">
+  <div class="sticky left-0 z-10 shrink-0 bg-panel" [style.width.px]="KEY_W">
+    <div
+      class="font-mono text-[10px] leading-none text-ink-4"
+      [style.height.px]="RULER_H"
+      [style.padding-left.px]="4"
+      [style.padding-top.px]="3">
+      VOICES
+    </div>
+    @for (voice of voices(); track voice.index) {
+      <div
+        class="flex items-center font-mono text-[10px] leading-none"
+        [class]="voice.active ? 'text-jade-ink' : 'text-ink-4'"
+        [style.height.px]="LANE_H"
+        [style.padding-left.px]="4">
+        V{{ voice.index + 1 }}
+      </div>
+    }
+  </div>
+  <div
+    class="relative shrink-0"
+    [style.width.px]="trackWidth()"
+    role="img"
+    [attr.aria-label]="label()">
+    @for (bar of bars(); track bar.key) {
+      <div
+        class="absolute"
+        [style.left.px]="bar.left"
+        [style.top.px]="bar.top"
+        [style.width.px]="bar.width"
+        [style.height.px]="LANE_H - 4"
+        [style.background]="bar.colour"></div>
+    }
+    @let x = playheadX();
+    @if (x !== null) {
+      <div class="absolute top-0 bottom-0 w-px bg-hot" [style.left.px]="x"></div>
+    }
+  </div>
+</div>
