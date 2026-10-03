@@ -1,0 +1,1126 @@
+import { type DisplayEffect, type GfxBackend, NO_EFFECT } from '../api/ports';
+import type { Game, PixelChange } from '../game/Game';
+import type { GameMap } from '../game/GameMap';
+import { PALETTE_SIZE, SCREEN_HEIGHT, SCREEN_WIDTH, SPRITE_SIZE } from '../game/keys';
+import { buildFontAtlas, FONT_HEIGHT, FONT_WIDTH, glyphIndex } from './Font';
+import {
+  allocateR8,
+  createGLContext,
+  createTexture,
+  hexToRgb,
+  linkProgram,
+  rgbToHex,
+} from './glUtils';
+import { DRAW_FS, DRAW_VS, FX_BLANK, FX_WRAP, PRESENT_FS, PRESENT_VS } from './shaders';
+
+/** One colour kept clear, as the bitmask the shader reads. */
+const keyed = (colour: number | null): number => (colour === null ? 0 : 1 << (colour & 15));
+
+/** The map is drawn without a call to ask, so it takes the default a sprite would. */
+const MAP_KEY = 0;
+
+const UNIT_SHEET = 0;
+const UNIT_MAP = 1;
+const UNIT_FONT = 2;
+const UNIT_FRAME = 3;
+const UNIT_EFFECTS = 4;
+const UNIT_PALETTES = 5;
+
+/** One map's texture and the pixels it was last built from, at that map's own size. */
+interface MapTexture {
+  tex: WebGLTexture;
+  pixels: Uint8Array;
+  width: number;
+  height: number;
+  dirty: boolean;
+}
+const flagsOf = (fx: DisplayEffect): number => (fx.wrap ? FX_WRAP : 0) | (fx.blank ? FX_BLANK : 0);
+
+/** The frame palette on row 0, then one row per line for the lines given a palette of their own. */
+const PALETTE_ROWS = SCREEN_HEIGHT + 1;
+
+/** Quads one draw call carries; a batch that grows past it is drawn in two. */
+const MAX_QUADS = 4096;
+/** Two triangles: six vertices of two floats. */
+const FLOATS_PER_QUAD = 12;
+
+type BatchSource = 'sheet' | 'map' | 'font' | 'solid';
+
+/**
+ * GPU renderer. Pass 1 batches textured/solid quads into an R8 index frame;
+ * pass 2 presents it through the per-line effect table and the palette rows.
+ */
+export class WebGL2Backend implements GfxBackend {
+  private readonly gl: WebGL2RenderingContext;
+  private readonly drawProgram: WebGLProgram;
+  private readonly presentProgram: WebGLProgram;
+  private readonly fbo: WebGLFramebuffer;
+  private readonly textures: WebGLTexture[] = [];
+  private readonly vao: WebGLVertexArrayObject;
+  private readonly posBuffer: WebGLBuffer;
+  private readonly uvBuffer: WebGLBuffer;
+  private readonly uCamera: WebGLUniformLocation | null;
+  private readonly uRemap: WebGLUniformLocation | null;
+  private readonly uTransparent: WebGLUniformLocation | null;
+  private readonly uSolid: WebGLUniformLocation | null;
+  private readonly uSrc: WebGLUniformLocation | null;
+
+  /**
+   * Vertex scratch, written in place and uploaded up to `quadCount`. A flush happens several times
+   * a frame, so the arrays and the GL buffers behind them are sized once for the largest batch.
+   */
+  private readonly verts = new Float32Array(MAX_QUADS * FLOATS_PER_QUAD);
+  private readonly uvs = new Float32Array(MAX_QUADS * FLOATS_PER_QUAD);
+  private quadCount = 0;
+  private batchSource: BatchSource = 'sheet';
+  private batchTexture = '';
+  /** One per sheet, keyed by its id. They take turns on the sheet texture unit. */
+  private readonly sheetTextures = new Map<string, WebGLTexture>();
+  /** One per map, keyed by its id, on the map texture unit the same way. */
+  private readonly mapTextures = new Map<string, MapTexture>();
+  private batchSolid = -1;
+  private batchTextColour = -1;
+  private batchTransparent = 1;
+
+  private cameraX = 0;
+  private cameraY = 0;
+  private clipRect: [number, number, number, number] | null = null;
+  private readonly remap = new Int32Array(16);
+  private remapDirty = true;
+
+  /** Per line: shiftX, shiftY, palette row (0 = the frame's, y + 1 = its own), flags. */
+  private readonly effects = new Int16Array(SCREEN_HEIGHT * 4);
+  private effectsDirty = true;
+  /** Whether any line was given something of its own since the last `begin()`. */
+  private effectsUsed = false;
+  /** The lines given an effect of their own this frame, which a frame effect set later leaves be. */
+  private readonly lineOwn = new Uint8Array(SCREEN_HEIGHT);
+  private frameEffect: DisplayEffect = NO_EFFECT;
+  private readonly palettes = new Uint8Array(PALETTE_SIZE * PALETTE_ROWS * 4);
+  private palettesDirty = true;
+  private gamePalette: string[];
+
+  /**
+   * The tiles the running game has changed, which the document does not hold.
+   *
+   * A cache of what the engine wrote, per map by id, kept here because a map texture is rebuilt
+   * from the whole document and would otherwise paint over them on the next rebuild.
+   */
+  private readonly tileOverrides = new Map<string, Map<number, number>>();
+  /** Where a screenshot is presented, made the first time one is asked for. */
+  private grab: { fbo: WebGLFramebuffer; rbo: WebGLRenderbuffer } | null = null;
+  private readonly unsubscribes: (() => void)[] = [];
+  private destroyed = false;
+
+  constructor(
+    canvas: HTMLCanvasElement,
+    private readonly game: Game,
+  ) {
+    canvas.width = SCREEN_WIDTH;
+    canvas.height = SCREEN_HEIGHT;
+    const gl = createGLContext(canvas);
+    this.gl = gl;
+    gl.disable(gl.BLEND);
+    gl.disable(gl.DEPTH_TEST);
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+
+    this.drawProgram = linkProgram(gl, DRAW_VS, DRAW_FS);
+    this.presentProgram = linkProgram(gl, PRESENT_VS, PRESENT_FS);
+
+    // sheet
+    this.textures[UNIT_SHEET] = createTexture(gl, UNIT_SHEET);
+    // one texture per sheet and per map
+    this.allocateTextures();
+    // font
+    const font = buildFontAtlas();
+    this.textures[UNIT_FONT] = createTexture(gl, UNIT_FONT);
+    allocateR8(gl, font.width, font.height, font.data);
+    // frame target
+    this.textures[UNIT_FRAME] = createTexture(gl, UNIT_FRAME);
+    allocateR8(gl, SCREEN_WIDTH, SCREEN_HEIGHT, null);
+    this.fbo = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
+    gl.framebufferTexture2D(
+      gl.FRAMEBUFFER,
+      gl.COLOR_ATTACHMENT0,
+      gl.TEXTURE_2D,
+      this.textures[UNIT_FRAME],
+      0,
+    );
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    // effects
+    this.textures[UNIT_EFFECTS] = createTexture(gl, UNIT_EFFECTS);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA16I,
+      SCREEN_HEIGHT,
+      1,
+      0,
+      gl.RGBA_INTEGER,
+      gl.SHORT,
+      this.effects,
+    );
+    // palettes
+    this.textures[UNIT_PALETTES] = createTexture(gl, UNIT_PALETTES);
+    this.gamePalette = game.palette;
+    this.resetPalette();
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA,
+      PALETTE_SIZE,
+      PALETTE_ROWS,
+      0,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      this.palettes,
+    );
+
+    this.vao = gl.createVertexArray();
+    gl.bindVertexArray(this.vao);
+    this.posBuffer = gl.createBuffer();
+    this.uvBuffer = gl.createBuffer();
+    const aPos = gl.getAttribLocation(this.drawProgram, 'a_pos');
+    const aUv = gl.getAttribLocation(this.drawProgram, 'a_uv');
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.posBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, this.verts.byteLength, gl.STREAM_DRAW);
+    gl.enableVertexAttribArray(aPos);
+    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.uvBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, this.uvs.byteLength, gl.STREAM_DRAW);
+    gl.enableVertexAttribArray(aUv);
+    gl.vertexAttribPointer(aUv, 2, gl.FLOAT, false, 0, 0);
+    gl.bindVertexArray(null);
+
+    gl.useProgram(this.drawProgram);
+    gl.uniform2f(gl.getUniformLocation(this.drawProgram, 'u_screen'), SCREEN_WIDTH, SCREEN_HEIGHT);
+    this.uCamera = gl.getUniformLocation(this.drawProgram, 'u_camera');
+    this.uRemap = gl.getUniformLocation(this.drawProgram, 'u_remap');
+    this.uTransparent = gl.getUniformLocation(this.drawProgram, 'u_transparent');
+    this.uSolid = gl.getUniformLocation(this.drawProgram, 'u_solid');
+    this.uSrc = gl.getUniformLocation(this.drawProgram, 'u_src');
+    gl.useProgram(this.presentProgram);
+    gl.uniform1i(gl.getUniformLocation(this.presentProgram, 'u_frame'), UNIT_FRAME);
+    gl.uniform1i(gl.getUniformLocation(this.presentProgram, 'u_effects'), UNIT_EFFECTS);
+    gl.uniform1i(gl.getUniformLocation(this.presentProgram, 'u_palettes'), UNIT_PALETTES);
+
+    this.resetCol();
+
+    this.unsubscribes.push(
+      game.onPixelsChange((changes) => {
+        this.uploadSheetRegion(changes);
+        for (const held of this.mapTextures.values()) {
+          held.dirty = true;
+        }
+      }),
+      game.onTilesChange((changes) => {
+        for (const change of changes) {
+          const held = this.mapTextures.get(change.map);
+          if (held) {
+            held.dirty = true;
+          }
+        }
+      }),
+      game.onPaletteChange(() => {
+        this.gamePalette = game.palette;
+        this.resetPalette();
+      }),
+      // A texture is allocated at one size and cannot be resized, so a game that changes shape gets
+      // new ones. Rare enough to redo wholesale rather than track.
+      game.onGeometryChange(() => {
+        this.allocateTextures();
+      }),
+      // A sheet or a map added, dropped or resized changes the set of textures without changing
+      // the shape the geometry records, so the two are watched separately.
+      game.onCollectionsChange(() => {
+        this.allocateTextures();
+      }),
+    );
+    this.clear(0);
+    this.present();
+  }
+
+  /**
+   * Gives every sheet and every map a texture at its own size; sheets share one texture unit and
+   * maps another.
+   */
+  private allocateTextures(): void {
+    const gl = this.gl;
+    const sheets = this.game.sheets;
+
+    for (const [id, tex] of this.sheetTextures) {
+      if (!sheets.some((sheet) => sheet.id === id)) {
+        gl.deleteTexture(tex);
+        this.sheetTextures.delete(id);
+      }
+    }
+
+    gl.activeTexture(gl.TEXTURE0 + UNIT_SHEET);
+    for (const sheet of sheets) {
+      let tex = this.sheetTextures.get(sheet.id);
+      if (!tex) {
+        tex = createTexture(gl, UNIT_SHEET);
+        this.sheetTextures.set(sheet.id, tex);
+      }
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      allocateR8(gl, sheet.width, sheet.height, sheet.pixels);
+    }
+
+    const maps = this.game.maps;
+    for (const [id, held] of this.mapTextures) {
+      if (!maps.some((map) => map.id === id)) {
+        gl.deleteTexture(held.tex);
+        this.mapTextures.delete(id);
+        this.tileOverrides.delete(id);
+      }
+    }
+
+    gl.activeTexture(gl.TEXTURE0 + UNIT_MAP);
+    for (const map of maps) {
+      const width = map.width * SPRITE_SIZE;
+      const height = map.height * SPRITE_SIZE;
+      const held = this.mapTextures.get(map.id);
+      if (held?.width === width && held.height === height) {
+        held.dirty = true;
+        continue;
+      }
+      const tex = held?.tex ?? createTexture(gl, UNIT_MAP);
+      this.mapTextures.set(map.id, {
+        tex,
+        pixels: new Uint8Array(width * height),
+        width,
+        height,
+        dirty: true,
+      });
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      allocateR8(gl, width, height, null);
+    }
+  }
+
+  // ---- frame ----------------------------------------------------------------
+
+  begin(): void {
+    // Every line follows the frame again. Done here and not after the present: the loop may step
+    // twice before it presents, and it may present a frame it has already shown.
+    if (this.effectsUsed) {
+      this.lineOwn.fill(0);
+      this.setFrameEffect(this.frameEffect);
+      for (let y = 0; y < SCREEN_HEIGHT; y++) {
+        this.effects[y * 4 + 2] = 0;
+      }
+      this.effectsUsed = false;
+    }
+    const gl = this.gl;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
+    gl.viewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    gl.useProgram(this.drawProgram);
+    gl.bindVertexArray(this.vao);
+    this.applyClip();
+  }
+
+  /**
+   * Pass 2 onto `target`: the index frame through the effect table and the palette. It reads
+   * nothing but textures, so the same picture can be drawn again onto another target.
+   */
+  private presentTo(target: WebGLFramebuffer | null, width: number, height: number): void {
+    const gl = this.gl;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, target);
+    gl.disable(gl.SCISSOR_TEST);
+    gl.viewport(0, 0, width, height);
+    gl.useProgram(this.presentProgram);
+    gl.bindVertexArray(null);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+
+  present(): void {
+    const gl = this.gl;
+    this.flush();
+    if (this.effectsDirty) {
+      gl.activeTexture(gl.TEXTURE0 + UNIT_EFFECTS);
+      gl.bindTexture(gl.TEXTURE_2D, this.tex(UNIT_EFFECTS));
+      gl.texSubImage2D(
+        gl.TEXTURE_2D,
+        0,
+        0,
+        0,
+        SCREEN_HEIGHT,
+        1,
+        gl.RGBA_INTEGER,
+        gl.SHORT,
+        this.effects,
+      );
+      this.effectsDirty = false;
+    }
+    if (this.palettesDirty) {
+      gl.activeTexture(gl.TEXTURE0 + UNIT_PALETTES);
+      gl.bindTexture(gl.TEXTURE_2D, this.tex(UNIT_PALETTES));
+      gl.texSubImage2D(
+        gl.TEXTURE_2D,
+        0,
+        0,
+        0,
+        PALETTE_SIZE,
+        PALETTE_ROWS,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        this.palettes,
+      );
+      this.palettesDirty = false;
+    }
+    this.presentTo(null, gl.drawingBufferWidth, gl.drawingBufferHeight);
+  }
+
+  clear(colour: number): void {
+    this.flush();
+    const gl = this.gl;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
+    gl.disable(gl.SCISSOR_TEST);
+    gl.viewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    gl.clearColor((colour & 15) / 255, 0, 0, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    this.applyClip();
+  }
+
+  camera(x: number, y: number): void {
+    if (x === this.cameraX && y === this.cameraY) {
+      return;
+    }
+    this.flush();
+    this.cameraX = Math.floor(x);
+    this.cameraY = Math.floor(y);
+    this.gl.useProgram(this.drawProgram);
+    this.gl.uniform2f(this.uCamera, this.cameraX, this.cameraY);
+  }
+
+  clip(x: number, y: number, width: number, height: number): void {
+    this.flush();
+    this.clipRect = [
+      Math.floor(x),
+      Math.floor(y),
+      Math.max(0, Math.floor(width)),
+      Math.max(0, Math.floor(height)),
+    ];
+    this.applyClip();
+  }
+
+  resetClip(): void {
+    this.flush();
+    this.clipRect = null;
+    this.applyClip();
+  }
+
+  // ---- drawing --------------------------------------------------------------
+
+  drawSprite(
+    spriteNumber: number,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    flipH: boolean,
+    flipV: boolean,
+    scale: number,
+    keyColour: number | null,
+  ): void {
+    spriteNumber = Math.floor(spriteNumber);
+    // Sprite numbers run on from one sheet to the next, so the number picks the sheet.
+    const sheet = this.game.sheetOf(spriteNumber) ?? this.game.sheets[0];
+    if (!sheet) {
+      return;
+    }
+    const { x: sx, y: sy } = sheet.originOf(spriteNumber);
+    const sw = Math.floor(width) * SPRITE_SIZE;
+    const sh = Math.floor(height) * SPRITE_SIZE;
+    this.pushSheetQuad(
+      sheet.id,
+      sheet.width,
+      sheet.height,
+      sx,
+      sy,
+      sw,
+      sh,
+      x,
+      y,
+      sw * scale,
+      sh * scale,
+      flipH,
+      flipV,
+      keyColour,
+    );
+  }
+
+  drawRegion(
+    sx: number,
+    sy: number,
+    sw: number,
+    sh: number,
+    dx: number,
+    dy: number,
+    dw: number,
+    dh: number,
+    flipH: boolean,
+    flipV: boolean,
+    keyColour: number | null,
+  ): void {
+    // A sheet-pixel rectangle names no sheet, so it reads the first.
+    const sheet = this.game.sheets[0];
+    if (!sheet) {
+      return;
+    }
+    this.pushSheetQuad(
+      sheet.id,
+      sheet.width,
+      sheet.height,
+      sx,
+      sy,
+      sw,
+      sh,
+      dx,
+      dy,
+      dw,
+      dh,
+      flipH,
+      flipV,
+      keyColour,
+    );
+  }
+
+  private pushSheetQuad(
+    sheetId: string,
+    sheetWidth: number,
+    sheetHeight: number,
+    sx: number,
+    sy: number,
+    sw: number,
+    sh: number,
+    dx: number,
+    dy: number,
+    dw: number,
+    dh: number,
+    flipH: boolean,
+    flipV: boolean,
+    keyColour: number | null,
+  ): void {
+    this.useBatch('sheet', -1, -1, keyed(keyColour), sheetId);
+    let u0 = sx / sheetWidth;
+    let v0 = sy / sheetHeight;
+    let u1 = (sx + sw) / sheetWidth;
+    let v1 = (sy + sh) / sheetHeight;
+    if (flipH) {
+      [u0, u1] = [u1, u0];
+    }
+    if (flipV) {
+      [v0, v1] = [v1, v0];
+    }
+    this.pushQuad(Math.floor(dx), Math.floor(dy), Math.floor(dw), Math.floor(dh), u0, v0, u1, v1);
+  }
+
+  setTileOverride(x: number, y: number, sprite: number, map: number): void {
+    const gameMap = this.game.maps[map];
+    const held = gameMap && this.mapTextures.get(gameMap.id);
+    if (!gameMap || !held || x < 0 || x >= gameMap.width || y < 0 || y >= gameMap.height) {
+      return;
+    }
+    let mine = this.tileOverrides.get(gameMap.id);
+    if (!mine) {
+      mine = new Map();
+      this.tileOverrides.set(gameMap.id, mine);
+    }
+    mine.set(y * gameMap.width + x, sprite & 0xffff);
+    held.dirty = true;
+  }
+
+  clearTileOverrides(): void {
+    if (this.tileOverrides.size === 0) {
+      return;
+    }
+    this.tileOverrides.clear();
+    for (const held of this.mapTextures.values()) {
+      held.dirty = true;
+    }
+  }
+
+  drawMap(x: number, y: number, tx: number, ty: number, tw: number, th: number, map: number): void {
+    const gameMap = this.game.maps[map];
+    const held = gameMap && this.mapTextures.get(gameMap.id);
+    if (!gameMap || !held) {
+      return;
+    }
+    if (held.dirty) {
+      this.rebuildMap(gameMap, held);
+    }
+    this.useBatch('map', -1, -1, keyed(MAP_KEY), gameMap.id);
+    const px = tx * SPRITE_SIZE;
+    const py = ty * SPRITE_SIZE;
+    const pw = tw * SPRITE_SIZE;
+    const ph = th * SPRITE_SIZE;
+    this.pushQuad(
+      Math.floor(x),
+      Math.floor(y),
+      pw,
+      ph,
+      px / held.width,
+      py / held.height,
+      (px + pw) / held.width,
+      (py + ph) / held.height,
+    );
+  }
+
+  pixel(x: number, y: number, colour: number): void {
+    this.useBatch('solid', colour & 15, -1, 0);
+    this.pushQuad(Math.floor(x), Math.floor(y), 1, 1, 0, 0, 0, 0);
+  }
+
+  getPixel(x: number, y: number): number {
+    this.flush();
+    const gl = this.gl;
+    const px = Math.floor(x) - this.cameraX;
+    const py = Math.floor(y) - this.cameraY;
+    if (px < 0 || py < 0 || px >= SCREEN_WIDTH || py >= SCREEN_HEIGHT) {
+      return 0;
+    }
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
+    const out = new Uint8Array(4);
+    gl.readPixels(px, SCREEN_HEIGHT - 1 - py, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, out);
+    return out[0] ?? 0;
+  }
+
+  line(x0: number, y0: number, x1: number, y1: number, colour: number): void {
+    this.useBatch('solid', colour & 15, -1, 0);
+    x0 = Math.floor(x0);
+    y0 = Math.floor(y0);
+    x1 = Math.floor(x1);
+    y1 = Math.floor(y1);
+    const dx = Math.abs(x1 - x0);
+    const dy = -Math.abs(y1 - y0);
+    const sx = x0 < x1 ? 1 : -1;
+    const sy = y0 < y1 ? 1 : -1;
+    let err = dx + dy;
+    for (let guard = 0; guard < 4096; guard++) {
+      this.pushQuad(x0, y0, 1, 1, 0, 0, 0, 0);
+      if (x0 === x1 && y0 === y1) {
+        break;
+      }
+      const e2 = 2 * err;
+      if (e2 >= dy) {
+        err += dy;
+        x0 += sx;
+      }
+      if (e2 <= dx) {
+        err += dx;
+        y0 += sy;
+      }
+    }
+  }
+
+  rect(x: number, y: number, width: number, height: number, colour: number): void {
+    x = Math.floor(x);
+    y = Math.floor(y);
+    width = Math.floor(width);
+    height = Math.floor(height);
+    if (width <= 0 || height <= 0) {
+      return;
+    }
+    this.useBatch('solid', colour & 15, -1, 0);
+    this.pushQuad(x, y, width, 1, 0, 0, 0, 0);
+    if (height > 1) {
+      this.pushQuad(x, y + height - 1, width, 1, 0, 0, 0, 0);
+    }
+    if (height > 2) {
+      this.pushQuad(x, y + 1, 1, height - 2, 0, 0, 0, 0);
+      if (width > 1) {
+        this.pushQuad(x + width - 1, y + 1, 1, height - 2, 0, 0, 0, 0);
+      }
+    }
+  }
+
+  fillRect(x: number, y: number, width: number, height: number, colour: number): void {
+    width = Math.floor(width);
+    height = Math.floor(height);
+    if (width <= 0 || height <= 0) {
+      return;
+    }
+    this.useBatch('solid', colour & 15, -1, 0);
+    this.pushQuad(Math.floor(x), Math.floor(y), width, height, 0, 0, 0, 0);
+  }
+
+  circle(cx: number, cy: number, radius: number, colour: number): void {
+    cx = Math.floor(cx);
+    cy = Math.floor(cy);
+    radius = Math.floor(radius);
+    if (radius < 0) {
+      return;
+    }
+    this.useBatch('solid', colour & 15, -1, 0);
+    let x = radius;
+    let y = 0;
+    let err = 1 - radius;
+    while (x >= y) {
+      for (const [px, py] of [
+        [x, y],
+        [y, x],
+        [-y, x],
+        [-x, y],
+        [-x, -y],
+        [-y, -x],
+        [y, -x],
+        [x, -y],
+      ] as const) {
+        this.pushQuad(cx + px, cy + py, 1, 1, 0, 0, 0, 0);
+      }
+      y++;
+      if (err < 0) {
+        err += 2 * y + 1;
+      } else {
+        x--;
+        err += 2 * (y - x) + 1;
+      }
+    }
+  }
+
+  fillCircle(cx: number, cy: number, radius: number, colour: number): void {
+    cx = Math.floor(cx);
+    cy = Math.floor(cy);
+    radius = Math.floor(radius);
+    if (radius < 0) {
+      return;
+    }
+    this.useBatch('solid', colour & 15, -1, 0);
+    for (let dy = -radius; dy <= radius; dy++) {
+      const dx = Math.floor(Math.sqrt(radius * radius - dy * dy));
+      this.pushQuad(cx - dx, cy + dy, dx * 2 + 1, 1, 0, 0, 0, 0);
+    }
+  }
+
+  print(text: string, x: number, y: number, colour: number): number {
+    this.useBatch('font', -1, colour & 15, 1);
+    x = Math.floor(x);
+    y = Math.floor(y);
+    let cx = x;
+    let cy = y;
+    const atlasW = 95 * FONT_WIDTH;
+    for (const ch of text) {
+      if (ch === '\n') {
+        cx = x;
+        cy += FONT_HEIGHT;
+        continue;
+      }
+      const glyph = glyphIndex(ch);
+      const u0 = (glyph * FONT_WIDTH) / atlasW;
+      const u1 = ((glyph + 1) * FONT_WIDTH) / atlasW;
+      this.pushQuad(cx, cy, FONT_WIDTH, FONT_HEIGHT, u0, 0, u1, 1);
+      cx += FONT_WIDTH;
+    }
+    return cx - x;
+  }
+
+  // ---- palettes -------------------------------------------------------------
+
+  setCol(from: number, to: number): void {
+    this.flush();
+    this.remap[from & 15] = to & 15;
+    this.remapDirty = true;
+  }
+
+  resetCol(): void {
+    this.flush();
+    for (let i = 0; i < 16; i++) {
+      this.remap[i] = i;
+    }
+    this.remapDirty = true;
+  }
+
+  setColour(index: number, hex: string): void {
+    this.writePalette(0, index & 15, hex);
+  }
+
+  getColour(index: number): string {
+    const offset = (index & 15) * 4;
+    return rgbToHex(
+      this.palettes[offset] ?? 0,
+      this.palettes[offset + 1] ?? 0,
+      this.palettes[offset + 2] ?? 0,
+    );
+  }
+
+  /** Row 0 only: a line's row is written whole on the frame it is used, and read on no other. */
+  resetPalette(): void {
+    for (let i = 0; i < PALETTE_SIZE; i++) {
+      this.writePalette(0, i, this.gamePalette[i] ?? '#000000');
+    }
+  }
+
+  screenCol(from: number, to: number): void {
+    const src = (to & 15) * 4;
+    const dst = (from & 15) * 4;
+    for (let channel = 0; channel < 4; channel++) {
+      this.palettes[dst + channel] = this.palettes[src + channel] ?? 0;
+    }
+    this.palettesDirty = true;
+  }
+
+  // ---- effects --------------------------------------------------------------
+
+  setFrameEffect(fx: DisplayEffect): void {
+    this.frameEffect = fx;
+    const x = Math.round(fx.shiftX);
+    const y = Math.round(fx.shiftY);
+    const flags = flagsOf(fx);
+    for (let line = 0; line < SCREEN_HEIGHT; line++) {
+      if (this.lineOwn[line]) {
+        continue;
+      }
+      const offset = line * 4;
+      this.effects[offset] = x;
+      this.effects[offset + 1] = y;
+      this.effects[offset + 3] = flags;
+    }
+    this.effectsDirty = true;
+  }
+
+  setLinePalette(y: number, colours: readonly string[]): void {
+    y = Math.floor(y);
+    if (y < 0 || y >= SCREEN_HEIGHT) {
+      return;
+    }
+    for (let i = 0; i < PALETTE_SIZE; i++) {
+      this.writePalette(y + 1, i, colours[i] ?? '#000000');
+    }
+    this.effects[y * 4 + 2] = y + 1;
+    this.effectsDirty = true;
+    this.effectsUsed = true;
+  }
+
+  setLineEffect(y: number, fx: DisplayEffect): void {
+    y = Math.floor(y);
+    if (y < 0 || y >= SCREEN_HEIGHT) {
+      return;
+    }
+    const offset = y * 4;
+    this.effects[offset] = Math.round(fx.shiftX);
+    this.effects[offset + 1] = Math.round(fx.shiftY);
+    this.effects[offset + 3] = flagsOf(fx);
+    this.lineOwn[y] = 1;
+    this.effectsDirty = true;
+    this.effectsUsed = true;
+  }
+
+  /**
+   * Presents the retained index frame again into an offscreen target, since the drawing buffer is
+   * not preserved after compositing.
+   */
+  screenshot(): Uint8ClampedArray | null {
+    const gl = this.gl;
+    const width = SCREEN_WIDTH;
+    const height = SCREEN_HEIGHT;
+    if (!this.grab) {
+      const rbo = gl.createRenderbuffer();
+      gl.bindRenderbuffer(gl.RENDERBUFFER, rbo);
+      gl.renderbufferStorage(gl.RENDERBUFFER, gl.RGBA8, width, height);
+      const fbo = gl.createFramebuffer();
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+      gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.RENDERBUFFER, rbo);
+      this.grab = { fbo, rbo };
+    }
+    this.presentTo(this.grab.fbo, width, height);
+    const buf = new Uint8Array(width * height * 4);
+    gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, buf);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    const out = new Uint8ClampedArray(width * height * 4);
+    for (let y = 0; y < height; y++) {
+      out.set(buf.subarray((height - 1 - y) * width * 4, (height - y) * width * 4), y * width * 4);
+    }
+    return out;
+  }
+
+  destroy(): void {
+    if (this.destroyed) {
+      return;
+    }
+    this.destroyed = true;
+    for (const unsubscribe of this.unsubscribes) {
+      unsubscribe();
+    }
+    const gl = this.gl;
+    gl.deleteProgram(this.drawProgram);
+    gl.deleteProgram(this.presentProgram);
+    gl.deleteFramebuffer(this.fbo);
+    gl.deleteVertexArray(this.vao);
+    gl.deleteBuffer(this.posBuffer);
+    gl.deleteBuffer(this.uvBuffer);
+    if (this.grab) {
+      gl.deleteFramebuffer(this.grab.fbo);
+      gl.deleteRenderbuffer(this.grab.rbo);
+    }
+    for (const texture of this.textures) {
+      gl.deleteTexture(texture);
+    }
+    for (const texture of this.sheetTextures.values()) {
+      gl.deleteTexture(texture);
+    }
+    for (const held of this.mapTextures.values()) {
+      gl.deleteTexture(held.tex);
+    }
+  }
+
+  // ---- internals ------------------------------------------------------------
+
+  private tex(unit: number): WebGLTexture {
+    const texture = this.textures[unit];
+    if (!texture) {
+      throw new Error(`texture unit ${String(unit)} missing`);
+    }
+    return texture;
+  }
+
+  private writePalette(row: number, index: number, hex: string): void {
+    const [red, green, blue] = hexToRgb(hex);
+    const offset = (row * PALETTE_SIZE + index) * 4;
+    this.palettes[offset] = red;
+    this.palettes[offset + 1] = green;
+    this.palettes[offset + 2] = blue;
+    this.palettes[offset + 3] = 255;
+    this.palettesDirty = true;
+  }
+
+  private applyClip(): void {
+    const gl = this.gl;
+    if (this.clipRect) {
+      const [x, y, width, height] = this.clipRect;
+      gl.enable(gl.SCISSOR_TEST);
+      gl.scissor(x, SCREEN_HEIGHT - y - height, width, height);
+    } else {
+      gl.disable(gl.SCISSOR_TEST);
+    }
+  }
+
+  /**
+   * Every quad queued since the last flush is drawn with the uniforms current at that flush. A value
+   * those uniforms are built from therefore has to end the batch when it changes, or it reaches
+   * backwards over everything already waiting.
+   */
+  private useBatch(
+    source: BatchSource,
+    solid: number,
+    textColour: number,
+    transparent: number,
+    /** Which sheet or map the batch reads. A batch draws with one texture bound, so a second
+        sheet, or a second map, is a second batch. */
+    texture = '',
+  ): void {
+    if (
+      source === this.batchSource &&
+      solid === this.batchSolid &&
+      textColour === this.batchTextColour &&
+      transparent === this.batchTransparent &&
+      texture === this.batchTexture
+    ) {
+      return;
+    }
+    this.flush();
+    this.batchSource = source;
+    this.batchSolid = solid;
+    this.batchTextColour = textColour;
+    this.batchTransparent = transparent;
+    this.batchTexture = texture;
+  }
+
+  private pushQuad(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    u0: number,
+    v0: number,
+    u1: number,
+    v1: number,
+  ): void {
+    const x1 = x + width;
+    const y1 = y + height;
+    const offset = this.quadCount * FLOATS_PER_QUAD;
+    const vertices = this.verts;
+    const textureCoords = this.uvs;
+    vertices[offset] = x;
+    vertices[offset + 1] = y;
+    vertices[offset + 2] = x1;
+    vertices[offset + 3] = y;
+    vertices[offset + 4] = x;
+    vertices[offset + 5] = y1;
+    vertices[offset + 6] = x;
+    vertices[offset + 7] = y1;
+    vertices[offset + 8] = x1;
+    vertices[offset + 9] = y;
+    vertices[offset + 10] = x1;
+    vertices[offset + 11] = y1;
+    textureCoords[offset] = u0;
+    textureCoords[offset + 1] = v0;
+    textureCoords[offset + 2] = u1;
+    textureCoords[offset + 3] = v0;
+    textureCoords[offset + 4] = u0;
+    textureCoords[offset + 5] = v1;
+    textureCoords[offset + 6] = u0;
+    textureCoords[offset + 7] = v1;
+    textureCoords[offset + 8] = u1;
+    textureCoords[offset + 9] = v0;
+    textureCoords[offset + 10] = u1;
+    textureCoords[offset + 11] = v1;
+    this.quadCount++;
+    if (this.quadCount === MAX_QUADS) {
+      this.flush();
+    }
+  }
+
+  private flush(): void {
+    if (this.quadCount === 0) {
+      return;
+    }
+    const gl = this.gl;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
+    gl.viewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    gl.useProgram(this.drawProgram);
+    gl.bindVertexArray(this.vao);
+    const unit =
+      this.batchSource === 'sheet'
+        ? UNIT_SHEET
+        : this.batchSource === 'map'
+          ? UNIT_MAP
+          : this.batchSource === 'font'
+            ? UNIT_FONT
+            : UNIT_SHEET;
+    if (this.batchSource === 'sheet') {
+      gl.activeTexture(gl.TEXTURE0 + UNIT_SHEET);
+      gl.bindTexture(gl.TEXTURE_2D, this.sheetTextures.get(this.batchTexture) ?? null);
+    } else if (this.batchSource === 'map') {
+      gl.activeTexture(gl.TEXTURE0 + UNIT_MAP);
+      gl.bindTexture(gl.TEXTURE_2D, this.mapTextures.get(this.batchTexture)?.tex ?? null);
+    }
+    gl.uniform1i(this.uSrc, unit);
+    gl.uniform1i(this.uSolid, this.batchSource === 'solid' ? this.batchSolid : -1);
+    gl.uniform1i(this.uTransparent, this.batchTransparent);
+    if (this.batchSource === 'font') {
+      // Glyph atlas holds 0/1: map 1 → colour, and hide 0.
+      const remapTable = new Int32Array(16);
+      remapTable.set(this.remap);
+      remapTable[1] = this.remap[this.batchTextColour] ?? this.batchTextColour;
+      gl.uniform1iv(this.uRemap, remapTable);
+      this.remapDirty = true;
+    } else if (this.remapDirty) {
+      gl.uniform1iv(this.uRemap, this.remap);
+      this.remapDirty = false;
+    }
+    const floatCount = this.quadCount * FLOATS_PER_QUAD;
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.posBuffer);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.verts, 0, floatCount);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.uvBuffer);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.uvs, 0, floatCount);
+    gl.drawArrays(gl.TRIANGLES, 0, this.quadCount * 6);
+    this.quadCount = 0;
+  }
+
+  /** Sorted by sheet first: one rectangle covering two sheets is not a rectangle on either. */
+  private uploadSheetRegion(changes: PixelChange[]): void {
+    const bySheet = new Map<string, PixelChange[]>();
+    for (const change of changes) {
+      const list = bySheet.get(change.sheet);
+      if (list) {
+        list.push(change);
+      } else {
+        bySheet.set(change.sheet, [change]);
+      }
+    }
+    const gl = this.gl;
+    for (const [id, list] of bySheet) {
+      const sheet = this.game.sheets.find((candidate) => candidate.id === id);
+      const tex = this.sheetTextures.get(id);
+      if (!sheet || !tex) {
+        continue;
+      }
+      let minX = sheet.width,
+        minY = sheet.height,
+        maxX = -1,
+        maxY = -1;
+      for (const change of list) {
+        if (change.x < minX) {
+          minX = change.x;
+        }
+        if (change.x > maxX) {
+          maxX = change.x;
+        }
+        if (change.y < minY) {
+          minY = change.y;
+        }
+        if (change.y > maxY) {
+          maxY = change.y;
+        }
+      }
+      if (maxX < 0) {
+        continue;
+      }
+      const width = maxX - minX + 1;
+      const height = maxY - minY + 1;
+      const region = new Uint8Array(width * height);
+      for (let y = 0; y < height; y++) {
+        region.set(
+          sheet.pixels.subarray(
+            (minY + y) * sheet.width + minX,
+            (minY + y) * sheet.width + minX + width,
+          ),
+          y * width,
+        );
+      }
+      gl.activeTexture(gl.TEXTURE0 + UNIT_SHEET);
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texSubImage2D(
+        gl.TEXTURE_2D,
+        0,
+        minX,
+        minY,
+        width,
+        height,
+        gl.RED,
+        gl.UNSIGNED_BYTE,
+        region,
+      );
+    }
+  }
+
+  private rebuildMap(map: GameMap, held: MapTexture): void {
+    const tiles = map.tiles;
+    const overrides = this.tileOverrides.get(map.id);
+    // Each tile through the sheet its own number belongs to: a map is free to mix them, and read
+    // off one sheet a tile from another lands on whatever pixels happen to be at that offset.
+    for (let ty = 0; ty < map.height; ty++) {
+      for (let tx = 0; tx < map.width; tx++) {
+        const i = ty * map.width + tx;
+        const spriteNumber = overrides?.get(i) ?? tiles[i] ?? 0;
+        const sheet = this.game.sheetOf(spriteNumber);
+        const { x: sx, y: sy } = sheet?.originOf(spriteNumber) ?? { x: 0, y: 0 };
+        for (let y = 0; y < SPRITE_SIZE; y++) {
+          const dst = (ty * SPRITE_SIZE + y) * held.width + tx * SPRITE_SIZE;
+          if (spriteNumber === 0 || !sheet) {
+            held.pixels.fill(0, dst, dst + SPRITE_SIZE);
+            continue;
+          }
+          const src = (sy + y) * sheet.width + sx;
+          held.pixels.set(sheet.pixels.subarray(src, src + SPRITE_SIZE), dst);
+        }
+      }
+    }
+    const gl = this.gl;
+    gl.activeTexture(gl.TEXTURE0 + UNIT_MAP);
+    gl.bindTexture(gl.TEXTURE_2D, held.tex);
+    gl.texSubImage2D(
+      gl.TEXTURE_2D,
+      0,
+      0,
+      0,
+      held.width,
+      held.height,
+      gl.RED,
+      gl.UNSIGNED_BYTE,
+      held.pixels,
+    );
+    held.dirty = false;
+  }
+}
