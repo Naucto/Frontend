@@ -1,0 +1,59 @@
+<div
+  class="flex touch-none items-center justify-between gap-2 select-none"
+  [class]="
+    overlay()
+      ? 'pointer-events-none absolute inset-0 p-2'
+      : 'w-full bg-panel px-2 py-2 pb-[max(16px,env(safe-area-inset-bottom))]'
+  "
+  role="group"
+  [attr.aria-label]="'game.screen.pad.label' | transloco"
+  [style.--nc-pad-scale]="settings.scale()"
+  [style.opacity]="overlay() ? settings.opacity() / 100 : 1">
+  <div class="pointer-events-auto grid grid-cols-3 grid-rows-3 gap-0.5">
+    <span></span>
+    <button
+      type="button"
+      [class]="key"
+      data-nc-action="up"
+      [attr.aria-label]="'game.screen.pad.up' | transloco">
+      <nc-icon name="arrow-up" [size]="24" [class]="arrow" />
+    </button>
+    <span></span>
+    <button
+      type="button"
+      [class]="key"
+      data-nc-action="left"
+      [attr.aria-label]="'game.screen.pad.left' | transloco">
+      <nc-icon name="arrow-left" [size]="24" [class]="arrow" />
+    </button>
+    <span class="rounded-xs bg-line/40"></span>
+    <button
+      type="button"
+      [class]="key"
+      data-nc-action="right"
+      [attr.aria-label]="'game.screen.pad.right' | transloco">
+      <nc-icon name="arrow-right" [size]="24" [class]="arrow" />
+    </button>
+    <span></span>
+    <button
+      type="button"
+      [class]="key"
+      data-nc-action="down"
+      [attr.aria-label]="'game.screen.pad.down' | transloco">
+      <nc-icon name="arrow-down" [size]="24" [class]="arrow" />
+    </button>
+    <span></span>
+  </div>
+
+  <div class="pointer-events-auto flex items-center gap-1.5">
+    <button
+      type="button"
+      [class]="face"
+      data-nc-action="pause"
+      [attr.aria-label]="'game.screen.pause' | transloco">
+      II
+    </button>
+    <button type="button" [class]="face" data-nc-action="b" aria-label="B">B</button>
+    <button type="button" [class]="face" data-nc-action="a" aria-label="A">A</button>
+  </div>
+</div>
