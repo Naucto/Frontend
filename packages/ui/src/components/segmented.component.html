@@ -1,0 +1,16 @@
+<div role="radiogroup" [attr.aria-label]="label()" [class]="trackClass()">
+  @for (option of options(); track option.value; let i = $index) {
+    <button
+      #radio
+      type="button"
+      role="radio"
+      [attr.aria-checked]="option.value === value()"
+      [attr.tabindex]="tabIndexFor(option, i)"
+      [disabled]="disabled()"
+      (click)="value.set(option.value)"
+      (keydown)="onKey($event, i)"
+      [class]="itemClass(option)">
+      {{ option.label }}
+    </button>
+  }
+</div>

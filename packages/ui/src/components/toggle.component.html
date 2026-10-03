@@ -1,0 +1,15 @@
+<button
+  type="button"
+  role="switch"
+  [attr.aria-checked]="checked()"
+  [attr.aria-label]="label()"
+  [disabled]="disabled()"
+  (click)="checked.set(!checked())"
+  [class]="buttonClass()">
+  <span
+    class="relative inline-block h-2 w-[30px] bg-line-strong transition-colors duration-100 group-aria-checked:bg-jade">
+    <span
+      class="absolute top-[3px] left-[3px] h-[10px] w-[10px] bg-ink-3 transition-[transform,background-color] duration-100 group-aria-checked:translate-x-[14px] group-aria-checked:bg-page"></span>
+  </span>
+  <ng-content />
+</button>

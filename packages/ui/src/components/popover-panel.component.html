@@ -1,0 +1,7 @@
+@if (title() && header()) {
+  <header class="flex h-4 items-center justify-between border-b border-line px-2">
+    <span class="label">{{ title() }}</span>
+    <ng-content select="[actions]" />
+  </header>
+}
+<ng-content />

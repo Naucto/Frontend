@@ -1,0 +1,18 @@
+<nav [attr.aria-label]="label()" class="flex h-full w-full flex-col">
+  @for (it of items(); track it.value) {
+    <button
+      type="button"
+      [attr.aria-current]="it.value === value() ? 'page' : null"
+      [attr.title]="it.label"
+      (click)="value.set(it.value)"
+      class="relative flex h-[60px] w-full cursor-pointer flex-col items-center justify-center gap-[6px] text-ink-4 transition-colors duration-100 hover:text-ink aria-[current]:bg-raised aria-[current]:text-gold-ink">
+      <!-- One conditional class rather than a static transparent plus a gold binding: with both on
+           the element, stylesheet order decides which paints. -->
+      <span
+        class="absolute top-0 bottom-0 left-0 w-[3px] transition-colors duration-100"
+        [class]="it.value === value() ? 'bg-gold' : 'bg-transparent'"></span>
+      <nc-icon [name]="it.icon" [size]="24" />
+      <span class="font-mono text-micro uppercase tracking-wide">{{ it.label }}</span>
+    </button>
+  }
+</nav>

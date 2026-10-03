@@ -1,0 +1,9 @@
+<div class="min-w-0">
+  <div class="text-ui" [class]="danger() ? 'text-hot-ink' : 'text-ink'">{{ title() }}</div>
+  @if (hint()) {
+    <div class="text-meta text-ink-3">{{ hint() }}</div>
+  }
+</div>
+<div class="flex shrink-0 items-center justify-end gap-1">
+  <ng-content />
+</div>

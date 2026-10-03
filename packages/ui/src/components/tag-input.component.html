@@ -1,0 +1,16 @@
+<div
+  class="flex min-h-5 flex-wrap items-center gap-0.5 rounded-sm border border-line bg-inset px-1 py-0.5 focus-within:border-gold">
+  @for (tag of tags(); track tag) {
+    <nc-chip kind="tag" [removable]="!disabled()" (removed)="remove(tag)">{{ tag }}</nc-chip>
+  }
+  <input
+    type="text"
+    [value]="draft()"
+    [placeholder]="prompt()"
+    [disabled]="disabled() || tags().length >= max()"
+    [attr.aria-label]="placeholder()"
+    (input)="draft.set($any($event.target).value)"
+    (keydown)="onKey($event)"
+    (blur)="commit()"
+    class="min-w-[8ch] flex-1 bg-transparent font-ui text-ui text-ink outline-none placeholder:text-ink-4 disabled:opacity-40" />
+</div>
