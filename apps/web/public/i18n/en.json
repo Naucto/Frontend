@@ -815,7 +815,8 @@
       "lossParts": "Pitches {{harmony}}% · rhythm {{rhythm}}%. An estimate: timbre, effects and voices are never kept.",
       "sampleReport": "{{bytes}} bytes of 8-bit sound at 8 kHz, at most {{seconds}} s.",
       "nothing": "Nothing was left to import.",
-      "sfxTrimmed": "A sound effect is one pattern: only its first 32 steps were kept."
+      "sfxTrimmed": "A sound effect is one pattern: only its first 32 steps were kept.",
+      "reuse": "{{sections}} sections play from {{patterns}} stored pattern(s) of {{steps}} steps: repeated parts are stored once and named again in the song's order."
     }
   },
   "net": {

@@ -253,6 +253,17 @@ const AUDIO = /\.(mp3|wav|ogg|oga|flac|m4a|aac|webm|opus)$/i;
                   })
                 }}
               </p>
+              @if (c.report.reusedSections) {
+                <p data-testid="midi-reuse">
+                  {{
+                    t('editor.midi.reuse', {
+                      sections: c.report.sections,
+                      patterns: c.patterns.length,
+                      steps: c.report.patternSteps,
+                    })
+                  }}
+                </p>
+              }
               @for (warning of c.report.warnings; track warning) {
                 <p class="text-ink-3">· {{ warning }}</p>
               }
@@ -356,7 +367,7 @@ export class MidiImportDialog {
   private adopt(parsed: ParsedMidi): void {
     this.parsed.set(parsed);
     this.selected.set(parsed.tracks.filter((t) => t.notes.length).map((t) => t.index));
-    this.bpm = Math.min(240, Math.max(40, Math.round(parsed.bpm)));
+    this.bpm = Math.min(240, Math.max(40, Math.round(parsed.steadyBpm ?? parsed.bpm)));
   }
 
   /** Runs the analysis again with the listening settings; a frame first, so the status shows. */
