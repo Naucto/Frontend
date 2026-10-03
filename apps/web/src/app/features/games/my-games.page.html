@@ -1,0 +1,33 @@
+<div *transloco="let t" class="grid gap-4">
+  @if (query.isError()) {
+    <!-- Never the "you have no games" copy: someone with a shelf full of them would read that
+         as having lost the lot. -->
+    <nc-error-state
+      [title]="t('games.loadFailed')"
+      [hint]="t('hub.rowError')"
+      [retryLabel]="t('game.retry')"
+      (retry)="query.refetch()" />
+  } @else if (query.isPending()) {
+    <div class="grid gap-1">
+      <nc-skeleton height="1.25rem" width="30%" />
+      <nc-skeleton height="112px" radius="rounded-md" />
+      <nc-skeleton height="112px" radius="rounded-md" />
+    </div>
+  } @else if (!all().length) {
+    <nc-empty-state icon="file-plus" [title]="t('games.emptyTitle')" [hint]="t('games.emptyHint')">
+      <a ncButton variant="primary" routerLink="/games/new">+ {{ t('nav.newGame') }}</a>
+    </nc-empty-state>
+  } @else {
+    <nc-hub-row
+      [title]="t('games.drafts')"
+      [games]="drafts()"
+      [count]="drafts().length"
+      [empty]="t('games.noDrafts')"
+      [opensEditor]="true" />
+    <nc-hub-row
+      [title]="t('games.published')"
+      [games]="published()"
+      [empty]="t('games.noPublished')"
+      [opensEditor]="true" />
+  }
+</div>

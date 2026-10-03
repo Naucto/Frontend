@@ -1,0 +1,13 @@
+<ng-container *transloco="let t">
+  @if (error(); as message) {
+    <div class="flex items-center justify-center p-6">
+      <nc-error-state
+        [title]="t('games.createFailed')"
+        [hint]="message"
+        [retryLabel]="t('game.retry')"
+        (retry)="create()" />
+    </div>
+  } @else {
+    <nc-lcd class="mx-auto mt-6 w-[320px]">> creating a new game…</nc-lcd>
+  }
+</ng-container>
