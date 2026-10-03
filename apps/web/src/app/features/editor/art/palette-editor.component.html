@@ -1,0 +1,42 @@
+<div class="rounded-sm border border-line p-1.5">
+  <div class="flex items-center gap-1">
+    <span
+      class="h-[26px] w-[26px] rounded-xs border border-line-strong"
+      [style.background]="hex()"></span>
+    <span class="font-mono text-meta text-ink">{{ slotLabel() }} {{ pad(slot()) }}</span>
+    <input
+      type="text"
+      [value]="digits()"
+      [attr.aria-label]="hexLabel()"
+      maxlength="6"
+      spellcheck="false"
+      (change)="onHex($event)"
+      class="ml-auto w-[calc(6ch+1.25rem)] rounded-xs border border-line-strong bg-inset px-1 py-0.5 text-center font-mono text-meta text-ink outline-none focus:border-gold" />
+  </div>
+  <div class="mt-1 grid gap-0.5">
+    <nc-slider
+      label="R"
+      [max]="255"
+      [value]="rgb()[0]"
+      [readout]="String(rgb()[0])"
+      accent="hot"
+      compact
+      (valueChange)="onChannel(0, $event)" />
+    <nc-slider
+      label="G"
+      [max]="255"
+      [value]="rgb()[1]"
+      [readout]="String(rgb()[1])"
+      accent="jade"
+      compact
+      (valueChange)="onChannel(1, $event)" />
+    <nc-slider
+      label="B"
+      [max]="255"
+      [value]="rgb()[2]"
+      [readout]="String(rgb()[2])"
+      accent="sky"
+      compact
+      (valueChange)="onChannel(2, $event)" />
+  </div>
+</div>

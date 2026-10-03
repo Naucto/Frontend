@@ -1,0 +1,14 @@
+<div role="radiogroup" [attr.aria-label]="label()" class="grid grid-cols-8 gap-0.5">
+  @for (hex of colours(); track $index) {
+    <button
+      type="button"
+      role="radio"
+      [attr.aria-checked]="$index === value()"
+      [attr.aria-label]="'Colour ' + $index + ' ' + hex"
+      [attr.tabindex]="$index === value() ? 0 : -1"
+      [style.background]="hex"
+      (click)="value.set($index)"
+      (keydown)="onKey($event)"
+      class="aspect-[5/3] cursor-pointer rounded-xs outline-offset-1 transition-[outline-color] duration-100 aria-checked:outline-2 aria-checked:outline-gold"></button>
+  }
+</div>

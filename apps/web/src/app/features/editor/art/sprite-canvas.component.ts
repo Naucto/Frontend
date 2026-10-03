@@ -1,0 +1,943 @@
+import {
+  booleanAttribute,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  ElementRef,
+  inject,
+  input,
+  model,
+  output,
+  signal,
+  untracked,
+  viewChild,
+} from '@angular/core';
+import { DEFAULT_GEOMETRY, type EditableGame, FIRST_SHEET_ID, SPRITE_SIZE } from '@naucto/engine';
+import {
+  DragPanDirective,
+  PresenceLayerComponent,
+  type PresenceMark,
+  type PresenceViewport,
+} from '@naucto/ui';
+import type * as Y from 'yjs';
+
+import { ThemeService } from '../../../core/theme/theme.service';
+import {
+  MARK_LINE_WIDTH,
+  ONION_ALPHA,
+  outlineCells,
+  SHEET_GRID,
+} from '../../../shared/pixel/canvas-style';
+import { collectionsSignal } from '../../../shared/pixel/collections.signal';
+import { cutInside, FloatingLayer } from '../../../shared/pixel/floating-layer';
+import { geometrySignal } from '../../../shared/pixel/geometry.signal';
+import {
+  checkerboard,
+  ellipsePoints,
+  floodFill,
+  linePoints,
+  type Pt,
+  rectPoints,
+  spanning,
+  type Transform,
+  withinBounds,
+} from '../../../shared/pixel/pixel-tools';
+import { type SheetPainter } from '../../../shared/pixel/sheet-painter';
+import { type PixelClip } from '../state/clipboard.store';
+import { type Collaborator } from '../work-session/session-presence.service';
+import { ArtStore, type ArtTool, type PixelRect, type SpriteRect } from './art.store';
+
+/**
+ * Screen pixels per art pixel, at the ends. The whole sheet is drawn at once rather than the part
+ * on screen, so the ceiling is set by what a canvas that large costs, not by how far into a sprite
+ * anybody would want to go.
+ */
+export const MIN_ZOOM = 1;
+export const MAX_ZOOM = 64;
+
+/**
+ * One press of a magnifier: a quarter more or less, landing on a whole scale.
+ *
+ * Whole, because that is where nothing is resampled and the art is at its crispest — the buttons
+ * are how you get back to a clean multiple, and the track is how you get everywhere else. Each
+ * direction rounds towards where it started, so one press each way is a round trip.
+ *
+ * The floor of one whole step is not tidiness: a quarter more than a small scale rounds back onto
+ * itself, which would leave the buttons dead at the bottom of the range.
+ */
+export function stepZoom(scale: number, delta: number, min = MIN_ZOOM, max = MAX_ZOOM): number {
+  const next =
+    delta > 0
+      ? Math.max(Math.floor(scale * 1.25), Math.floor(scale) + 1)
+      : Math.min(Math.ceil(scale / 1.25), Math.ceil(scale) - 1);
+  return Math.max(min, Math.min(max, next));
+}
+
+export function toolBounds(
+  region: SpriteRect,
+  clip: boolean,
+  sheetWidth: number,
+  sheetHeight: number,
+): PixelRect {
+  if (!clip) {
+    return { x: 0, y: 0, w: sheetWidth, h: sheetHeight };
+  }
+  return {
+    x: region.x * SPRITE_SIZE,
+    y: region.y * SPRITE_SIZE,
+    w: region.w * SPRITE_SIZE,
+    h: region.h * SPRITE_SIZE,
+  };
+}
+
+function checkerboardRegion(
+  ctx: CanvasRenderingContext2D,
+  rect: PixelRect,
+  scale: number,
+  insetColour: string,
+  sunkenColour: string,
+): void {
+  ctx.save();
+  ctx.translate(rect.x * scale, rect.y * scale);
+  checkerboard(ctx, rect.w * scale, rect.h * scale, 8, insetColour, sunkenColour);
+  ctx.restore();
+}
+
+/** What every pass of one frame draws with. */
+interface Frame {
+  ctx: CanvasRenderingContext2D;
+  token: (name: string) => string;
+  /** Drawn pixels per art pixel: the whole scale the canvas is painted at. */
+  scale: number;
+  sheetW: number;
+  sheetH: number;
+}
+
+interface Drag {
+  tool: ArtTool;
+  start: Pt;
+  last: Pt;
+  colour: number;
+  /** For MOVE: the lifted pixels and where they came from. */
+  lifted?: { rect: PixelRect; pixels: Uint8Array };
+  /** MOVE, on a pasted layer: the drag carries the layer, and the sheet under it is untouched. */
+  carrying?: boolean;
+}
+
+/**
+ * The whole sheet, zoomed and scrolled, with the worked-on region marked on it.
+ *
+ * The canvas shows everything; the region says what the flags, the preview and the onion refer to,
+ * and — while `clip` holds — how far a tool may reach. Panning is the host's own scrollbars: the
+ * content is the sheet at its full drawn size, so there is no second scrolling model to keep in
+ * step with the first.
+ */
+@Component({
+  selector: 'nc-sprite-canvas',
+  imports: [PresenceLayerComponent],
+  templateUrl: './sprite-canvas.component.html',
+  hostDirectives: [DragPanDirective],
+  host: {
+    class: 'flex overflow-auto',
+    tabindex: '0',
+    '(wheel)': 'onWheel($event)',
+    '(scroll)': 'measure()',
+  },
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class SpriteCanvasComponent {
+  readonly game = input.required<EditableGame>();
+  /** Every pixel read and written below goes to this sheet. */
+  readonly sheetId = input(FIRST_SHEET_ID);
+  readonly painter = input.required<SheetPainter>();
+  /** The cells being worked on, in whole 8×8 units. */
+  readonly region = input.required<SpriteRect>();
+  /** Whether a tool stops at the region's edge or may paint anywhere on the sheet. */
+  readonly clip = input(true, { transform: booleanAttribute });
+  readonly crop = input(false, { transform: booleanAttribute });
+  readonly tool = input<ArtTool>('pen');
+  readonly colour = input(4);
+  readonly grid = input(true);
+  readonly onion = input(false);
+  /** In sheet pixels, like everything else the tools speak. */
+  readonly selection = model<PixelRect | null>(null);
+  readonly collaborators = input<readonly Collaborator[]>([]);
+  /**
+   * The manager the tab owns, so settling a paste is its own step.
+   *
+   * Settling happens on the press that starts the next stroke, and a stroke landing in the same
+   * breath would otherwise be undone together with the paste it was drawn over.
+   */
+  readonly undo = input<Y.UndoManager | null>(null);
+  readonly label = input('Sprite canvas');
+  /** Pointer cell in sheet coordinates, null when outside. */
+  readonly hover = output<Pt | null>();
+  /**
+   * Where the pointer actually is, in fractional sheet cells.
+   *
+   * `hover` is snapped to whole cells because that is the pixel you are about to paint. A cursor
+   * shown to somebody else wants the opposite: at a high zoom one cell is a hundred screen pixels,
+   * so a snapped position makes a peer's cursor jump across the canvas in visible steps.
+   */
+  readonly pointer = output<{ x: number; y: number } | null>();
+  readonly pick = output<number>();
+  /** A paste has been placed and wants the tool that can move it. */
+  readonly pasted = output();
+
+  /** What of the sheet is on screen, in fractional cells — for whatever draws a map of it. */
+  readonly view = signal<SpriteRect>({
+    x: 0,
+    y: 0,
+    w: DEFAULT_GEOMETRY.spritesPerRow,
+    h: DEFAULT_GEOMETRY.spriteRows,
+  });
+
+  /**
+   * A pasted clip, placed but not written. A selection turned against an edge is cut there rather
+   * than slid away from where it was.
+   */
+  private readonly floating = new FloatingLayer<Uint8Array>(
+    {
+      read: (x, y) => this.sheet()?.getPixel(x, y) ?? 0,
+      write: (x, y, value) => {
+        this.sheet()?.setPixel(x, y, value);
+      },
+      bounds: () => this.bounds(),
+      transact: (edit) => {
+        this.game().transact(edit);
+      },
+      undo: () => this.undo(),
+    },
+    Uint8Array,
+    'cut',
+  );
+
+  /** Consumed by the draw that follows a scale change, once the content has its new size. */
+  private centre: { x: number; y: number } | null = null;
+
+  private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
+  private readonly wrap = viewChild.required<ElementRef<HTMLElement>>('wrap');
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly theme = inject(ThemeService);
+  /** The well, as the ResizeObserver last measured it. */
+  private readonly well = signal({ w: 0, h: 0 });
+  /**
+   * The largest whole scale at which the subject — the region when cropped, the sheet otherwise —
+   * fits the well.
+   */
+  private readonly fitScale = computed(() => {
+    const { w, h } = this.well();
+    if (!w || !h) {
+      return 4;
+    }
+    const regionPx = this.regionPx();
+    const subject = this.crop()
+      ? Math.max(regionPx.w, regionPx.h)
+      : Math.max(this.pxW(), this.pxH());
+    return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.floor((Math.min(w, h) - 16) / subject)));
+  });
+  /**
+   * Null until somebody zooms, and from then on theirs: screen pixels per art pixel, whatever the
+   * region's size.
+   */
+  private readonly art = inject(ArtStore);
+  readonly zoom = computed(() => this.art.zoom() ?? this.fitScale());
+  private readonly hoverCell = signal<Pt | null>(null);
+  private readonly preview = signal<Pt[] | null>(null);
+  private readonly moveOffset = signal<Pt | null>(null);
+  private drag: Drag | null = null;
+  private raf = 0;
+
+  private readonly geometry = geometrySignal(this.game);
+  private readonly collections = collectionsSignal(this.game);
+  /**
+   * The sheet in hand.
+   *
+   * Resolved per use rather than held: the projection is rebuilt whenever the collection changes,
+   * and a stale one would point at a pixel buffer that has been replaced.
+   */
+  protected readonly sheet = computed(() => {
+    this.geometry();
+    this.collections();
+    const id = this.sheetId();
+    const sheets = this.game().sheets;
+    return sheets.find((candidate) => candidate.id === id) ?? sheets[0];
+  });
+  /** The sheet's size in pixels. */
+  protected readonly pxW = computed(() => this.sheet()?.width ?? this.geometry().sheetWidth);
+  protected readonly pxH = computed(() => this.sheet()?.height ?? this.geometry().sheetHeight);
+  /** The region in sheet pixels: what the tools are held to, and what is outlined on the canvas. */
+  private readonly regionPx = computed<PixelRect>(() => {
+    const region = this.region();
+    return {
+      x: region.x * SPRITE_SIZE,
+      y: region.y * SPRITE_SIZE,
+      w: region.w * SPRITE_SIZE,
+      h: region.h * SPRITE_SIZE,
+    };
+  });
+  // A drag that leaves the canvas still lands on the sheet, so cropping has to confine the tools
+  // as well as the view. The smaller canvas alone does not.
+  private readonly bounds = computed(() =>
+    toolBounds(this.region(), this.clip() || this.crop(), this.pxW(), this.pxH()),
+  );
+  protected readonly hoverInBounds = computed(() => {
+    const hoverCell = this.hoverCell();
+    return hoverCell === null || withinBounds(this.bounds(), hoverCell);
+  });
+  /**
+   * Where the drawn surface starts, in drawn pixels. Cropped, the canvas holds the region alone
+   * and takes the region's corner as its own origin, so anything laid over it in sheet
+   * coordinates has to come back to that corner before it means anything.
+   */
+  private readonly originPx = computed(() => {
+    const zoom = this.zoom();
+    const origin = this.crop() ? this.regionPx() : { x: 0, y: 0 };
+    return { x: origin.x * zoom, y: origin.y * zoom };
+  });
+  protected readonly marks = computed<PresenceMark[]>(() => {
+    const zoom = this.zoom();
+    const originPx = this.originPx();
+    return this.collaborators()
+      .filter((collaborator) => !collaborator.isSelf && collaborator.cursor?.tab === 'art')
+      .map((collaborator) => ({
+        id: collaborator.clientId,
+        name: collaborator.name,
+        colour: collaborator.colour,
+        x: (collaborator.cursor?.x ?? 0) * zoom - originPx.x,
+        y: (collaborator.cursor?.y ?? 0) * zoom - originPx.y,
+      }));
+  });
+  /** The same frame `view` reports, in the drawn pixels the marks are placed in. */
+  protected readonly viewPx = computed<PresenceViewport>(() => {
+    const view = this.view();
+    const originPx = this.originPx();
+    const scale = SPRITE_SIZE * this.zoom();
+    return {
+      x: view.x * scale - originPx.x,
+      y: view.y * scale - originPx.y,
+      w: view.w * scale,
+      h: view.h * scale,
+    };
+  });
+
+  constructor() {
+    const ro = new ResizeObserver((entries) => {
+      const contentRect = entries[0]?.contentRect;
+      if (!contentRect) {
+        return;
+      }
+      this.well.set({ w: contentRect.width, h: contentRect.height });
+      this.measure();
+    });
+    ro.observe(this.host.nativeElement);
+    inject(DestroyRef).onDestroy(() => {
+      ro.disconnect();
+      cancelAnimationFrame(this.raf);
+    });
+    // A placed paste settles when the tool or the region moves off it; untracked so placing one
+    // does not settle it, and the region is compared because the effect also re-runs for the tool.
+    let lastRegion: SpriteRect | undefined;
+    effect(() => {
+      const movable = this.tool() === 'move';
+      const region = this.region();
+      untracked(() => {
+        const leftBehind = lastRegion !== undefined && region !== lastRegion;
+        lastRegion = region;
+        if (!movable || leftBehind) {
+          this.settleFloating();
+        }
+      });
+    });
+    // Picking a region off screen — in the sheet map, or with the arrow keys — has to bring it back
+    // into view, or the pick silently does nothing you can see.
+    effect(() => {
+      const regionPx = this.regionPx();
+      const zoom = this.zoom();
+      untracked(() => {
+        this.reveal(regionPx, zoom);
+      });
+    });
+    effect(() => {
+      this.painter().version();
+      this.region();
+      this.crop();
+      this.clip();
+      this.grid();
+      this.onion();
+      this.selection();
+      this.zoom();
+      this.hoverCell();
+      this.preview();
+      this.moveOffset();
+      this.colour();
+      // Colours are read from CSS custom properties at paint time; repaint when the theme flips.
+      this.theme.effective();
+      untracked(() => {
+        this.requestRedraw();
+      });
+    });
+  }
+
+  /**
+   * Remembers what is in the middle of the well, for the next draw to put back there.
+   *
+   * The content scales about its own origin, so offsets left alone hold the top-left corner and
+   * nothing else. Read here rather than after, because it means nothing at the new scale.
+   */
+  private holdCentre(): void {
+    const el = this.host.nativeElement;
+    const zoom = this.zoom();
+    this.centre = {
+      x: (el.scrollLeft + el.clientWidth / 2) / zoom,
+      y: (el.scrollTop + el.clientHeight / 2) / zoom,
+    };
+  }
+
+  setZoom(scale: number): void {
+    this.holdCentre();
+    this.art.setZoom(Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, scale)));
+  }
+
+  zoomBy(delta: number): void {
+    this.setZoom(stepZoom(this.zoom(), delta));
+  }
+
+  /** Back to fitting the sheet, and back to following it when the panel resizes. */
+  resetZoom(): void {
+    this.holdCentre();
+    this.art.setZoom(null);
+  }
+
+  /** Scrolls so the given sheet cell is centred. */
+  scrollToCell(x: number, y: number): void {
+    const el = this.host.nativeElement;
+    const zoom = this.zoom();
+    el.scrollTo({
+      left: (x + 0.5) * SPRITE_SIZE * zoom - el.clientWidth / 2,
+      top: (y + 0.5) * SPRITE_SIZE * zoom - el.clientHeight / 2,
+    });
+  }
+
+  /** Scrolling is the wheel's; zooming asks for the modifier the browser reserves for it. */
+  protected onWheel(event: WheelEvent): void {
+    if (!event.ctrlKey && !event.metaKey) {
+      return;
+    }
+    event.preventDefault();
+    this.zoomBy(event.deltaY < 0 ? 1 : -1);
+  }
+
+  /**
+   * Publishes what is on screen, in sheet cells; cropped, the scrolled content is the region alone,
+   * so the frame is offset by the region's corner.
+   */
+  protected measure(): void {
+    const el = this.host.nativeElement;
+    const zoom = this.zoom();
+    const cropped = this.crop();
+    const regionPx = this.regionPx();
+    const content = cropped ? regionPx : { x: 0, y: 0, w: this.pxW(), h: this.pxH() };
+    const span = (client: number, scroll: number, size: number): [number, number] =>
+      size * zoom <= client ? [0, size] : [scroll / zoom, client / zoom];
+    const [x, width] = span(el.clientWidth, el.scrollLeft, content.w);
+    const [y, height] = span(el.clientHeight, el.scrollTop, content.h);
+    this.view.set({
+      x: (content.x + x) / SPRITE_SIZE,
+      y: (content.y + y) / SPRITE_SIZE,
+      w: width / SPRITE_SIZE,
+      h: height / SPRITE_SIZE,
+    });
+  }
+
+  private reveal(rect: PixelRect, zoom: number): void {
+    const el = this.host.nativeElement;
+    if (this.pxW() * zoom <= el.clientWidth && this.pxH() * zoom <= el.clientHeight) {
+      return;
+    }
+    const axis = (start: number, size: number, scroll: number, client: number): number => {
+      const startPx = start * zoom;
+      const endPx = (start + size) * zoom;
+      if (startPx < scroll) {
+        return startPx - 8;
+      }
+      if (endPx > scroll + client) {
+        return endPx - client + 8;
+      }
+      return scroll;
+    };
+    el.scrollTo({
+      left: axis(rect.x, rect.w, el.scrollLeft, el.clientWidth),
+      top: axis(rect.y, rect.h, el.scrollTop, el.clientHeight),
+      behavior: 'smooth',
+    });
+  }
+
+  /** The same position, unsnapped. */
+  private pointOf(event: PointerEvent): { x: number; y: number } {
+    const box = this.canvas().nativeElement.getBoundingClientRect();
+    const zoom = this.zoom();
+    const origin = this.crop() ? this.regionPx() : { x: 0, y: 0 };
+    return {
+      x: origin.x + (event.clientX - box.left) / zoom,
+      y: origin.y + (event.clientY - box.top) / zoom,
+    };
+  }
+
+  private cellOf(event: PointerEvent): Pt {
+    const point = this.pointOf(event);
+    return {
+      x: Math.max(0, Math.min(this.pxW() - 1, Math.floor(point.x))),
+      y: Math.max(0, Math.min(this.pxH() - 1, Math.floor(point.y))),
+    };
+  }
+
+  private inBounds(point: Pt): boolean {
+    return withinBounds(this.bounds(), point);
+  }
+
+  private paint(points: readonly Pt[], colour: number): void {
+    this.game().transact(() => {
+      for (const point of points) {
+        if (this.inBounds(point)) {
+          this.sheet()?.setPixel(point.x, point.y, colour);
+        }
+      }
+    });
+  }
+
+  /** Writes the placed layer into the sheet, as one undo step. Silent when there is none. */
+  settleFloating(): void {
+    const rect = this.floating.settle();
+    if (rect) {
+      this.selection.set(rect);
+    }
+  }
+
+  protected onDown(event: PointerEvent): void {
+    if (event.button !== 0 && event.button !== 2) {
+      return;
+    }
+    this.host.nativeElement.focus({ preventScroll: true });
+    const cell = this.cellOf(event);
+    // A press outside what the tools may touch is not the start of a stroke — silently clamping it
+    // to the nearest legal pixel would paint somewhere nobody aimed.
+    if (!this.inBounds(cell)) {
+      return;
+    }
+    this.canvas().nativeElement.setPointerCapture(event.pointerId);
+    const colour = event.button === 2 ? 0 : this.colour();
+    const tool = this.tool();
+    const layer = this.floating.placed();
+    if (layer && tool === 'move' && withinBounds(layer.rect, cell)) {
+      this.drag = { tool, start: cell, last: cell, colour, carrying: true };
+      this.moveOffset.set({ x: 0, y: 0 });
+      return;
+    }
+    // Anything else is done with the layer: a press elsewhere settles it rather than losing it.
+    this.settleFloating();
+    this.drag = { tool, start: cell, last: cell, colour };
+    switch (tool) {
+      case 'pen':
+        this.paint([cell], colour);
+        break;
+      case 'fill': {
+        const bounds = this.bounds();
+        this.paint(
+          floodFill(
+            (x, y) => this.sheet()?.getPixel(bounds.x + x, bounds.y + y) ?? 0,
+            { x: cell.x - bounds.x, y: cell.y - bounds.y },
+            bounds.w,
+            bounds.h,
+          ).map((point) => ({ x: point.x + bounds.x, y: point.y + bounds.y })),
+          colour,
+        );
+        this.drag = null;
+        break;
+      }
+      case 'eyedropper':
+        this.pick.emit(this.sheet()?.getPixel(cell.x, cell.y) ?? 0);
+        this.drag = null;
+        break;
+      case 'move': {
+        const rect = this.selection() ?? this.bounds();
+        this.drag.lifted = { rect, pixels: this.floating.lift(rect) };
+        this.moveOffset.set({ x: 0, y: 0 });
+        break;
+      }
+      case 'select':
+        this.selection.set(null);
+        break;
+      default:
+        this.preview.set([cell]);
+    }
+  }
+
+  protected onMove(event: PointerEvent): void {
+    const cell = this.cellOf(event);
+    this.hoverCell.set(cell);
+    this.hover.emit(cell);
+    const pt = this.pointOf(event);
+    this.pointer.emit(pt);
+    const drag = this.drag;
+    if (!drag) {
+      return;
+    }
+    if (cell.x === drag.last.x && cell.y === drag.last.y) {
+      return;
+    }
+    switch (drag.tool) {
+      case 'pen':
+        this.paint(linePoints(drag.last, cell), drag.colour);
+        break;
+      case 'line':
+        this.preview.set(linePoints(drag.start, cell));
+        break;
+      case 'rect':
+        this.preview.set(rectPoints(drag.start, cell));
+        break;
+      case 'circle':
+        this.preview.set(ellipsePoints(drag.start, cell));
+        break;
+      case 'select':
+        this.selection.set(cutInside(spanning(drag.start, cell), this.bounds()));
+        break;
+      case 'move':
+        this.moveOffset.set({ x: cell.x - drag.start.x, y: cell.y - drag.start.y });
+        break;
+      default:
+        break;
+    }
+    drag.last = cell;
+  }
+
+  protected onUp(event: PointerEvent): void {
+    const drag = this.drag;
+    this.drag = null;
+    if (!drag) {
+      return;
+    }
+    const cell = this.cellOf(event);
+    const preview = this.preview();
+    this.preview.set(null);
+    if (drag.tool === 'line' || drag.tool === 'rect' || drag.tool === 'circle') {
+      if (preview) {
+        this.paint(preview, drag.colour);
+      }
+      return;
+    }
+    if (drag.carrying) {
+      this.moveOffset.set(null);
+      const rect = this.floating.carry({ x: cell.x - drag.start.x, y: cell.y - drag.start.y });
+      if (rect) {
+        this.selection.set(rect);
+      }
+      return;
+    }
+    if (drag.tool === 'move' && drag.lifted) {
+      const off = { x: cell.x - drag.start.x, y: cell.y - drag.start.y };
+      this.moveOffset.set(null);
+      if (off.x === 0 && off.y === 0) {
+        return;
+      }
+      const { rect, pixels } = drag.lifted;
+      this.floating.move(rect, pixels, off);
+      if (this.selection()) {
+        this.selection.set({ ...rect, x: rect.x + off.x, y: rect.y + off.y });
+      }
+    }
+  }
+
+  protected onLeave(): void {
+    this.hoverCell.set(null);
+    this.hover.emit(null);
+    this.pointer.emit(null);
+  }
+
+  /** Falls back to what a tool may reach, so copying the sprite in hand needs no selection. */
+  copySelection(): PixelClip {
+    const rect = this.selection() ?? this.bounds();
+    return { kind: 'pixels', w: rect.w, h: rect.h, cells: this.floating.lift(rect) };
+  }
+
+  /**
+   * Places the clip as a floating layer in the middle of what is on screen, kept inside what the
+   * tools may reach; nothing is written until it is settled.
+   */
+  pasteClip(clip: PixelClip): void {
+    // A second paste settles the first rather than dropping it: work already placed is work.
+    this.settleFloating();
+    // The middle of what is on screen, not of the sheet: at a zoom where most of the sheet is
+    // scrolled away, the sheet's middle is somewhere nobody is looking.
+    const view = this.view();
+    const rect = this.floating.place(
+      {
+        x: Math.round((view.x + view.w / 2) * SPRITE_SIZE - clip.w / 2),
+        y: Math.round((view.y + view.h / 2) * SPRITE_SIZE - clip.h / 2),
+        w: clip.w,
+        h: clip.h,
+      },
+      clip.cells,
+    );
+    this.selection.set(rect);
+    this.pasted.emit();
+  }
+
+  /** Drops the placed layer. Nothing was written, so there is nothing to undo. */
+  discardFloating(): boolean {
+    return this.floating.discard();
+  }
+
+  /** Clears the selected pixels (Delete / Backspace). */
+  clearSelection(): void {
+    const sel = this.selection();
+    if (!sel) {
+      return;
+    }
+    this.paint(
+      rectPoints({ x: sel.x, y: sel.y }, { x: sel.x + sel.w - 1, y: sel.y + sel.h - 1 }, true),
+      0,
+    );
+  }
+
+  /**
+   * Turns the selected pixels over in place, as one undo step. A rotation swaps the selection's
+   * sides; turned against an edge, it loses what would land past it.
+   */
+  transformSelection(op: Transform): void {
+    // Done with the layer, as any other edit is: the turn reads the sheet, and a placed paste is
+    // not in it until it is settled.
+    this.settleFloating();
+    const sel = this.selection();
+    if (!sel) {
+      return;
+    }
+    this.selection.set(this.floating.transform(sel, op));
+  }
+
+  // ---- drawing --------------------------------------------------------------
+
+  /**
+   * Sizes the canvas for this frame and says what every pass draws with. Everything after it draws
+   * in sheet coordinates; cropping moves the origin and nothing else.
+   */
+  private beginFrame(el: HTMLCanvasElement, ctx: CanvasRenderingContext2D): Frame {
+    // One style object for the whole frame: reading a token is a getComputedStyle, which makes the
+    // browser settle pending style work before it answers, and this frame also writes styles.
+    const tokens = getComputedStyle(el);
+    const scale = this.zoom();
+    // Drawn at the whole scale above, shown at the real one. At a whole scale every art pixel is
+    // exactly as wide as its neighbour and the cell guides land on hard edges; the browser then
+    // resamples the finished picture once, evenly, on its way down to the size asked for.
+    const wholeScale = Math.ceil(scale);
+    const view = this.crop() ? this.regionPx() : { x: 0, y: 0, w: this.pxW(), h: this.pxH() };
+    const cw = view.w * wholeScale;
+    const ch = view.h * wholeScale;
+    if (el.width !== cw) {
+      el.width = cw;
+    }
+    if (el.height !== ch) {
+      el.height = ch;
+    }
+    el.style.width = `${String(view.w * scale)}px`;
+    el.style.height = `${String(view.h * scale)}px`;
+    el.style.imageRendering = wholeScale === scale ? 'pixelated' : 'auto';
+    const wrap = this.wrap().nativeElement;
+    wrap.style.width = `${String(view.w * scale)}px`;
+    wrap.style.height = `${String(view.h * scale)}px`;
+    // Assigning a size resets the transform and nothing else does, so a view whose size has not
+    // changed would translate again on top of the last one and walk off the canvas.
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    const frame: Frame = {
+      ctx,
+      token: (name) => tokens.getPropertyValue(name).trim(),
+      scale: wholeScale,
+      sheetW: this.pxW() * wholeScale,
+      sheetH: this.pxH() * wholeScale,
+    };
+    // The checker is sized in screen pixels: zooming with the art, it would read as part of the
+    // sprite.
+    checkerboard(
+      ctx,
+      cw,
+      ch,
+      Math.round((8 * wholeScale) / scale),
+      frame.token('--nc-inset'),
+      frame.token('--nc-sunken'),
+    );
+    ctx.translate(-view.x * wholeScale, -view.y * wholeScale);
+    return frame;
+  }
+
+  /** Every non-transparent cell of a block, at an offset from where it was taken. */
+  private fillCells(frame: Frame, rect: PixelRect, cells: Uint8Array, offset: Pt): void {
+    const { ctx, scale } = frame;
+    const palette = this.painter().palette;
+    for (let y = 0; y < rect.h; y++) {
+      for (let x = 0; x < rect.w; x++) {
+        const paletteIndex = cells[y * rect.w + x] ?? 0;
+        if (!paletteIndex) {
+          continue;
+        }
+        ctx.fillStyle = palette[paletteIndex] ?? '#000';
+        ctx.fillRect(
+          (rect.x + x + offset.x) * scale,
+          (rect.y + y + offset.y) * scale,
+          scale,
+          scale,
+        );
+      }
+    }
+  }
+
+  /** The sheet, the frame before the region ghosted under it, and what a move or a paste holds. */
+  private drawArt(frame: Frame): void {
+    const { ctx, scale } = frame;
+    const sheet = this.painter().canvas;
+    const regionPx = this.regionPx();
+    if (this.onion() && regionPx.x >= regionPx.w) {
+      // A step of the region's own width, since an animation drawn two cells wide has its previous
+      // frame two cells back.
+      ctx.globalAlpha = ONION_ALPHA;
+      ctx.drawImage(
+        sheet,
+        regionPx.x - regionPx.w,
+        regionPx.y,
+        regionPx.w,
+        regionPx.h,
+        regionPx.x * scale,
+        regionPx.y * scale,
+        regionPx.w * scale,
+        regionPx.h * scale,
+      );
+      ctx.globalAlpha = 1;
+    }
+    const lifted = this.drag?.lifted;
+    const off = this.moveOffset();
+    ctx.drawImage(sheet, 0, 0, this.pxW(), this.pxH(), 0, 0, frame.sheetW, frame.sheetH);
+    if (lifted && off) {
+      const { rect } = lifted;
+      ctx.clearRect(rect.x * scale, rect.y * scale, rect.w * scale, rect.h * scale);
+      checkerboardRegion(ctx, rect, scale, frame.token('--nc-inset'), frame.token('--nc-sunken'));
+      this.fillCells(frame, rect, lifted.pixels, off);
+    }
+    const layer = this.floating.placed();
+    if (layer) {
+      // Over the sheet, not into it: what it covers is still there, and still there if it moves on.
+      const carry = this.drag?.carrying === true ? (off ?? { x: 0, y: 0 }) : { x: 0, y: 0 };
+      this.fillCells(frame, layer.rect, layer.cells, carry);
+    }
+    const preview = this.preview();
+    if (preview) {
+      const colour = this.drag?.colour ?? this.colour();
+      ctx.fillStyle =
+        colour === 0 ? frame.token('--nc-inset') : (this.painter().palette[colour] ?? '#fff');
+      for (const point of preview) {
+        ctx.fillRect(point.x * scale, point.y * scale, scale, scale);
+      }
+    }
+  }
+
+  private drawGrid(frame: Frame): void {
+    const { ctx, scale, sheetW, sheetH } = frame;
+    const pxW = this.pxW();
+    const pxH = this.pxH();
+    ctx.strokeStyle = frame.token('--nc-ink');
+    ctx.lineWidth = 1;
+    if (scale >= SHEET_GRID.fineMinScale) {
+      ctx.globalAlpha = SHEET_GRID.fineAlpha;
+      ctx.beginPath();
+      for (let i = 1; i < pxW; i++) {
+        if (i % SPRITE_SIZE === 0) {
+          continue;
+        }
+        ctx.moveTo(i * scale + 0.5, 0);
+        ctx.lineTo(i * scale + 0.5, sheetH);
+      }
+      for (let i = 1; i < pxH; i++) {
+        if (i % SPRITE_SIZE === 0) {
+          continue;
+        }
+        ctx.moveTo(0, i * scale + 0.5);
+        ctx.lineTo(sheetW, i * scale + 0.5);
+      }
+      ctx.stroke();
+    }
+    ctx.globalAlpha = SHEET_GRID.boldAlpha;
+    ctx.beginPath();
+    for (let i = SPRITE_SIZE; i < pxW; i += SPRITE_SIZE) {
+      ctx.moveTo(i * scale + 0.5, 0);
+      ctx.lineTo(i * scale + 0.5, sheetH);
+    }
+    for (let i = SPRITE_SIZE; i < pxH; i += SPRITE_SIZE) {
+      ctx.moveTo(0, i * scale + 0.5);
+      ctx.lineTo(sheetW, i * scale + 0.5);
+    }
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  /** The region, the sheet's edge, the selection and the pointer's cell, over everything else. */
+  private drawMarks(frame: Frame): void {
+    const { ctx, scale } = frame;
+    // Gold on this screen means what is being worked on, which is why the guides and the sheet's
+    // edge are not.
+    ctx.strokeStyle = frame.token('--nc-gold');
+    outlineCells(ctx, this.regionPx(), scale, MARK_LINE_WIDTH);
+    ctx.strokeStyle = frame.token('--nc-line-strong');
+    outlineCells(ctx, { x: 0, y: 0, w: this.pxW(), h: this.pxH() }, scale);
+    const sel = this.selection();
+    if (sel) {
+      ctx.setLineDash([scale / 2, scale / 2]);
+      ctx.strokeStyle = frame.token('--nc-ink');
+      outlineCells(ctx, sel, scale);
+      ctx.setLineDash([]);
+    }
+    const hoverCell = this.hoverCell();
+    if (hoverCell && this.inBounds(hoverCell)) {
+      ctx.strokeStyle = frame.token('--nc-ink');
+      outlineCells(ctx, { ...hoverCell, w: 1, h: 1 }, scale, MARK_LINE_WIDTH);
+    }
+  }
+
+  private draw(): void {
+    const el = this.canvas().nativeElement;
+    const ctx = el.getContext('2d');
+    if (!ctx) {
+      return;
+    }
+    const frame = this.beginFrame(el, ctx);
+    this.drawArt(frame);
+    if (this.grid()) {
+      this.drawGrid(frame);
+    }
+    this.drawMarks(frame);
+
+    // Both are measured against the content, so neither can run before it has been given its size.
+    const centre = this.centre;
+    if (centre) {
+      this.centre = null;
+      const well = this.host.nativeElement;
+      const scale = this.zoom();
+      well.scrollLeft = centre.x * scale - well.clientWidth / 2;
+      well.scrollTop = centre.y * scale - well.clientHeight / 2;
+    }
+    this.measure();
+  }
+
+  private requestRedraw(): void {
+    cancelAnimationFrame(this.raf);
+    // Writing a canvas's width clears it, so a repaint that follows a size change one frame later
+    // leaves a blank frame on screen.
+    if (this.canvas().nativeElement.width !== this.pxW() * Math.ceil(this.zoom())) {
+      this.draw();
+      return;
+    }
+    this.raf = requestAnimationFrame(() => {
+      this.draw();
+    });
+  }
+}

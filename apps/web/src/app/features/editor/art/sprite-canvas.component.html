@@ -1,0 +1,21 @@
+<!-- `m-auto` rather than centring on the host: a centred flex child that overflows cannot be scrolled back to its start. -->
+<div #wrap class="relative m-auto">
+  <canvas
+    #canvas
+    class="block touch-none"
+    [class.cursor-crosshair]="hoverInBounds()"
+    [class.cursor-not-allowed]="!hoverInBounds()"
+    [attr.aria-label]="label()"
+    role="img"
+    (pointerdown)="onDown($event)"
+    (pointermove)="onMove($event)"
+    (pointerup)="onUp($event)"
+    (pointercancel)="onUp($event)"
+    (pointerleave)="onLeave()"
+    (contextmenu)="$event.preventDefault()"></canvas>
+  <!-- Clipped to the drawn surface: a chip overhangs the point it marks, and an absolute child past
+       the edge is scrollable overflow. -->
+  <div class="pointer-events-none absolute inset-0 overflow-hidden">
+    <nc-presence-layer [marks]="marks()" [viewport]="viewPx()" />
+  </div>
+</div>
