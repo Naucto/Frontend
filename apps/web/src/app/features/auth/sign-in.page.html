@@ -1,0 +1,12 @@
+<section
+  *transloco="let t"
+  class="mx-auto mt-6 w-full max-w-[436px] rounded-md border border-line bg-panel px-3.5 pt-3.5 pb-3.25">
+  <div class="mb-2 flex items-center gap-1">
+    <nc-logo [size]="22" />
+    <span class="text-title text-ink">Naucto</span>
+  </div>
+  <h1 class="mt-2 text-[22px] leading-[1.2] text-ink">{{ t('auth.insertGame') }}</h1>
+  <p class="mt-1 mb-3 text-body text-ink-3">{{ t('auth.tagline') }}</p>
+
+  <nc-sign-in-form [next]="safeNext()" (succeeded)="go()" />
+</section>
