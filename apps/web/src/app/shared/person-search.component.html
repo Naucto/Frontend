@@ -1,0 +1,56 @@
+<ng-container *transloco="let t">
+  <nc-search
+    class="w-full"
+    [class.rounded-b-none]="open()"
+    [size]="size()"
+    [placeholder]="placeholder()"
+    [hint]="''"
+    [(value)]="text"
+    (focusin)="dismissed.set(false)"
+    (keydown)="onKey($event)"
+    (submitted)="commit()"
+    (focusout)="dismissed.set(true)" />
+
+  @if (open()) {
+    <nc-suggest-panel [label]="t('share.people')">
+      @if (friendHits().length) {
+        <p class="label px-[14px] pt-[10px] pb-[6px] text-ink-4">{{ t('nav.friends') }}</p>
+        @for (person of friendHits(); track person.id) {
+          <nc-suggest-row [selected]="cursor() === $index" (click)="choose(person)">
+            <nc-avatar
+              class="shrink-0"
+              [size]="22"
+              [id]="person.id"
+              [name]="person.nickname ?? person.username" />
+            <span class="min-w-0 flex-1 truncate text-body text-ink">
+              <nc-highlight [text]="person.username" [match]="term()" />
+            </span>
+          </nc-suggest-row>
+        }
+      }
+      @if (otherHits().length) {
+        <p class="label px-[14px] pt-[10px] pb-[6px] text-ink-4">{{ t('search.people') }}</p>
+        @for (person of otherHits(); track person.id) {
+          <nc-suggest-row
+            [selected]="cursor() === friendHits().length + $index"
+            (click)="choose(person)">
+            <nc-avatar
+              class="shrink-0"
+              [size]="22"
+              [id]="person.id"
+              [name]="person.nickname ?? person.username"
+              [src]="person.profileImageUrl ?? null" />
+            <span class="min-w-0 flex-1 truncate text-body text-ink">
+              <nc-highlight [text]="person.username" [match]="term()" />
+            </span>
+          </nc-suggest-row>
+        }
+      }
+      @if (!friendHits().length && !otherHits().length) {
+        <p class="px-[14px] py-[10px] text-body text-ink-3">
+          {{ hits.isError() ? t('share.searchFailed') : t('friends.noMatch', { q: term() }) }}
+        </p>
+      }
+    </nc-suggest-panel>
+  }
+</ng-container>
