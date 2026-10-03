@@ -1,0 +1,383 @@
+<div *transloco="let t" class="grid h-full grid-cols-[minmax(0,1fr)_auto]">
+  <section class="flex min-h-0 flex-col bg-paper">
+    <div
+      class="@container relative flex h-(--nc-bar-h) shrink-0 items-center gap-1.25 border-b border-line bg-panel pr-1.5 pl-2">
+      <span class="font-mono text-[11px] uppercase tracking-strip text-ink">
+        {{ t('editor.net.sharedState') }}
+      </span>
+      @if (session()) {
+        <span
+          class="flex items-center gap-0.75 font-mono text-[10px] uppercase tracking-[0.08em] text-jade-ink">
+          <span class="block h-[6px] w-[6px] bg-current"></span>
+          {{ t('editor.net.live') }}
+        </span>
+      } @else {
+        <span class="font-mono text-[10px] uppercase tracking-[0.08em] text-ink-4">
+          {{ t('editor.net.idle') }}
+        </span>
+      }
+      <span class="flex-1"></span>
+      <!--
+        Centred on the tree rather than on what is left over, but only while the column is wide
+        enough: with the console open there is no centre that clears the status label, so the
+        box falls back into the flow beside it.
+      -->
+      <nc-search
+        class="w-[200px] @min-[760px]:absolute @min-[760px]:left-1/2 @min-[760px]:-translate-x-1/2"
+        size="sm"
+        [placeholder]="t('editor.net.filter')"
+        [hint]="''"
+        [value]="filter()"
+        (valueChange)="filter.set($event)" />
+      <button
+        ncButton
+        variant="ghost"
+        size="tool"
+        iconOnly
+        [disabled]="!collapsed().size"
+        [attr.aria-label]="t('editor.net.expandAll')"
+        [ncTooltip]="t('editor.net.expandAll')"
+        (click)="expandAll()">
+        <nc-icon name="expand" [size]="24" />
+      </button>
+      <button
+        ncButton
+        variant="ghost"
+        size="tool"
+        iconOnly
+        [disabled]="allCollapsed()"
+        [attr.aria-label]="t('editor.net.collapseAll')"
+        [ncTooltip]="t('editor.net.collapseAll')"
+        (click)="collapseAll()">
+        <nc-icon name="collapse" [size]="24" />
+      </button>
+    </div>
+    <div class="flex items-center gap-1 px-[18px] py-[10px]">
+      <span class="font-mono text-[9px] tracking-[0.14em] text-ink-3">net.state</span>
+      <span class="flex-1"></span>
+      <nc-help-dot title="net.state" [text]="t('editor.net.helpState')" />
+    </div>
+    @if (!bare()) {
+      <div class="min-h-0 flex-1 overflow-auto">
+        <table class="w-full table-fixed border-collapse font-mono text-[12px]">
+          <colgroup>
+            <col />
+            <col class="w-[110px]" />
+            <col class="w-[88px]" />
+            <col class="w-[74px]" />
+            <col class="w-[76px]" />
+          </colgroup>
+          <thead>
+            <tr class="text-[9px] uppercase tracking-strip text-ink-4">
+              <th class="border-b border-line-faint py-[9px] pl-[18px] text-left font-normal">
+                {{ t('editor.net.path') }}
+              </th>
+              <th class="border-b border-line-faint py-[9px] text-left font-normal">
+                {{ t('editor.net.value') }}
+              </th>
+              <th class="border-b border-line-faint py-[9px] text-left font-normal">
+                {{ t('editor.net.owner') }}
+              </th>
+              <th class="border-b border-line-faint py-[9px] text-left font-normal">
+                {{ t('editor.net.perms') }}
+              </th>
+              <th class="border-b border-line-faint py-[9px] pr-[18px] text-left font-normal">
+                <span class="sr-only">{{ t('editor.net.actions') }}</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of rows(); track row.path) {
+              <tr class="h-[35px] border-b border-line-faint hover:bg-sunken">
+                <td
+                  class="truncate py-[7px] pr-2"
+                  [attr.title]="row.name"
+                  [class]="row.depth ? 'text-ink-body' : 'text-ink'"
+                  [style.paddingLeft.px]="18 + row.depth * 20">
+                  @if (row.container) {
+                    <button
+                      type="button"
+                      class="mr-1 text-ink-4 hover:text-ink"
+                      (click)="toggle(row.path)"
+                      [attr.aria-label]="row.name"
+                      [attr.aria-expanded]="!collapsed().has(row.path)">
+                      <nc-icon
+                        [name]="collapsed().has(row.path) ? 'chevron-right' : 'chevron-down'"
+                        [size]="12" />
+                    </button>
+                  }
+                  @if (renaming() === row.path) {
+                    <input
+                      #editInput
+                      class="w-[180px] rounded-xs border border-gold bg-inset px-1 font-mono text-[12px] text-ink outline-none"
+                      [value]="draft()"
+                      [attr.aria-label]="t('editor.net.renameNode')"
+                      (input)="onDraft($event)"
+                      (keydown.enter)="commitRename(row)"
+                      (keydown.escape)="cancelEdit()"
+                      (blur)="cancelEdit()" />
+                  } @else {
+                    {{ row.name }}
+                  }
+                </td>
+                <td
+                  class="truncate py-[7px]"
+                  [attr.title]="row.value"
+                  [class]="valueClass(row.kind)">
+                  {{ row.value }}
+                </td>
+                <td
+                  class="truncate py-[7px]"
+                  [attr.title]="ownerName(row.owner)"
+                  [class]="ownerClass(row.owner)">
+                  {{ ownerName(row.owner) }}
+                </td>
+                <td class="py-[7px]">
+                  <span class="flex items-center gap-0.5">
+                    <button
+                      type="button"
+                      class="inline-flex h-[20px] w-[22px] items-center justify-center rounded-xs border text-[10px]"
+                      [class]="permClass(row.read)"
+                      [attr.aria-pressed]="row.read"
+                      [attr.title]="t('editor.net.readHelp')"
+                      (click)="setPerm(row, 'read', !row.read)">
+                      {{ t('editor.net.read') }}
+                    </button>
+                    <button
+                      type="button"
+                      class="inline-flex h-[20px] w-[22px] items-center justify-center rounded-xs border text-[10px]"
+                      [class]="permClass(row.write)"
+                      [attr.aria-pressed]="row.write"
+                      [attr.title]="t('editor.net.writeHelp')"
+                      (click)="setPerm(row, 'write', !row.write)">
+                      {{ t('editor.net.write') }}
+                    </button>
+                  </span>
+                </td>
+                <td class="py-[7px] pr-[18px]">
+                  <span class="flex items-center justify-end gap-[2px]">
+                    <button
+                      type="button"
+                      class="flex h-[20px] w-[18px] items-center justify-center rounded-xs text-[12px] leading-none text-ink-4 hover:text-ink disabled:opacity-40 disabled:hover:text-ink-4"
+                      [disabled]="!canShape(row) || (row.live && !row.container)"
+                      [attr.title]="editHint(t, row, t('editor.net.addChild'))"
+                      (click)="startAdd(row.path)">
+                      +
+                    </button>
+                    <button
+                      type="button"
+                      class="flex h-[20px] w-[18px] items-center justify-center rounded-xs text-ink-4 hover:text-ink disabled:opacity-40 disabled:hover:text-ink-4"
+                      [disabled]="!canShape(row) || !row.path"
+                      [attr.title]="editHint(t, row, t('editor.net.renameNode'))"
+                      (click)="startRename(row)">
+                      <nc-icon name="edit" [size]="12" />
+                    </button>
+                    <button
+                      type="button"
+                      class="flex h-[20px] w-[18px] items-center justify-center rounded-xs text-ink-4 hover:text-hot-ink disabled:opacity-40 disabled:hover:text-ink-4"
+                      [disabled]="!canShape(row) || !row.path"
+                      [attr.title]="editHint(t, row, t('editor.net.deleteNode'))"
+                      (click)="remove(row)">
+                      <nc-icon name="trash" [size]="12" />
+                    </button>
+                  </span>
+                </td>
+              </tr>
+              @if (adding() === row.path) {
+                <tr class="h-[35px] border-b border-line-faint">
+                  <td class="py-[7px]" [style.paddingLeft.px]="18 + (row.depth + 1) * 20">
+                    <input
+                      #editInput
+                      class="w-[180px] rounded-xs border border-gold bg-inset px-1 font-mono text-[12px] text-ink outline-none"
+                      [placeholder]="t('editor.net.newKey')"
+                      [attr.aria-label]="t('editor.net.newKey')"
+                      [value]="draft()"
+                      (input)="onDraft($event)"
+                      (keydown.enter)="commitAdd(row)"
+                      (keydown.escape)="cancelEdit()"
+                      (blur)="cancelEdit()" />
+                  </td>
+                  <td colspan="4"></td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <div class="flex flex-1 items-center justify-center">
+        <nc-empty-state
+          icon="users"
+          [title]="t('editor.net.idle')"
+          [hint]="t('editor.net.noSession')">
+          <button ncButton variant="secondary" size="sm" (click)="startAdd('')">
+            {{ t('editor.net.declarePath') }}
+          </button>
+        </nc-empty-state>
+      </div>
+    }
+  </section>
+
+  <nc-panel-column [width]="PANEL_WIDTH" [title]="t('editor.net.session')">
+    <span
+      actions
+      class="font-mono text-[10px] uppercase tracking-[0.08em]"
+      [class]="
+        info()?.role === 'host' ? 'text-sky-ink' : session() ? 'text-jade-ink' : 'text-ink-4'
+      ">
+      {{
+        info()?.role === 'host'
+          ? t('editor.net.hosting')
+          : info()
+            ? t('editor.net.joined')
+            : t('editor.net.idle')
+      }}
+    </span>
+
+    <nc-section banded [title]="t('editor.net.whoCanJoin')">
+      <nc-help-dot actions [title]="t('editor.net.whoCanJoin')" [text]="t('editor.net.whoHelp')" />
+      <nc-presence-surface surface="net:session" />
+      <span class="font-mono text-micro uppercase tracking-strip text-ink-4">
+        {{ t('editor.net.inWorkSession') }}
+      </span>
+      @for (collaborator of presence.collaborators(); track collaborator.clientId) {
+        <div class="flex items-center gap-1 py-0.5">
+          <nc-user-avatar [name]="collaborator.name" [userId]="collaborator.userId" [size]="16" />
+          <span class="text-ui text-ink">{{ collaborator.name }}</span>
+          @if (collaborator.isSelf) {
+            <span class="font-mono text-micro lowercase tracking-button text-ink-3">
+              {{ t('editor.net.you') }}
+            </span>
+          }
+          <span class="flex-1"></span>
+          @if (slotOf(collaborator.userId); as slot) {
+            <span class="label text-jade-ink">{{ t('editor.net.inGame') }} · P{{ slot }}</span>
+          } @else if (info()?.joinCode && !collaborator.isSelf) {
+            <span class="label text-ink-4">{{ t('editor.net.invite') }}</span>
+          }
+        </div>
+      }
+      @if (info(); as netInfo) {
+        <span class="label mt-1 block text-ink-4">{{ t('editor.net.anyoneElse') }}</span>
+        <div class="mt-0.5 flex items-center rounded-sm border border-line bg-inset px-1.5 py-1">
+          <span class="flex-1 font-mono text-ui tracking-[.2em] text-gold-ink">
+            {{ netInfo.joinCode ?? '—' }}
+          </span>
+          @if (netInfo.joinCode) {
+            <button ncButton variant="ghost" size="sm" (click)="copy(netInfo.joinCode)">
+              {{ t('editor.net.copy') }}
+            </button>
+          }
+        </div>
+        <button ncButton variant="secondary" class="mt-1 w-full" (click)="end()">
+          {{ netInfo.role === 'host' ? t('editor.net.endSession') : t('editor.net.leaveSession') }}
+        </button>
+      }
+    </nc-section>
+
+    <nc-section
+      banded
+      [title]="
+        t('editor.net.players') + ' · ' + players().length + ' / ' + (info()?.maxPlayers || '—')
+      ">
+      <nc-help-dot actions [title]="t('editor.net.players')" [text]="t('editor.net.playersHelp')" />
+      <nc-presence-surface surface="net:players" />
+      @for (player of slots(); track player.slot) {
+        <div class="flex items-center gap-1 py-0.5">
+          @if (player.userId !== null) {
+            <nc-user-avatar [name]="player.name" [userId]="player.userId" [size]="16" />
+            <span class="text-ui text-ink">{{ player.name }}</span>
+            @if (player.host) {
+              <span class="label text-gold-ink">{{ t('editor.net.host') }}</span>
+            }
+            <span class="flex-1"></span>
+            @if (player.ping !== null) {
+              <span class="font-mono text-label text-ink-4">{{ player.ping }}ms</span>
+            }
+            <span class="label text-jade-ink">P{{ player.slot }}</span>
+          } @else {
+            <span class="inline-block h-2 w-2 rounded-xs border border-dashed border-line"></span>
+            <span class="text-ui text-ink-4">{{ t('editor.net.openSlot') }}</span>
+            <span class="flex-1"></span>
+            <span class="label text-ink-4">P{{ player.slot }}</span>
+          }
+        </div>
+      }
+      @if (traffic(); as t2) {
+        <div class="flex items-center gap-1 border-t border-line-faint pt-0.5 text-label">
+          <span class="label text-ink-3">{{ t('editor.net.route') }}</span>
+          <span [class]="t2.relayed ? 'text-orange-ink' : 'text-jade-ink'">
+            {{ t2.relayed ? t('editor.net.relayed') : t('editor.net.direct') }}
+          </span>
+          <span class="flex-1"></span>
+          <span class="font-mono text-ink-4">{{ t2.total }}</span>
+          @if (t2.rate) {
+            <span class="font-mono text-ink-body">{{ t2.rate }}</span>
+          }
+        </div>
+      }
+    </nc-section>
+
+    <!-- No presence surface: the rig and its sliders shape a client in this browser alone, so a
+         peer's pointer over them would mean nothing. -->
+    <nc-section banded [title]="t('editor.net.testRig')">
+      <nc-help-dot actions [title]="t('editor.net.testRig')" [text]="t('editor.net.testHelp')" />
+      @if (rig()) {
+        <button ncButton variant="secondary" class="w-full" (click)="rig.set(false)">
+          {{ t('editor.net.closeRig') }}
+        </button>
+        <div class="mt-1 rounded-sm border border-line bg-inset p-1">
+          <nc-game-screen
+            [game]="work.game"
+            [projectId]="work.id"
+            [autoJoin]="rigTarget()"
+            fit="width"
+            debug
+            [autoPlay]="true"
+            [showFps]="false"
+            [transport]="false" />
+        </div>
+        <p class="mt-1 text-meta text-ink-4">
+          {{ rigJoined() ? t('editor.net.rigJoined') : t('editor.net.rigWaiting') }}
+        </p>
+      } @else {
+        <button ncButton variant="primary" class="w-full" (click)="spawn()" [disabled]="!info()">
+          <nc-icon name="plus" [size]="12" />
+          {{ t('editor.net.spawn') }}
+        </button>
+        @if (!info()) {
+          <p class="mt-1 text-meta text-ink-4">{{ t('editor.net.needHost') }}</p>
+        }
+      }
+      <div class="mt-1.5 grid gap-0.5">
+        <!-- Impairment belongs to the spawned client, not to us: degrading the host's own
+             transport would slow every real player down instead of simulating one bad line. -->
+        <nc-slider
+          [label]="t('editor.net.latency')"
+          [max]="400"
+          [step]="10"
+          [value]="latency()"
+          [readout]="latency() + 'ms'"
+          [disabled]="!rig()"
+          accent="sky"
+          (valueChange)="setLatency($event)" />
+        <nc-slider
+          [label]="t('editor.net.loss')"
+          [max]="30"
+          [value]="loss()"
+          [readout]="loss() + '%'"
+          [disabled]="!rig()"
+          accent="hot"
+          (valueChange)="setLoss($event)" />
+      </div>
+      <nc-toggle-button
+        class="mt-1"
+        accent="gold"
+        [checked]="relayOnly()"
+        (checkedChange)="setRelayOnly($event)">
+        {{ t('editor.net.relayOnly') }}
+      </nc-toggle-button>
+      <p class="mt-0.5 text-meta text-ink-3">{{ t('editor.net.relayOnlyHelp') }}</p>
+    </nc-section>
+  </nc-panel-column>
+</div>

@@ -1,0 +1,103 @@
+<div *transloco="let t" class="relative flex h-full flex-col">
+  <div class="flex h-(--nc-bar-h) shrink-0 items-center gap-1 border-b border-line px-1.5">
+    @if (view() !== 'tree') {
+      <button
+        ncButton
+        variant="ghost"
+        size="sm"
+        iconOnly
+        [attr.aria-label]="t('docs.back')"
+        (click)="back()">
+        <nc-icon name="chevron-left" [size]="24" />
+      </button>
+    }
+    <nc-icon name="reference" [size]="24" class="text-ink" />
+    @if (view() === 'page' && page(); as currentPage) {
+      <nc-doc-anchor
+        bare
+        [page]="currentPage"
+        [article]="articleEl()?.nativeElement ?? null"
+        [container]="scrollerEl()?.nativeElement ?? null"
+        (jump)="fragment.set($event)" />
+    } @else {
+      <span class="label text-ink">{{ t('docs.reference') }}</span>
+      <span class="flex-1"></span>
+    }
+    <span class="label text-ink-4">F1</span>
+  </div>
+  <nc-search
+    #search
+    class="m-1.5"
+    [placeholder]="t('docs.search')"
+    hint=""
+    [value]="query()"
+    (valueChange)="query.set($event)" />
+  <div #scroller class="min-h-0 flex-1 overflow-auto px-1.5 pb-1.5">
+    @if (hits().length) {
+      <div role="listbox">
+        @for (hit of hits(); track hit.slug + hit.title) {
+          <button
+            type="button"
+            role="option"
+            aria-selected="false"
+            class="block w-full border-b border-line py-1 text-left hover:text-ink"
+            (click)="openHit(hit)">
+            <div
+              class="truncate text-meta"
+              [class]="hit.kind === 'api' ? 'font-mono text-gold-ink' : 'text-ink'">
+              <nc-highlight [text]="hit.title" [match]="query()" />
+            </div>
+            <div class="truncate text-label text-ink-4">{{ hit.subtitle }}</div>
+          </button>
+        }
+      </div>
+    } @else if (view() === 'api' && entry(); as currentEntry) {
+      <nc-api-card
+        [entry]="currentEntry"
+        [insertable]="true"
+        (insert)="insert($event)"
+        (navigate)="openApi($event)" />
+    } @else if (view() === 'page' && page(); as currentPage) {
+      @if (currentPage.lua) {
+        <button
+          ncButton
+          variant="primary"
+          size="sm"
+          class="mb-1.5"
+          (click)="copyToNewGame(currentPage)">
+          <nc-icon name="file-plus" [size]="12" />
+          {{ t('docs.copyToNewGame') }}
+        </button>
+      }
+      <nc-doc-article
+        #article
+        [page]="currentPage"
+        [insertable]="true"
+        (insert)="insert($event)"
+        (navigate)="navigate($event)" />
+      @if (neighbours(); as neighbourPages) {
+        <nav class="mt-3 flex justify-between gap-1 border-t border-line pt-1.5">
+          @if (neighbourPages.prev; as prev) {
+            <button ncButton variant="secondary" size="sm" (click)="openPage(prev.slug)">
+              <nc-icon name="chevron-left" [size]="12" />
+              {{ prev.title }}
+            </button>
+          } @else {
+            <span></span>
+          }
+          @if (neighbourPages.next; as next) {
+            <button ncButton variant="secondary" size="sm" (click)="openPage(next.slug)">
+              {{ next.title }}
+              <nc-icon name="chevron-right" [size]="12" />
+            </button>
+          }
+        </nav>
+      }
+    } @else if (docs.error()) {
+      <p class="p-2 text-body text-ink-3">{{ t('docs.unavailableHint') }}</p>
+    } @else {
+      <nc-doc-tree [active]="slug()" [fragment]="fragment()" (open)="openPage($event)" />
+      <p class="label mt-2 text-ink-4">{{ t('docs.tutorialHint') }}</p>
+    }
+  </div>
+</div>
