@@ -1,0 +1,10 @@
+@if (url(); as src) {
+  <img [src]="src" [alt]="alt()" class="pixelated h-full w-full object-cover" loading="lazy" />
+} @else {
+  <span class="no-cover flex h-full w-full flex-col items-center justify-center gap-0.5 text-ink-4">
+    <nc-icon name="image" [size]="iconSize()" />
+    @if (label()) {
+      <span class="label text-[9px]">{{ label() }}</span>
+    }
+  </span>
+}
