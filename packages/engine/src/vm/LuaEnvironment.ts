@@ -296,6 +296,10 @@ class LuaEnvironment {
         fengari.lua.lua_pushjsfunction(this._L, (state: fengari.lua_State) => {
           // A JS throw escaping into fengari surfaces as an opaque non-string
           // error, so convert it into a proper Lua error carrying the message.
+          // Arguments and results live on the stack of the thread that made the call
+          // (a coroutine's own, not the main one), so marshal against that thread.
+          const mainState = this._L;
+          this._L = state;
           try {
             const args = Array.from({ length: fengari.lua.lua_gettop(state) }, (_, i) =>
               this.getObject(i + 1),
@@ -319,6 +323,8 @@ class LuaEnvironment {
           } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             return fengari.lauxlib.luaL_error(state, fengari.to_luastring(message));
+          } finally {
+            this._L = mainState;
           }
         });
         break;
@@ -354,6 +360,8 @@ class LuaEnvironment {
       fengari.lua.lua_pushjsfunction(L, (state: fengari.lua_State) => {
         // A JS throw escaping into fengari surfaces as an opaque non-string error,
         // so convert it into a proper Lua error carrying the message.
+        const mainState = this._L;
+        this._L = state;
         try {
           const top = fengari.lua.lua_gettop(state);
           const args: unknown[] = [];
@@ -366,6 +374,8 @@ class LuaEnvironment {
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
           return fengari.lauxlib.luaL_error(state, fengari.to_luastring(message));
+        } finally {
+          this._L = mainState;
         }
       });
 
