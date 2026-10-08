@@ -1,18 +1,16 @@
-import { computed, DestroyRef, effect, inject, Injectable, untracked } from '@angular/core';
+import { DestroyRef, effect, inject, Injectable, untracked } from '@angular/core';
 import type { AnalyticsRotationDto } from '@naucto/api-client';
 
 import { AuthStore } from '../auth/auth.store';
 import { FeaturesService } from '../config/features.service';
 import { ActivityService } from './activity.service';
+import { type AnalyticsMode, AnalyticsModeService } from './analytics-mode.service';
 import { AnalyticsTransport, applyRotation } from './analytics-transport';
-import { BrowserAccountService } from './browser-account.service';
-import { ConsentStore } from './consent.store';
+import { PlayReporter } from './play-reporter';
 import { ensureVisitorId, touchSession } from './visitor';
 
 export const CONSENTED_BEAT_MS = 45_000;
 export const ANONYMOUS_BEAT_MS = 60_000;
-
-export type BeatMode = 'off' | 'consented' | 'anonymous';
 
 /**
  * Tells the server this tab is open and what it is doing, while it is visible. A browser that
@@ -22,25 +20,14 @@ export type BeatMode = 'off' | 'consented' | 'anonymous';
 @Injectable({ providedIn: 'root' })
 export class HeartbeatService {
   private readonly features = inject(FeaturesService);
-  private readonly consent = inject(ConsentStore);
-  private readonly account = inject(BrowserAccountService);
   private readonly auth = inject(AuthStore);
   private readonly activity = inject(ActivityService);
   private readonly transport = inject(AnalyticsTransport);
+  private readonly plays = inject(PlayReporter);
+  private readonly mode = inject(AnalyticsModeService).mode;
 
-  /** The OAuth popup is open for a moment, and only to hand a code back to its opener. */
-  private readonly popup = location.pathname.startsWith('/oauth');
   private timer: ReturnType<typeof setInterval> | null = null;
   private lastBeatAt = Number.NEGATIVE_INFINITY;
-
-  readonly mode = computed<BeatMode>(() => {
-    if (!this.features.analytics() || this.popup) {
-      return 'off';
-    }
-    return this.consent.status() === 'granted' && !this.account.suspended()
-      ? 'consented'
-      : 'anonymous';
-  });
 
   constructor() {
     effect(() => {
@@ -59,7 +46,7 @@ export class HeartbeatService {
     });
   }
 
-  private restart(mode: BeatMode): void {
+  private restart(mode: AnalyticsMode): void {
     this.stop();
     if (mode === 'off' || document.visibilityState !== 'visible') {
       return;
@@ -80,8 +67,9 @@ export class HeartbeatService {
     }
   }
 
-  private beat(mode: Exclude<BeatMode, 'off'>): void {
+  private beat(mode: Exclude<AnalyticsMode, 'off'>): void {
     this.lastBeatAt = Date.now();
+    this.plays.sync();
     const { state, releaseId } = this.activity.current();
     if (mode === 'anonymous') {
       void this.transport
@@ -90,13 +78,15 @@ export class HeartbeatService {
           state,
           signedIn: this.auth.isAuthenticated(),
           releaseId,
+          playMs: this.plays.takeAnonymousMs(),
         })
         .catch(() => undefined);
       return;
     }
     const sent = { visitorId: ensureVisitorId(), sessionId: touchSession() };
+    const play = this.plays.consentedReport(sent);
     void this.transport
-      .post<AnalyticsRotationDto>('/analytics/beat', { ...sent, state, releaseId })
+      .post<AnalyticsRotationDto>('/analytics/beat', { ...sent, state, releaseId, play })
       .then((answer) => {
         if (!answer) {
           return;
@@ -104,6 +94,8 @@ export class HeartbeatService {
         applyRotation(sent, answer);
         if (answer.disabled) {
           this.features.disableAnalytics();
+        } else if (play && !answer.rotateVisitor && !answer.rotateSession) {
+          this.plays.acknowledged(play);
         }
       })
       .catch(() => undefined);

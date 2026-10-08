@@ -31,6 +31,7 @@ export class RuntimeHostService {
   private sound: SoundEngine | null = null;
   private unsub: (() => void)[] = [];
   private perfTimer: ReturnType<typeof setInterval> | null = null;
+  private readonly stateListeners = new Set<(state: EngineState) => void>();
 
   readonly state = signal<EngineState>('idle');
   readonly error = signal<EngineError | null>(null);
@@ -137,7 +138,7 @@ export class RuntimeHostService {
         document.removeEventListener('visibilitychange', onVisibility);
       },
       engine.onStateChange((nextState) => {
-        this.state.set(nextState);
+        this.setState(nextState);
         if (nextState === 'running') {
           this.error.set(null);
         }
@@ -165,10 +166,21 @@ export class RuntimeHostService {
       );
       this.frame.set(engine.stats.frame);
     }, 250);
-    this.state.set('idle');
+    this.setState('idle');
     this.error.set(null);
     this.lines.set([]);
     return engine;
+  }
+
+  /**
+   * Every state change, as it happens. A restart passes through `idle` within one call, which the
+   * `state` signal never shows.
+   */
+  onStateChange(listener: (state: EngineState) => void): () => void {
+    this.stateListeners.add(listener);
+    return () => {
+      this.stateListeners.delete(listener);
+    };
   }
 
   /**
@@ -220,6 +232,13 @@ export class RuntimeHostService {
   }
   screenshot(): Uint8ClampedArray | null {
     return this.engine?.screenshot() ?? null;
+  }
+
+  private setState(next: EngineState): void {
+    this.state.set(next);
+    for (const listener of this.stateListeners) {
+      listener(next);
+    }
   }
 
   destroy(): void {

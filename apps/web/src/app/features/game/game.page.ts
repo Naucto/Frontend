@@ -43,12 +43,12 @@ import {
   injectRelease,
   injectReleaseContentUrl,
   injectToggleLike,
-  registerView,
   SORTERS,
 } from '../../shared/queries/releases.queries';
 import { UserAvatarComponent } from '../../shared/user-avatar.component';
 import { CommentsComponent } from './comments/comments.component';
 import { HowToPlayComponent } from './how-to-play.component';
+import { PlayTrackingDirective } from './play-tracking.directive';
 import { ReleaseGameService } from './release-game.service';
 
 /** How many games each related shelf shows. */
@@ -81,6 +81,7 @@ function topRelated(
     CommentsComponent,
     HowToPlayComponent,
     UserAvatarComponent,
+    PlayTrackingDirective,
   ],
   templateUrl: './game.page.html',
   // A column that fills what the shell left it, so the panel's own surface reaches the footer
@@ -226,7 +227,6 @@ export default class GamePage {
               return;
             }
             this.game.set(game);
-            registerView(id);
           })
           .catch(() => {
             // The reason is dropped on purpose: the page states the failure in its own words.

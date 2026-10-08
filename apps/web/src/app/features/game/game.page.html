@@ -13,7 +13,12 @@
     } @else if (loading()) {
       <nc-skeleton height="60vh" radius="rounded-sm" />
     } @else {
-      <nc-game-screen [game]="game()" [projectId]="id()" fit="width" [autoPlay]="false" />
+      <nc-game-screen
+        [game]="game()"
+        [projectId]="id()"
+        [ncPlayTracking]="id()"
+        fit="width"
+        [autoPlay]="false" />
     }
     @if (release.data(); as release) {
       <nc-comments class="mt-4 block" [projectId]="release.id" [authorId]="release.creator.id" />

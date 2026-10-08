@@ -8,7 +8,6 @@ import {
   hubControllerGetPublishedProjectImage,
   hubControllerGetRelease,
   hubControllerLikeProject,
-  hubControllerRegisterReleaseView,
   hubControllerUnlikeProject,
   type ImageUrlResponseDto,
   type LikeResponseDto,
@@ -245,10 +244,6 @@ export function injectFork(): CreateMutationResult<ForkProjectResponseDto, Error
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.projectsAll() }),
   }));
 }
-
-export const registerView = (id: number): void => {
-  void hubControllerRegisterReleaseView({ path: { id: String(id) }, body: {} });
-};
 
 export const SORTERS: Record<
   SortMetric,
