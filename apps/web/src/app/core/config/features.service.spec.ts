@@ -47,4 +47,14 @@ describe('FeaturesService', () => {
 
     expect(service().analytics()).toBe(false);
   });
+
+  it('turns analytics off alone when the server says so later', async () => {
+    answer(200, { monetization: true, analytics: true });
+    await service().load();
+
+    service().disableAnalytics();
+
+    expect(service().analytics()).toBe(false);
+    expect(service().monetization()).toBe(true);
+  });
 });

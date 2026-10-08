@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ToastHostComponent } from '@naucto/ui';
 
+import { AnalyticsService } from './core/analytics/analytics.service';
 import { ThemeService } from './core/theme/theme.service';
 import { SessionExpiredDialogComponent } from './features/auth/session-expired.dialog';
 import { ConsentBannerComponent } from './shared/consent/consent-banner.component';
@@ -21,4 +22,6 @@ import { ConsentBannerComponent } from './shared/consent/consent-banner.componen
 export class App {
   // Instantiated eagerly so the theme attribute is applied before the first route renders.
   protected readonly themeService = inject(ThemeService);
+  // Instantiated eagerly so the landing page is counted and its referrer read before any navigation.
+  protected readonly analytics = inject(AnalyticsService);
 }

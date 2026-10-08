@@ -24,4 +24,9 @@ export class FeaturesService {
       this.flags.set(OFF);
     }
   }
+
+  /** The server turned analytics off since boot, as an ingest answer said. */
+  disableAnalytics(): void {
+    this.flags.update((flags) => ({ ...flags, analytics: false }));
+  }
 }
