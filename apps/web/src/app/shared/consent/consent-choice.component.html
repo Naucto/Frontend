@@ -1,0 +1,11 @@
+<nc-setting-row
+  *transloco="let t"
+  [title]="t('consent.choiceTitle')"
+  [hint]="t('consent.choiceHint')">
+  <nc-segmented
+    [options]="options()"
+    [value]="value()"
+    (valueChange)="choose($event)"
+    [label]="t('consent.choiceTitle')"
+    size="sm" />
+</nc-setting-row>

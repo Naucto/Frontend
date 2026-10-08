@@ -914,5 +914,44 @@
     },
     "close": "Close the reference",
     "swapBack": "Swap back to the game"
+  },
+  "consent": {
+    "title": "Usage analytics",
+    "body": "May Naucto measure how the site is used, to make it better? It keeps a first-party cookie and shares nothing with anyone else. Refusing changes nothing else on the site.",
+    "learnMore": "What is measured, and for how long",
+    "accept": "Accept",
+    "refuse": "Refuse",
+    "allow": "Allow",
+    "choiceTitle": "Usage analytics",
+    "choiceHint": "Measure how you use Naucto under a first-party cookie. You can change this at any time."
+  },
+  "privacy": {
+    "title": "Privacy",
+    "intro": "Naucto measures how it is used to see what to improve. It never sells or shares this data, shows no advertising, and runs no third-party trackers. You decide below whether your visits are measured.",
+    "acceptedTitle": "If you accept",
+    "accepted": {
+      "pages": "The pages you open, by name (a game page, not which game), and how long your visits last, under a random id kept in a cookie for 13 months and a visit id kept 30 minutes.",
+      "plays": "The games you play and how long they run, and the time you spend in the editor.",
+      "context": "Your device type, browser and system family, country, screen size range and language, and the site or campaign that brought you. Your address is only used to find the country and is never kept.",
+      "account": "When you are signed in, these visits are linked to your account, so you can see your own play time in Settings."
+    },
+    "refusedTitle": "If you refuse, or do not answer",
+    "refused": {
+      "nothingStored": "Nothing is stored on your device, apart from your choice once you make it.",
+      "ping": "While a tab is visible, it tells us about once a minute whether a game is running, with no id of any kind, so we know how many people are on Naucto.",
+      "plays": "Games started and how long they run are counted per game, with no id of any kind.",
+      "views": "A game’s public play count still goes up when you press Play, with nothing that identifies you."
+    },
+    "retentionTitle": "How long it is kept",
+    "retention": {
+      "raw": "Visits, page views and plays: 90 days.",
+      "aggregate": "Totals per day, week and month, with no id of any kind: kept.",
+      "history": "Your own play history by day, when you are signed in: while your account exists.",
+      "choice": "Your choice: six months, then you are asked again."
+    },
+    "rightsTitle": "Your data",
+    "rights": "Signed in, you can see what was counted for your account, download it, or erase it, in Settings. Deleting your account erases it too.",
+    "rightsLink": "Open your privacy settings",
+    "geoCredit": "Country lookups use IP geolocation by"
   }
 }

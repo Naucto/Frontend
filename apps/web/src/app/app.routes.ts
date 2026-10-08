@@ -124,6 +124,11 @@ export const routes: Routes = [
           ]
         : []),
       {
+        path: 'privacy',
+        loadComponent: () => import('./features/privacy/privacy.page'),
+        title: 'Privacy | Naucto',
+      },
+      {
         path: '**',
         loadComponent: () => import('./features/not-found/not-found.page'),
         title: 'Not found — Naucto',
