@@ -1,0 +1,275 @@
+<!-- No toast host here: the root component mounts the only one. -->
+<div class="mx-auto grid max-w-[1100px] gap-4 p-6">
+  <header class="flex items-end justify-between">
+    <div>
+      <h1 class="text-hero text-ink">Naucto UI kit</h1>
+      <p class="text-body text-ink-2">Every primitive on the 8px grid, HD44780 + Pixelarticons.</p>
+    </div>
+    <nc-segmented
+      [options]="themes"
+      [value]="themeService.effective()"
+      (valueChange)="applyTheme($event)"
+      label="Theme" />
+  </header>
+
+  <nc-panel title="Controls">
+    <div class="flex flex-wrap items-center gap-2">
+      <button ncButton variant="primary">Publish</button>
+      <button ncButton variant="run">
+        <nc-icon name="play" [size]="12" />
+        Run
+      </button>
+      <button ncButton variant="secondary">Secondary</button>
+      <button ncButton variant="ghost">Ghost</button>
+      <button ncButton variant="danger">Delete</button>
+      <button ncButton variant="secondary" size="sm">Small</button>
+      <button ncButton variant="ghost" iconOnly aria-label="Settings">
+        <nc-icon name="sliders" />
+      </button>
+      <button ncButton variant="primary" disabled>Disabled</button>
+      <button ncButton variant="ghost" disabled>Disabled ghost</button>
+    </div>
+    <div class="mt-2 flex flex-wrap items-center gap-2">
+      <nc-toggle [(checked)]="autoRun">Auto-run</nc-toggle>
+      <nc-toggle>Haptics</nc-toggle>
+      <nc-checkbox [(checked)]="matchCase">Match case</nc-checkbox>
+      <nc-checkbox>Regexp</nc-checkbox>
+      <nc-checkbox disabled>Disabled</nc-checkbox>
+      <nc-segmented [options]="visibility" value="draft" label="Visibility" />
+      <nc-segmented [options]="monetization" value="none" label="Monetization" fill />
+      <nc-segmented [options]="shelves" value="games" label="Shelf" variant="chips" />
+      <nc-slider label="BPM" [min]="40" [max]="240" [value]="124" readout="124" class="w-[220px]" />
+      <nc-slider label="R" [max]="255" [value]="255" readout="255" accent="hot" class="w-[220px]" />
+    </div>
+    <div class="mt-2 flex flex-wrap items-center gap-2">
+      <nc-bit-flags [value]="5" />
+      @for (provider of providers; track provider.id) {
+        <nc-brand-mark [mark]="provider.mark" [size]="16" />
+      }
+      <nc-keycap>Arrows</nc-keycap>
+      <nc-keycap>Z</nc-keycap>
+      <nc-keycap>Esc</nc-keycap>
+      <nc-keycap>D-pad</nc-keycap>
+      <nc-chip>Action</nc-chip>
+      <nc-chip tone="gold" [removable]="true">Adventure</nc-chip>
+      <nc-chip tone="jade">Synced</nc-chip>
+      <nc-chip tone="sky">Netplay</nc-chip>
+      <nc-chip tone="hot">Draft</nc-chip>
+      <nc-chip tone="orange">Warning</nc-chip>
+    </div>
+  </nc-panel>
+
+  <div class="grid grid-cols-[48px_1fr_1fr] gap-4">
+    <nc-rail [items]="rail" value="code" class="h-[320px]" />
+    <nc-panel title="Fields">
+      <div class="grid gap-2">
+        <nc-field label="Name" for="f-name">
+          <input ncInput id="f-name" value="Platformer" />
+        </nc-field>
+        <nc-field
+          label="Summary"
+          for="f-sum"
+          counter="38 / 80"
+          hint="One line shown on the hub card.">
+          <input ncInput id="f-sum" value="A tiny run-and-jump built as a tutorial." />
+        </nc-field>
+        <nc-field label="Description" for="f-desc" error="Required before publishing">
+          <textarea
+            ncInput
+            id="f-desc"
+            rows="3"
+            placeholder="The long version. Markdown is fine."
+            aria-invalid="true"></textarea>
+        </nc-field>
+        <nc-tabs [tabs]="tabs" value="account" label="Settings" />
+        <nc-tabs [tabs]="consoleTabs" value="console" label="Console" variant="console" />
+      </div>
+    </nc-panel>
+    <nc-panel title="Surfaces">
+      <nc-section title="Game size">
+        <nc-meter [segments]="size" [max]="1048576" label="Game size" />
+      </nc-section>
+      <nc-section title="Console" class="mt-2">
+        <nc-lcd [minHeight]="72">
+          &gt; RUN main &gt; Welcome to Naucto! ! main:39 attempt to index a nil value (field
+          'sprites')
+        </nc-lcd>
+        <nc-lcd variant="flush" [minHeight]="48" class="mt-1">
+          &gt; flush: the console fills its column, no frame
+        </nc-lcd>
+      </nc-section>
+      <nc-section title="Loading" class="mt-2">
+        <div class="grid gap-1">
+          <nc-skeleton height="96px" radius="rounded-sm" />
+          <nc-skeleton height="0.75rem" width="60%" />
+          <nc-skeleton height="0.75rem" width="35%" />
+        </div>
+      </nc-section>
+      <nc-section title="Presence" class="mt-2">
+        <div class="flex items-center gap-2">
+          <nc-avatar name="louis" [size]="38" overlap />
+          <nc-avatar name="edgar" [size]="38" overlap />
+          <nc-avatar name="thea" [size]="38" overlap />
+          <nc-avatar name="alexis" colour="neutral" [size]="38" />
+          <nc-presence-flag name="louis" colour="sky" />
+          <nc-presence-flag name="edgar" colour="blush" />
+          <nc-online-dot [online]="true" />
+          <nc-online-dot />
+        </div>
+        <!-- One mark inside the frame, two past its edges, which come back as chips on the rim. -->
+        <div
+          class="relative mt-1.5 h-[120px] w-[320px] overflow-hidden rounded-sm border border-line bg-inset">
+          <nc-presence-layer [marks]="presenceMarks" [viewport]="presenceFrame" />
+        </div>
+      </nc-section>
+      <nc-section title="Notice" class="mt-2">
+        <nc-notice>The game is over the size ceiling, so publishing is blocked.</nc-notice>
+        <nc-notice tone="danger">This release could not be reached.</nc-notice>
+      </nc-section>
+      <nc-section title="Swatch picker" class="mt-2">
+        <nc-swatch-picker allowNone [colours]="palette" [slots]="accents" [(value)]="swatch" />
+      </nc-section>
+      <nc-section title="Panel column" class="mt-2">
+        <!-- A region holding one column and the second that unfolds beside it. Its own height,
+                 because a region takes the one it is given and there is no editor here to give it. -->
+        <div class="h-[168px] border border-line">
+          <nc-panel-region
+            [secondaryOpen]="regionOpen()"
+            [viewportWidth]="1920"
+            [splitAt]="1602"
+            [primaryWidth]="140"
+            [secondaryWidth]="110">
+            <nc-panel-column secondary edge="none" title="Reference">
+              <p class="p-1.5 text-meta text-ink-3">Unfolded beside.</p>
+            </nc-panel-column>
+            <nc-panel-column primary title="Console">
+              <nc-edge-handle
+                icon="prev"
+                label="Fold the column away"
+                (pressed)="regionOpen.set(!regionOpen())" />
+              <p class="p-1.5 text-meta text-ink-3">The grip folds the other one out.</p>
+            </nc-panel-column>
+          </nc-panel-region>
+        </div>
+      </nc-section>
+      <nc-section title="Label" class="mt-2">
+        <nc-label>In this work session</nc-label>
+      </nc-section>
+    </nc-panel>
+  </div>
+
+  <nc-panel title="Editor &amp; settings primitives">
+    <div class="grid gap-3 md:grid-cols-2">
+      <nc-section title="Stepper">
+        <nc-stepper [(value)]="spriteSize" [options]="sizes" />
+      </nc-section>
+      <nc-section title="Density">
+        <div class="grid gap-2">
+          @for (density of densities; track density.klass) {
+            <div [class]="density.klass">
+              <div class="label mb-1">{{ density.name }}</div>
+              <div class="flex h-(--nc-bar-h) items-center gap-1 rounded-xs bg-panel px-1.5">
+                <nc-tool-group [items]="tools" [(value)]="tool" [iconSize]="density.icon" />
+                <nc-toggle-button [(checked)]="grid">
+                  <nc-icon name="grid" [size]="density.icon" />
+                  Grid
+                </nc-toggle-button>
+                <button ncButton variant="secondary" size="tool">
+                  <nc-icon name="frame" [size]="density.icon" />
+                  Crop
+                </button>
+                <button ncButton variant="ghost" size="sm" iconOnly aria-label="Undo">
+                  <nc-icon name="undo" [size]="density.icon" />
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      </nc-section>
+      <nc-section title="Share code">
+        <nc-share-code
+          class="w-[210px]"
+          code="ALEXIS01"
+          [regenerable]="true"
+          copyLabel="Copy"
+          regenerateLabel="Regenerate" />
+      </nc-section>
+    </div>
+    <nc-section title="Setting row" class="mt-2">
+      <nc-setting-row
+        title="Reduce motion"
+        hint="Stills the animations and the screen shake in the UI">
+        <nc-toggle [(checked)]="reduceMotion" label="Reduce motion" />
+      </nc-setting-row>
+      <nc-setting-row title="Delete account" hint="Your published games stay up" [danger]="true">
+        <button ncButton variant="danger" size="sm">Delete</button>
+      </nc-setting-row>
+    </nc-section>
+  </nc-panel>
+
+  <nc-panel title="Overlays &amp; inputs">
+    <div class="flex flex-wrap items-center gap-2">
+      <button ncButton variant="secondary" ncTooltip="Kick this player from the session">
+        Hover me
+      </button>
+      <button ncButton variant="secondary" [ncPopover]="versions">
+        Platformer v3
+        <nc-icon name="chevron-down" [size]="12" />
+      </button>
+      <ng-template #versions>
+        <nc-popover-panel title="Versions">
+          <ul class="p-2 text-body text-ink">
+            <li class="flex justify-between">
+              <span>v3 Cave update</span>
+              <nc-chip tone="gold">Current</nc-chip>
+            </li>
+            <li class="mt-1 text-ink-3">Autosave · 8 minutes ago · you</li>
+          </ul>
+        </nc-popover-panel>
+      </ng-template>
+      <button ncButton variant="danger" (click)="confirm()">End session</button>
+      <button ncButton variant="ghost" (click)="toast()">Toast</button>
+      <nc-help-dot
+        title="Sprite flags"
+        text="Eight bits per sprite. The engine ignores them; your game reads them with `map.flag(index, bit)`.
+
+What each bit means is yours to decide." />
+      <nc-search class="w-[280px]" placeholder="Search games, people, tags…" />
+      <nc-tag-input class="w-[320px]" [tags]="['action', 'adventure']" />
+      <nc-stat icon="play" [value]="40" />
+      <nc-stat icon="heart" [value]="1008" tone="hot" />
+      <nc-stat icon="git-branch" [value]="3" />
+      <nc-stat icon="eye" [value]="48" label="Views" />
+      <nc-stat icon="play" [value]="1247" label="Plays" compact />
+      <nc-stat icon="heart" [value]="318" label="Likes" tone="hot" />
+    </div>
+  </nc-panel>
+
+  <nc-panel>
+    <nc-empty-state
+      icon="music"
+      title="No sound yet"
+      hint="An instrument is a wave plus an envelope. Add one and the piano roll wakes up — five voices, sixteen slots.">
+      <button ncButton variant="primary">+ Add instrument</button>
+    </nc-empty-state>
+  </nc-panel>
+
+  <nc-panel>
+    <nc-error-state
+      title="Could not reach the hub"
+      hint="The request failed. This is not the same as there being nothing here — an outage must never read as an empty shelf."
+      retryLabel="Retry" />
+  </nc-panel>
+
+  <nc-panel title="Icons">
+    <div class="flex flex-wrap gap-1 text-ink-2">
+      @for (icon of icons; track icon) {
+        <span
+          class="flex h-5 w-5 items-center justify-center rounded-xs border border-line"
+          [title]="icon">
+          <nc-icon [name]="icon" />
+        </span>
+      }
+    </div>
+  </nc-panel>
+</div>

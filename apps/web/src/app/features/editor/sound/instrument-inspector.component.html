@@ -1,0 +1,258 @@
+<div *transloco="let t" class="relative">
+  <nc-presence-surface surface="sound:inspector" />
+  <section class="border-b border-line p-1.5">
+    <div class="mb-1 flex items-center justify-between">
+      <span class="label text-ink-3">{{ t('editor.sound.oscillator') }}</span>
+      <nc-help-dot [title]="t('editor.sound.oscillator')" [text]="t('editor.sound.oscHelp')" />
+    </div>
+    <div
+      class="grid grid-cols-3 gap-0.5"
+      role="radiogroup"
+      tabindex="-1"
+      [attr.aria-label]="t('editor.sound.oscillator')"
+      (keydown)="onOscKey($event)">
+      @for (osc of oscs; track osc.value) {
+        <button
+          type="button"
+          role="radio"
+          [attr.aria-checked]="inst().osc === osc.value"
+          [attr.tabindex]="inst().osc === osc.value ? 0 : -1"
+          class="flex h-[55px] flex-col items-center justify-center gap-0.5 rounded-xs border border-line bg-inset text-ink-3 hover:text-ink aria-checked:border-gold aria-checked:bg-line aria-checked:text-gold-ink"
+          (click)="patched.emit({ osc: osc.value })">
+          <nc-wave-glyph [type]="osc.value" [width]="44" />
+          <!-- Type utilities, not the label class: that class sets its own colour and would
+               override the card's state colour. -->
+          <span class="font-mono text-micro tracking-wide uppercase">{{ osc.label }}</span>
+        </button>
+      }
+    </div>
+    <div class="mt-1 grid gap-0.5">
+      @if (inst().osc === 'square') {
+        <nc-slider
+          label="DUTY"
+          [min]="5"
+          [max]="95"
+          [value]="inst().duty * 100"
+          [readout]="pct(inst().duty)"
+          (valueChange)="patched.emit({ duty: $event / 100 })" />
+      }
+      @if (inst().osc === 'sample') {
+        <div class="rounded-sm border border-line bg-inset p-1">
+          <div class="flex items-center gap-1">
+            <label ncButton variant="secondary" size="sm" class="cursor-pointer">
+              {{ sampleName() ? t('editor.sound.replaceSample') : t('editor.sound.addSample') }}
+              <input type="file" accept="audio/*" class="sr-only" (change)="onSampleFile($event)" />
+            </label>
+            <span class="flex-1"></span>
+            @if (sampleName()) {
+              <span class="label">{{ sampleMeta() }}</span>
+              <button
+                ncButton
+                variant="ghost"
+                size="sm"
+                iconOnly
+                [attr.aria-label]="t('editor.sound.removeSample')"
+                (click)="clearSample()">
+                <nc-icon name="close" [size]="12" />
+              </button>
+            }
+          </div>
+          @if (sampleError(); as err) {
+            <p class="mt-0.5 text-meta text-hot-ink">{{ t(err.key, err.params) }}</p>
+          } @else if (!sampleName()) {
+            <p class="mt-0.5 text-meta text-ink-4">
+              {{ t('editor.sound.sampleHint', { seconds: maxSampleSeconds }) }}
+            </p>
+          }
+        </div>
+        <nc-slider
+          label="ROOT"
+          [min]="24"
+          [max]="95"
+          [value]="inst().sampleRoot ?? 60"
+          [readout]="noteName(inst().sampleRoot ?? 60)"
+          (valueChange)="patched.emit({ sampleRoot: $event })" />
+      }
+      <nc-slider
+        label="DETUNE"
+        [min]="-12"
+        [max]="12"
+        [value]="inst().detune"
+        [readout]="semis(inst().detune)"
+        accent="sky"
+        (valueChange)="patched.emit({ detune: $event })" />
+      <nc-slider
+        label="GLIDE"
+        [max]="500"
+        [step]="5"
+        [value]="inst().glide * 1000"
+        [readout]="ms(inst().glide)"
+        accent="sky"
+        (valueChange)="patched.emit({ glide: $event / 1000 })" />
+    </div>
+  </section>
+
+  <section class="border-b border-line p-1.5">
+    <div class="mb-1 flex items-center justify-between">
+      <span class="label text-ink-3">{{ t('editor.sound.envelope') }}</span>
+      <nc-help-dot [title]="t('editor.sound.envelope')" [text]="t('editor.sound.envHelp')" />
+    </div>
+    <nc-envelope-graph
+      [env]="inst().env"
+      (envChange)="env($event)"
+      [label]="t('editor.sound.envelope')" />
+    <div class="mt-1 grid grid-cols-4 gap-1 text-center">
+      @for (key of envKeys; track key) {
+        <div>
+          <div class="font-mono text-meta text-ink">{{ envReadout(key) }}</div>
+          <div class="label mt-0.75 text-ink-4">{{ key }}</div>
+        </div>
+      }
+    </div>
+    <div class="mt-1 grid gap-0.5">
+      <nc-slider
+        label="A"
+        compact
+        [min]="0"
+        [max]="100"
+        [value]="toSlider(inst().env.attack, ENV_MAX)"
+        (valueChange)="env({ attack: fromSlider($event, ENV_MAX) })"
+        accent="jade" />
+      <nc-slider
+        label="D"
+        compact
+        [min]="0"
+        [max]="100"
+        [value]="toSlider(inst().env.decay, ENV_MAX)"
+        (valueChange)="env({ decay: fromSlider($event, ENV_MAX) })"
+        accent="jade" />
+      <nc-slider
+        label="S"
+        compact
+        [min]="0"
+        [max]="100"
+        [value]="inst().env.sustain * 100"
+        (valueChange)="env({ sustain: $event / 100 })"
+        accent="jade" />
+      <nc-slider
+        label="R"
+        compact
+        [min]="0"
+        [max]="100"
+        [value]="toSlider(inst().env.release, ENV_MAX)"
+        (valueChange)="env({ release: fromSlider($event, ENV_MAX) })"
+        accent="jade" />
+    </div>
+  </section>
+
+  <section class="border-b border-line p-1.5">
+    <div class="mb-1 flex items-center justify-between">
+      <span class="label text-ink-3">{{ t('editor.sound.modFilter') }}</span>
+      <nc-help-dot [title]="t('editor.sound.modFilter')" [text]="t('editor.sound.modHelp')" />
+    </div>
+    <div class="grid gap-0.5">
+      <nc-slider
+        label="VIB"
+        [min]="0"
+        [max]="100"
+        [value]="inst().vibrato.depth * 100"
+        [readout]="dec(inst().vibrato.depth)"
+        accent="hot"
+        (valueChange)="vib({ depth: $event / 100 })" />
+      <nc-slider
+        label="RATE"
+        [min]="1"
+        [max]="20"
+        [value]="inst().vibrato.rate"
+        [readout]="inst().vibrato.rate + ' Hz'"
+        accent="hot"
+        (valueChange)="vib({ rate: $event })" />
+      <nc-slider
+        label="DELAY"
+        [min]="0"
+        [max]="1000"
+        [value]="inst().vibrato.delay * 1000"
+        [readout]="ms(inst().vibrato.delay)"
+        accent="hot"
+        (valueChange)="vib({ delay: $event / 1000 })" />
+      <nc-slider
+        label="ARP"
+        [min]="0"
+        [max]="30"
+        [value]="inst().arp.rate"
+        [readout]="inst().arp.rate ? inst().arp.rate + ' Hz' : 'OFF'"
+        accent="hot"
+        (valueChange)="arp($event)" />
+      <!-- Laid out as nc-slider lays out its own row, so this label lines up with the sliders
+           around it. -->
+      <div class="flex items-center gap-1.5">
+        <span class="label tracking-tag w-[56px] shrink-0">FILT</span>
+        <nc-segmented
+          [options]="filters"
+          [value]="inst().filter.type"
+          (valueChange)="filter({ type: asFilter($event) })"
+          size="sm"
+          fill />
+      </div>
+      <nc-slider
+        label="CUT"
+        [min]="0"
+        [max]="100"
+        [value]="cutToSlider(inst().filter.cutoff)"
+        [readout]="hz(inst().filter.cutoff)"
+        accent="sky"
+        (valueChange)="filter({ cutoff: cutFromSlider($event) })" />
+      <nc-slider
+        label="RES"
+        [min]="0"
+        [max]="100"
+        [value]="inst().filter.resonance * 100"
+        [readout]="dec(inst().filter.resonance)"
+        accent="sky"
+        (valueChange)="filter({ resonance: $event / 100 })" />
+    </div>
+  </section>
+
+  <section class="border-b border-line p-1.5">
+    <div class="mb-1 flex items-center justify-between">
+      <span class="label text-ink-3">{{ t('editor.sound.mix') }}</span>
+      <nc-help-dot [title]="t('editor.sound.mix')" [text]="t('editor.sound.mixHelp')" />
+    </div>
+    <div class="grid gap-0.5">
+      <nc-slider
+        label="VOL"
+        [min]="0"
+        [max]="100"
+        [value]="inst().volume * 100"
+        [readout]="db(inst().volume)"
+        (valueChange)="patched.emit({ volume: $event / 100 })" />
+      <nc-slider
+        label="PAN"
+        [min]="-100"
+        [max]="100"
+        [value]="inst().pan * 100"
+        [readout]="panLabel(inst().pan)"
+        (valueChange)="patched.emit({ pan: $event / 100 })" />
+    </div>
+  </section>
+
+  <section class="p-1.5">
+    <div class="mb-1 flex items-center justify-between">
+      <span class="label text-ink-3">{{ t('editor.sound.usedBy') }}</span>
+      <span class="label text-ink-4">
+        {{ t('editor.sound.usedByCount', { p: usedBy().patterns.length, s: usedBy().sfx.length }) }}
+      </span>
+    </div>
+    <div class="flex flex-wrap gap-0.5">
+      @for (pattern of usedBy().patterns; track pattern.id) {
+        <nc-chip>{{ t('editor.sound.pattern') }} {{ pad(pattern.slot) }}</nc-chip>
+      }
+      @for (sfxId of usedBy().sfx; track sfxId) {
+        <nc-chip>SFX {{ pad(sfxId) }}</nc-chip>
+      }
+      @if (!usedBy().patterns.length) {
+        <span class="text-meta text-ink-4">{{ t('editor.sound.unused') }}</span>
+      }
+    </div>
+  </section>
+</div>

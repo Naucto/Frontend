@@ -1,0 +1,132 @@
+<ng-container *transloco="let t">
+  <button
+    type="button"
+    [ncPopover]="panel"
+    [(popoverOpen)]="open"
+    class="-ms-[11px] flex items-center gap-1.25 rounded-sm border bg-raised px-1.5 py-0.75 text-ui tracking-[0.04em] text-ink"
+    [class]="open() ? 'border-gold' : 'border-line hover:border-line-strong'">
+    <span class="max-w-[24ch] truncate">
+      {{ session.project()?.name || t('editor.game.untitled') }}
+    </span>
+    <span class="max-w-[16ch] truncate font-mono text-meta tracking-tag text-ink-3">
+      {{ newest()?.name ?? t('editor.game.unversioned') }}
+    </span>
+    <nc-icon name="chevron-down" [size]="12" class="text-ink-3" />
+  </button>
+  <!-- The design only shows the size when the game is near its ceiling. -->
+  @if (sizeTone(); as tone) {
+    <span
+      class="ml-1 flex items-center gap-0.5 font-mono text-label"
+      [class.text-hot-ink]="tone === 'over'"
+      [class.text-orange-ink]="tone === 'near'">
+      <nc-icon name="alert" [size]="12" />
+      {{ kb(size().total) }}
+    </span>
+  }
+  <ng-template #panel>
+    <nc-popover-panel [title]="t('editor.game.versions')" [header]="false" class="w-[354px]">
+      <!-- Its own head row: the design gives this popover a raised band where the kit's header draws a plain rule. -->
+      <header
+        class="flex h-[38px] items-center justify-between border-b border-line bg-raised px-2">
+        <span class="label text-ink-3">{{ t('editor.game.versions') }}</span>
+        <button
+          ncButton
+          variant="ghost"
+          size="sm"
+          iconOnly
+          [attr.aria-label]="t('editor.game.saveVersion')"
+          [disabled]="!session.isCollaborator()"
+          (click)="openSave()">
+          <nc-icon name="save" [size]="12" />
+        </button>
+      </header>
+      <div>
+        <!-- Only the list scrolls, under a ceiling taken from the window; the head, the totals and the budget stay put. -->
+        <ul class="max-h-[min(52vh,420px)] overflow-y-auto">
+          @for (version of history(); track version.key; let i = $index) {
+            <li class="flex h-[52px] items-center gap-1 px-2" [class.bg-line-soft]="i === 0">
+              <!-- Gold marks which one the game is, not which ones were released. -->
+              <span
+                class="w-[22px] shrink-0 font-mono text-label"
+                [class]="
+                  i === 0 ? 'text-gold-ink' : version.release ? 'text-ink-body' : 'text-ink-4'
+                ">
+                {{ version.release ? 'v' + version.index : '—' }}
+              </span>
+              <div class="min-w-0 flex-1">
+                <div class="truncate text-ui" [class]="i === 0 ? 'text-ink' : 'text-ink-3'">
+                  {{ version.release ? version.name : t('editor.game.autosave') }}
+                </div>
+                @if (version.when) {
+                  <div class="label text-ink-4">{{ version.when | ncRelativeTime }}</div>
+                }
+              </div>
+              <!-- "Current" is only true while nothing has been typed since: the newest save
+                   stops describing the document the moment anyone edits it. -->
+              @if (i === 0 && !saves.dirty()) {
+                <span class="label shrink-0 text-gold-ink">{{ t('editor.game.current') }}</span>
+              } @else {
+                <button
+                  ncButton
+                  variant="ghost"
+                  size="sm"
+                  iconOnly
+                  [attr.aria-label]="
+                    version.release
+                      ? t('editor.game.restoreVersion')
+                      : t('editor.game.restoreAutosave')
+                  "
+                  [disabled]="!session.isCollaborator() || restoring()"
+                  (click)="restore(version)">
+                  <nc-icon name="undo" [size]="12" />
+                </button>
+              }
+              @if (i !== 0 || saves.dirty()) {
+                <button
+                  ncButton
+                  variant="ghost"
+                  size="sm"
+                  iconOnly
+                  [attr.aria-label]="
+                    version.release
+                      ? t('editor.game.deleteVersion')
+                      : t('editor.game.deleteAutosave')
+                  "
+                  [disabled]="!session.isCollaborator()"
+                  (click)="remove(version)">
+                  <nc-icon name="trash" [size]="12" />
+                </button>
+              }
+            </li>
+          } @empty {
+            <li class="px-2 py-2 text-meta text-ink-3">{{ t('editor.game.nothingSaved') }}</li>
+          }
+        </ul>
+        <div class="label mt-1 px-2 pb-2">
+          {{
+            t('editor.game.historyCount', {
+              named: releases().length,
+              autosaves: autosaves().length,
+            })
+          }}
+        </div>
+      </div>
+      <div class="border-t border-line p-2">
+        <div class="mb-1 flex justify-between text-label">
+          <span>{{ t('editor.publishDialog.size') }}</span>
+          <span class="font-mono text-ink">{{ kb(size().total) }} / 1 MB</span>
+        </div>
+        <nc-meter
+          size="md"
+          [segments]="segments()"
+          [max]="ceiling"
+          [label]="t('editor.publishDialog.size')" />
+        @if (size().total > ceiling) {
+          <p class="mt-1 text-meta text-hot-ink">
+            {{ t('editor.game.overCeiling', { by: kb(size().total - ceiling) }) }}
+          </p>
+        }
+      </div>
+    </nc-popover-panel>
+  </ng-template>
+</ng-container>

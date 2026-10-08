@@ -1,0 +1,20 @@
+import { booleanAttribute, ChangeDetectionStrategy, Component, input } from '@angular/core';
+
+/** Label + divider used to split a panel body into groups (STATUS, MONETIZATION, LINEAGE). */
+@Component({
+  selector: 'nc-section',
+  templateUrl: './section.component.html',
+  host: {
+    '[class]':
+      'banded()' +
+      " ? 'relative block border-b border-line px-[14px] py-1.5 last:border-b-0'" +
+      " : 'block border-t border-line pt-2 first:border-t-0 first:pt-0'",
+  },
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class SectionComponent {
+  readonly title = input.required<string>();
+  readonly tone = input<'default' | 'gold'>('default');
+  /** Full-bleed band with its own padding, as the editor inspectors are drawn. */
+  readonly banded = input(false, { transform: booleanAttribute });
+}

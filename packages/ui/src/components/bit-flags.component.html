@@ -1,0 +1,14 @@
+<div role="group" [attr.aria-label]="label()" class="flex gap-0.5">
+  @for (bit of bits; track bit) {
+    <button
+      type="button"
+      role="checkbox"
+      [attr.aria-checked]="isSet(bit)"
+      [attr.aria-label]="'Flag ' + bit"
+      (click)="toggle(bit)"
+      class="h-[26px] w-[30px] flex-none rounded-xs border border-line bg-raised font-mono text-label text-ink-3 hover:border-line-strong aria-checked:text-on-accent"
+      [class]="set(bit)">
+      {{ bit }}
+    </button>
+  }
+</div>

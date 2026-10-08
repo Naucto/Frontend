@@ -1,0 +1,58 @@
+<nc-dialog-shell
+  *transloco="let t"
+  [title]="t('editor.publishDialog.title')"
+  [lead]="t('editor.publishDialog.lead')">
+  <!-- What a release lets people do, one line each, with the mark the hub shows it under. -->
+  <ul class="grid gap-0.75 text-body leading-[1.65] text-ink-body">
+    @for (line of lines; track line.icon) {
+      <li class="flex items-start gap-1">
+        <nc-icon [name]="line.icon" [size]="12" class="mt-[3px] shrink-0 text-ink-3" />
+        <span>{{ t('editor.publishDialog.' + line.key) }}</span>
+      </li>
+    }
+  </ul>
+  <div class="mt-2 border-t border-line pt-1.5">
+    <div class="mb-1 flex justify-between">
+      <span class="label">{{ t('editor.publishDialog.size') }}</span>
+      <span class="font-mono text-label text-ink">{{ kb(size().total) }} / 1 MB</span>
+    </div>
+    <nc-meter
+      size="md"
+      [segments]="segments()"
+      [max]="ceiling"
+      [label]="t('editor.publishDialog.size')" />
+  </div>
+  @if (size().total > ceiling) {
+    <nc-notice tone="danger" class="mt-1">
+      {{ t('editor.publishDialog.over', { by: kb(size().total - ceiling) }) }}
+    </nc-notice>
+  }
+  @if (error()) {
+    <nc-notice tone="danger" class="mt-1">{{ error() }}</nc-notice>
+  }
+  <ng-container footer>
+    @if (data.session.project()?.publishedAt) {
+      <button ncButton variant="danger" (click)="unpublish()" [disabled]="busy()">
+        {{ t('editor.publishDialog.unpublish') }}
+      </button>
+      <button
+        ncButton
+        variant="primary"
+        (click)="publish(true)"
+        [disabled]="busy() || size().total > ceiling">
+        {{ t('editor.publishDialog.update') }}
+      </button>
+    } @else {
+      <button ncButton variant="ghost" (click)="ref.close(false)">
+        {{ t('editor.publishDialog.notYet') }}
+      </button>
+      <button
+        ncButton
+        variant="primary"
+        (click)="publish(false)"
+        [disabled]="busy() || size().total > ceiling">
+        {{ t('editor.publishDialog.publish') }}
+      </button>
+    }
+  </ng-container>
+</nc-dialog-shell>

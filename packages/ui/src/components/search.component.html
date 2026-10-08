@@ -1,0 +1,19 @@
+<nc-icon name="search" [size]="12" [class]="chrome().icon" />
+<input
+  #input
+  type="search"
+  [placeholder]="placeholder()"
+  [value]="value()"
+  [attr.aria-label]="placeholder()"
+  (input)="onInput($event)"
+  (keydown.enter)="submitted.emit(value())"
+  class="min-w-0 flex-1 bg-transparent text-ink outline-none placeholder:text-ink-4"
+  [class]="chrome().input" />
+<!-- The badge never shrinks; a placeholder has no ellipsis, so a narrow box needs a placeholder
+     written to fit beside it. -->
+@if (hint()) {
+  <kbd
+    class="shrink-0 rounded-xs border border-line px-[5px] py-[2px] font-mono text-[10px] leading-[normal] text-ink-4">
+    {{ hint() }}
+  </kbd>
+}

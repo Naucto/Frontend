@@ -1,0 +1,45 @@
+<div
+  class="flex items-stretch overflow-hidden rounded-sm border"
+  [class]="frameClass()"
+  [class.h-full]="fill()">
+  <div class="flex min-w-0 flex-1 items-center gap-1" [class]="padClass()">
+    @if (label()) {
+      <span class="label">{{ label() }}</span>
+    }
+    <!-- Committed on blur and on Enter rather than per keystroke, so a half-typed number is never
+         applied. -->
+    <input
+      type="text"
+      inputmode="numeric"
+      [attr.aria-label]="label() || ariaLabel()"
+      [value]="shown()"
+      [attr.placeholder]="placeholder()"
+      [style.width.ch]="width()"
+      [class]="
+        'min-w-0 flex-1 bg-transparent text-right font-mono outline-none placeholder:text-ink-4 ' +
+        textClass()
+      "
+      (keydown.enter)="commit($event)"
+      (keydown.arrowUp)="nudge(1, $event)"
+      (keydown.arrowDown)="nudge(-1, $event)"
+      (blur)="commit($event)" />
+  </div>
+  <div class="flex flex-none flex-col border-l border-line" [class]="caretsClass()">
+    <button
+      type="button"
+      class="flex flex-1 items-center justify-center text-ink-3 hover:text-ink disabled:opacity-40 disabled:hover:text-ink-3"
+      [attr.aria-label]="(label() || ariaLabel()) + ' +' + step()"
+      [disabled]="!canRaise()"
+      (click)="nudge(1)">
+      <nc-icon name="caret-up" [size]="12" />
+    </button>
+    <button
+      type="button"
+      class="flex flex-1 items-center justify-center border-t border-line text-ink-3 hover:text-ink disabled:opacity-40 disabled:hover:text-ink-3"
+      [attr.aria-label]="(label() || ariaLabel()) + ' -' + step()"
+      [disabled]="!canLower()"
+      (click)="nudge(-1)">
+      <nc-icon name="caret-down" [size]="12" />
+    </button>
+  </div>
+</div>

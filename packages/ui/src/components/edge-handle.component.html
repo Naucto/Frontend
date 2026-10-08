@@ -1,0 +1,7 @@
+<button
+  type="button"
+  class="flex h-[52px] w-2 items-center justify-center rounded-[8px] border border-line-strong bg-raised text-ink-2 hover:text-ink"
+  [attr.aria-label]="label()"
+  (click)="pressed.emit()">
+  <nc-icon [name]="icon()" [size]="12" />
+</button>

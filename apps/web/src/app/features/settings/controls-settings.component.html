@@ -1,0 +1,212 @@
+<div *transloco="let t" class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_300px]">
+  <div>
+    <p class="mb-2 max-w-[640px] text-body text-ink-2">
+      {{ t('settings.controlsIntroBefore') }}
+      <code class="font-mono text-meta text-sky-ink">input.held("left")</code>
+      {{ t('settings.controlsIntroAfter') }}
+    </p>
+    <div class="mb-1 flex flex-wrap items-center gap-1">
+      <nc-segmented
+        variant="chips"
+        [options]="players()"
+        [value]="String(player())"
+        (valueChange)="setPlayer($event)" />
+    </div>
+
+    <!-- Visual captions only; the sr-only head row below carries the column association for screen
+         readers. -->
+    <div aria-hidden="true" class="label mx-[1px] grid grid-cols-[24%_40%_36%] text-ink-3">
+      <span class="px-1.75 pb-1.5">{{ t('settings.action') }}</span>
+      <span class="px-1.75 pb-1.5">{{ t('settings.keyboard') }}</span>
+      <span class="px-1.75 pb-1.5">{{ t('settings.gamepad') }}</span>
+    </div>
+    <div class="overflow-hidden rounded-[6px] border border-line bg-sunken">
+      <table class="w-full table-fixed border-collapse text-body">
+        <colgroup>
+          <col class="w-[24%]" />
+          <col class="w-[40%]" />
+          <col class="w-[36%]" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th scope="col" class="sr-only">{{ t('settings.action') }}</th>
+            <th scope="col" class="sr-only">{{ t('settings.keyboard') }}</th>
+            <th scope="col" class="sr-only">{{ t('settings.gamepad') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows(); track row.action) {
+            <tr
+              class="border-b border-line-soft last:border-b-0"
+              [class.bg-raised]="capturing()?.action === row.action">
+              <td class="px-1.75 py-1.5">
+                <div class="font-mono text-meta text-ink">{{ row.action }}</div>
+              </td>
+              <td class="px-1.75 py-1.5">
+                <div class="flex flex-wrap items-center gap-0.5">
+                  @for (key of row.keys; track key) {
+                    <button
+                      type="button"
+                      class="group inline-flex items-center"
+                      [attr.aria-label]="t('settings.rebindKey', { key: label(key) })"
+                      (click)="capture(row.action, 'keyboard', key)">
+                      <nc-keycap>{{ label(key) }}</nc-keycap>
+                      <nc-icon
+                        name="close"
+                        [size]="12"
+                        class="ml-0.5 hidden text-ink-4 group-hover:inline"
+                        (click)="removeKey($event, row.action, key)" />
+                    </button>
+                  }
+                  @if (isCapturing(row.action, 'keyboard')) {
+                    <span
+                      class="label rounded-xs border border-gold bg-gold-wash px-1 py-0.5 text-gold-ink">
+                      {{ t('settings.pressKey') }}
+                    </span>
+                  } @else {
+                    <button
+                      ncButton
+                      variant="ghost"
+                      size="sm"
+                      iconOnly
+                      [attr.aria-label]="t('settings.addKey')"
+                      (click)="capture(row.action, 'keyboard')">
+                      <nc-icon name="plus" [size]="12" />
+                    </button>
+                  }
+                </div>
+              </td>
+              <td class="px-1.75 py-1.5">
+                <div class="flex flex-wrap items-center gap-0.5">
+                  @if (isCapturing(row.action, 'gamepad')) {
+                    <span
+                      class="label rounded-xs border border-gold bg-gold-wash px-1 py-0.5 text-gold-ink">
+                      {{ t('settings.pressButton') }}
+                    </span>
+                  } @else {
+                    <button
+                      type="button"
+                      [attr.aria-label]="t('settings.rebindPad')"
+                      (click)="capture(row.action, 'gamepad')">
+                      @let pad = padLabel(row.pad);
+                      <nc-keycap>
+                        {{ pad.text }}
+                        @if (pad.icon; as arrow) {
+                          <nc-icon [name]="arrow" [size]="12" />
+                        }
+                      </nc-keycap>
+                    </button>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-1.5 flex items-center gap-1">
+      <button
+        ncButton
+        variant="secondary"
+        size="sm"
+        (click)="bindings.reset()"
+        [disabled]="bindings.isDefault()">
+        {{ t('settings.resetDefaults') }}
+      </button>
+      @if (capturing()) {
+        <span class="label">{{ t('settings.escapeCancels') }}</span>
+      }
+    </div>
+  </div>
+
+  <div class="grid content-start gap-2">
+    <div class="rounded-sm border border-line bg-panel p-1.5">
+      <div class="flex items-center justify-between">
+        <span
+          class="label flex items-center gap-0.5"
+          [class]="pad() ? 'text-jade-ink' : 'text-ink-4'">
+          <span
+            class="inline-block h-1 w-1 rounded-xs"
+            [class]="pad() ? 'bg-jade' : 'bg-ink-4'"></span>
+          {{ pad() ? t('settings.connected') : t('settings.noPad') }}
+        </span>
+        <span class="label">{{ t('settings.slot', { n: 1 }) }}</span>
+      </div>
+      <div class="my-2 flex justify-center">
+        <nc-gamepad-art />
+      </div>
+      <div class="text-center text-body text-ink">{{ pad()?.id ?? '—' }}</div>
+      <div class="label text-center">{{ t('settings.pressAny') }}</div>
+    </div>
+
+    <!-- The on-screen pad, for the device that has no keyboard and no gamepad. The preview is
+       live: both sliders drive the same store the pad itself reads.
+
+       TODO(NCTO-mobile): nothing reads these yet. A phone cannot open the editor and does not
+       get the pad on a game page either, so the two sliders below set a size and an opacity for
+       a control nobody is shown. They stay because the store and the pad are built and this is
+       where they will be tuned; until a phone can play, they tune nothing. -->
+    <div class="rounded-sm border border-line bg-panel p-1.5">
+      <div class="mb-1 flex items-center justify-between gap-1">
+        <span class="label whitespace-nowrap">{{ t('settings.padLayout') }}</span>
+        <button
+          ncButton
+          variant="ghost"
+          size="sm"
+          iconOnly
+          [attr.aria-label]="t('settings.resetDefaults')"
+          (click)="padSettings.reset()"
+          [disabled]="padSettings.isDefault()">
+          <nc-icon name="undo" [size]="12" />
+        </button>
+      </div>
+      <div
+        class="relative flex h-[84px] items-center justify-between rounded-sm border border-line bg-inset px-1.5"
+        [style.opacity]="padSettings.opacity() / 100"
+        aria-hidden="true">
+        <span
+          class="grid grid-cols-3 grid-rows-3 gap-px"
+          [style.--nc-preview]="padSettings.scale()">
+          <span></span>
+          <span
+            class="h-[calc(12px*var(--nc-preview,1))] w-[calc(12px*var(--nc-preview,1))] rounded-t-xs bg-ink-4"></span>
+          <span></span>
+          <span
+            class="h-[calc(12px*var(--nc-preview,1))] w-[calc(12px*var(--nc-preview,1))] rounded-l-xs bg-ink-4"></span>
+          <span
+            class="h-[calc(12px*var(--nc-preview,1))] w-[calc(12px*var(--nc-preview,1))] bg-ink-3"></span>
+          <span
+            class="h-[calc(12px*var(--nc-preview,1))] w-[calc(12px*var(--nc-preview,1))] rounded-r-xs bg-ink-4"></span>
+          <span></span>
+          <span
+            class="h-[calc(12px*var(--nc-preview,1))] w-[calc(12px*var(--nc-preview,1))] rounded-b-xs bg-ink-4"></span>
+          <span></span>
+        </span>
+        <span class="flex items-center gap-1" [style.--nc-preview]="padSettings.scale()">
+          <span
+            class="h-[calc(22px*var(--nc-preview,1))] w-[calc(22px*var(--nc-preview,1))] rounded-full bg-sky/45"></span>
+          <span
+            class="h-[calc(24px*var(--nc-preview,1))] w-[calc(24px*var(--nc-preview,1))] rounded-full bg-hot/50"></span>
+        </span>
+      </div>
+      <div class="mt-1.5 grid gap-1">
+        <nc-slider
+          [label]="t('settings.padSize')"
+          [min]="60"
+          [max]="140"
+          [value]="padSettings.size()"
+          [readout]="padSettings.size() + '%'"
+          (valueChange)="padSettings.setSize($event)" />
+        <nc-slider
+          [label]="t('settings.padOpacity')"
+          [min]="30"
+          [max]="100"
+          [value]="padSettings.opacity()"
+          [readout]="padSettings.opacity() + '%'"
+          (valueChange)="padSettings.setOpacity($event)" />
+      </div>
+      <p class="mt-1 text-meta leading-[1.6] text-ink-3">{{ t('settings.padHint') }}</p>
+    </div>
+  </div>
+</div>

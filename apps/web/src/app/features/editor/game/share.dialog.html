@@ -1,0 +1,36 @@
+<nc-dialog-shell *transloco="let t" [title]="t('share.title')" [lead]="t('share.blurb')">
+  <ul class="mb-2 divide-y divide-line">
+    @for (person of people(); track person.id) {
+      <li class="flex items-center gap-1 py-1">
+        <nc-user-avatar [userId]="person.id" [name]="person.username" [size]="24" />
+        <span class="text-ui text-ink">{{ person.username }}</span>
+        @if (person.isCreator) {
+          <span class="label text-gold-ink">{{ t('share.creator') }}</span>
+        }
+        @if (person.here) {
+          <nc-online-dot [online]="true" />
+        }
+        <span class="flex-1"></span>
+        @if (!person.isCreator && isCreator()) {
+          <button ncButton variant="ghost" size="sm" (click)="remove(person)">
+            {{ t('share.remove') }}
+          </button>
+        }
+      </li>
+    } @empty {
+      <li class="py-1 text-meta text-ink-3">{{ t('share.justYou') }}</li>
+    }
+  </ul>
+  @if (isCreator()) {
+    <nc-person-search
+      size="md"
+      [placeholder]="t('share.invite')"
+      [exclude]="memberIds()"
+      (picked)="invite($event)" />
+  } @else {
+    <p class="text-meta text-ink-3">{{ t('share.creatorOnly') }}</p>
+  }
+  <ng-container footer>
+    <button ncButton variant="ghost" (click)="ref.close()">{{ t('share.done') }}</button>
+  </ng-container>
+</nc-dialog-shell>
