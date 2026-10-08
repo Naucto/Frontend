@@ -52,9 +52,12 @@ export class PrivacySettingsComponent {
 
   protected duration(ms: number): string {
     const { hours, minutes } = playTime(ms);
-    return hours > 0
-      ? this.transloco.translate('settings.analytics.hours', { hours, minutes })
-      : this.transloco.translate('settings.analytics.minutes', { minutes });
+    if (hours === 0) {
+      return this.transloco.translate('settings.analytics.minutes', { minutes });
+    }
+    return minutes === 0
+      ? this.transloco.translate('settings.analytics.wholeHours', { hours })
+      : this.transloco.translate('settings.analytics.hours', { hours, minutes });
   }
 
   protected async download(): Promise<void> {

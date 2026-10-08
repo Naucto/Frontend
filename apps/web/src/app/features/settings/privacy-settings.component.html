@@ -43,7 +43,7 @@
     <nc-setting-row [title]="t('settings.analytics.lastActive')">
       <span class="text-ui text-ink">
         @if (summary.lastActiveAt; as at) {
-          {{ at | date: (summary.lastActiveIsExact ? 'medium' : 'mediumDate') }}
+          {{ at | date: (summary.lastActiveIsExact ? 'MMM d, y, h:mm a' : 'mediumDate') }}
         } @else {
           {{ t('settings.analytics.never') }}
         }

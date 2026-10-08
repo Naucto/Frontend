@@ -69,6 +69,7 @@ describe('PrivacySettingsComponent', () => {
     expect(screen.getByText('14 in all, 3 this month')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Ferry Click' })).toHaveAttribute('href', '/play/7');
     expect(screen.getByText('A deleted game')).toBeInTheDocument();
+    expect(screen.getByText('2 h')).toBeInTheDocument();
   });
 
   it('says when nothing was counted', async () => {

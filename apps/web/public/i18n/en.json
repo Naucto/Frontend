@@ -148,6 +148,7 @@
       "playsHint": "A restart counts as a new game",
       "totals": "{{total}} in all, {{month}} this month",
       "hours": "{{hours}} h {{minutes}} min",
+      "wholeHours": "{{hours}} h",
       "minutes": "{{minutes}} min",
       "gamesPlayed": "Different games played",
       "lastActive": "Last active",
