@@ -42,7 +42,7 @@
     "@playwright/test": "^1.62.1",
     "@stylistic/eslint-plugin": "^5.10.0",
     "@types/node": "^22.20.1",
-    "angular-eslint": "^22.0.0",
+    "angular-eslint": "^22.5.0",
     "eslint": "^9.39.4",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-simple-import-sort": "^13.0.0",
