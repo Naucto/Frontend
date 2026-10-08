@@ -31,7 +31,7 @@
     "@codemirror/lint": "^6.8.0",
     "@codemirror/legacy-modes": "^6.5.3",
     "y-codemirror.next": "^0.3.6",
-    "yjs": "^13.6.32",
+    "yjs": "^13.6.33",
     "y-webrtc": "^10.3.0",
     "y-protocols": "^1.0.6",
     "simple-peer": "^9.11.1",
