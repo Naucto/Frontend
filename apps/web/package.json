@@ -43,20 +43,20 @@
     "postcss": "^8.5.0"
   },
   "devDependencies": {
-    "@angular/build": "^22.1.5",
-    "@angular/cli": "^22.1.5",
-    "@angular/compiler-cli": "^22.1.0",
-    "jsdom": "^28.0.0",
-    "prettier": "^3.8.1",
-    "typescript": "~6.0.2",
-    "vitest": "^4.0.8",
-    "@testing-library/angular": "^19.4.2",
-    "@testing-library/dom": "^10.4.0",
-    "@testing-library/user-event": "^14.6.1",
-    "@testing-library/jest-dom": "^6.9.0",
+    "@angular/build": "^22.2.1",
+    "@angular/cli": "^22.2.1",
+    "@angular/compiler-cli": "^22.2.1",
+    "jsdom": "^30.1.2",
+    "prettier": "^3.9.9",
+    "typescript": "~7.0.2",
+    "vitest": "^5.0.3",
+    "@testing-library/angular": "^19.5.0",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/user-event": "^14.6.7",
+    "@testing-library/jest-dom": "^7.0.1",
     "@types/simple-peer": "^9.11.9",
-    "@vitest/browser": "^4.0.8",
+    "@vitest/browser": "^5.0.3",
     "axe-core": "^4.11.0",
-    "msw": "^2.12.0"
+    "msw": "^3.0.2"
   }
 }
