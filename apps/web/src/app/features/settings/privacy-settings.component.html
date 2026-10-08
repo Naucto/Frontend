@@ -15,7 +15,9 @@
       [hint]="t('settings.analytics.browsersHint')">
       <span class="text-ui text-ink">{{ summary.linkedBrowsers | number }}</span>
     </nc-setting-row>
-    <nc-setting-row [title]="t('settings.analytics.playtime')">
+    <nc-setting-row
+      [title]="t('settings.analytics.playtime')"
+      [hint]="t('settings.analytics.playtimeHint')">
       <span class="text-ui text-ink">
         {{
           t('settings.analytics.totals', {
@@ -37,10 +39,14 @@
         }}
       </span>
     </nc-setting-row>
-    <nc-setting-row [title]="t('settings.analytics.gamesPlayed')">
+    <nc-setting-row
+      [title]="t('settings.analytics.gamesPlayed')"
+      [hint]="t('settings.analytics.gamesPlayedHint')">
       <span class="text-ui text-ink">{{ summary.gamesPlayed | number }}</span>
     </nc-setting-row>
-    <nc-setting-row [title]="t('settings.analytics.lastActive')">
+    <nc-setting-row
+      [title]="t('settings.analytics.lastActive')"
+      [hint]="t('settings.analytics.lastActiveHint')">
       <span class="text-ui text-ink">
         @if (summary.lastActiveAt; as at) {
           {{ at | date: (summary.lastActiveIsExact ? 'MMM d, y, h:mm a' : 'mediumDate') }}
