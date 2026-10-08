@@ -79,6 +79,16 @@ Pixelarticons, Bubblegum-16 palette, dark + light themes).
 - **Netplay**: every `nc-game-screen` owns a `NetUiBridgeService`; `net.host()` / `net.join()`
   open the dialogs in `shared/netplay`. Permissions come from the game's `net.permissions` map
   (`core/net/net-permissions.ts`, bits CLIENT_READ=1 / CLIENT_WRITE=2, allow-by-default).
+- **Usage analytics** (`core/analytics`): nothing is collected while the backend's `analytics`
+  feature flag is off. The banner in `shared/consent` asks once, and the answer lives six months in
+  the `naucto_consent` cookie. With consent, page views (`analytics.service.ts`), beats
+  (`heartbeat.service.ts`) and plays (`play-reporter.ts`, fed by the `ncPlayTracking` directive on
+  the game page) carry the `naucto_vid` and `naucto_sid` cookies. Without it, a tab sends only pings
+  that hold no identifier. Every report goes through `AnalyticsTransport` as plain-text JSON with no
+  credentials and no bearer, so no report names an account. The account is attached only when
+  `BrowserAccountService` links the visitor. Features claim what the tab is doing (browsing,
+  building, playing, hosting) through `ActivityService`. Settings → Privacy shows, exports and
+  erases the account's history even with the flag off.
 - **Boot order**: `provideApiClient()` runs one initializer — load `/config.json`, configure the
   client, bootstrap auth — because Angular initializers otherwise run concurrently.
 - **Mobile** is out of scope for now but must not be blocked: measure widths with `ResizeObserver`
@@ -203,3 +213,11 @@ broken; an absence reads as not built.
   `shape-rendering: crispEdges` at exact halves and doubles. Where an artboard renders one at 16,
   take the nearest legal step rather than widening the union.
 - TypeScript 6: `baseUrl` is deprecated; path aliases are relative to each `tsconfig.json`.
+- An ingest answer that asks to rotate the visitor or the session applies only while the cookies
+  still hold the identity the request carried. Go through `applyRotation`, or a late answer about an
+  old identity throws away a newer one.
+- A play's running time is reported cumulatively under consent and as deltas without it. Moving
+  between the two goes through `PlayReporter.sync()`, which hands over only what was not yet sent.
+  Resetting the clock instead counts an interval twice or loses it.
+- Analytics e2e specs wait for the routed page to render before sending the queue: a fresh load
+  finishes its first navigation after Playwright's `load` event.
