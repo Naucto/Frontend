@@ -1,0 +1,103 @@
+<div *transloco="let t">
+  @if (features.analytics()) {
+    <nc-consent-choice />
+  }
+
+  <h2 class="mt-2.5 mb-1 text-heading text-ink">{{ t('settings.analytics.statsTitle') }}</h2>
+  @if (stats.isError()) {
+    <p class="py-2 text-body text-ink-3">{{ t('settings.analytics.loadFailed') }}</p>
+  } @else if (stats.data(); as summary) {
+    @if (!summary.tracked) {
+      <p class="py-2 text-body text-ink-3">{{ t('settings.analytics.untracked') }}</p>
+    }
+    <nc-setting-row
+      [title]="t('settings.analytics.browsers')"
+      [hint]="t('settings.analytics.browsersHint')">
+      <span class="text-ui text-ink">{{ summary.linkedBrowsers | number }}</span>
+    </nc-setting-row>
+    <nc-setting-row [title]="t('settings.analytics.playtime')">
+      <span class="text-ui text-ink">
+        {{
+          t('settings.analytics.totals', {
+            total: duration(summary.lifetime.playtimeMs),
+            month: duration(summary.thisMonth.playtimeMs),
+          })
+        }}
+      </span>
+    </nc-setting-row>
+    <nc-setting-row
+      [title]="t('settings.analytics.plays')"
+      [hint]="t('settings.analytics.playsHint')">
+      <span class="text-ui text-ink">
+        {{
+          t('settings.analytics.totals', {
+            total: summary.lifetime.plays | number,
+            month: summary.thisMonth.plays | number,
+          })
+        }}
+      </span>
+    </nc-setting-row>
+    <nc-setting-row [title]="t('settings.analytics.gamesPlayed')">
+      <span class="text-ui text-ink">{{ summary.gamesPlayed | number }}</span>
+    </nc-setting-row>
+    <nc-setting-row [title]="t('settings.analytics.lastActive')">
+      <span class="text-ui text-ink">
+        @if (summary.lastActiveAt; as at) {
+          {{ at | date: (summary.lastActiveIsExact ? 'medium' : 'mediumDate') }}
+        } @else {
+          {{ t('settings.analytics.never') }}
+        }
+      </span>
+    </nc-setting-row>
+    @if (summary.topGames.length > 0) {
+      <h3 class="mt-2 mb-1 text-ui text-ink-2">{{ t('settings.analytics.topGames') }}</h3>
+      <ol class="divide-y divide-line">
+        @for (game of summary.topGames; track game.releaseId) {
+          <li class="flex items-center justify-between gap-2 py-1 text-body">
+            @if (game.name; as name) {
+              <a [routerLink]="['/play', game.releaseId]" class="truncate text-ink hover:underline">
+                {{ name }}
+              </a>
+            } @else {
+              <span class="truncate text-ink-3">{{ t('settings.analytics.deletedGame') }}</span>
+            }
+            <span class="shrink-0 text-ink-2">
+              {{ duration(game.playtimeMs) }}
+            </span>
+          </li>
+        }
+      </ol>
+    }
+  } @else {
+    <p class="py-2 text-body text-ink-3">{{ t('settings.analytics.loading') }}</p>
+  }
+
+  <h2 class="mt-2.5 mb-1 text-heading text-ink">{{ t('settings.analytics.yourData') }}</h2>
+  <nc-setting-row
+    [title]="t('settings.analytics.export')"
+    [hint]="t('settings.analytics.exportHint')">
+    <button
+      ncButton
+      variant="secondary"
+      size="sm"
+      type="button"
+      [disabled]="exporting()"
+      (click)="download()">
+      {{ t('settings.analytics.exportButton') }}
+    </button>
+  </nc-setting-row>
+  <nc-setting-row
+    [title]="t('settings.analytics.erase')"
+    [hint]="t('settings.analytics.eraseHint')"
+    [danger]="true">
+    <button
+      ncButton
+      variant="danger"
+      size="sm"
+      type="button"
+      [disabled]="erasing()"
+      (click)="confirmErase()">
+      {{ t('settings.analytics.eraseButton') }}
+    </button>
+  </nc-setting-row>
+</div>
