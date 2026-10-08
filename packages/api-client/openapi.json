@@ -363,6 +363,21 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "text/plain": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterViewDto"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterViewDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Updated view count",
@@ -381,7 +396,7 @@
             "JWT-auth": []
           }
         ],
-        "summary": "Register a play view for a published project",
+        "summary": "Count a play of a published project",
         "tags": ["projects"]
       }
     },
@@ -3056,6 +3071,865 @@
         "tags": ["admin"]
       }
     },
+    "/analytics/events": {
+      "post": {
+        "operationId": "AnalyticsIngestController_events",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "text/plain": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyticsEventsDto"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyticsEventsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsEventsResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many reports from this browser or address"
+          }
+        },
+        "summary": "Store a consenting browser's page views",
+        "tags": ["analytics"],
+        "security": [
+          {},
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/analytics/play": {
+      "post": {
+        "operationId": "AnalyticsIngestController_play",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "text/plain": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyticsPlayDto"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyticsPlayDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsPlayResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many reports from this browser or address"
+          }
+        },
+        "summary": "Store the start or end of a consenting browser's play",
+        "tags": ["analytics"],
+        "security": [
+          {},
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/analytics/beat": {
+      "post": {
+        "operationId": "AnalyticsIngestController_beat",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "text/plain": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyticsBeatDto"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyticsBeatDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsRotationDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many reports from this browser or address"
+          }
+        },
+        "summary": "Mark a consenting browser's visible tab as present this minute",
+        "tags": ["analytics"],
+        "security": [
+          {},
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/analytics/ping": {
+      "post": {
+        "operationId": "AnalyticsIngestController_ping",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "text/plain": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyticsPingDto"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyticsPingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Counted, or ignored"
+          },
+          "429": {
+            "description": "Too many pings from this address"
+          }
+        },
+        "summary": "Count an identifier-free ping of a tab that declined analytics or never answered",
+        "tags": ["analytics"],
+        "security": [
+          {},
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/analytics/link": {
+      "post": {
+        "operationId": "AnalyticsIngestController_link",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyticsLinkDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsLinkResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "429": {
+            "description": "Too many links from this account"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Link this consenting browser to the signed-in account",
+        "tags": ["analytics"]
+      }
+    },
+    "/admin/analytics/metrics": {
+      "get": {
+        "operationId": "AdminAnalyticsController_metrics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsMetricsResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Admin role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Every metric with what it counts, how it combines and its version",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/analytics/timeseries": {
+      "get": {
+        "operationId": "AdminAnalyticsController_timeseries",
+        "parameters": [
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "description": "First day, UTC, as YYYY-MM-DD",
+            "schema": {
+              "example": "2026-09-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "description": "Last day, UTC, as YYYY-MM-DD, included",
+            "schema": {
+              "example": "2026-09-30",
+              "type": "string"
+            }
+          },
+          {
+            "name": "metric",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/AnalyticsMetric"
+            }
+          },
+          {
+            "name": "grain",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/AnalyticsGrain"
+            }
+          },
+          {
+            "name": "dimension",
+            "required": false,
+            "in": "query",
+            "description": "One value of a dimension of the metric, as `release:42`; the total when absent",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsSeriesDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Admin role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "A metric, or one value of a dimension, per day, ISO week or month",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/analytics/breakdown": {
+      "get": {
+        "operationId": "AdminAnalyticsController_breakdown",
+        "parameters": [
+          {
+            "name": "grain",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/AnalyticsGrain"
+            }
+          },
+          {
+            "name": "day",
+            "required": true,
+            "in": "query",
+            "description": "Any day of the period, UTC, as YYYY-MM-DD; the period holding it is used",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "metric",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/AnalyticsMetric"
+            }
+          },
+          {
+            "name": "dimension",
+            "required": true,
+            "in": "query",
+            "description": "A dimension the metric is split by, as `country`",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsBreakdownDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Admin role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "A metric split by one dimension over one period",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/analytics/overview": {
+      "get": {
+        "operationId": "AdminAnalyticsController_overview",
+        "parameters": [
+          {
+            "name": "grain",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/AnalyticsGrain"
+            }
+          },
+          {
+            "name": "day",
+            "required": true,
+            "in": "query",
+            "description": "Any day of the period, UTC, as YYYY-MM-DD; the period holding it is used",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsOverviewDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Admin role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "The headline metrics of a period and of the period before it",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/analytics/live": {
+      "get": {
+        "operationId": "AdminAnalyticsController_live",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsLiveDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Admin role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "The last hour of presence, the current minute and the games playing now",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/analytics/presence": {
+      "get": {
+        "operationId": "AdminAnalyticsController_presence",
+        "parameters": [
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "description": "First instant, ISO 8601",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "description": "Last instant, ISO 8601; at most 7 days after the first",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsPresenceDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Admin role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Minute presence samples over at most seven days",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/analytics/retention": {
+      "get": {
+        "operationId": "AdminAnalyticsController_retention",
+        "parameters": [
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "description": "First day, UTC, as YYYY-MM-DD",
+            "schema": {
+              "example": "2026-09-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "description": "Last day, UTC, as YYYY-MM-DD, included",
+            "schema": {
+              "example": "2026-09-30",
+              "type": "string"
+            }
+          },
+          {
+            "name": "kind",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/AnalyticsRetentionKind"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsRetentionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Admin role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "D1, D7 and D30 retention of the cohorts starting in a range",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/analytics/funnel": {
+      "get": {
+        "operationId": "AdminAnalyticsController_funnel",
+        "parameters": [
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "description": "First day, UTC, as YYYY-MM-DD",
+            "schema": {
+              "example": "2026-09-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "description": "Last day, UTC, as YYYY-MM-DD, included",
+            "schema": {
+              "example": "2026-09-30",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsFunnelDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Admin role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "From first visit to a published game, within the raw window",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/analytics/games": {
+      "get": {
+        "operationId": "AdminAnalyticsController_games",
+        "parameters": [
+          {
+            "name": "grain",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/AnalyticsGrain"
+            }
+          },
+          {
+            "name": "day",
+            "required": true,
+            "in": "query",
+            "description": "Any day of the period, UTC, as YYYY-MM-DD; the period holding it is used",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "plays",
+              "type": "string",
+              "enum": ["plays", "playtime_ms", "players", "mp_sessions"]
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsGamesDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Admin role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Games ranked by plays, playtime, players or multiplayer sessions",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/analytics/users/{id}": {
+      "get": {
+        "operationId": "AdminAnalyticsController_user",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserAnalyticsSummaryDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Admin role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "What analytics counted of one account",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/analytics/health": {
+      "get": {
+        "operationId": "AdminAnalyticsController_health",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsHealthDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Admin role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Ingest errors, finalization progress and projection backlog",
+        "tags": ["admin"]
+      }
+    },
+    "/users/me/analytics": {
+      "get": {
+        "operationId": "UserAnalyticsController_summary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserAnalyticsSummaryDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "What analytics counted of the signed-in account",
+        "tags": ["analytics"]
+      },
+      "delete": {
+        "operationId": "UserAnalyticsController_erase",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserAnalyticsEraseResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Erase what analytics holds about the signed-in account; collection starts afresh",
+        "tags": ["analytics"]
+      }
+    },
+    "/users/me/analytics/export": {
+      "get": {
+        "operationId": "UserAnalyticsController_export",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserAnalyticsExportDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Everything analytics holds about the signed-in account, as a file",
+        "tags": ["analytics"]
+      }
+    },
     "/auth/login": {
       "post": {
         "operationId": "AuthController_login",
@@ -4857,13 +5731,23 @@
         },
         "required": ["likes", "liked"]
       },
+      "RegisterViewDto": {
+        "type": "object",
+        "properties": {
+          "visitorId": {
+            "type": "string",
+            "description": "The visitor cookie of a browser that consented to analytics; without it the play counts but no viewer is kept",
+            "format": "uuid"
+          }
+        }
+      },
       "ViewResponseDto": {
         "type": "object",
         "properties": {
           "viewCount": {
             "type": "number",
             "example": 128,
-            "description": "The number of play opens registered for the project"
+            "description": "The number of plays counted for the project"
           }
         },
         "required": ["viewCount"]
@@ -5542,6 +6426,10 @@
           "visibility": {
             "type": "string",
             "enum": ["PUBLIC", "FRIENDS_ONLY", "INVITE_CODE"]
+          },
+          "editorTest": {
+            "type": "boolean",
+            "description": "Set by the game editor when it hosts to test its own game, so the session is not counted as a real game"
           }
         },
         "required": ["projectId", "title", "maxPlayers", "visibility"]
@@ -6448,6 +7336,1293 @@
         },
         "required": ["items", "total", "page", "limit"]
       },
+      "AnalyticsContextDto": {
+        "type": "object",
+        "properties": {
+          "referrer": {
+            "type": "string",
+            "description": "document.referrer of the landing page",
+            "maxLength": 2048
+          },
+          "utmSource": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "utmMedium": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "utmCampaign": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "viewportWidth": {
+            "type": "number",
+            "description": "Viewport width in CSS pixels; stored only as a bucket"
+          }
+        }
+      },
+      "AnalyticsPageViewDto": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": "string",
+            "description": "Client-minted id, so a retried batch is stored once",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["PAGE_VIEW"]
+          },
+          "ageMs": {
+            "type": "number",
+            "description": "Milliseconds since the navigation finished, by the client clock"
+          },
+          "route": {
+            "type": "string",
+            "description": "Route template, as `play/:id`",
+            "maxLength": 80
+          }
+        },
+        "required": ["eventId", "type", "ageMs", "route"]
+      },
+      "AnalyticsEventsDto": {
+        "type": "object",
+        "properties": {
+          "visitorId": {
+            "type": "string",
+            "description": "The visitor cookie",
+            "format": "uuid"
+          },
+          "sessionId": {
+            "type": "string",
+            "description": "The session cookie",
+            "format": "uuid"
+          },
+          "context": {
+            "$ref": "#/components/schemas/AnalyticsContextDto"
+          },
+          "events": {
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsPageViewDto"
+            }
+          }
+        },
+        "required": ["visitorId", "sessionId", "events"]
+      },
+      "AnalyticsRejectedEventDto": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string",
+            "enum": ["too_old"]
+          }
+        },
+        "required": ["eventId", "reason"]
+      },
+      "AnalyticsEventsResponseDto": {
+        "type": "object",
+        "properties": {
+          "rotateVisitor": {
+            "type": "boolean",
+            "description": "The visitor id is erased or expired: start a new visitor and session"
+          },
+          "rotateSession": {
+            "type": "boolean",
+            "description": "The session is closed or not this visitor's: start a new session"
+          },
+          "disabled": {
+            "type": "boolean",
+            "description": "Analytics is off on this deployment: stop sending"
+          },
+          "accepted": {
+            "description": "Events stored now or by an earlier attempt of the same batch",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "rejected": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsRejectedEventDto"
+            }
+          }
+        },
+        "required": ["rotateVisitor", "rotateSession", "disabled", "accepted", "rejected"]
+      },
+      "AnalyticsPlayReportDto": {
+        "type": "object",
+        "properties": {
+          "playId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "releaseId": {
+            "type": "number",
+            "description": "The published project being played"
+          },
+          "continued": {
+            "type": "boolean",
+            "description": "Reopened after a consent, identity or session change: never counted as a play"
+          },
+          "activeMs": {
+            "type": "number",
+            "description": "Cumulative running time the client measured for this play"
+          },
+          "startAgeMs": {
+            "type": "number",
+            "description": "Milliseconds since the play started, by the client clock"
+          }
+        },
+        "required": ["playId", "releaseId", "continued", "activeMs"]
+      },
+      "AnalyticsPlayDto": {
+        "type": "object",
+        "properties": {
+          "visitorId": {
+            "type": "string",
+            "description": "The visitor cookie",
+            "format": "uuid"
+          },
+          "sessionId": {
+            "type": "string",
+            "description": "The session cookie",
+            "format": "uuid"
+          },
+          "play": {
+            "$ref": "#/components/schemas/AnalyticsPlayReportDto"
+          },
+          "phase": {
+            "type": "string",
+            "enum": ["START", "END"]
+          },
+          "endReason": {
+            "type": "string",
+            "enum": ["stopped", "halted", "leave", "pagehide", "release-change", "rotated"]
+          }
+        },
+        "required": ["visitorId", "sessionId", "play", "phase"]
+      },
+      "AnalyticsPlayResponseDto": {
+        "type": "object",
+        "properties": {
+          "rotateVisitor": {
+            "type": "boolean",
+            "description": "The visitor id is erased or expired: start a new visitor and session"
+          },
+          "rotateSession": {
+            "type": "boolean",
+            "description": "The session is closed or not this visitor's: start a new session"
+          },
+          "disabled": {
+            "type": "boolean",
+            "description": "Analytics is off on this deployment: stop sending"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["ok", "ended", "rejected"],
+            "description": "`ended`: the play is over and takes no more progress; `rejected`: not this session's play"
+          }
+        },
+        "required": ["rotateVisitor", "rotateSession", "disabled", "status"]
+      },
+      "AnalyticsLiveState": {
+        "type": "string",
+        "enum": ["BROWSING", "BUILDING", "PLAYING", "HOSTING"]
+      },
+      "AnalyticsBeatDto": {
+        "type": "object",
+        "properties": {
+          "visitorId": {
+            "type": "string",
+            "description": "The visitor cookie",
+            "format": "uuid"
+          },
+          "sessionId": {
+            "type": "string",
+            "description": "The session cookie",
+            "format": "uuid"
+          },
+          "state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnalyticsLiveState"
+              }
+            ]
+          },
+          "releaseId": {
+            "type": "number",
+            "description": "The published project on screen, if any"
+          },
+          "play": {
+            "$ref": "#/components/schemas/AnalyticsPlayReportDto"
+          }
+        },
+        "required": ["visitorId", "sessionId", "state"]
+      },
+      "AnalyticsRotationDto": {
+        "type": "object",
+        "properties": {
+          "rotateVisitor": {
+            "type": "boolean",
+            "description": "The visitor id is erased or expired: start a new visitor and session"
+          },
+          "rotateSession": {
+            "type": "boolean",
+            "description": "The session is closed or not this visitor's: start a new session"
+          },
+          "disabled": {
+            "type": "boolean",
+            "description": "Analytics is off on this deployment: stop sending"
+          }
+        },
+        "required": ["rotateVisitor", "rotateSession", "disabled"]
+      },
+      "AnalyticsPingDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["BEAT", "PLAY_START", "FLUSH"]
+          },
+          "state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnalyticsLiveState"
+              }
+            ]
+          },
+          "signedIn": {
+            "type": "boolean",
+            "description": "Whether the tab is signed in; never which account"
+          },
+          "releaseId": {
+            "type": "number"
+          },
+          "playMs": {
+            "type": "number",
+            "description": "Running time since the previous ping of this tab, sent once and never retried",
+            "maximum": 65000
+          }
+        },
+        "required": ["kind", "state", "signedIn"]
+      },
+      "AnalyticsLinkDto": {
+        "type": "object",
+        "properties": {
+          "visitorId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": ["visitorId"]
+      },
+      "AnalyticsLinkResponseDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["linked", "conflict", "erased", "disabled"],
+            "description": "`conflict`: the visitor belongs to another account; `erased`: the visitor was erased or expired. Both mean: mint a new visitor and link that one. `disabled`: analytics is off."
+          }
+        },
+        "required": ["status"]
+      },
+      "AnalyticsMetricInfoDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "population": {
+            "type": "string",
+            "enum": ["C", "C_LINKED", "A", "C_AND_A", "F", "PRESENCE"]
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["additive", "max", "perGrain"]
+          },
+          "finalization": {
+            "type": "string",
+            "enum": ["ACTIVITY", "SESSION", "FACT", "MULTIPLAYER", "PRESENCE", "COHORT"]
+          },
+          "version": {
+            "type": "number"
+          },
+          "dimensions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "definition": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "population",
+          "kind",
+          "finalization",
+          "version",
+          "dimensions",
+          "definition"
+        ]
+      },
+      "AnalyticsMetricsResponseDto": {
+        "type": "object",
+        "properties": {
+          "metrics": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsMetricInfoDto"
+            }
+          },
+          "truncatedDimensions": {
+            "description": "Dimensions kept as their top values plus (other)",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "erasureContract": {
+            "type": "string"
+          }
+        },
+        "required": ["metrics", "truncatedDimensions", "erasureContract"]
+      },
+      "AnalyticsMetric": {
+        "type": "string",
+        "enum": [
+          "pageviews",
+          "sessions",
+          "sessions_bounced",
+          "session_seconds_total",
+          "session_seconds_median",
+          "active_minutes",
+          "build_minutes",
+          "plays",
+          "playtime_ms",
+          "visitors",
+          "visitors_new",
+          "visitors_returning",
+          "players",
+          "accounts_active",
+          "builders_active",
+          "signups",
+          "projects_created",
+          "releases_published",
+          "releases_updated",
+          "releases_unpublished",
+          "mp_rooms_created",
+          "mp_rooms_connected",
+          "mp_sessions",
+          "mp_participants",
+          "mp_minutes",
+          "mp_player_minutes",
+          "active_browsers_peak",
+          "anon_tabs_peak",
+          "accounts_peak",
+          "presence_minutes_sampled",
+          "active_browser_minutes",
+          "anon_tab_minutes"
+        ]
+      },
+      "AnalyticsGrain": {
+        "type": "string",
+        "enum": ["DAY", "WEEK", "MONTH"]
+      },
+      "AnalyticsPointDto": {
+        "type": "object",
+        "properties": {
+          "periodStart": {
+            "type": "string",
+            "description": "First day of the period, YYYY-MM-DD"
+          },
+          "value": {
+            "type": "number",
+            "nullable": true,
+            "description": "Null when unavailable, or when the metric has no value (a peak or median without data)"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["final", "provisional", "unavailable"],
+            "description": "`final`: frozen; `provisional`: computed from raw data, may still change; `unavailable`: raw data gone before it was finalized at this version"
+          },
+          "samplerCoverage": {
+            "type": "number",
+            "nullable": true,
+            "description": "Share of the minutes of the period that were sampled: whether we were measuring"
+          },
+          "ingestErrorRate": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": ["periodStart", "value", "status", "samplerCoverage", "ingestErrorRate"]
+      },
+      "AnalyticsSeriesDto": {
+        "type": "object",
+        "properties": {
+          "metric": {
+            "type": "string"
+          },
+          "dimension": {
+            "type": "string",
+            "description": "'' for the total"
+          },
+          "grain": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnalyticsGrain"
+              }
+            ]
+          },
+          "definitionVersion": {
+            "type": "number"
+          },
+          "points": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsPointDto"
+            }
+          }
+        },
+        "required": ["metric", "dimension", "grain", "definitionVersion", "points"]
+      },
+      "AnalyticsBreakdownValueDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "The dimension value, `(none)` when unknown, `(other)` for the folded rest"
+          },
+          "value": {
+            "type": "number"
+          }
+        },
+        "required": ["key", "value"]
+      },
+      "AnalyticsBreakdownDto": {
+        "type": "object",
+        "properties": {
+          "metric": {
+            "type": "string"
+          },
+          "dimension": {
+            "type": "string"
+          },
+          "grain": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnalyticsGrain"
+              }
+            ]
+          },
+          "periodStart": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["final", "provisional", "unavailable"]
+          },
+          "truncated": {
+            "type": "boolean",
+            "description": "Whether the rarest values were folded into (other)"
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsBreakdownValueDto"
+            }
+          }
+        },
+        "required": ["metric", "dimension", "grain", "periodStart", "status", "truncated", "values"]
+      },
+      "AnalyticsTileDto": {
+        "type": "object",
+        "properties": {
+          "metric": {
+            "type": "string"
+          },
+          "current": {
+            "$ref": "#/components/schemas/AnalyticsPointDto"
+          },
+          "previous": {
+            "$ref": "#/components/schemas/AnalyticsPointDto"
+          }
+        },
+        "required": ["metric", "current", "previous"]
+      },
+      "AnalyticsOverviewDto": {
+        "type": "object",
+        "properties": {
+          "grain": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnalyticsGrain"
+              }
+            ]
+          },
+          "periodStart": {
+            "type": "string"
+          },
+          "tiles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsTileDto"
+            }
+          }
+        },
+        "required": ["grain", "periodStart", "tiles"]
+      },
+      "AnalyticsPresenceSampleDto": {
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "string"
+          },
+          "activeBrowsers": {
+            "type": "number"
+          },
+          "activeBrowsersPlaying": {
+            "type": "number"
+          },
+          "activeBrowsersBuilding": {
+            "type": "number"
+          },
+          "activeBrowsersHosting": {
+            "type": "number"
+          },
+          "anonTabs": {
+            "type": "number"
+          },
+          "anonTabsPlaying": {
+            "type": "number"
+          },
+          "anonTabsBuilding": {
+            "type": "number"
+          },
+          "anonTabsHosting": {
+            "type": "number"
+          },
+          "accounts": {
+            "type": "number"
+          },
+          "accountsPlaying": {
+            "type": "number"
+          },
+          "accountsBuilding": {
+            "type": "number"
+          },
+          "accountsHosting": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "at",
+          "activeBrowsers",
+          "activeBrowsersPlaying",
+          "activeBrowsersBuilding",
+          "activeBrowsersHosting",
+          "anonTabs",
+          "anonTabsPlaying",
+          "anonTabsBuilding",
+          "anonTabsHosting",
+          "accounts",
+          "accountsPlaying",
+          "accountsBuilding",
+          "accountsHosting"
+        ]
+      },
+      "AnalyticsGameNowDto": {
+        "type": "object",
+        "properties": {
+          "releaseId": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "browsers": {
+            "type": "number",
+            "description": "Consenting browsers playing it in the last minute"
+          },
+          "anonTabs": {
+            "type": "number",
+            "description": "Anonymous pings from it in the last minute"
+          }
+        },
+        "required": ["releaseId", "name", "browsers", "anonTabs"]
+      },
+      "AnalyticsLiveDto": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string",
+            "description": "Minute-active, not instantaneous; accounts are instantaneous"
+          },
+          "samples": {
+            "description": "The last 60 sampled minutes",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsPresenceSampleDto"
+            }
+          },
+          "current": {
+            "description": "The current minute so far, provisional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnalyticsPresenceSampleDto"
+              }
+            ]
+          },
+          "gamesNow": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsGameNowDto"
+            }
+          }
+        },
+        "required": ["note", "samples", "current", "gamesNow"]
+      },
+      "AnalyticsPresenceDto": {
+        "type": "object",
+        "properties": {
+          "samples": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsPresenceSampleDto"
+            }
+          }
+        },
+        "required": ["samples"]
+      },
+      "AnalyticsRetentionKind": {
+        "type": "string",
+        "enum": ["VISITOR", "ACCOUNT"]
+      },
+      "AnalyticsCohortOffsetDto": {
+        "type": "object",
+        "properties": {
+          "offsetDays": {
+            "type": "number"
+          },
+          "retained": {
+            "type": "number",
+            "nullable": true,
+            "description": "Null until the return day is final"
+          },
+          "rate": {
+            "type": "number",
+            "nullable": true
+          },
+          "mature": {
+            "type": "boolean"
+          }
+        },
+        "required": ["offsetDays", "retained", "rate", "mature"]
+      },
+      "AnalyticsCohortDto": {
+        "type": "object",
+        "properties": {
+          "cohortDay": {
+            "type": "string"
+          },
+          "size": {
+            "type": "number"
+          },
+          "offsets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsCohortOffsetDto"
+            }
+          }
+        },
+        "required": ["cohortDay", "size", "offsets"]
+      },
+      "AnalyticsRetentionDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnalyticsRetentionKind"
+              }
+            ]
+          },
+          "version": {
+            "type": "number"
+          },
+          "cohorts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsCohortDto"
+            }
+          }
+        },
+        "required": ["kind", "version", "cohorts"]
+      },
+      "AnalyticsFunnelStepDto": {
+        "type": "object",
+        "properties": {
+          "step": {
+            "type": "string",
+            "enum": ["visited", "played", "signedUp", "createdProject", "published"]
+          },
+          "count": {
+            "type": "number"
+          }
+        },
+        "required": ["step", "count"]
+      },
+      "AnalyticsFunnelDto": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "population": {
+            "type": "string",
+            "description": "Consenting browsers first seen in the range, each step counted after the one before"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsFunnelStepDto"
+            }
+          }
+        },
+        "required": ["from", "to", "population", "steps"]
+      },
+      "AnalyticsGameDto": {
+        "type": "object",
+        "properties": {
+          "releaseId": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null for a game since deleted"
+          },
+          "plays": {
+            "type": "number"
+          },
+          "playtimeMs": {
+            "type": "number"
+          },
+          "players": {
+            "type": "number"
+          },
+          "mpSessions": {
+            "type": "number"
+          }
+        },
+        "required": ["releaseId", "name", "plays", "playtimeMs", "players", "mpSessions"]
+      },
+      "AnalyticsGamesDto": {
+        "type": "object",
+        "properties": {
+          "grain": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnalyticsGrain"
+              }
+            ]
+          },
+          "periodStart": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["final", "provisional", "unavailable"]
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsGameDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": ["grain", "periodStart", "status", "items", "total", "page", "limit"]
+      },
+      "UserAnalyticsTotalsDto": {
+        "type": "object",
+        "properties": {
+          "plays": {
+            "type": "number",
+            "description": "Games started, a restart counting as a new play"
+          },
+          "playtimeMs": {
+            "type": "number",
+            "description": "Time games ran in a visible tab"
+          }
+        },
+        "required": ["plays", "playtimeMs"]
+      },
+      "UserAnalyticsGameDto": {
+        "type": "object",
+        "properties": {
+          "releaseId": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null for a game since deleted"
+          },
+          "plays": {
+            "type": "number"
+          },
+          "playtimeMs": {
+            "type": "number"
+          }
+        },
+        "required": ["releaseId", "name", "plays", "playtimeMs"]
+      },
+      "UserAnalyticsSummaryDto": {
+        "type": "object",
+        "properties": {
+          "tracked": {
+            "type": "boolean",
+            "description": "Whether any browser that consented to analytics is linked to the account"
+          },
+          "linkedBrowsers": {
+            "type": "number"
+          },
+          "lifetime": {
+            "$ref": "#/components/schemas/UserAnalyticsTotalsDto"
+          },
+          "thisMonth": {
+            "description": "The current UTC calendar month",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserAnalyticsTotalsDto"
+              }
+            ]
+          },
+          "gamesPlayed": {
+            "type": "number"
+          },
+          "topGames": {
+            "description": "The five games played longest",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserAnalyticsGameDto"
+            }
+          },
+          "lastActiveAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastActiveIsExact": {
+            "type": "boolean",
+            "description": "Whether lastActiveAt is exact, or only the day once the raw data is gone"
+          }
+        },
+        "required": [
+          "tracked",
+          "linkedBrowsers",
+          "lifetime",
+          "thisMonth",
+          "gamesPlayed",
+          "topGames",
+          "lastActiveAt",
+          "lastActiveIsExact"
+        ]
+      },
+      "AnalyticsIngestTotalsDto": {
+        "type": "object",
+        "properties": {
+          "accepted": {
+            "type": "number"
+          },
+          "rejected": {
+            "type": "number"
+          },
+          "throttled": {
+            "type": "number"
+          },
+          "writeErrors": {
+            "type": "number"
+          }
+        },
+        "required": ["accepted", "rejected", "throttled", "writeErrors"]
+      },
+      "AnalyticsClassLagDto": {
+        "type": "object",
+        "properties": {
+          "finalization": {
+            "type": "string"
+          },
+          "lastFinalDay": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": ["finalization"]
+      },
+      "AnalyticsHealthDto": {
+        "type": "object",
+        "properties": {
+          "ingest": {
+            "description": "Over the last 24 hours",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnalyticsIngestTotalsDto"
+              }
+            ]
+          },
+          "finalization": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsClassLagDto"
+            }
+          },
+          "projectionBacklog": {
+            "type": "number"
+          },
+          "oldestProjectionWork": {
+            "type": "string",
+            "nullable": true
+          },
+          "oldestRawDay": {
+            "type": "string",
+            "nullable": true,
+            "description": "Oldest raw day still stored"
+          }
+        },
+        "required": [
+          "ingest",
+          "finalization",
+          "projectionBacklog",
+          "oldestProjectionWork",
+          "oldestRawDay"
+        ]
+      },
+      "ExportVisitorDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "firstSeenAt": {
+            "type": "string"
+          },
+          "lastSeenAt": {
+            "type": "string"
+          },
+          "linkedAt": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": ["id", "firstSeenAt", "lastSeenAt", "linkedAt"]
+      },
+      "ExportSessionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "visitorId": {
+            "type": "string"
+          },
+          "startedAt": {
+            "type": "string"
+          },
+          "lastSeenAt": {
+            "type": "string"
+          },
+          "closedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "referrerDomain": {
+            "type": "string",
+            "nullable": true
+          },
+          "utmSource": {
+            "type": "string",
+            "nullable": true
+          },
+          "utmMedium": {
+            "type": "string",
+            "nullable": true
+          },
+          "utmCampaign": {
+            "type": "string",
+            "nullable": true
+          },
+          "device": {
+            "type": "string"
+          },
+          "browser": {
+            "type": "string",
+            "nullable": true
+          },
+          "os": {
+            "type": "string",
+            "nullable": true
+          },
+          "country": {
+            "type": "string",
+            "nullable": true
+          },
+          "screen": {
+            "type": "string",
+            "nullable": true
+          },
+          "language": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "visitorId",
+          "startedAt",
+          "lastSeenAt",
+          "closedAt",
+          "referrerDomain",
+          "utmSource",
+          "utmMedium",
+          "utmCampaign",
+          "device",
+          "browser",
+          "os",
+          "country",
+          "screen",
+          "language"
+        ]
+      },
+      "ExportSessionDayDto": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string"
+          },
+          "day": {
+            "type": "string"
+          },
+          "pageViews": {
+            "type": "number"
+          },
+          "activeMinutes": {
+            "type": "number"
+          },
+          "buildMinutes": {
+            "type": "number"
+          },
+          "playMs": {
+            "type": "number"
+          }
+        },
+        "required": ["sessionId", "day", "pageViews", "activeMinutes", "buildMinutes", "playMs"]
+      },
+      "ExportPageViewDto": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string"
+          },
+          "occurredAt": {
+            "type": "string"
+          },
+          "route": {
+            "type": "string"
+          }
+        },
+        "required": ["sessionId", "occurredAt", "route"]
+      },
+      "ExportPlayDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "sessionId": {
+            "type": "string"
+          },
+          "releaseId": {
+            "type": "number"
+          },
+          "continued": {
+            "type": "boolean"
+          },
+          "startedAt": {
+            "type": "string"
+          },
+          "activeMs": {
+            "type": "number"
+          },
+          "endedAt": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "sessionId",
+          "releaseId",
+          "continued",
+          "startedAt",
+          "activeMs",
+          "endedAt"
+        ]
+      },
+      "ExportHistoryDayDto": {
+        "type": "object",
+        "properties": {
+          "day": {
+            "type": "string"
+          },
+          "releaseId": {
+            "type": "number"
+          },
+          "plays": {
+            "type": "number"
+          },
+          "activeMs": {
+            "type": "number"
+          },
+          "activeMinutes": {
+            "type": "number"
+          }
+        },
+        "required": ["day", "releaseId", "plays", "activeMs", "activeMinutes"]
+      },
+      "ExportFactDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string"
+          },
+          "projectId": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": ["type", "at", "projectId"]
+      },
+      "ExportReleaseViewDto": {
+        "type": "object",
+        "properties": {
+          "projectId": {
+            "type": "number"
+          },
+          "day": {
+            "type": "string"
+          }
+        },
+        "required": ["projectId", "day"]
+      },
+      "UserAnalyticsExportDto": {
+        "type": "object",
+        "properties": {
+          "exportedAt": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string",
+            "description": "What the export holds: raw activity is kept 90 days; the history by day is kept while the account exists"
+          },
+          "browsers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExportVisitorDto"
+            }
+          },
+          "sessions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExportSessionDto"
+            }
+          },
+          "sessionDays": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExportSessionDayDto"
+            }
+          },
+          "pageViews": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExportPageViewDto"
+            }
+          },
+          "plays": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExportPlayDto"
+            }
+          },
+          "history": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExportHistoryDayDto"
+            }
+          },
+          "facts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExportFactDto"
+            }
+          },
+          "releaseViews": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExportReleaseViewDto"
+            }
+          }
+        },
+        "required": [
+          "exportedAt",
+          "note",
+          "browsers",
+          "sessions",
+          "sessionDays",
+          "pageViews",
+          "plays",
+          "history",
+          "facts",
+          "releaseViews"
+        ]
+      },
+      "UserAnalyticsEraseResponseDto": {
+        "type": "object",
+        "properties": {
+          "erasedBrowsers": {
+            "type": "number",
+            "description": "Browsers whose analytics were erased; they will start afresh"
+          }
+        },
+        "required": ["erasedBrowsers"]
+      },
       "LoginDto": {
         "type": "object",
         "properties": {
@@ -7236,9 +9411,14 @@
             "type": "boolean",
             "description": "Whether a game's monetization settings are offered. Off unless a deployment turns it on.",
             "example": false
+          },
+          "analytics": {
+            "type": "boolean",
+            "description": "Whether usage analytics run: the consent banner shows and consenting browsers are measured. Off unless a deployment turns it on.",
+            "example": false
           }
         },
-        "required": ["monetization"]
+        "required": ["monetization", "analytics"]
       },
       "GameTableStateMessage": {
         "type": "object",

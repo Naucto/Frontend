@@ -247,7 +247,7 @@ export function injectFork(): CreateMutationResult<ForkProjectResponseDto, Error
 }
 
 export const registerView = (id: number): void => {
-  void hubControllerRegisterReleaseView({ path: { id: String(id) } });
+  void hubControllerRegisterReleaseView({ path: { id: String(id) }, body: {} });
 };
 
 export const SORTERS: Record<
