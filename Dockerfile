@@ -16,7 +16,8 @@ COPY packages/api-client/package.json packages/api-client/openapi.json packages/
 # it (it no-ops here because the worklet source only arrives in the build stage).
 COPY packages/engine/scripts packages/engine/scripts
 # No registry credential is mounted: `@naucto/api-client` resolves from the workspace.
-RUN --mount=type=cache,target=/root/.npm npm ci --no-audit --no-fund
+# No cache mount: the deploying host builds with the classic builder, which rejects --mount.
+RUN npm ci --no-audit --no-fund
 
 # Dev server with hot reload; docker-compose.dev.yml syncs the sources into it.
 FROM deps AS dev
