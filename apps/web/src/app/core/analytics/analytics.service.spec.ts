@@ -103,6 +103,14 @@ describe('AnalyticsService', () => {
     expect(posted[0]?.options.keepalive).toBe(true);
   });
 
+  it('counts the landing page when the service starts before the first navigation', async () => {
+    TestBed.inject(AnalyticsService);
+    TestBed.tick();
+    await TestBed.inject(Router).navigateByUrl('/play/3');
+
+    expect(routesSent()).toEqual(['play/:id']);
+  });
+
   it('stamps each view with the visitor and a live session', async () => {
     await start();
 

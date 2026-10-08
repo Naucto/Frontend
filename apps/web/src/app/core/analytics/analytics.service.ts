@@ -43,7 +43,7 @@ export class AnalyticsService {
   constructor() {
     const navigations = this.router.events.subscribe((event) => {
       if (event instanceof NavigationEnd) {
-        this.capture();
+        this.capture(event.urlAfterRedirects);
       }
     });
 
@@ -51,7 +51,10 @@ export class AnalyticsService {
       const collecting = this.collecting();
       untracked(() => {
         if (collecting) {
-          this.capture();
+          // Before the first navigation ends there is no page yet; its NavigationEnd counts it.
+          if (this.router.navigated) {
+            this.capture(this.router.url);
+          }
         } else {
           this.queue.clear();
           this.lastPath = null;
@@ -89,11 +92,11 @@ export class AnalyticsService {
     );
   }
 
-  private capture(): void {
-    if (!this.router.navigated || !untracked(() => this.collecting())) {
+  private capture(url: string): void {
+    if (!untracked(() => this.collecting())) {
       return;
     }
-    const path = pagePath(this.router.url);
+    const path = pagePath(url);
     const route = routeKey(this.router.routerState.snapshot.root);
     if (route === null || path === this.lastPath) {
       return;
