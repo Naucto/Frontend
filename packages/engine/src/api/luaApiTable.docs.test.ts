@@ -44,7 +44,7 @@ const NOT_DOCUMENTED: Record<string, string> = {
   undefined: 'fengari’s io library, present in Node and not in a browser',
 };
 
-const driver = { request: () => 0, cancel: () => undefined };
+const driver = { request: () => 0, cancel: () => undefined, now: () => 0 };
 
 /**
  * Runs `code` as a whole game for three steps, so an example written as `_update` and `_draw` runs

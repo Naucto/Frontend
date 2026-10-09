@@ -13,7 +13,7 @@ import type { InputState } from '../input/InputState';
 import { STEP_MS } from '../loop/GameLoop';
 import { Engine } from './Engine';
 
-const driver = { request: () => 0, cancel: () => undefined };
+const driver = { request: () => 0, cancel: () => undefined, now: () => 0 };
 
 describe('Engine', () => {
   it('runs the starter game headlessly and moves the moon with held("right")', () => {
@@ -61,6 +61,27 @@ describe('Engine', () => {
     expect(engine.stats.frame).toBe(ran + 1);
     engine.stepOnce();
     expect(engine.stats.frame).toBe(ran + 2);
+    engine.destroy();
+  });
+
+  it('catches up on _update alone and draws once per frame shown', () => {
+    const game = new EditableGame(new Y.Doc());
+    game.seedDefaults();
+    const file = game.files[0];
+    file?.text.delete(0, file.text.length);
+    file?.text.insert(
+      0,
+      'updates, draws = 0, 0\n' +
+        'function _update() updates = updates + 1 end\n' +
+        'function _draw() draws = draws + 1 print(updates .. ":" .. draws) end',
+    );
+    const engine = new Engine({ game, gfx: new RecordingBackend(), driver });
+    expect(engine.load()).toBeNull();
+    engine.run();
+    engine.tick(STEP_MS * 3);
+    expect(engine.console.lines.map((line) => line.text)).toEqual(['3:1']);
+    engine.stepOnce();
+    expect(engine.console.lines.at(-1)?.text).toBe('4:2');
     engine.destroy();
   });
 

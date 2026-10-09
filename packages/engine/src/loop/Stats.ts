@@ -2,13 +2,18 @@
 export class Stats {
   frame = 0;
   fps = 0;
-  /** Step time as a share of one fixed step. */
+  /** One update and one draw, as a share of one fixed step: past 1, the game cannot keep 60 Hz. */
   cpu = 0;
   private readonly samples: number[] = [];
   private lastPresent = 0;
+  private lastUpdate = 0;
 
-  recordStep(ms: number): void {
-    this.cpu = ms / (1000 / 60);
+  recordUpdate(ms: number): void {
+    this.lastUpdate = ms;
+  }
+
+  recordDraw(ms: number): void {
+    this.cpu = (this.lastUpdate + ms) / (1000 / 60);
   }
 
   recordPresent(now: number): void {
@@ -29,6 +34,7 @@ export class Stats {
     this.frame = 0;
     this.fps = 0;
     this.cpu = 0;
+    this.lastUpdate = 0;
     this.samples.length = 0;
     this.lastPresent = 0;
   }

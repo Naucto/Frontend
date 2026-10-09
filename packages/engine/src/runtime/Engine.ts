@@ -104,9 +104,7 @@ export class Engine {
     this.console = new ConsoleBuffer(opts.consoleCapacity ?? 500);
     this.loop = new GameLoop(
       () => this.step(),
-      () => {
-        this.present();
-      },
+      () => this.present(),
       opts.driver,
     );
     for (const src of opts.inputs ?? []) {
@@ -346,6 +344,7 @@ export class Engine {
 
   // ---- internals ------------------------------------------------------------
 
+  /** One fixed update. Drawing is the frame's, in {@link present}: a catch-up step draws nothing. */
   private step(): boolean {
     const lua = this.lua;
     if (!lua) {
@@ -364,6 +363,27 @@ export class Engine {
       this.fail('update', error);
       return false;
     }
+    this.opts.sound?.flush();
+    this.stats.recordUpdate(performance.now() - t0);
+    return true;
+  }
+
+  /** Draws the state the last step left and shows it; a draw that fails still shows what it drew. */
+  private present(): boolean {
+    const lua = this.lua;
+    if (!lua) {
+      return false;
+    }
+    const t0 = performance.now();
+    const ok = this.draw(lua);
+    this.opts.gfx.present();
+    const now = performance.now();
+    this.stats.recordDraw(now - t0);
+    this.stats.recordPresent(now);
+    return ok;
+  }
+
+  private draw(lua: LuaEnvironment): boolean {
     this.opts.gfx.begin();
     try {
       lua.callGlobal('_draw');
@@ -371,7 +391,7 @@ export class Engine {
       this.fail('draw', error);
       return false;
     }
-    // Looked up every step, since a game may define or replace it at any time; a game without one
+    // Looked up every frame, since a game may define or replace it at any time; a game without one
     // pays this one lookup and nothing else.
     const scanline = lua.getGlobalFunction('_scanline');
     if (scanline && this.gfxApi) {
@@ -382,14 +402,7 @@ export class Engine {
         return false;
       }
     }
-    this.opts.sound?.flush();
-    this.stats.recordStep(performance.now() - t0);
     return true;
-  }
-
-  private present(): void {
-    this.opts.gfx.present();
-    this.stats.recordPresent(performance.now());
   }
 
   /**

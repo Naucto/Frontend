@@ -9,7 +9,7 @@ import { RecordingBackend } from '../gfx/RecordingBackend';
 import { STEP_MS } from '../loop/GameLoop';
 import { Engine } from './Engine';
 
-const driver = { request: () => 0, cancel: () => undefined };
+const driver = { request: () => 0, cancel: () => undefined, now: () => 0 };
 const DEMO = fileURLToPath(new URL('../../../../e2e/docs/lua/gfx-photo.lua', import.meta.url));
 
 /** Draws every pixel of the frame inside one step, so it is the worst case the step budget has to carry. */
