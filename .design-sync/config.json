@@ -1,0 +1,10 @@
+{
+  "projectId": "e2b94d02-0d43-4155-9c3a-6b2a0ed43c36",
+  "shape": "package",
+  "pkg": "@naucto/ui",
+  "globalName": "Naucto",
+  "buildCmd": "node .design-sync/build-css.mjs",
+  "cssEntry": ".ds-sync/naucto.css",
+  "guidelinesGlob": [],
+  "readmeHeader": ".design-sync/conventions.md"
+}
