@@ -21,3 +21,8 @@ packages/api-client/src/
 
 # bundles built for another image (npm run migrate:games:build)
 dist-tools/
+.ds-sync/
+ds-bundle/
+.design-sync/.cache/
+.design-sync/learnings/
+.design-sync/node_modules

@@ -18,6 +18,8 @@ export default tseslint.config(
       'patches/**',
       'apps/web/src/assets/docs/**',
       'packages/api-client/src/**',
+      '.ds-sync/**',
+      'ds-bundle/**',
     ],
   },
   {
