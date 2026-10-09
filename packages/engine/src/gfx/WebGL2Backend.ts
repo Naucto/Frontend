@@ -41,8 +41,10 @@ const PALETTE_ROWS = SCREEN_HEIGHT + 1;
 
 /** Quads one draw call carries; a batch that grows past it is drawn in two. */
 const MAX_QUADS = 4096;
-/** Two triangles: six vertices of two floats. */
-const FLOATS_PER_QUAD = 12;
+/** Position, texture coordinate and ink, interleaved. */
+const FLOATS_PER_VERTEX = 5;
+/** Two triangles: six vertices. */
+const FLOATS_PER_QUAD = 6 * FLOATS_PER_VERTEX;
 
 type BatchSource = 'sheet' | 'map' | 'font' | 'solid';
 
@@ -57,20 +59,18 @@ export class WebGL2Backend implements GfxBackend {
   private readonly fbo: WebGLFramebuffer;
   private readonly textures: WebGLTexture[] = [];
   private readonly vao: WebGLVertexArrayObject;
-  private readonly posBuffer: WebGLBuffer;
-  private readonly uvBuffer: WebGLBuffer;
+  private readonly vertexBuffer: WebGLBuffer;
   private readonly uCamera: WebGLUniformLocation | null;
   private readonly uRemap: WebGLUniformLocation | null;
   private readonly uTransparent: WebGLUniformLocation | null;
-  private readonly uSolid: WebGLUniformLocation | null;
+  private readonly uSample: WebGLUniformLocation | null;
   private readonly uSrc: WebGLUniformLocation | null;
 
   /**
    * Vertex scratch, written in place and uploaded up to `quadCount`. A flush happens several times
-   * a frame, so the arrays and the GL buffers behind them are sized once for the largest batch.
+   * a frame, so the array and the GL buffer behind it are sized once for the largest batch.
    */
   private readonly verts = new Float32Array(MAX_QUADS * FLOATS_PER_QUAD);
-  private readonly uvs = new Float32Array(MAX_QUADS * FLOATS_PER_QUAD);
   private quadCount = 0;
   private batchSource: BatchSource = 'sheet';
   private batchTexture = '';
@@ -78,8 +78,11 @@ export class WebGL2Backend implements GfxBackend {
   private readonly sheetTextures = new Map<string, WebGLTexture>();
   /** One per map, keyed by its id, on the map texture unit the same way. */
   private readonly mapTextures = new Map<string, MapTexture>();
-  private batchSolid = -1;
-  private batchTextColour = -1;
+  /**
+   * What the quads pushed next draw as: a solid's colour, a glyph's ink, or -1 for what the texture
+   * holds. It travels with each vertex, so a change of colour does not end the batch.
+   */
+  private ink = -1;
   private batchTransparent = 1;
 
   private cameraX = 0;
@@ -179,18 +182,27 @@ export class WebGL2Backend implements GfxBackend {
 
     this.vao = gl.createVertexArray();
     gl.bindVertexArray(this.vao);
-    this.posBuffer = gl.createBuffer();
-    this.uvBuffer = gl.createBuffer();
-    const aPos = gl.getAttribLocation(this.drawProgram, 'a_pos');
-    const aUv = gl.getAttribLocation(this.drawProgram, 'a_uv');
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.posBuffer);
+    this.vertexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, this.verts.byteLength, gl.STREAM_DRAW);
-    gl.enableVertexAttribArray(aPos);
-    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.uvBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, this.uvs.byteLength, gl.STREAM_DRAW);
-    gl.enableVertexAttribArray(aUv);
-    gl.vertexAttribPointer(aUv, 2, gl.FLOAT, false, 0, 0);
+    const stride = FLOATS_PER_VERTEX * Float32Array.BYTES_PER_ELEMENT;
+    const attributes = [
+      ['a_pos', 2, 0],
+      ['a_uv', 2, 2],
+      ['a_ink', 1, 4],
+    ] as const;
+    for (const [name, size, offset] of attributes) {
+      const location = gl.getAttribLocation(this.drawProgram, name);
+      gl.enableVertexAttribArray(location);
+      gl.vertexAttribPointer(
+        location,
+        size,
+        gl.FLOAT,
+        false,
+        stride,
+        offset * Float32Array.BYTES_PER_ELEMENT,
+      );
+    }
     gl.bindVertexArray(null);
 
     gl.useProgram(this.drawProgram);
@@ -198,7 +210,7 @@ export class WebGL2Backend implements GfxBackend {
     this.uCamera = gl.getUniformLocation(this.drawProgram, 'u_camera');
     this.uRemap = gl.getUniformLocation(this.drawProgram, 'u_remap');
     this.uTransparent = gl.getUniformLocation(this.drawProgram, 'u_transparent');
-    this.uSolid = gl.getUniformLocation(this.drawProgram, 'u_solid');
+    this.uSample = gl.getUniformLocation(this.drawProgram, 'u_sample');
     this.uSrc = gl.getUniformLocation(this.drawProgram, 'u_src');
     gl.useProgram(this.presentProgram);
     gl.uniform1i(gl.getUniformLocation(this.presentProgram, 'u_frame'), UNIT_FRAME);
@@ -847,8 +859,7 @@ export class WebGL2Backend implements GfxBackend {
     gl.deleteProgram(this.presentProgram);
     gl.deleteFramebuffer(this.fbo);
     gl.deleteVertexArray(this.vao);
-    gl.deleteBuffer(this.posBuffer);
-    gl.deleteBuffer(this.uvBuffer);
+    gl.deleteBuffer(this.vertexBuffer);
     if (this.grab) {
       gl.deleteFramebuffer(this.grab.fbo);
       gl.deleteRenderbuffer(this.grab.rbo);
@@ -909,10 +920,9 @@ export class WebGL2Backend implements GfxBackend {
         sheet, or a second map, is a second batch. */
     texture = '',
   ): void {
+    this.ink = solid >= 0 ? solid : textColour;
     if (
       source === this.batchSource &&
-      solid === this.batchSolid &&
-      textColour === this.batchTextColour &&
       transparent === this.batchTransparent &&
       texture === this.batchTexture
     ) {
@@ -920,8 +930,6 @@ export class WebGL2Backend implements GfxBackend {
     }
     this.flush();
     this.batchSource = source;
-    this.batchSolid = solid;
-    this.batchTextColour = textColour;
     this.batchTransparent = transparent;
     this.batchTexture = texture;
   }
@@ -938,33 +946,39 @@ export class WebGL2Backend implements GfxBackend {
   ): void {
     const x1 = x + width;
     const y1 = y + height;
-    const offset = this.quadCount * FLOATS_PER_QUAD;
+    const ink = this.ink;
     const vertices = this.verts;
-    const textureCoords = this.uvs;
-    vertices[offset] = x;
-    vertices[offset + 1] = y;
-    vertices[offset + 2] = x1;
-    vertices[offset + 3] = y;
-    vertices[offset + 4] = x;
-    vertices[offset + 5] = y1;
-    vertices[offset + 6] = x;
-    vertices[offset + 7] = y1;
-    vertices[offset + 8] = x1;
-    vertices[offset + 9] = y;
-    vertices[offset + 10] = x1;
-    vertices[offset + 11] = y1;
-    textureCoords[offset] = u0;
-    textureCoords[offset + 1] = v0;
-    textureCoords[offset + 2] = u1;
-    textureCoords[offset + 3] = v0;
-    textureCoords[offset + 4] = u0;
-    textureCoords[offset + 5] = v1;
-    textureCoords[offset + 6] = u0;
-    textureCoords[offset + 7] = v1;
-    textureCoords[offset + 8] = u1;
-    textureCoords[offset + 9] = v0;
-    textureCoords[offset + 10] = u1;
-    textureCoords[offset + 11] = v1;
+    let offset = this.quadCount * FLOATS_PER_QUAD;
+    vertices[offset++] = x;
+    vertices[offset++] = y;
+    vertices[offset++] = u0;
+    vertices[offset++] = v0;
+    vertices[offset++] = ink;
+    vertices[offset++] = x1;
+    vertices[offset++] = y;
+    vertices[offset++] = u1;
+    vertices[offset++] = v0;
+    vertices[offset++] = ink;
+    vertices[offset++] = x;
+    vertices[offset++] = y1;
+    vertices[offset++] = u0;
+    vertices[offset++] = v1;
+    vertices[offset++] = ink;
+    vertices[offset++] = x;
+    vertices[offset++] = y1;
+    vertices[offset++] = u0;
+    vertices[offset++] = v1;
+    vertices[offset++] = ink;
+    vertices[offset++] = x1;
+    vertices[offset++] = y;
+    vertices[offset++] = u1;
+    vertices[offset++] = v0;
+    vertices[offset++] = ink;
+    vertices[offset++] = x1;
+    vertices[offset++] = y1;
+    vertices[offset++] = u1;
+    vertices[offset++] = v1;
+    vertices[offset] = ink;
     this.quadCount++;
     if (this.quadCount === MAX_QUADS) {
       this.flush();
@@ -996,24 +1010,14 @@ export class WebGL2Backend implements GfxBackend {
       gl.bindTexture(gl.TEXTURE_2D, this.mapTextures.get(this.batchTexture)?.tex ?? null);
     }
     gl.uniform1i(this.uSrc, unit);
-    gl.uniform1i(this.uSolid, this.batchSource === 'solid' ? this.batchSolid : -1);
+    gl.uniform1i(this.uSample, this.batchSource === 'solid' ? 0 : 1);
     gl.uniform1i(this.uTransparent, this.batchTransparent);
-    if (this.batchSource === 'font') {
-      // Glyph atlas holds 0/1: map 1 → colour, and hide 0.
-      const remapTable = new Int32Array(16);
-      remapTable.set(this.remap);
-      remapTable[1] = this.remap[this.batchTextColour] ?? this.batchTextColour;
-      gl.uniform1iv(this.uRemap, remapTable);
-      this.remapDirty = true;
-    } else if (this.remapDirty) {
+    if (this.remapDirty) {
       gl.uniform1iv(this.uRemap, this.remap);
       this.remapDirty = false;
     }
-    const floatCount = this.quadCount * FLOATS_PER_QUAD;
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.posBuffer);
-    gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.verts, 0, floatCount);
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.uvBuffer);
-    gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.uvs, 0, floatCount);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.verts, 0, this.quadCount * FLOATS_PER_QUAD);
     gl.drawArrays(gl.TRIANGLES, 0, this.quadCount * 6);
     this.quadCount = 0;
   }
