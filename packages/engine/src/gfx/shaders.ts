@@ -7,12 +7,15 @@ uniform vec2 u_screen;
 uniform vec2 u_camera;
 in vec2 a_pos;
 in vec2 a_uv;
+in float a_ink;
 out vec2 v_uv;
+flat out int v_ink;
 void main() {
   vec2 n = (a_pos - u_camera) / u_screen;
   vec2 clip = n * 2.0 - 1.0;
   gl_Position = vec4(clip.x, -clip.y, 0.0, 1.0);
   v_uv = a_uv;
+  v_ink = int(a_ink);
 }`;
 
 export const DRAW_FS = `#version 300 es
@@ -21,16 +24,16 @@ precision highp int;
 uniform sampler2D u_src;
 uniform int u_remap[16];
 uniform int u_transparent; // bitmask of transparent indices
-uniform int u_solid;       // -1 = sample texture, else draw this index
+uniform bool u_sample;     // false: the quad is its ink, nothing is sampled
 in vec2 v_uv;
+flat in int v_ink;         // -1 keeps the sampled index, else what an opaque texel draws as
 out vec4 o_index;
 void main() {
-  int idx;
-  if (u_solid >= 0) {
-    idx = u_solid;
-  } else {
-    idx = int(texture(u_src, v_uv).r * 255.0 + 0.5);
-    if (((u_transparent >> idx) & 1) == 1) discard;
+  int idx = v_ink;
+  if (u_sample) {
+    int texel = int(texture(u_src, v_uv).r * 255.0 + 0.5);
+    if (((u_transparent >> texel) & 1) == 1) discard;
+    if (v_ink < 0) idx = texel;
   }
   idx = u_remap[idx & 15];
   o_index = vec4(float(idx) / 255.0, 0.0, 0.0, 1.0);

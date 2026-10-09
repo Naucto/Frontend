@@ -169,7 +169,10 @@ broken; an absence reads as not built.
 
 ## Gotchas
 
-- `fengari` needs `patches/fengari+0.1.5.patch` (applied by `patch-package` on `postinstall`).
+- `fengari` needs `patches/fengari+0.1.5.patch` (applied by `patch-package` on `postinstall`). Besides
+  keeping Node-only modules out of the browser bundle, it clears a released stack slot by assigning
+  `undefined` rather than with `delete`: SpiderMonkey never compiles `delete` on an array element,
+  and the VM releases slots on every call return, which cost an eighth of a running game on Firefox.
 - `packages/api-client/src` is generated from `packages/api-client/openapi.json` by the same
   `postinstall` and gitignored. After replacing `openapi.json`, run
   `npm run generate -w @naucto/api-client`.

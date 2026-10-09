@@ -215,7 +215,7 @@ class LuaEnvironment {
   }
 
   public getObject(index: number): unknown {
-    return this.readValue(index, 0, new Set());
+    return this.readValue(index, 0, null);
   }
 
   /** A bridged table read back is a copy of what its proxy lists, since its raw entries are empty. */
@@ -235,9 +235,10 @@ class LuaEnvironment {
 
   /**
    * `inside` holds the addresses of the tables this read is already within, so a table that reaches
-   * itself is a cycle rather than an endless walk.
+   * itself is a cycle rather than an endless walk. It stays null until the read meets a table, since
+   * nearly every read is a scalar argument of a host call.
    */
-  private readValue(index: number, depth: number, inside: Set<number>): unknown {
+  private readValue(index: number, depth: number, inside: Set<number> | null): unknown {
     let value: unknown;
 
     switch (fengari.lua.lua_type(this.stack, index)) {
@@ -268,24 +269,25 @@ class LuaEnvironment {
           value = this.snapshot(bridged);
           break;
         }
-        if (inside.has(address)) {
+        const within = inside ?? new Set<number>();
+        if (within.has(address)) {
           throw new LuaError('table contains itself');
         }
         if (depth >= MAX_TABLE_DEPTH) {
           throw new LuaError('table nested deeper than the host can take');
         }
 
-        inside.add(address);
+        within.add(address);
         const table: Record<string, unknown> = {};
         try {
           fengari.lua.lua_pushnil(this.stack);
           while (fengari.lua.lua_next(this.stack, tableIndex) !== 0) {
-            const key = String(this.readValue(-2, depth + 1, inside));
-            table[key] = this.readValue(-1, depth + 1, inside);
+            const key = String(this.readValue(-2, depth + 1, within));
+            table[key] = this.readValue(-1, depth + 1, within);
             fengari.lua.lua_pop(this.stack, 1);
           }
         } finally {
-          inside.delete(address);
+          within.delete(address);
         }
 
         value = table;
@@ -401,13 +403,12 @@ class LuaEnvironment {
           // A JS throw escaping into fengari surfaces as an opaque non-string
           // error, so convert it into a proper Lua error carrying the message.
           try {
-            const args = Array.from({ length: fengari.lua.lua_gettop(state) }, (_, i) =>
-              this.getObject(i + 1),
-            );
-
-            while (fengari.lua.lua_gettop(state) > 0) {
-              fengari.lua.lua_remove(state, 1);
+            const count = fengari.lua.lua_gettop(state);
+            const args: unknown[] = new Array(count);
+            for (let i = 0; i < count; i++) {
+              args[i] = this.getObject(i + 1);
             }
+            fengari.lua.lua_settop(state, 0);
 
             const returnValues = value(...args);
 
@@ -543,18 +544,22 @@ class LuaEnvironment {
         table[name] = member.value(api);
         continue;
       }
+      const params = member.params;
       table[name] = (...args: unknown[]) => {
-        const values = member.params.map((param, i) => {
-          try {
-            return param.rest
+        const values: unknown[] = new Array(params.length);
+        let i = 0;
+        try {
+          for (; i < params.length; i++) {
+            const param = params[i]!;
+            values[i] = param.rest
               ? param.read(args.slice(i), true)
               : param.read(args[i], i < args.length);
-          } catch (error) {
-            throw new LuaError(
-              `bad argument #${String(i + 1)} to '${namespace.name}.${name}' (${error instanceof Error ? error.message : String(error)})`,
-            );
           }
-        });
+        } catch (error) {
+          throw new LuaError(
+            `bad argument #${String(i + 1)} to '${namespace.name}.${name}' (${error instanceof Error ? error.message : String(error)})`,
+          );
+        }
         return member.call(api, values);
       };
     }
