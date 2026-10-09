@@ -1,11 +1,6 @@
-// Compiles the nc-* kit's Tailwind v4 source into the plain stylesheet Claude Design ships.
-//
-// tokens.css is Tailwind input (@theme, @utility), which a browser cannot read, so the sync
-// ships its compiled output instead: the custom properties, the base and component layers,
-// and every utility class the app and the kit actually use, scanned from their templates.
-// That scan is the vocabulary the design agent is told it may write.
-//
-// Usage (from the Frontend root): node .design-sync/build-css.mjs  ->  .ds-sync/naucto.css
+// The kit's tokens are Tailwind source, which a browser cannot read, so the sync ships them
+// compiled. Utilities are generated only for the classes the kit and the app use, which makes
+// the stylesheet the exact vocabulary the design agent may write, and nothing beyond it.
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
@@ -31,8 +26,8 @@ const scanner = new Scanner({
 });
 let css = compiler.build(scanner.scan());
 
-// The app serves the faces from /fonts at runtime; point at the files themselves so the
-// converter can copy them into the bundle.
+// The app resolves the faces against its served root, which does not exist on disk; the
+// converter copies only fonts it can read from a file path.
 const fontsRel = relative(dirname(OUT), FONTS);
 css = css.replace(/url\((['"]?)\/fonts\//g, `url($1${fontsRel}/`);
 
