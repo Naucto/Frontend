@@ -30,6 +30,7 @@ import {
 } from '@naucto/ui';
 import { filter } from 'rxjs';
 
+import { ActivityService } from '../../core/analytics/activity.service';
 import { PresenceStore } from '../../core/presence/presence.store';
 import { RuntimeHostService } from '../../shared/game-screen/runtime-host.service';
 import { UserAvatarComponent } from '../../shared/user-avatar.component';
@@ -128,6 +129,7 @@ export default class EditorShellComponent implements OnInit {
   readonly id = input.required({ transform: numberAttribute });
   protected readonly String = String;
   private readonly presence = inject(PresenceStore);
+  private readonly activity = inject(ActivityService);
   private readonly docRequests = inject(DocRequestService);
   private readonly editorRuntime = inject(EditorRuntimeService);
   protected readonly session = inject(WorkSessionService);
@@ -220,8 +222,10 @@ export default class EditorShellComponent implements OnInit {
     effect((onCleanup) => {
       const projectId = this.id();
       this.presence.announce({ kind: 'BUILDING', projectId });
+      const release = this.activity.claim({ state: 'BUILDING' });
       onCleanup(() => {
         this.presence.announce({ kind: 'IDLE' });
+        release();
       });
     });
     this.ui.setViewportWidth(window.innerWidth);

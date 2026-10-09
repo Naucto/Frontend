@@ -6,9 +6,10 @@ import { PanelComponent, TabsComponent } from '@naucto/ui';
 import { AccountSettingsComponent } from './account-settings.component';
 import { ControlsSettingsComponent } from './controls-settings.component';
 import { EditorSettingsComponent } from './editor-settings.component';
+import { PrivacySettingsComponent } from './privacy-settings.component';
 
-type Tab = 'account' | 'editor' | 'controls';
-const TABS: Tab[] = ['account', 'editor', 'controls'];
+type Tab = 'account' | 'editor' | 'controls' | 'privacy';
+const TABS: Tab[] = ['account', 'editor', 'controls', 'privacy'];
 
 @Component({
   selector: 'nc-settings-page',
@@ -19,6 +20,7 @@ const TABS: Tab[] = ['account', 'editor', 'controls'];
     AccountSettingsComponent,
     ControlsSettingsComponent,
     EditorSettingsComponent,
+    PrivacySettingsComponent,
   ],
   templateUrl: './settings.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -1,0 +1,45 @@
+<section *transloco="let t" class="mx-auto flex w-full max-w-[760px] flex-col gap-2">
+  <nc-panel>
+    <h1 class="text-title text-ink">{{ t('privacy.title') }}</h1>
+    <p class="mt-1 text-body text-ink-2">{{ t('privacy.intro') }}</p>
+    <nc-consent-choice class="mt-2 block" />
+  </nc-panel>
+
+  <nc-panel [title]="t('privacy.acceptedTitle')">
+    <ul class="list-disc space-y-1 pl-2 text-body text-ink-2">
+      @for (item of accepted; track item) {
+        <li>{{ t('privacy.accepted.' + item) }}</li>
+      }
+    </ul>
+  </nc-panel>
+
+  <nc-panel [title]="t('privacy.refusedTitle')">
+    <ul class="list-disc space-y-1 pl-2 text-body text-ink-2">
+      @for (item of refused; track item) {
+        <li>{{ t('privacy.refused.' + item) }}</li>
+      }
+    </ul>
+  </nc-panel>
+
+  <nc-panel [title]="t('privacy.retentionTitle')">
+    <ul class="list-disc space-y-1 pl-2 text-body text-ink-2">
+      @for (item of retention; track item) {
+        <li>{{ t('privacy.retention.' + item) }}</li>
+      }
+    </ul>
+  </nc-panel>
+
+  <nc-panel [title]="t('privacy.rightsTitle')">
+    <p class="text-body text-ink-2">{{ t('privacy.rights') }}</p>
+    <a routerLink="/settings/privacy" class="mt-1 text-body text-ink-2 underline hover:text-ink">
+      {{ t('privacy.rightsLink') }}
+    </a>
+  </nc-panel>
+
+  <p class="text-micro text-ink-3">
+    {{ t('privacy.geoCredit') }}
+    <a href="https://db-ip.com" target="_blank" rel="noopener" class="underline hover:text-ink">
+      DB-IP
+    </a>
+  </p>
+</section>

@@ -21,6 +21,8 @@ export interface HostDialogData {
   bridge: NetUiBridgeService;
   projectId: number;
   options: NetHostOptions;
+  /** The editor hosting to test its own game, which is not a real game played. */
+  editorTest?: boolean;
 }
 
 /**
@@ -83,10 +85,14 @@ export class HostDialogComponent {
     }
     this.busy.set(true);
     try {
-      await this.data.bridge.createSession(this.data.projectId, {
-        ...this.data.options,
-        title: this.title().trim() || (this.data.options.title ?? 'Session'),
-      });
+      await this.data.bridge.createSession(
+        this.data.projectId,
+        {
+          ...this.data.options,
+          title: this.title().trim() || (this.data.options.title ?? 'Session'),
+        },
+        this.data.editorTest === true,
+      );
     } catch (error: unknown) {
       this.toasts.show(
         error instanceof Error ? error.message : this.transloco.translate('net.host.failed'),

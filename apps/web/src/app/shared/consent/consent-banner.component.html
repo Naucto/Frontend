@@ -1,0 +1,34 @@
+@if (visible()) {
+  <div
+    *transloco="let t"
+    role="region"
+    [attr.aria-label]="t('consent.title')"
+    class="fixed bottom-2 left-2 right-2 z-[900] sm:right-auto sm:w-[420px]">
+    <nc-panel [title]="t('consent.title')">
+      <p class="text-body text-ink-2">{{ t('consent.body') }}</p>
+      <a routerLink="/privacy" class="mt-1 text-body text-ink-2 underline hover:text-ink">
+        {{ t('consent.learnMore') }}
+      </a>
+      <div class="mt-2 flex gap-1">
+        <button
+          ncButton
+          variant="secondary"
+          size="sm"
+          type="button"
+          class="flex-1"
+          (click)="refuse()">
+          {{ t('consent.refuse') }}
+        </button>
+        <button
+          ncButton
+          variant="secondary"
+          size="sm"
+          type="button"
+          class="flex-1"
+          (click)="accept()">
+          {{ t('consent.accept') }}
+        </button>
+      </div>
+    </nc-panel>
+  </div>
+}

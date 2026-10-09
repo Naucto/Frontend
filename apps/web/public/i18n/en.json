@@ -135,7 +135,42 @@
     "padHint": "Sized for the thumbs that actually hold the device. Opacity applies to the landscape overlay, where the pad sits on the game.",
     "handle": "Handle",
     "handleHint": "Unique — people add you as a friend with it",
-    "handleTaken": "That handle belongs to someone else."
+    "handleTaken": "That handle belongs to someone else.",
+    "analytics": {
+      "statsTitle": "What was counted for your account",
+      "loading": "Loading…",
+      "loadFailed": "Could not load what was counted. Try again later.",
+      "untracked": "Nothing has been counted for your account. Counting starts once you allow usage analytics in a browser you are signed in to.",
+      "browsers": "Linked browsers",
+      "browsersHint": "Browsers where you allowed usage analytics while signed in",
+      "playtime": "Play time",
+      "playtimeHint": "Time a game was running in a visible tab. A paused or hidden game does not count",
+      "plays": "Games started",
+      "playsHint": "A restart counts as a new game",
+      "totals": "{{total}} in all, {{month}} this month",
+      "hours": "{{hours}} h {{minutes}} min",
+      "wholeHours": "{{hours}} h",
+      "minutes": "{{minutes}} min",
+      "gamesPlayed": "Different games played",
+      "gamesPlayedHint": "Published games you started at least once",
+      "lastActive": "Last active",
+      "lastActiveHint": "Your last visit in a linked browser. After 90 days only the day is kept",
+      "never": "Not yet",
+      "topGames": "Played longest",
+      "deletedGame": "A deleted game",
+      "yourData": "Your data",
+      "export": "Download my data",
+      "exportHint": "Everything kept about how you use Naucto, as a JSON file",
+      "exportButton": "Download",
+      "exportFailed": "Could not prepare the download. Try again later.",
+      "erase": "Erase my usage data",
+      "eraseHint": "Counting starts afresh if usage analytics stays allowed",
+      "eraseButton": "Erase",
+      "eraseConfirmTitle": "Erase your usage data?",
+      "eraseConfirmHint": "This removes your play history and unlinks every browser from your account.\n\nTotals that hold no id stay as they are. This cannot be undone.",
+      "erased": "Your usage data was erased.",
+      "eraseFailed": "Could not erase it. Nothing changed."
+    }
   },
   "notFound": {
     "title": "Nothing here",
@@ -914,5 +949,44 @@
     },
     "close": "Close the reference",
     "swapBack": "Swap back to the game"
+  },
+  "consent": {
+    "title": "Usage analytics",
+    "body": "May Naucto measure how the site is used, to make it better? It keeps a first-party cookie and shares nothing with anyone else. Refusing changes nothing else on the site.",
+    "learnMore": "What is measured, and for how long",
+    "accept": "Accept",
+    "refuse": "Refuse",
+    "allow": "Allow",
+    "choiceTitle": "Usage analytics",
+    "choiceHint": "Measure how you use Naucto under a first-party cookie. You can change this at any time."
+  },
+  "privacy": {
+    "title": "Privacy",
+    "intro": "Naucto measures how it is used to see what to improve. It never sells or shares this data, shows no advertising, and runs no third-party trackers. You decide below whether your visits are measured.",
+    "acceptedTitle": "If you accept",
+    "accepted": {
+      "pages": "The pages you open, by name (a game page, not which game), and how long your visits last, under a random id kept in a cookie for 13 months and a visit id kept 30 minutes.",
+      "plays": "The games you play and how long they run, and the time you spend in the editor.",
+      "context": "Your device type, browser and system family, country, screen size range and language, and the site or campaign that brought you. Your address is only used to find the country and is never kept.",
+      "account": "When you are signed in, these visits are linked to your account, so you can see your own play time in Settings."
+    },
+    "refusedTitle": "If you refuse, or do not answer",
+    "refused": {
+      "nothingStored": "Nothing is stored on your device, apart from your choice once you make it.",
+      "ping": "While a tab is visible, it tells us about once a minute whether a game is running, with no id of any kind, so we know how many people are on Naucto.",
+      "plays": "Games started and how long they run are counted per game, with no id of any kind.",
+      "views": "A game’s public play count still goes up when you press Play, with nothing that identifies you."
+    },
+    "retentionTitle": "How long it is kept",
+    "retention": {
+      "raw": "Visits, page views and plays: 90 days.",
+      "aggregate": "Totals per day, week and month, with no id of any kind: kept.",
+      "history": "Your own play history by day, when you are signed in: while your account exists.",
+      "choice": "Your choice: six months, then you are asked again."
+    },
+    "rightsTitle": "Your data",
+    "rights": "Signed in, you can see what was counted for your account, download it, or erase it, in Settings. Deleting your account erases it too.",
+    "rightsLink": "Open your privacy settings",
+    "geoCredit": "Country lookups use IP geolocation by"
   }
 }

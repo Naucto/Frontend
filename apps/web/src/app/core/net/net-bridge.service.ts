@@ -21,6 +21,7 @@ import {
   SharedTableSession,
 } from '@naucto/engine';
 
+import { ActivityService } from '../analytics/activity.service';
 import { unwrap } from '../api/api-errors';
 import { AppConfigService } from '../config/app-config';
 import { PresenceStore } from '../presence/presence.store';
@@ -61,6 +62,7 @@ export interface OpenSession {
 export class NetUiBridgeService implements NetUi, OnDestroy {
   private readonly config = inject(AppConfigService);
   private readonly presence = inject(PresenceStore);
+  private readonly activity = inject(ActivityService);
   private readonly transloco = inject(TranslocoService);
   private transport: SyncedSessionTransport | null = null;
 
@@ -108,7 +110,11 @@ export class NetUiBridgeService implements NetUi, OnDestroy {
   /** Read when a session opens, so it takes effect on the next one, not the one already running. */
   readonly relayOnly = signal(false);
 
-  async createSession(projectId: number, options: NetHostOptions): Promise<void> {
+  async createSession(
+    projectId: number,
+    options: NetHostOptions,
+    editorTest = false,
+  ): Promise<void> {
     // The seat count is the game's to name and the endpoint accepts 2..16, so it is narrowed here
     // rather than refused with a 400 after the dialog has already drawn that many seats.
     const maxPlayers = Math.min(16, Math.max(2, Math.trunc(options.maxPlayers)));
@@ -121,10 +127,16 @@ export class NetUiBridgeService implements NetUi, OnDestroy {
           // The backend mints a join code for this visibility only, and a join code is how a host
           // invites.
           visibility: 'INVITE_CODE',
+          editorTest,
         },
       }),
     );
-    this.connect(conn, 'host', { maxPlayers, title: options.title ?? '' });
+    this.connect(
+      conn,
+      'host',
+      { maxPlayers, title: options.title ?? '' },
+      editorTest ? null : projectId,
+    );
     // Announced as soon as the session exists, not on the first peer: friends can only join a
     // session their presence list shows.
     this.presence.announce({ kind: 'HOSTING', projectId });
@@ -204,6 +216,7 @@ export class NetUiBridgeService implements NetUi, OnDestroy {
     conn: GameSessionConnectionResponseDto,
     role: SessionRole,
     meta: { maxPlayers: number; title: string },
+    hostedGame: number | null = null,
   ): void {
     const signaling = conn.webrtcConfig.signaling[0];
     if (!signaling) {
@@ -259,7 +272,12 @@ export class NetUiBridgeService implements NetUi, OnDestroy {
       maxPlayers: meta.maxPlayers,
       title: meta.title,
     };
+    const releaseHosting =
+      hostedGame === null
+        ? (): void => undefined
+        : this.activity.claim({ state: 'HOSTING', releaseId: hostedGame });
     const forget = (): void => {
+      releaseHosting();
       this.session.set(null);
       this.info.set(null);
       this.peers.set([]);

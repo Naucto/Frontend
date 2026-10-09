@@ -55,6 +55,20 @@ describe('NetUiBridgeService.createSession', () => {
       expect(JSON.parse(bodies.join(''))).toMatchObject({ maxPlayers: sent });
     },
   );
+
+  it('marks a room the editor hosts to test its own game', async () => {
+    await bridge()
+      .createSession(7, { maxPlayers: 2 }, true)
+      .catch(() => undefined);
+    await bridge()
+      .createSession(7, { maxPlayers: 2 })
+      .catch(() => undefined);
+
+    expect(bodies.map((body) => (JSON.parse(body) as { editorTest: boolean }).editorTest)).toEqual([
+      true,
+      false,
+    ]);
+  });
 });
 
 describe('NetUiBridgeService.setListed', () => {

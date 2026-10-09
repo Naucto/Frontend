@@ -30,7 +30,7 @@ import { NetUiBridgeService } from '../../core/net/net-bridge.service';
 import { netPermissionsOf } from '../../core/net/net-permissions';
 import { ThemeService } from '../../core/theme/theme.service';
 import { SignedInAction } from '../auth/signed-in-action';
-import { HostDialogComponent } from '../netplay/host.dialog';
+import { HostDialogComponent, type HostDialogData } from '../netplay/host.dialog';
 import { JoinDialogComponent } from '../netplay/join.dialog';
 import { RuntimeHostService } from './runtime-host.service';
 import { VirtualPadComponent } from './virtual-pad.component';
@@ -118,6 +118,8 @@ export class GameScreenComponent {
   readonly projectId = input<number | null>(null);
   /** Test rig: when the mounted game calls `net.join()`, join this session straight away instead of asking the player which one. */
   readonly autoJoin = input<{ uuid: string; code: string | null } | null>(null);
+  /** Rooms hosted from this screen are the editor testing its own game, not the game being played. */
+  readonly editorTest = input(false, { transform: booleanAttribute });
   readonly mounted = output();
   /** True while this screen — not some other one on the page — owns the fullscreen element. */
   protected readonly isFullscreen = signal(false);
@@ -270,7 +272,8 @@ export class GameScreenComponent {
                       bridge: this.bridge,
                       projectId,
                       options: req.hostOptions ?? { maxPlayers: 2 },
-                    },
+                      editorTest: this.editorTest(),
+                    } satisfies HostDialogData,
                   })
                 : this.dialogs.open(JoinDialogComponent, {
                     width: '400px',
