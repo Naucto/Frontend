@@ -89,6 +89,25 @@ Pixelarticons, Bubblegum-16 palette, dark + light themes).
   `BrowserAccountService` links the visitor. Features claim what the tab is doing (browsing,
   building, playing, hosting) through `ActivityService`. Settings → Privacy shows, exports and
   erases the account's history even with the flag off.
+- **Feedback and crash reports** (`shared/feedback`, `core/crash`), behind the backend's
+  `feedback` feature flag:
+  - **Rating prompt.** A play of two minutes (`PlayTrackingDirective`) or five minutes in the
+    editor arms `FeedbackStore`. `nc-feedback-prompt` then asks on the hub, or on any app-shell
+    page for a creator. It never shows over a game, the editor, a dialog or the consent banner.
+    The server holds whether an account may still be asked: an answer or "don't ask again" ends
+    it, closing it snoozes it for 14 days, and Settings → Privacy turns it back on.
+  - **Rating.** The rating is 1 to 10 (`nc-rating`) with two optional comments. A score of 4 or
+    less also asks for reasons and offers a bug report.
+  - **Who can send.** Ratings and bug reports need an account. `FeedbackLauncher` asks a
+    signed-out reader to sign in over the page.
+  - **What a bug report carries.** It lists everything it attaches before it is sent. A screenshot
+    comes from the running game's frame, a one-frame screen capture, or a file. It is shrunk to
+    1920 px and WebP before upload, within the server's 2 MB.
+  - **Crash reports.** `CrashReporter` sends uncaught errors (`GlobalErrorHandler`) and engine
+    faults (`Engine.onFault`, plus the WebGL and audio backends' `onFault`). It goes through
+    `AnalyticsTransport`, so a report carries no account and no identifier whatever the consent
+    answer, at most once per crash and ten per tab. A Lua error in a game is the game's own and
+    is never reported; its overlay offers a bug report instead.
 - **Boot order**: `provideApiClient()` runs one initializer — load `/config.json`, configure the
   client, bootstrap auth — because Angular initializers otherwise run concurrently.
 - **Mobile** is out of scope for now but must not be blocked: measure widths with `ResizeObserver`

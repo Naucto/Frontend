@@ -12,10 +12,12 @@ import { injectQuery } from '@tanstack/angular-query-experimental';
 
 import { unwrap } from '../../core/api/api-errors';
 import { AuthStore } from '../../core/auth/auth.store';
+import { FeaturesService } from '../../core/config/features.service';
 import { ThemeService } from '../../core/theme/theme.service';
+import { FeedbackLauncher } from '../../shared/feedback/feedback-launcher.service';
 import { qk } from '../../shared/queries/query-keys';
 
-/** Account popover: identity, then Profile / Settings / Appearance / Sign out. */
+/** Account popover: identity, then Profile / Settings / Appearance / feedback / Sign out. */
 @Component({
   selector: 'nc-account-menu',
   imports: [
@@ -33,6 +35,8 @@ export class AccountMenuComponent {
   protected readonly auth = inject(AuthStore);
   protected readonly avatar = computed(() => this.auth.user()?.profileImageUrl ?? null);
   protected readonly theme = inject(ThemeService);
+  protected readonly features = inject(FeaturesService);
+  private readonly feedback = inject(FeedbackLauncher);
   private readonly router = inject(Router);
   protected readonly open = signal(false);
   protected readonly games = injectQuery(() => ({
@@ -52,6 +56,16 @@ export class AccountMenuComponent {
     enabled: this.auth.isAuthenticated() && this.open(),
     retry: false,
   }));
+
+  protected rate(): void {
+    this.open.set(false);
+    this.feedback.rate();
+  }
+
+  protected reportBug(): void {
+    this.open.set(false);
+    this.feedback.reportBug();
+  }
 
   protected async logout(): Promise<void> {
     this.open.set(false);

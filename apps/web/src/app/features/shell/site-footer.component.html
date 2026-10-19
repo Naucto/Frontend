@@ -43,13 +43,20 @@
           </a>
         </li>
         <li>
-          <a
-            href="https://docs.google.com/forms/d/e/1FAIpQLSdOuqKBWdCL3JO5Lftcrqs3D_mc6clB_KwoSl8uy-dEbQlZWA/viewform"
-            target="_blank"
-            rel="noopener"
-            class="text-ink-2 hover:text-ink">
+          <button
+            type="button"
+            class="cursor-pointer text-ink-2 hover:text-ink"
+            (click)="feedback.rate()">
             {{ t('footer.feedback') }}
-          </a>
+          </button>
+        </li>
+        <li>
+          <button
+            type="button"
+            class="cursor-pointer text-ink-2 hover:text-ink"
+            (click)="feedback.reportBug()">
+            {{ t('footer.reportBug') }}
+          </button>
         </li>
       </ul>
     </nav>

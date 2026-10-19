@@ -1,0 +1,49 @@
+@if (visible()) {
+  <div
+    *transloco="let t"
+    role="region"
+    [attr.aria-label]="t('feedback.prompt.label')"
+    class="fixed right-2 bottom-2 left-2 z-[900] sm:right-auto sm:w-[420px]">
+    <nc-panel
+      [title]="
+        store.armed()?.context === 'CREATOR'
+          ? t('feedback.prompt.creatorTitle')
+          : t('feedback.prompt.playerTitle')
+      ">
+      @if (!thanked()) {
+        <button
+          actions
+          ncButton
+          variant="ghost"
+          size="sm"
+          iconOnly
+          type="button"
+          [attr.aria-label]="t('feedback.prompt.notNow')"
+          (click)="snooze()">
+          <nc-icon name="close" [size]="12" />
+        </button>
+      }
+      @if (thanked()) {
+        <p class="flex items-center gap-1 text-body text-ink-2" role="status">
+          <nc-icon name="mood-happy" [size]="12" class="text-jade-ink" />
+          {{ t('feedback.rating.thanks') }}
+        </p>
+      } @else {
+        <p class="mb-1.5 text-body text-ink-2">{{ t('feedback.prompt.lead') }}</p>
+        <nc-rating-form
+          [context]="store.armed()?.context ?? 'PLAYER'"
+          source="PROMPT"
+          [releaseId]="store.armed()?.releaseId ?? null"
+          (sent)="sent($event)">
+          <button
+            secondary
+            type="button"
+            class="cursor-pointer text-meta text-ink-3 underline-offset-2 hover:text-ink hover:underline"
+            (click)="decline()">
+            {{ t('feedback.prompt.never') }}
+          </button>
+        </nc-rating-form>
+      }
+    </nc-panel>
+  </div>
+}

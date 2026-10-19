@@ -47,6 +47,22 @@
           {{ t('account.appearance') }}
           <span class="label ml-auto text-ink-4">{{ theme.theme() }}</span>
         </button>
+        @if (features.feedback()) {
+          <button
+            type="button"
+            class="flex items-center gap-1 rounded-xs px-1 py-0.5 text-left text-body text-ink hover:bg-raised"
+            (click)="rate()">
+            <nc-icon name="message" [size]="12" class="text-ink-3" />
+            {{ t('feedback.rating.menu') }}
+          </button>
+          <button
+            type="button"
+            class="flex items-center gap-1 rounded-xs px-1 py-0.5 text-left text-body text-ink hover:bg-raised"
+            (click)="reportBug()">
+            <nc-icon name="bug" [size]="12" class="text-ink-3" />
+            {{ t('feedback.bug.title') }}
+          </button>
+        }
         <button
           type="button"
           class="flex items-center gap-1 rounded-xs px-1 py-0.5 text-left text-body text-ink hover:bg-raised"

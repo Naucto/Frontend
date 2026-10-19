@@ -32,6 +32,8 @@ import { filter } from 'rxjs';
 
 import { ActivityService } from '../../core/analytics/activity.service';
 import { PresenceStore } from '../../core/presence/presence.store';
+import { FeedbackStore } from '../../shared/feedback/feedback.store';
+import { ReportProblemButtonComponent } from '../../shared/feedback/report-problem-button.component';
 import { RuntimeHostService } from '../../shared/game-screen/runtime-host.service';
 import { UserAvatarComponent } from '../../shared/user-avatar.component';
 import { yTextField } from '../../shared/yjs/y-signal';
@@ -98,6 +100,7 @@ const RAIL: Omit<RailItem<EditorTab>, 'label'>[] = [
     DocPaneComponent,
     VersionsPopoverComponent,
     LogoComponent,
+    ReportProblemButtonComponent,
   ],
   providers: [
     WorkSessionService,
@@ -130,6 +133,7 @@ export default class EditorShellComponent implements OnInit {
   protected readonly String = String;
   private readonly presence = inject(PresenceStore);
   private readonly activity = inject(ActivityService);
+  private readonly feedback = inject(FeedbackStore);
   private readonly docRequests = inject(DocRequestService);
   private readonly editorRuntime = inject(EditorRuntimeService);
   protected readonly session = inject(WorkSessionService);
@@ -218,6 +222,10 @@ export default class EditorShellComponent implements OnInit {
   }
 
   constructor() {
+    const openedAt = Date.now();
+    inject(DestroyRef).onDestroy(() => {
+      this.feedback.noteEditorLeft(Date.now() - openedAt);
+    });
     // BUILDING presence, so a friend sees "building Ferry Click" while the editor is open.
     effect((onCleanup) => {
       const projectId = this.id();

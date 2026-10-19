@@ -52,6 +52,7 @@
   <div
     class="ms-2 flex flex-1 items-center justify-end gap-1 md:ms-0 md:justify-self-end"
     data-testid="top-bar-actions">
+    <nc-report-problem-button />
     @if (auth.isAuthenticated()) {
       <a ncButton variant="primary" size="bar" routerLink="/games/new">
         <nc-icon name="plus" [size]="12" class="sm:hidden" />

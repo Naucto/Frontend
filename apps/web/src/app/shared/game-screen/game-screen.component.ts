@@ -26,10 +26,12 @@ import {
   PopoverPanelComponent,
 } from '@naucto/ui';
 
+import { FeaturesService } from '../../core/config/features.service';
 import { NetUiBridgeService } from '../../core/net/net-bridge.service';
 import { netPermissionsOf } from '../../core/net/net-permissions';
 import { ThemeService } from '../../core/theme/theme.service';
 import { SignedInAction } from '../auth/signed-in-action';
+import { FeedbackLauncher } from '../feedback/feedback-launcher.service';
 import { HostDialogComponent, type HostDialogData } from '../netplay/host.dialog';
 import { JoinDialogComponent } from '../netplay/join.dialog';
 import { RuntimeHostService } from './runtime-host.service';
@@ -146,6 +148,8 @@ export class GameScreenComponent {
   private readonly dialogs = inject(DialogService);
   private readonly signedIn = inject(SignedInAction);
   private readonly theme = inject(ThemeService);
+  protected readonly features = inject(FeaturesService);
+  private readonly feedback = inject(FeedbackLauncher);
   protected readonly canvasLabel = inject(TranslocoService).translate('game.screen.canvas');
   protected readonly showCpu = computed(() => this.debug());
   /** The error as the Console would print it: where, then what. */
@@ -331,6 +335,11 @@ export class GameScreenComponent {
   restart(): void {
     this.host.restart();
     this.focus();
+  }
+
+  /** A bug report about the game that just stopped, with its error, console and last frame. */
+  protected reportProblem(): void {
+    this.feedback.reportBug({ category: 'GAMEPLAY', attachFrame: true });
   }
 
   /**

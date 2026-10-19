@@ -1,5 +1,6 @@
 {
   "apiUrl": "http://localhost:3000",
+  "release": "dev",
   "google": { "clientId": "", "redirectUri": "http://localhost:3001/oauth/google/callback" },
   "github": { "clientId": "", "redirectUri": "http://localhost:3001/oauth/callback" },
   "microsoft": {

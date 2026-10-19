@@ -11,6 +11,7 @@ services:
       dockerfile: Dockerfile
     environment:
       APP_API_URL: ${APP_API_URL:-http://localhost:3000}
+      APP_RELEASE: ${APP_RELEASE:-}
       APP_GOOGLE_CLIENT_ID: ${APP_GOOGLE_CLIENT_ID:-}
       APP_GOOGLE_REDIRECT_URI: ${APP_GOOGLE_REDIRECT_URI:-}
       APP_GITHUB_CLIENT_ID: ${APP_GITHUB_CLIENT_ID:-}
