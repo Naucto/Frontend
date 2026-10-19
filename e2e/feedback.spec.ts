@@ -17,7 +17,13 @@ test.describe('bug reports', () => {
 
   test('a signed-in player reports a problem from the bar, with a screenshot', async ({ page }) => {
     await mockSignedIn(page);
-    await page.route('**/feedback/prompt', answer(200, { eligible: false, declined: false }));
+    await page.route(
+      '**/feedback/prompt',
+      answer(200, {
+        player: { eligible: false, declined: false },
+        creator: { eligible: false, declined: false },
+      }),
+    );
     await page.route('**/feedback/bugs', answer(201, { id: 31 }));
 
     await page.goto('/hub');

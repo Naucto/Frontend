@@ -4,7 +4,7 @@
   [lead]="t('feedback.bug.lead')"
   [closeLabel]="t('feedback.close')">
   <form
-    class="flex flex-col gap-2"
+    class="-mr-1 flex max-h-[calc(100dvh-240px)] flex-col gap-2 overflow-y-auto pr-1"
     (submit)="$event.preventDefault(); send()"
     (keydown)="onKey($event)">
     <nc-field [label]="t('feedback.bug.category')">

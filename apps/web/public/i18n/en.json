@@ -1081,7 +1081,7 @@
         "engineError": "Game error",
         "appError": "App error",
         "console": "Console",
-        "consoleLines": "The last {{count}} lines of the game console"
+        "consoleLines": "Its last lines, {{count}} at most 50"
       }
     },
     "settings": {

@@ -75,7 +75,7 @@ export class FeedbackPromptComponent {
       return null;
     }
     const askable =
-      this.prompt.data()?.[promptKey(armed.context)].eligible === true &&
+      this.prompt.data()?.[promptKey(armed.context)]?.eligible === true &&
       promptFits(armed.context, url) &&
       !(this.features.analytics() && this.consent.status() === 'unknown') &&
       !this.dialogOpen();
