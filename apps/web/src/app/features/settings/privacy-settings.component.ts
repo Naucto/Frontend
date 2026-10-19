@@ -1,5 +1,5 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { userAnalyticsControllerErase, userAnalyticsControllerExport } from '@naucto/api-client';
@@ -49,6 +49,11 @@ export class PrivacySettingsComponent {
   protected readonly stats = injectMyAnalytics();
   protected readonly feedbackPrompt = injectFeedbackPrompt();
   protected readonly updatePrompt = injectUpdateFeedbackPrompt();
+  /** On while neither the player's nor the creator's prompt was declined. */
+  protected readonly askingForFeedback = computed(() => {
+    const prompts = this.feedbackPrompt.data();
+    return prompts !== undefined && !prompts.player.declined && !prompts.creator.declined;
+  });
   protected readonly exporting = signal(false);
   protected readonly erasing = signal(false);
 

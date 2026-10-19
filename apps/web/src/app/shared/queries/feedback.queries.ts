@@ -2,12 +2,13 @@ import { inject } from '@angular/core';
 import {
   type CreatedFeedbackDto,
   type CreateRatingDto,
+  type FeedbackContext,
   feedbackControllerCreateBugReport,
   type FeedbackControllerCreateBugReportData,
   feedbackControllerCreateRating,
   feedbackControllerPrompt,
   feedbackControllerUpdatePrompt,
-  type FeedbackPromptStateDto,
+  type FeedbackPromptsDto,
   type UpdateFeedbackPromptDto,
 } from '@naucto/api-client';
 import {
@@ -25,8 +26,12 @@ import { qk } from './query-keys';
 
 export type BugReportBody = FeedbackControllerCreateBugReportData['body'];
 
-/** Whether the rating prompt may ask the signed-in account now; idle while feedback is off. */
-export function injectFeedbackPrompt(): CreateQueryResult<FeedbackPromptStateDto> {
+/** The key of a context's state in the prompt's answer. */
+export const promptKey = (context: FeedbackContext): keyof FeedbackPromptsDto =>
+  context === 'CREATOR' ? 'creator' : 'player';
+
+/** Whether the rating prompt may ask the signed-in account now, idle while feedback is off. */
+export function injectFeedbackPrompt(): CreateQueryResult<FeedbackPromptsDto> {
   const auth = inject(AuthStore);
   const features = inject(FeaturesService);
   return injectQuery(() => ({
@@ -38,15 +43,15 @@ export function injectFeedbackPrompt(): CreateQueryResult<FeedbackPromptStateDto
 }
 
 export function injectUpdateFeedbackPrompt(): CreateMutationResult<
-  FeedbackPromptStateDto,
+  FeedbackPromptsDto,
   Error,
-  UpdateFeedbackPromptDto['action']
+  UpdateFeedbackPromptDto
 > {
   const queries = inject(QueryClient);
   return injectMutation(() => ({
-    mutationFn: async (action: UpdateFeedbackPromptDto['action']) =>
-      unwrap(await feedbackControllerUpdatePrompt({ body: { action } })),
-    onSuccess: (state: FeedbackPromptStateDto) => {
+    mutationFn: async (body: UpdateFeedbackPromptDto) =>
+      unwrap(await feedbackControllerUpdatePrompt({ body })),
+    onSuccess: (state: FeedbackPromptsDto) => {
       queries.setQueryData(qk.feedbackPrompt(), state);
     },
   }));
@@ -61,9 +66,10 @@ export function injectSubmitRating(): CreateMutationResult<
   return injectMutation(() => ({
     mutationFn: async (body: CreateRatingDto) =>
       unwrap(await feedbackControllerCreateRating({ body })),
-    onSuccess: () => {
-      queries.setQueryData<FeedbackPromptStateDto>(qk.feedbackPrompt(), (state) =>
-        state ? { ...state, eligible: false } : state,
+    onSuccess: (_created: CreatedFeedbackDto, body: CreateRatingDto) => {
+      const key = promptKey(body.context);
+      queries.setQueryData<FeedbackPromptsDto>(qk.feedbackPrompt(), (state) =>
+        state ? { ...state, [key]: { ...state[key], eligible: false } } : state,
       );
     },
   }));

@@ -92,10 +92,12 @@ Pixelarticons, Bubblegum-16 palette, dark + light themes).
 - **Feedback and crash reports** (`shared/feedback`, `core/crash`), behind the backend's
   `feedback` feature flag:
   - **Rating prompt.** A play of two minutes (`PlayTrackingDirective`) or five minutes in the
-    editor arms `FeedbackStore`. `nc-feedback-prompt` then asks on the hub, or on any app-shell
-    page for a creator. It never shows over a game, the editor, a dialog or the consent banner.
-    The server holds whether an account may still be asked: an answer or "don't ask again" ends
-    it, closing it snoozes it for 14 days, and Settings → Privacy turns it back on.
+    editor arms `FeedbackStore`. `nc-feedback-prompt` then opens a modal in the middle of the
+    screen, on the hub after a play or on any app-shell page for a creator. It waits for the
+    consent banner and any other dialog. Escape and the backdrop do not close it: it is answered,
+    put off ("not now", 14 days) or declined. The server keeps that state once per context, so a
+    player who starts making games is asked again as a creator. Settings → Privacy turns both back
+    on.
   - **Rating.** The rating is 1 to 10 (`nc-rating`) with two optional comments. A score of 4 or
     less also asks for reasons and offers a bug report.
   - **Who can send.** Ratings and bug reports need an account. `FeedbackLauncher` asks a

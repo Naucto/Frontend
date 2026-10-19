@@ -1,21 +1,22 @@
 import { Dialog } from '@angular/cdk/dialog';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router } from '@angular/router';
-import { TranslocoDirective } from '@jsverse/transloco';
-import { ButtonDirective, IconComponent, PanelComponent } from '@naucto/ui';
-import { filter, map, merge } from 'rxjs';
+import { TranslocoService } from '@jsverse/transloco';
+import { DialogService } from '@naucto/ui';
+import { filter, firstValueFrom, map, merge } from 'rxjs';
 
 import { ConsentStore } from '../../core/analytics/consent.store';
 import { AuthStore } from '../../core/auth/auth.store';
 import { FeaturesService } from '../../core/config/features.service';
-import { injectFeedbackPrompt, injectUpdateFeedbackPrompt } from '../queries/feedback.queries';
-import { FeedbackStore } from './feedback.store';
+import {
+  injectFeedbackPrompt,
+  injectUpdateFeedbackPrompt,
+  promptKey,
+} from '../queries/feedback.queries';
+import { type ArmedPrompt, FeedbackStore } from './feedback.store';
 import { FeedbackLauncher } from './feedback-launcher.service';
-import { RatingFormComponent, type RatingSent } from './rating-form.component';
-
-/** How long the thanks stays before the card goes. */
-export const THANKS_MS = 3000;
+import { FeedbackPromptDialog, type PromptOutcome } from './feedback-prompt.dialog';
 
 /** Pages the prompt never interrupts: a game, the editor, a sign-in popup about to close. */
 const BUSY = /^\/(play|edit|oauth|sign-in)(\/|$|\?)/;
@@ -29,34 +30,27 @@ export function promptFits(context: 'PLAYER' | 'CREATOR', url: string): boolean 
 }
 
 /**
- * Asks once, after a real play or editing session, how the platform is going. It waits for the
- * hub, never covers a game or a dialog, and steps aside while the consent banner asks first.
- * Closing it asks again in two weeks; an answer or "don't ask again" ends it for good.
+ * Opens the rating prompt once a real play or editing session has ended and the account may still
+ * be asked in that context. It waits for the hub, and for the consent banner or another dialog to
+ * be done, then asks in the middle of the screen until it is answered or put off.
  */
 @Component({
   selector: 'nc-feedback-prompt',
-  imports: [
-    TranslocoDirective,
-    ButtonDirective,
-    IconComponent,
-    PanelComponent,
-    RatingFormComponent,
-  ],
-  templateUrl: './feedback-prompt.component.html',
-  host: { '(document:keydown.escape)': 'onEscape()' },
+  template: '',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FeedbackPromptComponent {
-  protected readonly store = inject(FeedbackStore);
+  private readonly store = inject(FeedbackStore);
   private readonly features = inject(FeaturesService);
   private readonly auth = inject(AuthStore);
   private readonly consent = inject(ConsentStore);
   private readonly launcher = inject(FeedbackLauncher);
+  private readonly dialogs = inject(DialogService);
+  private readonly dialog = inject(Dialog);
+  private readonly transloco = inject(TranslocoService);
   private readonly prompt = injectFeedbackPrompt();
   private readonly update = injectUpdateFeedbackPrompt();
-  private readonly dialog = inject(Dialog);
-
-  protected readonly thanked = signal(false);
+  private asking = false;
 
   private readonly url = toSignal(
     inject(Router).events.pipe(
@@ -73,49 +67,47 @@ export class FeedbackPromptComponent {
     { initialValue: false },
   );
 
-  protected readonly visible = computed(() => {
+  /** The prompt to ask now, or null while there is nothing to ask or no good moment to. */
+  private readonly due = computed<ArmedPrompt | null>(() => {
     const armed = this.store.armed();
     const url = this.url();
     if (!armed || url === null || !this.features.feedback() || !this.auth.isAuthenticated()) {
-      return false;
+      return null;
     }
-    if (this.thanked()) {
-      return true;
-    }
-    return (
-      this.prompt.data()?.eligible === true &&
+    const askable =
+      this.prompt.data()?.[promptKey(armed.context)].eligible === true &&
       promptFits(armed.context, url) &&
       !(this.features.analytics() && this.consent.status() === 'unknown') &&
-      !this.dialogOpen()
-    );
+      !this.dialogOpen();
+    return askable ? armed : null;
   });
 
-  protected sent(sent: RatingSent): void {
-    if (sent.reportBug) {
+  constructor() {
+    effect(() => {
+      const armed = this.due();
+      if (armed && !this.asking) {
+        void this.ask(armed);
+      }
+    });
+  }
+
+  private async ask(armed: ArmedPrompt): Promise<void> {
+    this.asking = true;
+    const label = await firstValueFrom(
+      this.transloco.selectTranslate<string>('feedback.prompt.label'),
+    );
+    const ref = this.dialogs.open<FeedbackPromptDialog, ArmedPrompt, PromptOutcome>(
+      FeedbackPromptDialog,
+      { data: armed, width: '440px', disableClose: true, ariaLabel: label },
+    );
+    ref.closed.subscribe((outcome) => {
+      this.asking = false;
       this.store.disarm();
-      this.launcher.afterRating(sent);
-      return;
-    }
-    this.thanked.set(true);
-    setTimeout(() => {
-      this.thanked.set(false);
-      this.store.disarm();
-    }, THANKS_MS);
-  }
-
-  protected snooze(): void {
-    this.update.mutate('snooze');
-    this.store.disarm();
-  }
-
-  protected decline(): void {
-    this.update.mutate('decline');
-    this.store.disarm();
-  }
-
-  protected onEscape(): void {
-    if (this.visible() && !this.thanked()) {
-      this.snooze();
-    }
+      if (outcome?.kind === 'sent') {
+        this.launcher.afterRating(outcome.sent);
+      } else if (outcome) {
+        this.update.mutate({ action: outcome.kind, context: armed.context });
+      }
+    });
   }
 }

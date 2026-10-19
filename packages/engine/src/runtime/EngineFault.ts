@@ -3,7 +3,7 @@ import type { EnginePhase } from './EngineError';
 /**
  * A failure of the engine itself, as opposed to an error of the game it runs:
  *
- * - `internal`: a JS bug escaped a host call; the game sees it as a Lua error and halts.
+ * - `internal`: a JS bug escaped a host call. The game sees it as a Lua error and halts.
  * - `webgl-context-lost`: the browser took the GPU context away.
  * - `audio`: the synth could not start or its worklet crashed.
  */

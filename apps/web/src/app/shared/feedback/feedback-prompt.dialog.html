@@ -1,0 +1,32 @@
+<nc-dialog-shell
+  *transloco="let t"
+  [title]="
+    prompt.context === 'CREATOR'
+      ? t('feedback.prompt.creatorTitle')
+      : t('feedback.prompt.playerTitle')
+  "
+  [lead]="t('feedback.prompt.lead')"
+  [dismissible]="false">
+  <nc-rating-form
+    [context]="prompt.context"
+    source="PROMPT"
+    [releaseId]="prompt.releaseId"
+    (sent)="ref.close({ kind: 'sent', sent: $event })">
+    <span secondary class="flex flex-wrap items-center gap-1">
+      <button
+        ncButton
+        variant="ghost"
+        size="sm"
+        type="button"
+        (click)="ref.close({ kind: 'snooze' })">
+        {{ t('feedback.prompt.notNow') }}
+      </button>
+      <button
+        type="button"
+        class="cursor-pointer text-meta text-ink-3 underline-offset-2 hover:text-ink hover:underline"
+        (click)="ref.close({ kind: 'decline' })">
+        {{ t('feedback.prompt.never') }}
+      </button>
+    </span>
+  </nc-rating-form>
+</nc-dialog-shell>

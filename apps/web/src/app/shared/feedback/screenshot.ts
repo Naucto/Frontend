@@ -1,6 +1,6 @@
 /** What the server accepts for a bug screenshot. */
 export const SCREENSHOT_MAX_BYTES = 2 * 1024 * 1024;
-/** The longest edge a screenshot is sent at; a 4K capture is read just as well at half. */
+/** The longest edge a screenshot is sent at. A 4K capture reads just as well at half. */
 export const SCREENSHOT_MAX_EDGE = 1920;
 
 export class ScreenshotTooLargeError extends Error {}

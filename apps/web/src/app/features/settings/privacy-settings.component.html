@@ -7,10 +7,10 @@
     <h2 class="mt-2.5 mb-1 text-heading text-ink">{{ t('feedback.settings.title') }}</h2>
     <nc-setting-row [title]="t('feedback.settings.ask')" [hint]="t('feedback.settings.askHint')">
       <nc-toggle
-        [checked]="feedbackPrompt.data()?.declined === false"
+        [checked]="askingForFeedback()"
         [disabled]="!feedbackPrompt.data() || updatePrompt.isPending()"
         [label]="t('feedback.settings.ask')"
-        (checkedChange)="updatePrompt.mutate($event ? 'reset' : 'decline')" />
+        (checkedChange)="updatePrompt.mutate({ action: $event ? 'reset' : 'decline' })" />
     </nc-setting-row>
   }
 

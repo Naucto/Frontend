@@ -173,7 +173,7 @@ export class BugReportDialog {
         await this.attach(blob);
       }
     } catch {
-      // The person declined to share their screen; nothing is attached and nothing is wrong.
+      // The person declined to share their screen. Nothing is attached and nothing is wrong.
     }
   }
 

@@ -4193,7 +4193,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FeedbackPromptStateDto"
+                  "$ref": "#/components/schemas/FeedbackPromptsDto"
                 }
               }
             }
@@ -4210,7 +4210,7 @@
             "JWT-auth": []
           }
         ],
-        "summary": "Whether the rating prompt may ask the signed-in account now",
+        "summary": "Whether the rating prompt may ask the signed-in account now, as a player and as a creator",
         "tags": ["feedback"]
       },
       "put": {
@@ -4232,7 +4232,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FeedbackPromptStateDto"
+                  "$ref": "#/components/schemas/FeedbackPromptsDto"
                 }
               }
             }
@@ -9823,14 +9823,31 @@
         "properties": {
           "eligible": {
             "type": "boolean",
-            "description": "Whether the rating prompt may be shown to this account now"
+            "description": "Whether the rating prompt may be shown in this context now"
           },
           "declined": {
             "type": "boolean",
-            "description": "Whether this account asked never to be prompted again"
+            "description": "Whether this account asked never to be asked again here"
           }
         },
         "required": ["eligible", "declined"]
+      },
+      "FeedbackPromptsDto": {
+        "type": "object",
+        "properties": {
+          "player": {
+            "$ref": "#/components/schemas/FeedbackPromptStateDto"
+          },
+          "creator": {
+            "$ref": "#/components/schemas/FeedbackPromptStateDto"
+          }
+        },
+        "required": ["player", "creator"]
+      },
+      "FeedbackContext": {
+        "type": "string",
+        "enum": ["PLAYER", "CREATOR"],
+        "description": "The prompt to act on. Without it, both, as the Settings toggle does"
       },
       "UpdateFeedbackPromptDto": {
         "type": "object",
@@ -9839,6 +9856,14 @@
             "type": "string",
             "enum": ["snooze", "decline", "reset"],
             "description": "`snooze` asks again in 14 days, `decline` never asks again, `reset` lets the prompt ask again"
+          },
+          "context": {
+            "description": "The prompt to act on. Without it, both, as the Settings toggle does",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FeedbackContext"
+              }
+            ]
           }
         },
         "required": ["action"]
@@ -9846,10 +9871,6 @@
       "RatingReason": {
         "type": "string",
         "enum": ["BUGS", "PERFORMANCE", "HARD_TO_USE", "MISSING_FEATURE", "CONTENT", "OTHER"]
-      },
-      "FeedbackContext": {
-        "type": "string",
-        "enum": ["PLAYER", "CREATOR"]
       },
       "FeedbackSource": {
         "type": "string",
@@ -9996,7 +10017,7 @@
           "profileUrl": {
             "type": "string",
             "nullable": true,
-            "description": "The public profile on the web app; null once the account is deleted"
+            "description": "The public profile on the web app, null once the account is deleted"
           },
           "deleted": {
             "type": "boolean"
