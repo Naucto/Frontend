@@ -1,12 +1,13 @@
 import { inject, Injectable } from '@angular/core';
 import { TranslocoService } from '@jsverse/transloco';
 import type { FeedbackContext } from '@naucto/api-client';
-import { DialogService, ToastService } from '@naucto/ui';
+import { DialogService } from '@naucto/ui';
 
 import { SignedInAction } from '../auth/signed-in-action';
 import { type BugReportData, BugReportDialog } from './bug-report.dialog';
 import { RatingDialog, type RatingDialogData } from './rating.dialog';
 import type { RatingSent } from './rating-form.component';
+import { type ThanksData, ThanksDialog } from './thanks.dialog';
 
 /** The context a rating asked for on this page speaks from. */
 export function contextFor(path: string): FeedbackContext {
@@ -21,16 +22,21 @@ export function contextFor(path: string): FeedbackContext {
 export class FeedbackLauncher {
   private readonly dialogs = inject(DialogService);
   private readonly signedIn = inject(SignedInAction);
-  private readonly toasts = inject(ToastService);
   private readonly transloco = inject(TranslocoService);
 
   reportBug(data: BugReportData = {}): void {
     this.signedIn.run(() => {
-      this.dialogs.open<BugReportDialog, BugReportData, number>(BugReportDialog, {
-        data,
-        width: '560px',
-        ariaLabel: this.transloco.translate('feedback.bug.title'),
-      });
+      this.dialogs
+        .open<BugReportDialog, BugReportData, number>(BugReportDialog, {
+          data,
+          width: '560px',
+          ariaLabel: this.transloco.translate('feedback.bug.title'),
+        })
+        .closed.subscribe((id) => {
+          if (id !== undefined) {
+            this.thank({ kind: 'bug', id });
+          }
+        });
     });
   }
 
@@ -56,6 +62,14 @@ export class FeedbackLauncher {
       this.reportBug({ ratingId: sent.id, description: sent.improve });
       return;
     }
-    this.toasts.show(this.transloco.translate('feedback.rating.thanks'), 'success');
+    this.thank({ kind: 'rating' });
+  }
+
+  private thank(data: ThanksData): void {
+    this.dialogs.open<ThanksDialog, ThanksData>(ThanksDialog, {
+      data,
+      width: '440px',
+      ariaLabel: this.transloco.translate('feedback.thanks.title'),
+    });
   }
 }

@@ -100,6 +100,8 @@ Pixelarticons, Bubblegum-16 palette, dark + light themes).
     on.
   - **Rating.** The rating is 1 to 10 (`nc-rating`) with two optional comments. A score of 4 or
     less also asks for reasons and offers a bug report.
+  - **Thanks.** A sent report or rating opens `ThanksDialog`, which invites the person to the
+    Naucto Discord (`DISCORD_INVITE`) and closes on OK or its cross.
   - **Who can send.** Ratings and bug reports need an account. `FeedbackLauncher` asks a
     signed-out reader to sign in over the page.
   - **What a bug report carries.** It lists everything it attaches before it is sent. A screenshot

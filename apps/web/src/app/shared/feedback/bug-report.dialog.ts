@@ -20,7 +20,6 @@ import {
   NoticeComponent,
   SegmentedComponent,
   type SegmentOption,
-  ToastService,
 } from '@naucto/ui';
 
 import { violationsOf } from '../../core/api/api-errors';
@@ -103,7 +102,6 @@ export class BugReportDialog {
   protected readonly ref = inject<DialogRef<number>>(DialogRef);
   private readonly data = inject<BugReportData | null>(DIALOG_DATA, { optional: true }) ?? {};
   private readonly transloco = inject(TranslocoService);
-  private readonly toasts = inject(ToastService);
   private readonly overlay = inject(OverlayContainer);
   private readonly config = inject(AppConfigService);
   private readonly runtime = inject(ActiveRuntimeService).current();
@@ -236,7 +234,6 @@ export class BugReportDialog {
         context: JSON.stringify(this.context),
         ...(screenshot ? { screenshot } : {}),
       });
-      this.toasts.show(this.transloco.translate('feedback.bug.sent', { id }), 'success');
       this.ref.close(id);
     } catch (error) {
       const violations = violationsOf(error);

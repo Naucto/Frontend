@@ -1023,7 +1023,6 @@
       "send": "Send",
       "reportBug": "Report a bug",
       "failed": "Your rating could not be sent. Try again in a moment.",
-      "thanks": "Thanks, we read every one.",
       "dialogTitle": "Rate Naucto",
       "dialogLead": "How is the platform working for you? Your answer goes straight to the team.",
       "menu": "Send feedback"
@@ -1067,7 +1066,6 @@
       "screenshotTooLarge": "This image is still over 2 MB once shrunk. Try a smaller one.",
       "screenshotUnreadable": "This file could not be read as an image.",
       "send": "Send report",
-      "sent": "Report #{{id}} sent. Thank you.",
       "failed": "Your report could not be sent. Try again in a moment.",
       "invalid": "Some fields need another look before the report can be sent.",
       "included": {
@@ -1090,6 +1088,14 @@
       "title": "Feedback",
       "ask": "Ask me for feedback",
       "askHint": "After a play or an editing session, ask once how Naucto is going."
+    },
+    "thanks": {
+      "title": "Thank you",
+      "bugLead": "Report #{{id}} reached the team. We read every one.",
+      "ratingLead": "Your feedback reached the team. We read every one.",
+      "discord": "Want to talk it over, or follow what we do with it? Join the Naucto Discord, where it is easier to discuss.",
+      "join": "Join our Discord",
+      "ok": "OK"
     }
   }
 }

@@ -44,7 +44,14 @@ test.describe('bug reports', () => {
     expect(body).toContain('name="category"\r\n\r\nSOUND');
     expect(body).toContain('name="route"\r\n\r\n/hub');
     expect(body).toContain('name="screenshot"');
-    await expect(page.getByText('Report #31 sent. Thank you.')).toBeVisible();
+    const thanks = page.getByRole('dialog', { name: 'Thank you' });
+    await expect(thanks).toContainText('Report #31 reached the team.');
+    await expect(thanks.getByRole('link', { name: 'Join our Discord' })).toHaveAttribute(
+      'href',
+      'https://discord.gg/4fxDFCNrqW',
+    );
+    await thanks.getByRole('button', { name: 'OK' }).click();
+    await expect(thanks).toBeHidden();
     await expect(dialog).toBeHidden();
   });
 
