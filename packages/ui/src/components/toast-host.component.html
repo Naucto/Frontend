@@ -15,6 +15,14 @@
         class="mt-[1px] shrink-0"
         [class]="TONE[toast.tone].mark" />
       <span class="flex-1">{{ toast.text }}</span>
+      @if (toast.action; as action) {
+        <button
+          type="button"
+          class="cursor-pointer font-mono text-label tracking-button text-ink-2 uppercase underline-offset-2 transition-colors duration-100 hover:text-ink hover:underline"
+          (click)="toasts.run(toast)">
+          {{ action.label }}
+        </button>
+      }
       <button
         type="button"
         class="cursor-pointer text-ink-3 transition-colors duration-100 hover:text-ink"
