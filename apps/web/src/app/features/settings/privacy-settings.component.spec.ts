@@ -43,7 +43,10 @@ const mount = async (analytics: boolean): Promise<{ afterErase: ReturnType<typeo
   await render(PrivacySettingsComponent, {
     providers: [
       ...testProviders(),
-      { provide: FeaturesService, useValue: { analytics: signal(analytics) } },
+      {
+        provide: FeaturesService,
+        useValue: { analytics: signal(analytics), feedback: signal(false) },
+      },
       { provide: BrowserAccountService, useValue: { afterErase } },
       { provide: DialogService, useValue: { open: () => ({ closed: of(true) }) } },
     ],
