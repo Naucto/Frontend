@@ -45,7 +45,7 @@ export class RatingComponent {
     return `h-(--nc-control-h) min-w-0 cursor-pointer rounded-xs border border-transparent bg-raised font-mono text-meta tabular-nums text-ink-3 transition-colors duration-100 hover:border-line-strong hover:text-ink disabled:cursor-not-allowed disabled:opacity-40 ${CHOSEN[tone]}`;
   }
 
-  /** The chosen cell is the one tab stop; with nothing chosen yet, the first one is. */
+  /** The chosen cell is the one tab stop, or the first cell while none is chosen. */
   protected tabIndexFor(score: number): number {
     const value = this.value();
     return value === score || (value === null && score === 1) ? 0 : -1;
