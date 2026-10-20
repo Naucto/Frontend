@@ -75,7 +75,13 @@ test('an uncaught error is reported once, with no account attached', async ({ pa
   await page.route('**/features', featuresOn);
   await page.route('**/projects/releases**', answer(200, { items: [], total: 0 }));
   await mockSignedIn(page);
-  await page.route('**/feedback/prompt', answer(200, { eligible: false, declined: false }));
+  await page.route(
+    '**/feedback/prompt',
+    answer(200, {
+      player: { eligible: false, declined: false },
+      creator: { eligible: false, declined: false },
+    }),
+  );
   await page.route('**/reports/crash', (route) => route.fulfill({ status: 204 }));
 
   await page.goto('/hub');

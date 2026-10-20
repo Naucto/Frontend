@@ -111,7 +111,8 @@ Pixelarticons, Bubblegum-16 palette, dark + light themes).
     faults (`Engine.onFault`, plus the WebGL and audio backends' `onFault`). It goes through
     `AnalyticsTransport`, so a report carries no account and no identifier whatever the consent
     answer, at most once per crash and ten per tab. A Lua error in a game is the game's own and
-    is never reported; its overlay offers a bug report instead.
+    is never reported; its overlay offers a bug report instead. A crash is said on screen only in a
+    development build (`SHOW_CRASHES`): a player has nothing to do about one that is already reported.
 - **Boot order**: `provideApiClient()` runs one initializer — load `/config.json`, configure the
   client, bootstrap auth — because Angular initializers otherwise run concurrently.
 - **Mobile** is out of scope for now but must not be blocked: measure widths with `ResizeObserver`

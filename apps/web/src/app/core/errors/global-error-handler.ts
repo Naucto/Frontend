@@ -1,4 +1,11 @@
-import { type ErrorHandler, inject, Injectable, Injector } from '@angular/core';
+import {
+  type ErrorHandler,
+  inject,
+  Injectable,
+  InjectionToken,
+  Injector,
+  isDevMode,
+} from '@angular/core';
 import { TranslocoService } from '@jsverse/transloco';
 import { ToastService } from '@naucto/ui';
 
@@ -10,11 +17,20 @@ import { CrashReporter, describeError } from '../crash/crash-reporter.service';
 /** How long a crash toast stays, long enough to reach its Report button. */
 const CRASH_TOAST_MS = 8000;
 
+/**
+ * Whether a crash is also said on screen. It is always reported, so a player has nothing to do
+ * about one, and only a development build shows it.
+ */
+export const SHOW_CRASHES = new InjectionToken<boolean>('SHOW_CRASHES', {
+  factory: () => isDevMode(),
+});
+
 @Injectable()
 export class GlobalErrorHandler implements ErrorHandler {
   private readonly toasts = inject(ToastService);
   private readonly crashes = inject(CrashReporter);
   private readonly features = inject(FeaturesService);
+  private readonly showCrashes = inject(SHOW_CRASHES);
   // Resolved on first use: the handler is built before most of the app it would open.
   private readonly injector = inject(Injector);
 
@@ -27,6 +43,9 @@ export class GlobalErrorHandler implements ErrorHandler {
     }
     console.error(error);
     this.crashes.report('web', error);
+    if (!this.showCrashes) {
+      return;
+    }
     const text = error instanceof Error ? error.message : 'Something went wrong';
     if (!this.features.feedback()) {
       this.toasts.show(text, 'error');
