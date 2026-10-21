@@ -101,15 +101,6 @@ export class PlayReporter {
     }
   }
 
-  /** Counts a view of the game, under the visitor when the browser agreed to it. */
-  registerView(releaseId: number): void {
-    const body =
-      untracked(() => this.mode()) === 'consented' ? { visitorId: ensureVisitorId() } : {};
-    void this.transport
-      .post(`/projects/releases/${String(releaseId)}/view`, body)
-      .catch(() => undefined);
-  }
-
   /** Brings the current stretch in line with the reporting mode and the browser's identity. */
   sync(): void {
     const play = this.play;

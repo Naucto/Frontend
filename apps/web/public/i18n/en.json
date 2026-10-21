@@ -975,7 +975,7 @@
       "nothingStored": "Nothing is stored on your device, apart from your choice once you make it.",
       "ping": "While a tab is visible, it tells us about once a minute whether a game is running, whether you are signed in, and whether you refused or have not answered yet, with no id of any kind, so we know how many people are on Naucto.",
       "plays": "Games started and how long they run are counted per game, with no id of any kind.",
-      "views": "A game’s public play count still goes up when you press Play, with nothing that identifies you."
+      "views": "A game’s public play count goes up once a day when you press Play. To count it once, your network address is kept as a one-way code, used for nothing else, and deleted after 90 days."
     },
     "retentionTitle": "How long it is kept",
     "retention": {

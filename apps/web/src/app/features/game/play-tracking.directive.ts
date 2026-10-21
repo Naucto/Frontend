@@ -4,6 +4,7 @@ import { ActivityService } from '../../core/analytics/activity.service';
 import { PlayReporter } from '../../core/analytics/play-reporter';
 import { PlayTracker } from '../../core/analytics/play-tracker';
 import { RuntimeHostService } from '../../shared/game-screen/runtime-host.service';
+import { registerView } from '../../shared/queries/releases.queries';
 
 /**
  * Reports the plays of the game on this screen: each start, its running time and its end, and one
@@ -26,7 +27,7 @@ export class PlayTrackingDirective {
         releasePlaying = this.activity.claim({ state: 'PLAYING', releaseId });
         if (viewed !== releaseId) {
           viewed = releaseId;
-          this.reporter.registerView(releaseId);
+          registerView(releaseId);
         }
       },
       ended: (reason) => {
