@@ -10,6 +10,12 @@ import { ConsentStore } from './consent.store';
  */
 export type AnalyticsMode = 'off' | 'consented' | 'anonymous';
 
+/**
+ * What an anonymous ping says the tab answered: no to analytics, or nothing yet. A tab that said
+ * yes pings only while its account is suspended, and then says neither.
+ */
+export type PingConsent = 'DECLINED' | 'UNANSWERED' | undefined;
+
 /** How this tab may report usage right now. */
 @Injectable({ providedIn: 'root' })
 export class AnalyticsModeService {
@@ -27,5 +33,16 @@ export class AnalyticsModeService {
     return this.consent.status() === 'granted' && !this.account.suspended()
       ? 'consented'
       : 'anonymous';
+  });
+
+  readonly pingConsent = computed<PingConsent>(() => {
+    switch (this.consent.status()) {
+      case 'denied':
+        return 'DECLINED';
+      case 'unknown':
+        return 'UNANSWERED';
+      default:
+        return undefined;
+    }
   });
 }

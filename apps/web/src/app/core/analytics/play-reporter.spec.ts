@@ -72,7 +72,7 @@ describe('PlayReporter', () => {
     writeCookie(COOKIE_NAMES.session, SESSION, 3600);
     TestBed.configureTestingModule({
       providers: [
-        { provide: AnalyticsModeService, useValue: { mode } },
+        { provide: AnalyticsModeService, useValue: { mode, pingConsent: () => 'DECLINED' } },
         { provide: AuthStore, useValue: { isAuthenticated: () => false } },
         { provide: FeaturesService, useValue: { disableAnalytics } },
         {
@@ -233,6 +233,7 @@ describe('PlayReporter', () => {
             kind: 'PLAY_START',
             state: 'PLAYING',
             signedIn: false,
+            consent: 'DECLINED',
             releaseId: 5,
             playMs: undefined,
           },

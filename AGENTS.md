@@ -84,7 +84,8 @@ Pixelarticons, Bubblegum-16 palette, dark + light themes).
   the `naucto_consent` cookie. With consent, page views (`analytics.service.ts`), beats
   (`heartbeat.service.ts`) and plays (`play-reporter.ts`, fed by the `ncPlayTracking` directive on
   the game page) carry the `naucto_vid` and `naucto_sid` cookies. Without it, a tab sends only pings
-  that hold no identifier. Every report goes through `AnalyticsTransport` as plain-text JSON with no
+  that hold no identifier. A ping says whether the tab refused or has not answered yet
+  (`AnalyticsModeService.pingConsent`). Every report goes through `AnalyticsTransport` as plain-text JSON with no
   credentials and no bearer, so no report names an account. The account is attached only when
   `BrowserAccountService` links the visitor. Features claim what the tab is doing (browsing,
   building, playing, hosting) through `ActivityService`. Settings → Privacy shows, exports and
