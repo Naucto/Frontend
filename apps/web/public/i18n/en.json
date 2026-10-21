@@ -973,7 +973,7 @@
     "refusedTitle": "If you refuse, or do not answer",
     "refused": {
       "nothingStored": "Nothing is stored on your device, apart from your choice once you make it.",
-      "ping": "While a tab is visible, it tells us about once a minute whether a game is running, with no id of any kind, so we know how many people are on Naucto.",
+      "ping": "While a tab is visible, it tells us about once a minute whether a game is running, whether you are signed in, and whether you refused or have not answered yet, with no id of any kind, so we know how many people are on Naucto.",
       "plays": "Games started and how long they run are counted per game, with no id of any kind.",
       "views": "A game’s public play count still goes up when you press Play, with nothing that identifies you."
     },
