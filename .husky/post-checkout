@@ -1,3 +1,0 @@
-if [ "$3" = 1 ] && ! git diff --quiet "$1" "$2" -- packages/api-client/openapi.json; then
-  npm run generate -w @naucto/api-client
-fi
