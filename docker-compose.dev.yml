@@ -24,6 +24,8 @@ services:
           path: apps
           target: /app/apps
           ignore: [apps/web/dist, apps/web/.angular]
+        - action: rebuild
+          path: packages/api-client/openapi.json
         - action: sync
           path: packages
           target: /app/packages
