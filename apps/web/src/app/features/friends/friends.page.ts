@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
@@ -48,6 +49,7 @@ const ACCENT: Record<string, { rule: string; name: string }> = {
 @Component({
   selector: 'nc-friends-page',
   imports: [
+    DatePipe,
     RouterLink,
     TranslocoDirective,
     ButtonDirective,
@@ -96,11 +98,11 @@ export default class FriendsPage {
     })),
   );
   protected readonly online = computed(() =>
-    this.friends().filter((friend) => friend.presence && friend.presence.kind !== 'IDLE'),
+    this.friends()
+      .filter((friend) => friend.presence)
+      .sort((a, b) => Number(a.presence?.kind === 'IDLE') - Number(b.presence?.kind === 'IDLE')),
   );
-  protected readonly offline = computed(() =>
-    this.friends().filter((friend) => !friend.presence || friend.presence.kind === 'IDLE'),
-  );
+  protected readonly offline = computed(() => this.friends().filter((friend) => !friend.presence));
   protected readonly requests = computed<FriendRequestDto[]>(() =>
     (this.requestsQuery.data() ?? []).filter((request) => request.to.id === this.auth.userId()),
   );
@@ -130,8 +132,16 @@ export default class FriendsPage {
   protected line(friend: Friend): { verb: string; name: string; nameClass: string; tail: string } {
     const presence = friend.presence;
     const line = presenceLine(presence);
-    if (!presence || !line) {
+    if (!presence) {
       return { verb: '', name: '', nameClass: '', tail: '' };
+    }
+    if (!line) {
+      return {
+        verb: this.transloco.translate('presence.online'),
+        name: '',
+        nameClass: '',
+        tail: '',
+      };
     }
     return {
       verb: this.transloco.translate(line.verbKey),
