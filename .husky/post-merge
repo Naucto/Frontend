@@ -1,0 +1,3 @@
+if ! git diff --quiet ORIG_HEAD HEAD -- packages/api-client/openapi.json; then
+  npm run generate -w @naucto/api-client
+fi
