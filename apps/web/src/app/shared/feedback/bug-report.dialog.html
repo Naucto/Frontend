@@ -7,13 +7,14 @@
     class="-mr-1 flex max-h-[calc(100dvh-240px)] flex-col gap-2 overflow-y-auto pr-1"
     (submit)="$event.preventDefault(); send()"
     (keydown)="onKey($event)">
-    <nc-field [label]="t('feedback.bug.category')">
-      <nc-segmented
-        variant="chips"
-        size="sm"
-        [label]="t('feedback.bug.category')"
-        [options]="categories()"
-        [(value)]="category" />
+    <nc-field [label]="t('feedback.bug.category')" for="bug-category">
+      <select ncInput id="bug-category" (change)="category.set($any($event.target).value)">
+        @for (option of categories(); track option.value) {
+          <option [value]="option.value" [selected]="option.value === category()">
+            {{ option.label }}
+          </option>
+        }
+      </select>
     </nc-field>
 
     <nc-field

@@ -18,8 +18,6 @@ import {
   IconComponent,
   InputDirective,
   NoticeComponent,
-  SegmentedComponent,
-  type SegmentOption,
 } from '@naucto/ui';
 
 import { violationsOf } from '../../core/api/api-errors';
@@ -53,8 +51,6 @@ export interface BugReportData {
   description?: string;
   /** The app error the report follows, as its name, message and stack. */
   appError?: string;
-  /** Start with the running game's frame attached. */
-  attachFrame?: boolean;
 }
 
 /** The release or project a page is about, read from its path. */
@@ -92,7 +88,6 @@ export function categoryFor(path: string): BugCategory {
     IconComponent,
     InputDirective,
     NoticeComponent,
-    SegmentedComponent,
   ],
   templateUrl: './bug-report.dialog.html',
   host: { '(paste)': 'onPaste($event)' },
@@ -115,7 +110,7 @@ export class BugReportDialog {
   private readonly categoryLabels = toSignal(
     this.transloco.selectTranslateObject<Record<BugCategory, string>>('feedback.categories'),
   );
-  protected readonly categories = computed<SegmentOption<BugCategory>[]>(() =>
+  protected readonly categories = computed<{ value: BugCategory; label: string }[]>(() =>
     BUG_CATEGORIES.map((value) => ({ value, label: this.categoryLabels()?.[value] ?? value })),
   );
   protected readonly category = signal<BugCategory>(this.data.category ?? categoryFor(this.route));
@@ -145,9 +140,6 @@ export class BugReportDialog {
     inject(DestroyRef).onDestroy(() => {
       this.revokePreview();
     });
-    if (this.data.attachFrame && this.hasFrame) {
-      void this.useFrame();
-    }
   }
 
   protected async useFrame(): Promise<void> {

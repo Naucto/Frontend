@@ -42,14 +42,7 @@
           [title]="t('game.haltedTitle')"
           [hint]="errorLine()"
           [retryLabel]="t('game.haltedRestart')"
-          (retry)="restart()">
-          @if (features.feedback()) {
-            <button ncButton variant="ghost" size="sm" type="button" (click)="reportProblem()">
-              <nc-icon name="bug" [size]="12" />
-              {{ t('feedback.bug.title') }}
-            </button>
-          }
-        </nc-error-state>
+          (retry)="restart()" />
       </div>
     }
     <span class="scanlines pointer-events-none absolute inset-0"></span>

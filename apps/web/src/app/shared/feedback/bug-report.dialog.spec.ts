@@ -86,6 +86,19 @@ describe('BugReportDialog', () => {
     await open({ description: 'Loading takes ages' });
 
     expect(await screen.findByLabelText('What happened?')).toHaveValue('Loading takes ages');
-    expect(screen.getByRole('radio', { name: 'Other' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByLabelText('What is it about?')).toHaveValue('OTHER');
+  });
+
+  it('sends the category picked from the list', async () => {
+    await open();
+
+    await userEvent.selectOptions(await screen.findByLabelText('What is it about?'), 'NETPLAY');
+    await userEvent.type(screen.getByLabelText('Summary'), 'Friend cannot join');
+    await userEvent.type(screen.getByLabelText('What happened?'), 'The code is never accepted.');
+    await userEvent.click(screen.getByRole('button', { name: 'Send report' }));
+
+    await vi.waitFor(() => {
+      expect(form?.get('category')).toBe('NETPLAY');
+    });
   });
 });

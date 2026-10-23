@@ -34,7 +34,7 @@ test.describe('bug reports', () => {
     const send = dialog.getByRole('button', { name: 'Send report' });
     await expect(send).toBeDisabled();
 
-    await dialog.getByRole('radio', { name: 'Sound' }).click();
+    await dialog.getByLabel('What is it about?').selectOption({ label: 'Sound' });
     await dialog.getByLabel('Summary').fill('No music on the hub');
     await dialog.getByLabel('What happened?').fill('The hub trailer plays without any sound.');
     await dialog
@@ -104,7 +104,7 @@ test('an uncaught error is reported once, with no account attached', async ({ pa
   await expect(page.getByRole('button', { name: 'Report', exact: true })).toBeVisible();
 });
 
-test('a game that stops on an error offers to report it', async ({ page }) => {
+test('a game that stops on an error offers a restart and no report', async ({ page }) => {
   await page.route('**/features', featuresOn);
   await serveGame(page, 'function _update()\n  local t = nil\n  t.x = 1\nend');
 
@@ -112,5 +112,6 @@ test('a game that stops on an error offers to report it', async ({ page }) => {
   await page.getByRole('button', { name: 'Play' }).first().click();
   const alert = page.getByRole('alert');
   await expect(alert).toContainText('The game stopped on an error');
-  await expect(alert.getByRole('button', { name: 'Report a problem' })).toBeVisible();
+  await expect(alert.getByRole('button', { name: 'Restart' })).toBeVisible();
+  await expect(alert.getByRole('button', { name: 'Report a problem' })).toHaveCount(0);
 });
