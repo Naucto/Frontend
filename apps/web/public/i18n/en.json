@@ -1000,7 +1000,7 @@
   "feedback": {
     "close": "Close",
     "cancel": "Cancel",
-    "sending": "Sending…",
+    "sending": "Sending...",
     "prompt": {
       "label": "Feedback",
       "playerTitle": "How is Naucto so far?",
@@ -1015,7 +1015,7 @@
       "high": "Excellent",
       "whatWentWrong": "What went wrong?",
       "liked": "What did you like?",
-      "likedPlaceholder": "A game, a tool, a moment…",
+      "likedPlaceholder": "A game, a tool, a moment...",
       "improve": "What should we improve?",
       "why": "Tell us why",
       "improvePlaceholder": "What got in your way, or what is missing",
@@ -1059,7 +1059,7 @@
       "screenshotAlt": "The screenshot attached to this report",
       "removeScreenshot": "Remove",
       "dropHint": "Drop or paste an image here, or pick one below.",
-      "preparing": "Preparing the image…",
+      "preparing": "Preparing the image...",
       "useFrame": "Game frame",
       "captureScreen": "Capture screen",
       "chooseFile": "Choose file",
