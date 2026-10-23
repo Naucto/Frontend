@@ -14,7 +14,7 @@
         [size]="12"
         class="mt-[1px] shrink-0"
         [class]="TONE[toast.tone].mark" />
-      <span class="flex-1">{{ toast.text }}</span>
+      <span class="min-w-0 flex-1 wrap-anywhere">{{ toast.text }}</span>
       <span class="flex h-[14px] shrink-0 items-center gap-1">
         @if (toast.action; as action) {
           <button
