@@ -3,6 +3,8 @@ import { Injectable, signal } from '@angular/core';
 /** Runtime configuration served as /config.json (written by the nginx entrypoint in production). */
 export interface AppConfig {
   apiUrl: string;
+  /** The build this deployment serves, as the commit it was built from; named in crash reports. */
+  release: string;
   google: { clientId: string; redirectUri: string };
   github: { clientId: string; redirectUri: string };
   microsoft: { clientId: string; tenantId: string; redirectUri: string };
@@ -10,6 +12,7 @@ export interface AppConfig {
 
 const FALLBACK: AppConfig = {
   apiUrl: '',
+  release: '',
   google: { clientId: '', redirectUri: '' },
   github: { clientId: '', redirectUri: '' },
   microsoft: { clientId: '', tenantId: 'common', redirectUri: '' },

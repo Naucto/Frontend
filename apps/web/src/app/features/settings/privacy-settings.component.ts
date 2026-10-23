@@ -1,5 +1,5 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { userAnalyticsControllerErase, userAnalyticsControllerExport } from '@naucto/api-client';
@@ -9,6 +9,7 @@ import {
   DialogService,
   SettingRowComponent,
   ToastService,
+  ToggleComponent,
 } from '@naucto/ui';
 import { QueryClient } from '@tanstack/angular-query-experimental';
 
@@ -17,11 +18,15 @@ import { unwrap } from '../../core/api/api-errors';
 import { FeaturesService } from '../../core/config/features.service';
 import { ConsentChoiceComponent } from '../../shared/consent/consent-choice.component';
 import { injectMyAnalytics } from '../../shared/queries/analytics.queries';
+import {
+  injectFeedbackPrompt,
+  injectUpdateFeedbackPrompt,
+} from '../../shared/queries/feedback.queries';
 import { qk } from '../../shared/queries/query-keys';
 import { playTime } from './play-time';
 
 /**
- * The usage-analytics choice, and what was counted for the account: shown, downloadable and
+ * The usage-analytics choice, whether the feedback prompt may ask, and what was counted for the account: shown, downloadable and
  * erasable even once collection is switched off, since the history outlives the switch.
  */
 @Component({
@@ -34,6 +39,7 @@ import { playTime } from './play-time';
     ButtonDirective,
     SettingRowComponent,
     ConsentChoiceComponent,
+    ToggleComponent,
   ],
   templateUrl: './privacy-settings.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -41,6 +47,13 @@ import { playTime } from './play-time';
 export class PrivacySettingsComponent {
   protected readonly features = inject(FeaturesService);
   protected readonly stats = injectMyAnalytics();
+  protected readonly feedbackPrompt = injectFeedbackPrompt();
+  protected readonly updatePrompt = injectUpdateFeedbackPrompt();
+  /** On while neither the player's nor the creator's prompt was declined. */
+  protected readonly askingForFeedback = computed(() => {
+    const prompts = this.feedbackPrompt.data();
+    return prompts !== undefined && !prompts.player.declined && !prompts.creator.declined;
+  });
   protected readonly exporting = signal(false);
   protected readonly erasing = signal(false);
 

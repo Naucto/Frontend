@@ -1,0 +1,7 @@
+<nc-dialog-shell
+  *transloco="let t"
+  [title]="t('feedback.rating.dialogTitle')"
+  [lead]="t('feedback.rating.dialogLead')"
+  [closeLabel]="t('feedback.close')">
+  <nc-rating-form [context]="data.context" source="MANUAL" (sent)="ref.close($event)" />
+</nc-dialog-shell>

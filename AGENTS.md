@@ -89,6 +89,30 @@ Pixelarticons, Bubblegum-16 palette, dark + light themes).
   `BrowserAccountService` links the visitor. Features claim what the tab is doing (browsing,
   building, playing, hosting) through `ActivityService`. Settings → Privacy shows, exports and
   erases the account's history even with the flag off.
+- **Feedback and crash reports** (`shared/feedback`, `core/crash`), behind the backend's
+  `feedback` feature flag:
+  - **Rating prompt.** A play of two minutes (`PlayTrackingDirective`) or five minutes in the
+    editor arms `FeedbackStore`. `nc-feedback-prompt` then opens a modal in the middle of the
+    screen, on the hub after a play or on any app-shell page for a creator. It waits for the
+    consent banner and any other dialog. Escape and the backdrop do not close it: it is answered,
+    put off ("not now", 14 days) or declined. The server keeps that state once per context, so a
+    player who starts making games is asked again as a creator. Settings → Privacy turns both back
+    on.
+  - **Rating.** The rating is 1 to 10 (`nc-rating`) with two optional comments. A score of 4 or
+    less also asks for reasons and offers a bug report.
+  - **Thanks.** A sent report or rating opens `ThanksDialog`, which invites the person to the
+    Naucto Discord (`DISCORD_INVITE`) and closes on OK or its cross.
+  - **Who can send.** Ratings and bug reports need an account. `FeedbackLauncher` asks a
+    signed-out reader to sign in over the page.
+  - **What a bug report carries.** It lists everything it attaches before it is sent. A screenshot
+    comes from the running game's frame, a one-frame screen capture, or a file. It is shrunk to
+    1920 px and WebP before upload, within the server's 2 MB.
+  - **Crash reports.** `CrashReporter` sends uncaught errors (`GlobalErrorHandler`) and engine
+    faults (`Engine.onFault`, plus the WebGL and audio backends' `onFault`). It goes through
+    `AnalyticsTransport`, so a report carries no account and no identifier whatever the consent
+    answer, at most once per crash and ten per tab. A Lua error in a game is the game's own and
+    is never reported. Its overlay offers a bug report instead. A crash is said on screen only in a
+    development build (`SHOW_CRASHES`): a player has nothing to do about one that is already reported.
 - **Boot order**: `provideApiClient()` runs one initializer — load `/config.json`, configure the
   client, bootstrap auth — because Angular initializers otherwise run concurrently.
 - **Mobile** is out of scope for now but must not be blocked: measure widths with `ResizeObserver`

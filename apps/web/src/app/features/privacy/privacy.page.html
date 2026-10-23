@@ -29,6 +29,16 @@
     </ul>
   </nc-panel>
 
+  @if (features.feedback()) {
+    <nc-panel [title]="t('privacy.feedbackTitle')">
+      <ul class="list-disc space-y-1 pl-2 text-body text-ink-2">
+        @for (item of feedbackItems; track item) {
+          <li>{{ t('privacy.feedback.' + item) }}</li>
+        }
+      </ul>
+    </nc-panel>
+  }
+
   <nc-panel [title]="t('privacy.rightsTitle')">
     <p class="text-body text-ink-2">{{ t('privacy.rights') }}</p>
     <a routerLink="/settings/privacy" class="mt-1 text-body text-ink-2 underline hover:text-ink">

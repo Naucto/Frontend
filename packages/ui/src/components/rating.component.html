@@ -1,0 +1,25 @@
+<div
+  role="radiogroup"
+  [attr.aria-label]="label()"
+  class="grid grid-cols-10 gap-[3px] rounded-sm border border-line bg-inset p-[3px]">
+  @for (score of scores; track score; let i = $index) {
+    <button
+      #cell
+      type="button"
+      role="radio"
+      [attr.aria-checked]="score === value()"
+      [attr.tabindex]="tabIndexFor(score)"
+      [disabled]="disabled()"
+      [class]="cellClass(score)"
+      (click)="value.set(score)"
+      (keydown)="onKey($event, i)">
+      {{ score }}
+    </button>
+  }
+</div>
+@if (lowLabel() || highLabel()) {
+  <div class="mt-0.5 flex justify-between text-label text-ink-4" aria-hidden="true">
+    <span>{{ lowLabel() }}</span>
+    <span>{{ highLabel() }}</span>
+  </div>
+}

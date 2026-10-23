@@ -14,14 +14,24 @@
         [size]="12"
         class="mt-[1px] shrink-0"
         [class]="TONE[toast.tone].mark" />
-      <span class="flex-1">{{ toast.text }}</span>
-      <button
-        type="button"
-        class="cursor-pointer text-ink-3 transition-colors duration-100 hover:text-ink"
-        aria-label="Dismiss"
-        (click)="toasts.dismiss(toast.id)">
-        <nc-icon name="close" [size]="12" />
-      </button>
+      <span class="min-w-0 flex-1 wrap-anywhere">{{ toast.text }}</span>
+      <span class="flex h-[14px] shrink-0 items-center gap-1">
+        @if (toast.action; as action) {
+          <button
+            type="button"
+            class="cursor-pointer font-mono text-label leading-none tracking-button text-ink-2 uppercase underline-offset-2 transition-colors duration-100 hover:text-ink hover:underline"
+            (click)="toasts.run(toast)">
+            {{ action.label }}
+          </button>
+        }
+        <button
+          type="button"
+          class="inline-flex cursor-pointer items-center text-ink-3 transition-colors duration-100 hover:text-ink"
+          aria-label="Dismiss"
+          (click)="toasts.dismiss(toast.id)">
+          <nc-icon name="close" [size]="12" />
+        </button>
+      </span>
     </div>
   }
 </div>
