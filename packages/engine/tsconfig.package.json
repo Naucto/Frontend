@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "./dist/types",
+    "rootDir": "./src",
+    "types": []
+  },
+  "include": ["src/headless.ts", "src/sound.ts"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.bench.ts"]
+}
