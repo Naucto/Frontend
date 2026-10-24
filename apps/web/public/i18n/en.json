@@ -267,7 +267,8 @@
     "feedback": "Send feedback",
     "privacy": "Privacy",
     "security": "Report a vulnerability",
-    "toggleTheme": "Toggle theme"
+    "toggleTheme": "Toggle theme",
+    "reportBug": "Report a problem"
   },
   "games": {
     "title": "My games",
@@ -990,11 +991,14 @@
     "geoCredit": "Country lookups use IP geolocation by",
     "feedbackTitle": "Feedback",
     "feedback": {
+      "reports": "A bug report you send names your account, so the team can follow up with you. It includes what its form lists before you send it.",
+      "screenshots": "A screenshot you attach is seen only by the team, and is deleted with your account.",
       "ratings": "A rating you send names your account, so the team can follow up with you. We ask for one at most once: close the question and we ask again in two weeks. You can turn it off in Settings."
     }
   },
   "feedback": {
     "close": "Close",
+    "cancel": "Cancel",
     "sending": "Sending...",
     "prompt": {
       "label": "Feedback",
@@ -1023,7 +1027,8 @@
       "failed": "Your rating could not be sent. Try again in a moment.",
       "dialogTitle": "Rate Naucto",
       "dialogLead": "How is the platform working for you? Your answer goes straight to the team.",
-      "menu": "Send feedback"
+      "menu": "Send feedback",
+      "reportBug": "Report a bug"
     },
     "reasons": {
       "BUGS": "Bugs or crashes",
@@ -1032,6 +1037,52 @@
       "MISSING_FEATURE": "Missing feature",
       "CONTENT": "Games and content",
       "OTHER": "Something else"
+    },
+    "categories": {
+      "GAMEPLAY": "Playing a game",
+      "EDITOR": "Editor",
+      "GRAPHICS": "Graphics",
+      "SOUND": "Sound",
+      "NETPLAY": "Multiplayer",
+      "ACCOUNT": "Account",
+      "PERFORMANCE": "Performance",
+      "OTHER": "Other"
+    },
+    "bug": {
+      "title": "Report a problem",
+      "lead": "Tell us what went wrong. The team reads every report.",
+      "category": "What is it about?",
+      "summary": "Summary",
+      "summaryPlaceholder": "In a few words",
+      "description": "What happened?",
+      "descriptionHint": "What you did, what you expected, and what happened instead.",
+      "screenshot": "Screenshot (optional)",
+      "screenshotHint": "PNG, JPEG or WebP, up to 2 MB. A large image is shrunk before it is sent.",
+      "screenshotAlt": "The screenshot attached to this report",
+      "removeScreenshot": "Remove",
+      "dropHint": "Drop or paste an image here, or pick one below.",
+      "preparing": "Preparing the image...",
+      "useFrame": "Game frame",
+      "captureScreen": "Capture screen",
+      "chooseFile": "Choose file",
+      "screenshotUnreadable": "This file could not be read as an image.",
+      "send": "Send report",
+      "failed": "Your report could not be sent. Try again in a moment.",
+      "invalid": "Some fields need another look before the report can be sent.",
+      "included": {
+        "title": "Included with your report",
+        "page": "Page",
+        "browser": "Browser",
+        "browserValue": "Browser, system and device family, without versions",
+        "viewport": "Window",
+        "language": "Language",
+        "release": "App version",
+        "game": "Game",
+        "project": "Project",
+        "engineError": "Game error",
+        "console": "Console",
+        "consoleLines": "Its last lines, {{count}} at most 50"
+      }
     },
     "settings": {
       "title": "Feedback",
@@ -1043,7 +1094,9 @@
       "ratingLead": "Your feedback reached the team. We read every one.",
       "discord": "Want to talk it over, or follow what we do with it? Join the Naucto Discord, where it is easier to discuss.",
       "join": "Join our Discord",
-      "ok": "OK"
+      "ok": "OK",
+      "bugLead": "Report #{{id}} reached the team. We read every one.",
+      "screenshotRefused": "The screenshot could not be attached: it may be over 2 MB or not an image. The report itself was sent."
     }
   }
 }

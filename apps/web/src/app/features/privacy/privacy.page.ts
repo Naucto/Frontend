@@ -19,5 +19,5 @@ export default class PrivacyPage {
   protected readonly accepted = ['pages', 'plays', 'context', 'account'] as const;
   protected readonly refused = ['nothingStored', 'ping', 'plays', 'views'] as const;
   protected readonly retention = ['raw', 'aggregate', 'history', 'choice'] as const;
-  protected readonly feedbackItems = ['ratings'] as const;
+  protected readonly feedbackItems = ['reports', 'screenshots', 'ratings'] as const;
 }

@@ -1,7 +1,7 @@
 <form
   *transloco="let t"
   class="flex flex-col gap-1.5"
-  (submit)="$event.preventDefault(); send()"
+  (submit)="$event.preventDefault(); send(false)"
   (keydown)="onKey($event)">
   <nc-field [label]="t('feedback.rating.role')">
     <nc-segmented
@@ -75,6 +75,17 @@
   <div class="flex flex-wrap items-center justify-end gap-1">
     <ng-content select="[secondary]" />
     <span class="flex-1"></span>
+    @if (low()) {
+      <button
+        ncButton
+        variant="secondary"
+        size="sm"
+        type="button"
+        [disabled]="pending()"
+        (click)="send(true)">
+        {{ t('feedback.rating.reportBug') }}
+      </button>
+    }
     <button
       ncButton
       variant="primary"

@@ -50,6 +50,14 @@
             {{ t('footer.feedback') }}
           </button>
         </li>
+        <li>
+          <button
+            type="button"
+            class="cursor-pointer text-ink-2 hover:text-ink"
+            (click)="feedback.reportBug()">
+            {{ t('footer.reportBug') }}
+          </button>
+        </li>
       </ul>
     </nav>
     <nav [attr.aria-label]="t('footer.legal')">

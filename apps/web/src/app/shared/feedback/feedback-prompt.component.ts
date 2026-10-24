@@ -101,7 +101,7 @@ export class FeedbackPromptComponent {
       this.asking = false;
       this.store.disarm();
       if (outcome?.kind === 'sent') {
-        this.launcher.afterRating();
+        this.launcher.afterRating(outcome.sent);
       } else if (outcome) {
         this.update.mutate({ action: outcome.kind });
       }

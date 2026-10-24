@@ -99,11 +99,19 @@ Pixelarticons, Bubblegum-16 palette, dark + light themes).
     it back on.
   - **Rating.** The person says whether they mostly play or make games (offered from what they were
     just doing), then gives a score from 1 to 10 (`nc-rating`) with two optional comments. A score
-    of 4 or less also asks for reasons.
-  - **Thanks.** A sent rating opens `ThanksDialog`, which invites the person to the Naucto Discord
-    (`DISCORD_INVITE`) and closes on OK or its cross.
-  - **Who can send.** A rating needs an account. `FeedbackLauncher` asks a signed-out reader to
-    sign in over the page.
+    of 4 or less also asks for reasons and offers a bug report.
+  - **Bug report.** The bug button beside the bell, the account menu and the footer open it. It
+    lists everything it attaches before it is sent. It goes as JSON, and its screenshot follows on
+    its own route: the running game's frame as a PNG, a one-frame screen capture or a file, shrunk
+    to 1920 px and WebP. Whether it fits is the server's call: a refused screenshot leaves the
+    report sent, and the thanks says so.
+  - **Thanks.** A sent report or rating opens `ThanksDialog`, which invites the person to the Naucto
+    Discord (`DISCORD_INVITE`) and closes on OK or its cross.
+  - **Who can send.** Ratings and bug reports need an account. `FeedbackLauncher` asks a signed-out
+    reader to sign in over the page.
+- **Release.** `APP_RELEASE` (`core/config/release.ts`) is the version of `apps/web` and the commit
+  it was built from, compiled in by `tools/build-web.ts`. The Docker image has no `.git`, so its
+  build takes the commit as `--build-arg GIT_COMMIT`. A development server says `dev`.
 - **Boot order**: `provideApiClient()` runs one initializer — load `/config.json`, configure the
   client, bootstrap auth — because Angular initializers otherwise run concurrently.
 - **Mobile** is out of scope for now but must not be blocked: measure widths with `ResizeObserver`

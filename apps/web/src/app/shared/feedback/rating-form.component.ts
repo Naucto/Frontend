@@ -31,9 +31,11 @@ const PRAISE_FROM = 8;
 
 export const RATING_REASONS = Object.values(RatingReason);
 
-/** What was sent. */
+/** What was sent, and whether the person went on to report a bug from it. */
 export interface RatingSent {
   id: number;
+  reportBug: boolean;
+  improve: string;
 }
 
 /**
@@ -106,11 +108,11 @@ export class RatingFormComponent {
   protected onKey(event: KeyboardEvent): void {
     if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
       event.preventDefault();
-      void this.send();
+      void this.send(false);
     }
   }
 
-  protected async send(): Promise<void> {
+  protected async send(reportBug: boolean): Promise<void> {
     const score = this.score();
     if (score === null || this.pending()) {
       return;
@@ -131,7 +133,7 @@ export class RatingFormComponent {
         ...(improve ? { improve } : {}),
         ...(releaseId === null ? {} : { releaseId }),
       });
-      this.sent.emit({ id });
+      this.sent.emit({ id, reportBug, improve });
     } catch {
       this.failed.set(true);
     }

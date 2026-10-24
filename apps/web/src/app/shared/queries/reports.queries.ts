@@ -1,8 +1,11 @@
 import { inject } from '@angular/core';
 import {
+  type CreateBugReportDto,
   type CreatedReportDto,
   type CreateRatingDto,
   type FeedbackPromptDto,
+  reportsControllerAttachScreenshot,
+  reportsControllerCreateBugReport,
   reportsControllerCreateRating,
   reportsControllerPrompt,
   reportsControllerUpdatePrompt,
@@ -59,6 +62,30 @@ export function injectSubmitRating(): CreateMutationResult<
       queries.setQueryData<FeedbackPromptDto>(qk.feedbackPrompt(), (state) =>
         state ? { ...state, eligible: false } : state,
       );
+    },
+  }));
+}
+
+export function injectSubmitBugReport(): CreateMutationResult<
+  CreatedReportDto,
+  Error,
+  CreateBugReportDto
+> {
+  return injectMutation(() => ({
+    mutationFn: async (body: CreateBugReportDto) =>
+      unwrap(await reportsControllerCreateBugReport({ body })),
+  }));
+}
+
+/** Attaches a screenshot to a bug report just sent. The server judges its size and type. */
+export function injectAttachScreenshot(): CreateMutationResult<
+  void,
+  Error,
+  { id: number; screenshot: Blob }
+> {
+  return injectMutation(() => ({
+    mutationFn: async ({ id, screenshot }: { id: number; screenshot: Blob }) => {
+      unwrap(await reportsControllerAttachScreenshot({ path: { id }, body: { screenshot } }));
     },
   }));
 }

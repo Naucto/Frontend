@@ -144,6 +144,7 @@ describe('FeedbackPromptComponent', () => {
 
     await userEvent.click(screen.getByRole('radio', { name: '3' }));
     expect(screen.getByText('What went wrong?')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Report a bug' })).toBeTruthy();
 
     await userEvent.click(screen.getByRole('switch', { name: 'Slow' }));
     await userEvent.type(screen.getByLabelText('Tell us why'), 'Loading takes ages');

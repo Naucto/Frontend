@@ -27,6 +27,13 @@ describe('ThanksDialog', () => {
     expect(link).toHaveAttribute('target', '_blank');
   });
 
+  it('thanks for a report by its number, and says when its screenshot was refused', async () => {
+    await open({ kind: 'bug', id: 31, screenshotRefused: true });
+
+    expect(await screen.findByText(/Report #31 reached the team/)).toBeTruthy();
+    expect(screen.getByText(/The screenshot could not be attached/)).toBeTruthy();
+  });
+
   it('closes on OK and on its cross', async () => {
     const close = await open({ kind: 'rating' });
 

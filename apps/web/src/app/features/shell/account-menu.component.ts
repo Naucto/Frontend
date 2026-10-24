@@ -60,6 +60,11 @@ export class AccountMenuComponent {
     this.feedback.rate();
   }
 
+  protected reportBug(): void {
+    this.open.set(false);
+    this.feedback.reportBug();
+  }
+
   protected async logout(): Promise<void> {
     this.open.set(false);
     await this.auth.logout();

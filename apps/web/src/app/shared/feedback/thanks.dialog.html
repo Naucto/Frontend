@@ -1,8 +1,15 @@
 <nc-dialog-shell
   *transloco="let t"
   [title]="t('feedback.thanks.title')"
-  [lead]="t('feedback.thanks.ratingLead')"
+  [lead]="
+    data.kind === 'bug'
+      ? t('feedback.thanks.bugLead', { id: data.id })
+      : t('feedback.thanks.ratingLead')
+  "
   [closeLabel]="t('feedback.close')">
+  @if (data.kind === 'bug' && data.screenshotRefused) {
+    <nc-notice tone="warn" class="mb-1.5">{{ t('feedback.thanks.screenshotRefused') }}</nc-notice>
+  }
   <div class="flex items-start gap-1.5 rounded-sm border border-line bg-inset px-1.5 py-1.25">
     <nc-icon name="message" [size]="24" class="shrink-0 text-sky-ink" />
     <div class="flex min-w-0 flex-col gap-1">

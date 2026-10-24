@@ -1,0 +1,141 @@
+<nc-dialog-shell
+  *transloco="let t"
+  [title]="t('feedback.bug.title')"
+  [lead]="t('feedback.bug.lead')"
+  [closeLabel]="t('feedback.close')">
+  <form
+    class="-mr-1 flex max-h-[calc(100dvh-240px)] flex-col gap-2 overflow-y-auto pr-1"
+    (submit)="$event.preventDefault(); send()"
+    (keydown)="onKey($event)">
+    <nc-field [label]="t('feedback.bug.category')" for="bug-category">
+      <select ncInput id="bug-category" (change)="category.set($any($event.target).value)">
+        @for (option of categories(); track option.value) {
+          <option [value]="option.value" [selected]="option.value === category()">
+            {{ option.label }}
+          </option>
+        }
+      </select>
+    </nc-field>
+
+    <nc-field
+      [label]="t('feedback.bug.summary')"
+      for="bug-title"
+      [counter]="title().length + '/' + titleMax">
+      <input
+        ncInput
+        id="bug-title"
+        class="w-full"
+        autocomplete="off"
+        [attr.maxlength]="titleMax"
+        [placeholder]="t('feedback.bug.summaryPlaceholder')"
+        [value]="title()"
+        (input)="title.set($any($event.target).value)" />
+    </nc-field>
+
+    <nc-field
+      [label]="t('feedback.bug.description')"
+      for="bug-description"
+      [hint]="t('feedback.bug.descriptionHint')"
+      [counter]="description().length + '/' + descriptionMax">
+      <textarea
+        ncInput
+        id="bug-description"
+        rows="5"
+        class="w-full resize-y"
+        [attr.maxlength]="descriptionMax"
+        [value]="description()"
+        (input)="description.set($any($event.target).value)"></textarea>
+    </nc-field>
+
+    <nc-field
+      [label]="t('feedback.bug.screenshot')"
+      [hint]="t('feedback.bug.screenshotHint')"
+      [error]="screenshotError() ?? undefined">
+      @if (preview(); as src) {
+        <div class="flex items-start gap-1.5">
+          <img
+            [src]="src"
+            [alt]="t('feedback.bug.screenshotAlt')"
+            class="max-h-[180px] max-w-[320px] rounded-sm border border-line bg-inset object-contain [image-rendering:pixelated]" />
+          <button ncButton variant="ghost" size="sm" type="button" (click)="removeScreenshot()">
+            <nc-icon name="close" [size]="12" />
+            {{ t('feedback.bug.removeScreenshot') }}
+          </button>
+        </div>
+      } @else {
+        <div
+          class="flex flex-col items-center gap-1 rounded-sm border border-dashed border-line-strong bg-inset px-2 py-1.5 text-center"
+          (dragover)="$event.preventDefault()"
+          (drop)="onDrop($event)">
+          <p class="text-meta text-ink-3">
+            {{ preparing() ? t('feedback.bug.preparing') : t('feedback.bug.dropHint') }}
+          </p>
+          <div class="flex flex-wrap justify-center gap-1">
+            @if (hasFrame) {
+              <button
+                ncButton
+                variant="secondary"
+                size="sm"
+                type="button"
+                [disabled]="preparing()"
+                (click)="useFrame()">
+                <nc-icon name="gamepad" [size]="12" />
+                {{ t('feedback.bug.useFrame') }}
+              </button>
+            }
+            @if (canCapture) {
+              <button
+                ncButton
+                variant="secondary"
+                size="sm"
+                type="button"
+                [disabled]="preparing()"
+                (click)="captureScreen()">
+                <nc-icon name="camera" [size]="12" />
+                {{ t('feedback.bug.captureScreen') }}
+              </button>
+            }
+            <label ncButton variant="secondary" size="sm" [class.pointer-events-none]="preparing()">
+              <nc-icon name="upload" [size]="12" />
+              {{ t('feedback.bug.chooseFile') }}
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                class="sr-only"
+                (change)="pickFile($event)" />
+            </label>
+          </div>
+        </div>
+      }
+    </nc-field>
+
+    <details class="rounded-sm border border-line">
+      <summary class="label cursor-pointer px-1.5 py-1 text-ink-3 hover:text-ink">
+        {{ t('feedback.bug.included.title') }}
+      </summary>
+      <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 gap-y-0.5 px-1.5 pb-1.5 text-meta">
+        @for (row of contextRows(); track row.label) {
+          <dt class="text-ink-4">{{ row.label }}</dt>
+          <dd class="font-mono break-words whitespace-pre-wrap text-ink-2">{{ row.value }}</dd>
+        }
+      </dl>
+    </details>
+
+    @if (failed(); as message) {
+      <nc-notice tone="danger">{{ message }}</nc-notice>
+    }
+  </form>
+  <ng-container footer>
+    <button ncButton variant="ghost" type="button" (click)="ref.close()">
+      {{ t('feedback.cancel') }}
+    </button>
+    <button
+      ncButton
+      variant="primary"
+      type="button"
+      [disabled]="!valid() || pending() || preparing()"
+      (click)="send()">
+      {{ pending() ? t('feedback.sending') : t('feedback.bug.send') }}
+    </button>
+  </ng-container>
+</nc-dialog-shell>
