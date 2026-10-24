@@ -4288,6 +4288,107 @@
         "tags": ["reports"]
       }
     },
+    "/reports/bugs": {
+      "post": {
+        "operationId": "ReportsController_createBugReport",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBugReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedReportDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "429": {
+            "description": "Too many reports"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Report a bug. Its screenshot, if any, follows on its own route",
+        "tags": ["reports"]
+      }
+    },
+    "/reports/bugs/{id}/screenshot": {
+      "put": {
+        "operationId": "ReportsController_attachScreenshot",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["screenshot"],
+                "properties": {
+                  "screenshot": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "PNG, JPEG or WebP, 2 MB"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Attached"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "404": {
+            "description": "Not a bug report of this account"
+          },
+          "409": {
+            "description": "Already has one, or too late"
+          },
+          "413": {
+            "description": "Larger than 2 MB"
+          },
+          "422": {
+            "description": "Not a PNG, JPEG or WebP image"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Attach a screenshot to a bug report sent within the hour",
+        "tags": ["reports"]
+      }
+    },
     "/admin/reports": {
       "get": {
         "operationId": "AdminReportsController_list",
@@ -4368,6 +4469,14 @@
             "description": "Only ratings that came with a comment",
             "schema": {
               "type": "boolean"
+            }
+          },
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/BugCategory"
             }
           },
           {
@@ -4476,6 +4585,54 @@
         "tags": ["admin"]
       }
     },
+    "/admin/reports/count": {
+      "get": {
+        "operationId": "AdminReportsController_count",
+        "parameters": [
+          {
+            "name": "kind",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ReportKind"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ReportStatus"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportCountDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Admin role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "How many reports of a kind, in a status if given",
+        "tags": ["admin"]
+      }
+    },
     "/admin/reports/{id}": {
       "get": {
         "operationId": "AdminReportsController_detail",
@@ -4567,6 +4724,42 @@
           }
         ],
         "summary": "Set the status of a report or the note of the team",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/reports/{id}/screenshot": {
+      "get": {
+        "operationId": "AdminReportsController_screenshot",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The image"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Admin role required"
+          },
+          "404": {
+            "description": "No screenshot"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "The screenshot of a bug report, served privately",
         "tags": ["admin"]
       }
     },
@@ -9448,9 +9641,101 @@
         },
         "required": ["id"]
       },
+      "BugCategory": {
+        "type": "string",
+        "enum": [
+          "GAMEPLAY",
+          "EDITOR",
+          "GRAPHICS",
+          "SOUND",
+          "NETPLAY",
+          "ACCOUNT",
+          "PERFORMANCE",
+          "OTHER"
+        ]
+      },
+      "BugContextDto": {
+        "type": "object",
+        "properties": {
+          "viewport": {
+            "type": "string",
+            "example": "1920x1080"
+          },
+          "language": {
+            "type": "string",
+            "example": "en-GB"
+          },
+          "engineError": {
+            "type": "string",
+            "description": "The engine error the game stopped on, with its traceback"
+          },
+          "console": {
+            "description": "The last lines of the game console",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "CreateBugReportDto": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BugCategory"
+              }
+            ]
+          },
+          "title": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 120
+          },
+          "description": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 4000
+          },
+          "route": {
+            "type": "string",
+            "example": "/play/42",
+            "maxLength": 200
+          },
+          "role": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReportRole"
+              }
+            ]
+          },
+          "releaseId": {
+            "type": "number",
+            "description": "The release the page is about"
+          },
+          "projectId": {
+            "type": "number",
+            "description": "The project open in the editor"
+          },
+          "ratingId": {
+            "type": "number",
+            "description": "The rating the report follows, for a low score"
+          },
+          "appRelease": {
+            "type": "string",
+            "description": "The build of the web app",
+            "maxLength": 64
+          },
+          "context": {
+            "$ref": "#/components/schemas/BugContextDto"
+          }
+        },
+        "required": ["category", "title", "description", "route"]
+      },
       "ReportKind": {
         "type": "string",
-        "enum": ["RATING"]
+        "enum": ["RATING", "BUG"]
       },
       "ReportStatus": {
         "type": "string",
@@ -9562,6 +9847,21 @@
               }
             ]
           },
+          "appRelease": {
+            "type": "string",
+            "nullable": true,
+            "description": "The build of the web app"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "description": "A bug report summary"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true,
+            "description": "A bug report description"
+          },
           "score": {
             "type": "number",
             "nullable": true,
@@ -9589,9 +9889,41 @@
                 "$ref": "#/components/schemas/RatingOrigin"
               }
             ]
+          },
+          "followUpIds": {
+            "description": "Bug reports opened from this rating",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "category": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BugCategory"
+              }
+            ]
+          },
+          "ratingId": {
+            "type": "number",
+            "nullable": true,
+            "description": "The rating a bug followed"
+          },
+          "hasScreenshot": {
+            "type": "boolean"
           }
         },
-        "required": ["id", "kind", "status", "createdAt", "updatedAt", "reasons"]
+        "required": [
+          "id",
+          "kind",
+          "status",
+          "createdAt",
+          "updatedAt",
+          "reasons",
+          "followUpIds",
+          "hasScreenshot"
+        ]
       },
       "AdminReportListDto": {
         "type": "object",
@@ -9694,6 +10026,48 @@
         },
         "required": ["count", "distribution", "player", "creator", "series"]
       },
+      "ReportCountDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number"
+          }
+        },
+        "required": ["count"]
+      },
+      "LinkedRatingDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "score": {
+            "type": "number"
+          },
+          "liked": {
+            "type": "string",
+            "nullable": true
+          },
+          "improve": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": ["id", "score"]
+      },
+      "ScreenshotInfoDto": {
+        "type": "object",
+        "properties": {
+          "mime": {
+            "type": "string",
+            "example": "image/webp"
+          },
+          "bytes": {
+            "type": "number"
+          }
+        },
+        "required": ["mime", "bytes"]
+      },
       "AdminReportDetailDto": {
         "type": "object",
         "properties": {
@@ -9753,6 +10127,21 @@
               }
             ]
           },
+          "appRelease": {
+            "type": "string",
+            "nullable": true,
+            "description": "The build of the web app"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "description": "A bug report summary"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true,
+            "description": "A bug report description"
+          },
           "score": {
             "type": "number",
             "nullable": true,
@@ -9781,12 +10170,72 @@
               }
             ]
           },
+          "followUpIds": {
+            "description": "Bug reports opened from this rating",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "category": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BugCategory"
+              }
+            ]
+          },
+          "ratingId": {
+            "type": "number",
+            "nullable": true,
+            "description": "The rating a bug followed"
+          },
+          "hasScreenshot": {
+            "type": "boolean"
+          },
           "adminNote": {
             "type": "string",
             "nullable": true
+          },
+          "projectId": {
+            "type": "number",
+            "nullable": true
+          },
+          "context": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true,
+            "description": "What the browser attached: viewport, language, browser family, errors, console"
+          },
+          "rating": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LinkedRatingDto"
+              }
+            ]
+          },
+          "screenshot": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ScreenshotInfoDto"
+              }
+            ]
           }
         },
-        "required": ["id", "kind", "status", "createdAt", "updatedAt", "reasons"]
+        "required": [
+          "id",
+          "kind",
+          "status",
+          "createdAt",
+          "updatedAt",
+          "reasons",
+          "followUpIds",
+          "hasScreenshot"
+        ]
       },
       "UpdateReportDto": {
         "type": "object",
