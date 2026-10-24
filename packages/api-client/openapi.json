@@ -4389,6 +4389,43 @@
         "tags": ["reports"]
       }
     },
+    "/reports/crash": {
+      "post": {
+        "operationId": "CrashIngestController_report",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "text/plain": {
+              "schema": {
+                "$ref": "#/components/schemas/CrashReportDto"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrashReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Recorded, or ignored"
+          },
+          "429": {
+            "description": "Too many reports"
+          }
+        },
+        "summary": "Report an uncaught error of the web app or a fault of the engine",
+        "tags": ["reports"],
+        "security": [
+          {},
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
     "/admin/reports": {
       "get": {
         "operationId": "AdminReportsController_list",
@@ -4477,6 +4514,25 @@
             "in": "query",
             "schema": {
               "$ref": "#/components/schemas/BugCategory"
+            }
+          },
+          {
+            "name": "source",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/CrashSource"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "Newest first, crashes last seen first, or crashes seen most first",
+            "schema": {
+              "default": "created",
+              "type": "string",
+              "enum": ["created", "lastSeen", "count"]
             }
           },
           {
@@ -9733,13 +9789,72 @@
         },
         "required": ["category", "title", "description", "route"]
       },
+      "CrashExtraDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "description": "The engine fault kind, as `webgl-context-lost`"
+          },
+          "phase": {
+            "type": "string",
+            "description": "The engine phase the fault happened in, as `draw`"
+          },
+          "renderer": {
+            "type": "string",
+            "description": "The WebGL renderer string"
+          },
+          "audio": {
+            "type": "string",
+            "description": "The state of the audio context, as `suspended`"
+          }
+        }
+      },
+      "CrashReportDto": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": ["web", "engine"]
+          },
+          "name": {
+            "type": "string",
+            "example": "TypeError",
+            "maxLength": 120
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "stack": {
+            "type": "string",
+            "maxLength": 8000
+          },
+          "route": {
+            "type": "string",
+            "example": "/play/42"
+          },
+          "appRelease": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "extra": {
+            "$ref": "#/components/schemas/CrashExtraDto"
+          }
+        },
+        "required": ["source", "name", "message", "stack", "route"]
+      },
       "ReportKind": {
         "type": "string",
-        "enum": ["RATING", "BUG"]
+        "enum": ["RATING", "BUG", "CRASH"]
       },
       "ReportStatus": {
         "type": "string",
         "enum": ["NEW", "TRIAGED", "IN_PROGRESS", "RESOLVED", "IGNORED"]
+      },
+      "CrashSource": {
+        "type": "string",
+        "enum": ["WEB", "ENGINE", "BACKEND"]
       },
       "ReportAccountDto": {
         "type": "object",
@@ -9912,6 +10027,30 @@
           },
           "hasScreenshot": {
             "type": "boolean"
+          },
+          "source": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CrashSource"
+              }
+            ]
+          },
+          "count": {
+            "type": "number",
+            "description": "How many times a crash happened, 1 for any other report"
+          },
+          "lastSeen": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "When a crash last happened"
+          },
+          "regressedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "When a resolved crash was last reported again"
           }
         },
         "required": [
@@ -9922,7 +10061,8 @@
           "updatedAt",
           "reasons",
           "followUpIds",
-          "hasScreenshot"
+          "hasScreenshot",
+          "count"
         ]
       },
       "AdminReportListDto": {
@@ -10068,6 +10208,43 @@
         },
         "required": ["mime", "bytes"]
       },
+      "ReportOccurrenceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "route": {
+            "type": "string"
+          },
+          "appRelease": {
+            "type": "string",
+            "nullable": true
+          },
+          "device": {
+            "type": "string",
+            "nullable": true
+          },
+          "browser": {
+            "type": "string",
+            "nullable": true
+          },
+          "os": {
+            "type": "string",
+            "nullable": true
+          },
+          "extra": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true
+          }
+        },
+        "required": ["id", "createdAt", "route"]
+      },
       "AdminReportDetailDto": {
         "type": "object",
         "properties": {
@@ -10193,6 +10370,30 @@
           "hasScreenshot": {
             "type": "boolean"
           },
+          "source": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CrashSource"
+              }
+            ]
+          },
+          "count": {
+            "type": "number",
+            "description": "How many times a crash happened, 1 for any other report"
+          },
+          "lastSeen": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "When a crash last happened"
+          },
+          "regressedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "When a resolved crash was last reported again"
+          },
           "adminNote": {
             "type": "string",
             "nullable": true
@@ -10224,6 +10425,18 @@
                 "$ref": "#/components/schemas/ScreenshotInfoDto"
               }
             ]
+          },
+          "stack": {
+            "type": "string",
+            "nullable": true,
+            "description": "The latest stack of a crash, mapped back to the sources when possible"
+          },
+          "occurrences": {
+            "description": "The latest occurrences, newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportOccurrenceDto"
+            }
           }
         },
         "required": [
@@ -10234,7 +10447,9 @@
           "updatedAt",
           "reasons",
           "followUpIds",
-          "hasScreenshot"
+          "hasScreenshot",
+          "count",
+          "occurrences"
         ]
       },
       "UpdateReportDto": {
