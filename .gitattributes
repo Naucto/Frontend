@@ -2,3 +2,5 @@
 *.ttf binary
 *.woff2 binary
 *.png binary
+# Generated from the backend. GitHub folds it in a diff, so the code around it reads first.
+packages/api-client/openapi.json linguist-generated=true
