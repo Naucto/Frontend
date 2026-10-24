@@ -20,6 +20,7 @@ import type { NetUi } from '../net/NetUi';
 import type { SharedTableSession } from '../net/SharedTableSession';
 import { LuaEnvironment, LuaError } from '../vm/LuaEnvironment';
 import type { EngineError, EnginePhase } from './EngineError';
+import { type FaultListener, faultOf } from './EngineFault';
 
 export type EngineState = 'idle' | 'running' | 'paused' | 'halted';
 
@@ -97,6 +98,7 @@ export class Engine {
   /** Per map, by id, keyed on that map's own width. */
   private readonly tileOverrides = new Map<string, Map<number, number>>();
   private readonly errorListeners = new Set<(error: EngineError) => void>();
+  private readonly faultListeners = new Set<FaultListener>();
   private readonly stateListeners = new Set<(state: EngineState) => void>();
   private lastError: EngineError | null = null;
 
@@ -165,6 +167,12 @@ export class Engine {
     this.lastError = null;
 
     const lua = new LuaEnvironment();
+    lua.onHostFault = (error): void => {
+      const fault = faultOf('internal', error);
+      this.faultListeners.forEach((listener) => {
+        listener(fault);
+      });
+    };
     this.lua = lua;
     const ctx: ApiContext = {
       lua,
@@ -322,6 +330,7 @@ export class Engine {
     }
     this.sources.clear();
     this.errorListeners.clear();
+    this.faultListeners.clear();
     this.stateListeners.clear();
   }
 
@@ -337,6 +346,12 @@ export class Engine {
   onError(listener: (error: EngineError) => void): () => void {
     this.errorListeners.add(listener);
     return () => this.errorListeners.delete(listener);
+  }
+
+  /** Failures of the engine itself, never the game's own errors: see {@link EngineFault}. */
+  onFault(listener: FaultListener): () => void {
+    this.faultListeners.add(listener);
+    return () => this.faultListeners.delete(listener);
   }
 
   onStateChange(listener: (state: EngineState) => void): () => void {
