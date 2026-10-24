@@ -109,6 +109,16 @@ Pixelarticons, Bubblegum-16 palette, dark + light themes).
     Discord (`DISCORD_INVITE`) and closes on OK or its cross.
   - **Who can send.** Ratings and bug reports need an account. `FeedbackLauncher` asks a signed-out
     reader to sign in over the page.
+  - **Crash reports.** `CrashReporter` (`core/reports`) sends uncaught errors (`GlobalErrorHandler`)
+    and engine faults (`Engine.onFault`, plus the WebGL and audio backends' `onFault`) to
+    `/reports/crash`. It goes through `AnalyticsTransport`, so a report carries no account and no
+    identifier whatever the consent answer, once per message and at most three per tab. A Lua error
+    in a game is the game's own and is never reported. A crash is said on screen only through
+    `ToastService.debug`, which a production build drops: a player has nothing to do about a crash
+    already reported.
+  - **Readable stacks.** The production build writes hidden source maps beside each bundle (no
+    `sourceMappingURL`, so browsers never load them), and nginx serves them. The backend reads them
+    to map a crash stack back to the sources.
 - **Release.** `APP_RELEASE` (`core/config/release.ts`) is the version of `apps/web` and the commit
   it was built from, compiled in by `tools/build-web.ts`. The Docker image has no `.git`, so its
   build takes the commit as `--build-arg GIT_COMMIT`. A development server says `dev`.

@@ -44,6 +44,7 @@
                 }
               ],
               "outputHashing": "all",
+              "sourceMap": { "scripts": true, "styles": false, "hidden": true, "vendor": true },
               "optimization": {
                 "scripts": true,
                 "styles": { "minify": true, "inlineCritical": false },

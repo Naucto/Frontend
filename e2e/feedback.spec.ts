@@ -116,3 +116,30 @@ test.describe('bug reports', () => {
     await expect(thanks).toContainText('The screenshot could not be attached');
   });
 });
+
+test('an uncaught error is reported once, with no account attached', async ({ page }) => {
+  await page.route('**/projects/releases**', answer(200, { items: [], total: 0 }));
+  await mockSignedIn(page);
+  await page.route('**/reports/prompt', answer(200, { eligible: false, declined: false }));
+  await page.route('**/reports/crash', (route) => route.fulfill({ status: 204 }));
+
+  await page.goto('/hub');
+  await expect(page.getByTestId('report-problem')).toBeVisible();
+  const crash = page.waitForRequest('**/reports/crash');
+  await page.evaluate(() => {
+    setTimeout(() => {
+      throw new TypeError('e2e boom');
+    });
+  });
+
+  const request = await crash;
+  expect(request.headers().authorization).toBeUndefined();
+  expect(request.postDataJSON()).toMatchObject({
+    source: 'web',
+    name: 'TypeError',
+    message: 'e2e boom',
+    route: '/hub',
+    appRelease: 'dev',
+  });
+  await expect(page.locator('nc-toast-host')).toContainText('e2e boom');
+});
