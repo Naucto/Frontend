@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "scripts": {
     "start": "ng serve web --port 3001",
-    "build": "ng build web",
+    "build": "cd ../.. && node tools/run-ts.mjs tools/build-web.ts",
     "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.spec.json --noEmit",
     "test": "ng test web"
   },
