@@ -3,6 +3,15 @@
     <nc-consent-choice />
   }
 
+  <h2 class="mt-2.5 mb-1 text-heading text-ink">{{ t('feedback.settings.title') }}</h2>
+  <nc-setting-row [title]="t('feedback.settings.ask')" [hint]="t('feedback.settings.askHint')">
+    <nc-toggle
+      [checked]="feedbackPrompt.data()?.declined === false"
+      [disabled]="!feedbackPrompt.data() || updatePrompt.isPending()"
+      [label]="t('feedback.settings.ask')"
+      (checkedChange)="updatePrompt.mutate({ action: $event ? 'reset' : 'decline' })" />
+  </nc-setting-row>
+
   <h2 class="mt-2.5 mb-1 text-heading text-ink">{{ t('settings.analytics.statsTitle') }}</h2>
   @if (stats.isError()) {
     <p class="py-2 text-body text-ink-3">{{ t('settings.analytics.loadFailed') }}</p>

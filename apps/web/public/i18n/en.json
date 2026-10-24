@@ -987,6 +987,63 @@
     "rightsTitle": "Your data",
     "rights": "Signed in, you can see what was counted for your account, download it, or erase it, in Settings. Deleting your account erases it too.",
     "rightsLink": "Open your privacy settings",
-    "geoCredit": "Country lookups use IP geolocation by"
+    "geoCredit": "Country lookups use IP geolocation by",
+    "feedbackTitle": "Feedback",
+    "feedback": {
+      "ratings": "A rating you send names your account, so the team can follow up with you. We ask for one at most once: close the question and we ask again in two weeks. You can turn it off in Settings."
+    }
+  },
+  "feedback": {
+    "close": "Close",
+    "sending": "Sending...",
+    "prompt": {
+      "label": "Feedback",
+      "title": "How is Naucto so far?",
+      "lead": "Rate the platform out of 10. It takes a few seconds.",
+      "notNow": "Not now",
+      "never": "Don't ask again"
+    },
+    "roles": {
+      "PLAYER": "Play games",
+      "CREATOR": "Make games"
+    },
+    "rating": {
+      "role": "What do you mostly do on Naucto?",
+      "scoreLabel": "Your score out of 10",
+      "low": "Not good",
+      "high": "Excellent",
+      "whatWentWrong": "What went wrong?",
+      "liked": "What did you like?",
+      "likedPlaceholder": "A game, a tool, a moment...",
+      "improve": "What should we improve?",
+      "why": "Tell us why",
+      "improvePlaceholder": "What got in your way, or what is missing",
+      "optional": "Both are optional. You can send just the score.",
+      "send": "Send",
+      "failed": "Your rating could not be sent. Try again in a moment.",
+      "dialogTitle": "Rate Naucto",
+      "dialogLead": "How is the platform working for you? Your answer goes straight to the team.",
+      "menu": "Send feedback"
+    },
+    "reasons": {
+      "BUGS": "Bugs or crashes",
+      "PERFORMANCE": "Slow",
+      "HARD_TO_USE": "Hard to use",
+      "MISSING_FEATURE": "Missing feature",
+      "CONTENT": "Games and content",
+      "OTHER": "Something else"
+    },
+    "settings": {
+      "title": "Feedback",
+      "ask": "Ask me for feedback",
+      "askHint": "After a play or an editing session, ask once how Naucto is going."
+    },
+    "thanks": {
+      "title": "Thank you",
+      "ratingLead": "Your feedback reached the team. We read every one.",
+      "discord": "Want to talk it over, or follow what we do with it? Join the Naucto Discord, where it is easier to discuss.",
+      "join": "Join our Discord",
+      "ok": "OK"
+    }
   }
 }

@@ -1,0 +1,28 @@
+<nc-dialog-shell
+  *transloco="let t"
+  [title]="t('feedback.thanks.title')"
+  [lead]="t('feedback.thanks.ratingLead')"
+  [closeLabel]="t('feedback.close')">
+  <div class="flex items-start gap-1.5 rounded-sm border border-line bg-inset px-1.5 py-1.25">
+    <nc-icon name="message" [size]="24" class="shrink-0 text-sky-ink" />
+    <div class="flex min-w-0 flex-col gap-1">
+      <p class="text-body text-ink-2">{{ t('feedback.thanks.discord') }}</p>
+      <a
+        ncButton
+        variant="secondary"
+        size="sm"
+        class="self-start"
+        [href]="discord"
+        target="_blank"
+        rel="noopener noreferrer">
+        {{ t('feedback.thanks.join') }}
+        <nc-icon name="external-link" [size]="12" />
+      </a>
+    </div>
+  </div>
+  <ng-container footer>
+    <button ncButton variant="primary" type="button" (click)="ref.close()">
+      {{ t('feedback.thanks.ok') }}
+    </button>
+  </ng-container>
+</nc-dialog-shell>

@@ -1,0 +1,87 @@
+<form
+  *transloco="let t"
+  class="flex flex-col gap-1.5"
+  (submit)="$event.preventDefault(); send()"
+  (keydown)="onKey($event)">
+  <nc-field [label]="t('feedback.rating.role')">
+    <nc-segmented
+      size="sm"
+      [label]="t('feedback.rating.role')"
+      [options]="roles()"
+      [disabled]="pending()"
+      [(value)]="chosenRole" />
+  </nc-field>
+
+  <nc-rating
+    [label]="t('feedback.rating.scoreLabel')"
+    [lowLabel]="t('feedback.rating.low')"
+    [highLabel]="t('feedback.rating.high')"
+    [disabled]="pending()"
+    [(value)]="score" />
+
+  @if (score() !== null) {
+    @if (low()) {
+      <nc-field [label]="t('feedback.rating.whatWentWrong')">
+        <div class="flex flex-wrap gap-0.5">
+          @for (reason of reasons; track reason) {
+            <nc-toggle-button
+              accent="sky"
+              [checked]="chosenReasons().has(reason)"
+              (checkedChange)="toggleReason(reason, $event)">
+              {{ t('feedback.reasons.' + reason) }}
+            </nc-toggle-button>
+          }
+        </div>
+      </nc-field>
+    }
+
+    <div class="flex flex-col gap-1.5" [class.flex-col-reverse]="!praiseFirst()">
+      <nc-field
+        [label]="t('feedback.rating.liked')"
+        for="rating-liked"
+        [counter]="liked().length > commentMax * 0.8 ? liked().length + '/' + commentMax : ''">
+        <textarea
+          ncInput
+          id="rating-liked"
+          rows="2"
+          class="w-full resize-y"
+          [attr.maxlength]="commentMax"
+          [placeholder]="t('feedback.rating.likedPlaceholder')"
+          [value]="liked()"
+          (input)="liked.set($any($event.target).value)"></textarea>
+      </nc-field>
+      <nc-field
+        [label]="low() ? t('feedback.rating.why') : t('feedback.rating.improve')"
+        for="rating-improve"
+        [counter]="improve().length > commentMax * 0.8 ? improve().length + '/' + commentMax : ''">
+        <textarea
+          ncInput
+          id="rating-improve"
+          rows="2"
+          class="w-full resize-y"
+          [attr.maxlength]="commentMax"
+          [placeholder]="t('feedback.rating.improvePlaceholder')"
+          [value]="improve()"
+          (input)="improve.set($any($event.target).value)"></textarea>
+      </nc-field>
+    </div>
+    <p class="text-meta text-ink-4">{{ t('feedback.rating.optional') }}</p>
+  }
+
+  @if (failed()) {
+    <nc-notice tone="danger">{{ t('feedback.rating.failed') }}</nc-notice>
+  }
+
+  <div class="flex flex-wrap items-center justify-end gap-1">
+    <ng-content select="[secondary]" />
+    <span class="flex-1"></span>
+    <button
+      ncButton
+      variant="primary"
+      size="sm"
+      type="submit"
+      [disabled]="score() === null || pending()">
+      {{ pending() ? t('feedback.sending') : t('feedback.rating.send') }}
+    </button>
+  </div>
+</form>
