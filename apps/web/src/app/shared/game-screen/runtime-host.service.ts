@@ -16,6 +16,7 @@ import {
 } from '@naucto/engine';
 
 import { InputBindingsStore } from '../../core/input/input-bindings.store';
+import { ActiveRuntimeService } from './active-runtime.service';
 
 /**
  * Owns one running game: engine, renderer, audio, input sources. Provided per
@@ -43,6 +44,7 @@ export class RuntimeHostService {
   readonly frame = signal(0);
 
   private readonly bindings = inject(InputBindingsStore);
+  private readonly active = inject(ActiveRuntimeService);
 
   constructor() {
     inject(DestroyRef).onDestroy(() => {
@@ -111,6 +113,7 @@ export class RuntimeHostService {
       netPermissions: opts.netPermissions,
     });
     this.engine = engine;
+    this.active.claim(this);
     const unlock = (): void => {
       void this.audio?.unlock();
     };
@@ -250,6 +253,7 @@ export class RuntimeHostService {
       unsubscribe();
     }
     this.unsub = [];
+    this.active.release(this);
     this.engine?.destroy();
     this.engine = null;
     this.sound?.destroy();
