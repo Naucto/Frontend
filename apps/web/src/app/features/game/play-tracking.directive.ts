@@ -2,7 +2,8 @@ import { DestroyRef, Directive, effect, inject, input, untracked } from '@angula
 
 import { ActivityService } from '../../core/analytics/activity.service';
 import { PlayReporter } from '../../core/analytics/play-reporter';
-import { PlayTracker } from '../../core/analytics/play-tracker';
+import { type PlayClock, PlayTracker } from '../../core/analytics/play-tracker';
+import { FeedbackStore } from '../../shared/feedback/feedback.store';
 import { RuntimeHostService } from '../../shared/game-screen/runtime-host.service';
 
 /**
@@ -15,13 +16,16 @@ export class PlayTrackingDirective {
 
   private readonly reporter = inject(PlayReporter);
   private readonly activity = inject(ActivityService);
+  private readonly feedback = inject(FeedbackStore);
 
   constructor() {
     let releasePlaying: (() => void) | null = null;
     let viewed: number | null = null;
+    let playing: { releaseId: number; clock: PlayClock } | null = null;
     const tracker = new PlayTracker(() => Date.now(), {
       started: (clock) => {
         const releaseId = untracked(() => this.releaseId());
+        playing = { releaseId, clock };
         this.reporter.begin(releaseId, clock);
         releasePlaying = this.activity.claim({ state: 'PLAYING', releaseId });
         if (viewed !== releaseId) {
@@ -30,6 +34,10 @@ export class PlayTrackingDirective {
         }
       },
       ended: (reason) => {
+        if (playing) {
+          this.feedback.notePlayEnded(playing.releaseId, playing.clock.activeMs);
+          playing = null;
+        }
         this.reporter.end(reason);
         releasePlaying?.();
         releasePlaying = null;

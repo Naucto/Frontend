@@ -57,9 +57,11 @@
         <nc-icon name="plus" [size]="12" class="sm:hidden" />
         <span class="hidden sm:inline">+ {{ t('nav.newGame') }}</span>
       </a>
+      <nc-report-problem-button />
       <nc-notifications-bell />
       <nc-account-menu class="ms-1" />
     } @else {
+      <nc-report-problem-button />
       <a ncButton variant="primary" size="bar" routerLink="/sign-in">
         {{ t('nav.signIn') }}
       </a>

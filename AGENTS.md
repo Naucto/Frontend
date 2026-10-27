@@ -89,6 +89,39 @@ Pixelarticons, Bubblegum-16 palette, dark + light themes).
   `BrowserAccountService` links the visitor. Features claim what the tab is doing (browsing,
   building, playing, hosting) through `ActivityService`. Settings → Privacy shows, exports and
   erases the account's history even with the flag off.
+- **Feedback** (`shared/feedback`): what people tell the team, sent as reports to the backend's
+  `/reports` routes.
+  - **Rating prompt.** A play of two minutes (`PlayTrackingDirective`) or five minutes in the
+    editor arms `FeedbackStore`. `nc-feedback-prompt` then opens a modal in the middle of the
+    screen, on the hub after a play or on any app-shell page after the editor. It waits for the
+    consent banner and any other dialog. Escape and the backdrop do not close it: it is answered,
+    put off ("not now", 14 days) or declined. It asks an account once, and Settings → Privacy turns
+    it back on.
+  - **Rating.** The person says whether they mostly play or make games (offered from what they were
+    just doing), then gives a score from 1 to 10 (`nc-rating`) with two optional comments. A score
+    of 4 or less also asks for reasons and offers a bug report.
+  - **Bug report.** The bug button beside the bell, the account menu and the footer open it. It
+    lists everything it attaches before it is sent. It goes as JSON, and its screenshot follows on
+    its own route: the running game's frame as a PNG, a one-frame screen capture or a file, shrunk
+    to 1920 px and WebP. Whether it fits is the server's call: a refused screenshot leaves the
+    report sent, and the thanks says so.
+  - **Thanks.** A sent report or rating opens `ThanksDialog`, which invites the person to the Naucto
+    Discord (`DISCORD_INVITE`) and closes on OK or its cross.
+  - **Who can send.** Ratings and bug reports need an account. `FeedbackLauncher` asks a signed-out
+    reader to sign in over the page.
+  - **Crash reports.** `CrashReporter` (`core/reports`) sends uncaught errors (`GlobalErrorHandler`)
+    and engine faults (`Engine.onFault`, plus the WebGL and audio backends' `onFault`) to
+    `/reports/crash`. It goes through `AnalyticsTransport`, so a report carries no account and no
+    identifier whatever the consent answer, once per message and at most three per tab. A Lua error
+    in a game is the game's own and is never reported. A crash is said on screen only through
+    `ToastService.debug`, which a production build drops: a player has nothing to do about a crash
+    already reported.
+  - **Readable stacks.** The production build writes hidden source maps beside each bundle (no
+    `sourceMappingURL`, so browsers never load them), and nginx serves them. The backend reads them
+    to map a crash stack back to the sources.
+- **Release.** `APP_RELEASE` (`core/config/release.ts`) is the version of `apps/web` and the commit
+  it was built from, compiled in by `tools/build-web.ts`. The Docker image has no `.git`, so its
+  build takes the commit as `--build-arg GIT_COMMIT`. A development server says `dev`.
 - **Boot order**: `provideApiClient()` runs one initializer — load `/config.json`, configure the
   client, bootstrap auth — because Angular initializers otherwise run concurrently.
 - **Mobile** is out of scope for now but must not be blocked: measure widths with `ResizeObserver`

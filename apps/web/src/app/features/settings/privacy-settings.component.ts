@@ -9,6 +9,7 @@ import {
   DialogService,
   SettingRowComponent,
   ToastService,
+  ToggleComponent,
 } from '@naucto/ui';
 import { QueryClient } from '@tanstack/angular-query-experimental';
 
@@ -18,11 +19,16 @@ import { FeaturesService } from '../../core/config/features.service';
 import { ConsentChoiceComponent } from '../../shared/consent/consent-choice.component';
 import { injectMyAnalytics } from '../../shared/queries/analytics.queries';
 import { qk } from '../../shared/queries/query-keys';
+import {
+  injectFeedbackPrompt,
+  injectUpdateFeedbackPrompt,
+} from '../../shared/queries/reports.queries';
 import { playTime } from './play-time';
 
 /**
- * The usage-analytics choice, and what was counted for the account: shown, downloadable and
- * erasable even once collection is switched off, since the history outlives the switch.
+ * The usage-analytics choice, whether the rating prompt may ask, and what was counted for the
+ * account: shown, downloadable and erasable even once collection is switched off, since the
+ * history outlives the switch.
  */
 @Component({
   selector: 'nc-privacy-settings',
@@ -34,6 +40,7 @@ import { playTime } from './play-time';
     ButtonDirective,
     SettingRowComponent,
     ConsentChoiceComponent,
+    ToggleComponent,
   ],
   templateUrl: './privacy-settings.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -41,6 +48,8 @@ import { playTime } from './play-time';
 export class PrivacySettingsComponent {
   protected readonly features = inject(FeaturesService);
   protected readonly stats = injectMyAnalytics();
+  protected readonly feedbackPrompt = injectFeedbackPrompt();
+  protected readonly updatePrompt = injectUpdateFeedbackPrompt();
   protected readonly exporting = signal(false);
   protected readonly erasing = signal(false);
 

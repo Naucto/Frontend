@@ -7,6 +7,7 @@ import { HeartbeatService } from './core/analytics/heartbeat.service';
 import { ThemeService } from './core/theme/theme.service';
 import { SessionExpiredDialogComponent } from './features/auth/session-expired.dialog';
 import { ConsentBannerComponent } from './shared/consent/consent-banner.component';
+import { FeedbackPromptComponent } from './shared/feedback/feedback-prompt.component';
 
 @Component({
   selector: 'nc-root',
@@ -15,9 +16,11 @@ import { ConsentBannerComponent } from './shared/consent/consent-banner.componen
     ToastHostComponent,
     SessionExpiredDialogComponent,
     ConsentBannerComponent,
+    FeedbackPromptComponent,
   ],
   // The banner comes first so a keyboard reaches it first.
-  template: '<nc-consent-banner /><router-outlet /><nc-toast-host /><nc-session-expired-dialog />',
+  template:
+    '<nc-consent-banner /><nc-feedback-prompt /><router-outlet /><nc-toast-host /><nc-session-expired-dialog />',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class App {

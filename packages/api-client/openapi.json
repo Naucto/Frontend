@@ -3930,6 +3930,895 @@
         "tags": ["analytics"]
       }
     },
+    "/admin/auth/login": {
+      "post": {
+        "operationId": "AdminAuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminLoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminSessionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid email or password"
+          },
+          "403": {
+            "description": "Not an admin account"
+          },
+          "429": {
+            "description": "Too many failed attempts"
+          }
+        },
+        "summary": "Sign in to the admin console with an admin account",
+        "tags": ["admin"],
+        "security": [
+          {},
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/admin/auth/refresh": {
+      "post": {
+        "operationId": "AdminAuthController_refresh",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminSessionDto"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No session, or it ended"
+          }
+        },
+        "summary": "A new access token from the session cookie, until the session ends",
+        "tags": ["admin"],
+        "security": [
+          {},
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/admin/auth/logout": {
+      "post": {
+        "operationId": "AdminAuthController_logout",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "summary": "End the admin session in this browser",
+        "tags": ["admin"],
+        "security": [
+          {},
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/admin/accounts/me": {
+      "get": {
+        "operationId": "AdminAccountController_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountSummaryDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Admin role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "The signed-in admin",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/accounts/admins": {
+      "get": {
+        "operationId": "AdminAccountController_admins",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAccountListDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Admin role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Every account holding the admin role",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/accounts/search": {
+      "get": {
+        "operationId": "AdminAccountController_search",
+        "parameters": [
+          {
+            "name": "term",
+            "required": true,
+            "in": "query",
+            "description": "Part of a handle, display name or email",
+            "schema": {
+              "minLength": 2,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountSearchResultDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Admin role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Naucto accounts matching part of a handle, display name or email",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/accounts/{id}/role": {
+      "put": {
+        "operationId": "AdminAccountController_setRole",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetRoleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountSummaryDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Your own account"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Admin role required"
+          },
+          "409": {
+            "description": "The last admin"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Change an account's role; never your own, never the last admin",
+        "tags": ["admin"]
+      }
+    },
+    "/reports/prompt": {
+      "get": {
+        "operationId": "ReportsController_prompt",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedbackPromptDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Whether the rating prompt may ask the signed-in account now",
+        "tags": ["reports"]
+      },
+      "put": {
+        "operationId": "ReportsController_updatePrompt",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFeedbackPromptDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedbackPromptDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Snooze or decline the rating prompt, or let it ask again",
+        "tags": ["reports"]
+      }
+    },
+    "/reports/ratings": {
+      "post": {
+        "operationId": "ReportsController_createRating",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRatingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedReportDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "429": {
+            "description": "Too many ratings"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Rate the platform out of 10, with optional comments",
+        "tags": ["reports"]
+      }
+    },
+    "/reports/bugs": {
+      "post": {
+        "operationId": "ReportsController_createBugReport",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBugReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedReportDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "429": {
+            "description": "Too many reports"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Report a bug. Its screenshot, if any, follows on its own route",
+        "tags": ["reports"]
+      }
+    },
+    "/reports/bugs/{id}/screenshot": {
+      "put": {
+        "operationId": "ReportsController_attachScreenshot",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["screenshot"],
+                "properties": {
+                  "screenshot": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "PNG, JPEG or WebP, 2 MB"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Attached"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "404": {
+            "description": "Not a bug report of this account"
+          },
+          "409": {
+            "description": "Already has one, or too late"
+          },
+          "413": {
+            "description": "Larger than 2 MB"
+          },
+          "422": {
+            "description": "Not a PNG, JPEG or WebP image"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Attach a screenshot to a bug report sent within the hour",
+        "tags": ["reports"]
+      }
+    },
+    "/reports/crash": {
+      "post": {
+        "operationId": "CrashIngestController_report",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "text/plain": {
+              "schema": {
+                "$ref": "#/components/schemas/CrashReportDto"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrashReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Recorded, or ignored"
+          },
+          "429": {
+            "description": "Too many reports"
+          }
+        },
+        "summary": "Report an uncaught error of the web app or a fault of the engine",
+        "tags": ["reports"],
+        "security": [
+          {},
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/admin/reports": {
+      "get": {
+        "operationId": "AdminReportsController_list",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number, from 1",
+            "schema": {
+              "minimum": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "kind",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ReportKind"
+            }
+          },
+          {
+            "name": "view",
+            "required": false,
+            "in": "query",
+            "description": "NEW alone, OPEN for anything not closed, CLOSED for resolved or ignored",
+            "schema": {
+              "type": "string",
+              "enum": ["NEW", "OPEN", "CLOSED", "ALL"]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Wins over view",
+            "schema": {
+              "$ref": "#/components/schemas/ReportStatus"
+            }
+          },
+          {
+            "name": "role",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ReportRole"
+            }
+          },
+          {
+            "name": "maxScore",
+            "required": false,
+            "in": "query",
+            "description": "Only ratings up to this score",
+            "schema": {
+              "minimum": 1,
+              "maximum": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "withComments",
+            "required": false,
+            "in": "query",
+            "description": "Only ratings that came with a comment",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/BugCategory"
+            }
+          },
+          {
+            "name": "source",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/CrashSource"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "Newest first, crashes last seen first, or crashes seen most first",
+            "schema": {
+              "default": "created",
+              "type": "string",
+              "enum": ["created", "lastSeen", "count"]
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "First day, UTC, as YYYY-MM-DD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Last day, UTC, as YYYY-MM-DD, included",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminReportListDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Admin role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Reports, newest first, filtered by kind, status and their fields",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/reports/ratings/summary": {
+      "get": {
+        "operationId": "AdminReportsController_ratingSummary",
+        "parameters": [
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "description": "First day, UTC, as YYYY-MM-DD",
+            "schema": {
+              "example": "2026-09-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "description": "Last day, UTC, as YYYY-MM-DD, included",
+            "schema": {
+              "example": "2026-09-30",
+              "type": "string"
+            }
+          },
+          {
+            "name": "grain",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/AnalyticsGrain"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RatingSummaryDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Admin role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Average, distribution and trend of the ratings in a range",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/reports/count": {
+      "get": {
+        "operationId": "AdminReportsController_count",
+        "parameters": [
+          {
+            "name": "kind",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ReportKind"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ReportStatus"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportCountDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Admin role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "How many reports of a kind, in a status if given",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/reports/{id}": {
+      "get": {
+        "operationId": "AdminReportsController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminReportDetailDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Admin role required"
+          },
+          "404": {
+            "description": "No such report"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "One report in full",
+        "tags": ["admin"]
+      },
+      "put": {
+        "operationId": "AdminReportsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminReportDetailDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Admin role required"
+          },
+          "404": {
+            "description": "No such report"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Set the status of a report or the note of the team",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/reports/{id}/screenshot": {
+      "get": {
+        "operationId": "AdminReportsController_screenshot",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The image"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Admin role required"
+          },
+          "404": {
+            "description": "No screenshot"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "The screenshot of a bug report, served privately",
+        "tags": ["admin"]
+      }
+    },
     "/auth/login": {
       "post": {
         "operationId": "AuthController_login",
@@ -8622,6 +9511,963 @@
           }
         },
         "required": ["erasedBrowsers"]
+      },
+      "AdminLoginDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "admin@example.com"
+          },
+          "password": {
+            "type": "string"
+          }
+        },
+        "required": ["email", "password"]
+      },
+      "AccountSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "username": {
+            "type": "string"
+          },
+          "nickname": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["User", "Moderator", "Admin"]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": ["id", "username", "email", "role", "createdAt"]
+      },
+      "AdminSessionDto": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "Bearer token for the admin routes"
+          },
+          "expiresIn": {
+            "type": "number",
+            "description": "Seconds the access token is valid for"
+          },
+          "account": {
+            "$ref": "#/components/schemas/AccountSummaryDto"
+          }
+        },
+        "required": ["accessToken", "expiresIn", "account"]
+      },
+      "AdminAccountListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccountSummaryDto"
+            }
+          }
+        },
+        "required": ["items"]
+      },
+      "AccountSearchResultDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccountSummaryDto"
+            }
+          }
+        },
+        "required": ["items"]
+      },
+      "SetRoleDto": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": ["User", "Moderator", "Admin"]
+          }
+        },
+        "required": ["role"]
+      },
+      "FeedbackPromptDto": {
+        "type": "object",
+        "properties": {
+          "eligible": {
+            "type": "boolean",
+            "description": "Whether the rating prompt may ask this account now"
+          },
+          "declined": {
+            "type": "boolean",
+            "description": "Whether this account asked never to be asked again"
+          }
+        },
+        "required": ["eligible", "declined"]
+      },
+      "UpdateFeedbackPromptDto": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": ["snooze", "decline", "reset"],
+            "description": "`snooze` asks again in 14 days, `decline` never asks again, `reset` lets the prompt ask again"
+          }
+        },
+        "required": ["action"]
+      },
+      "ReportRole": {
+        "type": "string",
+        "enum": ["PLAYER", "CREATOR"],
+        "description": "What the person mostly does on Naucto"
+      },
+      "RatingOrigin": {
+        "type": "string",
+        "enum": ["PROMPT", "MANUAL"]
+      },
+      "RatingReason": {
+        "type": "string",
+        "enum": ["BUGS", "PERFORMANCE", "HARD_TO_USE", "MISSING_FEATURE", "CONTENT", "OTHER"]
+      },
+      "CreateRatingDto": {
+        "type": "object",
+        "properties": {
+          "score": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 10,
+            "example": 8
+          },
+          "role": {
+            "description": "What the person mostly does on Naucto",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReportRole"
+              }
+            ]
+          },
+          "origin": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RatingOrigin"
+              }
+            ]
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RatingReason"
+            }
+          },
+          "liked": {
+            "type": "string",
+            "description": "What the person liked",
+            "maxLength": 1000
+          },
+          "improve": {
+            "type": "string",
+            "description": "What the person would improve",
+            "maxLength": 1000
+          },
+          "releaseId": {
+            "type": "number",
+            "description": "The release played just before the prompt"
+          }
+        },
+        "required": ["score", "role", "origin"]
+      },
+      "CreatedReportDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          }
+        },
+        "required": ["id"]
+      },
+      "BugCategory": {
+        "type": "string",
+        "enum": [
+          "GAMEPLAY",
+          "EDITOR",
+          "GRAPHICS",
+          "SOUND",
+          "NETPLAY",
+          "ACCOUNT",
+          "PERFORMANCE",
+          "OTHER"
+        ]
+      },
+      "BugContextDto": {
+        "type": "object",
+        "properties": {
+          "viewport": {
+            "type": "string",
+            "example": "1920x1080"
+          },
+          "language": {
+            "type": "string",
+            "example": "en-GB"
+          },
+          "engineError": {
+            "type": "string",
+            "description": "The engine error the game stopped on, with its traceback"
+          },
+          "console": {
+            "description": "The last lines of the game console",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "CreateBugReportDto": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BugCategory"
+              }
+            ]
+          },
+          "title": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 120
+          },
+          "description": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 4000
+          },
+          "route": {
+            "type": "string",
+            "example": "/play/42",
+            "maxLength": 200
+          },
+          "role": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReportRole"
+              }
+            ]
+          },
+          "releaseId": {
+            "type": "number",
+            "description": "The release the page is about"
+          },
+          "projectId": {
+            "type": "number",
+            "description": "The project open in the editor"
+          },
+          "ratingId": {
+            "type": "number",
+            "description": "The rating the report follows, for a low score"
+          },
+          "appRelease": {
+            "type": "string",
+            "description": "The build of the web app",
+            "maxLength": 64
+          },
+          "context": {
+            "$ref": "#/components/schemas/BugContextDto"
+          }
+        },
+        "required": ["category", "title", "description", "route"]
+      },
+      "CrashExtraDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "description": "The engine fault kind, as `webgl-context-lost`"
+          },
+          "phase": {
+            "type": "string",
+            "description": "The engine phase the fault happened in, as `draw`"
+          },
+          "renderer": {
+            "type": "string",
+            "description": "The WebGL renderer string"
+          },
+          "audio": {
+            "type": "string",
+            "description": "The state of the audio context, as `suspended`"
+          }
+        }
+      },
+      "CrashReportDto": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": ["web", "engine"]
+          },
+          "name": {
+            "type": "string",
+            "example": "TypeError",
+            "maxLength": 120
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "stack": {
+            "type": "string",
+            "maxLength": 8000
+          },
+          "route": {
+            "type": "string",
+            "example": "/play/42"
+          },
+          "appRelease": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "extra": {
+            "$ref": "#/components/schemas/CrashExtraDto"
+          }
+        },
+        "required": ["source", "name", "message", "stack", "route"]
+      },
+      "ReportKind": {
+        "type": "string",
+        "enum": ["RATING", "BUG", "CRASH"]
+      },
+      "ReportStatus": {
+        "type": "string",
+        "enum": ["NEW", "TRIAGED", "IN_PROGRESS", "RESOLVED", "IGNORED"]
+      },
+      "CrashSource": {
+        "type": "string",
+        "enum": ["WEB", "ENGINE", "BACKEND"]
+      },
+      "ReportAccountDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "username": {
+            "type": "string"
+          },
+          "nickname": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["User", "Moderator", "Admin"]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "profileUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "The public profile on the web app, null once the account is deleted"
+          },
+          "deleted": {
+            "type": "boolean"
+          }
+        },
+        "required": ["id", "username", "email", "role", "createdAt", "deleted"]
+      },
+      "ReportReleaseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "name"]
+      },
+      "AdminReportDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReportKind"
+              }
+            ]
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReportStatus"
+              }
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "account": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReportAccountDto"
+              }
+            ]
+          },
+          "role": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReportRole"
+              }
+            ]
+          },
+          "route": {
+            "type": "string",
+            "nullable": true,
+            "example": "/play/42"
+          },
+          "release": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReportReleaseDto"
+              }
+            ]
+          },
+          "appRelease": {
+            "type": "string",
+            "nullable": true,
+            "description": "The build of the web app"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "description": "A bug report summary"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true,
+            "description": "A bug report description"
+          },
+          "score": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 1,
+            "maximum": 10
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RatingReason"
+            }
+          },
+          "liked": {
+            "type": "string",
+            "nullable": true
+          },
+          "improve": {
+            "type": "string",
+            "nullable": true
+          },
+          "origin": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RatingOrigin"
+              }
+            ]
+          },
+          "followUpIds": {
+            "description": "Bug reports opened from this rating",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "category": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BugCategory"
+              }
+            ]
+          },
+          "ratingId": {
+            "type": "number",
+            "nullable": true,
+            "description": "The rating a bug followed"
+          },
+          "hasScreenshot": {
+            "type": "boolean"
+          },
+          "source": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CrashSource"
+              }
+            ]
+          },
+          "count": {
+            "type": "number",
+            "description": "How many times a crash happened, 1 for any other report"
+          },
+          "lastSeen": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "When a crash last happened"
+          },
+          "regressedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "When a resolved crash was last reported again"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "status",
+          "createdAt",
+          "updatedAt",
+          "reasons",
+          "followUpIds",
+          "hasScreenshot",
+          "count"
+        ]
+      },
+      "AdminReportListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminReportDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": ["items", "total", "page", "limit"]
+      },
+      "RatingAverageDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number"
+          },
+          "average": {
+            "type": "number",
+            "nullable": true,
+            "description": "Null with no rating"
+          }
+        },
+        "required": ["count"]
+      },
+      "RatingBucketDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number"
+          },
+          "average": {
+            "type": "number",
+            "nullable": true,
+            "description": "Null with no rating"
+          },
+          "start": {
+            "type": "string",
+            "description": "First day of the period, as YYYY-MM-DD"
+          }
+        },
+        "required": ["count", "start"]
+      },
+      "RatingSummaryDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number"
+          },
+          "average": {
+            "type": "number",
+            "nullable": true,
+            "description": "Null with no rating"
+          },
+          "lowShare": {
+            "type": "number",
+            "nullable": true,
+            "description": "Share of ratings of 4 or less, from 0 to 1"
+          },
+          "distribution": {
+            "description": "How many ratings gave each score, 1 to 10",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "player": {
+            "description": "Ratings from people who mostly play",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RatingAverageDto"
+              }
+            ]
+          },
+          "creator": {
+            "description": "Ratings from people who mostly create",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RatingAverageDto"
+              }
+            ]
+          },
+          "series": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RatingBucketDto"
+            }
+          }
+        },
+        "required": ["count", "distribution", "player", "creator", "series"]
+      },
+      "ReportCountDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number"
+          }
+        },
+        "required": ["count"]
+      },
+      "LinkedRatingDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "score": {
+            "type": "number"
+          },
+          "liked": {
+            "type": "string",
+            "nullable": true
+          },
+          "improve": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": ["id", "score"]
+      },
+      "ScreenshotInfoDto": {
+        "type": "object",
+        "properties": {
+          "mime": {
+            "type": "string",
+            "example": "image/webp"
+          },
+          "bytes": {
+            "type": "number"
+          }
+        },
+        "required": ["mime", "bytes"]
+      },
+      "ReportOccurrenceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "route": {
+            "type": "string"
+          },
+          "appRelease": {
+            "type": "string",
+            "nullable": true
+          },
+          "device": {
+            "type": "string",
+            "nullable": true
+          },
+          "browser": {
+            "type": "string",
+            "nullable": true
+          },
+          "os": {
+            "type": "string",
+            "nullable": true
+          },
+          "extra": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true
+          }
+        },
+        "required": ["id", "createdAt", "route"]
+      },
+      "AdminReportDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReportKind"
+              }
+            ]
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReportStatus"
+              }
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "account": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReportAccountDto"
+              }
+            ]
+          },
+          "role": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReportRole"
+              }
+            ]
+          },
+          "route": {
+            "type": "string",
+            "nullable": true,
+            "example": "/play/42"
+          },
+          "release": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReportReleaseDto"
+              }
+            ]
+          },
+          "appRelease": {
+            "type": "string",
+            "nullable": true,
+            "description": "The build of the web app"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "description": "A bug report summary"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true,
+            "description": "A bug report description"
+          },
+          "score": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 1,
+            "maximum": 10
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RatingReason"
+            }
+          },
+          "liked": {
+            "type": "string",
+            "nullable": true
+          },
+          "improve": {
+            "type": "string",
+            "nullable": true
+          },
+          "origin": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RatingOrigin"
+              }
+            ]
+          },
+          "followUpIds": {
+            "description": "Bug reports opened from this rating",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "category": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BugCategory"
+              }
+            ]
+          },
+          "ratingId": {
+            "type": "number",
+            "nullable": true,
+            "description": "The rating a bug followed"
+          },
+          "hasScreenshot": {
+            "type": "boolean"
+          },
+          "source": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CrashSource"
+              }
+            ]
+          },
+          "count": {
+            "type": "number",
+            "description": "How many times a crash happened, 1 for any other report"
+          },
+          "lastSeen": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "When a crash last happened"
+          },
+          "regressedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "When a resolved crash was last reported again"
+          },
+          "adminNote": {
+            "type": "string",
+            "nullable": true
+          },
+          "projectId": {
+            "type": "number",
+            "nullable": true
+          },
+          "context": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true,
+            "description": "What the browser attached: viewport, language, browser family, errors, console"
+          },
+          "rating": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LinkedRatingDto"
+              }
+            ]
+          },
+          "screenshot": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ScreenshotInfoDto"
+              }
+            ]
+          },
+          "stack": {
+            "type": "string",
+            "nullable": true,
+            "description": "The latest stack of a crash, mapped back to the sources when possible"
+          },
+          "occurrences": {
+            "description": "The latest occurrences, newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportOccurrenceDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "status",
+          "createdAt",
+          "updatedAt",
+          "reasons",
+          "followUpIds",
+          "hasScreenshot",
+          "count",
+          "occurrences"
+        ]
+      },
+      "UpdateReportDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReportStatus"
+              }
+            ]
+          },
+          "adminNote": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 2000
+          }
+        }
       },
       "LoginDto": {
         "type": "object",

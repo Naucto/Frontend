@@ -4,6 +4,7 @@ import {
   type ConsoleEntry,
   Engine,
   type EngineError,
+  type EngineFault,
   type EngineState,
   GamepadSource,
   KeyboardSource,
@@ -16,6 +17,9 @@ import {
 } from '@naucto/engine';
 
 import { InputBindingsStore } from '../../core/input/input-bindings.store';
+import { CrashReporter } from '../../core/reports/crash-reporter.service';
+import { ActiveRuntimeService } from './active-runtime.service';
+import { faultError } from './fault-error';
 
 /**
  * Owns one running game: engine, renderer, audio, input sources. Provided per
@@ -43,6 +47,8 @@ export class RuntimeHostService {
   readonly frame = signal(0);
 
   private readonly bindings = inject(InputBindingsStore);
+  private readonly active = inject(ActiveRuntimeService);
+  private readonly crashes = inject(CrashReporter);
 
   constructor() {
     inject(DestroyRef).onDestroy(() => {
@@ -111,6 +117,15 @@ export class RuntimeHostService {
       netPermissions: opts.netPermissions,
     });
     this.engine = engine;
+    this.active.claim(this);
+    const reportFault = (fault: EngineFault): void => {
+      const audio = this.audio?.contextState;
+      this.crashes.report('engine', faultError(fault), {
+        kind: fault.kind,
+        ...(fault.phase ? { phase: fault.phase } : {}),
+        ...(audio ? { audio } : {}),
+      });
+    };
     const unlock = (): void => {
       void this.audio?.unlock();
     };
@@ -146,6 +161,9 @@ export class RuntimeHostService {
       engine.onError((error) => {
         this.error.set(error);
       }),
+      engine.onFault(reportFault),
+      this.gfx.onFault(reportFault),
+      this.audio.onFault(reportFault),
       engine.console.subscribe((ev) => {
         if (ev.type === 'clear') {
           this.lines.set([]);
@@ -250,6 +268,7 @@ export class RuntimeHostService {
       unsubscribe();
     }
     this.unsub = [];
+    this.active.release(this);
     this.engine?.destroy();
     this.engine = null;
     this.sound?.destroy();

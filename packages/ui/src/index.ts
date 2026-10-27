@@ -32,6 +32,7 @@ export * from './components/popover-panel.component';
 export * from './components/presence-flag.component';
 export * from './components/presence-layer.component';
 export * from './components/rail.component';
+export * from './components/rating.component';
 export * from './components/readout.component';
 export * from './components/search.component';
 export * from './components/section.component';
