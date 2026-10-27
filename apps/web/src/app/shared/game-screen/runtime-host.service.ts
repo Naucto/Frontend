@@ -19,6 +19,7 @@ import {
 import { InputBindingsStore } from '../../core/input/input-bindings.store';
 import { CrashReporter } from '../../core/reports/crash-reporter.service';
 import { ActiveRuntimeService } from './active-runtime.service';
+import { faultError } from './fault-error';
 
 /**
  * Owns one running game: engine, renderer, audio, input sources. Provided per
@@ -119,7 +120,7 @@ export class RuntimeHostService {
     this.active.claim(this);
     const reportFault = (fault: EngineFault): void => {
       const audio = this.audio?.contextState;
-      this.crashes.report('engine', Object.assign(new Error(fault.message), fault), {
+      this.crashes.report('engine', faultError(fault), {
         kind: fault.kind,
         ...(fault.phase ? { phase: fault.phase } : {}),
         ...(audio ? { audio } : {}),
