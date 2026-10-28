@@ -42,6 +42,19 @@ describe('AnalyticsModeService', () => {
     expect(mode()).toBe('anonymous');
   });
 
+  it('tells a refusal from no answer in anonymous pings, and says neither after a yes', () => {
+    const pingConsent = (): string | undefined =>
+      TestBed.inject(AnalyticsModeService).pingConsent();
+
+    consent.set('denied');
+    expect(pingConsent()).toBe('DECLINED');
+    consent.set('unknown');
+    expect(pingConsent()).toBe('UNANSWERED');
+    consent.set('granted');
+    suspended.set(true);
+    expect(pingConsent()).toBeUndefined();
+  });
+
   it('reports nothing with analytics off', () => {
     analytics.set(false);
 

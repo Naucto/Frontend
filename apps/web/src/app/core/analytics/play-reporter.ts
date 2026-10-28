@@ -64,6 +64,7 @@ export class PlayReporter {
   private readonly auth = inject(AuthStore);
   private readonly features = inject(FeaturesService);
   private readonly mode = inject(AnalyticsModeService).mode;
+  private readonly pingConsent = inject(AnalyticsModeService).pingConsent;
   private play: Play | null = null;
 
   constructor() {
@@ -310,6 +311,7 @@ export class PlayReporter {
           kind,
           state: 'PLAYING',
           signedIn: this.auth.isAuthenticated(),
+          consent: this.pingConsent(),
           releaseId: play.releaseId,
           playMs: kind === 'FLUSH' ? Math.min(Math.round(playMs), MAX_PING_PLAY_MS) : undefined,
         },

@@ -25,6 +25,7 @@ export class HeartbeatService {
   private readonly transport = inject(AnalyticsTransport);
   private readonly plays = inject(PlayReporter);
   private readonly mode = inject(AnalyticsModeService).mode;
+  private readonly pingConsent = inject(AnalyticsModeService).pingConsent;
 
   private timer: ReturnType<typeof setInterval> | null = null;
   private lastBeatAt = Number.NEGATIVE_INFINITY;
@@ -77,6 +78,7 @@ export class HeartbeatService {
           kind: 'BEAT',
           state,
           signedIn: this.auth.isAuthenticated(),
+          consent: this.pingConsent(),
           releaseId,
           playMs: this.plays.takeAnonymousMs(),
         })
