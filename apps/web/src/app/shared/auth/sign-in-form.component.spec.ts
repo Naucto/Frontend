@@ -8,7 +8,7 @@ import { AuthStore } from '../../core/auth/auth.store';
 import { OAuthService } from '../../core/auth/oauth/oauth.service';
 import { type OAuthProviderFlow } from '../../core/auth/oauth/oauth-provider';
 import { testProviders } from '../../testing/providers';
-import { SignInFormComponent } from './sign-in-form.component';
+import { RESEND_COOLDOWN_SECONDS, SignInFormComponent } from './sign-in-form.component';
 
 const shown: string[] = [];
 const toasts = {
@@ -85,8 +85,30 @@ describe('SignInFormComponent, waiting on a mailed link', () => {
     await userEvent.click(screen.getByRole('button', { name: /create account/i }));
 
     expect(await screen.findByText(/we sent a link to ada@example\.com/i)).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: /send the link again/i }));
-    expect(resendVerification).toHaveBeenCalledWith('ada@example.com');
+  });
+
+  it('keeps the resend button down for as long as the server would refuse it', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      const resendVerification = vi.fn(() => Promise.resolve());
+      await renderWith({
+        register: () => Promise.resolve('ada@example.com'),
+        resendVerification,
+      });
+
+      await user.click(screen.getByRole('button', { name: /make one/i }));
+      await user.click(screen.getByRole('button', { name: /create account/i }));
+
+      expect(await screen.findByRole('button', { name: /send again in \d+ s/i })).toBeDisabled();
+
+      await vi.advanceTimersByTimeAsync(RESEND_COOLDOWN_SECONDS * 1000);
+      await user.click(await screen.findByRole('button', { name: /send the link again/i }));
+      expect(resendVerification).toHaveBeenCalledWith('ada@example.com');
+      expect(await screen.findByRole('button', { name: /send again in \d+ s/i })).toBeDisabled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('turns a sign-in refused for an unconfirmed address into the same wait', async () => {

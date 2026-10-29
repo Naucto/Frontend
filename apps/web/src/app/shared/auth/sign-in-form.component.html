@@ -13,9 +13,13 @@
           size="sm"
           type="button"
           class="w-full"
-          [disabled]="busy()"
+          [disabled]="busy() || resendIn() > 0"
           (click)="resend()">
-          {{ t('auth.inbox.resend') }}
+          @if (resendIn() > 0) {
+            {{ t('auth.inbox.resendIn', { seconds: resendIn() }) }}
+          } @else {
+            {{ t('auth.inbox.resend') }}
+          }
         </button>
       }
       <button
@@ -137,7 +141,7 @@
         }
         @default {
           {{ t('auth.haveAccount') }}
-          <button type="button" class="text-gold-ink hover:underline" (click)="mode.set('login')">
+          <button type="button" class="text-gold-ink hover:underline" (click)="backToSignIn()">
             {{ t('auth.signIn') }}
           </button>
         }

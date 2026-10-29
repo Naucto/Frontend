@@ -68,6 +68,7 @@
       "reset": "If {{email}} has an account, a link to choose a new password is on its way. It works for an hour.",
       "spam": "Nothing after a few minutes? Look in your spam folder.",
       "resend": "Send the link again",
+      "resendIn": "Send again in {{seconds}} s",
       "resent": "Sent. Only the newest link works.",
       "resendFailed": "Could not send it. Try again in a minute."
     },

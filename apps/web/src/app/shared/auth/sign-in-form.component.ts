@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   inject,
   input,
   output,
@@ -22,6 +23,15 @@ import { ApiError, unwrap, violationsOf } from '../../core/api/api-errors';
 import { AuthStore } from '../../core/auth/auth.store';
 import { OAuthService } from '../../core/auth/oauth/oauth.service';
 import { type OAuthProviderFlow } from '../../core/auth/oauth/oauth-provider';
+
+/**
+ * How long the resend button stays down after a link is mailed. It mirrors the backend's
+ * `EMAIL_TOKEN_COOLDOWN_MS`, which answers 204 without mailing anything before then: change both
+ * together.
+ */
+export const RESEND_COOLDOWN_SECONDS = 60;
+
+type InboxReason = 'registered' | 'unverified' | 'reset';
 
 /**
  * The credentials half of signing in, without an opinion about where you end up.
@@ -53,6 +63,12 @@ export class SignInFormComponent {
   private readonly i18n = inject(TranslocoService);
   private readonly toasts = inject(ToastService);
 
+  constructor() {
+    inject(DestroyRef).onDestroy(() => {
+      clearInterval(this.resendTimer);
+    });
+  }
+
   /** A provider the server registered no client with is drawn, but down: it says what is missing. */
   protected readonly providers = computed(() =>
     this.oauthService
@@ -61,10 +77,13 @@ export class SignInFormComponent {
   );
   protected readonly mode = signal<'login' | 'register' | 'forgot' | 'inbox'>('login');
   /** Why the form now waits on a mailed link, which decides what it says and whether it resends. */
-  protected readonly inboxReason = signal<'registered' | 'unverified' | 'reset'>('registered');
+  protected readonly inboxReason = signal<InboxReason>('registered');
   /** The address the last link went to, kept apart from the field the reader may edit. */
   protected readonly sentTo = signal('');
   protected readonly busy = signal(false);
+  /** Seconds before the resend button comes back; 0 when it is up. */
+  protected readonly resendIn = signal(0);
+  private resendTimer: ReturnType<typeof setInterval> | undefined;
   protected readonly policy = signal<PasswordPolicyDto | null>(null);
   protected email = '';
   protected password = '';
@@ -135,6 +154,7 @@ export class SignInFormComponent {
     this.busy.set(true);
     try {
       await this.auth.resendVerification(this.sentTo());
+      this.startResendCooldown();
       this.toasts.show(this.i18n.translate('auth.inbox.resent'), 'success');
     } catch {
       this.toasts.show(this.i18n.translate('auth.inbox.resendFailed'), 'error');
@@ -148,10 +168,22 @@ export class SignInFormComponent {
     this.mode.set('login');
   }
 
-  private awaitLink(reason: 'registered' | 'unverified' | 'reset', email: string): void {
+  private awaitLink(reason: InboxReason, email: string): void {
     this.inboxReason.set(reason);
     this.sentTo.set(email);
     this.mode.set('inbox');
+    this.startResendCooldown();
+  }
+
+  private startResendCooldown(): void {
+    clearInterval(this.resendTimer);
+    this.resendIn.set(RESEND_COOLDOWN_SECONDS);
+    this.resendTimer = setInterval(() => {
+      this.resendIn.update((seconds) => seconds - 1);
+      if (this.resendIn() <= 0) {
+        clearInterval(this.resendTimer);
+      }
+    }, 1000);
   }
 
   /**
