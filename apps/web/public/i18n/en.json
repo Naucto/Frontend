@@ -54,6 +54,39 @@
     "sessionExpired": "You have been signed out",
     "sessionExpiredBody": "Your session expired.\n\nSign in again to keep working; what you had open is kept until then.",
     "ok": "OK",
+    "backToSignIn": "Back to sign in",
+    "forgot": {
+      "link": "Forgot your password?",
+      "intro": "Give the address of your account and we mail you a link to choose a new password.",
+      "send": "Send the link",
+      "failed": "Could not send the link. Try again in a minute."
+    },
+    "inbox": {
+      "title": "Check your inbox",
+      "registered": "We sent a link to {{email}}. Follow it to confirm your address and sign in.",
+      "unverified": "Confirm your address before signing in: follow the link we sent to {{email}}.",
+      "reset": "If {{email}} has an account, a link to choose a new password is on its way. It works for an hour.",
+      "spam": "Nothing after a few minutes? Look in your spam folder.",
+      "resend": "Send the link again",
+      "resent": "Sent. Only the newest link works.",
+      "resendFailed": "Could not send it. Try again in a minute."
+    },
+    "verify": {
+      "working": "Confirming your address…",
+      "done": "Address confirmed — welcome to Naucto!",
+      "failedTitle": "This link does not work any more",
+      "failed": "It was already used, or it expired. Sign in with your password to get a new one."
+    },
+    "reset": {
+      "title": "Choose a new password",
+      "intro": "Every device signed in to your account is signed out once it changes.",
+      "newPassword": "New password",
+      "submit": "Save and sign in",
+      "done": "Password changed — you are signed in.",
+      "failed": "Could not change the password.",
+      "expiredTitle": "This link does not work any more",
+      "expired": "It was already used, or it expired. Ask for a new one from the sign-in page."
+    },
     "errors": {
       "EMAIL_INVALID": "That does not look like an email address.",
       "EMAIL_REQUIRED": "An email address is required.",
@@ -104,6 +137,8 @@
     "copy": "Copy",
     "joinPolicy": "Who can join my sessions",
     "joinPolicyHint": "Applies to every game you host",
+    "emailNotifications": "Notifications by email",
+    "emailNotificationsHint": "Friend requests, invitations and the rest, also sent to your address",
     "policies": {
       "ANYONE": "Anyone",
       "FRIENDS": "Friends",

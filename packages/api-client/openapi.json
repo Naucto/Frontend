@@ -3930,6 +3930,259 @@
         "tags": ["analytics"]
       }
     },
+    "/admin/auth/login": {
+      "post": {
+        "operationId": "AdminAuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminLoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminSessionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid email or password"
+          },
+          "403": {
+            "description": "Not an admin account"
+          },
+          "429": {
+            "description": "Too many failed attempts"
+          }
+        },
+        "summary": "Sign in to the admin console with an admin account",
+        "tags": ["admin"],
+        "security": [
+          {},
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/admin/auth/refresh": {
+      "post": {
+        "operationId": "AdminAuthController_refresh",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminSessionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or it ended"
+          }
+        },
+        "summary": "A new access token from the session cookie, until the session ends",
+        "tags": ["admin"],
+        "security": [
+          {},
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/admin/auth/logout": {
+      "post": {
+        "operationId": "AdminAuthController_logout",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "summary": "End the admin session in this browser",
+        "tags": ["admin"],
+        "security": [
+          {},
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/admin/accounts/me": {
+      "get": {
+        "operationId": "AdminAccountController_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountSummaryDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Admin role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "The signed-in admin",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/accounts/admins": {
+      "get": {
+        "operationId": "AdminAccountController_admins",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAccountListDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Admin role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Every account holding the admin role",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/accounts/search": {
+      "get": {
+        "operationId": "AdminAccountController_search",
+        "parameters": [
+          {
+            "name": "term",
+            "required": true,
+            "in": "query",
+            "description": "Part of a handle, display name or email",
+            "schema": {
+              "minLength": 2,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountSearchResultDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Admin role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Naucto accounts matching part of a handle, display name or email",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/accounts/{id}/role": {
+      "put": {
+        "operationId": "AdminAccountController_setRole",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetRoleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountSummaryDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Your own account"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Admin role required"
+          },
+          "409": {
+            "description": "The last admin"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Change an account's role; never your own, never the last admin",
+        "tags": ["admin"]
+      }
+    },
     "/auth/login": {
       "post": {
         "operationId": "AuthController_login",
@@ -3960,6 +4213,9 @@
           },
           "401": {
             "description": "Invalid credentials"
+          },
+          "403": {
+            "description": "Email address not confirmed yet (code EMAIL_NOT_VERIFIED)"
           }
         },
         "summary": "Authenticate a user and return an access token",
@@ -4000,6 +4256,7 @@
     },
     "/auth/register": {
       "post": {
+        "description": "Nobody is signed in: the account signs in once the mailed link is followed.",
         "operationId": "AuthController_register",
         "parameters": [],
         "requestBody": {
@@ -4014,11 +4271,11 @@
         },
         "responses": {
           "201": {
-            "description": "User registered successfully",
+            "description": "User registered, confirmation link mailed",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AccessTokenResponseDto"
+                  "$ref": "#/components/schemas/RegisterResponseDto"
                 }
               }
             }
@@ -4044,7 +4301,152 @@
             }
           }
         },
-        "summary": "Register a new user and return an access token",
+        "summary": "Register a new user and mail them the link that confirms their address",
+        "tags": ["auth"],
+        "security": [
+          {},
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/auth/verify-email": {
+      "post": {
+        "operationId": "AuthController_verifyEmail",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyEmailDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Address confirmed, signed in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessTokenResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Link invalid, already used or expired (code INVALID_EMAIL_TOKEN)"
+          }
+        },
+        "summary": "Confirm an email address from the mailed link and sign its account in",
+        "tags": ["auth"],
+        "security": [
+          {},
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/auth/resend-verification": {
+      "post": {
+        "description": "Answers 204 whether or not the address has an account, and sends at most one a minute.",
+        "operationId": "AuthController_resendVerification",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailAddressDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Sent if the address has an unconfirmed account"
+          }
+        },
+        "summary": "Mail a new confirmation link to an unconfirmed account",
+        "tags": ["auth"],
+        "security": [
+          {},
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/auth/forgot-password": {
+      "post": {
+        "description": "Answers 204 whether or not the address has an account, and sends at most one a minute.",
+        "operationId": "AuthController_forgotPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailAddressDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Sent if the address has an account"
+          }
+        },
+        "summary": "Mail a password reset link",
+        "tags": ["auth"],
+        "security": [
+          {},
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/auth/reset-password": {
+      "post": {
+        "operationId": "AuthController_resetPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Password changed, signed in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessTokenResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Password rejected, or link invalid, already used or expired (code INVALID_EMAIL_TOKEN)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Set a new password from the mailed link, ending every other session",
         "tags": ["auth"],
         "security": [
           {},
@@ -8623,6 +9025,97 @@
         },
         "required": ["erasedBrowsers"]
       },
+      "AdminLoginDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "admin@example.com"
+          },
+          "password": {
+            "type": "string"
+          }
+        },
+        "required": ["email", "password"]
+      },
+      "AccountSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "username": {
+            "type": "string"
+          },
+          "nickname": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["User", "Moderator", "Admin"]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": ["id", "username", "email", "role", "createdAt"]
+      },
+      "AdminSessionDto": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "Bearer token for the admin routes"
+          },
+          "expiresIn": {
+            "type": "number",
+            "description": "Seconds the access token is valid for"
+          },
+          "account": {
+            "$ref": "#/components/schemas/AccountSummaryDto"
+          }
+        },
+        "required": ["accessToken", "expiresIn", "account"]
+      },
+      "AdminAccountListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccountSummaryDto"
+            }
+          }
+        },
+        "required": ["items"]
+      },
+      "AccountSearchResultDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccountSummaryDto"
+            }
+          }
+        },
+        "required": ["items"]
+      },
+      "SetRoleDto": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": ["User", "Moderator", "Admin"]
+          }
+        },
+        "required": ["role"]
+      },
       "LoginDto": {
         "type": "object",
         "properties": {
@@ -8705,6 +9198,17 @@
         },
         "required": ["email", "username", "password"]
       },
+      "RegisterResponseDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "Address the confirmation link was sent to; the account signs in once it is followed",
+            "example": "user@example.com"
+          }
+        },
+        "required": ["email"]
+      },
       "ViolationDto": {
         "type": "object",
         "properties": {
@@ -8771,6 +9275,42 @@
           }
         },
         "required": ["statusCode", "error", "message", "violations"]
+      },
+      "VerifyEmailDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Token from the link mailed at registration"
+          }
+        },
+        "required": ["token"]
+      },
+      "EmailAddressDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "Address of the account",
+            "example": "user@example.com"
+          }
+        },
+        "required": ["email"]
+      },
+      "ResetPasswordDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Token from the link mailed by forgot-password"
+          },
+          "newPassword": {
+            "type": "string",
+            "description": "New password",
+            "minLength": 8
+          }
+        },
+        "required": ["token", "newPassword"]
       },
       "GoogleCodeDto": {
         "type": "object",
@@ -9149,9 +9689,13 @@
           "hasPassword": {
             "type": "boolean",
             "description": "Whether the account signs in with a password, which deleting it then has to be given"
+          },
+          "emailNotifications": {
+            "type": "boolean",
+            "description": "Whether notifications are also sent by mail"
           }
         },
-        "required": ["friendCode", "sessionJoinPolicy", "hasPassword"]
+        "required": ["friendCode", "sessionJoinPolicy", "hasPassword", "emailNotifications"]
       },
       "UpdateMeDto": {
         "type": "object",
@@ -9162,6 +9706,10 @@
                 "$ref": "#/components/schemas/SessionJoinPolicy"
               }
             ]
+          },
+          "emailNotifications": {
+            "type": "boolean",
+            "description": "Whether notifications are also sent by mail"
           }
         }
       },

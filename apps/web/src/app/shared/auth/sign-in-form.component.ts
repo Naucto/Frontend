@@ -59,7 +59,11 @@ export class SignInFormComponent {
       .providers()
       .map((flow) => ({ flow, configured: this.oauthService.isConfigured(flow.id) })),
   );
-  protected readonly mode = signal<'login' | 'register'>('login');
+  protected readonly mode = signal<'login' | 'register' | 'forgot' | 'inbox'>('login');
+  /** Why the form now waits on a mailed link, which decides what it says and whether it resends. */
+  protected readonly inboxReason = signal<'registered' | 'unverified' | 'reset'>('registered');
+  /** The address the last link went to, kept apart from the field the reader may edit. */
+  protected readonly sentTo = signal('');
   protected readonly busy = signal(false);
   protected readonly policy = signal<PasswordPolicyDto | null>(null);
   protected email = '';
@@ -89,24 +93,65 @@ export class SignInFormComponent {
       .catch(() => undefined);
   }
 
+  protected forgot(): void {
+    this.mode.set('forgot');
+  }
+
   protected async submit(): Promise<void> {
     this.busy.set(true);
     try {
-      if (this.mode() === 'register') {
-        await this.auth.register({
-          email: this.email,
-          password: this.password,
-          username: this.username,
-        });
-      } else {
-        await this.auth.loginWithPassword(this.email, this.password);
+      switch (this.mode()) {
+        case 'register':
+          this.awaitLink(
+            'registered',
+            await this.auth.register({
+              email: this.email,
+              password: this.password,
+              username: this.username,
+            }),
+          );
+          return;
+        case 'forgot':
+          await this.auth.forgotPassword(this.email);
+          this.awaitLink('reset', this.email);
+          return;
+        default:
+          await this.auth.loginWithPassword(this.email, this.password);
+          this.succeeded.emit();
       }
-      this.succeeded.emit();
     } catch (err) {
+      if (err instanceof ApiError && err.code === 'EMAIL_NOT_VERIFIED') {
+        this.awaitLink('unverified', this.email);
+        return;
+      }
       this.toasts.show(this.explain(err), 'error');
     } finally {
       this.busy.set(false);
     }
+  }
+
+  /** Mails the confirmation link again; the server sends at most one a minute. */
+  protected async resend(): Promise<void> {
+    this.busy.set(true);
+    try {
+      await this.auth.resendVerification(this.sentTo());
+      this.toasts.show(this.i18n.translate('auth.inbox.resent'), 'success');
+    } catch {
+      this.toasts.show(this.i18n.translate('auth.inbox.resendFailed'), 'error');
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  protected backToSignIn(): void {
+    this.password = '';
+    this.mode.set('login');
+  }
+
+  private awaitLink(reason: 'registered' | 'unverified' | 'reset', email: string): void {
+    this.inboxReason.set(reason);
+    this.sentTo.set(email);
+    this.mode.set('inbox');
   }
 
   /**
@@ -124,7 +169,14 @@ export class SignInFormComponent {
     if (err instanceof ApiError && err.message) {
       return err.message;
     }
-    return this.i18n.translate(this.mode() === 'register' ? 'auth.registerFailed' : 'auth.failed');
+    switch (this.mode()) {
+      case 'register':
+        return this.i18n.translate('auth.registerFailed');
+      case 'forgot':
+        return this.i18n.translate('auth.forgot.failed');
+      default:
+        return this.i18n.translate('auth.failed');
+    }
   }
 
   protected async oauth(provider: OAuthProviderFlow): Promise<void> {

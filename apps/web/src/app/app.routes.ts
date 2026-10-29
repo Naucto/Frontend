@@ -101,6 +101,16 @@ export const routes: Routes = [
         title: 'Sign in — Naucto',
       },
       {
+        path: 'verify-email',
+        loadComponent: () => import('./features/auth/verify-email.page'),
+        title: 'Confirm your email — Naucto',
+      },
+      {
+        path: 'reset-password',
+        loadComponent: () => import('./features/auth/reset-password.page'),
+        title: 'Reset your password — Naucto',
+      },
+      {
         path: 'settings',
         loadComponent: () => import('./features/settings/settings.page'),
         canActivate: [authGuard],

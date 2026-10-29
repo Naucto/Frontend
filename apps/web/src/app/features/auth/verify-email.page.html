@@ -1,0 +1,17 @@
+<section
+  *transloco="let t"
+  class="mx-auto mt-6 w-full max-w-[436px] rounded-md border border-line bg-panel px-3.5 pt-3.5 pb-3.25">
+  <div class="mb-2 flex items-center gap-1">
+    <nc-logo [size]="22" />
+    <span class="text-title text-ink">Naucto</span>
+  </div>
+  @if (status() === 'working') {
+    <nc-lcd [minHeight]="64">{{ t('auth.verify.working') }}</nc-lcd>
+  } @else {
+    <h1 class="mt-2 text-[22px] leading-[1.2] text-ink">{{ t('auth.verify.failedTitle') }}</h1>
+    <p class="mt-1 mb-3 text-body text-ink-3">{{ t('auth.verify.failed') }}</p>
+    <a ncButton variant="primary" size="lg" class="w-full" routerLink="/sign-in">
+      {{ t('auth.signIn') }}
+    </a>
+  }
+</section>

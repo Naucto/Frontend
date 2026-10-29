@@ -87,9 +87,14 @@ export class AccountSettingsComponent {
     })),
   );
   private readonly update = injectMutation(() => ({
-    mutationFn: async (policy: SessionJoinPolicy) =>
-      unwrap(await userControllerUpdateMe({ body: { sessionJoinPolicy: policy } })),
+    mutationFn: async (body: {
+      sessionJoinPolicy?: SessionJoinPolicy;
+      emailNotifications?: boolean;
+    }) => unwrap(await userControllerUpdateMe({ body })),
     onSuccess: () => this.qc.invalidateQueries({ queryKey: qk.me() }),
+    onError: () => {
+      this.toasts.show(this.transloco.translate('settings.saveFailed'), 'error');
+    },
   }));
 
   protected setTheme(value: string | undefined): void {
@@ -100,8 +105,12 @@ export class AccountSettingsComponent {
 
   protected setPolicy(value: string | undefined): void {
     if (POLICIES.includes(value as SessionJoinPolicy)) {
-      this.update.mutate(value as SessionJoinPolicy);
+      this.update.mutate({ sessionJoinPolicy: value as SessionJoinPolicy });
     }
+  }
+
+  protected setEmailNotifications(value: boolean): void {
+    this.update.mutate({ emailNotifications: value });
   }
 
   protected confirmDelete(): void {

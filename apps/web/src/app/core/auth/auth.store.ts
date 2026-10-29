@@ -1,9 +1,13 @@
 import { computed, inject } from '@angular/core';
 import {
+  authControllerForgotPassword,
   authControllerLogin,
   authControllerLogout,
   authControllerRefresh,
   authControllerRegister,
+  authControllerResendVerification,
+  authControllerResetPassword,
+  authControllerVerifyEmail,
   type CreateUserDto,
   userControllerGetProfile,
   type UserProfileResponseDto,
@@ -164,8 +168,36 @@ export const AuthStore = signalStore(
         );
         await applyToken(res.access_token);
       },
-      async register(dto: CreateUserDto): Promise<void> {
-        const res = unwrap(await authControllerRegister({ body: dto, credentials: 'include' }));
+      /**
+       * Creates the account, which stays signed out until the link mailed to it is followed.
+       * Resolves the address the link went to.
+       */
+      async register(dto: CreateUserDto): Promise<string> {
+        return unwrap(await authControllerRegister({ body: dto })).email;
+      },
+      /** Follows the link mailed at registration, which signs the account in. */
+      async verifyEmail(token: string): Promise<void> {
+        const res = unwrap(
+          await authControllerVerifyEmail({ body: { token }, credentials: 'include' }),
+        );
+        await applyToken(res.access_token);
+      },
+      /** The server answers the same whether or not the address has an account. */
+      async resendVerification(email: string): Promise<void> {
+        unwrap(await authControllerResendVerification({ body: { email } }));
+      },
+      /** The server answers the same whether or not the address has an account. */
+      async forgotPassword(email: string): Promise<void> {
+        unwrap(await authControllerForgotPassword({ body: { email } }));
+      },
+      /** Sets the password from a mailed link; every other session ends and this one starts. */
+      async resetPassword(token: string, newPassword: string): Promise<void> {
+        const res = unwrap(
+          await authControllerResetPassword({
+            body: { token, newPassword },
+            credentials: 'include',
+          }),
+        );
         await applyToken(res.access_token);
       },
       /** Finishes an OAuth flow that already produced an access token. */

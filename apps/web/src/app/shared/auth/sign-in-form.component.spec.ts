@@ -59,6 +59,67 @@ describe('SignInFormComponent', () => {
   });
 });
 
+describe('SignInFormComponent, waiting on a mailed link', () => {
+  beforeEach(() => {
+    shown.length = 0;
+  });
+
+  async function renderWith(auth: object): Promise<void> {
+    await render(SignInFormComponent, {
+      providers: [
+        ...testProviders(),
+        { provide: ToastService, useValue: toasts },
+        { provide: AuthStore, useValue: auth },
+      ],
+    });
+  }
+
+  it('asks a new account to confirm its address instead of signing it in', async () => {
+    const resendVerification = vi.fn(() => Promise.resolve());
+    await renderWith({
+      register: () => Promise.resolve('ada@example.com'),
+      resendVerification,
+    });
+
+    await userEvent.click(screen.getByRole('button', { name: /make one/i }));
+    await userEvent.click(screen.getByRole('button', { name: /create account/i }));
+
+    expect(await screen.findByText(/we sent a link to ada@example\.com/i)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /send the link again/i }));
+    expect(resendVerification).toHaveBeenCalledWith('ada@example.com');
+  });
+
+  it('turns a sign-in refused for an unconfirmed address into the same wait', async () => {
+    await renderWith({
+      loginWithPassword: () =>
+        Promise.reject(
+          ApiError.from(403, { message: 'Confirm first', code: 'EMAIL_NOT_VERIFIED' }),
+        ),
+    });
+
+    await userEvent.type(screen.getByLabelText(/email/i), 'ada@example.com');
+    await userEvent.type(screen.getByLabelText(/password/i), 'secret-1');
+    await userEvent.click(screen.getByRole('button', { name: /^sign in$/i }));
+
+    expect(await screen.findByText(/confirm your address before signing in/i)).toBeInTheDocument();
+    expect(shown).toEqual([]);
+  });
+
+  it('mails a reset link from the address alone', async () => {
+    const forgotPassword = vi.fn(() => Promise.resolve());
+    await renderWith({ forgotPassword });
+
+    await userEvent.click(screen.getByRole('button', { name: /forgot your password/i }));
+    expect(screen.queryByLabelText(/password/i)).not.toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText(/email/i), 'ada@example.com');
+    await userEvent.click(screen.getByRole('button', { name: /send the link/i }));
+
+    expect(forgotPassword).toHaveBeenCalledWith('ada@example.com');
+    expect(await screen.findByText(/if ada@example\.com has an account/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /send the link again/i })).not.toBeInTheDocument();
+  });
+});
+
 /** Any provider will do; the form only reads the label, the mark and whether it is configured. */
 const elsewhere: OAuthProviderFlow = {
   id: 'github',

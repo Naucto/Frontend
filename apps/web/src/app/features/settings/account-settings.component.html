@@ -34,6 +34,14 @@
         (valueChange)="setPolicy($event)"
         size="sm" />
     </nc-setting-row>
+    <nc-setting-row
+      [title]="t('settings.emailNotifications')"
+      [hint]="t('settings.emailNotificationsHint')">
+      <nc-toggle
+        [checked]="me.data()?.emailNotifications ?? true"
+        (checkedChange)="setEmailNotifications($event)"
+        [label]="t('settings.emailNotifications')" />
+    </nc-setting-row>
   }
   <nc-setting-row [title]="t('settings.theme')" [hint]="t('settings.themeHint')">
     <nc-segmented
