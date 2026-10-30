@@ -1,5 +1,8 @@
-<nc-dialog-shell *transloco="let t" [title]="t('auth.signIn')" [lead]="t('auth.needAccount')">
-  <nc-sign-in-form [next]="here" (succeeded)="ref.close(true)" />
+<nc-dialog-shell
+  *transloco="let t"
+  [title]="t(heading().title)"
+  [lead]="heading().lead ? t(heading().lead!) : undefined">
+  <nc-sign-in-form [next]="here" [(mode)]="mode" (succeeded)="ref.close(true)" />
   <button ncButton variant="ghost" footer (click)="ref.close(false)">
     {{ t('net.cancel') }}
   </button>

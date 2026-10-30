@@ -1,9 +1,12 @@
 import { DialogRef } from '@angular/cdk/dialog';
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { ButtonDirective, DialogShellComponent } from '@naucto/ui';
 
-import { SignInFormComponent } from './sign-in-form.component';
+import { SignInFormComponent, type SignInMode } from './sign-in-form.component';
+import { signInHeadings } from './sign-in-headings';
+
+const HEADINGS = signInHeadings({ title: 'auth.signIn', lead: 'auth.needAccount' });
 
 /**
  * Sign in without leaving what you were doing.
@@ -22,4 +25,6 @@ export class SignInDialogComponent {
   readonly ref = inject<DialogRef<boolean>>(DialogRef);
   /** Where a redirecting provider comes back to, which is the page the reader is standing on. */
   protected readonly here = location.pathname + location.search;
+  protected readonly mode = signal<SignInMode>('login');
+  protected readonly heading = computed(() => HEADINGS[this.mode()]);
 }

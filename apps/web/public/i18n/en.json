@@ -57,6 +57,7 @@
     "backToSignIn": "Back to sign in",
     "forgot": {
       "link": "Forgot your password?",
+      "title": "Forgot your password?",
       "intro": "Give the address of your account and we mail you a link to choose a new password.",
       "send": "Send the link",
       "failed": "Could not send the link. Try again in a minute."

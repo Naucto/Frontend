@@ -1,7 +1,6 @@
 <ng-container *transloco="let t">
   @if (mode() === 'inbox') {
     <div class="grid gap-2" role="status">
-      <h2 class="text-title text-ink">{{ t('auth.inbox.title') }}</h2>
       <p class="text-body text-ink-body">
         {{ t('auth.inbox.' + inboxReason(), { email: sentTo() }) }}
       </p>
@@ -31,9 +30,6 @@
     </div>
   } @else {
     <form class="grid gap-2" (ngSubmit)="submit()" novalidate>
-      @if (mode() === 'forgot') {
-        <p class="text-body text-ink-3">{{ t('auth.forgot.intro') }}</p>
-      }
       @if (mode() === 'register') {
         <nc-field [label]="t('auth.username')" for="username">
           <input

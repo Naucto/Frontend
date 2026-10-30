@@ -5,6 +5,7 @@ import {
   DestroyRef,
   inject,
   input,
+  model,
   output,
   signal,
 } from '@angular/core';
@@ -32,6 +33,9 @@ import { type OAuthProviderFlow } from '../../core/auth/oauth/oauth-provider';
 export const RESEND_COOLDOWN_SECONDS = 60;
 
 type InboxReason = 'registered' | 'unverified' | 'reset';
+
+/** What the form is doing; its host titles itself after it. */
+export type SignInMode = 'login' | 'register' | 'forgot' | 'inbox';
 
 /**
  * The credentials half of signing in, without an opinion about where you end up.
@@ -75,7 +79,7 @@ export class SignInFormComponent {
       .providers()
       .map((flow) => ({ flow, configured: this.oauthService.isConfigured(flow.id) })),
   );
-  protected readonly mode = signal<'login' | 'register' | 'forgot' | 'inbox'>('login');
+  readonly mode = model<SignInMode>('login');
   /** Why the form now waits on a mailed link, which decides what it says and whether it resends. */
   protected readonly inboxReason = signal<InboxReason>('registered');
   /** The address the last link went to, kept apart from the field the reader may edit. */
