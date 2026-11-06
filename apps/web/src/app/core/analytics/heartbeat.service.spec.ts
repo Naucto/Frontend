@@ -112,7 +112,13 @@ describe('HeartbeatService', () => {
 
     expect(posted[0]).toEqual({
       path: '/analytics/ping',
-      body: { kind: 'BEAT', state: 'BROWSING', signedIn: true, releaseId: undefined },
+      body: {
+        kind: 'BEAT',
+        state: 'BROWSING',
+        signedIn: true,
+        consent: 'UNANSWERED',
+        releaseId: undefined,
+      },
     });
     expect(readCookie(COOKIE_NAMES.session)).toBeNull();
 
