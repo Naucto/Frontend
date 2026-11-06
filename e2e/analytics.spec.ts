@@ -172,7 +172,7 @@ test.describe('consent and usage analytics', () => {
     });
     await expect
       .poll(() => paths(sent, '/projects/releases/42/view').map(({ body }) => body))
-      .toEqual([{ visitorId: visitor }]);
+      .toEqual([{}]);
 
     await flush(page);
     await expect

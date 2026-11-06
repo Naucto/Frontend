@@ -311,17 +311,6 @@ describe('PlayReporter', () => {
     });
   });
 
-  it('counts a view under the visitor only with consent', async () => {
-    reporter.registerView(5);
-    await setMode('anonymous');
-    reporter.registerView(6);
-
-    expect(posted.map(({ path, body }) => [path, body])).toEqual([
-      ['/projects/releases/5/view', { visitorId: VISITOR }],
-      ['/projects/releases/6/view', {}],
-    ]);
-  });
-
   it('turns analytics off when the server says it is off', async () => {
     reply = async () => ({ ...OK, disabled: true });
     await begin();

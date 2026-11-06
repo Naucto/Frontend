@@ -1,7 +1,8 @@
 import { Component, CUSTOM_ELEMENTS_SCHEMA, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { client } from '@naucto/api-client';
 import type { EngineState } from '@naucto/engine';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ActivityService } from '../../core/analytics/activity.service';
 import { PlayReporter } from '../../core/analytics/play-reporter';
@@ -42,8 +43,9 @@ describe('PlayTrackingDirective', () => {
     end: vi.fn(),
     exit: vi.fn(),
     sync: vi.fn(),
-    registerView: vi.fn(),
   };
+  const realFetch = globalThis.fetch;
+  let requested: string[];
 
   const mount = (): { page: GamePage; activity: ActivityService } => {
     const fixture = TestBed.createComponent(GamePage);
@@ -58,9 +60,19 @@ describe('PlayTrackingDirective', () => {
     }
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({ providers: [{ provide: PlayReporter, useValue: reporter }] });
+    requested = [];
+    client.setConfig({ baseUrl: 'https://api.test', throwOnError: false });
+    globalThis.fetch = (async (request: Request) => {
+      requested.push(`${request.method} ${request.url}`);
+      return Response.json({ viewCount: 1 });
+    }) as typeof fetch;
   });
 
-  it('reports a play, marks the tab as playing it, and counts one view', () => {
+  afterEach(() => {
+    globalThis.fetch = realFetch;
+  });
+
+  it('reports a play, marks the tab as playing it, and counts one view', async () => {
     const { activity } = mount();
 
     emit('running');
@@ -71,7 +83,9 @@ describe('PlayTrackingDirective', () => {
     emit('running');
     expect(reporter.end).toHaveBeenCalledWith('stopped');
     expect(reporter.begin).toHaveBeenCalledTimes(2);
-    expect(reporter.registerView).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() => {
+      expect(requested).toEqual(['POST https://api.test/projects/releases/5/view']);
+    });
   });
 
   it('ends the play when the page shows another game', () => {
