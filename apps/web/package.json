@@ -39,7 +39,7 @@
     "@naucto/ui": "*",
     "pixelarticons": "^2.4.1",
     "tailwindcss": "^4.3.3",
-    "@tailwindcss/postcss": "^4.3.3",
+    "@tailwindcss/postcss": "^4.3.4",
     "postcss": "^8.5.0"
   },
   "devDependencies": {
