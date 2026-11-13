@@ -176,7 +176,9 @@ export class SignInFormComponent {
     this.inboxReason.set(reason);
     this.sentTo.set(email);
     this.mode.set('inbox');
-    this.startResendCooldown();
+    if (reason !== 'registered') {
+      this.startResendCooldown();
+    }
   }
 
   private startResendCooldown(): void {
