@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, isDevMode, signal } from '@angular/core';
 
 export type ToastTone = 'info' | 'success' | 'warning' | 'error';
 export interface Toast {
@@ -19,6 +19,13 @@ export class ToastService {
     setTimeout(() => {
       this.dismiss(id);
     }, ttlMs);
+  }
+
+  /** A message for whoever is developing the app: a production build drops it. */
+  debug(text: string, tone: ToastTone = 'error', ttlMs = 8000): void {
+    if (isDevMode()) {
+      this.show(text, tone, ttlMs);
+    }
   }
 
   dismiss(id: number): void {

@@ -3,6 +3,7 @@ import fengari from 'fengari';
 
 import type { LuaNamespace } from '../api/lua-namespace';
 import { MAIN_FILE } from '../game/keys';
+import { isHostBug } from '../runtime/EngineFault';
 
 export type LuaCallable = (...args: unknown[]) => unknown;
 
@@ -150,6 +151,9 @@ class LuaEnvironment {
    * function was called from while that call runs, since each thread has a stack of its own.
    */
   private stack: fengari.lua.lua_State;
+
+  /** Told of each host bug before it reaches the game as a Lua error. */
+  onHostFault: ((error: Error) => void) | null = null;
 
   constructor() {
     this.luaState = fengari.lauxlib.luaL_newstate();
@@ -340,6 +344,9 @@ class LuaEnvironment {
    * proper Lua error carrying the message.
    */
   private asLuaError(state: fengari.lua_State, error: unknown): number {
+    if (isHostBug(error)) {
+      this.onHostFault?.(error);
+    }
     return fengari.lauxlib.luaL_error(
       state,
       fengari.to_luastring(error instanceof Error ? error.message : String(error)),

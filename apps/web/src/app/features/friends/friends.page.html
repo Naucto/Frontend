@@ -107,7 +107,9 @@
                   <div class="truncate text-meta text-ink-body">
                     {{ friend.nickname || friend.username }}
                   </div>
-                  <div class="label">{{ friend.since | ncRelativeTime }}</div>
+                  <div class="label">
+                    {{ t('friends.friendsSince', { when: friend.since | date: 'MMM y' }) }}
+                  </div>
                 </div>
               </a>
             }

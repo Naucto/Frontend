@@ -36,6 +36,7 @@ const flag: Parser<boolean> = (raw, key) => {
 const ENV = {
   CI: flag,
   E2E_BASE_URL: text,
+  GIT_COMMIT: text,
 
   NAUCTO_API: text,
   NAUCTO_SEED_PASSWORD: text,

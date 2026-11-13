@@ -24,6 +24,7 @@ export const qk = {
   friendship: (userId: number) => ['friendship', userId] as const,
   me: () => ['me'] as const,
   myAnalytics: () => ['me', 'analytics'] as const,
+  feedbackPrompt: () => ['me', 'feedback-prompt'] as const,
   myProjects: (params: Record<string, unknown>) => ['projects', 'mine', params] as const,
   projectImage: (id: number) => ['project', id, 'image'] as const,
   /** Autosaves — the server writes one on every save, so this is what a save invalidates. */

@@ -14,7 +14,8 @@ export type AnalyticsPath =
   | '/analytics/play'
   | '/analytics/beat'
   | '/analytics/ping'
-  | `/projects/releases/${string}/view`;
+  | `/projects/releases/${string}/view`
+  | '/reports/crash';
 
 /** A report the server could not take for now; worth sending again later. */
 export class TransientTransportError extends Error {}

@@ -13,6 +13,7 @@ import { ButtonDirective, IconComponent, LogoComponent } from '@naucto/ui';
 import { map } from 'rxjs';
 
 import { AuthStore } from '../../core/auth/auth.store';
+import { ReportProblemButtonComponent } from '../../shared/feedback/report-problem-button.component';
 import { AccountMenuComponent } from './account-menu.component';
 import { NotificationsBellComponent } from './notifications-bell.component';
 import { SearchSuggestComponent } from './search-suggest.component';
@@ -37,6 +38,7 @@ const NAV_LINK =
     AccountMenuComponent,
     NotificationsBellComponent,
     LogoComponent,
+    ReportProblemButtonComponent,
   ],
   templateUrl: './top-bar.component.html',
   host: { class: 'block', '(document:keydown)': 'onKey($event)' },
