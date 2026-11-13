@@ -21,6 +21,14 @@
     </ul>
   </nc-panel>
 
+  <nc-panel [title]="t('privacy.alwaysTitle')">
+    <ul class="list-disc space-y-1 pl-2 text-body text-ink-2">
+      @for (item of always; track item) {
+        <li>{{ t('privacy.always.' + item) }}</li>
+      }
+    </ul>
+  </nc-panel>
+
   <nc-panel [title]="t('privacy.retentionTitle')">
     <ul class="list-disc space-y-1 pl-2 text-body text-ink-2">
       @for (item of retention; track item) {
