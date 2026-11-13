@@ -86,6 +86,12 @@ export class AccountSettingsComponent {
       label: this.transloco.translate(`settings.policies.${value}`),
     })),
   );
+
+  protected readonly emailNotifications = linkedSignal(
+    () => this.me.data()?.emailNotifications ?? false,
+  );
+  protected readonly policy = linkedSignal(() => this.me.data()?.sessionJoinPolicy ?? 'ANYONE');
+
   private readonly update = injectMutation(() => ({
     mutationFn: async (body: {
       sessionJoinPolicy?: SessionJoinPolicy;
@@ -93,6 +99,8 @@ export class AccountSettingsComponent {
     }) => unwrap(await userControllerUpdateMe({ body })),
     onSuccess: () => this.qc.invalidateQueries({ queryKey: qk.me() }),
     onError: () => {
+      this.emailNotifications.set(this.me.data()?.emailNotifications ?? false);
+      this.policy.set(this.me.data()?.sessionJoinPolicy ?? 'ANYONE');
       this.toasts.show(this.transloco.translate('settings.saveFailed'), 'error');
     },
   }));

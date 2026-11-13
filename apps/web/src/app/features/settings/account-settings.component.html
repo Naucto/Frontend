@@ -30,7 +30,7 @@
     <nc-setting-row [title]="t('settings.joinPolicy')" [hint]="t('settings.joinPolicyHint')">
       <nc-segmented
         [options]="policies()"
-        [value]="me.data()?.sessionJoinPolicy ?? 'ANYONE'"
+        [(value)]="policy"
         (valueChange)="setPolicy($event)"
         size="sm" />
     </nc-setting-row>
@@ -38,7 +38,7 @@
       [title]="t('settings.emailNotifications')"
       [hint]="t('settings.emailNotificationsHint')">
       <nc-toggle
-        [checked]="me.data()?.emailNotifications ?? true"
+        [(checked)]="emailNotifications"
         (checkedChange)="setEmailNotifications($event)"
         [label]="t('settings.emailNotifications')" />
     </nc-setting-row>
