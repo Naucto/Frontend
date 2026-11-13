@@ -1,3 +1,4 @@
+import { type FaultListener, faultOf } from '../runtime/EngineFault';
 import type { SynthCommand, SynthEvent } from './worklet/protocol';
 import { SYNTH_WORKLET_SOURCE } from './worklet/synth.worklet.generated';
 
@@ -28,6 +29,7 @@ export class WebAudioBackend implements AudioBackend {
   private pendingPause = false;
   private readonly listeners = new Set<(event: SynthEvent) => void>();
   private unlocking: Promise<void> | null = null;
+  private readonly faultListeners = new Set<FaultListener>();
 
   constructor(private readonly workletUrl?: string) {}
 
@@ -44,6 +46,7 @@ export class WebAudioBackend implements AudioBackend {
     // Shared by concurrent gestures; cleared on failure so the next gesture can retry.
     this.unlocking ??= this.init().catch((error: unknown) => {
       this.unlocking = null;
+      this.fault(error);
       throw error;
     });
     return this.unlocking;
@@ -91,7 +94,26 @@ export class WebAudioBackend implements AudioBackend {
     return () => this.listeners.delete(listener);
   }
 
+  /** Told when the synth cannot start or its worklet crashes. */
+  onFault(listener: FaultListener): () => void {
+    this.faultListeners.add(listener);
+    return () => this.faultListeners.delete(listener);
+  }
+
+  /** The state of the audio context, as `suspended`; null before the first unlock. */
+  get contextState(): string | null {
+    return this.ctx?.state ?? null;
+  }
+
+  private fault(error: unknown): void {
+    const fault = faultOf('audio', error);
+    this.faultListeners.forEach((listener) => {
+      listener(fault);
+    });
+  }
+
   destroy(): void {
+    this.faultListeners.clear();
     this.node?.disconnect();
     this.node = null;
     void this.ctx?.close();
@@ -115,6 +137,9 @@ export class WebAudioBackend implements AudioBackend {
       URL.createObjectURL(new Blob([SYNTH_WORKLET_SOURCE], { type: 'text/javascript' }));
     await ctx.audioWorklet.addModule(url);
     const node = new AudioWorkletNode(ctx, 'naucto-synth', { outputChannelCount: [2] });
+    node.onprocessorerror = (event: Event): void => {
+      this.fault(event instanceof ErrorEvent ? event.error : new Error('Synth worklet crashed'));
+    };
     node.port.onmessage = (event: MessageEvent<SynthEvent>) => {
       this.listeners.forEach((listener) => {
         listener(event.data);

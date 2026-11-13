@@ -42,6 +42,7 @@ import type * as Y from 'yjs';
 
 import { unwrap } from '../../../core/api/api-errors';
 import { FeaturesService } from '../../../core/config/features.service';
+import { frameToPng } from '../../../shared/game-screen/frame-to-png';
 import { RuntimeHostService } from '../../../shared/game-screen/runtime-host.service';
 import { PersonSearchComponent } from '../../../shared/person-search.component';
 import { qk } from '../../../shared/queries/query-keys';
@@ -285,24 +286,7 @@ export default class GameTabPage implements OnInit {
       this.toasts.show(this.transloco.translate('editor.game.grabNeedsRun'), 'warning');
       return;
     }
-    const canvas = document.createElement('canvas');
-    canvas.width = 320;
-    canvas.height = 180;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      return;
-    }
-    const width = Math.sqrt((rgba.length / 4) * (320 / 180));
-    const img = new ImageData(rgba as Uint8ClampedArray<ArrayBuffer>, Math.round(width));
-    const tmp = document.createElement('canvas');
-    tmp.width = img.width;
-    tmp.height = img.height;
-    tmp.getContext('2d')?.putImageData(img, 0, 0);
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(tmp, 0, 0, 320, 180);
-    const blob = await new Promise<Blob | null>((resolve) => {
-      canvas.toBlob(resolve, 'image/png');
-    });
+    const blob = await frameToPng(rgba);
     if (blob) {
       await this.uploadBlob(blob);
     }

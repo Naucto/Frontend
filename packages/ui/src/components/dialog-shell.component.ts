@@ -23,6 +23,8 @@ export class DialogShellComponent {
   readonly title = input.required<string>();
   readonly lead = input<string>();
   readonly closeLabel = input('Close');
+  /** False for a dialog that must be answered through its own buttons, which then has no cross. */
+  readonly dismissible = input(true);
   private readonly ref = inject(DialogRef, { optional: true });
   protected close(): void {
     this.ref?.close();

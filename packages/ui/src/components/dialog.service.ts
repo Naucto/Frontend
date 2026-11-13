@@ -9,6 +9,8 @@ export interface DialogOptions<D> {
   /** Width in px or CSS length; defaults to 480px. */
   width?: string;
   ariaLabel?: string;
+  /** Neither Escape nor the backdrop closes it: only what the dialog itself offers does. */
+  disableClose?: boolean;
 }
 
 /** Thin wrapper over CDK Dialog with Naucto panel styling and focus management. */
@@ -28,6 +30,7 @@ export class DialogService {
       panelClass: ['nc-dialog-panel'],
       backdropClass: 'nc-dialog-backdrop',
       autoFocus: 'first-tabbable',
+      disableClose: opts.disableClose ?? false,
       restoreFocus: true,
     });
   }

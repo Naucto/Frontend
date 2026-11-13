@@ -62,6 +62,7 @@ export type {
 export { SharedTableSession, type TableScalar } from './net/SharedTableSession';
 export { Engine, type EngineOptions, type EngineState } from './runtime/Engine';
 export type { EngineError, EnginePhase } from './runtime/EngineError';
+export { type EngineFault, type FaultListener, isHostBug } from './runtime/EngineFault';
 export * from './sound/model';
 export {
   type Bound,

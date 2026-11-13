@@ -2,6 +2,7 @@ import { type DisplayEffect, type GfxBackend, NO_EFFECT } from '../api/ports';
 import type { Game, PixelChange } from '../game/Game';
 import type { GameMap } from '../game/GameMap';
 import { PALETTE_SIZE, SCREEN_HEIGHT, SCREEN_WIDTH, SPRITE_SIZE } from '../game/keys';
+import type { FaultListener } from '../runtime/EngineFault';
 import { buildFontAtlas, FONT_HEIGHT, FONT_WIDTH, glyphIndex } from './Font';
 import {
   allocateR8,
@@ -113,6 +114,7 @@ export class WebGL2Backend implements GfxBackend {
   /** Where a screenshot is presented, made the first time one is asked for. */
   private grab: { fbo: WebGLFramebuffer; rbo: WebGLRenderbuffer } | null = null;
   private readonly unsubscribes: (() => void)[] = [];
+  private readonly faultListeners = new Set<FaultListener>();
   private destroyed = false;
 
   constructor(
@@ -123,6 +125,19 @@ export class WebGL2Backend implements GfxBackend {
     canvas.height = SCREEN_HEIGHT;
     const gl = createGLContext(canvas);
     this.gl = gl;
+    const onContextLost = (): void => {
+      this.faultListeners.forEach((listener) => {
+        listener({
+          kind: 'webgl-context-lost',
+          name: 'WebGlError',
+          message: 'WebGL context lost',
+        });
+      });
+    };
+    canvas.addEventListener('webglcontextlost', onContextLost);
+    this.unsubscribes.push(() => {
+      canvas.removeEventListener('webglcontextlost', onContextLost);
+    });
     gl.disable(gl.BLEND);
     gl.disable(gl.DEPTH_TEST);
     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
@@ -844,6 +859,12 @@ export class WebGL2Backend implements GfxBackend {
       out.set(buf.subarray((height - 1 - y) * width * 4, (height - y) * width * 4), y * width * 4);
     }
     return out;
+  }
+
+  /** Told when the browser takes the GPU context away from this canvas. */
+  onFault(listener: FaultListener): () => void {
+    this.faultListeners.add(listener);
+    return () => this.faultListeners.delete(listener);
   }
 
   destroy(): void {

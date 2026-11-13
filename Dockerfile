@@ -26,6 +26,8 @@ EXPOSE 4200
 CMD ["npx", "ng", "serve", "web", "--host", "0.0.0.0", "--port", "4200", "--poll", "1000"]
 
 FROM deps AS build
+# The commit the image is built from, named in the release the app reports. The image has no .git.
+ARG GIT_COMMIT=
 COPY . .
 ENV NODE_OPTIONS=--max-old-space-size=4096
 RUN npm run build:worklet -w @naucto/engine && npm run docs:build && npm run build -w @naucto/web -- --configuration production \

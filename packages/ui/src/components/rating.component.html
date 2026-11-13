@@ -1,0 +1,27 @@
+<div
+  role="radiogroup"
+  [attr.aria-label]="label()"
+  class="grid grid-cols-10 gap-[3px] rounded-sm border border-line bg-inset p-[3px]">
+  @for (score of scores; track score; let i = $index) {
+    <!-- The chosen cell is the one tab stop, or the first cell while none is chosen. -->
+    <button
+      #cell
+      type="button"
+      role="radio"
+      class="h-(--nc-control-h) min-w-0 cursor-pointer rounded-xs border border-transparent bg-raised font-mono text-meta text-ink-3 tabular-nums transition-colors duration-100 hover:border-line-strong hover:text-ink disabled:cursor-not-allowed disabled:opacity-40 data-[tone=high]:aria-checked:border-jade data-[tone=high]:aria-checked:bg-jade data-[tone=high]:aria-checked:text-on-accent data-[tone=low]:aria-checked:border-hot data-[tone=low]:aria-checked:bg-hot data-[tone=low]:aria-checked:text-on-accent-dark data-[tone=mid]:aria-checked:border-orange data-[tone=mid]:aria-checked:bg-orange data-[tone=mid]:aria-checked:text-on-accent"
+      [attr.data-tone]="score <= lowMax ? 'low' : score <= 7 ? 'mid' : 'high'"
+      [attr.aria-checked]="score === value()"
+      [attr.tabindex]="score === value() || (value() === null && score === 1) ? 0 : -1"
+      [disabled]="disabled()"
+      (click)="value.set(score)"
+      (keydown)="onKey($event, i)">
+      {{ score }}
+    </button>
+  }
+</div>
+@if (lowLabel() || highLabel()) {
+  <div class="mt-0.5 flex justify-between text-label text-ink-4" aria-hidden="true">
+    <span>{{ lowLabel() }}</span>
+    <span>{{ highLabel() }}</span>
+  </div>
+}
