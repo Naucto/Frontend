@@ -977,12 +977,16 @@
     "refused": {
       "nothingStored": "Nothing is stored on your device, apart from your choice once you make it.",
       "ping": "While a tab is visible, it tells us about once a minute whether a game is running, with no id of any kind, so we know how many people are on Naucto.",
-      "plays": "Games started and how long they run are counted per game, with no id of any kind.",
-      "views": "A game’s public play count still goes up when you press Play, with nothing that identifies you."
+      "plays": "Games started and how long they run are counted per game, with no id of any kind."
+    },
+    "alwaysTitle": "Whatever you choose",
+    "always": {
+      "views": "A game’s public play count goes up when you press Play, at most once a day for each player. To count you once, the play is noted under your account when you are signed in. Otherwise your network address is turned into a one-way code that changes every day and cannot be turned back into the address. Neither is used for anything else."
     },
     "retentionTitle": "How long it is kept",
     "retention": {
       "raw": "Visits, page views and plays: 90 days.",
+      "views": "What keeps a play count to once a day: 90 days under an account, and until the next day for a network address code.",
       "aggregate": "Totals per day, week and month, with no id of any kind: kept.",
       "history": "Your own play history by day, when you are signed in: while your account exists.",
       "choice": "Your choice: six months, then you are asked again."

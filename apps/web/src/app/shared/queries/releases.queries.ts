@@ -8,6 +8,7 @@ import {
   hubControllerGetPublishedProjectImage,
   hubControllerGetRelease,
   hubControllerLikeProject,
+  hubControllerRegisterReleaseView,
   hubControllerUnlikeProject,
   type ImageUrlResponseDto,
   type LikeResponseDto,
@@ -251,4 +252,15 @@ export const SORTERS: Record<
 > = {
   viewCount: (a, b) => b.viewCount - a.viewCount,
   uniquePlayers: (a, b) => b.uniquePlayers - a.uniquePlayers,
+};
+
+/**
+ * Counts a play of a game, once a day per viewer: the account when signed in, which is why it goes
+ * through the API client and its bearer, else the network address. Consent to analytics plays no
+ * part.
+ */
+export const registerView = (id: number): void => {
+  void hubControllerRegisterReleaseView({ path: { id: String(id) }, body: {} }).catch(
+    () => undefined,
+  );
 };
