@@ -105,6 +105,11 @@
               {{ t('comments.delete') }}
             </button>
           }
+          @if (canReport(entry)) {
+            <button type="button" class="label text-ink-3 hover:text-ink" (click)="report(entry)">
+              {{ t('moderation.reportComment') }}
+            </button>
+          }
         </div>
         <!-- Bound, not interpolated: under whitespace-pre-wrap the template newlines around an
              interpolation render as spaces, and Prettier will not keep the tag on one line. -->

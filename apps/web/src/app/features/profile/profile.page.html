@@ -190,6 +190,15 @@
             </button>
           }
         }
+        @if (canReport()) {
+          <button
+            type="button"
+            class="label flex items-center gap-0.5 text-ink-3 hover:text-ink"
+            (click)="report(profile)">
+            <nc-icon name="flag" [size]="12" />
+            {{ t('moderation.reportProfile') }}
+          </button>
+        }
       </div>
     </div>
     <nc-segmented

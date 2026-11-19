@@ -1,0 +1,54 @@
+<nc-dialog-shell
+  *transloco="let t"
+  [title]="t('moderation.report.title.' + data.targetType)"
+  [lead]="data.label"
+  [closeLabel]="t('feedback.close')">
+  <form class="flex flex-col gap-2" (submit)="$event.preventDefault(); send()">
+    <nc-field [label]="t('moderation.report.reason')" for="flag-reason">
+      <select ncInput id="flag-reason" (change)="setReason($any($event.target).value)">
+        <option value="" [selected]="reason() === null">
+          {{ t('moderation.report.chooseReason') }}
+        </option>
+        @for (option of reasons(); track option.value) {
+          <option [value]="option.value" [selected]="option.value === reason()">
+            {{ option.label }}
+          </option>
+        }
+      </select>
+    </nc-field>
+
+    <nc-field
+      [label]="t('moderation.report.details')"
+      for="flag-details"
+      [hint]="t('moderation.report.detailsHint')"
+      [counter]="details().length + '/' + detailsMax">
+      <textarea
+        ncInput
+        id="flag-details"
+        rows="4"
+        class="w-full resize-y"
+        [attr.maxlength]="detailsMax"
+        [value]="details()"
+        (input)="details.set($any($event.target).value)"></textarea>
+    </nc-field>
+
+    <p class="text-meta text-ink-3">{{ t('moderation.report.note') }}</p>
+
+    @if (failed(); as message) {
+      <nc-notice tone="danger">{{ message }}</nc-notice>
+    }
+  </form>
+  <ng-container footer>
+    <button ncButton variant="ghost" type="button" (click)="ref.close()">
+      {{ t('feedback.cancel') }}
+    </button>
+    <button
+      ncButton
+      variant="primary"
+      type="button"
+      [disabled]="reason() === null || pending()"
+      (click)="send()">
+      {{ pending() ? t('feedback.sending') : t('moderation.report.send') }}
+    </button>
+  </ng-container>
+</nc-dialog-shell>
