@@ -1,5 +1,5 @@
 <nc-dialog-shell *transloco="let t" [title]="t('net.join.title')">
-  <div class="flex items-stretch gap-1">
+  <div class="mt-2 flex items-stretch gap-1">
     <nc-search
       size="sm"
       class="flex-1"
@@ -15,18 +15,18 @@
       [ncTooltip]="t('net.join.refresh')"
       [disabled]="sessions.isFetching()"
       (click)="sessions.refetch()">
-      <nc-icon name="reload" [size]="12" />
+      <nc-icon name="reload" [size]="24" />
     </button>
   </div>
 
-  <div class="mt-1.5 max-h-[190px] overflow-y-auto" role="list">
+  <div class="mt-1.5 grid max-h-[190px] gap-0.5 overflow-y-auto" role="list">
     @for (group of groups(); track group.key) {
       @if (group.rows.length) {
         <p class="label px-0.5 pt-1.5 pb-1 text-ink-4">{{ t(group.key) }}</p>
         @for (session of group.rows; track session.uuid) {
           <div
             role="listitem"
-            class="flex items-center gap-2 rounded-sm border border-line bg-raised px-1.5 py-1">
+            class="flat-sm flex items-center gap-2 bevel-fill-raised px-1.5 py-1">
             <div class="min-w-0 flex-1">
               <div class="truncate text-ui text-ink">{{ session.title }}</div>
               <div class="label text-ink-3">

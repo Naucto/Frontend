@@ -132,14 +132,14 @@ export class GameScreenComponent {
   protected readonly transportClass = computed(() => {
     if (this.overlay() || this.isFullscreen()) {
       return (
-        'absolute inset-x-0 bottom-0 flex h-[36px] items-center gap-0.75 px-1.25 ' +
+        'absolute inset-x-0 bottom-0 flex h-(--nc-h-md) items-center gap-0.75 px-1.25 ' +
         'bg-[image:var(--nc-scrim-video)]'
       );
     }
     const shape = this.compact()
-      ? 'h-[36px] gap-1.5 border-y border-line px-1.75'
-      : 'h-[44px] gap-1 rounded-b-sm border border-t-0 border-line px-1';
-    return `mx-auto -mt-px flex max-w-[1600px] items-center bg-panel ${shape}`;
+      ? 'h-(--nc-h-md) gap-1.5 border-y-3 border-line px-1.75'
+      : 'h-(--nc-h-xl) gap-1 border-3 border-t-0 border-line px-1';
+    return `mx-auto -mt-[3px] flex max-w-[1600px] items-center bg-panel ${shape}`;
   });
   protected readonly host = inject(RuntimeHostService);
   protected readonly bridge = inject(NetUiBridgeService);

@@ -1,10 +1,8 @@
 <div #frame [class]="frameClass()">
   <div
     class="relative mx-auto flex max-w-[1600px] items-center justify-center overflow-hidden bg-black"
-    [class.rounded-t-sm]="!overlay() && !compact()"
-    [class.border]="!overlay() && !compact()"
+    [class.border-3]="!overlay() && !compact()"
     [class.border-line]="!overlay() && !compact()"
-    [class.rounded-b-sm]="!transport() && !overlay() && !compact()"
     [class.aspect-video]="fit() === 'width'">
     <canvas
       #canvas
@@ -16,7 +14,7 @@
       [style.imageRendering]="'pixelated'"></canvas>
     @if (fpsVisible()) {
       <span
-        class="absolute top-1.5 left-1.5 rounded-xs border border-line-strong bg-page/80 px-1 py-0.5 font-mono text-[10px] text-jade-ink">
+        class="absolute top-1.5 left-1.5 border-3 border-line-strong bg-page/80 px-1 py-0.5 font-mono text-micro text-jade-ink">
         {{ host.fps() }} FPS
         @if (showCpu()) {
           · {{ host.cpu() }}% CPU
@@ -55,50 +53,48 @@
   }
   @if (transport()) {
     <div [class]="transportClass()" *transloco="let t">
-      <span
-        class="flex items-center"
-        [class]="compact() ? 'gap-px' : 'gap-0.5 rounded-sm border border-line bg-inset p-0.5'">
+      <span class="flex items-center" [class]="compact() ? 'gap-0' : 'gap-[3px]'">
         @if (host.state() === 'running') {
           <button
             ncButton
             variant="ghost"
-            size="sm"
+            size="md"
             iconOnly
             [attr.aria-label]="t('game.screen.pause')"
             (click)="host.pause()">
-            <nc-icon name="pause" [size]="12" />
+            <nc-icon name="pause" [size]="24" />
           </button>
         } @else {
           <!-- In a transport the design draws play as a bare hot glyph, not a filled button. -->
           <button
             ncButton
             variant="ghost"
-            size="sm"
+            size="md"
             iconOnly
             [attr.aria-label]="t('game.screen.play')"
             (click)="host.state() === 'paused' ? resume() : play()">
-            <nc-icon name="play" [size]="12" class="text-hot-ink" />
+            <nc-icon name="play" [size]="24" class="text-hot-ink" />
           </button>
         }
         <button
           ncButton
           variant="ghost"
-          size="sm"
+          size="md"
           iconOnly
           [attr.aria-label]="t('game.screen.restart')"
           (click)="restart()">
-          <nc-icon name="reload" [size]="12" />
+          <nc-icon name="reload" [size]="24" />
         </button>
         @if (debug()) {
           <button
             ncButton
             variant="ghost"
-            size="sm"
+            size="md"
             iconOnly
             [attr.aria-label]="t('game.screen.step')"
             [disabled]="host.state() === 'idle' || host.state() === 'halted'"
             (click)="host.step()">
-            <nc-icon name="next" [size]="12" />
+            <nc-icon name="next" [size]="24" />
           </button>
         }
       </span>
@@ -115,20 +111,20 @@
         <span
           class="flex items-center gap-0.5 font-mono text-label whitespace-nowrap @max-[299px]:hidden"
           [class]="player.here ? 'text-ink-3' : 'text-ink-4'">
-          <nc-icon [name]="player.pad ? 'gamepad' : 'keyboard'" [size]="12" />
+          <nc-icon [name]="player.pad ? 'gamepad' : 'keyboard'" [size]="24" />
           P{{ player.slot }}
         </span>
       }
       <button
         ncButton
         variant="ghost"
-        size="sm"
+        size="md"
         [ncPopover]="pads"
         popoverAlign="end"
         (popoverOpenChange)="refreshPads()"
         [attr.aria-label]="t('game.screen.gamepads')"
         iconOnly>
-        <nc-icon name="gamepad" [size]="12" />
+        <nc-icon name="gamepad" [size]="24" />
       </button>
       <ng-template #pads>
         <nc-popover-panel [title]="t('game.screen.gamepads')" class="w-[280px]">
@@ -138,13 +134,11 @@
                 <span class="min-w-0 flex-1 truncate text-meta text-ink">{{ pad.id }}</span>
                 @for (slot of [0, 1, 2, 3]; track slot) {
                   <button
+                    ncButton
+                    size="xs"
                     type="button"
-                    class="label rounded-xs border px-0.5"
-                    [class]="
-                      pad.player === slot
-                        ? 'border-gold text-gold-ink'
-                        : 'border-line text-ink-3 hover:text-ink'
-                    "
+                    [pressed]="pad.player === slot"
+                    [attr.aria-pressed]="pad.player === slot"
                     (click)="assign(pad.index, slot)">
                     P{{ slot + 1 }}
                   </button>
@@ -159,11 +153,11 @@
       <button
         ncButton
         variant="ghost"
-        size="sm"
+        size="md"
         iconOnly
         [attr.aria-label]="t('game.screen.fullscreen')"
         (click)="fullscreen()">
-        <nc-icon name="fullscreen" [size]="12" />
+        <nc-icon name="fullscreen" [size]="24" />
       </button>
     </div>
   }

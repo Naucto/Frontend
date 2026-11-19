@@ -115,47 +115,9 @@
     "apps/web/src/app/features/editor/sound/wave-glyph.component.html": {
       "stroke-width": 1
     },
-    "apps/web/src/app/features/friends/add-friend.dialog.html": {
-      "rounded": 1,
-      "border": 1
-    },
-    "apps/web/src/app/features/friends/friends.page.html": {
-      "rounded": 4,
-      "border": 5
-    },
-    "apps/web/src/app/features/game/comments/comments.component.html": {
-      "border": 2
-    },
-    "apps/web/src/app/features/game/game.page.html": {
-      "rounded": 2,
-      "border": 7
-    },
-    "apps/web/src/app/features/games/my-games.page.html": {
-      "rounded": 2
-    },
-    "apps/web/src/app/features/hub/hub-row.component.html": {
-      "rounded": 3,
-      "border": 2
-    },
-    "apps/web/src/app/features/hub/hub.page.html": {
-      "rounded": 4,
-      "border": 2
-    },
     "apps/web/src/app/features/learn/learn.page.html": {
       "rounded": 1,
       "border": 3
-    },
-    "apps/web/src/app/features/profile/edit-chip.component.html": {
-      "rounded": 1,
-      "border": 1
-    },
-    "apps/web/src/app/features/profile/profile-image.dialog.html": {
-      "rounded": 2,
-      "border": 3
-    },
-    "apps/web/src/app/features/profile/profile.page.html": {
-      "rounded": 3,
-      "border": 1
     },
     "apps/web/src/app/features/settings/controls-settings.component.html": {
       "rounded": 13,
@@ -198,36 +160,6 @@
       "border": 3
     },
     "apps/web/src/app/shared/feedback/thanks.dialog.html": {
-      "rounded": 1,
-      "border": 1
-    },
-    "apps/web/src/app/shared/game-card/game-card.component.ts": {
-      "rounded": 2,
-      "border": 2
-    },
-    "apps/web/src/app/shared/game-card/game-cover.component.ts": {
-      "border": 1
-    },
-    "apps/web/src/app/shared/game-screen/game-screen.component.html": {
-      "rounded": 3,
-      "border": 3
-    },
-    "apps/web/src/app/shared/game-screen/game-screen.component.ts": {
-      "rounded": 1,
-      "border": 2
-    },
-    "apps/web/src/app/shared/game-screen/virtual-pad.component.html": {
-      "rounded": 1
-    },
-    "apps/web/src/app/shared/game-screen/virtual-pad.component.ts": {
-      "rounded": 2,
-      "border": 2
-    },
-    "apps/web/src/app/shared/netplay/host.dialog.html": {
-      "rounded": 1,
-      "border": 1
-    },
-    "apps/web/src/app/shared/netplay/join.dialog.html": {
       "rounded": 1,
       "border": 1
     },

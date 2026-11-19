@@ -84,6 +84,24 @@ function topRelated(
     PlayTrackingDirective,
   ],
   templateUrl: './game.page.html',
+  styles: `
+    .like-pop {
+      animation: like-pop 200ms steps(2, end);
+    }
+    @keyframes like-pop {
+      50% {
+        transform: scale(1.3);
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .like-pop {
+        animation: none;
+      }
+    }
+    :host-context([data-reduce-motion]) .like-pop {
+      animation: none;
+    }
+  `,
   // A column that fills what the shell left it, so the panel's own surface reaches the footer
   // instead of stopping at the height of whatever the sidebar happens to hold.
   host: { class: 'flex flex-1 flex-col' },
@@ -107,6 +125,8 @@ export default class GamePage {
   private readonly all = injectRelatedWindow();
 
   /** Whether the description is shown in full, rather than clamped to its first lines. */
+  /** Set by the press that likes, so the heart pops for it and not for a like already there. */
+  protected readonly justLiked = signal(false);
   protected readonly descOpen = signal(false);
   /**
    * Whether the clamp is actually hiding something — measured, because how much text fits depends
@@ -287,7 +307,9 @@ export default class GamePage {
    */
   protected toggleLike(): void {
     this.signedIn.run(() => {
-      this.toggle.mutate(this.likes.data()?.liked ?? false);
+      const liked = this.likes.data()?.liked ?? false;
+      this.justLiked.set(!liked);
+      this.toggle.mutate(liked);
     });
   }
 

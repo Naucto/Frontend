@@ -9,7 +9,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
-import { ButtonDirective, DialogShellComponent, IconComponent } from '@naucto/ui';
+import { ButtonDirective, DialogShellComponent, IconComponent, NoticeComponent } from '@naucto/ui';
 
 /** Which zone the dialog is filling, which is all that differs between its two windows. */
 export type ProfileImageZone = 'picture' | 'banner';
@@ -51,7 +51,13 @@ type Grip = 'move' | 'nw' | 'ne' | 'sw' | 'se' | 'w' | 'e';
 
 @Component({
   selector: 'nc-profile-image-dialog',
-  imports: [TranslocoDirective, ButtonDirective, DialogShellComponent, IconComponent],
+  imports: [
+    TranslocoDirective,
+    ButtonDirective,
+    DialogShellComponent,
+    IconComponent,
+    NoticeComponent,
+  ],
   templateUrl: './profile-image.dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
