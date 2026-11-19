@@ -132,11 +132,69 @@ export default class UiKitPage {
     { value: 'rect', icon: 'frame' as const, label: 'Rect' },
   ];
   protected readonly grid = signal(true);
-  /** The two densities a bar may ask for, and the glyph step each one takes. */
-  protected readonly densities = [
-    { name: 'Small — the drawn size', klass: 'nc-density-small', icon: 12 as const },
-    { name: 'Big — the editor strips', klass: 'nc-density-big', icon: 24 as const },
+  protected readonly sections = [
+    { id: 'foundations', label: 'Foundations' },
+    { id: 'buttons', label: 'Buttons' },
+    { id: 'inputs', label: 'Inputs' },
+    { id: 'selection', label: 'Selection' },
+    { id: 'chips', label: 'Chips & data' },
+    { id: 'navigation', label: 'Navigation' },
+    { id: 'feedback', label: 'Feedback' },
+    { id: 'overlays', label: 'Overlays' },
   ];
+  protected readonly surfaces = [
+    { name: 'page', fill: 'bevel-fill-page' },
+    { name: 'panel', fill: 'bevel-fill-panel' },
+    { name: 'raised', fill: 'bevel-fill-raised' },
+    { name: 'inset', fill: 'bevel-fill-inset' },
+    { name: 'line', fill: 'bevel-fill-line-strong' },
+  ];
+  protected readonly accentSwatches = [
+    { name: 'gold', fill: 'bg-gold text-on-accent', ink: 'text-gold-ink' },
+    { name: 'hot', fill: 'bg-hot text-on-hot', ink: 'text-hot-ink' },
+    { name: 'jade', fill: 'bg-jade text-on-accent', ink: 'text-jade-ink' },
+    { name: 'sky', fill: 'bg-sky text-on-accent', ink: 'text-sky-ink' },
+    { name: 'orange', fill: 'bg-orange text-on-accent', ink: 'text-orange-ink' },
+  ];
+  protected readonly washes = [
+    { name: 'gold', fill: 'bevel-fill-gold-wash', ink: 'text-gold-ink' },
+    { name: 'hot', fill: 'bevel-fill-hot-wash', ink: 'text-hot-ink' },
+    { name: 'jade', fill: 'bevel-fill-jade-wash', ink: 'text-jade-ink' },
+    { name: 'sky', fill: 'bevel-fill-sky-wash', ink: 'text-sky-ink' },
+  ];
+  protected readonly inks = [
+    { name: 'ink', ink: 'text-ink' },
+    { name: 'body', ink: 'text-ink-body' },
+    { name: 'ink-2', ink: 'text-ink-2' },
+    { name: 'ink-3', ink: 'text-ink-3' },
+    { name: 'ink-4', ink: 'text-ink-4' },
+    { name: 'active', ink: 'text-active-ink' },
+  ];
+  protected readonly scale = [
+    { px: 40, name: 'control' },
+    { px: 30, name: 'small' },
+    { px: 48, name: 'bar' },
+    { px: 56, name: 'hero' },
+    { px: 24, name: 'icon' },
+  ];
+  protected readonly dithers = [
+    'var(--nc-dither-12)',
+    'var(--nc-dither-25)',
+    'var(--nc-dither-37)',
+    'var(--nc-dither-50)',
+    'var(--nc-dither-75)',
+    'var(--nc-dither-87)',
+  ];
+  protected readonly buttonSizes = [
+    { size: 'xs', label: 'xs 28' },
+    { size: 'sm', label: 'sm 30' },
+    { size: 'md', label: 'md 36' },
+    { size: 'lg', label: 'lg 40' },
+    { size: 'xl', label: 'xl 44' },
+    { size: 'bar', label: 'bar 48' },
+  ] as const;
+  protected readonly versionsOpen = signal(false);
+  protected readonly copied = signal(false);
   protected readonly reduceMotion = signal(false);
   protected readonly matchCase = signal(true);
   protected readonly themes = [

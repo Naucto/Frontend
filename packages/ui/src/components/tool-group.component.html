@@ -13,10 +13,10 @@
       [ncTooltip]="item.key ? item.label + ' · ' + item.key : item.label"
       (click)="value.set(item.value)"
       (keydown)="onKey($event, i)"
-      class="inline-flex h-(--nc-control-h) w-(--nc-tool-w) cursor-pointer items-center justify-center gap-1.5 rounded-xs px-0 text-ink-3 transition-colors duration-100 hover:text-ink aria-checked:w-auto aria-checked:bg-gold aria-checked:px-1.5 aria-checked:text-on-accent">
+      class="inline-flex h-(--nc-h-sm) w-(--nc-h-sm) cursor-pointer items-center justify-center gap-1.5 rounded-xs px-0 text-ink-3 transition-colors duration-100 hover:text-ink aria-checked:w-auto aria-checked:bg-gold aria-checked:px-1.5 aria-checked:text-on-accent">
       <nc-icon [name]="item.icon" [size]="iconSize()" />
       @if (item.value === value()) {
-        <span class="control-type font-mono uppercase tracking-button">{{ item.label }}</span>
+        <span class="text-label font-mono uppercase tracking-button">{{ item.label }}</span>
       }
     </button>
   }

@@ -8,7 +8,7 @@
       #cell
       type="button"
       role="radio"
-      class="h-(--nc-control-h) min-w-0 cursor-pointer rounded-xs border border-transparent bg-raised font-mono text-meta text-ink-3 tabular-nums transition-colors duration-100 hover:border-line-strong hover:text-ink disabled:cursor-not-allowed disabled:opacity-40 data-[tone=high]:aria-checked:border-jade data-[tone=high]:aria-checked:bg-jade data-[tone=high]:aria-checked:text-on-accent data-[tone=low]:aria-checked:border-hot data-[tone=low]:aria-checked:bg-hot data-[tone=low]:aria-checked:text-on-accent-dark data-[tone=mid]:aria-checked:border-orange data-[tone=mid]:aria-checked:bg-orange data-[tone=mid]:aria-checked:text-on-accent"
+      class="h-(--nc-h-sm) min-w-0 cursor-pointer rounded-xs border border-transparent bg-raised font-mono text-meta text-ink-3 tabular-nums transition-colors duration-100 hover:border-line-strong hover:text-ink disabled:cursor-not-allowed disabled:opacity-40 data-[tone=high]:aria-checked:border-jade data-[tone=high]:aria-checked:bg-jade data-[tone=high]:aria-checked:text-on-accent data-[tone=low]:aria-checked:border-hot data-[tone=low]:aria-checked:bg-hot data-[tone=low]:aria-checked:text-on-accent-dark data-[tone=mid]:aria-checked:border-orange data-[tone=mid]:aria-checked:bg-orange data-[tone=mid]:aria-checked:text-on-accent"
       [attr.data-tone]="score <= lowMax ? 'low' : score <= 7 ? 'mid' : 'high'"
       [attr.aria-checked]="score === value()"
       [attr.tabindex]="score === value() || (value() === null && score === 1) ? 0 : -1"
