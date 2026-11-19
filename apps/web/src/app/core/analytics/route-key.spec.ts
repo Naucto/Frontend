@@ -16,6 +16,10 @@ describe('routeKey', () => {
     expect(routeKey(snapshot({ path: '' }, { path: 'play/:id' }))).toBe('play/:id');
   });
 
+  it('does not measure a staff preview', () => {
+    expect(routeKey(snapshot({ path: '' }, { path: 'staff/play/:id' }))).toBeNull();
+  });
+
   it('does not measure the OAuth callbacks', () => {
     expect(routeKey(snapshot({ path: 'oauth' }, { path: 'google/callback' }))).toBeNull();
   });
