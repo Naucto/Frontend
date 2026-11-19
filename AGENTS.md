@@ -32,6 +32,7 @@ Pixelarticons, Bubblegum-16 palette, dark + light themes).
 | `npm run typecheck`                       | `tsc --noEmit` per workspace.                                                                 |
 | `npm test`                                | Vitest in every workspace (`ng test` for the app).                                            |
 | `npm run e2e`                             | Playwright (starts the dev server unless `E2E_BASE_URL` is set).                              |
+| `npm run pixel:check`                     | Fails on rounded corners, strokes off the 3px pixel and density tokens (see Gotchas).         |
 | `npm run docs:build`                      | Builds the docs submodule into `apps/web/public/docs` (run it before `start`/`build`/`e2e`).  |
 | `./dev.sh`                                | Dev server in Docker against the Backend on the `naucto-dev` network (hot reload, port 3001). |
 | `docker compose up --build`               | Production-style image on port 3001; `APP_*` env vars configure it at runtime.                |
@@ -70,6 +71,12 @@ Pixelarticons, Bubblegum-16 palette, dark + light themes).
   document that still holds the older shape — see `migrations/v1_to_v2/shape.ts`.
 - **Theming**: every colour comes from a token in `packages/ui/src/tokens.css`; never write raw hex in
   components. Dark is the default; light is `[data-theme=light]` or `prefers-color-scheme`.
+- **Pixel kit**: one pixel is 3px (`--nc-px`) and every stroke is a whole number of them; boxes,
+  paddings and gaps are free. A frame is a bevel utility from `tokens.css` — `raised-sm` /
+  `raised-lg` for what is pressed, `well` for what is typed in, `flat-sm` / `flat-lg` for the rest —
+  painted from five colour roles (`bevel-edge-*`, `bevel-hi-*`, `bevel-lo-*`, `bevel-skirt-*`,
+  `bevel-fill-*`). A state changes roles (`hover:bevel-lit`, `active:bevel-down`), never the shape.
+  Control heights come from the `--nc-h-*` ladder; there are no densities and no radius scale.
 - **Editor layout**: the shell is rail + routed workspace + one `nc-panel-region` on the right. Each
   tab draws its own inspector as an `nc-panel-column` at `PANEL_WIDTH`; the console column is CODE's
   own, and the region either unfolds the reference beside it or lends it that track when the window
@@ -238,6 +245,14 @@ broken; an absence reads as not built.
 
 ## Gotchas
 
+- A bevelled element takes its ground from `bevel-fill-*`, never from `bg-*`: the background colour
+  lies under the painted strips and shows through the stepped corners. Its border is transparent by
+  construction, so `border-*` colours do nothing on it either.
+- `glare` is asked for by name and only on a coloured call to action. It needs the element to be a
+  bevel (it is cut to the bevel's outline) and it owns the element's `::after`.
+- `tools/pixel-allow.json` is what each file still owes `npm run pixel:check`. A change that moves a
+  file onto the kit lowers its entry in the same diff (`npm run pixel:check -- --update`); nothing
+  raises one.
 - `fengari` needs `patches/fengari+0.1.5.patch` (applied by `patch-package` on `postinstall`). Besides
   keeping Node-only modules out of the browser bundle, it clears a released stack slot by assigning
   `undefined` rather than with `delete`: SpiderMonkey never compiles `delete` on an array element,

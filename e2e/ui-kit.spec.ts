@@ -40,17 +40,33 @@ for (const [stored, marked] of [
   });
 }
 
-/** Read as a computed colour, because the border is always there and only its alpha carries this. */
-test('an unavailable button gains a border only where it had one', async ({ page }) => {
+/** Read as the computed edge role: a bevel's border is always transparent, its frame is painted. */
+test('an unavailable button gains a frame only where it had one', async ({ page }) => {
   await page.goto('/ui-kit');
-  const border = async (variant: string): Promise<string> =>
+  const edge = async (variant: string): Promise<string> =>
     page
       .locator(`button[data-variant="${variant}"]:disabled`)
       .first()
-      .evaluate((el) => getComputedStyle(el).borderTopColor);
+      .evaluate((el) => getComputedStyle(el).getPropertyValue('--bv-edge'));
 
-  expect(await border('ghost')).toBe('rgba(0, 0, 0, 0)');
-  expect(await border('primary')).not.toBe('rgba(0, 0, 0, 0)');
+  expect(await edge('ghost')).toBe('rgba(0, 0, 0, 0)');
+  expect(await edge('primary')).not.toBe('rgba(0, 0, 0, 0)');
+});
+
+/** One pixel is 3px: the frame, the skirt under it and the travel of a press. */
+test('a raised button is drawn and pressed on the pixel grid', async ({ page }) => {
+  await page.goto('/ui-kit');
+  const publish = page.getByRole('button', { name: 'Publish' });
+  const hero = page.getByRole('button', { name: 'hero 56' });
+  const borders = (el: Element): string => getComputedStyle(el).borderWidth;
+
+  expect(await publish.evaluate(borders)).toBe('3px 3px 6px');
+  expect(await hero.evaluate(borders)).toBe('6px 6px 9px');
+  expect(
+    await page
+      .getByRole('button', { name: 'Latched' })
+      .evaluate((el) => getComputedStyle(el).translate),
+  ).toBe('0px 3px');
 });
 
 /** The container the host reports from takes no pointer events; the row with the button must. */

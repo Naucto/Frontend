@@ -68,7 +68,7 @@ export class SlotGridComponent {
 
   protected readonly height = computed(
     () =>
-      `calc(${String(this.rows())} * var(--nc-control-h-xs) + ${String((this.rows() - 1) * GAP + TAIL)}px)`,
+      `calc(${String(this.rows())} * var(--nc-h-xs) + ${String((this.rows() - 1) * GAP + TAIL)}px)`,
   );
 
   protected pad(value: number): string {

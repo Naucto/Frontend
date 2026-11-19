@@ -74,7 +74,7 @@ const VARIANT: Record<
   },
   // A bar of its own, full height, where the tabs are the primary subject of the screen below.
   bar: {
-    frame: 'h-(--nc-bar-h) border-b border-line bg-panel',
+    frame: 'h-(--nc-h-bar) border-b border-line bg-panel',
     list: 'items-stretch',
     item: [
       'flex shrink-0 items-center gap-1 border-t-2 border-r border-r-line border-t-transparent px-[15px]',

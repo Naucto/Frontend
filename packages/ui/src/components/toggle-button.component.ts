@@ -44,7 +44,7 @@ export class ToggleButtonComponent {
 
   protected readonly active = computed(() => ACTIVE[this.accent()]);
   protected readonly height = computed(() =>
-    this.size() === 'strip' ? 'h-(--nc-transport-h)' : 'h-(--nc-control-h)',
+    this.size() === 'strip' ? 'h-(--nc-h-md)' : 'h-(--nc-h-sm)',
   );
 
   protected press(): void {
