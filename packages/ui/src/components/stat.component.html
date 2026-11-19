@@ -1,0 +1,5 @@
+<nc-icon [name]="icon()" class="-mt-[2px]" />
+<span [class.text-ink]="label() && tone() !== 'hot'">{{ formatted() }}</span>
+@if (label(); as text) {
+  <span>{{ text }}</span>
+}

@@ -5,7 +5,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   selector: 'nc-online-dot',
   template: '',
   host: {
-    class: 'inline-block h-1 w-1 rounded-xs',
+    class: 'inline-block h-1 w-1',
     '[class.bg-jade]': 'online()',
     '[class.bg-ink-4]': '!online()',
     role: 'img',

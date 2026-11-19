@@ -14,10 +14,10 @@ const FILL: Record<PresenceColour, string> = {
 };
 
 /**
- * Where a collaborator's pointer is, with their name hung at the row where the mark stops widening
- * — which is what the fraction in the tag's offset counts. The path keeps one bar per row of the
- * design's grid, so a wrong row reads as a wrong row. Position it from the parent (`left`/`top`, or
- * a translate); the host smooths whatever moves, and `[data-reduce-motion]` turns that off.
+ * Where a collaborator's pointer is, with their name hung at the row where the mark has narrowed
+ * to its stem — the sixth of its nine, which is what the tag's offset counts. Each cell of the mark
+ * is one pixel of the kit. Position it from the parent (`left`/`top`, or a translate); the host
+ * smooths whatever moves, and `[data-reduce-motion]` turns that off.
  */
 @Component({
   selector: 'nc-presence-flag',

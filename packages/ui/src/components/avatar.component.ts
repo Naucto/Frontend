@@ -38,6 +38,15 @@ export const PERSONAL_COLOURS: Record<IdentityAccent, { fill: string; swatch: st
   hot: { fill: 'var(--color-hot)', swatch: 'bg-hot' },
 };
 
+/** The smallest box each step of the type scale is the initial of; below them all, the label step. */
+const TYPE: readonly (readonly [number, string])[] = [
+  [84, 'text-hero'],
+  [66, 'text-display'],
+  [44, 'text-title'],
+  [36, 'text-ui'],
+  [30, 'text-small'],
+];
+
 /**
  * Square avatar: image when available, else the first letter on the person's colour.
  *
@@ -52,8 +61,7 @@ export const PERSONAL_COLOURS: Record<IdentityAccent, { fill: string; swatch: st
     '[class]': 'classes()',
     '[style.width.px]': 'size()',
     '[style.height.px]': 'size()',
-    '[style.font-size.px]': 'Math.round(size() * 0.4)',
-    '[style.background]': 'fill()',
+    '[style.--bv-fill]': 'fill()',
     '[style.color]': 'ink()',
     '[attr.title]': 'name()',
     role: 'img',
@@ -72,7 +80,6 @@ export class AvatarComponent {
   /** Overlap the previous avatar, for presence stacks. */
   readonly overlap = input(false, { transform: booleanAttribute });
 
-  protected readonly Math = Math;
   protected readonly initial = computed(() => (this.name().trim()[0] ?? '?').toUpperCase());
 
   protected readonly fill = computed(() => {
@@ -101,12 +108,11 @@ export class AvatarComponent {
   });
 
   protected readonly classes = computed(() => {
-    // The design keeps 2px corners on the small card avatars and 3px with a hairline from 24px up.
-    const large = this.size() >= 24;
+    const type = TYPE.find(([from]) => this.size() >= from)?.[1] ?? 'text-label';
     return [
-      'inline-flex shrink-0 items-center justify-center overflow-hidden font-mono uppercase',
-      large ? 'rounded-sm border border-line-strong' : 'rounded-xs',
-      this.overlap() ? '-ml-1 ring-1 ring-panel first:ml-0' : '',
+      'flat-sm bevel-edge-line-strong inline-flex shrink-0 items-center justify-center overflow-hidden font-mono leading-none uppercase',
+      type,
+      this.overlap() ? '-ml-1 shadow-[0_0_0_var(--nc-px)_var(--color-panel)] first:ml-0' : '',
     ].join(' ');
   });
 }
