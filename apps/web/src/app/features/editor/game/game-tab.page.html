@@ -1,7 +1,7 @@
 <div *transloco="let t" class="grid h-full grid-cols-[minmax(0,1fr)_auto]">
   <section class="flex min-h-0 flex-col">
     <div
-      class="flex h-(--nc-bar-h) min-w-0 shrink-0 items-center gap-1.5 border-b border-line bg-panel pr-1.5 pl-2">
+      class="flex h-(--nc-h-bar) min-w-0 shrink-0 items-center gap-1.5 border-b-3 border-line bg-panel pr-1.5 pl-2">
       <span class="font-mono text-meta tracking-strip text-ink uppercase">
         {{ t('editor.game.title') }}
       </span>
@@ -20,7 +20,7 @@
         <div>
           <nc-label class="mb-1">{{ t('editor.game.icon') }}</nc-label>
           <div
-            class="relative aspect-video overflow-hidden rounded-sm border border-line-strong bg-inset"
+            class="relative aspect-video overflow-hidden flat-sm bevel-edge-line-strong bevel-fill-inset"
             (dragover)="$event.preventDefault()"
             (drop)="dropCover($event)">
             @if (cover.data(); as url) {
@@ -32,21 +32,21 @@
               </div>
             }
             <span
-              class="absolute top-1 right-1 rounded-xs border border-line-strong bg-page/80 px-[6px] py-[3px] font-mono text-micro tracking-tag text-ink">
+              class="absolute top-1 right-1 flat-sm bevel-edge-line-strong bevel-fill-page px-[6px] py-[3px] font-mono text-micro tracking-tag text-ink">
               320×180
             </span>
             <div
-              class="absolute inset-x-0 bottom-0 flex h-4 border-t border-line-strong bg-page/85">
+              class="absolute inset-x-0 bottom-0 flex h-(--nc-h-md) border-t-3 border-line-strong bg-page/85">
               <button
                 type="button"
-                class="flex flex-1 cursor-pointer items-center justify-center gap-0.75 border-r border-line-strong font-ui text-label text-ink uppercase transition-colors duration-100 hover:text-gold-ink"
+                class="flex flex-1 cursor-pointer items-center justify-center gap-0.75 border-r-3 border-line-strong font-ui text-label text-ink uppercase transition-colors duration-100 hover:text-gold-ink"
                 (click)="grabFrame()">
-                <nc-icon name="camera" [size]="12" />
+                <nc-icon name="camera" [size]="24" />
                 {{ t('editor.game.grabFrame') }}
               </button>
               <label
                 class="flex flex-1 cursor-pointer items-center justify-center gap-0.75 font-ui text-label text-ink-body uppercase transition-colors duration-100 hover:text-gold-ink focus-within:text-gold-ink">
-                <nc-icon name="upload" [size]="12" />
+                <nc-icon name="upload" [size]="24" />
                 {{ t('editor.game.upload') }}
                 <input
                   type="file"
@@ -249,7 +249,7 @@
           <!-- The id stands in until the parent's name arrives, and for good once the parent is
                unpublished or deleted. -->
           <div class="flex items-center gap-0.5 text-body text-ink-2">
-            <nc-icon name="git-branch" [size]="12" />
+            <nc-icon name="git-branch" [size]="24" />
             {{ t('editor.game.forkedFrom') }}
             <a [href]="'/play/' + from" class="text-sky-ink">
               {{ parent.data()?.name ?? '#' + from }}
@@ -262,7 +262,7 @@
         <!-- A different mark from the fork line above, which points the other way: these are copies
              taken of this game. -->
         <div class="flex items-center gap-0.5 text-body text-ink-2">
-          <nc-icon name="duplicate" [size]="12" />
+          <nc-icon name="duplicate" [size]="24" />
           {{ t('editor.game.remixedBy', { n: session.project()?.forkCount ?? 0 }) }}
         </div>
         @if (!session.project()?.publishedAt) {

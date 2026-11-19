@@ -15,7 +15,7 @@ export const nauctoTheme = EditorView.theme({
   // font size lands between them.
   '.cm-scroller': { fontFamily: 'var(--font-mono)', letterSpacing: 'normal', lineHeight: '22px' },
   '.cm-content': { caretColor: 'var(--nc-gold)', padding: '8px 0' },
-  '.cm-cursor, .cm-dropCursor': { borderLeftColor: 'var(--nc-gold)', borderLeftWidth: '2px' },
+  '.cm-cursor, .cm-dropCursor': { borderLeftColor: 'var(--nc-gold)', borderLeftWidth: '3px' },
   '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection': {
     backgroundColor: 'color-mix(in srgb, var(--nc-gold) 22%, transparent)',
   },
@@ -24,7 +24,7 @@ export const nauctoTheme = EditorView.theme({
     backgroundColor: 'var(--nc-paper)',
     color: 'var(--nc-gutter)',
     border: 'none',
-    borderRight: '1px solid var(--nc-line)',
+    borderRight: '3px solid var(--nc-line)',
     fontFamily: 'var(--font-mono)',
   },
   '.cm-activeLineGutter': { backgroundColor: 'transparent', color: 'var(--nc-ink-2)' },
@@ -33,20 +33,20 @@ export const nauctoTheme = EditorView.theme({
     backgroundColor: 'color-mix(in srgb, var(--nc-sky) 25%, transparent)',
     outline: 'none',
   },
-  '.cm-lintRange-error': { backgroundImage: 'none', borderBottom: '2px dotted var(--nc-hot)' },
+  '.cm-lintRange-error': { backgroundImage: 'none', borderBottom: '3px dotted var(--nc-hot)' },
   // The design marks a failing line three ways: the gutter number, the line itself, and the token.
   '.cm-lint-marker-error': { color: 'var(--nc-hot-ink)' },
   '.cm-gutterElement.cm-error-line': { color: 'var(--nc-hot-ink)' },
   '.cm-line.cm-error-line': {
     backgroundColor: 'var(--nc-gold-wash)',
-    borderLeft: '2px solid var(--nc-gold)',
+    borderLeft: '3px solid var(--nc-gold)',
     marginLeft: '-14px',
-    paddingLeft: '12px',
+    paddingLeft: '11px',
   },
   '.cm-tooltip': {
     backgroundColor: 'var(--nc-raised)',
-    border: '1px solid var(--nc-line-strong)',
-    borderRadius: '3px',
+    border: '3px solid var(--nc-line-strong)',
+    borderRadius: '0',
     color: 'var(--nc-ink)',
     fontFamily: 'var(--font-ui)',
   },
@@ -61,18 +61,17 @@ export const nauctoTheme = EditorView.theme({
   '.cm-completionDetail': { color: 'var(--nc-ink-3)', marginLeft: '8px', fontStyle: 'normal' },
   '.cm-completionInfo': {
     backgroundColor: 'var(--nc-raised)',
-    border: '1px solid var(--nc-line-strong)',
+    border: '3px solid var(--nc-line-strong)',
     color: 'var(--nc-ink-body)',
     fontFamily: 'var(--font-ui)',
     padding: '6px 8px',
   },
   '.cm-ySelectionInfo': {
     fontFamily: 'var(--font-ui)',
-    fontSize: '9px',
+    fontSize: '11px',
     letterSpacing: '.04em',
     textTransform: 'uppercase',
-    padding: '1px 4px',
-    borderRadius: '2px',
+    padding: '0 3px',
     color: 'var(--nc-ink)',
     opacity: '1 !important',
     top: '-1.3em',
@@ -80,11 +79,11 @@ export const nauctoTheme = EditorView.theme({
   '.cm-ySelection': { opacity: '0.35' },
   '.cm-panels': { backgroundColor: 'var(--nc-panel)', color: 'var(--nc-ink)' },
   '.cm-searchMatch': { backgroundColor: 'color-mix(in srgb, var(--nc-gold) 30%, transparent)' },
-  // The one the arrows just landed on, over a selection wash of the same gold: the outline is what
-  // still tells it apart once the two tints have added up.
+  // The one the arrows just landed on, over a selection wash of the same gold: the rule under it is
+  // what still tells it apart once the two tints have added up.
   '.cm-searchMatch-selected': {
     backgroundColor: 'color-mix(in srgb, var(--nc-gold) 45%, transparent)',
-    outline: '1px solid var(--nc-gold)',
+    boxShadow: 'inset 0 -3px 0 var(--nc-gold)',
   },
 });
 

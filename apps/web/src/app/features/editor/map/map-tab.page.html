@@ -3,7 +3,7 @@
     <!-- Three tracks, so the tool group is centred on the header rather than on whatever is
          left over between the title and the undo pair. -->
     <header
-      class="grid h-(--nc-bar-h) grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-line bg-panel px-2">
+      class="grid h-(--nc-h-bar) grid-cols-[1fr_auto_1fr] items-center gap-2 border-b-3 border-line bg-panel px-2">
       <div class="flex min-w-0 items-center gap-2">
         <span class="font-mono text-meta truncate text-ink">{{ mapTitle() }}</span>
         <span class="label text-ink-4">
@@ -20,7 +20,7 @@
           type="button"
           ncButton
           variant="ghost"
-          size="strip"
+          size="md"
           iconOnly
           [attr.aria-label]="t('editor.undo')"
           (click)="undo.manager.undo()"
@@ -31,7 +31,7 @@
           type="button"
           ncButton
           variant="ghost"
-          size="strip"
+          size="md"
           iconOnly
           [attr.aria-label]="t('editor.redo')"
           (click)="undo.manager.redo()"
@@ -42,7 +42,7 @@
           type="button"
           ncButton
           variant="ghost"
-          size="strip"
+          size="md"
           iconOnly
           [attr.aria-label]="t('editor.copy')"
           (click)="transfer('c')"
@@ -53,7 +53,7 @@
           type="button"
           ncButton
           variant="ghost"
-          size="strip"
+          size="md"
           iconOnly
           [attr.aria-label]="t('editor.paste')"
           (click)="transfer('v')"
@@ -89,7 +89,7 @@
            so the selection's edge is as often as not scrolled out of view. -->
       @if (map.tool() === 'select' && map.selection()) {
         <nc-transform-bar
-          class="absolute top-1.5 right-1.5 rounded-xs bg-page/80"
+          class="absolute top-1.5 right-1.5 bg-page/80"
           (flipH)="canvas.transformSelection('flipH')"
           (flipV)="canvas.transformSelection('flipV')"
           (rotateCw)="canvas.transformSelection('rotateCw')"
@@ -97,7 +97,7 @@
       }
       @if (hover(); as hoverInfo) {
         <div
-          class="pointer-events-none absolute bottom-1.5 left-1.5 flex items-center gap-1 rounded-xs bg-page/80 px-1 py-0.5 font-mono text-label text-ink-3">
+          class="pointer-events-none absolute bottom-1.5 left-1.5 flex items-center gap-1 bg-page/80 px-1 py-0.5 font-mono text-label text-ink-3">
           <span>
             {{
               t('editor.map.status', { x: hoverInfo.x, y: hoverInfo.y, spr: pad3(hoverInfo.spr) })
@@ -140,7 +140,7 @@
         type="button"
         ncButton
         variant="ghost"
-        size="strip"
+        size="md"
         iconOnly
         class="shrink-0"
         [attr.aria-label]="t('editor.map.zoomOut')"
@@ -161,7 +161,7 @@
         type="button"
         ncButton
         variant="ghost"
-        size="strip"
+        size="md"
         iconOnly
         class="shrink-0"
         [attr.aria-label]="t('editor.map.zoomIn')"
@@ -210,7 +210,7 @@
             iconOnly
             [attr.aria-label]="t('editor.map.addMap')"
             (click)="maps.add()">
-            <nc-icon name="plus" [size]="12" />
+            <nc-icon name="plus" [size]="24" />
           </button>
           <button
             type="button"
@@ -220,7 +220,7 @@
             iconOnly
             [attr.aria-label]="t('editor.map.mapSize')"
             (click)="openMapSize()">
-            <nc-icon name="gear" [size]="12" />
+            <nc-icon name="gear" [size]="24" />
           </button>
         </span>
       </nc-tabs>

@@ -20,7 +20,7 @@ import { cssVar } from '../../../shared/pixel/pixel-tools';
 @Component({
   selector: 'nc-oscilloscope',
   templateUrl: './oscilloscope.component.html',
-  host: { class: 'block overflow-hidden rounded-xs bg-lcd' },
+  host: { class: 'block overflow-hidden bg-lcd' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OscilloscopeComponent {

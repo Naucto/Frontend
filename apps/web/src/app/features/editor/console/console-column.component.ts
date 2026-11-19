@@ -69,18 +69,6 @@ const PIP_GRIPS: readonly { grip: PipGrip; box: string; cursor: string }[] = [
   ],
   templateUrl: './console-column.component.html',
   host: { class: 'block' },
-  styles: `
-    /* The floating viewer; its position and width are bound in the template. */
-    .nc-pip {
-      position: fixed;
-      z-index: 40;
-      overflow: hidden;
-      border: 1px solid var(--nc-line-strong);
-      border-radius: 4px;
-      background: var(--nc-panel);
-      box-shadow: 0 6px 0 var(--nc-inset);
-    }
-  `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ConsoleColumnComponent {

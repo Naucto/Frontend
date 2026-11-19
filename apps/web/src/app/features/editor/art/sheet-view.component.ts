@@ -47,7 +47,7 @@ type Drag =
   templateUrl: './sheet-view.component.html',
   // One scale for both axes, so a cell stays square whatever shape the sheet is.
   host: {
-    class: 'relative mx-auto block rounded-xs border border-line bg-inset',
+    class: 'relative mx-auto block flat-sm bevel-fill-inset',
     '[style.width]': "'100%'",
     '[style.aspect-ratio]': 'cols() + " / " + rows()',
     '[style.max-width.px]': '(MAX_HEIGHT * cols()) / rows()',
