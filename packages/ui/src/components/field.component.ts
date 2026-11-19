@@ -1,8 +1,11 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
+import { IconComponent } from './icon.component';
+
 /** Label + control + hint/error/counter wrapper. Put the control in the default slot. */
 @Component({
   selector: 'nc-field',
+  imports: [IconComponent],
   templateUrl: './field.component.html',
   host: { class: 'block' },
   changeDetection: ChangeDetectionStrategy.OnPush,

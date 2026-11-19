@@ -96,6 +96,15 @@ describe('NumberFieldComponent, empty', () => {
 });
 
 describe('NumberFieldComponent, typed and stepped', () => {
+  it('prints the unit beside the number without making it part of its name', async () => {
+    await render(NumberFieldComponent, {
+      inputs: { value: 120, min: 40, max: 240, unit: 'BPM', ariaLabel: 'Tempo' },
+    });
+
+    expect(screen.getByText('BPM')).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.getByRole('textbox', { name: 'Tempo' })).toHaveValue('120');
+  });
+
   it('asks for the number typed', async () => {
     const requested = vi.fn();
     await render(NumberFieldComponent, {

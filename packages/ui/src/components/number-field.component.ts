@@ -7,15 +7,47 @@ import {
   output,
 } from '@angular/core';
 
-import { IconComponent } from './icon.component';
+import { WELL } from './input.directive';
 
 /** What the frame says about the value, where the value alone cannot say it. */
 export type NumberFieldTone = 'default' | 'warn' | 'accent';
 
-const TONE: Record<NumberFieldTone, string> = {
-  default: 'border-line bg-inset',
-  warn: 'border-orange bg-inset text-orange-ink',
-  accent: 'border-hot bg-hot text-on-accent',
+interface ToneClasses {
+  frame: string;
+  value: string;
+  label: string;
+  button: string;
+}
+const NEUTRAL_BUTTON = 'text-ink-2 enabled:hover:text-ink enabled:active:text-gold-ink';
+const TONE: Record<NumberFieldTone, ToneClasses> = {
+  default: {
+    frame: '',
+    value: 'text-gold-ink',
+    label: 'text-ink-4',
+    button: NEUTRAL_BUTTON,
+  },
+  warn: {
+    frame: 'bevel-edge-orange bevel-lo-orange',
+    value: 'text-orange-ink',
+    label: 'text-ink-4',
+    button: NEUTRAL_BUTTON,
+  },
+  accent: {
+    frame: 'bevel-edge-hot bevel-lo-hot bevel-fill-hot',
+    value: 'text-on-hot',
+    label: 'text-on-hot',
+    button: 'text-on-hot',
+  },
+};
+
+interface SizeClasses {
+  frame: string;
+  button: string;
+  value: string;
+}
+const SIZE: Record<'md' | 'sm', SizeClasses> = {
+  md: { frame: 'h-[42px]', button: 'w-[36px] text-ui', value: 'min-w-[36px] text-body' },
+  sm: { frame: 'h-(--nc-h-sm)', button: 'w-[24px] text-meta', value: 'min-w-0 text-micro' },
 };
 
 /**
@@ -24,7 +56,6 @@ const TONE: Record<NumberFieldTone, string> = {
  */
 @Component({
   selector: 'nc-number-field',
-  imports: [IconComponent],
   templateUrl: './number-field.component.html',
   host: { class: 'inline-block' },
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -32,6 +63,8 @@ const TONE: Record<NumberFieldTone, string> = {
 export class NumberFieldComponent {
   readonly value = input.required<number | null>();
   readonly label = input('');
+  /** What the number counts, printed after it: BPM, PX. */
+  readonly unit = input('');
   /** The name to announce where the box carries no printed label. */
   readonly ariaLabel = input('');
   readonly min = input(0);
@@ -68,14 +101,22 @@ export class NumberFieldComponent {
   /** The box was emptied. Only ever fires where {@link clearable} is on. */
   readonly cleared = output();
 
-  protected readonly padClass = computed(() =>
-    this.size() === 'sm' ? 'px-0.75 py-[1px]' : 'px-1.25 py-[5px]',
+  protected readonly frameClass = computed(
+    () =>
+      `${WELL} flex items-stretch ${TONE[this.tone()].frame} ${this.fill() ? 'h-full' : SIZE[this.size()].frame}`,
   );
-  protected readonly textClass = computed(() =>
-    this.size() === 'sm' ? 'text-micro' : 'text-body',
+  /** Lifted a pixel so its ground, once held, reaches the rim instead of stopping under it. */
+  protected readonly buttonClass = computed(
+    () =>
+      `-mt-[3px] flex flex-none items-center justify-center font-mono enabled:active:bg-line disabled:text-ink-4 ${TONE[this.tone()].button} ${SIZE[this.size()].button}`,
   );
-  protected readonly caretsClass = computed(() => (this.size() === 'sm' ? 'w-[14px]' : 'w-[18px]'));
-  protected readonly frameClass = computed(() => TONE[this.tone()]);
+  protected readonly labelClass = computed(
+    () => `font-ui text-micro tracking-strip uppercase ${TONE[this.tone()].label}`,
+  );
+  protected readonly inputClass = computed(
+    () =>
+      `flex-1 font-mono outline-none placeholder:text-ink-4 ${this.label() || this.unit() ? 'text-right' : 'text-center'} ${TONE[this.tone()].value} ${SIZE[this.size()].value}`,
+  );
   protected readonly shown = computed(() => this.print(this.value()));
   /** Wide enough for the largest number it may hold; a box that fills its cell grows from there. */
   protected readonly width = computed(() => {
