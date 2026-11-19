@@ -5,55 +5,42 @@
 /* ---- documentation (built from the docs submodule) ---- */
 @layer components {
   /*
-   * The docs are built HTML, so their frames cannot wear the kit's classes: each takes the bevel
-   * shape here and names its own roles, since the shapes' default roles are keyed on the class.
-   */
-  .doc-html pre,
-  .doc-html kbd,
-  .doc-html figure.doc-figure,
-  .doc-html details.doc-listing,
-  .doc-html .callout,
-  .doc-html .doc-diagram,
-  .api-sig {
-    @apply flat-sm;
-    --bv-edge: var(--nc-line-strong);
-    --bv-hi: var(--bv-edge);
-    --bv-lo: var(--bv-edge);
-    --bv-fill: var(--nc-inset);
-  }
-  /*
    * Running text sits one ink step down; emphasis returns to full ink, never to a heavier weight.
    */
   .doc-html {
     color: var(--nc-ink-2);
-    font-size: var(--text-ui);
-    line-height: 1.6;
+    font-size: var(--text-body);
+    line-height: 1.75;
     container-type: inline-size;
   }
   .doc-html h1 + p {
     color: var(--nc-ink-body);
-    font-size: 14px;
-    line-height: 1.6;
+    font-size: var(--text-ui);
   }
   .doc-html em {
     color: var(--nc-ink-body);
   }
+  .doc-html h1,
+  .doc-html h2,
+  .doc-html h3 {
+    font-family: var(--font-display);
+    color: var(--nc-ink);
+  }
   .doc-html h1 {
     font-size: var(--text-display);
-    line-height: 1.1;
-    color: var(--nc-ink);
+    line-height: var(--text-display--line-height);
     margin: 0 0 16px;
   }
   .doc-html h2 {
     font-size: var(--text-title);
-    color: var(--nc-ink);
-    margin: 32px 0 8px;
-    padding-top: 8px;
-    border-top: 3px solid var(--nc-line);
+    line-height: var(--text-title--line-height);
+    margin: 36px 0 12px;
+    padding-top: 15px;
+    border-top: var(--nc-px) solid var(--nc-line);
   }
   .doc-html h3 {
-    font-size: 14px;
-    color: var(--nc-ink);
+    font-size: var(--text-ui);
+    line-height: var(--text-title--line-height);
     margin: 24px 0 8px;
   }
   .doc-html p,
@@ -74,18 +61,32 @@
   }
   .doc-html a:hover {
     text-decoration: underline;
+    text-decoration-thickness: var(--nc-px);
+    text-underline-offset: var(--nc-px);
   }
   .doc-html code {
     font-family: var(--font-mono);
-    font-size: var(--text-body);
+    font-size: var(--text-small);
     color: var(--nc-ink);
     background: var(--nc-inset);
-    padding: 0 4px;
+    padding: 0 6px;
+  }
+
+  /* A block of code: a well, its lines numbered, and the button that copies it. */
+  .doc-html .doc-code {
+    @apply flat-sm;
+    --bv-edge: var(--nc-line-strong);
+    --bv-hi: var(--bv-edge);
+    --bv-lo: var(--bv-edge);
+    --bv-fill: var(--nc-inset);
+    position: relative;
+    margin: 0 0 12px;
   }
   .doc-html pre {
-    padding: 12px;
+    margin: 0;
+    padding: 12px 56px 12px 0;
     overflow: auto;
-    margin: 0 0 12px;
+    counter-reset: doc-line;
   }
   .doc-html pre code {
     background: none;
@@ -93,6 +94,51 @@
     font-size: var(--text-small);
     line-height: 1.75;
   }
+  .doc-html .doc-line::before {
+    counter-increment: doc-line;
+    content: counter(doc-line);
+    display: inline-block;
+    width: 44px;
+    margin-right: 12px;
+    padding-right: 12px;
+    text-align: right;
+    color: var(--nc-ink-4);
+    user-select: none;
+  }
+  .doc-html .doc-copy {
+    @apply raised-sm;
+    --bv-edge: var(--nc-line-strong);
+    --bv-hi: var(--bv-edge);
+    --bv-lo: var(--bv-edge);
+    --bv-skirt: var(--nc-skirt);
+    --bv-fill: var(--nc-raised);
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: inline-flex;
+    width: 36px;
+    height: 36px;
+    align-items: center;
+    justify-content: center;
+    color: var(--nc-ink-body);
+  }
+  .doc-html .doc-copy:hover {
+    @apply bevel-lit;
+    color: var(--nc-active-ink);
+  }
+  .doc-html .doc-copy:active {
+    @apply bevel-down;
+  }
+  .doc-html .doc-copy[data-copied] {
+    @apply bevel-level;
+    --bv-edge: var(--nc-jade);
+    --bv-fill: var(--nc-jade-wash);
+    color: var(--nc-jade-ink);
+  }
+  .doc-html .doc-copy svg {
+    flex: none;
+  }
+
   .doc-html table {
     border-collapse: collapse;
     width: 100%;
@@ -101,8 +147,8 @@
   .doc-html th,
   .doc-html td {
     text-align: left;
-    padding: 4px 8px;
-    border-bottom: 3px solid var(--nc-line-soft);
+    padding: 6px 8px;
+    border-bottom: var(--nc-px) solid var(--nc-line);
     vertical-align: top;
   }
   .doc-html th {
@@ -118,7 +164,7 @@
     color: var(--nc-ink);
   }
   .doc-html h4 {
-    font-size: var(--text-body);
+    font-size: var(--text-small);
     color: var(--nc-ink);
     margin: 16px 0 4px;
     text-transform: uppercase;
@@ -126,29 +172,33 @@
   }
   .doc-html hr {
     border: 0;
-    border-top: 3px solid var(--nc-line);
+    border-top: var(--nc-px) solid var(--nc-line);
     margin: 24px 0;
   }
   .doc-html blockquote:not(.callout) {
-    border-left: 3px solid var(--nc-line-strong);
+    border-left: var(--nc-px) solid var(--nc-line-strong);
     padding-left: 12px;
     margin: 0 0 12px;
     color: var(--nc-ink-3);
   }
+  /* A key, as the kit's keycap draws one, at the height of a line of text. */
   .doc-html kbd {
+    @apply flat-sm;
+    --bv-edge: var(--color-key-edge);
+    --bv-hi: var(--bv-edge);
+    --bv-lo: var(--bv-edge);
+    --bv-fill: var(--color-key-face);
     display: inline-block;
     min-width: 24px;
-    padding: 0 3px 3px;
-    --bv-edge: var(--color-key-edge);
-    --bv-fill: var(--nc-key-face);
-    box-shadow:
-      inset 0 3px 0 var(--nc-key-hl),
-      inset 0 -6px 0 var(--nc-key-side);
+    padding: 0 6px 3px;
+    box-shadow: inset 0 -3px 0 var(--color-key-side);
     font-family: var(--font-mono);
     font-size: var(--text-meta);
+    line-height: 1.2;
     text-align: center;
-    color: var(--nc-key-ink);
+    color: var(--color-key-ink);
     text-transform: uppercase;
+    vertical-align: middle;
   }
   .doc-html tbody tr:nth-child(even) {
     background: color-mix(in srgb, var(--nc-raised) 50%, transparent);
@@ -156,8 +206,13 @@
   /* A picture sits in a frame of its own, with its caption under it, and never wider than the
      column. */
   .doc-html figure.doc-figure {
+    @apply flat-sm;
+    --bv-edge: var(--nc-line);
+    --bv-hi: var(--bv-edge);
+    --bv-lo: var(--bv-edge);
+    --bv-fill: var(--nc-inset);
     margin: 0 0 16px;
-    padding: 8px;
+    padding: 9px;
   }
   .doc-html figure.doc-figure img {
     display: block;
@@ -166,7 +221,7 @@
   }
   .doc-html figure.doc-figure figcaption {
     margin-top: 6px;
-    font-size: var(--text-body);
+    font-size: var(--text-meta);
     line-height: 1.5;
     color: var(--nc-ink-3);
   }
@@ -214,13 +269,19 @@
       display: block;
     }
   }
-  /* A whole game's code, folded until it is asked for. */
+  /* A whole game's code, folded until it is asked for. The frame is the listing's; the block of
+     code inside it stands under the summary without one of its own. */
   .doc-html details.doc-listing {
+    @apply flat-sm;
+    --bv-edge: var(--nc-line-strong);
+    --bv-hi: var(--bv-edge);
+    --bv-lo: var(--bv-edge);
+    --bv-fill: var(--nc-inset);
     margin: 0 0 12px;
   }
   .doc-html details.doc-listing summary {
     cursor: pointer;
-    padding: 8px 12px;
+    padding: 9px 12px;
     font-family: var(--font-ui);
     font-size: var(--text-label);
     letter-spacing: var(--tracking-label);
@@ -228,49 +289,63 @@
     color: var(--nc-ink-3);
   }
   .doc-html details.doc-listing summary:hover {
-    color: var(--nc-ink);
+    color: var(--nc-active-ink);
   }
-  .doc-html details.doc-listing pre {
+  .doc-html details.doc-listing[open] summary {
+    border-bottom: var(--nc-px) solid var(--nc-line);
+  }
+  .doc-html details.doc-listing .doc-code {
+    --bv-edge: transparent;
+    --bv-fill: transparent;
     margin: 0;
-    background: none;
-    border: 0;
-    border-top: 3px solid var(--nc-line);
   }
-  /* One shape, a tone each: the frame in the accent, the ground in its wash. */
+
+  /* A callout is the kit's notice set in the page: a flat frame in the tone's colour over its wash,
+     led by the word that names the tone. */
   .doc-html .callout {
+    @apply flat-sm;
     --bv-edge: var(--nc-sky);
+    --bv-hi: var(--bv-edge);
+    --bv-lo: var(--bv-edge);
     --bv-fill: var(--nc-sky-wash);
-    padding: 9px 12px;
+    --callout-ink: var(--nc-sky-ink);
+    padding: 9px 12px 9px 14px;
     margin: 0 0 12px;
     color: var(--nc-ink-body);
   }
   .doc-html .callout.warning {
-    --bv-edge: var(--nc-orange);
-    --bv-fill: color-mix(in srgb, var(--nc-orange) var(--nc-wash-opacity), var(--nc-page));
+    --bv-edge: var(--nc-gold);
+    --bv-fill: var(--nc-gold-wash);
+    --callout-ink: var(--nc-gold-ink);
   }
   .doc-html .callout.tip {
     --bv-edge: var(--nc-jade);
     --bv-fill: var(--nc-jade-wash);
+    --callout-ink: var(--nc-jade-ink);
   }
   .doc-html .callout.important {
     --bv-edge: var(--nc-hot);
     --bv-fill: var(--nc-hot-wash);
+    --callout-ink: var(--nc-hot-ink);
   }
   .doc-html .callout.try {
     --bv-edge: var(--nc-gold);
-    --bv-fill: var(--nc-gold-wash);
+    --bv-fill: var(--nc-inset);
+    --callout-ink: var(--nc-gold-ink);
+  }
+  .doc-html .callout::before {
+    content: attr(data-kind);
+    display: block;
+    margin-bottom: 3px;
+    font-family: var(--font-ui);
+    font-size: var(--text-label);
+    line-height: var(--text-label--line-height);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--callout-ink);
   }
   .doc-html .callout.try::before {
     content: 'Try it';
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 4px;
-    font-family: var(--font-ui);
-    font-size: var(--text-label);
-    letter-spacing: var(--tracking-label);
-    text-transform: uppercase;
-    color: var(--nc-gold-ink);
   }
   .doc-html .callout > p:last-child {
     margin-bottom: 0;
@@ -300,6 +375,11 @@
 
   /* Box art the docs build vectorises, kept on its character grid. */
   .doc-html .doc-diagram {
+    @apply flat-sm;
+    --bv-edge: var(--nc-line);
+    --bv-hi: var(--bv-edge);
+    --bv-lo: var(--bv-edge);
+    --bv-fill: var(--nc-inset);
     margin: 0 0 16px;
     padding: 14px 16px;
     overflow-x: auto;
@@ -317,15 +397,13 @@
   .doc-html .doc-diagram .d-stroke polyline {
     fill: none;
     stroke: var(--nc-ink-4);
-    stroke-width: 3;
-    vector-effect: non-scaling-stroke;
+    stroke-width: 1;
     shape-rendering: crispEdges;
   }
   .doc-html .doc-diagram .d-box rect {
     fill: var(--nc-raised);
     stroke: var(--nc-line-strong);
-    stroke-width: 3;
-    vector-effect: non-scaling-stroke;
+    stroke-width: 1;
     shape-rendering: crispEdges;
   }
   .doc-html .doc-diagram .d-fill-gold {
@@ -365,26 +443,34 @@
   }
   .doc-html .doc-diagram .d-stroke line {
     stroke: var(--nc-ink-4);
-    stroke-width: 3;
-    vector-effect: non-scaling-stroke;
+    stroke-width: 1;
     shape-rendering: crispEdges;
   }
   .doc-html .doc-diagram .d-head polygon {
     fill: var(--nc-gold);
   }
 
+  /* A function's card: a panel of its own, the signature set in a strip at its head. */
   .api-card {
-    padding: 8px 0 24px;
-    border-bottom: 3px solid var(--nc-line);
-  }
-  .api-card:last-child {
-    border-bottom: 0;
+    @apply flat-lg;
+    --bv-edge: var(--nc-line-strong);
+    --bv-hi: var(--bv-edge);
+    --bv-lo: var(--bv-edge);
+    --bv-fill: var(--nc-panel);
+    margin: 0 0 16px;
+    padding: 12px 14px 16px;
   }
   .api-sig {
+    @apply flat-sm;
+    --bv-edge: var(--nc-line);
+    --bv-hi: var(--bv-edge);
+    --bv-lo: var(--bv-edge);
+    --bv-fill: var(--nc-inset);
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 8px;
-    padding: 8px 12px;
+    min-height: 42px;
+    padding: 6px 12px;
   }
   .api-sig code {
     flex: 1 1 auto;
@@ -392,7 +478,7 @@
     padding-left: 16px;
     text-indent: -16px;
     font-family: var(--font-mono);
-    font-size: var(--text-ui);
+    font-size: var(--text-small);
     line-height: 1.5;
     color: var(--nc-ink);
     white-space: pre-wrap;
@@ -406,7 +492,7 @@
   }
   .api-insert {
     flex: none;
-    margin: -4px -6px -4px 0;
+    margin-right: -6px;
   }
   @container (max-width: 480px) {
     .api-insert-word {
@@ -422,8 +508,8 @@
   .api-prose {
     margin-top: 12px;
     color: var(--nc-ink-2);
-    font-size: var(--text-ui);
-    line-height: 1.6;
+    font-size: var(--text-body);
+    line-height: 1.75;
   }
   .api-prose > p:last-child {
     margin-bottom: 0;
@@ -444,7 +530,7 @@
   }
   .api-param {
     padding: 6px 0;
-    border-top: 3px solid var(--nc-line-soft);
+    border-top: var(--nc-px) solid var(--nc-line-soft);
   }
   .api-param:first-child {
     border-top: 0;
@@ -458,7 +544,7 @@
   }
   .api-param dt code {
     font-family: var(--font-mono);
-    font-size: var(--text-body);
+    font-size: var(--text-small);
     color: var(--nc-ink);
   }
   .api-param-meta {
@@ -501,8 +587,8 @@
   }
   .api-param dd {
     margin: 2px 0 0 16px;
-    font-size: var(--text-body);
-    line-height: 1.55;
+    font-size: var(--text-small);
+    line-height: 1.6;
   }
   .api-param dd p:last-child {
     margin-bottom: 0;
@@ -512,6 +598,8 @@
     flex-wrap: wrap;
     gap: 6px;
   }
+  /* A reference to another function is pressed to go there, so it is drawn as the kit draws
+     anything pressed. */
   .api-ref-chip {
     @apply raised-sm;
     --bv-edge: var(--nc-line-strong);
@@ -520,21 +608,19 @@
     --bv-skirt: var(--nc-skirt);
     --bv-fill: var(--nc-raised);
     display: inline-flex;
-    align-items: center;
     height: var(--nc-h-sm);
-    padding: 0 8px;
+    align-items: center;
+    padding: 0 10px;
     font-family: var(--font-mono);
     font-size: var(--text-meta);
     color: var(--nc-gold-ink);
     cursor: pointer;
   }
   .api-ref-chip:hover {
-    --bv-edge: var(--nc-active-ink);
-    --bv-skirt: var(--nc-lit-skirt);
-    color: var(--nc-active-ink);
+    @apply bevel-lit;
   }
   .api-ref-chip:active {
-    --bv-drop: var(--bv-rise);
+    @apply bevel-down;
   }
 
   /* Inline code in a heading keeps the heading's size. */
@@ -546,6 +632,13 @@
     background: none;
     color: var(--nc-gold-ink);
   }
+}
+
+/* Outside the layers: a card draws these two glyphs with the kit's icon, whose own display is a
+   utility and outranks any rule in `components`. */
+.doc-copy:not([data-copied]) .doc-copy-done,
+.doc-copy[data-copied] .doc-copy-idle {
+  display: none;
 }
 
 /* CodeMirror card fed by the docs manifest. The frame is the editor theme's, on every .cm-tooltip;
@@ -585,7 +678,7 @@
 .nc-doc-card__params dt[data-active] code,
 .nc-doc-card__sig span[data-active] {
   color: var(--nc-ink);
-  box-shadow: inset 0 -3px var(--nc-gold);
+  box-shadow: inset 0 -1px var(--nc-gold);
 }
 .nc-doc-card__params dd[data-active] {
   color: var(--nc-ink);

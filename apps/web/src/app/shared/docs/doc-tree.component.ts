@@ -6,6 +6,17 @@ import { readJson, STORAGE_KEYS, writeJson } from '../../core/storage/local-stor
 import { type DocPage, DocsService } from './docs.service';
 
 /**
+ * A row of the tree: no frame until the pointer is on it, then it lights and presses like anything
+ * else that is chosen from a list.
+ */
+const ROW =
+  'raised-sm bevel-bare flex w-full items-center text-left select-none ' +
+  'hover:bevel-lit hover:bevel-fill-raised hover:text-active-ink active:bevel-down';
+
+/** The page being read, or the place on it. */
+const CURRENT = 'bevel-lit bevel-fill-raised text-active-ink';
+
+/**
  * The documentation tree: sections → pages, and under the page being read, what is on it.
  *
  * Only the open page unfolds — every page's sections at once is a table of contents of the whole
@@ -26,6 +37,8 @@ export class DocTreeComponent {
   /** A slug, with `#anchor` when a child of the page was chosen. */
   readonly open = output<string>();
   protected readonly docs = inject(DocsService);
+  protected readonly ROW = ROW;
+  protected readonly CURRENT = CURRENT;
   protected readonly collapsed = signal(
     new Set(readJson<string[]>(STORAGE_KEYS.docsCollapsed, [])),
   );

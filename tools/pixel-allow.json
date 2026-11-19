@@ -1,11 +1,115 @@
 {
   "exempt": {},
   "owed": {
+    "apps/web/src/app/features/editor/art/art-tab.page.html": {
+      "rounded": 2,
+      "border": 2,
+      "density": 2
+    },
+    "apps/web/src/app/features/editor/art/palette-editor.component.html": {
+      "rounded": 3,
+      "border": 3
+    },
     "apps/web/src/app/features/editor/art/sheet-view.component.html": {
       "stroke-width": 1
     },
+    "apps/web/src/app/features/editor/art/sheet-view.component.ts": {
+      "rounded": 1,
+      "border": 1
+    },
+    "apps/web/src/app/features/editor/code/code-tab.page.html": {
+      "border": 1
+    },
+    "apps/web/src/app/features/editor/code/search-bar.component.html": {
+      "border": 1
+    },
+    "apps/web/src/app/features/editor/console/console-column.component.html": {
+      "rounded": 1,
+      "border": 3,
+      "density": 1
+    },
+    "apps/web/src/app/features/editor/docs/doc-pane.component.html": {
+      "border": 3,
+      "density": 1
+    },
+    "apps/web/src/app/features/editor/editor-shell.component.html": {
+      "border": 3
+    },
+    "apps/web/src/app/features/editor/editor-shell.component.ts": {
+      "density": 1
+    },
+    "apps/web/src/app/features/editor/game/game-tab.page.html": {
+      "rounded": 2,
+      "border": 5,
+      "density": 1
+    },
+    "apps/web/src/app/features/editor/game/publish.dialog.html": {
+      "border": 1
+    },
+    "apps/web/src/app/features/editor/game/share.dialog.html": {
+      "border": 1
+    },
+    "apps/web/src/app/features/editor/game/versions-popover.component.html": {
+      "rounded": 1,
+      "border": 3
+    },
+    "apps/web/src/app/features/editor/map/map-tab.page.html": {
+      "rounded": 2,
+      "border": 1,
+      "density": 1
+    },
+    "apps/web/src/app/features/editor/map/minimap.component.ts": {
+      "rounded": 1,
+      "border": 1
+    },
+    "apps/web/src/app/features/editor/net/net-tab.page.html": {
+      "rounded": 10,
+      "border": 16,
+      "density": 1
+    },
+    "apps/web/src/app/features/editor/open-on-desktop.component.html": {
+      "rounded": 1,
+      "border": 1
+    },
+    "apps/web/src/app/features/editor/sound/envelope-graph.component.html": {
+      "rounded": 1,
+      "stroke-width": 1
+    },
+    "apps/web/src/app/features/editor/sound/instrument-inspector.component.html": {
+      "rounded": 2,
+      "border": 6
+    },
+    "apps/web/src/app/features/editor/sound/instrument-list.component.html": {
+      "border": 2,
+      "density": 3
+    },
+    "apps/web/src/app/features/editor/sound/new-instrument.dialog.html": {
+      "rounded": 4,
+      "border": 4,
+      "stroke-width": 1
+    },
+    "apps/web/src/app/features/editor/sound/oscilloscope.component.ts": {
+      "rounded": 1
+    },
     "apps/web/src/app/features/editor/sound/piano-keys.component.html": {
       "border": 1
+    },
+    "apps/web/src/app/features/editor/sound/song-list.component.html": {
+      "border": 1,
+      "density": 4
+    },
+    "apps/web/src/app/features/editor/sound/song-list.component.ts": {
+      "density": 1
+    },
+    "apps/web/src/app/features/editor/sound/sound-tab.page.html": {
+      "border": 3,
+      "density": 7
+    },
+    "apps/web/src/app/features/editor/sound/voices-lane.component.ts": {
+      "border": 1
+    },
+    "apps/web/src/app/features/editor/sound/wave-glyph.component.html": {
+      "stroke-width": 1
     },
     "apps/web/src/app/features/friends/add-friend.dialog.html": {
       "rounded": 1,
@@ -45,6 +149,36 @@
       "rounded": 3,
       "border": 1
     },
+    "apps/web/src/app/features/shell/account-menu.component.html": {
+      "rounded": 7,
+      "border": 1
+    },
+    "apps/web/src/app/features/shell/notifications-bell.component.html": {
+      "rounded": 2,
+      "border": 2
+    },
+    "apps/web/src/app/features/shell/search-suggest.component.html": {
+      "rounded": 4,
+      "border": 2
+    },
+    "apps/web/src/app/features/shell/site-footer.component.html": {
+      "border": 2
+    },
+    "apps/web/src/app/features/shell/top-bar.component.html": {
+      "rounded": 1,
+      "border": 1
+    },
+    "apps/web/src/app/features/shell/top-bar.component.ts": {
+      "rounded": 1
+    },
+    "apps/web/src/app/shared/feedback/bug-report.dialog.html": {
+      "rounded": 3,
+      "border": 3
+    },
+    "apps/web/src/app/shared/feedback/thanks.dialog.html": {
+      "rounded": 1,
+      "border": 1
+    },
     "apps/web/src/app/shared/game-card/game-card.component.ts": {
       "rounded": 2,
       "border": 2
@@ -74,6 +208,13 @@
     "apps/web/src/app/shared/netplay/join.dialog.html": {
       "rounded": 1,
       "border": 1
+    },
+    "apps/web/src/app/shared/pixel/palette-grid.component.html": {
+      "rounded": 1,
+      "border": 1
+    },
+    "apps/web/src/styles.css": {
+      "stroke-width": 3
     },
     "packages/ui/src/components/avatar.component.ts": {
       "rounded": 2,

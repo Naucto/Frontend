@@ -1,5 +1,5 @@
 <div *transloco="let t" class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_300px]">
-  <div class="min-w-0">
+  <div>
     <p class="mb-2 max-w-[640px] text-body text-ink-2">
       {{ t('settings.controlsIntroBefore') }}
       <code class="font-mono text-meta text-sky-ink">input.held("left")</code>
@@ -20,8 +20,8 @@
       <span class="px-1.75 pb-1.5">{{ t('settings.keyboard') }}</span>
       <span class="px-1.75 pb-1.5">{{ t('settings.gamepad') }}</span>
     </div>
-    <div class="flat-sm bevel-fill-inset overflow-x-auto">
-      <table class="w-full min-w-[520px] table-fixed border-collapse text-body">
+    <div class="flat-sm bevel-fill-inset">
+      <table class="w-full table-fixed border-collapse text-body">
         <colgroup>
           <col class="w-[24%]" />
           <col class="w-[40%]" />
@@ -53,20 +53,19 @@
                       <nc-keycap>{{ label(key) }}</nc-keycap>
                       <nc-icon
                         name="close"
-                        class="ml-0.5 hidden text-ink-4 group-hover:inline"
+                        class="text-ink-4"
                         (click)="removeKey($event, row.action, key)" />
                     </button>
                   }
                   @if (isCapturing(row.action, 'keyboard')) {
                     <span
-                      class="label flat-sm bevel-edge-gold bevel-fill-gold-wash inline-flex h-(--nc-h-md) items-center px-1 text-gold-ink">
+                      class="flat-sm bevel-edge-gold bevel-fill-gold-wash label inline-flex h-(--nc-h-md) items-center px-1 text-gold-ink">
                       {{ t('settings.pressKey') }}
                     </span>
                   } @else {
                     <button
                       ncButton
                       variant="ghost"
-                      size="sm"
                       iconOnly
                       [attr.aria-label]="t('settings.addKey')"
                       (click)="capture(row.action, 'keyboard')">
@@ -79,7 +78,7 @@
                 <div class="flex flex-wrap items-center gap-0.5">
                   @if (isCapturing(row.action, 'gamepad')) {
                     <span
-                      class="label flat-sm bevel-edge-gold bevel-fill-gold-wash inline-flex h-(--nc-h-md) items-center px-1 text-gold-ink">
+                      class="flat-sm bevel-edge-gold bevel-fill-gold-wash label inline-flex h-(--nc-h-md) items-center px-1 text-gold-ink">
                       {{ t('settings.pressButton') }}
                     </span>
                   } @else {
@@ -119,8 +118,8 @@
     </div>
   </div>
 
-  <div class="grid min-w-0 content-start gap-2">
-    <div class="flat-lg bevel-fill-panel p-1.5">
+  <div class="grid content-start gap-2">
+    <div class="flat-sm bevel-fill-panel p-1.5">
       <div class="flex items-center justify-between">
         <span
           class="label flex items-center gap-0.5"
@@ -144,13 +143,12 @@
        get the pad on a game page either, so the two sliders below set a size and an opacity for
        a control nobody is shown. They stay because the store and the pad are built and this is
        where they will be tuned; until a phone can play, they tune nothing. -->
-    <div class="flat-lg bevel-fill-panel p-1.5">
+    <div class="flat-sm bevel-fill-panel p-1.5">
       <div class="mb-1 flex items-center justify-between gap-1">
         <span class="label whitespace-nowrap">{{ t('settings.padLayout') }}</span>
         <button
           ncButton
           variant="ghost"
-          size="sm"
           iconOnly
           [attr.aria-label]="t('settings.resetDefaults')"
           (click)="padSettings.reset()"
@@ -162,9 +160,7 @@
         class="flat-sm bevel-fill-inset relative flex h-[84px] items-center justify-between px-1.5"
         [style.opacity]="padSettings.opacity() / 100"
         aria-hidden="true">
-        <span
-          class="grid grid-cols-3 grid-rows-3 gap-[3px]"
-          [style.--nc-preview]="padSettings.scale()">
+        <span class="grid grid-cols-3 grid-rows-3" [style.--nc-preview]="padSettings.scale()">
           <span></span>
           <span
             class="h-[calc(12px*var(--nc-preview,1))] w-[calc(12px*var(--nc-preview,1))] bg-ink-4"></span>
@@ -182,20 +178,24 @@
         </span>
         <span class="flex items-center gap-1" [style.--nc-preview]="padSettings.scale()">
           <span
-            class="flat-sm bevel-edge-sky bevel-fill-sky h-[calc(22px*var(--nc-preview,1))] w-[calc(22px*var(--nc-preview,1))] opacity-45"></span>
+            class="h-[calc(22px*var(--nc-preview,1))] w-[calc(22px*var(--nc-preview,1))] bg-sky/45"></span>
           <span
-            class="flat-sm bevel-edge-hot bevel-fill-hot h-[calc(24px*var(--nc-preview,1))] w-[calc(24px*var(--nc-preview,1))] opacity-50"></span>
+            class="h-[calc(24px*var(--nc-preview,1))] w-[calc(24px*var(--nc-preview,1))] bg-hot/50"></span>
         </span>
       </div>
-      <div class="mt-1.5 grid gap-1">
+      <div class="mt-1.5 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-1.5 gap-y-1">
+        <span class="label" aria-hidden="true">{{ t('settings.padSize') }}</span>
         <nc-slider
+          hideLabel
           [label]="t('settings.padSize')"
           [min]="60"
           [max]="140"
           [value]="padSettings.size()"
           [readout]="padSettings.size() + '%'"
           (valueChange)="padSettings.setSize($event)" />
+        <span class="label" aria-hidden="true">{{ t('settings.padOpacity') }}</span>
         <nc-slider
+          hideLabel
           [label]="t('settings.padOpacity')"
           [min]="30"
           [max]="100"

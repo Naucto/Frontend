@@ -72,4 +72,25 @@ describe('DocArticleComponent', () => {
     expect(screen.getByText('What utf8.len does.')).toBeTruthy();
     expect(screen.getByText('What gfx.clear does.')).toBeTruthy();
   });
+
+  it('copies a block of code as it was written, and says so on the button', async () => {
+    const writeText = vi.fn(() => Promise.resolve());
+    vi.stubGlobal('navigator', { clipboard: { writeText } });
+    const code =
+      '<div class="doc-code"><pre class="lua"><code>' +
+      '<span class="doc-line"><span class="tok-kw">local</span> x = 1</span>\n' +
+      '<span class="doc-line">x = x + 1</span></code></pre>' +
+      '<button type="button" class="doc-copy" aria-label="Copy code"></button></div>';
+    await render(DocArticleComponent, {
+      providers: testProviders(),
+      inputs: { page: { ...article, html: code } },
+    });
+
+    const button = screen.getByRole('button', { name: 'Copy code' });
+    button.click();
+    await Promise.resolve();
+
+    expect(writeText).toHaveBeenCalledWith('local x = 1\nx = x + 1');
+    expect(button.hasAttribute('data-copied')).toBe(true);
+  });
 });
