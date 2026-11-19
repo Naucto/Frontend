@@ -5,6 +5,23 @@
 /* ---- documentation (built from the docs submodule) ---- */
 @layer components {
   /*
+   * The docs are built HTML, so their frames cannot wear the kit's classes: each takes the bevel
+   * shape here and names its own roles, since the shapes' default roles are keyed on the class.
+   */
+  .doc-html pre,
+  .doc-html kbd,
+  .doc-html figure.doc-figure,
+  .doc-html details.doc-listing,
+  .doc-html .callout,
+  .doc-html .doc-diagram,
+  .api-sig {
+    @apply flat-sm;
+    --bv-edge: var(--nc-line-strong);
+    --bv-hi: var(--bv-edge);
+    --bv-lo: var(--bv-edge);
+    --bv-fill: var(--nc-inset);
+  }
+  /*
    * Running text sits one ink step down; emphasis returns to full ink, never to a heavier weight.
    */
   .doc-html {
@@ -32,7 +49,7 @@
     color: var(--nc-ink);
     margin: 32px 0 8px;
     padding-top: 8px;
-    border-top: 1px solid var(--nc-line);
+    border-top: 3px solid var(--nc-line);
   }
   .doc-html h3 {
     font-size: 14px;
@@ -64,12 +81,8 @@
     color: var(--nc-ink);
     background: var(--nc-inset);
     padding: 0 4px;
-    border-radius: var(--radius-xs);
   }
   .doc-html pre {
-    background: var(--nc-inset);
-    border: 1px solid var(--nc-line);
-    border-radius: var(--radius-sm);
     padding: 12px;
     overflow: auto;
     margin: 0 0 12px;
@@ -77,8 +90,8 @@
   .doc-html pre code {
     background: none;
     padding: 0;
-    font-size: var(--text-meta);
-    line-height: 1.5;
+    font-size: var(--text-small);
+    line-height: 1.75;
   }
   .doc-html table {
     border-collapse: collapse;
@@ -89,7 +102,7 @@
   .doc-html td {
     text-align: left;
     padding: 4px 8px;
-    border-bottom: 1px solid var(--nc-line);
+    border-bottom: 3px solid var(--nc-line-soft);
     vertical-align: top;
   }
   .doc-html th {
@@ -113,25 +126,28 @@
   }
   .doc-html hr {
     border: 0;
-    border-top: 1px solid var(--nc-line);
+    border-top: 3px solid var(--nc-line);
     margin: 24px 0;
   }
   .doc-html blockquote:not(.callout) {
-    border-left: 2px solid var(--nc-line-strong);
+    border-left: 3px solid var(--nc-line-strong);
     padding-left: 12px;
     margin: 0 0 12px;
     color: var(--nc-ink-3);
   }
   .doc-html kbd {
     display: inline-block;
-    min-width: 20px;
-    padding: 1px 6px;
-    border: 1px solid var(--nc-line-strong);
-    border-radius: var(--radius-sm);
-    background: var(--nc-line);
+    min-width: 24px;
+    padding: 0 3px 3px;
+    --bv-edge: var(--color-key-edge);
+    --bv-fill: var(--nc-key-face);
+    box-shadow:
+      inset 0 3px 0 var(--nc-key-hl),
+      inset 0 -6px 0 var(--nc-key-side);
     font-family: var(--font-mono);
     font-size: var(--text-meta);
-    color: var(--nc-ink-body);
+    text-align: center;
+    color: var(--nc-key-ink);
     text-transform: uppercase;
   }
   .doc-html tbody tr:nth-child(even) {
@@ -142,15 +158,11 @@
   .doc-html figure.doc-figure {
     margin: 0 0 16px;
     padding: 8px;
-    border: 1px solid var(--nc-line);
-    border-radius: var(--radius-sm);
-    background: var(--nc-inset);
   }
   .doc-html figure.doc-figure img {
     display: block;
     max-width: 100%;
     height: auto;
-    border-radius: var(--radius-xs);
   }
   .doc-html figure.doc-figure figcaption {
     margin-top: 6px;
@@ -205,9 +217,6 @@
   /* A whole game's code, folded until it is asked for. */
   .doc-html details.doc-listing {
     margin: 0 0 12px;
-    border: 1px solid var(--nc-line);
-    border-radius: var(--radius-sm);
-    background: var(--nc-inset);
   }
   .doc-html details.doc-listing summary {
     cursor: pointer;
@@ -223,29 +232,33 @@
   }
   .doc-html details.doc-listing pre {
     margin: 0;
+    background: none;
     border: 0;
-    border-top: 1px solid var(--nc-line);
-    border-radius: 0;
+    border-top: 3px solid var(--nc-line);
   }
+  /* One shape, a tone each: the frame in the accent, the ground in its wash. */
   .doc-html .callout {
-    border-left: 2px solid var(--nc-sky);
-    background: var(--nc-raised);
-    padding: 8px 12px;
+    --bv-edge: var(--nc-sky);
+    --bv-fill: var(--nc-sky-wash);
+    padding: 9px 12px;
     margin: 0 0 12px;
-    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    color: var(--nc-ink-body);
   }
   .doc-html .callout.warning {
-    border-color: var(--nc-orange);
+    --bv-edge: var(--nc-orange);
+    --bv-fill: color-mix(in srgb, var(--nc-orange) var(--nc-wash-opacity), var(--nc-page));
   }
   .doc-html .callout.tip {
-    border-color: var(--nc-jade);
+    --bv-edge: var(--nc-jade);
+    --bv-fill: var(--nc-jade-wash);
   }
   .doc-html .callout.important {
-    border-color: var(--nc-hot);
+    --bv-edge: var(--nc-hot);
+    --bv-fill: var(--nc-hot-wash);
   }
   .doc-html .callout.try {
-    border-color: var(--nc-gold);
-    background: var(--nc-inset);
+    --bv-edge: var(--nc-gold);
+    --bv-fill: var(--nc-gold-wash);
   }
   .doc-html .callout.try::before {
     content: 'Try it';
@@ -290,9 +303,6 @@
     margin: 0 0 16px;
     padding: 14px 16px;
     overflow-x: auto;
-    background: var(--nc-inset);
-    border: 1px solid var(--nc-line);
-    border-radius: var(--radius-sm);
   }
   .doc-html .doc-diagram svg {
     display: block;
@@ -307,13 +317,15 @@
   .doc-html .doc-diagram .d-stroke polyline {
     fill: none;
     stroke: var(--nc-ink-4);
-    stroke-width: 1;
+    stroke-width: 3;
+    vector-effect: non-scaling-stroke;
     shape-rendering: crispEdges;
   }
   .doc-html .doc-diagram .d-box rect {
     fill: var(--nc-raised);
     stroke: var(--nc-line-strong);
-    stroke-width: 1;
+    stroke-width: 3;
+    vector-effect: non-scaling-stroke;
     shape-rendering: crispEdges;
   }
   .doc-html .doc-diagram .d-fill-gold {
@@ -353,7 +365,8 @@
   }
   .doc-html .doc-diagram .d-stroke line {
     stroke: var(--nc-ink-4);
-    stroke-width: 1;
+    stroke-width: 3;
+    vector-effect: non-scaling-stroke;
     shape-rendering: crispEdges;
   }
   .doc-html .doc-diagram .d-head polygon {
@@ -362,7 +375,7 @@
 
   .api-card {
     padding: 8px 0 24px;
-    border-bottom: 1px solid var(--nc-line);
+    border-bottom: 3px solid var(--nc-line);
   }
   .api-card:last-child {
     border-bottom: 0;
@@ -372,9 +385,6 @@
     align-items: flex-start;
     gap: 8px;
     padding: 8px 12px;
-    border: 1px solid var(--nc-line);
-    border-radius: var(--radius-sm);
-    background: var(--nc-inset);
   }
   .api-sig code {
     flex: 1 1 auto;
@@ -434,7 +444,7 @@
   }
   .api-param {
     padding: 6px 0;
-    border-top: 1px solid var(--nc-line);
+    border-top: 3px solid var(--nc-line-soft);
   }
   .api-param:first-child {
     border-top: 0;
@@ -503,17 +513,28 @@
     gap: 6px;
   }
   .api-ref-chip {
-    padding: 2px 8px;
-    border: 1px solid var(--nc-line-strong);
-    border-radius: var(--radius-sm);
+    @apply raised-sm;
+    --bv-edge: var(--nc-line-strong);
+    --bv-hi: var(--bv-edge);
+    --bv-lo: var(--bv-edge);
+    --bv-skirt: var(--nc-skirt);
+    --bv-fill: var(--nc-raised);
+    display: inline-flex;
+    align-items: center;
+    height: var(--nc-h-sm);
+    padding: 0 8px;
     font-family: var(--font-mono);
     font-size: var(--text-meta);
     color: var(--nc-gold-ink);
     cursor: pointer;
   }
   .api-ref-chip:hover {
-    border-color: var(--nc-gold);
-    background: var(--nc-raised);
+    --bv-edge: var(--nc-active-ink);
+    --bv-skirt: var(--nc-lit-skirt);
+    color: var(--nc-active-ink);
+  }
+  .api-ref-chip:active {
+    --bv-drop: var(--bv-rise);
   }
 
   /* Inline code in a heading keeps the heading's size. */

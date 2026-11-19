@@ -3,7 +3,7 @@
     <nc-consent-choice />
   }
 
-  <h2 class="mt-2.5 mb-1 text-heading text-ink">{{ t('feedback.settings.title') }}</h2>
+  <h2 class="mt-2.5 mb-1 text-title text-ink">{{ t('feedback.settings.title') }}</h2>
   <nc-setting-row [title]="t('feedback.settings.ask')" [hint]="t('feedback.settings.askHint')">
     <nc-toggle
       [checked]="feedbackPrompt.data()?.declined === false"
@@ -12,7 +12,7 @@
       (checkedChange)="updatePrompt.mutate({ action: $event ? 'reset' : 'decline' })" />
   </nc-setting-row>
 
-  <h2 class="mt-2.5 mb-1 text-heading text-ink">{{ t('settings.analytics.statsTitle') }}</h2>
+  <h2 class="mt-2.5 mb-1 text-title text-ink">{{ t('settings.analytics.statsTitle') }}</h2>
   @if (stats.isError()) {
     <p class="py-2 text-body text-ink-3">{{ t('settings.analytics.loadFailed') }}</p>
   } @else if (stats.data(); as summary) {
@@ -66,9 +66,10 @@
     </nc-setting-row>
     @if (summary.topGames.length > 0) {
       <h3 class="mt-2 mb-1 text-ui text-ink-2">{{ t('settings.analytics.topGames') }}</h3>
-      <ol class="divide-y divide-line">
+      <ol>
         @for (game of summary.topGames; track game.releaseId) {
-          <li class="flex items-center justify-between gap-2 py-1 text-body">
+          <li
+            class="flex items-center justify-between gap-2 border-b-3 border-line-soft py-1 text-body last:border-b-0">
             @if (game.name; as name) {
               <a [routerLink]="['/play', game.releaseId]" class="truncate text-ink hover:underline">
                 {{ name }}
@@ -87,7 +88,7 @@
     <p class="py-2 text-body text-ink-3">{{ t('settings.analytics.loading') }}</p>
   }
 
-  <h2 class="mt-2.5 mb-1 text-heading text-ink">{{ t('settings.analytics.yourData') }}</h2>
+  <h2 class="mt-2.5 mb-1 text-title text-ink">{{ t('settings.analytics.yourData') }}</h2>
   <nc-setting-row
     [title]="t('settings.analytics.export')"
     [hint]="t('settings.analytics.exportHint')">

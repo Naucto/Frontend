@@ -137,10 +137,6 @@
       "rounded": 4,
       "border": 2
     },
-    "apps/web/src/app/features/learn/learn.page.html": {
-      "rounded": 1,
-      "border": 3
-    },
     "apps/web/src/app/features/profile/edit-chip.component.html": {
       "rounded": 1,
       "border": 1
@@ -152,20 +148,6 @@
     "apps/web/src/app/features/profile/profile.page.html": {
       "rounded": 3,
       "border": 1
-    },
-    "apps/web/src/app/features/settings/controls-settings.component.html": {
-      "rounded": 13,
-      "border": 7
-    },
-    "apps/web/src/app/features/settings/privacy-settings.component.html": {
-      "border": 1
-    },
-    "apps/web/src/app/shared/docs/doc-anchor.component.ts": {
-      "border": 1,
-      "density": 2
-    },
-    "apps/web/src/app/shared/docs/doc-tree.component.html": {
-      "border": 2
     },
     "apps/web/src/app/shared/game-card/game-card.component.ts": {
       "rounded": 2,
@@ -200,11 +182,6 @@
     "apps/web/src/app/shared/pixel/palette-grid.component.html": {
       "rounded": 1,
       "border": 1
-    },
-    "apps/web/src/styles.css": {
-      "rounded": 11,
-      "border": 15,
-      "stroke-width": 3
     },
     "packages/ui/src/components/avatar.component.ts": {
       "rounded": 2,

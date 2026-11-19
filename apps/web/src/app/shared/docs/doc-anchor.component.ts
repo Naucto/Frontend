@@ -61,7 +61,7 @@ export class DocAnchorComponent {
     }
     // No flow height of its own: the document would grow by a bar each time it shows, and scroll
     // anchoring would answer with a scroll event that hides it again.
-    const bar = `sticky top-0 z-10 -mb-(--nc-bar-h) h-(--nc-bar-h) border-b border-line bg-panel px-2 ${row}`;
+    const bar = `sticky top-0 z-10 -mb-(--nc-h-bar) h-(--nc-h-bar) border-b-3 border-line bg-panel px-2 ${row}`;
     return this.current() ? bar : `${bar} invisible`;
   });
 
