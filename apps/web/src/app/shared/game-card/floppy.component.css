@@ -1,0 +1,326 @@
+/*
+ * A 3.5" disk drawn in kit pixels. The shell is two copies of one stepped outline, the second a
+ * pixel inside the first, so the line between them is the frame; every shade is mixed from the one
+ * body colour the caller gives.
+ */
+:host {
+  --f-body: var(--floppy-body, var(--nc-line-strong));
+  --f-edge: color-mix(in srgb, var(--f-body) 55%, white);
+  --f-skirt: color-mix(in srgb, var(--f-body) 54%, black);
+  --f-deep: color-mix(in srgb, var(--f-body) 30%, black);
+  --f-x: 0;
+  --f-y: 0;
+  --f-clip: polygon(
+    3px 0,
+    calc(100% - 15px) 0,
+    calc(100% - 15px) 3px,
+    calc(100% - 12px) 3px,
+    calc(100% - 12px) 6px,
+    calc(100% - 9px) 6px,
+    calc(100% - 9px) 9px,
+    calc(100% - 6px) 9px,
+    calc(100% - 6px) 12px,
+    calc(100% - 3px) 12px,
+    calc(100% - 3px) 15px,
+    100% 15px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px),
+    0 3px,
+    3px 3px
+  );
+  min-width: 0;
+  container-type: inline-size;
+}
+
+.stage {
+  perspective: 720px;
+}
+
+.tilt {
+  position: relative;
+  aspect-ratio: 100 / 86;
+  transform-style: preserve-3d;
+  transform: rotateY(calc(var(--f-x) * 9deg)) rotateX(calc(var(--f-y) * -9deg));
+  transition: transform 320ms ease-out;
+}
+:host(.tilting) .tilt {
+  transition-duration: 80ms;
+}
+/* Pressed: the disk travels the height of its skirt, as every raised frame does. */
+:host-context(a:active) .tilt {
+  translate: 0 3px;
+}
+
+.glow {
+  position: absolute;
+  inset: 0;
+  transition: filter 180ms;
+}
+
+.shell {
+  position: absolute;
+  inset: 0;
+  clip-path: var(--f-clip);
+  background: linear-gradient(to top, var(--f-skirt) 3px, var(--f-edge) 3px);
+  transition: background 180ms;
+}
+
+.face {
+  position: absolute;
+  inset: 3px 3px 6px;
+  clip-path: var(--f-clip);
+  background: var(--f-body);
+}
+
+/* The window in the body, which the shutter covers until it slides. */
+.window {
+  position: absolute;
+  top: 5%;
+  left: 40%;
+  width: 12%;
+  height: 21%;
+  background: var(--f-deep);
+}
+
+/* Metal, with a hole that meets the window once the shutter has travelled half its own width. */
+.shutter {
+  position: absolute;
+  top: 0;
+  left: 34%;
+  width: 44%;
+  height: 30%;
+  background:
+    linear-gradient(var(--color-key-lit) 0 0) 0 0 / 100% 3px no-repeat,
+    linear-gradient(var(--color-key-side) 0 0) 0 100% / 100% 3px no-repeat,
+    var(--color-key);
+  clip-path: polygon(
+    evenodd,
+    0 0,
+    100% 0,
+    100% 100%,
+    0 100%,
+    0 0,
+    63.6% 16%,
+    90.9% 16%,
+    90.9% 87%,
+    63.6% 87%,
+    63.6% 16%
+  );
+  transition: transform 220ms steps(4, end);
+}
+
+.label {
+  position: absolute;
+  top: 38.4%;
+  right: 9%;
+  left: 9%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--nc-inset);
+  box-shadow: 0 0 0 3px var(--f-skirt);
+}
+.label img,
+.label video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.label video {
+  opacity: 0;
+}
+
+.band {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  height: 24px;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  padding: 0 6px;
+  background: color-mix(in srgb, var(--nc-page) 86%, transparent);
+}
+.band:empty {
+  display: none;
+}
+
+/* Where the light falls: it follows the pointer, through the checker rather than a blend. */
+.light {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at calc(50% + var(--f-x) * 50%) calc(50% + var(--f-y) * 50%),
+    var(--nc-glare),
+    transparent 62%
+  );
+  mask-image: var(--nc-dither-25);
+  mask-size: 12px 12px;
+  opacity: 0;
+  transition: opacity 180ms;
+}
+
+/* Outside the clipped shell, so it can stand off the disk in depth. */
+.action {
+  position: absolute;
+  top: 61.5%;
+  left: 50%;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, calc(-50% + 6px));
+  transition:
+    transform 180ms ease-out,
+    opacity 120ms;
+}
+
+.title {
+  margin-top: 10px;
+  overflow: hidden;
+}
+.title > span {
+  display: block;
+  width: calc(100% / var(--f-squeeze, 1));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transform: scaleX(var(--f-squeeze, 1));
+  transform-origin: left;
+  transition: color 180ms;
+}
+
+/* Hover and `open` are one state; `open` is the keyboard's, and stands square. */
+@media (hover: hover) {
+  :host(:hover) .shell {
+    background: linear-gradient(to top, var(--nc-lit-skirt) 3px, var(--nc-active-ink) 3px);
+  }
+  :host(:hover) .glow {
+    filter: drop-shadow(0 0 6px color-mix(in srgb, var(--nc-active-ink) 55%, transparent));
+  }
+  :host(:hover) .shutter {
+    transform: translateX(-50%);
+  }
+  :host(:hover) .light,
+  :host(:hover) .label video {
+    opacity: 1;
+  }
+  :host(:hover) .action {
+    opacity: 1;
+    transform: translate(-50%, -50%) translateZ(36px);
+  }
+  :host(:hover) .title > span {
+    color: var(--nc-gold-ink);
+  }
+}
+:host(.open) .shell,
+:host-context(a:focus-visible) .shell {
+  background: linear-gradient(to top, var(--nc-lit-skirt) 3px, var(--nc-active-ink) 3px);
+}
+:host(.open) .glow,
+:host-context(a:focus-visible) .glow {
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--nc-active-ink) 55%, transparent));
+}
+:host(.open) .shutter,
+:host-context(a:focus-visible) .shutter {
+  transform: translateX(-50%);
+}
+:host(.open) .label video {
+  opacity: 1;
+}
+:host(.open) .action,
+:host-context(a:focus-visible) .action {
+  opacity: 1;
+  transform: translate(-50%, -50%);
+}
+:host(.open) .title > span,
+:host-context(a:focus-visible) .title > span {
+  color: var(--nc-gold-ink);
+}
+:host(.open) .tilt {
+  transform: none;
+}
+
+/* The disk that is not there yet: a dashed outline until the pointer or the keyboard reaches it. */
+.is-ghost {
+  --f-dash: var(--nc-line-strong);
+}
+.is-ghost .shell {
+  background: none;
+}
+.is-ghost .face {
+  background:
+    repeating-linear-gradient(90deg, var(--f-dash) 0 6px, transparent 6px 12px) 0 0 / 100% 3px
+      no-repeat,
+    repeating-linear-gradient(90deg, var(--f-dash) 0 6px, transparent 6px 12px) 0 100% / 100% 3px
+      no-repeat,
+    repeating-linear-gradient(0deg, var(--f-dash) 0 6px, transparent 6px 12px) 0 0 / 3px 100%
+      no-repeat,
+    repeating-linear-gradient(0deg, var(--f-dash) 0 6px, transparent 6px 12px) 100% 0 / 3px 100%
+      no-repeat;
+}
+.is-ghost :is(.window, .shutter, .label) {
+  opacity: 0;
+  transition:
+    opacity 180ms,
+    transform 220ms steps(4, end);
+}
+.is-ghost .action {
+  opacity: 1;
+  transform: translate(-50%, -50%);
+}
+:host(.open) .is-ghost .shell,
+:host-context(a:focus-visible) .is-ghost .shell {
+  background: linear-gradient(to top, var(--nc-lit-skirt) 3px, var(--nc-active-ink) 3px);
+}
+:host(.open) .is-ghost .face,
+:host-context(a:focus-visible) .is-ghost .face {
+  background: var(--f-body);
+}
+:host(.open) .is-ghost :is(.window, .shutter, .label),
+:host-context(a:focus-visible) .is-ghost :is(.window, .shutter, .label) {
+  opacity: 1;
+}
+@media (hover: hover) {
+  :host(:hover) .is-ghost .shell {
+    background: linear-gradient(to top, var(--nc-lit-skirt) 3px, var(--nc-active-ink) 3px);
+  }
+  :host(:hover) .is-ghost .face {
+    background: var(--f-body);
+  }
+  :host(:hover) .is-ghost :is(.window, .shutter, .label) {
+    opacity: 1;
+  }
+}
+
+/* A row's thumbnail: the disk alone, still. */
+:host(.thumb) .tilt {
+  transform: none;
+}
+:host(.thumb) .glow {
+  filter: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tilt {
+    transform: none;
+  }
+  :host(:hover) .action {
+    transform: translate(-50%, -50%);
+  }
+  .label video {
+    display: none;
+  }
+}
+:host-context([data-reduce-motion]) .tilt {
+  transform: none;
+}
+:host-context([data-reduce-motion]) .label video {
+  display: none;
+}

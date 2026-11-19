@@ -57,7 +57,6 @@
     <div class="relative -mt-6 flex flex-wrap items-start gap-2">
       <span class="group relative">
         <nc-avatar
-          class="rounded-sm border border-line-strong"
           [name]="profile.nickname || profile.username"
           [src]="profile.profileImageUrl ?? undefined"
           [id]="profile.id"
@@ -91,7 +90,9 @@
             (blur)="commit('nickname', $any($event.target).value)" />
         } @else {
           <span class="group relative inline-flex items-center gap-1.5">
-            <h1 class="text-display text-ink">{{ profile.nickname || profile.username }}</h1>
+            <h1 class="font-display text-display text-ink">
+              {{ profile.nickname || profile.username }}
+            </h1>
             @if (isSelf()) {
               <nc-edit-chip [label]="t('settings.displayName')" (click)="editing.set('nickname')" />
             }
@@ -126,16 +127,15 @@
           <div class="group relative mt-1 flex items-center gap-1.5">
             @if (editing() === 'colour') {
               <span
-                class="flex gap-[5px]"
+                class="flex gap-[9px]"
                 role="radiogroup"
                 [attr.aria-label]="t('profile.colour')">
                 @for (colour of COLOURS; track colour) {
                   <button
                     type="button"
                     role="radio"
-                    class="size-[22px] rounded-xs"
+                    class="size-[24px] outline-offset-3 outline-gold aria-checked:outline-3"
                     [class]="swatch(colour)"
-                    [class.ring-2]="accent() === colour"
                     [attr.aria-checked]="accent() === colour"
                     [attr.aria-label]="colour"
                     (click)="commit('colour', colour)"></button>
@@ -144,7 +144,7 @@
             } @else {
               <span class="label text-ink-4">{{ t('profile.colour') }}</span>
               @if (accent(); as accent) {
-                <span class="size-[22px] rounded-xs" [class]="swatch(accent)"></span>
+                <span class="size-[24px]" [class]="swatch(accent)"></span>
               }
               <nc-edit-chip [label]="t('profile.colour')" (click)="editing.set('colour')" />
             }
@@ -152,7 +152,7 @@
         }
         @if (presenceLine(); as line) {
           <div class="mt-0.5 flex items-center gap-0.5 text-meta text-jade-ink">
-            <span class="inline-block h-1 w-1 bg-jade"></span>
+            <span class="inline-block size-[9px] bg-jade"></span>
             {{ line }}
           </div>
         }
@@ -165,7 +165,7 @@
             icon="heart"
             [value]="counts().likes"
             [label]="t('profile.likes')"
-            iconClass="text-hot-ink"
+            tone="hot"
             compact />
         </div>
         @if (isSelf()) {
@@ -175,7 +175,7 @@
         } @else if (auth.isAuthenticated()) {
           @if (friendship() === 'FRIENDS') {
             <span class="label flex items-center gap-0.5 text-jade-ink">
-              <nc-icon name="check" [size]="12" />
+              <nc-icon name="check" [size]="24" />
               {{ t('profile.friends') }}
             </span>
           } @else {
@@ -185,7 +185,7 @@
               size="sm"
               (click)="addFriend(profile.id)"
               [disabled]="adding.isPending() || friendship() === 'PENDING'">
-              <nc-icon name="plus" [size]="12" />
+              <nc-icon name="plus" [size]="24" />
               {{ friendship() === 'PENDING' ? t('profile.pending') : t('profile.addFriend') }}
             </button>
           }
@@ -216,7 +216,7 @@
         [hint]="t('profile.empty.' + shelf() + 'Hint')">
         @if (isSelf()) {
           <a ncButton variant="primary" routerLink="/games/new">
-            <nc-icon name="plus" [size]="12" />
+            <nc-icon name="plus" [size]="24" />
             {{ t('nav.newGame') }}
           </a>
         }

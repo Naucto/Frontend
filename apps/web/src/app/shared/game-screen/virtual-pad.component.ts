@@ -33,10 +33,10 @@ export class VirtualPadComponent {
    * 56px at 100 % — below that a thumb misses more often than it hits.
    */
   protected readonly key =
-    'flex h-[calc(56px*var(--nc-pad-scale,1))] w-[calc(56px*var(--nc-pad-scale,1))] items-center justify-center rounded-sm border border-line-strong bg-raised text-ui text-ink-body active:bg-gold active:text-on-accent';
+    'flex h-[calc(56px*var(--nc-pad-scale,1))] w-[calc(56px*var(--nc-pad-scale,1))] items-center justify-center raised-sm text-ui text-ink-body active:bevel-down active:bevel-primary active:text-on-primary';
   /** Icons rather than arrow characters, which the pixel typeface does not hold. Sized in CSS because `nc-icon` writes width and height as attributes, which a class beats. */
   protected readonly arrow =
     'h-[calc(24px*var(--nc-pad-scale,1))] w-[calc(24px*var(--nc-pad-scale,1))] [&>svg]:h-full [&>svg]:w-full';
   protected readonly face =
-    'flex h-[calc(64px*var(--nc-pad-scale,1))] w-[calc(64px*var(--nc-pad-scale,1))] items-center justify-center rounded-full border border-line-strong bg-raised font-mono text-ui text-ink-body active:bg-gold active:text-on-accent';
+    'flex h-[calc(64px*var(--nc-pad-scale,1))] w-[calc(64px*var(--nc-pad-scale,1))] items-center justify-center raised-lg font-mono text-ui text-ink-body active:bevel-down active:bevel-primary active:text-on-primary';
 }
