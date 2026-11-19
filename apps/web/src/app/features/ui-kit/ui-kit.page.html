@@ -1,5 +1,8 @@
 <!-- No toast host here: the root component mounts the only one. -->
 <header class="flex h-[56px] items-center gap-3 border-b-3 border-line-strong bg-panel px-3">
+  <a href="/ui-kit" aria-label="Naucto" class="flex-none">
+    <nc-logo variant="wordmark" link [size]="21" />
+  </a>
   <h1 class="font-display text-title text-ink">Naucto UI kit</h1>
   <nav class="flex gap-[22px] overflow-auto text-meta tracking-tag whitespace-nowrap uppercase">
     @for (section of sections; track section.id) {
