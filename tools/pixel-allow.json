@@ -1,10 +1,6 @@
 {
   "exempt": {},
   "owed": {
-    "apps/web/src/app/features/auth/sign-in.page.html": {
-      "rounded": 1,
-      "border": 1
-    },
     "apps/web/src/app/features/editor/art/art-tab.page.html": {
       "rounded": 2,
       "border": 2,
@@ -164,42 +160,12 @@
     "apps/web/src/app/features/settings/privacy-settings.component.html": {
       "border": 1
     },
-    "apps/web/src/app/features/shell/account-menu.component.html": {
-      "rounded": 7,
-      "border": 1
-    },
-    "apps/web/src/app/features/shell/notifications-bell.component.html": {
-      "rounded": 2,
-      "border": 2
-    },
-    "apps/web/src/app/features/shell/search-suggest.component.html": {
-      "rounded": 4,
-      "border": 2
-    },
-    "apps/web/src/app/features/shell/site-footer.component.html": {
-      "border": 2
-    },
-    "apps/web/src/app/features/shell/top-bar.component.html": {
-      "rounded": 1,
-      "border": 1
-    },
-    "apps/web/src/app/features/shell/top-bar.component.ts": {
-      "rounded": 1
-    },
     "apps/web/src/app/shared/docs/doc-anchor.component.ts": {
       "border": 1,
       "density": 2
     },
     "apps/web/src/app/shared/docs/doc-tree.component.html": {
       "border": 2
-    },
-    "apps/web/src/app/shared/feedback/bug-report.dialog.html": {
-      "rounded": 3,
-      "border": 3
-    },
-    "apps/web/src/app/shared/feedback/thanks.dialog.html": {
-      "rounded": 1,
-      "border": 1
     },
     "apps/web/src/app/shared/game-card/game-card.component.ts": {
       "rounded": 2,

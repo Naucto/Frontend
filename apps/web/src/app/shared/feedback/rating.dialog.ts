@@ -2,7 +2,7 @@ import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
 import type { ReportRole } from '@naucto/api-client';
-import { DialogShellComponent } from '@naucto/ui';
+import { ButtonDirective, DialogShellComponent } from '@naucto/ui';
 
 import { RatingFormComponent, type RatingSent } from './rating-form.component';
 
@@ -13,7 +13,7 @@ export interface RatingDialogData {
 /** The rating asked for by the person themselves, from the footer or the account menu. */
 @Component({
   selector: 'nc-rating-dialog',
-  imports: [TranslocoDirective, DialogShellComponent, RatingFormComponent],
+  imports: [TranslocoDirective, ButtonDirective, DialogShellComponent, RatingFormComponent],
   templateUrl: './rating.dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

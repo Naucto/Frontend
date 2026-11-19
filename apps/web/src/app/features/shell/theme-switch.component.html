@@ -1,0 +1,6 @@
+<nc-segmented
+  size="sm"
+  [label]="label()"
+  [options]="options()"
+  [value]="theme.effective()"
+  (valueChange)="$event && theme.theme.set($event)" />

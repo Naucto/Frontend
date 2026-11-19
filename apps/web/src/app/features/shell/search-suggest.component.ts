@@ -12,6 +12,8 @@ import { Router } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
 import {
   AvatarComponent,
+  ButtonDirective,
+  ChipComponent,
   HighlightComponent,
   IconComponent,
   OnlineDotComponent,
@@ -82,6 +84,8 @@ const SECTIONS: readonly { key: keyof Suggestions; targets: (results: Suggestion
     SuggestRowComponent,
     HighlightComponent,
     AvatarComponent,
+    ButtonDirective,
+    ChipComponent,
     IconComponent,
     OnlineDotComponent,
     GameCoverComponent,

@@ -4,68 +4,79 @@
     [ncPopover]="menu"
     popoverAlign="end"
     [(popoverOpen)]="open"
-    class="flex items-center rounded-xs"
+    class="flex cursor-pointer items-center"
     [attr.aria-label]="t('account.menu')">
-    <nc-avatar [name]="auth.displayName()" [src]="avatar()" colour="neutral" [size]="38" />
+    <nc-avatar [name]="auth.displayName()" [src]="avatar()" colour="neutral" [size]="40" />
   </button>
   <ng-template #menu>
-    <nc-popover-panel class="w-[280px]">
-      <div class="flex items-center gap-1.5 p-2">
-        <nc-avatar [name]="auth.displayName()" [src]="avatar()" [size]="32" />
-        <div class="min-w-0">
-          <div class="truncate text-ui text-ink">{{ auth.displayName() }}</div>
+    <nc-popover-panel class="w-[320px] max-w-[calc(100vw-28px)]">
+      <div class="flex items-center gap-[12px] p-[14px]">
+        <nc-avatar [name]="auth.displayName()" [src]="avatar()" [size]="40" />
+        <div class="grid min-w-0 gap-[2px]">
+          <div class="truncate text-body text-ink">{{ auth.displayName() }}</div>
           <div class="label text-ink-4">
             {{ t('account.gamesFriends', { g: games.data() ?? 0, f: friends.data() ?? 0 }) }}
           </div>
         </div>
       </div>
-      <div class="flex flex-col border-t border-line p-1">
+      <div class="flex items-center justify-between gap-[12px] px-[14px] pt-[4px] pb-[14px]">
+        <span class="font-ui text-label tracking-label text-ink-3 uppercase">
+          {{ t('account.theme') }}
+        </span>
+        <nc-theme-switch />
+      </div>
+      <!-- Menu rows: a button with no frame until it is pointed at, its words set from the left. -->
+      <div class="grid gap-[3px] px-[6px] pb-[6px]">
         @if (auth.user()?.username; as username) {
           <a
+            ncButton
+            variant="ghost"
+            size="lg"
+            class="justify-start! px-[10px]!"
             [routerLink]="['/u', username]"
-            class="flex items-center gap-1 rounded-xs px-1 py-0.5 text-body text-ink hover:bg-raised"
             (click)="open.set(false)">
-            <nc-icon name="user" [size]="12" class="text-ink-3" />
+            <nc-icon name="user" />
             {{ t('account.profile') }}
           </a>
         }
         <a
+          ncButton
+          variant="ghost"
+          size="lg"
+          class="justify-start! px-[10px]!"
           routerLink="/settings"
-          class="flex items-center gap-1 rounded-xs px-1 py-0.5 text-body text-ink hover:bg-raised"
           (click)="open.set(false)">
-          <nc-icon name="sliders" [size]="12" class="text-ink-3" />
+          <nc-icon name="sliders" />
           {{ t('account.settings') }}
         </a>
         <button
+          ncButton
+          variant="ghost"
+          size="lg"
           type="button"
-          class="flex items-center gap-1 rounded-xs px-1 py-0.5 text-left text-body text-ink hover:bg-raised"
-          (click)="theme.toggle()">
-          <nc-icon
-            [name]="theme.theme() === 'light' ? 'sun' : 'moon'"
-            [size]="12"
-            class="text-ink-3" />
-          {{ t('account.appearance') }}
-          <span class="label ml-auto text-ink-4">{{ theme.theme() }}</span>
-        </button>
-        <button
-          type="button"
-          class="flex items-center gap-1 rounded-xs px-1 py-0.5 text-left text-body text-ink hover:bg-raised"
+          class="justify-start! px-[10px]!"
           (click)="rate()">
-          <nc-icon name="message" [size]="12" class="text-ink-3" />
+          <nc-icon name="message" />
           {{ t('feedback.rating.menu') }}
         </button>
         <button
+          ncButton
+          variant="ghost"
+          size="lg"
           type="button"
-          class="flex items-center gap-1 rounded-xs px-1 py-0.5 text-left text-body text-ink hover:bg-raised"
+          class="justify-start! px-[10px]!"
           (click)="reportBug()">
-          <nc-icon name="bug" [size]="12" class="text-ink-3" />
+          <nc-icon name="bug" />
           {{ t('feedback.bug.title') }}
         </button>
         <button
+          ncButton
+          variant="ghost"
+          size="lg"
           type="button"
-          class="flex items-center gap-1 rounded-xs px-1 py-0.5 text-left text-body text-ink hover:bg-raised"
+          class="justify-start! px-[10px]!"
           (click)="logout()">
-          <nc-icon name="logout" [size]="12" class="text-ink-3" />
+          <nc-icon name="logout" />
           {{ t('account.signOut') }}
         </button>
       </div>

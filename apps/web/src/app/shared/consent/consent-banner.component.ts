@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
-import { ButtonDirective, PanelComponent } from '@naucto/ui';
+import { ButtonDirective } from '@naucto/ui';
 import { filter, map } from 'rxjs';
 
 import { ConsentStore } from '../../core/analytics/consent.store';
@@ -14,7 +14,7 @@ import { FeaturesService } from '../../core/config/features.service';
  */
 @Component({
   selector: 'nc-consent-banner',
-  imports: [TranslocoDirective, RouterLink, ButtonDirective, PanelComponent],
+  imports: [TranslocoDirective, RouterLink, ButtonDirective],
   templateUrl: './consent-banner.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

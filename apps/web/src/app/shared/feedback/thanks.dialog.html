@@ -8,11 +8,13 @@
   "
   [closeLabel]="t('feedback.close')">
   @if (data.kind === 'bug' && data.screenshotRefused) {
-    <nc-notice tone="warn" class="mb-1.5">{{ t('feedback.thanks.screenshotRefused') }}</nc-notice>
+    <nc-notice tone="warn" class="mb-[12px]">
+      {{ t('feedback.thanks.screenshotRefused') }}
+    </nc-notice>
   }
-  <div class="flex items-start gap-1.5 rounded-sm border border-line bg-inset px-1.5 py-1.25">
-    <nc-icon name="message" [size]="24" class="shrink-0 text-sky-ink" />
-    <div class="flex min-w-0 flex-col gap-1">
+  <div class="flat-sm flex items-start gap-[12px] bevel-fill-inset px-[12px] py-[10px]">
+    <nc-icon name="message" class="shrink-0 text-sky-ink" />
+    <div class="flex min-w-0 flex-col gap-[10px]">
       <p class="text-body text-ink-2">{{ t('feedback.thanks.discord') }}</p>
       <a
         ncButton
@@ -23,7 +25,7 @@
         target="_blank"
         rel="noopener noreferrer">
         {{ t('feedback.thanks.join') }}
-        <nc-icon name="external-link" [size]="12" />
+        <nc-icon name="external-link" />
       </a>
     </div>
   </div>
