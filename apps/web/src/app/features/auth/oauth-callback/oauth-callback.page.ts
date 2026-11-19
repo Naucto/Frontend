@@ -22,7 +22,7 @@ import { type OAuthProviderId } from '../../../core/auth/oauth/oauth-provider';
   selector: 'nc-oauth-callback-page',
   imports: [TranslocoDirective, LcdComponent],
   template: `
-    <div *transloco="let t" class="mx-auto mt-8 w-[360px]">
+    <div *transloco="let t" class="mx-auto mt-8 w-full max-w-[360px]">
       <nc-lcd [minHeight]="64">{{ t(status()) }}</nc-lcd>
     </div>
   `,

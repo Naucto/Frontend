@@ -48,9 +48,9 @@
   </form>
 
   <div class="my-2 flex items-center gap-2">
-    <span class="h-px flex-1 bg-line-soft"></span>
+    <span class="h-[3px] flex-1 bg-line-soft"></span>
     <span class="label text-ink-4">{{ t('auth.or') }}</span>
-    <span class="h-px flex-1 bg-line-soft"></span>
+    <span class="h-[3px] flex-1 bg-line-soft"></span>
   </div>
   <div class="grid grid-cols-1 gap-1 sm:grid-cols-3">
     @for (provider of providers(); track provider.flow.id) {
@@ -59,11 +59,10 @@
         variant="secondary"
         size="sm"
         type="button"
-        class="h-[36px] text-ink-body"
         (click)="oauth(provider.flow)"
         [disabled]="busy() || !provider.configured"
         [attr.title]="provider.configured ? null : t('auth.notConfigured')">
-        <nc-brand-mark [mark]="provider.flow.mark" [size]="12" />
+        <nc-brand-mark [mark]="provider.flow.mark" [size]="16" />
         {{ provider.flow.label }}
       </button>
     }
