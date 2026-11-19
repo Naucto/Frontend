@@ -4326,21 +4326,14 @@
           }
         },
         "responses": {
-          "201": {
-            "description": "Address confirmed, signed in",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AccessTokenResponseDto"
-                }
-              }
-            }
+          "204": {
+            "description": "Address confirmed"
           },
           "400": {
             "description": "Link invalid, already used or expired (code INVALID_EMAIL_TOKEN)"
           }
         },
-        "summary": "Confirm an email address from the mailed link and sign its account in",
+        "summary": "Confirm an email address from the mailed link, without signing anyone in",
         "tags": ["auth"],
         "security": [
           {},

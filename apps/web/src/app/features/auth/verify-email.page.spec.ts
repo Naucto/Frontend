@@ -1,5 +1,3 @@
-import { Router } from '@angular/router';
-import { ToastService } from '@naucto/ui';
 import { render, screen } from '@testing-library/angular';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -11,28 +9,32 @@ import VerifyEmailPage from './verify-email.page';
 async function renderPage(
   token: string | undefined,
   verifyEmail: (token: string) => Promise<void>,
-): Promise<{ shown: string[]; navigate: ReturnType<typeof vi.spyOn> }> {
-  const shown: string[] = [];
-  const { fixture } = await render(VerifyEmailPage, {
+  isAuthenticated = false,
+): Promise<void> {
+  await render(VerifyEmailPage, {
     inputs: token === undefined ? {} : { token },
     providers: [
       ...testProviders(),
-      { provide: AuthStore, useValue: { verifyEmail } },
-      { provide: ToastService, useValue: { show: (text: string) => shown.push(text) } },
+      { provide: AuthStore, useValue: { verifyEmail, isAuthenticated: () => isAuthenticated } },
     ],
   });
-  const navigate = vi.spyOn(fixture.debugElement.injector.get(Router), 'navigateByUrl');
-  return { shown, navigate };
 }
 
 describe('VerifyEmailPage', () => {
-  it('confirms the address from the link and goes on to the hub', async () => {
+  it('confirms the address from the link and points to signing in', async () => {
     const verifyEmail = vi.fn(() => Promise.resolve());
     await renderPage('the-token', verifyEmail);
 
-    await vi.waitFor(() => {
-      expect(verifyEmail).toHaveBeenCalledWith('the-token');
-    });
+    expect(await screen.findByText(/address confirmed/i)).toBeInTheDocument();
+    expect(verifyEmail).toHaveBeenCalledWith('the-token');
+    expect(screen.getByRole('link', { name: /sign in/i })).toHaveAttribute('href', '/sign-in');
+  });
+
+  it('points to the hub instead when the reader is already signed in', async () => {
+    await renderPage('the-token', () => Promise.resolve(), true);
+
+    expect(await screen.findByText(/address confirmed/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /hub/i })).toHaveAttribute('href', '/hub');
   });
 
   it('says a spent or expired link no longer works', async () => {

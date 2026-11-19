@@ -175,12 +175,9 @@ export const AuthStore = signalStore(
       async register(dto: CreateUserDto): Promise<string> {
         return unwrap(await authControllerRegister({ body: dto })).email;
       },
-      /** Follows the link mailed at registration, which signs the account in. */
+      /** Follows the link mailed at registration; it only confirms the account but doesn't give the token */
       async verifyEmail(token: string): Promise<void> {
-        const res = unwrap(
-          await authControllerVerifyEmail({ body: { token }, credentials: 'include' }),
-        );
-        await applyToken(res.access_token);
+        unwrap(await authControllerVerifyEmail({ body: { token } }));
       },
       /** The server answers the same whether or not the address has an account. */
       async resendVerification(email: string): Promise<void> {

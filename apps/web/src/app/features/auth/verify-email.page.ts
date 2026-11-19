@@ -6,9 +6,9 @@ import {
   type OnInit,
   signal,
 } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
-import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
-import { ButtonDirective, LcdComponent, LogoComponent, ToastService } from '@naucto/ui';
+import { RouterLink } from '@angular/router';
+import { TranslocoDirective } from '@jsverse/transloco';
+import { ButtonDirective, LcdComponent, LogoComponent } from '@naucto/ui';
 
 import { AuthStore } from '../../core/auth/auth.store';
 
@@ -25,11 +25,8 @@ import { AuthStore } from '../../core/auth/auth.store';
 })
 export default class VerifyEmailPage implements OnInit {
   readonly token = input<string>();
-  private readonly auth = inject(AuthStore);
-  private readonly router = inject(Router);
-  private readonly toasts = inject(ToastService);
-  private readonly i18n = inject(TranslocoService);
-  protected readonly status = signal<'working' | 'failed'>('working');
+  protected readonly auth = inject(AuthStore);
+  protected readonly status = signal<'working' | 'done' | 'failed'>('working');
 
   ngOnInit(): void {
     void this.run();
@@ -43,11 +40,9 @@ export default class VerifyEmailPage implements OnInit {
     }
     try {
       await this.auth.verifyEmail(token);
+      this.status.set('done');
     } catch {
       this.status.set('failed');
-      return;
     }
-    this.toasts.show(this.i18n.translate('auth.verify.done'), 'success');
-    await this.router.navigateByUrl('/hub', { replaceUrl: true });
   }
 }

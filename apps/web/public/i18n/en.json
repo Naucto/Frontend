@@ -75,7 +75,9 @@
     },
     "verify": {
       "working": "Confirming your address…",
-      "done": "Address confirmed — welcome to Naucto!",
+      "doneTitle": "Address confirmed!",
+      "done": "Your account is ready, welcome to Naucto!",
+      "toHub": "Go to the hub",
       "failedTitle": "This link does not work any more",
       "failed": "It was already used, or it expired. Sign in with your password to get a new one."
     },
