@@ -137,6 +137,7 @@ export class BugReportDialog {
 
   protected readonly context: BugContextDto = this.buildContext();
   protected readonly contextRows = computed(() => this.describeContext());
+  protected readonly showIncluded = signal(false);
 
   protected readonly valid = computed(
     () =>

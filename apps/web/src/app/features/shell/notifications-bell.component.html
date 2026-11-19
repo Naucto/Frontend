@@ -4,27 +4,29 @@
     variant="ghost"
     size="bar"
     iconOnly
+    [pressed]="open()"
     [ncPopover]="panel"
     popoverAlign="end"
     [(popoverOpen)]="open"
     class="relative"
     [attr.aria-label]="t('notifications.title')">
-    <nc-icon
-      name="notification"
-      [size]="24"
-      [class]="store.unread() > 0 ? 'text-gold-ink' : 'text-ink-3'" />
+    <nc-icon name="notification" />
     @if (store.unread() > 0) {
-      <span class="absolute top-[4px] right-[4px] h-[8px] w-[8px] bg-hot" aria-hidden="true"></span>
+      <span
+        class="pointer-events-none absolute top-0 right-0 z-1 inline-flex h-[18px] min-w-[18px] items-center justify-center bg-hot px-[3px] font-mono text-label leading-none text-on-hot"
+        aria-hidden="true">
+        {{ store.unread() }}
+      </span>
     }
   </button>
   <ng-template #panel>
-    <nc-popover-panel class="w-[360px]">
-      <div class="flex h-4 items-center gap-1 border-b border-line px-2">
-        <span class="label text-ink">{{ t('notifications.title') }}</span>
+    <nc-popover-panel class="w-[360px] max-w-[calc(100vw-28px)]">
+      <div class="flex h-[46px] items-center gap-[10px] pr-[8px] pl-[14px]">
+        <span class="font-ui text-label tracking-label text-ink uppercase">
+          {{ t('notifications.title') }}
+        </span>
         @if (store.unread() > 0) {
-          <span class="rounded-xs bg-hot px-0.5 font-mono text-[10px] text-on-accent-dark">
-            {{ store.unread() }}
-          </span>
+          <nc-chip tone="hot">{{ store.unread() }}</nc-chip>
         }
         <span class="flex-1"></span>
         <button
@@ -36,28 +38,39 @@
           {{ t('notifications.markAllRead') }}
         </button>
       </div>
-      <ul class="max-h-[360px] overflow-auto">
+      <!-- A row is a list option: no frame until it is pointed at, then lit and pressable. One not
+           read yet stands on the raised ground. -->
+      <ul class="grid max-h-[360px] gap-[3px] overflow-auto px-[6px] pb-[6px]">
         @for (notification of store.items(); track notification.id) {
-          <li
-            class="flex gap-1 border-b border-line px-2 py-1.5 last:border-b-0"
-            [class.bg-raised]="!notification.read">
-            <span
-              class="mt-0.5 w-[2px] shrink-0 self-stretch"
-              [class.bg-sky]="notification.type === 'INFO'"
-              [class.bg-orange]="notification.type === 'WARNING'"></span>
-            <button type="button" class="flex-1 text-left" (click)="act(notification)">
-              <div class="text-ui text-ink">{{ notification.title }}</div>
-              <div class="text-meta text-ink-2">{{ notification.message }}</div>
-              <div class="label mt-0.5 text-ink-4">
-                {{ notification.createdAt | slice: 0 : 10 }}
-              </div>
+          <li>
+            <button
+              type="button"
+              class="raised-sm flex w-full cursor-pointer gap-[12px] bevel-edge-transparent bevel-skirt-transparent px-[11px] pt-[8px] pb-[5px] text-left hover:bevel-lit active:bevel-down"
+              [class]="notification.read ? 'bevel-fill-transparent' : 'bevel-fill-raised'"
+              (click)="act(notification)">
+              <span
+                class="flat-sm inline-flex h-[30px] w-[30px] shrink-0 items-center justify-center"
+                [class]="
+                  notification.type === 'WARNING'
+                    ? 'bevel-edge-orange text-orange-ink'
+                    : 'bevel-edge-sky text-sky-ink'
+                "
+                aria-hidden="true">
+                <nc-icon [name]="notification.type === 'WARNING' ? 'warning-box' : 'info-box'" />
+              </span>
+              <span class="grid min-w-0 flex-1 gap-[2px]">
+                <span class="text-small leading-[1.35] text-ink">{{ notification.title }}</span>
+                <span class="text-meta text-ink-2">{{ notification.message }}</span>
+                <span class="text-micro tracking-wide text-ink-4 uppercase">
+                  {{ notification.createdAt | slice: 0 : 10 }}
+                </span>
+              </span>
             </button>
-            @if (!notification.read) {
-              <span class="mt-1 h-1 w-1 shrink-0 rounded-xs bg-hot" aria-hidden="true"></span>
-            }
           </li>
         } @empty {
-          <li class="p-3 text-center text-body text-ink-3">{{ t('notifications.empty') }}</li>
+          <li class="px-[14px] pt-[22px] pb-[26px] text-center text-body text-ink-3">
+            {{ t('notifications.empty') }}
+          </li>
         }
       </ul>
     </nc-popover-panel>

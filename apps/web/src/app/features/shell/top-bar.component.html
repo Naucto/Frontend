@@ -1,30 +1,33 @@
 <!-- Stacked above the page because the bar opens panels over it; a z-index on a dropdown would only
      order it inside the bar. Above the editor's edge handles, below the toasts. -->
 <!-- From md, a grid of mark | nav | search | actions: the search takes the track left between the
-     two clusters, so it shrinks before anything overlaps it. -->
+     two clusters, so it shrinks before anything overlaps it. Below md the row is menu | mark |
+     actions, and the menu button opens the search and the links under it; the header never scrolls
+     sideways. -->
 <header
   *transloco="let t"
-  class="relative z-30 flex min-h-7 flex-wrap items-center gap-x-0 gap-y-2 border-b border-line bg-panel py-1 pr-2 pl-0 md:grid md:grid-cols-[auto_auto_minmax(0,1fr)_auto] md:gap-x-2 md:py-0">
-  <a
-    routerLink="/hub"
-    class="flex w-[81px] shrink-0 items-center justify-center"
-    aria-label="Naucto">
-    <nc-logo />
+  class="relative z-30 flex min-h-[56px] flex-wrap items-center gap-x-[10px] border-b-3 border-line-strong bg-panel pr-[10px] pl-[6px] md:grid md:h-[56px] md:grid-cols-[auto_auto_minmax(0,1fr)_auto] md:gap-x-[18px] md:pr-[14px] md:pl-[20px]">
+  <a routerLink="/hub" class="order-2 flex shrink-0 items-center md:order-none" aria-label="Naucto">
+    <nc-logo variant="wordmark" link [size]="18" />
   </a>
 
-  <!-- Below md the links collapse behind the menu button; the header never scrolls sideways. -->
   <button
+    ncButton
+    variant="ghost"
+    size="xl"
+    iconOnly
     type="button"
-    class="ms-1 inline-flex h-4 w-4 items-center justify-center rounded-xs text-ink-3 hover:text-ink md:hidden"
+    class="order-1 md:hidden"
+    [pressed]="menuOpen()"
     [attr.aria-expanded]="menuOpen()"
     [attr.aria-label]="t('nav.main')"
     (click)="menuOpen.set(!menuOpen())">
-    <nc-icon [name]="menuOpen() ? 'close' : 'menu'" [size]="24" />
+    <nc-icon [name]="menuOpen() ? 'close' : 'menu'" />
   </button>
 
   <nav
-    class="order-last w-full flex-wrap items-center gap-1 md:order-none md:flex md:w-auto"
-    [class.flex]="menuOpen()"
+    class="order-5 w-full pb-[14px] md:order-none md:flex md:w-auto md:items-center md:gap-[22px] md:p-0"
+    [class.grid]="menuOpen()"
     [class.hidden]="!menuOpen()"
     [attr.aria-label]="t('nav.main')">
     <a routerLink="/hub" routerLinkActive ariaCurrentWhenActive="page" [class]="navLink">
@@ -45,24 +48,31 @@
 
   <nc-search-suggest
     #search
-    class="ms-2 min-w-0 flex-1 md:ms-0 md:w-full md:max-w-[420px] md:justify-self-center"
+    class="order-4 w-full max-md:my-[14px] md:order-none md:max-w-[420px] md:justify-self-center"
+    [class.max-md:hidden]="!menuOpen()"
     [placeholder]="t('nav.search')"
     [query]="query()" />
 
   <div
-    class="ms-2 flex flex-1 items-center justify-end gap-1 md:ms-0 md:justify-self-end"
+    class="order-3 ms-auto flex items-center justify-end gap-[10px] md:order-none md:ms-0 md:justify-self-end"
     data-testid="top-bar-actions">
     @if (auth.isAuthenticated()) {
-      <a ncButton variant="primary" size="bar" routerLink="/games/new">
-        <nc-icon name="plus" [size]="12" class="sm:hidden" />
-        <span class="hidden sm:inline">+ {{ t('nav.newGame') }}</span>
+      <a
+        ncButton
+        variant="primary"
+        size="lg"
+        routerLink="/games/new"
+        class="max-sm:aspect-square max-sm:px-0"
+        [attr.aria-label]="t('nav.newGame')">
+        <nc-icon name="plus" class="sm:hidden" />
+        <span class="hidden sm:inline">{{ t('nav.newGame') }}</span>
       </a>
-      <nc-report-problem-button />
+      <nc-report-problem-button class="max-md:hidden" />
       <nc-notifications-bell />
-      <nc-account-menu class="ms-1" />
+      <nc-account-menu />
     } @else {
-      <nc-report-problem-button />
-      <a ncButton variant="primary" size="bar" routerLink="/sign-in">
+      <nc-report-problem-button class="max-md:hidden" />
+      <a ncButton variant="primary" size="lg" routerLink="/sign-in">
         {{ t('nav.signIn') }}
       </a>
     }

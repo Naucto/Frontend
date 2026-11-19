@@ -5,6 +5,7 @@ import { TranslocoDirective } from '@jsverse/transloco';
 import { type NotificationPayloadDto } from '@naucto/api-client';
 import {
   ButtonDirective,
+  ChipComponent,
   IconComponent,
   PopoverDirective,
   PopoverPanelComponent,
@@ -18,6 +19,7 @@ import { NotificationsStore } from '../../core/notifications/notifications.store
     SlicePipe,
     TranslocoDirective,
     ButtonDirective,
+    ChipComponent,
     IconComponent,
     PopoverDirective,
     PopoverPanelComponent,

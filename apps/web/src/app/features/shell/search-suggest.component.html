@@ -2,7 +2,6 @@
   <nc-search
     #box
     class="w-full"
-    [class.rounded-b-none]="open()"
     [placeholder]="placeholder()"
     [(value)]="text"
     [hint]="open() ? 'ESC' : '/'"
@@ -12,18 +11,18 @@
     <nc-suggest-panel [label]="t('nav.suggestions')">
       @let suggestions = data();
       @if (parsed().tagsOnly) {
-        <div class="flex items-center gap-2 px-[14px] pt-[10px] pb-[6px]">
-          <span class="label text-ink-4">{{ t('search.tags') }}</span>
-          <span class="label rounded-xs border border-line px-[5px] py-px text-gold">
-            {{ t('search.tagsOnly') }}
+        <div class="flex items-center gap-[12px] px-[14px] pt-[12px] pb-[6px]">
+          <span class="font-ui text-micro tracking-label text-ink-4 uppercase">
+            {{ t('search.tags') }}
           </span>
+          <nc-chip tone="gold">{{ t('search.tagsOnly') }}</nc-chip>
         </div>
         @for (tag of suggestions.tags; track tag.tag; let i = $index) {
           <nc-suggest-row
             [selected]="cursor() === i"
             (pointerenter)="cursor.set(i)"
             (click)="go({ kind: 'tag', tag: tag.tag })">
-            <span class="font-mono text-[10px] tracking-wide">
+            <span class="text-body">
               <nc-highlight [text]="tag.tag" [match]="parsed().term" />
             </span>
             <span class="ms-auto label text-ink-4">{{ tag.count }}</span>
@@ -31,17 +30,19 @@
         }
       } @else {
         @if (suggestions.games.length) {
-          <p class="label px-[14px] pt-[10px] pb-[6px] text-ink-4">{{ t('search.games') }}</p>
+          <p
+            class="px-[14px] pt-[12px] pb-[6px] font-ui text-micro tracking-label text-ink-4 uppercase">
+            {{ t('search.games') }}
+          </p>
           @for (game of suggestions.games; track game.id; let i = $index) {
             <nc-suggest-row
               [selected]="cursor() === offsets().games + i"
               (pointerenter)="cursor.set(offsets().games + i)"
               (click)="go({ kind: 'game', id: game.id })">
               <nc-game-cover
-                class="h-[25px] w-[44px] shrink-0 rounded-xs"
+                class="h-[27px] w-[48px] shrink-0"
                 [bordered]="false"
-                [releaseId]="game.id"
-                [iconSize]="12" />
+                [releaseId]="game.id" />
               <span class="min-w-0 flex-[2_1_auto] truncate text-body text-ink">
                 <nc-highlight [text]="game.name" [match]="parsed().term" />
               </span>
@@ -53,7 +54,10 @@
         }
 
         @if (suggestions.people.length) {
-          <p class="label px-[14px] pt-[10px] pb-[6px] text-ink-4">{{ t('search.people') }}</p>
+          <p
+            class="px-[14px] pt-[12px] pb-[6px] font-ui text-micro tracking-label text-ink-4 uppercase">
+            {{ t('search.people') }}
+          </p>
           @for (person of suggestions.people; track person.id; let i = $index) {
             <nc-suggest-row
               [selected]="cursor() === offsets().people + i"
@@ -61,7 +65,7 @@
               (click)="go({ kind: 'person', username: person.username })">
               <nc-avatar
                 class="shrink-0"
-                [size]="22"
+                [size]="30"
                 [id]="person.id"
                 [name]="person.nickname ?? person.username"
                 [src]="person.profileImageUrl ?? null" />
@@ -85,7 +89,10 @@
         }
 
         @if (suggestions.sessions.length) {
-          <p class="label px-[14px] pt-[10px] pb-[6px] text-ink-4">{{ t('search.liveNow') }}</p>
+          <p
+            class="px-[14px] pt-[12px] pb-[6px] font-ui text-micro tracking-label text-ink-4 uppercase">
+            {{ t('search.liveNow') }}
+          </p>
           @for (session of suggestions.sessions; track session.sessionUuid; let i = $index) {
             <nc-suggest-row
               [selected]="cursor() === offsets().sessions + i"
@@ -104,8 +111,7 @@
                   })
                 }}
               </span>
-              <span
-                class="label shrink-0 rounded-xs border border-jade-line px-[7px] py-[3px] text-jade-ink">
+              <span class="shrink-0 text-meta tracking-button text-jade-ink uppercase">
                 {{ t('net.join.join') }}
               </span>
             </nc-suggest-row>
@@ -113,14 +119,19 @@
         }
 
         @if (suggestions.tags.length) {
-          <p class="label px-[14px] pt-[10px] pb-[6px] text-ink-4">{{ t('search.tags') }}</p>
-          <div class="flex flex-wrap gap-1.5 px-[14px] pt-[2px] pb-[12px]">
+          <p
+            class="px-[14px] pt-[12px] pb-[6px] font-ui text-micro tracking-label text-ink-4 uppercase">
+            {{ t('search.tags') }}
+          </p>
+          <div class="flex flex-wrap gap-[6px] px-[14px] pt-[2px] pb-[12px]">
             @for (tag of suggestions.tags; track tag.tag; let i = $index) {
               <button
+                ncButton
+                size="sm"
                 type="button"
-                class="cursor-pointer rounded-xs bg-raised px-2 py-1 font-mono text-[10px] tracking-wide text-ink-2 hover:text-ink active:bg-inset"
-                [class.outline]="cursor() === offsets().tags + i"
-                [class.outline-gold]="cursor() === offsets().tags + i"
+                class="normal-case!"
+                [class.bevel-lit]="cursor() === offsets().tags + i"
+                [class.text-active-ink!]="cursor() === offsets().tags + i"
                 (pointerenter)="cursor.set(offsets().tags + i)"
                 (click)="go({ kind: 'tag', tag: tag.tag })">
                 <nc-highlight [text]="tag.tag" [match]="parsed().term" />
@@ -137,13 +148,13 @@
         }
       }
 
-      <span footer class="flex items-center gap-4 label text-ink-4">
+      <span footer class="flex flex-wrap items-center gap-x-[18px] gap-y-[6px] label text-ink-4">
         @if (parsed().tagsOnly) {
           <span>{{ t('search.footerTags', { tag: parsed().term }) }}</span>
         } @else {
           <span class="flex items-center gap-1">
-            <nc-icon name="arrow-up" [size]="12" />
-            <nc-icon name="arrow-down" [size]="12" />
+            <nc-icon name="arrow-up" />
+            <nc-icon name="arrow-down" />
             {{ t('search.move') }}
           </span>
           <span>{{ t('search.enterOpen') }}</span>

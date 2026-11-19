@@ -23,7 +23,8 @@ import { SearchSuggestComponent } from './search-suggest.component';
  * utilities on one element, stylesheet order decides which one wins.
  */
 const NAV_LINK =
-  'rounded-xs px-1.5 py-1 text-body leading-[20px] uppercase tracking-button text-ink-3 transition-colors hover:text-ink aria-[current]:text-ink';
+  'flex h-[44px] items-center px-[10px] text-body whitespace-nowrap uppercase tracking-button text-ink-3 transition-colors hover:text-active-ink aria-[current]:text-active-ink ' +
+  'max-md:aria-[current]:bg-raised max-md:aria-[current]:shadow-[inset_3px_0_0_var(--color-primary)] md:h-auto md:px-0';
 
 /** App-wide top bar: HUB / MY GAMES / FRIENDS / LEARN, search, NEW GAME, bell, account. */
 @Component({

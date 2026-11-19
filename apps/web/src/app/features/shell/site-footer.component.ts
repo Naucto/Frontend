@@ -1,21 +1,32 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { ENGINE_VERSION } from '@naucto/engine/version';
 import { IconComponent, LogoComponent } from '@naucto/ui';
 
-import { ThemeService } from '../../core/theme/theme.service';
 import { FeedbackLauncher } from '../../shared/feedback/feedback-launcher.service';
+import { ThemeSwitchComponent } from './theme-switch.component';
 
 /** Hub/learn pages only — never rendered in the editor. */
 @Component({
   selector: 'nc-site-footer',
-  imports: [RouterLink, TranslocoDirective, IconComponent, LogoComponent],
+  imports: [
+    NgTemplateOutlet,
+    RouterLink,
+    TranslocoDirective,
+    IconComponent,
+    LogoComponent,
+    ThemeSwitchComponent,
+  ],
   templateUrl: './site-footer.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SiteFooterComponent {
-  protected readonly theme = inject(ThemeService);
   protected readonly feedback = inject(FeedbackLauncher);
   protected readonly engineVersion = ENGINE_VERSION;
+  /** The group standing open below md, where only one is at a time; from md all three are. */
+  protected readonly open = signal<'product' | 'community' | 'legal' | null>(null);
+  protected readonly links = 'grid gap-[8px] max-md:gap-[10px] max-md:px-[16px] max-md:pb-[14px]';
+  protected readonly link = 'cursor-pointer text-left text-body text-ink-2 hover:text-ink';
 }
