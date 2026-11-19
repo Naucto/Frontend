@@ -1,0 +1,24 @@
+<nc-icon [name]="look().icon" [class]="look().ink" />
+<div class="grid min-w-0 flex-1 gap-0.5">
+  @if (title(); as text) {
+    <div class="text-label tracking-strip uppercase" [class]="look().ink">{{ text }}</div>
+  }
+  <div class="text-small wrap-anywhere text-ink-body">
+    <ng-content />
+  </div>
+  <div class="mt-[6px] -ml-[13px] flex flex-wrap gap-1 empty:hidden">
+    <ng-content select="[actions]" />
+  </div>
+</div>
+@if (dismissible()) {
+  <button
+    ncButton
+    type="button"
+    variant="ghost"
+    iconOnly
+    class="-mt-1 -mr-1"
+    [attr.aria-label]="dismissLabel()"
+    (click)="dismissed.emit()">
+    <nc-icon name="close" />
+  </button>
+}

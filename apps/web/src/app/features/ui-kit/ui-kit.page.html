@@ -431,73 +431,109 @@
     </div>
   </section>
 
-  <section id="chips" class="grid scroll-mt-3 gap-2.5">
-    <h2 class="font-display text-display text-ink">Chips, keys &amp; data</h2>
-    <nc-panel title="Chips and keys">
-      <div class="flex flex-wrap items-center gap-2">
-        <nc-bit-flags [value]="5" />
-        @for (provider of providers; track provider.id) {
-          <nc-brand-mark [mark]="provider.mark" [size]="16" />
-        }
-        <nc-keycap>Arrows</nc-keycap>
-        <nc-keycap>Z</nc-keycap>
-        <nc-keycap>Esc</nc-keycap>
-        <nc-keycap>D-pad</nc-keycap>
+  <section id="chips" class="grid scroll-mt-[80px] gap-2.5">
+    <div class="flex items-baseline gap-2">
+      <h2 class="font-display text-display text-ink">Chips, keys &amp; data</h2>
+      <span class="text-meta text-ink-3">
+        badge · tag · keycap · stat · avatar · cursor tag · bit flags · meter · LCD · readout
+      </span>
+    </div>
+    <div class="flat-lg bevel-fill-panel grid gap-[22px] p-[22px]">
+      <div class="flex flex-wrap items-center gap-1.5">
         <nc-chip>Action</nc-chip>
-        <nc-chip tone="gold" [removable]="true">Adventure</nc-chip>
+        <nc-chip tone="gold">Adventure</nc-chip>
         <nc-chip tone="jade">Synced</nc-chip>
         <nc-chip tone="sky">Netplay</nc-chip>
         <nc-chip tone="hot">Draft</nc-chip>
         <nc-chip tone="orange">Warning</nc-chip>
-        <nc-stat icon="play" [value]="40" />
-        <nc-stat icon="heart" [value]="1008" tone="hot" />
+        <nc-chip tone="jade" wash>Granted</nc-chip>
+        <nc-chip tone="sky" wash>Invited</nc-chip>
+        <nc-chip tone="gold" wash>Pending</nc-chip>
+        <nc-chip tone="hot" wash>Refused</nc-chip>
+        <nc-chip tone="gold" [removable]="true">Removable</nc-chip>
+        <nc-chip kind="tag">puzzle</nc-chip>
+        <nc-chip kind="tag">two-player</nc-chip>
+        <span class="h-(--nc-h-xs) w-[3px] bg-line"></span>
+        <nc-keycap>Arrows</nc-keycap>
+        <nc-keycap>Z</nc-keycap>
+        <nc-keycap>Esc</nc-keycap>
+        <nc-keycap>D-pad</nc-keycap>
+      </div>
+      <div class="flex flex-wrap items-center gap-2.5">
+        <nc-stat icon="play" [value]="1247" />
+        <nc-stat icon="heart" [value]="318" tone="hot" />
         <nc-stat icon="git-branch" [value]="3" />
         <nc-stat icon="eye" [value]="48" label="Views" />
         <nc-stat icon="play" [value]="1247" label="Plays" compact />
-        <nc-stat icon="heart" [value]="318" label="Likes" tone="hot" />
+        <span class="h-(--nc-h-xs) w-[3px] bg-line"></span>
+        <span class="inline-flex">
+          <nc-avatar name="louis" [size]="40" overlap />
+          <nc-avatar name="edgar" [size]="40" overlap />
+          <nc-avatar name="thea" [size]="40" overlap />
+        </span>
+        <nc-avatar name="alexis" colour="neutral" [size]="40" />
+        <nc-avatar name="ada" [size]="30" />
+        <nc-avatar name="bob" />
+        <nc-presence-flag name="louis" colour="sky" />
+        <nc-presence-flag name="edgar" colour="blush" />
+        <span class="inline-flex items-center gap-1 text-meta text-ink-3">
+          <nc-online-dot [online]="true" />
+          online
+          <nc-online-dot />
+          offline
+        </span>
+        <nc-bit-flags [value]="5" />
       </div>
-      <div class="mt-2 grid gap-3 md:grid-cols-2">
-        <nc-section title="Game size">
-          <nc-meter [segments]="size" [max]="1048576" label="Game size" />
-        </nc-section>
-        <nc-section title="Console">
+      <div class="max-w-[560px]">
+        <div class="mb-1 flex justify-between text-label tracking-label text-ink-3 uppercase">
+          <span>Game size</span>
+          <span class="font-mono">942 kB / 1 MB</span>
+        </div>
+        <nc-meter [segments]="size" [max]="1048576" label="Game size" size="md" />
+      </div>
+      <div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,300px),1fr))] gap-[18px]">
+        <div class="grid content-start gap-[10px]">
+          <div class="text-label tracking-label text-ink-3 uppercase">LCD · boxed and flush</div>
           <nc-lcd [minHeight]="72">
             &gt; RUN main &gt; Welcome to Naucto! ! main:39 attempt to index a nil value (field
             'sprites')
           </nc-lcd>
-          <nc-lcd variant="flush" [minHeight]="48" class="mt-1">
+          <nc-lcd variant="flush" [minHeight]="48">
             &gt; flush: the console fills its column, no frame
           </nc-lcd>
-        </nc-section>
-        <nc-section title="Presence">
-          <div class="flex items-center gap-2">
-            <nc-avatar name="louis" [size]="38" overlap />
-            <nc-avatar name="edgar" [size]="38" overlap />
-            <nc-avatar name="thea" [size]="38" overlap />
-            <nc-avatar name="alexis" colour="neutral" [size]="38" />
-            <nc-presence-flag name="louis" colour="sky" />
-            <nc-presence-flag name="edgar" colour="blush" />
-            <nc-online-dot [online]="true" />
-            <nc-online-dot />
-          </div>
+        </div>
+        <div class="grid content-start gap-[10px]">
+          <div class="text-label tracking-label text-ink-3 uppercase">Readout · inline meter</div>
+          <nc-readout value="ALEXIS01" tone="gold" />
+          <nc-readout size="sm" value="60 FPS" class="w-[120px]" />
+          <nc-meter [segments]="size" [max]="1048576" label="Inline size" [legend]="false" />
+          <nc-meter [segments]="size" [max]="786432" label="Over the ceiling" [legend]="false" />
+        </div>
+        <div class="grid content-start gap-[10px]">
+          <div class="text-label tracking-label text-ink-3 uppercase">Presence over a surface</div>
           <!-- One mark inside the frame, two past its edges, which come back as chips on the rim. -->
-          <div class="flat-sm bevel-fill-inset relative mt-1.5 h-[120px] w-[320px] overflow-hidden">
+          <div
+            class="flat-sm bevel-fill-inset relative h-[120px] w-[320px] max-w-full overflow-hidden">
             <nc-presence-layer [marks]="presenceMarks" [viewport]="presenceFrame" />
           </div>
-        </nc-section>
-        <nc-section title="Share code">
-          <nc-share-code
-            class="w-[210px]"
-            code="ALEXIS01"
-            [regenerable]="true"
-            copyLabel="Copy"
-            regenerateLabel="Regenerate" />
-        </nc-section>
-        <nc-section title="Label">
-          <nc-label>In this work session</nc-label>
-        </nc-section>
+        </div>
       </div>
-    </nc-panel>
+      <div class="flex flex-wrap items-center gap-2">
+        @for (provider of providers; track provider.id) {
+          <nc-brand-mark [mark]="provider.mark" [size]="16" />
+        }
+        <nc-share-code
+          class="w-[210px]"
+          code="ALEXIS01"
+          [regenerable]="true"
+          copyLabel="Copy"
+          regenerateLabel="Regenerate" />
+        <nc-label>In this work session</nc-label>
+        <span class="text-body text-ink-body">
+          <nc-highlight text="Platformer" match="form" />
+        </span>
+      </div>
+    </div>
   </section>
 
   <section id="navigation" class="grid scroll-mt-3 gap-2.5">
@@ -536,38 +572,90 @@
     </div>
   </section>
 
-  <section id="feedback" class="grid scroll-mt-3 gap-2.5">
-    <h2 class="font-display text-display text-ink">Feedback</h2>
-    <nc-panel title="Notices and loading">
-      <div class="grid gap-3 md:grid-cols-2">
-        <nc-section title="Notice">
-          <nc-notice>The game is over the size ceiling, so publishing is blocked.</nc-notice>
-          <nc-notice tone="danger">This release could not be reached.</nc-notice>
-        </nc-section>
-        <nc-section title="Loading">
-          <div class="grid gap-1">
-            <nc-skeleton height="96px" />
-            <nc-skeleton height="0.75rem" width="60%" />
-            <nc-skeleton height="0.75rem" width="35%" />
-          </div>
-        </nc-section>
+  <section id="feedback" class="grid scroll-mt-[80px] gap-2.5">
+    <div class="flex items-baseline gap-2">
+      <h2 class="font-display text-display text-ink">Feedback</h2>
+      <span class="text-meta text-ink-3">toast &amp; callout · empty · error · loading</span>
+    </div>
+    <div class="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] items-start gap-2.5">
+      <div class="grid content-start gap-1.5">
+        <div class="text-label tracking-label text-ink-3 uppercase">
+          Toasts &amp; callouts — one shape, four tones
+        </div>
+        @if (!hidden().has('published')) {
+          <nc-notice tone="success" title="Published" dismissible (dismissed)="hide('published')">
+            <span class="text-ink">Hightide v3</span>
+            is live on the hub.
+            <button ncButton variant="ghost" size="sm" actions>View</button>
+          </nc-notice>
+        }
+        @if (!hidden().has('joined')) {
+          <nc-notice tone="info" title="Théo joined" dismissible (dismissed)="hide('joined')">
+            Editing
+            <span class="font-mono text-ink">main</span>
+            with you. Their cursor is blue.
+          </nc-notice>
+        }
+        @if (!hidden().has('ceiling')) {
+          <nc-notice
+            tone="warn"
+            title="Over the size ceiling"
+            dismissible
+            (dismissed)="hide('ceiling')">
+            Publishing is blocked until the game is under 1 MB.
+            <button ncButton variant="ghost" size="sm" actions>See what's big</button>
+          </nc-notice>
+        }
+        @if (!hidden().has('save')) {
+          <nc-notice tone="danger" title="Could not save" dismissible (dismissed)="hide('save')">
+            The release could not be reached. Your changes are kept locally.
+            <button ncButton variant="ghost" size="sm" actions>Retry</button>
+          </nc-notice>
+        }
+        <p class="text-meta text-ink-3">
+          Same shape inline in docs and panels, as a note, a tip or a warning: drop the dismiss.
+        </p>
+        <nc-notice>The game is over the size ceiling, so publishing is blocked.</nc-notice>
+        <nc-notice tone="danger">This release could not be reached.</nc-notice>
+        <div class="flat-sm">
+          <nc-notice variant="band" title="Band">Full width, at the top of its panel.</nc-notice>
+        </div>
+        <div class="flex flex-wrap gap-1">
+          <button ncButton variant="ghost" (click)="toast()">Toast</button>
+          <button ncButton variant="ghost" (click)="toastTitled()">Titled toast</button>
+        </div>
       </div>
-      <button ncButton variant="ghost" class="mt-2" (click)="toast()">Toast</button>
-    </nc-panel>
-    <nc-panel>
-      <nc-empty-state
-        icon="music"
-        title="No sound yet"
-        hint="An instrument is a wave plus an envelope. Add one and the piano roll wakes up — five voices, sixteen slots.">
-        <button ncButton variant="primary">+ Add instrument</button>
-      </nc-empty-state>
-    </nc-panel>
-    <nc-panel>
-      <nc-error-state
-        title="Could not reach the hub"
-        hint="The request failed. This is not the same as there being nothing here — an outage must never read as an empty shelf."
-        retryLabel="Retry" />
-    </nc-panel>
+      <div class="grid content-start gap-2.5">
+        <div class="flat-lg bevel-fill-panel">
+          <nc-empty-state
+            icon="music"
+            title="No sound yet"
+            hint="An instrument is a wave plus an envelope. Add one and the piano roll wakes up.">
+            <button ncButton variant="primary" size="lg">+ Add instrument</button>
+          </nc-empty-state>
+        </div>
+        <div class="flat-lg bevel-fill-panel">
+          <nc-error-state
+            title="Could not reach the hub"
+            hint="The request failed. An outage must never read as an empty shelf."
+            retryLabel="Retry" />
+        </div>
+      </div>
+      <div class="grid content-start gap-2.5">
+        <div class="raised-lg bevel-fill-panel grid gap-1.5 p-1" role="status" aria-label="Loading">
+          <nc-skeleton class="aspect-video" height="auto" />
+          <div class="grid gap-1 px-1 pt-0.5 pb-[6px]">
+            <nc-skeleton class="text-ui" [words]="[7, 4, 6]" />
+            <nc-skeleton class="text-meta" style="animation-delay: 150ms" [words]="[5, 2, 4, 3]" />
+          </div>
+        </div>
+        <div class="flat-lg bevel-fill-panel grid gap-1 p-2">
+          <nc-skeleton height="96px" />
+          <nc-skeleton height="12px" width="60%" />
+          <nc-skeleton height="12px" width="35%" />
+        </div>
+      </div>
+    </div>
   </section>
 
   <section id="overlays" class="grid scroll-mt-3 gap-2.5">

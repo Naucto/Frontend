@@ -16,6 +16,7 @@ import {
   ErrorStateComponent,
   FieldComponent,
   HelpDotComponent,
+  HighlightComponent,
   IconComponent,
   InputDirective,
   KeycapComponent,
@@ -36,6 +37,7 @@ import {
   type PresenceMark,
   RailComponent,
   RatingComponent,
+  ReadoutComponent,
   SearchComponent,
   SectionComponent,
   SegmentedComponent,
@@ -104,6 +106,8 @@ import { ACCENT_SLOTS } from '../editor/accent-slots';
     ShareCodeComponent,
     SettingRowComponent,
     HelpDotComponent,
+    HighlightComponent,
+    ReadoutComponent,
     PopoverDirective,
     PopoverPanelComponent,
     SearchComponent,
@@ -123,6 +127,7 @@ export default class UiKitPage {
   protected readonly accents = ACCENT_SLOTS;
   protected readonly swatch = signal<number | null>(4);
   protected readonly regionOpen = signal(true);
+  protected readonly hidden = signal<ReadonlySet<string>>(new Set());
   private readonly dialogs = inject(DialogService);
   private readonly toasts = inject(ToastService);
   private readonly document = inject(DOCUMENT);
@@ -363,6 +368,14 @@ export default class UiKitPage {
 
   protected toast(): void {
     this.toasts.show('Saved 2 minutes ago — 942 KB', 'success');
+  }
+
+  protected toastTitled(): void {
+    this.toasts.show('The release could not be reached.', 'error', 6000, 'Could not save');
+  }
+
+  protected hide(notice: string): void {
+    this.hidden.update((hidden) => new Set(hidden).add(notice));
   }
 
   protected applyTheme(theme: 'dark' | 'light' | undefined): void {
