@@ -22,6 +22,7 @@ import {
   LcdComponent,
   MeterComponent,
   NoticeComponent,
+  NumberFieldComponent,
   OnlineDotComponent,
   PanelColumnComponent,
   PanelComponent,
@@ -101,6 +102,7 @@ import { ACCENT_SLOTS } from '../editor/accent-slots';
     SearchComponent,
     StatComponent,
     TagInputComponent,
+    NumberFieldComponent,
     TooltipDirective,
   ],
   templateUrl: './ui-kit.page.html',
@@ -116,6 +118,10 @@ export default class UiKitPage {
   protected readonly themeService = inject(ThemeService);
   protected readonly providers = inject(OAUTH_PROVIDERS);
   protected readonly autoRun = signal(true);
+  protected readonly tags = signal(['action', 'adventure']);
+  protected readonly maxPlayers = signal(4);
+  protected readonly tempo = signal(120);
+  protected readonly keys = ['Arrows', 'Z', 'X', 'Esc'];
   protected readonly spriteSize = signal(1);
   protected readonly presenceFrame = { x: 0, y: 0, w: 320, h: 120 };
   protected readonly presenceMarks: PresenceMark[] = [

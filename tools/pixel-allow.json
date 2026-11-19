@@ -270,14 +270,6 @@
       "rounded": 1,
       "border": 1
     },
-    "packages/ui/src/components/input.directive.ts": {
-      "rounded": 1,
-      "border": 1
-    },
-    "packages/ui/src/components/keycap.component.ts": {
-      "rounded": 1,
-      "border": 1
-    },
     "packages/ui/src/components/lcd.component.ts": {
       "rounded": 1,
       "border": 1
@@ -290,10 +282,6 @@
     },
     "packages/ui/src/components/notice.component.ts": {
       "border": 1
-    },
-    "packages/ui/src/components/number-field.component.html": {
-      "rounded": 1,
-      "border": 3
     },
     "packages/ui/src/components/online-dot.component.ts": {
       "rounded": 1
@@ -326,14 +314,6 @@
       "border": 2
     },
     "packages/ui/src/components/readout.component.ts": {
-      "rounded": 1,
-      "border": 1
-    },
-    "packages/ui/src/components/search.component.html": {
-      "rounded": 1,
-      "border": 1
-    },
-    "packages/ui/src/components/search.component.ts": {
       "rounded": 1,
       "border": 1
     },
@@ -379,10 +359,6 @@
     },
     "packages/ui/src/components/tabs.component.ts": {
       "border": 8
-    },
-    "packages/ui/src/components/tag-input.component.html": {
-      "rounded": 1,
-      "border": 1
     },
     "packages/ui/src/components/toast-host.component.html": {
       "rounded": 1,
