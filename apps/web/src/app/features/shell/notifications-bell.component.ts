@@ -44,6 +44,10 @@ export class NotificationsBellComponent {
         return typeof projectId === 'number' ? ['/edit', String(projectId)] : null;
       case 'COLLABORATOR_REMOVED':
         return null;
+      // A decision about a game carries its project, and that game may be the very thing that is
+      // no longer there to open. The standing says what was decided and why.
+      case 'MODERATION':
+        return ['/settings', 'standing'];
       default:
         return typeof projectId === 'number' ? ['/play', String(projectId)] : null;
     }
