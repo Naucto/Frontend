@@ -1,5 +1,5 @@
 <ng-container *transloco="let t">
-  <form class="grid gap-[14px]" (ngSubmit)="submit()" novalidate>
+  <form class="grid gap-2" (ngSubmit)="submit()" novalidate>
     @if (mode() === 'register') {
       <nc-field [label]="t('auth.username')" for="username">
         <input
@@ -41,48 +41,43 @@
       variant="primary"
       size="lg"
       type="submit"
-      class="mt-[6px] w-full"
+      class="mt-1 w-full"
       [disabled]="busy()">
       {{ mode() === 'register' ? t('auth.create') : t('auth.signIn') }}
     </button>
   </form>
 
-  <div class="my-[18px] flex items-center gap-[12px]">
-    <span class="h-[3px] flex-1 bg-line"></span>
+  <div class="my-2 flex items-center gap-2">
+    <span class="h-[3px] flex-1 bg-line-soft"></span>
     <span class="label text-ink-4">{{ t('auth.or') }}</span>
-    <span class="h-[3px] flex-1 bg-line"></span>
+    <span class="h-[3px] flex-1 bg-line-soft"></span>
   </div>
-  <div class="grid grid-cols-1 gap-[10px] sm:grid-cols-3">
+  <div class="grid grid-cols-1 gap-1 sm:grid-cols-3">
     @for (provider of providers(); track provider.flow.id) {
       <button
         ncButton
         variant="secondary"
+        size="sm"
         type="button"
         (click)="oauth(provider.flow)"
         [disabled]="busy() || !provider.configured"
         [attr.title]="provider.configured ? null : t('auth.notConfigured')">
-        <nc-brand-mark [mark]="provider.flow.mark" [size]="24" />
+        <nc-brand-mark [mark]="provider.flow.mark" [size]="16" />
         {{ provider.flow.label }}
       </button>
     }
   </div>
 
-  <p class="mt-[22px] text-center text-meta text-ink-3">
+  <p class="mt-3 text-center text-meta text-ink-3">
     @if (mode() === 'login') {
       {{ t('auth.noAccount') }}
-      <button
-        type="button"
-        class="cursor-pointer text-gold-ink decoration-3 underline-offset-[6px] hover:underline"
-        (click)="register()">
+      <button type="button" class="text-gold-ink hover:underline" (click)="register()">
         {{ t('auth.register') }}
       </button>
       {{ t('auth.takes20') }}
     } @else {
       {{ t('auth.haveAccount') }}
-      <button
-        type="button"
-        class="cursor-pointer text-gold-ink decoration-3 underline-offset-[6px] hover:underline"
-        (click)="mode.set('login')">
+      <button type="button" class="text-gold-ink hover:underline" (click)="mode.set('login')">
         {{ t('auth.signIn') }}
       </button>
     }
