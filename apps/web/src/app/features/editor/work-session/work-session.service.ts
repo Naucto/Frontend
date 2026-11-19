@@ -26,11 +26,18 @@ import { unwrap } from '../../../core/api/api-errors';
 import { AuthStore } from '../../../core/auth/auth.store';
 import { AppConfigService } from '../../../core/config/app-config';
 import { type GameSeed, SEED_KEY } from '../../../shared/docs/seed-new-game';
+import { StaffPreviewService } from '../../../shared/moderation/staff-preview.service';
 import { HostElectionService } from './host-election.service';
 import { SessionPresenceService } from './session-presence.service';
 import { type SavedSession, SessionSaveService } from './session-save.service';
 
 export type SessionStatus = 'joining' | 'loading' | 'upgrading' | 'ready' | 'error' | 'closed';
+
+/**
+ * Whose game a read-only session shows: someone else's, read as staff through the preview routes,
+ * or the reader's own, read through the ordinary ones while their account is suspended.
+ */
+export type PreviewKind = 'staff' | 'own';
 
 /**
  * One editing session on one project: joins the work session, loads and migrates the game
@@ -46,6 +53,7 @@ export class WorkSessionService implements SavedSession {
   private readonly saves = inject(SessionSaveService);
   private readonly election = inject(HostElectionService);
   private readonly presence = inject(SessionPresenceService);
+  private readonly previews = inject(StaffPreviewService);
   readonly doc = new Y.Doc();
   readonly game = new EditableGame(this.doc);
 
@@ -60,6 +68,11 @@ export class WorkSessionService implements SavedSession {
   readonly ready = computed(() => this.status() === 'ready');
   readonly project = signal<ProjectExResponseDto | null>(null);
   /**
+   * Set by `openPreview`, for good: the document is a copy to look at. Nothing of it is saved,
+   * no work session is joined and no peer is connected, so whatever is typed dies with the tab.
+   */
+  readonly readOnly = signal(false);
+  /**
    * What the upgrade this client ran could not rewrite, each on the line it left, for the editor
    * to point at. Only the client that ran it knows; the others open a document already upgraded.
    */
@@ -69,6 +82,7 @@ export class WorkSessionService implements SavedSession {
     const me = this.auth.userId();
     const project = this.project();
     return (
+      !this.readOnly() &&
       me !== null &&
       !!project &&
       (project.creator.id === me ||
@@ -85,6 +99,11 @@ export class WorkSessionService implements SavedSession {
 
   get id(): number {
     return this.projectId;
+  }
+
+  /** The project a game run from here may host or join a session on. None in a preview. */
+  get playProjectId(): number | null {
+    return this.readOnly() ? null : this.projectId;
   }
 
   get myUserId(): number | null {
@@ -202,12 +221,15 @@ export class WorkSessionService implements SavedSession {
 
   /** Asks the browser to confirm leaving while the host holds edits the server has not seen. */
   onBeforeUnload(event: BeforeUnloadEvent): void {
-    if (this.election.isHost() && this.saves.dirty()) {
+    if (!this.readOnly() && this.election.isHost() && this.saves.dirty()) {
       event.preventDefault();
     }
   }
 
   onPageHide(event: PageTransitionEvent): void {
+    if (this.readOnly()) {
+      return;
+    }
     if (this.election.isHost() && this.saves.dirty()) {
       void this.saves.save({ keepalive: true });
     }
@@ -311,11 +333,72 @@ export class WorkSessionService implements SavedSession {
     }
   }
 
+  /**
+   * Opens the game to look at and nothing more: two reads, then a local copy of the document.
+   *
+   * It joins no work session, elects no host, connects no peer and starts no save. An older
+   * document is brought forward in this copy alone. Every request it makes is a GET, and no
+   * request follows it: that is what lets staff open someone's draft, and a suspended account its
+   * own game, without either of them changing anything.
+   */
+  async openPreview(projectId: number, kind: PreviewKind): Promise<void> {
+    this.projectId = projectId;
+    this.readOnly.set(true);
+    try {
+      this.status.set('loading');
+      const [bytes, details] = await Promise.all([
+        kind === 'staff' ? this.previews.content(projectId, 'draft') : this.ownContent(projectId),
+        kind === 'staff'
+          ? this.previews.project(projectId)
+          : projectControllerFindOne({ path: { id: projectId } }).then(unwrap),
+      ]);
+      if (this.closing) {
+        return;
+      }
+      if (bytes) {
+        Y.applyUpdate(this.doc, bytes, 'remote-init');
+      }
+      if (isFromFutureSchema(this.doc)) {
+        throw new Error(this.i18n.translate('editor.tooNew'));
+      }
+      if (needsMigration(this.doc)) {
+        this.migrationWarnings.set(migrateGame(this.doc).warnings);
+      }
+      this.game.seedDefaults();
+      this.project.set(details);
+      this.seedMeta(details);
+      this.saves.dirty.set(false);
+      this.status.set('ready');
+    } catch (error) {
+      if (this.closing) {
+        return;
+      }
+      this.error.set(error instanceof Error ? error.message : 'Could not open this game');
+      this.status.set('error');
+    }
+  }
+
+  private async ownContent(projectId: number): Promise<Uint8Array | null> {
+    const blob = unwrap(
+      await projectContentControllerFetchProjectContent({
+        path: { id: String(projectId) },
+        parseAs: 'blob',
+      }),
+    ) as Blob | undefined;
+    return blob && blob.size > 0 ? new Uint8Array(await blob.arrayBuffer()) : null;
+  }
+
   async close(): Promise<void> {
     if (this.closing) {
       return;
     }
     this.closing = true;
+    if (this.readOnly()) {
+      this.saves.stop();
+      this.doc.destroy();
+      this.status.set('closed');
+      return;
+    }
     this.election.stop();
     this.saves.stop();
     this.stopWaitingForSchema?.();

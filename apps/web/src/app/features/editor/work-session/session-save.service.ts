@@ -39,6 +39,8 @@ export interface SavedSession {
   readonly project: WritableSignal<ProjectExResponseDto | null>;
   /** Open for writing: false while the session loads, and again once it has failed or closed. */
   readonly ready: Signal<boolean>;
+  /** A copy to look at: nothing of it is ever written to the server. */
+  readonly readOnly: Signal<boolean>;
   /** The document as the server stores it. */
   snapshot(): Blob;
 }
@@ -133,7 +135,11 @@ export class SessionSaveService {
    */
   async save(opts: { keepalive?: boolean; force?: boolean } = {}): Promise<void> {
     const session = this.attached;
-    if (!session || (!this.election.isHost() && !opts.force) || !session.ready()) {
+    // Before anything else, and whatever `force` says: a preview has no save at all.
+    if (!session || session.readOnly()) {
+      return;
+    }
+    if ((!this.election.isHost() && !opts.force) || !session.ready()) {
       return;
     }
     this.saving.set(true);
@@ -192,7 +198,8 @@ export class SessionSaveService {
   }
 
   private readonly onDocUpdate = (_update: Uint8Array, origin: unknown): void => {
-    if (origin === 'remote-init') {
+    // In a preview an edit is nobody's unsaved work: there is nothing it could be saved to.
+    if (origin === 'remote-init' || this.attached?.readOnly()) {
       return;
     }
     this.edits++;
@@ -234,6 +241,9 @@ export class SessionSaveService {
 
   async saveCheckpoint(name: string): Promise<void> {
     const session = this.session;
+    if (session.readOnly()) {
+      return;
+    }
     unwrap(
       await projectContentControllerSaveCheckpoint({
         path: { id: String(session.id), name },

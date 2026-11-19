@@ -23,12 +23,14 @@ import { provideApiClient } from './core/api/api-client.provider';
 import { GlobalErrorHandler } from './core/errors/global-error-handler';
 import { TranslocoHttpLoader } from './core/i18n/transloco-loader';
 
+const EDITOR_PATHS = ['edit/:id', 'staff/edit/:id'];
+
 /** The editor owns one work session per instance, so another project id builds another editor. */
 @Injectable()
 export class ProjectRouteReuseStrategy extends BaseRouteReuseStrategy {
   override shouldReuseRoute(future: ActivatedRouteSnapshot, curr: ActivatedRouteSnapshot): boolean {
     if (
-      future.routeConfig?.path === 'edit/:id' &&
+      EDITOR_PATHS.includes(future.routeConfig?.path ?? '') &&
       future.paramMap.get('id') !== curr.paramMap.get('id')
     ) {
       return false;
