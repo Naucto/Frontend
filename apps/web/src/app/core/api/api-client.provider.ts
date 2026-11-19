@@ -12,6 +12,9 @@ import { FeaturesService } from '../config/features.service';
 
 const RETRIED = new WeakSet<Request>();
 
+/** The code the backend gives a write it refuses because the account is suspended. */
+const ACCOUNT_SUSPENDED = 'ACCOUNT_SUSPENDED';
+
 /**
  * Configures the generated fetch client: base URL from runtime config, cookies
  * for the refresh endpoint, bearer header from the in-memory token, and a
@@ -38,6 +41,22 @@ export function provideApiClient(): EnvironmentProviders {
           request.headers.set('Authorization', `Bearer ${token}`);
         }
         return request;
+      });
+
+      client.interceptors.response.use(async (response: Response) => {
+        // A refused write is how a tab learns its account was suspended since it last read the
+        // profile. Reading it again puts the band up and turns the write controls into their
+        // explanation. The caller still gets the refusal and says so itself.
+        if (response.status === 403 && auth.isAuthenticated() && !auth.suspension()) {
+          const body = (await response
+            .clone()
+            .json()
+            .catch(() => null)) as { code?: unknown } | null;
+          if (body?.code === ACCOUNT_SUSPENDED) {
+            void auth.refreshProfile().catch(() => undefined);
+          }
+        }
+        return response;
       });
 
       client.interceptors.response.use(async (response: Response, request: Request, options) => {

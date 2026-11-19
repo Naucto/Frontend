@@ -34,10 +34,10 @@ import { ApiError } from '../../core/api/api-errors';
 import { AuthStore } from '../../core/auth/auth.store';
 import { FeaturesService } from '../../core/config/features.service';
 import { PresenceStore } from '../../core/presence/presence.store';
-import { SignedInAction } from '../../shared/auth/signed-in-action';
 import { GameCardComponent } from '../../shared/game-card/game-card.component';
 import { GameScreenComponent } from '../../shared/game-screen/game-screen.component';
 import { ContentFlagLauncher } from '../../shared/moderation/content-flag-launcher.service';
+import { GoodStandingAction } from '../../shared/moderation/good-standing-action';
 import {
   injectFork,
   injectLikeStatus,
@@ -105,7 +105,7 @@ export default class GamePage {
   private readonly transloco = inject(TranslocoService);
   private readonly loader = inject(ReleaseGameService);
   private readonly presence = inject(PresenceStore);
-  private readonly signedIn = inject(SignedInAction);
+  private readonly standing = inject(GoodStandingAction);
   private readonly features = inject(FeaturesService);
   private readonly flags = inject(ContentFlagLauncher);
 
@@ -305,7 +305,7 @@ export default class GamePage {
    * have liked yet; a game they had already liked settles on the refetch the toggle triggers.
    */
   protected toggleLike(): void {
-    this.signedIn.run(() => {
+    this.standing.run(() => {
       this.toggle.mutate(this.likes.data()?.liked ?? false);
     });
   }
@@ -315,7 +315,7 @@ export default class GamePage {
   }
 
   protected remix(id: number): void {
-    this.signedIn.run(() => {
+    this.standing.run(() => {
       this.fork.mutate(id, {
         onSuccess: (project) => {
           this.toasts.show(this.transloco.translate('game.remixed'), 'success');

@@ -64,6 +64,19 @@ describe('AuthStore', () => {
     expect(store().isStaff()).toBe(staff);
   });
 
+  it('carries the suspension the profile reports, and none in good standing', async () => {
+    const suspension = { since: '2026-11-01T00:00:00.000Z', until: null };
+    answered.set('/auth/login', () => json(201, { access_token: 'tok' }));
+    answered.set('/users/profile', () => json(200, { id: 1, username: 'alice', suspension }));
+
+    await store().loginWithPassword('a@b.test', 'pw');
+    expect(store().suspension()).toEqual(suspension);
+
+    answered.set('/users/profile', () => json(200, { id: 1, username: 'alice', suspension: null }));
+    await store().refreshProfile();
+    expect(store().suspension()).toBeNull();
+  });
+
   it('reads nobody as staff before anyone signs in', () => {
     expect(store().role()).toBeNull();
     expect(store().isStaff()).toBe(false);

@@ -29,7 +29,7 @@ import {
 import { NetUiBridgeService } from '../../core/net/net-bridge.service';
 import { netPermissionsOf } from '../../core/net/net-permissions';
 import { ThemeService } from '../../core/theme/theme.service';
-import { SignedInAction } from '../auth/signed-in-action';
+import { GoodStandingAction } from '../moderation/good-standing-action';
 import { HostDialogComponent, type HostDialogData } from '../netplay/host.dialog';
 import { JoinDialogComponent } from '../netplay/join.dialog';
 import { RuntimeHostService } from './runtime-host.service';
@@ -144,7 +144,7 @@ export class GameScreenComponent {
   protected readonly host = inject(RuntimeHostService);
   protected readonly bridge = inject(NetUiBridgeService);
   private readonly dialogs = inject(DialogService);
-  private readonly signedIn = inject(SignedInAction);
+  private readonly standing = inject(GoodStandingAction);
   private readonly theme = inject(ThemeService);
   protected readonly canvasLabel = inject(TranslocoService).translate('game.screen.canvas');
   protected readonly showCpu = computed(() => this.debug());
@@ -253,7 +253,7 @@ export class GameScreenComponent {
         }
         // Hosting and joining need an account. A declined sign-in has to cancel the request, or the
         // game that made it waits on it forever.
-        this.signedIn.run(
+        this.standing.run(
           () => {
             const target = this.autoJoin();
             if (target && req.kind === 'join') {

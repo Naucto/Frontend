@@ -27,6 +27,7 @@ import { unwrap } from '../../../core/api/api-errors';
 import { AuthStore } from '../../../core/auth/auth.store';
 import { FeaturesService } from '../../../core/config/features.service';
 import { ContentFlagLauncher } from '../../../shared/moderation/content-flag-launcher.service';
+import { GoodStandingAction } from '../../../shared/moderation/good-standing-action';
 import { qk } from '../../../shared/queries/query-keys';
 import { UserAvatarComponent } from '../../../shared/user-avatar.component';
 
@@ -61,6 +62,7 @@ export class CommentsComponent {
   private readonly toasts = inject(ToastService);
   private readonly features = inject(FeaturesService);
   private readonly flags = inject(ContentFlagLauncher);
+  private readonly standing = inject(GoodStandingAction);
   protected readonly page = signal(1);
   protected readonly maxLen = MAX_LEN;
   protected draft = '';
@@ -120,14 +122,22 @@ export class CommentsComponent {
     if (!text) {
       return;
     }
-    this.posting.mutate(text);
+    this.standing.run(() => {
+      this.posting.mutate(text);
+    });
   }
 
-  protected async postReply(commentId: number): Promise<void> {
+  protected postReply(commentId: number): void {
     const text = this.replyDraft.trim();
     if (!text) {
       return;
     }
+    this.standing.run(() => {
+      void this.sendReply(commentId, text);
+    });
+  }
+
+  private async sendReply(commentId: number, text: string): Promise<void> {
     try {
       unwrap(
         await projectCommentControllerCreateReply({
