@@ -83,7 +83,7 @@ interface Bar {
   templateUrl: './voices-lane.component.html',
   // No vertical overflow here, so height this strip loses is height it cuts. It keeps its own and
   // leaves the squeeze to whatever it is stacked against.
-  host: { class: 'block shrink-0 overflow-x-hidden border-t border-line bg-panel' },
+  host: { class: 'block shrink-0 overflow-x-hidden border-t-3 border-line bg-panel' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class VoicesLaneComponent {
