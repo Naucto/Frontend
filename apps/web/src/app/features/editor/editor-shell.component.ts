@@ -23,6 +23,7 @@ import {
   IconComponent,
   LcdComponent,
   LogoComponent,
+  NoticeComponent,
   PanelRegionComponent,
   RailComponent,
   type RailItem,
@@ -91,6 +92,7 @@ const RAIL: Omit<RailItem<EditorTab>, 'label'>[] = [
     ErrorStateComponent,
     IconComponent,
     LcdComponent,
+    NoticeComponent,
     PanelRegionComponent,
     RailComponent,
     AccountMenuComponent,
@@ -296,12 +298,18 @@ export default class EditorShellComponent implements OnInit {
     });
   }
 
+  /** Whether moderation withholds the game: it still opens and saves, and cannot be published. */
+  protected readonly hidden = computed(() => !!this.session.project()?.hiddenAt);
+
   /**
    * The name and the summary as the GAME tab edits them: they live in the document long before they
    * reach the server.
    */
   protected readonly publishBlockedBy = computed<string | null>(() => {
     this.docTick();
+    if (this.hidden()) {
+      return 'editor.publishBlockedHidden';
+    }
     const game = this.session.game;
     if (computeSizeReport(game).total > PUBLISH_CEILING) {
       return 'editor.publishBlockedSize';

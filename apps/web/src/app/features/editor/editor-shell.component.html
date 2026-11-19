@@ -1,4 +1,4 @@
-<div *transloco="let t" class="grid h-dvh grid-rows-[56px_1fr] bg-page text-ink">
+<div *transloco="let t" class="grid h-dvh grid-rows-[56px_auto_1fr] bg-page text-ink">
   <!-- The mark sits in the rail's own column, so the vertical seam runs unbroken from the logo
        down past every rail item. The hub's bar gives it the same cell, which is what makes that
        safe. -->
@@ -42,6 +42,13 @@
     <nc-notifications-bell />
     <nc-account-menu />
   </header>
+
+  <!-- Always a row of its own, empty most of the time, so the workspace keeps the third row. -->
+  <div>
+    @if (hidden()) {
+      <nc-notice variant="band" tone="danger">{{ t('editor.hiddenBand') }}</nc-notice>
+    }
+  </div>
 
   @if (ui.tooNarrow()) {
     <nc-open-on-desktop [id]="String(id())" />

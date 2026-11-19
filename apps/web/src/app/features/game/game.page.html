@@ -3,9 +3,9 @@
     @if (failure(); as reason) {
       <div class="rounded-sm border border-line bg-panel">
         <nc-error-state
-          [title]="t(reason === 'notFound.body' ? 'notFound.title' : 'game.loadFailedTitle')"
+          [title]="t(failureTitle() ?? 'game.loadFailedTitle')"
           [hint]="t(reason)"
-          [retryLabel]="reason === 'notFound.body' ? undefined : t('game.retry')"
+          [retryLabel]="failureTitle() ? undefined : t('game.retry')"
           (retry)="retry()">
           <a ncButton variant="ghost" routerLink="/hub">{{ t('notFound.back') }}</a>
         </nc-error-state>

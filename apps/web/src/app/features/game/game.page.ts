@@ -56,6 +56,12 @@ import { ReleaseGameService } from './release-game.service';
 /** How many games each related shelf shows. */
 const RELATED_SHOWN = 2;
 
+/** The failures that have a title of their own. Any other is a game that would not start. */
+const FAILURE_TITLES: Record<string, string> = {
+  'notFound.body': 'notFound.title',
+  'game.unavailable': 'game.unavailableTitle',
+};
+
 /** The most played of the releases that pass, as many as a related shelf shows. */
 function topRelated(
   items: readonly ProjectExResponseDto[] | undefined,
@@ -132,6 +138,9 @@ export default class GamePage {
     if (!(this.id() > 0) || (error instanceof ApiError && error.status === 404)) {
       return 'notFound.body';
     }
+    if (error instanceof ApiError && error.code === 'PROJECT_HIDDEN') {
+      return 'game.unavailable';
+    }
     if (this.release.isError()) {
       return 'game.loadFailedRelease';
     }
@@ -143,6 +152,8 @@ export default class GamePage {
     }
     return null;
   });
+  /** A game that is gone or withheld will not come back on a second try. */
+  protected readonly failureTitle = computed(() => FAILURE_TITLES[this.failure() ?? ''] ?? null);
   protected readonly loading = computed(() => !this.failure() && !this.game());
 
   protected retry(): void {
