@@ -5,9 +5,10 @@ import { Subject } from 'rxjs';
 import { ConfirmDialogComponent } from './confirm-dialog.component';
 import { DialogService } from './dialog.service';
 
-describe('DialogService.confirmDanger', () => {
-  let closed: Subject<boolean | undefined>;
+describe('DialogService', () => {
+  let closed: Subject<boolean | string | undefined>;
   let opened: { component: unknown; data: unknown }[];
+  let backdrop: unknown;
 
   beforeEach(() => {
     closed = new Subject();
@@ -17,8 +18,9 @@ describe('DialogService.confirmDanger', () => {
         {
           provide: Dialog,
           useValue: {
-            open: (component: unknown, config: { data: unknown }) => {
+            open: (component: unknown, config: { data: unknown; backdropClass: unknown }) => {
               opened.push({ component, data: config.data });
+              backdrop = config.backdropClass;
               return { closed };
             },
           },
@@ -59,5 +61,46 @@ describe('DialogService.confirmDanger', () => {
     const answer = ask();
     closed.next(undefined);
     await expect(answer).resolves.toBe(false);
+  });
+
+  /** A field of pixels that appears at once is the flicker reduced motion asks to be spared. */
+  it('lays the dither scrim, and a flat veil in its place where motion is reduced', () => {
+    void ask();
+    expect(backdrop).toEqual(
+      expect.arrayContaining([
+        'nc-dialog-backdrop',
+        'motion-reduce:[mask-image:none]',
+        'motion-reduce:bg-scrim/50',
+        'in-data-reduce-motion:[mask-image:none]',
+        'in-data-reduce-motion:bg-scrim/50',
+      ]),
+    );
+  });
+
+  it('asks without the danger mark through confirm', async () => {
+    const answer = TestBed.inject(DialogService).confirm({
+      title: 'Publish?',
+      message: 'It goes on the shelf.',
+    });
+    expect(opened[0]?.data).toEqual({ title: 'Publish?', message: 'It goes on the shelf.' });
+    closed.next(true);
+    await expect(answer).resolves.toBe(true);
+  });
+
+  it('resolves with the password that was typed, or null on a dismissal', async () => {
+    const service = TestBed.inject(DialogService);
+    const texts = { title: 'Delete your account?', message: 'For good.', danger: true };
+
+    const typed = service.confirmWithPassword(texts, 'Password');
+    expect(opened[0]?.data).toEqual({
+      ...texts,
+      friction: { kind: 'password', label: 'Password' },
+    });
+    closed.next('hunter2');
+    await expect(typed).resolves.toBe('hunter2');
+
+    const dismissed = service.confirmWithPassword(texts, 'Password');
+    closed.next(false);
+    await expect(dismissed).resolves.toBeNull();
   });
 });

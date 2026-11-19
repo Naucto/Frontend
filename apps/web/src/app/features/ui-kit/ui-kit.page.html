@@ -536,39 +536,101 @@
     </div>
   </section>
 
-  <section id="navigation" class="grid scroll-mt-3 gap-2.5">
-    <h2 class="font-display text-display text-ink">Navigation</h2>
-    <div class="grid grid-cols-[48px_1fr] gap-4">
-      <nc-rail [items]="rail" value="code" class="h-[320px]" />
-      <nc-panel title="Tabs and panels">
-        <div class="grid gap-2">
-          <nc-tabs [tabs]="tabs" value="account" label="Settings" />
-          <nc-tabs [tabs]="consoleTabs" value="console" label="Console" variant="console" />
-          <nc-section title="Panel column">
-            <!-- A region holding one column and the second that unfolds beside it. Its own height,
-                 because a region takes the one it is given and there is no editor here to give it. -->
-            <div class="flat-sm h-[168px]">
-              <nc-panel-region
-                [secondaryOpen]="regionOpen()"
-                [viewportWidth]="1920"
-                [splitAt]="1602"
-                [primaryWidth]="140"
-                [secondaryWidth]="110">
-                <nc-panel-column secondary edge="none" title="Reference">
-                  <p class="p-1.5 text-meta text-ink-3">Unfolded beside.</p>
-                </nc-panel-column>
-                <nc-panel-column primary title="Console">
-                  <nc-edge-handle
-                    icon="prev"
-                    label="Fold the column away"
-                    (pressed)="regionOpen.set(!regionOpen())" />
-                  <p class="p-1.5 text-meta text-ink-3">The grip folds the other one out.</p>
-                </nc-panel-column>
-              </nc-panel-region>
-            </div>
-          </nc-section>
+  <section id="navigation" class="grid scroll-mt-[80px] gap-2.5">
+    <div class="flex items-baseline gap-2">
+      <h2 class="font-display text-display text-ink">Navigation</h2>
+      <span class="text-meta text-ink-3">top-bar links · page tabs · editor rail · pager</span>
+    </div>
+    <div class="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] items-start gap-2.5">
+      <div class="flat-lg bevel-fill-panel grid content-start gap-[14px] px-2.5 py-[18px]">
+        <div class="label">Top-bar links</div>
+        <nav class="flex gap-[28px] text-body tracking-button uppercase" aria-label="Top bar">
+          @for (link of topLinks; track link) {
+            <a
+              href="/ui-kit#navigation"
+              [attr.aria-current]="$first ? 'page' : null"
+              class="text-ink-3 hover:text-active-ink aria-[current]:text-active-ink">
+              {{ link }}
+            </a>
+          }
+        </nav>
+      </div>
+      <div class="flat-lg bevel-fill-panel grid content-start gap-[14px] px-2.5 py-[18px]">
+        <div class="label">Page tabs</div>
+        <div class="min-w-0">
+          <nc-tabs
+            [tabs]="tabs"
+            [value]="pageTab()"
+            (valueChange)="$event && pageTab.set($event)"
+            label="Settings" />
+          <div
+            role="tabpanel"
+            class="flat-sm bevel-edge-line-strong bevel-fill-raised -mt-[3px] grid gap-[6px] p-2">
+            <div class="text-body text-ink">{{ tabCopy[pageTab()].title }}</div>
+            <div class="text-meta text-ink-3">{{ tabCopy[pageTab()].body }}</div>
+          </div>
         </div>
-      </nc-panel>
+      </div>
+      <div class="flat-lg bevel-fill-panel grid content-start gap-[14px] px-2.5 py-[18px]">
+        <div class="label">Pager</div>
+        <nc-pager class="justify-self-start" [count]="5" [(value)]="page" [autoplay]="5000" />
+      </div>
+      <div
+        class="flat-lg bevel-fill-panel row-span-2 grid content-start gap-[14px] px-2.5 py-[18px]">
+        <div class="label">Editor rail</div>
+        <div class="flex min-h-[300px] items-start">
+          <nc-rail
+            class="w-[90px] shrink-0"
+            [items]="rail"
+            [value]="railTab()"
+            (valueChange)="$event && railTab.set($event)"
+            label="Editor" />
+          <div
+            role="tabpanel"
+            class="flat-sm bevel-edge-line-strong bevel-fill-raised -ml-[3px] grid min-w-0 flex-1 content-start gap-[6px] self-stretch p-2">
+            <div class="text-body text-ink">{{ railCopy[railTab()].title }}</div>
+            <div class="text-meta text-ink-3">{{ railCopy[railTab()].body }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="flat-lg bevel-fill-panel grid content-start gap-[14px] px-2.5 py-[18px]">
+        <div class="label">Strips · console, bar, small</div>
+        <div class="grid min-w-0 gap-[14px]">
+          <nc-tabs [tabs]="consoleTabs" [(value)]="consoleTab" label="Console" variant="console" />
+          <nc-tabs [tabs]="shelves" [(value)]="shelf" label="Files" variant="bar" />
+          <nc-tabs [tabs]="shelves" [(value)]="shelf" label="Sheets" variant="small" editable />
+        </div>
+      </div>
+      <div class="flat-lg bevel-fill-panel grid content-start gap-[14px] px-2.5 py-[18px]">
+        <div class="label">Panel column · section · setting row</div>
+        <!-- A region holding one column and the second that unfolds beside it. Its own height,
+             because a region takes the one it is given and there is no editor here to give it. -->
+        <div class="flat-sm h-[168px]">
+          <nc-panel-region
+            [secondaryOpen]="regionOpen()"
+            [viewportWidth]="1920"
+            [splitAt]="1602"
+            [primaryWidth]="140"
+            [secondaryWidth]="110">
+            <nc-panel-column secondary edge="none" title="Reference">
+              <p class="p-1.5 text-meta text-ink-3">Unfolded beside.</p>
+            </nc-panel-column>
+            <nc-panel-column primary title="Console">
+              <nc-edge-handle
+                icon="prev"
+                label="Fold the column away"
+                (pressed)="regionOpen.set(!regionOpen())" />
+              <p class="p-1.5 text-meta text-ink-3">The grip folds the other one out.</p>
+            </nc-panel-column>
+          </nc-panel-region>
+        </div>
+        <nc-section title="Section">
+          <nc-help-dot actions title="Section" text="A heading over a group of rows." />
+          <nc-setting-row title="Auto-run" hint="Run the game on every save.">
+            <nc-toggle [(checked)]="autoRun" label="Auto-run" />
+          </nc-setting-row>
+        </nc-section>
+      </div>
     </div>
   </section>
 
@@ -658,35 +720,118 @@
     </div>
   </section>
 
-  <section id="overlays" class="grid scroll-mt-3 gap-2.5">
-    <h2 class="font-display text-display text-ink">Overlays</h2>
-    <nc-panel title="Tooltip, popover, dialog">
-      <div class="flex flex-wrap items-center gap-2">
-        <button ncButton variant="secondary" ncTooltip="Kick this player from the session">
-          Hover me
-        </button>
-        <button ncButton variant="secondary" [ncPopover]="versions">
-          Platformer v3
-          <nc-icon name="chevron-down" [size]="12" />
-        </button>
-        <ng-template #versions>
-          <nc-popover-panel title="Versions">
-            <ul class="p-2 text-body text-ink">
-              <li class="flex justify-between">
-                <span>v3 Cave update</span>
-                <nc-chip tone="gold">Current</nc-chip>
-              </li>
-              <li class="mt-1 text-ink-3">Autosave · 8 minutes ago · you</li>
-            </ul>
-          </nc-popover-panel>
-        </ng-template>
-        <button ncButton variant="danger" (click)="confirm()">End session</button>
-        <nc-help-dot
-          title="Sprite flags"
-          text="Eight bits per sprite. The engine ignores them; your game reads them with `map.flag(index, bit)`.
+  <section id="overlays" class="grid scroll-mt-[80px] gap-2.5">
+    <div class="flex items-baseline gap-2">
+      <h2 class="font-display text-display text-ink">Overlays</h2>
+      <span class="text-meta text-ink-3">
+        tooltip · popover · menu item · dialog — all lg frames, dialog is raised over a dither scrim
+      </span>
+    </div>
+    <div class="flex flex-wrap items-stretch gap-x-2.5 gap-y-[28px]">
+      <div class="grid min-w-0 flex-[1_1_280px] grid-rows-[auto_1fr_auto] gap-[10px]">
+        <span class="label">Tooltip · popover</span>
+        <div class="flat-lg bevel-fill-panel grid min-h-[280px] content-start gap-[30px] p-[22px]">
+          <div class="flex flex-wrap items-center gap-2 justify-self-start">
+            <button ncButton size="lg" ncTooltip="Save project">Simple</button>
+            <button
+              ncButton
+              size="lg"
+              ncTooltip="Your game becomes public and playable by anyone with the link, under `hightide`."
+              tooltipTitle="Publish to the shelf"
+              [tooltipMeta]="tooltipMeta">
+              Advanced
+            </button>
+            <button
+              ncButton
+              size="lg"
+              [pressed]="versionsOpen()"
+              [ncPopover]="versions"
+              [(popoverOpen)]="versionsOpen">
+              Platformer v3
+              <nc-icon name="chevron-down" [size]="12" />
+            </button>
+            <ng-template #versions>
+              <nc-popover-panel title="Versions">
+                <ul class="p-2 text-body text-ink">
+                  <li class="flex justify-between">
+                    <span>v3 Cave update</span>
+                    <nc-chip tone="gold">Current</nc-chip>
+                  </li>
+                  <li class="mt-1 text-ink-3">Autosave · 8 minutes ago · you</li>
+                </ul>
+              </nc-popover-panel>
+            </ng-template>
+            <nc-help-dot
+              title="Sprite flags"
+              text="Eight bits per sprite. The engine ignores them; your game reads them with `map.flag(index, bit)`.
 
 What each bit means is yours to decide." />
+          </div>
+        </div>
+        <span class="text-meta text-ink-3">Hover for 0.75 s, reveals in .18 s.</span>
       </div>
-    </nc-panel>
+      <div class="grid min-w-0 flex-[1.5_1_420px] grid-rows-[auto_1fr_auto] gap-[10px]">
+        <span class="label">Dialog</span>
+        <div
+          class="flat-lg bevel-fill-panel relative grid min-h-[300px] place-items-center px-3 py-5">
+          <span
+            aria-hidden="true"
+            class="absolute inset-0 bg-scrim [mask-image:var(--nc-dither-50)] [mask-size:12px_12px]"></span>
+          <!-- The chrome alone, set on the page: nothing here holds a reference to close. -->
+          <nc-dialog-shell
+            class="relative w-full max-w-[400px]"
+            title="Kick everyone out?"
+            kicker="End session"
+            tone="danger"
+            lead="Three players are still in. They'll see the lobby close and lose unsaved progress.">
+            <ng-container footer>
+              <button ncButton variant="ghost" size="lg">Keep going</button>
+              <button ncButton variant="run" size="lg">End session</button>
+            </ng-container>
+          </nc-dialog-shell>
+        </div>
+        <div class="flex flex-wrap items-center gap-1">
+          <span class="text-meta text-ink-3">
+            Raised over a dither scrim: 4 × 12.5% layers, 45 ms steps. Opened for real:
+          </span>
+          @for (level of frictions; track level) {
+            <button ncButton size="sm" (click)="ask(level)">{{ level }}</button>
+          }
+        </div>
+      </div>
+      <div class="grid max-w-[460px] min-w-0 flex-[1_1_300px] grid-rows-[auto_1fr_auto] gap-[10px]">
+        <span class="label">Menu item</span>
+        <div class="flat-lg bevel-fill-panel grid content-start gap-[3px] p-[6px]">
+          <button type="button" ncOption shape="menu">
+            <nc-icon name="sliders" />
+            Settings
+          </button>
+          <button type="button" ncOption shape="menu">
+            <nc-icon name="logout" />
+            Sign out
+          </button>
+          <span class="h-[9px]"></span>
+          @for (note of notifications; track note.title) {
+            <button type="button" ncOption [wash]="note.unread ? 'sky' : undefined">
+              <span
+                aria-hidden="true"
+                class="flat-sm bevel-edge-line-strong bevel-fill-gold inline-flex size-[30px] shrink-0 items-center justify-center font-mono text-small text-on-accent uppercase">
+                {{ note.title[0] }}
+              </span>
+              <span class="grid min-w-0 flex-1 gap-[2px]">
+                <span
+                  class="text-small leading-[1.35]"
+                  [class]="note.unread ? 'text-sky-ink' : 'text-ink'">
+                  {{ note.title }}
+                </span>
+                <span class="text-meta text-ink-2">{{ note.body }}</span>
+                <span class="text-label tracking-wide text-ink-4 uppercase">{{ note.when }}</span>
+              </span>
+            </button>
+          }
+        </div>
+        <span class="text-meta text-ink-3">Ghost rows; unread adds a dither wash.</span>
+      </div>
+    </div>
   </section>
 </main>

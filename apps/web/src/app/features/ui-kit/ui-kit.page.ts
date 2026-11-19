@@ -9,8 +9,8 @@ import {
   ButtonDirective,
   CheckboxComponent,
   ChipComponent,
-  ConfirmDialogComponent,
   DialogService,
+  DialogShellComponent,
   EdgeHandleComponent,
   EmptyStateComponent,
   ErrorStateComponent,
@@ -27,6 +27,8 @@ import {
   NoticeComponent,
   NumberFieldComponent,
   OnlineDotComponent,
+  OptionDirective,
+  PagerComponent,
   PanelColumnComponent,
   PanelComponent,
   PanelRegionComponent,
@@ -110,6 +112,9 @@ import { ACCENT_SLOTS } from '../editor/accent-slots';
     ReadoutComponent,
     PopoverDirective,
     PopoverPanelComponent,
+    DialogShellComponent,
+    OptionDirective,
+    PagerComponent,
     SearchComponent,
     StatComponent,
     TagInputComponent,
@@ -159,7 +164,6 @@ export default class UiKitPage {
   protected readonly regexp = signal(false);
   protected readonly visibilityValue = signal('draft');
   protected readonly monetizationValue = signal('none');
-  protected readonly shelf = signal('games');
   protected readonly bpm = signal(124);
   protected readonly red = signal(255);
   protected readonly paletteSlots = this.palette.map((_, slot) => slot);
@@ -268,15 +272,52 @@ export default class UiKitPage {
     { value: 'editor', label: 'Editor' },
     { value: 'controls', label: 'Controls' },
     { value: 'privacy', label: 'Privacy', badge: 2 },
-  ];
+  ] as const;
   protected readonly rail = [
-    { value: 'game', label: 'Game', icon: 'save' },
-    { value: 'code', label: 'Code', icon: 'code' },
     { value: 'art', label: 'Art', icon: 'image' },
+    { value: 'code', label: 'Code', icon: 'code' },
     { value: 'map', label: 'Map', icon: 'map' },
     { value: 'sound', label: 'Sound', icon: 'music' },
-    { value: 'net', label: 'Net', icon: 'users' },
+    { value: 'game', label: 'Game', icon: 'gamepad' },
   ] as const;
+  protected readonly railTab = signal<'art' | 'code' | 'map' | 'sound' | 'game'>('art');
+  protected readonly railCopy = {
+    art: { title: 'Sprites · 8×8', body: 'Draw tiles and characters on the shared sheet.' },
+    code: { title: 'main.lua', body: 'Lua, with the engine reference one key away.' },
+    map: { title: 'Level 1 · 32×18', body: 'Lay the sheet out into rooms.' },
+    sound: { title: '4 instruments', body: 'Waves, envelopes and the piano roll.' },
+    game: { title: 'Hightide · v3', body: 'Title, cover, controls and publishing.' },
+  };
+  protected readonly pageTab = signal<'account' | 'editor' | 'controls' | 'privacy'>('account');
+  protected readonly tabCopy = {
+    account: {
+      title: 'Signed in as Louis',
+      body: 'Your handle shows on every game you publish.',
+    },
+    editor: { title: 'Indent with 2 spaces', body: 'Applies to every file you open.' },
+    controls: { title: 'Gamepad 1 · Xbox layout', body: 'Rebind any action from here.' },
+    privacy: { title: 'Two things to review', body: 'What is collected, and what you can erase.' },
+  };
+  protected readonly consoleTab = signal<string | undefined>('console');
+  protected readonly shelf = signal<string | undefined>('games');
+  protected readonly page = signal(0);
+  protected readonly topLinks = ['Hub', 'My games', 'Friends', 'Learn'];
+  protected readonly tooltipMeta = ['Visibility · public', 'Last build · 2 min ago'];
+  protected readonly frictions = ['Plain', 'Password', 'Type the name', 'Hold'] as const;
+  protected readonly notifications = [
+    {
+      title: 'theo joined Hightide',
+      body: 'Editing main.lua with you right now.',
+      when: '2 min ago',
+      unread: true,
+    },
+    {
+      title: 'Starline is over 1 MB',
+      body: 'Publishing is blocked until it shrinks.',
+      when: 'Yesterday',
+      unread: false,
+    },
+  ];
   protected readonly size = [
     { label: 'Sprites 612 KB', value: 612 * 1024, color: 'bg-sky' },
     { label: 'Music 214 KB', value: 214 * 1024, color: 'bg-hot' },
@@ -348,22 +389,64 @@ export default class UiKitPage {
     this.document.getElementById(id)?.scrollIntoView();
   }
 
-  protected confirm(): void {
-    this.dialogs
-      .open<ConfirmDialogComponent, unknown, boolean>(ConfirmDialogComponent, {
-        data: {
-          title: 'End session',
-          message: [
-            'Everyone is disconnected and the slots are freed.',
-            'The game keeps its state.',
-          ],
-          confirmLabel: 'End session',
-          danger: true,
-        },
-      })
-      .closed.subscribe((ok) => {
-        this.toasts.show(ok ? 'Session ended' : 'Kept the session', ok ? 'success' : 'info');
-      });
+  /** The four levels of friction, matched to how much there is to lose. */
+  protected async ask(level: 'Plain' | 'Password' | 'Type the name' | 'Hold'): Promise<void> {
+    let done: boolean;
+    switch (level) {
+      case 'Plain':
+        done = await this.dialogs.confirmDanger({
+          kicker: 'Unsaved changes',
+          title: 'Discard your changes?',
+          message:
+            'Your last 4 edits to main.lua have not synced. Discarding drops them for everyone in the session.',
+          cancelLabel: 'Keep editing',
+          confirmLabel: 'Discard',
+        });
+        break;
+      case 'Password': {
+        const password = await this.dialogs.confirmWithPassword(
+          {
+            kicker: 'Delete account',
+            title: 'Delete your account?',
+            message: [
+              'Your games, sprites and comments are removed for good. Remixes other people made stay up, credited to a deleted user.',
+              'This cannot be undone.',
+            ],
+            confirmLabel: 'Delete',
+            danger: true,
+          },
+          'Password',
+        );
+        done = password !== null;
+        break;
+      }
+      case 'Type the name':
+        done = await this.dialogs.confirmDanger({
+          kicker: 'Delete game',
+          title: 'Delete Hightide?',
+          message:
+            'All published versions and its 318 likes go with it. Forks stay — they belong to their makers.',
+          confirmLabel: 'Delete game',
+          friction: { kind: 'name', name: 'Hightide', label: 'Type Hightide to confirm' },
+        });
+        break;
+      case 'Hold':
+        done = await this.dialogs.confirmDanger({
+          kicker: 'End session',
+          title: 'Kick everyone out?',
+          message:
+            'Three players are still in. They will see the lobby close and lose unsaved progress.',
+          cancelLabel: 'Keep going',
+          confirmLabel: 'Hold to end',
+          friction: {
+            kind: 'hold',
+            holdingLabel: 'Keep holding…',
+            hint: 'Hold Space or Enter for 1.2 seconds',
+          },
+        });
+        break;
+    }
+    this.toasts.show(done ? 'Done' : 'Cancelled — nothing changed', done ? 'success' : 'info');
   }
 
   protected toast(): void {
