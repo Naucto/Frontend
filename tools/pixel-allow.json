@@ -244,13 +244,6 @@
       "rounded": 2,
       "border": 1
     },
-    "packages/ui/src/components/bit-flags.component.html": {
-      "rounded": 1,
-      "border": 1
-    },
-    "packages/ui/src/components/checkbox.component.ts": {
-      "border": 1
-    },
     "packages/ui/src/components/chip.component.ts": {
       "rounded": 1,
       "border": 1
@@ -309,10 +302,6 @@
     "packages/ui/src/components/rail.component.ts": {
       "border": 1
     },
-    "packages/ui/src/components/rating.component.html": {
-      "rounded": 2,
-      "border": 2
-    },
     "packages/ui/src/components/readout.component.ts": {
       "rounded": 1,
       "border": 1
@@ -320,25 +309,11 @@
     "packages/ui/src/components/section.component.ts": {
       "border": 2
     },
-    "packages/ui/src/components/segmented.component.ts": {
-      "rounded": 3,
-      "border": 2
-    },
     "packages/ui/src/components/setting-row.component.ts": {
       "border": 1
     },
     "packages/ui/src/components/skeleton.component.ts": {
       "rounded": 5
-    },
-    "packages/ui/src/components/slider.component.html": {
-      "rounded": 1
-    },
-    "packages/ui/src/components/slot-grid.component.html": {
-      "rounded": 1,
-      "border": 1
-    },
-    "packages/ui/src/components/stepper.component.html": {
-      "rounded": 1
     },
     "packages/ui/src/components/suggest-panel.component.html": {
       "border": 1
@@ -350,10 +325,6 @@
     "packages/ui/src/components/suggest-row.component.ts": {
       "border": 1
     },
-    "packages/ui/src/components/swatch-picker.component.html": {
-      "rounded": 2,
-      "border": 3
-    },
     "packages/ui/src/components/tabs.component.html": {
       "rounded": 2
     },
@@ -364,27 +335,11 @@
       "rounded": 1,
       "border": 2
     },
-    "packages/ui/src/components/toggle-button.component.html": {
-      "rounded": 1,
-      "border": 1
-    },
-    "packages/ui/src/components/toggle.component.ts": {
-      "rounded": 1,
-      "border": 1
-    },
-    "packages/ui/src/components/tool-group.component.html": {
-      "rounded": 2,
-      "border": 1
-    },
     "packages/ui/src/components/tooltip-panel.component.html": {
       "rounded": 1,
       "border": 1
     },
     "packages/ui/src/components/tooltip.directive.ts": {
-      "rounded": 1,
-      "border": 1
-    },
-    "packages/ui/src/components/transport.component.html": {
       "rounded": 1,
       "border": 1
     }
