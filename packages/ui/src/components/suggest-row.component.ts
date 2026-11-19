@@ -1,24 +1,23 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+
+import { OptionDirective } from './option.directive';
 
 /**
- * One offered thing in a suggestion list.
- *
- * The row the keyboard is on is filled and wears a bar down its left edge; the bar eats two of the
- * fourteen pixels of padding rather than adding to them, so the words do not shift as the
- * selection moves.
+ * One offered thing in a suggestion list: a list option, lit where the keyboard is. The frame is
+ * there from the start and only its colour arrives, so the words do not shift as the selection
+ * moves.
  */
 @Component({
   selector: 'nc-suggest-row',
   template: '<ng-content />',
+  hostDirectives: [{ directive: OptionDirective, inputs: ['selected'] }],
   host: {
     role: 'option',
-    '[attr.aria-selected]': 'selected()',
-    '[class]':
-      '"flex w-full cursor-pointer items-center gap-2 py-[7px] pr-[14px] text-left active:bg-inset " + ' +
-      '(selected() ? "border-l-2 border-gold bg-raised pl-[12px]" : "pl-[14px]")',
+    class: 'items-center',
+    '[attr.aria-selected]': 'option.selected()',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SuggestRowComponent {
-  readonly selected = input(false);
+  protected readonly option = inject(OptionDirective);
 }

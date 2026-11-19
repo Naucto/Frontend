@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
-/** Bordered panel with an optional uppercase header row and header actions (slot `[actions]`). */
+/** A large flat frame with an optional uppercase header row and header actions (slot `[actions]`). */
 @Component({
   selector: 'nc-panel',
   templateUrl: './panel.component.html',
-  host: { class: 'block rounded-md border border-line bg-panel' },
+  host: { class: 'flat-lg bevel-fill-panel block' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PanelComponent {

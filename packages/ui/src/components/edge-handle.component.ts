@@ -13,7 +13,7 @@ import { IconComponent } from './icon.component';
   selector: 'nc-edge-handle',
   imports: [IconComponent],
   templateUrl: './edge-handle.component.html',
-  host: { class: 'absolute top-1/2 -left-1 z-20 -translate-y-1/2' },
+  host: { class: 'absolute top-1/2 -left-[9px] z-20 -translate-y-1/2' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EdgeHandleComponent {
