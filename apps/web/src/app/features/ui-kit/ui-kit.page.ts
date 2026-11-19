@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { inject } from '@angular/core';
 import { BUBBLEGUM_16 } from '@naucto/engine';
@@ -20,6 +21,7 @@ import {
   KeycapComponent,
   LabelComponent,
   LcdComponent,
+  LogoComponent,
   MeterComponent,
   NoticeComponent,
   NumberFieldComponent,
@@ -78,6 +80,7 @@ import { ACCENT_SLOTS } from '../editor/accent-slots';
     LabelComponent,
     NoticeComponent,
     LcdComponent,
+    LogoComponent,
     MeterComponent,
     OnlineDotComponent,
     PanelComponent,
@@ -115,6 +118,7 @@ export default class UiKitPage {
   protected readonly regionOpen = signal(true);
   private readonly dialogs = inject(DialogService);
   private readonly toasts = inject(ToastService);
+  private readonly document = inject(DOCUMENT);
   protected readonly themeService = inject(ThemeService);
   protected readonly providers = inject(OAUTH_PROVIDERS);
   protected readonly autoRun = signal(true);
@@ -304,6 +308,12 @@ export default class UiKitPage {
     'arrow-right',
     'more-horizontal',
   ] as const;
+
+  /** The router restores the scroll position on every navigation and follows no fragment. */
+  protected jump(event: Event, id: string): void {
+    event.preventDefault();
+    this.document.getElementById(id)?.scrollIntoView();
+  }
 
   protected confirm(): void {
     this.dialogs

@@ -1,9 +1,15 @@
 <!-- No toast host here: the root component mounts the only one. -->
 <header class="flex h-[56px] items-center gap-3 border-b-3 border-line-strong bg-panel px-3">
+  <a href="/ui-kit" aria-label="Naucto" class="flex-none">
+    <nc-logo variant="wordmark" link [size]="21" />
+  </a>
   <h1 class="font-display text-title text-ink">Naucto UI kit</h1>
   <nav class="flex gap-[22px] overflow-auto text-meta tracking-tag whitespace-nowrap uppercase">
     @for (section of sections; track section.id) {
-      <a class="text-ink-3 hover:text-active-ink" [href]="'/ui-kit#' + section.id">
+      <a
+        class="text-ink-3 hover:text-active-ink"
+        [href]="'/ui-kit#' + section.id"
+        (click)="jump($event, section.id)">
         {{ section.label }}
       </a>
     }
@@ -25,6 +31,11 @@
       one pixel. If you can type in it, it is a well. Everything else is a flat frame. Corners are
       stepped, never round, and one pixel is 3px.
     </p>
+    <div class="flex items-center gap-3">
+      <nc-logo />
+      <nc-logo variant="wordmark" [size]="24" />
+      <nc-logo variant="wordmark" [size]="18" />
+    </div>
   </div>
 
   <section id="foundations" class="grid scroll-mt-3 gap-3">
