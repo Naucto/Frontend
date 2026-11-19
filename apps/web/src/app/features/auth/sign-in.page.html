@@ -1,9 +1,9 @@
 <section
   *transloco="let t"
-  class="flat-lg mx-auto mt-6 w-full max-w-[436px] bevel-fill-panel px-[22px] pt-[22px] pb-[20px]">
+  class="flat-lg bevel-fill-panel mx-auto mt-6 w-full max-w-[360px] px-2.5 pt-3 pb-2.5">
   <nc-logo variant="wordmark" [size]="24" />
-  <h1 class="mt-[18px] font-display text-title text-ink">{{ t('auth.insertGame') }}</h1>
-  <p class="mt-[6px] mb-[22px] text-body text-ink-3">{{ t('auth.tagline') }}</p>
+  <h1 class="mt-2 font-display text-display text-ink">{{ t('auth.insertGame') }}</h1>
+  <p class="mt-1 mb-2.5 text-small text-ink-3">{{ t('auth.tagline') }}</p>
 
   <nc-sign-in-form [next]="safeNext()" (succeeded)="go()" />
 </section>

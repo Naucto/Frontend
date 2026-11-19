@@ -10,13 +10,13 @@
       [value]="query()"
       (valueChange)="query.set($event)" />
     @if (hits().length) {
-      <div class="flat-sm bevel-fill-panel mb-2 p-[3px]" role="listbox">
+      <div class="flat-sm bevel-fill-raised mb-2" role="listbox">
         @for (hit of hits(); track hit.slug + hit.title) {
           <button
             type="button"
             role="option"
             aria-selected="false"
-            class="raised-sm bevel-bare hover:bevel-lit hover:bevel-fill-raised active:bevel-down block w-full cursor-pointer px-1.5 py-0.5 text-left"
+            class="block w-full border-b-3 border-line px-1.5 py-1 text-left last:border-b-0 hover:bg-inset"
             (click)="openHit(hit)">
             <div
               class="truncate text-meta"
@@ -45,7 +45,6 @@
           <button
             ncButton
             variant="primary"
-            size="sm"
             (click)="copyToNewGame(page)"
             [disabled]="!auth.isAuthenticated()">
             <nc-icon name="file-plus" />
@@ -57,16 +56,16 @@
       @if (neighbours(); as neighbours) {
         <nav class="mt-4 flex justify-between gap-2 border-t-3 border-line pt-2">
           @if (neighbours.prev; as prev) {
-            <button ncButton variant="secondary" size="sm" (click)="go(prev.slug)">
+            <button ncButton variant="secondary" class="min-w-0" (click)="go(prev.slug)">
               <nc-icon name="chevron-left" />
-              {{ prev.title }}
+              <span class="truncate">{{ prev.title }}</span>
             </button>
           } @else {
             <span></span>
           }
           @if (neighbours.next; as next) {
-            <button ncButton variant="secondary" size="sm" (click)="go(next.slug)">
-              {{ next.title }}
+            <button ncButton variant="secondary" class="min-w-0" (click)="go(next.slug)">
+              <span class="truncate">{{ next.title }}</span>
               <nc-icon name="chevron-right" />
             </button>
           }

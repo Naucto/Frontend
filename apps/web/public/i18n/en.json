@@ -940,6 +940,8 @@
     "prevStep": "Previous step",
     "nextStep": "Next step",
     "copyToNewGame": "Copy to new game",
+    "copyCode": "Copy code",
+    "codeCopied": "Copied",
     "copyFromEditorTitle": "Copy to a new game?",
     "copyFromEditorMessage": "This closes the game you are editing, once it has saved, and opens the copy as a game of your own.",
     "copyFromEditorConfirm": "Copy",

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { Router } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
-import { PanelComponent, TabsComponent } from '@naucto/ui';
+import { PanelComponent, SegmentedComponent } from '@naucto/ui';
 
 import { FeaturesService } from '../../core/config/features.service';
 import { AccountSettingsComponent } from './account-settings.component';
@@ -18,7 +18,7 @@ const TABS: Tab[] = ['account', 'editor', 'controls', 'privacy', 'standing'];
   imports: [
     TranslocoDirective,
     PanelComponent,
-    TabsComponent,
+    SegmentedComponent,
     AccountSettingsComponent,
     ControlsSettingsComponent,
     EditorSettingsComponent,

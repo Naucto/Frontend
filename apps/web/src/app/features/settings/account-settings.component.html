@@ -1,20 +1,20 @@
 <div *transloco="let t">
   <nc-setting-row [title]="t('settings.displayName')" [hint]="t('settings.displayNameHint')">
-    <input
-      ncInput
-      class="w-[200px]"
-      [value]="nickname()"
-      maxlength="32"
-      [attr.aria-label]="t('settings.displayName')"
-      [disabled]="saving()"
-      (change)="save($event)" />
+    <span class="block w-[224px] max-w-full">
+      <input
+        ncInput
+        [value]="nickname()"
+        maxlength="32"
+        [attr.aria-label]="t('settings.displayName')"
+        [disabled]="saving()"
+        (change)="save($event)" />
+    </span>
   </nc-setting-row>
   <nc-setting-row [title]="t('settings.handle')" [hint]="t('settings.handleHint')">
-    <span class="flex items-center gap-1">
+    <span class="flex w-[224px] max-w-full items-center gap-1">
       <span class="font-mono text-ui text-ink-4">&#64;</span>
       <input
         ncInput
-        class="w-[184px]"
         [value]="handle()"
         maxlength="24"
         spellcheck="false"
@@ -31,16 +31,11 @@
       <nc-segmented
         [options]="policies()"
         [value]="me.data()?.sessionJoinPolicy ?? 'ANYONE'"
-        (valueChange)="setPolicy($event)"
-        size="sm" />
+        (valueChange)="setPolicy($event)" />
     </nc-setting-row>
   }
   <nc-setting-row [title]="t('settings.theme')" [hint]="t('settings.themeHint')">
-    <nc-segmented
-      [options]="themes()"
-      [value]="theme.theme()"
-      (valueChange)="setTheme($event)"
-      size="sm" />
+    <nc-segmented [options]="themes()" [value]="theme.theme()" (valueChange)="setTheme($event)" />
   </nc-setting-row>
   <nc-setting-row [title]="t('settings.reduceMotion')" [hint]="t('settings.reduceMotionHint')">
     <nc-toggle
