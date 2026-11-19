@@ -1,19 +1,26 @@
-import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
+import {
+  booleanAttribute,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  model,
+  output,
+} from '@angular/core';
 
-/** Accent of the checked state; gold is the neutral "on", jade and sky carry meaning. */
+import { CELL, CELL_ON } from './selection-styles';
+
+/** Fill of the checked state; gold is the neutral "on", jade and sky carry meaning. */
 export type ToggleAccent = 'gold' | 'jade' | 'sky';
 
-/**
- * The checked state is a *fill*, not just a coloured outline, so an active overlay reads at a
- * glance.
- */
+/** The neutral "on" is the primary fill, which is gold only in the dark theme. */
 const ACTIVE: Record<ToggleAccent, string> = {
-  gold: 'aria-checked:border-line-strong aria-checked:bg-line aria-checked:text-gold-ink',
-  jade: 'aria-checked:border-jade aria-checked:bg-[color-mix(in_srgb,var(--color-jade)_12%,var(--color-page))] aria-checked:text-jade-ink',
-  sky: 'aria-checked:border-sky aria-checked:bg-[color-mix(in_srgb,var(--color-sky)_12%,var(--color-page))] aria-checked:text-sky-ink',
+  gold: CELL_ON.primary,
+  jade: CELL_ON.jade,
+  sky: CELL_ON.sky,
 };
 
-/** Bordered on/off button with icon + label (GRID, ONION, FLAGS, LOOP). */
+/** Raised on/off button with icon + label (GRID, ONION, FLAGS, LOOP): latched, it stays down. */
 @Component({
   selector: 'nc-toggle-button',
   templateUrl: './toggle-button.component.html',
@@ -22,10 +29,10 @@ const ACTIVE: Record<ToggleAccent, string> = {
 })
 export class ToggleButtonComponent {
   readonly checked = model(false);
-  readonly disabled = input(false);
+  readonly disabled = input(false, { transform: booleanAttribute });
   readonly label = input<string>();
   readonly accent = input<ToggleAccent>('gold');
-  /** `strip` stands as tall as a framed group on the same line, like a button of that size. */
+  /** `strip` stands as tall as a button of the strip it sits in. */
   readonly size = input<'control' | 'strip'>('control');
 
   /**
@@ -42,9 +49,11 @@ export class ToggleButtonComponent {
   /** Pressed. For a button that is not controlled, `checkedChange` already says as much. */
   readonly activated = output();
 
-  protected readonly active = computed(() => ACTIVE[this.accent()]);
-  protected readonly height = computed(() =>
-    this.size() === 'strip' ? 'h-(--nc-h-md)' : 'h-(--nc-h-sm)',
+  protected readonly buttonClass = computed(
+    () =>
+      `${CELL} ${ACTIVE[this.accent()]} inline-flex items-center gap-[6px] px-[10px] font-ui text-label tracking-tag whitespace-nowrap uppercase text-ink-3 ${
+        this.size() === 'strip' ? 'h-(--nc-h-md)' : 'h-(--nc-h-sm)'
+      }`,
   );
 
   protected press(): void {

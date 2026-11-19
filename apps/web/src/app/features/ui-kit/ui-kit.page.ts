@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
 import { inject } from '@angular/core';
 import { BUBBLEGUM_16 } from '@naucto/engine';
 import {
@@ -35,6 +35,7 @@ import {
   PresenceLayerComponent,
   type PresenceMark,
   RailComponent,
+  RatingComponent,
   SearchComponent,
   SectionComponent,
   SegmentedComponent,
@@ -42,6 +43,8 @@ import {
   ShareCodeComponent,
   SkeletonComponent,
   SliderComponent,
+  type SlotCell,
+  SlotGridComponent,
   StatComponent,
   StepperComponent,
   SwatchPickerComponent,
@@ -52,6 +55,7 @@ import {
   ToggleComponent,
   ToolGroupComponent,
   TooltipDirective,
+  TransportComponent,
 } from '@naucto/ui';
 
 import { OAUTH_PROVIDERS } from '../../core/auth/oauth/providers';
@@ -107,6 +111,9 @@ import { ACCENT_SLOTS } from '../editor/accent-slots';
     TagInputComponent,
     NumberFieldComponent,
     TooltipDirective,
+    RatingComponent,
+    SlotGridComponent,
+    TransportComponent,
   ],
   templateUrl: './ui-kit.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -133,15 +140,35 @@ export default class UiKitPage {
     { id: 2, name: 'louis', colour: 'sky', x: 900, y: 70 },
     { id: 3, name: 'edgar', colour: 'blush', x: 60, y: -400 },
   ];
-  protected readonly sizes = ['1×1', '2×2', '3×3', '4×4', '5×5', '6×6', '7×7', '8×8'];
+  protected readonly sizes = ['1×1', '2×2', '4×4', '8×8'];
   protected readonly tool = signal('pen');
   protected readonly tools = [
-    { value: 'pen', icon: 'sliders' as const, label: 'Pen' },
+    { value: 'pen', icon: 'edit' as const, label: 'Pen' },
     { value: 'fill', icon: 'paint-bucket' as const, label: 'Fill' },
     { value: 'line', icon: 'line' as const, label: 'Line' },
     { value: 'rect', icon: 'frame' as const, label: 'Rect' },
   ];
   protected readonly grid = signal(true);
+  protected readonly onion = signal(false);
+  protected readonly haptics = signal(false);
+  protected readonly regexp = signal(false);
+  protected readonly visibilityValue = signal('draft');
+  protected readonly monetizationValue = signal('none');
+  protected readonly shelf = signal('games');
+  protected readonly bpm = signal(124);
+  protected readonly red = signal(255);
+  protected readonly paletteSlots = this.palette.map((_, slot) => slot);
+  protected readonly colour = signal<number | null>(13);
+  protected readonly bits = signal(5);
+  protected readonly score = signal<number | null>(8);
+  protected readonly playing = signal(false);
+  protected readonly slot = signal(2);
+  protected readonly slotCells = computed<SlotCell[]>(() =>
+    Array.from({ length: 16 }, (_, i) => ({
+      n: i,
+      state: i === this.slot() ? 'current' : i < 6 ? 'filled' : 'empty',
+    })),
+  );
   protected readonly sections = [
     { id: 'foundations', label: 'Foundations' },
     { id: 'buttons', label: 'Buttons' },
@@ -213,11 +240,12 @@ export default class UiKitPage {
   ] as const;
   protected readonly visibility = [
     { value: 'draft', label: 'Draft' },
+    { value: 'unlisted', label: 'Unlisted' },
     { value: 'public', label: 'Public' },
   ];
   protected readonly monetization = [
     { value: 'none', label: 'None' },
-    { value: 'ads', label: 'Ads' },
+    { value: 'tips', label: 'Tips' },
     { value: 'paid', label: 'Paid' },
   ];
   protected readonly consoleTabs = [
@@ -226,9 +254,9 @@ export default class UiKitPage {
     { value: 'perf', label: 'Perf', icon: 'chart' as const },
   ];
   protected readonly shelves = [
-    { value: 'games', label: 'Games 7' },
-    { value: 'liked', label: 'Liked 12' },
-    { value: 'collabs', label: 'Collabs 3' },
+    { value: 'games', label: 'Games' },
+    { value: 'people', label: 'People' },
+    { value: 'tags', label: 'Tags' },
   ];
   protected readonly tabs = [
     { value: 'account', label: 'Account' },

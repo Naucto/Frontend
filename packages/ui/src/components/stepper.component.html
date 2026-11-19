@@ -1,24 +1,52 @@
-<input
-  type="range"
-  min="0"
-  [max]="options().length - 1"
-  step="1"
-  [value]="value()"
-  [attr.aria-label]="label()"
-  [attr.aria-valuetext]="options()[value()]"
-  (input)="onInput($event)"
-  class="nc-range h-[4px] w-full cursor-pointer appearance-none rounded-xs bg-line-soft"
-  [style.--nc-stops]="stops()"
-  [style.--nc-fill]="'calc(3px + ' + value() + ' * ' + stops() + ')'" />
-<!-- Each caption is placed on its own stop rather than spread edge to edge: laid out by the
-     box, the outer two sit flush and every centre between them lands off the tick it names. -->
-<div class="relative mt-[7px] h-[14px]">
+<span class="block" [class]="track">
+  <span
+    class="absolute inset-y-0 left-0 bg-primary"
+    [class]="
+      drag() === null
+        ? 'transition-[width] duration-[140ms] ease-[cubic-bezier(0.3,0.8,0.2,1)]'
+        : ''
+    "
+    [style.width.%]="percent(position())"></span>
+  @for (option of options(); track $index) {
+    @if (!$first && !$last) {
+      <span
+        class="absolute inset-y-0 -ml-[1.5px] w-[3px]"
+        [class]="$index < value() ? 'bg-tick-on' : 'bg-line-strong'"
+        [style.left.%]="percent($index)"></span>
+    }
+  }
+  <input
+    type="range"
+    min="0"
+    [max]="last()"
+    step="any"
+    [value]="position()"
+    [attr.aria-label]="label()"
+    [attr.aria-valuetext]="options()[value()]"
+    (input)="onInput($event)"
+    (change)="drag.set(null)"
+    (blur)="drag.set(null)"
+    (keydown)="onKey($event)"
+    [class]="range" />
+  <span
+    [class]="
+      thumbSlot +
+      (drag() === null
+        ? ' transition-[left] duration-[140ms] ease-[cubic-bezier(0.3,0.8,0.2,1)]'
+        : '')
+    "
+    [style.left.%]="percent(position())">
+    <span [class]="thumb"></span>
+  </span>
+</span>
+<!-- Each caption is placed on its own stop, inside the groove's frame, where the thumb travels. -->
+<div class="relative mx-[3px] mt-[10px] h-[14px]">
   @for (option of options(); track $index) {
     <button
       type="button"
-      class="absolute -translate-x-1/2 cursor-pointer font-mono text-label whitespace-nowrap text-ink-4 transition-colors duration-100 hover:text-ink"
-      [style.left]="'calc(3px + ' + $index + ' * ' + stops() + ')'"
-      [class.text-gold-ink]="$index === value()"
+      class="absolute -translate-x-1/2 font-mono text-label whitespace-nowrap"
+      [class]="$index === value() ? 'text-active-ink' : 'text-ink-4 hover:text-ink'"
+      [style.left.%]="percent($index)"
       (click)="value.set($index)">
       {{ option }}
     </button>

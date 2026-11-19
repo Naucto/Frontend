@@ -317,64 +317,118 @@
     </div>
   </section>
 
-  <section id="selection" class="grid scroll-mt-3 gap-2.5">
-    <h2 class="font-display text-display text-ink">Selection</h2>
-    <nc-panel title="Controls">
-      <div class="flex flex-wrap items-center gap-2">
+  <section id="selection" class="grid scroll-mt-[80px] gap-2.5">
+    <div class="flex items-baseline gap-2">
+      <h2 class="font-display text-display text-ink">Selection</h2>
+      <span class="text-meta text-ink-3">
+        switch · checkbox · segmented (framed, filled, chips) · slider · stepper · tool group ·
+        swatches
+      </span>
+    </div>
+    <div class="flat-lg bevel-fill-panel grid gap-[22px] p-[22px]">
+      <div class="flex flex-wrap items-center gap-3">
         <nc-toggle [(checked)]="autoRun">Auto-run</nc-toggle>
-        <nc-toggle>Haptics</nc-toggle>
+        <nc-toggle [(checked)]="haptics">Haptics</nc-toggle>
+        <nc-toggle disabled>Disabled</nc-toggle>
         <nc-checkbox [(checked)]="matchCase">Match case</nc-checkbox>
-        <nc-checkbox>Regexp</nc-checkbox>
+        <nc-checkbox [(checked)]="regexp">Regexp</nc-checkbox>
         <nc-checkbox disabled>Disabled</nc-checkbox>
-        <nc-segmented [options]="visibility" value="draft" label="Visibility" />
-        <nc-segmented [options]="monetization" value="none" label="Monetization" fill />
-        <nc-segmented [options]="shelves" value="games" label="Shelf" variant="chips" />
+      </div>
+      <div class="flex flex-wrap items-center gap-2.5">
+        <nc-segmented [options]="visibility" [(value)]="visibilityValue" label="Visibility" />
+        <div class="w-[280px]">
+          <nc-segmented
+            [options]="monetization"
+            [(value)]="monetizationValue"
+            label="Monetization"
+            fill />
+        </div>
+        <nc-segmented [options]="shelves" [(value)]="shelf" label="Shelf" variant="chips" />
+        <nc-segmented [options]="visibility" value="draft" label="Small" size="sm" />
+        <nc-segmented [options]="visibility" value="draft" label="Unavailable" disabled />
+      </div>
+      <div class="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] items-center gap-[22px]">
+        <nc-slider label="BPM" [min]="40" [max]="240" [(value)]="bpm" [readout]="'' + bpm()" />
+        <div class="flex items-start gap-[14px]">
+          <span class="label w-[56px] shrink-0">Size</span>
+          <nc-stepper class="flex-1" [(value)]="spriteSize" [options]="sizes" label="Sprite size" />
+          <span class="w-[52px] shrink-0 text-right font-mono text-meta text-ink-body">
+            {{ sizes[spriteSize()] }}
+          </span>
+        </div>
+        <nc-tool-group class="justify-self-start" [items]="tools" [(value)]="tool" />
+      </div>
+      <div class="flex flex-wrap items-center gap-2.5">
+        <span class="label">Palette</span>
+        <nc-swatch-picker
+          [colours]="palette"
+          [slots]="paletteSlots"
+          [(value)]="colour"
+          slotLabel="Color" />
+        <span class="font-mono text-meta text-ink-3">
+          color =
+          <span class="text-active-ink">{{ colour() }}</span>
+        </span>
+        <nc-swatch-picker allowNone [colours]="palette" [slots]="accents" [(value)]="swatch" />
+      </div>
+      <!-- Not drawn in the design's Selection section: the same joined cells, latched the same way. -->
+      <div class="flex flex-wrap items-start gap-2.5">
+        <span class="inline-flex items-start gap-1.5">
+          <nc-bit-flags [(value)]="bits" [accents]="false" label="Bit flags" />
+          <span class="pt-1 font-mono text-meta text-ink-3">
+            =
+            <span class="text-active-ink">{{ bits() }}</span>
+          </span>
+        </span>
+        <nc-bit-flags [(value)]="bits" label="Tile flags" />
+        <nc-transport
+          [playing]="playing()"
+          [canStop]="playing()"
+          (started)="playing.set(true)"
+          (paused)="playing.set(false)"
+          (stopped)="playing.set(false)" />
+        <nc-toggle-button [(checked)]="grid">
+          <nc-icon name="grid" [size]="12" />
+          Grid
+        </nc-toggle-button>
+        <nc-toggle-button [(checked)]="onion" accent="jade" size="strip">
+          <nc-icon name="duplicate" [size]="24" />
+          Onion
+        </nc-toggle-button>
+        <nc-toggle-button disabled>Disabled</nc-toggle-button>
         <nc-slider
-          label="BPM"
-          [min]="40"
-          [max]="240"
-          [value]="124"
-          readout="124"
-          class="w-[220px]" />
-        <nc-slider
+          class="w-[220px]"
           label="R"
           [max]="255"
-          [value]="255"
-          readout="255"
+          [(value)]="red"
+          [readout]="'' + red()"
           accent="hot"
-          class="w-[220px]" />
+          compact />
+        <nc-slider class="w-[220px]" label="Off" [value]="40" readout="40" disabled />
       </div>
-      <div class="mt-2 grid gap-3 md:grid-cols-2">
-        <nc-section title="Stepper">
-          <nc-stepper [(value)]="spriteSize" [options]="sizes" />
-        </nc-section>
-        <nc-section title="Tools">
-          <div class="flex h-(--nc-h-bar) items-center gap-1 bg-panel px-1.5">
-            <nc-tool-group [items]="tools" [(value)]="tool" />
-            <nc-toggle-button [(checked)]="grid">
-              <nc-icon name="grid" [size]="12" />
-              Grid
-            </nc-toggle-button>
-          </div>
-        </nc-section>
-        <nc-section title="Swatch picker">
-          <nc-swatch-picker allowNone [colours]="palette" [slots]="accents" [(value)]="swatch" />
-        </nc-section>
-        <nc-section title="Setting row">
-          <nc-setting-row
-            title="Reduce motion"
-            hint="Stills the animations and the screen shake in the UI">
-            <nc-toggle [(checked)]="reduceMotion" label="Reduce motion" />
-          </nc-setting-row>
-          <nc-setting-row
-            title="Delete account"
-            hint="Your published games stay up"
-            [danger]="true">
-            <button ncButton variant="danger" size="sm">Delete</button>
-          </nc-setting-row>
-        </nc-section>
+      <div class="grid items-start gap-[22px] md:grid-cols-2">
+        <nc-rating
+          [(value)]="score"
+          label="Score"
+          lowLabel="Not for me"
+          highLabel="I would recommend it" />
+        <nc-slot-grid
+          class="w-[240px]"
+          [cells]="slotCells()"
+          [rows]="3"
+          (pick)="slot.set($event)" />
       </div>
-    </nc-panel>
+      <div class="grid gap-1">
+        <nc-setting-row
+          title="Reduce motion"
+          hint="Stills the animations and the screen shake in the UI">
+          <nc-toggle [(checked)]="reduceMotion" label="Reduce motion" />
+        </nc-setting-row>
+        <nc-setting-row title="Delete account" hint="Your published games stay up" [danger]="true">
+          <button ncButton variant="danger" size="sm">Delete</button>
+        </nc-setting-row>
+      </div>
+    </div>
   </section>
 
   <section id="chips" class="grid scroll-mt-3 gap-2.5">

@@ -21,4 +21,16 @@ describe('CheckboxComponent', () => {
     await userEvent.click(screen.getByRole('checkbox', { name: 'Regexp' }));
     expect(fixture.componentInstance.checked()).toBe(false);
   });
+
+  it('draws a mark that is already there still, and steps it once pressed', async () => {
+    await render(CheckboxComponent, { inputs: { label: 'Whole word', checked: true } });
+    const box = screen.getByRole('checkbox', { name: 'Whole word' });
+    const mark = (): string => box.querySelector('span > span')?.className ?? '';
+    expect(mark()).not.toContain('animate-');
+
+    await userEvent.click(box);
+    expect(mark()).toContain('nc-uncheck');
+    await userEvent.click(box);
+    expect(mark()).toContain('nc-check');
+  });
 });
