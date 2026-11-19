@@ -46,6 +46,30 @@ describe('VerifyEmailPage', () => {
     expect(screen.getByRole('link', { name: /sign in/i })).toHaveAttribute('href', '/sign-in');
   });
 
+  it('keeps the link and offers to retry when the server cannot be reached', async () => {
+    const verifyEmail = vi
+      .fn<(token: string) => Promise<void>>()
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockResolvedValueOnce(undefined);
+    await renderPage('the-token', verifyEmail);
+
+    expect(await screen.findByText(/could not confirm/i)).toBeInTheDocument();
+    expect(screen.queryByText(/does not work any more/i)).not.toBeInTheDocument();
+
+    screen.getByRole('button', { name: /try again/i }).click();
+
+    expect(await screen.findByText(/address confirmed/i)).toBeInTheDocument();
+    expect(verifyEmail).toHaveBeenCalledTimes(2);
+  });
+
+  it('treats a server error other than a spent link as retryable', async () => {
+    await renderPage('the-token', () =>
+      Promise.reject(ApiError.from(502, { code: 'BAD_GATEWAY', message: 'down' })),
+    );
+
+    expect(await screen.findByText(/could not confirm/i)).toBeInTheDocument();
+  });
+
   it('asks nothing of the server without a token', async () => {
     const verifyEmail = vi.fn(() => Promise.resolve());
     await renderPage(undefined, verifyEmail);

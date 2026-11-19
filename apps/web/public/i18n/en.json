@@ -79,7 +79,10 @@
       "done": "Your account is ready, welcome to Naucto!",
       "toHub": "Go to the hub",
       "failedTitle": "This link does not work any more",
-      "failed": "It was already used, or it expired. Sign in with your password to get a new one."
+      "failed": "It was already used, or it expired. Sign in with your password to get a new one.",
+      "errorTitle": "We could not confirm your address",
+      "error": "The server did not answer. Your link still works, so try again in a moment.",
+      "retry": "Try again"
     },
     "reset": {
       "title": "Choose a new password",

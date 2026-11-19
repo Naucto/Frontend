@@ -22,6 +22,13 @@
         </a>
       }
     }
+    @case ('error') {
+      <h1 class="mt-2 text-[22px] leading-[1.2] text-ink">{{ t('auth.verify.errorTitle') }}</h1>
+      <p class="mt-1 mb-3 text-body text-ink-3">{{ t('auth.verify.error') }}</p>
+      <button ncButton type="button" variant="primary" size="lg" class="w-full" (click)="run()">
+        {{ t('auth.verify.retry') }}
+      </button>
+    }
     @default {
       <h1 class="mt-2 text-[22px] leading-[1.2] text-ink">{{ t('auth.verify.failedTitle') }}</h1>
       <p class="mt-1 mb-3 text-body text-ink-3">{{ t('auth.verify.failed') }}</p>
