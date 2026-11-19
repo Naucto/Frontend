@@ -1,4 +1,4 @@
-<div *transloco="let t" class="flex flex-col gap-1 border-t border-line bg-panel px-1.75 py-1.5">
+<div *transloco="let t" class="flex flex-col gap-1 border-t-3 border-line bg-panel px-1.75 py-1.5">
   <div class="flex items-center gap-1">
     <button
       ncButton
@@ -8,7 +8,7 @@
       [attr.aria-label]="t('editor.code.replaceMode')"
       [attr.aria-expanded]="replacing()"
       (click)="replacing.set(!replacing())">
-      <nc-icon [name]="replacing() ? 'chevron-down' : 'chevron-right'" [size]="12" />
+      <nc-icon [name]="replacing() ? 'chevron-down' : 'chevron-right'" [size]="24" />
     </button>
     <input
       #field
@@ -32,7 +32,7 @@
       [attr.aria-label]="t('editor.code.previous')"
       (mousedown)="$event.preventDefault()"
       (click)="previous.emit()">
-      <nc-icon name="chevron-up" [size]="12" />
+      <nc-icon name="chevron-up" [size]="24" />
     </button>
     <button
       ncButton
@@ -42,7 +42,7 @@
       [attr.aria-label]="t('editor.code.next')"
       (mousedown)="$event.preventDefault()"
       (click)="next.emit()">
-      <nc-icon name="chevron-down" [size]="12" />
+      <nc-icon name="chevron-down" [size]="24" />
     </button>
     <button
       ncButton
@@ -52,7 +52,7 @@
       [attr.aria-label]="t('editor.code.selectAll')"
       (mousedown)="$event.preventDefault()"
       (click)="selectAll.emit()">
-      <nc-icon name="list" [size]="12" />
+      <nc-icon name="list" [size]="24" />
     </button>
     <nc-checkbox [(checked)]="caseSensitive">{{ t('editor.code.matchCase') }}</nc-checkbox>
     <nc-checkbox [(checked)]="regexp">{{ t('editor.code.regexp') }}</nc-checkbox>
@@ -65,14 +65,14 @@
       iconOnly
       [attr.aria-label]="t('editor.code.closeSearch')"
       (click)="closed.emit()">
-      <nc-icon name="close" [size]="12" />
+      <nc-icon name="close" [size]="24" />
     </button>
   </div>
 
   @if (replacing()) {
     <div class="flex items-center gap-1">
       <!-- Indented by the width of the control that opened this row, so the two fields line up. -->
-      <span class="w-[24px] shrink-0"></span>
+      <span class="w-(--nc-h-sm) shrink-0"></span>
       <input
         ncInput
         class="min-w-0 flex-1 font-mono"
@@ -91,7 +91,7 @@
         [attr.aria-label]="t('editor.code.replaceOne')"
         (mousedown)="$event.preventDefault()"
         (click)="replaceOne.emit()">
-        <nc-icon name="edit" [size]="12" />
+        <nc-icon name="edit" [size]="24" />
       </button>
       <button
         ncButton
@@ -101,7 +101,7 @@
         [attr.aria-label]="t('editor.code.replaceAll')"
         (mousedown)="$event.preventDefault()"
         (click)="replaceEvery.emit()">
-        <nc-icon name="repeat" [size]="12" />
+        <nc-icon name="repeat" [size]="24" />
       </button>
     </div>
   }

@@ -238,8 +238,8 @@ export default class NetTabPage {
 
   protected permClass(on: boolean): string {
     return on
-      ? 'border-jade bg-jade-wash text-jade-ink'
-      : 'border-line-strong bg-raised text-ink-4 hover:text-ink';
+      ? 'bevel-down bevel-edge-jade bevel-fill-jade-wash text-jade-ink'
+      : 'text-ink-4 hover:bevel-lit hover:text-active-ink';
   }
 
   protected valueClass(kind: Row['kind']): string {

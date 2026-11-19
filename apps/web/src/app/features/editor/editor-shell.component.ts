@@ -123,10 +123,8 @@ const RAIL: Omit<RailItem<EditorTab>, 'label'>[] = [
   templateUrl: './editor-shell.component.html',
   // `block` is load-bearing: a ResizeObserver reports a 0-wide content box for an inline element,
   // so an inline host measures 0 into the store whatever the window is.
-  // The editor asks for the big density; the hub and the pages around it match the artboards and
-  // are left at the default. Named here rather than at the root so it is a choice, not a setting.
   host: {
-    class: 'nc-density-big block',
+    class: 'block',
     '(document:keydown)': 'onShortcut($event)',
     '(window:beforeunload)': 'session.onBeforeUnload($event)',
     '(window:pagehide)': 'session.onPageHide($event)',

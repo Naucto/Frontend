@@ -1,5 +1,5 @@
 <div *transloco="let t" class="relative flex h-full flex-col">
-  <div class="flex h-(--nc-bar-h) shrink-0 items-center gap-1 border-b border-line px-1.5">
+  <div class="flex h-(--nc-h-bar) shrink-0 items-center gap-1 border-b-3 border-line px-1.5">
     @if (view() !== 'tree') {
       <button
         ncButton
@@ -40,7 +40,7 @@
             type="button"
             role="option"
             aria-selected="false"
-            class="block w-full border-b border-line py-1 text-left hover:text-ink"
+            class="block w-full border-b-3 border-line py-1 text-left hover:text-ink"
             (click)="openHit(hit)">
             <div
               class="truncate text-meta"
@@ -65,7 +65,7 @@
           size="sm"
           class="mb-1.5"
           (click)="copyToNewGame(currentPage)">
-          <nc-icon name="file-plus" [size]="12" />
+          <nc-icon name="file-plus" [size]="24" />
           {{ t('docs.copyToNewGame') }}
         </button>
       }
@@ -76,10 +76,10 @@
         (insert)="insert($event)"
         (navigate)="navigate($event)" />
       @if (neighbours(); as neighbourPages) {
-        <nav class="mt-3 flex justify-between gap-1 border-t border-line pt-1.5">
+        <nav class="mt-3 flex justify-between gap-1 border-t-3 border-line pt-1.5">
           @if (neighbourPages.prev; as prev) {
             <button ncButton variant="secondary" size="sm" (click)="openPage(prev.slug)">
-              <nc-icon name="chevron-left" [size]="12" />
+              <nc-icon name="chevron-left" [size]="24" />
               {{ prev.title }}
             </button>
           } @else {
@@ -88,7 +88,7 @@
           @if (neighbourPages.next; as next) {
             <button ncButton variant="secondary" size="sm" (click)="openPage(next.slug)">
               {{ next.title }}
-              <nc-icon name="chevron-right" [size]="12" />
+              <nc-icon name="chevron-right" [size]="24" />
             </button>
           }
         </nav>

@@ -4,7 +4,7 @@
   class="grid h-full grid-cols-[200px_minmax(0,1fr)_auto] min-[1280px]:grid-cols-[276px_minmax(0,1fr)_auto]">
   <!-- Scrolls as a whole: the banks keep a fixed height, so a short screen must not cut one of them
        mid-row. -->
-  <aside class="flex min-h-0 flex-col overflow-y-auto border-r border-line bg-panel">
+  <aside class="flex min-h-0 flex-col overflow-y-auto border-r-3 border-line bg-panel">
     <!-- A floor rather than nothing: left free to shrink it would give up every one of its
          rows to the banks below before the column ever scrolled. -->
     <nc-instrument-list
@@ -42,9 +42,9 @@
       <!-- Too narrow for one line, the bar takes a second row of its own height rather than
            wrapping inside the first. -->
       <header
-        class="flex h-(--nc-bar-h) shrink-0 items-center gap-1 overflow-x-auto border-b border-line bg-panel px-2 @max-[780px]:h-[calc(2*var(--nc-bar-h))] @max-[780px]:flex-wrap @max-[780px]:content-start @max-[440px]:gap-0.5 @max-[440px]:px-1">
+        class="flex h-(--nc-h-bar) shrink-0 items-center gap-1 overflow-x-auto border-b-3 border-line bg-panel px-2 @max-[780px]:h-[calc(2*var(--nc-h-bar))] @max-[780px]:flex-wrap @max-[780px]:content-start @max-[440px]:gap-0.5 @max-[440px]:px-1">
         <nc-number-field
-          class="h-(--nc-transport-h) shrink-0"
+          class="h-(--nc-h-md) shrink-0"
           fill
           [label]="tightBar() ? '' : t('editor.sound.pattern')"
           [ariaLabel]="t('editor.sound.pattern')"
@@ -95,7 +95,7 @@
              taking a whole line of no height so the number fields start the next. -->
         <span class="flex-1 @max-[780px]:basis-full"></span>
         <nc-number-field
-          class="h-(--nc-transport-h) shrink-0"
+          class="h-(--nc-h-md) shrink-0"
           fill
           [label]="t('editor.sound.bpm')"
           [ariaLabel]="t('editor.sound.bpm')"
@@ -104,7 +104,7 @@
           [max]="BPM_MAX"
           (requested)="setBpm($event)" />
         <nc-number-field
-          class="h-(--nc-transport-h) shrink-0"
+          class="h-(--nc-h-md) shrink-0"
           fill
           [label]="t('editor.sound.steps')"
           [ariaLabel]="t('editor.sound.steps')"
@@ -116,7 +116,7 @@
         <button
           ncButton
           variant="ghost"
-          [size]="tightBar() ? 'sm' : 'strip'"
+          [size]="tightBar() ? 'sm' : 'md'"
           iconOnly
           [attr.aria-label]="t('editor.undo')"
           (click)="undo.manager.undo()"
@@ -126,7 +126,7 @@
         <button
           ncButton
           variant="ghost"
-          [size]="tightBar() ? 'sm' : 'strip'"
+          [size]="tightBar() ? 'sm' : 'md'"
           iconOnly
           [attr.aria-label]="t('editor.redo')"
           (click)="undo.manager.redo()"
@@ -169,7 +169,7 @@
           [title]="t('editor.sound.emptyTitle')"
           [hint]="t('editor.sound.emptyHint')">
           <button ncButton variant="primary" (click)="addInstrument()">
-            <nc-icon name="plus" [size]="12" />
+            <nc-icon name="plus" [size]="24" />
             {{ t('editor.sound.addInstrument') }}
           </button>
         </nc-empty-state>
@@ -190,7 +190,7 @@
         {{ snapLabel(t('editor.sound.snap')) }}
       </nc-toggle-button>
       <nc-oscilloscope
-        class="h-(--nc-control-h) w-[88px] shrink-0 border border-line"
+        class="h-(--nc-h-sm) w-[88px] shrink-0 border-3 border-line"
         [peaks]="peaks"
         [label]="t('editor.sound.liveOut')" />
       <span class="flex-1"></span>
@@ -226,7 +226,7 @@
       </button>
       <button
         type="button"
-        class="control-type w-[38px] shrink-0 text-right font-mono text-ink-3 hover:text-ink"
+        class="w-[38px] shrink-0 cursor-pointer text-right font-mono text-label text-ink-3 hover:text-ink"
         [attr.aria-label]="t('editor.sound.zoomReset')"
         (click)="sound.setZoom(1)">
         ×{{ zoomLabel() }}

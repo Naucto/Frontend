@@ -2,7 +2,7 @@
   <!-- The mark sits in the rail's own column, so the vertical seam runs unbroken from the logo
        down past every rail item. The hub's bar gives it the same cell, which is what makes that
        safe. -->
-  <header class="flex items-center gap-1.5 border-b border-line bg-panel pr-2 pl-0">
+  <header class="flex items-center gap-1.5 border-b-3 border-line bg-panel pr-2 pl-0">
     <a
       routerLink="/games"
       class="flex w-[81px] shrink-0 items-center justify-center"
@@ -85,15 +85,15 @@
               (switched)="ui.toggleReference()">
               <!-- Built only while it is open: the reference has nothing running in it, so unlike
                the console it costs nothing to rebuild and something to keep. -->
-              <div secondary class="flex min-h-0 flex-col border-l border-line">
+              <div secondary class="flex min-h-0 flex-col border-l-3 border-line">
                 @if (ui.referenceShown()) {
                   <nc-doc-pane class="min-h-0 flex-1 overflow-auto" />
                   <!-- Only where the reference has taken the console's place: the one arrangement
                      that pauses the game. -->
                   @if (ui.columnMode() === 'swap') {
                     <div
-                      class="flex shrink-0 items-center gap-1 border-t border-line bg-inset px-1.5 py-1">
-                      <nc-icon name="pause" [size]="12" class="text-gold-ink" />
+                      class="flex shrink-0 items-center gap-1 border-t-3 border-line bg-inset px-1.5 py-1">
+                      <nc-icon name="pause" [size]="24" class="text-gold-ink" />
                       <span class="label text-gold-ink">{{ t('editor.gamePaused') }}</span>
                     </div>
                   }
@@ -103,7 +103,7 @@
                 primary
                 class="min-h-0 border-line"
                 [shown]="consoleShown()"
-                [class.border-l]="consoleShown()" />
+                [class.border-l-3]="consoleShown()" />
             </nc-panel-region>
           </div>
         }

@@ -67,7 +67,7 @@ export class SongListComponent {
 
   protected readonly NO_CEILING = Infinity;
   protected readonly columnTrack = `repeat(${String(COLUMNS)}, minmax(0, 1fr))`;
-  protected readonly height = `calc(${String(ROWS)} * var(--nc-control-h-xs) + ${String(
+  protected readonly height = `calc(${String(ROWS)} * var(--nc-h-sm) + ${String(
     (ROWS - 1) * 2 + TAIL,
   )}px)`;
 
