@@ -12,7 +12,7 @@ import {
 
 import { injectStanding, STANDING_PAGE_SIZE } from '../../shared/queries/moderation.queries';
 
-const WHEN = new Intl.DateTimeFormat(undefined, { dateStyle: 'long', timeStyle: 'short' });
+const WHEN = new Intl.DateTimeFormat('en-US', { dateStyle: 'long', timeStyle: 'short' });
 
 /** What each decision reads as to the account it landed on. Any other gets the general wording. */
 const KNOWN: readonly ModerationActionType[] = [

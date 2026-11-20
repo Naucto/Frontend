@@ -46,7 +46,10 @@
   <!-- Always a row of its own, empty most of the time, so the workspace keeps the third row. -->
   <div>
     <nc-suspension-band />
-    @if (hidden()) {
+    @if (bandKey(); as key) {
+      <nc-notice variant="band" tone="warn" data-testid="read-only-band">{{ t(key) }}</nc-notice>
+    }
+    @if (hidden() && !session.readOnly()) {
       <nc-notice variant="band" tone="danger">
         {{ t('editor.hiddenBand') }}
         <a routerLink="/settings/standing" class="underline underline-offset-2 hover:text-ink">

@@ -997,6 +997,12 @@
     "rights": "Signed in, you can see what was counted for your account, download it, or erase it, in Settings. Deleting your account erases it too.",
     "rightsLink": "Open your privacy settings",
     "geoCredit": "Country lookups use IP geolocation by",
+    "moderationTitle": "Moderation",
+    "moderation": {
+      "reports": "When you report a game, a comment or a profile, the moderators see your account, the reason you chose and what you wrote. Whoever you report is not told it was you.",
+      "drafts": "To review a report, a moderator can open a game that is not published, in a read-only view. They cannot change it, and each such visit is recorded.",
+      "record": "Decisions about your account and what you made are kept, and you can read them in Settings. If you delete your account the decisions stay, without the text they were about."
+    },
     "feedbackTitle": "Feedback and crash reports",
     "feedback": {
       "crashes": "When the app or the game engine crashes, it sends what failed: the error, the page path, the app version, and your browser, system and device family. It carries no id, no account and nothing about you, whatever you chose above.",
@@ -1072,6 +1078,13 @@
     },
     "preview": {
       "band": "Staff preview. Nothing here is saved or counted, and this visit is logged.",
+      "editorBand": "Staff preview of the latest save. You can look around and run it. Nothing you change here is saved, and this visit is logged.",
+      "suspendedEditor": "Your game opens to look at and run. Nothing you change here is saved while your account is suspended.",
+      "summary": "Summary",
+      "description": "Description",
+      "collaborators": "Collaborators",
+      "nothingWritten": "Nothing written",
+      "openEditor": "Look inside in the editor",
       "draft": "Latest save",
       "release": "Released build",
       "sourceLabel": "Which version to run",

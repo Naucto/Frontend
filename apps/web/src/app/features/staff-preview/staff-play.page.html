@@ -28,6 +28,9 @@
           }
         </p>
       </div>
+      <a ncButton variant="secondary" size="sm" [routerLink]="['/staff/edit', found.id]">
+        {{ t('moderation.preview.openEditor') }}
+      </a>
       @if (found.hasRelease) {
         <nc-segmented
           size="sm"

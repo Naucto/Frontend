@@ -36,6 +36,16 @@ export const routes: Routes = [
     loadChildren: () => import('./features/editor/editor.routes'),
     title: 'Editor — Naucto',
   },
+  // The same editor, opened to look at: for moderators and admins only, and anyone else falls
+  // through to the wildcard. The mode is in the path because the editor navigates between its
+  // tabs, and a flag in the query would not survive the first of those.
+  {
+    path: 'staff/edit/:id',
+    canMatch: [staffGuard],
+    loadChildren: () => import('./features/editor/editor.routes'),
+    data: { preview: 'staff' },
+    title: 'Staff preview | Naucto',
+  },
   {
     path: '',
     loadComponent: () => import('./features/shell/app-shell.component'),

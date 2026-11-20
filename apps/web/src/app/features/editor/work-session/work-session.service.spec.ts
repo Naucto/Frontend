@@ -102,6 +102,86 @@ describe('WorkSessionService', () => {
     globalThis.fetch = realFetch;
   });
 
+  describe('a read-only preview', () => {
+    const writes = (): string[] =>
+      calls.map((call) => call.key).filter((key) => !key.startsWith('GET '));
+
+    beforeEach(() => {
+      routes['GET /moderation/projects/7/preview'] = () => json({ ...details, hasRelease: false });
+      routes['GET /moderation/projects/7/preview/content'] = () =>
+        new Response(savedGame('print(2)') as BlobPart, {
+          status: 200,
+          headers: { 'content-type': 'application/octet-stream' },
+        });
+    });
+
+    it('opens a game as staff with two reads and no write', async () => {
+      const service = TestBed.inject(WorkSessionService);
+      await service.openPreview(7, 'staff');
+
+      expect(service.status()).toBe('ready');
+      expect(service.readOnly()).toBe(true);
+      expect(service.game.entryFile?.text.toString()).toBe('print(2)');
+      expect(calls.map((call) => call.key).sort()).toEqual([
+        'GET /moderation/projects/7/preview',
+        'GET /moderation/projects/7/preview/content',
+      ]);
+    });
+
+    it('opens a suspended account its own game through the ordinary reads', async () => {
+      const service = TestBed.inject(WorkSessionService);
+      await service.openPreview(7, 'own');
+
+      expect(service.status()).toBe('ready');
+      expect(service.game.entryFile?.text.toString()).toBe('print(1)');
+      expect(calls.map((call) => call.key).sort()).toEqual([
+        'GET /projects/7',
+        'GET /projects/7/content',
+      ]);
+    });
+
+    it('never counts whoever looks as someone working on the game', async () => {
+      const service = TestBed.inject(WorkSessionService);
+      await service.openPreview(7, 'own');
+
+      expect(service.isCollaborator()).toBe(false);
+      expect(service.playProjectId).toBeNull();
+    });
+
+    it('sends nothing for an edit, however long it sits, nor for a forced save', async () => {
+      vi.useFakeTimers();
+      try {
+        const service = TestBed.inject(WorkSessionService);
+        const saves = TestBed.inject(SessionSaveService);
+        await service.openPreview(7, 'staff');
+        calls.length = 0;
+
+        service.game.entryFile?.text.insert(0, '-- looked at\n');
+        await vi.advanceTimersByTimeAsync(10 * 60 * 1000);
+        await saves.save({ force: true });
+        await saves.saveCheckpoint('kept');
+
+        expect(calls).toHaveLength(0);
+        expect(saves.dirty()).toBe(false);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('sends nothing when it closes or the tab goes away', async () => {
+      const service = TestBed.inject(WorkSessionService);
+      await service.openPreview(7, 'staff');
+      service.game.entryFile?.text.insert(0, '-- looked at\n');
+      calls.length = 0;
+
+      service.onPageHide({ persisted: false } as PageTransitionEvent);
+      await service.close();
+
+      expect(writes()).toEqual([]);
+      expect(calls).toHaveLength(0);
+      expect(service.status()).toBe('closed');
+    });
+  });
   it('refuses to open, and saves nothing, when the content cannot be fetched', async () => {
     routes['GET /projects/7/content'] = () => json({ message: 'boom' }, 500);
     const service = TestBed.inject(WorkSessionService);
