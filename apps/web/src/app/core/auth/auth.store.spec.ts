@@ -50,6 +50,25 @@ describe('AuthStore', () => {
     expect(store().status()).toBe('anonymous');
   });
 
+  it.each([
+    ['Admin', true],
+    ['Moderator', true],
+    ['User', false],
+  ])('reads a signed-in %s as staff: %s', async (role, staff) => {
+    answered.set('/auth/login', () => json(201, { access_token: 'tok' }));
+    answered.set('/users/profile', () => json(200, { id: 1, username: 'alice', role }));
+
+    await store().loginWithPassword('a@b.test', 'pw');
+
+    expect(store().role()).toBe(role);
+    expect(store().isStaff()).toBe(staff);
+  });
+
+  it('reads nobody as staff before anyone signs in', () => {
+    expect(store().role()).toBeNull();
+    expect(store().isStaff()).toBe(false);
+  });
+
   it('drops the session when a refresh lands on the account the cookie now belongs to', async () => {
     answered.set('/auth/refresh', () => {
       refreshes += 1;
