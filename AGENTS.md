@@ -49,6 +49,13 @@ Pixelarticons, Bubblegum-16 palette, dark + light themes).
 4. **Ask before architectural decisions** (new state library, new dependency, cross-cutting change).
 5. **Never hand-edit generated code** (`packages/api-client/src` comes from `openapi.json`; docs assets
    are built from the submodule).
+6. **Settle a look in an artifact before writing it into the app.** When a change concerns a screen
+   the design does not draw, or its look would take back-and-forth to settle:
+   1. Say so to the user before building anything, and go on only if they agree.
+   2. Build several versions that differ in structure, with the real kit, on fixtures.
+   3. Publish them as an artifact: a screenshot per version and state, each with its trade-off.
+   4. Let the user pick one or ask for another round.
+   5. Implement only what was picked.
 
 ## Architecture
 
@@ -167,6 +174,37 @@ No secrets in the repo (see `.env.example` for what `.env` actually holds; never
 `.npmrc` values or Docker layers). Sanitise any HTML that does not come from our own build (docs
 are built at compile time). Validate redirect targets. Do not disable security lint rules. See
 `SECURITY.md`.
+
+## Design rules
+
+The owner's rules for every screen and every kit component. Where a design source draws otherwise,
+the rule wins.
+
+1. **No "·" between two things.** A dot says two things are apart and nothing about how they
+   relate, so every line built on it reads flat. Say the relation with the kit: a count or a state
+   is an `nc-chip` or an `nc-stat`, a name and its value are a label and a value, two facts are two
+   elements a gap apart. Another character in its place ("|", "/", "—", "•") is the same dot.
+2. **Hierarchy, not separators.** A rule under every row gives every row the same weight, and a
+   screen ruled all over shows no structure at all. Group what belongs together, and tell groups
+   apart by weight and spacing; keep a rule for the edge between two regions. A list of options or
+   controls is a table component of the kit, not rows a screen rules by hand.
+3. **A symbol is pixel art.** Arrows, the cross, the plus and key glyphs are drawn on the 3px grid:
+   an `nc-icon`, or an inline SVG under `shape-rendering: crispEdges`. Never a font character (×,
+   ←, ↑, +): a glyph is sized by its face, not by the grid, and one the face lacks comes from
+   whatever font the browser falls back to.
+4. **Alternatives read as alternatives.** Two keys bound to one action are written "Space or ↑",
+   the arrow drawn. Two keycaps side by side read as a chord to press together.
+5. **No words nobody asked for.** A notice that explains the screen and a caption that describes
+   what is already on it ("your games, in the order you made them") are read once and keep their
+   room for good. Keep the datum that informs, the count, and show it as rule 6 says. Name a
+   control so it needs no explaining, or put the explanation behind an `nc-help-dot`, where it is
+   asked for.
+6. **What the kit draws is drawn with the kit.** A count is an `nc-chip` or an `nc-stat`, a person
+   is the kit's avatar, a title that may overflow its plate is fitted as the floppy's label is. A
+   look-alike, a coloured square with an initial or a bare number in a span, lacks what the piece
+   carries (its frame, its reflection, the person's own colour) and stops following the kit at its
+   next change. Look on `/ui-kit` before building any small element; if no piece fits, the kit
+   gains one, and a page does not draw a one-off.
 
 ## Deliberate divergences from the design
 
