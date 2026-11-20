@@ -20,8 +20,8 @@ import {
   EmptyStateComponent,
   HighlightComponent,
   IconComponent,
+  modifierLabel,
   SearchComponent,
-  shortcutLabel,
 } from '@naucto/ui';
 
 import { AuthStore } from '../../core/auth/auth.store';
@@ -60,7 +60,7 @@ import { seedNewGame } from '../../shared/docs/seed-new-game';
 export default class LearnPage {
   /** Doc slug: "api/gfx", "tutorials/pong" … (empty = index). */
   readonly path = input<string | undefined>();
-  protected readonly searchHint = shortcutLabel('K');
+  protected readonly searchHint = [modifierLabel(), 'K'];
   private readonly searchBox = viewChild<SearchComponent>('search');
   protected readonly articleEl = viewChild<string, ElementRef<HTMLElement>>('article', {
     read: ElementRef,

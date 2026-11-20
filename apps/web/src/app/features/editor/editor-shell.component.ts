@@ -43,6 +43,7 @@ import { yTextField } from '../../shared/yjs/y-signal';
 import { AccountMenuComponent } from '../shell/account-menu.component';
 import { CommandPaletteShortcutDirective } from '../shell/command-palette-shortcut.directive';
 import { NotificationsBellComponent } from '../shell/notifications-bell.component';
+import { ThemeSwitchComponent } from '../shell/theme-switch.component';
 import { ArtStore } from './art/art.store';
 import { ConsoleColumnComponent } from './console/console-column.component';
 import { DocPaneComponent } from './docs/doc-pane.component';
@@ -107,6 +108,7 @@ const RAIL: Omit<RailItem<EditorTab>, 'label'>[] = [
     LogoComponent,
     ReportProblemButtonComponent,
     SuspensionBandComponent,
+    ThemeSwitchComponent,
   ],
   providers: [
     WorkSessionService,

@@ -68,10 +68,12 @@
         <span class="hidden sm:inline">{{ t('nav.newGame') }}</span>
       </a>
       <nc-report-problem-button class="max-md:hidden" />
+      <nc-theme-switch class="max-md:hidden" />
       <nc-notifications-bell />
       <nc-account-menu />
     } @else {
       <nc-report-problem-button class="max-md:hidden" />
+      <nc-theme-switch />
       <a ncButton variant="primary" size="lg" routerLink="/sign-in">
         {{ t('nav.signIn') }}
       </a>
