@@ -242,6 +242,22 @@
     "tabResults": "TAB FULL RESULTS",
     "escClose": "ESC CLOSE"
   },
+  "palette": {
+    "label": "Search games and commands",
+    "placeholder": "Type a game or a command",
+    "results": "Results",
+    "recent": "Recent",
+    "actions": "Actions",
+    "edit": "Edit",
+    "toggleTheme": "Toggle theme",
+    "empty": "Nothing by that name.",
+    "count": "{{n}} results",
+    "move": "Move",
+    "run": "Run",
+    "close": "Close",
+    "enterKey": "Enter",
+    "escKey": "Esc"
+  },
   "share": {
     "people": "PEOPLE",
     "searchFailed": "Could not search for people just now.",

@@ -25,6 +25,7 @@ import {
 import { PresenceStore } from '../../core/presence/presence.store';
 import { type PresenceLine, presenceLine } from '../../core/presence/presence-line';
 import { GameCoverComponent } from '../../shared/game-card/game-cover.component';
+import { arrowStep } from '../../shared/list-cursor';
 import {
   injectSuggestions,
   parseTerm,
@@ -167,14 +168,10 @@ export class SearchSuggestComponent {
       return;
     }
 
-    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+    const next = arrowStep(event.key, this.cursor(), this.targets().length);
+    if (next !== null) {
       event.preventDefault();
-      const rows = this.targets().length;
-      if (rows === 0) {
-        return;
-      }
-      const step = event.key === 'ArrowDown' ? 1 : -1;
-      this.cursor.set((this.cursor() + step + rows) % rows);
+      this.cursor.set(next);
       return;
     }
     if (event.key === 'Tab') {
