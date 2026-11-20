@@ -26,3 +26,6 @@ ds-bundle/
 .design-sync/.cache/
 .design-sync/learnings/
 .design-sync/node_modules
+
+# agent worktrees; the skills beside them are tracked
+.claude/worktrees/
