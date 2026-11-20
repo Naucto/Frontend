@@ -303,6 +303,8 @@
     "emptyTitle": "No games yet",
     "emptyHint": "A new game starts with a moon you can move. Make it yours.",
     "drafts": "Drafts",
+    "draft": "Draft",
+    "hidden": "Hidden",
     "published": "Published",
     "noDrafts": "No drafts.",
     "noPublished": "Nothing published yet.",

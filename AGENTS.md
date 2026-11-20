@@ -164,7 +164,7 @@ Pixelarticons, Bubblegum-16 palette, dark + light themes).
 
 - Component selectors `nc-kebab-case`, directives `ncCamelCase`. Standalone, `OnPush`, `input()` /
   `output()` / `model()`, `inject()`, signals everywhere, no `any`.
-- Files: kebab-case (`game-card.component.ts`, `auth.store.ts`); one responsibility per file.
+- Files: kebab-case (`game-disk.component.ts`, `auth.store.ts`); one responsibility per file.
 - Imports sorted by `simple-import-sort`. Inside `apps/web`, relative paths; across packages, the
   package name (`@naucto/ui`, `@naucto/engine`, `@naucto/api-client`).
 - A lazy route target (`*.page.ts`, `*.routes.ts`, the two shells) is its file's `export default`,
@@ -260,6 +260,9 @@ broken; an absence reads as not built.
 - A dialog a root service opens (`FeedbackLauncher`, `SignedInAction`, `nc-feedback-prompt`) is
   fetched with `import()` when it opens, and names the component by `import type` only: a static
   import puts the dialog and everything it draws in what every page loads.
+- A class in a component's own stylesheet that is spelled like a utility gets the utility as well:
+  Tailwind reads the template and generates it. `label` set a disk's whole label in tracked
+  capitals, `hidden` removed what was only meant to fade, and `outline` and `ring` draw strokes.
 - `tools/pixel-allow.json` is what each file still owes `npm run pixel:check`. A change that moves a
   file onto the kit lowers its entry in the same diff (`npm run pixel:check -- --update`); nothing
   raises one.

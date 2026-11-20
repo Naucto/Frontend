@@ -34,7 +34,7 @@ import { ApiError } from '../../core/api/api-errors';
 import { AuthStore } from '../../core/auth/auth.store';
 import { FeaturesService } from '../../core/config/features.service';
 import { PresenceStore } from '../../core/presence/presence.store';
-import { GameCardComponent } from '../../shared/game-card/game-card.component';
+import { GameDiskComponent } from '../../shared/game-card/game-disk.component';
 import { GameScreenComponent } from '../../shared/game-screen/game-screen.component';
 import { ContentFlagLauncher } from '../../shared/moderation/content-flag-launcher.service';
 import { GoodStandingAction } from '../../shared/moderation/good-standing-action';
@@ -84,7 +84,7 @@ function topRelated(
     LabelComponent,
     SkeletonComponent,
     StatComponent,
-    GameCardComponent,
+    GameDiskComponent,
     GameScreenComponent,
     CommentsComponent,
     HowToPlayComponent,
