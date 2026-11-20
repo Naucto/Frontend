@@ -16,6 +16,7 @@ import {
   IconComponent,
   type IconName,
   KeycapComponent,
+  MarkComponent,
   SuggestRowComponent,
   WELL,
 } from '@naucto/ui';
@@ -64,6 +65,7 @@ interface Group {
     TranslocoDirective,
     HighlightComponent,
     IconComponent,
+    MarkComponent,
     KeycapComponent,
     SuggestRowComponent,
   ],

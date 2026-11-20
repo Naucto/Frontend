@@ -23,6 +23,9 @@ import {
   LabelComponent,
   LcdComponent,
   LogoComponent,
+  MARK_PATHS,
+  MarkComponent,
+  type MarkName,
   MeterComponent,
   NoticeComponent,
   NumberFieldComponent,
@@ -84,6 +87,7 @@ import { HubPiecesSection } from './hub-pieces.section';
     ErrorStateComponent,
     FieldComponent,
     IconComponent,
+    MarkComponent,
     SwatchPickerComponent,
     PanelRegionComponent,
     PanelColumnComponent,
@@ -386,6 +390,7 @@ export default class UiKitPage {
     { label: 'Map 88 KB', value: 88 * 1024, color: 'bg-jade' },
     { label: 'Code 28 KB', value: 28 * 1024, color: 'bg-gold' },
   ];
+  protected readonly marks = Object.keys(MARK_PATHS) as MarkName[];
   protected readonly icons = [
     'save',
     'code',

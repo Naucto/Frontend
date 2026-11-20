@@ -15,7 +15,7 @@ import {
 } from '@angular/core';
 
 import { ButtonDirective } from './button.directive';
-import { IconComponent } from './icon.component';
+import { MarkComponent } from './mark.component';
 
 /** The current dot's fill starts as the square an idle dot is: 8 of its 34 pixels. */
 const SQUARE = 8 / 34;
@@ -33,7 +33,7 @@ const SQUARE = 8 / 34;
  */
 @Component({
   selector: 'nc-pager',
-  imports: [ButtonDirective, IconComponent],
+  imports: [ButtonDirective, MarkComponent],
   templateUrl: './pager.component.html',
   host: {
     class: 'inline-flex items-center gap-[14px]',
