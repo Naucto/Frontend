@@ -5,6 +5,8 @@ export interface Toast {
   id: number;
   text: string;
   tone: ToastTone;
+  /** The line above the text, in the tone's ink. */
+  title?: string;
 }
 
 /** Queue of transient messages rendered by <nc-toast-host>. */
@@ -13,9 +15,9 @@ export class ToastService {
   private seq = 0;
   readonly toasts = signal<Toast[]>([]);
 
-  show(text: string, tone: ToastTone = 'info', ttlMs = 4000): void {
+  show(text: string, tone: ToastTone = 'info', ttlMs = 4000, title?: string): void {
     const id = ++this.seq;
-    this.toasts.update((toasts) => [...toasts, { id, text, tone }]);
+    this.toasts.update((toasts) => [...toasts, { id, text, tone, title }]);
     setTimeout(() => {
       this.dismiss(id);
     }, ttlMs);

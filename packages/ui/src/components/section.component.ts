@@ -7,8 +7,8 @@ import { booleanAttribute, ChangeDetectionStrategy, Component, input } from '@an
   host: {
     '[class]':
       'banded()' +
-      " ? 'relative block border-b border-line px-[14px] py-1.5 last:border-b-0'" +
-      " : 'block border-t border-line pt-2 first:border-t-0 first:pt-0'",
+      " ? 'relative block border-b-3 border-line px-[14px] py-1.5 last:border-b-0'" +
+      " : 'block border-t-3 border-line pt-2 first:border-t-0 first:pt-0'",
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

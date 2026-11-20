@@ -36,13 +36,13 @@ import { AddFriendDialog } from './add-friend.dialog';
 type Friend = FriendDto & { presence: PresenceDto | null };
 
 /**
- * Left border and game-name colour of a row, by what the person is doing; the two always carry the
+ * Left rule and game-name colour of a row, by what the person is doing; the two always carry the
  * same accent.
  */
 const ACCENT: Record<string, { rule: string; name: string }> = {
-  PLAYING: { rule: 'border-l-jade', name: 'text-jade-ink' },
-  BUILDING: { rule: 'border-l-gold', name: 'text-gold-ink' },
-  HOSTING: { rule: 'border-l-sky', name: 'text-sky-ink' },
+  PLAYING: { rule: 'bg-jade', name: 'text-jade-ink' },
+  BUILDING: { rule: 'bg-gold', name: 'text-gold-ink' },
+  HOSTING: { rule: 'bg-sky', name: 'text-sky-ink' },
 };
 
 /** Friends: who is online and what they are doing, requests, and people you played with. */

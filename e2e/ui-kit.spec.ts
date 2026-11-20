@@ -81,6 +81,6 @@ test('a toast is shown from the overlay container and can be dismissed', async (
     ),
   ).toBe(1);
 
-  await page.getByRole('button', { name: 'Dismiss' }).click();
+  await page.locator('nc-toast-host').getByRole('button', { name: 'Dismiss' }).click();
   await expect(toast).toHaveCount(0);
 });

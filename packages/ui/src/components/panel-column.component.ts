@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
-/** Which side of the column draws the hairline that separates it from what it sits beside. */
+/** Which side of the column draws the line that separates it from what it sits beside. */
 export type PanelEdge = 'left' | 'right' | 'none';
 
 const EDGE: Record<PanelEdge, string> = {
-  left: 'border-l border-line',
-  right: 'border-r border-line',
+  left: 'border-l-3 border-line',
+  right: 'border-r-3 border-line',
   none: '',
 };
 

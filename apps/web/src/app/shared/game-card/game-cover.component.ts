@@ -12,7 +12,7 @@ import { injectProjectImage, injectReleaseImage } from '../queries/releases.quer
   imports: [IconComponent],
   templateUrl: './game-cover.component.html',
   host: {
-    '[class]': '"block overflow-hidden " + (bordered() ? "border-b border-line" : "")',
+    '[class]': '"block overflow-hidden " + (bordered() ? "border-b-3 border-line" : "")',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

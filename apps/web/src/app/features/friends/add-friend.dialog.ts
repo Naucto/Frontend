@@ -7,6 +7,7 @@ import {
   DialogShellComponent,
   FieldComponent,
   InputDirective,
+  NoticeComponent,
   ToastService,
 } from '@naucto/ui';
 import { injectQuery } from '@tanstack/angular-query-experimental';
@@ -33,6 +34,7 @@ const RESULTS_SHOWN = 8;
     DialogShellComponent,
     FieldComponent,
     InputDirective,
+    NoticeComponent,
     UserAvatarComponent,
   ],
   templateUrl: './add-friend.dialog.html',
