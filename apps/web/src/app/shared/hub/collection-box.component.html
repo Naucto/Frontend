@@ -9,23 +9,23 @@
     aria-hidden="true"
     class="flat-sm bevel-fill-inset absolute inset-x-[12px] top-[80px] bottom-0"></span>
   <span class="row">
-    @for (game of shown(); track game.id; let place = $index) {
+    @for (item of shown(); track item.game.id; let place = $index) {
       <button
         type="button"
         class="disk"
         [attr.data-place]="place"
-        [attr.aria-label]="game.name"
+        [attr.aria-label]="item.game.name"
         [style.left.px]="poses()[place]?.left"
         [style.z-index]="poses()[place]?.z"
         [style.transform]="poses()[place]?.transform"
         (focus)="onFocus(place)"
         (blur)="onBlur($event)"
-        (click)="picked.emit(game)">
+        (click)="picked.emit(item.game)">
         <nc-floppy
           mode="thumb"
-          [name]="game.name"
-          [body]="game.diskColor ?? undefined"
-          [cover]="game.coverUrl" />
+          [name]="item.game.name"
+          [disk]="item.disk"
+          [cover]="item.game.coverUrl" />
       </button>
     }
     @if (more() > 0) {

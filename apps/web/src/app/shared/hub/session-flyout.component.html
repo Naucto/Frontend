@@ -3,16 +3,16 @@
     <span class="text-label tracking-label text-ink-3 uppercase">
       {{ elapsed() ? t('hub.session.started', { when: elapsed() }) : t('hub.session.startedNow') }}
     </span>
-    <p class="line-clamp-2 text-body leading-[1.55] text-pretty text-ink-body">
-      {{ description() }}
-    </p>
+    <span class="line-clamp-2 font-display text-[28px] leading-[1.1] text-balance text-ink">
+      {{ session().projectName }}
+    </span>
   </div>
   <div class="grid min-w-0 gap-[8px]">
     <div class="flex items-center justify-between gap-[10px]">
       <span class="text-label tracking-label text-ink-3 uppercase">
         {{ t('hub.session.players') }}
       </span>
-      <nc-chip>{{ session().players.length }}/{{ session().capacity }}</nc-chip>
+      <nc-chip>{{ session().playerCount }}/{{ session().maxPlayers }}</nc-chip>
     </div>
     <ul class="grid gap-[6px]" [attr.aria-label]="t('hub.session.players')">
       @for (row of rows(); track $index) {
@@ -21,14 +21,13 @@
             @case ('player') {
               <nc-avatar
                 aria-hidden="true"
-                [name]="row.player.username"
-                [id]="row.player.id"
-                [colour]="row.you ? 'gold' : undefined"
+                [name]="displayName(row.player)"
+                [colour]="playerColour(row.player.username, viewer())"
                 [size]="28" />
               <span
                 class="min-w-0 truncate text-body leading-none"
                 [class]="row.you ? 'text-gold-ink' : 'text-ink'">
-                {{ row.player.username }}
+                {{ displayName(row.player) }}
               </span>
               @if (row.host) {
                 <nc-chip class="ml-auto" tone="gold">{{ t('hub.session.host') }}</nc-chip>
@@ -45,11 +44,11 @@
             }
             @case ('more') {
               <span aria-hidden="true" class="inline-flex flex-none">
-                @for (face of row.faces; track face.id) {
+                @for (face of row.faces; track face.username) {
                   <nc-avatar
                     class="shadow-[0_0_0_3px_var(--color-raised)] not-first:-ml-[8px]"
-                    [name]="face.username"
-                    [id]="face.id"
+                    [name]="displayName(face)"
+                    [colour]="playerColour(face.username, viewer())"
                     [size]="28" />
                 }
               </span>

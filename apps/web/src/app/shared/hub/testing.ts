@@ -1,4 +1,4 @@
-import type { HubGame } from './hub-game';
+import type { HubGame, HubSession } from './hub-game';
 
 /** A game for the specs of the hub's pieces: every field set, and told apart by its number. */
 export function gameOf(id: number, over: Partial<HubGame> = {}): HubGame {
@@ -9,10 +9,33 @@ export function gameOf(id: number, over: Partial<HubGame> = {}): HubGame {
     tags: ['arcade'],
     viewCount: 1000 * id,
     likes: 10 * id,
+    commentCount: id,
     creator: { id: 100 + id, username: `maker${String(id)}` },
     coverUrl: `/covers/${String(id)}.png`,
     clipUrl: null,
-    diskColor: null,
+    disk: null,
+    ...over,
+  };
+}
+
+/** A session of `player1`…, hosted by the first, naming eight of them at most as the API does. */
+export function sessionOf(
+  seated: number,
+  seats: number,
+  over: Partial<HubSession> = {},
+): HubSession {
+  return {
+    sessionUuid: 'room',
+    startedAt: '2026-11-20T10:00:00Z',
+    projectId: 7,
+    projectName: 'Game 7',
+    coverUrl: null,
+    hostUsername: 'player1',
+    roster: Array.from({ length: Math.min(seated, 8) }, (_, i) => ({
+      username: `player${String(i + 1)}`,
+    })),
+    playerCount: seated,
+    maxPlayers: seats,
     ...over,
   };
 }

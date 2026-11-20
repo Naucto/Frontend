@@ -14,6 +14,7 @@ import { RouterLink } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { AvatarComponent, ChipComponent, IconComponent } from '@naucto/ui';
 
+import { diskStyleFor } from '../game-card/disk-style';
 import { FloppyComponent } from '../game-card/floppy.component';
 import { dockFits, dockPose, restPose } from './dock';
 import type { HubGame } from './hub-game';
@@ -92,7 +93,9 @@ export class CollectionBoxComponent {
   /** A collection that would run past the row is spread over it, one disk past what fits. */
   private readonly spread = computed(() => this.total() > dockFits(this.rowWidth()));
   protected readonly shown = computed(() =>
-    this.spread() ? this.games().slice(0, dockFits(this.rowWidth()) + 1) : this.games(),
+    (this.spread() ? this.games().slice(0, dockFits(this.rowWidth()) + 1) : this.games()).map(
+      (game) => ({ game, disk: diskStyleFor(game) }),
+    ),
   );
   protected readonly more = computed(() => this.total() - this.shown().length);
   /** Everything that rides the dock: the disks, then the tile for the rest. */
