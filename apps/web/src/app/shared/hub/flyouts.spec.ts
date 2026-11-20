@@ -3,10 +3,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { testProviders } from '../../testing/providers';
 import { GameFlyoutComponent } from './game-flyout.component';
-import type { HubSession } from './hub-game';
+import { SessionDiskComponent } from './session-disk.component';
 import { SessionFlyoutComponent } from './session-flyout.component';
 import { ShelfDiskComponent } from './shelf-disk.component';
-import { gameOf, installLayoutStubs } from './testing';
+import { gameOf, installLayoutStubs, sessionOf } from './testing';
 
 const text = (element: Element | null | undefined): string =>
   (element?.textContent ?? '').replace(/\s+/g, ' ').trim();
@@ -31,29 +31,23 @@ describe('the bodies of a shelf flyout', () => {
   describe('for a session', () => {
     let fixture: ComponentFixture<SessionFlyoutComponent>;
     let host: HTMLElement;
-    const session: HubSession = {
-      id: 'room',
+    const session = sessionOf(3, 5, {
       startedAt: new Date(Date.now() - 12 * 60_000 - 5000).toISOString(),
-      hostId: 2,
-      players: [
-        { id: 1, username: 'you' },
-        { id: 2, username: 'lea' },
-        { id: 3, username: 'emma' },
-      ],
-      capacity: 5,
-    };
+      projectName: 'Bomberman',
+      hostUsername: 'lea',
+      roster: [{ username: 'you' }, { username: 'lea' }, { username: 'emma', nickname: 'Emma B' }],
+    });
 
     beforeEach(() => {
       fixture = TestBed.createComponent(SessionFlyoutComponent);
       fixture.componentRef.setInput('session', session);
-      fixture.componentRef.setInput('description', 'Four corners, too many bombs.');
-      fixture.componentRef.setInput('viewerId', 1);
+      fixture.componentRef.setInput('viewer', 'you');
       fixture.detectChanges();
       host = fixture.nativeElement as HTMLElement;
     });
 
-    it('says when it started, what the game is and how full it is', () => {
-      expect(text(host)).toContain('Started 12 min ago Four corners, too many bombs.');
+    it('says when it started, which game it is and how full it is', () => {
+      expect(text(host)).toContain('Started 12 min ago Bomberman');
       expect(text(host)).toContain('Players 3/5');
     });
 
@@ -63,7 +57,7 @@ describe('the bodies of a shelf flyout', () => {
       expect([...list.querySelectorAll('li')].map(text)).toEqual([
         'L lea Host',
         'Y you Leave',
-        'E emma',
+        'E Emma B',
         '2 open seats',
       ]);
       expect(list.querySelector('nc-avatar')?.getAttribute('aria-hidden')).toBe('true');
@@ -118,5 +112,55 @@ describe('ShelfDiskComponent', () => {
     expect(link().getAttribute('aria-expanded')).toBe('true');
     expect(link().getAttribute('aria-describedby')).toBe('flyout-7');
     expect(link().querySelector('nc-floppy')?.classList).toContain('open');
+  });
+});
+
+describe('SessionDiskComponent', () => {
+  let fixture: ComponentFixture<SessionDiskComponent>;
+  const host = (): HTMLElement => fixture.nativeElement as HTMLElement;
+
+  beforeEach(() => {
+    installLayoutStubs();
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ providers: testProviders() });
+    fixture = TestBed.createComponent(SessionDiskComponent);
+    fixture.componentRef.setInput('session', sessionOf(2, 4));
+    fixture.componentRef.setInput('link', ['/play', 7]);
+    fixture.componentRef.setInput('viewer', 'you');
+    fixture.detectChanges();
+  });
+
+  it('is the link to the game, wearing its players and its open seats', () => {
+    expect(host().querySelector('a')?.getAttribute('aria-label')).toBe('Game 7');
+    expect(host().querySelectorAll('.sticker .card')).toHaveLength(3);
+    expect(host().querySelectorAll('.sticker .seat')).toHaveLength(2);
+    expect(host().querySelectorAll('.sticker.away')).toHaveLength(1);
+  });
+
+  it('offers to join, and a press on it joins without following the link', () => {
+    const joined = vi.fn();
+    fixture.componentInstance.joined.subscribe(joined);
+    const followed = vi.fn();
+    host().querySelector('a')?.addEventListener('click', followed);
+
+    host().querySelector<HTMLElement>('.action.join')?.click();
+    expect(joined).toHaveBeenCalledTimes(1);
+    expect(followed).not.toHaveBeenCalled();
+  });
+
+  it('offers nothing once the viewer is in, or when no seat is left', () => {
+    const session = sessionOf(2, 4);
+    fixture.componentRef.setInput('session', {
+      ...session,
+      roster: [...session.roster, { username: 'you' }],
+      playerCount: 3,
+    });
+    fixture.detectChanges();
+    expect(host().querySelector('.action')).toBeNull();
+    expect(host().querySelectorAll('.sticker.away .seat')).toHaveLength(1);
+
+    fixture.componentRef.setInput('session', sessionOf(4, 4));
+    fixture.detectChanges();
+    expect(host().querySelector('.action')).toBeNull();
   });
 });

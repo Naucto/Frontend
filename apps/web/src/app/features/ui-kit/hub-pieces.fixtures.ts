@@ -1,7 +1,7 @@
 import { BUBBLEGUM_16 } from '@naucto/engine';
 
 import type { HeroEntry } from '../../shared/hub/hero-pile.component';
-import type { HubGame, HubSession, SessionPlayer } from '../../shared/hub/hub-game';
+import type { HubGame, HubSession } from '../../shared/hub/hub-game';
 
 /**
  * A stand-in cover in three palette colours: a night sky with a few stars and a moon, over a
@@ -37,7 +37,12 @@ function pick<T>(list: readonly T[], index: number): T {
   return item;
 }
 
-const PEOPLE: readonly SessionPlayer[] = [
+interface Person {
+  id: number;
+  username: string;
+}
+
+const PEOPLE: readonly Person[] = [
   'you',
   'louis',
   'lea',
@@ -53,9 +58,9 @@ const PEOPLE: readonly SessionPlayer[] = [
 ].map((username, id) => ({ id: id + 1, username }));
 
 /** The signed-in player of the showcase. */
-export const VIEWER = 1;
+export const VIEWER = 'you';
 
-const person = (index: number): SessionPlayer => pick(PEOPLE, index);
+const person = (index: number): Person => pick(PEOPLE, index);
 
 /** Name, description, tags, then the disk's colour and the cover's three, as palette slots. */
 const CATALOGUE: readonly (readonly [
@@ -205,8 +210,8 @@ export const GAMES: readonly HubGame[] = CATALOGUE.map(
     likes: 960 - index * 61,
     creator: person(index + 1),
     coverUrl: cover(index + 1, sky, ground, mark),
-    clipUrl: null,
-    diskColor: BUBBLEGUM_16[disk] ?? null,
+    commentCount: 42 - index * 3,
+    disk: { color: BUBBLEGUM_16[disk] ?? '', finish: 'solid' },
   }),
 );
 
@@ -216,11 +221,6 @@ export const HERO: readonly HeroEntry[] = [
   'Trending',
   'Because you played High Tide Plinko',
 ].map((reason, index) => ({ reason, game: pick(GAMES, index), mine: index === 1 }));
-
-export interface OpenSession {
-  session: HubSession;
-  game: HubGame;
-}
 
 /** Players seated and seats in all, per session; the second one has the viewer in it. */
 const SEATS: readonly (readonly [number, number])[] = [
@@ -232,27 +232,30 @@ const SEATS: readonly (readonly [number, number])[] = [
   [6, 8],
 ];
 
-export function openSessions(now: number): OpenSession[] {
-  return SEATS.map(([seated, capacity], index) => {
-    const players = Array.from({ length: seated }, (_, seat) =>
-      index === 1 && seat === 1 ? person(0) : person(index + seat + 1),
-    );
+export function openSessions(now: number): HubSession[] {
+  return SEATS.map(([seated, seats], index) => {
+    const game = pick(GAMES, index * 3 + 2);
+    // A session names eight of its players at most.
+    const roster = Array.from({ length: Math.min(seated, 8) }, (_, seat) => ({
+      username: (index === 1 && seat === 1 ? person(0) : person(index + seat + 1)).username,
+    }));
     return {
-      game: pick(GAMES, index * 3 + 2),
-      session: {
-        id: `session-${String(index)}`,
-        startedAt: new Date(now - (3 + index * 9) * 60_000).toISOString(),
-        hostId: players[0]?.id ?? 0,
-        players,
-        capacity,
-      },
+      sessionUuid: `session-${String(index)}`,
+      startedAt: new Date(now - (3 + index * 9) * 60_000).toISOString(),
+      projectId: game.id,
+      projectName: game.name,
+      coverUrl: game.coverUrl,
+      hostUsername: roster[0]?.username ?? '',
+      roster,
+      playerCount: seated,
+      maxPlayers: seats,
     };
   });
 }
 
 export interface Collection {
   title: string;
-  curator: SessionPlayer;
+  curator: Person;
   total: number;
   games: readonly HubGame[];
 }

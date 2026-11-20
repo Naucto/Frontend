@@ -20,6 +20,7 @@ import {
   StatComponent,
 } from '@naucto/ui';
 
+import { diskStyleFor } from '../game-card/disk-style';
 import { FloppyComponent } from '../game-card/floppy.component';
 import { HeroBackdropComponent } from './hero-backdrop.component';
 import type { HubGame } from './hub-game';
@@ -95,6 +96,7 @@ export class HeroPileComponent {
       const side = Math.sign(offset);
       return {
         entry,
+        disk: diskStyleFor(entry.game),
         front: offset === 0,
         z: 10 - far,
         transform: `translate(${String(side * far * 92)}px, ${String(-far * 30)}px) rotate(${String(side * far * 6)}deg) scale(${(1 - far * 0.14).toFixed(3)})`,

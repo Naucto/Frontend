@@ -1,0 +1,18 @@
+<a
+  class="relative block"
+  [routerLink]="link()"
+  [attr.aria-label]="session().projectName"
+  [attr.aria-expanded]="flyoutId() ? open() : null"
+  [attr.aria-controls]="flyoutId()"
+  [attr.aria-describedby]="open() ? flyoutId() : null">
+  <nc-floppy
+    info="bandBottom"
+    [name]="session().projectName"
+    [disk]="disk()"
+    [cover]="session().coverUrl"
+    [by]="session().hostUsername"
+    [stickers]="stickers()"
+    [action]="joinable() ? 'join' : 'none'"
+    [open]="open()"
+    (acted)="joined.emit()" />
+</a>
