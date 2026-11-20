@@ -4,25 +4,24 @@ import {
   Component,
   computed,
   input,
-  signal,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
 import type { ProjectExResponseDto } from '@naucto/api-client';
-import { ChipComponent, colourOf, StatComponent } from '@naucto/ui';
+import { ChipComponent, StatComponent } from '@naucto/ui';
 
-import { injectProjectImage, injectReleaseImage } from '../queries/releases.queries';
 import { UserAvatarComponent } from '../user-avatar.component';
-import { FloppyComponent } from './floppy.component';
+import { COVER_RATIO, CoverCardComponent } from './cover-card.component';
+import { GameCoverComponent } from './game-cover.component';
 
-/** Hub card: the game as a disk, its name, author chips, plays / likes / remixes. */
 @Component({
   selector: 'nc-game-card',
   imports: [
     RouterLink,
     TranslocoDirective,
     ChipComponent,
-    FloppyComponent,
+    CoverCardComponent,
+    GameCoverComponent,
     StatComponent,
     UserAvatarComponent,
   ],
@@ -43,18 +42,8 @@ export class GameCardComponent {
   protected readonly link = computed(() =>
     this.opensEditor() ? ['/edit', this.game().id] : ['/play', this.game().id],
   );
-  /** A row with the disk as its thumbnail, for the sidebar lists on the play page. */
   readonly dense = input(false, { transform: booleanAttribute });
-
-  /** A game has no colour of its own, so its disk takes one that is stable for its id. */
-  protected readonly body = computed(() => colourOf(this.game().id));
-
-  private readonly released = injectReleaseImage(() => (this.isDraft() ? null : this.game().id));
-  private readonly draft = injectProjectImage(() => (this.isDraft() ? this.game().id : null));
-  protected readonly cover = computed(() => this.released.data() ?? this.draft.data() ?? null);
-
-  /** Whether the keyboard is on the card, which opens the disk the way the pointer does. */
-  protected readonly focused = signal(false);
+  protected readonly COVER_RATIO = COVER_RATIO;
 
   /** Collaborators other than the author, who already has the avatar beside their name. */
   private readonly others = computed(() =>

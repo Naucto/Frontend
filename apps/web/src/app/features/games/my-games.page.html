@@ -26,9 +26,13 @@
       [count]="drafts().length"
       [empty]="t('games.noDrafts')"
       [opensEditor]="true">
-      <a lead routerLink="/games/new" class="block min-w-0">
-        <nc-floppy ghost action="new" [name]="t('nav.newGame')" [actionLabel]="t('nav.newGame')" />
-      </a>
+      <nc-cover-card
+        lead
+        ghost
+        link="/games/new"
+        action="new"
+        [name]="t('nav.newGame')"
+        [actionLabel]="t('nav.newGame')" />
     </nc-hub-row>
     <nc-hub-row
       [title]="t('games.published')"

@@ -4,7 +4,7 @@ import { TranslocoDirective } from '@jsverse/transloco';
 import type { ProjectExResponseDto } from '@naucto/api-client';
 import { ButtonDirective, IconComponent, SkeletonComponent } from '@naucto/ui';
 
-import { FloppyComponent } from '../../shared/game-card/floppy.component';
+import { CoverCardComponent } from '../../shared/game-card/cover-card.component';
 import { GameCardComponent } from '../../shared/game-card/game-card.component';
 
 /** Whether the shelf has its games, is still asking, or could not find out. */
@@ -17,7 +17,7 @@ export type ShelfState = 'ready' | 'pending' | 'error';
     RouterLink,
     TranslocoDirective,
     ButtonDirective,
-    FloppyComponent,
+    CoverCardComponent,
     GameCardComponent,
     IconComponent,
     SkeletonComponent,
