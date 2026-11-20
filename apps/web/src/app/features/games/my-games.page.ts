@@ -12,7 +12,7 @@ import {
 import { injectQuery } from '@tanstack/angular-query-experimental';
 
 import { unwrap } from '../../core/api/api-errors';
-import { FloppyComponent } from '../../shared/game-card/floppy.component';
+import { CoverCardComponent } from '../../shared/game-card/cover-card.component';
 import { qk } from '../../shared/queries/query-keys';
 import { HubRowComponent } from '../hub/hub-row.component';
 
@@ -26,7 +26,7 @@ import { HubRowComponent } from '../hub/hub-row.component';
     ErrorStateComponent,
     IconComponent,
     SkeletonComponent,
-    FloppyComponent,
+    CoverCardComponent,
     HubRowComponent,
   ],
   templateUrl: './my-games.page.html',

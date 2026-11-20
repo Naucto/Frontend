@@ -23,13 +23,12 @@
       @case ('pending') {
         <!-- At the card's real geometry, so the shelf does not jump when the games land. -->
         @for (i of placeholders; track i) {
-          <div class="grid justify-items-center">
-            <div class="raised-lg aspect-[100/86] w-full bevel-fill-panel p-1">
-              <nc-skeleton height="100%" />
+          <nc-cover-card aria-hidden="true" name="&nbsp;">
+            <nc-skeleton cover height="100%" />
+            <div meta class="mt-0.5 flex justify-center">
+              <nc-skeleton height="20px" width="45%" />
             </div>
-            <nc-skeleton class="mt-[14px]" height="16px" width="70%" />
-            <nc-skeleton class="mt-[10px]" height="18px" width="45%" />
-          </div>
+          </nc-cover-card>
         }
       }
       @case ('error') {
@@ -45,16 +44,15 @@
                own: the cells the ghosts fill behind it are what hold the height. -->
           <p class="text-body text-ink-3" [class.col-span-full]="!reserve()">{{ empty() }}</p>
         }
-        <!-- The card's own structure with nothing in it, not a fixed height: a card is as tall
-             as its disk at the column's width plus two lines of type, and only the same
-             boxes come out to the same pixel at every column count. -->
+        <!-- The card itself with nothing in it, not a fixed height: only the same boxes come out
+             to the same pixel at every column count. -->
         @for (i of ghosts(); track i) {
-          <nc-floppy class="invisible" aria-hidden="true" name="&nbsp;">
+          <nc-cover-card class="invisible" aria-hidden="true" name="&nbsp;">
             <div meta class="mt-0.5 flex items-center justify-center">
               <span class="inline-block h-[20px]"></span>
               <span class="label">&nbsp;</span>
             </div>
-          </nc-floppy>
+          </nc-cover-card>
         }
       }
     }

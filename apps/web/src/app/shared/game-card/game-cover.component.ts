@@ -27,6 +27,7 @@ export class GameCoverComponent {
   readonly iconSize = input<12 | 24 | 48>(24);
   /** The rule under a card. A thumbnail small enough to sit in a row has nothing to rule off. */
   readonly bordered = input(true);
+  readonly fit = input<'cover' | 'contain'>('cover');
 
   private readonly released = injectReleaseImage(() => this.releaseId());
   private readonly draft = injectProjectImage(() => this.projectId());

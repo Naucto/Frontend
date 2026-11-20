@@ -3,12 +3,13 @@
     <a
       [routerLink]="link()"
       class="group raised-sm bevel-bare flex items-center gap-1.5 p-[6px] hover:bevel-lit hover:bevel-fill-raised active:bevel-down">
-      <nc-floppy
-        class="w-[64px] shrink-0"
-        mode="thumb"
-        [name]="game().name"
-        [body]="body()"
-        [cover]="cover()" />
+      <nc-game-cover
+        class="flat-sm w-[96px] shrink-0 bevel-fill-inset"
+        fit="contain"
+        [style.aspect-ratio]="COVER_RATIO"
+        [releaseId]="isDraft() ? null : game().id"
+        [projectId]="isDraft() ? game().id : null"
+        [bordered]="false" />
       <span class="grid min-w-0 flex-1 gap-0.5">
         <span class="flex items-center gap-1">
           <span class="min-w-0 flex-1 truncate text-body text-ink group-hover:text-gold-ink">
@@ -29,48 +30,40 @@
       </span>
     </a>
   } @else {
-    <a
-      [routerLink]="link()"
-      class="block"
-      (focus)="focused.set($any($event.target).matches(':focus-visible'))"
-      (blur)="focused.set(false)">
-      <nc-floppy
-        [name]="game().name"
-        [body]="body()"
-        [cover]="cover()"
-        [action]="opensEditor() ? 'edit' : 'play'"
-        [actionLabel]="opensEditor() ? t('game.edit') : t('hub.play')"
-        [open]="focused()">
-        <nc-stat info icon="play" [value]="game().viewCount" compact />
-        <nc-stat info icon="heart" [value]="game().likes" tone="hot" compact />
-        <nc-stat
-          info
-          class="@max-[210px]:hidden"
-          icon="git-branch"
-          [value]="game().forkCount ?? 0" />
-        <div meta class="mt-0.5 flex min-w-0 items-center justify-center gap-[6px]">
+    <nc-cover-card
+      [name]="game().name"
+      [link]="link()"
+      [action]="opensEditor() ? 'edit' : 'play'"
+      [actionLabel]="opensEditor() ? t('game.edit') : t('hub.play')">
+      <nc-game-cover
+        cover
+        class="size-full"
+        fit="contain"
+        [releaseId]="isDraft() ? null : game().id"
+        [projectId]="isDraft() ? game().id : null"
+        [bordered]="false" />
+      <nc-stat info icon="play" [value]="game().viewCount" compact />
+      <nc-stat info icon="heart" [value]="game().likes" tone="hot" compact />
+      <nc-stat info class="@max-[210px]:hidden" icon="git-branch" [value]="game().forkCount ?? 0" />
+      <div meta class="mt-0.5 flex min-w-0 items-center justify-center gap-[6px]">
+        <nc-user-avatar [name]="game().creator.username" [userId]="game().creator.id" [size]="20" />
+        <span class="label truncate">{{ game().creator.username }}</span>
+        @for (collaborator of stacked(); track collaborator.id) {
           <nc-user-avatar
-            [name]="game().creator.username"
-            [userId]="game().creator.id"
-            [size]="20" />
-          <span class="label truncate">{{ game().creator.username }}</span>
-          @for (collaborator of stacked(); track collaborator.id) {
-            <nc-user-avatar
-              [name]="collaborator.username"
-              [userId]="collaborator.id"
-              [size]="20"
-              overlap />
-          }
-          @if (extra()) {
-            <span class="label text-ink-4">+{{ extra() }}</span>
-          }
-          @if (game().hiddenAt) {
-            <nc-chip tone="hot">Hidden</nc-chip>
-          } @else if (isDraft()) {
-            <nc-chip>Draft</nc-chip>
-          }
-        </div>
-      </nc-floppy>
-    </a>
+            [name]="collaborator.username"
+            [userId]="collaborator.id"
+            [size]="20"
+            overlap />
+        }
+        @if (extra()) {
+          <span class="label text-ink-4">+{{ extra() }}</span>
+        }
+        @if (game().hiddenAt) {
+          <nc-chip tone="hot">Hidden</nc-chip>
+        } @else if (isDraft()) {
+          <nc-chip>Draft</nc-chip>
+        }
+      </div>
+    </nc-cover-card>
   }
 </ng-container>
