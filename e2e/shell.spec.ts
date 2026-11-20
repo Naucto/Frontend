@@ -1,4 +1,5 @@
 import { expect, test } from './fixtures';
+import { release } from './mocks/game';
 
 test.describe('app shell', () => {
   test('hub renders with navigation and footer', async ({ page }) => {
@@ -83,6 +84,48 @@ test.describe('app shell', () => {
     for (const button of await down.all()) {
       await expect(button).toBeDisabled();
     }
+  });
+
+  /** Games and actions answer to the same field, and the arrows reach across both groups. */
+  test('Ctrl-K opens the command palette, which finds a game and runs an action', async ({
+    page,
+  }) => {
+    await page.route('**/auth/refresh', (route) =>
+      route.fulfill({ status: 401, json: { message: 'no' } }),
+    );
+    await page.route('**/projects/releases/paginated**', (route) => {
+      const searched = new URL(route.request().url()).searchParams.has('search');
+      return route.fulfill({ json: { projects: searched ? [release] : [], total: 0 } });
+    });
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.goto('/hub');
+    await expect(page.getByRole('navigation', { name: 'Main navigation' })).toBeVisible();
+
+    await page.keyboard.press('Control+k');
+    const field = page.getByRole('combobox', { name: 'Search games and commands' });
+    await expect(field).toBeFocused();
+    await expect(page.getByRole('option', { name: 'Sign in' })).toBeVisible();
+    await expect(page.getByRole('option', { name: 'My games' })).toHaveCount(0);
+
+    await field.fill('e');
+    await expect(page.getByRole('option', { name: 'Cave Diver' })).toBeVisible();
+    await expect(page.getByRole('option', { name: 'Hub' })).toHaveCount(0);
+
+    await page.keyboard.press('Escape');
+    await expect(field).toHaveCount(0);
+
+    await page.keyboard.press('Control+k');
+    await field.fill('theme');
+    await expect(page.getByRole('option')).toHaveCount(2);
+    await page.keyboard.press('ArrowDown');
+    await expect(page.getByRole('option', { name: 'Toggle theme' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    await page.keyboard.press('Enter');
+
+    await expect(field).toHaveCount(0);
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   });
 
   test('unknown routes show the not-found page', async ({ page }) => {

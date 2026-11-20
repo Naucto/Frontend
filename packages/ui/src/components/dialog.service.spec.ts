@@ -9,6 +9,7 @@ describe('DialogService', () => {
   let closed: Subject<boolean | string | undefined>;
   let opened: { component: unknown; data: unknown }[];
   let backdrop: unknown;
+  let position: unknown;
 
   beforeEach(() => {
     closed = new Subject();
@@ -18,9 +19,13 @@ describe('DialogService', () => {
         {
           provide: Dialog,
           useValue: {
-            open: (component: unknown, config: { data: unknown; backdropClass: unknown }) => {
+            open: (
+              component: unknown,
+              config: { data: unknown; backdropClass: unknown; positionStrategy?: unknown },
+            ) => {
               opened.push({ component, data: config.data });
               backdrop = config.backdropClass;
+              position = config.positionStrategy;
               return { closed };
             },
           },
@@ -75,6 +80,16 @@ describe('DialogService', () => {
         'in-data-reduce-motion:bg-scrim/50',
       ]),
     );
+  });
+
+  it('leaves the centring to the overlay unless a distance from the top is asked for', () => {
+    const service = TestBed.inject(DialogService);
+
+    service.open(ConfirmDialogComponent);
+    expect(position).toBeUndefined();
+
+    service.open(ConfirmDialogComponent, { top: '96px' });
+    expect(position).toBeDefined();
   });
 
   it('asks without the danger mark through confirm', async () => {

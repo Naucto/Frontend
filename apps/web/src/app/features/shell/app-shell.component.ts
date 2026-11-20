@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
+import { CommandPaletteShortcutDirective } from './command-palette-shortcut.directive';
 import { SiteFooterComponent } from './site-footer.component';
 import { TopBarComponent } from './top-bar.component';
 
@@ -9,6 +10,7 @@ import { TopBarComponent } from './top-bar.component';
   selector: 'nc-app-shell',
   imports: [RouterOutlet, TopBarComponent, SiteFooterComponent],
   templateUrl: './app-shell.component.html',
+  hostDirectives: [CommandPaletteShortcutDirective],
   host: { class: 'flex min-h-dvh flex-col overflow-x-clip' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

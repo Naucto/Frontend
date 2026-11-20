@@ -1,6 +1,7 @@
 import { Dialog, type DialogRef } from '@angular/cdk/dialog';
+import { createGlobalPositionStrategy } from '@angular/cdk/overlay';
 import { type ComponentType } from '@angular/cdk/portal';
-import { inject, Injectable } from '@angular/core';
+import { inject, Injectable, Injector } from '@angular/core';
 
 import {
   ConfirmDialogComponent,
@@ -37,6 +38,11 @@ export interface DialogOptions<D> {
   data?: D;
   /** Width in px or CSS length; defaults to 480px. */
   width?: string;
+  /**
+   * How far under the top of the window it hangs, as a CSS length; centred when absent. For a
+   * dialog whose height follows what is typed in it, which would otherwise move under the caret.
+   */
+  top?: string;
   ariaLabel?: string;
   /** Neither Escape nor the backdrop closes it: only what the dialog itself offers does. */
   disableClose?: boolean;
@@ -46,6 +52,7 @@ export interface DialogOptions<D> {
 @Injectable({ providedIn: 'root' })
 export class DialogService {
   private readonly dialog = inject(Dialog);
+  private readonly injector = inject(Injector);
 
   open<T, D = unknown, R = unknown>(
     component: ComponentType<T>,
@@ -61,6 +68,11 @@ export class DialogService {
       autoFocus: 'first-tabbable',
       disableClose: opts.disableClose ?? false,
       restoreFocus: true,
+      ...(opts.top && {
+        positionStrategy: createGlobalPositionStrategy(this.injector)
+          .centerHorizontally()
+          .top(opts.top),
+      }),
     });
   }
 
