@@ -67,25 +67,28 @@ describe('FloppyComponent', () => {
   });
 
   /** The lean is two custom properties the stylesheet reads; a touch never sets them. */
-  it('leans toward a mouse and stands back when it leaves', () => {
+  it('leans toward a mouse and is eased back from where it left', () => {
     const host = render({}).nativeElement as HTMLElement;
-    const move = (pointerType: string): void => {
-      const event = new MouseEvent('pointermove', { clientX: 10, clientY: 10 });
+    const pointer = (type: string, pointerType: string): void => {
+      const event = new MouseEvent(type, { clientX: 10, clientY: 10 });
       Object.defineProperty(event, 'pointerType', { value: pointerType });
       host.dispatchEvent(event);
     };
 
-    move('touch');
-    expect(host.style.getPropertyValue('--f-x')).toBe('');
-
-    host.dispatchEvent(new MouseEvent('pointerenter'));
-    move('mouse');
-    expect(host.classList).toContain('tilting');
-    expect(host.style.getPropertyValue('--f-x')).not.toBe('');
-
-    host.dispatchEvent(new MouseEvent('pointerleave'));
+    pointer('pointerenter', 'touch');
+    pointer('pointermove', 'touch');
     expect(host.classList).not.toContain('tilting');
     expect(host.style.getPropertyValue('--f-x')).toBe('');
+
+    pointer('pointerenter', 'mouse');
+    pointer('pointermove', 'mouse');
+    expect(host.classList).toContain('tilting');
+    const lean = host.style.getPropertyValue('--f-x');
+    expect(lean).not.toBe('');
+
+    pointer('pointerleave', 'mouse');
+    expect(host.classList).not.toContain('tilting');
+    expect(host.style.getPropertyValue('--f-x')).toBe(lean);
   });
 
   it('shows the cover on the label, and the hatch when there is none', () => {
@@ -97,8 +100,12 @@ describe('FloppyComponent', () => {
     expect(covered.querySelector('.label')?.classList).not.toContain('no-cover');
   });
 
-  it('draws the disk that does not exist yet as a ghost', () => {
-    const host = render({ ghost: true, action: 'new' }).nativeElement as HTMLElement;
-    expect(host.querySelector('.stage')?.classList).toContain('is-ghost');
+  it('draws the disk that does not exist yet as an outline that says what it makes', () => {
+    const host = render({ ghost: true, action: 'new', actionLabel: 'New game' })
+      .nativeElement as HTMLElement;
+    expect(host.classList).toContain('ghost');
+    expect(host.querySelector('.outline')).not.toBeNull();
+    expect(host.querySelector('.new')?.textContent).toContain('New game');
+    expect(host.querySelector('.action')).toBeNull();
   });
 });

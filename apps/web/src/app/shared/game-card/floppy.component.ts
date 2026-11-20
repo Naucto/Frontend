@@ -28,10 +28,9 @@ const ACTION_ICON: Record<FloppyAction, IconName> = {
 const TIGHTEST = 0.7;
 
 /**
- * A game as a 3.5" disk: its cover is the label. Reached by the pointer, the disk leans toward it
- * under a light that follows, the shutter slides off the window, the preview plays over the cover
- * and the action stands off the label. `open` is that same state for the keyboard, without the
- * lean.
+ * A game as a 3.5" disk: its cover is the label. Reached by the pointer, the disk lifts and leans
+ * toward it under a light that follows, the shutter slides onto the window, the preview plays over
+ * the cover and the action shows. `open` is that same state for the keyboard, without the lean.
  *
  * It is a picture, not a control: the link around it is the caller's, and an `a` that holds one
  * opens it on `:focus-visible` with nothing to bind. Project `[info]` into the band along the
@@ -45,6 +44,7 @@ const TIGHTEST = 0.7;
   host: {
     class: 'block',
     '[class.open]': 'open()',
+    '[class.ghost]': 'ghost()',
     '[class.thumb]': 'mode() === "thumb"',
     '[style.--floppy-body]': 'body() ?? null',
   },
@@ -62,7 +62,7 @@ export class FloppyComponent {
   readonly open = input(false, { transform: booleanAttribute });
   readonly mode = input<FloppyMode>('title');
   readonly titleAlign = input<'start' | 'center'>('center');
-  /** The disk that does not exist yet: an outline until it is reached. */
+  /** The disk that does not exist yet: an outline that says `actionLabel`, until it is reached. */
   readonly ghost = input(false, { transform: booleanAttribute });
 
   protected readonly ACTION_ICON = ACTION_ICON;
@@ -116,16 +116,16 @@ export class FloppyComponent {
       host.style.setProperty('--f-x', Math.max(-1, Math.min(1, x)).toFixed(3));
       host.style.setProperty('--f-y', Math.max(-1, Math.min(1, y)).toFixed(3));
     };
-    const enter = (): void => {
+    const enter = (event: PointerEvent): void => {
       this.hovered = true;
-      host.classList.add('tilting');
+      host.classList.toggle('tilting', event.pointerType === 'mouse' && this.mode() !== 'thumb');
       this.roll();
     };
+    // The lean is left where the pointer went out: the stylesheet eases the disk back from there,
+    // and clearing it here would snap the disk square first.
     const leave = (): void => {
       this.hovered = false;
       host.classList.remove('tilting');
-      host.style.removeProperty('--f-x');
-      host.style.removeProperty('--f-y');
       this.roll();
     };
     host.addEventListener('pointermove', lean, { passive: true });
