@@ -32,7 +32,7 @@ Pixelarticons, Bubblegum-16 palette, dark + light themes).
 | `npm run typecheck`                       | `tsc --noEmit` per workspace.                                                                 |
 | `npm test`                                | Vitest in every workspace (`ng test` for the app).                                            |
 | `npm run e2e`                             | Playwright (starts the dev server unless `E2E_BASE_URL` is set).                              |
-| `npm run pixel:check`                     | Fails on rounded corners, off-pixel strokes, density tokens and "·" separators (see Gotchas). |
+| `npm run pixel:check`                     | Fails on rounded corners, off-pixel strokes, density tokens, "·" separators and shrunk icons. |
 | `npm run docs:build`                      | Builds the docs submodule into `apps/web/public/docs` (run it before `start`/`build`/`e2e`).  |
 | `./dev.sh`                                | Dev server in Docker against the Backend on the `naucto-dev` network (hot reload, port 3001). |
 | `docker compose up --build`               | Production-style image on port 3001; `APP_*` env vars configure it at runtime.                |
@@ -193,10 +193,14 @@ the rule wins.
    screen ruled all over shows no structure at all. Group what belongs together, and tell groups
    apart by weight and spacing; keep a rule for the edge between two regions. A list of options or
    controls is a table component of the kit, not rows a screen rules by hand.
-3. **A symbol is pixel art.** Arrows, the cross, the plus and key glyphs are drawn on the 3px grid:
-   an `nc-icon`, or an inline SVG under `shape-rendering: crispEdges`. Never a font character (×,
-   ←, ↑, +): a glyph is sized by its face, not by the grid, and one the face lacks comes from
-   whatever font the browser falls back to.
+3. **A symbol is pixel art, and its pixel is the kit's.** Arrows, the cross, the plus, the check
+   and key glyphs are drawn on a grid whose cell is one kit pixel (3px): an `nc-mark` (five cells,
+   15px), an `nc-icon`, or an inline SVG under `shape-rendering: crispEdges`. Never a font
+   character (×, ←, ↑, +): a glyph is sized by its face, not by the grid, and one the face lacks
+   comes from whatever font the browser falls back to. Never a glyph scaled below its native size
+   or to a size that is not a multiple of it: its steps land on fractions of a pixel and its
+   diagonals blur. A control that needs a smaller mark gets one drawn for that size, not a shrunk
+   icon.
 4. **Alternatives read as alternatives.** Two keys bound to one action are written "Space or ↑",
    the arrow drawn. Two keycaps side by side read as a chord to press together.
 5. **No words nobody asked for.** A notice that explains the screen and a caption that describes
@@ -317,9 +321,14 @@ broken; an absence reads as not built.
   forever. `packages/ui/src/components/presence-flag.component.ts` draws its own path too and is not
   listed; nothing reports it today, so it stays out until something does. The edge chips in
   `presence-layer.component.ts` beside it use `nc-icon`, so they are covered.
-- `IconSize` is `12 | 24 | 48` on purpose: a 24-grid glyph only stays crisp under
-  `shape-rendering: crispEdges` at exact halves and doubles. Where an artboard renders one at 16,
-  take the nearest legal step rather than widening the union.
+- An `nc-icon` is native at 24 and doubles to 48. `IconSize` still holds 12, which halves the
+  glyph's own pixel: nothing new uses it, and `tools/pixel-allow.json` lists what still does. Where
+  an artboard renders an icon at 16, take 24 or an `nc-mark`, never a size in between.
+- The `nc-icon` set is older than the rule that a glyph's pixel is the kit's: it is drawn on a
+  24 grid with a cell of two units (one unit for a third of it, three for the four carets), so at
+  24 its pixel is 2px or 1px where the kit's is 3px. The `nc-mark` set (`icons/marks.ts`) is drawn
+  five cells across at 3px a cell. Redrawing the icons on the kit pixel is a design decision that
+  has not been taken; until it is, a small mark goes in as an `nc-mark`.
 - TypeScript 6: `baseUrl` is deprecated; path aliases are relative to each `tsconfig.json`.
 - An ingest answer that asks to rotate the visitor or the session applies only while the cookies
   still hold the identity the request carried. Go through `applyRotation`, or a late answer about an
