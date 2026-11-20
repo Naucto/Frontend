@@ -36,6 +36,7 @@ import { PresenceStore } from '../../core/presence/presence.store';
 import { FeedbackStore } from '../../shared/feedback/feedback.store';
 import { ReportProblemButtonComponent } from '../../shared/feedback/report-problem-button.component';
 import { RuntimeHostService } from '../../shared/game-screen/runtime-host.service';
+import { SuspensionBandComponent } from '../../shared/moderation/suspension-band.component';
 import { UserAvatarComponent } from '../../shared/user-avatar.component';
 import { yTextField } from '../../shared/yjs/y-signal';
 import { AccountMenuComponent } from '../shell/account-menu.component';
@@ -103,6 +104,7 @@ const RAIL: Omit<RailItem<EditorTab>, 'label'>[] = [
     VersionsPopoverComponent,
     LogoComponent,
     ReportProblemButtonComponent,
+    SuspensionBandComponent,
   ],
   providers: [
     WorkSessionService,

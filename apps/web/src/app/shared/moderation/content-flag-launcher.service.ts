@@ -2,8 +2,8 @@ import { inject, Injectable } from '@angular/core';
 import { TranslocoService } from '@jsverse/transloco';
 import { DialogService, ToastService } from '@naucto/ui';
 
-import { SignedInAction } from '../auth/signed-in-action';
 import { type FlagContentData, FlagContentDialog } from './flag-content.dialog';
+import { GoodStandingAction } from './good-standing-action';
 
 /**
  * Opens the report of a game, a comment or a profile from anywhere, asking a signed-out reader to
@@ -12,12 +12,12 @@ import { type FlagContentData, FlagContentDialog } from './flag-content.dialog';
 @Injectable({ providedIn: 'root' })
 export class ContentFlagLauncher {
   private readonly dialogs = inject(DialogService);
-  private readonly signedIn = inject(SignedInAction);
+  private readonly standing = inject(GoodStandingAction);
   private readonly toasts = inject(ToastService);
   private readonly transloco = inject(TranslocoService);
 
   report(target: FlagContentData): void {
-    this.signedIn.run(() => {
+    this.standing.run(() => {
       this.dialogs
         .open<FlagContentDialog, FlagContentData, boolean>(FlagContentDialog, {
           data: target,

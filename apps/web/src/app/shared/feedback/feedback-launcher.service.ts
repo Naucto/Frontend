@@ -3,7 +3,7 @@ import { TranslocoService } from '@jsverse/transloco';
 import type { ReportRole } from '@naucto/api-client';
 import { DialogService } from '@naucto/ui';
 
-import { SignedInAction } from '../auth/signed-in-action';
+import { GoodStandingAction } from '../moderation/good-standing-action';
 import { type BugReportData, BugReportDialog, type BugReportSent } from './bug-report.dialog';
 import { RatingDialog, type RatingDialogData } from './rating.dialog';
 import type { RatingSent } from './rating-form.component';
@@ -15,17 +15,17 @@ export function roleFor(path: string): ReportRole {
 }
 
 /**
- * Opens the bug report and the rating from anywhere, asking a signed-out reader to sign in first:
+ * Opens the bug report and the rating from anywhere, asking a signed-out reader to sign in first and telling a suspended account why it cannot:
  * both name the account they come from.
  */
 @Injectable({ providedIn: 'root' })
 export class FeedbackLauncher {
   private readonly dialogs = inject(DialogService);
-  private readonly signedIn = inject(SignedInAction);
+  private readonly standing = inject(GoodStandingAction);
   private readonly transloco = inject(TranslocoService);
 
   reportBug(data: BugReportData = {}): void {
-    this.signedIn.run(() => {
+    this.standing.run(() => {
       this.dialogs
         .open<BugReportDialog, BugReportData, BugReportSent>(BugReportDialog, {
           data,
@@ -41,7 +41,7 @@ export class FeedbackLauncher {
   }
 
   rate(role: ReportRole = roleFor(location.pathname)): void {
-    this.signedIn.run(() => {
+    this.standing.run(() => {
       this.dialogs
         .open<RatingDialog, RatingDialogData, RatingSent>(RatingDialog, {
           data: { role },

@@ -40,6 +40,8 @@ export const AuthStore = signalStore(
     userId: computed(() => state.user()?.id ?? null),
     displayName: computed(() => state.user()?.nickname ?? state.user()?.username ?? ''),
     role: computed(() => state.user()?.role ?? null),
+    /** The suspension the account is under, as the profile last said it. Null in good standing. */
+    suspension: computed(() => state.user()?.suspension ?? null),
     /**
      * Whether the account moderates: it may open the read-only staff previews. The backend decides
      * again on every request, so this only keeps the app from drawing what would be refused.

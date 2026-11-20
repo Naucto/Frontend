@@ -45,6 +45,7 @@
 
   <!-- Always a row of its own, empty most of the time, so the workspace keeps the third row. -->
   <div>
+    <nc-suspension-band />
     @if (hidden()) {
       <nc-notice variant="band" tone="danger">{{ t('editor.hiddenBand') }}</nc-notice>
     }

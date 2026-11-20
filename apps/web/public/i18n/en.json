@@ -1037,6 +1037,12 @@
         "suspended": "Your account is suspended, so it cannot send reports for now."
       }
     },
+    "suspended": {
+      "until": "Your account is suspended until {{until}}.",
+      "indefinite": "Your account is suspended.",
+      "rule": "You can still read and play. Nothing you post, change or save goes through meanwhile.",
+      "blocked": "Your account is suspended, so this is not available for now."
+    },
     "reportGame": "Report game",
     "reportComment": "Report",
     "reportProfile": "Report profile"
