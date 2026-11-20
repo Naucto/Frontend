@@ -1,4 +1,5 @@
 import { BUBBLEGUM_16 } from '@naucto/engine';
+import { colourOf } from '@naucto/ui';
 
 import type { FloppySticker } from '../game-card/floppy.component';
 import type { HubSession, SessionPlayer } from './hub-game';
@@ -14,16 +15,7 @@ const SLOTS = [
   [10, 84],
   [90, 85],
 ] as const;
-/** The palette's light colours: a sticker's initial is always printed in dark ink. */
-const INKS = [
-  BUBBLEGUM_16[11],
-  BUBBLEGUM_16[12],
-  BUBBLEGUM_16[4],
-  BUBBLEGUM_16[6],
-  BUBBLEGUM_16[13],
-  BUBBLEGUM_16[3],
-] as const;
-type Ink = (typeof INKS)[number];
+/** The viewer's own sticker is gold, as their row of the roster is. */
 const VIEWER_INK = BUBBLEGUM_16[4];
 
 function hash(text: string): number {
@@ -43,11 +35,6 @@ function seeded(seed: number): () => number {
     mixed = (mixed + Math.imul(mixed ^ (mixed >>> 7), 61 | mixed)) ^ mixed;
     return ((mixed ^ (mixed >>> 14)) >>> 0) / 4294967296;
   };
-}
-
-/** A player's colour on a session's disk and in its roster: the viewer's is gold. */
-export function playerColour(username: string, viewer: string | null): Ink {
-  return username === viewer ? VIEWER_INK : (INKS[hash(username) % INKS.length] ?? VIEWER_INK);
 }
 
 export const displayName = (player: SessionPlayer): string => player.nickname ?? player.username;
@@ -84,7 +71,7 @@ export function sessionStickers(session: HubSession, viewer: string | null): Flo
   const cards = [
     ...shown.map((player) => ({
       initial: displayName(player)[0] ?? '?',
-      color: playerColour(player.username, viewer),
+      color: colourOf(player.username),
       host: player.username === session.hostUsername,
     })),
     ...(folded ? [{ initial: `+${String(folded)}`, color: 'var(--color-key-lit)' }] : []),

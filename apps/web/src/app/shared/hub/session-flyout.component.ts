@@ -10,7 +10,7 @@ import {
 
 import type { HubSession } from './hub-game';
 import { rosterRows } from './session-roster';
-import { displayName, playerColour } from './session-stickers';
+import { displayName } from './session-stickers';
 
 /**
  * What a shelf says of an open session beside its disk: when it started, which game it is, and who
@@ -30,7 +30,6 @@ export class SessionFlyoutComponent {
   readonly leave = output();
 
   protected readonly displayName = displayName;
-  protected readonly playerColour = playerColour;
   protected readonly rows = computed(() => rosterRows(this.session(), this.viewer()));
   /** How long ago it started, or nothing for one that just did. */
   protected readonly elapsed = computed(() => {

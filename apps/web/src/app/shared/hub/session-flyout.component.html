@@ -22,7 +22,8 @@
               <nc-avatar
                 aria-hidden="true"
                 [name]="displayName(row.player)"
-                [colour]="playerColour(row.player.username, viewer())"
+                [id]="row.player.username"
+                [colour]="row.you ? 'gold' : undefined"
                 [size]="28" />
               <span
                 class="min-w-0 truncate text-body leading-none"
@@ -48,7 +49,7 @@
                   <nc-avatar
                     class="shadow-[0_0_0_3px_var(--color-raised)] not-first:-ml-[8px]"
                     [name]="displayName(face)"
-                    [colour]="playerColour(face.username, viewer())"
+                    [id]="face.username"
                     [size]="28" />
                 }
               </span>

@@ -13,7 +13,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { formatCompact, IconComponent, type IconName } from '@naucto/ui';
+import { formatCompact, IconComponent, type IconName, inkFor } from '@naucto/ui';
 
 import { diskBody, diskFinish, type DiskStyle, luminance, PLAIN_DISK } from './disk-style';
 
@@ -149,6 +149,7 @@ export class FloppyComponent {
   readonly acted = output();
 
   protected readonly ACTION_ICON = ACTION_ICON;
+  protected readonly inkFor = inkFor;
   protected readonly DISK_RATIO = DISK_RATIO;
   protected readonly SHINE_CELLS = SHINE_CELLS;
 
