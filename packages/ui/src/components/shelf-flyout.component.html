@@ -1,0 +1,7 @@
+<span class="mx-[10px] flex-none" [style.width.px]="itemWidth() + 2 * placement().gutter"></span>
+<div
+  class="grid min-w-0 flex-1 overflow-hidden [align-content:safe_center] p-[10px]"
+  [style.padding-inline-end.px]="placement().side === 'right' ? placement().gutter + 10 : null"
+  [style.padding-inline-start.px]="placement().side === 'left' ? placement().gutter + 10 : null">
+  <ng-content />
+</div>

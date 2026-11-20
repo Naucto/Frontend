@@ -31,6 +31,31 @@ describe('PagerComponent', () => {
     await userEvent.click(screen.getByRole('tab', { name: 'Page 4' }));
     expect(selected()).toBe('Page 4');
   });
+
+  it('is one tab stop, and the arrow keys carry the focus with the page', async () => {
+    await render(PagerComponent, { inputs: { count: 3, value: 0 } });
+    expect(screen.getAllByRole('tab').map((dot) => dot.getAttribute('tabindex'))).toEqual([
+      '0',
+      '-1',
+      '-1',
+    ]);
+
+    screen.getByRole('tab', { name: 'Page 1' }).focus();
+    await userEvent.keyboard('{ArrowLeft}');
+    expect(selected()).toBe('Page 3');
+    expect(screen.getByRole('tab', { name: 'Page 3' })).toHaveFocus();
+  });
+
+  it('drops its arrows, names its dots and says what they page when told', async () => {
+    await render(PagerComponent, {
+      inputs: { count: 2, arrows: false, labels: ['Hightide', 'Moss Garden'], controls: 'track' },
+    });
+    expect(screen.queryByRole('button', { name: 'Next page' })).toBeNull();
+    expect(screen.getByRole('tab', { name: 'Moss Garden' })).toHaveAttribute(
+      'aria-controls',
+      'track',
+    );
+  });
 });
 
 describe('PagerComponent on autoplay', () => {
