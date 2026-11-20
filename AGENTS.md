@@ -57,6 +57,9 @@ Pixelarticons, Bubblegum-16 palette, dark + light themes).
    4. Let the user pick one or ask for another round.
    5. Implement only what was picked.
 
+   The method in full, for agents that load project skills:
+   `.claude/skills/naucto-screen-design/SKILL.md`.
+
 ## Architecture
 
 - **State**: server state via `@tanstack/angular-query-experimental` over `@naucto/api-client`
