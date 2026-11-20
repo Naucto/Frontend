@@ -24,7 +24,7 @@
   <div
     id="nc-palette-list"
     role="listbox"
-    class="max-h-[min(336px,50dvh)] overflow-y-auto px-[6px] pb-[6px]"
+    class="max-h-[min(336px,50dvh)] scroll-pb-[24px] overflow-y-auto px-[6px]"
     [attr.aria-label]="t('palette.results')">
     @for (group of groups(); track group.label) {
       <div role="group" class="grid gap-[3px]" [attr.aria-label]="group.label">
@@ -53,6 +53,12 @@
     } @empty {
       <p class="px-[8px] py-[12px] text-body text-ink-3">{{ t('palette.empty') }}</p>
     }
+    <!-- Sits under the last row as the list's own foot, and over the rows while more lie below:
+         a row the frame would cut dissolves instead. -->
+    <div aria-hidden="true" class="pointer-events-none sticky bottom-0 grid grid-rows-2 h-[24px]">
+      <span class="bg-panel [mask-image:var(--nc-dither-50)] [mask-size:12px_12px]"></span>
+      <span class="bg-panel [mask-image:var(--nc-dither-87)] [mask-size:12px_12px]"></span>
+    </div>
   </div>
 
   <div

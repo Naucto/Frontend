@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
-import { PanelComponent } from '@naucto/ui';
 
 import { FeaturesService } from '../../core/config/features.service';
 import { ConsentChoiceComponent } from '../../shared/consent/consent-choice.component';
@@ -12,7 +11,7 @@ import { ConsentChoiceComponent } from '../../shared/consent/consent-choice.comp
  */
 @Component({
   selector: 'nc-privacy-page',
-  imports: [TranslocoDirective, RouterLink, PanelComponent, ConsentChoiceComponent],
+  imports: [TranslocoDirective, RouterLink, ConsentChoiceComponent],
   templateUrl: './privacy.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
