@@ -64,15 +64,14 @@ import {
 
 import { OAUTH_PROVIDERS } from '../../core/auth/oauth/providers';
 import { ThemeService } from '../../core/theme/theme.service';
-import { CoverCardComponent } from '../../shared/game-card/cover-card.component';
-import { FloppyComponent } from '../../shared/game-card/floppy.component';
+import type { DiskStyle } from '../../shared/game-card/disk-style';
+import { FloppyComponent, type FloppySticker } from '../../shared/game-card/floppy.component';
 import { ACCENT_SLOTS } from '../editor/accent-slots';
 
 /** Dev-only gallery of every UI primitive, used for visual goldens in light and dark. */
 @Component({
   selector: 'nc-ui-kit-page',
   imports: [
-    CoverCardComponent,
     FloppyComponent,
     AvatarComponent,
     BitFlagsComponent,
@@ -193,11 +192,61 @@ export default class UiKitPage {
     { id: 'overlays', label: 'Overlays' },
     { id: 'cards', label: 'Game card' },
   ];
-  protected readonly disks = [
-    { name: 'Hightide', body: BUBBLEGUM_16[12] },
-    { name: 'Moss Garden', body: BUBBLEGUM_16[6] },
-    { name: 'Night Courier', body: BUBBLEGUM_16[9] },
+  /** A cover that needs no server: a sun going down over the sea, sixteen pixels wide. */
+  protected readonly diskCover =
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 9' shape-rendering='crispEdges'%3E%3Cpath fill='%23430067' d='M0 0h16v9H0z'/%3E%3Cpath fill='%2394216a' d='M0 3h16v3H0z'/%3E%3Cpath fill='%23ff8426' d='M0 5h16v1H0z'/%3E%3Cpath fill='%23ffd100' d='M6 3h4v1H6zM5 4h6v2H5z'/%3E%3Cpath fill='%23234975' d='M0 6h16v3H0z'/%3E%3Cpath fill='%2368aed4' d='M5 6h6v1H5zM7 7h3v1H7zM2 7h2v1H2zM12 8h3v1h-3z'/%3E%3C/svg%3E";
+  protected readonly striped: DiskStyle = { color: BUBBLEGUM_16[6], finish: 'stripes' };
+  protected readonly checkered: DiskStyle = { color: BUBBLEGUM_16[12], finish: 'checker' };
+  protected readonly dotted: DiskStyle = { color: BUBBLEGUM_16[13], finish: 'dots' };
+  protected readonly twoTone: DiskStyle = {
+    color: BUBBLEGUM_16[3],
+    finish: 'stripes',
+    color2: BUBBLEGUM_16[4],
+  };
+  protected readonly diagonal: DiskStyle = {
+    color: BUBBLEGUM_16[3],
+    finish: 'gradient',
+    color2: BUBBLEGUM_16[7],
+    gradDir: 'd',
+  };
+  protected readonly finishes: { name: string; disk: DiskStyle }[] = [
+    { name: 'Solid', disk: { color: BUBBLEGUM_16[11], finish: 'solid' } },
+    { name: 'Stripes', disk: this.striped },
+    { name: 'Checker', disk: this.checkered },
+    { name: 'Dots', disk: this.dotted },
+    { name: 'Two colours', disk: this.twoTone },
+    { name: 'Gold', disk: { color: BUBBLEGUM_16[4], finish: 'gold' } },
+    { name: 'Silver', disk: { color: BUBBLEGUM_16[5], finish: 'silver' } },
+    { name: 'Holo', disk: { color: BUBBLEGUM_16[5], finish: 'holo' } },
+    {
+      name: 'Across',
+      disk: { color: BUBBLEGUM_16[14], finish: 'gradient', color2: BUBBLEGUM_16[11], gradDir: 'h' },
+    },
+    {
+      name: 'Down',
+      disk: { color: BUBBLEGUM_16[10], finish: 'gradient', color2: BUBBLEGUM_16[9], gradDir: 'v' },
+    },
+    { name: 'Diagonal', disk: this.diagonal },
+    {
+      name: 'Other diagonal',
+      disk: { color: BUBBLEGUM_16[7], finish: 'gradient', color2: BUBBLEGUM_16[4], gradDir: 'd2' },
+    },
+    {
+      name: 'Outward',
+      disk: { color: BUBBLEGUM_16[12], finish: 'gradient', color2: BUBBLEGUM_16[13], gradDir: 'r' },
+    },
   ];
+  protected readonly seated = signal(false);
+  /** A host, two players, those who did not fit, and the open seat the visitor takes. */
+  protected readonly stickers = computed<FloppySticker[]>(() => [
+    { x: 13, y: 14, rotation: -8, initial: 'L', color: BUBBLEGUM_16[11], host: true },
+    { x: 87, y: 15, rotation: 11, initial: 'E', color: BUBBLEGUM_16[6] },
+    { x: 9, y: 52, rotation: 6, initial: 'T', color: BUBBLEGUM_16[12] },
+    { x: 91, y: 49, rotation: -12, initial: '+3', color: 'var(--color-key-lit)' },
+    { x: 29, y: 34, rotation: 4, seat: true, hidden: this.seated() },
+    { x: 29, y: 34, rotation: 4, initial: 'Y', color: BUBBLEGUM_16[4], hidden: !this.seated() },
+    { x: 72, y: 33, rotation: -5, seat: true },
+  ]);
   protected readonly surfaces = [
     { name: 'page', fill: 'bevel-fill-page' },
     { name: 'panel', fill: 'bevel-fill-panel' },
