@@ -7,7 +7,7 @@ test.describe('app shell', () => {
     await expect(page).toHaveURL(/\/hub$/);
     await expect(page.getByRole('navigation', { name: 'Main navigation' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Sign in' })).toBeVisible();
-    await expect(page.getByRole('contentinfo')).toContainText('Naucto');
+    await expect(page.getByRole('contentinfo')).toContainText('A browser fantasy console');
   });
 
   test('sign-in page shows the insert-game form', async ({ page }) => {

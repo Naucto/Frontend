@@ -11,6 +11,13 @@
   [class]="chrome().input" />
 <!-- The key never shrinks; a placeholder has no ellipsis, so a narrow box needs a placeholder
      written to fit beside it. -->
-@if (hint() && size() === 'md') {
-  <nc-keycap size="sm" class="-mt-[3px] flex-none">{{ hint() }}</nc-keycap>
+@if (size() === 'md' && keys().length) {
+  <span class="-mt-[3px] flex flex-none items-center gap-[3px]">
+    @for (key of keys(); track $index) {
+      @if (!$first) {
+        <span aria-hidden="true" class="font-mono text-meta text-ink-4">+</span>
+      }
+      <nc-keycap size="sm">{{ key }}</nc-keycap>
+    }
+  </span>
 }

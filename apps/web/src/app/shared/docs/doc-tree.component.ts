@@ -13,8 +13,8 @@ const ROW =
   'raised-sm bevel-bare flex w-full items-center text-left select-none ' +
   'hover:bevel-lit hover:bevel-fill-raised hover:text-active-ink active:bevel-down';
 
-/** The page being read, or the place on it. */
-const CURRENT = 'bevel-lit bevel-fill-raised text-active-ink';
+/** The page being read, or the place on it: held down, as a latched button is. */
+const CURRENT = 'bevel-down bevel-lit bevel-fill-raised text-active-ink';
 
 /**
  * The documentation tree: sections → pages, and under the page being read, what is on it.

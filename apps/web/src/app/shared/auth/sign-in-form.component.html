@@ -52,18 +52,19 @@
     <span class="label text-ink-4">{{ t('auth.or') }}</span>
     <span class="h-[3px] flex-1 bg-line"></span>
   </div>
-  <div class="grid gap-1">
+  <div class="flex justify-center gap-[12px]">
     @for (provider of providers(); track provider.flow.id) {
       <button
         ncButton
         variant="secondary"
-        size="sm"
+        size="xl"
+        iconOnly
         type="button"
         (click)="oauth(provider.flow)"
         [disabled]="busy() || !provider.configured"
-        [attr.title]="provider.configured ? null : t('auth.notConfigured')">
+        [attr.aria-label]="provider.flow.label"
+        [attr.title]="provider.configured ? provider.flow.label : t('auth.notConfigured')">
         <nc-brand-mark [mark]="provider.flow.mark" [size]="24" />
-        {{ provider.flow.label }}
       </button>
     }
   </div>

@@ -15,9 +15,8 @@ import { unwrap } from '../../core/api/api-errors';
 import { AuthStore } from '../../core/auth/auth.store';
 import { FeedbackLauncher } from '../../shared/feedback/feedback-launcher.service';
 import { qk } from '../../shared/queries/query-keys';
-import { ThemeSwitchComponent } from './theme-switch.component';
 
-/** Account popover: identity, then theme, Profile / Settings / feedback / Sign out. */
+/** Account popover: identity, then Profile / Settings / feedback / Sign out. */
 @Component({
   selector: 'nc-account-menu',
   imports: [
@@ -28,7 +27,6 @@ import { ThemeSwitchComponent } from './theme-switch.component';
     IconComponent,
     PopoverDirective,
     PopoverPanelComponent,
-    ThemeSwitchComponent,
   ],
   templateUrl: './account-menu.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

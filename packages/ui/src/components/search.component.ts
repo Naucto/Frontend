@@ -52,7 +52,12 @@ export class SearchComponent {
   readonly placeholder = input('Search');
   readonly size = input<SearchSize>('md');
   protected readonly chrome = computed(() => SIZE[this.size()]);
-  readonly hint = input<string>('/');
+  /** One key, or the keys of a chord in the order they are held. */
+  readonly hint = input<string | readonly string[]>('/');
+  protected readonly keys = computed(() => {
+    const hint = this.hint();
+    return typeof hint === 'string' ? (hint ? [hint] : []) : hint;
+  });
   readonly submitted = output<string>();
   /** Put the caret in the box — a keyboard shortcut somewhere else has no other way in. */
   focus(): void {
