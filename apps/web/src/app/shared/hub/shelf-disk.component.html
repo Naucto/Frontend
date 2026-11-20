@@ -1,0 +1,19 @@
+<a
+  class="relative block"
+  [routerLink]="link()"
+  [attr.aria-label]="game().name"
+  [attr.aria-expanded]="flyoutId() ? open() : null"
+  [attr.aria-controls]="flyoutId()"
+  [attr.aria-describedby]="open() ? flyoutId() : null">
+  <nc-floppy
+    [name]="game().name"
+    [body]="game().diskColor ?? undefined"
+    [cover]="game().coverUrl"
+    [preview]="game().clipUrl"
+    [action]="action()"
+    [actionLabel]="actionLabel()"
+    [open]="open()">
+    <nc-stat info icon="play" [value]="game().viewCount" compact />
+    <nc-stat info icon="heart" [value]="game().likes" tone="hot" compact />
+  </nc-floppy>
+</a>
