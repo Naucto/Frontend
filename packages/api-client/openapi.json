@@ -2983,7 +2983,7 @@
             "description": "Project is not published"
           },
           "401": {
-            "description": "Authentication required"
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
           },
           "403": {
             "description": "Admin role required"
@@ -3008,7 +3008,7 @@
             "description": "No featured release remains"
           },
           "401": {
-            "description": "Authentication required"
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
           },
           "403": {
             "description": "Admin role required"
@@ -3056,7 +3056,7 @@
             }
           },
           "401": {
-            "description": "Authentication required"
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
           },
           "403": {
             "description": "Admin role required"
@@ -3297,7 +3297,7 @@
             }
           },
           "401": {
-            "description": "Authentication required"
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
           },
           "403": {
             "description": "Admin role required"
@@ -3374,7 +3374,7 @@
             }
           },
           "401": {
-            "description": "Authentication required"
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
           },
           "403": {
             "description": "Admin role required"
@@ -3394,19 +3394,22 @@
         "operationId": "AdminAnalyticsController_breakdown",
         "parameters": [
           {
-            "name": "grain",
+            "name": "from",
             "required": true,
             "in": "query",
+            "description": "First day, UTC, as YYYY-MM-DD",
             "schema": {
-              "$ref": "#/components/schemas/AnalyticsGrain"
+              "example": "2026-09-01",
+              "type": "string"
             }
           },
           {
-            "name": "day",
+            "name": "to",
             "required": true,
             "in": "query",
-            "description": "Any day of the period, UTC, as YYYY-MM-DD; the period holding it is used",
+            "description": "Last day, UTC, as YYYY-MM-DD, included",
             "schema": {
+              "example": "2026-09-30",
               "type": "string"
             }
           },
@@ -3440,7 +3443,7 @@
             }
           },
           "401": {
-            "description": "Authentication required"
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
           },
           "403": {
             "description": "Admin role required"
@@ -3451,7 +3454,7 @@
             "JWT-auth": []
           }
         ],
-        "summary": "A metric split by one dimension over one period",
+        "summary": "A metric split by one dimension over a range of days",
         "tags": ["admin"]
       }
     },
@@ -3489,7 +3492,7 @@
             }
           },
           "401": {
-            "description": "Authentication required"
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
           },
           "403": {
             "description": "Admin role required"
@@ -3520,7 +3523,7 @@
             }
           },
           "401": {
-            "description": "Authentication required"
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
           },
           "403": {
             "description": "Admin role required"
@@ -3570,7 +3573,7 @@
             }
           },
           "401": {
-            "description": "Authentication required"
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
           },
           "403": {
             "description": "Admin role required"
@@ -3630,7 +3633,7 @@
             }
           },
           "401": {
-            "description": "Authentication required"
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
           },
           "403": {
             "description": "Admin role required"
@@ -3682,7 +3685,7 @@
             }
           },
           "401": {
-            "description": "Authentication required"
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
           },
           "403": {
             "description": "Admin role required"
@@ -3702,19 +3705,22 @@
         "operationId": "AdminAnalyticsController_games",
         "parameters": [
           {
-            "name": "grain",
+            "name": "from",
             "required": true,
             "in": "query",
+            "description": "First day, UTC, as YYYY-MM-DD",
             "schema": {
-              "$ref": "#/components/schemas/AnalyticsGrain"
+              "example": "2026-09-01",
+              "type": "string"
             }
           },
           {
-            "name": "day",
+            "name": "to",
             "required": true,
             "in": "query",
-            "description": "Any day of the period, UTC, as YYYY-MM-DD; the period holding it is used",
+            "description": "Last day, UTC, as YYYY-MM-DD, included",
             "schema": {
+              "example": "2026-09-30",
               "type": "string"
             }
           },
@@ -3762,7 +3768,7 @@
             }
           },
           "401": {
-            "description": "Authentication required"
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
           },
           "403": {
             "description": "Admin role required"
@@ -3773,7 +3779,348 @@
             "JWT-auth": []
           }
         ],
-        "summary": "Games ranked by plays, playtime, players or multiplayer sessions",
+        "summary": "Games ranked by plays, playtime, players or multiplayer sessions over a range of days",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/analytics/timeline": {
+      "get": {
+        "operationId": "AdminAnalyticsController_timeline",
+        "parameters": [
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "description": "First instant, ISO 8601",
+            "schema": {
+              "example": "2026-10-20T18:00:00Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "description": "Last instant, ISO 8601, excluded",
+            "schema": {
+              "example": "2026-10-21T18:00:00Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "bucket",
+            "required": false,
+            "in": "query",
+            "description": "Bucket size, the finest one under 400 buckets when absent",
+            "schema": {
+              "type": "string",
+              "enum": ["1m", "5m", "15m", "1h", "6h", "1d"]
+            }
+          },
+          {
+            "name": "metrics",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated timeline metrics, every one when absent",
+            "schema": {
+              "example": "visitors_new,plays_consented,plays_anonymous",
+              "type": "string"
+            }
+          },
+          {
+            "name": "releaseId",
+            "required": false,
+            "in": "query",
+            "description": "Only what concerns this published project",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "source",
+            "required": false,
+            "in": "query",
+            "description": "Only consenting sessions from this source, as `referrer:youtube.com`, `utmSource:newsletter`, `utmCampaign:launch`, or `referrer:(none)` for direct visits",
+            "schema": {
+              "maxLength": 220,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsTimelineDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "Admin role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Raw metrics between two instants, per minute to per day, for a game or a source",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/analytics/sources": {
+      "get": {
+        "operationId": "AdminAnalyticsController_sources",
+        "parameters": [
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "description": "First instant, ISO 8601",
+            "schema": {
+              "example": "2026-10-20T18:00:00Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "description": "Last instant, ISO 8601, excluded",
+            "schema": {
+              "example": "2026-10-21T18:00:00Z",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsSourcesDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "Admin role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Where consenting sessions came from between two instants",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/analytics/activity": {
+      "get": {
+        "operationId": "AdminAnalyticsController_activity",
+        "parameters": [
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "description": "First instant, ISO 8601",
+            "schema": {
+              "example": "2026-10-20T18:00:00Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "description": "Last instant, ISO 8601, excluded",
+            "schema": {
+              "example": "2026-10-21T18:00:00Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 500,
+              "default": 200,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsActivityDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "Admin role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "First visits, first plays, sign-ups, projects, releases and anonymous plays",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/analytics/arrivals": {
+      "get": {
+        "operationId": "AdminAnalyticsController_arrivals",
+        "parameters": [
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "description": "First instant, ISO 8601",
+            "schema": {
+              "example": "2026-10-20T18:00:00Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "description": "Last instant, ISO 8601, excluded",
+            "schema": {
+              "example": "2026-10-21T18:00:00Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 500,
+              "default": 200,
+              "type": "number"
+            }
+          },
+          {
+            "name": "source",
+            "required": false,
+            "in": "query",
+            "description": "Only browsers whose first session came from this source",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsArrivalsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "Admin role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Browsers first seen between two instants, and what each did since",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/analytics/releases": {
+      "get": {
+        "operationId": "AdminAnalyticsController_releases",
+        "parameters": [
+          {
+            "name": "query",
+            "required": false,
+            "in": "query",
+            "description": "Part of the name of a published game, or its id as `12` or `#12`",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "ids",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated project ids to name, published or not. The query is then ignored",
+            "schema": {
+              "example": "12,40",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 10,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsReleasesDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "Admin role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Published games by part of their name or their id, to narrow a chart to one",
         "tags": ["admin"]
       }
     },
@@ -3802,7 +4149,7 @@
             }
           },
           "401": {
-            "description": "Authentication required"
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
           },
           "403": {
             "description": "Admin role required"
@@ -3833,7 +4180,7 @@
             }
           },
           "401": {
-            "description": "Authentication required"
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
           },
           "403": {
             "description": "Admin role required"
@@ -3845,6 +4192,182 @@
           }
         ],
         "summary": "Ingest errors, finalization progress and projection backlog",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/analytics/markers": {
+      "get": {
+        "operationId": "AnalyticsMarkerController_list",
+        "parameters": [
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "First instant, ISO 8601",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Last instant, ISO 8601, excluded",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsMarkersDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "Admin role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "The moments marked on the charts, such as posts going out",
+        "tags": ["admin"]
+      },
+      "post": {
+        "operationId": "AnalyticsMarkerController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAnalyticsMarkerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsMarkerDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "Admin role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Mark a moment on the charts",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/analytics/markers/{id}": {
+      "patch": {
+        "operationId": "AnalyticsMarkerController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAnalyticsMarkerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsMarkerDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "Admin role required"
+          },
+          "404": {
+            "description": "No such marker"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Change a marker. Null clears an optional field",
+        "tags": ["admin"]
+      },
+      "delete": {
+        "operationId": "AnalyticsMarkerController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Removed"
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "Admin role required"
+          },
+          "404": {
+            "description": "No such marker"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Remove a marker",
         "tags": ["admin"]
       }
     },
@@ -3959,13 +4482,13 @@
             "description": "Invalid email or password"
           },
           "403": {
-            "description": "Not an admin account"
+            "description": "Not a staff account, or suspended"
           },
           "429": {
             "description": "Too many failed attempts"
           }
         },
-        "summary": "Sign in to the admin console with an admin account",
+        "summary": "Sign in to the admin console with a moderator or an admin account",
         "tags": ["admin"],
         "security": [
           {},
@@ -4013,7 +4536,7 @@
             "description": ""
           }
         },
-        "summary": "End the admin session in this browser",
+        "summary": "End the staff session in this browser",
         "tags": ["admin"],
         "security": [
           {},
@@ -4039,18 +4562,21 @@
             }
           },
           "401": {
-            "description": "Authentication required"
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
           },
           "403": {
-            "description": "Admin role required"
+            "description": "Viewer role required"
           }
         },
         "security": [
           {
             "JWT-auth": []
+          },
+          {
+            "JWT-auth": []
           }
         ],
-        "summary": "The signed-in admin",
+        "summary": "The signed-in staff member",
         "tags": ["admin"]
       }
     },
@@ -4070,7 +4596,7 @@
             }
           },
           "401": {
-            "description": "Authentication required"
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
           },
           "403": {
             "description": "Admin role required"
@@ -4082,6 +4608,37 @@
           }
         ],
         "summary": "Every account holding the admin role",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/accounts/staff": {
+      "get": {
+        "operationId": "AdminAccountController_staff",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAccountListDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "Admin role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Every account holding a role that signs in to the console",
         "tags": ["admin"]
       }
     },
@@ -4112,7 +4669,7 @@
             }
           },
           "401": {
-            "description": "Authentication required"
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
           },
           "403": {
             "description": "Admin role required"
@@ -4165,7 +4722,7 @@
             "description": "Your own account"
           },
           "401": {
-            "description": "Authentication required"
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
           },
           "403": {
             "description": "Admin role required"
@@ -4566,7 +5123,7 @@
             }
           },
           "401": {
-            "description": "Authentication required"
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
           },
           "403": {
             "description": "Admin role required"
@@ -4626,7 +5183,7 @@
             }
           },
           "401": {
-            "description": "Authentication required"
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
           },
           "403": {
             "description": "Admin role required"
@@ -4674,7 +5231,7 @@
             }
           },
           "401": {
-            "description": "Authentication required"
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
           },
           "403": {
             "description": "Admin role required"
@@ -4714,7 +5271,7 @@
             }
           },
           "401": {
-            "description": "Authentication required"
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
           },
           "403": {
             "description": "Admin role required"
@@ -4765,7 +5322,7 @@
             }
           },
           "401": {
-            "description": "Authentication required"
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
           },
           "403": {
             "description": "Admin role required"
@@ -4801,7 +5358,7 @@
             "description": "The image"
           },
           "401": {
-            "description": "Authentication required"
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
           },
           "403": {
             "description": "Admin role required"
@@ -4816,6 +5373,1540 @@
           }
         ],
         "summary": "The screenshot of a bug report, served privately",
+        "tags": ["admin"]
+      }
+    },
+    "/moderation/flags": {
+      "post": {
+        "operationId": "ModerationController_createFlag",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFlagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedFlagDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Your own content (CANNOT_FLAG_OWN_CONTENT)"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "404": {
+            "description": "No such target, or none the account can see (FLAG_TARGET_NOT_FOUND)"
+          },
+          "409": {
+            "description": "Already reported by this account and not settled yet (ALREADY_FLAGGED)"
+          },
+          "429": {
+            "description": "Too many reports"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Report a game, a comment or a profile to staff",
+        "tags": ["moderation"]
+      }
+    },
+    "/moderation/standing": {
+      "get": {
+        "operationId": "ModerationController_standing",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number, from 1",
+            "schema": {
+              "minimum": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "example": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandingDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Where the signed-in account stands with moderation, and why",
+        "tags": ["moderation"]
+      }
+    },
+    "/moderation/projects/{id}/preview": {
+      "get": {
+        "operationId": "StaffPreviewController_preview",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectPreviewDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Moderator role required"
+          },
+          "404": {
+            "description": "No such game"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Any game as its collaborators read it, published or not",
+        "tags": ["moderation"]
+      }
+    },
+    "/moderation/projects/{id}/preview/content": {
+      "get": {
+        "operationId": "StaffPreviewController_content",
+        "parameters": [
+          {
+            "name": "source",
+            "required": false,
+            "in": "query",
+            "description": "The latest save, or the released build as players got it",
+            "schema": {
+              "default": "draft",
+              "type": "string",
+              "enum": ["draft", "release"]
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The game file",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Nothing saved or released yet"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Moderator role required"
+          },
+          "404": {
+            "description": "No such game"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "The latest save of any game, or its released build",
+        "tags": ["moderation"]
+      }
+    },
+    "/admin/moderation/cases": {
+      "get": {
+        "operationId": "AdminCaseController_list",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number, from 1",
+            "schema": {
+              "minimum": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "view",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "OPEN",
+              "type": "string",
+              "enum": ["OPEN", "RESOLVED", "ALL"]
+            }
+          },
+          {
+            "name": "targetType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ModerationTargetType"
+            }
+          },
+          {
+            "name": "reason",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ModerationReason"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "Flagged last first, or flagged most first",
+            "schema": {
+              "default": "lastFlagged",
+              "type": "string",
+              "enum": ["lastFlagged", "flags"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseListDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "Moderator role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Flagged targets, each with the flags it holds",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/moderation/cases/count": {
+      "get": {
+        "operationId": "AdminCaseController_count",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenCaseCountDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "Moderator role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "How many cases and flags wait for staff",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/moderation/cases/{targetType}/{targetId}": {
+      "get": {
+        "operationId": "AdminCaseController_detail",
+        "parameters": [
+          {
+            "name": "targetType",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "$ref": "#/components/schemas/ModerationTargetType"
+            }
+          },
+          {
+            "name": "targetId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseDetailDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "Moderator role required"
+          },
+          "404": {
+            "description": "Nothing was ever flagged there"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "One case in full: the target, its flags and what was done about it",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/moderation/cases/{targetType}/{targetId}/dismiss": {
+      "post": {
+        "operationId": "AdminCaseController_dismiss",
+        "parameters": [
+          {
+            "name": "targetType",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "$ref": "#/components/schemas/ModerationTargetType"
+            }
+          },
+          {
+            "name": "targetId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InternalNoteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseDetailDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "A case about the caller's own content (OWN_CASE)"
+          },
+          "409": {
+            "description": "No flag left open (NO_OPEN_FLAGS)"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Close the open flags of a case without acting on its target",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/moderation/accounts": {
+      "get": {
+        "operationId": "AdminModerationAccountController_list",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number, from 1",
+            "schema": {
+              "minimum": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Part of a name or of a text",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "standing",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/AccountStanding"
+            }
+          },
+          {
+            "name": "role",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["User", "Viewer", "Moderator", "Admin"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationAccountListDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "Moderator role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Accounts by handle or display name, with where each stands",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/moderation/accounts/{id}": {
+      "get": {
+        "operationId": "AdminModerationAccountController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationAccountDetailDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "Moderator role required"
+          },
+          "404": {
+            "description": "No such account"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "One account, with what the caller may do about it",
+        "tags": ["admin"]
+      },
+      "delete": {
+        "operationId": "AdminModerationAccountController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffDeleteAccountDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationActionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "Your own account (CANNOT_MODERATE_SELF), or one holding a role not ranked below yours (TARGET_OUTRANKS_ACTOR)\n\nAdmin role required"
+          },
+          "404": {
+            "description": "No such account"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          },
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Erase an account for good, as its owner could",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/moderation/accounts/{id}/warn": {
+      "post": {
+        "operationId": "AdminModerationAccountController_warn",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WarnAccountDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationActionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "Your own account (CANNOT_MODERATE_SELF), or one holding a role not ranked below yours (TARGET_OUTRANKS_ACTOR)"
+          },
+          "404": {
+            "description": "No such account"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Send an account a formal warning, kept on its record",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/moderation/accounts/{id}/suspend": {
+      "post": {
+        "operationId": "AdminModerationAccountController_suspend",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuspendAccountDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationActionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "Your own account (CANNOT_MODERATE_SELF), or one holding a role not ranked below yours (TARGET_OUTRANKS_ACTOR)"
+          },
+          "404": {
+            "description": "No such account"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Suspend an account for a number of days, or until reinstated",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/moderation/accounts/{id}/reinstate": {
+      "post": {
+        "operationId": "AdminModerationAccountController_reinstate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModerationNoteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationActionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "Your own account (CANNOT_MODERATE_SELF), or one holding a role not ranked below yours (TARGET_OUTRANKS_ACTOR)"
+          },
+          "404": {
+            "description": "No such account"
+          },
+          "409": {
+            "description": "Not suspended (NOT_SUSPENDED)"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Lift the suspension of an account",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/moderation/accounts/{id}/clear-profile": {
+      "post": {
+        "operationId": "AdminModerationAccountController_clearProfile",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClearProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationActionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "Your own account (CANNOT_MODERATE_SELF), or one holding a role not ranked below yours (TARGET_OUTRANKS_ACTOR)"
+          },
+          "404": {
+            "description": "No such account"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Clear parts of a profile: display name, bio, picture, background",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/moderation/projects": {
+      "get": {
+        "operationId": "AdminModerationProjectController_list",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number, from 1",
+            "schema": {
+              "minimum": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Part of a name or of a text",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ProjectModerationState"
+            }
+          },
+          {
+            "name": "creatorId",
+            "required": false,
+            "in": "query",
+            "description": "Only the games this account created",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationProjectListDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "Moderator role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Every game by name, published, unpublished or hidden",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/moderation/projects/{id}": {
+      "get": {
+        "operationId": "AdminModerationProjectController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationProjectDetailDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "Moderator role required"
+          },
+          "404": {
+            "description": "No such game"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "One game, with what the caller may do about it",
+        "tags": ["admin"]
+      },
+      "delete": {
+        "operationId": "AdminModerationProjectController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContentDecisionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationActionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "Admin role required"
+          },
+          "404": {
+            "description": "No such game"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          },
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Delete a game for good, with its saves, release and comments",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/moderation/projects/{id}/cover": {
+      "get": {
+        "operationId": "AdminModerationProjectController_cover",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The image"
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "Moderator role required"
+          },
+          "404": {
+            "description": "No cover"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "The cover of a game, served privately even while it is hidden",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/moderation/projects/{id}/hide": {
+      "post": {
+        "operationId": "AdminModerationProjectController_hide",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContentDecisionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationActionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "Moderator role required"
+          },
+          "404": {
+            "description": "No such game"
+          },
+          "409": {
+            "description": "Hidden already (ALREADY_HIDDEN)"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Take a game off the hub and stop serving its release",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/moderation/projects/{id}/restore": {
+      "post": {
+        "operationId": "AdminModerationProjectController_restore",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModerationNoteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationActionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "Moderator role required"
+          },
+          "404": {
+            "description": "No such game"
+          },
+          "409": {
+            "description": "Not hidden (NOT_HIDDEN)"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Put a hidden game back as it was",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/moderation/comments": {
+      "get": {
+        "operationId": "AdminModerationCommentController_list",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number, from 1",
+            "schema": {
+              "minimum": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Part of a name or of a text",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": false,
+            "in": "query",
+            "description": "Only the comments on this game",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "authorId",
+            "required": false,
+            "in": "query",
+            "description": "Only the comments of this account",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/CommentModerationState"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationCommentListDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "Moderator role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Comments across every game, newest first, by text, author or game",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/moderation/comments/{id}/hide": {
+      "post": {
+        "operationId": "AdminModerationCommentController_hide",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContentDecisionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationActionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "Moderator role required"
+          },
+          "404": {
+            "description": "No such comment"
+          },
+          "409": {
+            "description": "Hidden already (ALREADY_HIDDEN), or deleted by a user (COMMENT_DELETED)"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Remove a comment from view, keeping its text for a restore",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/moderation/comments/{id}/restore": {
+      "post": {
+        "operationId": "AdminModerationCommentController_restore",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModerationNoteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationActionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "Moderator role required"
+          },
+          "404": {
+            "description": "No such comment"
+          },
+          "409": {
+            "description": "Not hidden (NOT_HIDDEN)"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Put a hidden comment back as it was",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/moderation/comments/{id}": {
+      "delete": {
+        "operationId": "AdminModerationCommentController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContentDecisionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationActionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "Admin role required"
+          },
+          "404": {
+            "description": "No such comment"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          },
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Delete a comment for good",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/moderation/log": {
+      "get": {
+        "operationId": "AdminModerationLogController_list",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number, from 1",
+            "schema": {
+              "minimum": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "action",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ModerationActionType"
+            }
+          },
+          {
+            "name": "actorId",
+            "required": false,
+            "in": "query",
+            "description": "Only the actions of this staff member",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "subjectUserId",
+            "required": false,
+            "in": "query",
+            "description": "Only the actions that bore on this account",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "targetType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ModerationTargetType"
+            }
+          },
+          {
+            "name": "targetId",
+            "required": false,
+            "in": "query",
+            "description": "With targetType, the history of one target",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "First day, UTC, as YYYY-MM-DD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Last day, UTC, as YYYY-MM-DD, included",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationLogDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "Moderator role required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "What staff did, newest first. Filtered by target, it is the history of that target",
         "tags": ["admin"]
       }
     },
@@ -5571,252 +7662,6 @@
         "tags": ["users"]
       }
     },
-    "/users": {
-      "get": {
-        "operationId": "UserController_findAll",
-        "parameters": [
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "description": "Page number, from 1",
-            "schema": {
-              "minimum": 1,
-              "example": 1,
-              "type": "number"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "Items per page",
-            "schema": {
-              "minimum": 1,
-              "maximum": 100,
-              "example": 10,
-              "type": "number"
-            }
-          },
-          {
-            "name": "q",
-            "required": false,
-            "in": "query",
-            "description": "Free-text search over username and nickname",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "nickname",
-            "required": false,
-            "in": "query",
-            "description": "Filter by nickname",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "email",
-            "required": false,
-            "in": "query",
-            "description": "Filter by email",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "sortBy",
-            "required": false,
-            "in": "query",
-            "description": "Sort by field",
-            "schema": {
-              "type": "string",
-              "enum": ["id", "username", "email", "createdAt"]
-            }
-          },
-          {
-            "name": "order",
-            "required": false,
-            "in": "query",
-            "description": "Sort order",
-            "schema": {
-              "type": "string",
-              "enum": ["asc", "desc"]
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Returns paginated list of users",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserListResponseDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Authentication required\n\nUnauthorized"
-          },
-          "403": {
-            "description": "Admin role required\n\nInsufficient permissions"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Get all users with pagination and filtering",
-        "tags": ["users"]
-      }
-    },
-    "/users/{id}": {
-      "get": {
-        "operationId": "UserController_findOne",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "User ID",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Returns the user",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserSingleResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid ID format"
-          },
-          "401": {
-            "description": "Authentication required\n\nUnauthorized"
-          },
-          "403": {
-            "description": "Admin role required\n\nInsufficient permissions"
-          },
-          "404": {
-            "description": "User not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Get a user by ID",
-        "tags": ["users"]
-      },
-      "patch": {
-        "operationId": "UserController_update",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "User ID",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateUserDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "User updated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserSingleResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid input"
-          },
-          "401": {
-            "description": "Authentication required\n\nUnauthorized"
-          },
-          "403": {
-            "description": "Admin role required\n\nInsufficient permissions"
-          },
-          "404": {
-            "description": "User not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Update a user by ID",
-        "tags": ["users"]
-      },
-      "delete": {
-        "operationId": "UserController_remove",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "User ID",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "User deleted successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserRemovedResponseDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Authentication required\n\nUnauthorized"
-          },
-          "403": {
-            "description": "Admin role required\n\nInsufficient permissions"
-          },
-          "404": {
-            "description": "User not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Delete a user by ID",
-        "tags": ["users"]
-      }
-    },
     "/users/public/search": {
       "get": {
         "operationId": "UserPublicController_search",
@@ -6468,6 +8313,12 @@
             "description": "The date and time when the project was last published",
             "nullable": true
           },
+          "hiddenAt": {
+            "type": "string",
+            "example": null,
+            "description": "Set while moderation withholds the game: it is off the hub and cannot be published",
+            "nullable": true
+          },
           "viewCount": {
             "type": "number",
             "example": 123,
@@ -6529,6 +8380,7 @@
           "createdAt",
           "updatedAt",
           "publishedAt",
+          "hiddenAt",
           "viewCount",
           "uniquePlayers",
           "likes",
@@ -6731,6 +8583,12 @@
             "description": "The date and time when the project was last published",
             "nullable": true
           },
+          "hiddenAt": {
+            "type": "string",
+            "example": null,
+            "description": "Set while moderation withholds the game: it is off the hub and cannot be published",
+            "nullable": true
+          },
           "viewCount": {
             "type": "number",
             "example": 123,
@@ -6792,6 +8650,7 @@
           "createdAt",
           "updatedAt",
           "publishedAt",
+          "hiddenAt",
           "viewCount",
           "uniquePlayers",
           "likes",
@@ -7154,6 +9013,12 @@
             "description": "The date and time when the project was last published",
             "nullable": true
           },
+          "hiddenAt": {
+            "type": "string",
+            "example": null,
+            "description": "Set while moderation withholds the game: it is off the hub and cannot be published",
+            "nullable": true
+          },
           "viewCount": {
             "type": "number",
             "example": 123,
@@ -7200,6 +9065,7 @@
           "createdAt",
           "updatedAt",
           "publishedAt",
+          "hiddenAt",
           "viewCount",
           "uniquePlayers",
           "likes"
@@ -7598,6 +9464,11 @@
         },
         "required": ["id", "username"]
       },
+      "CommentRemoval": {
+        "type": "string",
+        "enum": ["USER", "MODERATION"],
+        "description": "Who removed a deleted comment: its author or the game creator, or moderation"
+      },
       "CommentResponseDto": {
         "type": "object",
         "properties": {
@@ -7624,6 +9495,14 @@
           "deleted": {
             "type": "boolean",
             "example": false
+          },
+          "removedBy": {
+            "description": "Who removed a deleted comment: its author or the game creator, or moderation",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CommentRemoval"
+              }
+            ]
           },
           "replies": {
             "description": "Replies to this comment (only for top-level comments)",
@@ -7745,7 +9624,8 @@
               "FRIEND_ACCEPTED",
               "FEATURED",
               "COLLABORATOR_ADDED",
-              "COLLABORATOR_REMOVED"
+              "COLLABORATOR_REMOVED",
+              "MODERATION"
             ],
             "example": "GENERIC"
           },
@@ -8492,6 +10372,11 @@
             "type": "boolean",
             "description": "Whether the tab is signed in; never which account"
           },
+          "consent": {
+            "type": "string",
+            "enum": ["DECLINED", "UNANSWERED"],
+            "description": "Whether the tab refused analytics or has not answered yet, absent when neither"
+          },
           "releaseId": {
             "type": "number"
           },
@@ -8524,6 +10409,11 @@
         },
         "required": ["status"]
       },
+      "AnalyticsPopulation": {
+        "type": "string",
+        "enum": ["CONSENTED", "ANONYMOUS", "CONSENTED_AND_ANONYMOUS", "SERVER"],
+        "description": "Whom it counts: consenting browsers, anonymous tabs, both, or what the server records for every account"
+      },
       "AnalyticsMetricInfoDto": {
         "type": "object",
         "properties": {
@@ -8531,8 +10421,12 @@
             "type": "string"
           },
           "population": {
-            "type": "string",
-            "enum": ["C", "C_LINKED", "A", "C_AND_A", "F", "PRESENCE"]
+            "description": "Whom it counts: consenting browsers, anonymous tabs, both, or what the server records for every account",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnalyticsPopulation"
+              }
+            ]
           },
           "kind": {
             "type": "string",
@@ -8708,19 +10602,21 @@
           "dimension": {
             "type": "string"
           },
-          "grain": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/AnalyticsGrain"
-              }
-            ]
+          "from": {
+            "type": "string",
+            "description": "First day, YYYY-MM-DD"
           },
-          "periodStart": {
-            "type": "string"
+          "to": {
+            "type": "string",
+            "description": "Last day, YYYY-MM-DD, included"
           },
           "status": {
             "type": "string",
             "enum": ["final", "provisional", "unavailable"]
+          },
+          "missingDays": {
+            "type": "number",
+            "description": "Days of the range whose values are not kept, left out of the sum"
           },
           "truncated": {
             "type": "boolean",
@@ -8733,7 +10629,16 @@
             }
           }
         },
-        "required": ["metric", "dimension", "grain", "periodStart", "status", "truncated", "values"]
+        "required": [
+          "metric",
+          "dimension",
+          "from",
+          "to",
+          "status",
+          "missingDays",
+          "truncated",
+          "values"
+        ]
       },
       "AnalyticsTileDto": {
         "type": "object",
@@ -8831,6 +10736,24 @@
           "accountsHosting"
         ]
       },
+      "AnalyticsAnonAnswersDto": {
+        "type": "object",
+        "properties": {
+          "declined": {
+            "type": "number",
+            "description": "Pings from tabs that refused analytics"
+          },
+          "unanswered": {
+            "type": "number",
+            "description": "Pings from tabs that have not answered yet"
+          },
+          "unknown": {
+            "type": "number",
+            "description": "Pings that did not say"
+          }
+        },
+        "required": ["declined", "unanswered", "unknown"]
+      },
       "AnalyticsGameNowDto": {
         "type": "object",
         "properties": {
@@ -8874,6 +10797,14 @@
               }
             ]
           },
+          "anonymousByAnswer": {
+            "description": "The anonymous tabs of the current minute, by what they answered",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnalyticsAnonAnswersDto"
+              }
+            ]
+          },
           "gamesNow": {
             "type": "array",
             "items": {
@@ -8881,7 +10812,7 @@
             }
           }
         },
-        "required": ["note", "samples", "current", "gamesNow"]
+        "required": ["note", "samples", "current", "anonymousByAnswer", "gamesNow"]
       },
       "AnalyticsPresenceDto": {
         "type": "object",
@@ -9013,7 +10944,9 @@
             "type": "number"
           },
           "players": {
-            "type": "number"
+            "type": "number",
+            "nullable": true,
+            "description": "Null over a range reaching before the raw window: distinct players cannot be added"
           },
           "mpSessions": {
             "type": "number"
@@ -9024,19 +10957,21 @@
       "AnalyticsGamesDto": {
         "type": "object",
         "properties": {
-          "grain": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/AnalyticsGrain"
-              }
-            ]
+          "from": {
+            "type": "string",
+            "description": "First day, YYYY-MM-DD"
           },
-          "periodStart": {
-            "type": "string"
+          "to": {
+            "type": "string",
+            "description": "Last day, YYYY-MM-DD, included"
           },
           "status": {
             "type": "string",
             "enum": ["final", "provisional", "unavailable"]
+          },
+          "missingDays": {
+            "type": "number",
+            "description": "Days of the range whose values are not kept, left out of the sums"
           },
           "items": {
             "type": "array",
@@ -9054,7 +10989,456 @@
             "type": "number"
           }
         },
-        "required": ["grain", "periodStart", "status", "items", "total", "page", "limit"]
+        "required": ["from", "to", "status", "missingDays", "items", "total", "page", "limit"]
+      },
+      "AnalyticsTimelineSeriesDto": {
+        "type": "object",
+        "properties": {
+          "metric": {
+            "type": "string"
+          },
+          "population": {
+            "description": "Whom it counts: consenting browsers, anonymous tabs, both, or what the server records for every account",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnalyticsPopulation"
+              }
+            ]
+          },
+          "combine": {
+            "type": "string",
+            "enum": ["sum", "distinct", "max"],
+            "description": "How the buckets make up the total: added, counted once, or the highest"
+          },
+          "definition": {
+            "type": "string"
+          },
+          "ignoredFilters": {
+            "description": "Filters of the request this metric is not split by, and so did not apply",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "nullable": true
+            },
+            "description": "One value per bucket. Null before the raw window, after now, and for a presence bucket without a sample"
+          },
+          "total": {
+            "type": "number",
+            "nullable": true,
+            "description": "The whole window, combined as `combine` says"
+          }
+        },
+        "required": [
+          "metric",
+          "population",
+          "combine",
+          "definition",
+          "ignoredFilters",
+          "values",
+          "total"
+        ]
+      },
+      "AnalyticsTimelineDto": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "description": "Start of the first bucket"
+          },
+          "to": {
+            "type": "string",
+            "description": "End of the last bucket, excluded"
+          },
+          "bucket": {
+            "type": "string",
+            "enum": ["1m", "5m", "15m", "1h", "6h", "1d"]
+          },
+          "bucketMs": {
+            "type": "number"
+          },
+          "rawFrom": {
+            "type": "string",
+            "description": "Raw data starts here: buckets before it have no value"
+          },
+          "buckets": {
+            "description": "Start of every bucket",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "series": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsTimelineSeriesDto"
+            }
+          }
+        },
+        "required": ["from", "to", "bucket", "bucketMs", "rawFrom", "buckets", "series"]
+      },
+      "AnalyticsSourceDto": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "description": "As the timeline takes it: `referrer:itch.io`"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["referrer", "utmSource", "utmCampaign"]
+          },
+          "value": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null for direct visits"
+          },
+          "sessions": {
+            "type": "number",
+            "description": "Consenting sessions started in the window"
+          },
+          "visitorsNew": {
+            "type": "number",
+            "description": "Consenting browsers whose first session it was"
+          }
+        },
+        "required": ["source", "kind", "value", "sessions", "visitorsNew"]
+      },
+      "AnalyticsSourcesDto": {
+        "type": "object",
+        "properties": {
+          "sources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsSourceDto"
+            }
+          }
+        },
+        "required": ["sources"]
+      },
+      "AnalyticsActivityItemDto": {
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "FIRST_VISIT",
+              "FIRST_PLAY",
+              "SIGNUP",
+              "PROJECT_CREATED",
+              "RELEASE_PUBLISHED",
+              "RELEASE_UNPUBLISHED",
+              "MP_SESSION",
+              "ANONYMOUS_PLAYS"
+            ]
+          },
+          "journey": {
+            "type": "string",
+            "nullable": true,
+            "description": "A short code standing for one consenting browser, the same in every answer while the backend runs and never its cookie. Null when no consenting browser is involved"
+          },
+          "releaseId": {
+            "type": "number",
+            "nullable": true
+          },
+          "game": {
+            "type": "string",
+            "nullable": true
+          },
+          "source": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where a first visit came from, as a source the timeline takes"
+          },
+          "country": {
+            "type": "string",
+            "nullable": true
+          },
+          "device": {
+            "type": "string",
+            "nullable": true
+          },
+          "count": {
+            "type": "number",
+            "description": "Plays a row of anonymous plays stands for, 1 otherwise"
+          },
+          "signedIn": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Anonymous plays: signed-in tabs"
+          },
+          "consent": {
+            "type": "string",
+            "enum": ["DECLINED", "UNANSWERED", "UNKNOWN"],
+            "nullable": true,
+            "description": "Anonymous plays: what the tabs answered to analytics"
+          }
+        },
+        "required": [
+          "at",
+          "kind",
+          "journey",
+          "releaseId",
+          "game",
+          "source",
+          "country",
+          "device",
+          "count",
+          "signedIn",
+          "consent"
+        ]
+      },
+      "AnalyticsActivityDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "Newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsActivityItemDto"
+            }
+          },
+          "truncated": {
+            "type": "boolean",
+            "description": "Whether the window held more than the limit"
+          }
+        },
+        "required": ["items", "truncated"]
+      },
+      "AnalyticsArrivalSummaryDto": {
+        "type": "object",
+        "properties": {
+          "arrived": {
+            "type": "number",
+            "description": "Consenting browsers first seen in the window"
+          },
+          "played": {
+            "type": "number",
+            "description": "Of them, browsers that started a play since"
+          },
+          "signedUp": {
+            "type": "number",
+            "description": "Of them, linked to an account created after their first visit"
+          },
+          "existingAccounts": {
+            "type": "number",
+            "description": "Of them, linked to an account that existed before"
+          },
+          "createdProject": {
+            "type": "number",
+            "description": "Of them, whose account created a project since"
+          },
+          "published": {
+            "type": "number",
+            "description": "Of them, whose account published a game since"
+          },
+          "anonymousPlays": {
+            "type": "number",
+            "description": "Plays started in the window in tabs that declined analytics or never answered"
+          },
+          "declinedPlays": {
+            "type": "number",
+            "description": "Of them, in tabs that refused analytics"
+          },
+          "unansweredPlays": {
+            "type": "number",
+            "description": "Of them, in tabs that have not answered yet"
+          },
+          "anonymousSignedInPlays": {
+            "type": "number",
+            "description": "Of them, in signed-in tabs"
+          },
+          "unlinkedSignups": {
+            "type": "number",
+            "description": "Accounts created in the window that no consenting browser is linked to"
+          }
+        },
+        "required": [
+          "arrived",
+          "played",
+          "signedUp",
+          "existingAccounts",
+          "createdProject",
+          "published",
+          "anonymousPlays",
+          "declinedPlays",
+          "unansweredPlays",
+          "anonymousSignedInPlays",
+          "unlinkedSignups"
+        ]
+      },
+      "AnalyticsArrivalGameDto": {
+        "type": "object",
+        "properties": {
+          "releaseId": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "players": {
+            "type": "number",
+            "description": "Browsers of the population that played it"
+          },
+          "plays": {
+            "type": "number",
+            "description": "Plays of the population, until now"
+          },
+          "anonymousPlays": {
+            "type": "number",
+            "description": "Plays started in the window in tabs that declined analytics or never answered"
+          }
+        },
+        "required": ["releaseId", "name", "players", "plays", "anonymousPlays"]
+      },
+      "AnalyticsArrivalDto": {
+        "type": "object",
+        "properties": {
+          "journey": {
+            "type": "string"
+          },
+          "firstSeenAt": {
+            "type": "string"
+          },
+          "lastSeenAt": {
+            "type": "string"
+          },
+          "referrer": {
+            "type": "string",
+            "nullable": true
+          },
+          "utmSource": {
+            "type": "string",
+            "nullable": true
+          },
+          "utmCampaign": {
+            "type": "string",
+            "nullable": true
+          },
+          "country": {
+            "type": "string",
+            "nullable": true
+          },
+          "device": {
+            "type": "string",
+            "nullable": true
+          },
+          "sessions": {
+            "type": "number"
+          },
+          "plays": {
+            "type": "number"
+          },
+          "firstPlayAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "games": {
+            "description": "Names of the games played, most played first",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "account": {
+            "type": "string",
+            "enum": ["NEW", "EXISTING"],
+            "nullable": true,
+            "description": "Null while no account is linked"
+          },
+          "signedUpAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "projectCreatedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "publishedAt": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "journey",
+          "firstSeenAt",
+          "lastSeenAt",
+          "referrer",
+          "utmSource",
+          "utmCampaign",
+          "country",
+          "device",
+          "sessions",
+          "plays",
+          "firstPlayAt",
+          "games",
+          "account",
+          "signedUpAt",
+          "projectCreatedAt",
+          "publishedAt"
+        ]
+      },
+      "AnalyticsArrivalsDto": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "$ref": "#/components/schemas/AnalyticsArrivalSummaryDto"
+          },
+          "games": {
+            "description": "The ten most played",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsArrivalGameDto"
+            }
+          },
+          "visitors": {
+            "description": "Newest first, up to the limit",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsArrivalDto"
+            }
+          }
+        },
+        "required": ["summary", "games", "visitors"]
+      },
+      "AnalyticsReleaseDto": {
+        "type": "object",
+        "properties": {
+          "releaseId": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "publishedAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null for a project not published"
+          }
+        },
+        "required": ["releaseId", "name", "publishedAt"]
+      },
+      "AnalyticsReleasesDto": {
+        "type": "object",
+        "properties": {
+          "releases": {
+            "description": "An id match first, then the latest published, up to the limit",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsReleaseDto"
+            }
+          }
+        },
+        "required": ["releases"]
       },
       "UserAnalyticsTotalsDto": {
         "type": "object",
@@ -9209,6 +11593,154 @@
           "oldestProjectionWork",
           "oldestRawDay"
         ]
+      },
+      "AnalyticsMarkerAudience": {
+        "type": "string",
+        "enum": ["EVERYONE", "PLAYERS", "CREATORS"]
+      },
+      "AnalyticsMarkerDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "at": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "channel": {
+            "type": "string",
+            "nullable": true
+          },
+          "url": {
+            "type": "string",
+            "nullable": true
+          },
+          "audience": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnalyticsMarkerAudience"
+              }
+            ]
+          },
+          "releaseId": {
+            "type": "number",
+            "nullable": true
+          },
+          "game": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null for a game since deleted"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "at",
+          "label",
+          "channel",
+          "url",
+          "audience",
+          "releaseId",
+          "game",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "AnalyticsMarkersDto": {
+        "type": "object",
+        "properties": {
+          "markers": {
+            "description": "Oldest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsMarkerDto"
+            }
+          }
+        },
+        "required": ["markers"]
+      },
+      "CreateAnalyticsMarkerDto": {
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "string",
+            "description": "When it went out, ISO 8601",
+            "example": "2026-10-20T18:00:00Z"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 120,
+            "example": "Launch trailer"
+          },
+          "channel": {
+            "type": "string",
+            "maxLength": 40,
+            "example": "YouTube"
+          },
+          "url": {
+            "type": "string",
+            "maxLength": 2048,
+            "description": "An http or https link to the post"
+          },
+          "audience": {
+            "default": "EVERYONE",
+            "description": "Who it speaks to: players of a game, people making games, or everyone",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnalyticsMarkerAudience"
+              }
+            ]
+          },
+          "releaseId": {
+            "type": "number",
+            "description": "The published project it is about: the game to play, or for creators the game to fork"
+          }
+        },
+        "required": ["at", "label"]
+      },
+      "UpdateAnalyticsMarkerDto": {
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "string",
+            "description": "ISO 8601"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "channel": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 40
+          },
+          "url": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 2048
+          },
+          "audience": {
+            "description": "Who it speaks to: players of a game, people making games, or everyone",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnalyticsMarkerAudience"
+              }
+            ]
+          },
+          "releaseId": {
+            "type": "number",
+            "nullable": true,
+            "description": "The published project it is about: the game to play, or for creators the game to fork"
+          }
+        }
       },
       "ExportVisitorDto": {
         "type": "object",
@@ -9539,18 +12071,20 @@
             "nullable": true
           },
           "email": {
-            "type": "string"
+            "type": "string",
+            "nullable": true,
+            "description": "Null for a reader who does not read addresses: anyone but an admin"
           },
           "role": {
             "type": "string",
-            "enum": ["User", "Moderator", "Admin"]
+            "enum": ["User", "Viewer", "Moderator", "Admin"]
           },
           "createdAt": {
             "format": "date-time",
             "type": "string"
           }
         },
-        "required": ["id", "username", "email", "role", "createdAt"]
+        "required": ["id", "username", "role", "createdAt"]
       },
       "AdminSessionDto": {
         "type": "object",
@@ -9598,7 +12132,7 @@
         "properties": {
           "role": {
             "type": "string",
-            "enum": ["User", "Moderator", "Admin"]
+            "enum": ["User", "Viewer", "Moderator", "Admin"]
           }
         },
         "required": ["role"]
@@ -9870,11 +12404,13 @@
             "nullable": true
           },
           "email": {
-            "type": "string"
+            "type": "string",
+            "nullable": true,
+            "description": "Null for a reader who does not read addresses: anyone but an admin"
           },
           "role": {
             "type": "string",
-            "enum": ["User", "Moderator", "Admin"]
+            "enum": ["User", "Viewer", "Moderator", "Admin"]
           },
           "createdAt": {
             "format": "date-time",
@@ -9889,7 +12425,7 @@
             "type": "boolean"
           }
         },
-        "required": ["id", "username", "email", "role", "createdAt", "deleted"]
+        "required": ["id", "username", "role", "createdAt", "deleted"]
       },
       "ReportReleaseDto": {
         "type": "object",
@@ -10469,6 +13005,1518 @@
           }
         }
       },
+      "ModerationTargetType": {
+        "type": "string",
+        "enum": ["USER", "PROJECT", "COMMENT"]
+      },
+      "ModerationReason": {
+        "type": "string",
+        "enum": [
+          "SPAM",
+          "HARASSMENT",
+          "HATE",
+          "SEXUAL_CONTENT",
+          "VIOLENCE",
+          "ILLEGAL",
+          "IMPERSONATION",
+          "STOLEN_CONTENT",
+          "OTHER"
+        ]
+      },
+      "CreateFlagDto": {
+        "type": "object",
+        "properties": {
+          "targetType": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ModerationTargetType"
+              }
+            ]
+          },
+          "targetId": {
+            "type": "number",
+            "description": "The id of the account, the game or the comment",
+            "minimum": 1
+          },
+          "reason": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ModerationReason"
+              }
+            ]
+          },
+          "details": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        },
+        "required": ["targetType", "targetId", "reason"]
+      },
+      "CreatedFlagDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          }
+        },
+        "required": ["id"]
+      },
+      "StandingSuspensionDto": {
+        "type": "object",
+        "properties": {
+          "since": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "until": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "When it ends by itself, null when only staff can lift it"
+          },
+          "reason": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ModerationReason"
+              }
+            ]
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": ["since"]
+      },
+      "ModerationActionType": {
+        "type": "string",
+        "enum": [
+          "ACCOUNT_WARNED",
+          "ACCOUNT_SUSPENDED",
+          "ACCOUNT_REINSTATED",
+          "ACCOUNT_DELETED",
+          "PROFILE_CLEARED",
+          "ROLE_CHANGED",
+          "PROJECT_HIDDEN",
+          "PROJECT_RESTORED",
+          "PROJECT_DELETED",
+          "COMMENT_HIDDEN",
+          "COMMENT_RESTORED",
+          "COMMENT_DELETED",
+          "FLAGS_DISMISSED",
+          "DRAFT_VIEWED"
+        ]
+      },
+      "StandingEntryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "action": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ModerationActionType"
+              }
+            ]
+          },
+          "targetType": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ModerationTargetType"
+              }
+            ]
+          },
+          "targetId": {
+            "type": "number"
+          },
+          "targetLabel": {
+            "type": "string",
+            "nullable": true,
+            "description": "What the target was called when the action was taken: the name of a game or the start of a comment. It may be gone since."
+          },
+          "reason": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ModerationReason"
+              }
+            ]
+          },
+          "message": {
+            "type": "string",
+            "nullable": true,
+            "description": "What staff told the account"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "When a suspension ends"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": ["id", "action", "targetType", "targetId", "createdAt"]
+      },
+      "StandingDto": {
+        "type": "object",
+        "properties": {
+          "suspension": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StandingSuspensionDto"
+              }
+            ]
+          },
+          "warnings": {
+            "type": "number",
+            "description": "How many warnings the account has received"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StandingEntryDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": ["warnings", "items", "total", "page", "limit"]
+      },
+      "ProjectPreviewDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 1,
+            "description": "The unique identifier of the project"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name of the project",
+            "example": "MySuperVideoGame"
+          },
+          "shortDesc": {
+            "type": "string",
+            "description": "A short description of the project",
+            "example": "A 2D platformer game with pixel art graphics"
+          },
+          "longDesc": {
+            "type": "string",
+            "description": "A detailed description of the project",
+            "example": "This game features multiple levels, power-ups, and boss fights.",
+            "nullable": true
+          },
+          "tags": {
+            "description": "Tags associated with the project",
+            "example": ["Roguelike", "Action", "Custom Jam"],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "iconUrl": {
+            "type": "string",
+            "description": "URL to the project icon",
+            "example": "https://example.com/icons/MySuperVideoGame.png",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "description": "The current status of the project",
+            "enum": ["IN_PROGRESS", "COMPLETED", "ARCHIVED"],
+            "example": "IN_PROGRESS"
+          },
+          "monetization": {
+            "type": "string",
+            "description": "The monetization strategy for this project",
+            "enum": ["NONE", "ADS", "PAID"],
+            "example": "NONE"
+          },
+          "price": {
+            "type": "number",
+            "example": 99.99,
+            "description": "The price of the project, if applicable",
+            "nullable": true
+          },
+          "userId": {
+            "type": "number",
+            "example": 1,
+            "description": "The ID of the user who owns this project"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2023-04-15T12:00:00Z",
+            "description": "The date and time when the project was created"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2023-05-15T12:00:00Z",
+            "description": "The date and time when the project was last updated"
+          },
+          "publishedAt": {
+            "type": "string",
+            "example": "2023-05-20T12:00:00Z",
+            "description": "The date and time when the project was last published",
+            "nullable": true
+          },
+          "hiddenAt": {
+            "type": "string",
+            "example": null,
+            "description": "Set while moderation withholds the game: it is off the hub and cannot be published",
+            "nullable": true
+          },
+          "viewCount": {
+            "type": "number",
+            "example": 123,
+            "description": "The number of times players opened this game's play page"
+          },
+          "uniquePlayers": {
+            "type": "number",
+            "example": 123,
+            "description": "The number of unique players who have interacted with this project"
+          },
+          "likes": {
+            "type": "number",
+            "example": 87,
+            "description": "The number of likes received by the project"
+          },
+          "commentCount": {
+            "type": "number",
+            "example": 12,
+            "description": "The number of comments on the project"
+          },
+          "forkCount": {
+            "type": "number",
+            "example": 7,
+            "description": "The number of forks created from this project"
+          },
+          "forkedFromId": {
+            "type": "number",
+            "example": 42,
+            "description": "The ID of the project this was forked from, if any",
+            "nullable": true
+          },
+          "collaborators": {
+            "description": "The users collaborating on this project",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserBasicInfoDto"
+            }
+          },
+          "creator": {
+            "description": "The creator of this project",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserBasicInfoDto"
+              }
+            ]
+          },
+          "hasRelease": {
+            "type": "boolean",
+            "description": "Whether a released build exists, on the hub or withheld"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "shortDesc",
+          "longDesc",
+          "tags",
+          "iconUrl",
+          "status",
+          "monetization",
+          "price",
+          "userId",
+          "createdAt",
+          "updatedAt",
+          "publishedAt",
+          "hiddenAt",
+          "viewCount",
+          "uniquePlayers",
+          "likes",
+          "collaborators",
+          "creator",
+          "hasRelease"
+        ]
+      },
+      "ModerationTargetState": {
+        "type": "string",
+        "enum": ["VISIBLE", "UNPUBLISHED", "HIDDEN", "SUSPENDED", "DELETED", "GONE"]
+      },
+      "ModerationAccountRefDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "username": {
+            "type": "string"
+          },
+          "nickname": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "type": "string",
+            "enum": ["User", "Viewer", "Moderator", "Admin"]
+          },
+          "deleted": {
+            "type": "boolean",
+            "description": "Whether the account was erased since"
+          },
+          "profileUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "The public profile on the web app, null once the account is erased"
+          },
+          "email": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null unless the caller is an admin: moderators do not read addresses"
+          }
+        },
+        "required": ["id", "username", "role", "deleted"]
+      },
+      "CaseTargetDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ModerationTargetType"
+              }
+            ]
+          },
+          "id": {
+            "type": "number"
+          },
+          "state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ModerationTargetState"
+              }
+            ]
+          },
+          "label": {
+            "type": "string",
+            "nullable": true,
+            "description": "The name of the game, the handle of the account or the start of the comment"
+          },
+          "owner": {
+            "nullable": true,
+            "description": "The account itself, the creator of the game or the author of the comment",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ModerationAccountRefDto"
+              }
+            ]
+          },
+          "projectId": {
+            "type": "number",
+            "nullable": true,
+            "description": "The game a comment is on"
+          },
+          "projectName": {
+            "type": "string",
+            "nullable": true
+          },
+          "playUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "The play page of the game, null while players cannot reach it"
+          },
+          "previewPlayUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "The staff preview of the game in the player, null for an account"
+          },
+          "previewEditUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "The staff preview of the game in the editor, null for an account"
+          }
+        },
+        "required": ["type", "id", "state"]
+      },
+      "ModerationCaseStatus": {
+        "type": "string",
+        "enum": ["OPEN", "RESOLVED"]
+      },
+      "CaseSummaryDto": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "$ref": "#/components/schemas/CaseTargetDto"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ModerationCaseStatus"
+              }
+            ]
+          },
+          "openFlags": {
+            "type": "number"
+          },
+          "totalFlags": {
+            "type": "number"
+          },
+          "reasons": {
+            "type": "array",
+            "description": "The reasons of the open flags, or of every flag once the case is resolved",
+            "items": {
+              "$ref": "#/components/schemas/ModerationReason"
+            }
+          },
+          "firstFlaggedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "lastFlaggedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target",
+          "status",
+          "openFlags",
+          "totalFlags",
+          "reasons",
+          "firstFlaggedAt",
+          "lastFlaggedAt"
+        ]
+      },
+      "CaseListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CaseSummaryDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": ["items", "total", "page", "limit"]
+      },
+      "OpenCaseCountDto": {
+        "type": "object",
+        "properties": {
+          "openCases": {
+            "type": "number",
+            "description": "Targets holding at least one open flag"
+          },
+          "openFlags": {
+            "type": "number"
+          }
+        },
+        "required": ["openCases", "openFlags"]
+      },
+      "TargetContentDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "description": "The name of a game or the display name of an account. A comment has none."
+          },
+          "body": {
+            "type": "string",
+            "nullable": true,
+            "description": "The descriptions of a game, the text of a comment or the bio of an account"
+          }
+        }
+      },
+      "FlagStatus": {
+        "type": "string",
+        "enum": ["OPEN", "ACTIONED", "DISMISSED"]
+      },
+      "CaseFlagDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "reporter": {
+            "$ref": "#/components/schemas/ModerationAccountRefDto"
+          },
+          "reason": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ModerationReason"
+              }
+            ]
+          },
+          "details": {
+            "type": "string",
+            "nullable": true
+          },
+          "snapshot": {
+            "description": "The target as it read when flagged",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TargetContentDto"
+              }
+            ]
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FlagStatus"
+              }
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "resolvedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "resolvedBy": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ModerationAccountRefDto"
+              }
+            ]
+          }
+        },
+        "required": ["id", "reporter", "reason", "snapshot", "status", "createdAt"]
+      },
+      "ModerationActionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "action": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ModerationActionType"
+              }
+            ]
+          },
+          "actor": {
+            "$ref": "#/components/schemas/ModerationAccountRefDto"
+          },
+          "targetType": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ModerationTargetType"
+              }
+            ]
+          },
+          "targetId": {
+            "type": "number"
+          },
+          "targetLabel": {
+            "type": "string",
+            "nullable": true,
+            "description": "What the target was called when the action was taken"
+          },
+          "subject": {
+            "nullable": true,
+            "description": "The account the action bore on: the one warned, or the owner of the content",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ModerationAccountRefDto"
+              }
+            ]
+          },
+          "reason": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ModerationReason"
+              }
+            ]
+          },
+          "publicMessage": {
+            "type": "string",
+            "nullable": true,
+            "description": "What the subject was told"
+          },
+          "internalNote": {
+            "type": "string",
+            "nullable": true
+          },
+          "snapshot": {
+            "nullable": true,
+            "description": "The content the action bore on, as it read then",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TargetContentDto"
+              }
+            ]
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "When a suspension ends"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": ["id", "action", "actor", "targetType", "targetId", "createdAt"]
+      },
+      "ModerationOperation": {
+        "type": "string",
+        "enum": [
+          "DISMISS",
+          "HIDE",
+          "RESTORE",
+          "DELETE",
+          "WARN",
+          "SUSPEND",
+          "REINSTATE",
+          "CLEAR_PROFILE",
+          "DELETE_ACCOUNT"
+        ],
+        "description": "What the caller may do now, given their role and the state of the target"
+      },
+      "CaseDetailDto": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "$ref": "#/components/schemas/CaseTargetDto"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ModerationCaseStatus"
+              }
+            ]
+          },
+          "openFlags": {
+            "type": "number"
+          },
+          "totalFlags": {
+            "type": "number"
+          },
+          "reasons": {
+            "type": "array",
+            "description": "The reasons of the open flags, or of every flag once the case is resolved",
+            "items": {
+              "$ref": "#/components/schemas/ModerationReason"
+            }
+          },
+          "firstFlaggedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "lastFlaggedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "current": {
+            "nullable": true,
+            "description": "The target as it reads now, null once it is gone",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TargetContentDto"
+              }
+            ]
+          },
+          "flags": {
+            "description": "Newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CaseFlagDto"
+            }
+          },
+          "history": {
+            "description": "What was done to the target",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModerationActionDto"
+            }
+          },
+          "ownerHistory": {
+            "description": "The latest actions that bore on the owner, on any of their content",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModerationActionDto"
+            }
+          },
+          "allowedActions": {
+            "type": "array",
+            "description": "What the caller may do now, given their role and the state of the target",
+            "items": {
+              "$ref": "#/components/schemas/ModerationOperation"
+            }
+          }
+        },
+        "required": [
+          "target",
+          "status",
+          "openFlags",
+          "totalFlags",
+          "reasons",
+          "firstFlaggedAt",
+          "lastFlaggedAt",
+          "flags",
+          "history",
+          "ownerHistory",
+          "allowedActions"
+        ]
+      },
+      "InternalNoteDto": {
+        "type": "object",
+        "properties": {
+          "internalNote": {
+            "type": "string",
+            "description": "What only staff read",
+            "maxLength": 2000
+          }
+        }
+      },
+      "AccountStanding": {
+        "type": "string",
+        "enum": ["GOOD", "WARNED", "SUSPENDED"]
+      },
+      "SuspensionDto": {
+        "type": "object",
+        "properties": {
+          "since": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "until": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "When it ends by itself, null when only staff can lift it"
+          }
+        },
+        "required": ["since"]
+      },
+      "ModerationAccountDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "username": {
+            "type": "string"
+          },
+          "nickname": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "type": "string",
+            "enum": ["User", "Viewer", "Moderator", "Admin"]
+          },
+          "deleted": {
+            "type": "boolean",
+            "description": "Whether the account was erased since"
+          },
+          "profileUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "The public profile on the web app, null once the account is erased"
+          },
+          "email": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null unless the caller is an admin: moderators do not read addresses"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "standing": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AccountStanding"
+              }
+            ]
+          },
+          "suspension": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SuspensionDto"
+              }
+            ]
+          },
+          "warnings": {
+            "type": "number"
+          },
+          "games": {
+            "type": "number",
+            "description": "Games the account created, published or not"
+          },
+          "comments": {
+            "type": "number"
+          },
+          "openFlags": {
+            "type": "number",
+            "description": "Open flags on the account or on its content"
+          },
+          "flagsFiled": {
+            "type": "number",
+            "description": "Flags the account filed"
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "role",
+          "deleted",
+          "createdAt",
+          "standing",
+          "warnings",
+          "games",
+          "comments",
+          "openFlags",
+          "flagsFiled"
+        ]
+      },
+      "ModerationAccountListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModerationAccountDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": ["items", "total", "page", "limit"]
+      },
+      "ModerationAccountDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "username": {
+            "type": "string"
+          },
+          "nickname": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "type": "string",
+            "enum": ["User", "Viewer", "Moderator", "Admin"]
+          },
+          "deleted": {
+            "type": "boolean",
+            "description": "Whether the account was erased since"
+          },
+          "profileUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "The public profile on the web app, null once the account is erased"
+          },
+          "email": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null unless the caller is an admin: moderators do not read addresses"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "standing": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AccountStanding"
+              }
+            ]
+          },
+          "suspension": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SuspensionDto"
+              }
+            ]
+          },
+          "warnings": {
+            "type": "number"
+          },
+          "games": {
+            "type": "number",
+            "description": "Games the account created, published or not"
+          },
+          "comments": {
+            "type": "number"
+          },
+          "openFlags": {
+            "type": "number",
+            "description": "Open flags on the account or on its content"
+          },
+          "flagsFiled": {
+            "type": "number",
+            "description": "Flags the account filed"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "allowedActions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModerationOperation"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "role",
+          "deleted",
+          "createdAt",
+          "standing",
+          "warnings",
+          "games",
+          "comments",
+          "openFlags",
+          "flagsFiled",
+          "allowedActions"
+        ]
+      },
+      "WarnAccountDto": {
+        "type": "object",
+        "properties": {
+          "internalNote": {
+            "type": "string",
+            "description": "What only staff read",
+            "maxLength": 2000
+          },
+          "reason": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ModerationReason"
+              }
+            ]
+          },
+          "resolveFlags": {
+            "type": "boolean",
+            "default": true,
+            "description": "Also closes the open flags on the target, as acted on"
+          },
+          "publicMessage": {
+            "type": "string",
+            "description": "What the account is told",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        },
+        "required": ["reason", "publicMessage"]
+      },
+      "SuspendAccountDto": {
+        "type": "object",
+        "properties": {
+          "internalNote": {
+            "type": "string",
+            "description": "What only staff read",
+            "maxLength": 2000
+          },
+          "reason": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ModerationReason"
+              }
+            ]
+          },
+          "resolveFlags": {
+            "type": "boolean",
+            "default": true,
+            "description": "Also closes the open flags on the target, as acted on"
+          },
+          "publicMessage": {
+            "type": "string",
+            "description": "What the account is told",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "durationDays": {
+            "type": "number",
+            "description": "How long it lasts. Left out, it lasts until staff reinstate the account.",
+            "minimum": 1,
+            "maximum": 365
+          }
+        },
+        "required": ["reason", "publicMessage"]
+      },
+      "ModerationNoteDto": {
+        "type": "object",
+        "properties": {
+          "internalNote": {
+            "type": "string",
+            "description": "What only staff read",
+            "maxLength": 2000
+          },
+          "publicMessage": {
+            "type": "string",
+            "description": "What the affected account is told",
+            "maxLength": 1000
+          }
+        }
+      },
+      "ProfilePart": {
+        "type": "string",
+        "enum": ["NICKNAME", "DESCRIPTION", "PICTURE", "BACKGROUND"],
+        "description": "What to clear of the profile"
+      },
+      "ClearProfileDto": {
+        "type": "object",
+        "properties": {
+          "internalNote": {
+            "type": "string",
+            "description": "What only staff read",
+            "maxLength": 2000
+          },
+          "reason": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ModerationReason"
+              }
+            ]
+          },
+          "resolveFlags": {
+            "type": "boolean",
+            "default": true,
+            "description": "Also closes the open flags on the target, as acted on"
+          },
+          "publicMessage": {
+            "type": "string",
+            "description": "What the owner is told",
+            "maxLength": 1000
+          },
+          "parts": {
+            "type": "array",
+            "description": "What to clear of the profile",
+            "items": {
+              "$ref": "#/components/schemas/ProfilePart"
+            }
+          }
+        },
+        "required": ["reason", "parts"]
+      },
+      "StaffDeleteAccountDto": {
+        "type": "object",
+        "properties": {
+          "internalNote": {
+            "type": "string",
+            "description": "What only staff read",
+            "maxLength": 2000
+          },
+          "reason": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ModerationReason"
+              }
+            ]
+          },
+          "resolveFlags": {
+            "type": "boolean",
+            "default": true,
+            "description": "Also closes the open flags on the target, as acted on"
+          },
+          "confirmation": {
+            "type": "string",
+            "description": "Must be the literal string DELETE",
+            "enum": ["DELETE"]
+          },
+          "removePublishedGames": {
+            "type": "boolean",
+            "description": "Whether the published games of the account go too, or stay without an author"
+          }
+        },
+        "required": ["reason", "confirmation", "removePublishedGames"]
+      },
+      "ProjectModerationState": {
+        "type": "string",
+        "enum": ["PUBLISHED", "UNPUBLISHED", "HIDDEN"]
+      },
+      "ModerationProjectDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "shortDesc": {
+            "type": "string"
+          },
+          "owner": {
+            "$ref": "#/components/schemas/ModerationAccountRefDto"
+          },
+          "state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProjectModerationState"
+              }
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "publishedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "hiddenAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "openFlags": {
+            "type": "number"
+          },
+          "playUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "The play page, null while players cannot reach the game"
+          },
+          "previewPlayUrl": {
+            "type": "string",
+            "description": "The staff preview in the player of the web app"
+          },
+          "previewEditUrl": {
+            "type": "string",
+            "description": "The staff preview in the editor of the web app"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "shortDesc",
+          "owner",
+          "state",
+          "createdAt",
+          "updatedAt",
+          "openFlags",
+          "previewPlayUrl",
+          "previewEditUrl"
+        ]
+      },
+      "ModerationProjectListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModerationProjectDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": ["items", "total", "page", "limit"]
+      },
+      "ModerationProjectDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "shortDesc": {
+            "type": "string"
+          },
+          "owner": {
+            "$ref": "#/components/schemas/ModerationAccountRefDto"
+          },
+          "state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProjectModerationState"
+              }
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "publishedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "hiddenAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "openFlags": {
+            "type": "number"
+          },
+          "playUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "The play page, null while players cannot reach the game"
+          },
+          "previewPlayUrl": {
+            "type": "string",
+            "description": "The staff preview in the player of the web app"
+          },
+          "previewEditUrl": {
+            "type": "string",
+            "description": "The staff preview in the editor of the web app"
+          },
+          "longDesc": {
+            "type": "string",
+            "nullable": true
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "collaborators": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModerationAccountRefDto"
+            }
+          },
+          "forkedFromId": {
+            "type": "number",
+            "nullable": true
+          },
+          "hasCover": {
+            "type": "boolean",
+            "description": "Whether the cover route has an image to serve"
+          },
+          "allowedActions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModerationOperation"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "shortDesc",
+          "owner",
+          "state",
+          "createdAt",
+          "updatedAt",
+          "openFlags",
+          "previewPlayUrl",
+          "previewEditUrl",
+          "tags",
+          "collaborators",
+          "hasCover",
+          "allowedActions"
+        ]
+      },
+      "ContentDecisionDto": {
+        "type": "object",
+        "properties": {
+          "internalNote": {
+            "type": "string",
+            "description": "What only staff read",
+            "maxLength": 2000
+          },
+          "reason": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ModerationReason"
+              }
+            ]
+          },
+          "resolveFlags": {
+            "type": "boolean",
+            "default": true,
+            "description": "Also closes the open flags on the target, as acted on"
+          },
+          "publicMessage": {
+            "type": "string",
+            "description": "What the owner is told",
+            "maxLength": 1000
+          }
+        },
+        "required": ["reason"]
+      },
+      "CommentModerationState": {
+        "type": "string",
+        "enum": ["VISIBLE", "HIDDEN", "DELETED"]
+      },
+      "ModerationCommentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "content": {
+            "type": "string",
+            "description": "Empty once a user deleted the comment"
+          },
+          "author": {
+            "$ref": "#/components/schemas/ModerationAccountRefDto"
+          },
+          "projectId": {
+            "type": "number"
+          },
+          "projectName": {
+            "type": "string"
+          },
+          "parentId": {
+            "type": "number",
+            "nullable": true,
+            "description": "The comment it replies to"
+          },
+          "state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CommentModerationState"
+              }
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "hiddenAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "openFlags": {
+            "type": "number"
+          },
+          "playUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "The play page the comment is on, null while players cannot reach the game"
+          },
+          "allowedActions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModerationOperation"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "content",
+          "author",
+          "projectId",
+          "projectName",
+          "state",
+          "createdAt",
+          "openFlags",
+          "allowedActions"
+        ]
+      },
+      "ModerationCommentListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModerationCommentDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": ["items", "total", "page", "limit"]
+      },
+      "ModerationLogDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModerationActionDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": ["items", "total", "page", "limit"]
+      },
       "LoginDto": {
         "type": "object",
         "properties": {
@@ -10696,7 +14744,7 @@
           "role": {
             "type": "string",
             "description": "Role the user holds",
-            "enum": ["User", "Moderator", "Admin"],
+            "enum": ["User", "Viewer", "Moderator", "Admin"],
             "example": "User"
           },
           "createdAt": {
@@ -10707,87 +14755,6 @@
           }
         },
         "required": ["id", "email", "username", "nickname", "role", "createdAt"]
-      },
-      "PaginationMetaDto": {
-        "type": "object",
-        "properties": {
-          "page": {
-            "type": "number",
-            "description": "Current page number",
-            "example": 1
-          },
-          "limit": {
-            "type": "number",
-            "description": "Number of items per page",
-            "example": 10
-          },
-          "total": {
-            "type": "number",
-            "description": "Total number of items",
-            "example": 100
-          },
-          "totalPages": {
-            "type": "number",
-            "description": "Total number of pages",
-            "example": 10
-          }
-        },
-        "required": ["page", "limit", "total", "totalPages"]
-      },
-      "UserListResponseDto": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "description": "HTTP status code",
-            "example": 200
-          },
-          "message": {
-            "type": "string",
-            "description": "Response message",
-            "example": "Users retrieved successfully"
-          },
-          "data": {
-            "description": "List of users",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/UserResponseDto"
-            }
-          },
-          "meta": {
-            "description": "Pagination metadata",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PaginationMetaDto"
-              }
-            ]
-          }
-        },
-        "required": ["statusCode", "message", "data", "meta"]
-      },
-      "UserSingleResponseDto": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "description": "HTTP status code",
-            "example": 200
-          },
-          "message": {
-            "type": "string",
-            "description": "Response message",
-            "example": "User retrieved successfully"
-          },
-          "data": {
-            "description": "User data",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/UserResponseDto"
-              }
-            ]
-          }
-        },
-        "required": ["statusCode", "message", "data"]
       },
       "UserProfileResponseDto": {
         "type": "object",
@@ -10816,7 +14783,7 @@
           "role": {
             "type": "string",
             "description": "Role the user holds",
-            "enum": ["User", "Moderator", "Admin"],
+            "enum": ["User", "Viewer", "Moderator", "Admin"],
             "example": "User"
           },
           "createdAt": {
@@ -10836,6 +14803,16 @@
             "description": "Public CDN URL of the profile background image (if any)",
             "example": "https://cdn.example.com/users/1/background?v=abc123",
             "nullable": true
+          },
+          "suspension": {
+            "description": "The suspension the account is under, null in good standing. Its reason is in the standing.",
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SuspensionDto"
+              }
+            ]
           }
         },
         "required": [
@@ -10846,7 +14823,8 @@
           "role",
           "createdAt",
           "profileImageUrl",
-          "backgroundImageUrl"
+          "backgroundImageUrl",
+          "suspension"
         ]
       },
       "PublicUserProfileDto": {
@@ -11078,57 +15056,6 @@
         },
         "required": ["resourceUrl"]
       },
-      "UpdateUserDto": {
-        "type": "object",
-        "properties": {
-          "email": {
-            "type": "string",
-            "description": "User email address",
-            "example": "user@example.com"
-          },
-          "username": {
-            "type": "string",
-            "description": "User username",
-            "example": "xX_DarkGamer_Xx",
-            "minLength": 3,
-            "maxLength": 24,
-            "pattern": "^[a-zA-Z0-9._-]+$"
-          },
-          "nickname": {
-            "type": "string",
-            "description": "User nick name",
-            "example": "JohnDoe"
-          },
-          "password": {
-            "type": "string",
-            "description": "User password",
-            "example": "password123",
-            "minLength": 8
-          },
-          "role": {
-            "type": "string",
-            "description": "Role the user holds, replacing the one they held",
-            "enum": ["User", "Moderator", "Admin"],
-            "example": "User"
-          }
-        }
-      },
-      "UserRemovedResponseDto": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "description": "HTTP status code",
-            "example": 200
-          },
-          "message": {
-            "type": "string",
-            "description": "Response message",
-            "example": "User deleted successfully"
-          }
-        },
-        "required": ["statusCode", "message"]
-      },
       "PublicUserSearchHitDto": {
         "type": "object",
         "properties": {
@@ -11262,9 +15189,14 @@
             "type": "boolean",
             "description": "Whether usage analytics run: the consent banner shows and consenting browsers are measured. Off unless a deployment turns it on.",
             "example": false
+          },
+          "moderation": {
+            "type": "boolean",
+            "description": "Whether moderation is offered: people can report games, comments and profiles, and see their account standing. Off unless a deployment turns it on.",
+            "example": false
           }
         },
-        "required": ["monetization", "analytics"]
+        "required": ["monetization", "analytics", "moderation"]
       },
       "GameTableStateMessage": {
         "type": "object",
