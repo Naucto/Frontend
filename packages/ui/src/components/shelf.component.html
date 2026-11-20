@@ -16,7 +16,7 @@
     [attr.aria-label]="previousLabel()"
     [attr.aria-controls]="ids.rail"
     (click)="go(current() - 1)">
-    <nc-icon name="chevron-left" [size]="12" />
+    <nc-mark name="chevron-left" />
   </button>
   <div
     class="window"
@@ -106,7 +106,7 @@
     [attr.aria-label]="nextLabel()"
     [attr.aria-controls]="ids.rail"
     (click)="go(current() + 1)">
-    <nc-icon name="chevron-right" [size]="12" />
+    <nc-mark name="chevron-right" />
   </button>
 </div>
 @if (layout().pages > 1) {

@@ -12,7 +12,7 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
-import { AvatarComponent, ChipComponent, IconComponent } from '@naucto/ui';
+import { AvatarComponent, ChipComponent, MarkComponent } from '@naucto/ui';
 
 import { diskStyleFor } from '../game-card/disk-style';
 import { FloppyComponent } from '../game-card/floppy.component';
@@ -57,7 +57,7 @@ interface Drag {
     AvatarComponent,
     ChipComponent,
     FloppyComponent,
-    IconComponent,
+    MarkComponent,
   ],
   templateUrl: './collection-box.component.html',
   styleUrl: './collection-box.component.css',
