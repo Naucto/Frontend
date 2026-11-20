@@ -86,6 +86,11 @@ export class NumberFieldComponent {
   /** Whether the box takes the height it is given, and grows into the width of its cell. */
   readonly fill = input(false, { transform: booleanAttribute });
   /**
+   * Whether it is typed only, without its two step buttons: a cell of a grid, too narrow for them.
+   * The arrow keys still step it.
+   */
+  readonly plain = input(false, { transform: booleanAttribute });
+  /**
    * How much room it takes.
    *
    * `sm` exists for a strip already carrying something else — a row of tabs, a toolbar — where the

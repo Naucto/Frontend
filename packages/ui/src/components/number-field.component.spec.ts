@@ -194,6 +194,19 @@ describe('NumberFieldComponent, typed and stepped', () => {
     expect(requested).toHaveBeenCalledWith(5);
   });
 
+  it('is typed only where it is plain, and still steps from the keyboard', async () => {
+    const requested = vi.fn();
+    await render(NumberFieldComponent, {
+      inputs: { value: 4, min: 0, max: 9, ariaLabel: 'Place', plain: true },
+      on: { requested },
+    });
+
+    expect(screen.queryByRole('button')).toBeNull();
+    await userEvent.click(screen.getByRole('textbox', { name: 'Place' }));
+    await userEvent.keyboard('{ArrowDown}');
+    expect(requested).toHaveBeenCalledWith(3);
+  });
+
   it('ignores text that is not a number, and shows the value it still holds', async () => {
     const cleared = vi.fn();
     const requested = vi.fn();
