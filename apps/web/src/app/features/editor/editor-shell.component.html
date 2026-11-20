@@ -1,4 +1,6 @@
-<div *transloco="let t" class="grid h-dvh grid-rows-[56px_1fr] bg-page text-ink">
+<div
+  *transloco="let t"
+  class="grid h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[56px_1fr] bg-page text-ink">
   <!-- The mark sits in the rail's own column, so the vertical seam runs unbroken from the logo
        down past every rail item. The hub's bar gives it the same cell, which is what makes that
        safe. -->
@@ -25,18 +27,21 @@
             overlap />
         }
       </div>
-      <button ncButton variant="secondary" size="bar" (click)="share()">
-        {{ t('editor.share') }}
-      </button>
-      <button
-        ncButton
-        variant="primary"
-        size="bar"
-        (click)="publish()"
-        [disabled]="!session.isCollaborator() || !!publishBlockedBy()"
-        [attr.title]="publishBlockedBy() ? t(publishBlockedBy()!) : null">
-        {{ t('editor.publish') }}
-      </button>
+      <!-- The narrow screen offers a link to a laptop instead: nothing here to share or publish from. -->
+      @if (!ui.tooNarrow()) {
+        <button ncButton variant="secondary" size="bar" (click)="share()">
+          {{ t('editor.share') }}
+        </button>
+        <button
+          ncButton
+          variant="primary"
+          size="bar"
+          (click)="publish()"
+          [disabled]="!session.isCollaborator() || !!publishBlockedBy()"
+          [attr.title]="publishBlockedBy() ? t(publishBlockedBy()!) : null">
+          {{ t('editor.publish') }}
+        </button>
+      }
     }
     <nc-report-problem-button />
     <nc-notifications-bell />
