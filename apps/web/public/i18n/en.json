@@ -999,6 +999,43 @@
       "ratings": "A rating you send names your account, so the team can follow up with you. We ask for one at most once: close the question and we ask again in two weeks. You can turn it off in Settings."
     }
   },
+  "moderation": {
+    "reasons": {
+      "SPAM": "Spam or advertising",
+      "HARASSMENT": "Harassment or bullying",
+      "HATE": "Hate",
+      "SEXUAL_CONTENT": "Sexual content",
+      "VIOLENCE": "Violence or threats",
+      "ILLEGAL": "Something illegal",
+      "IMPERSONATION": "Pretending to be someone else",
+      "STOLEN_CONTENT": "Stolen work",
+      "OTHER": "Something else"
+    },
+    "report": {
+      "title": {
+        "PROJECT": "Report this game",
+        "COMMENT": "Report this comment",
+        "USER": "Report this profile"
+      },
+      "reason": "What is wrong with it?",
+      "chooseReason": "Choose a reason",
+      "details": "Anything the moderators should know",
+      "detailsHint": "Optional. Where to look, or what happened.",
+      "note": "A moderator reads every report. Whoever you report is not told it was you.",
+      "send": "Send report",
+      "sent": "Your report reached the moderators. Thank you.",
+      "errors": {
+        "failed": "The report could not be sent. Try again in a moment.",
+        "already": "You already reported this, and a moderator has not looked at it yet.",
+        "own": "This is yours, so there is nothing to report.",
+        "gone": "It is no longer there.",
+        "suspended": "Your account is suspended, so it cannot send reports for now."
+      }
+    },
+    "reportGame": "Report game",
+    "reportComment": "Report",
+    "reportProfile": "Report profile"
+  },
   "feedback": {
     "close": "Close",
     "cancel": "Cancel",

@@ -32,10 +32,12 @@ import {
 
 import { ApiError } from '../../core/api/api-errors';
 import { AuthStore } from '../../core/auth/auth.store';
+import { FeaturesService } from '../../core/config/features.service';
 import { PresenceStore } from '../../core/presence/presence.store';
 import { SignedInAction } from '../../shared/auth/signed-in-action';
 import { GameCardComponent } from '../../shared/game-card/game-card.component';
 import { GameScreenComponent } from '../../shared/game-screen/game-screen.component';
+import { ContentFlagLauncher } from '../../shared/moderation/content-flag-launcher.service';
 import {
   injectFork,
   injectLikeStatus,
@@ -98,6 +100,8 @@ export default class GamePage {
   private readonly loader = inject(ReleaseGameService);
   private readonly presence = inject(PresenceStore);
   private readonly signedIn = inject(SignedInAction);
+  private readonly features = inject(FeaturesService);
+  private readonly flags = inject(ContentFlagLauncher);
 
   protected readonly release = injectRelease(() => this.id());
   protected readonly contentUrl = injectReleaseContentUrl(() => this.id());
@@ -164,6 +168,10 @@ export default class GamePage {
       release.collaborators.some((collaborator) => collaborator.id === me)
     );
   });
+  /** Whoever works on a game has nothing to report about it. */
+  protected readonly canReport = computed(
+    () => this.features.moderation() && !!this.release.data() && !this.canEdit(),
+  );
   protected readonly remixes = computed(() => {
     const release = this.release.data();
     return release
@@ -289,6 +297,10 @@ export default class GamePage {
     this.signedIn.run(() => {
       this.toggle.mutate(this.likes.data()?.liked ?? false);
     });
+  }
+
+  protected report(release: { id: number; name: string }): void {
+    this.flags.report({ targetType: 'PROJECT', targetId: release.id, label: release.name });
   }
 
   protected remix(id: number): void {

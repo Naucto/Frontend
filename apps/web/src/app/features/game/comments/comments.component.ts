@@ -25,6 +25,8 @@ import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-quer
 
 import { unwrap } from '../../../core/api/api-errors';
 import { AuthStore } from '../../../core/auth/auth.store';
+import { FeaturesService } from '../../../core/config/features.service';
+import { ContentFlagLauncher } from '../../../shared/moderation/content-flag-launcher.service';
 import { qk } from '../../../shared/queries/query-keys';
 import { UserAvatarComponent } from '../../../shared/user-avatar.component';
 
@@ -57,6 +59,8 @@ export class CommentsComponent {
   protected readonly auth = inject(AuthStore);
   private readonly qc = inject(QueryClient);
   private readonly toasts = inject(ToastService);
+  private readonly features = inject(FeaturesService);
+  private readonly flags = inject(ContentFlagLauncher);
   protected readonly page = signal(1);
   protected readonly maxLen = MAX_LEN;
   protected draft = '';
@@ -152,6 +156,19 @@ export class CommentsComponent {
       return;
     }
     await this.refresh();
+  }
+
+  /** A comment that still reads, written by someone else: nobody reports their own words. */
+  protected canReport(comment: CommentResponseDto): boolean {
+    return (
+      this.features.moderation() &&
+      comment.deleted !== true &&
+      comment.author.id !== this.auth.userId()
+    );
+  }
+
+  protected report(comment: CommentResponseDto): void {
+    this.flags.report({ targetType: 'COMMENT', targetId: comment.id, label: comment.content });
   }
 
   private fail(error: unknown): void {

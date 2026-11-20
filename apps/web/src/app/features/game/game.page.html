@@ -109,6 +109,15 @@
             </a>
           }
         </div>
+        @if (canReport()) {
+          <button
+            type="button"
+            class="mt-1 label flex items-center gap-0.5 text-ink-3 hover:text-ink"
+            (click)="report(release)">
+            <nc-icon name="flag" [size]="12" />
+            {{ t('moderation.reportGame') }}
+          </button>
+        }
         @if (release.tags.length) {
           <div class="mt-2 flex flex-wrap gap-0.5">
             @for (tag of release.tags; track tag) {
