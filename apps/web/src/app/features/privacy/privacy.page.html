@@ -1,55 +1,37 @@
-<section *transloco="let t" class="mx-auto flex w-full max-w-[760px] flex-col gap-2">
-  <nc-panel>
-    <h1 class="font-display text-display text-ink">{{ t('privacy.title') }}</h1>
-    <p class="mt-1 text-body text-ink-2">{{ t('privacy.intro') }}</p>
-    <nc-consent-choice class="mt-2 block" />
-  </nc-panel>
+<section *transloco="let t" class="mx-auto w-full max-w-[760px]">
+  <h1 class="font-display text-display text-ink">{{ t('privacy.title') }}</h1>
+  <p class="mt-1 text-body leading-[1.6] text-ink-2">{{ t('privacy.intro') }}</p>
+  <nc-consent-choice class="mt-2 block" />
 
-  <nc-panel>
-    <h2 class="mb-1.5 font-display text-title text-ink">{{ t('privacy.acceptedTitle') }}</h2>
-    <ul class="list-[square] space-y-1 pl-2 text-body text-ink-2">
-      @for (item of accepted; track item) {
-        <li>{{ t('privacy.accepted.' + item) }}</li>
-      }
-    </ul>
-  </nc-panel>
+  <h2 class="mt-4 mb-1.5 font-display text-title text-ink">{{ t('privacy.acceptedTitle') }}</h2>
+  @for (item of accepted; track item) {
+    <p class="mt-1 text-body leading-[1.6] text-ink-2">{{ t('privacy.accepted.' + item) }}</p>
+  }
 
-  <nc-panel>
-    <h2 class="mb-1.5 font-display text-title text-ink">{{ t('privacy.refusedTitle') }}</h2>
-    <ul class="list-[square] space-y-1 pl-2 text-body text-ink-2">
-      @for (item of refused; track item) {
-        <li>{{ t('privacy.refused.' + item) }}</li>
-      }
-    </ul>
-  </nc-panel>
+  <h2 class="mt-4 mb-1.5 font-display text-title text-ink">{{ t('privacy.refusedTitle') }}</h2>
+  @for (item of refused; track item) {
+    <p class="mt-1 text-body leading-[1.6] text-ink-2">{{ t('privacy.refused.' + item) }}</p>
+  }
 
-  <nc-panel>
-    <h2 class="mb-1.5 font-display text-title text-ink">{{ t('privacy.retentionTitle') }}</h2>
-    <ul class="list-[square] space-y-1 pl-2 text-body text-ink-2">
-      @for (item of retention; track item) {
-        <li>{{ t('privacy.retention.' + item) }}</li>
-      }
-    </ul>
-  </nc-panel>
+  <h2 class="mt-4 mb-1.5 font-display text-title text-ink">{{ t('privacy.retentionTitle') }}</h2>
+  @for (item of retention; track item) {
+    <p class="mt-1 text-body leading-[1.6] text-ink-2">{{ t('privacy.retention.' + item) }}</p>
+  }
 
-  <nc-panel>
-    <h2 class="mb-1.5 font-display text-title text-ink">{{ t('privacy.feedbackTitle') }}</h2>
-    <ul class="list-[square] space-y-1 pl-2 text-body text-ink-2">
-      @for (item of feedbackItems; track item) {
-        <li>{{ t('privacy.feedback.' + item) }}</li>
-      }
-    </ul>
-  </nc-panel>
+  <h2 class="mt-4 mb-1.5 font-display text-title text-ink">{{ t('privacy.feedbackTitle') }}</h2>
+  @for (item of feedbackItems; track item) {
+    <p class="mt-1 text-body leading-[1.6] text-ink-2">{{ t('privacy.feedback.' + item) }}</p>
+  }
 
-  <nc-panel>
-    <h2 class="mb-1.5 font-display text-title text-ink">{{ t('privacy.rightsTitle') }}</h2>
-    <p class="text-body text-ink-2">{{ t('privacy.rights') }}</p>
-    <a routerLink="/settings/privacy" class="mt-1 text-body text-ink-2 underline hover:text-ink">
-      {{ t('privacy.rightsLink') }}
-    </a>
-  </nc-panel>
+  <h2 class="mt-4 mb-1.5 font-display text-title text-ink">{{ t('privacy.rightsTitle') }}</h2>
+  <p class="mt-1 text-body leading-[1.6] text-ink-2">{{ t('privacy.rights') }}</p>
+  <a
+    routerLink="/settings/privacy"
+    class="mt-1 inline-block text-body text-ink-2 underline hover:text-ink">
+    {{ t('privacy.rightsLink') }}
+  </a>
 
-  <p class="text-micro text-ink-3">
+  <p class="mt-4 text-micro text-ink-3">
     {{ t('privacy.geoCredit') }}
     <a href="https://db-ip.com" target="_blank" rel="noopener" class="underline hover:text-ink">
       DB-IP
