@@ -102,13 +102,9 @@
             <li class="px-2 py-2 text-meta text-ink-3">{{ t('editor.game.nothingSaved') }}</li>
           }
         </ul>
-        <div class="label mt-1 px-2 pb-2">
-          {{
-            t('editor.game.historyCount', {
-              named: releases().length,
-              autosaves: autosaves().length,
-            })
-          }}
+        <div class="mt-1 flex gap-2 px-2 pb-2">
+          <nc-stat icon="save" [value]="releases().length" [label]="t('editor.game.named')" />
+          <nc-stat icon="clock" [value]="autosaves().length" [label]="t('editor.game.autosaves')" />
         </div>
       </div>
       <div class="border-t-3 border-line p-2">

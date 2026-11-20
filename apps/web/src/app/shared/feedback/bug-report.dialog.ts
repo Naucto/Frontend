@@ -292,10 +292,10 @@ export class BugReportDialog {
       .slice(-CONSOLE_LINES)
       .map((line) => `[${line.level}] ${line.text}`.slice(0, CONSOLE_LINE_MAX));
     const where = error?.file
-      ? `${error.file}${error.line === undefined ? '' : `:${String(error.line)}`} · `
+      ? `${error.file}${error.line === undefined ? '' : `:${String(error.line)}`}`
       : '';
     const engineError = error
-      ? [`${where}${error.phase}: ${error.message}`, error.traceback ?? '']
+      ? [where, `${error.phase}: ${error.message}`, error.traceback ?? '']
           .filter(Boolean)
           .join('\n')
           .slice(0, BUG_DESCRIPTION_MAX)

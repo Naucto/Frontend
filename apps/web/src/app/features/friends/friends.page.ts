@@ -16,6 +16,7 @@ import {
 import { type PresenceDto } from '@naucto/api-client';
 import {
   ButtonDirective,
+  ChipComponent,
   DialogService,
   EmptyStateComponent,
   IconComponent,
@@ -49,6 +50,7 @@ const ACCENT: Record<string, { rule: string; name: string }> = {
 @Component({
   selector: 'nc-friends-page',
   imports: [
+    ChipComponent,
     DatePipe,
     RouterLink,
     TranslocoDirective,
@@ -147,7 +149,7 @@ export default class FriendsPage {
       verb: this.transloco.translate(line.verbKey),
       name: line.name,
       nameClass: ACCENT[presence.kind]?.name ?? 'text-ink-body',
-      tail: line.tail ? `· ${this.transloco.translate(line.tail.key, line.tail.params)}` : '',
+      tail: line.tail ? this.transloco.translate(line.tail.key, line.tail.params) : '',
     };
   }
 

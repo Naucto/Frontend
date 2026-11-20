@@ -69,11 +69,11 @@ test('the screen is not mirrored top to bottom', async ({ page }) => {
 test('a reload opens the editor with the viewer docked', async ({ page }) => {
   await page.goto(editorUrl('code'));
   await page.getByRole('button', { name: 'Pop the viewer out' }).click();
-  await expect(page.getByText('Viewer · 320×180')).toBeVisible();
+  await expect(page.getByText('Viewer', { exact: true })).toBeVisible();
 
   await page.reload();
   await expect(page.getByRole('button', { name: 'Pop the viewer out' })).toBeVisible();
-  await expect(page.getByText('Viewer · 320×180')).toHaveCount(0);
+  await expect(page.getByText('Viewer', { exact: true })).toHaveCount(0);
 });
 
 /**
@@ -454,9 +454,9 @@ test('FIND arrows walk the matches and leave the caret in the bar', async ({ pag
   const line = page.getByText(/^LN \d+/);
   await field.fill('function');
   await next.click();
-  await expect(line).toHaveText(/LN 10 /);
+  await expect(line).toHaveText(/^LN 10$/);
   await next.click();
-  await expect(line).toHaveText(/LN 14 /);
+  await expect(line).toHaveText(/^LN 14$/);
   await expect(field).toBeFocused();
   await expect(page.locator('.cm-searchMatch').count()).resolves.toBeGreaterThanOrEqual(2);
   await expect(page.locator('.cm-searchMatch-selected')).toHaveText('function');
@@ -473,7 +473,7 @@ test('FIND arrows walk the matches and leave the caret in the bar', async ({ pag
   await page.getByRole('tab', { name: 'main', exact: true }).click();
   await expect(page.locator('.cm-content')).toContainText('_init');
   await next.click();
-  await expect(line).toHaveText(/LN 10 /);
+  await expect(line).toHaveText(/^LN 10$/);
 });
 
 /**

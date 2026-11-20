@@ -118,10 +118,10 @@
               } @else {
                 <span class="font-mono">&#64;{{ profile.username }}</span>
               }
-              @if (joined(); as year) {
-                · {{ t('profile.joined', { year: year }) }}
-              }
             </span>
+            @if (joined(); as year) {
+              <span class="label shrink-0">{{ t('profile.joined', { year: year }) }}</span>
+            }
             @if (isSelf()) {
               <nc-edit-chip [label]="t('profile.status')" (click)="editing.set('description')" />
             }

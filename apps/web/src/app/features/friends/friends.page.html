@@ -70,10 +70,14 @@
                   class="block truncate text-ui text-ink hover:text-gold-ink">
                   {{ friend.nickname || friend.username }}
                 </a>
-                <div class="truncate text-meta text-ink-3">
-                  {{ line(friend).verb }}
-                  <span [class]="line(friend).nameClass">{{ line(friend).name }}</span>
-                  {{ line(friend).tail }}
+                <div class="flex items-baseline gap-1 text-meta text-ink-3">
+                  <span class="truncate">
+                    {{ line(friend).verb }}
+                    <span [class]="line(friend).nameClass">{{ line(friend).name }}</span>
+                  </span>
+                  @if (line(friend).tail; as tail) {
+                    <span class="label shrink-0">{{ tail }}</span>
+                  }
                 </div>
               </div>
               <span class="flex-1"></span>
@@ -130,14 +134,14 @@
                   [userId]="person.id"
                   [size]="36" />
                 <div class="min-w-0 flex-1">
-                  <div class="truncate text-meta text-ink-body">
-                    {{ person.nickname || person.username }}
+                  <div class="flex items-baseline gap-1">
+                    <span class="truncate text-meta text-ink-body">
+                      {{ person.nickname || person.username }}
+                    </span>
+                    <span class="label shrink-0">{{ person.playedAt | ncRelativeTime }}</span>
                   </div>
                   <!-- The game name keeps its own case: uppercase micro runs wider than the panel. -->
-                  <div class="truncate text-meta text-ink-3">
-                    {{ person.game }}
-                    <span class="label">· {{ person.playedAt | ncRelativeTime }}</span>
-                  </div>
+                  <div class="truncate text-meta text-ink-3">{{ person.game }}</div>
                 </div>
                 @if (!person.friend) {
                   <button ncButton variant="secondary" size="sm" (click)="addUser(person.id)">
@@ -150,8 +154,9 @@
         }
         @if (requests().length) {
           <section class="flat-lg bevel-fill-panel p-2">
-            <div class="label mb-[13px] text-gold-ink">
-              {{ t('friends.requests') }} · {{ requests().length }}
+            <div class="mb-[13px] flex items-center gap-1">
+              <span class="label text-gold-ink">{{ t('friends.requests') }}</span>
+              <nc-chip tone="gold" wash>{{ requests().length }}</nc-chip>
             </div>
             @for (request of requests(); track request.id) {
               <div class="flex items-center gap-[11px] not-last:mb-1.5">

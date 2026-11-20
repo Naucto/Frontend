@@ -299,6 +299,10 @@
     text-transform: uppercase;
     color: var(--nc-ink-3);
   }
+  .doc-html details.doc-listing summary span {
+    margin-left: 12px;
+    color: var(--nc-ink-4);
+  }
   .doc-html details.doc-listing summary:hover {
     color: var(--nc-active-ink);
   }
@@ -689,6 +693,9 @@
   color: var(--nc-ink-2);
 }
 .nc-doc-card__more {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 12px;
   margin-top: 6px;
   font-size: var(--text-label);
   letter-spacing: var(--tracking-label);

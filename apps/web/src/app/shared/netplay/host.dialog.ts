@@ -9,6 +9,7 @@ import {
   InputDirective,
   SettingRowComponent,
   ShareCodeComponent,
+  StatComponent,
   ToastService,
   ToggleComponent,
 } from '@naucto/ui';
@@ -34,6 +35,7 @@ export interface HostDialogData {
 @Component({
   selector: 'nc-host-dialog',
   imports: [
+    StatComponent,
     TranslocoDirective,
     ButtonDirective,
     DialogShellComponent,

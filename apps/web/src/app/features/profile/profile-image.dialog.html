@@ -1,5 +1,8 @@
 <nc-dialog-shell *transloco="let t" [title]="t('profile.image.' + data.zone)">
-  <p class="label mt-2 mb-1 text-ink-4">{{ t('profile.image.spec.' + data.zone) }}</p>
+  <p class="mt-2 mb-1 flex items-center gap-1">
+    <nc-chip>{{ t('profile.image.shape.' + data.zone) }}</nc-chip>
+    <span class="label text-ink-4">{{ t('profile.image.spec.' + data.zone) }}</span>
+  </p>
 
   <!-- The well is a wrapper: the crop is measured from the frame's own box, which has no border. -->
   <div class="well">
@@ -61,6 +64,11 @@
           (click)="file().nativeElement.click()">
           <nc-icon name="image" [size]="24" />
           <span class="text-body">{{ t('profile.image.drop') }}</span>
+          <span class="flex items-center gap-0.5">
+            @for (format of formats; track format) {
+              <nc-chip>{{ format }}</nc-chip>
+            }
+          </span>
           <span class="label text-ink-4">{{ t('profile.image.limits') }}</span>
           <span ncButton variant="secondary" size="sm" class="mt-1">
             {{ t('profile.image.browse') }}

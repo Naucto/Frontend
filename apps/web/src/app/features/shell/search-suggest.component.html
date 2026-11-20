@@ -47,8 +47,9 @@
                 <nc-highlight [text]="game.name" [match]="parsed().term" />
               </span>
               <span class="label min-w-0 flex-[0_1_auto] truncate text-ink-4">
-                {{ t('search.byPlays', { name: game.creator.username, plays: game.viewCount }) }}
+                {{ t('hub.by', { name: game.creator.username }) }}
               </span>
+              <nc-stat class="shrink-0" icon="play" [value]="game.viewCount" compact />
             </nc-suggest-row>
           }
         }
@@ -76,12 +77,10 @@
               @if (doing) {
                 <span class="flex shrink-0 items-center gap-1.5">
                   <nc-online-dot [online]="true" />
-                  <span class="label text-ink-4">
-                    {{ t(doing.verbKey) }}
-                    @if (doing.name) {
-                      · {{ doing.name }}
-                    }
-                  </span>
+                  <span class="label text-ink-4">{{ t(doing.verbKey) }}</span>
+                  @if (doing.name) {
+                    <span class="max-w-[16ch] truncate text-meta text-ink-3">{{ doing.name }}</span>
+                  }
                 </span>
               }
             </nc-suggest-row>
@@ -103,14 +102,12 @@
                 <nc-highlight [text]="session.projectName" [match]="parsed().term" />
               </span>
               <span class="label min-w-0 flex-[0_1_auto] truncate text-ink-4">
-                {{
-                  t('search.slotsHost', {
-                    players: session.playerCount,
-                    max: session.maxPlayers,
-                    name: session.hostNickname || session.hostUsername,
-                  })
-                }}
+                {{ t('net.join.hostedBy', { name: session.hostNickname || session.hostUsername }) }}
               </span>
+              <nc-stat
+                class="shrink-0"
+                icon="users"
+                [value]="session.playerCount + '/' + session.maxPlayers" />
               <span class="shrink-0 text-meta tracking-button text-jade-ink uppercase">
                 {{ t('net.join.join') }}
               </span>

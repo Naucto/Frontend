@@ -45,7 +45,9 @@
             </label>
             <span class="flex-1"></span>
             @if (sampleName()) {
-              <span class="label">{{ sampleMeta() }}</span>
+              @for (cost of sampleCost(); track $index) {
+                <span class="label">{{ cost }}</span>
+              }
               <button
                 ncButton
                 variant="ghost"
@@ -239,8 +241,15 @@
   <section class="p-1.5">
     <div class="mb-1 flex items-center justify-between">
       <span class="label text-ink-3">{{ t('editor.sound.usedBy') }}</span>
-      <span class="label text-ink-4">
-        {{ t('editor.sound.usedByCount', { p: usedBy().patterns.length, s: usedBy().sfx.length }) }}
+      <span class="flex gap-1.5">
+        <nc-stat
+          icon="music"
+          [value]="usedBy().patterns.length"
+          [label]="t('editor.sound.usedByPatterns')" />
+        <nc-stat
+          icon="volume-2"
+          [value]="usedBy().sfx.length"
+          [label]="t('editor.sound.usedBySfx')" />
       </span>
     </div>
     <div class="flex flex-wrap gap-0.5">

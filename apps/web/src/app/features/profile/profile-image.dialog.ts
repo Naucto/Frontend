@@ -9,7 +9,13 @@ import {
   viewChild,
 } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
-import { ButtonDirective, DialogShellComponent, IconComponent, NoticeComponent } from '@naucto/ui';
+import {
+  ButtonDirective,
+  ChipComponent,
+  DialogShellComponent,
+  IconComponent,
+  NoticeComponent,
+} from '@naucto/ui';
 
 /** Which zone the dialog is filling, which is all that differs between its two windows. */
 export type ProfileImageZone = 'picture' | 'banner';
@@ -54,6 +60,7 @@ type Grip = 'move' | 'nw' | 'ne' | 'sw' | 'se' | 'w' | 'e';
   imports: [
     TranslocoDirective,
     ButtonDirective,
+    ChipComponent,
     DialogShellComponent,
     IconComponent,
     NoticeComponent,
@@ -66,6 +73,7 @@ export class ProfileImageDialogComponent {
   protected readonly ref = inject<DialogRef<ProfileImageResult | undefined>>(DialogRef);
   private readonly win = WINDOW[this.data.zone];
   protected readonly accept = ACCEPT;
+  protected readonly formats = ['PNG', 'JPG', 'GIF'];
   /** Tall enough that a square selection has somewhere to move; the banner needs no more. */
   protected readonly frameHeight = this.data.zone === 'picture' ? 300 : 260;
 
