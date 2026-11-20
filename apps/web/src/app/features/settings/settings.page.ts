@@ -3,13 +3,15 @@ import { Router } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { PanelComponent, TabsComponent } from '@naucto/ui';
 
+import { FeaturesService } from '../../core/config/features.service';
 import { AccountSettingsComponent } from './account-settings.component';
 import { ControlsSettingsComponent } from './controls-settings.component';
 import { EditorSettingsComponent } from './editor-settings.component';
 import { PrivacySettingsComponent } from './privacy-settings.component';
+import { StandingSettingsComponent } from './standing-settings.component';
 
-type Tab = 'account' | 'editor' | 'controls' | 'privacy';
-const TABS: Tab[] = ['account', 'editor', 'controls', 'privacy'];
+type Tab = 'account' | 'editor' | 'controls' | 'privacy' | 'standing';
+const TABS: Tab[] = ['account', 'editor', 'controls', 'privacy', 'standing'];
 
 @Component({
   selector: 'nc-settings-page',
@@ -21,6 +23,7 @@ const TABS: Tab[] = ['account', 'editor', 'controls', 'privacy'];
     ControlsSettingsComponent,
     EditorSettingsComponent,
     PrivacySettingsComponent,
+    StandingSettingsComponent,
   ],
   templateUrl: './settings.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -28,12 +31,17 @@ const TABS: Tab[] = ['account', 'editor', 'controls', 'privacy'];
 export default class SettingsPage {
   readonly tab = input<string>();
   private readonly router = inject(Router);
+  private readonly features = inject(FeaturesService);
+  /** The standing is part of moderation, and shows only where moderation is on. */
+  private readonly offered = computed(() =>
+    TABS.filter((tab) => tab !== 'standing' || this.features.moderation()),
+  );
   protected readonly current = computed<Tab>(() =>
-    TABS.includes(this.tab() as Tab) ? (this.tab() as Tab) : 'account',
+    this.offered().includes(this.tab() as Tab) ? (this.tab() as Tab) : 'account',
   );
   private readonly i18n = inject(TranslocoService);
   protected readonly tabs = computed(() =>
-    TABS.map((value) => ({ value, label: this.i18n.translate(`settings.${value}`) })),
+    this.offered().map((value) => ({ value, label: this.i18n.translate(`settings.${value}`) })),
   );
 
   protected go(tab: Tab | undefined): void {

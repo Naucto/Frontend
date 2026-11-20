@@ -88,6 +88,11 @@ export const NotificationsStore = signalStore(
           if (notification.kind === 'FRIEND_REQUEST' || notification.kind === 'FRIEND_ACCEPTED') {
             void store.queries.invalidateQueries({ queryKey: qk.friends() });
           }
+          // A decision changes the standing, and may begin or end a suspension the profile carries.
+          if (notification.kind === 'MODERATION') {
+            void store.queries.invalidateQueries({ queryKey: qk.standingAll() });
+            void store.auth.refreshProfile().catch(() => undefined);
+          }
           break;
         }
         case 'pong':

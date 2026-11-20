@@ -47,7 +47,12 @@
   <div>
     <nc-suspension-band />
     @if (hidden()) {
-      <nc-notice variant="band" tone="danger">{{ t('editor.hiddenBand') }}</nc-notice>
+      <nc-notice variant="band" tone="danger">
+        {{ t('editor.hiddenBand') }}
+        <a routerLink="/settings/standing" class="underline underline-offset-2 hover:text-ink">
+          {{ t('moderation.suspended.why') }}
+        </a>
+      </nc-notice>
     }
   </div>
 

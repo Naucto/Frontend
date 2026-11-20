@@ -73,6 +73,7 @@
     "editor": "Editor",
     "controls": "Controls",
     "privacy": "Privacy",
+    "standing": "Standing",
     "soon": "Coming in a later step.",
     "saved": "Saved",
     "saveFailed": "Could not save that. Nothing changed.",
@@ -1041,7 +1042,33 @@
       "until": "Your account is suspended until {{until}}.",
       "indefinite": "Your account is suspended.",
       "rule": "You can still read and play. Nothing you post, change or save goes through meanwhile.",
-      "blocked": "Your account is suspended, so this is not available for now."
+      "blocked": "Your account is suspended, so this is not available for now.",
+      "why": "See why"
+    },
+    "standing": {
+      "lead": "What the moderators decided about your account and what you made. Only you see this.",
+      "loadFailed": "Could not load your standing.",
+      "history": "Decisions",
+      "warnings": "{{count}} warnings",
+      "oneWarning": "1 warning",
+      "empty": "Nothing on record. Your account is in good standing.",
+      "reason": "Reason",
+      "until": "Until {{until}}",
+      "newer": "Newer",
+      "older": "Older",
+      "actions": {
+        "ACCOUNT_WARNED": "Warning",
+        "ACCOUNT_SUSPENDED": "Account suspended",
+        "ACCOUNT_REINSTATED": "Suspension lifted",
+        "PROFILE_CLEARED": "Profile cleared",
+        "PROJECT_HIDDEN": "Game hidden",
+        "PROJECT_RESTORED": "Game restored",
+        "PROJECT_DELETED": "Game deleted",
+        "COMMENT_HIDDEN": "Comment removed",
+        "COMMENT_RESTORED": "Comment restored",
+        "COMMENT_DELETED": "Comment deleted",
+        "OTHER": "Decision"
+      }
     },
     "reportGame": "Report game",
     "reportComment": "Report",
