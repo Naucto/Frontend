@@ -1,28 +1,27 @@
 <section *transloco="let t" class="mx-auto w-full max-w-[1000px]">
-  <nc-panel [padded]="false">
-    <header class="flex flex-wrap items-center justify-between gap-2 px-2.75 pt-2.75">
-      <h1 class="font-display text-display text-ink">{{ t('settings.title') }}</h1>
-      <nc-segmented
-        [options]="tabs()"
-        [value]="current()"
-        (valueChange)="go($event)"
-        [label]="t('settings.title')" />
-    </header>
-    <div class="px-2.75 py-2.75">
-      @switch (current()) {
-        @case ('account') {
-          <nc-account-settings />
-        }
-        @case ('editor') {
-          <nc-editor-settings />
-        }
-        @case ('controls') {
-          <nc-controls-settings />
-        }
-        @case ('privacy') {
-          <nc-privacy-settings />
-        }
+  <h1 class="mb-2 font-display text-display text-ink">{{ t('settings.title') }}</h1>
+  <nc-tabs
+    [tabs]="tabs()"
+    [value]="current()"
+    (valueChange)="go($event)"
+    [label]="t('settings.title')" />
+  <!-- The strip's rule is this frame's top edge: the chosen tab opens into it. -->
+  <div
+    class="flat-sm bevel-open-t bevel-edge-line-strong bevel-fill-raised px-2.75 py-2.75"
+    role="tabpanel">
+    @switch (current()) {
+      @case ('account') {
+        <nc-account-settings />
       }
-    </div>
-  </nc-panel>
+      @case ('editor') {
+        <nc-editor-settings />
+      }
+      @case ('controls') {
+        <nc-controls-settings />
+      }
+      @case ('privacy') {
+        <nc-privacy-settings />
+      }
+    }
+  </div>
 </section>

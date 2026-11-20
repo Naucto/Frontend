@@ -6,8 +6,8 @@ import {
   IconComponent,
   type IconName,
   KeycapComponent,
-  SegmentedComponent,
   SliderComponent,
+  TabsComponent,
 } from '@naucto/ui';
 
 import { InputBindingsStore } from '../../core/input/input-bindings.store';
@@ -91,7 +91,7 @@ interface Row {
     GamepadArtComponent,
     IconComponent,
     KeycapComponent,
-    SegmentedComponent,
+    TabsComponent,
     SliderComponent,
   ],
   templateUrl: './controls-settings.component.html',

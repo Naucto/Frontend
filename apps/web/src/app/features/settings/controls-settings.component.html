@@ -5,22 +5,21 @@
       <code class="font-mono text-meta text-sky-ink">input.held("left")</code>
       {{ t('settings.controlsIntroAfter') }}
     </p>
-    <div class="mb-1 flex flex-wrap items-center gap-1">
-      <nc-segmented
-        variant="chips"
-        [options]="players()"
-        [value]="String(player())"
-        (valueChange)="setPlayer($event)" />
-    </div>
+    <nc-tabs
+      variant="small"
+      [tabs]="players()"
+      [value]="String(player())"
+      (valueChange)="setPlayer($event)"
+      [label]="t('settings.controls')" />
 
-    <!-- Visual captions only; the sr-only head row below carries the column association for screen
-         readers. -->
-    <div aria-hidden="true" class="label mx-[3px] grid grid-cols-[24%_40%_36%] text-ink-3">
-      <span class="px-1.75 pb-1.5">{{ t('settings.action') }}</span>
-      <span class="px-1.75 pb-1.5">{{ t('settings.keyboard') }}</span>
-      <span class="px-1.75 pb-1.5">{{ t('settings.gamepad') }}</span>
-    </div>
-    <div class="flat-sm bevel-fill-inset">
+    <div class="flat-sm bevel-open-t bevel-edge-line-strong bevel-fill-raised" role="tabpanel">
+      <!-- Visual captions only; the sr-only head row below carries the column association for
+           screen readers. -->
+      <div aria-hidden="true" class="label grid grid-cols-[24%_40%_36%] pt-1.5 text-ink-3">
+        <span class="px-1.75 pb-1.5">{{ t('settings.action') }}</span>
+        <span class="px-1.75 pb-1.5">{{ t('settings.keyboard') }}</span>
+        <span class="px-1.75 pb-1.5">{{ t('settings.gamepad') }}</span>
+      </div>
       <table class="w-full table-fixed border-collapse text-body">
         <colgroup>
           <col class="w-[24%]" />
@@ -37,8 +36,8 @@
         <tbody>
           @for (row of rows(); track row.action) {
             <tr
-              class="border-b-3 border-line-soft last:border-b-0"
-              [class.bg-raised]="capturing()?.action === row.action">
+              class="border-t-3 border-line-soft"
+              [class.bg-inset]="capturing()?.action === row.action">
               <td class="px-1.75 py-1.5">
                 <div class="font-mono text-meta text-ink">{{ row.action }}</div>
               </td>
