@@ -301,6 +301,8 @@
     "moreFrom": "More from {{name}}",
     "similar": "Similar",
     "loadFailedTitle": "This game would not start",
+    "unavailableTitle": "This game is unavailable",
+    "unavailable": "A moderator took it off Naucto.",
     "loadFailedRelease": "We could not reach the server to look it up. It may be a connection problem at your end, or ours.",
     "loadFailedContent": "The game was found, but its content could not be downloaded.",
     "retry": "Try again",
@@ -341,6 +343,7 @@
     "reply": "Reply",
     "delete": "Delete",
     "deleted": "[deleted]",
+    "removedByModeration": "[removed by a moderator]",
     "replyPlaceholder": "Write a reply…",
     "loadFailed": "Could not load the comments."
   },
@@ -494,6 +497,8 @@
       "find": "Find"
     },
     "publishBlockedSize": "Blocked — the game is over the size ceiling",
+    "publishBlockedHidden": "Blocked: a moderator hid this game",
+    "hiddenBand": "A moderator hid this game. It is off the hub and cannot be published until it is restored. You can still open and edit it.",
     "publishBlockedFields": "Blocked — a game needs a name and a summary",
     "openReference": "Open the reference",
     "swapToReference": "Swap to the reference",

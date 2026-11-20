@@ -117,7 +117,7 @@
           class="text-body whitespace-pre-wrap"
           [class.text-ink-4]="entry.deleted"
           [class.text-ink-body]="!entry.deleted"
-          [textContent]="entry.deleted ? t('comments.deleted') : entry.content"></p>
+          [textContent]="entry.deleted ? t(removalKey(entry)) : entry.content"></p>
         @if (replyTo() === entry.id) {
           <form class="mt-1 flex gap-1" (ngSubmit)="postReply(entry.id)">
             <input
