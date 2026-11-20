@@ -6,7 +6,7 @@ import { NoticeComponent } from '@naucto/ui';
 import { AuthStore } from '../../core/auth/auth.store';
 import { FeaturesService } from '../../core/config/features.service';
 
-const UNTIL = new Intl.DateTimeFormat(undefined, { dateStyle: 'long', timeStyle: 'short' });
+const UNTIL = new Intl.DateTimeFormat('en-US', { dateStyle: 'long', timeStyle: 'short' });
 
 /**
  * Tells a suspended account, on every page, that it is suspended and until when. Draws nothing
