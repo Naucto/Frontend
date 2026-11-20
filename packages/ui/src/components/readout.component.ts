@@ -8,10 +8,11 @@ const TONES: Record<ReadoutTone, string> = {
 };
 
 /**
- * A value the product produced, in a well of its own, with whatever acts on it at its right.
+ * A value the product produced, in a frame of its own, with whatever acts on it at its right.
  *
- * Not a field: nothing here is typed. Drawing such a value as an inert field says it could be
- * edited once whatever governs it changes, which is not true of any of them.
+ * Not a field: nothing here is typed, so the frame is flat rather than a well. Drawing such a value
+ * as an inert field says it could be edited once whatever governs it changes, which is not true of
+ * any of them.
  */
 @Component({
   selector: 'nc-readout',
@@ -32,15 +33,17 @@ export class ReadoutComponent {
 
   protected readonly boxClass = computed(() =>
     [
-      'flex items-center rounded-sm border border-line-strong bg-inset',
-      this.size() === 'sm' ? 'gap-0.75 px-1 py-0.5' : 'gap-1.25 px-[11px] py-[9px]',
+      'flat-sm bevel-edge-line-strong bevel-fill-inset flex items-center',
+      this.size() === 'sm'
+        ? 'min-h-(--nc-h-sm) gap-0.75 px-1'
+        : 'min-h-(--nc-h-lg) gap-1.25 px-1.5',
     ].join(' '),
   );
 
   protected readonly valueClass = computed(() =>
     [
       'flex-1 font-mono tracking-strip',
-      this.size() === 'sm' ? 'text-meta' : 'text-[14px]',
+      this.size() === 'sm' ? 'text-meta' : 'text-small',
       TONES[this.tone()],
     ].join(' '),
   );

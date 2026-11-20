@@ -1,48 +1,76 @@
-<a [routerLink]="link()" [class]="cardClass()">
-  <div class="relative aspect-video w-full">
-    <nc-game-cover
-      class="h-full w-full"
-      [releaseId]="isDraft() ? null : game().id"
-      [projectId]="isDraft() ? game().id : null"
-      [alt]="game().name"
-      [label]="dense() ? undefined : 'No cover yet'"
-      [iconSize]="dense() ? 12 : 48" />
-  </div>
-  <div [class]="dense() ? 'p-1' : 'px-1.5 pt-[11px] pb-1.5'">
-    <div class="flex items-center gap-1">
-      <span
-        class="min-w-0 flex-1 truncate text-ink group-hover:text-gold-ink"
-        [class]="dense() ? 'text-meta' : 'text-ui'">
-        {{ game().name }}
+<ng-container *transloco="let t">
+  @if (dense()) {
+    <a
+      [routerLink]="link()"
+      class="group raised-sm bevel-bare flex items-center gap-1.5 p-[6px] hover:bevel-lit hover:bevel-fill-raised active:bevel-down">
+      <nc-floppy
+        class="w-[64px] shrink-0"
+        mode="thumb"
+        [name]="game().name"
+        [body]="body()"
+        [cover]="cover()" />
+      <span class="grid min-w-0 flex-1 gap-0.5">
+        <span class="flex items-center gap-1">
+          <span class="min-w-0 flex-1 truncate text-body text-ink group-hover:text-gold-ink">
+            {{ game().name }}
+          </span>
+          @if (game().hiddenAt) {
+            <nc-chip tone="hot">Hidden</nc-chip>
+          } @else if (isDraft()) {
+            <nc-chip>Draft</nc-chip>
+          }
+        </span>
+        <span class="label truncate">{{ game().creator.username }}</span>
+        <span class="flex gap-1.5">
+          <nc-stat icon="play" [value]="game().viewCount" />
+          <nc-stat icon="heart" [value]="game().likes" tone="hot" />
+          <nc-stat icon="git-branch" [value]="game().forkCount ?? 0" />
+        </span>
       </span>
-      @if (game().hiddenAt) {
-        <nc-chip tone="hot">Hidden</nc-chip>
-      } @else if (isDraft()) {
-        <nc-chip>Draft</nc-chip>
-      }
-    </div>
-    <div class="mt-0.5 flex items-center gap-[6px]">
-      <nc-user-avatar
-        [name]="game().creator.username"
-        [userId]="game().creator.id"
-        [size]="14"
-        avatarClass="mr-0.5" />
-      <span class="label truncate">{{ game().creator.username }}</span>
-      @for (collaborator of stacked(); track collaborator.id) {
-        <nc-user-avatar
-          [name]="collaborator.username"
-          [userId]="collaborator.id"
-          [size]="14"
-          overlap />
-      }
-      @if (extra()) {
-        <span class="label ml-0.5 text-ink-4">+{{ extra() }}</span>
-      }
-    </div>
-    <div class="mt-1 flex gap-1.5">
-      <nc-stat icon="play" [value]="game().viewCount" />
-      <nc-stat icon="heart" [value]="game().likes" tone="hot" />
-      <nc-stat icon="git-branch" [value]="game().forkCount ?? 0" />
-    </div>
-  </div>
-</a>
+    </a>
+  } @else {
+    <a
+      [routerLink]="link()"
+      class="block"
+      (focus)="focused.set($any($event.target).matches(':focus-visible'))"
+      (blur)="focused.set(false)">
+      <nc-floppy
+        [name]="game().name"
+        [body]="body()"
+        [cover]="cover()"
+        [action]="opensEditor() ? 'edit' : 'play'"
+        [actionLabel]="opensEditor() ? t('game.edit') : t('hub.play')"
+        [open]="focused()">
+        <nc-stat info icon="play" [value]="game().viewCount" compact />
+        <nc-stat info icon="heart" [value]="game().likes" tone="hot" compact />
+        <nc-stat
+          info
+          class="@max-[210px]:hidden"
+          icon="git-branch"
+          [value]="game().forkCount ?? 0" />
+        <div meta class="mt-0.5 flex min-w-0 items-center justify-center gap-[6px]">
+          <nc-user-avatar
+            [name]="game().creator.username"
+            [userId]="game().creator.id"
+            [size]="20" />
+          <span class="label truncate">{{ game().creator.username }}</span>
+          @for (collaborator of stacked(); track collaborator.id) {
+            <nc-user-avatar
+              [name]="collaborator.username"
+              [userId]="collaborator.id"
+              [size]="20"
+              overlap />
+          }
+          @if (extra()) {
+            <span class="label text-ink-4">+{{ extra() }}</span>
+          }
+          @if (game().hiddenAt) {
+            <nc-chip tone="hot">Hidden</nc-chip>
+          } @else if (isDraft()) {
+            <nc-chip>Draft</nc-chip>
+          }
+        </div>
+      </nc-floppy>
+    </a>
+  }
+</ng-container>

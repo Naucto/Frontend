@@ -18,17 +18,11 @@ import { IconComponent } from './icon.component';
 @Component({
   selector: 'nc-stat',
   imports: [IconComponent],
-  template: `
-    <nc-icon [name]="icon()" [size]="12" />
-    <span [class]="label() && tone() !== 'hot' ? 'text-ink' : ''">{{ formatted() }}</span>
-    @if (label(); as text) {
-      <span>{{ text }}</span>
-    }
-  `,
+  templateUrl: './stat.component.html',
   host: {
-    class: 'inline-flex items-center font-mono text-label uppercase tracking-data',
-    '[class]':
-      '(tone() === "hot" ? "text-hot-ink" : "text-ink-3") + (label() ? " gap-[7px]" : " gap-[5px]")',
+    class:
+      'inline-flex items-center gap-1 font-ui text-small leading-none tracking-button uppercase',
+    '[class]': 'tone() === "hot" ? "text-hot-ink" : "text-ink-3"',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -13,7 +13,7 @@
         (keydown.enter)="start()" />
     </nc-field>
   } @else {
-    <nc-field [label]="t('net.host.code')">
+    <nc-field class="mt-2" [label]="t('net.host.code')">
       <nc-share-code [code]="code()" (copied)="copy()" />
       <p class="mt-1 text-meta text-ink-3">{{ t('net.host.codeHint') }}</p>
     </nc-field>
@@ -29,9 +29,9 @@
     <div class="mt-1 flex flex-wrap gap-2">
       @for (seat of seats().slots; track $index) {
         @if (seat) {
-          <nc-user-avatar [size]="26" [userId]="seat.id" [name]="seat.name" />
+          <nc-user-avatar [size]="30" [userId]="seat.id" [name]="seat.name" />
         } @else {
-          <span class="size-[26px] rounded-xs border border-dashed border-line-strong"></span>
+          <span class="flat-sm size-[30px] bevel-edge-line-strong bevel-fill-inset"></span>
         }
       }
     </div>

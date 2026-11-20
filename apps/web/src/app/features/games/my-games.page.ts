@@ -6,11 +6,13 @@ import {
   ButtonDirective,
   EmptyStateComponent,
   ErrorStateComponent,
+  IconComponent,
   SkeletonComponent,
 } from '@naucto/ui';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 
 import { unwrap } from '../../core/api/api-errors';
+import { FloppyComponent } from '../../shared/game-card/floppy.component';
 import { qk } from '../../shared/queries/query-keys';
 import { HubRowComponent } from '../hub/hub-row.component';
 
@@ -22,7 +24,9 @@ import { HubRowComponent } from '../hub/hub-row.component';
     ButtonDirective,
     EmptyStateComponent,
     ErrorStateComponent,
+    IconComponent,
     SkeletonComponent,
+    FloppyComponent,
     HubRowComponent,
   ],
   templateUrl: './my-games.page.html',
