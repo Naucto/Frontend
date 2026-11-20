@@ -1,35 +1,6 @@
 {
   "openapi": "3.0.0",
   "paths": {
-    "/projects/releases": {
-      "get": {
-        "operationId": "HubController_getAllReleases",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "A JSON array of projects with collaborators and creator information",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ProjectExResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {},
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Get all released projects",
-        "tags": ["projects"]
-      }
-    },
     "/projects/releases/paginated": {
       "get": {
         "operationId": "HubController_getPaginatedReleases",
@@ -1502,6 +1473,62 @@
         "tags": ["projects"]
       }
     },
+    "/projects/{id}/disk": {
+      "patch": {
+        "operationId": "ProjectController_setDisk",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectDiskDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The disk as stored",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectDiskDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A colour, finish or direction the disk cannot take"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Project not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Choose the disk of a project, or go back to the derived one with null",
+        "tags": ["projects"]
+      }
+    },
     "/projects/{id}/add-collaborator": {
       "patch": {
         "description": "Add a collaborator to a project by providing either userId, username, or email. At least one must be provided.",
@@ -1765,6 +1792,101 @@
         "tags": ["projects"]
       }
     },
+    "/projects/{id}/clip": {
+      "post": {
+        "operationId": "ProjectController_uploadClip",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["file"],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "WebM or MP4 video, 4 MiB"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Clip stored",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectClipDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "413": {
+            "description": "Larger than 4 MiB"
+          },
+          "422": {
+            "description": "Not a WebM or MP4 video, by its type or its content"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Upload the gameplay clip of a project, over the one it has",
+        "tags": ["projects"]
+      },
+      "delete": {
+        "operationId": "ProjectController_removeClip",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Clip removed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Remove the gameplay clip of a project; no-op when it has none",
+        "tags": ["projects"]
+      }
+    },
     "/game-sessions": {
       "post": {
         "operationId": "MultiplayerController_create",
@@ -1843,7 +1965,7 @@
             "JWT-auth": []
           }
         ],
-        "summary": "List open game sessions from the caller's perspective, one game's or every game's",
+        "summary": "List open game sessions from the caller's perspective, the latest first: one game's, or the latest across published games",
         "tags": ["game-sessions"]
       }
     },
@@ -2954,75 +3076,6 @@
         ]
       }
     },
-    "/admin/featured-release": {
-      "put": {
-        "operationId": "AdminFeaturedReleaseController_setFeatured",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SetFeaturedReleaseDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "The new featured release",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/FeaturedReleaseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Project is not published"
-          },
-          "401": {
-            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
-          },
-          "403": {
-            "description": "Admin role required"
-          },
-          "404": {
-            "description": "Project not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Feature a published project (replaces the current pick)",
-        "tags": ["admin"]
-      },
-      "delete": {
-        "operationId": "AdminFeaturedReleaseController_clearFeatured",
-        "parameters": [],
-        "responses": {
-          "204": {
-            "description": "No featured release remains"
-          },
-          "401": {
-            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
-          },
-          "403": {
-            "description": "Admin role required"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Clear the current featured release",
-        "tags": ["admin"]
-      }
-    },
     "/admin/featured-release/history": {
       "get": {
         "operationId": "AdminFeaturedReleaseController_getHistory",
@@ -3069,6 +3122,606 @@
         ],
         "summary": "List past and current featured releases",
         "tags": ["admin"]
+      }
+    },
+    "/hub": {
+      "get": {
+        "operationId": "HubFeedController_getHub",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HubResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "The hub of the day: its hero and the shelves it opens on",
+        "tags": ["hub"],
+        "security": [
+          {},
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/hub/shelves": {
+      "get": {
+        "operationId": "HubFeedController_getShelves",
+        "parameters": [
+          {
+            "name": "keys",
+            "required": true,
+            "in": "query",
+            "description": "Comma-separated shelf keys, 12 at most",
+            "schema": {
+              "example": "tag:Platformer,tag:Puzzle",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HubShelvesResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A key names no shelf, or too many were asked for"
+          }
+        },
+        "summary": "Shelves by key, fetched as the page scrolls",
+        "tags": ["hub"],
+        "security": [
+          {},
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/hub/shelves/{key}": {
+      "get": {
+        "operationId": "HubFeedController_getShelf",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "description": "popular, trending, friends or tag:<tag>",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number, from 1",
+            "schema": {
+              "minimum": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Games per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "example": 24,
+              "type": "number"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "Defaults to the shelf's own order: the draw of the day, or the most played",
+            "schema": {
+              "type": "string",
+              "enum": ["fresh", "popular", "liked", "discussed", "name"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HubShelfPageDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The key names no shelf"
+          }
+        },
+        "summary": "One page of everything a shelf lists",
+        "tags": ["hub"],
+        "security": [
+          {},
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/collections": {
+      "get": {
+        "operationId": "CollectionsController_list",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number, from 1",
+            "schema": {
+              "minimum": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Collections per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "example": 24,
+              "type": "number"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "popular: the most played games inside; recent: the newest collection; games: the most games",
+            "schema": {
+              "default": "popular",
+              "type": "string",
+              "enum": ["popular", "recent", "games"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionsPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {},
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "The public collections holding a game, a page at a time",
+        "tags": ["collections"]
+      },
+      "post": {
+        "operationId": "CollectionsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCollectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, or the caller holds as many collections as they may",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionLimitDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create a collection",
+        "tags": ["collections"]
+      }
+    },
+    "/collections/{id}": {
+      "get": {
+        "operationId": "CollectionsController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such collection, or a private one of someone else"
+          }
+        },
+        "security": [
+          {},
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "A collection and its games",
+        "tags": ["collections"]
+      },
+      "patch": {
+        "operationId": "CollectionsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCollectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "The collection is not the caller’s"
+          },
+          "404": {
+            "description": "No such collection, or a private one of someone else"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Change the title, the description or who may read a collection",
+        "tags": ["collections"]
+      },
+      "delete": {
+        "operationId": "CollectionsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "The collection is not the caller’s"
+          },
+          "404": {
+            "description": "No such collection, or a private one of someone else"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Delete a collection",
+        "tags": ["collections"]
+      }
+    },
+    "/collections/{id}/games": {
+      "put": {
+        "operationId": "CollectionsController_reorder",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderCollectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "A game named is not in it"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "The collection is not the caller’s"
+          },
+          "404": {
+            "description": "No such collection, or a private one of someone else"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Reorder the games of a collection",
+        "tags": ["collections"]
+      }
+    },
+    "/collections/{id}/games/{projectId}": {
+      "put": {
+        "operationId": "CollectionsController_addGame",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "The collection lists as many games as it may",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionLimitDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "The collection is not the caller’s"
+          },
+          "404": {
+            "description": "No such collection, or a private one of someone else; or the game is not published"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Add a published game to a collection, last; no-op when it is there",
+        "tags": ["collections"]
+      },
+      "delete": {
+        "operationId": "CollectionsController_removeGame",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "The collection is not the caller’s"
+          },
+          "404": {
+            "description": "No such collection, or a private one of someone else"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Remove a game from a collection; no-op when it is not there",
+        "tags": ["collections"]
+      }
+    },
+    "/users/me/collections": {
+      "get": {
+        "operationId": "UserCollectionsController_mine",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": false,
+            "in": "query",
+            "description": "A game: each collection then says whether it lists it",
+            "schema": {
+              "example": 12,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MyCollectionDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "The caller's collections, private ones included",
+        "tags": ["collections"]
+      }
+    },
+    "/users/public/{id}/collections": {
+      "get": {
+        "operationId": "UserCollectionsController_publicOf",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "User ID",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CollectionPreviewDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "A user's public collections",
+        "tags": ["collections"],
+        "security": [
+          {},
+          {
+            "JWT-auth": []
+          }
+        ]
       }
     },
     "/analytics/events": {
@@ -8218,6 +8871,48 @@
       }
     },
     "schemas": {
+      "DiskFinish": {
+        "type": "string",
+        "enum": ["solid", "stripes", "checker", "dots", "gradient", "gold", "silver", "holo"]
+      },
+      "DiskGradDir": {
+        "type": "string",
+        "enum": ["h", "v", "d", "d2", "r"],
+        "description": "The direction of a gradient"
+      },
+      "DiskStyleDto": {
+        "type": "object",
+        "properties": {
+          "color": {
+            "type": "string",
+            "description": "Any colour, as `#rrggbb`; answered in lower case",
+            "example": "#ff8426",
+            "pattern": "^#[0-9a-f]{6}$"
+          },
+          "finish": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DiskFinish"
+              }
+            ]
+          },
+          "color2": {
+            "type": "string",
+            "description": "The second colour, for a finish that takes two, as `#rrggbb`",
+            "example": "#ffd100",
+            "pattern": "^#[0-9a-f]{6}$"
+          },
+          "gradDir": {
+            "description": "The direction of a gradient",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DiskGradDir"
+              }
+            ]
+          }
+        },
+        "required": ["color", "finish"]
+      },
       "UserBasicInfoDto": {
         "type": "object",
         "properties": {
@@ -8266,11 +8961,41 @@
               "type": "string"
             }
           },
+          "palette": {
+            "description": "The colours the game draws with, as lower-case `#rrggbb` in the order the game indexes them. Empty until its editor wrote them",
+            "example": ["#16171a", "#7f0622", "#d62411"],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "iconUrl": {
             "type": "string",
             "description": "URL to the project icon",
             "example": "https://example.com/icons/MySuperVideoGame.png",
             "nullable": true
+          },
+          "coverUrl": {
+            "type": "string",
+            "description": "Address of the cover, usable as is: it changes when the cover does. Null without a cover. Absent from answers that neither list nor open a project",
+            "example": "https://cdn.example.com/projects/1/image?v=5d41402abc4b2a76b9719d911017c592",
+            "nullable": true
+          },
+          "clipUrl": {
+            "type": "string",
+            "description": "Address of the short gameplay clip, usable as is: it changes when the clip does. Null without a clip. Absent from answers that neither list nor open a project",
+            "example": "https://cdn.example.com/projects/1/clip?v=5d41402abc4b2a76b9719d911017c592",
+            "nullable": true
+          },
+          "disk": {
+            "description": "The disk its author chose. Null when none was chosen: a client then derives a colour from the id. Absent from answers that neither list nor open a project",
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DiskStyleDto"
+              }
+            ]
           },
           "status": {
             "type": "string",
@@ -8372,6 +9097,7 @@
           "shortDesc",
           "longDesc",
           "tags",
+          "palette",
           "iconUrl",
           "status",
           "monetization",
@@ -8536,11 +9262,41 @@
               "type": "string"
             }
           },
+          "palette": {
+            "description": "The colours the game draws with, as lower-case `#rrggbb` in the order the game indexes them. Empty until its editor wrote them",
+            "example": ["#16171a", "#7f0622", "#d62411"],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "iconUrl": {
             "type": "string",
             "description": "URL to the project icon",
             "example": "https://example.com/icons/MySuperVideoGame.png",
             "nullable": true
+          },
+          "coverUrl": {
+            "type": "string",
+            "description": "Address of the cover, usable as is: it changes when the cover does. Null without a cover. Absent from answers that neither list nor open a project",
+            "example": "https://cdn.example.com/projects/1/image?v=5d41402abc4b2a76b9719d911017c592",
+            "nullable": true
+          },
+          "clipUrl": {
+            "type": "string",
+            "description": "Address of the short gameplay clip, usable as is: it changes when the clip does. Null without a clip. Absent from answers that neither list nor open a project",
+            "example": "https://cdn.example.com/projects/1/clip?v=5d41402abc4b2a76b9719d911017c592",
+            "nullable": true
+          },
+          "disk": {
+            "description": "The disk its author chose. Null when none was chosen: a client then derives a colour from the id. Absent from answers that neither list nor open a project",
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DiskStyleDto"
+              }
+            ]
           },
           "status": {
             "type": "string",
@@ -8642,6 +9398,7 @@
           "shortDesc",
           "longDesc",
           "tags",
+          "palette",
           "iconUrl",
           "status",
           "monetization",
@@ -8966,11 +9723,41 @@
               "type": "string"
             }
           },
+          "palette": {
+            "description": "The colours the game draws with, as lower-case `#rrggbb` in the order the game indexes them. Empty until its editor wrote them",
+            "example": ["#16171a", "#7f0622", "#d62411"],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "iconUrl": {
             "type": "string",
             "description": "URL to the project icon",
             "example": "https://example.com/icons/MySuperVideoGame.png",
             "nullable": true
+          },
+          "coverUrl": {
+            "type": "string",
+            "description": "Address of the cover, usable as is: it changes when the cover does. Null without a cover. Absent from answers that neither list nor open a project",
+            "example": "https://cdn.example.com/projects/1/image?v=5d41402abc4b2a76b9719d911017c592",
+            "nullable": true
+          },
+          "clipUrl": {
+            "type": "string",
+            "description": "Address of the short gameplay clip, usable as is: it changes when the clip does. Null without a clip. Absent from answers that neither list nor open a project",
+            "example": "https://cdn.example.com/projects/1/clip?v=5d41402abc4b2a76b9719d911017c592",
+            "nullable": true
+          },
+          "disk": {
+            "description": "The disk its author chose. Null when none was chosen: a client then derives a colour from the id. Absent from answers that neither list nor open a project",
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DiskStyleDto"
+              }
+            ]
           },
           "status": {
             "type": "string",
@@ -9057,6 +9844,7 @@
           "shortDesc",
           "longDesc",
           "tags",
+          "palette",
           "iconUrl",
           "status",
           "monetization",
@@ -9101,6 +9889,15 @@
               "type": "string"
             }
           },
+          "palette": {
+            "description": "The colours the game draws with, as `#rrggbb` in the order the game indexes them: the palette of its content, mirrored here so a client reads it without the engine",
+            "example": ["#16171a", "#7f0622", "#d62411"],
+            "maxItems": 64,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "status": {
             "type": "string",
             "description": "Project status",
@@ -9120,6 +9917,22 @@
           }
         },
         "required": ["name", "shortDesc"]
+      },
+      "ProjectDiskDto": {
+        "type": "object",
+        "properties": {
+          "disk": {
+            "nullable": true,
+            "description": "Null for no chosen style: a client then derives a colour from the project id",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DiskStyleDto"
+              }
+            ]
+          }
+        },
+        "required": ["disk"]
       },
       "AddCollaboratorDto": {
         "type": "object",
@@ -9160,6 +9973,17 @@
             "example": "john.doe@example.com"
           }
         }
+      },
+      "ProjectClipDto": {
+        "type": "object",
+        "properties": {
+          "clipUrl": {
+            "type": "string",
+            "description": "Address of the clip just stored, usable as is",
+            "example": "https://cdn.example.com/projects/1/clip?v=5d41402abc4b2a76b9719d911017c592"
+          }
+        },
+        "required": ["clipUrl"]
       },
       "CreateGameSessionDto": {
         "type": "object",
@@ -9284,6 +10108,20 @@
         },
         "required": ["joinCode"]
       },
+      "GameSessionRosterEntryDto": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "example": "alice"
+          },
+          "nickname": {
+            "type": "string",
+            "description": "Display nickname, if set"
+          }
+        },
+        "required": ["username"]
+      },
       "GameSessionResponseDto": {
         "type": "object",
         "properties": {
@@ -9324,6 +10162,25 @@
           "playerCount": {
             "type": "number",
             "description": "Current number of players, host included"
+          },
+          "startedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the session was opened",
+            "example": "2026-11-20T18:30:00Z"
+          },
+          "roster": {
+            "description": "Who is in the session, host first",
+            "maxItems": 8,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GameSessionRosterEntryDto"
+            }
+          },
+          "coverUrl": {
+            "type": "string",
+            "description": "Address of the cover of the game, usable as is; null without a cover",
+            "nullable": true
           }
         },
         "required": [
@@ -9335,7 +10192,10 @@
           "projectId",
           "projectName",
           "maxPlayers",
-          "playerCount"
+          "playerCount",
+          "startedAt",
+          "roster",
+          "coverUrl"
         ]
       },
       "GameSessionListResponseDto": {
@@ -9962,7 +10822,8 @@
           },
           "note": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "description": "What a curator wrote about the pick; null for a pick the hub made itself"
           },
           "startsAt": {
             "format": "date-time",
@@ -9975,6 +10836,7 @@
           },
           "featuredBy": {
             "nullable": true,
+            "description": "The curator of a pick made by hand; null for a pick the hub made itself",
             "type": "object",
             "allOf": [
               {
@@ -10009,23 +10871,6 @@
         },
         "required": ["featured"]
       },
-      "SetFeaturedReleaseDto": {
-        "type": "object",
-        "properties": {
-          "projectId": {
-            "type": "number",
-            "example": 42,
-            "description": "ID of the published project"
-          },
-          "note": {
-            "type": "string",
-            "example": "Editor's pick: a tight one-button platformer",
-            "description": "Optional curator note shown next to the featured game",
-            "maxLength": 280
-          }
-        },
-        "required": ["projectId"]
-      },
       "FeaturedProjectSummaryDto": {
         "type": "object",
         "properties": {
@@ -10055,7 +10900,8 @@
           },
           "note": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "description": "What a curator wrote about the pick; null for a pick the hub made itself"
           },
           "startsAt": {
             "format": "date-time",
@@ -10068,6 +10914,7 @@
           },
           "featuredBy": {
             "nullable": true,
+            "description": "The curator of a pick made by hand; null for a pick the hub made itself",
             "type": "object",
             "allOf": [
               {
@@ -10104,6 +10951,689 @@
           }
         },
         "required": ["items", "total", "page", "limit"]
+      },
+      "HubReasonGameDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 42
+          },
+          "name": {
+            "type": "string",
+            "example": "Moon Lander"
+          }
+        },
+        "required": ["id", "name"]
+      },
+      "HubGameDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 1,
+            "description": "The unique identifier of the project"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name of the project",
+            "example": "MySuperVideoGame"
+          },
+          "shortDesc": {
+            "type": "string",
+            "description": "A short description of the project",
+            "example": "A 2D platformer game with pixel art graphics"
+          },
+          "longDesc": {
+            "type": "string",
+            "description": "A detailed description of the project",
+            "example": "This game features multiple levels, power-ups, and boss fights.",
+            "nullable": true
+          },
+          "tags": {
+            "description": "Tags associated with the project",
+            "example": ["Roguelike", "Action", "Custom Jam"],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "iconUrl": {
+            "type": "string",
+            "description": "URL to the project icon",
+            "example": "https://example.com/icons/MySuperVideoGame.png",
+            "nullable": true
+          },
+          "coverUrl": {
+            "type": "string",
+            "description": "Address of the cover, usable as is: it changes when the cover does. Null without a cover",
+            "example": "https://cdn.example.com/projects/1/image?v=5d41402abc4b2a76b9719d911017c592",
+            "nullable": true
+          },
+          "clipUrl": {
+            "type": "string",
+            "description": "Address of the short gameplay clip, usable as is: it changes when the clip does. Null without a clip",
+            "example": "https://cdn.example.com/projects/1/clip?v=5d41402abc4b2a76b9719d911017c592",
+            "nullable": true
+          },
+          "disk": {
+            "description": "The disk its author chose. Null when none was chosen: a client then derives a colour from the id",
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DiskStyleDto"
+              }
+            ]
+          },
+          "status": {
+            "type": "string",
+            "description": "The current status of the project",
+            "enum": ["IN_PROGRESS", "COMPLETED", "ARCHIVED"],
+            "example": "IN_PROGRESS"
+          },
+          "monetization": {
+            "type": "string",
+            "description": "The monetization strategy for this project",
+            "enum": ["NONE", "ADS", "PAID"],
+            "example": "NONE"
+          },
+          "price": {
+            "type": "number",
+            "example": 99.99,
+            "description": "The price of the project, if applicable",
+            "nullable": true
+          },
+          "userId": {
+            "type": "number",
+            "example": 1,
+            "description": "The ID of the user who owns this project"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2023-04-15T12:00:00Z",
+            "description": "The date and time when the project was created"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2023-05-15T12:00:00Z",
+            "description": "The date and time when the project was last updated"
+          },
+          "publishedAt": {
+            "type": "string",
+            "example": "2023-05-20T12:00:00Z",
+            "description": "The date and time when the project was last published",
+            "nullable": true
+          },
+          "hiddenAt": {
+            "type": "string",
+            "example": null,
+            "description": "Set while moderation withholds the game: it is off the hub and cannot be published",
+            "nullable": true
+          },
+          "viewCount": {
+            "type": "number",
+            "example": 123,
+            "description": "The number of times players opened this game's play page"
+          },
+          "uniquePlayers": {
+            "type": "number",
+            "example": 123,
+            "description": "The number of unique players who have interacted with this project"
+          },
+          "likes": {
+            "type": "number",
+            "example": 87,
+            "description": "The number of likes received by the project"
+          },
+          "commentCount": {
+            "type": "number",
+            "example": 12,
+            "description": "The number of comments on the project"
+          },
+          "forkCount": {
+            "type": "number",
+            "example": 7,
+            "description": "The number of forks created from this project"
+          },
+          "forkedFromId": {
+            "type": "number",
+            "example": 42,
+            "description": "The ID of the project this was forked from, if any",
+            "nullable": true
+          },
+          "collaborators": {
+            "description": "The users collaborating on this project",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserBasicInfoDto"
+            }
+          },
+          "creator": {
+            "description": "The creator of this project",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserBasicInfoDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "shortDesc",
+          "longDesc",
+          "tags",
+          "iconUrl",
+          "coverUrl",
+          "clipUrl",
+          "disk",
+          "status",
+          "monetization",
+          "price",
+          "userId",
+          "createdAt",
+          "updatedAt",
+          "publishedAt",
+          "hiddenAt",
+          "viewCount",
+          "uniquePlayers",
+          "likes",
+          "collaborators",
+          "creator"
+        ]
+      },
+      "HubHeroSlotDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "enum": [
+              "GAME_OF_THE_WEEK",
+              "CONTINUE",
+              "TRENDING",
+              "NEW_AND_RISING",
+              "FRIENDS_PLAY",
+              "BECAUSE_YOU_PLAYED"
+            ],
+            "description": "Why this game is put forward"
+          },
+          "reasonGame": {
+            "description": "The game the reader played, for BECAUSE_YOU_PLAYED",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HubReasonGameDto"
+              }
+            ]
+          },
+          "game": {
+            "$ref": "#/components/schemas/HubGameDto"
+          }
+        },
+        "required": ["reason", "game"]
+      },
+      "CollectionVisibility": {
+        "type": "string",
+        "enum": ["PUBLIC", "UNLISTED", "PRIVATE"]
+      },
+      "CollectionPreviewDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "6f1c2f4e-8a53-4c1c-9a57-2f0f6f0d6c11"
+          },
+          "title": {
+            "type": "string",
+            "example": "Couch co-op"
+          },
+          "description": {
+            "type": "string",
+            "example": "Games to play side by side.",
+            "nullable": true
+          },
+          "visibility": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CollectionVisibility"
+              }
+            ]
+          },
+          "owner": {
+            "$ref": "#/components/schemas/UserBasicInfoDto"
+          },
+          "gameCount": {
+            "type": "number",
+            "description": "Games of it on the hub: the ones a reader is shown",
+            "example": 14
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-11-20T12:00:00Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-11-20T12:00:00Z",
+            "description": "When it or its list of games last changed"
+          },
+          "games": {
+            "description": "Its first games on the hub, in order, 8 at most",
+            "maxItems": 8,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HubGameDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "description",
+          "visibility",
+          "owner",
+          "gameCount",
+          "createdAt",
+          "updatedAt",
+          "games"
+        ]
+      },
+      "HubShelfDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "What names the shelf to the shelf routes. They do not serve `collections`: its \"see all\" is GET /collections",
+            "example": "tag:Platformer"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["POPULAR", "TRENDING", "FRIENDS", "TAG", "COLLECTIONS"]
+          },
+          "tag": {
+            "type": "string",
+            "description": "The tag of a TAG shelf",
+            "example": "Platformer"
+          },
+          "total": {
+            "type": "number",
+            "description": "Games, or collections, its \"see all\" lists",
+            "example": 57
+          },
+          "games": {
+            "description": "Its games in order: the first 24 on the hub, one page in \"see all\". Empty for COLLECTIONS",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HubGameDto"
+            }
+          },
+          "collections": {
+            "description": "The collections of a COLLECTIONS shelf in order, one per owner, 12 at most",
+            "maxItems": 12,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CollectionPreviewDto"
+            }
+          }
+        },
+        "required": ["key", "kind", "total", "games"]
+      },
+      "HubResponseDto": {
+        "type": "object",
+        "properties": {
+          "day": {
+            "type": "string",
+            "description": "The UTC day these shelves were drawn for",
+            "example": "2026-11-20"
+          },
+          "hero": {
+            "description": "Up to four games, each once, in the order the hero stacks them",
+            "maxItems": 4,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HubHeroSlotDto"
+            }
+          },
+          "shelves": {
+            "description": "The shelves the page opens on; one with nothing to show is left out",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HubShelfDto"
+            }
+          },
+          "more": {
+            "description": "Keys of the shelves to fetch as the page scrolls, in order",
+            "example": ["tag:Platformer", "tag:Puzzle"],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["day", "hero", "shelves", "more"]
+      },
+      "HubShelvesResponseDto": {
+        "type": "object",
+        "properties": {
+          "shelves": {
+            "description": "The shelves asked for, in the order asked; one with nothing to show is left out",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HubShelfDto"
+            }
+          }
+        },
+        "required": ["shelves"]
+      },
+      "HubShelfPageDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "What names the shelf to the shelf routes. They do not serve `collections`: its \"see all\" is GET /collections",
+            "example": "tag:Platformer"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["POPULAR", "TRENDING", "FRIENDS", "TAG", "COLLECTIONS"]
+          },
+          "tag": {
+            "type": "string",
+            "description": "The tag of a TAG shelf",
+            "example": "Platformer"
+          },
+          "total": {
+            "type": "number",
+            "description": "Games, or collections, its \"see all\" lists",
+            "example": 57
+          },
+          "games": {
+            "description": "Its games in order: the first 24 on the hub, one page in \"see all\". Empty for COLLECTIONS",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HubGameDto"
+            }
+          },
+          "collections": {
+            "description": "The collections of a COLLECTIONS shelf in order, one per owner, 12 at most",
+            "maxItems": 12,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CollectionPreviewDto"
+            }
+          },
+          "page": {
+            "type": "number",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "example": 24
+          }
+        },
+        "required": ["key", "kind", "total", "games", "page", "limit"]
+      },
+      "CollectionsPageDto": {
+        "type": "object",
+        "properties": {
+          "collections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CollectionPreviewDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Collections the list holds",
+            "example": 128
+          },
+          "page": {
+            "type": "number",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "example": 24
+          }
+        },
+        "required": ["collections", "total", "page", "limit"]
+      },
+      "CreateCollectionDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Couch co-op",
+            "maxLength": 40
+          },
+          "description": {
+            "type": "string",
+            "example": "Games to play side by side.",
+            "nullable": true,
+            "maxLength": 280
+          },
+          "visibility": {
+            "default": "PRIVATE",
+            "description": "PUBLIC is listed and open to anyone, UNLISTED open to whoever holds its id, PRIVATE to its owner",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CollectionVisibility"
+              }
+            ]
+          }
+        },
+        "required": ["title"]
+      },
+      "CollectionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "6f1c2f4e-8a53-4c1c-9a57-2f0f6f0d6c11"
+          },
+          "title": {
+            "type": "string",
+            "example": "Couch co-op"
+          },
+          "description": {
+            "type": "string",
+            "example": "Games to play side by side.",
+            "nullable": true
+          },
+          "visibility": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CollectionVisibility"
+              }
+            ]
+          },
+          "owner": {
+            "$ref": "#/components/schemas/UserBasicInfoDto"
+          },
+          "gameCount": {
+            "type": "number",
+            "description": "Games of it on the hub: the ones a reader is shown",
+            "example": 14
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-11-20T12:00:00Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-11-20T12:00:00Z",
+            "description": "When it or its list of games last changed"
+          },
+          "games": {
+            "description": "Its games on the hub, in order",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HubGameDto"
+            }
+          },
+          "unavailableGameIds": {
+            "description": "Games it lists that left the hub, for its owner to remove. Always empty for anyone else",
+            "example": [57],
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "description",
+          "visibility",
+          "owner",
+          "gameCount",
+          "createdAt",
+          "updatedAt",
+          "games",
+          "unavailableGameIds"
+        ]
+      },
+      "CollectionLimitDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 400
+          },
+          "error": {
+            "type": "string",
+            "example": "Bad Request"
+          },
+          "code": {
+            "type": "string",
+            "enum": ["COLLECTIONS_LIMIT", "COLLECTION_GAMES_LIMIT"]
+          },
+          "message": {
+            "type": "string",
+            "example": "50 collections at most - delete one to create another"
+          },
+          "max": {
+            "type": "number",
+            "example": 50,
+            "description": "The count that is reached"
+          }
+        },
+        "required": ["statusCode", "error", "code", "message", "max"]
+      },
+      "UpdateCollectionDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Couch co-op",
+            "maxLength": 40
+          },
+          "description": {
+            "type": "string",
+            "example": "Games to play side by side.",
+            "nullable": true,
+            "maxLength": 280
+          },
+          "visibility": {
+            "default": "PRIVATE",
+            "description": "PUBLIC is listed and open to anyone, UNLISTED open to whoever holds its id, PRIVATE to its owner",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CollectionVisibility"
+              }
+            ]
+          }
+        }
+      },
+      "ReorderCollectionDto": {
+        "type": "object",
+        "properties": {
+          "projectIds": {
+            "description": "Games of the collection in their new order. One left out keeps its place after those listed",
+            "example": [12, 4, 31],
+            "maxItems": 200,
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "required": ["projectIds"]
+      },
+      "MyCollectionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "6f1c2f4e-8a53-4c1c-9a57-2f0f6f0d6c11"
+          },
+          "title": {
+            "type": "string",
+            "example": "Couch co-op"
+          },
+          "description": {
+            "type": "string",
+            "example": "Games to play side by side.",
+            "nullable": true
+          },
+          "visibility": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CollectionVisibility"
+              }
+            ]
+          },
+          "owner": {
+            "$ref": "#/components/schemas/UserBasicInfoDto"
+          },
+          "gameCount": {
+            "type": "number",
+            "description": "Games of it on the hub: the ones a reader is shown",
+            "example": 14
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-11-20T12:00:00Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-11-20T12:00:00Z",
+            "description": "When it or its list of games last changed"
+          },
+          "games": {
+            "description": "Its first games on the hub, in order, 8 at most",
+            "maxItems": 8,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HubGameDto"
+            }
+          },
+          "contains": {
+            "type": "boolean",
+            "description": "Whether it lists the game asked about, on the hub or not. Absent when no game was asked about"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "description",
+          "visibility",
+          "owner",
+          "gameCount",
+          "createdAt",
+          "updatedAt",
+          "games"
+        ]
       },
       "AnalyticsContextDto": {
         "type": "object",
@@ -13228,11 +14758,41 @@
               "type": "string"
             }
           },
+          "palette": {
+            "description": "The colours the game draws with, as lower-case `#rrggbb` in the order the game indexes them. Empty until its editor wrote them",
+            "example": ["#16171a", "#7f0622", "#d62411"],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "iconUrl": {
             "type": "string",
             "description": "URL to the project icon",
             "example": "https://example.com/icons/MySuperVideoGame.png",
             "nullable": true
+          },
+          "coverUrl": {
+            "type": "string",
+            "description": "Address of the cover, usable as is: it changes when the cover does. Null without a cover. Absent from answers that neither list nor open a project",
+            "example": "https://cdn.example.com/projects/1/image?v=5d41402abc4b2a76b9719d911017c592",
+            "nullable": true
+          },
+          "clipUrl": {
+            "type": "string",
+            "description": "Address of the short gameplay clip, usable as is: it changes when the clip does. Null without a clip. Absent from answers that neither list nor open a project",
+            "example": "https://cdn.example.com/projects/1/clip?v=5d41402abc4b2a76b9719d911017c592",
+            "nullable": true
+          },
+          "disk": {
+            "description": "The disk its author chose. Null when none was chosen: a client then derives a colour from the id. Absent from answers that neither list nor open a project",
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DiskStyleDto"
+              }
+            ]
           },
           "status": {
             "type": "string",
@@ -13338,6 +14898,7 @@
           "shortDesc",
           "longDesc",
           "tags",
+          "palette",
           "iconUrl",
           "status",
           "monetization",
