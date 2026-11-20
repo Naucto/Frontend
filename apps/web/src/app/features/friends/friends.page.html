@@ -96,7 +96,7 @@
              as having none. -->
         @if (offline().length && (tab() === 'all' || !online().length)) {
           <div class="label mt-2.75 mb-[11px]">{{ t('friends.offline') }}</div>
-          <div class="grid grid-cols-2 gap-[9px] md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          <div class="grid grid-cols-1 gap-[9px] md:grid-cols-2 lg:grid-cols-3">
             @for (friend of offline(); track friend.id) {
               <a
                 [routerLink]="['/u', friend.username]"
@@ -109,7 +109,7 @@
                   <div class="truncate text-meta text-ink-body">
                     {{ friend.nickname || friend.username }}
                   </div>
-                  <div class="label">
+                  <div class="label truncate">
                     {{ t('friends.friendsSince', { when: friend.since | date: 'MMM y' }) }}
                   </div>
                 </div>
