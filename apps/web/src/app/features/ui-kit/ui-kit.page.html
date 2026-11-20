@@ -180,6 +180,14 @@
           </span>
         }
       </div>
+      <div class="label">Marks: 15, five kit pixels across</div>
+      <div class="flex flex-wrap gap-1 text-ink-2" data-testid="marks">
+        @for (mark of marks; track mark) {
+          <span class="flex h-5 w-5 items-center justify-center" [title]="mark">
+            <nc-mark [name]="mark" />
+          </span>
+        }
+      </div>
     </div>
   </section>
 
@@ -388,7 +396,7 @@
           (paused)="playing.set(false)"
           (stopped)="playing.set(false)" />
         <nc-toggle-button [(checked)]="grid">
-          <nc-icon name="grid" [size]="12" />
+          <nc-icon name="grid" [size]="24" />
           Grid
         </nc-toggle-button>
         <nc-toggle-button [(checked)]="onion" accent="jade" size="strip">
@@ -755,7 +763,7 @@
               [ncPopover]="versions"
               [(popoverOpen)]="versionsOpen">
               Platformer v3
-              <nc-icon name="chevron-down" [size]="12" />
+              <nc-mark name="chevron-down" />
             </button>
             <ng-template #versions>
               <nc-popover-panel title="Versions">

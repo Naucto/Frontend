@@ -179,7 +179,7 @@
         } @else if (auth.isAuthenticated()) {
           @if (friendship() === 'FRIENDS') {
             <span class="label flex items-center gap-0.5 text-jade-ink">
-              <nc-icon name="check" [size]="24" />
+              <nc-mark name="check" />
               {{ t('profile.friends') }}
             </span>
           } @else {

@@ -185,7 +185,7 @@
                   [attr.aria-label]="t('friends.accept')"
                   [disabled]="answering() !== null"
                   (click)="accept(request.id)">
-                  <nc-icon name="check" [size]="24" />
+                  <nc-mark name="check" />
                 </button>
                 <button
                   ncButton
@@ -196,7 +196,7 @@
                   [attr.aria-label]="t('friends.decline')"
                   [disabled]="answering() !== null"
                   (click)="decline(request.id)">
-                  <nc-icon name="close" [size]="24" />
+                  <nc-mark name="close" />
                 </button>
               </div>
             }

@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import { RouterLink } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
 import type { ProjectExResponseDto } from '@naucto/api-client';
-import { ButtonDirective, IconComponent, SkeletonComponent } from '@naucto/ui';
+import { ButtonDirective, MarkComponent, SkeletonComponent } from '@naucto/ui';
 
 import { DISK_RATIO } from '../../shared/game-card/floppy.component';
 import { GameDiskComponent } from '../../shared/game-card/game-disk.component';
@@ -18,7 +18,7 @@ export type ShelfState = 'ready' | 'pending' | 'error';
     TranslocoDirective,
     ButtonDirective,
     GameDiskComponent,
-    IconComponent,
+    MarkComponent,
     SkeletonComponent,
   ],
   templateUrl: './hub-row.component.html',

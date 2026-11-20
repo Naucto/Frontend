@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 
 import { inkFor } from '../palette';
-import { IconComponent } from './icon.component';
+import { MarkComponent } from './mark.component';
 import { mark } from './selection-styles';
 
 interface SwatchCell {
@@ -33,7 +33,7 @@ const SIDES = 'relative bevel-edge-line-strong focus-visible:z-10 data-on:bevel-
  */
 @Component({
   selector: 'nc-swatch-picker',
-  imports: [IconComponent],
+  imports: [MarkComponent],
   templateUrl: './swatch-picker.component.html',
   host: {
     class: 'inline-grid justify-start',
