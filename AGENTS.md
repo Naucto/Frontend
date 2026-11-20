@@ -32,7 +32,7 @@ Pixelarticons, Bubblegum-16 palette, dark + light themes).
 | `npm run typecheck`                       | `tsc --noEmit` per workspace.                                                                 |
 | `npm test`                                | Vitest in every workspace (`ng test` for the app).                                            |
 | `npm run e2e`                             | Playwright (starts the dev server unless `E2E_BASE_URL` is set).                              |
-| `npm run pixel:check`                     | Fails on rounded corners, strokes off the 3px pixel and density tokens (see Gotchas).         |
+| `npm run pixel:check`                     | Fails on rounded corners, off-pixel strokes, density tokens and "·" separators (see Gotchas). |
 | `npm run docs:build`                      | Builds the docs submodule into `apps/web/public/docs` (run it before `start`/`build`/`e2e`).  |
 | `./dev.sh`                                | Dev server in Docker against the Backend on the `naucto-dev` network (hot reload, port 3001). |
 | `docker compose up --build`               | Production-style image on port 3001; `APP_*` env vars configure it at runtime.                |
@@ -212,6 +212,8 @@ the rule wins.
    relate, so every line built on it reads flat. Say the relation with the kit: a count or a state
    is an `nc-chip` or an `nc-stat`, a name and its value are a label and a value, two facts are two
    elements a gap apart. Another character in its place ("|", "/", "—", "•") is the same dot.
+   `npm run pixel:check` fails on one in the catalogue, a template or a string literal; comments
+   and the docs submodule are not read.
 2. **Hierarchy, not separators.** A rule under every row gives every row the same weight, and a
    screen ruled all over shows no structure at all. Group what belongs together, and tell groups
    apart by weight and spacing; keep a rule for the edge between two regions. A list of options or
