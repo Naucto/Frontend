@@ -1,0 +1,46 @@
+import {
+  booleanAttribute,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+} from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { TranslocoDirective } from '@jsverse/transloco';
+import type { ProjectExResponseDto } from '@naucto/api-client';
+import { ChipComponent, StatComponent } from '@naucto/ui';
+
+import { injectProjectImage, injectReleaseImage } from '../queries/releases.queries';
+import { type DiskStyle, diskStyleFor } from './disk-style';
+import { FloppyComponent } from './floppy.component';
+
+/**
+ * A game as the link to it: its disk, or with `dense` a small disk beside its name and counts. A
+ * published game is played; a draft, or any game on its owner's shelf, opens in the editor.
+ */
+@Component({
+  selector: 'nc-game-disk',
+  imports: [RouterLink, TranslocoDirective, ChipComponent, FloppyComponent, StatComponent],
+  templateUrl: './game-disk.component.html',
+  host: { class: 'block min-w-0' },
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class GameDiskComponent {
+  readonly game = input.required<ProjectExResponseDto & { disk?: DiskStyle | null }>();
+  /** A draft has no release: it takes the project's cover and wears the chip. */
+  protected readonly isDraft = computed(() => !this.game().publishedAt);
+
+  /**
+   * Lead to the editor instead of the play page: the same published game is played from the hub and
+   * opened from its owner's shelf.
+   */
+  readonly opensEditor = input(false);
+  protected readonly edits = computed(() => this.opensEditor() || this.isDraft());
+  protected readonly link = computed(() => [this.edits() ? '/edit' : '/play', this.game().id]);
+  readonly dense = input(false, { transform: booleanAttribute });
+
+  protected readonly disk = computed(() => diskStyleFor(this.game()));
+  private readonly released = injectReleaseImage(() => (this.isDraft() ? null : this.game().id));
+  private readonly draft = injectProjectImage(() => (this.isDraft() ? this.game().id : null));
+  protected readonly cover = computed(() => this.released.data() ?? this.draft.data() ?? null);
+}

@@ -34,7 +34,7 @@ import { ApiError } from '../../core/api/api-errors';
 import { AuthStore } from '../../core/auth/auth.store';
 import { PresenceStore } from '../../core/presence/presence.store';
 import { SignedInAction } from '../../shared/auth/signed-in-action';
-import { GameCardComponent } from '../../shared/game-card/game-card.component';
+import { GameDiskComponent } from '../../shared/game-card/game-disk.component';
 import { GameScreenComponent } from '../../shared/game-screen/game-screen.component';
 import {
   injectFork,
@@ -76,7 +76,7 @@ function topRelated(
     LabelComponent,
     SkeletonComponent,
     StatComponent,
-    GameCardComponent,
+    GameDiskComponent,
     GameScreenComponent,
     CommentsComponent,
     HowToPlayComponent,

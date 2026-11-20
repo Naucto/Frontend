@@ -47,7 +47,7 @@ test.describe('hub shelves', () => {
     await page.goto('/hub');
 
     const shelf = page.locator('nc-hub-row').first();
-    await expect(shelf.locator('nc-game-card')).toHaveCount(10);
+    await expect(shelf.locator('nc-game-disk')).toHaveCount(10);
     const hero = page.locator('a[aria-label="Popular 1"]');
     await expect(hero).toBeVisible();
     const before = await shelf.boundingBox();
@@ -56,8 +56,8 @@ test.describe('hub shelves', () => {
     }
 
     await page.getByRole('radio', { name: 'Arcade' }).click();
-    await expect(shelf.locator('nc-game-card')).toHaveCount(4);
-    await expect(shelf.locator('nc-game-card').first()).toContainText('Arcade 1');
+    await expect(shelf.locator('nc-game-disk')).toHaveCount(4);
+    await expect(shelf.locator('nc-game-disk').first()).toContainText('Arcade 1');
 
     const after = await shelf.boundingBox();
     if (!after) {
