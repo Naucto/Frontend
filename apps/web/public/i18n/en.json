@@ -1070,6 +1070,17 @@
         "OTHER": "Decision"
       }
     },
+    "preview": {
+      "band": "Staff preview. Nothing here is saved or counted, and this visit is logged.",
+      "draft": "Latest save",
+      "release": "Released build",
+      "sourceLabel": "Which version to run",
+      "hidden": "Hidden",
+      "unpublished": "Unpublished",
+      "nothingSaved": "Nothing was saved in this version yet.",
+      "failedTitle": "This preview would not open",
+      "failed": "The game may be gone, or your role may have changed."
+    },
     "reportGame": "Report game",
     "reportComment": "Report",
     "reportProfile": "Report profile"
