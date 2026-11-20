@@ -18,7 +18,7 @@ import {
   viewChild,
 } from '@angular/core';
 
-import { IconComponent } from './icon.component';
+import { MarkComponent } from './mark.component';
 import { PagerComponent } from './pager.component';
 import { ShelfFlyoutComponent } from './shelf-flyout.component';
 import { ShelfFlyoutDirective, ShelfItemDirective } from './shelf-item.directive';
@@ -67,7 +67,7 @@ let shelves = 0;
  */
 @Component({
   selector: 'nc-shelf',
-  imports: [NgTemplateOutlet, IconComponent, PagerComponent, ShelfFlyoutComponent],
+  imports: [NgTemplateOutlet, MarkComponent, PagerComponent, ShelfFlyoutComponent],
   templateUrl: './shelf.component.html',
   styleUrl: './shelf.component.css',
   host: {

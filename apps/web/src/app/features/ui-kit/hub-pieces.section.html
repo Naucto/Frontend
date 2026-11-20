@@ -51,7 +51,7 @@
       href="/ui-kit#hub"
       class="inline-flex items-center gap-[6px] text-label tracking-wide text-gold-ink uppercase">
       See all {{ sessions().length }}
-      <nc-icon name="arrow-right" [size]="12" />
+      <nc-mark name="arrow-right" />
     </a>
     <nc-session-disk
       *ncShelfItem="let session of sessions(); open as open; flyoutId as flyoutId"
@@ -74,7 +74,7 @@
       href="/ui-kit#hub"
       class="inline-flex items-center gap-[6px] text-label tracking-wide text-gold-ink uppercase">
       See all {{ games.length }}
-      <nc-icon name="arrow-right" [size]="12" />
+      <nc-mark name="arrow-right" />
     </a>
     <nc-shelf-disk
       *ncShelfItem="let game of games; open as open; flyoutId as flyoutId"
@@ -106,7 +106,7 @@
         href="/ui-kit#hub"
         class="inline-flex items-center gap-[6px] text-label tracking-wide text-gold-ink uppercase">
         See all 8
-        <nc-icon name="arrow-right" [size]="12" />
+        <nc-mark name="arrow-right" />
       </a>
     </div>
     <div

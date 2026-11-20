@@ -1,6 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
-import { AvatarComponent, ChipComponent, formatElapsed, IconComponent } from '@naucto/ui';
+import {
+  AvatarComponent,
+  ChipComponent,
+  formatElapsed,
+  IconComponent,
+  MarkComponent,
+} from '@naucto/ui';
 
 import type { HubSession } from './hub-game';
 import { rosterRows } from './session-roster';
@@ -12,7 +18,7 @@ import { displayName, playerColour } from './session-stickers';
  */
 @Component({
   selector: 'nc-session-flyout',
-  imports: [TranslocoDirective, AvatarComponent, ChipComponent, IconComponent],
+  imports: [TranslocoDirective, AvatarComponent, ChipComponent, IconComponent, MarkComponent],
   templateUrl: './session-flyout.component.html',
   host: { class: 'grid gap-[16px]' },
   changeDetection: ChangeDetectionStrategy.OnPush,
