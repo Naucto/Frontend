@@ -2,10 +2,8 @@
   *transloco="let t"
   [title]="t('consent.choiceTitle')"
   [hint]="t('consent.choiceHint')">
-  <nc-segmented
-    [options]="options()"
-    [value]="value()"
-    (valueChange)="choose($event)"
+  <nc-toggle
     [label]="t('consent.choiceTitle')"
-    size="sm" />
+    [checked]="consent.status() === 'granted'"
+    (checkedChange)="$event ? consent.grant() : consent.deny()" />
 </nc-setting-row>
