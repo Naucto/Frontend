@@ -834,4 +834,62 @@ What each bit means is yours to decide." />
       </div>
     </div>
   </section>
+
+  <section id="cards" class="grid scroll-mt-[80px] gap-2.5">
+    <div class="flex items-baseline gap-2">
+      <h2 class="font-display text-display text-ink">Game card</h2>
+      <span class="text-meta text-ink-3">
+        the app's shelves use the cover card · the floppy lives here until it is ready
+      </span>
+    </div>
+    <div class="grid gap-[10px]">
+      <span class="label">Floppy · rest · reached · pressed (hold it) · thumbnail</span>
+      <div
+        class="flat-lg bevel-fill-panel grid grid-cols-2 items-start gap-3 p-[22px] sm:grid-cols-4"
+        data-testid="floppy-states">
+        <a href="/ui-kit#cards" class="block min-w-0" data-testid="floppy-rest">
+          <nc-floppy name="Hightide" action="play" actionLabel="Play">
+            <nc-stat info icon="play" [value]="1280" compact />
+            <nc-stat info icon="heart" [value]="96" tone="hot" compact />
+          </nc-floppy>
+        </a>
+        <nc-floppy name="Reached" action="play" actionLabel="Play" open>
+          <nc-stat info icon="play" [value]="1280" compact />
+          <nc-stat info icon="heart" [value]="96" tone="hot" compact />
+        </nc-floppy>
+        <nc-floppy name="Edit" action="edit" actionLabel="Edit" open />
+        <nc-floppy class="w-[64px]" mode="thumb" name="Thumbnail" />
+      </div>
+    </div>
+    <div class="grid gap-[10px]">
+      <span class="label">Floppy · colours · the game that does not exist yet</span>
+      <div
+        class="flat-lg bevel-fill-panel grid grid-cols-2 items-start gap-3 p-[22px] sm:grid-cols-5">
+        @for (disk of disks; track disk.name) {
+          <a href="/ui-kit#cards" class="block min-w-0">
+            <nc-floppy [name]="disk.name" [body]="disk.body" action="play" actionLabel="Play" />
+          </a>
+        }
+        <a href="/ui-kit#cards" class="block min-w-0" data-testid="floppy-ghost">
+          <nc-floppy ghost action="new" name="New game" actionLabel="New game" />
+        </a>
+        <nc-floppy ghost action="new" name="New game · reached" actionLabel="New game" open />
+      </div>
+    </div>
+    <div class="grid gap-[10px]">
+      <span class="label">Cover card · what the shelves show</span>
+      <div
+        class="flat-lg bevel-fill-panel grid grid-cols-2 items-start gap-3 p-[22px] sm:grid-cols-5">
+        <nc-cover-card name="Hightide" link="/ui-kit" action="play" actionLabel="Play">
+          <span cover class="no-cover block size-full"></span>
+          <nc-stat info icon="play" [value]="1280" compact />
+          <nc-stat info icon="heart" [value]="96" tone="hot" compact />
+        </nc-cover-card>
+        <nc-cover-card name="Draft" link="/ui-kit" action="edit" actionLabel="Edit">
+          <span cover class="no-cover block size-full"></span>
+        </nc-cover-card>
+        <nc-cover-card ghost name="New game" link="/ui-kit" action="new" actionLabel="New game" />
+      </div>
+    </div>
+  </section>
 </main>

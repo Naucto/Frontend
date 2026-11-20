@@ -64,12 +64,16 @@ import {
 
 import { OAUTH_PROVIDERS } from '../../core/auth/oauth/providers';
 import { ThemeService } from '../../core/theme/theme.service';
+import { CoverCardComponent } from '../../shared/game-card/cover-card.component';
+import { FloppyComponent } from '../../shared/game-card/floppy.component';
 import { ACCENT_SLOTS } from '../editor/accent-slots';
 
 /** Dev-only gallery of every UI primitive, used for visual goldens in light and dark. */
 @Component({
   selector: 'nc-ui-kit-page',
   imports: [
+    CoverCardComponent,
+    FloppyComponent,
     AvatarComponent,
     BitFlagsComponent,
     ButtonDirective,
@@ -187,6 +191,12 @@ export default class UiKitPage {
     { id: 'navigation', label: 'Navigation' },
     { id: 'feedback', label: 'Feedback' },
     { id: 'overlays', label: 'Overlays' },
+    { id: 'cards', label: 'Game card' },
+  ];
+  protected readonly disks = [
+    { name: 'Hightide', body: BUBBLEGUM_16[12] },
+    { name: 'Moss Garden', body: BUBBLEGUM_16[6] },
+    { name: 'Night Courier', body: BUBBLEGUM_16[9] },
   ];
   protected readonly surfaces = [
     { name: 'page', fill: 'bevel-fill-page' },
