@@ -67,11 +67,13 @@ import { ThemeService } from '../../core/theme/theme.service';
 import type { DiskStyle } from '../../shared/game-card/disk-style';
 import { FloppyComponent, type FloppySticker } from '../../shared/game-card/floppy.component';
 import { ACCENT_SLOTS } from '../editor/accent-slots';
+import { HubPiecesSection } from './hub-pieces.section';
 
 /** Dev-only gallery of every UI primitive, used for visual goldens in light and dark. */
 @Component({
   selector: 'nc-ui-kit-page',
   imports: [
+    HubPiecesSection,
     FloppyComponent,
     AvatarComponent,
     BitFlagsComponent,
@@ -191,6 +193,7 @@ export default class UiKitPage {
     { id: 'feedback', label: 'Feedback' },
     { id: 'overlays', label: 'Overlays' },
     { id: 'cards', label: 'Game card' },
+    { id: 'hub', label: 'Hub pieces' },
   ];
   /** A cover that needs no server: a sun going down over the sea, sixteen pixels wide. */
   protected readonly diskCover =
