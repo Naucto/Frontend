@@ -11,7 +11,7 @@ for (const theme of ['dark', 'light'] as const) {
     await page.goto('/ui-kit');
     await expect(page.getByRole('heading', { name: 'Naucto UI kit' })).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
-    await expect(page.getByRole('button', { name: 'Publish' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Publish', exact: true })).toBeVisible();
     if (!getOptionalEnv('CI', false)) {
       await page.screenshot({ path: `test-results/ui-kit-${theme}.png`, fullPage: true });
     }
@@ -56,7 +56,7 @@ test('an unavailable button gains a frame only where it had one', async ({ page 
 /** One pixel is 3px: the frame, the skirt under it and the travel of a press. */
 test('a raised button is drawn and pressed on the pixel grid', async ({ page }) => {
   await page.goto('/ui-kit');
-  const publish = page.getByRole('button', { name: 'Publish' });
+  const publish = page.getByRole('button', { name: 'Publish', exact: true });
   const hero = page.getByRole('button', { name: 'hero 56' });
   const borders = (el: Element): string => getComputedStyle(el).borderWidth;
 

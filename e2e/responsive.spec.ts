@@ -117,7 +117,7 @@ for (const width of [1024, 1152, 1280, 1440, 1920]) {
       const steps = page.getByRole('textbox', { name: 'Steps' });
       await expect(steps).toBeVisible();
       const box = steps.locator('xpath=ancestor::nc-number-field');
-      await expect(box.locator('.label')).toHaveText('Steps');
+      await expect(box.getByText('Steps', { exact: true })).toBeVisible();
       const [field, bar] = await Promise.all([
         box.boundingBox(),
         steps.locator('xpath=ancestor::header').boundingBox(),

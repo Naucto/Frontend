@@ -105,7 +105,7 @@ test('the head can be dragged, rewound and resumed', async ({ page }) => {
 test('the sound column reaches its last row on a short screen', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 700 });
   await page.goto(editorUrl('sound'));
-  const boxes = page.locator('nc-song-list [role=group] input');
+  const boxes = page.locator('nc-song-list [role=group] nc-number-field input');
   await expect(boxes).toHaveCount(20);
   // The two banks stand at a fixed height, so on a screen too short for both the column has to
   // be scrollable: a row of the music that cannot be reached is a row that cannot be written.

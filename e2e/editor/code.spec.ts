@@ -27,11 +27,12 @@ test('the active file tab wears its gold cap', async ({ page }) => {
 
   // Scoped to this tab, not to `[role=tab][aria-selected=true]`: the console strip carries a
   // selected tab too, and a document-wide query reads whichever the DOM happens to order first.
-  const cap = await tab.evaluate((el) => getComputedStyle(el).borderTopColor);
+  // A bevel's border is transparent: the cap is the painted highlight role.
+  const cap = await tab.evaluate((el) => getComputedStyle(el).getPropertyValue('--bv-hi'));
   const gold = await page.evaluate(() => {
     const probe = document.createElement('span');
     document.body.appendChild(probe);
-    probe.style.color = 'var(--color-gold)';
+    probe.style.color = 'var(--color-active-ink)';
     const value = getComputedStyle(probe).color;
     probe.remove();
     return value;
