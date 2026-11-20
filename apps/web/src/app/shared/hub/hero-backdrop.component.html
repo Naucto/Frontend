@@ -1,0 +1,21 @@
+@for (layer of layers(); track $index) {
+  <span
+    class="pixelated absolute inset-0 bg-cover bg-position-[80%_50%] bg-no-repeat [animation-duration:420ms] motion-reduce:[animation:none] in-data-reduce-motion:[animation:none]"
+    [class]="$index === front() ? 'z-[2]' : 'z-[1]'"
+    [class.dither-in-fine]="$index === front() && changed()"
+    [style.background-image]="layer?.cover ? 'url(&quot;' + layer?.cover + '&quot;)' : null"
+    (animationend)="settle()">
+    @if (layer?.clip; as clip) {
+      <video
+        class="pixelated absolute inset-0 size-full object-cover object-[80%_50%]"
+        autoplay
+        loop
+        playsinline
+        preload="auto"
+        [src]="clip"
+        [muted]="true"
+        (loadedmetadata)="seek($event)"
+        (playing)="show($index)"></video>
+    }
+  </span>
+}

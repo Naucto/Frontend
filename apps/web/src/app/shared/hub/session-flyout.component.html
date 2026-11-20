@@ -1,0 +1,76 @@
+<ng-container *transloco="let t">
+  <div class="grid gap-[8px]">
+    <span class="text-label tracking-label text-ink-3 uppercase">
+      {{ elapsed() ? t('hub.session.started', { when: elapsed() }) : t('hub.session.startedNow') }}
+    </span>
+    <p class="line-clamp-2 text-body leading-[1.55] text-pretty text-ink-body">
+      {{ description() }}
+    </p>
+  </div>
+  <div class="grid min-w-0 gap-[8px]">
+    <div class="flex items-center justify-between gap-[10px]">
+      <span class="text-label tracking-label text-ink-3 uppercase">
+        {{ t('hub.session.players') }}
+      </span>
+      <nc-chip>{{ session().players.length }}/{{ session().capacity }}</nc-chip>
+    </div>
+    <ul class="grid gap-[6px]" [attr.aria-label]="t('hub.session.players')">
+      @for (row of rows(); track $index) {
+        <li class="flex h-[28px] min-w-0 items-center gap-[10px]">
+          @switch (row.kind) {
+            @case ('player') {
+              <nc-avatar
+                aria-hidden="true"
+                [name]="row.player.username"
+                [id]="row.player.id"
+                [colour]="row.you ? 'gold' : undefined"
+                [size]="28" />
+              <span
+                class="min-w-0 truncate text-body leading-none"
+                [class]="row.you ? 'text-gold-ink' : 'text-ink'">
+                {{ row.player.username }}
+              </span>
+              @if (row.host) {
+                <nc-chip class="ml-auto" tone="gold">{{ t('hub.session.host') }}</nc-chip>
+              }
+              @if (row.you) {
+                <button
+                  type="button"
+                  class="cursor-pointer text-label leading-none tracking-wide text-gold-ink uppercase"
+                  [class.ml-auto]="!row.host"
+                  (click)="leave.emit()">
+                  {{ t('hub.session.leave') }}
+                </button>
+              }
+            }
+            @case ('more') {
+              <span aria-hidden="true" class="inline-flex flex-none">
+                @for (face of row.faces; track face.id) {
+                  <nc-avatar
+                    class="shadow-[0_0_0_3px_var(--color-raised)] not-first:-ml-[8px]"
+                    [name]="face.username"
+                    [id]="face.id"
+                    [size]="28" />
+                }
+              </span>
+              <span class="inline-flex items-center gap-[3px] text-body leading-none text-ink-2">
+                <nc-icon name="plus" [size]="12" />
+                {{ t('hub.session.more', { n: row.count }) }}
+              </span>
+            }
+            @case ('open') {
+              <nc-icon aria-hidden="true" class="size-[28px] flex-none text-ink-4" name="user" />
+              <span class="text-body leading-none text-ink-3">
+                {{
+                  row.seats === 1
+                    ? t('hub.session.openSeat')
+                    : t('hub.session.openSeats', { n: row.seats })
+                }}
+              </span>
+            }
+          }
+        </li>
+      }
+    </ul>
+  </div>
+</ng-container>

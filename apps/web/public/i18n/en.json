@@ -223,7 +223,30 @@
     },
     "seeAll": "See all",
     "remixFailed": "Could not remix that game.",
-    "remixable": "remixable"
+    "remixable": "remixable",
+    "pile": {
+      "label": "Featured games",
+      "play": "Play {{name}}",
+      "show": "Show {{name}}",
+      "status": "{{index}} of {{count}}: {{name}}, by {{author}}, {{plays}} plays. {{description}}"
+    },
+    "session": {
+      "started": "Started {{when}} ago",
+      "startedNow": "Just started",
+      "players": "Players",
+      "host": "Host",
+      "leave": "Leave",
+      "more": "{{n}} more",
+      "openSeat": "Open seat",
+      "openSeats": "{{n}} open seats"
+    },
+    "collection": {
+      "label": "{{title}}, {{n}} games, curated by {{name}}",
+      "open": "Open {{label}}",
+      "count": "{{n}} games",
+      "more": "more",
+      "showAll": "Show all {{n}} games in {{title}}"
+    }
   },
   "search": {
     "games": "GAMES",
