@@ -73,6 +73,8 @@ export interface DocsSection {
 export interface SearchHit {
   kind: 'page' | 'api';
   title: string;
+  /** The heading the match sits under, when it is not the page's own. */
+  section?: string;
   subtitle: string;
   slug: string;
   fragment?: string;
@@ -225,7 +227,8 @@ export class DocsService {
         offer({
           kind: 'page',
           title: docPage.title,
-          subtitle: `${section.title} · ${inTitle ? section.text.slice(0, 90) : snippet(section.text, term)}`,
+          section: section.title,
+          subtitle: inTitle ? section.text.slice(0, 90) : snippet(section.text, term),
           slug: docPage.slug,
           fragment: section.id,
           score: inTitle ? 70 : 40,

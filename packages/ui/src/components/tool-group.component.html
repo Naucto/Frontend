@@ -8,7 +8,7 @@
       [attr.data-on]="item.value === value() ? '' : null"
       [attr.aria-label]="item.label"
       [attr.tabindex]="tabIndexFor(item, i)"
-      [ncTooltip]="item.key ? item.label + ' · ' + item.key : item.label"
+      [ncTooltip]="item.key ? item.label + ' `' + item.key + '`' : item.label"
       (click)="value.set(item.value)"
       (keydown)="onKey($event, i)"
       [class]="toolClass($first, $last)">

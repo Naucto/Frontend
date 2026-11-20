@@ -257,7 +257,8 @@
           }
           <span class="flex-1"></span>
           @if (slotOf(collaborator.userId); as slot) {
-            <span class="label text-jade-ink">{{ t('editor.net.inGame') }} · P{{ slot }}</span>
+            <span class="label text-ink-3">{{ t('editor.net.inGame') }}</span>
+            <span class="label text-jade-ink">P{{ slot }}</span>
           } @else if (info()?.joinCode && !collaborator.isSelf) {
             <span class="label text-ink-4">{{ t('editor.net.invite') }}</span>
           }
@@ -281,12 +282,14 @@
       }
     </nc-section>
 
-    <nc-section
-      banded
-      [title]="
-        t('editor.net.players') + ' · ' + players().length + ' / ' + (info()?.maxPlayers || '—')
-      ">
-      <nc-help-dot actions [title]="t('editor.net.players')" [text]="t('editor.net.playersHelp')" />
+    <nc-section banded [title]="t('editor.net.players')">
+      <span actions class="flex items-center gap-1">
+        <nc-stat
+          class="-my-[3px]"
+          icon="users"
+          [value]="players().length + '/' + (info()?.maxPlayers || '—')" />
+        <nc-help-dot [title]="t('editor.net.players')" [text]="t('editor.net.playersHelp')" />
+      </span>
       <nc-presence-surface surface="net:players" />
       @for (player of slots(); track player.slot) {
         <div class="flex items-center gap-1 py-0.5">

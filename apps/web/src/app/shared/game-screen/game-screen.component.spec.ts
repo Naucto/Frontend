@@ -69,7 +69,8 @@ describe('GameScreenComponent on a halted game', () => {
     fixture.detectChanges();
     const alert = screen.getByRole('alert');
     expect(alert.textContent).toContain('The game stopped on an error');
-    expect(alert.textContent).toContain('main:3 · update: boom');
+    expect(within(alert).getByText('main:3')).toBeInTheDocument();
+    expect(within(alert).getByText('update: boom')).toBeInTheDocument();
 
     const restart = vi.spyOn(host, 'restart').mockImplementation(() => undefined);
     await userEvent.click(within(alert).getByRole('button', { name: 'Restart' }));

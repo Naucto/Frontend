@@ -21,6 +21,7 @@ import {
   SearchComponent,
   SectionComponent,
   SliderComponent,
+  StatComponent,
   ToastService,
   ToggleButtonComponent,
   TooltipDirective,
@@ -54,6 +55,7 @@ const PATH = /^[a-z0-9_]+(\.[a-z0-9_]+)*$/i;
 @Component({
   selector: 'nc-net-tab-page',
   imports: [
+    StatComponent,
     TranslocoDirective,
     ButtonDirective,
     EmptyStateComponent,

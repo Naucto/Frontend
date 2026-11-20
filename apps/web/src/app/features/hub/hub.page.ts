@@ -14,14 +14,15 @@ import { projectControllerFindAll, type ProjectExResponseDto } from '@naucto/api
 import { type PresenceDto } from '@naucto/api-client';
 import {
   ButtonDirective,
+  ChipComponent,
   EmptyStateComponent,
   ErrorStateComponent,
-  formatCount,
   IconComponent,
   PanelComponent,
   RelativeTimePipe,
   SegmentedComponent,
   SkeletonComponent,
+  StatComponent,
   ToastService,
 } from '@naucto/ui';
 import { QueryClient } from '@tanstack/angular-query-experimental';
@@ -50,6 +51,8 @@ const SHELF_SIZE = 10;
 @Component({
   selector: 'nc-hub-page',
   imports: [
+    ChipComponent,
+    StatComponent,
     RouterLink,
     TranslocoDirective,
     ButtonDirective,
@@ -199,10 +202,6 @@ export default class HubPage {
       .filter((presence) => presence.title)
       .slice(0, 3),
   );
-
-  protected plays(count: number): string {
-    return formatCount(count);
-  }
 
   protected verb(presence: PresenceDto): string {
     const line = presenceLine(presence);

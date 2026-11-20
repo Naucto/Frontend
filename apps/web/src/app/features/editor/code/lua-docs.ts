@@ -56,11 +56,14 @@ export function docCard(entry: ApiEntry, peers?: ApiPeers, active?: number): HTM
       .slice(0, PEERS_SHOWN)
       .map((peerName) => peerName.split('.')[1] ?? peerName);
     const rest = siblings.length - shown.length;
-    more.textContent = rest
-      ? `${shown.join(' · ')} · + ${String(rest)} MORE IN ${namespace.toUpperCase()}`
-      : `${shown.join(' · ')} — IN ${namespace.toUpperCase()}`;
+    const where = `IN ${namespace.toUpperCase()}`;
+    for (const text of [...shown, rest ? `${String(rest)} MORE ${where}` : where]) {
+      const item = document.createElement('span');
+      item.textContent = text;
+      more.append(item);
+    }
   } else {
-    more.textContent = `MORE IN API · ${namespace}`;
+    more.textContent = `MORE IN THE ${namespace.toUpperCase()} API`;
   }
   dom.append(more);
   return dom;

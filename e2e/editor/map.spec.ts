@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
 import { getOptionalEnv } from '../../tools/env';
 import { editorUrl, mockEditor } from '../editor-mocks';
@@ -11,10 +11,14 @@ test.beforeEach(async ({ page }) => {
   await mockEditor(page);
 });
 
-/** The MAP status line is the only reading of a single tile the page offers. */
+/** The MAP status line, found by its tile segment: the sprite and the flags sit beside it. */
+const statusLine = (page: Page, tile = /^TILE \d+,\d+$/): Locator =>
+  page.getByText(tile).locator('..');
+
+/** The status line is the only reading of a single tile the page offers. */
 const sprUnder = async (page: Page, x: number, y: number): Promise<string> => {
   await page.mouse.move(x, y);
-  const text = await page.getByText(/TILE \d+,\d+/).textContent();
+  const text = await statusLine(page).textContent();
   return /SPR (\d+)/.exec(text ?? '')?.[1] ?? '';
 };
 
@@ -136,7 +140,7 @@ test('MAP rotates the arrangement of a selection', async ({ page }) => {
     await page.mouse.move(point.x, point.y);
     // The readout follows the pointer, not the map: a nudge makes it read the tile again.
     await page.mouse.move(point.x + 1, point.y);
-    const text = await page.getByText(/TILE \d+,\d+ · SPR \d+/).textContent();
+    const text = await statusLine(page).textContent();
     return /SPR (\d+)/.exec(text ?? '')?.[1] ?? '';
   };
 
@@ -270,7 +274,7 @@ test('MAP stamps on the second map and leaves the first untouched', async ({ pag
   await page.mouse.click(box.x + 20, box.y + 20);
   // The readout follows the pointer, not the stamp: a nudge makes it read the tile again.
   await page.mouse.move(box.x + 21, box.y + 21);
-  const readout = page.getByText(/TILE \d+,\d+ · SPR \d+/);
+  const readout = statusLine(page);
   await expect(readout).not.toHaveText(/SPR 000/);
 
   await maps.getByRole('tab', { name: '1' }).click();
@@ -307,7 +311,7 @@ test('a running game draws map 2 with map.draw(..., 2)', async ({ page }) => {
   // The first tile of the second map, so the top-left corner of the screen shows it.
   await page.mouse.click(box.x + 4, box.y + 4);
   await page.mouse.move(box.x + 5, box.y + 5);
-  await expect(page.getByText(/TILE 0,0 · SPR \d+/)).not.toHaveText(/SPR 000/);
+  await expect(statusLine(page, /^TILE 0,0$/)).not.toHaveText(/SPR 000/);
 
   await page.locator('nc-rail').getByRole('button', { name: 'Code' }).click();
   await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
@@ -403,7 +407,7 @@ test('MAP stamps on a 256×256 map at zoom 8 without a long task', async ({ page
   const well = await boxOf(page.locator('nc-map-canvas'));
   await drag(page, well, { x: 32, y: 32 }, { x: well.width - 32, y: 32 }, { steps: 20 });
   await page.mouse.move(well.x + 40, well.y + 40);
-  await expect(page.getByText(/TILE \d+,\d+ · SPR \d+/)).not.toHaveText(/SPR 000/);
+  await expect(statusLine(page)).not.toHaveText(/SPR 000/);
   await page.evaluate(
     () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
   );

@@ -24,7 +24,7 @@
 
 <main class="mx-auto grid max-w-[1200px] gap-8 px-[28px] pt-6 pb-[120px]">
   <div class="grid max-w-[70ch] gap-[14px]">
-    <div class="text-label tracking-kicker text-active-ink uppercase">UI kit · v2</div>
+    <div class="text-label tracking-kicker text-active-ink uppercase">UI kit v2</div>
     <p class="font-display text-banner text-ink">Pressable pixels.</p>
     <p class="text-ui text-ink-body">
       If you can press it, it is raised: a pixel bevel with a deeper bottom edge that pushes down
@@ -86,7 +86,7 @@
       </div>
 
       <div class="flat-lg bevel-fill-panel grid content-start gap-[10px] p-2.5">
-        <div class="label">Type · three faces</div>
+        <div class="label">Type: three faces</div>
         <div class="font-display text-hero">
           Datasaur
           <span class="text-ink-4">38</span>
@@ -109,7 +109,7 @@
           gfx.circfill(x, y, 6, 13)
           <span class="text-ink-4">-- mono 14</span>
         </div>
-        <div class="font-mono text-label text-lcd-ink">&gt; LCD · KEYCAPS · COUNTS 12</div>
+        <div class="font-mono text-label text-lcd-ink">&gt; LCD, KEYCAPS, COUNTS 12</div>
       </div>
 
       <div class="flat-lg bevel-fill-panel grid content-start gap-2 p-2.5">
@@ -172,7 +172,7 @@
       </div>
     </div>
     <div class="flat-lg bevel-fill-panel grid gap-1.5 p-2.5">
-      <div class="label">Icons · 24 on a 24 grid</div>
+      <div class="label">Icons: 24 on a 24 grid</div>
       <div class="flex flex-wrap gap-1 text-ink-2">
         @for (icon of icons; track icon) {
           <span class="flex h-5 w-5 items-center justify-center" [title]="icon">
@@ -187,7 +187,7 @@
     <div class="flex items-baseline gap-2">
       <h2 class="font-display text-display text-ink">Buttons</h2>
       <span class="text-meta text-ink-3">
-        7 variants × 7 sizes · icon · pressed · copied · disabled · text link
+        7 variants × 7 sizes, icon, pressed, copied, disabled, text link
       </span>
     </div>
     <div class="flat-lg bevel-fill-panel grid gap-[22px] p-[22px]">
@@ -234,7 +234,7 @@
         <button ncButton size="strip">strip → md</button>
       </div>
       <div class="flex flex-wrap items-center gap-3">
-        <span class="label">Text link · active ink + pixel arrow</span>
+        <span class="label">Text link: active ink and a pixel arrow</span>
         <a
           class="inline-flex items-center gap-[6px] text-label tracking-wide text-active-ink uppercase hover:text-hot-ink"
           href="/ui-kit#buttons">
@@ -258,7 +258,7 @@
     <div class="flex items-baseline gap-2">
       <h2 class="font-display text-display text-ink">Inputs</h2>
       <span class="text-meta text-ink-3">
-        wells · search shares the well · focus turns the rim gold
+        wells, a search that shares the well, a rim that focus turns gold
       </span>
     </div>
     <div
@@ -321,8 +321,7 @@
     <div class="flex items-baseline gap-2">
       <h2 class="font-display text-display text-ink">Selection</h2>
       <span class="text-meta text-ink-3">
-        switch · checkbox · segmented (framed, filled, chips) · slider · stepper · tool group ·
-        swatches
+        switch, checkbox, segmented (framed, filled, chips), slider, stepper, tool group, swatches
       </span>
     </div>
     <div class="flat-lg bevel-fill-panel grid gap-[22px] p-[22px]">
@@ -435,7 +434,7 @@
     <div class="flex items-baseline gap-2">
       <h2 class="font-display text-display text-ink">Chips, keys &amp; data</h2>
       <span class="text-meta text-ink-3">
-        badge · tag · keycap · stat · avatar · cursor tag · bit flags · meter · LCD · readout
+        badge, tag, keycap, stat, avatar, cursor tag, bit flags, meter, LCD, readout
       </span>
     </div>
     <div class="flat-lg bevel-fill-panel grid gap-[22px] p-[22px]">
@@ -493,7 +492,7 @@
       </div>
       <div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,300px),1fr))] gap-[18px]">
         <div class="grid content-start gap-[10px]">
-          <div class="text-label tracking-label text-ink-3 uppercase">LCD · boxed and flush</div>
+          <div class="text-label tracking-label text-ink-3 uppercase">LCD: boxed and flush</div>
           <nc-lcd [minHeight]="72">
             &gt; RUN main &gt; Welcome to Naucto! ! main:39 attempt to index a nil value (field
             'sprites')
@@ -503,7 +502,7 @@
           </nc-lcd>
         </div>
         <div class="grid content-start gap-[10px]">
-          <div class="text-label tracking-label text-ink-3 uppercase">Readout · inline meter</div>
+          <div class="text-label tracking-label text-ink-3 uppercase">Readout, inline meter</div>
           <nc-readout value="ALEXIS01" tone="gold" />
           <nc-readout size="sm" value="60 FPS" class="w-[120px]" />
           <nc-meter [segments]="size" [max]="1048576" label="Inline size" [legend]="false" />
@@ -539,7 +538,7 @@
   <section id="navigation" class="grid scroll-mt-[80px] gap-2.5">
     <div class="flex items-baseline gap-2">
       <h2 class="font-display text-display text-ink">Navigation</h2>
-      <span class="text-meta text-ink-3">top-bar links · page tabs · editor rail · pager</span>
+      <span class="text-meta text-ink-3">top-bar links, page tabs, editor rail, pager</span>
     </div>
     <div class="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] items-start gap-2.5">
       <div class="flat-lg bevel-fill-panel grid content-start gap-[14px] px-2.5 py-[18px]">
@@ -594,7 +593,7 @@
         </div>
       </div>
       <div class="flat-lg bevel-fill-panel grid content-start gap-[14px] px-2.5 py-[18px]">
-        <div class="label">Strips · console, bar, small</div>
+        <div class="label">Strips: console, bar, small</div>
         <div class="grid min-w-0 gap-[14px]">
           <nc-tabs [tabs]="consoleTabs" [(value)]="consoleTab" label="Console" variant="console" />
           <nc-tabs [tabs]="shelves" [(value)]="shelf" label="Files" variant="bar" />
@@ -602,7 +601,7 @@
         </div>
       </div>
       <div class="flat-lg bevel-fill-panel grid content-start gap-[14px] px-2.5 py-[18px]">
-        <div class="label">Panel column · section · setting row</div>
+        <div class="label">Panel column, section, setting row</div>
         <!-- A region holding one column and the second that unfolds beside it. Its own height,
              because a region takes the one it is given and there is no editor here to give it. -->
         <div class="flat-sm h-[168px]">
@@ -637,7 +636,7 @@
   <section id="feedback" class="grid scroll-mt-[80px] gap-2.5">
     <div class="flex items-baseline gap-2">
       <h2 class="font-display text-display text-ink">Feedback</h2>
-      <span class="text-meta text-ink-3">toast &amp; callout · empty · error · loading</span>
+      <span class="text-meta text-ink-3">toast &amp; callout, empty, error, loading</span>
     </div>
     <div class="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] items-start gap-2.5">
       <div class="grid content-start gap-1.5">
@@ -724,12 +723,12 @@
     <div class="flex items-baseline gap-2">
       <h2 class="font-display text-display text-ink">Overlays</h2>
       <span class="text-meta text-ink-3">
-        tooltip · popover · menu item · dialog — all lg frames, dialog is raised over a dither scrim
+        tooltip, popover, menu item, dialog — all lg frames, dialog is raised over a dither scrim
       </span>
     </div>
     <div class="flex flex-wrap items-stretch gap-x-2.5 gap-y-[28px]">
       <div class="grid min-w-0 flex-[1_1_280px] grid-rows-[auto_1fr_auto] gap-[10px]">
-        <span class="label">Tooltip · popover</span>
+        <span class="label">Tooltip, popover</span>
         <div class="flat-lg bevel-fill-panel grid min-h-[280px] content-start gap-[30px] p-[22px]">
           <div class="flex flex-wrap items-center gap-2 justify-self-start">
             <button ncButton size="lg" ncTooltip="Save project">Simple</button>
@@ -757,7 +756,11 @@
                     <span>v3 Cave update</span>
                     <nc-chip tone="gold">Current</nc-chip>
                   </li>
-                  <li class="mt-1 text-ink-3">Autosave · 8 minutes ago · you</li>
+                  <li class="mt-1 flex gap-1.5 text-ink-3">
+                    <span class="flex-1">Autosave</span>
+                    <span class="text-ink-4">8 minutes ago</span>
+                    <span class="text-ink-4">you</span>
+                  </li>
                 </ul>
               </nc-popover-panel>
             </ng-template>
@@ -841,7 +844,7 @@ What each bit means is yours to decide." />
       <span class="text-meta text-ink-3">a game is a disk, wherever it is shown</span>
     </div>
     <div class="grid gap-[10px]">
-      <span class="label">Floppy · title · thumbnail · reached · pressed (hold the first)</span>
+      <span class="label">Floppy: title, thumbnail, reached, pressed (hold the first)</span>
       <div
         class="flat-lg bevel-fill-panel grid grid-cols-2 items-start gap-3 p-[22px] sm:grid-cols-5"
         data-testid="floppy-states">
@@ -895,7 +898,7 @@ What each bit means is yours to decide." />
       </div>
     </div>
     <div class="grid gap-[10px]">
-      <span class="label">Floppy · finishes · the five directions of a gradient</span>
+      <span class="label">Floppy: finishes, the five directions of a gradient</span>
       <div
         class="flat-lg bevel-fill-panel grid grid-cols-2 items-start gap-3 p-[22px] sm:grid-cols-4 lg:grid-cols-6"
         data-testid="floppy-finishes">
@@ -913,7 +916,7 @@ What each bit means is yours to decide." />
     </div>
     <div class="grid gap-[10px]">
       <span class="label">
-        Floppy · actions · a session's stickers · the game that does not exist yet
+        Floppy: actions, a session's stickers, the game that does not exist yet
       </span>
       <div
         class="flat-lg bevel-fill-panel grid grid-cols-2 items-start gap-3 p-[22px] sm:grid-cols-5"

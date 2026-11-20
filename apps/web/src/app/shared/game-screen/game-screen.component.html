@@ -14,10 +14,10 @@
       [style.imageRendering]="'pixelated'"></canvas>
     @if (fpsVisible()) {
       <span
-        class="absolute top-1.5 left-1.5 border-3 border-line-strong bg-page/80 px-1 py-0.5 font-mono text-micro text-jade-ink">
-        {{ host.fps() }} FPS
+        class="absolute top-1.5 left-1.5 flex gap-1.5 border-3 border-line-strong bg-page/80 px-1 py-0.5 font-mono text-micro text-jade-ink">
+        <span>{{ host.fps() }} FPS</span>
         @if (showCpu()) {
-          · {{ host.cpu() }}% CPU
+          <span>{{ host.cpu() }}% CPU</span>
         }
       </span>
     }
@@ -38,9 +38,21 @@
         class="absolute inset-0 flex items-center justify-center overflow-hidden bg-page/80">
         <nc-error-state
           [title]="t('game.haltedTitle')"
-          [hint]="errorLine()"
           [retryLabel]="t('game.haltedRestart')"
-          (retry)="restart()" />
+          (retry)="restart()">
+          @if (host.error(); as error) {
+            <p
+              hint
+              class="flex max-w-[36ch] flex-wrap items-center justify-center gap-0.75 text-small text-ink-3">
+              @if (error.file) {
+                <nc-chip kind="tag" tone="hot" wash>
+                  {{ error.file }}{{ error.line === undefined ? '' : ':' + error.line }}
+                </nc-chip>
+              }
+              <span>{{ error.phase }}: {{ error.message }}</span>
+            </p>
+          }
+        </nc-error-state>
       </div>
     }
     <span class="scanlines pointer-events-none absolute inset-0"></span>
@@ -99,8 +111,11 @@
         }
       </span>
       @if (!compact()) {
-        <span class="ml-1 hidden font-mono text-label whitespace-nowrap text-ink-4 md:inline">
-          320×180 · {{ t(fit() === 'width' ? 'game.screen.fitWidth' : 'game.screen.fitInteger') }}
+        <span class="ml-1 hidden gap-1.5 font-mono text-label whitespace-nowrap text-ink-4 md:flex">
+          <span>320×180</span>
+          <span>
+            {{ t(fit() === 'width' ? 'game.screen.fitWidth' : 'game.screen.fitInteger') }}
+          </span>
         </span>
       }
       <!-- Projected before the spacer: left of the break is what the game runs on, right of it who

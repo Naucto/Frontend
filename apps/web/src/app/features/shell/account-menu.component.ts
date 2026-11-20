@@ -8,6 +8,7 @@ import {
   IconComponent,
   PopoverDirective,
   PopoverPanelComponent,
+  StatComponent,
 } from '@naucto/ui';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 
@@ -27,6 +28,7 @@ import { qk } from '../../shared/queries/query-keys';
     IconComponent,
     PopoverDirective,
     PopoverPanelComponent,
+    StatComponent,
   ],
   templateUrl: './account-menu.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -469,7 +469,7 @@ const LISTING_TIP =
 function listing(code) {
   const lines = code.split('\n').length;
   return (
-    `<details class="doc-listing"><summary>Complete code · ${lines} lines</summary>` +
+    `<details class="doc-listing"><summary>Complete code<span>${lines} lines</span></summary>` +
     `${codeBlock(highlightLua(code), 'lua')}</details>\n`
   );
 }

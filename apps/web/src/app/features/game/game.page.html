@@ -149,11 +149,12 @@
       }
       @if (similar().length) {
         <div class="mt-0.25 border-t-3 border-line pt-2.25 lg:-mx-2.5 lg:px-2.5">
-          <nc-label class="mb-1">
-            {{
-              release.tags[0] ? t('game.similarTag', { tag: release.tags[0] }) : t('game.similar')
-            }}
-          </nc-label>
+          <div class="mb-1 flex items-center gap-1">
+            <nc-label>{{ t('game.similar') }}</nc-label>
+            @if (release.tags[0]; as tag) {
+              <nc-chip kind="tag">{{ tag }}</nc-chip>
+            }
+          </div>
           <div class="grid grid-cols-2 gap-x-2 gap-y-2.5">
             @for (game of similar(); track game.id) {
               <nc-game-disk [game]="game" />

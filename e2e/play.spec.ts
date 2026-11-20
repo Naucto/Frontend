@@ -61,7 +61,8 @@ test('a game that errors tells the player, and restarts from the banner', async 
   await page.getByRole('button', { name: 'Play' }).first().click();
   const alert = page.getByRole('alert');
   await expect(alert).toContainText('The game stopped on an error');
-  await expect(alert).toContainText('main:3 · update:');
+  await expect(alert).toContainText('main:3');
+  await expect(alert).toContainText('update:');
 
   // Restart runs the game again from the top; it errors again, so the banner comes back.
   await alert.getByRole('button', { name: 'Restart' }).click();

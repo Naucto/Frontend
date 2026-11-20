@@ -344,11 +344,11 @@ export default class UiKitPage {
   ] as const;
   protected readonly railTab = signal<'art' | 'code' | 'map' | 'sound' | 'game'>('art');
   protected readonly railCopy = {
-    art: { title: 'Sprites · 8×8', body: 'Draw tiles and characters on the shared sheet.' },
+    art: { title: '8×8 sprites', body: 'Draw tiles and characters on the shared sheet.' },
     code: { title: 'main.lua', body: 'Lua, with the engine reference one key away.' },
-    map: { title: 'Level 1 · 32×18', body: 'Lay the sheet out into rooms.' },
+    map: { title: 'Level 1, 32×18', body: 'Lay the sheet out into rooms.' },
     sound: { title: '4 instruments', body: 'Waves, envelopes and the piano roll.' },
-    game: { title: 'Hightide · v3', body: 'Title, cover, controls and publishing.' },
+    game: { title: 'Hightide v3', body: 'Title, cover, controls and publishing.' },
   };
   protected readonly pageTab = signal<'account' | 'editor' | 'controls' | 'privacy'>('account');
   protected readonly tabCopy = {
@@ -357,14 +357,14 @@ export default class UiKitPage {
       body: 'Your handle shows on every game you publish.',
     },
     editor: { title: 'Indent with 2 spaces', body: 'Applies to every file you open.' },
-    controls: { title: 'Gamepad 1 · Xbox layout', body: 'Rebind any action from here.' },
+    controls: { title: 'Gamepad 1, Xbox layout', body: 'Rebind any action from here.' },
     privacy: { title: 'Two things to review', body: 'What is collected, and what you can erase.' },
   };
   protected readonly consoleTab = signal<string | undefined>('console');
   protected readonly shelf = signal<string | undefined>('games');
   protected readonly page = signal(0);
   protected readonly topLinks = ['Hub', 'My games', 'Friends', 'Learn'];
-  protected readonly tooltipMeta = ['Visibility · public', 'Last build · 2 min ago'];
+  protected readonly tooltipMeta = ['Visible to everyone', 'Built 2 min ago'];
   protected readonly frictions = ['Plain', 'Password', 'Type the name', 'Hold'] as const;
   protected readonly notifications = [
     {

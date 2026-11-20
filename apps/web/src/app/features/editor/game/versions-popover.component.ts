@@ -23,6 +23,7 @@ import {
   PopoverDirective,
   PopoverPanelComponent,
   RelativeTimePipe,
+  StatComponent,
   ToastService,
 } from '@naucto/ui';
 import { QueryClient } from '@tanstack/angular-query-experimental';
@@ -58,6 +59,7 @@ const byWhen = (a: VersionRow, b: VersionRow): number => (b.when ?? '').localeCo
     PopoverDirective,
     PopoverPanelComponent,
     RelativeTimePipe,
+    StatComponent,
   ],
   templateUrl: './versions-popover.component.html',
   host: { class: 'inline-flex items-center' },
