@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
  * Fails on what the pixel kit has no place for: a rounded corner, a stroke that is not a whole
- * number of 3px pixels, the density tokens the size ladder replaced, and a "·" set between two
- * things on screen (in the catalogue, a template or a string; see `separators.mjs`).
+ * number of 3px pixels, the density tokens the size ladder replaced, a "·" set between two
+ * things on screen (in the catalogue, a template or a string; see `separators.mjs`), and an
+ * `nc-icon` shrunk to 12, where the glyph's own pixel is halved.
  *
  * `tools/pixel-allow.json` lists what each file still owes, rule by rule. A file may owe less than
  * its entry says, never more, and a file with no entry owes nothing. `--update` rewrites the entries
@@ -49,6 +50,8 @@ const STROKE_WIDTH = /stroke-width\s*(?:=\s*["']|:\s*)(\d+(?:\.\d+)?)/g;
 const DENSITY =
   /nc-density-(?:small|big)|--nc-density|--nc-control-(?:text|leading)|--nc-bar-h|--nc-control-h(?:-xs|-sm)?|--nc-tool-w|--nc-transport-h|(?<![\w-])control-type(?![\w-])/g;
 
+const SHRUNK_ICON = /<nc-icon\b[^>]*\[size\]="12"/g;
+
 /** Class names only mean something inside a string, so prose that says "border" is not counted. */
 function strings(line) {
   return [...line.matchAll(/'([^']*)'|"([^"]*)"|`([^`]*)`/g)].map(
@@ -61,8 +64,16 @@ function count(text, pattern, keep = () => true) {
 }
 
 function violations(path, text) {
-  const found = { rounded: 0, border: 0, 'stroke-width': 0, density: 0, separator: 0 };
+  const found = {
+    rounded: 0,
+    border: 0,
+    'stroke-width': 0,
+    density: 0,
+    separator: 0,
+    'icon-scale': 0,
+  };
   found.separator = separators(path, text);
+  found['icon-scale'] = count(text, SHRUNK_ICON);
   found.density = count(text, DENSITY);
   found['stroke-width'] = count(text, STROKE_WIDTH, ([, width]) => offPixel(Number(width)));
   if (path.endsWith('.css')) {
@@ -131,7 +142,8 @@ if (over.length > 0) {
   console.error(
     '\nrounded: corners are stepped by the bevel utilities. border: a stroke is 3px or a multiple' +
       ' (border-3, or a bevel). density: use the --nc-h-* ladder. separator: no "·" between two' +
-      ' things; a chip, a label and its value, or two elements a gap apart.',
+      ' things; a chip, a label and its value, or two elements a gap apart. icon-scale: an icon' +
+      ' is 24 or 48; a smaller mark is an nc-mark, drawn for its size.',
   );
   process.exit(1);
 }
