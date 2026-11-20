@@ -1,0 +1,147 @@
+<nc-dither-backdrop
+  class="absolute -inset-x-[28px] -inset-y-[24px]"
+  [image]="lead()?.coverUrl ?? null"
+  [tint]="lead()?.diskColor ?? null"
+  [seed]="(lead()?.id ?? '') + ''" />
+<div class="relative grid gap-[56px] *:min-w-0">
+  <h2 class="font-display text-display text-ink">Hub pieces</h2>
+
+  <div class="grid gap-[10px] *:min-w-0">
+    <span class="label">Hero pile</span>
+    <nc-hero-pile
+      data-testid="hero-pile"
+      [entries]="hero()"
+      [(index)]="front"
+      (picked)="say('Play ' + $event.name)" />
+    <nc-field class="max-w-[420px]" label="Clip for the first disk" for="hub-clip">
+      <input
+        ncInput
+        id="hub-clip"
+        placeholder="URL of an mp4 or a webm"
+        [value]="clip()"
+        (change)="clip.set($any($event.target).value)" />
+    </nc-field>
+  </div>
+
+  <nc-shelf heading="Your games" data-testid="shelf-mine">
+    <ng-container *ncShelfItem="let game of mine; open as open; flyoutId as flyoutId">
+      @if (game) {
+        <nc-shelf-disk
+          link="/ui-kit"
+          action="edit"
+          actionLabel="Edit"
+          [game]="game"
+          [open]="open"
+          [flyoutId]="flyoutId" />
+      } @else {
+        <a href="/ui-kit#hub" class="block">
+          <nc-floppy ghost action="new" name="New game" actionLabel="New game" />
+        </a>
+      }
+    </ng-container>
+    <ng-container *ncShelfFlyout="let game of mine; when: isGame">
+      @if (game) {
+        <nc-game-flyout [game]="game" />
+      }
+    </ng-container>
+  </nc-shelf>
+
+  <nc-shelf heading="Open sessions" data-testid="shelf-sessions">
+    <a
+      shelfAction
+      href="/ui-kit#hub"
+      class="inline-flex items-center gap-[6px] text-label tracking-wide text-gold-ink uppercase">
+      See all {{ sessions.length }}
+      <nc-icon name="arrow-right" [size]="12" />
+    </a>
+    <nc-shelf-disk
+      *ncShelfItem="let seat of sessions; open as open; flyoutId as flyoutId"
+      link="/ui-kit"
+      action="play"
+      actionLabel="Join"
+      [game]="seat.game"
+      [session]="seat.session"
+      [open]="open"
+      [flyoutId]="flyoutId" />
+    <nc-session-flyout
+      *ncShelfFlyout="let seat of sessions"
+      [session]="seat.session"
+      [description]="seat.game.shortDesc"
+      [viewerId]="viewer"
+      (leave)="say('Left ' + seat.game.name)" />
+  </nc-shelf>
+
+  <nc-shelf heading="Popular" data-testid="shelf-popular">
+    <a
+      shelfAction
+      href="/ui-kit#hub"
+      class="inline-flex items-center gap-[6px] text-label tracking-wide text-gold-ink uppercase">
+      See all {{ games.length }}
+      <nc-icon name="arrow-right" [size]="12" />
+    </a>
+    <nc-shelf-disk
+      *ncShelfItem="let game of games; open as open; flyoutId as flyoutId"
+      link="/ui-kit"
+      actionLabel="Play"
+      [game]="game"
+      [open]="open"
+      [flyoutId]="flyoutId" />
+    <nc-game-flyout *ncShelfFlyout="let game of games" [game]="game" />
+  </nc-shelf>
+
+  <nc-shelf heading="My games" rows="2" data-testid="shelf-rows">
+    <nc-shelf-disk
+      *ncShelfItem="let game of games; open as open; flyoutId as flyoutId"
+      link="/ui-kit"
+      action="edit"
+      actionLabel="Edit"
+      [game]="game"
+      [open]="open"
+      [flyoutId]="flyoutId" />
+    <nc-game-flyout *ncShelfFlyout="let game of games" [game]="game" />
+  </nc-shelf>
+
+  <section class="grid min-w-0 gap-[14px]" aria-labelledby="hub-collections">
+    <div class="flex flex-wrap items-center gap-[14px]">
+      <h3 id="hub-collections" class="font-display text-[22px] leading-[1.2] text-ink">
+        Collections
+      </h3>
+      <span class="flex-1"></span>
+      <a
+        href="/ui-kit#hub"
+        class="inline-flex items-center gap-[6px] text-label tracking-wide text-gold-ink uppercase">
+        See all 8
+        <nc-icon name="arrow-right" [size]="12" />
+      </a>
+    </div>
+    <div
+      class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-[20px]"
+      data-testid="collections">
+      @for (collection of collections; track collection.title) {
+        <nc-collection-box
+          link="/ui-kit"
+          [title]="collection.title"
+          [curator]="collection.curator"
+          [total]="collection.total"
+          [games]="collection.games"
+          (picked)="say('Play ' + $event.name)" />
+      }
+    </div>
+  </section>
+
+  <div class="grid gap-[10px]">
+    <span class="label">Scramble and fitted text</span>
+    <div
+      class="flat-lg bevel-fill-panel flex flex-wrap items-center gap-3 p-[22px]"
+      data-testid="scramble">
+      <div
+        ncFitText
+        class="w-[min(100%,360px)] min-w-0 overflow-hidden font-display text-[38px] leading-[1.1] whitespace-nowrap text-ink">
+        <span
+          class="inline-block origin-left truncate align-top"
+          [ncScramble]="lines[line()] ?? ''"></span>
+      </div>
+      <button ncButton (click)="line.set((line() + 1) % lines.length)">Next name</button>
+    </div>
+  </div>
+</div>
