@@ -71,7 +71,10 @@
           </span>
         } @else {
           <span class="card">
-            <span class="initial" [style.background-color]="sticker.color">
+            <span
+              class="initial"
+              [style.background-color]="sticker.color"
+              [style.color]="inkFor(sticker.color)">
               {{ sticker.initial }}
             </span>
           </span>
