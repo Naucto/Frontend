@@ -1,14 +1,74 @@
 {
   "exempt": {},
   "owed": {
+    "apps/web/public/i18n/en.json": {
+      "separator": 14
+    },
     "apps/web/src/app/features/editor/art/sheet-view.component.html": {
       "stroke-width": 1
+    },
+    "apps/web/src/app/features/editor/code/code-tab.page.html": {
+      "separator": 1
+    },
+    "apps/web/src/app/features/editor/code/lua-docs.ts": {
+      "separator": 4
+    },
+    "apps/web/src/app/features/editor/console/console-column.component.html": {
+      "separator": 1
+    },
+    "apps/web/src/app/features/editor/map/map-tab.page.html": {
+      "separator": 1
+    },
+    "apps/web/src/app/features/editor/net/net-tab.page.html": {
+      "separator": 2
+    },
+    "apps/web/src/app/features/editor/sound/instrument-inspector.component.ts": {
+      "separator": 1
     },
     "apps/web/src/app/features/editor/sound/piano-keys.component.html": {
       "border": 1
     },
+    "apps/web/src/app/features/friends/friends.page.html": {
+      "separator": 2
+    },
+    "apps/web/src/app/features/friends/friends.page.ts": {
+      "separator": 1
+    },
+    "apps/web/src/app/features/hub/hub.page.html": {
+      "separator": 2
+    },
+    "apps/web/src/app/features/profile/profile.page.html": {
+      "separator": 1
+    },
+    "apps/web/src/app/features/shell/search-suggest.component.html": {
+      "separator": 1
+    },
+    "apps/web/src/app/features/ui-kit/ui-kit.page.html": {
+      "separator": 54
+    },
+    "apps/web/src/app/features/ui-kit/ui-kit.page.ts": {
+      "separator": 6
+    },
+    "apps/web/src/app/shared/docs/docs.service.ts": {
+      "separator": 1
+    },
+    "apps/web/src/app/shared/feedback/bug-report.dialog.ts": {
+      "separator": 1
+    },
+    "apps/web/src/app/shared/game-screen/game-screen.component.html": {
+      "separator": 2
+    },
+    "apps/web/src/app/shared/game-screen/game-screen.component.ts": {
+      "separator": 1
+    },
+    "apps/web/src/app/shared/netplay/join.dialog.html": {
+      "separator": 1
+    },
     "apps/web/src/styles.css": {
       "stroke-width": 3
+    },
+    "packages/ui/src/components/tool-group.component.html": {
+      "separator": 1
     }
   }
 }
