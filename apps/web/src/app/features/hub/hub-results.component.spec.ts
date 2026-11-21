@@ -72,7 +72,7 @@ describe('HubResultsComponent', () => {
     ).toEqual(['Puzzle 2', 'Untagged 1', 'Arcade 1']);
     expect(text(host().querySelector('h2'))).toBe('“run”');
     expect(text(host().querySelector('[data-testid="results-count"]'))).toBe('4');
-    expect(host().querySelector('nc-floppy')?.classList).toContain('title');
+    expect(text(host().querySelector('nc-shelf-disk nc-disk-name'))).toBe('Game 1');
   });
 
   it('asks a search for its best match and a shelf for its own order until a sort is chosen', async () => {
