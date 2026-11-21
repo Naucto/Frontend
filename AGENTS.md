@@ -373,7 +373,10 @@ broken; an absence reads as not built.
 - Anything the app draws that is not in `ICON_PATHS` — the oscillator waves and the controller are
   the current cases — has to be listed in `EXTRA_SOURCES` in
   `Design2Code/packages/targets/naucto-angular/src/glyphs.ts`, or the report lists it as missing
-  forever. `packages/ui/src/components/presence-flag.component.ts` draws its own path too and is not
+  forever. The controller moved to `apps/web/src/app/shared/controls/pad-art.component.ts`, and
+  `npm run design:check` stops on the missing file until the entry that still names
+  `features/settings/gamepad-art.component.ts` follows it there.
+  `packages/ui/src/components/presence-flag.component.ts` draws its own path too and is not
   listed; nothing reports it today, so it stays out until something does. The edge chips in
   `presence-layer.component.ts` beside it use `nc-icon`, so they are covered.
 - An `nc-icon` is native at 24 and doubles to 48. `IconSize` still holds 12, which halves the
