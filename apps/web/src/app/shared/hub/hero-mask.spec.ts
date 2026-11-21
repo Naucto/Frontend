@@ -32,4 +32,12 @@ describe('maskAlpha', () => {
     expect(maskAlpha(x, height - HERO_BLEED / 2, width, height)).toBeGreaterThan(0);
     expect(maskAlpha(x, height - 8, width, height)).toBe(0);
   });
+
+  it('stays below the text when the pile stands under it', () => {
+    const tall = 1010;
+    expect(maskAlpha(20, 150, 390, tall, true)).toBe(0);
+    expect(maskAlpha(370, 150, 390, tall, true)).toBe(0);
+    expect(maskAlpha(20, 500, 390, tall, true)).toBe(1);
+    expect(maskAlpha(20, tall - 8, 390, tall, true)).toBe(0);
+  });
 });
