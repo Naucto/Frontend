@@ -348,6 +348,7 @@
       "games": "Most games"
     },
     "empty": "No collection has been shared yet",
+    "games": "games",
     "updated": "Updated {{when}}",
     "copyLink": "Copy link",
     "copied": "Copied",

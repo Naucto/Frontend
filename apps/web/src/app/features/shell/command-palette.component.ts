@@ -129,6 +129,7 @@ export class CommandPaletteComponent {
 
     return [
       go('home', translate('nav.hub'), '/hub'),
+      go('archive', translate('collections.title'), '/collections'),
       ...(username
         ? [
             go('folder', translate('nav.myGames'), '/games'),
