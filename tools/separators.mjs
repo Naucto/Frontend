@@ -74,12 +74,23 @@ function literals(source) {
   return found;
 }
 
+/** Removing a comment can join the two halves of another, so it is done until none is left. */
+function withoutMarkupComments(text) {
+  let stripped = text;
+  let before;
+  do {
+    before = stripped;
+    stripped = before.replace(MARKUP_COMMENT, '');
+  } while (stripped !== before);
+  return stripped;
+}
+
 export function separators(path, text) {
   let shown = text;
   if (path.endsWith('.ts')) {
-    shown = literals(text).join('\n').replace(MARKUP_COMMENT, '');
+    shown = withoutMarkupComments(literals(text).join('\n'));
   } else if (path.endsWith('.html')) {
-    shown = text.replace(MARKUP_COMMENT, '');
+    shown = withoutMarkupComments(text);
   } else if (path.endsWith('.css')) {
     shown = text.replace(BLOCK_COMMENT, '');
   }
