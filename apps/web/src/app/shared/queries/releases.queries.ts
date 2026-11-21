@@ -1,12 +1,12 @@
 import { inject } from '@angular/core';
 import {
-  featuredReleaseControllerGetFeatured,
   type ForkProjectResponseDto,
   hubControllerFork,
   hubControllerGetLikeStatus,
   hubControllerGetPaginatedReleases,
   hubControllerGetPublishedProjectImage,
   hubControllerGetRelease,
+  hubControllerGetReleaseTags,
   hubControllerLikeProject,
   hubControllerUnlikeProject,
   type ImageUrlResponseDto,
@@ -16,11 +16,8 @@ import {
   type ProjectExResponseDto,
 } from '@naucto/api-client';
 import {
-  type CreateInfiniteQueryResult,
   type CreateMutationResult,
   type CreateQueryResult,
-  type InfiniteData,
-  injectInfiniteQuery,
   injectMutation,
   injectQuery,
   QueryClient,
@@ -60,11 +57,6 @@ interface ReleasePage {
   total: number;
 }
 
-/** A page that knows its own index, for the "show N more" shelf. */
-interface NumberedReleasePage extends ReleasePage {
-  page: number;
-}
-
 /** One page of released games, searched and sorted by the backend. */
 export function injectReleasesPage(
   page: () => number,
@@ -97,18 +89,6 @@ export function injectRelatedWindow(): CreateQueryResult<ReleasePage> {
   return injectReleasesPage(() => 1, RELATED_WINDOW);
 }
 
-/** The editorially chosen game of the week, or null when nothing is featured. */
-export function injectFeaturedRelease(): CreateQueryResult<ProjectExResponseDto | null> {
-  return injectQuery(() => ({
-    queryKey: qk.featuredRelease(),
-    staleTime: 5 * 60 * 1000,
-    queryFn: async () => {
-      const res = unwrap(await featuredReleaseControllerGetFeatured());
-      return res.featured?.project ?? null;
-    },
-  }));
-}
-
 export function injectRelease(id: () => number): CreateQueryResult<ProjectExResponseDto> {
   return injectQuery(() => ({
     queryKey: qk.release(id()),
@@ -117,24 +97,17 @@ export function injectRelease(id: () => number): CreateQueryResult<ProjectExResp
   }));
 }
 
-/** Every released game, page after page ("SHOW N MORE"), searched and sorted by the backend. */
-export function injectReleasesInfinite(
-  limit = RELEASE_PAGE_SIZE,
-  query: () => ReleaseQuery = () => ({}),
-): CreateInfiniteQueryResult<InfiniteData<NumberedReleasePage, number>> {
-  return injectInfiniteQuery(() => ({
-    queryKey: qk.releases({ page: 'all', limit, ...query() }),
-    initialPageParam: 1,
-    queryFn: async ({ pageParam }): Promise<NumberedReleasePage> => {
-      const res = unwrap(
-        await hubControllerGetPaginatedReleases({
-          query: { page: pageParam, limit, ...releaseParams(query()) },
-        }),
-      );
-      return { items: res.projects, total: res.total, page: pageParam };
-    },
-    getNextPageParam: (last: NumberedReleasePage): number | undefined =>
-      last.page * limit < last.total ? last.page + 1 : undefined,
+/** The tags published games carry most, the most used first; asked for only once `enabled`. */
+export function injectReleaseTags(
+  limit: number,
+  enabled: () => boolean,
+): CreateQueryResult<string[]> {
+  return injectQuery(() => ({
+    queryKey: qk.releaseTags(limit),
+    enabled: enabled(),
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () =>
+      unwrap(await hubControllerGetReleaseTags({ query: { limit } })).tags.map(({ tag }) => tag),
   }));
 }
 

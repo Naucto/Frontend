@@ -10,7 +10,7 @@ export interface HubGame {
   likes: number;
   commentCount?: number;
   creator: { id: number; username: string };
-  coverUrl: string | null;
+  coverUrl?: string | null;
   /** A short silent recording of the game being played. */
   clipUrl?: string | null;
   /** How its author dressed the disk; without it the disk keeps a plastic of its own. */

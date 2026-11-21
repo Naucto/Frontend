@@ -8,7 +8,7 @@ import { gameOf, installLayoutStubs, pointer } from './testing';
 
 const ENTRIES: HeroEntry[] = [
   { reason: 'Game of the week', game: gameOf(1) },
-  { reason: 'Continue your game', game: gameOf(2), mine: true },
+  { reason: 'Continue', game: gameOf(2), mine: true },
   { reason: 'Trending', game: gameOf(3) },
   { reason: 'New and rising', game: gameOf(4) },
 ];
@@ -95,10 +95,12 @@ describe('HeroPileComponent', () => {
     expect(cards.map((card) => card.style.zIndex)).toEqual(['10', '9', '8', '7']);
   });
 
-  it('leaves out the byline of the game that is the own game of the viewer', () => {
+  it('says the own game of the viewer in a chip beside the reason, and leaves out its byline', () => {
     expect(hero.querySelector('nc-avatar')).not.toBeNull();
+    expect(hero.querySelector('nc-chip')).toBeNull();
     key('ArrowRight');
     expect(hero.querySelector('nc-avatar')).toBeNull();
+    expect(hero.querySelector('nc-chip')?.textContent.trim()).toBe('Your game');
   });
 
   it('moves on the arrows, Home and End, and stops at both ends', () => {

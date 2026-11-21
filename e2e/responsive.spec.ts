@@ -1,5 +1,6 @@
 import { editorUrl, mockEditor } from './editor-mocks';
 import { expect, test } from './fixtures';
+import { mockHub } from './mocks/hub';
 import { mockSignedIn } from './mocks/session';
 
 /**
@@ -24,9 +25,13 @@ for (const vp of VIEWPORTS) {
 
     for (const route of ROUTES) {
       test(`${route} does not scroll sideways`, async ({ page }) => {
+        await mockHub(page);
         await page.goto(route);
         // Wait for the shell rather than networkidle: several of these pages poll.
         await page.locator('body').waitFor();
+        if (route === '/hub') {
+          await page.locator('nc-collection-box').waitFor();
+        }
         const overflow = await page.evaluate(() => {
           const documentElement = document.documentElement;
           return {

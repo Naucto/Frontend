@@ -18,6 +18,19 @@
 }
 
 /*
+ * A phone has no room for arrows beside the rail: there the rail runs to the page's edges, and a
+ * swipe, the dots and the dithered ends page it.
+ */
+@media (width < 640px) {
+  .row {
+    margin-inline: calc(-1 * var(--nc-page-gutter, 0px));
+  }
+  .arrow {
+    display: none;
+  }
+}
+
+/*
  * The window on the rail. It is cut on its sides only: its padding is the room a lifted item and
  * an open flyout take above and below, given back by the margins, and it lets the pointer through
  * so that room does not cover what the page puts there. Both ends dissolve over the peek, except

@@ -12,7 +12,7 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
-import { AvatarComponent, ChipComponent, MarkComponent } from '@naucto/ui';
+import { AvatarComponent, ChipComponent, FitTextDirective, MarkComponent } from '@naucto/ui';
 
 import { diskStyleFor } from '../game-card/disk-style';
 import { FloppyComponent } from '../game-card/floppy.component';
@@ -56,6 +56,7 @@ interface Drag {
     TranslocoDirective,
     AvatarComponent,
     ChipComponent,
+    FitTextDirective,
     FloppyComponent,
     MarkComponent,
   ],

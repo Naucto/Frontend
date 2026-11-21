@@ -4,7 +4,7 @@
   class="relative grid min-h-[560px] min-w-0 grid-cols-[repeat(auto-fit,minmax(min(100%,420px),1fr))] items-center gap-[clamp(24px,4vw,72px)] pt-[8px] pb-[24px]"
   [attr.aria-label]="t('hub.pile.label')">
   @if (entry(); as shown) {
-    <nc-hero-backdrop [cover]="shown.game.coverUrl" [clip]="shown.game.clipUrl ?? null" />
+    <nc-hero-backdrop [cover]="shown.game.coverUrl ?? null" [clip]="shown.game.clipUrl ?? null" />
     <span role="status" aria-live="polite" class="sr-only">
       {{
         t('hub.pile.status', {
@@ -18,7 +18,12 @@
       }}
     </span>
     <div class="relative z-[1] grid max-w-[540px] min-w-0 content-center gap-[14px]">
-      <span class="text-label tracking-kicker text-gold-ink uppercase">{{ shown.reason }}</span>
+      <span class="flex min-h-(--nc-h-xs) flex-wrap items-center gap-[10px]">
+        <span class="text-label tracking-kicker text-gold-ink uppercase">{{ shown.reason }}</span>
+        @if (shown.mine) {
+          <nc-chip tone="gold" wash>{{ t('hub.pile.yours') }}</nc-chip>
+        }
+      </span>
       <h2
         ncFitText
         aria-hidden="true"
@@ -76,7 +81,7 @@
               <nc-floppy
                 info="bandBottom"
                 [disk]="card.disk"
-                [cover]="card.entry.game.coverUrl"
+                [cover]="card.entry.game.coverUrl ?? null"
                 [preview]="card.front ? (card.entry.game.clipUrl ?? null) : null"
                 [by]="card.entry.game.creator.username"
                 [likes]="card.entry.game.likes"

@@ -9,10 +9,6 @@ const PNG = Buffer.from(
 );
 
 test.describe('ratings', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.route('**/projects/releases**', answer(200, { items: [], total: 0 }));
-  });
-
   test('a signed-in player rates the platform from the footer and is thanked', async ({ page }) => {
     await mockSignedIn(page);
     await page.route('**/reports/prompt', answer(200, { eligible: false, declined: false }));
@@ -60,7 +56,6 @@ test.describe('ratings', () => {
 
 test.describe('bug reports', () => {
   test.beforeEach(async ({ page }) => {
-    await page.route('**/projects/releases**', answer(200, { items: [], total: 0 }));
     await mockSignedIn(page);
     await page.route('**/reports/prompt', answer(200, { eligible: false, declined: false }));
     await page.route('**/reports/bugs', answer(201, { id: 31 }));
@@ -118,7 +113,6 @@ test.describe('bug reports', () => {
 });
 
 test('an uncaught error is reported once, with no account attached', async ({ page }) => {
-  await page.route('**/projects/releases**', answer(200, { items: [], total: 0 }));
   await mockSignedIn(page);
   await page.route('**/reports/prompt', answer(200, { eligible: false, declined: false }));
   await page.route('**/reports/crash', (route) => route.fulfill({ status: 204 }));
