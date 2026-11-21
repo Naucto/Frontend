@@ -1,5 +1,6 @@
 import { expect, test } from './fixtures';
-import { release, serveGame } from './mocks/game';
+import { release, serveGame, servePreset } from './mocks/game';
+import { setGamepads } from './mocks/gamepads';
 import { answer } from './mocks/session';
 
 test.describe('play page', () => {
@@ -70,7 +71,7 @@ test('a game that errors tells the player, and restarts from the banner', async 
 });
 
 /**
- * The words come from the document, so the panel is right before the game has run: nothing here
+ * The words come from the document, so the table is right before the game has run: nothing here
  * presses Play. The served game predates actions of its own, so what it shows is what opening it
  * gave it: the nine it always had, under the names its author gave some, with the keys they had.
  */
@@ -82,12 +83,207 @@ test('how to play shows the actions an old game is given, under the names it gav
   });
 
   await page.goto('/play/42');
-  await expect(page.getByText('How to play')).toBeVisible();
-  const rows = page.locator('nc-how-to-play dl > div');
-  await expect(rows).toHaveCount(9);
-  const jump = rows.filter({ has: page.getByText('Jump', { exact: true }) });
+  const howTo = page.locator('nc-how-to-play');
+  await expect(howTo.getByRole('heading', { name: 'How to play' })).toBeVisible();
+  await expect(howTo.getByRole('rowheader')).toHaveCount(9);
+  await expect(howTo.getByRole('rowheader').first()).toHaveText('Left');
+  const jump = howTo.getByRole('row', { name: /Jump/ });
   await expect(jump.locator('nc-input-cap')).toHaveText(['x', 'Space', 'n', 'A']);
-  await expect(rows.first().locator('dt')).toHaveText('Left');
+});
+
+test.describe('how to play', () => {
+  test('stands between the screen and the comments, a row per action of a one-player game', async ({
+    page,
+  }) => {
+    await servePreset(page, 'platformer');
+    await page.goto('/play/42');
+
+    const howTo = page.locator('nc-how-to-play');
+    await expect(howTo.getByRole('table')).toHaveCount(2);
+    await expect(howTo.getByRole('columnheader')).toHaveText([
+      'Action',
+      'Keys',
+      'Pad',
+      'Action',
+      'Keys',
+      'Pad',
+    ]);
+    const jump = howTo.getByRole('row', { name: /Jump/ });
+    await expect(jump.getByRole('rowheader')).toContainText('Hold to jump higher');
+    const keys = jump.getByRole('cell').first();
+    await expect(keys.locator('nc-input-cap')).toHaveText(['Space', 'up', 'w', 'z']);
+    await expect(keys.getByText('or', { exact: true })).toHaveCount(3);
+    await expect(jump.getByRole('cell').last().locator('nc-input-cap')).toHaveText(['A']);
+    await expect(howTo.getByRole('rowheader', { name: 'Crouch', exact: true })).toBeVisible();
+
+    const [screen, table, comments] = await Promise.all(
+      [page.locator('nc-game-screen'), howTo, page.locator('nc-comments')].map((part) =>
+        part.boundingBox(),
+      ),
+    );
+    expect(table?.y).toBeGreaterThan((screen?.y ?? 0) + (screen?.height ?? 0) - 1);
+    expect(comments?.y).toBeGreaterThan((table?.y ?? 0) + (table?.height ?? 0) - 1);
+    await expect(page.locator('aside nc-how-to-play')).toHaveCount(0);
+  });
+
+  test('gives each keyboard player a column in a two-player game', async ({ page }) => {
+    await servePreset(page, 'two-players');
+    await page.goto('/play/42');
+
+    const table = page.locator('nc-how-to-play').getByRole('table').first();
+    await expect(table.getByRole('columnheader')).toHaveText(['Action', /P1/, /P2/, 'Pad']);
+    const left = table.getByRole('row', { name: 'Left' });
+    await expect(left.getByRole('cell').nth(0).locator('nc-input-cap')).toHaveText(['a', 'q']);
+    await expect(left.getByRole('cell').nth(1).locator('nc-input-cap')).toHaveText(['left']);
+  });
+
+  test('folds away, and is still folded when the page is opened again', async ({ page }) => {
+    await servePreset(page, 'platformer');
+    await page.goto('/play/42');
+    const howTo = page.locator('nc-how-to-play');
+    await expect(howTo.getByRole('table')).toHaveCount(2);
+
+    await howTo.getByRole('button', { name: 'Hide how to play' }).click();
+    await expect(howTo.getByRole('table')).toHaveCount(0);
+    await expect(howTo.getByRole('heading', { name: 'How to play' })).toBeVisible();
+
+    await page.reload();
+    const show = howTo.getByRole('button', { name: 'Show how to play' });
+    await expect(show).toHaveAttribute('aria-expanded', 'false');
+    await expect(howTo.getByRole('table')).toHaveCount(0);
+
+    await show.click();
+    await expect(howTo.getByRole('table')).toHaveCount(2);
+  });
+
+  test.describe('on a phone', () => {
+    test.use({ viewport: { width: 390, height: 844 } });
+
+    test('keeps every table inside the page', async ({ page }) => {
+      await servePreset(page, 'two-players');
+      await page.goto('/play/42');
+      const tables = page.locator('nc-how-to-play').getByRole('table');
+      await expect(tables).toHaveCount(2);
+
+      for (const table of await tables.all()) {
+        const box = await table.boundingBox();
+        expect(box?.x).toBeGreaterThanOrEqual(0);
+        expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(390);
+      }
+      const overflow = await page.evaluate(() => ({
+        scroll: document.documentElement.scrollWidth,
+        client: document.documentElement.clientWidth,
+      }));
+      expect(overflow.scroll).toBeLessThanOrEqual(overflow.client + 1);
+    });
+  });
+
+  test.describe('on a touch device', () => {
+    test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+    test('shows the control of the on-screen pad instead of keys', async ({ page }) => {
+      await servePreset(page, 'platformer');
+      await page.goto('/play/42');
+
+      const table = page.locator('nc-how-to-play').getByRole('table').first();
+      await expect(table.getByRole('columnheader')).toHaveText(['Action', 'Touch']);
+      await expect(table.getByRole('row', { name: /Jump/ }).locator('nc-input-cap')).toHaveText([
+        'A',
+      ]);
+    });
+  });
+});
+
+test.describe('controls of the player', () => {
+  const TEST_PAD = { id: 'Test Pad (STANDARD GAMEPAD Vendor: 0000 Product: 0000)' };
+
+  test('the gear of the transport opens the controls over the game', async ({ page }) => {
+    await setGamepads(page, []);
+    await servePreset(page, 'platformer');
+    await page.goto('/play/42');
+
+    await page.getByRole('button', { name: 'Controls' }).click();
+    const dialog = page.locator('nc-controls-dialog');
+    await expect(dialog.getByRole('heading', { name: 'Controls', exact: true })).toBeVisible();
+    await expect(dialog.getByRole('heading', { name: 'No gamepad connected' })).toBeVisible();
+    await expect(dialog.getByRole('slider', { name: 'Size' })).toBeVisible();
+    await expect(dialog.getByRole('slider', { name: 'Opacity' })).toBeVisible();
+
+    await setGamepads(page, [TEST_PAD]);
+    await expect(dialog.getByRole('button', { name: 'Plays as player 1' })).toBeVisible();
+    await expect(dialog.locator('[data-pad="0"]')).toContainText('Test Pad');
+    await expect(dialog.locator('[data-pad="0"]')).not.toContainText('STANDARD');
+
+    await dialog.getByRole('button', { name: 'Close' }).click();
+    await expect(dialog).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Gamepads' })).toHaveCount(0);
+  });
+
+  test('a held button and a leaning stick light on the drawn gamepad, live', async ({ page }) => {
+    await setGamepads(page, [TEST_PAD]);
+    await servePreset(page, 'platformer');
+    await page.goto('/play/42');
+    await page.getByRole('button', { name: 'Controls' }).click();
+    const pad = page.locator('nc-controls-dialog [data-pad="0"]');
+    await expect(pad.locator('[data-part]')).toHaveCount(16);
+    await expect(pad.locator('[data-lit]')).toHaveCount(0);
+
+    await setGamepads(page, [{ ...TEST_PAD, held: [0, 12], axes: [-1, 0, 0, 0] }]);
+    await expect(pad.locator('[data-part="a"]')).toHaveAttribute('data-lit', '');
+    await expect(pad.locator('[data-part="dpad-up"]')).toHaveAttribute('data-lit', '');
+    await expect(pad.locator('[data-part="ls"]')).toHaveAttribute('data-lit', '');
+    await expect(pad.locator('[data-lit]')).toHaveCount(3);
+    const lit = await pad
+      .locator('[data-part="a"] .face')
+      .evaluate((face) => getComputedStyle(face).fill);
+    expect(lit).toBe('rgb(255, 209, 0)');
+
+    await setGamepads(page, [TEST_PAD]);
+    await expect(pad.locator('[data-lit]')).toHaveCount(0);
+  });
+
+  /**
+   * The game says which player pressed the one way a player can see: it stops on an error that
+   * names it.
+   */
+  test('a gamepad seated as another player plays as that player in the running game', async ({
+    page,
+  }) => {
+    await setGamepads(page, [TEST_PAD]);
+    await serveGame(
+      page,
+      [
+        'function _update()',
+        '  if input.btnp("a", 2) then error("player two pressed a") end',
+        '  if input.btnp("a") then error("player one pressed a") end',
+        'end',
+      ].join('\n'),
+    );
+    await page.goto('/play/42');
+    await page.getByRole('button', { name: 'Play' }).first().click();
+    const alert = page.getByRole('alert');
+
+    await setGamepads(page, [{ ...TEST_PAD, held: [0] }]);
+    await expect(alert).toContainText('player one pressed a');
+    await setGamepads(page, [TEST_PAD]);
+    await alert.getByRole('button', { name: 'Restart' }).click();
+    await expect(alert).toHaveCount(0);
+
+    await page.getByRole('button', { name: 'Controls' }).click();
+    const dialog = page.locator('nc-controls-dialog');
+    await dialog.getByRole('button', { name: 'Plays as player 1' }).click();
+    const seats = page.getByRole('menu').getByRole('menuitemradio');
+    await expect(seats).toHaveText([/P1\s*This gamepad/, /P2\s*Free/, /P3\s*Free/, /P4\s*Free/]);
+    await seats.nth(1).click();
+    await expect(dialog.getByRole('button', { name: 'Plays as player 2' })).toBeVisible();
+    await expect(dialog.locator('article').first()).toContainText('P1 open');
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(page.locator('nc-game-screen canvas')).toBeFocused();
+
+    await setGamepads(page, [{ ...TEST_PAD, held: [0] }]);
+    await expect(alert).toContainText('player two pressed a');
+  });
 });
 
 /**

@@ -9,6 +9,7 @@ export const STORAGE_KEYS = {
   editorPrefs: 'naucto.editor',
   docsCollapsed: 'naucto.docs.collapsed',
   padLayout: 'naucto.pad-layout',
+  howToPlayOpen: 'naucto.how-to-play-open',
   oauthState: 'naucto.oauth.state',
   pkceVerifier: 'naucto.oauth.verifier',
 } as const;

@@ -1,6 +1,8 @@
 import type { Page } from '@playwright/test';
 import * as Y from 'yjs';
 
+import { EditableGame } from '../../packages/engine/src/game/EditableGame';
+import type { InputPresetId } from '../../packages/engine/src/input/presets';
 import { answer } from './session';
 
 export const release = {
@@ -24,6 +26,20 @@ export const release = {
   creator: { id: 7, username: 'ada' },
 };
 
+/** Serves a document as the signed content of game 42, to a reader who is signed out. */
+const serveContent = async (page: Page, doc: Y.Doc): Promise<void> => {
+  const bytes = Buffer.from(Y.encodeStateAsUpdate(doc));
+
+  await page.route('**/auth/refresh', answer(401, {}));
+  await page.route('**/projects/releases/42', answer(200, release));
+  await page.route('**/projects/releases/42/content-url', (route) =>
+    route.fulfill({ json: { signedUrl: 'http://localhost:3001/e2e/game.bin' } }),
+  );
+  await page.route('**/e2e/game.bin', (route) =>
+    route.fulfill({ status: 200, body: bytes, contentType: 'application/octet-stream' }),
+  );
+};
+
 /** A release whose document holds one `main` file, served as the signed content of game 42. */
 export const serveGame = async (
   page: Page,
@@ -43,14 +59,20 @@ export const serveGame = async (
   main.set('text', text);
   text.insert(0, code);
   doc.getMap('code.meta').set('entry', 'main');
-  const bytes = Buffer.from(Y.encodeStateAsUpdate(doc));
 
-  await page.route('**/auth/refresh', answer(401, {}));
-  await page.route('**/projects/releases/42', answer(200, release));
-  await page.route('**/projects/releases/42/content-url', (route) =>
-    route.fulfill({ json: { signedUrl: 'http://localhost:3001/e2e/game.bin' } }),
-  );
-  await page.route('**/e2e/game.bin', (route) =>
-    route.fulfill({ status: 200, body: bytes, contentType: 'application/octet-stream' }),
-  );
+  await serveContent(page, doc);
+};
+
+/** A game of today, on one of the sets of actions an author starts from, served as game 42. */
+export const servePreset = async (
+  page: Page,
+  preset: InputPresetId,
+  edit: (game: EditableGame) => void = () => undefined,
+): Promise<void> => {
+  const game = new EditableGame(new Y.Doc());
+  game.seedDefaults();
+  game.applyPreset(preset);
+  edit(game);
+
+  await serveContent(page, game.doc);
 };
