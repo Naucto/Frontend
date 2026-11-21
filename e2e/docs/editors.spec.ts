@@ -1,8 +1,9 @@
 import { readFileSync } from 'node:fs';
 
-import { type Locator, type Page, test } from '@playwright/test';
+import { type Locator, type Page } from '@playwright/test';
 
 import { mockEditor } from '../editor-mocks';
+import { test } from '../fixtures';
 import { setGamepads } from '../mocks/gamepads';
 import { shoot } from './frame';
 
