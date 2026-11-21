@@ -88,10 +88,11 @@
 
   <section>
     <nc-label class="mb-1">{{ t('controls.touchPad') }}</nc-label>
-    <article
-      class="flat-lg bevel-fill-panel grid grid-cols-[repeat(auto-fit,minmax(min(100%,340px),1fr))] items-center gap-x-3 gap-y-2 p-2">
-      <nc-pad-preview class="w-full max-w-[480px] justify-self-center" />
-      <div class="grid content-start gap-2">
+    <!-- The preview takes its full 480 before the sliders take a share: narrower, its keys are
+         under the 30px that hold their arrows and it would show a pad with blank keys. -->
+    <article class="flat-lg bevel-fill-panel flex flex-wrap items-center gap-x-3 gap-y-2 p-2">
+      <nc-pad-preview class="mx-auto min-w-0 shrink grow-0 basis-[480px]" />
+      <div class="grid min-w-[240px] flex-1 content-start gap-2">
         <nc-slider
           [label]="t('controls.size')"
           [min]="60"
