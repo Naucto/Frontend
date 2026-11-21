@@ -217,7 +217,7 @@ export const GAMES: readonly HubGame[] = CATALOGUE.map(
 
 export const HERO: readonly HeroEntry[] = [
   'Game of the week',
-  'Continue your game',
+  'Continue',
   'Trending',
   'Because you played High Tide Plinko',
 ].map((reason, index) => ({ reason, game: pick(GAMES, index), mine: index === 1 }));
@@ -244,7 +244,7 @@ export function openSessions(now: number): HubSession[] {
       startedAt: new Date(now - (3 + index * 9) * 60_000).toISOString(),
       projectId: game.id,
       projectName: game.name,
-      coverUrl: game.coverUrl,
+      coverUrl: game.coverUrl ?? null,
       hostUsername: roster[0]?.username ?? '',
       roster,
       playerCount: seated,

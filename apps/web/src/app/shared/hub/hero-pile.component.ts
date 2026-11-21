@@ -13,6 +13,7 @@ import {
 import { TranslocoDirective } from '@jsverse/transloco';
 import {
   AvatarComponent,
+  ChipComponent,
   FitTextDirective,
   formatCompact,
   PagerComponent,
@@ -29,7 +30,7 @@ export interface HeroEntry {
   /** Why this game is here, as the line above its name. */
   reason: string;
   game: HubGame;
-  /** The viewer's own game, which needs no byline. */
+  /** The viewer's own game: said beside the reason, and in no need of a byline. */
   mine?: boolean;
 }
 
@@ -63,6 +64,7 @@ interface Swipe {
   imports: [
     TranslocoDirective,
     AvatarComponent,
+    ChipComponent,
     FitTextDirective,
     FloppyComponent,
     HeroBackdropComponent,

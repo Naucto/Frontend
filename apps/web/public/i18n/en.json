@@ -240,7 +240,8 @@
       "label": "Featured games",
       "play": "Play {{name}}",
       "show": "Show {{name}}",
-      "status": "{{index}} of {{count}}: {{name}}, by {{author}}, {{plays}} plays. {{description}}"
+      "status": "{{index}} of {{count}}: {{name}}, by {{author}}, {{plays}} plays. {{description}}",
+      "yours": "Your game"
     },
     "session": {
       "started": "Started {{when}} ago",

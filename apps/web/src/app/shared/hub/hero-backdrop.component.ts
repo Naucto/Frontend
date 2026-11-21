@@ -23,7 +23,8 @@ const CLIP_PATIENCE = 1200;
 
 /**
  * What lies behind the hero: the cover of the game in front, or its clip playing silently, cut by
- * a dither that leaves the text side clear and dissolves into what follows.
+ * a dither that leaves the text clear, beside the pile or above it, and dissolves into what
+ * follows.
  *
  * Two layers stay in place. The next picture loads in the one underneath, and only once it has
  * something to show does that layer come to the front, through a dither, over the one still
@@ -121,7 +122,11 @@ export class HeroBackdropComponent {
     });
 
     const observer = new ResizeObserver(() => {
-      const url = heroMask(host.clientWidth, host.clientHeight);
+      // The hero around it is a grid that folds to one column, the text above the pile.
+      const columns = host.parentElement
+        ? getComputedStyle(host.parentElement).gridTemplateColumns.split(' ').length
+        : 2;
+      const url = heroMask(host.clientWidth, host.clientHeight, columns < 2);
       if (url) {
         this.mask.set(`url(${url})`);
         this.maskSize.set(`${String(host.clientWidth)}px ${String(host.clientHeight)}px`);

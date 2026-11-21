@@ -8,11 +8,14 @@
   <nc-floppy
     info="bandBottom"
     [disk]="disk()"
-    [cover]="game().coverUrl"
+    [cover]="game().coverUrl ?? null"
     [preview]="game().clipUrl ?? null"
     [by]="game().creator.username"
     [likes]="game().likes"
     [comments]="game().commentCount ?? null"
     [action]="action()"
     [open]="open()" />
+  @if (named()) {
+    <nc-disk-name>{{ game().name }}</nc-disk-name>
+  }
 </a>
