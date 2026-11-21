@@ -127,9 +127,13 @@
           </div>
         }
       </div>
-      <nc-how-to-play
-        class="mt-0.25 border-t-3 border-line pt-2.25 lg:-mx-2.5 lg:px-2.5"
-        [declared]="declaredActions()" />
+      @if (game()?.actions; as actions) {
+        @if (actions.length) {
+          <nc-how-to-play
+            class="mt-0.25 border-t-3 border-line pt-2.25 lg:-mx-2.5 lg:px-2.5"
+            [actions]="actions" />
+        }
+      }
       @if (remixes().length) {
         <div class="mt-0.25 border-t-3 border-line pt-2.25 lg:-mx-2.5 lg:px-2.5">
           <nc-label class="mb-1">{{ t('game.remixesOf') }}</nc-label>

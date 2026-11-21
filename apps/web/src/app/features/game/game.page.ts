@@ -317,9 +317,6 @@ export default class GamePage {
     this.descClamped.set(el.scrollHeight > el.clientHeight + 1);
   }
 
-  /** What the game calls its actions, read from the document so the panel is right before a run. */
-  protected readonly declaredActions = computed(() => this.game()?.declaredActions ?? []);
-
   protected count(count: number): string {
     return formatCount(count);
   }

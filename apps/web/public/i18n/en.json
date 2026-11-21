@@ -99,12 +99,7 @@
       "light": "Light",
       "system": "System"
     },
-    "action": "Action",
-    "keyboard": "Keyboard",
-    "gamepad": "Gamepad",
-    "pressKey": "Press a key…",
     "resetDefaults": "Reset to defaults",
-    "player": "Player {{n}}",
     "connected": "Connected",
     "noPad": "No gamepad",
     "slot": "Slot P{{n}}",
@@ -130,13 +125,6 @@
     "autoRunDefault": "Start new sessions with auto-run on",
     "snap": "Sound snap",
     "snapHint": "Snap notes to the grid by default",
-    "controlsIntroBefore": "The game reads",
-    "controlsIntroAfter": "and never cares how you press it. Rebind anything here — a keycap to change it, × to drop it.",
-    "rebindKey": "Rebind {{key}}",
-    "addKey": "Add a key",
-    "pressButton": "Press a button",
-    "rebindPad": "Rebind the gamepad button",
-    "escapeCancels": "Escape cancels",
     "padLayout": "Touch pad layout",
     "padSize": "Size",
     "padOpacity": "Opacity",
@@ -402,6 +390,36 @@
       "failed": "Could not save the collection. Try again."
     }
   },
+  "input": {
+    "or": "or",
+    "player": "Player {{n}}",
+    "gamepad": "Gamepad",
+    "key": {
+      "space": "Space",
+      "escape": "Esc",
+      "enter": "Enter",
+      "shift": "Shift",
+      "control": "Ctrl",
+      "alt": "Alt",
+      "meta": "Meta",
+      "tab": "Tab",
+      "backspace": "Bksp",
+      "delete": "Del",
+      "capsLock": "Caps"
+    },
+    "pad": {
+      "dpad": "D-pad",
+      "stick": "Stick",
+      "start": "Start",
+      "select": "Select"
+    },
+    "direction": {
+      "up": "up",
+      "down": "down",
+      "left": "left",
+      "right": "right"
+    }
+  },
   "game": {
     "haltedTitle": "The game stopped on an error",
     "haltedRestart": "Restart",
@@ -415,8 +433,6 @@
     "remixed": "Remixed into your games",
     "edit": "Edit",
     "howToPlay": "How to play",
-    "gamepad": "d-pad + A",
-    "readFromMap": "Read from the game's action map",
     "moreFrom": "More from {{name}}",
     "similar": "Similar",
     "loadFailedTitle": "This game would not start",
@@ -520,8 +536,19 @@
       "descriptionPlaceholder": "The long version. Markdown is fine.",
       "tags": "Tags",
       "tagPlaceholder": "Type a tag and press enter",
-      "controls": "Controls",
-      "controlsHelp": "The console has nine actions. Name the ones your game uses, so the controls settings and the game's page show your words.\n\nLeave the rest empty.",
+      "inputs": "Inputs",
+      "inputsHelp": "An action is what your code reads with input.held(\"name\"), and each one lists the keys and the gamepad controls that press it.\n\nEvery player gets the inputs set here.",
+      "presets": "Start from",
+      "preset": {
+        "classic": "Classic",
+        "platformer": "Platformer",
+        "top-down": "Top-down",
+        "two-players": "Two players"
+      },
+      "presetConfirmTitle": "Start from {{preset}}?",
+      "presetConfirmHint": "Every action of the game is replaced by the preset's.\n\nCode that reads an action the preset does not have stops answering.",
+      "presetConfirm": "Replace the actions",
+      "noActions": "This game has no actions.",
       "publishing": "Publishing",
       "export": "Export",
       "delete": "Delete",

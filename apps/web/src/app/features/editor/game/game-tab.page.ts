@@ -1,13 +1,6 @@
 import { SlicePipe } from '@angular/common';
 import type { OnInit } from '@angular/core';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  DestroyRef,
-  inject,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
@@ -18,7 +11,7 @@ import {
   type ProjectExResponseDto,
   type UpdateProjectDto,
 } from '@naucto/api-client';
-import { type Action, ACTIONS, KEYS } from '@naucto/engine';
+import { INPUT_PRESET_IDS, type InputPresetId, KEYS } from '@naucto/engine';
 import {
   ButtonDirective,
   DialogService,
@@ -38,12 +31,15 @@ import {
   ToastService,
 } from '@naucto/ui';
 import { QueryClient } from '@tanstack/angular-query-experimental';
-import type * as Y from 'yjs';
 
 import { unwrap } from '../../../core/api/api-errors';
 import { FeaturesService } from '../../../core/config/features.service';
 import { frameToPng } from '../../../shared/game-screen/frame-to-png';
 import { RuntimeHostService } from '../../../shared/game-screen/runtime-host.service';
+import {
+  ActionInputsComponent,
+  usesTwoKeyboards,
+} from '../../../shared/input/action-inputs.component';
 import { PersonSearchComponent } from '../../../shared/person-search.component';
 import { qk } from '../../../shared/queries/query-keys';
 import { injectProjectImage, injectRelease } from '../../../shared/queries/releases.queries';
@@ -63,7 +59,6 @@ import { addCollaborator } from './share.dialog';
 const NAME_MAX = 25;
 const SUMMARY_MAX = 50;
 const DESCRIPTION_MAX = 300;
-const CONTROL_LABEL_MAX = 25;
 type ProjectStatus = ProjectExResponseDto['status'];
 type Monetization = ProjectExResponseDto['monetization'];
 
@@ -76,6 +71,7 @@ const COVER_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
     SlicePipe,
     FormsModule,
     TranslocoDirective,
+    ActionInputsComponent,
     UserAvatarComponent,
     ButtonDirective,
     FieldComponent,
@@ -126,53 +122,24 @@ export default class GameTabPage implements OnInit {
     this.tagsRaw.set(JSON.stringify(tags));
   }
 
-  protected readonly controlLabelMax = CONTROL_LABEL_MAX;
-  private readonly declared = ySignal(
-    () => this.session.game.declaredActions,
-    (cb) => {
-      const meta = this.session.game.meta;
-      const handler = (event: Y.YMapEvent<unknown>): void => {
-        if (event.keysChanged.has('actions')) {
-          cb();
-        }
-      };
-      meta.observe(handler);
-      return () => {
-        meta.unobserve(handler);
-      };
-    },
+  protected readonly presets = INPUT_PRESET_IDS;
+  protected readonly actions = ySignal(
+    () => this.session.game.actions,
+    (cb) => this.session.game.onActionsChange(cb),
   );
-  /**
-   * Labels being typed, shown over the document's until blur or Enter: the document trims, so
-   * echoing it back mid-word would eat the space just typed.
-   */
-  private readonly controlDrafts = signal<Partial<Record<Action, string>>>({});
-  private controlsTimer: ReturnType<typeof setTimeout> | undefined;
-  protected readonly controls = computed(() => {
-    const drafts = this.controlDrafts();
-    const labels = new Map(
-      this.declared().map((declaredAction) => [declaredAction.action, declaredAction.label]),
-    );
-    return ACTIONS.map((action) => ({ action, label: drafts[action] ?? labels.get(action) ?? '' }));
-  });
+  protected readonly twoKeyboards = computed(() => usesTwoKeyboards(this.actions()));
 
-  protected editControl(action: Action, label: string): void {
-    this.controlDrafts.update((prevDrafts) => ({ ...prevDrafts, [action]: label }));
-    clearTimeout(this.controlsTimer);
-    this.controlsTimer = setTimeout(() => {
-      this.writeControls();
-    }, 300);
-  }
-
-  protected commitControls(): void {
-    this.writeControls();
-    this.controlDrafts.set({});
-  }
-
-  private writeControls(): void {
-    clearTimeout(this.controlsTimer);
-    this.controlsTimer = undefined;
-    this.session.game.setDeclaredActions(this.controls());
+  protected async applyPreset(preset: InputPresetId): Promise<void> {
+    // Named first: as an argument its type would be inferred from the untyped parameter bag.
+    const name = this.transloco.translate(`editor.game.preset.${preset}`);
+    const confirmed = await this.dialogs.confirm({
+      title: this.transloco.translate('editor.game.presetConfirmTitle', { preset: name }),
+      message: this.transloco.translate('editor.game.presetConfirmHint'),
+      confirmLabel: this.transloco.translate('editor.game.presetConfirm'),
+    });
+    if (confirmed) {
+      this.session.game.applyPreset(preset);
+    }
   }
 
   protected readonly status = signal<ProjectStatus>('IN_PROGRESS');
@@ -201,15 +168,6 @@ export default class GameTabPage implements OnInit {
 
   protected readonly cover = injectProjectImage(() => this.session.id);
   protected readonly coverAccept = COVER_TYPES.join(',');
-
-  constructor() {
-    // A label still waiting on its debounce when the tab is left is owed to the document.
-    inject(DestroyRef).onDestroy(() => {
-      if (this.controlsTimer !== undefined) {
-        this.writeControls();
-      }
-    });
-  }
 
   ngOnInit(): void {
     const project = this.session.project();

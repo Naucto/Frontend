@@ -1,7 +1,13 @@
+import type { Locator, Page } from '@playwright/test';
+
 import { editorUrl, mockEditor, projectRoute } from '../editor-mocks';
 import { expect, test } from '../fixtures';
 
 test.use({ viewport: { width: 1920, height: 1030 } });
+
+/** The chip in the header, named for the game: the Inputs block has a preset of the same name. */
+const versionsChip = (page: Page): Locator =>
+  page.locator('nc-versions-popover').getByRole('button', { name: 'Platformer' });
 
 test.beforeEach(async ({ page }) => {
   await mockEditor(page);
@@ -15,22 +21,80 @@ test('GAME tab binds the project meta', async ({ page }) => {
 });
 
 /**
- * The names live in the document, not in the tab: leaving for CODE tears the page down, and the
- * word is still there on the way back. Asserted in one page load because the mock holds the
+ * The actions live in the document, not in the tab: leaving for CODE tears the page down, and the
+ * preset is still applied on the way back. Asserted in one page load because the mock holds the
  * document in the page only.
  */
-test('GAME tab names the controls, and the document keeps the name across tabs', async ({
+test('GAME tab lists the actions of the game, and a preset replaces them in the document', async ({
   page,
 }) => {
   await page.goto(editorUrl('game'));
-  const jump = page.getByRole('textbox', { name: 'a', exact: true });
-  await expect(jump).toHaveValue('');
-  await jump.fill('Jump');
-  await jump.press('Enter');
+  const actions = page.getByRole('list', { name: 'Inputs' });
+  await expect(actions.getByRole('listitem')).toHaveCount(9);
+  await expect(actions.getByText('pause', { exact: true })).toBeVisible();
+
+  await page
+    .getByRole('group', { name: 'Start from' })
+    .getByRole('button', { name: 'Platformer' })
+    .click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Replace the actions' }).click();
+  await expect(actions.getByRole('listitem')).toHaveCount(7);
+  await expect(actions.getByText('jump', { exact: true })).toBeVisible();
+
   await page.locator('nc-rail').getByRole('button', { name: 'Code' }).click();
   await expect(page.getByRole('tab', { name: 'main', exact: true })).toBeVisible();
   await page.locator('nc-rail').getByRole('button', { name: 'Game' }).click();
-  await expect(page.getByRole('textbox', { name: 'a', exact: true })).toHaveValue('Jump');
+  await expect(
+    page.getByRole('list', { name: 'Inputs' }).getByText('jump', { exact: true }),
+  ).toBeVisible();
+});
+
+/**
+ * The game is started before the preset is applied and never restarted: it reads the new actions
+ * because the engine follows the document, not because it loaded them.
+ */
+test('a preset applied in the GAME tab is what the running game reads', async ({ page }) => {
+  await page.addInitScript(() => {
+    sessionStorage.setItem(
+      'naucto.seed.7',
+      JSON.stringify({
+        name: 'Tutorial',
+        code: [
+          'function _update()',
+          '  if input.pressed("jump") then print("jumped") end',
+          '  if input.pressed("a") then print("pressed a") end',
+          'end',
+        ].join('\n'),
+      }),
+    );
+  });
+  await page.goto(editorUrl('code'));
+  await page.getByRole('tab', { name: 'main', exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Play' }).first().click();
+  // A key is read at the next step, so it is held for longer than one.
+  const tapSpace = async (): Promise<void> => {
+    await page.locator('nc-game-screen canvas').first().click();
+    await page.keyboard.down('Space');
+    await page.waitForTimeout(100);
+    await page.keyboard.up('Space');
+  };
+  const said = (line: string): Locator => page.locator('nc-console-column').getByText(line);
+  await tapSpace();
+  await expect(said('pressed a')).toHaveCount(1);
+  await expect(said('jumped')).toHaveCount(0);
+
+  await page.locator('nc-rail').getByRole('button', { name: 'Game' }).click();
+  await page
+    .getByRole('group', { name: 'Start from' })
+    .getByRole('button', { name: 'Platformer' })
+    .click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Replace the actions' }).click();
+  await expect(page.getByRole('list', { name: 'Inputs' }).getByRole('listitem')).toHaveCount(7);
+
+  await page.locator('nc-rail').getByRole('button', { name: 'Code' }).click();
+  await tapSpace();
+  await expect(said('jumped')).toHaveCount(1);
+  await expect(said('pressed a')).toHaveCount(1);
 });
 
 test('a collaborator is shown with their picture, not their initial', async ({ page }) => {
@@ -60,7 +124,7 @@ test('an autosave is deleted from the versions panel', async ({ page }) => {
   });
 
   await page.goto(editorUrl('game'));
-  const chip = page.getByRole('button', { name: 'Platformer' });
+  const chip = versionsChip(page);
   // The chip names the newest named version, and this project has none: an autosave coming or
   // going is not something it can show, so it reads the same before and after the delete.
   await expect(chip).toContainText('draft');
@@ -126,7 +190,7 @@ test('a collaborator who is not the host may publish and name a version', async 
   await name.fill('Platformer II');
   await expect(page.getByText('unsaved changes')).toBeVisible();
 
-  await page.getByRole('button', { name: 'Platformer' }).click();
+  await versionsChip(page).click();
   await page.locator('nc-popover-panel').getByRole('button', { name: 'Save a version' }).click();
   const dialog = page.getByRole('dialog', { name: 'Save a version' });
   await dialog.getByRole('textbox', { name: 'Name' }).fill('v1');
@@ -149,7 +213,7 @@ test('the cap on named versions is explained before the save is refused', async 
   });
 
   await page.goto(editorUrl('game'));
-  await page.getByRole('button', { name: 'Platformer' }).click();
+  await versionsChip(page).click();
   await page.locator('nc-popover-panel').getByRole('button', { name: 'Save a version' }).click();
   const dialog = page.getByRole('dialog', { name: 'Save a version' });
   await expect(dialog.getByText('1 of 1 named versions')).toBeVisible();
