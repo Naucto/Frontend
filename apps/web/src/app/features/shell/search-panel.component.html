@@ -28,12 +28,12 @@
             "
             (click)="picked.emit({ kind: 'game', id: entry.game.id })">
             <nc-floppy
-              mode="title"
-              titleAlign="center"
-              [name]="entry.game.name"
               [disk]="entry.disk"
               [cover]="entry.game.coverUrl ?? null"
               [open]="cursor() === i" />
+            <nc-disk-name aria-hidden="true" class="mt-0!">
+              <nc-highlight [text]="entry.game.name" [match]="term" />
+            </nc-disk-name>
             <span
               aria-hidden="true"
               class="flex flex-wrap items-center justify-between gap-x-[6px]">
@@ -101,7 +101,6 @@
           ">
           <nc-floppy
             class="w-[52px] shrink-0"
-            [name]="session.projectName"
             [disk]="entry.disk"
             [cover]="session.coverUrl"
             [interactive]="false" />
