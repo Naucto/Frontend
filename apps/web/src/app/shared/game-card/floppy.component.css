@@ -6,7 +6,8 @@
  * mean something only while the host is `.lit`.
  */
 :host {
-  --f-body: var(--nc-gold);
+  /* A game's disk is handed its colour; the disk that does not exist yet keeps the theme's accent. */
+  --f-body: var(--nc-active-ink);
   --f-edge: color-mix(in srgb, var(--f-body) 50%, black);
   --f-hi: color-mix(in srgb, var(--f-body) 62%, white);
   --f-lo: color-mix(in srgb, var(--f-body) 74%, black);
@@ -570,20 +571,24 @@
 }
 
 /*
- * The disk that is not there yet: the same parts in outline, which give way to a gold disk once it
- * is reached. Inside `.ghost` every shade is the one line colour, so each part is drawn by the
- * rule that draws it on a real disk.
+ * The disk that is not there yet: the same parts in outline, which give way to a disk in the
+ * theme's accent once it is reached. Its window is the page's panel, not a label's dark ground, so
+ * the caption reads on it in either theme. Inside `.ghost` every shade is the one line colour, so
+ * each part is drawn by the rule that draws it on a real disk.
  */
 :host(.new) :is(.edge, .back, .face) {
   opacity: var(--f-on);
   transition: opacity 200ms;
+}
+:host(.new) .cover {
+  background-color: var(--nc-panel);
 }
 .ghost {
   --f-edge: currentColor;
   --f-lo: currentColor;
   --f-tab: currentColor;
   box-shadow: inset 0 0 0 3px currentColor;
-  color: var(--nc-gold-ink);
+  color: var(--nc-active-ink);
   opacity: calc(1 - var(--f-on));
   pointer-events: none;
   transition: opacity 200ms;
@@ -649,14 +654,13 @@
   align-items: center;
   justify-content: center;
   gap: 2cqw;
-  color: color-mix(in srgb, var(--nc-gold) calc(var(--f-on) * 100%), var(--nc-gold-ink));
+  color: var(--nc-active-ink);
   font-family: var(--font-ui);
   font-size: max(10px, round(5.6cqw, 1px));
   line-height: 1;
   letter-spacing: 0.06em;
   text-align: center;
   text-transform: uppercase;
-  transition: color 180ms;
 }
 .caption nc-icon {
   width: max(24px, round(16cqw, 24px));
