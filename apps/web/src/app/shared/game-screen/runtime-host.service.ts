@@ -5,11 +5,10 @@ import {
   Engine,
   type EngineError,
   type EngineFault,
+  type EngineOptions,
   type EngineState,
   GamepadSource,
   KeyboardSource,
-  type NetPermissions,
-  type NetUi,
   SoundEngine,
   TouchSource,
   WebAudioBackend,
@@ -81,7 +80,7 @@ export class RuntimeHostService {
   mount(
     canvas: HTMLCanvasElement,
     game: Game,
-    opts: { netUi?: NetUi; netPermissions?: NetPermissions } = {},
+    opts: Pick<EngineOptions, 'netUi' | 'netPermissions' | 'netInvite'> = {},
   ): Engine {
     this.destroy();
     this.canvas.set(canvas);
@@ -96,8 +95,7 @@ export class RuntimeHostService {
       sound: this.sound,
       inputs: [new KeyboardSource(), gamepad],
       inputTarget: canvas,
-      netUi: opts.netUi,
-      netPermissions: opts.netPermissions,
+      ...opts,
     });
     this.engine = engine;
     this.active.claim(this);

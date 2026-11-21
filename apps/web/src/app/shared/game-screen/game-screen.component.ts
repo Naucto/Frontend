@@ -8,6 +8,7 @@ import {
   effect,
   inject,
   input,
+  linkedSignal,
   Optional,
   output,
   signal,
@@ -23,9 +24,15 @@ import {
   DialogService,
   ErrorStateComponent,
   IconComponent,
+  ToastService,
 } from '@naucto/ui';
 
-import { NetUiBridgeService } from '../../core/net/net-bridge.service';
+import { ApiError } from '../../core/api/api-errors';
+import {
+  type NetRequest,
+  NetUiBridgeService,
+  type SessionInvite,
+} from '../../core/net/net-bridge.service';
 import { netPermissionsOf } from '../../core/net/net-permissions';
 import { ThemeService } from '../../core/theme/theme.service';
 import { SignedInAction } from '../auth/signed-in-action';
@@ -115,11 +122,17 @@ export class GameScreenComponent {
   readonly autoPlay = input(false);
   /** Backend project id, needed to host or join netplay sessions. */
   readonly projectId = input<number | null>(null);
-  /** Test rig: when the mounted game calls `net.join()`, join this session straight away instead of asking the player which one. */
-  readonly autoJoin = input<{ uuid: string; code: string | null } | null>(null);
+  /**
+   * The session this screen was opened on. The mounted game reads it with `net.invite()`, and its
+   * `net.join()` enters it straight away instead of asking the player which one.
+   */
+  readonly invite = input<SessionInvite | null>(null);
   /** Rooms hosted from this screen are the editor testing its own game, not the game being played. */
   readonly editorTest = input(false, { transform: booleanAttribute });
   readonly mounted = output();
+  readonly inviteJoined = output();
+  /** The invite leads nowhere any more: its session was left, ended, or would not let the player in. */
+  readonly inviteClosed = output();
   /** True while this screen — not some other one on the page — owns the fullscreen element. */
   protected readonly isFullscreen = signal(false);
   protected readonly frameClass = computed(() =>
@@ -143,7 +156,17 @@ export class GameScreenComponent {
   private readonly dialogs = inject(DialogService);
   private readonly signedIn = inject(SignedInAction);
   private readonly theme = inject(ThemeService);
-  protected readonly canvasLabel = inject(TranslocoService).translate('game.screen.canvas');
+  private readonly toasts = inject(ToastService);
+  private readonly transloco = inject(TranslocoService);
+  protected readonly canvasLabel = this.transloco.translate('game.screen.canvas');
+  /**
+   * The invite while its session may still be entered. It ends here, before whoever gave it hears,
+   * the moment the session is left, ended or refuses the player: the game may ask again within the
+   * same step.
+   */
+  private readonly open = linkedSignal(() => this.invite());
+  /** Play was pressed while the session this screen was opened on was still unknown. */
+  private readonly starting = signal(false);
   protected readonly showCpu = computed(() => this.debug());
   /**
    * Hidden while idle: there is nothing to count until the game runs, and the play overlay already
@@ -191,6 +214,9 @@ export class GameScreenComponent {
         this.host.mount(canvas, game, {
           netUi: this.bridge,
           netPermissions: netPermissionsOf(game),
+          // Nothing while in a session: what the game reads says whether its next `net.join()`
+          // goes straight in.
+          netInvite: () => (this.bridge.session() ? null : (this.open()?.session ?? null)),
         });
         this.mounted.emit();
         if (this.autoPlay()) {
@@ -241,35 +267,12 @@ export class GameScreenComponent {
         // game that made it waits on it forever.
         this.signedIn.run(
           () => {
-            const target = this.autoJoin();
-            if (target && req.kind === 'join') {
-              void this.bridge
-                .joinSession(target.uuid, target.code ?? undefined, true)
-                .catch(() => {
-                  this.bridge.cancel();
-                });
-              return;
+            const invite = this.open();
+            if (invite && req.kind === 'join') {
+              this.enter(invite, req, projectId);
+            } else {
+              this.ask(req, projectId);
             }
-            const ref =
-              req.kind === 'host'
-                ? this.dialogs.open(HostDialogComponent, {
-                    width: '400px',
-                    data: {
-                      bridge: this.bridge,
-                      projectId,
-                      options: req.hostOptions ?? { maxPlayers: 2 },
-                      editorTest: this.editorTest(),
-                    } satisfies HostDialogData,
-                  })
-                : this.dialogs.open(JoinDialogComponent, {
-                    width: '400px',
-                    data: { bridge: this.bridge, projectId },
-                  });
-            ref.closed.subscribe((ok) => {
-              if (!ok) {
-                this.bridge.cancel();
-              }
-            });
           },
           () => {
             this.bridge.cancel();
@@ -277,6 +280,78 @@ export class GameScreenComponent {
         );
       });
     });
+    // The editor's second client has only its host's room to go to, so its invite never ends.
+    this.bridge.onDeparted((uuid) => {
+      if (uuid === this.open()?.uuid && !this.editorTest()) {
+        this.close();
+      }
+    });
+    effect(() => {
+      const invite = this.open();
+      if (this.starting() && (!invite || invite.session !== undefined)) {
+        untracked(() => {
+          this.starting.set(false);
+          this.start();
+        });
+      }
+    });
+  }
+
+  private close(): void {
+    this.open.set(null);
+    this.inviteClosed.emit();
+  }
+
+  private ask(req: NetRequest, projectId: number): void {
+    const ref =
+      req.kind === 'host'
+        ? this.dialogs.open(HostDialogComponent, {
+            width: '400px',
+            data: {
+              bridge: this.bridge,
+              projectId,
+              options: req.hostOptions ?? { maxPlayers: 2 },
+              editorTest: this.editorTest(),
+            } satisfies HostDialogData,
+          })
+        : this.dialogs.open(JoinDialogComponent, {
+            width: '400px',
+            data: { bridge: this.bridge, projectId },
+          });
+    ref.closed.subscribe((ok) => {
+      if (!ok) {
+        this.bridge.cancel();
+      }
+    });
+  }
+
+  /**
+   * Joins the session the screen was opened on. One that will not have the player says why and
+   * gives way to the dialog, where another can be picked; for the editor's second client the
+   * request ends there.
+   */
+  private enter(invite: SessionInvite, req: NetRequest, projectId: number): void {
+    this.bridge.joinSession(invite.uuid, invite.code ?? undefined, this.editorTest()).then(
+      () => {
+        this.inviteJoined.emit();
+      },
+      (error: unknown) => {
+        this.toasts.show(
+          error instanceof ApiError && error.status === 404
+            ? this.transloco.translate('net.invite.ended')
+            : error instanceof Error
+              ? error.message
+              : this.transloco.translate('net.join.failed'),
+          'error',
+        );
+        if (this.editorTest()) {
+          this.bridge.cancel();
+        } else {
+          this.close();
+          this.ask(req, projectId);
+        }
+      },
+    );
   }
 
   get runtime(): RuntimeHostService {
@@ -307,9 +382,35 @@ export class GameScreenComponent {
    * Starting the game hands it the keyboard: the canvas is what listens, and the click left focus
    * on the button.
    */
-  play(): void {
+  private start(): void {
     this.host.play();
     this.focus();
+  }
+
+  /**
+   * A game opened on a session reads that session in `_init`, so it starts once the session is
+   * known, which takes an account. Declining the account starts the game without it.
+   */
+  play(): void {
+    const invite = this.open();
+    if (invite && invite.session === undefined) {
+      this.signedIn.run(
+        () => {
+          this.starting.set(true);
+        },
+        () => {
+          this.start();
+        },
+      );
+      return;
+    }
+    this.start();
+  }
+
+  /** Starts the game without the session the screen was opened on. */
+  playAlone(): void {
+    this.close();
+    this.start();
   }
 
   resume(): void {

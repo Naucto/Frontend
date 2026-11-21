@@ -1,0 +1,46 @@
+<ng-container *transloco="let t">
+  @let known = cameFor();
+  <!-- The session takes the first row and gives the way out the next one when both do not fit. -->
+  <div class="flex min-w-0 flex-1 basis-[240px] items-center gap-1.5">
+    @switch (known.state) {
+      @case ('open') {
+        <nc-user-avatar
+          [name]="known.session.hostNickname ?? known.session.hostUsername"
+          [userId]="known.session.hostId"
+          [size]="30" />
+        <span class="min-w-0 truncate text-ui text-ink">{{ known.session.title }}</span>
+        <!-- On a phone the avatar alone says who hosts: the row is the title's. -->
+        <span class="label min-w-0 shrink-[8] truncate text-ink-3 max-sm:hidden">
+          {{
+            t('net.join.hostedBy', {
+              name: known.session.hostNickname ?? known.session.hostUsername,
+            })
+          }}
+        </span>
+        <nc-chip
+          class="shrink-0"
+          [tone]="known.session.playerCount < known.session.maxPlayers ? 'sky' : 'neutral'">
+          {{
+            t('net.invite.seats', {
+              players: known.session.playerCount,
+              max: known.session.maxPlayers,
+            })
+          }}
+        </nc-chip>
+      }
+      @case ('ended') {
+        <span class="text-ui text-ink-2">{{ t('net.invite.ended') }}</span>
+      }
+      @case ('unknown') {
+        @if (known.signedOut) {
+          <button ncButton type="button" variant="sky" size="sm" (click)="signIn.emit()">
+            {{ t('net.invite.signIn') }}
+          </button>
+        }
+      }
+    }
+  </div>
+  <button ncButton type="button" variant="ghost" size="sm" class="ml-auto" (click)="alone.emit()">
+    {{ t('net.invite.alone') }}
+  </button>
+</ng-container>

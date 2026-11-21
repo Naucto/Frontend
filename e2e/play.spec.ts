@@ -1,7 +1,7 @@
 import { expect, test } from './fixtures';
 import { release, serveGame, servePreset } from './mocks/game';
 import { setGamepads } from './mocks/gamepads';
-import { answer } from './mocks/session';
+import { answer, mockSignedIn } from './mocks/session';
 
 test.describe('play page', () => {
   test.beforeEach(async ({ page }) => {
@@ -357,4 +357,58 @@ test('a game saved before it had actions of its own answers to the keys it alway
   await page.keyboard.down('Space');
   await expect(alert).toContainText('player one pressed a');
   await page.keyboard.up('Space');
+});
+
+/**
+ * A room is created reached by its code, which is what mints the code, and listed right after: the
+ * host dialog then shows both the code and the switch on.
+ */
+test('a game that asks for a listed room gets one, and the host dialog says so', async ({
+  page,
+}) => {
+  const uuid = '5b1d2a0e-93c4-4f6e-8a57-0c7de1f2a934';
+  const asked: unknown[] = [];
+  await serveGame(
+    page,
+    'function _init()\n  net.host({ listed = true, title = "Friday night" })\nend',
+  );
+  await mockSignedIn(page);
+  await page.route('**/game-sessions', (route) => {
+    asked.push(route.request().postDataJSON());
+    return answer(201, {
+      sessionUuid: uuid,
+      playerId: 1,
+      joinCode: 'ABCD2345',
+      connectionTicket: 'ticket',
+      webrtcConfig: {
+        signaling: ['ws://localhost/e2e-game-socket'],
+        peerOpts: { config: { iceServers: [] } },
+      },
+    })(route);
+  });
+  await page.route(`**/game-sessions/${uuid}`, (route) => {
+    if (route.request().method() === 'PATCH') {
+      asked.push(route.request().postDataJSON());
+    }
+    return answer(200, { sessionUuid: uuid, visibility: 'PUBLIC' })(route);
+  });
+  await page.routeWebSocket(/e2e-game-socket/, () => undefined);
+
+  await page.goto('/play/42');
+  await page.getByRole('button', { name: 'Play' }).first().click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Start hosting' }).click();
+
+  await expect(dialog.getByRole('switch', { name: 'Listed in browse' })).toBeChecked();
+  await expect(dialog).toContainText('ABCD2345');
+  expect(asked).toEqual([
+    {
+      projectId: 42,
+      title: 'Friday night',
+      maxPlayers: 2,
+      visibility: 'INVITE_CODE',
+      editorTest: false,
+    },
+    { visibility: 'PUBLIC' },
+  ]);
 });
