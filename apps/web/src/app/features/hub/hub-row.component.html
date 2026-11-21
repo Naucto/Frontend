@@ -35,9 +35,8 @@
         <p class="col-span-full text-body text-hot-ink">{{ t('hub.rowError') }}</p>
       }
       @default {
-        <ng-content select="[lead]" />
         @for (game of games(); track game.id) {
-          <nc-game-disk [game]="game" [opensEditor]="opensEditor()" />
+          <nc-game-disk [game]="game" />
         } @empty {
           <!-- A shelf that reserves room keeps the copy to one cell rather than a row of its
                own: the cells the ghosts fill behind it are what hold the height. -->
