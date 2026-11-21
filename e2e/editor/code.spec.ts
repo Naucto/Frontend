@@ -69,11 +69,11 @@ test('the screen is not mirrored top to bottom', async ({ page }) => {
 test('a reload opens the editor with the viewer docked', async ({ page }) => {
   await page.goto(editorUrl('code'));
   await page.getByRole('button', { name: 'Pop the viewer out' }).click();
-  await expect(page.getByText('Viewer', { exact: true })).toBeVisible();
+  await expect(page.locator('.nc-pip')).toBeVisible();
 
   await page.reload();
   await expect(page.getByRole('button', { name: 'Pop the viewer out' })).toBeVisible();
-  await expect(page.getByText('Viewer', { exact: true })).toHaveCount(0);
+  await expect(page.locator('.nc-pip')).toHaveCount(0);
 });
 
 /**
@@ -88,13 +88,13 @@ test('the reference opens beside the game when there is room', async ({ page }) 
 
   // Closed: the console column has the screen and there is no reference.
   await expect(page.locator('nc-doc-pane')).toHaveCount(0);
-  await expect(page.getByText('320×180').first()).toBeVisible();
+  await expect(page.getByText('Game preview').first()).toBeVisible();
 
   await page.keyboard.press('F1');
 
   // Split: both. The game is NOT displaced — that is the whole point.
   await expect(page.locator('nc-doc-pane')).toBeVisible();
-  await expect(page.getByText('320×180').first()).toBeVisible();
+  await expect(page.getByText('Game preview').first()).toBeVisible();
   await expect(page.getByText('Game paused — swap back to resume')).toHaveCount(0);
 
   // Beside, not above: a runtime-built grid class Tailwind never generated stacks the columns.
@@ -201,7 +201,7 @@ test('the sidebar swaps both ways where there is room for one', async ({ page })
 
   await page.getByRole('button', { name: 'Swap back to the game' }).click();
   await expect(page.locator('nc-doc-pane')).toHaveCount(0);
-  await expect(page.getByText('320×180').first()).toBeVisible();
+  await expect(page.getByText('Game preview').first()).toBeVisible();
 });
 
 test('the console grip unfolds the reference where both fit', async ({ page }) => {
@@ -214,7 +214,7 @@ test('the console grip unfolds the reference where both fit', async ({ page }) =
 
   await expect(page.locator('nc-doc-pane')).toBeVisible();
   // Beside, not instead: the running game is still there.
-  await expect(page.getByText('320×180').first()).toBeVisible();
+  await expect(page.getByText('Game preview').first()).toBeVisible();
 });
 
 test('the reference stays on CODE and does not follow the reader to a canvas', async ({ page }) => {
@@ -251,7 +251,7 @@ test('the reference is closed from its own edge, not from a tab', async ({ page 
 
   await page.getByRole('button', { name: 'Close the reference' }).click();
   await expect(page.locator('nc-doc-pane')).toHaveCount(0);
-  await expect(page.getByText('320×180').first()).toBeVisible();
+  await expect(page.getByText('Game preview').first()).toBeVisible();
 });
 
 test('typing does not put the editor into a syncing state', async ({ page }) => {
@@ -602,6 +602,7 @@ test('the transport keeps its controls and fullscreen buttons inside the console
 
   const [track, gear, last] = [await boxOf(column), await boxOf(controls), await boxOf(fullscreen)];
   expect(gear.x).toBeGreaterThanOrEqual(track.x);
-  expect(gear.x + gear.width).toBeLessThanOrEqual(last.x);
+  // The two are joined: the gear ends on the pixel the fullscreen button starts with.
+  expect(gear.x + gear.width).toBe(last.x + 3);
   expect(last.x + last.width).toBeLessThanOrEqual(track.x + track.width);
 });
