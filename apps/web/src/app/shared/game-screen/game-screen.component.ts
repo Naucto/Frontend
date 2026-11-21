@@ -16,7 +16,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
-import { type Game } from '@naucto/engine';
+import { type Game, type TouchControl, touchControlsOf } from '@naucto/engine';
 import {
   ButtonDirective,
   ChipComponent,
@@ -173,7 +173,11 @@ export class GameScreenComponent {
   private readonly frame = viewChild.required<ElementRef<HTMLElement>>('frame');
   private readonly padZone = viewChild<VirtualPadComponent>('padZone');
   private readonly padOverlay = viewChild<VirtualPadComponent>('padOverlay');
-  protected readonly showPad = coarsePointer();
+  /**
+   * The controls of the on-screen pad: those the mounted game uses, followed as its actions
+   * change, and none on a device with a fine pointer, where the pad is not drawn.
+   */
+  protected readonly padControls = signal<readonly TouchControl[]>([]);
   protected readonly padList = signal<{ index: number; id: string; player: number }[]>([]);
 
   constructor() {
@@ -212,10 +216,21 @@ export class GameScreenComponent {
         }
       });
     });
+    effect((onCleanup) => {
+      const game = this.game();
+      if (!game || !coarsePointer()) {
+        return;
+      }
+      const read = (): void => {
+        this.padControls.set(touchControlsOf(game.actions));
+      };
+      read();
+      onCleanup(game.onActionsChange(read));
+    });
     // Both layouts are in the DOM at once (CSS picks one), so both are attached: TouchSource
     // hit-tests, and the hidden one can never be hit.
     effect((onCleanup) => {
-      if (!this.game() || !this.showPad) {
+      if (!this.game()) {
         return;
       }
       const roots = [this.padZone()?.element, this.padOverlay()?.element].filter(

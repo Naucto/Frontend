@@ -56,12 +56,16 @@
       </div>
     }
     <span class="scanlines pointer-events-none absolute inset-0"></span>
-    @if (showPad) {
-      <nc-virtual-pad #padOverlay [overlay]="true" class="hidden landscape:block" />
+    @if (padControls().length) {
+      <nc-virtual-pad
+        #padOverlay
+        [controls]="padControls()"
+        [overlay]="true"
+        class="hidden landscape:block" />
     }
   </div>
-  @if (showPad) {
-    <nc-virtual-pad #padZone class="block landscape:hidden" />
+  @if (padControls().length) {
+    <nc-virtual-pad #padZone [controls]="padControls()" class="block landscape:hidden" />
   }
   @if (transport()) {
     <div [class]="transportClass()" *transloco="let t">
