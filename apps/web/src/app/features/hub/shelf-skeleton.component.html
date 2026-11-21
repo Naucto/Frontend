@@ -1,0 +1,7 @@
+<nc-skeleton class="text-[28px]" [words]="[8]" />
+<div
+  class="mx-[max(-92px,calc(4px-var(--nc-page-gutter,0px)))] mt-[18px] grid auto-rows-[0px] grid-cols-[repeat(auto-fill,minmax(min(220px,calc(50%-8px)),1fr))] grid-rows-[auto] gap-x-[16px] overflow-hidden px-[92px]">
+  @for (disk of disks; track disk) {
+    <nc-skeleton class="aspect-[1/1.02]" height="auto" />
+  }
+</div>

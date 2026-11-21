@@ -1,0 +1,102 @@
+<ng-container *transloco="let t">
+  <div class="grid gap-[14px]">
+    <a ncButton variant="ghost" class="w-fit" routerLink="/hub">
+      <nc-mark name="chevron-left" />
+      {{ t('hub.results.back') }}
+    </a>
+    <span class="text-label tracking-kicker text-gold-ink uppercase">
+      {{ t('hub.results.kicker.' + head().kicker) }}
+    </span>
+    <div class="flex flex-wrap items-center gap-[14px]">
+      <h2 class="min-w-0 font-display text-[40px] leading-[1.05] break-words text-ink">
+        {{ head().title }}
+      </h2>
+      @if (pages.isSuccess()) {
+        <nc-chip data-testid="results-count">{{ total() }}</nc-chip>
+      }
+    </div>
+  </div>
+
+  <div class="flex flex-wrap items-center justify-end gap-[12px]">
+    <span class="label" aria-hidden="true">{{ t('hub.results.sort.label') }}</span>
+    <nc-segmented
+      variant="chips"
+      [options]="orders()"
+      [label]="t('hub.results.sort.name')"
+      [(value)]="order" />
+  </div>
+
+  @if (pages.isSuccess()) {
+    @for (group of groups(); track group.tag) {
+      <section
+        class="flat-lg grid gap-[20px] bevel-fill-panel p-[22px]"
+        [attr.aria-labelledby]="'results-' + $index">
+        <div class="flex items-center gap-[14px]">
+          <h3 class="font-display text-[22px] leading-[1.2] text-ink" [id]="'results-' + $index">
+            {{ group.label }}
+          </h3>
+          <nc-chip>{{ group.games.length }}</nc-chip>
+        </div>
+        <div
+          class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,190px),1fr))] gap-x-[22px] gap-y-[26px]">
+          @for (game of group.games; track game.id) {
+            <nc-shelf-disk
+              titled
+              class="relative z-[1] min-w-0 hover:z-[60]"
+              [link]="['/play', game.id]"
+              [game]="game" />
+          }
+        </div>
+      </section>
+    } @empty {
+      <nc-empty-state
+        class="flat-lg bevel-fill-panel py-[48px]"
+        icon="save"
+        [title]="t('hub.results.empty')">
+        @if (suggested.data(); as tags) {
+          <div class="flex flex-wrap justify-center gap-[8px]">
+            @for (tag of tags; track tag) {
+              <a
+                ncButton
+                size="sm"
+                class="normal-case!"
+                routerLink="/hub"
+                [queryParams]="{ tags: tag }">
+                #{{ tag }}
+              </a>
+            }
+          </div>
+        }
+        <a ncButton variant="primary" size="lg" routerLink="/games/new">
+          <nc-icon name="plus" [size]="24" />
+          {{ t('hub.results.make') }}
+        </a>
+      </nc-empty-state>
+    }
+    @if (pages.hasNextPage()) {
+      <button
+        ncButton
+        class="justify-self-center"
+        [disabled]="pages.isFetchingNextPage()"
+        (click)="pages.fetchNextPage()">
+        {{ t('hub.results.more', { n: left() }) }}
+      </button>
+    }
+  } @else if (pages.isError()) {
+    <nc-error-state
+      class="flat-lg bevel-fill-panel"
+      [title]="t('hub.results.errorTitle')"
+      [retryLabel]="t('game.retry')"
+      (retry)="pages.refetch()" />
+  } @else {
+    <div aria-hidden="true" class="flat-lg grid gap-[20px] bevel-fill-panel p-[22px]">
+      <nc-skeleton class="text-[22px]" [words]="[7]" />
+      <div
+        class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,190px),1fr))] gap-x-[22px] gap-y-[26px]">
+        @for (place of placeholders; track place) {
+          <nc-skeleton class="aspect-[1/1.02]" height="auto" />
+        }
+      </div>
+    </div>
+  }
+</ng-container>

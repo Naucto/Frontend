@@ -46,11 +46,7 @@ export const routes: Routes = [
         loadComponent: () => import('./features/hub/hub.page'),
         title: 'Naucto',
       },
-      {
-        path: 'hub/all/:row',
-        loadComponent: () => import('./features/hub/see-all.page'),
-        title: 'Naucto',
-      },
+      { path: 'hub/all/:row', redirectTo: ({ params }) => `/hub?shelf=${String(params.row)}` },
       {
         path: 'play/:id',
         loadComponent: () => import('./features/game/game.page'),

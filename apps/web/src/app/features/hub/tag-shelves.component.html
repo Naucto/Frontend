@@ -1,0 +1,17 @@
+<ng-container *transloco="let t">
+  @if (shelves.data(); as loaded) {
+    @for (shelf of loaded; track shelf.key) {
+      <nc-hub-shelf [shelf]="shelf" />
+    }
+  } @else if (shelves.isError()) {
+    <nc-error-state
+      tone="neutral"
+      [title]="t('hub.shelvesError')"
+      [retryLabel]="t('game.retry')"
+      (retry)="shelves.refetch()" />
+  } @else {
+    @for (key of keys(); track key) {
+      <nc-shelf-skeleton />
+    }
+  }
+</ng-container>
