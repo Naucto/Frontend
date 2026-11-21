@@ -76,11 +76,7 @@
                 class="absolute top-0 w-[140px]"
                 [style.left]="item.left"
                 [style.z-index]="place + 1">
-                <nc-floppy
-                  [name]="item.game.name"
-                  [disk]="item.disk"
-                  [cover]="item.game.coverUrl"
-                  [interactive]="false" />
+                <nc-floppy [disk]="item.disk" [cover]="item.game.coverUrl" [interactive]="false" />
               </span>
             }
             @if (hero().more; as more) {
@@ -182,7 +178,7 @@
                     (checkedChange)="pick(game.id, $event)" />
                 }
               </div>
-              <nc-shelf-disk titled [game]="game" [link]="['/play', game.id]" />
+              <nc-shelf-disk named [game]="game" [link]="['/play', game.id]" />
             </li>
           }
         </ol>
