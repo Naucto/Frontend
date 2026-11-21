@@ -22,21 +22,21 @@ icons drawn on the kit pixel, Bubblegum-16 palette, dark + light themes).
 
 ## Commands (run from the repo root)
 
-| Command                                   | Purpose                                                                                                                     |
-| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `npm install`                             | Install all workspaces; generates `@naucto/api-client` from `openapi.json`.                                                 |
-| `npm start`                               | Angular dev server on `http://localhost:3001`.                                                                              |
-| `npm run build`                           | Production build of every workspace.                                                                                        |
-| `npm run lint` / `npm run lint:fix`       | ESLint (flat config) over the whole repo.                                                                                   |
-| `npm run format` / `npm run format:check` | Prettier.                                                                                                                   |
-| `npm run typecheck`                       | `tsc --noEmit` per workspace.                                                                                               |
-| `npm test`                                | Vitest in every workspace (`ng test` for the app).                                                                          |
-| `npm run e2e`                             | Playwright (starts the dev server unless `E2E_BASE_URL` is set).                                                            |
-| `npm run pixel:check`                     | Fails on rounded corners, off-pixel strokes, density tokens, "·" separators and an icon that is neither 24 nor 36.          |
-| `npm run icons:check`                     | Fails when `packages/ui/src/icons/glyphs.ts` is not what the cell drawings give (`node tools/build-icons.mjs` rebuilds it). |
-| `npm run docs:build`                      | Builds the docs submodule into `apps/web/public/docs` (run it before `start`/`build`/`e2e`).                                |
-| `./dev.sh`                                | Dev server in Docker against the Backend on the `naucto-dev` network (hot reload, port 3001).                               |
-| `docker compose up --build`               | Production-style image on port 3001; `APP_*` env vars configure it at runtime.                                              |
+| Command                                   | Purpose                                                                                                                                              |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm install`                             | Install all workspaces; generates `@naucto/api-client` from `openapi.json`.                                                                          |
+| `npm start`                               | Angular dev server on `http://localhost:3001`.                                                                                                       |
+| `npm run build`                           | Production build of every workspace.                                                                                                                 |
+| `npm run lint` / `npm run lint:fix`       | ESLint (flat config) over the whole repo.                                                                                                            |
+| `npm run format` / `npm run format:check` | Prettier.                                                                                                                                            |
+| `npm run typecheck`                       | `tsc --noEmit` per workspace.                                                                                                                        |
+| `npm test`                                | Vitest in every workspace (`ng test` for the app).                                                                                                   |
+| `npm run e2e`                             | Playwright (starts the dev server unless `E2E_BASE_URL` is set).                                                                                     |
+| `npm run pixel:check`                     | Fails on rounded corners, off-pixel strokes, density tokens, "·" separators, an icon that is neither 18 nor 24 and a glyph too large for its button. |
+| `npm run icons:check`                     | Fails when `packages/ui/src/icons/glyphs.ts` is not what the cell drawings give (`node tools/build-icons.mjs` rebuilds it).                          |
+| `npm run docs:build`                      | Builds the docs submodule into `apps/web/public/docs` (run it before `start`/`build`/`e2e`).                                                         |
+| `./dev.sh`                                | Dev server in Docker against the Backend on the `naucto-dev` network (hot reload, port 3001).                                                        |
+| `docker compose up --build`               | Production-style image on port 3001; `APP_*` env vars configure it at runtime.                                                                       |
 
 ## How to work in this repo
 
@@ -218,7 +218,7 @@ the rule wins.
    controls is the kit's table (`table[ncTable]`), not rows a screen rules by hand.
 3. **A symbol is pixel art, and its pixel is the kit's.** Arrows, the cross, the plus, the check
    and key glyphs are drawn on a grid whose cell is one kit pixel (3px): an `nc-mark` (five cells,
-   15px), an `nc-icon` (eight cells at 24 beside words, twelve at 36 standing alone), or an inline
+   15px), an `nc-icon` (six cells at 18 beside words, eight at 24 standing alone), or an inline
    SVG under `shape-rendering: crispEdges`. Never a font character (×, ←, ↑, +): a glyph is sized
    by its face, not by the grid, and one the face lacks comes from whatever font the browser falls
    back to. Never a glyph scaled: its steps land on fractions of a pixel and its diagonals blur.
@@ -245,10 +245,10 @@ here rather than shipping a control that does nothing. A button that toasts "not
 broken; an absence reads as not built.
 
 - **The icons.** The design sets Pixelarticons and glyphs of its own on a 24 grid whose pixel is
-  2px, at 12, 16, 24 and 48. The app draws every icon on the kit pixel instead, once for eight
-  cells (24px, beside words) and once for twelve (36px, standing alone), because a stroke of 2px
-  or 1px beside 3px frames reads as a second system. At 36 a drawing is the design's own cell for
-  cell wherever that one sat on whole cells; at 24 none is. A state that is on or done has a
+  2px, at 12, 16, 24 and 48. The app draws every icon on the kit pixel instead, once for six
+  cells (18px, beside words) and once for eight (24px, standing alone), because a stroke of 2px
+  or 1px beside 3px frames reads as a second system, and none of them is the design's drawing: at
+  six and eight cells a glyph is a mass with a cell left out, not an outline. A state that is on or done has a
   filled drawing (`heart-filled`, `notification-filled`, `lock-filled`), which the design does not
   draw. `npm run design:check` therefore finds none of the design's glyphs in the app: that is
   this divergence and not drift.
@@ -334,7 +334,7 @@ broken; an absence reads as not built.
   a gold border for exactly this reason. On the stateful element itself it is fine; on a child,
   write the type utilities out (`font-mono text-micro tracking-wide uppercase`) and let colour
   inherit.
-- The icons are drawn as cells, in `packages/ui/src/icons/`: `icons-24.txt` and `icons-36.txt`
+- The icons are drawn as cells, in `packages/ui/src/icons/`: `icons-18.txt` and `icons-24.txt`
   hold every icon under the same names, `marks.txt` the marks. `node tools/build-icons.mjs` packs
   them into `glyphs.ts`, and `nc-icon` and `nc-mark` turn a packed drawing into its path
   (`glyph-path.ts`), so a glyph is added or changed in a `.txt` and nowhere else. A drawing is cut
@@ -366,12 +366,22 @@ broken; an absence reads as not built.
   `packages/ui/src/components/presence-flag.component.ts` draws its own path too and is not
   listed; nothing reports it today, so it stays out until something does. The edge chips in
   `presence-layer.component.ts` beside it use `nc-mark`.
-- An `nc-icon` is 24 or 36 and nothing else, and the size picks the drawing: 24 beside words (a
-  button's leading icon, a stat, a menu row, a toolbar key), 36 standing alone (the top bar, the
-  rail, an empty state). `pixel:check` fails on any other size and on an icon resized through its
-  `svg`. Where an artboard renders an icon at 12 or 16, take an `nc-mark`; a mark that does not
-  exist yet is drawn in `marks.txt`. A state that is on or done takes the glyph's filled drawing,
-  named `<name>-filled`, and the call site chooses between the two.
+- An `nc-icon` is 18 or 24 and nothing else, and the size picks the drawing: 18 beside words (a
+  button's leading icon, a stat, a menu row, a chip), 24 standing alone (the top bar, the rail, an
+  empty state, a tool, an icon-only button of 40 or taller). `pixel:check` fails on any other size
+  and on an icon resized through its `svg`. One icon is drawn `doubled`, two kit pixels a cell:
+  the Play mark over an idle game screen at least 640px wide, the one place `pixel:check` lets it
+  be (`DOUBLED_ICON_HOME`). A state that is on or done takes the glyph's filled drawing, named
+  `<name>-filled`, and the call site chooses between the two.
+- A glyph keeps one kit pixel clear of the frame it stands in, on every side. A raised frame takes
+  3px above and 6px below, so a control holds a glyph up to its height less 15: none at 28
+  (`xs`), an `nc-mark` at 30 (`sm`, a toggle), an icon of 18 at 36 (`md`, a transport key), an
+  icon of 24 from 40 (`lg` and up, a tool). A control too low for the glyph it needs takes the
+  mark of that name, drawn in `marks.txt` if it is not there yet, or grows a step; the glyph is
+  never the one to give. `pixel:check` (`icon-fit`) reads the size written on an `ncButton` or an
+  `nc-toggle-button` and fails on a glyph too large for it; a kit component that frames its own
+  glyph chooses the tier itself. The disk's diamond shows the 24 drawing from 175px across and
+  the 18 one under it, and its band is never lower than a mark and its clearance.
 - TypeScript 6: `baseUrl` is deprecated; path aliases are relative to each `tsconfig.json`.
 - An ingest answer that asks to rotate the visitor or the session applies only while the cookies
   still hold the identity the request carried. Go through `applyRotation`, or a late answer about an
