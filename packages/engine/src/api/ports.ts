@@ -1,4 +1,3 @@
-import type { DeclaredAction } from '../input/ActionMap';
 import type { InputState } from '../input/InputState';
 import type { NetPermissions } from '../net/NetPermissions';
 import type { NetUi } from '../net/NetUi';
@@ -183,7 +182,5 @@ export interface EnginePorts {
   sys: SysPort;
   netUi?: NetUi;
   netPermissions?: NetPermissions;
-  /** Called with the names the game document gives its actions, when a run loads them. */
-  onActionsDeclared?(actions: readonly DeclaredAction[]): void;
   log(level: ConsoleLevel, text: string): void;
 }

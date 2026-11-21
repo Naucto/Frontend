@@ -19,7 +19,7 @@ import { migrateGame, needsMigration } from '../index';
 function v2WithRoots(): Y.Doc {
   const doc = new Y.Doc();
   const meta = doc.getMap(KEYS.meta);
-  meta.set('schemaVersion', GAME_SCHEMA_VERSION);
+  meta.set('schemaVersion', 2);
   meta.set('sheetWidth', 64);
   meta.set('mapWidth', 40);
   doc.getMap<number>('gfx.sprites').set('3,4', 9);
@@ -30,13 +30,13 @@ function v2WithRoots(): Y.Doc {
 }
 
 describe('a v2 document still holding the v1 shape', () => {
-  it('is rewritten in place, without moving its schema', () => {
+  it('is given the shape on its way to the next schema', () => {
     const doc = v2WithRoots();
     expect(needsMigration(doc)).toBe(true);
 
     const report = migrateGame(doc);
 
-    expect(report).toMatchObject({ from: GAME_SCHEMA_VERSION, to: GAME_SCHEMA_VERSION });
+    expect(report).toMatchObject({ from: 2, to: GAME_SCHEMA_VERSION });
     expect(report.counts.reshaped).toBeGreaterThan(0);
     expect(doc.getMap(KEYS.meta).get('schemaVersion')).toBe(GAME_SCHEMA_VERSION);
     const game = new EditableGame(doc);

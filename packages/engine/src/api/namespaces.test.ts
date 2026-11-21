@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_GEOMETRY } from '../game/geometry';
 import { RecordingBackend } from '../gfx/RecordingBackend';
 import { InputState } from '../input/InputState';
+import { tableOf } from '../input/test-table';
 import { LuaEnvironment } from '../vm/LuaEnvironment';
 import { GfxAPI } from './GfxAPI';
 import { InputAPI } from './InputAPI';
@@ -210,8 +211,9 @@ describe('Lua API namespaces', () => {
 
   it('input reads actions per player and keys', () => {
     const { lua, input } = setup();
-    input.setAction(0, 'left', true);
-    input.setAction(1, 'a', true);
+    input.setActions(tableOf());
+    input.press(0, input.actions.bits.get('left') ?? 0, true);
+    input.press(1, input.actions.bits.get('a') ?? 0, true);
     input.setKey('ArrowUp', true);
     input.commit();
     const [left, a1, a2, keyPressed, bad] = lua.evaluate(

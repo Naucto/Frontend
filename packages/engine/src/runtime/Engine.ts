@@ -9,7 +9,7 @@ import { SoundAPI } from '../api/SoundAPI';
 import { SysAPI } from '../api/SysAPI';
 import type { Game } from '../game/Game';
 import type { GameMap } from '../game/GameMap';
-import type { DeclaredAction } from '../input/ActionMap';
+import { buildActionTable } from '../input/ActionTable';
 import type { InputSource } from '../input/InputSource';
 import { InputState } from '../input/InputState';
 import { ConsoleBuffer } from '../loop/ConsoleBuffer';
@@ -68,8 +68,6 @@ export interface EngineOptions {
   /** Element that receives keyboard/mouse focus (the canvas). */
   inputTarget?: HTMLElement;
   netUi?: NetUi;
-  /** Called on each load with the names the game document gives its actions, for the app to show. */
-  onActionsDeclared?: (actions: readonly DeclaredAction[]) => void;
   netPermissions?: NetPermissions;
   driver?: LoopDriver;
   consoleCapacity?: number;
@@ -85,8 +83,7 @@ export class Engine {
   readonly input = new InputState();
   /** Attached input devices; sources may be added or removed while the game runs. */
   private readonly sources = new Set<InputSource>();
-  /** Action names the game document gives its actions, as of the last load. */
-  declaredActions: readonly DeclaredAction[] = [];
+  private readonly stopFollowingActions: () => void;
 
   private lua: LuaEnvironment | null = null;
   private modules: EngineModule[] = [];
@@ -111,6 +108,13 @@ export class Engine {
       },
       opts.driver,
     );
+    // The table follows the document, so an action edited while the game runs is read by its
+    // name, and pressed by its inputs, from the next step on.
+    const readActions = (): void => {
+      this.input.setActions(buildActionTable(opts.game.actions));
+    };
+    readActions();
+    this.stopFollowingActions = opts.game.onActionsChange(readActions);
     for (const src of opts.inputs ?? []) {
       this.sources.add(src);
     }
@@ -181,10 +185,6 @@ export class Engine {
       sound: this.opts.sound,
       netUi: this.opts.netUi,
       netPermissions: this.opts.netPermissions,
-      onActionsDeclared: (actions) => {
-        this.declaredActions = actions;
-        this.opts.onActionsDeclared?.(actions);
-      },
       data: {
         mapCount: () => this.opts.game.maps.length,
         mapWidth: (i) => this.opts.game.maps[i]?.width ?? 0,
@@ -236,9 +236,6 @@ export class Engine {
       new SoundAPI(ctx),
       this.netApi,
     ];
-    // The labels are the document's, not the code's, so they reach the host whether or not the
-    // code loads: a game that errors on load still has a controls table to show.
-    ctx.onActionsDeclared?.(this.opts.game.declaredActions);
     if (hold) {
       this.opts.sound?.pause();
     }
@@ -325,6 +322,7 @@ export class Engine {
 
   destroy(): void {
     this.stop();
+    this.stopFollowingActions();
     for (const src of this.sources) {
       src.detach();
     }

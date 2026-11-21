@@ -1,4 +1,3 @@
-import { isAction } from '../input/ActionMap';
 import type { ApiContext } from './ApiContext';
 import { EngineModule } from './EngineModule';
 import { defineLuaNamespace, luaFn, param } from './lua-namespace';
@@ -8,7 +7,7 @@ const player = param.index('player', { default: 1 });
 export const INPUT_API = defineLuaNamespace<InputAPI>('input', {
   held: luaFn(
     {
-      summary: 'True while an action (left right up down a b x y pause) is held.',
+      summary: 'True while an action of the game is held.',
       params: [param.string('action'), player],
       returns: 'boolean',
     },
@@ -80,7 +79,10 @@ export const INPUT_API = defineLuaNamespace<InputAPI>('input', {
   ),
 });
 
-/** The `input` namespace. A player below the first reads as the first. */
+/**
+ * The `input` namespace. A player below the first reads as the first, and an action the game does
+ * not have reads as never held.
+ */
 export class InputAPI extends EngineModule {
   constructor(ctx: ApiContext) {
     super(ctx);
@@ -88,15 +90,15 @@ export class InputAPI extends EngineModule {
   }
 
   held(action: string, playerIndex: number): boolean {
-    return isAction(action) && this.ctx.input.btn(action, Math.max(0, playerIndex));
+    return this.ctx.input.btn(action, Math.max(0, playerIndex));
   }
 
   pressed(action: string, playerIndex: number): boolean {
-    return isAction(action) && this.ctx.input.btnp(action, Math.max(0, playerIndex));
+    return this.ctx.input.btnp(action, Math.max(0, playerIndex));
   }
 
   released(action: string, playerIndex: number): boolean {
-    return isAction(action) && this.ctx.input.btnr(action, Math.max(0, playerIndex));
+    return this.ctx.input.btnr(action, Math.max(0, playerIndex));
   }
 
   keyPressed(key: string): boolean {

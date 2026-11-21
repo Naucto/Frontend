@@ -1,5 +1,5 @@
 /** Yjs key layout of a game document, and the legacy v0 keys it replaces. */
-export const GAME_SCHEMA_VERSION = 2;
+export const GAME_SCHEMA_VERSION = 3;
 
 export const KEYS = {
   meta: 'game.meta',
@@ -8,6 +8,7 @@ export const KEYS = {
   palette: 'gfx.palette',
   sheets: 'gfx.sheets',
   maps: 'map.maps',
+  actions: 'input.actions',
   instruments: 'sound.instruments',
   patterns: 'sound.patterns',
   sfx: 'sound.sfx',
@@ -23,8 +24,9 @@ export const KEYS = {
 } as const;
 
 /**
- * Field names inside one entry of a collection root: a code file, a sheet or a map. A sheet's
- * `pixels` and `flags` and a map's `tiles` hold its cells as nested maps keyed `"x,y"`.
+ * Field names inside one entry of a collection root: a code file, a sheet, a map or an action. A
+ * sheet's `pixels` and `flags` and a map's `tiles` hold its cells as nested maps keyed `"x,y"`; an
+ * action's `inputs` is a nested map too, from each input plugged into it to its rank among them.
  */
 export const ENTRY_KEYS = {
   name: 'name',
@@ -36,12 +38,14 @@ export const ENTRY_KEYS = {
   pixels: 'pixels',
   flags: 'flags',
   tiles: 'tiles',
+  label: 'label',
+  description: 'description',
+  inputs: 'inputs',
 } as const;
 
 /** Field names in the `game.meta` root, and `entry` in `code.meta`. */
 export const META_KEYS = {
   schemaVersion: 'schemaVersion',
-  actions: 'actions',
   entry: 'entry',
 } as const;
 
