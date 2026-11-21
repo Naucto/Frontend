@@ -1,52 +1,54 @@
 <div
-  class="flex touch-none items-center justify-between gap-2 select-none"
+  class="grid touch-none grid-cols-[repeat(3,var(--nc-pad-key))_minmax(var(--nc-pad-inset),1fr)_repeat(3,var(--nc-pad-key))] gap-(--nc-pad-gap) p-(--nc-pad-inset) select-none"
   [class]="
     overlay()
-      ? 'pointer-events-none absolute inset-0 p-2'
-      : 'w-full bg-panel px-2 py-2 pb-[max(16px,env(safe-area-inset-bottom))]'
+      ? 'size-full grid-rows-[1fr_[r1]_var(--nc-pad-key)_[r2]_var(--nc-pad-key)_[r3]_var(--nc-pad-key)_1fr]'
+      : 'w-full grid-rows-[[r1]_var(--nc-pad-key)_[r2]_var(--nc-pad-key)_[r3]_var(--nc-pad-key)] bg-panel pb-[max(var(--nc-pad-inset),env(safe-area-inset-bottom))]'
   "
   role="group"
   [attr.aria-label]="'game.screen.pad.label' | transloco"
-  [style.--nc-pad-scale]="settings.scale() * zoom()"
+  [style.--nc-pad-key]="layout().key + 'px'"
+  [style.--nc-pad-gap]="layout().gap + 'px'"
+  [style.--nc-pad-inset]="layout().inset + 'px'"
   [style.opacity]="overlay() ? settings.opacity() / 100 : 1">
-  <div class="pointer-events-auto grid grid-cols-3 grid-rows-3 gap-0.5">
-    @for (arm of cross(); track arm.control) {
-      <button
-        type="button"
-        [class]="key + ' ' + arm.at"
-        [attr.data-nc-control]="arm.control"
-        [attr.aria-label]="'game.screen.pad.' + arm.label | transloco">
+  @for (arm of cross(); track arm.control) {
+    <button
+      type="button"
+      [class]="key + ' ' + arm.at"
+      [attr.data-nc-control]="arm.control"
+      [attr.aria-label]="'game.screen.pad.' + arm.label | transloco">
+      @if (layout().legends) {
         <nc-mark [name]="arm.mark" />
-      </button>
-    }
-    @if (cross().length) {
-      <span
-        class="col-start-2 row-start-2 h-[calc(56px*var(--nc-pad-scale,1))] w-[calc(56px*var(--nc-pad-scale,1))] bg-line/40"></span>
-    }
-  </div>
+      }
+    </button>
+  }
+  @if (cross().length) {
+    <span class="pointer-events-auto col-start-2 row-start-[r2] bg-line/40"></span>
+  }
 
   @if (controls().includes('start')) {
     <button
       type="button"
-      class="pointer-events-auto self-end"
-      [class]="start"
+      class="pointer-events-auto col-start-3 col-end-6 row-start-[r3] -row-end-1 flex items-center justify-center self-end justify-self-center raised-sm font-mono text-label text-ink-body uppercase active:bevel-down active:bevel-primary active:text-on-primary"
+      [style.height.px]="layout().start.tall"
+      [style.width.px]="layout().start.wide"
+      [attr.aria-label]="'input.pad.start' | transloco"
       data-nc-control="start">
-      {{ 'input.pad.start' | transloco }}
+      @if (layout().legends) {
+        {{ 'input.pad.start' | transloco }}
+      }
     </button>
   }
 
-  <div class="pointer-events-auto grid grid-cols-3 grid-rows-3 gap-0.5">
-    @for (button of faces(); track button.control) {
-      <button
-        type="button"
-        [class]="face + ' ' + button.at"
-        [attr.data-nc-control]="button.control">
+  @for (button of faces(); track button.control) {
+    <button
+      type="button"
+      [class]="face + ' ' + button.at"
+      [attr.aria-label]="button.legend"
+      [attr.data-nc-control]="button.control">
+      @if (layout().legends) {
         {{ button.legend }}
-      </button>
-    }
-    @if (faces().length) {
-      <span
-        class="col-start-2 row-start-2 h-[calc(56px*var(--nc-pad-scale,1))] w-[calc(56px*var(--nc-pad-scale,1))]"></span>
-    }
-  </div>
+      }
+    </button>
+  }
 </div>

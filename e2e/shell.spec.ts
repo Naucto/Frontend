@@ -422,5 +422,40 @@ test.describe('app shell', () => {
         expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(390);
       }
     });
+
+    test('the touch pad preview holds every key at the largest size, none on another', async ({
+      page,
+    }) => {
+      await page.addInitScript(() => {
+        localStorage.setItem('naucto.pad-layout', JSON.stringify({ size: 140, opacity: 85 }));
+      });
+      await mockSignedIn(page);
+      await page.goto('/settings/controls');
+
+      const preview = page.locator('nc-controls nc-pad-preview');
+      const keys = preview.locator('[data-nc-control]');
+      await expect(keys).toHaveCount(9);
+      const frame = await preview.evaluate(
+        (element) => element.getBoundingClientRect().toJSON() as DOMRect,
+      );
+      const boxes = await keys.evaluateAll((elements) =>
+        elements.map((element) => element.getBoundingClientRect().toJSON() as DOMRect),
+      );
+      for (const box of boxes) {
+        expect(box.left).toBeGreaterThanOrEqual(frame.left);
+        expect(box.right).toBeLessThanOrEqual(frame.right);
+        expect(box.top).toBeGreaterThanOrEqual(frame.top);
+        expect(box.bottom).toBeLessThanOrEqual(frame.bottom);
+      }
+      const apart = (a: DOMRect, b: DOMRect): boolean =>
+        a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top;
+      for (const [i, box] of boxes.entries()) {
+        for (const other of boxes.slice(i + 1)) {
+          expect(apart(box, other)).toBe(true);
+        }
+      }
+      // A legend is never squeezed: at this width no key is large enough to hold one.
+      await expect(preview.locator('nc-mark')).toHaveCount(0);
+    });
   });
 });

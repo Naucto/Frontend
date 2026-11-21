@@ -191,6 +191,40 @@ test.describe('how to play', () => {
         'A',
       ]);
     });
+
+    test('fits the nine controls of the pad in the screen, at its largest size', async ({
+      page,
+    }) => {
+      await page.addInitScript(() => {
+        localStorage.setItem('naucto.pad-layout', JSON.stringify({ size: 140, opacity: 85 }));
+      });
+      await servePreset(page, 'classic');
+      await page.goto('/play/42');
+
+      const keys = page.locator('nc-virtual-pad [data-nc-control]:visible');
+      await expect(keys).toHaveCount(9);
+      const boxes = await keys.evaluateAll((elements) =>
+        elements.map((element) => element.getBoundingClientRect().toJSON() as DOMRect),
+      );
+      for (const box of boxes) {
+        expect(box.left).toBeGreaterThanOrEqual(0);
+        expect(box.right).toBeLessThanOrEqual(390);
+        expect(box.width).toBe(Math.round(box.width));
+        expect(box.left).toBe(Math.round(box.left));
+      }
+      const apart = (a: DOMRect, b: DOMRect): boolean =>
+        a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top;
+      for (const [i, box] of boxes.entries()) {
+        for (const other of boxes.slice(i + 1)) {
+          expect(apart(box, other)).toBe(true);
+        }
+      }
+      const overflow = await page.evaluate(() => ({
+        scroll: document.documentElement.scrollWidth,
+        client: document.documentElement.clientWidth,
+      }));
+      expect(overflow.scroll).toBeLessThanOrEqual(overflow.client);
+    });
   });
 });
 
