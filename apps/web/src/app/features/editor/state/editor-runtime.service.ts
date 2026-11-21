@@ -8,6 +8,11 @@ import type { RuntimeHostService } from '../../../shared/game-screen/runtime-hos
 export class EditorRuntimeService {
   readonly host = signal<RuntimeHostService | null>(null);
   readonly bridge = signal<NetUiBridgeService | null>(null);
+  /**
+   * Where a tab draws the screen in its own panel: the console column moves the screen there and
+   * takes it back when this is null again. Moved, never mounted twice, so it is the same game.
+   */
+  readonly screenSlot = signal<HTMLElement | null>(null);
   /** Set by the CODE tab while it is open: inserts text at the caret, returns false when no editor. */
   insertAtCursor: ((text: string) => boolean) | null = null;
   /** Also set by the CODE tab: the dotted name under the caret, for F1. */

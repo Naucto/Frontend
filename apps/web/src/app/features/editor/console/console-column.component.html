@@ -1,93 +1,98 @@
-<div *transloco="let t" class="relative flex h-full flex-col bg-panel">
-  @if (shown() && popped()) {
-    <!-- Placeholder at the viewer's own ratio, so the column keeps its height while the viewer
-         floats. -->
-    <div
-      class="m-1.5 flex aspect-video flex-col items-center justify-center flat-sm bevel-edge-line-strong p-2 text-center">
-      <p class="label text-ink-3">{{ t('editor.viewerPopped') }}</p>
-      <p class="mt-0.5 text-meta text-ink-4">{{ t('editor.viewerPoppedHint') }}</p>
-      <button ncButton variant="secondary" size="sm" class="mt-1" (click)="ui.togglePip()">
-        <nc-icon name="dock" [size]="24" />
-        {{ t('editor.dockViewer') }}
-      </button>
-    </div>
-  }
-  <!-- Hidden, never unmounted: unmounting cold-starts the game and drops any netplay session. -->
-  <div [class.hidden]="screenHidden()">
-    @if (!popped()) {
-      <div class="flex h-(--nc-h-bar) items-center gap-1 border-b-3 border-line px-1.5">
-        <span class="text-meta tracking-wide text-ink">320×180</span>
-        <span class="text-meta text-ink-3">×{{ scale() }}</span>
-        <span class="flex-1"></span>
-        <button
-          ncButton
-          variant="ghost"
-          size="sm"
-          iconOnly
-          [attr.aria-pressed]="false"
-          [attr.aria-label]="t('editor.popOut')"
-          (click)="ui.togglePip()">
-          <nc-icon name="pip" [size]="24" />
+<div #column *transloco="let t" class="relative flex h-full flex-col bg-panel">
+  <div #dock>
+    @if ((shown() || lent()) && popped()) {
+      <!-- Placeholder at the viewer's own ratio, so the column keeps its height while the viewer
+           floats. -->
+      <div
+        class="m-1.5 flex aspect-video flex-col items-center justify-center flat-sm bevel-edge-line-strong p-2 text-center">
+        <p class="label text-ink-3">{{ t('editor.viewerPopped') }}</p>
+        <p class="mt-0.5 text-meta text-ink-4">{{ t('editor.viewerPoppedHint') }}</p>
+        <button ncButton variant="secondary" size="sm" class="mt-1" (click)="ui.togglePip()">
+          <nc-icon name="dock" [size]="24" />
+          {{ t('editor.dockViewer') }}
         </button>
       </div>
     }
-    <div
-      #card
-      [class]="
-        popped()
-          ? 'nc-pip fixed z-40 overflow-hidden flat-lg bevel-fill-panel shadow-[0_6px_0_var(--color-inset)]'
-          : ''
-      "
-      [style.left.px]="pip()?.x ?? null"
-      [style.top.px]="pip()?.y ?? null"
-      [style.width.px]="popped() ? ui.pipWidth() : null">
-      @if (popped()) {
-        <!-- Drawn over the card's own edges rather than straddling them: the card clips its
-             overflow, so half of a grip hung outside would not be there to grab. -->
-        @for (grip of grips; track grip.grip) {
-          <span
-            class="absolute z-10 {{ grip.box }} {{ grip.cursor }}"
-            (pointerdown)="startResize($event, grip.grip)"></span>
-        }
-      }
-      @if (popped()) {
-        <div
-          #grab
-          class="flex h-(--nc-h-md) cursor-grab items-center gap-1 border-b-3 border-line bg-raised px-1.25 active:cursor-grabbing"
-          (pointerdown)="startDrag($event)">
-          <nc-icon name="pip" [size]="24" class="text-ink-4" />
-          <span class="text-micro tracking-strip text-ink-3 uppercase">
-            {{ t('editor.viewer') }}
-          </span>
-          <span class="text-micro tracking-strip text-ink-4">320×180</span>
+    <!-- Hidden, never unmounted: unmounting cold-starts the game and drops any netplay session. -->
+    <div [class.hidden]="screenHidden()">
+      @if (!popped() && !lent()) {
+        <div class="flex h-(--nc-h-bar) items-center gap-1 border-b-3 border-line px-1.5">
+          <span class="text-meta tracking-wide text-ink">320×180</span>
+          <span class="text-meta text-ink-3">×{{ scale() }}</span>
           <span class="flex-1"></span>
           <button
             ncButton
             variant="ghost"
             size="sm"
             iconOnly
-            class="-me-0.5"
-            [attr.aria-pressed]="true"
-            [attr.aria-label]="t('editor.dockViewer')"
+            [attr.aria-pressed]="false"
+            [attr.aria-label]="t('editor.popOut')"
             (click)="ui.togglePip()">
-            <nc-icon name="collapse" [size]="24" />
+            <nc-icon name="pip" [size]="24" />
           </button>
         </div>
       }
-      <nc-game-screen
-        #screen
-        [game]="session.game"
-        [projectId]="session.playProjectId"
-        fit="width"
-        compact
-        debug
-        editorTest
-        [overlay]="popped()"
-        (mounted)="onMounted()">
-        <nc-toggle transport-extra [checked]="ui.autoRun()" (checkedChange)="ui.setAutoRun($event)">
-          {{ t('editor.autoRun') }}
-        </nc-toggle>
-      </nc-game-screen>
+      <div
+        #card
+        [class]="
+          popped()
+            ? 'nc-pip fixed z-40 overflow-hidden flat-lg bevel-fill-panel shadow-[0_6px_0_var(--color-inset)]'
+            : ''
+        "
+        [style.left.px]="pip()?.x ?? null"
+        [style.top.px]="pip()?.y ?? null"
+        [style.width.px]="popped() ? ui.pipWidth() : null">
+        @if (popped()) {
+          <!-- Drawn over the card's own edges rather than straddling them: the card clips its
+               overflow, so half of a grip hung outside would not be there to grab. -->
+          @for (grip of grips; track grip.grip) {
+            <span
+              class="absolute z-10 {{ grip.box }} {{ grip.cursor }}"
+              (pointerdown)="startResize($event, grip.grip)"></span>
+          }
+        }
+        @if (popped()) {
+          <div
+            #grab
+            class="flex h-(--nc-h-md) cursor-grab items-center gap-1 border-b-3 border-line bg-raised px-1.25 active:cursor-grabbing"
+            (pointerdown)="startDrag($event)">
+            <nc-icon name="pip" [size]="24" class="text-ink-4" />
+            <span class="text-micro tracking-strip text-ink-3 uppercase">
+              {{ t('editor.viewer') }}
+            </span>
+            <span class="text-micro tracking-strip text-ink-4">320×180</span>
+            <span class="flex-1"></span>
+            <button
+              ncButton
+              variant="ghost"
+              size="sm"
+              iconOnly
+              class="-me-0.5"
+              [attr.aria-pressed]="true"
+              [attr.aria-label]="t('editor.dockViewer')"
+              (click)="ui.togglePip()">
+              <nc-icon name="collapse" [size]="24" />
+            </button>
+          </div>
+        }
+        <nc-game-screen
+          #screen
+          [game]="session.game"
+          [projectId]="session.playProjectId"
+          fit="width"
+          compact
+          debug
+          editorTest
+          [overlay]="popped()"
+          (mounted)="onMounted()">
+          <nc-toggle
+            transport-extra
+            [checked]="ui.autoRun()"
+            (checkedChange)="ui.setAutoRun($event)">
+            {{ t('editor.autoRun') }}
+          </nc-toggle>
+        </nc-game-screen>
+      </div>
     </div>
   </div>
   @if (shown()) {
