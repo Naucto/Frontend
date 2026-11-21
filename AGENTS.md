@@ -268,7 +268,10 @@ broken; an absence reads as not built.
   all its frames, as the docs block of `apps/web/src/styles.css` does.
 - `@naucto/ui` is declared free of side effects (`sideEffects` in its `package.json`). That is what
   lets a page that imports one component from the barrel load that one and not the whole kit, so a
-  kit module does nothing at import that something other than its own exports relies on.
+  kit module does nothing at import that something other than its own exports relies on. Its barrel
+  passes every name on with `export * from`: a name passed on with `export { X } from` makes the
+  barrel itself part of whatever imports `X`, and the bundler puts the whole kit in what every page
+  loads.
 - A dialog a root service opens (`FeedbackLauncher`, `SignedInAction`, `nc-feedback-prompt`) is
   fetched with `import()` when it opens, and names the component by `import type` only: a static
   import puts the dialog and everything it draws in what every page loads.
