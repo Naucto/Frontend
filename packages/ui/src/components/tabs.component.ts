@@ -16,7 +16,7 @@ import {
   viewChildren,
 } from '@angular/core';
 
-import { type IconName } from '../icons/paths';
+import { type MarkName } from '../icons/glyphs';
 import { IconComponent } from './icon.component';
 import { MarkComponent } from './mark.component';
 
@@ -24,7 +24,8 @@ export interface TabItem<T extends string> {
   value: T;
   label: string;
   badge?: string | number;
-  icon?: IconName;
+  /** Drawn before the name. */
+  mark?: MarkName;
   /** Its place in the list, drawn before the name. */
   index?: number;
   /** A colour the tab is marked with, as a CSS colour. Nothing is drawn without one. */
@@ -60,11 +61,12 @@ const RULE_ON_PANEL =
  * `frame` dresses the strip as a whole — its rule, its height, its ground — and `list` dresses the
  * run of tabs inside it, which is the part that scrolls. Anything that must stay put when the tabs
  * slide belongs to the frame. `off` and `on` are an idle and the chosen tab, `label` dresses the
- * name alone, apart from the number, the swatch and the buttons beside it.
+ * name alone, apart from the number, the swatch and the buttons beside it. `marks` says the
+ * buttons of a tab are marks, where the tab is too low to hold an icon.
  */
 const VARIANT: Record<
   TabsVariant,
-  { frame: string; list: string; off: string; on: string; label: string; icon: 12 | 24 }
+  { frame: string; list: string; off: string; on: string; label: string; marks: boolean }
 > = {
   // Settings and other page-level strips: caps, inset from the edge.
   panel: {
@@ -73,7 +75,7 @@ const VARIANT: Record<
     off: `${TAB} ${OFF} h-[34px] gap-1 px-2 text-meta tracking-tag uppercase hover:h-[37px]`,
     on: `${TAB} ${ON} bevel-fill-raised h-(--nc-h-lg) gap-1 px-2 text-meta tracking-tag uppercase`,
     label: '',
-    icon: 12,
+    marks: true,
   },
   // Sits directly on the thing it chooses between. Sentence case: these are names somebody typed.
   small: {
@@ -84,7 +86,7 @@ const VARIANT: Record<
     // The cut falls on the name and never on the tab, so the number, the swatch and the buttons
     // keep their width beside a long name.
     label: 'max-w-[14ch] truncate',
-    icon: 12,
+    marks: true,
   },
   // A bar of its own, where the tabs are the primary subject of the screen below: the chosen one
   // opens onto the paper under it.
@@ -94,7 +96,7 @@ const VARIANT: Record<
     off: `${TAB} ${OFF} h-[36px] gap-1 px-[15px] text-body tracking-copy hover:h-[39px]`,
     on: `${TAB} ${ON} bevel-fill-paper h-[42px] gap-1 px-[15px] text-body tracking-copy`,
     label: '',
-    icon: 24,
+    marks: false,
   },
   // The editor console: mono, full-bleed in its column, and jade — the colour the machine talks in.
   console: {
@@ -105,7 +107,7 @@ const VARIANT: Record<
       `${TAB} bevel-edge-line-strong bevel-hi-jade-ink bevel-fill-raised text-jade-ink ` +
       'h-(--nc-h-lg) gap-1 px-[14px] font-mono text-meta tracking-strip uppercase',
     label: '',
-    icon: 12,
+    marks: true,
   },
 };
 
@@ -152,7 +154,7 @@ export class TabsComponent<T extends string = string> {
   protected readonly offClass = computed(() => VARIANT[this.variant()].off);
   protected readonly onClass = computed(() => VARIANT[this.variant()].on);
   protected readonly labelClass = computed(() => VARIANT[this.variant()].label);
-  protected readonly iconSize = computed(() => VARIANT[this.variant()].icon);
+  protected readonly marks = computed(() => VARIANT[this.variant()].marks);
   /** How far the run of tabs is scrolled, and how far it could be. Measured, not derived. */
   private readonly scrolled = signal(0);
   private readonly overflow = signal(0);

@@ -7,7 +7,7 @@ import {
 } from '@angular/core';
 
 import { formatCompact, formatCount } from '../format';
-import { type IconName } from '../icons/paths';
+import { type IconName } from '../icons/glyphs';
 import { IconComponent } from './icon.component';
 
 /**

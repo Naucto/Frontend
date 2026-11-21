@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, model } from '@angular/core';
 
-import { type IconName } from '../icons/paths';
+import { type IconName } from '../icons/glyphs';
 import { IconComponent } from './icon.component';
 
 export interface RailItem<T extends string> {

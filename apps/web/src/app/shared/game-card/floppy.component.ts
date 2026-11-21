@@ -13,7 +13,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { formatCompact, IconComponent, type IconName, inkFor } from '@naucto/ui';
+import { formatCompact, IconComponent, type IconName, inkFor, MarkComponent } from '@naucto/ui';
 
 import { diskBody, diskFinish, type DiskStyle, luminance, PLAIN_DISK } from './disk-style';
 
@@ -107,7 +107,7 @@ const SHINE_CELLS = [
  */
 @Component({
   selector: 'nc-floppy',
-  imports: [IconComponent],
+  imports: [IconComponent, MarkComponent],
   templateUrl: './floppy.component.html',
   styleUrl: './floppy.component.css',
   host: {

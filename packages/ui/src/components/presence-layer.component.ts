@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
-import { type MarkName } from '../icons/marks';
+import { type MarkName } from '../icons/glyphs';
 import { type PresenceColour } from './avatar.component';
 import { MarkComponent } from './mark.component';
 import { PresenceFlagComponent } from './presence-flag.component';

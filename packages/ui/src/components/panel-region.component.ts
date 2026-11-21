@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
+import { type MarkName } from '../icons/glyphs';
 import { EdgeHandleComponent } from './edge-handle.component';
 
 /**
@@ -46,14 +47,14 @@ export class PanelRegionComponent {
   });
 
   /** A chevron where the secondary can arrive beside the primary, a swap where it cannot. */
-  protected readonly switchIcon = computed(() => {
+  protected readonly switchMark = computed<MarkName>(() => {
     if (this.mode() === 'instead') {
-      return 'sync';
+      return 'swap';
     }
     if (this.mode() === 'beside') {
       return 'chevron-right';
     }
-    return this.viewportWidth() >= this.splitAt() ? 'chevron-left' : 'sync';
+    return this.viewportWidth() >= this.splitAt() ? 'chevron-left' : 'swap';
   });
 
   protected readonly primaryTrack = computed(() =>

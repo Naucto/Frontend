@@ -10,11 +10,7 @@
           {{ t('editor.map.tiles', { w: mapW(), h: mapH() }) }}
         </span>
       </div>
-      <nc-tool-group
-        [items]="tools()"
-        [value]="map.tool()"
-        (valueChange)="setTool($event)"
-        [iconSize]="24" />
+      <nc-tool-group [items]="tools()" [value]="map.tool()" (valueChange)="setTool($event)" />
       <div class="flex items-center justify-end gap-0.5">
         <button
           type="button"

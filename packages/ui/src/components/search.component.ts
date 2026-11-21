@@ -9,9 +9,10 @@ import {
   viewChild,
 } from '@angular/core';
 
-import { IconComponent, type IconSize } from './icon.component';
+import { IconComponent } from './icon.component';
 import { WELL } from './input.directive';
 import { KeycapComponent } from './keycap.component';
+import { MarkComponent } from './mark.component';
 
 /**
  * How tall the box is: `md` is the top bar's, `sm` the one an editor toolbar carries. Only `md` has
@@ -19,26 +20,15 @@ import { KeycapComponent } from './keycap.component';
  */
 export type SearchSize = 'sm' | 'md';
 
-const SIZE: Record<SearchSize, { host: string; input: string; icon: string; glyph: IconSize }> = {
-  sm: {
-    host: 'h-(--nc-h-sm) gap-1 px-[9px]',
-    input: 'font-mono text-micro',
-    icon: '',
-    glyph: 12,
-  },
-  md: {
-    host: 'h-[42px] gap-1.5 pr-[10px] pl-[14px]',
-    input: 'font-ui text-small',
-    // The well sinks its content a pixel; the glyph is set back on the middle of the whole box.
-    icon: '-mt-[3px]',
-    glyph: 24,
-  },
+const SIZE: Record<SearchSize, { host: string; input: string }> = {
+  sm: { host: 'h-(--nc-h-sm) gap-1 px-[9px]', input: 'font-mono text-micro' },
+  md: { host: 'h-[42px] gap-1.5 pr-[10px] pl-[14px]', input: 'font-ui text-small' },
 };
 
 /** Search box with the magnifier and a keyboard hint ("/"). Emits `submitted` on Enter. */
 @Component({
   selector: 'nc-search',
-  imports: [IconComponent, KeycapComponent],
+  imports: [IconComponent, KeycapComponent, MarkComponent],
   templateUrl: './search.component.html',
   host: {
     class: `${WELL} flex items-center text-ink-3 not-focus-within:hover:text-ink-2 focus-within:text-gold-ink`,

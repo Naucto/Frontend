@@ -172,19 +172,26 @@
       </div>
     </div>
     <div class="flat-lg bevel-fill-panel grid gap-1.5 p-2.5">
-      <div class="label">Icons: 24 on a 24 grid</div>
-      <div class="flex flex-wrap gap-1 text-ink-2">
+      <div class="label">Icons: 24 beside words, 36 standing alone</div>
+      <div
+        class="grid grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-x-2 gap-y-[6px] text-ink-2"
+        data-testid="icons">
         @for (icon of icons; track icon) {
-          <span class="flex h-5 w-5 items-center justify-center" [title]="icon">
+          <span class="flex h-[36px] items-center gap-[10px]">
             <nc-icon [name]="icon" />
+            <nc-icon [name]="icon" [size]="36" />
+            <span class="truncate text-meta text-ink-3">{{ icon }}</span>
           </span>
         }
       </div>
       <div class="label">Marks: 15, five kit pixels across</div>
-      <div class="flex flex-wrap gap-1 text-ink-2" data-testid="marks">
+      <div
+        class="grid grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-x-2 gap-y-[6px] text-ink-2"
+        data-testid="marks">
         @for (mark of marks; track mark) {
-          <span class="flex h-5 w-5 items-center justify-center" [title]="mark">
+          <span class="flex h-[24px] items-center gap-[10px]">
             <nc-mark [name]="mark" />
+            <span class="truncate text-meta text-ink-3">{{ mark }}</span>
           </span>
         }
       </div>
@@ -710,7 +717,7 @@
             </nc-panel-column>
             <nc-panel-column primary title="Console">
               <nc-edge-handle
-                icon="prev"
+                mark="chevron-left"
                 label="Fold the column away"
                 (pressed)="regionOpen.set(!regionOpen())" />
               <p class="p-1.5 text-meta text-ink-3">The grip folds the other one out.</p>
