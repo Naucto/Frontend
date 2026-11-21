@@ -805,31 +805,38 @@
     color 180ms;
 }
 
+/*
+ * The five shapes. Each `@utility` holds its geometry only; the strips are written once for the
+ * five class names, so a stylesheet carries one copy of them rather than one per shape. That rule
+ * has no specificity: any utility on the same element still wins over it, as it would over a
+ * utility generated ahead of it. A shape asked for through a variant or `@apply` therefore brings
+ * its geometry alone, and stands on an element that is a `bevel` already.
+ */
+@layer utilities {
+  :where(.flat-sm, .flat-lg, .raised-sm, .raised-lg, .well) {
+    @apply bevel;
+  }
+}
 /* A flat frame: everything that is neither pressed nor typed in. */
 @utility flat-sm {
-  @apply bevel;
   --bv-clip: var(--nc-clip-sm);
 }
 @utility flat-lg {
-  @apply bevel;
   --bv-steps: 2;
   --bv-clip: var(--nc-clip-lg);
 }
 /* Raised: whatever can be pressed. The bottom border is a pixel deeper, and the skirt fills it. */
 @utility raised-sm {
-  @apply bevel;
   --bv-foot: var(--nc-px);
   --bv-clip: var(--nc-clip-sm);
 }
 @utility raised-lg {
-  @apply bevel;
   --bv-steps: 2;
   --bv-foot: var(--nc-px);
   --bv-clip: var(--nc-clip-lg);
 }
 /* A well: whatever can be typed in. A flat frame whose content sits a pixel lower, under a dark rim. */
 @utility well {
-  @apply bevel;
   --bv-sink: var(--nc-px);
   --bv-clip: var(--nc-clip-sm);
 }
