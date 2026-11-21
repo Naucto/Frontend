@@ -71,7 +71,7 @@ export function sessionStickers(session: HubSession, viewer: string | null): Flo
   const cards = [
     ...shown.map((player) => ({
       initial: displayName(player)[0] ?? '?',
-      color: colourOf(player.username),
+      color: colourOf(player.id),
       host: player.username === session.hostUsername,
     })),
     ...(folded ? [{ initial: `+${String(folded)}`, color: 'var(--color-key-lit)' }] : []),

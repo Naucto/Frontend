@@ -89,7 +89,7 @@ export class HubPiecesSection {
         other === session
           ? {
               ...session,
-              roster: seated ? [...roster, { username: VIEWER }] : roster,
+              roster: seated ? [...roster, { id: 1, username: VIEWER }] : roster,
               playerCount: session.playerCount + (seated ? 1 : -1),
             }
           : other,
