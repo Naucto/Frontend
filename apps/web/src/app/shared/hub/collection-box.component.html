@@ -21,11 +21,7 @@
         (focus)="onFocus(place)"
         (blur)="onBlur($event)"
         (click)="picked.emit(item.game)">
-        <nc-floppy
-          mode="thumb"
-          [name]="item.game.name"
-          [disk]="item.disk"
-          [cover]="item.game.coverUrl" />
+        <nc-floppy [disk]="item.disk" [cover]="item.game.coverUrl" />
       </button>
     }
     @if (more() > 0) {
