@@ -34,6 +34,8 @@ const QUIET_SAVE_MS = 3000;
 /** What a save reads of the session it writes out. */
 export interface SavedSession {
   readonly doc: Y.Doc;
+  /** The game the document holds, for what a save reads through it rather than from a root. */
+  readonly game: { readonly palette: readonly string[] };
   readonly id: number;
   /** The project as the server last described it; a save that changes its metadata updates it. */
   readonly project: WritableSignal<ProjectExResponseDto | null>;
@@ -80,13 +82,21 @@ export class SessionSaveService {
     return this.attached;
   }
 
-  private meta(): { name: string; shortDesc: string; longDesc: string; tags: string[] } {
+  private meta(): {
+    name: string;
+    shortDesc: string;
+    longDesc: string;
+    tags: string[];
+    palette: string[];
+  } {
     const doc = this.session.doc;
     return {
       name: doc.getText(KEYS.projectName).toString(),
       shortDesc: doc.getText(KEYS.shortDescription).toString(),
       longDesc: doc.getText(KEYS.longDescription).toString(),
       tags: parseTags(doc.getText(KEYS.projectTags).toString()),
+      // Lower case is how the server answers them, so a palette it already holds compares equal.
+      palette: this.session.game.palette.map((colour) => colour.toLowerCase()),
     };
   }
 
@@ -157,7 +167,9 @@ export class SessionSaveService {
         (details.name !== name ||
           (details.shortDesc ?? '') !== meta.shortDesc ||
           (details.longDesc ?? '') !== meta.longDesc ||
-          JSON.stringify([...details.tags].sort()) !== JSON.stringify([...meta.tags].sort()))
+          JSON.stringify([...details.tags].sort()) !== JSON.stringify([...meta.tags].sort()) ||
+          // In order: a palette is indexed, so two colours swapped are another palette.
+          details.palette.join() !== meta.palette.join())
       ) {
         const updated = unwrap(
           await projectControllerUpdate({
@@ -167,6 +179,7 @@ export class SessionSaveService {
               shortDesc: meta.shortDesc,
               longDesc: meta.longDesc,
               tags: meta.tags,
+              palette: meta.palette,
             },
           }),
         );

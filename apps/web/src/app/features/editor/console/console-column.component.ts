@@ -77,11 +77,14 @@ export class ConsoleColumnComponent {
   /** Told rather than worked out: what shows in the track is the region's to decide, not a column's. */
   readonly shown = input(true);
 
+  private readonly editorRuntime = inject(EditorRuntimeService);
+  /** A tab has room for the screen in its own panel, and the screen stands there. */
+  protected readonly lent = computed(() => this.editorRuntime.screenSlot() !== null);
   protected readonly screenHidden = computed(
     () =>
       this.ui.tooNarrow() ||
       this.ui.columnMode() === 'swap' ||
-      (!this.popped() && this.ui.activeTab() !== 'code'),
+      (!this.popped() && !this.lent() && this.ui.activeTab() !== 'code'),
   );
   /** How many screen pixels one console pixel takes. The column is a fixed track, so this is too. */
   protected readonly scale = computed(() => {
@@ -91,12 +94,13 @@ export class ConsoleColumnComponent {
   protected readonly session = inject(WorkSessionService);
   protected readonly presence = inject(SessionPresenceService);
   protected readonly saves = inject(SessionSaveService);
-  private readonly editorRuntime = inject(EditorRuntimeService);
   private readonly transloco = inject(TranslocoService);
   private readonly pipAt = signal<{ x: number; y: number } | null>(null);
   /** The title bar's height as drawn, which is the least of the card that must stay in reach. */
   private readonly grab = signal(0);
   protected readonly grips = PIP_GRIPS;
+  private readonly column = viewChild<ElementRef<HTMLElement>>('column');
+  private readonly dock = viewChild<ElementRef<HTMLElement>>('dock');
   private readonly card = viewChild<ElementRef<HTMLElement>>('card');
   private readonly grabBar = viewChild<ElementRef<HTMLElement>>('grab');
   private readonly screen = viewChild<GameScreenComponent>('screen');
@@ -156,6 +160,21 @@ export class ConsoleColumnComponent {
       this.ui.viewportHeight();
       this.popped();
       this.fitToViewport();
+    });
+    // The element is moved, not rendered a second time: a second screen would be a second game,
+    // and unmounting this one drops its netplay session.
+    effect(() => {
+      const dock = this.dock()?.nativeElement;
+      const column = this.column()?.nativeElement;
+      if (!dock || !column) {
+        return;
+      }
+      const slot = this.editorRuntime.screenSlot();
+      if (slot) {
+        slot.prepend(dock);
+      } else {
+        column.prepend(dock);
+      }
     });
     let pausedByHiding = false;
     let timer: ReturnType<typeof setTimeout> | null = null;

@@ -54,6 +54,7 @@ import {
   StatComponent,
   StepperComponent,
   SwatchPickerComponent,
+  TableDirective,
   TabsComponent,
   TagInputComponent,
   ToastService,
@@ -109,6 +110,7 @@ import { HubPiecesSection } from './hub-pieces.section';
     SegmentedComponent,
     SkeletonComponent,
     SliderComponent,
+    TableDirective,
     TabsComponent,
     ToggleComponent,
     StepperComponent,
@@ -160,6 +162,18 @@ export default class UiKitPage {
     { id: 3, name: 'edgar', colour: 'blush', x: 60, y: -400 },
   ];
   protected readonly sizes = ['1×1', '2×2', '4×4', '8×8'];
+  protected readonly tableActions: {
+    name: string;
+    hint?: string;
+    key: string;
+    arrow?: MarkName;
+    pad: string;
+  }[] = [
+    { name: 'Move left', key: 'A', arrow: 'arrow-left', pad: 'D-pad' },
+    { name: 'Jump', hint: 'Hold to jump higher', key: 'Space', arrow: 'arrow-up', pad: 'A' },
+    { name: 'Dash', hint: 'A burst of speed, once per jump', key: 'Shift', pad: 'X' },
+    { name: 'Pause', key: 'Esc', pad: 'Start' },
+  ];
   protected readonly tool = signal('pen');
   protected readonly tools = [
     { value: 'pen', icon: 'edit' as const, label: 'Pen' },
@@ -193,6 +207,7 @@ export default class UiKitPage {
     { id: 'inputs', label: 'Inputs' },
     { id: 'selection', label: 'Selection' },
     { id: 'chips', label: 'Chips & data' },
+    { id: 'table', label: 'Table' },
     { id: 'navigation', label: 'Navigation' },
     { id: 'feedback', label: 'Feedback' },
     { id: 'overlays', label: 'Overlays' },

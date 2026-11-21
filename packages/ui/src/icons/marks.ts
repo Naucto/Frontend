@@ -1,6 +1,7 @@
 /**
  * The marks a control carries where a 24px icon has no room: each is drawn for its size, on a grid
  * of five cells by five whose cell is one kit pixel, so it is 15px across and never scaled.
+ * `record` and `stop` are a recorder's two buttons: the dot and the square.
  */
 export const MARK_PATHS = {
   'arrow-down':
@@ -24,7 +25,9 @@ export const MARK_PATHS = {
   enter: 'M4 0h1v1h-1zM1 1h1v1h-1zM4 1h1v1h-1zM0 2h5v1h-5zM1 3h1v1h-1z',
   minus: 'M0 2h5v1h-5z',
   plus: 'M2 0h1v1h-1zM2 1h1v1h-1zM0 2h5v1h-5zM2 3h1v1h-1zM2 4h1v1h-1z',
+  record: 'M1 0h3v1h-3zM0 1h5v3h-5zM1 4h3v1h-3z',
   space: 'M0 2h1v1h-1zM4 2h1v1h-1zM0 3h5v1h-5z',
+  stop: 'M0 0h5v5h-5z',
 } as const;
 
 export type MarkName = keyof typeof MARK_PATHS;

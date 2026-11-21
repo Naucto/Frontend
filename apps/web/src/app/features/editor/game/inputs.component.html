@@ -1,0 +1,261 @@
+<ng-container *transloco="let t">
+  <div class="mb-1.5 flex flex-wrap items-center gap-x-1 gap-y-0.5">
+    <nc-label class="text-ink">{{ t('editor.game.inputs.actions') }}</nc-label>
+    <nc-chip>{{ t('editor.game.count', { n: actions().length, max: MAX_ACTIONS }) }}</nc-chip>
+    <nc-help-dot [title]="t('editor.game.inputs.actions')" [text]="t('editor.game.inputs.help')" />
+    <span class="flex-1"></span>
+    <button ncButton size="sm" [pressed]="pane() === 'touch'" (click)="togglePane('touch')">
+      <nc-icon name="device-phone" [size]="24" />
+      {{ t('editor.game.inputs.touchPad') }}
+    </button>
+    <button ncButton size="sm" [pressed]="pane() === 'presets'" (click)="togglePane('presets')">
+      {{ t('editor.game.inputs.presets') }}
+    </button>
+    <button ncButton size="sm" [disabled]="actions().length >= MAX_ACTIONS" (click)="edit(null)">
+      <nc-mark name="plus" />
+      {{ t('editor.game.inputs.addAction') }}
+    </button>
+  </div>
+
+  @switch (pane()) {
+    @case ('touch') {
+      <section
+        class="grid justify-items-start gap-2 flat-lg bevel-edge-line-strong bevel-fill-panel p-2.5"
+        [attr.aria-label]="t('editor.game.inputs.touchPad')">
+        <div class="flex flex-wrap items-center gap-1">
+          <span class="font-display text-title text-ink">
+            {{ t('editor.game.inputs.touchPad') }}
+          </span>
+          <nc-chip>{{ t('editor.game.count', { n: touch().length, max: TOUCH_SLOTS }) }}</nc-chip>
+          @for (control of offPad(); track control) {
+            <nc-chip tone="gold" wash>
+              {{ t('editor.game.inputs.offPad', { control: padName(control) }) }}
+            </nc-chip>
+          }
+        </div>
+        <!-- The pad as a player's phone lays it over the game, there to be looked at. -->
+        <div
+          class="relative aspect-video w-full max-w-[560px] overflow-hidden flat-sm bevel-edge-line-strong bevel-fill-inset"
+          inert>
+          <nc-virtual-pad [controls]="touch()" [overlay]="true" />
+        </div>
+      </section>
+    }
+    @case ('presets') {
+      <section
+        class="grid gap-2 flat-lg bevel-edge-line-strong bevel-fill-panel p-2.5"
+        [attr.aria-label]="t('editor.game.inputs.presets')">
+        <span class="font-display text-title text-ink">{{ t('editor.game.inputs.presets') }}</span>
+        <div class="grid grid-cols-1 gap-1 @min-[721px]:grid-cols-2">
+          @for (preset of PRESETS; track preset.id) {
+            <button
+              type="button"
+              class="grid cursor-pointer content-start gap-0.75 raised-sm p-1.5 text-left hover:bevel-lit active:bevel-down"
+              (click)="applyPreset(preset.id)">
+              <span class="flex items-center justify-between gap-1">
+                <span class="text-ui text-ink">{{ t('editor.game.preset.' + preset.id) }}</span>
+                <nc-chip>
+                  {{ t('editor.game.inputs.actionCount', { n: preset.actions.length }) }}
+                </nc-chip>
+              </span>
+              <span class="flex flex-wrap gap-x-1 font-mono text-meta text-sky-ink">
+                @for (action of preset.actions; track action.name) {
+                  <span>{{ action.name }}</span>
+                }
+              </span>
+            </button>
+          }
+        </div>
+      </section>
+    }
+    @default {
+      <table ncTable class="table-fixed">
+        <thead>
+          <tr>
+            <th scope="col">{{ t('editor.game.inputs.action') }}</th>
+            <th scope="col" class="w-[132px]">{{ t('editor.game.inputs.device') }}</th>
+            <th scope="col" class="w-[84px]">{{ t('editor.game.inputs.player') }}</th>
+            <th scope="col" class="w-[96px]">
+              <span class="sr-only">{{ t('editor.game.inputs.edit') }}</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (action of actions(); track action.id; let i = $index) {
+            @let on = action.id === openId();
+            <tr
+              draggable="true"
+              class="cursor-grab"
+              [class]="rowClass(action, i)"
+              [attr.data-action]="action.id"
+              (dragstart)="dragStart($event, action)"
+              (dragover)="dragOver($event, action)"
+              (drop)="drop($event, i)"
+              (dragend)="dragEnd()">
+              <th scope="row">
+                <button
+                  type="button"
+                  class="flex w-full cursor-pointer items-center gap-1 text-left"
+                  [class]="on ? 'text-active-ink' : 'hover:text-active-ink'"
+                  [attr.aria-expanded]="on"
+                  aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
+                  (click)="toggle(action.id)"
+                  (keydown)="onRowKey($event, action, i)">
+                  <nc-mark [name]="on ? 'caret-down' : 'caret-right'" />
+                  <span class="min-w-0">
+                    <span class="block truncate">{{ action.label || action.name }}</span>
+                    <small class="truncate font-mono">{{ action.name }}</small>
+                  </span>
+                </button>
+              </th>
+              <td colspan="2">
+                @if (!on) {
+                  <nc-chip>
+                    {{
+                      action.inputs.length === 1
+                        ? t('editor.game.inputs.inputCount.one')
+                        : t('editor.game.inputs.inputCount.other', { n: action.inputs.length })
+                    }}
+                  </nc-chip>
+                }
+              </td>
+              <td>
+                <span class="flex justify-end">
+                  <button
+                    ncButton
+                    variant="ghost"
+                    size="sm"
+                    iconOnly
+                    [attr.aria-label]="
+                      t('editor.game.inputs.editNamed', { action: action.label || action.name })
+                    "
+                    (click)="edit(action)">
+                    <nc-icon name="edit" [size]="24" />
+                  </button>
+                  <button
+                    ncButton
+                    variant="ghost"
+                    size="sm"
+                    iconOnly
+                    [attr.aria-label]="
+                      t('editor.game.inputs.removeNamed', { action: action.label || action.name })
+                    "
+                    (click)="remove(action)">
+                    <nc-icon name="trash" [size]="24" />
+                  </button>
+                </span>
+              </td>
+            </tr>
+            @if (on) {
+              @for (plugged of action.inputs; track $index) {
+                <tr [class]="OPEN_ROW">
+                  <th scope="row">
+                    <span class="flex pl-[27px]">
+                      <nc-input-cap [input]="plugged" />
+                    </span>
+                  </th>
+                  <td>
+                    {{
+                      plugged.kind === 'key' ? t('editor.game.inputs.keyboard') : t('input.gamepad')
+                    }}
+                  </td>
+                  <td>
+                    @if (plugged.kind === 'key') {
+                      <button
+                        ncButton
+                        size="xs"
+                        [attr.aria-label]="
+                          t('editor.game.inputs.switchPlayer', {
+                            n: plugged.player + 1,
+                            other: 2 - plugged.player,
+                          })
+                        "
+                        (click)="switchPlayer(action, plugged)">
+                        {{ t('input.playerShort', { n: plugged.player + 1 }) }}
+                      </button>
+                    }
+                  </td>
+                  <td>
+                    <span class="flex justify-end">
+                      <button
+                        ncButton
+                        variant="ghost"
+                        size="sm"
+                        iconOnly
+                        [attr.aria-label]="t('editor.game.inputs.unplug')"
+                        (click)="unplug(action, plugged)">
+                        <nc-mark name="close" />
+                      </button>
+                    </span>
+                  </td>
+                </tr>
+              }
+              <tr [class]="OPEN_ROW">
+                <td colspan="4">
+                  <div class="pb-0.5 pl-[27px]">
+                    @if (clash(); as held) {
+                      <div
+                        class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-1 gap-y-0.75 flat-sm bevel-edge-gold bevel-fill-gold-wash p-1.5"
+                        role="group"
+                        aria-labelledby="clash-title">
+                        <nc-icon name="alert" [size]="24" class="text-gold-ink" />
+                        <span id="clash-title" class="label self-center text-gold-ink">
+                          {{ t('editor.game.inputs.clash', { actions: held.into }) }}
+                        </span>
+                        <nc-input-cap class="col-start-2 justify-self-start" [input]="held.input" />
+                        <span class="col-start-2 flex flex-wrap gap-0.5">
+                          <button
+                            ncButton
+                            data-next
+                            variant="ghost"
+                            size="sm"
+                            (click)="settle(held, true)">
+                            {{ t('editor.game.inputs.moveHere') }}
+                          </button>
+                          <button ncButton variant="ghost" size="sm" (click)="settle(held, false)">
+                            {{ t('editor.game.inputs.keepBoth') }}
+                          </button>
+                          <button
+                            ncButton
+                            variant="ghost"
+                            size="sm"
+                            (click)="clash.set(null); refocus()">
+                            {{ t('editor.code.cancel') }}
+                          </button>
+                        </span>
+                      </div>
+                    } @else if (listeningFor() === action.id) {
+                      <div class="flex flex-wrap items-center gap-1">
+                        <span
+                          class="label flex h-(--nc-h-md) items-center flat-sm bevel-edge-gold bevel-fill-gold-wash px-1.5 text-gold-ink"
+                          role="status">
+                          {{ t('editor.game.inputs.listening') }}
+                        </span>
+                        <button
+                          type="button"
+                          class="flex cursor-pointer items-center gap-0.75 text-meta text-ink-3 hover:text-ink"
+                          (click)="capture.cancel()">
+                          <nc-keycap size="sm">{{ t('input.key.escape') }}</nc-keycap>
+                          {{ t('editor.game.inputs.cancels') }}
+                        </button>
+                      </div>
+                    } @else {
+                      <button ncButton data-next size="sm" (click)="plug(action)">
+                        <nc-mark name="plus" />
+                        {{ t('editor.game.inputs.plug') }}
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          } @empty {
+            <tr>
+              <td colspan="4" class="text-ink-3!">{{ t('editor.game.noActions') }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  }
+</ng-container>

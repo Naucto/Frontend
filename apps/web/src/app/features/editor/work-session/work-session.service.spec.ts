@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { TranslocoService } from '@jsverse/transloco';
 import { client } from '@naucto/api-client';
-import { EditableGame, GAME_SCHEMA_VERSION } from '@naucto/engine';
+import { BUBBLEGUM_16, EditableGame, GAME_SCHEMA_VERSION } from '@naucto/engine';
 import { QueryClient } from '@tanstack/angular-query-experimental';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
@@ -27,6 +27,7 @@ const details = {
   shortDesc: 'A ferry',
   longDesc: '',
   tags: [],
+  palette: [...BUBBLEGUM_16],
   creator: { id: ME },
   collaborators: [],
 };
@@ -120,6 +121,18 @@ describe('WorkSessionService', () => {
     await TestBed.inject(SessionSaveService).save();
     expect(called('PATCH /projects/7/content')).toHaveLength(1);
     expect(called('PUT /projects/7')).toHaveLength(0);
+  });
+
+  it('writes the palette the game draws with onto the project, when the server holds another', async () => {
+    routes['GET /projects/7'] = () => json({ ...details, palette: [] });
+    const service = TestBed.inject(WorkSessionService);
+    await service.open(7);
+    calls.length = 0;
+    service.game.setPaletteColour(3, '#ABCDEF');
+    await TestBed.inject(SessionSaveService).save();
+    const [update] = called('PUT /projects/7');
+    const sent = (await update?.json()) as { palette: string[] };
+    expect(sent.palette).toEqual(BUBBLEGUM_16.map((colour, i) => (i === 3 ? '#abcdef' : colour)));
   });
 
   it('keeps an edit made during a save marked dirty', async () => {
