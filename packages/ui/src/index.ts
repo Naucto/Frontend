@@ -1,3 +1,4 @@
+export * from './bayer';
 export * from './components/arrow-link.directive';
 export * from './components/avatar.component';
 export * from './components/bit-flags.component';
@@ -68,10 +69,9 @@ export * from './components/toggle-button.component';
 export * from './components/tool-group.component';
 export * from './components/tooltip.directive';
 export * from './components/transport.component';
-export { BAYER_8 } from './dither-field';
 export * from './format';
-export { MARK_PATHS, type MarkName } from './icons/marks';
-export { ICON_PATHS, type IconName } from './icons/paths';
+export * from './icons/marks';
+export * from './icons/paths';
 export * from './motion';
 export * from './palette';
 export * from './pipes/relative-time.pipe';
