@@ -15,7 +15,7 @@ test.describe('ratings', () => {
     await page.route('**/reports/ratings', answer(201, { id: 5 }));
 
     await page.goto('/hub');
-    await page.getByRole('contentinfo').getByRole('button', { name: 'Send feedback' }).click();
+    await page.getByRole('contentinfo').getByRole('button', { name: 'Feedback' }).click();
 
     const dialog = page.getByRole('dialog', { name: 'Rate Naucto' });
     await expect(dialog.getByRole('radio', { name: 'Play games' })).toHaveAttribute(
@@ -48,7 +48,7 @@ test.describe('ratings', () => {
     await page.route('**/auth/refresh', answer(401, {}));
 
     await page.goto('/hub');
-    await page.getByRole('contentinfo').getByRole('button', { name: 'Send feedback' }).click();
+    await page.getByRole('contentinfo').getByRole('button', { name: 'Feedback' }).click();
 
     await expect(page.getByRole('dialog').getByRole('heading', { name: 'Sign in' })).toBeVisible();
   });

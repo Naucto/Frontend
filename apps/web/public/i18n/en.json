@@ -304,15 +304,14 @@
     "removeFailed": "Could not remove that person."
   },
   "footer": {
-    "tagline": "A browser fantasy console. Make tiny Lua games together and play them with friends.",
+    "tagline": "Draw, code and play together, right in your browser.",
     "product": "Product",
     "community": "Community",
     "legal": "Legal",
     "makeGame": "Make a game",
-    "feedback": "Send feedback",
+    "feedback": "Feedback",
     "privacy": "Privacy",
-    "security": "Report a vulnerability",
-    "toggleTheme": "Toggle theme",
+    "security": "Security",
     "reportBug": "Report a problem"
   },
   "games": {
