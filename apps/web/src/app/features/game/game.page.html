@@ -105,7 +105,9 @@
             size="bar"
             [variant]="likes.data()?.liked ? 'run' : 'secondary'"
             (click)="toggleLike()">
-            <nc-icon name="heart" [size]="24" [class.like-pop]="justLiked()" />
+            <nc-icon
+              [name]="likes.data()?.liked ? 'heart-filled' : 'heart'"
+              [class.like-pop]="justLiked()" />
             {{ count(likes.data()?.likes ?? release.likes) }} {{ t('game.likes') }}
           </button>
           <button
