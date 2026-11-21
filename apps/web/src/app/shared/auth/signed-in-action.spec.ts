@@ -2,7 +2,7 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { DialogService } from '@naucto/ui';
 import { Subject } from 'rxjs';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AuthStore } from '../../core/auth/auth.store';
 import { SignedInAction } from './signed-in-action';
@@ -19,6 +19,12 @@ const action = (): void => {
 const onDeclined = (): void => {
   declined += 1;
 };
+
+/** The dialog is fetched before it opens, so it is asked a moment after `run` returns. */
+const asked = (): Promise<void> =>
+  vi.waitFor(() => {
+    expect(opened).toBe(1);
+  });
 
 function setUp(signedIn: boolean): SignedInAction {
   isAuthenticated.set(signedIn);
@@ -55,9 +61,9 @@ describe('SignedInAction', () => {
     expect(declined).toBe(0);
   });
 
-  it('asks a signed-out reader first, and runs once they have signed in', () => {
+  it('asks a signed-out reader first, and runs once they have signed in', async () => {
     setUp(false).run(action, onDeclined);
-    expect(opened).toBe(1);
+    await asked();
     expect(ran).toBe(0);
     closed.next(true);
     expect(ran).toBe(1);
@@ -68,8 +74,9 @@ describe('SignedInAction', () => {
    * Escape and the backdrop close with `undefined`, not `false`; both are a refusal, and a netplay
    * request left pending on one of them would hang the game that made it.
    */
-  it('declines when the dialog closes any other way', () => {
+  it('declines when the dialog closes any other way', async () => {
     setUp(false).run(action, onDeclined);
+    await asked();
     closed.next(undefined);
     expect(ran).toBe(0);
     expect(declined).toBe(1);
