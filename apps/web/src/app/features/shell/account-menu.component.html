@@ -14,8 +14,13 @@
         <nc-avatar [name]="auth.displayName()" [src]="avatar()" [size]="40" />
         <div class="grid min-w-0 gap-[2px]">
           <div class="truncate text-body text-ink">{{ auth.displayName() }}</div>
-          <div class="label text-ink-4">
-            {{ t('account.gamesFriends', { g: games.data() ?? 0, f: friends.data() ?? 0 }) }}
+          <div class="flex gap-1.5">
+            <nc-stat icon="grid" [value]="games.data() ?? 0" [label]="t('account.games')" compact />
+            <nc-stat
+              icon="users"
+              [value]="friends.data() ?? 0"
+              [label]="t('account.friends')"
+              compact />
           </div>
         </div>
       </div>

@@ -7,7 +7,7 @@ import {
   output,
 } from '@angular/core';
 
-import { IconComponent } from './icon.component';
+import { MarkComponent } from './mark.component';
 
 export type ChipTone = 'neutral' | 'gold' | 'hot' | 'jade' | 'sky' | 'orange';
 
@@ -36,7 +36,7 @@ const KINDS = {
 /** Small labelled token: tags, status badges, author chips. */
 @Component({
   selector: 'nc-chip',
-  imports: [IconComponent],
+  imports: [MarkComponent],
   templateUrl: './chip.component.html',
   host: { '[class]': 'classes()' },
   changeDetection: ChangeDetectionStrategy.OnPush,

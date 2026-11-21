@@ -271,6 +271,17 @@
   --nc-key-side: #9e8b62;
   --nc-key-ink: #1c170e;
 
+  /* The floppy disk, which has no theme twin: its shutter is steel, its label paper and its window
+     dark in any light, and only the plastic around them is the game's to colour. */
+  --nc-disk-steel: #c9cdd5;
+  --nc-disk-steel-lit: #eef0f3;
+  --nc-disk-steel-shade: #9aa1ad;
+  --nc-disk-steel-foot: #8e95a2;
+  --nc-disk-paper: #f4f1e6;
+  --nc-disk-ink: #16171a;
+  --nc-disk-window: #1d1a17;
+  --nc-disk-media: #3a2e24;
+
   /* One pixel of the kit. Every stroke is a whole number of these: borders, bevel edges and
      skirts, separators, ticks, the travel of a press, the focus ring. Boxes, paddings and gaps are
      free of it. */

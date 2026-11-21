@@ -1,0 +1,18 @@
+<a
+  class="relative block"
+  [routerLink]="link()"
+  [attr.aria-label]="game().name"
+  [attr.aria-expanded]="flyoutId() ? open() : null"
+  [attr.aria-controls]="flyoutId()"
+  [attr.aria-describedby]="open() ? flyoutId() : null">
+  <nc-floppy
+    info="bandBottom"
+    [disk]="disk()"
+    [cover]="game().coverUrl"
+    [preview]="game().clipUrl ?? null"
+    [by]="game().creator.username"
+    [likes]="game().likes"
+    [comments]="game().commentCount ?? null"
+    [action]="action()"
+    [open]="open()" />
+</a>

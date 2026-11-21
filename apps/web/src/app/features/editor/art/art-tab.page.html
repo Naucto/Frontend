@@ -127,14 +127,11 @@
       }
       @if (hover(); as hoverInfo) {
         <div
-          class="pointer-events-none absolute bottom-1.5 left-1.5 font-mono text-micro tracking-[0.1em] text-ink-4">
-          {{
-            t('editor.art.status', {
-              x: pad3(hoverInfo.x),
-              y: pad3(hoverInfo.y),
-              col: pad2(hoverInfo.col),
-            })
-          }}
+          class="pointer-events-none absolute bottom-1.5 left-1.5 flex gap-1.5 font-mono text-micro tracking-[0.1em] text-ink-4">
+          <span>
+            {{ t('editor.art.statusAt', { x: pad3(hoverInfo.x), y: pad3(hoverInfo.y) }) }}
+          </span>
+          <span>{{ t('editor.art.statusColour', { col: pad2(hoverInfo.col) }) }}</span>
         </div>
       }
       <div class="pointer-events-none absolute right-1.5 bottom-1.5 flex items-center gap-1.25">
@@ -283,7 +280,7 @@
           [ncPopover]="presets"
           popoverAlign="end">
           {{ t('editor.art.presets') }}
-          <nc-icon name="chevron-down" [size]="24" />
+          <nc-mark name="chevron-down" />
         </button>
         <button
           type="button"

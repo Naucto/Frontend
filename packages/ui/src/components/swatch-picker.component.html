@@ -12,7 +12,7 @@
       class="flex h-[24px] w-[26px] items-center justify-center text-ink-4 group-data-on:text-active-ink"
       [class]="cell.sinks ? 'group-data-on:h-[21px]' : ''">
       @if (cell.slot === null) {
-        <nc-icon name="close" [size]="12" />
+        <nc-mark name="close" />
       } @else {
         <span [class]="markClass(cell.slot)" [style.background]="cell.ink"></span>
       }

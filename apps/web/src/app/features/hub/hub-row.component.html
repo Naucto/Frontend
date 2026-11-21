@@ -13,7 +13,7 @@
             {{ t('hub.seeAll') }}
           }
           <!-- An icon, not a literal arrow: the pixel faces have no glyph for →. -->
-          <nc-icon name="arrow-right" [size]="24" />
+          <nc-mark name="arrow-right" />
         </a>
       }
     </div>
@@ -21,14 +21,13 @@
   <div class="grid grid-cols-2 gap-x-2 gap-y-2.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
     @switch (state()) {
       @case ('pending') {
-        <!-- At the card's real geometry, so the shelf does not jump when the games land. -->
+        <!-- At the real geometry of a disk over its name, so the shelf does not jump when the
+             games land. -->
         @for (i of placeholders; track i) {
-          <nc-cover-card aria-hidden="true" name="&nbsp;">
-            <nc-skeleton cover height="100%" />
-            <div meta class="mt-0.5 flex justify-center">
-              <nc-skeleton height="20px" width="45%" />
-            </div>
-          </nc-cover-card>
+          <div>
+            <nc-skeleton height="auto" [style.aspect-ratio]="DISK_RATIO" />
+            <nc-disk-name>&nbsp;</nc-disk-name>
+          </div>
         }
       }
       @case ('error') {
@@ -38,21 +37,19 @@
       @default {
         <ng-content select="[lead]" />
         @for (game of games(); track game.id) {
-          <nc-game-card [game]="game" [opensEditor]="opensEditor()" />
+          <nc-game-disk [game]="game" [opensEditor]="opensEditor()" />
         } @empty {
           <!-- A shelf that reserves room keeps the copy to one cell rather than a row of its
                own: the cells the ghosts fill behind it are what hold the height. -->
           <p class="text-body text-ink-3" [class.col-span-full]="!reserve()">{{ empty() }}</p>
         }
-        <!-- The card itself with nothing in it, not a fixed height: only the same boxes come out
-             to the same pixel at every column count. -->
+        <!-- The shape of a disk over its name with nothing in it, not a fixed height: only the
+             same boxes come out to the same pixel at every column count. -->
         @for (i of ghosts(); track i) {
-          <nc-cover-card class="invisible" aria-hidden="true" name="&nbsp;">
-            <div meta class="mt-0.5 flex items-center justify-center">
-              <span class="inline-block h-[20px]"></span>
-              <span class="label">&nbsp;</span>
-            </div>
-          </nc-cover-card>
+          <div aria-hidden="true">
+            <div [style.aspect-ratio]="DISK_RATIO"></div>
+            <nc-disk-name>&nbsp;</nc-disk-name>
+          </div>
         }
       }
     }

@@ -32,7 +32,7 @@ Pixelarticons, Bubblegum-16 palette, dark + light themes).
 | `npm run typecheck`                       | `tsc --noEmit` per workspace.                                                                 |
 | `npm test`                                | Vitest in every workspace (`ng test` for the app).                                            |
 | `npm run e2e`                             | Playwright (starts the dev server unless `E2E_BASE_URL` is set).                              |
-| `npm run pixel:check`                     | Fails on rounded corners, strokes off the 3px pixel and density tokens (see Gotchas).         |
+| `npm run pixel:check`                     | Fails on rounded corners, off-pixel strokes, density tokens, "·" separators and shrunk icons. |
 | `npm run docs:build`                      | Builds the docs submodule into `apps/web/public/docs` (run it before `start`/`build`/`e2e`).  |
 | `./dev.sh`                                | Dev server in Docker against the Backend on the `naucto-dev` network (hot reload, port 3001). |
 | `docker compose up --build`               | Production-style image on port 3001; `APP_*` env vars configure it at runtime.                |
@@ -49,6 +49,16 @@ Pixelarticons, Bubblegum-16 palette, dark + light themes).
 4. **Ask before architectural decisions** (new state library, new dependency, cross-cutting change).
 5. **Never hand-edit generated code** (`packages/api-client/src` comes from `openapi.json`; docs assets
    are built from the submodule).
+6. **Settle a look in an artifact before writing it into the app.** When a change concerns a screen
+   the design does not draw, or its look would take back-and-forth to settle:
+   1. Say so to the user before building anything, and go on only if they agree.
+   2. Build several versions that differ in structure, with the real kit, on fixtures.
+   3. Publish them as an artifact: a screenshot per version and state, each with its trade-off.
+   4. Let the user pick one or ask for another round.
+   5. Implement only what was picked.
+
+   The method in full, for agents that load project skills:
+   `.claude/skills/naucto-screen-design/SKILL.md`.
 
 ## Architecture
 
@@ -139,7 +149,7 @@ Pixelarticons, Bubblegum-16 palette, dark + light themes).
 
 - Component selectors `nc-kebab-case`, directives `ncCamelCase`. Standalone, `OnPush`, `input()` /
   `output()` / `model()`, `inject()`, signals everywhere, no `any`.
-- Files: kebab-case (`game-card.component.ts`, `auth.store.ts`); one responsibility per file.
+- Files: kebab-case (`game-disk.component.ts`, `auth.store.ts`); one responsibility per file.
 - Imports sorted by `simple-import-sort`. Inside `apps/web`, relative paths; across packages, the
   package name (`@naucto/ui`, `@naucto/engine`, `@naucto/api-client`).
 - A lazy route target (`*.page.ts`, `*.routes.ts`, the two shells) is its file's `export default`,
@@ -167,6 +177,43 @@ No secrets in the repo (see `.env.example` for what `.env` actually holds; never
 `.npmrc` values or Docker layers). Sanitise any HTML that does not come from our own build (docs
 are built at compile time). Validate redirect targets. Do not disable security lint rules. See
 `SECURITY.md`.
+
+## Design rules
+
+The owner's rules for every screen and every kit component. Where a design source draws otherwise,
+the rule wins.
+
+1. **No "·" between two things.** A dot says two things are apart and nothing about how they
+   relate, so every line built on it reads flat. Say the relation with the kit: a count or a state
+   is an `nc-chip` or an `nc-stat`, a name and its value are a label and a value, two facts are two
+   elements a gap apart. Another character in its place ("|", "/", "—", "•") is the same dot.
+   `npm run pixel:check` fails on one in the catalogue, a template or a string literal; comments
+   and the docs submodule are not read.
+2. **Hierarchy, not separators.** A rule under every row gives every row the same weight, and a
+   screen ruled all over shows no structure at all. Group what belongs together, and tell groups
+   apart by weight and spacing; keep a rule for the edge between two regions. A list of options or
+   controls is a table component of the kit, not rows a screen rules by hand.
+3. **A symbol is pixel art, and its pixel is the kit's.** Arrows, the cross, the plus, the check
+   and key glyphs are drawn on a grid whose cell is one kit pixel (3px): an `nc-mark` (five cells,
+   15px), an `nc-icon`, or an inline SVG under `shape-rendering: crispEdges`. Never a font
+   character (×, ←, ↑, +): a glyph is sized by its face, not by the grid, and one the face lacks
+   comes from whatever font the browser falls back to. Never a glyph scaled below its native size
+   or to a size that is not a multiple of it: its steps land on fractions of a pixel and its
+   diagonals blur. A control that needs a smaller mark gets one drawn for that size, not a shrunk
+   icon.
+4. **Alternatives read as alternatives.** Two keys bound to one action are written "Space or ↑",
+   the arrow drawn. Two keycaps side by side read as a chord to press together.
+5. **No words nobody asked for.** A notice that explains the screen and a caption that describes
+   what is already on it ("your games, in the order you made them") are read once and keep their
+   room for good. Keep the datum that informs, the count, and show it as rule 6 says. Name a
+   control so it needs no explaining, or put the explanation behind an `nc-help-dot`, where it is
+   asked for.
+6. **What the kit draws is drawn with the kit.** A count is an `nc-chip` or an `nc-stat`, a person
+   is the kit's avatar, a title that may overflow its plate is fitted as the floppy's label is. A
+   look-alike, a coloured square with an initial or a bare number in a span, lacks what the piece
+   carries (its frame, its reflection, the person's own colour) and stops following the kit at its
+   next change. Look on `/ui-kit` before building any small element; if no piece fits, the kit
+   gains one, and a page does not draw a one-off.
 
 ## Deliberate divergences from the design
 
@@ -221,10 +268,16 @@ broken; an absence reads as not built.
   all its frames, as the docs block of `apps/web/src/styles.css` does.
 - `@naucto/ui` is declared free of side effects (`sideEffects` in its `package.json`). That is what
   lets a page that imports one component from the barrel load that one and not the whole kit, so a
-  kit module does nothing at import that something other than its own exports relies on.
+  kit module does nothing at import that something other than its own exports relies on. Its barrel
+  passes every name on with `export * from`: a name passed on with `export { X } from` makes the
+  barrel itself part of whatever imports `X`, and the bundler puts the whole kit in what every page
+  loads.
 - A dialog a root service opens (`FeedbackLauncher`, `SignedInAction`, `nc-feedback-prompt`) is
   fetched with `import()` when it opens, and names the component by `import type` only: a static
   import puts the dialog and everything it draws in what every page loads.
+- A class in a component's own stylesheet that is spelled like a utility gets the utility as well:
+  Tailwind reads the template and generates it. `label` set a disk's whole label in tracked
+  capitals, `hidden` removed what was only meant to fade, and `outline` and `ring` draw strokes.
 - `tools/pixel-allow.json` is what each file still owes `npm run pixel:check`. A change that moves a
   file onto the kit lowers its entry in the same diff (`npm run pixel:check -- --update`); nothing
   raises one.
@@ -271,9 +324,14 @@ broken; an absence reads as not built.
   forever. `packages/ui/src/components/presence-flag.component.ts` draws its own path too and is not
   listed; nothing reports it today, so it stays out until something does. The edge chips in
   `presence-layer.component.ts` beside it use `nc-icon`, so they are covered.
-- `IconSize` is `12 | 24 | 48` on purpose: a 24-grid glyph only stays crisp under
-  `shape-rendering: crispEdges` at exact halves and doubles. Where an artboard renders one at 16,
-  take the nearest legal step rather than widening the union.
+- An `nc-icon` is native at 24 and doubles to 48. `IconSize` still holds 12, which halves the
+  glyph's own pixel: nothing new uses it, and `tools/pixel-allow.json` lists what still does. Where
+  an artboard renders an icon at 16, take 24 or an `nc-mark`, never a size in between.
+- The `nc-icon` set is older than the rule that a glyph's pixel is the kit's: it is drawn on a
+  24 grid with a cell of two units (one unit for a third of it, three for the four carets), so at
+  24 its pixel is 2px or 1px where the kit's is 3px. The `nc-mark` set (`icons/marks.ts`) is drawn
+  five cells across at 3px a cell. Redrawing the icons on the kit pixel is a design decision that
+  has not been taken; until it is, a small mark goes in as an `nc-mark`.
 - TypeScript 6: `baseUrl` is deprecated; path aliases are relative to each `tsconfig.json`.
 - An ingest answer that asks to rotate the visitor or the session applies only while the cookies
   still hold the identity the request carried. Go through `applyRotation`, or a late answer about an

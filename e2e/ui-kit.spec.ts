@@ -84,3 +84,52 @@ test('a toast is shown from the overlay container and can be dismissed', async (
   await page.locator('nc-toast-host').getByRole('button', { name: 'Dismiss' }).click();
   await expect(toast).toHaveCount(0);
 });
+
+/** A floppy's states are custom properties read by its stylesheet: only a browser sees them. */
+test('a floppy opens a quarter of a shutter, raises a whole-pixel diamond and lifts under a mouse', async ({
+  page,
+}) => {
+  await page.goto('/ui-kit');
+  const open = page.getByTestId('floppy-open');
+  const slide = await open.locator('.shutter').evaluate((el) => {
+    return new DOMMatrix(getComputedStyle(el).transform).m41 / (el as HTMLElement).offsetWidth;
+  });
+  expect(slide).toBeCloseTo(0.25, 2);
+  const cell = await open
+    .locator('.action')
+    .evaluate((el) => parseFloat(getComputedStyle(el).width) / 16);
+  expect(Number.isInteger(cell)).toBe(true);
+
+  const rest = page.getByTestId('floppy-rest').locator('nc-floppy');
+  await expect(rest.locator('.action')).toHaveCSS('opacity', '0');
+  await rest.hover();
+  await expect(rest).toContainClass('lit');
+  await expect(rest.locator('.edge')).toHaveCount(4);
+  await expect(rest.locator('.action')).toHaveCSS('opacity', '1');
+
+  await page.mouse.move(0, 0);
+  await expect(rest).not.toContainClass('lit');
+  await expect(rest.locator('.edge')).toHaveCount(0);
+});
+
+test('a floppy opens flat when motion is reduced', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('naucto.reduce-motion', 'true');
+  });
+  await page.goto('/ui-kit');
+  const rest = page.getByTestId('floppy-rest').locator('nc-floppy');
+  await rest.hover();
+  await expect(rest.locator('.action')).toHaveCSS('opacity', '1');
+  await expect(rest).not.toContainClass('lit');
+});
+
+test('taking a seat on a session disk stays on the page and lands a sticker', async ({ page }) => {
+  await page.goto('/ui-kit');
+  const session = page.getByTestId('floppy-session');
+  await expect(session.locator('.sticker.away')).toHaveCount(1);
+  await session.hover();
+  await session.locator('.action').click();
+  await expect(page).toHaveURL(/\/ui-kit$/);
+  await expect(session.locator('.action')).toHaveCount(0);
+  await expect(session.locator('.sticker.away .seat')).toHaveCount(1);
+});

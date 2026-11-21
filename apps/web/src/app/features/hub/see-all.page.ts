@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, signal } f
 import { RouterLink } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import type { ProjectExResponseDto } from '@naucto/api-client';
-import { ButtonDirective, IconComponent, SegmentedComponent } from '@naucto/ui';
+import { ButtonDirective, MarkComponent, SegmentedComponent } from '@naucto/ui';
 
 import {
   injectReleasesInfinite,
@@ -22,7 +22,7 @@ const STEP = 15;
     RouterLink,
     TranslocoDirective,
     ButtonDirective,
-    IconComponent,
+    MarkComponent,
     SegmentedComponent,
     HubRowComponent,
   ],

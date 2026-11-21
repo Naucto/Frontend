@@ -18,6 +18,7 @@ import {
   IconComponent,
   OnlineDotComponent,
   SearchComponent,
+  StatComponent,
   SuggestPanelComponent,
   SuggestRowComponent,
 } from '@naucto/ui';
@@ -89,6 +90,7 @@ const SECTIONS: readonly { key: keyof Suggestions; targets: (results: Suggestion
     ChipComponent,
     IconComponent,
     OnlineDotComponent,
+    StatComponent,
     GameCoverComponent,
   ],
   templateUrl: './search-suggest.component.html',

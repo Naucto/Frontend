@@ -6,11 +6,11 @@
       [style.left.px]="mark.x"
       [style.top.px]="mark.y">
       @if (!trails(dir)) {
-        <nc-icon [name]="arrow(dir)" [size]="12" />
+        <nc-mark [name]="arrow(dir)" />
       }
       <span class="max-w-[84px] overflow-hidden text-ellipsis">{{ mark.name }}</span>
       @if (trails(dir)) {
-        <nc-icon [name]="arrow(dir)" [size]="12" />
+        <nc-mark [name]="arrow(dir)" />
       }
     </div>
   } @else {

@@ -19,6 +19,7 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { type Game } from '@naucto/engine';
 import {
   ButtonDirective,
+  ChipComponent,
   DialogService,
   ErrorStateComponent,
   IconComponent,
@@ -42,6 +43,7 @@ import { VirtualPadComponent } from './virtual-pad.component';
 @Component({
   selector: 'nc-game-screen',
   imports: [
+    ChipComponent,
     ButtonDirective,
     IconComponent,
     PopoverDirective,
@@ -146,17 +148,6 @@ export class GameScreenComponent {
   private readonly theme = inject(ThemeService);
   protected readonly canvasLabel = inject(TranslocoService).translate('game.screen.canvas');
   protected readonly showCpu = computed(() => this.debug());
-  /** The error as the Console would print it: where, then what. */
-  protected readonly errorLine = computed(() => {
-    const error = this.host.error();
-    if (!error) {
-      return '';
-    }
-    const at = error.file
-      ? `${error.file}${error.line === undefined ? '' : `:${String(error.line)}`} · `
-      : '';
-    return `${at}${error.phase}: ${error.message}`;
-  });
   /**
    * Hidden while idle: there is nothing to count until the game runs, and the play overlay already
    * says it is waiting.

@@ -18,6 +18,7 @@ import {
 
 import { type IconName } from '../icons/paths';
 import { IconComponent } from './icon.component';
+import { MarkComponent } from './mark.component';
 
 export interface TabItem<T extends string> {
   value: T;
@@ -115,7 +116,7 @@ const VARIANT: Record<
  */
 @Component({
   selector: 'nc-tabs',
-  imports: [IconComponent, CdkDrag, CdkDropList],
+  imports: [IconComponent, MarkComponent, CdkDrag, CdkDropList],
   templateUrl: './tabs.component.html',
   // Positioned, so the chosen tab is drawn over the top edge of a frame pulled up under the rule.
   host: { class: 'relative block' },

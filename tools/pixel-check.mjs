@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 /**
  * Fails on what the pixel kit has no place for: a rounded corner, a stroke that is not a whole
- * number of 3px pixels, and the density tokens the size ladder replaced.
+ * number of 3px pixels, the density tokens the size ladder replaced, a "·" set between two
+ * things on screen (in the catalogue, a template or a string; see `separators.mjs`), and an
+ * `nc-icon` shrunk to 12, where the glyph's own pixel is halved.
  *
  * `tools/pixel-allow.json` lists what each file still owes, rule by rule. A file may owe less than
  * its entry says, never more, and a file with no entry owes nothing. `--update` rewrites the entries
@@ -10,9 +12,12 @@
 import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 
+import { separators } from './separators.mjs';
+
 const ROOT = resolve(import.meta.dirname, '..');
 const ALLOW = join(ROOT, 'tools/pixel-allow.json');
 const SOURCES = ['packages/ui/src', 'apps/web/src'];
+const CATALOGUES = 'apps/web/public/i18n';
 const PIXEL = 3;
 
 function* walk(dir) {
@@ -45,6 +50,8 @@ const STROKE_WIDTH = /stroke-width\s*(?:=\s*["']|:\s*)(\d+(?:\.\d+)?)/g;
 const DENSITY =
   /nc-density-(?:small|big)|--nc-density|--nc-control-(?:text|leading)|--nc-bar-h|--nc-control-h(?:-xs|-sm)?|--nc-tool-w|--nc-transport-h|(?<![\w-])control-type(?![\w-])/g;
 
+const SHRUNK_ICON = /<nc-icon\b[^>]*\[size\]="12"/g;
+
 /** Class names only mean something inside a string, so prose that says "border" is not counted. */
 function strings(line) {
   return [...line.matchAll(/'([^']*)'|"([^"]*)"|`([^`]*)`/g)].map(
@@ -57,7 +64,16 @@ function count(text, pattern, keep = () => true) {
 }
 
 function violations(path, text) {
-  const found = { rounded: 0, border: 0, 'stroke-width': 0, density: 0 };
+  const found = {
+    rounded: 0,
+    border: 0,
+    'stroke-width': 0,
+    density: 0,
+    separator: 0,
+    'icon-scale': 0,
+  };
+  found.separator = separators(path, text);
+  found['icon-scale'] = count(text, SHRUNK_ICON);
   found.density = count(text, DENSITY);
   found['stroke-width'] = count(text, STROKE_WIDTH, ([, width]) => offPixel(Number(width)));
   if (path.endsWith('.css')) {
@@ -81,6 +97,15 @@ for (const dir of SOURCES) {
     if (Object.keys(owed).length > 0) {
       found[relative(ROOT, file)] = owed;
     }
+  }
+}
+
+// A catalogue is copy, so only the separator is looked for: a sentence that says "border" names
+// no class.
+for (const name of readdirSync(join(ROOT, CATALOGUES))) {
+  const separator = separators(name, readFileSync(join(ROOT, CATALOGUES, name), 'utf8'));
+  if (separator > 0) {
+    found[`${CATALOGUES}/${name}`] = { separator };
   }
 }
 
@@ -123,7 +148,9 @@ if (over.length > 0) {
   console.error(over.join('\n'));
   console.error(
     '\nrounded: corners are stepped by the bevel utilities. border: a stroke is 3px or a multiple' +
-      ' (border-3, or a bevel). density: use the --nc-h-* ladder.',
+      ' (border-3, or a bevel). density: use the --nc-h-* ladder. separator: no "·" between two' +
+      ' things; a chip, a label and its value, or two elements a gap apart. icon-scale: an icon' +
+      ' is 24 or 48; a smaller mark is an nc-mark, drawn for its size.',
   );
   process.exit(1);
 }

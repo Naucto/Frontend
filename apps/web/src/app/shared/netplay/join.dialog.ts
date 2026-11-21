@@ -8,6 +8,7 @@ import {
   IconComponent,
   InputDirective,
   SearchComponent,
+  StatComponent,
   ToastService,
   TooltipDirective,
 } from '@naucto/ui';
@@ -31,6 +32,7 @@ export interface JoinDialogData {
 @Component({
   selector: 'nc-join-dialog',
   imports: [
+    StatComponent,
     TranslocoDirective,
     ButtonDirective,
     DialogShellComponent,

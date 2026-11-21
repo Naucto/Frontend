@@ -2,24 +2,25 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import { RouterLink } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
 import type { ProjectExResponseDto } from '@naucto/api-client';
-import { ButtonDirective, IconComponent, SkeletonComponent } from '@naucto/ui';
+import { ButtonDirective, MarkComponent, SkeletonComponent } from '@naucto/ui';
 
-import { CoverCardComponent } from '../../shared/game-card/cover-card.component';
-import { GameCardComponent } from '../../shared/game-card/game-card.component';
+import { DiskNameComponent } from '../../shared/game-card/disk-name.component';
+import { DISK_RATIO } from '../../shared/game-card/floppy.component';
+import { GameDiskComponent } from '../../shared/game-card/game-disk.component';
 
 /** Whether the shelf has its games, is still asking, or could not find out. */
 export type ShelfState = 'ready' | 'pending' | 'error';
 
-/** A titled shelf of game cards, five to a row at full width, with a "see all" link and actions. */
+/** A titled shelf of game disks, five to a row at full width, with a "see all" link and actions. */
 @Component({
   selector: 'nc-hub-row',
   imports: [
     RouterLink,
     TranslocoDirective,
     ButtonDirective,
-    CoverCardComponent,
-    GameCardComponent,
-    IconComponent,
+    DiskNameComponent,
+    GameDiskComponent,
+    MarkComponent,
     SkeletonComponent,
   ],
   templateUrl: './hub-row.component.html',
@@ -33,14 +34,15 @@ export class HubRowComponent {
   readonly empty = input('Nothing here yet.');
   /** How many games the shelf has in total, shown beside "see all". */
   readonly count = input(0);
-  /** Whether this shelf's cards open the editor rather than the play page. */
+  /** Whether this shelf's disks open the editor rather than the play page. */
   readonly opensEditor = input(false);
   readonly state = input<ShelfState>('ready');
   /**
    * How many cells the shelf keeps whatever it holds, so narrowing it does not change its height;
-   * the cells the games do not fill stay, invisible, at a card's geometry.
+   * the cells the games do not fill stay, empty, at a disk's geometry.
    */
   readonly reserve = input(0);
+  protected readonly DISK_RATIO = DISK_RATIO;
   protected readonly placeholders = [0, 1, 2, 3, 4];
   /** An empty shelf still takes one cell for its copy, so the ghosts start after it. */
   protected readonly ghosts = computed(() =>

@@ -1,12 +1,14 @@
-<button
-  ncButton
-  variant="ghost"
-  size="sm"
-  iconOnly
-  [attr.aria-label]="previousLabel()"
-  (click)="step(-1)">
-  <nc-icon name="chevron-left" [size]="12" />
-</button>
+@if (arrows()) {
+  <button
+    ncButton
+    variant="ghost"
+    size="sm"
+    iconOnly
+    [attr.aria-label]="previousLabel()"
+    (click)="step(-1)">
+    <nc-mark name="chevron-left" />
+  </button>
+}
 <span role="tablist" class="flex items-center gap-[6px]" [attr.aria-label]="label()">
   @for (page of pages(); track page) {
     <button
@@ -14,8 +16,10 @@
       role="tab"
       class="relative h-[8px] cursor-pointer bg-line-strong transition-[width,background-color] duration-[180ms] ease-out"
       [class]="page === value() ? 'w-[34px]' : 'w-[8px] hover:bg-ink-3'"
+      [attr.tabindex]="page === value() ? 0 : -1"
       [attr.aria-selected]="page === value()"
-      [attr.aria-label]="pageLabel() + ' ' + (page + 1)"
+      [attr.aria-controls]="controls() ?? null"
+      [attr.aria-label]="labels()?.[page] ?? pageLabel() + ' ' + (page + 1)"
       (click)="value.set(page)">
       @if (page === value()) {
         <span #fill class="absolute inset-0 origin-left bg-primary"></span>
@@ -23,12 +27,14 @@
     </button>
   }
 </span>
-<button
-  ncButton
-  variant="ghost"
-  size="sm"
-  iconOnly
-  [attr.aria-label]="nextLabel()"
-  (click)="step(1)">
-  <nc-icon name="chevron-right" [size]="12" />
-</button>
+@if (arrows()) {
+  <button
+    ncButton
+    variant="ghost"
+    size="sm"
+    iconOnly
+    [attr.aria-label]="nextLabel()"
+    (click)="step(1)">
+    <nc-mark name="chevron-right" />
+  </button>
+}
