@@ -14,7 +14,7 @@
 import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 
-import { separators } from './separators.mjs';
+import { separators, withoutMarkupComments } from './separators.mjs';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const ALLOW = join(ROOT, 'tools/pixel-allow.json');
@@ -92,9 +92,7 @@ const VOID = new Set(['input', 'img', 'br', 'hr', 'source', 'path', 'rect', 'cir
 function misfits(template) {
   const open = [];
   let total = 0;
-  for (const [, closing, tag, attributes] of template
-    .replace(/<!--[\s\S]*?-->/g, '')
-    .matchAll(TAG)) {
+  for (const [, closing, tag, attributes] of withoutMarkupComments(template).matchAll(TAG)) {
     if (closing) {
       const at = open.findLastIndex((element) => element.tag === tag);
       if (at >= 0) {
