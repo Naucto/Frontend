@@ -12,8 +12,7 @@
  * `content-size` module live; `tools/migrate-games.mjs` builds the bundle it runs as.
  *
  *   node migrate-games.cjs --dry-run [--project <id>]   reads everything, writes nothing
- *   node migrate-games.cjs --apply   [--project <id>]   rewrites what is behind, or at the current
- *                                                       schema but still in an older shape
+ *   node migrate-games.cjs --apply   [--project <id>]   rewrites what is behind
  *   node migrate-games.cjs --check <id>                 prints the schema of each object of one game
  */
 import { writeFileSync } from 'node:fs';
@@ -40,8 +39,6 @@ export interface BlobMigration {
   warnings: string[];
   /** Written by a newer schema than this build knows: there is no reading it, let alone rewriting it. */
   future: boolean;
-  /** At the current schema already, and rewritten in place into the shape it now has. */
-  reshaped: boolean;
 }
 
 const describeWarning = (warning: MigrationWarning): string => {
@@ -60,13 +57,7 @@ export function migrateBlob(bytes: Uint8Array): BlobMigration {
       Y.applyUpdate(doc, bytes);
     }
     const from = schemaVersionOf(doc);
-    const untouched = {
-      bytes: null,
-      from,
-      to: GAME_SCHEMA_VERSION,
-      warnings: [],
-      reshaped: false,
-    };
+    const untouched = { bytes: null, from, to: GAME_SCHEMA_VERSION, warnings: [] };
     if (isFromFutureSchema(doc)) {
       return { ...untouched, future: true };
     }
@@ -81,7 +72,6 @@ export function migrateBlob(bytes: Uint8Array): BlobMigration {
       to: report.to,
       warnings: report.warnings.map(describeWarning),
       future: false,
-      reshaped: report.from === report.to && (report.counts.reshaped ?? 0) > 0,
     };
   } finally {
     doc.destroy();
@@ -173,8 +163,6 @@ interface ObjectResult {
   to?: number;
   bytes?: number;
   warnings: string[];
-  /** Rewritten in place at the current schema. */
-  reshaped?: boolean;
   error?: string;
 }
 
@@ -196,7 +184,6 @@ interface Report {
   totals: Record<ObjectStatus, number> & {
     projects: number;
     contentSizes: number;
-    reshaped: number;
   };
   transitions: Record<string, number>;
   warnings: string[];
@@ -427,7 +414,6 @@ async function processObject(
       to: out.to,
       bytes: bytes.byteLength,
       warnings: out.warnings,
-      reshaped: out.reshaped,
     };
     if (out.future) {
       return { result: { ...base, status: 'future' }, migrated: null };
@@ -460,7 +446,7 @@ function describeTransition(object: ObjectResult): string {
   if (object.status !== 'migrated') {
     return ` (schema ${String(object.from)})`;
   }
-  return ` ${String(object.from)}→${String(object.to)}${object.reshaped === true ? ' (in place)' : ''}`;
+  return ` ${String(object.from)}→${String(object.to)}`;
 }
 
 async function processProject(run: Run, row: ProjectRow): Promise<ProjectResult> {
@@ -514,9 +500,6 @@ function tally(report: Report): void {
     report.warnings.push(...project.notes.map((note) => `#${String(project.id)}: ${note}`));
     for (const object of project.objects) {
       report.totals[object.status] += 1;
-      if (object.reshaped === true) {
-        report.totals.reshaped += 1;
-      }
       if (object.status === 'migrated') {
         const transition = `${String(object.from)}→${String(object.to)}`;
         report.transitions[transition] = (report.transitions[transition] ?? 0) + 1;
@@ -542,9 +525,6 @@ function printSummary(report: Report, path: string): void {
     ([key, count]) => `${key}: ${String(count)}`,
   );
   console.log(`transitions: ${transitions.length > 0 ? transitions.join(', ') : 'none'}`);
-  console.log(
-    `rewritten in place at schema ${String(report.schemaVersion)}: ${String(totals.reshaped)}${report.mode === 'apply' ? '' : ' (not written)'}`,
-  );
   console.log(
     `content sizes recomputed: ${String(totals.contentSizes)}${report.mode === 'apply' ? '' : ' (not written)'}`,
   );
@@ -584,13 +564,7 @@ async function check(run: Run, id: number): Promise<void> {
     try {
       const { bytes } = await readObject(run.store, key);
       const out = migrateBlob(bytes);
-      const state = out.future
-        ? 'future'
-        : out.bytes === null
-          ? 'current'
-          : out.reshaped
-            ? 'older shape'
-            : 'behind';
+      const state = out.future ? 'future' : out.bytes === null ? 'current' : 'behind';
       const latest = key === latestSave ? ', latest autosave' : '';
       console.log(
         `  ${key}: schema ${String(out.from)} (${state}${latest}, ${String(bytes.byteLength)} bytes)`,
@@ -664,7 +638,6 @@ async function main(): Promise<void> {
     totals: {
       projects: 0,
       contentSizes: 0,
-      reshaped: 0,
       migrated: 0,
       skipped: 0,
       future: 0,
