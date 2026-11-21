@@ -1,9 +1,9 @@
 <section *transloco="let t" class="grid gap-[18px]">
   <div class="flex items-center justify-between">
-    <h2 class="font-display text-title text-ink">
-      {{ t('comments.title') }}
-      <span class="text-label text-ink-4">{{ total() }}</span>
-    </h2>
+    <div class="flex items-center gap-1">
+      <h2 class="font-display text-title text-ink">{{ t('comments.title') }}</h2>
+      <nc-chip>{{ total() }}</nc-chip>
+    </div>
     <span class="label text-ink-4">{{ t('comments.newest') }}</span>
   </div>
 
