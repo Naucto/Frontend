@@ -468,8 +468,6 @@
       "pause": "Pause",
       "restart": "Restart",
       "step": "Step one frame",
-      "fitWidth": "FIT TO WIDTH",
-      "fitInteger": "INTEGER SCALE",
       "controls": "Controls",
       "fullscreen": "Fullscreen",
       "pad": {
@@ -757,7 +755,7 @@
     "popOut": "Pop the viewer out",
     "cannotOpen": "This project would not open",
     "tooNew": "This game was saved by a newer version of Naucto. Reload the page to get it; until then, opening the game here could lose part of it.",
-    "viewer": "Viewer",
+    "gamePreview": "Game preview",
     "closeViewer": "Close the viewer",
     "showViewer": "Viewer",
     "undo": "Undo",

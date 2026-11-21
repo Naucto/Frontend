@@ -24,6 +24,7 @@ import {
   DialogService,
   ErrorStateComponent,
   IconComponent,
+  JoinedDirective,
   ToastService,
 } from '@naucto/ui';
 
@@ -52,6 +53,7 @@ import { VirtualPadComponent } from './virtual-pad.component';
     ChipComponent,
     ButtonDirective,
     IconComponent,
+    JoinedDirective,
     VirtualPadComponent,
     ErrorStateComponent,
     TranslocoDirective,
