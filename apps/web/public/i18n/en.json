@@ -22,13 +22,11 @@
   },
   "notifications": {
     "title": "Notifications",
+    "titleUnread": "Notifications, {{n}} unread",
     "markAllRead": "Mark all read",
-    "empty": "Nothing yet. Likes, comments and session invites land here.",
-    "unread": "{{n}} unread",
-    "kinds": {
-      "INFO": "Info",
-      "WARNING": "Warning"
-    }
+    "empty": "All clear",
+    "ignore": "Ignore",
+    "answerFailed": "Could not answer that request."
   },
   "auth": {
     "insertGame": "Insert game",
