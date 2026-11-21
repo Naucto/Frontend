@@ -1,0 +1,69 @@
+<nc-dialog-shell
+  *transloco="let t"
+  [title]="t(data.action ? 'editor.game.inputs.editAction' : 'editor.game.inputs.addAction')">
+  <div class="mt-2 grid gap-2">
+    <nc-field
+      [label]="t('editor.game.inputs.label')"
+      for="action-label"
+      [counter]="t('editor.game.count', { n: label().length, max: LABEL_MAX })">
+      <input
+        ncInput
+        cdkFocusInitial
+        id="action-label"
+        autocomplete="off"
+        [attr.maxlength]="LABEL_MAX"
+        [value]="label()"
+        (input)="label.set($any($event.target).value)"
+        (keydown.enter)="submit()" />
+    </nc-field>
+    <nc-field
+      [label]="t('editor.game.inputs.name')"
+      for="action-name"
+      [counter]="t('editor.game.count', { n: name().length, max: NAME_MAX })"
+      [error]="nameError()"
+      [hint]="
+        renamedFrom()
+          ? t('editor.game.inputs.renameHint', { name: renamedFrom() })
+          : t('editor.game.inputs.nameHint')
+      ">
+      <input
+        ncInput
+        id="action-name"
+        class="font-mono text-sky-ink"
+        autocomplete="off"
+        autocapitalize="off"
+        spellcheck="false"
+        [value]="name()"
+        (input)="typedName.set($any($event.target).value)"
+        (keydown.enter)="submit()" />
+    </nc-field>
+    <nc-field
+      [label]="t('editor.game.inputs.description')"
+      for="action-description"
+      [counter]="t('editor.game.count', { n: description().length, max: DESCRIPTION_MAX })">
+      <input
+        ncInput
+        id="action-description"
+        autocomplete="off"
+        [attr.maxlength]="DESCRIPTION_MAX"
+        [placeholder]="t('editor.game.inputs.descriptionPlaceholder')"
+        [value]="description()"
+        (input)="description.set($any($event.target).value)"
+        (keydown.enter)="submit()" />
+    </nc-field>
+  </div>
+  <ng-container footer>
+    @if (data.action) {
+      <button ncButton variant="danger" class="mr-auto" (click)="ref.close('remove')">
+        <nc-icon name="trash" [size]="24" />
+        {{ t('editor.game.inputs.remove') }}
+      </button>
+    }
+    <button ncButton variant="ghost" (click)="ref.close()">
+      {{ t('editor.code.cancel') }}
+    </button>
+    <button ncButton variant="primary" [disabled]="issue() !== null" (click)="submit()">
+      {{ t(data.action ? 'editor.game.inputs.save' : 'editor.game.inputs.addAction') }}
+    </button>
+  </ng-container>
+</nc-dialog-shell>

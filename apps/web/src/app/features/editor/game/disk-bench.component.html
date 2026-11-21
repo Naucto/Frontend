@@ -1,0 +1,97 @@
+<div
+  *transloco="let t"
+  class="grid grid-cols-[minmax(0,1fr)] items-start gap-3 @min-[820px]:grid-cols-[auto_minmax(0,1fr)]">
+  <div
+    class="grid w-[312px] justify-items-center gap-1.5 justify-self-start flat-lg bevel-edge-line-strong bevel-fill-panel px-3 pt-3 pb-2">
+    <div class="w-full">
+      <nc-floppy
+        [disk]="style()"
+        [cover]="cover.data() ?? null"
+        [preview]="session.project()?.clipUrl ?? null" />
+      <nc-disk-name>{{ name() }}</nc-disk-name>
+    </div>
+    <button ncButton variant="ghost" size="sm" [disabled]="chosen() === null" (click)="set(null)">
+      {{ t('editor.game.disk.automatic') }}
+    </button>
+  </div>
+
+  <div class="grid min-w-0 content-start gap-2.5">
+    <div class="grid content-start gap-1">
+      <nc-label class="text-ink">{{ t('editor.game.disk.palette') }}</nc-label>
+      <div class="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+        <nc-swatch-picker
+          [class.opacity-30]="metal()"
+          [colours]="body().colours"
+          [slots]="body().slots"
+          [columns]="body().slots.length"
+          [value]="body().at"
+          (valueChange)="paint('color', body(), $event)"
+          [slotLabel]="t('editor.game.disk.bodyColour')" />
+        @if (body().stray) {
+          <span class="text-meta text-ink-3">{{ t('editor.game.disk.stray') }}</span>
+        }
+      </div>
+    </div>
+
+    <div class="grid content-start gap-1">
+      <nc-label class="text-ink">{{ t('editor.game.disk.finish') }}</nc-label>
+      <div
+        class="grid grid-cols-4 gap-0.75"
+        role="group"
+        [attr.aria-label]="t('editor.game.disk.finish')">
+        @for (item of finishes(); track item.finish) {
+          <button
+            type="button"
+            class="gap-0.75 px-0.75 pt-1 pb-0.75"
+            [class]="tileClass(item.finish === style().finish)"
+            [attr.aria-pressed]="item.finish === style().finish"
+            (click)="wear({ finish: item.finish })">
+            <nc-floppy
+              class="w-full"
+              [disk]="item.disk"
+              [cover]="cover.data() ?? null"
+              [interactive]="false" />
+            <span class="font-ui text-meta uppercase">
+              {{ t('editor.game.disk.finishes.' + item.finish) }}
+            </span>
+          </button>
+        }
+      </div>
+    </div>
+
+    @if (style().finish === 'gradient') {
+      <div class="grid content-start gap-1">
+        <nc-label class="text-ink">{{ t('editor.game.disk.runsTo') }}</nc-label>
+        <div class="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+          <nc-swatch-picker
+            [colours]="runsTo().colours"
+            [slots]="runsTo().slots"
+            [columns]="runsTo().slots.length"
+            [value]="runsTo().at"
+            (valueChange)="paint('color2', runsTo(), $event)"
+            [slotLabel]="t('editor.game.disk.secondColour')" />
+          @if (runsTo().stray) {
+            <span class="text-meta text-ink-3">{{ t('editor.game.disk.stray') }}</span>
+          }
+        </div>
+      </div>
+      <div class="grid content-start gap-1">
+        <nc-label class="text-ink">{{ t('editor.game.disk.direction') }}</nc-label>
+        <div class="flex gap-0.5" role="group" [attr.aria-label]="t('editor.game.disk.direction')">
+          @for (item of directions(); track item.dir) {
+            <button
+              type="button"
+              class="p-[3px]"
+              [class]="tileClass(item.dir === style().gradDir)"
+              [attr.aria-pressed]="item.dir === style().gradDir"
+              [attr.aria-label]="t('editor.game.disk.directions.' + item.dir)"
+              [attr.title]="t('editor.game.disk.directions.' + item.dir)"
+              (click)="wear({ gradDir: item.dir })">
+              <span class="block size-[48px]" [style.background]="item.swatch"></span>
+            </button>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</div>
