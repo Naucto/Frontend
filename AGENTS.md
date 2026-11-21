@@ -110,8 +110,14 @@ Pixelarticons, Bubblegum-16 palette, dark + light themes).
   floating VIEWER pip. `EditorRuntimeService` exposes the one runtime (host, net bridge,
   insert-at-cursor) to every tab.
 - **Netplay**: every `nc-game-screen` owns a `NetUiBridgeService`; `net.host()` / `net.join()`
-  open the dialogs in `shared/netplay`. Permissions come from the game's `net.permissions` map
-  (`core/net/net-permissions.ts`, bits CLIENT_READ=1 / CLIENT_WRITE=2, allow-by-default).
+  open the dialogs in `shared/netplay`. A screen may be opened on a session (its `invite` input):
+  the game page takes one from `/play/:id?session=<uuid>[&code=<join code>]`, which is what the
+  hub's Join, a session of the search panel, a friend's slot and an invitation all link to, and the
+  editor's test rig takes its host's. The game reads it with `net.invite()`, and its `net.join()`
+  enters it with no dialog until the session is left, ends or refuses the player. The page drops
+  the params once the session is joined or turned down, so a reload never goes back in.
+  Permissions come from the game's `net.permissions` map (`core/net/net-permissions.ts`, bits
+  CLIENT_READ=1 / CLIENT_WRITE=2, allow-by-default).
 - **Usage analytics** (`core/analytics`): nothing is collected while the backend's `analytics`
   feature flag is off. The banner in `shared/consent` asks once, and the answer lives six months in
   the `naucto_consent` cookie. With consent, page views (`analytics.service.ts`), beats
