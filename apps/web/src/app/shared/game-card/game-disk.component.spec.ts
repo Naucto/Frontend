@@ -66,10 +66,11 @@ describe('GameDiskComponent', () => {
     });
   });
 
-  it('plays a published game and prints it on its disk', () => {
+  it('plays a published game and names it under its disk, not on it', () => {
     const host = render({ game: game({}) }).nativeElement as HTMLElement;
     expect(host.querySelector('a')?.getAttribute('href')).toBe('/play/7');
-    expect(host.querySelector('nc-floppy .name')?.textContent).toContain('Hightide');
+    expect(host.querySelector('a > nc-disk-name')?.textContent).toContain('Hightide');
+    expect(host.querySelector('nc-floppy')?.textContent).not.toContain('Hightide');
     expect(host.querySelector('nc-floppy .info')?.textContent).toContain('louis');
     expect(host.querySelector('nc-floppy .action')?.classList).toContain('play');
     expect(host.querySelector('nc-floppy .cover img')?.getAttribute('src')).toBe(COVER);
@@ -94,7 +95,7 @@ describe('GameDiskComponent', () => {
       .nativeElement as HTMLElement;
     expect(host.querySelector('a')?.getAttribute('href')).toBe('/edit/7');
     expect(host.querySelector('nc-floppy')?.classList).not.toContain('interactive');
-    expect(host.querySelector('nc-floppy .name')).toBeNull();
+    expect(host.querySelector('nc-disk-name')).toBeNull();
     expect(host.querySelector('a')?.textContent).toContain('Hightide');
     expect(host.querySelector('nc-chip')?.textContent).toContain('Draft');
   });

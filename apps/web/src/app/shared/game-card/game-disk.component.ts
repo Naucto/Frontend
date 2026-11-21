@@ -11,16 +11,25 @@ import type { ProjectExResponseDto } from '@naucto/api-client';
 import { ChipComponent, StatComponent } from '@naucto/ui';
 
 import { injectProjectImage, injectReleaseImage } from '../queries/releases.queries';
+import { DiskNameComponent } from './disk-name.component';
 import { type DiskStyle, diskStyleFor } from './disk-style';
 import { FloppyComponent } from './floppy.component';
 
 /**
- * A game as the link to it: its disk, or with `dense` a small disk beside its name and counts. A
- * published game is played; a draft, or any game on its owner's shelf, opens in the editor.
+ * A game as the link to it: its disk over its name, or with `dense` a small disk beside its name
+ * and counts. A published game is played; a draft, or any game on its owner's shelf, opens in the
+ * editor.
  */
 @Component({
   selector: 'nc-game-disk',
-  imports: [RouterLink, TranslocoDirective, ChipComponent, FloppyComponent, StatComponent],
+  imports: [
+    RouterLink,
+    TranslocoDirective,
+    ChipComponent,
+    DiskNameComponent,
+    FloppyComponent,
+    StatComponent,
+  ],
   templateUrl: './game-disk.component.html',
   host: { class: 'block min-w-0' },
   changeDetection: ChangeDetectionStrategy.OnPush,

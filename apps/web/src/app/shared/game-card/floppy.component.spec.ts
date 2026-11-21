@@ -35,7 +35,7 @@ function installBrowserStubs(): void {
 
 function render(inputs: Record<string, unknown>): ComponentFixture<FloppyComponent> {
   const fixture = TestBed.createComponent(FloppyComponent);
-  for (const [name, value] of Object.entries({ name: 'Hightide', ...inputs })) {
+  for (const [name, value] of Object.entries(inputs)) {
     fixture.componentRef.setInput(name, value);
   }
   fixture.detectChanges();
@@ -71,16 +71,6 @@ describe('FloppyComponent', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
-  });
-
-  it('prints the name on the label with a title, and nothing as a thumbnail', () => {
-    const titled = render({ mode: 'title' }).nativeElement as HTMLElement;
-    expect(titled.classList).toContain('title');
-    expect(titled.querySelector('.name')?.textContent).toContain('Hightide');
-
-    const thumb = render({}).nativeElement as HTMLElement;
-    expect(thumb.classList).not.toContain('title');
-    expect(thumb.querySelector('.name')).toBeNull();
   });
 
   it('raises a diamond for the action it is given, and none without one', () => {
@@ -224,13 +214,11 @@ describe('FloppyComponent', () => {
   });
 
   it('draws the disk that does not exist yet as an outline that says what it makes', () => {
-    const host = render({ action: 'new', name: 'New game', mode: 'title' })
-      .nativeElement as HTMLElement;
+    const host = render({ action: 'new', caption: 'New game' }).nativeElement as HTMLElement;
     expect(host.classList).toContain('new');
     expect(host.querySelector('.ghost')).not.toBeNull();
     expect(host.querySelector('.caption')?.textContent).toContain('New game');
     expect(host.querySelector('.action')).toBeNull();
-    expect(host.querySelector('.name')).toBeNull();
     expect(host.style.getPropertyValue('--f-body')).toBe('');
   });
 });

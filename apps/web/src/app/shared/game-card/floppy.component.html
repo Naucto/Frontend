@@ -27,11 +27,6 @@
           <ng-content />
         </span>
       </div>
-      @if (titled()) {
-        <div #title class="name">
-          <span>{{ name() }}</span>
-        </div>
-      }
       @if (info() === 'bandBottom') {
         <span class="info">
           <span class="by">{{ by() }}</span>
@@ -128,7 +123,7 @@
     </div>
     <span class="caption">
       <nc-icon name="plus" [size]="24" />
-      {{ name() }}
+      {{ caption() }}
     </span>
   }
 </div>

@@ -19,8 +19,6 @@ import { diskBody, diskFinish, type DiskStyle, luminance, PLAIN_DISK } from './d
 
 /** What the disk offers once it is reached. `new` is the disk that does not exist yet. */
 export type FloppyAction = 'none' | 'play' | 'edit' | 'new' | 'join';
-/** `thumb` gives the whole label to the cover; `title` prints the name under it, on paper. */
-export type FloppyMode = 'thumb' | 'title';
 /** `bandBottom` lays the author and the counts along the bottom of the label. */
 export type FloppyInfo = 'none' | 'bandBottom';
 
@@ -54,9 +52,6 @@ const ACTION_ICON: Partial<Record<FloppyAction, IconName>> = {
   edit: 'edit',
   join: 'login',
 };
-
-/** A name is narrowed this far to stay whole; past it, it is cut. */
-const TIGHTEST = 0.62;
 
 type Vector = [number, number, number];
 
@@ -101,7 +96,8 @@ const SHINE_CELLS = [
 ].map(([x, y]) => `${String(x)}px ${String(y)}px`);
 
 /**
- * A game as a 3.5" disk: its cover is the label. Reached by the pointer, the disk lifts and leans
+ * A game as a 3.5" disk: its cover is the label, and its name is never printed on it. Reached by
+ * the pointer, the disk lifts and leans
  * toward it under a fixed lamp, the shutter slides onto the window, the preview plays over the
  * cover and the action shows. `open` is that same state for the keyboard, without the lean.
  *
@@ -115,8 +111,6 @@ const SHINE_CELLS = [
   templateUrl: './floppy.component.html',
   styleUrl: './floppy.component.css',
   host: {
-    '[class.title]': 'titled()',
-    '[class.center]': 'titleAlign() === "center"',
     '[class.band]': 'info() === "bandBottom"',
     '[class.new]': 'action() === "new"',
     '[class.open]': 'open()',
@@ -128,15 +122,13 @@ const SHINE_CELLS = [
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FloppyComponent {
-  /** Printed under the cover in `title` mode, and as the caption of the `new` disk. */
-  readonly name = input.required<string>();
+  /** What the `new` disk says it makes. */
+  readonly caption = input('');
   readonly disk = input<DiskStyle>(PLAIN_DISK);
   readonly cover = input<string | null>(null);
   /** A clip that plays over the cover while the disk is reached. */
   readonly preview = input<string | null>(null);
-  readonly mode = input<FloppyMode>('thumb');
   readonly info = input<FloppyInfo>('none');
-  readonly titleAlign = input<'start' | 'center'>('start');
   readonly by = input('');
   readonly likes = input<number | null>(null);
   readonly comments = input<number | null>(null);
@@ -153,8 +145,6 @@ export class FloppyComponent {
   protected readonly DISK_RATIO = DISK_RATIO;
   protected readonly SHINE_CELLS = SHINE_CELLS;
 
-  /** The disk that does not exist yet has no name to print but its caption. */
-  protected readonly titled = computed(() => this.mode() === 'title' && this.action() !== 'new');
   protected readonly likesText = computed(() => compact(this.likes()));
   protected readonly commentsText = computed(() => compact(this.comments()));
   /** Lifted off the page, however little: the sides and the lighting exist only while it is. */
@@ -168,7 +158,6 @@ export class FloppyComponent {
   protected readonly pale = computed(() => luminance(this.body()) * 0.72 > 0.4);
 
   private readonly element = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
-  private readonly title = viewChild<ElementRef<HTMLElement>>('title');
   private readonly video = viewChild<ElementRef<HTMLVideoElement>>('video');
   /** A mouse is over the disk. A touch never leans it. */
   private pointed = false;
@@ -183,26 +172,6 @@ export class FloppyComponent {
       event.preventDefault();
       event.stopPropagation();
       this.acted.emit();
-    }
-  }
-
-  /** Narrow the name until it fits its line, rather than cut a word the disk has room to print. */
-  private squeeze(): void {
-    const box = this.title()?.nativeElement;
-    const text = box?.firstElementChild;
-    if (!box?.clientWidth || !(text instanceof HTMLElement)) {
-      return;
-    }
-    // Measured at its own width: a name that was cut has been given the line's.
-    text.style.width = '';
-    const natural = text.scrollWidth;
-    const fit =
-      Math.round(Math.min(1, Math.max(TIGHTEST, box.clientWidth / natural)) * 1000) / 1000;
-    text.style.transform = `scaleX(${String(fit)})`;
-    // A cut name takes the line's whole width before it is narrowed, so the ellipsis lands on the
-    // line's end.
-    if (natural * fit > box.clientWidth + 1) {
-      text.style.width = `${(100 / fit).toFixed(2)}%`;
     }
   }
 
@@ -327,7 +296,6 @@ export class FloppyComponent {
     host.addEventListener('pointerleave', leave);
 
     const observer = new ResizeObserver(() => {
-      this.squeeze();
       this.width.set(Math.round(host.clientWidth));
     });
     inject(DestroyRef).onDestroy(() => {
@@ -339,22 +307,10 @@ export class FloppyComponent {
     });
 
     afterRenderEffect(() => {
-      this.name();
-      const title = this.title()?.nativeElement;
       observer.disconnect();
       // Only a gradient is drawn to the disk's size; no other finish needs it measured.
       if (this.disk().finish === 'gradient') {
         observer.observe(host);
-      }
-      // The line and not the name on it: the name's box is what `squeeze` writes, and an observer
-      // answering its own writes never settles.
-      if (title) {
-        observer.observe(title);
-        this.squeeze();
-        // The name is measured in a face that may still be on its way.
-        void document.fonts.ready.then(() => {
-          this.squeeze();
-        });
       }
     });
 

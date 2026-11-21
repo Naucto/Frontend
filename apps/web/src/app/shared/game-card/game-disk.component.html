@@ -5,7 +5,6 @@
       class="group raised-sm bevel-bare flex items-center gap-1.5 p-[6px] hover:bevel-lit hover:bevel-fill-raised active:bevel-down">
       <nc-floppy
         class="w-[52px] shrink-0"
-        [name]="game().name"
         [disk]="disk()"
         [cover]="cover()"
         [interactive]="false" />
@@ -31,10 +30,7 @@
   } @else {
     <a [routerLink]="link()" class="block">
       <nc-floppy
-        mode="title"
         info="bandBottom"
-        titleAlign="center"
-        [name]="game().name"
         [disk]="disk()"
         [cover]="cover()"
         [by]="game().creator.username"
@@ -47,6 +43,7 @@
           <nc-chip>{{ t('games.draft') }}</nc-chip>
         }
       </nc-floppy>
+      <nc-disk-name>{{ game().name }}</nc-disk-name>
     </a>
   }
 </ng-container>

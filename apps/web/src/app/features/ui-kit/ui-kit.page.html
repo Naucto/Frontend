@@ -860,45 +860,27 @@ What each bit means is yours to decide." />
       <span class="text-meta text-ink-3">a game is a disk, wherever it is shown</span>
     </div>
     <div class="grid gap-[10px]">
-      <span class="label">Floppy: title, thumbnail, reached, pressed (hold the first)</span>
+      <span class="label">
+        Floppy: named under the disk, bare, reached, pressed (hold the first)
+      </span>
       <div
-        class="flat-lg bevel-fill-panel grid grid-cols-2 items-start gap-3 p-[22px] sm:grid-cols-5"
+        class="flat-lg bevel-fill-panel grid grid-cols-2 items-start gap-3 p-[22px] sm:grid-cols-4"
         data-testid="floppy-states">
         <a href="/ui-kit#cards" class="block min-w-0" data-testid="floppy-rest">
           <nc-floppy
-            name="Hightide"
-            mode="title"
             info="bandBottom"
-            titleAlign="center"
             action="play"
             by="louis"
             [cover]="diskCover"
             [likes]="318"
             [comments]="12" />
+          <nc-disk-name>Tidepool: the Hermit Crab Returns</nc-disk-name>
         </a>
         <a href="/ui-kit#cards" class="block min-w-0">
-          <nc-floppy
-            name="Tidepool: the Hermit Crab Returns"
-            mode="title"
-            action="edit"
-            [disk]="striped"
-            [cover]="diskCover" />
-        </a>
-        <a href="/ui-kit#cards" class="block min-w-0">
-          <nc-floppy
-            name="Hightide"
-            info="bandBottom"
-            action="play"
-            by="louis"
-            [disk]="checkered"
-            [cover]="diskCover"
-            [likes]="1247" />
+          <nc-floppy action="edit" [disk]="striped" [cover]="diskCover" />
         </a>
         <nc-floppy
-          name="Reached"
-          mode="title"
           info="bandBottom"
-          titleAlign="center"
           action="play"
           by="lea"
           open
@@ -908,8 +890,8 @@ What each bit means is yours to decide." />
           [likes]="911"
           [comments]="67" />
         <div class="flex items-end gap-2">
-          <nc-floppy class="w-[96px]" name="Small" [cover]="diskCover" />
-          <nc-floppy class="w-[52px]" name="Thumbnail" [cover]="diskCover" />
+          <nc-floppy class="w-[96px]" [cover]="diskCover" />
+          <nc-floppy class="w-[52px]" [cover]="diskCover" />
         </div>
       </div>
     </div>
@@ -920,12 +902,8 @@ What each bit means is yours to decide." />
         data-testid="floppy-finishes">
         @for (finish of finishes; track finish.name) {
           <a href="/ui-kit#cards" class="block min-w-0">
-            <nc-floppy
-              mode="title"
-              titleAlign="center"
-              [name]="finish.name"
-              [disk]="finish.disk"
-              [cover]="diskCover" />
+            <nc-floppy [disk]="finish.disk" [cover]="diskCover" />
+            <nc-disk-name>{{ finish.name }}</nc-disk-name>
           </a>
         }
       </div>
@@ -937,11 +915,10 @@ What each bit means is yours to decide." />
       <div
         class="flat-lg bevel-fill-panel grid grid-cols-2 items-start gap-3 p-[22px] sm:grid-cols-5"
         data-testid="floppy-actions">
-        <nc-floppy name="Play" action="play" open [cover]="diskCover" />
-        <nc-floppy name="Edit" action="edit" open [disk]="twoTone" [cover]="diskCover" />
+        <nc-floppy action="play" open [cover]="diskCover" />
+        <nc-floppy action="edit" open [disk]="twoTone" [cover]="diskCover" />
         <a href="/ui-kit#cards" class="block min-w-0" data-testid="floppy-session">
           <nc-floppy
-            name="Session"
             info="bandBottom"
             by="louis"
             [action]="seated() ? 'none' : 'join'"
@@ -951,9 +928,9 @@ What each bit means is yours to decide." />
             (acted)="seated.set(true)" />
         </a>
         <a href="/ui-kit#cards" class="block min-w-0" data-testid="floppy-ghost">
-          <nc-floppy action="new" name="New game" />
+          <nc-floppy action="new" caption="New game" />
         </a>
-        <nc-floppy action="new" name="New game" open />
+        <nc-floppy action="new" caption="New game" open />
       </div>
     </div>
   </section>

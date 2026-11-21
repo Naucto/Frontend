@@ -75,7 +75,6 @@
               (click)="pick(i, card.entry.game)">
               <nc-floppy
                 info="bandBottom"
-                [name]="card.entry.game.name"
                 [disk]="card.disk"
                 [cover]="card.entry.game.coverUrl"
                 [preview]="card.front ? (card.entry.game.clipUrl ?? null) : null"

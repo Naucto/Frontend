@@ -68,6 +68,7 @@ import {
 
 import { OAUTH_PROVIDERS } from '../../core/auth/oauth/providers';
 import { ThemeService } from '../../core/theme/theme.service';
+import { DiskNameComponent } from '../../shared/game-card/disk-name.component';
 import type { DiskStyle } from '../../shared/game-card/disk-style';
 import { FloppyComponent, type FloppySticker } from '../../shared/game-card/floppy.component';
 import { ACCENT_SLOTS } from '../editor/accent-slots';
@@ -78,6 +79,7 @@ import { HubPiecesSection } from './hub-pieces.section';
   selector: 'nc-ui-kit-page',
   imports: [
     HubPiecesSection,
+    DiskNameComponent,
     FloppyComponent,
     ArrowLinkDirective,
     AvatarComponent,
