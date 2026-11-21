@@ -34,8 +34,6 @@ export class HubRowComponent {
   readonly empty = input('Nothing here yet.');
   /** How many games the shelf has in total, shown beside "see all". */
   readonly count = input(0);
-  /** Whether this shelf's disks open the editor rather than the play page. */
-  readonly opensEditor = input(false);
   readonly state = input<ShelfState>('ready');
   /**
    * How many cells the shelf keeps whatever it holds, so narrowing it does not change its height;

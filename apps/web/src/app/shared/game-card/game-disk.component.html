@@ -36,7 +36,7 @@
         [by]="game().creator.username"
         [likes]="game().likes"
         [comments]="game().commentCount ?? null"
-        [action]="edits() ? 'edit' : 'play'">
+        [action]="isDraft() ? 'edit' : 'play'">
         @if (game().hiddenAt) {
           <nc-chip tone="hot">{{ t('games.hidden') }}</nc-chip>
         } @else if (isDraft()) {

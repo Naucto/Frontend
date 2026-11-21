@@ -73,19 +73,12 @@ describe('GameDiskComponent', () => {
 
   it('says a game moderation withholds is hidden, in place of saying it is a draft', () => {
     const hiddenAt = '2026-11-01T00:00:00Z';
-    const published = render({ game: game({ hiddenAt }), opensEditor: true })
-      .nativeElement as HTMLElement;
+    const published = render({ game: game({ hiddenAt }) }).nativeElement as HTMLElement;
     expect(published.querySelector('nc-floppy nc-chip')?.textContent).toContain('Hidden');
     const draft = render({ game: game({ publishedAt: null, hiddenAt }), dense: true })
       .nativeElement as HTMLElement;
     expect(draft.querySelector('nc-chip')?.textContent).toContain('Hidden');
     expect(draft.querySelectorAll('nc-chip')).toHaveLength(1);
-  });
-
-  it('opens a published game in the editor from its owner’s shelf', () => {
-    const host = render({ game: game({}), opensEditor: true }).nativeElement as HTMLElement;
-    expect(host.querySelector('a')?.getAttribute('href')).toBe('/edit/7');
-    expect(host.querySelector('nc-chip')).toBeNull();
   });
 
   it('is a small still disk beside the name when dense', () => {
