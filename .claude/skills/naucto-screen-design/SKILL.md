@@ -28,8 +28,8 @@ added to the kit and shown on `/ui-kit`, not drawn once in the screen.
 
 A glyph is drawn for the size it is shown at, on a grid whose cell is one kit pixel (3px): an
 `nc-mark` is five cells (15px), and a mark of another size is drawn on its own grid of 3px cells.
-An icon is never shrunk to fit a control, and never set to a size that is not a multiple of its
-native one.
+An `nc-icon` is 24 beside words or 36 standing alone, each its own drawing in
+`packages/ui/src/icons/`, and is never scaled to fit a control.
 
 A title on a fixed-width plate stays on **one line**: squeezed horizontally down to a floor of
 0.62, and only then cut with an ellipsis, as the design's fitted titles are (`squeeze` in

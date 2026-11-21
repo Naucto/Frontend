@@ -26,7 +26,7 @@
     {
       "id": "559827cce519",
       "sample": "M16 2h4v2h2v4h-2v2h-2V8h-2V6h-2V4h2V2zM14 6h2v2h-2v2h-2v2h-2v2H8",
-      "note": "The second pencil the design draws for the profile's edit chips. Transcribed faithfully, then dropped again: its reading depends on single pixels of a 24 grid, and both the design and the app place it at 12, where those pixels are gone and it reads as a diagonal arrow. The chips wear `edit`, which the app already draws at 12 in five other places for the same meaning."
+      "note": "The second pencil the design draws for the profile's edit chips. Transcribed faithfully, then dropped again: its reading depends on single pixels of a 24 grid, and both the design and the app place it at 12, where those pixels are gone and it reads as a diagonal arrow. The chips wear `edit`, which the app draws for the same meaning everywhere else."
     },
     {
       "id": "ad354565257d",
@@ -41,17 +41,17 @@
     {
       "id": "0fbe3770988d",
       "sample": "M5 10h14v2h-2v2h-2v2h-2v2h-2v-2H9v-2H7v-2H5v-2z",
-      "note": "The SOUND steppers' caret. The app draws this silhouette under `caret-up`, on the 24 grid; the design draws it in a box tight around the ink, and matching rasterises each through its own viewBox — the same shape under two box conventions cannot meet."
+      "note": "The SOUND steppers' caret. The app draws this silhouette as the `caret-up` mark, in a box of five cells; the design draws it in a box tight around the ink, and matching rasterises each through its own viewBox — the same shape under two box conventions cannot meet."
     },
     {
       "id": "ca4dcf9f8d31",
       "sample": "M14 4V2h-4v2H5v2h14V4h-5zm5 12H5v-4H3v6h5v4h2v-4h4v2h-4v2h6v-4h5",
-      "note": "The foundations gallery's own outline bell. Every bell the design actually places is the solid one, which is what the app draws — see DISAGREEMENTS in the target profile."
+      "note": "The foundations gallery's own outline bell. Every bell the design actually places is the solid one, which the app draws while something is unread — see DISAGREEMENTS in the target profile."
     },
     {
       "id": "551160de3ea5",
       "sample": "M0 0H1V7H0Z M1 1H2V6H1Z M2 2H3V5H2Z M3 3H4V4H3Z",
-      "note": "The direction mark on a rim puck. Drawn, as `caret-{up,down,left,right}`: the kit puts it on the 24 grid, the design draws it in a 4x7 box tight around the ink, and matching rasterises each through its own viewBox — so the same shape under two box conventions cannot meet. Fifteen of the design's drawings use a tight box and are unmatchable this way; this is the first one anybody redrew.",
+      "note": "The direction mark on a rim puck. Drawn, as the `caret-{up,down,left,right}` marks: the kit draws each in a box of five cells, the design in a 4x7 box tight around the ink, and matching rasterises each through its own viewBox — so the same shape under two box conventions cannot meet. Fifteen of the design's drawings use a tight box and are unmatchable this way; this is the first one anybody redrew.",
       "reconstructed": true
     },
     {
