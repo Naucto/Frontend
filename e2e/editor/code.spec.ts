@@ -584,3 +584,19 @@ test('Step one frame advances a paused game by one update, and pauses a running 
   await page.getByRole('button', { name: 'Step one frame' }).click();
   await expect(page.getByRole('button', { name: 'Play' })).toBeVisible();
 });
+
+/**
+ * The console column is a fixed track, and the transport under its screen holds more than the
+ * track is wide once two seats show: the row has to fit it, down to its last button.
+ */
+test('the transport keeps its fullscreen button inside the console column', async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await page.goto(editorUrl('code'));
+  const column = page.locator('nc-console-column');
+  const fullscreen = column.getByRole('button', { name: 'Fullscreen' });
+  await expect(fullscreen).toBeVisible();
+  await expect(column.getByText('P2', { exact: true })).toBeVisible();
+
+  const [track, button] = [await boxOf(column), await boxOf(fullscreen)];
+  expect(button.x + button.width).toBeLessThanOrEqual(track.x + track.width);
+});

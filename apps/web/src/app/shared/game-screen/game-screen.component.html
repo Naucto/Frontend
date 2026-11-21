@@ -106,15 +106,20 @@
       <!-- Projected before the spacer: left of the break is what the game runs on, right of it who
            is running it. -->
       <ng-content select="[transport-extra]" />
-      <span class="flex-1"></span>
-      @for (player of players(); track player.slot) {
-        <span
-          class="flex items-center gap-0.5 font-mono text-label whitespace-nowrap @max-[299px]:hidden"
-          [class]="player.here ? 'text-ink-3' : 'text-ink-4'">
-          <nc-icon [name]="player.pad ? 'gamepad' : 'keyboard'" [size]="24" />
-          P{{ player.slot }}
-        </span>
-      }
+      <!-- The seats take what room the row has left and give way whole, last first: a line that
+           wraps, of which only the first row shows. The empty first item is what lets the first
+           seat wrap too. -->
+      <span
+        class="flex h-full min-w-0 flex-1 flex-wrap content-start justify-end gap-x-[inherit] overflow-clip before:content-['']">
+        @for (player of players(); track player.slot) {
+          <span
+            class="flex h-full items-center gap-0.5 font-mono text-label whitespace-nowrap"
+            [class]="player.here ? 'text-ink-3' : 'text-ink-4'">
+            <nc-icon [name]="player.pad ? 'gamepad' : 'keyboard'" [size]="24" />
+            P{{ player.slot }}
+          </span>
+        }
+      </span>
       <button
         ncButton
         variant="ghost"
