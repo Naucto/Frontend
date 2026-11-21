@@ -1,8 +1,9 @@
 import { readdirSync, readFileSync } from 'node:fs';
 
-import { expect, type Locator, type Page, test } from '@playwright/test';
+import { type Locator, type Page } from '@playwright/test';
 
 import { mockEditor } from '../editor-mocks';
+import { expect, test } from '../fixtures';
 import { grabFrame, recordGif, shoot } from './frame';
 
 /** The tutorial games the pass pictures, each seeded from its own page by `docs:shots`. */

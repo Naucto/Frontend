@@ -1,10 +1,13 @@
 import { readFileSync } from 'node:fs';
 
-import { type Locator, type Page, test } from '@playwright/test';
+import { type Locator, type Page } from '@playwright/test';
 
 import { mockEditor } from '../editor-mocks';
+import { test } from '../fixtures';
+import { release } from '../mocks/game';
 import { setGamepads } from '../mocks/gamepads';
-import { shoot } from './frame';
+import { answer } from '../mocks/session';
+import { grabFrame, shoot } from './frame';
 
 /**
  * The pictures the documentation shows of each editor, taken from one seeded game so that they
@@ -43,6 +46,33 @@ const CHARACTER = [
   '..#..#..',
   '..#..#..',
 ];
+
+const COVER_FILE = 'node_modules/.cache/docs-shots/cover.png';
+
+/**
+ * Starts the game in the GAME tab's sidebar and grabs its frame as the cover, the way an author
+ * does: the mock keeps no picture, so the frame is read off the console and served back as the
+ * cover the project then says it has.
+ */
+async function playAndGrabCover(page: Page): Promise<void> {
+  await page.locator('nc-game-publishing').getByRole('button', { name: 'Play' }).first().click();
+  await page.waitForTimeout(1500);
+  await grabFrame(page, COVER_FILE);
+  await page.route('**/e2e/cover.png', (route) =>
+    route.fulfill({ status: 200, body: readFileSync(COVER_FILE), contentType: 'image/png' }),
+  );
+  await page.route('**/projects/7/image', (route) =>
+    route.request().method() === 'GET'
+      ? route.fulfill({ json: { url: 'http://localhost:3001/e2e/cover.png' } })
+      : route.fulfill({ status: 204, body: '' }),
+  );
+  await page.getByRole('button', { name: 'Grab frame' }).click();
+  const saved = page.getByText('Cover updated');
+  await saved.waitFor();
+  await saved.waitFor({ state: 'hidden' });
+  // Off the button, which would be pictured lit.
+  await page.mouse.move(0, 0);
+}
 
 const section = (page: Page, title: string): Locator =>
   page
@@ -336,7 +366,7 @@ for (const theme of THEMES) {
       );
       await page.goto('/edit/7/game');
       await page.getByRole('textbox', { name: 'Name' }).waitFor();
-      await page.waitForTimeout(500);
+      await playAndGrabCover(page);
       await shoot(page, OUT, 'game', theme);
       await page.locator('nc-versions-popover').getByRole('button', { name: 'Platformer' }).click();
       const panel = page.locator('nc-popover-panel');
@@ -357,6 +387,48 @@ for (const theme of THEMES) {
       await page.locator('header').getByRole('button', { name: 'Publish' }).click();
       await shoot(page, OUT, 'game-publish', theme, page.getByRole('dialog'));
       await page.keyboard.press('Escape');
+    });
+
+    test('game: the clip while it records, the disk and the inputs', async ({ page }) => {
+      await page.goto('/edit/7/game');
+      await page.getByRole('textbox', { name: 'Name' }).waitFor();
+      await playAndGrabCover(page);
+      const clip = page.getByRole('region', { name: 'Clip' });
+      await clip.getByRole('button', { name: 'Record' }).click();
+      await clip.getByRole('button', { name: 'Stop' }).waitFor();
+      await page.waitForTimeout(2000);
+      await shoot(page, OUT, 'game-clip', theme);
+      await clip.getByRole('button', { name: 'Stop' }).click();
+
+      await page.getByRole('tab', { name: 'Disk' }).click();
+      await page.locator('nc-game-disk-bench').waitFor();
+      await page.waitForTimeout(500);
+      await shoot(page, OUT, 'game-disk', theme);
+
+      await page.getByRole('tab', { name: /^Inputs/ }).click();
+      const actions = page.locator('nc-game-inputs');
+      await actions.locator('button[aria-expanded]').first().click();
+      await page.waitForTimeout(300);
+      await shoot(page, OUT, 'game-inputs', theme);
+    });
+
+    test('how to play, on the page of a game', async ({ page }) => {
+      await page.route('**/projects/releases/42', answer(200, release));
+      await page.route('**/projects/releases/42/content-url', (route) =>
+        route.fulfill({ json: { signedUrl: 'http://localhost:3001/e2e/game.bin' } }),
+      );
+      await page.route('**/e2e/game.bin', (route) =>
+        route.fulfill({
+          status: 200,
+          body: readFileSync(CONTENT_FILE),
+          contentType: 'application/octet-stream',
+        }),
+      );
+      await page.goto('/play/42');
+      const howToPlay = page.locator('nc-how-to-play');
+      await howToPlay.getByRole('table').first().waitFor();
+      await page.waitForTimeout(300);
+      await shoot(page, OUT, 'how-to-play', theme, howToPlay);
     });
 
     test('the floating viewer', async ({ page }) => {

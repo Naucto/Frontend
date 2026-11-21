@@ -1,9 +1,8 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 
-import { test } from '@playwright/test';
-
 import { mockEditor } from '../editor-mocks';
+import { test } from '../fixtures';
 import { grabFrame } from './frame';
 
 /** The frames the API reference shows: one Lua scene per picture, run in the editor's viewer. */
