@@ -9,7 +9,7 @@
           type="button"
           class="flex cursor-pointer flex-col items-start gap-1 raised-lg p-2 text-left hover:bevel-lit active:bevel-down"
           (click)="step.set('preset')">
-          <nc-icon name="music" [size]="24" class="text-gold-ink" />
+          <nc-icon name="music" class="text-gold-ink" />
           <span class="text-ui text-ink">{{ t('editor.sound.fromPreset') }}</span>
           <span class="text-meta leading-[1.5] text-ink-3">
             {{ t('editor.sound.fromPresetHint') }}
@@ -19,7 +19,7 @@
           type="button"
           class="flex cursor-pointer flex-col items-start gap-1 raised-lg p-2 text-left hover:bevel-lit active:bevel-down"
           (click)="ref.close({ kind: 'custom' })">
-          <nc-icon name="sliders" [size]="24" class="text-ink-3" />
+          <nc-icon name="sliders" class="text-ink-3" />
           <span class="text-ui text-ink">{{ t('editor.sound.custom') }}</span>
           <span class="text-meta leading-[1.5] text-ink-3">
             {{ t('editor.sound.customHint') }}

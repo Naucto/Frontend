@@ -17,6 +17,7 @@ import {
   ButtonDirective,
   IconComponent,
   LcdComponent,
+  MarkComponent,
   TabsComponent,
   ToggleComponent,
 } from '@naucto/ui';
@@ -62,6 +63,7 @@ const PIP_GRIPS: readonly { grip: PipGrip; box: string; cursor: string }[] = [
     TranslocoDirective,
     ButtonDirective,
     IconComponent,
+    MarkComponent,
     LcdComponent,
     TabsComponent,
     ToggleComponent,

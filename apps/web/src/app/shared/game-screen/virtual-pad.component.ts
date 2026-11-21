@@ -20,8 +20,11 @@ const KEY = 56;
 const GAP = 3;
 /** The pad's margin, which is also the least room between the cross and the diamond. */
 const INSET = 16;
-/** The smallest key that holds its legend at the size the legend is drawn for. */
-const LEGEND_KEY = 27;
+/**
+ * The smallest key that holds its legend: a mark of 15, the 9 its raised frame takes above and
+ * below, and one pixel clear on each side of the mark.
+ */
+const LEGEND_KEY = 30;
 /** The narrowest Start that holds its word. */
 const START_WORD = 63;
 

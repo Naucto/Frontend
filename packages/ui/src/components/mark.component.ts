@@ -6,8 +6,8 @@ import { glyphRendering } from '../icons/rendering';
 
 /**
  * A chevron, a cross, a check, an arrow or a key's legend at the size of a control's corner: 15px,
- * five kit pixels across. It has one size because it is drawn for it; where there is room for 24px, the
- * glyph is an `nc-icon`.
+ * five kit pixels across. It has one size because it is drawn for it, and it is what a control
+ * of 30 holds; where the control is 36 or taller the glyph is an `nc-icon`.
  */
 @Component({
   selector: 'nc-mark',

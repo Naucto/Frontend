@@ -58,7 +58,7 @@
           [attr.aria-label]="t('editor.sound.clearPattern', { n: pad(currentPattern.slot) })"
           [disabled]="!currentPattern.notes.length"
           (click)="clearPattern()">
-          <nc-icon name="trash" [size]="24" />
+          <nc-mark name="trash" />
         </button>
         <span class="flex-1"></span>
         <nc-transport
@@ -78,7 +78,7 @@
           [label]="t('editor.sound.loop')"
           [checked]="sound.loop()"
           (checkedChange)="setLoop($event)">
-          <nc-icon name="repeat" [size]="24" />
+          <nc-icon name="repeat" />
           <span class="hidden @min-[900px]:inline">{{ t('editor.sound.loop') }}</span>
         </nc-toggle-button>
         <nc-toggle-button
@@ -87,7 +87,7 @@
           [checked]="sound.metronome()"
           (checkedChange)="sound.setMetronome($event)"
           accent="jade">
-          <nc-icon name="metronome" [size]="24" />
+          <nc-icon name="metronome" />
           <span class="hidden @min-[900px]:inline">{{ t('editor.sound.metronome') }}</span>
         </nc-toggle-button>
         <!-- The spring between the two groups on one line; on two it is the line break,
@@ -120,7 +120,7 @@
           [attr.aria-label]="t('editor.undo')"
           (click)="undo.manager.undo()"
           [disabled]="!undo.canUndo()">
-          <nc-icon name="undo" [size]="24" />
+          <nc-icon name="undo" />
         </button>
         <button
           ncButton
@@ -130,7 +130,7 @@
           [attr.aria-label]="t('editor.redo')"
           (click)="undo.manager.redo()"
           [disabled]="!undo.canRedo()">
-          <nc-icon name="redo" [size]="24" />
+          <nc-icon name="redo" />
         </button>
       </header>
       <nc-piano-roll
@@ -168,7 +168,7 @@
           [title]="t('editor.sound.emptyTitle')"
           [hint]="t('editor.sound.emptyHint')">
           <button ncButton variant="primary" (click)="addInstrument()">
-            <nc-icon name="plus" [size]="24" />
+            <nc-icon name="plus" />
             {{ t('editor.sound.addInstrument') }}
           </button>
         </nc-empty-state>
@@ -185,7 +185,7 @@
         [checked]="sound.snap() !== 0"
         (activated)="cycleSnap()"
         [label]="t('editor.sound.snap')">
-        <nc-icon name="grid" [size]="24" />
+        <nc-mark name="grid" />
         {{ snapLabel(t('editor.sound.snap')) }}
       </nc-toggle-button>
       <nc-oscilloscope
@@ -201,7 +201,7 @@
         class="shrink-0"
         [attr.aria-label]="t('editor.sound.zoomOut')"
         (click)="stepZoom(-1)">
-        <nc-icon name="zoom-out" [size]="24" />
+        <nc-mark name="minus" />
       </button>
       <nc-slider
         class="w-[88px] min-w-[32px] shrink"
@@ -221,7 +221,7 @@
         class="shrink-0"
         [attr.aria-label]="t('editor.sound.zoomIn')"
         (click)="stepZoom(1)">
-        <nc-icon name="zoom-in" [size]="24" />
+        <nc-mark name="plus" />
       </button>
       <button
         type="button"

@@ -1,4 +1,4 @@
-import { expect, test } from './fixtures';
+import { expect, type Page, test } from './fixtures';
 import { release, serveGame, servePreset } from './mocks/game';
 import { setGamepads } from './mocks/gamepads';
 import { connection } from './mocks/netplay';
@@ -403,4 +403,31 @@ test('a game that asks for a listed room gets one, and the host dialog says so',
     },
     { visibility: 'PUBLIC' },
   ]);
+});
+
+test.describe('the Play mark over an idle screen', () => {
+  const side = async (page: Page): Promise<number[]> => {
+    const play = page.locator('nc-game-screen').getByRole('button', { name: 'Play' }).first();
+    await expect(play).toBeVisible();
+
+    return play
+      .locator('svg:visible')
+      .evaluateAll((marks) => marks.map((mark) => mark.getBoundingClientRect().width));
+  };
+
+  test('is the 24 drawing at twice its size on a screen wide enough for it', async ({ page }) => {
+    await serveGame(page, 'function _update() end');
+    await page.goto('/play/42');
+    expect(await side(page)).toEqual([48]);
+  });
+
+  test.describe('on a phone', () => {
+    test.use({ viewport: { width: 390, height: 844 } });
+
+    test('stays at 24', async ({ page }) => {
+      await serveGame(page, 'function _update() end');
+      await page.goto('/play/42');
+      expect(await side(page)).toEqual([24]);
+    });
+  });
 });

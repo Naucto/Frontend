@@ -13,7 +13,7 @@ import { MarkComponent } from './mark.component';
   selector: 'nc-edge-handle',
   imports: [MarkComponent],
   templateUrl: './edge-handle.component.html',
-  host: { class: 'absolute top-1/2 -left-[9px] z-20 -translate-y-1/2' },
+  host: { class: 'absolute top-1/2 -left-[15px] z-20 -translate-y-1/2' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EdgeHandleComponent {

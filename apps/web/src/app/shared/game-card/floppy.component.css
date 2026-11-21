@@ -289,7 +289,8 @@
   bottom: 0;
   left: 0;
   display: flex;
-  height: 9cqw;
+  /* Never lower than a mark of 15 with a pixel clear above and below it, over the foot. */
+  height: max(9cqw, 21px + 1cqw);
   align-items: center;
   gap: 2cqw;
   overflow: hidden;
@@ -566,8 +567,9 @@
   fill: rgb(11 10 9 / 0.3);
 }
 /*
- * A glyph has a drawing for 24 and one for 36 and is never scaled: the disk shows the larger one
- * from the width at which its action, or its caption, has the room.
+ * A glyph has a drawing for 18 and one for 24 and is never scaled. The disk shows the larger one
+ * from the width at which its diamond is 64px across, where the rind clears a box of 24 by a
+ * pixel; under it the diamond is 48px and clears a box of 18.
  */
 .action nc-icon {
   position: relative;
@@ -575,19 +577,11 @@
 .large-glyph {
   display: none;
 }
-@container (min-width: 281px) {
-  .action .small-glyph {
+@container (min-width: 175px) {
+  .small-glyph {
     display: none;
   }
-  .action .large-glyph {
-    display: inline-flex;
-  }
-}
-@container (min-width: 225px) {
-  .caption .small-glyph {
-    display: none;
-  }
-  .caption .large-glyph {
+  .large-glyph {
     display: inline-flex;
   }
 }

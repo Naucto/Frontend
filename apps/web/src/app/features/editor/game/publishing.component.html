@@ -20,12 +20,12 @@
   </div>
   <nc-panel-column edge="none" class="flex-1" [title]="t('editor.game.publishing')">
     <button actions ncButton variant="secondary" size="sm" (click)="exportGame()">
-      <nc-icon name="download" [size]="24" />
+      <nc-mark name="download" />
       {{ t('editor.game.export') }}
     </button>
     @if (isCreator()) {
       <button actions ncButton variant="secondary" size="sm" (click)="confirmDelete()">
-        <nc-icon name="trash" [size]="24" />
+        <nc-mark name="trash" />
         {{ t('editor.game.delete') }}
       </button>
     }

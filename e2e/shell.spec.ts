@@ -477,6 +477,8 @@ test.describe('app shell', () => {
           expect(apart(box, other)).toBe(true);
         }
       }
+      // A legend is never squeezed: at this width no key is large enough to hold one.
+      await expect(preview.locator('nc-mark')).toHaveCount(0);
     });
   });
 });

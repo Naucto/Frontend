@@ -1,10 +1,8 @@
-The icons set beside words: a button's leading icon, a stat, a menu row. Each is drawn for a box
-of eight cells by eight, three pixels a cell, so `nc-icon` draws it at 24px and never scales it.
+The icons that stand alone: the top bar, the rail, an empty state, an icon-only button tall
+enough to hold one. Each is drawn for a box of eight cells by eight, three pixels a cell, so
+`nc-icon` draws it at 24px and never scales it.
 
-A drawing is its ink and nothing around it: `#` is a cell, `.` is not, and the first and last row
-and column each hold a cell. `tools/build-icons.mjs` centres it in its box. One whose axis is a
-single cell is drawn on an odd count of cells and sits a pixel off the middle, rather than
-doubling the stroke to stay on it. Every name here is also drawn in icons-36.txt.
+The format is that of icons-18.txt, which draws every name here for the box beside words.
 
 alert:
 ...#...
@@ -37,11 +35,11 @@ bug:
 .#....#.
 ..#..#..
 ..####..
-########
-..####..
-########
-..####..
-##.##.##
+#.####.#
+.######.
+#.####.#
+.######.
+#..##..#
 
 camera:
 ..####..
@@ -488,13 +486,14 @@ logout:
 ########
 
 map:
-#...#..
-#.#.#.#
-#.#.#.#
-#.#.#.#
-#.#.#.#
-#.#.#.#
-..#...#
+.##...##
+#.#.##.#
+#.#.#..#
+#.#.#..#
+#.#.#..#
+#.#.#..#
+#.##.#.#
+##...##.
 
 marquee:
 #.#.#.#
