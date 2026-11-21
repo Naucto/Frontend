@@ -5,7 +5,7 @@
     <nc-help-dot [title]="t('editor.game.inputs.actions')" [text]="t('editor.game.inputs.help')" />
     <span class="flex-1"></span>
     <button ncButton size="sm" [pressed]="pane() === 'touch'" (click)="togglePane('touch')">
-      <nc-icon name="device-phone" [size]="24" />
+      <nc-mark name="device-phone" />
       {{ t('editor.game.inputs.touchPad') }}
     </button>
     <button ncButton size="sm" [pressed]="pane() === 'presets'" (click)="togglePane('presets')">
@@ -130,7 +130,7 @@
                       t('editor.game.inputs.editNamed', { action: action.label || action.name })
                     "
                     (click)="edit(action)">
-                    <nc-icon name="edit" [size]="24" />
+                    <nc-mark name="edit" />
                   </button>
                   <button
                     ncButton
@@ -141,7 +141,7 @@
                       t('editor.game.inputs.removeNamed', { action: action.label || action.name })
                     "
                     (click)="remove(action)">
-                    <nc-icon name="trash" [size]="24" />
+                    <nc-mark name="trash" />
                   </button>
                 </span>
               </td>
@@ -198,7 +198,7 @@
                         class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-1 gap-y-0.75 flat-sm bevel-edge-gold bevel-fill-gold-wash p-1.5"
                         role="group"
                         aria-labelledby="clash-title">
-                        <nc-icon name="alert" [size]="24" class="text-gold-ink" />
+                        <nc-icon name="alert" class="text-gold-ink" />
                         <span id="clash-title" class="label self-center text-gold-ink">
                           {{ t('editor.game.inputs.clash', { actions: held.into }) }}
                         </span>

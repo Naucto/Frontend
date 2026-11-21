@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, output } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
-import { ButtonDirective, IconComponent } from '@naucto/ui';
+import { ButtonDirective, MarkComponent } from '@naucto/ui';
 
 /**
  * The four ways to turn a block over, as a strip of buttons.
@@ -10,7 +10,7 @@ import { ButtonDirective, IconComponent } from '@naucto/ui';
  */
 @Component({
   selector: 'nc-transform-bar',
-  imports: [TranslocoDirective, ButtonDirective, IconComponent],
+  imports: [TranslocoDirective, ButtonDirective, MarkComponent],
   templateUrl: './transform-bar.component.html',
   host: { class: 'inline-flex' },
   changeDetection: ChangeDetectionStrategy.OnPush,

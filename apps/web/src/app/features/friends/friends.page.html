@@ -7,7 +7,7 @@
           {{ t('friends.emptyHint') }}
         </p>
         <button ncButton variant="primary" (click)="openAdd()">
-          <nc-icon name="plus" [size]="24" />
+          <nc-icon name="plus" />
           {{ t('friends.addFriend') }}
         </button>
       </nc-empty-state>
@@ -23,7 +23,7 @@
         (valueChange)="setTab($event)" />
       <span class="flex-1"></span>
       <button ncButton variant="primary" (click)="openAdd()">
-        <nc-icon name="plus" [size]="24" />
+        <nc-icon name="plus" />
         {{ t('friends.addFriend') }}
       </button>
     </header>

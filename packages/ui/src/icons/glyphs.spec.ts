@@ -61,8 +61,8 @@ function squares(rows: readonly string[], box: number): string[] {
 }
 
 const SOURCES: readonly [file: string, box: number, table: Record<string, string>][] = [
+  ['icons-18.txt', 6, ICON_GLYPHS[18]],
   ['icons-24.txt', 8, ICON_GLYPHS[24]],
-  ['icons-36.txt', 12, ICON_GLYPHS[36]],
   ['marks.txt', 5, MARK_GLYPHS],
 ];
 
@@ -86,7 +86,7 @@ describe.each(SOURCES)('%s', (file, box, table) => {
 });
 
 it('draws every icon at both sizes', () => {
-  expect(Object.keys(ICON_GLYPHS[36])).toEqual(Object.keys(ICON_GLYPHS[24]));
+  expect(Object.keys(ICON_GLYPHS[24])).toEqual(Object.keys(ICON_GLYPHS[18]));
 });
 
 it('sets a drawing an odd count of cells across a pixel before the middle of its box', () => {

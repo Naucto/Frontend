@@ -16,8 +16,8 @@ import {
   ButtonDirective,
   DialogShellComponent,
   FieldComponent,
-  IconComponent,
   InputDirective,
+  MarkComponent,
   NoticeComponent,
 } from '@naucto/ui';
 
@@ -90,7 +90,7 @@ export function categoryFor(path: string): BugCategory {
     ButtonDirective,
     DialogShellComponent,
     FieldComponent,
-    IconComponent,
+    MarkComponent,
     InputDirective,
     NoticeComponent,
   ],

@@ -58,7 +58,7 @@
             [alt]="t('feedback.bug.screenshotAlt')"
             class="pixelated max-h-[180px] max-w-[320px] border-3 border-line bg-inset object-contain" />
           <button ncButton variant="ghost" size="sm" type="button" (click)="removeScreenshot()">
-            <nc-icon name="close" />
+            <nc-mark name="close" />
             {{ t('feedback.bug.removeScreenshot') }}
           </button>
         </div>
@@ -79,7 +79,7 @@
                 type="button"
                 [disabled]="preparing()"
                 (click)="useFrame()">
-                <nc-icon name="gamepad" />
+                <nc-mark name="gamepad" />
                 {{ t('feedback.bug.useFrame') }}
               </button>
             }
@@ -91,12 +91,12 @@
                 type="button"
                 [disabled]="preparing()"
                 (click)="captureScreen()">
-                <nc-icon name="camera" />
+                <nc-mark name="camera" />
                 {{ t('feedback.bug.captureScreen') }}
               </button>
             }
             <label ncButton variant="secondary" size="sm" [class.pointer-events-none]="preparing()">
-              <nc-icon name="upload" />
+              <nc-mark name="upload" />
               {{ t('feedback.bug.chooseFile') }}
               <input
                 type="file"
@@ -119,7 +119,7 @@
         aria-controls="bug-included"
         [attr.aria-expanded]="showIncluded()"
         (click)="showIncluded.set(!showIncluded())">
-        <nc-icon [name]="showIncluded() ? 'chevron-up' : 'chevron-down'" />
+        <nc-mark [name]="showIncluded() ? 'chevron-up' : 'chevron-down'" />
         {{ t('feedback.bug.included.title') }}
       </button>
       @if (showIncluded()) {

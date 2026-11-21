@@ -437,7 +437,7 @@ test('FIND is a magnifier beside the plus', async ({ page }) => {
   const find = page.getByRole('button', { name: 'Find' });
   await expect(find).toBeVisible();
   await expect(find).toHaveText('');
-  await expect(find.locator('nc-icon')).toBeVisible();
+  await expect(find.locator('nc-mark')).toBeVisible();
 });
 
 /**

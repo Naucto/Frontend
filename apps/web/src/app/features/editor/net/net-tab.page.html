@@ -38,7 +38,7 @@
         [attr.aria-label]="t('editor.net.expandAll')"
         [ncTooltip]="t('editor.net.expandAll')"
         (click)="expandAll()">
-        <nc-icon name="expand" [size]="24" />
+        <nc-mark name="expand" />
       </button>
       <button
         ncButton
@@ -49,7 +49,7 @@
         [attr.aria-label]="t('editor.net.collapseAll')"
         [ncTooltip]="t('editor.net.collapseAll')"
         (click)="collapseAll()">
-        <nc-icon name="collapse" [size]="24" />
+        <nc-mark name="collapse" />
       </button>
     </div>
     <div class="flex items-center gap-1 px-[18px] py-[10px]">
@@ -102,8 +102,7 @@
                       [attr.aria-label]="row.name"
                       [attr.aria-expanded]="!collapsed().has(row.path)">
                       <nc-icon
-                        [name]="collapsed().has(row.path) ? 'chevron-right' : 'chevron-down'"
-                        [size]="24" />
+                        [name]="collapsed().has(row.path) ? 'chevron-right' : 'chevron-down'" />
                     </button>
                   }
                   @if (renaming() === row.path) {
@@ -157,34 +156,34 @@
                       type="button"
                       ncButton
                       variant="ghost"
-                      size="xs"
+                      size="sm"
                       iconOnly
                       [disabled]="!canShape(row) || (row.live && !row.container)"
                       [attr.title]="editHint(t, row, t('editor.net.addChild'))"
                       (click)="startAdd(row.path)">
-                      <nc-icon name="plus" [size]="24" />
+                      <nc-mark name="plus" />
                     </button>
                     <button
                       type="button"
                       ncButton
                       variant="ghost"
-                      size="xs"
+                      size="sm"
                       iconOnly
                       [disabled]="!canShape(row) || !row.path"
                       [attr.title]="editHint(t, row, t('editor.net.renameNode'))"
                       (click)="startRename(row)">
-                      <nc-icon name="edit" [size]="24" />
+                      <nc-mark name="edit" />
                     </button>
                     <button
                       type="button"
                       ncButton
                       variant="ghost"
-                      size="xs"
+                      size="sm"
                       iconOnly
                       [disabled]="!canShape(row) || !row.path"
                       [attr.title]="editHint(t, row, t('editor.net.deleteNode'))"
                       (click)="remove(row)">
-                      <nc-icon name="trash" [size]="24" />
+                      <nc-mark name="trash" />
                     </button>
                   </span>
                 </td>
@@ -352,7 +351,7 @@
         </p>
       } @else {
         <button ncButton variant="primary" class="w-full" (click)="spawn()" [disabled]="!info()">
-          <nc-icon name="plus" [size]="24" />
+          <nc-icon name="plus" />
           {{ t('editor.net.spawn') }}
         </button>
         @if (!info()) {

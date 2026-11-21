@@ -40,7 +40,7 @@
           [label]="t('editor.art.crop')"
           [checked]="art.crop()"
           (checkedChange)="art.setCrop($event)">
-          <nc-icon name="frame" [size]="24" />
+          <nc-icon name="frame" />
           <span class="hidden @min-[900px]:inline">{{ t('editor.art.crop') }}</span>
         </nc-toggle-button>
         <button
@@ -52,7 +52,7 @@
           [attr.aria-label]="t('editor.undo')"
           (click)="undo.manager.undo()"
           [disabled]="!undo.canUndo()">
-          <nc-icon name="undo" [size]="24" />
+          <nc-icon name="undo" />
         </button>
         <button
           type="button"
@@ -63,7 +63,7 @@
           [attr.aria-label]="t('editor.redo')"
           (click)="undo.manager.redo()"
           [disabled]="!undo.canRedo()">
-          <nc-icon name="redo" [size]="24" />
+          <nc-icon name="redo" />
         </button>
         <button
           type="button"
@@ -73,7 +73,7 @@
           iconOnly
           [attr.aria-label]="t('editor.copy')"
           (click)="transfer('c')">
-          <nc-icon name="copy" [size]="24" />
+          <nc-icon name="copy" />
         </button>
         <button
           type="button"
@@ -84,7 +84,7 @@
           [attr.aria-label]="t('editor.paste')"
           (click)="transfer('v')"
           [disabled]="!canPaste()">
-          <nc-icon name="clipboard" [size]="24" />
+          <nc-icon name="clipboard" />
         </button>
       </div>
     </header>
@@ -153,7 +153,7 @@
         class="shrink-0"
         [checked]="art.grid()"
         (checkedChange)="art.setGrid($event)">
-        <nc-icon name="grid" [size]="24" />
+        <nc-icon name="grid" />
         {{ t('editor.art.grid') }}
       </nc-toggle-button>
       <!-- Only where the sheet is cropped away. Uncropped, the previous frame is already on
@@ -164,7 +164,7 @@
           class="shrink-0"
           [checked]="art.onion()"
           (checkedChange)="art.setOnion($event)">
-          <nc-icon name="duplicate" [size]="24" />
+          <nc-icon name="duplicate" />
           {{ t('editor.art.onion') }}
         </nc-toggle-button>
       }
@@ -178,7 +178,7 @@
         class="shrink-0"
         [attr.aria-label]="t('editor.art.zoomOut')"
         (click)="canvas.zoomBy(-1)">
-        <nc-icon name="zoom-out" [size]="24" />
+        <nc-icon name="zoom-out" />
       </button>
       <nc-slider
         class="w-[88px] min-w-[40px] shrink"
@@ -199,7 +199,7 @@
         class="shrink-0"
         [attr.aria-label]="t('editor.art.zoomIn')"
         (click)="canvas.zoomBy(1)">
-        <nc-icon name="zoom-in" [size]="24" />
+        <nc-icon name="zoom-in" />
       </button>
       <button
         type="button"
@@ -232,7 +232,7 @@
             iconOnly
             [attr.aria-label]="t('editor.art.addSheet')"
             (click)="sheets.add()">
-            <nc-icon name="plus" [size]="24" />
+            <nc-mark name="plus" />
           </button>
           <button
             type="button"
@@ -242,7 +242,7 @@
             iconOnly
             [attr.aria-label]="t('editor.art.sheetSize')"
             (click)="openSheetSize()">
-            <nc-icon name="gear" [size]="24" />
+            <nc-mark name="gear" />
           </button>
         </span>
       </nc-tabs>

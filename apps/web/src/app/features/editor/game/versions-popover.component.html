@@ -19,7 +19,7 @@
       class="ml-1 flex items-center gap-0.5 font-mono text-label"
       [class.text-hot-ink]="tone === 'over'"
       [class.text-orange-ink]="tone === 'near'">
-      <nc-icon name="alert" [size]="24" />
+      <nc-icon name="alert" />
       {{ kb(size().total) }}
     </span>
   }
@@ -37,7 +37,7 @@
           [attr.aria-label]="t('editor.game.saveVersion')"
           [disabled]="!session.isCollaborator()"
           (click)="openSave()">
-          <nc-icon name="save" [size]="24" />
+          <nc-mark name="save" />
         </button>
       </header>
       <div>
@@ -78,7 +78,7 @@
                   "
                   [disabled]="!session.isCollaborator() || restoring()"
                   (click)="restore(version)">
-                  <nc-icon name="undo" [size]="24" />
+                  <nc-mark name="undo" />
                 </button>
               }
               @if (i !== 0 || saves.dirty()) {
@@ -94,7 +94,7 @@
                   "
                   [disabled]="!session.isCollaborator()"
                   (click)="remove(version)">
-                  <nc-icon name="trash" [size]="24" />
+                  <nc-mark name="trash" />
                 </button>
               }
             </li>

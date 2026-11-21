@@ -24,11 +24,16 @@
     @if (host.state() === 'idle') {
       <button
         type="button"
-        class="absolute inset-0 flex items-center justify-center bg-page/60 text-ink hover:text-gold-ink"
+        class="@container absolute inset-0 flex items-center justify-center bg-page/60 text-ink hover:text-gold-ink"
         (click)="play()"
         *transloco="let t"
         [attr.aria-label]="t('game.screen.play')">
-        <nc-icon name="play" [size]="36" />
+        <span class="contents @min-[640px]:hidden">
+          <nc-icon name="play" [size]="24" />
+        </span>
+        <span class="hidden @min-[640px]:contents">
+          <nc-icon name="play" [size]="24" doubled />
+        </span>
       </button>
     }
     <!-- A player has no console to read: outside the editor the screen says it stopped. -->
@@ -78,7 +83,7 @@
             iconOnly
             [attr.aria-label]="t('game.screen.pause')"
             (click)="host.pause()">
-            <nc-icon name="pause" [size]="24" />
+            <nc-icon name="pause" />
           </button>
         } @else {
           <!-- In a transport the design draws play as a bare hot glyph, not a filled button. -->
@@ -89,7 +94,7 @@
             iconOnly
             [attr.aria-label]="t('game.screen.play')"
             (click)="host.state() === 'paused' ? resume() : play()">
-            <nc-icon name="play" [size]="24" class="text-hot-ink" />
+            <nc-icon name="play" class="text-hot-ink" />
           </button>
         }
         <button
@@ -99,7 +104,7 @@
           iconOnly
           [attr.aria-label]="t('game.screen.restart')"
           (click)="restart()">
-          <nc-icon name="reload" [size]="24" />
+          <nc-icon name="reload" />
         </button>
         @if (debug()) {
           <button
@@ -110,7 +115,7 @@
             [attr.aria-label]="t('game.screen.step')"
             [disabled]="host.state() === 'idle' || host.state() === 'halted'"
             (click)="host.step()">
-            <nc-icon name="next" [size]="24" />
+            <nc-icon name="next" />
           </button>
         }
       </span>
@@ -134,7 +139,7 @@
         aria-haspopup="dialog"
         [attr.aria-label]="t('game.screen.controls')"
         (click)="openControls()">
-        <nc-icon name="gear" [size]="24" />
+        <nc-icon name="gear" />
       </button>
       <button
         ncButton
@@ -143,7 +148,7 @@
         iconOnly
         [attr.aria-label]="t('game.screen.fullscreen')"
         (click)="fullscreen()">
-        <nc-icon name="fullscreen" [size]="24" />
+        <nc-icon name="fullscreen" />
       </button>
     </div>
   }

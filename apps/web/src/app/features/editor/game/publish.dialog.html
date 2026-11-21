@@ -6,7 +6,7 @@
   <ul class="grid gap-0.75 text-body leading-[1.65] text-ink-body">
     @for (line of lines; track line.icon) {
       <li class="flex items-start gap-1">
-        <nc-icon [name]="line.icon" [size]="24" class="mt-[3px] shrink-0 text-ink-3" />
+        <nc-icon [name]="line.icon" class="mt-[3px] shrink-0 text-ink-3" />
         <span>{{ t('editor.publishDialog.' + line.key) }}</span>
       </li>
     }

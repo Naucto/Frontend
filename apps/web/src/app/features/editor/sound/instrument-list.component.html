@@ -9,7 +9,7 @@
       iconOnly
       [attr.aria-label]="t('editor.sound.addInstrument')"
       (click)="add.emit()">
-      <nc-icon name="plus" [size]="24" />
+      <nc-mark name="plus" />
     </button>
   </div>
   <div
@@ -38,7 +38,7 @@
           [attr.aria-label]="t('editor.sound.duplicate')"
           [ncTooltip]="t('editor.sound.duplicate')"
           (click)="$event.stopPropagation(); duplicate.emit(instrument.id)">
-          <nc-icon name="copy" [size]="24" />
+          <nc-mark name="copy" />
         </button>
         <button
           ncButton
@@ -49,7 +49,7 @@
           [attr.aria-label]="t('editor.sound.editInstrument')"
           [ncTooltip]="t('editor.sound.editInstrument')"
           (click)="$event.stopPropagation(); edit.emit(instrument.id)">
-          <nc-icon name="edit" [size]="24" />
+          <nc-mark name="edit" />
         </button>
         <button
           ncButton
@@ -60,7 +60,7 @@
           [attr.aria-label]="t('editor.sound.removeInstrument', { name: instrument.name })"
           [ncTooltip]="t('editor.sound.removeInstrument', { name: instrument.name })"
           (click)="$event.stopPropagation(); remove.emit(instrument.id)">
-          <nc-icon name="trash" [size]="24" />
+          <nc-mark name="trash" />
         </button>
       </div>
     }

@@ -21,7 +21,7 @@
         iconOnly
         [attr.aria-label]="t('editor.code.addFile')"
         (click)="addFile()">
-        <nc-icon name="plus" [size]="24" />
+        <nc-mark name="plus" />
       </button>
       <button
         ncButton
@@ -31,7 +31,7 @@
         [attr.aria-expanded]="searching()"
         [attr.aria-label]="t('editor.code.find')"
         (click)="find()">
-        <nc-icon name="search" [size]="24" />
+        <nc-mark name="search" />
       </button>
     </span>
   </nc-tabs>
@@ -71,7 +71,7 @@
          fall back to another font. -->
     @if (runtime.error()) {
       <span class="flex items-center gap-0.5 text-hot-ink">
-        <nc-icon name="alert" [size]="24" />
+        <nc-icon name="alert" />
         {{ t('editor.oneError') }}
       </span>
     }

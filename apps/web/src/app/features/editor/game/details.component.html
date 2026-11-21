@@ -20,7 +20,7 @@
         } @else {
           <div
             class="no-cover flex h-full flex-col items-center justify-center gap-0.5 pb-4 text-ink-4">
-            <nc-icon name="image" [size]="24" />
+            <nc-icon name="image" />
             <span class="label">{{ t('editor.game.noCover') }}</span>
           </div>
         }
@@ -31,13 +31,13 @@
             class="border-r-3 border-line-strong text-ink hover:text-gold-ink"
             [class]="CELL"
             (click)="grabFrame()">
-            <nc-icon name="camera" [size]="24" />
+            <nc-icon name="camera" />
             {{ t('editor.game.grabFrame') }}
           </button>
           <label
             class="text-ink-body hover:text-gold-ink focus-within:text-gold-ink"
             [class]="CELL">
-            <nc-icon name="upload" [size]="24" />
+            <nc-icon name="upload" />
             {{ t('editor.game.upload') }}
             <input type="file" [accept]="coverAccept" class="sr-only" (change)="upload($event)" />
           </label>
@@ -105,7 +105,7 @@
         } @else {
           <div
             class="no-cover flex h-full flex-col items-center justify-center gap-0.5 pb-4 text-ink-4">
-            <nc-icon name="video" [size]="24" />
+            <nc-icon name="video" />
             <span class="label">{{ t('editor.game.clip.none') }}</span>
           </div>
         }
@@ -145,7 +145,7 @@
                 class="border-l-3 border-line-strong text-ink-body hover:text-hot-ink"
                 [class]="CELL"
                 (click)="removeClip()">
-                <nc-icon name="trash" [size]="24" />
+                <nc-icon name="trash" />
                 {{ t('editor.game.delete') }}
               </button>
             }

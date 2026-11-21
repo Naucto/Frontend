@@ -1,4 +1,4 @@
-The marks a control carries where a 24px icon has no room. Each is exactly five cells by five,
+The marks a control carries where an icon has no room. Each is exactly five cells by five,
 three pixels a cell, drawn where it sits in its box: `nc-mark` draws it at 15px and never scales
 it. `#` is a cell, `.` is not.
 
@@ -36,6 +36,13 @@ arrow-up-right:
 ..#.#
 .#..#
 #....
+
+camera:
+.....
+.#...
+#####
+##.##
+#####
 
 caret-down:
 .....
@@ -114,12 +121,40 @@ close:
 .#.#.
 #...#
 
+collapse:
+#...#
+.#.#.
+..#..
+.....
+#####
+
 copy:
 ..###
 ..#.#
 #####
 #.#..
 ###..
+
+device-phone:
+.###.
+.#.#.
+.#.#.
+.#.#.
+.###.
+
+dock:
+#####
+#...#
+#.#.#
+#...#
+#####
+
+download:
+..#..
+#.#.#
+.###.
+..#..
+#####
 
 edit:
 ...#.
@@ -135,12 +170,68 @@ enter:
 .#...
 .....
 
+expand:
+..#..
+.#.#.
+#...#
+.....
+#####
+
+file-plus:
+#####
+##.##
+#...#
+##.##
+#####
+
+flip-horizontal:
+..#..
+#...#
+##.##
+#...#
+..#..
+
+flip-vertical:
+.###.
+..#..
+#...#
+..#..
+.###.
+
+gamepad:
+.....
+.###.
+#.#.#
+#####
+#...#
+
+gear:
+#.#.#
+.###.
+##.##
+.###.
+#.#.#
+
+grid:
+##.##
+##.##
+.....
+##.##
+##.##
+
 heart-filled:
 .#.#.
 #####
 #####
 .###.
 ..#..
+
+list:
+#.###
+.....
+#.###
+.....
+#.###
 
 message:
 #####
@@ -155,6 +246,13 @@ minus:
 #####
 .....
 .....
+
+pip:
+#####
+#...#
+#.###
+#.###
+#####
 
 plus:
 ..#..
@@ -176,6 +274,20 @@ record:
 #####
 #####
 .###.
+
+repeat:
+...#.
+#####
+.....
+#####
+.#...
+
+save:
+####.
+#..##
+#####
+#...#
+#####
 
 search:
 ###..
@@ -218,3 +330,17 @@ trash:
 .#.#.
 .#.#.
 .###.
+
+undo:
+.#...
+####.
+.#..#
+....#
+..##.
+
+upload:
+..#..
+.###.
+#.#.#
+..#..
+#####
