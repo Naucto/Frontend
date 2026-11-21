@@ -4,7 +4,8 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
  * The list that drops out of a search box.
  *
  * A frame of its own, two pixels under the box and standing off the page by a pixel shadow. Its own
- * scroll is capped, because what it lists is unbounded and the box under it is not.
+ * scroll is capped, because what it lists is unbounded and the box under it is not; a list that
+ * knows its length sets `--nc-suggest-max` to the room it may take.
  *
  * It carries no z-index on purpose. Being positioned already lifts it over its static siblings, and
  * clearing the *page* is not something it can settle from in here — a z-index on a child only
@@ -24,4 +25,6 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 })
 export class SuggestPanelComponent {
   readonly label = input('Suggestions');
+  /** What the field names in `aria-controls`. */
+  readonly listId = input<string>();
 }

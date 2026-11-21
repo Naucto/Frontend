@@ -2,9 +2,14 @@
 <input
   #input
   type="search"
+  autocomplete="off"
   [placeholder]="placeholder()"
   [value]="value()"
   [attr.aria-label]="placeholder()"
+  [attr.role]="list() ? 'combobox' : null"
+  [attr.aria-autocomplete]="list() ? 'list' : null"
+  [attr.aria-controls]="list()"
+  [attr.aria-expanded]="list() ? expanded() : null"
   (input)="onInput($event)"
   (keydown.enter)="submitted.emit(value())"
   class="min-w-0 flex-1 text-ink outline-none placeholder:text-ink-4"
