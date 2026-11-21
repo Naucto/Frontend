@@ -73,12 +73,25 @@ Pixelarticons, Bubblegum-16 palette, dark + light themes).
 - **Engine**: the Lua API is namespaced (`gfx`, `input`, `sound`, `map`, `net`, `sys`).
   `packages/engine/src/api/luaApiTable.ts` is the single source of truth (docs manifest parity,
   editor completions). Old games are migrated on load against frozen tables of their own
-  (`migrations/v0_to_v1/globals.ts`, `migrations/v1_to_v2/renames.ts`), never against the live
-  API; what a migration cannot rewrite is a warning on its line in the CODE tab.
-- **Game document shape**: every sheet and every map is an entry of its collection (`gfx.sheets`,
-  `map.maps`) holding its own cells and size; nothing is read from document roots or meta sizes.
-  The shape moved inside schema v2 without a bump, so `migrateGame` also rewrites in place a v2
-  document that still holds the older shape — see `migrations/v1_to_v2/shape.ts`.
+  (`migrations/v0_to_v1/globals.ts`, `migrations/v1_to_v2/renames.ts` and `actions.ts`,
+  `migrations/v2_to_v3/legacy.ts`), never against the live API or the live presets; what a
+  migration cannot rewrite is a warning on its line in the CODE tab.
+- **Game document shape**: every sheet, every map and every action is an entry of its collection
+  (`gfx.sheets`, `map.maps`, `input.actions`); a sheet and a map hold their own cells and size,
+  and nothing is read from document roots or meta sizes. That shape moved inside schema v2 without
+  a bump, so the step from v2 to v3 first brings a v2 document that still holds the older one to
+  it — see `migrations/v1_to_v2/shape.ts`.
+- **Input**: a game defines its own actions (schema v3, at most 32, one bit each of a player's
+  mask). An action has the name the code reads it by, a label and a description for players, and
+  the inputs plugged into it: keyboard keys of the first or the second player, and gamepad
+  controls from a closed standard set, the same on every pad (`input/actions.ts`). The engine
+  builds its `ActionTable` from the game and follows the document, so an action edited while the
+  game runs is live at the next step. The on-screen pad is a gamepad: it presses gamepad controls
+  for player 1, its cross standing for the left stick too, and draws only the controls the game
+  uses (`input/touch-pad.ts`). Nobody rebinds: what the author sets is what every player gets.
+  What stays per device is which player a gamepad drives and the on-screen pad's size and opacity.
+  A new game starts on the `classic` preset (`input/presets.ts`), the nine actions every game had
+  before v3, which is what keeps the starter code, the tutorials and the docs examples running.
 - **Theming**: every colour comes from a token in `packages/ui/src/tokens.css`; never write raw hex in
   components. Dark is the default; light is `[data-theme=light]` or `prefers-color-scheme`.
 - **Pixel kit**: one pixel is 3px (`--nc-px`) and every stroke is a whole number of them; boxes,
@@ -253,10 +266,6 @@ broken; an absence reads as not built.
   is an inner corner — and the engine has none, so there is nothing behind the button to call. It
   stood there permanently disabled, promising itself, which is the shape this list exists to stop.
 
-- **`+ ADD ACTION` on the controls page.** `ACTIONS` in `packages/engine/src/input/ActionMap.ts` is
-  nine fixed bits, and the input path is a bitmask — a game _names_ those actions in its GAME tab,
-  it cannot invent new ones. There is nothing for the button to add. If custom
-  actions ever land, this is the surface for them.
 - **File extensions on the CODE tabs.** The artboard writes `main.lua` and `player.lua`; a tab is
   called `main`, or `my helpers`. A tab is named for what it holds, and every one of them is Lua, so
   the suffix repeats the one thing they all share. The name is stored as it is written — it is the
