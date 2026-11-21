@@ -23,7 +23,11 @@ const project = {
   shortDesc: 'A tiny run-and-jump built as a tutorial.',
   longDesc: 'Move the moon with the arrow keys or a gamepad.',
   tags: ['action', 'adventure'],
+  palette: [] as string[],
   iconUrl: null,
+  coverUrl: null,
+  clipUrl: null as string | null,
+  disk: null as Record<string, string> | null,
   status: 'IN_PROGRESS',
   monetization: 'NONE',
   price: null,
@@ -57,7 +61,8 @@ interface HistoryEntry {
  * and is called `name` in the header, which a capture of a tutorial's game sets to the page's title.
  * `versions`/`checkpoints` seed the two histories the versions popover reads, and `onSave` runs on
  * every write of the content — a spec that needs to overwrite or track an endpoint of its own still can,
- * by routing it after this call.
+ * by routing it after this call. Answers the project as the routes hold it: a spec that stores a
+ * clip or a disk writes it there, and the next read of the project says so.
  */
 export async function mockEditor(
   page: Page,
@@ -80,7 +85,7 @@ export async function mockEditor(
     checkpoints?: HistoryEntry[];
     onSave?: () => void;
   } = {},
-): Promise<void> {
+): Promise<typeof project> {
   await page.addInitScript((value) => {
     localStorage.setItem('naucto.theme', value);
   }, theme);
@@ -124,5 +129,13 @@ export async function mockEditor(
       json: { data: { id: COLLABORATOR_ID, username: 'priax', profileImageUrl: '/img/logo.svg' } },
     }),
   );
-  await page.route(projectRoute(), (route) => route.fulfill({ json: { ...project, name } }));
+  // What a save or a refresh reads back is what the last write left, as on the real server.
+  const stored = { ...project, name };
+  await page.route(projectRoute(), (route) => {
+    if (route.request().method() === 'PUT') {
+      Object.assign(stored, route.request().postDataJSON());
+    }
+    return route.fulfill({ json: stored });
+  });
+  return stored;
 }
