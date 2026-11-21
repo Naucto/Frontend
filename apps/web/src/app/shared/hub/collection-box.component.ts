@@ -12,8 +12,10 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
+import type { CollectionVisibility } from '@naucto/api-client';
 import { AvatarComponent, ChipComponent, FitTextDirective, MarkComponent } from '@naucto/ui';
 
+import { VisibilityChipComponent } from '../collections/visibility-chip.component';
 import { diskStyleFor } from '../game-card/disk-style';
 import { FloppyComponent } from '../game-card/floppy.component';
 import { dockFits, dockPose, restPose } from './dock';
@@ -47,7 +49,7 @@ interface Drag {
  * the mouse, a finger or the keyboard they fan out along an arc with one at the crown, and a drag
  * or the arrow keys bring another there. Pressing a disk that is not at the crown brings it
  * there; pressing the one that is, is `picked`. The plate, and the tile for the games the box
- * does not show, open the collection.
+ * does not show, open the collection. The title keeps to one line: it is narrowed to fit, then cut.
  */
 @Component({
   selector: 'nc-collection-box',
@@ -59,6 +61,7 @@ interface Drag {
     FitTextDirective,
     FloppyComponent,
     MarkComponent,
+    VisibilityChipComponent,
   ],
   templateUrl: './collection-box.component.html',
   styleUrl: './collection-box.component.css',
@@ -84,6 +87,8 @@ export class CollectionBoxComponent {
   /** How many games the collection holds, shown or not. */
   readonly total = input.required<number>();
   readonly link = input.required<string | readonly unknown[]>();
+  /** Who can open it, shown in the curator's place: for the shelves of the curator's own. */
+  readonly visibility = input<CollectionVisibility | null>(null);
   /** The disk at the crown was pressed. */
   readonly picked = output<HubGame>();
 
@@ -159,6 +164,8 @@ export class CollectionBoxComponent {
     if ((mouse && event.button !== 0) || (event.target as Element).closest('[data-plate]')) {
       return;
     }
+    // A drag on the disks is the dock's: a carousel that holds the box must not page under it.
+    event.stopPropagation();
     const wasOpen = this.focus() !== null;
     if (!wasOpen) {
       // A finger lands on the disk it wants; a mouse was already over the box, which opened it.
@@ -266,6 +273,8 @@ export class CollectionBoxComponent {
       return;
     }
     event.preventDefault();
+    // Whatever holds the box may page on the same keys.
+    event.stopPropagation();
     const next = Math.max(
       0,
       Math.min(this.count() - 1, place + (event.key === 'ArrowRight' ? 1 : -1)),

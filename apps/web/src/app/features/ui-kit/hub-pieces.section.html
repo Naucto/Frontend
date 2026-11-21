@@ -85,7 +85,14 @@
     <nc-game-flyout *ncShelfFlyout="let game of games" [game]="game" />
   </nc-shelf>
 
-  <nc-shelf heading="My games" rows="2" data-testid="shelf-rows">
+  <nc-shelf heading="My games" rows="2" data-testid="shelf-rows" [count]="games.length">
+    <a
+      shelfMore
+      href="/ui-kit#hub"
+      class="inline-flex items-center gap-[6px] text-label tracking-wide text-gold-ink uppercase">
+      See all
+      <nc-mark name="arrow-right" />
+    </a>
     <nc-shelf-disk
       *ncShelfItem="let game of games; open as open; flyoutId as flyoutId"
       link="/ui-kit"
@@ -119,6 +126,7 @@
           [curator]="collection.curator"
           [total]="collection.total"
           [games]="collection.games"
+          [visibility]="collection.visibility ?? null"
           (picked)="say('Play ' + $event.name)" />
       }
     </div>
