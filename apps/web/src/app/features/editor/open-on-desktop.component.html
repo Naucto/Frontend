@@ -6,7 +6,7 @@
     @if (link(); as url) {
       <div class="flex w-full max-w-[420px] items-center gap-1">
         <span
-          class="h-(--nc-h-md) min-w-0 flex-1 truncate flat-sm bevel-fill-inset px-1.5 font-mono text-meta leading-[30px] text-ink-body">
+          class="min-w-0 flex-1 flat-sm bevel-fill-inset px-1.5 py-0.75 text-left font-mono text-meta wrap-anywhere text-ink-body">
           {{ url }}
         </span>
         <button ncButton variant="secondary" (click)="copy(url)">

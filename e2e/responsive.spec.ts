@@ -53,6 +53,30 @@ test.describe('editor gate', () => {
     await expect(page).toHaveURL(/\/sign-in\?next=%2Fedit%2F1/);
     await expect(page.getByRole('heading', { name: /insert game/i })).toBeVisible();
   });
+
+  test('the notice that stands for the editor keeps its words and its link inside the screen', async ({
+    page,
+  }) => {
+    await mockEditor(page);
+    await page.goto(editorUrl('game'));
+
+    const notice = page.locator('nc-open-on-desktop');
+    await expect(
+      notice.getByRole('heading', { name: 'The editor needs a bigger screen' }),
+    ).toBeVisible();
+    const pieces = [
+      notice.locator('p'),
+      notice.locator('span', { hasText: '/edit/7' }),
+      notice.getByRole('button', { name: 'Copy link' }),
+      notice.getByRole('link', { name: 'Play it instead' }),
+      notice.getByRole('link', { name: 'Back to the hub' }),
+    ];
+    for (const piece of pieces) {
+      const box = await piece.boundingBox();
+      expect(box?.x).toBeGreaterThanOrEqual(0);
+      expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(390);
+    }
+  });
 });
 
 for (const width of [1100, 1280]) {
