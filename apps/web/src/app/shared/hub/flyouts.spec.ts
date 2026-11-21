@@ -35,7 +35,11 @@ describe('the bodies of a shelf flyout', () => {
       startedAt: new Date(Date.now() - 12 * 60_000 - 5000).toISOString(),
       projectName: 'Bomberman',
       hostUsername: 'lea',
-      roster: [{ username: 'you' }, { username: 'lea' }, { username: 'emma', nickname: 'Emma B' }],
+      roster: [
+        { id: 1, username: 'you' },
+        { id: 2, username: 'lea' },
+        { id: 3, username: 'emma', nickname: 'Emma B' },
+      ],
     });
 
     beforeEach(() => {
@@ -137,6 +141,21 @@ describe('SessionDiskComponent', () => {
     expect(host().querySelectorAll('.sticker.away')).toHaveLength(1);
   });
 
+  it('wears the disk the author of its game chose, and a plastic of its own without one', () => {
+    const body = (): string =>
+      host().querySelector<HTMLElement>('nc-floppy')?.style.getPropertyValue('--f-body') ?? '';
+    const plastic = body();
+    expect(plastic).toMatch(/^#[0-9a-f]{6}$/);
+
+    fixture.componentRef.setInput(
+      'session',
+      sessionOf(2, 4, { disk: { color: '#ff80a4', finish: 'solid' } }),
+    );
+    fixture.detectChanges();
+    expect(body()).toBe('#ff80a4');
+    expect(body()).not.toBe(plastic);
+  });
+
   it('offers to join, and a press on it joins without following the link', () => {
     const joined = vi.fn();
     fixture.componentInstance.joined.subscribe(joined);
@@ -152,7 +171,7 @@ describe('SessionDiskComponent', () => {
     const session = sessionOf(2, 4);
     fixture.componentRef.setInput('session', {
       ...session,
-      roster: [...session.roster, { username: 'you' }],
+      roster: [...session.roster, { id: 9, username: 'you' }],
       playerCount: 3,
     });
     fixture.detectChanges();

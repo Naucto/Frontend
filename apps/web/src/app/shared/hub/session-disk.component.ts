@@ -27,7 +27,9 @@ export class SessionDiskComponent {
   readonly flyoutId = input<string | null>(null);
   readonly joined = output();
 
-  protected readonly disk = computed(() => diskStyleFor({ id: this.session().projectId }));
+  protected readonly disk = computed(() =>
+    diskStyleFor({ id: this.session().projectId, disk: this.session().disk }),
+  );
   protected readonly stickers = computed(() => sessionStickers(this.session(), this.viewer()));
   protected readonly joinable = computed(
     () =>

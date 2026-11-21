@@ -18,6 +18,8 @@ export interface HubGame {
 }
 
 export interface SessionPlayer {
+  /** Who they are across the app, which is what their colour is drawn from. */
+  id: number;
   username: string;
   /** What they are called, when it is not their username. */
   nickname?: string;
@@ -30,6 +32,8 @@ export interface HubSession {
   projectId: number;
   projectName: string;
   coverUrl: string | null;
+  /** How the game's author dressed its disk; without it the disk keeps a plastic of its own. */
+  disk?: DiskStyle | null;
   hostUsername: string;
   /** Who is in, host first; a crowded session names only its first players. */
   roster: readonly SessionPlayer[];

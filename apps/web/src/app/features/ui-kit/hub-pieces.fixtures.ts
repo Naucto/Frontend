@@ -237,15 +237,17 @@ export function openSessions(now: number): HubSession[] {
   return SEATS.map(([seated, seats], index) => {
     const game = pick(GAMES, index * 3 + 2);
     // A session names eight of its players at most.
-    const roster = Array.from({ length: Math.min(seated, 8) }, (_, seat) => ({
-      username: (index === 1 && seat === 1 ? person(0) : person(index + seat + 1)).username,
-    }));
+    const roster = Array.from({ length: Math.min(seated, 8) }, (_, seat) => {
+      const { id, username } = index === 1 && seat === 1 ? person(0) : person(index + seat + 1);
+      return { id, username };
+    });
     return {
       sessionUuid: `session-${String(index)}`,
       startedAt: new Date(now - (3 + index * 9) * 60_000).toISOString(),
       projectId: game.id,
       projectName: game.name,
       coverUrl: game.coverUrl ?? null,
+      disk: game.disk,
       hostUsername: roster[0]?.username ?? '',
       roster,
       playerCount: seated,
