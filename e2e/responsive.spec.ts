@@ -104,6 +104,22 @@ for (const width of [1100, 1280]) {
       expect(search.x + search.width).toBeLessThanOrEqual(actions.x);
       expect(search.width).toBeGreaterThanOrEqual(240);
     });
+
+    /** The panel is as wide as three disks need even where the box is not, and stays on screen. */
+    test('drops a panel that keeps its width and stays inside the window', async ({ page }) => {
+      await mockSignedIn(page);
+      await page.goto('/hub');
+
+      await page.getByRole('combobox', { name: 'Search games, people, tags…' }).click();
+      const panel = await page.locator('nc-suggest-panel').boundingBox();
+      if (!panel) {
+        throw new Error('the search panel is not laid out');
+      }
+
+      expect(panel.width).toBeGreaterThanOrEqual(480);
+      expect(panel.x).toBeGreaterThanOrEqual(0);
+      expect(panel.x + panel.width).toBeLessThanOrEqual(width);
+    });
   });
 }
 
