@@ -84,12 +84,6 @@ describe('GameDiskComponent', () => {
     expect(host.querySelector('nc-floppy nc-chip')?.textContent).toContain('Draft');
   });
 
-  it('opens a published game in the editor from its owner’s shelf', () => {
-    const host = render({ game: game({}), opensEditor: true }).nativeElement as HTMLElement;
-    expect(host.querySelector('a')?.getAttribute('href')).toBe('/edit/7');
-    expect(host.querySelector('nc-chip')).toBeNull();
-  });
-
   it('is a small still disk beside the name when dense', () => {
     const host = render({ game: game({ publishedAt: null }), dense: true })
       .nativeElement as HTMLElement;

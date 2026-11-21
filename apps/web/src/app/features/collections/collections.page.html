@@ -1,0 +1,58 @@
+<div *transloco="let t" class="grid grid-cols-[minmax(0,1fr)] content-start gap-3">
+  <div class="flex flex-wrap items-center gap-x-[14px] gap-y-1.5">
+    <h1 class="font-display text-display text-ink">{{ t('collections.title') }}</h1>
+    @if (query.data(); as found) {
+      <nc-chip data-testid="total">{{ found.total }}</nc-chip>
+    }
+    <span class="flex-1"></span>
+    <nc-segmented
+      variant="chips"
+      [label]="t('collections.sort.label')"
+      [options]="sorts()"
+      [value]="order()"
+      (valueChange)="$event && show($event, 1)" />
+  </div>
+
+  @if (query.isError()) {
+    <div class="flat-lg bevel-fill-panel">
+      <nc-error-state
+        [title]="t('collections.listFailed')"
+        [retryLabel]="t('game.retry')"
+        (retry)="query.refetch()" />
+    </div>
+  } @else if (query.data(); as found) {
+    @if (found.total) {
+      <div
+        data-testid="collections"
+        class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-x-[20px] gap-y-1">
+        @for (collection of found.collections; track collection.id) {
+          <nc-collection-box
+            [title]="collection.title"
+            [curator]="collection.owner"
+            [games]="collection.games"
+            [total]="collection.gameCount"
+            [link]="['/collections', collection.id]"
+            (picked)="router.navigate(['/play', $event.id])" />
+        }
+      </div>
+      @if (pages() > 1) {
+        <nc-pager
+          class="justify-self-center"
+          [count]="pages()"
+          [value]="number() - 1"
+          (valueChange)="show(order(), $event + 1)" />
+      }
+    } @else {
+      <div class="flat-lg bevel-fill-panel">
+        <nc-empty-state icon="archive" [title]="t('collections.empty')" />
+      </div>
+    }
+  } @else {
+    <div
+      class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-x-[20px] gap-y-1">
+      @for (i of placeholders; track i) {
+        <nc-skeleton class="mt-[64px]" height="226px" />
+      }
+    </div>
+  }
+</div>

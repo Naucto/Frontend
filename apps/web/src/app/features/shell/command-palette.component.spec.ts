@@ -74,6 +74,7 @@ describe('CommandPaletteComponent', () => {
 
     expect(options()).toEqual([
       'Hub',
+      'Collections',
       'Learn',
       'Toggle theme',
       'Report a problem',

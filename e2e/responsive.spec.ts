@@ -17,7 +17,7 @@ const VIEWPORTS = [
   { name: 'ultrawide', width: 2560, height: 1440 },
 ] as const;
 
-const ROUTES = ['/hub', '/learn', '/friends', '/sign-in', '/u/nobody'] as const;
+const ROUTES = ['/hub', '/learn', '/friends', '/sign-in', '/u/nobody', '/collections'] as const;
 
 for (const vp of VIEWPORTS) {
   test.describe(`${vp.name} (${String(vp.width)}px)`, () => {

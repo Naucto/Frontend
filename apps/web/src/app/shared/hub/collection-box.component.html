@@ -50,24 +50,27 @@
   </span>
   <a
     data-plate
-    class="raised-lg bevel-fill-raised group-hover:bevel-lit active:bevel-down absolute inset-x-0 bottom-0 z-[200] grid h-[116px] content-center gap-[6px] px-[20px] text-ink"
+    class="raised-lg bevel-fill-raised group-hover:bevel-lit active:bevel-down absolute inset-x-0 bottom-0 z-[200] grid h-[116px] grid-cols-[minmax(0,1fr)] content-center gap-[10px] px-[20px] text-ink"
     [routerLink]="link()"
     [attr.aria-label]="
       t('hub.collection.open', {
         label: t('hub.collection.label', { title: title(), n: total(), name: curator().username }),
       })
     ">
-    <span class="flex min-w-0 items-center gap-[10px]">
-      <span
-        ncFitText
-        class="min-w-0 overflow-hidden font-display text-[22px] leading-[1.1] whitespace-nowrap">
-        <span class="inline-block origin-left truncate align-top">{{ title() }}</span>
-      </span>
-      <nc-chip class="flex-none">{{ t('hub.collection.count', { n: total() }) }}</nc-chip>
+    <span
+      ncFitText
+      class="min-w-0 overflow-hidden font-display text-[22px] leading-[1.1] whitespace-nowrap">
+      <span class="inline-block origin-left truncate align-top">{{ title() }}</span>
     </span>
-    <span class="flex items-center gap-[8px] text-meta text-ink-3">
-      <nc-avatar aria-hidden="true" [name]="curator().username" [id]="curator().id" [size]="24" />
-      <span>{{ curator().username }}</span>
+    <span class="flex min-w-0 items-center gap-[8px] text-meta text-ink-3">
+      @if (visibility(); as visibility) {
+        <nc-visibility-chip [visibility]="visibility" />
+      } @else {
+        <nc-avatar aria-hidden="true" [name]="curator().username" [id]="curator().id" [size]="24" />
+        <span class="min-w-0 truncate">{{ curator().username }}</span>
+      }
+      <span class="flex-1"></span>
+      <nc-chip class="flex-none">{{ t('hub.collection.count', { n: total() }) }}</nc-chip>
     </span>
   </a>
 </div>

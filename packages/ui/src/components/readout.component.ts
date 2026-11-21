@@ -42,7 +42,7 @@ export class ReadoutComponent {
 
   protected readonly valueClass = computed(() =>
     [
-      'flex-1 font-mono tracking-strip',
+      'min-w-0 flex-1 truncate font-mono tracking-strip',
       this.size() === 'sm' ? 'text-meta' : 'text-small',
       TONES[this.tone()],
     ].join(' '),

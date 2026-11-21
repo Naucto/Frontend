@@ -6,10 +6,11 @@ import {
   type ElementRef,
   inject,
   input,
+  linkedSignal,
   signal,
   viewChild,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import {
   friendsControllerSend,
@@ -48,6 +49,8 @@ import { unwrap } from '../../core/api/api-errors';
 import { AuthStore } from '../../core/auth/auth.store';
 import { PresenceStore } from '../../core/presence/presence.store';
 import { presenceLine } from '../../core/presence/presence-line';
+import { CollectionBoxComponent } from '../../shared/hub/collection-box.component';
+import { injectUserCollections } from '../../shared/queries/collections.queries';
 import { qk } from '../../shared/queries/query-keys';
 import { injectRelatedWindow } from '../../shared/queries/releases.queries';
 import { HubRowComponent } from '../hub/hub-row.component';
@@ -58,7 +61,7 @@ import {
   type ProfileImageZone,
 } from './profile-image.dialog';
 
-type Shelf = 'games' | 'liked' | 'collabs' | 'remixes';
+type Shelf = 'games' | 'liked' | 'collabs' | 'remixes' | 'collections';
 
 type Zone = 'nickname' | 'description' | 'colour';
 
@@ -91,6 +94,7 @@ const COLOURS: PersonalColour[] = (Object.keys(PERSONAL_COLOURS) as IdentityAcce
     StatComponent,
     HubRowComponent,
     EditChipComponent,
+    CollectionBoxComponent,
   ],
   templateUrl: './profile.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -98,10 +102,15 @@ const COLOURS: PersonalColour[] = (Object.keys(PERSONAL_COLOURS) as IdentityAcce
 export default class ProfilePage {
   readonly username = input.required<string>();
   protected readonly auth = inject(AuthStore);
+  protected readonly router = inject(Router);
   private readonly toasts = inject(ToastService);
   private readonly presence = inject(PresenceStore);
   private readonly transloco = inject(TranslocoService);
-  protected readonly shelf = signal<Shelf>('games');
+  /** Another person's profile opens on their games: they may not have the shelf this one was on. */
+  protected readonly shelf = linkedSignal<string, Shelf>({
+    source: () => this.username(),
+    computation: () => 'games',
+  });
   /** The one zone currently open. There is no edit mode, so at most one is. */
   protected readonly editing = signal<Zone | null>(null);
   protected readonly COLOURS = COLOURS;
@@ -277,6 +286,8 @@ export default class ProfilePage {
     queryFn: async () =>
       unwrap(await userPublicControllerGetRemixes({ path: { id: this.userId() } })),
   }));
+  /** The public ones only: what the API lists of anyone, the viewer's own profile included. */
+  protected readonly collections = injectUserCollections(() => this.userId());
   private readonly friendshipQuery = injectQuery(() => ({
     queryKey: qk.friendship(this.userId()),
     enabled: this.userId() > 0 && this.auth.isAuthenticated() && !this.isSelf(),
@@ -350,6 +361,14 @@ export default class ProfilePage {
       value: 'remixes' as const,
       label: `${this.transloco.translate('profile.remixes')} ${formatCompact(this.remixes().length)}`,
     },
+    ...(this.collections.data()?.length
+      ? [
+          {
+            value: 'collections' as const,
+            label: `${this.transloco.translate('profile.collections')} ${formatCompact(this.collections.data()?.length ?? 0)}`,
+          },
+        ]
+      : []),
   ]);
   protected readonly current = computed(() =>
     this.shelf() === 'games'

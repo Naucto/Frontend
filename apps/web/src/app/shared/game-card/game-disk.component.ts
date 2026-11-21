@@ -17,8 +17,7 @@ import { FloppyComponent } from './floppy.component';
 
 /**
  * A game as the link to it: its disk over its name, or with `dense` a small disk beside its name
- * and counts. A published game is played; a draft, or any game on its owner's shelf, opens in the
- * editor.
+ * and counts. A published game is played; a draft opens in the editor.
  */
 @Component({
   selector: 'nc-game-disk',
@@ -38,14 +37,7 @@ export class GameDiskComponent {
   readonly game = input.required<ProjectExResponseDto & { disk?: DiskStyle | null }>();
   /** A draft has no release: it takes the project's cover and wears the chip. */
   protected readonly isDraft = computed(() => !this.game().publishedAt);
-
-  /**
-   * Lead to the editor instead of the play page: the same published game is played from the hub and
-   * opened from its owner's shelf.
-   */
-  readonly opensEditor = input(false);
-  protected readonly edits = computed(() => this.opensEditor() || this.isDraft());
-  protected readonly link = computed(() => [this.edits() ? '/edit' : '/play', this.game().id]);
+  protected readonly link = computed(() => [this.isDraft() ? '/edit' : '/play', this.game().id]);
   readonly dense = input(false, { transform: booleanAttribute });
 
   protected readonly disk = computed(() => diskStyleFor(this.game()));

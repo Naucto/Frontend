@@ -34,7 +34,7 @@
         [by]="game().creator.username"
         [likes]="game().likes"
         [comments]="game().commentCount ?? null"
-        [action]="edits() ? 'edit' : 'play'">
+        [action]="isDraft() ? 'edit' : 'play'">
         @if (isDraft()) {
           <nc-chip>{{ t('games.draft') }}</nc-chip>
         }
