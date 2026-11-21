@@ -77,7 +77,7 @@ const ramps = new Map<string, string>();
  * A ramp from nothing to `to` in ordered dither, one canvas pixel per 3px cell and scaled back up:
  * the cells stay whole at any disk size, which a stretched tile cannot promise.
  */
-function ditherRamp(width: number, height: number, to: string, dir: DiskGradDir): string {
+export function ditherRamp(width: number, height: number, to: string, dir: DiskGradDir): string {
   const key = `${String(width)}x${String(height)}${to}${dir}`;
   const known = ramps.get(key);
   if (known) {
