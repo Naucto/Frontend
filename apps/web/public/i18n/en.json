@@ -325,6 +325,75 @@
     "loadFailed": "Could not load your games",
     "createFailed": "Could not create a new game"
   },
+  "collections": {
+    "title": "Collections",
+    "one": "Collection",
+    "new": "New collection",
+    "loadFailed": "Could not load this collection",
+    "listFailed": "Could not load the collections",
+    "visibility": {
+      "PUBLIC": "Public",
+      "UNLISTED": "Unlisted",
+      "PRIVATE": "Private"
+    },
+    "visibilityHint": {
+      "PUBLIC": "Anyone can find it: on your profile and on the hub.",
+      "UNLISTED": "Only people who have the link can open it. It is listed nowhere.",
+      "PRIVATE": "Only you can see it."
+    },
+    "sort": {
+      "label": "Sort collections",
+      "popular": "Popular",
+      "recent": "Recent",
+      "games": "Most games"
+    },
+    "empty": "No collection has been shared yet",
+    "updated": "Updated {{when}}",
+    "copyLink": "Copy link",
+    "copied": "Copied",
+    "edit": "Edit details",
+    "delete": "Delete",
+    "deleteTitle": "Delete {{title}}?",
+    "deleteMessage": "The list goes, and its link stops working.\n\nThe games in it are not touched: they stay where their makers published them.",
+    "deleteConfirm": "Delete collection",
+    "deleted": "{{title}} was deleted",
+    "deleteFailed": "Could not delete this collection",
+    "organize": "Organize",
+    "organizeHelp": "Drag a disk to move it, or use its two arrows.\n\nTick the disks to take out, then press Remove.",
+    "selected": "{{n}} selected",
+    "remove": "Remove",
+    "removeFailed": "Could not remove every game. Try again.",
+    "reorderFailed": "Could not save the new order.",
+    "select": "Select {{name}}",
+    "moveEarlier": "Move {{name}} earlier",
+    "moveLater": "Move {{name}} later",
+    "moved": "{{name}} is now {{position}} of {{count}}",
+    "unavailable": "No longer on the hub",
+    "unavailableGame": "A game that left the hub",
+    "emptyOwnerTitle": "No disk in this box yet",
+    "emptyOwnerHint": "Open a published game and press Add to collection.",
+    "emptyTitle": "Nothing in this box yet",
+    "browse": "Browse the hub",
+    "seeOthers": "See other collections",
+    "add": {
+      "label": "Add to collection",
+      "failed": "Could not update {{title}}.",
+      "full": "{{title}} is full: a collection holds {{n}} games at most.",
+      "loadFailed": "Could not load your collections."
+    },
+    "dialog": {
+      "edit": "Edit collection",
+      "title": "Title",
+      "description": "Description",
+      "visibility": "Who can see it",
+      "create": "Create",
+      "save": "Save",
+      "cancel": "Cancel",
+      "close": "Close",
+      "limit": "You already have {{n}} collections, which is the most an account holds. Delete one to make room.",
+      "failed": "Could not save the collection. Try again."
+    }
+  },
   "game": {
     "haltedTitle": "The game stopped on an error",
     "haltedRestart": "Restart",
@@ -959,7 +1028,8 @@
       "browse": "BROWSE",
       "save": "SAVE",
       "zoom": "Zoom"
-    }
+    },
+    "collections": "Collections"
   },
   "docs": {
     "title": "Learn",
