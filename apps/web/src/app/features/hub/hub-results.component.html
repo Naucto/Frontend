@@ -41,7 +41,7 @@
           class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,190px),1fr))] gap-x-[22px] gap-y-[26px]">
           @for (game of group.games; track game.id) {
             <nc-shelf-disk
-              titled
+              named
               class="relative z-[1] min-w-0 hover:z-[60]"
               [link]="['/play', game.id]"
               [game]="game" />
