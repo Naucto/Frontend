@@ -52,22 +52,51 @@ describe('migrateBlob', () => {
       to: GAME_SCHEMA_VERSION,
       warnings: [],
       future: false,
-      reshaped: false,
     });
   });
 
-  it('rewrites in place a current document still holding the first sheet in the roots', () => {
+  it('brings a v2 blob to the current schema with the nine actions and the names it gave them', () => {
+    const doc = decode(blobAt(2, 'function _update()\n  if input.held("a") then end\nend'));
+    doc.getMap(KEYS.actions).clear();
+    doc.getMap(KEYS.meta).set('actions', [{ action: 'a', label: 'Jump' }]);
+
+    const out = migrateBlob(Y.encodeStateAsUpdate(doc));
+
+    expect(out).toMatchObject({ from: 2, to: GAME_SCHEMA_VERSION, future: false, warnings: [] });
+    const migrated = decode(out.bytes!);
+    expect(migrated.getMap(KEYS.meta).get('schemaVersion')).toBe(GAME_SCHEMA_VERSION);
+    expect(migrated.getMap(KEYS.meta).has('actions')).toBe(false);
+    const game = new Game(migrated);
+    expect(game.actions.map((action) => action.name)).toEqual([
+      'left',
+      'right',
+      'up',
+      'down',
+      'a',
+      'b',
+      'x',
+      'y',
+      'pause',
+    ]);
+    expect(game.actions[4]).toMatchObject({ name: 'a', label: 'Jump' });
+    expect(game.actions[4]?.inputs).toContainEqual({ kind: 'key', player: 0, key: 'x' });
+    expect(game.files[0].text.toString()).toContain('input.held("a")');
+    expect(migrateBlob(out.bytes!).bytes).toBeNull();
+  });
+
+  it('brings a v2 blob still holding the first sheet in the roots to the collection shape', () => {
     const doc = new Y.Doc();
-    doc.getMap(KEYS.meta).set('schemaVersion', GAME_SCHEMA_VERSION);
+    doc.getMap(KEYS.meta).set('schemaVersion', 2);
     doc.getMap(KEYS.meta).set('sheetWidth', 64);
     doc.getMap<number>('gfx.sprites').set('3,4', 9);
 
     const out = migrateBlob(Y.encodeStateAsUpdate(doc));
 
-    expect(out).toMatchObject({ from: GAME_SCHEMA_VERSION, reshaped: true });
+    expect(out).toMatchObject({ from: 2, to: GAME_SCHEMA_VERSION });
     const game = new Game(decode(out.bytes!));
     expect(game.sheets[0]?.getPixel(3, 4)).toBe(9);
     expect(game.sheets[0]?.width).toBe(64);
+    expect(game.actions).toHaveLength(9);
     expect(migrateBlob(out.bytes!).bytes).toBeNull();
   });
 
