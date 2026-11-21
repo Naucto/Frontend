@@ -5,6 +5,24 @@
 /* ---- documentation (built from the docs submodule) ---- */
 @layer components {
   /*
+   * Every frame a page draws is the kit's bevel, whose strips are written here once for all of
+   * them. Each names its shape and its colours where it is styled, and a shape applied to a
+   * selector missing from this list paints nothing.
+   */
+  .doc-html .doc-code,
+  .doc-html .doc-copy,
+  .doc-html kbd,
+  .doc-html figure.doc-figure,
+  .doc-html details.doc-listing,
+  .doc-html .callout,
+  .doc-html .doc-diagram,
+  .api-card,
+  .api-sig,
+  .api-ref-chip {
+    @apply bevel;
+  }
+
+  /*
    * Running text sits one ink step down; emphasis returns to full ink, never to a heavier weight.
    */
   .doc-html {

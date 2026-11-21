@@ -142,9 +142,14 @@ describe('tokens.css', () => {
     );
   });
 
-  it('paints every shape from the one bevel', () => {
-    for (const shape of ['flat-sm', 'flat-lg', 'raised-sm', 'raised-lg', 'well']) {
-      expect(utility(shape), `${shape} paints on its own`).toContain('@apply bevel;');
+  it('paints every shape from the one bevel, written once', () => {
+    const shapes = ['flat-sm', 'flat-lg', 'raised-sm', 'raised-lg', 'well'];
+    const names = shapes.map((shape) => `.${shape}`).join(', ');
+    expect(css, 'a shape is missing from the rule that paints them').toContain(
+      `:where(${names}) {\n    @apply bevel;`,
+    );
+    for (const shape of shapes) {
+      expect(utility(shape), `${shape} carries the strips a second time`).not.toContain('@apply');
       expect(utility(shape)).not.toContain('linear-gradient');
     }
     expect(css.match(/border-image/g)).toBeNull();
