@@ -84,7 +84,15 @@ test.describe('editor gate', () => {
   });
 });
 
-for (const width of [1100, 1280]) {
+/** A signed-in bar is the full one: on a tablet the search keeps room to type a few words in. */
+const BARS = [
+  { width: 768, least: 160 },
+  { width: 900, least: 240 },
+  { width: 1100, least: 240 },
+  { width: 1280, least: 240 },
+] as const;
+
+for (const { width, least } of BARS) {
   test.describe(`top bar search (${String(width)}px)`, () => {
     test.use({ viewport: { width, height: 800 } });
 
@@ -102,7 +110,25 @@ for (const width of [1100, 1280]) {
 
       expect(nav.x + nav.width).toBeLessThanOrEqual(search.x);
       expect(search.x + search.width).toBeLessThanOrEqual(actions.x);
-      expect(search.width).toBeGreaterThanOrEqual(240);
+      expect(search.width).toBeGreaterThanOrEqual(least);
+    });
+
+    /** The panel is as wide as three disks need even where the box is not, and stays on screen. */
+    test('drops a panel that keeps its width and stays inside the window', async ({ page }) => {
+      await mockSignedIn(page);
+      await page.goto('/hub');
+
+      await page.getByRole('combobox', { name: 'Search games, people, tags…' }).click();
+      const panel = await page.locator('nc-suggest-panel').boundingBox();
+      if (!panel) {
+        throw new Error('the search panel is not laid out');
+      }
+
+      // Under a box of odd width the panel's edges fall on half pixels, which the engine keeps in
+      // 64ths: the width comes back a 64th short.
+      expect(Math.round(panel.width)).toBeGreaterThanOrEqual(480);
+      expect(panel.x).toBeGreaterThanOrEqual(0);
+      expect(panel.x + panel.width).toBeLessThanOrEqual(width);
     });
   });
 }

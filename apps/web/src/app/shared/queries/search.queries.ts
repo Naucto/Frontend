@@ -82,8 +82,14 @@ export function parseTerm(raw: string): ParsedTerm {
  *
  * Live sessions are the one kind that needs a signed-in caller — who may see a session depends on
  * whose friend the host is — so a visitor gets three sections rather than a section that lies.
+ *
+ * With `untyped`, an empty box is answered too: the most played games and the open sessions, or
+ * the most used tags after a lone `#`. People and tags are only ever looked up by what was typed.
  */
-export function injectSuggestions(query: Signal<string>): CreateQueryResult<Suggestions> {
+export function injectSuggestions(
+  query: Signal<string>,
+  untyped: () => boolean = () => false,
+): CreateQueryResult<Suggestions> {
   const auth = inject(AuthStore);
   const parsed = computed(() => parseTerm(query()));
 
@@ -93,15 +99,18 @@ export function injectSuggestions(query: Signal<string>): CreateQueryResult<Sugg
 
     return {
       queryKey: qk.searchSuggest(term, tagsOnly, signedIn),
-      enabled: term.length > 0,
+      enabled: term.length > 0 || untyped(),
       staleTime: 30_000,
       queryFn: async (): Promise<Suggestions> => {
-        const tags = section(
-          hubControllerGetReleaseTags({
-            query: { q: term, limit: tagsOnly ? TAGS_ONLY_SHOWN : TAGS_SHOWN },
-          }).then(unwrap),
-          (tagsResponse) => tagsResponse.tags,
-        );
+        const tags =
+          term || tagsOnly
+            ? section(
+                hubControllerGetReleaseTags({
+                  query: { q: term || undefined, limit: tagsOnly ? TAGS_ONLY_SHOWN : TAGS_SHOWN },
+                }).then(unwrap),
+                (tagsResponse) => tagsResponse.tags,
+              )
+            : Promise.resolve([]);
 
         if (tagsOnly) {
           return { ...EMPTY, tags: await tags };
@@ -109,14 +118,16 @@ export function injectSuggestions(query: Signal<string>): CreateQueryResult<Sugg
 
         const games = section(
           hubControllerGetPaginatedReleases({
-            query: { search: term, limit: PER_SECTION, page: 1, sort: 'popular' },
+            query: { search: term || undefined, limit: PER_SECTION, page: 1, sort: 'popular' },
           }).then(unwrap),
           (releasesResponse) => releasesResponse.projects.slice(0, PER_SECTION),
         );
-        const people = section(searchPeople(term, PER_SECTION), (hits) => hits);
+        const people = term
+          ? section(searchPeople(term, PER_SECTION), (hits) => hits)
+          : Promise.resolve([]);
         const sessions = signedIn
           ? section(
-              multiplayerControllerList({ query: { q: term } }).then(unwrap),
+              multiplayerControllerList({ query: { q: term || undefined } }).then(unwrap),
               (sessionsResponse) => sessionsResponse.sessions.slice(0, PER_SECTION),
             )
           : Promise.resolve([]);

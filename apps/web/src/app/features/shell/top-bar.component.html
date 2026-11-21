@@ -1,9 +1,11 @@
 <!-- Stacked above the page because the bar opens panels over it; a z-index on a dropdown would only
      order it inside the bar. Above the editor's edge handles, below the toasts. -->
 <!-- From md, a grid of mark | nav | search | actions: the search takes the track left between the
-     two clusters, so it shrinks before anything overlaps it. Below md the row is menu | mark |
-     actions, and the menu button opens the search and the links under it; the header never scrolls
-     sideways. -->
+     two clusters, so it shrinks before anything overlaps it. A signed-in bar holds more than a
+     tablet is wide, so what has another way in gives the search its room: NEW GAME is its plus
+     below xl, and the theme and the report button, which Settings and the account menu also hold,
+     show from lg. Below md the row is menu | mark | actions, and the menu button opens the search
+     and the links under it; the header never scrolls sideways. -->
 <header
   *transloco="let t"
   class="relative z-30 flex min-h-[56px] flex-wrap items-center gap-x-[10px] border-b-3 border-line-strong bg-panel pr-[10px] pl-[6px] md:grid md:h-[56px] md:grid-cols-[auto_auto_minmax(0,1fr)_auto] md:gap-x-[18px] md:pr-[14px] md:pl-[20px]">
@@ -26,7 +28,7 @@
   </button>
 
   <nav
-    class="order-5 w-full pb-[14px] md:order-none md:flex md:w-auto md:items-center md:gap-[22px] md:p-0"
+    class="order-5 w-full pb-[14px] md:order-none md:flex md:w-auto md:items-center md:gap-[14px] md:p-0 lg:gap-[22px]"
     [class.grid]="menuOpen()"
     [class.hidden]="!menuOpen()"
     [attr.aria-label]="t('nav.main')">
@@ -62,13 +64,13 @@
         variant="primary"
         size="lg"
         routerLink="/games/new"
-        class="max-sm:aspect-square max-sm:px-0"
+        class="max-xl:aspect-square max-xl:px-0"
         [attr.aria-label]="t('nav.newGame')">
-        <nc-icon name="plus" class="sm:hidden" />
-        <span class="hidden sm:inline">{{ t('nav.newGame') }}</span>
+        <nc-icon name="plus" class="xl:hidden" />
+        <span class="hidden xl:inline">{{ t('nav.newGame') }}</span>
       </a>
-      <nc-report-problem-button class="max-md:hidden" />
-      <nc-theme-switch class="max-md:hidden" />
+      <nc-report-problem-button class="max-lg:hidden" />
+      <nc-theme-switch class="max-lg:hidden" />
       <nc-notifications-bell />
       <nc-account-menu />
     } @else {

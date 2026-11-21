@@ -1,5 +1,47 @@
-import { expect, test } from './fixtures';
+import { expect, type Page, test } from './fixtures';
 import { release } from './mocks/game';
+import { mockNotifications } from './mocks/notifications';
+import { answer, mockSignedIn } from './mocks/session';
+
+const popular = [1, 2, 3].map((id) => ({
+  ...release,
+  id,
+  name: `Popular ${String(id)}`,
+  coverUrl: null,
+  disk: null,
+}));
+
+const room = {
+  sessionUuid: 'room-1',
+  title: 'High Tide',
+  visibility: 'PUBLIC',
+  hostId: 11,
+  hostUsername: 'louis',
+  projectId: 9,
+  projectName: 'High Tide',
+  maxPlayers: 4,
+  playerCount: 2,
+  startedAt: '2026-11-20T10:00:00.000Z',
+  roster: [{ username: 'louis' }],
+  coverUrl: null,
+};
+
+/** What the search box asks for: three popular games, one game and one tag for any word typed. */
+async function mockSearch(page: Page): Promise<void> {
+  await page.route('**/projects/releases/paginated**', (route) => {
+    const searched = new URL(route.request().url()).searchParams.has('search');
+    return route.fulfill({ json: { projects: searched ? [release] : popular, total: 3 } });
+  });
+  await page.route(
+    '**/projects/releases/tags**',
+    answer(200, { tags: [{ tag: 'caves', count: 3 }] }),
+  );
+  await page.route(
+    '**/users/public/search**',
+    answer(200, { statusCode: 200, message: '', data: [{ id: 5, username: 'cavefan' }] }),
+  );
+  await page.route('**/game-sessions**', answer(200, { sessions: [room] }));
+}
 
 test.describe('app shell', () => {
   test('hub renders with navigation and footer', async ({ page }) => {
@@ -7,7 +49,187 @@ test.describe('app shell', () => {
     await expect(page).toHaveURL(/\/hub$/);
     await expect(page.getByRole('navigation', { name: 'Main navigation' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Sign in' })).toBeVisible();
-    await expect(page.getByRole('contentinfo')).toContainText('A browser fantasy console');
+    await expect(page.getByRole('contentinfo')).toContainText('Draw, code and play together');
+  });
+
+  /** Every destination of the footer, under the heading of its column. */
+  test('the footer stands in four columns, and folds them behind their headings on a phone', async ({
+    page,
+  }) => {
+    await page.goto('/hub');
+    const footer = page.getByRole('contentinfo');
+    const links = {
+      Product: ['Hub', 'Learn', 'Make a game'],
+      Community: ['Friends', 'GitHub', 'Feedback', 'Report a problem'],
+      Legal: ['GPL-3.0', 'Privacy', 'Security'],
+    };
+    for (const [heading, names] of Object.entries(links)) {
+      const column = footer.getByRole('navigation', { name: heading });
+      await expect(column.getByRole('listitem')).toHaveText(names);
+    }
+    await expect(footer.getByRole('link', { name: 'Make a game' })).toHaveAttribute(
+      'href',
+      '/games/new',
+    );
+    await expect(footer.getByRole('link', { name: 'Privacy' })).toHaveAttribute('href', '/privacy');
+    await expect(footer.getByRole('link', { name: 'Security' })).toHaveAttribute(
+      'href',
+      'https://github.com/Naucto/Frontend/security',
+    );
+    const columns = await Promise.all(
+      ['Product', 'Community', 'Legal'].map((name) =>
+        footer.getByRole('navigation', { name }).boundingBox(),
+      ),
+    );
+    expect(new Set(columns.map((box) => box?.y)).size).toBe(1);
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(footer.getByRole('link', { name: 'Privacy' })).toBeHidden();
+    await footer.getByRole('button', { name: 'Legal' }).click();
+    await expect(footer.getByRole('link', { name: 'Privacy' })).toBeVisible();
+    await expect(footer.getByRole('link', { name: 'Learn' })).toBeHidden();
+  });
+
+  test('the search box offers the popular games as disks, then what the words find', async ({
+    page,
+  }) => {
+    await page.route('**/auth/refresh', answer(401, {}));
+    await mockSearch(page);
+    await page.goto('/hub');
+    await expect(page.getByRole('navigation', { name: 'Main navigation' })).toBeVisible();
+
+    await page.keyboard.press('/');
+    const box = page.getByRole('combobox', { name: 'Search games, people, tags…' });
+    await expect(box).toBeFocused();
+    const list = page.getByRole('listbox', { name: 'Suggestions' });
+    const games = list.getByRole('group', { name: 'Popular' });
+    await expect(games.getByRole('option')).toHaveCount(3);
+    await expect(games.locator('nc-floppy')).toHaveCount(3);
+    await expect(list.getByRole('group', { name: 'Open sessions' })).toHaveCount(0);
+
+    await box.fill('cave');
+    await expect(
+      list.getByRole('group', { name: 'Games' }).getByRole('option'),
+    ).toHaveAccessibleName('Cave Diver, 12 plays, 1 likes');
+    await expect(list.getByRole('group', { name: 'People' })).toContainText('cavefan');
+    await expect(list.getByRole('group', { name: 'Tags' }).getByRole('option')).toHaveText('caves');
+
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('ArrowDown');
+    const person = list.getByRole('option', { name: 'cavefan' });
+    await expect(person).toBeFocused();
+    await expect(person).toHaveAttribute('aria-selected', 'true');
+    await page.keyboard.press('Home');
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(/\/play\/42$/);
+    await expect(list).toHaveCount(0);
+  });
+
+  test('ENTER in the search box runs the search, and a # lands on the tag', async ({ page }) => {
+    await page.route('**/auth/refresh', answer(401, {}));
+    await mockSearch(page);
+    await page.goto('/hub');
+    const box = page.getByRole('combobox', { name: 'Search games, people, tags…' });
+
+    await box.fill('cave');
+    await expect(page.getByRole('option', { name: '#caves' })).toBeVisible();
+    await box.press('Enter');
+    await expect(page).toHaveURL(/\/hub\?q=cave$/);
+    await expect(page.getByRole('listbox')).toHaveCount(0);
+
+    await box.fill('#ca');
+    await expect(page.getByRole('option')).toHaveCount(1);
+    await box.press('Enter');
+    await expect(page).toHaveURL(/\/hub\?tags=caves$/);
+  });
+
+  test('a signed-in player joins an open session from the search box', async ({ page }) => {
+    await mockSignedIn(page);
+    await mockSearch(page);
+    await page.goto('/hub');
+
+    await page.getByRole('combobox', { name: 'Search games, people, tags…' }).click();
+    const sessions = page.getByRole('group', { name: 'Open sessions' });
+    await sessions
+      .getByRole('option', { name: 'Join High Tide, hosted by louis, 2 of 4 players' })
+      .click();
+
+    await expect(page).toHaveURL(/\/play\/9\?session=room-1$/);
+  });
+
+  test('the account popover names the player, counts their games and friends, and signs out', async ({
+    page,
+  }) => {
+    await mockSignedIn(page);
+    await page.route(/\/projects\?/, answer(200, { projects: [], total: 7 }));
+    await page.route(/\/friends$/, answer(200, [{ id: 2 }, { id: 3 }]));
+    await page.route('**/auth/logout', answer(200, {}));
+    await page.goto('/hub');
+
+    await page.getByRole('button', { name: 'Account' }).click();
+    const menu = page.getByRole('dialog', { name: 'Account' });
+    await expect(menu).toContainText('alexis');
+    await expect(menu.locator('nc-stat')).toHaveText([/7\s*games/, /2\s*friends/]);
+    await expect(menu.getByRole('link', { name: 'Profile' })).toHaveAttribute('href', '/u/alexis');
+    await expect(menu.getByRole('link', { name: 'Settings' })).toHaveAttribute('href', '/settings');
+    await expect(menu.getByRole('switch')).toHaveCount(0);
+    await expect(menu.getByRole('radiogroup')).toHaveCount(0);
+
+    await menu.getByRole('button', { name: 'Sign out' }).click();
+    await expect(page.getByRole('link', { name: 'Sign in' })).toBeVisible();
+  });
+
+  test('the bell lists what happened, answers a friend request and opens an invite on its session', async ({
+    page,
+  }) => {
+    const at = new Date().toISOString();
+    const notification = { userId: 1, type: 'INFO', read: false, createdAt: at };
+    await mockSignedIn(page);
+    await mockNotifications(page, [
+      {
+        ...notification,
+        id: 'n1',
+        kind: 'GENERIC',
+        title: 'High Tide',
+        message: 'theo invited you to play High Tide',
+        data: { projectId: 9, sessionId: 'room-1', joinCode: 'WXYZ' },
+      },
+      {
+        ...notification,
+        id: 'n2',
+        kind: 'FRIEND_REQUEST',
+        title: 'New friend request',
+        message: 'lea wants to be your friend',
+        data: { requestId: 31, fromUserId: 21 },
+      },
+    ]);
+    await page.route(
+      '**/friends/requests',
+      answer(200, [
+        {
+          id: 31,
+          from: { id: 21, username: 'lea' },
+          to: { id: 1, username: 'alexis' },
+          createdAt: at,
+        },
+      ]),
+    );
+    await page.route('**/friends/requests/31/accept', answer(201, {}));
+    await page.route('**/notifications/*/read', answer(200, {}));
+    await page.goto('/hub');
+
+    await page.getByRole('button', { name: 'Notifications, 2 unread' }).click();
+    const panel = page.getByRole('dialog', { name: 'Notifications' });
+    await expect(panel.getByRole('listitem')).toHaveCount(2);
+
+    const accepted = page.waitForRequest('**/friends/requests/31/accept');
+    await panel.getByRole('button', { name: 'Accept' }).click();
+    expect((await accepted).method()).toBe('POST');
+    await expect(page.getByRole('button', { name: 'Notifications, 1 unread' })).toBeVisible();
+
+    await panel.getByRole('button', { name: /invited you to play High Tide/ }).click();
+    await expect(page).toHaveURL(/\/play\/9\?session=room-1&code=WXYZ$/);
+    await expect(panel).toHaveCount(0);
   });
 
   test('sign-in page shows the insert-game form', async ({ page }) => {

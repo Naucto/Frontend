@@ -3,9 +3,8 @@
 <footer *transloco="let t" class="relative border-t-3 border-line-strong bg-panel">
   <!-- Below md each group folds behind its heading; from md the four columns stand open. -->
   <div
-    class="mx-auto grid w-full max-w-[1400px] md:grid-cols-[1.4fr_1fr_1fr_1fr] md:gap-[32px] md:px-[28px] md:py-[36px]">
-    <div
-      class="grid content-start gap-[12px] border-b-3 border-line px-[16px] py-[22px] md:border-b-0 md:p-0">
+    class="grid max-md:pb-[8px] md:grid-cols-[1.4fr_1fr_1fr_1fr] md:gap-[32px] md:px-[clamp(28px,5vw,100px)] md:py-[44px]">
+    <div class="grid content-start gap-[12px] px-[16px] pt-[22px] pb-[14px] md:p-0">
       <nc-logo variant="wordmark" [size]="24" class="justify-self-start" />
       <p class="max-w-[34ch] text-body leading-[1.55] text-ink-2">{{ t('footer.tagline') }}</p>
     </div>
@@ -17,14 +16,14 @@
         [attr.aria-expanded]="open() === group"
         (click)="open.set(open() === group ? null : group)">
         {{ title }}
-        <nc-icon [name]="open() === group ? 'chevron-up' : 'chevron-down'" />
+        <nc-mark [name]="open() === group ? 'chevron-up' : 'chevron-down'" />
       </button>
-      <div class="mb-[4px] hidden font-ui text-label tracking-label text-ink-3 uppercase md:block">
+      <div class="mb-[12px] hidden font-ui text-label tracking-label text-ink-3 uppercase md:block">
         {{ title }}
       </div>
     </ng-template>
 
-    <nav class="border-b-3 border-line md:border-b-0" [attr.aria-label]="t('footer.product')">
+    <nav [attr.aria-label]="t('footer.product')">
       <ng-container
         [ngTemplateOutlet]="heading"
         [ngTemplateOutletContext]="{ group: 'product', title: t('footer.product') }" />
@@ -40,7 +39,7 @@
         </li>
       </ul>
     </nav>
-    <nav class="border-b-3 border-line md:border-b-0" [attr.aria-label]="t('footer.community')">
+    <nav [attr.aria-label]="t('footer.community')">
       <ng-container
         [ngTemplateOutlet]="heading"
         [ngTemplateOutletContext]="{ group: 'community', title: t('footer.community') }" />
@@ -65,7 +64,7 @@
         </li>
       </ul>
     </nav>
-    <nav class="border-b-3 border-line md:border-b-0" [attr.aria-label]="t('footer.legal')">
+    <nav [attr.aria-label]="t('footer.legal')">
       <ng-container
         [ngTemplateOutlet]="heading"
         [ngTemplateOutletContext]="{ group: 'legal', title: t('footer.legal') }" />

@@ -105,7 +105,7 @@ describe('CommandPaletteComponent', () => {
 
     await userEvent.type(screen.getByRole('combobox'), 'theme');
 
-    expect(await screen.findByRole('group', { name: 'GAMES' })).toBeTruthy();
+    expect(await screen.findByRole('group', { name: 'Games' })).toBeTruthy();
     expect(options()).toEqual([expect.stringContaining('Theme Park Tycoon'), 'Toggle theme']);
     expect(screen.getByRole('status')).toHaveTextContent('2 results');
 

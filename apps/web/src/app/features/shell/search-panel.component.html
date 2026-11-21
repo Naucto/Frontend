@@ -1,0 +1,209 @@
+<!-- The cap is what the window leaves under the box: the bar is 56px tall, and below md the box
+     sits a row further down, inside the opened menu. From md the panel is never narrower than
+     three disks need, whatever the bar has left the box: it then overhangs it evenly. -->
+<nc-suggest-panel
+  *transloco="let t"
+  class="animate-rise [--nc-suggest-max:calc(100dvh-144px)] md:inset-x-[min(0px,calc(50%-240px))] md:[--nc-suggest-max:calc(100dvh-84px)]"
+  [label]="t('nav.suggestions')"
+  [listId]="listId()">
+  @let found = suggestions();
+  @let term = parsed().term;
+
+  @if (found.games.length) {
+    @let title = term ? t('search.games') : t('search.popular');
+    <div role="group" class="grid gap-[3px]" [attr.aria-label]="title">
+      <p aria-hidden="true" [class]="heading">{{ title }}</p>
+      <div class="grid grid-cols-3 gap-[3px]">
+        @for (entry of games(); track entry.game.id; let i = $index) {
+          <nc-suggest-row
+            tabindex="-1"
+            class="min-w-0 flex-col items-stretch! gap-[6px]! px-[3px]! pt-[3px]! outline-none"
+            [selected]="cursor() === i"
+            [attr.aria-label]="
+              t('search.gameLabel', {
+                name: entry.game.name,
+                plays: entry.game.viewCount,
+                likes: entry.game.likes,
+              })
+            "
+            (click)="picked.emit({ kind: 'game', id: entry.game.id })">
+            <nc-floppy
+              [disk]="entry.disk"
+              [cover]="entry.game.coverUrl ?? null"
+              [open]="cursor() === i" />
+            <nc-disk-name aria-hidden="true" class="mt-0!">
+              <nc-highlight [text]="entry.game.name" [match]="term" />
+            </nc-disk-name>
+            <span
+              aria-hidden="true"
+              class="flex flex-wrap items-center justify-between gap-x-[6px]">
+              <nc-stat class="gap-[6px]!" icon="eye" [value]="entry.game.viewCount" compact />
+              <nc-stat class="gap-[6px]!" icon="heart" [value]="entry.game.likes" compact />
+            </span>
+          </nc-suggest-row>
+        }
+      </div>
+    </div>
+  }
+
+  @if (found.people.length) {
+    <div role="group" class="grid gap-[3px]" [attr.aria-label]="t('search.people')">
+      <p aria-hidden="true" [class]="heading">{{ t('search.people') }}</p>
+      @for (person of found.people; track person.id; let i = $index) {
+        <nc-suggest-row
+          tabindex="-1"
+          class="min-h-[46px] outline-none"
+          [selected]="cursor() === offsets().people + i"
+          (click)="picked.emit({ kind: 'person', username: person.username })">
+          <nc-avatar
+            aria-hidden="true"
+            [size]="30"
+            [id]="person.id"
+            [name]="person.nickname ?? person.username"
+            [src]="person.profileImageUrl ?? null" />
+          <span class="min-w-0 flex-1 truncate text-body text-ink">
+            <nc-highlight [text]="person.username" [match]="term" />
+          </span>
+          @let doing = presenceOf(person);
+          @if (doing) {
+            <span class="label min-w-0 truncate text-ink-4">
+              {{ t(doing.verbKey) }} {{ doing.name }}
+            </span>
+          }
+        </nc-suggest-row>
+      }
+    </div>
+  }
+
+  @if (found.sessions.length) {
+    <div role="group" class="grid gap-[3px]" [attr.aria-label]="t('search.sessions')">
+      <p aria-hidden="true" [class]="heading">{{ t('search.sessions') }}</p>
+      @for (entry of sessions(); track entry.session.sessionUuid; let i = $index) {
+        @let session = entry.session;
+        <nc-suggest-row
+          tabindex="-1"
+          class="px-[6px]! pt-[6px]! pb-[6px]! outline-none"
+          [selected]="cursor() === offsets().sessions + i"
+          [attr.aria-label]="
+            t('search.sessionLabel', {
+              name: session.projectName,
+              host: entry.host,
+              n: session.playerCount,
+              m: session.maxPlayers,
+            })
+          "
+          (click)="
+            picked.emit({
+              kind: 'session',
+              projectId: session.projectId,
+              sessionUuid: session.sessionUuid,
+            })
+          ">
+          <nc-floppy
+            class="w-[52px] shrink-0"
+            [disk]="entry.disk"
+            [cover]="session.coverUrl"
+            [interactive]="false" />
+          <span aria-hidden="true" class="grid min-w-0 flex-1 gap-[6px]">
+            <span class="truncate text-body text-ink">
+              <nc-highlight [text]="session.projectName" [match]="term" />
+            </span>
+            <span class="flex min-w-0 items-center gap-[10px]">
+              <nc-user-avatar [userId]="session.hostId" [name]="entry.host" [size]="24" />
+              <span class="label min-w-0 truncate text-ink-3">
+                {{ t('search.hosts', { name: entry.host }) }}
+              </span>
+              @if (entry.seats; as seats) {
+                <span class="flex shrink-0 gap-[3px]">
+                  @for (taken of seats; track $index) {
+                    <span
+                      class="size-[12px]"
+                      [class]="
+                        taken ? 'bg-jade' : 'shadow-[inset_0_0_0_3px_var(--color-line-strong)]'
+                      "></span>
+                  }
+                </span>
+              } @else {
+                <nc-chip>{{ session.playerCount }}/{{ session.maxPlayers }}</nc-chip>
+              }
+            </span>
+          </span>
+          @if (session.playerCount < session.maxPlayers) {
+            <span
+              aria-hidden="true"
+              class="shrink-0 pr-[6px] text-meta tracking-button text-jade-ink uppercase">
+              {{ t('net.join.join') }}
+            </span>
+          }
+        </nc-suggest-row>
+      }
+    </div>
+  }
+
+  @if (found.tags.length) {
+    <div role="group" class="grid gap-[3px]" [attr.aria-label]="t('search.tags')">
+      <div aria-hidden="true" class="flex items-center gap-[12px]" [class]="heading">
+        {{ t('search.tags') }}
+        @if (parsed().tagsOnly) {
+          <nc-chip tone="gold">{{ t('search.tagsOnly') }}</nc-chip>
+        }
+      </div>
+      <div class="flex flex-wrap gap-[6px] px-[8px] pb-[3px]">
+        @for (tag of found.tags; track tag.tag; let i = $index) {
+          <button
+            ncButton
+            size="sm"
+            type="button"
+            role="option"
+            tabindex="-1"
+            class="normal-case! outline-none"
+            [class.bevel-lit]="cursor() === offsets().tags + i"
+            [class.text-active-ink!]="cursor() === offsets().tags + i"
+            [attr.aria-selected]="cursor() === offsets().tags + i"
+            [attr.aria-label]="'#' + tag.tag"
+            (click)="picked.emit({ kind: 'tag', tag: tag.tag })">
+            <span class="before:content-['#']">
+              <nc-highlight [text]="tag.tag" [match]="term" />
+            </span>
+          </button>
+        }
+      </div>
+    </div>
+  }
+
+  @if (empty()) {
+    <p class="px-[8px] pt-[10px] pb-[4px] text-small text-ink-3">{{ t('search.nothing') }}</p>
+  }
+
+  <div
+    aria-hidden="true"
+    class="mt-[9px] flex flex-wrap items-center gap-x-[8px] gap-y-[6px] pb-[3px] label text-ink-4 pointer-coarse:hidden">
+    <span class="flex items-center gap-[6px]">
+      <span class="flex gap-[3px]">
+        <nc-keycap size="sm">
+          <nc-mark name="arrow-up" />
+        </nc-keycap>
+        <nc-keycap size="sm">
+          <nc-mark name="arrow-down" />
+        </nc-keycap>
+      </span>
+      {{ t('search.or') }}
+      <nc-keycap size="sm">{{ t('search.tabKey') }}</nc-keycap>
+      {{ t('search.move') }}
+    </span>
+    <span class="flex items-center gap-[6px]">
+      <nc-keycap size="sm">
+        <nc-mark name="enter" />
+      </nc-keycap>
+      {{ t('search.or') }}
+      <nc-keycap size="sm" class="min-w-[42px]!">
+        <nc-mark name="space" />
+      </nc-keycap>
+      {{ t('search.open') }}
+    </span>
+    <span class="ms-auto flex items-center gap-[6px]">
+      <nc-keycap size="sm">{{ t('palette.escKey') }}</nc-keycap>
+      {{ t('search.close') }}
+    </span>
+  </div>
+</nc-suggest-panel>

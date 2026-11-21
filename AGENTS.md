@@ -246,6 +246,11 @@ broken; an absence reads as not built.
   stroke inside it. The design's own sheet map, drawn as a wide band with 0/1/2/3 tabs, is square
   for the same reason: it has to show where the canvas is looking, which a quarter of it cannot.
 
+- **`Clear all` in the notifications panel.** The design pairs it with `Mark all read`. The API
+  marks a notification read and never deletes one, so there is nothing for the button to clear.
+- **`Theme` and `Interface sounds` in the account panel.** The theme has its own key in the bar, and
+  the interface makes no sound for a switch to silence.
+
 - **Drag-to-reposition in the touch pad panel.** SIZE and OPACITY are real and drive the pad; moving
   individual buttons is not built, and the panel's copy does not claim it.
 

@@ -2,14 +2,14 @@ import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
-import { IconComponent, LogoComponent } from '@naucto/ui';
+import { LogoComponent, MarkComponent } from '@naucto/ui';
 
 import { FeedbackLauncher } from '../../shared/feedback/feedback-launcher.service';
 
 /** Hub/learn pages only — never rendered in the editor. */
 @Component({
   selector: 'nc-site-footer',
-  imports: [NgTemplateOutlet, RouterLink, TranslocoDirective, IconComponent, LogoComponent],
+  imports: [NgTemplateOutlet, RouterLink, TranslocoDirective, LogoComponent, MarkComponent],
   templateUrl: './site-footer.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
