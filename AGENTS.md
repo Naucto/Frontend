@@ -8,7 +8,7 @@ the rule authority; this file documents intent, conventions and gotchas tooling 
 Naucto is a browser fantasy console (320×180 screen, 16-colour indexed palette, 8×8 sprites, Lua
 games, real-time collaborative editing via Yjs, netplay). This repo holds the web app, the engine and
 the UI kit, implementing the "Naucto Redesign" design (HD44780 character-LCD typeface on an 8 px grid,
-Pixelarticons, Bubblegum-16 palette, dark + light themes).
+icons drawn on the kit pixel, Bubblegum-16 palette, dark + light themes).
 
 | Path              | Package          | Purpose                                                                                                                                                                                                                                                   |
 | ----------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -22,20 +22,21 @@ Pixelarticons, Bubblegum-16 palette, dark + light themes).
 
 ## Commands (run from the repo root)
 
-| Command                                   | Purpose                                                                                       |
-| ----------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `npm install`                             | Install all workspaces; generates `@naucto/api-client` from `openapi.json`.                   |
-| `npm start`                               | Angular dev server on `http://localhost:3001`.                                                |
-| `npm run build`                           | Production build of every workspace.                                                          |
-| `npm run lint` / `npm run lint:fix`       | ESLint (flat config) over the whole repo.                                                     |
-| `npm run format` / `npm run format:check` | Prettier.                                                                                     |
-| `npm run typecheck`                       | `tsc --noEmit` per workspace.                                                                 |
-| `npm test`                                | Vitest in every workspace (`ng test` for the app).                                            |
-| `npm run e2e`                             | Playwright (starts the dev server unless `E2E_BASE_URL` is set).                              |
-| `npm run pixel:check`                     | Fails on rounded corners, off-pixel strokes, density tokens, "·" separators and shrunk icons. |
-| `npm run docs:build`                      | Builds the docs submodule into `apps/web/public/docs` (run it before `start`/`build`/`e2e`).  |
-| `./dev.sh`                                | Dev server in Docker against the Backend on the `naucto-dev` network (hot reload, port 3001). |
-| `docker compose up --build`               | Production-style image on port 3001; `APP_*` env vars configure it at runtime.                |
+| Command                                   | Purpose                                                                                                                     |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `npm install`                             | Install all workspaces; generates `@naucto/api-client` from `openapi.json`.                                                 |
+| `npm start`                               | Angular dev server on `http://localhost:3001`.                                                                              |
+| `npm run build`                           | Production build of every workspace.                                                                                        |
+| `npm run lint` / `npm run lint:fix`       | ESLint (flat config) over the whole repo.                                                                                   |
+| `npm run format` / `npm run format:check` | Prettier.                                                                                                                   |
+| `npm run typecheck`                       | `tsc --noEmit` per workspace.                                                                                               |
+| `npm test`                                | Vitest in every workspace (`ng test` for the app).                                                                          |
+| `npm run e2e`                             | Playwright (starts the dev server unless `E2E_BASE_URL` is set).                                                            |
+| `npm run pixel:check`                     | Fails on rounded corners, off-pixel strokes, density tokens, "·" separators and an icon that is neither 24 nor 36.          |
+| `npm run icons:check`                     | Fails when `packages/ui/src/icons/glyphs.ts` is not what the cell drawings give (`node tools/build-icons.mjs` rebuilds it). |
+| `npm run docs:build`                      | Builds the docs submodule into `apps/web/public/docs` (run it before `start`/`build`/`e2e`).                                |
+| `./dev.sh`                                | Dev server in Docker against the Backend on the `naucto-dev` network (hot reload, port 3001).                               |
+| `docker compose up --build`               | Production-style image on port 3001; `APP_*` env vars configure it at runtime.                                              |
 
 ## How to work in this repo
 
@@ -217,12 +218,12 @@ the rule wins.
    controls is the kit's table (`table[ncTable]`), not rows a screen rules by hand.
 3. **A symbol is pixel art, and its pixel is the kit's.** Arrows, the cross, the plus, the check
    and key glyphs are drawn on a grid whose cell is one kit pixel (3px): an `nc-mark` (five cells,
-   15px), an `nc-icon`, or an inline SVG under `shape-rendering: crispEdges`. Never a font
-   character (×, ←, ↑, +): a glyph is sized by its face, not by the grid, and one the face lacks
-   comes from whatever font the browser falls back to. Never a glyph scaled below its native size
-   or to a size that is not a multiple of it: its steps land on fractions of a pixel and its
-   diagonals blur. A control that needs a smaller mark gets one drawn for that size, not a shrunk
-   icon.
+   15px), an `nc-icon` (eight cells at 24 beside words, twelve at 36 standing alone), or an inline
+   SVG under `shape-rendering: crispEdges`. Never a font character (×, ←, ↑, +): a glyph is sized
+   by its face, not by the grid, and one the face lacks comes from whatever font the browser falls
+   back to. Never a glyph scaled: its steps land on fractions of a pixel and its diagonals blur.
+   Each size has its own drawing, and a control that needs a smaller mark gets one drawn for that
+   size, not a shrunk icon.
 4. **Alternatives read as alternatives.** Two keys bound to one action are written "Space or ↑",
    the arrow drawn. Two keycaps side by side read as a chord to press together.
 5. **No words nobody asked for.** A notice that explains the screen and a caption that describes
@@ -242,6 +243,15 @@ the rule wins.
 Where the artboards draw something the product cannot honestly do yet, we leave it out and say why
 here rather than shipping a control that does nothing. A button that toasts "not yet" reads as
 broken; an absence reads as not built.
+
+- **The icons.** The design sets Pixelarticons and glyphs of its own on a 24 grid whose pixel is
+  2px, at 12, 16, 24 and 48. The app draws every icon on the kit pixel instead, once for eight
+  cells (24px, beside words) and once for twelve (36px, standing alone), because a stroke of 2px
+  or 1px beside 3px frames reads as a second system. At 36 a drawing is the design's own cell for
+  cell wherever that one sat on whole cells; at 24 none is. A state that is on or done has a
+  filled drawing (`heart-filled`, `notification-filled`, `lock-filled`), which the design does not
+  draw. `npm run design:check` therefore finds none of the design's glyphs in the app: that is
+  this divergence and not drift.
 
 - **`FORMAT` in the CODE tab.** The artboard pairs it with `FIND` in the file strip. There is no Lua
   formatter behind it, and `luaparse` parses but does not print. Revisit when there is one.
@@ -324,16 +334,22 @@ broken; an absence reads as not built.
   a gold border for exactly this reason. On the stateful element itself it is fine; on a child,
   write the type utilities out (`font-mono text-micro tracking-wide uppercase`) and let colour
   inherit.
-- Icons the design draws differently from pixelarticons live in `CUSTOM` in `tools/build-icons.mjs`
-  and override the generated glyph of the same name. `npm run design:check` compares the two sets by
-  rasterising each path, which is how a hollow play was found under a name that reads as correct —
-  and it now checks the colours against `tokens.css`, the type scale and the corner ladder in the
-  same pass. It drives `d2c report` from a Design2Code checkout beside this one
-  (`Naucto/Design2Code`, private; point elsewhere with `D2C=<path> npm run design:check`).
-  Most of `CUSTOM` is generated from the foundations artboard, which captions each glyph it shows;
-  the rest are marks the design draws but never captions, and those are settled by **slot** — the
-  glyph goes in under the name whose one call site is the button the design draws it on, never by
-  nearest-neighbour, which finds a match for glyphs the design does not draw at all.
+- The icons are drawn as cells, in `packages/ui/src/icons/`: `icons-24.txt` and `icons-36.txt`
+  hold every icon under the same names, `marks.txt` the marks. `node tools/build-icons.mjs` packs
+  them into `glyphs.ts`, and `nc-icon` and `nc-mark` turn a packed drawing into its path
+  (`glyph-path.ts`), so a glyph is added or changed in a `.txt` and nowhere else. A drawing is cut
+  to its ink and centred in its box; one whose axis is a single cell is drawn on an odd count of
+  cells and sits a pixel off the middle rather than doubling its stroke. `npm run icons:check` and
+  `glyphs.spec.ts` fail on a table that is not what the drawings give, on a drawing larger than its
+  box and on a name drawn at one size only.
+- `npm run design:check` drives `d2c report` from a Design2Code checkout beside this one
+  (`Naucto/Design2Code`, private; point elsewhere with `D2C=<path> npm run design:check`) and
+  checks the colours against `tokens.css`, the type scale and the corner ladder. Its glyph pass
+  reads path strings from `packages/ui/src/icons/paths.ts` and a `viewBox` from
+  `icon.component.ts`, neither of which exists here: the table is `glyphs.ts` and holds packed
+  cells. Until the target profile (`Design2Code/packages/targets/naucto-angular/src/glyphs.ts`)
+  reads that, the pass cannot run; once it does, every glyph differs from the design's on
+  purpose (see "Deliberate divergences").
 - **"I know about that one" has two forms and they live in different places.** A caption the app
   contradicts _on purpose_ goes in `DISAGREEMENTS` in the target profile
   (`Design2Code/packages/targets/naucto-angular/src/profile.ts`), with the reason the design's own
@@ -341,7 +357,7 @@ broken; an absence reads as not built.
   to goes in `tools/design-coverage.json` with a note, and the change that finally draws it deletes
   that line in the same diff. Both exist so the report says nothing when nothing moved, which is the
   only state in which anyone keeps running it.
-- Anything the app draws that is not in `ICON_PATHS` — the oscillator waves and the controller are
+- Anything the app draws that is not in the icon set — the oscillator waves and the controller are
   the current cases — has to be listed in `EXTRA_SOURCES` in
   `Design2Code/packages/targets/naucto-angular/src/glyphs.ts`, or the report lists it as missing
   forever. The controller moved to `apps/web/src/app/shared/controls/pad-art.component.ts`, and
@@ -349,15 +365,13 @@ broken; an absence reads as not built.
   `features/settings/gamepad-art.component.ts` follows it there.
   `packages/ui/src/components/presence-flag.component.ts` draws its own path too and is not
   listed; nothing reports it today, so it stays out until something does. The edge chips in
-  `presence-layer.component.ts` beside it use `nc-icon`, so they are covered.
-- An `nc-icon` is native at 24 and doubles to 48. `IconSize` still holds 12, which halves the
-  glyph's own pixel: nothing new uses it, and `tools/pixel-allow.json` lists what still does. Where
-  an artboard renders an icon at 16, take 24 or an `nc-mark`, never a size in between.
-- The `nc-icon` set is older than the rule that a glyph's pixel is the kit's: it is drawn on a
-  24 grid with a cell of two units (one unit for a third of it, three for the four carets), so at
-  24 its pixel is 2px or 1px where the kit's is 3px. The `nc-mark` set (`icons/marks.ts`) is drawn
-  five cells across at 3px a cell. Redrawing the icons on the kit pixel is a design decision that
-  has not been taken; until it is, a small mark goes in as an `nc-mark`.
+  `presence-layer.component.ts` beside it use `nc-mark`.
+- An `nc-icon` is 24 or 36 and nothing else, and the size picks the drawing: 24 beside words (a
+  button's leading icon, a stat, a menu row, a toolbar key), 36 standing alone (the top bar, the
+  rail, an empty state). `pixel:check` fails on any other size and on an icon resized through its
+  `svg`. Where an artboard renders an icon at 12 or 16, take an `nc-mark`; a mark that does not
+  exist yet is drawn in `marks.txt`. A state that is on or done takes the glyph's filled drawing,
+  named `<name>-filled`, and the call site chooses between the two.
 - TypeScript 6: `baseUrl` is deprecated; path aliases are relative to each `tsconfig.json`.
 - An ingest answer that asks to rotate the visitor or the session applies only while the cookies
   still hold the identity the request carried. Go through `applyRotation`, or a late answer about an
