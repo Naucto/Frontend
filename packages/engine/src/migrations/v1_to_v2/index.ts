@@ -1,8 +1,9 @@
 import type * as Y from 'yjs';
 
 import { EditableGame } from '../../game/EditableGame';
-import { ACTIONS, type DeclaredAction } from '../../input/ActionMap';
+import { KEYS } from '../../game/keys';
 import type { MigrationReport } from '../types';
+import { readV2Labels, V2_ACTIONS, V2_LABELS_KEY, type V2Action } from './actions';
 import { migrateCode } from './code';
 import { moveToV2Shape } from './shape';
 
@@ -11,15 +12,16 @@ import { moveToV2Shape } from './shape';
  * and `btnr`, the action labels on the document instead of an `input.declare` call, and every sheet
  * and map an entry of its collection holding its own cells and size.
  *
- * Every label the code declared lands in `meta.actions`, later files and later calls winning as
- * the last call did at runtime, over whatever the document already held.
+ * Every label the code declared lands on `game.meta`, later files and later calls winning as the
+ * last call did at runtime, over whatever the document already held.
  */
 export function migrateV1ToV2(doc: Y.Doc, report: MigrationReport): void {
   report.counts.reshaped = moveToV2Shape(doc);
-  const game = new EditableGame(doc);
-  const labels = new Map<DeclaredAction['action'], string>(
-    game.declaredActions.map((declared) => [declared.action, declared.label]),
+  const meta = doc.getMap(KEYS.meta);
+  const labels = new Map<V2Action, string>(
+    readV2Labels(meta.get(V2_LABELS_KEY)).map((declared) => [declared.action, declared.label]),
   );
+  const game = new EditableGame(doc);
   let found = 0;
   for (const file of game.files) {
     for (const declared of migrateCode(file.text, report, file.name)) {
@@ -27,13 +29,14 @@ export function migrateV1ToV2(doc: Y.Doc, report: MigrationReport): void {
       found += 1;
     }
   }
+  game.destroy();
   if (found > 0) {
-    game.setDeclaredActions(
-      ACTIONS.filter((action) => labels.has(action)).map((action) => ({
+    meta.set(
+      V2_LABELS_KEY,
+      V2_ACTIONS.filter((action) => labels.has(action)).map((action) => ({
         action,
         label: labels.get(action) ?? '',
       })),
     );
   }
-  game.destroy();
 }
