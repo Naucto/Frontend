@@ -49,6 +49,8 @@ export class VirtualPadComponent {
   readonly controls = input.required<readonly TouchControl[]>();
   /** Overlay the screen (landscape) instead of taking a zone under it (portrait). */
   readonly overlay = input(false);
+  /** How much smaller than life the pad is drawn, where it is shown rather than played. */
+  readonly zoom = input(1);
   /** The element `TouchSource` binds to. */
   readonly element = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   protected readonly settings = inject(PadSettingsStore);

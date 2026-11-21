@@ -7,7 +7,7 @@
   "
   role="group"
   [attr.aria-label]="'game.screen.pad.label' | transloco"
-  [style.--nc-pad-scale]="settings.scale()"
+  [style.--nc-pad-scale]="settings.scale() * zoom()"
   [style.opacity]="overlay() ? settings.opacity() / 100 : 1">
   <div class="pointer-events-auto grid grid-cols-3 grid-rows-3 gap-0.5">
     @for (arm of cross(); track arm.control) {

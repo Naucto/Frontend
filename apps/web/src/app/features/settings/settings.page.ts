@@ -4,8 +4,8 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { TabsComponent } from '@naucto/ui';
 
 import { FeaturesService } from '../../core/config/features.service';
+import { ControlsComponent } from '../../shared/controls/controls.component';
 import { AccountSettingsComponent } from './account-settings.component';
-import { ControlsSettingsComponent } from './controls-settings.component';
 import { EditorSettingsComponent } from './editor-settings.component';
 import { PrivacySettingsComponent } from './privacy-settings.component';
 import { StandingSettingsComponent } from './standing-settings.component';
@@ -19,7 +19,7 @@ const TABS: Tab[] = ['account', 'editor', 'controls', 'privacy', 'standing'];
     TranslocoDirective,
     TabsComponent,
     AccountSettingsComponent,
-    ControlsSettingsComponent,
+    ControlsComponent,
     EditorSettingsComponent,
     PrivacySettingsComponent,
     StandingSettingsComponent,

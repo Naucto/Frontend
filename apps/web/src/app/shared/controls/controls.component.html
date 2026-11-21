@@ -1,0 +1,122 @@
+<div *transloco="let t" class="grid grid-cols-[minmax(0,1fr)] gap-3">
+  <section>
+    <nc-label class="mb-1">{{ t('controls.gamepads') }}</nc-label>
+    @if (pads().length) {
+      <div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,330px),1fr))] gap-2">
+        @for (card of cards(); track card.player) {
+          @if (card.pad; as pad) {
+            <article
+              class="flat-lg bevel-fill-panel grid grid-cols-[minmax(0,1fr)] content-start gap-2 pt-1.5 pb-2.5"
+              [attr.data-pad]="pad.index">
+              <header class="flex items-center gap-1 px-1.5">
+                <button
+                  ncButton
+                  size="sm"
+                  type="button"
+                  [variant]="badges[card.tone]"
+                  [ncPopover]="seatMenu"
+                  [popoverOpen]="choosing() === pad.index"
+                  (popoverOpenChange)="choosing.set($event ? pad.index : null)"
+                  [attr.aria-label]="t('controls.playsAsPlayer', { n: card.player + 1 })">
+                  {{ t('controls.player', { n: card.player + 1 }) }}
+                  <nc-mark name="chevron-down" />
+                </button>
+                <span class="min-w-0 flex-1 truncate text-body text-ink">{{ pad.name }}</span>
+              </header>
+              <div class="flex justify-center overflow-hidden">
+                <nc-pad-art
+                  [tone]="card.tone"
+                  [held]="pad.held"
+                  [left]="pad.left"
+                  [right]="pad.right" />
+              </div>
+              <ng-template #seatMenu>
+                <nc-popover-panel
+                  [title]="t('controls.playsAs')"
+                  class="w-[360px] max-w-[calc(100vw-32px)]">
+                  <div class="grid grid-cols-[minmax(0,1fr)] gap-[3px] p-1" role="menu">
+                    @for (seat of players(); track seat.player) {
+                      <button
+                        type="button"
+                        ncOption
+                        role="menuitemradio"
+                        class="items-center"
+                        [selected]="seat.player === card.player"
+                        [attr.aria-checked]="seat.player === card.player"
+                        (click)="assign(pad.index, seat.player)">
+                        <nc-chip [tone]="seat.tone">
+                          {{ t('controls.player', { n: seat.player + 1 }) }}
+                        </nc-chip>
+                        @if (seat.player === card.player) {
+                          <span class="min-w-0 flex-1 truncate">{{ t('controls.thisPad') }}</span>
+                          <nc-mark name="check" />
+                        } @else if (seat.pad; as other) {
+                          <span class="min-w-0 flex-1 truncate text-ink-2">{{ other.name }}</span>
+                          <span class="label shrink-0 text-ink-4">{{ t('controls.swap') }}</span>
+                        } @else {
+                          <span class="min-w-0 flex-1 truncate text-ink-3">
+                            {{ t('controls.free') }}
+                          </span>
+                        }
+                      </button>
+                    }
+                  </div>
+                </nc-popover-panel>
+              </ng-template>
+            </article>
+          } @else {
+            <article
+              class="flat-lg bevel-edge-line bevel-fill-transparent grid grid-cols-[minmax(0,1fr)] content-center justify-items-center gap-1.5 py-2 text-center">
+              <div class="flex max-w-full justify-center overflow-hidden">
+                <nc-pad-art ghost />
+              </div>
+              <nc-chip>{{ t('controls.open', { n: card.player + 1 }) }}</nc-chip>
+              <p class="px-1.5 text-meta text-ink-3">{{ t('controls.join') }}</p>
+            </article>
+          }
+        }
+      </div>
+    } @else {
+      <div class="flat-lg bevel-fill-panel">
+        <nc-empty-state
+          icon="gamepad"
+          [title]="t('controls.noPad')"
+          [hint]="t('controls.noPadHint')" />
+      </div>
+    }
+  </section>
+
+  <section>
+    <nc-label class="mb-1">{{ t('controls.touchPad') }}</nc-label>
+    <article
+      class="flat-lg bevel-fill-panel grid grid-cols-[repeat(auto-fit,minmax(min(100%,340px),1fr))] items-center gap-x-3 gap-y-2 p-2">
+      <nc-pad-preview class="w-full max-w-[480px] justify-self-center" />
+      <div class="grid content-start gap-2">
+        <nc-slider
+          [label]="t('controls.size')"
+          [min]="60"
+          [max]="140"
+          [value]="padSettings.size()"
+          [readout]="padSettings.size() + '%'"
+          (valueChange)="padSettings.setSize($event)" />
+        <nc-slider
+          [label]="t('controls.opacity')"
+          [min]="30"
+          [max]="100"
+          [value]="padSettings.opacity()"
+          [readout]="padSettings.opacity() + '%'"
+          (valueChange)="padSettings.setOpacity($event)" />
+        <div>
+          <button
+            ncButton
+            size="sm"
+            type="button"
+            [disabled]="padSettings.isDefault()"
+            (click)="padSettings.reset()">
+            {{ t('controls.reset') }}
+          </button>
+        </div>
+      </div>
+    </article>
+  </section>
+</div>

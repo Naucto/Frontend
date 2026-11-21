@@ -58,6 +58,16 @@ describe('VirtualPadComponent', () => {
     expect(wrap.style.getPropertyValue('--nc-pad-scale')).toBe('1.4');
   });
 
+  it('is drawn smaller than life where it is only shown', () => {
+    const fixture = pad();
+    TestBed.inject(PadSettingsStore).setSize(140);
+    fixture.componentRef.setInput('zoom', 0.5);
+    fixture.detectChanges();
+
+    const wrap = fixture.nativeElement.firstElementChild as HTMLElement;
+    expect(wrap.style.getPropertyValue('--nc-pad-scale')).toBe('0.7');
+  });
+
   it('dims only the overlay, so the zone under the screen stays solid', () => {
     const store = TestBed.inject(PadSettingsStore);
     store.setOpacity(50);

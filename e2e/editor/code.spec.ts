@@ -586,17 +586,22 @@ test('Step one frame advances a paused game by one update, and pauses a running 
 });
 
 /**
- * The console column is a fixed track, and the transport under its screen holds more than the
- * track is wide once two seats show: the row has to fit it, down to its last button.
+ * The console column is a fixed track, narrower than the transport's buttons would like once the
+ * editor adds its own: the row has to fit it, down to its last button.
  */
-test('the transport keeps its fullscreen button inside the console column', async ({ page }) => {
+test('the transport keeps its controls and fullscreen buttons inside the console column', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 1024, height: 768 });
   await page.goto(editorUrl('code'));
   const column = page.locator('nc-console-column');
   const fullscreen = column.getByRole('button', { name: 'Fullscreen' });
+  const controls = column.getByRole('button', { name: 'Controls' });
   await expect(fullscreen).toBeVisible();
-  await expect(column.getByText('P2', { exact: true })).toBeVisible();
+  await expect(controls).toBeVisible();
 
-  const [track, button] = [await boxOf(column), await boxOf(fullscreen)];
-  expect(button.x + button.width).toBeLessThanOrEqual(track.x + track.width);
+  const [track, gear, last] = [await boxOf(column), await boxOf(controls), await boxOf(fullscreen)];
+  expect(gear.x).toBeGreaterThanOrEqual(track.x);
+  expect(gear.x + gear.width).toBeLessThanOrEqual(last.x);
+  expect(last.x + last.width).toBeLessThanOrEqual(track.x + track.width);
 });
