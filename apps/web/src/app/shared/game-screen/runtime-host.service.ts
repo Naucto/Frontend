@@ -1,4 +1,4 @@
-import { DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
+import { DestroyRef, inject, Injectable, signal } from '@angular/core';
 import type { Game } from '@naucto/engine';
 import {
   type ConsoleEntry,
@@ -16,19 +16,18 @@ import {
   WebGL2Backend,
 } from '@naucto/engine';
 
-import { InputBindingsStore } from '../../core/input/input-bindings.store';
 import { CrashReporter } from '../../core/reports/crash-reporter.service';
 import { ActiveRuntimeService } from './active-runtime.service';
 import { faultError } from './fault-error';
 
 /**
  * Owns one running game: engine, renderer, audio, input sources. Provided per
- * screen (component-level) so the editor and the play page each get their own.
+ * screen (component-level) so the editor and the play page each get their own. What a key or a
+ * gamepad control does is the mounted game's to say: the engine reads it from the game's actions.
  */
 @Injectable()
 export class RuntimeHostService {
   private engine: Engine | null = null;
-  private keyboard: KeyboardSource | null = null;
   private gamepad: GamepadSource | null = null;
   private gfx: WebGL2Backend | null = null;
   private audio: WebAudioBackend | null = null;
@@ -46,18 +45,12 @@ export class RuntimeHostService {
   readonly gamepadCount = signal(0);
   readonly frame = signal(0);
 
-  private readonly bindings = inject(InputBindingsStore);
   private readonly active = inject(ActiveRuntimeService);
   private readonly crashes = inject(CrashReporter);
 
   constructor() {
     inject(DestroyRef).onDestroy(() => {
       this.destroy();
-    });
-    effect(() => {
-      const allBindings = this.bindings.bindings();
-      this.keyboard?.setBindings(allBindings);
-      this.gamepad?.setBindings(allBindings);
     });
   }
 
@@ -103,15 +96,13 @@ export class RuntimeHostService {
     this.gfx = new WebGL2Backend(canvas, game);
     this.audio = new WebAudioBackend();
     this.sound = new SoundEngine(this.audio, game);
-    const keyboard = new KeyboardSource({ bindings: this.bindings.bindings() });
-    const gamepad = new GamepadSource({ bindings: this.bindings.bindings() });
-    this.keyboard = keyboard;
+    const gamepad = new GamepadSource();
     this.gamepad = gamepad;
     const engine = new Engine({
       game,
       gfx: this.gfx,
       sound: this.sound,
-      inputs: [keyboard, gamepad],
+      inputs: [new KeyboardSource(), gamepad],
       inputTarget: canvas,
       netUi: opts.netUi,
       netPermissions: opts.netPermissions,
