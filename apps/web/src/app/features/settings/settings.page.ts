@@ -3,8 +3,8 @@ import { Router } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { TabsComponent } from '@naucto/ui';
 
+import { ControlsComponent } from '../../shared/controls/controls.component';
 import { AccountSettingsComponent } from './account-settings.component';
-import { ControlsSettingsComponent } from './controls-settings.component';
 import { EditorSettingsComponent } from './editor-settings.component';
 import { PrivacySettingsComponent } from './privacy-settings.component';
 
@@ -17,7 +17,7 @@ const TABS: Tab[] = ['account', 'editor', 'controls', 'privacy'];
     TranslocoDirective,
     TabsComponent,
     AccountSettingsComponent,
-    ControlsSettingsComponent,
+    ControlsComponent,
     EditorSettingsComponent,
     PrivacySettingsComponent,
   ],

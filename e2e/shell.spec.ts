@@ -1,5 +1,6 @@
 import { expect, type Page, test } from './fixtures';
 import { release } from './mocks/game';
+import { setGamepads } from './mocks/gamepads';
 import { mockNotifications } from './mocks/notifications';
 import { answer, mockSignedIn } from './mocks/session';
 
@@ -358,5 +359,103 @@ test.describe('app shell', () => {
   test('settings redirects anonymous users to sign-in', async ({ page }) => {
     await page.goto('/settings');
     await expect(page).toHaveURL(/\/sign-in\?next=%2Fsettings/);
+  });
+
+  test('Settings, Controls seats each gamepad as a player and trades two seats', async ({
+    page,
+  }) => {
+    await mockSignedIn(page);
+    await setGamepads(page, [{ id: 'First Pad' }, { id: 'Second Pad (Vendor: 0000)' }]);
+    await page.goto('/settings/controls');
+
+    const controls = page.locator('nc-controls');
+    const cards = controls.locator('article');
+    await expect(cards).toHaveText([/P1\s*First Pad/, /P2\s*Second Pad$/, /P3 open/, /Size/]);
+    await expect(controls.getByText('connected')).toHaveCount(0);
+
+    await controls.getByRole('button', { name: 'Plays as player 2' }).click();
+    const seats = page.getByRole('menu').getByRole('menuitemradio');
+    await expect(seats).toHaveText([
+      /P1\s*First Pad\s*Swap/,
+      /P2\s*This gamepad/,
+      /P3\s*Free/,
+      /P4\s*Free/,
+    ]);
+    await expect(seats.nth(1)).toHaveAttribute('aria-checked', 'true');
+    await seats.first().click();
+
+    await expect(page.getByRole('menu')).toHaveCount(0);
+    await expect(cards.first()).toHaveText(/P1\s*Second Pad$/);
+    await expect(cards.nth(1)).toHaveText(/P2\s*First Pad/);
+    // The first player's badge is gold, the second's sky.
+    const fill = (name: string): Promise<string> =>
+      controls
+        .getByRole('button', { name })
+        .evaluate((el) => getComputedStyle(el).getPropertyValue('--bv-fill'));
+    expect(await fill('Plays as player 1')).toBe('rgb(255, 209, 0)');
+    expect(await fill('Plays as player 2')).toBe('rgb(104, 174, 212)');
+  });
+
+  test.describe('on a phone', () => {
+    test.use({ viewport: { width: 390, height: 844 } });
+
+    test('Settings, Controls fits four gamepads and the touch pad without scrolling sideways', async ({
+      page,
+    }) => {
+      await mockSignedIn(page);
+      await setGamepads(
+        page,
+        ['One', 'Two', 'Three', 'Four'].map((id) => ({ id })),
+      );
+      await page.goto('/settings/controls');
+      await expect(page.locator('nc-controls nc-pad-art')).toHaveCount(4);
+      await expect(page.locator('nc-controls nc-pad-preview')).toBeVisible();
+
+      const overflow = await page.evaluate(() => ({
+        scroll: document.documentElement.scrollWidth,
+        client: document.documentElement.clientWidth,
+      }));
+      expect(overflow.scroll).toBeLessThanOrEqual(overflow.client + 1);
+      for (const art of await page.locator('nc-pad-art').all()) {
+        const box = await art.boundingBox();
+        expect(box?.width).toBe(279);
+        expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(390);
+      }
+    });
+
+    test('the touch pad preview holds every key at the largest size, none on another', async ({
+      page,
+    }) => {
+      await page.addInitScript(() => {
+        localStorage.setItem('naucto.pad-layout', JSON.stringify({ size: 140, opacity: 85 }));
+      });
+      await mockSignedIn(page);
+      await page.goto('/settings/controls');
+
+      const preview = page.locator('nc-controls nc-pad-preview');
+      const keys = preview.locator('[data-nc-control]');
+      await expect(keys).toHaveCount(9);
+      const frame = await preview.evaluate(
+        (element) => element.getBoundingClientRect().toJSON() as DOMRect,
+      );
+      const boxes = await keys.evaluateAll((elements) =>
+        elements.map((element) => element.getBoundingClientRect().toJSON() as DOMRect),
+      );
+      for (const box of boxes) {
+        expect(box.left).toBeGreaterThanOrEqual(frame.left);
+        expect(box.right).toBeLessThanOrEqual(frame.right);
+        expect(box.top).toBeGreaterThanOrEqual(frame.top);
+        expect(box.bottom).toBeLessThanOrEqual(frame.bottom);
+      }
+      const apart = (a: DOMRect, b: DOMRect): boolean =>
+        a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top;
+      for (const [i, box] of boxes.entries()) {
+        for (const other of boxes.slice(i + 1)) {
+          expect(apart(box, other)).toBe(true);
+        }
+      }
+      // A legend is never squeezed: at this width no key is large enough to hold one.
+      await expect(preview.locator('nc-mark')).toHaveCount(0);
+    });
   });
 });

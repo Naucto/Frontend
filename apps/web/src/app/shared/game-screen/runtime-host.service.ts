@@ -1,4 +1,4 @@
-import { DestroyRef, inject, Injectable, signal } from '@angular/core';
+import { DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
 import type { Game } from '@naucto/engine';
 import {
   type ConsoleEntry,
@@ -17,6 +17,7 @@ import {
 } from '@naucto/engine';
 
 import { CrashReporter } from '../../core/reports/crash-reporter.service';
+import { GamepadSeatsStore } from '../controls/gamepad-seats.store';
 import { ActiveRuntimeService } from './active-runtime.service';
 import { faultError } from './fault-error';
 
@@ -24,11 +25,12 @@ import { faultError } from './fault-error';
  * Owns one running game: engine, renderer, audio, input sources. Provided per
  * screen (component-level) so the editor and the play page each get their own. What a key or a
  * gamepad control does is the mounted game's to say: the engine reads it from the game's actions.
+ * Which player a gamepad drives is the device's, the same for every game: `GamepadSeatsStore`.
  */
 @Injectable()
 export class RuntimeHostService {
   private engine: Engine | null = null;
-  private gamepad: GamepadSource | null = null;
+  private readonly gamepad = signal<GamepadSource | null>(null);
   private gfx: WebGL2Backend | null = null;
   private audio: WebAudioBackend | null = null;
   private sound: SoundEngine | null = null;
@@ -41,35 +43,22 @@ export class RuntimeHostService {
   readonly lines = signal<ConsoleEntry[]>([]);
   readonly fps = signal(0);
   readonly cpu = signal(0);
-  /** Connected gamepads, polled with the frame stats. */
-  readonly gamepadCount = signal(0);
   readonly frame = signal(0);
   /** The canvas the game is drawn on, at the console's own resolution; null until one is mounted. */
   readonly canvas = signal<HTMLCanvasElement | null>(null);
 
   private readonly active = inject(ActiveRuntimeService);
   private readonly crashes = inject(CrashReporter);
+  private readonly seats = inject(GamepadSeatsStore);
 
   constructor() {
+    effect(() => {
+      const gamepad = this.gamepad();
+      this.seats.seats().forEach((player, pad) => gamepad?.assign(pad, player));
+    });
     inject(DestroyRef).onDestroy(() => {
       this.destroy();
     });
-  }
-
-  /** Connected gamepads and the player slot each one drives. */
-  gamepads(): { index: number; id: string; player: number }[] {
-    const pads = typeof navigator.getGamepads === 'function' ? navigator.getGamepads() : [];
-    const out: { index: number; id: string; player: number }[] = [];
-    pads.forEach((pad, i) => {
-      if (pad) {
-        out.push({ index: i, id: pad.id, player: this.gamepad?.slots[i] ?? i });
-      }
-    });
-    return out;
-  }
-
-  assignGamepad(index: number, player: number): void {
-    this.gamepad?.assign(index, player);
   }
 
   /**
@@ -100,7 +89,7 @@ export class RuntimeHostService {
     this.audio = new WebAudioBackend();
     this.sound = new SoundEngine(this.audio, game);
     const gamepad = new GamepadSource();
-    this.gamepad = gamepad;
+    this.gamepad.set(gamepad);
     const engine = new Engine({
       game,
       gfx: this.gfx,
@@ -171,11 +160,6 @@ export class RuntimeHostService {
     this.perfTimer = setInterval(() => {
       this.fps.set(Math.round(engine.stats.fps));
       this.cpu.set(Math.round(engine.stats.cpu * 100));
-      this.gamepadCount.set(
-        typeof navigator.getGamepads === 'function'
-          ? navigator.getGamepads().filter((pad) => pad !== null).length
-          : 0,
-      );
       this.frame.set(engine.stats.frame);
     }, 250);
     this.setState('idle');

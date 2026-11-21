@@ -89,7 +89,10 @@ Pixelarticons, Bubblegum-16 palette, dark + light themes).
   game runs is live at the next step. The on-screen pad is a gamepad: it presses gamepad controls
   for player 1, its cross standing for the left stick too, and draws only the controls the game
   uses (`input/touch-pad.ts`). Nobody rebinds: what the author sets is what every player gets.
-  What stays per device is which player a gamepad drives and the on-screen pad's size and opacity.
+  What stays per device is which player a gamepad drives and the on-screen pad's size and opacity:
+  one component, `shared/controls`, shown by Settings › Controls and by the dialog the gear of a
+  game screen's transport opens. The seats live in `GamepadSeatsStore` for as long as the tab, and
+  every runtime follows them through `GamepadSource.assign`.
   A new game starts on the `classic` preset (`input/presets.ts`), the nine actions every game had
   before v3, which is what keeps the starter code, the tutorials and the docs examples running.
 - **Theming**: every colour comes from a token in `packages/ui/src/tokens.css`; never write raw hex in
@@ -205,7 +208,7 @@ the rule wins.
 2. **Hierarchy, not separators.** A rule under every row gives every row the same weight, and a
    screen ruled all over shows no structure at all. Group what belongs together, and tell groups
    apart by weight and spacing; keep a rule for the edge between two regions. A list of options or
-   controls is a table component of the kit, not rows a screen rules by hand.
+   controls is the kit's table (`table[ncTable]`), not rows a screen rules by hand.
 3. **A symbol is pixel art, and its pixel is the kit's.** Arrows, the cross, the plus, the check
    and key glyphs are drawn on a grid whose cell is one kit pixel (3px): an `nc-mark` (five cells,
    15px), an `nc-icon`, or an inline SVG under `shape-rendering: crispEdges`. Never a font
@@ -335,7 +338,10 @@ broken; an absence reads as not built.
 - Anything the app draws that is not in `ICON_PATHS` — the oscillator waves and the controller are
   the current cases — has to be listed in `EXTRA_SOURCES` in
   `Design2Code/packages/targets/naucto-angular/src/glyphs.ts`, or the report lists it as missing
-  forever. `packages/ui/src/components/presence-flag.component.ts` draws its own path too and is not
+  forever. The controller moved to `apps/web/src/app/shared/controls/pad-art.component.ts`, and
+  `npm run design:check` stops on the missing file until the entry that still names
+  `features/settings/gamepad-art.component.ts` follows it there.
+  `packages/ui/src/components/presence-flag.component.ts` draws its own path too and is not
   listed; nothing reports it today, so it stays out until something does. The edge chips in
   `presence-layer.component.ts` beside it use `nc-icon`, so they are covered.
 - An `nc-icon` is native at 24 and doubles to 48. `IconSize` still holds 12, which halves the
