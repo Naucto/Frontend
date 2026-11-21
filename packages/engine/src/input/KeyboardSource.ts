@@ -1,28 +1,21 @@
 import { SCREEN_HEIGHT, SCREEN_WIDTH } from '../game/keys';
-import { type ActionBindings, ACTIONS, DEFAULT_BINDINGS } from './ActionMap';
+import { canonicalKey } from './actions';
 import type { InputSource } from './InputSource';
 import type { InputState } from './InputState';
 
 /**
  * Keyboard + mouse on the game canvas. The canvas takes focus on pointerdown;
- * keys are cleared on blur so nothing sticks when the player tabs away.
+ * keys are cleared on blur so nothing sticks when the player tabs away. A key presses the actions
+ * the running game plugs it into, for the first or the second player.
  */
 export class KeyboardSource implements InputSource {
-  private bindings: ActionBindings;
   private detachFn: (() => void) | null = null;
   private readonly logicalWidth: number;
   private readonly logicalHeight: number;
 
-  constructor(
-    opts: { bindings?: ActionBindings; logicalWidth?: number; logicalHeight?: number } = {},
-  ) {
-    this.bindings = opts.bindings ?? DEFAULT_BINDINGS;
+  constructor(opts: { logicalWidth?: number; logicalHeight?: number } = {}) {
     this.logicalWidth = opts.logicalWidth ?? SCREEN_WIDTH;
     this.logicalHeight = opts.logicalHeight ?? SCREEN_HEIGHT;
-  }
-
-  setBindings(bindings: ActionBindings): void {
-    this.bindings = bindings;
   }
 
   attach(target: HTMLElement | null, state: InputState): void {
@@ -44,9 +37,9 @@ export class KeyboardSource implements InputSource {
     };
     const onBlur = (): void => {
       state.clearKeys();
-      for (let player = 0; player < this.bindings.keyboard.length; player++) {
+      state.actions.keys.forEach((_keys, player) => {
         state.clearActions(player);
-      }
+      });
     };
     const keys: EventTarget = target ?? window;
     keys.addEventListener('keydown', onKeyDown as EventListener);
@@ -99,11 +92,11 @@ export class KeyboardSource implements InputSource {
   }
 
   private applyAction(state: InputState, key: string, down: boolean): void {
-    this.bindings.keyboard.forEach((map, player) => {
-      for (const action of ACTIONS) {
-        if (map[action].includes(key)) {
-          state.setAction(player, action, down);
-        }
+    const pressed = canonicalKey(key);
+    state.actions.keys.forEach((keys, player) => {
+      const mask = keys.get(pressed);
+      if (mask !== undefined) {
+        state.press(player, mask, down);
       }
     });
   }

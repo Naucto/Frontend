@@ -31,11 +31,36 @@ export { buildFontAtlas, FONT_HEIGHT, FONT_WIDTH } from './gfx/Font';
 export { hexToRgb, rgbToHex, WebGlError } from './gfx/glUtils';
 export { RecordingBackend } from './gfx/RecordingBackend';
 export { WebGL2Backend } from './gfx/WebGL2Backend';
-export * from './input/ActionMap';
-export { GAMEPAD_DEADZONE, GamepadSource } from './input/GamepadSource';
+export {
+  ACTION_DESCRIPTION_MAX,
+  ACTION_LABEL_MAX,
+  ACTION_NAME_MAX,
+  type ActionDraft,
+  type ActionInput,
+  type ActionNameIssue,
+  actionNameIssue,
+  actionsUsing,
+  canonicalKey,
+  type GameAction,
+  inputId,
+  type KeyboardPlayer,
+  MAX_ACTIONS,
+  MAX_PLAYERS,
+  PAD_CONTROLS,
+  type PadControl,
+} from './input/actions';
+export type { ActionTable } from './input/ActionTable';
+export { GAMEPAD_DEADZONE, GamepadSource, isPadControlDown } from './input/GamepadSource';
 export type { InputSource } from './input/InputSource';
 export { InputState } from './input/InputState';
 export { KeyboardSource } from './input/KeyboardSource';
+export { INPUT_PRESET_IDS, INPUT_PRESETS, type InputPresetId } from './input/presets';
+export {
+  TOUCH_CONTROLS,
+  type TouchControl,
+  touchControlsOf,
+  touchUnreachable,
+} from './input/touch-pad';
 export { TouchSource } from './input/TouchSource';
 export { ConsoleBuffer, type ConsoleEntry, type ConsoleEvent } from './loop/ConsoleBuffer';
 export { GameLoop, type LoopDriver, STEP_MS } from './loop/GameLoop';

@@ -1,23 +1,32 @@
-import { type Action } from './ActionMap';
 import type { InputSource } from './InputSource';
 import type { InputState } from './InputState';
+import { TOUCH_CONTROLS, type TouchControl, touchPresses } from './touch-pad';
+
+/** The bits of every action a control of the on-screen pad presses. */
+function maskOf(state: InputState, control: TouchControl): number {
+  return touchPresses(control).reduce(
+    (mask, pressed) => mask | (state.actions.pad.get(pressed) ?? 0),
+    0,
+  );
+}
 
 /**
- * On-screen pad. Unlike the keyboard, this source owns its own element — the pad lives in a zone
- * below the screen (portrait) or overlays its edges (landscape) — so it ignores the target the
- * engine offers and binds to the element handed to the constructor.
+ * On-screen pad: a gamepad drawn on the screen, pressing for one player the actions the running
+ * game plugs its controls into. Unlike the keyboard, this source owns its own element — the pad
+ * lives in a zone below the screen (portrait) or overlays its edges (landscape) — so it ignores the
+ * target the engine offers and binds to the element handed to the constructor.
  *
- * Every control carries `data-nc-action="left"`. Touches are tracked by pointer id and re-hit-test
- * on move, so sliding a thumb from LEFT to UP behaves the way a real d-pad does rather than
- * sticking to whatever was pressed first.
+ * Every control carries `data-nc-control="dpad-left"`. Touches are tracked by pointer id and
+ * re-hit-test on move, so sliding a thumb from LEFT to UP behaves the way a real d-pad does rather
+ * than sticking to whatever was pressed first.
  */
 export class TouchSource implements InputSource {
   private readonly root: HTMLElement;
   private readonly player: number;
   private state: InputState | null = null;
   private detachFn: (() => void) | null = null;
-  /** Which action each live pointer is currently over. */
-  private readonly held = new Map<number, Action>();
+  /** Which control each live pointer is currently over. */
+  private readonly held = new Map<number, TouchControl>();
 
   constructor(root: HTMLElement, opts: { player?: number } = {}) {
     this.root = root;
@@ -28,44 +37,44 @@ export class TouchSource implements InputSource {
     this.detach();
     this.state = state;
 
-    const actionAt = (event: PointerEvent): Action | null => {
+    const controlAt = (event: PointerEvent): TouchControl | null => {
       const el = document.elementFromPoint(event.clientX, event.clientY);
-      const owner = el?.closest<HTMLElement>('[data-nc-action]');
-      const name = owner?.dataset.ncAction;
-      return name ? (name as Action) : null;
+      const name = el?.closest<HTMLElement>('[data-nc-control]')?.dataset.ncControl;
+
+      return TOUCH_CONTROLS.find((control) => control === name) ?? null;
     };
 
-    const apply = (id: number, action: Action | null): void => {
+    const apply = (id: number, control: TouchControl | null): void => {
       const previous = this.held.get(id);
-      if (previous === action) {
+      if (previous === control) {
         return;
       }
       if (previous) {
         this.release(previous, id);
       }
-      if (action) {
-        this.held.set(id, action);
-        state.setAction(this.player, action, true);
+      if (control) {
+        this.held.set(id, control);
+        state.press(this.player, maskOf(state, control), true);
       } else {
         this.held.delete(id);
       }
     };
 
     const onDown = (event: PointerEvent): void => {
-      const action = actionAt(event);
-      if (!action) {
+      const control = controlAt(event);
+      if (!control) {
         return;
       }
       event.preventDefault();
       this.root.setPointerCapture?.(event.pointerId);
-      apply(event.pointerId, action);
+      apply(event.pointerId, control);
     };
     const onMove = (event: PointerEvent): void => {
       if (!this.held.has(event.pointerId)) {
         return;
       }
       event.preventDefault();
-      apply(event.pointerId, actionAt(event));
+      apply(event.pointerId, controlAt(event));
     };
     const onUp = (event: PointerEvent): void => {
       apply(event.pointerId, null);
@@ -98,20 +107,22 @@ export class TouchSource implements InputSource {
     this.state = null;
   }
 
-  private release(action: Action, id: number): void {
+  private release(control: TouchControl, id: number): void {
     this.held.delete(id);
     // Two thumbs can be on the same button; only lift it when the last one goes.
     for (const held of this.held.values()) {
-      if (held === action) {
+      if (held === control) {
         return;
       }
     }
-    this.state?.setAction(this.player, action, false);
+    if (this.state) {
+      this.state.press(this.player, maskOf(this.state, control), false);
+    }
   }
 
   private releaseAll(): void {
-    for (const [id, action] of [...this.held]) {
-      this.release(action, id);
+    for (const [id, control] of [...this.held]) {
+      this.release(control, id);
     }
     this.held.clear();
   }

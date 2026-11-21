@@ -7,7 +7,6 @@ import * as Y from 'yjs';
 import { NO_EFFECT, type SoundPort } from '../api/ports';
 import { EditableGame } from '../game/EditableGame';
 import { RecordingBackend } from '../gfx/RecordingBackend';
-import type { DeclaredAction } from '../input/ActionMap';
 import type { InputSource } from '../input/InputSource';
 import type { InputState } from '../input/InputState';
 import { STEP_MS } from '../loop/GameLoop';
@@ -26,7 +25,7 @@ describe('Engine', () => {
       attach: () => undefined,
       detach: () => undefined,
       poll: (state: InputState) => {
-        state.setAction(0, 'right', held);
+        state.press(0, state.actions.bits.get('right') ?? 0, held);
       },
     };
     const engine = new Engine({ game, gfx, inputs: [source], driver });
@@ -218,30 +217,55 @@ describe('Engine', () => {
     engine.destroy();
   });
 
-  it('hands the host the names the document gives its actions, on every load', () => {
+  it('reads the actions of its game, and follows them as the document changes under a run', () => {
     const game = new EditableGame(new Y.Doc());
     game.seedDefaults();
-    game.setDeclaredActions([
-      { action: 'left', label: 'Port' },
-      { action: 'right', label: 'Starboard' },
-    ]);
-    const seen: (readonly DeclaredAction[])[] = [];
-    const engine = new Engine({
-      game,
-      gfx: new RecordingBackend(),
-      driver,
-      onActionsDeclared: (actions) => seen.push(actions),
-    });
+    const main = game.files[0];
+    main?.text.delete(0, main.text.length);
+    main?.text.insert(
+      0,
+      [
+        'function _update()',
+        '  print(tostring(input.held("jump")) .. " " .. tostring(input.held("a")))',
+        'end',
+      ].join('\n'),
+    );
+    const keys = new Set<string>();
+    const keyboard: InputSource = {
+      attach: () => undefined,
+      detach: () => undefined,
+      poll: (state: InputState) => {
+        state.clearActions(0);
+        for (const key of keys) {
+          state.press(0, state.actions.keys[0].get(key) ?? 0, true);
+        }
+      },
+    };
+    const engine = new Engine({ game, gfx: new RecordingBackend(), inputs: [keyboard], driver });
+    const said = (): string | undefined => {
+      engine.tick(STEP_MS);
 
-    expect(engine.load()).toBeNull();
-    expect(engine.declaredActions).toEqual(game.declaredActions);
-    expect(seen).toEqual([game.declaredActions]);
+      return engine.console.lines.at(-1)?.text;
+    };
+    engine.run();
 
-    game.setDeclaredActions([]);
-    expect(engine.load()).toBeNull();
-    expect(engine.declaredActions).toEqual([]);
-    expect(seen).toHaveLength(2);
+    keys.add('x');
+    expect(said()).toBe('false true');
+
+    game.applyPreset('platformer');
+    keys.add(' ');
+    expect(said()).toBe('true false');
+
+    const jump = game.actions.find((action) => action.name === 'jump')?.id ?? '';
+    game.unplugInput(jump, { kind: 'key', player: 0, key: ' ' });
+    expect(said()).toBe('false false');
+
+    game.plugInput(jump, { kind: 'key', player: 0, key: 'x' });
+    expect(said()).toBe('true false');
+
     engine.destroy();
+    game.applyPreset('classic');
+    expect(engine.input.actions.bits.has('jump')).toBe(true);
   });
 
   it('does not hand the next run the button the last one was holding', () => {
@@ -250,7 +274,7 @@ describe('Engine', () => {
     const engine = new Engine({ game, gfx: new RecordingBackend(), driver });
     expect(engine.load()).toBeNull();
 
-    engine.input.setAction(0, 'right', true);
+    engine.input.press(0, engine.input.actions.bits.get('right') ?? 0, true);
     engine.run();
     engine.tick(STEP_MS);
     expect(engine.input.btn('right', 0)).toBe(true);
