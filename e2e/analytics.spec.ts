@@ -128,10 +128,10 @@ test.describe('consent and usage analytics', () => {
     await analyticsOn(page);
     const sent = await collect(page);
     await page.goto('/hub');
-    await page
-      .getByRole('region', { name: 'Usage analytics' })
-      .getByRole('button', { name: 'Accept' })
-      .click();
+    const banner = page.getByRole('region', { name: 'Usage analytics' });
+    await banner.getByRole('button', { name: 'Accept' }).click();
+    // The banner goes in the pass that queues this page's view: a flush before it sends nothing.
+    await expect(banner).toBeHidden();
     await flush(page);
     await page.goto('/play/1');
     await flush(page);

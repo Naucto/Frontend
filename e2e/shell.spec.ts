@@ -55,7 +55,7 @@ test.describe('app shell', () => {
     const current = page.locator('a[aria-current="page"]');
     await expect(current).toHaveText(/hub/i);
 
-    const { active, lit, dim } = await page.evaluate(() => {
+    const { lit, dim } = await page.evaluate(() => {
       const probe = document.createElement('span');
       document.body.appendChild(probe);
       const read = (token: string): string => {
@@ -65,12 +65,12 @@ test.describe('app shell', () => {
       const lit = read('--color-active-ink');
       const dim = read('--color-ink-3');
       probe.remove();
-      const el = document.querySelector('a[aria-current="page"]');
-      return { active: el ? getComputedStyle(el).color : '', lit, dim };
+      return { lit, dim };
     });
 
     expect(lit).not.toBe(dim);
-    expect(active).toBe(lit);
+    // Retried: the link eases into its colour, and a single read can land on the way there.
+    await expect(current).toHaveCSS('color', lit);
   });
 
   /**
