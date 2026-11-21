@@ -3,9 +3,8 @@ import { copyFileSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { test } from '@playwright/test';
-
 import { mockEditor } from '../editor-mocks';
+import { test } from '../fixtures';
 import { shoot } from './frame';
 
 /**
