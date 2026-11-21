@@ -1,6 +1,16 @@
 import * as Y from 'yjs';
 
-import type { DeclaredAction } from '../input/ActionMap';
+import {
+  ACTION_DESCRIPTION_MAX,
+  ACTION_LABEL_MAX,
+  type ActionDraft,
+  type ActionInput,
+  type ActionNameIssue,
+  actionNameIssue,
+  inputId,
+  MAX_ACTIONS,
+} from '../input/actions';
+import { INPUT_PRESETS, type InputPresetId } from '../input/presets';
 import type { Instrument, Pattern, Song } from '../sound/model';
 import {
   BUBBLEGUM_16,
@@ -56,8 +66,8 @@ export interface ResizePreview {
 
 /**
  * How {@link EditableGame.restoreFrom} puts each root back: a flat map or array by value, a text by
- * its differing span, the code files and the sheet and map collections entry by entry since they
- * nest.
+ * its differing span, the code files and the sheet, map and action collections entry by entry since
+ * they nest.
  */
 type RestoreKind = 'map' | 'array' | 'text' | 'files' | 'collection';
 
@@ -78,6 +88,7 @@ export const RESTORE_KINDS: Readonly<Record<keyof typeof KEYS, RestoreKind>> = {
   codeFiles: 'files',
   sheets: 'collection',
   maps: 'collection',
+  actions: 'collection',
   // Texts the editor writes directly, outside anything Game models.
   projectName: 'text',
   shortDescription: 'text',
@@ -154,6 +165,7 @@ export class EditableGame extends Game {
   declare readonly paletteArray: Y.Array<string>;
   declare readonly sheetsMap: Y.Map<Y.Map<unknown>>;
   declare readonly mapsMap: Y.Map<Y.Map<unknown>>;
+  declare readonly actionsMap: Y.Map<Y.Map<unknown>>;
   declare readonly instruments: Y.Map<string>;
   declare readonly patterns: Y.Map<string>;
   declare readonly sfx: Y.Map<string>;
@@ -439,18 +451,151 @@ export class EditableGame extends Game {
     }, LOCAL_ORIGIN);
   }
 
-  // ---- meta -----------------------------------------------------------------
+  // ---- actions --------------------------------------------------------------
 
-  /** An action with a blank label is an action left unnamed, so it is not written at all. */
-  setDeclaredActions(actions: readonly DeclaredAction[]): void {
-    const next = actions
-      .map((declared) => ({ action: declared.action, label: declared.label.trim() }))
-      .filter((declared) => declared.label.length > 0);
-    if (JSON.stringify(next) === JSON.stringify(this.declaredActions)) {
-      return;
+  /** Why this game cannot give an action that name; `except` is the action being renamed. */
+  actionNameIssue(name: string, except?: string): ActionNameIssue | null {
+    return actionNameIssue(
+      name,
+      this.actions.filter((action) => action.id !== except).map((action) => action.name),
+    );
+  }
+
+  /** Writes an action whole, under an id nothing holds yet. Inside a transaction. */
+  private writeAction(id: string, draft: ActionDraft, order: number): void {
+    const entry = new Y.Map<unknown>();
+    const inputs = new Y.Map<number>();
+    this.actionsMap.set(id, entry);
+    entry.set(ENTRY_KEYS.name, draft.name);
+    entry.set(ENTRY_KEYS.label, draft.label.trim().slice(0, ACTION_LABEL_MAX));
+    entry.set(ENTRY_KEYS.description, draft.description.trim().slice(0, ACTION_DESCRIPTION_MAX));
+    entry.set(ENTRY_KEYS.order, order);
+    entry.set(ENTRY_KEYS.inputs, inputs);
+    draft.inputs.forEach((input, rank) => {
+      inputs.set(inputId(input), rank);
+    });
+  }
+
+  /**
+   * Adds an action after the ones there are and answers its id, or null when the game is at
+   * {@link MAX_ACTIONS} or the name is one {@link actionNameIssue} refuses.
+   */
+  addAction(
+    draft: Pick<ActionDraft, 'name'> & Partial<ActionDraft>,
+    id: string = crypto.randomUUID(),
+  ): string | null {
+    const actions = this.actions;
+    if (actions.length >= MAX_ACTIONS || this.actionNameIssue(draft.name) !== null) {
+      return null;
     }
     this.doc.transact(() => {
-      this.meta.set(META_KEYS.actions, next);
+      this.writeAction(
+        id,
+        { label: '', description: '', inputs: [], ...draft },
+        actions.reduce((max, action) => Math.max(max, action.order), -1) + 1,
+      );
+    }, LOCAL_ORIGIN);
+
+    return id;
+  }
+
+  /**
+   * Changes what an action says of itself, field by field; false, and nothing written, for an
+   * action the game does not have or a name {@link actionNameIssue} refuses. Code that reads the
+   * action by its old name is not rewritten.
+   */
+  updateAction(
+    id: string,
+    patch: Partial<Pick<ActionDraft, 'name' | 'label' | 'description'>>,
+  ): boolean {
+    const entry = this.actionsMap.get(id);
+    if (!entry || (patch.name !== undefined && this.actionNameIssue(patch.name, id) !== null)) {
+      return false;
+    }
+    const fields: [string, string | undefined][] = [
+      [ENTRY_KEYS.name, patch.name],
+      [ENTRY_KEYS.label, patch.label?.trim().slice(0, ACTION_LABEL_MAX)],
+      [ENTRY_KEYS.description, patch.description?.trim().slice(0, ACTION_DESCRIPTION_MAX)],
+    ];
+    this.doc.transact(() => {
+      for (const [key, value] of fields) {
+        if (value !== undefined && entry.get(key) !== value) {
+          entry.set(key, value);
+        }
+      }
+    }, LOCAL_ORIGIN);
+
+    return true;
+  }
+
+  removeAction(id: string): void {
+    this.doc.transact(() => {
+      this.actionsMap.delete(id);
+    }, LOCAL_ORIGIN);
+  }
+
+  /** Ids first to last, anything not named kept after them, as {@link reorderFiles} does. */
+  reorderActions(ids: readonly string[]): void {
+    const ranked = new Set(ids);
+    const rest = this.actions.filter((action) => !ranked.has(action.id));
+    this.doc.transact(() => {
+      ids.forEach((id, i) => this.actionsMap.get(id)?.set(ENTRY_KEYS.order, i));
+      rest.forEach((action, i) =>
+        this.actionsMap.get(action.id)?.set(ENTRY_KEYS.order, ids.length + i),
+      );
+    }, LOCAL_ORIGIN);
+  }
+
+  /** Where an action's inputs are, made on first plug for an entry that came without. */
+  private inputsOf(id: string): Y.Map<number> | null {
+    const entry = this.actionsMap.get(id);
+    if (!entry) {
+      return null;
+    }
+    const held = entry.get(ENTRY_KEYS.inputs);
+    if (held instanceof Y.Map) {
+      return held as Y.Map<number>;
+    }
+    const made = new Y.Map<number>();
+    entry.set(ENTRY_KEYS.inputs, made);
+
+    return made;
+  }
+
+  /**
+   * Plugs an input into an action, after the ones it has. The same input may be plugged into
+   * several actions: {@link actionsUsing} says which, for a caller that wants to ask first.
+   */
+  plugInput(id: string, input: ActionInput): void {
+    this.doc.transact(() => {
+      const inputs = this.inputsOf(id);
+      if (!inputs || inputs.has(inputId(input))) {
+        return;
+      }
+      let last = -1;
+      inputs.forEach((rank) => {
+        last = Math.max(last, rank);
+      });
+      inputs.set(inputId(input), last + 1);
+    }, LOCAL_ORIGIN);
+  }
+
+  unplugInput(id: string, input: ActionInput): void {
+    this.doc.transact(() => {
+      this.inputsOf(id)?.delete(inputId(input));
+    }, LOCAL_ORIGIN);
+  }
+
+  /**
+   * Replaces the game's actions with a preset's, each under its name as id so two clients applying
+   * the same preset write the same entries.
+   */
+  applyPreset(preset: InputPresetId): void {
+    this.doc.transact(() => {
+      this.actionsMap.clear();
+      INPUT_PRESETS[preset].forEach((draft, order) => {
+        this.writeAction(draft.name, draft, order);
+      });
     }, LOCAL_ORIGIN);
   }
 
@@ -756,15 +901,16 @@ export class EditableGame extends Game {
   /**
    * Fills an empty document with the starter game. Idempotent.
    *
-   * The first sheet and map are written only by the client that marks the schema: a marked
-   * document gets them from its migration, and a second writer there would replace the cells it
-   * moved.
+   * The first sheet and map, and the actions, are written only by the client that marks the
+   * schema: a marked document gets them from its migration, and a second writer there would
+   * replace the cells it moved and the actions its author set.
    */
   seedDefaults(): void {
     this.doc.transact(() => {
       if (!this.meta.has(META_KEYS.schemaVersion)) {
         this.meta.set(META_KEYS.schemaVersion, GAME_SCHEMA_VERSION);
         this.seedSheetAndMap();
+        this.applyPreset('classic');
       }
       if (this.paletteArray.length !== PALETTE_SIZE) {
         this.paletteArray.delete(0, this.paletteArray.length);

@@ -7,7 +7,7 @@ import type { MigrationReport, MigrationStep } from './types';
 import { migrateV0ToV1 } from './v0_to_v1';
 import { migrateV1ToV2 } from './v1_to_v2';
 import { computeRenames } from './v1_to_v2/code';
-import { holdsV1Shape, moveToV2Shape } from './v1_to_v2/shape';
+import { migrateV2ToV3 } from './v2_to_v3';
 
 export type { MigrationReport, MigrationStep, MigrationWarning } from './types';
 
@@ -26,6 +26,7 @@ export const MIGRATION_ORIGIN = 'migration';
 const STEPS: readonly MigrationStep[] = [
   { from: 0, to: 1, run: migrateV0ToV1 },
   { from: 1, to: 2, run: migrateV1ToV2 },
+  { from: 2, to: 3, run: migrateV2ToV3 },
 ];
 
 /** Content only the first schema ever wrote, and the only evidence a document predates the marker. */
@@ -66,27 +67,13 @@ function pendingRenames(doc: Y.Doc): { file: string; text: Y.Text; splices: Spli
 }
 
 /**
- * A document marked at the current schema that still holds some of the v1 shape, since the shape
- * moved inside v2 without a bump. An unmarked one is about to be seeded, and seeding writes the
- * current shape.
- */
-function reshapedInPlace(doc: Y.Doc): boolean {
-  return doc.getMap(KEYS.meta).get('schemaVersion') === GAME_SCHEMA_VERSION && holdsV1Shape(doc);
-}
-
-/**
  * Whether opening the document has to change it first.
  *
- * A schema behind is one reason; a renamed call the code still writes is another, and a v2
- * document still in the v1 shape the last, and the version tells neither, so the document is read
- * for them.
+ * A schema behind is one reason; a renamed call the code still writes is the other, and the
+ * version does not tell it, so the code is read for it.
  */
 export function needsMigration(doc: Y.Doc): boolean {
-  return (
-    schemaVersionOf(doc) < GAME_SCHEMA_VERSION ||
-    reshapedInPlace(doc) ||
-    pendingRenames(doc).length > 0
-  );
+  return schemaVersionOf(doc) < GAME_SCHEMA_VERSION || pendingRenames(doc).length > 0;
 }
 
 /**
@@ -98,8 +85,8 @@ export function isFromFutureSchema(doc: Y.Doc): boolean {
 }
 
 /**
- * Brings a game document up to the current schema, shape and names in one transaction, so no peer
- * sees it halfway; the shape and the renames are brought at the current version and never move it.
+ * Brings a game document up to the current schema and names in one transaction, so no peer sees
+ * it halfway; the renames are brought at the current version and never move it.
  */
 export function migrateGame(doc: Y.Doc, opts: { apply?: boolean } = {}): MigrationReport {
   const from = schemaVersionOf(doc);
@@ -111,9 +98,8 @@ export function migrateGame(doc: Y.Doc, opts: { apply?: boolean } = {}): Migrati
     warnings: [],
   };
   const behind = from < GAME_SCHEMA_VERSION;
-  const reshape = !behind && reshapedInPlace(doc);
   let renames = behind ? [] : pendingRenames(doc);
-  if (!behind && !reshape && renames.length === 0) {
+  if (!behind && renames.length === 0) {
     return report;
   }
   if (opts.apply === false) {
@@ -132,9 +118,6 @@ export function migrateGame(doc: Y.Doc, opts: { apply?: boolean } = {}): Migrati
       meta.set('migratedFrom', from);
       meta.set('migratedAt', new Date().toISOString());
       renames = pendingRenames(doc);
-    }
-    if (reshape) {
-      report.counts.reshaped = moveToV2Shape(doc);
     }
     for (const rename of renames) {
       report.counts[`rewrites:${rename.file}`] = applySplices(rename.text, rename.splices);

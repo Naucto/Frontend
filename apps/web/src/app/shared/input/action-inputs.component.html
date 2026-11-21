@@ -1,0 +1,20 @@
+<ng-container *transloco="let t">
+  @for (device of devices(); track device.kind) {
+    <span class="flex flex-wrap items-center gap-0.5">
+      @if (device.kind === 'pad') {
+        <nc-icon name="gamepad" [size]="24" class="text-ink-3" />
+        <span class="sr-only">{{ t('input.gamepad') }}</span>
+      } @else if (twoKeyboards()) {
+        <span class="label text-ink-3">
+          {{ t('input.player', { n: device.kind === 'p1' ? 1 : 2 }) }}
+        </span>
+      }
+      @for (plugged of device.inputs; track $index) {
+        @if (!$first) {
+          <span class="text-meta text-ink-3">{{ t('input.or') }}</span>
+        }
+        <nc-input-cap [input]="plugged" size="sm" />
+      }
+    </span>
+  }
+</ng-container>

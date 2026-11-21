@@ -10,50 +10,43 @@
   [style.--nc-pad-scale]="settings.scale()"
   [style.opacity]="overlay() ? settings.opacity() / 100 : 1">
   <div class="pointer-events-auto grid grid-cols-3 grid-rows-3 gap-0.5">
-    <span></span>
-    <button
-      type="button"
-      [class]="key"
-      data-nc-action="up"
-      [attr.aria-label]="'game.screen.pad.up' | transloco">
-      <nc-icon name="arrow-up" [size]="24" [class]="arrow" />
-    </button>
-    <span></span>
-    <button
-      type="button"
-      [class]="key"
-      data-nc-action="left"
-      [attr.aria-label]="'game.screen.pad.left' | transloco">
-      <nc-icon name="arrow-left" [size]="24" [class]="arrow" />
-    </button>
-    <span class="bg-line/40"></span>
-    <button
-      type="button"
-      [class]="key"
-      data-nc-action="right"
-      [attr.aria-label]="'game.screen.pad.right' | transloco">
-      <nc-icon name="arrow-right" [size]="24" [class]="arrow" />
-    </button>
-    <span></span>
-    <button
-      type="button"
-      [class]="key"
-      data-nc-action="down"
-      [attr.aria-label]="'game.screen.pad.down' | transloco">
-      <nc-icon name="arrow-down" [size]="24" [class]="arrow" />
-    </button>
-    <span></span>
+    @for (arm of cross(); track arm.control) {
+      <button
+        type="button"
+        [class]="key + ' ' + arm.at"
+        [attr.data-nc-control]="arm.control"
+        [attr.aria-label]="'game.screen.pad.' + arm.label | transloco">
+        <nc-mark [name]="arm.mark" />
+      </button>
+    }
+    @if (cross().length) {
+      <span
+        class="col-start-2 row-start-2 h-[calc(56px*var(--nc-pad-scale,1))] w-[calc(56px*var(--nc-pad-scale,1))] bg-line/40"></span>
+    }
   </div>
 
-  <div class="pointer-events-auto flex items-center gap-1.5">
+  @if (controls().includes('start')) {
     <button
       type="button"
-      [class]="face"
-      data-nc-action="pause"
-      [attr.aria-label]="'game.screen.pause' | transloco">
-      II
+      class="pointer-events-auto self-end"
+      [class]="start"
+      data-nc-control="start">
+      {{ 'input.pad.start' | transloco }}
     </button>
-    <button type="button" [class]="face" data-nc-action="b" aria-label="B">B</button>
-    <button type="button" [class]="face" data-nc-action="a" aria-label="A">A</button>
+  }
+
+  <div class="pointer-events-auto grid grid-cols-3 grid-rows-3 gap-0.5">
+    @for (button of faces(); track button.control) {
+      <button
+        type="button"
+        [class]="face + ' ' + button.at"
+        [attr.data-nc-control]="button.control">
+        {{ button.legend }}
+      </button>
+    }
+    @if (faces().length) {
+      <span
+        class="col-start-2 row-start-2 h-[calc(56px*var(--nc-pad-scale,1))] w-[calc(56px*var(--nc-pad-scale,1))]"></span>
+    }
   </div>
 </div>

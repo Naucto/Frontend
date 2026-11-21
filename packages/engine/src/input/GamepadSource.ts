@@ -1,32 +1,60 @@
-import {
-  ACTION_BIT,
-  type ActionBindings,
-  ACTIONS,
-  DEFAULT_BINDINGS,
-  MAX_PLAYERS,
-} from './ActionMap';
+import { MAX_PLAYERS, type PadControl } from './actions';
 import type { InputSource } from './InputSource';
 import type { InputState } from './InputState';
 
 /** How far an axis has to lean, out of 1, before the game reads it as a direction pressed. */
 export const GAMEPAD_DEADZONE = 0.3;
 
-/** Polls navigator.getGamepads() every step; pad i drives player i (pad 0 merges with the keyboard as player 1). */
+/** Where the Gamepad API's standard mapping puts each control. */
+const STANDARD_MAPPING: Record<
+  PadControl,
+  { button: number } | { axis: number; direction: 1 | -1 }
+> = {
+  'dpad-up': { button: 12 },
+  'dpad-down': { button: 13 },
+  'dpad-left': { button: 14 },
+  'dpad-right': { button: 15 },
+  'stick-up': { axis: 1, direction: -1 },
+  'stick-down': { axis: 1, direction: 1 },
+  'stick-left': { axis: 0, direction: -1 },
+  'stick-right': { axis: 0, direction: 1 },
+  a: { button: 0 },
+  b: { button: 1 },
+  x: { button: 2 },
+  y: { button: 3 },
+  lb: { button: 4 },
+  rb: { button: 5 },
+  select: { button: 8 },
+  start: { button: 9 },
+};
+
+/** Whether a pad holds a control: its button pressed, or its stick leaning past `deadzone`. */
+export function isPadControlDown(
+  pad: Gamepad,
+  control: PadControl,
+  deadzone = GAMEPAD_DEADZONE,
+): boolean {
+  const at = STANDARD_MAPPING[control];
+  if ('button' in at) {
+    return pad.buttons[at.button]?.pressed === true;
+  }
+
+  return (pad.axes[at.axis] ?? 0) * at.direction > deadzone;
+}
+
+/**
+ * Polls navigator.getGamepads() every step; pad i drives player i (pad 0 merges with the keyboard
+ * as player 1). Every pad presses the actions the running game plugs its controls into.
+ */
 export class GamepadSource implements InputSource {
-  private bindings: ActionBindings;
   private readonly getGamepads: () => (Gamepad | null)[];
   /** Player slot per gamepad index; -1 = unassigned. */
   readonly slots: number[] = [];
-  private readonly masks = new Uint16Array(MAX_PLAYERS);
+  private readonly masks = new Uint32Array(MAX_PLAYERS);
 
-  constructor(opts: { bindings?: ActionBindings; getGamepads?: () => (Gamepad | null)[] } = {}) {
-    this.bindings = opts.bindings ?? DEFAULT_BINDINGS;
+  constructor(opts: { getGamepads?: () => (Gamepad | null)[] } = {}) {
     this.getGamepads =
       opts.getGamepads ?? (() => (typeof navigator === 'undefined' ? [] : navigator.getGamepads()));
-  }
-
-  setBindings(bindings: ActionBindings): void {
-    this.bindings = bindings;
   }
 
   attach(): void {
@@ -54,32 +82,16 @@ export class GamepadSource implements InputSource {
         continue;
       }
       connected = Math.max(connected, player + 1);
-      this.masks[player] = (this.masks[player] ?? 0) | this.readMask(pad);
+      for (const [control, mask] of state.actions.pad) {
+        if (isPadControlDown(pad, control)) {
+          this.masks[player] = (this.masks[player] ?? 0) | mask;
+        }
+      }
     }
     // Every player is written, so a pad that was unplugged lets go of its bits.
     for (let player = 0; player < MAX_PLAYERS; player++) {
       state.setPolled(player, this.masks[player] ?? 0);
     }
     state.connectedPlayers = connected;
-  }
-
-  private readMask(pad: Gamepad): number {
-    let mask = 0;
-    for (const action of ACTIONS) {
-      for (const ref of this.bindings.gamepad[action]) {
-        if (ref.button !== undefined && pad.buttons[ref.button]?.pressed) {
-          mask |= ACTION_BIT[action];
-        }
-        if (ref.axis !== undefined) {
-          const axisValue = pad.axes[ref.axis] ?? 0;
-          if (
-            (ref.direction ?? 1) > 0 ? axisValue > GAMEPAD_DEADZONE : axisValue < -GAMEPAD_DEADZONE
-          ) {
-            mask |= ACTION_BIT[action];
-          }
-        }
-      }
-    }
-    return mask;
   }
 }

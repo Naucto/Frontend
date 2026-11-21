@@ -1,0 +1,12 @@
+<nc-keycap [size]="size()">
+  @if (legend().word; as word) {
+    {{ word | transloco }}
+  }
+  {{ legend().text }}
+  @if (legend().mark; as mark) {
+    <nc-mark [name]="mark" />
+  }
+  @if (legend().direction; as direction) {
+    <span class="sr-only">{{ direction | transloco }}</span>
+  }
+</nc-keycap>

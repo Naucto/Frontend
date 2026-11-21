@@ -1,9 +1,9 @@
 import type * as Y from 'yjs';
 
 import { matchesName, skipDead, splitArgs } from '../../game/luaScan';
-import { type DeclaredAction, isAction } from '../../input/ActionMap';
 import { applySplices, type Splice } from '../splice';
 import type { MigrationReport, MigrationWarning } from '../types';
+import { isV2Action, type V2ActionLabel } from './actions';
 import { V1_RENAMES } from './renames';
 
 /** Row effects the virtual beam replaced: a game calling one has to be rewritten by hand. */
@@ -43,7 +43,7 @@ const ESCAPED_QUOTE = /\\(["'\\])/g;
 export interface CodeRewrite {
   splices: Splice[];
   /** Labels found in literal `input.declare` calls, in the order the file gives them. */
-  declared: DeclaredAction[];
+  declared: V2ActionLabel[];
 }
 
 const lineOf = (source: string, at: number): number => source.slice(0, at).split('\n').length;
@@ -79,8 +79,8 @@ function closeOf(source: string, open: number): number | null {
  *
  * A computed label is only known while the game runs, so it is left for the author to move.
  */
-function parseLabels(inner: string, warn: (message: string) => void): DeclaredAction[] | null {
-  const labels: DeclaredAction[] = [];
+function parseLabels(inner: string, warn: (message: string) => void): V2ActionLabel[] | null {
+  const labels: V2ActionLabel[] = [];
   let at = 0;
   while (at < inner.length) {
     if (BLANK.test(inner.slice(at))) {
@@ -94,7 +94,7 @@ function parseLabels(inner: string, warn: (message: string) => void): DeclaredAc
     at = LABEL_FIELD.lastIndex;
     const key = (match[1] ?? match[3] ?? '').replace(ESCAPED_QUOTE, '$1');
     const label = (match[5] ?? '').replace(ESCAPED_QUOTE, '$1').trim();
-    if (!isAction(key)) {
+    if (!isV2Action(key)) {
       warn(`${DECLARE}: "${key}" is not an action; dropped`);
       continue;
     }
@@ -136,7 +136,7 @@ export function computeRenames(source: string): Splice[] {
 interface Scan {
   source: string;
   splices: Splice[];
-  declared: DeclaredAction[];
+  declared: V2ActionLabel[];
   warn: (at: number, message: string) => void;
 }
 
@@ -260,7 +260,7 @@ export function computeV2Splices(
   return { splices: scan.splices, declared: scan.declared };
 }
 
-export function migrateCode(text: Y.Text, report: MigrationReport, file: string): DeclaredAction[] {
+export function migrateCode(text: Y.Text, report: MigrationReport, file: string): V2ActionLabel[] {
   const { splices, declared } = computeV2Splices(text.toString(), report, file);
   report.counts[`rewrites:${file}`] = applySplices(text, splices);
 
