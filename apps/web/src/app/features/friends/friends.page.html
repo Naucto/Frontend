@@ -87,7 +87,8 @@
                   ncButton
                   class="relative"
                   [variant]="target.variant"
-                  [routerLink]="['/play', target.releaseId]">
+                  [routerLink]="['/play', target.releaseId]"
+                  [queryParams]="{ session: target.session }">
                   {{ t(target.label) }}
                 </a>
               }

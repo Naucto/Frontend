@@ -150,18 +150,32 @@ export default class FriendsPage {
    * The one action a row offers, if any. BUILDING has none: you cannot drop into someone's editor
    * from here, and the design draws that row without a button.
    */
-  protected playable(
-    friend: Friend,
-  ): { releaseId: number; variant: 'run' | 'sky'; label: string } | null {
+  protected playable(friend: Friend): {
+    releaseId: number;
+    /** The session a slot is taken in, which the game page then joins. */
+    session: string | null;
+    variant: 'run' | 'sky';
+    label: string;
+  } | null {
     const presence = friend.presence;
     if (!presence?.releaseId) {
       return null;
     }
     if (presence.kind === 'PLAYING') {
-      return { releaseId: presence.releaseId, variant: 'run', label: 'friends.join' };
+      return {
+        releaseId: presence.releaseId,
+        session: null,
+        variant: 'run',
+        label: 'friends.join',
+      };
     }
     if (presence.kind === 'HOSTING') {
-      return { releaseId: presence.releaseId, variant: 'sky', label: 'friends.takeSlot' };
+      return {
+        releaseId: presence.releaseId,
+        session: presence.sessionId,
+        variant: 'sky',
+        label: 'friends.takeSlot',
+      };
     }
     return null;
   }
