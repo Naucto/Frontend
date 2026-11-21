@@ -61,6 +61,24 @@ describe('CollectionBoxComponent', () => {
     expect(plate?.textContent).toContain('6 games');
   });
 
+  it('keeps the title on one line, in a box that narrows it before it is cut', () => {
+    const line = box.querySelector<HTMLElement>('a[data-plate] [ncFitText] > span');
+    expect(line?.textContent).toBe('Couch co-op');
+    expect(line?.classList).toContain('truncate');
+    expect(line?.parentElement?.classList).toContain('whitespace-nowrap');
+  });
+
+  it('shows the curator on the plate, or who can open it when that is given instead', () => {
+    const plate = (): HTMLElement => box.querySelector<HTMLElement>('a[data-plate]')!;
+    expect(plate().querySelector('nc-avatar')).not.toBeNull();
+    expect(plate().textContent).toContain('louis');
+
+    fixture.componentRef.setInput('visibility', 'UNLISTED');
+    fixture.detectChanges();
+    expect(plate().querySelector('nc-avatar')).toBeNull();
+    expect(plate().querySelector('nc-visibility-chip')?.textContent.trim()).toBe('Unlisted');
+  });
+
   it('stands its disks a step apart at rest, each a button named for its game', () => {
     expect(disks().map((disk) => disk.style.left)).toEqual([
       '0px',

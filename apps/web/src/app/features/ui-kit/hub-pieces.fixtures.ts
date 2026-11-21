@@ -1,3 +1,4 @@
+import type { CollectionVisibility } from '@naucto/api-client';
 import { BUBBLEGUM_16 } from '@naucto/engine';
 
 import type { HeroEntry } from '../../shared/hub/hero-pile.component';
@@ -258,10 +259,24 @@ interface Collection {
   curator: Person;
   total: number;
   games: readonly HubGame[];
+  /** Set on the viewer's own, whose plate says who can open it. */
+  visibility?: CollectionVisibility;
 }
 
 export const COLLECTIONS: readonly Collection[] = [
   { title: 'Couch co-op', curator: person(1), total: 6, games: GAMES.slice(2, 8) },
   { title: 'Tiny shooters', curator: person(3), total: 3, games: GAMES.slice(11, 14) },
-  { title: 'Everything we loved in 2026', curator: person(9), total: 52, games: GAMES },
+  {
+    title: 'Everything we loved at the 2026 game jam',
+    curator: person(9),
+    total: 52,
+    games: GAMES,
+  },
+  {
+    title: 'To try later',
+    curator: person(0),
+    total: 2,
+    games: GAMES.slice(0, 2),
+    visibility: 'PRIVATE',
+  },
 ];
