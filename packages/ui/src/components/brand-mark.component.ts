@@ -11,8 +11,8 @@ export interface PixelMark {
 /**
  * Pixel-art brand mark: a third party's logo, which the caller owns and passes in.
  *
- * Separate from `nc-icon` on purpose: the icon kit is one monochrome path on a 24 grid, while these
- * are multi-colour rect grids at their own sizes.
+ * Separate from `nc-icon` on purpose: the icon set is one monochrome drawing on the kit pixel, while
+ * these are multi-colour rect grids at their own sizes.
  */
 @Component({
   selector: 'nc-brand-mark',

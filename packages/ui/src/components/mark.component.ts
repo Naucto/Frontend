@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
-import { MARK_PATHS, type MarkName } from '../icons/marks';
+import { glyphPath } from '../icons/glyph-path';
+import { MARK_GLYPHS, type MarkName } from '../icons/glyphs';
 import { glyphRendering } from '../icons/rendering';
 
 /**
@@ -16,6 +17,6 @@ import { glyphRendering } from '../icons/rendering';
 })
 export class MarkComponent {
   readonly name = input.required<MarkName>();
-  protected readonly pathData = computed(() => MARK_PATHS[this.name()]);
+  protected readonly pathData = computed(() => glyphPath(MARK_GLYPHS[this.name()], 5));
   protected readonly rendering = glyphRendering;
 }

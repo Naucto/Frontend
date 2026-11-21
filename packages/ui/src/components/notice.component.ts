@@ -7,7 +7,7 @@ import {
   output,
 } from '@angular/core';
 
-import { type IconName } from '../icons/paths';
+import { type IconName } from '../icons/glyphs';
 import { ButtonDirective } from './button.directive';
 import { IconComponent } from './icon.component';
 

@@ -34,8 +34,8 @@
         (click)="value.set(tabItem.value)"
         (dblclick)="edit.emit(tabItem.value)"
         (keydown)="onKey($event)">
-        @if (tabItem.icon) {
-          <nc-icon [name]="tabItem.icon" [size]="look().icon" />
+        @if (tabItem.mark) {
+          <nc-mark [name]="tabItem.mark" />
         }
         @if (tabItem.colour) {
           <span class="size-[9px] shrink-0" [style.background]="tabItem.colour"></span>
@@ -56,7 +56,11 @@
             class="hidden shrink-0 text-ink-4 group-hover:inline-flex group-focus-within:inline-flex hover:text-ink"
             [attr.aria-label]="editLabel()"
             (click)="act(edit, tabItem.value, $event)">
-            <nc-icon name="edit" [size]="look().icon" />
+            @if (look().marks) {
+              <nc-mark name="edit" />
+            } @else {
+              <nc-icon name="edit" />
+            }
           </button>
         }
         @if (removable() && tabs().length > 1) {
@@ -65,7 +69,11 @@
             class="hidden shrink-0 text-ink-4 group-hover:inline-flex group-focus-within:inline-flex hover:text-hot-ink"
             [attr.aria-label]="removeLabel()"
             (click)="act(remove, tabItem.value, $event)">
-            <nc-icon name="trash" [size]="look().icon" />
+            @if (look().marks) {
+              <nc-mark name="trash" />
+            } @else {
+              <nc-icon name="trash" />
+            }
           </button>
         }
       </div>

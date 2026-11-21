@@ -565,11 +565,31 @@
 .action .foot {
   fill: rgb(11 10 9 / 0.3);
 }
-/* A 24-grid glyph stays crisp only at 24 and at its double. */
+/*
+ * A glyph has a drawing for 24 and one for 36 and is never scaled: the disk shows the larger one
+ * from the width at which its action, or its caption, has the room.
+ */
 .action nc-icon {
   position: relative;
-  width: max(24px, round(12.8cqw, 24px));
-  height: max(24px, round(12.8cqw, 24px));
+}
+.large-glyph {
+  display: none;
+}
+@container (min-width: 281px) {
+  .action .small-glyph {
+    display: none;
+  }
+  .action .large-glyph {
+    display: inline-flex;
+  }
+}
+@container (min-width: 225px) {
+  .caption .small-glyph {
+    display: none;
+  }
+  .caption .large-glyph {
+    display: inline-flex;
+  }
 }
 
 /*
@@ -658,16 +678,9 @@
   text-transform: uppercase;
 }
 .caption nc-icon {
-  width: max(24px, round(16cqw, 24px));
-  height: max(24px, round(16cqw, 24px));
   scale: calc(1 + 0.15 * var(--f-on));
   transition: scale 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-:host ::ng-deep :is(.action, .caption) nc-icon svg {
-  width: 100%;
-  height: 100%;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .shutter,
   .action,

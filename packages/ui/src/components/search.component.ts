@@ -9,7 +9,7 @@ import {
   viewChild,
 } from '@angular/core';
 
-import { IconComponent, type IconSize } from './icon.component';
+import { IconComponent } from './icon.component';
 import { WELL } from './input.directive';
 import { KeycapComponent } from './keycap.component';
 import { MarkComponent } from './mark.component';
@@ -20,20 +20,9 @@ import { MarkComponent } from './mark.component';
  */
 export type SearchSize = 'sm' | 'md';
 
-const SIZE: Record<SearchSize, { host: string; input: string; icon: string; glyph: IconSize }> = {
-  sm: {
-    host: 'h-(--nc-h-sm) gap-1 px-[9px]',
-    input: 'text-micro',
-    icon: '',
-    glyph: 12,
-  },
-  md: {
-    host: 'h-[42px] gap-1.5 pr-[10px] pl-[14px]',
-    input: 'font-ui text-small',
-    // The well sinks its content a pixel; the glyph is set back on the middle of the whole box.
-    icon: '-mt-[3px]',
-    glyph: 24,
-  },
+const SIZE: Record<SearchSize, { host: string; input: string }> = {
+  sm: { host: 'h-(--nc-h-sm) gap-1 px-[9px]', input: 'text-micro' },
+  md: { host: 'h-[42px] gap-1.5 pr-[10px] pl-[14px]', input: 'font-ui text-small' },
 };
 
 /** Search box with the magnifier and a keyboard hint ("/"). Emits `submitted` on Enter. */

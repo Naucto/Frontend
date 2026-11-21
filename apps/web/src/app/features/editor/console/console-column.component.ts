@@ -108,10 +108,10 @@ export class ConsoleColumnComponent {
     {
       value: 'console',
       label: this.transloco.translate('editor.console'),
-      icon: 'command' as const,
+      mark: 'prompt' as const,
       badge: this.errorCount() || undefined,
     },
-    { value: 'perf', label: this.transloco.translate('editor.perf'), icon: 'chart' as const },
+    { value: 'perf', label: this.transloco.translate('editor.perf'), mark: 'chart' as const },
   ]);
 
   get runtime(): GameScreenComponent['runtime'] {
