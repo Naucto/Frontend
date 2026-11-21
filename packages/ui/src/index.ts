@@ -69,6 +69,7 @@ export * from './components/tool-group.component';
 export * from './components/tooltip.directive';
 export * from './components/transport.component';
 export * from './format';
+export * from './icons/glyph-path';
 export * from './icons/glyphs';
 export * from './icons/rendering';
 export * from './motion';
