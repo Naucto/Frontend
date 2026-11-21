@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 
 import { ButtonDirective } from './button.directive';
-import { IconComponent } from './icon.component';
+import { MarkComponent } from './mark.component';
 import { ReadoutComponent } from './readout.component';
 
 /**
@@ -17,7 +17,7 @@ import { ReadoutComponent } from './readout.component';
  */
 @Component({
   selector: 'nc-share-code',
-  imports: [ButtonDirective, IconComponent, ReadoutComponent],
+  imports: [ButtonDirective, MarkComponent, ReadoutComponent],
   templateUrl: './share-code.component.html',
   host: { class: 'block' },
   changeDetection: ChangeDetectionStrategy.OnPush,

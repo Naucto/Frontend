@@ -5,7 +5,7 @@ import {
   computed,
   input,
 } from '@angular/core';
-import { glyphRendering, MARK_PATHS } from '@naucto/ui';
+import { glyphPath, glyphRendering, MARK_GLYPHS, type MarkName } from '@naucto/ui';
 
 import type { PlayerTone } from '../input/player-tone';
 
@@ -95,6 +95,8 @@ const BUTTON = [9, 9] as const;
 const PILL = [9, 5] as const;
 const SHOULDER = [11, 7] as const;
 const ARROW_AT = at(2, 2);
+/** A mark of the kit, in the pad's own unit: the cell. */
+const arrow = (name: MarkName): string => glyphPath(MARK_GLYPHS[name], 5, 1);
 const LETTER_AT = at(3, 2);
 
 /** Drawn first: the body's top edge closes them. */
@@ -110,10 +112,10 @@ const SHOULDERS: readonly Part[] = [
  * bottom, B on the right, X on the left, Y at the top.
  */
 const BUTTONS: readonly Part[] = [
-  part('dpad-up', 13, 9, BUTTON, MARK_PATHS['arrow-up'], ARROW_AT),
-  part('dpad-left', 3, 19, BUTTON, MARK_PATHS['arrow-left'], ARROW_AT),
-  part('dpad-right', 23, 19, BUTTON, MARK_PATHS['arrow-right'], ARROW_AT),
-  part('dpad-down', 13, 29, BUTTON, MARK_PATHS['arrow-down'], ARROW_AT),
+  part('dpad-up', 13, 9, BUTTON, arrow('arrow-up'), ARROW_AT),
+  part('dpad-left', 3, 19, BUTTON, arrow('arrow-left'), ARROW_AT),
+  part('dpad-right', 23, 19, BUTTON, arrow('arrow-right'), ARROW_AT),
+  part('dpad-down', 13, 29, BUTTON, arrow('arrow-down'), ARROW_AT),
   part('select', 36, 12, PILL),
   part('start', 48, 12, PILL),
   part('y', 71, 9, BUTTON, word('Y'), LETTER_AT),

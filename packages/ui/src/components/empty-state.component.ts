@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
-import { type IconName } from '../icons/paths';
+import { type IconName } from '../icons/glyphs';
 import { IconComponent } from './icon.component';
 
 /** Centered empty state: an icon in its well, a title, a hint, and the call to action under them. */

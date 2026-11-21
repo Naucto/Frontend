@@ -70,7 +70,7 @@
           <a
             [routerLink]="['/play', release.forkedFromId]"
             class="mt-1 inline-flex items-center gap-0.5 text-meta text-ink-3 hover:text-ink">
-            <nc-icon name="git-branch" [size]="24" />
+            <nc-icon name="git-branch" />
             @if (parent.data(); as parentRelease) {
               {{ t('game.forkedFromNamed') }}
               <span class="text-gold-ink">{{ parentRelease.name }}</span>
@@ -105,7 +105,9 @@
             size="bar"
             [variant]="likes.data()?.liked ? 'run' : 'secondary'"
             (click)="toggleLike()">
-            <nc-icon name="heart" [size]="24" [class.like-pop]="justLiked()" />
+            <nc-icon
+              [name]="likes.data()?.liked ? 'heart-filled' : 'heart'"
+              [class.like-pop]="justLiked()" />
             {{ count(likes.data()?.likes ?? release.likes) }} {{ t('game.likes') }}
           </button>
           <button
@@ -114,13 +116,13 @@
             variant="secondary"
             (click)="remix(release.id)"
             [disabled]="fork.isPending()">
-            <nc-icon name="git-branch" [size]="24" />
+            <nc-icon name="git-branch" />
             {{ t('game.remix') }}
           </button>
           <nc-add-to-collection class="col-span-2" [projectId]="release.id" />
           @if (canEdit()) {
             <a ncButton variant="secondary" class="col-span-2" [routerLink]="['/edit', release.id]">
-              <nc-icon name="edit" [size]="24" />
+              <nc-icon name="edit" />
               {{ t('game.edit') }}
             </a>
           }

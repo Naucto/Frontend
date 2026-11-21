@@ -7,8 +7,8 @@ import {
   viewChildren,
 } from '@angular/core';
 
-import { type IconName } from '../icons/paths';
-import { IconComponent, type IconSize } from './icon.component';
+import { type IconName } from '../icons/glyphs';
+import { IconComponent } from './icon.component';
 import { CELL, CELL_ON, joined } from './selection-styles';
 import { TooltipDirective } from './tooltip.directive';
 
@@ -34,11 +34,6 @@ export class ToolGroupComponent<T extends string = string> {
   readonly items = input.required<readonly ToolItem<T>[]>();
   readonly value = model<T>();
   readonly label = input('Tools');
-  /**
-   * The glyph step. An attribute on an SVG, not a length, and the legal steps are halves and
-   * doubles of the 24 grid the glyphs are drawn on.
-   */
-  readonly iconSize = input<IconSize>(24);
 
   protected toolClass(first: boolean, last: boolean): string {
     return `${TOOL} ${joined(first, last)}`;

@@ -14,7 +14,7 @@
         ? t('notifications.titleUnread', { n: store.unread() })
         : t('notifications.title')
     ">
-    <nc-icon name="notification" />
+    <nc-icon [name]="store.unread() > 0 ? 'notification-filled' : 'notification'" [size]="24" />
     @if (store.unread() > 0) {
       <span
         class="pointer-events-none absolute top-0 right-0 z-1 inline-flex h-[18px] min-w-[18px] items-center justify-center bg-hot px-[3px] font-mono text-label leading-none text-on-hot"

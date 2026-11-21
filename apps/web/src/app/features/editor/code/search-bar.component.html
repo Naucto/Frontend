@@ -8,7 +8,7 @@
       [attr.aria-label]="t('editor.code.replaceMode')"
       [attr.aria-expanded]="replacing()"
       (click)="replacing.set(!replacing())">
-      <nc-icon [name]="replacing() ? 'chevron-down' : 'chevron-right'" [size]="24" />
+      <nc-mark [name]="replacing() ? 'chevron-down' : 'chevron-right'" />
     </button>
     <input
       #field
@@ -32,7 +32,7 @@
       [attr.aria-label]="t('editor.code.previous')"
       (mousedown)="$event.preventDefault()"
       (click)="previous.emit()">
-      <nc-icon name="chevron-up" [size]="24" />
+      <nc-mark name="chevron-up" />
     </button>
     <button
       ncButton
@@ -42,7 +42,7 @@
       [attr.aria-label]="t('editor.code.next')"
       (mousedown)="$event.preventDefault()"
       (click)="next.emit()">
-      <nc-icon name="chevron-down" [size]="24" />
+      <nc-mark name="chevron-down" />
     </button>
     <button
       ncButton
@@ -52,7 +52,7 @@
       [attr.aria-label]="t('editor.code.selectAll')"
       (mousedown)="$event.preventDefault()"
       (click)="selectAll.emit()">
-      <nc-icon name="list" [size]="24" />
+      <nc-mark name="list" />
     </button>
     <nc-checkbox [(checked)]="caseSensitive">{{ t('editor.code.matchCase') }}</nc-checkbox>
     <nc-checkbox [(checked)]="regexp">{{ t('editor.code.regexp') }}</nc-checkbox>
@@ -65,7 +65,7 @@
       iconOnly
       [attr.aria-label]="t('editor.code.closeSearch')"
       (click)="closed.emit()">
-      <nc-icon name="close" [size]="24" />
+      <nc-mark name="close" />
     </button>
   </div>
 
@@ -91,7 +91,7 @@
         [attr.aria-label]="t('editor.code.replaceOne')"
         (mousedown)="$event.preventDefault()"
         (click)="replaceOne.emit()">
-        <nc-icon name="edit" [size]="24" />
+        <nc-mark name="edit" />
       </button>
       <button
         ncButton
@@ -101,7 +101,7 @@
         [attr.aria-label]="t('editor.code.replaceAll')"
         (mousedown)="$event.preventDefault()"
         (click)="replaceEvery.emit()">
-        <nc-icon name="repeat" [size]="24" />
+        <nc-mark name="repeat" />
       </button>
     </div>
   }

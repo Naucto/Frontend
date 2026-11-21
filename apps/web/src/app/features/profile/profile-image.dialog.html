@@ -62,7 +62,7 @@
           type="button"
           class="flex h-full w-full flex-col items-center justify-center gap-1 text-ink-3 hover:text-ink-2"
           (click)="file().nativeElement.click()">
-          <nc-icon name="image" [size]="24" />
+          <nc-icon name="image" />
           <span class="text-body">{{ t('profile.image.drop') }}</span>
           <span class="flex items-center gap-0.5">
             @for (format of formats; track format) {

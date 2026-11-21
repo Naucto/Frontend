@@ -1,4 +1,9 @@
-<nc-icon name="search" [size]="chrome().glyph" [class]="chrome().icon" />
+@if (size() === 'md') {
+  <!-- The well sinks its content a pixel; the glyph is set back on the middle of the whole box. -->
+  <nc-icon name="search" class="-mt-[3px]" />
+} @else {
+  <nc-mark name="search" />
+}
 <input
   #input
   type="search"

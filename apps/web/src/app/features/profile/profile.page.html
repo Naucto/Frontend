@@ -19,7 +19,7 @@
           [attr.aria-label]="t('profile.image.banner')"
           (click)="editImage('banner')">
           @if (!profile.backgroundImageUrl) {
-            <nc-icon name="image" [size]="24" />
+            <nc-icon name="image" />
             <span class="label">{{ t('profile.setBanner') }}</span>
           }
         </button>
@@ -160,7 +160,7 @@
           <nc-stat icon="grid" [value]="counts().games" [label]="t('profile.games')" compact />
           <nc-stat icon="play" [value]="counts().plays" [label]="t('profile.plays')" compact />
           <nc-stat
-            icon="heart"
+            icon="heart-filled"
             [value]="counts().likes"
             [label]="t('profile.likes')"
             tone="hot"
@@ -183,7 +183,7 @@
               size="sm"
               (click)="addFriend(profile.id)"
               [disabled]="adding.isPending() || friendship() === 'PENDING'">
-              <nc-icon name="plus" [size]="24" />
+              <nc-mark name="plus" />
               {{ friendship() === 'PENDING' ? t('profile.pending') : t('profile.addFriend') }}
             </button>
           }
@@ -219,7 +219,7 @@
         [hint]="t('profile.empty.' + shelf() + 'Hint')">
         @if (isSelf()) {
           <a ncButton variant="primary" routerLink="/games/new">
-            <nc-icon name="plus" [size]="24" />
+            <nc-icon name="plus" />
             {{ t('nav.newGame') }}
           </a>
         }

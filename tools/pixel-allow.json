@@ -7,17 +7,8 @@
     "apps/web/src/app/features/editor/sound/piano-keys.component.html": {
       "border": 1
     },
-    "apps/web/src/app/shared/game-card/floppy.component.html": {
-      "icon-scale": 2
-    },
     "apps/web/src/styles.css": {
       "stroke-width": 3
-    },
-    "packages/ui/src/components/edge-handle.component.html": {
-      "icon-scale": 1
-    },
-    "packages/ui/src/components/share-code.component.html": {
-      "icon-scale": 2
     }
   }
 }

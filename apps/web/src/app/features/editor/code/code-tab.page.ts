@@ -14,6 +14,7 @@ import {
   ButtonDirective,
   DialogService,
   IconComponent,
+  MarkComponent,
   type TabItem,
   TabsComponent,
 } from '@naucto/ui';
@@ -41,6 +42,7 @@ import { localSignatures } from './signature-help';
     TranslocoDirective,
     ButtonDirective,
     IconComponent,
+    MarkComponent,
     SearchBarComponent,
     CodeEditorComponent,
   ],

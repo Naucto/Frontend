@@ -1,7 +1,13 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
-import { ButtonDirective, DialogShellComponent, IconComponent, NoticeComponent } from '@naucto/ui';
+import {
+  ButtonDirective,
+  DialogShellComponent,
+  IconComponent,
+  MarkComponent,
+  NoticeComponent,
+} from '@naucto/ui';
 
 /** The community server people are invited to after sending feedback. */
 export const DISCORD_INVITE = 'https://discord.gg/4fxDFCNrqW';
@@ -18,6 +24,7 @@ export type ThanksData =
     ButtonDirective,
     DialogShellComponent,
     IconComponent,
+    MarkComponent,
     NoticeComponent,
   ],
   templateUrl: './thanks.dialog.html',

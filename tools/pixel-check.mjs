@@ -2,8 +2,10 @@
 /**
  * Fails on what the pixel kit has no place for: a rounded corner, a stroke that is not a whole
  * number of 3px pixels, the density tokens the size ladder replaced, a "·" set between two
- * things on screen (in the catalogue, a template or a string; see `separators.mjs`), and an
- * `nc-icon` shrunk to 12, where the glyph's own pixel is halved.
+ * things on screen (in the catalogue, a template or a string; see `separators.mjs`), an
+ * `nc-icon` at a size it has no drawing for (18 and 24 are the two it is drawn at, and its `svg`
+ * is never resized from outside; one icon is `doubled`, and only where `DOUBLED_ICON_HOME`
+ * says), and a glyph too large for the button it is written in.
  *
  * `tools/pixel-allow.json` lists what each file still owes, rule by rule. A file may owe less than
  * its entry says, never more, and a file with no entry owes nothing. `--update` rewrites the entries
@@ -12,7 +14,7 @@
 import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 
-import { separators } from './separators.mjs';
+import { separators, withoutMarkupComments } from './separators.mjs';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const ALLOW = join(ROOT, 'tools/pixel-allow.json');
@@ -50,7 +52,78 @@ const STROKE_WIDTH = /stroke-width\s*(?:=\s*["']|:\s*)(\d+(?:\.\d+)?)/g;
 const DENSITY =
   /nc-density-(?:small|big)|--nc-density|--nc-control-(?:text|leading)|--nc-bar-h|--nc-control-h(?:-xs|-sm)?|--nc-tool-w|--nc-transport-h|(?<![\w-])control-type(?![\w-])/g;
 
-const SHRUNK_ICON = /<nc-icon\b[^>]*\[size\]="12"/g;
+const ICON_SIZE = /<nc-icon\b[^>]*\[size\]="(\d+)"/g;
+const ICON_RESIZED = /<nc-icon\b[^>]*\[&>svg\]:(?:size|w|h)-/g;
+/**
+ * The one icon drawn at twice its size: the Play mark over a game's idle screen, where a picture
+ * as wide as a page makes 24 a speck. Two kit pixels a cell are still whole pixels; anywhere else
+ * `doubled` is a resize.
+ */
+const ICON_DOUBLED = /<nc-icon\b[^>]*\bdoubled\b/g;
+const DOUBLED_ICON_HOME = 'apps/web/src/app/shared/game-screen/game-screen.component.html';
+const ICON_RESIZED_CSS = /nc-icon\s*>?\s*svg\s*\{[^}]*\b(?:width|height|scale|zoom)\s*:/g;
+
+/**
+ * The height of each step of the button ladder. A raised frame takes 3px above and 6px below, and
+ * a glyph keeps one pixel clear of it on every side: a button holds a glyph up to its height less
+ * 15, which is a mark at 30, an icon of 18 at 36 and one of 24 from 40.
+ */
+const BUTTON_HEIGHT = {
+  xs: 28,
+  sm: 30,
+  tool: 30,
+  md: 36,
+  strip: 36,
+  lg: 40,
+  xl: 44,
+  bar: 48,
+  hero: 56,
+};
+const FRAME_AND_CLEARANCE = 15;
+const TAG = /<(\/?)([a-zA-Z][\w-]*)((?:"[^"]*"|'[^']*'|[^'">])*)>/g;
+const VOID = new Set(['input', 'img', 'br', 'hr', 'source', 'path', 'rect', 'circle']);
+
+/**
+ * The glyphs of a template that leave less than a pixel between their box and the frame of the
+ * `ncButton` or `nc-toggle-button` they are written in. Only a size written as a word is read: a
+ * bound one is the caller's to keep, and a kit component that frames its own glyph is measured
+ * where it is drawn, not here.
+ */
+function misfits(template) {
+  const open = [];
+  let total = 0;
+  for (const [, closing, tag, attributes] of withoutMarkupComments(template).matchAll(TAG)) {
+    if (closing) {
+      const at = open.findLastIndex((element) => element.tag === tag);
+      if (at >= 0) {
+        open.length = at;
+      }
+      continue;
+    }
+    const bound = /\[size\]="(\d+)"/.exec(attributes)?.[1];
+    const glyph =
+      tag === 'nc-mark'
+        ? 15
+        : tag === 'nc-icon' && (bound || !attributes.includes('[size]'))
+          ? Number(bound ?? 18)
+          : undefined;
+    const room = open.findLast((element) => element.room !== undefined)?.room;
+    if (glyph && room && glyph > room) {
+      total += 1;
+    }
+    if (!attributes.endsWith('/') && !VOID.has(tag)) {
+      const size = /(?<![\w[])size="(\w+)"/.exec(attributes)?.[1];
+      const height =
+        tag === 'nc-toggle-button'
+          ? BUTTON_HEIGHT[size === 'strip' ? 'strip' : 'sm']
+          : /(?<![\w-])ncButton(?![\w-])/.test(attributes) && !attributes.includes('[size]')
+            ? BUTTON_HEIGHT[size ?? 'md']
+            : undefined;
+      open.push({ tag, room: height && height - FRAME_AND_CLEARANCE });
+    }
+  }
+  return total;
+}
 
 /** Class names only mean something inside a string, so prose that says "border" is not counted. */
 function strings(line) {
@@ -71,14 +144,22 @@ function violations(path, text) {
     density: 0,
     separator: 0,
     'icon-scale': 0,
+    'icon-fit': 0,
   };
   found.separator = separators(path, text);
-  found['icon-scale'] = count(text, SHRUNK_ICON);
+  found['icon-scale'] =
+    count(text, ICON_SIZE, ([, size]) => size !== '18' && size !== '24') +
+    count(text, ICON_RESIZED) +
+    (path.endsWith(DOUBLED_ICON_HOME) ? 0 : count(text, ICON_DOUBLED));
   found.density = count(text, DENSITY);
   found['stroke-width'] = count(text, STROKE_WIDTH, ([, width]) => offPixel(Number(width)));
+  if (path.endsWith('.html')) {
+    found['icon-fit'] = misfits(text);
+  }
   if (path.endsWith('.css')) {
     found.border = count(text, CSS_STROKE, ([, width]) => offPixel(Number(width)));
     found.rounded = count(text, /border-radius\s*:/g);
+    found['icon-scale'] += count(text, ICON_RESIZED_CSS);
   }
   for (const line of text.split('\n')) {
     for (const literal of strings(line)) {
@@ -150,7 +231,9 @@ if (over.length > 0) {
     '\nrounded: corners are stepped by the bevel utilities. border: a stroke is 3px or a multiple' +
       ' (border-3, or a bevel). density: use the --nc-h-* ladder. separator: no "·" between two' +
       ' things; a chip, a label and its value, or two elements a gap apart. icon-scale: an icon' +
-      ' is 24 or 48; a smaller mark is an nc-mark, drawn for its size.',
+      ' is 18 beside words or 24 standing alone; a smaller mark is an nc-mark, drawn for its size.' +
+      " icon-fit: a glyph keeps one pixel clear of its button's frame; a button of 36 holds an" +
+      ' icon of 18, one of 40 or more an icon of 24, one of 30 a mark, one of 28 none.',
   );
   process.exit(1);
 }

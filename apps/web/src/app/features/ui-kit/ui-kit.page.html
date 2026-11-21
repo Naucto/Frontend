@@ -172,19 +172,26 @@
       </div>
     </div>
     <div class="flat-lg bevel-fill-panel grid gap-1.5 p-2.5">
-      <div class="label">Icons: 24 on a 24 grid</div>
-      <div class="flex flex-wrap gap-1 text-ink-2">
+      <div class="label">Icons: 18 beside words, 24 standing alone</div>
+      <div
+        class="grid grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-x-2 gap-y-[6px] text-ink-2"
+        data-testid="icons">
         @for (icon of icons; track icon) {
-          <span class="flex h-5 w-5 items-center justify-center" [title]="icon">
+          <span class="flex h-[30px] items-center gap-[10px]">
             <nc-icon [name]="icon" />
+            <nc-icon [name]="icon" [size]="24" />
+            <span class="truncate text-meta text-ink-3">{{ icon }}</span>
           </span>
         }
       </div>
       <div class="label">Marks: 15, five kit pixels across</div>
-      <div class="flex flex-wrap gap-1 text-ink-2" data-testid="marks">
+      <div
+        class="grid grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-x-2 gap-y-[6px] text-ink-2"
+        data-testid="marks">
         @for (mark of marks; track mark) {
-          <span class="flex h-5 w-5 items-center justify-center" [title]="mark">
+          <span class="flex h-[24px] items-center gap-[10px]">
             <nc-mark [name]="mark" />
+            <span class="truncate text-meta text-ink-3">{{ mark }}</span>
           </span>
         }
       </div>
@@ -221,10 +228,10 @@
         <button ncButton variant="primary" size="hero">hero 56</button>
         <span class="h-(--nc-h-lg) w-[3px] bg-line"></span>
         <button ncButton size="lg" iconOnly aria-label="Settings">
-          <nc-icon name="sliders" />
+          <nc-icon name="sliders" [size]="24" />
         </button>
         <button ncButton variant="ghost" size="lg" iconOnly aria-label="Close">
-          <nc-icon name="close" />
+          <nc-icon name="close" [size]="24" />
         </button>
         <button
           ncButton
@@ -241,6 +248,55 @@
         </button>
         <button ncButton size="tool">tool → sm</button>
         <button ncButton size="strip">strip → md</button>
+      </div>
+      <div class="grid gap-[10px]">
+        <span class="label">
+          A glyph keeps a pixel clear of its frame: a mark at 30, an icon of 18 at 36, of 24 from 40
+        </span>
+        <div class="flex flex-wrap items-end gap-[14px]" data-testid="glyph-ladder">
+          <button ncButton size="sm">
+            <nc-mark name="download" />
+            sm
+          </button>
+          <button ncButton size="sm" iconOnly aria-label="sm, glyph alone">
+            <nc-mark name="download" />
+          </button>
+          <button ncButton size="md">
+            <nc-icon name="download" />
+            md
+          </button>
+          <button ncButton size="md" iconOnly aria-label="md, glyph alone">
+            <nc-icon name="download" />
+          </button>
+          <button ncButton size="lg">
+            <nc-icon name="download" />
+            lg
+          </button>
+          <button ncButton size="lg" iconOnly aria-label="lg, glyph alone">
+            <nc-icon name="download" [size]="24" />
+          </button>
+          <button ncButton size="xl">
+            <nc-icon name="download" />
+            xl
+          </button>
+          <button ncButton size="xl" iconOnly aria-label="xl, glyph alone">
+            <nc-icon name="download" [size]="24" />
+          </button>
+          <button ncButton size="bar">
+            <nc-icon name="download" />
+            bar
+          </button>
+          <button ncButton size="bar" iconOnly aria-label="bar, glyph alone">
+            <nc-icon name="download" [size]="24" />
+          </button>
+          <button ncButton variant="primary" size="hero">
+            <nc-icon name="download" />
+            hero
+          </button>
+          <button ncButton variant="primary" size="hero" iconOnly aria-label="hero, glyph alone">
+            <nc-icon name="download" [size]="24" />
+          </button>
+        </div>
       </div>
       <div class="flex flex-wrap items-center gap-3">
         <span class="label">Text link: active ink and a pixel arrow</span>
@@ -396,11 +452,11 @@
           (paused)="playing.set(false)"
           (stopped)="playing.set(false)" />
         <nc-toggle-button [(checked)]="grid">
-          <nc-icon name="grid" [size]="24" />
+          <nc-mark name="grid" />
           Grid
         </nc-toggle-button>
         <nc-toggle-button [(checked)]="onion" accent="jade" size="strip">
-          <nc-icon name="duplicate" [size]="24" />
+          <nc-icon name="duplicate" />
           Onion
         </nc-toggle-button>
         <nc-toggle-button disabled>Disabled</nc-toggle-button>
@@ -710,7 +766,7 @@
             </nc-panel-column>
             <nc-panel-column primary title="Console">
               <nc-edge-handle
-                icon="prev"
+                mark="chevron-left"
                 label="Fold the column away"
                 (pressed)="regionOpen.set(!regionOpen())" />
               <p class="p-1.5 text-meta text-ink-3">The grip folds the other one out.</p>

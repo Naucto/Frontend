@@ -2,7 +2,7 @@
   @for (device of devices(); track device.kind) {
     <span class="flex flex-wrap items-center gap-0.5">
       @if (device.kind === 'pad') {
-        <nc-icon name="gamepad" [size]="24" class="text-ink-3" />
+        <nc-icon name="gamepad" class="text-ink-3" />
         <span class="sr-only">{{ t('input.gamepad') }}</span>
       } @else if (twoKeyboards()) {
         <span class="label text-ink-3">

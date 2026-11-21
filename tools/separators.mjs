@@ -75,7 +75,7 @@ function literals(source) {
 }
 
 /** Removing a comment can join the two halves of another, so it is done until none is left. */
-function withoutMarkupComments(text) {
+export function withoutMarkupComments(text) {
   let stripped = text;
   let before;
   do {

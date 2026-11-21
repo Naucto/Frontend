@@ -170,3 +170,33 @@ test('taking a seat on a session disk stays on the page and lands a sticker', as
   await expect(session.locator('.action')).toHaveCount(0);
   await expect(session.locator('.sticker.away .seat')).toHaveCount(1);
 });
+
+/**
+ * The room between a glyph's box and the inner edge of the frame it stands in, the least of the
+ * four sides, for every button of the ladder. A raised frame is 3px above and at the sides, and
+ * 6px below with its skirt.
+ */
+test('a glyph keeps one pixel clear of the frame of its button, at every height', async ({
+  page,
+}) => {
+  await page.goto('/ui-kit');
+  const ladder = page.getByTestId('glyph-ladder');
+  await expect(ladder).toBeVisible();
+  const rooms = await ladder.locator('button').evaluateAll((buttons) =>
+    buttons.map((button) => {
+      const frame = button.getBoundingClientRect();
+      const glyph = button.querySelector('svg')?.getBoundingClientRect();
+      return glyph
+        ? Math.min(
+            glyph.top - frame.top - 3,
+            frame.bottom - glyph.bottom - 6,
+            glyph.left - frame.left - 3,
+            frame.right - glyph.right - 3,
+          )
+        : -1;
+    }),
+  );
+
+  expect(rooms).toHaveLength(12);
+  expect(rooms.filter((room) => room < 3)).toEqual([]);
+});

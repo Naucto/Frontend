@@ -1,11 +1,11 @@
 <span class="inline-flex items-start">
   @if (playing()) {
     <button type="button" [class]="first" [attr.aria-label]="pauseLabel()" (click)="paused.emit()">
-      <nc-icon name="pause" [size]="24" />
+      <nc-icon name="pause" />
     </button>
   } @else {
     <button type="button" [class]="first" [attr.aria-label]="playLabel()" (click)="started.emit()">
-      <nc-icon name="play" [size]="24" class="text-hot-ink" />
+      <nc-icon name="play" class="text-hot-ink" />
     </button>
   }
   <button
@@ -14,7 +14,7 @@
     [attr.aria-label]="rewindLabel()"
     [disabled]="!canRewind()"
     (click)="rewound.emit()">
-    <nc-icon name="prev" [size]="24" />
+    <nc-icon name="prev" />
   </button>
   <button
     type="button"
@@ -22,6 +22,6 @@
     [attr.aria-label]="stopLabel()"
     [disabled]="!canStop()"
     (click)="stopped.emit()">
-    <nc-icon name="stop" [size]="24" />
+    <nc-icon name="stop" />
   </button>
 </span>

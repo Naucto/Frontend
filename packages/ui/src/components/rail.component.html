@@ -6,9 +6,7 @@
       [attr.title]="it.label"
       (click)="value.set(it.value)"
       [class]="it.value === value() ? onClass : offClass">
-      <!-- A glyph is drawn on twelve cells of two units, so at 36 a cell is one pixel of the kit:
-           a size the icon's own ladder has no step for. -->
-      <nc-icon [name]="it.icon" [size]="24" class="[&>svg]:size-[36px]" />
+      <nc-icon [name]="it.icon" [size]="24" />
       <span class="font-ui text-label tracking-strip uppercase">{{ it.label }}</span>
     </button>
   }

@@ -10,7 +10,7 @@
     iconOnly
     [attr.aria-label]="t('editor.transform.flipH')"
     (click)="flipH.emit()">
-    <nc-icon name="flip-horizontal" [size]="24" />
+    <nc-mark name="flip-horizontal" />
   </button>
   <button
     ncButton
@@ -19,7 +19,7 @@
     iconOnly
     [attr.aria-label]="t('editor.transform.flipV')"
     (click)="flipV.emit()">
-    <nc-icon name="flip-vertical" [size]="24" />
+    <nc-mark name="flip-vertical" />
   </button>
   <button
     ncButton
@@ -28,9 +28,9 @@
     iconOnly
     [attr.aria-label]="t('editor.transform.rotateCw')"
     (click)="rotateCw.emit()">
-    <nc-icon name="rotate-cw" [size]="24" />
+    <nc-mark name="sync" />
   </button>
-  <!-- Pixelarticons draws one arrow; the other direction is the same glyph mirrored. -->
+  <!-- The set draws one arrow; the other direction is the same glyph mirrored. -->
   <button
     ncButton
     variant="ghost"
@@ -38,6 +38,6 @@
     iconOnly
     [attr.aria-label]="t('editor.transform.rotateCcw')"
     (click)="rotateCcw.emit()">
-    <nc-icon name="rotate-cw" [size]="24" class="-scale-x-100" />
+    <nc-mark name="sync" class="-scale-x-100" />
   </button>
 </div>

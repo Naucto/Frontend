@@ -18,6 +18,7 @@ import {
   DialogService,
   HighlightComponent,
   IconComponent,
+  MarkComponent,
   SearchComponent,
   ToastService,
 } from '@naucto/ui';
@@ -43,6 +44,7 @@ import { DocRequestService } from './doc-request.service';
     TranslocoDirective,
     ButtonDirective,
     IconComponent,
+    MarkComponent,
     SearchComponent,
     ApiCardComponent,
     DocAnchorComponent,

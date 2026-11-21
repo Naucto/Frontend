@@ -5,11 +5,12 @@
       <button
         ncButton
         variant="ghost"
+        size="lg"
         iconOnly
         class="-mr-1"
         [attr.aria-label]="closeLabel()"
         (click)="close()">
-        <nc-icon name="close" />
+        <nc-icon name="close" [size]="24" />
       </button>
     }
   </header>
