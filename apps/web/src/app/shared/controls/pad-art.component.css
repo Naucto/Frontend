@@ -1,0 +1,33 @@
+.edge,
+.hub {
+  fill: var(--color-line-strong);
+}
+.face {
+  fill: var(--color-inset);
+}
+.shell,
+.cap {
+  fill: var(--color-raised);
+}
+.skirt {
+  fill: var(--color-skirt);
+}
+.glyph {
+  fill: var(--color-ink-3);
+}
+
+[data-lit] > .edge,
+[data-lit] > .face,
+[data-lit] > .cap {
+  fill: var(--pad-lit);
+}
+[data-lit] > .glyph {
+  fill: var(--pad-on);
+}
+
+[data-ghost] .edge {
+  fill: var(--color-line);
+}
+[data-ghost] :is(.face, .shell, .cap, .skirt, .hub, .glyph) {
+  fill: none;
+}

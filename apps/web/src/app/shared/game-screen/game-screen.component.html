@@ -122,58 +122,20 @@
           </span>
         </span>
       }
-      <!-- Projected before the spacer: left of the break is what the game runs on, right of it who
-           is running it. -->
+      <!-- Projected before the spacer: left of the break is what the game runs on, right of it
+           what the device plays it with. -->
       <ng-content select="[transport-extra]" />
-      <!-- The seats take what room the row has left and give way whole, last first: a line that
-           wraps, of which only the first row shows. The empty first item is what lets the first
-           seat wrap too. -->
-      <span
-        class="flex h-full min-w-0 flex-1 flex-wrap content-start justify-end gap-x-[inherit] overflow-clip before:content-['']">
-        @for (player of players(); track player.slot) {
-          <span
-            class="flex h-full items-center gap-0.5 font-mono text-label whitespace-nowrap"
-            [class]="player.here ? 'text-ink-3' : 'text-ink-4'">
-            <nc-icon [name]="player.pad ? 'gamepad' : 'keyboard'" [size]="24" />
-            P{{ player.slot }}
-          </span>
-        }
-      </span>
+      <span class="flex-1"></span>
       <button
         ncButton
         variant="ghost"
         size="md"
-        [ncPopover]="pads"
-        popoverAlign="end"
-        (popoverOpenChange)="refreshPads()"
-        [attr.aria-label]="t('game.screen.gamepads')"
-        iconOnly>
-        <nc-icon name="gamepad" [size]="24" />
+        iconOnly
+        aria-haspopup="dialog"
+        [attr.aria-label]="t('game.screen.controls')"
+        (click)="openControls()">
+        <nc-icon name="gear" [size]="24" />
       </button>
-      <ng-template #pads>
-        <nc-popover-panel [title]="t('game.screen.gamepads')" class="w-[280px]">
-          <div class="p-1.5">
-            @for (pad of padList(); track pad.index) {
-              <div class="flex items-center gap-1 py-0.5">
-                <span class="min-w-0 flex-1 truncate text-meta text-ink">{{ pad.id }}</span>
-                @for (slot of [0, 1, 2, 3]; track slot) {
-                  <button
-                    ncButton
-                    size="xs"
-                    type="button"
-                    [pressed]="pad.player === slot"
-                    [attr.aria-pressed]="pad.player === slot"
-                    (click)="assign(pad.index, slot)">
-                    P{{ slot + 1 }}
-                  </button>
-                }
-              </div>
-            } @empty {
-              <p class="text-meta text-ink-3">{{ t('game.screen.noGamepad') }}</p>
-            }
-          </div>
-        </nc-popover-panel>
-      </ng-template>
       <button
         ncButton
         variant="ghost"

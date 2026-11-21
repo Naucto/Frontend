@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { type Locator, type Page, test } from '@playwright/test';
 
 import { mockEditor } from '../editor-mocks';
+import { setGamepads } from '../mocks/gamepads';
 import { shoot } from './frame';
 
 /**
@@ -370,10 +371,14 @@ for (const theme of THEMES) {
     });
 
     test('settings: controls', async ({ page }) => {
+      await setGamepads(page, [
+        { id: 'Xbox Wireless Controller', held: [0, 5], axes: [0.9, -0.8, 0, 0] },
+        { id: 'DualSense Wireless Controller', held: [14] },
+      ]);
       await page.goto('/settings/controls');
-      await page.locator('nc-controls-settings').waitFor();
+      await page.locator('nc-controls nc-pad-art').first().waitFor();
       await page.waitForTimeout(300);
-      await shoot(page, OUT, 'settings-controls', theme, page.locator('nc-controls-settings'));
+      await shoot(page, OUT, 'settings-controls', theme, page.locator('nc-controls'));
     });
   });
 }

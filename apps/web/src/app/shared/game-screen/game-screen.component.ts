@@ -23,14 +23,13 @@ import {
   DialogService,
   ErrorStateComponent,
   IconComponent,
-  PopoverDirective,
-  PopoverPanelComponent,
 } from '@naucto/ui';
 
 import { NetUiBridgeService } from '../../core/net/net-bridge.service';
 import { netPermissionsOf } from '../../core/net/net-permissions';
 import { ThemeService } from '../../core/theme/theme.service';
 import { SignedInAction } from '../auth/signed-in-action';
+import { coarsePointer } from '../input/coarse-pointer';
 import { HostDialogComponent, type HostDialogData } from '../netplay/host.dialog';
 import { JoinDialogComponent } from '../netplay/join.dialog';
 import { RuntimeHostService } from './runtime-host.service';
@@ -46,8 +45,6 @@ import { VirtualPadComponent } from './virtual-pad.component';
     ChipComponent,
     ButtonDirective,
     IconComponent,
-    PopoverDirective,
-    PopoverPanelComponent,
     VirtualPadComponent,
     ErrorStateComponent,
     TranslocoDirective,
@@ -155,20 +152,6 @@ export class GameScreenComponent {
   protected readonly fpsVisible = computed(
     () => this.showFps() && this.theme.showFps() && this.host.state() !== 'idle',
   );
-  /**
-   * The player slots, occupied or not. Never fewer than two, so a game nobody has joined does not
-   * read as single-player; an empty seat takes the pad glyph because the keyboard is the first
-   * player's.
-   */
-  protected readonly players = computed(() => {
-    const pads = this.host.gamepadCount();
-    const taken = Math.max(2, pads > 1 ? pads : 2);
-    return Array.from({ length: taken }, (_, i) => ({
-      slot: i + 1,
-      pad: i === 0 ? pads > 0 : true,
-      here: i === 0 || pads > i,
-    }));
-  });
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
   private readonly frame = viewChild.required<ElementRef<HTMLElement>>('frame');
   private readonly padZone = viewChild<VirtualPadComponent>('padZone');
@@ -178,7 +161,6 @@ export class GameScreenComponent {
    * change, and none on a device with a fine pointer, where the pad is not drawn.
    */
   protected readonly padControls = signal<readonly TouchControl[]>([]);
-  protected readonly padList = signal<{ index: number; id: string; player: number }[]>([]);
 
   constructor() {
     // Also fires when the viewer leaves fullscreen by Escape or the browser's own control, which
@@ -305,13 +287,16 @@ export class GameScreenComponent {
     return this.bridge;
   }
 
-  protected refreshPads(): void {
-    this.padList.set(this.host.gamepads());
-  }
-
-  protected assign(index: number, player: number): void {
-    this.host.assignGamepad(index, player);
-    this.refreshPads();
+  /**
+   * Closing hands the keyboard back to the game: the dialog returns focus to the gear, and the
+   * canvas is what listens.
+   */
+  protected openControls(): void {
+    void import('../controls/controls.dialog').then((loaded) => {
+      this.dialogs.open(loaded.ControlsDialogComponent, { width: '860px' }).closed.subscribe(() => {
+        this.focus();
+      });
+    });
   }
 
   focus(): void {
@@ -350,9 +335,4 @@ export class GameScreenComponent {
       void frame.requestFullscreen();
     }
   }
-}
-
-/** No fine pointer means a touch device — the pad is the only way to play. */
-function coarsePointer(): boolean {
-  return typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
 }
