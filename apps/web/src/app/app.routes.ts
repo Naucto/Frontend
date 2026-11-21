@@ -82,6 +82,16 @@ export const routes: Routes = [
         title: 'New game — Naucto',
       },
       {
+        path: 'collections',
+        loadComponent: () => import('./features/collections/collections.page'),
+        title: 'Collections — Naucto',
+      },
+      {
+        path: 'collections/:id',
+        loadComponent: () => import('./features/collections/collection.page'),
+        title: 'Collection — Naucto',
+      },
+      {
         path: 'learn',
         loadComponent: () => import('./features/learn/learn.page'),
         title: 'Learn — Naucto',

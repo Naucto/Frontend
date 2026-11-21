@@ -1,0 +1,235 @@
+<ng-container *transloco="let t">
+  @if (missing()) {
+    <nc-not-found-page />
+  } @else if (query.isError()) {
+    <div class="flat-lg bevel-fill-panel">
+      <nc-error-state
+        [title]="t('collections.loadFailed')"
+        [retryLabel]="t('game.retry')"
+        (retry)="query.refetch()" />
+    </div>
+  } @else if (query.data(); as collection) {
+    <div class="grid grid-cols-[minmax(0,1fr)] content-start gap-3">
+      <section
+        class="flat-lg bevel-fill-panel grid grid-cols-[minmax(0,1fr)] gap-3 p-2 sm:p-[22px] xl:grid-cols-[minmax(0,1fr)_minmax(0,520px)] xl:items-center">
+        <div class="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-[14px]">
+          <div class="flex flex-wrap items-center gap-[14px]">
+            <span class="text-label tracking-kicker text-gold-ink uppercase">
+              {{ t('collections.one') }}
+            </span>
+            <nc-visibility-chip [visibility]="collection.visibility" />
+          </div>
+          <h1
+            ncFitText
+            class="min-w-0 overflow-hidden font-display text-title whitespace-nowrap text-ink sm:text-display xl:text-[40px] xl:leading-[1.05]">
+            <span class="inline-block origin-left truncate align-top">{{ collection.title }}</span>
+          </h1>
+          @if (collection.description; as description) {
+            <!-- Bound, not interpolated: under whitespace-pre-wrap a template newline renders as
+                 a leading space. -->
+            <p
+              class="max-w-[60ch] text-ui whitespace-pre-wrap wrap-anywhere text-ink-body"
+              [textContent]="description"></p>
+          }
+          <a
+            class="inline-flex items-center gap-1 justify-self-start text-meta text-ink-2 hover:text-ink"
+            [routerLink]="['/u', collection.owner.username]">
+            <nc-user-avatar
+              [name]="collection.owner.username"
+              [userId]="collection.owner.id"
+              [size]="24" />
+            {{ t('hub.by', { name: collection.owner.username }) }}
+          </a>
+          @if (collection.visibility !== 'PRIVATE') {
+            <nc-readout class="max-w-[520px]" [value]="link()">
+              <button
+                ncButton
+                variant="ghost"
+                size="xs"
+                data-testid="copy-link"
+                [copied]="copied()"
+                (click)="copy()">
+                {{ copied() ? t('collections.copied') : t('collections.copyLink') }}
+              </button>
+            </nc-readout>
+          }
+          @if (owned()) {
+            <div class="flex flex-wrap items-center gap-[10px]">
+              <button ncButton size="lg" (click)="edit(collection)">
+                <nc-icon name="edit" />
+                {{ t('collections.edit') }}
+              </button>
+              <button ncButton variant="danger" size="lg" (click)="delete(collection)">
+                <nc-icon name="trash" />
+                {{ t('collections.delete') }}
+              </button>
+            </div>
+          }
+        </div>
+        <div class="relative h-[236px] min-w-0">
+          <span
+            aria-hidden="true"
+            class="flat-sm bevel-fill-inset absolute inset-x-[12px] top-[64px] bottom-0"></span>
+          <span aria-hidden="true" class="absolute inset-x-3 top-[24px] h-[150px]">
+            @for (item of hero().disks; track item.game.id; let place = $index) {
+              <span
+                class="absolute top-0 w-[140px]"
+                [style.left]="item.left"
+                [style.z-index]="place + 1">
+                <nc-floppy
+                  [name]="item.game.name"
+                  [disk]="item.disk"
+                  [cover]="item.game.coverUrl"
+                  [interactive]="false" />
+              </span>
+            }
+            @if (hero().more; as more) {
+              <span
+                class="raised-sm bevel-fill-raised absolute top-0 z-[20] flex h-[143px] w-[140px] flex-col items-center justify-center gap-[6px] text-ink-body"
+                [style.left]="hero().moreLeft">
+                <span
+                  class="inline-flex items-center gap-[6px] font-mono text-display leading-none">
+                  <nc-mark name="plus" />
+                  {{ more }}
+                </span>
+                <span class="text-label tracking-strip text-ink-3 uppercase">
+                  {{ t('hub.collection.more') }}
+                </span>
+              </span>
+            }
+          </span>
+          <span
+            class="raised-lg bevel-fill-raised absolute inset-x-0 bottom-0 z-[30] flex h-[72px] items-center gap-[10px] px-[18px]">
+            <nc-stat
+              icon="save"
+              data-testid="game-count"
+              [value]="games().length"
+              [label]="t('collections.games')" />
+            <span class="flex-1"></span>
+            <span class="label truncate">
+              {{ t('collections.updated', { when: collection.updatedAt | ncRelativeTime }) }}
+            </span>
+          </span>
+        </div>
+      </section>
+
+      @if (owned() && games().length) {
+        <div
+          class="flat-sm bevel-edge-gold bevel-fill-gold-wash sticky top-1 z-[40] flex flex-wrap items-center gap-x-1.5 gap-y-1 px-1.5 py-1">
+          <nc-toggle-button [(checked)]="organizing">
+            {{ t('collections.organize') }}
+          </nc-toggle-button>
+          @if (organizing()) {
+            <nc-help-dot [text]="t('collections.organizeHelp')" />
+            <span class="flex-1"></span>
+            <nc-chip tone="gold" wash>
+              {{ t('collections.selected', { n: picked().size }) }}
+            </nc-chip>
+            <button
+              ncButton
+              variant="danger"
+              size="sm"
+              [disabled]="!picked().size"
+              (click)="remove(picked())">
+              {{ t('collections.remove') }}
+            </button>
+          }
+        </div>
+        <span class="sr-only" aria-live="polite">{{ moved() }}</span>
+      }
+
+      @if (games().length) {
+        <ol
+          cdkDropList
+          cdkDropListOrientation="mixed"
+          data-testid="tray"
+          class="grid grid-cols-2 gap-x-1.5 gap-y-3 sm:grid-cols-[repeat(auto-fill,minmax(190px,1fr))] sm:gap-x-[22px]"
+          [cdkDropListDisabled]="!organizing()"
+          (cdkDropListDropped)="drop($event)">
+          @for (game of games(); track game.id; let place = $index) {
+            <li cdkDrag class="grid min-w-0 content-start gap-1" [class.cursor-grab]="organizing()">
+              <div class="flex h-[24px] items-center gap-[6px]">
+                <span class="font-mono text-label text-ink-3">
+                  {{ (place + 1).toString().padStart(2, '0') }}
+                </span>
+                <span class="flex-1"></span>
+                @if (organizing()) {
+                  <button
+                    ncButton
+                    variant="ghost"
+                    size="xs"
+                    iconOnly
+                    [attr.data-move]="game.id"
+                    [attr.aria-label]="t('collections.moveEarlier', { name: game.name })"
+                    [disabled]="$first"
+                    (click)="step(game.id, -1)">
+                    <nc-mark name="arrow-left" />
+                  </button>
+                  <button
+                    ncButton
+                    variant="ghost"
+                    size="xs"
+                    iconOnly
+                    [attr.data-move]="game.id"
+                    [attr.aria-label]="t('collections.moveLater', { name: game.name })"
+                    [disabled]="$last"
+                    (click)="step(game.id, 1)">
+                    <nc-mark name="arrow-right" />
+                  </button>
+                  <nc-checkbox
+                    [label]="t('collections.select', { name: game.name })"
+                    [checked]="picked().has(game.id)"
+                    (checkedChange)="pick(game.id, $event)" />
+                }
+              </div>
+              <nc-shelf-disk titled [game]="game" [link]="['/play', game.id]" />
+            </li>
+          }
+        </ol>
+      } @else {
+        <div class="flat-lg bevel-fill-panel">
+          @if (owned()) {
+            <nc-empty-state
+              icon="save"
+              [title]="t('collections.emptyOwnerTitle')"
+              [hint]="t('collections.emptyOwnerHint')">
+              <a ncButton variant="primary" size="lg" routerLink="/hub">
+                {{ t('collections.browse') }}
+              </a>
+            </nc-empty-state>
+          } @else {
+            <nc-empty-state icon="save" [title]="t('collections.emptyTitle')">
+              <a ncButton size="lg" routerLink="/collections">{{ t('collections.seeOthers') }}</a>
+            </nc-empty-state>
+          }
+        </div>
+      }
+
+      @if (collection.unavailableGameIds.length) {
+        <section class="grid gap-1.5" aria-labelledby="collection-unavailable">
+          <div class="flex items-center gap-[10px]">
+            <h2 id="collection-unavailable" class="label">{{ t('collections.unavailable') }}</h2>
+            <nc-chip>{{ collection.unavailableGameIds.length }}</nc-chip>
+          </div>
+          <ul
+            class="grid grid-cols-2 gap-x-1.5 gap-y-3 sm:grid-cols-[repeat(auto-fill,minmax(190px,1fr))] sm:gap-x-[22px]">
+            @for (game of collection.unavailableGameIds; track game) {
+              <li class="grid min-w-0 content-start gap-1">
+                <span
+                  role="img"
+                  class="no-cover block"
+                  [style.aspect-ratio]="DISK_RATIO"
+                  [attr.aria-label]="t('collections.unavailableGame')"></span>
+                <button ncButton variant="danger" size="sm" (click)="remove([game])">
+                  {{ t('collections.remove') }}
+                </button>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+    </div>
+  } @else {
+    <nc-skeleton height="320px" />
+  }
+</ng-container>
