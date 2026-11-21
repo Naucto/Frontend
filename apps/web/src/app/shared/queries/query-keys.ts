@@ -3,7 +3,6 @@ export const qk = {
   releasesAll: () => ['releases'] as const,
   releases: (params: Record<string, unknown>) => ['releases', params] as const,
   release: (id: number) => ['release', id] as const,
-  featuredRelease: () => ['releases', 'featured'] as const,
   releaseImage: (id: number) => ['release', id, 'image'] as const,
   releaseContentUrl: (id: number) => ['release', id, 'content-url'] as const,
   likeStatus: (id: number) => ['release', id, 'like'] as const,
