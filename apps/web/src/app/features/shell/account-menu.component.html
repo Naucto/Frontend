@@ -1,15 +1,24 @@
 <ng-container *transloco="let t">
+  <!-- While the panel is out the avatar stands pressed, ringed in gold. -->
   <button
     type="button"
     [ncPopover]="menu"
     popoverAlign="end"
     [(popoverOpen)]="open"
-    class="flex cursor-pointer items-center"
+    class="group flex cursor-pointer items-center"
     [attr.aria-label]="t('account.menu')">
-    <nc-avatar [name]="auth.displayName()" [src]="avatar()" colour="neutral" [size]="40" />
+    <nc-avatar
+      class="group-hover:bevel-edge-gold group-aria-expanded:translate-y-[3px] group-aria-expanded:bevel-edge-gold"
+      colour="neutral"
+      [name]="auth.displayName()"
+      [src]="avatar()"
+      [size]="40" />
   </button>
   <ng-template #menu>
-    <nc-popover-panel class="w-[320px] max-w-[calc(100vw-28px)]">
+    <nc-popover-panel
+      class="w-[320px] max-w-[calc(100vw-28px)] animate-rise"
+      [title]="t('account.menu')"
+      [header]="false">
       <div class="flex items-center gap-[12px] p-[14px]">
         <nc-avatar [name]="auth.displayName()" [src]="avatar()" [size]="40" />
         <div class="grid min-w-0 gap-[2px]">
@@ -24,57 +33,26 @@
           </div>
         </div>
       </div>
-      <!-- Menu rows: a button with no frame until it is pointed at, its words set from the left. -->
       <div class="grid gap-[3px] px-[6px] pb-[6px]">
         @if (auth.user()?.username; as username) {
-          <a
-            ncButton
-            variant="ghost"
-            size="lg"
-            class="justify-start! px-[10px]!"
-            [routerLink]="['/u', username]"
-            (click)="open.set(false)">
+          <a ncOption shape="menu" [routerLink]="['/u', username]" (click)="open.set(false)">
             <nc-icon name="user" />
             {{ t('account.profile') }}
           </a>
         }
-        <a
-          ncButton
-          variant="ghost"
-          size="lg"
-          class="justify-start! px-[10px]!"
-          routerLink="/settings"
-          (click)="open.set(false)">
+        <a ncOption shape="menu" routerLink="/settings" (click)="open.set(false)">
           <nc-icon name="sliders" />
           {{ t('account.settings') }}
         </a>
-        <button
-          ncButton
-          variant="ghost"
-          size="lg"
-          type="button"
-          class="justify-start! px-[10px]!"
-          (click)="rate()">
+        <button ncOption shape="menu" type="button" (click)="rate()">
           <nc-icon name="message" />
           {{ t('feedback.rating.menu') }}
         </button>
-        <button
-          ncButton
-          variant="ghost"
-          size="lg"
-          type="button"
-          class="justify-start! px-[10px]!"
-          (click)="reportBug()">
+        <button ncOption shape="menu" type="button" (click)="reportBug()">
           <nc-icon name="bug" />
           {{ t('feedback.bug.title') }}
         </button>
-        <button
-          ncButton
-          variant="ghost"
-          size="lg"
-          type="button"
-          class="justify-start! px-[10px]!"
-          (click)="logout()">
+        <button ncOption shape="menu" type="button" (click)="logout()">
           <nc-icon name="logout" />
           {{ t('account.signOut') }}
         </button>
