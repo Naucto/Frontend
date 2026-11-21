@@ -47,6 +47,7 @@ import {
   injectToggleLike,
 } from '../../shared/queries/releases.queries';
 import { UserAvatarComponent } from '../../shared/user-avatar.component';
+import { AddToCollectionComponent } from './add-to-collection.component';
 import { CommentsComponent } from './comments/comments.component';
 import { HowToPlayComponent } from './how-to-play.component';
 import { PlayTrackingDirective } from './play-tracking.directive';
@@ -92,6 +93,7 @@ function topRelated(
     HowToPlayComponent,
     UserAvatarComponent,
     PlayTrackingDirective,
+    AddToCollectionComponent,
   ],
   templateUrl: './game.page.html',
   styles: `

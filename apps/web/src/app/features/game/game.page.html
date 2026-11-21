@@ -102,6 +102,7 @@
             <nc-icon name="git-branch" [size]="24" />
             {{ t('game.remix') }}
           </button>
+          <nc-add-to-collection class="col-span-2" [projectId]="release.id" />
           @if (canEdit()) {
             <a ncButton variant="secondary" class="col-span-2" [routerLink]="['/edit', release.id]">
               <nc-icon name="edit" [size]="24" />
