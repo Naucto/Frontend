@@ -552,6 +552,92 @@
     </div>
   </section>
 
+  <section id="table" class="grid scroll-mt-[80px] gap-2.5">
+    <div class="flex items-baseline gap-2">
+      <h2 class="font-display text-display text-ink">Table</h2>
+      <span class="text-meta text-ink-3">head row, rows named by their first cell, bands</span>
+    </div>
+    <div class="flat-lg bevel-fill-panel grid items-start gap-[22px] p-[22px] lg:grid-cols-2">
+      <table ncTable>
+        <caption>On the panel ground</caption>
+        <thead>
+          <tr>
+            <th scope="col">Action</th>
+            <th scope="col" class="w-0">Keys</th>
+            <th scope="col" class="w-0">Pad</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of tableActions; track row.name) {
+            <tr>
+              <th scope="row">
+                {{ row.name }}
+                @if (row.hint) {
+                  <small>{{ row.hint }}</small>
+                }
+              </th>
+              <td>
+                <span class="flex items-center gap-0.5 whitespace-nowrap">
+                  <nc-keycap>{{ row.key }}</nc-keycap>
+                  @if (row.arrow; as arrow) {
+                    <span class="text-meta text-ink-3">or</span>
+                    <nc-keycap>
+                      <nc-mark [name]="arrow" />
+                    </nc-keycap>
+                  }
+                </span>
+              </td>
+              <td>
+                <nc-keycap>{{ row.pad }}</nc-keycap>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      <div class="flat-sm bevel-fill-inset p-2">
+        <table ncTable>
+          <caption>On the inset ground, holding controls</caption>
+          <thead>
+            <tr>
+              <th scope="col">Setting</th>
+              <th scope="col" class="w-0">Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">
+                Grid
+                <small>Lines between the cells of the sheet</small>
+              </th>
+              <td>
+                <nc-toggle [(checked)]="grid" label="Grid" />
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Onion skin</th>
+              <td>
+                <nc-toggle [(checked)]="onion" label="Onion skin" />
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">
+                Visibility
+                <small>Who finds the game on the hub</small>
+              </th>
+              <td>
+                <nc-segmented
+                  size="sm"
+                  [options]="visibility"
+                  [(value)]="visibilityValue"
+                  label="Visibility" />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
   <section id="navigation" class="grid scroll-mt-[80px] gap-2.5">
     <div class="flex items-baseline gap-2">
       <h2 class="font-display text-display text-ink">Navigation</h2>

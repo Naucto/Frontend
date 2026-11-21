@@ -60,6 +60,7 @@ export * from './components/stepper.component';
 export * from './components/suggest-panel.component';
 export * from './components/suggest-row.component';
 export * from './components/swatch-picker.component';
+export * from './components/table.directive';
 export * from './components/tabs.component';
 export * from './components/tag-input.component';
 export * from './components/toast.service';
