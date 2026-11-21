@@ -352,7 +352,7 @@ export default class UiKitPage {
     code: { title: 'main.lua', body: 'Lua, with the engine reference one key away.' },
     map: { title: 'Level 1, 32×18', body: 'Lay the sheet out into rooms.' },
     sound: { title: '4 instruments', body: 'Waves, envelopes and the piano roll.' },
-    game: { title: 'Hightide v3', body: 'Title, cover, controls and publishing.' },
+    game: { title: 'Hightide v3', body: 'Title, cover, inputs and publishing.' },
   };
   protected readonly pageTab = signal<'account' | 'editor' | 'controls' | 'privacy'>('account');
   protected readonly tabCopy = {
@@ -361,7 +361,10 @@ export default class UiKitPage {
       body: 'Your handle shows on every game you publish.',
     },
     editor: { title: 'Indent with 2 spaces', body: 'Applies to every file you open.' },
-    controls: { title: 'Gamepad 1, Xbox layout', body: 'Rebind any action from here.' },
+    controls: {
+      title: 'Gamepad 1, Xbox layout',
+      body: 'The gamepad and the touch pad of this device.',
+    },
     privacy: { title: 'Two things to review', body: 'What is collected, and what you can erase.' },
   };
   protected readonly consoleTab = signal<string | undefined>('console');
