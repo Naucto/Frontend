@@ -13,10 +13,20 @@
     } @else if (loading()) {
       <nc-skeleton height="60vh" />
     } @else {
+      @if (strip(); as cameFor) {
+        <nc-session-strip
+          [cameFor]="cameFor"
+          (signIn)="signInToJoin()"
+          (alone)="screen.playAlone()" />
+      }
       <nc-game-screen
+        #screen
         [game]="game()"
         [projectId]="id()"
         [ncPlayTracking]="id()"
+        [invite]="invite()"
+        (inviteJoined)="dropSessionParams()"
+        (inviteClosed)="closeInvite()"
         fit="width"
         [autoPlay]="false" />
     }

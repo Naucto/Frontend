@@ -1,3 +1,4 @@
+import { colourOf } from '@naucto/ui';
 import { describe, expect, it } from 'vitest';
 
 import type { FloppySticker } from '../game-card/floppy.component';
@@ -35,6 +36,12 @@ describe('sessionStickers', () => {
     expect(stickers[1]).toMatchObject({ host: false });
   });
 
+  it('colours a player as their avatar is everywhere else, from who they are', () => {
+    const [host, guest] = sessionStickers(sessionOf(2, 4), null);
+    expect(host).toMatchObject({ color: colourOf(1) });
+    expect(guest).toMatchObject({ color: colourOf(2) });
+  });
+
   it('folds the players who do not fit into one card, and keeps a seat in sight', () => {
     expect(initials(sessionStickers(sessionOf(9, 12), null))).toEqual([
       'p',
@@ -55,7 +62,7 @@ describe('sessionStickers', () => {
 
     const session = sessionOf(2, 4);
     const joined = sessionStickers(
-      { ...session, roster: [...session.roster, { username: 'you' }], playerCount: 3 },
+      { ...session, roster: [...session.roster, { id: 9, username: 'you' }], playerCount: 3 },
       'you',
     );
     expect(initials(joined)).toEqual(['p', 'p', 'seat', 'seat', 'y']);

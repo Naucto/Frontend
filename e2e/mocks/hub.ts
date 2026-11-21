@@ -115,8 +115,12 @@ export const SESSION = {
   maxPlayers: 4,
   playerCount: 2,
   startedAt: '2026-11-21T10:00:00.000Z',
-  roster: [{ username: 'louis' }, { username: 'lea' }],
+  roster: [
+    { id: 9, username: 'louis' },
+    { id: 10, username: 'lea' },
+  ],
   coverUrl: null,
+  disk: null,
 };
 
 export interface HubMock {

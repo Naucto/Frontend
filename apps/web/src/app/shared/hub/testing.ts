@@ -32,6 +32,7 @@ export function sessionOf(
     coverUrl: null,
     hostUsername: 'player1',
     roster: Array.from({ length: Math.min(seated, 8) }, (_, i) => ({
+      id: i + 1,
       username: `player${String(i + 1)}`,
     })),
     playerCount: seated,

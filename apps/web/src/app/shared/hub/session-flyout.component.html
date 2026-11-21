@@ -22,7 +22,7 @@
               <nc-avatar
                 aria-hidden="true"
                 [name]="displayName(row.player)"
-                [id]="row.player.username"
+                [id]="row.player.id"
                 [colour]="row.you ? 'gold' : undefined"
                 [size]="28" />
               <span
@@ -45,11 +45,11 @@
             }
             @case ('more') {
               <span aria-hidden="true" class="inline-flex flex-none">
-                @for (face of row.faces; track face.username) {
+                @for (face of row.faces; track face.id) {
                   <nc-avatar
                     class="shadow-[0_0_0_3px_var(--color-raised)] not-first:-ml-[8px]"
                     [name]="displayName(face)"
-                    [id]="face.username"
+                    [id]="face.id"
                     [size]="28" />
                 }
               </span>

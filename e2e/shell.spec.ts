@@ -1,6 +1,7 @@
 import { expect, type Page, test } from './fixtures';
-import { release } from './mocks/game';
+import { release, serveGame } from './mocks/game';
 import { setGamepads } from './mocks/gamepads';
+import { JOINS_FROM_INIT, mockRoom } from './mocks/netplay';
 import { mockNotifications } from './mocks/notifications';
 import { answer, mockSignedIn } from './mocks/session';
 
@@ -23,8 +24,9 @@ const room = {
   maxPlayers: 4,
   playerCount: 2,
   startedAt: '2026-11-20T10:00:00.000Z',
-  roster: [{ username: 'louis' }],
+  roster: [{ id: 11, username: 'louis' }],
   coverUrl: null,
+  disk: null,
 };
 
 /** What the search box asks for: three popular games, one game and one tag for any word typed. */
@@ -145,8 +147,10 @@ test.describe('app shell', () => {
   });
 
   test('a signed-in player joins an open session from the search box', async ({ page }) => {
+    await serveGame(page, JOINS_FROM_INIT, {}, room.projectId);
     await mockSignedIn(page);
     await mockSearch(page);
+    const entered = await mockRoom(page, room);
     await page.goto('/hub');
 
     await page.getByRole('combobox', { name: 'Search games, people, tags…' }).click();
@@ -156,6 +160,11 @@ test.describe('app shell', () => {
       .click();
 
     await expect(page).toHaveURL(/\/play\/9\?session=room-1$/);
+
+    await page.getByRole('button', { name: 'Play', exact: true }).first().click();
+    await expect(page.getByRole('alert')).toContainText('in High Tide of louis, 2 of 4');
+    expect(entered.joins).toEqual([{ editorTest: false }]);
+    await expect(page).toHaveURL(/\/play\/9$/);
   });
 
   test('the account popover names the player, counts their games and friends, and signs out', async ({
@@ -185,7 +194,9 @@ test.describe('app shell', () => {
   }) => {
     const at = new Date().toISOString();
     const notification = { userId: 1, type: 'INFO', read: false, createdAt: at };
+    await serveGame(page, JOINS_FROM_INIT, {}, room.projectId);
     await mockSignedIn(page);
+    const entered = await mockRoom(page, room);
     await mockNotifications(page, [
       {
         ...notification,
@@ -231,6 +242,13 @@ test.describe('app shell', () => {
     await panel.getByRole('button', { name: /invited you to play High Tide/ }).click();
     await expect(page).toHaveURL(/\/play\/9\?session=room-1&code=WXYZ$/);
     await expect(panel).toHaveCount(0);
+
+    // The code of the invitation is what lets the invitee read the session, then into it.
+    await page.getByRole('button', { name: 'Play', exact: true }).first().click();
+    await expect(page.getByRole('alert')).toContainText('in High Tide of louis, 2 of 4');
+    expect(entered.lookups[0]).toBe('?code=WXYZ');
+    expect(entered.joins).toEqual([{ joinCode: 'WXYZ', editorTest: false }]);
+    await expect(page).toHaveURL(/\/play\/9$/);
   });
 
   test('sign-in page shows the insert-game form', async ({ page }) => {

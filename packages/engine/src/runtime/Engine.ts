@@ -16,7 +16,7 @@ import { ConsoleBuffer } from '../loop/ConsoleBuffer';
 import { GameLoop, type LoopDriver, STEP_MS } from '../loop/GameLoop';
 import { Stats } from '../loop/Stats';
 import type { NetPermissions } from '../net/NetPermissions';
-import type { NetUi } from '../net/NetUi';
+import type { NetInvite, NetUi } from '../net/NetUi';
 import type { SharedTableSession } from '../net/SharedTableSession';
 import { LuaEnvironment, LuaError } from '../vm/LuaEnvironment';
 import type { EngineError, EnginePhase } from './EngineError';
@@ -68,6 +68,7 @@ export interface EngineOptions {
   /** Element that receives keyboard/mouse focus (the canvas). */
   inputTarget?: HTMLElement;
   netUi?: NetUi;
+  netInvite?: () => NetInvite | null;
   netPermissions?: NetPermissions;
   driver?: LoopDriver;
   consoleCapacity?: number;
@@ -184,6 +185,7 @@ export class Engine {
       input: this.input,
       sound: this.opts.sound,
       netUi: this.opts.netUi,
+      netInvite: this.opts.netInvite,
       netPermissions: this.opts.netPermissions,
       data: {
         mapCount: () => this.opts.game.maps.length,

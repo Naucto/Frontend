@@ -81,6 +81,18 @@ describe('FriendsPage', () => {
     expect(names).toEqual(['player', 'idler']);
   });
 
+  it('sends whoever takes a slot to the session their friend hosts', async () => {
+    await renderWith([aFriend(2, 'host'), aFriend(3, 'player')], {
+      2: { ...aPresence(2, 'HOSTING'), releaseId: 5, sessionId: 'room-1' },
+      3: { ...aPresence(3, 'PLAYING'), releaseId: 6 },
+    });
+
+    expect(screen.getByRole('link', { name: 'Take the slot' }).getAttribute('href')).toBe(
+      '/play/5?session=room-1',
+    );
+    expect(screen.getByRole('link', { name: 'Join' }).getAttribute('href')).toBe('/play/6');
+  });
+
   it('says since when an offline friend has been a friend, not when they were last seen', async () => {
     await renderWith([aFriend(3, 'gone')], {});
 

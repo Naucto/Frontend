@@ -76,7 +76,7 @@ export {
   schemaVersionOf,
 } from './migrations';
 export { ALLOW_ALL, type NetPermissions } from './net/NetPermissions';
-export type { NetHostOptions, NetUi } from './net/NetUi';
+export type { NetHostOptions, NetInvite, NetUi } from './net/NetUi';
 export type {
   RelayUsage,
   SessionRole,

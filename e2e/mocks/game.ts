@@ -26,13 +26,13 @@ export const release = {
   creator: { id: 7, username: 'ada' },
 };
 
-/** Serves a document as the signed content of game 42, to a reader who is signed out. */
-const serveContent = async (page: Page, doc: Y.Doc): Promise<void> => {
+/** Serves a document as the signed content of the game `id` names, to a reader who is signed out. */
+const serveContent = async (page: Page, doc: Y.Doc, id = release.id): Promise<void> => {
   const bytes = Buffer.from(Y.encodeStateAsUpdate(doc));
 
   await page.route('**/auth/refresh', answer(401, {}));
-  await page.route('**/projects/releases/42', answer(200, release));
-  await page.route('**/projects/releases/42/content-url', (route) =>
+  await page.route(`**/projects/releases/${String(id)}`, answer(200, { ...release, id }));
+  await page.route(`**/projects/releases/${String(id)}/content-url`, (route) =>
     route.fulfill({ json: { signedUrl: 'http://localhost:3001/e2e/game.bin' } }),
   );
   await page.route('**/e2e/game.bin', (route) =>
@@ -40,11 +40,15 @@ const serveContent = async (page: Page, doc: Y.Doc): Promise<void> => {
   );
 };
 
-/** A release whose document holds one `main` file, served as the signed content of game 42. */
+/**
+ * A release whose document holds one `main` file, served as the signed content of game 42, or of
+ * the game `id` names.
+ */
 export const serveGame = async (
   page: Page,
   code: string,
   meta: Record<string, unknown> = {},
+  id = release.id,
 ): Promise<void> => {
   const doc = new Y.Doc();
   doc.getMap('game.meta').set('schemaVersion', 1);
@@ -60,7 +64,7 @@ export const serveGame = async (
   text.insert(0, code);
   doc.getMap('code.meta').set('entry', 'main');
 
-  await serveContent(page, doc);
+  await serveContent(page, doc, id);
 };
 
 /** A game of today, on one of the sets of actions an author starts from, served as game 42. */
