@@ -21,8 +21,10 @@ export const MARK_PATHS = {
   'chevron-up': 'M2 1h1v1h-1zM1 2h1v1h-1zM3 2h1v1h-1zM0 3h1v1h-1zM4 3h1v1h-1z',
   close:
     'M0 0h1v1h-1zM4 0h1v1h-1zM1 1h1v1h-1zM3 1h1v1h-1zM2 2h1v1h-1zM1 3h1v1h-1zM3 3h1v1h-1zM0 4h1v1h-1zM4 4h1v1h-1z',
+  enter: 'M4 0h1v1h-1zM1 1h1v1h-1zM4 1h1v1h-1zM0 2h5v1h-5zM1 3h1v1h-1z',
   minus: 'M0 2h5v1h-5z',
   plus: 'M2 0h1v1h-1zM2 1h1v1h-1zM0 2h5v1h-5zM2 3h1v1h-1zM2 4h1v1h-1z',
+  space: 'M0 2h1v1h-1zM4 2h1v1h-1zM0 3h5v1h-5z',
 } as const;
 
 export type MarkName = keyof typeof MARK_PATHS;

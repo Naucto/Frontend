@@ -58,6 +58,10 @@ export class SearchComponent {
     const hint = this.hint();
     return typeof hint === 'string' ? (hint ? [hint] : []) : hint;
   });
+  /** The id of the listbox the box fills: with one, the field is a combobox. */
+  readonly list = input<string>();
+  /** Whether that listbox is on screen. */
+  readonly expanded = input(false);
   readonly submitted = output<string>();
   /** Put the caret in the box — a keyboard shortcut somewhere else has no other way in. */
   focus(): void {
