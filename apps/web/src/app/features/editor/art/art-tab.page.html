@@ -28,7 +28,7 @@
             [label]="t('editor.art.clip')"
             [checked]="art.clip()"
             (checkedChange)="art.setClip($event)">
-            <nc-icon name="lock" />
+            <nc-icon [name]="art.clip() ? 'lock-filled' : 'lock'" />
             <span class="hidden @min-[900px]:inline">{{ t('editor.art.clip') }}</span>
           </nc-toggle-button>
         }

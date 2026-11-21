@@ -22,7 +22,7 @@
         <span class="label truncate">{{ game().creator.username }}</span>
         <span class="flex gap-1.5">
           <nc-stat icon="play" [value]="game().viewCount" />
-          <nc-stat icon="heart" [value]="game().likes" tone="hot" />
+          <nc-stat icon="heart-filled" [value]="game().likes" tone="hot" />
           <nc-stat icon="git-branch" [value]="game().forkCount ?? 0" />
         </span>
       </span>
