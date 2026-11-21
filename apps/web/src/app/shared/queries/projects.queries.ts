@@ -1,7 +1,10 @@
+import { inject } from '@angular/core';
 import {
+  type PaginatedProjectsResponseDto,
   projectContentControllerGetCheckpoints,
   projectContentControllerGetLimits,
   projectContentControllerGetVersions,
+  projectControllerFindAll,
   type ProjectLimitsDto,
 } from '@naucto/api-client';
 import {
@@ -11,6 +14,7 @@ import {
 } from '@tanstack/angular-query-experimental';
 
 import { unwrap } from '../../core/api/api-errors';
+import { AuthStore } from '../../core/auth/auth.store';
 import { qk } from './query-keys';
 
 /** One saved state of a project, from either history. */
@@ -74,6 +78,16 @@ export function injectProjectLimits(): CreateQueryResult<ProjectLimitsDto> {
     queryKey: qk.projectLimits(),
     staleTime: 10 * 60 * 1000,
     queryFn: async () => unwrap(await projectContentControllerGetLimits()),
+  }));
+}
+
+/** The signed-in reader's own projects, drafts included, the last one touched first. */
+export function injectMyProjects(limit: number): CreateQueryResult<PaginatedProjectsResponseDto> {
+  const auth = inject(AuthStore);
+  return injectQuery(() => ({
+    queryKey: qk.myProjects({ page: 1, limit }),
+    enabled: auth.isAuthenticated(),
+    queryFn: async () => unwrap(await projectControllerFindAll({ query: { page: 1, limit } })),
   }));
 }
 

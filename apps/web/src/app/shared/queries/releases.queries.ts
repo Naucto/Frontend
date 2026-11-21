@@ -7,6 +7,7 @@ import {
   hubControllerGetPaginatedReleases,
   hubControllerGetPublishedProjectImage,
   hubControllerGetRelease,
+  hubControllerGetReleaseTags,
   hubControllerLikeProject,
   hubControllerUnlikeProject,
   type ImageUrlResponseDto,
@@ -114,6 +115,20 @@ export function injectRelease(id: () => number): CreateQueryResult<ProjectExResp
     queryKey: qk.release(id()),
     enabled: id() > 0,
     queryFn: async () => unwrap(await hubControllerGetRelease({ path: { id: String(id()) } })),
+  }));
+}
+
+/** The tags published games carry most, the most used first; asked for only once `enabled`. */
+export function injectReleaseTags(
+  limit: number,
+  enabled: () => boolean,
+): CreateQueryResult<string[]> {
+  return injectQuery(() => ({
+    queryKey: qk.releaseTags(limit),
+    enabled: enabled(),
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () =>
+      unwrap(await hubControllerGetReleaseTags({ query: { limit } })).tags.map(({ tag }) => tag),
   }));
 }
 
