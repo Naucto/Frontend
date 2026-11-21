@@ -2018,6 +2018,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "code",
+            "required": false,
+            "in": "query",
+            "description": "The join code of a session that is reached by code, for someone not in it yet",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -8768,6 +8777,11 @@
       "GameSessionRosterEntryDto": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "number",
+            "description": "User ID",
+            "example": 42
+          },
           "username": {
             "type": "string",
             "example": "alice"
@@ -8777,7 +8791,7 @@
             "description": "Display nickname, if set"
           }
         },
-        "required": ["username"]
+        "required": ["id", "username"]
       },
       "GameSessionResponseDto": {
         "type": "object",
@@ -8838,6 +8852,16 @@
             "type": "string",
             "description": "Address of the cover of the game, usable as is; null without a cover",
             "nullable": true
+          },
+          "disk": {
+            "description": "The disk the author of the game chose. Null when none was chosen: a client then derives a colour from the project id",
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DiskStyleDto"
+              }
+            ]
           }
         },
         "required": [
@@ -8852,7 +8876,8 @@
           "playerCount",
           "startedAt",
           "roster",
-          "coverUrl"
+          "coverUrl",
+          "disk"
         ]
       },
       "GameSessionListResponseDto": {
