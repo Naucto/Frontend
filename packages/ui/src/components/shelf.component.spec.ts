@@ -7,8 +7,9 @@ import { ShelfFlyoutDirective, ShelfItemDirective } from './shelf-item.directive
 @Component({
   imports: [ShelfComponent, ShelfItemDirective, ShelfFlyoutDirective],
   template: `
-    <nc-shelf heading="Popular" [rows]="rows()" [(page)]="page">
+    <nc-shelf heading="Popular" [rows]="rows()" [count]="count()" [(page)]="page">
       <a shelfAction href="#all">See all 14</a>
+      <a shelfMore href="#more">More</a>
       <a
         *ncShelfItem="let name of names; open as open; flyoutId as flyoutId"
         href="#game"
@@ -24,6 +25,7 @@ class HostComponent {
   readonly names = Array.from({ length: 14 }, (_, i) => `game ${String(i)}`);
   readonly page = signal(0);
   readonly rows = signal(1);
+  readonly count = signal<number | null>(null);
   readonly speaks = (name: string): boolean => name !== 'game 2';
 }
 
@@ -256,6 +258,22 @@ describe('ShelfComponent', () => {
       expect(flyout.classList).toContain('flex-row-reverse');
       expect(flyout.textContent).toContain('About game 7');
     });
+  });
+
+  it('carries its count in a chip beside the heading, when it is given one', () => {
+    expect(shelf.querySelector('nc-chip')).toBeNull();
+    fixture.componentInstance.count.set(14);
+    fixture.detectChanges();
+    expect(shelf.querySelector('h3 + nc-chip')?.textContent.trim()).toBe('14');
+  });
+
+  it('shows what leads to the rest only while the items take more than a page', () => {
+    expect(shelf.querySelector('a[shelfMore]')).not.toBeNull();
+    fixture.componentInstance.rows.set(4);
+    fixture.detectChanges();
+    expect(live()).toBe('Page 1 of 1');
+    expect(shelf.querySelector('a[shelfMore]')).toBeNull();
+    expect(shelf.querySelector('a[shelfAction]')).not.toBeNull();
   });
 
   it('leaves a vertical swipe to the page', () => {
