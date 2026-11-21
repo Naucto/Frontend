@@ -1,18 +1,24 @@
-@if (title(); as heading) {
-  <div class="label border-b border-line px-1.5 py-0.75">{{ heading }}</div>
-}
-<div [class]="title() ? 'px-1.5 py-1' : 'px-1 py-0.5'">
+<div class="flat-lg bevel-fill-raised" [class]="shape()">
+  @if (title(); as heading) {
+    <div class="font-display text-ui leading-[1.15]">{{ heading }}</div>
+  }
   @for (paragraph of paragraphs(); track $index) {
-    <p [class.mt-1]="$index > 0">
+    <p>
       @for (run of paragraph; track $index) {
         @if (run.code) {
-          <code class="rounded-xs bg-inset px-0.5 font-mono text-[0.95em] text-ink">
-            {{ run.text }}
-          </code>
+          <code class="bg-inset px-0.5 font-mono text-active-ink">{{ run.text }}</code>
         } @else {
           {{ run.text }}
         }
       }
     </p>
+  }
+  @if (meta().length) {
+    <div
+      class="grid gap-[4px] border-t-3 border-current pt-1 text-label leading-[1.4] tracking-tag uppercase">
+      @for (line of meta(); track $index) {
+        <span>{{ line }}</span>
+      }
+    </div>
   }
 </div>

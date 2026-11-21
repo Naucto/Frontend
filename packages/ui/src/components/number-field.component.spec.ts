@@ -96,6 +96,15 @@ describe('NumberFieldComponent, empty', () => {
 });
 
 describe('NumberFieldComponent, typed and stepped', () => {
+  it('prints the unit beside the number without making it part of its name', async () => {
+    await render(NumberFieldComponent, {
+      inputs: { value: 120, min: 40, max: 240, unit: 'BPM', ariaLabel: 'Tempo' },
+    });
+
+    expect(screen.getByText('BPM')).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.getByRole('textbox', { name: 'Tempo' })).toHaveValue('120');
+  });
+
   it('asks for the number typed', async () => {
     const requested = vi.fn();
     await render(NumberFieldComponent, {
@@ -183,6 +192,19 @@ describe('NumberFieldComponent, typed and stepped', () => {
     await userEvent.click(box);
     await userEvent.keyboard('{ArrowUp}');
     expect(requested).toHaveBeenCalledWith(5);
+  });
+
+  it('is typed only where it is plain, and still steps from the keyboard', async () => {
+    const requested = vi.fn();
+    await render(NumberFieldComponent, {
+      inputs: { value: 4, min: 0, max: 9, ariaLabel: 'Place', plain: true },
+      on: { requested },
+    });
+
+    expect(screen.queryByRole('button')).toBeNull();
+    await userEvent.click(screen.getByRole('textbox', { name: 'Place' }));
+    await userEvent.keyboard('{ArrowDown}');
+    expect(requested).toHaveBeenCalledWith(3);
   });
 
   it('ignores text that is not a number, and shows the value it still holds', async () => {

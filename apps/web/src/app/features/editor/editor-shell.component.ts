@@ -38,7 +38,9 @@ import { RuntimeHostService } from '../../shared/game-screen/runtime-host.servic
 import { UserAvatarComponent } from '../../shared/user-avatar.component';
 import { yTextField } from '../../shared/yjs/y-signal';
 import { AccountMenuComponent } from '../shell/account-menu.component';
+import { CommandPaletteShortcutDirective } from '../shell/command-palette-shortcut.directive';
 import { NotificationsBellComponent } from '../shell/notifications-bell.component';
+import { ThemeSwitchComponent } from '../shell/theme-switch.component';
 import { ArtStore } from './art/art.store';
 import { ConsoleColumnComponent } from './console/console-column.component';
 import { DocPaneComponent } from './docs/doc-pane.component';
@@ -101,6 +103,7 @@ const RAIL: Omit<RailItem<EditorTab>, 'label'>[] = [
     VersionsPopoverComponent,
     LogoComponent,
     ReportProblemButtonComponent,
+    ThemeSwitchComponent,
   ],
   providers: [
     WorkSessionService,
@@ -116,12 +119,11 @@ const RAIL: Omit<RailItem<EditorTab>, 'label'>[] = [
     SoundStore,
   ],
   templateUrl: './editor-shell.component.html',
+  hostDirectives: [CommandPaletteShortcutDirective],
   // `block` is load-bearing: a ResizeObserver reports a 0-wide content box for an inline element,
   // so an inline host measures 0 into the store whatever the window is.
-  // The editor asks for the big density; the hub and the pages around it match the artboards and
-  // are left at the default. Named here rather than at the root so it is a choice, not a setting.
   host: {
-    class: 'nc-density-big block',
+    class: 'block',
     '(document:keydown)': 'onShortcut($event)',
     '(window:beforeunload)': 'session.onBeforeUnload($event)',
     '(window:pagehide)': 'session.onPageHide($event)',
@@ -194,7 +196,8 @@ export default class EditorShellComponent implements OnInit {
 
   /**
    * F1 shows the docs for the symbol under the caret; Ctrl/⌘-K focuses the doc search. Bound on the
-   * document, so on a tab with no reference the keystroke is left to the browser.
+   * document, so on a tab with no reference the keystroke goes on to the window, where the command
+   * palette answers it.
    */
   protected onShortcut(event: KeyboardEvent): void {
     if (this.ui.activeTab() !== 'code') {

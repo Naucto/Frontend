@@ -1,138 +1,611 @@
 <!-- No toast host here: the root component mounts the only one. -->
-<div class="mx-auto grid max-w-[1100px] gap-4 p-6">
-  <header class="flex items-end justify-between">
-    <div>
-      <h1 class="text-hero text-ink">Naucto UI kit</h1>
-      <p class="text-body text-ink-2">Every primitive on the 8px grid, HD44780 + Pixelarticons.</p>
-    </div>
-    <nc-segmented
-      [options]="themes"
-      [value]="themeService.effective()"
-      (valueChange)="applyTheme($event)"
-      label="Theme" />
-  </header>
+<header class="flex h-[56px] items-center gap-3 border-b-3 border-line-strong bg-panel px-3">
+  <a href="/ui-kit" aria-label="Naucto" class="flex-none">
+    <nc-logo variant="wordmark" link [size]="21" />
+  </a>
+  <h1 class="font-display text-title text-ink">Naucto UI kit</h1>
+  <nav class="flex gap-[22px] overflow-auto text-meta tracking-tag whitespace-nowrap uppercase">
+    @for (section of sections; track section.id) {
+      <a
+        class="text-ink-3 hover:text-active-ink"
+        [href]="'/ui-kit#' + section.id"
+        (click)="jump($event, section.id)">
+        {{ section.label }}
+      </a>
+    }
+  </nav>
+  <nc-segmented
+    class="ml-auto"
+    [options]="themes"
+    [value]="themeService.effective()"
+    (valueChange)="applyTheme($event)"
+    label="Theme" />
+</header>
 
-  <nc-panel title="Controls">
-    <div class="flex flex-wrap items-center gap-2">
-      <button ncButton variant="primary">Publish</button>
-      <button ncButton variant="run">
-        <nc-icon name="play" [size]="12" />
-        Run
-      </button>
-      <button ncButton variant="secondary">Secondary</button>
-      <button ncButton variant="ghost">Ghost</button>
-      <button ncButton variant="danger">Delete</button>
-      <button ncButton variant="secondary" size="sm">Small</button>
-      <button ncButton variant="ghost" iconOnly aria-label="Settings">
-        <nc-icon name="sliders" />
-      </button>
-      <button ncButton variant="primary" disabled>Disabled</button>
-      <button ncButton variant="ghost" disabled>Disabled ghost</button>
+<main class="mx-auto grid max-w-[1200px] gap-8 px-[28px] pt-6 pb-[120px]">
+  <div class="grid max-w-[70ch] gap-[14px]">
+    <div class="text-label tracking-kicker text-active-ink uppercase">UI kit · v2</div>
+    <p class="font-display text-banner text-ink">Pressable pixels.</p>
+    <p class="text-ui text-ink-body">
+      If you can press it, it is raised: a pixel bevel with a deeper bottom edge that pushes down
+      one pixel. If you can type in it, it is a well. Everything else is a flat frame. Corners are
+      stepped, never round, and one pixel is 3px.
+    </p>
+    <div class="flex items-center gap-3">
+      <nc-logo />
+      <nc-logo variant="wordmark" [size]="24" />
+      <nc-logo variant="wordmark" [size]="18" />
     </div>
-    <div class="mt-2 flex flex-wrap items-center gap-2">
-      <nc-toggle [(checked)]="autoRun">Auto-run</nc-toggle>
-      <nc-toggle>Haptics</nc-toggle>
-      <nc-checkbox [(checked)]="matchCase">Match case</nc-checkbox>
-      <nc-checkbox>Regexp</nc-checkbox>
-      <nc-checkbox disabled>Disabled</nc-checkbox>
-      <nc-segmented [options]="visibility" value="draft" label="Visibility" />
-      <nc-segmented [options]="monetization" value="none" label="Monetization" fill />
-      <nc-segmented [options]="shelves" value="games" label="Shelf" variant="chips" />
-      <nc-slider label="BPM" [min]="40" [max]="240" [value]="124" readout="124" class="w-[220px]" />
-      <nc-slider label="R" [max]="255" [value]="255" readout="255" accent="hot" class="w-[220px]" />
-    </div>
-    <div class="mt-2 flex flex-wrap items-center gap-2">
-      <nc-bit-flags [value]="5" />
-      @for (provider of providers; track provider.id) {
-        <nc-brand-mark [mark]="provider.mark" [size]="16" />
-      }
-      <nc-keycap>Arrows</nc-keycap>
-      <nc-keycap>Z</nc-keycap>
-      <nc-keycap>Esc</nc-keycap>
-      <nc-keycap>D-pad</nc-keycap>
-      <nc-chip>Action</nc-chip>
-      <nc-chip tone="gold" [removable]="true">Adventure</nc-chip>
-      <nc-chip tone="jade">Synced</nc-chip>
-      <nc-chip tone="sky">Netplay</nc-chip>
-      <nc-chip tone="hot">Draft</nc-chip>
-      <nc-chip tone="orange">Warning</nc-chip>
-    </div>
-  </nc-panel>
+  </div>
 
-  <div class="grid grid-cols-[48px_1fr_1fr] gap-4">
-    <nc-rail [items]="rail" value="code" class="h-[320px]" />
-    <nc-panel title="Fields">
-      <div class="grid gap-2">
-        <nc-field label="Name" for="f-name">
-          <input ncInput id="f-name" value="Platformer" />
-        </nc-field>
-        <nc-field
-          label="Summary"
-          for="f-sum"
-          counter="38 / 80"
-          hint="One line shown on the hub card.">
-          <input ncInput id="f-sum" value="A tiny run-and-jump built as a tutorial." />
-        </nc-field>
-        <nc-field label="Description" for="f-desc" error="Required before publishing">
-          <textarea
-            ncInput
-            id="f-desc"
-            rows="3"
-            placeholder="The long version. Markdown is fine."
-            aria-invalid="true"></textarea>
-        </nc-field>
-        <nc-tabs [tabs]="tabs" value="account" label="Settings" />
-        <nc-tabs [tabs]="consoleTabs" value="console" label="Console" variant="console" />
+  <section id="foundations" class="grid scroll-mt-3 gap-3">
+    <h2 class="font-display text-display text-ink">Foundations</h2>
+    <div class="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-2.5">
+      <div class="flat-lg bevel-fill-panel grid content-start gap-[14px] p-2.5">
+        <div class="label">Colour</div>
+        <div class="grid grid-cols-5 gap-[6px]">
+          @for (surface of surfaces; track surface.name) {
+            <div class="grid gap-[6px]">
+              <div class="flat-sm h-[44px]" [class]="surface.fill"></div>
+              <div class="text-micro tracking-tag text-ink-3 uppercase">{{ surface.name }}</div>
+            </div>
+          }
+        </div>
+        <div class="grid grid-cols-5 gap-[6px]">
+          @for (accent of accentSwatches; track accent.name) {
+            <div class="grid gap-[6px]">
+              <div
+                class="flex h-[44px] items-center justify-center font-mono text-label"
+                [class]="accent.fill">
+                Aa
+              </div>
+              <div class="text-micro tracking-tag uppercase" [class]="accent.ink">
+                {{ accent.name }}
+              </div>
+            </div>
+          }
+        </div>
+        <div class="grid grid-cols-5 gap-[6px]">
+          @for (wash of washes; track wash.name) {
+            <div
+              class="flat-sm flex h-[30px] items-center justify-center text-micro tracking-tag uppercase"
+              [class]="wash.fill + ' ' + wash.ink">
+              wash
+            </div>
+          }
+          <div
+            class="flat-sm bevel-fill-primary flex h-[30px] items-center justify-center text-micro tracking-tag text-on-primary uppercase">
+            primary
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-[6px] text-small">
+          @for (ink of inks; track ink.name) {
+            <span [class]="ink.ink">{{ ink.name }}</span>
+          }
+        </div>
       </div>
-    </nc-panel>
-    <nc-panel title="Surfaces">
-      <nc-section title="Game size">
-        <nc-meter [segments]="size" [max]="1048576" label="Game size" />
-      </nc-section>
-      <nc-section title="Console" class="mt-2">
-        <nc-lcd [minHeight]="72">
-          &gt; RUN main &gt; Welcome to Naucto! ! main:39 attempt to index a nil value (field
-          'sprites')
-        </nc-lcd>
-        <nc-lcd variant="flush" [minHeight]="48" class="mt-1">
-          &gt; flush: the console fills its column, no frame
-        </nc-lcd>
-      </nc-section>
-      <nc-section title="Loading" class="mt-2">
-        <div class="grid gap-1">
-          <nc-skeleton height="96px" radius="rounded-sm" />
-          <nc-skeleton height="0.75rem" width="60%" />
-          <nc-skeleton height="0.75rem" width="35%" />
+
+      <div class="flat-lg bevel-fill-panel grid content-start gap-[10px] p-2.5">
+        <div class="label">Type · three faces</div>
+        <div class="font-display text-hero">
+          Datasaur
+          <span class="text-ink-4">38</span>
         </div>
-      </nc-section>
-      <nc-section title="Presence" class="mt-2">
-        <div class="flex items-center gap-2">
-          <nc-avatar name="louis" [size]="38" overlap />
-          <nc-avatar name="edgar" [size]="38" overlap />
-          <nc-avatar name="thea" [size]="38" overlap />
-          <nc-avatar name="alexis" colour="neutral" [size]="38" />
-          <nc-presence-flag name="louis" colour="sky" />
-          <nc-presence-flag name="edgar" colour="blush" />
-          <nc-online-dot [online]="true" />
-          <nc-online-dot />
+        <div class="font-display text-display">
+          Page title
+          <span class="text-ink-4">30</span>
         </div>
-        <!-- One mark inside the frame, two past its edges, which come back as chips on the rim. -->
-        <div
-          class="relative mt-1.5 h-[120px] w-[320px] overflow-hidden rounded-sm border border-line bg-inset">
-          <nc-presence-layer [marks]="presenceMarks" [viewport]="presenceFrame" />
+        <div class="font-display text-title">
+          Shelf heading
+          <span class="text-ink-4">20</span>
         </div>
-      </nc-section>
-      <nc-section title="Notice" class="mt-2">
-        <nc-notice>The game is over the size ceiling, so publishing is blocked.</nc-notice>
-        <nc-notice tone="danger">This release could not be reached.</nc-notice>
-      </nc-section>
-      <nc-section title="Swatch picker" class="mt-2">
+        <div class="mt-[6px] text-ui">Ticketing UI 16 — buttons, nav, names</div>
+        <div class="text-body text-ink-body">
+          Body 15 — Draw, code and play together, right in your browser.
+        </div>
+        <div class="text-meta text-ink-2">Meta 13 — hints, bylines, 2 days ago</div>
+        <div class="label">Label 12 — tracked caps</div>
+        <div class="mt-[6px] font-mono text-small text-ink-body">
+          gfx.circfill(x, y, 6, 13)
+          <span class="text-ink-4">-- mono 14</span>
+        </div>
+        <div class="font-mono text-label text-lcd-ink">&gt; LCD · KEYCAPS · COUNTS 12</div>
+      </div>
+
+      <div class="flat-lg bevel-fill-panel grid content-start gap-2 p-2.5">
+        <div class="label">Bevel anatomy &amp; scale</div>
+        <div class="flex flex-wrap items-end gap-[14px]">
+          <button ncButton size="lg" data-testid="raised-sm">Raised sm</button>
+          <button ncButton size="bar" data-testid="raised-lg">Raised lg</button>
+          <span
+            class="well inline-flex h-(--nc-h-lg) items-center px-[14px] text-meta tracking-tag text-ink-4 uppercase"
+            data-testid="well">
+            Well
+          </span>
+          <span
+            class="flat-sm bevel-fill-panel inline-flex h-(--nc-h-lg) items-center px-[14px] text-meta tracking-tag text-ink-3 uppercase"
+            data-testid="flat-sm">
+            Flat
+          </span>
+          <span
+            class="flat-lg bevel-fill-panel inline-flex h-(--nc-h-bar) items-center px-[14px] text-meta tracking-tag text-ink-3 uppercase"
+            data-testid="flat-lg">
+            Flat lg
+          </span>
+        </div>
+        <div class="flex flex-wrap items-end gap-[14px]">
+          <div class="flex items-end">
+            <span
+              class="flat-sm bevel-open-b bevel-hi-active-ink bevel-edge-line-strong bevel-fill-panel inline-flex h-(--nc-h-md) items-center px-[14px] text-meta tracking-tag text-active-ink uppercase"
+              data-testid="tab">
+              Tab
+            </span>
+            <span
+              class="raised-sm bevel-open-r inline-flex h-(--nc-h-md) items-center px-[14px] text-meta tracking-tag text-ink-3 uppercase">
+              Joined
+            </span>
+            <span
+              class="raised-sm bevel-open-l bevel-open-r inline-flex h-(--nc-h-md) items-center px-[14px] text-meta tracking-tag text-ink-3 uppercase">
+              in a
+            </span>
+            <span
+              class="raised-sm bevel-open-l inline-flex h-(--nc-h-md) items-center px-[14px] text-meta tracking-tag text-ink-3 uppercase">
+              row
+            </span>
+          </div>
+          <div class="flex gap-[6px]">
+            @for (step of dithers; track step) {
+              <span
+                class="h-[36px] w-[36px] bg-ink [mask-size:12px_12px]"
+                [style.mask-image]="step"></span>
+            }
+          </div>
+        </div>
+        <div class="grid grid-cols-5 gap-[10px] text-micro tracking-wide text-ink-3 uppercase">
+          @for (step of scale; track step.name) {
+            <div>
+              <div class="font-mono text-title text-ink">{{ step.px }}</div>
+              {{ step.name }}
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+    <div class="flat-lg bevel-fill-panel grid gap-1.5 p-2.5">
+      <div class="label">Icons · 24 on a 24 grid</div>
+      <div class="flex flex-wrap gap-1 text-ink-2">
+        @for (icon of icons; track icon) {
+          <span class="flex h-5 w-5 items-center justify-center" [title]="icon">
+            <nc-icon [name]="icon" />
+          </span>
+        }
+      </div>
+    </div>
+  </section>
+
+  <section id="buttons" class="grid scroll-mt-3 gap-2.5">
+    <div class="flex items-baseline gap-2">
+      <h2 class="font-display text-display text-ink">Buttons</h2>
+      <span class="text-meta text-ink-3">
+        7 variants × 7 sizes · icon · pressed · copied · disabled · text link
+      </span>
+    </div>
+    <div class="flat-lg bevel-fill-panel grid gap-[22px] p-[22px]">
+      <div class="flex flex-wrap items-center gap-[14px]">
+        <button ncButton variant="primary" size="lg">Publish</button>
+        <button ncButton variant="run" size="lg">
+          <nc-icon name="play" />
+          Run
+        </button>
+        <button ncButton variant="secondary" size="lg">Secondary</button>
+        <button ncButton variant="ghost" size="lg">Ghost</button>
+        <button ncButton variant="danger" size="lg">Delete</button>
+        <button ncButton variant="jade" size="lg">Join</button>
+        <button ncButton variant="sky" size="lg">Invite</button>
+        <button ncButton variant="primary" size="lg" disabled>Disabled</button>
+        <button ncButton variant="ghost" size="lg" disabled>Disabled ghost</button>
+      </div>
+      <div class="flex flex-wrap items-end gap-[14px]">
+        @for (step of buttonSizes; track step.size) {
+          <button ncButton [size]="step.size">{{ step.label }}</button>
+        }
+        <button ncButton variant="primary" size="hero">hero 56</button>
+        <span class="h-(--nc-h-lg) w-[3px] bg-line"></span>
+        <button ncButton size="lg" iconOnly aria-label="Settings">
+          <nc-icon name="sliders" />
+        </button>
+        <button ncButton variant="ghost" size="lg" iconOnly aria-label="Close">
+          <nc-icon name="close" />
+        </button>
+        <button
+          ncButton
+          size="lg"
+          [pressed]="versionsOpen()"
+          [attr.aria-pressed]="versionsOpen()"
+          (click)="versionsOpen.set(!versionsOpen())">
+          Pressed
+        </button>
+        <button ncButton size="lg" pressed aria-pressed="true">Latched</button>
+        <button ncButton variant="primary" size="lg" pressed aria-pressed="true">Dark</button>
+        <button ncButton size="lg" [copied]="copied()" (click)="copied.set(!copied())">
+          {{ copied() ? 'Copied' : 'Copy' }}
+        </button>
+        <button ncButton size="tool">tool → sm</button>
+        <button ncButton size="strip">strip → md</button>
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        <span class="label">Text link · active ink + pixel arrow</span>
+        <a
+          class="inline-flex items-center gap-[6px] text-label tracking-wide text-active-ink uppercase hover:text-hot-ink"
+          href="/ui-kit#buttons">
+          See all
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 5 5"
+            shape-rendering="crispEdges"
+            aria-hidden="true">
+            <path
+              d="M1 0h4v1H1zM4 1h1v3H4zM3 1h1v1H3zM2 2h1v1H2zM1 3h1v1H1zM0 4h1v1H0z"
+              fill="currentColor" />
+          </svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section id="inputs" class="grid scroll-mt-3 gap-2.5">
+    <div class="flex items-baseline gap-2">
+      <h2 class="font-display text-display text-ink">Inputs</h2>
+      <span class="text-meta text-ink-3">
+        wells · search shares the well · focus turns the rim gold
+      </span>
+    </div>
+    <div
+      class="flat-lg bevel-fill-panel grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] items-start gap-[22px] p-[22px]">
+      <nc-field label="Name" for="f-name">
+        <input ncInput id="f-name" value="Platformer" />
+      </nc-field>
+      <nc-field
+        label="Summary"
+        for="f-sum"
+        counter="38 / 80"
+        hint="One line shown on the hub card.">
+        <input ncInput id="f-sum" value="A tiny run-and-jump built as a tutorial." />
+      </nc-field>
+      <nc-field label="Description" for="f-desc" error="Required before publishing">
+        <textarea
+          ncInput
+          id="f-desc"
+          class="resize-y"
+          rows="3"
+          placeholder="The long version. Markdown is fine."
+          aria-invalid="true"></textarea>
+      </nc-field>
+      <div class="grid content-start gap-[14px]">
+        <nc-search placeholder="Search games, people, tags…" />
+        <nc-tag-input placeholder="Add a tag" hint="Add a tag" [(tags)]="tags" />
+        <div class="grid grid-cols-[1fr_auto] items-end gap-[10px]">
+          <nc-field label="Max players">
+            <nc-number-field
+              ariaLabel="Max players"
+              [value]="maxPlayers()"
+              [min]="1"
+              [max]="8"
+              (requested)="maxPlayers.set($event)" />
+          </nc-field>
+          <nc-field label="Tempo">
+            <nc-number-field
+              ariaLabel="Tempo"
+              unit="BPM"
+              [value]="tempo()"
+              [min]="40"
+              [max]="240"
+              (requested)="tempo.set($event)" />
+          </nc-field>
+        </div>
+      </div>
+      <nc-field label="Disabled" for="f-off">
+        <input ncInput id="f-off" value="Locked while published" disabled />
+      </nc-field>
+      <div class="flex flex-wrap items-center gap-1.5">
+        @for (key of keys; track key) {
+          <nc-keycap>{{ key }}</nc-keycap>
+        }
+        <nc-keycap size="sm">/</nc-keycap>
+      </div>
+    </div>
+  </section>
+
+  <section id="selection" class="grid scroll-mt-[80px] gap-2.5">
+    <div class="flex items-baseline gap-2">
+      <h2 class="font-display text-display text-ink">Selection</h2>
+      <span class="text-meta text-ink-3">
+        switch · checkbox · segmented (framed, filled, chips) · slider · stepper · tool group ·
+        swatches
+      </span>
+    </div>
+    <div class="flat-lg bevel-fill-panel grid gap-[22px] p-[22px]">
+      <div class="flex flex-wrap items-center gap-3">
+        <nc-toggle [(checked)]="autoRun">Auto-run</nc-toggle>
+        <nc-toggle [(checked)]="haptics">Haptics</nc-toggle>
+        <nc-toggle disabled>Disabled</nc-toggle>
+        <nc-checkbox [(checked)]="matchCase">Match case</nc-checkbox>
+        <nc-checkbox [(checked)]="regexp">Regexp</nc-checkbox>
+        <nc-checkbox disabled>Disabled</nc-checkbox>
+      </div>
+      <div class="flex flex-wrap items-center gap-2.5">
+        <nc-segmented [options]="visibility" [(value)]="visibilityValue" label="Visibility" />
+        <div class="w-[280px]">
+          <nc-segmented
+            [options]="monetization"
+            [(value)]="monetizationValue"
+            label="Monetization"
+            fill />
+        </div>
+        <nc-segmented [options]="shelves" [(value)]="shelf" label="Shelf" variant="chips" />
+        <nc-segmented [options]="visibility" value="draft" label="Small" size="sm" />
+        <nc-segmented [options]="visibility" value="draft" label="Unavailable" disabled />
+      </div>
+      <div class="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] items-center gap-[22px]">
+        <nc-slider label="BPM" [min]="40" [max]="240" [(value)]="bpm" [readout]="'' + bpm()" />
+        <div class="flex items-start gap-[14px]">
+          <span class="label w-[56px] shrink-0">Size</span>
+          <nc-stepper class="flex-1" [(value)]="spriteSize" [options]="sizes" label="Sprite size" />
+          <span class="w-[52px] shrink-0 text-right font-mono text-meta text-ink-body">
+            {{ sizes[spriteSize()] }}
+          </span>
+        </div>
+        <nc-tool-group class="justify-self-start" [items]="tools" [(value)]="tool" />
+      </div>
+      <div class="flex flex-wrap items-center gap-2.5">
+        <span class="label">Palette</span>
+        <nc-swatch-picker
+          [colours]="palette"
+          [slots]="paletteSlots"
+          [(value)]="colour"
+          slotLabel="Color" />
+        <span class="font-mono text-meta text-ink-3">
+          color =
+          <span class="text-active-ink">{{ colour() }}</span>
+        </span>
         <nc-swatch-picker allowNone [colours]="palette" [slots]="accents" [(value)]="swatch" />
-      </nc-section>
-      <nc-section title="Panel column" class="mt-2">
+      </div>
+      <!-- Not drawn in the design's Selection section: the same joined cells, latched the same way. -->
+      <div class="flex flex-wrap items-start gap-2.5">
+        <span class="inline-flex items-start gap-1.5">
+          <nc-bit-flags [(value)]="bits" [accents]="false" label="Bit flags" />
+          <span class="pt-1 font-mono text-meta text-ink-3">
+            =
+            <span class="text-active-ink">{{ bits() }}</span>
+          </span>
+        </span>
+        <nc-bit-flags [(value)]="bits" label="Tile flags" />
+        <nc-transport
+          [playing]="playing()"
+          [canStop]="playing()"
+          (started)="playing.set(true)"
+          (paused)="playing.set(false)"
+          (stopped)="playing.set(false)" />
+        <nc-toggle-button [(checked)]="grid">
+          <nc-icon name="grid" [size]="12" />
+          Grid
+        </nc-toggle-button>
+        <nc-toggle-button [(checked)]="onion" accent="jade" size="strip">
+          <nc-icon name="duplicate" [size]="24" />
+          Onion
+        </nc-toggle-button>
+        <nc-toggle-button disabled>Disabled</nc-toggle-button>
+        <nc-slider
+          class="w-[220px]"
+          label="R"
+          [max]="255"
+          [(value)]="red"
+          [readout]="'' + red()"
+          accent="hot"
+          compact />
+        <nc-slider class="w-[220px]" label="Off" [value]="40" readout="40" disabled />
+      </div>
+      <div class="grid items-start gap-[22px] md:grid-cols-2">
+        <nc-rating
+          [(value)]="score"
+          label="Score"
+          lowLabel="Not for me"
+          highLabel="I would recommend it" />
+        <nc-slot-grid
+          class="w-[240px]"
+          [cells]="slotCells()"
+          [rows]="3"
+          (pick)="slot.set($event)" />
+      </div>
+      <div class="grid gap-1">
+        <nc-setting-row
+          title="Reduce motion"
+          hint="Stills the animations and the screen shake in the UI">
+          <nc-toggle [(checked)]="reduceMotion" label="Reduce motion" />
+        </nc-setting-row>
+        <nc-setting-row title="Delete account" hint="Your published games stay up" [danger]="true">
+          <button ncButton variant="danger" size="sm">Delete</button>
+        </nc-setting-row>
+      </div>
+    </div>
+  </section>
+
+  <section id="chips" class="grid scroll-mt-[80px] gap-2.5">
+    <div class="flex items-baseline gap-2">
+      <h2 class="font-display text-display text-ink">Chips, keys &amp; data</h2>
+      <span class="text-meta text-ink-3">
+        badge · tag · keycap · stat · avatar · cursor tag · bit flags · meter · LCD · readout
+      </span>
+    </div>
+    <div class="flat-lg bevel-fill-panel grid gap-[22px] p-[22px]">
+      <div class="flex flex-wrap items-center gap-1.5">
+        <nc-chip>Action</nc-chip>
+        <nc-chip tone="gold">Adventure</nc-chip>
+        <nc-chip tone="jade">Synced</nc-chip>
+        <nc-chip tone="sky">Netplay</nc-chip>
+        <nc-chip tone="hot">Draft</nc-chip>
+        <nc-chip tone="orange">Warning</nc-chip>
+        <nc-chip tone="jade" wash>Granted</nc-chip>
+        <nc-chip tone="sky" wash>Invited</nc-chip>
+        <nc-chip tone="gold" wash>Pending</nc-chip>
+        <nc-chip tone="hot" wash>Refused</nc-chip>
+        <nc-chip tone="gold" [removable]="true">Removable</nc-chip>
+        <nc-chip kind="tag">puzzle</nc-chip>
+        <nc-chip kind="tag">two-player</nc-chip>
+        <span class="h-(--nc-h-xs) w-[3px] bg-line"></span>
+        <nc-keycap>Arrows</nc-keycap>
+        <nc-keycap>Z</nc-keycap>
+        <nc-keycap>Esc</nc-keycap>
+        <nc-keycap>D-pad</nc-keycap>
+      </div>
+      <div class="flex flex-wrap items-center gap-2.5">
+        <nc-stat icon="play" [value]="1247" />
+        <nc-stat icon="heart" [value]="318" tone="hot" />
+        <nc-stat icon="git-branch" [value]="3" />
+        <nc-stat icon="eye" [value]="48" label="Views" />
+        <nc-stat icon="play" [value]="1247" label="Plays" compact />
+        <span class="h-(--nc-h-xs) w-[3px] bg-line"></span>
+        <span class="inline-flex">
+          <nc-avatar name="louis" [size]="40" overlap />
+          <nc-avatar name="edgar" [size]="40" overlap />
+          <nc-avatar name="thea" [size]="40" overlap />
+        </span>
+        <nc-avatar name="alexis" colour="neutral" [size]="40" />
+        <nc-avatar name="ada" [size]="30" />
+        <nc-avatar name="bob" />
+        <nc-presence-flag name="louis" colour="sky" />
+        <nc-presence-flag name="edgar" colour="blush" />
+        <span class="inline-flex items-center gap-1 text-meta text-ink-3">
+          <nc-online-dot [online]="true" />
+          online
+          <nc-online-dot />
+          offline
+        </span>
+        <nc-bit-flags [value]="5" />
+      </div>
+      <div class="max-w-[560px]">
+        <div class="mb-1 flex justify-between text-label tracking-label text-ink-3 uppercase">
+          <span>Game size</span>
+          <span class="font-mono">942 kB / 1 MB</span>
+        </div>
+        <nc-meter [segments]="size" [max]="1048576" label="Game size" size="md" />
+      </div>
+      <div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,300px),1fr))] gap-[18px]">
+        <div class="grid content-start gap-[10px]">
+          <div class="text-label tracking-label text-ink-3 uppercase">LCD · boxed and flush</div>
+          <nc-lcd [minHeight]="72">
+            &gt; RUN main &gt; Welcome to Naucto! ! main:39 attempt to index a nil value (field
+            'sprites')
+          </nc-lcd>
+          <nc-lcd variant="flush" [minHeight]="48">
+            &gt; flush: the console fills its column, no frame
+          </nc-lcd>
+        </div>
+        <div class="grid content-start gap-[10px]">
+          <div class="text-label tracking-label text-ink-3 uppercase">Readout · inline meter</div>
+          <nc-readout value="ALEXIS01" tone="gold" />
+          <nc-readout size="sm" value="60 FPS" class="w-[120px]" />
+          <nc-meter [segments]="size" [max]="1048576" label="Inline size" [legend]="false" />
+          <nc-meter [segments]="size" [max]="786432" label="Over the ceiling" [legend]="false" />
+        </div>
+        <div class="grid content-start gap-[10px]">
+          <div class="text-label tracking-label text-ink-3 uppercase">Presence over a surface</div>
+          <!-- One mark inside the frame, two past its edges, which come back as chips on the rim. -->
+          <div
+            class="flat-sm bevel-fill-inset relative h-[120px] w-[320px] max-w-full overflow-hidden">
+            <nc-presence-layer [marks]="presenceMarks" [viewport]="presenceFrame" />
+          </div>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        @for (provider of providers; track provider.id) {
+          <nc-brand-mark [mark]="provider.mark" [size]="16" />
+        }
+        <nc-share-code
+          class="w-[210px]"
+          code="ALEXIS01"
+          [regenerable]="true"
+          copyLabel="Copy"
+          regenerateLabel="Regenerate" />
+        <nc-label>In this work session</nc-label>
+        <span class="text-body text-ink-body">
+          <nc-highlight text="Platformer" match="form" />
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <section id="navigation" class="grid scroll-mt-[80px] gap-2.5">
+    <div class="flex items-baseline gap-2">
+      <h2 class="font-display text-display text-ink">Navigation</h2>
+      <span class="text-meta text-ink-3">top-bar links · page tabs · editor rail · pager</span>
+    </div>
+    <div class="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] items-start gap-2.5">
+      <div class="flat-lg bevel-fill-panel grid content-start gap-[14px] px-2.5 py-[18px]">
+        <div class="label">Top-bar links</div>
+        <nav class="flex gap-[28px] text-body tracking-button uppercase" aria-label="Top bar">
+          @for (link of topLinks; track link) {
+            <a
+              href="/ui-kit#navigation"
+              [attr.aria-current]="$first ? 'page' : null"
+              class="text-ink-3 hover:text-active-ink aria-[current]:text-active-ink">
+              {{ link }}
+            </a>
+          }
+        </nav>
+      </div>
+      <div class="flat-lg bevel-fill-panel grid content-start gap-[14px] px-2.5 py-[18px]">
+        <div class="label">Page tabs</div>
+        <div class="min-w-0">
+          <nc-tabs
+            [tabs]="tabs"
+            [value]="pageTab()"
+            (valueChange)="$event && pageTab.set($event)"
+            label="Settings" />
+          <div
+            role="tabpanel"
+            class="flat-sm bevel-edge-line-strong bevel-fill-raised -mt-[3px] grid gap-[6px] p-2">
+            <div class="text-body text-ink">{{ tabCopy[pageTab()].title }}</div>
+            <div class="text-meta text-ink-3">{{ tabCopy[pageTab()].body }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="flat-lg bevel-fill-panel grid content-start gap-[14px] px-2.5 py-[18px]">
+        <div class="label">Pager</div>
+        <nc-pager class="justify-self-start" [count]="5" [(value)]="page" [autoplay]="5000" />
+      </div>
+      <div
+        class="flat-lg bevel-fill-panel row-span-2 grid content-start gap-[14px] px-2.5 py-[18px]">
+        <div class="label">Editor rail</div>
+        <div class="flex min-h-[300px] items-start">
+          <nc-rail
+            class="w-[90px] shrink-0"
+            [items]="rail"
+            [value]="railTab()"
+            (valueChange)="$event && railTab.set($event)"
+            label="Editor" />
+          <div
+            role="tabpanel"
+            class="flat-sm bevel-edge-line-strong bevel-fill-raised -ml-[3px] grid min-w-0 flex-1 content-start gap-[6px] self-stretch p-2">
+            <div class="text-body text-ink">{{ railCopy[railTab()].title }}</div>
+            <div class="text-meta text-ink-3">{{ railCopy[railTab()].body }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="flat-lg bevel-fill-panel grid content-start gap-[14px] px-2.5 py-[18px]">
+        <div class="label">Strips · console, bar, small</div>
+        <div class="grid min-w-0 gap-[14px]">
+          <nc-tabs [tabs]="consoleTabs" [(value)]="consoleTab" label="Console" variant="console" />
+          <nc-tabs [tabs]="shelves" [(value)]="shelf" label="Files" variant="bar" />
+          <nc-tabs [tabs]="shelves" [(value)]="shelf" label="Sheets" variant="small" editable />
+        </div>
+      </div>
+      <div class="flat-lg bevel-fill-panel grid content-start gap-[14px] px-2.5 py-[18px]">
+        <div class="label">Panel column · section · setting row</div>
         <!-- A region holding one column and the second that unfolds beside it. Its own height,
-                 because a region takes the one it is given and there is no editor here to give it. -->
-        <div class="h-[168px] border border-line">
+             because a region takes the one it is given and there is no editor here to give it. -->
+        <div class="flat-sm h-[168px]">
           <nc-panel-region
             [secondaryOpen]="regionOpen()"
             [viewportWidth]="1920"
@@ -151,125 +624,272 @@
             </nc-panel-column>
           </nc-panel-region>
         </div>
-      </nc-section>
-      <nc-section title="Label" class="mt-2">
-        <nc-label>In this work session</nc-label>
-      </nc-section>
-    </nc-panel>
-  </div>
-
-  <nc-panel title="Editor &amp; settings primitives">
-    <div class="grid gap-3 md:grid-cols-2">
-      <nc-section title="Stepper">
-        <nc-stepper [(value)]="spriteSize" [options]="sizes" />
-      </nc-section>
-      <nc-section title="Density">
-        <div class="grid gap-2">
-          @for (density of densities; track density.klass) {
-            <div [class]="density.klass">
-              <div class="label mb-1">{{ density.name }}</div>
-              <div class="flex h-(--nc-bar-h) items-center gap-1 rounded-xs bg-panel px-1.5">
-                <nc-tool-group [items]="tools" [(value)]="tool" [iconSize]="density.icon" />
-                <nc-toggle-button [(checked)]="grid">
-                  <nc-icon name="grid" [size]="density.icon" />
-                  Grid
-                </nc-toggle-button>
-                <button ncButton variant="secondary" size="tool">
-                  <nc-icon name="frame" [size]="density.icon" />
-                  Crop
-                </button>
-                <button ncButton variant="ghost" size="sm" iconOnly aria-label="Undo">
-                  <nc-icon name="undo" [size]="density.icon" />
-                </button>
-              </div>
-            </div>
-          }
-        </div>
-      </nc-section>
-      <nc-section title="Share code">
-        <nc-share-code
-          class="w-[210px]"
-          code="ALEXIS01"
-          [regenerable]="true"
-          copyLabel="Copy"
-          regenerateLabel="Regenerate" />
-      </nc-section>
+        <nc-section title="Section">
+          <nc-help-dot actions title="Section" text="A heading over a group of rows." />
+          <nc-setting-row title="Auto-run" hint="Run the game on every save.">
+            <nc-toggle [(checked)]="autoRun" label="Auto-run" />
+          </nc-setting-row>
+        </nc-section>
+      </div>
     </div>
-    <nc-section title="Setting row" class="mt-2">
-      <nc-setting-row
-        title="Reduce motion"
-        hint="Stills the animations and the screen shake in the UI">
-        <nc-toggle [(checked)]="reduceMotion" label="Reduce motion" />
-      </nc-setting-row>
-      <nc-setting-row title="Delete account" hint="Your published games stay up" [danger]="true">
-        <button ncButton variant="danger" size="sm">Delete</button>
-      </nc-setting-row>
-    </nc-section>
-  </nc-panel>
+  </section>
 
-  <nc-panel title="Overlays &amp; inputs">
-    <div class="flex flex-wrap items-center gap-2">
-      <button ncButton variant="secondary" ncTooltip="Kick this player from the session">
-        Hover me
-      </button>
-      <button ncButton variant="secondary" [ncPopover]="versions">
-        Platformer v3
-        <nc-icon name="chevron-down" [size]="12" />
-      </button>
-      <ng-template #versions>
-        <nc-popover-panel title="Versions">
-          <ul class="p-2 text-body text-ink">
-            <li class="flex justify-between">
-              <span>v3 Cave update</span>
-              <nc-chip tone="gold">Current</nc-chip>
-            </li>
-            <li class="mt-1 text-ink-3">Autosave · 8 minutes ago · you</li>
-          </ul>
-        </nc-popover-panel>
-      </ng-template>
-      <button ncButton variant="danger" (click)="confirm()">End session</button>
-      <button ncButton variant="ghost" (click)="toast()">Toast</button>
-      <nc-help-dot
-        title="Sprite flags"
-        text="Eight bits per sprite. The engine ignores them; your game reads them with `map.flag(index, bit)`.
+  <section id="feedback" class="grid scroll-mt-[80px] gap-2.5">
+    <div class="flex items-baseline gap-2">
+      <h2 class="font-display text-display text-ink">Feedback</h2>
+      <span class="text-meta text-ink-3">toast &amp; callout · empty · error · loading</span>
+    </div>
+    <div class="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] items-start gap-2.5">
+      <div class="grid content-start gap-1.5">
+        <div class="text-label tracking-label text-ink-3 uppercase">
+          Toasts &amp; callouts — one shape, four tones
+        </div>
+        @if (!hidden().has('published')) {
+          <nc-notice tone="success" title="Published" dismissible (dismissed)="hide('published')">
+            <span class="text-ink">Hightide v3</span>
+            is live on the hub.
+            <button ncButton variant="ghost" size="sm" actions>View</button>
+          </nc-notice>
+        }
+        @if (!hidden().has('joined')) {
+          <nc-notice tone="info" title="Théo joined" dismissible (dismissed)="hide('joined')">
+            Editing
+            <span class="font-mono text-ink">main</span>
+            with you. Their cursor is blue.
+          </nc-notice>
+        }
+        @if (!hidden().has('ceiling')) {
+          <nc-notice
+            tone="warn"
+            title="Over the size ceiling"
+            dismissible
+            (dismissed)="hide('ceiling')">
+            Publishing is blocked until the game is under 1 MB.
+            <button ncButton variant="ghost" size="sm" actions>See what's big</button>
+          </nc-notice>
+        }
+        @if (!hidden().has('save')) {
+          <nc-notice tone="danger" title="Could not save" dismissible (dismissed)="hide('save')">
+            The release could not be reached. Your changes are kept locally.
+            <button ncButton variant="ghost" size="sm" actions>Retry</button>
+          </nc-notice>
+        }
+        <p class="text-meta text-ink-3">
+          Same shape inline in docs and panels, as a note, a tip or a warning: drop the dismiss.
+        </p>
+        <nc-notice>The game is over the size ceiling, so publishing is blocked.</nc-notice>
+        <nc-notice tone="danger">This release could not be reached.</nc-notice>
+        <div class="flat-sm">
+          <nc-notice variant="band" title="Band">Full width, at the top of its panel.</nc-notice>
+        </div>
+        <div class="flex flex-wrap gap-1">
+          <button ncButton variant="ghost" (click)="toast()">Toast</button>
+          <button ncButton variant="ghost" (click)="toastTitled()">Titled toast</button>
+        </div>
+      </div>
+      <div class="grid content-start gap-2.5">
+        <div class="flat-lg bevel-fill-panel">
+          <nc-empty-state
+            icon="music"
+            title="No sound yet"
+            hint="An instrument is a wave plus an envelope. Add one and the piano roll wakes up.">
+            <button ncButton variant="primary" size="lg">+ Add instrument</button>
+          </nc-empty-state>
+        </div>
+        <div class="flat-lg bevel-fill-panel">
+          <nc-error-state
+            title="Could not reach the hub"
+            hint="The request failed. An outage must never read as an empty shelf."
+            retryLabel="Retry" />
+        </div>
+      </div>
+      <div class="grid content-start gap-2.5">
+        <div class="raised-lg bevel-fill-panel grid gap-1.5 p-1" role="status" aria-label="Loading">
+          <nc-skeleton class="aspect-video" height="auto" />
+          <div class="grid gap-1 px-1 pt-0.5 pb-[6px]">
+            <nc-skeleton class="text-ui" [words]="[7, 4, 6]" />
+            <nc-skeleton class="text-meta" style="animation-delay: 150ms" [words]="[5, 2, 4, 3]" />
+          </div>
+        </div>
+        <div class="flat-lg bevel-fill-panel grid gap-1 p-2">
+          <nc-skeleton height="96px" />
+          <nc-skeleton height="12px" width="60%" />
+          <nc-skeleton height="12px" width="35%" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="overlays" class="grid scroll-mt-[80px] gap-2.5">
+    <div class="flex items-baseline gap-2">
+      <h2 class="font-display text-display text-ink">Overlays</h2>
+      <span class="text-meta text-ink-3">
+        tooltip · popover · menu item · dialog — all lg frames, dialog is raised over a dither scrim
+      </span>
+    </div>
+    <div class="flex flex-wrap items-stretch gap-x-2.5 gap-y-[28px]">
+      <div class="grid min-w-0 flex-[1_1_280px] grid-rows-[auto_1fr_auto] gap-[10px]">
+        <span class="label">Tooltip · popover</span>
+        <div class="flat-lg bevel-fill-panel grid min-h-[280px] content-start gap-[30px] p-[22px]">
+          <div class="flex flex-wrap items-center gap-2 justify-self-start">
+            <button ncButton size="lg" ncTooltip="Save project">Simple</button>
+            <button
+              ncButton
+              size="lg"
+              ncTooltip="Your game becomes public and playable by anyone with the link, under `hightide`."
+              tooltipTitle="Publish to the shelf"
+              [tooltipMeta]="tooltipMeta">
+              Advanced
+            </button>
+            <button
+              ncButton
+              size="lg"
+              [pressed]="versionsOpen()"
+              [ncPopover]="versions"
+              [(popoverOpen)]="versionsOpen">
+              Platformer v3
+              <nc-icon name="chevron-down" [size]="12" />
+            </button>
+            <ng-template #versions>
+              <nc-popover-panel title="Versions">
+                <ul class="p-2 text-body text-ink">
+                  <li class="flex justify-between">
+                    <span>v3 Cave update</span>
+                    <nc-chip tone="gold">Current</nc-chip>
+                  </li>
+                  <li class="mt-1 text-ink-3">Autosave · 8 minutes ago · you</li>
+                </ul>
+              </nc-popover-panel>
+            </ng-template>
+            <nc-help-dot
+              title="Sprite flags"
+              text="Eight bits per sprite. The engine ignores them; your game reads them with `map.flag(index, bit)`.
 
 What each bit means is yours to decide." />
-      <nc-search class="w-[280px]" placeholder="Search games, people, tags…" />
-      <nc-tag-input class="w-[320px]" [tags]="['action', 'adventure']" />
-      <nc-stat icon="play" [value]="40" />
-      <nc-stat icon="heart" [value]="1008" tone="hot" />
-      <nc-stat icon="git-branch" [value]="3" />
-      <nc-stat icon="eye" [value]="48" label="Views" />
-      <nc-stat icon="play" [value]="1247" label="Plays" compact />
-      <nc-stat icon="heart" [value]="318" label="Likes" tone="hot" />
+          </div>
+        </div>
+        <span class="text-meta text-ink-3">Hover for 0.75 s, reveals in .18 s.</span>
+      </div>
+      <div class="grid min-w-0 flex-[1.5_1_420px] grid-rows-[auto_1fr_auto] gap-[10px]">
+        <span class="label">Dialog</span>
+        <div
+          class="flat-lg bevel-fill-panel relative grid min-h-[300px] place-items-center px-3 py-5">
+          <span
+            aria-hidden="true"
+            class="absolute inset-0 bg-scrim [mask-image:var(--nc-dither-50)] [mask-size:12px_12px]"></span>
+          <!-- The chrome alone, set on the page: nothing here holds a reference to close. -->
+          <nc-dialog-shell
+            class="relative w-full max-w-[400px]"
+            title="Kick everyone out?"
+            kicker="End session"
+            tone="danger"
+            lead="Three players are still in. They'll see the lobby close and lose unsaved progress.">
+            <ng-container footer>
+              <button ncButton variant="ghost" size="lg">Keep going</button>
+              <button ncButton variant="run" size="lg">End session</button>
+            </ng-container>
+          </nc-dialog-shell>
+        </div>
+        <div class="flex flex-wrap items-center gap-1">
+          <span class="text-meta text-ink-3">
+            Raised over a dither scrim: 4 × 12.5% layers, 45 ms steps. Opened for real:
+          </span>
+          @for (level of frictions; track level) {
+            <button ncButton size="sm" (click)="ask(level)">{{ level }}</button>
+          }
+        </div>
+      </div>
+      <div class="grid max-w-[460px] min-w-0 flex-[1_1_300px] grid-rows-[auto_1fr_auto] gap-[10px]">
+        <span class="label">Menu item</span>
+        <div class="flat-lg bevel-fill-panel grid content-start gap-[3px] p-[6px]">
+          <button type="button" ncOption shape="menu">
+            <nc-icon name="sliders" />
+            Settings
+          </button>
+          <button type="button" ncOption shape="menu">
+            <nc-icon name="logout" />
+            Sign out
+          </button>
+          <span class="h-[9px]"></span>
+          @for (note of notifications; track note.title) {
+            <button type="button" ncOption [wash]="note.unread ? 'sky' : undefined">
+              <span
+                aria-hidden="true"
+                class="flat-sm bevel-edge-line-strong bevel-fill-gold inline-flex size-[30px] shrink-0 items-center justify-center font-mono text-small text-on-accent uppercase">
+                {{ note.title[0] }}
+              </span>
+              <span class="grid min-w-0 flex-1 gap-[2px]">
+                <span
+                  class="text-small leading-[1.35]"
+                  [class]="note.unread ? 'text-sky-ink' : 'text-ink'">
+                  {{ note.title }}
+                </span>
+                <span class="text-meta text-ink-2">{{ note.body }}</span>
+                <span class="text-label tracking-wide text-ink-4 uppercase">{{ note.when }}</span>
+              </span>
+            </button>
+          }
+        </div>
+        <span class="text-meta text-ink-3">Ghost rows; unread adds a dither wash.</span>
+      </div>
     </div>
-  </nc-panel>
+  </section>
 
-  <nc-panel>
-    <nc-empty-state
-      icon="music"
-      title="No sound yet"
-      hint="An instrument is a wave plus an envelope. Add one and the piano roll wakes up — five voices, sixteen slots.">
-      <button ncButton variant="primary">+ Add instrument</button>
-    </nc-empty-state>
-  </nc-panel>
-
-  <nc-panel>
-    <nc-error-state
-      title="Could not reach the hub"
-      hint="The request failed. This is not the same as there being nothing here — an outage must never read as an empty shelf."
-      retryLabel="Retry" />
-  </nc-panel>
-
-  <nc-panel title="Icons">
-    <div class="flex flex-wrap gap-1 text-ink-2">
-      @for (icon of icons; track icon) {
-        <span
-          class="flex h-5 w-5 items-center justify-center rounded-xs border border-line"
-          [title]="icon">
-          <nc-icon [name]="icon" />
-        </span>
-      }
+  <section id="cards" class="grid scroll-mt-[80px] gap-2.5">
+    <div class="flex items-baseline gap-2">
+      <h2 class="font-display text-display text-ink">Game card</h2>
+      <span class="text-meta text-ink-3">
+        the app's shelves use the cover card · the floppy lives here until it is ready
+      </span>
     </div>
-  </nc-panel>
-</div>
+    <div class="grid gap-[10px]">
+      <span class="label">Floppy · rest · reached · pressed (hold it) · thumbnail</span>
+      <div
+        class="flat-lg bevel-fill-panel grid grid-cols-2 items-start gap-3 p-[22px] sm:grid-cols-4"
+        data-testid="floppy-states">
+        <a href="/ui-kit#cards" class="block min-w-0" data-testid="floppy-rest">
+          <nc-floppy name="Hightide" action="play" actionLabel="Play">
+            <nc-stat info icon="play" [value]="1280" compact />
+            <nc-stat info icon="heart" [value]="96" tone="hot" compact />
+          </nc-floppy>
+        </a>
+        <nc-floppy name="Reached" action="play" actionLabel="Play" open>
+          <nc-stat info icon="play" [value]="1280" compact />
+          <nc-stat info icon="heart" [value]="96" tone="hot" compact />
+        </nc-floppy>
+        <nc-floppy name="Edit" action="edit" actionLabel="Edit" open />
+        <nc-floppy class="w-[64px]" mode="thumb" name="Thumbnail" />
+      </div>
+    </div>
+    <div class="grid gap-[10px]">
+      <span class="label">Floppy · colours · the game that does not exist yet</span>
+      <div
+        class="flat-lg bevel-fill-panel grid grid-cols-2 items-start gap-3 p-[22px] sm:grid-cols-5">
+        @for (disk of disks; track disk.name) {
+          <a href="/ui-kit#cards" class="block min-w-0">
+            <nc-floppy [name]="disk.name" [body]="disk.body" action="play" actionLabel="Play" />
+          </a>
+        }
+        <a href="/ui-kit#cards" class="block min-w-0" data-testid="floppy-ghost">
+          <nc-floppy ghost action="new" name="New game" actionLabel="New game" />
+        </a>
+        <nc-floppy ghost action="new" name="New game · reached" actionLabel="New game" open />
+      </div>
+    </div>
+    <div class="grid gap-[10px]">
+      <span class="label">Cover card · what the shelves show</span>
+      <div
+        class="flat-lg bevel-fill-panel grid grid-cols-2 items-start gap-3 p-[22px] sm:grid-cols-5">
+        <nc-cover-card name="Hightide" link="/ui-kit" action="play" actionLabel="Play">
+          <span cover class="no-cover block size-full"></span>
+          <nc-stat info icon="play" [value]="1280" compact />
+          <nc-stat info icon="heart" [value]="96" tone="hot" compact />
+        </nc-cover-card>
+        <nc-cover-card name="Draft" link="/ui-kit" action="edit" actionLabel="Edit">
+          <span cover class="no-cover block size-full"></span>
+        </nc-cover-card>
+        <nc-cover-card ghost name="New game" link="/ui-kit" action="new" actionLabel="New game" />
+      </div>
+    </div>
+  </section>
+</main>

@@ -1,15 +1,57 @@
-<nc-dialog-shell [title]="data.title">
-  <div class="max-w-[52ch] space-y-1 text-body leading-[1.65] text-ink-body">
+<nc-dialog-shell
+  [title]="data.title"
+  [kicker]="data.kicker"
+  [tone]="data.danger ? 'danger' : 'default'">
+  <div class="mt-[10px] grid max-w-[52ch] gap-[10px] text-small leading-[1.6] text-ink-body">
     @for (paragraph of paragraphs; track $index) {
       <p>{{ paragraph }}</p>
     }
   </div>
+  @if (field; as asked) {
+    <label class="mt-2 grid gap-1">
+      <span class="text-label tracking-label text-ink-3 uppercase">{{ asked.label }}</span>
+      <input
+        ncInput
+        autocomplete="off"
+        [type]="asked.kind === 'password' ? 'password' : 'text'"
+        [placeholder]="asked.kind === 'name' ? asked.name : ''"
+        [attr.aria-invalid]="mistyped() ? 'true' : null"
+        (input)="type($event)"
+        (keydown.enter)="confirm()" />
+    </label>
+  }
   <ng-container footer>
-    <button ncButton variant="ghost" (click)="ref.close(false)">
+    <button ncButton variant="ghost" size="lg" (click)="ref.close(false)">
       {{ data.cancelLabel ?? 'Cancel' }}
     </button>
-    <button ncButton [variant]="data.danger ? 'danger' : 'primary'" (click)="ref.close(true)">
-      {{ data.confirmLabel ?? 'Confirm' }}
-    </button>
+    @if (hold; as held) {
+      <button
+        ncButton
+        size="lg"
+        aria-keyshortcuts="Space Enter"
+        [variant]="variant"
+        [attr.aria-description]="held.hint"
+        [attr.title]="held.hint"
+        (pointerdown)="press()"
+        (pointerup)="release()"
+        (pointerleave)="release()"
+        (pointercancel)="release()"
+        (blur)="release()"
+        (keydown)="holdKey($event, true)"
+        (keyup)="holdKey($event, false)">
+        <span
+          aria-hidden="true"
+          class="absolute inset-y-0 left-0 transition-[width]"
+          [class]="holdFill + (holding() ? ' w-full ease-linear' : ' w-0 duration-200 ease-out')"
+          [style.transition-duration.ms]="holding() ? holdMs : null"></span>
+        <span class="relative">
+          {{ holding() ? held.holdingLabel : (data.confirmLabel ?? 'Confirm') }}
+        </span>
+      </button>
+    } @else {
+      <button ncButton size="lg" [variant]="variant" [disabled]="locked()" (click)="confirm()">
+        {{ data.confirmLabel ?? 'Confirm' }}
+      </button>
+    }
   </ng-container>
 </nc-dialog-shell>

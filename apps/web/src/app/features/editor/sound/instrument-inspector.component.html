@@ -1,6 +1,6 @@
 <div *transloco="let t" class="relative">
   <nc-presence-surface surface="sound:inspector" />
-  <section class="border-b border-line p-1.5">
+  <section class="border-b-3 border-line p-1.5">
     <div class="mb-1 flex items-center justify-between">
       <span class="label text-ink-3">{{ t('editor.sound.oscillator') }}</span>
       <nc-help-dot [title]="t('editor.sound.oscillator')" [text]="t('editor.sound.oscHelp')" />
@@ -17,7 +17,7 @@
           role="radio"
           [attr.aria-checked]="inst().osc === osc.value"
           [attr.tabindex]="inst().osc === osc.value ? 0 : -1"
-          class="flex h-[55px] flex-col items-center justify-center gap-0.5 rounded-xs border border-line bg-inset text-ink-3 hover:text-ink aria-checked:border-gold aria-checked:bg-line aria-checked:text-gold-ink"
+          class="flex h-[57px] cursor-pointer flex-col items-center justify-center gap-0.5 raised-sm text-ink-3 hover:bevel-lit hover:text-active-ink aria-checked:bevel-down aria-checked:bevel-lit aria-checked:text-active-ink"
           (click)="patched.emit({ osc: osc.value })">
           <nc-wave-glyph [type]="osc.value" [width]="44" />
           <!-- Type utilities, not the label class: that class sets its own colour and would
@@ -37,7 +37,7 @@
           (valueChange)="patched.emit({ duty: $event / 100 })" />
       }
       @if (inst().osc === 'sample') {
-        <div class="rounded-sm border border-line bg-inset p-1">
+        <div class="flat-sm bevel-fill-inset p-1">
           <div class="flex items-center gap-1">
             <label ncButton variant="secondary" size="sm" class="cursor-pointer">
               {{ sampleName() ? t('editor.sound.replaceSample') : t('editor.sound.addSample') }}
@@ -53,7 +53,7 @@
                 iconOnly
                 [attr.aria-label]="t('editor.sound.removeSample')"
                 (click)="clearSample()">
-                <nc-icon name="close" [size]="12" />
+                <nc-icon name="close" [size]="24" />
               </button>
             }
           </div>
@@ -92,7 +92,7 @@
     </div>
   </section>
 
-  <section class="border-b border-line p-1.5">
+  <section class="border-b-3 border-line p-1.5">
     <div class="mb-1 flex items-center justify-between">
       <span class="label text-ink-3">{{ t('editor.sound.envelope') }}</span>
       <nc-help-dot [title]="t('editor.sound.envelope')" [text]="t('editor.sound.envHelp')" />
@@ -145,7 +145,7 @@
     </div>
   </section>
 
-  <section class="border-b border-line p-1.5">
+  <section class="border-b-3 border-line p-1.5">
     <div class="mb-1 flex items-center justify-between">
       <span class="label text-ink-3">{{ t('editor.sound.modFilter') }}</span>
       <nc-help-dot [title]="t('editor.sound.modFilter')" [text]="t('editor.sound.modHelp')" />
@@ -213,7 +213,7 @@
     </div>
   </section>
 
-  <section class="border-b border-line p-1.5">
+  <section class="border-b-3 border-line p-1.5">
     <div class="mb-1 flex items-center justify-between">
       <span class="label text-ink-3">{{ t('editor.sound.mix') }}</span>
       <nc-help-dot [title]="t('editor.sound.mix')" [text]="t('editor.sound.mixHelp')" />

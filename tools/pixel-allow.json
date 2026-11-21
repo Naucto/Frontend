@@ -1,0 +1,14 @@
+{
+  "exempt": {},
+  "owed": {
+    "apps/web/src/app/features/editor/art/sheet-view.component.html": {
+      "stroke-width": 1
+    },
+    "apps/web/src/app/features/editor/sound/piano-keys.component.html": {
+      "border": 1
+    },
+    "apps/web/src/styles.css": {
+      "stroke-width": 3
+    }
+  }
+}

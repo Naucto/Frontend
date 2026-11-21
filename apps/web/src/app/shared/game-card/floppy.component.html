@@ -1,0 +1,52 @@
+<div #disk class="tilt">
+  <span class="ring"></span>
+  <div class="face">
+    <span class="grip"></span>
+    <span class="hd" aria-hidden="true">HD</span>
+    <span class="slot"></span>
+    <span class="shutter"></span>
+    <div class="label" [class.no-cover]="!cover()">
+      @if (cover(); as src) {
+        <img [src]="src" alt="" class="pixelated" loading="lazy" />
+      } @else if (mode() === 'title' && !ghost()) {
+        <nc-icon name="image" [size]="24" class="absolute inset-0 m-auto size-[24px] text-ink-4" />
+      }
+      @if (preview(); as clip) {
+        <video #video [src]="clip" [muted]="true" loop playsinline preload="none"></video>
+      }
+      @if (mode() === 'title') {
+        <div class="band">
+          <ng-content select="[info]" />
+        </div>
+      }
+    </div>
+    <span class="tabs"></span>
+    <span class="light"></span>
+  </div>
+  @if (ghost()) {
+    <div class="outline">
+      <span class="grip"></span>
+      <span class="hd" aria-hidden="true">HD</span>
+      <span class="shutter"></span>
+      <span class="label"></span>
+      <span class="tabs"></span>
+    </div>
+    <span class="new">
+      <nc-icon name="plus" [size]="48" />
+      {{ actionLabel() }}
+    </span>
+  } @else if (mode() === 'title' && action() !== 'none') {
+    <span
+      class="action raised-sm glare"
+      [class]="action() === 'play' ? 'bevel-hot text-on-hot' : 'bevel-primary text-on-primary'">
+      <nc-icon [name]="ACTION_ICON[action()]" [size]="48" />
+      <span class="sr-only">{{ actionLabel() }}</span>
+    </span>
+  }
+</div>
+@if (mode() === 'title') {
+  <div #title class="title text-ui text-ink" [class.text-center]="titleAlign() === 'center'">
+    <span>{{ name() }}</span>
+  </div>
+  <ng-content select="[meta]" />
+}

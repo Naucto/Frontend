@@ -11,27 +11,25 @@
       <span class="label min-w-0 truncate text-ink">{{ current.title }}</span>
       <span class="flex-1"></span>
       <span
-        class="absolute -bottom-px left-0 h-[2px] bg-gold"
+        class="absolute -bottom-[3px] left-0 h-[3px] bg-gold"
         [style.width.%]="(current.step / current.steps) * 100"></span>
       <button
         ncButton
         variant="ghost"
-        size="sm"
         iconOnly
         [attr.aria-label]="t('docs.prevStep')"
         [disabled]="current.step <= 1"
         (click)="stepTo(current.step - 1)">
-        <nc-icon name="chevron-left" [size]="24" />
+        <nc-icon name="chevron-left" />
       </button>
       <button
         ncButton
         variant="ghost"
-        size="sm"
         iconOnly
         [attr.aria-label]="t('docs.nextStep')"
         [disabled]="current.step >= current.steps"
         (click)="stepTo(current.step + 1)">
-        <nc-icon name="chevron-right" [size]="24" />
+        <nc-icon name="chevron-right" />
       </button>
     } @else {
       <span class="label min-w-0 truncate text-ink">{{ current.title }}</span>

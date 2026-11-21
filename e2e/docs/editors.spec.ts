@@ -272,7 +272,7 @@ for (const theme of THEMES) {
       await page.waitForTimeout(200);
       await shoot(page, OUT, 'sound-sfx', theme, page.locator('nc-slot-grid').first());
       // Five places filled with pattern 0 and one left empty: the orange hole the music stops at.
-      const cells = page.locator('nc-song-list [role="group"] input');
+      const cells = page.locator('nc-song-list [role="group"] nc-number-field input');
       for (const i of [0, 1, 2, 4, 5]) {
         await cells.nth(i).fill('0');
         await cells.nth(i).press('Enter');

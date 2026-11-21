@@ -27,7 +27,7 @@ const SCALE = 3;
 @Component({
   selector: 'nc-minimap',
   templateUrl: './minimap.component.html',
-  host: { class: 'block rounded-xs border border-line bg-inset' },
+  host: { class: 'block flat-sm bevel-fill-inset' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MinimapComponent {

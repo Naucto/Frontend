@@ -1,72 +1,100 @@
 import { computed, Directive, input } from '@angular/core';
 
-export type ButtonVariant = 'primary' | 'run' | 'secondary' | 'sky' | 'ghost' | 'danger';
-export type ButtonSize = 'xs' | 'tool' | 'sm' | 'md' | 'strip' | 'bar' | 'hero' | 'lg';
-
-/**
- * Unavailable is a different shape, not the same one faded: the fill is stripped, as the design
- * draws a blocked button, and the ink stays legible because the button carries the reason in its
- * title.
- */
-const DISABLED =
-  'disabled:cursor-not-allowed disabled:bg-transparent disabled:text-ink-4 ' +
-  'disabled:hover:bg-transparent disabled:hover:text-ink-4 disabled:hover:brightness-100';
+export type ButtonVariant = 'primary' | 'run' | 'secondary' | 'ghost' | 'danger' | 'jade' | 'sky';
+export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'bar' | 'hero';
+/** Sizes the ladder no longer has. Each still resolves, to the step nearest what it was. */
+export type RetiredButtonSize = 'tool' | 'strip';
 
 const BASE =
-  'inline-flex cursor-pointer items-center justify-center gap-1 select-none whitespace-nowrap rounded-sm border font-ui uppercase tracking-button ' +
-  `focus-visible:outline-2 ${DISABLED}`;
+  'inline-flex cursor-pointer items-center justify-center select-none whitespace-nowrap font-ui uppercase active:bevel-down';
 
 /**
- * A filled variant keeps a line when unavailable; a borderless one keeps none, or a ghost button
- * would gain a visible shape in the one state where it can do nothing.
+ * Unavailable is one shape whatever the variant: the frame drawn flat, no fill, the faintest ink.
+ * Only the frame's colour is the variant's to say, because a button that had no frame must not gain
+ * one in the state where it can do nothing.
  */
-const DISABLED_BORDER = 'disabled:border-line disabled:hover:border-line';
-const NO_DISABLED_BORDER = 'disabled:border-transparent disabled:hover:border-transparent';
+const DISABLED_SHAPE =
+  'disabled:cursor-not-allowed disabled:bevel-level disabled:bevel-fill-transparent disabled:text-ink-4';
+const DISABLED = `${DISABLED_SHAPE} disabled:bevel-edge-line`;
+const DISABLED_BARE = `${DISABLED_SHAPE} disabled:bevel-edge-transparent`;
+
+const LIT = 'hover:bevel-lit hover:text-active-ink';
 
 const VARIANTS: Record<ButtonVariant, string> = {
-  primary: `bg-gold border-gold text-on-accent hover:bg-orange hover:border-orange ${DISABLED_BORDER}`,
-  run: `bg-hot border-hot text-on-accent-dark hover:brightness-110 ${DISABLED_BORDER}`,
-  secondary: `bg-raised border-line-strong text-ink-body hover:text-ink hover:border-ink-4 ${DISABLED_BORDER}`,
-  sky: `bg-sky border-sky text-on-accent hover:brightness-110 ${DISABLED_BORDER}`,
-  ghost: `bg-transparent border-transparent text-ink-2 hover:text-ink hover:bg-raised ${NO_DISABLED_BORDER}`,
-  danger: `bg-transparent border-hot-ink text-hot-ink hover:bg-hot hover:text-on-accent-dark hover:border-hot ${DISABLED_BORDER}`,
+  primary: `glare bevel-primary text-on-primary hover:bevel-fill-primary-hover ${DISABLED}`,
+  run: `glare bevel-hot text-on-hot hover:bevel-fill-hot-hover ${DISABLED}`,
+  secondary: `text-ink-body ${LIT} ${DISABLED}`,
+  ghost: `bevel-bare text-ink-2 ${LIT} hover:bevel-fill-raised ${DISABLED_BARE}`,
+  danger: `bevel-level bevel-edge-hot bevel-fill-transparent text-hot-ink hover:bevel-lift hover:bevel-hot hover:text-on-hot ${DISABLED}`,
+  jade: `glare bevel-jade text-on-accent ${DISABLED}`,
+  sky: `glare bevel-sky text-on-accent ${DISABLED}`,
 };
 
-// Height and padding are kept apart so an icon-only button can drop the padding outright: two
-// padding utilities on one element are settled by stylesheet order, not by which was added last.
-const SIZES: Record<ButtonSize, { box: string; px: string }> = {
-  // The editors' tool strips: the height the design draws most.
-  tool: { box: 'h-(--nc-control-h) control-type', px: 'px-1.25' },
-  // An inline affordance that sits inside another control rather than beside it.
-  xs: { box: 'h-(--nc-control-h-xs) text-micro', px: 'px-1' },
-  sm: { box: 'h-(--nc-control-h-sm) control-type', px: 'px-1.25' },
-  md: { box: 'h-[32px] text-body', px: 'px-2' },
-  // An editor strip beside a framed group, the transport or a tool group: every control on that
-  // line stands as tall as the frame, or the line reads as three heights.
-  strip: { box: 'h-(--nc-transport-h) control-type', px: 'px-1.25' },
-  // The header bars only: every control there shares this height.
-  bar: { box: 'h-[38px] text-body', px: 'px-[16px]' },
-  // The hub hero's pair, the only buttons sitting over artwork rather than over a surface. Then
-  // settle the disagreement in the code: either `h-[34px]` as the comment measured, or keep 40.
-  hero: { box: 'h-[40px] text-body', px: 'px-[20px]' },
-  // The sign-in submit: a button you are meant to land on without aiming.
-  lg: { box: 'h-[39px] text-ui tracking-[0.08em]', px: 'px-2' },
+/** Held down: a neutral button lights, a coloured one keeps its colour, and neither sweeps. */
+const PRESSED: Record<ButtonVariant, string> = {
+  primary: `bevel-down bevel-primary text-on-primary ${DISABLED}`,
+  run: `bevel-down bevel-hot text-on-hot ${DISABLED}`,
+  secondary: `bevel-down bevel-lit text-active-ink ${DISABLED}`,
+  ghost: `bevel-down bevel-lit text-active-ink ${DISABLED_BARE}`,
+  danger: `bevel-down bevel-hot text-on-hot ${DISABLED}`,
+  jade: `bevel-down bevel-jade text-on-accent ${DISABLED}`,
+  sky: `bevel-down bevel-sky text-on-accent ${DISABLED}`,
 };
+
+/** The answer a copy button gives: it stands flat in jade until the caller clears it. */
+const COPIED = `bevel-level bevel-edge-jade bevel-fill-jade-wash text-jade-ink ${DISABLED}`;
+
+// Padding is kept apart so an icon-only button can drop it outright: two padding utilities on one
+// element are settled by stylesheet order, not by which was added last.
+interface SizeClasses {
+  box: string;
+  px: string;
+}
+const SM: SizeClasses = {
+  box: 'raised-sm h-(--nc-h-sm) gap-1 text-meta tracking-button',
+  px: 'px-1.5',
+};
+const MD: SizeClasses = {
+  box: 'raised-sm h-(--nc-h-md) gap-1 text-small tracking-button',
+  px: 'px-[14px]',
+};
+const SIZES: Record<ButtonSize | RetiredButtonSize, SizeClasses> = {
+  xs: { box: 'raised-sm h-(--nc-h-xs) gap-[6px] text-label tracking-button', px: 'px-[10px]' },
+  sm: SM,
+  md: MD,
+  lg: { box: 'raised-sm h-(--nc-h-lg) gap-[10px] text-body tracking-button', px: 'px-[18px]' },
+  xl: { box: 'raised-sm h-(--nc-h-xl) gap-[10px] text-body tracking-button', px: 'px-[18px]' },
+  bar: { box: 'raised-lg h-(--nc-h-bar) gap-[10px] text-body tracking-strip', px: 'px-2.5' },
+  hero: { box: 'raised-lg h-(--nc-h-hero) gap-1.5 text-ui tracking-strip', px: 'px-3' },
+  tool: SM,
+  strip: MD,
+};
+
+function coerceBoolean(value: boolean | string): boolean {
+  return value !== false && value !== 'false';
+}
 
 /** Applies Naucto button styling to the native element it sits on. */
 @Directive({
   selector: 'button[ncButton], a[ncButton], label[ncButton]',
-  host: { '[class]': 'classes()', '[attr.data-variant]': 'variant()' },
+  host: {
+    '[class]': 'classes()',
+    '[attr.data-variant]': 'variant()',
+    '[attr.data-pressed]': 'pressed() ? "" : null',
+    '[attr.data-copied]': 'copied() ? "" : null',
+  },
 })
 export class ButtonDirective {
   readonly variant = input<ButtonVariant>('secondary');
-  readonly size = input<ButtonSize>('md');
-  readonly iconOnly = input(false, {
-    transform: (value: boolean | string) => value !== false && value !== 'false',
-  });
+  readonly size = input<ButtonSize | RetiredButtonSize>('md');
+  readonly iconOnly = input(false, { transform: coerceBoolean });
+  /** Latched: an open trigger, a held tool. The caller owns the ARIA state that says which. */
+  readonly pressed = input(false, { transform: coerceBoolean });
+  readonly copied = input(false, { transform: coerceBoolean });
 
-  protected readonly classes = computed(
-    () =>
-      `${BASE} ${VARIANTS[this.variant()]} ${SIZES[this.size()].box} ${this.iconOnly() ? 'aspect-square' : SIZES[this.size()].px}`,
-  );
+  protected readonly classes = computed(() => {
+    const size = SIZES[this.size()];
+    const state = this.copied() ? COPIED : (this.pressed() ? PRESSED : VARIANTS)[this.variant()];
+    return `${BASE} ${state} ${size.box} ${this.iconOnly() ? 'aspect-square' : size.px}`;
+  });
 }

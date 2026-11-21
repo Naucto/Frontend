@@ -4,25 +4,42 @@
   [lead]="t('feedback.prompt.lead')"
   [dismissible]="false">
   <nc-rating-form
+    #form
     [role]="prompt.role"
     origin="PROMPT"
     [releaseId]="prompt.releaseId"
-    (sent)="ref.close({ kind: 'sent', sent: $event })">
-    <span secondary class="flex flex-wrap items-center gap-1">
+    (sent)="ref.close({ kind: 'sent', sent: $event })" />
+  <!-- Refusing for good is not one of the form's actions, so it stays out of the footer. -->
+  <button
+    ncButton
+    variant="ghost"
+    size="sm"
+    type="button"
+    class="mt-[14px] -ml-[12px]"
+    (click)="ref.close({ kind: 'decline' })">
+    {{ t('feedback.prompt.never') }}
+  </button>
+  <ng-container footer>
+    <button ncButton variant="ghost" type="button" (click)="ref.close({ kind: 'snooze' })">
+      {{ t('feedback.prompt.notNow') }}
+    </button>
+    @if (form.low()) {
       <button
         ncButton
-        variant="ghost"
-        size="sm"
+        variant="secondary"
         type="button"
-        (click)="ref.close({ kind: 'snooze' })">
-        {{ t('feedback.prompt.notNow') }}
+        [disabled]="form.pending()"
+        (click)="form.send(true)">
+        {{ t('feedback.rating.reportBug') }}
       </button>
-      <button
-        type="button"
-        class="cursor-pointer text-meta text-ink-3 underline-offset-2 hover:text-ink hover:underline"
-        (click)="ref.close({ kind: 'decline' })">
-        {{ t('feedback.prompt.never') }}
-      </button>
-    </span>
-  </nc-rating-form>
+    }
+    <button
+      ncButton
+      variant="primary"
+      type="button"
+      [disabled]="form.score() === null || form.pending()"
+      (click)="form.send(false)">
+      {{ form.pending() ? t('feedback.sending') : t('feedback.rating.send') }}
+    </button>
+  </ng-container>
 </nc-dialog-shell>

@@ -1,8 +1,10 @@
-<div *transloco="let t" class="grid h-dvh grid-rows-[56px_1fr] bg-page text-ink">
+<div
+  *transloco="let t"
+  class="grid h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[56px_1fr] bg-page text-ink">
   <!-- The mark sits in the rail's own column, so the vertical seam runs unbroken from the logo
        down past every rail item. The hub's bar gives it the same cell, which is what makes that
        safe. -->
-  <header class="flex items-center gap-1.5 border-b border-line bg-panel pr-2 pl-0">
+  <header class="flex items-center gap-1.5 border-b-3 border-line bg-panel pr-2 pl-0">
     <a
       routerLink="/games"
       class="flex w-[81px] shrink-0 items-center justify-center"
@@ -25,20 +27,24 @@
             overlap />
         }
       </div>
-      <button ncButton variant="secondary" size="bar" (click)="share()">
-        {{ t('editor.share') }}
-      </button>
-      <button
-        ncButton
-        variant="primary"
-        size="bar"
-        (click)="publish()"
-        [disabled]="!session.isCollaborator() || !!publishBlockedBy()"
-        [attr.title]="publishBlockedBy() ? t(publishBlockedBy()!) : null">
-        {{ t('editor.publish') }}
-      </button>
+      <!-- The narrow screen offers a link to a laptop instead: nothing here to share or publish from. -->
+      @if (!ui.tooNarrow()) {
+        <button ncButton variant="secondary" size="bar" (click)="share()">
+          {{ t('editor.share') }}
+        </button>
+        <button
+          ncButton
+          variant="primary"
+          size="bar"
+          (click)="publish()"
+          [disabled]="!session.isCollaborator() || !!publishBlockedBy()"
+          [attr.title]="publishBlockedBy() ? t(publishBlockedBy()!) : null">
+          {{ t('editor.publish') }}
+        </button>
+      }
     }
     <nc-report-problem-button />
+    <nc-theme-switch />
     <nc-notifications-bell />
     <nc-account-menu />
   </header>
@@ -69,15 +75,15 @@
               (switched)="ui.toggleReference()">
               <!-- Built only while it is open: the reference has nothing running in it, so unlike
                the console it costs nothing to rebuild and something to keep. -->
-              <div secondary class="flex min-h-0 flex-col border-l border-line">
+              <div secondary class="flex min-h-0 flex-col border-l-3 border-line">
                 @if (ui.referenceShown()) {
                   <nc-doc-pane class="min-h-0 flex-1 overflow-auto" />
                   <!-- Only where the reference has taken the console's place: the one arrangement
                      that pauses the game. -->
                   @if (ui.columnMode() === 'swap') {
                     <div
-                      class="flex shrink-0 items-center gap-1 border-t border-line bg-inset px-1.5 py-1">
-                      <nc-icon name="pause" [size]="12" class="text-gold-ink" />
+                      class="flex shrink-0 items-center gap-1 border-t-3 border-line bg-inset px-1.5 py-1">
+                      <nc-icon name="pause" [size]="24" class="text-gold-ink" />
                       <span class="label text-gold-ink">{{ t('editor.gamePaused') }}</span>
                     </div>
                   }
@@ -87,7 +93,7 @@
                 primary
                 class="min-h-0 border-line"
                 [shown]="consoleShown()"
-                [class.border-l]="consoleShown()" />
+                [class.border-l-3]="consoleShown()" />
             </nc-panel-region>
           </div>
         }

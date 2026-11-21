@@ -241,6 +241,22 @@
     "tabResults": "TAB FULL RESULTS",
     "escClose": "ESC CLOSE"
   },
+  "palette": {
+    "label": "Search games and commands",
+    "placeholder": "Type a game or a command",
+    "results": "Results",
+    "recent": "Recent",
+    "actions": "Actions",
+    "edit": "Edit",
+    "toggleTheme": "Toggle theme",
+    "empty": "Nothing by that name.",
+    "count": "{{n}} results",
+    "move": "Move",
+    "run": "Run",
+    "close": "Close",
+    "enterKey": "Enter",
+    "escKey": "Esc"
+  },
   "share": {
     "people": "PEOPLE",
     "searchFailed": "Could not search for people just now.",
@@ -934,6 +950,8 @@
     "prevStep": "Previous step",
     "nextStep": "Next step",
     "copyToNewGame": "Copy to new game",
+    "copyCode": "Copy code",
+    "codeCopied": "Copied",
     "copyFromEditorTitle": "Copy to a new game?",
     "copyFromEditorMessage": "This closes the game you are editing, once it has saved, and opens the copy as a game of your own.",
     "copyFromEditorConfirm": "Copy",
@@ -959,7 +977,6 @@
     "learnMore": "What is measured, and for how long",
     "accept": "Accept",
     "refuse": "Refuse",
-    "allow": "Allow",
     "choiceTitle": "Usage analytics",
     "choiceHint": "Measure how you use Naucto under a first-party cookie. You can change this at any time."
   },

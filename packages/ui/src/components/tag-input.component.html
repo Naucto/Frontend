@@ -1,5 +1,4 @@
-<div
-  class="flex min-h-5 flex-wrap items-center gap-0.5 rounded-sm border border-line bg-inset px-1 py-0.5 focus-within:border-gold">
+<div [class]="well">
   @for (tag of tags(); track tag) {
     <nc-chip kind="tag" [removable]="!disabled()" (removed)="remove(tag)">{{ tag }}</nc-chip>
   }
@@ -12,5 +11,5 @@
     (input)="draft.set($any($event.target).value)"
     (keydown)="onKey($event)"
     (blur)="commit()"
-    class="min-w-[8ch] flex-1 bg-transparent font-ui text-ui text-ink outline-none placeholder:text-ink-4 disabled:opacity-40" />
+    class="min-w-[80px] flex-1 font-ui text-small text-ink outline-none placeholder:text-ink-4 disabled:cursor-not-allowed" />
 </div>

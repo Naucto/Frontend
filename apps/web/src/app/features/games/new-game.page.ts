@@ -4,6 +4,7 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { projectControllerCreate } from '@naucto/api-client';
 import { ErrorStateComponent, LcdComponent } from '@naucto/ui';
 import { QueryClient } from '@tanstack/angular-query-experimental';
+import { firstValueFrom } from 'rxjs';
 
 import { unwrap } from '../../core/api/api-errors';
 import { type GameSeed, SEED_KEY } from '../../shared/docs/seed-new-game';
@@ -21,26 +22,26 @@ export default class NewGamePage implements OnInit {
   private readonly qc = inject(QueryClient);
   private readonly transloco = inject(TranslocoService);
   protected readonly error = signal<string | null>(null);
-  private name = this.transloco.translate('editor.game.namePlaceholder');
-
   private seed: string | null = null;
 
   ngOnInit(): void {
     // Taken once, so a retry after a failed request still creates the game the tutorial named.
     this.seed = sessionStorage.getItem(SEED_KEY);
     sessionStorage.removeItem(SEED_KEY);
-    if (this.seed) {
-      this.name = (JSON.parse(this.seed) as GameSeed).name;
-    }
     void this.create();
   }
 
   protected async create(): Promise<void> {
     this.error.set(null);
     try {
-      const project = unwrap(
-        await projectControllerCreate({ body: { name: this.name, shortDesc: '' } }),
-      );
+      // Selected, not translated: on a cold load this runs before the catalogue is in, and
+      // `translate` would answer the key.
+      const name = this.seed
+        ? (JSON.parse(this.seed) as GameSeed).name
+        : await firstValueFrom(
+            this.transloco.selectTranslate<string>('editor.game.namePlaceholder'),
+          );
+      const project = unwrap(await projectControllerCreate({ body: { name, shortDesc: '' } }));
       if (this.seed) {
         sessionStorage.setItem(`${SEED_KEY}.${String(project.id)}`, this.seed);
       }

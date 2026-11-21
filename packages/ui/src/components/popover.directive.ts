@@ -75,8 +75,8 @@ export class PopoverDirective {
       .position()
       .flexibleConnectedTo(this.host)
       .withPositions([
-        { originX: x, originY: 'bottom', overlayX: x, overlayY: 'top', offsetY: 4 },
-        { originX: x, originY: 'top', overlayX: x, overlayY: 'bottom', offsetY: -4 },
+        { originX: x, originY: 'bottom', overlayX: x, overlayY: 'top', offsetY: 6 },
+        { originX: x, originY: 'top', overlayX: x, overlayY: 'bottom', offsetY: -6 },
       ]);
     this.ref = this.overlay.create({
       positionStrategy: position,

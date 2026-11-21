@@ -27,11 +27,12 @@ test('the active file tab wears its gold cap', async ({ page }) => {
 
   // Scoped to this tab, not to `[role=tab][aria-selected=true]`: the console strip carries a
   // selected tab too, and a document-wide query reads whichever the DOM happens to order first.
-  const cap = await tab.evaluate((el) => getComputedStyle(el).borderTopColor);
+  // A bevel's border is transparent: the cap is the painted highlight role.
+  const cap = await tab.evaluate((el) => getComputedStyle(el).getPropertyValue('--bv-hi'));
   const gold = await page.evaluate(() => {
     const probe = document.createElement('span');
     document.body.appendChild(probe);
-    probe.style.color = 'var(--color-gold)';
+    probe.style.color = 'var(--color-active-ink)';
     const value = getComputedStyle(probe).color;
     probe.remove();
     return value;
@@ -582,4 +583,20 @@ test('Step one frame advances a paused game by one update, and pauses a running 
   await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
   await page.getByRole('button', { name: 'Step one frame' }).click();
   await expect(page.getByRole('button', { name: 'Play' })).toBeVisible();
+});
+
+/**
+ * The console column is a fixed track, and the transport under its screen holds more than the
+ * track is wide once two seats show: the row has to fit it, down to its last button.
+ */
+test('the transport keeps its fullscreen button inside the console column', async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await page.goto(editorUrl('code'));
+  const column = page.locator('nc-console-column');
+  const fullscreen = column.getByRole('button', { name: 'Fullscreen' });
+  await expect(fullscreen).toBeVisible();
+  await expect(column.getByText('P2', { exact: true })).toBeVisible();
+
+  const [track, button] = [await boxOf(column), await boxOf(fullscreen)];
+  expect(button.x + button.width).toBeLessThanOrEqual(track.x + track.width);
 });

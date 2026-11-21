@@ -87,7 +87,10 @@ test.describe('learn', () => {
     await expect(tree.getByRole('button', { name: 'Rendering', exact: true })).toBeHidden();
   });
 
-  /** Ctrl-K belongs to the docs search and the slash key to the top bar. */
+  /**
+   * Ctrl-K belongs to the docs search and the slash key to the top bar. The command palette
+   * answers the same key everywhere else, and must stay shut here.
+   */
   test('Ctrl-K focuses the docs search, and "/" still focuses the top bar', async ({ page }) => {
     await page.goto('/learn');
     const docs = page.getByPlaceholder('Search', { exact: true });
@@ -96,6 +99,7 @@ test.describe('learn', () => {
 
     await page.keyboard.press('Control+k');
     await expect(docs).toBeFocused();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
 
     await docs.blur();
     await page.keyboard.press('/');

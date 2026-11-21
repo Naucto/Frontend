@@ -1,4 +1,5 @@
 import { expect, test } from './fixtures';
+import { release } from './mocks/game';
 
 test.describe('app shell', () => {
   test('hub renders with navigation and footer', async ({ page }) => {
@@ -6,7 +7,7 @@ test.describe('app shell', () => {
     await expect(page).toHaveURL(/\/hub$/);
     await expect(page.getByRole('navigation', { name: 'Main navigation' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Sign in' })).toBeVisible();
-    await expect(page.getByRole('contentinfo')).toContainText('Naucto');
+    await expect(page.getByRole('contentinfo')).toContainText('A browser fantasy console');
   });
 
   test('sign-in page shows the insert-game form', async ({ page }) => {
@@ -47,27 +48,29 @@ test.describe('app shell', () => {
    * Tailwind resolves conflicting utilities by stylesheet order, not attribute order, so the active
    * link's colour is pinned.
    */
-  test('the current page nav link is drawn in ink, not the dim colour', async ({ page }) => {
+  test('the current page nav link is drawn in the active ink, not the dim colour', async ({
+    page,
+  }) => {
     await page.goto('/hub');
     const current = page.locator('a[aria-current="page"]');
     await expect(current).toHaveText(/hub/i);
 
-    const { active, ink, dim } = await page.evaluate(() => {
+    const { lit, dim } = await page.evaluate(() => {
       const probe = document.createElement('span');
       document.body.appendChild(probe);
       const read = (token: string): string => {
         probe.style.color = `var(${token})`;
         return getComputedStyle(probe).color;
       };
-      const ink = read('--color-ink');
+      const lit = read('--color-active-ink');
       const dim = read('--color-ink-3');
       probe.remove();
-      const el = document.querySelector('a[aria-current="page"]');
-      return { active: el ? getComputedStyle(el).color : '', ink, dim };
+      return { lit, dim };
     });
 
-    expect(ink).not.toBe(dim);
-    expect(active).toBe(ink);
+    expect(lit).not.toBe(dim);
+    // Retried: the link eases into its colour, and a single read can land on the way there.
+    await expect(current).toHaveCSS('color', lit);
   });
 
   /**
@@ -81,6 +84,48 @@ test.describe('app shell', () => {
     for (const button of await down.all()) {
       await expect(button).toBeDisabled();
     }
+  });
+
+  /** Games and actions answer to the same field, and the arrows reach across both groups. */
+  test('Ctrl-K opens the command palette, which finds a game and runs an action', async ({
+    page,
+  }) => {
+    await page.route('**/auth/refresh', (route) =>
+      route.fulfill({ status: 401, json: { message: 'no' } }),
+    );
+    await page.route('**/projects/releases/paginated**', (route) => {
+      const searched = new URL(route.request().url()).searchParams.has('search');
+      return route.fulfill({ json: { projects: searched ? [release] : [], total: 0 } });
+    });
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.goto('/hub');
+    await expect(page.getByRole('navigation', { name: 'Main navigation' })).toBeVisible();
+
+    await page.keyboard.press('Control+k');
+    const field = page.getByRole('combobox', { name: 'Search games and commands' });
+    await expect(field).toBeFocused();
+    await expect(page.getByRole('option', { name: 'Sign in' })).toBeVisible();
+    await expect(page.getByRole('option', { name: 'My games' })).toHaveCount(0);
+
+    await field.fill('e');
+    await expect(page.getByRole('option', { name: 'Cave Diver' })).toBeVisible();
+    await expect(page.getByRole('option', { name: 'Hub' })).toHaveCount(0);
+
+    await page.keyboard.press('Escape');
+    await expect(field).toHaveCount(0);
+
+    await page.keyboard.press('Control+k');
+    await field.fill('theme');
+    await expect(page.getByRole('option')).toHaveCount(2);
+    await page.keyboard.press('ArrowDown');
+    await expect(page.getByRole('option', { name: 'Toggle theme' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    await page.keyboard.press('Enter');
+
+    await expect(field).toHaveCount(0);
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   });
 
   test('unknown routes show the not-found page', async ({ page }) => {

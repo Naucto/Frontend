@@ -1,34 +1,27 @@
 @if (visible()) {
+  <!-- A banner, not a dialog: no scrim, and the page under it stays usable while it waits. -->
   <div
     *transloco="let t"
     role="region"
     [attr.aria-label]="t('consent.title')"
-    class="fixed bottom-2 left-2 right-2 z-[900] sm:right-auto sm:w-[420px]">
-    <nc-panel [title]="t('consent.title')">
-      <p class="text-body text-ink-2">{{ t('consent.body') }}</p>
-      <a routerLink="/privacy" class="mt-1 text-body text-ink-2 underline hover:text-ink">
-        {{ t('consent.learnMore') }}
-      </a>
-      <div class="mt-2 flex gap-1">
-        <button
-          ncButton
-          variant="secondary"
-          size="sm"
-          type="button"
-          class="flex-1"
-          (click)="refuse()">
-          {{ t('consent.refuse') }}
-        </button>
-        <button
-          ncButton
-          variant="secondary"
-          size="sm"
-          type="button"
-          class="flex-1"
-          (click)="accept()">
-          {{ t('consent.accept') }}
-        </button>
-      </div>
-    </nc-panel>
+    class="flat-lg fixed right-[16px] bottom-[16px] left-[16px] z-[900] grid gap-[12px] bevel-fill-panel p-[14px] [filter:drop-shadow(0_6px_0_var(--color-well))] sm:right-auto sm:w-[420px]">
+    <div class="font-ui text-label tracking-label text-ink-3 uppercase">
+      {{ t('consent.title') }}
+    </div>
+    <p class="text-small leading-[1.55] text-ink-2">{{ t('consent.body') }}</p>
+    <a
+      routerLink="/privacy"
+      class="justify-self-start text-small text-ink-2 underline decoration-3 underline-offset-[6px] hover:text-ink">
+      {{ t('consent.learnMore') }}
+    </a>
+    <!-- Both answers are the same button: refusing is as easy as accepting. -->
+    <div class="mt-[4px] flex gap-[10px]">
+      <button ncButton variant="secondary" type="button" class="flex-1" (click)="refuse()">
+        {{ t('consent.refuse') }}
+      </button>
+      <button ncButton variant="secondary" type="button" class="flex-1" (click)="accept()">
+        {{ t('consent.accept') }}
+      </button>
+    </div>
   </div>
 }

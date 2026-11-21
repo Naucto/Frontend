@@ -6,7 +6,7 @@
     @if (link(); as url) {
       <div class="flex w-full max-w-[420px] items-center gap-1">
         <span
-          class="min-w-0 flex-1 truncate rounded-sm border border-line bg-inset px-1.5 py-1 font-mono text-meta text-ink-body">
+          class="min-w-0 flex-1 flat-sm bevel-fill-inset px-1.5 py-0.75 text-left font-mono text-meta wrap-anywhere text-ink-body">
           {{ url }}
         </span>
         <button ncButton variant="secondary" (click)="copy(url)">
@@ -17,7 +17,7 @@
     <div class="flex flex-wrap justify-center gap-1">
       @if (id()) {
         <a ncButton variant="primary" [routerLink]="['/play', id()]">
-          <nc-icon name="play" [size]="12" />
+          <nc-icon name="play" [size]="24" />
           {{ t('editor.desktopOnly.play') }}
         </a>
       }

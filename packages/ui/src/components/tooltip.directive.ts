@@ -41,29 +41,34 @@ export const tooltipParagraphs = (text: string): readonly (readonly TooltipRun[]
 /** The same text with the backticks taken out, for a place that shows text and not runs. */
 export const tooltipPlainText = (text: string): string => text.replaceAll('`', '');
 
+/**
+ * The motion is the host's and the frame is its child's: a bevel sets its own `translate` and
+ * `transition`, which are the two things the arrival is made of.
+ */
 @Component({
   selector: 'nc-tooltip-panel',
   templateUrl: './tooltip-panel.component.html',
   host: {
     role: 'tooltip',
     class:
-      'block overflow-hidden rounded-sm border border-line-strong bg-raised font-ui shadow-[0_2px_0_var(--nc-inset)]',
-    '[class]': 'shape()',
+      'block font-ui [clip-path:inset(0_0_0_0)] transition-[opacity,translate,clip-path] duration-[180ms] ease-out ' +
+      'starting:-translate-y-[8px] starting:opacity-0 starting:[clip-path:inset(0_0_100%_0)]',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TooltipPanelComponent {
   readonly text = signal('');
   readonly title = signal<string | undefined>(undefined);
+  readonly meta = signal<readonly string[]>([]);
   protected readonly paragraphs = computed(() => tooltipParagraphs(this.text()));
   /**
-   * A titled tooltip is a help text — read, not glanced at — so it gets the body size and more
-   * room to wrap. The untitled one is a label for a control and stays small.
+   * A titled tooltip is a help text — read, not glanced at — so it gets a heading and room to
+   * wrap. The untitled one is a label for a control: one line, in caps.
    */
   protected readonly shape = computed(() =>
     this.title()
-      ? 'max-w-[44ch] text-body leading-[1.6] text-ink-body'
-      : 'max-w-[32ch] text-meta text-ink',
+      ? 'grid w-[260px] gap-1 px-[14px] py-1.5 text-meta leading-[1.45] text-ink'
+      : 'max-w-[32ch] px-[10px] py-[6px] text-label leading-[1.4] tracking-tag text-ink uppercase',
   );
 }
 
@@ -72,22 +77,27 @@ export class TooltipPanelComponent {
   selector: '[ncTooltip]',
   host: {
     '(mouseenter)': 'show()',
-    '(mouseleave)': 'hide()',
+    '(mouseleave)': 'leave()',
     '(focus)': 'show()',
-    '(blur)': 'hide()',
+    '(blur)': 'leave()',
     '(keydown.escape)': 'hide()',
+    '(pointerdown)': 'press()',
   },
 })
 export class TooltipDirective {
   readonly ncTooltip = input.required<string>();
   /** Set on a help text; leaves a control's label alone. */
   readonly tooltipTitle = input<string>();
-  readonly tooltipDelay = input(400);
+  /** Facts set under a help text, one per line: what a setting is at, when a build was made. */
+  readonly tooltipMeta = input<readonly string[]>([]);
+  readonly tooltipDelay = input(750);
 
   private readonly overlay = inject(Overlay);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private ref: OverlayRef | null = null;
   private timer: ReturnType<typeof setTimeout> | null = null;
+  /** A press answers the label: it goes, and stays away until the pointer has left and come back. */
+  private pressed = false;
 
   constructor() {
     inject(DestroyRef).onDestroy(() => {
@@ -100,7 +110,7 @@ export class TooltipDirective {
     // above open the same tooltip on one gesture. Without the timer in the guard the second call
     // overwrites the handle of the first, which nothing can then clear — not hide(), not the
     // teardown below — and it attaches an overlay no one holds a reference to.
-    if (this.ref || this.timer || !this.ncTooltip()) {
+    if (this.ref || this.timer || this.pressed || !this.ncTooltip()) {
       return;
     }
     this.timer = setTimeout(() => {
@@ -108,14 +118,10 @@ export class TooltipDirective {
         .position()
         .flexibleConnectedTo(this.host)
         .withPositions([
-          { originX: 'center', originY: 'bottom', overlayX: 'center', overlayY: 'top', offsetY: 6 },
-          {
-            originX: 'center',
-            originY: 'top',
-            overlayX: 'center',
-            overlayY: 'bottom',
-            offsetY: -6,
-          },
+          { originX: 'start', originY: 'bottom', overlayX: 'start', overlayY: 'top', offsetY: 10 },
+          { originX: 'start', originY: 'top', overlayX: 'start', overlayY: 'bottom', offsetY: -10 },
+          { originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top', offsetY: 10 },
+          { originX: 'end', originY: 'top', overlayX: 'end', overlayY: 'bottom', offsetY: -10 },
         ]);
       this.ref = this.overlay.create({
         positionStrategy: position,
@@ -124,6 +130,7 @@ export class TooltipDirective {
       const panel = this.ref.attach(new ComponentPortal(TooltipPanelComponent));
       panel.instance.text.set(this.ncTooltip());
       panel.instance.title.set(this.tooltipTitle());
+      panel.instance.meta.set(this.tooltipMeta());
     }, this.tooltipDelay());
   }
 
@@ -134,5 +141,15 @@ export class TooltipDirective {
     this.timer = null;
     this.ref?.dispose();
     this.ref = null;
+  }
+
+  protected press(): void {
+    this.pressed = true;
+    this.hide();
+  }
+
+  protected leave(): void {
+    this.pressed = false;
+    this.hide();
   }
 }

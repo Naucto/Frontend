@@ -6,28 +6,31 @@ import {
   input,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { TranslocoDirective } from '@jsverse/transloco';
 import type { ProjectExResponseDto } from '@naucto/api-client';
 import { ChipComponent, StatComponent } from '@naucto/ui';
 
 import { UserAvatarComponent } from '../user-avatar.component';
+import { COVER_RATIO, CoverCardComponent } from './cover-card.component';
 import { GameCoverComponent } from './game-cover.component';
 
-/** Hub card: cover, title, author chips, plays / likes / remixes. */
 @Component({
   selector: 'nc-game-card',
-  imports: [RouterLink, ChipComponent, GameCoverComponent, StatComponent, UserAvatarComponent],
+  imports: [
+    RouterLink,
+    TranslocoDirective,
+    ChipComponent,
+    CoverCardComponent,
+    GameCoverComponent,
+    StatComponent,
+    UserAvatarComponent,
+  ],
   templateUrl: './game-card.component.html',
-  host: { class: 'block' },
+  host: { class: 'block min-w-0' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GameCardComponent {
   readonly game = input.required<ProjectExResponseDto>();
-  protected readonly cardClass = computed(() =>
-    [
-      'group block overflow-hidden border border-line hover:border-line-strong focus-visible:outline-2',
-      this.dense() ? 'rounded-sm bg-page' : 'rounded-md bg-panel',
-    ].join(' '),
-  );
   /** A draft has no release: it takes the project's cover and wears the chip. */
   protected readonly isDraft = computed(() => !this.game().publishedAt);
 
@@ -39,8 +42,8 @@ export class GameCardComponent {
   protected readonly link = computed(() =>
     this.opensEditor() ? ['/edit', this.game().id] : ['/play', this.game().id],
   );
-  /** Tighter type and padding for the sidebar lists on the play page. */
   readonly dense = input(false, { transform: booleanAttribute });
+  protected readonly COVER_RATIO = COVER_RATIO;
 
   /** Collaborators other than the author, who already has the avatar beside their name. */
   private readonly others = computed(() =>

@@ -1,5 +1,5 @@
 @if (title()) {
-  <header class="flex h-4 items-center justify-between border-b border-line px-2">
+  <header class="flex h-(--nc-h-md) items-center justify-between border-b-3 border-line px-2">
     <span class="label" [class.text-gold-ink]="titleTone() === 'gold'">{{ title() }}</span>
     <div class="flex items-center gap-1">
       <ng-content select="[actions]" />

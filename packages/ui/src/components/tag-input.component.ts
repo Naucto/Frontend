@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, model, signal } from '@angular/core';
 
 import { ChipComponent } from './chip.component';
+import { WELL } from './input.directive';
 
 /** Tags as removable chips + an inline input. Enter or comma adds; Backspace on empty removes the last. */
 @Component({
@@ -28,6 +29,7 @@ export class TagInputComponent {
     return this.tags().length ? this.hint() : this.placeholder();
   });
   protected readonly draft = signal('');
+  protected readonly well = `${WELL} flex min-h-[42px] flex-wrap items-center gap-0.75 px-1 py-[5px]`;
 
   protected onKey(event: KeyboardEvent): void {
     if (event.key === 'Enter' || event.key === ',') {

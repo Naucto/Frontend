@@ -4,7 +4,7 @@
   [lead]="t('feedback.bug.lead')"
   [closeLabel]="t('feedback.close')">
   <form
-    class="-mr-1 flex max-h-[calc(100dvh-240px)] flex-col gap-2 overflow-y-auto pr-1"
+    class="-mr-1 flex max-h-[calc(100dvh-240px)] flex-col gap-[14px] overflow-y-auto pr-1"
     (submit)="$event.preventDefault(); send()"
     (keydown)="onKey($event)">
     <nc-field [label]="t('feedback.bug.category')" for="bug-category">
@@ -52,25 +52,25 @@
       [hint]="t('feedback.bug.screenshotHint')"
       [error]="screenshotError() ?? undefined">
       @if (preview(); as src) {
-        <div class="flex items-start gap-1.5">
+        <div class="flex items-start gap-[12px]">
           <img
             [src]="src"
             [alt]="t('feedback.bug.screenshotAlt')"
-            class="max-h-[180px] max-w-[320px] rounded-sm border border-line bg-inset object-contain [image-rendering:pixelated]" />
+            class="pixelated max-h-[180px] max-w-[320px] border-3 border-line bg-inset object-contain" />
           <button ncButton variant="ghost" size="sm" type="button" (click)="removeScreenshot()">
-            <nc-icon name="close" [size]="12" />
+            <nc-icon name="close" />
             {{ t('feedback.bug.removeScreenshot') }}
           </button>
         </div>
       } @else {
         <div
-          class="flex flex-col items-center gap-1 rounded-sm border border-dashed border-line-strong bg-inset px-2 py-1.5 text-center"
+          class="flat-sm flex flex-col items-center gap-[10px] bevel-fill-inset px-[14px] py-[14px] text-center"
           (dragover)="$event.preventDefault()"
           (drop)="onDrop($event)">
           <p class="text-meta text-ink-3">
             {{ preparing() ? t('feedback.bug.preparing') : t('feedback.bug.dropHint') }}
           </p>
-          <div class="flex flex-wrap justify-center gap-1">
+          <div class="flex flex-wrap justify-center gap-[6px]">
             @if (hasFrame) {
               <button
                 ncButton
@@ -79,7 +79,7 @@
                 type="button"
                 [disabled]="preparing()"
                 (click)="useFrame()">
-                <nc-icon name="gamepad" [size]="12" />
+                <nc-icon name="gamepad" />
                 {{ t('feedback.bug.useFrame') }}
               </button>
             }
@@ -91,12 +91,12 @@
                 type="button"
                 [disabled]="preparing()"
                 (click)="captureScreen()">
-                <nc-icon name="camera" [size]="12" />
+                <nc-icon name="camera" />
                 {{ t('feedback.bug.captureScreen') }}
               </button>
             }
             <label ncButton variant="secondary" size="sm" [class.pointer-events-none]="preparing()">
-              <nc-icon name="upload" [size]="12" />
+              <nc-icon name="upload" />
               {{ t('feedback.bug.chooseFile') }}
               <input
                 type="file"
@@ -109,17 +109,30 @@
       }
     </nc-field>
 
-    <details class="rounded-sm border border-line">
-      <summary class="label cursor-pointer px-1.5 py-1 text-ink-3 hover:text-ink">
+    <div>
+      <button
+        ncButton
+        variant="ghost"
+        size="sm"
+        type="button"
+        class="-ml-[12px]"
+        aria-controls="bug-included"
+        [attr.aria-expanded]="showIncluded()"
+        (click)="showIncluded.set(!showIncluded())">
+        <nc-icon [name]="showIncluded() ? 'chevron-up' : 'chevron-down'" />
         {{ t('feedback.bug.included.title') }}
-      </summary>
-      <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 gap-y-0.5 px-1.5 pb-1.5 text-meta">
-        @for (row of contextRows(); track row.label) {
-          <dt class="text-ink-4">{{ row.label }}</dt>
-          <dd class="font-mono break-words whitespace-pre-wrap text-ink-2">{{ row.value }}</dd>
-        }
-      </dl>
-    </details>
+      </button>
+      @if (showIncluded()) {
+        <dl
+          id="bug-included"
+          class="flat-sm mt-[6px] grid grid-cols-[auto_minmax(0,1fr)] gap-x-[14px] gap-y-[4px] bevel-fill-inset px-[12px] py-[10px] text-meta">
+          @for (row of contextRows(); track row.label) {
+            <dt class="text-ink-4">{{ row.label }}</dt>
+            <dd class="font-mono break-words whitespace-pre-wrap text-ink-2">{{ row.value }}</dd>
+          }
+        </dl>
+      }
+    </div>
 
     @if (failed(); as message) {
       <nc-notice tone="danger">{{ message }}</nc-notice>

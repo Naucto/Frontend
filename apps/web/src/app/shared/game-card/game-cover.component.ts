@@ -12,7 +12,7 @@ import { injectProjectImage, injectReleaseImage } from '../queries/releases.quer
   imports: [IconComponent],
   templateUrl: './game-cover.component.html',
   host: {
-    '[class]': '"block overflow-hidden " + (bordered() ? "border-b border-line" : "")',
+    '[class]': '"block overflow-hidden " + (bordered() ? "border-b-3 border-line" : "")',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -27,6 +27,7 @@ export class GameCoverComponent {
   readonly iconSize = input<12 | 24 | 48>(24);
   /** The rule under a card. A thumbnail small enough to sit in a row has nothing to rule off. */
   readonly bordered = input(true);
+  readonly fit = input<'cover' | 'contain'>('cover');
 
   private readonly released = injectReleaseImage(() => this.releaseId());
   private readonly draft = injectProjectImage(() => this.projectId());

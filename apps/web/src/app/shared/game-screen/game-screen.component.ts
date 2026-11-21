@@ -124,22 +124,20 @@ export class GameScreenComponent {
   /** True while this screen — not some other one on the page — owns the fullscreen element. */
   protected readonly isFullscreen = signal(false);
   protected readonly frameClass = computed(() =>
-    this.overlay()
-      ? 'game-frame @container relative'
-      : 'game-frame @container relative mx-auto max-w-[1600px]',
+    this.overlay() ? 'game-frame relative' : 'game-frame relative mx-auto max-w-[1600px]',
   );
   /** The band under the screen, or the scrim across it. */
   protected readonly transportClass = computed(() => {
     if (this.overlay() || this.isFullscreen()) {
       return (
-        'absolute inset-x-0 bottom-0 flex h-[36px] items-center gap-0.75 px-1.25 ' +
+        'absolute inset-x-0 bottom-0 flex h-(--nc-h-md) items-center gap-[3px] px-0.75 ' +
         'bg-[image:var(--nc-scrim-video)]'
       );
     }
     const shape = this.compact()
-      ? 'h-[36px] gap-1.5 border-y border-line px-1.75'
-      : 'h-[44px] gap-1 rounded-b-sm border border-t-0 border-line px-1';
-    return `mx-auto -mt-px flex max-w-[1600px] items-center bg-panel ${shape}`;
+      ? 'h-(--nc-h-md) gap-0.75 border-y-3 border-line px-0.75'
+      : 'h-(--nc-h-xl) gap-1 border-3 border-t-0 border-line px-1';
+    return `mx-auto -mt-[3px] flex max-w-[1600px] items-center bg-panel ${shape}`;
   });
   protected readonly host = inject(RuntimeHostService);
   protected readonly bridge = inject(NetUiBridgeService);

@@ -1,105 +1,97 @@
 <!-- No top margin: a page whose own panel runs to the bottom edge has to meet this rule, and
      one that ends on its content is already held off it by the shell's padding. -->
-<footer *transloco="let t" class="border-t border-line bg-panel">
+<footer *transloco="let t" class="border-t-3 border-line-strong bg-panel">
+  <!-- Below md each group folds behind its heading; from md the four columns stand open. -->
   <div
-    class="mx-auto grid w-full max-w-[1400px] grid-cols-2 gap-4 px-3 py-5 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
-    <div>
-      <div class="flex items-center gap-1">
-        <nc-logo [size]="24" />
-        <span class="text-title text-ink">Naucto</span>
-      </div>
-      <p class="mt-1 max-w-[38ch] text-body text-ink-2">{{ t('footer.tagline') }}</p>
+    class="mx-auto grid w-full max-w-[1400px] md:grid-cols-[1.4fr_1fr_1fr_1fr] md:gap-[32px] md:px-[28px] md:py-[36px]">
+    <div
+      class="grid content-start gap-[12px] border-b-3 border-line px-[16px] py-[22px] md:border-b-0 md:p-0">
+      <nc-logo variant="wordmark" [size]="24" class="justify-self-start" />
+      <p class="max-w-[34ch] text-body leading-[1.55] text-ink-2">{{ t('footer.tagline') }}</p>
     </div>
-    <nav [attr.aria-label]="t('footer.product')">
-      <div class="label mb-1">{{ t('footer.product') }}</div>
-      <ul class="space-y-0.5 text-body">
+
+    <ng-template #heading let-group="group" let-title="title">
+      <button
+        type="button"
+        class="flex h-[46px] w-full cursor-pointer items-center justify-between px-[16px] font-ui text-label tracking-label text-ink-3 uppercase hover:text-ink md:hidden"
+        [attr.aria-expanded]="open() === group"
+        (click)="open.set(open() === group ? null : group)">
+        {{ title }}
+        <nc-icon [name]="open() === group ? 'chevron-up' : 'chevron-down'" />
+      </button>
+      <div class="mb-[4px] hidden font-ui text-label tracking-label text-ink-3 uppercase md:block">
+        {{ title }}
+      </div>
+    </ng-template>
+
+    <nav class="border-b-3 border-line md:border-b-0" [attr.aria-label]="t('footer.product')">
+      <ng-container
+        [ngTemplateOutlet]="heading"
+        [ngTemplateOutletContext]="{ group: 'product', title: t('footer.product') }" />
+      <ul [class]="links" [class.max-md:hidden]="open() !== 'product'">
         <li>
-          <a routerLink="/hub" class="text-ink-2 hover:text-ink">{{ t('nav.hub') }}</a>
+          <a routerLink="/hub" [class]="link">{{ t('nav.hub') }}</a>
         </li>
         <li>
-          <a routerLink="/learn" class="text-ink-2 hover:text-ink">{{ t('nav.learn') }}</a>
+          <a routerLink="/learn" [class]="link">{{ t('nav.learn') }}</a>
         </li>
         <li>
-          <a routerLink="/games/new" class="text-ink-2 hover:text-ink">
-            {{ t('footer.makeGame') }}
-          </a>
+          <a routerLink="/games/new" [class]="link">{{ t('footer.makeGame') }}</a>
         </li>
       </ul>
     </nav>
-    <nav [attr.aria-label]="t('footer.community')">
-      <div class="label mb-1">{{ t('footer.community') }}</div>
-      <ul class="space-y-0.5 text-body">
+    <nav class="border-b-3 border-line md:border-b-0" [attr.aria-label]="t('footer.community')">
+      <ng-container
+        [ngTemplateOutlet]="heading"
+        [ngTemplateOutletContext]="{ group: 'community', title: t('footer.community') }" />
+      <ul [class]="links" [class.max-md:hidden]="open() !== 'community'">
         <li>
-          <a routerLink="/friends" class="text-ink-2 hover:text-ink">{{ t('nav.friends') }}</a>
+          <a routerLink="/friends" [class]="link">{{ t('nav.friends') }}</a>
         </li>
         <li>
-          <a
-            href="https://github.com/Naucto"
-            target="_blank"
-            rel="noopener"
-            class="inline-flex items-center gap-0.5 text-ink-2 hover:text-ink">
-            <nc-icon name="github" [size]="12" />
+          <a href="https://github.com/Naucto" target="_blank" rel="noopener" [class]="link">
             GitHub
           </a>
         </li>
         <li>
-          <button
-            type="button"
-            class="cursor-pointer text-ink-2 hover:text-ink"
-            (click)="feedback.rate()">
+          <button type="button" [class]="link" (click)="feedback.rate()">
             {{ t('footer.feedback') }}
           </button>
         </li>
         <li>
-          <button
-            type="button"
-            class="cursor-pointer text-ink-2 hover:text-ink"
-            (click)="feedback.reportBug()">
+          <button type="button" [class]="link" (click)="feedback.reportBug()">
             {{ t('footer.reportBug') }}
           </button>
         </li>
       </ul>
     </nav>
-    <nav [attr.aria-label]="t('footer.legal')">
-      <div class="label mb-1">{{ t('footer.legal') }}</div>
-      <ul class="space-y-0.5 text-body">
+    <nav class="border-b-3 border-line md:border-b-0" [attr.aria-label]="t('footer.legal')">
+      <ng-container
+        [ngTemplateOutlet]="heading"
+        [ngTemplateOutletContext]="{ group: 'legal', title: t('footer.legal') }" />
+      <ul [class]="links" [class.max-md:hidden]="open() !== 'legal'">
         <li>
           <a
             href="https://github.com/Naucto/Frontend/blob/main/license.txt"
             target="_blank"
             rel="noopener"
-            class="text-ink-2 hover:text-ink">
+            [class]="link">
             GPL-3.0
           </a>
         </li>
         <li>
-          <a routerLink="/privacy" class="text-ink-2 hover:text-ink">
-            {{ t('footer.privacy') }}
-          </a>
+          <a routerLink="/privacy" [class]="link">{{ t('footer.privacy') }}</a>
         </li>
         <li>
           <a
             href="https://github.com/Naucto/Frontend/security"
             target="_blank"
             rel="noopener"
-            class="text-ink-2 hover:text-ink">
+            [class]="link">
             {{ t('footer.security') }}
           </a>
         </li>
       </ul>
     </nav>
-  </div>
-  <div class="border-t border-line">
-    <div
-      class="mx-auto flex w-full max-w-[1400px] items-center justify-between px-3 py-1.5 text-label text-ink-4">
-      <span>Naucto · engine {{ engineVersion }}</span>
-      <button
-        type="button"
-        class="inline-flex items-center gap-0.5 hover:text-ink"
-        (click)="theme.toggle()">
-        <nc-icon [name]="theme.theme() === 'light' ? 'moon' : 'sun'" [size]="12" />
-        {{ t('footer.toggleTheme') }}
-      </button>
-    </div>
   </div>
 </footer>

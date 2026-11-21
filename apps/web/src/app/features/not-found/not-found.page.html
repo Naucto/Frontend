@@ -1,7 +1,5 @@
-<nc-empty-state
-  *transloco="let t"
-  icon="folder-x"
-  [title]="t('notFound.title')"
-  [hint]="t('notFound.body')">
-  <a ncButton variant="primary" routerLink="/hub">{{ t('notFound.back') }}</a>
-</nc-empty-state>
+<section *transloco="let t" class="flat-lg bevel-fill-panel mx-auto mt-6 w-full max-w-[560px]">
+  <nc-empty-state icon="folder-x" [title]="t('notFound.title')" [hint]="t('notFound.body')">
+    <a ncButton variant="primary" size="lg" routerLink="/hub">{{ t('notFound.back') }}</a>
+  </nc-empty-state>
+</section>

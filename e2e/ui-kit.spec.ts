@@ -11,7 +11,7 @@ for (const theme of ['dark', 'light'] as const) {
     await page.goto('/ui-kit');
     await expect(page.getByRole('heading', { name: 'Naucto UI kit' })).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
-    await expect(page.getByRole('button', { name: 'Publish' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Publish', exact: true })).toBeVisible();
     if (!getOptionalEnv('CI', false)) {
       await page.screenshot({ path: `test-results/ui-kit-${theme}.png`, fullPage: true });
     }
@@ -40,17 +40,33 @@ for (const [stored, marked] of [
   });
 }
 
-/** Read as a computed colour, because the border is always there and only its alpha carries this. */
-test('an unavailable button gains a border only where it had one', async ({ page }) => {
+/** Read as the computed edge role: a bevel's border is always transparent, its frame is painted. */
+test('an unavailable button gains a frame only where it had one', async ({ page }) => {
   await page.goto('/ui-kit');
-  const border = async (variant: string): Promise<string> =>
+  const edge = async (variant: string): Promise<string> =>
     page
       .locator(`button[data-variant="${variant}"]:disabled`)
       .first()
-      .evaluate((el) => getComputedStyle(el).borderTopColor);
+      .evaluate((el) => getComputedStyle(el).getPropertyValue('--bv-edge'));
 
-  expect(await border('ghost')).toBe('rgba(0, 0, 0, 0)');
-  expect(await border('primary')).not.toBe('rgba(0, 0, 0, 0)');
+  expect(await edge('ghost')).toBe('rgba(0, 0, 0, 0)');
+  expect(await edge('primary')).not.toBe('rgba(0, 0, 0, 0)');
+});
+
+/** One pixel is 3px: the frame, the skirt under it and the travel of a press. */
+test('a raised button is drawn and pressed on the pixel grid', async ({ page }) => {
+  await page.goto('/ui-kit');
+  const publish = page.getByRole('button', { name: 'Publish', exact: true });
+  const hero = page.getByRole('button', { name: 'hero 56' });
+  const borders = (el: Element): string => getComputedStyle(el).borderWidth;
+
+  expect(await publish.evaluate(borders)).toBe('3px 3px 6px');
+  expect(await hero.evaluate(borders)).toBe('6px 6px 9px');
+  expect(
+    await page
+      .getByRole('button', { name: 'Latched' })
+      .evaluate((el) => getComputedStyle(el).translate),
+  ).toBe('0px 3px');
 });
 
 /** The container the host reports from takes no pointer events; the row with the button must. */
@@ -65,6 +81,6 @@ test('a toast is shown from the overlay container and can be dismissed', async (
     ),
   ).toBe(1);
 
-  await page.getByRole('button', { name: 'Dismiss' }).click();
+  await page.locator('nc-toast-host').getByRole('button', { name: 'Dismiss' }).click();
   await expect(toast).toHaveCount(0);
 });

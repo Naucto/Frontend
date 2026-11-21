@@ -1,11 +1,15 @@
 <div class="overflow-y-auto" [style.height]="height()" [style.scrollbar-gutter]="'stable'">
-  <div class="grid" [style.gap.px]="gap" [style.grid-template-columns]="columnTrack()" role="group">
+  <div
+    class="grid"
+    [style.row-gap.px]="gap"
+    [style.grid-template-columns]="columnTrack()"
+    role="group">
     @for (cell of cells(); track cell.n) {
       <button
         type="button"
-        class="h-(--nc-control-h-xs) rounded-xs border font-mono text-label"
-        [class]="cellClass(cell)"
+        [class]="cellClass(cell, $index, $last)"
         [attr.aria-pressed]="cell.state === 'current'"
+        [attr.data-on]="cell.state === 'current' ? '' : null"
         [attr.aria-label]="cell.label ?? pad(cell.n)"
         (click)="pick.emit(cell.n)">
         {{ pad(cell.n) }}

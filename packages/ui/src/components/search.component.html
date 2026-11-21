@@ -1,4 +1,4 @@
-<nc-icon name="search" [size]="12" [class]="chrome().icon" />
+<nc-icon name="search" [size]="chrome().glyph" [class]="chrome().icon" />
 <input
   #input
   type="search"
@@ -7,13 +7,17 @@
   [attr.aria-label]="placeholder()"
   (input)="onInput($event)"
   (keydown.enter)="submitted.emit(value())"
-  class="min-w-0 flex-1 bg-transparent text-ink outline-none placeholder:text-ink-4"
+  class="min-w-0 flex-1 text-ink outline-none placeholder:text-ink-4"
   [class]="chrome().input" />
-<!-- The badge never shrinks; a placeholder has no ellipsis, so a narrow box needs a placeholder
+<!-- The key never shrinks; a placeholder has no ellipsis, so a narrow box needs a placeholder
      written to fit beside it. -->
-@if (hint()) {
-  <kbd
-    class="shrink-0 rounded-xs border border-line px-[5px] py-[2px] font-mono text-[10px] leading-[normal] text-ink-4">
-    {{ hint() }}
-  </kbd>
+@if (size() === 'md' && keys().length) {
+  <span class="-mt-[3px] flex flex-none items-center gap-[3px]">
+    @for (key of keys(); track $index) {
+      @if (!$first) {
+        <span aria-hidden="true" class="font-mono text-meta text-ink-4">+</span>
+      }
+      <nc-keycap size="sm">{{ key }}</nc-keycap>
+    }
+  </span>
 }

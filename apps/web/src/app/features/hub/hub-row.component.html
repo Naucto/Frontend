@@ -2,36 +2,33 @@
   @if (title() || seeAll()) {
     <div class="mb-1.5 flex flex-wrap items-center gap-x-1.75 gap-y-1">
       @if (title()) {
-        <h2 class="text-title text-ink">{{ title() }}</h2>
+        <h2 class="font-display text-title text-ink">{{ title() }}</h2>
       }
       <ng-content select="[actions]" />
       @if (seeAll(); as link) {
-        <a
-          [routerLink]="link"
-          class="ms-auto flex items-center gap-0.75 font-mono text-meta tracking-tag text-ink-3 uppercase hover:text-ink">
+        <a ncButton variant="ghost" size="sm" class="ms-auto" [routerLink]="link">
           @if (count()) {
             {{ t('hub.seeAllCount', { n: count() }) }}
           } @else {
             {{ t('hub.seeAll') }}
           }
-          <!-- An icon, not a literal arrow: the HD44780 face has no glyph for →. -->
-          <nc-icon name="arrow-right" [size]="12" />
+          <!-- An icon, not a literal arrow: the pixel faces have no glyph for →. -->
+          <nc-icon name="arrow-right" [size]="24" />
         </a>
       }
     </div>
   }
-  <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+  <div class="grid grid-cols-2 gap-x-2 gap-y-2.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
     @switch (state()) {
       @case ('pending') {
         <!-- At the card's real geometry, so the shelf does not jump when the games land. -->
         @for (i of placeholders; track i) {
-          <div class="overflow-hidden rounded-md border border-line">
-            <nc-skeleton height="202px" radius="rounded-none" />
-            <div class="grid gap-1 p-1.5">
-              <nc-skeleton height="0.9rem" width="70%" />
-              <nc-skeleton height="0.7rem" width="45%" />
+          <nc-cover-card aria-hidden="true" name="&nbsp;">
+            <nc-skeleton cover height="100%" />
+            <div meta class="mt-0.5 flex justify-center">
+              <nc-skeleton height="20px" width="45%" />
             </div>
-          </div>
+          </nc-cover-card>
         }
       }
       @case ('error') {
@@ -39,6 +36,7 @@
         <p class="col-span-full text-body text-hot-ink">{{ t('hub.rowError') }}</p>
       }
       @default {
+        <ng-content select="[lead]" />
         @for (game of games(); track game.id) {
           <nc-game-card [game]="game" [opensEditor]="opensEditor()" />
         } @empty {
@@ -46,25 +44,15 @@
                own: the cells the ghosts fill behind it are what hold the height. -->
           <p class="text-body text-ink-3" [class.col-span-full]="!reserve()">{{ empty() }}</p>
         }
-        <!-- The card's own structure with nothing in it, not a fixed height: a card is as tall
-             as its cover at the column's width plus three lines of type, and only the same
-             boxes come out to the same pixel at every column count. -->
+        <!-- The card itself with nothing in it, not a fixed height: only the same boxes come out
+             to the same pixel at every column count. -->
         @for (i of ghosts(); track i) {
-          <div class="invisible overflow-hidden rounded-md border border-line" aria-hidden="true">
-            <div class="aspect-video w-full"></div>
-            <div class="px-1.5 pt-[11px] pb-1.5">
-              <div class="flex items-center gap-1">
-                <span class="min-w-0 flex-1 truncate text-ui">&nbsp;</span>
-              </div>
-              <div class="mt-0.5 flex items-center gap-[6px]">
-                <span class="mr-0.5 inline-block h-[14px] w-[14px] shrink-0"></span>
-                <span class="label truncate">&nbsp;</span>
-              </div>
-              <div class="mt-1 flex gap-1.5">
-                <nc-stat icon="play" [value]="0" />
-              </div>
+          <nc-cover-card class="invisible" aria-hidden="true" name="&nbsp;">
+            <div meta class="mt-0.5 flex items-center justify-center">
+              <span class="inline-block h-[20px]"></span>
+              <span class="label">&nbsp;</span>
             </div>
-          </div>
+          </nc-cover-card>
         }
       }
     }

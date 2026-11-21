@@ -23,14 +23,21 @@ describe('TabsComponent', () => {
 });
 
 /** The small strip sits on the thing it chooses between, and its tabs are names somebody typed. */
-it('draws a small strip with no rule under it, in ordinary sentence case', async () => {
+it('draws a small strip in ordinary sentence case', async () => {
   await render(TabsComponent, { inputs: { tabs, value: 'account', variant: 'small' } });
-  const tab = screen.getByRole('tab', { name: 'Account' });
-  const list = screen.getByRole('tablist');
 
-  expect(tab.className).not.toContain('uppercase');
-  expect(tab.className).toContain('aria-selected:border-gold');
-  expect(list.className).not.toContain('border-b');
+  expect(screen.getByRole('tab', { name: 'Account' }).className).not.toContain('uppercase');
+});
+
+/** One tab is the frame that opens into what it chooses; the others stand a pixel off the rule. */
+it('opens the chosen tab through the rule and leaves the others on it', async () => {
+  await render(TabsComponent, { inputs: { tabs, value: 'account' } });
+  const chosen = screen.getByRole('tab', { name: 'Account' });
+  const idle = screen.getByRole('tab', { name: 'Editor' });
+
+  expect(chosen).toHaveClass('bevel-open-b', 'bevel-hi-active-ink', 'bevel-fill-raised');
+  expect(chosen).not.toHaveClass('mb-[3px]');
+  expect(idle).toHaveClass('bevel-open-b', 'bevel-fill-panel', 'mb-[3px]', 'hover:h-[37px]');
 });
 
 it('gives the per-tab buttons no room until they show', async () => {

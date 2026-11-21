@@ -2,8 +2,9 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import { RouterLink } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
 import type { ProjectExResponseDto } from '@naucto/api-client';
-import { IconComponent, SkeletonComponent, StatComponent } from '@naucto/ui';
+import { ButtonDirective, IconComponent, SkeletonComponent } from '@naucto/ui';
 
+import { CoverCardComponent } from '../../shared/game-card/cover-card.component';
 import { GameCardComponent } from '../../shared/game-card/game-card.component';
 
 /** Whether the shelf has its games, is still asking, or could not find out. */
@@ -15,10 +16,11 @@ export type ShelfState = 'ready' | 'pending' | 'error';
   imports: [
     RouterLink,
     TranslocoDirective,
+    ButtonDirective,
+    CoverCardComponent,
     GameCardComponent,
     IconComponent,
     SkeletonComponent,
-    StatComponent,
   ],
   templateUrl: './hub-row.component.html',
   host: { class: 'block' },

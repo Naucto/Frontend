@@ -1,7 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
+import { TranslocoService } from '@jsverse/transloco';
 
 import { ApiCardComponent } from './api-card.component';
+import { copyCodeOnClick } from './copy-code';
 import { type ApiEntry, type DocPage, DocsService } from './docs.service';
 
 type Segment = { kind: 'html'; html: SafeHtml } | { kind: 'api'; entry: ApiEntry };
@@ -22,6 +24,7 @@ export class DocArticleComponent {
   readonly navigate = output<string>();
   private readonly docs = inject(DocsService);
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly i18n = inject(TranslocoService);
 
   protected readonly segments = computed<Segment[]>(() => {
     const out: Segment[] = [];
@@ -50,6 +53,9 @@ export class DocArticleComponent {
   });
 
   protected onClick(event: MouseEvent): void {
+    if (copyCodeOnClick(event, this.i18n.translate('docs.codeCopied'))) {
+      return;
+    }
     const anchor = (event.target as HTMLElement).closest('a');
     if (!anchor) {
       return;

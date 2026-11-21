@@ -1,8 +1,8 @@
-<div class="rounded-sm border border-line p-1.5">
+<div class="flat-sm p-1.5">
   <div class="flex items-center gap-1">
     <span
-      class="h-[26px] w-[26px] rounded-xs border border-line-strong"
-      [style.background]="hex()"></span>
+      class="h-(--nc-h-sm) w-(--nc-h-sm) flat-sm bevel-edge-line-strong"
+      [style.--bv-fill]="hex()"></span>
     <span class="font-mono text-meta text-ink">{{ slotLabel() }} {{ pad(slot()) }}</span>
     <input
       type="text"
@@ -11,7 +11,7 @@
       maxlength="6"
       spellcheck="false"
       (change)="onHex($event)"
-      class="ml-auto w-[calc(6ch+1.25rem)] rounded-xs border border-line-strong bg-inset px-1 py-0.5 text-center font-mono text-meta text-ink outline-none focus:border-gold" />
+      class="ml-auto h-(--nc-h-sm) w-[calc(6ch+1.5rem)] well px-1 text-center font-mono text-meta text-ink outline-none not-focus:hover:bevel-lo-ink-4 focus:bevel-lo-active-ink" />
   </div>
   <div class="mt-1 grid gap-0.5">
     <nc-slider

@@ -9,32 +9,40 @@ import {
   viewChild,
 } from '@angular/core';
 
-import { IconComponent } from './icon.component';
+import { IconComponent, type IconSize } from './icon.component';
+import { WELL } from './input.directive';
+import { KeycapComponent } from './keycap.component';
 
-/** How tall the box is: `md` is the top bar's, `sm` the one an editor toolbar carries. */
+/**
+ * How tall the box is: `md` is the top bar's, `sm` the one an editor toolbar carries. Only `md` has
+ * the room for the key that names its shortcut.
+ */
 export type SearchSize = 'sm' | 'md';
 
-const SIZE: Record<SearchSize, { host: string; input: string; icon: string }> = {
+const SIZE: Record<SearchSize, { host: string; input: string; icon: string; glyph: IconSize }> = {
   sm: {
-    host: 'h-[31px] gap-1 px-[10px]',
-    input: 'font-mono text-[11px]',
-    icon: 'text-ink-4',
+    host: 'h-(--nc-h-sm) gap-1 px-[9px]',
+    input: 'font-mono text-micro',
+    icon: '',
+    glyph: 12,
   },
   md: {
-    host: 'gap-2.5 px-[13px] py-[9px]',
-    input: 'font-ui text-body',
-    icon: 'text-ink-3',
+    host: 'h-[42px] gap-1.5 pr-[10px] pl-[14px]',
+    input: 'font-ui text-small',
+    // The well sinks its content a pixel; the glyph is set back on the middle of the whole box.
+    icon: '-mt-[3px]',
+    glyph: 24,
   },
 };
 
 /** Search box with the magnifier and a keyboard hint ("/"). Emits `submitted` on Enter. */
 @Component({
   selector: 'nc-search',
-  imports: [IconComponent],
+  imports: [IconComponent, KeycapComponent],
   templateUrl: './search.component.html',
   host: {
-    '[class]':
-      '"flex items-center rounded-sm border border-line bg-inset focus-within:border-gold " + chrome().host',
+    class: `${WELL} flex items-center text-ink-3 not-focus-within:hover:text-ink-2 focus-within:text-gold-ink`,
+    '[class]': 'chrome().host',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -44,7 +52,12 @@ export class SearchComponent {
   readonly placeholder = input('Search');
   readonly size = input<SearchSize>('md');
   protected readonly chrome = computed(() => SIZE[this.size()]);
-  readonly hint = input<string>('/');
+  /** One key, or the keys of a chord in the order they are held. */
+  readonly hint = input<string | readonly string[]>('/');
+  protected readonly keys = computed(() => {
+    const hint = this.hint();
+    return typeof hint === 'string' ? (hint ? [hint] : []) : hint;
+  });
   readonly submitted = output<string>();
   /** Put the caret in the box — a keyboard shortcut somewhere else has no other way in. */
   focus(): void {

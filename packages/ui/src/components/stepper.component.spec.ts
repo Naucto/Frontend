@@ -1,29 +1,52 @@
-import { render, screen } from '@testing-library/angular';
+import { fireEvent, render, screen } from '@testing-library/angular';
+import userEvent from '@testing-library/user-event';
 
 import { StepperComponent } from './stepper.component';
 
-const styleSheet = (): string =>
-  ((StepperComponent as unknown as { ɵcmp: { styles: string[] } }).ɵcmp.styles ?? []).join('\n');
+const SIZES = ['1×1', '2×2', '4×4', '8×8'];
 
 describe('StepperComponent', () => {
-  it('marks the current step', async () => {
-    await render(StepperComponent, { inputs: { value: 2, options: ['1×1', '2×2', '3×3'] } });
-    expect(screen.getByRole('slider')).toBeTruthy();
+  it('names the current step', async () => {
+    await render(StepperComponent, { inputs: { value: 2, options: SIZES, label: 'Size' } });
+    expect(screen.getByRole('slider', { name: 'Size' })).toHaveAttribute('aria-valuetext', '4×4');
   });
 
-  /**
-   * The ticks and the fill are two layers of one `background-image`; a second declaration on `.nc-
-   * range` replaces the first outright, and the ticks vanish without anything failing.
-   */
-  it('sets background-image on the groove exactly once, so the tick layer survives', () => {
-    const declarations = styleSheet().match(/background-image\s*:/g) ?? [];
-    expect(declarations.length).toBe(1);
+  it('moves one stop per arrow key and stops at either end', async () => {
+    const { fixture } = await render(StepperComponent, {
+      inputs: { value: 2, options: SIZES, label: 'Size' },
+    });
+    const range = screen.getByRole('slider', { name: 'Size' });
+    range.focus();
+    await userEvent.keyboard('{ArrowRight}{ArrowRight}');
+    expect(fixture.componentInstance.value()).toBe(3);
+    await userEvent.keyboard('{Home}');
+    expect(fixture.componentInstance.value()).toBe(0);
   });
 
-  it('keeps both the tick track and the fill in the background', () => {
-    const css = styleSheet();
-    expect(css).toContain('radial-gradient');
-    // Custom properties come out namespaced in the compiled sheet, so match the bare name.
-    expect(css).toMatch(/nc-fill/);
+  it('follows the pointer between two stops and settles on the nearest when let go', async () => {
+    const { fixture } = await render(StepperComponent, {
+      inputs: { value: 0, options: SIZES, label: 'Size' },
+    });
+    const range = screen.getByRole<HTMLInputElement>('slider', { name: 'Size' });
+    const thumb = range.nextElementSibling as HTMLElement;
+
+    fireEvent.input(range, { target: { value: '1.8' } });
+    expect(fixture.componentInstance.value()).toBe(2);
+    expect(thumb.style.left).toBe('60%');
+
+    fireEvent.change(range);
+    fixture.detectChanges();
+    expect(thumb.style.left).toBe(`${String((2 / 3) * 100)}%`);
+  });
+
+  it('picks a step from its caption', async () => {
+    const { fixture } = await render(StepperComponent, { inputs: { value: 0, options: SIZES } });
+    await userEvent.click(screen.getByRole('button', { name: '8×8' }));
+    expect(fixture.componentInstance.value()).toBe(3);
+  });
+
+  it('ticks the stops between the two ends only', async () => {
+    const { container } = await render(StepperComponent, { inputs: { value: 0, options: SIZES } });
+    expect(container.querySelectorAll('.w-\\[3px\\]')).toHaveLength(2);
   });
 });

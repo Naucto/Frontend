@@ -17,13 +17,15 @@ import { ReportProblemButtonComponent } from '../../shared/feedback/report-probl
 import { AccountMenuComponent } from './account-menu.component';
 import { NotificationsBellComponent } from './notifications-bell.component';
 import { SearchSuggestComponent } from './search-suggest.component';
+import { ThemeSwitchComponent } from './theme-switch.component';
 
 /**
  * The current page is marked through `aria-current`, not a second colour class: with two colour
  * utilities on one element, stylesheet order decides which one wins.
  */
 const NAV_LINK =
-  'rounded-xs px-1.5 py-1 text-body leading-[20px] uppercase tracking-button text-ink-3 transition-colors hover:text-ink aria-[current]:text-ink';
+  'flex h-[44px] items-center px-[10px] text-body whitespace-nowrap uppercase tracking-button text-ink-3 transition-colors hover:text-active-ink aria-[current]:text-active-ink ' +
+  'max-md:aria-[current]:bg-raised max-md:aria-[current]:shadow-[inset_3px_0_0_var(--color-primary)] md:h-auto md:px-0 md:pt-[3px]';
 
 /** App-wide top bar: HUB / MY GAMES / FRIENDS / LEARN, search, NEW GAME, bell, account. */
 @Component({
@@ -39,6 +41,7 @@ const NAV_LINK =
     NotificationsBellComponent,
     LogoComponent,
     ReportProblemButtonComponent,
+    ThemeSwitchComponent,
   ],
   templateUrl: './top-bar.component.html',
   host: { class: 'block', '(document:keydown)': 'onKey($event)' },

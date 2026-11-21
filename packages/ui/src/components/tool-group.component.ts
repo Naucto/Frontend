@@ -9,6 +9,7 @@ import {
 
 import { type IconName } from '../icons/paths';
 import { IconComponent, type IconSize } from './icon.component';
+import { CELL, CELL_ON, joined } from './selection-styles';
 import { TooltipDirective } from './tooltip.directive';
 
 export interface ToolItem<T extends string = string> {
@@ -19,7 +20,9 @@ export interface ToolItem<T extends string = string> {
   key?: string;
 }
 
-/** Icon toolbar where only the active tool keeps its label (PEN · fill · line · …). */
+const TOOL = `${CELL} ${CELL_ON.primary} group h-(--nc-h-lg) min-w-[44px] font-ui uppercase text-ink-3 data-on:cursor-default`;
+
+/** Icon toolbar where only the active tool opens onto its label (PEN · fill · line · …). */
 @Component({
   selector: 'nc-tool-group',
   imports: [IconComponent, TooltipDirective],
@@ -32,11 +35,14 @@ export class ToolGroupComponent<T extends string = string> {
   readonly value = model<T>();
   readonly label = input('Tools');
   /**
-   * The glyph step, which the density decides and CSS cannot carry: this is an attribute on an
-   * SVG, not a length, and the legal steps are halves and doubles of the 24 grid the glyphs are
-   * drawn on. A bar at the big density takes 24; there is no rung between.
+   * The glyph step. An attribute on an SVG, not a length, and the legal steps are halves and
+   * doubles of the 24 grid the glyphs are drawn on.
    */
-  readonly iconSize = input<IconSize>(12);
+  readonly iconSize = input<IconSize>(24);
+
+  protected toolClass(first: boolean, last: boolean): string {
+    return `${TOOL} ${joined(first, last)}`;
+  }
 
   private readonly radios = viewChildren<ElementRef<HTMLButtonElement>>('radio');
 

@@ -34,65 +34,75 @@ export interface TabItem<T extends string> {
 export type TabsVariant = 'panel' | 'console' | 'small' | 'bar';
 
 /**
+ * A tab is a small frame open at the bottom, standing on the strip's rule. The chosen one is three
+ * pixels taller each way: it rises over its neighbours and comes down through the rule, into what
+ * it opens. One left idle rises a pixel under the pointer, in three held steps. Neighbours share
+ * one edge, and the lit one is drawn over the other two.
+ */
+const TAB =
+  'flat-sm bevel-open-b relative flex shrink-0 items-center font-ui focus-visible:outline-offset-[-6px] ' +
+  '-ml-[3px] first:ml-0 [transition:height_120ms_steps(3),color_180ms]';
+const OFF =
+  'mb-[3px] bevel-edge-line-strong bevel-fill-panel text-ink-3 ' +
+  'hover:z-1 hover:bevel-lit hover:text-active-ink';
+const ON = 'bevel-edge-line-strong bevel-hi-active-ink text-active-ink';
+
+/** The rule a strip stands on, stopping a pixel short of each end as the top of a frame does. */
+const RULE =
+  '[background:linear-gradient(var(--nc-line-strong)_0_0)_bottom/calc(100%-6px)_3px_no-repeat]';
+// One declaration, because a ground named beside it would be reset by the shorthand or not,
+// depending on which of the two the stylesheet happens to write last.
+const RULE_ON_PANEL =
+  '[background:linear-gradient(var(--nc-line-strong)_0_0)_bottom/calc(100%-6px)_3px_no-repeat_var(--nc-panel)]';
+
+/**
  * `frame` dresses the strip as a whole — its rule, its height, its ground — and `list` dresses the
  * run of tabs inside it, which is the part that scrolls. Anything that must stay put when the tabs
- * slide belongs to the frame. `label` dresses the name alone, apart from the number, the swatch and
- * the buttons beside it.
+ * slide belongs to the frame. `off` and `on` are an idle and the chosen tab, `label` dresses the
+ * name alone, apart from the number, the swatch and the buttons beside it.
  */
 const VARIANT: Record<
   TabsVariant,
-  { frame: string; list: string; item: string; label: string; icon: 12 | 24 }
+  { frame: string; list: string; off: string; on: string; label: string; icon: 12 | 24 }
 > = {
-  // Settings and other page-level strips: the UI face, inset from the edge, and the active tab
-  // marked in ink. Gold is a primary action here, not a selection.
+  // Settings and other page-level strips: caps, inset from the edge.
   panel: {
-    frame: 'border-b border-line',
-    list: 'gap-[6px] px-2.75',
-    item: [
-      '-mb-px flex items-center gap-1 border-b-2 border-transparent px-1.5 pt-1 pb-1.25',
-      'font-ui text-meta uppercase tracking-tag text-ink-3 transition-colors hover:text-ink',
-      'aria-selected:border-ink aria-selected:text-ink',
-    ].join(' '),
+    frame: `h-(--nc-h-lg) ${RULE}`,
+    list: 'pl-[6px]',
+    off: `${TAB} ${OFF} h-[34px] gap-1 px-2 text-meta tracking-tag uppercase hover:h-[37px]`,
+    on: `${TAB} ${ON} bevel-fill-raised h-(--nc-h-lg) gap-1 px-2 text-meta tracking-tag uppercase`,
     label: '',
     icon: 12,
   },
-  // Sits directly on the thing it chooses between, so it carries no rule of its own and marks the
-  // selection in gold.
+  // Sits directly on the thing it chooses between. Sentence case: these are names somebody typed.
   small: {
-    frame: '',
-    list: 'gap-px',
-    item: [
-      '-mb-px flex h-2.5 shrink-0 items-center gap-0.5 border-b-2 border-transparent px-1',
-      // Sentence case: these are names somebody typed.
-      'font-ui text-body tracking-copy text-ink-3 transition-colors hover:text-ink',
-      'aria-selected:border-gold aria-selected:text-gold-ink',
-    ].join(' '),
+    frame: `h-[34px] ${RULE}`,
+    list: '',
+    off: `${TAB} ${OFF} h-[28px] gap-0.5 px-1 text-body tracking-copy hover:h-[31px]`,
+    on: `${TAB} ${ON} bevel-fill-raised h-[34px] gap-0.5 px-1 text-body tracking-copy`,
     // The cut falls on the name and never on the tab, so the number, the swatch and the buttons
     // keep their width beside a long name.
     label: 'max-w-[14ch] truncate',
     icon: 12,
   },
-  // A bar of its own, full height, where the tabs are the primary subject of the screen below.
+  // A bar of its own, where the tabs are the primary subject of the screen below: the chosen one
+  // opens onto the paper under it.
   bar: {
-    frame: 'h-(--nc-bar-h) border-b border-line bg-panel',
-    list: 'items-stretch',
-    item: [
-      'flex shrink-0 items-center gap-1 border-t-2 border-r border-r-line border-t-transparent px-[15px]',
-      'font-ui text-body tracking-copy text-ink-3 transition-colors hover:text-ink',
-      'aria-selected:border-t-gold aria-selected:bg-paper aria-selected:text-ink',
-    ].join(' '),
+    frame: `h-(--nc-h-bar) ${RULE_ON_PANEL}`,
+    list: 'pl-[6px]',
+    off: `${TAB} ${OFF} h-[36px] gap-1 px-[15px] text-body tracking-copy hover:h-[39px]`,
+    on: `${TAB} ${ON} bevel-fill-paper h-[42px] gap-1 px-[15px] text-body tracking-copy`,
     label: '',
     icon: 24,
   },
   // The editor console: mono, full-bleed in its column, and jade — the colour the machine talks in.
   console: {
-    frame: 'border-b border-line',
+    frame: `h-(--nc-h-lg) ${RULE}`,
     list: '',
-    item: [
-      '-mb-px flex h-4 items-center gap-1 border-b-2 border-transparent px-[14px]',
-      'font-mono text-meta uppercase tracking-strip text-ink-3 transition-colors hover:text-ink',
-      'aria-selected:border-jade aria-selected:text-jade-ink',
-    ].join(' '),
+    off: `${TAB} ${OFF} h-[34px] gap-1 px-[14px] font-mono text-meta tracking-strip uppercase hover:h-[37px]`,
+    on:
+      `${TAB} bevel-edge-line-strong bevel-hi-jade-ink bevel-fill-raised text-jade-ink ` +
+      'h-(--nc-h-lg) gap-1 px-[14px] font-mono text-meta tracking-strip uppercase',
     label: '',
     icon: 12,
   },
@@ -107,7 +117,8 @@ const VARIANT: Record<
   selector: 'nc-tabs',
   imports: [IconComponent, CdkDrag, CdkDropList],
   templateUrl: './tabs.component.html',
-  host: { class: 'block' },
+  // Positioned, so the chosen tab is drawn over the top edge of a frame pulled up under the rule.
+  host: { class: 'relative block' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TabsComponent<T extends string = string> {
@@ -137,7 +148,8 @@ export class TabsComponent<T extends string = string> {
 
   protected readonly frameClass = computed(() => VARIANT[this.variant()].frame);
   protected readonly listClass = computed(() => VARIANT[this.variant()].list);
-  protected readonly itemClass = computed(() => VARIANT[this.variant()].item);
+  protected readonly offClass = computed(() => VARIANT[this.variant()].off);
+  protected readonly onClass = computed(() => VARIANT[this.variant()].on);
   protected readonly labelClass = computed(() => VARIANT[this.variant()].label);
   protected readonly iconSize = computed(() => VARIANT[this.variant()].icon);
   /** How far the run of tabs is scrolled, and how far it could be. Measured, not derived. */
