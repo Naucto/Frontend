@@ -215,6 +215,16 @@ broken; an absence reads as not built.
   construction, so `border-*` colours do nothing on it either.
 - `glare` is asked for by name and only on a coloured call to action. It needs the element to be a
   bevel (it is cut to the bevel's outline) and it owns the element's `::after`.
+- A shape (`flat-sm`, `flat-lg`, `raised-sm`, `raised-lg`, `well`) paints as a bare class only: the
+  strips are one rule over those five names, so the stylesheet holds them once. Through `@apply` or
+  a variant a shape brings its geometry alone; a stylesheet rule applies `bevel` beside it, once for
+  all its frames, as the docs block of `apps/web/src/styles.css` does.
+- `@naucto/ui` is declared free of side effects (`sideEffects` in its `package.json`). That is what
+  lets a page that imports one component from the barrel load that one and not the whole kit, so a
+  kit module does nothing at import that something other than its own exports relies on.
+- A dialog a root service opens (`FeedbackLauncher`, `SignedInAction`, `nc-feedback-prompt`) is
+  fetched with `import()` when it opens, and names the component by `import type` only: a static
+  import puts the dialog and everything it draws in what every page loads.
 - `tools/pixel-allow.json` is what each file still owes `npm run pixel:check`. A change that moves a
   file onto the kit lowers its entry in the same diff (`npm run pixel:check -- --update`); nothing
   raises one.
