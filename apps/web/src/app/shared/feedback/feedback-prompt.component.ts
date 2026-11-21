@@ -13,7 +13,7 @@ import { FeaturesService } from '../../core/config/features.service';
 import { injectFeedbackPrompt, injectUpdateFeedbackPrompt } from '../queries/reports.queries';
 import { type ArmedPrompt, FeedbackStore } from './feedback.store';
 import { FeedbackLauncher } from './feedback-launcher.service';
-import { FeedbackPromptDialog, type PromptOutcome } from './feedback-prompt.dialog';
+import type { FeedbackPromptDialog, PromptOutcome } from './feedback-prompt.dialog';
 
 /** Pages the prompt never interrupts: a game, the editor, a sign-in popup about to close. */
 const BUSY = /^\/(play|edit|oauth|sign-in)(\/|$|\?)/;
@@ -90,11 +90,12 @@ export class FeedbackPromptComponent {
 
   private async ask(armed: ArmedPrompt): Promise<void> {
     this.asking = true;
-    const label = await firstValueFrom(
-      this.transloco.selectTranslate<string>('feedback.prompt.label'),
-    );
+    const [label, loaded] = await Promise.all([
+      firstValueFrom(this.transloco.selectTranslate<string>('feedback.prompt.label')),
+      import('./feedback-prompt.dialog'),
+    ]);
     const ref = this.dialogs.open<FeedbackPromptDialog, ArmedPrompt, PromptOutcome>(
-      FeedbackPromptDialog,
+      loaded.FeedbackPromptDialog,
       { data: armed, width: '440px', disableClose: true, ariaLabel: label },
     );
     ref.closed.subscribe((outcome) => {

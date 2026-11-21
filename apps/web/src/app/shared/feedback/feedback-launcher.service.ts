@@ -4,10 +4,10 @@ import type { ReportRole } from '@naucto/api-client';
 import { DialogService } from '@naucto/ui';
 
 import { SignedInAction } from '../auth/signed-in-action';
-import { type BugReportData, BugReportDialog, type BugReportSent } from './bug-report.dialog';
-import { RatingDialog, type RatingDialogData } from './rating.dialog';
+import type { BugReportData, BugReportDialog, BugReportSent } from './bug-report.dialog';
+import type { RatingDialog, RatingDialogData } from './rating.dialog';
 import type { RatingSent } from './rating-form.component';
-import { type ThanksData, ThanksDialog } from './thanks.dialog';
+import type { ThanksData, ThanksDialog } from './thanks.dialog';
 
 /** What someone asking to rate from this page is most likely doing on Naucto. */
 export function roleFor(path: string): ReportRole {
@@ -24,35 +24,50 @@ export class FeedbackLauncher {
   private readonly signedIn = inject(SignedInAction);
   private readonly transloco = inject(TranslocoService);
 
+  constructor() {
+    // Fetched once the page is quiet, so the first click opens at once. Safari has no idle
+    // callback: there a dialog is fetched when it is first opened.
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(() => {
+        void import('./bug-report.dialog');
+        void import('./rating.dialog');
+      });
+    }
+  }
+
   reportBug(data: BugReportData = {}): void {
     this.signedIn.run(() => {
-      this.dialogs
-        .open<BugReportDialog, BugReportData, BugReportSent>(BugReportDialog, {
-          data,
-          width: '560px',
-          ariaLabel: this.transloco.translate('feedback.bug.title'),
-        })
-        .closed.subscribe((sent) => {
-          if (sent) {
-            this.thank({ kind: 'bug', ...sent });
-          }
-        });
+      void import('./bug-report.dialog').then((loaded) => {
+        this.dialogs
+          .open<BugReportDialog, BugReportData, BugReportSent>(loaded.BugReportDialog, {
+            data,
+            width: '560px',
+            ariaLabel: this.transloco.translate('feedback.bug.title'),
+          })
+          .closed.subscribe((sent) => {
+            if (sent) {
+              this.thank({ kind: 'bug', ...sent });
+            }
+          });
+      });
     });
   }
 
   rate(role: ReportRole = roleFor(location.pathname)): void {
     this.signedIn.run(() => {
-      this.dialogs
-        .open<RatingDialog, RatingDialogData, RatingSent>(RatingDialog, {
-          data: { role },
-          width: '440px',
-          ariaLabel: this.transloco.translate('feedback.rating.dialogTitle'),
-        })
-        .closed.subscribe((sent) => {
-          if (sent) {
-            this.afterRating(sent);
-          }
-        });
+      void import('./rating.dialog').then((loaded) => {
+        this.dialogs
+          .open<RatingDialog, RatingDialogData, RatingSent>(loaded.RatingDialog, {
+            data: { role },
+            width: '440px',
+            ariaLabel: this.transloco.translate('feedback.rating.dialogTitle'),
+          })
+          .closed.subscribe((sent) => {
+            if (sent) {
+              this.afterRating(sent);
+            }
+          });
+      });
     });
   }
 
@@ -66,10 +81,12 @@ export class FeedbackLauncher {
   }
 
   private thank(data: ThanksData): void {
-    this.dialogs.open<ThanksDialog, ThanksData>(ThanksDialog, {
-      data,
-      width: '440px',
-      ariaLabel: this.transloco.translate('feedback.thanks.title'),
+    void import('./thanks.dialog').then((loaded) => {
+      this.dialogs.open<ThanksDialog, ThanksData>(loaded.ThanksDialog, {
+        data,
+        width: '440px',
+        ariaLabel: this.transloco.translate('feedback.thanks.title'),
+      });
     });
   }
 }
