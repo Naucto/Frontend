@@ -2,8 +2,8 @@
 export const SHELF_GAP = 16;
 /** The room on each side of the track where the neighbouring pages show through the dither. */
 export const SHELF_PEEK = 54;
-/** An item is never narrower than this while more than two fit. */
-const ITEM_MIN = 220;
+/** An item is never narrower than this while more than the fewest across fit. */
+export const SHELF_ITEM_MIN = 220;
 /** The widest the text beside an item gets. */
 const BODY_MAX = 380;
 
@@ -16,10 +16,16 @@ export interface ShelfLayout {
 
 /**
  * How a track of that width pages that many items: as many across as fit at their least width,
- * two at least, on as many rows as it is given.
+ * `fewest` at least, on as many rows as it is given.
  */
-export function shelfLayout(width: number, count: number, rows = 1): ShelfLayout {
-  const per = Math.max(2, Math.floor((width + SHELF_GAP) / (ITEM_MIN + SHELF_GAP)));
+export function shelfLayout(
+  width: number,
+  count: number,
+  rows = 1,
+  itemMin = SHELF_ITEM_MIN,
+  fewest = 2,
+): ShelfLayout {
+  const per = Math.max(fewest, Math.floor((width + SHELF_GAP) / (itemMin + SHELF_GAP)));
   return {
     per,
     itemWidth: Math.floor((width - (per - 1) * SHELF_GAP) / per),

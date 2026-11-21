@@ -10,6 +10,11 @@ describe('shelfLayout', () => {
     expect(shelfLayout(198, 5)).toEqual({ per: 2, itemWidth: 91, pages: 3 });
   });
 
+  it('takes a wider least width, and one across where it is allowed to', () => {
+    expect(shelfLayout(1100, 9, 1, 280)).toEqual({ per: 3, itemWidth: 356, pages: 3 });
+    expect(shelfLayout(198, 5, 1, 280, 1)).toEqual({ per: 1, itemWidth: 198, pages: 5 });
+  });
+
   it('is one page for a list that fits, and for none at all', () => {
     expect(shelfLayout(1100, 3).pages).toBe(1);
     expect(shelfLayout(1100, 0).pages).toBe(1);

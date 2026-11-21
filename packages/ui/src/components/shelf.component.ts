@@ -18,6 +18,7 @@ import {
   viewChild,
 } from '@angular/core';
 
+import { ChipComponent } from './chip.component';
 import { MarkComponent } from './mark.component';
 import { PagerComponent } from './pager.component';
 import { ShelfFlyoutComponent } from './shelf-flyout.component';
@@ -26,6 +27,7 @@ import {
   type FlyoutPlacement,
   flyoutPlacement,
   SHELF_GAP,
+  SHELF_ITEM_MIN,
   SHELF_PEEK,
   shelfLayout,
   shelfPlace,
@@ -55,7 +57,9 @@ let shelves = 0;
  * A titled row that pages through more items than fit: as many per page as the width takes, the
  * neighbouring pages showing through a dither at both ends. Paged by its arrows, its dots, the
  * left and right keys, or a swipe that resists at either end; a vertical swipe stays the page's.
- * With `rows`, a page is that many rows high and is filled row by row.
+ * With `rows`, a page is that many rows high and is filled row by row. With `count`, the heading
+ * carries that number in a chip. Beside the heading, `[shelfAction]` always shows and `[shelfMore]`
+ * only while the items take more than one page.
  *
  * What an item is drawn as is the caller's (`*ncShelfItem`). With a `*ncShelfFlyout`, an item that
  * is reached opens a frame beside it holding that template: after a second under the mouse, at
@@ -67,7 +71,7 @@ let shelves = 0;
  */
 @Component({
   selector: 'nc-shelf',
-  imports: [NgTemplateOutlet, MarkComponent, PagerComponent, ShelfFlyoutComponent],
+  imports: [NgTemplateOutlet, ChipComponent, MarkComponent, PagerComponent, ShelfFlyoutComponent],
   templateUrl: './shelf.component.html',
   styleUrl: './shelf.component.css',
   host: {
@@ -82,12 +86,17 @@ let shelves = 0;
 })
 export class ShelfComponent<T> {
   readonly heading = input.required<string>();
+  /** How many things the shelf holds, shown beside its heading; left out, nothing is. */
+  readonly count = input<number | null>(null);
   /** The page shown, from 0. */
   readonly page = model(0);
   /** How many rows high a page is, from 1 to 4. */
   readonly rows = input(1, {
     transform: (value: unknown) => Math.max(1, Math.min(4, Math.round(numberAttribute(value, 1)))),
   });
+  /** The least width of an item, and the fewest that stand across however narrow the shelf. */
+  readonly itemMin = input(SHELF_ITEM_MIN, { transform: numberAttribute });
+  readonly fewest = input(2, { transform: numberAttribute });
   readonly previousLabel = input('Previous page');
   readonly nextLabel = input('Next page');
   readonly pagesLabel = input('Pages');
@@ -118,7 +127,13 @@ export class ShelfComponent<T> {
   /** The track's width; until it is measured, a desktop's. */
   private readonly width = signal(1100);
   protected readonly layout = computed(() =>
-    shelfLayout(this.width(), this.slot().ncShelfItemOf().length, this.rows()),
+    shelfLayout(
+      this.width(),
+      this.slot().ncShelfItemOf().length,
+      this.rows(),
+      this.itemMin(),
+      this.fewest(),
+    ),
   );
   protected readonly current = computed(() => Math.min(this.page(), this.layout().pages - 1));
 
