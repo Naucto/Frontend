@@ -19,6 +19,7 @@ export * from './components/help-dot.component';
 export * from './components/highlight.component';
 export * from './components/icon.component';
 export * from './components/input.directive';
+export * from './components/joined.directive';
 export * from './components/keycap.component';
 export * from './components/label.component';
 export * from './components/lcd.component';
