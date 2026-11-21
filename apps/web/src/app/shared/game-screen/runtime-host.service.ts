@@ -44,6 +44,8 @@ export class RuntimeHostService {
   /** Connected gamepads, polled with the frame stats. */
   readonly gamepadCount = signal(0);
   readonly frame = signal(0);
+  /** The canvas the game is drawn on, at the console's own resolution; null until one is mounted. */
+  readonly canvas = signal<HTMLCanvasElement | null>(null);
 
   private readonly active = inject(ActiveRuntimeService);
   private readonly crashes = inject(CrashReporter);
@@ -93,6 +95,7 @@ export class RuntimeHostService {
     opts: { netUi?: NetUi; netPermissions?: NetPermissions } = {},
   ): Engine {
     this.destroy();
+    this.canvas.set(canvas);
     this.gfx = new WebGL2Backend(canvas, game);
     this.audio = new WebAudioBackend();
     this.sound = new SoundEngine(this.audio, game);
@@ -259,6 +262,7 @@ export class RuntimeHostService {
       unsubscribe();
     }
     this.unsub = [];
+    this.canvas.set(null);
     this.active.release(this);
     this.engine?.destroy();
     this.engine = null;
