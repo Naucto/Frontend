@@ -1,4 +1,5 @@
 import { InputState } from '../input/InputState';
+import type { SessionTransport } from '../net/SessionTransport';
 import type { LuaEnvironment } from '../vm/LuaEnvironment';
 import type { ApiContext } from './ApiContext';
 import type { GameData, GfxBackend, SysPort } from './ports';
@@ -18,4 +19,16 @@ export const makeApiContext = (
   log: () => undefined,
   print: () => undefined,
   ...overrides,
+});
+
+/** A host's transport that sends nothing and hears nothing, for a session with nobody else in it. */
+export const hostTransport = (): SessionTransport => ({
+  role: 'host',
+  selfUserId: 1,
+  broadcastState: () => undefined,
+  respondTo: () => undefined,
+  sendRequest: () => undefined,
+  on: () => undefined,
+  off: () => undefined,
+  destroy: () => undefined,
 });
