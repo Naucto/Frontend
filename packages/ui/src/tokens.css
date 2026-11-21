@@ -164,6 +164,8 @@
   --color-hot-edge: color-mix(in srgb, var(--nc-hot) 55%, white);
   --color-hot-skirt: color-mix(in srgb, var(--nc-hot) 54%, black);
   --color-on-hot: #fafdff;
+  --color-gold-edge: color-mix(in srgb, var(--nc-gold) 55%, white);
+  --color-gold-skirt: color-mix(in srgb, var(--nc-gold) 54%, black);
   --color-jade-edge: color-mix(in srgb, var(--nc-jade) 55%, white);
   --color-jade-skirt: #066e3f;
   --color-sky-edge: color-mix(in srgb, var(--nc-sky) 55%, white);
@@ -909,6 +911,11 @@
   --bv-edge: var(--color-primary-edge);
   --bv-skirt: var(--color-primary-skirt);
   --bv-fill: var(--color-primary);
+}
+@utility bevel-gold {
+  --bv-edge: var(--color-gold-edge);
+  --bv-skirt: var(--color-gold-skirt);
+  --bv-fill: var(--color-gold);
 }
 @utility bevel-hot {
   --bv-edge: var(--color-hot-edge);

@@ -29,6 +29,13 @@ import { TableDirective } from './table.directive';
         </tr>
       </tbody>
     </table>
+    <table ncTable dense aria-label="Dense">
+      <tbody>
+        <tr>
+          <td>Space</td>
+        </tr>
+      </tbody>
+    </table>
   `,
 })
 class HostComponent {}
@@ -50,7 +57,7 @@ describe('TableDirective', () => {
 
   it('draws one frame and bands every other row, with no rule under any', async () => {
     await render(HostComponent);
-    const table = screen.getByRole('table');
+    const table = screen.getByRole('table', { name: 'How to play' });
 
     expect(table).toHaveClass(
       'flat-sm',
@@ -58,5 +65,13 @@ describe('TableDirective', () => {
       '[&_tbody_tr:nth-child(odd)]:bg-inset',
     );
     expect(table.className).not.toMatch(/border-[btlr]|divide/);
+  });
+
+  it('keeps less room around a cell when dense', async () => {
+    await render(HostComponent);
+
+    expect(screen.getByRole('table', { name: 'How to play' })).toHaveClass('sm:[&_td]:px-1.5');
+    expect(screen.getByRole('table', { name: 'Dense' })).toHaveClass('[&_tbody_td]:py-0.75');
+    expect(screen.getByRole('table', { name: 'Dense' })).not.toHaveClass('sm:[&_td]:px-1.5');
   });
 });

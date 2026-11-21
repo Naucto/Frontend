@@ -16,6 +16,7 @@ import { ButtonDirective } from './button.directive';
     <button ncButton variant="primary" copied>Copied</button>
     <button ncButton variant="ghost" disabled>Undo</button>
     <button ncButton variant="ghost-danger" size="lg">Remove</button>
+    <button ncButton variant="gold">Player 1</button>
   `,
 })
 class Host {}
@@ -45,6 +46,12 @@ describe('ButtonDirective', () => {
       ]),
     );
     expect(classesOf('Remove')).not.toContain('bevel-edge-hot');
+  });
+
+  it('has a gold that stays gold where the primary follows the theme', async () => {
+    await render(Host);
+    expect(classesOf('Player 1')).toEqual(expect.arrayContaining(['bevel-gold', 'text-on-accent']));
+    expect(classesOf('Player 1')).not.toContain('bevel-primary');
   });
 
   it('draws the two tallest sizes on the large bevel', async () => {

@@ -1,4 +1,4 @@
-import { Directive } from '@angular/core';
+import { booleanAttribute, computed, Directive, input } from '@angular/core';
 
 /** One frame on the panel ground, so the bands show whatever the table stands on. */
 const FRAME =
@@ -12,13 +12,20 @@ const HEAD =
 
 /** A row is named by its `th`, whose `small` is the line under the name. */
 const ROWS =
-  '[&_tbody_th]:py-1 [&_tbody_th]:text-body [&_tbody_th]:font-normal [&_tbody_th]:text-ink ' +
-  '[&_tbody_td]:py-1 [&_tbody_td]:text-body [&_tbody_td]:text-ink-body ' +
+  '[&_tbody_th]:text-body [&_tbody_th]:font-normal [&_tbody_th]:text-ink ' +
+  '[&_tbody_td]:text-body [&_tbody_td]:text-ink-body ' +
+  '[&_td]:align-middle [&_th]:align-middle ' +
   '[&_small]:block [&_small]:text-meta [&_small]:text-ink-3';
 
-/** A cell keeps less room around it on a phone, where every column counts. */
-const CELLS =
-  '[&_td]:px-1 [&_td]:align-middle [&_th]:px-1 [&_th]:align-middle sm:[&_td]:px-1.5 sm:[&_th]:px-1.5';
+/**
+ * The room a cell keeps around what it holds. On a phone every column counts, so the regular
+ * table takes the dense one's sides there.
+ */
+const ROOM = {
+  regular:
+    '[&_tbody_td]:py-1 [&_tbody_th]:py-1 [&_td]:px-1 [&_th]:px-1 sm:[&_td]:px-1.5 sm:[&_th]:px-1.5',
+  dense: '[&_tbody_td]:py-0.75 [&_tbody_th]:py-0.75 [&_td]:px-1 [&_th]:px-1',
+};
 
 const CAPTION =
   '[&_caption]:pb-1 [&_caption]:text-left [&_caption]:text-label [&_caption]:tracking-label [&_caption]:text-ink-3 [&_caption]:uppercase';
@@ -33,6 +40,10 @@ const CAPTION =
  */
 @Directive({
   selector: 'table[ncTable]',
-  host: { class: `${FRAME} ${BANDS} ${HEAD} ${ROWS} ${CELLS} ${CAPTION}` },
+  host: { class: `${FRAME} ${BANDS} ${HEAD} ${ROWS} ${CAPTION}`, '[class]': 'room()' },
 })
-export class TableDirective {}
+export class TableDirective {
+  /** Tighter cells, for a table of many columns or one that stands in a narrow column. */
+  readonly dense = input(false, { transform: booleanAttribute });
+  protected readonly room = computed(() => ROOM[this.dense() ? 'dense' : 'regular']);
+}

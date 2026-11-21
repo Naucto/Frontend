@@ -69,6 +69,43 @@ test('a raised button is drawn and pressed on the pixel grid', async ({ page }) 
   ).toBe('0px 3px');
 });
 
+/** Bands and a frame are painted, and what is painted is only there in a browser. */
+test('a table stands in one frame, every other row on a band and no rule under any', async ({
+  page,
+}) => {
+  await page.goto('/ui-kit');
+  const table = page.locator('#table').getByRole('table').first();
+  await expect(table.getByRole('columnheader')).toHaveText(['Action', 'Keys', 'Pad']);
+  await expect(table.getByRole('rowheader').nth(1)).toContainText('Hold to jump higher');
+
+  const rows = await table.locator('tbody tr').evaluateAll((all) =>
+    all.map((row) => ({
+      ground: getComputedStyle(row).backgroundColor,
+      rule: getComputedStyle(row.firstElementChild ?? row).borderBottomWidth,
+    })),
+  );
+  expect(rows).toHaveLength(4);
+  expect(rows[0]?.ground).not.toBe(rows[1]?.ground);
+  expect(rows[2]?.ground).toBe(rows[0]?.ground);
+  expect(rows.map((row) => row.rule)).toEqual(['0px', '0px', '0px', '0px']);
+  expect(await table.evaluate((el) => getComputedStyle(el).borderTopWidth)).toBe('3px');
+});
+
+test.describe('on a phone', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('a table keeps inside the page', async ({ page }) => {
+    await page.goto('/ui-kit');
+    const tables = page.locator('#table').getByRole('table');
+    await expect(tables).toHaveCount(2);
+    for (const table of await tables.all()) {
+      const box = await table.boundingBox();
+      expect(box?.x).toBeGreaterThanOrEqual(0);
+      expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(390);
+    }
+  });
+});
+
 /** The container the host reports from takes no pointer events; the row with the button must. */
 test('a toast is shown from the overlay container and can be dismissed', async ({ page }) => {
   await page.goto('/ui-kit');

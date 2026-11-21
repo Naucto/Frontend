@@ -73,6 +73,7 @@ export * from './components/transport.component';
 export * from './format';
 export * from './icons/marks';
 export * from './icons/paths';
+export * from './icons/rendering';
 export * from './motion';
 export * from './palette';
 export * from './pipes/relative-time.pipe';

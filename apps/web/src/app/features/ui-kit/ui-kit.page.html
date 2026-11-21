@@ -22,7 +22,7 @@
     label="Theme" />
 </header>
 
-<main class="mx-auto grid max-w-[1200px] gap-8 px-[28px] pt-6 pb-[120px]">
+<main class="mx-auto grid max-w-[1200px] grid-cols-[minmax(0,1fr)] gap-8 px-[28px] pt-6 pb-[120px]">
   <div class="grid max-w-[70ch] gap-[14px]">
     <div class="text-label tracking-kicker text-active-ink uppercase">UI kit v2</div>
     <p class="font-display text-banner text-ink">Pressable pixels.</p>
@@ -209,6 +209,7 @@
         <button ncButton variant="ghost" size="lg">Ghost</button>
         <button ncButton variant="danger" size="lg">Delete</button>
         <button ncButton variant="ghost-danger" size="lg">Ghost danger</button>
+        <button ncButton variant="gold" size="lg">Player 1</button>
         <button ncButton variant="jade" size="lg">Join</button>
         <button ncButton variant="sky" size="lg">Invite</button>
         <button ncButton variant="primary" size="lg" disabled>Disabled</button>
@@ -557,14 +558,15 @@
       <h2 class="font-display text-display text-ink">Table</h2>
       <span class="text-meta text-ink-3">head row, rows named by their first cell, bands</span>
     </div>
-    <div class="flat-lg bevel-fill-panel grid items-start gap-[22px] p-[22px] lg:grid-cols-2">
+    <div
+      class="flat-lg bevel-fill-panel grid grid-cols-[minmax(0,1fr)] items-start gap-[22px] p-1.5 sm:p-[22px] lg:grid-cols-2">
       <table ncTable>
         <caption>On the panel ground</caption>
         <thead>
           <tr>
             <th scope="col">Action</th>
-            <th scope="col" class="w-0">Keys</th>
-            <th scope="col" class="w-0">Pad</th>
+            <th scope="col">Keys</th>
+            <th scope="col">Pad</th>
           </tr>
         </thead>
         <tbody>
@@ -577,13 +579,15 @@
                 }
               </th>
               <td>
-                <span class="flex items-center gap-0.5 whitespace-nowrap">
+                <span class="flex flex-wrap items-center gap-0.5">
                   <nc-keycap>{{ row.key }}</nc-keycap>
                   @if (row.arrow; as arrow) {
-                    <span class="text-meta text-ink-3">or</span>
-                    <nc-keycap>
-                      <nc-mark [name]="arrow" />
-                    </nc-keycap>
+                    <span class="flex items-center gap-0.5">
+                      <span class="text-meta text-ink-3">or</span>
+                      <nc-keycap>
+                        <nc-mark [name]="arrow" />
+                      </nc-keycap>
+                    </span>
                   }
                 </span>
               </td>
@@ -595,12 +599,12 @@
         </tbody>
       </table>
       <div class="flat-sm bevel-fill-inset p-2">
-        <table ncTable>
-          <caption>On the inset ground, holding controls</caption>
+        <table ncTable dense>
+          <caption>Dense, on the inset ground, holding controls</caption>
           <thead>
             <tr>
               <th scope="col">Setting</th>
-              <th scope="col" class="w-0">Value</th>
+              <th scope="col">Value</th>
             </tr>
           </thead>
           <tbody>
@@ -621,15 +625,11 @@
             </tr>
             <tr>
               <th scope="row">
-                Visibility
-                <small>Who finds the game on the hub</small>
+                Reduce motion
+                <small>Stills the animations of the UI</small>
               </th>
               <td>
-                <nc-segmented
-                  size="sm"
-                  [options]="visibility"
-                  [(value)]="visibilityValue"
-                  label="Visibility" />
+                <nc-toggle [(checked)]="reduceMotion" label="Reduce motion" />
               </td>
             </tr>
           </tbody>

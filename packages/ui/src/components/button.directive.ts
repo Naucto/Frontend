@@ -1,7 +1,7 @@
 import { booleanAttribute, computed, Directive, input } from '@angular/core';
 
 export type ButtonVariant =
-  'primary' | 'run' | 'secondary' | 'ghost' | 'ghost-danger' | 'danger' | 'jade' | 'sky';
+  'primary' | 'run' | 'secondary' | 'ghost' | 'ghost-danger' | 'danger' | 'gold' | 'jade' | 'sky';
 export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'bar' | 'hero';
 /** Sizes the ladder no longer has. Each still resolves, to the step nearest what it was. */
 export type RetiredButtonSize = 'tool' | 'strip';
@@ -28,6 +28,7 @@ const VARIANTS: Record<ButtonVariant, string> = {
   ghost: `bevel-bare text-ink-2 ${LIT} hover:bevel-fill-raised ${DISABLED_BARE}`,
   'ghost-danger': `bevel-bare text-hot-ink hover:bevel-edge-hot hover:bevel-skirt-hot hover:bevel-fill-hot-wash ${DISABLED_BARE}`,
   danger: `bevel-level bevel-edge-hot bevel-fill-transparent text-hot-ink hover:bevel-lift hover:bevel-hot hover:text-on-hot ${DISABLED}`,
+  gold: `glare bevel-gold text-on-accent ${DISABLED}`,
   jade: `glare bevel-jade text-on-accent ${DISABLED}`,
   sky: `glare bevel-sky text-on-accent ${DISABLED}`,
 };
@@ -40,6 +41,7 @@ const PRESSED: Record<ButtonVariant, string> = {
   ghost: `bevel-down bevel-lit text-active-ink ${DISABLED_BARE}`,
   'ghost-danger': `bevel-down bevel-hot text-on-hot ${DISABLED_BARE}`,
   danger: `bevel-down bevel-hot text-on-hot ${DISABLED}`,
+  gold: `bevel-down bevel-gold text-on-accent ${DISABLED}`,
   jade: `bevel-down bevel-jade text-on-accent ${DISABLED}`,
   sky: `bevel-down bevel-sky text-on-accent ${DISABLED}`,
 };
