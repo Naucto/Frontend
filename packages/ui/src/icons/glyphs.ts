@@ -76,7 +76,7 @@ export const ICON_GLYPHS = {
     prev: '49bfb9',
     redo: '6087c888060',
     reference: '5f8a8a8a8f8',
-    reload: '61078847820',
+    reload: '6748c8004c4b8',
     repeat: '608fc0840fc40',
     'rotate-cw': '6748c9c808478',
     save: '6f89cfc8484fc',
