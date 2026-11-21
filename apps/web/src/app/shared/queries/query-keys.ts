@@ -56,4 +56,14 @@ export const qk = {
   hubShelves: (keys: readonly string[]) => ['hub', 'shelves', keys] as const,
   hubResults: (params: Record<string, unknown>) => ['hub', 'results', params] as const,
   releaseTags: (limit: number) => ['releases', 'tags', limit] as const,
+  /** Every list of collections at once: what any change to one of them invalidates. */
+  collectionLists: () => ['collections'] as const,
+  collectionsPage: (params: Record<string, unknown>) => ['collections', 'public', params] as const,
+  /** The viewer's own, with the game each is asked about: null when none is. */
+  myCollections: (projectId: number | null) => ['collections', 'mine', projectId] as const,
+  userCollections: (userId: number) => ['collections', 'of', userId] as const,
+  /** One collection whoever reads it, to invalidate it for every viewer at once. */
+  collectionAll: (id: string) => ['collection', id] as const,
+  /** What a collection answers depends on who asks: a private one is its owner's alone. */
+  collection: (id: string, viewer: number | null) => ['collection', id, viewer] as const,
 };
