@@ -14,6 +14,7 @@ import {
 
 import { PresenceStore } from '../../core/presence/presence.store';
 import { type PresenceLine, presenceLine } from '../../core/presence/presence-line';
+import { DiskNameComponent } from '../../shared/game-card/disk-name.component';
 import { diskStyleFor } from '../../shared/game-card/disk-style';
 import { FloppyComponent } from '../../shared/game-card/floppy.component';
 import type { ParsedTerm, PersonHit, Suggestions } from '../../shared/queries/search.queries';
@@ -40,6 +41,7 @@ const SEATS_DRAWN = 8;
     StatComponent,
     SuggestPanelComponent,
     SuggestRowComponent,
+    DiskNameComponent,
     FloppyComponent,
     UserAvatarComponent,
   ],
