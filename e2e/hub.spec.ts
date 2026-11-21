@@ -190,9 +190,9 @@ test.describe('the results view', () => {
   test('lists what the top bar search finds, and sorts it on the server', async ({ page }) => {
     await mockHub(page, { found: games(3, 'Cave', 700) });
     await page.goto('/hub');
-    const field = page.getByRole('searchbox');
+    const field = page.getByRole('combobox', { name: 'Search games, people, tags…' });
     await field.fill('cave');
-    await field.press('Tab');
+    await field.press('Enter');
 
     await expect(page).toHaveURL(/\/hub\?q=cave$/);
     await expect(page.getByText('Search', { exact: true })).toBeVisible();
