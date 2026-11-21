@@ -4,8 +4,8 @@ import { TranslocoDirective } from '@jsverse/transloco';
 import { friendsControllerList, projectControllerFindAll } from '@naucto/api-client';
 import {
   AvatarComponent,
-  ButtonDirective,
   IconComponent,
+  OptionDirective,
   PopoverDirective,
   PopoverPanelComponent,
   StatComponent,
@@ -24,8 +24,8 @@ import { qk } from '../../shared/queries/query-keys';
     RouterLink,
     TranslocoDirective,
     AvatarComponent,
-    ButtonDirective,
     IconComponent,
+    OptionDirective,
     PopoverDirective,
     PopoverPanelComponent,
     StatComponent,
