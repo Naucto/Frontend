@@ -25,7 +25,6 @@ import {
 import { GameScreenComponent } from '../../../shared/game-screen/game-screen.component';
 import { EditorRuntimeService } from '../state/editor-runtime.service';
 import {
-  CONSOLE_WIDTH,
   EditorUiStore,
   PANEL_WIDTH,
   PIP_MAX_AREA_SHARE,
@@ -88,11 +87,6 @@ export class ConsoleColumnComponent {
       this.ui.columnMode() === 'swap' ||
       (!this.popped() && !this.lent() && this.ui.activeTab() !== 'code'),
   );
-  /** How many screen pixels one console pixel takes. The column is a fixed track, so this is too. */
-  protected readonly scale = computed(() => {
-    const inner = CONSOLE_WIDTH - 24;
-    return Math.max(1, Math.round((inner / 320) * 10) / 10);
-  });
   protected readonly session = inject(WorkSessionService);
   protected readonly presence = inject(SessionPresenceService);
   protected readonly saves = inject(SessionSaveService);

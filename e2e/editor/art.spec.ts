@@ -39,7 +39,7 @@ test('ART tab gives the canvas the console’s width, and paints with the pen', 
 
   // The console is CODE's own sidebar: on a canvas tab there is nothing to unfold.
   await expect(page.getByRole('button', { name: 'Clear' })).toHaveCount(0);
-  await expect(page.getByText('Viewer', { exact: true })).toHaveCount(0);
+  await expect(page.locator('.nc-pip')).toHaveCount(0);
 
   // Lock off, or the lock clips the stroke to the single sprite in hand.
   await expect(page.getByRole('switch', { name: 'Lock' })).toHaveAttribute('aria-checked', 'false');
@@ -56,7 +56,7 @@ test('ART tab gives the canvas the console’s width, and paints with the pen', 
   await page.goto(editorUrl('code'));
   await page.getByRole('button', { name: 'Pop the viewer out' }).click();
   await page.locator('nc-rail').getByRole('button', { name: 'Art' }).click();
-  await expect(page.getByText('Viewer', { exact: true })).toBeVisible();
+  await expect(page.locator('.nc-pip')).toBeVisible();
 
   // Over the canvas, not over the inspector: the corner the artboard draws the card in is the
   // console's, and on a canvas tab that track holds the panel you came to work in.

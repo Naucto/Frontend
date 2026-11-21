@@ -74,13 +74,14 @@
   }
   @if (transport()) {
     <div [class]="transportClass()" *transloco="let t">
-      <span class="flex items-center" [class]="compact() ? 'gap-0' : 'gap-[3px]'">
+      <span ncJoined>
         @if (host.state() === 'running') {
           <button
             ncButton
-            variant="ghost"
+            variant="run"
             size="md"
             iconOnly
+            pressed
             [attr.aria-label]="t('game.screen.pause')"
             (click)="host.pause()">
             <nc-icon name="pause" />
@@ -119,37 +120,31 @@
           </button>
         }
       </span>
-      @if (!compact()) {
-        <span class="ml-1 hidden gap-1.5 font-mono text-label whitespace-nowrap text-ink-4 md:flex">
-          <span>320×180</span>
-          <span>
-            {{ t(fit() === 'width' ? 'game.screen.fitWidth' : 'game.screen.fitInteger') }}
-          </span>
-        </span>
-      }
       <!-- Projected before the spacer: left of the break is what the game runs on, right of it
            what the device plays it with. -->
       <ng-content select="[transport-extra]" />
       <span class="flex-1"></span>
-      <button
-        ncButton
-        variant="ghost"
-        size="md"
-        iconOnly
-        aria-haspopup="dialog"
-        [attr.aria-label]="t('game.screen.controls')"
-        (click)="openControls()">
-        <nc-icon name="gear" />
-      </button>
-      <button
-        ncButton
-        variant="ghost"
-        size="md"
-        iconOnly
-        [attr.aria-label]="t('game.screen.fullscreen')"
-        (click)="fullscreen()">
-        <nc-icon name="fullscreen" />
-      </button>
+      <span ncJoined>
+        <button
+          ncButton
+          variant="ghost"
+          size="md"
+          iconOnly
+          aria-haspopup="dialog"
+          [attr.aria-label]="t('game.screen.controls')"
+          (click)="openControls()">
+          <nc-icon name="gear" />
+        </button>
+        <button
+          ncButton
+          variant="ghost"
+          size="md"
+          iconOnly
+          [attr.aria-label]="t('game.screen.fullscreen')"
+          (click)="fullscreen()">
+          <nc-icon name="fullscreen" />
+        </button>
+      </span>
     </div>
   }
 </div>
