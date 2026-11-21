@@ -5,11 +5,8 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import {
   type FriendDto,
   type FriendRequestDto,
-  friendsControllerAccept,
-  friendsControllerDecline,
   friendsControllerList,
   friendsControllerRecentPlayers,
-  friendsControllerRequests,
   friendsControllerSend,
   type RecentPlayerDto,
 } from '@naucto/api-client';
@@ -31,6 +28,7 @@ import { unwrap } from '../../core/api/api-errors';
 import { AuthStore } from '../../core/auth/auth.store';
 import { PresenceStore } from '../../core/presence/presence.store';
 import { presenceLine } from '../../core/presence/presence-line';
+import { answerFriendRequest, injectFriendRequests } from '../../shared/queries/friends.queries';
 import { qk } from '../../shared/queries/query-keys';
 import { UserAvatarComponent } from '../../shared/user-avatar.component';
 import { AddFriendDialog } from './add-friend.dialog';
@@ -83,11 +81,7 @@ export default class FriendsPage {
     queryFn: async () => unwrap(await friendsControllerList()),
     enabled: this.auth.isAuthenticated(),
   }));
-  private readonly requestsQuery = injectQuery(() => ({
-    queryKey: qk.friendRequests(),
-    queryFn: async () => unwrap(await friendsControllerRequests()),
-    enabled: this.auth.isAuthenticated(),
-  }));
+  private readonly requestsQuery = injectFriendRequests(() => this.auth.isAuthenticated());
   private readonly recentQuery = injectQuery(() => ({
     queryKey: qk.recentPlayers(),
     queryFn: async () => unwrap(await friendsControllerRecentPlayers()),
@@ -202,11 +196,10 @@ export default class FriendsPage {
    * disappears on success, so a silent error leaves the sender listed and the reader believing they
    * answered.
    */
-  private async answer(id: number, call: () => Promise<unknown>): Promise<void> {
+  protected async answer(id: number, accept: boolean): Promise<void> {
     this.answering.set(id);
     try {
-      await call();
-      await this.qc.invalidateQueries({ queryKey: qk.friends() });
+      await answerFriendRequest(this.qc, id, accept);
     } catch (error: unknown) {
       this.toasts.show(
         error instanceof Error ? error.message : 'Could not answer that request',
@@ -215,17 +208,5 @@ export default class FriendsPage {
     } finally {
       this.answering.set(null);
     }
-  }
-
-  protected async accept(id: number): Promise<void> {
-    await this.answer(id, async () => {
-      unwrap(await friendsControllerAccept({ path: { id } }));
-    });
-  }
-
-  protected async decline(id: number): Promise<void> {
-    await this.answer(id, async () => {
-      unwrap(await friendsControllerDecline({ path: { id } }));
-    });
   }
 }
