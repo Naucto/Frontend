@@ -51,4 +51,13 @@ export const qk = {
   recentPlayers: () => ['friends', 'recent'] as const,
   friendCount: () => ['friends', 'count'] as const,
   sessions: (projectId: number) => ['sessions', projectId] as const,
+  /** The sessions a reader may join, whatever the game. */
+  openSessions: () => ['sessions', 'open'] as const,
+  /** Every hub query at once: the feed, its shelves and the results drawn from them. */
+  hubAll: () => ['hub'] as const,
+  /** The feed is drawn for its reader, so each account, and no account, has its own. */
+  hubFeed: (userId: number | null) => ['hub', 'feed', userId] as const,
+  hubShelves: (keys: readonly string[]) => ['hub', 'shelves', keys] as const,
+  hubResults: (params: Record<string, unknown>) => ['hub', 'results', params] as const,
+  releaseTags: (limit: number) => ['releases', 'tags', limit] as const,
 };
