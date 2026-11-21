@@ -4,6 +4,7 @@ import { TranslocoDirective } from '@jsverse/transloco';
 import type { ProjectExResponseDto } from '@naucto/api-client';
 import { ButtonDirective, MarkComponent, SkeletonComponent } from '@naucto/ui';
 
+import { DiskNameComponent } from '../../shared/game-card/disk-name.component';
 import { DISK_RATIO } from '../../shared/game-card/floppy.component';
 import { GameDiskComponent } from '../../shared/game-card/game-disk.component';
 
@@ -17,6 +18,7 @@ export type ShelfState = 'ready' | 'pending' | 'error';
     RouterLink,
     TranslocoDirective,
     ButtonDirective,
+    DiskNameComponent,
     GameDiskComponent,
     MarkComponent,
     SkeletonComponent,

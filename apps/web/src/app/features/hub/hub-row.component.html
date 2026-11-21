@@ -21,9 +21,13 @@
   <div class="grid grid-cols-2 gap-x-2 gap-y-2.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
     @switch (state()) {
       @case ('pending') {
-        <!-- At the disk's real geometry, so the shelf does not jump when the games land. -->
+        <!-- At the real geometry of a disk over its name, so the shelf does not jump when the
+             games land. -->
         @for (i of placeholders; track i) {
-          <nc-skeleton height="auto" [style.aspect-ratio]="DISK_RATIO" />
+          <div>
+            <nc-skeleton height="auto" [style.aspect-ratio]="DISK_RATIO" />
+            <nc-disk-name>&nbsp;</nc-disk-name>
+          </div>
         }
       }
       @case ('error') {
@@ -39,10 +43,13 @@
                own: the cells the ghosts fill behind it are what hold the height. -->
           <p class="text-body text-ink-3" [class.col-span-full]="!reserve()">{{ empty() }}</p>
         }
-        <!-- A disk's shape with nothing in it, not a fixed height: only the same boxes come out
-             to the same pixel at every column count. -->
+        <!-- The shape of a disk over its name with nothing in it, not a fixed height: only the
+             same boxes come out to the same pixel at every column count. -->
         @for (i of ghosts(); track i) {
-          <div aria-hidden="true" [style.aspect-ratio]="DISK_RATIO"></div>
+          <div aria-hidden="true">
+            <div [style.aspect-ratio]="DISK_RATIO"></div>
+            <nc-disk-name>&nbsp;</nc-disk-name>
+          </div>
         }
       }
     }
