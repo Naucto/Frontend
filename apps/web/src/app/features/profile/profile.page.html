@@ -195,7 +195,21 @@
       [options]="shelves()"
       [value]="shelf()"
       (valueChange)="setShelf($event)" />
-    @if (current().length) {
+    @if (shelf() === 'collections') {
+      <div
+        data-testid="profile-collections"
+        class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-x-[20px] gap-y-1">
+        @for (collection of collections.data(); track collection.id) {
+          <nc-collection-box
+            [title]="collection.title"
+            [curator]="collection.owner"
+            [games]="collection.games"
+            [total]="collection.gameCount"
+            [link]="['/collections', collection.id]"
+            (picked)="router.navigate(['/play', $event.id])" />
+        }
+      </div>
+    } @else if (current().length) {
       <nc-hub-row [games]="current()" />
     } @else {
       <nc-empty-state
