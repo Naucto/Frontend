@@ -4,6 +4,17 @@ import type { SharedTableSession } from './SharedTableSession';
 export interface NetHostOptions {
   maxPlayers: number;
   title?: string;
+  /** The room is in the browse list from the start, instead of reached by its code alone. */
+  listed?: boolean;
+}
+
+/** The session a game was opened on, as `net.invite()` hands it to the game. */
+export interface NetInvite {
+  title: string;
+  host: string;
+  /** Seats taken, the host's included. */
+  players: number;
+  maxPlayers: number;
 }
 
 // Implemented app-side: the modal flow that creates/joins a session (REST +

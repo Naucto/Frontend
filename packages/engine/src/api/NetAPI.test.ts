@@ -1,20 +1,8 @@
 import type { NetHostOptions, NetUi } from '../net/NetUi';
-import type { SessionTransport } from '../net/SessionTransport';
 import { SharedTableSession } from '../net/SharedTableSession';
 import { LuaEnvironment } from '../vm/LuaEnvironment';
 import { NetAPI } from './NetAPI';
-import { makeApiContext } from './test-context';
-
-const hostTransport = (): SessionTransport => ({
-  role: 'host',
-  selfUserId: 1,
-  broadcastState: () => undefined,
-  respondTo: () => undefined,
-  sendRequest: () => undefined,
-  on: () => undefined,
-  off: () => undefined,
-  destroy: () => undefined,
-});
+import { hostTransport, makeApiContext } from './test-context';
 
 function setup(): { lua: LuaEnvironment; session: SharedTableSession } {
   const lua = new LuaEnvironment();
@@ -154,7 +142,27 @@ describe('NetAPI net.state', () => {
 
     lua.evaluate("net.host({ max_players = 6, title = 'Arena' })");
 
-    expect(captured).toEqual({ maxPlayers: 6, title: 'Arena' });
+    expect(captured).toEqual({ maxPlayers: 6, title: 'Arena', listed: false });
+  });
+
+  it('asks for a listed room only when the game says listed = true', () => {
+    const lua = new LuaEnvironment();
+    const asked: (boolean | undefined)[] = [];
+    const ui: NetUi = {
+      host: (options, onReady) => {
+        asked.push(options.listed);
+        onReady(null);
+      },
+      join: () => undefined,
+      leave: () => undefined,
+    };
+    new NetAPI(makeApiContext(lua, { netUi: ui }));
+
+    lua.evaluate('net.host({ listed = true })');
+    lua.evaluate('net.host({ listed = 1 })');
+    lua.evaluate('net.host()');
+
+    expect(asked).toEqual([true, false, false]);
   });
 
   it('pushes and pops FIFO through a net.state queue', () => {
@@ -451,5 +459,51 @@ describe('NetAPI net.state objects', () => {
     expect(lua.evaluate('return _G.len')[0]).toBe(1);
     expect(lua.evaluate('return _G.held')[0]).toBe(true);
     expect(lua.evaluate('return _G.released')[0]).toBe(false);
+  });
+});
+
+describe('NetAPI net.invite', () => {
+  const noUi: NetUi = { host: () => undefined, join: () => undefined, leave: () => undefined };
+
+  it('is nil for a game that was not opened on a session', () => {
+    const lua = new LuaEnvironment();
+    new NetAPI(makeApiContext(lua, { netUi: noUi }));
+
+    expect(lua.evaluate('return net.invite()')[0]).toBeUndefined();
+  });
+
+  it('describes the session the game was opened on, with no session active', () => {
+    const lua = new LuaEnvironment();
+    new NetAPI(
+      makeApiContext(lua, {
+        netUi: noUi,
+        netInvite: () => ({ title: 'Tag arena', host: 'ada', players: 2, maxPlayers: 4 }),
+      }),
+    );
+
+    expect(
+      lua.evaluate(
+        'local i = net.invite() return i.title, i.host, i.players, i.max_players, i.maxPlayers',
+      ),
+    ).toEqual(['Tag arena', 'ada', 2, 4, undefined]);
+  });
+
+  it('reads the session again at each call, and is nil once there is none left', () => {
+    const lua = new LuaEnvironment();
+    let players: number | null = 2;
+    new NetAPI(
+      makeApiContext(lua, {
+        netUi: noUi,
+        netInvite: () =>
+          players === null ? null : { title: 'Tag arena', host: 'ada', players, maxPlayers: 4 },
+      }),
+    );
+
+    lua.evaluate('_G.first = net.invite() _G.first.players = 99');
+    players = 3;
+
+    expect(lua.evaluate('return net.invite().players, _G.first.players')).toEqual([3, 99]);
+    players = null;
+    expect(lua.evaluate('return net.invite()')[0]).toBeUndefined();
   });
 });

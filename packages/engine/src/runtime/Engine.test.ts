@@ -5,11 +5,14 @@ import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
 
 import { NO_EFFECT, type SoundPort } from '../api/ports';
+import { hostTransport } from '../api/test-context';
 import { EditableGame } from '../game/EditableGame';
 import { RecordingBackend } from '../gfx/RecordingBackend';
 import type { InputSource } from '../input/InputSource';
 import type { InputState } from '../input/InputState';
 import { STEP_MS } from '../loop/GameLoop';
+import type { NetInvite, NetUi } from '../net/NetUi';
+import { SharedTableSession } from '../net/SharedTableSession';
 import { Engine } from './Engine';
 
 const driver = { request: () => 0, cancel: () => undefined };
@@ -559,6 +562,63 @@ describe('Engine', () => {
     expect(errors).toEqual(['scanline:2']);
     expect(engine.error?.message).toContain('beam');
     expect(gfx.ops('setLineEffect')).toHaveLength(42);
+    engine.destroy();
+  });
+
+  it('hands a game the session it was opened on at every run, until the launcher has none', () => {
+    const game = new EditableGame(new Y.Doc());
+    game.seedDefaults();
+    const main = game.files[0];
+    main?.text.delete(0, main.text.length);
+    main?.text.insert(
+      0,
+      [
+        'function _init()',
+        '  local invite = net.invite()',
+        '  if invite then',
+        '    net.join(function()',
+        '      print("joined " .. invite.title .. " as " .. net.id())',
+        '    end)',
+        '  else',
+        '    print("menu")',
+        '  end',
+        'end',
+      ].join('\n'),
+    );
+    let invite: NetInvite | null = { title: 'Tag arena', host: 'ada', players: 1, maxPlayers: 4 };
+    let joins = 0;
+    const netUi: NetUi = {
+      host: () => undefined,
+      join: (onReady) => {
+        joins++;
+        onReady(new SharedTableSession(hostTransport()));
+      },
+      leave: () => undefined,
+    };
+    const engine = new Engine({
+      game,
+      gfx: new RecordingBackend(),
+      driver,
+      netUi,
+      netInvite: () => invite,
+    });
+    const printed = (): string[] => engine.console.lines.map((line) => line.text);
+
+    engine.run();
+    expect(printed()).toEqual(['joined Tag arena as 1']);
+    expect(engine.net).not.toBeNull();
+
+    engine.stop();
+    expect(engine.net).toBeNull();
+    engine.run();
+    expect(printed()).toEqual(['joined Tag arena as 1']);
+    expect(joins).toBe(2);
+
+    invite = null;
+    engine.stop();
+    engine.run();
+    expect(printed()).toEqual(['menu']);
+    expect(joins).toBe(2);
     engine.destroy();
   });
 

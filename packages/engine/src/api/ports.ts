@@ -1,6 +1,6 @@
 import type { InputState } from '../input/InputState';
 import type { NetPermissions } from '../net/NetPermissions';
-import type { NetUi } from '../net/NetUi';
+import type { NetInvite, NetUi } from '../net/NetUi';
 import type { Envelope, Instrument, Pattern, Song } from '../sound/model';
 
 /**
@@ -181,6 +181,11 @@ export interface EnginePorts {
   data: GameData;
   sys: SysPort;
   netUi?: NetUi;
+  /**
+   * The session the game was opened on while it can still be joined, read at each call: what is
+   * known of it changes while the game runs, and it stops being one once left or found closed.
+   */
+  netInvite?: () => NetInvite | null;
   netPermissions?: NetPermissions;
   log(level: ConsoleLevel, text: string): void;
 }
