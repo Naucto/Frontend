@@ -1,5 +1,12 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  linkedSignal,
+  signal,
+} from '@angular/core';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { type NetHostOptions } from '@naucto/engine';
 import {
@@ -58,7 +65,8 @@ export class HostDialogComponent {
 
   protected readonly title = signal(this.data.options.title ?? '');
   protected readonly busy = signal(false);
-  protected readonly listed = signal(false);
+  /** What the room is, shown as asked for while the server answers. */
+  protected readonly listed = linkedSignal(() => this.data.bridge.info()?.listed ?? false);
 
   /** The room exists once the server has answered; until then this dialog is still a form. */
   protected readonly open = computed(() => this.data.bridge.info() !== null);
@@ -112,7 +120,7 @@ export class HostDialogComponent {
     }
     this.listed.set(listed);
     try {
-      this.listed.set(await this.data.bridge.setListed(uuid, listed));
+      await this.data.bridge.setListed(uuid, listed);
     } catch {
       // Put the switch back where the server left it rather than showing a state it does not hold.
       this.listed.set(!listed);

@@ -49,6 +49,8 @@ export const qk = {
   sessions: (projectId: number) => ['sessions', projectId] as const,
   /** The sessions a reader may join, whatever the game. */
   openSessions: () => ['sessions', 'open'] as const,
+  /** One session by its id; the code is part of who may read it. */
+  session: (uuid: string | null, code: string | null) => ['session', uuid, code] as const,
   /** Every hub query at once: the feed, its shelves and the results drawn from them. */
   hubAll: () => ['hub'] as const,
   /** The feed is drawn for its reader, so each account, and no account, has its own. */

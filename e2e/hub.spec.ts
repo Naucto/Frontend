@@ -1,5 +1,7 @@
 import { expect, test } from './fixtures';
+import { serveGame } from './mocks/game';
 import { FEED, games, hubGame, mockHub, POPULAR, SESSION } from './mocks/hub';
+import { JOINS_FROM_INIT, mockRoom } from './mocks/netplay';
 import { answer, mockSignedIn } from './mocks/session';
 
 test.use({ viewport: { width: 1440, height: 900 } });
@@ -109,6 +111,7 @@ test.describe('the hub', () => {
   test('gives a signed-in reader their games and the open sessions, before the rest', async ({
     page,
   }) => {
+    await serveGame(page, JOINS_FROM_INIT, {}, SESSION.projectId);
     await mockSignedIn(page);
     await mockHub(page);
     await page.route(/\/projects\?/, (route) =>
@@ -120,6 +123,7 @@ test.describe('the hub', () => {
       }),
     );
     await page.route('**/game-sessions', answer(200, { sessions: [SESSION] }));
+    const room = await mockRoom(page, SESSION);
     await page.goto('/hub');
 
     await expect(page.getByRole('heading', { level: 3 })).toHaveText([
@@ -147,6 +151,12 @@ test.describe('the hub', () => {
     await expect(session.locator('.sticker .seat')).toHaveCount(2);
     await session.locator('.action.join .rind').click();
     await expect(page).toHaveURL(/\/play\/2\?session=room-1$/);
+
+    // The game page takes it from there: Play is in the session, with no dialog to pick it in.
+    await page.getByRole('button', { name: 'Play', exact: true }).first().click();
+    await expect(page.getByRole('alert')).toContainText('in Friday night of louis, 2 of 4');
+    expect(room.joins).toEqual([{ editorTest: false }]);
+    await expect(page).toHaveURL(/\/play\/2$/);
   });
 });
 

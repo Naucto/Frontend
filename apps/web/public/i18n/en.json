@@ -1089,6 +1089,12 @@
       "full": "FULL",
       "noMatch": "No room matches that.",
       "failed": "Could not join that session."
+    },
+    "invite": {
+      "seats": "{{players}} of {{max}}",
+      "ended": "This session has ended.",
+      "signIn": "Sign in to join the session",
+      "alone": "Play alone"
     }
   },
   "friends": {

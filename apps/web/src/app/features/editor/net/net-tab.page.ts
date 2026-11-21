@@ -28,7 +28,7 @@ import {
 } from '@naucto/ui';
 
 import { AuthStore } from '../../../core/auth/auth.store';
-import type { NetUiBridgeService } from '../../../core/net/net-bridge.service';
+import type { NetUiBridgeService, SessionInvite } from '../../../core/net/net-bridge.service';
 import { PERM_CLIENT_READ, PERM_CLIENT_WRITE } from '../../../core/net/net-permissions';
 import { GameScreenComponent } from '../../../shared/game-screen/game-screen.component';
 import { RuntimeHostService } from '../../../shared/game-screen/runtime-host.service';
@@ -111,11 +111,6 @@ export default class NetTabPage {
   );
   protected readonly info = computed(() => this.bridge()?.info() ?? null);
   private readonly rigScreen = viewChild(GameScreenComponent);
-  /** The session the spawned client should join: ours, with the code if it needs one. */
-  protected readonly rigTarget = computed(() => {
-    const i = this.info();
-    return i ? { uuid: i.uuid, code: i.joinCode } : null;
-  });
   protected readonly rigJoined = computed(() => this.rigScreen()?.netBridge.session() !== null);
   /** The id the rig plays under: its own, not the account's, so the two windows can be told apart. */
   private readonly rigId = computed(
@@ -140,6 +135,25 @@ export default class NetTabPage {
     }
     const peers = this.bridge()?.peers() ?? [];
     return [session.selfUserId, ...peers.filter((peer) => peer !== session.selfUserId)];
+  });
+  /**
+   * The session the spawned client is opened on: ours, with the code if it needs one, described as
+   * an invited player's game would read it.
+   */
+  protected readonly rigTarget = computed<SessionInvite | null>(() => {
+    const info = this.info();
+    return info
+      ? {
+          uuid: info.uuid,
+          code: info.joinCode,
+          session: {
+            title: info.title,
+            host: this.auth.displayName(),
+            players: this.players().length,
+            maxPlayers: info.maxPlayers,
+          },
+        }
+      : null;
   });
   protected readonly slots = computed(() => {
     this.tick();
