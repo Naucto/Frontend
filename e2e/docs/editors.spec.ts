@@ -337,7 +337,7 @@ for (const theme of THEMES) {
       await page.getByRole('textbox', { name: 'Name' }).waitFor();
       await page.waitForTimeout(500);
       await shoot(page, OUT, 'game', theme);
-      await page.getByRole('button', { name: 'Platformer' }).click();
+      await page.locator('nc-versions-popover').getByRole('button', { name: 'Platformer' }).click();
       const panel = page.locator('nc-popover-panel');
       await shoot(page, OUT, 'game-versions', theme, panel);
       await panel.getByRole('button', { name: 'Save a version' }).click();

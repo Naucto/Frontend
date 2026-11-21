@@ -109,26 +109,43 @@
               (tagsChange)="setTags($event)"
               [placeholder]="t('editor.game.tagPlaceholder')" />
           </nc-field>
-          <nc-field [label]="t('editor.game.controls')">
+          <nc-field [label]="t('editor.game.inputs')">
             <nc-help-dot
               actions
-              [title]="t('editor.game.controls')"
-              [text]="t('editor.game.controlsHelp')" />
-            <div class="grid grid-cols-[48px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
-              @for (control of controls(); track control.action) {
-                <label [for]="'g-ctl-' + control.action" class="font-mono text-meta text-ink-3">
-                  {{ control.action }}
-                </label>
-                <input
-                  ncInput
-                  [id]="'g-ctl-' + control.action"
-                  [ngModel]="control.label"
-                  (ngModelChange)="editControl(control.action, $event)"
-                  (blur)="commitControls()"
-                  (keydown.enter)="commitControls()"
-                  [maxlength]="controlLabelMax"
-                  [placeholder]="control.action" />
-              }
+              [title]="t('editor.game.inputs')"
+              [text]="t('editor.game.inputsHelp')" />
+            <div class="grid gap-1.5">
+              <div
+                class="flex flex-wrap items-center gap-0.5"
+                role="group"
+                [attr.aria-label]="t('editor.game.presets')">
+                <span class="label mr-0.5 text-ink-3" aria-hidden="true">
+                  {{ t('editor.game.presets') }}
+                </span>
+                @for (preset of presets; track preset) {
+                  <button
+                    ncButton
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    (click)="applyPreset(preset)">
+                    {{ t('editor.game.preset.' + preset) }}
+                  </button>
+                }
+              </div>
+              <ul class="grid gap-1.5" [attr.aria-label]="t('editor.game.inputs')">
+                @for (action of actions(); track action.id) {
+                  <li class="grid grid-cols-[160px_minmax(0,1fr)] items-start gap-x-1.5">
+                    <span class="grid min-w-0">
+                      <span class="truncate text-meta text-ink">{{ action.label }}</span>
+                      <code class="truncate font-mono text-meta text-ink-3">{{ action.name }}</code>
+                    </span>
+                    <nc-action-inputs [inputs]="action.inputs" [twoKeyboards]="twoKeyboards()" />
+                  </li>
+                } @empty {
+                  <li class="text-meta text-ink-3">{{ t('editor.game.noActions') }}</li>
+                }
+              </ul>
             </div>
           </nc-field>
         </div>

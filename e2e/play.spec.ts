@@ -71,14 +71,60 @@ test('a game that errors tells the player, and restarts from the banner', async 
 
 /**
  * The words come from the document, so the panel is right before the game has run: nothing here
- * presses Play.
+ * presses Play. The served game predates actions of its own, so what it shows is what opening it
+ * gave it: the nine it always had, under the names its author gave some, with the keys they had.
  */
-test('how to play shows the names the document gives its actions', async ({ page }) => {
+test('how to play shows the actions an old game is given, under the names it gave them', async ({
+  page,
+}) => {
   await serveGame(page, 'function _update() end', {
     actions: [{ action: 'a', label: 'Jump' }],
   });
 
   await page.goto('/play/42');
   await expect(page.getByText('How to play')).toBeVisible();
-  await expect(page.getByText('Jump', { exact: true })).toBeVisible();
+  const rows = page.locator('nc-how-to-play dl > div');
+  await expect(rows).toHaveCount(9);
+  const jump = rows.filter({ has: page.getByText('Jump', { exact: true }) });
+  await expect(jump.locator('nc-input-cap')).toHaveText(['x', 'Space', 'n', 'A']);
+  await expect(rows.first().locator('dt')).toHaveText('Left');
+});
+
+/**
+ * A published game has no console, so the game says it read the action the one way a player can
+ * see: it stops on an error that names it. The code is a v1 game's, read through every migration.
+ */
+test('a game saved before it had actions of its own answers to the keys it always had', async ({
+  page,
+}) => {
+  await serveGame(
+    page,
+    [
+      'function _update()',
+      '  if input.btn("right", 2) then error("player two goes right") end',
+      '  if input.btnp("a") then error("player one pressed a") end',
+      'end',
+    ].join('\n'),
+  );
+
+  await page.goto('/play/42');
+  await page.getByRole('button', { name: 'Play' }).first().click();
+  const alert = page.getByRole('alert');
+  // A key no action holds, and player one's own "right": neither is what the code reads.
+  await page.keyboard.down('F8');
+  await page.keyboard.down('ArrowRight');
+  await page.waitForTimeout(200);
+  await page.keyboard.up('F8');
+  await page.keyboard.up('ArrowRight');
+  await expect(alert).toHaveCount(0);
+
+  await page.keyboard.down('l');
+  await expect(alert).toContainText('player two goes right');
+  await page.keyboard.up('l');
+
+  await alert.getByRole('button', { name: 'Restart' }).click();
+  await expect(alert).toHaveCount(0);
+  await page.keyboard.down('Space');
+  await expect(alert).toContainText('player one pressed a');
+  await page.keyboard.up('Space');
 });
