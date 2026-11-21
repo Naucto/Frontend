@@ -300,6 +300,20 @@
         </div>
       </div>
       <div class="flex flex-wrap items-center gap-3">
+        <span class="label">Joined: ghost buttons that share an edge</span>
+        <span ncJoined data-testid="joined">
+          <button ncButton variant="run" iconOnly pressed aria-label="Pause">
+            <nc-icon name="pause" />
+          </button>
+          <button ncButton variant="ghost" iconOnly aria-label="Restart">
+            <nc-icon name="reload" />
+          </button>
+          <button ncButton variant="ghost" iconOnly aria-label="Step one frame">
+            <nc-icon name="next" />
+          </button>
+        </span>
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
         <span class="label">Text link: active ink and a pixel arrow</span>
         <a
           class="inline-flex items-center gap-[6px] text-label tracking-wide text-active-ink uppercase hover:text-hot-ink"
