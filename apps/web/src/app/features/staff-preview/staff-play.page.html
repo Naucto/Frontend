@@ -1,0 +1,70 @@
+<section *transloco="let t" class="mx-auto flex w-full max-w-[1100px] flex-col gap-2">
+  <nc-notice variant="band" tone="warn" data-testid="staff-preview-band">
+    {{ t('moderation.preview.band') }}
+  </nc-notice>
+
+  @if (project.isError()) {
+    <div class="rounded-sm border border-line bg-panel">
+      <nc-error-state
+        [title]="t('moderation.preview.failedTitle')"
+        [hint]="t('moderation.preview.failed')"
+        [retryLabel]="t('game.retry')"
+        (retry)="retry()">
+        <a ncButton variant="ghost" routerLink="/hub">{{ t('notFound.back') }}</a>
+      </nc-error-state>
+    </div>
+  } @else if (project.data(); as found) {
+    <header class="flex flex-wrap items-center gap-1.5">
+      <div class="min-w-0 flex-1">
+        <h1 class="truncate text-title text-ink">{{ found.name }}</h1>
+        <p class="mt-0.25 flex flex-wrap items-center gap-1 text-meta text-ink-3">
+          <a [routerLink]="['/u', found.creator.username]" class="hover:text-gold-ink">
+            {{ t('hub.by', { name: found.creator.username }) }}
+          </a>
+          @if (found.hiddenAt) {
+            <nc-chip tone="hot">{{ t('moderation.preview.hidden') }}</nc-chip>
+          } @else if (!found.publishedAt) {
+            <nc-chip>{{ t('moderation.preview.unpublished') }}</nc-chip>
+          }
+        </p>
+      </div>
+      <a ncButton variant="secondary" size="sm" [routerLink]="['/staff/edit', found.id]">
+        {{ t('moderation.preview.openEditor') }}
+      </a>
+      @if (found.hasRelease) {
+        <nc-segmented
+          size="sm"
+          [options]="sources()"
+          [value]="source()"
+          (valueChange)="choose($event)"
+          [label]="t('moderation.preview.sourceLabel')" />
+      }
+    </header>
+
+    @if (game.isError()) {
+      <div class="rounded-sm border border-line bg-panel">
+        <nc-error-state
+          [title]="t('game.loadFailedTitle')"
+          [hint]="t('game.loadFailedContent')"
+          [retryLabel]="t('game.retry')"
+          (retry)="retry()" />
+      </div>
+    } @else if (game.isPending()) {
+      <nc-skeleton height="60vh" radius="rounded-sm" />
+    } @else if (game.data(); as loaded) {
+      <nc-game-screen [game]="loaded" [projectId]="null" fit="width" [autoPlay]="false" />
+    } @else {
+      <p class="rounded-sm border border-line bg-panel px-2 py-3 text-center text-body text-ink-3">
+        {{ t('moderation.preview.nothingSaved') }}
+      </p>
+    }
+
+    @if (found.shortDesc || found.longDesc) {
+      <p
+        class="text-body whitespace-pre-wrap wrap-anywhere text-ink-body"
+        [textContent]="found.longDesc || found.shortDesc"></p>
+    }
+  } @else {
+    <nc-skeleton height="60vh" radius="rounded-sm" />
+  }
+</section>

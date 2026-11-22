@@ -45,8 +45,10 @@ import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-quer
 
 import { unwrap } from '../../core/api/api-errors';
 import { AuthStore } from '../../core/auth/auth.store';
+import { FeaturesService } from '../../core/config/features.service';
 import { PresenceStore } from '../../core/presence/presence.store';
 import { presenceLine } from '../../core/presence/presence-line';
+import { ContentFlagLauncher } from '../../shared/moderation/content-flag-launcher.service';
 import { qk } from '../../shared/queries/query-keys';
 import { injectRelatedWindow } from '../../shared/queries/releases.queries';
 import { HubRowComponent } from '../hub/hub-row.component';
@@ -105,6 +107,8 @@ export default class ProfilePage {
   protected readonly COLOURS = COLOURS;
   private readonly dialogs = inject(DialogService);
   private readonly queries = inject(QueryClient);
+  private readonly features = inject(FeaturesService);
+  private readonly flags = inject(ContentFlagLauncher);
   private readonly zoneInput = viewChild<ElementRef<HTMLInputElement>>('zoneInput');
 
   constructor() {
@@ -294,6 +298,7 @@ export default class ProfilePage {
   }));
 
   protected readonly isSelf = computed(() => this.auth.user()?.username === this.username());
+  protected readonly canReport = computed(() => this.features.moderation() && !this.isSelf());
   protected readonly games = computed<ProjectExResponseDto[]>(() => this.published.data() ?? []);
   protected readonly likedGames = computed<ProjectExResponseDto[]>(() => this.liked.data() ?? []);
   protected readonly collabs = computed<ProjectExResponseDto[]>(
@@ -367,5 +372,9 @@ export default class ProfilePage {
 
   protected addFriend(userId: number): void {
     this.adding.mutate(userId);
+  }
+
+  protected report(profile: { id: number; username: string }): void {
+    this.flags.report({ targetType: 'USER', targetId: profile.id, label: `@${profile.username}` });
   }
 }

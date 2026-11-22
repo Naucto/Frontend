@@ -23,6 +23,7 @@ import {
   IconComponent,
   LcdComponent,
   LogoComponent,
+  NoticeComponent,
   PanelRegionComponent,
   RailComponent,
   type RailItem,
@@ -31,10 +32,12 @@ import {
 import { filter } from 'rxjs';
 
 import { ActivityService } from '../../core/analytics/activity.service';
+import { AuthStore } from '../../core/auth/auth.store';
 import { PresenceStore } from '../../core/presence/presence.store';
 import { FeedbackStore } from '../../shared/feedback/feedback.store';
 import { ReportProblemButtonComponent } from '../../shared/feedback/report-problem-button.component';
 import { RuntimeHostService } from '../../shared/game-screen/runtime-host.service';
+import { SuspensionBandComponent } from '../../shared/moderation/suspension-band.component';
 import { UserAvatarComponent } from '../../shared/user-avatar.component';
 import { yTextField } from '../../shared/yjs/y-signal';
 import { AccountMenuComponent } from '../shell/account-menu.component';
@@ -61,7 +64,7 @@ import {
 import { HostElectionService } from './work-session/host-election.service';
 import { SessionPresenceService } from './work-session/session-presence.service';
 import { SessionSaveService } from './work-session/session-save.service';
-import { WorkSessionService } from './work-session/work-session.service';
+import { type PreviewKind, WorkSessionService } from './work-session/work-session.service';
 
 const TABS: readonly EditorTab[] = ['game', 'code', 'art', 'map', 'sound', 'net'];
 const isTab = (segment: string | undefined): segment is EditorTab =>
@@ -91,6 +94,7 @@ const RAIL: Omit<RailItem<EditorTab>, 'label'>[] = [
     ErrorStateComponent,
     IconComponent,
     LcdComponent,
+    NoticeComponent,
     PanelRegionComponent,
     RailComponent,
     AccountMenuComponent,
@@ -101,6 +105,7 @@ const RAIL: Omit<RailItem<EditorTab>, 'label'>[] = [
     VersionsPopoverComponent,
     LogoComponent,
     ReportProblemButtonComponent,
+    SuspensionBandComponent,
   ],
   providers: [
     WorkSessionService,
@@ -130,7 +135,28 @@ const RAIL: Omit<RailItem<EditorTab>, 'label'>[] = [
 })
 export default class EditorShellComponent implements OnInit {
   readonly id = input.required({ transform: numberAttribute });
+  /** Route data: set on the staff route, where the editor opens someone's game to look at. */
+  readonly preview = input<'staff'>();
   protected readonly String = String;
+  private readonly auth = inject(AuthStore);
+  /**
+   * Whose game a read-only editor shows, or null for the editor proper. A suspended account opens
+   * its own game the same way staff open anyone's: to look at, with nothing saved.
+   */
+  private readonly previewKind = computed<PreviewKind | null>(() => {
+    if (this.preview() === 'staff') {
+      return 'staff';
+    }
+    return this.auth.suspension() ? 'own' : null;
+  });
+  protected readonly bandKey = computed(() => {
+    if (!this.session.readOnly()) {
+      return null;
+    }
+    return this.preview() === 'staff'
+      ? 'moderation.preview.editorBand'
+      : 'moderation.preview.suspendedEditor';
+  });
   private readonly presence = inject(PresenceStore);
   private readonly activity = inject(ActivityService);
   private readonly feedback = inject(FeedbackStore);
@@ -218,17 +244,26 @@ export default class EditorShellComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    void this.session.open(this.id());
+    // Read once: a session is one or the other for as long as it lives.
+    const kind = this.previewKind();
+    void (kind ? this.session.openPreview(this.id(), kind) : this.session.open(this.id()));
   }
 
   constructor() {
     const openedAt = Date.now();
     inject(DestroyRef).onDestroy(() => {
-      this.feedback.noteEditorLeft(Date.now() - openedAt);
+      // Looking at a game is not a session of making one, so it earns no rating prompt.
+      if (!this.session.readOnly()) {
+        this.feedback.noteEditorLeft(Date.now() - openedAt);
+      }
     });
     // BUILDING presence, so a friend sees "building Ferry Click" while the editor is open.
     effect((onCleanup) => {
       const projectId = this.id();
+      // A preview builds nothing: friends are not told, and the activity is not claimed.
+      if (this.previewKind()) {
+        return;
+      }
       this.presence.announce({ kind: 'BUILDING', projectId });
       const release = this.activity.claim({ state: 'BUILDING' });
       onCleanup(() => {
@@ -287,7 +322,11 @@ export default class EditorShellComponent implements OnInit {
     if (!tab) {
       return;
     }
-    void this.router.navigate(['/edit', this.id(), tab]);
+    void this.router.navigate([
+      this.preview() === 'staff' ? '/staff/edit' : '/edit',
+      this.id(),
+      tab,
+    ]);
   }
 
   protected share(): void {
@@ -296,12 +335,18 @@ export default class EditorShellComponent implements OnInit {
     });
   }
 
+  /** Whether moderation withholds the game: it still opens and saves, and cannot be published. */
+  protected readonly hidden = computed(() => !!this.session.project()?.hiddenAt);
+
   /**
    * The name and the summary as the GAME tab edits them: they live in the document long before they
    * reach the server.
    */
   protected readonly publishBlockedBy = computed<string | null>(() => {
     this.docTick();
+    if (this.hidden()) {
+      return 'editor.publishBlockedHidden';
+    }
     const game = this.session.game;
     if (computeSizeReport(game).total > PUBLISH_CEILING) {
       return 'editor.publishBlockedSize';
@@ -312,7 +357,9 @@ export default class EditorShellComponent implements OnInit {
   });
 
   /** Whether the session opened at all: the header offers SHARE and PUBLISH only then. */
-  protected readonly live = computed(() => this.session.status() === 'ready');
+  protected readonly live = computed(
+    () => this.session.status() === 'ready' && !this.session.readOnly(),
+  );
 
   /** Collaborators other than us, for the presence stack. */
   protected readonly others = computed(() =>

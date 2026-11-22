@@ -88,6 +88,13 @@ export const NotificationsStore = signalStore(
           if (notification.kind === 'FRIEND_REQUEST' || notification.kind === 'FRIEND_ACCEPTED') {
             void store.queries.invalidateQueries({ queryKey: qk.friends() });
           }
+          // A decision changes the standing, may begin or end a suspension the profile carries,
+          // and may hide or give back a game on the owner's shelf.
+          if (notification.kind === 'MODERATION') {
+            void store.queries.invalidateQueries({ queryKey: qk.standingAll() });
+            void store.queries.invalidateQueries({ queryKey: qk.projectsAll() });
+            void store.auth.refreshProfile().catch(() => undefined);
+          }
           break;
         }
         case 'pong':

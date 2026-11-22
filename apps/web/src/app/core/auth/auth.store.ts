@@ -25,6 +25,8 @@ interface AuthState {
 
 const KEEP_ALIVE_MS = 10 * 60 * 1000;
 
+const STAFF_ROLES: readonly UserProfileResponseDto['role'][] = ['Moderator', 'Admin'];
+
 /**
  * Authentication: bearer token in memory, refreshed from the httpOnly cookie at
  * boot and whenever a request hits 401. Active users are kept signed in by a
@@ -37,6 +39,14 @@ export const AuthStore = signalStore(
     isAuthenticated: computed(() => state.status() === 'authenticated'),
     userId: computed(() => state.user()?.id ?? null),
     displayName: computed(() => state.user()?.nickname ?? state.user()?.username ?? ''),
+    role: computed(() => state.user()?.role ?? null),
+    /** The suspension the account is under, as the profile last said it. Null in good standing. */
+    suspension: computed(() => state.user()?.suspension ?? null),
+    /**
+     * Whether the account moderates: it may open the read-only staff previews. The backend decides
+     * again on every request, so this only keeps the app from drawing what would be refused.
+     */
+    isStaff: computed(() => STAFF_ROLES.includes(state.user()?.role ?? 'User')),
   })),
   withMethods((store) => {
     const queries = inject(QueryClient);

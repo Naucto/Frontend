@@ -32,10 +32,12 @@ import {
 
 import { ApiError } from '../../core/api/api-errors';
 import { AuthStore } from '../../core/auth/auth.store';
+import { FeaturesService } from '../../core/config/features.service';
 import { PresenceStore } from '../../core/presence/presence.store';
-import { SignedInAction } from '../../shared/auth/signed-in-action';
 import { GameCardComponent } from '../../shared/game-card/game-card.component';
 import { GameScreenComponent } from '../../shared/game-screen/game-screen.component';
+import { ContentFlagLauncher } from '../../shared/moderation/content-flag-launcher.service';
+import { GoodStandingAction } from '../../shared/moderation/good-standing-action';
 import {
   injectFork,
   injectLikeStatus,
@@ -53,6 +55,12 @@ import { ReleaseGameService } from './release-game.service';
 
 /** How many games each related shelf shows. */
 const RELATED_SHOWN = 2;
+
+/** The failures that have a title of their own. Any other is a game that would not start. */
+const FAILURE_TITLES: Record<string, string> = {
+  'notFound.body': 'notFound.title',
+  'game.unavailable': 'game.unavailableTitle',
+};
 
 /** The most played of the releases that pass, as many as a related shelf shows. */
 function topRelated(
@@ -97,7 +105,9 @@ export default class GamePage {
   private readonly transloco = inject(TranslocoService);
   private readonly loader = inject(ReleaseGameService);
   private readonly presence = inject(PresenceStore);
-  private readonly signedIn = inject(SignedInAction);
+  private readonly standing = inject(GoodStandingAction);
+  private readonly features = inject(FeaturesService);
+  private readonly flags = inject(ContentFlagLauncher);
 
   protected readonly release = injectRelease(() => this.id());
   protected readonly contentUrl = injectReleaseContentUrl(() => this.id());
@@ -128,6 +138,9 @@ export default class GamePage {
     if (!(this.id() > 0) || (error instanceof ApiError && error.status === 404)) {
       return 'notFound.body';
     }
+    if (error instanceof ApiError && error.code === 'PROJECT_HIDDEN') {
+      return 'game.unavailable';
+    }
     if (this.release.isError()) {
       return 'game.loadFailedRelease';
     }
@@ -139,6 +152,8 @@ export default class GamePage {
     }
     return null;
   });
+  /** A game that is gone or withheld will not come back on a second try. */
+  protected readonly failureTitle = computed(() => FAILURE_TITLES[this.failure() ?? ''] ?? null);
   protected readonly loading = computed(() => !this.failure() && !this.game());
 
   protected retry(): void {
@@ -164,6 +179,10 @@ export default class GamePage {
       release.collaborators.some((collaborator) => collaborator.id === me)
     );
   });
+  /** Whoever works on a game has nothing to report about it. */
+  protected readonly canReport = computed(
+    () => this.features.moderation() && !!this.release.data() && !this.canEdit(),
+  );
   protected readonly remixes = computed(() => {
     const release = this.release.data();
     return release
@@ -286,13 +305,17 @@ export default class GamePage {
    * have liked yet; a game they had already liked settles on the refetch the toggle triggers.
    */
   protected toggleLike(): void {
-    this.signedIn.run(() => {
+    this.standing.run(() => {
       this.toggle.mutate(this.likes.data()?.liked ?? false);
     });
   }
 
+  protected report(release: { id: number; name: string }): void {
+    this.flags.report({ targetType: 'PROJECT', targetId: release.id, label: release.name });
+  }
+
   protected remix(id: number): void {
-    this.signedIn.run(() => {
+    this.standing.run(() => {
       this.fork.mutate(id, {
         onSuccess: (project) => {
           this.toasts.show(this.transloco.translate('game.remixed'), 'success');

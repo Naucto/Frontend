@@ -31,8 +31,8 @@ import { unwrap } from '../../core/api/api-errors';
 import { AuthStore } from '../../core/auth/auth.store';
 import { PresenceStore } from '../../core/presence/presence.store';
 import { presenceLine } from '../../core/presence/presence-line';
-import { SignedInAction } from '../../shared/auth/signed-in-action';
 import { GameCoverComponent } from '../../shared/game-card/game-cover.component';
+import { GoodStandingAction } from '../../shared/moderation/good-standing-action';
 import { qk } from '../../shared/queries/query-keys';
 import {
   injectFeaturedRelease,
@@ -79,7 +79,7 @@ export default class HubPage {
   protected readonly fork = injectFork();
   private readonly presence = inject(PresenceStore);
   private readonly transloco = inject(TranslocoService);
-  private readonly signedIn = inject(SignedInAction);
+  private readonly standing = inject(GoodStandingAction);
   /** Trimmed `?q=`; empty means the shelves are shown rather than results. */
   protected readonly term = computed(() => this.q()?.trim() ?? '');
   protected readonly tagFilter = computed(() => this.tags()?.trim() ?? '');
@@ -210,7 +210,7 @@ export default class HubPage {
   }
 
   protected remix(id: number): void {
-    this.signedIn.run(() => {
+    this.standing.run(() => {
       this.fork.mutate(id, {
         onSuccess: (project) => void this.router.navigate(['/edit', project.id]),
         onError: () => {

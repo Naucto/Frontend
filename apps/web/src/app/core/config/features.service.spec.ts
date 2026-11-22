@@ -32,12 +32,13 @@ describe('FeaturesService', () => {
   });
 
   it('reads each flag from the server', async () => {
-    answer(200, { monetization: false, analytics: true });
+    answer(200, { monetization: false, analytics: true, moderation: true });
 
     await service().load();
 
     expect(service().analytics()).toBe(true);
     expect(service().monetization()).toBe(false);
+    expect(service().moderation()).toBe(true);
   });
 
   it('keeps every flag off when the server cannot answer', async () => {
@@ -49,7 +50,7 @@ describe('FeaturesService', () => {
   });
 
   it('turns analytics off alone when the server says so later', async () => {
-    answer(200, { monetization: true, analytics: true });
+    answer(200, { monetization: true, analytics: true, moderation: false });
     await service().load();
 
     service().disableAnalytics();

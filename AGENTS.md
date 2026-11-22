@@ -120,6 +120,31 @@ Pixelarticons, Bubblegum-16 palette, dark + light themes).
   - **Readable stacks.** The production build writes hidden source maps beside each bundle (no
     `sourceMappingURL`, so browsers never load them), and nginx serves them. The backend reads them
     to map a crash stack back to the sources.
+- **Moderation** (`shared/moderation`): what the site shows of it. Staff decide in the admin
+  console, never here. Nothing of it shows while the backend's `moderation` feature flag is off.
+  - **Words.** "Report" already names bug reports and ratings (`shared/feedback`, `/reports`),
+    so a user's report of a game, a comment or a profile is a **flag** in the code
+    (`FlagContentDialog`, `ContentFlagLauncher`, `/moderation/flags`). The buttons still say
+    Report, which is the word people know.
+  - **Reporting.** Report sits on each comment, under a game's actions and on a profile, never on
+    your own content.
+  - **What an account is shown.** A comment a moderator removed reads as such. A withheld game
+    answers its play page as unavailable, and its owner finds it marked Hidden with Publish
+    blocked. `nc-suspension-band` sits in both shells. Settings → Standing lists every decision
+    with what staff said, and a `MODERATION` notification leads there.
+  - **Suspended.** `AuthStore.suspension` comes from the profile. A control that writes goes
+    through `GoodStandingAction`, which wraps `SignedInAction` and explains on the press. The
+    server refuses the write whatever the page does, and the API client reads the profile again
+    on `ACCOUNT_SUSPENDED` so an open tab learns of it.
+  - **Read-only editor.** `WorkSessionService.openPreview` opens a game to look at: two GETs,
+    then a local copy. It joins no work session, elects no host, connects no peer and saves
+    nothing, and `SessionSaveService` refuses every save while `readOnly` is set. Staff reach
+    it at `staff/edit/:id` (and `staff/play/:id` for the player), behind `staffGuard`, which
+    answers anyone else as an address that does not exist. A suspended account gets it on
+    `edit/:id` for its own games. The mode is in the path because the shell navigates between
+    tabs. `game-route.page` swaps the GAME tab for a summary, since the real tab uploads,
+    invites and deletes. **A new write in the editor must check `session.readOnly()`**: the
+    specs in `work-session.service.spec.ts` pin that a preview sends no request after it opens.
 - **Release.** `APP_RELEASE` (`core/config/release.ts`) is the version of `apps/web` and the commit
   it was built from, compiled in by `tools/build-web.ts`. The Docker image has no `.git`, so its
   build takes the commit as `--build-arg GIT_COMMIT`. A development server says `dev`.
@@ -191,6 +216,16 @@ broken; an absence reads as not built.
   the region (`region.w`×`region.h` beside the sprite number), and the LOCK toggle is what keeps a
   stroke inside it. The design's own sheet map, drawn as a wide band with 0/1/2/3 tabs, is square
   for the same reason: it has to show where the canvas is looking, which a quarter of it cannot.
+
+- **Moderation controls on the site.** Staff hide, warn, suspend and delete in the admin console
+  only. The site reports, previews and tells an account where it stands. One place to decide
+  means one place to log and one session to trust.
+- **Export in a staff preview.** Looking at someone's draft is what a review needs. Leaving with
+  it as a file is more than looking, so the read-only GAME tab has no Export.
+- **An appeal button.** The standing says what was decided and why. There is no process behind a
+  button to contest it yet, so there is no button.
+- **A public mark on a suspended profile.** A suspension is between the account and the
+  moderators. Nothing on a profile says it.
 
 - **Drag-to-reposition in the touch pad panel.** SIZE and OPACITY are real and drive the pad; moving
   individual buttons is not built, and the panel's copy does not claim it.

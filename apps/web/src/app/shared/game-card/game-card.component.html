@@ -15,7 +15,9 @@
         [class]="dense() ? 'text-meta' : 'text-ui'">
         {{ game().name }}
       </span>
-      @if (isDraft()) {
+      @if (game().hiddenAt) {
+        <nc-chip tone="hot">Hidden</nc-chip>
+      } @else if (isDraft()) {
         <nc-chip>Draft</nc-chip>
       }
     </div>

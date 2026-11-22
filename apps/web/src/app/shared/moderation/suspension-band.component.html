@@ -1,0 +1,15 @@
+@if (auth.suspension()) {
+  <nc-notice *transloco="let t" variant="band" tone="danger" data-testid="suspension-band">
+    {{
+      until()
+        ? t('moderation.suspended.until', { until: until() })
+        : t('moderation.suspended.indefinite')
+    }}
+    {{ t('moderation.suspended.rule') }}
+    @if (features.moderation()) {
+      <a routerLink="/settings/standing" class="underline underline-offset-2 hover:text-ink">
+        {{ t('moderation.suspended.why') }}
+      </a>
+    }
+  </nc-notice>
+}

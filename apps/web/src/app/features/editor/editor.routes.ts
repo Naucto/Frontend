@@ -8,7 +8,7 @@ const EDITOR_ROUTES: Routes = [
       { path: '', redirectTo: 'game', pathMatch: 'full' },
       {
         path: 'game',
-        loadComponent: () => import('./game/game-tab.page'),
+        loadComponent: () => import('./game/game-route.page'),
       },
       {
         path: 'code',

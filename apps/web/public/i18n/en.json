@@ -73,6 +73,7 @@
     "editor": "Editor",
     "controls": "Controls",
     "privacy": "Privacy",
+    "standing": "Standing",
     "soon": "Coming in a later step.",
     "saved": "Saved",
     "saveFailed": "Could not save that. Nothing changed.",
@@ -301,6 +302,8 @@
     "moreFrom": "More from {{name}}",
     "similar": "Similar",
     "loadFailedTitle": "This game would not start",
+    "unavailableTitle": "This game is unavailable",
+    "unavailable": "A moderator took it off Naucto.",
     "loadFailedRelease": "We could not reach the server to look it up. It may be a connection problem at your end, or ours.",
     "loadFailedContent": "The game was found, but its content could not be downloaded.",
     "retry": "Try again",
@@ -341,6 +344,7 @@
     "reply": "Reply",
     "delete": "Delete",
     "deleted": "[deleted]",
+    "removedByModeration": "[removed by a moderator]",
     "replyPlaceholder": "Write a reply…",
     "loadFailed": "Could not load the comments."
   },
@@ -494,6 +498,8 @@
       "find": "Find"
     },
     "publishBlockedSize": "Blocked — the game is over the size ceiling",
+    "publishBlockedHidden": "Blocked: a moderator hid this game",
+    "hiddenBand": "A moderator hid this game. It is off the hub and cannot be published until it is restored. You can still open and edit it.",
     "publishBlockedFields": "Blocked — a game needs a name and a summary",
     "openReference": "Open the reference",
     "swapToReference": "Swap to the reference",
@@ -991,6 +997,12 @@
     "rights": "Signed in, you can see what was counted for your account, download it, or erase it, in Settings. Deleting your account erases it too.",
     "rightsLink": "Open your privacy settings",
     "geoCredit": "Country lookups use IP geolocation by",
+    "moderationTitle": "Moderation",
+    "moderation": {
+      "reports": "When you report a game, a comment or a profile, the moderators see your account, the reason you chose and what you wrote. Whoever you report is not told it was you.",
+      "drafts": "To review a report, a moderator can open a game that is not published, in a read-only view. They cannot change it, and each such visit is recorded.",
+      "record": "Decisions about your account and what you made are kept, and you can read them in Settings. If you delete your account the decisions stay, without the text they were about."
+    },
     "feedbackTitle": "Feedback and crash reports",
     "feedback": {
       "crashes": "When the app or the game engine crashes, it sends what failed: the error, the page path, the app version, and your browser, system and device family. It carries no id, no account and nothing about you, whatever you chose above.",
@@ -998,6 +1010,93 @@
       "screenshots": "A screenshot you attach is seen only by the team, and is deleted with your account.",
       "ratings": "A rating you send names your account, so the team can follow up with you. We ask for one at most once: close the question and we ask again in two weeks. You can turn it off in Settings."
     }
+  },
+  "moderation": {
+    "reasons": {
+      "SPAM": "Spam or advertising",
+      "HARASSMENT": "Harassment or bullying",
+      "HATE": "Hate",
+      "SEXUAL_CONTENT": "Sexual content",
+      "VIOLENCE": "Violence or threats",
+      "ILLEGAL": "Something illegal",
+      "IMPERSONATION": "Pretending to be someone else",
+      "STOLEN_CONTENT": "Stolen work",
+      "OTHER": "Something else"
+    },
+    "report": {
+      "title": {
+        "PROJECT": "Report this game",
+        "COMMENT": "Report this comment",
+        "USER": "Report this profile"
+      },
+      "reason": "What is wrong with it?",
+      "chooseReason": "Choose a reason",
+      "details": "Anything the moderators should know",
+      "detailsHint": "Optional. Where to look, or what happened.",
+      "note": "A moderator reads every report. Whoever you report is not told it was you.",
+      "send": "Send report",
+      "sent": "Your report reached the moderators. Thank you.",
+      "errors": {
+        "failed": "The report could not be sent. Try again in a moment.",
+        "already": "You already reported this, and a moderator has not looked at it yet.",
+        "own": "This is yours, so there is nothing to report.",
+        "gone": "It is no longer there.",
+        "suspended": "Your account is suspended, so it cannot send reports for now."
+      }
+    },
+    "suspended": {
+      "until": "Your account is suspended until {{until}}.",
+      "indefinite": "Your account is suspended.",
+      "rule": "You can still read and play. Nothing you post, change or save goes through meanwhile.",
+      "blocked": "Your account is suspended, so this is not available for now.",
+      "why": "See why"
+    },
+    "standing": {
+      "lead": "What the moderators decided about your account and what you made. Only you see this.",
+      "loadFailed": "Could not load your standing.",
+      "history": "Decisions",
+      "warnings": "{{count}} warnings",
+      "oneWarning": "1 warning",
+      "empty": "Nothing on record. Your account is in good standing.",
+      "reason": "Reason",
+      "until": "Until {{until}}",
+      "newer": "Newer",
+      "older": "Older",
+      "actions": {
+        "ACCOUNT_WARNED": "Warning",
+        "ACCOUNT_SUSPENDED": "Account suspended",
+        "ACCOUNT_REINSTATED": "Suspension lifted",
+        "PROFILE_CLEARED": "Profile cleared",
+        "PROJECT_HIDDEN": "Game hidden",
+        "PROJECT_RESTORED": "Game restored",
+        "PROJECT_DELETED": "Game deleted",
+        "COMMENT_HIDDEN": "Comment removed",
+        "COMMENT_RESTORED": "Comment restored",
+        "COMMENT_DELETED": "Comment deleted",
+        "OTHER": "Decision"
+      }
+    },
+    "preview": {
+      "band": "Staff preview. Nothing here is saved or counted, and this visit is logged.",
+      "editorBand": "Staff preview of the latest save. You can look around and run it. Nothing you change here is saved, and this visit is logged.",
+      "suspendedEditor": "Your game opens to look at and run. Nothing you change here is saved while your account is suspended.",
+      "summary": "Summary",
+      "description": "Description",
+      "collaborators": "Collaborators",
+      "nothingWritten": "Nothing written",
+      "openEditor": "Look inside in the editor",
+      "draft": "Latest save",
+      "release": "Released build",
+      "sourceLabel": "Which version to run",
+      "hidden": "Hidden",
+      "unpublished": "Unpublished",
+      "nothingSaved": "Nothing was saved in this version yet.",
+      "failedTitle": "This preview would not open",
+      "failed": "The game may be gone, or your role may have changed."
+    },
+    "reportGame": "Report game",
+    "reportComment": "Report",
+    "reportProfile": "Report profile"
   },
   "feedback": {
     "close": "Close",
