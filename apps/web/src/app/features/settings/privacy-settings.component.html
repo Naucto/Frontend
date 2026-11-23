@@ -6,7 +6,10 @@
   }
 
   <nc-settings-group [title]="t('feedback.settings.title')">
-    <nc-setting-row [title]="t('feedback.settings.ask')" [hint]="t('feedback.settings.askHint')">
+    <nc-setting-row
+      icon="message"
+      [title]="t('feedback.settings.ask')"
+      [hint]="t('feedback.settings.askHint')">
       <nc-toggle
         [checked]="feedbackPrompt.data()?.declined === false"
         [disabled]="!feedbackPrompt.data() || updatePrompt.isPending()"
@@ -23,11 +26,13 @@
         <p class="px-2.25 py-2 text-body text-ink-3">{{ t('settings.analytics.untracked') }}</p>
       }
       <nc-setting-row
+        icon="device-laptop"
         [title]="t('settings.analytics.browsers')"
         [hint]="t('settings.analytics.browsersHint')">
         <nc-chip>{{ summary.linkedBrowsers | number }}</nc-chip>
       </nc-setting-row>
       <nc-setting-row
+        icon="clock"
         [title]="t('settings.analytics.playtime')"
         [hint]="t('settings.analytics.playtimeHint')">
         <nc-chip>
@@ -38,6 +43,7 @@
         </nc-chip>
       </nc-setting-row>
       <nc-setting-row
+        icon="play"
         [title]="t('settings.analytics.plays')"
         [hint]="t('settings.analytics.playsHint')">
         <nc-chip>
@@ -48,11 +54,13 @@
         </nc-chip>
       </nc-setting-row>
       <nc-setting-row
+        icon="gamepad"
         [title]="t('settings.analytics.gamesPlayed')"
         [hint]="t('settings.analytics.gamesPlayedHint')">
         <nc-chip>{{ summary.gamesPlayed | number }}</nc-chip>
       </nc-setting-row>
       <nc-setting-row
+        icon="eye"
         [title]="t('settings.analytics.lastActive')"
         [hint]="t('settings.analytics.lastActiveHint')">
         <nc-chip>
@@ -91,6 +99,7 @@
 
   <nc-settings-group [title]="t('settings.analytics.yourData')">
     <nc-setting-row
+      icon="download"
       [title]="t('settings.analytics.export')"
       [hint]="t('settings.analytics.exportHint')">
       <button
@@ -104,6 +113,7 @@
       </button>
     </nc-setting-row>
     <nc-setting-row
+      icon="trash"
       [title]="t('settings.analytics.erase')"
       [hint]="t('settings.analytics.eraseHint')"
       [danger]="true">

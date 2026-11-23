@@ -1,12 +1,15 @@
 <div *transloco="let t" class="grid gap-3">
   <nc-settings-group [title]="t('settings.groups.editing')">
-    <nc-setting-row [title]="t('settings.autoRun')" [hint]="t('settings.autoRunDefault')">
+    <nc-setting-row
+      icon="play"
+      [title]="t('settings.autoRun')"
+      [hint]="t('settings.autoRunDefault')">
       <nc-toggle
         [checked]="prefs.autoRun()"
         (checkedChange)="prefs.setAutoRun($event)"
         [label]="t('settings.autoRun')" />
     </nc-setting-row>
-    <nc-setting-row [title]="t('settings.snap')" [hint]="t('settings.snapHint')">
+    <nc-setting-row icon="music" [title]="t('settings.snap')" [hint]="t('settings.snapHint')">
       <nc-toggle
         [checked]="prefs.soundSnap()"
         (checkedChange)="prefs.setSoundSnap($event)"

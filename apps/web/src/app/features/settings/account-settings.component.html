@@ -2,7 +2,10 @@
   <nc-settings-group
     [title]="t('settings.groups.identity')"
     [hint]="t('settings.groups.identityHint')">
-    <nc-setting-row [title]="t('settings.displayName')" [hint]="t('settings.displayNameHint')">
+    <nc-setting-row
+      icon="user"
+      [title]="t('settings.displayName')"
+      [hint]="t('settings.displayNameHint')">
       <span class="block w-[224px] max-w-full">
         <input
           ncInput
@@ -13,7 +16,7 @@
           (change)="save($event)" />
       </span>
     </nc-setting-row>
-    <nc-setting-row [title]="t('settings.handle')" [hint]="t('settings.handleHint')">
+    <nc-setting-row icon="label" [title]="t('settings.handle')" [hint]="t('settings.handleHint')">
       <span class="flex w-[224px] max-w-full items-center gap-1">
         <span class="font-mono text-ui text-ink-4">&#64;</span>
         <input
@@ -33,7 +36,10 @@
     @if (me.isError()) {
       <p class="px-2.25 py-2 text-body text-ink-3">{{ t('settings.privacySoon') }}</p>
     } @else {
-      <nc-setting-row [title]="t('settings.joinPolicy')" [hint]="t('settings.joinPolicyHint')">
+      <nc-setting-row
+        icon="users"
+        [title]="t('settings.joinPolicy')"
+        [hint]="t('settings.joinPolicyHint')">
         <nc-segmented
           [options]="policies()"
           [value]="me.data()?.sessionJoinPolicy ?? 'ANYONE'"
@@ -42,22 +48,28 @@
     }
   </nc-settings-group>
   <nc-settings-group [title]="t('settings.groups.appearance')">
-    <nc-setting-row [title]="t('settings.theme')" [hint]="t('settings.themeHint')">
+    <nc-setting-row icon="moon" [title]="t('settings.theme')" [hint]="t('settings.themeHint')">
       <nc-segmented [options]="themes()" [value]="theme.theme()" (valueChange)="setTheme($event)" />
     </nc-setting-row>
-    <nc-setting-row [title]="t('settings.reduceMotion')" [hint]="t('settings.reduceMotionHint')">
+    <nc-setting-row
+      icon="pause"
+      [title]="t('settings.reduceMotion')"
+      [hint]="t('settings.reduceMotionHint')">
       <nc-toggle
         [checked]="theme.reduceMotion()"
         (checkedChange)="theme.reduceMotion.set($event)"
         [label]="t('settings.reduceMotion')" />
     </nc-setting-row>
-    <nc-setting-row [title]="t('settings.screenVeil')" [hint]="t('settings.screenVeilHint')">
+    <nc-setting-row
+      icon="device-tv"
+      [title]="t('settings.screenVeil')"
+      [hint]="t('settings.screenVeilHint')">
       <nc-toggle
         [checked]="theme.screenVeil()"
         (checkedChange)="theme.screenVeil.set($event)"
         [label]="t('settings.screenVeil')" />
     </nc-setting-row>
-    <nc-setting-row [title]="t('settings.showFps')" [hint]="t('settings.showFpsHint')">
+    <nc-setting-row icon="zap" [title]="t('settings.showFps')" [hint]="t('settings.showFpsHint')">
       <nc-toggle
         [checked]="theme.showFps()"
         (checkedChange)="theme.showFps.set($event)"
@@ -69,6 +81,7 @@
     [title]="t('settings.groups.dangerZone')"
     [hint]="t('settings.groups.dangerZoneHint')">
     <nc-setting-row
+      icon="trash"
       [title]="t('settings.deleteAccount')"
       [hint]="t('settings.deleteHint')"
       [danger]="true">
