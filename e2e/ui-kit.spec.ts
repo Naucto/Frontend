@@ -243,5 +243,5 @@ test('a disabled scope closes every control under it but the ones let through by
   await expect(demo.getByRole('slider', { name: 'Zoom' })).toBeEnabled();
 
   await page.locator('#disabled').getByRole('switch', { name: 'Closed' }).click();
-  expect(await closed()).toBe(0);
+  await expect.poll(closed).toBe(0);
 });
