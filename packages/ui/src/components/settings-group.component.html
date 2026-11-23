@@ -1,0 +1,9 @@
+<header class="mb-1 px-2.25">
+  <h2 class="text-ui" [class]="danger() ? 'text-hot-ink' : 'text-ink'">{{ title() }}</h2>
+  @if (hint()) {
+    <p class="text-meta text-ink-3">{{ hint() }}</p>
+  }
+</header>
+<div class="bg-panel">
+  <ng-content />
+</div>

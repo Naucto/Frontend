@@ -419,7 +419,7 @@
           [rows]="3"
           (pick)="slot.set($event)" />
       </div>
-      <div class="grid gap-1">
+      <nc-settings-group title="Appearance" hint="How the site looks on this device">
         <nc-setting-row
           title="Reduce motion"
           hint="Stills the animations and the screen shake in the UI">
@@ -428,7 +428,7 @@
         <nc-setting-row title="Delete account" hint="Your published games stay up" [danger]="true">
           <button ncButton variant="danger" size="sm">Delete</button>
         </nc-setting-row>
-      </div>
+      </nc-settings-group>
     </div>
   </section>
 
