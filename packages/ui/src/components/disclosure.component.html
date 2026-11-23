@@ -7,7 +7,7 @@
     (click)="open.set(!open())">
     <nc-icon [name]="open() ? 'chevron-down' : 'chevron-right'" class="shrink-0" />
     <ng-content select="[lead]" />
-    <span class="min-w-0 flex-1 truncate">{{ title() }}</span>
+    <span class="min-w-0 truncate">{{ title() }}</span>
   </button>
 </div>
 <div [id]="regionId" [hidden]="!open()">

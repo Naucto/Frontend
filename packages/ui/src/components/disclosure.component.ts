@@ -6,12 +6,12 @@ import { IconComponent } from './icon.component';
 export type DisclosureVariant = 'row' | 'title';
 
 const TITLE_ROW =
-  'raised-sm bevel-bare flex w-full cursor-pointer items-center gap-0.5 text-left select-none ' +
+  'raised-sm bevel-bare flex w-fit max-w-full cursor-pointer items-center gap-1.5 text-left select-none ' +
   'hover:bevel-lit hover:bevel-fill-raised hover:text-active-ink active:bevel-down';
 
 const VARIANTS: Record<DisclosureVariant, string> = {
-  row: `${TITLE_ROW} h-(--nc-h-md) px-[3px] font-ui text-label tracking-label text-ink-3 uppercase`,
-  title: `${TITLE_ROW} min-h-(--nc-h-lg) -ml-[3px] px-[3px] font-display text-title text-ink`,
+  row: `${TITLE_ROW} h-(--nc-h-md) px-1 font-ui text-label tracking-label text-ink-3 uppercase`,
+  title: `${TITLE_ROW} min-h-(--nc-h-lg) -ml-1 px-1 font-display text-title text-ink`,
 };
 
 let nextId = 0;
