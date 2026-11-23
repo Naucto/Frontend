@@ -28,26 +28,17 @@
 
   @if (pages.isSuccess()) {
     @for (group of groups(); track group.tag) {
-      <section
-        class="flat-lg grid gap-[20px] bevel-fill-panel p-[22px]"
-        [attr.aria-labelledby]="'results-' + $index">
-        <div class="flex items-center gap-[14px]">
-          <h3 class="font-display text-[22px] leading-[1.2] text-ink" [id]="'results-' + $index">
-            {{ group.label }}
-          </h3>
-          <nc-chip>{{ group.games.length }}</nc-chip>
-        </div>
-        <div
-          class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,190px),1fr))] gap-x-[22px] gap-y-[26px]">
-          @for (game of group.games; track game.id) {
-            <nc-shelf-disk
-              named
-              class="relative z-[1] min-w-0 hover:z-[60]"
-              [link]="['/play', game.id]"
-              [game]="game" />
-          }
-        </div>
-      </section>
+      <nc-shelf [heading]="group.label" [attr.data-shelf]="group.tag">
+        <nc-chip shelfAction>{{ group.games.length }}</nc-chip>
+        <nc-shelf-disk
+          *ncShelfItem="let game of group.games; open as open; flyoutId as flyoutId"
+          named
+          [link]="['/play', game.id]"
+          [game]="game"
+          [open]="open"
+          [flyoutId]="flyoutId" />
+        <nc-game-flyout *ncShelfFlyout="let game of group.games" [game]="game" />
+      </nc-shelf>
     } @empty {
       <nc-empty-state
         class="flat-lg bevel-fill-panel py-[48px]"
@@ -89,14 +80,6 @@
       [retryLabel]="t('game.retry')"
       (retry)="pages.refetch()" />
   } @else {
-    <div aria-hidden="true" class="flat-lg grid gap-[20px] bevel-fill-panel p-[22px]">
-      <nc-skeleton class="text-[22px]" [words]="[7]" />
-      <div
-        class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,190px),1fr))] gap-x-[22px] gap-y-[26px]">
-        @for (place of placeholders; track place) {
-          <nc-skeleton class="aspect-[1/1.02]" height="auto" />
-        }
-      </div>
-    </div>
+    <nc-shelf-skeleton />
   }
 </ng-container>

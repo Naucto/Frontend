@@ -16,13 +16,17 @@ import {
   IconComponent,
   MarkComponent,
   SegmentedComponent,
-  SkeletonComponent,
+  ShelfComponent,
+  ShelfFlyoutDirective,
+  ShelfItemDirective,
 } from '@naucto/ui';
 
+import { GameFlyoutComponent } from '../../shared/hub/game-flyout.component';
 import type { HubGame } from '../../shared/hub/hub-game';
 import { ShelfDiskComponent } from '../../shared/hub/shelf-disk.component';
 import { injectHubResults, type ResultsQuery } from '../../shared/queries/hub.queries';
 import { injectReleaseTags, type ReleaseSort } from '../../shared/queries/releases.queries';
+import { ShelfSkeletonComponent } from './shelf-skeleton.component';
 import { capitalised, shelfTag, shelfTitle } from './shelf-title';
 
 type Order = 'own' | 'played' | 'newest';
@@ -36,7 +40,7 @@ const SORTS: Record<Order, ReleaseSort | undefined> = {
 const TAGS_SUGGESTED = 6;
 
 /**
- * Everything a search, a tag or a shelf holds, in panels by the first tag of each game, a page at
+ * Everything a search, a tag or a shelf holds, in shelves by the first tag of each game, a page at
  * a time. With nothing to show it offers the tags games carry most, and to make the game.
  */
 @Component({
@@ -48,11 +52,15 @@ const TAGS_SUGGESTED = 6;
     ChipComponent,
     EmptyStateComponent,
     ErrorStateComponent,
+    GameFlyoutComponent,
     IconComponent,
     MarkComponent,
     SegmentedComponent,
+    ShelfComponent,
     ShelfDiskComponent,
-    SkeletonComponent,
+    ShelfFlyoutDirective,
+    ShelfItemDirective,
+    ShelfSkeletonComponent,
   ],
   templateUrl: './hub-results.component.html',
   host: { class: 'grid min-h-[60vh] min-w-0 content-start gap-[24px]' },
@@ -126,5 +134,4 @@ export class HubResultsComponent {
     TAGS_SUGGESTED,
     () => this.pages.isSuccess() && this.total() === 0,
   );
-  protected readonly placeholders = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 }
