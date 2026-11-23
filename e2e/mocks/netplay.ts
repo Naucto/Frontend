@@ -119,3 +119,61 @@ export async function mockRoom(
     },
   };
 }
+
+/** Someone in a room, as its players route names them: an account and the number it plays under. */
+export interface SeatedPlayer {
+  userId: string;
+  username: string;
+  nickname: string | null;
+  host: boolean;
+  playerId: number;
+}
+
+/**
+ * A room the signed-in player hosts. Creating it answers a connection under the host's number,
+ * its players route answers `players`, and each of them has a picture. `sit` tells the host that
+ * a player reached the table; false while the host is not connected to be told.
+ */
+export async function mockHostedRoom(
+  page: Page,
+  sessionUuid: string,
+  players: SeatedPlayer[],
+): Promise<{ sit(player: number): boolean }> {
+  const sockets: { send(frame: string): void }[] = [];
+
+  await page.route(
+    '**/game-sessions',
+    answer(201, {
+      sessionUuid,
+      playerId: players.find((player) => player.host)?.playerId,
+      joinCode: 'ABCD2345',
+      connectionTicket: 'ticket',
+      webrtcConfig: {
+        signaling: ['ws://localhost/e2e-game-socket'],
+        peerOpts: { config: { iceServers: [] } },
+      },
+    }),
+  );
+  await page.route(
+    `**/game-sessions/${sessionUuid}/players`,
+    answer(200, { players, maxPlayers: 4 }),
+  );
+  for (const { userId, username } of players) {
+    await page.route(
+      `**/users/public/${userId}/profile`,
+      answer(200, { data: { id: userId, username, profileImageUrl: '/img/logo.svg' } }),
+    );
+  }
+  await page.routeWebSocket(/e2e-game-socket/, (socket) => {
+    sockets.push(socket);
+  });
+
+  return {
+    sit: (player) => {
+      for (const socket of sockets) {
+        socket.send(JSON.stringify({ type: 'peer-joined', userId: player }));
+      }
+      return sockets.length > 0;
+    },
+  };
+}

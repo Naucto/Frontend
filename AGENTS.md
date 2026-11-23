@@ -83,10 +83,13 @@ icons drawn on the kit pixel, Bubblegum-16 palette, dark + light themes).
     `PlayerNumber` (`packages/engine/src/net/SessionTransport.ts`): what a game reads as
     `net.id()`, receives in `peer.joined` and `peer.left` and gets as the `from` of an event.
     Published games compute on it, so it stays an integer all the way into Lua
-    (`NetAPI.test.ts`). It names a player at the table and never an account. The server maps
-    no player to an account for a client; the one link is what a collaborator's editor shares
-    of itself in the work session (`AwarenessState.player`), which is how the NET tab names
-    the players of a session run from the editor.
+    (`NetAPI.test.ts`). It names a player at the table and never an account. Whose account a
+    number is comes from the roster of the session (`GET /game-sessions/{sessionId}/players`,
+    `playerId` beside `userId`): a game page names and draws a player from the entry that
+    holds their number, as the host dialog does its seats, and one the roster does not hold
+    reads "player N" with no face. The NET tab runs sessions from the editor, whose test rig
+    plays under a number no account has, so it names its players from what each
+    collaborator's editor shares of itself in the work session (`AwarenessState.player`).
   - **Old links.** `/play/<number>` and `/edit/<number>/…` were written while games were
     numbered. `gameAddressGuard` (`core/ids/game-address.guard.ts`), a `canMatch` on both
     routes, asks `GET /projects/legacy/{number}` and sends the navigation on to the same

@@ -48,6 +48,9 @@ export const qk = {
   openSessions: () => ['sessions', 'open'] as const,
   /** One session by its id; the code is part of who may read it. */
   session: (uuid: string | null, code: string | null) => ['session', uuid, code] as const,
+  /** Who plays under which number in a session, as of the players at its table. */
+  sessionPlayers: (uuid: string | null, table: readonly number[]) =>
+    ['sessions', 'players', uuid, table] as const,
   /** Every hub query at once: the feed, its shelves and the results drawn from them. */
   hubAll: () => ['hub'] as const,
   /** The feed is drawn for its reader, so each account, and no account, has its own. */

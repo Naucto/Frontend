@@ -8,6 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
+import { multiplayerControllerPlayers } from '@naucto/api-client';
 import { type NetHostOptions } from '@naucto/engine';
 import {
   ButtonDirective,
@@ -20,9 +21,12 @@ import {
   ToastService,
   ToggleComponent,
 } from '@naucto/ui';
+import { injectQuery, keepPreviousData } from '@tanstack/angular-query-experimental';
 
+import { unwrap } from '../../core/api/api-errors';
 import { AuthStore } from '../../core/auth/auth.store';
 import type { NetUiBridgeService } from '../../core/net/net-bridge.service';
+import { qk } from '../queries/query-keys';
 import { UserAvatarComponent } from '../user-avatar.component';
 
 export interface HostDialogData {
@@ -72,18 +76,45 @@ export class HostDialogComponent {
   protected readonly open = computed(() => this.data.bridge.info() !== null);
   protected readonly code = computed(() => this.data.bridge.info()?.joinCode ?? '');
 
+  /**
+   * The accounts of the session, each with the number it plays under. A seat is taken on the
+   * server before its player reaches the table, so the roster is asked again whenever the table
+   * changes and then holds whoever just sat down.
+   */
+  private readonly roster = injectQuery(() => {
+    const uuid = this.data.bridge.info()?.uuid ?? null;
+    const table = this.data.bridge.peers();
+    return {
+      queryKey: qk.sessionPlayers(uuid, table),
+      queryFn: async () =>
+        unwrap(await multiplayerControllerPlayers({ path: { sessionId: uuid ?? '' } })).players,
+      enabled: uuid !== null && table.length > 0,
+      placeholderData: keepPreviousData,
+    };
+  });
+
   /** Who is in, and the empty chairs after them, so a room reads as filling rather than as a count. */
   protected readonly seats = computed(() => {
     const info = this.data.bridge.info();
     const me = this.auth.user();
     const self = this.data.bridge.session()?.selfPlayer;
-    // A peer is a player number, which names no account: only the host's own seat has a face.
+    const roster = this.roster.data() ?? [];
+    // A player is placed by the number the roster gives an account, never by an account's id. One
+    // the roster does not hold, such as the second client of an editor's test, keeps its number.
     const taken: { account: string | null; name: string }[] = [
       { account: me?.id ?? null, name: me?.nickname ?? me?.username ?? '' },
       ...this.data.bridge
         .peers()
         .filter((player) => player !== self)
-        .map((player) => ({ account: null, name: String(player) })),
+        .map((player) => {
+          const seated = roster.find((entry) => entry.playerId === player);
+          return seated
+            ? { account: seated.userId, name: seated.nickname ?? seated.username }
+            : {
+                account: null,
+                name: this.transloco.translate('net.unknownPlayer', { number: player }),
+              };
+        }),
     ];
     const max = info?.maxPlayers ?? this.data.options.maxPlayers;
     return {

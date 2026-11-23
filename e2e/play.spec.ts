@@ -2,7 +2,7 @@ import { uuidOf } from '../packages/api-client/testing';
 import { expect, type Page, test } from './fixtures';
 import { PLAY, release, serveGame, servePreset } from './mocks/game';
 import { setGamepads } from './mocks/gamepads';
-import { connection } from './mocks/netplay';
+import { connection, mockHostedRoom } from './mocks/netplay';
 import { answer, mockSignedIn } from './mocks/session';
 
 test.describe('play page', () => {
@@ -453,6 +453,40 @@ test('a game that hosts reads its player number as an integer it can compute on'
   await dialog.getByRole('button', { name: 'Done' }).click();
 
   await expect(page.getByRole('alert')).toContainText('integer 1042, then 1043');
+});
+
+/**
+ * The table names a player by a number and the roster says whose it is: the one way a seat gets a
+ * name and a face. A number the roster does not hold stays a number, with neither.
+ */
+test('the host dialog names and draws whoever sits down from the roster of the session', async ({
+  page,
+}) => {
+  const uuid = '5b1d2a0e-93c4-4f6e-8a57-0c7de1f2a934';
+  await serveGame(page, 'function _init()\n  net.host({ max_players = 4 })\nend');
+  await mockSignedIn(page);
+  const room = await mockHostedRoom(page, uuid, [
+    { userId: uuidOf(1), username: 'alexis', nickname: 'alexis', host: true, playerId: 1042 },
+    { userId: uuidOf(12), username: 'lea', nickname: 'Léa', host: false, playerId: 1043 },
+  ]);
+
+  await page.goto(PLAY);
+  await page.getByRole('button', { name: 'Play' }).first().click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Start hosting' }).click();
+  const seats = dialog.locator('nc-avatar');
+  await expect(seats).toHaveCount(1);
+
+  await expect.poll(() => room.sit(1043)).toBe(true);
+  await expect(seats).toHaveCount(2);
+  await expect(seats.nth(1)).toHaveAccessibleName('Léa');
+  await expect(seats.nth(1).locator('img')).toHaveAttribute('src', '/img/logo.svg');
+
+  room.sit(987654321);
+  await expect(seats).toHaveCount(3);
+  await expect(seats.nth(2)).toHaveAccessibleName('player 987654321');
+  await expect(seats.nth(2).locator('img')).toHaveCount(0);
+  await expect(seats.nth(1)).toHaveAccessibleName('Léa');
 });
 
 test.describe('the Play mark over an idle screen', () => {
