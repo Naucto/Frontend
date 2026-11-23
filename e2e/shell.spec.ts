@@ -157,7 +157,7 @@ test.describe('app shell', () => {
     await expect(page).toHaveURL(/\/play\/9\?session=room-1$/);
   });
 
-  test('the account popover names the player, links to their profile, flips the theme and signs out', async ({
+  test('the account popover names the player, links to their profile and signs out', async ({
     page,
   }) => {
     await page.addInitScript(() => {
@@ -178,10 +178,7 @@ test.describe('app shell', () => {
     await expect(menu.getByRole('link', { name: 'Settings' })).toHaveAttribute('href', '/settings');
     await expect(menu.getByRole('switch')).toHaveCount(0);
 
-    const theme = menu.getByRole('radiogroup', { name: 'Theme' });
-    await expect(theme.getByRole('radio', { name: 'Dark' })).toBeChecked();
-    await theme.getByRole('radio', { name: 'Light' }).click();
-    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    await expect(menu.getByRole('radiogroup')).toHaveCount(0);
 
     await menu.getByRole('button', { name: 'Sign out' }).click();
     await expect(page.getByRole('link', { name: 'Sign in' })).toBeVisible();
