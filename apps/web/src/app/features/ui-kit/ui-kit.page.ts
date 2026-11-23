@@ -12,6 +12,7 @@ import {
   ChipComponent,
   DialogService,
   DialogShellComponent,
+  DisabledScopeDirective,
   DisclosureComponent,
   EdgeHandleComponent,
   EmptyStateComponent,
@@ -28,6 +29,7 @@ import {
   LabelComponent,
   LcdComponent,
   LogoComponent,
+  LooksOnlyDirective,
   MARK_GLYPHS,
   MarkComponent,
   type MarkName,
@@ -110,6 +112,8 @@ import { HubPiecesSection } from './hub-pieces.section';
     PanelRegionComponent,
     PanelColumnComponent,
     EdgeHandleComponent,
+    DisabledScopeDirective,
+    LooksOnlyDirective,
     InputDirective,
     JoinedDirective,
     KeycapComponent,
@@ -204,6 +208,16 @@ export default class UiKitPage {
     { value: 'line', icon: 'line' as const, label: 'Line' },
     { value: 'rect', icon: 'frame' as const, label: 'Rect' },
   ];
+  protected readonly scopeClosed = signal(true);
+  protected readonly zoom = signal(40);
+  protected readonly lookingTool = signal('pick');
+  /** The same strip with its writing tools closed one by one, as a canvas that is only read has it. */
+  protected readonly lookingTools = computed(() =>
+    [...this.tools, { value: 'pick', icon: 'drop' as const, label: 'Pick' }].map((item) => ({
+      ...item,
+      disabled: this.scopeClosed() && item.value !== 'pick',
+    })),
+  );
   protected readonly grid = signal(true);
   protected readonly onion = signal(false);
   protected readonly haptics = signal(false);
@@ -230,6 +244,7 @@ export default class UiKitPage {
     { id: 'buttons', label: 'Buttons' },
     { id: 'inputs', label: 'Inputs' },
     { id: 'selection', label: 'Selection' },
+    { id: 'disabled', label: 'Disabled' },
     { id: 'chips', label: 'Chips & data' },
     { id: 'table', label: 'Table' },
     { id: 'navigation', label: 'Navigation' },

@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 
 import { inkFor } from '../palette';
+import { closedBy } from './disabled-scope.directive';
 import { MarkComponent } from './mark.component';
 import { mark } from './selection-styles';
 
@@ -22,7 +23,9 @@ interface SwatchCell {
   sinks: boolean;
 }
 
-const SIDES = 'relative bevel-edge-line-strong focus-visible:z-10 data-on:bevel-lit';
+const SIDES =
+  'relative bevel-edge-line-strong focus-visible:z-10 enabled:data-on:bevel-lit ' +
+  'disabled:cursor-not-allowed disabled:bevel-level disabled:bevel-edge-line';
 
 /**
  * A slot is what gets stored, not the colour in it, so repainting the palette repaints everything
@@ -46,6 +49,8 @@ export class SwatchPickerComponent {
   readonly slots = input.required<readonly number[]>();
   readonly value = model<number | null>(null);
   readonly allowNone = input(false, { transform: booleanAttribute });
+  readonly disabled = input(false, { transform: booleanAttribute });
+  protected readonly closed = closedBy(() => this.disabled());
   readonly slotLabel = input('Palette slot');
   readonly noneLabel = input('No colour');
   /** Swatches to a row. */
@@ -71,7 +76,7 @@ export class SwatchPickerComponent {
         ink: colour === null ? null : inkFor(colour),
         frame: [
           SIDES,
-          bottom ? 'raised-sm data-on:bevel-down' : 'flat-sm bevel-open-b',
+          bottom ? 'raised-sm enabled:data-on:bevel-down' : 'flat-sm bevel-open-b',
           top ? '' : 'bevel-open-t',
           left ? '' : 'bevel-open-l',
           right ? '' : 'bevel-open-r',

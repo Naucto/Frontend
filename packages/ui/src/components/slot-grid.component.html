@@ -11,6 +11,7 @@
         [attr.aria-pressed]="cell.state === 'current'"
         [attr.data-on]="cell.state === 'current' ? '' : null"
         [attr.aria-label]="cell.label ?? pad(cell.n)"
+        [disabled]="closed()"
         (click)="pick.emit(cell.n)">
         {{ pad(cell.n) }}
       </button>

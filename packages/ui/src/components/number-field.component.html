@@ -4,13 +4,15 @@
       type="button"
       [class]="buttonClass()"
       [attr.aria-label]="(label() || ariaLabel()) + ' -' + step()"
-      [disabled]="!canLower()"
+      [disabled]="closed() || !canLower()"
       (click)="nudge(-1)">
       −
     </button>
     <span aria-hidden="true" class="-mt-[3px] w-[3px] flex-none bg-well"></span>
   }
-  <label class="flex min-w-0 flex-1 cursor-text items-center gap-[10px] px-1">
+  <label
+    class="flex min-w-0 flex-1 items-center gap-[10px] px-1"
+    [class]="closed() ? 'cursor-not-allowed' : 'cursor-text'">
     @if (label()) {
       <span [class]="labelClass()">{{ label() }}</span>
     }
@@ -24,6 +26,7 @@
       [attr.placeholder]="placeholder()"
       [style.width.ch]="width()"
       [class]="inputClass()"
+      [disabled]="closed()"
       (keydown.enter)="commit($event)"
       (keydown.arrowUp)="nudge(1, $event)"
       (keydown.arrowDown)="nudge(-1, $event)"
@@ -38,7 +41,7 @@
       type="button"
       [class]="buttonClass()"
       [attr.aria-label]="(label() || ariaLabel()) + ' +' + step()"
-      [disabled]="!canRaise()"
+      [disabled]="closed() || !canRaise()"
       (click)="nudge(1)">
       +
     </button>

@@ -10,6 +10,7 @@
   autocomplete="off"
   [placeholder]="placeholder()"
   [value]="value()"
+  [disabled]="closed()"
   [attr.aria-label]="placeholder()"
   [attr.role]="list() ? 'combobox' : null"
   [attr.aria-autocomplete]="list() ? 'list' : null"
@@ -17,7 +18,7 @@
   [attr.aria-expanded]="list() ? expanded() : null"
   (input)="onInput($event)"
   (keydown.enter)="submitted.emit(value())"
-  class="min-w-0 flex-1 text-ink outline-none placeholder:text-ink-4"
+  class="min-w-0 flex-1 text-ink outline-none placeholder:text-ink-4 disabled:cursor-not-allowed disabled:text-ink-4"
   [class]="chrome().input" />
 <!-- The key never shrinks; a placeholder has no ellipsis, so a narrow box needs a placeholder
      written to fit beside it. -->

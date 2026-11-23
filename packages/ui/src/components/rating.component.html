@@ -9,7 +9,7 @@
       [attr.aria-checked]="score === value()"
       [attr.data-on]="score === value() ? '' : null"
       [attr.tabindex]="score === value() || (value() === null && score === 1) ? 0 : -1"
-      [disabled]="disabled()"
+      [disabled]="closed()"
       (click)="value.set(score)"
       (keydown)="onKey($event, i)">
       {{ score }}

@@ -1,12 +1,12 @@
-<div [class]="well">
+<div [class]="well()">
   @for (tag of tags(); track tag) {
-    <nc-chip kind="tag" [removable]="!disabled()" (removed)="remove(tag)">{{ tag }}</nc-chip>
+    <nc-chip kind="tag" [removable]="!closed()" (removed)="remove(tag)">{{ tag }}</nc-chip>
   }
   <input
     type="text"
     [value]="draft()"
     [placeholder]="prompt()"
-    [disabled]="disabled() || tags().length >= max()"
+    [disabled]="closed() || tags().length >= max()"
     [attr.aria-label]="placeholder()"
     (input)="draft.set($any($event.target).value)"
     (keydown)="onKey($event)"

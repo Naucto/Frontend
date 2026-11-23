@@ -1,6 +1,6 @@
 <span class="block" [class]="track">
   <span
-    class="absolute inset-y-0 left-0 bg-primary"
+    class="absolute inset-y-0 left-0 bg-primary group-has-[input:disabled]:bg-ink-4"
     [class]="
       drag() === null
         ? 'transition-[width] duration-[140ms] ease-[cubic-bezier(0.3,0.8,0.2,1)]'
@@ -21,6 +21,7 @@
     [max]="last()"
     step="any"
     [value]="position()"
+    [disabled]="closed()"
     [attr.aria-label]="label()"
     [attr.aria-valuetext]="options()[value()]"
     (input)="onInput($event)"
@@ -44,9 +45,14 @@
   @for (option of options(); track $index) {
     <button
       type="button"
-      class="absolute -translate-x-1/2 text-label whitespace-nowrap"
-      [class]="$index === value() ? 'text-active-ink' : 'text-ink-4 hover:text-ink'"
+      class="absolute -translate-x-1/2 text-label whitespace-nowrap disabled:cursor-not-allowed"
+      [class]="
+        $index === value()
+          ? 'text-active-ink disabled:text-ink-3'
+          : 'text-ink-4 enabled:hover:text-ink'
+      "
       [style.left.%]="percent($index)"
+      [disabled]="closed()"
       (click)="value.set($index)">
       {{ option }}
     </button>

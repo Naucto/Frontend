@@ -3,7 +3,7 @@
   role="checkbox"
   [attr.aria-checked]="checked()"
   [attr.aria-label]="label()"
-  [disabled]="disabled()"
+  [disabled]="closed()"
   (click)="toggle()"
   class="group inline-flex items-center gap-[10px] font-ui text-meta uppercase tracking-button text-ink-3 enabled:aria-checked:text-active-ink disabled:cursor-not-allowed disabled:text-ink-4">
   <span

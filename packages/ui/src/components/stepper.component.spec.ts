@@ -49,4 +49,14 @@ describe('StepperComponent', () => {
     const { container } = await render(StepperComponent, { inputs: { value: 0, options: SIZES } });
     expect(container.querySelectorAll('.w-\\[3px\\]')).toHaveLength(2);
   });
+
+  it('holds still when disabled, the range and every caption with it', async () => {
+    const { fixture } = await render(StepperComponent, {
+      inputs: { value: 1, options: SIZES, label: 'Size', disabled: true },
+    });
+
+    expect(screen.getByRole('slider', { name: 'Size' })).toBeDisabled();
+    await userEvent.click(screen.getByRole('button', { name: '8×8' }));
+    expect(fixture.componentInstance.value()).toBe(1);
+  });
 });

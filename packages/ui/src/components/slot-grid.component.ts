@@ -1,5 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import {
+  booleanAttribute,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  output,
+} from '@angular/core';
 
+import { closedBy } from './disabled-scope.directive';
 import { CELL, CELL_ON, joined } from './selection-styles';
 
 /** One numbered place in a bank, and whether anything is in it. */
@@ -63,6 +71,8 @@ export class SlotGridComponent {
    * everything under it every time a row was added. It keeps its height and scrolls instead.
    */
   readonly rows = input(5);
+  readonly disabled = input(false, { transform: booleanAttribute });
+  protected readonly closed = closedBy(() => this.disabled());
   readonly pick = output<number>();
 
   protected readonly gap = GAP;

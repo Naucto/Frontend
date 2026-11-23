@@ -6,6 +6,7 @@
       [attr.aria-checked]="isSet(bit)"
       [attr.data-on]="isSet(bit) ? '' : null"
       [attr.aria-label]="'Flag ' + bit"
+      [disabled]="closed()"
       (click)="toggle(bit)"
       [class]="bitClass(bit, $first, $last)">
       {{ bit }}

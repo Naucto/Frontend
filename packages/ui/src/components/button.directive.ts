@@ -1,5 +1,6 @@
-import { booleanAttribute, computed, Directive, inject, input } from '@angular/core';
+import { booleanAttribute, computed, Directive, ElementRef, inject, input } from '@angular/core';
 
+import { closedBy } from './disabled-scope.directive';
 import { JoinedDirective } from './joined.directive';
 
 export type ButtonVariant =
@@ -20,6 +21,12 @@ const DISABLED_SHAPE =
   'disabled:cursor-not-allowed disabled:bevel-level disabled:bevel-fill-transparent disabled:text-ink-4';
 const DISABLED = `${DISABLED_SHAPE} disabled:bevel-edge-line`;
 const DISABLED_BARE = `${DISABLED_SHAPE} disabled:bevel-edge-transparent`;
+
+/**
+ * The same shape on an element that has no `disabled` of its own: a label standing for the file
+ * input inside it.
+ */
+const UNAVAILABLE = 'bevel-level bevel-edge-line bevel-fill-transparent text-ink-4';
 
 const LIT = 'hover:bevel-lit hover:text-active-ink';
 
@@ -99,6 +106,9 @@ const SIZES: Record<ButtonSize | RetiredButtonSize, SizeClasses> = {
   selector: 'button[ncButton], a[ncButton], label[ncButton]',
   host: {
     '[class]': 'classes()',
+    '[attr.disabled]': 'closed() && native ? "" : null',
+    '[attr.aria-disabled]': 'inert() ? "true" : null',
+    '[attr.inert]': 'inert() ? "" : null',
     '[attr.data-variant]': 'variant()',
     '[attr.data-pressed]': 'pressed() ? "" : null',
     '[attr.data-copied]': 'copied() ? "" : null',
@@ -111,12 +121,29 @@ export class ButtonDirective {
   /** Latched: an open trigger, a held tool. The caller owns the ARIA state that says which. */
   readonly pressed = input(false, { transform: booleanAttribute });
   readonly copied = input(false, { transform: booleanAttribute });
+  readonly disabled = input(false, { transform: booleanAttribute });
+
+  private readonly tag = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement.tagName;
+  /** A button is disabled by the browser, which also draws it through the `disabled:` classes. */
+  protected readonly native = this.tag === 'BUTTON';
+  private readonly unavailable = closedBy(() => this.disabled());
+  /**
+   * A link is never closed: it navigates, and following one writes nothing. A label is, since
+   * what it stands for is the file input it wraps.
+   */
+  protected readonly closed = computed(() => this.tag !== 'A' && this.unavailable());
+  /** A closed label has no `disabled` to take, so it and the input inside it are made inert. */
+  protected readonly inert = computed(() => this.closed() && !this.native);
 
   private readonly joined = inject(JoinedDirective, { optional: true }) !== null;
 
   protected readonly classes = computed(() => {
     const size = SIZES[this.size()];
-    const state = this.copied() ? COPIED : (this.pressed() ? PRESSED : VARIANTS)[this.variant()];
+    const state = this.inert()
+      ? UNAVAILABLE
+      : this.copied()
+        ? COPIED
+        : (this.pressed() ? PRESSED : VARIANTS)[this.variant()];
     const sides = this.joined ? JOINED_SIDES : '';
     return `${BASE} ${state} ${sides} ${size.box} ${this.iconOnly() ? 'aspect-square' : size.px}`;
   });

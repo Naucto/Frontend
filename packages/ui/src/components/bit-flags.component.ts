@@ -1,5 +1,6 @@
 import { booleanAttribute, ChangeDetectionStrategy, Component, input, model } from '@angular/core';
 
+import { closedBy } from './disabled-scope.directive';
 import { CELL, CELL_ON, joined } from './selection-styles';
 
 export const FLAG_ACCENTS = [
@@ -41,6 +42,8 @@ const BIT = `${CELL} h-[34px] w-[28px] flex-none font-mono text-label text-ink-4
 export class BitFlagsComponent {
   readonly value = model(0);
   readonly label = input('Flags');
+  readonly disabled = input(false, { transform: booleanAttribute });
+  protected readonly closed = closedBy(() => this.disabled());
   /**
    * Each bit latches in a colour of its own, the one whatever draws that flag elsewhere uses, so
    * the row is also the legend. Turned off, every bit takes the primary fill.

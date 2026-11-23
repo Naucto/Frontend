@@ -1,6 +1,15 @@
-import { ChangeDetectionStrategy, Component, computed, input, model, signal } from '@angular/core';
+import {
+  booleanAttribute,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  model,
+  signal,
+} from '@angular/core';
 
 import { ChipComponent } from './chip.component';
+import { closedBy } from './disabled-scope.directive';
 import { WELL } from './input.directive';
 
 /** Tags as removable chips + an inline input. Enter or comma adds; Backspace on empty removes the last. */
@@ -17,7 +26,8 @@ export class TagInputComponent {
   readonly placeholder = input('Type a tag and press enter');
   /** The short standing invitation, once the long one has been answered at least once. */
   readonly hint = input('+ tag');
-  readonly disabled = input(false);
+  readonly disabled = input(false, { transform: booleanAttribute });
+  protected readonly closed = closedBy(() => this.disabled());
   /**
    * The field keeps saying it takes another one until it cannot: the invitation shortens once a tag
    * has landed and goes only at the ceiling, where the input is disabled.
@@ -29,7 +39,13 @@ export class TagInputComponent {
     return this.tags().length ? this.hint() : this.placeholder();
   });
   protected readonly draft = signal('');
-  protected readonly well = `${WELL} flex min-h-[42px] flex-wrap items-center gap-0.75 px-1 py-[5px]`;
+  /** Disabled, the frame is the one `ncInput` draws for a well that takes nothing. */
+  protected readonly well = computed(
+    () =>
+      `${WELL} flex min-h-[42px] flex-wrap items-center gap-0.75 px-1 py-[5px] ${
+        this.closed() ? 'bevel-edge-line bevel-lo-line bevel-fill-transparent' : ''
+      }`,
+  );
 
   protected onKey(event: KeyboardEvent): void {
     if (event.key === 'Enter' || event.key === ',') {

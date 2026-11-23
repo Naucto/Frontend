@@ -8,6 +8,7 @@ import {
   viewChildren,
 } from '@angular/core';
 
+import { closedBy } from './disabled-scope.directive';
 import { CELL, CELL_ON, joined } from './selection-styles';
 
 /** A score of this or less reads as a complaint. */
@@ -34,6 +35,7 @@ export class RatingComponent {
   readonly lowLabel = input<string>();
   readonly highLabel = input<string>();
   readonly disabled = input(false, { transform: booleanAttribute });
+  protected readonly closed = closedBy(() => this.disabled());
 
   protected readonly scores = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
   private readonly cells = viewChildren<ElementRef<HTMLButtonElement>>('cell');

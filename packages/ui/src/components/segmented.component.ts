@@ -9,6 +9,7 @@ import {
   viewChildren,
 } from '@angular/core';
 
+import { closedBy } from './disabled-scope.directive';
 import { CELL, CELL_ON, joined } from './selection-styles';
 
 export interface SegmentOption<T extends string> {
@@ -52,6 +53,7 @@ export class SegmentedComponent<T extends string = string> {
   readonly options = input.required<readonly SegmentOption<T>[]>();
   readonly value = model<T>();
   readonly disabled = input(false, { transform: booleanAttribute });
+  protected readonly closed = closedBy(() => this.disabled());
   readonly label = input<string>();
   readonly variant = input<'framed' | 'chips'>('framed');
   /** Stretch the segments to share the full width, as the publishing rows do. */

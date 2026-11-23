@@ -17,9 +17,12 @@ import { ButtonDirective } from './button.directive';
     <button ncButton variant="ghost" disabled>Undo</button>
     <button ncButton variant="ghost-danger" size="lg">Remove</button>
     <button ncButton variant="gold">Player 1</button>
+    <button ncButton [disabled]="busy">Send</button>
   `,
 })
-class Host {}
+class Host {
+  protected readonly busy = true;
+}
 
 function classesOf(name: string): string[] {
   return screen.getByRole('button', { name }).className.split(' ');
@@ -92,5 +95,12 @@ describe('ButtonDirective', () => {
     await render(Host);
     expect(classesOf('Undo')).toContain('disabled:bevel-edge-transparent');
     expect(classesOf('Publish')).toContain('disabled:bevel-edge-line');
+  });
+
+  it('is disabled by a binding as by the attribute', async () => {
+    await render(Host);
+    expect(screen.getByRole('button', { name: 'Send' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Publish' })).toBeEnabled();
   });
 });

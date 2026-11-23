@@ -16,23 +16,24 @@
     [class]="look().list"
     cdkDropList
     cdkDropListOrientation="horizontal"
-    [cdkDropListDisabled]="!reorderable()"
+    [cdkDropListDisabled]="!reorderable() || closed()"
     (cdkDropListDropped)="dropped($event)"
     (scroll)="measure()">
     @for (tabItem of tabs(); track tabItem.value; let i = $index) {
       <div
         #tab
         cdkDrag
-        [cdkDragDisabled]="!reorderable()"
+        [cdkDragDisabled]="!reorderable() || closed()"
         role="tab"
         [attr.aria-selected]="tabItem.value === value()"
+        [attr.aria-disabled]="closed() ? 'true' : null"
         [attr.aria-label]="nameOf(tabItem)"
-        [attr.tabindex]="tabItem.value === value() ? 0 : -1"
+        [attr.tabindex]="tabItem.value === value() && !closed() ? 0 : -1"
         [attr.data-index]="i"
-        class="group cursor-pointer"
+        class="group"
         [class]="tabItem.value === value() ? look().on : look().off"
-        (click)="value.set(tabItem.value)"
-        (dblclick)="edit.emit(tabItem.value)"
+        (click)="choose(tabItem.value)"
+        (dblclick)="rename(tabItem.value)"
         (keydown)="onKey($event)">
         @if (tabItem.mark) {
           <nc-mark [name]="tabItem.mark" />
@@ -50,7 +51,7 @@
         @if (tabItem.badge !== undefined) {
           <span class="bg-inset px-0.5 text-label text-ink-2">{{ tabItem.badge }}</span>
         }
-        @if (editable()) {
+        @if (editable() && !closed()) {
           <button
             type="button"
             class="hidden shrink-0 text-ink-4 group-hover:inline-flex group-focus-within:inline-flex hover:text-ink"
@@ -63,7 +64,7 @@
             }
           </button>
         }
-        @if (removable() && tabs().length > 1) {
+        @if (removable() && !closed() && tabs().length > 1) {
           <button
             type="button"
             class="hidden shrink-0 text-ink-4 group-hover:inline-flex group-focus-within:inline-flex hover:text-hot-ink"

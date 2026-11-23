@@ -8,6 +8,8 @@ import {
   signal,
 } from '@angular/core';
 
+import { closedBy } from './disabled-scope.directive';
+
 /** How far the knob goes from off to on: the track's width less the knob's. */
 const TRAVEL = 24;
 /** A pointer that moved less than this was a press, not a drag. */
@@ -34,6 +36,7 @@ interface Drag {
 export class ToggleComponent {
   readonly checked = model(false);
   readonly disabled = input(false, { transform: booleanAttribute });
+  protected readonly closed = closedBy(() => this.disabled());
   readonly label = input<string>();
   readonly variant = input<'bare' | 'chip'>('bare');
 
@@ -60,7 +63,7 @@ export class ToggleComponent {
   }
 
   protected grab(event: PointerEvent): void {
-    if (this.disabled()) {
+    if (this.closed()) {
       return;
     }
     const target = event.currentTarget as HTMLElement;

@@ -8,6 +8,7 @@ import {
   output,
 } from '@angular/core';
 
+import { closedBy } from './disabled-scope.directive';
 import { CELL, CELL_ON } from './selection-styles';
 
 /** Fill of the checked state; gold is the neutral "on", jade and sky carry meaning. */
@@ -30,6 +31,7 @@ const ACTIVE: Record<ToggleAccent, string> = {
 export class ToggleButtonComponent {
   readonly checked = model(false);
   readonly disabled = input(false, { transform: booleanAttribute });
+  protected readonly closed = closedBy(() => this.disabled());
   readonly label = input<string>();
   readonly accent = input<ToggleAccent>('gold');
   /** `strip` stands as tall as a button of the strip it sits in. */

@@ -1,4 +1,6 @@
-import { Directive } from '@angular/core';
+import { booleanAttribute, Directive, input } from '@angular/core';
+
+import { closedBy } from './disabled-scope.directive';
 
 /**
  * What every well answers with, whatever it holds: the lip under it lightens on hover, takes the
@@ -18,9 +20,13 @@ export const WELL_DISABLED =
 @Directive({
   selector: 'input[ncInput], textarea[ncInput]',
   host: {
+    '[disabled]': 'closed()',
     class:
       `${WELL} block h-(--nc-h-lg) w-full px-1.5 font-ui text-body text-ink outline-none placeholder:text-ink-4 ` +
       `[&:is(textarea)]:h-auto [&:is(textarea)]:py-[10px] ${WELL_DISABLED}`,
   },
 })
-export class InputDirective {}
+export class InputDirective {
+  readonly disabled = input(false, { transform: booleanAttribute });
+  protected readonly closed = closedBy(() => this.disabled());
+}

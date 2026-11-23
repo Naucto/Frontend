@@ -224,3 +224,29 @@ describe('NumberFieldComponent, typed and stepped', () => {
     expect(box).toHaveValue('4');
   });
 });
+
+describe('NumberFieldComponent, disabled', () => {
+  it('closes its field as well as its two steps', async () => {
+    const requested = vi.fn();
+    await render(NumberFieldComponent, {
+      inputs: { value: 4, min: 0, max: 9, ariaLabel: 'Place', disabled: true },
+      on: { requested },
+    });
+
+    expect(screen.getByRole('textbox', { name: 'Place' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Place +1' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Place -1' })).toBeDisabled();
+    await userEvent.click(screen.getByRole('button', { name: 'Place +1' }));
+    expect(requested).not.toHaveBeenCalled();
+  });
+
+  it('draws the frame of a disabled well whatever its tone', async () => {
+    await render(NumberFieldComponent, {
+      inputs: { value: 4, ariaLabel: 'Place', tone: 'accent', disabled: true },
+    });
+
+    const frame = screen.getByRole('group', { name: 'Place' });
+    expect(frame).toHaveClass('bevel-edge-line', 'bevel-fill-transparent');
+    expect(frame).not.toHaveClass('bevel-fill-hot');
+  });
+});

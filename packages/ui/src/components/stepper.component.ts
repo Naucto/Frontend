@@ -1,5 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, input, model, signal } from '@angular/core';
+import {
+  booleanAttribute,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  model,
+  signal,
+} from '@angular/core';
 
+import { closedBy } from './disabled-scope.directive';
 import { RANGE_INPUT, RANGE_THUMB, RANGE_THUMB_SLOT, RANGE_TRACK } from './selection-styles';
 
 const KEY_STEPS: Record<string, number> = {
@@ -27,6 +36,8 @@ export class StepperComponent {
   readonly value = model(0);
   readonly options = input.required<readonly string[]>();
   readonly label = input<string>();
+  readonly disabled = input(false, { transform: booleanAttribute });
+  protected readonly closed = closedBy(() => this.disabled());
 
   protected readonly track = RANGE_TRACK;
   protected readonly range = RANGE_INPUT;

@@ -4,7 +4,7 @@
   [attr.aria-checked]="checked()"
   [attr.data-on]="checked() ? '' : null"
   [attr.aria-label]="label()"
-  [disabled]="disabled()"
+  [disabled]="closed()"
   (click)="press()"
   [class]="buttonClass()">
   <ng-content />

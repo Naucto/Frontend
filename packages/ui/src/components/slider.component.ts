@@ -7,6 +7,7 @@ import {
   model,
 } from '@angular/core';
 
+import { closedBy } from './disabled-scope.directive';
 import { RANGE_INPUT, RANGE_THUMB, RANGE_THUMB_SLOT, RANGE_TRACK } from './selection-styles';
 
 /** What the covered part of the track is filled with; `primary` unless the colour says something. */
@@ -48,6 +49,7 @@ export class SliderComponent {
   readonly readout = input<string>();
   readonly accent = input<SliderAccent>('primary');
   readonly disabled = input(false, { transform: booleanAttribute });
+  protected readonly closed = closedBy(() => this.disabled());
   readonly compact = input(false, { transform: booleanAttribute });
   readonly hideLabel = input(false, { transform: booleanAttribute });
 

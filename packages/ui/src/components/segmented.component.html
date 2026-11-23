@@ -10,7 +10,7 @@
       [attr.aria-checked]="option.value === value()"
       [attr.data-on]="option.value === value() ? '' : null"
       [attr.tabindex]="tabIndexFor(option, i)"
-      [disabled]="disabled()"
+      [disabled]="closed()"
       (click)="value.set(option.value)"
       (keydown)="onKey($event, i)"
       [class]="itemClass(option, $first, $last)">

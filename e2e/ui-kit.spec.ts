@@ -200,3 +200,48 @@ test('a glyph keeps one pixel clear of the frame of its button, at every height'
   expect(rooms).toHaveLength(12);
   expect(rooms.filter((room) => room < 3)).toEqual([]);
 });
+
+/**
+ * One scope closes what is under it and lets through what is named: the strip of tabs that only
+ * chooses, the tool that picks, the zoom. Switched off, everything is open again.
+ */
+test('a disabled scope closes every control under it but the ones let through by name', async ({
+  page,
+}) => {
+  await page.goto('/ui-kit');
+  const demo = page.getByTestId('disabled-scope-demo');
+  const closed = (): Promise<number> =>
+    demo
+      .locator('button, input, textarea, [role="tab"]')
+      .evaluateAll(
+        (controls) =>
+          controls.filter(
+            (control) =>
+              control.matches(':disabled') ||
+              control.getAttribute('aria-disabled') === 'true' ||
+              control.closest('[inert]') !== null,
+          ).length,
+      );
+
+  await expect(demo.getByRole('button', { name: 'Save' })).toBeDisabled();
+  await expect(demo.getByRole('textbox', { name: 'Name' })).toBeDisabled();
+  await expect(demo.getByRole('tablist', { name: 'Sheets, written' }).getByRole('tab')).toHaveCount(
+    3,
+  );
+  expect(await closed()).toBeGreaterThan(60);
+
+  // Let through: a strip that chooses, the one tool that looks, the zoom, a view toggle.
+  const looked = demo.getByRole('tablist', { name: 'Sheets, looked at' });
+  await looked.getByRole('tab', { name: 'People' }).click();
+  await expect(looked.getByRole('tab', { name: 'People' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await expect(demo.getByRole('radio', { name: 'Pick' })).toBeEnabled();
+  await expect(demo.getByRole('radio', { name: 'Pen' }).last()).toBeDisabled();
+  await expect(demo.getByRole('button', { name: 'Zoom in' })).toBeEnabled();
+  await expect(demo.getByRole('slider', { name: 'Zoom' })).toBeEnabled();
+
+  await page.locator('#disabled').getByRole('switch', { name: 'Closed' }).click();
+  expect(await closed()).toBe(0);
+});

@@ -7,6 +7,7 @@ import {
   output,
 } from '@angular/core';
 
+import { closedBy } from './disabled-scope.directive';
 import { WELL } from './input.directive';
 
 /** What the frame says about the value, where the value alone cannot say it. */
@@ -38,6 +39,13 @@ const TONE: Record<NumberFieldTone, ToneClasses> = {
     label: 'text-on-hot',
     button: 'text-on-hot',
   },
+};
+
+const UNAVAILABLE: ToneClasses = {
+  frame: 'bevel-edge-line bevel-lo-line bevel-fill-transparent',
+  value: 'text-ink-4',
+  label: 'text-ink-4',
+  button: 'cursor-not-allowed',
 };
 
 interface SizeClasses {
@@ -97,6 +105,8 @@ export class NumberFieldComponent {
    * standing size would set the height of the whole row for the sake of one field.
    */
   readonly size = input<'md' | 'sm'>('md');
+  readonly disabled = input(false, { transform: booleanAttribute });
+  protected readonly closed = closedBy(() => this.disabled());
 
   /**
    * The number asked for. The field never writes `value` itself — its owner may refuse or confirm
@@ -106,21 +116,23 @@ export class NumberFieldComponent {
   /** The box was emptied. Only ever fires where {@link clearable} is on. */
   readonly cleared = output();
 
+  /** Disabled, the frame and the number are drawn as a disabled well is, whatever the tone. */
   protected readonly frameClass = computed(
     () =>
-      `${WELL} flex items-stretch ${TONE[this.tone()].frame} ${this.fill() ? 'h-full' : SIZE[this.size()].frame}`,
+      `${WELL} flex items-stretch ${this.closed() ? UNAVAILABLE.frame : TONE[this.tone()].frame} ${this.fill() ? 'h-full' : SIZE[this.size()].frame}`,
   );
   /** Lifted a pixel so its ground, once held, reaches the rim instead of stopping under it. */
   protected readonly buttonClass = computed(
     () =>
-      `-mt-[3px] flex flex-none items-center justify-center enabled:active:bg-line disabled:text-ink-4 ${TONE[this.tone()].button} ${SIZE[this.size()].button}`,
+      `-mt-[3px] flex flex-none items-center justify-center enabled:active:bg-line disabled:text-ink-4 ${this.closed() ? UNAVAILABLE.button : TONE[this.tone()].button} ${SIZE[this.size()].button}`,
   );
   protected readonly labelClass = computed(
-    () => `font-ui text-micro tracking-strip uppercase ${TONE[this.tone()].label}`,
+    () =>
+      `font-ui text-micro tracking-strip uppercase ${this.closed() ? UNAVAILABLE.label : TONE[this.tone()].label}`,
   );
   protected readonly inputClass = computed(
     () =>
-      `flex-1 outline-none placeholder:text-ink-4 ${this.label() || this.unit() ? 'text-right' : 'text-center'} ${TONE[this.tone()].value} ${SIZE[this.size()].value}`,
+      `flex-1 outline-none placeholder:text-ink-4 disabled:cursor-not-allowed ${this.label() || this.unit() ? 'text-right' : 'text-center'} ${this.closed() ? UNAVAILABLE.value : TONE[this.tone()].value} ${SIZE[this.size()].value}`,
   );
   protected readonly shown = computed(() => this.print(this.value()));
   /** Wide enough for the largest number it may hold; a box that fills its cell grows from there. */

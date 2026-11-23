@@ -8,6 +8,7 @@ import {
   signal,
 } from '@angular/core';
 
+import { closedBy } from './disabled-scope.directive';
 import { mark } from './selection-styles';
 
 /**
@@ -24,6 +25,7 @@ import { mark } from './selection-styles';
 export class CheckboxComponent {
   readonly checked = model(false);
   readonly disabled = input(false, { transform: booleanAttribute });
+  protected readonly closed = closedBy(() => this.disabled());
   readonly label = input<string>();
 
   private readonly pressed = signal(false);

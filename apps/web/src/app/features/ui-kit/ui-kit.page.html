@@ -548,6 +548,107 @@
     </div>
   </section>
 
+  <section id="disabled" class="grid scroll-mt-[80px] gap-2.5">
+    <div class="flex items-baseline gap-2">
+      <h2 class="font-display text-display text-ink">Disabled context</h2>
+      <span class="text-meta text-ink-3">
+        one scope closes every control under it; a control that only looks is let through by name
+      </span>
+    </div>
+    <div class="flat-lg bevel-fill-panel grid gap-[22px] p-[22px]">
+      <nc-toggle [(checked)]="scopeClosed">Closed</nc-toggle>
+      <div
+        data-testid="disabled-scope-demo"
+        class="grid gap-[22px]"
+        [ncDisabledScope]="scopeClosed()">
+        <div class="flex flex-wrap items-center gap-2.5">
+          <button ncButton variant="primary">Save</button>
+          <button ncButton>Rename</button>
+          <button ncButton variant="danger">Delete</button>
+          <label ncButton>
+            <nc-mark name="upload" />
+            Upload
+            <input type="file" class="sr-only" />
+          </label>
+          <nc-toggle [(checked)]="autoRun">Auto-run</nc-toggle>
+          <nc-checkbox [(checked)]="matchCase">Match case</nc-checkbox>
+          <nc-toggle-button [(checked)]="haptics">Lock</nc-toggle-button>
+        </div>
+        <div class="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] items-start gap-[22px]">
+          <nc-field label="Name" for="d-name">
+            <input ncInput id="d-name" value="Platformer" />
+          </nc-field>
+          <nc-field label="Tags">
+            <nc-tag-input placeholder="Add a tag" hint="Add a tag" [(tags)]="tags" />
+          </nc-field>
+          <nc-field label="Tempo">
+            <nc-number-field
+              ariaLabel="Tempo"
+              unit="BPM"
+              [value]="tempo()"
+              [min]="40"
+              [max]="240"
+              (requested)="tempo.set($event)" />
+          </nc-field>
+        </div>
+        <div class="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] items-center gap-[22px]">
+          <nc-segmented [options]="visibility" [(value)]="visibilityValue" label="Visibility" />
+          <nc-slider label="BPM" [min]="40" [max]="240" [(value)]="bpm" [readout]="'' + bpm()" />
+          <nc-stepper [(value)]="spriteSize" [options]="sizes" label="Sprite size" />
+        </div>
+        <div class="flex flex-wrap items-start gap-2.5">
+          <nc-tool-group [items]="tools" [(value)]="tool" />
+          <nc-bit-flags [(value)]="bits" label="Tile flags" />
+          <nc-swatch-picker
+            [colours]="palette"
+            [slots]="paletteSlots"
+            [(value)]="colour"
+            slotLabel="Color" />
+        </div>
+        <div class="grid items-start gap-[22px] md:grid-cols-2">
+          <nc-rating [(value)]="score" label="Score" />
+          <nc-slot-grid
+            class="w-[240px]"
+            [cells]="slotCells()"
+            [rows]="2"
+            (pick)="slot.set($event)" />
+        </div>
+        <nc-tabs
+          [tabs]="shelves"
+          [(value)]="shelf"
+          label="Sheets, written"
+          variant="small"
+          editable
+          removable />
+        <div class="grid gap-1.5">
+          <span class="label">Let through with ncLooksOnly</span>
+          <div class="flex flex-wrap items-center gap-2.5">
+            <nc-tabs
+              ncLooksOnly
+              [tabs]="shelves"
+              [(value)]="shelf"
+              label="Sheets, looked at"
+              variant="small" />
+            <nc-tool-group ncLooksOnly [items]="lookingTools()" [(value)]="lookingTool" />
+            <span ncLooksOnly class="flex items-center gap-0.5">
+              <button ncButton variant="ghost" iconOnly aria-label="Zoom out">
+                <nc-icon name="zoom-out" />
+              </button>
+              <nc-slider class="w-[120px]" label="Zoom" [(value)]="zoom" compact hideLabel />
+              <button ncButton variant="ghost" iconOnly aria-label="Zoom in">
+                <nc-icon name="zoom-in" />
+              </button>
+            </span>
+            <nc-toggle-button ncLooksOnly [(checked)]="grid">
+              <nc-mark name="grid" />
+              Grid
+            </nc-toggle-button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section id="chips" class="grid scroll-mt-[80px] gap-2.5">
     <div class="flex items-baseline gap-2">
       <h2 class="font-display text-display text-ink">Chips, keys &amp; data</h2>
