@@ -1,5 +1,5 @@
 /** The width of a disk in a collection box. */
-export const DOCK_DISK = 96;
+const DOCK_DISK = 96;
 /** How far apart the disks of a box stand while it is at rest. */
 const STEP = 12;
 /** The circle the disks ride once the box is reached: its radius, and how far it is raised. */

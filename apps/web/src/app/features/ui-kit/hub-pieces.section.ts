@@ -51,7 +51,7 @@ import { COLLECTIONS, GAMES, HERO, openSessions, VIEWER } from './hub-pieces.fix
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HubPiecesSection {
-  private readonly toasts = inject(ToastService);
+  protected readonly toasts = inject(ToastService);
 
   protected readonly games = GAMES;
   /** The owner's shelf opens on the game that does not exist yet. */
@@ -95,9 +95,5 @@ export class HubPiecesSection {
           : other,
       ),
     );
-  }
-
-  protected say(message: string): void {
-    this.toasts.show(message);
   }
 }

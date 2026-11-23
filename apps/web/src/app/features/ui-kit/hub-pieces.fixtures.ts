@@ -253,7 +253,7 @@ export function openSessions(now: number): HubSession[] {
   });
 }
 
-export interface Collection {
+interface Collection {
   title: string;
   curator: Person;
   total: number;
