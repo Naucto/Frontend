@@ -71,6 +71,30 @@ icons drawn on the kit pixel, Bubblegum-16 palette, dark + light themes).
   `packages/engine` imports no framework.
 - **Auth**: access token in memory only + httpOnly refresh cookie (silent refresh at boot). Never put
   tokens in `localStorage`.
+- **Ids**: every id the backend answers (an account, a game, a comment, a report, a notification,
+  a collection) is a lower-case UUID string. It is opaque: compared for equality, never ordered
+  to mean older or newer, never computed on, never shown to a person. Where every client has to
+  sort the same ids alike (the colours and the order of collaborators), `compareIds`
+  (`core/ids/ids.ts`) orders them as the server does. A look drawn from an id (the plastic of a
+  disk nobody dressed, a person's colour) comes from the kit's `hashOf`. A fixture writes one as
+  `uuidOf(7)` (`@naucto/api-client/testing`), in unit specs and in `e2e/` alike.
+  - **The player number is the one integer.** `playerId` in the answer of a game-session
+    connection, and the `to`, `from` and `userId` of the game table's signaling, are a
+    `PlayerNumber` (`packages/engine/src/net/SessionTransport.ts`): what a game reads as
+    `net.id()`, receives in `peer.joined` and `peer.left` and gets as the `from` of an event.
+    Published games compute on it, so it stays an integer all the way into Lua
+    (`NetAPI.test.ts`). It names a player at the table and never an account. The server maps
+    no player to an account for a client; the one link is what a collaborator's editor shares
+    of itself in the work session (`AwarenessState.player`), which is how the NET tab names
+    the players of a session run from the editor.
+  - **Old links.** `/play/<number>` and `/edit/<number>/…` were written while games were
+    numbered. `gameAddressGuard` (`core/ids/game-address.guard.ts`), a `canMatch` on both
+    routes, asks `GET /projects/legacy/{number}` and sends the navigation on to the same
+    address under the id, with its child path and its query. A number no game had, and
+    anything that is neither an id nor a number, does not match and falls through to
+    not-found. A page is never built on a number, and no other request carries one.
+  - **"No game" is the nil UUID** in the analytics export, which Settings › Privacy hands over
+    as the server wrote it.
 - **Engine**: the Lua API is namespaced (`gfx`, `input`, `sound`, `map`, `net`, `sys`).
   `packages/engine/src/api/luaApiTable.ts` is the single source of truth (docs manifest parity,
   editor completions). Old games are migrated on load against frozen tables of their own
