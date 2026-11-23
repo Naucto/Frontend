@@ -28,15 +28,32 @@ const DARK_FILLS = new Set([
   '#007899',
 ]);
 
+/** Below this relative luminance a colour outside the palette takes the light ink. */
+const DARK_LUMINANCE = 0.16;
+
+/** Relative luminance of a `#rrggbb` colour, from 0 (black) to 1 (white); null for anything else. */
+function luminanceOf(fill: string): number | null {
+  const hex = /^#([0-9a-f]{6})$/i.exec(fill)?.[1];
+  if (hex === undefined) {
+    return null;
+  }
+  const [red, green, blue] = [0, 2, 4].map((at) => {
+    const channel = Number.parseInt(hex.slice(at, at + 2), 16) / 255;
+    return channel <= 0.040_45 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+  }) as [number, number, number];
+  return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+}
+
 /**
- * Ink to draw on a palette fill. The design states it once and applies it everywhere:
+ * Ink to draw on a fill. The design states it once for the palette and applies it everywhere:
  * dark ink on the bright colours, `#FAFDFF` on the dark ones — "avatars, keycaps and badges
- * all obey it".
+ * all obey it". A colour the palette does not hold, as a game's own, goes by its luminance.
  */
 export function inkFor(fill: string): string {
-  return DARK_FILLS.has(fill.toLowerCase())
-    ? 'var(--color-on-accent-dark)'
-    : 'var(--color-on-accent)';
+  const colour = fill.toLowerCase();
+  const known = (IDENTITY_COLOURS as readonly string[]).includes(colour);
+  const dark = known ? DARK_FILLS.has(colour) : (luminanceOf(colour) ?? 1) < DARK_LUMINANCE;
+  return dark ? 'var(--color-on-accent-dark)' : 'var(--color-on-accent)';
 }
 
 /**

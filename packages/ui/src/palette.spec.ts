@@ -49,4 +49,13 @@ describe('inkFor', () => {
   it('matches a fill regardless of case', () => {
     expect(inkFor('#16171A')).toBe(inkFor('#16171a'));
   });
+
+  it('reads a colour outside the palette by its luminance', () => {
+    expect(inkFor('#21171a')).toBe('var(--color-on-accent-dark)');
+    expect(inkFor('#e8e0c0')).toBe('var(--color-on-accent)');
+  });
+
+  it('keeps the dark ink on what is no hex colour', () => {
+    expect(inkFor('transparent')).toBe('var(--color-on-accent)');
+  });
 });
