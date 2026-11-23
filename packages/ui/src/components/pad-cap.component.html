@@ -1,0 +1,17 @@
+<svg
+  [attr.width]="(cells()[0]?.length ?? 0) * 3"
+  [attr.height]="cells().length * 3"
+  [attr.viewBox]="'0 0 ' + (cells()[0]?.length ?? 0) + ' ' + cells().length"
+  [attr.shape-rendering]="rendering()"
+  aria-hidden="true"
+  focusable="false"
+  class="block">
+  @for (run of runs(); track $index) {
+    <rect
+      [attr.x]="run.x"
+      [attr.y]="run.y"
+      [attr.width]="run.w"
+      height="1"
+      [attr.fill]="run.fill" />
+  }
+</svg>

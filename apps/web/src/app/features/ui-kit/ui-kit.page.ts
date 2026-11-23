@@ -32,6 +32,8 @@ import {
   NumberFieldComponent,
   OnlineDotComponent,
   OptionDirective,
+  PadCapComponent,
+  type PadDirection,
   PagerComponent,
   PanelColumnComponent,
   PanelRegionComponent,
@@ -98,6 +100,7 @@ import { HubPiecesSection } from './hub-pieces.section';
     EdgeHandleComponent,
     InputDirective,
     KeycapComponent,
+    PadCapComponent,
     LabelComponent,
     NoticeComponent,
     LcdComponent,
@@ -156,6 +159,7 @@ export default class UiKitPage {
   protected readonly maxPlayers = signal(4);
   protected readonly tempo = signal(120);
   protected readonly keys = ['Arrows', 'Z', 'X', 'Esc'];
+  protected readonly padDirections: PadDirection[] = ['left', 'right', 'up', 'down'];
   protected readonly spriteSize = signal(1);
   protected readonly presenceFrame = { x: 0, y: 0, w: 320, h: 120 };
   protected readonly presenceMarks: PresenceMark[] = [

@@ -323,6 +323,14 @@
         }
         <nc-keycap size="sm">/</nc-keycap>
       </div>
+      <div class="flex flex-wrap items-center gap-1.5" data-testid="pad-caps">
+        @for (direction of padDirections; track direction) {
+          <nc-pad-cap kind="dpad" [direction]="direction" />
+        }
+        @for (direction of padDirections; track direction) {
+          <nc-pad-cap kind="stick" [direction]="direction" />
+        }
+      </div>
     </div>
   </section>
 
@@ -465,7 +473,7 @@
         <nc-keycap>Arrows</nc-keycap>
         <nc-keycap>Z</nc-keycap>
         <nc-keycap>Esc</nc-keycap>
-        <nc-keycap>D-pad</nc-keycap>
+        <nc-pad-cap kind="dpad" direction="left" />
       </div>
       <div class="flex flex-wrap items-center gap-2.5">
         <nc-stat icon="play" [value]="1247" />
