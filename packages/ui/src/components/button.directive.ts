@@ -1,4 +1,6 @@
-import { booleanAttribute, computed, Directive, input } from '@angular/core';
+import { booleanAttribute, computed, Directive, inject, input } from '@angular/core';
+
+import { JoinedDirective } from './joined.directive';
 
 export type ButtonVariant =
   'primary' | 'run' | 'secondary' | 'ghost' | 'ghost-danger' | 'danger' | 'gold' | 'jade' | 'sky';
@@ -32,6 +34,31 @@ const VARIANTS: Record<ButtonVariant, string> = {
   jade: `glare bevel-jade text-on-accent ${DISABLED}`,
   sky: `glare bevel-sky text-on-accent ${DISABLED}`,
 };
+
+/**
+ * A ghost cell of an `ncJoined` strip: at rest it keeps the frame a ghost button only shows on
+ * hover, drawn in the quiet line and without a fill, so the strip reads as one block; pointed at,
+ * it lights as a ghost button does. Unavailable, it keeps the line, or the frame would break.
+ */
+const JOINED_GHOST =
+  `bevel-edge-line bevel-skirt-transparent bevel-fill-transparent text-ink-2 ${LIT} hover:bevel-fill-raised ` +
+  'disabled:cursor-not-allowed disabled:bevel-fill-transparent disabled:text-ink-4 disabled:bevel-edge-line';
+
+/**
+ * Where a cell meets its neighbours in a strip. Only the strip's two ends keep a side; the line
+ * between two cells is drawn on the face of the second, and a pointed-at cell's right side is laid
+ * over the next cell's first column, which that line occupies. A latched cell has no line of its
+ * own. The cell that is pointed at, focused or latched is drawn over its neighbours.
+ */
+const JOINED_SIDES =
+  'relative hover:z-1 focus-visible:z-1 data-pressed:z-1 ' +
+  'not-first:bevel-open-l not-first:before:absolute not-first:before:inset-y-0 not-first:before:left-0 ' +
+  'not-first:before:w-[3px] not-first:before:bg-line not-first:not-data-pressed:enabled:hover:before:bg-active-ink ' +
+  'not-first:data-pressed:before:hidden ' +
+  'not-last:bevel-open-r not-last:after:absolute not-last:after:-top-[3px] not-last:after:-right-[3px] ' +
+  'not-last:after:-bottom-[3px] not-last:after:hidden not-last:after:w-[3px] not-last:after:bg-active-ink ' +
+  'not-last:after:shadow-[0_3px_0_var(--color-lit-skirt)] not-last:not-data-pressed:enabled:hover:after:block ' +
+  'not-last:enabled:active:after:shadow-none';
 
 /** Held down: a neutral button lights, a coloured one keeps its colour, and neither sweeps. */
 const PRESSED: Record<ButtonVariant, string> = {
@@ -93,9 +120,18 @@ export class ButtonDirective {
   readonly pressed = input(false, { transform: booleanAttribute });
   readonly copied = input(false, { transform: booleanAttribute });
 
+  private readonly joined = inject(JoinedDirective, { optional: true }) !== null;
+
   protected readonly classes = computed(() => {
     const size = SIZES[this.size()];
-    const state = this.copied() ? COPIED : (this.pressed() ? PRESSED : VARIANTS)[this.variant()];
-    return `${BASE} ${state} ${size.box} ${this.iconOnly() ? 'aspect-square' : size.px}`;
+    const ghostCell =
+      this.joined && this.variant() === 'ghost' && !this.pressed() && !this.copied();
+    const state = ghostCell
+      ? JOINED_GHOST
+      : this.copied()
+        ? COPIED
+        : (this.pressed() ? PRESSED : VARIANTS)[this.variant()];
+    const sides = this.joined ? JOINED_SIDES : '';
+    return `${BASE} ${state} ${sides} ${size.box} ${this.iconOnly() ? 'aspect-square' : size.px}`;
   });
 }

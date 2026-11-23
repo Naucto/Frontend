@@ -601,7 +601,7 @@ test('the transport keeps its controls and fullscreen buttons inside the console
 
   const [track, gear, last] = [await boxOf(column), await boxOf(controls), await boxOf(fullscreen)];
   expect(gear.x).toBeGreaterThanOrEqual(track.x);
-  // The two are joined: the gear ends on the pixel the fullscreen button starts with.
-  expect(gear.x + gear.width).toBe(last.x + 3);
+  // The two are joined: the fullscreen button starts on the pixel the gear ends on.
+  expect(gear.x + gear.width).toBe(last.x);
   expect(last.x + last.width).toBeLessThanOrEqual(track.x + track.width);
 });
