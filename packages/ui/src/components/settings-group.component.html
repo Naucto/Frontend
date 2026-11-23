@@ -5,6 +5,6 @@
   }
 </header>
 <!-- One frame around the rows, as a table stands in one; the title stays outside it. -->
-<div class="flat-sm bevel-edge-line-strong bevel-fill-panel">
+<div [class]="unframed() ? 'grid gap-1.5' : 'flat-sm bevel-edge-line-strong bevel-fill-panel'">
   <ng-content />
 </div>
