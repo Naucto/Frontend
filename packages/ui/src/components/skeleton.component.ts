@@ -74,8 +74,6 @@ export class SkeletonComponent {
   readonly height = input<string>('1rem');
   /** The length of each made-up word of a text placeholder, e.g. `[7, 4, 6]`. */
   readonly words = input<readonly number[]>();
-  /** Retired: corners are stepped, never rounded. Still accepted so existing call sites compile. */
-  readonly radius = input<string>();
 
   protected readonly text = computed(() =>
     (this.words() ?? [])
