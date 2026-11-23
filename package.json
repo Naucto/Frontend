@@ -34,6 +34,7 @@
     "pixel:check": "node tools/pixel-check.mjs",
     "design:check": "HERE=$PWD; D2C=${D2C:-../Design2Code}; cd \"$D2C\" && npm run d2c -- harvest --canvas fixtures/naucto-redesign.html --out out/design.ir.json --no-png && npm run d2c -- report --ir out/design.ir.json --target naucto-angular --repo \"$HERE\" --gallery 1a --expect \"$HERE/tools/design-coverage.json\"",
     "seed:content": "node tools/run-ts.mjs tools/seed-content.ts",
+    "collab:bot": "node tools/run-ts.mjs tools/collab-bot.ts",
     "demo:photo": "node tools/run-ts.mjs tools/photo-demo.ts",
     "migrate:games:build": "node tools/migrate-games.mjs"
   },
