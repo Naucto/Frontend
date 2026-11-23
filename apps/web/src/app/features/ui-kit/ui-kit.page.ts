@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/c
 import { inject } from '@angular/core';
 import { BUBBLEGUM_16 } from '@naucto/engine';
 import {
+  ArrowLinkDirective,
   AvatarComponent,
   BitFlagsComponent,
   BrandMarkComponent,
@@ -74,6 +75,7 @@ import { ACCENT_SLOTS } from '../editor/accent-slots';
   imports: [
     CoverCardComponent,
     FloppyComponent,
+    ArrowLinkDirective,
     AvatarComponent,
     BitFlagsComponent,
     ButtonDirective,

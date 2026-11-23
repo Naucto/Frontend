@@ -1,3 +1,4 @@
+export * from './components/arrow-link.directive';
 export * from './components/avatar.component';
 export * from './components/bit-flags.component';
 export * from './components/brand-mark.component';
