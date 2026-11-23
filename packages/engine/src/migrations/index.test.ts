@@ -3,7 +3,7 @@ import * as Y from 'yjs';
 
 import { EditableGame } from '../game/EditableGame';
 import { Game } from '../game/Game';
-import { KEYS, LEGACY_KEYS } from '../game/keys';
+import { GAME_SCHEMA_VERSION, KEYS, LEGACY_KEYS } from '../game/keys';
 import { migrateGame, needsMigration, schemaVersionOf } from './index';
 
 function docAt(version: number, code: string): Y.Doc {
@@ -22,7 +22,7 @@ function docAt(version: number, code: string): Y.Doc {
 const v1Doc = (code: string): Y.Doc => docAt(1, code);
 
 describe('migrateGame across steps', () => {
-  it('brings a v0 document to v2 through both steps', () => {
+  it('brings a v0 document to the current schema through every step', () => {
     const doc = new Y.Doc();
     doc
       .getText(LEGACY_KEYS.code)
@@ -31,9 +31,9 @@ describe('migrateGame across steps', () => {
 
     const report = migrateGame(doc);
 
-    expect(report).toMatchObject({ from: 0, to: 2, applied: true });
+    expect(report).toMatchObject({ from: 0, to: GAME_SCHEMA_VERSION, applied: true });
     const game = new EditableGame(doc);
-    expect(game.schemaVersion).toBe(2);
+    expect(game.schemaVersion).toBe(GAME_SCHEMA_VERSION);
     expect(game.files[0]?.text.toString()).toContain('input.key_pressed("ArrowLeft")');
   });
 
@@ -52,10 +52,10 @@ describe('migrateGame across steps', () => {
 
     const report = migrateGame(doc);
 
-    expect(report).toMatchObject({ from: 1, to: 2, applied: true });
+    expect(report).toMatchObject({ from: 1, to: GAME_SCHEMA_VERSION, applied: true });
     expect(report.warnings).toEqual([]);
     const game = new EditableGame(doc);
-    expect(game.schemaVersion).toBe(2);
+    expect(game.schemaVersion).toBe(GAME_SCHEMA_VERSION);
     expect(game.files[0]?.text.toString()).toBe(
       [
         'function _init()',
@@ -103,14 +103,22 @@ describe('migrateGame across steps', () => {
 
 describe('migrateGame renames past the schema', () => {
   it('brings a current game to the current names without moving its version', () => {
-    const doc = docAt(2, 'local p, s = sound.music_position()\nif input.btn("a") then end');
+    const doc = docAt(
+      GAME_SCHEMA_VERSION,
+      'local p, s = sound.music_position()\nif input.btn("a") then end',
+    );
     expect(needsMigration(doc)).toBe(true);
 
     const report = migrateGame(doc);
 
-    expect(report).toMatchObject({ from: 2, to: 2, applied: true, counts: { 'rewrites:main': 2 } });
+    expect(report).toMatchObject({
+      from: GAME_SCHEMA_VERSION,
+      to: GAME_SCHEMA_VERSION,
+      applied: true,
+      counts: { 'rewrites:main': 2 },
+    });
     const game = new EditableGame(doc);
-    expect(game.schemaVersion).toBe(2);
+    expect(game.schemaVersion).toBe(GAME_SCHEMA_VERSION);
     expect(doc.getMap(KEYS.meta).has('migratedFrom')).toBe(false);
     expect(game.files[0]?.text.toString()).toBe(
       'local p, s = sound.music_pos()\nif input.held("a") then end',
@@ -123,21 +131,29 @@ describe('migrateGame renames past the schema', () => {
 
     const report = migrateGame(doc);
 
-    expect(report).toMatchObject({ from: 1, to: 2, applied: true });
+    expect(report).toMatchObject({ from: 1, to: GAME_SCHEMA_VERSION, applied: true });
     expect(new EditableGame(doc).files[0]?.text.toString()).toBe(
       'if input.pressed("a") then local p, s = sound.music_pos() end',
     );
   });
 
   it('leaves a current game with nothing to rename untouched', () => {
-    const doc = docAt(2, 'local p, s = sound.music_pos()\n-- sound.music_position() was its name');
+    const doc = docAt(
+      GAME_SCHEMA_VERSION,
+      'local p, s = sound.music_pos()\n-- sound.music_position() was its name',
+    );
     const updates: unknown[] = [];
     doc.on('update', (update: unknown) => updates.push(update));
 
     expect(needsMigration(doc)).toBe(false);
     const report = migrateGame(doc);
 
-    expect(report).toMatchObject({ from: 2, to: 2, applied: false, counts: {} });
+    expect(report).toMatchObject({
+      from: GAME_SCHEMA_VERSION,
+      to: GAME_SCHEMA_VERSION,
+      applied: false,
+      counts: {},
+    });
     expect(updates).toEqual([]);
   });
 });

@@ -8,6 +8,7 @@ import { migrateV0ToV1 } from './v0_to_v1';
 import { migrateV1ToV2 } from './v1_to_v2';
 import { computeRenames } from './v1_to_v2/code';
 import { holdsV1Shape, moveToV2Shape } from './v1_to_v2/shape';
+import { migrateV2ToV3 } from './v2_to_v3';
 
 export type { MigrationReport, MigrationStep, MigrationWarning } from './types';
 
@@ -26,6 +27,7 @@ export const MIGRATION_ORIGIN = 'migration';
 const STEPS: readonly MigrationStep[] = [
   { from: 0, to: 1, run: migrateV0ToV1 },
   { from: 1, to: 2, run: migrateV1ToV2 },
+  { from: 2, to: 3, run: migrateV2ToV3 },
 ];
 
 /** Content only the first schema ever wrote, and the only evidence a document predates the marker. */
@@ -66,12 +68,16 @@ function pendingRenames(doc: Y.Doc): { file: string; text: Y.Text; splices: Spli
 }
 
 /**
- * A document marked at the current schema that still holds some of the v1 shape, since the shape
+ * A document marked at v2 or later that still holds some of the v1 shape, since the shape
  * moved inside v2 without a bump. An unmarked one is about to be seeded, and seeding writes the
  * current shape.
  */
 function reshapedInPlace(doc: Y.Doc): boolean {
-  return doc.getMap(KEYS.meta).get('schemaVersion') === GAME_SCHEMA_VERSION && holdsV1Shape(doc);
+  const marked = doc.getMap(KEYS.meta).get('schemaVersion');
+
+  return (
+    typeof marked === 'number' && marked >= 2 && marked <= GAME_SCHEMA_VERSION && holdsV1Shape(doc)
+  );
 }
 
 /**
@@ -111,7 +117,7 @@ export function migrateGame(doc: Y.Doc, opts: { apply?: boolean } = {}): Migrati
     warnings: [],
   };
   const behind = from < GAME_SCHEMA_VERSION;
-  const reshape = !behind && reshapedInPlace(doc);
+  const reshape = reshapedInPlace(doc);
   let renames = behind ? [] : pendingRenames(doc);
   if (!behind && !reshape && renames.length === 0) {
     return report;

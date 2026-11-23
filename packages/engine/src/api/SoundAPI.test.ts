@@ -5,35 +5,34 @@ import type { SoundPort } from './ports';
 import { SoundAPI } from './SoundAPI';
 import { makeApiContext } from './test-context';
 
-const setup = (step: number | null): LuaEnvironment => {
+const setup = (beat: number | null): LuaEnvironment => {
   const lua = new LuaEnvironment();
   const sound = {
-    musicPosition: () => (step === null ? null : { pattern: 2, step }),
+    musicPosition: () => (beat === null ? null : { bar: 2, beat }),
   } as unknown as SoundPort;
   new SoundAPI(makeApiContext(lua, { sound }));
   return lua;
 };
 
 describe('SoundAPI sound.music_pos', () => {
-  it('hands a game the step that is sounding, however far into it the clock has run', () => {
-    // The sequencer's own position is fine enough to move a playhead, so it carries a fraction for
-    // most of each step. A game compares this against the step a note is written on, and 2.125 is
-    // step 2 an eighth of the way through — that note is the one playing.
+  it('hands a game the bar and the beat that is sounding, however far into it the clock has run', () => {
     const lua = setup(2.125);
-    expect(lua.evaluate('local p, s = sound.music_pos() return s')).toEqual([2]);
-    expect(lua.evaluate('local p, s = sound.music_pos() return p')).toEqual([2]);
+    expect(lua.evaluate('local bar, beat = sound.music_pos() return beat')).toEqual([2]);
+    expect(lua.evaluate('local bar, beat = sound.music_pos() return bar')).toEqual([2]);
   });
 
-  it('starts at step 0', () => {
-    expect(setup(0).evaluate('local p, s = sound.music_pos() return s')).toEqual([0]);
+  it('starts at beat 0', () => {
+    expect(setup(0).evaluate('local bar, beat = sound.music_pos() return beat')).toEqual([0]);
   });
 
-  it('lands exactly on a step boundary', () => {
-    expect(setup(4).evaluate('local p, s = sound.music_pos() return s')).toEqual([4]);
+  it('lands exactly on a beat', () => {
+    expect(setup(3).evaluate('local bar, beat = sound.music_pos() return beat')).toEqual([3]);
   });
 
   it('gives nothing while stopped', () => {
-    expect(setup(null).evaluate('local p, s = sound.music_pos() return s')).toEqual([undefined]);
+    expect(setup(null).evaluate('local bar, beat = sound.music_pos() return beat')).toEqual([
+      undefined,
+    ]);
   });
 });
 
@@ -66,6 +65,19 @@ describe('SoundAPI Lua truth', () => {
     const { lua } = mount({ setSongOverride: (_slot, patch) => loops.push(patch.loop) > 0 });
     lua.evaluate('sound.set_music(0, {loop = 0}) sound.set_music(0, {loop = false})');
     expect(loops).toEqual([true, false]);
+  });
+
+  it('sets the tempo on the music, and says set_pattern no longer does', () => {
+    const patches: unknown[] = [];
+    const { lua, warnings } = mount({
+      setSongOverride: (_slot, patch) => patches.push(patch) > 0,
+      setPatternOverride: (_slot, patch) => patches.push(patch) > 0,
+    });
+    lua.evaluate('sound.set_music(0, {bpm = 999}) sound.set_pattern(1, {bpm = 90})');
+    expect(patches).toEqual([{ bpm: 240 }, {}]);
+    expect(warnings).toEqual([
+      'sound.set_pattern: bpm is now set on the music, with sound.set_music',
+    ]);
   });
 });
 

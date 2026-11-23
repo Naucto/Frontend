@@ -95,7 +95,7 @@ export const SOUND_API = defineLuaNamespace<SoundAPI>('sound', {
   ),
   play_music: luaFn(
     {
-      summary: 'Start a music; loops from its start unless told otherwise.',
+      summary: 'Start a music; loops unless told otherwise.',
       params: [
         param.int('song', { default: 0 }),
         param.bool('loop', { optional: true, defaultsTo: "the music's own setting" }),
@@ -128,8 +128,7 @@ export const SOUND_API = defineLuaNamespace<SoundAPI>('sound', {
   ),
   music_pos: luaFn(
     {
-      summary:
-        "Place in the music's chain and the step now sounding, 0-based; nil when nothing plays.",
+      summary: 'Bar and beat of the music now sounding, 0-based; nil when nothing plays.',
       params: [],
       returns: 'number|nil',
     },
@@ -153,7 +152,7 @@ export const SOUND_API = defineLuaNamespace<SoundAPI>('sound', {
   ),
   set_pattern: luaFn(
     {
-      summary: 'Change the tempo or length of a pattern for this run.',
+      summary: 'Change the length of a pattern for this run.',
       params: [param.int('n', { fallback: NO_SLOT }), param.table('fields')],
       returns: null,
     },
@@ -161,7 +160,7 @@ export const SOUND_API = defineLuaNamespace<SoundAPI>('sound', {
   ),
   set_music: luaFn(
     {
-      summary: 'Change whether a music loops for this run.',
+      summary: 'Change the tempo of a music or whether it loops, for this run.',
       params: [param.int('n', { fallback: NO_SLOT }), param.table('fields')],
       returns: null,
     },
@@ -228,10 +227,10 @@ export class SoundAPI extends EngineModule {
     this.ctx.sound?.setVolume(master, music, sfx);
   }
 
-  /** The place in the chain and the whole step sounding, or two nils while nothing plays. */
+  /** The bar and the whole beat sounding, or two nils while nothing plays. */
   musicPosition(): [number, number] | [undefined, undefined] {
     const position = this.ctx.sound?.musicPosition();
-    return position ? [position.pattern, Math.floor(position.step)] : [undefined, undefined];
+    return position ? [position.bar, Math.floor(position.beat)] : [undefined, undefined];
   }
 
   isPlaying(channel: number): boolean {
@@ -273,12 +272,12 @@ export class SoundAPI extends EngineModule {
   setPattern(slot: number, fields: Readonly<Record<string, unknown>>): void {
     const patch: PatternPatch = {};
     for (const [key, value] of Object.entries(fields)) {
-      if (key !== 'bpm' && key !== 'steps') {
+      if (key === 'bpm') {
+        this.warn('sound.set_pattern: bpm is now set on the music, with sound.set_music');
+      } else if (key !== 'steps') {
         this.warn(`sound.set_pattern: "${key}" is not a pattern field`);
       } else if (typeof value !== 'number' || !Number.isFinite(value)) {
         this.warn(`sound.set_pattern: ${key} takes a number`);
-      } else if (key === 'bpm') {
-        patch.bpm = clamp(value, PATTERN_BOUNDS.bpm);
       } else {
         patch.steps = clamp(Math.round(value), PATTERN_BOUNDS.steps);
       }
@@ -294,6 +293,12 @@ export class SoundAPI extends EngineModule {
     for (const [key, value] of Object.entries(fields)) {
       if (key === 'loop') {
         patch.loop = truthy(value);
+      } else if (key === 'bpm') {
+        if (typeof value === 'number' && Number.isFinite(value)) {
+          patch.bpm = clamp(value, PATTERN_BOUNDS.bpm);
+        } else {
+          this.warn('sound.set_music: bpm takes a number');
+        }
       } else {
         this.warn(`sound.set_music: "${key}" is not a music field`);
       }

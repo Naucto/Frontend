@@ -332,8 +332,8 @@ describe('sound overrides', () => {
 
   it('set_pattern on a number no pattern has warns and changes nothing', () => {
     const { lua, logs, patches } = setupSound();
-    lua.evaluate('sound.set_pattern(7, { bpm = 300 }) sound.set_pattern(7, { bpm = 300 })');
-    expect(patches).toEqual([{ bpm: 240 }, { bpm: 240 }]);
+    lua.evaluate('sound.set_pattern(7, { steps = 300 }) sound.set_pattern(7, { steps = 300 })');
+    expect(patches).toEqual([{ steps: 128 }, { steps: 128 }]);
     expect(logs).toEqual(['warn:sound.set_pattern: there is no pattern 7']);
   });
 });

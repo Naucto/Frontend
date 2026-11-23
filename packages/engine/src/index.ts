@@ -82,7 +82,9 @@ export {
 } from './sound/sample-codec';
 export { Sequencer } from './sound/Sequencer';
 export { SoundEngine } from './sound/SoundEngine';
+export * from './sound/storage';
 export { SynthCore } from './sound/SynthCore';
+export * from './sound/timeline';
 export { type AudioBackend, WebAudioBackend } from './sound/WebAudioBackend';
 export type { SynthCommand, SynthEvent } from './sound/worklet/protocol';
 export type { Destroyable } from './types';

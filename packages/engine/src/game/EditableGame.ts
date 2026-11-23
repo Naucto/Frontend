@@ -1,7 +1,8 @@
 import * as Y from 'yjs';
 
 import type { DeclaredAction } from '../input/ActionMap';
-import type { Instrument, Pattern, Song } from '../sound/model';
+import type { Instrument, Pattern, Sfx, Song } from '../sound/model';
+import { encodePattern, encodeSfx, encodeSong } from '../sound/storage';
 import {
   BUBBLEGUM_16,
   DEFAULT_GAME_CODE,
@@ -558,10 +559,13 @@ export class EditableGame extends Game {
     this.instruments.set(instrument.id, JSON.stringify(instrument));
   }
   setPattern(pattern: Pattern): void {
-    this.patterns.set(pattern.id, JSON.stringify(pattern));
+    this.patterns.set(pattern.id, encodePattern(pattern));
   }
   setSong(slot: number, song: Song): void {
-    this.songs.set(String(slot), JSON.stringify(song));
+    this.songs.set(String(slot), encodeSong(song));
+  }
+  setSfx(slot: number, sfx: Sfx): void {
+    this.sfx.set(String(slot), encodeSfx(sfx));
   }
 
   // ---- versions -------------------------------------------------------------

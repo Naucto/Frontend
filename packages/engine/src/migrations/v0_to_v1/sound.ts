@@ -8,10 +8,10 @@ import {
   noteNameToMidi,
   type OscType,
   type Pattern,
-  type Song,
   VOICES,
 } from '../../sound/model';
 import type { MigrationReport } from '../types';
+import type { V2Song } from '../v2_to_v3/legacy';
 
 interface V0Note {
   note: string;
@@ -200,7 +200,7 @@ export function migrateSound(doc: Y.Doc, report: MigrationReport): void {
     };
     if (notes.length > 0) {
       patterns.set(id, JSON.stringify(pattern));
-      const song: Song = { name: pattern.name, sequence: [id], loop: true, loopStart: 0 };
+      const song: V2Song = { name: pattern.name, sequence: [id], loop: true, loopStart: 0 };
       songs.set(String(i), JSON.stringify(song));
     }
   });
