@@ -198,7 +198,6 @@
     "rowError": "Could not load these games. Check your connection and try again.",
     "seeAll": "See all",
     "seeAllCount": "See all {{n}}",
-    "newGame": "New game",
     "reason": {
       "GAME_OF_THE_WEEK": "Game of the week",
       "CONTINUE": "Continue",
