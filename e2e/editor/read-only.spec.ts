@@ -5,6 +5,7 @@ import { EditableGame } from '../../packages/engine/src/game/EditableGame';
 import { defaultInstrument } from '../../packages/engine/src/sound/model';
 import { editorUrl, mockEditor, PROJECT_ID } from '../editor-mocks';
 import { expect, test } from '../fixtures';
+import { mockSignedIn } from '../mocks/session';
 import { boxOf, drag } from './helpers';
 
 test.use({ viewport: { width: 1920, height: 1030 } });
@@ -316,21 +317,7 @@ test('a suspended account opens its own game the same way, and is told why', asy
     }
     return route.fallback();
   });
-  await page.route('**/users/profile', (route) =>
-    route.fulfill({
-      json: {
-        id: 1,
-        email: 'a@x',
-        username: 'alexis',
-        nickname: 'alexis',
-        role: 'User',
-        createdAt: '',
-        updatedAt: '',
-        message: '',
-        suspension: { since: '2026-11-01T00:00:00.000Z', until: null },
-      },
-    }),
-  );
+  await mockSignedIn(page, { suspension: { since: '2026-11-01T00:00:00.000Z', until: null } });
   await page.goto(editorUrl('game'));
 
   await expect(page.getByTestId('read-only-band')).toContainText(
