@@ -13,7 +13,6 @@ import {
   PAD_CONTROLS,
   parseInputId,
 } from './actions';
-import { buildActionTable } from './ActionTable';
 import { InputState } from './InputState';
 import { INPUT_PRESET_IDS, INPUT_PRESETS } from './presets';
 import { tableOf } from './test-table';
@@ -202,7 +201,7 @@ describe('the presets', () => {
   });
 
   it('classic is the nine actions and the bindings every game had', () => {
-    const table = buildActionTable(numbered(INPUT_PRESETS.classic));
+    const table = tableOf();
     expect([...table.bits.keys()]).toEqual([
       'left',
       'right',
