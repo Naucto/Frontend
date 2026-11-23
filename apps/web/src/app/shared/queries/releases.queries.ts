@@ -30,8 +30,6 @@ import { qk } from './query-keys';
 
 export const RELEASE_PAGE_SIZE = 24;
 
-export type SortMetric = 'viewCount' | 'uniquePlayers';
-
 export type ReleaseSort = 'fresh' | 'popular' | 'liked' | 'discussed' | 'name';
 
 export interface ReleaseQuery {
@@ -57,26 +55,6 @@ interface ReleasePage {
   total: number;
 }
 
-/** One page of released games, searched and sorted by the backend. */
-export function injectReleasesPage(
-  page: () => number,
-  limit = RELEASE_PAGE_SIZE,
-  query: () => ReleaseQuery = () => ({}),
-): CreateQueryResult<ReleasePage> {
-  return injectQuery(() => ({
-    queryKey: qk.releases({ page: page(), limit, ...query() }),
-    queryFn: async () => {
-      const res = unwrap(
-        await hubControllerGetPaginatedReleases({
-          query: { page: page(), limit, ...releaseParams(query()) },
-        }),
-      );
-      return { items: res.projects, total: res.total };
-    },
-    placeholderData: (prev: ReleasePage | undefined) => prev,
-  }));
-}
-
 /**
  * How many recent releases a page reads to derive remixes, collaborations or related games itself,
  * for want of an endpoint that answers those questions. It is the first page only, so what is
@@ -86,7 +64,15 @@ const RELATED_WINDOW = 48;
 
 /** The partial window above, shared by every page that derives a related shelf from it. */
 export function injectRelatedWindow(): CreateQueryResult<ReleasePage> {
-  return injectReleasesPage(() => 1, RELATED_WINDOW);
+  return injectQuery(() => ({
+    queryKey: qk.releases({ page: 1, limit: RELATED_WINDOW }),
+    queryFn: async () => {
+      const res = unwrap(
+        await hubControllerGetPaginatedReleases({ query: { page: 1, limit: RELATED_WINDOW } }),
+      );
+      return { items: res.projects, total: res.total };
+    },
+  }));
 }
 
 export function injectRelease(id: () => number): CreateQueryResult<ProjectExResponseDto> {
@@ -217,11 +203,3 @@ export function injectFork(): CreateMutationResult<ForkProjectResponseDto, Error
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.projectsAll() }),
   }));
 }
-
-export const SORTERS: Record<
-  SortMetric,
-  (a: ProjectExResponseDto, b: ProjectExResponseDto) => number
-> = {
-  viewCount: (a, b) => b.viewCount - a.viewCount,
-  uniquePlayers: (a, b) => b.uniquePlayers - a.uniquePlayers,
-};

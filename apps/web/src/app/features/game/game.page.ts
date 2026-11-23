@@ -45,7 +45,6 @@ import {
   injectRelease,
   injectReleaseContentUrl,
   injectToggleLike,
-  SORTERS,
 } from '../../shared/queries/releases.queries';
 import { UserAvatarComponent } from '../../shared/user-avatar.component';
 import { CommentsComponent } from './comments/comments.component';
@@ -68,7 +67,10 @@ function topRelated(
   keep: (candidate: ProjectExResponseDto) => boolean,
   count = RELATED_SHOWN,
 ): ProjectExResponseDto[] {
-  return (items ?? []).filter(keep).sort(SORTERS.viewCount).slice(0, count);
+  return (items ?? [])
+    .filter(keep)
+    .sort((a, b) => b.viewCount - a.viewCount)
+    .slice(0, count);
 }
 
 @Component({
