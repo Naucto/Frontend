@@ -97,8 +97,6 @@ function stripOf(palette: readonly string[], worn: string, kept: boolean): Strip
 export class DiskBenchComponent {
   readonly name = input.required<string>();
 
-  protected readonly FINISHES = FINISHES;
-  protected readonly DIRECTIONS = DIRECTIONS;
   protected readonly session = inject(WorkSessionService);
   private readonly saves = inject(SessionSaveService);
   private readonly toasts = inject(ToastService);

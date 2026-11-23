@@ -169,8 +169,7 @@
       <input
         ncInput
         id="g-name"
-        [ngModel]="name()"
-        (ngModelChange)="name.set($event)"
+        [(ngModel)]="name"
         [maxlength]="NAME_MAX"
         [placeholder]="t('editor.game.namePlaceholder')" />
     </nc-field>
@@ -185,8 +184,7 @@
       <input
         ncInput
         id="g-summary"
-        [ngModel]="summary()"
-        (ngModelChange)="summary.set($event)"
+        [(ngModel)]="summary"
         [maxlength]="SUMMARY_MAX"
         [placeholder]="t('editor.game.summaryPlaceholder')" />
     </nc-field>
@@ -198,8 +196,7 @@
         ncInput
         id="g-desc"
         rows="5"
-        [ngModel]="description()"
-        (ngModelChange)="description.set($event)"
+        [(ngModel)]="description"
         [maxlength]="DESCRIPTION_MAX"
         [placeholder]="t('editor.game.descriptionPlaceholder')"></textarea>
     </nc-field>
