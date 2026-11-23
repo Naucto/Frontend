@@ -9,7 +9,7 @@
         (retry)="query.refetch()" />
     </div>
   } @else if (query.data(); as collection) {
-    <div class="grid grid-cols-[minmax(0,1fr)] content-start gap-3">
+    <div class="grid grid-cols-[minmax(0,1fr)] content-start gap-4">
       @if (collection.hiddenAt) {
         <nc-notice tone="danger" data-testid="collection-hidden-notice">
           {{ t('collections.hiddenNotice') }}
@@ -18,84 +18,103 @@
           </a>
         </nc-notice>
       }
-      <section
-        class="flat-lg bevel-fill-panel grid grid-cols-[minmax(0,1fr)] gap-3 p-2 sm:p-[22px] xl:grid-cols-[minmax(0,1fr)_minmax(0,520px)] xl:items-center">
-        <div class="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-[14px]">
-          <div class="flex flex-wrap items-center gap-[14px]">
-            <span class="text-label tracking-kicker text-gold-ink uppercase">
-              {{ t('collections.one') }}
-            </span>
-            @if (collection.hiddenAt) {
-              <nc-chip tone="hot">{{ t('collections.hidden') }}</nc-chip>
-            } @else {
-              <nc-visibility-chip [visibility]="collection.visibility" />
+      <header
+        class="grid grid-cols-[minmax(0,1fr)] items-center gap-x-[clamp(24px,4vw,72px)] gap-y-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,460px)]">
+        <div class="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2">
+          <div class="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-[14px]">
+            <div class="flex flex-wrap items-center gap-[14px]">
+              <span class="text-label tracking-kicker text-gold-ink uppercase">
+                {{ t('collections.one') }}
+              </span>
+              @if (collection.hiddenAt) {
+                <nc-chip tone="hot">{{ t('collections.hidden') }}</nc-chip>
+              } @else {
+                <nc-visibility-chip [visibility]="collection.visibility" />
+              }
+            </div>
+            <h1
+              ncFitText
+              class="min-w-0 overflow-hidden font-display text-display whitespace-nowrap text-ink xl:text-[56px] xl:leading-[1.05]">
+              <span class="inline-block origin-left truncate align-top">
+                {{ collection.title }}
+              </span>
+            </h1>
+            @if (collection.description; as description) {
+              <!-- Bound, not interpolated: under whitespace-pre-wrap a template newline renders as
+                   a leading space. -->
+              <p
+                class="max-w-[60ch] text-ui whitespace-pre-wrap wrap-anywhere text-ink-body"
+                [textContent]="description"></p>
             }
+            <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <a
+                class="inline-flex items-center gap-1 text-meta text-ink-2 hover:text-ink"
+                [routerLink]="['/u', collection.owner.username]">
+                <nc-user-avatar
+                  [name]="collection.owner.username"
+                  [userId]="collection.owner.id"
+                  [size]="24" />
+                {{ t('hub.by', { name: collection.owner.username }) }}
+              </a>
+              <nc-stat
+                icon="save"
+                data-testid="game-count"
+                [value]="games().length"
+                [label]="t('collections.games')" />
+              <span class="text-meta text-ink-3">
+                {{ t('collections.updated', { when: collection.updatedAt | ncRelativeTime }) }}
+              </span>
+            </div>
           </div>
-          <h1
-            ncFitText
-            class="min-w-0 overflow-hidden font-display text-title whitespace-nowrap text-ink sm:text-display xl:text-[40px] xl:leading-[1.05]">
-            <span class="inline-block origin-left truncate align-top">{{ collection.title }}</span>
-          </h1>
-          @if (collection.description; as description) {
-            <!-- Bound, not interpolated: under whitespace-pre-wrap a template newline renders as
-                 a leading space. -->
-            <p
-              class="max-w-[60ch] text-ui whitespace-pre-wrap wrap-anywhere text-ink-body"
-              [textContent]="description"></p>
-          }
-          <a
-            class="inline-flex items-center gap-1 justify-self-start text-meta text-ink-2 hover:text-ink"
-            [routerLink]="['/u', collection.owner.username]">
-            <nc-user-avatar
-              [name]="collection.owner.username"
-              [userId]="collection.owner.id"
-              [size]="24" />
-            {{ t('hub.by', { name: collection.owner.username }) }}
-          </a>
           @if (collection.visibility !== 'PRIVATE' && !collection.hiddenAt) {
-            <nc-readout class="max-w-[520px]" [value]="link()">
+            <nc-readout class="max-w-full justify-self-start" [value]="link()">
               <button
+                type="button"
                 ncButton
                 variant="ghost"
-                size="xs"
+                size="sm"
+                iconOnly
                 data-testid="copy-link"
                 [copied]="copied()"
+                [attr.aria-label]="copied() ? t('collections.copied') : t('collections.copyLink')"
+                [attr.title]="copied() ? t('collections.copied') : t('collections.copyLink')"
                 (click)="copy()">
-                {{ copied() ? t('collections.copied') : t('collections.copyLink') }}
+                <nc-mark name="copy" />
               </button>
             </nc-readout>
           }
-          @if (owned()) {
-            <div class="flex flex-wrap items-center gap-[10px]">
-              <button
-                ncButton
-                size="lg"
-                [disabled]="!!collection.hiddenAt"
-                [attr.title]="collection.hiddenAt ? t('collections.hiddenBlocked') : null"
-                (click)="edit(collection)">
-                <nc-icon name="edit" />
-                {{ t('collections.edit') }}
-              </button>
-              <button ncButton variant="danger" size="lg" (click)="delete(collection)">
-                <nc-icon name="trash" />
-                {{ t('collections.delete') }}
-              </button>
+          @if (owned() || canReport()) {
+            <div class="flex flex-wrap items-center gap-1">
+              @if (owned()) {
+                <button
+                  ncButton
+                  [disabled]="!!collection.hiddenAt"
+                  [attr.title]="collection.hiddenAt ? t('collections.hiddenBlocked') : null"
+                  (click)="edit(collection)">
+                  <nc-icon name="edit" />
+                  {{ t('collections.edit') }}
+                </button>
+                <button ncButton variant="ghost-danger" (click)="delete(collection)">
+                  <nc-icon name="trash" />
+                  {{ t('collections.delete') }}
+                </button>
+              }
+              @if (canReport()) {
+                <button
+                  ncButton
+                  variant="ghost"
+                  size="sm"
+                  type="button"
+                  class="-ml-[13px]"
+                  (click)="report(collection)">
+                  <nc-mark name="flag" />
+                  {{ t('moderation.reportCollection') }}
+                </button>
+              }
             </div>
           }
-          @if (canReport()) {
-            <button
-              ncButton
-              variant="ghost"
-              size="sm"
-              type="button"
-              class="-ml-[13px] justify-self-start"
-              (click)="report(collection)">
-              <nc-mark name="flag" />
-              {{ t('moderation.reportCollection') }}
-            </button>
-          }
         </div>
-        <div class="relative h-[236px] min-w-0">
+        <div class="relative h-[210px] min-w-0">
           <span
             aria-hidden="true"
             class="flat-sm bevel-fill-inset absolute inset-x-[12px] top-[64px] bottom-0"></span>
@@ -122,117 +141,109 @@
               </span>
             }
           </span>
-          <span
-            class="raised-lg bevel-fill-raised absolute inset-x-0 bottom-0 z-[30] flex h-[72px] items-center gap-[10px] px-[18px]">
-            <nc-stat
-              icon="save"
-              data-testid="game-count"
-              [value]="games().length"
-              [label]="t('collections.games')" />
-            <span class="flex-1"></span>
-            <span class="label truncate">
-              {{ t('collections.updated', { when: collection.updatedAt | ncRelativeTime }) }}
-            </span>
-          </span>
         </div>
-      </section>
+      </header>
 
-      @if (owned() && games().length) {
-        <div
-          class="flat-sm bevel-edge-gold bevel-fill-gold-wash sticky top-1 z-[40] flex flex-wrap items-center gap-x-1.5 gap-y-1 px-1.5 py-1">
-          <nc-toggle-button [(checked)]="organizing">
-            {{ t('collections.organize') }}
-          </nc-toggle-button>
-          @if (organizing()) {
-            <nc-help-dot [text]="t('collections.organizeHelp')" />
+      <div class="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2">
+        @if (owned() && games().length) {
+          <div class="flex min-h-(--nc-h-lg) flex-wrap items-center gap-x-1.5 gap-y-1">
+            <h2 class="font-display text-[22px] leading-[1.2] text-ink">
+              {{ t('collections.gamesHeading') }}
+            </h2>
+            <nc-chip>{{ games().length }}</nc-chip>
             <span class="flex-1"></span>
-            <nc-chip tone="gold" wash>
-              {{ t('collections.selected', { n: picked().size }) }}
-            </nc-chip>
-            <button
-              ncButton
-              variant="danger"
-              size="sm"
-              [disabled]="!picked().size"
-              (click)="remove(picked())">
-              {{ t('collections.remove') }}
-            </button>
-          }
-        </div>
-        <span class="sr-only" aria-live="polite">{{ moved() }}</span>
-      }
+            @if (organizing()) {
+              <nc-chip tone="gold" wash>
+                {{ t('collections.selected', { n: picked().size }) }}
+              </nc-chip>
+              <button
+                ncButton
+                variant="ghost-danger"
+                size="sm"
+                [disabled]="!picked().size"
+                (click)="remove(picked())">
+                <nc-mark name="trash" />
+                {{ t('collections.remove') }}
+              </button>
+              <nc-help-dot [text]="t('collections.organizeHelp')" />
+            }
+            <nc-toggle-button [(checked)]="organizing">
+              {{ t('collections.organize') }}
+            </nc-toggle-button>
+          </div>
+          <span class="sr-only" aria-live="polite">{{ moved() }}</span>
+        }
 
-      @if (games().length) {
-        <ol
-          cdkDropList
-          cdkDropListOrientation="mixed"
-          data-testid="tray"
-          class="grid grid-cols-2 gap-x-1.5 gap-y-3 sm:grid-cols-[repeat(auto-fill,minmax(190px,1fr))] sm:gap-x-[22px]"
-          [cdkDropListDisabled]="!organizing() || !!collection.hiddenAt"
-          (cdkDropListDropped)="drop($event)">
-          @for (game of games(); track game.id; let place = $index) {
-            <li
-              cdkDrag
-              class="grid min-w-0 content-start gap-1"
-              [class.cursor-grab]="organizing() && !collection.hiddenAt">
-              <div class="flex h-[24px] items-center gap-[6px]">
-                <span class="text-label text-ink-3">
-                  {{ (place + 1).toString().padStart(2, '0') }}
-                </span>
-                <span class="flex-1"></span>
-                @if (organizing()) {
-                  <button
-                    ncButton
-                    variant="ghost"
-                    size="sm"
-                    iconOnly
-                    [attr.data-move]="game.id"
-                    [attr.aria-label]="t('collections.moveEarlier', { name: game.name })"
-                    [disabled]="$first || !!collection.hiddenAt"
-                    [attr.title]="collection.hiddenAt ? t('collections.hiddenBlocked') : null"
-                    (click)="step(game.id, -1)">
-                    <nc-mark name="arrow-left" />
-                  </button>
-                  <button
-                    ncButton
-                    variant="ghost"
-                    size="sm"
-                    iconOnly
-                    [attr.data-move]="game.id"
-                    [attr.aria-label]="t('collections.moveLater', { name: game.name })"
-                    [disabled]="$last || !!collection.hiddenAt"
-                    [attr.title]="collection.hiddenAt ? t('collections.hiddenBlocked') : null"
-                    (click)="step(game.id, 1)">
-                    <nc-mark name="arrow-right" />
-                  </button>
-                  <nc-checkbox
-                    [label]="t('collections.select', { name: game.name })"
-                    [checked]="picked().has(game.id)"
-                    (checkedChange)="pick(game.id, $event)" />
-                }
-              </div>
-              <nc-shelf-disk named [game]="game" [link]="['/play', game.id]" />
-            </li>
-          }
-        </ol>
-      } @else {
-        <div class="flat-lg bevel-fill-panel">
-          @if (owned()) {
-            <nc-empty-state
-              icon="save"
-              [title]="t('collections.emptyOwnerTitle')"
-              [hint]="t('collections.emptyOwnerHint')">
-              <a ncButton variant="primary" size="lg" routerLink="/hub">
-                {{ t('collections.browse') }}
-              </a>
-            </nc-empty-state>
-          } @else {
-            <nc-empty-state icon="save" [title]="t('collections.emptyTitle')">
-              <a ncButton size="lg" routerLink="/collections">{{ t('collections.seeOthers') }}</a>
-            </nc-empty-state>
-          }
-        </div>
-      }
+        @if (games().length) {
+          <ol
+            cdkDropList
+            cdkDropListOrientation="mixed"
+            data-testid="tray"
+            class="grid grid-cols-2 gap-x-1.5 gap-y-3 sm:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] sm:gap-x-[22px]"
+            [cdkDropListDisabled]="!organizing() || !!collection.hiddenAt"
+            (cdkDropListDropped)="drop($event)">
+            @for (game of games(); track game.id; let place = $index) {
+              <li
+                cdkDrag
+                class="grid min-w-0 content-start gap-1"
+                [class.cursor-grab]="organizing() && !collection.hiddenAt">
+                <div class="flex h-[30px] items-center gap-[6px]">
+                  <span class="text-label text-ink-3">{{ place + 1 }}</span>
+                  <span class="flex-1"></span>
+                  @if (organizing()) {
+                    <button
+                      ncButton
+                      variant="ghost"
+                      size="sm"
+                      iconOnly
+                      [attr.data-move]="game.id"
+                      [attr.aria-label]="t('collections.moveEarlier', { name: game.name })"
+                      [disabled]="$first || !!collection.hiddenAt"
+                      [attr.title]="collection.hiddenAt ? t('collections.hiddenBlocked') : null"
+                      (click)="step(game.id, -1)">
+                      <nc-mark name="arrow-left" />
+                    </button>
+                    <button
+                      ncButton
+                      variant="ghost"
+                      size="sm"
+                      iconOnly
+                      [attr.data-move]="game.id"
+                      [attr.aria-label]="t('collections.moveLater', { name: game.name })"
+                      [disabled]="$last || !!collection.hiddenAt"
+                      [attr.title]="collection.hiddenAt ? t('collections.hiddenBlocked') : null"
+                      (click)="step(game.id, 1)">
+                      <nc-mark name="arrow-right" />
+                    </button>
+                    <nc-checkbox
+                      [label]="t('collections.select', { name: game.name })"
+                      [checked]="picked().has(game.id)"
+                      (checkedChange)="pick(game.id, $event)" />
+                  }
+                </div>
+                <nc-shelf-disk named [game]="game" [link]="['/play', game.id]" />
+              </li>
+            }
+          </ol>
+        } @else {
+          <div class="flat-lg bevel-fill-panel">
+            @if (owned()) {
+              <nc-empty-state
+                icon="save"
+                [title]="t('collections.emptyOwnerTitle')"
+                [hint]="t('collections.emptyOwnerHint')">
+                <a ncButton variant="primary" size="lg" routerLink="/hub">
+                  {{ t('collections.browse') }}
+                </a>
+              </nc-empty-state>
+            } @else {
+              <nc-empty-state icon="save" [title]="t('collections.emptyTitle')">
+                <a ncButton size="lg" routerLink="/collections">{{ t('collections.seeOthers') }}</a>
+              </nc-empty-state>
+            }
+          </div>
+        }
+      </div>
 
       @if (collection.unavailableGameIds.length) {
         <section class="grid gap-1.5" aria-labelledby="collection-unavailable">

@@ -96,6 +96,10 @@ const COPIED_MS = 1600;
     VisibilityChipComponent,
   ],
   templateUrl: './collection.page.html',
+  host: {
+    class:
+      'block px-[calc(var(--nc-page-gutter)-var(--spacing)*2)] pt-[20px] pb-[72px] [--nc-page-gutter:clamp(28px,5vw,100px)] md:px-[calc(var(--nc-page-gutter)-var(--spacing)*3)] md:pt-[12px]',
+  },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export default class CollectionPage {

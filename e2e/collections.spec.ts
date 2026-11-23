@@ -67,14 +67,14 @@ test.describe('a collection page', () => {
       'Night Courier',
     ]);
     await expect(tray(page).first()).toHaveAttribute('href', `/play/${uuidOf(11)}`);
-    await expect(page.getByTestId('tray').locator('li').nth(2)).toContainText('03');
+    await expect(page.getByTestId('tray').locator('li').nth(2)).toContainText('3');
 
     await expect(page.getByRole('switch', { name: 'Organize' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Edit details' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Delete' })).toHaveCount(0);
 
-    await page.getByTestId('copy-link').click();
-    await expect(page.getByTestId('copy-link')).toHaveText('Copied');
+    await page.getByRole('button', { name: 'Copy link' }).click();
+    await expect(page.getByTestId('copy-link')).toHaveAccessibleName('Copied');
     expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
       `${new URL(page.url()).origin}/collections/couch`,
     );
