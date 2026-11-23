@@ -182,8 +182,10 @@ icons drawn on the kit pixel, Bubblegum-16 palette, dark + light themes).
     game, get the last save loaded once (`session.preview()` says whose): GET requests alone,
     then a local copy that joins no work session, elects no host, connects no peer and saves
     nothing. That load imposes the `read-only` mode, so the same editor is read, and the game
-    run from its Game preview, with nothing written: see "Editor modes". Anyone else is told
-    the game cannot be opened. `staff/edit/:id` and `staff/play/:id` are redirects to it.
+    run from its Game preview, with nothing written: see "Editor modes". The band over it
+    (`nc-read-only-band`) says why, and tells a staff member what the game is, hidden by
+    moderation, not published or published, and who made it. Anyone else is told the game
+    cannot be opened. `staff/edit/:id` and `staff/play/:id` are redirects to it.
 - **Release.** `APP_RELEASE` (`core/config/release.ts`) is the version of `apps/web` and the commit
   it was built from, compiled in by `tools/build-web.ts`. The Docker image has no `.git`, so its
   build takes the commit as `--build-arg GIT_COMMIT`. A development server says `dev`.

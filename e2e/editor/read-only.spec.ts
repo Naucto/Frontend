@@ -37,10 +37,11 @@ const rail = (page: Page, tab: string): Promise<void> =>
 
 test.describe('a staff member who does not collaborate on the game', () => {
   let writes: string[];
+  let stored: Awaited<ReturnType<typeof mockEditor>>;
 
   test.beforeEach(async ({ page }) => {
     writes = [];
-    await mockEditor(page, {
+    stored = await mockEditor(page, {
       staff: true,
       content: savedGame(),
       onWrite: (request) => writes.push(request),
@@ -58,6 +59,31 @@ test.describe('a staff member who does not collaborate on the game', () => {
     await expect(page.locator('nc-versions-popover')).toHaveCount(0);
     expect(writes).toEqual([]);
   });
+
+  for (const [state, words] of [
+    [{ publishedAt: null, hiddenAt: null }, 'Not published'],
+    [{ publishedAt: '2026-10-01T10:00:00.000Z', hiddenAt: null }, 'Published'],
+    [
+      { publishedAt: '2026-10-01T10:00:00.000Z', hiddenAt: '2026-11-02T10:00:00.000Z' },
+      'Hidden by moderation',
+    ],
+  ] as const) {
+    test(`is told on the band that the game is ${words.toLowerCase()}, and who made it`, async ({
+      page,
+    }) => {
+      Object.assign(stored, state);
+      await page.goto(editorUrl('game'));
+
+      const band = page.getByTestId('read-only-band');
+      await expect(band.getByTestId('read-only-state')).toHaveText(words);
+      await expect(band.getByRole('img', { name: 'alexis' })).toBeVisible();
+      // One band says it all: the one a game's own author gets about a withheld game is not theirs.
+      await expect(page.getByText('A moderator hid this game')).toHaveCount(0);
+      await band.getByRole('link', { name: 'by alexis' }).click();
+      await expect(page).toHaveURL(/\/u\/alexis$/);
+      expect(writes).toEqual([]);
+    });
+  }
 
   test('reads the code, finds in it and runs it, and types nothing into it', async ({ page }) => {
     await page.goto(editorUrl('code'));

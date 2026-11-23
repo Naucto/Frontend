@@ -1,0 +1,16 @@
+<nc-notice *transloco="let t" variant="band" tone="warn" data-testid="read-only-band">
+  @if (facts(); as facts) {
+    <div class="mb-1 flex flex-wrap items-center gap-1 text-meta text-ink-2">
+      <nc-chip [tone]="facts.tone" data-testid="read-only-state">{{ t(facts.state) }}</nc-chip>
+      <nc-user-avatar [name]="facts.maker.username" [userId]="facts.maker.id" [size]="24" />
+      <a [routerLink]="['/u', facts.maker.username]" class="hover:text-ink">
+        {{ t('hub.by', { name: facts.maker.username }) }}
+      </a>
+    </div>
+  }
+  {{
+    kind() === 'staff'
+      ? t('moderation.preview.editorBand')
+      : t('moderation.preview.suspendedEditor')
+  }}
+</nc-notice>

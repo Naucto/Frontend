@@ -1343,6 +1343,9 @@
       }
     },
     "preview": {
+      "hidden": "Hidden by moderation",
+      "unpublished": "Not published",
+      "published": "Published",
       "editorBand": "Staff view of the latest save. You can look around and run it. Nothing in it can be changed, and this visit is logged.",
       "suspendedEditor": "Your game opens to look at and run. Nothing in it can be changed while your account is suspended."
     },

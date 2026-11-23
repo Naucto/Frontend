@@ -52,8 +52,8 @@
   <!-- Always a row of its own, empty most of the time, so the workspace keeps the third row. -->
   <div>
     <nc-suspension-band />
-    @if (bandKey(); as key) {
-      <nc-notice variant="band" tone="warn" data-testid="read-only-band">{{ t(key) }}</nc-notice>
+    @if (session.preview(); as kind) {
+      <nc-read-only-band [kind]="kind" [project]="session.project()" />
     }
     @if (hidden() && !session.preview()) {
       <nc-notice variant="band" tone="danger">

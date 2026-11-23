@@ -53,6 +53,7 @@ import { ShareDialogComponent } from './game/share.dialog';
 import { VersionsPopoverComponent } from './game/versions-popover.component';
 import { MapStore } from './map/map.store';
 import { OpenOnDesktopComponent } from './open-on-desktop.component';
+import { ReadOnlyBandComponent } from './read-only-band.component';
 import { SoundStore } from './sound/sound.store';
 import { ClipboardStore } from './state/clipboard.store';
 import { EditorModeService } from './state/editor-mode.service';
@@ -108,6 +109,7 @@ const RAIL: Omit<RailItem<EditorTab>, 'label'>[] = [
     DocPaneComponent,
     VersionsPopoverComponent,
     LogoComponent,
+    ReadOnlyBandComponent,
     ReportProblemButtonComponent,
     SuspensionBandComponent,
     ThemeSwitchComponent,
@@ -141,17 +143,6 @@ const RAIL: Omit<RailItem<EditorTab>, 'label'>[] = [
 export default class EditorShellComponent implements OnInit {
   readonly id = input.required({ transform: numberAttribute });
   protected readonly String = String;
-  /** Why the game is only looked at, for the band to say; null in the editor proper. */
-  protected readonly bandKey = computed(() => {
-    switch (this.session.preview()) {
-      case 'staff':
-        return 'moderation.preview.editorBand';
-      case 'own':
-        return 'moderation.preview.suspendedEditor';
-      default:
-        return null;
-    }
-  });
   private readonly presence = inject(PresenceStore);
   private readonly activity = inject(ActivityService);
   private readonly feedback = inject(FeedbackStore);
