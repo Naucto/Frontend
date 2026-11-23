@@ -4,7 +4,6 @@ import { RouterLink } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import {
   type FriendDto,
-  type FriendRequestDto,
   friendsControllerList,
   friendsControllerRecentPlayers,
   friendsControllerSend,
@@ -101,9 +100,7 @@ export default class FriendsPage {
       .sort((a, b) => Number(a.presence?.kind === 'IDLE') - Number(b.presence?.kind === 'IDLE')),
   );
   protected readonly offline = computed(() => this.friends().filter((friend) => !friend.presence));
-  protected readonly requests = computed<FriendRequestDto[]>(() =>
-    (this.requestsQuery.data() ?? []).filter((request) => request.to.id === this.auth.userId()),
-  );
+  protected readonly requests = computed(() => this.requestsQuery.data() ?? []);
   protected readonly recent = computed<RecentPlayerDto[]>(() => this.recentQuery.data() ?? []);
   protected readonly tabs = computed(() => [
     {

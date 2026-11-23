@@ -15,7 +15,6 @@ import {
 } from '@naucto/ui';
 import { QueryClient } from '@tanstack/angular-query-experimental';
 
-import { AuthStore } from '../../core/auth/auth.store';
 import { NotificationsStore } from '../../core/notifications/notifications.store';
 import { answerFriendRequest, injectFriendRequests } from '../../shared/queries/friends.queries';
 import { UserAvatarComponent } from '../../shared/user-avatar.component';
@@ -57,7 +56,6 @@ export class NotificationsBellComponent {
   protected readonly answering = signal<string | null>(null);
   protected readonly INK = INK;
 
-  private readonly auth = inject(AuthStore);
   private readonly router = inject(Router);
   private readonly queries = inject(QueryClient);
   private readonly toasts = inject(ToastService);
@@ -71,9 +69,7 @@ export class NotificationsBellComponent {
   );
 
   protected readonly rows = computed(() => {
-    const waiting = (this.requests.data() ?? []).filter(
-      (request) => request.to.id === this.auth.userId(),
-    );
+    const waiting = this.requests.data() ?? [];
     return this.store.items().map((notification) => ({
       notification,
       ...lookOf(notification),

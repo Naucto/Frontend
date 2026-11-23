@@ -1,3 +1,4 @@
+import { inject } from '@angular/core';
 import {
   type FriendDto,
   type FriendRequestDto,
@@ -13,6 +14,7 @@ import {
 } from '@tanstack/angular-query-experimental';
 
 import { unwrap } from '../../core/api/api-errors';
+import { AuthStore } from '../../core/auth/auth.store';
 import { qk } from './query-keys';
 
 export function injectFriends(enabled: () => boolean = () => true): CreateQueryResult<FriendDto[]> {
@@ -24,15 +26,21 @@ export function injectFriends(enabled: () => boolean = () => true): CreateQueryR
   }));
 }
 
-/** Every request still waiting for an answer, the ones the viewer sent included. */
+/** The requests waiting for the viewer's answer; the ones the viewer sent are left out. */
 export function injectFriendRequests(
-  enabled: () => boolean = () => true,
+  enabled: () => boolean,
 ): CreateQueryResult<FriendRequestDto[]> {
-  return injectQuery(() => ({
-    queryKey: qk.friendRequests(),
-    queryFn: async () => unwrap(await friendsControllerRequests()),
-    enabled: enabled(),
-  }));
+  const auth = inject(AuthStore);
+  return injectQuery(() => {
+    const viewer = auth.userId();
+    return {
+      queryKey: qk.friendRequests(),
+      queryFn: async () => unwrap(await friendsControllerRequests()),
+      select: (requests: FriendRequestDto[]) =>
+        requests.filter((request) => request.to.id === viewer),
+      enabled: enabled(),
+    };
+  });
 }
 
 /** Accepts or declines a request, then refreshes every friends query: it leaves each list it was in. */
