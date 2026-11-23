@@ -68,6 +68,11 @@ Pixelarticons, Bubblegum-16 palette, dark + light themes).
   `map.maps`) holding its own cells and size; nothing is read from document roots or meta sizes.
   The shape moved inside schema v2 without a bump, so `migrateGame` also rewrites in place a v2
   document that still holds the older shape — see `migrations/v1_to_v2/shape.ts`.
+- **Sound storage**: `sound.patterns`, `sound.songs` and `sound.effects` hold one JSON string per
+  entry, written and read only through `packages/engine/src/sound/storage.ts`. Notes are
+  `[step, pitch, length, instrument, volume?]` and blocks `[id, pattern, start, repeat?]`, a
+  volume or a repeat of 1 left out, because the project budget counts these bytes. The reader
+  still takes the object form older documents hold.
 - **Theming**: every colour comes from a token in `packages/ui/src/tokens.css`; never write raw hex in
   components. Dark is the default; light is `[data-theme=light]` or `prefers-color-scheme`.
 - **Editor layout**: the shell is rail + routed workspace + one `nc-panel-region` on the right. Each
@@ -230,11 +235,9 @@ broken; an absence reads as not built.
 - **Drag-to-reposition in the touch pad panel.** SIZE and OPACITY are real and drive the pad; moving
   individual buttons is not built, and the panel's copy does not claim it.
 
-- **The STEPS field moves by 16, not by 4.** The sheet's own tooltip says `4-64, step 4`, and the
-  same box's buttons are captioned `+1`/`-1` — the sheet does not agree with itself. Four steps is
-  not a phrase, so a pattern is never cut there, and by-4 puts fifteen stops between the two lengths
-  anybody uses. BPM keeps the sheet's `40-240, step 1`, which is a tempo and is asked for one at a
-  time.
+- **No STEPS field in the SOUND tab.** The sheet draws one; the length of a pattern or an SFX is set
+  the way FL Studio sets it instead: drag END in the roll's ruler, a beat at a time, or write a note
+  past the end, which lengthens it to the next beat. BPM keeps the sheet's `40-240, step 1`.
 
 ## Gotchas
 

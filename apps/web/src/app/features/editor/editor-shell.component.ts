@@ -172,7 +172,13 @@ export default class EditorShellComponent implements OnInit {
   private readonly transloco = inject(TranslocoService);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   protected readonly rail = computed<RailItem<EditorTab>[]>(() =>
-    RAIL.map((item) => ({ ...item, label: this.transloco.translate(`editor.rail.${item.value}`) })),
+    RAIL.map((item) => ({
+      ...item,
+      label: this.transloco.translate(`editor.rail.${item.value}`),
+      peers: this.sessionPresence
+        .peersIn(item.value)
+        .map((peer) => ({ id: peer.clientId, name: peer.name, colour: peer.colour })),
+    })),
   );
   /**
    * The name and the summary as the GAME tab edits them.
@@ -270,6 +276,12 @@ export default class EditorShellComponent implements OnInit {
         this.presence.announce({ kind: 'IDLE' });
         release();
       });
+    });
+    effect(() => {
+      const tab = this.ui.activeTab();
+      if (tab !== 'sound') {
+        this.sessionPresence.setView({ tab });
+      }
     });
     this.ui.setViewportWidth(window.innerWidth);
     this.ui.setViewportHeight(window.innerHeight);

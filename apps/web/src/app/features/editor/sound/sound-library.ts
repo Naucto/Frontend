@@ -2,12 +2,18 @@ import { type Signal, signal } from '@angular/core';
 import {
   defaultInstrument,
   defaultPattern,
-  defaultSong,
   type EditableGame,
   type Instrument,
   type InstrumentPreset,
+  type Note,
   type Pattern,
+  patternBars,
+  patternUses,
+  type Sfx,
   type Song,
+  stepsAfterEdit,
+  stretchPattern,
+  withoutPattern,
 } from '@naucto/engine';
 
 import { ACCENT_SLOTS } from '../accent-slots';
@@ -19,16 +25,16 @@ export const INSTRUMENT_NAME_MAX = 16;
 export class SoundLibrary {
   private readonly instrumentsSig = signal<Map<string, Instrument>>(new Map());
   private readonly patternsSig = signal<Map<string, Pattern>>(new Map());
-  private readonly sfxSig = signal<Map<string, string>>(new Map());
+  private readonly sfxSig = signal<Map<string, Sfx>>(new Map());
   private readonly songsSig = signal<Map<string, Song>>(new Map());
   private readonly samplesSig = signal<Map<string, string>>(new Map());
   private readonly unsub: (() => void)[] = [];
 
   readonly instruments: Signal<Map<string, Instrument>> = this.instrumentsSig.asReadonly();
   readonly patterns: Signal<Map<string, Pattern>> = this.patternsSig.asReadonly();
-  /** sfx slot → pattern id */
-  readonly sfx: Signal<Map<string, string>> = this.sfxSig.asReadonly();
-  /** music slot → the chain of patterns it plays */
+  /** sfx slot → its SFX */
+  readonly sfx: Signal<Map<string, Sfx>> = this.sfxSig.asReadonly();
+  /** music slot → its blocks on the timeline */
   readonly songs: Signal<Map<string, Song>> = this.songsSig.asReadonly();
   /** sample id → base64 PCM */
   readonly samples: Signal<Map<string, string>> = this.samplesSig.asReadonly();
@@ -41,7 +47,7 @@ export class SoundLibrary {
       this.patternsSig.set(game.getPatterns());
     };
     const refreshSfx = (): void => {
-      this.sfxSig.set(game.getSfxSlots());
+      this.sfxSig.set(game.getSfx());
     };
     const refreshSongs = (): void => {
       this.songsSig.set(game.getSongs());
@@ -149,6 +155,14 @@ export class SoundLibrary {
           });
         }
       }
+      for (const [slot, sfx] of this.sfx()) {
+        if (sfx.notes.some((note) => note.instrument === id)) {
+          this.game.setSfx(Number(slot), {
+            ...sfx,
+            notes: sfx.notes.filter((note) => note.instrument !== id),
+          });
+        }
+      }
     });
   }
 
@@ -205,6 +219,77 @@ export class SoundLibrary {
     });
   }
 
+  setPatternNotes(id: string, notes: Note[]): void {
+    const src = this.patterns().get(id);
+    if (src) {
+      this.updatePattern(id, { notes, steps: stepsAfterEdit(src, notes) });
+    }
+  }
+
+  setPatternLength(id: string, steps: number, notes?: Note[]): void {
+    const src = this.patterns().get(id);
+    if (!src) {
+      return;
+    }
+    const next = { ...src, steps, notes: notes ?? src.notes };
+    const added = patternBars(next) - patternBars(src);
+    this.game.transact(() => {
+      this.game.setPattern(next);
+      if (added > 0) {
+        for (const [slot, song] of this.songs()) {
+          const pushed = stretchPattern(song, id, added);
+          if (pushed !== song) {
+            this.game.setSong(Number(slot), pushed);
+          }
+        }
+      }
+    });
+  }
+
+  removePattern(id: string): void {
+    this.game.transact(() => {
+      this.game.patterns.delete(id);
+      for (const [slot, song] of this.songs()) {
+        if (patternUses(song, id) > 0) {
+          this.game.setSong(Number(slot), withoutPattern(song, id));
+        }
+      }
+    });
+  }
+
+  patternUsage(id: string): { slot: number; name: string; uses: number }[] {
+    return [...this.songs()]
+      .map(([slot, song]) => ({ slot: Number(slot), name: song.name, uses: patternUses(song, id) }))
+      .filter((entry) => entry.uses > 0)
+      .sort((a, b) => a.slot - b.slot);
+  }
+
+  nextPatternSlot(): number {
+    const taken = new Set([...this.patterns().values()].map((pattern) => pattern.slot));
+    let slot = 0;
+    while (taken.has(slot)) {
+      slot += 1;
+    }
+    return slot;
+  }
+
+  duplicatePattern(id: string): Pattern | null {
+    const src = this.patterns().get(id);
+    if (!src) {
+      return null;
+    }
+    const slot = this.nextPatternSlot();
+    const copy: Pattern = {
+      ...src,
+      id: uid(),
+      slot,
+      name: src.name,
+      notes: src.notes.map((note) => ({ ...note })),
+    };
+    this.putPattern(copy);
+    return copy;
+  }
+
   // ---- sfx ------------------------------------------------------------------
 
   /**
@@ -237,29 +322,50 @@ export class SoundLibrary {
     });
   }
 
-  assignSfx(slot: number, patternId: string | null): void {
+  putSfx(slot: number, sfx: Sfx): void {
     if (slot < 0) {
       return;
     }
     this.game.transact(() => {
-      if (patternId) {
-        this.game.sfx.set(String(slot), patternId);
-      } else {
-        this.game.sfx.delete(String(slot));
-      }
+      this.game.setSfx(slot, sfx);
     });
+  }
+
+  removeSfx(slot: number): void {
+    this.game.transact(() => {
+      this.game.sfx.delete(String(slot));
+    });
+  }
+
+  nextSfxSlot(): number {
+    const taken = [...this.sfx().keys()].map(Number).filter(Number.isInteger);
+    return taken.length ? Math.max(...taken) + 1 : 0;
   }
 
   // ---- songs ----------------------------------------------------------------
 
-  setSongSequence(slot: number, sequence: (string | null)[]): void {
+  putSong(slot: number, song: Song): void {
     if (slot < 0) {
       return;
     }
-    const current = this.songs().get(String(slot)) ?? defaultSong();
     this.game.transact(() => {
-      this.game.setSong(slot, { ...current, sequence });
+      this.game.setSong(slot, song);
     });
+  }
+
+  removeSong(slot: number): void {
+    this.game.transact(() => {
+      this.game.songs.delete(String(slot));
+    });
+  }
+
+  nextSongSlot(): number {
+    const taken = new Set([...this.songs().keys()].map(Number));
+    let slot = 0;
+    while (taken.has(slot)) {
+      slot += 1;
+    }
+    return slot;
   }
 
   /** Patterns and sfx slots that use an instrument. */
@@ -267,8 +373,9 @@ export class SoundLibrary {
     const patterns = [...this.patterns().values()].filter((pattern) =>
       pattern.notes.some((note) => note.instrument === id),
     );
-    const ids = new Set(patterns.map((pattern) => pattern.id));
-    const sfx = [...this.sfx()].filter(([, pid]) => ids.has(pid)).map(([slot]) => Number(slot));
+    const sfx = [...this.sfx()]
+      .filter(([, each]) => each.notes.some((note) => note.instrument === id))
+      .map(([slot]) => Number(slot));
     return { patterns, sfx };
   }
 }
@@ -295,7 +402,7 @@ function playedElsewhere(
   return [...instruments.values()].some((i) => i.id !== id && i.sampleId === sampleId);
 }
 
-function uid(): string {
+export function uid(): string {
   return crypto.randomUUID().slice(0, 8);
 }
 
@@ -306,4 +413,22 @@ export function pad2(value: number): string {
 /** A pattern that doesn't exist yet, named the way a stored one would be. */
 export function blankPattern(slot: number): Pattern {
   return defaultPattern(uid(), slot, `pattern ${pad2(slot)}`);
+}
+
+export function patternTint(pattern: Pattern, instruments: Map<string, Instrument>): number {
+  if (pattern.colour !== undefined) {
+    return pattern.colour;
+  }
+  const counts = new Map<string, number>();
+  for (const note of pattern.notes) {
+    counts.set(note.instrument, (counts.get(note.instrument) ?? 0) + 1);
+  }
+  const main = [...counts].sort((a, b) => b[1] - a[1])[0]?.[0];
+  const colour = main === undefined ? undefined : instruments.get(main)?.colour;
+
+  return colour ?? ACCENT_SLOTS[pattern.slot % ACCENT_SLOTS.length] ?? ACCENT_SLOTS[0];
+}
+
+export function patternLabel(pattern: Pattern): string {
+  return pattern.name.trim() || `pattern ${pad2(pattern.slot)}`;
 }

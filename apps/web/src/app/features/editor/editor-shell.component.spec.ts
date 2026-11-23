@@ -77,7 +77,10 @@ describe('EditorShellComponent', () => {
         EditorUiStore,
         { provide: WorkSessionService, useValue: session },
         { provide: SessionSaveService, useValue: {} },
-        { provide: SessionPresenceService, useValue: { collaborators: signal([]) } },
+        {
+          provide: SessionPresenceService,
+          useValue: { collaborators: signal([]), setView: () => undefined, peersIn: () => [] },
+        },
         { provide: PresenceStore, useValue: { announce } },
         { provide: AuthStore, useValue: { suspension } },
         { provide: DialogService, useValue: { open: vi.fn() } },

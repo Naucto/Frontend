@@ -1,0 +1,12 @@
+@if (here().length) {
+  <div class="absolute inset-0 border-2" [class]="frame()"></div>
+  <div class="absolute bottom-1 left-1 flex flex-wrap gap-0.5">
+    @for (peer of here(); track peer.clientId) {
+      <span
+        class="px-[5px] py-[2px] font-mono text-micro tracking-tag text-on-accent uppercase"
+        [class]="chip(peer.colour)">
+        {{ label(peer) }}
+      </span>
+    }
+  </div>
+}

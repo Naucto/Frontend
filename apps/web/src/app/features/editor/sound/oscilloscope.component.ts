@@ -27,13 +27,16 @@ export class OscilloscopeComponent {
   /** Pulled every frame rather than pushed: the trace is only worth drawing at screen rate. */
   readonly peaks = input.required<() => Float32Array>();
   readonly label = input.required<string>();
-  private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
+  private readonly canvas = viewChild<ElementRef<HTMLCanvasElement>>('canvas');
 
   constructor() {
     let raf = 0;
     const draw = (): void => {
       raf = requestAnimationFrame(draw);
-      const el = this.canvas().nativeElement;
+      const el = this.canvas()?.nativeElement;
+      if (!el) {
+        return;
+      }
       const ctx = el.getContext('2d');
       if (!ctx) {
         return;

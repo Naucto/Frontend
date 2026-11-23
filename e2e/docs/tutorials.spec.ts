@@ -233,16 +233,22 @@ for (const theme of THEMES) {
       content: readFileSync(contentOf('sound-step5')),
       name: titleOf('sound'),
     });
+    await page.route('**/features', (route) =>
+      route.fulfill({ json: { monetization: false, analytics: false } }),
+    );
     await page.goto('/edit/7/sound');
     await page.getByRole('img', { name: 'Piano roll' }).waitFor();
     await page.waitForTimeout(500);
     await shoot(page, OUT, 'sound-roll-pattern', theme, page.locator('nc-piano-roll'));
-    await shoot(page, OUT, 'sound-music-chain', theme, page.locator('nc-song-list'));
-    const pattern = page.getByRole('textbox', { name: /^pattern$/i });
-    await pattern.fill('2');
-    await pattern.press('Enter');
+    await page.getByRole('tab', { name: /^Timeline/ }).click();
+    await page.locator('[data-lane]').waitFor();
     await page.waitForTimeout(300);
-    await shoot(page, OUT, 'sound-sfx-slot', theme, page.locator('nc-slot-grid').first());
+    await shoot(page, OUT, 'sound-timeline-music', theme, page.locator('nc-timeline-editor'));
+    await page.getByRole('tab', { name: /^SFX/ }).click();
+    await page.getByRole('img', { name: 'Piano roll' }).waitFor();
+    await page.waitForTimeout(300);
+    await shoot(page, OUT, 'sound-sfx-zap', theme, page.locator('nc-sfx-editor'));
+    await page.getByRole('tab', { name: /^Patterns/ }).click();
     await page.getByRole('button', { name: 'Add instrument' }).first().click();
     const dialog = page.getByRole('dialog', { name: 'New instrument' });
     await dialog.getByRole('button', { name: 'From a preset' }).click();

@@ -7,8 +7,11 @@ import * as Y from 'yjs';
  * Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y shortcuts every tab wires the same way. Destroyed with the
  * injector.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Y.UndoManager's own scope type.
-export function injectUndo(scope: Y.AbstractType<any>[]): {
+export function injectUndo(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Y.UndoManager's own scope type.
+  scope: Y.AbstractType<any>[],
+  options: { limit?: number } = {},
+): {
   manager: Y.UndoManager;
   canUndo: Signal<boolean>;
   canRedo: Signal<boolean>;
@@ -26,6 +29,14 @@ export function injectUndo(scope: Y.AbstractType<any>[]): {
     canRedo.set(manager.canRedo());
   };
   manager.on('stack-item-added', onStack);
+  const limit = options.limit;
+  if (limit !== undefined) {
+    manager.on('stack-item-added', (event: { type: 'undo' | 'redo' }) => {
+      if (event.type === 'undo' && manager.undoStack.length > limit) {
+        forget(manager, manager.undoStack.splice(0, manager.undoStack.length - limit));
+      }
+    });
+  }
   manager.on('stack-item-popped', onStack);
   manager.on('stack-cleared', onStack);
   inject(DestroyRef).onDestroy(() => {
@@ -54,4 +65,27 @@ export function injectUndo(scope: Y.AbstractType<any>[]): {
       return false;
     },
   };
+}
+
+function forget(manager: Y.UndoManager, dropped: Y.UndoManager['undoStack']): void {
+  const doc = manager.doc;
+  const inScope = (item: Y.Item): boolean =>
+    manager.scope.some(
+      (type) => type === doc || (type instanceof Y.AbstractType && Y.isParentOf(type, item)),
+    );
+  doc.transact((transaction) => {
+    for (const stackItem of dropped) {
+      Y.iterateDeletedStructs(transaction, stackItem.deletions, (struct) => {
+        if (!(struct instanceof Y.Item) || !inScope(struct)) {
+          return;
+        }
+        let item: Y.Item | null = struct;
+        while (item?.keep) {
+          item.keep = false;
+          item = item.parent instanceof Y.AbstractType ? item.parent._item : null;
+        }
+      });
+      Y.tryGc(stackItem.deletions, doc.store, doc.gcFilter);
+    }
+  });
 }

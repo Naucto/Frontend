@@ -16,12 +16,27 @@ export interface CanvasCursor {
   y: number;
 }
 
+export interface SessionSelection {
+  tab: string;
+  scope?: string;
+  items: string[];
+}
+
+export interface SessionView {
+  tab: string;
+  pane?: string;
+  /** What the pane has open, such as `pattern:3`, so the others can mark it in their lists. */
+  item?: string;
+}
+
 export interface Collaborator {
   clientId: number;
   userId: number;
   name: string;
   colour: PresenceColour;
   cursor?: CanvasCursor;
+  view?: SessionView;
+  selection?: SessionSelection;
   isSelf: boolean;
 }
 
@@ -30,6 +45,8 @@ export interface AwarenessState {
   userId?: number;
   name?: string;
   cursor?: CanvasCursor;
+  view?: SessionView;
+  selection?: SessionSelection;
 }
 
 /**
@@ -42,6 +59,7 @@ export class SessionPresenceService {
   private readonly connected = signal<Awareness | null>(null);
   /** The last state each client shared, kept so a departure can still say who left. */
   private readonly known = new Map<number, AwarenessState>();
+  private view: SessionView | undefined;
 
   /** y-protocols awareness of the live session (null until connected). */
   readonly awareness = this.connected.asReadonly();
@@ -72,6 +90,8 @@ export class SessionPresenceService {
         name: state.name ?? `user ${String(state.userId)}`,
         colour: colours.get(state.userId) ?? 'sky',
         cursor: state.cursor,
+        view: state.view,
+        selection: state.selection,
         isSelf: clientId === awareness.clientID,
       });
     });
@@ -83,6 +103,7 @@ export class SessionPresenceService {
     awareness.setLocalState({
       userId: this.auth.userId() ?? undefined,
       name: this.auth.displayName(),
+      view: this.view,
     } satisfies AwarenessState);
     this.connected.set(awareness);
     this.refreshCollaborators();
@@ -112,6 +133,44 @@ export class SessionPresenceService {
   isPresent(userId: number): boolean {
     const states = (this.connected()?.getStates() ?? new Map()) as Map<number, AwarenessState>;
     return [...states.values()].some((state) => state.userId === userId);
+  }
+
+  setView(view: SessionView): void {
+    if (
+      this.view?.tab === view.tab &&
+      this.view.pane === view.pane &&
+      this.view.item === view.item
+    ) {
+      return;
+    }
+    this.view = view;
+    this.connected()?.setLocalStateField('view', view);
+  }
+
+  setSelection(selection: SessionSelection | null): void {
+    const awareness = this.connected();
+    if (!awareness) {
+      return;
+    }
+    const previous = (awareness.getLocalState() as AwarenessState | null)?.selection;
+    const next = selection?.items.length ? selection : undefined;
+    if (
+      previous?.tab === next?.tab &&
+      previous?.scope === next?.scope &&
+      (previous?.items ?? []).join() === (next?.items ?? []).join()
+    ) {
+      return;
+    }
+    awareness.setLocalStateField('selection', next);
+  }
+
+  peersIn(tab: string, pane?: string): Collaborator[] {
+    return this.collaborators().filter(
+      (collaborator) =>
+        !collaborator.isSelf &&
+        collaborator.view?.tab === tab &&
+        (pane === undefined || collaborator.view.pane === pane),
+    );
   }
 
   /** Share where this user's pointer is on an editor canvas (null when it leaves). */

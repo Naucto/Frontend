@@ -1,0 +1,29 @@
+<div class="relative h-[84px]" role="group" [attr.aria-label]="label()" [style.width.px]="width()">
+  @for (key of keys(); track key.pitch) {
+    <button
+      type="button"
+      class="group absolute top-0 cursor-pointer"
+      [class]="
+        key.black
+          ? 'z-10 h-3/5 bg-key-sharp'
+          : key.octave
+            ? 'h-full border-r border-key-sharp bg-key-lit'
+            : 'h-full border-r border-key-sharp bg-key'
+      "
+      [style.left.px]="key.left"
+      [style.width.px]="key.black ? blackW() : whiteW()"
+      [attr.aria-label]="key.name"
+      [attr.aria-pressed]="held() === key.pitch"
+      [attr.data-pitch]="key.pitch"
+      (pointerdown)="onDown($event, key.pitch)">
+      <span
+        class="pointer-events-none absolute inset-0"
+        [class]="held() === key.pitch ? 'bg-gold/45' : 'group-hover:bg-gold/20'"></span>
+      @if (key.octave) {
+        <span class="absolute bottom-[4px] left-[3px] font-mono text-[9px] text-key-sharp">
+          {{ key.name }}
+        </span>
+      }
+    </button>
+  }
+</div>

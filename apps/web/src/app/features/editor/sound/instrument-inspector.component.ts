@@ -7,13 +7,11 @@ import {
   MAX_SAMPLE_SECONDS,
   midiToNoteName,
   type OscType,
-  type Pattern,
   SAMPLE_RATE,
   toSampleBytes,
 } from '@naucto/engine';
 import {
   ButtonDirective,
-  ChipComponent,
   HelpDotComponent,
   IconComponent,
   SegmentedComponent,
@@ -55,7 +53,6 @@ const FILTERS = [
   imports: [
     TranslocoDirective,
     ButtonDirective,
-    ChipComponent,
     HelpDotComponent,
     IconComponent,
     SegmentedComponent,
@@ -71,7 +68,6 @@ const FILTERS = [
 export class InstrumentInspectorComponent {
   readonly inst = input.required<Instrument>();
   readonly palette = input.required<readonly string[]>();
-  readonly usedBy = input.required<{ patterns: Pattern[]; sfx: number[] }>();
   readonly patched = output<Partial<Instrument>>();
   /** Base64 PCM keyed by sample id — the game document's own `samples` map. */
   readonly samples = input.required<Map<string, string>>();

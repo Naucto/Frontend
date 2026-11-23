@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { type Instrument, type Note, type Pattern, VOICES } from '@naucto/engine';
 
-import { KEY_W } from './piano-roll.component';
+import { KEY_W } from './piano-geometry';
 
 const RULER_H = 16;
 /** 118px of lane in the design; the voice rows share what is left under the ruler. */

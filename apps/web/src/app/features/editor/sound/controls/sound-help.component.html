@@ -1,0 +1,44 @@
+<ng-container *transloco="let t; prefix: 'editor.sound.help'">
+  <button
+    ncButton
+    variant="ghost"
+    size="sm"
+    iconOnly
+    popoverAlign="end"
+    [ncPopover]="panel"
+    [attr.aria-label]="t('open')">
+    ?
+  </button>
+  <ng-template #panel>
+    <nc-popover-panel>
+      <div class="grid w-[480px] gap-1 p-1.5" role="dialog" [attr.aria-label]="t('title')">
+        @if (intro()) {
+          <p class="text-body text-ink-2">{{ t('sfxIntro') }}</p>
+        }
+        <span class="label text-ink-3">{{ t('title') }}</span>
+        <dl class="grid grid-cols-[190px_minmax(0,1fr)] items-center gap-x-1.5 gap-y-1">
+          @for (entry of entries(); track entry.action + (entry.gesture ?? '')) {
+            <dt class="flex flex-wrap items-center gap-0.5 text-body text-ink-body">
+              @if (entry.keys; as combos) {
+                @for (combo of combos; track $index) {
+                  @if (!$first) {
+                    <span class="text-ink-4">/</span>
+                  }
+                  @for (key of combo; track $index) {
+                    @if (!$first) {
+                      <span class="text-ink-4">+</span>
+                    }
+                    <nc-keycap>{{ key }}</nc-keycap>
+                  }
+                }
+              } @else if (entry.gesture; as gesture) {
+                {{ t('gesture.' + gesture) }}
+              }
+            </dt>
+            <dd class="text-body text-ink-3">{{ t('action.' + entry.action) }}</dd>
+          }
+        </dl>
+      </div>
+    </nc-popover-panel>
+  </ng-template>
+</ng-container>
