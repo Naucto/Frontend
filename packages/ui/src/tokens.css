@@ -186,12 +186,6 @@
    * Scrims laid over artwork, so that --color-on-accent-dark stays legible whatever the art is.
    * Identical in both themes, because the ink over them does not flip either.
    */
-  --nc-scrim-hero: linear-gradient(
-    to top,
-    rgb(11 10 9 / 0.96) 0%,
-    rgb(11 10 9 / 0.55) 42%,
-    transparent 72%
-  );
   --nc-scrim-video: linear-gradient(
     to top,
     rgb(8 7 6 / 0.88) 0%,
