@@ -135,16 +135,12 @@
           }
         </div>
         @if (canReport()) {
-          <button
-            ncButton
-            variant="ghost"
-            size="sm"
-            type="button"
-            class="mx-auto mt-2 flex w-fit"
-            (click)="report(release)">
-            <nc-mark name="flag" />
-            {{ t('moderation.reportGame') }}
-          </button>
+          <div class="mt-2 flex justify-center">
+            <button ncButton variant="ghost" size="sm" type="button" (click)="report(release)">
+              <nc-mark name="flag" />
+              {{ t('moderation.reportGame') }}
+            </button>
+          </div>
         }
       </div>
       @if (remixes().length) {
