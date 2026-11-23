@@ -276,7 +276,7 @@ export class NetUiBridgeService implements NetUi, OnDestroy {
       role,
       // The id the ticket was minted for, which is what the relay addresses every frame by. It is
       // the account id for everyone but the editor's test rig, which plays under a synthetic one.
-      selfUserId: conn.playerId,
+      selfPlayer: conn.playerId,
       signalingUrl: this.config.reachable(signaling),
       ticket: conn.connectionTicket,
       ticketIssuedAt: Date.now(),

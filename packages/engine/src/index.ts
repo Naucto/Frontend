@@ -76,11 +76,11 @@ export {
 export { ALLOW_ALL, type NetPermissions } from './net/NetPermissions';
 export type { NetHostOptions, NetInvite, NetUi } from './net/NetUi';
 export type {
+  PlayerNumber,
   RelayUsage,
   SessionRole,
   SessionTransport,
   SessionTransportEvents,
-  UserId,
 } from './net/SessionTransport';
 export { SharedTableSession, type TableScalar } from './net/SharedTableSession';
 export { Engine, type EngineOptions, type EngineState } from './runtime/Engine';

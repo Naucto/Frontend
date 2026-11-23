@@ -24,7 +24,7 @@ export const makeApiContext = (
 /** A host's transport that sends nothing and hears nothing, for a session with nobody else in it. */
 export const hostTransport = (): SessionTransport => ({
   role: 'host',
-  selfUserId: 1,
+  selfPlayer: 1,
   broadcastState: () => undefined,
   respondTo: () => undefined,
   sendRequest: () => undefined,

@@ -22,7 +22,7 @@ function sessionOf(
   };
   return {
     isHost: options.isHost ?? false,
-    selfUserId: 1,
+    selfPlayer: 1,
     getValue: (path) => values[path],
     isContainer: (path) => paths.some((candidate) => candidate.startsWith(`${path}.`)),
     childKeys,

@@ -120,7 +120,7 @@ export default class NetTabPage {
   protected readonly rigJoined = computed(() => this.rigScreen()?.netBridge.session() !== null);
   /** The id the rig plays under: its own, not the account's, so the two windows can be told apart. */
   private readonly rigId = computed(
-    () => this.rigScreen()?.netBridge.session()?.selfUserId ?? null,
+    () => this.rigScreen()?.netBridge.session()?.selfPlayer ?? null,
   );
   /**
    * Only the host may reshape the *live* tree. A client's write goes through the host anyway, but a
@@ -140,7 +140,7 @@ export default class NetTabPage {
       return [] as number[];
     }
     const peers = this.bridge()?.peers() ?? [];
-    return [session.selfUserId, ...peers.filter((peer) => peer !== session.selfUserId)];
+    return [session.selfPlayer, ...peers.filter((peer) => peer !== session.selfPlayer)];
   });
   /**
    * The session the spawned client is opened on: ours, with the code if it needs one, described as
@@ -165,7 +165,7 @@ export default class NetTabPage {
     this.tick();
     const max = Math.max(this.info()?.maxPlayers ?? 0, this.players().length, 2);
     const session = this.session();
-    const hostId = this.info()?.role === 'host' ? session?.selfUserId : null;
+    const hostId = this.info()?.role === 'host' ? session?.selfPlayer : null;
     return Array.from({ length: max }, (_, i) => {
       const userId = this.players()[i] ?? null;
       return {
@@ -174,7 +174,7 @@ export default class NetTabPage {
         name: userId === null ? '' : this.nameOf(userId),
         host: userId !== null && userId === hostId,
         ping:
-          userId === null || userId === session?.selfUserId
+          userId === null || userId === session?.selfPlayer
             ? null
             : (session?.peerPing(userId) ?? null),
       };
@@ -288,7 +288,7 @@ export default class NetTabPage {
 
   private isHostOwner(userId: number): boolean {
     const session = this.session();
-    return session !== null && session.isHost && userId === session.selfUserId;
+    return session !== null && session.isHost && userId === session.selfPlayer;
   }
 
   /** The action buttons say what they do, or why they cannot. */

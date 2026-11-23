@@ -24,7 +24,7 @@ export interface Row {
 /** What of a running session the tree reads. */
 export type TreeSession = Pick<
   SharedTableSession,
-  'isHost' | 'selfUserId' | 'getValue' | 'isContainer' | 'childKeys' | 'objectKindAt' | 'lockOwner'
+  'isHost' | 'selfPlayer' | 'getValue' | 'isContainer' | 'childKeys' | 'objectKindAt' | 'lockOwner'
 >;
 
 /**
@@ -119,7 +119,7 @@ export function buildRows(tree: {
     // A lock names who holds it; any other live path below the root is written by the host.
     let owner: number | null = null;
     if (!root && session && live) {
-      owner = session.lockOwner(path) ?? (session.isHost ? session.selfUserId : null);
+      owner = session.lockOwner(path) ?? (session.isHost ? session.selfPlayer : null);
     }
 
     const flags = resolveFlags(perms, path);

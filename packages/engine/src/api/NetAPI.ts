@@ -155,7 +155,7 @@ export class NetAPI extends EngineModule {
   }
 
   id(): number {
-    return this.require().selfUserId;
+    return this.require().selfPlayer;
   }
 
   emit(name: string, payload: unknown): void {
@@ -433,8 +433,8 @@ export class NetAPI extends EngineModule {
     const session = this.require();
 
     if (pattern === 'peer.joined' || pattern === 'peer.left') {
-      session.onPeer(pattern === 'peer.joined' ? 'joined' : 'left', (userId) => {
-        this.invoke(callback, userId);
+      session.onPeer(pattern === 'peer.joined' ? 'joined' : 'left', (player) => {
+        this.invoke(callback, player);
       });
       return;
     }

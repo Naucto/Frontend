@@ -31,11 +31,53 @@ describe('NetAPI net.state', () => {
     expect(() => lua.evaluate('return net.state.score')).toThrow(/no active session/);
   });
 
-  it('exposes the local user id via net.id', () => {
+  it('exposes the local player number via net.id', () => {
     const { lua } = setup();
     lua.evaluate('net.host()');
 
     expect(lua.evaluate('return net.id()')[0]).toBe(1);
+  });
+
+  /** Published games add to it, compare it after `tonumber()` and print it without a decimal. */
+  it('hands a running game integers: its own number, a peer that joins, the sender of an event', () => {
+    const lua = new LuaEnvironment();
+    const fire = new Map<string, (...args: unknown[]) => void>();
+    const session = new SharedTableSession({
+      ...hostTransport(),
+      selfPlayer: 1042,
+      on: (event, listener) => {
+        fire.set(event, listener as (...args: unknown[]) => void);
+      },
+    });
+    new NetAPI(
+      makeApiContext(lua, {
+        netUi: {
+          host: (_options, onReady) => {
+            onReady(session);
+          },
+          join: () => undefined,
+          leave: () => undefined,
+        },
+      }),
+    );
+    lua.evaluate(`
+      seen = {}
+      net.host()
+      net.on("peer.joined", function(id) seen.joined = id end)
+      net.on("event:wave", function(from) seen.from = from end)
+    `);
+
+    fire.get('peerJoined')?.(2007);
+    fire.get('request')?.(2007, { kind: 'event', name: 'wave', payload: null });
+
+    const kinds = 'math.type(net.id()), math.type(seen.joined), math.type(seen.from)';
+    expect(lua.evaluate(`return ${kinds}`)).toEqual(['integer', 'integer', 'integer']);
+    expect(lua.evaluate('return net.id(), seen.joined, seen.from')).toEqual([1042, 2007, 2007]);
+    expect(lua.evaluate('return "p" .. net.id()')[0]).toBe('p1042');
+    expect(lua.evaluate('return net.id() + 1, tonumber(net.id()) == net.id()')).toEqual([
+      1043,
+      true,
+    ]);
   });
 
   it('reads and writes scalars after net.host', () => {
