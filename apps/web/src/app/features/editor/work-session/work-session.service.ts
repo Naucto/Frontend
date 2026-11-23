@@ -386,7 +386,7 @@ export class WorkSessionService implements SavedSession {
     this.mode.impose('read-only');
     this.status.set('loading');
     const [bytes, details] = await Promise.all([
-      kind === 'staff' ? this.previews.content(projectId, 'draft') : this.ownContent(projectId),
+      kind === 'staff' ? this.previews.content(projectId) : this.ownContent(projectId),
       kind === 'staff'
         ? this.previews.project(projectId)
         : projectControllerFindOne({ path: { id: projectId } }).then(unwrap),

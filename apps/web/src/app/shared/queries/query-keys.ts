@@ -25,9 +25,6 @@ export const qk = {
   /** Every page of the account's standing, which a moderation notice invalidates at once. */
   standingAll: () => ['me', 'standing'] as const,
   standing: (page: number) => ['me', 'standing', page] as const,
-  staffPreview: (id: number) => ['staff-preview', id] as const,
-  staffPreviewContent: (id: number, source: string) =>
-    ['staff-preview', id, 'content', source] as const,
   myProjects: (params: Record<string, unknown>) => ['projects', 'mine', params] as const,
   projectImage: (id: number) => ['project', id, 'image'] as const,
   /** Autosaves — the server writes one on every save, so this is what a save invalidates. */

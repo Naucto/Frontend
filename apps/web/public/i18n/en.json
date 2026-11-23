@@ -1343,18 +1343,8 @@
       }
     },
     "preview": {
-      "band": "Staff preview. Nothing here is saved or counted, and this visit is logged.",
       "editorBand": "Staff view of the latest save. You can look around and run it. Nothing in it can be changed, and this visit is logged.",
-      "suspendedEditor": "Your game opens to look at and run. Nothing in it can be changed while your account is suspended.",
-      "openEditor": "Look inside in the editor",
-      "draft": "Latest save",
-      "release": "Released build",
-      "sourceLabel": "Which version to run",
-      "hidden": "Hidden",
-      "unpublished": "Unpublished",
-      "nothingSaved": "Nothing was saved in this version yet.",
-      "failedTitle": "This preview would not open",
-      "failed": "The game may be gone, or your role may have changed."
+      "suspendedEditor": "Your game opens to look at and run. Nothing in it can be changed while your account is suspended."
     },
     "reportGame": "Report game",
     "reportComment": "Report",

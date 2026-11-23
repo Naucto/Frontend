@@ -1,10 +1,7 @@
 import type { ActivatedRouteSnapshot } from '@angular/router';
 
-/**
- * Routes never measured: the OAuth popup closes before anyone sees it, and a staff preview is
- * staff reviewing a game, which is no visit to count for it.
- */
-const UNMEASURED = new Set(['oauth', 'staff']);
+/** Routes never measured: the OAuth popup closes before anyone sees it. */
+const UNMEASURED = new Set(['oauth']);
 
 /**
  * The route template a navigation landed on, as the router declares it, without a leading slash:

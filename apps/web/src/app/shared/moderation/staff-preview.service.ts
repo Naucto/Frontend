@@ -7,9 +7,6 @@ import {
 
 import { unwrap } from '../../core/api/api-errors';
 
-/** The latest save of a game, or the build its players got. */
-export type PreviewSource = 'draft' | 'release';
-
 /**
  * Reads a game as staff read it when they review one: whatever its state, through the backend's
  * preview routes, which count nothing and log the read. Both calls are GETs. Nothing here writes,
@@ -21,11 +18,11 @@ export class StaffPreviewService {
     return unwrap(await staffPreviewControllerPreview({ path: { id: String(id) } }));
   }
 
-  /** The game file, or null when nothing was saved or released yet. */
-  async content(id: number, source: PreviewSource): Promise<Uint8Array | null> {
+  /** The latest save of the game, or null when nothing was saved yet. */
+  async content(id: number): Promise<Uint8Array | null> {
     const result = await staffPreviewControllerContent({
       path: { id: String(id) },
-      query: { source },
+      query: { source: 'draft' },
       parseAs: 'blob',
     });
     if (result.response?.status === 204) {

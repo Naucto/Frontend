@@ -1,6 +1,6 @@
 import { type Routes } from '@angular/router';
 
-import { authGuard, guestGuard, staffGuard } from './core/auth/auth.guard';
+import { authGuard, guestGuard } from './core/auth/auth.guard';
 
 /**
  * The literal `false` in a production build, where the builder substitutes it; undefined or an
@@ -36,16 +36,14 @@ export const routes: Routes = [
     loadChildren: () => import('./features/editor/editor.routes'),
     title: 'Editor — Naucto',
   },
-  // The same editor, opened to look at: for moderators and admins only, and anyone else falls
-  // through to the wildcard. The mode is in the path because the editor navigates between its
-  // tabs, and a flag in the query would not survive the first of those.
+  // Kept so that a link to one of the two staff addresses still leads to the game: the editor's
+  // own address opens it for a staff member to look at.
   {
-    path: 'staff/edit/:id',
-    canMatch: [staffGuard],
-    loadChildren: () => import('./features/editor/editor.routes'),
-    data: { preview: 'staff' },
-    title: 'Staff preview | Naucto',
+    path: 'staff/edit/:id/:tab',
+    redirectTo: ({ params }) => `/edit/${String(params.id)}/${String(params.tab)}`,
   },
+  { path: 'staff/edit/:id', redirectTo: ({ params }) => `/edit/${String(params.id)}` },
+  { path: 'staff/play/:id', redirectTo: ({ params }) => `/edit/${String(params.id)}` },
   {
     path: '',
     loadComponent: () => import('./features/shell/app-shell.component'),
@@ -61,13 +59,6 @@ export const routes: Routes = [
         path: 'play/:id',
         loadComponent: () => import('./features/game/game.page'),
         title: 'Play — Naucto',
-      },
-      // For moderators and admins only. Anyone else falls through to the wildcard below.
-      {
-        path: 'staff/play/:id',
-        canMatch: [staffGuard],
-        loadComponent: () => import('./features/staff-preview/staff-play.page'),
-        title: 'Staff preview | Naucto',
       },
       {
         path: 'games',
