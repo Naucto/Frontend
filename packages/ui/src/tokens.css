@@ -901,6 +901,14 @@
   --bv-edge: var(--color-active-ink);
   --bv-skirt: var(--color-lit-skirt);
 }
+/*
+ * The light catching the top edge of a shape whose fill is not a token, and the shade under its
+ * bottom edge, both derived from the fill so a personal colour carries its own tint.
+ */
+@utility bevel-glint {
+  --bv-hi: color-mix(in srgb, var(--bv-fill) 55%, white);
+  --bv-lo: color-mix(in srgb, var(--bv-fill) 60%, black);
+}
 /* No frame until a state gives it one. */
 @utility bevel-bare {
   --bv-edge: transparent;
