@@ -317,10 +317,10 @@ export class BugReportDialog {
       { label: label('release'), value: APP_RELEASE, identifier: true },
     ];
     if (this.subject.releaseId !== undefined) {
-      rows.push({ label: label('game'), value: this.subject.releaseId });
+      rows.push({ label: label('game'), value: this.subject.releaseId, identifier: true });
     }
     if (this.subject.projectId !== undefined) {
-      rows.push({ label: label('project'), value: this.subject.projectId });
+      rows.push({ label: label('project'), value: this.subject.projectId, identifier: true });
     }
     if (this.context.engineError) {
       rows.push({ label: label('engineError'), value: this.context.engineError, identifier: true });
