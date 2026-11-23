@@ -5,6 +5,7 @@ import { BUBBLEGUM_16 } from '@naucto/engine';
 import {
   ArrowLinkDirective,
   AvatarComponent,
+  baseLayout,
   BitFlagsComponent,
   BrandMarkComponent,
   ButtonDirective,
@@ -14,6 +15,11 @@ import {
   DialogShellComponent,
   DisabledScopeDirective,
   DisclosureComponent,
+  type DockLabels,
+  type DockLayout,
+  DockPaneDirective,
+  type DockWindow,
+  DockWorkspaceComponent,
   EdgeHandleComponent,
   EmptyStateComponent,
   ErrorStateComponent,
@@ -49,6 +55,8 @@ import {
   PerfGraphComponent,
   PopoverDirective,
   PopoverPanelComponent,
+  type PresenceDot,
+  PresenceDotsComponent,
   PresenceFlagComponent,
   PresenceLayerComponent,
   type PresenceMark,
@@ -93,6 +101,9 @@ import { HubPiecesSection } from './hub-pieces.section';
   selector: 'nc-ui-kit-page',
   imports: [
     HubPiecesSection,
+    DockWorkspaceComponent,
+    DockPaneDirective,
+    PresenceDotsComponent,
     DiskNameComponent,
     FloppyComponent,
     ArrowLinkDirective,
@@ -405,9 +416,49 @@ export default class UiKitPage {
     { value: 'art', label: 'Art', icon: 'image' },
     { value: 'code', label: 'Code', icon: 'code' },
     { value: 'map', label: 'Map', icon: 'map' },
-    { value: 'sound', label: 'Sound', icon: 'music' },
+    {
+      value: 'sound',
+      label: 'Sound',
+      icon: 'music',
+      peers: [{ id: 1, name: 'lea', colour: 'blush' }] as readonly PresenceDot[],
+    },
     { value: 'game', label: 'Game', icon: 'gamepad' },
   ] as const;
+  protected readonly peers: readonly PresenceDot[] = [
+    { id: 1, name: 'lea', colour: 'blush' },
+    { id: 2, name: 'louis', colour: 'jade' },
+  ];
+  protected readonly dockWindows: readonly DockWindow[] = [
+    { id: 'timeline', title: 'Timeline', mark: 'list', peers: this.peers.slice(0, 1) },
+    { id: 'patterns', title: 'Patterns', mark: 'grid' },
+    { id: 'sfx', title: 'SFX', mark: 'zap' },
+  ];
+  protected readonly dockLayout = signal<DockLayout>(
+    baseLayout(['timeline', 'patterns', 'sfx'], 'timeline'),
+  );
+  protected readonly dockLabels: DockLabels = {
+    popOut: (title) => `Pop ${title} out`,
+    dock: (title) => `Put ${title} back`,
+    addTab: 'Open a tab here',
+    resize: 'Resize',
+    fallback: 'Too small for this layout: base view shown.',
+    reset: 'Base view',
+    empty: 'Every window is out.',
+    openHere: 'Open here',
+    floating: 'popped out',
+    elsewhere: 'other zone',
+    drop: {
+      left: 'Dock left',
+      right: 'Dock right',
+      top: 'Dock on top',
+      bottom: 'Dock below',
+      tab: 'Add as a tab',
+      'edge-left': 'Dock left, full height',
+      'edge-right': 'Dock right, full height',
+      'edge-top': 'Dock on top, full width',
+      'edge-bottom': 'Dock below, full width',
+    },
+  };
   protected readonly railTab = signal<'art' | 'code' | 'map' | 'sound' | 'game'>('art');
   protected readonly railCopy = {
     art: { title: '8×8 sprites', body: 'Draw tiles and characters on the shared sheet.' },
@@ -546,7 +597,9 @@ export default class UiKitPage {
   }
 
   protected toastTitled(): void {
-    this.toasts.show('The release could not be reached.', 'error', 6000, 'Could not save');
+    this.toasts.show('The release could not be reached.', 'error', 6000, {
+      title: 'Could not save',
+    });
   }
 
   protected hide(notice: string): void {

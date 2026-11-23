@@ -2,11 +2,13 @@ import { ChangeDetectionStrategy, Component, input, model } from '@angular/core'
 
 import { type IconName } from '../icons/glyphs';
 import { IconComponent } from './icon.component';
+import { type PresenceDot, PresenceDotsComponent } from './presence-dots.component';
 
 export interface RailItem<T extends string> {
   value: T;
   label: string;
   icon: IconName;
+  peers?: readonly PresenceDot[];
 }
 
 /**
@@ -27,7 +29,7 @@ const ON =
 /** Vertical tool rail: tabs that open on their right edge, into the workspace beside them. */
 @Component({
   selector: 'nc-rail',
-  imports: [IconComponent],
+  imports: [IconComponent, PresenceDotsComponent],
   templateUrl: './rail.component.html',
   // The rule is the host's: the nav is only as tall as its buttons, and a rule drawn on it would
   // stop where they do. It stops a pixel short of each end, as the side of a frame does, and the

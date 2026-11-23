@@ -949,6 +949,24 @@
           <nc-tabs [tabs]="shelves" [(value)]="shelf" label="Sheets" variant="small" editable />
         </div>
       </div>
+      <div
+        class="flat-lg bevel-fill-panel col-span-full grid content-start gap-[14px] px-2.5 py-[18px]"
+        data-testid="dock">
+        <div class="flex items-center gap-1">
+          <span class="label">Dock workspace, presence dots</span>
+          <nc-presence-dots [peers]="peers" />
+        </div>
+        <!-- A workspace fills what it is given, so the frame around it holds the height. -->
+        <div class="h-[320px]">
+          <nc-dock-workspace [windows]="dockWindows" [(layout)]="dockLayout" [labels]="dockLabels">
+            @for (win of dockWindows; track win.id) {
+              <ng-template [ncDockPane]="win.id">
+                <p class="p-1.5 text-meta text-ink-3">{{ win.title }}</p>
+              </ng-template>
+            }
+          </nc-dock-workspace>
+        </div>
+      </div>
       <div class="flat-lg bevel-fill-panel grid content-start gap-[14px] px-2.5 py-[18px]">
         <div class="label">Panel column, section, setting row</div>
         <!-- A region holding one column and the second that unfolds beside it. Its own height,

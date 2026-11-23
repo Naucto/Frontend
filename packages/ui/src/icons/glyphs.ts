@@ -247,6 +247,7 @@ export const MARK_GLYPHS = {
   repeat: '510f800f840',
   save: '5f098f888f8',
   search: '5e0a0e01008',
+  sliders: '5507850f050',
   space: '5000088f800',
   stop: '5f8f8f8f8f8',
   swap: '52070007020',
@@ -254,6 +255,7 @@ export const MARK_GLYPHS = {
   trash: '570f8505070',
   undo: '540f0480830',
   upload: '52070a820f8',
+  zap: '518307060c0',
 } as const;
 
 export type MarkName = keyof typeof MARK_GLYPHS;
