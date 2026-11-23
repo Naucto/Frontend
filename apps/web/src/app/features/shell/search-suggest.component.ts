@@ -15,14 +15,7 @@ import { TranslocoDirective } from '@jsverse/transloco';
 import { SearchComponent } from '@naucto/ui';
 
 import { injectSuggestions, parseTerm } from '../../shared/queries/search.queries';
-import { SearchPanelComponent } from './search-panel.component';
-
-/** Where an option leads, which is all the box needs to know about it. */
-export type SuggestTarget =
-  | { kind: 'game'; id: number }
-  | { kind: 'person'; username: string }
-  | { kind: 'session'; projectId: number; sessionUuid: string }
-  | { kind: 'tag'; tag: string };
+import { SearchPanelComponent, type SuggestTarget } from './search-panel.component';
 
 /**
  * The search box with the panel that drops out of it.

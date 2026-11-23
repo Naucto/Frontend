@@ -19,7 +19,13 @@ import { diskStyleFor } from '../../shared/game-card/disk-style';
 import { FloppyComponent } from '../../shared/game-card/floppy.component';
 import type { ParsedTerm, PersonHit, Suggestions } from '../../shared/queries/search.queries';
 import { UserAvatarComponent } from '../../shared/user-avatar.component';
-import type { SuggestTarget } from './search-suggest.component';
+
+/** Where an option leads, which is all the box needs to know about it. */
+export type SuggestTarget =
+  | { kind: 'game'; id: number }
+  | { kind: 'person'; username: string }
+  | { kind: 'session'; projectId: number; sessionUuid: string }
+  | { kind: 'tag'; tag: string };
 
 /** Past this many, a session's seats are counted in a chip instead of drawn one by one. */
 const SEATS_DRAWN = 8;
