@@ -13,7 +13,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { formatCompact, IconComponent, type IconName, inkFor } from '@naucto/ui';
+import { formatCompact, IconComponent, type IconName, inkFor, prefersStill } from '@naucto/ui';
 
 import { diskBody, diskFinish, type DiskStyle, luminance, PLAIN_DISK } from './disk-style';
 
@@ -175,13 +175,6 @@ export class FloppyComponent {
     }
   }
 
-  private still(): boolean {
-    return (
-      matchMedia('(prefers-reduced-motion: reduce)').matches ||
-      this.element.closest('[data-reduce-motion]') !== null
-    );
-  }
-
   /**
    * The lean follows the pointer: the point under it is pressed away. The light is Lambert diffuse
    * and Blinn-Phong specular from the one lamp, handed to the stylesheet as custom properties.
@@ -235,7 +228,7 @@ export class FloppyComponent {
   private settle(): void {
     const reached = this.pointed && this.interactive();
     const video = this.video()?.nativeElement;
-    if (video && (reached || this.open()) && !this.still()) {
+    if (video && (reached || this.open()) && !prefersStill(this.element)) {
       // A refused autoplay leaves the cover in place, which is the right fallback.
       video.play().catch(() => undefined);
     } else if (video) {
@@ -243,7 +236,7 @@ export class FloppyComponent {
       video.currentTime = 0;
     }
 
-    const to = reached && !this.still() ? 1 : 0;
+    const to = reached && !prefersStill(this.element) ? 1 : 0;
     const from = this.lift;
     cancelAnimationFrame(this.frame);
     this.frame = 0;
