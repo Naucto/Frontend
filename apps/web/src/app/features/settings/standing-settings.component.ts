@@ -7,6 +7,7 @@ import {
   type ChipTone,
   NoticeComponent,
   PagerComponent,
+  SettingsGroupComponent,
   SkeletonComponent,
   TableDirective,
 } from '@naucto/ui';
@@ -45,6 +46,7 @@ const LIFTED: readonly ModerationActionType[] = [
     ChipComponent,
     NoticeComponent,
     PagerComponent,
+    SettingsGroupComponent,
     SkeletonComponent,
     TableDirective,
   ],

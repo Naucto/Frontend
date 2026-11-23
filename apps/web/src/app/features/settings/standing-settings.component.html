@@ -1,105 +1,106 @@
 <div *transloco="let t">
-  <p class="text-body text-ink-3">{{ t('moderation.standing.lead') }}</p>
-
-  @if (standing.isError()) {
-    <nc-notice tone="danger" class="mt-2">{{ t('moderation.standing.loadFailed') }}</nc-notice>
-  } @else if (standing.data(); as data) {
-    @if (data.suspension; as suspension) {
-      <nc-notice
-        tone="danger"
-        class="mt-2"
-        [title]="
-          suspension.until
-            ? t('moderation.suspended.until', { until: suspension.until | date: WHEN })
-            : t('moderation.suspended.indefinite')
-        ">
-        {{ t('moderation.suspended.rule') }}
-        @if (suspension.reason; as reason) {
-          <span class="mt-1 flex flex-wrap items-baseline gap-x-1">
-            <span class="label">{{ t('moderation.standing.reason') }}</span>
-            <span class="text-ink">{{ t('moderation.reasons.' + reason) }}</span>
-          </span>
+  <nc-settings-group
+    [title]="t('moderation.standing.history')"
+    [hint]="t('moderation.standing.lead')">
+    <div class="grid p-2.25">
+      @if (standing.isError()) {
+        <nc-notice tone="danger">{{ t('moderation.standing.loadFailed') }}</nc-notice>
+      } @else if (standing.data(); as data) {
+        @if (data.suspension; as suspension) {
+          <nc-notice
+            tone="danger"
+            class="mb-1.5"
+            [title]="
+              suspension.until
+                ? t('moderation.suspended.until', { until: suspension.until | date: WHEN })
+                : t('moderation.suspended.indefinite')
+            ">
+            {{ t('moderation.suspended.rule') }}
+            @if (suspension.reason; as reason) {
+              <span class="mt-1 flex flex-wrap items-baseline gap-x-1">
+                <span class="label">{{ t('moderation.standing.reason') }}</span>
+                <span class="text-ink">{{ t('moderation.reasons.' + reason) }}</span>
+              </span>
+            }
+            @if (suspension.message; as message) {
+              <span
+                class="mt-0.5 block whitespace-pre-wrap wrap-anywhere text-ink"
+                [textContent]="message"></span>
+            }
+          </nc-notice>
         }
-        @if (suspension.message; as message) {
-          <span
-            class="mt-0.5 block whitespace-pre-wrap wrap-anywhere text-ink"
-            [textContent]="message"></span>
+
+        @if (data.warnings > 0) {
+          <nc-chip tone="orange" class="mb-1.5 justify-self-start">
+            {{
+              data.warnings === 1
+                ? t('moderation.standing.oneWarning')
+                : t('moderation.standing.warnings', { count: data.warnings })
+            }}
+          </nc-chip>
         }
-      </nc-notice>
-    }
 
-    <h2 class="mt-2.5 mb-1 flex items-center gap-1 font-display text-title text-ink">
-      {{ t('moderation.standing.history') }}
-      @if (data.warnings > 0) {
-        <nc-chip tone="orange">
-          {{
-            data.warnings === 1
-              ? t('moderation.standing.oneWarning')
-              : t('moderation.standing.warnings', { count: data.warnings })
-          }}
-        </nc-chip>
-      }
-    </h2>
-
-    @if (data.items.length === 0) {
-      <nc-notice tone="success">{{ t('moderation.standing.empty') }}</nc-notice>
-    } @else {
-      <table ncTable id="standing-decisions">
-        <thead>
-          <tr>
-            <th scope="col">{{ t('moderation.standing.decision') }}</th>
-            <th scope="col">{{ t('moderation.standing.reason') }}</th>
-            <th scope="col">{{ t('moderation.standing.message') }}</th>
-            <th scope="col">{{ t('moderation.standing.date') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (entry of data.items; track entry.id) {
-            <tr>
-              <th scope="row">
-                <nc-chip [tone]="tone(entry)">{{ t(actionKey(entry)) }}</nc-chip>
-                @if (entry.targetLabel && entry.targetType !== 'USER') {
-                  <small class="mt-0.5 max-w-[24ch] truncate" [title]="entry.targetLabel">
-                    {{ entry.targetLabel }}
-                  </small>
-                }
-              </th>
-              <td>
-                @if (entry.reason; as reason) {
-                  {{ t('moderation.reasons.' + reason) }}
-                }
-              </td>
-              <td class="whitespace-pre-wrap wrap-anywhere" [textContent]="entry.message"></td>
-              <td class="whitespace-nowrap">
-                {{ entry.createdAt | date: WHEN }}
-                @if (entry.expiresAt; as expiry) {
-                  <small>
-                    {{ t('moderation.standing.until', { until: expiry | date: WHEN }) }}
-                  </small>
-                }
-              </td>
-            </tr>
+        @if (data.items.length === 0) {
+          <nc-notice tone="success">{{ t('moderation.standing.empty') }}</nc-notice>
+        } @else {
+          <table ncTable id="standing-decisions">
+            <thead>
+              <tr>
+                <th scope="col">{{ t('moderation.standing.decision') }}</th>
+                <th scope="col">{{ t('moderation.standing.reason') }}</th>
+                <th scope="col">{{ t('moderation.standing.message') }}</th>
+                <th scope="col">{{ t('moderation.standing.date') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (entry of data.items; track entry.id) {
+                <tr>
+                  <th scope="row">
+                    <nc-chip [tone]="tone(entry)">{{ t(actionKey(entry)) }}</nc-chip>
+                    @if (entry.targetLabel && entry.targetType !== 'USER') {
+                      <small class="mt-0.5 max-w-[24ch] truncate" [title]="entry.targetLabel">
+                        {{ entry.targetLabel }}
+                      </small>
+                    }
+                  </th>
+                  <td>
+                    @if (entry.reason; as reason) {
+                      {{ t('moderation.reasons.' + reason) }}
+                    }
+                  </td>
+                  <td class="whitespace-pre-wrap wrap-anywhere" [textContent]="entry.message"></td>
+                  <td class="whitespace-nowrap">
+                    {{ entry.createdAt | date: WHEN }}
+                    @if (entry.expiresAt; as expiry) {
+                      <small>
+                        {{ t('moderation.standing.until', { until: expiry | date: WHEN }) }}
+                      </small>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          @if (pages() > 1) {
+            <div class="mt-1.5 flex justify-end">
+              <nc-pager
+                controls="standing-decisions"
+                [count]="pages()"
+                [value]="page() - 1"
+                [label]="t('moderation.standing.history')"
+                [pageLabel]="t('moderation.standing.page')"
+                [previousLabel]="t('moderation.standing.newer')"
+                [nextLabel]="t('moderation.standing.older')"
+                (valueChange)="page.set($event + 1)" />
+            </div>
           }
-        </tbody>
-      </table>
-      @if (pages() > 1) {
-        <div class="mt-1.5 flex justify-end">
-          <nc-pager
-            controls="standing-decisions"
-            [count]="pages()"
-            [value]="page() - 1"
-            [label]="t('moderation.standing.history')"
-            [pageLabel]="t('moderation.standing.page')"
-            [previousLabel]="t('moderation.standing.newer')"
-            [nextLabel]="t('moderation.standing.older')"
-            (valueChange)="page.set($event + 1)" />
+        }
+      } @else {
+        <div class="grid gap-1">
+          <nc-skeleton height="0.9rem" width="35%" />
+          <nc-skeleton height="0.75rem" width="80%" />
         </div>
       }
-    }
-  } @else {
-    <div class="grid gap-1 py-2">
-      <nc-skeleton height="0.9rem" width="35%" />
-      <nc-skeleton height="0.75rem" width="80%" />
     </div>
-  }
+  </nc-settings-group>
 </div>
