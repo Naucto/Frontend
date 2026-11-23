@@ -2,7 +2,7 @@
   class="fixed inset-0 -z-[1]"
   [image]="lead()?.coverUrl ?? null"
   [tint]="tint()"
-  [seed]="(lead()?.id ?? '') + ''" />
+  [seed]="lead()?.id ?? ''" />
 <!-- The backdrop lies under the whole shell; the shelves and disks keep their own stacking to
      themselves. -->
 <div class="isolate">
