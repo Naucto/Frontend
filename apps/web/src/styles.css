@@ -6,8 +6,9 @@
 @layer components {
   /*
    * Every frame a page draws is the kit's bevel, whose strips are written here once for all of
-   * them. Each names its shape and its colours where it is styled, and a shape applied to a
-   * selector missing from this list paints nothing.
+   * them, their top and bottom lines following the edge as they do on a bare shape. Each names
+   * its shape and its colours where it is styled, and a shape applied to a selector missing from
+   * this list paints nothing.
    */
   .doc-html .doc-code,
   .doc-html .doc-copy,
@@ -20,6 +21,8 @@
   .api-sig,
   .api-ref-chip {
     @apply bevel;
+    --bv-hi: var(--bv-edge);
+    --bv-lo: var(--bv-edge);
   }
 
   /*
@@ -94,8 +97,6 @@
   .doc-html .doc-code {
     @apply flat-sm;
     --bv-edge: var(--nc-line-strong);
-    --bv-hi: var(--bv-edge);
-    --bv-lo: var(--bv-edge);
     --bv-fill: var(--nc-inset);
     position: relative;
     margin: 0 0 12px;
@@ -126,8 +127,6 @@
   .doc-html .doc-copy {
     @apply raised-sm;
     --bv-edge: var(--nc-line-strong);
-    --bv-hi: var(--bv-edge);
-    --bv-lo: var(--bv-edge);
     --bv-skirt: var(--nc-skirt);
     --bv-fill: var(--nc-raised);
     position: absolute;
@@ -203,8 +202,6 @@
   .doc-html kbd {
     @apply flat-sm;
     --bv-edge: var(--color-key-edge);
-    --bv-hi: var(--bv-edge);
-    --bv-lo: var(--bv-edge);
     --bv-fill: var(--color-key-face);
     display: inline-block;
     min-width: 24px;
@@ -226,8 +223,6 @@
   .doc-html figure.doc-figure {
     @apply flat-sm;
     --bv-edge: var(--nc-line);
-    --bv-hi: var(--bv-edge);
-    --bv-lo: var(--bv-edge);
     --bv-fill: var(--nc-inset);
     margin: 0 0 16px;
     padding: 9px;
@@ -292,8 +287,6 @@
   .doc-html details.doc-listing {
     @apply flat-sm;
     --bv-edge: var(--nc-line-strong);
-    --bv-hi: var(--bv-edge);
-    --bv-lo: var(--bv-edge);
     --bv-fill: var(--nc-inset);
     margin: 0 0 12px;
   }
@@ -323,8 +316,6 @@
   .doc-html .callout {
     @apply flat-sm;
     --bv-edge: var(--nc-sky);
-    --bv-hi: var(--bv-edge);
-    --bv-lo: var(--bv-edge);
     --bv-fill: var(--nc-sky-wash);
     --callout-ink: var(--nc-sky-ink);
     padding: 9px 12px 9px 14px;
@@ -395,8 +386,6 @@
   .doc-html .doc-diagram {
     @apply flat-sm;
     --bv-edge: var(--nc-line);
-    --bv-hi: var(--bv-edge);
-    --bv-lo: var(--bv-edge);
     --bv-fill: var(--nc-inset);
     margin: 0 0 16px;
     padding: 14px 16px;
@@ -472,8 +461,6 @@
   .api-card {
     @apply flat-lg;
     --bv-edge: var(--nc-line-strong);
-    --bv-hi: var(--bv-edge);
-    --bv-lo: var(--bv-edge);
     --bv-fill: var(--nc-panel);
     margin: 0 0 16px;
     padding: 12px 14px 16px;
@@ -481,8 +468,6 @@
   .api-sig {
     @apply flat-sm;
     --bv-edge: var(--nc-line);
-    --bv-hi: var(--bv-edge);
-    --bv-lo: var(--bv-edge);
     --bv-fill: var(--nc-inset);
     display: flex;
     align-items: center;
@@ -621,8 +606,6 @@
   .api-ref-chip {
     @apply raised-sm;
     --bv-edge: var(--nc-line-strong);
-    --bv-hi: var(--bv-edge);
-    --bv-lo: var(--bv-edge);
     --bv-skirt: var(--nc-skirt);
     --bv-fill: var(--nc-raised);
     display: inline-flex;
