@@ -22,6 +22,7 @@
         box falls back into the flow beside it.
       -->
       <nc-search
+        ncLooksOnly
         class="w-[200px] @min-[760px]:absolute @min-[760px]:left-1/2 @min-[760px]:-translate-x-1/2"
         size="sm"
         [placeholder]="t('editor.net.filter')"
@@ -30,6 +31,7 @@
         (valueChange)="filter.set($event)" />
       <button
         ncButton
+        ncLooksOnly
         variant="ghost"
         size="sm"
         iconOnly
@@ -41,6 +43,7 @@
       </button>
       <button
         ncButton
+        ncLooksOnly
         variant="ghost"
         size="sm"
         iconOnly
@@ -131,8 +134,9 @@
                   <span class="flex items-center gap-0.5">
                     <button
                       type="button"
-                      class="inline-flex h-(--nc-h-xs) w-(--nc-h-xs) cursor-pointer items-center justify-center raised-sm text-micro active:bevel-down"
+                      class="inline-flex h-(--nc-h-xs) w-(--nc-h-xs) cursor-pointer items-center justify-center raised-sm text-micro enabled:active:bevel-down disabled:cursor-not-allowed disabled:bevel-level disabled:bevel-edge-line disabled:text-ink-4"
                       [class]="permClass(row.read)"
+                      [disabled]="!mode.canWrite()"
                       [attr.aria-pressed]="row.read"
                       [attr.title]="t('editor.net.readHelp')"
                       (click)="setPerm(row, 'read', !row.read)">
@@ -140,8 +144,9 @@
                     </button>
                     <button
                       type="button"
-                      class="inline-flex h-(--nc-h-xs) w-(--nc-h-xs) cursor-pointer items-center justify-center raised-sm text-micro active:bevel-down"
+                      class="inline-flex h-(--nc-h-xs) w-(--nc-h-xs) cursor-pointer items-center justify-center raised-sm text-micro enabled:active:bevel-down disabled:cursor-not-allowed disabled:bevel-level disabled:bevel-edge-line disabled:text-ink-4"
                       [class]="permClass(row.write)"
+                      [disabled]="!mode.canWrite()"
                       [attr.aria-pressed]="row.write"
                       [attr.title]="t('editor.net.writeHelp')"
                       (click)="setPerm(row, 'write', !row.write)">
@@ -222,7 +227,9 @@
     }
   </section>
 
-  <nc-panel-column [width]="PANEL_WIDTH" [title]="t('editor.net.session')">
+  <!-- Let through whole: the session, its players and the test rig are a game being played,
+       and nothing of them is in the document. -->
+  <nc-panel-column ncLooksOnly [width]="PANEL_WIDTH" [title]="t('editor.net.session')">
     <span
       actions
       class="text-micro uppercase tracking-tag"

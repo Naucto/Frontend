@@ -17,6 +17,7 @@ import {
   formatBytes,
   HelpDotComponent,
   IconComponent,
+  LooksOnlyDirective,
   MarkComponent,
   PanelColumnComponent,
   SearchComponent,
@@ -35,6 +36,7 @@ import { GameScreenComponent } from '../../../shared/game-screen/game-screen.com
 import { RuntimeHostService } from '../../../shared/game-screen/runtime-host.service';
 import { UserAvatarComponent } from '../../../shared/user-avatar.component';
 import { yVersion } from '../../../shared/yjs/y-signal';
+import { EditorModeService } from '../state/editor-mode.service';
 import { EditorRuntimeService } from '../state/editor-runtime.service';
 import { PANEL_WIDTH } from '../state/editor-ui.store';
 import { PresenceSurfaceComponent } from '../work-session/presence-surface.component';
@@ -62,6 +64,7 @@ const PATH = /^[a-z0-9_]+(\.[a-z0-9_]+)*$/i;
     EmptyStateComponent,
     HelpDotComponent,
     IconComponent,
+    LooksOnlyDirective,
     MarkComponent,
     PanelColumnComponent,
     SectionComponent,
@@ -84,6 +87,7 @@ const PATH = /^[a-z0-9_]+(\.[a-z0-9_]+)*$/i;
 export default class NetTabPage {
   protected readonly PANEL_WIDTH = PANEL_WIDTH;
   protected readonly work = inject(WorkSessionService);
+  protected readonly mode = inject(EditorModeService);
   protected readonly presence = inject(SessionPresenceService);
   private readonly runtime = inject(EditorRuntimeService);
   private readonly auth = inject(AuthStore);
@@ -254,10 +258,11 @@ export default class NetTabPage {
     });
   }
 
+  /** A lamp that cannot be pressed is drawn as the kit draws a latched cell that cannot. */
   protected permClass(on: boolean): string {
     return on
-      ? 'bevel-down bevel-edge-jade bevel-fill-jade-wash text-jade-ink'
-      : 'text-ink-4 hover:bevel-lit hover:text-active-ink';
+      ? 'bevel-down enabled:bevel-edge-jade enabled:bevel-fill-jade-wash enabled:text-jade-ink disabled:bevel-fill-line'
+      : 'text-ink-4 enabled:hover:bevel-lit enabled:hover:text-active-ink disabled:bevel-fill-transparent';
   }
 
   protected valueClass(kind: Row['kind']): string {
