@@ -2,11 +2,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
-import {
-  type CollectionDto,
-  projectControllerFindAll,
-  type ProjectExResponseDto,
-} from '@naucto/api-client';
+import type { CollectionDto } from '@naucto/api-client';
 import {
   ButtonDirective,
   ChipComponent,
@@ -19,9 +15,7 @@ import {
   ShelfItemDirective,
   SkeletonComponent,
 } from '@naucto/ui';
-import { injectQuery } from '@tanstack/angular-query-experimental';
 
-import { unwrap } from '../../core/api/api-errors';
 import {
   CollectionDialogComponent,
   type CollectionDialogData,
@@ -33,14 +27,9 @@ import type { HubGame } from '../../shared/hub/hub-game';
 import { ShelfDiskComponent } from '../../shared/hub/shelf-disk.component';
 import { GoodStandingAction } from '../../shared/moderation/good-standing-action';
 import { injectMyCollections } from '../../shared/queries/collections.queries';
-import { qk } from '../../shared/queries/query-keys';
+import { injectMyProjects } from '../../shared/queries/projects.queries';
 
 type Shelf = 'drafts' | 'published' | 'collections';
-
-const hubGame = (project: ProjectExResponseDto): HubGame => ({
-  ...project,
-  coverUrl: project.coverUrl ?? null,
-});
 
 /**
  * The signed-in person's own shelves: drafts, published games, collections. Each is a carousel;
@@ -76,22 +65,15 @@ export default class MyGamesPage {
   private readonly dialogs = inject(DialogService);
   private readonly standing = inject(GoodStandingAction);
 
-  protected readonly query = injectQuery(() => ({
-    queryKey: qk.myProjects({ page: 1, limit: 100 }),
-    queryFn: async () => unwrap(await projectControllerFindAll({ query: { page: 1, limit: 100 } })),
-  }));
+  protected readonly query = injectMyProjects(100);
   protected readonly collections = injectMyCollections();
 
   private readonly projects = computed(() => this.query.data()?.projects ?? []);
   protected readonly drafts = computed(() =>
-    this.projects()
-      .filter((project) => !project.publishedAt)
-      .map(hubGame),
+    this.projects().filter((project) => !project.publishedAt),
   );
   protected readonly published = computed(() =>
-    this.projects()
-      .filter((project) => !!project.publishedAt)
-      .map(hubGame),
+    this.projects().filter((project) => !!project.publishedAt),
   );
   /** A shelf leads with what does not exist yet: the game, or the collection, to make. */
   protected readonly draftItems = computed<(HubGame | null)[]>(() => [null, ...this.drafts()]);
