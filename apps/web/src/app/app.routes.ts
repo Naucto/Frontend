@@ -1,6 +1,7 @@
 import { type Routes } from '@angular/router';
 
 import { authGuard, guestGuard } from './core/auth/auth.guard';
+import { gameAddressGuard } from './core/ids/game-address.guard';
 
 /**
  * The literal `false` in a production build, where the builder substitutes it; undefined or an
@@ -32,6 +33,7 @@ export const routes: Routes = [
   },
   {
     path: 'edit/:id',
+    canMatch: [gameAddressGuard],
     canActivate: [authGuard],
     loadChildren: () => import('./features/editor/editor.routes'),
     title: 'Editor — Naucto',
@@ -57,6 +59,7 @@ export const routes: Routes = [
       { path: 'hub/all/:row', redirectTo: ({ params }) => `/hub?shelf=${String(params.row)}` },
       {
         path: 'play/:id',
+        canMatch: [gameAddressGuard],
         loadComponent: () => import('./features/game/game.page'),
         title: 'Play — Naucto',
       },
