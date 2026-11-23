@@ -518,11 +518,16 @@
       </div>
       <nc-settings-group title="Appearance" hint="How the site looks on this device">
         <nc-setting-row
+          icon="pause"
           title="Reduce motion"
           hint="Stills the animations and the screen shake in the UI">
           <nc-toggle [(checked)]="reduceMotion" label="Reduce motion" />
         </nc-setting-row>
-        <nc-setting-row title="Delete account" hint="Your published games stay up" [danger]="true">
+        <nc-setting-row
+          icon="trash"
+          title="Delete account"
+          hint="Your published games stay up"
+          [danger]="true">
           <button ncButton variant="danger" size="sm">Delete</button>
         </nc-setting-row>
       </nc-settings-group>
