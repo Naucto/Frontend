@@ -32,7 +32,7 @@ export const RATING_REASONS = Object.values(RatingReason);
 
 /** What was sent, and whether the person went on to report a bug from it. */
 export interface RatingSent {
-  id: number;
+  id: string;
   reportBug: boolean;
   improve: string;
 }
@@ -62,7 +62,7 @@ export class RatingFormComponent {
   /** The answer offered to "mostly play or create", from what the person was just doing. */
   readonly role = input.required<ReportRole>();
   readonly origin = input.required<RatingOrigin>();
-  readonly releaseId = input<number | null>(null);
+  readonly releaseId = input<string | null>(null);
   readonly sent = output<RatingSent>();
 
   private readonly submit = injectSubmitRating();

@@ -261,7 +261,7 @@
             </span>
           }
           <span class="flex-1"></span>
-          @if (slotOf(collaborator.userId); as slot) {
+          @if (slotOf(collaborator); as slot) {
             <span class="label text-ink-3">{{ t('editor.net.inGame') }}</span>
             <span class="label text-jade-ink">P{{ slot }}</span>
           } @else if (info()?.joinCode && !collaborator.isSelf) {
@@ -298,8 +298,8 @@
       <nc-presence-surface surface="net:players" />
       @for (player of slots(); track player.slot) {
         <div class="flex items-center gap-1 py-0.5">
-          @if (player.userId !== null) {
-            <nc-user-avatar [name]="player.name" [userId]="player.userId" [size]="16" />
+          @if (player.player !== null) {
+            <nc-user-avatar [name]="player.name" [userId]="player.account" [size]="16" />
             <span class="text-ui text-ink">{{ player.name }}</span>
             @if (player.host) {
               <span class="label text-gold-ink">{{ t('editor.net.host') }}</span>

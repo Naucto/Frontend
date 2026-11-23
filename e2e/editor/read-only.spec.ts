@@ -50,9 +50,9 @@ test.describe('a staff member who does not collaborate on the game', () => {
   });
 
   test('opens it on the editor address, to look at, and is told why', async ({ page }) => {
-    await page.goto(`/edit/${String(PROJECT_ID)}`);
+    await page.goto(`/edit/${PROJECT_ID}`);
 
-    await expect(page).toHaveURL(new RegExp(`/edit/${String(PROJECT_ID)}/game$`));
+    await expect(page).toHaveURL(new RegExp(`/edit/${PROJECT_ID}/game$`));
     await expect(page.getByTestId('read-only-band')).toContainText('Staff view of the latest save');
     // The header of a session nobody joined offers nothing to share, publish or go back to.
     await expect(page.getByRole('button', { name: 'Share', exact: true })).toHaveCount(0);
@@ -300,9 +300,9 @@ test.describe('a staff member who does not collaborate on the game', () => {
 
   for (const address of ['staff/edit', 'staff/play']) {
     test(`is taken from the old /${address} address to the editor`, async ({ page }) => {
-      await page.goto(`/${address}/${String(PROJECT_ID)}`);
+      await page.goto(`/${address}/${PROJECT_ID}`);
 
-      await expect(page).toHaveURL(new RegExp(`/edit/${String(PROJECT_ID)}/game$`));
+      await expect(page).toHaveURL(new RegExp(`/edit/${PROJECT_ID}/game$`));
       await expect(page.getByTestId('read-only-band')).toBeVisible();
     });
   }

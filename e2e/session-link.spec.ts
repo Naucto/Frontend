@@ -1,7 +1,8 @@
 import type { Locator, Page } from '@playwright/test';
 
+import { uuidOf } from '../packages/api-client/testing';
 import { expect, test } from './fixtures';
-import { serveGame } from './mocks/game';
+import { PLAY, release, serveGame } from './mocks/game';
 import { JOINS_FROM_INIT, mockRoom, ROOM } from './mocks/netplay';
 import { answer, mockSignedIn } from './mocks/session';
 
@@ -20,7 +21,7 @@ const JOINS_FROM_MENU = [
   'end',
 ].join('\n');
 
-const link = `/play/42?session=${ROOM.sessionUuid}`;
+const link = `${PLAY}?session=${ROOM.sessionUuid}`;
 const strip = (page: Page): Locator => page.locator('nc-session-strip');
 const play = (page: Page): Locator =>
   page.getByRole('button', { name: 'Play', exact: true }).first();
@@ -45,7 +46,7 @@ test.describe('a game opened on a session', () => {
     await expect(page.getByRole('dialog')).toHaveCount(0);
     expect(room.joins).toEqual([{ editorTest: false }]);
     // A reload would otherwise go back into a session the player may have left since.
-    await expect(page).toHaveURL(/\/play\/42$/);
+    await expect(page).toHaveURL(new RegExp(`${PLAY}$`));
     await expect(strip(page)).toHaveCount(0);
 
     // The invite lasts the visit: a restart goes back in.
@@ -71,7 +72,7 @@ test.describe('a game opened on a session', () => {
     await page.keyboard.up('Space');
     await expect(page.getByRole('dialog')).toHaveCount(0);
     expect(room.joins).toEqual([{ joinCode: 'WXYZ', editorTest: false }]);
-    await expect(page).toHaveURL(/\/play\/42$/);
+    await expect(page).toHaveURL(new RegExp(`${PLAY}$`));
   });
 
   test('says when the session has ended, and a join then tells why and opens the dialog', async ({
@@ -79,7 +80,7 @@ test.describe('a game opened on a session', () => {
   }) => {
     await serveGame(page, JOINS_FROM_MENU);
     await mockSignedIn(page);
-    await page.route('**/game-sessions?projectId=42', answer(200, { sessions: [] }));
+    await page.route(`**/game-sessions?projectId=${release.id}`, answer(200, { sessions: [] }));
     const room = await mockRoom(page, ROOM, { gone: true });
 
     await page.goto(link);
@@ -93,13 +94,13 @@ test.describe('a game opened on a session', () => {
     await page.keyboard.up('Space');
     await expect(page.locator('nc-toast-host').getByText('This session has ended.')).toBeVisible();
     expect(room.joins).toHaveLength(1);
-    await expect(page).toHaveURL(/\/play\/42$/);
+    await expect(page).toHaveURL(new RegExp(`${PLAY}$`));
   });
 
   test('tells the player a full session is full, and opens the dialog', async ({ page }) => {
     await serveGame(page, JOINS_FROM_MENU);
     await mockSignedIn(page);
-    await page.route('**/game-sessions?projectId=42', answer(200, { sessions: [] }));
+    await page.route(`**/game-sessions?projectId=${release.id}`, answer(200, { sessions: [] }));
     await mockRoom(
       page,
       { ...ROOM, playerCount: 4 },
@@ -123,7 +124,7 @@ test.describe('a game opened on a session', () => {
     await page.route(
       '**/users/profile',
       answer(200, {
-        id: 9,
+        id: uuidOf(9),
         email: 'kay@example.com',
         username: 'kay',
         nickname: null,
@@ -148,7 +149,7 @@ test.describe('a game opened on a session', () => {
     await expect(page.getByRole('alert')).toContainText('in Friday night of louis, 2 of 4');
     await expect(page.getByRole('dialog')).toHaveCount(0);
     expect(room.joins).toHaveLength(1);
-    await expect(page).toHaveURL(/\/play\/42$/);
+    await expect(page).toHaveURL(new RegExp(`${PLAY}$`));
   });
 
   test('starts without the session for a visitor who would rather play alone', async ({ page }) => {
@@ -161,7 +162,7 @@ test.describe('a game opened on a session', () => {
 
     await expect(page.getByRole('alert')).toContainText('at the menu');
     await expect(strip(page)).toHaveCount(0);
-    await expect(page).toHaveURL(/\/play\/42$/);
+    await expect(page).toHaveURL(new RegExp(`${PLAY}$`));
     expect(room.joins).toEqual([]);
   });
 
@@ -171,7 +172,7 @@ test.describe('a game opened on a session', () => {
       'function _init()\n  net.join(function()\n    net.leave()\n    net.join()\n  end)\nend',
     );
     await mockSignedIn(page);
-    await page.route('**/game-sessions?projectId=42', answer(200, { sessions: [] }));
+    await page.route(`**/game-sessions?projectId=${release.id}`, answer(200, { sessions: [] }));
     const room = await mockRoom(page);
 
     await page.goto(link);
@@ -203,7 +204,7 @@ test.describe('a game opened on a session', () => {
       ].join('\n'),
     );
     await mockSignedIn(page);
-    await page.route('**/game-sessions?projectId=42', answer(200, { sessions: [] }));
+    await page.route(`**/game-sessions?projectId=${release.id}`, answer(200, { sessions: [] }));
     const room = await mockRoom(page);
 
     await page.goto(link);

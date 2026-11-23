@@ -1,5 +1,6 @@
+import { uuidOf } from '../packages/api-client/testing';
 import { expect, type Page, test } from './fixtures';
-import { release, serveGame, servePreset } from './mocks/game';
+import { PLAY, release, serveGame, servePreset } from './mocks/game';
 import { setGamepads } from './mocks/gamepads';
 import { connection } from './mocks/netplay';
 import { answer, mockSignedIn } from './mocks/session';
@@ -7,7 +8,7 @@ import { answer, mockSignedIn } from './mocks/session';
 test.describe('play page', () => {
   test.beforeEach(async ({ page }) => {
     await page.route('**/auth/refresh', answer(401, {}));
-    await page.route('**/projects/releases/42', answer(200, release));
+    await page.route(`**/projects/releases/${release.id}`, answer(200, release));
   });
 
   /** REMIX asks a signed-out reader to sign in over the page, then forks. */
@@ -16,16 +17,19 @@ test.describe('play page', () => {
     await page.route(
       '**/users/profile',
       answer(200, {
-        id: 9,
+        id: uuidOf(9),
         email: 'kay@example.com',
         username: 'kay',
         nickname: null,
         createdAt: '2026-09-01T00:00:00.000Z',
       }),
     );
-    await page.route('**/projects/42/fork', answer(201, { id: 77, name: 'Cave Diver (remix)' }));
+    await page.route(
+      `**/projects/${release.id}/fork`,
+      answer(201, { id: uuidOf(77), name: 'Cave Diver (remix)' }),
+    );
 
-    await page.goto('/play/42');
+    await page.goto(PLAY);
     const remix = page.getByRole('button', { name: 'Remix' });
     await expect(remix).toBeEnabled();
     await remix.click();
@@ -34,21 +38,21 @@ test.describe('play page', () => {
     await expect(dialog.getByRole('heading', { name: 'Sign in' })).toBeVisible();
     await dialog.getByLabel('Email').fill('kay@example.com');
     await dialog.getByLabel('Password').fill('correct horse battery staple');
-    const forked = page.waitForRequest('**/projects/42/fork');
+    const forked = page.waitForRequest(`**/projects/${release.id}/fork`);
     await dialog.getByRole('button', { name: 'Sign in' }).click();
 
     expect((await forked).method()).toBe('POST');
-    await expect(page).toHaveURL(/\/edit\/77/);
+    await expect(page).toHaveURL(new RegExp(`/edit/${uuidOf(77)}`));
   });
 
   test('cancelling the sign-in leaves the page where it was', async ({ page }) => {
-    await page.goto('/play/42');
+    await page.goto(PLAY);
     await page.getByRole('button', { name: 'Remix' }).click();
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
     await dialog.getByRole('button', { name: 'Cancel' }).click();
     await expect(dialog).toBeHidden();
-    await expect(page).toHaveURL(/\/play\/42$/);
+    await expect(page).toHaveURL(new RegExp(`${PLAY}$`));
   });
 });
 
@@ -59,7 +63,7 @@ test.describe('play page', () => {
 test('a game that errors tells the player, and restarts from the banner', async ({ page }) => {
   await serveGame(page, 'function _update()\n  local t = nil\n  t.x = 1\nend');
 
-  await page.goto('/play/42');
+  await page.goto(PLAY);
   await page.getByRole('button', { name: 'Play' }).first().click();
   const alert = page.getByRole('alert');
   await expect(alert).toContainText('The game stopped on an error');
@@ -83,7 +87,7 @@ test('how to play shows the actions an old game is given, under the names it gav
     actions: [{ action: 'a', label: 'Jump' }],
   });
 
-  await page.goto('/play/42');
+  await page.goto(PLAY);
   const howTo = page.locator('nc-how-to-play');
   await expect(howTo.getByRole('heading', { name: 'How to play' })).toBeVisible();
   await expect(howTo.getByRole('rowheader')).toHaveCount(9);
@@ -97,7 +101,7 @@ test.describe('how to play', () => {
     page,
   }) => {
     await servePreset(page, 'platformer');
-    await page.goto('/play/42');
+    await page.goto(PLAY);
 
     const howTo = page.locator('nc-how-to-play');
     await expect(howTo.getByRole('table')).toHaveCount(2);
@@ -129,7 +133,7 @@ test.describe('how to play', () => {
 
   test('gives each keyboard player a column in a two-player game', async ({ page }) => {
     await servePreset(page, 'two-players');
-    await page.goto('/play/42');
+    await page.goto(PLAY);
 
     const table = page.locator('nc-how-to-play').getByRole('table').first();
     await expect(table.getByRole('columnheader')).toHaveText(['Action', /P1/, /P2/, 'Pad']);
@@ -140,7 +144,7 @@ test.describe('how to play', () => {
 
   test('folds away, and is still folded when the page is opened again', async ({ page }) => {
     await servePreset(page, 'platformer');
-    await page.goto('/play/42');
+    await page.goto(PLAY);
     const howTo = page.locator('nc-how-to-play');
     await expect(howTo.getByRole('table')).toHaveCount(2);
 
@@ -164,7 +168,7 @@ test.describe('how to play', () => {
 
     test('keeps every table inside the page', async ({ page }) => {
       await servePreset(page, 'two-players');
-      await page.goto('/play/42');
+      await page.goto(PLAY);
       const tables = page.locator('nc-how-to-play').getByRole('table');
       await expect(tables).toHaveCount(2);
 
@@ -186,7 +190,7 @@ test.describe('how to play', () => {
 
     test('shows the control of the on-screen pad instead of keys', async ({ page }) => {
       await servePreset(page, 'platformer');
-      await page.goto('/play/42');
+      await page.goto(PLAY);
 
       const table = page.locator('nc-how-to-play').getByRole('table').first();
       await expect(table.getByRole('columnheader')).toHaveText(['Action', 'Touch']);
@@ -202,7 +206,7 @@ test.describe('how to play', () => {
         localStorage.setItem('naucto.pad-layout', JSON.stringify({ size: 140, opacity: 85 }));
       });
       await servePreset(page, 'classic');
-      await page.goto('/play/42');
+      await page.goto(PLAY);
 
       const keys = page.locator('nc-virtual-pad [data-nc-control]:visible');
       await expect(keys).toHaveCount(9);
@@ -237,7 +241,7 @@ test.describe('controls of the player', () => {
   test('the gear of the transport opens the controls over the game', async ({ page }) => {
     await setGamepads(page, []);
     await servePreset(page, 'platformer');
-    await page.goto('/play/42');
+    await page.goto(PLAY);
 
     await page.getByRole('button', { name: 'Controls' }).click();
     const dialog = page.locator('nc-controls-dialog');
@@ -259,7 +263,7 @@ test.describe('controls of the player', () => {
   test('a held button and a leaning stick light on the drawn gamepad, live', async ({ page }) => {
     await setGamepads(page, [TEST_PAD]);
     await servePreset(page, 'platformer');
-    await page.goto('/play/42');
+    await page.goto(PLAY);
     await page.getByRole('button', { name: 'Controls' }).click();
     const pad = page.locator('nc-controls-dialog [data-pad="0"]');
     await expect(pad.locator('[data-part]')).toHaveCount(16);
@@ -296,7 +300,7 @@ test.describe('controls of the player', () => {
         'end',
       ].join('\n'),
     );
-    await page.goto('/play/42');
+    await page.goto(PLAY);
     await page.getByRole('button', { name: 'Play' }).first().click();
     const alert = page.getByRole('alert');
 
@@ -340,7 +344,7 @@ test('a game saved before it had actions of its own answers to the keys it alway
     ].join('\n'),
   );
 
-  await page.goto('/play/42');
+  await page.goto(PLAY);
   await page.getByRole('button', { name: 'Play' }).first().click();
   const alert = page.getByRole('alert');
   // A key no action holds, and player one's own "right": neither is what the code reads.
@@ -388,7 +392,7 @@ test('a game that asks for a listed room gets one, and the host dialog says so',
   });
   await page.routeWebSocket(/e2e-game-socket/, () => undefined);
 
-  await page.goto('/play/42');
+  await page.goto(PLAY);
   await page.getByRole('button', { name: 'Play' }).first().click();
   const dialog = page.getByRole('dialog');
   await dialog.getByRole('button', { name: 'Start hosting' }).click();
@@ -397,7 +401,7 @@ test('a game that asks for a listed room gets one, and the host dialog says so',
   await expect(dialog).toContainText('ABCD2345');
   expect(asked).toEqual([
     {
-      projectId: 42,
+      projectId: release.id,
       title: 'Friday night',
       maxPlayers: 2,
       visibility: 'INVITE_CODE',
@@ -405,6 +409,50 @@ test('a game that asks for a listed room gets one, and the host dialog says so',
     },
     { visibility: 'PUBLIC' },
   ]);
+});
+
+/** Published games add to it and print it: what the server gives a connection reaches Lua whole. */
+test('a game that hosts reads its player number as an integer it can compute on', async ({
+  page,
+}) => {
+  const uuid = '5b1d2a0e-93c4-4f6e-8a57-0c7de1f2a934';
+  await serveGame(
+    page,
+    [
+      'local hosted',
+      'function _init()',
+      '  net.host({ title = "Friday night" }, function() hosted = true end)',
+      'end',
+      'function _update()',
+      '  if hosted then',
+      '    error(math.type(net.id()) .. " " .. net.id() .. ", then " .. net.id() + 1)',
+      '  end',
+      'end',
+    ].join('\n'),
+  );
+  await mockSignedIn(page);
+  await page.route(
+    '**/game-sessions',
+    answer(201, {
+      sessionUuid: uuid,
+      playerId: 1042,
+      joinCode: 'ABCD2345',
+      connectionTicket: 'ticket',
+      webrtcConfig: {
+        signaling: ['ws://localhost/e2e-game-socket'],
+        peerOpts: { config: { iceServers: [] } },
+      },
+    }),
+  );
+  await page.routeWebSocket(/e2e-game-socket/, () => undefined);
+
+  await page.goto(PLAY);
+  await page.getByRole('button', { name: 'Play' }).first().click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Start hosting' }).click();
+  await dialog.getByRole('button', { name: 'Done' }).click();
+
+  await expect(page.getByRole('alert')).toContainText('integer 1042, then 1043');
 });
 
 test.describe('the Play mark over an idle screen', () => {
@@ -419,7 +467,7 @@ test.describe('the Play mark over an idle screen', () => {
 
   test('is the 24 drawing at twice its size on a screen wide enough for it', async ({ page }) => {
     await serveGame(page, 'function _update() end');
-    await page.goto('/play/42');
+    await page.goto(PLAY);
     expect(await side(page)).toEqual([48]);
   });
 
@@ -428,7 +476,7 @@ test.describe('the Play mark over an idle screen', () => {
 
     test('stays at 24', async ({ page }) => {
       await serveGame(page, 'function _update() end');
-      await page.goto('/play/42');
+      await page.goto(PLAY);
       expect(await side(page)).toEqual([24]);
     });
   });

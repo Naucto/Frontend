@@ -93,7 +93,7 @@ export class NotificationsBellComponent {
 
   protected async answer(
     notificationId: string,
-    requestId: number,
+    requestId: string,
     accept: boolean,
   ): Promise<void> {
     this.answering.set(notificationId);

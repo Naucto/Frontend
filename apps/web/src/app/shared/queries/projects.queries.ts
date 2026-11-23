@@ -48,24 +48,24 @@ export const toRows = (
   });
 };
 
-export function injectProjectVersions(id: () => number): CreateQueryResult<VersionRow[]> {
+export function injectProjectVersions(id: () => string): CreateQueryResult<VersionRow[]> {
   return injectQuery(() => ({
     queryKey: qk.projectVersions(id()),
     queryFn: async () =>
       toRows(
-        unwrap(await projectContentControllerGetVersions({ path: { id: String(id()) } })),
+        unwrap(await projectContentControllerGetVersions({ path: { id: id() } })),
         'versions',
         false,
       ),
   }));
 }
 
-export function injectProjectCheckpoints(id: () => number): CreateQueryResult<VersionRow[]> {
+export function injectProjectCheckpoints(id: () => string): CreateQueryResult<VersionRow[]> {
   return injectQuery(() => ({
     queryKey: qk.projectCheckpoints(id()),
     queryFn: async () =>
       toRows(
-        unwrap(await projectContentControllerGetCheckpoints({ path: { id: String(id()) } })),
+        unwrap(await projectContentControllerGetCheckpoints({ path: { id: id() } })),
         'checkpoints',
         true,
       ),
@@ -100,7 +100,7 @@ export function injectMyProjects(limit: number): CreateQueryResult<PaginatedProj
  */
 export function invalidateProjectHistory(
   qc: QueryClient,
-  id: number,
+  id: string,
   kind: 'versions' | 'checkpoints',
 ): Promise<void> {
   return qc.invalidateQueries({

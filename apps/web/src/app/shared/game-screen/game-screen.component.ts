@@ -123,7 +123,7 @@ export class GameScreenComponent {
   readonly debug = input(false, { transform: booleanAttribute });
   readonly autoPlay = input(false);
   /** Backend project id, needed to host or join netplay sessions. */
-  readonly projectId = input<number | null>(null);
+  readonly projectId = input<string | null>(null);
   /**
    * The session this screen was opened on. The mounted game reads it with `net.invite()`, and its
    * `net.join()` enters it straight away instead of asking the player which one.
@@ -304,7 +304,7 @@ export class GameScreenComponent {
     this.inviteClosed.emit();
   }
 
-  private ask(req: NetRequest, projectId: number): void {
+  private ask(req: NetRequest, projectId: string): void {
     const ref =
       req.kind === 'host'
         ? this.dialogs.open(HostDialogComponent, {
@@ -332,7 +332,7 @@ export class GameScreenComponent {
    * gives way to the dialog, where another can be picked; for the editor's second client the
    * request ends there.
    */
-  private enter(invite: SessionInvite, req: NetRequest, projectId: number): void {
+  private enter(invite: SessionInvite, req: NetRequest, projectId: string): void {
     this.bridge.joinSession(invite.uuid, invite.code ?? undefined, this.editorTest()).then(
       () => {
         this.inviteJoined.emit();

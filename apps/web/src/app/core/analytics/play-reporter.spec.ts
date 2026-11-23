@@ -1,6 +1,7 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import type { AnalyticsPlayDto } from '@naucto/api-client';
+import { uuidOf } from '@naucto/api-client/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AuthStore } from '../auth/auth.store';
@@ -50,7 +51,7 @@ describe('PlayReporter', () => {
   const begin = async (): Promise<void> => {
     clock = new PlayClock(() => Date.now());
     clock.run();
-    reporter.begin(5, clock);
+    reporter.begin(uuidOf(5), clock);
     await vi.advanceTimersByTimeAsync(0);
   };
 
@@ -110,7 +111,7 @@ describe('PlayReporter', () => {
           sessionId: SESSION,
           phase: 'START',
           endReason: undefined,
-          play: expect.objectContaining({ releaseId: 5, continued: false, activeMs: 0 }),
+          play: expect.objectContaining({ releaseId: uuidOf(5), continued: false, activeMs: 0 }),
         },
       ]);
     });
@@ -234,7 +235,7 @@ describe('PlayReporter', () => {
             state: 'PLAYING',
             signedIn: false,
             consent: 'DECLINED',
-            releaseId: 5,
+            releaseId: uuidOf(5),
             playMs: undefined,
           },
           keepalive: false,
@@ -313,13 +314,13 @@ describe('PlayReporter', () => {
   });
 
   it('counts a view under the visitor only with consent', async () => {
-    reporter.registerView(5);
+    reporter.registerView(uuidOf(5));
     await setMode('anonymous');
-    reporter.registerView(6);
+    reporter.registerView(uuidOf(6));
 
     expect(posted.map(({ path, body }) => [path, body])).toEqual([
-      ['/projects/releases/5/view', { visitorId: VISITOR }],
-      ['/projects/releases/6/view', {}],
+      [`/projects/releases/${uuidOf(5)}/view`, { visitorId: VISITOR }],
+      [`/projects/releases/${uuidOf(6)}/view`, {}],
     ]);
   });
 

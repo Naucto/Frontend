@@ -1,4 +1,5 @@
 import type { CollectionVisibility } from '@naucto/api-client';
+import { uuidOf } from '@naucto/api-client/testing';
 import { BUBBLEGUM_16 } from '@naucto/engine';
 
 import type { HeroEntry } from '../../shared/hub/hero-pile.component';
@@ -39,7 +40,7 @@ function pick<T>(list: readonly T[], index: number): T {
 }
 
 interface Person {
-  id: number;
+  id: string;
   username: string;
 }
 
@@ -56,7 +57,7 @@ const PEOPLE: readonly Person[] = [
   'nina',
   'yann',
   'zoe',
-].map((username, id) => ({ id: id + 1, username }));
+].map((username, at) => ({ id: uuidOf(at + 1), username }));
 
 /** The signed-in player of the showcase. */
 export const VIEWER = 'you';
@@ -203,7 +204,7 @@ const CATALOGUE: readonly (readonly [
 
 export const GAMES: readonly HubGame[] = CATALOGUE.map(
   ([name, shortDesc, tags, disk, sky, ground, mark], index) => ({
-    id: index + 1,
+    id: uuidOf(index + 1),
     name,
     shortDesc,
     tags,

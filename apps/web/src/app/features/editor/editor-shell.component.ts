@@ -8,7 +8,6 @@ import {
   inject,
   input,
   linkedSignal,
-  numberAttribute,
   type OnInit,
   signal,
 } from '@angular/core';
@@ -141,8 +140,7 @@ const RAIL: Omit<RailItem<EditorTab>, 'label'>[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export default class EditorShellComponent implements OnInit {
-  readonly id = input.required({ transform: numberAttribute });
-  protected readonly String = String;
+  readonly id = input.required<string>();
   private readonly presence = inject(PresenceStore);
   private readonly activity = inject(ActivityService);
   private readonly feedback = inject(FeedbackStore);
@@ -263,6 +261,10 @@ export default class EditorShellComponent implements OnInit {
         this.presence.announce({ kind: 'IDLE' });
         release();
       });
+    });
+    // The room is told which player this editor's game is at the table, for as long as it is.
+    effect(() => {
+      this.sessionPresence.setPlayer(this.editorRuntime.bridge()?.session()?.selfPlayer ?? null);
     });
     this.ui.setViewportWidth(window.innerWidth);
     this.ui.setViewportHeight(window.innerHeight);

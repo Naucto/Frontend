@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { client } from '@naucto/api-client';
+import { uuidOf } from '@naucto/api-client/testing';
 import { render, screen } from '@testing-library/angular';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -43,7 +44,7 @@ describe('FeedbackPromptComponent', () => {
     });
     const store = TestBed.inject(FeedbackStore);
     if (arm === 'play') {
-      store.notePlayEnded(42, PROMPT_AFTER_PLAY_MS);
+      store.notePlayEnded(uuidOf(42), PROMPT_AFTER_PLAY_MS);
     } else {
       store.noteEditorLeft(PROMPT_AFTER_BUILD_MS);
     }
@@ -67,10 +68,13 @@ describe('FeedbackPromptComponent', () => {
       const text = await request.text();
       sent.push({ method: request.method, path, body: text ? JSON.parse(text) : null });
       const rating = path === '/reports/ratings';
-      return new Response(JSON.stringify(rating ? { id: 5 } : { eligible, declined: false }), {
-        status: rating ? 201 : 200,
-        headers: { 'content-type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify(rating ? { id: uuidOf(5) } : { eligible, declined: false }),
+        {
+          status: rating ? 201 : 200,
+          headers: { 'content-type': 'application/json' },
+        },
+      );
     };
   });
 
@@ -81,9 +85,9 @@ describe('FeedbackPromptComponent', () => {
   it('waits for the hub after a play, and stays out of games and the editor', () => {
     expect(promptFits('PLAYER', '/hub')).toBe(true);
     expect(promptFits('PLAYER', '/games')).toBe(false);
-    expect(promptFits('PLAYER', '/play/42')).toBe(false);
+    expect(promptFits('PLAYER', `/play/${uuidOf(42)}`)).toBe(false);
     expect(promptFits('CREATOR', '/games')).toBe(true);
-    expect(promptFits('CREATOR', '/edit/3/code')).toBe(false);
+    expect(promptFits('CREATOR', `/edit/${uuidOf(3)}/code`)).toBe(false);
   });
 
   it('asks in the middle of the hub once a play has ended, and Escape does not skip it', async () => {
@@ -118,7 +122,7 @@ describe('FeedbackPromptComponent', () => {
       score: 9,
       role: 'PLAYER',
       origin: 'PROMPT',
-      releaseId: 42,
+      releaseId: uuidOf(42),
     });
   });
 

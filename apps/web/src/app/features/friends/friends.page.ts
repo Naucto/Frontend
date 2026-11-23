@@ -74,7 +74,7 @@ export default class FriendsPage {
   protected readonly ACCENT = ACCENT;
   protected readonly tab = signal<'online' | 'all'>('online');
   /** The request being answered, so a second click cannot answer a row that is already leaving. */
-  protected readonly answering = signal<number | null>(null);
+  protected readonly answering = signal<string | null>(null);
 
   private readonly friendsQuery = injectQuery(() => ({
     queryKey: qk.friends(),
@@ -152,7 +152,7 @@ export default class FriendsPage {
    * from here, and the design draws that row without a button.
    */
   protected playable(friend: Friend): {
-    releaseId: number;
+    releaseId: string;
     /** The session a slot is taken in, which the game page then joins. */
     session: string | null;
     variant: 'run' | 'sky';
@@ -191,7 +191,7 @@ export default class FriendsPage {
       });
   }
 
-  protected addUser(userId: number): void {
+  protected addUser(userId: string): void {
     void friendsControllerSend({ body: { userId } })
       .then(unwrap)
       .then(() => {
@@ -208,7 +208,7 @@ export default class FriendsPage {
    * disappears on success, so a silent error leaves the sender listed and the reader believing they
    * answered.
    */
-  protected async answer(id: number, accept: boolean): Promise<void> {
+  protected async answer(id: string, accept: boolean): Promise<void> {
     this.answering.set(id);
     try {
       await answerFriendRequest(this.qc, id, accept);

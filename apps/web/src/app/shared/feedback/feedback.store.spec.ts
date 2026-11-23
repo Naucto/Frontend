@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { uuidOf } from '@naucto/api-client/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { FeedbackStore, PROMPT_AFTER_BUILD_MS, PROMPT_AFTER_PLAY_MS } from './feedback.store';
@@ -11,11 +12,11 @@ describe('FeedbackStore', () => {
   });
 
   it('asks after a real play, not after a glance at a game', () => {
-    store().notePlayEnded(42, PROMPT_AFTER_PLAY_MS - 1);
+    store().notePlayEnded(uuidOf(42), PROMPT_AFTER_PLAY_MS - 1);
     expect(store().armed()).toBeNull();
 
-    store().notePlayEnded(42, PROMPT_AFTER_PLAY_MS);
-    expect(store().armed()).toEqual({ role: 'PLAYER', releaseId: 42 });
+    store().notePlayEnded(uuidOf(42), PROMPT_AFTER_PLAY_MS);
+    expect(store().armed()).toEqual({ role: 'PLAYER', releaseId: uuidOf(42) });
   });
 
   it('asks a creator after a real editing session', () => {

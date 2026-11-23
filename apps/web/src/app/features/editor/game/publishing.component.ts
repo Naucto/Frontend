@@ -115,7 +115,7 @@ export class PublishingComponent {
     () => this.session.project()?.creator.id === this.session.myUserId,
   );
   /** The game this one was forked from, so the lineage can name it rather than number it. */
-  protected readonly parent = injectRelease(() => this.session.project()?.forkedFromId ?? 0);
+  protected readonly parent = injectRelease(() => this.session.project()?.forkedFromId ?? null);
 
   protected readonly status = linkedSignal<ProjectStatus>(
     () => this.session.project()?.status ?? 'IN_PROGRESS',

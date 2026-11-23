@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { uuidOf } from '@naucto/api-client/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { ActivityService } from './activity.service';
@@ -17,10 +18,10 @@ describe('ActivityService', () => {
 
   it('reports the highest claim, with its game', () => {
     const building = activity.claim({ state: 'BUILDING' });
-    const playing = activity.claim({ state: 'PLAYING', releaseId: 4 });
+    const playing = activity.claim({ state: 'PLAYING', releaseId: uuidOf(4) });
     activity.claim({ state: 'BROWSING' });
 
-    expect(activity.current()).toEqual({ state: 'PLAYING', releaseId: 4 });
+    expect(activity.current()).toEqual({ state: 'PLAYING', releaseId: uuidOf(4) });
 
     playing();
     expect(activity.current()).toEqual({ state: 'BUILDING' });
@@ -30,19 +31,19 @@ describe('ActivityService', () => {
   });
 
   it('ranks hosting above playing', () => {
-    activity.claim({ state: 'PLAYING', releaseId: 4 });
-    activity.claim({ state: 'HOSTING', releaseId: 4 });
+    activity.claim({ state: 'PLAYING', releaseId: uuidOf(4) });
+    activity.claim({ state: 'HOSTING', releaseId: uuidOf(4) });
 
     expect(activity.current().state).toBe('HOSTING');
   });
 
   it('keeps an equal claim when another is released twice', () => {
-    const first = activity.claim({ state: 'PLAYING', releaseId: 1 });
-    activity.claim({ state: 'PLAYING', releaseId: 2 });
+    const first = activity.claim({ state: 'PLAYING', releaseId: uuidOf(1) });
+    activity.claim({ state: 'PLAYING', releaseId: uuidOf(2) });
 
     first();
     first();
 
-    expect(activity.current()).toEqual({ state: 'PLAYING', releaseId: 2 });
+    expect(activity.current()).toEqual({ state: 'PLAYING', releaseId: uuidOf(2) });
   });
 });

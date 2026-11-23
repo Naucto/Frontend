@@ -149,7 +149,7 @@ export class VersionsPopoverComponent {
     }
     this.restoring.set(true);
     try {
-      const path = { id: String(this.session.id) };
+      const path = { id: this.session.id };
       const res = row.release
         ? await projectContentControllerGetCheckpoint({
             path: { ...path, name: row.name },
@@ -192,7 +192,7 @@ export class VersionsPopoverComponent {
     if (!this.session.isCollaborator()) {
       return;
     }
-    const path = { id: String(this.session.id) };
+    const path = { id: this.session.id };
     const res = row.release
       ? await projectContentControllerDeleteCheckpoint({ path: { ...path, name: row.name } })
       : await projectContentControllerDeleteVersion({ path: { ...path, version: row.name } });

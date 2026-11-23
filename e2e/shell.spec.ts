@@ -1,14 +1,15 @@
+import { uuidOf } from '../packages/api-client/testing';
 import { expect, type Page, test } from './fixtures';
-import { release, serveGame } from './mocks/game';
+import { PLAY, release, serveGame } from './mocks/game';
 import { setGamepads } from './mocks/gamepads';
 import { JOINS_FROM_INIT, mockRoom } from './mocks/netplay';
 import { mockNotifications } from './mocks/notifications';
 import { answer, mockSignedIn } from './mocks/session';
 
-const popular = [1, 2, 3].map((id) => ({
+const popular = [1, 2, 3].map((number) => ({
   ...release,
-  id,
-  name: `Popular ${String(id)}`,
+  id: uuidOf(number),
+  name: `Popular ${String(number)}`,
   coverUrl: null,
   disk: null,
 }));
@@ -17,14 +18,14 @@ const room = {
   sessionUuid: 'room-1',
   title: 'High Tide',
   visibility: 'PUBLIC',
-  hostId: 11,
+  hostId: uuidOf(11),
   hostUsername: 'louis',
-  projectId: 9,
+  projectId: uuidOf(9),
   projectName: 'High Tide',
   maxPlayers: 4,
   playerCount: 2,
   startedAt: '2026-11-20T10:00:00.000Z',
-  roster: [{ id: 11, username: 'louis' }],
+  roster: [{ id: uuidOf(11), username: 'louis' }],
   coverUrl: null,
   disk: null,
 };
@@ -41,7 +42,7 @@ async function mockSearch(page: Page): Promise<void> {
   );
   await page.route(
     '**/users/public/search**',
-    answer(200, { statusCode: 200, message: '', data: [{ id: 5, username: 'cavefan' }] }),
+    answer(200, { statusCode: 200, message: '', data: [{ id: uuidOf(5), username: 'cavefan' }] }),
   );
   await page.route('**/game-sessions**', answer(200, { sessions: [room] }));
 }
@@ -124,7 +125,7 @@ test.describe('app shell', () => {
     await expect(person).toHaveAttribute('aria-selected', 'true');
     await page.keyboard.press('Home');
     await page.keyboard.press('Enter');
-    await expect(page).toHaveURL(/\/play\/42$/);
+    await expect(page).toHaveURL(new RegExp(`${PLAY}$`));
     await expect(list).toHaveCount(0);
   });
 
@@ -159,12 +160,12 @@ test.describe('app shell', () => {
       .getByRole('option', { name: 'Join High Tide, hosted by louis, 2 of 4 players' })
       .click();
 
-    await expect(page).toHaveURL(/\/play\/9\?session=room-1$/);
+    await expect(page).toHaveURL(new RegExp(`/play/${room.projectId}\\?session=room-1$`));
 
     await page.getByRole('button', { name: 'Play', exact: true }).first().click();
     await expect(page.getByRole('alert')).toContainText('in High Tide of louis, 2 of 4');
     expect(entered.joins).toEqual([{ editorTest: false }]);
-    await expect(page).toHaveURL(/\/play\/9$/);
+    await expect(page).toHaveURL(new RegExp(`/play/${room.projectId}$`));
   });
 
   test('the account popover names the player, links to their profile and signs out', async ({
@@ -198,7 +199,7 @@ test.describe('app shell', () => {
     page,
   }) => {
     const at = new Date().toISOString();
-    const notification = { userId: 1, type: 'INFO', read: false, createdAt: at };
+    const notification = { userId: uuidOf(1), type: 'INFO', read: false, createdAt: at };
     await serveGame(page, JOINS_FROM_INIT, {}, room.projectId);
     await mockSignedIn(page);
     const entered = await mockRoom(page, room);
@@ -209,7 +210,7 @@ test.describe('app shell', () => {
         kind: 'GENERIC',
         title: 'High Tide',
         message: 'theo invited you to play High Tide',
-        data: { projectId: 9, sessionId: 'room-1', joinCode: 'WXYZ' },
+        data: { projectId: room.projectId, sessionId: 'room-1', joinCode: 'WXYZ' },
       },
       {
         ...notification,
@@ -217,21 +218,21 @@ test.describe('app shell', () => {
         kind: 'FRIEND_REQUEST',
         title: 'New friend request',
         message: 'lea wants to be your friend',
-        data: { requestId: 31, fromUserId: 21 },
+        data: { requestId: uuidOf(31), fromUserId: uuidOf(21) },
       },
     ]);
     await page.route(
       '**/friends/requests',
       answer(200, [
         {
-          id: 31,
-          from: { id: 21, username: 'lea' },
-          to: { id: 1, username: 'alexis' },
+          id: uuidOf(31),
+          from: { id: uuidOf(21), username: 'lea' },
+          to: { id: uuidOf(1), username: 'alexis' },
           createdAt: at,
         },
       ]),
     );
-    await page.route('**/friends/requests/31/accept', answer(201, {}));
+    await page.route(`**/friends/requests/${uuidOf(31)}/accept`, answer(201, {}));
     await page.route('**/notifications/*/read', answer(200, {}));
     await page.goto('/hub');
 
@@ -239,13 +240,13 @@ test.describe('app shell', () => {
     const panel = page.getByRole('dialog', { name: 'Notifications' });
     await expect(panel.getByRole('listitem')).toHaveCount(2);
 
-    const accepted = page.waitForRequest('**/friends/requests/31/accept');
+    const accepted = page.waitForRequest(`**/friends/requests/${uuidOf(31)}/accept`);
     await panel.getByRole('button', { name: 'Accept' }).click();
     expect((await accepted).method()).toBe('POST');
     await expect(page.getByRole('button', { name: 'Notifications, 1 unread' })).toBeVisible();
 
     await panel.getByRole('button', { name: /invited you to play High Tide/ }).click();
-    await expect(page).toHaveURL(/\/play\/9\?session=room-1&code=WXYZ$/);
+    await expect(page).toHaveURL(new RegExp(`/play/${room.projectId}\\?session=room-1&code=WXYZ$`));
     await expect(panel).toHaveCount(0);
 
     // The code of the invitation is what lets the invitee read the session, then into it.
@@ -253,7 +254,7 @@ test.describe('app shell', () => {
     await expect(page.getByRole('alert')).toContainText('in High Tide of louis, 2 of 4');
     expect(entered.lookups[0]).toBe('?code=WXYZ');
     expect(entered.joins).toEqual([{ joinCode: 'WXYZ', editorTest: false }]);
-    await expect(page).toHaveURL(/\/play\/9$/);
+    await expect(page).toHaveURL(new RegExp(`/play/${room.projectId}$`));
   });
 
   test('sign-in page shows the insert-game form', async ({ page }) => {

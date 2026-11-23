@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 
+import { uuidOf } from '../../packages/api-client/testing';
 import { answer } from './session';
 
 /** Turns the backend's `moderation` feature on, which is what makes any of it show. */
@@ -15,11 +16,11 @@ export const SUSPENSION = {
   until: '2026-12-04T09:30:00.000Z',
 };
 
-const decision = (id: number, over: Record<string, unknown>): Record<string, unknown> => ({
-  id,
+const decision = (number: number, over: Record<string, unknown>): Record<string, unknown> => ({
+  id: uuidOf(number),
   action: 'COMMENT_HIDDEN',
   targetType: 'COMMENT',
-  targetId: id,
+  targetId: uuidOf(number),
   targetLabel: null,
   reason: null,
   message: null,
@@ -95,11 +96,11 @@ export async function mockStanding(
 /** The comments of a game, as its first page answers them. */
 export async function mockComments(
   page: Page,
-  projectId: number,
+  projectId: string,
   comments: Record<string, unknown>[],
 ): Promise<void> {
   await page.route(
-    `**/projects/${String(projectId)}/comments**`,
+    `**/projects/${projectId}/comments**`,
     answer(200, { comments, total: comments.length, page: 1, limit: 20 }),
   );
 }
@@ -109,7 +110,7 @@ export async function mockFlags(page: Page): Promise<unknown[]> {
   const sent: unknown[] = [];
   await page.route('**/moderation/flags', (route) => {
     sent.push(route.request().postDataJSON());
-    return route.fulfill({ status: 201, json: { id: sent.length } });
+    return route.fulfill({ status: 201, json: { id: uuidOf(sent.length) } });
   });
   return sent;
 }

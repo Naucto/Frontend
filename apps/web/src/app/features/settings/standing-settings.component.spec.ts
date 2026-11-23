@@ -1,5 +1,6 @@
 import { signal } from '@angular/core';
 import { client } from '@naucto/api-client';
+import { uuidOf } from '@naucto/api-client/testing';
 import { render, screen, within } from '@testing-library/angular';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -10,11 +11,11 @@ import { StandingSettingsComponent } from './standing-settings.component';
 
 const realFetch = globalThis.fetch;
 
-const entry = (id: number, changes: Record<string, unknown>): Record<string, unknown> => ({
-  id,
+const entry = (number: number, changes: Record<string, unknown>): Record<string, unknown> => ({
+  id: uuidOf(number),
   action: 'COMMENT_HIDDEN',
   targetType: 'COMMENT',
-  targetId: id,
+  targetId: uuidOf(number),
   targetLabel: null,
   reason: null,
   message: null,

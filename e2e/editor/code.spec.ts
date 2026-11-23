@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test';
 
-import { editorUrl, mockEditor } from '../editor-mocks';
+import { uuidOf } from '../../packages/api-client/testing';
+import { editorUrl, mockEditor, SEED_KEY } from '../editor-mocks';
 import { expect, test } from '../fixtures';
 import { boxOf, lit, screenPixels } from './helpers';
 
@@ -132,12 +133,14 @@ test('the reference searches to a section, and copies a tutorial into a new game
   const dialog = page.getByRole('dialog');
   await expect(dialog).toContainText('Copy to a new game?');
   await page.route('**/projects', (route) =>
-    route.request().method() === 'POST' ? route.fulfill({ json: { id: 99 } }) : route.fallback(),
+    route.request().method() === 'POST'
+      ? route.fulfill({ json: { id: uuidOf(99) } })
+      : route.fallback(),
   );
   await dialog.getByRole('button', { name: 'Copy', exact: true }).click();
   // The new game is filed under its id; nothing answers for game 99, so the seed waits there.
   await expect
-    .poll(() => page.evaluate(() => sessionStorage.getItem('naucto.seed.99')))
+    .poll(() => page.evaluate((key) => sessionStorage.getItem(key), `naucto.seed.${uuidOf(99)}`))
     .toContain('function _update');
 });
 
@@ -409,9 +412,9 @@ test('a tab is named and coloured in a dialog, and the last one cannot be remove
 });
 
 test('a copied tutorial arrives with its sprites, flags and map', async ({ page }) => {
-  await page.addInitScript(() => {
+  await page.addInitScript((key) => {
     sessionStorage.setItem(
-      'naucto.seed.7',
+      key,
       JSON.stringify({
         name: 'Tutorial',
         code: 'function _draw() gfx.clear(0) print(map.get(2, 5) .. " " .. tostring(map.flag(40, 1))) end',
@@ -422,7 +425,7 @@ test('a copied tutorial arrives with its sprites, flags and map', async ({ page 
         },
       }),
     );
-  });
+  }, SEED_KEY);
   await page.goto(editorUrl('code'));
   await page.getByRole('tab', { name: 'main', exact: true }).waitFor();
   await page.getByRole('button', { name: 'Play' }).first().click();

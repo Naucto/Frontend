@@ -1,8 +1,10 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
+import type { PlayerNumber } from '@naucto/engine';
 import type { PresenceColour } from '@naucto/ui';
 import type { Awareness } from 'y-protocols/awareness';
 
 import { AuthStore } from '../../../core/auth/auth.store';
+import { compareIds } from '../../../core/ids/ids';
 import { assignColours } from './presence-colours';
 
 export interface CanvasCursor {
@@ -18,7 +20,9 @@ export interface CanvasCursor {
 
 export interface Collaborator {
   clientId: number;
-  userId: number;
+  userId: string;
+  /** The number they play under at the game table, while their editor runs a session. */
+  player?: PlayerNumber;
   name: string;
   colour: PresenceColour;
   cursor?: CanvasCursor;
@@ -27,7 +31,13 @@ export interface Collaborator {
 
 /** What each client publishes about itself in the room's awareness. */
 export interface AwarenessState {
-  userId?: number;
+  userId?: string;
+  /**
+   * The player number this client holds at the game table while its editor runs a session. The
+   * server names a player by a number that says nothing of the account, so this is the one link
+   * between someone in the room and a player in the game.
+   */
+  player?: PlayerNumber;
   name?: string;
   cursor?: CanvasCursor;
 }
@@ -42,6 +52,7 @@ export class SessionPresenceService {
   private readonly connected = signal<Awareness | null>(null);
   /** The last state each client shared, kept so a departure can still say who left. */
   private readonly known = new Map<number, AwarenessState>();
+  private player: PlayerNumber | null = null;
 
   /** y-protocols awareness of the live session (null until connected). */
   readonly awareness = this.connected.asReadonly();
@@ -58,30 +69,35 @@ export class SessionPresenceService {
     const states = awareness.getStates() as Map<number, AwarenessState>;
     const ids = [...states.values()]
       .map((state) => state.userId)
-      .filter((userId): userId is number => typeof userId === 'number');
+      .filter((userId): userId is string => typeof userId === 'string');
     const colours = assignColours(ids);
     const list: Collaborator[] = [];
     states.forEach((state, clientId) => {
-      if (typeof state.userId !== 'number') {
+      if (typeof state.userId !== 'string') {
         return;
       }
       this.known.set(clientId, state);
       list.push({
         clientId,
         userId: state.userId,
-        name: state.name ?? `user ${String(state.userId)}`,
+        player: state.player,
+        name: state.name ?? '',
         colour: colours.get(state.userId) ?? 'sky',
         cursor: state.cursor,
         isSelf: clientId === awareness.clientID,
       });
     });
-    this.collaborators.set(list.sort((a, b) => a.userId - b.userId));
+    // Two tabs of one account share an id; the client id settles which of them comes first.
+    this.collaborators.set(
+      list.sort((a, b) => compareIds(a.userId, b.userId) || a.clientId - b.clientId),
+    );
   }
 
   /** Starts telling the room who this client is. */
   connect(awareness: Awareness): void {
     awareness.setLocalState({
       userId: this.auth.userId() ?? undefined,
+      player: this.player ?? undefined,
       name: this.auth.displayName(),
     } satisfies AwarenessState);
     this.connected.set(awareness);
@@ -109,9 +125,15 @@ export class SessionPresenceService {
     return this.connected()?.getStates().size ?? 0;
   }
 
-  isPresent(userId: number): boolean {
+  isPresent(userId: string): boolean {
     const states = (this.connected()?.getStates() ?? new Map()) as Map<number, AwarenessState>;
     return [...states.values()].some((state) => state.userId === userId);
+  }
+
+  /** Shares the number this client plays under at the game table, or that it left the table. */
+  setPlayer(player: PlayerNumber | null): void {
+    this.player = player;
+    this.connected()?.setLocalStateField('player', player ?? undefined);
   }
 
   /** Share where this user's pointer is on an editor canvas (null when it leaves). */

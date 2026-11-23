@@ -1,8 +1,9 @@
+import { uuidOf } from '../packages/api-client/testing';
 import { glyphPath } from '../packages/ui/src/icons/glyph-path';
 import { ICON_GLYPHS } from '../packages/ui/src/icons/glyphs';
 import { expect, type Page, test } from './fixtures';
 import { ALEXIS, by, collection, mockCollections } from './mocks/collections';
-import { serveGame } from './mocks/game';
+import { PLAY, release, serveGame } from './mocks/game';
 import { hubGame, mockHub, mockProjects } from './mocks/hub';
 import {
   mockComments,
@@ -14,12 +15,12 @@ import {
 import { mockNotifications } from './mocks/notifications';
 import { answer, mockSignedIn } from './mocks/session';
 
-const comment = (id: number, over: Record<string, unknown>): Record<string, unknown> => ({
-  id,
+const comment = (number: number, over: Record<string, unknown>): Record<string, unknown> => ({
+  id: uuidOf(number),
   content: 'Loved the third cave.',
   createdAt: '2026-11-22T10:00:00.000Z',
-  projectId: 42,
-  author: { id: 21, username: 'lea' },
+  projectId: release.id,
+  author: { id: uuidOf(21), username: 'lea' },
   deleted: false,
   replies: [],
   ...over,
@@ -42,9 +43,9 @@ test.describe('moderation', () => {
   }) => {
     await serveGame(page, 'function _draw() gfx.cls(1) end');
     await mockSignedIn(page);
-    await mockComments(page, 42, []);
+    await mockComments(page, release.id, []);
     const sent = await mockFlags(page);
-    await page.goto('/play/42');
+    await page.goto(PLAY);
 
     await page.getByRole('button', { name: 'Report game' }).click();
     const dialog = page.getByRole('dialog', { name: 'Report this game' });
@@ -67,7 +68,7 @@ test.describe('moderation', () => {
     expect(sent).toEqual([
       {
         targetType: 'PROJECT',
-        targetId: 42,
+        targetId: release.id,
         reason: 'STOLEN_CONTENT',
         details: 'Sprites of Hightide',
       },
@@ -105,16 +106,16 @@ test.describe('moderation', () => {
   }) => {
     await serveGame(page, 'function _draw() gfx.cls(1) end');
     await mockSignedIn(page);
-    await mockComments(page, 42, [
+    await mockComments(page, release.id, [
       comment(3, {}),
       comment(2, { content: '', deleted: true, removedBy: 'MODERATION' }),
       comment(1, { content: '', deleted: true, removedBy: 'USER' }),
     ]);
     await page.route(
       '**/users/public/username/ada**',
-      answer(200, { statusCode: 200, message: '', data: { id: 7, username: 'ada' } }),
+      answer(200, { statusCode: 200, message: '', data: { id: uuidOf(7), username: 'ada' } }),
     );
-    await page.goto('/play/42');
+    await page.goto(PLAY);
 
     const thread = page.locator('nc-comments').getByRole('listitem');
     await expect(thread).toHaveCount(3);
@@ -143,10 +144,10 @@ test.describe('moderation', () => {
   test('a game a moderator hid answers its page as unavailable', async ({ page }) => {
     await page.route('**/auth/refresh', answer(401, {}));
     await page.route(
-      '**/projects/releases/42',
+      `**/projects/releases/${release.id}`,
       answer(403, { statusCode: 403, code: 'PROJECT_HIDDEN', message: 'Hidden' }),
     );
-    await page.goto('/play/42');
+    await page.goto(PLAY);
 
     const state = page.locator('nc-error-state');
     await expect(state.getByRole('heading', { name: 'This game is unavailable' })).toBeVisible();
@@ -235,7 +236,7 @@ test.describe('moderation', () => {
     page,
   }) => {
     const api = await mockCollections(page, [hubGame(11, 'Hightide')], {
-      collections: [collection('couch', 'Couch co-op', { gameIds: [11] })],
+      collections: [collection('couch', 'Couch co-op', { gameIds: [uuidOf(11)] })],
       viewer: ALEXIS.id,
     });
     await mockSignedIn(page, { ...ALEXIS, suspension: SUSPENSION });
@@ -280,12 +281,12 @@ test.describe('moderation', () => {
     await mockNotifications(page, [
       {
         id: 'n1',
-        userId: 1,
+        userId: uuidOf(1),
         type: 'WARNING',
         kind: 'MODERATION',
         title: 'Your game Neon Drift was hidden',
         message: 'The sprites are taken from another game on the hub.',
-        data: { actionId: 11, action: 'PROJECT_HIDDEN' },
+        data: { actionId: uuidOf(11), action: 'PROJECT_HIDDEN' },
         read: false,
         createdAt: new Date().toISOString(),
       },

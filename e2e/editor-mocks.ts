@@ -1,22 +1,26 @@
 import type { Page } from '@playwright/test';
 
+import { uuidOf } from '../packages/api-client/testing';
 import { mockSignedIn } from './mocks/session';
 
 /** The one project every editor spec opens, and the one history endpoint for each of its ids. */
-export const PROJECT_ID = 7;
+export const PROJECT_ID = uuidOf(7);
 
 export type EditorTab = 'game' | 'code' | 'art' | 'map' | 'sound' | 'net';
 
 /** `/edit/<PROJECT_ID>/<tab>`, so a spec names the tab and never the id. */
-export const editorUrl = (tab: EditorTab): string => `/edit/${String(PROJECT_ID)}/${tab}`;
+export const editorUrl = (tab: EditorTab): string => `/edit/${PROJECT_ID}/${tab}`;
+
+/** Where a new game's code and assets wait in the session storage for the editor of project 7. */
+export const SEED_KEY = `naucto.seed.${PROJECT_ID}`;
 
 /** A glob for one of project 7's own endpoints, e.g. `projectRoute('checkpoints/*')`. */
 export const projectRoute = (path = ''): string =>
-  `**/projects/${String(PROJECT_ID)}${path ? `/${path}` : ''}`;
+  `**/projects/${PROJECT_ID}${path ? `/${path}` : ''}`;
 
-const HOST_ID = 1;
-const COLLABORATOR_ID = 4;
-const MODERATOR_ID = 9;
+const HOST_ID = uuidOf(1);
+const COLLABORATOR_ID = uuidOf(4);
+const MODERATOR_ID = uuidOf(9);
 
 const project = {
   id: PROJECT_ID,
@@ -40,7 +44,7 @@ const project = {
   uniquePlayers: 0,
   likes: 0,
   forkCount: 4,
-  forkedFromId: 3,
+  forkedFromId: uuidOf(3),
   collaborators: [
     { id: HOST_ID, username: 'alexis' },
     { id: COLLABORATOR_ID, username: 'priax' },
@@ -82,7 +86,7 @@ export async function mockEditor(
     staff = false,
     onWrite,
   }: {
-    hostId?: number;
+    hostId?: string;
     maxCheckpoints?: number;
     theme?: 'dark' | 'light';
     content?: Buffer;
@@ -106,10 +110,10 @@ export async function mockEditor(
   await page.route('**/notifications/webrtc-offer', (route) =>
     route.fulfill({ json: { data: { signaling: ['ws://127.0.0.1:9'] } } }),
   );
-  await page.route(`**/work-sessions/join/${String(PROJECT_ID)}`, (route) =>
+  await page.route(`**/work-sessions/join/${PROJECT_ID}`, (route) =>
     route.fulfill({
       json: {
-        roomId: `room-${String(PROJECT_ID)}`,
+        roomId: `room-${PROJECT_ID}`,
         hostId,
         webrtcOffer: {
           signaling: ['ws://127.0.0.1:9'],
@@ -119,7 +123,7 @@ export async function mockEditor(
       },
     }),
   );
-  await page.route(`**/work-sessions/leave/${String(PROJECT_ID)}`, (route) =>
+  await page.route(`**/work-sessions/leave/${PROJECT_ID}`, (route) =>
     route.fulfill({ status: 204, body: '' }),
   );
   await page.route(projectRoute('content'), (route) => {
@@ -137,7 +141,7 @@ export async function mockEditor(
   await page.route('**/projects/limits', (route) =>
     route.fulfill({ json: { maxCheckpoints, maxAutosaves: 5 } }),
   );
-  await page.route(`**/users/public/${String(COLLABORATOR_ID)}/profile`, (route) =>
+  await page.route(`**/users/public/${COLLABORATOR_ID}/profile`, (route) =>
     route.fulfill({
       json: { data: { id: COLLABORATOR_ID, username: 'priax', profileImageUrl: '/img/logo.svg' } },
     }),
@@ -166,10 +170,10 @@ export async function mockEditor(
     await page.route(projectRoute(), (route) =>
       route.fulfill({ status: 403, json: { message: 'Forbidden' } }),
     );
-    await page.route(`**/moderation/projects/${String(PROJECT_ID)}/preview`, (route) =>
+    await page.route(`**/moderation/projects/${PROJECT_ID}/preview`, (route) =>
       route.fulfill({ json: { ...stored, hasRelease: false } }),
     );
-    await page.route(`**/moderation/projects/${String(PROJECT_ID)}/preview/content**`, (route) =>
+    await page.route(`**/moderation/projects/${PROJECT_ID}/preview/content**`, (route) =>
       content.length
         ? route.fulfill({ status: 200, body: content, contentType: 'application/octet-stream' })
         : route.fulfill({ status: 204, body: '' }),

@@ -688,6 +688,7 @@
       "inviteByName": "Invite by name",
       "lineage": "Lineage",
       "forkedFrom": "Forked from",
+      "anotherGame": "another game",
       "unversioned": "draft",
       "versionLimit": "{{count}} versions out of {{max}} — delete one to save another",
       "versionSaved": "Saved version \"{{name}}\"",
@@ -982,7 +983,7 @@
       "entry": "{{n}} entry",
       "entries": "{{n}} entries",
       "host": "host",
-      "unknownUser": "user {{id}}",
+      "unknownPlayer": "player {{number}}",
       "helpState": "Every path the game declares, and, while a session runs, what it holds.\n\n`R` and `W` say whether joined clients may read or write a path. The host is never restricted.",
       "noSession": "Set a path up here before you run anything, and the flags travel with the game. The values fill in when it calls net.host() or net.join().",
       "session": "Session",
@@ -1452,7 +1453,7 @@
       "discord": "Want to talk it over, or follow what we do with it? Join the Naucto Discord, where it is easier to discuss.",
       "join": "Join our Discord",
       "ok": "OK",
-      "bugLead": "Report #{{id}} reached the team. We read every one.",
+      "bugLead": "Your report reached the team. We read every one.",
       "screenshotRefused": "The screenshot could not be attached: it may be over 2 MB or not an image. The report itself was sent."
     }
   }

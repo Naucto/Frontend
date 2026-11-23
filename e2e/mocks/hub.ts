@@ -1,12 +1,14 @@
 import type { Page } from '@playwright/test';
 
-/** A game as the hub's routes answer it. */
+import { uuidOf } from '../../packages/api-client/testing';
+
+/** A game as the hub's routes answer it: `uuidOf(number)` is its id. */
 export const hubGame = (
-  id: number,
+  number: number,
   name: string,
   over: Record<string, unknown> = {},
 ): Record<string, unknown> => ({
-  id,
+  id: uuidOf(number),
   name,
   shortDesc: `What ${name} is.`,
   longDesc: null,
@@ -19,18 +21,18 @@ export const hubGame = (
   status: 'COMPLETED',
   monetization: 'NONE',
   price: null,
-  userId: 7,
+  userId: uuidOf(7),
   createdAt: '2026-09-01T00:00:00.000Z',
   updatedAt: '2026-09-01T00:00:00.000Z',
   publishedAt: '2026-09-01T00:00:00.000Z',
-  viewCount: 1000 - id,
+  viewCount: 1000 - number,
   uniquePlayers: 3,
-  likes: id,
+  likes: number,
   commentCount: 2,
   forkCount: 0,
   forkedFromId: null,
   collaborators: [],
-  creator: { id: 7, username: 'ada' },
+  creator: { id: uuidOf(7), username: 'ada' },
   ...over,
 });
 
@@ -87,12 +89,15 @@ export const FEED = {
     { reason: 'TRENDING', game: hubGame(2, 'Neon Drift') },
     {
       reason: 'BECAUSE_YOU_PLAYED',
-      reasonGame: { id: 1, name: 'Orbit Run' },
+      reasonGame: { id: uuidOf(1), name: 'Orbit Run' },
       game: hubGame(3, 'Ferry Click'),
     },
     {
       reason: 'CONTINUE',
-      game: hubGame(4, 'Cave Diver', { userId: 1, creator: { id: 1, username: 'alexis' } }),
+      game: hubGame(4, 'Cave Diver', {
+        userId: uuidOf(1),
+        creator: { id: uuidOf(1), username: 'alexis' },
+      }),
     },
   ],
   shelves: [
@@ -109,7 +114,7 @@ export const FEED = {
           title: 'Couch co-op',
           description: null,
           visibility: 'PUBLIC',
-          owner: { id: 9, username: 'louis' },
+          owner: { id: uuidOf(9), username: 'louis' },
           gameCount: 6,
           createdAt: '2026-09-01T00:00:00.000Z',
           updatedAt: '2026-09-01T00:00:00.000Z',
@@ -125,16 +130,16 @@ export const SESSION = {
   sessionUuid: 'room-1',
   title: 'Friday night',
   visibility: 'PUBLIC',
-  hostId: 9,
+  hostId: uuidOf(9),
   hostUsername: 'louis',
-  projectId: 2,
+  projectId: uuidOf(2),
   projectName: 'Neon Drift',
   maxPlayers: 4,
   playerCount: 2,
   startedAt: '2026-11-21T10:00:00.000Z',
   roster: [
-    { id: 9, username: 'louis' },
-    { id: 10, username: 'lea' },
+    { id: uuidOf(9), username: 'louis' },
+    { id: uuidOf(10), username: 'lea' },
   ],
   coverUrl: null,
   disk: null,

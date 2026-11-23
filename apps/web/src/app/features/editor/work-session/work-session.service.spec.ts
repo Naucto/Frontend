@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { TranslocoService } from '@jsverse/transloco';
 import { client } from '@naucto/api-client';
+import { uuidOf } from '@naucto/api-client/testing';
 import { BUBBLEGUM_16, EditableGame, GAME_SCHEMA_VERSION } from '@naucto/engine';
 import { QueryClient } from '@tanstack/angular-query-experimental';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -16,7 +17,8 @@ import { SessionSaveService } from './session-save.service';
 import { WorkSessionService } from './work-session.service';
 
 const realFetch = globalThis.fetch;
-const ME = 1;
+const ME = uuidOf(1);
+const GAME = uuidOf(7);
 
 type Route = (req: Request) => Response | Promise<Response>;
 
@@ -24,7 +26,7 @@ const json = (data: unknown, status = 200): Response =>
   new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json' } });
 
 const details = {
-  id: 7,
+  id: GAME,
   name: 'Ferry',
   shortDesc: 'A ferry',
   longDesc: '',
@@ -66,22 +68,22 @@ describe('WorkSessionService', () => {
     report.mockClear();
     sessionStorage.clear();
     routes = {
-      'POST /work-sessions/join/7': () =>
+      [`POST /work-sessions/join/${GAME}`]: () =>
         json({
           hostId: ME,
           roomId: 'room',
-          users: [String(ME)],
+          users: [ME],
           webrtcOffer: { signaling: [], peerOpts: {}, maxConns: 1 },
         }),
-      'POST /work-sessions/leave/7': () => json({}),
-      'GET /projects/7/content': () =>
+      [`POST /work-sessions/leave/${GAME}`]: () => json({}),
+      [`GET /projects/${GAME}/content`]: () =>
         new Response(savedGame('print(1)') as BlobPart, {
           status: 200,
           headers: { 'content-type': 'application/octet-stream' },
         }),
-      'GET /projects/7': () => json(details),
-      'PUT /projects/7': () => json(details),
-      'PATCH /projects/7/content': () => json({}),
+      [`GET /projects/${GAME}`]: () => json(details),
+      [`PUT /projects/${GAME}`]: () => json(details),
+      [`PATCH /projects/${GAME}/content`]: () => json({}),
     };
     client.setConfig({ baseUrl: 'https://api.test', throwOnError: false });
     globalThis.fetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
@@ -124,12 +126,13 @@ describe('WorkSessionService', () => {
 
   describe('who gets what on the editor address', () => {
     const refuseTheProject = (): void => {
-      routes['GET /projects/7'] = () => json({ message: 'Forbidden' }, 403);
+      routes[`GET /projects/${GAME}`] = () => json({ message: 'Forbidden' }, 403);
     };
 
     beforeEach(() => {
-      routes['GET /moderation/projects/7/preview'] = () => json({ ...details, hasRelease: false });
-      routes['GET /moderation/projects/7/preview/content'] = () =>
+      routes[`GET /moderation/projects/${GAME}/preview`] = () =>
+        json({ ...details, hasRelease: false });
+      routes[`GET /moderation/projects/${GAME}/preview/content`] = () =>
         new Response(savedGame('print(2)') as BlobPart, {
           status: 200,
           headers: { 'content-type': 'application/octet-stream' },
@@ -138,74 +141,74 @@ describe('WorkSessionService', () => {
 
     it('gives a collaborator the live session, in a mode that writes', async () => {
       const service = TestBed.inject(WorkSessionService);
-      await service.open(7);
+      await service.open(GAME);
 
       expect(service.status()).toBe('ready');
       expect(service.preview()).toBeNull();
       expect(TestBed.inject(EditorModeService).canWrite()).toBe(true);
-      expect(called('POST /work-sessions/join/7')).toHaveLength(1);
+      expect(called(`POST /work-sessions/join/${GAME}`)).toHaveLength(1);
     });
 
     it('gives a staff member who collaborates on the game the live session too', async () => {
       staff = true;
       const service = TestBed.inject(WorkSessionService);
-      await service.open(7);
+      await service.open(GAME);
 
       expect(service.preview()).toBeNull();
-      expect(called('POST /work-sessions/join/7')).toHaveLength(1);
-      expect(called('GET /moderation/projects/7/preview')).toHaveLength(0);
+      expect(called(`POST /work-sessions/join/${GAME}`)).toHaveLength(1);
+      expect(called(`GET /moderation/projects/${GAME}/preview`)).toHaveLength(0);
     });
 
     it('gives a staff member who does not the last save to look at, with reads alone', async () => {
       staff = true;
       refuseTheProject();
       const service = TestBed.inject(WorkSessionService);
-      await service.open(7);
+      await service.open(GAME);
 
       expect(service.status()).toBe('ready');
       expect(service.preview()).toBe('staff');
       expect(TestBed.inject(EditorModeService).mode()).toBe('read-only');
       expect(service.game.entryFile?.text.toString()).toBe('print(2)');
       expect(calls.map((call) => call.key).sort()).toEqual([
-        'GET /moderation/projects/7/preview',
-        'GET /moderation/projects/7/preview/content',
-        'GET /projects/7',
+        `GET /moderation/projects/${GAME}/preview`,
+        `GET /moderation/projects/${GAME}/preview/content`,
+        `GET /projects/${GAME}`,
       ]);
     });
 
     it('gives a suspended account its own game to look at, through the ordinary reads', async () => {
       suspended = true;
       const service = TestBed.inject(WorkSessionService);
-      await service.open(7);
+      await service.open(GAME);
 
       expect(service.status()).toBe('ready');
       expect(service.preview()).toBe('own');
       expect(TestBed.inject(EditorModeService).canWrite()).toBe(false);
       expect(service.game.entryFile?.text.toString()).toBe('print(1)');
       expect(calls.map((call) => call.key).sort()).toEqual([
-        'GET /projects/7',
-        'GET /projects/7/content',
+        `GET /projects/${GAME}`,
+        `GET /projects/${GAME}/content`,
       ]);
     });
 
     it('refuses anyone else, without joining or reading further', async () => {
       refuseTheProject();
       const service = TestBed.inject(WorkSessionService);
-      await service.open(7);
+      await service.open(GAME);
 
       expect(service.status()).toBe('error');
       expect(service.error()).toBe('Forbidden');
-      expect(calls.map((call) => call.key)).toEqual(['GET /projects/7']);
+      expect(calls.map((call) => call.key)).toEqual([`GET /projects/${GAME}`]);
     });
 
     it('does not take a game that cannot be found for one a staff member may look at', async () => {
       staff = true;
-      routes['GET /projects/7'] = () => json({ message: 'Not found' }, 404);
+      routes[`GET /projects/${GAME}`] = () => json({ message: 'Not found' }, 404);
       const service = TestBed.inject(WorkSessionService);
-      await service.open(7);
+      await service.open(GAME);
 
       expect(service.status()).toBe('error');
-      expect(calls.map((call) => call.key)).toEqual(['GET /projects/7']);
+      expect(calls.map((call) => call.key)).toEqual([`GET /projects/${GAME}`]);
     });
   });
 
@@ -219,16 +222,16 @@ describe('WorkSessionService', () => {
 
     it('never counts whoever looks as someone working on the game', async () => {
       const service = TestBed.inject(WorkSessionService);
-      await service.open(7);
+      await service.open(GAME);
 
       expect(service.isCollaborator()).toBe(false);
       expect(service.playProjectId).toBeNull();
     });
 
     it('is seeded and migrated while it opens, and closed to edits once it is open', async () => {
-      routes['GET /projects/7/content'] = () => new Response(null, { status: 200 });
+      routes[`GET /projects/${GAME}/content`] = () => new Response(null, { status: 200 });
       const service = TestBed.inject(WorkSessionService);
-      await service.open(7);
+      await service.open(GAME);
       const before = Y.encodeStateAsUpdate(service.doc);
 
       expect(service.game.files).toHaveLength(1);
@@ -245,7 +248,7 @@ describe('WorkSessionService', () => {
       try {
         const service = TestBed.inject(WorkSessionService);
         const saves = TestBed.inject(SessionSaveService);
-        await service.open(7);
+        await service.open(GAME);
         calls.length = 0;
 
         service.game.setPaletteColour(3, '#abcdef');
@@ -262,7 +265,7 @@ describe('WorkSessionService', () => {
 
     it('sends nothing when it closes or the tab goes away', async () => {
       const service = TestBed.inject(WorkSessionService);
-      await service.open(7);
+      await service.open(GAME);
       calls.length = 0;
 
       service.onPageHide({ persisted: false } as PageTransitionEvent);
@@ -276,7 +279,7 @@ describe('WorkSessionService', () => {
     it('reports a write that went round the gate, and still saves nothing', async () => {
       const service = TestBed.inject(WorkSessionService);
       const saves = TestBed.inject(SessionSaveService);
-      await service.open(7);
+      await service.open(GAME);
       calls.length = 0;
 
       service.game.entryFile?.text.insert(0, '-- round the gate\n');
@@ -291,7 +294,7 @@ describe('WorkSessionService', () => {
   describe('a live session whose mode does not write', () => {
     it.each(['diff', 'read-only'] as const)('refuses an edit in %s', async (mode) => {
       const service = TestBed.inject(WorkSessionService);
-      await service.open(7);
+      await service.open(GAME);
       const before = Y.encodeStateAsUpdate(service.doc);
 
       TestBed.inject(EditorModeService).choose(mode);
@@ -303,7 +306,7 @@ describe('WorkSessionService', () => {
 
     it('still takes what a collaborator writes, and reports none of it', async () => {
       const service = TestBed.inject(WorkSessionService);
-      await service.open(7);
+      await service.open(GAME);
       TestBed.inject(EditorModeService).choose('read-only');
       const peer = new Y.Doc();
       Y.applyUpdate(peer, Y.encodeStateAsUpdate(service.doc));
@@ -318,7 +321,7 @@ describe('WorkSessionService', () => {
     it('writes again once the mode is given up, and reports nothing for a write it allows', async () => {
       const service = TestBed.inject(WorkSessionService);
       const mode = TestBed.inject(EditorModeService);
-      await service.open(7);
+      await service.open(GAME);
       mode.choose('read-only');
       mode.choose('normal');
 
@@ -331,33 +334,33 @@ describe('WorkSessionService', () => {
   });
 
   it('refuses to open, and saves nothing, when the content cannot be fetched', async () => {
-    routes['GET /projects/7/content'] = () => json({ message: 'boom' }, 500);
+    routes[`GET /projects/${GAME}/content`] = () => json({ message: 'boom' }, 500);
     const service = TestBed.inject(WorkSessionService);
-    await service.open(7);
+    await service.open(GAME);
     expect(service.status()).toBe('error');
-    expect(called('PATCH /projects/7/content')).toHaveLength(0);
+    expect(called(`PATCH /projects/${GAME}/content`)).toHaveLength(0);
   });
 
   it('uploads the document while the name is empty, without sending the empty name', async () => {
-    routes['PUT /projects/7'] = () => json({ message: ['name should not be empty'] }, 400);
+    routes[`PUT /projects/${GAME}`] = () => json({ message: ['name should not be empty'] }, 400);
     const service = TestBed.inject(WorkSessionService);
-    await service.open(7);
+    await service.open(GAME);
     calls.length = 0;
     const name = service.doc.getText('projectName');
     name.delete(0, name.length);
     await TestBed.inject(SessionSaveService).save();
-    expect(called('PATCH /projects/7/content')).toHaveLength(1);
-    expect(called('PUT /projects/7')).toHaveLength(0);
+    expect(called(`PATCH /projects/${GAME}/content`)).toHaveLength(1);
+    expect(called(`PUT /projects/${GAME}`)).toHaveLength(0);
   });
 
   it('writes the palette the game draws with onto the project, when the server holds another', async () => {
-    routes['GET /projects/7'] = () => json({ ...details, palette: [] });
+    routes[`GET /projects/${GAME}`] = () => json({ ...details, palette: [] });
     const service = TestBed.inject(WorkSessionService);
-    await service.open(7);
+    await service.open(GAME);
     calls.length = 0;
     service.game.setPaletteColour(3, '#ABCDEF');
     await TestBed.inject(SessionSaveService).save();
-    const [update] = called('PUT /projects/7');
+    const [update] = called(`PUT /projects/${GAME}`);
     const sent = (await update?.json()) as { palette: string[] };
     expect(sent.palette).toEqual(BUBBLEGUM_16.map((colour, i) => (i === 3 ? '#abcdef' : colour)));
   });
@@ -365,9 +368,9 @@ describe('WorkSessionService', () => {
   it('keeps an edit made during a save marked dirty', async () => {
     const service = TestBed.inject(WorkSessionService);
     const saves = TestBed.inject(SessionSaveService);
-    await service.open(7);
+    await service.open(GAME);
     let land: () => void = () => undefined;
-    routes['PATCH /projects/7/content'] = () =>
+    routes[`PATCH /projects/${GAME}/content`] = () =>
       new Promise<Response>((resolve) => {
         land = () => {
           resolve(json({}));
@@ -383,9 +386,9 @@ describe('WorkSessionService', () => {
   });
 
   it('builds nothing once closed while the join is in flight', async () => {
-    const join = routes['POST /work-sessions/join/7'];
+    const join = routes[`POST /work-sessions/join/${GAME}`];
     let release: () => void = () => undefined;
-    routes['POST /work-sessions/join/7'] = (req) =>
+    routes[`POST /work-sessions/join/${GAME}`] = (req) =>
       new Promise<Response>((resolve) => {
         release = () => {
           resolve(join?.(req) as Response);
@@ -393,14 +396,14 @@ describe('WorkSessionService', () => {
       });
     const service = TestBed.inject(WorkSessionService);
     const presence = TestBed.inject(SessionPresenceService);
-    const opening = service.open(7);
+    const opening = service.open(GAME);
     await new Promise((resolve) => setTimeout(resolve, 0));
     const closing = service.close();
     release();
     await Promise.all([opening, closing]);
     expect(presence.awareness()).toBeNull();
     expect(service.status()).toBe('closed');
-    expect(called('GET /projects/7/content')).toHaveLength(0);
+    expect(called(`GET /projects/${GAME}/content`)).toHaveLength(0);
   });
 
   it('releases the room before the leave call returns, so the next shell can join it', async () => {
@@ -408,7 +411,7 @@ describe('WorkSessionService', () => {
     // left closing may send its own at any point while this one waits.
     const held: (() => void)[] = [];
     let released = false;
-    routes['POST /work-sessions/leave/7'] = () =>
+    routes[`POST /work-sessions/leave/${GAME}`] = () =>
       new Promise<Response>((resolve) => {
         const answer = (): void => {
           resolve(json({}));
@@ -421,7 +424,7 @@ describe('WorkSessionService', () => {
       });
     const service = TestBed.inject(WorkSessionService);
     const presence = TestBed.inject(SessionPresenceService);
-    await service.open(7);
+    await service.open(GAME);
     expect(presence.awareness()).not.toBeNull();
     const closing = service.close();
     expect(presence.awareness()).toBeNull();
@@ -434,23 +437,23 @@ describe('WorkSessionService', () => {
   });
 
   it('lets a guest waiting for the host to upgrade the game go when the session closes', async () => {
-    routes['POST /work-sessions/join/7'] = () =>
+    routes[`POST /work-sessions/join/${GAME}`] = () =>
       json({
-        hostId: ME + 1,
+        hostId: uuidOf(2),
         roomId: 'room',
-        users: [String(ME + 1), String(ME)],
+        users: [uuidOf(2), ME],
         webrtcOffer: { signaling: [], peerOpts: {}, maxConns: 1 },
       });
     const behind = new Y.Doc();
     Y.applyUpdate(behind, savedGame('print(1)'));
     behind.getMap('game.meta').set('schemaVersion', GAME_SCHEMA_VERSION - 1);
-    routes['GET /projects/7/content'] = () =>
+    routes[`GET /projects/${GAME}/content`] = () =>
       new Response(Y.encodeStateAsUpdate(behind) as BlobPart, {
         status: 200,
         headers: { 'content-type': 'application/octet-stream' },
       });
     const service = TestBed.inject(WorkSessionService);
-    const opening = service.open(7);
+    const opening = service.open(GAME);
     await vi.waitFor(() => {
       expect(service.status()).toBe('upgrading');
     });
@@ -460,12 +463,12 @@ describe('WorkSessionService', () => {
 
   it('leaves a saved game alone when a tutorial seed is waiting', async () => {
     sessionStorage.setItem(
-      'naucto.seed.7',
+      `naucto.seed.${GAME}`,
       JSON.stringify({ name: 'Tutorial', code: 'print("tutorial")', assets: null }),
     );
     const service = TestBed.inject(WorkSessionService);
-    await service.open(7);
+    await service.open(GAME);
     expect(service.game.entryFile?.text.toString()).toBe('print(1)');
-    expect(sessionStorage.getItem('naucto.seed.7')).toBeNull();
+    expect(sessionStorage.getItem(`naucto.seed.${GAME}`)).toBeNull();
   });
 });

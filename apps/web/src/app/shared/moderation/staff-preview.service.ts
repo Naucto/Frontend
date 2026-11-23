@@ -14,14 +14,14 @@ import { unwrap } from '../../core/api/api-errors';
  */
 @Injectable({ providedIn: 'root' })
 export class StaffPreviewService {
-  async project(id: number): Promise<ProjectPreviewDto> {
-    return unwrap(await staffPreviewControllerPreview({ path: { id: String(id) } }));
+  async project(id: string): Promise<ProjectPreviewDto> {
+    return unwrap(await staffPreviewControllerPreview({ path: { id: id } }));
   }
 
   /** The latest save of the game, or null when nothing was saved yet. */
-  async content(id: number): Promise<Uint8Array | null> {
+  async content(id: string): Promise<Uint8Array | null> {
     const result = await staffPreviewControllerContent({
-      path: { id: String(id) },
+      path: { id: id },
       query: { source: 'draft' },
       parseAs: 'blob',
     });

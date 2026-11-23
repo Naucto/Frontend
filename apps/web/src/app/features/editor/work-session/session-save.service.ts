@@ -39,7 +39,7 @@ export interface SavedSession {
   readonly doc: Y.Doc;
   /** The game the document holds, for what a save reads through it rather than from a root. */
   readonly game: { readonly palette: readonly string[] };
-  readonly id: number;
+  readonly id: string;
   /** The project as the server last described it; a save that changes its metadata updates it. */
   readonly project: WritableSignal<ProjectExResponseDto | null>;
   /** Open for writing: false while the session loads, and again once it has failed or closed. */
@@ -262,7 +262,7 @@ export class SessionSaveService {
     }
     unwrap(
       await projectContentControllerSaveCheckpoint({
-        path: { id: String(session.id), name },
+        path: { id: session.id, name },
         body: { file: session.snapshot() },
       }),
     );

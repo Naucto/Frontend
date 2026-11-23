@@ -1,7 +1,8 @@
 import type { Locator, Page, Request } from '@playwright/test';
 
+import { uuidOf } from '../../packages/api-client/testing';
 import { BUBBLEGUM_16 } from '../../packages/engine/src/game/defaults';
-import { editorUrl, mockEditor, projectRoute } from '../editor-mocks';
+import { editorUrl, mockEditor, PROJECT_ID, projectRoute, SEED_KEY } from '../editor-mocks';
 import { expect, test } from '../fixtures';
 import { boxOf } from './helpers';
 
@@ -49,9 +50,12 @@ function postedFile(request: Request): { type: string; bytes: Buffer } {
 }
 
 async function seedGame(page: Page): Promise<void> {
-  await page.addInitScript((code) => {
-    sessionStorage.setItem('naucto.seed.7', JSON.stringify({ name: 'Platformer', code }));
-  }, MOVING_GAME);
+  await page.addInitScript(
+    ([key, code]) => {
+      sessionStorage.setItem(key, JSON.stringify({ name: 'Platformer', code }));
+    },
+    [SEED_KEY, MOVING_GAME] as const,
+  );
 }
 
 /** The frame the editor's one runtime has reached. */
@@ -361,7 +365,7 @@ test('a refused disk style goes back to the one before, and a colour the palette
 test('a save mirrors the game palette onto the project', async ({ page }) => {
   const updates: { palette?: string[] }[] = [];
   page.on('request', (request) => {
-    if (request.method() === 'PUT' && request.url().endsWith('/projects/7')) {
+    if (request.method() === 'PUT' && request.url().endsWith(`/projects/${PROJECT_ID}`)) {
       updates.push(request.postDataJSON() as { palette?: string[] });
     }
   });
@@ -700,7 +704,7 @@ test('a pause in the typing is what saves the game', async ({ page }) => {
 test('a collaborator who is not the host may publish and name a version', async ({ page }) => {
   let saves = 0;
   await mockEditor(page, {
-    hostId: 4,
+    hostId: uuidOf(4),
     onSave: () => {
       saves += 1;
     },

@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 
+import { uuidOf } from '../../packages/api-client/testing';
 import { answer } from './session';
 
 /** A session of game 42 with two of its four seats taken, as the API answers it. */
@@ -7,16 +8,16 @@ export const ROOM = {
   sessionUuid: '7d0f6a52-4c1b-4f0e-9a51-2f6f0c7b9e11',
   title: 'Friday night',
   visibility: 'PUBLIC',
-  hostId: 11,
+  hostId: uuidOf(11),
   hostUsername: 'louis',
-  projectId: 42,
+  projectId: uuidOf(42),
   projectName: 'Cave Diver',
   maxPlayers: 4,
   playerCount: 2,
   startedAt: '2026-11-21T10:00:00.000Z',
   roster: [
-    { id: 11, username: 'louis' },
-    { id: 12, username: 'lea' },
+    { id: uuidOf(11), username: 'louis' },
+    { id: uuidOf(12), username: 'lea' },
   ],
   coverUrl: null,
   disk: null,

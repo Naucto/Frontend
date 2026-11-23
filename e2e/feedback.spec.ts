@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 
+import { uuidOf } from '../packages/api-client/testing';
 import { expect, test } from './fixtures';
 import { answer, mockSignedIn } from './mocks/session';
 
@@ -12,7 +13,7 @@ test.describe('ratings', () => {
   test('a signed-in player rates the platform from the footer and is thanked', async ({ page }) => {
     await mockSignedIn(page);
     await page.route('**/reports/prompt', answer(200, { eligible: false, declined: false }));
-    await page.route('**/reports/ratings', answer(201, { id: 5 }));
+    await page.route('**/reports/ratings', answer(201, { id: uuidOf(5) }));
 
     await page.goto('/hub');
     await page.getByRole('contentinfo').getByRole('button', { name: 'Feedback' }).click();
@@ -58,7 +59,7 @@ test.describe('bug reports', () => {
   test.beforeEach(async ({ page }) => {
     await mockSignedIn(page);
     await page.route('**/reports/prompt', answer(200, { eligible: false, declined: false }));
-    await page.route('**/reports/bugs', answer(201, { id: 31 }));
+    await page.route('**/reports/bugs', answer(201, { id: uuidOf(31) }));
   });
 
   const report = async (page: Page): Promise<void> => {
@@ -79,11 +80,13 @@ test.describe('bug reports', () => {
   test('a signed-in player reports a problem from the bar, the screenshot following it', async ({
     page,
   }) => {
-    await page.route('**/reports/bugs/31/screenshot', (route) => route.fulfill({ status: 204 }));
+    await page.route(`**/reports/bugs/${uuidOf(31)}/screenshot`, (route) =>
+      route.fulfill({ status: 204 }),
+    );
     await report(page);
 
     const created = page.waitForRequest('**/reports/bugs');
-    const attached = page.waitForRequest('**/reports/bugs/31/screenshot');
+    const attached = page.waitForRequest(`**/reports/bugs/${uuidOf(31)}/screenshot`);
     await page.getByRole('button', { name: 'Send report' }).click();
     expect((await created).postDataJSON()).toMatchObject({
       category: 'SOUND',
@@ -97,18 +100,21 @@ test.describe('bug reports', () => {
     expect(upload.postDataBuffer()?.toString('latin1')).toContain('name="screenshot"');
 
     const thanks = page.getByRole('dialog', { name: 'Thank you' });
-    await expect(thanks).toContainText('Report #31 reached the team.');
+    await expect(thanks).toContainText('Your report reached the team.');
     await expect(thanks).not.toContainText('could not be attached');
   });
 
   test('a report stands when the server refuses its screenshot, and says so', async ({ page }) => {
-    await page.route('**/reports/bugs/31/screenshot', answer(413, { message: 'Too large' }));
+    await page.route(
+      `**/reports/bugs/${uuidOf(31)}/screenshot`,
+      answer(413, { message: 'Too large' }),
+    );
     await report(page);
 
     await page.getByRole('button', { name: 'Send report' }).click();
 
     const thanks = page.getByRole('dialog', { name: 'Thank you' });
-    await expect(thanks).toContainText('Report #31 reached the team.');
+    await expect(thanks).toContainText('Your report reached the team.');
     await expect(thanks).toContainText('The screenshot could not be attached');
   });
 });

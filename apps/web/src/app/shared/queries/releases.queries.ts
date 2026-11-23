@@ -75,11 +75,12 @@ export function injectRelatedWindow(): CreateQueryResult<ReleasePage> {
   }));
 }
 
-export function injectRelease(id: () => number): CreateQueryResult<ProjectExResponseDto> {
+/** The release of a game; with no id, as for a game that was forked from none, nothing is asked. */
+export function injectRelease(id: () => string | null): CreateQueryResult<ProjectExResponseDto> {
   return injectQuery(() => ({
     queryKey: qk.release(id()),
-    enabled: id() > 0,
-    queryFn: async () => unwrap(await hubControllerGetRelease({ path: { id: String(id()) } })),
+    enabled: id() !== null,
+    queryFn: async () => unwrap(await hubControllerGetRelease({ path: { id: id() ?? '' } })),
   }));
 }
 
@@ -98,9 +99,9 @@ export function injectReleaseTags(
 }
 
 /** Signed cover URL for a published game; null when the game has no cover. */
-export function injectReleaseImage(id: () => number | null): CreateQueryResult<string | null> {
+export function injectReleaseImage(id: () => string | null): CreateQueryResult<string | null> {
   return injectQuery(() => ({
-    queryKey: qk.releaseImage(id() ?? -1),
+    queryKey: qk.releaseImage(id()),
     enabled: id() !== null,
     staleTime: 10 * 60 * 1000,
     queryFn: async () => {
@@ -125,9 +126,9 @@ export function injectReleaseImage(id: () => number | null): CreateQueryResult<s
  *
  * Authenticated, so it is for a reader looking at their own work rather than for the shelves.
  */
-export function injectProjectImage(id: () => number | null): CreateQueryResult<string | null> {
+export function injectProjectImage(id: () => string | null): CreateQueryResult<string | null> {
   return injectQuery(() => ({
-    queryKey: qk.projectImage(id() ?? -1),
+    queryKey: qk.projectImage(id()),
     enabled: id() !== null,
     staleTime: 10 * 60 * 1000,
     queryFn: async () => {
@@ -145,35 +146,34 @@ export function injectProjectImage(id: () => number | null): CreateQueryResult<s
   }));
 }
 
-export function injectReleaseContentUrl(id: () => number): CreateQueryResult<string> {
+export function injectReleaseContentUrl(id: () => string): CreateQueryResult<string> {
   return injectQuery(() => ({
     queryKey: qk.releaseContentUrl(id()),
     staleTime: 0,
     queryFn: async () =>
-      unwrap(await projectContentControllerGetReleaseContentUrl({ path: { id: String(id()) } }))
-        .signedUrl,
+      unwrap(await projectContentControllerGetReleaseContentUrl({ path: { id: id() } })).signedUrl,
   }));
 }
 
 export function injectLikeStatus(
-  id: () => number,
+  id: () => string,
 ): CreateQueryResult<{ likes: number; liked: boolean }> {
   const auth = inject(AuthStore);
   return injectQuery(() => ({
     queryKey: qk.likeStatus(id()),
     enabled: auth.isAuthenticated(),
-    queryFn: async () => unwrap(await hubControllerGetLikeStatus({ path: { id: String(id()) } })),
+    queryFn: async () => unwrap(await hubControllerGetLikeStatus({ path: { id: id() } })),
   }));
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type -- inferred mutation type (context from onMutate)
-export function injectToggleLike(id: () => number) {
+export function injectToggleLike(id: () => string) {
   const qc = inject(QueryClient);
   return injectMutation<LikeResponseDto, Error, boolean, LikeResponseDto | undefined>(() => ({
     mutationFn: async (liked: boolean): Promise<LikeResponseDto> => {
       const res = liked
-        ? await hubControllerUnlikeProject({ path: { id: String(id()) } })
-        : await hubControllerLikeProject({ path: { id: String(id()) } });
+        ? await hubControllerUnlikeProject({ path: { id: id() } })
+        : await hubControllerLikeProject({ path: { id: id() } });
       return unwrap(res);
     },
     onMutate: async (liked: boolean) => {
@@ -196,10 +196,10 @@ export function injectToggleLike(id: () => number) {
   }));
 }
 
-export function injectFork(): CreateMutationResult<ForkProjectResponseDto, Error, number> {
+export function injectFork(): CreateMutationResult<ForkProjectResponseDto, Error, string> {
   const qc = inject(QueryClient);
   return injectMutation(() => ({
-    mutationFn: async (id: number) => unwrap(await hubControllerFork({ path: { id } })),
+    mutationFn: async (id: string) => unwrap(await hubControllerFork({ path: { id } })),
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.projectsAll() }),
   }));
 }

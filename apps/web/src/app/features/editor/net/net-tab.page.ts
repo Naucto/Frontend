@@ -10,7 +10,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
-import { type SharedTableSession } from '@naucto/engine';
+import { type PlayerNumber, type SharedTableSession } from '@naucto/engine';
 import {
   ButtonDirective,
   EmptyStateComponent,
@@ -40,7 +40,10 @@ import { EditorModeService } from '../state/editor-mode.service';
 import { EditorRuntimeService } from '../state/editor-runtime.service';
 import { PANEL_WIDTH } from '../state/editor-ui.store';
 import { PresenceSurfaceComponent } from '../work-session/presence-surface.component';
-import { SessionPresenceService } from '../work-session/session-presence.service';
+import {
+  type Collaborator,
+  SessionPresenceService,
+} from '../work-session/session-presence.service';
 import { WorkSessionService } from '../work-session/work-session.service';
 import { buildRows, type Row } from './net-tree';
 
@@ -110,7 +113,6 @@ export default class NetTabPage {
    */
   private readonly observed = signal<{ at: number; bytes: number } | null>(null);
   private readonly permsVersion = yVersion(this.work.game.netPermissions);
-  protected readonly me = computed(() => this.auth.userId());
   private readonly bridge = computed<NetUiBridgeService | null>(() => this.runtime.bridge());
   protected readonly session = computed<SharedTableSession | null>(
     () => this.bridge()?.session() ?? null,
@@ -137,7 +139,7 @@ export default class NetTabPage {
   protected readonly players = computed(() => {
     const session = this.session();
     if (!session) {
-      return [] as number[];
+      return [] as PlayerNumber[];
     }
     const peers = this.bridge()?.peers() ?? [];
     return [session.selfPlayer, ...peers.filter((peer) => peer !== session.selfPlayer)];
@@ -165,18 +167,19 @@ export default class NetTabPage {
     this.tick();
     const max = Math.max(this.info()?.maxPlayers ?? 0, this.players().length, 2);
     const session = this.session();
-    const hostId = this.info()?.role === 'host' ? session?.selfPlayer : null;
+    const host = this.info()?.role === 'host' ? session?.selfPlayer : null;
     return Array.from({ length: max }, (_, i) => {
-      const userId = this.players()[i] ?? null;
+      const player = this.players()[i] ?? null;
       return {
         slot: i + 1,
-        userId,
-        name: userId === null ? '' : this.nameOf(userId),
-        host: userId !== null && userId === hostId,
+        player,
+        account: player === null ? null : this.accountOf(player),
+        name: player === null ? '' : this.nameOf(player),
+        host: player !== null && player === host,
         ping:
-          userId === null || userId === session?.selfPlayer
+          player === null || player === session?.selfPlayer
             ? null
-            : (session?.peerPing(userId) ?? null),
+            : (session?.peerPing(player) ?? null),
       };
     });
   });
@@ -279,16 +282,16 @@ export default class NetTabPage {
           : 'text-ink-4';
   }
 
-  protected ownerClass(owner: number | null): string {
+  protected ownerClass(owner: PlayerNumber | null): string {
     if (owner === null) {
       return 'text-ink-4';
     }
     return this.isHostOwner(owner) ? 'text-gold-ink' : 'text-sky-ink';
   }
 
-  private isHostOwner(userId: number): boolean {
+  private isHostOwner(player: PlayerNumber): boolean {
     const session = this.session();
-    return session !== null && session.isHost && userId === session.selfPlayer;
+    return session !== null && session.isHost && player === session.selfPlayer;
   }
 
   /** The action buttons say what they do, or why they cannot. */
@@ -296,31 +299,50 @@ export default class NetTabPage {
     return this.canShape(row) ? label : translate('editor.net.hostOnly');
   }
 
-  protected ownerName(userId: number | null): string {
-    if (userId === null) {
+  protected ownerName(player: PlayerNumber | null): string {
+    if (player === null) {
       return '—';
     }
-    if (this.isHostOwner(userId)) {
+    if (this.isHostOwner(player)) {
       return this.transloco.translate('editor.net.host');
     }
-    return this.nameOf(userId);
+    return this.nameOf(player);
   }
 
-  protected nameOf(userId: number): string {
-    if (userId === this.me()) {
-      return this.auth.displayName();
-    }
-    if (userId === this.rigId()) {
-      return this.transloco.translate('editor.net.rigClient');
-    }
+  /**
+   * The collaborator who plays under a number. The table names a player by a number that says
+   * nothing of the account, so the link is what each collaborator's editor shares of itself in
+   * the room; a player who is not in the room stays a number.
+   */
+  private collaboratorAt(player: PlayerNumber): Collaborator | null {
     return (
-      this.presence.collaborators().find((collaborator) => collaborator.userId === userId)?.name ??
-      this.transloco.translate('editor.net.unknownUser', { id: userId })
+      this.presence.collaborators().find((collaborator) => collaborator.player === player) ?? null
     );
   }
 
-  protected slotOf(userId: number): number | null {
-    const i = this.players().indexOf(userId);
+  private accountOf(player: PlayerNumber): string | null {
+    return player === this.session()?.selfPlayer
+      ? this.auth.userId()
+      : (this.collaboratorAt(player)?.userId ?? null);
+  }
+
+  protected nameOf(player: PlayerNumber): string {
+    if (player === this.session()?.selfPlayer) {
+      return this.auth.displayName();
+    }
+    if (player === this.rigId()) {
+      return this.transloco.translate('editor.net.rigClient');
+    }
+    return (
+      this.collaboratorAt(player)?.name ??
+      this.transloco.translate('editor.net.unknownPlayer', { number: player })
+    );
+  }
+
+  /** Where a collaborator sits in the game, or null while they are not in it. */
+  protected slotOf(collaborator: Collaborator): number | null {
+    const player = collaborator.isSelf ? this.session()?.selfPlayer : collaborator.player;
+    const i = player === undefined ? -1 : this.players().indexOf(player);
     return i < 0 ? null : i + 1;
   }
 

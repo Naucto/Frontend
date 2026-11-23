@@ -1,3 +1,4 @@
+import { uuidOf } from '../packages/api-client/testing';
 import { expect, type Locator, type Page, test } from './fixtures';
 import {
   ADA,
@@ -7,9 +8,12 @@ import {
   type CollectionsApi,
   mockCollections,
 } from './mocks/collections';
-import { release } from './mocks/game';
+import { PLAY, release } from './mocks/game';
 import { hubGame, mockProjects } from './mocks/hub';
 import { answer, mockSignedIn } from './mocks/session';
+
+/** The ids of the games numbered so. */
+const ids = (...numbers: number[]): string[] => numbers.map(uuidOf);
 
 const GAMES = [
   hubGame(11, 'Hightide'),
@@ -22,7 +26,7 @@ const GAMES = [
 const couch = (): ReturnType<typeof collection> =>
   collection('couch', 'Couch co-op', {
     description: 'Two pads, one sofa.',
-    gameIds: [11, 12, 13, 14],
+    gameIds: ids(11, 12, 13, 14),
   });
 
 /** The four of the tray's disks, by the name on each, in the order they stand. */
@@ -35,8 +39,8 @@ async function asAlexis(page: Page, api: CollectionsApi): Promise<void> {
   api.viewer = ALEXIS.id;
 }
 
-const project = (id: number, name: string, published: boolean): Record<string, unknown> =>
-  hubGame(id, name, { ...by(ALEXIS), ...(published ? {} : { publishedAt: null }) });
+const project = (number: number, name: string, published: boolean): Record<string, unknown> =>
+  hubGame(number, name, { ...by(ALEXIS), ...(published ? {} : { publishedAt: null }) });
 
 test.describe('a collection page', () => {
   test('shows a reader the box, its games in order, and a link to hand on', async ({
@@ -62,7 +66,7 @@ test.describe('a collection page', () => {
       'Frog Hop',
       'Night Courier',
     ]);
-    await expect(tray(page).first()).toHaveAttribute('href', '/play/11');
+    await expect(tray(page).first()).toHaveAttribute('href', `/play/${uuidOf(11)}`);
     await expect(page.getByTestId('tray').locator('li').nth(2)).toContainText('03');
 
     await expect(page.getByRole('switch', { name: 'Organize' })).toHaveCount(0);
@@ -98,7 +102,9 @@ test.describe('a collection page', () => {
   test('answers not-found for a private collection to anyone but its owner', async ({ page }) => {
     await page.route('**/auth/refresh', answer(401, {}));
     const api = await mockCollections(page, GAMES, {
-      collections: [collection('secret', 'To try later', { visibility: 'PRIVATE', gameIds: [11] })],
+      collections: [
+        collection('secret', 'To try later', { visibility: 'PRIVATE', gameIds: ids(11) }),
+      ],
     });
     await page.goto('/collections/secret');
     await expect(page.getByRole('heading', { name: 'Nothing here' })).toBeVisible();
@@ -143,10 +149,10 @@ test.describe('a collection page', () => {
       .poll(() => names(tray(page)))
       .toEqual(['Hightide', 'Frog Hop', 'Pong Royale', 'Night Courier']);
     await expect(page.getByRole('button', { name: 'Move Frog Hop earlier' })).toBeFocused();
-    await expect.poll(() => api.collections[0]?.gameIds).toEqual([11, 13, 12, 14]);
+    await expect.poll(() => api.collections[0]?.gameIds).toEqual(ids(11, 13, 12, 14));
     expect(api.calls.filter((call) => call.method === 'PUT').at(-1)).toMatchObject({
       path: '/collections/couch/games',
-      body: { projectIds: [11, 13, 12, 14] },
+      body: { projectIds: ids(11, 13, 12, 14) },
     });
 
     const remove = page.getByRole('button', { name: 'Remove', exact: true });
@@ -181,7 +187,7 @@ test.describe('a collection page', () => {
     await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 12 });
     await page.mouse.up();
 
-    await expect.poll(() => api.collections[0]?.gameIds).toEqual([12, 13, 11, 14]);
+    await expect.poll(() => api.collections[0]?.gameIds).toEqual(ids(12, 13, 11, 14));
     expect(await names(tray(page))).toEqual([
       'Pong Royale',
       'Frog Hop',
@@ -192,7 +198,9 @@ test.describe('a collection page', () => {
 
   test('shows its owner the games that left the hub, to take out', async ({ page }) => {
     const api = await mockCollections(page, GAMES, {
-      collections: [collection('couch', 'Couch co-op', { gameIds: [11], unavailable: [90, 91] })],
+      collections: [
+        collection('couch', 'Couch co-op', { gameIds: ids(11), unavailable: ids(90, 91) }),
+      ],
     });
     await asAlexis(page, api);
     await page.goto('/collections/couch');
@@ -204,7 +212,7 @@ test.describe('a collection page', () => {
     await expect(gone.getByRole('img')).toHaveCount(1);
     expect(api.calls.at(-2)).toMatchObject({
       method: 'DELETE',
-      path: '/collections/couch/games/90',
+      path: `/collections/couch/games/${uuidOf(90)}`,
     });
 
     // Nobody else is told about them.
@@ -288,7 +296,7 @@ test.describe('creating, editing and deleting', () => {
 
 test.describe('add to collection, on a game page', () => {
   test.beforeEach(async ({ page }) => {
-    await page.route('**/projects/releases/42', answer(200, release));
+    await page.route(`**/projects/releases/${release.id}`, answer(200, release));
   });
 
   test('ticks and unticks at once, goes back when refused, and makes a new one', async ({
@@ -296,13 +304,13 @@ test.describe('add to collection, on a game page', () => {
   }) => {
     const api = await mockCollections(page, GAMES, {
       collections: [
-        collection('couch', 'Couch co-op', { gameIds: [11, 42] }),
+        collection('couch', 'Couch co-op', { gameIds: ids(11, 42) }),
         collection('later', 'To try later', { visibility: 'PRIVATE' }),
-        collection('full', 'Jam shortlist', { visibility: 'UNLISTED', gameIds: [11, 12] }),
+        collection('full', 'Jam shortlist', { visibility: 'UNLISTED', gameIds: ids(11, 12) }),
       ],
     });
     await asAlexis(page, api);
-    await page.goto('/play/42');
+    await page.goto(PLAY);
 
     const add = page.getByTestId('add-to-collection');
     await expect(add.getByTestId('holding')).toHaveText('1');
@@ -318,11 +326,11 @@ test.describe('add to collection, on a game page', () => {
     await row('To try later').click();
     await expect(row('To try later')).toBeChecked();
     await expect(add.getByTestId('holding')).toHaveText('2');
-    await expect.poll(() => api.collections[1]?.gameIds).toEqual([42]);
+    await expect.poll(() => api.collections[1]?.gameIds).toEqual(ids(42));
 
     await row('Couch co-op').click();
     await expect(row('Couch co-op')).not.toBeChecked();
-    await expect.poll(() => api.collections[0]?.gameIds).toEqual([11]);
+    await expect.poll(() => api.collections[0]?.gameIds).toEqual(ids(11));
     await expect(add.getByTestId('holding')).toHaveText('1');
 
     api.limits.games = 2;
@@ -341,15 +349,15 @@ test.describe('add to collection, on a game page', () => {
     await expect(dialog).toBeHidden();
     await expect(row('Deep dives')).toBeChecked();
     await expect(add.getByTestId('holding')).toHaveText('2');
-    expect(api.collections[0]).toMatchObject({ title: 'Deep dives', gameIds: [42] });
+    expect(api.collections[0]).toMatchObject({ title: 'Deep dives', gameIds: ids(42) });
   });
 
   test('asks a signed-out reader to sign in, then opens the checklist', async ({ page }) => {
     await page.route('**/auth/refresh', answer(401, {}));
     const api = await mockCollections(page, GAMES, {
-      collections: [collection('couch', 'Couch co-op', { gameIds: [42] })],
+      collections: [collection('couch', 'Couch co-op', { gameIds: ids(42) })],
     });
-    await page.goto('/play/42');
+    await page.goto(PLAY);
 
     const add = page.getByTestId('add-to-collection');
     await expect(add.getByTestId('holding')).toHaveCount(0);
@@ -360,7 +368,7 @@ test.describe('add to collection, on a game page', () => {
     await page.route('**/auth/login', answer(200, { access_token: 'token' }));
     await page.route(
       '**/users/profile',
-      answer(200, { id: 1, email: 'a@x', username: 'alexis', nickname: null, createdAt: '' }),
+      answer(200, { ...ALEXIS, email: 'a@x', nickname: null, createdAt: '' }),
     );
     api.viewer = ALEXIS.id;
     await dialog.getByLabel('Email').fill('a@x.io');
@@ -379,7 +387,7 @@ test.describe('every public collection', () => {
   const many = Array.from({ length: 30 }, (_, i) =>
     collection(`c${String(i + 1)}`, `Collection ${String(i + 1)}`, {
       owner: i % 2 ? ADA : ALEXIS,
-      gameIds: GAMES.slice(0, (i % 4) + 1).map((game) => game.id as number),
+      gameIds: GAMES.slice(0, (i % 4) + 1).map((game) => game.id as string),
     }),
   );
 
@@ -423,7 +431,7 @@ test.describe('every public collection', () => {
     await page.route('**/auth/refresh', answer(401, {}));
     await mockCollections(page, GAMES, {
       collections: [
-        collection('jam', 'Everything we loved at the 2026 game jam', { gameIds: [11] }),
+        collection('jam', 'Everything we loved at the 2026 game jam', { gameIds: ids(11) }),
       ],
     });
     await page.goto('/collections');
@@ -464,7 +472,7 @@ test.describe('my games', () => {
     );
     await expect(drafts.getByRole('link', { name: 'Draft 1', exact: true })).toHaveAttribute(
       'href',
-      '/edit/100',
+      `/edit/${uuidOf(100)}`,
     );
     // Four across at this width, on two rows: the tenth thing waits on the second page.
     await expect(drafts.locator('[role="listitem"]:not([inert])')).toHaveCount(8);
@@ -477,7 +485,7 @@ test.describe('my games', () => {
     await expect(published.getByRole('link', { name: 'See all' })).toHaveCount(0);
     await expect(published.getByRole('link', { name: 'Pong Royale' })).toHaveAttribute(
       'href',
-      '/edit/201',
+      `/edit/${uuidOf(201)}`,
     );
 
     const boxes = page.getByTestId('shelf-collections');

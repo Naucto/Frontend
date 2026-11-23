@@ -129,20 +129,20 @@ export default class CollectionPage {
     source: () => this.id(),
     computation: () => false,
   });
-  protected readonly picked = linkedSignal<boolean, ReadonlySet<number>>({
+  protected readonly picked = linkedSignal<boolean, ReadonlySet<string>>({
     source: () => this.organizing(),
     computation: () => new Set(),
   });
   /** What the last move did, for whoever cannot see the tray. */
   protected readonly moved = signal('');
   /** The disk an arrow just moved and where it goes: its arrow is focused again once it is there. */
-  private readonly following = signal<{ game: number; by: -1 | 1; to: number } | null>(null);
+  private readonly following = signal<{ game: string; by: -1 | 1; to: number } | null>(null);
 
   /**
    * The order its owner gave the games on this page. It holds over what the server answers: an
    * answer to an earlier move arrives after later ones were made, and would undo them on screen.
    */
-  private readonly order = linkedSignal<string, readonly number[] | null>({
+  private readonly order = linkedSignal<string, readonly string[] | null>({
     source: () => this.id(),
     computation: () => null,
   });
@@ -152,7 +152,7 @@ export default class CollectionPage {
     if (!order) {
       return games;
     }
-    const place = (id: number): number => {
+    const place = (id: string): number => {
       const at = order.indexOf(id);
       return at < 0 ? order.length : at;
     };
@@ -220,7 +220,7 @@ export default class CollectionPage {
     });
   }
 
-  protected pick(game: number, on: boolean): void {
+  protected pick(game: string, on: boolean): void {
     this.picked.update((picked) => {
       const next = new Set(picked);
       if (on) {
@@ -232,7 +232,7 @@ export default class CollectionPage {
     });
   }
 
-  protected remove(games: Iterable<number>): void {
+  protected remove(games: Iterable<string>): void {
     this.standing.run(() => {
       const id = this.id();
       void Promise.allSettled(
@@ -291,7 +291,7 @@ export default class CollectionPage {
    * The keyboard's way to move a disk: the focus follows it to where it lands. The disk is named,
    * not counted: a second press comes before the tray is drawn again, when its place is out of date.
    */
-  protected step(game: number, by: -1 | 1): void {
+  protected step(game: string, by: -1 | 1): void {
     const from = this.games().findIndex((other) => other.id === game);
     if (this.games()[from + by]) {
       this.following.set({ game, by, to: from + by });
@@ -305,9 +305,7 @@ export default class CollectionPage {
       if (!follow || this.games()[follow.to]?.id !== follow.game) {
         return;
       }
-      const arrows = this.host.querySelectorAll<HTMLButtonElement>(
-        `[data-move="${String(follow.game)}"]`,
-      );
+      const arrows = this.host.querySelectorAll<HTMLButtonElement>(`[data-move="${follow.game}"]`);
       // The arrow that was pressed is out of use once the disk reaches that end.
       const pressed = arrows[follow.by < 0 ? 0 : 1];
       (pressed?.disabled ? arrows[follow.by < 0 ? 1 : 0] : pressed)?.focus();

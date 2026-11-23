@@ -1,7 +1,9 @@
 import type { Page, Route } from '@playwright/test';
 
+import { uuidOf } from '../../packages/api-client/testing';
+
 export interface Person {
-  id: number;
+  id: string;
   username: string;
 }
 
@@ -14,9 +16,9 @@ export interface StoredCollection {
   visibility: Visibility;
   owner: Person;
   /** Its games on the hub, in order. */
-  gameIds: number[];
+  gameIds: string[];
   /** Games it lists that left the hub. */
-  unavailable: number[];
+  unavailable: string[];
 }
 
 export interface Call {
@@ -29,14 +31,14 @@ export interface Call {
 export interface CollectionsApi {
   collections: StoredCollection[];
   /** Who is asking, as the server would know from the token; null for nobody. */
-  viewer: number | null;
+  viewer: string | null;
   limits: { collections: number; games: number };
   /** Every request answered, in order. */
   calls: Call[];
 }
 
-export const ALEXIS: Person = { id: 1, username: 'alexis' };
-export const ADA: Person = { id: 7, username: 'ada' };
+export const ALEXIS: Person = { id: uuidOf(1), username: 'alexis' };
+export const ADA: Person = { id: uuidOf(7), username: 'ada' };
 
 /** What makes a game of `hubGame` this person's: passed as what it overrides. */
 export const by = (creator: Person): Record<string, unknown> => ({ userId: creator.id, creator });
@@ -113,7 +115,7 @@ export async function mockCollections(
   });
 
   await page.route(
-    /\/(collections|users\/me\/collections|users\/public\/\d+\/collections)(\/|\?|$)/,
+    /\/(collections|users\/me\/collections|users\/public\/[^/]+\/collections)(\/|\?|$)/,
     (route) => {
       const request = route.request();
       // The app's own pages live under the same paths.
@@ -142,20 +144,18 @@ export async function mockCollections(
               ...(asked === null
                 ? {}
                 : {
-                    contains: [...stored.gameIds, ...stored.unavailable].includes(Number(asked)),
+                    contains: [...stored.gameIds, ...stored.unavailable].includes(asked),
                   }),
             })),
         );
       }
-      const person = /^\/users\/public\/(\d+)\/collections$/.exec(url.pathname);
+      const person = /^\/users\/public\/([^/]+)\/collections$/.exec(url.pathname);
       if (person) {
         return json(
           route,
           200,
           api.collections
-            .filter(
-              (stored) => stored.owner.id === Number(person[1]) && stored.visibility === 'PUBLIC',
-            )
+            .filter((stored) => stored.owner.id === person[1] && stored.visibility === 'PUBLIC')
             .map(preview),
         );
       }
@@ -178,7 +178,7 @@ export async function mockCollections(
       }
       if (url.pathname === '/collections') {
         const owner = api.collections.find((stored) => stored.owner.id === api.viewer)?.owner ?? {
-          id: api.viewer ?? 0,
+          id: api.viewer ?? '',
           username: 'someone',
         };
         const mine = api.collections.filter((stored) => stored.owner.id === api.viewer).length;
@@ -197,7 +197,7 @@ export async function mockCollections(
       }
 
       const [, id, , game] =
-        /^\/collections\/([^/]+)(\/games(?:\/(\d+))?)?$/.exec(url.pathname) ?? [];
+        /^\/collections\/([^/]+)(\/games(?:\/([^/]+))?)?$/.exec(url.pathname) ?? [];
       const stored = api.collections.find((other) => other.id === id);
       const owned = stored?.owner.id === api.viewer;
       if (!stored || (stored.visibility === 'PRIVATE' && !owned)) {
@@ -210,7 +210,7 @@ export async function mockCollections(
         return json(route, 403, { statusCode: 403, message: 'Forbidden' });
       }
       if (url.pathname.endsWith('/games')) {
-        const asked = (body as { projectIds: number[] }).projectIds;
+        const asked = (body as { projectIds: string[] }).projectIds;
         stored.gameIds = [...asked, ...stored.gameIds.filter((other) => !asked.includes(other))];
         return json(route, 204);
       }
@@ -218,14 +218,14 @@ export async function mockCollections(
         if (stored.gameIds.length >= api.limits.games) {
           return refuse(route, 'games');
         }
-        if (!stored.gameIds.includes(Number(game))) {
-          stored.gameIds.push(Number(game));
+        if (!stored.gameIds.includes(game)) {
+          stored.gameIds.push(game);
         }
         return json(route, 204);
       }
       if (game !== undefined) {
-        stored.gameIds = stored.gameIds.filter((other) => other !== Number(game));
-        stored.unavailable = stored.unavailable.filter((other) => other !== Number(game));
+        stored.gameIds = stored.gameIds.filter((other) => other !== game);
+        stored.unavailable = stored.unavailable.filter((other) => other !== game);
         return json(route, 204);
       }
       if (method === 'DELETE') {

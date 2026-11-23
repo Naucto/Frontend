@@ -114,12 +114,12 @@
       <nc-section banded [title]="t('editor.game.lineage')">
         <div class="grid gap-1 text-body text-ink-2">
           @if (session.project()?.forkedFromId; as from) {
-            <!-- The id stands in until the parent's name arrives, and for good once the parent is
-               unpublished or deleted. -->
+            <!-- Until the parent's name arrives, and for good once the parent is unpublished or
+               deleted, it is another game: an id says nothing to whoever reads it. -->
             <div class="flex items-center gap-1">
               {{ t('editor.game.forkedFrom') }}
               <a [href]="'/play/' + from" class="min-w-0 truncate text-sky-ink">
-                {{ parent.data()?.name ?? '#' + from }}
+                {{ parent.data()?.name ?? t('editor.game.anotherGame') }}
               </a>
               @if (parent.data()?.creator; as creator) {
                 <nc-user-avatar [userId]="creator.id" [name]="creator.username" [size]="24" />

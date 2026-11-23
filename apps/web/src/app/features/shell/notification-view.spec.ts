@@ -1,11 +1,12 @@
 import { type NotificationPayloadDto } from '@naucto/api-client';
+import { uuidOf } from '@naucto/api-client/testing';
 import { describe, expect, it } from 'vitest';
 
 import { destinationOf, lookOf } from './notification-view';
 
 const notification = (patch: Partial<NotificationPayloadDto>): NotificationPayloadDto => ({
-  id: 'n1',
-  userId: 1,
+  id: uuidOf(71),
+  userId: uuidOf(1),
   title: '',
   message: '',
   type: 'INFO',
@@ -18,25 +19,39 @@ const notification = (patch: Partial<NotificationPayloadDto>): NotificationPaylo
 
 describe('destinationOf', () => {
   it('opens the game of a session invite on the session, with the code that lets one in', () => {
-    const invite = notification({ data: { projectId: 4, sessionId: 'abc', joinCode: 'WXYZ' } });
+    const invite = notification({
+      data: { projectId: uuidOf(4), sessionId: 'abc', joinCode: 'WXYZ' },
+    });
 
     expect(destinationOf(invite)).toEqual({
-      path: ['/play', '4'],
+      path: ['/play', uuidOf(4)],
       query: { session: 'abc', code: 'WXYZ' },
     });
   });
 
   it('leaves the code out of an invite to a session that has none', () => {
-    const invite = notification({ data: { projectId: 4, sessionId: 'abc' } });
+    const invite = notification({ data: { projectId: uuidOf(4), sessionId: 'abc' } });
 
-    expect(destinationOf(invite)).toEqual({ path: ['/play', '4'], query: { session: 'abc' } });
+    expect(destinationOf(invite)).toEqual({
+      path: ['/play', uuidOf(4)],
+      query: { session: 'abc' },
+    });
   });
 
   it('opens a game that is only named, and leads nowhere without one', () => {
-    expect(destinationOf(notification({ kind: 'FEATURED', data: { projectId: 4 } }))).toEqual({
-      path: ['/play', '4'],
+    expect(
+      destinationOf(notification({ kind: 'FEATURED', data: { projectId: uuidOf(4) } })),
+    ).toEqual({
+      path: ['/play', uuidOf(4)],
     });
     expect(destinationOf(notification({}))).toBeNull();
+  });
+
+  it('leads nowhere from a project that is not named by an id', () => {
+    expect(destinationOf(notification({ kind: 'FEATURED', data: { projectId: 4 } }))).toBeNull();
+    expect(
+      destinationOf(notification({ kind: 'COLLABORATOR_ADDED', data: { projectId: 9 } })),
+    ).toBeNull();
   });
 
   it('sends both friend kinds to the friends page', () => {
@@ -48,15 +63,17 @@ describe('destinationOf', () => {
 
   it('opens the editor of a project one was added to, and nothing of one they were removed from', () => {
     expect(
-      destinationOf(notification({ kind: 'COLLABORATOR_ADDED', data: { projectId: 9 } })),
-    ).toEqual({ path: ['/edit', '9'] });
+      destinationOf(notification({ kind: 'COLLABORATOR_ADDED', data: { projectId: uuidOf(9) } })),
+    ).toEqual({ path: ['/edit', uuidOf(9)] });
     expect(
-      destinationOf(notification({ kind: 'COLLABORATOR_REMOVED', data: { projectId: 9 } })),
+      destinationOf(notification({ kind: 'COLLABORATOR_REMOVED', data: { projectId: uuidOf(9) } })),
     ).toBeNull();
   });
 
   it('sends a moderation notice to the standing, never to the game it is about', () => {
-    expect(destinationOf(notification({ kind: 'MODERATION', data: { projectId: 9 } }))).toEqual({
+    expect(
+      destinationOf(notification({ kind: 'MODERATION', data: { projectId: uuidOf(9) } })),
+    ).toEqual({
       path: ['/settings', 'standing'],
     });
   });
@@ -78,8 +95,10 @@ describe('lookOf', () => {
   });
 
   it('tells a session invite from the other generic notifications', () => {
-    expect(lookOf(notification({ data: { projectId: 4, sessionId: 'abc' } })).icon).toBe('gamepad');
-    expect(lookOf(notification({ data: { projectId: 4 } })).icon).toBe('info-box');
+    expect(lookOf(notification({ data: { projectId: uuidOf(4), sessionId: 'abc' } })).icon).toBe(
+      'gamepad',
+    );
+    expect(lookOf(notification({ data: { projectId: uuidOf(4) } })).icon).toBe('info-box');
   });
 
   it('gives each kind its accent', () => {

@@ -27,7 +27,7 @@ import { UserAvatarComponent } from '../user-avatar.component';
 
 export interface HostDialogData {
   bridge: NetUiBridgeService;
-  projectId: number;
+  projectId: string;
   options: NetHostOptions;
   /** The editor hosting to test its own game, which is not a real game played. */
   editorTest?: boolean;
@@ -76,10 +76,14 @@ export class HostDialogComponent {
   protected readonly seats = computed(() => {
     const info = this.data.bridge.info();
     const me = this.auth.user();
-    const peers = this.data.bridge.peers();
-    const taken = [
-      { id: me?.id ?? 0, name: me?.nickname ?? me?.username ?? '' },
-      ...peers.filter((id) => id !== me?.id).map((id) => ({ id, name: String(id) })),
+    const self = this.data.bridge.session()?.selfPlayer;
+    // A peer is a player number, which names no account: only the host's own seat has a face.
+    const taken: { account: string | null; name: string }[] = [
+      { account: me?.id ?? null, name: me?.nickname ?? me?.username ?? '' },
+      ...this.data.bridge
+        .peers()
+        .filter((player) => player !== self)
+        .map((player) => ({ account: null, name: String(player) })),
     ];
     const max = info?.maxPlayers ?? this.data.options.maxPlayers;
     return {

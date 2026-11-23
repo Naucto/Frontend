@@ -1,3 +1,4 @@
+import { uuidOf } from '@naucto/api-client/testing';
 import { QueryClient } from '@tanstack/angular-query-experimental';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -34,11 +35,11 @@ describe('invalidateProjectHistory', () => {
     const qc = new QueryClient();
     const invalidate = vi.spyOn(qc, 'invalidateQueries').mockResolvedValue(undefined);
 
-    await invalidateProjectHistory(qc, 7, 'versions');
-    expect(invalidate).toHaveBeenLastCalledWith({ queryKey: qk.projectVersions(7) });
+    await invalidateProjectHistory(qc, uuidOf(7), 'versions');
+    expect(invalidate).toHaveBeenLastCalledWith({ queryKey: qk.projectVersions(uuidOf(7)) });
 
-    await invalidateProjectHistory(qc, 7, 'checkpoints');
-    expect(invalidate).toHaveBeenLastCalledWith({ queryKey: qk.projectCheckpoints(7) });
+    await invalidateProjectHistory(qc, uuidOf(7), 'checkpoints');
+    expect(invalidate).toHaveBeenLastCalledWith({ queryKey: qk.projectCheckpoints(uuidOf(7)) });
     expect(invalidate).toHaveBeenCalledTimes(2);
   });
 });

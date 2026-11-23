@@ -3,7 +3,7 @@ import { copyFileSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { mockEditor } from '../editor-mocks';
+import { editorUrl, mockEditor } from '../editor-mocks';
 import { test } from '../fixtures';
 import { shoot } from './frame';
 
@@ -38,7 +38,7 @@ test.describe('network tutorials', () => {
   for (const theme of THEMES) {
     test(`pong: the Host a session dialog (${theme})`, async ({ page }) => {
       await mockEditor(page, { theme, content });
-      await page.goto('/edit/7/code');
+      await page.goto(editorUrl('code'));
       await page.locator('nc-game-screen canvas').first().waitFor();
       await page.getByRole('button', { name: 'Play' }).first().click();
       await page.waitForTimeout(600);
@@ -53,7 +53,7 @@ test.describe('network tutorials', () => {
 
     test(`permissions: SHARED STATE with winner declared (${theme})`, async ({ page }) => {
       await mockEditor(page, { theme, content });
-      await page.goto('/edit/7/net');
+      await page.goto(editorUrl('net'));
       await page.getByRole('button', { name: 'Declare a path' }).click();
       await page.getByPlaceholder('key').fill('winner');
       await page.keyboard.press('Enter');

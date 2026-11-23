@@ -22,9 +22,9 @@ import { UserAvatarComponent } from '../../shared/user-avatar.component';
 
 /** Where an option leads, which is all the box needs to know about it. */
 export type SuggestTarget =
-  | { kind: 'game'; id: number }
+  | { kind: 'game'; id: string }
   | { kind: 'person'; username: string }
-  | { kind: 'session'; projectId: number; sessionUuid: string }
+  | { kind: 'session'; projectId: string; sessionUuid: string }
   | { kind: 'tag'; tag: string };
 
 /** Past this many, a session's seats are counted in a chip instead of drawn one by one. */

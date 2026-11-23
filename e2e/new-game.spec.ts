@@ -1,3 +1,4 @@
+import { uuidOf } from '../packages/api-client/testing';
 import { expect, test } from './fixtures';
 import { mockSignedIn } from './mocks/session';
 
@@ -11,7 +12,7 @@ test('a game made from a cold load is named in words, not by a catalogue key', a
   const names: unknown[] = [];
   await page.route('**/projects', (route) => {
     names.push((route.request().postDataJSON() as { name: unknown }).name);
-    return route.fulfill({ status: 201, json: { id: 9 } });
+    return route.fulfill({ status: 201, json: { id: uuidOf(9) } });
   });
 
   await page.goto('/games/new');

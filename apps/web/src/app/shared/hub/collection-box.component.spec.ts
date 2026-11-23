@@ -1,4 +1,5 @@
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
+import { uuidOf } from '@naucto/api-client/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { testProviders } from '../../testing/providers';
@@ -10,10 +11,10 @@ function render(count: number, total = count): ComponentFixture<CollectionBoxCom
   const fixture = TestBed.createComponent(CollectionBoxComponent);
   const inputs = {
     title: 'Couch co-op',
-    curator: { id: 7, username: 'louis' },
+    curator: { id: uuidOf(7), username: 'louis' },
     games: Array.from({ length: count }, (_, i) => gameOf(i + 1)),
     total,
-    link: ['/collections', 'abc'],
+    link: ['/collections', uuidOf(30)],
   };
   for (const [name, value] of Object.entries(inputs)) {
     fixture.componentRef.setInput(name, value);
@@ -57,7 +58,7 @@ describe('CollectionBoxComponent', () => {
     expect(box.querySelector('[role="group"]')?.getAttribute('aria-label')).toBe(label);
     const plate = box.querySelector<HTMLAnchorElement>('a[data-plate]');
     expect(plate?.getAttribute('aria-label')).toBe(`Open ${label}`);
-    expect(plate?.getAttribute('href')).toBe('/collections/abc');
+    expect(plate?.getAttribute('href')).toBe(`/collections/${uuidOf(30)}`);
     expect(plate?.textContent).toContain('6 games');
   });
 
@@ -114,7 +115,7 @@ describe('CollectionBoxComponent', () => {
     expect(picked).not.toHaveBeenCalled();
 
     press(disks()[4]!);
-    expect(picked).toHaveBeenCalledWith(expect.objectContaining({ id: 5 }));
+    expect(picked).toHaveBeenCalledWith(expect.objectContaining({ id: uuidOf(5) }));
   });
 
   it('moves the crown under a drag, and lands on a whole disk', () => {
@@ -171,7 +172,7 @@ describe('CollectionBoxComponent', () => {
     const tile = box.querySelector<HTMLAnchorElement>('.disk a');
     expect(tile?.textContent).toContain('36');
     expect(tile?.getAttribute('aria-label')).toBe('Show all 52 games in Couch co-op');
-    expect(tile?.getAttribute('href')).toBe('/collections/abc');
+    expect(tile?.getAttribute('href')).toBe(`/collections/${uuidOf(30)}`);
     expect(disks().at(-1)?.style.left).toBe('168px');
   });
 });

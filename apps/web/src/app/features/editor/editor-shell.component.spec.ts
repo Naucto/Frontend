@@ -2,6 +2,7 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, RouteReuseStrategy, withComponentInputBinding } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
+import { uuidOf } from '@naucto/api-client/testing';
 import { DialogService, ToastService } from '@naucto/ui';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
@@ -69,7 +70,10 @@ describe('EditorShellComponent', () => {
         EditorUiStore,
         { provide: WorkSessionService, useValue: session },
         { provide: SessionSaveService, useValue: {} },
-        { provide: SessionPresenceService, useValue: { collaborators: signal([]) } },
+        {
+          provide: SessionPresenceService,
+          useValue: { collaborators: signal([]), setPlayer: vi.fn() },
+        },
         { provide: PresenceStore, useValue: { announce } },
         { provide: DialogService, useValue: { open: vi.fn() } },
         { provide: ToastService, useValue: { show: vi.fn() } },
@@ -82,24 +86,24 @@ describe('EditorShellComponent', () => {
 
   it('opens the session on the id in the URL, and reopens it in a new shell when the id changes', async () => {
     const harness = await RouterTestingHarness.create();
-    const first = await harness.navigateByUrl('/edit/7', EditorShellComponent);
+    const first = await harness.navigateByUrl(`/edit/${uuidOf(7)}`, EditorShellComponent);
     expect(session.open).toHaveBeenCalledTimes(1);
-    expect(session.open).toHaveBeenCalledWith(7);
+    expect(session.open).toHaveBeenCalledWith(uuidOf(7));
 
-    const second = await harness.navigateByUrl('/edit/9', EditorShellComponent);
+    const second = await harness.navigateByUrl(`/edit/${uuidOf(9)}`, EditorShellComponent);
 
     expect(second).not.toBe(first);
     expect(session.close).toHaveBeenCalledTimes(1);
     expect(session.open).toHaveBeenCalledTimes(2);
-    expect(session.open).toHaveBeenLastCalledWith(9);
+    expect(session.open).toHaveBeenLastCalledWith(uuidOf(9));
   });
 
   it('tells no friend a game is being built while it is only looked at', async () => {
     session.preview.set('staff');
     const harness = await RouterTestingHarness.create();
-    await harness.navigateByUrl('/edit/7', EditorShellComponent);
+    await harness.navigateByUrl(`/edit/${uuidOf(7)}`, EditorShellComponent);
 
-    expect(session.open).toHaveBeenCalledWith(7);
+    expect(session.open).toHaveBeenCalledWith(uuidOf(7));
     expect(announce).not.toHaveBeenCalledWith(expect.objectContaining({ kind: 'BUILDING' }));
   });
 
@@ -107,12 +111,12 @@ describe('EditorShellComponent', () => {
   it('announces the game being built once the session is open as a live one, not before', async () => {
     session.status.set('joining');
     const harness = await RouterTestingHarness.create();
-    await harness.navigateByUrl('/edit/7', EditorShellComponent);
+    await harness.navigateByUrl(`/edit/${uuidOf(7)}`, EditorShellComponent);
     expect(announce).not.toHaveBeenCalled();
 
     session.status.set('ready');
     harness.detectChanges();
 
-    expect(announce).toHaveBeenCalledWith({ kind: 'BUILDING', projectId: 7 });
+    expect(announce).toHaveBeenCalledWith({ kind: 'BUILDING', projectId: uuidOf(7) });
   });
 });

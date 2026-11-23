@@ -73,7 +73,7 @@ export function injectCollectionsPage(
 
 /** The viewer's own collections; with a game, each says whether it holds it. */
 export function injectMyCollections(
-  projectId: () => number | null = () => null,
+  projectId: () => string | null = () => null,
 ): CreateQueryResult<MyCollectionDto[]> {
   const auth = inject(AuthStore);
   return injectQuery(() => ({
@@ -90,11 +90,11 @@ export function injectMyCollections(
 
 /** The public collections of a person. */
 export function injectUserCollections(
-  userId: () => number,
+  userId: () => string,
 ): CreateQueryResult<CollectionPreviewDto[]> {
   return injectQuery(() => ({
     queryKey: qk.userCollections(userId()),
-    enabled: userId() > 0,
+    enabled: userId() !== '',
     queryFn: async () =>
       unwrap(await userCollectionsControllerPublicOf({ path: { id: userId() } })),
   }));
@@ -154,7 +154,7 @@ export function injectDeleteCollection(): CreateMutationResult<unknown, Error, s
 
 export interface CollectionMembership {
   id: string;
-  projectId: number;
+  projectId: string;
   /** Whether the collection is to hold the game. */
   holds: boolean;
 }
@@ -208,7 +208,7 @@ export function injectSetInCollection(): CreateMutationResult<
 export interface CollectionOrder {
   id: string;
   /** Every game the collection shows, in the order to give them. */
-  projectIds: number[];
+  projectIds: string[];
 }
 
 /** Puts a collection's games in the order given. */

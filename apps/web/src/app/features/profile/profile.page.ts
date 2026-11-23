@@ -131,7 +131,8 @@ export default class ProfilePage {
       ).data,
     retry: false,
   }));
-  private readonly userId = computed(() => this.profile.data()?.id ?? 0);
+  /** Empty until the profile is known: every query about the person waits for it. */
+  private readonly userId = computed(() => this.profile.data()?.id ?? '');
   /** What the top of the page stands on and takes its hues from; without one, the bare page. */
   protected readonly banner = computed(() => this.profile.data()?.backgroundImageUrl ?? null);
 
@@ -201,7 +202,7 @@ export default class ProfilePage {
     }
   }
 
-  private async upload(id: number, zone: ProfileImageZone, blob: Blob): Promise<void> {
+  private async upload(id: string, zone: ProfileImageZone, blob: Blob): Promise<void> {
     try {
       const name = zone === 'picture' ? 'picture' : 'background';
       const options = {
@@ -229,7 +230,7 @@ export default class ProfilePage {
   }
   private readonly published = injectQuery(() => ({
     queryKey: qk.profileGames(this.userId()),
-    enabled: this.userId() > 0,
+    enabled: this.userId() !== '',
     queryFn: async () =>
       unwrap(
         await userPublicControllerGetPublishedGames({
@@ -240,7 +241,7 @@ export default class ProfilePage {
   }));
   private readonly liked = injectQuery(() => ({
     queryKey: qk.profileLiked(this.userId()),
-    enabled: this.userId() > 0,
+    enabled: this.userId() !== '',
     queryFn: async () =>
       unwrap(await userPublicControllerGetLikedGames({ path: { id: this.userId() } })),
   }));
@@ -248,14 +249,14 @@ export default class ProfilePage {
   private readonly all = injectRelatedWindow();
   private readonly collabsQuery = injectQuery(() => ({
     queryKey: qk.profileCollabs(this.userId()),
-    enabled: this.userId() > 0,
+    enabled: this.userId() !== '',
     retry: false,
     queryFn: async () =>
       unwrap(await userPublicControllerGetCollaborations({ path: { id: this.userId() } })),
   }));
   private readonly remixesQuery = injectQuery(() => ({
     queryKey: qk.profileRemixes(this.userId()),
-    enabled: this.userId() > 0,
+    enabled: this.userId() !== '',
     retry: false,
     queryFn: async () =>
       unwrap(await userPublicControllerGetRemixes({ path: { id: this.userId() } })),
@@ -264,16 +265,16 @@ export default class ProfilePage {
   protected readonly collections = injectUserCollections(() => this.userId());
   private readonly friendshipQuery = injectQuery(() => ({
     queryKey: qk.friendship(this.userId()),
-    enabled: this.userId() > 0 && this.auth.isAuthenticated() && !this.isSelf(),
+    enabled: this.userId() !== '' && this.auth.isAuthenticated() && !this.isSelf(),
     retry: false,
     queryFn: async () =>
       unwrap(await userFriendshipControllerFriendship({ path: { id: this.userId() } })),
   }));
   protected readonly adding = injectMutation(() => ({
-    mutationFn: async (userId: number) => {
+    mutationFn: async (userId: string) => {
       unwrap(await friendsControllerSend({ body: { userId } }));
     },
-    onSuccess: (_: unknown, userId: number) =>
+    onSuccess: (_: unknown, userId: string) =>
       this.queries.invalidateQueries({ queryKey: qk.friendship(userId) }),
     onError: (error: Error) => {
       this.toasts.show(error.message, 'error');
@@ -338,11 +339,11 @@ export default class ProfilePage {
     () => !this.collections.data()?.length && this.rows().every((row) => !row.games.length),
   );
 
-  protected addFriend(userId: number): void {
+  protected addFriend(userId: string): void {
     this.adding.mutate(userId);
   }
 
-  protected report(profile: { id: number; username: string }): void {
+  protected report(profile: { id: string; username: string }): void {
     this.flags.report({ targetType: 'USER', targetId: profile.id, label: `@${profile.username}` });
   }
 }

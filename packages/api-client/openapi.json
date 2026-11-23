@@ -186,6 +186,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -221,6 +222,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -256,6 +258,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -293,6 +296,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -330,6 +334,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -381,7 +386,8 @@
             "in": "path",
             "description": "Project ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -418,9 +424,10 @@
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Numeric ID of the published project to fork",
+            "description": "ID of the published project to fork",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -463,6 +470,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -499,6 +507,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -561,7 +570,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -604,7 +614,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -665,6 +676,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -717,6 +729,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -795,6 +808,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -841,6 +855,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -882,6 +897,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -932,6 +948,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -972,6 +989,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -1012,6 +1030,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -1060,6 +1079,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -1109,6 +1129,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -1150,6 +1171,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -1336,6 +1358,49 @@
         "tags": ["projects"]
       }
     },
+    "/projects/legacy/{number}": {
+      "get": {
+        "description": "For links written while projects were numbered. Any project answers, published or not: the routes behind its id still decide who reads it.",
+        "operationId": "ProjectController_findLegacy",
+        "parameters": [
+          {
+            "name": "number",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": 42,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The id of the project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegacyProjectDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Not a number"
+          },
+          "404": {
+            "description": "No project was known by that number"
+          }
+        },
+        "security": [
+          {},
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Translate the number a project was once known by into its id",
+        "tags": ["projects"]
+      }
+    },
     "/projects/{id}": {
       "get": {
         "operationId": "ProjectController_findOne",
@@ -1344,9 +1409,10 @@
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Numeric ID of the project to retrieve",
+            "description": "ID of the project to retrieve",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -1389,9 +1455,10 @@
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Numeric ID of the project to update",
+            "description": "ID of the project to update",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -1444,9 +1511,10 @@
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Numeric ID of the project to delete",
+            "description": "ID of the project to delete",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -1482,7 +1550,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -1538,9 +1607,10 @@
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Numeric ID of the project to update",
+            "description": "ID of the project to update",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -1616,9 +1686,10 @@
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Numeric ID of the project to update",
+            "description": "ID of the project to update",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -1697,7 +1768,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -1758,7 +1830,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -1801,7 +1874,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -1863,7 +1937,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -1932,7 +2007,8 @@
             "required": false,
             "in": "query",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           },
           {
@@ -2329,7 +2405,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           },
           {
@@ -2387,7 +2464,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -2434,7 +2512,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           },
           {
@@ -2442,7 +2521,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -2489,7 +2569,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           },
           {
@@ -2497,7 +2578,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -2542,7 +2624,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           },
           {
@@ -2550,7 +2633,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -2674,6 +2758,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -2816,7 +2901,8 @@
             "in": "path",
             "description": "Friend request ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -2850,7 +2936,8 @@
             "in": "path",
             "description": "Friend request ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -2925,7 +3012,8 @@
             "in": "path",
             "description": "ID of the friend to remove",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -2959,7 +3047,8 @@
             "in": "path",
             "description": "User ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -3028,7 +3117,8 @@
             "in": "path",
             "description": "User ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -3572,7 +3662,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -3625,7 +3716,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -3662,8 +3754,9 @@
             "in": "query",
             "description": "A game: each collection then says whether it lists it",
             "schema": {
-              "example": 12,
-              "type": "number"
+              "format": "uuid",
+              "example": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+              "type": "string"
             }
           }
         ],
@@ -3704,7 +3797,8 @@
             "in": "path",
             "description": "User ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -4018,7 +4112,7 @@
             "name": "dimension",
             "required": false,
             "in": "query",
-            "description": "One value of a dimension of the metric, as `release:42`; the total when absent",
+            "description": "One value of a dimension of the metric, as `release:3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b`; the total when absent",
             "schema": {
               "type": "string"
             }
@@ -4495,7 +4589,8 @@
             "in": "query",
             "description": "Only what concerns this published project",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           },
           {
@@ -4731,7 +4826,7 @@
             "name": "query",
             "required": false,
             "in": "query",
-            "description": "Part of the name of a published game, or its id as `12` or `#12`",
+            "description": "Part of the name of a published game, or its id, with or without a leading `#`",
             "schema": {
               "maxLength": 100,
               "type": "string"
@@ -4743,7 +4838,7 @@
             "in": "query",
             "description": "Comma-separated project ids to name, published or not. The query is then ignored",
             "schema": {
-              "example": "12,40",
+              "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b,7c9e6679-7425-40de-944b-e07fc1f90ae7",
               "type": "string"
             }
           },
@@ -4795,7 +4890,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -4955,7 +5051,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -5006,7 +5103,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -5355,7 +5453,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -5557,7 +5656,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -5917,7 +6017,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -5958,7 +6059,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -6011,7 +6113,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -6149,6 +6252,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -6203,6 +6307,7 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -6381,7 +6486,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -6432,7 +6538,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -6567,7 +6674,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -6608,7 +6716,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -6664,7 +6773,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -6717,7 +6827,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -6770,7 +6881,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -6826,7 +6938,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -6921,7 +7034,8 @@
             "in": "query",
             "description": "Only the games this account created",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -6961,7 +7075,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -7002,7 +7117,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -7058,7 +7174,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -7094,7 +7211,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -7150,7 +7268,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -7240,7 +7359,8 @@
             "in": "query",
             "description": "Only the comments on this game",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           },
           {
@@ -7249,7 +7369,8 @@
             "in": "query",
             "description": "Only the comments of this account",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           },
           {
@@ -7297,7 +7418,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -7353,7 +7475,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -7409,7 +7532,8 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -7497,7 +7621,8 @@
             "in": "query",
             "description": "Only the actions of this staff member",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           },
           {
@@ -7506,7 +7631,8 @@
             "in": "query",
             "description": "Only the actions that bore on this account",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           },
           {
@@ -7523,7 +7649,8 @@
             "in": "query",
             "description": "With targetType, the history of one target",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           },
           {
@@ -8107,7 +8234,8 @@
             "in": "path",
             "description": "User ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -8160,7 +8288,8 @@
             "in": "path",
             "description": "User ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -8199,7 +8328,8 @@
             "in": "path",
             "description": "User ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -8240,7 +8370,8 @@
             "in": "path",
             "description": "User ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -8293,7 +8424,8 @@
             "in": "path",
             "description": "User ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -8378,7 +8510,8 @@
             "in": "path",
             "description": "User ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -8456,7 +8589,8 @@
             "in": "path",
             "description": "User ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           },
           {
@@ -8511,7 +8645,8 @@
             "in": "path",
             "description": "User ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           },
           {
@@ -8575,7 +8710,8 @@
             "in": "path",
             "description": "User ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           },
           {
@@ -8630,7 +8766,8 @@
             "in": "path",
             "description": "User ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           },
           {
@@ -8685,7 +8822,8 @@
             "in": "path",
             "description": "Project ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -8726,7 +8864,8 @@
             "in": "path",
             "description": "Project ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -8760,7 +8899,8 @@
             "in": "path",
             "description": "Project ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -8804,7 +8944,8 @@
             "in": "path",
             "description": "Project ID",
             "schema": {
-              "type": "number"
+              "format": "uuid",
+              "type": "string"
             }
           }
         ],
@@ -8926,8 +9067,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "example": 1,
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b",
             "description": "The unique identifier of the user"
           },
           "username": {
@@ -8942,8 +9084,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "example": 1,
+            "type": "string",
+            "format": "uuid",
+            "example": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
             "description": "The unique identifier of the project"
           },
           "name": {
@@ -8987,13 +9130,13 @@
           "coverUrl": {
             "type": "string",
             "description": "Address of the cover, usable as is: it changes when the cover does. Null without a cover. Absent from answers that neither list nor open a project",
-            "example": "https://cdn.example.com/projects/1/image?v=5d41402abc4b2a76b9719d911017c592",
+            "example": "https://cdn.example.com/projects/7c9e6679-7425-40de-944b-e07fc1f90ae7/image?v=5d41402abc4b2a76b9719d911017c592",
             "nullable": true
           },
           "clipUrl": {
             "type": "string",
             "description": "Address of the short gameplay clip, usable as is: it changes when the clip does. Null without a clip. Absent from answers that neither list nor open a project",
-            "example": "https://cdn.example.com/projects/1/clip?v=5d41402abc4b2a76b9719d911017c592",
+            "example": "https://cdn.example.com/projects/7c9e6679-7425-40de-944b-e07fc1f90ae7/clip?v=5d41402abc4b2a76b9719d911017c592",
             "nullable": true
           },
           "disk": {
@@ -9025,8 +9168,9 @@
             "nullable": true
           },
           "userId": {
-            "type": "number",
-            "example": 1,
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b",
             "description": "The ID of the user who owns this project"
           },
           "createdAt": {
@@ -9079,8 +9223,9 @@
             "description": "The number of forks created from this project"
           },
           "forkedFromId": {
-            "type": "number",
-            "example": 42,
+            "type": "string",
+            "format": "uuid",
+            "example": "c1a5f0de-3b7a-4f2e-9d6c-8e4b2a1f0c3d",
             "description": "The ID of the project this was forked from, if any",
             "nullable": true
           },
@@ -9233,7 +9378,7 @@
         "properties": {
           "url": {
             "type": "string",
-            "example": "https://cdn.example.com/projects/42/image",
+            "example": "https://cdn.example.com/projects/7c9e6679-7425-40de-944b-e07fc1f90ae7/image",
             "description": "The public CDN URL for the image"
           }
         },
@@ -9243,8 +9388,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "example": 1,
+            "type": "string",
+            "format": "uuid",
+            "example": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
             "description": "The unique identifier of the project"
           },
           "name": {
@@ -9288,13 +9434,13 @@
           "coverUrl": {
             "type": "string",
             "description": "Address of the cover, usable as is: it changes when the cover does. Null without a cover. Absent from answers that neither list nor open a project",
-            "example": "https://cdn.example.com/projects/1/image?v=5d41402abc4b2a76b9719d911017c592",
+            "example": "https://cdn.example.com/projects/7c9e6679-7425-40de-944b-e07fc1f90ae7/image?v=5d41402abc4b2a76b9719d911017c592",
             "nullable": true
           },
           "clipUrl": {
             "type": "string",
             "description": "Address of the short gameplay clip, usable as is: it changes when the clip does. Null without a clip. Absent from answers that neither list nor open a project",
-            "example": "https://cdn.example.com/projects/1/clip?v=5d41402abc4b2a76b9719d911017c592",
+            "example": "https://cdn.example.com/projects/7c9e6679-7425-40de-944b-e07fc1f90ae7/clip?v=5d41402abc4b2a76b9719d911017c592",
             "nullable": true
           },
           "disk": {
@@ -9326,8 +9472,9 @@
             "nullable": true
           },
           "userId": {
-            "type": "number",
-            "example": 1,
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b",
             "description": "The ID of the user who owns this project"
           },
           "createdAt": {
@@ -9380,8 +9527,9 @@
             "description": "The number of forks created from this project"
           },
           "forkedFromId": {
-            "type": "number",
-            "example": 42,
+            "type": "string",
+            "format": "uuid",
+            "example": "c1a5f0de-3b7a-4f2e-9d6c-8e4b2a1f0c3d",
             "description": "The ID of the project this was forked from, if any",
             "nullable": true
           },
@@ -9429,7 +9577,7 @@
         "properties": {
           "signedUrl": {
             "type": "string",
-            "example": "https://cdn.example.com/release/123?v=abc123",
+            "example": "https://cdn.example.com/release/7c9e6679-7425-40de-944b-e07fc1f90ae7?v=abc123",
             "description": "The CDN URL of the file"
           }
         },
@@ -9520,8 +9668,9 @@
         "type": "object",
         "properties": {
           "projectId": {
-            "type": "number",
-            "example": 1,
+            "type": "string",
+            "format": "uuid",
+            "example": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
             "description": "Project ID"
           },
           "contentSize": {
@@ -9548,8 +9697,9 @@
             "example": "Project published successfully"
           },
           "id": {
-            "type": "number",
-            "example": 1,
+            "type": "string",
+            "format": "uuid",
+            "example": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
             "description": "The project acted on"
           }
         },
@@ -9674,6 +9824,18 @@
         },
         "required": ["message", "name"]
       },
+      "LegacyProjectDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+            "description": "The id of the project the number named"
+          }
+        },
+        "required": ["id"]
+      },
       "CreateProjectDto": {
         "type": "object",
         "properties": {
@@ -9704,8 +9866,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "example": 1,
+            "type": "string",
+            "format": "uuid",
+            "example": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
             "description": "The unique identifier of the project"
           },
           "name": {
@@ -9749,13 +9912,13 @@
           "coverUrl": {
             "type": "string",
             "description": "Address of the cover, usable as is: it changes when the cover does. Null without a cover. Absent from answers that neither list nor open a project",
-            "example": "https://cdn.example.com/projects/1/image?v=5d41402abc4b2a76b9719d911017c592",
+            "example": "https://cdn.example.com/projects/7c9e6679-7425-40de-944b-e07fc1f90ae7/image?v=5d41402abc4b2a76b9719d911017c592",
             "nullable": true
           },
           "clipUrl": {
             "type": "string",
             "description": "Address of the short gameplay clip, usable as is: it changes when the clip does. Null without a clip. Absent from answers that neither list nor open a project",
-            "example": "https://cdn.example.com/projects/1/clip?v=5d41402abc4b2a76b9719d911017c592",
+            "example": "https://cdn.example.com/projects/7c9e6679-7425-40de-944b-e07fc1f90ae7/clip?v=5d41402abc4b2a76b9719d911017c592",
             "nullable": true
           },
           "disk": {
@@ -9787,8 +9950,9 @@
             "nullable": true
           },
           "userId": {
-            "type": "number",
-            "example": 1,
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b",
             "description": "The ID of the user who owns this project"
           },
           "createdAt": {
@@ -9841,8 +10005,9 @@
             "description": "The number of forks created from this project"
           },
           "forkedFromId": {
-            "type": "number",
-            "example": 42,
+            "type": "string",
+            "format": "uuid",
+            "example": "c1a5f0de-3b7a-4f2e-9d6c-8e4b2a1f0c3d",
             "description": "The ID of the project this was forked from, if any",
             "nullable": true
           }
@@ -9947,9 +10112,10 @@
         "type": "object",
         "properties": {
           "userId": {
-            "type": "number",
+            "type": "string",
             "description": "User ID of the user to add as collaborator",
-            "example": 42
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "username": {
             "type": "string",
@@ -9967,9 +10133,10 @@
         "type": "object",
         "properties": {
           "userId": {
-            "type": "number",
+            "type": "string",
             "description": "User ID of the user to remove as collaborator",
-            "example": 42
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "username": {
             "type": "string",
@@ -9989,7 +10156,7 @@
           "clipUrl": {
             "type": "string",
             "description": "Address of the clip just stored, usable as is",
-            "example": "https://cdn.example.com/projects/1/clip?v=5d41402abc4b2a76b9719d911017c592"
+            "example": "https://cdn.example.com/projects/7c9e6679-7425-40de-944b-e07fc1f90ae7/clip?v=5d41402abc4b2a76b9719d911017c592"
           }
         },
         "required": ["clipUrl"]
@@ -9998,8 +10165,10 @@
         "type": "object",
         "properties": {
           "projectId": {
-            "type": "number",
-            "description": "ID of the project this session is played on"
+            "type": "string",
+            "description": "ID of the project this session is played on",
+            "format": "uuid",
+            "example": "8c5d2a7e-41b3-4f6a-9e0d-2b7c6a5f4e3d"
           },
           "title": {
             "type": "string",
@@ -10086,8 +10255,8 @@
             "type": "string"
           },
           "playerId": {
-            "type": "number",
-            "description": "Player id assigned to this connection"
+            "type": "integer",
+            "description": "Player number assigned to this connection: what the game reads as net.id(), never an account id"
           },
           "webrtcConfig": {
             "$ref": "#/components/schemas/WebRTCOfferDto"
@@ -10121,9 +10290,10 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
+            "type": "string",
             "description": "User ID",
-            "example": 42
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "username": {
             "type": "string",
@@ -10150,8 +10320,10 @@
             "enum": ["PUBLIC", "FRIENDS_ONLY", "INVITE_CODE"]
           },
           "hostId": {
-            "type": "number",
-            "description": "ID of the host user"
+            "type": "string",
+            "description": "ID of the host user",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "hostUsername": {
             "type": "string",
@@ -10162,8 +10334,10 @@
             "description": "Display nickname of the host, if set"
           },
           "projectId": {
-            "type": "number",
-            "description": "ID of the game (project) being played"
+            "type": "string",
+            "description": "ID of the game (project) being played",
+            "format": "uuid",
+            "example": "8c5d2a7e-41b3-4f6a-9e0d-2b7c6a5f4e3d"
           },
           "projectName": {
             "type": "string",
@@ -10239,9 +10413,10 @@
         "type": "object",
         "properties": {
           "userId": {
-            "type": "number",
+            "type": "string",
             "description": "User ID",
-            "example": 42
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "username": {
             "type": "string",
@@ -10257,9 +10432,14 @@
             "type": "boolean",
             "description": "Whether this player is hosting",
             "example": false
+          },
+          "playerId": {
+            "type": "integer",
+            "description": "Player number of this player: what the game reads as net.id() and the playerId of that player's connection, never an account id",
+            "example": 1042
           }
         },
-        "required": ["userId", "username", "host"]
+        "required": ["userId", "username", "host", "playerId"]
       },
       "SessionRosterResponseDto": {
         "type": "object",
@@ -10282,9 +10462,10 @@
         "type": "object",
         "properties": {
           "userId": {
-            "type": "number",
+            "type": "string",
             "description": "Who to invite",
-            "example": 42
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           }
         },
         "required": ["userId"]
@@ -10334,8 +10515,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "example": 1
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "username": {
             "type": "string",
@@ -10358,8 +10540,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "example": 1
+            "type": "string",
+            "format": "uuid",
+            "example": "9b2f7a4c-1d3e-4f5a-8b6c-7d8e9f0a1b2c"
           },
           "content": {
             "type": "string",
@@ -10371,8 +10554,9 @@
             "example": "2023-04-15T12:00:00Z"
           },
           "projectId": {
-            "type": "number",
-            "example": 1
+            "type": "string",
+            "format": "uuid",
+            "example": "7c9e6679-7425-40de-944b-e07fc1f90ae7"
           },
           "author": {
             "$ref": "#/components/schemas/CommentAuthorDto"
@@ -10481,11 +10665,13 @@
         "properties": {
           "id": {
             "type": "string",
-            "example": "7"
+            "format": "uuid",
+            "example": "7c9e6679-7425-40de-944b-e07fc1f90ae7"
           },
           "userId": {
-            "type": "number",
-            "example": 42,
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b",
             "description": "ID of the user notified"
           },
           "title": {
@@ -10592,8 +10778,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "example": 1
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "username": {
             "type": "string",
@@ -10616,8 +10803,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "example": 1
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "username": {
             "type": "string",
@@ -10635,8 +10823,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "example": 12
+            "type": "string",
+            "format": "uuid",
+            "example": "7c9e6679-7425-40de-944b-e07fc1f90ae7"
           },
           "from": {
             "$ref": "#/components/schemas/UserSummaryDto"
@@ -10663,7 +10852,8 @@
         "type": "object",
         "properties": {
           "userId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "description": "ID of the user to befriend"
           },
           "username": {
@@ -10685,8 +10875,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "example": 1
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "username": {
             "type": "string",
@@ -10738,8 +10929,9 @@
         "type": "object",
         "properties": {
           "userId": {
-            "type": "number",
-            "example": 1
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "username": {
             "type": "string",
@@ -10759,12 +10951,14 @@
             ]
           },
           "releaseId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "nullable": true,
             "description": "Released project being played (PLAYING)"
           },
           "projectId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "nullable": true,
             "description": "Project being edited (BUILDING) or hosted (HOSTING)"
           },
@@ -10822,8 +11016,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "example": 1
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "username": {
             "type": "string",
@@ -10836,13 +11031,15 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "example": 7,
+            "type": "string",
+            "format": "uuid",
+            "example": "5a1c3e7b-2d4f-4a6b-9c8d-0e1f2a3b4c5d",
             "description": "Featured entry ID"
           },
           "projectId": {
-            "type": "number",
-            "example": 42,
+            "type": "string",
+            "format": "uuid",
+            "example": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
             "description": "Featured project ID"
           },
           "note": {
@@ -10900,8 +11097,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "example": 42
+            "type": "string",
+            "format": "uuid",
+            "example": "7c9e6679-7425-40de-944b-e07fc1f90ae7"
           },
           "name": {
             "type": "string",
@@ -10914,13 +11112,15 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "example": 7,
+            "type": "string",
+            "format": "uuid",
+            "example": "5a1c3e7b-2d4f-4a6b-9c8d-0e1f2a3b4c5d",
             "description": "Featured entry ID"
           },
           "projectId": {
-            "type": "number",
-            "example": 42,
+            "type": "string",
+            "format": "uuid",
+            "example": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
             "description": "Featured project ID"
           },
           "note": {
@@ -10981,8 +11181,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "example": 42
+            "type": "string",
+            "format": "uuid",
+            "example": "7c9e6679-7425-40de-944b-e07fc1f90ae7"
           },
           "name": {
             "type": "string",
@@ -10995,8 +11196,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "example": 1,
+            "type": "string",
+            "format": "uuid",
+            "example": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
             "description": "The unique identifier of the project"
           },
           "name": {
@@ -11032,13 +11234,13 @@
           "coverUrl": {
             "type": "string",
             "description": "Address of the cover, usable as is: it changes when the cover does. Null without a cover",
-            "example": "https://cdn.example.com/projects/1/image?v=5d41402abc4b2a76b9719d911017c592",
+            "example": "https://cdn.example.com/projects/7c9e6679-7425-40de-944b-e07fc1f90ae7/image?v=5d41402abc4b2a76b9719d911017c592",
             "nullable": true
           },
           "clipUrl": {
             "type": "string",
             "description": "Address of the short gameplay clip, usable as is: it changes when the clip does. Null without a clip",
-            "example": "https://cdn.example.com/projects/1/clip?v=5d41402abc4b2a76b9719d911017c592",
+            "example": "https://cdn.example.com/projects/7c9e6679-7425-40de-944b-e07fc1f90ae7/clip?v=5d41402abc4b2a76b9719d911017c592",
             "nullable": true
           },
           "disk": {
@@ -11070,8 +11272,9 @@
             "nullable": true
           },
           "userId": {
-            "type": "number",
-            "example": 1,
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b",
             "description": "The ID of the user who owns this project"
           },
           "createdAt": {
@@ -11124,8 +11327,9 @@
             "description": "The number of forks created from this project"
           },
           "forkedFromId": {
-            "type": "number",
-            "example": 42,
+            "type": "string",
+            "format": "uuid",
+            "example": "c1a5f0de-3b7a-4f2e-9d6c-8e4b2a1f0c3d",
             "description": "The ID of the project this was forked from, if any",
             "nullable": true
           },
@@ -11505,10 +11709,11 @@
           },
           "unavailableGameIds": {
             "description": "Games it lists that left the hub, for its owner to remove. Always empty for anyone else",
-            "example": [57],
+            "example": ["c1a5f0de-3b7a-4f2e-9d6c-8e4b2a1f0c3d"],
             "type": "array",
             "items": {
-              "type": "number"
+              "type": "string",
+              "format": "uuid"
             }
           }
         },
@@ -11582,11 +11787,15 @@
         "properties": {
           "projectIds": {
             "description": "Games of the collection in their new order. One left out keeps its place after those listed",
-            "example": [12, 4, 31],
+            "example": [
+              "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+              "c1a5f0de-3b7a-4f2e-9d6c-8e4b2a1f0c3d"
+            ],
             "maxItems": 200,
             "type": "array",
             "items": {
-              "type": "number"
+              "type": "string",
+              "format": "uuid"
             }
           }
         },
@@ -11789,7 +11998,8 @@
             "format": "uuid"
           },
           "releaseId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "description": "The published project being played"
           },
           "continued": {
@@ -11882,7 +12092,8 @@
             ]
           },
           "releaseId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "description": "The published project on screen, if any"
           },
           "play": {
@@ -11933,7 +12144,8 @@
             "description": "Whether the tab refused analytics or has not answered yet, absent when neither"
           },
           "releaseId": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "playMs": {
             "type": "number",
@@ -12313,7 +12525,8 @@
         "type": "object",
         "properties": {
           "releaseId": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "name": {
             "type": "string",
@@ -12485,7 +12698,8 @@
         "type": "object",
         "properties": {
           "releaseId": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "name": {
             "type": "string",
@@ -12701,7 +12915,8 @@
             "description": "A short code standing for one consenting browser, the same in every answer while the backend runs and never its cookie. Null when no consenting browser is involved"
           },
           "releaseId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "nullable": true
           },
           "game": {
@@ -12834,7 +13049,8 @@
         "type": "object",
         "properties": {
           "releaseId": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "name": {
             "type": "string",
@@ -12854,6 +13070,21 @@
           }
         },
         "required": ["releaseId", "name", "players", "plays", "anonymousPlays"]
+      },
+      "AnalyticsPlayedGameDto": {
+        "type": "object",
+        "properties": {
+          "releaseId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null for a game since deleted"
+          }
+        },
+        "required": ["releaseId", "name"]
       },
       "AnalyticsArrivalDto": {
         "type": "object",
@@ -12898,10 +13129,10 @@
             "nullable": true
           },
           "games": {
-            "description": "Names of the games played, most played first",
+            "description": "The games played, most first",
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/AnalyticsPlayedGameDto"
             }
           },
           "account": {
@@ -12969,7 +13200,8 @@
         "type": "object",
         "properties": {
           "releaseId": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "name": {
             "type": "string"
@@ -13013,7 +13245,8 @@
         "type": "object",
         "properties": {
           "releaseId": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "name": {
             "type": "string",
@@ -13157,7 +13390,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "at": {
             "type": "string"
@@ -13181,7 +13415,8 @@
             ]
           },
           "releaseId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "nullable": true
           },
           "game": {
@@ -13255,7 +13490,8 @@
             ]
           },
           "releaseId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "description": "The published project it is about: the game to play, or for creators the game to fork"
           }
         },
@@ -13291,7 +13527,8 @@
             ]
           },
           "releaseId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "nullable": true,
             "description": "The published project it is about: the game to play, or for creators the game to fork"
           }
@@ -13442,7 +13679,8 @@
             "type": "string"
           },
           "releaseId": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "continued": {
             "type": "boolean"
@@ -13475,7 +13713,9 @@
             "type": "string"
           },
           "releaseId": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid",
+            "description": "The nil UUID for activity outside a game"
           },
           "plays": {
             "type": "number"
@@ -13499,7 +13739,8 @@
             "type": "string"
           },
           "projectId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "nullable": true
           }
         },
@@ -13509,7 +13750,8 @@
         "type": "object",
         "properties": {
           "projectId": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "day": {
             "type": "string"
@@ -13616,7 +13858,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "username": {
             "type": "string"
@@ -13771,7 +14015,8 @@
             "maxLength": 1000
           },
           "releaseId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "description": "The release played just before the prompt"
           }
         },
@@ -13781,7 +14026,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           }
         },
         "required": ["id"]
@@ -13845,7 +14092,7 @@
           },
           "route": {
             "type": "string",
-            "example": "/play/42",
+            "example": "/play/3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b",
             "maxLength": 200
           },
           "role": {
@@ -13856,15 +14103,18 @@
             ]
           },
           "releaseId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "description": "The release the page is about"
           },
           "projectId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "description": "The project open in the editor"
           },
           "ratingId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "description": "The rating the report follows, for a low score"
           },
           "appRelease": {
@@ -13921,7 +14171,7 @@
           },
           "route": {
             "type": "string",
-            "example": "/play/42"
+            "example": "/play/3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "appRelease": {
             "type": "string",
@@ -13949,7 +14199,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "username": {
             "type": "string"
@@ -13986,7 +14238,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "name": {
             "type": "string"
@@ -13998,7 +14252,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "kind": {
             "allOf": [
@@ -14042,7 +14298,7 @@
           "route": {
             "type": "string",
             "nullable": true,
-            "example": "/play/42"
+            "example": "/play/3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "release": {
             "nullable": true,
@@ -14100,7 +14356,8 @@
             "description": "Bug reports opened from this rating",
             "type": "array",
             "items": {
-              "type": "number"
+              "type": "string",
+              "format": "uuid"
             }
           },
           "category": {
@@ -14112,7 +14369,8 @@
             ]
           },
           "ratingId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "nullable": true,
             "description": "The rating a bug followed"
           },
@@ -14270,7 +14528,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "score": {
             "type": "number"
@@ -14303,7 +14563,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "createdAt": {
             "format": "date-time",
@@ -14340,7 +14602,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "kind": {
             "allOf": [
@@ -14384,7 +14648,7 @@
           "route": {
             "type": "string",
             "nullable": true,
-            "example": "/play/42"
+            "example": "/play/3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "release": {
             "nullable": true,
@@ -14442,7 +14706,8 @@
             "description": "Bug reports opened from this rating",
             "type": "array",
             "items": {
-              "type": "number"
+              "type": "string",
+              "format": "uuid"
             }
           },
           "category": {
@@ -14454,7 +14719,8 @@
             ]
           },
           "ratingId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "nullable": true,
             "description": "The rating a bug followed"
           },
@@ -14490,7 +14756,8 @@
             "nullable": true
           },
           "projectId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "nullable": true
           },
           "context": {
@@ -14589,9 +14856,9 @@
             ]
           },
           "targetId": {
-            "type": "number",
-            "description": "The id of the account, the game or the comment",
-            "minimum": 1
+            "type": "string",
+            "format": "uuid",
+            "description": "The id of the account, the game or the comment"
           },
           "reason": {
             "allOf": [
@@ -14611,7 +14878,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           }
         },
         "required": ["id"]
@@ -14667,7 +14935,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "action": {
             "allOf": [
@@ -14684,7 +14953,8 @@
             ]
           },
           "targetId": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "targetLabel": {
             "type": "string",
@@ -14755,8 +15025,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "example": 1,
+            "type": "string",
+            "format": "uuid",
+            "example": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
             "description": "The unique identifier of the project"
           },
           "name": {
@@ -14800,13 +15071,13 @@
           "coverUrl": {
             "type": "string",
             "description": "Address of the cover, usable as is: it changes when the cover does. Null without a cover. Absent from answers that neither list nor open a project",
-            "example": "https://cdn.example.com/projects/1/image?v=5d41402abc4b2a76b9719d911017c592",
+            "example": "https://cdn.example.com/projects/7c9e6679-7425-40de-944b-e07fc1f90ae7/image?v=5d41402abc4b2a76b9719d911017c592",
             "nullable": true
           },
           "clipUrl": {
             "type": "string",
             "description": "Address of the short gameplay clip, usable as is: it changes when the clip does. Null without a clip. Absent from answers that neither list nor open a project",
-            "example": "https://cdn.example.com/projects/1/clip?v=5d41402abc4b2a76b9719d911017c592",
+            "example": "https://cdn.example.com/projects/7c9e6679-7425-40de-944b-e07fc1f90ae7/clip?v=5d41402abc4b2a76b9719d911017c592",
             "nullable": true
           },
           "disk": {
@@ -14838,8 +15109,9 @@
             "nullable": true
           },
           "userId": {
-            "type": "number",
-            "example": 1,
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b",
             "description": "The ID of the user who owns this project"
           },
           "createdAt": {
@@ -14892,8 +15164,9 @@
             "description": "The number of forks created from this project"
           },
           "forkedFromId": {
-            "type": "number",
-            "example": 42,
+            "type": "string",
+            "format": "uuid",
+            "example": "c1a5f0de-3b7a-4f2e-9d6c-8e4b2a1f0c3d",
             "description": "The ID of the project this was forked from, if any",
             "nullable": true
           },
@@ -14949,7 +15222,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "username": {
             "type": "string"
@@ -14990,7 +15264,8 @@
             ]
           },
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "state": {
             "allOf": [
@@ -15015,7 +15290,8 @@
             ]
           },
           "projectId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "nullable": true,
             "description": "The game a comment is on"
           },
@@ -15147,7 +15423,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "reporter": {
             "$ref": "#/components/schemas/ModerationAccountRefDto"
@@ -15203,7 +15480,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "action": {
             "allOf": [
@@ -15223,7 +15501,8 @@
             ]
           },
           "targetId": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "targetLabel": {
             "type": "string",
@@ -15416,7 +15695,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "username": {
             "type": "string"
@@ -15521,7 +15801,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "username": {
             "type": "string"
@@ -15771,7 +16052,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "name": {
             "type": "string"
@@ -15862,7 +16144,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "name": {
             "type": "string"
@@ -15931,7 +16214,8 @@
             }
           },
           "forkedFromId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "nullable": true
           },
           "hasCover": {
@@ -15998,7 +16282,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "content": {
             "type": "string",
@@ -16008,13 +16293,15 @@
             "$ref": "#/components/schemas/ModerationAccountRefDto"
           },
           "projectId": {
-            "type": "number"
+            "type": "string",
+            "format": "uuid"
           },
           "projectName": {
             "type": "string"
           },
           "parentId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "nullable": true,
             "description": "The comment it replies to"
           },
@@ -16307,9 +16594,10 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
+            "type": "string",
             "description": "User ID",
-            "example": 1
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "email": {
             "type": "string",
@@ -16346,9 +16634,10 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
+            "type": "string",
             "description": "User ID",
-            "example": 1
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "email": {
             "type": "string",
@@ -16381,13 +16670,13 @@
           "profileImageUrl": {
             "type": "string",
             "description": "Public CDN URL of the profile image (if any)",
-            "example": "https://cdn.example.com/users/1/profile?v=abc123",
+            "example": "https://cdn.example.com/users/3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b/profile?v=abc123",
             "nullable": true
           },
           "backgroundImageUrl": {
             "type": "string",
             "description": "Public CDN URL of the profile background image (if any)",
-            "example": "https://cdn.example.com/users/1/background?v=abc123",
+            "example": "https://cdn.example.com/users/3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b/background?v=abc123",
             "nullable": true
           },
           "suspension": {
@@ -16417,9 +16706,10 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
+            "type": "string",
             "description": "User ID",
-            "example": 1
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "username": {
             "type": "string",
@@ -16441,13 +16731,13 @@
           "profileImageUrl": {
             "type": "string",
             "description": "Public CDN URL of the profile image (if any)",
-            "example": "https://cdn.example.com/users/1/profile?v=abc123",
+            "example": "https://cdn.example.com/users/3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b/profile?v=abc123",
             "nullable": true
           },
           "backgroundImageUrl": {
             "type": "string",
             "description": "Public CDN URL of the profile background image (if any)",
-            "example": "https://cdn.example.com/users/1/background?v=abc123",
+            "example": "https://cdn.example.com/users/3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b/background?v=abc123",
             "nullable": true
           },
           "colour": {
@@ -16604,14 +16894,15 @@
             "example": "Profile picture uploaded successfully"
           },
           "id": {
-            "type": "number",
+            "type": "string",
             "description": "User ID",
-            "example": 12
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "resourceUrl": {
             "type": "string",
             "description": "Where the image now lives, versioned so a replacement is not served from cache",
-            "example": "https://cdn.example/users/12/profile?v=abc"
+            "example": "https://cdn.example/users/3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b/profile?v=abc"
           }
         },
         "required": ["message", "id", "resourceUrl"]
@@ -16624,9 +16915,10 @@
             "example": "Profile picture removed successfully"
           },
           "id": {
-            "type": "number",
+            "type": "string",
             "description": "User ID",
-            "example": 12
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           }
         },
         "required": ["message", "id"]
@@ -16637,7 +16929,7 @@
           "resourceUrl": {
             "type": "string",
             "description": "Public CDN URL of the image, versioned so a replacement is not served from cache",
-            "example": "https://cdn.example/users/12/profile?v=abc"
+            "example": "https://cdn.example/users/3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b/profile?v=abc"
           }
         },
         "required": ["resourceUrl"]
@@ -16646,9 +16938,10 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
+            "type": "string",
             "description": "User ID",
-            "example": 12
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "username": {
             "type": "string",
@@ -16664,7 +16957,7 @@
           "profileImageUrl": {
             "type": "string",
             "description": "Profile picture, null when the person has not set one",
-            "example": "https://cdn.example/users/12/profile?v=abc",
+            "example": "https://cdn.example/users/3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b/profile?v=abc",
             "nullable": true
           }
         },
@@ -16702,9 +16995,10 @@
             "example": "550e8400-e29b-41d4-a716-446655440000"
           },
           "hostId": {
-            "type": "number",
+            "type": "string",
             "description": "The user ID of the session's host",
-            "example": 1
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "webrtcOffer": {
             "description": "The WebRTC offer given to the client",
@@ -16721,9 +17015,10 @@
         "type": "object",
         "properties": {
           "userId": {
-            "type": "number",
+            "type": "string",
             "description": "The ID of the user participating in the work session",
-            "example": 1
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           }
         },
         "required": ["userId"]
@@ -16733,21 +17028,24 @@
         "properties": {
           "users": {
             "description": "IDs of the users present in the work session",
-            "example": [1, 2, 3],
+            "example": ["3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"],
             "type": "array",
             "items": {
-              "type": "number"
+              "type": "string",
+              "format": "uuid"
             }
           },
           "hostId": {
-            "type": "number",
+            "type": "string",
             "description": "The ID of the session's host",
-            "example": 1
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           },
           "project": {
-            "type": "number",
+            "type": "string",
             "description": "The ID of the project this work session belongs to",
-            "example": 1
+            "format": "uuid",
+            "example": "8c5d2a7e-41b3-4f6a-9e0d-2b7c6a5f4e3d"
           },
           "startedAt": {
             "format": "date-time",
@@ -16821,7 +17119,7 @@
           },
           "to": {
             "type": "number",
-            "description": "userId of the slave this response is addressed to"
+            "description": "Player number of the slave this response is addressed to"
           },
           "data": {
             "description": "Game payload, relayed as is",
@@ -16839,7 +17137,7 @@
           },
           "to": {
             "type": "number",
-            "description": "userId of the slave the host addresses; absent from a slave to its host"
+            "description": "Player number of the slave the host addresses; absent from a slave to its host"
           },
           "data": {
             "description": "Game payload, relayed as is",
@@ -16871,7 +17169,7 @@
           },
           "from": {
             "type": "number",
-            "description": "userId of the slave that sent the request"
+            "description": "Player number of the slave that sent the request"
           },
           "data": {
             "description": "Game payload, relayed as is",
@@ -16903,7 +17201,7 @@
           },
           "from": {
             "type": "number",
-            "description": "userId of the slave that sent the signal; absent from the host to a slave"
+            "description": "Player number of the slave that sent the signal; absent from the host to a slave"
           },
           "data": {
             "description": "Game payload, relayed as is",
@@ -16921,7 +17219,7 @@
           },
           "userId": {
             "type": "number",
-            "description": "userId of the slave now at the table"
+            "description": "Player number of the slave now at the table"
           }
         },
         "required": ["type", "userId"]
@@ -16935,7 +17233,7 @@
           },
           "userId": {
             "type": "number",
-            "description": "userId of the slave that left the table"
+            "description": "Player number of the slave that left the table"
           }
         },
         "required": ["type", "userId"]
@@ -16989,12 +17287,14 @@
             ]
           },
           "releaseId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "nullable": true,
             "description": "Release being played"
           },
           "projectId": {
-            "type": "number",
+            "type": "string",
+            "format": "uuid",
             "nullable": true,
             "description": "Project being edited"
           }
@@ -17075,8 +17375,9 @@
         "type": "object",
         "properties": {
           "userId": {
-            "type": "number",
-            "example": 1
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b8c1e-9d4a-4e6f-8a7b-1c2d3e4f5a6b"
           }
         },
         "required": ["userId"]

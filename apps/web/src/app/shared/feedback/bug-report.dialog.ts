@@ -27,6 +27,7 @@ import {
 
 import { violationsOf } from '../../core/api/api-errors';
 import { APP_RELEASE } from '../../core/config/release';
+import { ID_PATTERN } from '../../core/ids/ids';
 import { pagePath } from '../../core/reports/page-path';
 import { ActiveRuntimeService } from '../game-screen/active-runtime.service';
 import { frameToPng } from '../game-screen/frame-to-png';
@@ -52,24 +53,25 @@ export const BUG_CATEGORIES = Object.values(BugCategory);
 /** Where the dialog was opened from, and what that place already knows. */
 export interface BugReportData {
   category?: BugCategory;
-  ratingId?: number;
+  ratingId?: string;
   description?: string;
 }
 
 /** The report sent, and whether its screenshot, if any, was refused. */
 export interface BugReportSent {
-  id: number;
+  id: string;
   screenshotRefused: boolean;
 }
 
+const SUBJECT = new RegExp(`^/(play|edit)/(${ID_PATTERN})(?:/|$)`);
+
 /** The release or project a page is about, read from its path. */
-export function subjectOf(path: string): { releaseId?: number; projectId?: number } {
-  const play = /^\/play\/(\d+)/.exec(path);
-  if (play?.[1]) {
-    return { releaseId: Number(play[1]) };
+export function subjectOf(path: string): { releaseId?: string; projectId?: string } {
+  const [, page, id] = SUBJECT.exec(path) ?? [];
+  if (!id) {
+    return {};
   }
-  const edit = /^\/edit\/(\d+)/.exec(path);
-  return edit?.[1] ? { projectId: Number(edit[1]) } : {};
+  return page === 'play' ? { releaseId: id } : { projectId: id };
 }
 
 /** The category a report opened on this page most likely belongs to. */
@@ -222,7 +224,7 @@ export class BugReportDialog {
       return;
     }
     this.failed.set(null);
-    let id: number;
+    let id: string;
     try {
       ({ id } = await this.submit.mutateAsync({
         category: this.category(),
@@ -316,18 +318,10 @@ export class BugReportDialog {
       { label: label('release'), value: APP_RELEASE, identifier: true },
     ];
     if (this.subject.releaseId !== undefined) {
-      rows.push({
-        label: label('game'),
-        value: `#${String(this.subject.releaseId)}`,
-        identifier: true,
-      });
+      rows.push({ label: label('game'), value: this.subject.releaseId });
     }
     if (this.subject.projectId !== undefined) {
-      rows.push({
-        label: label('project'),
-        value: `#${String(this.subject.projectId)}`,
-        identifier: true,
-      });
+      rows.push({ label: label('project'), value: this.subject.projectId });
     }
     if (this.context.engineError) {
       rows.push({ label: label('engineError'), value: this.context.engineError, identifier: true });

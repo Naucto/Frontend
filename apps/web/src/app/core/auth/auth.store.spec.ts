@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { client } from '@naucto/api-client';
+import { uuidOf } from '@naucto/api-client/testing';
 import { QueryClient } from '@tanstack/angular-query-experimental';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -56,7 +57,7 @@ describe('AuthStore', () => {
     ['User', false],
   ])('reads a signed-in %s as staff: %s', async (role, staff) => {
     answered.set('/auth/login', () => json(201, { access_token: 'tok' }));
-    answered.set('/users/profile', () => json(200, { id: 1, username: 'alice', role }));
+    answered.set('/users/profile', () => json(200, { id: uuidOf(1), username: 'alice', role }));
 
     await store().loginWithPassword('a@b.test', 'pw');
 
@@ -67,12 +68,16 @@ describe('AuthStore', () => {
   it('carries the suspension the profile reports, and none in good standing', async () => {
     const suspension = { since: '2026-11-01T00:00:00.000Z', until: null };
     answered.set('/auth/login', () => json(201, { access_token: 'tok' }));
-    answered.set('/users/profile', () => json(200, { id: 1, username: 'alice', suspension }));
+    answered.set('/users/profile', () =>
+      json(200, { id: uuidOf(1), username: 'alice', suspension }),
+    );
 
     await store().loginWithPassword('a@b.test', 'pw');
     expect(store().suspension()).toEqual(suspension);
 
-    answered.set('/users/profile', () => json(200, { id: 1, username: 'alice', suspension: null }));
+    answered.set('/users/profile', () =>
+      json(200, { id: uuidOf(1), username: 'alice', suspension: null }),
+    );
     await store().refreshProfile();
     expect(store().suspension()).toBeNull();
   });
@@ -89,8 +94,8 @@ describe('AuthStore', () => {
     });
     answered.set('/users/profile', (bearer) =>
       bearer === 'Bearer t1'
-        ? json(200, { id: 1, username: 'alice', nickname: 'Alice' })
-        : json(200, { id: 2, username: 'bob', nickname: 'Bob' }),
+        ? json(200, { id: uuidOf(1), username: 'alice', nickname: 'Alice' })
+        : json(200, { id: uuidOf(2), username: 'bob', nickname: 'Bob' }),
     );
 
     await store().bootstrap();
@@ -108,7 +113,7 @@ describe('AuthStore', () => {
       refreshes += 1;
       return json(200, { access_token: `t${String(refreshes)}` });
     });
-    answered.set('/users/profile', () => json(200, { id: 1, username: 'alice' }));
+    answered.set('/users/profile', () => json(200, { id: uuidOf(1), username: 'alice' }));
     await store().bootstrap();
     expect(store().status()).toBe('authenticated');
   };
@@ -154,7 +159,7 @@ describe('AuthStore', () => {
   it("drops the previous account's cached server state when the session ends", async () => {
     await signIn();
     const queries = TestBed.inject(QueryClient);
-    queries.setQueryData(['projects', 'mine'], [{ id: 7 }]);
+    queries.setQueryData(['projects', 'mine'], [{ id: uuidOf(7) }]);
     answered.set('/auth/logout', () => json(200, {}));
 
     await store().logout();

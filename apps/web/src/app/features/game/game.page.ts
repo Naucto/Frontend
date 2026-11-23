@@ -10,7 +10,6 @@ import {
   inject,
   input,
   linkedSignal,
-  numberAttribute,
   signal,
   untracked,
   viewChild,
@@ -128,7 +127,7 @@ function topRelated(
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export default class GamePage {
-  readonly id = input.required({ transform: numberAttribute });
+  readonly id = input.required<string>();
   /** What a link to a session of this game carries: the session, and its code when it takes one. */
   readonly session = input<string>();
   readonly code = input<string>();
@@ -169,7 +168,7 @@ export default class GamePage {
    * play alone, and when the session was left or would not let them in.
    */
   private readonly cameFor = linkedSignal<
-    { id: number; uuid: string | undefined; code: string | undefined },
+    { id: string; uuid: string | undefined; code: string | undefined },
     Pick<SessionInvite, 'uuid' | 'code'> | null
   >({
     source: () => ({ id: this.id(), uuid: this.session(), code: this.code() }),
@@ -242,7 +241,7 @@ export default class GamePage {
    */
   protected readonly failure = computed<string | null>(() => {
     const error = this.release.error() ?? this.contentUrl.error();
-    if (!(this.id() > 0) || (error instanceof ApiError && error.status === 404)) {
+    if (error instanceof ApiError && error.status === 404) {
       return 'notFound.body';
     }
     if (error instanceof ApiError && error.code === 'PROJECT_HIDDEN') {
@@ -269,7 +268,7 @@ export default class GamePage {
     void this.contentUrl.refetch();
   }
 
-  protected readonly parent = injectRelease(() => this.release.data()?.forkedFromId ?? 0);
+  protected readonly parent = injectRelease(() => this.release.data()?.forkedFromId ?? null);
 
   /**
    * Who may go straight back into the editor; everyone else only gets REMIX. Collaborators count,
@@ -434,11 +433,11 @@ export default class GamePage {
     });
   }
 
-  protected report(release: { id: number; name: string }): void {
+  protected report(release: { id: string; name: string }): void {
     this.flags.report({ targetType: 'PROJECT', targetId: release.id, label: release.name });
   }
 
-  protected remix(id: number): void {
+  protected remix(id: string): void {
     this.standing.run(() => {
       this.fork.mutate(id, {
         onSuccess: (project) => {

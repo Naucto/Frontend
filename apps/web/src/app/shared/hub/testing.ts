@@ -1,17 +1,19 @@
+import { uuidOf } from '@naucto/api-client/testing';
+
 import type { HubGame, HubSession } from './hub-game';
 
 /** A game for the specs of the hub's pieces: every field set, and told apart by its number. */
-export function gameOf(id: number, over: Partial<HubGame> = {}): HubGame {
+export function gameOf(number: number, over: Partial<HubGame> = {}): HubGame {
   return {
-    id,
-    name: `Game ${String(id)}`,
-    shortDesc: `What game ${String(id)} is.`,
+    id: uuidOf(number),
+    name: `Game ${String(number)}`,
+    shortDesc: `What game ${String(number)} is.`,
     tags: ['arcade'],
-    viewCount: 1000 * id,
-    likes: 10 * id,
-    commentCount: id,
-    creator: { id: 100 + id, username: `maker${String(id)}` },
-    coverUrl: `/covers/${String(id)}.png`,
+    viewCount: 1000 * number,
+    likes: 10 * number,
+    commentCount: number,
+    creator: { id: uuidOf(100 + number), username: `maker${String(number)}` },
+    coverUrl: `/covers/${String(number)}.png`,
     clipUrl: null,
     disk: null,
     ...over,
@@ -27,12 +29,12 @@ export function sessionOf(
   return {
     sessionUuid: 'room',
     startedAt: '2026-11-20T10:00:00Z',
-    projectId: 7,
+    projectId: uuidOf(7),
     projectName: 'Game 7',
     coverUrl: null,
     hostUsername: 'player1',
     roster: Array.from({ length: Math.min(seated, 8) }, (_, i) => ({
-      id: i + 1,
+      id: uuidOf(i + 1),
       username: `player${String(i + 1)}`,
     })),
     playerCount: seated,

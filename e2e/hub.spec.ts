@@ -1,3 +1,4 @@
+import { uuidOf } from '../packages/api-client/testing';
 import { expect, test } from './fixtures';
 import { serveGame } from './mocks/game';
 import { FEED, games, hubGame, mockHub, POPULAR, SESSION } from './mocks/hub';
@@ -20,7 +21,7 @@ test.describe('the hub', () => {
     await expect(hero.getByText('Because you played Orbit Run')).toBeVisible();
 
     await hero.getByRole('button', { name: 'Play Ferry Click' }).click();
-    await expect(page).toHaveURL(/\/play\/3$/);
+    await expect(page).toHaveURL(new RegExp(`/play/${uuidOf(3)}$`));
   });
 
   test('shows a visitor the shelves of the day and none of the personal ones', async ({ page }) => {
@@ -35,7 +36,7 @@ test.describe('the hub', () => {
     const popular = page.locator('[data-shelf="popular"]');
     await expect(popular.getByRole('link', { name: 'Popular 1', exact: true })).toHaveAttribute(
       'href',
-      '/play/100',
+      `/play/${uuidOf(100)}`,
     );
     await expect(popular.getByRole('link', { name: 'See all 30' })).toHaveAttribute(
       'href',
@@ -138,7 +139,10 @@ test.describe('the hub', () => {
       'href',
       '/games/new',
     );
-    await expect(mine.getByRole('link', { name: 'Cave Diver' })).toHaveAttribute('href', '/edit/4');
+    await expect(mine.getByRole('link', { name: 'Cave Diver' })).toHaveAttribute(
+      'href',
+      `/edit/${uuidOf(4)}`,
+    );
     await expect(mine.getByRole('link', { name: 'See all 2' })).toHaveAttribute('href', '/games');
 
     const hero = page.locator('nc-hero-pile');
@@ -150,13 +154,13 @@ test.describe('the hub', () => {
     await expect(session.locator('.sticker .card')).toHaveCount(3);
     await expect(session.locator('.sticker .seat')).toHaveCount(2);
     await session.locator('.action.join .rind').click();
-    await expect(page).toHaveURL(/\/play\/2\?session=room-1$/);
+    await expect(page).toHaveURL(new RegExp(`/play/${uuidOf(2)}\\?session=room-1$`));
 
     // The game page takes it from there: Play is in the session, with no dialog to pick it in.
     await page.getByRole('button', { name: 'Play', exact: true }).first().click();
     await expect(page.getByRole('alert')).toContainText('in Friday night of louis, 2 of 4');
     expect(room.joins).toEqual([{ editorTest: false }]);
-    await expect(page).toHaveURL(/\/play\/2$/);
+    await expect(page).toHaveURL(new RegExp(`/play/${uuidOf(2)}$`));
   });
 });
 

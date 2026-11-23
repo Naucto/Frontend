@@ -75,7 +75,7 @@ export class PublishDialogComponent {
     this.error.set(null);
     try {
       await this.data.saves.save({ force: true });
-      const id = String(this.data.session.id);
+      const id = this.data.session.id;
       unwrap(
         update
           ? await projectContentControllerUpdateRelease({ path: { id } })
@@ -101,9 +101,7 @@ export class PublishDialogComponent {
     this.busy.set(true);
     this.error.set(null);
     try {
-      unwrap(
-        await projectContentControllerUnpublish({ path: { id: String(this.data.session.id) } }),
-      );
+      unwrap(await projectContentControllerUnpublish({ path: { id: this.data.session.id } }));
       await this.data.saves.refreshProject();
       this.ref.close(false);
     } catch (error) {

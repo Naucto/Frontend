@@ -1,5 +1,7 @@
 import type { Page, Route } from '@playwright/test';
 
+import { uuidOf } from '../../packages/api-client/testing';
+
 /** Fulfills a route with a JSON body at the given status, so a spec names both in one call. */
 export const answer =
   (status: number, body: unknown) =>
@@ -13,12 +15,12 @@ export const answer =
 export async function mockSignedIn(
   page: Page,
   {
-    id = 1,
+    id = uuidOf(1),
     username = 'alexis',
     role = 'User',
     suspension = null,
   }: {
-    id?: number;
+    id?: string;
     username?: string;
     role?: 'User' | 'Moderator' | 'Admin';
     suspension?: { since: string; until: string | null } | null;

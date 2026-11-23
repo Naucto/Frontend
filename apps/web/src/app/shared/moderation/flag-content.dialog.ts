@@ -26,7 +26,7 @@ const FLAG_REASONS = Object.values(ModerationReason);
  */
 export interface FlagContentData {
   targetType: ModerationTargetType;
-  targetId: number;
+  targetId: string;
   label: string;
   author?: { id: number; name: string };
 }

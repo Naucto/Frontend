@@ -19,7 +19,8 @@
       "@naucto/engine/*": ["../../packages/engine/src/*"],
       "@naucto/ui": ["../../packages/ui/src/index.ts"],
       "@naucto/ui/*": ["../../packages/ui/src/*"],
-      "@naucto/api-client": ["../../packages/api-client/entry.ts"]
+      "@naucto/api-client": ["../../packages/api-client/entry.ts"],
+      "@naucto/api-client/testing": ["../../packages/api-client/testing.ts"]
     }
   },
   "angularCompilerOptions": {

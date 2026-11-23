@@ -50,7 +50,7 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AddToCollectionComponent {
-  readonly projectId = input.required<number>();
+  readonly projectId = input.required<string>();
 
   protected readonly auth = inject(AuthStore);
   private readonly standing = inject(GoodStandingAction);

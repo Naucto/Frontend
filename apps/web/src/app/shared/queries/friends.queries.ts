@@ -46,7 +46,7 @@ export function injectFriendRequests(
 /** Accepts or declines a request, then refreshes every friends query: it leaves each list it was in. */
 export async function answerFriendRequest(
   queries: QueryClient,
-  id: number,
+  id: string,
   accept: boolean,
 ): Promise<void> {
   unwrap(await (accept ? friendsControllerAccept : friendsControllerDecline)({ path: { id } }));

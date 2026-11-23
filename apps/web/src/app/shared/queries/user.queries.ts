@@ -4,13 +4,17 @@ import { type CreateQueryResult, injectQuery } from '@tanstack/angular-query-exp
 import { unwrap } from '../../core/api/api-errors';
 import { qk } from './query-keys';
 
-export function injectUserAvatar(id: () => number | null): CreateQueryResult<string | null> {
+export function injectUserAvatar(id: () => string | null): CreateQueryResult<string | null> {
   return injectQuery(() => ({
-    queryKey: qk.userAvatar(id() ?? -1),
-    enabled: (id() ?? 0) > 0,
+    queryKey: qk.userAvatar(id()),
+    enabled: id() !== null,
     staleTime: 10 * 60 * 1000,
     queryFn: async () => {
-      const res = unwrap(await userPublicControllerGetPublicProfile({ path: { id: id() ?? -1 } }));
+      const current = id();
+      if (current === null) {
+        return null;
+      }
+      const res = unwrap(await userPublicControllerGetPublicProfile({ path: { id: current } }));
       return res.data.profileImageUrl ?? null;
     },
   }));

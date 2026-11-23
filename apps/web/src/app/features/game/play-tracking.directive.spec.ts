@@ -1,5 +1,6 @@
 import { Component, CUSTOM_ELEMENTS_SCHEMA, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { uuidOf } from '@naucto/api-client/testing';
 import type { EngineState } from '@naucto/engine';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -32,7 +33,7 @@ const emit = (state: EngineState): void => {
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 class GamePage {
-  readonly releaseId = signal(5);
+  readonly releaseId = signal(uuidOf(5));
   readonly shown = signal(true);
 }
 
@@ -64,8 +65,8 @@ describe('PlayTrackingDirective', () => {
     const { activity } = mount();
 
     emit('running');
-    expect(reporter.begin).toHaveBeenCalledWith(5, expect.anything());
-    expect(activity.current()).toEqual({ state: 'PLAYING', releaseId: 5 });
+    expect(reporter.begin).toHaveBeenCalledWith(uuidOf(5), expect.anything());
+    expect(activity.current()).toEqual({ state: 'PLAYING', releaseId: uuidOf(5) });
 
     emit('idle');
     emit('running');
@@ -78,7 +79,7 @@ describe('PlayTrackingDirective', () => {
     const { page, activity } = mount();
     emit('running');
 
-    page.releaseId.set(6);
+    page.releaseId.set(uuidOf(6));
     TestBed.tick();
 
     expect(reporter.end).toHaveBeenCalledWith('release-change');

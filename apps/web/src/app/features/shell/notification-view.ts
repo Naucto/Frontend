@@ -21,7 +21,7 @@ export function destinationOf(
     case 'FRIEND_ACCEPTED':
       return { path: ['/friends'] };
     case 'COLLABORATOR_ADDED':
-      return typeof projectId === 'number' ? { path: ['/edit', String(projectId)] } : null;
+      return typeof projectId === 'string' ? { path: ['/edit', projectId] } : null;
     case 'COLLABORATOR_REMOVED':
       return null;
     // A decision about a game carries its project, and that game may be the very thing that is
@@ -29,10 +29,10 @@ export function destinationOf(
     case 'MODERATION':
       return { path: ['/settings', 'standing'] };
     default: {
-      if (typeof projectId !== 'number') {
+      if (typeof projectId !== 'string') {
         return null;
       }
-      const path = ['/play', String(projectId)];
+      const path = ['/play', projectId];
       if (typeof sessionId !== 'string') {
         return { path };
       }

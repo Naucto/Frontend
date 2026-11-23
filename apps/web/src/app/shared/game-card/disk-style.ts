@@ -22,10 +22,10 @@ export const PLAIN_DISK: DiskStyle = { color: BUBBLEGUM_16[11], finish: 'solid' 
 const PLASTICS = BUBBLEGUM_16.filter((colour) => colour !== '#16171a');
 
 /** The author's style, or a plastic that stays the same for a given game. */
-export function diskStyleFor(game: { id: number; disk?: DiskStyle | null }): DiskStyle {
+export function diskStyleFor(game: { id: string; disk?: DiskStyle | null }): DiskStyle {
   return (
     game.disk ?? {
-      color: PLASTICS[hashOf(String(game.id)) % PLASTICS.length] as string,
+      color: PLASTICS[hashOf(game.id) % PLASTICS.length] as string,
       finish: 'solid',
     }
   );

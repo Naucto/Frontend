@@ -1,4 +1,5 @@
 import { client, type ProjectExResponseDto } from '@naucto/api-client';
+import { uuidOf } from '@naucto/api-client/testing';
 import { render, screen } from '@testing-library/angular';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -10,11 +11,11 @@ const realFetch = globalThis.fetch;
 
 const game = (state: Partial<ProjectExResponseDto> = {}): ProjectExResponseDto =>
   ({
-    id: 7,
+    id: uuidOf(7),
     name: 'Ferry Click',
     publishedAt: null,
     hiddenAt: null,
-    creator: { id: 4, username: 'priax' },
+    creator: { id: uuidOf(4), username: 'priax' },
     ...state,
   }) as ProjectExResponseDto;
 

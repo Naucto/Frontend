@@ -2,14 +2,14 @@ import type { DiskStyle } from '../game-card/disk-style';
 
 /** What the hub's pieces show of a game, under the names the API gives a game's fields. */
 export interface HubGame {
-  id: number;
+  id: string;
   name: string;
   shortDesc: string;
   tags: readonly string[];
   viewCount: number;
   likes: number;
   commentCount?: number;
-  creator: { id: number; username: string };
+  creator: { id: string; username: string };
   coverUrl?: string | null;
   /** A short silent recording of the game being played. */
   clipUrl?: string | null;
@@ -21,7 +21,7 @@ export interface HubGame {
 
 export interface SessionPlayer {
   /** Who they are across the app, which is what their colour is drawn from. */
-  id: number;
+  id: string;
   username: string;
   /** What they are called, when it is not their username. */
   nickname?: string;
@@ -31,7 +31,7 @@ export interface SessionPlayer {
 export interface HubSession {
   sessionUuid: string;
   startedAt: string;
-  projectId: number;
+  projectId: string;
   projectName: string;
   coverUrl: string | null;
   /** How the game's author dressed its disk; without it the disk keeps a plastic of its own. */

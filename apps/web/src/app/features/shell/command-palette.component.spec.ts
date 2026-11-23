@@ -2,6 +2,7 @@ import { DialogRef } from '@angular/cdk/dialog';
 import { signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { client } from '@naucto/api-client';
+import { uuidOf } from '@naucto/api-client/testing';
 import { render, screen } from '@testing-library/angular';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -54,8 +55,8 @@ describe('CommandPaletteComponent', () => {
     globalThis.fetch = (input: RequestInfo | URL): Promise<Response> => {
       const path = new URL(input instanceof Request ? input.url : input).pathname;
       const projects = path.endsWith('/projects/releases/paginated')
-        ? [{ id: 7, name: 'Theme Park Tycoon', creator: { username: 'lena' } }]
-        : [{ id: 3, name: 'Night Survivors' }];
+        ? [{ id: uuidOf(7), name: 'Theme Park Tycoon', creator: { username: 'lena' } }]
+        : [{ id: uuidOf(3), name: 'Night Survivors' }];
       return Promise.resolve(
         new Response(JSON.stringify({ projects, total: 1, page: 1, limit: 3 }), {
           status: path.includes('/projects') ? 200 : 404,
@@ -98,7 +99,7 @@ describe('CommandPaletteComponent', () => {
     await userEvent.keyboard('{Enter}');
 
     expect(close).toHaveBeenCalledOnce();
-    expect(router.navigate).toHaveBeenCalledWith(['/edit', 3]);
+    expect(router.navigate).toHaveBeenCalledWith(['/edit', uuidOf(3)]);
   });
 
   it('narrows games and actions by what is typed, walks them with the arrows and runs one', async () => {

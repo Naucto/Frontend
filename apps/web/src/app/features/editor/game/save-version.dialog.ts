@@ -19,7 +19,7 @@ import {
 import type { SessionSaveService } from '../work-session/session-save.service';
 
 export interface SaveVersionDialogData {
-  projectId: number;
+  projectId: string;
   saves: SessionSaveService;
 }
 

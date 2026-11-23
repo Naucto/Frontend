@@ -58,7 +58,7 @@ export interface OpenSession {
   uuid: string;
   title: string;
   host: string;
-  hostId: number;
+  hostId: string;
   players: number;
   max: number;
   /** Reachable by code only — it is not in anyone's browse list. */
@@ -141,7 +141,7 @@ export class NetUiBridgeService implements NetUi, OnDestroy {
   readonly relayOnly = signal(false);
 
   async createSession(
-    projectId: number,
+    projectId: string,
     options: NetHostOptions,
     editorTest = false,
   ): Promise<void> {
@@ -177,7 +177,7 @@ export class NetUiBridgeService implements NetUi, OnDestroy {
     }
   }
 
-  async listSessions(projectId: number): Promise<OpenSession[]> {
+  async listSessions(projectId: string): Promise<OpenSession[]> {
     const res = unwrap(await multiplayerControllerList({ query: { projectId } }));
     return res.sessions.map((session) => ({
       uuid: session.sessionUuid,
@@ -259,7 +259,7 @@ export class NetUiBridgeService implements NetUi, OnDestroy {
     conn: GameSessionConnectionResponseDto,
     role: SessionRole,
     meta: Pick<NetSessionInfo, 'maxPlayers' | 'title' | 'listed'>,
-    hostedGame: number | null = null,
+    hostedGame: string | null = null,
   ): void {
     const signaling = conn.webrtcConfig.signaling[0];
     if (!signaling) {
@@ -274,8 +274,9 @@ export class NetUiBridgeService implements NetUi, OnDestroy {
     );
     const transport = new SyncedSessionTransport({
       role,
-      // The id the ticket was minted for, which is what the relay addresses every frame by. It is
-      // the account id for everyone but the editor's test rig, which plays under a synthetic one.
+      // The number the ticket was minted for, which is what the relay addresses every frame by
+      // and what the game reads as net.id(): the player number of the account, or a synthetic
+      // one for the editor's test rig. An integer, and never the account's id.
       selfPlayer: conn.playerId,
       signalingUrl: this.config.reachable(signaling),
       ticket: conn.connectionTicket,
@@ -290,7 +291,7 @@ export class NetUiBridgeService implements NetUi, OnDestroy {
               body: { ticket: current },
             }),
           );
-          // A ticket for another id would reconnect this transport as someone else, and the room
+          // A ticket for another player would reconnect this transport as someone else, and the room
           // would then hold two clients claiming one seat. Better to drop than to become them.
           if (fresh.playerId !== conn.playerId) {
             return null;

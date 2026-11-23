@@ -12,7 +12,7 @@ import { RuntimeHostService } from '../../shared/game-screen/runtime-host.servic
  */
 @Directive({ selector: 'nc-game-screen[ncPlayTracking]' })
 export class PlayTrackingDirective {
-  readonly releaseId = input.required<number>({ alias: 'ncPlayTracking' });
+  readonly releaseId = input.required<string>({ alias: 'ncPlayTracking' });
 
   private readonly reporter = inject(PlayReporter);
   private readonly activity = inject(ActivityService);
@@ -20,8 +20,8 @@ export class PlayTrackingDirective {
 
   constructor() {
     let releasePlaying: (() => void) | null = null;
-    let viewed: number | null = null;
-    let playing: { releaseId: number; clock: PlayClock } | null = null;
+    let viewed: string | null = null;
+    let playing: { releaseId: string; clock: PlayClock } | null = null;
     const tracker = new PlayTracker(() => Date.now(), {
       started: (clock) => {
         const releaseId = untracked(() => this.releaseId());

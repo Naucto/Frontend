@@ -2,6 +2,7 @@ import { signal } from '@angular/core';
 import { DeferBlockBehavior } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { client } from '@naucto/api-client';
+import { uuidOf } from '@naucto/api-client/testing';
 import { render, screen } from '@testing-library/angular';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -14,18 +15,18 @@ import { SearchSuggestComponent } from './search-suggest.component';
 
 const realFetch = globalThis.fetch;
 
-const game = (id: number, name: string): Record<string, unknown> => ({
-  id,
+const game = (number: number, name: string): Record<string, unknown> => ({
+  id: uuidOf(number),
   name,
   viewCount: 1200,
   likes: 34,
   coverUrl: null,
   disk: null,
-  creator: { id: 7, username: 'ada' },
+  creator: { id: uuidOf(7), username: 'ada' },
 });
 
 describe('SearchSuggestComponent', () => {
-  const user = signal<{ id: number } | null>(null);
+  const user = signal<{ id: string } | null>(null);
 
   const mount = async (): Promise<Router> => {
     const view = await render(SearchSuggestComponent, {
@@ -62,15 +63,15 @@ describe('SearchSuggestComponent', () => {
           tags: typed.startsWith('ca') ? [{ tag: 'caves', count: 3 }] : [],
         },
         '/users/public/search': {
-          data: typed.startsWith('ca') ? [{ id: 5, username: 'cavefan' }] : [],
+          data: typed.startsWith('ca') ? [{ id: uuidOf(5), username: 'cavefan' }] : [],
         },
         '/game-sessions': {
           sessions: [
             {
               sessionUuid: 'room-1',
-              projectId: 9,
+              projectId: uuidOf(9),
               projectName: 'High Tide',
-              hostId: 11,
+              hostId: uuidOf(11),
               hostUsername: 'louis',
               playerCount: 2,
               maxPlayers: 4,
@@ -113,7 +114,7 @@ describe('SearchSuggestComponent', () => {
   });
 
   it('lists the open sessions to a signed-in player only, and opens the game on the session', async () => {
-    user.set({ id: 1 });
+    user.set({ id: uuidOf(1) });
     const router = await mount();
 
     await userEvent.click(box());
@@ -125,7 +126,7 @@ describe('SearchSuggestComponent', () => {
     ).toBe('#3a7d44');
     await userEvent.click(session);
 
-    expect(router.navigate).toHaveBeenCalledWith(['/play', 9], {
+    expect(router.navigate).toHaveBeenCalledWith(['/play', uuidOf(9)], {
       queryParams: { session: 'room-1' },
     });
     expect(screen.queryByRole('listbox')).toBeNull();
@@ -180,7 +181,7 @@ describe('SearchSuggestComponent', () => {
     await screen.findByRole('group', { name: 'Games' });
     await userEvent.keyboard('{ArrowDown}{Enter}');
 
-    expect(router.navigate).toHaveBeenCalledWith(['/play', 42]);
+    expect(router.navigate).toHaveBeenCalledWith(['/play', uuidOf(42)]);
     expect(screen.queryByRole('listbox')).toBeNull();
     expect(box()).toHaveFocus();
 

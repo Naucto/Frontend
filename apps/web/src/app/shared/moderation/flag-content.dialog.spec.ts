@@ -1,5 +1,6 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { client } from '@naucto/api-client';
+import { uuidOf } from '@naucto/api-client/testing';
 import { render, screen } from '@testing-library/angular';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -9,7 +10,11 @@ import { type FlagContentData, FlagContentDialog } from './flag-content.dialog';
 
 const realFetch = globalThis.fetch;
 
-const COMMENT: FlagContentData = { targetType: 'COMMENT', targetId: 7, label: 'buy cheap coins' };
+const COMMENT: FlagContentData = {
+  targetType: 'COMMENT',
+  targetId: uuidOf(7),
+  label: 'buy cheap coins',
+};
 
 /** Opens the reason list and takes one reason from it. */
 async function pick(reason: string): Promise<void> {
@@ -40,7 +45,7 @@ describe('FlagContentDialog', () => {
 
   beforeEach(() => {
     sent = [];
-    answer = () => json(201, { id: 3 });
+    answer = () => json(201, { id: uuidOf(3) });
     close.mockReset();
     client.setConfig({ baseUrl: 'https://api.test', throwOnError: false });
     globalThis.fetch = async (input: RequestInfo | URL): Promise<Response> => {
@@ -97,20 +102,25 @@ describe('FlagContentDialog', () => {
     expect(sent).toEqual([
       {
         path: '/moderation/flags',
-        json: { targetType: 'COMMENT', targetId: 7, reason: 'SPAM', details: 'Third time today' },
+        json: {
+          targetType: 'COMMENT',
+          targetId: uuidOf(7),
+          reason: 'SPAM',
+          details: 'Third time today',
+        },
       },
     ]);
   });
 
   it('leaves the details out when nothing was written', async () => {
-    await open({ targetType: 'USER', targetId: 4, label: '@bob' });
+    await open({ targetType: 'USER', targetId: uuidOf(4), label: '@bob' });
     await pick('Hate');
     await userEvent.click(screen.getByRole('button', { name: 'Send report' }));
 
     await vi.waitFor(() => {
       expect(close).toHaveBeenCalledWith(true);
     });
-    expect(sent[0]?.json).toEqual({ targetType: 'USER', targetId: 4, reason: 'HATE' });
+    expect(sent[0]?.json).toEqual({ targetType: 'USER', targetId: uuidOf(4), reason: 'HATE' });
   });
 
   it.each([

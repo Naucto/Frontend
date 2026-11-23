@@ -30,7 +30,7 @@
     <div class="mt-1 flex flex-wrap gap-2">
       @for (seat of seats().slots; track $index) {
         @if (seat) {
-          <nc-user-avatar [size]="30" [userId]="seat.id" [name]="seat.name" />
+          <nc-user-avatar [size]="30" [userId]="seat.account" [name]="seat.name" />
         } @else {
           <span class="flat-sm size-[30px] bevel-edge-line-strong bevel-fill-inset"></span>
         }

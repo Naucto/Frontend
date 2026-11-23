@@ -16,9 +16,9 @@ const HOST_PRESENCE_MS = 5000;
 export class HostElectionService {
   private readonly auth = inject(AuthStore);
   private readonly presence = inject(SessionPresenceService);
-  private projectId = 0;
+  private projectId = '';
   /** Who the server last said hosts — what a departure is compared against. */
-  private hostId: number | null = null;
+  private hostId: string | null = null;
   private hostCheck: ReturnType<typeof setTimeout> | null = null;
   private kicking = false;
   private promoted: () => void = () => undefined;
@@ -29,7 +29,7 @@ export class HostElectionService {
    */
   readonly isHost = signal(false);
 
-  async kick(userId: number): Promise<void> {
+  async kick(userId: string): Promise<void> {
     await workSessionControllerKick({ path: { id: this.projectId }, body: { userId } });
   }
 
@@ -64,7 +64,7 @@ export class HostElectionService {
       }
       if (this.isHost()) {
         for (const state of gone) {
-          if (typeof state.userId === 'number' && state.userId !== me) {
+          if (state.userId !== undefined && state.userId !== me) {
             await this.kick(state.userId);
           }
         }
@@ -90,7 +90,7 @@ export class HostElectionService {
    * Records the host the server named at join. `onPromoted` runs when this client takes over
    * later, after `isHost` has turned true.
    */
-  start(projectId: number, hostId: number, onPromoted: () => void): void {
+  start(projectId: string, hostId: string, onPromoted: () => void): void {
     this.projectId = projectId;
     this.hostId = hostId;
     this.isHost.set(hostId === this.auth.userId());

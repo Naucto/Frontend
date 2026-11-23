@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { uuidOf } from '@naucto/api-client/testing';
 import {
   ArrowLinkDirective,
   ButtonDirective,
@@ -94,7 +95,7 @@ export class HubPiecesSection {
         other === session
           ? {
               ...session,
-              roster: seated ? [...roster, { id: 1, username: VIEWER }] : roster,
+              roster: seated ? [...roster, { id: uuidOf(1), username: VIEWER }] : roster,
               playerCount: session.playerCount + (seated ? 1 : -1),
             }
           : other,

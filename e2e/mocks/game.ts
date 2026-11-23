@@ -1,12 +1,13 @@
 import type { Page } from '@playwright/test';
 import * as Y from 'yjs';
 
+import { uuidOf } from '../../packages/api-client/testing';
 import { EditableGame } from '../../packages/engine/src/game/EditableGame';
 import type { InputPresetId } from '../../packages/engine/src/input/presets';
 import { answer } from './session';
 
 export const release = {
-  id: 42,
+  id: uuidOf(42),
   name: 'Cave Diver',
   shortDesc: 'Dive.',
   longDesc: null,
@@ -15,7 +16,7 @@ export const release = {
   status: 'COMPLETED',
   monetization: 'NONE',
   price: null,
-  userId: 7,
+  userId: uuidOf(7),
   createdAt: '2026-09-01T00:00:00.000Z',
   updatedAt: '2026-09-01T00:00:00.000Z',
   publishedAt: '2026-09-01T00:00:00.000Z',
@@ -23,16 +24,19 @@ export const release = {
   uniquePlayers: 3,
   likes: 1,
   collaborators: [],
-  creator: { id: 7, username: 'ada' },
+  creator: { id: uuidOf(7), username: 'ada' },
 };
+
+/** Where the release above is played. */
+export const PLAY = `/play/${release.id}`;
 
 /** Serves a document as the signed content of the game `id` names, to a reader who is signed out. */
 const serveContent = async (page: Page, doc: Y.Doc, id = release.id): Promise<void> => {
   const bytes = Buffer.from(Y.encodeStateAsUpdate(doc));
 
   await page.route('**/auth/refresh', answer(401, {}));
-  await page.route(`**/projects/releases/${String(id)}`, answer(200, { ...release, id }));
-  await page.route(`**/projects/releases/${String(id)}/content-url`, (route) =>
+  await page.route(`**/projects/releases/${id}`, answer(200, { ...release, id }));
+  await page.route(`**/projects/releases/${id}/content-url`, (route) =>
     route.fulfill({ json: { signedUrl: 'http://localhost:3001/e2e/game.bin' } }),
   );
   await page.route('**/e2e/game.bin', (route) =>

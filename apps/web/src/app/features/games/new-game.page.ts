@@ -43,7 +43,7 @@ export default class NewGamePage implements OnInit {
           );
       const project = unwrap(await projectControllerCreate({ body: { name, shortDesc: '' } }));
       if (this.seed) {
-        sessionStorage.setItem(`${SEED_KEY}.${String(project.id)}`, this.seed);
+        sessionStorage.setItem(`${SEED_KEY}.${project.id}`, this.seed);
       }
       await this.qc.invalidateQueries({ queryKey: qk.projectsAll() });
       await this.router.navigate(['/edit', project.id], { replaceUrl: true });

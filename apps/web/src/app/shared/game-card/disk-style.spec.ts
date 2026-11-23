@@ -1,3 +1,4 @@
+import { uuidOf } from '@naucto/api-client/testing';
 import { BUBBLEGUM_16 } from '@naucto/engine';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -6,21 +7,32 @@ import { diskBody, diskFinish, type DiskStyle, diskStyleFor } from './disk-style
 describe('diskStyleFor', () => {
   it('keeps the style its author chose', () => {
     const disk: DiskStyle = { color: '#ff80a4', finish: 'holo' };
-    expect(diskStyleFor({ id: 3, disk })).toBe(disk);
+    expect(diskStyleFor({ id: uuidOf(3), disk })).toBe(disk);
   });
 
   it('gives an undressed game a plain plastic from the engine palette, the same every time', () => {
-    for (let id = 0; id < 40; id++) {
-      const { color, finish } = diskStyleFor({ id, disk: null });
+    for (let number = 0; number < 40; number++) {
+      const { color, finish } = diskStyleFor({ id: uuidOf(number), disk: null });
       expect(finish).toBe('solid');
       expect(BUBBLEGUM_16).toContain(color);
       expect(color).not.toBe('#16171a');
-      expect(diskStyleFor({ id }).color).toBe(color);
+      expect(diskStyleFor({ id: uuidOf(number) }).color).toBe(color);
     }
   });
 
+  /** Pinned: a game's disk is the same colour after a reload, in another browser, next release. */
+  it('draws the plastic of an undressed game from its id, the same on every load', () => {
+    expect(diskStyleFor({ id: '7c9e6679-7425-40de-944b-e07fc1f90ae7' })).toEqual({
+      color: '#68aed4',
+      finish: 'solid',
+    });
+    expect(diskStyleFor({ id: uuidOf(7) }).color).toBe('#bfff3c');
+  });
+
   it('spreads undressed games over the plastics rather than moulding them all alike', () => {
-    const colours = new Set(Array.from({ length: 40 }, (_, id) => diskStyleFor({ id }).color));
+    const colours = new Set(
+      Array.from({ length: 40 }, (_, number) => diskStyleFor({ id: uuidOf(number) }).color),
+    );
     expect(colours.size).toBeGreaterThan(8);
   });
 });

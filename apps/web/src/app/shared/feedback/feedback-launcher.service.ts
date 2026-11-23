@@ -46,7 +46,7 @@ export class FeedbackLauncher {
           })
           .closed.subscribe((sent) => {
             if (sent) {
-              this.thank({ kind: 'bug', ...sent });
+              this.thank({ kind: 'bug', screenshotRefused: sent.screenshotRefused });
             }
           });
       });

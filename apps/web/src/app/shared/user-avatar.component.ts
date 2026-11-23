@@ -11,7 +11,7 @@ import { injectUserAvatar } from './queries/user.queries';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UserAvatarComponent {
-  readonly userId = input<number | null>(null);
+  readonly userId = input<string | null>(null);
   readonly name = input.required<string>();
   readonly colour = input<AvatarColour>();
   readonly size = input(24);

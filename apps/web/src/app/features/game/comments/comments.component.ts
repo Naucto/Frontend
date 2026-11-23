@@ -57,8 +57,8 @@ const MAX_LEN = 500;
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CommentsComponent {
-  readonly projectId = input.required<number>();
-  readonly authorId = input<number | null>(null);
+  readonly projectId = input.required<string>();
+  readonly authorId = input<string | null>(null);
   protected readonly auth = inject(AuthStore);
   private readonly qc = inject(QueryClient);
   private readonly toasts = inject(ToastService);
@@ -71,7 +71,7 @@ export class CommentsComponent {
   protected readonly maxLen = MAX_LEN;
   protected draft = '';
   protected replyDraft = '';
-  protected readonly replyTo = signal<number | null>(null);
+  protected readonly replyTo = signal<string | null>(null);
   private readonly loaded = signal<CommentResponseDto[]>([]);
 
   protected readonly query = injectQuery(() => ({
@@ -87,7 +87,7 @@ export class CommentsComponent {
   protected readonly total = computed(() => this.query.data()?.total ?? 0);
   protected readonly comments = computed(() => {
     const current = this.query.data()?.comments ?? [];
-    const seen = new Set<number>();
+    const seen = new Set<string>();
     return [...this.loaded(), ...current].filter((comment) =>
       seen.has(comment.id) ? false : (seen.add(comment.id), true),
     );
@@ -131,7 +131,7 @@ export class CommentsComponent {
     });
   }
 
-  protected postReply(commentId: number): void {
+  protected postReply(commentId: string): void {
     const text = this.replyDraft.trim();
     if (!text) {
       return;
@@ -141,7 +141,7 @@ export class CommentsComponent {
     });
   }
 
-  private async sendReply(commentId: number, text: string): Promise<void> {
+  private async sendReply(commentId: string, text: string): Promise<void> {
     try {
       unwrap(
         await projectCommentControllerCreateReply({
@@ -158,7 +158,7 @@ export class CommentsComponent {
     await this.refresh();
   }
 
-  protected async remove(commentId: number): Promise<void> {
+  protected async remove(commentId: string): Promise<void> {
     const confirmed = await this.dialogs.confirmDanger({
       title: this.transloco.translate('comments.deleteTitle'),
       message: this.transloco.translate('comments.deleteMessage'),

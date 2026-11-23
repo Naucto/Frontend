@@ -1,3 +1,4 @@
+import { uuidOf } from '@naucto/api-client/testing';
 import { colourOf } from '@naucto/ui';
 import { describe, expect, it } from 'vitest';
 
@@ -38,8 +39,8 @@ describe('sessionStickers', () => {
 
   it('colours a player as their avatar is everywhere else, from who they are', () => {
     const [host, guest] = sessionStickers(sessionOf(2, 4), null);
-    expect(host).toMatchObject({ color: colourOf(1) });
-    expect(guest).toMatchObject({ color: colourOf(2) });
+    expect(host).toMatchObject({ color: colourOf(uuidOf(1)) });
+    expect(guest).toMatchObject({ color: colourOf(uuidOf(2)) });
   });
 
   it('folds the players who do not fit into one card, and keeps a seat in sight', () => {
@@ -62,7 +63,11 @@ describe('sessionStickers', () => {
 
     const session = sessionOf(2, 4);
     const joined = sessionStickers(
-      { ...session, roster: [...session.roster, { id: 9, username: 'you' }], playerCount: 3 },
+      {
+        ...session,
+        roster: [...session.roster, { id: uuidOf(9), username: 'you' }],
+        playerCount: 3,
+      },
       'you',
     );
     expect(initials(joined)).toEqual(['p', 'p', 'seat', 'seat', 'y']);

@@ -2,9 +2,9 @@ import { readFileSync } from 'node:fs';
 
 import { type Locator, type Page } from '@playwright/test';
 
-import { mockEditor } from '../editor-mocks';
+import { editorUrl, mockEditor, projectRoute } from '../editor-mocks';
 import { test } from '../fixtures';
-import { release } from '../mocks/game';
+import { PLAY, release } from '../mocks/game';
 import { setGamepads } from '../mocks/gamepads';
 import { answer } from '../mocks/session';
 import { grabFrame, shoot } from './frame';
@@ -61,7 +61,7 @@ async function playAndGrabCover(page: Page): Promise<void> {
   await page.route('**/e2e/cover.png', (route) =>
     route.fulfill({ status: 200, body: readFileSync(COVER_FILE), contentType: 'image/png' }),
   );
-  await page.route('**/projects/7/image', (route) =>
+  await page.route(projectRoute('image'), (route) =>
     route.request().method() === 'GET'
       ? route.fulfill({ json: { url: 'http://localhost:3001/e2e/cover.png' } })
       : route.fulfill({ status: 204, body: '' }),
@@ -93,14 +93,14 @@ for (const theme of THEMES) {
       // the region on sprite 1, Lock off. The later route wins, so this stands in for the
       // Platformer of `beforeEach`.
       await mockEditor(page, { theme, name: 'Untitled game' });
-      await page.goto('/edit/7/art');
+      await page.goto(editorUrl('art'));
       await page.getByRole('img', { name: 'Sprite canvas' }).waitFor();
       await page.waitForTimeout(500);
       await shoot(page, OUT, 'art', theme);
     });
 
     test('art', async ({ page }) => {
-      await page.goto('/edit/7/art');
+      await page.goto(editorUrl('art'));
       await page.getByRole('img', { name: 'Sprite canvas' }).waitFor();
       await page.waitForTimeout(500);
       await shoot(page, OUT, 'art-tools', theme, page.locator('nc-tool-group').first());
@@ -140,7 +140,7 @@ for (const theme of THEMES) {
     });
 
     test('map', async ({ page }) => {
-      await page.goto('/edit/7/map');
+      await page.goto(editorUrl('map'));
       await page.getByRole('img', { name: 'Map canvas' }).waitFor();
       await page.waitForTimeout(500);
       await shoot(page, OUT, 'map', theme);
@@ -167,7 +167,7 @@ for (const theme of THEMES) {
 
     test('getting started: the sprite and the code', async ({ page }) => {
       await mockEditor(page, { theme, name: 'Untitled game' });
-      await page.goto('/edit/7/art');
+      await page.goto(editorUrl('art'));
       const canvas = page.getByRole('img', { name: 'Sprite canvas' });
       await canvas.waitFor();
       await page.locator('nc-sheet-view svg').first().focus();
@@ -216,7 +216,7 @@ for (const theme of THEMES) {
 
     test('code: the first run', async ({ page }) => {
       await mockEditor(page, { theme, name: 'Untitled game' });
-      await page.goto('/edit/7/code');
+      await page.goto(editorUrl('code'));
       await page.getByRole('tab', { name: 'main', exact: true }).waitFor();
       await page.getByRole('button', { name: 'Play' }).first().click();
       await page.locator('nc-console-column').getByText('Welcome to Naucto!').waitFor();
@@ -225,7 +225,7 @@ for (const theme of THEMES) {
     });
 
     test('code', async ({ page }) => {
-      await page.goto('/edit/7/code');
+      await page.goto(editorUrl('code'));
       await page.getByRole('tab', { name: 'main', exact: true }).waitFor();
       await page.waitForTimeout(500);
       await shoot(page, OUT, 'code-console', theme, page.locator('nc-console-column'));
@@ -291,7 +291,7 @@ for (const theme of THEMES) {
     });
 
     test('sound', async ({ page }) => {
-      await page.goto('/edit/7/sound');
+      await page.goto(editorUrl('sound'));
       await page.getByRole('img', { name: 'Piano roll' }).waitFor();
       await page.waitForTimeout(500);
       await shoot(page, OUT, 'sound', theme);
@@ -327,7 +327,7 @@ for (const theme of THEMES) {
     });
 
     test('net', async ({ page }) => {
-      await page.goto('/edit/7/net');
+      await page.goto(editorUrl('net'));
       await page.getByRole('button', { name: 'Declare a path' }).click();
       await page.getByPlaceholder('key').fill('score');
       await page.keyboard.press('Enter');
@@ -345,7 +345,7 @@ for (const theme of THEMES) {
 
     test('game', async ({ page }) => {
       // A history worth showing: the mock's empty lists would picture the panel with nothing in it.
-      await page.route('**/projects/7/versions', (route) =>
+      await page.route(projectRoute('versions'), (route) =>
         route.fulfill({
           json: {
             versions: [
@@ -356,7 +356,7 @@ for (const theme of THEMES) {
           },
         }),
       );
-      await page.route('**/projects/7/checkpoints', (route) =>
+      await page.route(projectRoute('checkpoints'), (route) =>
         route.fulfill({
           json: [
             { name: 'v2 double jump', date: '2026-09-18T16:00:00.000Z' },
@@ -364,7 +364,7 @@ for (const theme of THEMES) {
           ],
         }),
       );
-      await page.goto('/edit/7/game');
+      await page.goto(editorUrl('game'));
       await page.getByRole('textbox', { name: 'Name' }).waitFor();
       await playAndGrabCover(page);
       await shoot(page, OUT, 'game', theme);
@@ -390,7 +390,7 @@ for (const theme of THEMES) {
     });
 
     test('game: the clip while it records, the disk and the inputs', async ({ page }) => {
-      await page.goto('/edit/7/game');
+      await page.goto(editorUrl('game'));
       await page.getByRole('textbox', { name: 'Name' }).waitFor();
       await playAndGrabCover(page);
       const clip = page.getByRole('region', { name: 'Clip' });
@@ -413,8 +413,8 @@ for (const theme of THEMES) {
     });
 
     test('how to play, on the page of a game', async ({ page }) => {
-      await page.route('**/projects/releases/42', answer(200, release));
-      await page.route('**/projects/releases/42/content-url', (route) =>
+      await page.route(`**/projects/releases/${release.id}`, answer(200, release));
+      await page.route(`**/projects/releases/${release.id}/content-url`, (route) =>
         route.fulfill({ json: { signedUrl: 'http://localhost:3001/e2e/game.bin' } }),
       );
       await page.route('**/e2e/game.bin', (route) =>
@@ -424,7 +424,7 @@ for (const theme of THEMES) {
           contentType: 'application/octet-stream',
         }),
       );
-      await page.goto('/play/42');
+      await page.goto(PLAY);
       const howToPlay = page.locator('nc-how-to-play');
       await howToPlay.getByRole('table').first().waitFor();
       await page.waitForTimeout(300);
@@ -432,7 +432,7 @@ for (const theme of THEMES) {
     });
 
     test('the floating viewer', async ({ page }) => {
-      await page.goto('/edit/7/code');
+      await page.goto(editorUrl('code'));
       await page.getByRole('tab', { name: 'main', exact: true }).waitFor();
       await page.getByRole('button', { name: 'Play' }).first().click();
       await page.getByRole('button', { name: 'Pop the viewer out' }).click();

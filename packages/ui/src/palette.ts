@@ -62,7 +62,7 @@ export function hashOf(text: string): number {
  * A person's colour, stable for a given key (user id, or username when no id is to hand) so the
  * same person is the same colour in a byline, a comment thread and a presence stack.
  */
-export function colourOf(key: string | number): string {
+export function colourOf(key: string): string {
   const candidates = IDENTITY_COLOURS.filter((colour) => !RESERVED.has(colour));
-  return candidates[hashOf(String(key)) % candidates.length] as string;
+  return candidates[hashOf(key) % candidates.length] as string;
 }

@@ -1,4 +1,5 @@
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
+import { uuidOf } from '@naucto/api-client/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { testProviders } from '../../testing/providers';
@@ -83,7 +84,7 @@ describe('HeroPileComponent', () => {
     expect(played).not.toHaveBeenCalled();
 
     buttons[2]!.click();
-    expect(played).toHaveBeenCalledWith(expect.objectContaining({ id: 3 }));
+    expect(played).toHaveBeenCalledWith(expect.objectContaining({ id: uuidOf(3) }));
   });
 
   it('fans the disks behind the one in front, smaller and dimmer the further they are', () => {

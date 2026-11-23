@@ -10,7 +10,7 @@ export interface ArmedPrompt {
   /** What the person was just doing, offered as their answer to "mostly play or create". */
   role: ReportRole;
   /** The release just played, for a prompt that follows a play. */
-  releaseId: number | null;
+  releaseId: string | null;
 }
 
 interface FeedbackState {
@@ -25,7 +25,7 @@ export const FeedbackStore = signalStore(
   { providedIn: 'root' },
   withState<FeedbackState>({ armed: null }),
   withMethods((store) => ({
-    notePlayEnded(releaseId: number, activeMs: number): void {
+    notePlayEnded(releaseId: string, activeMs: number): void {
       if (activeMs >= PROMPT_AFTER_PLAY_MS) {
         patchState(store, { armed: { role: 'PLAYER', releaseId } });
       }

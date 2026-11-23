@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 
 import { type Locator, type Page } from '@playwright/test';
 
-import { mockEditor } from '../editor-mocks';
+import { editorUrl, mockEditor } from '../editor-mocks';
 import { expect, test } from '../fixtures';
 import { grabFrame, recordGif, shoot } from './frame';
 
@@ -74,7 +74,7 @@ async function stepFrame(
     content: readFileSync(contentOf(`${tutorial}-step${String(step)}`)),
     name: titleOf(tutorial),
   });
-  await page.goto('/edit/7/code');
+  await page.goto(editorUrl('code'));
   await page.locator('nc-game-screen canvas').first().waitFor();
   await page.getByRole('button', { name: 'Play' }).first().click();
   await act(page);
@@ -106,7 +106,7 @@ for (const game of GAMES) {
       });
 
       test('art: the ground tile and its flag', async ({ page }) => {
-        await page.goto('/edit/7/art');
+        await page.goto(editorUrl('art'));
         await page.getByRole('img', { name: 'Sprite canvas' }).waitFor();
         await pickSprite32(page, page.locator('nc-sheet-view svg').first());
         await page.waitForTimeout(500);
@@ -114,7 +114,7 @@ for (const game of GAMES) {
       });
 
       test('map: the level under the Flags overlay', async ({ page }) => {
-        await page.goto('/edit/7/map');
+        await page.goto(editorUrl('map'));
         await page.getByRole('img', { name: 'Map canvas' }).waitFor();
         await page.getByRole('switch', { name: 'Flags' }).click();
         await pickSprite32(page, page.locator('nc-sheet-view svg').first());
@@ -131,7 +131,7 @@ test('animation: the player runs and jumps', async ({ page }) => {
     content: readFileSync(contentOf('platformer')),
     name: titleOf('platformer'),
   });
-  await page.goto('/edit/7/code');
+  await page.goto(editorUrl('code'));
   await page.locator('nc-game-screen canvas').first().waitFor();
   await page.getByRole('button', { name: 'Play' }).first().click();
   await page.waitForTimeout(800);
@@ -154,7 +154,7 @@ test('frame: the camera follows the player', async ({ page }) => {
     content: readFileSync(contentOf('platformer')),
     name: titleOf('platformer'),
   });
-  await page.goto('/edit/7/code');
+  await page.goto(editorUrl('code'));
   await page.locator('nc-game-screen canvas').first().waitFor();
   await page.getByRole('button', { name: 'Play' }).first().click();
   await page.waitForTimeout(800);
@@ -234,7 +234,7 @@ for (const theme of THEMES) {
       content: readFileSync(contentOf('sound-step5')),
       name: titleOf('sound'),
     });
-    await page.goto('/edit/7/sound');
+    await page.goto(editorUrl('sound'));
     await page.getByRole('img', { name: 'Piano roll' }).waitFor();
     await page.waitForTimeout(500);
     await shoot(page, OUT, 'sound-roll-pattern', theme, page.locator('nc-piano-roll'));

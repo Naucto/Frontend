@@ -2,6 +2,7 @@ import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import type { ProjectExResponseDto } from '@naucto/api-client';
+import { uuidOf } from '@naucto/api-client/testing';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -13,12 +14,12 @@ const COVER = 'data:image/png;base64,AA==';
 
 function game(over: Partial<ProjectExResponseDto>): ProjectExResponseDto {
   return {
-    id: 7,
+    id: uuidOf(7),
     name: 'Hightide',
     publishedAt: '2026-10-01T00:00:00Z',
     likes: 318,
     viewCount: 1247,
-    creator: { id: 1, username: 'louis' },
+    creator: { id: uuidOf(1), username: 'louis' },
     collaborators: [],
     ...over,
   } as ProjectExResponseDto;
@@ -38,8 +39,8 @@ describe('GameDiskComponent', () => {
     installLayoutStubs();
     // Both covers are already known, so no test reaches for the network.
     const queries = new QueryClient();
-    queries.setQueryData(qk.releaseImage(7), COVER);
-    queries.setQueryData(qk.projectImage(7), COVER);
+    queries.setQueryData(qk.releaseImage(uuidOf(7)), COVER);
+    queries.setQueryData(qk.projectImage(uuidOf(7)), COVER);
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       imports: [
@@ -55,7 +56,7 @@ describe('GameDiskComponent', () => {
 
   it('plays a published game and names it under its disk, not on it', () => {
     const host = render({ game: game({}) }).nativeElement as HTMLElement;
-    expect(host.querySelector('a')?.getAttribute('href')).toBe('/play/7');
+    expect(host.querySelector('a')?.getAttribute('href')).toBe(`/play/${uuidOf(7)}`);
     expect(host.querySelector('a > nc-disk-name')?.textContent).toContain('Hightide');
     expect(host.querySelector('nc-floppy')?.textContent).not.toContain('Hightide');
     expect(host.querySelector('nc-floppy .info')?.textContent).toContain('louis');
@@ -66,7 +67,7 @@ describe('GameDiskComponent', () => {
 
   it('opens a draft in the editor and says it is one', () => {
     const host = render({ game: game({ publishedAt: null }) }).nativeElement as HTMLElement;
-    expect(host.querySelector('a')?.getAttribute('href')).toBe('/edit/7');
+    expect(host.querySelector('a')?.getAttribute('href')).toBe(`/edit/${uuidOf(7)}`);
     expect(host.querySelector('nc-floppy .action')?.classList).toContain('edit');
     expect(host.querySelector('nc-floppy nc-chip')?.textContent).toContain('Draft');
   });
@@ -84,7 +85,7 @@ describe('GameDiskComponent', () => {
   it('is a small still disk beside the name when dense', () => {
     const host = render({ game: game({ publishedAt: null }), dense: true })
       .nativeElement as HTMLElement;
-    expect(host.querySelector('a')?.getAttribute('href')).toBe('/edit/7');
+    expect(host.querySelector('a')?.getAttribute('href')).toBe(`/edit/${uuidOf(7)}`);
     expect(host.querySelector('nc-floppy')?.classList).not.toContain('interactive');
     expect(host.querySelector('nc-disk-name')).toBeNull();
     expect(host.querySelector('a')?.textContent).toContain('Hightide');

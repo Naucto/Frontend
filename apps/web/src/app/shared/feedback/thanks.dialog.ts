@@ -12,9 +12,8 @@ import {
 /** The community server people are invited to after sending feedback. */
 export const DISCORD_INVITE = 'https://discord.gg/4fxDFCNrqW';
 
-/** What was just sent: a rating, or a bug report with its number and how its screenshot went. */
-export type ThanksData =
-  { kind: 'rating' } | { kind: 'bug'; id: number; screenshotRefused: boolean };
+/** What was just sent: a rating, or a bug report and how its screenshot went. */
+export type ThanksData = { kind: 'rating' } | { kind: 'bug'; screenshotRefused: boolean };
 
 /** Thanks for a report or a rating, with an invitation to talk it over on Discord. */
 @Component({

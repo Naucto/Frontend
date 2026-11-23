@@ -85,7 +85,7 @@ export class WorkSessionService implements SavedSession {
   );
 
   private provider: WebrtcProvider | null = null;
-  private projectId = 0;
+  private projectId = '';
   private closing = false;
   /** Set while a guest waits for the host's upgrade; settles that wait without it. */
   private stopWaitingForSchema: (() => void) | null = null;
@@ -140,16 +140,16 @@ export class WorkSessionService implements SavedSession {
     });
   }
 
-  get id(): number {
+  get id(): string {
     return this.projectId;
   }
 
   /** The project a game run from here may host or join a session on. None for a game looked at. */
-  get playProjectId(): number | null {
+  get playProjectId(): string | null {
     return this.preview() ? null : this.projectId;
   }
 
-  get myUserId(): number | null {
+  get myUserId(): string | null {
     return this.auth.userId();
   }
 
@@ -195,7 +195,7 @@ export class WorkSessionService implements SavedSession {
     if (!this.election.isHost()) {
       return;
     }
-    const key = `${SEED_KEY}.${String(this.projectId)}`;
+    const key = `${SEED_KEY}.${this.projectId}`;
     const json = sessionStorage.getItem(key);
     if (!json) {
       return;
@@ -283,10 +283,10 @@ export class WorkSessionService implements SavedSession {
   }
 
   /** The game file as its collaborators read it, or null when nothing was saved yet. */
-  private async ownContent(projectId: number): Promise<Uint8Array | null> {
+  private async ownContent(projectId: string): Promise<Uint8Array | null> {
     const blob = unwrap(
       await projectContentControllerFetchProjectContent({
-        path: { id: String(projectId) },
+        path: { id: projectId },
         parseAs: 'blob',
       }),
     ) as Blob | undefined;
@@ -299,7 +299,7 @@ export class WorkSessionService implements SavedSession {
    * The session can be closed during any wait, and a step that ran after that would revive what
    * `close` took down, so the one check for it sits between the steps rather than inside each.
    */
-  private async openLive(projectId: number, details: ProjectExResponseDto): Promise<void> {
+  private async openLive(projectId: string, details: ProjectExResponseDto): Promise<void> {
     const session = unwrap(await workSessionControllerJoin({ path: { id: projectId } }));
     if (this.closing) {
       // Closed while the join was in flight, so the leave `close` sent may have reached the
@@ -378,7 +378,7 @@ export class WorkSessionService implements SavedSession {
    * request follows it: that is what lets staff open someone's draft, and a suspended account its
    * own game, without either of them changing anything.
    */
-  private async openPreview(projectId: number, kind: PreviewKind): Promise<void> {
+  private async openPreview(projectId: string, kind: PreviewKind): Promise<void> {
     this.preview.set(kind);
     this.mode.impose('read-only');
     this.status.set('loading');
@@ -413,7 +413,7 @@ export class WorkSessionService implements SavedSession {
    * answered, the account is one and gets the live session; refused, a staff member looks at
    * the game and anyone else is told it cannot be opened.
    */
-  async open(projectId: number): Promise<void> {
+  async open(projectId: string): Promise<void> {
     this.projectId = projectId;
     try {
       if (this.auth.suspension()) {

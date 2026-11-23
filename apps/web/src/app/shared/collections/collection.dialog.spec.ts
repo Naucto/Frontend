@@ -1,5 +1,6 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { client } from '@naucto/api-client';
+import { uuidOf } from '@naucto/api-client/testing';
 import { render, screen } from '@testing-library/angular';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -32,7 +33,7 @@ describe('CollectionDialogComponent', () => {
 
   beforeEach(() => {
     sent = [];
-    answer = { status: 201, body: { id: 'new', title: 'Late night picks' } };
+    answer = { status: 201, body: { id: uuidOf(1), title: 'Late night picks' } };
     close.mockReset();
     client.setConfig({ baseUrl: 'https://api.test', throwOnError: false });
     globalThis.fetch = async (input: RequestInfo | URL): Promise<Response> => {
@@ -65,7 +66,7 @@ describe('CollectionDialogComponent', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Create' }));
 
     await vi.waitFor(() => {
-      expect(close).toHaveBeenCalledWith({ id: 'new', title: 'Late night picks' });
+      expect(close).toHaveBeenCalledWith({ id: uuidOf(1), title: 'Late night picks' });
     });
     expect(sent).toEqual([
       {
@@ -83,10 +84,10 @@ describe('CollectionDialogComponent', () => {
   });
 
   it('edits the collection it is given, and says what the chosen visibility means', async () => {
-    answer = { status: 200, body: { id: 'abc', title: 'Couch co-op' } };
+    answer = { status: 200, body: { id: uuidOf(2), title: 'Couch co-op' } };
     await open({
       collection: {
-        id: 'abc',
+        id: uuidOf(2),
         title: 'Couch co-op',
         description: 'Two pads.',
         visibility: 'PUBLIC',
@@ -104,7 +105,7 @@ describe('CollectionDialogComponent', () => {
     expect(sent).toEqual([
       {
         method: 'PATCH',
-        path: '/collections/abc',
+        path: `/collections/${uuidOf(2)}`,
         json: { title: 'Couch co-op', description: 'Two pads.', visibility: 'UNLISTED' },
       },
     ]);

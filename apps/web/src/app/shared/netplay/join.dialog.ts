@@ -20,7 +20,7 @@ import { qk } from '../queries/query-keys';
 
 export interface JoinDialogData {
   bridge: NetUiBridgeService;
-  projectId: number;
+  projectId: string;
 }
 
 /**

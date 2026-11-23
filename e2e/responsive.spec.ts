@@ -1,4 +1,5 @@
-import { editorUrl, mockEditor } from './editor-mocks';
+import { uuidOf } from '../packages/api-client/testing';
+import { editorUrl, mockEditor, PROJECT_ID } from './editor-mocks';
 import { expect, test } from './fixtures';
 import { mockHub } from './mocks/hub';
 import { mockSignedIn } from './mocks/session';
@@ -54,8 +55,8 @@ test.describe('editor gate', () => {
    * sign-in, never a 404.
    */
   test('a phone keeps its way into the editor, and is not 404ed out of it', async ({ page }) => {
-    await page.goto('/edit/1');
-    await expect(page).toHaveURL(/\/sign-in\?next=%2Fedit%2F1/);
+    await page.goto(`/edit/${uuidOf(1)}`);
+    await expect(page).toHaveURL(new RegExp(`/sign-in\\?next=%2Fedit%2F${uuidOf(1)}`));
     await expect(page.getByRole('heading', { name: /insert game/i })).toBeVisible();
   });
 
@@ -71,7 +72,7 @@ test.describe('editor gate', () => {
     ).toBeVisible();
     const pieces = [
       notice.locator('p'),
-      notice.locator('span', { hasText: '/edit/7' }),
+      notice.locator('span', { hasText: `/edit/${PROJECT_ID}` }),
       notice.getByRole('button', { name: 'Copy link' }),
       notice.getByRole('link', { name: 'Play it instead' }),
       notice.getByRole('link', { name: 'Back to the hub' }),

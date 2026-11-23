@@ -25,14 +25,15 @@ describe('hashOf', () => {
 describe('colourOf', () => {
   it('never hands out a reserved colour', () => {
     for (let i = 0; i < 200; i++) {
-      expect(RESERVED).not.toContain(colourOf(i));
       expect(RESERVED).not.toContain(colourOf(`user-${String(i)}`));
     }
   });
 
   it('gives the same key the same colour every time', () => {
     expect(colourOf('alexis')).toBe(colourOf('alexis'));
-    expect(colourOf(42)).toBe(colourOf(42));
+    expect(colourOf('7c9e6679-7425-40de-944b-e07fc1f90ae7')).toBe(
+      colourOf('7c9e6679-7425-40de-944b-e07fc1f90ae7'),
+    );
   });
 });
 

@@ -81,7 +81,7 @@ interface Drag {
 })
 export class CollectionBoxComponent {
   readonly title = input.required<string>();
-  readonly curator = input.required<{ id: number; username: string }>();
+  readonly curator = input.required<{ id: string; username: string }>();
   /** The games the box may show, in order; it shows as many as fit. */
   readonly games = input.required<readonly HubGame[]>();
   /** How many games the collection holds, shown or not. */

@@ -81,10 +81,10 @@ export function injectSubmitBugReport(): CreateMutationResult<
 export function injectAttachScreenshot(): CreateMutationResult<
   void,
   Error,
-  { id: number; screenshot: Blob }
+  { id: string; screenshot: Blob }
 > {
   return injectMutation(() => ({
-    mutationFn: async ({ id, screenshot }: { id: number; screenshot: Blob }) => {
+    mutationFn: async ({ id, screenshot }: { id: string; screenshot: Blob }) => {
       unwrap(await reportsControllerAttachScreenshot({ path: { id }, body: { screenshot } }));
     },
   }));

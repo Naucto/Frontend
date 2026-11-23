@@ -1,5 +1,6 @@
 import { signal } from '@angular/core';
 import { client, type UserAnalyticsSummaryDto } from '@naucto/api-client';
+import { uuidOf } from '@naucto/api-client/testing';
 import { DialogService } from '@naucto/ui';
 import { render, screen } from '@testing-library/angular';
 import userEvent from '@testing-library/user-event';
@@ -17,8 +18,8 @@ const SUMMARY: UserAnalyticsSummaryDto = {
   thisMonth: { plays: 3, playtimeMs: 45 * 60_000 },
   gamesPlayed: 4,
   topGames: [
-    { releaseId: 7, name: 'Ferry Click', plays: 9, playtimeMs: 2 * 3_600_000 },
-    { releaseId: 8, name: null, plays: 1, playtimeMs: 60_000 },
+    { releaseId: uuidOf(7), name: 'Ferry Click', plays: 9, playtimeMs: 2 * 3_600_000 },
+    { releaseId: uuidOf(8), name: null, plays: 1, playtimeMs: 60_000 },
   ],
   lastActiveAt: '2026-10-01T10:00:00.000Z',
   lastActiveIsExact: true,
@@ -69,7 +70,10 @@ describe('PrivacySettingsComponent', () => {
     expect(screen.getByText('45 min this month')).toBeInTheDocument();
     expect(screen.getByText('14 in all')).toBeInTheDocument();
     expect(screen.getByText('3 this month')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Ferry Click' })).toHaveAttribute('href', '/play/7');
+    expect(screen.getByRole('link', { name: 'Ferry Click' })).toHaveAttribute(
+      'href',
+      `/play/${uuidOf(7)}`,
+    );
     expect(screen.getByText('A deleted game')).toBeInTheDocument();
     expect(screen.getByText('2 h')).toBeInTheDocument();
   });

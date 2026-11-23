@@ -66,7 +66,7 @@
   </div>
 
   @if (ui.tooNarrow()) {
-    <nc-open-on-desktop [id]="String(id())" />
+    <nc-open-on-desktop [id]="id()" />
   }
   @if (!ui.tooNarrow() || workspaceBuilt()) {
     <div [class.contents]="!ui.tooNarrow()" [class.hidden]="ui.tooNarrow()">

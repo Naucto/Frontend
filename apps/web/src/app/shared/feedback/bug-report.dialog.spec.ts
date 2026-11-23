@@ -1,5 +1,6 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { client } from '@naucto/api-client';
+import { uuidOf } from '@naucto/api-client/testing';
 import { render, screen } from '@testing-library/angular';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -47,7 +48,7 @@ describe('BugReportDialog', () => {
         path,
         json: (await request.json()) as Record<string, unknown>,
       });
-      return new Response(JSON.stringify({ id: 12 }), {
+      return new Response(JSON.stringify({ id: uuidOf(12) }), {
         status: 201,
         headers: { 'content-type': 'application/json' },
       });
@@ -64,11 +65,13 @@ describe('BugReportDialog', () => {
   };
 
   it('reads the game or project a page is about, and the likely category', () => {
-    expect(subjectOf('/play/42')).toEqual({ releaseId: 42 });
-    expect(subjectOf('/edit/7/code')).toEqual({ projectId: 7 });
+    expect(subjectOf(`/play/${uuidOf(42)}`)).toEqual({ releaseId: uuidOf(42) });
+    expect(subjectOf(`/edit/${uuidOf(7)}/code`)).toEqual({ projectId: uuidOf(7) });
     expect(subjectOf('/hub')).toEqual({});
-    expect(categoryFor('/edit/7/code')).toBe('EDITOR');
-    expect(categoryFor('/play/42')).toBe('GAMEPLAY');
+    expect(subjectOf('/play/42')).toEqual({});
+    expect(subjectOf(`/edit/${uuidOf(7)}0/code`)).toEqual({});
+    expect(categoryFor(`/edit/${uuidOf(7)}/code`)).toBe('EDITOR');
+    expect(categoryFor(`/play/${uuidOf(42)}`)).toBe('GAMEPLAY');
     expect(categoryFor('/hub')).toBe('OTHER');
   });
 
@@ -85,12 +88,12 @@ describe('BugReportDialog', () => {
   });
 
   it('sends the report as JSON with the context it lists, and closes with its id', async () => {
-    await open({ category: 'SOUND', ratingId: 5 });
+    await open({ category: 'SOUND', ratingId: uuidOf(5) });
     await fill();
     await userEvent.click(screen.getByRole('button', { name: 'Send report' }));
 
     await vi.waitFor(() => {
-      expect(close).toHaveBeenCalledWith({ id: 12, screenshotRefused: false });
+      expect(close).toHaveBeenCalledWith({ id: uuidOf(12), screenshotRefused: false });
     });
     expect(sent).toHaveLength(1);
     expect(sent[0]?.json).toMatchObject({
@@ -98,7 +101,7 @@ describe('BugReportDialog', () => {
       title: 'No music',
       description: 'The song never starts.',
       route: '/',
-      ratingId: 5,
+      ratingId: uuidOf(5),
       appRelease: 'dev',
     });
     expect(Object.keys(sent[0]?.json.context ?? {}).sort()).toEqual(['language', 'viewport']);

@@ -73,7 +73,7 @@ export class AvatarComponent {
   readonly name = input.required<string>();
   readonly src = input<string | null>();
   /** Identity key for the stable colour; falls back to the name. */
-  readonly id = input<string | number>();
+  readonly id = input<string>();
   /** A presence colour, `gold` for the viewer's own row of a roster, `neutral`, an index, or a hex. */
   readonly colour = input<AvatarColour>();
   readonly size = input(24);

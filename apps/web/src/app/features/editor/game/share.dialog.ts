@@ -20,7 +20,7 @@ import type { SessionPresenceService } from '../work-session/session-presence.se
 import type { SessionSaveService } from '../work-session/session-save.service';
 import type { WorkSessionService } from '../work-session/work-session.service';
 
-export async function addCollaborator(projectId: number, handle: string): Promise<void> {
+export async function addCollaborator(projectId: string, handle: string): Promise<void> {
   const body = handle.includes('@') ? { email: handle } : { username: handle };
   unwrap(await projectControllerAddCollaborator({ path: { id: projectId }, body }));
 }
@@ -90,7 +90,7 @@ export class ShareDialogComponent {
     }
   }
 
-  protected async remove(person: { id: number; username: string }): Promise<void> {
+  protected async remove(person: { id: string; username: string }): Promise<void> {
     try {
       unwrap(
         await projectControllerRemoveCollaborator({

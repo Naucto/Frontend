@@ -1,4 +1,5 @@
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
+import { uuidOf } from '@naucto/api-client/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { testProviders } from '../../testing/providers';
@@ -36,9 +37,9 @@ describe('the bodies of a shelf flyout', () => {
       projectName: 'Bomberman',
       hostUsername: 'lea',
       roster: [
-        { id: 1, username: 'you' },
-        { id: 2, username: 'lea' },
-        { id: 3, username: 'emma', nickname: 'Emma B' },
+        { id: uuidOf(1), username: 'you' },
+        { id: uuidOf(2), username: 'lea' },
+        { id: uuidOf(3), username: 'emma', nickname: 'Emma B' },
       ],
     });
 
@@ -93,12 +94,12 @@ describe('ShelfDiskComponent', () => {
     TestBed.configureTestingModule({ providers: testProviders() });
     fixture = TestBed.createComponent(ShelfDiskComponent);
     fixture.componentRef.setInput('game', gameOf(7));
-    fixture.componentRef.setInput('link', ['/play', 7]);
+    fixture.componentRef.setInput('link', ['/play', uuidOf(7)]);
     fixture.detectChanges();
   });
 
   it('is the link to the game, named for it, around its disk', () => {
-    expect(link().getAttribute('href')).toBe('/play/7');
+    expect(link().getAttribute('href')).toBe(`/play/${uuidOf(7)}`);
     expect(link().getAttribute('aria-label')).toBe('Game 7');
     expect(link().querySelector('nc-floppy')).not.toBeNull();
     expect(link().hasAttribute('aria-expanded')).toBe(false);
@@ -129,7 +130,7 @@ describe('SessionDiskComponent', () => {
     TestBed.configureTestingModule({ providers: testProviders() });
     fixture = TestBed.createComponent(SessionDiskComponent);
     fixture.componentRef.setInput('session', sessionOf(2, 4));
-    fixture.componentRef.setInput('link', ['/play', 7]);
+    fixture.componentRef.setInput('link', ['/play', uuidOf(7)]);
     fixture.componentRef.setInput('viewer', 'you');
     fixture.detectChanges();
   });
@@ -171,7 +172,7 @@ describe('SessionDiskComponent', () => {
     const session = sessionOf(2, 4);
     fixture.componentRef.setInput('session', {
       ...session,
-      roster: [...session.roster, { id: 9, username: 'you' }],
+      roster: [...session.roster, { id: uuidOf(9), username: 'you' }],
       playerCount: 3,
     });
     fixture.detectChanges();
