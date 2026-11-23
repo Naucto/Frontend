@@ -79,7 +79,10 @@ type Monetization = ProjectExResponseDto['monetization'];
     SegmentedComponent,
   ],
   templateUrl: './publishing.component.html',
-  host: { class: 'contents' },
+  host: {
+    class: 'flex min-h-0 flex-col border-l-3 border-line bg-panel',
+    '[style.width.px]': 'PANEL_WIDTH',
+  },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PublishingComponent {

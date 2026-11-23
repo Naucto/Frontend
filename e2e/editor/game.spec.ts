@@ -3,6 +3,7 @@ import type { Locator, Page, Request } from '@playwright/test';
 import { BUBBLEGUM_16 } from '../../packages/engine/src/game/defaults';
 import { editorUrl, mockEditor, projectRoute } from '../editor-mocks';
 import { expect, test } from '../fixtures';
+import { boxOf } from './helpers';
 
 test.use({ viewport: { width: 1920, height: 1030 } });
 
@@ -130,6 +131,23 @@ test('GAME tab binds the project meta, in three tabs beside the Publishing sideb
   await tabs.getByRole('tab', { name: 'Details' }).click();
   await expect(page.getByRole('textbox', { name: 'Summary' })).toBeVisible();
 });
+
+/**
+ * The screen heads the sidebar and Publishing starts under it: the game lent to this tab is not
+ * one of the Publishing sections, so no part of it, transport included, lies inside that panel.
+ */
+for (const width of [1920, 1440]) {
+  test(`the game screen stands above the Publishing panel, at ${String(width)} wide`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto(editorUrl('game'));
+    const screen = await boxOf(sidebar(page).locator('nc-game-screen'));
+    const panel = await boxOf(sidebar(page).locator('nc-panel-column'));
+    expect(screen.height).toBeGreaterThan(0);
+    expect(screen.y + screen.height).toBeLessThanOrEqual(panel.y);
+  });
+}
 
 /**
  * One screen for the whole editor: the game started in CODE is the one the sidebar shows, still on
