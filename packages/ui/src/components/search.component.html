@@ -15,7 +15,7 @@
   <span class="-mt-[3px] flex flex-none items-center gap-[3px]">
     @for (key of keys(); track $index) {
       @if (!$first) {
-        <nc-icon aria-hidden="true" name="plus" [size]="12" class="text-ink-4" />
+        <nc-mark aria-hidden="true" name="plus" class="text-ink-4" />
       }
       <nc-keycap size="sm">{{ key }}</nc-keycap>
     }

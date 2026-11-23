@@ -12,6 +12,7 @@ import {
 import { IconComponent, type IconSize } from './icon.component';
 import { WELL } from './input.directive';
 import { KeycapComponent } from './keycap.component';
+import { MarkComponent } from './mark.component';
 
 /**
  * How tall the box is: `md` is the top bar's, `sm` the one an editor toolbar carries. Only `md` has
@@ -38,7 +39,7 @@ const SIZE: Record<SearchSize, { host: string; input: string; icon: string; glyp
 /** Search box with the magnifier and a keyboard hint ("/"). Emits `submitted` on Enter. */
 @Component({
   selector: 'nc-search',
-  imports: [IconComponent, KeycapComponent],
+  imports: [IconComponent, KeycapComponent, MarkComponent],
   templateUrl: './search.component.html',
   host: {
     class: `${WELL} flex items-center text-ink-3 not-focus-within:hover:text-ink-2 focus-within:text-gold-ink`,
