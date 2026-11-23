@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import {
+  ArrowLinkDirective,
   ButtonDirective,
   DitherBackdropComponent,
   FieldComponent,
   FitTextDirective,
   InputDirective,
-  MarkComponent,
   ScrambleDirective,
   ShelfComponent,
   ShelfFlyoutDirective,
@@ -28,6 +28,7 @@ import { COLLECTIONS, GAMES, HERO, openSessions, VIEWER } from './hub-pieces.fix
 @Component({
   selector: 'nc-hub-pieces-section',
   imports: [
+    ArrowLinkDirective,
     ButtonDirective,
     CollectionBoxComponent,
     DitherBackdropComponent,
@@ -36,7 +37,6 @@ import { COLLECTIONS, GAMES, HERO, openSessions, VIEWER } from './hub-pieces.fix
     FloppyComponent,
     GameFlyoutComponent,
     HeroPileComponent,
-    MarkComponent,
     InputDirective,
     ScrambleDirective,
     SessionDiskComponent,

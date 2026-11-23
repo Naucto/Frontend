@@ -6,9 +6,9 @@
 
     @if (mine(); as games) {
       <nc-shelf data-shelf="mine" [heading]="t('hub.shelf.mine')">
-        <nc-see-all shelfAction link="/games">
+        <a ncArrowLink shelfAction routerLink="/games">
           {{ t('hub.seeAllCount', { n: mineTotal() }) }}
-        </nc-see-all>
+        </a>
         <ng-container *ncShelfItem="let game of games; open as open; flyoutId as flyoutId">
           @if (game) {
             <nc-shelf-disk
@@ -60,9 +60,9 @@
               {{ t('hub.shelf.collections') }}
             </h3>
             <span class="flex-1"></span>
-            <nc-see-all link="/collections">
+            <a ncArrowLink routerLink="/collections">
               {{ t('hub.seeAllCount', { n: shelf.total }) }}
-            </nc-see-all>
+            </a>
           </div>
           <div class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-[20px]">
             @for (collection of collections; track collection.id) {

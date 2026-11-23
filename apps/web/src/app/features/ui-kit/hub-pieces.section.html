@@ -46,13 +46,7 @@
   </nc-shelf>
 
   <nc-shelf heading="Open sessions" data-testid="shelf-sessions">
-    <a
-      shelfAction
-      href="/ui-kit#hub"
-      class="inline-flex items-center gap-[6px] text-label tracking-wide text-gold-ink uppercase">
-      See all {{ sessions().length }}
-      <nc-mark name="arrow-up-right" />
-    </a>
+    <a ncArrowLink shelfAction href="/ui-kit#hub">See all {{ sessions().length }}</a>
     <nc-session-disk
       *ncShelfItem="let session of sessions(); open as open; flyoutId as flyoutId"
       link="/ui-kit"
@@ -69,13 +63,7 @@
   </nc-shelf>
 
   <nc-shelf heading="Popular" data-testid="shelf-popular">
-    <a
-      shelfAction
-      href="/ui-kit#hub"
-      class="inline-flex items-center gap-[6px] text-label tracking-wide text-gold-ink uppercase">
-      See all {{ games.length }}
-      <nc-mark name="arrow-up-right" />
-    </a>
+    <a ncArrowLink shelfAction href="/ui-kit#hub">See all {{ games.length }}</a>
     <nc-shelf-disk
       *ncShelfItem="let game of games; open as open; flyoutId as flyoutId"
       link="/ui-kit"
@@ -102,12 +90,7 @@
         Collections
       </h3>
       <span class="flex-1"></span>
-      <a
-        href="/ui-kit#hub"
-        class="inline-flex items-center gap-[6px] text-label tracking-wide text-gold-ink uppercase">
-        See all 8
-        <nc-mark name="arrow-up-right" />
-      </a>
+      <a ncArrowLink href="/ui-kit#hub">See all 8</a>
     </div>
     <div
       class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-[20px]"

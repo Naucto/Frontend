@@ -16,6 +16,7 @@ import { Router, RouterLink } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import type { GameSessionResponseDto, HubResponseDto } from '@naucto/api-client';
 import {
+  ArrowLinkDirective,
   ErrorStateComponent,
   ShelfComponent,
   ShelfFlyoutDirective,
@@ -36,7 +37,6 @@ import { ShelfDiskComponent } from '../../shared/hub/shelf-disk.component';
 import { injectLeaveSession, injectOpenSessions } from '../../shared/queries/hub.queries';
 import { injectMyProjects } from '../../shared/queries/projects.queries';
 import { HubShelfComponent } from './hub-shelf.component';
-import { SeeAllLinkComponent } from './see-all-link.component';
 import { ShelfSkeletonComponent } from './shelf-skeleton.component';
 import { TagShelvesComponent } from './tag-shelves.component';
 
@@ -53,13 +53,13 @@ const BATCH = 3;
   imports: [
     RouterLink,
     TranslocoDirective,
+    ArrowLinkDirective,
     CollectionBoxComponent,
     ErrorStateComponent,
     FloppyComponent,
     GameFlyoutComponent,
     HeroPileComponent,
     HubShelfComponent,
-    SeeAllLinkComponent,
     SessionDiskComponent,
     SessionFlyoutComponent,
     ShelfComponent,

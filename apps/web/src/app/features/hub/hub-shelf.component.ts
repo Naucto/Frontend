@@ -1,20 +1,26 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import type { HubShelfDto } from '@naucto/api-client';
-import { ShelfComponent, ShelfFlyoutDirective, ShelfItemDirective } from '@naucto/ui';
+import {
+  ArrowLinkDirective,
+  ShelfComponent,
+  ShelfFlyoutDirective,
+  ShelfItemDirective,
+} from '@naucto/ui';
 
 import { GameFlyoutComponent } from '../../shared/hub/game-flyout.component';
 import { ShelfDiskComponent } from '../../shared/hub/shelf-disk.component';
-import { SeeAllLinkComponent } from './see-all-link.component';
 import { shelfTitle } from './shelf-title';
 
 /** One of the hub's shelves of games to play, with the way to everything it holds. */
 @Component({
   selector: 'nc-hub-shelf',
   imports: [
+    RouterLink,
     TranslocoDirective,
+    ArrowLinkDirective,
     GameFlyoutComponent,
-    SeeAllLinkComponent,
     ShelfComponent,
     ShelfDiskComponent,
     ShelfFlyoutDirective,
