@@ -33,6 +33,7 @@
         <div class="label mb-[11px] text-jade-ink">{{ t('friends.onlineNow') }}</div>
         <div class="grid gap-[9px] md:grid-cols-2">
           @for (friend of online(); track friend.id) {
+            @let presence = line(friend);
             <div
               class="flat-lg relative flex items-center gap-1.75 overflow-hidden bevel-fill-panel px-2 py-1.75">
               <span
@@ -72,10 +73,10 @@
                 </a>
                 <div class="flex items-baseline gap-1 text-meta text-ink-3">
                   <span class="truncate">
-                    {{ line(friend).verb }}
-                    <span [class]="line(friend).nameClass">{{ line(friend).name }}</span>
+                    {{ presence.verb }}
+                    <span [class]="presence.nameClass">{{ presence.name }}</span>
                   </span>
-                  @if (line(friend).tail; as tail) {
+                  @if (presence.tail; as tail) {
                     <span class="label shrink-0">{{ tail }}</span>
                   }
                 </div>
