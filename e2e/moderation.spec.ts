@@ -369,10 +369,7 @@ test.describe('moderation', () => {
       const api = await mockCollections(page, games, { collections: [hidden()] });
       await mockSignedIn(page, ALEXIS);
       api.viewer = ALEXIS.id;
-      await page.route(
-        /\/projects\?/,
-        answer(200, { projects: [], total: 0, page: 1, limit: 100 }),
-      );
+      await mockProjects(page);
       await page.goto('/collections/couch');
 
       await page.getByRole('button', { name: 'Delete' }).click();
@@ -398,10 +395,7 @@ test.describe('moderation', () => {
       });
       await mockSignedIn(page, ALEXIS);
       api.viewer = ALEXIS.id;
-      await page.route(
-        /\/projects\?/,
-        answer(200, { projects: [], total: 0, page: 1, limit: 100 }),
-      );
+      await mockProjects(page);
       await page.goto('/games');
 
       const shelf = page.getByTestId('shelf-collections');
@@ -457,7 +451,7 @@ test.describe('moderation', () => {
         ],
       },
     });
-    await page.route(/\/projects\?/, answer(200, { projects: [], total: 0, page: 1, limit: 24 }));
+    await mockProjects(page);
     await page.route('**/game-sessions**', answer(200, { sessions: [] }));
     await page.goto('/hub');
 
