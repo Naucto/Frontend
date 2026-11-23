@@ -173,7 +173,7 @@ export class NetUiBridgeService implements NetUi, OnDestroy {
     if (options.listed) {
       // The room is open by now: a listing that fails leaves it reached by its code, which is what
       // its switch then shows.
-      await this.setListed(conn.sessionUuid, true).catch(() => false);
+      await this.setListed(conn.sessionUuid, true).catch(() => undefined);
     }
   }
 
