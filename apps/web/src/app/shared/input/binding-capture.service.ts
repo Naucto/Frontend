@@ -1,4 +1,4 @@
-import { DestroyRef, inject, Injectable, signal } from '@angular/core';
+import { DestroyRef, inject, Injectable } from '@angular/core';
 import {
   type ActionInput,
   canonicalKey,
@@ -23,7 +23,6 @@ const CAPTURE_AXIS_THRESHOLD = GAMEPAD_DEADZONE * 2;
  */
 @Injectable()
 export class BindingCaptureService {
-  readonly listening = signal(false);
   private settle: ((input: ActionInput | null) => void) | null = null;
   private poll: ReturnType<typeof setInterval> | undefined;
 
@@ -49,7 +48,6 @@ export class BindingCaptureService {
   private finish(input: ActionInput | null): void {
     clearInterval(this.poll);
     this.poll = undefined;
-    this.listening.set(false);
     const settle = this.settle;
     this.settle = null;
     settle?.(input);
@@ -63,7 +61,6 @@ export class BindingCaptureService {
   /** The next input, or null when the capture is backed out of; a second call ends the first. */
   listen(): Promise<ActionInput | null> {
     this.finish(null);
-    this.listening.set(true);
     this.poll = setInterval(() => {
       const pads = typeof navigator.getGamepads === 'function' ? navigator.getGamepads() : [];
       for (const pad of pads) {

@@ -31,11 +31,9 @@ describe('BindingCaptureService', () => {
 
   it('answers the key pressed, for the first player and whatever its case', async () => {
     const heard = capture.listen();
-    expect(capture.listening()).toBe(true);
     press('W');
 
     expect(await heard).toEqual({ kind: 'key', player: 0, key: 'w' });
-    expect(capture.listening()).toBe(false);
   });
 
   it('answers the gamepad control held, when that comes first', async () => {
@@ -55,7 +53,6 @@ describe('BindingCaptureService', () => {
     const heard = capture.listen();
     pads = [padHolding([6, 7, 10, 11, 16], [0.4, 0.4, 1, 1])];
     vi.advanceTimersByTime(600);
-    expect(capture.listening()).toBe(true);
 
     press('Enter');
     expect(await heard).toEqual({ kind: 'key', player: 0, key: 'Enter' });
