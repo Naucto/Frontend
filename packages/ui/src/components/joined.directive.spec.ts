@@ -29,27 +29,21 @@ describe('JoinedDirective', () => {
     expect(strip.filter((name) => name.startsWith('bg-'))).toEqual([]);
   });
 
-  it('frames a ghost cell in the line at rest, unfilled, and lights it on hover', async () => {
+  it('leaves a ghost cell bare at rest, as a ghost button, and lights it on hover', async () => {
     await render(Host);
     expect(classesOf('Restart')).toEqual(
-      expect.arrayContaining([
-        'bevel-edge-line',
-        'bevel-fill-transparent',
-        'hover:bevel-lit',
-        'hover:bevel-fill-raised',
-      ]),
+      expect.arrayContaining(['bevel-bare', 'hover:bevel-lit', 'hover:bevel-fill-raised']),
     );
-    expect(classesOf('Restart')).not.toContain('bevel-bare');
-    expect(classesOf('Step')).toEqual(expect.arrayContaining(['disabled:bevel-edge-line']));
+    expect(classesOf('Restart')).not.toContain('not-first:before:bg-line');
   });
 
-  it('opens the sides cells share and draws the line between them', async () => {
+  it('opens the sides cells share and lights the line between them under the pointer', async () => {
     await render(Host);
     expect(classesOf('Restart')).toEqual(
       expect.arrayContaining([
         'not-first:bevel-open-l',
         'not-last:bevel-open-r',
-        'not-first:before:bg-line',
+        'not-first:not-data-pressed:enabled:hover:before:bg-active-ink',
       ]),
     );
   });

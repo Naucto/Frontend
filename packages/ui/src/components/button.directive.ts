@@ -36,24 +36,16 @@ const VARIANTS: Record<ButtonVariant, string> = {
 };
 
 /**
- * A ghost cell of an `ncJoined` strip: at rest it keeps the frame a ghost button only shows on
- * hover, drawn in the quiet line and without a fill, so the strip reads as one block; pointed at,
- * it lights as a ghost button does. Unavailable, it keeps the line, or the frame would break.
- */
-const JOINED_GHOST =
-  `bevel-edge-line bevel-skirt-transparent bevel-fill-transparent text-ink-2 ${LIT} hover:bevel-fill-raised ` +
-  'disabled:cursor-not-allowed disabled:bevel-fill-transparent disabled:text-ink-4 disabled:bevel-edge-line';
-
-/**
- * Where a cell meets its neighbours in a strip. Only the strip's two ends keep a side; the line
- * between two cells is drawn on the face of the second, and a pointed-at cell's right side is laid
- * over the next cell's first column, which that line occupies. A latched cell has no line of its
- * own. The cell that is pointed at, focused or latched is drawn over its neighbours.
+ * Where a cell meets its neighbours in a strip. A ghost cell stays bare at rest, as a ghost button
+ * does; pointed at, only the strip's two ends keep a side, the line between two cells is drawn on
+ * the face of the second, and the cell's right side is laid over the next cell's first column. A
+ * latched cell has no line of its own. The cell pointed at, focused or latched is drawn over its
+ * neighbours.
  */
 const JOINED_SIDES =
   'relative hover:z-1 focus-visible:z-1 data-pressed:z-1 ' +
   'not-first:bevel-open-l not-first:before:absolute not-first:before:inset-y-0 not-first:before:left-0 ' +
-  'not-first:before:w-[3px] not-first:before:bg-line not-first:not-data-pressed:enabled:hover:before:bg-active-ink ' +
+  'not-first:before:w-[3px] not-first:not-data-pressed:enabled:hover:before:bg-active-ink ' +
   'not-first:data-pressed:before:hidden ' +
   'not-last:bevel-open-r not-last:after:absolute not-last:after:-top-[3px] not-last:after:-right-[3px] ' +
   'not-last:after:-bottom-[3px] not-last:after:hidden not-last:after:w-[3px] not-last:after:bg-active-ink ' +
@@ -124,13 +116,7 @@ export class ButtonDirective {
 
   protected readonly classes = computed(() => {
     const size = SIZES[this.size()];
-    const ghostCell =
-      this.joined && this.variant() === 'ghost' && !this.pressed() && !this.copied();
-    const state = ghostCell
-      ? JOINED_GHOST
-      : this.copied()
-        ? COPIED
-        : (this.pressed() ? PRESSED : VARIANTS)[this.variant()];
+    const state = this.copied() ? COPIED : (this.pressed() ? PRESSED : VARIANTS)[this.variant()];
     const sides = this.joined ? JOINED_SIDES : '';
     return `${BASE} ${state} ${sides} ${size.box} ${this.iconOnly() ? 'aspect-square' : size.px}`;
   });
