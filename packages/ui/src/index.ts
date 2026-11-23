@@ -38,6 +38,7 @@ export * from './components/pad-cap.component';
 export * from './components/pager.component';
 export * from './components/panel-column.component';
 export * from './components/panel-region.component';
+export * from './components/perf-graph.component';
 export * from './components/popover.directive';
 export * from './components/popover-panel.component';
 export * from './components/presence-flag.component';

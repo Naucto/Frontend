@@ -43,6 +43,8 @@ import {
   PagerComponent,
   PanelColumnComponent,
   PanelRegionComponent,
+  type PerfBand,
+  PerfGraphComponent,
   PopoverDirective,
   PopoverPanelComponent,
   PresenceFlagComponent,
@@ -117,6 +119,7 @@ import { HubPiecesSection } from './hub-pieces.section';
     LcdComponent,
     LogoComponent,
     MeterComponent,
+    PerfGraphComponent,
     OnlineDotComponent,
     PresenceFlagComponent,
     PresenceLayerComponent,
@@ -436,6 +439,23 @@ export default class UiKitPage {
     { label: 'Music 214 KB', value: 214 * 1024, color: 'bg-hot' },
     { label: 'Map 88 KB', value: 88 * 1024, color: 'bg-jade' },
     { label: 'Code 28 KB', value: 28 * 1024, color: 'bg-gold' },
+  ];
+  /** A minute of readings: steady, a dip into each band, then a climb past the ceiling. */
+  protected readonly perfFps = Array.from({ length: 96 }, (_, i) =>
+    i > 30 && i < 38 ? 44 : i > 60 && i < 64 ? 24 : 60 - (i % 7 === 0 ? 2 : 0),
+  );
+  protected readonly perfCpu = Array.from({ length: 96 }, (_, i) =>
+    Math.min(98, 32 + (i % 9) * 2 + Math.max(0, i - 70) * 2.4),
+  );
+  protected readonly perfFpsBands: PerfBand[] = [
+    { from: Number.NEGATIVE_INFINITY, to: 30, tone: 'over' },
+    { from: 30, to: 54, tone: 'warn' },
+    { from: 54, to: Number.POSITIVE_INFINITY, tone: 'ok' },
+  ];
+  protected readonly perfCpuBands: PerfBand[] = [
+    { from: Number.NEGATIVE_INFINITY, to: 70, tone: 'ok' },
+    { from: 70, to: 90, tone: 'warn' },
+    { from: 90, to: Number.POSITIVE_INFINITY, tone: 'over' },
   ];
   protected readonly marks = Object.keys(MARK_GLYPHS) as MarkName[];
   protected readonly icons = Object.keys(ICON_GLYPHS[24]) as IconName[];

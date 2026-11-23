@@ -627,6 +627,25 @@
           <nc-meter [segments]="size" [max]="786432" label="Over the ceiling" [legend]="false" />
         </div>
         <div class="grid content-start gap-[10px]">
+          <div class="text-label tracking-label text-ink-3 uppercase">Perf graph</div>
+          <nc-lcd variant="flush" class="h-[240px]">
+            <div class="grid h-full grid-rows-2 gap-[14px] whitespace-normal">
+              <nc-perf-graph
+                label="FPS"
+                value="60"
+                [samples]="perfFps"
+                [max]="66"
+                [bands]="perfFpsBands" />
+              <nc-perf-graph
+                label="CPU"
+                value="98%"
+                [samples]="perfCpu"
+                [max]="100"
+                [bands]="perfCpuBands" />
+            </div>
+          </nc-lcd>
+        </div>
+        <div class="grid content-start gap-[10px]">
           <div class="text-label tracking-label text-ink-3 uppercase">Presence over a surface</div>
           <!-- One mark inside the frame, two past its edges, which come back as chips on the rim. -->
           <div
