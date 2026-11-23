@@ -48,7 +48,6 @@
   /* Chips and presence tags sit between label and button tracking. */
   --tracking-tag: 0.08em;
   --tracking-copy: 0.02em;
-  --tracking-data: 0.04em;
   /* Strip headings and the buttons on a large bevel. */
   --tracking-strip: 0.12em;
   /* The line above a page title. */
@@ -284,13 +283,11 @@
   --nc-h-bar: 48px;
   --nc-h-hero: 56px;
 
-  /* The ordered dither, on 3px cells in a 12px tile. The four cell pairs are disjoint, so stacking
-     them is how the steps between 12% and 50% are made; the heavier steps are single images
-     because a mask that composites them with something else needs one layer each. */
+  /* The ordered dither, on 3px cells in a 12px tile. 12% is one pair of cells, and 37% lays another
+     over the 25% tile, which it does not touch; the 25% and 50% steps are single images because a
+     mask that composites them with something else needs one layer each. */
   --nc-dither-1: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' shape-rendering='crispEdges'%3E%3Cpath d='M0 0h3v3H0zM6 6h3v3H6z'/%3E%3C/svg%3E");
-  --nc-dither-2: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' shape-rendering='crispEdges'%3E%3Cpath d='M6 0h3v3H6zM0 6h3v3H0z'/%3E%3C/svg%3E");
   --nc-dither-3: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' shape-rendering='crispEdges'%3E%3Cpath d='M3 3h3v3H3zM9 9h3v3H9z'/%3E%3C/svg%3E");
-  --nc-dither-4: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' shape-rendering='crispEdges'%3E%3Cpath d='M9 3h3v3H9zM3 9h3v3H3z'/%3E%3C/svg%3E");
   --nc-dither-12: var(--nc-dither-1);
   --nc-dither-25: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' shape-rendering='crispEdges'%3E%3Cpath d='M0 0h3v3H0zM6 6h3v3H6zM6 0h3v3H6zM0 6h3v3H0z'/%3E%3C/svg%3E");
   --nc-dither-37: var(--nc-dither-25), var(--nc-dither-3);
@@ -981,11 +978,6 @@
   &[data-pressed]::after {
     content: none;
   }
-}
-/* A surface much taller than a button: a wider band, so its slant crosses the full height uncut. */
-@utility glare-tall {
-  --nc-glare-w: 240px;
-  --nc-glare-s: 0.75;
 }
 [data-reduce-motion] .glare::after {
   content: none;
