@@ -9,7 +9,7 @@ import {
   viewChild,
 } from '@angular/core';
 
-import { BANNER_REACH, BANNER_ROWS, type BannerSample, CELL, paintBanner } from '../dither-field';
+import { BANNER_REACH, type BannerSample, CELL, coverRect, paintBanner } from '../dither-field';
 import { pageGround } from '../page-ground';
 
 /** A picture, loaded to be read; none when it cannot be loaded. */
@@ -28,24 +28,21 @@ function loadPicture(src: string): Promise<HTMLImageElement | null> {
   });
 }
 
-/** A picture read one sample a cell, covering `width` cells; none when its pixels are closed. */
+/** A picture read one sample a cell, `width` cells by the reach; none when it cannot be read. */
 function sampleBanner(image: HTMLImageElement, width: number): BannerSample | null {
-  const canvas = Object.assign(document.createElement('canvas'), { width, height: BANNER_ROWS });
+  const canvas = Object.assign(document.createElement('canvas'), { width, height: BANNER_REACH });
   const context = canvas.getContext('2d', { willReadFrequently: true });
   if (!context) {
     return null;
   }
-  const scale = Math.max(width / image.width, BANNER_ROWS / image.height);
-  const drawn = { width: image.width * scale, height: image.height * scale };
-  context.drawImage(
-    image,
-    (width - drawn.width) / 2,
-    (BANNER_ROWS - drawn.height) / 2,
-    drawn.width,
-    drawn.height,
-  );
+  const drawn = coverRect(image, width, BANNER_REACH);
+  context.drawImage(image, drawn.x, drawn.y, drawn.width, drawn.height);
   try {
-    return { data: context.getImageData(0, 0, width, BANNER_ROWS).data, width, rows: BANNER_ROWS };
+    return {
+      data: context.getImageData(0, 0, width, BANNER_REACH).data,
+      width,
+      rows: BANNER_REACH,
+    };
   } catch {
     return null;
   }

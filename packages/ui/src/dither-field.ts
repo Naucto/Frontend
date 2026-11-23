@@ -130,17 +130,38 @@ export interface BannerSample {
   rows: number;
 }
 
-/** In cells: how tall the picture is laid, how far it stays whole, where the last of it goes. */
-export const BANNER_ROWS = 140;
-const BANNER_WHOLE = 100;
+/** In cells: how tall the banner is, and how far down it stays whole before it starts to go. */
 export const BANNER_REACH = 320;
+const BANNER_WHOLE = 100;
+
+/** Where a picture is drawn, in cells, to cover a box the way `object-fit: cover` does. */
+export interface CoverRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * Scales a picture to fill the whole box, centred, its overflow cut on the sides or at the top and
+ * bottom. Never stretched: a picture of another shape than the box loses its edges, not its shape.
+ */
+export function coverRect(
+  picture: { width: number; height: number },
+  width: number,
+  rows: number,
+): CoverRect {
+  const scale = Math.max(width / picture.width, rows / picture.height);
+  const drawn = { width: picture.width * scale, height: picture.height * scale };
+  return { x: (width - drawn.width) / 2, y: (rows - drawn.height) / 2, ...drawn };
+}
 
 /**
  * Paints a banner into transparent RGBA pixels, `BANNER_REACH` rows of `width`: whole for its first
  * rows, then dropping out cell by cell in an ordered dither until nothing is left, so whatever lies
- * under it shows through the holes. Below the picture its last row runs on, so the fade carries its
- * colours rather than a cut. Every cell it keeps is the picture's colour pulled toward the ground,
- * so text over it reads as on the page.
+ * under it shows through the holes. Every cell it keeps is the picture's colour pulled toward the
+ * ground, so text over it reads as on the page. Rows past a sample shorter than the reach stay
+ * clear: a row is never repeated to fill the box.
  */
 export function paintBanner(
   data: Uint8ClampedArray,
@@ -150,9 +171,9 @@ export function paintBanner(
   dark: boolean,
 ): void {
   const pull = dark ? 0.55 : 0.6;
-  for (let y = 0; y < BANNER_REACH; y++) {
+  for (let y = 0; y < Math.min(BANNER_REACH, banner.rows); y++) {
     const share = y < BANNER_WHOLE ? 1 : 1 - (y - BANNER_WHOLE) / (BANNER_REACH - BANNER_WHOLE);
-    const row = Math.min(y, banner.rows - 1) * banner.width;
+    const row = y * banner.width;
     const matrix = BAYER_8[y & 7];
     for (let x = 0; x < Math.min(width, banner.width); x++) {
       if (share <= ((matrix?.[x & 7] ?? 0) + 0.5) / 64) {
