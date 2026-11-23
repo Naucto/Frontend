@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
-import { ButtonDirective } from '@naucto/ui';
+import { ArrowLinkDirective } from '@naucto/ui';
 
 import { FeaturesService } from '../../core/config/features.service';
 
@@ -11,7 +11,7 @@ import { FeaturesService } from '../../core/config/features.service';
  */
 @Component({
   selector: 'nc-privacy-page',
-  imports: [TranslocoDirective, RouterLink, ButtonDirective],
+  imports: [TranslocoDirective, RouterLink, ArrowLinkDirective],
   templateUrl: './privacy.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

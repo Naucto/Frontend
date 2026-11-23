@@ -1,9 +1,7 @@
 <section *transloco="let t" class="mx-auto w-full max-w-[760px]">
   <h1 class="font-display text-display text-ink">{{ t('privacy.title') }}</h1>
   <p class="mt-1 text-body leading-[1.6] text-ink-2">{{ t('privacy.intro') }}</p>
-  <a ncButton variant="primary" size="lg" routerLink="/settings/privacy" class="mt-2">
-    {{ t('privacy.rightsLink') }}
-  </a>
+  <a ncArrowLink routerLink="/settings/privacy" class="mt-1.5">{{ t('privacy.rightsLink') }}</a>
 
   <h2 class="mt-4 mb-1.5 font-display text-title text-ink">{{ t('privacy.acceptedTitle') }}</h2>
   @for (item of accepted; track item) {
