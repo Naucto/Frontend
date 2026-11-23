@@ -32,6 +32,13 @@ describe('tokens.css', () => {
 
   // The light palette is declared twice — once for the explicit toggle, once for the OS preference
   // — and nothing but this test keeps the two copies identical.
+  // A shelf builds the name of each dim layer's mask from its index, so no search finds the four.
+  it('declares the four disjoint dither pairs a shelf fades its dim layers in by', () => {
+    for (const step of [1, 2, 3, 4]) {
+      expect(dark[`--nc-dither-${String(step)}`], `--nc-dither-${String(step)}`).toBeDefined();
+    }
+  });
+
   it('keeps the explicit light theme and the OS-preference theme identical', () => {
     expect(auto).toEqual(light);
   });
