@@ -4,7 +4,6 @@ import { type ActionInput, type GameAction, touchControlsOf } from '@naucto/engi
 import { ButtonDirective, ChipComponent, MarkComponent, TableDirective } from '@naucto/ui';
 
 import { readJson, STORAGE_KEYS, writeJson } from '../../core/storage/local-storage';
-import { usesTwoKeyboards } from '../../shared/input/action-inputs.component';
 import { coarsePointer } from '../../shared/input/coarse-pointer';
 import { InputCapComponent } from '../../shared/input/input-cap.component';
 import { PLAYER_TONES } from '../../shared/input/player-tone';
@@ -82,7 +81,8 @@ export class HowToPlayComponent {
     if (this.touch) {
       return [TOUCH];
     }
-    return usesTwoKeyboards(this.actions()) ? TWO_KEYBOARDS : ONE_KEYBOARD;
+    const second = keysOf(1);
+    return this.actions().some((action) => second(action).length) ? TWO_KEYBOARDS : ONE_KEYBOARD;
   });
   protected readonly tables = computed(() => {
     const actions = this.actions();

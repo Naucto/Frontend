@@ -383,7 +383,6 @@
   },
   "input": {
     "or": "or",
-    "player": "Player {{n}}",
     "gamepad": "Gamepad",
     "key": {
       "space": "Space",
