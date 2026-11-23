@@ -269,6 +269,7 @@
       <nc-help-dot actions [title]="t('editor.art.flags')" [text]="t('editor.art.flagsHelp')" />
       <nc-presence-surface surface="art:flags" />
       <nc-bit-flags
+        fill
         [value]="flags()"
         (valueChange)="setFlags($event)"
         [label]="t('editor.art.flags')" />

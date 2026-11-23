@@ -1,4 +1,7 @@
-<div role="group" [attr.aria-label]="label()" class="inline-flex items-start">
+<div
+  role="group"
+  [attr.aria-label]="label()"
+  [class]="fill() ? 'flex items-start' : 'inline-flex items-start'">
   @for (bit of bits; track bit) {
     <button
       type="button"

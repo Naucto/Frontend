@@ -30,7 +30,7 @@ const SET: Record<FlagAccent, string> = {
     'enabled:data-on:bevel-edge-magenta enabled:data-on:bevel-fill-magenta enabled:data-on:text-on-accent-dark',
 };
 
-const BIT = `${CELL} h-[34px] w-[28px] flex-none font-mono text-label text-ink-4`;
+const BIT = `${CELL} h-[34px] font-mono text-label text-ink-4`;
 
 /** Eight toggleable bits (sprite flags 0–7), as one row of joined cells. Value is the byte. */
 @Component({
@@ -49,10 +49,12 @@ export class BitFlagsComponent {
    * the row is also the legend. Turned off, every bit takes the primary fill.
    */
   readonly accents = input(true, { transform: booleanAttribute });
+  /** Share the width of the container between the eight cells instead of a fixed width each. */
+  readonly fill = input(false, { transform: booleanAttribute });
   protected readonly bits = [0, 1, 2, 3, 4, 5, 6, 7];
   protected bitClass(bit: number, first: boolean, last: boolean): string {
     const fill = this.accents() ? SET[FLAG_ACCENTS[bit] ?? 'jade'] : CELL_ON.primary;
-    return `${BIT} ${fill} ${joined(first, last)}`;
+    return `${BIT} ${this.fill() ? 'min-w-0 flex-1' : 'w-[28px] flex-none'} ${fill} ${joined(first, last)}`;
   }
   protected isSet(bit: number): boolean {
     return (this.value() & (1 << bit)) !== 0;

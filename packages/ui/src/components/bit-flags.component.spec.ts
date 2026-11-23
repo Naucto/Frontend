@@ -30,4 +30,12 @@ describe('BitFlagsComponent', () => {
     expect(screen.getByRole('checkbox', { name: 'Flag 1' })).toBeDisabled();
     expect(fixture.componentInstance.value()).toBe(0b0101);
   });
+
+  it('shares the width of its container between the cells when it fills', async () => {
+    await render(BitFlagsComponent, { inputs: { fill: true } });
+
+    for (const bit of screen.getAllByRole('checkbox')) {
+      expect(bit).toHaveClass('flex-1');
+    }
+  });
 });
