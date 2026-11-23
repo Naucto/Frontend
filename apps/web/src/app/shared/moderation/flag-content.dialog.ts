@@ -15,9 +15,9 @@ import {
 import { ApiError } from '../../core/api/api-errors';
 import { injectFlagContent } from '../queries/moderation.queries';
 
-export const FLAG_DETAILS_MAX = 1000;
+const FLAG_DETAILS_MAX = 1000;
 
-export const FLAG_REASONS = Object.values(ModerationReason);
+const FLAG_REASONS = Object.values(ModerationReason);
 
 /** What is being reported. `label` is how the dialog names it back to the person. */
 export interface FlagContentData {
