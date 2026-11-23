@@ -2,19 +2,20 @@ import { expect, type Locator, type Page, test } from './fixtures';
 import {
   ADA,
   ALEXIS,
+  by,
   collection,
   type CollectionsApi,
-  hubGame,
   mockCollections,
 } from './mocks/collections';
 import { release } from './mocks/game';
+import { hubGame, mockProjects } from './mocks/hub';
 import { answer, mockSignedIn } from './mocks/session';
 
 const GAMES = [
   hubGame(11, 'Hightide'),
-  hubGame(12, 'Pong Royale', ALEXIS),
+  hubGame(12, 'Pong Royale', by(ALEXIS)),
   hubGame(13, 'Frog Hop'),
-  hubGame(14, 'Night Courier', ALEXIS),
+  hubGame(14, 'Night Courier', by(ALEXIS)),
   hubGame(42, 'Cave Diver'),
 ];
 
@@ -34,19 +35,8 @@ async function asAlexis(page: Page, api: CollectionsApi): Promise<void> {
   api.viewer = ALEXIS.id;
 }
 
-const project = (id: number, name: string, published: boolean): Record<string, unknown> => ({
-  ...hubGame(id, name, ALEXIS),
-  palette: [],
-  publishedAt: published ? '2026-09-01T00:00:00.000Z' : null,
-});
-
-/** The viewer's own projects, as My games asks for them. */
-async function mockProjects(page: Page, projects: Record<string, unknown>[]): Promise<void> {
-  await page.route(
-    /\/projects\?/,
-    answer(200, { projects, total: projects.length, page: 1, limit: 100 }),
-  );
-}
+const project = (id: number, name: string, published: boolean): Record<string, unknown> =>
+  hubGame(id, name, { ...by(ALEXIS), ...(published ? {} : { publishedAt: null }) });
 
 test.describe('a collection page', () => {
   test('shows a reader the box, its games in order, and a link to hand on', async ({
@@ -232,7 +222,7 @@ test.describe('creating, editing and deleting', () => {
   }) => {
     const api = await mockCollections(page, GAMES, { collections: [couch()] });
     await asAlexis(page, api);
-    await mockProjects(page, []);
+    await mockProjects(page);
     await page.goto('/games');
 
     await page.getByTestId('new-collection').click();
@@ -284,7 +274,7 @@ test.describe('creating, editing and deleting', () => {
       limits: { collections: 1, games: 200 },
     });
     await asAlexis(page, api);
-    await mockProjects(page, []);
+    await mockProjects(page);
     await page.goto('/games');
 
     await page.getByTestId('new-collection').click();
@@ -514,7 +504,7 @@ test.describe('my games', () => {
   }) => {
     const api = await mockCollections(page, GAMES);
     await asAlexis(page, api);
-    await mockProjects(page, []);
+    await mockProjects(page);
     await page.goto('/games');
 
     await expect(

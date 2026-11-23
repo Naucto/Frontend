@@ -38,33 +38,8 @@ export interface CollectionsApi {
 export const ALEXIS: Person = { id: 1, username: 'alexis' };
 export const ADA: Person = { id: 7, username: 'ada' };
 
-/** A game on the hub, as a collection lists it. */
-export function hubGame(id: number, name: string, creator: Person = ADA): Record<string, unknown> {
-  return {
-    id,
-    name,
-    shortDesc: `What ${name} is.`,
-    longDesc: null,
-    tags: ['arcade'],
-    iconUrl: null,
-    coverUrl: null,
-    clipUrl: null,
-    disk: null,
-    status: 'COMPLETED',
-    monetization: 'NONE',
-    price: null,
-    userId: creator.id,
-    createdAt: '2026-09-01T00:00:00.000Z',
-    updatedAt: '2026-09-01T00:00:00.000Z',
-    publishedAt: '2026-09-01T00:00:00.000Z',
-    viewCount: 10 * id,
-    uniquePlayers: id,
-    likes: id,
-    commentCount: 0,
-    collaborators: [],
-    creator,
-  };
-}
+/** What makes a game of `hubGame` this person's: passed as what it overrides. */
+export const by = (creator: Person): Record<string, unknown> => ({ userId: creator.id, creator });
 
 export function collection(
   id: string,

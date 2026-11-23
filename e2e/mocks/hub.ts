@@ -34,6 +34,23 @@ export const hubGame = (
   ...over,
 });
 
+/** The signed-in reader's own projects, as My games and the hub's own shelf ask for them. */
+export async function mockProjects(
+  page: Page,
+  projects: Record<string, unknown>[] = [],
+): Promise<void> {
+  await page.route(/\/projects\?/, (route) =>
+    route.fulfill({
+      json: {
+        projects,
+        total: projects.length,
+        page: 1,
+        limit: Number(new URL(route.request().url()).searchParams.get('limit')),
+      },
+    }),
+  );
+}
+
 /** `count` games called `<name> 1`…, numbered from `from`. */
 export const games = (
   count: number,
