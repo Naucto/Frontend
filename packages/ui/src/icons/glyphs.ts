@@ -229,6 +229,7 @@ export const MARK_GLYPHS = {
   enter: '50848f84000',
   expand: '520508800f8',
   'file-plus': '5f8d888d8f8',
+  flag: '5f8f0f88080',
   'flip-horizontal': '52088d88820',
   'flip-vertical': '57020882070',
   gamepad: '50070a8f888',
