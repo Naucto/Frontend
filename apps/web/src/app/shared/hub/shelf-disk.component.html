@@ -14,7 +14,11 @@
     [likes]="game().likes"
     [comments]="game().commentCount ?? null"
     [action]="action()"
-    [open]="open()" />
+    [open]="open()">
+    @if (game().hiddenAt) {
+      <nc-chip *transloco="let t" tone="hot">{{ t('games.hidden') }}</nc-chip>
+    }
+  </nc-floppy>
   @if (named()) {
     <nc-disk-name>{{ game().name }}</nc-disk-name>
   }

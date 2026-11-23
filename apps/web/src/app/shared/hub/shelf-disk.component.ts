@@ -6,6 +6,8 @@ import {
   input,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { TranslocoDirective } from '@jsverse/transloco';
+import { ChipComponent } from '@naucto/ui';
 
 import { DiskNameComponent } from '../game-card/disk-name.component';
 import { diskStyleFor } from '../game-card/disk-style';
@@ -13,12 +15,13 @@ import { type FloppyAction, FloppyComponent } from '../game-card/floppy.componen
 import type { HubGame } from './hub-game';
 
 /**
- * A game on a shelf: its disk inside the link that opens it. `open` and `flyoutId` are what the
- * shelf hands each item, and make the link say whether its flyout is showing and which it is.
+ * A game on a shelf: its disk inside the link that opens it, marked Hidden while moderation
+ * withholds it. `open` and `flyoutId` are what the shelf hands each item, and make the link say
+ * whether its flyout is showing and which it is.
  */
 @Component({
   selector: 'nc-shelf-disk',
-  imports: [RouterLink, DiskNameComponent, FloppyComponent],
+  imports: [RouterLink, TranslocoDirective, ChipComponent, DiskNameComponent, FloppyComponent],
   templateUrl: './shelf-disk.component.html',
   host: { class: 'block' },
   changeDetection: ChangeDetectionStrategy.OnPush,

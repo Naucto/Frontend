@@ -15,6 +15,8 @@ export interface HubGame {
   clipUrl?: string | null;
   /** How its author dressed the disk; without it the disk keeps a plastic of its own. */
   disk?: DiskStyle | null;
+  /** Since when moderation withholds it. Only its owner's own shelves are handed such a game. */
+  hiddenAt?: string | null;
 }
 
 export interface SessionPlayer {
