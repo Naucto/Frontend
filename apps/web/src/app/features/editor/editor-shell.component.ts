@@ -19,6 +19,7 @@ import { computeSizeReport, KEYS } from '@naucto/engine';
 import {
   ButtonDirective,
   DialogService,
+  DisabledScopeDirective,
   ErrorStateComponent,
   IconComponent,
   LcdComponent,
@@ -32,7 +33,6 @@ import {
 import { filter } from 'rxjs';
 
 import { ActivityService } from '../../core/analytics/activity.service';
-import { AuthStore } from '../../core/auth/auth.store';
 import { PresenceStore } from '../../core/presence/presence.store';
 import { FeedbackStore } from '../../shared/feedback/feedback.store';
 import { ReportProblemButtonComponent } from '../../shared/feedback/report-problem-button.component';
@@ -55,6 +55,7 @@ import { MapStore } from './map/map.store';
 import { OpenOnDesktopComponent } from './open-on-desktop.component';
 import { SoundStore } from './sound/sound.store';
 import { ClipboardStore } from './state/clipboard.store';
+import { EditorModeService } from './state/editor-mode.service';
 import { EditorRuntimeService } from './state/editor-runtime.service';
 import {
   CONSOLE_WIDTH,
@@ -66,7 +67,7 @@ import {
 import { HostElectionService } from './work-session/host-election.service';
 import { SessionPresenceService } from './work-session/session-presence.service';
 import { SessionSaveService } from './work-session/session-save.service';
-import { type PreviewKind, WorkSessionService } from './work-session/work-session.service';
+import { WorkSessionService } from './work-session/work-session.service';
 
 const TABS: readonly EditorTab[] = ['game', 'code', 'art', 'map', 'sound', 'net'];
 const isTab = (segment: string | undefined): segment is EditorTab =>
@@ -93,6 +94,7 @@ const RAIL: Omit<RailItem<EditorTab>, 'label'>[] = [
     TranslocoDirective,
     UserAvatarComponent,
     ButtonDirective,
+    DisabledScopeDirective,
     ErrorStateComponent,
     IconComponent,
     LcdComponent,
@@ -111,6 +113,7 @@ const RAIL: Omit<RailItem<EditorTab>, 'label'>[] = [
     ThemeSwitchComponent,
   ],
   providers: [
+    EditorModeService,
     WorkSessionService,
     SessionSaveService,
     HostElectionService,
@@ -137,27 +140,17 @@ const RAIL: Omit<RailItem<EditorTab>, 'label'>[] = [
 })
 export default class EditorShellComponent implements OnInit {
   readonly id = input.required({ transform: numberAttribute });
-  /** Route data: set on the staff route, where the editor opens someone's game to look at. */
-  readonly preview = input<'staff'>();
   protected readonly String = String;
-  private readonly auth = inject(AuthStore);
-  /**
-   * Whose game a read-only editor shows, or null for the editor proper. A suspended account opens
-   * its own game the same way staff open anyone's: to look at, with nothing saved.
-   */
-  private readonly previewKind = computed<PreviewKind | null>(() => {
-    if (this.preview() === 'staff') {
-      return 'staff';
-    }
-    return this.auth.suspension() ? 'own' : null;
-  });
+  /** Why the game is only looked at, for the band to say; null in the editor proper. */
   protected readonly bandKey = computed(() => {
-    if (!this.session.readOnly()) {
-      return null;
+    switch (this.session.preview()) {
+      case 'staff':
+        return 'moderation.preview.editorBand';
+      case 'own':
+        return 'moderation.preview.suspendedEditor';
+      default:
+        return null;
     }
-    return this.preview() === 'staff'
-      ? 'moderation.preview.editorBand'
-      : 'moderation.preview.suspendedEditor';
   });
   private readonly presence = inject(PresenceStore);
   private readonly activity = inject(ActivityService);
@@ -165,6 +158,7 @@ export default class EditorShellComponent implements OnInit {
   private readonly docRequests = inject(DocRequestService);
   private readonly editorRuntime = inject(EditorRuntimeService);
   protected readonly session = inject(WorkSessionService);
+  protected readonly mode = inject(EditorModeService);
   private readonly saves = inject(SessionSaveService);
   private readonly sessionPresence = inject(SessionPresenceService);
   protected readonly ui = inject(EditorUiStore);
@@ -182,8 +176,14 @@ export default class EditorShellComponent implements OnInit {
    * They live in the document long before they reach the server, so a gate reading the server's
    * copy called a summary missing while its author was looking at the one they had just typed.
    */
-  private readonly draftName = yTextField(this.session.doc.getText(KEYS.projectName));
-  private readonly draftSummary = yTextField(this.session.doc.getText(KEYS.shortDescription));
+  private readonly draftName = yTextField(
+    this.session.game,
+    this.session.doc.getText(KEYS.projectName),
+  );
+  private readonly draftSummary = yTextField(
+    this.session.game,
+    this.session.doc.getText(KEYS.shortDescription),
+  );
   /** Moves, debounced, with any change to the document, which no signal reports by itself. */
   private readonly docTick = signal(0);
   /**
@@ -247,24 +247,23 @@ export default class EditorShellComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Read once: a session is one or the other for as long as it lives.
-    const kind = this.previewKind();
-    void (kind ? this.session.openPreview(this.id(), kind) : this.session.open(this.id()));
+    void this.session.open(this.id());
   }
 
   constructor() {
     const openedAt = Date.now();
     inject(DestroyRef).onDestroy(() => {
       // Looking at a game is not a session of making one, so it earns no rating prompt.
-      if (!this.session.readOnly()) {
+      if (!this.session.preview()) {
         this.feedback.noteEditorLeft(Date.now() - openedAt);
       }
     });
     // BUILDING presence, so a friend sees "building Ferry Click" while the editor is open.
     effect((onCleanup) => {
       const projectId = this.id();
-      // A preview builds nothing: friends are not told, and the activity is not claimed.
-      if (this.previewKind()) {
+      // Only once the session is open as a live one: until then it may still turn out to be a
+      // game looked at, which builds nothing, so friends are not told and no activity is claimed.
+      if (this.session.status() !== 'ready' || this.session.preview()) {
         return;
       }
       this.presence.announce({ kind: 'BUILDING', projectId });
@@ -325,11 +324,7 @@ export default class EditorShellComponent implements OnInit {
     if (!tab) {
       return;
     }
-    void this.router.navigate([
-      this.preview() === 'staff' ? '/staff/edit' : '/edit',
-      this.id(),
-      tab,
-    ]);
+    void this.router.navigate(['/edit', this.id(), tab]);
   }
 
   protected share(): void {
@@ -361,7 +356,7 @@ export default class EditorShellComponent implements OnInit {
 
   /** Whether the session opened at all: the header offers SHARE and PUBLISH only then. */
   protected readonly live = computed(
-    () => this.session.status() === 'ready' && !this.session.readOnly(),
+    () => this.session.status() === 'ready' && !this.session.preview(),
   );
 
   /** Collaborators other than us, for the presence stack. */

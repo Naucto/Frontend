@@ -55,7 +55,7 @@
     @if (bandKey(); as key) {
       <nc-notice variant="band" tone="warn" data-testid="read-only-band">{{ t(key) }}</nc-notice>
     }
-    @if (hidden() && !session.readOnly()) {
+    @if (hidden() && !session.preview()) {
       <nc-notice variant="band" tone="danger">
         {{ t('editor.hiddenBand') }}
         <a actions ncButton variant="ghost" size="sm" routerLink="/settings/standing">
@@ -78,7 +78,9 @@
               [value]="ui.activeTab()"
               (valueChange)="go($event)"
               [label]="t('editor.tools')" />
-            <section class="min-h-0 overflow-auto">
+            <!-- The one place a session that may not be written closes its controls: every tab
+                 is routed under it. -->
+            <section class="min-h-0 overflow-auto" [ncDisabledScope]="!mode.canWrite()">
               <router-outlet />
             </section>
             <nc-panel-region

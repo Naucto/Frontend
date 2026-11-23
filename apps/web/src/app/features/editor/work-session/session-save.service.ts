@@ -41,8 +41,8 @@ export interface SavedSession {
   readonly project: WritableSignal<ProjectExResponseDto | null>;
   /** Open for writing: false while the session loads, and again once it has failed or closed. */
   readonly ready: Signal<boolean>;
-  /** A copy to look at: nothing of it is ever written to the server. */
-  readonly readOnly: Signal<boolean>;
+  /** Set for a game loaded once to be looked at: nothing of it is ever written to the server. */
+  readonly preview: Signal<string | null>;
   /** The document as the server stores it. */
   snapshot(): Blob;
 }
@@ -145,8 +145,8 @@ export class SessionSaveService {
    */
   async save(opts: { keepalive?: boolean; force?: boolean } = {}): Promise<void> {
     const session = this.attached;
-    // Before anything else, and whatever `force` says: a preview has no save at all.
-    if (!session || session.readOnly()) {
+    // Before anything else, and whatever `force` says: a game looked at has no save at all.
+    if (!session || session.preview()) {
       return;
     }
     if ((!this.election.isHost() && !opts.force) || !session.ready()) {
@@ -211,8 +211,8 @@ export class SessionSaveService {
   }
 
   private readonly onDocUpdate = (_update: Uint8Array, origin: unknown): void => {
-    // In a preview an edit is nobody's unsaved work: there is nothing it could be saved to.
-    if (origin === 'remote-init' || this.attached?.readOnly()) {
+    // In a game looked at a change is nobody's unsaved work: there is nothing to save it to.
+    if (origin === 'remote-init' || this.attached?.preview()) {
       return;
     }
     this.edits++;
@@ -254,7 +254,7 @@ export class SessionSaveService {
 
   async saveCheckpoint(name: string): Promise<void> {
     const session = this.session;
-    if (session.readOnly()) {
+    if (session.preview()) {
       return;
     }
     unwrap(

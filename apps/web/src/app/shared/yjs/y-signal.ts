@@ -1,5 +1,5 @@
 import { DestroyRef, inject, type Signal, signal, type WritableSignal } from '@angular/core';
-import { LOCAL_ORIGIN } from '@naucto/engine';
+import type { EditableGame } from '@naucto/engine';
 import type * as Y from 'yjs';
 
 /** A read-only signal kept in sync from a Yjs observer; unsubscribes with the injector. */
@@ -32,8 +32,14 @@ export function yVersion(type: {
   return version.asReadonly();
 }
 
-/** Two-way binding to a Y.Text used as a plain string field (name, description…). */
-export function yTextField(text: Y.Text): WritableSignal<string> {
+/**
+ * Two-way binding to a Y.Text used as a plain string field (name, description…). It writes
+ * through the game's gate: refused, the field keeps the value the document holds.
+ */
+export function yTextField(
+  game: Pick<EditableGame, 'transact'>,
+  text: Y.Text,
+): WritableSignal<string> {
   const state = signal(text.toString());
   // The observer and the public setter both write here, and the setter below is installed after
   // the observer is registered: a remote edit must not be judged by the setter's guard, which
@@ -50,13 +56,15 @@ export function yTextField(text: Y.Text): WritableSignal<string> {
     if (value === text.toString()) {
       return;
     }
-    text.doc?.transact(() => {
+    const written = game.transact(() => {
       text.delete(0, text.length);
       if (value) {
         text.insert(0, value);
       }
-    }, LOCAL_ORIGIN);
-    original(value);
+    });
+    if (written) {
+      original(value);
+    }
   };
   state.update = (fn: (value: string) => string): void => {
     state.set(fn(state()));

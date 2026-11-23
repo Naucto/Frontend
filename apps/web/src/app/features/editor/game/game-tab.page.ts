@@ -38,10 +38,22 @@ export default class GameTabPage {
   private readonly transloco = inject(TranslocoService);
 
   protected readonly view = signal<GameView>('details');
-  protected readonly name = yTextField(this.session.doc.getText(KEYS.projectName));
-  protected readonly summary = yTextField(this.session.doc.getText(KEYS.shortDescription));
-  protected readonly description = yTextField(this.session.doc.getText(KEYS.longDescription));
-  private readonly tagsRaw = yTextField(this.session.doc.getText(KEYS.projectTags));
+  protected readonly name = yTextField(
+    this.session.game,
+    this.session.doc.getText(KEYS.projectName),
+  );
+  protected readonly summary = yTextField(
+    this.session.game,
+    this.session.doc.getText(KEYS.shortDescription),
+  );
+  protected readonly description = yTextField(
+    this.session.game,
+    this.session.doc.getText(KEYS.longDescription),
+  );
+  private readonly tagsRaw = yTextField(
+    this.session.game,
+    this.session.doc.getText(KEYS.projectTags),
+  );
   protected readonly tags = computed(() => parseTags(this.tagsRaw()));
   private readonly actionCount = ySignal(
     () => this.session.game.actions.length,

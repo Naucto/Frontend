@@ -13,7 +13,7 @@ import GameTabPage from './game-tab.page';
   selector: 'nc-game-route-page',
   imports: [GamePreviewComponent, GameTabPage],
   template: `
-    @if (session.readOnly()) {
+    @if (session.preview()) {
       <nc-game-preview />
     } @else {
       <nc-game-tab-page />

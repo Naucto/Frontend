@@ -7,11 +7,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
 
 import { ProjectRouteReuseStrategy } from '../../app.config';
-import { AuthStore } from '../../core/auth/auth.store';
 import { PresenceStore } from '../../core/presence/presence.store';
 import { installMemoryStorage } from '../../testing/memory-storage';
 import { testProviders } from '../../testing/providers';
 import EditorShellComponent from './editor-shell.component';
+import { EditorModeService } from './state/editor-mode.service';
 import { EditorRuntimeService } from './state/editor-runtime.service';
 import { EditorUiStore } from './state/editor-ui.store';
 import { SessionPresenceService } from './work-session/session-presence.service';
@@ -30,21 +30,19 @@ describe('EditorShellComponent', () => {
     error: signal<string | null>(null),
     project: signal(null),
     isCollaborator: signal(true),
-    readOnly: signal(false),
+    preview: signal<'staff' | 'own' | null>(null),
     open: vi.fn(() => Promise.resolve()),
-    openPreview: vi.fn(() => Promise.resolve()),
     close: vi.fn(() => Promise.resolve()),
     setTab: vi.fn(),
   };
 
-  const suspension = signal<{ since: string; until: string | null } | null>(null);
   const announce = vi.fn();
 
   beforeEach(() => {
     installMemoryStorage();
-    suspension.set(null);
+    session.status.set('ready');
+    session.preview.set(null);
     announce.mockClear();
-    session.openPreview.mockClear();
     session.open.mockClear();
     session.close.mockClear();
     session.setTab.mockClear();
@@ -62,24 +60,17 @@ describe('EditorShellComponent', () => {
       providers: [
         ...testProviders(),
         provideRouter(
-          [
-            { path: 'edit/:id', component: EditorShellComponent },
-            {
-              path: 'staff/edit/:id',
-              component: EditorShellComponent,
-              data: { preview: 'staff' },
-            },
-          ],
+          [{ path: 'edit/:id', component: EditorShellComponent }],
           withComponentInputBinding(),
         ),
         { provide: RouteReuseStrategy, useClass: ProjectRouteReuseStrategy },
+        EditorModeService,
         EditorRuntimeService,
         EditorUiStore,
         { provide: WorkSessionService, useValue: session },
         { provide: SessionSaveService, useValue: {} },
         { provide: SessionPresenceService, useValue: { collaborators: signal([]) } },
         { provide: PresenceStore, useValue: { announce } },
-        { provide: AuthStore, useValue: { suspension } },
         { provide: DialogService, useValue: { open: vi.fn() } },
         { provide: ToastService, useValue: { show: vi.fn() } },
       ],
@@ -103,27 +94,24 @@ describe('EditorShellComponent', () => {
     expect(session.open).toHaveBeenLastCalledWith(9);
   });
 
-  it('opens a game to look at on the staff route, and tells no friend it is being built', async () => {
+  it('tells no friend a game is being built while it is only looked at', async () => {
+    session.preview.set('staff');
     const harness = await RouterTestingHarness.create();
-    await harness.navigateByUrl('/staff/edit/7', EditorShellComponent);
+    await harness.navigateByUrl('/edit/7', EditorShellComponent);
 
-    expect(session.openPreview).toHaveBeenCalledWith(7, 'staff');
-    expect(session.open).not.toHaveBeenCalled();
+    expect(session.open).toHaveBeenCalledWith(7);
     expect(announce).not.toHaveBeenCalledWith(expect.objectContaining({ kind: 'BUILDING' }));
   });
 
-  it('opens a suspended account its own game to look at', async () => {
-    suspension.set({ since: '2026-11-01T00:00:00.000Z', until: null });
+  /** Until the session is open nobody knows whether it is a live one. */
+  it('announces the game being built once the session is open as a live one, not before', async () => {
+    session.status.set('joining');
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/edit/7', EditorShellComponent);
+    expect(announce).not.toHaveBeenCalled();
 
-    expect(session.openPreview).toHaveBeenCalledWith(7, 'own');
-    expect(session.open).not.toHaveBeenCalled();
-  });
-
-  it('announces the game being built in the editor proper', async () => {
-    const harness = await RouterTestingHarness.create();
-    await harness.navigateByUrl('/edit/7', EditorShellComponent);
+    session.status.set('ready');
+    harness.detectChanges();
 
     expect(announce).toHaveBeenCalledWith({ kind: 'BUILDING', projectId: 7 });
   });
