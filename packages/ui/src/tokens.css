@@ -488,6 +488,11 @@
   inherits: false;
   initial-value: 0px;
 }
+@property --bv-shade {
+  syntax: '<length-percentage>';
+  inherits: false;
+  initial-value: 100%;
+}
 
 @layer base {
   /*
@@ -781,9 +786,9 @@
     linear-gradient(var(--bv-hi) 0 0) var(--bv-nl) 0 / var(--bv-run) var(--bv-t),
     linear-gradient(var(--bv-lo) 0 0) var(--bv-nl) calc(100% - var(--bv-rise)) / var(--bv-run)
       var(--bv-b),
-    linear-gradient(var(--bv-edge) 0 0) 0 var(--bv-nt) / var(--bv-l)
+    linear-gradient(var(--bv-edge) var(--bv-shade), var(--bv-lo) 0) 0 var(--bv-nt) / var(--bv-l)
       calc(100% - var(--bv-nt) - var(--bv-nb) - var(--bv-rise)),
-    linear-gradient(var(--bv-edge) 0 0) 100% var(--bv-nt) / var(--bv-r)
+    linear-gradient(var(--bv-edge) var(--bv-shade), var(--bv-lo) 0) 100% var(--bv-nt) / var(--bv-r)
       calc(100% - var(--bv-nt) - var(--bv-nb) - var(--bv-rise)),
     linear-gradient(var(--bv-edge) 0 0) var(--nc-px) var(--nc-px) / var(--bv-step) var(--bv-step),
     linear-gradient(var(--bv-edge) 0 0) calc(100% - var(--nc-px)) var(--nc-px) / var(--bv-step)
@@ -902,12 +907,13 @@
   --bv-skirt: var(--color-lit-skirt);
 }
 /*
- * The light catching the top edge of a shape whose fill is not a token, and the shade under its
- * bottom edge, both derived from the fill so a personal colour carries its own tint.
+ * A frame lit from above: the top line and the top quarter of each side keep the edge, the rest of
+ * the sides darkens to the bottom line's colour. It is how a person's square is framed. The quarter
+ * is rounded to a whole pixel, half up, so the step never lands between two rows.
  */
-@utility bevel-glint {
-  --bv-hi: color-mix(in srgb, var(--bv-fill) 55%, white);
-  --bv-lo: color-mix(in srgb, var(--bv-fill) 60%, black);
+@utility bevel-shade {
+  --bv-lo: var(--color-skirt);
+  --bv-shade: round(25%, 1px);
 }
 /* No frame until a state gives it one. */
 @utility bevel-bare {
