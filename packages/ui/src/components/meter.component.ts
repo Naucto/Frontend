@@ -19,7 +19,7 @@ export class MeterComponent {
   readonly max = input.required<number>();
   readonly label = input<string>();
   readonly legend = input(true);
-  /** `md` is the 16px track of the size budget; `sm` the 12px inline bar. */
+  /** `md` is the 16px track of the size budget; `sm` the 12px inline bar. Neither pads: the fill meets the frame. */
   readonly size = input<'sm' | 'md'>('sm');
 
   protected readonly total = computed(() =>
@@ -29,7 +29,7 @@ export class MeterComponent {
   protected readonly trackClass = computed(() =>
     [
       'flat-sm bevel-fill-inset flex w-full gap-[3px]',
-      this.size() === 'md' ? 'h-[16px] p-[3px]' : 'h-[12px]',
+      this.size() === 'md' ? 'h-[16px]' : 'h-[12px]',
       this.over() ? 'bevel-edge-hot' : '',
     ].join(' '),
   );
