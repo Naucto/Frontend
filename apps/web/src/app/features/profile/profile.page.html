@@ -113,7 +113,11 @@
           <div
             class="group relative mt-[6px] flex max-w-[560px] items-center gap-1.5 text-body tracking-copy text-ink-3">
             <span>
-              {{ profile.description || '@' + profile.username }}
+              @if (profile.description) {
+                {{ profile.description }}
+              } @else {
+                <span class="font-mono">&#64;{{ profile.username }}</span>
+              }
               @if (joined(); as year) {
                 · {{ t('profile.joined', { year: year }) }}
               }

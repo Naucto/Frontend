@@ -3,5 +3,5 @@
        console's own grid art keeps nearest-neighbour where that belongs. -->
   <img [src]="src()" [alt]="name()" class="h-full w-full object-cover" />
 } @else {
-  <span aria-hidden="true">{{ initial() }}</span>
+  <span aria-hidden="true" class="font-mono">{{ initial() }}</span>
 }

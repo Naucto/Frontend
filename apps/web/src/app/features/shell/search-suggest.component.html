@@ -69,7 +69,7 @@
                 [id]="person.id"
                 [name]="person.nickname ?? person.username"
                 [src]="person.profileImageUrl ?? null" />
-              <span class="min-w-0 flex-1 truncate text-body text-ink">
+              <span class="min-w-0 flex-1 truncate font-mono text-body text-ink">
                 <nc-highlight [text]="person.username" [match]="parsed().term" />
               </span>
               @let doing = presenceOf(person);

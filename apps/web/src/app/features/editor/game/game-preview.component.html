@@ -41,7 +41,9 @@
         <nc-label class="mb-0.5">{{ t('moderation.preview.collaborators') }}</nc-label>
         <p class="flex flex-wrap gap-x-1.5 gap-y-0.5 text-body">
           @for (collaborator of project.collaborators; track collaborator.id) {
-            <a [routerLink]="['/u', collaborator.username]" class="text-ink hover:text-gold-ink">
+            <a
+              [routerLink]="['/u', collaborator.username]"
+              class="font-mono text-ink hover:text-gold-ink">
               {{ collaborator.username }}
             </a>
           }

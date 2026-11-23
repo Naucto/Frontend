@@ -3,7 +3,7 @@
     @for (person of people(); track person.id) {
       <li class="flex items-center gap-1 py-1">
         <nc-user-avatar [userId]="person.id" [name]="person.username" [size]="24" />
-        <span class="text-ui text-ink">{{ person.username }}</span>
+        <span class="font-mono text-ui text-ink">{{ person.username }}</span>
         @if (person.isCreator) {
           <span class="label text-gold-ink">{{ t('share.creator') }}</span>
         }

@@ -12,9 +12,10 @@
   </nc-setting-row>
   <nc-setting-row [title]="t('settings.handle')" [hint]="t('settings.handleHint')">
     <span class="flex w-[224px] max-w-full items-center gap-1">
-      <span class="text-ui text-ink-4">&#64;</span>
+      <span class="font-mono text-ui text-ink-4">&#64;</span>
       <input
         ncInput
+        class="font-mono"
         [value]="handle()"
         maxlength="24"
         spellcheck="false"
