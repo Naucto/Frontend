@@ -94,16 +94,25 @@ test('the hero pile moves one disk for a turn of the wheel and keeps the page st
   const hero = page.getByTestId('hero-pile');
   await expect(hero.getByRole('status')).toContainText('1 of 4: High Tide Plinko');
 
-  await hero.getByRole('button', { name: 'Play High Tide Plinko' }).hover();
-  const before = await page.evaluate(() => window.scrollY);
-  for (let turn = 0; turn < 6; turn++) {
-    await page.mouse.wheel(0, 20);
-  }
+  // One turn is several wheel events in a row. They are sent from the page in one go: sent one
+  // call at a time, a slow machine spreads them past the pile's lock and it reads two turns.
+  const claimed = await hero
+    .getByRole('button', { name: 'Play High Tide Plinko' })
+    .evaluate((under) =>
+      Array.from(
+        { length: 6 },
+        () =>
+          !under.dispatchEvent(
+            new WheelEvent('wheel', { deltaY: 20, bubbles: true, cancelable: true }),
+          ),
+      ),
+    );
 
   await expect(hero.getByRole('status')).toContainText('2 of 4: Night Survivors');
   await expect(hero.getByRole('button', { name: 'Play Night Survivors' })).toBeVisible();
   await expect(hero.locator('h2')).toHaveText('Night Survivors');
-  expect(await page.evaluate(() => window.scrollY)).toBe(before);
+  // The pile keeps every event of the turn to itself, so none of them scrolls the page.
+  expect(claimed).toEqual([true, true, true, true, true, true]);
 });
 
 test('a collection box fans its disks out under the mouse and brings a pressed one to the crown', async ({
