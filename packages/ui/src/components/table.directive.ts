@@ -8,7 +8,7 @@ const FRAME =
 const BANDS = '[&_tbody_tr:nth-child(odd)]:bg-inset';
 
 const HEAD =
-  '[&_thead_th]:py-1 [&_thead_th]:font-mono [&_thead_th]:text-label [&_thead_th]:font-normal [&_thead_th]:tracking-label [&_thead_th]:whitespace-nowrap [&_thead_th]:text-ink-3 [&_thead_th]:uppercase';
+  '[&_thead_th]:py-1 [&_thead_th]:text-label [&_thead_th]:font-normal [&_thead_th]:tracking-label [&_thead_th]:whitespace-nowrap [&_thead_th]:text-ink-3 [&_thead_th]:uppercase';
 
 /** A row is named by its `th`, whose `small` is the line under the name. */
 const ROWS =
@@ -21,7 +21,7 @@ const CELLS =
   '[&_td]:px-1 [&_td]:align-middle [&_th]:px-1 [&_th]:align-middle sm:[&_td]:px-1.5 sm:[&_th]:px-1.5';
 
 const CAPTION =
-  '[&_caption]:pb-1 [&_caption]:text-left [&_caption]:font-mono [&_caption]:text-label [&_caption]:tracking-label [&_caption]:text-ink-3 [&_caption]:uppercase';
+  '[&_caption]:pb-1 [&_caption]:text-left [&_caption]:text-label [&_caption]:tracking-label [&_caption]:text-ink-3 [&_caption]:uppercase';
 
 /**
  * A table: a head row of labels, rows named by their first cell, cells that line up. No rule is
