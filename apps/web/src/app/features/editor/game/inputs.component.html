@@ -4,7 +4,13 @@
     <nc-chip>{{ t('editor.game.count', { n: actions().length, max: MAX_ACTIONS }) }}</nc-chip>
     <nc-help-dot [title]="t('editor.game.inputs.actions')" [text]="t('editor.game.inputs.help')" />
     <span class="flex-1"></span>
-    <button ncButton size="sm" [pressed]="pane() === 'touch'" (click)="togglePane('touch')">
+    <!-- The pad a phone would get is there to be looked at. -->
+    <button
+      ncButton
+      ncLooksOnly
+      size="sm"
+      [pressed]="pane() === 'touch'"
+      (click)="togglePane('touch')">
       <nc-mark name="device-phone" />
       {{ t('editor.game.inputs.touchPad') }}
     </button>
@@ -50,7 +56,8 @@
           @for (preset of PRESETS; track preset.id) {
             <button
               type="button"
-              class="grid cursor-pointer content-start gap-0.75 raised-sm p-1.5 text-left hover:bevel-lit active:bevel-down"
+              class="grid cursor-pointer content-start gap-0.75 raised-sm p-1.5 text-left enabled:hover:bevel-lit enabled:active:bevel-down disabled:cursor-not-allowed disabled:bevel-level disabled:bevel-edge-line disabled:bevel-fill-transparent"
+              [disabled]="closed()"
               (click)="applyPreset(preset.id)">
               <span class="flex items-center justify-between gap-1">
                 <span class="text-ui text-ink">{{ t('editor.game.preset.' + preset.id) }}</span>
@@ -84,8 +91,8 @@
           @for (action of actions(); track action.id; let i = $index) {
             @let on = action.id === openId();
             <tr
-              draggable="true"
-              class="cursor-grab"
+              [attr.draggable]="!closed()"
+              [class.cursor-grab]="!closed()"
               [class]="rowClass(action, i)"
               [attr.data-action]="action.id"
               (dragstart)="dragStart($event, action)"

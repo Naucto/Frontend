@@ -18,6 +18,7 @@ import {
 } from '@naucto/api-client';
 import {
   ChipComponent,
+  closedBy,
   DialogService,
   FieldComponent,
   formatBytes,
@@ -92,6 +93,11 @@ export class DetailsComponent {
   protected readonly coverAccept = COVER_TYPES.join(',');
 
   protected readonly session = inject(WorkSessionService);
+  /**
+   * The actions along the foot of the cover and of the clip are drawn here and not by the kit,
+   * so they ask the scope themselves.
+   */
+  protected readonly closed = closedBy(() => false);
   protected readonly recorder = inject(ClipRecorder);
   private readonly saves = inject(SessionSaveService);
   private readonly runtime = inject(RuntimeHostService);
@@ -164,7 +170,7 @@ export class DetailsComponent {
   }
 
   protected async dropCover(file: File): Promise<void> {
-    if (COVER_TYPES.includes(file.type)) {
+    if (COVER_TYPES.includes(file.type) && !this.closed()) {
       await this.uploadCover(file);
     }
   }

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { KEYS } from '@naucto/engine';
-import { type TabItem, TabsComponent } from '@naucto/ui';
+import { LooksOnlyDirective, type TabItem, TabsComponent } from '@naucto/ui';
 
 import { ySignal, yTextField } from '../../../shared/yjs/y-signal';
 import { parseTags } from '../state/project-tags';
@@ -22,6 +22,7 @@ type GameView = 'details' | 'disk' | 'inputs';
   selector: 'nc-game-tab-page',
   imports: [
     TranslocoDirective,
+    LooksOnlyDirective,
     TabsComponent,
     DetailsComponent,
     DiskBenchComponent,

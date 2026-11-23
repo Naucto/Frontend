@@ -24,11 +24,13 @@ import {
 import {
   ButtonDirective,
   ChipComponent,
+  closedBy,
   DialogService,
   HelpDotComponent,
   IconComponent,
   KeycapComponent,
   LabelComponent,
+  LooksOnlyDirective,
   MarkComponent,
   TableDirective,
 } from '@naucto/ui';
@@ -76,6 +78,7 @@ const OPEN_ROW = 'bg-raised! shadow-[inset_3px_0_0_var(--color-primary)]';
     InputCapComponent,
     KeycapComponent,
     LabelComponent,
+    LooksOnlyDirective,
     MarkComponent,
     TableDirective,
     VirtualPadComponent,
@@ -91,6 +94,11 @@ export class InputsComponent {
   protected readonly PRESETS = PRESETS;
   protected readonly OPEN_ROW = OPEN_ROW;
   protected readonly capture = inject(BindingCaptureService);
+  /**
+   * The preset tiles and the rows that are dragged are drawn here and not by the kit, so they
+   * ask the scope themselves.
+   */
+  protected readonly closed = closedBy(() => false);
   private readonly session = inject(WorkSessionService);
   private readonly dialogs = inject(DialogService);
   private readonly transloco = inject(TranslocoService);
@@ -270,7 +278,7 @@ export class InputsComponent {
    * a held key would otherwise land on the page.
    */
   protected onRowKey(event: KeyboardEvent, action: GameAction, i: number): void {
-    if (!event.altKey || (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')) {
+    if (!event.altKey || (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') || this.closed()) {
       return;
     }
     event.preventDefault();

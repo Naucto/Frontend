@@ -10,7 +10,13 @@ import {
 } from '@angular/core';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { projectControllerSetDisk } from '@naucto/api-client';
-import { ButtonDirective, LabelComponent, SwatchPickerComponent, ToastService } from '@naucto/ui';
+import {
+  ButtonDirective,
+  closedBy,
+  LabelComponent,
+  SwatchPickerComponent,
+  ToastService,
+} from '@naucto/ui';
 
 import { unwrap } from '../../../core/api/api-errors';
 import { DiskNameComponent } from '../../../shared/game-card/disk-name.component';
@@ -49,9 +55,12 @@ const SEND_AFTER_MS = 300;
 /** The side of a direction tile's swatch: sixteen cells of the dither. */
 const SWATCH = 48;
 
-const TILE = 'raised-sm grid cursor-pointer justify-items-center';
-const TILE_OFF = `${TILE} text-ink-3 hover:bevel-lit hover:text-active-ink`;
-const TILE_ON = `${TILE} bevel-down bevel-lit text-active-ink`;
+/** A tile that cannot be pressed is drawn as the kit draws a latched cell that cannot. */
+const TILE =
+  'raised-sm grid cursor-pointer justify-items-center ' +
+  'disabled:cursor-not-allowed disabled:bevel-level disabled:bevel-edge-line disabled:text-ink-4';
+const TILE_OFF = `${TILE} text-ink-3 enabled:hover:bevel-lit enabled:hover:text-active-ink disabled:bevel-fill-transparent`;
+const TILE_ON = `${TILE} bevel-down enabled:bevel-lit enabled:text-active-ink disabled:bevel-fill-line`;
 
 /** A row of the game's palette as a picker offers it, and where the colour worn stands in it. */
 interface Strip {
@@ -98,6 +107,8 @@ export class DiskBenchComponent {
   readonly name = input.required<string>();
 
   protected readonly session = inject(WorkSessionService);
+  /** The finish and direction tiles are drawn here and not by the kit, so they ask the scope. */
+  protected readonly closed = closedBy(() => false);
   private readonly saves = inject(SessionSaveService);
   private readonly toasts = inject(ToastService);
   private readonly transloco = inject(TranslocoService);

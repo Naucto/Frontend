@@ -45,6 +45,7 @@
             class="gap-0.75 px-0.75 pt-1 pb-0.75"
             [class]="tileClass(item.finish === style().finish)"
             [attr.aria-pressed]="item.finish === style().finish"
+            [disabled]="closed()"
             (click)="wear({ finish: item.finish })">
             <nc-floppy
               class="w-full"
@@ -86,6 +87,7 @@
               [attr.aria-pressed]="item.dir === style().gradDir"
               [attr.aria-label]="t('editor.game.disk.directions.' + item.dir)"
               [attr.title]="t('editor.game.disk.directions.' + item.dir)"
+              [disabled]="closed()"
               (click)="wear({ gradDir: item.dir })">
               <span class="block size-[48px]" [style.background]="item.swatch"></span>
             </button>

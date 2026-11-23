@@ -16,14 +16,20 @@
         [emptyLabel]="t('editor.game.noCover')"
         dropImages
         (imageDrop)="dropCover($event)">
-        <button type="button" ncMediaAction actions (click)="grabFrame()">
+        <button type="button" ncMediaAction actions [disabled]="closed()" (click)="grabFrame()">
           <nc-icon name="camera" />
           {{ t('editor.game.grabFrame') }}
         </button>
-        <label ncMediaAction actions>
+        <!-- A label has no disabled of its own: closed, it is made inert with its input. -->
+        <label ncMediaAction actions [attr.inert]="closed() ? '' : null">
           <nc-icon name="upload" />
           {{ t('editor.game.upload') }}
-          <input type="file" [accept]="coverAccept" class="sr-only" (change)="upload($event)" />
+          <input
+            type="file"
+            [accept]="coverAccept"
+            class="sr-only"
+            [disabled]="closed()"
+            (change)="upload($event)" />
         </label>
       </nc-media-frame>
     </section>
@@ -102,9 +108,9 @@
               type="button"
               ncMediaAction
               tone="danger"
-              [disabled]="recorder.phase() === 'saving'"
+              [disabled]="closed() || recorder.phase() === 'saving'"
               (click)="recorder.start()">
-              <nc-mark name="record" class="text-hot" />
+              <nc-mark name="record" [class.text-hot]="!closed()" />
               {{
                 recorder.phase() === 'saving'
                   ? t('editor.game.clip.saving')
@@ -114,7 +120,12 @@
               }}
             </button>
             @if (clipUrl() && recorder.phase() !== 'saving') {
-              <button type="button" ncMediaAction tone="danger" (click)="removeClip()">
+              <button
+                type="button"
+                ncMediaAction
+                tone="danger"
+                [disabled]="closed()"
+                (click)="removeClip()">
                 <nc-icon name="trash" />
                 {{ t('editor.game.delete') }}
               </button>
