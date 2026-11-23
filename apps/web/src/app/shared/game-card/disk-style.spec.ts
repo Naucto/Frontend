@@ -19,8 +19,9 @@ describe('diskStyleFor', () => {
     }
   });
 
-  it('keeps neighbouring games in different plastics', () => {
-    expect(diskStyleFor({ id: 11 }).color).not.toBe(diskStyleFor({ id: 12 }).color);
+  it('spreads undressed games over the plastics rather than moulding them all alike', () => {
+    const colours = new Set(Array.from({ length: 40 }, (_, id) => diskStyleFor({ id }).color));
+    expect(colours.size).toBeGreaterThan(8);
   });
 });
 

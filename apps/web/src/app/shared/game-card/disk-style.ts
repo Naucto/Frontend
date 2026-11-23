@@ -1,4 +1,5 @@
 import { BUBBLEGUM_16, hexToRgb, rgbToHex } from '@naucto/engine';
+import { hashOf } from '@naucto/ui';
 
 export type DiskFinish =
   'solid' | 'stripes' | 'checker' | 'dots' | 'gradient' | 'gold' | 'silver' | 'holo';
@@ -24,8 +25,7 @@ const PLASTICS = BUBBLEGUM_16.filter((colour) => colour !== '#16171a');
 export function diskStyleFor(game: { id: number; disk?: DiskStyle | null }): DiskStyle {
   return (
     game.disk ?? {
-      // The palette is sorted by hue: seven steps on per id keeps neighbouring games apart.
-      color: PLASTICS[(game.id * 7) % PLASTICS.length] as string,
+      color: PLASTICS[hashOf(String(game.id)) % PLASTICS.length] as string,
       finish: 'solid',
     }
   );

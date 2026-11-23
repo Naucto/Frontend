@@ -1,6 +1,26 @@
-import { colourOf, inkFor } from './palette';
+import { colourOf, hashOf, inkFor } from './palette';
 
 const RESERVED = ['#fafdff', '#ffd100', '#ff2674'];
+
+describe('hashOf', () => {
+  /** Pinned: a look drawn from it must not change with a release, a reload or a browser. */
+  it('gives a text the same whole number every time, and on every load', () => {
+    expect(hashOf('')).toBe(0);
+    expect(hashOf('alexis')).toBe(1415071800);
+    expect(hashOf('7c9e6679-7425-40de-944b-e07fc1f90ae7')).toBe(1406935180);
+    expect(hashOf('7c9e6679-7425-40de-944b-e07fc1f90ae7')).toBe(
+      hashOf('7c9e6679-7425-40de-944b-e07fc1f90ae7'),
+    );
+  });
+
+  it('is never negative nor fractional, so it indexes a list as it stands', () => {
+    for (let i = 0; i < 200; i++) {
+      const hash = hashOf(`${String(i)}-0000-4000-8000-${String(i * 7919)}`);
+      expect(Number.isInteger(hash)).toBe(true);
+      expect(hash).toBeGreaterThanOrEqual(0);
+    }
+  });
+});
 
 describe('colourOf', () => {
   it('never hands out a reserved colour', () => {

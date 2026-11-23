@@ -46,15 +46,23 @@ export function inkFor(fill: string): string {
 const RESERVED = new Set<string>(['#fafdff', '#ffd100', '#ff2674']);
 
 /**
- * A person's colour, stable for a given key (user id, or username when no id is to hand) so the
- * same person is the same colour in a byline, a comment thread and a presence stack.
+ * A whole number that is the same for a given text on every load and in every browser, to pick
+ * one look out of a few by: an id says nothing of what it names, so a look drawn from one is
+ * drawn from its hash.
  */
-export function colourOf(key: string | number): string {
-  const text = String(key);
+export function hashOf(text: string): number {
   let hash = 0;
   for (let i = 0; i < text.length; i++) {
     hash = (hash * 31 + text.charCodeAt(i)) | 0;
   }
+  return Math.abs(hash);
+}
+
+/**
+ * A person's colour, stable for a given key (user id, or username when no id is to hand) so the
+ * same person is the same colour in a byline, a comment thread and a presence stack.
+ */
+export function colourOf(key: string | number): string {
   const candidates = IDENTITY_COLOURS.filter((colour) => !RESERVED.has(colour));
-  return candidates[Math.abs(hash) % candidates.length] as string;
+  return candidates[hashOf(String(key)) % candidates.length] as string;
 }
