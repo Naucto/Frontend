@@ -15,10 +15,12 @@ export async function mockSignedIn(
   {
     id = 1,
     username = 'alexis',
+    role = 'User',
     suspension = null,
   }: {
     id?: number;
     username?: string;
+    role?: 'User' | 'Moderator' | 'Admin';
     suspension?: { since: string; until: string | null } | null;
   } = {},
 ): Promise<void> {
@@ -30,7 +32,7 @@ export async function mockSignedIn(
       email: 'a@x',
       username,
       nickname: username,
-      role: 'User',
+      role,
       createdAt: '',
       updatedAt: '',
       message: '',

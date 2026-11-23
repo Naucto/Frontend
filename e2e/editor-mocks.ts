@@ -16,6 +16,7 @@ export const projectRoute = (path = ''): string =>
 
 const HOST_ID = 1;
 const COLLABORATOR_ID = 4;
+const MODERATOR_ID = 9;
 
 const project = {
   id: PROJECT_ID,
@@ -62,7 +63,10 @@ interface HistoryEntry {
  * `versions`/`checkpoints` seed the two histories the versions popover reads, and `onSave` runs on
  * every write of the content — a spec that needs to overwrite or track an endpoint of its own still can,
  * by routing it after this call. Answers the project as the routes hold it: a spec that stores a
- * clip or a disk writes it there, and the next read of the project says so.
+ * clip or a disk writes it there, and the next read of the project says so. With `staff`, the one
+ * signed in is a moderator who does not collaborate on the game: the project refuses them, the
+ * moderation preview answers with its last save, and any write they send about a project or a
+ * work session is counted by `onWrite`.
  */
 export async function mockEditor(
   page: Page,
@@ -75,6 +79,8 @@ export async function mockEditor(
     versions = [],
     checkpoints = [],
     onSave,
+    staff = false,
+    onWrite,
   }: {
     hostId?: number;
     maxCheckpoints?: number;
@@ -84,12 +90,19 @@ export async function mockEditor(
     versions?: HistoryEntry[];
     checkpoints?: HistoryEntry[];
     onSave?: () => void;
+    staff?: boolean;
+    onWrite?: (request: string) => void;
   } = {},
 ): Promise<typeof project> {
   await page.addInitScript((value) => {
     localStorage.setItem('naucto.theme', value);
   }, theme);
-  await mockSignedIn(page, { id: HOST_ID, username: 'alexis' });
+  await mockSignedIn(
+    page,
+    staff
+      ? { id: MODERATOR_ID, username: 'modo', role: 'Moderator' }
+      : { id: HOST_ID, username: 'alexis' },
+  );
   await page.route('**/notifications/webrtc-offer', (route) =>
     route.fulfill({ json: { data: { signaling: ['ws://127.0.0.1:9'] } } }),
   );
@@ -137,5 +150,30 @@ export async function mockEditor(
     }
     return route.fulfill({ json: stored });
   });
+  if (staff) {
+    // Routed last, so they answer before the routes above: the server lets a moderator read any
+    // game through the preview and nothing else of it.
+    await page.route(/\/(projects|work-sessions)\//, (route) => {
+      const request = route.request();
+      if (request.method() !== 'GET') {
+        onWrite?.(`${request.method()} ${new URL(request.url()).pathname}`);
+      }
+      return route.fallback();
+    });
+    await page.route(projectRoute('**'), (route) =>
+      route.fulfill({ status: 403, json: { message: 'Forbidden' } }),
+    );
+    await page.route(projectRoute(), (route) =>
+      route.fulfill({ status: 403, json: { message: 'Forbidden' } }),
+    );
+    await page.route(`**/moderation/projects/${String(PROJECT_ID)}/preview`, (route) =>
+      route.fulfill({ json: { ...stored, hasRelease: false } }),
+    );
+    await page.route(`**/moderation/projects/${String(PROJECT_ID)}/preview/content**`, (route) =>
+      content.length
+        ? route.fulfill({ status: 200, body: content, contentType: 'application/octet-stream' })
+        : route.fulfill({ status: 204, body: '' }),
+    );
+  }
   return stored;
 }
