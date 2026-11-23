@@ -1428,7 +1428,7 @@
       "screenshotHint": "PNG, JPEG or WebP, up to 2 MB. A large image is shrunk before it is sent.",
       "screenshotAlt": "The screenshot attached to this report",
       "removeScreenshot": "Remove",
-      "dropHint": "Drop or paste an image here, or pick one below.",
+      "dropHint": "Drop or paste an image",
       "preparing": "Preparing the image...",
       "useFrame": "Game frame",
       "captureScreen": "Capture screen",

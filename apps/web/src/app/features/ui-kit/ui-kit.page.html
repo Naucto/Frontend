@@ -324,7 +324,8 @@
     <div class="flex items-baseline gap-2">
       <h2 class="font-display text-display text-ink">Inputs</h2>
       <span class="text-meta text-ink-3">
-        wells, a search that shares the well, a list in a well, a rim that focus turns gold
+        wells, a search that shares the well, a list in a well, a picture with its actions, a rim
+        that focus turns gold
       </span>
     </div>
     <div
@@ -373,6 +374,18 @@
       </div>
       <nc-field label="Disabled" for="f-off">
         <input ncInput id="f-off" value="Locked while published" disabled />
+      </nc-field>
+      <nc-field label="Cover" data-testid="media-frame">
+        <nc-media-frame emptyLabel="No cover yet">
+          <button type="button" ncMediaAction actions>
+            <nc-icon name="camera" />
+            Grab frame
+          </button>
+          <button type="button" ncMediaAction actions tone="danger">
+            <nc-icon name="trash" />
+            Delete
+          </button>
+        </nc-media-frame>
       </nc-field>
       <div class="grid content-start gap-[14px]" data-testid="select">
         <nc-field label="Genre" for="f-genre">

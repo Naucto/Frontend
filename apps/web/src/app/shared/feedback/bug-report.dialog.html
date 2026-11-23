@@ -45,62 +45,44 @@
       [label]="t('feedback.bug.screenshot')"
       [hint]="t('feedback.bug.screenshotHint')"
       [error]="screenshotError() ?? undefined">
-      @if (preview(); as src) {
-        <div class="flex items-start gap-[12px]">
-          <img
-            [src]="src"
-            [alt]="t('feedback.bug.screenshotAlt')"
-            class="pixelated max-h-[180px] max-w-[320px] border-3 border-line bg-inset object-contain" />
-          <button ncButton variant="ghost" size="sm" type="button" (click)="removeScreenshot()">
-            <nc-mark name="close" />
-            {{ t('feedback.bug.removeScreenshot') }}
-          </button>
-        </div>
-      } @else {
-        <div
-          class="flat-sm flex flex-col items-center gap-[10px] bevel-fill-inset px-[14px] py-[14px] text-center"
-          (dragover)="$event.preventDefault()"
-          (drop)="onDrop($event)">
-          <p class="text-meta text-ink-3">
-            {{ preparing() ? t('feedback.bug.preparing') : t('feedback.bug.dropHint') }}
-          </p>
-          <div class="flex flex-wrap justify-center gap-[6px]">
-            @if (hasFrame) {
-              <button
-                ncButton
-                variant="secondary"
-                size="sm"
-                type="button"
-                [disabled]="preparing()"
-                (click)="useFrame()">
-                <nc-mark name="gamepad" />
-                {{ t('feedback.bug.useFrame') }}
-              </button>
-            }
-            @if (canCapture) {
-              <button
-                ncButton
-                variant="secondary"
-                size="sm"
-                type="button"
-                [disabled]="preparing()"
-                (click)="captureScreen()">
-                <nc-mark name="camera" />
-                {{ t('feedback.bug.captureScreen') }}
-              </button>
-            }
-            <label ncButton variant="secondary" size="sm" [class.pointer-events-none]="preparing()">
-              <nc-mark name="upload" />
-              {{ t('feedback.bug.chooseFile') }}
-              <input
-                type="file"
-                accept="image/png,image/jpeg,image/webp,image/gif"
-                class="sr-only"
-                (change)="pickFile($event)" />
-            </label>
-          </div>
-        </div>
-      }
+      <nc-media-frame
+        fit="contain"
+        [src]="preview()"
+        [alt]="t('feedback.bug.screenshotAlt')"
+        emptyIcon="camera"
+        [emptyLabel]="preparing() ? t('feedback.bug.preparing') : t('feedback.bug.dropHint')"
+        dropImages
+        (imageDrop)="attach($event)">
+        <ng-container actions>
+          @if (hasFrame) {
+            <button type="button" ncMediaAction [disabled]="preparing()" (click)="useFrame()">
+              <nc-icon name="gamepad" />
+              {{ t('feedback.bug.useFrame') }}
+            </button>
+          }
+          @if (canCapture) {
+            <button type="button" ncMediaAction [disabled]="preparing()" (click)="captureScreen()">
+              <nc-icon name="camera" />
+              {{ t('feedback.bug.captureScreen') }}
+            </button>
+          }
+          <label ncMediaAction [class.pointer-events-none]="preparing()">
+            <nc-icon name="upload" />
+            {{ t('feedback.bug.chooseFile') }}
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              class="sr-only"
+              (change)="pickFile($event)" />
+          </label>
+          @if (preview()) {
+            <button type="button" ncMediaAction tone="danger" (click)="removeScreenshot()">
+              <nc-icon name="trash" />
+              {{ t('feedback.bug.removeScreenshot') }}
+            </button>
+          }
+        </ng-container>
+      </nc-media-frame>
     </nc-field>
 
     <div>

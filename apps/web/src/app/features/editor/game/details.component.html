@@ -11,38 +11,21 @@
           180
         </span>
       </div>
-      <div
-        class="relative aspect-video overflow-hidden flat-sm bevel-edge-line-strong bevel-fill-inset"
-        (dragover)="$event.preventDefault()"
-        (drop)="dropCover($event)">
-        @if (cover.data(); as url) {
-          <img [src]="url" alt="" class="pixelated h-full w-full object-cover" />
-        } @else {
-          <div
-            class="no-cover flex h-full flex-col items-center justify-center gap-0.5 pb-4 text-ink-4">
-            <nc-icon name="image" />
-            <span class="label">{{ t('editor.game.noCover') }}</span>
-          </div>
-        }
-        <div
-          class="absolute inset-x-0 bottom-0 flex h-(--nc-h-md) border-t-3 border-line-strong bg-page/85">
-          <button
-            type="button"
-            class="border-r-3 border-line-strong text-ink hover:text-gold-ink"
-            [class]="CELL"
-            (click)="grabFrame()">
-            <nc-icon name="camera" />
-            {{ t('editor.game.grabFrame') }}
-          </button>
-          <label
-            class="text-ink-body hover:text-gold-ink focus-within:text-gold-ink"
-            [class]="CELL">
-            <nc-icon name="upload" />
-            {{ t('editor.game.upload') }}
-            <input type="file" [accept]="coverAccept" class="sr-only" (change)="upload($event)" />
-          </label>
-        </div>
-      </div>
+      <nc-media-frame
+        [src]="cover.data()"
+        [emptyLabel]="t('editor.game.noCover')"
+        dropImages
+        (imageDrop)="dropCover($event)">
+        <button type="button" ncMediaAction actions (click)="grabFrame()">
+          <nc-icon name="camera" />
+          {{ t('editor.game.grabFrame') }}
+        </button>
+        <label ncMediaAction actions>
+          <nc-icon name="upload" />
+          {{ t('editor.game.upload') }}
+          <input type="file" [accept]="coverAccept" class="sr-only" (change)="upload($event)" />
+        </label>
+      </nc-media-frame>
     </section>
 
     <section [attr.aria-label]="t('editor.game.clip.title')">
@@ -52,9 +35,11 @@
           {{ t('editor.game.clip.limits', { seconds: CLIP_SECONDS }) }}
         </span>
       </div>
-      <div
-        class="relative aspect-video overflow-hidden flat-sm bevel-fill-inset"
-        [class]="recorder.phase() === 'recording' ? 'bevel-edge-hot' : 'bevel-edge-line-strong'">
+      <nc-media-frame
+        [empty]="recorder.phase() !== 'recording' && !clipUrl()"
+        emptyIcon="video"
+        [emptyLabel]="t('editor.game.clip.none')"
+        [tone]="recorder.phase() === 'recording' ? 'hot' : 'default'">
         @if (recorder.phase() === 'recording') {
           <video #live class="pixelated h-full w-full object-cover" [muted]="true" autoplay></video>
           <nc-chip tone="hot" class="absolute top-1 left-1">
@@ -102,21 +87,10 @@
           <div class="absolute inset-x-0 bottom-(--nc-h-md) h-[6px] bg-page/85">
             <div class="h-full bg-jade" [style.width.%]="clipProgress() * 100"></div>
           </div>
-        } @else {
-          <div
-            class="no-cover flex h-full flex-col items-center justify-center gap-0.5 pb-4 text-ink-4">
-            <nc-icon name="video" [size]="24" />
-            <span class="label">{{ t('editor.game.clip.none') }}</span>
-          </div>
         }
-        <div
-          class="absolute inset-x-0 bottom-0 flex h-(--nc-h-md) border-t-3 border-line-strong bg-page/85">
+        <ng-container actions>
           @if (recorder.phase() === 'recording') {
-            <button
-              type="button"
-              class="text-hot-ink hover:text-ink"
-              [class]="CELL"
-              (click)="recorder.stop()">
+            <button type="button" ncMediaAction tone="hot" (click)="recorder.stop()">
               <nc-mark name="stop" />
               {{ t('editor.game.clip.stop') }}
               <span class="text-ink-3 normal-case">
@@ -126,8 +100,8 @@
           } @else {
             <button
               type="button"
-              class="text-ink hover:text-hot-ink disabled:text-ink-4"
-              [class]="CELL"
+              ncMediaAction
+              tone="danger"
               [disabled]="recorder.phase() === 'saving'"
               (click)="recorder.start()">
               <nc-mark name="record" class="text-hot" />
@@ -140,18 +114,14 @@
               }}
             </button>
             @if (clipUrl() && recorder.phase() !== 'saving') {
-              <button
-                type="button"
-                class="border-l-3 border-line-strong text-ink-body hover:text-hot-ink"
-                [class]="CELL"
-                (click)="removeClip()">
+              <button type="button" ncMediaAction tone="danger" (click)="removeClip()">
                 <nc-icon name="trash" />
                 {{ t('editor.game.delete') }}
               </button>
             }
           }
-        </div>
-      </div>
+        </ng-container>
+      </nc-media-frame>
       @if (recorder.issue(); as issue) {
         <p class="mt-0.75 flex items-start gap-0.75 text-meta text-hot-ink" role="alert">
           <nc-icon name="alert" class="shrink-0" />

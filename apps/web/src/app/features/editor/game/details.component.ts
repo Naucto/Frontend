@@ -26,6 +26,8 @@ import {
   InputDirective,
   LabelComponent,
   MarkComponent,
+  MediaActionDirective,
+  MediaFrameComponent,
   TagInputComponent,
   ToastService,
 } from '@naucto/ui';
@@ -50,10 +52,6 @@ const TAGS_MAX = 10;
 
 const COVER_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
 
-/** One action of the bar along the foot of a picture. */
-const CELL =
-  'flex flex-1 cursor-pointer items-center justify-center gap-0.75 font-ui text-label uppercase transition-colors duration-100 disabled:cursor-default';
-
 /**
  * The Details tab: the cover and the clip as two blocks of one shape, then the words the game is
  * listed under. The cover's frame and the clip are both taken from the game running in the sidebar.
@@ -70,6 +68,8 @@ const CELL =
     InputDirective,
     LabelComponent,
     MarkComponent,
+    MediaActionDirective,
+    MediaFrameComponent,
     TagInputComponent,
   ],
   templateUrl: './details.component.html',
@@ -87,7 +87,6 @@ export class DetailsComponent {
   protected readonly DESCRIPTION_MAX = DESCRIPTION_MAX;
   protected readonly TAGS_MAX = TAGS_MAX;
   protected readonly CLIP_SECONDS = CLIP_SECONDS;
-  protected readonly CELL = CELL;
   protected readonly clock = clock;
   protected readonly formatBytes = formatBytes;
   protected readonly coverAccept = COVER_TYPES.join(',');
@@ -164,10 +163,8 @@ export class DetailsComponent {
     input.value = '';
   }
 
-  protected async dropCover(event: DragEvent): Promise<void> {
-    event.preventDefault();
-    const file = event.dataTransfer?.files[0];
-    if (file && COVER_TYPES.includes(file.type)) {
+  protected async dropCover(file: File): Promise<void> {
+    if (COVER_TYPES.includes(file.type)) {
       await this.uploadCover(file);
     }
   }

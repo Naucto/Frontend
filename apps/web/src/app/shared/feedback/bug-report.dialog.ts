@@ -16,8 +16,11 @@ import {
   ButtonDirective,
   DialogShellComponent,
   FieldComponent,
+  IconComponent,
   InputDirective,
   MarkComponent,
+  MediaActionDirective,
+  MediaFrameComponent,
   NoticeComponent,
   SelectComponent,
 } from '@naucto/ui';
@@ -91,7 +94,10 @@ export function categoryFor(path: string): BugCategory {
     ButtonDirective,
     DialogShellComponent,
     FieldComponent,
+    IconComponent,
     MarkComponent,
+    MediaActionDirective,
+    MediaFrameComponent,
     InputDirective,
     NoticeComponent,
     SelectComponent,
@@ -188,16 +194,6 @@ export class BugReportDialog {
     }
   }
 
-  protected async onDrop(event: DragEvent): Promise<void> {
-    event.preventDefault();
-    const file = [...(event.dataTransfer?.files ?? [])].find((item) =>
-      item.type.startsWith('image/'),
-    );
-    if (file) {
-      await this.attach(file);
-    }
-  }
-
   protected async onPaste(event: ClipboardEvent): Promise<void> {
     const file = [...(event.clipboardData?.items ?? [])]
       .find((item) => item.kind === 'file' && item.type.startsWith('image/'))
@@ -258,7 +254,7 @@ export class BugReportDialog {
     this.ref.close({ id, screenshotRefused });
   }
 
-  private async attach(image: Blob): Promise<void> {
+  protected async attach(image: Blob): Promise<void> {
     this.screenshotError.set(null);
     this.preparing.set(true);
     try {

@@ -25,6 +25,8 @@ export * from './components/label.component';
 export * from './components/lcd.component';
 export * from './components/logo.component';
 export * from './components/mark.component';
+export * from './components/media-action.directive';
+export * from './components/media-frame.component';
 export * from './components/meter.component';
 export * from './components/notice.component';
 export * from './components/number-field.component';
