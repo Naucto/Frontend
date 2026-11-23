@@ -26,16 +26,16 @@ async function mockAda(page: Page, banner: boolean): Promise<void> {
     route.fulfill({ contentType: 'image/png', body: BANNER }),
   );
   await page.route(
-    /\/users\/public\/7\/published-games/,
+    new RegExp(`/users/public/${ADA.id}/published-games`),
     answer(200, [hubGame(11, 'Hightide'), hubGame(12, 'Frog Hop')]),
   );
   await page.route(
-    '**/users/public/7/likes',
+    `**/users/public/${ADA.id}/likes`,
     answer(200, [hubGame(13, 'Pong Royale', by(ALEXIS))]),
   );
-  await page.route('**/users/public/7/collaborations', answer(200, []));
-  await page.route('**/users/public/7/remixes', answer(200, []));
-  await page.route('**/users/7/friendship', answer(200, { status: 'NONE' }));
+  await page.route(`**/users/public/${ADA.id}/collaborations`, answer(200, []));
+  await page.route(`**/users/public/${ADA.id}/remixes`, answer(200, []));
+  await page.route(`**/users/${ADA.id}/friendship`, answer(200, { status: 'NONE' }));
   await mockCollections(page, []);
 }
 
