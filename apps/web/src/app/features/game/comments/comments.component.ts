@@ -16,6 +16,7 @@ import {
   ChipComponent,
   EmptyStateComponent,
   InputDirective,
+  MarkComponent,
   NoticeComponent,
   RelativeTimePipe,
   SkeletonComponent,
@@ -46,6 +47,7 @@ const MAX_LEN = 500;
     ChipComponent,
     EmptyStateComponent,
     InputDirective,
+    MarkComponent,
     NoticeComponent,
     RelativeTimePipe,
     SkeletonComponent,
@@ -167,11 +169,6 @@ export class CommentsComponent {
       return;
     }
     await this.refresh();
-  }
-
-  /** What stands in for a comment that no longer reads: who took it down changes what is said. */
-  protected removalKey(comment: CommentResponseDto): string {
-    return comment.removedBy === 'MODERATION' ? 'comments.removedByModeration' : 'comments.deleted';
   }
 
   /** A comment that still reads, written by someone else: nobody reports their own words. */

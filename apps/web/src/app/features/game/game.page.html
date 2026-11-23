@@ -129,10 +129,13 @@
         </div>
         @if (canReport()) {
           <button
+            ncButton
+            variant="ghost"
+            size="sm"
             type="button"
-            class="mt-1 label flex items-center gap-0.5 text-ink-3 hover:text-ink"
+            class="mt-1 -ml-[13px]"
             (click)="report(release)">
-            <nc-icon name="flag" />
+            <nc-mark name="flag" />
             {{ t('moderation.reportGame') }}
           </button>
         }

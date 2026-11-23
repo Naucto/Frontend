@@ -142,13 +142,19 @@
             {{ entry.createdAt | ncRelativeTime }}
           </span>
         </div>
-        <!-- Bound, not interpolated: under whitespace-pre-wrap the template newlines around an
-             interpolation render as spaces, and Prettier will not keep the tag on one line. -->
-        <p
-          class="text-body leading-[1.55] wrap-anywhere whitespace-pre-wrap"
-          [class.text-ink-4]="entry.deleted"
-          [class.text-ink-body]="!entry.deleted"
-          [textContent]="entry.deleted ? t(removalKey(entry)) : entry.content"></p>
+        @if (entry.deleted && entry.removedBy === 'MODERATION') {
+          <nc-notice tone="info" data-testid="comment-moderated">
+            {{ t('comments.removedByModeration') }}
+          </nc-notice>
+        } @else {
+          <!-- Bound, not interpolated: under whitespace-pre-wrap the template newlines around an
+               interpolation render as spaces, and Prettier will not keep the tag on one line. -->
+          <p
+            class="text-body leading-[1.55] wrap-anywhere whitespace-pre-wrap"
+            [class.text-ink-4]="entry.deleted"
+            [class.text-ink-body]="!entry.deleted"
+            [textContent]="entry.deleted ? t('comments.deleted') : entry.content"></p>
+        }
         <div class="mt-0.5 -ml-[13px] flex items-center gap-[3px] empty:hidden">
           @if (auth.isAuthenticated()) {
             @if (depth === 0) {
@@ -173,6 +179,7 @@
           }
           @if (canReport(entry)) {
             <button ncButton variant="ghost" size="sm" type="button" (click)="report(entry)">
+              <nc-mark name="flag" />
               {{ t('moderation.reportComment') }}
             </button>
           }

@@ -490,7 +490,7 @@
     "reply": "Reply",
     "delete": "Delete",
     "deleted": "[deleted]",
-    "removedByModeration": "[removed by a moderator]",
+    "removedByModeration": "A moderator removed this comment.",
     "replyPlaceholder": "Write a reply…",
     "loadFailed": "Could not load the comments."
   },
