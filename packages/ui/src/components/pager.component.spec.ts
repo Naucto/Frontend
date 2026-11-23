@@ -103,6 +103,18 @@ describe('PagerComponent on autoplay', () => {
     expect(run.pause).toHaveBeenCalled();
   });
 
+  it('holds the fill while told to, and runs it again once let go', async () => {
+    const { fixture } = await render(PagerComponent, {
+      inputs: { count: 3, value: 0, autoplay: 5000, paused: true },
+    });
+    await fixture.whenStable();
+    expect(run.pause).toHaveBeenCalled();
+
+    fixture.componentRef.setInput('paused', false);
+    await fixture.whenStable();
+    expect(run.play).toHaveBeenCalled();
+  });
+
   it('runs nothing without a duration', async () => {
     await render(PagerComponent, { inputs: { count: 3, value: 0 } });
     expect(started).toBe(0);

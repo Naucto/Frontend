@@ -49,6 +49,8 @@ export class PagerComponent {
   readonly value = model(0);
   /** Milliseconds a page stays before the next one takes its place. 0 leaves it to the reader. */
   readonly autoplay = input(0);
+  /** Holds the run where it is, as a pointer on the dots does: whatever is paged is being read. */
+  readonly paused = input(false, { transform: booleanAttribute });
   readonly label = input('Pages');
   /** What a dot is called, before its number. */
   readonly pageLabel = input('Page');
@@ -114,7 +116,7 @@ export class PagerComponent {
     });
     effect(() => {
       const run = this.run();
-      if (this.held()) {
+      if (this.held() || this.paused()) {
         run?.pause();
       } else {
         run?.play();
