@@ -49,6 +49,7 @@ import { AuthStore } from '../../core/auth/auth.store';
 import { FeaturesService } from '../../core/config/features.service';
 import { PresenceStore } from '../../core/presence/presence.store';
 import { presenceLine } from '../../core/presence/presence-line';
+import { diskBody, diskStyleFor } from '../../shared/game-card/disk-style';
 import { CollectionBoxComponent } from '../../shared/hub/collection-box.component';
 import { GameFlyoutComponent } from '../../shared/hub/game-flyout.component';
 import { ShelfDiskComponent } from '../../shared/hub/shelf-disk.component';
@@ -283,6 +284,14 @@ export default class ProfilePage {
   protected readonly canReport = computed(() => this.features.moderation() && !this.isSelf());
   protected readonly games = computed<ProjectExResponseDto[]>(() => this.published.data() ?? []);
   protected readonly likedGames = computed<ProjectExResponseDto[]>(() => this.liked.data() ?? []);
+  /** Without a banner, the ground takes the person's disk colours: theirs, then liked ones. */
+  protected readonly diskColours = computed(() =>
+    [
+      ...new Set(
+        [...this.games(), ...this.likedGames()].map((game) => diskBody(diskStyleFor(game))),
+      ),
+    ].slice(0, 3),
+  );
   protected readonly collabs = computed<ProjectExResponseDto[]>(
     () =>
       this.collabsQuery.data() ??

@@ -1,6 +1,10 @@
 <ng-container *transloco="let t">
   @if (profile.data(); as profile) {
-    <nc-dither-backdrop class="fixed inset-0 -z-[1]" [image]="banner()" [seed]="profile.id + ''" />
+    <nc-dither-backdrop
+      class="fixed inset-0 -z-[1]"
+      [image]="banner()"
+      [tints]="diskColours()"
+      [seed]="profile.id + ''" />
     <!-- The shell pads the page; the bleed undoes exactly that padding so the gutter is the hub's. -->
     <div
       class="relative isolate -mx-2 -mt-2 grid gap-4 overflow-x-clip px-[calc(var(--nc-page-gutter)-var(--spacing)*2)] pt-[20px] pb-[72px] [--nc-page-gutter:clamp(28px,5vw,100px)] md:-mx-3 md:-mt-3 md:px-[calc(var(--nc-page-gutter)-var(--spacing)*3)] md:pt-[12px]"
