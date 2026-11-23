@@ -10,8 +10,9 @@
       [attr.aria-label]="hexLabel()"
       maxlength="6"
       spellcheck="false"
+      [disabled]="closed()"
       (change)="onHex($event)"
-      class="ml-auto h-(--nc-h-sm) w-[calc(6ch+1.5rem)] well px-1 text-center font-mono text-meta text-ink outline-none not-focus:hover:bevel-lo-ink-4 focus:bevel-lo-active-ink" />
+      class="ml-auto h-(--nc-h-sm) w-[calc(6ch+1.5rem)] well px-1 text-center font-mono text-meta text-ink outline-none enabled:not-focus:hover:bevel-lo-ink-4 focus:bevel-lo-active-ink disabled:cursor-not-allowed disabled:bevel-edge-line disabled:bevel-lo-line disabled:bevel-fill-transparent disabled:text-ink-4" />
   </div>
   <div class="mt-1 grid gap-0.5">
     <nc-slider

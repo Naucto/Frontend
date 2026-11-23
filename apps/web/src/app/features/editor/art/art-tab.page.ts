@@ -20,6 +20,7 @@ import {
   DialogService,
   HelpDotComponent,
   IconComponent,
+  LooksOnlyDirective,
   MarkComponent,
   PanelColumnComponent,
   PopoverDirective,
@@ -48,12 +49,13 @@ import {
   type SizeDialogResult,
 } from '../size.dialog';
 import { ClipboardStore } from '../state/clipboard.store';
+import { EditorModeService } from '../state/editor-mode.service';
 import { PANEL_WIDTH } from '../state/editor-ui.store';
 import { injectUndo } from '../state/undo-scope';
 import { PresenceSurfaceComponent } from '../work-session/presence-surface.component';
 import { SessionPresenceService } from '../work-session/session-presence.service';
 import { WorkSessionService } from '../work-session/work-session.service';
-import { ArtStore, type ArtTool } from './art.store';
+import { ART_LOOKING_TOOLS, ArtStore, type ArtTool } from './art.store';
 import { PaletteEditorComponent } from './palette-editor.component';
 import { SheetViewComponent } from './sheet-view.component';
 import { MAX_ZOOM, MIN_ZOOM, SpriteCanvasComponent } from './sprite-canvas.component';
@@ -72,6 +74,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
     TranslocoDirective,
     ButtonDirective,
     IconComponent,
+    LooksOnlyDirective,
     MarkComponent,
     PanelColumnComponent,
     SectionComponent,
@@ -97,6 +100,7 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
 export default class ArtTabPage {
   protected readonly PANEL_WIDTH = PANEL_WIDTH;
   protected readonly session = inject(WorkSessionService);
+  protected readonly mode = inject(EditorModeService);
   protected readonly presence = inject(SessionPresenceService);
   protected readonly art = inject(ArtStore);
   private readonly clipboard = inject(ClipboardStore);
@@ -219,7 +223,13 @@ export default class ArtTabPage {
   });
   /** The region's first cell as a sprite number, which counts from the sheet's own first. */
   protected readonly spriteNumber = computed(() => (this.sheet()?.base ?? 0) + this.art.sprite());
-  protected readonly tools = computed<ToolItem<ArtTool>[]>(() => [
+  /** The tool in hand. Where the sheet is only looked at, one that paints gives way to the pick. */
+  protected readonly tool = computed<ArtTool>(() =>
+    this.mode.canWrite() || ART_LOOKING_TOOLS.includes(this.art.tool())
+      ? this.art.tool()
+      : 'eyedropper',
+  );
+  private readonly toolList = computed<ToolItem<ArtTool>[]>(() => [
     { value: 'pen', icon: 'edit', label: this.i18n.translate('editor.art.tools.pen'), key: 'P' },
     {
       value: 'fill',
@@ -249,6 +259,12 @@ export default class ArtTabPage {
     },
     { value: 'move', icon: 'move', label: this.i18n.translate('editor.art.tools.move'), key: 'M' },
   ]);
+  protected readonly tools = computed(() =>
+    this.toolList().map((item) => ({
+      ...item,
+      disabled: !this.mode.canWrite() && !ART_LOOKING_TOOLS.includes(item.value),
+    })),
+  );
 
   constructor() {
     // One painter, pointed at whichever sheet the tabs chose: it is the source every view here
@@ -304,7 +320,7 @@ export default class ArtTabPage {
   }
 
   protected setTool(tool: ArtTool | undefined): void {
-    if (tool) {
+    if (tool && (this.mode.canWrite() || ART_LOOKING_TOOLS.includes(tool))) {
       this.art.setTool(tool);
     }
   }
@@ -437,7 +453,7 @@ export default class ArtTabPage {
     const op = (
       { H: 'flipH', V: 'flipV', ']': 'rotateCw', '[': 'rotateCcw' } as Record<string, Transform>
     )[event.key];
-    if (op && !mod && this.art.tool() === 'select' && this.art.selection()) {
+    if (op && !mod && this.tool() === 'select' && this.art.selection()) {
       event.preventDefault();
       this.canvas()?.transformSelection(op);
       return;
@@ -454,8 +470,8 @@ export default class ArtTabPage {
         m: 'move',
       } as Record<string, ArtTool>
     )[event.key.toLowerCase()];
-    if (tool && !mod) {
-      this.art.setTool(tool);
+    if (!mod) {
+      this.setTool(tool);
     }
   }
 
@@ -465,7 +481,8 @@ export default class ArtTabPage {
    */
   protected transfer(key: string): boolean {
     const canvas = this.canvas();
-    if (!canvas) {
+    // Looked at, a sheet is copied from and nothing else: a cut and a paste both write it.
+    if (!canvas || (key !== 'c' && !this.mode.canWrite())) {
       return false;
     }
     return this.clipboard.transfer(key, {

@@ -2,10 +2,13 @@ import { DestroyRef, inject, type Signal, signal } from '@angular/core';
 import { LOCAL_ORIGIN } from '@naucto/engine';
 import * as Y from 'yjs';
 
+import { EditorModeService } from './editor-mode.service';
+
 /**
  * One undo manager over the given Yjs scope, with the `canUndo`/`canRedo` signals and the
  * Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y shortcuts every tab wires the same way. Destroyed with the
- * injector.
+ * injector. An undo writes the document itself, round the game's gate, so the shortcuts answer
+ * nothing where the mode does not write.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Y.UndoManager's own scope type.
 export function injectUndo(scope: Y.AbstractType<any>[]): {
@@ -15,6 +18,7 @@ export function injectUndo(scope: Y.AbstractType<any>[]): {
   /** Handles the shortcut and returns true, or leaves the event alone and returns false. */
   onKey(event: KeyboardEvent): boolean;
 } {
+  const mode = inject(EditorModeService);
   const manager = new Y.UndoManager(scope, {
     trackedOrigins: new Set([LOCAL_ORIGIN, null]),
     captureTimeout: 300,
@@ -36,6 +40,9 @@ export function injectUndo(scope: Y.AbstractType<any>[]): {
     canUndo: canUndo.asReadonly(),
     canRedo: canRedo.asReadonly(),
     onKey(event: KeyboardEvent): boolean {
+      if (!mode.canWrite()) {
+        return false;
+      }
       const mod = event.ctrlKey || event.metaKey;
       if (mod && event.key.toLowerCase() === 'z') {
         event.preventDefault();

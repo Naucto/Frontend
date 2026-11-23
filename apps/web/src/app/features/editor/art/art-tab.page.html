@@ -17,12 +17,18 @@
           {{ t('editor.art.px', { w: regionPx().w, h: regionPx().h }) }}
         </span>
       </div>
-      <nc-tool-group [items]="tools()" [value]="art.tool()" (valueChange)="setTool($event)" />
+      <!-- Let through whole: the tools that paint are closed one by one in the list itself. -->
+      <nc-tool-group
+        ncLooksOnly
+        [items]="tools()"
+        [value]="tool()"
+        (valueChange)="setTool($event)" />
       <div class="flex items-center justify-end gap-0.5">
         <!-- Only where there is something to keep a stroke off: with the sheet cropped away
              there is no sprite next door to reach, so the choice has no subject. -->
         @if (!art.crop()) {
           <nc-toggle-button
+            ncLooksOnly
             size="strip"
             class="shrink-0"
             [label]="t('editor.art.clip')"
@@ -33,6 +39,7 @@
           </nc-toggle-button>
         }
         <nc-toggle-button
+          ncLooksOnly
           size="strip"
           class="mr-1 shrink-0"
           [label]="t('editor.art.crop')"
@@ -66,6 +73,7 @@
         <button
           type="button"
           ncButton
+          ncLooksOnly
           variant="ghost"
           size="md"
           iconOnly
@@ -96,7 +104,7 @@
         [region]="art.region()"
         [clip]="art.clip()"
         [crop]="art.crop()"
-        [tool]="art.tool()"
+        [tool]="tool()"
         [colour]="art.colour()"
         [grid]="art.grid()"
         [onion]="art.onion()"
@@ -111,7 +119,7 @@
         (pasted)="art.setTool('move')" />
       <!-- In the corner rather than beside the selection: at a zoom worth turning a sprite at,
            the selection's edge is as often as not scrolled out of view. -->
-      @if (art.tool() === 'select' && art.selection()) {
+      @if (tool() === 'select' && art.selection()) {
         <nc-transform-bar
           class="absolute top-1.5 right-1.5 bg-page/80"
           (flipH)="canvas.transformSelection('flipH')"
@@ -145,7 +153,8 @@
   </section>
 
   <nc-panel-column [width]="PANEL_WIDTH">
-    <div actions class="flex min-w-0 flex-1 items-center gap-1">
+    <!-- The grid, the onion skin and the zoom are each person's own view of the sheet. -->
+    <div actions ncLooksOnly class="flex min-w-0 flex-1 items-center gap-1">
       <nc-toggle-button
         size="strip"
         class="shrink-0"
@@ -210,9 +219,10 @@
 
     <nc-section banded [title]="t('editor.art.sheet')">
       <nc-tabs
+        ncLooksOnly
         variant="small"
-        [editable]="true"
-        [removable]="true"
+        [editable]="mode.canWrite()"
+        [removable]="mode.canWrite()"
         [tabs]="sheetTabs()"
         [value]="art.sheetId()"
         (valueChange)="sheets.choose($event)"

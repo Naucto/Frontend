@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { hexToRgb } from '@naucto/engine';
-import { SliderComponent } from '@naucto/ui';
+import { closedBy, SliderComponent } from '@naucto/ui';
 
 /** Edits one palette slot: hex field plus R/G/B sliders. */
 @Component({
@@ -17,6 +17,8 @@ export class PaletteEditorComponent {
   readonly hexLabel = input('Hex colour');
   readonly colourChange = output<{ slot: number; hex: string }>();
   protected readonly String = String;
+  /** The hex field is drawn here and not by the kit, so it asks the scope itself. */
+  protected readonly closed = closedBy(() => false);
   protected readonly hex = computed(() => this.colours()[this.slot()] ?? '#000000');
   protected readonly rgb = computed(() => hexToRgb(this.hex()));
   protected readonly digits = computed(() => this.hex().slice(1).toUpperCase());
