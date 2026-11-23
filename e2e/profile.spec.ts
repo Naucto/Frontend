@@ -68,7 +68,7 @@ const bannerOffset = (page: Page): Promise<number> =>
   });
 
 test.describe('a profile', () => {
-  test('stands on its banner, and on the bare ground without one', async ({ page }) => {
+  test('stands on its banner, and on the colours of its disks without one', async ({ page }) => {
     await page.route('**/auth/refresh', answer(401, {}));
     await mockAda(page, true);
     await page.goto('/u/ada');
@@ -86,7 +86,8 @@ test.describe('a profile', () => {
     await mockAda(page, false);
     await page.reload();
     await expect(page.getByRole('heading', { level: 1, name: 'ada' })).toBeVisible();
-    await expect.poll(() => coloursOf(page, 'nc-dither-backdrop', 'root')).toBe(1);
+    // Without a banner the ground takes the colours of the person's disks, not the bare page.
+    await expect.poll(() => coloursOf(page, 'nc-dither-backdrop', 'root')).toBeGreaterThan(1);
     expect(await coloursOf(page, 'nc-dither-banner', 'top')).toBe(0);
   });
 
