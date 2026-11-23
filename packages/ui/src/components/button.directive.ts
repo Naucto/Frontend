@@ -1,4 +1,4 @@
-import { computed, Directive, input } from '@angular/core';
+import { booleanAttribute, computed, Directive, input } from '@angular/core';
 
 export type ButtonVariant = 'primary' | 'run' | 'secondary' | 'ghost' | 'danger' | 'jade' | 'sky';
 export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'bar' | 'hero';
@@ -70,10 +70,6 @@ const SIZES: Record<ButtonSize | RetiredButtonSize, SizeClasses> = {
   strip: MD,
 };
 
-function coerceBoolean(value: boolean | string): boolean {
-  return value !== false && value !== 'false';
-}
-
 /** Applies Naucto button styling to the native element it sits on. */
 @Directive({
   selector: 'button[ncButton], a[ncButton], label[ncButton]',
@@ -87,10 +83,10 @@ function coerceBoolean(value: boolean | string): boolean {
 export class ButtonDirective {
   readonly variant = input<ButtonVariant>('secondary');
   readonly size = input<ButtonSize | RetiredButtonSize>('md');
-  readonly iconOnly = input(false, { transform: coerceBoolean });
+  readonly iconOnly = input(false, { transform: booleanAttribute });
   /** Latched: an open trigger, a held tool. The caller owns the ARIA state that says which. */
-  readonly pressed = input(false, { transform: coerceBoolean });
-  readonly copied = input(false, { transform: coerceBoolean });
+  readonly pressed = input(false, { transform: booleanAttribute });
+  readonly copied = input(false, { transform: booleanAttribute });
 
   protected readonly classes = computed(() => {
     const size = SIZES[this.size()];
