@@ -99,7 +99,14 @@
             {{ descOpen() ? t('game.showLess') : t('game.showMore') }}
           </button>
         }
-        <div class="mt-2 grid grid-cols-2 gap-1">
+        @if (release.tags.length) {
+          <div class="mt-1.5 flex flex-wrap gap-0.5">
+            @for (tag of release.tags; track tag) {
+              <nc-chip kind="tag">{{ tag }}</nc-chip>
+            }
+          </div>
+        }
+        <div class="mt-3 grid grid-cols-2 gap-1.5">
           <button
             ncButton
             size="bar"
@@ -133,18 +140,11 @@
             variant="ghost"
             size="sm"
             type="button"
-            class="mt-1 -ml-[13px]"
+            class="mx-auto mt-2 flex w-fit"
             (click)="report(release)">
             <nc-mark name="flag" />
             {{ t('moderation.reportGame') }}
           </button>
-        }
-        @if (release.tags.length) {
-          <div class="mt-2 flex flex-wrap gap-0.5">
-            @for (tag of release.tags; track tag) {
-              <nc-chip kind="tag">{{ tag }}</nc-chip>
-            }
-          </div>
         }
       </div>
       @if (remixes().length) {
