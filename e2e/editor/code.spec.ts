@@ -565,9 +565,8 @@ test('Step one frame advances a paused game by one update, and pauses a running 
   await page.getByRole('button', { name: 'Pause' }).click();
   await page.getByRole('tab', { name: 'Perf' }).click();
   // The readout samples the engine on a timer: let it catch up with the pause before reading.
-  const frame = page.getByText(/^FRAME \d+$/);
-  const read = async (): Promise<number> =>
-    Number((await frame.textContent())?.replace('FRAME ', ''));
+  const frame = page.getByTestId('perf-frame').locator('span').last();
+  const read = async (): Promise<number> => Number(await frame.textContent());
   await expect
     .poll(async () => {
       const before = await read();
@@ -577,7 +576,7 @@ test('Step one frame advances a paused game by one update, and pauses a running 
     .toBe(0);
   const frameNumber = await read();
   await page.getByRole('button', { name: 'Step one frame' }).click();
-  await expect(frame).toHaveText(`FRAME ${String(frameNumber + 1)}`);
+  await expect(frame).toHaveText(String(frameNumber + 1));
 
   await page.getByRole('button', { name: 'Play' }).click();
   await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();

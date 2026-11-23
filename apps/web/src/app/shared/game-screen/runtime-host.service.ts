@@ -20,6 +20,9 @@ import { GamepadSeatsStore } from '../controls/gamepad-seats.store';
 import { ActiveRuntimeService } from './active-runtime.service';
 import { faultError } from './fault-error';
 
+/** How many readings the PERF graphs keep: half a minute at one every 250 ms. */
+const PERF_HISTORY = 120;
+
 /**
  * Owns one running game: engine, renderer, audio, input sources. Provided per
  * screen (component-level) so the editor and the play page each get their own. What a key or a
@@ -43,6 +46,9 @@ export class RuntimeHostService {
   readonly fps = signal(0);
   readonly cpu = signal(0);
   readonly frame = signal(0);
+  /** The readings taken while the game ran, oldest first; emptied when it goes back to idle. */
+  readonly fpsHistory = signal<readonly number[]>([]);
+  readonly cpuHistory = signal<readonly number[]>([]);
   /** The canvas the game is drawn on, at the console's own resolution; null until one is mounted. */
   readonly canvas = signal<HTMLCanvasElement | null>(null);
 
@@ -159,6 +165,11 @@ export class RuntimeHostService {
       this.fps.set(Math.round(engine.stats.fps));
       this.cpu.set(Math.round(engine.stats.cpu * 100));
       this.frame.set(engine.stats.frame);
+      // Until two frames have been presented there is no rate to read, only a zero.
+      if (engine.currentState === 'running' && engine.stats.fps > 0) {
+        this.fpsHistory.update((history) => [...history.slice(1 - PERF_HISTORY), this.fps()]);
+        this.cpuHistory.update((history) => [...history.slice(1 - PERF_HISTORY), this.cpu()]);
+      }
     }, 250);
     this.setState('idle');
     this.error.set(null);
@@ -230,6 +241,10 @@ export class RuntimeHostService {
 
   private setState(next: EngineState): void {
     this.state.set(next);
+    if (next === 'idle') {
+      this.fpsHistory.set([]);
+      this.cpuHistory.set([]);
+    }
     for (const listener of this.stateListeners) {
       listener(next);
     }

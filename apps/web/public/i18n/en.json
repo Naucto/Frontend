@@ -522,6 +522,9 @@
     "clear": "Clear",
     "console": "Console",
     "perf": "Perf",
+    "perfFps": "FPS",
+    "perfCpu": "CPU",
+    "perfFrame": "Frame",
     "consoleTabs": "Console panes",
     "docSoon": "The reference pane arrives with the docs step.",
     "status": {

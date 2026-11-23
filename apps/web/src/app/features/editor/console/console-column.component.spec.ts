@@ -6,8 +6,6 @@ import { installMemoryStorage } from '../../../testing/memory-storage';
 import { testProviders } from '../../../testing/providers';
 import { EditorRuntimeService } from '../state/editor-runtime.service';
 import { EditorUiStore } from '../state/editor-ui.store';
-import { SessionPresenceService } from '../work-session/session-presence.service';
-import { SessionSaveService } from '../work-session/session-save.service';
 import { WorkSessionService } from '../work-session/work-session.service';
 import { ConsoleColumnComponent } from './console-column.component';
 
@@ -25,8 +23,6 @@ describe('ConsoleColumnComponent', () => {
         EditorRuntimeService,
         EditorUiStore,
         { provide: WorkSessionService, useValue: { game: { codeFiles } } },
-        { provide: SessionSaveService, useValue: {} },
-        { provide: SessionPresenceService, useValue: {} },
       ],
     });
     // The column's own template brings the game screen with it; what is at stake here is the

@@ -13,11 +13,14 @@ import {
   viewChild,
 } from '@angular/core';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
+import { STEP_MS } from '@naucto/engine';
 import {
   ButtonDirective,
   IconComponent,
   LcdComponent,
   MarkComponent,
+  type PerfBand,
+  PerfGraphComponent,
   TabsComponent,
   ToggleComponent,
 } from '@naucto/ui';
@@ -30,9 +33,28 @@ import {
   PIP_MAX_AREA_SHARE,
   PIP_MIN_WIDTH,
 } from '../state/editor-ui.store';
-import { SessionPresenceService } from '../work-session/session-presence.service';
-import { SessionSaveService } from '../work-session/session-save.service';
 import { WorkSessionService } from '../work-session/work-session.service';
+
+/** The engine steps at a fixed rate and presents once per step, so this is the most a game shows. */
+const TARGET_FPS = 1000 / STEP_MS;
+/** Below this share of the target, steps are being dropped often enough to see. */
+const FPS_WARN_SHARE = 0.9;
+/** Below this share, the game runs at half speed or worse. */
+const FPS_OVER_SHARE = 0.5;
+/** CPU is one step's work as a share of the step's budget; past 100% the game falls behind. */
+const CPU_WARN = 70;
+const CPU_OVER = 90;
+
+const FPS_BANDS: readonly PerfBand[] = [
+  { from: Number.NEGATIVE_INFINITY, to: TARGET_FPS * FPS_OVER_SHARE, tone: 'over' },
+  { from: TARGET_FPS * FPS_OVER_SHARE, to: TARGET_FPS * FPS_WARN_SHARE, tone: 'warn' },
+  { from: TARGET_FPS * FPS_WARN_SHARE, to: Number.POSITIVE_INFINITY, tone: 'ok' },
+];
+const CPU_BANDS: readonly PerfBand[] = [
+  { from: Number.NEGATIVE_INFINITY, to: CPU_WARN, tone: 'ok' },
+  { from: CPU_WARN, to: CPU_OVER, tone: 'warn' },
+  { from: CPU_OVER, to: Number.POSITIVE_INFINITY, tone: 'over' },
+];
 
 /** The viewer's own picture is 16:9, which is what makes the card's height follow its width. */
 const PIP_PICTURE_RATIO = 16 / 9;
@@ -64,6 +86,7 @@ const PIP_GRIPS: readonly { grip: PipGrip; box: string; cursor: string }[] = [
     IconComponent,
     MarkComponent,
     LcdComponent,
+    PerfGraphComponent,
     TabsComponent,
     ToggleComponent,
     GameScreenComponent,
@@ -88,13 +111,15 @@ export class ConsoleColumnComponent {
       (!this.popped() && !this.lent() && this.ui.activeTab() !== 'code'),
   );
   protected readonly session = inject(WorkSessionService);
-  protected readonly presence = inject(SessionPresenceService);
-  protected readonly saves = inject(SessionSaveService);
   private readonly transloco = inject(TranslocoService);
   private readonly pipAt = signal<{ x: number; y: number } | null>(null);
   /** The title bar's height as drawn, which is the least of the card that must stay in reach. */
   private readonly grab = signal(0);
   protected readonly grips = PIP_GRIPS;
+  protected readonly fpsBands = FPS_BANDS;
+  protected readonly cpuBands = CPU_BANDS;
+  /** A little over the target, so a steady game draws its line under the well's top edge. */
+  protected readonly fpsMax = TARGET_FPS * 1.1;
   private readonly column = viewChild<ElementRef<HTMLElement>>('column');
   private readonly dock = viewChild<ElementRef<HTMLElement>>('dock');
   private readonly card = viewChild<ElementRef<HTMLElement>>('card');
@@ -121,16 +146,6 @@ export class ConsoleColumnComponent {
   private readonly errorCount = computed(
     () => this.lines().filter((line) => line.level === 'error').length,
   );
-  protected readonly players = computed(() => {
-    const bridge = this.editorRuntime.bridge();
-    const session = bridge?.session();
-    const info = bridge?.info();
-    if (!bridge || !session || !info) {
-      return '—';
-    }
-    const others = bridge.peers().filter((peerId) => peerId !== session.selfUserId).length;
-    return `${String(others + 1)} / ${String(info.maxPlayers)}`;
-  });
 
   /**
    * Where the card sits while it floats. Clamped so a window that narrows or shortens cannot leave

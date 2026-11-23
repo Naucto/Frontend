@@ -134,13 +134,26 @@
         }
         @case ('perf') {
           <nc-lcd variant="flush" class="h-full">
-            <div>FPS {{ runtime.fps() }}</div>
-            <div>CPU {{ runtime.cpu() }}%</div>
-            <div>FRAME {{ runtime.frame() }}</div>
-            <div>STATE {{ runtime.state() }}</div>
-            <div>PLAYERS {{ players() }}</div>
-            <div>EDITORS {{ presence.collaborators().length }}</div>
-            <div>SYNC {{ saves.synced() ? 'synced' : 'pending' }}</div>
+            <div class="grid h-full grid-rows-[1fr_1fr_auto] gap-[14px] font-ui whitespace-normal">
+              <nc-perf-graph
+                [label]="t('editor.perfFps')"
+                [value]="runtime.state() === 'idle' ? '—' : '' + runtime.fps()"
+                [samples]="runtime.fpsHistory()"
+                [max]="fpsMax"
+                [bands]="fpsBands" />
+              <nc-perf-graph
+                [label]="t('editor.perfCpu')"
+                [value]="runtime.state() === 'idle' ? '—' : runtime.cpu() + '%'"
+                [samples]="runtime.cpuHistory()"
+                [max]="100"
+                [bands]="cpuBands" />
+              <div class="flex items-baseline justify-between gap-1.5" data-testid="perf-frame">
+                <span class="text-label tracking-strip text-lcd-dim uppercase">
+                  {{ t('editor.perfFrame') }}
+                </span>
+                <span class="text-ui leading-none">{{ runtime.frame() }}</span>
+              </div>
+            </div>
           </nc-lcd>
         }
       }
