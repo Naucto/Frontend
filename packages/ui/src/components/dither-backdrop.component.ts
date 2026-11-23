@@ -111,6 +111,8 @@ export class DitherBackdropComponent {
    * With neither, the ground is left bare.
    */
   readonly tint = input<string | null>(null);
+  /** Up to three colours, one a blob, that stand in for a picture before `tint` does. */
+  readonly tints = input<readonly string[]>([]);
   /** What the blobs are placed from: one seed, one sky. */
   readonly seed = input('');
 
@@ -210,10 +212,11 @@ export class DitherBackdropComponent {
       const { ground, dark } = pageGround(this.host);
       const image = this.image();
       const tint = this.tint();
-      const found = image ? await readCover(image) : [];
+      const read = image ? await readCover(image) : [];
       if (mine !== aim) {
         return;
       }
+      const found = read.length ? read : this.tints().map((tint) => channels(tint));
       const colours =
         found.length || tint
           ? threeColours(found, tint ? channels(tint) : ground)
@@ -229,6 +232,7 @@ export class DitherBackdropComponent {
     effect(() => {
       this.image();
       this.tint();
+      this.tints();
       this.seed();
       void retarget();
     });
