@@ -30,7 +30,25 @@ A glyph is drawn for the size it is shown at, on a grid whose cell is one kit pi
 `nc-mark` is five cells (15px), and a mark of another size is drawn on its own grid of 3px cells.
 An `nc-icon` is 18 beside words or 24 standing alone, each its own drawing in
 `packages/ui/src/icons/`, and is never scaled to fit a control. A control's frame keeps one pixel
-clear of its glyph: a mark at 30, an icon of 18 at 36, one of 24 from 40.
+clear of its glyph: none at 28 (`xs`), a mark at 30 (`sm`), an icon of 18 at 36 (`md`), one of 24
+from 40 (`lg`). A control too low for the icon it needs takes the mark of that name, drawn in
+`marks.txt` if it is not there yet (a `sm` Report button carries the `flag` mark), or grows a
+step. A state that is on or done takes the filled drawing, `<name>-filled`. `npm run pixel:check`
+fails on any other icon size and on a glyph too large for the button it is written in, and
+`npm run icons:check` on a drawing made at one size only.
+
+A screen that may not be changed is closed once, not control by control: `[ncDisabledScope]` on
+the container closes every kit control under it, and `ncLooksOnly` lets through, by name, what
+only changes the view (a tab strip that navigates, a zoom, a transport). A mock-up of such a
+state uses the scope, so it shows what the kit will really draw. A new kit control with a
+`disabled` reads the scope with `closedBy` and is shown under "Disabled context" on `/ui-kit`;
+`.claude/skills/naucto-editor-modes/SKILL.md` is the method inside the editor.
+
+What moderation shows has its pieces already. Report is a ghost `sm` button with the `flag` mark;
+something hidden wears an `nc-chip` of tone `hot` in the place of what it replaces (who can open a
+collection); what was removed or withheld is said in an `nc-notice`, in its `band` variant
+across a shell or an editor (`nc-suspension-band`, `nc-read-only-band`); a list of decisions is
+the kit's table over `nc-pager`. A new moderated thing takes these, not a treatment of its own.
 
 A title on a fixed-width plate stays on **one line**: squeezed horizontally down to a floor of
 0.62, and only then cut with an ellipsis, as the design's fitted titles are (`squeeze` in
@@ -83,7 +101,8 @@ unless the user asks to keep them.
 ## 5. Verify
 
 1. `npm run lint && npm run typecheck && npm test`
-2. `npm run pixel:check && npm run i18n:check && npm run format:check`
+2. `npm run pixel:check && npm run i18n:check && npm run format:check`, and
+   `npm run icons:check` after touching a drawing
 3. A dev server of your own: `npx ng serve web --port <free port>`. Port 3001 is the shared
    default and may be serving another tree.
 4. The e2e specs of the screens you touched, by name:
