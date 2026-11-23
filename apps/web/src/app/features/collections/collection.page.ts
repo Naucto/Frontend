@@ -1,4 +1,4 @@
-import { CdkDrag, type CdkDragDrop, CdkDropList } from '@angular/cdk/drag-drop';
+import { CdkDrag, type CdkDragDrop, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
 import {
   afterRenderEffect,
   ChangeDetectionStrategy,
@@ -257,7 +257,7 @@ export default class CollectionPage {
     this.standing.run(
       () => {
         const projectIds = games.map((other) => other.id);
-        projectIds.splice(to, 0, ...projectIds.splice(from, 1));
+        moveItemInArray(projectIds, from, to);
         this.order.set(projectIds);
         this.moved.set(
           this.i18n.translate('collections.moved', {
