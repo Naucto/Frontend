@@ -39,7 +39,7 @@ const SIDES =
   imports: [MarkComponent],
   templateUrl: './swatch-picker.component.html',
   host: {
-    class: 'inline-grid justify-start',
+    '[class]': "fill() ? 'grid' : 'inline-grid justify-start'",
     '[style.grid-template-columns]': 'columnTrack()',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -55,11 +55,15 @@ export class SwatchPickerComponent {
   readonly noneLabel = input('No colour');
   /** Swatches to a row. */
   readonly columns = input(8);
+  /** Stretch the cells across the width of the container, keeping their height. */
+  readonly fill = input(false, { transform: booleanAttribute });
 
   /** What was selected before the last pick; `undefined` until something is picked. */
   private readonly previous = signal<number | null | undefined>(undefined);
 
-  protected readonly columnTrack = computed(() => `repeat(${String(this.columns())}, auto)`);
+  protected readonly columnTrack = computed(
+    () => `repeat(${String(this.columns())}, ${this.fill() ? 'minmax(0, 1fr)' : 'auto'})`,
+  );
 
   protected readonly cells = computed<SwatchCell[]>(() => {
     const slots: (number | null)[] = this.allowNone() ? [null, ...this.slots()] : [...this.slots()];
@@ -90,6 +94,25 @@ export class SwatchPickerComponent {
   protected markClass(slot: number | null): string {
     const picked = this.previous() !== undefined;
     return slot === this.value() ? mark(true, picked) : mark(false, slot === this.previous());
+  }
+
+  protected move(event: KeyboardEvent, index: number): void {
+    const columns = this.columns();
+    const step: Record<string, number> = {
+      ArrowLeft: -1,
+      ArrowRight: 1,
+      ArrowUp: -columns,
+      ArrowDown: columns,
+    };
+    const delta = step[event.key];
+    const swatches = (event.currentTarget as HTMLElement).parentElement?.children;
+    const target = swatches?.[index + (delta ?? 0)];
+    if (delta === undefined || !(target instanceof HTMLButtonElement)) {
+      return;
+    }
+    event.preventDefault();
+    target.focus();
+    target.click();
   }
 
   protected pick(slot: number | null): void {

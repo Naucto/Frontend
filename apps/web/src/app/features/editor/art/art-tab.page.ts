@@ -27,6 +27,7 @@ import {
   PopoverPanelComponent,
   SectionComponent,
   SliderComponent,
+  SwatchPickerComponent,
   type TabItem,
   TabsComponent,
   ToggleButtonComponent,
@@ -36,7 +37,6 @@ import {
 
 import { collectionsSignal } from '../../../shared/pixel/collections.signal';
 import { geometrySignal } from '../../../shared/pixel/geometry.signal';
-import { PaletteGridComponent } from '../../../shared/pixel/palette-grid.component';
 import { type Pt, type Transform } from '../../../shared/pixel/pixel-tools';
 import { SheetPainter } from '../../../shared/pixel/sheet-painter';
 import { TransformBarComponent } from '../../../shared/pixel/transform-bar.component';
@@ -81,12 +81,12 @@ const PRESETS: { name: string; colours: readonly string[] }[] = [
     TabsComponent,
     HelpDotComponent,
     BitFlagsComponent,
+    SwatchPickerComponent,
     SliderComponent,
     ToggleButtonComponent,
     ToolGroupComponent,
     PopoverDirective,
     PopoverPanelComponent,
-    PaletteGridComponent,
     PaletteEditorComponent,
     SheetViewComponent,
     SpriteCanvasComponent,
@@ -217,6 +217,7 @@ export default class ArtTabPage {
     this.painter.version();
     return this.session.game.palette;
   });
+  protected readonly paletteSlots = computed(() => this.palette().map((_, slot) => slot));
   protected readonly flags = computed(() => {
     this.flagsVersion();
     return this.sheet()?.getFlag(this.spriteNumber()) ?? 0;

@@ -313,11 +313,13 @@
           }
         </nc-popover-panel>
       </ng-template>
-      <nc-palette-grid
+      <nc-swatch-picker
+        fill
         [colours]="palette()"
+        [slots]="paletteSlots()"
         [value]="art.colour()"
-        (valueChange)="art.setColour($event)"
-        [label]="t('editor.art.palette')" />
+        (valueChange)="art.setColour($event ?? 0)"
+        [slotLabel]="t('editor.art.slot')" />
       <nc-palette-editor
         class="mt-1"
         [colours]="palette()"
