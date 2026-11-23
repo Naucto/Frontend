@@ -40,9 +40,9 @@ const REFUSALS: Record<string, string> = {
 };
 
 /**
- * Reports a game, a comment or a profile to the moderators: why, and anything they should know.
- * The code calls a report a flag, since "report" already names bug reports. Closes with true once
- * the report is sent.
+ * Reports a game, a comment, a collection or a profile to the moderators: why, and anything they
+ * should know. The code calls a report a flag, since "report" already names bug reports. Closes
+ * with true once the report is sent.
  */
 @Component({
   selector: 'nc-flag-content-dialog',

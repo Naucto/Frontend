@@ -6,8 +6,8 @@ import type { FlagContentData, FlagContentDialog } from './flag-content.dialog';
 import { GoodStandingAction } from './good-standing-action';
 
 /**
- * Opens the report of a game, a comment or a profile from anywhere, asking a signed-out reader to
- * sign in first: a report names the account it comes from.
+ * Opens the report of a game, a comment, a collection or a profile from anywhere, asking a
+ * signed-out reader to sign in first: a report names the account it comes from.
  */
 @Injectable({ providedIn: 'root' })
 export class ContentFlagLauncher {
