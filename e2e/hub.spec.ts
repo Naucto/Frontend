@@ -151,7 +151,7 @@ test.describe('the hub', () => {
 });
 
 test.describe('the results view', () => {
-  test('opens a shelf out from its "see all", in panels by first tag, a page at a time', async ({
+  test('opens a shelf out from its "see all", in shelves by first tag, a page at a time', async ({
     page,
   }) => {
     await mockHub(page);
@@ -165,16 +165,20 @@ test.describe('the results view', () => {
     await expect(page.getByRole('radio', { name: 'Hub order' })).toBeChecked();
 
     const arcade = page.getByRole('region', { name: 'Arcade' });
-    await expect(arcade.getByRole('link')).toHaveCount(12);
-    await expect(arcade.locator('nc-chip')).toHaveText('12');
+    await expect(arcade.locator('[role="listitem"]')).toHaveCount(12);
+    await expect(arcade.locator('nc-chip[shelfAction]')).toHaveText('12');
     await expect(arcade.getByRole('link', { name: 'Popular 1', exact: true })).toContainText(
       'Popular 1',
     );
-    await expect(page.getByRole('region', { name: 'Puzzle' }).getByRole('link')).toHaveCount(12);
+    await expect(
+      page.getByRole('region', { name: 'Puzzle' }).locator('[role="listitem"]'),
+    ).toHaveCount(12);
     await expect(page.getByRole('region', { name: 'Untagged' })).toHaveCount(0);
 
     await page.getByRole('button', { name: 'Show 6 more' }).click();
-    await expect(page.getByRole('region', { name: 'Untagged' }).getByRole('link')).toHaveCount(6);
+    await expect(
+      page.getByRole('region', { name: 'Untagged' }).locator('[role="listitem"]'),
+    ).toHaveCount(6);
     await expect(page.getByRole('button', { name: /^Show/ })).toHaveCount(0);
 
     const sorted = page.waitForRequest(/\/hub\/shelves\/popular\?.*sort=fresh/);
