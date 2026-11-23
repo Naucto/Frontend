@@ -4,7 +4,7 @@ import * as Y from 'yjs';
 import { EditableGame } from '../packages/engine/src/game/EditableGame';
 import { Game } from '../packages/engine/src/game/Game';
 import { GAME_SCHEMA_VERSION, KEYS } from '../packages/engine/src/game/keys';
-import { migrateBlob } from './migrate-games';
+import { migrateBlob, parseArgs } from './migrate-games';
 
 const V1_CODE = [
   'function _update()',
@@ -123,4 +123,28 @@ describe('migrateBlob', () => {
     expect(out.bytes).toBeNull();
     expect(out.from).toBe(GAME_SCHEMA_VERSION);
   });
+});
+
+describe('parseArgs', () => {
+  const ID = '7c9e6679-7425-40de-944b-e07fc1f90ae7';
+
+  it('takes one project by its id, a UUID, as the database and the object keys spell it', () => {
+    expect(parseArgs(['--dry-run', '--project', ID])).toEqual({ mode: 'dry-run', project: ID });
+    expect(parseArgs(['--apply', '--project', ID.toUpperCase()])).toEqual({
+      mode: 'apply',
+      project: ID,
+    });
+    expect(parseArgs(['--check', ID])).toEqual({ mode: 'check', project: ID });
+  });
+
+  it('runs over every project when none is named', () => {
+    expect(parseArgs(['--apply'])).toEqual({ mode: 'apply', project: null });
+  });
+
+  it.each([['--project', '41'], ['--check', '41'], ['--project', `${ID}0`], ['--project']])(
+    'refuses %s %s: a project is named by a UUID and nothing else',
+    (...argv) => {
+      expect(() => parseArgs(['--dry-run', ...argv.filter(Boolean)])).toThrow(/needs a project id/);
+    },
+  );
 });

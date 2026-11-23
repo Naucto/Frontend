@@ -2,7 +2,8 @@
  * Migrates every stored game document of a deployment in place.
  *
  * A game lives in S3 only: its autosaves (`save/<id>/<epochMs>`), its named versions
- * (`checkpoint/<id>/<name>`) and, once published, an independent copy at `release/<id>`. Each is a
+ * (`checkpoint/<id>/<name>`) and, once published, an independent copy at `release/<id>`, where
+ * `<id>` is the project's id, a UUID. Each is a
  * Yjs update, and the editor migrates one transparently when it opens it -- but a release is never
  * opened by the editor, a checkpoint only when restored, and the `Project` row keeps a size
  * breakdown of the latest autosave stamped with the schema it was computed from. This brings all
@@ -167,7 +168,7 @@ interface ObjectResult {
 }
 
 interface ProjectResult {
-  id: number;
+  id: string;
   published: boolean;
   objects: ObjectResult[];
   contentSize?: { total: number; schemaVersion: number; written: boolean };
@@ -192,7 +193,7 @@ interface Report {
 // ---- arguments and environment --------------------------------------------
 
 type Args =
-  { mode: 'dry-run' | 'apply'; project: number | null } | { mode: 'check'; project: number };
+  { mode: 'dry-run' | 'apply'; project: string | null } | { mode: 'check'; project: string };
 
 const USAGE = `usage: migrate-games (--dry-run | --apply) [--project <id>]
        migrate-games --check <id>`;
@@ -200,18 +201,22 @@ const USAGE = `usage: migrate-games (--dry-run | --apply) [--project <id>]
 const errorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
 
-function parseId(flag: string, value: string | undefined): number {
-  if (value === undefined || !/^\d+$/.test(value)) {
-    throw new Error(`${flag} needs a project id`);
+const PROJECT_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+/** The id as the database and the object keys spell it: a UUID, in lower case. */
+function parseId(flag: string, value: string | undefined): string {
+  const id = value?.toLowerCase();
+  if (id === undefined || !PROJECT_ID.test(id)) {
+    throw new Error(`${flag} needs a project id, a UUID`);
   }
-  return Number(value);
+  return id;
 }
 
-function parseArgs(argv: string[]): Args {
+export function parseArgs(argv: string[]): Args {
   let dryRun = false;
   let apply = false;
-  let project: number | null = null;
-  let check: number | null = null;
+  let project: string | null = null;
+  let check: string | null = null;
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     switch (arg) {
@@ -342,15 +347,15 @@ const epochOf = (saveKey: string): number => Number(saveKey.slice(saveKey.lastIn
 
 async function objectsOf(
   store: Store,
-  id: number,
+  id: string,
   published: boolean,
 ): Promise<{ keys: string[]; latestSave: string | null; notes: string[] }> {
-  const saves = await listKeys(store, `save/${String(id)}/`);
-  const checkpoints = await listKeys(store, `checkpoint/${String(id)}/`);
+  const saves = await listKeys(store, `save/${id}/`);
+  const checkpoints = await listKeys(store, `checkpoint/${id}/`);
   const keys = [...saves, ...checkpoints];
   const notes: string[] = [];
   if (published) {
-    const release = `release/${String(id)}`;
+    const release = `release/${id}`;
     if (await exists(store, release)) {
       keys.push(release);
     } else {
@@ -375,28 +380,29 @@ interface Run {
 }
 
 interface ProjectRow {
-  id: number;
+  id: string;
   published: boolean;
 }
 
 // Prisma names the table after the model (`"Project"`, no `@@map`) and `publishedAt` after the
 // field, while the two size columns are the ones the model maps to snake_case.
-async function listProjects(db: PgClient, only: number | null): Promise<ProjectRow[]> {
-  const where = only === null ? '' : 'WHERE id = $1';
+async function listProjects(db: PgClient, only: string | null): Promise<ProjectRow[]> {
+  const where = only === null ? '' : 'WHERE id = $1::uuid';
+  // Oldest first, so a run that stops can be told how far it got; the id only breaks a tie.
   const { rows } = await db.query(
-    `SELECT id, "publishedAt" IS NOT NULL AS published FROM "Project" ${where} ORDER BY id`,
+    `SELECT id, "publishedAt" IS NOT NULL AS published FROM "Project" ${where} ORDER BY "createdAt", id`,
     only === null ? [] : [only],
   );
-  return rows.map((row) => ({ id: Number(row['id']), published: row['published'] === true }));
+  return rows.map((row) => ({ id: String(row['id']), published: row['published'] === true }));
 }
 
 async function storeContentSize(
   db: PgClient,
-  id: number,
+  id: string,
   breakdown: ContentSizeBreakdown,
 ): Promise<void> {
   await db.query(
-    'UPDATE "Project" SET content_size = $1::jsonb, content_size_total = $2 WHERE id = $3',
+    'UPDATE "Project" SET content_size = $1::jsonb, content_size_total = $2 WHERE id = $3::uuid',
     [JSON.stringify(breakdown), breakdown.total, id],
   );
 }
@@ -464,7 +470,7 @@ async function processProject(run: Run, row: ProjectRow): Promise<ProjectResult>
     const { result: object, migrated } = await processObject(run, key);
     result.objects.push(object);
     if (object.status !== 'skipped') {
-      console.log(`  #${String(row.id)} ${key}: ${object.status}${describeTransition(object)}`);
+      console.log(`  ${row.id} ${key}: ${object.status}${describeTransition(object)}`);
     }
     for (const warning of object.warnings) {
       console.log(`      ${warning}`);
@@ -497,7 +503,7 @@ function tally(report: Report): void {
     if (project.contentSize !== undefined) {
       report.totals.contentSizes += 1;
     }
-    report.warnings.push(...project.notes.map((note) => `#${String(project.id)}: ${note}`));
+    report.warnings.push(...project.notes.map((note) => `${project.id}: ${note}`));
     for (const object of project.objects) {
       report.totals[object.status] += 1;
       if (object.status === 'migrated') {
@@ -505,7 +511,7 @@ function tally(report: Report): void {
         report.transitions[transition] = (report.transitions[transition] ?? 0) + 1;
       }
       report.warnings.push(
-        ...object.warnings.map((warning) => `#${String(project.id)} ${object.key}: ${warning}`),
+        ...object.warnings.map((warning) => `${project.id} ${object.key}: ${warning}`),
       );
     }
   }
@@ -537,7 +543,7 @@ function printSummary(report: Report, path: string): void {
   const failed = report.projects.flatMap((project) =>
     project.objects
       .filter((object) => object.status === 'failed')
-      .map((object) => `  #${String(project.id)} ${object.key}: ${object.error ?? ''}`),
+      .map((object) => `  ${project.id} ${object.key}: ${object.error ?? ''}`),
   );
   if (failed.length > 0) {
     console.log(`failed (${String(failed.length)}):`);
@@ -548,14 +554,14 @@ function printSummary(report: Report, path: string): void {
   console.log(`report: ${path}`);
 }
 
-async function check(run: Run, id: number): Promise<void> {
+async function check(run: Run, id: string): Promise<void> {
   const [row] = await listProjects(run.db, id);
   if (row === undefined) {
-    throw new Error(`no project ${String(id)}`);
+    throw new Error(`no project ${id}`);
   }
   const { keys, latestSave, notes } = await objectsOf(run.store, id, row.published);
   console.log(
-    `#${String(id)} ${row.published ? 'published' : 'unpublished'}, ${String(keys.length)} objects, current schema ${String(GAME_SCHEMA_VERSION)}`,
+    `${id} ${row.published ? 'published' : 'unpublished'}, ${String(keys.length)} objects, current schema ${String(GAME_SCHEMA_VERSION)}`,
   );
   for (const note of notes) {
     console.log(`  ${note}`);
@@ -657,7 +663,7 @@ async function main(): Promise<void> {
     run.computeContentSize = loadContentSize(report.warnings);
     const rows = await listProjects(db, args.project);
     if (args.project !== null && rows.length === 0) {
-      throw new Error(`no project ${String(args.project)}`);
+      throw new Error(`no project ${args.project}`);
     }
     console.log(`${args.mode}: ${String(rows.length)} project(s) in ${store.bucket}`);
     for (const row of rows) {
