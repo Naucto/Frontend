@@ -22,7 +22,7 @@ export type SearchSize = 'sm' | 'md';
 const SIZE: Record<SearchSize, { host: string; input: string; icon: string; glyph: IconSize }> = {
   sm: {
     host: 'h-(--nc-h-sm) gap-1 px-[9px]',
-    input: 'font-mono text-micro',
+    input: 'text-micro',
     icon: '',
     glyph: 12,
   },

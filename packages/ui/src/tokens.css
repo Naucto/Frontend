@@ -644,7 +644,7 @@
 }
 
 @utility label {
-  font-family: var(--font-mono);
+  font-family: var(--font-ui);
   font-size: var(--text-label);
   line-height: var(--text-label--line-height);
   --nc-tracking: var(--tracking-label);

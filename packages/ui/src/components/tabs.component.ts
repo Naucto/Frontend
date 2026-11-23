@@ -95,14 +95,14 @@ const VARIANT: Record<
     label: '',
     icon: 24,
   },
-  // The editor console: mono, full-bleed in its column, and jade — the colour the machine talks in.
+  // The editor console: full-bleed in its column, and jade — the colour the machine talks in.
   console: {
     frame: `h-(--nc-h-lg) ${RULE}`,
     list: '',
-    off: `${TAB} ${OFF} h-[34px] gap-1 px-[14px] font-mono text-meta tracking-strip uppercase hover:h-[37px]`,
+    off: `${TAB} ${OFF} h-[34px] gap-1 px-[14px] text-meta tracking-strip uppercase hover:h-[37px]`,
     on:
       `${TAB} bevel-edge-line-strong bevel-hi-jade-ink bevel-fill-raised text-jade-ink ` +
-      'h-(--nc-h-lg) gap-1 px-[14px] font-mono text-meta tracking-strip uppercase',
+      'h-(--nc-h-lg) gap-1 px-[14px] text-meta tracking-strip uppercase',
     label: '',
     icon: 12,
   },

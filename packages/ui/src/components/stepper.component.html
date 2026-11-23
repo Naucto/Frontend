@@ -44,7 +44,7 @@
   @for (option of options(); track $index) {
     <button
       type="button"
-      class="absolute -translate-x-1/2 font-mono text-label whitespace-nowrap"
+      class="absolute -translate-x-1/2 text-label whitespace-nowrap"
       [class]="$index === value() ? 'text-active-ink' : 'text-ink-4 hover:text-ink'"
       [style.left.%]="percent($index)"
       (click)="value.set($index)">

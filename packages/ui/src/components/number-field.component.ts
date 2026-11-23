@@ -113,14 +113,14 @@ export class NumberFieldComponent {
   /** Lifted a pixel so its ground, once held, reaches the rim instead of stopping under it. */
   protected readonly buttonClass = computed(
     () =>
-      `-mt-[3px] flex flex-none items-center justify-center font-mono enabled:active:bg-line disabled:text-ink-4 ${TONE[this.tone()].button} ${SIZE[this.size()].button}`,
+      `-mt-[3px] flex flex-none items-center justify-center enabled:active:bg-line disabled:text-ink-4 ${TONE[this.tone()].button} ${SIZE[this.size()].button}`,
   );
   protected readonly labelClass = computed(
     () => `font-ui text-micro tracking-strip uppercase ${TONE[this.tone()].label}`,
   );
   protected readonly inputClass = computed(
     () =>
-      `flex-1 font-mono outline-none placeholder:text-ink-4 ${this.label() || this.unit() ? 'text-right' : 'text-center'} ${TONE[this.tone()].value} ${SIZE[this.size()].value}`,
+      `flex-1 outline-none placeholder:text-ink-4 ${this.label() || this.unit() ? 'text-right' : 'text-center'} ${TONE[this.tone()].value} ${SIZE[this.size()].value}`,
   );
   protected readonly shown = computed(() => this.print(this.value()));
   /** Wide enough for the largest number it may hold; a box that fills its cell grows from there. */

@@ -110,7 +110,7 @@ export class AvatarComponent {
   protected readonly classes = computed(() => {
     const type = TYPE.find(([from]) => this.size() >= from)?.[1] ?? 'text-label';
     return [
-      'flat-sm bevel-edge-line-strong inline-flex shrink-0 items-center justify-center overflow-hidden font-mono leading-none uppercase',
+      'flat-sm bevel-edge-line-strong inline-flex shrink-0 items-center justify-center overflow-hidden leading-none uppercase',
       type,
       this.overlap() ? '-ml-1 shadow-[0_0_0_var(--nc-px)_var(--color-panel)] first:ml-0' : '',
     ].join(' ');

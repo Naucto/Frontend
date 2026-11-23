@@ -15,7 +15,7 @@ export const LOW_RATING_MAX = 4;
 /** And one above this as praise. */
 const MID_RATING_MAX = 7;
 
-const SCORE = `${CELL} h-(--nc-h-sm) min-w-0 font-mono text-meta tabular-nums text-ink-3 data-on:cursor-default`;
+const SCORE = `${CELL} h-(--nc-h-sm) min-w-0 text-meta tabular-nums text-ink-3 data-on:cursor-default`;
 
 /**
  * A score out of ten, as one row of joined cells. The chosen cell takes the colour of what the
