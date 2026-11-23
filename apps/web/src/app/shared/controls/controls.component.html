@@ -1,12 +1,11 @@
 <div *transloco="let t" class="grid grid-cols-[minmax(0,1fr)] gap-3">
-  <section>
-    <nc-label class="mb-1">{{ t('controls.gamepads') }}</nc-label>
+  <nc-settings-group [title]="t('controls.gamepads')">
     @if (pads().length) {
-      <div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,330px),1fr))] gap-2">
+      <div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,330px),1fr))] gap-2 p-2.25">
         @for (card of cards(); track card.player) {
           @if (card.pad; as pad) {
             <article
-              class="flat-lg bevel-fill-panel grid grid-cols-[minmax(0,1fr)] content-start gap-2 pt-1.5 pb-2.5"
+              class="flat-lg bevel-fill-inset grid grid-cols-[minmax(0,1fr)] content-start gap-2 pt-1.5 pb-2.5"
               [attr.data-pad]="pad.index">
               <header class="flex items-center gap-1 px-1.5">
                 <button
@@ -77,20 +76,17 @@
         }
       </div>
     } @else {
-      <div class="flat-lg bevel-fill-panel">
-        <nc-empty-state
-          icon="gamepad"
-          [title]="t('controls.noPad')"
-          [hint]="t('controls.noPadHint')" />
-      </div>
+      <nc-empty-state
+        icon="gamepad"
+        [title]="t('controls.noPad')"
+        [hint]="t('controls.noPadHint')" />
     }
-  </section>
+  </nc-settings-group>
 
-  <section>
-    <nc-label class="mb-1">{{ t('controls.touchPad') }}</nc-label>
+  <nc-settings-group [title]="t('controls.touchPad')">
     <!-- The preview takes its full 480 before the sliders take a share: narrower, its keys are
          under the 30px that hold their arrows and it would show a pad with blank keys. -->
-    <article class="flat-lg bevel-fill-panel flex flex-wrap items-center gap-x-3 gap-y-2 p-2">
+    <article class="flex flex-wrap items-center gap-x-3 gap-y-2 p-2.25">
       <nc-pad-preview class="mx-auto min-w-0 shrink grow-0 basis-[480px]" />
       <div class="grid min-w-[240px] flex-1 content-start gap-2">
         <nc-slider
@@ -119,5 +115,5 @@
         </div>
       </div>
     </article>
-  </section>
+  </nc-settings-group>
 </div>

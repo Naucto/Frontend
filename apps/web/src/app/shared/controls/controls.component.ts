@@ -13,11 +13,11 @@ import {
   type ButtonVariant,
   ChipComponent,
   EmptyStateComponent,
-  LabelComponent,
   MarkComponent,
   OptionDirective,
   PopoverDirective,
   PopoverPanelComponent,
+  SettingsGroupComponent,
   SliderComponent,
 } from '@naucto/ui';
 
@@ -68,7 +68,7 @@ const BADGES: Record<PlayerTone, ButtonVariant> = {
     ButtonDirective,
     ChipComponent,
     EmptyStateComponent,
-    LabelComponent,
+    SettingsGroupComponent,
     MarkComponent,
     OptionDirective,
     PadArtComponent,
