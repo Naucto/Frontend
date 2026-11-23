@@ -14,6 +14,7 @@ import {
 import {
   ButtonDirective,
   ChipComponent,
+  closedBy,
   HelpDotComponent,
   MarkComponent,
   SegmentedComponent,
@@ -79,6 +80,8 @@ export class InstrumentInspectorComponent {
   readonly samples = input.required<Map<string, string>>();
   /** Emitted with the encoded PCM (or null to drop it); the library owns the document write. */
   readonly sampleChange = output<string | null>();
+  /** The oscillator cards are drawn here and not by the kit, so they ask the scope themselves. */
+  protected readonly closed = closedBy(() => false);
   protected readonly oscs = OSCS;
   protected readonly ENV_MAX = ENV_MAX;
   protected readonly filters = FILTERS;
@@ -107,7 +110,7 @@ export class InstrumentInspectorComponent {
   /** Left/up and right/down cycle the oscillator, wrapping at the ends. */
   protected onOscKey(event: KeyboardEvent): void {
     const step = { ArrowLeft: -1, ArrowUp: -1, ArrowRight: 1, ArrowDown: 1 }[event.key];
-    if (!step) {
+    if (!step || this.closed()) {
       return;
     }
     event.preventDefault();

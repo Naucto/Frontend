@@ -42,7 +42,9 @@
       <!-- Too narrow for one line, the bar grows by whole rows rather than clipping what wraps. -->
       <header
         class="flex h-(--nc-h-bar) shrink-0 items-center gap-1 overflow-x-auto border-b-3 border-line bg-panel px-2 @max-[780px]:h-auto @max-[780px]:flex-wrap @max-[780px]:content-start @max-[780px]:py-[6px] @max-[440px]:gap-0.5 @max-[440px]:px-1">
+        <!-- Which pattern is shown, not what it holds. -->
         <nc-number-field
+          ncLooksOnly
           class="h-(--nc-h-md) shrink-0"
           fill
           [label]="tightBar() ? '' : t('editor.sound.pattern')"
@@ -74,6 +76,7 @@
           (rewound)="toStart()"
           (stopped)="stop()" />
         <nc-toggle-button
+          ncLooksOnly
           size="strip"
           [label]="t('editor.sound.loop')"
           [checked]="sound.loop()"
@@ -82,6 +85,7 @@
           <span class="hidden @min-[900px]:inline">{{ t('editor.sound.loop') }}</span>
         </nc-toggle-button>
         <nc-toggle-button
+          ncLooksOnly
           size="strip"
           [label]="t('editor.sound.metronome')"
           [checked]="sound.metronome()"
@@ -177,7 +181,8 @@
   </section>
 
   <nc-panel-column [width]="PANEL_WIDTH">
-    <div actions class="flex min-w-0 flex-1 items-center gap-1">
+    <!-- The snap and the zoom are each person's own view of the roll. -->
+    <div actions ncLooksOnly class="flex min-w-0 flex-1 items-center gap-1">
       <!-- Controlled: a press means "next resolution", and only the store knows whether the result
            is still lit. -->
       <nc-toggle-button

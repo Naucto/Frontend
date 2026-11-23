@@ -3,6 +3,7 @@ import { TranslocoDirective } from '@jsverse/transloco';
 import { type Pattern, type Song } from '@naucto/engine';
 import {
   HelpDotComponent,
+  LooksOnlyDirective,
   NumberFieldComponent,
   type NumberFieldTone,
   TransportComponent,
@@ -44,7 +45,13 @@ interface Cell {
  */
 @Component({
   selector: 'nc-song-list',
-  imports: [TranslocoDirective, HelpDotComponent, NumberFieldComponent, TransportComponent],
+  imports: [
+    TranslocoDirective,
+    HelpDotComponent,
+    LooksOnlyDirective,
+    NumberFieldComponent,
+    TransportComponent,
+  ],
   templateUrl: './song-list.component.html',
   host: { class: 'block' },
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -17,7 +17,8 @@
           role="radio"
           [attr.aria-checked]="inst().osc === osc.value"
           [attr.tabindex]="inst().osc === osc.value ? 0 : -1"
-          class="flex h-[57px] cursor-pointer flex-col items-center justify-center gap-0.5 raised-sm text-ink-3 hover:bevel-lit hover:text-active-ink aria-checked:bevel-down aria-checked:bevel-lit aria-checked:text-active-ink"
+          class="flex h-[57px] cursor-pointer flex-col items-center justify-center gap-0.5 raised-sm text-ink-3 enabled:hover:bevel-lit enabled:hover:text-active-ink enabled:aria-checked:bevel-down enabled:aria-checked:bevel-lit enabled:aria-checked:text-active-ink disabled:cursor-not-allowed disabled:bevel-level disabled:bevel-edge-line disabled:bevel-fill-transparent disabled:text-ink-4 disabled:aria-checked:bevel-fill-line"
+          [disabled]="closed()"
           (click)="patched.emit({ osc: osc.value })">
           <nc-wave-glyph [type]="osc.value" [width]="44" />
           <!-- Type utilities, not the label class: that class sets its own colour and would

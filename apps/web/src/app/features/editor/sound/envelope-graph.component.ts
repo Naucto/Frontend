@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { type Envelope } from '@naucto/engine';
+import { closedBy } from '@naucto/ui';
 
 /** Which handle a pointer grabbed, and therefore which envelope fields it edits. */
 type Handle = 'attack' | 'decay' | 'release';
@@ -21,6 +22,8 @@ export class EnvelopeGraphComponent {
   readonly label = input.required<string>();
   readonly envChange = output<Partial<Envelope>>();
 
+  /** The handles are drawn here and not by the kit, so they ask the scope themselves. */
+  protected readonly closed = closedBy(() => false);
   protected dragging: Handle | null = null;
 
   private readonly total = computed(() => {
@@ -55,6 +58,9 @@ export class EnvelopeGraphComponent {
   );
 
   protected onDown(event: PointerEvent): void {
+    if (this.closed()) {
+      return;
+    }
     const { x, y } = this.toViewBox(event);
     const near = this.handles().find(
       (handle) => Math.abs(handle.x - x) < 8 && Math.abs(handle.y - y) < 8,

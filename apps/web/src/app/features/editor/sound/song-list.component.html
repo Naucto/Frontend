@@ -9,7 +9,9 @@
   <!-- A row of its own, and one that wraps: the slot and the transport together are wider than the
        narrow column. -->
   <div class="mb-1 flex flex-wrap items-center gap-1">
+    <!-- Which music is shown, not what it holds. -->
     <nc-number-field
+      ncLooksOnly
       class="h-(--nc-h-md) min-w-[96px] flex-1"
       fill
       [label]="t('editor.sound.musicSlot')"

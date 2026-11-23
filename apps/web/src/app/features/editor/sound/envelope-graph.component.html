@@ -21,7 +21,8 @@
       [attr.y]="handle.y - 3"
       width="6"
       height="6"
-      class="cursor-grab fill-lcd-ink"
+      class="fill-lcd-ink"
+      [class.cursor-grab]="!closed()"
       [class.cursor-grabbing]="dragging === handle.kind" />
   }
 </svg>
