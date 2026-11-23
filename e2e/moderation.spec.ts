@@ -291,7 +291,8 @@ test.describe('moderation', () => {
     await report.click();
     const dialog = page.getByRole('dialog', { name: 'Report this collection' });
     await expect(dialog).toContainText('Couch co-op');
-    await dialog.getByRole('switch', { name: 'Spam or advertising' }).click();
+    await dialog.getByRole('combobox', { name: 'What is wrong with it?' }).click();
+    await page.getByRole('option', { name: 'Spam or advertising' }).click();
     await dialog.getByRole('button', { name: 'Send report' }).click();
 
     await expect(page.locator('nc-toast-host')).toContainText('Your report reached the moderators');
