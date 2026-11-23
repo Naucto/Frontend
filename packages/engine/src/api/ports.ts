@@ -110,9 +110,9 @@ export interface InstrumentPatch {
   pan?: number;
 }
 
-export type PatternPatch = Partial<Pick<Pattern, 'bpm' | 'steps'>>;
+export type PatternPatch = Partial<Pick<Pattern, 'steps'>>;
 
-export type SongPatch = Partial<Pick<Song, 'loop'>>;
+export type SongPatch = Partial<Pick<Song, 'loop' | 'bpm'>>;
 
 export interface SoundPort {
   playSfx(slot: number, channel: number | undefined, pitchOffset: number, volume: number): void;
@@ -143,7 +143,7 @@ export interface SoundPort {
   pause(): void;
   resume(): void;
   setVolume(master: number, music?: number, sfx?: number): void;
-  musicPosition(): { pattern: number; step: number } | null;
+  musicPosition(): { bar: number; beat: number } | null;
   isPlaying(channel: number): boolean;
   /** Called once per fixed step so queued commands are flushed with the right timestamps. */
   flush(): void;

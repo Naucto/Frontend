@@ -1,5 +1,5 @@
 /** Yjs key layout of a game document, and the legacy v0 keys it replaces. */
-export const GAME_SCHEMA_VERSION = 3;
+export const GAME_SCHEMA_VERSION = 4;
 
 export const KEYS = {
   meta: 'game.meta',
@@ -11,7 +11,7 @@ export const KEYS = {
   actions: 'input.actions',
   instruments: 'sound.instruments',
   patterns: 'sound.patterns',
-  sfx: 'sound.sfx',
+  sfx: 'sound.effects',
   songs: 'sound.songs',
   samples: 'sound.samples',
   netPermissions: 'net.permissions',
@@ -58,6 +58,7 @@ export const LEGACY_KEYS = {
   selectedMusic: 'sound_selectedIndex',
   customInstruments: 'sound_customInstruments',
   netPermissions: 'multiplayerDirectory',
+  sfxSlots: 'sound.sfx',
 } as const;
 
 export const SCREEN_WIDTH = 320;

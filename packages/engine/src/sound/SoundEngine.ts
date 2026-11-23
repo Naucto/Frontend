@@ -1,6 +1,14 @@
 import type { InstrumentPatch, PatternPatch, SongPatch, SoundPort } from '../api/ports';
 import type { Game } from '../game/Game';
-import { type Instrument, type Pattern, type Song, VOICES } from './model';
+import {
+  BEATS_PER_BAR,
+  type Instrument,
+  type NoteSheet,
+  type Pattern,
+  type Sfx,
+  type Song,
+  VOICES,
+} from './model';
 import { decodeSample } from './sample-codec';
 import type { AudioBackend } from './WebAudioBackend';
 import type { SynthEvent } from './worklet/protocol';
@@ -32,16 +40,19 @@ const patchInstrument = (instrument: Instrument, patch: InstrumentPatch): Instru
   filter: { ...instrument.filter, ...patch.filter },
 });
 
+const PREVIEW_ID = '__preview';
+
 const same = (prev: unknown, next: unknown): boolean =>
   JSON.stringify(prev) === JSON.stringify(next);
 
 export class SoundEngine implements SoundPort {
-  private position: { pattern: number; step: number } | null = null;
+  private position: { beat: number } | null = null;
   private readonly voices: boolean[] = Array.from({ length: VOICES }, () => false);
   private readonly unsub: (() => void)[] = [];
   private instruments = new Map<string, Instrument>();
   private patterns = new Map<string, Pattern>();
-  private sfxSlots = new Map<string, string>();
+  private sfx = new Map<string, Sfx>();
+  private previewSheet: Pattern | null = null;
   private songs = new Map<string, Song>();
   /** By instrument id, pattern number and song slot: what a game changed for this run. */
   private readonly instrumentOverrides = new Map<string, InstrumentPatch>();
@@ -122,7 +133,10 @@ export class SoundEngine implements SoundPort {
         this.patterns.set(id, { ...pattern, ...patch });
       }
     }
-    this.sfxSlots = this.game.getSfxSlots();
+    if (this.previewSheet) {
+      this.patterns.set(PREVIEW_ID, this.previewSheet);
+    }
+    this.sfx = this.game.getSfx();
     this.songs = this.game.getSongs();
     for (const [slot, patch] of this.songOverrides) {
       const song = this.songs.get(slot);
@@ -142,6 +156,7 @@ export class SoundEngine implements SoundPort {
       type: 'library',
       instruments: [...this.instruments],
       patterns: [...this.patterns],
+      sfx: [...this.sfx],
     });
     this.librarySent = true;
   }
@@ -157,7 +172,12 @@ export class SoundEngine implements SoundPort {
     this.syncLibrary();
     const tmp = new Map(this.instruments);
     tmp.set(instrument.id, instrument);
-    this.backend.post({ type: 'library', instruments: [...tmp], patterns: [...this.patterns] });
+    this.backend.post({
+      type: 'library',
+      instruments: [...tmp],
+      patterns: [...this.patterns],
+      sfx: [...this.sfx],
+    });
     this.librarySent = false;
     this.backend.post({
       type: 'note_on',
@@ -169,20 +189,48 @@ export class SoundEngine implements SoundPort {
     });
   }
 
-  previewPattern(pattern: Pattern, loop: boolean, from = 0): void {
-    this.syncLibrary();
-    const tmp = new Map(this.patterns);
-    tmp.set(pattern.id, pattern);
-    this.backend.post({ type: 'library', instruments: [...this.instruments], patterns: [...tmp] });
-    this.librarySent = false;
+  previewPattern(sheet: NoteSheet, loop: boolean, from = 0): void {
+    this.updatePreview(sheet);
     this.playing = true;
     this.playingSong = null;
     this.backend.post({
       type: 'play_song',
-      song: { name: pattern.name, sequence: [pattern.id], loop, loopStart: 0 },
+      song: {
+        name: '',
+        bpm: sheet.bpm,
+        blocks: [{ id: PREVIEW_ID, pattern: PREVIEW_ID, start: 0, repeat: 1 }],
+        loop,
+        loopStart: 0,
+      },
       loop,
       fadeIn: 0,
-      from,
+      from: from / sheet.stepsPerBeat,
+    });
+  }
+
+  updatePreview(sheet: NoteSheet): void {
+    this.previewSheet = {
+      bpm: sheet.bpm,
+      stepsPerBeat: sheet.stepsPerBeat,
+      steps: sheet.steps,
+      notes: sheet.notes,
+      id: PREVIEW_ID,
+      slot: -1,
+      name: '',
+    };
+    this.resend();
+  }
+
+  previewSong(song: Song, loop: boolean, fromBar = 0): void {
+    this.syncLibrary();
+    this.playing = true;
+    this.playingSong = null;
+    this.backend.post({
+      type: 'play_song',
+      song,
+      loop,
+      fadeIn: 0,
+      from: fromBar * BEATS_PER_BAR,
     });
   }
 
@@ -202,12 +250,12 @@ export class SoundEngine implements SoundPort {
 
   playSfx(slot: number, channel: number | undefined, pitchOffset: number, volume: number): void {
     this.syncLibrary();
-    // No range check: any slot without a pattern is silent.
-    const pattern = this.sfxSlots.get(String(slot));
-    if (!pattern) {
+    // No range check: any slot without a SFX is silent.
+    const key = String(slot);
+    if (!this.sfx.has(key)) {
       return;
     }
-    this.backend.post({ type: 'play_sfx', pattern, pitchOffset, volume, channel });
+    this.backend.post({ type: 'play_sfx', slot: key, pitchOffset, volume, channel });
   }
 
   playNote(
@@ -327,6 +375,9 @@ export class SoundEngine implements SoundPort {
     if (patch.loop !== undefined && this.playingSong === key) {
       this.setLoop(patch.loop);
     }
+    if (patch.bpm !== undefined && this.playingSong === key) {
+      this.backend.post({ type: 'set_bpm', bpm: patch.bpm });
+    }
     return true;
   }
 
@@ -352,8 +403,17 @@ export class SoundEngine implements SoundPort {
     this.backend.post({ type: 'mixer', master, music, sfx });
   }
 
-  musicPosition(): { pattern: number; step: number } | null {
-    return this.position;
+  musicPosition(): { bar: number; beat: number } | null {
+    if (!this.position) {
+      return null;
+    }
+    const bar = Math.floor(this.position.beat / BEATS_PER_BAR);
+
+    return { bar, beat: this.position.beat - bar * BEATS_PER_BAR };
+  }
+
+  musicBeat(): number | null {
+    return this.position?.beat ?? null;
   }
 
   /** Whether {@link peaks} is being drawn; the worklet only reports a trace while it is. */
@@ -382,7 +442,7 @@ export class SoundEngine implements SoundPort {
   private onEvent(event: SynthEvent): void {
     switch (event.type) {
       case 'position':
-        this.position = { pattern: event.pattern, step: event.step };
+        this.position = { beat: event.beat };
         break;
       case 'stopped':
         this.position = null;
