@@ -553,14 +553,13 @@ test.describe('a profile', () => {
     });
     await page.goto('/u/alexis');
 
-    await page.getByRole('radio', { name: 'Collections 1' }).click();
     const boxes = page.getByTestId('profile-collections').locator('nc-collection-box');
     await expect(boxes).toHaveCount(1);
     await expect(boxes).toContainText('Couch co-op');
     await expect(page.getByText('To try later')).toHaveCount(0);
 
     await page.goto('/u/ada');
-    await expect(page.getByRole('radio', { name: /^Games/ })).toBeVisible();
-    await expect(page.getByRole('radio', { name: /^Collections/ })).toHaveCount(0);
+    await expect(page.getByRole('heading', { level: 1, name: 'ada' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Collections' })).toHaveCount(0);
   });
 });

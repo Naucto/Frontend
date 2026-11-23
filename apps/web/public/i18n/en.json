@@ -1140,7 +1140,7 @@
     "remixes": "Remixes",
     "plays": "plays",
     "likes": "likes",
-    "joined": "joined {{year}}",
+    "joined": "Joined {{year}}",
     "addFriend": "Add friend",
     "friends": "Friends",
     "pending": "Request sent",
@@ -1148,18 +1148,12 @@
     "edit": "Edit profile",
     "empty": {
       "gamesTitle": "No games on the shelf",
-      "gamesHint": "Drafts stay private until you publish. The shelf fills the moment one goes out.",
-      "likedTitle": "Nothing liked yet",
-      "likedHint": "Hearts on the hub end up here, ready to play again.",
-      "collabsTitle": "No collaborations yet",
-      "collabsHint": "Games someone else owns but built together show up on this shelf.",
-      "remixesTitle": "Nobody has remixed anything yet",
-      "remixesHint": "When someone forks one of these games, their version lands here."
+      "gamesHint": "Drafts stay private until you publish. The shelf fills the moment one goes out."
     },
     "settings": "Settings",
-    "setBanner": "SET A BANNER",
+    "setBanner": "Set a banner",
+    "changeBanner": "Change banner",
     "status": "Status",
-    "colour": "COLOUR",
     "image": {
       "picture": "PROFILE PICTURE",
       "banner": "PROFILE BANNER",

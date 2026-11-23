@@ -6,7 +6,6 @@ import {
   type ElementRef,
   inject,
   input,
-  linkedSignal,
   signal,
   viewChild,
 } from '@angular/core';
@@ -15,7 +14,6 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import {
   friendsControllerSend,
   type ProjectExResponseDto,
-  type UpdateUserProfileDto,
   userControllerRemoveProfileBackground,
   userControllerRemoveProfilePicture,
   userControllerUpdateMyProfile,
@@ -32,14 +30,14 @@ import {
   AvatarComponent,
   ButtonDirective,
   DialogService,
+  DitherBackdropComponent,
   EmptyStateComponent,
-  formatCompact,
   IconComponent,
-  type IdentityAccent,
   InputDirective,
   MarkComponent,
-  PERSONAL_COLOURS,
-  SegmentedComponent,
+  ShelfComponent,
+  ShelfFlyoutDirective,
+  ShelfItemDirective,
   StatComponent,
   ToastService,
 } from '@naucto/ui';
@@ -50,8 +48,9 @@ import { AuthStore } from '../../core/auth/auth.store';
 import { FeaturesService } from '../../core/config/features.service';
 import { PresenceStore } from '../../core/presence/presence.store';
 import { presenceLine } from '../../core/presence/presence-line';
-import { GameDiskComponent } from '../../shared/game-card/game-disk.component';
 import { CollectionBoxComponent } from '../../shared/hub/collection-box.component';
+import { GameFlyoutComponent } from '../../shared/hub/game-flyout.component';
+import { ShelfDiskComponent } from '../../shared/hub/shelf-disk.component';
 import { ContentFlagLauncher } from '../../shared/moderation/content-flag-launcher.service';
 import { injectUserCollections } from '../../shared/queries/collections.queries';
 import { qk } from '../../shared/queries/query-keys';
@@ -63,24 +62,12 @@ import {
   type ProfileImageZone,
 } from './profile-image.dialog';
 
-type Shelf = 'games' | 'liked' | 'collabs' | 'remixes' | 'collections';
-
-type Zone = 'nickname' | 'description' | 'colour';
-
-/** The six a person may wear, as the API stores them. */
-type PersonalColour = NonNullable<UpdateUserProfileDto['colour']>;
+type Zone = 'nickname' | 'description';
 
 /**
- * The stored name is the kit's, upper-cased. Both conversions are typed, so a colour added on one
- * side and not the other fails to compile.
+ * Profile: the person over their own banner, which fades into the hub's ground, then a shelf of
+ * each kind of game they have.
  */
-const toAccent = (colour: PersonalColour): IdentityAccent =>
-  colour.toLowerCase() as Lowercase<PersonalColour>;
-const COLOURS: PersonalColour[] = (Object.keys(PERSONAL_COLOURS) as IdentityAccent[]).map(
-  (accent) => accent.toUpperCase() as Uppercase<IdentityAccent>,
-);
-
-/** Profile — a shelf, not a social feed. */
 @Component({
   selector: 'nc-profile-page',
   imports: [
@@ -88,15 +75,19 @@ const COLOURS: PersonalColour[] = (Object.keys(PERSONAL_COLOURS) as IdentityAcce
     TranslocoDirective,
     AvatarComponent,
     ButtonDirective,
+    DitherBackdropComponent,
     EmptyStateComponent,
     IconComponent,
     MarkComponent,
     InputDirective,
-    SegmentedComponent,
+    ShelfComponent,
+    ShelfFlyoutDirective,
+    ShelfItemDirective,
     StatComponent,
-    GameDiskComponent,
     EditChipComponent,
     CollectionBoxComponent,
+    GameFlyoutComponent,
+    ShelfDiskComponent,
   ],
   templateUrl: './profile.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -108,14 +99,8 @@ export default class ProfilePage {
   private readonly toasts = inject(ToastService);
   private readonly presence = inject(PresenceStore);
   private readonly transloco = inject(TranslocoService);
-  /** Another person's profile opens on their games: they may not have the shelf this one was on. */
-  protected readonly shelf = linkedSignal<string, Shelf>({
-    source: () => this.username(),
-    computation: () => 'games',
-  });
   /** The one zone currently open. There is no edit mode, so at most one is. */
   protected readonly editing = signal<Zone | null>(null);
-  protected readonly COLOURS = COLOURS;
   private readonly dialogs = inject(DialogService);
   private readonly queries = inject(QueryClient);
   private readonly features = inject(FeaturesService);
@@ -144,21 +129,8 @@ export default class ProfilePage {
     retry: false,
   }));
   private readonly userId = computed(() => this.profile.data()?.id ?? 0);
-
-  /** The colour this person picked, if any; without one the kit derives it from their id. */
-  protected readonly accent = computed<PersonalColour | null>(
-    () => this.profile.data()?.colour ?? null,
-  );
-
-  /** What the avatar is told, which is the kit's name for the same colour. */
-  protected readonly avatarColour = computed<IdentityAccent | undefined>(() => {
-    const chosen = this.accent();
-    return chosen ? toAccent(chosen) : undefined;
-  });
-
-  protected swatch(colour: PersonalColour): string {
-    return PERSONAL_COLOURS[toAccent(colour)].swatch;
-  }
+  /** What the top of the page stands on and takes its hues from; without one, the bare page. */
+  protected readonly banner = computed(() => this.profile.data()?.backgroundImageUrl ?? null);
 
   /** One zone at a time, each committing on its own — there is no save bar to abandon. */
   protected async commit(zone: Zone, value: string): Promise<void> {
@@ -171,12 +143,7 @@ export default class ProfilePage {
     if (!profile) {
       return;
     }
-    const patch =
-      zone === 'colour'
-        ? { colour: value as PersonalColour }
-        : zone === 'nickname'
-          ? { nickname: value.trim() }
-          : { description: value.trim() };
+    const patch = zone === 'nickname' ? { nickname: value.trim() } : { description: value.trim() };
     if (
       zone === 'nickname' &&
       (profile.nickname?.length ? profile.nickname : profile.username) === patch.nickname
@@ -349,47 +316,16 @@ export default class ProfilePage {
     const line = presenceLine(this.presence.of(this.userId()));
     return line?.name ? `${this.transloco.translate(line.verbKey)} ${line.name}` : '';
   });
-  protected readonly shelves = computed(() => [
-    {
-      value: 'games' as const,
-      label: `${this.transloco.translate('profile.games')} ${formatCompact(this.counts().games)}`,
-    },
-    {
-      value: 'liked' as const,
-      label: `${this.transloco.translate('profile.liked')} ${formatCompact(this.likedGames().length)}`,
-    },
-    {
-      value: 'collabs' as const,
-      label: `${this.transloco.translate('profile.collabs')} ${formatCompact(this.collabs().length)}`,
-    },
-    {
-      value: 'remixes' as const,
-      label: `${this.transloco.translate('profile.remixes')} ${formatCompact(this.remixes().length)}`,
-    },
-    ...(this.collections.data()?.length
-      ? [
-          {
-            value: 'collections' as const,
-            label: `${this.transloco.translate('profile.collections')} ${formatCompact(this.collections.data()?.length ?? 0)}`,
-          },
-        ]
-      : []),
+  protected readonly rows = computed(() => [
+    { key: 'games', label: this.transloco.translate('profile.games'), games: this.games() },
+    { key: 'liked', label: this.transloco.translate('profile.liked'), games: this.likedGames() },
+    { key: 'collabs', label: this.transloco.translate('profile.collabs'), games: this.collabs() },
+    { key: 'remixes', label: this.transloco.translate('profile.remixes'), games: this.remixes() },
   ]);
-  protected readonly current = computed(() =>
-    this.shelf() === 'games'
-      ? this.games()
-      : this.shelf() === 'liked'
-        ? this.likedGames()
-        : this.shelf() === 'collabs'
-          ? this.collabs()
-          : this.remixes(),
+  /** Nothing on any shelf, collections included. */
+  protected readonly bare = computed(
+    () => !this.collections.data()?.length && this.rows().every((row) => !row.games.length),
   );
-
-  protected setShelf(value: Shelf | undefined): void {
-    if (value) {
-      this.shelf.set(value);
-    }
-  }
 
   protected addFriend(userId: number): void {
     this.adding.mutate(userId);
