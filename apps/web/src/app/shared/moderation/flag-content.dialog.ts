@@ -28,7 +28,7 @@ export interface FlagContentData {
   targetType: ModerationTargetType;
   targetId: string;
   label: string;
-  author?: { id: number; name: string };
+  author?: { id: string; name: string };
 }
 
 /** Refusals the dialog answers in its own words. Any other failure gets the general sentence. */
