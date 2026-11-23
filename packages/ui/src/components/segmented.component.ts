@@ -24,14 +24,13 @@ export interface SegmentOption<T extends string> {
 }
 
 /**
- * Fill of the selected segment. `raised` and `ink` are the plain selection, which is the primary
- * fill; `orange` is a state that has a colour of its own.
+ * Fill of the selected segment. `raised` is the plain selection, which is the primary fill;
+ * `orange` is a state that has a colour of its own.
  */
-export type SegmentTone = 'raised' | 'ink' | 'orange';
+export type SegmentTone = 'raised' | 'orange';
 
 const SELECTED: Record<SegmentTone, string> = {
   raised: CELL_ON.primary,
-  ink: CELL_ON.primary,
   orange: CELL_ON.orange,
 };
 
@@ -55,7 +54,6 @@ export class SegmentedComponent<T extends string = string> {
   readonly disabled = input(false, { transform: booleanAttribute });
   readonly label = input<string>();
   readonly variant = input<'framed' | 'chips'>('framed');
-  readonly tone = input<SegmentTone>('raised');
   /** Stretch the segments to share the full width, as the publishing rows do. */
   readonly fill = input(false, { transform: booleanAttribute });
   /** `sm` is for a strip or an inspector row, where the control stands a step lower. */
@@ -75,7 +73,7 @@ export class SegmentedComponent<T extends string = string> {
   );
 
   protected itemClass(option: SegmentOption<T>, first: boolean, last: boolean): string {
-    return `${this.baseItemClass()} ${SELECTED[option.tone ?? this.tone()]} ${joined(first, last)}`;
+    return `${this.baseItemClass()} ${SELECTED[option.tone ?? 'raised']} ${joined(first, last)}`;
   }
 
   private readonly radios = viewChildren<ElementRef<HTMLButtonElement>>('radio');
