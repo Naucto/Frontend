@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { defaultInstrument, defaultPattern, SUBSTEPS } from './model';
+import { defaultInstrument, defaultPattern, type Song } from './model';
 import { Sequencer } from './Sequencer';
 import { SynthCore } from './SynthCore';
 
@@ -168,13 +168,30 @@ describe('SynthCore', () => {
   });
 });
 
+const tune = (
+  blocks: { pattern: string; start: number; repeat?: number }[],
+  extra: Partial<Song> = {},
+): Song => ({
+  name: 's',
+  bpm: 120,
+  blocks: blocks.map((block, i) => ({ id: `b${String(i)}`, repeat: 1, ...block })),
+  loop: false,
+  loopStart: 0,
+  ...extra,
+});
+
+const sounding = (synth: SynthCore): number[] =>
+  synth.voices
+    .filter((voice) => voice.active)
+    .map((voice) => voice.pitch)
+    .sort();
+
 describe('Sequencer', () => {
   it('triggers notes at step boundaries and loops', () => {
     const synth = new SynthCore(SR);
     const seq = new Sequencer(synth, SR);
     const ins = defaultInstrument('i');
     const pattern = defaultPattern('p0');
-    pattern.bpm = 120;
     pattern.stepsPerBeat = 4;
     pattern.steps = 4;
     pattern.notes = [
@@ -182,70 +199,149 @@ describe('Sequencer', () => {
       { step: 2, pitch: 64, length: 1, instrument: 'i', volume: 1 },
     ];
     seq.setLibrary(new Map([['i', ins]]), new Map([['p0', pattern]]));
-    seq.playSong({ name: 's', sequence: ['p0'], loop: true, loopStart: 0 }, true, 0);
+    seq.playSong(tune([{ pattern: 'p0', start: 0 }], { loop: true }), true, 0);
     const stepSamples = Math.round((60 / 120 / 4) * SR);
     seq.advance(1);
-    expect(synth.voices.filter((voice) => voice.active).map((voice) => voice.pitch)).toEqual([60]);
+    expect(sounding(synth)).toEqual([60]);
     seq.advance(stepSamples * 2);
-    expect(
-      synth.voices
-        .filter((voice) => voice.active)
-        .map((voice) => voice.pitch)
-        .sort(),
-    ).toEqual([60, 64]);
-    // Sub-step 16 fired the note on step 2 and the next one is not due yet, so that is the one
-    // sounding, however far the counter has moved past it.
-    expect(seq.position()).toEqual({ pattern: 0, step: 16 / SUBSTEPS });
+    expect(sounding(synth)).toEqual([60, 64]);
+    expect(seq.position()?.beat).toBeCloseTo(0.5, 1);
     seq.advance(stepSamples * 2);
-    expect(seq.position()?.step).toBe(0);
+    expect(seq.position()?.beat).toBeCloseTo(0, 1);
     seq.stopMusic(0);
     expect(seq.position()).toBeNull();
   });
 
-  it('stops a music at the first empty place, and plays past a pattern that is gone', () => {
-    const build = (sequence: (string | null)[]): { synth: SynthCore; seq: Sequencer } => {
-      const synth = new SynthCore(SR);
-      const seq = new Sequencer(synth, SR);
-      const ins = defaultInstrument('i');
-      const first = defaultPattern('p0');
-      const third = defaultPattern('p2');
-      for (const pattern of [first, third]) {
-        pattern.bpm = 120;
-        pattern.stepsPerBeat = 4;
-        pattern.steps = 1;
-        pattern.notes = [{ step: 0, pitch: 60, length: 1, instrument: 'i', volume: 1 }];
-      }
-      third.notes = [{ step: 0, pitch: 72, length: 1, instrument: 'i', volume: 1 }];
-      seq.setLibrary(
-        new Map([['i', ins]]),
-        new Map([
-          ['p0', first],
-          ['p2', third],
-        ]),
-      );
-      seq.playSong({ name: 's', sequence, loop: false, loopStart: 0 }, false, 0);
-      return { synth, seq };
-    };
-    const stepSamples = Math.round((60 / 120 / 4) * SR);
+  it('plays at the tempo of the music, not of its patterns', () => {
+    const synth = new SynthCore(SR);
+    const seq = new Sequencer(synth, SR);
+    const pattern = defaultPattern('p0');
+    pattern.bpm = 60;
+    pattern.stepsPerBeat = 4;
+    pattern.steps = 4;
+    pattern.notes = [{ step: 2, pitch: 64, length: 1, instrument: 'i', volume: 1 }];
+    seq.setLibrary(new Map([['i', defaultInstrument('i')]]), new Map([['p0', pattern]]));
+    seq.playSong(tune([{ pattern: 'p0', start: 0 }]), false, 0);
+    seq.advance(Math.round(0.26 * SR));
+    expect(sounding(synth)).toEqual([64]);
+  });
 
-    const hole = build(['p0', null, 'p2']);
-    hole.seq.advance(stepSamples * 2);
-    expect(hole.seq.position()).toBeNull();
-    expect(hole.synth.voices.some((voice) => voice.active && voice.pitch === 72)).toBe(false);
+  it('starts each block at its bar, leaves a silence between, and skips a pattern that is gone', () => {
+    const synth = new SynthCore(SR);
+    const seq = new Sequencer(synth, SR);
+    const first = defaultPattern('p0');
+    const third = defaultPattern('p2');
+    for (const pattern of [first, third]) {
+      pattern.stepsPerBeat = 4;
+      pattern.steps = 1;
+    }
+    first.notes = [{ step: 0, pitch: 60, length: 1, instrument: 'i', volume: 1 }];
+    third.notes = [{ step: 0, pitch: 72, length: 1, instrument: 'i', volume: 1 }];
+    seq.setLibrary(
+      new Map([['i', defaultInstrument('i')]]),
+      new Map([
+        ['p0', first],
+        ['p2', third],
+      ]),
+    );
+    seq.playSong(
+      tune([
+        { pattern: 'p0', start: 0 },
+        { pattern: 'gone', start: 0.5 },
+        { pattern: 'p2', start: 1 },
+      ]),
+      false,
+      0,
+    );
+    const barSamples = Math.round(2 * SR);
+    seq.advance(barSamples - 64);
+    expect(sounding(synth)).not.toContain(72);
+    seq.advance(128);
+    expect(sounding(synth)).toContain(72);
+  });
 
-    // The place was filled; only the pattern it named has since been deleted.
-    const orphan = build(['p0', 'gone', 'p2']);
-    orphan.seq.advance(stepSamples * 2);
-    expect(orphan.synth.voices.some((voice) => voice.active && voice.pitch === 72)).toBe(true);
+  it('repeats a block and puts the steps of every pattern on one clock', () => {
+    const synth = new SynthCore(SR);
+    const seq = new Sequencer(synth, SR);
+    const pattern = defaultPattern('p0');
+    pattern.stepsPerBeat = 2;
+    pattern.steps = 2;
+    pattern.notes = [{ step: 1, pitch: 67, length: 0.5, instrument: 'i', volume: 1 }];
+    seq.setLibrary(new Map([['i', defaultInstrument('i')]]), new Map([['p0', pattern]]));
+    seq.playSong(tune([{ pattern: 'p0', start: 0, repeat: 2 }]), false, 0);
+    seq.advance(Math.round(0.26 * SR));
+    expect(sounding(synth)).toEqual([67]);
+    seq.advance(Math.round(0.5 * SR));
+    expect(seq.position()?.beat).toBeCloseTo(1.5, 1);
+    seq.advance(Math.round(0.5 * SR));
+    expect(seq.isPlaying).toBe(false);
+  });
+
+  it('loops between the loop start and the loop end', () => {
+    const synth = new SynthCore(SR);
+    const seq = new Sequencer(synth, SR);
+    const pattern = defaultPattern('p0');
+    pattern.stepsPerBeat = 4;
+    pattern.steps = 16;
+    seq.setLibrary(new Map([['i', defaultInstrument('i')]]), new Map([['p0', pattern]]));
+    seq.playSong(
+      tune([{ pattern: 'p0', start: 0, repeat: 4 }], { loop: true, loopStart: 1, loopEnd: 2 }),
+      true,
+      0,
+    );
+    seq.advance(Math.round(4.5 * SR));
+    expect(seq.position()?.beat).toBeCloseTo(5, 0);
+    expect(seq.isPlaying).toBe(true);
+  });
+
+  it('starts from the beat it is given', () => {
+    const synth = new SynthCore(SR);
+    const seq = new Sequencer(synth, SR);
+    const pattern = defaultPattern('p0');
+    pattern.stepsPerBeat = 4;
+    pattern.steps = 16;
+    seq.setLibrary(new Map([['i', defaultInstrument('i')]]), new Map([['p0', pattern]]));
+    seq.playSong(tune([{ pattern: 'p0', start: 0 }]), false, 0, 2);
+    seq.advance(128);
+    expect(seq.position()?.beat).toBeCloseTo(2, 1);
   });
 
   it('stops a looping music whose every pattern is gone', () => {
     const synth = new SynthCore(SR);
     const seq = new Sequencer(synth, SR);
     seq.setLibrary(new Map(), new Map());
-    seq.playSong({ name: 's', sequence: ['gone', 'also gone'], loop: true, loopStart: 0 }, true, 0);
+    seq.playSong(
+      tune(
+        [
+          { pattern: 'gone', start: 0 },
+          { pattern: 'also gone', start: 1 },
+        ],
+        { loop: true },
+      ),
+      true,
+      0,
+    );
     seq.advance(128);
     expect(seq.isPlaying).toBe(false);
+  });
+
+  it('plays a SFX at its own tempo, over the music', () => {
+    const synth = new SynthCore(SR);
+    const seq = new Sequencer(synth, SR);
+    seq.setLibrary(new Map([['i', defaultInstrument('i')]]), new Map());
+    seq.playSfx(
+      {
+        bpm: 240,
+        stepsPerBeat: 4,
+        steps: 2,
+        notes: [{ step: 1, pitch: 80, length: 1, instrument: 'i', volume: 1 }],
+      },
+      0,
+      1,
+    );
+    seq.advance(Math.round((60 / 240 / 4) * SR) + 1);
+    expect(sounding(synth)).toEqual([80]);
+    expect(synth.voices.find((voice) => voice.active)?.priority).toBe(1);
   });
 
   it('bends a gliding instrument from the note before into the next one', () => {
@@ -262,7 +358,7 @@ describe('Sequencer', () => {
       { step: 1, pitch: 48, length: 1, instrument: 'i', volume: 1 },
     ];
     seq.setLibrary(new Map([['i', ins]]), new Map([['p0', pattern]]));
-    seq.playSong({ name: 's', sequence: ['p0'], loop: false, loopStart: 0 }, false, 0);
+    seq.playSong(tune([{ pattern: 'p0', start: 0 }]), false, 0);
     const stepSamples = Math.round((60 / 120 / 4) * SR);
     seq.advance(stepSamples + 1);
     synth.render(new Float32Array(64), new Float32Array(64), 64);
@@ -280,7 +376,7 @@ describe('Sequencer', () => {
     pattern.stepsPerBeat = 4;
     pattern.steps = 1;
     seq.setLibrary(new Map([['i', ins]]), new Map([['p0', pattern]]));
-    seq.playSong({ name: 's', sequence: ['p0'], loop: true, loopStart: 0 }, true, 0);
+    seq.playSong(tune([{ pattern: 'p0', start: 0 }], { loop: true }), true, 0);
     const stepSamples = Math.round((60 / 120 / 4) * SR);
 
     seq.advance(stepSamples * 2);
@@ -315,7 +411,7 @@ describe('Sequencer', () => {
   };
 
   const play = (seq: Sequencer): void => {
-    seq.playSong({ name: 's', sequence: ['p0'], loop: false, loopStart: 0 }, false, 0);
+    seq.playSong(tune([{ pattern: 'p0', start: 0 }]), false, 0);
     seq.advance(1);
   };
 
@@ -345,7 +441,7 @@ describe('Sequencer', () => {
     pattern.steps = 4;
     pattern.notes = [{ step: 2.5, pitch: 67, length: 0.5, instrument: 'i', volume: 1 }];
     seq.setLibrary(new Map([['i', ins]]), new Map([['p0', pattern]]));
-    seq.playSong({ name: 's', sequence: ['p0'], loop: false, loopStart: 0 }, false, 0);
+    seq.playSong(tune([{ pattern: 'p0', start: 0 }]), false, 0);
     const stepSamples = Math.round((60 / 120 / 4) * SR);
     seq.advance(stepSamples * 3);
     expect(synth.voices.filter((voice) => voice.active).map((voice) => voice.pitch)).toEqual([67]);

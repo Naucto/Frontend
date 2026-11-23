@@ -1,8 +1,13 @@
-import type { Instrument, Pattern, Song } from '../model';
+import type { Instrument, Pattern, Sfx, Song } from '../model';
 
 /** Messages from the main thread to the worklet. */
 export type SynthCommand =
-  | { type: 'library'; instruments: [string, Instrument][]; patterns: [string, Pattern][] }
+  | {
+      type: 'library';
+      instruments: [string, Instrument][];
+      patterns: [string, Pattern][];
+      sfx: [string, Sfx][];
+    }
   | { type: 'sample'; id: string; data: Float32Array }
   | {
       type: 'note_on';
@@ -13,11 +18,12 @@ export type SynthCommand =
       channel?: number;
     }
   | { type: 'note_off'; channel: number }
-  | { type: 'play_sfx'; pattern: string; pitchOffset: number; volume: number; channel?: number }
+  | { type: 'play_sfx'; slot: string; pitchOffset: number; volume: number; channel?: number }
   | { type: 'play_song'; song: Song; loop: boolean; fadeIn: number; from?: number }
   | { type: 'stop_music'; fadeOut: number }
   /** Changes whether what is already playing loops, without restarting it. */
   | { type: 'set_loop'; loop: boolean }
+  | { type: 'set_bpm'; bpm: number }
   | { type: 'stop_all' }
   /** Holds the transport where it stands, and lets it go on from there. A stop resets it. */
   | { type: 'pause' }
@@ -28,7 +34,7 @@ export type SynthCommand =
 
 /** Messages from the worklet back to the main thread. */
 export type SynthEvent =
-  | { type: 'position'; pattern: number; step: number }
+  | { type: 'position'; beat: number }
   | { type: 'stopped' }
   | { type: 'voices'; active: boolean[] }
   /**

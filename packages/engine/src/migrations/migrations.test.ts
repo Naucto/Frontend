@@ -87,7 +87,10 @@ describe('migrateGame v0 → v1', () => {
       [2, 64, 'guitar'],
     ]);
     expect([...game.getInstruments().keys()].sort()).toEqual(['guitar', 'piano']);
-    expect(game.getSongs().get('0')?.sequence).toEqual([pattern?.id]);
+    expect(game.getSongs().get('0')).toMatchObject({
+      bpm: 60,
+      blocks: [{ pattern: pattern?.id, start: 0, repeat: 1 }],
+    });
   });
 
   it('skips a corrupt note and keeps the rest of its music in its slot', () => {

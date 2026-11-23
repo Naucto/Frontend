@@ -60,15 +60,32 @@ export interface Pattern {
   stepsPerBeat: 1 | 2 | 4 | 8;
   steps: number;
   notes: Note[];
+  colour?: number;
+}
+
+export type NoteSheet = Pick<Pattern, 'bpm' | 'stepsPerBeat' | 'steps' | 'notes'>;
+
+export interface Sfx extends NoteSheet {
+  name: string;
+}
+
+export interface SongBlock {
+  id: string;
+  pattern: string;
+  start: number;
+  repeat: number;
 }
 
 export interface Song {
   name: string;
-  /** Pattern ids played in order; `null` is an empty place, where the music ends. */
-  sequence: (string | null)[];
+  bpm: number;
+  blocks: SongBlock[];
   loop: boolean;
   loopStart: number;
+  loopEnd?: number;
 }
+
+export const BEATS_PER_BAR = 4;
 
 /**
  * Positions a step is divided into for playback, and so the finest position a note's fractional
@@ -135,13 +152,22 @@ export const defaultPattern = (id: string, slot = 0, name = 'pattern 00'): Patte
   name,
   bpm: 124,
   stepsPerBeat: 4,
-  steps: 32,
+  steps: 16,
   notes: [],
 });
 
-export const defaultSong = (): Song => ({
+export const defaultSong = (bpm = 124): Song => ({
   name: '',
-  sequence: [],
+  bpm,
+  blocks: [],
   loop: true,
   loopStart: 0,
+});
+
+export const defaultSfx = (name = ''): Sfx => ({
+  name,
+  bpm: 240,
+  stepsPerBeat: 4,
+  steps: 16,
+  notes: [],
 });

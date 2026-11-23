@@ -8,6 +8,7 @@ import { migrateV0ToV1 } from './v0_to_v1';
 import { migrateV1ToV2 } from './v1_to_v2';
 import { computeRenames } from './v1_to_v2/code';
 import { migrateV2ToV3 } from './v2_to_v3';
+import { migrateV3ToV4 } from './v3_to_v4';
 
 export type { MigrationReport, MigrationStep, MigrationWarning } from './types';
 
@@ -27,6 +28,7 @@ const STEPS: readonly MigrationStep[] = [
   { from: 0, to: 1, run: migrateV0ToV1 },
   { from: 1, to: 2, run: migrateV1ToV2 },
   { from: 2, to: 3, run: migrateV2ToV3 },
+  { from: 3, to: 4, run: migrateV3ToV4 },
 ];
 
 /** Content only the first schema ever wrote, and the only evidence a document predates the marker. */
