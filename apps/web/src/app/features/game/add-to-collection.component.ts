@@ -14,12 +14,12 @@ import {
 } from '@naucto/ui';
 
 import { AuthStore } from '../../core/auth/auth.store';
-import { SignedInAction } from '../../shared/auth/signed-in-action';
 import {
   CollectionDialogComponent,
   type CollectionDialogData,
 } from '../../shared/collections/collection.dialog';
 import { VisibilityChipComponent } from '../../shared/collections/visibility-chip.component';
+import { GoodStandingAction } from '../../shared/moderation/good-standing-action';
 import {
   injectMyCollections,
   injectSetInCollection,
@@ -29,7 +29,8 @@ import {
 /**
  * The game page's way into the reader's collections: a button that says how many of them hold the
  * game and opens them as a checklist, where a tick adds the game and an untick takes it out, at
- * once. A reader with no account is asked to sign in first.
+ * once. A reader with no account is asked to sign in first, and a suspended one is told why the
+ * checklist stays shut.
  */
 @Component({
   selector: 'nc-add-to-collection',
@@ -52,7 +53,7 @@ export class AddToCollectionComponent {
   readonly projectId = input.required<number>();
 
   protected readonly auth = inject(AuthStore);
-  private readonly signedIn = inject(SignedInAction);
+  private readonly standing = inject(GoodStandingAction);
   private readonly dialogs = inject(DialogService);
   private readonly toasts = inject(ToastService);
   private readonly i18n = inject(TranslocoService);
@@ -65,9 +66,12 @@ export class AddToCollectionComponent {
     () => (this.mine.data() ?? []).filter((collection) => collection.contains).length,
   );
 
-  /** Signing in swaps the button for the one that holds the checklist, which then opens. */
-  protected signIn(): void {
-    this.signedIn.run(() => {
+  /**
+   * The press of a reader the checklist is not offered to. Signing in swaps the button for the one
+   * that holds the checklist, which then opens; a suspended account gets the reason instead.
+   */
+  protected ask(): void {
+    this.standing.run(() => {
       this.open.set(true);
     });
   }

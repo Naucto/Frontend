@@ -34,7 +34,7 @@
     </nc-popover-panel>
   </ng-template>
 
-  @if (auth.isAuthenticated()) {
+  @if (auth.isAuthenticated() && !auth.suspension()) {
     <button
       ncButton
       data-testid="add-to-collection"
@@ -49,7 +49,7 @@
       }
     </button>
   } @else {
-    <button ncButton data-testid="add-to-collection" (click)="signIn()">
+    <button ncButton data-testid="add-to-collection" (click)="ask()">
       <nc-icon name="folder-plus" />
       {{ t('collections.add.label') }}
     </button>
