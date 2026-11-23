@@ -5,7 +5,7 @@
     <section [attr.aria-label]="t('editor.game.cover')">
       <div class="mb-1 flex items-center justify-between gap-1">
         <nc-label>{{ t('editor.game.cover') }}</nc-label>
-        <span class="flex items-center gap-[6px] font-mono text-label text-ink-4">
+        <span class="flex items-center gap-[6px] text-label text-ink-4">
           320
           <nc-mark name="close" />
           180
@@ -48,7 +48,7 @@
     <section [attr.aria-label]="t('editor.game.clip.title')">
       <div class="mb-1 flex items-center justify-between gap-1">
         <nc-label>{{ t('editor.game.clip.title') }}</nc-label>
-        <span class="font-mono text-label text-ink-4">
+        <span class="text-label text-ink-4">
           {{ t('editor.game.clip.limits', { seconds: CLIP_SECONDS }) }}
         </span>
       </div>
@@ -62,8 +62,8 @@
             {{ t('editor.game.clip.rec') }}
           </nc-chip>
           <nc-chip class="absolute top-1 right-1" role="timer">
-            <span class="font-mono text-ink">{{ clock(recorder.elapsed()) }}</span>
-            <span class="font-mono text-ink-4">
+            <span class="text-ink">{{ clock(recorder.elapsed()) }}</span>
+            <span class="text-ink-4">
               {{ t('editor.game.clip.of', { limit: clock(CLIP_SECONDS) }) }}
             </span>
           </nc-chip>
@@ -90,12 +90,12 @@
           <div class="absolute top-1 right-1 flex gap-0.5">
             @if (clipLength(); as length) {
               <nc-chip>
-                <span class="font-mono text-ink">{{ length }}</span>
+                <span class="text-ink">{{ length }}</span>
               </nc-chip>
             }
             @if (clipBytes(); as bytes) {
               <nc-chip>
-                <span class="font-mono normal-case">{{ formatBytes(bytes) }}</span>
+                <span class="normal-case">{{ formatBytes(bytes) }}</span>
               </nc-chip>
             }
           </div>
@@ -119,7 +119,7 @@
               (click)="recorder.stop()">
               <nc-mark name="stop" />
               {{ t('editor.game.clip.stop') }}
-              <span class="font-mono text-ink-3 normal-case">
+              <span class="text-ink-3 normal-case">
                 {{ t('editor.game.clip.left', { seconds: secondsLeft() }) }}
               </span>
             </button>
