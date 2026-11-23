@@ -60,12 +60,15 @@ const LOOKS: Record<NotificationPayloadDto['kind'], NotificationLook> = {
   FEATURED: { tone: 'gold', icon: 'trophy' },
   COLLABORATOR_ADDED: { tone: 'sky', icon: 'folder-plus' },
   COLLABORATOR_REMOVED: { tone: 'sky', icon: 'folder-x' },
-  MODERATION: { tone: 'sky', icon: 'info-box' },
+  MODERATION: { tone: 'orange', icon: 'flag' },
 };
 
-/** A warning is orange whatever it is about; an invite is told from the other generic ones. */
+/**
+ * A moderator's decision keeps its own glyph though it arrives as a warning; any other warning is
+ * orange whatever it is about; an invite is told from the other generic ones.
+ */
 export function lookOf(notification: NotificationPayloadDto): NotificationLook {
-  if (notification.type === 'WARNING') {
+  if (notification.type === 'WARNING' && notification.kind !== 'MODERATION') {
     return { tone: 'orange', icon: 'alert' };
   }
   if (destinationOf(notification)?.query) {

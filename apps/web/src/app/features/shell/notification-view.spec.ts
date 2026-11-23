@@ -70,6 +70,13 @@ describe('lookOf', () => {
     });
   });
 
+  it('keeps the flag of a moderation notice, which arrives as a warning', () => {
+    expect(lookOf(notification({ type: 'WARNING', kind: 'MODERATION' }))).toEqual({
+      tone: 'orange',
+      icon: 'flag',
+    });
+  });
+
   it('tells a session invite from the other generic notifications', () => {
     expect(lookOf(notification({ data: { projectId: 4, sessionId: 'abc' } })).icon).toBe('gamepad');
     expect(lookOf(notification({ data: { projectId: 4 } })).icon).toBe('info-box');
