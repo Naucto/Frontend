@@ -195,6 +195,41 @@ test.describe('app shell', () => {
     await expect(page.getByRole('link', { name: 'Sign in' })).toBeVisible();
   });
 
+  /** The frame is painted from its roles, so the roles are what a browser can be asked about. */
+  test('the account avatar is lit from above at rest, and its whole frame takes the active ink under the pointer', async ({
+    page,
+  }) => {
+    await mockSignedIn(page);
+    await page.goto('/hub');
+    const account = page.getByRole('button', { name: 'Account' });
+    const avatar = account.locator('nc-avatar');
+    const frame = (): Promise<Record<string, string>> =>
+      avatar.evaluate((el) => {
+        const style = getComputedStyle(el);
+        const ink = document.createElement('i');
+        ink.style.color = 'var(--color-active-ink)';
+        el.append(ink);
+        const active = getComputedStyle(ink).color;
+        ink.remove();
+        return {
+          edge: style.getPropertyValue('--bv-edge'),
+          lo: style.getPropertyValue('--bv-lo'),
+          shade: style.getPropertyValue('--bv-shade'),
+          active,
+        };
+      });
+
+    await page.mouse.move(0, 0);
+    const rest = await frame();
+    expect(rest.lo).not.toBe(rest.edge);
+    expect(rest.shade).not.toBe('100%');
+
+    await account.hover();
+    await expect.poll(async () => (await frame()).edge).toBe(rest.active);
+    const lit = await frame();
+    expect(lit.lo).toBe(lit.active);
+  });
+
   test('the bell lists what happened, answers a friend request and opens an invite on its session', async ({
     page,
   }) => {
