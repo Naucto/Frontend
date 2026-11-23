@@ -1,9 +1,9 @@
 import { glyphPath } from '../packages/ui/src/icons/glyph-path';
 import { ICON_GLYPHS } from '../packages/ui/src/icons/glyphs';
 import { expect, type Page, test } from './fixtures';
-import { ALEXIS, collection, hubGame, mockCollections } from './mocks/collections';
+import { ALEXIS, by, collection, mockCollections } from './mocks/collections';
 import { serveGame } from './mocks/game';
-import { mockHub } from './mocks/hub';
+import { hubGame, mockHub, mockProjects } from './mocks/hub';
 import {
   mockComments,
   mockFlags,
@@ -28,7 +28,7 @@ const comment = (id: number, over: Record<string, unknown>): Record<string, unkn
 /** The hub of a signed-in reader with no game of their own and nobody playing. */
 async function mockQuietHub(page: Page): Promise<void> {
   await mockHub(page);
-  await page.route(/\/projects\?/, answer(200, { projects: [], total: 0, page: 1, limit: 24 }));
+  await mockProjects(page);
   await page.route('**/game-sessions', answer(200, { sessions: [] }));
 }
 
@@ -227,17 +227,10 @@ test.describe('moderation', () => {
     await mockSignedIn(page, ALEXIS);
     api.viewer = ALEXIS.id;
     const projects = [
-      { ...hubGame(201, 'Pong Royale', ALEXIS), palette: [], hiddenAt: null },
-      {
-        ...hubGame(202, 'Neon Drift', ALEXIS),
-        palette: [],
-        hiddenAt: '2026-11-18T16:05:00.000Z',
-      },
+      hubGame(201, 'Pong Royale', { ...by(ALEXIS), hiddenAt: null }),
+      hubGame(202, 'Neon Drift', { ...by(ALEXIS), hiddenAt: '2026-11-18T16:05:00.000Z' }),
     ];
-    await page.route(
-      /\/projects\?/,
-      answer(200, { projects, total: projects.length, page: 1, limit: 100 }),
-    );
+    await mockProjects(page, projects);
     await page.goto('/games');
 
     const shelf = page.getByTestId('shelf-published');
