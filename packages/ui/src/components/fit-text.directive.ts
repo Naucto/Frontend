@@ -1,19 +1,20 @@
-import { afterNextRender, DestroyRef, Directive, ElementRef, inject, input } from '@angular/core';
+import { afterNextRender, DestroyRef, Directive, ElementRef, inject } from '@angular/core';
 
 /** How far a line of that width is narrowed to fit that box: no further than `tightest`. */
 export function fitScale(box: number, text: number, tightest: number): number {
   return text > box ? Math.max(tightest, box / text) : 1;
 }
 
+/** The share of its width a line is narrowed to at most. */
+const TIGHTEST = 0.62;
+
 /**
  * Keeps one line whole in its box by narrowing it, and only cuts it once it would be narrowed past
- * `tightest`. On the box, around a single element that holds the line: that element is squeezed
+ * `TIGHTEST`. On the box, around a single element that holds the line: that element is squeezed
  * from its start edge, and given the width that makes its own ellipsis fall at the box's edge.
  */
 @Directive({ selector: '[ncFitText]' })
 export class FitTextDirective {
-  readonly tightest = input(0.62);
-
   constructor() {
     const box = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
     const fit = (): void => {
@@ -28,7 +29,7 @@ export class FitTextDirective {
       if (!room || !length) {
         return;
       }
-      const scale = fitScale(room, length, this.tightest());
+      const scale = fitScale(room, length, TIGHTEST);
       line.style.transform = scale < 1 ? `scaleX(${scale.toFixed(3)})` : 'none';
       if (length * scale > room + 1) {
         line.style.width = `${String(room / scale)}px`;
