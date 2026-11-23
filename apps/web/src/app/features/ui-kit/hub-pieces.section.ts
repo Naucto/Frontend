@@ -76,6 +76,9 @@ export class HubPiecesSection {
     return lead ? diskBody(diskStyleFor(lead)) : null;
   });
 
+  /** A person's banner, as the profile lays it over the ground: a cover stands in for one. */
+  protected readonly banner = GAMES[2]?.coverUrl ?? null;
+
   protected readonly line = signal(0);
   protected readonly lines = GAMES.map((game) => game.name);
 

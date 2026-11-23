@@ -124,4 +124,15 @@
       <button ncButton (click)="line.set((line() + 1) % lines.length)">Next name</button>
     </div>
   </div>
+
+  <div class="grid gap-[10px]">
+    <span class="label">Ground under a banner</span>
+    <div class="relative isolate h-[960px] overflow-hidden" data-testid="banner-ground">
+      <nc-dither-backdrop
+        class="absolute inset-0"
+        [image]="banner"
+        [banner]="banner"
+        seed="banner" />
+    </div>
+  </div>
 </div>

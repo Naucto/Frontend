@@ -1,4 +1,13 @@
-import { blobLayout, type PaintedBlob, paintField, rampOf, type Rgb } from './dither-field';
+import {
+  BANNER_ROWS,
+  type BannerSample,
+  blobLayout,
+  paintBanner,
+  type PaintedBlob,
+  paintField,
+  rampOf,
+  type Rgb,
+} from './dither-field';
 
 describe('rampOf', () => {
   const ground: Rgb = [10, 10, 10];
@@ -74,5 +83,57 @@ describe('paintField', () => {
 
   it('moves the blobs up as the page scrolls', () => {
     expect(cells(paint(0.2))).not.toEqual(cells(paint()));
+  });
+});
+
+describe('paintBanner', () => {
+  const WIDTH = 16;
+  const HEIGHT = 400;
+  const ground: Rgb = [0, 0, 0];
+  /** A picture whose every cell is white, and whose last row is red. */
+  const banner: BannerSample = {
+    width: WIDTH,
+    rows: BANNER_ROWS,
+    data: Uint8ClampedArray.from({ length: WIDTH * BANNER_ROWS * 4 }, (_, i) =>
+      i >= WIDTH * (BANNER_ROWS - 1) * 4 && i % 4 !== 0 ? 0 : 255,
+    ),
+  };
+  const paint = (top: number): Uint8ClampedArray => {
+    const data = new Uint8ClampedArray(WIDTH * HEIGHT * 4).fill(7);
+    paintBanner(data, WIDTH, HEIGHT, banner, top, ground, true);
+    return data;
+  };
+  const kept = (data: Uint8ClampedArray, y: number): number =>
+    Array.from({ length: WIDTH }, (_, x) => data[(y * WIDTH + x) * 4]).filter((red) => red !== 7)
+      .length;
+
+  it('lays the picture whole at its top, pulled toward the ground', () => {
+    const data = paint(0);
+    expect(kept(data, 0)).toBe(WIDTH);
+    expect(kept(data, 99)).toBe(WIDTH);
+    expect(data[0]).toBe(140);
+  });
+
+  it('lets go of it in a dither down to nothing', () => {
+    const data = paint(0);
+    const shares = [120, 200, 300].map((y) => kept(data, y));
+    expect(shares[0]).toBeGreaterThan(shares[1]!);
+    expect(shares[1]).toBeGreaterThan(shares[2]!);
+    expect(kept(data, 320)).toBe(0);
+  });
+
+  it('runs the last row of the picture on under it', () => {
+    const data = paint(0);
+    const at =
+      (200 * WIDTH +
+        Array.from({ length: WIDTH }).findIndex((_, x) => data[(200 * WIDTH + x) * 4] !== 7)) *
+      4;
+    expect([data[at], data[at + 1], data[at + 2]]).toEqual([140, 0, 0]);
+  });
+
+  it('follows its top, above the field when it is scrolled past', () => {
+    expect(kept(paint(50), 49)).toBe(0);
+    expect(kept(paint(50), 50)).toBe(WIDTH);
+    expect(kept(paint(-400), 0)).toBe(0);
   });
 });

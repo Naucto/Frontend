@@ -119,3 +119,52 @@ export function paintField(
     }
   }
 }
+
+/** A picture read one sample a cell: `rows` rows of `width` cells, RGBA. */
+export interface BannerSample {
+  data: Uint8ClampedArray;
+  width: number;
+  rows: number;
+}
+
+/** In cells: how tall the picture is laid, how far it stays whole, where the last of it goes. */
+export const BANNER_ROWS = 140;
+const BANNER_WHOLE = 100;
+const BANNER_REACH = 320;
+
+/**
+ * Lays a banner over painted pixels from row `top` down: whole for its first rows, then dropping
+ * out cell by cell in an ordered dither until the field beneath is all that is left. Below the
+ * picture its last row runs on, so the fade carries its colours rather than a cut. Every cell it
+ * keeps is the picture's colour pulled toward the ground, so text over it reads as on the page.
+ */
+export function paintBanner(
+  data: Uint8ClampedArray,
+  width: number,
+  height: number,
+  banner: BannerSample,
+  top: number,
+  ground: Rgb,
+  dark: boolean,
+): void {
+  const pull = dark ? 0.55 : 0.6;
+  const from = Math.max(0, top);
+  const to = Math.min(height, top + BANNER_REACH);
+  for (let y = from; y < to; y++) {
+    const local = y - top;
+    const share =
+      local < BANNER_WHOLE ? 1 : 1 - (local - BANNER_WHOLE) / (BANNER_REACH - BANNER_WHOLE);
+    const row = Math.min(local, banner.rows - 1) * banner.width;
+    const matrix = BAYER_8[local & 7];
+    for (let x = 0; x < Math.min(width, banner.width); x++) {
+      if (share <= ((matrix?.[x & 7] ?? 0) + 0.5) / 64) {
+        continue;
+      }
+      const seen = (row + x) * 4;
+      const at = (y * width + x) * 4;
+      data[at] = ground[0] + ((banner.data[seen] ?? 0) - ground[0]) * pull;
+      data[at + 1] = ground[1] + ((banner.data[seen + 1] ?? 0) - ground[1]) * pull;
+      data[at + 2] = ground[2] + ((banner.data[seen + 2] ?? 0) - ground[2]) * pull;
+    }
+  }
+}

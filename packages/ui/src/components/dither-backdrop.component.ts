@@ -10,7 +10,16 @@ import {
 } from '@angular/core';
 
 import { coverHues, threeColours } from '../cover-palette';
-import { blobLayout, type FieldBlob, paintField, rampOf, type Rgb } from '../dither-field';
+import {
+  BANNER_ROWS,
+  type BannerSample,
+  blobLayout,
+  type FieldBlob,
+  paintBanner,
+  paintField,
+  rampOf,
+  type Rgb,
+} from '../dither-field';
 import { prefersStill } from '../motion';
 
 /** One cell of the field is one pixel of the kit. */
@@ -64,6 +73,44 @@ function readCover(src: string): Promise<Rgb[]> {
   return reading;
 }
 
+/** A picture, loaded to be read; none when it cannot be loaded. */
+function loadPicture(src: string): Promise<HTMLImageElement | null> {
+  return new Promise((resolve) => {
+    const image = new Image();
+    image.crossOrigin = 'anonymous';
+    image.onload = (): void => {
+      resolve(image);
+    };
+    image.onerror = (): void => {
+      resolve(null);
+    };
+    image.src = src;
+  });
+}
+
+/** A picture read one sample a cell, covering the field's width; none when its pixels are closed. */
+function sampleBanner(image: HTMLImageElement, width: number): BannerSample | null {
+  const canvas = Object.assign(document.createElement('canvas'), { width, height: BANNER_ROWS });
+  const context = canvas.getContext('2d', { willReadFrequently: true });
+  if (!context) {
+    return null;
+  }
+  const scale = Math.max(width / image.width, BANNER_ROWS / image.height);
+  const drawn = { width: image.width * scale, height: image.height * scale };
+  context.drawImage(
+    image,
+    (width - drawn.width) / 2,
+    (BANNER_ROWS - drawn.height) / 2,
+    drawn.width,
+    drawn.height,
+  );
+  try {
+    return { data: context.getImageData(0, 0, width, BANNER_ROWS).data, width, rows: BANNER_ROWS };
+  } catch {
+    return null;
+  }
+}
+
 /** Any CSS colour as its channels, by letting a canvas resolve it. */
 function channels(colour: string): Rgb {
   const context = Object.assign(document.createElement('canvas'), {
@@ -83,6 +130,9 @@ function channels(colour: string): Rgb {
  * A ground of three soft blobs drawn in an ordered dither, in the colours of a picture: what lies
  * behind a page whose mood is one game's. The page's own colour is the ground, and the blobs leave
  * it only by a few steps, so text over them reads as it does on the bare page.
+ *
+ * A banner, when given, is laid across the top of the field and let go in a dither over about a
+ * screen, so a page can open on a picture of its own and still end on the same ground as the hub.
  *
  * It takes the box its caller gives it — `fixed inset-0` behind a page — and draws only when
  * something changes: a new picture, the colours easing toward it, a scroll, a resize, the theme.
@@ -104,6 +154,13 @@ export class DitherBackdropComponent {
   readonly tint = input<string | null>(null);
   /** What the blobs are placed from: one seed, one sky. */
   readonly seed = input('');
+  /** A picture laid across the top of the field, whole at first, then dithered away. */
+  readonly banner = input<string | null>(null);
+  /**
+   * Where the banner starts: the top of this element, followed as the page scrolls. Without one,
+   * the top of the backdrop.
+   */
+  readonly bannerFrom = input<HTMLElement | null>(null);
 
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
@@ -113,6 +170,10 @@ export class DitherBackdropComponent {
   private wait: ReturnType<typeof setTimeout> | undefined;
   private drawn = 0;
   private eased = 0;
+  private ground: Rgb = [0, 0, 0];
+  private dark = true;
+  private bannerPicture: HTMLImageElement | null = null;
+  private bannerSample: BannerSample | null = null;
 
   /** Draws one frame and says whether anything is still on its way. */
   private draw(now: number): boolean {
@@ -163,6 +224,24 @@ export class DitherBackdropComponent {
       })),
       (window.scrollY / Math.max(1, page.scrollHeight)) * DRIFT,
     );
+    if (this.bannerPicture) {
+      if (this.bannerSample?.width !== width) {
+        this.bannerSample = sampleBanner(this.bannerPicture, width);
+      }
+      if (this.bannerSample) {
+        const from = this.bannerFrom() ?? this.host;
+        const top = from.getBoundingClientRect().top - this.host.getBoundingClientRect().top;
+        paintBanner(
+          this.pixels.data,
+          width,
+          height,
+          this.bannerSample,
+          Math.round(top / CELL),
+          this.ground,
+          this.dark,
+        );
+      }
+    }
     context.putImageData(this.pixels, 0, 0);
     return moving;
   }
@@ -196,6 +275,8 @@ export class DitherBackdropComponent {
       const mine = ++aim;
       const ground = channels(getComputedStyle(this.host).getPropertyValue('--nc-page'));
       const dark = 0.299 * ground[0] + 0.587 * ground[1] + 0.114 * ground[2] < 128;
+      this.ground = ground;
+      this.dark = dark;
       const image = this.image();
       const tint = this.tint();
       const found = image ? await readCover(image) : [];
@@ -219,6 +300,20 @@ export class DitherBackdropComponent {
       this.tint();
       this.seed();
       void retarget();
+    });
+
+    let asked = 0;
+    effect(() => {
+      const src = this.banner();
+      const mine = ++asked;
+      void (src ? loadPicture(src) : Promise.resolve(null)).then((picture) => {
+        if (mine !== asked) {
+          return;
+        }
+        this.bannerPicture = picture;
+        this.bannerSample = null;
+        this.kick();
+      });
     });
 
     const resized = new ResizeObserver(kick);
