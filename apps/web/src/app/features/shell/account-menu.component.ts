@@ -15,7 +15,7 @@ import { FeedbackLauncher } from '../../shared/feedback/feedback-launcher.servic
 
 /**
  * Account popover: who is signed in and the way to their profile, then Settings, feedback and
- * Sign out. The theme is the top bar's toggle and Settings', not this menu's.
+ * Sign out. A problem is reported from the bug button of the top bar. The theme is the top bar's toggle and Settings', not this menu's.
  */
 @Component({
   selector: 'nc-account-menu',
@@ -42,11 +42,6 @@ export class AccountMenuComponent {
   protected rate(): void {
     this.open.set(false);
     this.feedback.rate();
-  }
-
-  protected reportBug(): void {
-    this.open.set(false);
-    this.feedback.reportBug();
   }
 
   protected async logout(): Promise<void> {
