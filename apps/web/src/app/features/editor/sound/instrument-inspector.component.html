@@ -22,7 +22,7 @@
           <nc-wave-glyph [type]="osc.value" [width]="44" />
           <!-- Type utilities, not the label class: that class sets its own colour and would
                override the card's state colour. -->
-          <span class="font-mono text-micro tracking-wide uppercase">{{ osc.label }}</span>
+          <span class="text-micro tracking-wide uppercase">{{ osc.label }}</span>
         </button>
       }
     </div>
@@ -104,7 +104,7 @@
     <div class="mt-1 grid grid-cols-4 gap-1 text-center">
       @for (key of envKeys; track key) {
         <div>
-          <div class="font-mono text-meta text-ink">{{ envReadout(key) }}</div>
+          <div class="text-meta text-ink">{{ envReadout(key) }}</div>
           <div class="label mt-0.75 text-ink-4">{{ key }}</div>
         </div>
       }

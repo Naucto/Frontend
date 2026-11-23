@@ -13,7 +13,7 @@
     <nc-icon name="notification" />
     @if (store.unread() > 0) {
       <span
-        class="pointer-events-none absolute top-0 right-0 z-1 inline-flex h-[18px] min-w-[18px] items-center justify-center bg-hot px-[3px] font-mono text-label leading-none text-on-hot"
+        class="pointer-events-none absolute top-0 right-0 z-1 inline-flex h-[18px] min-w-[18px] items-center justify-center bg-hot px-[3px] text-label leading-none text-on-hot"
         aria-hidden="true">
         {{ store.unread() }}
       </span>

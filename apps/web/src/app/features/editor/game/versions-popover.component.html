@@ -16,7 +16,7 @@
   <!-- The design only shows the size when the game is near its ceiling. -->
   @if (sizeTone(); as tone) {
     <span
-      class="ml-1 flex items-center gap-0.5 font-mono text-label"
+      class="ml-1 flex items-center gap-0.5 text-label"
       [class.text-hot-ink]="tone === 'over'"
       [class.text-orange-ink]="tone === 'near'">
       <nc-icon name="alert" [size]="24" />
@@ -114,7 +114,7 @@
       <div class="border-t-3 border-line p-2">
         <div class="mb-1 flex justify-between text-label">
           <span>{{ t('editor.publishDialog.size') }}</span>
-          <span class="font-mono text-ink">{{ kb(size().total) }} / 1 MB</span>
+          <span class="text-ink">{{ kb(size().total) }} / 1 MB</span>
         </div>
         <nc-meter
           size="md"

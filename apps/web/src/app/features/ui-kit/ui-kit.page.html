@@ -55,7 +55,7 @@
           @for (accent of accentSwatches; track accent.name) {
             <div class="grid gap-[6px]">
               <div
-                class="flex h-[44px] items-center justify-center font-mono text-label"
+                class="flex h-[44px] items-center justify-center text-label"
                 [class]="accent.fill">
                 Aa
               </div>
@@ -164,7 +164,7 @@
         <div class="grid grid-cols-5 gap-[10px] text-micro tracking-wide text-ink-3 uppercase">
           @for (step of scale; track step.name) {
             <div>
-              <div class="font-mono text-title text-ink">{{ step.px }}</div>
+              <div class="text-title text-ink">{{ step.px }}</div>
               {{ step.name }}
             </div>
           }
@@ -353,7 +353,7 @@
         <div class="flex items-start gap-[14px]">
           <span class="label w-[56px] shrink-0">Size</span>
           <nc-stepper class="flex-1" [(value)]="spriteSize" [options]="sizes" label="Sprite size" />
-          <span class="w-[52px] shrink-0 text-right font-mono text-meta text-ink-body">
+          <span class="w-[52px] shrink-0 text-right text-meta text-ink-body">
             {{ sizes[spriteSize()] }}
           </span>
         </div>
@@ -488,7 +488,7 @@
       <div class="max-w-[560px]">
         <div class="mb-1 flex justify-between text-label tracking-label text-ink-3 uppercase">
           <span>Game size</span>
-          <span class="font-mono">942 kB / 1 MB</span>
+          <span>942 kB / 1 MB</span>
         </div>
         <nc-meter [segments]="size" [max]="1048576" label="Game size" size="md" />
       </div>
@@ -816,7 +816,7 @@ What each bit means is yours to decide." />
             <button type="button" ncOption [wash]="note.unread ? 'sky' : undefined">
               <span
                 aria-hidden="true"
-                class="flat-sm bevel-edge-line-strong bevel-fill-gold inline-flex size-[30px] shrink-0 items-center justify-center font-mono text-small text-on-accent uppercase">
+                class="flat-sm bevel-edge-line-strong bevel-fill-gold inline-flex size-[30px] shrink-0 items-center justify-center text-small text-on-accent uppercase">
                 {{ note.title[0] }}
               </span>
               <span class="grid min-w-0 flex-1 gap-[2px]">

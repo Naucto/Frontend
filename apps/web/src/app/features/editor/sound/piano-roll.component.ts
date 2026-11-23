@@ -574,7 +574,7 @@ export class PianoRollComponent {
     const sy = this.scrollY();
     ctx.fillStyle = cssVar(el, '--nc-panel');
     ctx.fillRect(0, sy, width, RULER_H);
-    ctx.font = `10px ${cssVar(el, '--font-mono')}`;
+    ctx.font = `10px ${cssVar(el, '--font-ui')}`;
     ctx.textBaseline = 'middle';
     ctx.fillStyle = cssVar(el, '--nc-ink-4');
     for (let step = 0; step < pattern.steps; step += pattern.stepsPerBeat) {

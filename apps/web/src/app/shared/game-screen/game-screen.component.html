@@ -14,7 +14,7 @@
       [style.imageRendering]="'pixelated'"></canvas>
     @if (fpsVisible()) {
       <span
-        class="absolute top-1.5 left-1.5 border-3 border-line-strong bg-page/80 px-1 py-0.5 font-mono text-micro text-jade-ink">
+        class="absolute top-1.5 left-1.5 border-3 border-line-strong bg-page/80 px-1 py-0.5 text-micro text-jade-ink">
         {{ host.fps() }} FPS
         @if (showCpu()) {
           · {{ host.cpu() }}% CPU
@@ -99,7 +99,7 @@
         }
       </span>
       @if (!compact()) {
-        <span class="ml-1 hidden font-mono text-label whitespace-nowrap text-ink-4 md:inline">
+        <span class="ml-1 hidden text-label whitespace-nowrap text-ink-4 md:inline">
           320×180 · {{ t(fit() === 'width' ? 'game.screen.fitWidth' : 'game.screen.fitInteger') }}
         </span>
       }
@@ -113,7 +113,7 @@
         class="flex h-full min-w-0 flex-1 flex-wrap content-start justify-end gap-x-[inherit] overflow-clip before:content-['']">
         @for (player of players(); track player.slot) {
           <span
-            class="flex h-full items-center gap-0.5 font-mono text-label whitespace-nowrap"
+            class="flex h-full items-center gap-0.5 text-label whitespace-nowrap"
             [class]="player.here ? 'text-ink-3' : 'text-ink-4'">
             <nc-icon [name]="player.pad ? 'gamepad' : 'keyboard'" [size]="24" />
             P{{ player.slot }}

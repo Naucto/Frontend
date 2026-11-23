@@ -2,7 +2,7 @@
   <div class="flex items-center justify-between">
     <h2 class="font-display text-title text-ink">
       {{ t('comments.title') }}
-      <span class="font-mono text-label text-ink-4">{{ total() }}</span>
+      <span class="text-label text-ink-4">{{ total() }}</span>
     </h2>
     <span class="label text-ink-4">{{ t('comments.newest') }}</span>
   </div>
@@ -28,7 +28,7 @@
             [placeholder]="t('comments.placeholder')"></textarea>
         </div>
         <div class="flex items-center justify-between">
-          <span class="font-mono text-label text-ink-4">{{ draft.length }} / {{ maxLen }}</span>
+          <span class="text-label text-ink-4">{{ draft.length }} / {{ maxLen }}</span>
           <button
             ncButton
             variant="primary"
@@ -76,9 +76,7 @@
                   (keydown.escape)="replyTo.set(null)"></textarea>
               </div>
               <div class="flex items-center justify-between">
-                <span class="font-mono text-label text-ink-4">
-                  {{ replyDraft.length }} / {{ maxLen }}
-                </span>
+                <span class="text-label text-ink-4">{{ replyDraft.length }} / {{ maxLen }}</span>
                 <button
                   ncButton
                   variant="primary"

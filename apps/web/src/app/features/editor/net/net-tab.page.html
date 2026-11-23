@@ -2,17 +2,16 @@
   <section class="flex min-h-0 flex-col bg-paper">
     <div
       class="@container relative flex h-(--nc-h-bar) shrink-0 items-center gap-1.25 border-b-3 border-line bg-panel pr-1.5 pl-2">
-      <span class="font-mono text-micro uppercase tracking-strip text-ink">
+      <span class="text-micro uppercase tracking-strip text-ink">
         {{ t('editor.net.sharedState') }}
       </span>
       @if (session()) {
-        <span
-          class="flex items-center gap-0.75 font-mono text-micro uppercase tracking-tag text-jade-ink">
+        <span class="flex items-center gap-0.75 text-micro uppercase tracking-tag text-jade-ink">
           <span class="block h-[6px] w-[6px] bg-current"></span>
           {{ t('editor.net.live') }}
         </span>
       } @else {
-        <span class="font-mono text-micro uppercase tracking-tag text-ink-4">
+        <span class="text-micro uppercase tracking-tag text-ink-4">
           {{ t('editor.net.idle') }}
         </span>
       }
@@ -227,7 +226,7 @@
   <nc-panel-column [width]="PANEL_WIDTH" [title]="t('editor.net.session')">
     <span
       actions
-      class="font-mono text-micro uppercase tracking-tag"
+      class="text-micro uppercase tracking-tag"
       [class]="
         info()?.role === 'host' ? 'text-sky-ink' : session() ? 'text-jade-ink' : 'text-ink-4'
       ">
@@ -243,7 +242,7 @@
     <nc-section banded [title]="t('editor.net.whoCanJoin')">
       <nc-help-dot actions [title]="t('editor.net.whoCanJoin')" [text]="t('editor.net.whoHelp')" />
       <nc-presence-surface surface="net:session" />
-      <span class="font-mono text-micro uppercase tracking-strip text-ink-4">
+      <span class="text-micro uppercase tracking-strip text-ink-4">
         {{ t('editor.net.inWorkSession') }}
       </span>
       @for (collaborator of presence.collaborators(); track collaborator.clientId) {
@@ -251,7 +250,7 @@
           <nc-user-avatar [name]="collaborator.name" [userId]="collaborator.userId" [size]="16" />
           <span class="text-ui text-ink">{{ collaborator.name }}</span>
           @if (collaborator.isSelf) {
-            <span class="font-mono text-micro lowercase tracking-button text-ink-3">
+            <span class="text-micro lowercase tracking-button text-ink-3">
               {{ t('editor.net.you') }}
             </span>
           }
@@ -298,7 +297,7 @@
             }
             <span class="flex-1"></span>
             @if (player.ping !== null) {
-              <span class="font-mono text-label text-ink-4">{{ player.ping }}ms</span>
+              <span class="text-label text-ink-4">{{ player.ping }}ms</span>
             }
             <span class="label text-jade-ink">P{{ player.slot }}</span>
           } @else {
@@ -316,9 +315,9 @@
             {{ t2.relayed ? t('editor.net.relayed') : t('editor.net.direct') }}
           </span>
           <span class="flex-1"></span>
-          <span class="font-mono text-ink-4">{{ t2.total }}</span>
+          <span class="text-ink-4">{{ t2.total }}</span>
           @if (t2.rate) {
-            <span class="font-mono text-ink-body">{{ t2.rate }}</span>
+            <span class="text-ink-body">{{ t2.rate }}</span>
           }
         </div>
       }
