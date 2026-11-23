@@ -6,10 +6,21 @@ export const answer =
   (route: Route): Promise<void> =>
     route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
 
-/** The identity most specs need and none of them disagree on: a refresh token and a profile. */
+/**
+ * The identity most specs need and none of them disagree on: a refresh token and a profile. A
+ * `suspension` makes it the profile of a suspended account.
+ */
 export async function mockSignedIn(
   page: Page,
-  { id = 1, username = 'alexis' }: { id?: number; username?: string } = {},
+  {
+    id = 1,
+    username = 'alexis',
+    suspension = null,
+  }: {
+    id?: number;
+    username?: string;
+    suspension?: { since: string; until: string | null } | null;
+  } = {},
 ): Promise<void> {
   await page.route('**/auth/refresh', (route) => route.fulfill({ json: { access_token: 'tok' } }));
   await page.route(
@@ -23,6 +34,7 @@ export async function mockSignedIn(
       createdAt: '',
       updatedAt: '',
       message: '',
+      suspension,
     }),
   );
 }
