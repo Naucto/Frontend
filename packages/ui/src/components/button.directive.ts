@@ -1,6 +1,7 @@
 import { booleanAttribute, computed, Directive, input } from '@angular/core';
 
-export type ButtonVariant = 'primary' | 'run' | 'secondary' | 'ghost' | 'danger' | 'jade' | 'sky';
+export type ButtonVariant =
+  'primary' | 'run' | 'secondary' | 'ghost' | 'ghost-danger' | 'danger' | 'jade' | 'sky';
 export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'bar' | 'hero';
 /** Sizes the ladder no longer has. Each still resolves, to the step nearest what it was. */
 export type RetiredButtonSize = 'tool' | 'strip';
@@ -25,6 +26,7 @@ const VARIANTS: Record<ButtonVariant, string> = {
   run: `glare bevel-hot text-on-hot hover:bevel-fill-hot-hover ${DISABLED}`,
   secondary: `text-ink-body ${LIT} ${DISABLED}`,
   ghost: `bevel-bare text-ink-2 ${LIT} hover:bevel-fill-raised ${DISABLED_BARE}`,
+  'ghost-danger': `bevel-bare text-hot-ink hover:bevel-edge-hot hover:bevel-skirt-hot hover:bevel-fill-hot-wash ${DISABLED_BARE}`,
   danger: `bevel-level bevel-edge-hot bevel-fill-transparent text-hot-ink hover:bevel-lift hover:bevel-hot hover:text-on-hot ${DISABLED}`,
   jade: `glare bevel-jade text-on-accent ${DISABLED}`,
   sky: `glare bevel-sky text-on-accent ${DISABLED}`,
@@ -36,6 +38,7 @@ const PRESSED: Record<ButtonVariant, string> = {
   run: `bevel-down bevel-hot text-on-hot ${DISABLED}`,
   secondary: `bevel-down bevel-lit text-active-ink ${DISABLED}`,
   ghost: `bevel-down bevel-lit text-active-ink ${DISABLED_BARE}`,
+  'ghost-danger': `bevel-down bevel-hot text-on-hot ${DISABLED_BARE}`,
   danger: `bevel-down bevel-hot text-on-hot ${DISABLED}`,
   jade: `bevel-down bevel-jade text-on-accent ${DISABLED}`,
   sky: `bevel-down bevel-sky text-on-accent ${DISABLED}`,

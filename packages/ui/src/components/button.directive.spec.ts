@@ -15,6 +15,7 @@ import { ButtonDirective } from './button.directive';
     <button ncButton variant="primary" pressed>Dark</button>
     <button ncButton variant="primary" copied>Copied</button>
     <button ncButton variant="ghost" disabled>Undo</button>
+    <button ncButton variant="ghost-danger" size="lg">Remove</button>
   `,
 })
 class Host {}
@@ -31,6 +32,19 @@ describe('ButtonDirective', () => {
     expect(classesOf('Publish')).toEqual(expect.arrayContaining(['bevel-primary', 'raised-sm']));
     expect(classesOf('Delete')).toEqual(expect.arrayContaining(['aspect-square', 'h-(--nc-h-sm)']));
     expect(classesOf('Delete')).not.toContain('px-1.5');
+  });
+
+  it('draws ghost-danger bare at rest, with the danger ink and a danger fill on hover', async () => {
+    await render(Host);
+    expect(classesOf('Remove')).toEqual(
+      expect.arrayContaining([
+        'bevel-bare',
+        'text-hot-ink',
+        'h-(--nc-h-lg)',
+        'hover:bevel-fill-hot-wash',
+      ]),
+    );
+    expect(classesOf('Remove')).not.toContain('bevel-edge-hot');
   });
 
   it('draws the two tallest sizes on the large bevel', async () => {
