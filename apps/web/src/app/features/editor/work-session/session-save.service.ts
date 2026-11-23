@@ -31,6 +31,9 @@ const AUTOSAVE_MS = 5 * 60 * 1000;
  */
 const QUIET_SAVE_MS = 3000;
 
+/** What `Y.applyUpdate` and the session's own seeding of the project's fields are written under. */
+export const LOAD_ORIGIN = 'remote-init';
+
 /** What a save reads of the session it writes out. */
 export interface SavedSession {
   readonly doc: Y.Doc;
@@ -212,7 +215,7 @@ export class SessionSaveService {
 
   private readonly onDocUpdate = (_update: Uint8Array, origin: unknown): void => {
     // In a game looked at a change is nobody's unsaved work: there is nothing to save it to.
-    if (origin === 'remote-init' || this.attached?.preview()) {
+    if (origin === LOAD_ORIGIN || this.attached?.preview()) {
       return;
     }
     this.edits++;

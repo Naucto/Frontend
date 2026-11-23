@@ -31,15 +31,12 @@ import { StaffPreviewService } from '../../../shared/moderation/staff-preview.se
 import { EditorModeService } from '../state/editor-mode.service';
 import { HostElectionService } from './host-election.service';
 import { SessionPresenceService } from './session-presence.service';
-import { type SavedSession, SessionSaveService } from './session-save.service';
+import { LOAD_ORIGIN, type SavedSession, SessionSaveService } from './session-save.service';
 
 export type SessionStatus = 'joining' | 'loading' | 'upgrading' | 'ready' | 'error' | 'closed';
 
 /** The statuses of a session still being opened, when what is written is the load's and no edit. */
 const OPENING: readonly SessionStatus[] = ['joining', 'loading', 'upgrading'];
-
-/** What `Y.applyUpdate` and the session's own seeding of the project's fields are written under. */
-const LOAD_ORIGIN = 'remote-init';
 
 /**
  * Whose game a session loaded once shows: someone else's, read as staff through the preview

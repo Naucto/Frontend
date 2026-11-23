@@ -252,9 +252,9 @@ export default class EditorShellComponent implements OnInit {
     // BUILDING presence, so a friend sees "building Ferry Click" while the editor is open.
     effect((onCleanup) => {
       const projectId = this.id();
-      // Only once the session is open as a live one: until then it may still turn out to be a
-      // game looked at, which builds nothing, so friends are not told and no activity is claimed.
-      if (this.session.status() !== 'ready' || this.session.preview()) {
+      // Only a live session builds: until it is open it may still turn out to be a game looked
+      // at, which tells no friend and claims no activity.
+      if (!this.live()) {
         return;
       }
       this.presence.announce({ kind: 'BUILDING', projectId });
