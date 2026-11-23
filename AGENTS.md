@@ -343,6 +343,10 @@ broken; an absence reads as not built.
 - A dialog a root service opens (`FeedbackLauncher`, `SignedInAction`, `nc-feedback-prompt`) is
   fetched with `import()` when it opens, and names the component by `import type` only: a static
   import puts the dialog and everything it draws in what every page loads.
+- The hub paints a backdrop across the whole window, under its own content
+  (`nc-dither-backdrop`, fixed, in `hub.page.html`). The bar and the footer stand over it because
+  they are positioned; anything else the shell sets beside `main` has to be positioned and stacked
+  too, as `nc-suspension-band` is, or it shows everywhere but on the hub.
 - A class in a component's own stylesheet that is spelled like a utility gets the utility as well:
   Tailwind reads the template and generates it. `label` set a disk's whole label in tracked
   capitals, `hidden` removed what was only meant to fade, and `outline` and `ring` draw strokes.

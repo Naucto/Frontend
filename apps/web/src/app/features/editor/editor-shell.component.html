@@ -58,7 +58,7 @@
     @if (hidden() && !session.readOnly()) {
       <nc-notice variant="band" tone="danger">
         {{ t('editor.hiddenBand') }}
-        <a routerLink="/settings/standing" class="underline underline-offset-2 hover:text-ink">
+        <a actions ncButton variant="ghost" size="sm" routerLink="/settings/standing">
           {{ t('moderation.suspended.why') }}
         </a>
       </nc-notice>
