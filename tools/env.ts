@@ -16,6 +16,14 @@ type Parser<T> = (raw: string, key: string) => T;
 
 const text: Parser<string> = (raw) => raw;
 
+const count: Parser<number> = (raw, key) => {
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value < 0) {
+    throw new BadEnvVarError(key);
+  }
+  return value;
+};
+
 const flag: Parser<boolean> = (raw, key) => {
   switch (raw.trim().toLowerCase()) {
     case 'true':
@@ -40,6 +48,14 @@ const ENV = {
 
   NAUCTO_API: text,
   NAUCTO_SEED_PASSWORD: text,
+
+  NAUCTO_BOT_URL: text,
+  NAUCTO_BOT_PROJECT: count,
+  NAUCTO_BOT_EMAIL: text,
+  NAUCTO_BOT_PASSWORD: text,
+  NAUCTO_BOT_ROUNDS: count,
+  NAUCTO_BOT_HEADED: flag,
+  NAUCTO_BOT_UNDO: flag,
 
   DATABASE_URL: text,
   S3_ENDPOINT: text,
