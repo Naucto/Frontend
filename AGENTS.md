@@ -40,13 +40,16 @@ icons drawn on the kit pixel, Bubblegum-16 palette, dark + light themes).
 
 ## How to work in this repo
 
-1. **Explore and reuse before writing.** Check `packages/ui` for an existing `nc-*` primitive and
-   `apps/web/src/app/shared` for composites before adding UI. A screen-specific component may not
-   introduce a new button/field/panel style — it composes the kit.
+1. **Explore and reuse before writing.** Check `packages/ui` for an existing `nc-*` primitive,
+   `apps/web/src/app/shared` for composites and `shared/queries` for the request before adding
+   one. A screen-specific component may not introduce a new button/field/panel style — it
+   composes the kit. What already does the job is extended; a second way to do it (another
+   helper that unwraps an answer, a variant of a dialog) is not added beside the first.
 2. **Config files are the rule authority**: `eslint.config.js`, `.prettierrc`, each `tsconfig.json`,
    `package.json`. The linter and Prettier own formatting.
-3. **Feedback loop before finishing**: `npm run lint && npm run typecheck && npm test` (also run by
-   the pre-commit hook and CI).
+3. **Feedback loop before finishing**: `npm run lint && npm run typecheck && npm test`. The
+   pre-commit hook formats and lints the staged files and nothing more (no build, no generation);
+   CI runs these three with the checks of the table above, then Playwright on Chromium.
 4. **Ask before architectural decisions** (new state library, new dependency, cross-cutting change).
 5. **Never hand-edit generated code** (`packages/api-client/src` comes from `openapi.json`; docs assets
    are built from the submodule).
@@ -61,6 +64,15 @@ icons drawn on the kit pixel, Bubblegum-16 palette, dark + light themes).
    The method in full, for agents that load project skills:
    `.claude/skills/naucto-screen-design/SKILL.md`.
 
+7. **Add nothing the change does not need.** A helper with one caller, an interface with one
+   implementation, an option nobody sets, an `export` nothing imports, a setting for what the
+   build already knows: each is one more name to hold for no gain. Write the body where it is
+   used. A name is earned by a second caller, by a test that imports it, or by a constraint the
+   expression cannot state.
+
+The order of work for a change to the web app, with what to look at and the checks to pass, is
+in `.claude/skills/naucto-frontend-change/SKILL.md`.
+
 ## Architecture
 
 - **State**: server state via `@tanstack/angular-query-experimental` over `@naucto/api-client`
@@ -69,6 +81,28 @@ icons drawn on the kit pixel, Bubblegum-16 palette, dark + light themes).
 - **Dependency rule** (enforced by ESLint): `features/*` → `core`, `shared`, `@naucto/ui`,
   `@naucto/engine`, `@naucto/api-client`; `core`/`shared` never import `features`;
   `packages/engine` imports no framework.
+- **Who decides**: the server validates and decides, the page asks and shows. A limit the page
+  shows is one the server gave (`injectProjectLimits`, the password policy of the sign-in form),
+  a refusal is read from the answer, and what takes more than the page holds (a count, a
+  ranking, who may) is asked for, not rebuilt from a list. A rule copied into the client is a
+  second rule, wrong the day the first one moves.
+- **Each layer once**: inside the app too, a thing is decided in one place. `unwrap`
+  (`core/api/api-errors.ts`) turns an answer into its payload or an `ApiError`, a query helper
+  holds a request and its key, a store holds UI state, and `GlobalErrorHandler` takes what nobody
+  caught. `ToastService` decides how a message is shown and to whom (`debug` reaches a developer
+  and a production build drops it), so a caller says what happened and never asks which build it
+  runs in.
+- **A request and its failure**: a call to the generated client is unwrapped with `unwrap`, and
+  one that more than one screen makes is an `injectX` helper in `shared/queries`. A failure is
+  narrowed on what the contract declares, a `code` (`PROJECT_HIDDEN`, `COLLECTIONS_LIMIT`, read
+  as `error instanceof ApiError && error.code === …`) or a status that means one thing (404).
+  Everything else (a timeout, a 502, no network) is a failure that can be tried again:
+  `nc-error-state` with its `retry` for a read, as `game.page.ts` does, a toast for a write. An
+  unknown failure read as the expected one tells someone their link expired when the server was
+  down. A control that shows a server value holds it in a `linkedSignal` and is set back when
+  the write fails (`publishing.component.ts`), so the screen never keeps what the server
+  refused. A code the page needs and the contract lacks is added to the backend's response
+  schema first.
 - **Auth**: access token in memory only + httpOnly refresh cookie (silent refresh at boot). Never put
   tokens in `localStorage`.
 - **Ids**: every id the backend answers (an account, a game, a comment, a report, a notification,
@@ -183,7 +217,8 @@ icons drawn on the kit pixel, Bubblegum-16 palette, dark + light themes).
     and engine faults (`Engine.onFault`, plus the WebGL and audio backends' `onFault`) to
     `/reports/crash`. It goes through `AnalyticsTransport`, so a report carries no account and no
     identifier whatever the consent answer, once per message and at most three per tab. A Lua error
-    in a game is the game's own and is never reported. A crash is said on screen only through
+    in a game is the game's own and is never reported, and neither is an app that fails to boot:
+    that failure shows to everyone already. A crash is said on screen only through
     `ToastService.debug`, which a production build drops: a player has nothing to do about a crash
     already reported.
   - **Readable stacks.** The production build writes hidden source maps beside each bundle (no
@@ -207,7 +242,8 @@ icons drawn on the kit pixel, Bubblegum-16 palette, dark + light themes).
     both shells. Settings → Standing lists every decision
     with what staff said, and a `MODERATION` notification leads there.
   - **Suspended.** `AuthStore.suspension` comes from the profile. A control that writes goes
-    through `GoodStandingAction`, which wraps `SignedInAction` and explains on the press. The
+    through `GoodStandingAction`, which wraps `SignedInAction` and explains on the press
+    (lint-enforced: nothing else imports `SignedInAction`). The
     server refuses the write whatever the page does, and the API client reads the profile again
     on `ACCOUNT_SUSPENDED` so an open tab learns of it.
   - **A game looked at.** `edit/:id` is the one address of the editor, and
@@ -224,7 +260,11 @@ icons drawn on the kit pixel, Bubblegum-16 palette, dark + light themes).
   it was built from, compiled in by `tools/build-web.ts`. The Docker image has no `.git`, so its
   build takes the commit as `--build-arg GIT_COMMIT`. A development server says `dev`.
 - **Boot order**: `provideApiClient()` runs one initializer — load `/config.json`, configure the
-  client, bootstrap auth — because Angular initializers otherwise run concurrently.
+  client, bootstrap auth, read the feature flags — because Angular initializers otherwise run
+  concurrently.
+- **Feature flags** (`core/config/features.service.ts`): `monetization`, `analytics` and
+  `moderation`, read once at boot and all off when the server cannot answer. A flag is what lets
+  a deployment switch something off; ask before putting a feature behind a new one.
 - **Mobile** is out of scope for now but must not be blocked: measure widths with `ResizeObserver`
   into stores, keep `InputSource` pluggable, no desktop-only assumptions baked into layout code.
 
@@ -290,6 +330,19 @@ someone who may not change it.
   so a route reads `loadComponent: () => import('./x.page')`; everything else is a named export.
 - No one-letter names (`id-length`) beyond indexes `i`/`j`/`k`, coordinates `x`/`y`, a comparator's
   `a`/`b`, an ignored `_` and the `Y` namespace of Yjs.
+- A name says what the thing is to someone who has not read the code behind it: a word, not a
+  letter or an abbreviation that needs its comment (`consented`, never `C`), shaped like its
+  siblings.
+- Comments are in English and say why: a constraint, an invariant, what a caller must know. One
+  that repeats the next line or tells how the code came to be is removed.
+- Export what another file imports, nothing more.
+- What a template can say, the template says (`@if`, `@for`, a binding), rather than TypeScript
+  building it.
+- The document is reached through Angular: `inject(DOCUMENT)` from `@angular/common` (as
+  `CrashReporter` and the bug report dialog do), a template reference or `ElementRef`, and an
+  off-screen picture is an `OffscreenCanvas` (`frame-to-png.ts`). The global `document` goes
+  round the injector, so nothing can stand in for it. Older files still name it; new code adds
+  no use.
 - Read a signal where it is used rather than copying it into a local first. A local stays when
   TypeScript must narrow it (two calls to `state()` are two values to the compiler) or when the
   value has to be the one read before a write or an `await`.
@@ -311,6 +364,18 @@ No secrets in the repo (see `.env.example` for what `.env` actually holds; never
 `.npmrc` values or Docker layers). Sanitise any HTML that does not come from our own build (docs
 are built at compile time). Validate redirect targets. Do not disable security lint rules. See
 `SECURITY.md`.
+
+- **A token in a link.** A page reached by a link that carries a token (a confirmation, a
+  reset) changes no account while someone is signed in: it sits behind `guestGuard`, or says who
+  is signed in and stops. Opened by someone signed in, an attacker's own link would otherwise
+  put that person in the attacker's account. What an address carries leaves it once read, as
+  the game page drops `session` and `code`, and what is reported about a page is its path
+  without the query (`pagePath`).
+- **A request sent twice.** A button disabled while its request is away is a courtesy. Twenty
+  requests sent together all pass a check made before the write, so what must happen once is
+  refused by the server, on the write itself.
+- **A finding** is written with the steps that reproduce it and the smallest change that closes
+  it.
 
 ## Design rules
 
@@ -347,7 +412,9 @@ the rule wins.
    look-alike, a coloured square with an initial or a bare number in a span, lacks what the piece
    carries (its frame, its reflection, the person's own colour) and stops following the kit at its
    next change. Look on `/ui-kit` before building any small element; if no piece fits, the kit
-   gains one, and a page does not draw a one-off.
+   gains one, and a page does not draw a one-off. A piece is used for what it is for: a frame
+   holds controls and data, so prose (a policy, an explanation) is headings and paragraphs, as
+   the privacy page is, and never a stack of panels.
 
 ## Deliberate divergences from the design
 
@@ -416,8 +483,8 @@ broken; an absence reads as not built.
 ## Gotchas
 
 - `disabled` is an input of `ncButton` and of `ncInput`, which write the attribute themselves from
-  it and from the scope above. Bind it as `[disabled]`, never as `[attr.disabled]`: two writers
-  of one attribute leave whichever wrote last.
+  it and from the scope above. Bind it as `[disabled]`, never as `[attr.disabled]` (lint-enforced
+  in templates): two writers of one attribute leave whichever wrote last.
 - `EditableGame.addFile` and `addAction` answer `null`, and `updateAction` and `transact`
   `false`, where the game may not be written. A caller that goes on to use what it added checks.
 - A bevelled element takes its ground from `bevel-fill-*`, never from `bg-*`: the background colour
@@ -437,7 +504,8 @@ broken; an absence reads as not built.
   loads.
 - A dialog a root service opens (`FeedbackLauncher`, `SignedInAction`, `nc-feedback-prompt`) is
   fetched with `import()` when it opens, and names the component by `import type` only: a static
-  import puts the dialog and everything it draws in what every page loads.
+  import puts the dialog and everything it draws in what every page loads
+  (`lazy-dialogs.spec.ts` fails on one).
 - A class in a component's own stylesheet that is spelled like a utility gets the utility as well:
   Tailwind reads the template and generates it. `label` set a disk's whole label in tracked
   capitals, `hidden` removed what was only meant to fade, and `outline` and `ring` draw strokes.
@@ -449,8 +517,15 @@ broken; an absence reads as not built.
   `undefined` rather than with `delete`: SpiderMonkey never compiles `delete` on an array element,
   and the VM releases slots on every call return, which cost an eighth of a running game on Firefox.
 - `packages/api-client/src` is generated from `packages/api-client/openapi.json` by the same
-  `postinstall` and gitignored. After replacing `openapi.json`, run
-  `npm run generate -w @naucto/api-client`.
+  `postinstall` and gitignored. `openapi.json` is the backend's `swagger.json`
+  (`npm run generate:swagger` there, on the branch the change goes with), copied whole, passed
+  through Prettier and never edited by hand. After replacing it, run
+  `npm run generate -w @naucto/api-client` and start the dev server again: one that was running
+  may still serve the client it started with, and `./dev.sh` builds its image again, whose
+  install is what generates the client there.
+- End-to-end specs are run as `npx playwright test --project=chromium <specs>`. A bare
+  `npx playwright test` also runs the `docs-shots` project, which is not a test run: it writes
+  the documentation's captures into the `docs` submodule.
 - npm 12 gates install scripts: approved packages are listed under `allowScripts` in `package.json`.
 - `@ngrx/signals` is pinned to Angular via an `overrides` entry until ngrx ships an Angular 22 range.
 - The `docs/` submodule must be checked out (`git submodule update --init`) before `docs:build`;
