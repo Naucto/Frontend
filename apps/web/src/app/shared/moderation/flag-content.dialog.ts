@@ -14,16 +14,21 @@ import {
 
 import { ApiError } from '../../core/api/api-errors';
 import { injectFlagContent } from '../queries/moderation.queries';
+import { UserAvatarComponent } from '../user-avatar.component';
 
 const FLAG_DETAILS_MAX = 1000;
 
 const FLAG_REASONS = Object.values(ModerationReason);
 
-/** What is being reported. `label` is how the dialog names it back to the person. */
+/**
+ * What is being reported. `label` is how the dialog names it back to the person; with an `author`
+ * the label is a comment's text, shown as the comment it is, cut to a few lines.
+ */
 export interface FlagContentData {
   targetType: ModerationTargetType;
   targetId: number;
   label: string;
+  author?: { id: number; name: string };
 }
 
 /** Refusals the dialog answers in its own words. Any other failure gets the general sentence. */
@@ -49,6 +54,7 @@ const REFUSALS: Record<string, string> = {
     InputDirective,
     NoticeComponent,
     SelectComponent,
+    UserAvatarComponent,
   ],
   templateUrl: './flag-content.dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

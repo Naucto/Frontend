@@ -181,7 +181,15 @@ export class CommentsComponent {
   }
 
   protected report(comment: CommentResponseDto): void {
-    this.flags.report({ targetType: 'COMMENT', targetId: comment.id, label: comment.content });
+    this.flags.report({
+      targetType: 'COMMENT',
+      targetId: comment.id,
+      label: comment.content,
+      author: {
+        id: comment.author.id,
+        name: comment.author.nickname ?? comment.author.username,
+      },
+    });
   }
 
   private fail(error: unknown): void {
