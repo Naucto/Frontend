@@ -9,7 +9,13 @@ import {
   viewChild,
 } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
-import { ButtonDirective, CheckboxComponent, InputDirective, MarkComponent } from '@naucto/ui';
+import {
+  ButtonDirective,
+  CheckboxComponent,
+  InputDirective,
+  LooksOnlyDirective,
+  MarkComponent,
+} from '@naucto/ui';
 
 export interface SearchTerms {
   search: string;
@@ -22,7 +28,14 @@ export interface SearchTerms {
 /** Find, and replace when it is asked for. */
 @Component({
   selector: 'nc-search-bar',
-  imports: [TranslocoDirective, ButtonDirective, CheckboxComponent, MarkComponent, InputDirective],
+  imports: [
+    TranslocoDirective,
+    ButtonDirective,
+    CheckboxComponent,
+    MarkComponent,
+    InputDirective,
+    LooksOnlyDirective,
+  ],
   templateUrl: './search-bar.component.html',
   host: { class: 'block' },
   changeDetection: ChangeDetectionStrategy.OnPush,

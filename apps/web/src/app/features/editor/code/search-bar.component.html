@@ -10,63 +10,66 @@
       (click)="replacing.set(!replacing())">
       <nc-mark [name]="replacing() ? 'chevron-down' : 'chevron-right'" />
     </button>
-    <input
-      #field
-      ncInput
-      class="min-w-0 flex-1 font-mono"
-      [attr.aria-label]="t('editor.code.find')"
-      [placeholder]="t('editor.code.find')"
-      autocomplete="off"
-      spellcheck="false"
-      [value]="search()"
-      (input)="search.set($any($event.target).value)"
-      (keydown.enter)="next.emit()"
-      (keydown.shift.enter)="previous.emit()"
-      (keydown.escape)="closed.emit()" />
-    <!-- Every button prevents its pointer's default, so the caret stays in the field between two arrows. -->
-    <button
-      ncButton
-      variant="secondary"
-      size="sm"
-      iconOnly
-      [attr.aria-label]="t('editor.code.previous')"
-      (mousedown)="$event.preventDefault()"
-      (click)="previous.emit()">
-      <nc-mark name="chevron-up" />
-    </button>
-    <button
-      ncButton
-      variant="secondary"
-      size="sm"
-      iconOnly
-      [attr.aria-label]="t('editor.code.next')"
-      (mousedown)="$event.preventDefault()"
-      (click)="next.emit()">
-      <nc-mark name="chevron-down" />
-    </button>
-    <button
-      ncButton
-      variant="secondary"
-      size="sm"
-      iconOnly
-      [attr.aria-label]="t('editor.code.selectAll')"
-      (mousedown)="$event.preventDefault()"
-      (click)="selectAll.emit()">
-      <nc-mark name="list" />
-    </button>
-    <nc-checkbox [(checked)]="caseSensitive">{{ t('editor.code.matchCase') }}</nc-checkbox>
-    <nc-checkbox [(checked)]="regexp">{{ t('editor.code.regexp') }}</nc-checkbox>
-    <nc-checkbox [(checked)]="wholeWord">{{ t('editor.code.wholeWord') }}</nc-checkbox>
-    <span class="flex-1"></span>
-    <button
-      ncButton
-      variant="ghost"
-      size="sm"
-      iconOnly
-      [attr.aria-label]="t('editor.code.closeSearch')"
-      (click)="closed.emit()">
-      <nc-mark name="close" />
-    </button>
+    <!-- Finding is looking, and stays open where the code may not be written; replacing is not. -->
+    <div ncLooksOnly class="contents">
+      <input
+        #field
+        ncInput
+        class="min-w-0 flex-1 font-mono"
+        [attr.aria-label]="t('editor.code.find')"
+        [placeholder]="t('editor.code.find')"
+        autocomplete="off"
+        spellcheck="false"
+        [value]="search()"
+        (input)="search.set($any($event.target).value)"
+        (keydown.enter)="next.emit()"
+        (keydown.shift.enter)="previous.emit()"
+        (keydown.escape)="closed.emit()" />
+      <!-- Every button prevents its pointer's default, so the caret stays in the field between two arrows. -->
+      <button
+        ncButton
+        variant="secondary"
+        size="sm"
+        iconOnly
+        [attr.aria-label]="t('editor.code.previous')"
+        (mousedown)="$event.preventDefault()"
+        (click)="previous.emit()">
+        <nc-mark name="chevron-up" />
+      </button>
+      <button
+        ncButton
+        variant="secondary"
+        size="sm"
+        iconOnly
+        [attr.aria-label]="t('editor.code.next')"
+        (mousedown)="$event.preventDefault()"
+        (click)="next.emit()">
+        <nc-mark name="chevron-down" />
+      </button>
+      <button
+        ncButton
+        variant="secondary"
+        size="sm"
+        iconOnly
+        [attr.aria-label]="t('editor.code.selectAll')"
+        (mousedown)="$event.preventDefault()"
+        (click)="selectAll.emit()">
+        <nc-mark name="list" />
+      </button>
+      <nc-checkbox [(checked)]="caseSensitive">{{ t('editor.code.matchCase') }}</nc-checkbox>
+      <nc-checkbox [(checked)]="regexp">{{ t('editor.code.regexp') }}</nc-checkbox>
+      <nc-checkbox [(checked)]="wholeWord">{{ t('editor.code.wholeWord') }}</nc-checkbox>
+      <span class="flex-1"></span>
+      <button
+        ncButton
+        variant="ghost"
+        size="sm"
+        iconOnly
+        [attr.aria-label]="t('editor.code.closeSearch')"
+        (click)="closed.emit()">
+        <nc-mark name="close" />
+      </button>
+    </div>
   </div>
 
   @if (replacing()) {

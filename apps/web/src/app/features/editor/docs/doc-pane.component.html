@@ -59,7 +59,7 @@
     } @else if (view() === 'api' && entry(); as currentEntry) {
       <nc-api-card
         [entry]="currentEntry"
-        [insertable]="true"
+        [insertable]="mode.canWrite()"
         (insert)="insert($event)"
         (navigate)="openApi($event)" />
     } @else if (view() === 'page' && page(); as currentPage) {
@@ -77,7 +77,7 @@
       <nc-doc-article
         #article
         [page]="currentPage"
-        [insertable]="true"
+        [insertable]="mode.canWrite()"
         (insert)="insert($event)"
         (navigate)="navigate($event)" />
       @if (neighbours(); as neighbourPages) {
