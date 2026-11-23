@@ -2,7 +2,7 @@ import { type NotificationPayloadDto } from '@naucto/api-client';
 import { type IconName, type OptionWash } from '@naucto/ui';
 
 /** Where a notification leads: a route and, for a session invite, the way into the session. */
-export interface NotificationDestination {
+interface NotificationDestination {
   path: string[];
   query?: { session: string; code?: string };
 }
@@ -47,7 +47,7 @@ export function destinationOf(
   }
 }
 
-export interface NotificationLook {
+interface NotificationLook {
   /** The accent of its glyph, and of its title and wash while it is unread. */
   tone: OptionWash;
   icon: IconName;
