@@ -50,12 +50,12 @@ import { AuthStore } from '../../core/auth/auth.store';
 import { FeaturesService } from '../../core/config/features.service';
 import { PresenceStore } from '../../core/presence/presence.store';
 import { presenceLine } from '../../core/presence/presence-line';
+import { GameDiskComponent } from '../../shared/game-card/game-disk.component';
 import { CollectionBoxComponent } from '../../shared/hub/collection-box.component';
 import { ContentFlagLauncher } from '../../shared/moderation/content-flag-launcher.service';
 import { injectUserCollections } from '../../shared/queries/collections.queries';
 import { qk } from '../../shared/queries/query-keys';
 import { injectRelatedWindow } from '../../shared/queries/releases.queries';
-import { HubRowComponent } from '../hub/hub-row.component';
 import { EditChipComponent } from './edit-chip.component';
 import {
   ProfileImageDialogComponent,
@@ -94,7 +94,7 @@ const COLOURS: PersonalColour[] = (Object.keys(PERSONAL_COLOURS) as IdentityAcce
     InputDirective,
     SegmentedComponent,
     StatComponent,
-    HubRowComponent,
+    GameDiskComponent,
     EditChipComponent,
     CollectionBoxComponent,
   ],

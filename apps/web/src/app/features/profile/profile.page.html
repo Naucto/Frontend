@@ -225,7 +225,11 @@
         }
       </div>
     } @else if (current().length) {
-      <nc-hub-row [games]="current()" />
+      <div class="grid grid-cols-2 gap-x-2 gap-y-2.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        @for (game of current(); track game.id) {
+          <nc-game-disk [game]="game" />
+        }
+      </div>
     } @else {
       <nc-empty-state
         class="py-12"
