@@ -44,6 +44,22 @@ export const JOINS_FROM_INIT = [
   'end',
 ].join('\n');
 
+/** What entering a session answers: the player's number at the table and where to signal. */
+export const connection = (
+  sessionUuid: string,
+  playerId: number | undefined,
+  joinCode?: string,
+): Record<string, unknown> => ({
+  sessionUuid,
+  playerId,
+  joinCode,
+  connectionTicket: 'ticket',
+  webrtcConfig: {
+    signaling: ['ws://localhost/e2e-game-socket'],
+    peerOpts: { config: { iceServers: [] } },
+  },
+});
+
 export interface RoomMock {
   /** The body of every join asked, in order. */
   joins: unknown[];
@@ -83,15 +99,7 @@ export async function mockRoom(
       if (gone || refuse) {
         return answer(refuse?.status ?? 404, refuse ? { message: refuse.message } : missing)(route);
       }
-      return answer(200, {
-        sessionUuid: room.sessionUuid,
-        playerId: 1,
-        connectionTicket: 'ticket',
-        webrtcConfig: {
-          signaling: ['ws://localhost/e2e-game-socket'],
-          peerOpts: { config: { iceServers: [] } },
-        },
-      })(route);
+      return answer(200, connection(room.sessionUuid, 1))(route);
     },
   );
   await page.route((url) => url.pathname.endsWith(`${at}/leave`), answer(200, {}));

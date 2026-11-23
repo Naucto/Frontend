@@ -1,6 +1,7 @@
 import { expect, test } from './fixtures';
 import { release, serveGame, servePreset } from './mocks/game';
 import { setGamepads } from './mocks/gamepads';
+import { connection } from './mocks/netplay';
 import { answer, mockSignedIn } from './mocks/session';
 
 test.describe('play page', () => {
@@ -375,16 +376,7 @@ test('a game that asks for a listed room gets one, and the host dialog says so',
   await mockSignedIn(page);
   await page.route('**/game-sessions', (route) => {
     asked.push(route.request().postDataJSON());
-    return answer(201, {
-      sessionUuid: uuid,
-      playerId: 1,
-      joinCode: 'ABCD2345',
-      connectionTicket: 'ticket',
-      webrtcConfig: {
-        signaling: ['ws://localhost/e2e-game-socket'],
-        peerOpts: { config: { iceServers: [] } },
-      },
-    })(route);
+    return answer(201, connection(uuid, 1, 'ABCD2345'))(route);
   });
   await page.route(`**/game-sessions/${uuid}`, (route) => {
     if (route.request().method() === 'PATCH') {
