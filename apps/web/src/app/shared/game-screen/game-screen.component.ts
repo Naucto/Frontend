@@ -144,12 +144,12 @@ export class GameScreenComponent {
   protected readonly transportClass = computed(() => {
     if (this.overlay() || this.isFullscreen()) {
       return (
-        'absolute inset-x-0 bottom-0 flex h-(--nc-h-md) items-center gap-[3px] px-0.75 ' +
+        'absolute inset-x-0 bottom-0 flex h-(--nc-h-lg) items-center gap-[3px] px-0.75 ' +
         'bg-[image:var(--nc-scrim-video)]'
       );
     }
     const shape = this.compact()
-      ? 'h-(--nc-h-md) gap-0.75 border-y-3 border-line px-0.75'
+      ? 'h-(--nc-h-lg) gap-0.75 border-y-3 border-line px-0.75'
       : 'h-(--nc-h-xl) gap-1 border-3 border-t-0 border-line px-1';
     return `mx-auto -mt-[3px] flex max-w-[1600px] items-center bg-panel ${shape}`;
   });

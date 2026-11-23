@@ -79,7 +79,7 @@
           <button
             ncButton
             variant="run"
-            size="md"
+            size="lg"
             iconOnly
             pressed
             [attr.aria-label]="t('game.screen.pause')"
@@ -91,7 +91,7 @@
           <button
             ncButton
             variant="ghost"
-            size="md"
+            size="lg"
             iconOnly
             [attr.aria-label]="t('game.screen.play')"
             (click)="host.state() === 'paused' ? resume() : play()">
@@ -101,7 +101,7 @@
         <button
           ncButton
           variant="ghost"
-          size="md"
+          size="lg"
           iconOnly
           [attr.aria-label]="t('game.screen.restart')"
           (click)="restart()">
@@ -111,7 +111,7 @@
           <button
             ncButton
             variant="ghost"
-            size="md"
+            size="lg"
             iconOnly
             [attr.aria-label]="t('game.screen.step')"
             [disabled]="host.state() === 'idle' || host.state() === 'halted'"
@@ -128,7 +128,7 @@
         <button
           ncButton
           variant="ghost"
-          size="md"
+          size="lg"
           iconOnly
           aria-haspopup="dialog"
           [attr.aria-label]="t('game.screen.controls')"
@@ -138,7 +138,7 @@
         <button
           ncButton
           variant="ghost"
-          size="md"
+          size="lg"
           iconOnly
           [attr.aria-label]="t('game.screen.fullscreen')"
           (click)="fullscreen()">
