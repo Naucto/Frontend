@@ -13,11 +13,10 @@
   "account": {
     "menu": "Account",
     "profile": "Profile",
+    "viewProfile": "View profile",
     "settings": "Settings",
     "theme": "Theme",
     "signOut": "Sign out",
-    "games": "games",
-    "friends": "friends",
     "copy": "Copy friend code"
   },
   "notifications": {

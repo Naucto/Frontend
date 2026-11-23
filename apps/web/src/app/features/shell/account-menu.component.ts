@@ -1,34 +1,36 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { TranslocoDirective } from '@jsverse/transloco';
-import { friendsControllerList, projectControllerFindAll } from '@naucto/api-client';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import {
+  ArrowLinkDirective,
   AvatarComponent,
   IconComponent,
   OptionDirective,
   PopoverDirective,
   PopoverPanelComponent,
-  StatComponent,
+  SegmentedComponent,
 } from '@naucto/ui';
-import { injectQuery } from '@tanstack/angular-query-experimental';
 
-import { unwrap } from '../../core/api/api-errors';
 import { AuthStore } from '../../core/auth/auth.store';
+import { ThemeService } from '../../core/theme/theme.service';
 import { FeedbackLauncher } from '../../shared/feedback/feedback-launcher.service';
-import { qk } from '../../shared/queries/query-keys';
 
-/** Account popover: identity, then Profile / Settings / feedback / Sign out. */
+/**
+ * Account popover: who is signed in and the way to their profile, the theme, then Settings, feedback
+ * and Sign out.
+ */
 @Component({
   selector: 'nc-account-menu',
   imports: [
     RouterLink,
     TranslocoDirective,
+    ArrowLinkDirective,
     AvatarComponent,
     IconComponent,
     OptionDirective,
     PopoverDirective,
     PopoverPanelComponent,
-    StatComponent,
+    SegmentedComponent,
   ],
   templateUrl: './account-menu.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -39,23 +41,15 @@ export class AccountMenuComponent {
   private readonly feedback = inject(FeedbackLauncher);
   private readonly router = inject(Router);
   protected readonly open = signal(false);
-  protected readonly games = injectQuery(() => ({
-    queryKey: qk.projectCount(),
-    queryFn: async () =>
-      unwrap(await projectControllerFindAll({ query: { page: 1, limit: 1 } })).total,
-    enabled: this.auth.isAuthenticated() && this.open(),
-  }));
-
-  /**
-   * The counts fall back to zero, not a dash: a refused friends request and an empty one arrive the
-   * same way.
-   */
-  protected readonly friends = injectQuery(() => ({
-    queryKey: qk.friendCount(),
-    queryFn: async () => unwrap(await friendsControllerList()).length,
-    enabled: this.auth.isAuthenticated() && this.open(),
-    retry: false,
-  }));
+  protected readonly theme = inject(ThemeService);
+  private readonly transloco = inject(TranslocoService);
+  /** Dark or light only: Settings is where following the system is given back. */
+  protected readonly themes = computed(() =>
+    (['dark', 'light'] as const).map((value) => ({
+      value,
+      label: this.transloco.translate(`settings.themes.${value}`),
+    })),
+  );
 
   protected rate(): void {
     this.open.set(false);

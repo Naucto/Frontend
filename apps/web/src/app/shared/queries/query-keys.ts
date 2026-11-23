@@ -11,8 +11,6 @@ export const qk = {
   comments: (id: number, page: number) => ['release', id, 'comments', page] as const,
   /** Every project query at once — what a fork invalidates, since it can land on any shelf. */
   projectsAll: () => ['projects'] as const,
-  /** Total only, so it shares the projects prefix and a fork refreshes it too. */
-  projectCount: () => ['projects', 'count'] as const,
   /** Every profile query at once — what editing your own profile invalidates. */
   profileAll: () => ['profile'] as const,
   profile: (username: string) => ['profile', username] as const,
@@ -48,7 +46,6 @@ export const qk = {
   friends: () => ['friends'] as const,
   friendRequests: () => ['friends', 'requests'] as const,
   recentPlayers: () => ['friends', 'recent'] as const,
-  friendCount: () => ['friends', 'count'] as const,
   sessions: (projectId: number) => ['sessions', projectId] as const,
   /** The sessions a reader may join, whatever the game. */
   openSessions: () => ['sessions', 'open'] as const,
