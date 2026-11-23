@@ -226,6 +226,7 @@ export const MARK_GLYPHS = {
   dock: '5f888a888f8',
   download: '520a87020f8',
   edit: '5103870a0c0',
+  ellipsis: '5000000a800',
   enter: '50848f84000',
   expand: '520508800f8',
   'file-plus': '5f8d888d8f8',
