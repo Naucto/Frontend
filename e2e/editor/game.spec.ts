@@ -668,10 +668,60 @@ test('an autosave is deleted from the versions panel', async ({ page }) => {
   const rows = page.locator('nc-popover-panel li', { hasText: 'Autosave' });
   await expect(rows).toHaveCount(2);
 
-  await rows.nth(1).getByRole('button', { name: 'Delete this autosave' }).click();
+  const remove = rows.nth(1).getByRole('button', { name: 'Delete this autosave' });
+
+  // Escape and Cancel are a no: the API is not called and the row stays.
+  await remove.click();
+  const dialog = page.getByRole('dialog').filter({ hasText: 'Delete this version?' });
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await remove.click();
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
+  await expect(dialog).toBeHidden();
+  expect(deletes).toEqual([]);
+  await expect(rows).toHaveCount(2);
+
+  await remove.click();
+  await dialog.getByRole('button', { name: 'Delete', exact: true }).click();
   await expect(rows).toHaveCount(1);
   expect(deletes).toEqual(['save-1']);
   await expect(chip).toHaveText(/^\s*Platformer\s+draft\s*$/);
+});
+
+test('restoring a version asks first, and Cancel never reads it', async ({ page }) => {
+  const releases = [
+    { name: 'alpha', date: '2026-09-11T09:00:00.000Z' },
+    { name: 'beta', date: '2026-09-11T08:00:00.000Z' },
+  ];
+  await page.route(projectRoute('checkpoints'), (route) =>
+    route.fulfill({ json: { checkpoints: releases } }),
+  );
+  const reads: string[] = [];
+  await page.route(projectRoute('checkpoints/*'), (route) => {
+    reads.push(new URL(route.request().url()).pathname.split('/').pop() ?? '');
+    return route.fulfill({ status: 404, json: { message: 'Not found' } });
+  });
+
+  await page.goto(editorUrl('game'));
+  await versionsChip(page).click();
+  const restore = page
+    .locator('nc-popover-panel li', { hasText: 'beta' })
+    .getByRole('button', { name: 'Restore this release' });
+  const dialog = page.getByRole('dialog').filter({ hasText: 'Restore this version?' });
+
+  await restore.click();
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await restore.click();
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
+  await expect(dialog).toBeHidden();
+  expect(reads).toEqual([]);
+
+  await restore.click();
+  await dialog.getByRole('button', { name: 'Restore', exact: true }).click();
+  await expect.poll(() => reads).toEqual(['beta']);
 });
 
 test('a pause in the typing is what saves the game', async ({ page }) => {

@@ -147,6 +147,16 @@ export class VersionsPopoverComponent {
     if (!this.session.isCollaborator() || this.restoring()) {
       return;
     }
+    const confirmed = await this.dialogs.confirm({
+      title: this.transloco.translate('editor.game.restoreTitle'),
+      message: row.release
+        ? this.transloco.translate('editor.game.restoreRelease', { name: row.name })
+        : this.transloco.translate('editor.game.restoreAutosaveMessage'),
+      confirmLabel: this.transloco.translate('editor.game.restoreConfirm'),
+    });
+    if (!confirmed) {
+      return;
+    }
     this.restoring.set(true);
     try {
       const path = { id: this.session.id };
@@ -190,6 +200,16 @@ export class VersionsPopoverComponent {
 
   protected async remove(row: HistoryRow): Promise<void> {
     if (!this.session.isCollaborator()) {
+      return;
+    }
+    const confirmed = await this.dialogs.confirmDanger({
+      title: this.transloco.translate('editor.game.deleteTitle'),
+      message: row.release
+        ? this.transloco.translate('editor.game.deleteRelease', { name: row.name })
+        : this.transloco.translate('editor.game.deleteAutosaveMessage'),
+      confirmLabel: this.transloco.translate('editor.game.deleteConfirm'),
+    });
+    if (!confirmed) {
       return;
     }
     const path = { id: this.session.id };
