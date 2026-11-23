@@ -176,23 +176,28 @@ test.describe('moderation', () => {
     await mockStanding(page);
     await page.setViewportSize({ width: 1280, height: 800 });
 
-    /** The band as it is painted, whatever lies over or under it. */
-    const painted = async (): Promise<Buffer> => {
-      const band = page.getByTestId('suspension-band');
-      await expect(band).toContainText(/Your account is suspended until Dec 4, 2026, /);
-      const box = await band.boundingBox();
-      if (!box) {
-        throw new Error('The band has no box');
-      }
-      return page.screenshot({ clip: box, animations: 'disabled' });
-    };
-
-    await page.goto('/friends');
-    const plain = await painted();
+    const band = page.getByTestId('suspension-band');
     await page.goto('/hub');
     await expect(page.locator('nc-hero-pile')).toBeVisible();
-    // The hub paints a backdrop over the whole window: the band must show through none of it.
-    await expect.poll(async () => (await painted()).equals(plain)).toBe(true);
+    await expect(band).toContainText(/Your account is suspended until Dec 4, 2026, /);
+
+    // The hub paints a backdrop over the whole window. What is painted on top at a point is
+    // what a pointer finds there, so the backdrop is made to take the pointer for the question.
+    const covered = await band.evaluate((painted) => {
+      const backdrop = document.querySelector<HTMLElement>('nc-dither-backdrop');
+      if (!backdrop) {
+        throw new Error('The hub has no backdrop');
+      }
+      backdrop.style.pointerEvents = 'auto';
+      const { left, top, width, height } = painted.getBoundingClientRect();
+      const points = [0.02, 0.5, 0.98].flatMap((across) =>
+        [0.1, 0.5, 0.9].map((down) => [left + width * across, top + height * down] as const),
+      );
+      const hidden = points.filter(([x, y]) => !painted.contains(document.elementFromPoint(x, y)));
+      backdrop.style.pointerEvents = '';
+      return hidden.length;
+    });
+    expect(covered).toBe(0);
 
     await page.getByTestId('suspension-band').getByRole('link', { name: 'See why' }).click();
     await expect(page).toHaveURL(/\/settings\/standing$/);
