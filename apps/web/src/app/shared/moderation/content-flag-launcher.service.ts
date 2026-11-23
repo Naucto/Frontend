@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { TranslocoService } from '@jsverse/transloco';
 import { DialogService, ToastService } from '@naucto/ui';
 
-import { type FlagContentData, FlagContentDialog } from './flag-content.dialog';
+import type { FlagContentData, FlagContentDialog } from './flag-content.dialog';
 import { GoodStandingAction } from './good-standing-action';
 
 /**
@@ -18,17 +18,19 @@ export class ContentFlagLauncher {
 
   report(target: FlagContentData): void {
     this.standing.run(() => {
-      this.dialogs
-        .open<FlagContentDialog, FlagContentData, boolean>(FlagContentDialog, {
-          data: target,
-          width: '480px',
-          ariaLabel: this.transloco.translate(`moderation.report.title.${target.targetType}`),
-        })
-        .closed.subscribe((sent) => {
-          if (sent === true) {
-            this.toasts.show(this.transloco.translate('moderation.report.sent'), 'success');
-          }
-        });
+      void import('./flag-content.dialog').then((loaded) => {
+        this.dialogs
+          .open<FlagContentDialog, FlagContentData, boolean>(loaded.FlagContentDialog, {
+            data: target,
+            width: '480px',
+            ariaLabel: this.transloco.translate(`moderation.report.title.${target.targetType}`),
+          })
+          .closed.subscribe((sent) => {
+            if (sent === true) {
+              this.toasts.show(this.transloco.translate('moderation.report.sent'), 'success');
+            }
+          });
+      });
     });
   }
 }

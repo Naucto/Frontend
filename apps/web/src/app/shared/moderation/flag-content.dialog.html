@@ -3,21 +3,28 @@
   [title]="t('moderation.report.title.' + data.targetType)"
   [lead]="data.label"
   [closeLabel]="t('feedback.close')">
-  <form class="flex flex-col gap-2" (submit)="$event.preventDefault(); send()">
-    <nc-field [label]="t('moderation.report.reason')" for="flag-reason">
-      <nc-select
-        inputId="flag-reason"
-        [options]="reasons()"
-        [placeholder]="t('moderation.report.chooseReason')"
-        [value]="reason() ?? undefined"
-        (valueChange)="reason.set($event ?? null)" />
+  <form class="flex flex-col gap-[14px]" (submit)="$event.preventDefault(); send()">
+    <nc-field [label]="t('moderation.report.reason')">
+      <div
+        role="group"
+        class="flex flex-wrap gap-[6px]"
+        [attr.aria-label]="t('moderation.report.reason')">
+        @for (option of reasons(); track option.value) {
+          <nc-toggle-button
+            [controlled]="true"
+            [checked]="option.value === reason()"
+            (activated)="reason.set(option.value)">
+            {{ option.label }}
+          </nc-toggle-button>
+        }
+      </div>
     </nc-field>
 
     <nc-field
       [label]="t('moderation.report.details')"
       for="flag-details"
       [hint]="t('moderation.report.detailsHint')"
-      [counter]="details().length + '/' + detailsMax">
+      [counter]="t('moderation.report.count', { n: details().length, max: detailsMax })">
       <textarea
         ncInput
         id="flag-details"

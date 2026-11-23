@@ -1295,9 +1295,9 @@
         "USER": "Report this profile"
       },
       "reason": "What is wrong with it?",
-      "chooseReason": "Choose a reason",
       "details": "Anything the moderators should know",
       "detailsHint": "Optional. Where to look, or what happened.",
+      "count": "{{n}} of {{max}}",
       "note": "A moderator reads every report. Whoever you report is not told it was you.",
       "send": "Send report",
       "sent": "Your report reached the moderators. Thank you.",
