@@ -2,6 +2,7 @@ import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { HeroBackdropComponent } from './hero-backdrop.component';
+import { HERO_BLEED } from './hero-mask';
 import { installLayoutStubs } from './testing';
 
 describe('HeroBackdropComponent', () => {
@@ -49,6 +50,12 @@ describe('HeroBackdropComponent', () => {
     expect(layers()).toHaveLength(2);
     expect(front().style.backgroundImage).toContain('/covers/1.png');
     expect(front().classList).not.toContain('dither-in-fine');
+  });
+
+  it('lets every layer overshoot the backdrop by half the bleed, above and below', () => {
+    for (const layer of layers()) {
+      expect(layer.style.insetBlock).toBe(`${String(-HERO_BLEED / 2)}px`);
+    }
   });
 
   it('keeps the old cover in front until the next one has loaded, then dithers it in', () => {

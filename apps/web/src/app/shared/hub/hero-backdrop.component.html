@@ -1,8 +1,12 @@
+<!-- Each layer overshoots the backdrop by half the bleed above and below, so the picture is never
+     scaled down to fit the backdrop's height: its foot (often a horizon) then always falls where
+     the backdrop has dissolved, instead of drawing a hard line through the middle of the fade. -->
 @for (layer of layers(); track $index) {
   <span
-    class="pixelated absolute inset-0 bg-cover bg-position-[80%_50%] bg-no-repeat [animation-duration:420ms] motion-reduce:[animation:none] in-data-reduce-motion:[animation:none]"
+    class="pixelated absolute inset-x-0 bg-cover bg-position-[80%_50%] bg-no-repeat [animation-duration:420ms] motion-reduce:[animation:none] in-data-reduce-motion:[animation:none]"
     [class]="$index === front() ? 'z-[2]' : 'z-[1]'"
     [class.dither-in-fine]="$index === front() && changed()"
+    [style.inset-block.px]="-bleed / 2"
     [style.background-image]="layer?.cover ? 'url(&quot;' + layer?.cover + '&quot;)' : null"
     (animationend)="settle()">
     @if (layer?.clip; as clip) {
