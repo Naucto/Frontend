@@ -8,8 +8,7 @@
   <div class="well">
     <div
       #frame
-      class="relative overflow-hidden select-none"
-      [style.height.px]="frameHeight"
+      class="relative h-[300px] overflow-hidden select-none"
       (dragover)="$event.preventDefault()"
       (drop)="onDrop($event)">
       @if (url(); as src) {
@@ -48,7 +47,7 @@
           [style.width.px]="selection.w"
           [style.height.px]="selection.h"
           (pointerdown)="grab($event, 'move')">
-          @for (grip of grips(); track grip.grip) {
+          @for (grip of grips; track grip.grip) {
             <span
               class="absolute size-[9px] bg-gold"
               [class]="grip.cursor"

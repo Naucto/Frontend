@@ -957,11 +957,11 @@
       "banner": "PROFILE BANNER",
       "shape": {
         "picture": "1:1",
-        "banner": "1918×220"
+        "banner": "2:1"
       },
       "spec": {
         "picture": "SAVED AT 256",
-        "banner": "≈8.7:1 — THE ZONE'S TRUE RATIO"
+        "banner": "SAVED AT 1920×960"
       },
       "clear": {
         "picture": "Remove the picture",
