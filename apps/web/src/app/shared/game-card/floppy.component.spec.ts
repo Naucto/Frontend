@@ -1,6 +1,7 @@
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { installLayoutStubs } from '../hub/testing';
 import { FloppyComponent, type FloppySticker } from './floppy.component';
 
 /** Frames asked for and not yet run: the lift is eased on them. */
@@ -10,27 +11,13 @@ let reducedMotion = false;
 
 /** jsdom lays nothing out and draws nothing: the disk only asks when to measure and when to move. */
 function installBrowserStubs(): void {
-  vi.stubGlobal(
-    'ResizeObserver',
-    class {
-      observe(): void {
-        return undefined;
-      }
-      disconnect(): void {
-        return undefined;
-      }
-    },
-  );
+  installLayoutStubs();
   vi.stubGlobal('matchMedia', () => ({ matches: reducedMotion }));
   vi.stubGlobal('requestAnimationFrame', (frame: FrameRequestCallback) => {
     frames.set(++asked, frame);
     return asked;
   });
   vi.stubGlobal('cancelAnimationFrame', (id: number) => frames.delete(id));
-  Object.defineProperty(document, 'fonts', {
-    configurable: true,
-    value: { ready: Promise.resolve() },
-  });
 }
 
 function render(inputs: Record<string, unknown>): ComponentFixture<FloppyComponent> {

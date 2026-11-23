@@ -3,8 +3,9 @@ import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import type { ProjectExResponseDto } from '@naucto/api-client';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
+import { installLayoutStubs } from '../hub/testing';
 import { qk } from '../queries/query-keys';
 import { GameDiskComponent } from './game-disk.component';
 
@@ -34,21 +35,7 @@ function render(inputs: Record<string, unknown>): ComponentFixture<GameDiskCompo
 
 describe('GameDiskComponent', () => {
   beforeEach(() => {
-    vi.stubGlobal(
-      'ResizeObserver',
-      class {
-        observe(): void {
-          return undefined;
-        }
-        disconnect(): void {
-          return undefined;
-        }
-      },
-    );
-    Object.defineProperty(document, 'fonts', {
-      configurable: true,
-      value: { ready: Promise.resolve() },
-    });
+    installLayoutStubs();
     // Both covers are already known, so no test reaches for the network.
     const queries = new QueryClient();
     queries.setQueryData(qk.releaseImage(7), COVER);
