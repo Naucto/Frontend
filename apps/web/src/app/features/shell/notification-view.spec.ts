@@ -54,6 +54,12 @@ describe('destinationOf', () => {
       destinationOf(notification({ kind: 'COLLABORATOR_REMOVED', data: { projectId: 9 } })),
     ).toBeNull();
   });
+
+  it('sends a moderation notice to the standing, never to the game it is about', () => {
+    expect(destinationOf(notification({ kind: 'MODERATION', data: { projectId: 9 } }))).toEqual({
+      path: ['/settings', 'standing'],
+    });
+  });
 });
 
 describe('lookOf', () => {
