@@ -57,9 +57,8 @@ export interface BugReportData {
   description?: string;
 }
 
-/** The report sent, and whether its screenshot, if any, was refused. */
+/** Whether the screenshot sent with the report, if any, was refused. */
 export interface BugReportSent {
-  id: string;
   screenshotRefused: boolean;
 }
 
@@ -253,7 +252,7 @@ export class BugReportDialog {
         screenshotRefused = true;
       }
     }
-    this.ref.close({ id, screenshotRefused });
+    this.ref.close({ screenshotRefused });
   }
 
   protected async attach(image: Blob): Promise<void> {

@@ -93,7 +93,7 @@ describe('BugReportDialog', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Send report' }));
 
     await vi.waitFor(() => {
-      expect(close).toHaveBeenCalledWith({ id: uuidOf(12), screenshotRefused: false });
+      expect(close).toHaveBeenCalledWith({ screenshotRefused: false });
     });
     expect(sent).toHaveLength(1);
     expect(sent[0]?.json).toMatchObject({
