@@ -37,7 +37,7 @@
           [attr.aria-label]="t('hub.collection.showAll', { n: total(), title: title() })"
           (focus)="onFocus(shown().length)"
           (blur)="onBlur($event)">
-          <span class="inline-flex items-center gap-[3px] font-mono text-title leading-none">
+          <span class="inline-flex items-center gap-[3px] text-title leading-none">
             <nc-mark name="plus" />
             {{ more() }}
           </span>
