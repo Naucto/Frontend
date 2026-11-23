@@ -176,15 +176,14 @@ icons drawn on the kit pixel, Bubblegum-16 palette, dark + light themes).
     through `GoodStandingAction`, which wraps `SignedInAction` and explains on the press. The
     server refuses the write whatever the page does, and the API client reads the profile again
     on `ACCOUNT_SUSPENDED` so an open tab learns of it.
-  - **Read-only editor.** `WorkSessionService.openPreview` opens a game to look at: two GETs,
-    then a local copy. It joins no work session, elects no host, connects no peer and saves
-    nothing, and `SessionSaveService` refuses every save while `readOnly` is set. Staff reach
-    it at `staff/edit/:id` (and `staff/play/:id` for the player), behind `staffGuard`, which
-    answers anyone else as an address that does not exist. A suspended account gets it on
-    `edit/:id` for its own games. The mode is in the path because the shell navigates between
-    tabs. `game-route.page` swaps the GAME tab for a summary, since the real tab uploads,
-    invites and deletes. **A new write in the editor must check `session.readOnly()`**: the
-    specs in `work-session.service.spec.ts` pin that a preview sends no request after it opens.
+  - **A game looked at.** `edit/:id` is the one address of the editor, and
+    `WorkSessionService.open` decides alone what the account gets on it. A collaborator gets the
+    live session. A staff member who does not collaborate, and a suspended account on its own
+    game, get the last save loaded once (`session.preview()` says whose): GET requests alone,
+    then a local copy that joins no work session, elects no host, connects no peer and saves
+    nothing. That load imposes the `read-only` mode, so the same editor is read, and the game
+    run from its Game preview, with nothing written: see "Editor modes". Anyone else is told
+    the game cannot be opened. `staff/edit/:id` and `staff/play/:id` are redirects to it.
 - **Release.** `APP_RELEASE` (`core/config/release.ts`) is the version of `apps/web` and the commit
   it was built from, compiled in by `tools/build-web.ts`. The Docker image has no `.git`, so its
   build takes the commit as `--build-arg GIT_COMMIT`. A development server says `dev`.
@@ -192,6 +191,57 @@ icons drawn on the kit pixel, Bubblegum-16 palette, dark + light themes).
   client, bootstrap auth — because Angular initializers otherwise run concurrently.
 - **Mobile** is out of scope for now but must not be blocked: measure widths with `ResizeObserver`
   into stores, keep `InputSource` pluggable, no desktop-only assumptions baked into layout code.
+
+## Editor modes
+
+Every editor can be read without being written, so there is no second screen that shows a game to
+someone who may not change it.
+
+- **The model.** `EditorMode` is `normal`, `diff` or `read-only`, held by `EditorModeService`
+  (`features/editor/state`), provided by the editor shell with the session. A mode comes from two
+  places: the code **imposes** one (`impose`, for a game loaded to be looked at) and the person
+  **chooses** one (`choose`). The imposed one wins and nothing takes it back. An editor asks one
+  question, `mode.canWrite()`: `normal` writes, the two others do not. How a session was opened is
+  the session's business (`session.preview()`: live, or loaded once with no network and no save)
+  and is never asked in place of `canWrite`. `diff` closes writing and is nothing more yet: no
+  second document, no control that chooses a mode.
+- **Three doors, one per kind of write.**
+  1. **The document.** `EditableGame.transact` is the gate: the only place that opens a
+     transaction for an edit. Whoever builds the game tells it whether it may write
+     (`new EditableGame(doc, mayWrite)`; the session answers yes while it opens, then
+     `mode.canWrite()`). Refused, it runs nothing and returns `false`; it never throws. Every
+     mutator goes through it, as do the pixels, flags and tiles a `Sheet` or a `GameMap` writes,
+     the net rules (`setNetPermission` and its two siblings) and `yTextField`. A load
+     (`Y.applyUpdate`, the session's `remote-init` writes), a migration and a peer's update are
+     not edits and do not pass it. CodeMirror takes its writability from the mode through a
+     compartment (`code-editor.component.ts`). A local update seen while the mode does not write
+     is reported through `CrashReporter` by the session.
+  2. **The controls.** `[ncDisabledScope]` on a container closes every kit control under it; the
+     shell puts one round the routed tab, so a tab closes nothing by hand. It denies by default.
+     `ncLooksOnly` is the one way through, for what changes the view and nothing else: on a
+     control it lets that control through (what is projected into it stays closed), on any other
+     element it lets through every control under it. A control the app draws without the kit
+     asks the scope itself with `closedBy(() => false)`. A canvas is not a control: its tool
+     group closes the tools that write (`ToolItem.disabled`), the tab hands it a tool that looks
+     (`ART_LOOKING_TOOLS`, `MAP_LOOKING_TOOLS`), and its handlers return before writing.
+  3. **The API.** No wrapper and no interceptor. The server refuses what the account may not
+     do, and a closed control keeps the call from being made.
+- **What a change owes.**
+  - _A new tab_ is routed under the shell and is closed with the others. It lets through, by
+    name, what only looks: the strips that navigate, the zoom, the transport.
+  - _A new mutator_ of `EditableGame` writes inside `this.transact` and is given a line in
+    `MUTATORS` of `packages/engine/src/game/gate.test.ts`, which compares the list against the
+    class and proves each call changes nothing while the gate is closed.
+  - _A new control_ in the kit that can be disabled reads the scope with `closedBy`
+    (`disabled-scope.directive.spec.ts` fails on one that does not) and is shown on `/ui-kit`.
+  - _A new write_ goes through one of the doors: `game.transact` for the document, never
+    `doc.transact` or a bare write on a Yjs type (`write-doors.spec.ts` and `gate.test.ts` fail
+    on the first), a kit control for a request to the API.
+  - _A tab strip_ that navigates and edits is `ncLooksOnly` with `editable`, `removable` and
+    `reorderable` bound to `mode.canWrite()`.
+- **Checking it.** `e2e/editor/read-only.spec.ts` opens a game as a staff member who does not
+  collaborate on it and compares the document byte for byte after trying to change it in every
+  tab. The method for working on an editor is in `.claude/skills/naucto-editor-modes/SKILL.md`.
 
 ## Conventions
 
@@ -302,8 +352,12 @@ broken; an absence reads as not built.
 - **Moderation controls on the site.** Staff hide, warn, suspend and delete in the admin console
   only. The site reports, previews and tells an account where it stands. One place to decide
   means one place to log and one session to trust.
-- **Export in a staff preview.** Looking at someone's draft is what a review needs. Leaving with
-  it as a file is more than looking, so the read-only GAME tab has no Export.
+- **Export of a game that is only looked at.** Looking at someone's draft is what a review needs.
+  Leaving with it as a file is more than looking, so Export is closed with the rest of the GAME
+  tab and is not let through as something that only looks.
+- **The released build for staff.** The staff play page ran either the latest save or the build
+  players got. A staff member now opens the editor, which holds the latest save: the released
+  build is played where players play it.
 - **An appeal button.** The standing says what was decided and why. There is no process behind a
   button to contest it yet, so there is no button.
 - **A public mark on a suspended profile.** A suspension is between the account and the
@@ -325,6 +379,11 @@ broken; an absence reads as not built.
 
 ## Gotchas
 
+- `disabled` is an input of `ncButton` and of `ncInput`, which write the attribute themselves from
+  it and from the scope above. Bind it as `[disabled]`, never as `[attr.disabled]`: two writers
+  of one attribute leave whichever wrote last.
+- `EditableGame.addFile` and `addAction` answer `null`, and `updateAction` and `transact`
+  `false`, where the game may not be written. A caller that goes on to use what it added checks.
 - A bevelled element takes its ground from `bevel-fill-*`, never from `bg-*`: the background colour
   lies under the painted strips and shows through the stepped corners. Its border is transparent by
   construction, so `border-*` colours do nothing on it either.
