@@ -39,7 +39,7 @@ const WINDOW: Record<ProfileImageZone, { ratio: number; out: { w: number; h: num
 };
 
 const MAX_BYTES = 2 * 1024 * 1024;
-const ACCEPT = 'image/png,image/jpeg,image/gif';
+const ACCEPT = 'image/png,image/jpeg,image/gif,image/webp';
 /** Below this the handles would sit on top of each other and the rectangle stops reading as one. */
 const MIN_SIDE = 32;
 
