@@ -7,6 +7,13 @@
     "apps/web/src/app/features/editor/sound/piano-keys.component.html": {
       "border": 1
     },
+    "apps/web/src/app/features/settings/standing-settings.component.html": {
+      "border": 1
+    },
+    "apps/web/src/app/features/staff-preview/staff-play.page.html": {
+      "rounded": 5,
+      "border": 3
+    },
     "apps/web/src/styles.css": {
       "stroke-width": 3
     }
