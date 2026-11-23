@@ -5,6 +5,9 @@ import { stepZoom } from '../art/sprite-canvas.component';
 
 export type MapTool = 'stamp' | 'fill' | 'select' | 'erase' | 'move';
 
+/** The tools that change nothing of a map, which is all a map that is only looked at offers. */
+export const MAP_LOOKING_TOOLS: readonly MapTool[] = ['select'];
+
 export interface TileRect {
   x: number;
   y: number;

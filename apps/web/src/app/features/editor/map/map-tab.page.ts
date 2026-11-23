@@ -15,6 +15,7 @@ import {
   ButtonDirective,
   DialogService,
   IconComponent,
+  LooksOnlyDirective,
   MarkComponent,
   PanelColumnComponent,
   SectionComponent,
@@ -38,11 +39,12 @@ import { injectCollectionActions } from '../collection-actions';
 import { logZoomScale } from '../log-zoom-scale';
 import { SizeDialog, type SizeDialogData, type SizeDialogResult } from '../size.dialog';
 import { ClipboardStore } from '../state/clipboard.store';
+import { EditorModeService } from '../state/editor-mode.service';
 import { PANEL_WIDTH } from '../state/editor-ui.store';
 import { injectUndo } from '../state/undo-scope';
 import { SessionPresenceService } from '../work-session/session-presence.service';
 import { WorkSessionService } from '../work-session/work-session.service';
-import { MAP_MAX_ZOOM, MAP_MIN_ZOOM, MapStore, type MapTool } from './map.store';
+import { MAP_LOOKING_TOOLS, MAP_MAX_ZOOM, MAP_MIN_ZOOM, MapStore, type MapTool } from './map.store';
 import { MapCanvasComponent, type TileViewport } from './map-canvas.component';
 import { MinimapComponent } from './minimap.component';
 
@@ -55,6 +57,7 @@ const ZOOM_SCALE = logZoomScale(MAP_MIN_ZOOM, MAP_MAX_ZOOM);
     TranslocoDirective,
     ButtonDirective,
     IconComponent,
+    LooksOnlyDirective,
     MarkComponent,
     SliderComponent,
     PanelColumnComponent,
@@ -75,6 +78,7 @@ const ZOOM_SCALE = logZoomScale(MAP_MIN_ZOOM, MAP_MAX_ZOOM);
 export default class MapTabPage {
   protected readonly PANEL_WIDTH = PANEL_WIDTH;
   protected readonly session = inject(WorkSessionService);
+  protected readonly mode = inject(EditorModeService);
   protected readonly presence = inject(SessionPresenceService);
   protected readonly map = inject(MapStore);
   private readonly clipboard = inject(ClipboardStore);
@@ -184,7 +188,13 @@ export default class MapTabPage {
   /** Both want a selection to work on, there being no region here to fall back to. */
   protected readonly canCopy = computed(() => this.canvas()?.selection() != null);
   protected readonly canPaste = computed(() => this.clipboard.take('tiles') !== null);
-  protected readonly tools = computed<ToolItem<MapTool>[]>(() => [
+  /** The tool in hand. Where the map is only looked at, one that lays tiles gives way to SELECT. */
+  protected readonly tool = computed<MapTool>(() =>
+    this.mode.canWrite() || MAP_LOOKING_TOOLS.includes(this.map.tool())
+      ? this.map.tool()
+      : 'select',
+  );
+  private readonly toolList = computed<ToolItem<MapTool>[]>(() => [
     {
       value: 'stamp',
       icon: 'grid',
@@ -211,6 +221,12 @@ export default class MapTabPage {
     },
     { value: 'move', icon: 'move', label: this.i18n.translate('editor.map.tools.move'), key: 'V' },
   ]);
+  protected readonly tools = computed(() =>
+    this.toolList().map((item) => ({
+      ...item,
+      disabled: !this.mode.canWrite() && !MAP_LOOKING_TOOLS.includes(item.value),
+    })),
+  );
 
   constructor() {
     // The brush is bounded by the sheet it is picked from, and the picker draws that sheet: both
@@ -248,7 +264,7 @@ export default class MapTabPage {
   }
 
   protected setTool(tool: MapTool | undefined): void {
-    if (tool) {
+    if (tool && (this.mode.canWrite() || MAP_LOOKING_TOOLS.includes(tool))) {
       this.map.setTool(tool);
     }
   }
@@ -360,7 +376,7 @@ export default class MapTabPage {
     const op = (
       { H: 'flipH', V: 'flipV', ']': 'rotateCw', '[': 'rotateCcw' } as Record<string, Transform>
     )[event.key];
-    if (op && !mod && this.map.tool() === 'select' && this.map.selection()) {
+    if (op && !mod && this.tool() === 'select' && this.map.selection()) {
       event.preventDefault();
       this.canvas()?.transformSelection(op);
       return;
@@ -368,15 +384,16 @@ export default class MapTabPage {
     const tool = (
       { s: 'stamp', f: 'fill', m: 'select', e: 'erase', v: 'move' } as Record<string, MapTool>
     )[event.key.toLowerCase()];
-    if (tool && !mod) {
-      this.map.setTool(tool);
+    if (!mod) {
+      this.setTool(tool);
     }
   }
 
   /** Copy and cut want a selection, there being no region in hand to fall back on. */
   protected transfer(key: string): boolean {
     const canvas = this.canvas();
-    if (!canvas) {
+    // Looked at, a map is copied from and nothing else: a cut and a paste both write it.
+    if (!canvas || (key !== 'c' && !this.mode.canWrite())) {
       return false;
     }
     return this.clipboard.transfer(key, {

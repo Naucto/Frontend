@@ -51,8 +51,9 @@ import {
 import { type SheetAtlas } from '../../../shared/pixel/sheet-atlas';
 import { type SheetPainter } from '../../../shared/pixel/sheet-painter';
 import { type TileClip } from '../state/clipboard.store';
+import { EditorModeService } from '../state/editor-mode.service';
 import { type Collaborator } from '../work-session/session-presence.service';
-import { type MapTool, type TileRect } from './map.store';
+import { MAP_LOOKING_TOOLS, type MapTool, type TileRect } from './map.store';
 
 export interface TileViewport {
   x: number;
@@ -147,6 +148,7 @@ export class MapCanvasComponent {
   private readonly overlay = viewChild.required<ElementRef<HTMLCanvasElement>>('overlay');
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly theme = inject(ThemeService);
+  private readonly mode = inject(EditorModeService);
   /** The window the canvases hold, in drawn pixels; a map the well contains whole gets the map
    * itself. */
   private win = { x: 0, y: 0, w: 0, h: 0 };
@@ -382,6 +384,9 @@ export class MapCanvasComponent {
 
   /** Writes the placed layer into the map, as one undo step. Silent when there is none. */
   settleFloating(): void {
+    if (!this.mode.canWrite()) {
+      return;
+    }
     const rect = this.floating.settle();
     if (rect) {
       this.selection.set(rect);
@@ -393,6 +398,9 @@ export class MapCanvasComponent {
    * nothing is written until it is settled.
    */
   pasteClip(clip: TileClip): void {
+    if (!this.mode.canWrite()) {
+      return;
+    }
     // A second paste settles the first rather than dropping it: work already placed is work.
     this.settleFloating();
     const centre = this.visibleCentre();
@@ -418,7 +426,7 @@ export class MapCanvasComponent {
   clearSelection(): void {
     const sel = this.selection();
     const map = this.gameMap();
-    if (!sel || !map) {
+    if (!sel || !map || !this.mode.canWrite()) {
       return;
     }
     this.game().transact(() => {
@@ -442,7 +450,7 @@ export class MapCanvasComponent {
     // in it until it is settled.
     this.settleFloating();
     const sel = this.selection();
-    if (!sel || !this.gameMap()) {
+    if (!sel || !this.gameMap() || !this.mode.canWrite()) {
       return;
     }
     this.selection.set(this.floating.transform(sel, op));
@@ -544,6 +552,10 @@ export class MapCanvasComponent {
       return;
     }
     this.host.nativeElement.focus({ preventScroll: true });
+    // A map that is only looked at takes the tools that look, whatever the tool it is handed.
+    if (!this.mode.canWrite() && !MAP_LOOKING_TOOLS.includes(this.tool())) {
+      return;
+    }
     this.overlay().nativeElement.setPointerCapture(event.pointerId);
     const cell = this.cellOf(event);
     const erase = event.button === 2 || this.tool() === 'erase';

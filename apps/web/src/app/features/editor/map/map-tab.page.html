@@ -10,7 +10,12 @@
           {{ t('editor.map.tiles', { w: mapW(), h: mapH() }) }}
         </span>
       </div>
-      <nc-tool-group [items]="tools()" [value]="map.tool()" (valueChange)="setTool($event)" />
+      <!-- Let through whole: the tools that lay tiles are closed one by one in the list itself. -->
+      <nc-tool-group
+        ncLooksOnly
+        [items]="tools()"
+        [value]="tool()"
+        (valueChange)="setTool($event)" />
       <div class="flex items-center justify-end gap-0.5">
         <button
           type="button"
@@ -37,6 +42,7 @@
         <button
           type="button"
           ncButton
+          ncLooksOnly
           variant="ghost"
           size="md"
           iconOnly
@@ -66,7 +72,7 @@
         [mapId]="map.mapId()"
         [painter]="painter"
         [atlas]="atlas"
-        [tool]="map.tool()"
+        [tool]="tool()"
         [brush]="map.brush()"
         [grid]="map.grid()"
         [flags]="map.flags()"
@@ -83,7 +89,7 @@
         (pasted)="map.setTool('move')" />
       <!-- In the corner rather than beside the selection: the map is far wider than its well,
            so the selection's edge is as often as not scrolled out of view. -->
-      @if (map.tool() === 'select' && map.selection()) {
+      @if (tool() === 'select' && map.selection()) {
         <nc-transform-bar
           class="absolute top-1.5 right-1.5 bg-page/80"
           (flipH)="canvas.transformSelection('flipH')"
@@ -109,7 +115,8 @@
   </section>
 
   <nc-panel-column [width]="PANEL_WIDTH">
-    <div actions class="flex min-w-0 flex-1 items-center gap-1">
+    <!-- The grid, the flags overlay and the zoom are each person's own view of the map. -->
+    <div actions ncLooksOnly class="flex min-w-0 flex-1 items-center gap-1">
       <nc-toggle-button
         size="strip"
         [checked]="map.grid()"
@@ -166,6 +173,7 @@
     <nc-section banded [title]="t('editor.map.tilePicker')">
       <!-- Read-only here: a sheet is named, coloured and deleted in the ART tab. -->
       <nc-tabs
+        ncLooksOnly
         variant="small"
         [tabs]="sheetTabs()"
         [value]="map.sheetId()"
@@ -180,9 +188,10 @@
 
     <nc-section banded [title]="t('editor.map.wholeMap')">
       <nc-tabs
+        ncLooksOnly
         variant="small"
-        [editable]="true"
-        [removable]="true"
+        [editable]="mode.canWrite()"
+        [removable]="mode.canWrite()"
         [tabs]="mapTabs()"
         [value]="map.mapId()"
         (valueChange)="maps.choose($event)"
