@@ -113,8 +113,8 @@ export type MarkName = keyof typeof MARK_GLYPHS;
 `;
 
 const text = await format(source, { ...(await resolveConfig(TARGET)), filepath: TARGET });
-// --check fails when the committed table is not what the drawings give, which nothing else would
-// notice: a drawing edited without a rebuild, or the table edited by hand.
+// --check fails when the committed table is not what the drawings give: a drawing edited without
+// a rebuild, or the table edited by hand.
 if (!process.argv.includes('--check')) {
   await writeFile(TARGET, text);
 } else if ((await readFile(TARGET, 'utf8').catch(() => '')) !== text) {

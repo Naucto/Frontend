@@ -269,7 +269,7 @@ export const numbered = (html) =>
     .map((line) => `<span class="doc-line">${line}</span>`)
     .join('\n');
 
-// Both glyphs of the copy button, as the kit's icon set draws them; the stylesheet shows one.
+// Both glyphs of the copy button; the stylesheet shows one.
 const COPY_GLYPH = 'M4 2h11v2H6v13H4V2zm4 4h12v16H8V6zm2 2v12h8V8h-8z';
 const CHECK_GLYPH =
   'M18 6h2v2h-2V6zm-2 4V8h2v2h-2zm-2 2v-2h2v2h-2zm-2 2h2v-2h-2v2zm-2 2h2v-2h-2v2zm-2 0v2h2v-2H8zm-2-2h2v2H6v-2zm0 0H4v-2h2v2z';
