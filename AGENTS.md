@@ -192,14 +192,19 @@ icons drawn on the kit pixel, Bubblegum-16 palette, dark + light themes).
 - **Moderation** (`shared/moderation`): what the site shows of it. Staff decide in the admin
   console, never here. Nothing of it shows while the backend's `moderation` feature flag is off.
   - **Words.** "Report" already names bug reports and ratings (`shared/feedback`, `/reports`),
-    so a user's report of a game, a comment or a profile is a **flag** in the code
+    so a user's report of a game, a comment, a collection or a profile is a **flag** in the code
     (`FlagContentDialog`, `ContentFlagLauncher`, `/moderation/flags`). The buttons still say
     Report, which is the word people know.
-  - **Reporting.** Report sits on each comment, under a game's actions and on a profile, never on
-    your own content.
+  - **Reporting.** Report sits on each comment, under a game's actions, on a collection's page
+    and on a profile, never on your own content.
   - **What an account is shown.** A comment a moderator removed reads as such. A withheld game
     answers its play page as unavailable, and its owner finds it marked Hidden with Publish
-    blocked. `nc-suspension-band` sits in both shells. Settings → Standing lists every decision
+    blocked; such a game takes no new disk and enters no collection, and the GAME tab's Disk
+    view and the add-to-collection checklist say why. A withheld collection answers anyone
+    else as not found. Its owner reads it with `hiddenAt` set: the page says so and closes what
+    would change it (its details, a game added, the order), a game can still be taken out and
+    the box deleted, and the box is marked Hidden on My games. `nc-suspension-band` sits in
+    both shells. Settings → Standing lists every decision
     with what staff said, and a `MODERATION` notification leads there.
   - **Suspended.** `AuthStore.suspension` comes from the profile. A control that writes goes
     through `GoodStandingAction`, which wraps `SignedInAction` and explains on the press. The
