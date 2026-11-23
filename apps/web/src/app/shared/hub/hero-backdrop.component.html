@@ -5,10 +5,12 @@
   <span
     class="pixelated absolute inset-x-0 bg-cover bg-position-[80%_50%] bg-no-repeat [animation-duration:420ms] motion-reduce:[animation:none] in-data-reduce-motion:[animation:none]"
     [class]="$index === front() ? 'z-[2]' : 'z-[1]'"
-    [class.dither-in-fine]="$index === front() && changed()"
+    [class.dither-in-fine]="$index === front() && changed() && $index !== leaving()"
+    [class.dither-out-fine]="$index === leaving()"
     [style.inset-block.px]="-bleed / 2"
+    [style.mask-image]="$index === loading() ? 'var(--nc-dither-none)' : null"
     [style.background-image]="layer?.cover ? 'url(&quot;' + layer?.cover + '&quot;)' : null"
-    (animationend)="settle()">
+    (animationend)="settle($index)">
     @if (layer?.clip; as clip) {
       <video
         class="pixelated absolute inset-0 size-full object-cover object-[80%_50%]"

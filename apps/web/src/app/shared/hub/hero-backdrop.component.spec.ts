@@ -116,6 +116,69 @@ describe('HeroBackdropComponent', () => {
     expect(host.querySelector('video')).toBeNull();
   });
 
+  it('dithers the cover out, with no layer to load, when the next game has nothing to show', () => {
+    const asked = covers.length;
+    show(null);
+    expect(covers).toHaveLength(asked);
+    expect(front().style.backgroundImage).toContain('/covers/1.png');
+    expect(front().classList).toContain('dither-out-fine');
+    expect(front().classList).not.toContain('dither-in-fine');
+
+    front().dispatchEvent(new Event('animationend'));
+    fixture.detectChanges();
+    expect(layers().every((layer) => layer.style.backgroundImage === '')).toBe(true);
+    expect(front().classList).not.toContain('dither-out-fine');
+  });
+
+  it('dithers a cover in over the bare ground after a game that had nothing to show', () => {
+    show(null);
+    front().dispatchEvent(new Event('animationend'));
+    fixture.detectChanges();
+
+    show('/covers/2.png');
+    const loading = layers().find((layer) => layer.style.backgroundImage.includes('/covers/2.png'));
+    expect(loading?.style.maskImage).toBe('var(--nc-dither-none)');
+    covers.at(-1)?.onload?.(new Event('load'));
+    fixture.detectChanges();
+    expect(front().style.backgroundImage).toContain('/covers/2.png');
+    expect(front().classList).toContain('dither-in-fine');
+    expect(front().style.maskImage).toBe('');
+  });
+
+  it('lets a cover go on dithering out under the next one coming in', () => {
+    show(null);
+    const leaving = front();
+    show('/covers/2.png');
+    covers.at(-1)?.onload?.(new Event('load'));
+    fixture.detectChanges();
+
+    expect(front().style.backgroundImage).toContain('/covers/2.png');
+    expect(front().classList).toContain('dither-in-fine');
+    expect(leaving).not.toBe(front());
+    expect(leaving.style.backgroundImage).toContain('/covers/1.png');
+    expect(leaving.classList).toContain('dither-out-fine');
+  });
+
+  it('changes nothing between two games that have nothing to show', () => {
+    show(null);
+    front().dispatchEvent(new Event('animationend'));
+    fixture.detectChanges();
+    const before = layers().map((layer) => layer.className);
+
+    // A clip left out where motion is reduced: the next game brings nothing either.
+    vi.spyOn(window, 'matchMedia').mockReturnValue({ matches: true } as MediaQueryList);
+    show(null, '/clips/2.webm');
+    expect(layers().map((layer) => layer.className)).toEqual(before);
+    expect(front().classList).not.toContain('dither-out-fine');
+  });
+
+  it('takes the cover away at once where motion is reduced and nothing follows it', () => {
+    vi.spyOn(window, 'matchMedia').mockReturnValue({ matches: true } as MediaQueryList);
+    show(null);
+    expect(layers().every((layer) => layer.style.backgroundImage === '')).toBe(true);
+    expect(front().classList).not.toContain('dither-out-fine');
+  });
+
   it('empties the layer left underneath once the new one has fully arrived', () => {
     show('/covers/2.png');
     covers.at(-1)?.onload?.(new Event('load'));

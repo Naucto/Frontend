@@ -1085,10 +1085,14 @@
   mask-size: 12px 12px;
   animation: nc-dither-out 200ms step-end both;
 }
-/* The seven-step ladder, for a surface large enough that four steps read as a jump. */
+/* The seven-step ladders, for a surface large enough that four steps read as a jump. */
 @utility dither-in-fine {
   mask-size: 12px 12px;
   animation: nc-dither-fine 320ms step-end both;
+}
+@utility dither-out-fine {
+  mask-size: 12px 12px;
+  animation: nc-dither-fine-out 320ms step-end both;
 }
 
 @keyframes nc-dither-in {
@@ -1146,6 +1150,29 @@
   }
   100% {
     mask-image: var(--nc-dither-full);
+  }
+}
+@keyframes nc-dither-fine-out {
+  0% {
+    mask-image: var(--nc-dither-full);
+  }
+  16.67% {
+    mask-image: var(--nc-dither-87);
+  }
+  33.33% {
+    mask-image: var(--nc-dither-75);
+  }
+  50% {
+    mask-image: var(--nc-dither-50);
+  }
+  66.67% {
+    mask-image: var(--nc-dither-25);
+  }
+  83.33% {
+    mask-image: var(--nc-dither-12);
+  }
+  100% {
+    mask-image: var(--nc-dither-none);
   }
 }
 /* The scrim settles at half: four steps of an eighth each. */

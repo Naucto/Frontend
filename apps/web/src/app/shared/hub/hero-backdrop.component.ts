@@ -18,6 +18,9 @@ interface Picture {
   clip: string | null;
 }
 
+/** What a game with neither a cover nor a clip shows: the page's own ground, through the mask. */
+const NOTHING: Picture = { cover: null, clip: null };
+
 /** A clip that has not started by then gives way to its cover. */
 const CLIP_PATIENCE = 1200;
 
@@ -28,8 +31,10 @@ const CLIP_PATIENCE = 1200;
  *
  * Two layers stay in place. The next picture loads in the one underneath, and only once it has
  * something to show does that layer come to the front, through a dither, over the one still
- * showing — so there is never an empty frame between two games. Where motion is reduced the clip
- * is left out and the cover stands.
+ * showing — so there is never an empty frame between two games. A game with nothing to show
+ * brings no layer: the picture in front dithers out instead, onto the ground of the page, which
+ * already takes that game's colour. Where motion is reduced the clip is left out and the cover
+ * stands.
  */
 @Component({
   selector: 'nc-hero-backdrop',
@@ -53,27 +58,43 @@ export class HeroBackdropComponent {
   protected readonly front = signal(0);
   /** Whether a layer has come to the front since the first: only then is there a change to show. */
   protected readonly changed = signal(false);
+  /** The layer dithering out because the game now in front has nothing to show. */
+  protected readonly leaving = signal<number | null>(null);
   protected readonly mask = signal('var(--nc-dither-none)');
   protected readonly maskSize = signal('auto');
 
-  /** The layer loading underneath, until it comes to the front. */
-  private loading: number | null = null;
+  /**
+   * The layer loading underneath, until it comes to the front. It stays masked out meanwhile: the
+   * layer over it may be bare, or dithering out.
+   */
+  protected readonly loading = signal<number | null>(null);
   private patience: ReturnType<typeof setTimeout> | undefined;
 
   protected show(layer: number): void {
-    if (this.loading !== layer) {
+    if (this.loading() !== layer) {
       return;
     }
     clearTimeout(this.patience);
-    this.loading = null;
+    this.loading.set(null);
     this.front.set(layer);
     this.changed.set(true);
   }
 
-  /** Once the front layer has fully arrived, the one it covers has nothing left to play. */
-  protected settle(): void {
-    if (this.loading === null) {
-      this.layers.update((layers) => layers.map((layer, i) => (i === this.front() ? layer : null)));
+  /**
+   * Once a layer has fully left, it is bare; once the front layer has fully arrived, the one it
+   * covers has nothing left to play.
+   */
+  protected settle(layer: number): void {
+    if (layer === this.leaving()) {
+      this.leaving.set(null);
+      this.layers.update((layers) =>
+        layers.map((picture, i) => (i !== layer ? picture : i === this.front() ? NOTHING : null)),
+      );
+    } else if (this.loading() === null) {
+      this.leaving.set(null);
+      this.layers.update((layers) =>
+        layers.map((picture, i) => (i === this.front() ? picture : null)),
+      );
     }
   }
 
@@ -100,12 +121,29 @@ export class HeroBackdropComponent {
       const under = 1 - front;
       const same = (picture: Picture | null | undefined): boolean =>
         picture?.cover === next.cover && picture.clip === next.clip;
-      if (same(shown) || (same(layers[under]) && this.loading === under)) {
+      if (
+        same(untracked(this.leaving) === front ? NOTHING : shown) ||
+        (same(layers[under]) && untracked(this.loading) === under)
+      ) {
         return;
       }
-      this.layers.set(front === 0 ? [shown, next] : [next, shown]);
-      this.loading = under;
       clearTimeout(this.patience);
+      if (!next.cover && !next.clip) {
+        this.loading.set(null);
+        if (prefersStill(host)) {
+          this.leaving.set(null);
+          this.layers.set(front === 0 ? [NOTHING, null] : [null, NOTHING]);
+        } else {
+          this.leaving.set(front);
+          this.layers.set(front === 0 ? [shown, null] : [null, shown]);
+        }
+        return;
+      }
+      if (untracked(this.leaving) === under) {
+        this.leaving.set(null);
+      }
+      this.layers.set(front === 0 ? [shown, next] : [next, shown]);
+      this.loading.set(under);
       if (next.clip) {
         this.patience = setTimeout(() => {
           this.show(under);
@@ -116,8 +154,6 @@ export class HeroBackdropComponent {
           this.show(under);
         };
         cover.src = next.cover;
-      } else {
-        this.show(under);
       }
     });
 
