@@ -1,8 +1,10 @@
 <div *transloco="let t">
+  <!-- What stands here brings its own frame: a notice or the decisions table. -->
   <nc-settings-group
+    unframed
     [title]="t('moderation.standing.history')"
     [hint]="t('moderation.standing.lead')">
-    <div class="grid p-2.25">
+    <div class="grid">
       @if (standing.isError()) {
         <nc-notice tone="danger">{{ t('moderation.standing.loadFailed') }}</nc-notice>
       } @else if (standing.data(); as data) {
