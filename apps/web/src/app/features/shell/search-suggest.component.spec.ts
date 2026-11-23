@@ -75,6 +75,7 @@ describe('SearchSuggestComponent', () => {
               playerCount: 2,
               maxPlayers: 4,
               coverUrl: null,
+              disk: { color: '#3a7d44', finish: 'solid' },
             },
           ],
         },
@@ -116,11 +117,13 @@ describe('SearchSuggestComponent', () => {
     const router = await mount();
 
     await userEvent.click(box());
-    await userEvent.click(
-      await screen.findByRole('option', {
-        name: 'Join High Tide, hosted by louis, 2 of 4 players',
-      }),
-    );
+    const session = await screen.findByRole('option', {
+      name: 'Join High Tide, hosted by louis, 2 of 4 players',
+    });
+    expect(
+      session.querySelector<HTMLElement>('nc-floppy')?.style.getPropertyValue('--f-body'),
+    ).toBe('#3a7d44');
+    await userEvent.click(session);
 
     expect(router.navigate).toHaveBeenCalledWith(['/play', 9], {
       queryParams: { session: 'room-1' },

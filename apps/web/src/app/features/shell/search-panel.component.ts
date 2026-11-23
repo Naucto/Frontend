@@ -78,7 +78,7 @@ export class SearchPanelComponent {
     this.suggestions().sessions.map((session) => ({
       session,
       host: session.hostNickname ?? session.hostUsername,
-      disk: diskStyleFor({ id: session.projectId }),
+      disk: diskStyleFor({ id: session.projectId, disk: session.disk }),
       seats:
         session.maxPlayers <= SEATS_DRAWN
           ? Array.from({ length: session.maxPlayers }, (_, seat) => seat < session.playerCount)
