@@ -147,12 +147,7 @@ export class TabsComponent<T extends string = string> {
   private readonly tabEls = viewChildren<ElementRef<HTMLElement>>('tab');
   private readonly scroller = viewChild<ElementRef<HTMLElement>>('scroller');
 
-  protected readonly frameClass = computed(() => VARIANT[this.variant()].frame);
-  protected readonly listClass = computed(() => VARIANT[this.variant()].list);
-  protected readonly offClass = computed(() => VARIANT[this.variant()].off);
-  protected readonly onClass = computed(() => VARIANT[this.variant()].on);
-  protected readonly labelClass = computed(() => VARIANT[this.variant()].label);
-  protected readonly iconSize = computed(() => VARIANT[this.variant()].icon);
+  protected readonly look = computed(() => VARIANT[this.variant()]);
   /** How far the run of tabs is scrolled, and how far it could be. Measured, not derived. */
   private readonly scrolled = signal(0);
   private readonly overflow = signal(0);
