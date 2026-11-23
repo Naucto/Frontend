@@ -166,7 +166,7 @@ test.describe('the results view', () => {
 
     const arcade = page.getByRole('region', { name: 'Arcade' });
     await expect(arcade.locator('[role="listitem"]')).toHaveCount(12);
-    await expect(arcade.locator('nc-chip[shelfAction]')).toHaveText('12');
+    await expect(arcade.locator('nc-chip').first()).toHaveText('12');
     await expect(arcade.getByRole('link', { name: 'Popular 1', exact: true })).toContainText(
       'Popular 1',
     );

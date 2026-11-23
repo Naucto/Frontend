@@ -28,8 +28,7 @@
 
   @if (pages.isSuccess()) {
     @for (group of groups(); track group.tag) {
-      <nc-shelf [heading]="group.label" [attr.data-shelf]="group.tag">
-        <nc-chip shelfAction>{{ group.games.length }}</nc-chip>
+      <nc-shelf [heading]="group.label" [count]="group.games.length" [attr.data-shelf]="group.tag">
         <nc-shelf-disk
           *ncShelfItem="let game of group.games; open as open; flyoutId as flyoutId"
           named
