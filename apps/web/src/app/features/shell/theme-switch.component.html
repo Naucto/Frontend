@@ -8,6 +8,6 @@
   data-testid="theme-switch"
   [ncTooltip]="t('account.theme')"
   [attr.aria-label]="t('account.theme')"
-  (click)="theme.theme.set(theme.effective() === 'dark' ? 'light' : 'dark')">
+  (click)="theme.toggle()">
   <nc-icon [name]="theme.effective() === 'dark' ? 'moon' : 'sun'" />
 </button>
