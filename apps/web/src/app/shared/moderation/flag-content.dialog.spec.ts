@@ -11,6 +11,12 @@ const realFetch = globalThis.fetch;
 
 const COMMENT: FlagContentData = { targetType: 'COMMENT', targetId: 7, label: 'buy cheap coins' };
 
+/** Opens the reason list and takes one reason from it. */
+async function pick(reason: string): Promise<void> {
+  await userEvent.click(await screen.findByRole('combobox', { name: 'What is wrong with it?' }));
+  await userEvent.click(await screen.findByRole('option', { name: reason }));
+}
+
 describe('FlagContentDialog', () => {
   let sent: { path: string; json: Record<string, unknown> }[];
   let answer: () => Response;
@@ -59,22 +65,17 @@ describe('FlagContentDialog', () => {
     const send = screen.getByRole('button', { name: 'Send report' });
     expect(send).toBeDisabled();
 
-    await userEvent.click(screen.getByRole('switch', { name: 'Spam or advertising' }));
+    await pick('Spam or advertising');
     expect(send).toBeEnabled();
   });
 
   it('holds one reason at a time, and counts the details as the kit writes a count', async () => {
     await open();
-    const spam = await screen.findByRole('switch', { name: 'Spam or advertising' });
-    const hate = screen.getByRole('switch', { name: 'Hate' });
-
-    await userEvent.click(spam);
-    await userEvent.click(hate);
-    expect(spam.getAttribute('aria-checked')).toBe('false');
-    expect(hate.getAttribute('aria-checked')).toBe('true');
-
-    await userEvent.click(hate);
-    expect(hate.getAttribute('aria-checked')).toBe('true');
+    await pick('Spam or advertising');
+    await pick('Hate');
+    expect(screen.getByRole('combobox', { name: 'What is wrong with it?' }).textContent).toContain(
+      'Hate',
+    );
 
     expect(screen.getByText('0 of 1000')).toBeTruthy();
     await userEvent.type(screen.getByLabelText('Anything the moderators should know'), 'Twice');
@@ -83,7 +84,7 @@ describe('FlagContentDialog', () => {
 
   it('sends the target, the reason and the trimmed details, and closes as sent', async () => {
     await open();
-    await userEvent.click(await screen.findByRole('switch', { name: 'Spam or advertising' }));
+    await pick('Spam or advertising');
     await userEvent.type(
       screen.getByLabelText('Anything the moderators should know'),
       '  Third time today  ',
@@ -103,7 +104,7 @@ describe('FlagContentDialog', () => {
 
   it('leaves the details out when nothing was written', async () => {
     await open({ targetType: 'USER', targetId: 4, label: '@bob' });
-    await userEvent.click(await screen.findByRole('switch', { name: 'Hate' }));
+    await pick('Hate');
     await userEvent.click(screen.getByRole('button', { name: 'Send report' }));
 
     await vi.waitFor(() => {
@@ -119,7 +120,7 @@ describe('FlagContentDialog', () => {
   ])('answers a %s refusal in its own words and stays open', async (code, message) => {
     answer = () => json(409, { code, message: 'refused' });
     await open();
-    await userEvent.click(await screen.findByRole('switch', { name: 'Spam or advertising' }));
+    await pick('Spam or advertising');
     await userEvent.click(screen.getByRole('button', { name: 'Send report' }));
 
     expect(await screen.findByText(message)).toBeTruthy();

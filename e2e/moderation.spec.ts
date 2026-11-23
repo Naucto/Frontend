@@ -52,14 +52,12 @@ test.describe('moderation', () => {
     const send = dialog.getByRole('button', { name: 'Send report' });
     await expect(send).toBeDisabled();
 
-    await dialog.getByRole('switch', { name: 'Spam or advertising' }).click();
-    const stolen = dialog.getByRole('switch', { name: 'Stolen work' });
-    await stolen.click();
-    await expect(stolen).toHaveAttribute('aria-checked', 'true');
-    await expect(dialog.getByRole('switch', { name: 'Spam or advertising' })).toHaveAttribute(
-      'aria-checked',
-      'false',
-    );
+    const reason = dialog.getByRole('combobox', { name: 'What is wrong with it?' });
+    await reason.click();
+    await page.getByRole('option', { name: 'Spam or advertising' }).click();
+    await reason.click();
+    await page.getByRole('option', { name: 'Stolen work' }).click();
+    await expect(reason).toContainText('Stolen work');
     await dialog.getByLabel('Anything the moderators should know').fill('  Sprites of Hightide ');
     await expect(dialog.getByText('22 of 1000')).toBeVisible();
     await send.click();

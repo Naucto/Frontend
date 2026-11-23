@@ -1289,6 +1289,7 @@
         "USER": "Report this profile"
       },
       "reason": "What is wrong with it?",
+      "pickReason": "Pick a reason",
       "details": "Anything the moderators should know",
       "detailsHint": "Optional. Where to look, or what happened.",
       "count": "{{n}} of {{max}}",

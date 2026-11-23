@@ -9,7 +9,7 @@ import {
   FieldComponent,
   InputDirective,
   NoticeComponent,
-  ToggleButtonComponent,
+  SelectComponent,
 } from '@naucto/ui';
 
 import { ApiError } from '../../core/api/api-errors';
@@ -48,7 +48,7 @@ const REFUSALS: Record<string, string> = {
     FieldComponent,
     InputDirective,
     NoticeComponent,
-    ToggleButtonComponent,
+    SelectComponent,
   ],
   templateUrl: './flag-content.dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
