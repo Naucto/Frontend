@@ -480,14 +480,12 @@ export class EditableGame extends Game {
    * Adds an action after the ones there are and answers its id, or null when the game is at
    * {@link MAX_ACTIONS} or the name is one {@link actionNameIssue} refuses.
    */
-  addAction(
-    draft: Pick<ActionDraft, 'name'> & Partial<ActionDraft>,
-    id: string = crypto.randomUUID(),
-  ): string | null {
+  addAction(draft: Pick<ActionDraft, 'name'> & Partial<ActionDraft>): string | null {
     const actions = this.actions;
     if (actions.length >= MAX_ACTIONS || this.actionNameIssue(draft.name) !== null) {
       return null;
     }
+    const id = crypto.randomUUID();
     this.doc.transact(() => {
       this.writeAction(
         id,
