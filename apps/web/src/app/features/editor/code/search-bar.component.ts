@@ -12,6 +12,7 @@ import { TranslocoDirective } from '@jsverse/transloco';
 import {
   ButtonDirective,
   CheckboxComponent,
+  IconComponent,
   InputDirective,
   LooksOnlyDirective,
   MarkComponent,
@@ -32,6 +33,7 @@ export interface SearchTerms {
     TranslocoDirective,
     ButtonDirective,
     CheckboxComponent,
+    IconComponent,
     MarkComponent,
     InputDirective,
     LooksOnlyDirective,

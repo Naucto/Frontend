@@ -1,5 +1,8 @@
-<div *transloco="let t" class="flex flex-col gap-1 border-t-3 border-line bg-panel px-1.75 py-1.5">
-  <div class="flex items-center gap-1">
+<!-- One grid for both rows, so the replace field is as long as the find field above it. -->
+<div
+  *transloco="let t"
+  class="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-1 border-t-3 border-line bg-panel px-1.75 py-1.5">
+  <div class="contents">
     <button
       ncButton
       variant="ghost"
@@ -15,7 +18,7 @@
       <input
         #field
         ncInput
-        class="min-w-0 flex-1 font-mono"
+        class="min-w-0 font-mono"
         [attr.aria-label]="t('editor.code.find')"
         [placeholder]="t('editor.code.find')"
         autocomplete="off"
@@ -26,59 +29,62 @@
         (keydown.shift.enter)="previous.emit()"
         (keydown.escape)="closed.emit()" />
       <!-- Every button prevents its pointer's default, so the caret stays in the field between two arrows. -->
-      <button
-        ncButton
-        variant="secondary"
-        size="sm"
-        iconOnly
-        [attr.aria-label]="t('editor.code.previous')"
-        (mousedown)="$event.preventDefault()"
-        (click)="previous.emit()">
-        <nc-mark name="chevron-up" />
-      </button>
-      <button
-        ncButton
-        variant="secondary"
-        size="sm"
-        iconOnly
-        [attr.aria-label]="t('editor.code.next')"
-        (mousedown)="$event.preventDefault()"
-        (click)="next.emit()">
-        <nc-mark name="chevron-down" />
-      </button>
-      <button
-        ncButton
-        variant="secondary"
-        size="sm"
-        iconOnly
-        [attr.aria-label]="t('editor.code.selectAll')"
-        (mousedown)="$event.preventDefault()"
-        (click)="selectAll.emit()">
-        <nc-mark name="list" />
-      </button>
-      <nc-checkbox [(checked)]="caseSensitive">{{ t('editor.code.matchCase') }}</nc-checkbox>
-      <nc-checkbox [(checked)]="regexp">{{ t('editor.code.regexp') }}</nc-checkbox>
-      <nc-checkbox [(checked)]="wholeWord">{{ t('editor.code.wholeWord') }}</nc-checkbox>
-      <span class="flex-1"></span>
-      <button
-        ncButton
-        variant="ghost"
-        size="sm"
-        iconOnly
-        [attr.aria-label]="t('editor.code.closeSearch')"
-        (click)="closed.emit()">
-        <nc-mark name="close" />
-      </button>
+      <div class="flex items-center gap-1">
+        <button
+          ncButton
+          variant="ghost"
+          size="lg"
+          iconOnly
+          [attr.aria-label]="t('editor.code.previous')"
+          (mousedown)="$event.preventDefault()"
+          (click)="previous.emit()">
+          <nc-icon name="chevron-up" [size]="24" />
+        </button>
+        <button
+          ncButton
+          variant="ghost"
+          size="lg"
+          iconOnly
+          [attr.aria-label]="t('editor.code.next')"
+          (mousedown)="$event.preventDefault()"
+          (click)="next.emit()">
+          <nc-icon name="chevron-down" [size]="24" />
+        </button>
+        <button
+          ncButton
+          variant="ghost"
+          size="lg"
+          iconOnly
+          [attr.aria-label]="t('editor.code.selectAll')"
+          (mousedown)="$event.preventDefault()"
+          (click)="selectAll.emit()">
+          <nc-icon name="list" [size]="24" />
+        </button>
+      </div>
+      <div class="flex min-w-0 items-center gap-1">
+        <nc-checkbox [(checked)]="caseSensitive">{{ t('editor.code.matchCase') }}</nc-checkbox>
+        <nc-checkbox [(checked)]="regexp">{{ t('editor.code.regexp') }}</nc-checkbox>
+        <nc-checkbox [(checked)]="wholeWord">{{ t('editor.code.wholeWord') }}</nc-checkbox>
+        <span class="flex-1"></span>
+        <button
+          ncButton
+          variant="ghost"
+          size="sm"
+          iconOnly
+          [attr.aria-label]="t('editor.code.closeSearch')"
+          (click)="closed.emit()">
+          <nc-mark name="close" />
+        </button>
+      </div>
     </div>
   </div>
 
   @if (replacing()) {
-    <div class="flex items-center gap-1">
-      <!-- Indented by the width of the control that opened this row, so the two fields line up. -->
-      <span class="w-(--nc-h-sm) shrink-0"></span>
+    <div class="contents">
+      <span></span>
       <input
         ncInput
-        class="min-w-0 flex-1 font-mono"
+        class="min-w-0 font-mono"
         [attr.aria-label]="t('editor.code.replaceWith')"
         [placeholder]="t('editor.code.replaceWith')"
         autocomplete="off"
@@ -86,26 +92,28 @@
         [value]="replace()"
         (input)="replace.set($any($event.target).value)"
         (keydown.escape)="closed.emit()" />
-      <button
-        ncButton
-        variant="secondary"
-        size="sm"
-        iconOnly
-        [attr.aria-label]="t('editor.code.replaceOne')"
-        (mousedown)="$event.preventDefault()"
-        (click)="replaceOne.emit()">
-        <nc-mark name="edit" />
-      </button>
-      <button
-        ncButton
-        variant="secondary"
-        size="sm"
-        iconOnly
-        [attr.aria-label]="t('editor.code.replaceAll')"
-        (mousedown)="$event.preventDefault()"
-        (click)="replaceEvery.emit()">
-        <nc-mark name="repeat" />
-      </button>
+      <div class="flex items-center gap-1">
+        <button
+          ncButton
+          variant="ghost"
+          size="lg"
+          iconOnly
+          [attr.aria-label]="t('editor.code.replaceOne')"
+          (mousedown)="$event.preventDefault()"
+          (click)="replaceOne.emit()">
+          <nc-icon name="edit" [size]="24" />
+        </button>
+        <button
+          ncButton
+          variant="ghost"
+          size="lg"
+          iconOnly
+          [attr.aria-label]="t('editor.code.replaceAll')"
+          (mousedown)="$event.preventDefault()"
+          (click)="replaceEvery.emit()">
+          <nc-icon name="repeat" [size]="24" />
+        </button>
+      </div>
     </div>
   }
 </div>
