@@ -3,8 +3,12 @@
   [image]="lead()?.coverUrl ?? null"
   [tint]="tint()"
   [seed]="(lead()?.id ?? '') + ''" />
-@if (results(); as query) {
-  <nc-hub-results [query]="query" />
-} @else {
-  <nc-hub-feed [feed]="feed" [(front)]="front" />
-}
+<!-- The backdrop lies under the whole shell; the shelves and disks keep their own stacking to
+     themselves. -->
+<div class="isolate">
+  @if (results(); as query) {
+    <nc-hub-results [query]="query" />
+  } @else {
+    <nc-hub-feed [feed]="feed" [(front)]="front" />
+  }
+</div>

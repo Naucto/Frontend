@@ -12,7 +12,9 @@ import { TopBarComponent } from './top-bar.component';
   imports: [RouterOutlet, TopBarComponent, SiteFooterComponent, SuspensionBandComponent],
   templateUrl: './app-shell.component.html',
   hostDirectives: [CommandPaletteShortcutDirective],
-  host: { class: 'flex min-h-dvh flex-col overflow-x-clip' },
+  // A stacking context of its own: a backdrop a page sets at z -1, as the hub does, lies under
+  // everything the shell holds, and nothing beside `main` has to be stacked over it.
+  host: { class: 'isolate flex min-h-dvh flex-col overflow-x-clip' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export default class AppShellComponent {}

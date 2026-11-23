@@ -15,9 +15,7 @@ import { FeaturesService } from '../../core/config/features.service';
   selector: 'nc-suspension-band',
   imports: [DatePipe, RouterLink, TranslocoDirective, ButtonDirective, NoticeComponent],
   templateUrl: './suspension-band.component.html',
-  // Stacked over the page: the hub paints a backdrop across the whole window, which covers a band
-  // left in the flow.
-  host: { class: 'relative z-10 block' },
+  host: { class: 'block' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SuspensionBandComponent {

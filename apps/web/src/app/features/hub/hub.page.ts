@@ -18,7 +18,7 @@ import { HubResultsComponent } from './hub-results.component';
   templateUrl: './hub.page.html',
   host: {
     class:
-      'relative isolate block px-[calc(var(--nc-page-gutter)-var(--spacing)*2)] pt-[20px] pb-[72px] [--nc-page-gutter:clamp(28px,5vw,100px)] md:px-[calc(var(--nc-page-gutter)-var(--spacing)*3)] md:pt-[12px]',
+      'block px-[calc(var(--nc-page-gutter)-var(--spacing)*2)] pt-[20px] pb-[72px] [--nc-page-gutter:clamp(28px,5vw,100px)] md:px-[calc(var(--nc-page-gutter)-var(--spacing)*3)] md:pt-[12px]',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
