@@ -25,7 +25,7 @@ import { unwrap } from '../../core/api/api-errors';
 import { AuthStore } from '../../core/auth/auth.store';
 import type { HubGame } from '../hub/hub-game';
 import { qk } from './query-keys';
-import { RELEASE_PAGE_SIZE, releaseParams, type ReleaseSort } from './releases.queries';
+import { RELEASE_PAGE_SIZE, releaseParams, type ReleaseQuery } from './releases.queries';
 
 /** The hub as the day drew it for this reader: the hero, the opening shelves, the keys of the rest. */
 export function injectHubFeed(): CreateQueryResult<HubResponseDto> {
@@ -45,14 +45,12 @@ export function injectHubShelves(keys: () => readonly string[]): CreateQueryResu
   }));
 }
 
-/** What a results view lists: a shelf opened out, or the catalogue searched or narrowed to tags. */
-export interface ResultsQuery {
+/**
+ * What a results view lists: a shelf opened out, or the catalogue searched or narrowed to tags.
+ * With no `sort`, a shelf keeps its own order and a search its best match first.
+ */
+export interface ResultsQuery extends ReleaseQuery {
   shelf?: string;
-  search?: string;
-  /** Comma-separated; a game must carry all of them. */
-  tags?: string;
-  /** Left out, a shelf keeps its own order and a search its best match first. */
-  sort?: ReleaseSort;
 }
 
 interface ResultsPage {
@@ -70,19 +68,19 @@ export function injectHubResults(
     queryKey: qk.hubResults({ limit, ...query() }),
     initialPageParam: 1,
     queryFn: async ({ pageParam }): Promise<ResultsPage> => {
-      const { shelf, sort, ...filters } = query();
+      const { shelf, ...release } = query();
       if (shelf) {
         const res = unwrap(
           await hubFeedControllerGetShelf({
             path: { key: shelf },
-            query: { page: pageParam, limit, sort },
+            query: { page: pageParam, limit, sort: release.sort },
           }),
         );
         return { games: res.games, total: res.total, page: pageParam };
       }
       const res = unwrap(
         await hubControllerGetPaginatedReleases({
-          query: { page: pageParam, limit, ...releaseParams({ ...filters, sort }) },
+          query: { page: pageParam, limit, ...releaseParams(release) },
         }),
       );
       return { games: res.projects, total: res.total, page: pageParam };
