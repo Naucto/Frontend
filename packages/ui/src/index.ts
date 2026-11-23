@@ -11,6 +11,7 @@ export * from './components/dialog.service';
 export * from './components/dialog-shell.component';
 export * from './components/disclosure.component';
 export * from './components/dither-backdrop.component';
+export * from './components/dither-banner.component';
 export * from './components/drag-pan.directive';
 export * from './components/edge-handle.component';
 export * from './components/empty-state.component';

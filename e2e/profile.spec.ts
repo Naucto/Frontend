@@ -39,22 +39,32 @@ async function mockAda(page: Page, banner: boolean): Promise<void> {
   await mockCollections(page, []);
 }
 
-/** How many colours the backdrop holds over the first 300px of the page's own content. */
-const coloursAtTop = (page: Page): Promise<number> =>
-  page.evaluate(() => {
-    const canvas = document.querySelector<HTMLCanvasElement>('nc-dither-backdrop canvas');
+/**
+ * How many colours a dithered canvas holds over 100 rows: from its own top, or from where the
+ * page's content starts.
+ */
+const coloursOf = (page: Page, selector: string, from: 'top' | 'root'): Promise<number> =>
+  page.locator(`${selector} canvas`).evaluate((canvas: HTMLCanvasElement, from) => {
     const root = document.querySelector('[data-testid="profile-root"]');
-    const context = canvas?.getContext('2d');
-    if (!canvas || !root || !context) {
+    const context = canvas.getContext('2d');
+    if (!canvas.width || !root || !context) {
       return 0;
     }
-    const row = Math.round(root.getBoundingClientRect().top / 3);
+    const row = from === 'root' ? Math.round(root.getBoundingClientRect().top / 3) : 0;
     const { data } = context.getImageData(0, row, canvas.width, 100);
     const seen = new Set<string>();
     for (let i = 0; i < data.length; i += 4) {
       seen.add(`${String(data[i])},${String(data[i + 1])},${String(data[i + 2])}`);
     }
     return seen.size;
+  }, from);
+
+/** How far the banner's top is from the top of the page's own content. */
+const bannerOffset = (page: Page): Promise<number> =>
+  page.evaluate(() => {
+    const banner = document.querySelector('nc-dither-banner');
+    const root = document.querySelector('[data-testid="profile-root"]');
+    return (banner?.getBoundingClientRect().top ?? NaN) - (root?.getBoundingClientRect().top ?? 0);
   });
 
 test.describe('a profile', () => {
@@ -63,14 +73,21 @@ test.describe('a profile', () => {
     await mockAda(page, true);
     await page.goto('/u/ada');
     await expect(page.getByRole('heading', { level: 1, name: 'ada' })).toBeVisible();
-    await expect.poll(() => coloursAtTop(page)).toBeGreaterThan(4);
+    await expect.poll(() => coloursOf(page, 'nc-dither-banner', 'top')).toBeGreaterThan(4);
+    // The banner stands in the page, so it scrolls with it rather than being drawn after it.
+    expect(await bannerOffset(page)).toBe(0);
+    await page.evaluate(() => {
+      window.scrollBy(0, 120);
+    });
+    expect(await bannerOffset(page)).toBe(0);
 
     await page.unrouteAll({ behavior: 'ignoreErrors' });
     await page.route('**/auth/refresh', answer(401, {}));
     await mockAda(page, false);
     await page.reload();
     await expect(page.getByRole('heading', { level: 1, name: 'ada' })).toBeVisible();
-    await expect.poll(() => coloursAtTop(page)).toBe(1);
+    await expect.poll(() => coloursOf(page, 'nc-dither-backdrop', 'root')).toBe(1);
+    expect(await coloursOf(page, 'nc-dither-banner', 'top')).toBe(0);
   });
 
   test('shows each kind of game on a shelf of its own, and no shelf for an empty one', async ({

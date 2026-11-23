@@ -128,11 +128,8 @@
   <div class="grid gap-[10px]">
     <span class="label">Ground under a banner</span>
     <div class="relative isolate h-[960px] overflow-hidden" data-testid="banner-ground">
-      <nc-dither-backdrop
-        class="absolute inset-0"
-        [image]="banner"
-        [banner]="banner"
-        seed="banner" />
+      <nc-dither-backdrop class="absolute inset-0" [image]="banner" seed="banner" />
+      <nc-dither-banner class="absolute inset-x-0 top-0" [src]="banner" />
     </div>
   </div>
 </div>

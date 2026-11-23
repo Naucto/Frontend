@@ -1,5 +1,8 @@
 import { BAYER_8 } from './bayer';
 
+/** How wide a cell of a dithered field is drawn, in CSS pixels: one pixel of the kit. */
+export const CELL = 3;
+
 /** A colour as its three channels, 0 to 255. */
 export type Rgb = readonly [number, number, number];
 
@@ -68,20 +71,20 @@ export function blobLayout(seed: string): FieldBlob[] {
 /**
  * Paints the blobs into RGBA pixels, one pixel a cell. Nothing is blended: where blobs meet, an
  * ordered dither decides whose cell it is, and another how deep into that blob's ramp it goes, so
- * every cell is exactly one of the ramps' colours. `lift` raises the blobs by a share of the
- * height.
+ * every cell is exactly one of the ramps' colours. The blobs are placed in shares of `height`;
+ * `rows` past it carry the field on below, for a field that is slid up as the page scrolls.
  */
 export function paintField(
   data: Uint8ClampedArray,
   width: number,
   height: number,
   blobs: readonly PaintedBlob[],
-  lift: number,
+  rows = height,
 ): void {
   const weights = new Float32Array(blobs.length);
   let at = 0;
-  for (let y = 0; y < height; y++) {
-    const down = y / height + lift;
+  for (let y = 0; y < rows; y++) {
+    const down = y / height;
     for (let x = 0; x < width; x++, at += 4) {
       const across = x / width;
       const cell = (y & 7) * 8 + (x & 7);
@@ -130,32 +133,27 @@ export interface BannerSample {
 /** In cells: how tall the picture is laid, how far it stays whole, where the last of it goes. */
 export const BANNER_ROWS = 140;
 const BANNER_WHOLE = 100;
-const BANNER_REACH = 320;
+export const BANNER_REACH = 320;
 
 /**
- * Lays a banner over painted pixels from row `top` down: whole for its first rows, then dropping
- * out cell by cell in an ordered dither until the field beneath is all that is left. Below the
- * picture its last row runs on, so the fade carries its colours rather than a cut. Every cell it
- * keeps is the picture's colour pulled toward the ground, so text over it reads as on the page.
+ * Paints a banner into transparent RGBA pixels, `BANNER_REACH` rows of `width`: whole for its first
+ * rows, then dropping out cell by cell in an ordered dither until nothing is left, so whatever lies
+ * under it shows through the holes. Below the picture its last row runs on, so the fade carries its
+ * colours rather than a cut. Every cell it keeps is the picture's colour pulled toward the ground,
+ * so text over it reads as on the page.
  */
 export function paintBanner(
   data: Uint8ClampedArray,
   width: number,
-  height: number,
   banner: BannerSample,
-  top: number,
   ground: Rgb,
   dark: boolean,
 ): void {
   const pull = dark ? 0.55 : 0.6;
-  const from = Math.max(0, top);
-  const to = Math.min(height, top + BANNER_REACH);
-  for (let y = from; y < to; y++) {
-    const local = y - top;
-    const share =
-      local < BANNER_WHOLE ? 1 : 1 - (local - BANNER_WHOLE) / (BANNER_REACH - BANNER_WHOLE);
-    const row = Math.min(local, banner.rows - 1) * banner.width;
-    const matrix = BAYER_8[local & 7];
+  for (let y = 0; y < BANNER_REACH; y++) {
+    const share = y < BANNER_WHOLE ? 1 : 1 - (y - BANNER_WHOLE) / (BANNER_REACH - BANNER_WHOLE);
+    const row = Math.min(y, banner.rows - 1) * banner.width;
+    const matrix = BAYER_8[y & 7];
     for (let x = 0; x < Math.min(width, banner.width); x++) {
       if (share <= ((matrix?.[x & 7] ?? 0) + 0.5) / 64) {
         continue;
@@ -165,6 +163,7 @@ export function paintBanner(
       data[at] = ground[0] + ((banner.data[seen] ?? 0) - ground[0]) * pull;
       data[at + 1] = ground[1] + ((banner.data[seen + 1] ?? 0) - ground[1]) * pull;
       data[at + 2] = ground[2] + ((banner.data[seen + 2] ?? 0) - ground[2]) * pull;
+      data[at + 3] = 255;
     }
   }
 }

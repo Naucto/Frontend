@@ -10,28 +10,20 @@ import {
 } from '@angular/core';
 
 import { coverHues, threeColours } from '../cover-palette';
-import {
-  BANNER_ROWS,
-  type BannerSample,
-  blobLayout,
-  type FieldBlob,
-  paintBanner,
-  paintField,
-  rampOf,
-  type Rgb,
-} from '../dither-field';
+import { blobLayout, CELL, type FieldBlob, paintField, rampOf, type Rgb } from '../dither-field';
 import { prefersStill } from '../motion';
+import { channels, pageGround } from '../page-ground';
 
-/** One cell of the field is one pixel of the kit. */
-const CELL = 3;
 /** The size a picture is read at: its colours, not its detail. */
 const SAMPLE = { width: 32, height: 18 };
 /** How long a colour or a blob takes to cover most of the way to where it is going. */
 const EASE = 420;
 /** The least time between two frames. */
 const FRAME = 33;
-/** How far the blobs rise over a whole page scrolled, in shares of the field's height. */
+/** How far the blobs rise at most as the page scrolls, in shares of the field's height. */
 const DRIFT = 0.25;
+/** How many pixels of page scrolled raise the blobs by one. */
+const DRIFT_RATE = 12;
 
 interface Moving extends FieldBlob {
   ramp: Rgb[];
@@ -73,74 +65,41 @@ function readCover(src: string): Promise<Rgb[]> {
   return reading;
 }
 
-/** A picture, loaded to be read; none when it cannot be loaded. */
-function loadPicture(src: string): Promise<HTMLImageElement | null> {
-  return new Promise((resolve) => {
-    const image = new Image();
-    image.crossOrigin = 'anonymous';
-    image.onload = (): void => {
-      resolve(image);
-    };
-    image.onerror = (): void => {
-      resolve(null);
-    };
-    image.src = src;
-  });
-}
-
-/** A picture read one sample a cell, covering the field's width; none when its pixels are closed. */
-function sampleBanner(image: HTMLImageElement, width: number): BannerSample | null {
-  const canvas = Object.assign(document.createElement('canvas'), { width, height: BANNER_ROWS });
-  const context = canvas.getContext('2d', { willReadFrequently: true });
-  if (!context) {
-    return null;
-  }
-  const scale = Math.max(width / image.width, BANNER_ROWS / image.height);
-  const drawn = { width: image.width * scale, height: image.height * scale };
-  context.drawImage(
-    image,
-    (width - drawn.width) / 2,
-    (BANNER_ROWS - drawn.height) / 2,
-    drawn.width,
-    drawn.height,
-  );
-  try {
-    return { data: context.getImageData(0, 0, width, BANNER_ROWS).data, width, rows: BANNER_ROWS };
-  } catch {
-    return null;
-  }
-}
-
-/** Any CSS colour as its channels, by letting a canvas resolve it. */
-function channels(colour: string): Rgb {
-  const context = Object.assign(document.createElement('canvas'), {
-    width: 1,
-    height: 1,
-  }).getContext('2d', { willReadFrequently: true });
-  if (!context) {
-    return [0, 0, 0];
-  }
-  context.fillStyle = colour;
-  context.fillRect(0, 0, 1, 1);
-  const [red = 0, green = 0, blue = 0] = context.getImageData(0, 0, 1, 1).data;
-  return [red, green, blue];
-}
-
 /**
  * A ground of three soft blobs drawn in an ordered dither, in the colours of a picture: what lies
  * behind a page whose mood is one game's. The page's own colour is the ground, and the blobs leave
  * it only by a few steps, so text over them reads as it does on the bare page.
  *
- * A banner, when given, is laid across the top of the field and let go in a dither over about a
- * screen, so a page can open on a picture of its own and still end on the same ground as the hub.
- *
  * It takes the box its caller gives it — `fixed inset-0` behind a page — and draws only when
- * something changes: a new picture, the colours easing toward it, a scroll, a resize, the theme.
- * At rest it costs nothing. Where motion is reduced the colours land at once.
+ * something changes: a new picture, the colours easing toward it, a resize, the theme. At rest it
+ * costs nothing. As the page scrolls the blobs rise a little, slid by the browser on the scroll's
+ * own timeline rather than drawn again, so they never trail it; a browser without scroll
+ * timelines holds them still. Where motion is reduced the colours land at once and nothing rises.
+ *
+ * A page that opens on a picture of its own lays an `nc-dither-banner` over it.
  */
 @Component({
   selector: 'nc-dither-backdrop',
   template: '<canvas #canvas class="pixelated block"></canvas>',
+  styles: `
+    @keyframes rise {
+      to {
+        translate: 0 var(--nc-drift);
+      }
+    }
+    @supports (animation-timeline: scroll()) {
+      @media (prefers-reduced-motion: no-preference) {
+        canvas {
+          animation: rise linear both;
+          animation-timeline: scroll(root);
+          animation-range: 0 var(--nc-drift-over);
+        }
+      }
+    }
+    :host-context([data-reduce-motion]) canvas {
+      animation: none;
+    }
+  `,
   host: { class: 'pointer-events-none block overflow-hidden', 'aria-hidden': 'true' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -154,13 +113,6 @@ export class DitherBackdropComponent {
   readonly tint = input<string | null>(null);
   /** What the blobs are placed from: one seed, one sky. */
   readonly seed = input('');
-  /** A picture laid across the top of the field, whole at first, then dithered away. */
-  readonly banner = input<string | null>(null);
-  /**
-   * Where the banner starts: the top of this element, followed as the page scrolls. Without one,
-   * the top of the backdrop.
-   */
-  readonly bannerFrom = input<HTMLElement | null>(null);
 
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
@@ -170,10 +122,6 @@ export class DitherBackdropComponent {
   private wait: ReturnType<typeof setTimeout> | undefined;
   private drawn = 0;
   private eased = 0;
-  private ground: Rgb = [0, 0, 0];
-  private dark = true;
-  private bannerPicture: HTMLImageElement | null = null;
-  private bannerSample: BannerSample | null = null;
 
   /** Draws one frame and says whether anything is still on its way. */
   private draw(now: number): boolean {
@@ -181,16 +129,21 @@ export class DitherBackdropComponent {
     const context = canvas.getContext('2d', { alpha: false });
     const width = Math.ceil(this.host.clientWidth / CELL);
     const height = Math.ceil(this.host.clientHeight / CELL);
+    // The field runs on below its box by as far as it rises, so it never shows its end.
+    const rows = height + Math.ceil(height * DRIFT);
     if (!context || !this.blobs.length || !width || !height) {
       return false;
     }
-    if (this.pixels?.width !== width || this.pixels.height !== height) {
+    if (this.pixels?.width !== width || this.pixels.height !== rows) {
       canvas.width = width;
-      canvas.height = height;
+      canvas.height = rows;
       // Whole cells past the box rather than cells stretched to fit it.
       canvas.style.width = `${String(width * CELL)}px`;
-      canvas.style.height = `${String(height * CELL)}px`;
-      this.pixels = context.createImageData(width, height);
+      canvas.style.height = `${String(rows * CELL)}px`;
+      const rise = (rows - height) * CELL;
+      canvas.style.setProperty('--nc-drift', `${String(-rise)}px`);
+      canvas.style.setProperty('--nc-drift-over', `${String(rise * DRIFT_RATE)}px`);
+      this.pixels = context.createImageData(width, rows);
       this.pixels.data.fill(255);
     }
     const elapsed = this.eased && now - this.eased < 200 ? now - this.eased : FRAME;
@@ -209,7 +162,6 @@ export class DitherBackdropComponent {
         blob[key] = approach(blob[key], blob.to[key]);
       }
     }
-    const page = document.documentElement;
     paintField(
       this.pixels.data,
       width,
@@ -222,26 +174,8 @@ export class DitherBackdropComponent {
           Math.round(blue),
         ]),
       })),
-      (window.scrollY / Math.max(1, page.scrollHeight)) * DRIFT,
+      rows,
     );
-    if (this.bannerPicture) {
-      if (this.bannerSample?.width !== width) {
-        this.bannerSample = sampleBanner(this.bannerPicture, width);
-      }
-      if (this.bannerSample) {
-        const from = this.bannerFrom() ?? this.host;
-        const top = from.getBoundingClientRect().top - this.host.getBoundingClientRect().top;
-        paintBanner(
-          this.pixels.data,
-          width,
-          height,
-          this.bannerSample,
-          Math.round(top / CELL),
-          this.ground,
-          this.dark,
-        );
-      }
-    }
     context.putImageData(this.pixels, 0, 0);
     return moving;
   }
@@ -273,10 +207,7 @@ export class DitherBackdropComponent {
     let aim = 0;
     const retarget = async (): Promise<void> => {
       const mine = ++aim;
-      const ground = channels(getComputedStyle(this.host).getPropertyValue('--nc-page'));
-      const dark = 0.299 * ground[0] + 0.587 * ground[1] + 0.114 * ground[2] < 128;
-      this.ground = ground;
-      this.dark = dark;
+      const { ground, dark } = pageGround(this.host);
       const image = this.image();
       const tint = this.tint();
       const found = image ? await readCover(image) : [];
@@ -302,31 +233,15 @@ export class DitherBackdropComponent {
       void retarget();
     });
 
-    let asked = 0;
-    effect(() => {
-      const src = this.banner();
-      const mine = ++asked;
-      void (src ? loadPicture(src) : Promise.resolve(null)).then((picture) => {
-        if (mine !== asked) {
-          return;
-        }
-        this.bannerPicture = picture;
-        this.bannerSample = null;
-        this.kick();
-      });
-    });
-
     const resized = new ResizeObserver(kick);
     resized.observe(this.host);
     // The ground is the page's colour, which is the theme's.
     const themed = new MutationObserver(() => void retarget());
     themed.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-    window.addEventListener('scroll', kick, { passive: true });
     document.addEventListener('visibilitychange', kick);
     inject(DestroyRef).onDestroy(() => {
       resized.disconnect();
       themed.disconnect();
-      window.removeEventListener('scroll', kick);
       document.removeEventListener('visibilitychange', kick);
       cancelAnimationFrame(this.frame);
       clearTimeout(this.wait);

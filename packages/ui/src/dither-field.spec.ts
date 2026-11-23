@@ -1,4 +1,5 @@
 import {
+  BANNER_REACH,
   BANNER_ROWS,
   type BannerSample,
   blobLayout,
@@ -54,9 +55,9 @@ describe('paintField', () => {
     { cx: 0.8, cy: 0.3, rx: 0.5, ry: 0.5, ramp: ramp(150) },
     { cx: 0.5, cy: 0.9, rx: 0.5, ry: 0.5, ramp: ramp(200) },
   ];
-  const paint = (lift = 0): Uint8ClampedArray => {
-    const data = new Uint8ClampedArray(48 * 32 * 4);
-    paintField(data, 48, 32, blobs, lift);
+  const paint = (rows = 32): Uint8ClampedArray => {
+    const data = new Uint8ClampedArray(48 * rows * 4);
+    paintField(data, 48, 32, blobs, rows);
     return data;
   };
   const cells = (data: Uint8ClampedArray): string[] =>
@@ -81,14 +82,15 @@ describe('paintField', () => {
     expect(at(24, 0)).toBeLessThanOrEqual(10);
   });
 
-  it('moves the blobs up as the page scrolls', () => {
-    expect(cells(paint(0.2))).not.toEqual(cells(paint()));
+  it('carries the same field on below its height, for a field slid up as the page scrolls', () => {
+    const longer = cells(paint(40));
+    expect(longer.slice(0, 48 * 32)).toEqual(cells(paint()));
+    expect(new Set(longer.slice(48 * 32)).size).toBeGreaterThan(1);
   });
 });
 
 describe('paintBanner', () => {
   const WIDTH = 16;
-  const HEIGHT = 400;
   const ground: Rgb = [0, 0, 0];
   /** A picture whose every cell is white, and whose last row is red. */
   const banner: BannerSample = {
@@ -98,42 +100,41 @@ describe('paintBanner', () => {
       i >= WIDTH * (BANNER_ROWS - 1) * 4 && i % 4 !== 0 ? 0 : 255,
     ),
   };
-  const paint = (top: number): Uint8ClampedArray => {
-    const data = new Uint8ClampedArray(WIDTH * HEIGHT * 4).fill(7);
-    paintBanner(data, WIDTH, HEIGHT, banner, top, ground, true);
+  const paint = (): Uint8ClampedArray => {
+    const data = new Uint8ClampedArray(WIDTH * BANNER_REACH * 4);
+    paintBanner(data, WIDTH, banner, ground, true);
     return data;
   };
   const kept = (data: Uint8ClampedArray, y: number): number =>
-    Array.from({ length: WIDTH }, (_, x) => data[(y * WIDTH + x) * 4]).filter((red) => red !== 7)
-      .length;
+    Array.from({ length: WIDTH }, (_, x) => data[(y * WIDTH + x) * 4 + 3]).filter(
+      (alpha) => alpha === 255,
+    ).length;
 
   it('lays the picture whole at its top, pulled toward the ground', () => {
-    const data = paint(0);
+    const data = paint();
     expect(kept(data, 0)).toBe(WIDTH);
     expect(kept(data, 99)).toBe(WIDTH);
     expect(data[0]).toBe(140);
   });
 
-  it('lets go of it in a dither down to nothing', () => {
-    const data = paint(0);
+  it('lets go of it in a dither down to nothing, every dropped cell left transparent', () => {
+    const data = paint();
     const shares = [120, 200, 300].map((y) => kept(data, y));
     expect(shares[0]).toBeGreaterThan(shares[1]!);
     expect(shares[1]).toBeGreaterThan(shares[2]!);
-    expect(kept(data, 320)).toBe(0);
+    expect(kept(data, BANNER_REACH - 1)).toBe(0);
+    const alphas = new Set(data.filter((_, i) => i % 4 === 3));
+    expect([...alphas].sort()).toEqual([0, 255]);
   });
 
   it('runs the last row of the picture on under it', () => {
-    const data = paint(0);
+    const data = paint();
     const at =
       (200 * WIDTH +
-        Array.from({ length: WIDTH }).findIndex((_, x) => data[(200 * WIDTH + x) * 4] !== 7)) *
+        Array.from({ length: WIDTH }).findIndex(
+          (_, x) => data[(200 * WIDTH + x) * 4 + 3] === 255,
+        )) *
       4;
     expect([data[at], data[at + 1], data[at + 2]]).toEqual([140, 0, 0]);
-  });
-
-  it('follows its top, above the field when it is scrolled past', () => {
-    expect(kept(paint(50), 49)).toBe(0);
-    expect(kept(paint(50), 50)).toBe(WIDTH);
-    expect(kept(paint(-400), 0)).toBe(0);
   });
 });
