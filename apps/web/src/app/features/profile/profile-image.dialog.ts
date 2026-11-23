@@ -39,7 +39,18 @@ const WINDOW: Record<ProfileImageZone, { ratio: number; out: { w: number; h: num
 };
 
 const MAX_BYTES = 2 * 1024 * 1024;
-const ACCEPT = 'image/png,image/jpeg,image/gif,image/webp';
+/**
+ * The types the picker takes, by the name the dialog shows for each: the chips, the file input and
+ * the refusal all read this list, so what it shows is what it takes.
+ */
+const FORMATS = [
+  { type: 'image/png', name: 'PNG' },
+  { type: 'image/jpeg', name: 'JPG' },
+  { type: 'image/gif', name: 'GIF' },
+  { type: 'image/webp', name: 'WebP' },
+] as const;
+const ACCEPT = FORMATS.map((format) => format.type).join(',');
+const FORMAT_NAMES = FORMATS.map((format) => format.name);
 /** Below this the handles would sit on top of each other and the rectangle stops reading as one. */
 const MIN_SIDE = 32;
 
@@ -71,7 +82,7 @@ export class ProfileImageDialogComponent {
   protected readonly ref = inject<DialogRef<ProfileImageResult | undefined>>(DialogRef);
   private readonly win = WINDOW[this.data.zone];
   protected readonly accept = ACCEPT;
-  protected readonly formats = ['PNG', 'JPG', 'GIF'];
+  protected readonly formats = FORMAT_NAMES;
 
   private readonly frame = viewChild.required<ElementRef<HTMLElement>>('frame');
   private readonly img = viewChild<ElementRef<HTMLImageElement>>('img');
@@ -179,8 +190,9 @@ export class ProfileImageDialogComponent {
   }
 
   private accepted(file: File): void {
-    if (!ACCEPT.split(',').includes(file.type)) {
-      this.error.set('That file type is not one of PNG, JPG or GIF.');
+    if (!FORMATS.some((format) => format.type === file.type)) {
+      const names = `${FORMAT_NAMES.slice(0, -1).join(', ')} or ${FORMAT_NAMES.at(-1) ?? ''}`;
+      this.error.set(`That file type is not one of ${names}.`);
       return;
     }
     if (file.size > MAX_BYTES) {
