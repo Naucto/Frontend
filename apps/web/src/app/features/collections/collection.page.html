@@ -182,15 +182,13 @@
             class="grid grid-cols-2 gap-x-1.5 gap-y-3 sm:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] sm:gap-x-[22px]"
             [cdkDropListDisabled]="!organizing() || !!collection.hiddenAt"
             (cdkDropListDropped)="drop($event)">
-            @for (game of games(); track game.id; let place = $index) {
+            @for (game of games(); track game.id) {
               <li
                 cdkDrag
                 class="grid min-w-0 content-start gap-1"
                 [class.cursor-grab]="organizing() && !collection.hiddenAt">
-                <div class="flex h-[30px] items-center gap-[6px]">
-                  <span class="text-label text-ink-3">{{ place + 1 }}</span>
-                  <span class="flex-1"></span>
-                  @if (organizing()) {
+                @if (organizing()) {
+                  <div class="flex h-[30px] items-center justify-end gap-[6px]">
                     <button
                       ncButton
                       variant="ghost"
@@ -219,8 +217,8 @@
                       [label]="t('collections.select', { name: game.name })"
                       [checked]="picked().has(game.id)"
                       (checkedChange)="pick(game.id, $event)" />
-                  }
-                </div>
+                  </div>
+                }
                 <nc-shelf-disk named [game]="game" [link]="['/play', game.id]" />
               </li>
             }
