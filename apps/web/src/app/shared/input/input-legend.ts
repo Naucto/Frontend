@@ -1,11 +1,10 @@
 import type { ActionInput, PadControl } from '@naucto/engine';
-import type { MarkName } from '@naucto/ui';
-
-type Direction = 'up' | 'down' | 'left' | 'right';
+import type { MarkName, PadCapKind, PadDirection } from '@naucto/ui';
 
 /**
  * What a keycap shows for an input. The words are translation keys; a direction is drawn, as the
- * kit's arrow, and `direction` is the word read out in its place.
+ * kit's arrow on a key or as the pad control itself, and `direction` is the word read out in its
+ * place.
  */
 export interface InputLegend {
   /** The key or the button as it is engraved: a letter, `F1`, `LB`. */
@@ -13,9 +12,11 @@ export interface InputLegend {
   word: string | null;
   mark: MarkName | null;
   direction: string | null;
+  /** A D-pad or stick direction, drawn as the control instead of a keycap. */
+  pad: { kind: PadCapKind; direction: PadDirection } | null;
 }
 
-const ARROW_KEYS: Record<string, Direction> = {
+const ARROW_KEYS: Record<string, PadDirection> = {
   ArrowUp: 'up',
   ArrowDown: 'down',
   ArrowLeft: 'left',
@@ -37,15 +38,23 @@ const KEY_WORDS: Record<string, string> = {
   CapsLock: 'input.key.capsLock',
 };
 
-const PAD_LEGENDS: Record<PadControl, { text?: string; word?: string; toward?: Direction }> = {
-  'dpad-up': { word: 'input.pad.dpad', toward: 'up' },
-  'dpad-down': { word: 'input.pad.dpad', toward: 'down' },
-  'dpad-left': { word: 'input.pad.dpad', toward: 'left' },
-  'dpad-right': { word: 'input.pad.dpad', toward: 'right' },
-  'stick-up': { word: 'input.pad.stick', toward: 'up' },
-  'stick-down': { word: 'input.pad.stick', toward: 'down' },
-  'stick-left': { word: 'input.pad.stick', toward: 'left' },
-  'stick-right': { word: 'input.pad.stick', toward: 'right' },
+const PAD_LEGENDS: Record<
+  PadControl,
+  {
+    text?: string;
+    word?: string;
+    toward?: PadDirection;
+    drawn?: PadCapKind;
+  }
+> = {
+  'dpad-up': { word: 'input.pad.dpad', toward: 'up', drawn: 'dpad' },
+  'dpad-down': { word: 'input.pad.dpad', toward: 'down', drawn: 'dpad' },
+  'dpad-left': { word: 'input.pad.dpad', toward: 'left', drawn: 'dpad' },
+  'dpad-right': { word: 'input.pad.dpad', toward: 'right', drawn: 'dpad' },
+  'stick-up': { word: 'input.pad.stick', toward: 'up', drawn: 'stick' },
+  'stick-down': { word: 'input.pad.stick', toward: 'down', drawn: 'stick' },
+  'stick-left': { word: 'input.pad.stick', toward: 'left', drawn: 'stick' },
+  'stick-right': { word: 'input.pad.stick', toward: 'right', drawn: 'stick' },
   a: { text: 'A' },
   b: { text: 'B' },
   x: { text: 'X' },
@@ -57,7 +66,7 @@ const PAD_LEGENDS: Record<PadControl, { text?: string; word?: string; toward?: D
 };
 
 export function legendOf(input: ActionInput): InputLegend {
-  const { text, word, toward } =
+  const { text, word, toward, drawn } =
     input.kind === 'pad'
       ? PAD_LEGENDS[input.control]
       : {
@@ -69,7 +78,8 @@ export function legendOf(input: ActionInput): InputLegend {
   return {
     text: text ?? null,
     word: word ?? null,
-    mark: toward ? `arrow-${toward}` : null,
+    mark: toward && !drawn ? `arrow-${toward}` : null,
     direction: toward ? `input.direction.${toward}` : null,
+    pad: drawn && toward ? { kind: drawn, direction: toward } : null,
   };
 }
