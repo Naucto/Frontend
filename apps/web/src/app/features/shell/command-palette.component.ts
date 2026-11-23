@@ -10,7 +10,6 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
-import { projectControllerFindAll } from '@naucto/api-client';
 import {
   HighlightComponent,
   IconComponent,
@@ -20,14 +19,12 @@ import {
   SuggestRowComponent,
   WELL,
 } from '@naucto/ui';
-import { injectQuery } from '@tanstack/angular-query-experimental';
 
-import { unwrap } from '../../core/api/api-errors';
 import { AuthStore } from '../../core/auth/auth.store';
 import { ThemeService } from '../../core/theme/theme.service';
 import { FeedbackLauncher } from '../../shared/feedback/feedback-launcher.service';
 import { arrowStep } from '../../shared/list-cursor';
-import { qk } from '../../shared/queries/query-keys';
+import { injectMyProjects } from '../../shared/queries/projects.queries';
 import { injectSuggestions } from '../../shared/queries/search.queries';
 
 /** How many of your own games lead the list before anything is typed. */
@@ -93,12 +90,7 @@ export class CommandPaletteComponent {
   private readonly found = injectSuggestions(this.text);
 
   /** `/projects` answers newest edit first, so its first page is the recent ones as it stands. */
-  private readonly recent = injectQuery(() => ({
-    queryKey: qk.myProjects({ page: 1, limit: RECENT_SHOWN }),
-    enabled: this.auth.isAuthenticated(),
-    queryFn: async () =>
-      unwrap(await projectControllerFindAll({ query: { page: 1, limit: RECENT_SHOWN } })),
-  }));
+  private readonly recent = injectMyProjects(RECENT_SHOWN);
 
   private readonly games = computed<Row[]>(() => {
     if (this.term()) {
