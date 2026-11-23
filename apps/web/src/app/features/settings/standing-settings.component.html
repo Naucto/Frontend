@@ -2,32 +2,33 @@
   <p class="text-body text-ink-3">{{ t('moderation.standing.lead') }}</p>
 
   @if (standing.isError()) {
-    <p class="py-2 text-body text-hot-ink">{{ t('moderation.standing.loadFailed') }}</p>
+    <nc-notice tone="danger" class="mt-2">{{ t('moderation.standing.loadFailed') }}</nc-notice>
   } @else if (standing.data(); as data) {
     @if (data.suspension; as suspension) {
-      <nc-notice tone="danger" class="mt-2">
-        <span class="block text-ink">
-          {{
-            suspension.until
-              ? t('moderation.suspended.until', { until: when(suspension.until) })
-              : t('moderation.suspended.indefinite')
-          }}
-          {{ t('moderation.suspended.rule') }}
-        </span>
+      <nc-notice
+        tone="danger"
+        class="mt-2"
+        [title]="
+          suspension.until
+            ? t('moderation.suspended.until', { until: suspension.until | date: WHEN })
+            : t('moderation.suspended.indefinite')
+        ">
+        {{ t('moderation.suspended.rule') }}
         @if (suspension.reason; as reason) {
-          <span class="mt-0.5 block">
-            {{ t('moderation.standing.reason') }}: {{ t('moderation.reasons.' + reason) }}
+          <span class="mt-1 flex flex-wrap items-baseline gap-x-1">
+            <span class="label">{{ t('moderation.standing.reason') }}</span>
+            <span class="text-ink">{{ t('moderation.reasons.' + reason) }}</span>
           </span>
         }
         @if (suspension.message; as message) {
           <span
-            class="mt-0.5 block whitespace-pre-wrap wrap-anywhere"
+            class="mt-0.5 block whitespace-pre-wrap wrap-anywhere text-ink"
             [textContent]="message"></span>
         }
       </nc-notice>
     }
 
-    <h2 class="mt-2.5 mb-1 flex items-center gap-1 text-heading text-ink">
+    <h2 class="mt-2.5 mb-1 flex items-center gap-1 font-display text-title text-ink">
       {{ t('moderation.standing.history') }}
       @if (data.warnings > 0) {
         <nc-chip tone="orange">
@@ -41,60 +42,57 @@
     </h2>
 
     @if (data.items.length === 0) {
-      <p class="flex items-center gap-1 py-2 text-body text-ink-3">
-        <nc-icon name="check" class="text-jade-ink" />
-        {{ t('moderation.standing.empty') }}
-      </p>
+      <nc-notice tone="success">{{ t('moderation.standing.empty') }}</nc-notice>
     } @else {
-      <ul class="divide-y divide-line">
-        @for (entry of data.items; track entry.id) {
-          <li class="py-1.5">
-            <p class="flex flex-wrap items-center gap-1">
-              <nc-chip [tone]="tone(entry)">{{ t(actionKey(entry)) }}</nc-chip>
-              @if (entry.reason; as reason) {
-                <nc-chip>{{ t('moderation.reasons.' + reason) }}</nc-chip>
-              }
-              <span class="label text-ink-4">{{ when(entry.createdAt) }}</span>
-            </p>
-            @if (entry.targetLabel && entry.targetType !== 'USER') {
-              <p class="mt-0.5 truncate text-body text-ink" [title]="entry.targetLabel">
-                {{ entry.targetLabel }}
-              </p>
-            }
-            @if (entry.message; as message) {
-              <p
-                class="mt-0.5 text-body whitespace-pre-wrap wrap-anywhere text-ink-body"
-                [textContent]="message"></p>
-            }
-            @if (entry.expiresAt; as expiry) {
-              <p class="mt-0.5 text-meta text-ink-3">
-                {{ t('moderation.standing.until', { until: when(expiry) }) }}
-              </p>
-            }
-          </li>
-        }
-      </ul>
+      <table ncTable id="standing-decisions">
+        <thead>
+          <tr>
+            <th scope="col">{{ t('moderation.standing.decision') }}</th>
+            <th scope="col">{{ t('moderation.standing.reason') }}</th>
+            <th scope="col">{{ t('moderation.standing.message') }}</th>
+            <th scope="col">{{ t('moderation.standing.date') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (entry of data.items; track entry.id) {
+            <tr>
+              <th scope="row">
+                <nc-chip [tone]="tone(entry)">{{ t(actionKey(entry)) }}</nc-chip>
+                @if (entry.targetLabel && entry.targetType !== 'USER') {
+                  <small class="mt-0.5 max-w-[24ch] truncate" [title]="entry.targetLabel">
+                    {{ entry.targetLabel }}
+                  </small>
+                }
+              </th>
+              <td>
+                @if (entry.reason; as reason) {
+                  {{ t('moderation.reasons.' + reason) }}
+                }
+              </td>
+              <td class="whitespace-pre-wrap wrap-anywhere" [textContent]="entry.message"></td>
+              <td class="whitespace-nowrap">
+                {{ entry.createdAt | date: WHEN }}
+                @if (entry.expiresAt; as expiry) {
+                  <small>
+                    {{ t('moderation.standing.until', { until: expiry | date: WHEN }) }}
+                  </small>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
       @if (pages() > 1) {
-        <div class="mt-1 flex items-center justify-end gap-1">
-          <button
-            ncButton
-            variant="ghost"
-            size="sm"
-            type="button"
-            [disabled]="page() <= 1"
-            (click)="page.set(page() - 1)">
-            {{ t('moderation.standing.newer') }}
-          </button>
-          <span class="label text-ink-4">{{ page() }} / {{ pages() }}</span>
-          <button
-            ncButton
-            variant="ghost"
-            size="sm"
-            type="button"
-            [disabled]="page() >= pages()"
-            (click)="page.set(page() + 1)">
-            {{ t('moderation.standing.older') }}
-          </button>
+        <div class="mt-1.5 flex justify-end">
+          <nc-pager
+            controls="standing-decisions"
+            [count]="pages()"
+            [value]="page() - 1"
+            [label]="t('moderation.standing.history')"
+            [pageLabel]="t('moderation.standing.page')"
+            [previousLabel]="t('moderation.standing.newer')"
+            [nextLabel]="t('moderation.standing.older')"
+            (valueChange)="page.set($event + 1)" />
         </div>
       }
     }

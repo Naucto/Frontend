@@ -1323,8 +1323,12 @@
       "warnings": "{{count}} warnings",
       "oneWarning": "1 warning",
       "empty": "Nothing on record. Your account is in good standing.",
+      "decision": "Decision",
       "reason": "Reason",
+      "message": "Message",
+      "date": "Date",
       "until": "Until {{until}}",
+      "page": "Page",
       "newer": "Newer",
       "older": "Older",
       "actions": {

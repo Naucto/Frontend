@@ -1,18 +1,17 @@
+import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
 import type { ModerationActionType, StandingEntryDto } from '@naucto/api-client';
 import {
-  ButtonDirective,
   ChipComponent,
   type ChipTone,
-  IconComponent,
   NoticeComponent,
+  PagerComponent,
   SkeletonComponent,
+  TableDirective,
 } from '@naucto/ui';
 
 import { injectStanding, STANDING_PAGE_SIZE } from '../../shared/queries/moderation.queries';
-
-const WHEN = new Intl.DateTimeFormat('en-US', { dateStyle: 'long', timeStyle: 'short' });
 
 /** What each decision reads as to the account it landed on. Any other gets the general wording. */
 const KNOWN: readonly ModerationActionType[] = [
@@ -41,26 +40,24 @@ const LIFTED: readonly ModerationActionType[] = [
 @Component({
   selector: 'nc-standing-settings',
   imports: [
+    DatePipe,
     TranslocoDirective,
-    ButtonDirective,
     ChipComponent,
-    IconComponent,
     NoticeComponent,
+    PagerComponent,
     SkeletonComponent,
+    TableDirective,
   ],
   templateUrl: './standing-settings.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StandingSettingsComponent {
+  protected readonly WHEN = 'MMM d, y, h:mm a';
   protected readonly page = signal(1);
   protected readonly standing = injectStanding(() => this.page());
   protected readonly pages = computed(() =>
     Math.max(1, Math.ceil((this.standing.data()?.total ?? 0) / STANDING_PAGE_SIZE)),
   );
-
-  protected when(iso: string): string {
-    return WHEN.format(new Date(iso));
-  }
 
   protected actionKey(entry: StandingEntryDto): string {
     return `moderation.standing.actions.${KNOWN.includes(entry.action) ? entry.action : 'OTHER'}`;
