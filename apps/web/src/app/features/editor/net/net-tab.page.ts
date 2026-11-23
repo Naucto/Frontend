@@ -120,7 +120,7 @@ export default class NetTabPage {
   protected readonly info = computed(() => this.bridge()?.info() ?? null);
   private readonly rigScreen = viewChild(GameScreenComponent);
   protected readonly rigJoined = computed(() => this.rigScreen()?.netBridge.session() !== null);
-  /** The id the rig plays under: its own, not the account's, so the two windows can be told apart. */
+  /** The number the rig plays under: its own, not the account's, so the two windows can be told apart. */
   private readonly rigId = computed(
     () => this.rigScreen()?.netBridge.session()?.selfPlayer ?? null,
   );
