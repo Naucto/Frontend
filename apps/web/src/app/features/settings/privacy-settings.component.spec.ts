@@ -65,8 +65,10 @@ describe('PrivacySettingsComponent', () => {
     serve(SUMMARY);
     await mount(true);
 
-    expect(await screen.findByText('3 h 12 min in all, 45 min this month')).toBeInTheDocument();
-    expect(screen.getByText('14 in all, 3 this month')).toBeInTheDocument();
+    expect(await screen.findByText('3 h 12 min in all')).toBeInTheDocument();
+    expect(screen.getByText('45 min this month')).toBeInTheDocument();
+    expect(screen.getByText('14 in all')).toBeInTheDocument();
+    expect(screen.getByText('3 this month')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Ferry Click' })).toHaveAttribute('href', '/play/7');
     expect(screen.getByText('A deleted game')).toBeInTheDocument();
     expect(screen.getByText('2 h')).toBeInTheDocument();
