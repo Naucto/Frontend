@@ -48,6 +48,7 @@
                 [games]="collection.games"
                 [total]="collection.gameCount"
                 [visibility]="collection.visibility"
+                [hidden]="!!collection.hiddenAt"
                 [link]="['/collections', collection.id]"
                 (picked)="router.navigate(['/play', $event.id])" />
             }
@@ -144,6 +145,7 @@
                   [games]="collection.games"
                   [total]="collection.gameCount"
                   [visibility]="collection.visibility"
+                  [hidden]="!!collection.hiddenAt"
                   [link]="['/collections', collection.id]"
                   (picked)="router.navigate(['/play', $event.id])" />
               } @else {

@@ -87,7 +87,11 @@
                 [likes]="card.entry.game.likes"
                 [comments]="card.entry.game.commentCount ?? null"
                 [action]="card.front ? 'play' : 'none'"
-                [interactive]="card.front" />
+                [interactive]="card.front">
+                @if (card.entry.game.hiddenAt) {
+                  <nc-chip tone="hot">{{ t('games.hidden') }}</nc-chip>
+                }
+              </nc-floppy>
             </button>
           </div>
         }

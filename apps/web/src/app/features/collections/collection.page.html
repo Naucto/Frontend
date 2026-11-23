@@ -10,6 +10,14 @@
     </div>
   } @else if (query.data(); as collection) {
     <div class="grid grid-cols-[minmax(0,1fr)] content-start gap-3">
+      @if (collection.hiddenAt) {
+        <nc-notice tone="danger" data-testid="collection-hidden-notice">
+          {{ t('collections.hiddenNotice') }}
+          <a actions ncButton variant="ghost" size="sm" routerLink="/settings/standing">
+            {{ t('moderation.suspended.why') }}
+          </a>
+        </nc-notice>
+      }
       <section
         class="flat-lg bevel-fill-panel grid grid-cols-[minmax(0,1fr)] gap-3 p-2 sm:p-[22px] xl:grid-cols-[minmax(0,1fr)_minmax(0,520px)] xl:items-center">
         <div class="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-[14px]">
@@ -17,7 +25,11 @@
             <span class="text-label tracking-kicker text-gold-ink uppercase">
               {{ t('collections.one') }}
             </span>
-            <nc-visibility-chip [visibility]="collection.visibility" />
+            @if (collection.hiddenAt) {
+              <nc-chip tone="hot">{{ t('collections.hidden') }}</nc-chip>
+            } @else {
+              <nc-visibility-chip [visibility]="collection.visibility" />
+            }
           </div>
           <h1
             ncFitText
@@ -40,7 +52,7 @@
               [size]="24" />
             {{ t('hub.by', { name: collection.owner.username }) }}
           </a>
-          @if (collection.visibility !== 'PRIVATE') {
+          @if (collection.visibility !== 'PRIVATE' && !collection.hiddenAt) {
             <nc-readout class="max-w-[520px]" [value]="link()">
               <button
                 ncButton
@@ -55,7 +67,12 @@
           }
           @if (owned()) {
             <div class="flex flex-wrap items-center gap-[10px]">
-              <button ncButton size="lg" (click)="edit(collection)">
+              <button
+                ncButton
+                size="lg"
+                [disabled]="!!collection.hiddenAt"
+                [attr.title]="collection.hiddenAt ? t('collections.hiddenBlocked') : null"
+                (click)="edit(collection)">
                 <nc-icon name="edit" />
                 {{ t('collections.edit') }}
               </button>
@@ -64,6 +81,18 @@
                 {{ t('collections.delete') }}
               </button>
             </div>
+          }
+          @if (canReport()) {
+            <button
+              ncButton
+              variant="ghost"
+              size="sm"
+              type="button"
+              class="-ml-[13px] justify-self-start"
+              (click)="report(collection)">
+              <nc-mark name="flag" />
+              {{ t('moderation.reportCollection') }}
+            </button>
           }
         </div>
         <div class="relative h-[236px] min-w-0">
@@ -139,10 +168,13 @@
           cdkDropListOrientation="mixed"
           data-testid="tray"
           class="grid grid-cols-2 gap-x-1.5 gap-y-3 sm:grid-cols-[repeat(auto-fill,minmax(190px,1fr))] sm:gap-x-[22px]"
-          [cdkDropListDisabled]="!organizing()"
+          [cdkDropListDisabled]="!organizing() || !!collection.hiddenAt"
           (cdkDropListDropped)="drop($event)">
           @for (game of games(); track game.id; let place = $index) {
-            <li cdkDrag class="grid min-w-0 content-start gap-1" [class.cursor-grab]="organizing()">
+            <li
+              cdkDrag
+              class="grid min-w-0 content-start gap-1"
+              [class.cursor-grab]="organizing() && !collection.hiddenAt">
               <div class="flex h-[24px] items-center gap-[6px]">
                 <span class="text-label text-ink-3">
                   {{ (place + 1).toString().padStart(2, '0') }}
@@ -156,7 +188,8 @@
                     iconOnly
                     [attr.data-move]="game.id"
                     [attr.aria-label]="t('collections.moveEarlier', { name: game.name })"
-                    [disabled]="$first"
+                    [disabled]="$first || !!collection.hiddenAt"
+                    [attr.title]="collection.hiddenAt ? t('collections.hiddenBlocked') : null"
                     (click)="step(game.id, -1)">
                     <nc-mark name="arrow-left" />
                   </button>
@@ -167,7 +200,8 @@
                     iconOnly
                     [attr.data-move]="game.id"
                     [attr.aria-label]="t('collections.moveLater', { name: game.name })"
-                    [disabled]="$last"
+                    [disabled]="$last || !!collection.hiddenAt"
+                    [attr.title]="collection.hiddenAt ? t('collections.hiddenBlocked') : null"
                     (click)="step(game.id, 1)">
                     <nc-mark name="arrow-right" />
                   </button>

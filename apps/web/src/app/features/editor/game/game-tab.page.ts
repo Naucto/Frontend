@@ -1,7 +1,15 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { KEYS } from '@naucto/engine';
-import { LooksOnlyDirective, type TabItem, TabsComponent } from '@naucto/ui';
+import {
+  ButtonDirective,
+  DisabledScopeDirective,
+  LooksOnlyDirective,
+  NoticeComponent,
+  type TabItem,
+  TabsComponent,
+} from '@naucto/ui';
 
 import { ySignal, yTextField } from '../../../shared/yjs/y-signal';
 import { parseTags } from '../state/project-tags';
@@ -21,8 +29,12 @@ type GameView = 'details' | 'disk' | 'inputs';
 @Component({
   selector: 'nc-game-tab-page',
   imports: [
+    RouterLink,
     TranslocoDirective,
+    ButtonDirective,
+    DisabledScopeDirective,
     LooksOnlyDirective,
+    NoticeComponent,
     TabsComponent,
     DetailsComponent,
     DiskBenchComponent,
@@ -39,6 +51,13 @@ export default class GameTabPage {
   private readonly transloco = inject(TranslocoService);
 
   protected readonly view = signal<GameView>('details');
+  /**
+   * Whether moderation withholds the author's own game: the server then refuses a new disk, as it
+   * refuses a publish. A game only looked at is closed already, and its band says what it is.
+   */
+  protected readonly hidden = computed(
+    () => !!this.session.project()?.hiddenAt && !this.session.preview(),
+  );
   protected readonly name = yTextField(
     this.session.game,
     this.session.doc.getText(KEYS.projectName),

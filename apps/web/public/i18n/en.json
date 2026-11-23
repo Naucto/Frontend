@@ -315,6 +315,9 @@
     "title": "Collections",
     "one": "Collection",
     "new": "New collection",
+    "hidden": "Hidden",
+    "hiddenNotice": "A moderator hid this collection. Nobody else can open it, and it cannot be changed until it is restored. You can still take games out of it or delete it.",
+    "hiddenBlocked": "Blocked: a moderator hid this collection",
     "loadFailed": "Could not load this collection",
     "listFailed": "Could not load the collections",
     "visibility": {
@@ -366,6 +369,8 @@
       "label": "Add to collection",
       "failed": "Could not update {{title}}.",
       "full": "{{title}} is full: a collection holds {{n}} games at most.",
+      "collectionHidden": "A moderator hid {{title}}, so it takes no new game until it is restored.",
+      "gameHidden": "A moderator hid this game, so no collection takes it until it is restored.",
       "loadFailed": "Could not load your collections."
     },
     "dialog": {
@@ -598,7 +603,8 @@
           "d2": "Other diagonal",
           "r": "From the centre"
         },
-        "failed": "Could not change the disk. It is as it was."
+        "failed": "Could not change the disk. It is as it was.",
+        "hidden": "A moderator hid this game, so its disk stays as it is until the game is restored."
       },
       "name": "Name",
       "namePlaceholder": "Untitled game",
@@ -1296,6 +1302,7 @@
     "report": {
       "title": {
         "PROJECT": "Report this game",
+        "COLLECTION": "Report this collection",
         "COMMENT": "Report this comment",
         "USER": "Report this profile"
       },
@@ -1348,6 +1355,9 @@
         "COMMENT_HIDDEN": "Comment removed",
         "COMMENT_RESTORED": "Comment restored",
         "COMMENT_DELETED": "Comment deleted",
+        "COLLECTION_HIDDEN": "Collection hidden",
+        "COLLECTION_RESTORED": "Collection restored",
+        "COLLECTION_DELETED": "Collection deleted",
         "OTHER": "Decision"
       }
     },
@@ -1360,7 +1370,8 @@
     },
     "reportGame": "Report game",
     "reportComment": "Report",
-    "reportProfile": "Report profile"
+    "reportProfile": "Report profile",
+    "reportCollection": "Report collection"
   },
   "feedback": {
     "close": "Close",

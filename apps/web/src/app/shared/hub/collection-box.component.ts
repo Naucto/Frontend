@@ -1,4 +1,5 @@
 import {
+  booleanAttribute,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -89,6 +90,8 @@ export class CollectionBoxComponent {
   readonly link = input.required<string | readonly unknown[]>();
   /** Who can open it, shown in the curator's place: for the shelves of the curator's own. */
   readonly visibility = input<CollectionVisibility | null>(null);
+  /** Moderation withholds it: said in the place of who can open it, since nobody else can. */
+  readonly hidden = input(false, { transform: booleanAttribute });
   /** The disk at the crown was pressed. */
   readonly picked = output<HubGame>();
 

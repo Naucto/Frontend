@@ -24,6 +24,7 @@ import {
   HelpDotComponent,
   IconComponent,
   MarkComponent,
+  NoticeComponent,
   ReadoutComponent,
   RelativeTimePipe,
   SkeletonComponent,
@@ -34,6 +35,7 @@ import {
 
 import { ApiError } from '../../core/api/api-errors';
 import { AuthStore } from '../../core/auth/auth.store';
+import { FeaturesService } from '../../core/config/features.service';
 import {
   CollectionDialogComponent,
   type CollectionDialogData,
@@ -42,6 +44,7 @@ import { VisibilityChipComponent } from '../../shared/collections/visibility-chi
 import { diskStyleFor } from '../../shared/game-card/disk-style';
 import { DISK_RATIO, FloppyComponent } from '../../shared/game-card/floppy.component';
 import { ShelfDiskComponent } from '../../shared/hub/shelf-disk.component';
+import { ContentFlagLauncher } from '../../shared/moderation/content-flag-launcher.service';
 import { GoodStandingAction } from '../../shared/moderation/good-standing-action';
 import {
   injectCollection,
@@ -82,6 +85,7 @@ const COPIED_MS = 1600;
     IconComponent,
     MarkComponent,
     NotFoundPage,
+    NoticeComponent,
     ReadoutComponent,
     RelativeTimePipe,
     ShelfDiskComponent,
@@ -99,6 +103,8 @@ export default class CollectionPage {
 
   private readonly auth = inject(AuthStore);
   private readonly standing = inject(GoodStandingAction);
+  private readonly features = inject(FeaturesService);
+  private readonly flags = inject(ContentFlagLauncher);
   private readonly router = inject(Router);
   private readonly dialogs = inject(DialogService);
   private readonly toasts = inject(ToastService);
@@ -121,6 +127,17 @@ export default class CollectionPage {
     const viewer = this.auth.userId();
     return viewer !== null && viewer === this.query.data()?.owner.id;
   });
+  /** A collection is reported by anyone but its owner, while there is someone to report it to. */
+  protected readonly canReport = computed(
+    () => this.features.moderation() && !!this.query.data() && !this.owned(),
+  );
+  protected report(collection: CollectionDto): void {
+    this.flags.report({
+      targetType: 'COLLECTION',
+      targetId: collection.id,
+      label: collection.title,
+    });
+  }
   protected readonly link = computed(() => `${location.origin}/collections/${this.id()}`);
   protected readonly copied = signal(false);
 
@@ -269,10 +286,18 @@ export default class CollectionPage {
         this.reorder.mutate(
           { id: this.id(), projectIds },
           {
-            onError: () => {
+            onError: (error) => {
               this.following.set(null);
               this.order.set(null);
-              this.toasts.show(this.i18n.translate('collections.reorderFailed'), 'error');
+              // Hidden since the page was read: the refusal says so, and the page read again
+              // closes what the server no longer takes.
+              const hidden = error instanceof ApiError && error.code === 'COLLECTION_HIDDEN';
+              this.toasts.show(
+                this.i18n.translate(
+                  hidden ? 'collections.hiddenBlocked' : 'collections.reorderFailed',
+                ),
+                'error',
+              );
             },
           },
         );

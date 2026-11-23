@@ -77,6 +77,17 @@ describe('destinationOf', () => {
       path: ['/settings', 'standing'],
     });
   });
+
+  it('sends a moderation notice about a collection to the standing as well', () => {
+    const hidden = notification({
+      kind: 'MODERATION',
+      type: 'WARNING',
+      data: { action: 'COLLECTION_HIDDEN', actionId: uuidOf(12), collectionId: uuidOf(30) },
+    });
+
+    expect(destinationOf(hidden)).toEqual({ path: ['/settings', 'standing'] });
+    expect(lookOf(hidden)).toEqual({ tone: 'orange', icon: 'flag' });
+  });
 });
 
 describe('lookOf', () => {

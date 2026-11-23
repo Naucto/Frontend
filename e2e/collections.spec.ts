@@ -120,6 +120,40 @@ test.describe('a collection page', () => {
     await expect(page.getByTestId('copy-link')).toHaveCount(0);
   });
 
+  test('offers a reader no Report while the moderation feature is off', async ({ page }) => {
+    const api = await mockCollections(page, GAMES, {
+      collections: [collection('couch', 'Couch co-op', { owner: ADA, gameIds: ids(11) })],
+    });
+    await asAlexis(page, api);
+    await page.goto('/collections/couch');
+
+    await expect(page.getByRole('heading', { level: 1, name: 'Couch co-op' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Report collection' })).toHaveCount(0);
+  });
+
+  test('says why a collection moderation withholds takes no new order, when the server refuses', async ({
+    page,
+  }) => {
+    const api = await mockCollections(page, GAMES, { collections: [couch()] });
+    await asAlexis(page, api);
+    await page.goto('/collections/couch');
+    await page.getByRole('switch', { name: 'Organize' }).click();
+    // Hidden since the page was read: the page still offers the move, and the server refuses it.
+    const stored = api.collections[0];
+    if (stored) {
+      stored.hiddenAt = '2026-11-18T16:05:00.000Z';
+    }
+
+    await page.getByRole('button', { name: 'Move Frog Hop later' }).click();
+
+    await expect(page.locator('nc-toast-host')).toContainText(
+      'Blocked: a moderator hid this collection',
+    );
+    await expect(page.getByTestId('collection-hidden-notice')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Edit' })).toBeDisabled();
+    expect(api.collections[0]?.gameIds).toEqual(ids(11, 12, 13, 14));
+  });
+
   test('lets its owner move disks from the keyboard, and take out the ones ticked', async ({
     page,
   }) => {

@@ -92,6 +92,27 @@ describe('StandingSettingsComponent', () => {
     expect(screen.queryByText('alice')).toBeNull();
   });
 
+  it('names what was decided about a collection, and reads a restore as good news', async () => {
+    const collection = { targetType: 'COLLECTION', targetLabel: 'Couch co-op' };
+    standing = {
+      ...standing,
+      total: 3,
+      items: [
+        entry(3, { ...collection, action: 'COLLECTION_RESTORED' }),
+        entry(2, { ...collection, action: 'COLLECTION_HIDDEN', reason: 'STOLEN_CONTENT' }),
+        entry(1, { ...collection, action: 'COLLECTION_DELETED' }),
+      ],
+    };
+    await open();
+
+    const hidden = within(await screen.findByRole('row', { name: /Collection hidden/ }));
+    expect(hidden.getByRole('rowheader').textContent).toContain('Couch co-op');
+    expect(hidden.getByText('Stolen work')).toBeTruthy();
+    expect(screen.getByRole('row', { name: /Collection restored/ })).toBeTruthy();
+    expect(screen.getByRole('row', { name: /Collection deleted/ })).toBeTruthy();
+    expect(screen.queryByText('Decision', { selector: 'nc-chip' })).toBeNull();
+  });
+
   it('heads the table with what each column holds', async () => {
     standing = { ...standing, total: 1, items: [entry(1, {})] };
     await open();

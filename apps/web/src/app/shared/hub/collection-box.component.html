@@ -63,7 +63,11 @@
       <span class="inline-block origin-left truncate align-top">{{ title() }}</span>
     </span>
     <span class="flex min-w-0 items-center gap-[8px] text-meta text-ink-3">
-      @if (visibility(); as visibility) {
+      @if (hidden()) {
+        <nc-chip class="flex-none" tone="hot" data-testid="collection-hidden">
+          {{ t('collections.hidden') }}
+        </nc-chip>
+      } @else if (visibility(); as visibility) {
         <nc-visibility-chip [visibility]="visibility" />
       } @else {
         <nc-avatar aria-hidden="true" [name]="curator().username" [id]="curator().id" [size]="24" />

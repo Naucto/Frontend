@@ -1583,7 +1583,14 @@
             "description": "Authentication required"
           },
           "403": {
-            "description": "Forbidden"
+            "description": "Not a collaborator of the project (no `code`), or the game is withheld by moderation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectHiddenDto"
+                }
+              }
+            }
           },
           "404": {
             "description": "Project not found"
@@ -3470,6 +3477,7 @@
     },
     "/collections/{id}": {
       "get": {
+        "description": "One moderation withholds answers its owner alone, with `hiddenAt` set, and everyone else as a gap.",
         "operationId": "CollectionsController_findOne",
         "parameters": [
           {
@@ -3494,7 +3502,7 @@
             }
           },
           "404": {
-            "description": "No such collection, or a private one of someone else"
+            "description": "No such collection, or one of someone else that is private or withheld by moderation"
           }
         },
         "security": [
@@ -3544,10 +3552,17 @@
             "description": "Authentication required"
           },
           "403": {
-            "description": "The collection is not the caller’s"
+            "description": "The collection is not the caller’s (no `code`), or it is theirs and moderation withholds it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionHiddenDto"
+                }
+              }
+            }
           },
           "404": {
-            "description": "No such collection, or a private one of someone else"
+            "description": "No such collection, or one of someone else that is private or withheld by moderation"
           }
         },
         "security": [
@@ -3582,7 +3597,7 @@
             "description": "The collection is not the caller’s"
           },
           "404": {
-            "description": "No such collection, or a private one of someone else"
+            "description": "No such collection, or one of someone else that is private or withheld by moderation"
           }
         },
         "security": [
@@ -3590,7 +3605,7 @@
             "JWT-auth": []
           }
         ],
-        "summary": "Delete a collection",
+        "summary": "Delete a collection, withheld by moderation or not",
         "tags": ["collections"]
       }
     },
@@ -3629,10 +3644,17 @@
             "description": "Authentication required"
           },
           "403": {
-            "description": "The collection is not the caller’s"
+            "description": "The collection is not the caller’s (no `code`), or it is theirs and moderation withholds it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionHiddenDto"
+                }
+              }
+            }
           },
           "404": {
-            "description": "No such collection, or a private one of someone else"
+            "description": "No such collection, or one of someone else that is private or withheld by moderation"
           }
         },
         "security": [
@@ -3685,10 +3707,24 @@
             "description": "Authentication required"
           },
           "403": {
-            "description": "The collection is not the caller’s"
+            "description": "The collection is not the caller’s (no `code`), or it is theirs and moderation withholds it; or the game is one the caller works on and moderation withholds it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/CollectionHiddenDto"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProjectHiddenDto"
+                    }
+                  ]
+                }
+              }
+            }
           },
           "404": {
-            "description": "No such collection, or a private one of someone else; or the game is not published"
+            "description": "No such collection, or one of someone else that is private or withheld by moderation; or the game is not on the hub, a game of someone else that moderation withholds included"
           }
         },
         "security": [
@@ -3700,6 +3736,7 @@
         "tags": ["collections"]
       },
       "delete": {
+        "description": "Open on a collection moderation withholds, unlike every other change to it.",
         "operationId": "CollectionsController_removeGame",
         "parameters": [
           {
@@ -3732,7 +3769,7 @@
             "description": "The collection is not the caller’s"
           },
           "404": {
-            "description": "No such collection, or a private one of someone else"
+            "description": "No such collection, or one of someone else that is private or withheld by moderation"
           }
         },
         "security": [
@@ -6187,7 +6224,7 @@
             "JWT-auth": []
           }
         ],
-        "summary": "Report a game, a comment or a profile to staff",
+        "summary": "Report a profile, or something an account made, to staff",
         "tags": ["moderation"]
       }
     },
@@ -7202,6 +7239,43 @@
         "tags": ["admin"]
       }
     },
+    "/admin/moderation/projects/{id}/clip": {
+      "get": {
+        "operationId": "AdminModerationProjectController_clip",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The video"
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "Moderator role required"
+          },
+          "404": {
+            "description": "No clip"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "The clip of a game, served privately even while it is hidden",
+        "tags": ["admin"]
+      }
+    },
     "/admin/moderation/projects/{id}/hide": {
       "post": {
         "operationId": "AdminModerationProjectController_hide",
@@ -7577,6 +7651,177 @@
           }
         ],
         "summary": "Delete a comment for good",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/moderation/collections/{id}/hide": {
+      "post": {
+        "operationId": "AdminModerationCollectionController_hide",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContentDecisionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationActionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "The role is missing, or the collection is the caller's own (OWN_CASE)"
+          },
+          "404": {
+            "description": "No such collection"
+          },
+          "409": {
+            "description": "Hidden already (ALREADY_HIDDEN)"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Hide a collection from everyone but its owner, for a restore to undo",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/moderation/collections/{id}/restore": {
+      "post": {
+        "operationId": "AdminModerationCollectionController_restore",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModerationNoteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationActionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "The role is missing, or the collection is the caller's own (OWN_CASE)"
+          },
+          "404": {
+            "description": "No such collection"
+          },
+          "409": {
+            "description": "Not hidden (NOT_HIDDEN)"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Put a hidden collection back as it was",
+        "tags": ["admin"]
+      }
+    },
+    "/admin/moderation/collections/{id}": {
+      "delete": {
+        "operationId": "AdminModerationCollectionController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContentDecisionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationActionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required, through the staff sign-in (STAFF_SESSION_REQUIRED)"
+          },
+          "403": {
+            "description": "The role is missing, or the collection is the caller's own (OWN_CASE)\n\nAdmin role required"
+          },
+          "404": {
+            "description": "No such collection"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          },
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Delete a collection for good; the games it listed stay",
         "tags": ["admin"]
       }
     },
@@ -10108,6 +10353,28 @@
         },
         "required": ["disk"]
       },
+      "ProjectHiddenDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 403
+          },
+          "error": {
+            "type": "string",
+            "example": "Forbidden"
+          },
+          "code": {
+            "type": "string",
+            "enum": ["PROJECT_HIDDEN"]
+          },
+          "message": {
+            "type": "string",
+            "example": "This game is unavailable"
+          }
+        },
+        "required": ["statusCode", "error", "code", "message"]
+      },
       "AddCollaboratorDto": {
         "type": "object",
         "properties": {
@@ -11431,6 +11698,13 @@
               }
             ]
           },
+          "hiddenAt": {
+            "type": "string",
+            "example": null,
+            "description": "Set while moderation withholds the collection. Only its owner then reads it, and it takes no change but the removal of a game or its own deletion",
+            "format": "date-time",
+            "nullable": true
+          },
           "owner": {
             "$ref": "#/components/schemas/UserBasicInfoDto"
           },
@@ -11464,6 +11738,7 @@
           "title",
           "description",
           "visibility",
+          "hiddenAt",
           "owner",
           "gameCount",
           "createdAt",
@@ -11606,6 +11881,28 @@
         },
         "required": ["key", "kind", "total", "games", "page", "limit"]
       },
+      "CollectionHiddenDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 403
+          },
+          "error": {
+            "type": "string",
+            "example": "Forbidden"
+          },
+          "code": {
+            "type": "string",
+            "enum": ["COLLECTION_HIDDEN"]
+          },
+          "message": {
+            "type": "string",
+            "example": "This collection is hidden by moderation"
+          }
+        },
+        "required": ["statusCode", "error", "code", "message"]
+      },
       "CollectionsPageDto": {
         "type": "object",
         "properties": {
@@ -11681,6 +11978,13 @@
               }
             ]
           },
+          "hiddenAt": {
+            "type": "string",
+            "example": null,
+            "description": "Set while moderation withholds the collection. Only its owner then reads it, and it takes no change but the removal of a game or its own deletion",
+            "format": "date-time",
+            "nullable": true
+          },
           "owner": {
             "$ref": "#/components/schemas/UserBasicInfoDto"
           },
@@ -11722,6 +12026,7 @@
           "title",
           "description",
           "visibility",
+          "hiddenAt",
           "owner",
           "gameCount",
           "createdAt",
@@ -11825,6 +12130,13 @@
               }
             ]
           },
+          "hiddenAt": {
+            "type": "string",
+            "example": null,
+            "description": "Set while moderation withholds the collection. Only its owner then reads it, and it takes no change but the removal of a game or its own deletion",
+            "format": "date-time",
+            "nullable": true
+          },
           "owner": {
             "$ref": "#/components/schemas/UserBasicInfoDto"
           },
@@ -11862,6 +12174,7 @@
           "title",
           "description",
           "visibility",
+          "hiddenAt",
           "owner",
           "gameCount",
           "createdAt",
@@ -14829,7 +15142,7 @@
       },
       "ModerationTargetType": {
         "type": "string",
-        "enum": ["USER", "PROJECT", "COMMENT"]
+        "enum": ["USER", "PROJECT", "COMMENT", "COLLECTION"]
       },
       "ModerationReason": {
         "type": "string",
@@ -14858,7 +15171,7 @@
           "targetId": {
             "type": "string",
             "format": "uuid",
-            "description": "The id of the account, the game or the comment"
+            "description": "The id of the target, of the kind `targetType` names"
           },
           "reason": {
             "allOf": [
@@ -14927,6 +15240,9 @@
           "COMMENT_HIDDEN",
           "COMMENT_RESTORED",
           "COMMENT_DELETED",
+          "COLLECTION_HIDDEN",
+          "COLLECTION_RESTORED",
+          "COLLECTION_DELETED",
           "FLAGS_DISMISSED",
           "DRAFT_VIEWED"
         ]
@@ -14959,7 +15275,7 @@
           "targetLabel": {
             "type": "string",
             "nullable": true,
-            "description": "What the target was called when the action was taken: the name of a game or the start of a comment. It may be gone since."
+            "description": "What the target was called when the action was taken: its name or its title, else the start of its text. It may be gone since."
           },
           "reason": {
             "nullable": true,
@@ -15277,11 +15593,11 @@
           "label": {
             "type": "string",
             "nullable": true,
-            "description": "The name of the game, the handle of the account or the start of the comment"
+            "description": "What to call the target: its title or its name, else the start of its text"
           },
           "owner": {
             "nullable": true,
-            "description": "The account itself, the creator of the game or the author of the comment",
+            "description": "The account itself, or the account the content belongs to",
             "type": "object",
             "allOf": [
               {
@@ -15293,7 +15609,7 @@
             "type": "string",
             "format": "uuid",
             "nullable": true,
-            "description": "The game a comment is on"
+            "description": "The game itself, or the game the target sits on. Null for any other target"
           },
           "projectName": {
             "type": "string",
@@ -15304,15 +15620,10 @@
             "nullable": true,
             "description": "The play page of the game, null while players cannot reach it"
           },
-          "previewPlayUrl": {
+          "editUrl": {
             "type": "string",
             "nullable": true,
-            "description": "The staff preview of the game in the player, null for an account"
-          },
-          "previewEditUrl": {
-            "type": "string",
-            "nullable": true,
-            "description": "The staff preview of the game in the editor, null for an account"
+            "description": "The game in the editor of the web app, which staff open read-only. Null without a game"
           }
         },
         "required": ["type", "id", "state"]
@@ -15406,14 +15717,33 @@
           "title": {
             "type": "string",
             "nullable": true,
-            "description": "The name of a game or the display name of an account. A comment has none."
+            "description": "What the target is called: its name or its title. Null for a target without one"
           },
           "body": {
             "type": "string",
             "nullable": true,
-            "description": "The descriptions of a game, the text of a comment or the bio of an account"
+            "description": "The text of the target: its description, or what it says when it is only text"
           }
         }
+      },
+      "ModerationTargetVisibility": {
+        "type": "string",
+        "enum": ["PUBLIC", "UNLISTED", "PRIVATE"],
+        "description": "Who its owner lets read the target: anyone, whoever holds its id, or the owner alone. Null for a target whose owner has no such choice"
+      },
+      "CaseListedGameDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name the hub shows, else the one of the draft"
+          }
+        },
+        "required": ["id", "name"]
       },
       "FlagStatus": {
         "type": "string",
@@ -15618,6 +15948,22 @@
               }
             ]
           },
+          "visibility": {
+            "nullable": true,
+            "description": "Who its owner lets read the target: anyone, whoever holds its id, or the owner alone. Null for a target whose owner has no such choice",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ModerationTargetVisibility"
+              }
+            ]
+          },
+          "games": {
+            "description": "The games the target lists, in its order, on the hub or not. Empty for a target that lists none",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CaseListedGameDto"
+            }
+          },
           "flags": {
             "description": "Newest first",
             "type": "array",
@@ -15655,6 +16001,7 @@
           "reasons",
           "firstFlaggedAt",
           "lastFlaggedAt",
+          "games",
           "flags",
           "history",
           "ownerHistory",
@@ -16097,13 +16444,9 @@
             "nullable": true,
             "description": "The play page, null while players cannot reach the game"
           },
-          "previewPlayUrl": {
+          "editUrl": {
             "type": "string",
-            "description": "The staff preview in the player of the web app"
-          },
-          "previewEditUrl": {
-            "type": "string",
-            "description": "The staff preview in the editor of the web app"
+            "description": "The game in the editor of the web app, which staff open read-only"
           }
         },
         "required": [
@@ -16115,8 +16458,7 @@
           "createdAt",
           "updatedAt",
           "openFlags",
-          "previewPlayUrl",
-          "previewEditUrl"
+          "editUrl"
         ]
       },
       "ModerationProjectListDto": {
@@ -16189,13 +16531,9 @@
             "nullable": true,
             "description": "The play page, null while players cannot reach the game"
           },
-          "previewPlayUrl": {
+          "editUrl": {
             "type": "string",
-            "description": "The staff preview in the player of the web app"
-          },
-          "previewEditUrl": {
-            "type": "string",
-            "description": "The staff preview in the editor of the web app"
+            "description": "The game in the editor of the web app, which staff open read-only"
           },
           "longDesc": {
             "type": "string",
@@ -16222,6 +16560,10 @@
             "type": "boolean",
             "description": "Whether the cover route has an image to serve"
           },
+          "hasClip": {
+            "type": "boolean",
+            "description": "Whether the clip route has a video to serve"
+          },
           "allowedActions": {
             "type": "array",
             "items": {
@@ -16238,11 +16580,11 @@
           "createdAt",
           "updatedAt",
           "openFlags",
-          "previewPlayUrl",
-          "previewEditUrl",
+          "editUrl",
           "tags",
           "collaborators",
           "hasCover",
+          "hasClip",
           "allowedActions"
         ]
       },

@@ -19,6 +19,8 @@ export interface StoredCollection {
   gameIds: string[];
   /** Games it lists that left the hub. */
   unavailable: string[];
+  /** Since when moderation withholds it; null while it does not. */
+  hiddenAt: string | null;
 }
 
 export interface Call {
@@ -33,6 +35,8 @@ export interface CollectionsApi {
   /** Who is asking, as the server would know from the token; null for nobody. */
   viewer: string | null;
   limits: { collections: number; games: number };
+  /** Games of the viewer that moderation withholds: no collection takes one. */
+  hiddenGames: string[];
   /** Every request answered, in order. */
   calls: Call[];
 }
@@ -56,6 +60,7 @@ export function collection(
     owner: ALEXIS,
     gameIds: [],
     unavailable: [],
+    hiddenAt: null,
     ...over,
   };
 }
@@ -65,7 +70,8 @@ const LIMIT_CODES = { collections: 'COLLECTIONS_LIMIT', games: 'COLLECTION_GAMES
 /**
  * Answers the collection routes from a list held in memory, with the rules the server keeps: a
  * private collection is its owner's alone, only an owner changes one, and both limits refuse with
- * their code. The list and the viewer can be changed while the page is open.
+ * their code. One moderation withholds is its owner's alone too, and takes no change but a game
+ * taken out or its own deletion. The list and the viewer can be changed while the page is open.
  */
 export async function mockCollections(
   page: Page,
@@ -76,6 +82,7 @@ export async function mockCollections(
     collections: seed.collections ?? [],
     viewer: seed.viewer ?? null,
     limits: seed.limits ?? { collections: 50, games: 200 },
+    hiddenGames: [],
     calls: [],
   };
   let created = 0;
@@ -101,6 +108,7 @@ export async function mockCollections(
     visibility: stored.visibility,
     owner: stored.owner,
     gameCount: stored.gameIds.length,
+    hiddenAt: stored.hiddenAt,
     createdAt: '2026-10-01T00:00:00.000Z',
     updatedAt: '2026-10-02T00:00:00.000Z',
   });
@@ -155,12 +163,17 @@ export async function mockCollections(
           route,
           200,
           api.collections
-            .filter((stored) => stored.owner.id === person[1] && stored.visibility === 'PUBLIC')
+            .filter(
+              (stored) =>
+                stored.owner.id === person[1] && stored.visibility === 'PUBLIC' && !stored.hiddenAt,
+            )
             .map(preview),
         );
       }
       if (url.pathname === '/collections' && method === 'GET') {
-        const listed = api.collections.filter((stored) => stored.visibility === 'PUBLIC');
+        const listed = api.collections.filter(
+          (stored) => stored.visibility === 'PUBLIC' && !stored.hiddenAt,
+        );
         const sort = url.searchParams.get('sort');
         if (sort === 'recent') {
           listed.reverse();
@@ -200,7 +213,7 @@ export async function mockCollections(
         /^\/collections\/([^/]+)(\/games(?:\/([^/]+))?)?$/.exec(url.pathname) ?? [];
       const stored = api.collections.find((other) => other.id === id);
       const owned = stored?.owner.id === api.viewer;
-      if (!stored || (stored.visibility === 'PRIVATE' && !owned)) {
+      if (!stored || ((stored.visibility === 'PRIVATE' || stored.hiddenAt) && !owned)) {
         return json(route, 404, { statusCode: 404, message: 'Not Found' });
       }
       if (method === 'GET') {
@@ -209,12 +222,18 @@ export async function mockCollections(
       if (!owned) {
         return json(route, 403, { statusCode: 403, message: 'Forbidden' });
       }
+      if (stored.hiddenAt && method !== 'DELETE') {
+        return json(route, 403, { statusCode: 403, code: 'COLLECTION_HIDDEN', message: 'Hidden' });
+      }
       if (url.pathname.endsWith('/games')) {
         const asked = (body as { projectIds: string[] }).projectIds;
         stored.gameIds = [...asked, ...stored.gameIds.filter((other) => !asked.includes(other))];
         return json(route, 204);
       }
       if (game !== undefined && method === 'PUT') {
+        if (api.hiddenGames.includes(game)) {
+          return json(route, 403, { statusCode: 403, code: 'PROJECT_HIDDEN', message: 'Hidden' });
+        }
         if (stored.gameIds.length >= api.limits.games) {
           return refuse(route, 'games');
         }

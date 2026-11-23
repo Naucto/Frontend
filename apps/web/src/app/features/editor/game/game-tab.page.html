@@ -19,7 +19,15 @@
             (tagsChange)="setTags($event)" />
         }
         @case ('disk') {
-          <nc-game-disk-bench [name]="name()" />
+          @if (hidden()) {
+            <nc-notice tone="danger" class="mb-2" data-testid="disk-hidden-notice">
+              {{ t('editor.game.disk.hidden') }}
+              <a actions ncButton variant="ghost" size="sm" routerLink="/settings/standing">
+                {{ t('moderation.suspended.why') }}
+              </a>
+            </nc-notice>
+          }
+          <nc-game-disk-bench [name]="name()" [ncDisabledScope]="hidden()" />
         }
         @case ('inputs') {
           <nc-game-inputs />

@@ -18,7 +18,7 @@ import {
   ToastService,
 } from '@naucto/ui';
 
-import { unwrap } from '../../../core/api/api-errors';
+import { ApiError, unwrap } from '../../../core/api/api-errors';
 import { DiskNameComponent } from '../../../shared/game-card/disk-name.component';
 import {
   diskBody,
@@ -186,9 +186,17 @@ export class DiskBenchComponent {
     try {
       unwrap(await projectControllerSetDisk({ path: { id: this.session.id }, body: { disk } }));
       await this.saves.refreshProject();
-    } catch {
+    } catch (error) {
+      const hidden = error instanceof ApiError && error.code === 'PROJECT_HIDDEN';
       if (turn === this.turn) {
-        this.toasts.show(this.transloco.translate('editor.game.disk.failed'), 'error');
+        this.toasts.show(
+          this.transloco.translate(hidden ? 'editor.game.disk.hidden' : 'editor.game.disk.failed'),
+          'error',
+        );
+      }
+      if (hidden) {
+        // Hidden since the editor opened: the project read again closes the bench and says why.
+        await this.saves.refreshProject().catch(() => undefined);
       }
     }
     // Either way the project is what stands: the pick it now holds, or the one from before.

@@ -1,10 +1,11 @@
 import { uuidOf } from '../packages/api-client/testing';
 import { glyphPath } from '../packages/ui/src/icons/glyph-path';
 import { ICON_GLYPHS } from '../packages/ui/src/icons/glyphs';
+import { editorUrl, mockEditor, projectRoute } from './editor-mocks';
 import { expect, type Page, test } from './fixtures';
-import { ALEXIS, by, collection, mockCollections } from './mocks/collections';
+import { ADA, ALEXIS, by, collection, mockCollections } from './mocks/collections';
 import { PLAY, release, serveGame } from './mocks/game';
-import { hubGame, mockHub, mockProjects } from './mocks/hub';
+import { FEED, hubGame, mockHub, mockProjects } from './mocks/hub';
 import {
   mockComments,
   mockFlags,
@@ -272,6 +273,289 @@ test.describe('moderation', () => {
     await expect(shelf.getByRole('link', { name: 'Pong Royale' }).locator('nc-chip')).toHaveCount(
       0,
     );
+  });
+
+  test('a reader reports a collection, and its owner is offered no Report', async ({ page }) => {
+    const sent = await mockFlags(page);
+    const api = await mockCollections(page, [hubGame(11, 'Hightide')], {
+      collections: [collection('couch', 'Couch co-op', { owner: ADA, gameIds: [uuidOf(11)] })],
+    });
+    await mockSignedIn(page, ALEXIS);
+    api.viewer = ALEXIS.id;
+    await page.goto('/collections/couch');
+
+    const report = page.getByRole('button', { name: 'Report collection' });
+    // The game page's own treatment: a ghost button of 30 with the flag mark, and no frame.
+    await expect(report.locator('nc-mark')).toHaveCount(1);
+    expect((await report.boundingBox())?.height).toBe(30);
+    await report.click();
+    const dialog = page.getByRole('dialog', { name: 'Report this collection' });
+    await expect(dialog).toContainText('Couch co-op');
+    await dialog.getByRole('switch', { name: 'Spam or advertising' }).click();
+    await dialog.getByRole('button', { name: 'Send report' }).click();
+
+    await expect(page.locator('nc-toast-host')).toContainText('Your report reached the moderators');
+    expect(sent).toEqual([{ targetType: 'COLLECTION', targetId: 'couch', reason: 'SPAM' }]);
+
+    // Its owner has nothing to report about it.
+    api.collections[0] = collection('couch', 'Couch co-op', { gameIds: [uuidOf(11)] });
+    await page.reload();
+    await expect(page.getByRole('heading', { level: 1, name: 'Couch co-op' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Report collection' })).toHaveCount(0);
+  });
+
+  test('a suspended reader is told why the report of a collection does not open', async ({
+    page,
+  }) => {
+    const sent = await mockFlags(page);
+    const api = await mockCollections(page, [hubGame(11, 'Hightide')], {
+      collections: [collection('couch', 'Couch co-op', { owner: ADA, gameIds: [uuidOf(11)] })],
+    });
+    await mockSignedIn(page, { ...ALEXIS, suspension: SUSPENSION });
+    api.viewer = ALEXIS.id;
+    await page.goto('/collections/couch');
+
+    await page.getByRole('button', { name: 'Report collection' }).click();
+
+    await expect(page.locator('nc-toast-host')).toContainText(
+      'Your account is suspended, so this is not available for now.',
+    );
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    expect(sent).toEqual([]);
+  });
+
+  test.describe('a collection a moderator hid', () => {
+    const hidden = (): ReturnType<typeof collection> =>
+      collection('couch', 'Couch co-op', {
+        gameIds: [uuidOf(11), uuidOf(12)],
+        hiddenAt: '2026-11-18T16:05:00.000Z',
+      });
+    const games = [hubGame(11, 'Hightide'), hubGame(12, 'Pong Royale')];
+
+    test('tells its owner so, closes what would change it, and still lets a game out', async ({
+      page,
+    }) => {
+      const api = await mockCollections(page, games, { collections: [hidden()] });
+      await mockSignedIn(page, ALEXIS);
+      api.viewer = ALEXIS.id;
+      await mockStanding(page);
+      await page.goto('/collections/couch');
+
+      const notice = page.getByTestId('collection-hidden-notice');
+      await expect(notice).toContainText('A moderator hid this collection.');
+      await expect(page.locator('nc-chip', { hasText: 'Hidden' })).toHaveCount(1);
+      await expect(page.locator('nc-visibility-chip')).toHaveCount(0);
+      // Nobody else can open it, so there is no link to hand on, and nothing to report.
+      await expect(page.getByTestId('copy-link')).toHaveCount(0);
+      await expect(page.getByRole('button', { name: 'Report collection' })).toHaveCount(0);
+
+      const edit = page.getByRole('button', { name: 'Edit' });
+      await expect(edit).toBeDisabled();
+      await expect(edit).toHaveAttribute('title', 'Blocked: a moderator hid this collection');
+      await page.getByRole('switch', { name: 'Organize' }).click();
+      await expect(page.getByRole('button', { name: 'Move Hightide later' })).toBeDisabled();
+      await expect(page.getByRole('button', { name: 'Move Pong Royale earlier' })).toBeDisabled();
+
+      await page.getByRole('checkbox', { name: 'Select Hightide' }).click();
+      await page.getByRole('button', { name: 'Remove', exact: true }).click();
+      await expect.poll(() => api.collections[0]?.gameIds).toEqual([uuidOf(12)]);
+      expect(api.calls.filter((call) => !['GET', 'DELETE'].includes(call.method))).toEqual([]);
+
+      await notice.getByRole('link', { name: 'See why' }).click();
+      await expect(page).toHaveURL(/\/settings\/standing$/);
+    });
+
+    test("is still its owner's to delete", async ({ page }) => {
+      const api = await mockCollections(page, games, { collections: [hidden()] });
+      await mockSignedIn(page, ALEXIS);
+      api.viewer = ALEXIS.id;
+      await page.route(
+        /\/projects\?/,
+        answer(200, { projects: [], total: 0, page: 1, limit: 100 }),
+      );
+      await page.goto('/collections/couch');
+
+      await page.getByRole('button', { name: 'Delete' }).click();
+      await page.getByRole('dialog').getByRole('button', { name: 'Delete' }).click();
+
+      await expect(page).toHaveURL(/\/games$/);
+      expect(api.collections).toEqual([]);
+    });
+
+    test('is not found by anyone else, signed in or not', async ({ page }) => {
+      const api = await mockCollections(page, games, { collections: [hidden()] });
+      await mockSignedIn(page, ADA);
+      api.viewer = ADA.id;
+      await page.goto('/collections/couch');
+
+      await expect(page.getByRole('heading', { name: 'Nothing here' })).toBeVisible();
+      await expect(page.getByTestId('collection-hidden-notice')).toHaveCount(0);
+    });
+
+    test('is marked Hidden on My games, in the place of who can open it', async ({ page }) => {
+      const api = await mockCollections(page, games, {
+        collections: [hidden(), collection('later', 'To try later', { visibility: 'PRIVATE' })],
+      });
+      await mockSignedIn(page, ALEXIS);
+      api.viewer = ALEXIS.id;
+      await page.route(
+        /\/projects\?/,
+        answer(200, { projects: [], total: 0, page: 1, limit: 100 }),
+      );
+      await page.goto('/games');
+
+      const shelf = page.getByTestId('shelf-collections');
+      const couch = shelf.locator('nc-collection-box').filter({ hasText: 'Couch co-op' });
+      await expect(couch.getByTestId('collection-hidden')).toHaveText('Hidden');
+      await expect(couch.locator('nc-visibility-chip')).toHaveCount(0);
+      const later = shelf.locator('nc-collection-box').filter({ hasText: 'To try later' });
+      await expect(later.getByTestId('collection-hidden')).toHaveCount(0);
+      await expect(later.locator('nc-visibility-chip')).toHaveText('Private');
+    });
+
+    test('takes no new game from the checklist of a game page, and says why', async ({ page }) => {
+      await serveGame(page, 'function _update() end');
+      const api = await mockCollections(page, games, {
+        collections: [hidden(), collection('later', 'To try later', { visibility: 'PRIVATE' })],
+      });
+      await mockSignedIn(page, ALEXIS);
+      api.viewer = ALEXIS.id;
+      await page.goto(PLAY);
+
+      await page.getByTestId('add-to-collection').click();
+      const list = page.getByRole('dialog', { name: 'Add to collection' });
+      const couch = list.getByRole('checkbox', { name: 'Couch co-op' });
+      await expect(couch).toContainText('Hidden');
+      await expect(couch).toBeDisabled();
+      await expect(list.locator('nc-checkbox').filter({ hasText: 'Couch co-op' })).toHaveAttribute(
+        'title',
+        'Blocked: a moderator hid this collection',
+      );
+
+      // The reader's own game that moderation withholds: no collection takes it, and it says so.
+      api.hiddenGames = [release.id];
+      await list.getByRole('checkbox', { name: 'To try later' }).click();
+      await expect(page.locator('nc-toast-host')).toContainText(
+        'A moderator hid this game, so no collection takes it until it is restored.',
+      );
+      await expect(list.getByRole('checkbox', { name: 'To try later' })).not.toBeChecked();
+    });
+  });
+
+  test("the hub marks the reader's own hidden game on the Continue card", async ({ page }) => {
+    const mine = { userId: uuidOf(1), creator: { id: uuidOf(1), username: 'alexis' } };
+    await mockSignedIn(page);
+    await mockHub(page, {
+      feed: {
+        ...FEED,
+        hero: [
+          {
+            reason: 'CONTINUE',
+            game: hubGame(4, 'Cave Diver', { ...mine, hiddenAt: '2026-11-18T16:05:00.000Z' }),
+          },
+          { reason: 'TRENDING', game: hubGame(2, 'Neon Drift') },
+        ],
+      },
+    });
+    await page.route(/\/projects\?/, answer(200, { projects: [], total: 0, page: 1, limit: 24 }));
+    await page.route('**/game-sessions**', answer(200, { sessions: [] }));
+    await page.goto('/hub');
+
+    const hero = page.locator('nc-hero-pile');
+    await expect(
+      hero.getByRole('button', { name: 'Play Cave Diver' }).locator('nc-chip'),
+    ).toHaveText('Hidden');
+    await expect(
+      hero.getByRole('button', { name: 'Show Neon Drift' }).locator('nc-chip'),
+    ).toHaveCount(0);
+  });
+
+  test('the Disk tab of a game a moderator hid says why it is closed, and sends nothing', async ({
+    page,
+  }) => {
+    const writes: string[] = [];
+    const stored = await mockEditor(page);
+    Object.assign(stored, { hiddenAt: '2026-11-18T16:05:00.000Z' });
+    await page.route(projectRoute('disk'), (route) => {
+      writes.push(route.request().method());
+      return route.fulfill({ status: 403, json: { code: 'PROJECT_HIDDEN', message: 'Hidden' } });
+    });
+    await page.goto(editorUrl('game'));
+    await page.getByRole('tablist', { name: 'Game' }).getByRole('tab', { name: 'Disk' }).click();
+
+    const notice = page.getByTestId('disk-hidden-notice');
+    await expect(notice).toContainText('A moderator hid this game, so its disk stays as it is');
+    await expect(notice.getByRole('link', { name: 'See why' })).toHaveAttribute(
+      'href',
+      '/settings/standing',
+    );
+    for (const finish of await page
+      .getByRole('group', { name: 'Finish' })
+      .getByRole('button')
+      .all()) {
+      await expect(finish).toBeDisabled();
+    }
+    await expect(page.getByRole('button', { name: /^Body colour \d+$/ }).first()).toBeDisabled();
+    // The other views of the tab are the author's as before: only the disk is refused.
+    await page.getByRole('tablist', { name: 'Game' }).getByRole('tab', { name: 'Details' }).click();
+    await expect(page.getByRole('textbox', { name: 'Name' })).toBeEnabled();
+    expect(writes).toEqual([]);
+  });
+
+  test('a disk refused because the game was hidden meanwhile says why and closes the bench', async ({
+    page,
+  }) => {
+    const stored = await mockEditor(page);
+    await page.route(projectRoute('disk'), (route) => {
+      Object.assign(stored, { hiddenAt: '2026-11-18T16:05:00.000Z' });
+      return route.fulfill({ status: 403, json: { code: 'PROJECT_HIDDEN', message: 'Hidden' } });
+    });
+    await page.goto(editorUrl('game'));
+    await page.getByRole('tablist', { name: 'Game' }).getByRole('tab', { name: 'Disk' }).click();
+
+    await page
+      .getByRole('group', { name: 'Finish' })
+      .getByRole('button', { name: 'Stripes' })
+      .click();
+
+    await expect(page.locator('nc-toast-host')).toContainText(
+      'A moderator hid this game, so its disk stays as it is until the game is restored.',
+    );
+    await expect(page.getByTestId('disk-hidden-notice')).toBeVisible();
+    await expect(
+      page.getByRole('group', { name: 'Finish' }).getByRole('button', { name: 'Stripes' }),
+    ).toBeDisabled();
+  });
+
+  test('a moderation notification about a collection leads to Standing as well', async ({
+    page,
+  }) => {
+    await mockQuietHub(page);
+    await mockSignedIn(page);
+    await mockStanding(page);
+    await mockNotifications(page, [
+      {
+        id: uuidOf(71),
+        userId: uuidOf(1),
+        type: 'WARNING',
+        kind: 'MODERATION',
+        title: 'Your collection Couch co-op was hidden',
+        message: 'It lists games taken from other people.',
+        data: { actionId: uuidOf(12), action: 'COLLECTION_HIDDEN', collectionId: 'couch' },
+        read: false,
+        createdAt: new Date().toISOString(),
+      },
+    ]);
+    await page.route('**/notifications/*/read', answer(200, {}));
+    await page.goto('/hub');
+
+    await page.getByRole('button', { name: 'Notifications, 1 unread' }).click();
+    await page
+      .getByRole('dialog', { name: 'Notifications' })
+      .getByRole('button', { name: /Your collection Couch co-op was hidden/ })
+      .click();
+
+    await expect(page).toHaveURL(/\/settings\/standing$/);
   });
 
   test('a moderation notification carries its own glyph and leads to Standing', async ({

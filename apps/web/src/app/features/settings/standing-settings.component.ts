@@ -26,12 +26,16 @@ const KNOWN: readonly ModerationActionType[] = [
   'COMMENT_HIDDEN',
   'COMMENT_RESTORED',
   'COMMENT_DELETED',
+  'COLLECTION_HIDDEN',
+  'COLLECTION_RESTORED',
+  'COLLECTION_DELETED',
 ];
 
 const LIFTED: readonly ModerationActionType[] = [
   'ACCOUNT_REINSTATED',
   'PROJECT_RESTORED',
   'COMMENT_RESTORED',
+  'COLLECTION_RESTORED',
 ];
 
 /**

@@ -13,6 +13,7 @@ import {
   ToastService,
 } from '@naucto/ui';
 
+import { ApiError } from '../../core/api/api-errors';
 import { AuthStore } from '../../core/auth/auth.store';
 import {
   CollectionDialogComponent,
@@ -25,6 +26,12 @@ import {
   injectSetInCollection,
   limitOf,
 } from '../../shared/queries/collections.queries';
+
+/** The refusals the checklist answers in its own words, as the keys that say them. */
+const REFUSALS: Record<string, string> = {
+  COLLECTION_HIDDEN: 'collections.add.collectionHidden',
+  PROJECT_HIDDEN: 'collections.add.gameHidden',
+};
 
 /**
  * The game page's way into the reader's collections: a button that says how many of them hold the
@@ -88,9 +95,10 @@ export class AddToCollectionComponent {
       });
     } catch (error: unknown) {
       const max = limitOf(error, 'COLLECTION_GAMES_LIMIT');
+      const refusal = error instanceof ApiError && error.code ? REFUSALS[error.code] : undefined;
       this.toasts.show(
         max === null
-          ? this.i18n.translate('collections.add.failed', { title: collection.title })
+          ? this.i18n.translate(refusal ?? 'collections.add.failed', { title: collection.title })
           : this.i18n.translate('collections.add.full', { title: collection.title, n: max }),
         'error',
       );

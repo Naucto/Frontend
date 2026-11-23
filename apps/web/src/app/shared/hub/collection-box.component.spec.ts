@@ -80,6 +80,21 @@ describe('CollectionBoxComponent', () => {
     expect(plate().querySelector('nc-visibility-chip')?.textContent.trim()).toBe('Unlisted');
   });
 
+  it('says Hidden in the place of who can open it, on a box moderation withholds', () => {
+    const plate = (): HTMLElement => box.querySelector<HTMLElement>('a[data-plate]')!;
+    const mark = (): string | undefined =>
+      plate().querySelector('[data-testid="collection-hidden"]')?.textContent.trim();
+    fixture.componentRef.setInput('visibility', 'PUBLIC');
+    fixture.detectChanges();
+    expect(mark()).toBeUndefined();
+
+    fixture.componentRef.setInput('hidden', true);
+    fixture.detectChanges();
+
+    expect(mark()).toBe('Hidden');
+    expect(plate().querySelector('nc-visibility-chip')).toBeNull();
+  });
+
   it('stands its disks a step apart at rest, each a button named for its game', () => {
     expect(disks().map((disk) => disk.style.left)).toEqual([
       '0px',
