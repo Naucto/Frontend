@@ -1,5 +1,4 @@
 {
-  "exempt": {},
   "owed": {
     "apps/web/src/app/features/editor/art/sheet-view.component.html": {
       "stroke-width": 1

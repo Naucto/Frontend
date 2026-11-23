@@ -87,12 +87,8 @@ for (const dir of SOURCES) {
 const allow = JSON.parse(readFileSync(ALLOW, 'utf8'));
 
 if (process.argv.includes('--update')) {
-  const owed = Object.fromEntries(
-    Object.entries(found)
-      .filter(([file]) => !(file in allow.exempt))
-      .sort(([a], [b]) => a.localeCompare(b)),
-  );
-  writeFileSync(ALLOW, `${JSON.stringify({ ...allow, owed }, null, 2)}\n`);
+  const owed = Object.fromEntries(Object.entries(found).sort(([a], [b]) => a.localeCompare(b)));
+  writeFileSync(ALLOW, `${JSON.stringify({ owed }, null, 2)}\n`);
   console.log(`pixel:check — ${Object.keys(owed).length} files recorded in tools/pixel-allow.json`);
   process.exit(0);
 }
@@ -100,9 +96,6 @@ if (process.argv.includes('--update')) {
 const over = [];
 let slack = 0;
 for (const [file, rules] of Object.entries(found)) {
-  if (file in allow.exempt) {
-    continue;
-  }
   for (const [rule, total] of Object.entries(rules)) {
     const allowed = allow.owed[file]?.[rule] ?? 0;
     if (total > allowed) {
