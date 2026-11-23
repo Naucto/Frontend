@@ -23,7 +23,6 @@
   </ul>
   @if (isCreator()) {
     <nc-person-search
-      size="md"
       [placeholder]="t('share.invite')"
       [exclude]="memberIds()"
       (picked)="invite($event)" />

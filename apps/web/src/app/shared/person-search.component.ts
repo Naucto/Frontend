@@ -13,7 +13,6 @@ import {
   AvatarComponent,
   HighlightComponent,
   SearchComponent,
-  type SearchSize,
   SuggestPanelComponent,
   SuggestRowComponent,
 } from '@naucto/ui';
@@ -54,7 +53,6 @@ const SHOWN = 6;
 })
 export class PersonSearchComponent {
   readonly placeholder = input('');
-  readonly size = input<SearchSize>('sm');
   /** Who is already on the project, so the list does not offer somebody twice. */
   readonly exclude = input<readonly string[]>([]);
   readonly picked = output<PersonHit>();
