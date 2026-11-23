@@ -13,7 +13,7 @@
     @let title = term ? t('search.games') : t('search.popular');
     <div role="group" class="grid gap-[3px]" [attr.aria-label]="title">
       <p aria-hidden="true" [class]="heading">{{ title }}</p>
-      <div class="grid grid-cols-3 gap-[3px]">
+      <div class="grid grid-cols-3 gap-[3px] px-[6px]">
         @for (entry of games(); track entry.game.id; let i = $index) {
           <nc-suggest-row
             tabindex="-1"
