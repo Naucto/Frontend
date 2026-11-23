@@ -126,13 +126,13 @@
             <nc-icon name="git-branch" />
             {{ t('game.remix') }}
           </button>
-          <nc-add-to-collection class="col-span-2" [projectId]="release.id" />
           @if (canEdit()) {
             <a ncButton variant="secondary" class="col-span-2" [routerLink]="['/edit', release.id]">
               <nc-icon name="edit" />
               {{ t('game.edit') }}
             </a>
           }
+          <nc-add-to-collection class="col-span-2" [projectId]="release.id" />
         </div>
         @if (canReport()) {
           <div class="mt-2 flex justify-center">
