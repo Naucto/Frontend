@@ -431,19 +431,7 @@ test('a game that hosts reads its player number as an integer it can compute on'
     ].join('\n'),
   );
   await mockSignedIn(page);
-  await page.route(
-    '**/game-sessions',
-    answer(201, {
-      sessionUuid: uuid,
-      playerId: 1042,
-      joinCode: 'ABCD2345',
-      connectionTicket: 'ticket',
-      webrtcConfig: {
-        signaling: ['ws://localhost/e2e-game-socket'],
-        peerOpts: { config: { iceServers: [] } },
-      },
-    }),
-  );
+  await page.route('**/game-sessions', answer(201, connection(uuid, 1042, 'ABCD2345')));
   await page.routeWebSocket(/e2e-game-socket/, () => undefined);
 
   await page.goto(PLAY);

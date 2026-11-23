@@ -143,16 +143,10 @@ export async function mockHostedRoom(
 
   await page.route(
     '**/game-sessions',
-    answer(201, {
-      sessionUuid,
-      playerId: players.find((player) => player.host)?.playerId,
-      joinCode: 'ABCD2345',
-      connectionTicket: 'ticket',
-      webrtcConfig: {
-        signaling: ['ws://localhost/e2e-game-socket'],
-        peerOpts: { config: { iceServers: [] } },
-      },
-    }),
+    answer(
+      201,
+      connection(sessionUuid, players.find((player) => player.host)?.playerId, 'ABCD2345'),
+    ),
   );
   await page.route(
     `**/game-sessions/${sessionUuid}/players`,
