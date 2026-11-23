@@ -5,7 +5,8 @@
   [attr.aria-label]="t('hub.pile.label')">
   @if (entry(); as shown) {
     <nc-hero-backdrop [cover]="shown.game.coverUrl ?? null" [clip]="shown.game.clipUrl ?? null" />
-    <span role="status" aria-live="polite" class="sr-only">
+    <!-- Quiet while the pile turns on its own; it speaks again once someone holds it. -->
+    <span role="status" class="sr-only" [attr.aria-live]="held() || !turnMs() ? 'polite' : 'off'">
       {{
         t('hub.pile.status', {
           index: current() + 1,
@@ -102,6 +103,8 @@
         [value]="current()"
         [labels]="names()"
         [label]="t('hub.pile.label')"
+        [autoplay]="turnMs()"
+        [paused]="held()"
         (valueChange)="go($event)" />
     </div>
   }

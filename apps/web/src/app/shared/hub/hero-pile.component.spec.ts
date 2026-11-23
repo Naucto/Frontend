@@ -1,5 +1,7 @@
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { uuidOf } from '@naucto/api-client/testing';
+import { PagerComponent } from '@naucto/ui';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { testProviders } from '../../testing/providers';
@@ -161,6 +163,27 @@ describe('HeroPileComponent', () => {
     fixture.componentInstance.picked.subscribe(played);
     hero.querySelector<HTMLButtonElement>('button[tabindex="0"]')!.click();
     expect(played).not.toHaveBeenCalled();
+  });
+
+  it('turns on its own, and holds while the pointer or the focus is on it', () => {
+    const pager = (): PagerComponent =>
+      fixture.debugElement.query(By.directive(PagerComponent)).componentInstance as PagerComponent;
+    expect(pager().autoplay()).toBeGreaterThan(0);
+    expect(pager().paused()).toBe(false);
+    expect(hero.querySelector('[role="status"]')!.getAttribute('aria-live')).toBe('off');
+
+    hero.dispatchEvent(new PointerEvent('pointerenter'));
+    fixture.detectChanges();
+    expect(pager().paused()).toBe(true);
+    expect(hero.querySelector('[role="status"]')!.getAttribute('aria-live')).toBe('polite');
+
+    hero.dispatchEvent(new PointerEvent('pointerleave'));
+    fixture.detectChanges();
+    expect(pager().paused()).toBe(false);
+
+    hero.querySelector('section')!.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+    fixture.detectChanges();
+    expect(pager().paused()).toBe(true);
   });
 
   it('names its dots after the games', () => {

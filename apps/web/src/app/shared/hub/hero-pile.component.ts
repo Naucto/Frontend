@@ -17,6 +17,7 @@ import {
   FitTextDirective,
   formatCompact,
   PagerComponent,
+  prefersStill,
   ScrambleDirective,
   StatComponent,
 } from '@naucto/ui';
@@ -25,6 +26,9 @@ import { diskStyleFor } from '../game-card/disk-style';
 import { FloppyComponent } from '../game-card/floppy.component';
 import { HeroBackdropComponent } from './hero-backdrop.component';
 import type { HubGame } from './hub-game';
+
+/** How long a featured game stays in front before the next one takes its place. */
+const TURN_MS = 6000;
 
 export interface HeroEntry {
   /** Why this game is here, as the line above its name. */
@@ -73,7 +77,14 @@ interface Swipe {
     StatComponent,
   ],
   templateUrl: './hero-pile.component.html',
-  host: { class: 'block min-w-0', '(keydown)': 'onKey($event)' },
+  host: {
+    class: 'block min-w-0',
+    '(keydown)': 'onKey($event)',
+    '(pointerenter)': 'pointed.set(true)',
+    '(pointerleave)': 'pointed.set(false)',
+    '(focusin)': 'focused.set(true)',
+    '(focusout)': 'focused.set(!host.contains($any($event).relatedTarget))',
+  },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HeroPileComponent {
@@ -109,6 +120,16 @@ export class HeroPileComponent {
   );
 
   protected readonly dragging = signal(false);
+  /** The pile turns on its own, unless motion is asked to stay still. */
+  protected readonly turnMs = signal(TURN_MS);
+  protected readonly pointed = signal(false);
+  protected readonly focused = signal(false);
+  private readonly seen = signal(true);
+  /** Someone is reading it, or nobody can see it: the turning holds. */
+  protected readonly held = computed(
+    () => this.pointed() || this.focused() || this.dragging() || !this.seen(),
+  );
+  protected readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private swipe: Swipe | null = null;
   private swiped = false;
   private wheel = { turned: 0, at: 0, lockedUntil: 0 };
@@ -222,7 +243,30 @@ export class HeroPileComponent {
   }
 
   constructor() {
-    const host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+    const host = this.host;
+    if (prefersStill(host)) {
+      this.turnMs.set(0);
+    }
+    // Where there is nothing to watch with, as under a test DOM, the pile counts as seen.
+    const watch =
+      typeof IntersectionObserver === 'undefined'
+        ? null
+        : new IntersectionObserver(
+            ([entry]) => {
+              this.seen.set((entry?.intersectionRatio ?? 0) >= 0.5 && !document.hidden);
+            },
+            { threshold: [0, 0.5, 1] },
+          );
+    watch?.observe(host);
+    const onVisibility = (): void => {
+      if (document.hidden) {
+        this.seen.set(false);
+      } else {
+        watch?.unobserve(host);
+        watch?.observe(host);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
     const onClick = (event: MouseEvent): void => {
       if (this.swiped) {
         this.swiped = false;
@@ -233,6 +277,8 @@ export class HeroPileComponent {
     host.addEventListener('click', onClick, true);
     inject(DestroyRef).onDestroy(() => {
       host.removeEventListener('click', onClick, true);
+      watch?.disconnect();
+      document.removeEventListener('visibilitychange', onVisibility);
     });
   }
 }
