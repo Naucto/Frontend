@@ -2,7 +2,7 @@ import { booleanAttribute, ChangeDetectionStrategy, Component, input } from '@an
 
 /**
  * A titled group of settings: a short title at the size of its rows, an optional line under it,
- * then the rows in one block on alternate bands. `danger` sets the title in the hot colour.
+ * then the rows in one framed block on alternate bands. `danger` sets the title in the hot colour.
  */
 @Component({
   selector: 'nc-settings-group',
