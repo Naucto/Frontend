@@ -116,7 +116,9 @@
 
 .dim {
   position: absolute;
-  inset: -12px -400px -24px;
+  /* As wide as any page, so it veils the whole shelf even when a few items leave the rail short;
+     the viewport clips it. */
+  inset: -12px -100vw -24px;
   z-index: 30;
   pointer-events: none;
   background: var(--nc-page);
