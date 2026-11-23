@@ -988,7 +988,7 @@
   },
   "privacy": {
     "title": "Privacy",
-    "intro": "Naucto measures how it is used to see what to improve. It never sells or shares this data, shows no advertising, and runs no third-party trackers. You decide below whether your visits are measured.",
+    "intro": "Naucto measures how it is used to see what to improve. It never sells or shares this data, shows no advertising, and runs no third-party trackers. You decide in your privacy settings whether your visits are measured.",
     "acceptedTitle": "If you accept",
     "accepted": {
       "pages": "The pages you open, by name (a game page, not which game), and how long your visits last, under a random id kept in a cookie for 13 months and a visit id kept 30 minutes.",

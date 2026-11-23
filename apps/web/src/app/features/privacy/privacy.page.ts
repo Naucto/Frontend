@@ -1,17 +1,17 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
+import { ButtonDirective } from '@naucto/ui';
 
 import { FeaturesService } from '../../core/config/features.service';
-import { ConsentChoiceComponent } from '../../shared/consent/consent-choice.component';
 
 /**
  * What usage analytics measures, under which choice and for how long, what feedback and crash
- * reports carry, what moderation sees and keeps, and the choice itself.
+ * reports carry, what moderation sees and keeps. The choice itself lives in the settings.
  */
 @Component({
   selector: 'nc-privacy-page',
-  imports: [TranslocoDirective, RouterLink, ConsentChoiceComponent],
+  imports: [TranslocoDirective, RouterLink, ButtonDirective],
   templateUrl: './privacy.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

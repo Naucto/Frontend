@@ -1,7 +1,9 @@
 <section *transloco="let t" class="mx-auto w-full max-w-[760px]">
   <h1 class="font-display text-display text-ink">{{ t('privacy.title') }}</h1>
   <p class="mt-1 text-body leading-[1.6] text-ink-2">{{ t('privacy.intro') }}</p>
-  <nc-consent-choice class="mt-2 block" />
+  <a ncButton variant="primary" size="lg" routerLink="/settings/privacy" class="mt-2">
+    {{ t('privacy.rightsLink') }}
+  </a>
 
   <h2 class="mt-4 mb-1.5 font-display text-title text-ink">{{ t('privacy.acceptedTitle') }}</h2>
   @for (item of accepted; track item) {
@@ -32,11 +34,6 @@
 
   <h2 class="mt-4 mb-1.5 font-display text-title text-ink">{{ t('privacy.rightsTitle') }}</h2>
   <p class="mt-1 text-body leading-[1.6] text-ink-2">{{ t('privacy.rights') }}</p>
-  <a
-    routerLink="/settings/privacy"
-    class="mt-1 inline-block text-body text-ink-2 underline hover:text-ink">
-    {{ t('privacy.rightsLink') }}
-  </a>
 
   <p class="mt-4 text-micro text-ink-3">
     {{ t('privacy.geoCredit') }}
