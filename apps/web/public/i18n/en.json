@@ -1423,7 +1423,7 @@
       "description": "What happened?",
       "descriptionHint": "What you did, what you expected, and what happened instead.",
       "screenshot": "Screenshot (optional)",
-      "screenshotHint": "PNG, JPEG or WebP, up to 2 MB. A large image is shrunk before it is sent.",
+      "screenshotHint": "PNG, JPEG, WebP or GIF, up to 2 MB. A large image is shrunk before it is sent.",
       "screenshotAlt": "The screenshot attached to this report",
       "removeScreenshot": "Remove",
       "dropHint": "Drop or paste an image",
