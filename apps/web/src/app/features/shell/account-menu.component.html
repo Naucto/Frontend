@@ -1,11 +1,12 @@
 <ng-container *transloco="let t">
-  <!-- While the panel is out the avatar stands pressed, ringed in gold. -->
+  <!-- While the panel is out the avatar stands pressed, ringed in gold. The trigger is as tall as
+       the bar buttons beside it, so its panel drops from the same line as theirs. -->
   <button
     type="button"
     [ncPopover]="menu"
     popoverAlign="end"
     [(popoverOpen)]="open"
-    class="group flex cursor-pointer items-center"
+    class="group flex h-(--nc-h-bar) cursor-pointer items-center"
     [attr.aria-label]="t('account.menu')">
     <nc-avatar
       class="group-hover:bevel-edge-gold group-aria-expanded:translate-y-[3px] group-aria-expanded:bevel-edge-gold"
