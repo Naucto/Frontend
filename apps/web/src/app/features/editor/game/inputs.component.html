@@ -233,11 +233,10 @@
                       </div>
                     } @else if (listeningFor() === action.id) {
                       <div class="flex flex-wrap items-center gap-1">
-                        <span
-                          class="label flex h-(--nc-h-md) items-center flat-sm bevel-edge-gold bevel-fill-gold-wash px-1.5 text-gold-ink"
-                          role="status">
-                          {{ t('editor.game.inputs.listening') }}
-                        </span>
+                        <nc-keycap class="min-w-[72px]" waiting role="status">
+                          <nc-mark name="ellipsis" />
+                          <span class="sr-only">{{ t('editor.game.inputs.listening') }}</span>
+                        </nc-keycap>
                         <button
                           type="button"
                           class="flex cursor-pointer items-center gap-0.75 text-meta text-ink-3 hover:text-ink"
