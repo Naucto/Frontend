@@ -134,9 +134,9 @@ export default class GamePage {
   protected readonly fork = injectFork();
   private readonly all = injectRelatedWindow();
 
-  /** Whether the description is shown in full, rather than clamped to its first lines. */
   /** Set by the press that likes, so the heart pops for it and not for a like already there. */
   protected readonly justLiked = signal(false);
+  /** Whether the description is shown in full, rather than clamped to its first lines. */
   protected readonly descOpen = signal(false);
   /**
    * Whether the clamp is actually hiding something — measured, because how much text fits depends
