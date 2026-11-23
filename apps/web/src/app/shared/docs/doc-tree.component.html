@@ -1,16 +1,10 @@
 <nav *transloco="let t" [attr.aria-label]="t('docs.title')" class="text-meta">
   @for (section of docs.sections(); track section.id) {
-    <button
-      type="button"
-      class="font-ui text-label tracking-label text-ink-3 uppercase"
-      [class]="ROW + ' h-(--nc-h-md) gap-0.5 px-[3px]'"
-      [attr.aria-expanded]="!collapsed().has(section.id)"
-      (click)="toggle(section.id)">
-      <nc-icon [name]="collapsed().has(section.id) ? 'chevron-right' : 'chevron-down'" />
-      <nc-icon [name]="iconOf(section.id)" class="text-ink-4" />
-      <span class="min-w-0 flex-1 truncate">{{ t('docs.sections.' + section.id) }}</span>
-    </button>
-    @if (!collapsed().has(section.id)) {
+    <nc-disclosure
+      [title]="t('docs.sections.' + section.id)"
+      [open]="!collapsed().has(section.id)"
+      (openChange)="toggle(section.id)">
+      <nc-icon lead [name]="iconOf(section.id)" class="text-ink-4" />
       @for (page of section.pages; track page.slug) {
         @if (!page.slug.endsWith('/index')) {
           <button
@@ -50,6 +44,6 @@
           }
         }
       }
-    }
+    </nc-disclosure>
   }
 </nav>

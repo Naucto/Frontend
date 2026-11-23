@@ -2,9 +2,10 @@
   *transloco="let t"
   [title]="t('feedback.bug.title')"
   [lead]="t('feedback.bug.lead')"
-  [closeLabel]="t('feedback.close')">
+  [closeLabel]="t('feedback.close')"
+  scrollable>
   <form
-    class="-mr-1 flex max-h-[calc(100dvh-240px)] flex-col gap-[14px] overflow-y-auto pr-1"
+    class="flex flex-col gap-[14px]"
     (submit)="$event.preventDefault(); send()"
     (keydown)="onKey($event)">
     <nc-field [label]="t('feedback.bug.category')" for="bug-category">
@@ -85,30 +86,15 @@
       </nc-media-frame>
     </nc-field>
 
-    <div>
-      <button
-        ncButton
-        variant="ghost"
-        size="sm"
-        type="button"
-        class="-ml-[12px]"
-        aria-controls="bug-included"
-        [attr.aria-expanded]="showIncluded()"
-        (click)="showIncluded.set(!showIncluded())">
-        <nc-mark [name]="showIncluded() ? 'chevron-up' : 'chevron-down'" />
-        {{ t('feedback.bug.included.title') }}
-      </button>
-      @if (showIncluded()) {
-        <dl
-          id="bug-included"
-          class="flat-sm mt-[6px] grid grid-cols-[auto_minmax(0,1fr)] gap-x-[14px] gap-y-[4px] bevel-fill-inset px-[12px] py-[10px] text-meta">
-          @for (row of contextRows(); track row.label) {
-            <dt class="text-ink-4">{{ row.label }}</dt>
-            <dd class="font-mono break-words whitespace-pre-wrap text-ink-2">{{ row.value }}</dd>
-          }
-        </dl>
-      }
-    </div>
+    <nc-disclosure [title]="t('feedback.bug.included.title')" [(open)]="showIncluded">
+      <dl
+        class="flat-sm mt-[6px] grid grid-cols-[auto_minmax(0,1fr)] gap-x-[14px] gap-y-[4px] bevel-fill-inset px-[12px] py-[10px] text-meta">
+        @for (row of contextRows(); track row.label) {
+          <dt class="text-ink-4">{{ row.label }}</dt>
+          <dd class="font-mono break-words whitespace-pre-wrap text-ink-2">{{ row.value }}</dd>
+        }
+      </dl>
+    </nc-disclosure>
 
     @if (failed(); as message) {
       <nc-notice tone="danger">{{ message }}</nc-notice>

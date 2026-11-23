@@ -1,5 +1,6 @@
 @if (kicker() || dismissible()) {
-  <header class="flex h-(--nc-h-xl) items-center justify-between border-b-3 border-line px-2">
+  <header
+    class="flex h-(--nc-h-xl) shrink-0 items-center justify-between border-b-3 border-line px-2">
     <span class="text-label tracking-label uppercase" [class]="kickerInk()">{{ kicker() }}</span>
     @if (dismissible()) {
       <button
@@ -15,13 +16,18 @@
     }
   </header>
 }
-<div class="px-2 py-2.5">
+<div class="shrink-0 px-2 pt-2.5">
   <h2 class="font-display text-title leading-[1.15] text-ink">{{ title() }}</h2>
   @if (lead(); as lead) {
     <p class="mt-1 mb-2 max-w-[62ch] text-small leading-[1.55] text-ink-3">{{ lead }}</p>
   }
+</div>
+<div class="px-2 pb-2.5" [class]="scrollable() ? 'min-h-0 overflow-y-auto' : ''">
   <ng-content />
 </div>
-<footer class="flex items-center justify-end gap-[10px] px-2 pb-2 empty:hidden">
+<!-- Over a body that scrolls, a rule says where the body stops and the footer stands still. -->
+<footer
+  class="flex shrink-0 items-center justify-end gap-[10px] px-2 pb-2 empty:hidden"
+  [class]="scrollable() ? 'border-t-3 border-line pt-2' : ''">
   <ng-content select="[footer]" />
 </footer>

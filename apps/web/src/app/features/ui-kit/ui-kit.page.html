@@ -722,9 +722,25 @@
   <section id="navigation" class="grid scroll-mt-[80px] gap-2.5">
     <div class="flex items-baseline gap-2">
       <h2 class="font-display text-display text-ink">Navigation</h2>
-      <span class="text-meta text-ink-3">top-bar links, page tabs, editor rail, pager</span>
+      <span class="text-meta text-ink-3">
+        top-bar links, page tabs, editor rail, pager, disclosure
+      </span>
     </div>
     <div class="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] items-start gap-2.5">
+      <div
+        class="flat-lg bevel-fill-panel grid content-start gap-[14px] px-2.5 py-[18px]"
+        data-testid="disclosure">
+        <nc-disclosure variant="title" [level]="3" title="How to play" [open]="true">
+          <p class="mt-1 text-body text-ink-body">Arrows move, Space jumps.</p>
+        </nc-disclosure>
+        <nc-disclosure title="Included with your report">
+          <p class="mt-1 text-meta text-ink-3">Page, window, language, app version.</p>
+        </nc-disclosure>
+        <nc-disclosure title="Graphics" [open]="true">
+          <nc-icon lead name="image" class="text-ink-4" />
+          <p class="mt-1 pl-2 text-meta text-ink-2">Sprites, maps, palettes.</p>
+        </nc-disclosure>
+      </div>
       <div class="flat-lg bevel-fill-panel grid content-start gap-[14px] px-2.5 py-[18px]">
         <div class="label">Top-bar links</div>
         <nav class="flex gap-[28px] text-body tracking-button uppercase" aria-label="Top bar">

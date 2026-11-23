@@ -144,12 +144,14 @@ test.describe('how to play', () => {
     const howTo = page.locator('nc-how-to-play');
     await expect(howTo.getByRole('table')).toHaveCount(2);
 
-    await howTo.getByRole('button', { name: 'Hide how to play' }).click();
+    const fold = howTo.getByRole('button', { name: 'How to play' });
+    await expect(fold).toHaveAttribute('aria-expanded', 'true');
+    await fold.click();
     await expect(howTo.getByRole('table')).toHaveCount(0);
     await expect(howTo.getByRole('heading', { name: 'How to play' })).toBeVisible();
 
     await page.reload();
-    const show = howTo.getByRole('button', { name: 'Show how to play' });
+    const show = howTo.getByRole('button', { name: 'How to play' });
     await expect(show).toHaveAttribute('aria-expanded', 'false');
     await expect(howTo.getByRole('table')).toHaveCount(0);
 

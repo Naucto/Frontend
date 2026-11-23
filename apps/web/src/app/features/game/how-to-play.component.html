@@ -1,19 +1,10 @@
 <section *transloco="let t" class="@container">
-  <div class="flex items-center gap-1">
-    <h2 class="font-display text-title text-ink">{{ t('game.howToPlay') }}</h2>
-    <button
-      ncButton
-      variant="ghost"
-      size="sm"
-      iconOnly
-      type="button"
-      [attr.aria-expanded]="open()"
-      [attr.aria-label]="open() ? t('game.howTo.hide') : t('game.howTo.show')"
-      (click)="toggle()">
-      <nc-mark [name]="open() ? 'chevron-up' : 'chevron-down'" />
-    </button>
-  </div>
-  @if (open()) {
+  <nc-disclosure
+    variant="title"
+    [level]="2"
+    [title]="t('game.howToPlay')"
+    [open]="open()"
+    (openChange)="toggle()">
     <div
       class="mt-1.5 grid items-start gap-2"
       [class]="tables().length > 1 ? '@[960px]:grid-cols-2' : 'max-w-[640px]'">
@@ -71,5 +62,5 @@
         </table>
       }
     </div>
-  }
+  </nc-disclosure>
 </section>

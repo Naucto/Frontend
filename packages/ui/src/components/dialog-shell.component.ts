@@ -1,5 +1,12 @@
 import { DialogRef } from '@angular/cdk/dialog';
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import {
+  booleanAttribute,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+} from '@angular/core';
 
 import { ButtonDirective } from './button.directive';
 import { IconComponent } from './icon.component';
@@ -18,7 +25,10 @@ import { IconComponent } from './icon.component';
   selector: 'nc-dialog-shell',
   imports: [ButtonDirective, IconComponent],
   templateUrl: './dialog-shell.component.html',
-  host: { class: 'raised-lg bevel-fill-panel block animate-rise text-ink' },
+  host: {
+    class: 'raised-lg bevel-fill-panel animate-rise text-ink',
+    '[class]': "scrollable() ? 'flex max-h-[calc(100dvh-32px)] flex-col' : 'block'",
+  },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DialogShellComponent {
@@ -31,6 +41,12 @@ export class DialogShellComponent {
   readonly closeLabel = input('Close');
   /** False for a dialog that must be answered through its own buttons, which then has no cross. */
   readonly dismissible = input(true);
+  /**
+   * The dialog stands no taller than the window, its head, title and footer held, and its body
+   * scrolls. Left off where something in the body floats out of it (a list of suggestions under a
+   * field), which a scrolling body would cut.
+   */
+  readonly scrollable = input(false, { transform: booleanAttribute });
   private readonly ref = inject(DialogRef, { optional: true });
   protected readonly kickerInk = computed(() =>
     this.tone() === 'danger' ? 'text-hot-ink' : 'text-ink-3',

@@ -124,16 +124,13 @@ it('shows the control of the on-screen pad, and nothing else, on a touch device'
 
 it('folds away, and says so to the device', async () => {
   const { fixture } = await show(gameOf('platformer'));
-  const fold = screen.getByRole('button', { name: 'Hide how to play' });
+  const fold = screen.getByRole('button', { name: 'How to play' });
   expect(fold).toHaveAttribute('aria-expanded', 'true');
 
   fold.click();
   fixture.detectChanges();
   expect(screen.queryByRole('table')).toBeNull();
-  expect(screen.getByRole('button', { name: 'Show how to play' })).toHaveAttribute(
-    'aria-expanded',
-    'false',
-  );
+  expect(fold).toHaveAttribute('aria-expanded', 'false');
   expect(localStorage.getItem('naucto.how-to-play-open')).toBe('false');
 });
 

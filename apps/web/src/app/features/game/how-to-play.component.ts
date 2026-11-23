@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { type ActionInput, type GameAction, touchControlsOf } from '@naucto/engine';
-import { ButtonDirective, ChipComponent, MarkComponent, TableDirective } from '@naucto/ui';
+import { ChipComponent, DisclosureComponent, TableDirective } from '@naucto/ui';
 
 import { readJson, STORAGE_KEYS, writeJson } from '../../core/storage/local-storage';
 import { coarsePointer } from '../../shared/input/coarse-pointer';
@@ -62,10 +62,9 @@ const TWO_KEYBOARDS: Column[] = [
   selector: 'nc-how-to-play',
   imports: [
     TranslocoDirective,
-    ButtonDirective,
     ChipComponent,
+    DisclosureComponent,
     InputCapComponent,
-    MarkComponent,
     TableDirective,
   ],
   templateUrl: './how-to-play.component.html',

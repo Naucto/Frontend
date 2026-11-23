@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
-import { IconComponent, type IconName } from '@naucto/ui';
+import { DisclosureComponent, IconComponent, type IconName } from '@naucto/ui';
 
 import { readJson, STORAGE_KEYS, writeJson } from '../../core/storage/local-storage';
 import { type DocPage, DocsService } from './docs.service';
@@ -25,7 +25,7 @@ const CURRENT = 'bevel-down bevel-lit bevel-fill-raised text-active-ink';
  */
 @Component({
   selector: 'nc-doc-tree',
-  imports: [TranslocoDirective, IconComponent],
+  imports: [TranslocoDirective, DisclosureComponent, IconComponent],
   templateUrl: './doc-tree.component.html',
   host: { class: 'block' },
   changeDetection: ChangeDetectionStrategy.OnPush,
