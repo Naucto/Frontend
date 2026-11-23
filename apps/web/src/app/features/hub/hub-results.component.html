@@ -27,6 +27,30 @@
   </div>
 
   @if (pages.isSuccess()) {
+    @if (collectionsFound().length) {
+      <section
+        class="grid min-w-0 gap-[14px]"
+        aria-labelledby="results-collections"
+        data-shelf="collections">
+        <div class="flex items-center gap-[14px]">
+          <h3 id="results-collections" class="font-display text-[22px] leading-[1.2] text-ink">
+            {{ t('hub.shelf.collections') }}
+          </h3>
+          <nc-chip>{{ collections.data()?.total }}</nc-chip>
+        </div>
+        <div class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-[20px]">
+          @for (collection of collectionsFound(); track collection.id) {
+            <nc-collection-box
+              [link]="['/collections', collection.id]"
+              [title]="collection.title"
+              [curator]="collection.owner"
+              [total]="collection.gameCount"
+              [games]="collection.games"
+              (picked)="play($event)" />
+          }
+        </div>
+      </section>
+    }
     @for (group of groups(); track group.tag) {
       <nc-shelf [heading]="group.label" [count]="group.games.length" [attr.data-shelf]="group.tag">
         <nc-shelf-disk
@@ -39,29 +63,31 @@
         <nc-game-flyout *ncShelfFlyout="let game of group.games" [game]="game" />
       </nc-shelf>
     } @empty {
-      <nc-empty-state
-        class="flat-lg bevel-fill-panel py-[48px]"
-        icon="save"
-        [title]="t('hub.results.empty')">
-        @if (suggested.data(); as tags) {
-          <div class="flex flex-wrap justify-center gap-[8px]">
-            @for (tag of tags; track tag) {
-              <a
-                ncButton
-                size="sm"
-                class="normal-case!"
-                routerLink="/hub"
-                [queryParams]="{ tags: tag }">
-                #{{ tag }}
-              </a>
-            }
-          </div>
-        }
-        <a ncButton variant="primary" size="lg" routerLink="/games/new">
-          <nc-icon name="plus" />
-          {{ t('hub.results.make') }}
-        </a>
-      </nc-empty-state>
+      @if (!collectionsFound().length) {
+        <nc-empty-state
+          class="flat-lg bevel-fill-panel py-[48px]"
+          icon="save"
+          [title]="t('hub.results.empty')">
+          @if (suggested.data(); as tags) {
+            <div class="flex flex-wrap justify-center gap-[8px]">
+              @for (tag of tags; track tag) {
+                <a
+                  ncButton
+                  size="sm"
+                  class="normal-case!"
+                  routerLink="/hub"
+                  [queryParams]="{ tags: tag }">
+                  #{{ tag }}
+                </a>
+              }
+            </div>
+          }
+          <a ncButton variant="primary" size="lg" routerLink="/games/new">
+            <nc-icon name="plus" />
+            {{ t('hub.results.make') }}
+          </a>
+        </nc-empty-state>
+      }
     }
     @if (pages.hasNextPage()) {
       <button

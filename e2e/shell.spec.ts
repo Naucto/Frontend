@@ -1,7 +1,9 @@
 import { uuidOf } from '../packages/api-client/testing';
 import { expect, type Page, test } from './fixtures';
+import { ALEXIS, collection, mockCollections } from './mocks/collections';
 import { PLAY, release, serveGame } from './mocks/game';
 import { setGamepads } from './mocks/gamepads';
+import { hubGame } from './mocks/hub';
 import { JOINS_FROM_INIT, mockRoom } from './mocks/netplay';
 import { mockNotifications } from './mocks/notifications';
 import { answer, mockSignedIn } from './mocks/session';
@@ -30,8 +32,25 @@ const room = {
   disk: null,
 };
 
-/** What the search box asks for: three popular games, one game and one tag for any word typed. */
+const COUCH = collection('couch', 'Couch co-op', {
+  description: 'Two pads, one sofa.',
+  gameIds: [uuidOf(11), uuidOf(12)],
+});
+
+/**
+ * What the search box asks for: three popular games, one game, one tag and the collections that
+ * hold the word, for any word typed.
+ */
 async function mockSearch(page: Page): Promise<void> {
+  await mockCollections(page, [hubGame(11, 'Hightide'), hubGame(12, 'Pong Royale')], {
+    collections: [
+      COUCH,
+      collection('cave-crawls', 'Cave crawls', {
+        owner: ALEXIS,
+        gameIds: [uuidOf(11), uuidOf(12)],
+      }),
+    ],
+  });
   await page.route('**/projects/releases/paginated**', (route) => {
     const searched = new URL(route.request().url()).searchParams.has('search');
     return route.fulfill({ json: { projects: searched ? [release] : popular, total: 3 } });
@@ -115,10 +134,16 @@ test.describe('app shell', () => {
     await expect(
       list.getByRole('group', { name: 'Games' }).getByRole('option'),
     ).toHaveAccessibleName('Cave Diver, 12 plays, 1 likes');
+    const collections = list.getByRole('group', { name: 'Collections' });
+    await expect(collections.getByRole('option')).toHaveAccessibleName(
+      'Open Cave crawls, a collection by alexis, 2 games',
+    );
     await expect(list.getByRole('group', { name: 'People' })).toContainText('cavefan');
     await expect(list.getByRole('group', { name: 'Tags' }).getByRole('option')).toHaveText('caves');
 
     await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('ArrowDown');
+    await expect(collections.getByRole('option')).toBeFocused();
     await page.keyboard.press('ArrowDown');
     const person = list.getByRole('option', { name: 'cavefan' });
     await expect(person).toBeFocused();
@@ -127,6 +152,30 @@ test.describe('app shell', () => {
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(new RegExp(`${PLAY}$`));
     await expect(list).toHaveCount(0);
+  });
+
+  test('the search box lists the collections that hold the words, and ENTER opens one', async ({
+    page,
+  }) => {
+    await page.route('**/auth/refresh', answer(401, {}));
+    await mockSearch(page);
+    await page.goto('/hub');
+    const box = page.getByRole('combobox', { name: 'Search games, people, tags…' });
+
+    await box.fill('CO-OP');
+    const collections = page.getByRole('group', { name: 'Collections' });
+    const couch = collections.getByRole('option', { name: /^Open Couch co-op/ });
+    await expect(couch).toHaveAccessibleName('Open Couch co-op, a collection by alexis, 2 games');
+    await expect(collections.getByRole('option')).toHaveCount(1);
+    await expect(collections.locator('nc-floppy')).toHaveCount(1);
+
+    // The game that matched comes first, the collections after it.
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('ArrowDown');
+    await expect(couch).toBeFocused();
+    await expect(couch).toHaveAttribute('aria-selected', 'true');
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(/\/collections\/couch$/);
   });
 
   test('ENTER in the search box runs the search, and a # lands on the tag', async ({ page }) => {

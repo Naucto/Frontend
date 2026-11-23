@@ -46,6 +46,50 @@
     </div>
   }
 
+  @if (found.collections.length) {
+    <div role="group" class="grid gap-[3px]" [attr.aria-label]="t('search.collections')">
+      <p aria-hidden="true" [class]="heading">{{ t('search.collections') }}</p>
+      @for (entry of collections(); track entry.collection.id; let i = $index) {
+        @let collection = entry.collection;
+        <nc-suggest-row
+          tabindex="-1"
+          class="px-[6px]! pt-[6px]! pb-[6px]! outline-none"
+          [selected]="cursor() === offsets().collections + i"
+          [attr.aria-label]="
+            t('search.collectionLabel', {
+              title: collection.title,
+              owner: collection.owner.username,
+              n: collection.gameCount,
+            })
+          "
+          (click)="picked.emit({ kind: 'collection', id: collection.id })">
+          @if (entry.first && entry.disk) {
+            <nc-floppy
+              class="w-[52px] shrink-0"
+              [disk]="entry.disk"
+              [cover]="entry.first.coverUrl ?? null"
+              [interactive]="false" />
+          }
+          <span aria-hidden="true" class="grid min-w-0 flex-1 gap-[6px]">
+            <span class="truncate text-body text-ink">
+              <nc-highlight [text]="collection.title" [match]="term" />
+            </span>
+            <span class="flex min-w-0 items-center gap-[10px]">
+              <nc-user-avatar
+                [userId]="collection.owner.id"
+                [name]="collection.owner.username"
+                [size]="24" />
+              <span class="min-w-0 truncate text-meta text-ink-3">
+                {{ t('search.collectionBy', { name: collection.owner.username }) }}
+              </span>
+              <nc-chip>{{ t('search.collectionGames', { n: collection.gameCount }) }}</nc-chip>
+            </span>
+          </span>
+        </nc-suggest-row>
+      }
+    </div>
+  }
+
   @if (found.people.length) {
     <div role="group" class="grid gap-[3px]" [attr.aria-label]="t('search.people')">
       <p aria-hidden="true" [class]="heading">{{ t('search.people') }}</p>

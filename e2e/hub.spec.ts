@@ -1,5 +1,6 @@
 import { uuidOf } from '../packages/api-client/testing';
 import { expect, test } from './fixtures';
+import { collection, mockCollections } from './mocks/collections';
 import { serveGame } from './mocks/game';
 import { FEED, games, hubGame, mockHub, POPULAR, SESSION } from './mocks/hub';
 import { JOINS_FROM_INIT, mockRoom } from './mocks/netplay';
@@ -221,6 +222,35 @@ test.describe('the results view', () => {
     const sorted = page.waitForRequest(/\/projects\/releases\/paginated\?.*sort=popular/);
     await page.getByRole('radio', { name: 'Most played' }).click();
     expect(new URL((await sorted).url()).searchParams.get('search')).toBe('cave');
+  });
+
+  test('lists the collections a search finds above its games, and only for a search', async ({
+    page,
+  }) => {
+    const found = games(3, 'Cave', 700);
+    await mockHub(page, { found });
+    await mockCollections(page, found, {
+      collections: [
+        collection('couch', 'Couch co-op', { gameIds: [found[0]?.id as string] }),
+        collection('cave-crawls', 'Cave crawls', {
+          gameIds: found.map((game) => game.id as string),
+        }),
+      ],
+    });
+    await page.goto('/hub?q=cave');
+
+    const shelf = page.locator('[data-shelf="collections"]');
+    await expect(shelf.getByRole('heading', { name: 'Collections' })).toBeVisible();
+    await expect(shelf.locator('nc-collection-box')).toHaveCount(1);
+    await expect(shelf.getByRole('link', { name: /^Open Cave crawls/ })).toHaveAttribute(
+      'href',
+      '/collections/cave-crawls',
+    );
+    await expect(page.getByRole('region', { name: 'Arcade' })).toBeVisible();
+
+    await page.goto('/hub?tags=arcade');
+    await expect(page.getByRole('region', { name: 'Arcade' })).toBeVisible();
+    await expect(page.locator('[data-shelf="collections"]')).toHaveCount(0);
   });
 
   test('lists the games that carry a tag', async ({ page }) => {

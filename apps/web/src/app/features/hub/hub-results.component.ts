@@ -6,7 +6,7 @@ import {
   input,
   linkedSignal,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import {
   ButtonDirective,
@@ -21,9 +21,11 @@ import {
   ShelfItemDirective,
 } from '@naucto/ui';
 
+import { CollectionBoxComponent } from '../../shared/hub/collection-box.component';
 import { GameFlyoutComponent } from '../../shared/hub/game-flyout.component';
 import type { HubGame } from '../../shared/hub/hub-game';
 import { ShelfDiskComponent } from '../../shared/hub/shelf-disk.component';
+import { injectCollectionSearch } from '../../shared/queries/collections.queries';
 import { injectHubResults, type ResultsQuery } from '../../shared/queries/hub.queries';
 import { injectReleaseTags, type ReleaseSort } from '../../shared/queries/releases.queries';
 import { ShelfSkeletonComponent } from './shelf-skeleton.component';
@@ -38,10 +40,12 @@ const SORTS: Record<Order, ReleaseSort | undefined> = {
   newest: 'fresh',
 };
 const TAGS_SUGGESTED = 6;
+const COLLECTIONS_SHOWN = 12;
 
 /**
  * Everything a search, a tag or a shelf holds, in shelves by the first tag of each game, a page at
- * a time. With nothing to show it offers the tags games carry most, and to make the game.
+ * a time, after the collections a search finds. With nothing to show it offers the tags games
+ * carry most, and to make the game.
  */
 @Component({
   selector: 'nc-hub-results',
@@ -50,6 +54,7 @@ const TAGS_SUGGESTED = 6;
     TranslocoDirective,
     ButtonDirective,
     ChipComponent,
+    CollectionBoxComponent,
     EmptyStateComponent,
     ErrorStateComponent,
     GameFlyoutComponent,
@@ -71,6 +76,7 @@ export class HubResultsComponent {
   readonly query = input.required<ResultsQuery>();
 
   private readonly transloco = inject(TranslocoService);
+  private readonly router = inject(Router);
 
   /** What the results are of, and what they are called. */
   protected readonly head = computed(() => {
@@ -129,6 +135,17 @@ export class HubResultsComponent {
       games,
     }));
   });
+
+  /** A shelf lists games only; a search lists the collections that match it too. */
+  protected readonly collections = injectCollectionSearch(
+    () => (this.query().shelf ? undefined : this.query().search),
+    COLLECTIONS_SHOWN,
+  );
+  protected readonly collectionsFound = computed(() => this.collections.data()?.collections ?? []);
+
+  protected play(game: HubGame): void {
+    void this.router.navigate(['/play', game.id]);
+  }
 
   protected readonly suggested = injectReleaseTags(
     TAGS_SUGGESTED,

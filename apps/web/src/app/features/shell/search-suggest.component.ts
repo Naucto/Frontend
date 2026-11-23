@@ -62,11 +62,12 @@ export class SearchSuggestComponent {
 
   protected readonly suggestions = injectSuggestions(this.text, this.opened);
   protected readonly data = computed(
-    () => this.suggestions.data() ?? { games: [], people: [], sessions: [], tags: [] },
+    () =>
+      this.suggestions.data() ?? { games: [], collections: [], people: [], sessions: [], tags: [] },
   );
   protected readonly count = computed(() => {
-    const { games, people, sessions, tags } = this.data();
-    return games.length + people.length + sessions.length + tags.length;
+    const { games, collections, people, sessions, tags } = this.data();
+    return games.length + collections.length + people.length + sessions.length + tags.length;
   });
 
   private options(): HTMLElement[] {
@@ -157,6 +158,9 @@ export class SearchSuggestComponent {
         void this.router.navigate(['/play', target.projectId], {
           queryParams: { session: target.sessionUuid },
         });
+        return;
+      case 'collection':
+        void this.router.navigate(['/collections', target.id]);
         return;
       case 'person':
         void this.router.navigate(['/u', target.username]);

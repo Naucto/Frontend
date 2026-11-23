@@ -71,6 +71,25 @@ export function injectCollectionsPage(
   }));
 }
 
+/** The public collections whose title or description holds `term`, the most followed first. */
+export async function searchCollections(term: string, limit: number): Promise<CollectionsPageDto> {
+  return unwrap(
+    await collectionsControllerList({ query: { search: term, page: 1, limit, sort: 'popular' } }),
+  );
+}
+
+/** What a search finds among the public collections; nothing is asked for while `term` is blank. */
+export function injectCollectionSearch(
+  term: () => string | undefined,
+  limit = COLLECTION_PAGE_SIZE,
+): CreateQueryResult<CollectionsPageDto> {
+  return injectQuery(() => ({
+    queryKey: qk.collectionsPage({ search: term(), limit }),
+    enabled: Boolean(term()),
+    queryFn: async () => searchCollections(term() ?? '', limit),
+  }));
+}
+
 /** The viewer's own collections; with a game, each says whether it holds it. */
 export function injectMyCollections(
   projectId: () => string | null = () => null,

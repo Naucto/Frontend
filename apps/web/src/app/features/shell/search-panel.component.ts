@@ -23,6 +23,7 @@ import { UserAvatarComponent } from '../../shared/user-avatar.component';
 /** Where an option leads, which is all the box needs to know about it. */
 export type SuggestTarget =
   | { kind: 'game'; id: string }
+  | { kind: 'collection'; id: string }
   | { kind: 'person'; username: string }
   | { kind: 'session'; projectId: string; sessionUuid: string }
   | { kind: 'tag'; tag: string };
@@ -31,7 +32,7 @@ export type SuggestTarget =
 const SEATS_DRAWN = 8;
 
 /**
- * What the search box offers, grouped by kind: games as disks, people, open sessions, tags. Each
+ * What the search box offers, grouped by kind: games as disks, collections, people, open sessions, tags. Each
  * option takes the focus itself, and the box that owns the panel moves it; a choice is `picked`.
  */
 @Component({
@@ -74,6 +75,13 @@ export class SearchPanelComponent {
     this.suggestions().games.map((game) => ({ game, disk: diskStyleFor(game) })),
   );
 
+  protected readonly collections = computed(() =>
+    this.suggestions().collections.map((collection) => {
+      const first = collection.games[0];
+      return { collection, first, disk: first ? diskStyleFor(first) : null };
+    }),
+  );
+
   protected readonly sessions = computed(() =>
     this.suggestions().sessions.map((session) => ({
       session,
@@ -88,11 +96,13 @@ export class SearchPanelComponent {
 
   /** Where each group after the games starts among every option drawn. */
   protected readonly offsets = computed(() => {
-    const { games, people, sessions } = this.suggestions();
+    const { games, collections, people, sessions } = this.suggestions();
+    const peopleStart = games.length + collections.length;
     return {
-      people: games.length,
-      sessions: games.length + people.length,
-      tags: games.length + people.length + sessions.length,
+      collections: games.length,
+      people: peopleStart,
+      sessions: peopleStart + people.length,
+      tags: peopleStart + people.length + sessions.length,
     };
   });
 

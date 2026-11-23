@@ -241,6 +241,7 @@
   "search": {
     "games": "Games",
     "popular": "Popular",
+    "collections": "Collections",
     "people": "People",
     "sessions": "Open sessions",
     "tags": "Tags",
@@ -248,6 +249,9 @@
     "nothing": "Nothing matches yet. Enter searches anyway.",
     "hosts": "{{name}} hosts",
     "gameLabel": "{{name}}, {{plays}} plays, {{likes}} likes",
+    "collectionBy": "by {{name}}",
+    "collectionGames": "{{n}} games",
+    "collectionLabel": "Open {{title}}, a collection by {{owner}}, {{n}} games",
     "sessionLabel": "Join {{name}}, hosted by {{host}}, {{n}} of {{m}} players",
     "count": "{{n}} suggestions",
     "none": "No suggestions",

@@ -1,5 +1,6 @@
 import { computed, inject, type Signal } from '@angular/core';
 import {
+  type CollectionPreviewDto,
   type GameSessionResponseDto,
   hubControllerGetPaginatedReleases,
   hubControllerGetReleaseTags,
@@ -13,6 +14,7 @@ import { type CreateQueryResult, injectQuery } from '@tanstack/angular-query-exp
 
 import { unwrap } from '../../core/api/api-errors';
 import { AuthStore } from '../../core/auth/auth.store';
+import { searchCollections } from './collections.queries';
 import { qk } from './query-keys';
 
 /** How many of each kind the panel shows before the full results page takes over. */
@@ -28,12 +30,13 @@ export type TagHit = ReleaseTagDto;
 
 export interface Suggestions {
   games: ProjectExResponseDto[];
+  collections: CollectionPreviewDto[];
   people: PersonHit[];
   sessions: SessionHit[];
   tags: TagHit[];
 }
 
-const EMPTY: Suggestions = { games: [], people: [], sessions: [], tags: [] };
+const EMPTY: Suggestions = { games: [], collections: [], people: [], sessions: [], tags: [] };
 
 /**
  * People matching what was typed, handle and display name alike, case-insensitively.
@@ -78,13 +81,14 @@ export function parseTerm(raw: string): ParsedTerm {
 }
 
 /**
- * The four kinds a search offers, fetched together.
+ * The kinds a search offers, fetched together.
  *
  * Live sessions are the one kind that needs a signed-in caller — who may see a session depends on
  * whose friend the host is — so a visitor gets three sections rather than a section that lies.
  *
  * With `untyped`, an empty box is answered too: the most played games and the open sessions, or
- * the most used tags after a lone `#`. People and tags are only ever looked up by what was typed.
+ * the most used tags after a lone `#`. Collections, people and tags are only ever looked up by
+ * what was typed.
  */
 export function injectSuggestions(
   query: Signal<string>,
@@ -122,6 +126,9 @@ export function injectSuggestions(
           }).then(unwrap),
           (releasesResponse) => releasesResponse.projects.slice(0, PER_SECTION),
         );
+        const collections = term
+          ? section(searchCollections(term, PER_SECTION), (page) => page.collections)
+          : Promise.resolve([]);
         const people = term
           ? section(searchPeople(term, PER_SECTION), (hits) => hits)
           : Promise.resolve([]);
@@ -132,14 +139,11 @@ export function injectSuggestions(
             )
           : Promise.resolve([]);
 
-        const [resolvedGames, resolvedPeople, resolvedSessions, resolvedTags] = await Promise.all([
-          games,
-          people,
-          sessions,
-          tags,
-        ]);
+        const [resolvedGames, resolvedCollections, resolvedPeople, resolvedSessions, resolvedTags] =
+          await Promise.all([games, collections, people, sessions, tags]);
         return {
           games: resolvedGames,
+          collections: resolvedCollections,
           people: resolvedPeople,
           sessions: resolvedSessions,
           tags: resolvedTags,

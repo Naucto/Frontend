@@ -171,8 +171,13 @@ export async function mockCollections(
         );
       }
       if (url.pathname === '/collections' && method === 'GET') {
+        const search = (url.searchParams.get('search') ?? '').trim().toLowerCase();
         const listed = api.collections.filter(
-          (stored) => stored.visibility === 'PUBLIC' && !stored.hiddenAt,
+          (stored) =>
+            stored.visibility === 'PUBLIC' &&
+            !stored.hiddenAt &&
+            (!search ||
+              `${stored.title}\n${stored.description ?? ''}`.toLowerCase().includes(search)),
         );
         const sort = url.searchParams.get('sort');
         if (sort === 'recent') {

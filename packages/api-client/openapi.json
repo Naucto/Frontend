@@ -3405,6 +3405,17 @@
               "type": "string",
               "enum": ["popular", "recent", "games"]
             }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "What was typed: only the collections whose title or description contains it, whatever the case, are listed. Blank means no search",
+            "schema": {
+              "maxLength": 100,
+              "example": "co-op",
+              "type": "string"
+            }
           }
         ],
         "responses": {
