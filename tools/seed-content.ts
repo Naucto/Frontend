@@ -32,7 +32,12 @@ import {
   type TutorialAssets,
 } from '../packages/engine/src/game/tutorial-assets';
 import type { Instrument, Note } from '../packages/engine/src/sound/model';
-import { defaultInstrument, defaultPattern, defaultSong } from '../packages/engine/src/sound/model';
+import {
+  defaultInstrument,
+  defaultPattern,
+  defaultSfx,
+  defaultSong,
+} from '../packages/engine/src/sound/model';
 import { INSTRUMENT_PRESETS } from '../packages/engine/src/sound/presets';
 import { getOptionalEnv } from './env';
 import { encodePng } from './png';
@@ -375,11 +380,11 @@ function addSound(game: EditableGame): void {
   ] as const) {
     notes.push({ step, pitch, length: 8, instrument: 'pad', volume: 0.5 });
   }
-  game.setPattern({ ...defaultPattern('00', 'main'), bpm: 124, steps: 16, notes });
+  game.setPattern({ ...defaultPattern('00', 0, 'main'), bpm: 124, steps: 16, notes });
 
-  // Two short patterns parked in SFX slots, which is what fills the 16-slot grid at the bottom.
-  game.setPattern({
-    ...defaultPattern('01', 'jump'),
+  // Two short sound effects, in SFX slots 0 and 1.
+  game.setSfx(0, {
+    ...defaultSfx('jump'),
     bpm: 124,
     steps: 4,
     notes: [
@@ -387,14 +392,12 @@ function addSound(game: EditableGame): void {
       { step: 1, pitch: 79, length: 1, instrument: 'lead', volume: 0.9 },
     ],
   });
-  game.setPattern({
-    ...defaultPattern('02', 'hit'),
+  game.setSfx(1, {
+    ...defaultSfx('hit'),
     bpm: 124,
     steps: 4,
     notes: [{ step: 0, pitch: 45, length: 2, instrument: 'drum', volume: 1 }],
   });
-  game.sfx.set('0', '01');
-  game.sfx.set('1', '02');
 }
 
 /** Replaces the starter code in place, so the entry file keeps its deterministic id. */
@@ -476,7 +479,7 @@ function midi(note: string): number {
 /**
  * What the "Make it sound" tutorial has the reader do in SOUND before it reaches CODE, since its
  * page carries no assets file: Square lead and Laser from the presets, the two bars of Steps 2
- * and 3 chained as music 0, and the zap of Step 4 in SFX slot 0. The colours follow the accent
+ * and 3 placed on the timeline of music 0, and the zap of Step 4 in SFX slot 0. The colours follow the accent
  * slots the SOUND tab hands out in order, so the captures show what the reader sees.
  */
 function addTutorialSound(game: EditableGame): void {
@@ -508,14 +511,19 @@ function addTutorialSound(game: EditableGame): void {
   };
   bar('p0', 0, ['C4', 'E4', 'G4', 'C5', 'G4', 'E4', 'C4', 'G3']);
   bar('p1', 1, ['A3', 'C4', 'E4', 'A4', 'E4', 'C4', 'A3', 'G3']);
-  game.setPattern({
-    ...defaultPattern('p2', 2, 'pattern 02'),
+  game.setSfx(0, {
+    ...defaultSfx('zap'),
     bpm: 120,
     steps: 16,
     notes: [{ step: 0, pitch: midi('G6'), length: 1, instrument: laser.id, volume: 0.8 }],
   });
-  game.sfx.set('0', 'p2');
-  game.setSong(0, { ...defaultSong(), sequence: ['p0', 'p1'] });
+  game.setSong(0, {
+    ...defaultSong(120),
+    blocks: [
+      { id: 'b0', pattern: 'p0', start: 0, repeat: 1 },
+      { id: 'b1', pattern: 'p1', start: 1, repeat: 1 },
+    ],
+  });
 }
 
 function buildTutorial(tutorial: string, source: string): EditableGame {

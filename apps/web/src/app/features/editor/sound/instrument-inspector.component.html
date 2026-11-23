@@ -1,6 +1,8 @@
-<div *transloco="let t" class="relative">
+<div
+  *transloco="let t"
+  class="relative grid grid-cols-[repeat(auto-fill,minmax(380px,1fr))] items-start gap-1 p-1">
   <nc-presence-surface surface="sound:inspector" />
-  <section class="border-b-3 border-line p-1.5">
+  <section class="flat-lg bevel-fill-panel p-1.5">
     <div class="mb-1 flex items-center justify-between">
       <span class="label text-ink-3">{{ t('editor.sound.oscillator') }}</span>
       <nc-help-dot [title]="t('editor.sound.oscillator')" [text]="t('editor.sound.oscHelp')" />
@@ -55,6 +57,7 @@
                 size="sm"
                 iconOnly
                 [attr.aria-label]="t('editor.sound.removeSample')"
+                [ncTooltip]="t('editor.sound.removeSample')"
                 (click)="clearSample()">
                 <nc-mark name="close" />
               </button>
@@ -95,7 +98,7 @@
     </div>
   </section>
 
-  <section class="border-b-3 border-line p-1.5">
+  <section class="flat-lg bevel-fill-panel p-1.5">
     <div class="mb-1 flex items-center justify-between">
       <span class="label text-ink-3">{{ t('editor.sound.envelope') }}</span>
       <nc-help-dot [title]="t('editor.sound.envelope')" [text]="t('editor.sound.envHelp')" />
@@ -148,7 +151,7 @@
     </div>
   </section>
 
-  <section class="border-b-3 border-line p-1.5">
+  <section class="flat-lg bevel-fill-panel p-1.5">
     <div class="mb-1 flex items-center justify-between">
       <span class="label text-ink-3">{{ t('editor.sound.modFilter') }}</span>
       <nc-help-dot [title]="t('editor.sound.modFilter')" [text]="t('editor.sound.modHelp')" />
@@ -216,7 +219,7 @@
     </div>
   </section>
 
-  <section class="border-b-3 border-line p-1.5">
+  <section class="flat-lg bevel-fill-panel p-1.5">
     <div class="mb-1 flex items-center justify-between">
       <span class="label text-ink-3">{{ t('editor.sound.mix') }}</span>
       <nc-help-dot [title]="t('editor.sound.mix')" [text]="t('editor.sound.mixHelp')" />
@@ -236,33 +239,6 @@
         [value]="inst().pan * 100"
         [readout]="panLabel(inst().pan)"
         (valueChange)="patched.emit({ pan: $event / 100 })" />
-    </div>
-  </section>
-
-  <section class="p-1.5">
-    <div class="mb-1 flex items-center justify-between">
-      <span class="label text-ink-3">{{ t('editor.sound.usedBy') }}</span>
-      <span class="flex gap-1.5">
-        <nc-stat
-          icon="music"
-          [value]="usedBy().patterns.length"
-          [label]="t('editor.sound.usedByPatterns')" />
-        <nc-stat
-          icon="volume-2"
-          [value]="usedBy().sfx.length"
-          [label]="t('editor.sound.usedBySfx')" />
-      </span>
-    </div>
-    <div class="flex flex-wrap gap-0.5">
-      @for (pattern of usedBy().patterns; track pattern.id) {
-        <nc-chip>{{ t('editor.sound.pattern') }} {{ pad(pattern.slot) }}</nc-chip>
-      }
-      @for (sfxId of usedBy().sfx; track sfxId) {
-        <nc-chip>SFX {{ pad(sfxId) }}</nc-chip>
-      }
-      @if (!usedBy().patterns.length) {
-        <span class="text-meta text-ink-4">{{ t('editor.sound.unused') }}</span>
-      }
     </div>
   </section>
 </div>

@@ -14,14 +14,17 @@ import { INSTRUMENT_NAME_MAX } from './sound-library';
 
 export interface InstrumentDialogData {
   name: string;
-  colour: number;
+  colour?: number;
   /** What the slots below index into, which the instrument stores a number of rather than a colour. */
-  palette: readonly string[];
+  palette?: readonly string[];
+  title?: string;
+  max?: number;
+  allowEmpty?: boolean;
 }
 
 export interface InstrumentDialogResult {
   name: string;
-  colour: number;
+  colour?: number;
 }
 
 /** The name and colour of an instrument, which are the two things about it that are only a label. */
@@ -41,12 +44,14 @@ export interface InstrumentDialogResult {
 export class InstrumentDialog {
   protected readonly data = inject<InstrumentDialogData>(DIALOG_DATA);
   protected readonly ref = inject<DialogRef<InstrumentDialogResult | undefined>>(DialogRef);
-  protected readonly nameMax = INSTRUMENT_NAME_MAX;
+  protected readonly nameMax = this.data.max ?? INSTRUMENT_NAME_MAX;
   protected readonly slots = ACCENT_SLOTS;
 
   protected readonly name = signal(this.data.name);
-  protected readonly colour = signal<number | null>(this.data.colour);
-  protected readonly valid = computed(() => this.name().trim().length > 0);
+  protected readonly colour = signal<number | null>(this.data.colour ?? null);
+  protected readonly valid = computed(
+    () => this.data.allowEmpty === true || this.name().trim().length > 0,
+  );
 
   protected submit(): void {
     if (!this.valid()) {

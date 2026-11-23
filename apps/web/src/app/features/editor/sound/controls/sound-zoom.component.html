@@ -1,0 +1,37 @@
+<ng-container *transloco="let t">
+  <button
+    ncButton
+    variant="ghost"
+    iconOnly
+    [attr.aria-label]="t('editor.sound.zoomOut')"
+    [ncTooltip]="t('editor.sound.zoomOut')"
+    (click)="step(-1)">
+    <nc-icon name="zoom-out" />
+  </button>
+  <nc-slider
+    class="w-[72px] shrink"
+    compact
+    hideLabel
+    [min]="0"
+    [max]="1"
+    [step]="0.001"
+    [value]="position()"
+    [label]="t('editor.sound.zoom')"
+    (valueChange)="slide($event)" />
+  <button
+    ncButton
+    variant="ghost"
+    iconOnly
+    [attr.aria-label]="t('editor.sound.zoomIn')"
+    [ncTooltip]="t('editor.sound.zoomIn')"
+    (click)="step(1)">
+    <nc-icon name="zoom-in" />
+  </button>
+  <button
+    type="button"
+    class="w-[54px] shrink-0 cursor-pointer text-right font-mono text-meta whitespace-nowrap text-ink-3 hover:text-active-ink"
+    [attr.aria-label]="t('editor.sound.zoomReset')"
+    (click)="set(1)">
+    {{ percent() }}
+  </button>
+</ng-container>

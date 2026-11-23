@@ -2,7 +2,11 @@ import type { Page } from '@playwright/test';
 import * as Y from 'yjs';
 
 import { EditableGame } from '../../packages/engine/src/game/EditableGame';
-import { defaultInstrument } from '../../packages/engine/src/sound/model';
+import {
+  defaultInstrument,
+  defaultPattern,
+  defaultSong,
+} from '../../packages/engine/src/sound/model';
 import { editorUrl, mockEditor, PROJECT_ID } from '../editor-mocks';
 import { expect, test } from '../fixtures';
 import { mockSignedIn } from '../mocks/session';
@@ -16,6 +20,8 @@ function savedGame(): Buffer {
   game.seedDefaults();
   game.setNetPermission('players.score', 3);
   game.setInstrument(defaultInstrument('lead'));
+  game.setPattern(defaultPattern('p0'));
+  game.setSong(0, { ...defaultSong(), blocks: [{ id: 'b1', pattern: 'p0', start: 0, repeat: 1 }] });
   game.doc.getText('projectName').insert(0, 'Platformer');
 
   return Buffer.from(Y.encodeStateAsUpdate(game.doc));
@@ -202,23 +208,53 @@ test.describe('a staff member who does not collaborate on the game', () => {
     expect(writes).toEqual([]);
   });
 
-  test('hears the sounds and places no note', async ({ page }) => {
+  test('hears the sounds and places no note, no block and no pattern', async ({ page }) => {
     await page.goto(editorUrl('sound'));
-    const roll = page.getByRole('img', { name: 'Piano roll' });
+    await page.getByRole('tab', { name: /Patterns/ }).click();
+    const roll = page.getByRole('img', { name: 'Piano roll' }).first();
     await expect(roll).toBeVisible();
     const before = await documentBytes(page);
 
-    const box = await boxOf(roll);
-    await page.mouse.click(box.x + 200, box.y + 200);
-    await drag(page, box, { x: 240, y: 240 }, { x: 320, y: 240 });
+    // The roll scrolls inside its window, so the window is what places the pointer.
+    const box = await boxOf(page.locator('[data-dock-leaf]').first());
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    await drag(
+      page,
+      box,
+      { x: box.width / 2, y: box.height / 2 + 40 },
+      { x: box.width / 2 + 80, y: box.height / 2 + 40 },
+    );
 
     await expect(page.getByRole('button', { name: 'Add instrument' }).first()).toBeDisabled();
-    await expect(page.getByRole('textbox', { name: 'BPM' })).toBeDisabled();
+    await expect(page.getByRole('textbox', { name: 'BPM' }).first()).toBeDisabled();
+    // Which pattern is shown, and whether it plays, are not edits.
+    await expect(page.getByRole('button', { name: 'Patterns', exact: true })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Play', exact: true }).first()).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Zoom in' }).first()).toBeEnabled();
+
+    await page.getByRole('tab', { name: /Timeline/ }).click();
+    const block = page.locator('[data-block]');
+    await expect(block).toHaveCount(1);
+    const from = await boxOf(block);
+    await drag(page, from, { x: 10, y: 10 }, { x: 200, y: 10 });
+    await drag(page, from, { x: 10, y: 10 }, { x: 10, y: 400 });
+    await block.click();
+    await page.keyboard.press('Delete');
+    await page.keyboard.press('Control+D');
+    const row = page.getByRole('list', { name: 'Patterns' }).getByRole('listitem').first();
+    const lane = await boxOf(page.locator('[data-lane]'));
+    const start = await boxOf(row);
+    await page.mouse.move(start.x + 40, start.y + start.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(lane.x + 300, lane.y + lane.height / 2, { steps: 10 });
+    await page.mouse.up();
+    await row.dblclick();
+    await expect(block).toHaveCount(1);
+    await expect(page.getByRole('button', { name: 'New pattern', exact: true })).toBeDisabled();
+
+    await page.getByRole('tab', { name: /Instruments/ }).click();
     await expect(page.getByRole('slider', { name: 'VOL' })).toBeDisabled();
     await expect(page.getByRole('radio', { name: 'Sine' })).toBeDisabled();
-    // Which pattern is shown, and whether it plays, are not edits.
-    await expect(page.getByRole('textbox', { name: 'Pattern' })).toBeEnabled();
-    await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
 
     expect(await documentBytes(page)).toBe(before);
     expect(writes).toEqual([]);

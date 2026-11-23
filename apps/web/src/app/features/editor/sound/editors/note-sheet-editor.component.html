@@ -1,0 +1,152 @@
+<ng-container *transloco="let t">
+  @if (!folded()) {
+    <nc-instrument-list
+      class="w-[200px] shrink-0 border-r-3 border-line bg-panel"
+      [list]="deck.instrumentList()"
+      [selectedId]="deck.instrument()?.id ?? null"
+      [palette]="deck.palette()"
+      [peersOf]="deck.instrumentPeers"
+      (selected)="store.selectInstrument($event)"
+      (add)="deck.addInstrument()"
+      (remove)="deck.removeInstrument($event)"
+      (duplicate)="deck.duplicateInstrument($event)"
+      (edit)="deck.editInstrument($event)" />
+  }
+  <section class="@container relative flex min-h-0 min-w-0 flex-1 flex-col">
+    <nc-edge-handle
+      class="left-0! z-30!"
+      [mark]="folded() ? 'chevron-right' : 'chevron-left'"
+      [label]="folded() ? t('editor.sound.showInstruments') : t('editor.sound.hideInstruments')"
+      (pressed)="store.toggleSide(source())" />
+    <header
+      class="flex shrink-0 flex-wrap items-center gap-1 border-b-3 border-line bg-panel px-2 py-[6px]">
+      <ng-content select="[menu]" />
+      <button
+        ncButton
+        variant="ghost"
+        size="sm"
+        iconOnly
+        [attr.aria-label]="clearLabel()"
+        [ncTooltip]="clearLabel()"
+        [disabled]="!sheet().notes.length"
+        (click)="cleared.emit()">
+        <nc-mark name="trash" />
+      </button>
+      <span class="flex-1"></span>
+      <nc-transport
+        [playing]="playing()"
+        [rewind]="false"
+        [canStop]="playing() || head() !== null"
+        [playLabel]="t('editor.sound.play')"
+        [pauseLabel]="t('editor.sound.pause')"
+        [stopLabel]="t('editor.sound.stop')"
+        (started)="play()"
+        (paused)="deck.pause()"
+        (stopped)="deck.stop(source())" />
+      <nc-toggle-button
+        ncLooksOnly
+        size="strip"
+        [label]="t('editor.sound.loop')"
+        [checked]="loop()"
+        (checkedChange)="setLoop($event)">
+        <nc-icon name="repeat" />
+        <span class="hidden @min-[900px]:inline">{{ t('editor.sound.loop') }}</span>
+      </nc-toggle-button>
+      <nc-metronome-button />
+    </header>
+    <div
+      class="flex shrink-0 flex-wrap items-center gap-1 border-b-3 border-line bg-panel px-2 py-[6px]">
+      <nc-number-field
+        class="h-(--nc-h-md) shrink-0"
+        fill
+        [label]="t('editor.sound.bpm')"
+        [ariaLabel]="t('editor.sound.bpm')"
+        [value]="sheet().bpm"
+        [min]="BPM_MIN"
+        [max]="BPM_MAX"
+        (requested)="bpmChange.emit($event)" />
+      <nc-toggle-button
+        ncLooksOnly
+        [controlled]="true"
+        [checked]="store.snap() !== 0"
+        [label]="t('editor.sound.snap')"
+        (activated)="cycleSnap()">
+        <nc-mark name="grid" />
+        {{ snapLabel(t('editor.sound.snap')) }}
+      </nc-toggle-button>
+      <span class="flex-1"></span>
+      <nc-oscilloscope
+        class="h-(--nc-h-sm) w-[88px] shrink-0 border-3 border-line"
+        [peaks]="deck.peaks"
+        [label]="t('editor.sound.liveOut')" />
+      <nc-sound-zoom
+        [value]="zoom()"
+        [min]="MIN_ZOOM"
+        [max]="MAX_ZOOM"
+        (changed)="setZoom($event)" />
+      <button
+        ncButton
+        variant="ghost"
+        iconOnly
+        [attr.aria-label]="t('editor.undo')"
+        [ncTooltip]="t('editor.undo')"
+        [disabled]="!deck.undo.canUndo()"
+        (click)="deck.undo.manager.undo()">
+        <nc-icon name="undo" />
+      </button>
+      <button
+        ncButton
+        variant="ghost"
+        iconOnly
+        [attr.aria-label]="t('editor.redo')"
+        [ncTooltip]="t('editor.redo')"
+        [disabled]="!deck.undo.canRedo()"
+        (click)="deck.undo.manager.redo()">
+        <nc-icon name="redo" />
+      </button>
+      <nc-sound-help [editor]="source()" />
+    </div>
+    <div class="relative flex min-h-0 flex-1 flex-col">
+      <nc-piano-roll
+        #roll
+        class="min-h-0 flex-1"
+        [endLabel]="t('editor.sound.end')"
+        [pattern]="sheet()"
+        [instruments]="deck.library.instruments()"
+        [palette]="deck.palette()"
+        [instrumentId]="deck.instrument()?.id ?? null"
+        [snap]="store.snap()"
+        [zoom]="zoom()"
+        [playhead]="head()"
+        [collaborators]="deck.presence.collaborators()"
+        [label]="t('editor.sound.pianoRoll')"
+        (notesChange)="notesChange.emit($event)"
+        (stepsChange)="stepsChange.emit($event)"
+        (audition)="deck.audition($event)"
+        (keyPressed)="deck.holdKey($event)"
+        (keyReleased)="deck.releaseKey()"
+        (pointer)="onPointer($event)"
+        (seek)="onSeek($event)" />
+      @if (!sheet().notes.length) {
+        <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <nc-empty-state
+            [icon]="emptyIcon()"
+            [title]="emptyTitle()"
+            [hint]="t('editor.sound.emptyRollHint')" />
+        </div>
+      }
+    </div>
+    @if (showVoices()) {
+      <nc-voices-lane
+        [pattern]="sheet()"
+        [instruments]="deck.library.instruments()"
+        [palette]="deck.palette()"
+        [stepWidth]="roll.stepW()"
+        [scrollLeft]="roll.scrollX()"
+        [playhead]="head()"
+        [active]="deck.voices()"
+        [label]="t('editor.sound.voices')" />
+    }
+  </section>
+  <nc-sound-peers [window]="source()" />
+</ng-container>
