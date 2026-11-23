@@ -31,7 +31,6 @@ export * from './components/number-field.component';
 export * from './components/online-dot.component';
 export * from './components/option.directive';
 export * from './components/pager.component';
-export * from './components/panel.component';
 export * from './components/panel-column.component';
 export * from './components/panel-region.component';
 export * from './components/popover.directive';
