@@ -210,7 +210,7 @@ test.describe('the results view', () => {
 
     await expect(page).toHaveURL(/\/hub\?q=cave$/);
     await expect(page.getByText('Search', { exact: true })).toBeVisible();
-    await expect(page.getByRole('heading', { level: 2 })).toHaveText('“cave”');
+    await expect(page.getByRole('heading', { level: 2 })).toHaveText('"cave"');
     await expect(page.getByTestId('results-count')).toHaveText('3');
     await expect(page.getByRole('radio', { name: 'Best match' })).toBeChecked();
 

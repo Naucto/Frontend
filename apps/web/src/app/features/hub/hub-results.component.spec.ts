@@ -70,7 +70,7 @@ describe('HubResultsComponent', () => {
     expect(
       [...host().querySelectorAll('nc-shelf')].map((panel) => text(panel.querySelector('div'))),
     ).toEqual(['Puzzle 2', 'Untagged 1', 'Arcade 1']);
-    expect(text(host().querySelector('h2'))).toBe('“run”');
+    expect(text(host().querySelector('h2'))).toBe('"run"');
     expect(text(host().querySelector('[data-testid="results-count"]'))).toBe('4');
     expect(text(host().querySelector('nc-shelf-disk nc-disk-name'))).toBe('Game 1');
   });
