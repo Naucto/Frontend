@@ -130,7 +130,7 @@ describe('Engine', () => {
     expect(first.load()).toBeNull();
     expect(first.console.lines.map((line) => line.text)).toEqual(['main', 'a', 'b']);
 
-    game.reorderFiles([fileB.id, fileA.id, main?.id ?? '']);
+    game.reorderFiles([fileB?.id ?? '', fileA?.id ?? '', main?.id ?? '']);
     const second = new Engine({ game, gfx: new RecordingBackend(), driver });
     expect(second.load()).toBeNull();
     expect(second.console.lines.map((line) => line.text)).toEqual(['b', 'a', 'main']);
@@ -196,7 +196,7 @@ describe('Engine', () => {
     const edited = game.files.find((file) => file.name === 'a');
     edited?.text.delete(0, edited.text.length);
     edited?.text.insert(0, 'print("edited")');
-    game.reorderFiles([fileA.id]);
+    game.reorderFiles([fileA?.id ?? '']);
 
     expect(engine.load()).toBeNull();
     expect(engine.console.lines.map((line) => line.text)).toEqual(['edited', 'main']);

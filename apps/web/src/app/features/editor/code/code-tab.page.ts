@@ -188,8 +188,10 @@ export default class CodeTabPage implements OnInit {
           return;
         }
         const file = this.session.game.addFile(result.name);
-        this.session.game.setFileColour(file.id, result.colour);
-        this.activeId.set(file.id);
+        if (file) {
+          this.session.game.setFileColour(file.id, result.colour);
+          this.activeId.set(file.id);
+        }
       });
   }
 

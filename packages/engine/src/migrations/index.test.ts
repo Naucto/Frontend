@@ -101,7 +101,7 @@ describe('migrateGame across steps', () => {
       { action: 'x', label: 'Shoot' },
     ]);
     const second = new EditableGame(doc).addFile('helpers');
-    second.text.insert(0, 'input.declare{ a = "Fire" }');
+    second?.text.insert(0, 'input.declare{ a = "Fire" }');
 
     migrateGame(doc);
 

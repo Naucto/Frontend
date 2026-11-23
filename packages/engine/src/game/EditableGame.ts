@@ -19,7 +19,7 @@ import {
   DEFAULT_PLAYER_SPRITE_INDICES,
   DEFAULT_SPRITE_COLOUR,
 } from './defaults';
-import { type CodeFile, coordKey, Game, LOCAL_ORIGIN } from './Game';
+import { type CodeFile, coordKey, Game, LOCAL_ORIGIN, type NetPermissionRules } from './Game';
 import { clampMapSize, clampSheetSize } from './geometry';
 import {
   ENTRY_KEYS,
@@ -171,18 +171,61 @@ export class EditableGame extends Game {
   declare readonly sfx: Y.Map<string>;
   declare readonly songs: Y.Map<string>;
   declare readonly samples: Y.Map<string>;
-  declare readonly netPermissions: Y.Map<{ flags: number }>;
+  /** Read and watched from outside, and written through the net permission methods alone. */
+  declare readonly netPermissions: NetPermissionRules &
+    Pick<Y.Map<{ flags: number }>, 'observe' | 'unobserve'>;
+  private readonly netRules: Y.Map<{ flags: number }>;
 
-  /** Batch writes into one transaction (one undo step, one network update). */
-  transact(fn: () => void, origin: unknown = LOCAL_ORIGIN): void {
-    this.doc.transact(fn, origin);
+  /**
+   * @param mayWrite Asked before every write, by whoever builds the game: whether the one holding
+   *   it may change it now. Left out, the game is always written, which is what a migration, a
+   *   seed and a tool want.
+   */
+  constructor(
+    doc: Y.Doc,
+    private readonly mayWrite: () => boolean = () => true,
+  ) {
+    super(doc);
+    this.netRules = doc.getMap(KEYS.netPermissions);
+  }
+
+  /**
+   * The one door every local write of the document goes through, as one transaction: one undo
+   * step, one network update. Where the game may not be written it runs nothing and answers
+   * false. It does not throw, since what called it may be a pointer handler.
+   */
+  transact(fn: () => void): boolean {
+    if (!this.mayWrite()) {
+      return false;
+    }
+    this.doc.transact(fn, LOCAL_ORIGIN);
+
+    return true;
+  }
+
+  protected override writeSheetPixel(sheetId: string, x: number, y: number, colour: number): void {
+    this.transact(() => {
+      super.writeSheetPixel(sheetId, x, y, colour);
+    });
+  }
+
+  protected override writeSheetFlag(sheetId: string, local: number, value: number): void {
+    this.transact(() => {
+      super.writeSheetFlag(sheetId, local, value);
+    });
+  }
+
+  protected override writeMapTile(mapId: string, x: number, y: number, sprite: number): void {
+    this.transact(() => {
+      super.writeMapTile(mapId, x, y, sprite);
+    });
   }
 
   // ---- sheets and maps ------------------------------------------------------
 
   /** Adds a sheet after the ones there are, and gives it the numbers that follow theirs. */
   addSheet(name: string, width: number, height: number, id: string = crypto.randomUUID()): void {
-    this.doc.transact(() => {
+    this.transact(() => {
       const order = this.sheets.reduce((max, sh) => Math.max(max, sh.order), -1) + 1;
       const entry = new Y.Map<unknown>();
       this.sheetsMap.set(id, entry);
@@ -190,7 +233,7 @@ export class EditableGame extends Game {
       entry.set(ENTRY_KEYS.order, order);
       entry.set(ENTRY_KEYS.width, clampSheetSize(width));
       entry.set(ENTRY_KEYS.height, clampSheetSize(height));
-    }, LOCAL_ORIGIN);
+    });
   }
 
   /** The sheets as they would be, in order, if this one took that size. */
@@ -348,11 +391,11 @@ export class EditableGame extends Game {
     const after = this.shapesAfterResize(id, width, height);
     const held = this.holdNumbered();
     const entry = this.sheetsMap.get(id);
-    this.doc.transact(() => {
+    this.transact(() => {
       entry?.set(ENTRY_KEYS.width, clampSheetSize(width));
       entry?.set(ENTRY_KEYS.height, clampSheetSize(height));
       this.renumber(before, after, held);
-    }, LOCAL_ORIGIN);
+    });
   }
   /** Resizes one map; tiles keep their place, so nothing is renumbered. */
   resizeMap(id: string, width: number, height: number): void {
@@ -360,10 +403,10 @@ export class EditableGame extends Game {
     if (!entry) {
       return;
     }
-    this.doc.transact(() => {
+    this.transact(() => {
       entry.set(ENTRY_KEYS.width, clampMapSize(width));
       entry.set(ENTRY_KEYS.height, clampMapSize(height));
-    }, LOCAL_ORIGIN);
+    });
   }
 
   private describe(
@@ -376,14 +419,14 @@ export class EditableGame extends Game {
     if (!entry) {
       return;
     }
-    this.doc.transact(() => {
+    this.transact(() => {
       entry.set(ENTRY_KEYS.name, name);
       if (colour === null) {
         entry.delete(ENTRY_KEYS.colour);
       } else {
         entry.set(ENTRY_KEYS.colour, colour);
       }
-    }, LOCAL_ORIGIN);
+    });
   }
 
   /** A colour of null takes none, rather than taking slot zero. */
@@ -422,15 +465,15 @@ export class EditableGame extends Game {
         };
       });
     const held = this.holdNumbered();
-    this.doc.transact(() => {
+    this.transact(() => {
       this.sheetsMap.delete(id);
       this.sheetMirrors.delete(id);
       this.renumber(before, after, held);
-    }, LOCAL_ORIGIN);
+    });
   }
 
   addMap(name: string, width: number, height: number, id: string = crypto.randomUUID()): void {
-    this.doc.transact(() => {
+    this.transact(() => {
       const order = this.maps.reduce((max, mp) => Math.max(max, mp.order), -1) + 1;
       const entry = new Y.Map<unknown>();
       this.mapsMap.set(id, entry);
@@ -438,17 +481,17 @@ export class EditableGame extends Game {
       entry.set(ENTRY_KEYS.order, order);
       entry.set(ENTRY_KEYS.width, clampMapSize(width));
       entry.set(ENTRY_KEYS.height, clampMapSize(height));
-    }, LOCAL_ORIGIN);
+    });
   }
 
   removeMap(id: string): void {
     if (this.mapsMap.size <= 1) {
       return;
     }
-    this.doc.transact(() => {
+    this.transact(() => {
       this.mapsMap.delete(id);
       this.mapMirrors.delete(id);
-    }, LOCAL_ORIGIN);
+    });
   }
 
   // ---- actions --------------------------------------------------------------
@@ -478,7 +521,8 @@ export class EditableGame extends Game {
 
   /**
    * Adds an action after the ones there are and answers its id, or null when the game is at
-   * {@link MAX_ACTIONS} or the name is one {@link actionNameIssue} refuses.
+   * {@link MAX_ACTIONS}, the name is one {@link actionNameIssue} refuses or the game may not be
+   * written.
    */
   addAction(draft: Pick<ActionDraft, 'name'> & Partial<ActionDraft>): string | null {
     const actions = this.actions;
@@ -486,21 +530,21 @@ export class EditableGame extends Game {
       return null;
     }
     const id = crypto.randomUUID();
-    this.doc.transact(() => {
+    const written = this.transact(() => {
       this.writeAction(
         id,
         { label: '', description: '', inputs: [], ...draft },
         actions.reduce((max, action) => Math.max(max, action.order), -1) + 1,
       );
-    }, LOCAL_ORIGIN);
+    });
 
-    return id;
+    return written ? id : null;
   }
 
   /**
    * Changes what an action says of itself, field by field; false, and nothing written, for an
-   * action the game does not have or a name {@link actionNameIssue} refuses. Code that reads the
-   * action by its old name is not rewritten.
+   * action the game does not have, a name {@link actionNameIssue} refuses or a game that may not
+   * be written. Code that reads the action by its old name is not rewritten.
    */
   updateAction(
     id: string,
@@ -515,33 +559,31 @@ export class EditableGame extends Game {
       [ENTRY_KEYS.label, patch.label?.trim().slice(0, ACTION_LABEL_MAX)],
       [ENTRY_KEYS.description, patch.description?.trim().slice(0, ACTION_DESCRIPTION_MAX)],
     ];
-    this.doc.transact(() => {
+    return this.transact(() => {
       for (const [key, value] of fields) {
         if (value !== undefined && entry.get(key) !== value) {
           entry.set(key, value);
         }
       }
-    }, LOCAL_ORIGIN);
-
-    return true;
+    });
   }
 
   removeAction(id: string): void {
-    this.doc.transact(() => {
+    this.transact(() => {
       this.actionsMap.delete(id);
-    }, LOCAL_ORIGIN);
+    });
   }
 
   /** Ids first to last, anything not named kept after them, as {@link reorderFiles} does. */
   reorderActions(ids: readonly string[]): void {
     const ranked = new Set(ids);
     const rest = this.actions.filter((action) => !ranked.has(action.id));
-    this.doc.transact(() => {
+    this.transact(() => {
       ids.forEach((id, i) => this.actionsMap.get(id)?.set(ENTRY_KEYS.order, i));
       rest.forEach((action, i) =>
         this.actionsMap.get(action.id)?.set(ENTRY_KEYS.order, ids.length + i),
       );
-    }, LOCAL_ORIGIN);
+    });
   }
 
   /** Where an action's inputs are, made on first plug for an entry that came without. */
@@ -565,7 +607,7 @@ export class EditableGame extends Game {
    * several actions: {@link actionsUsing} says which, for a caller that wants to ask first.
    */
   plugInput(id: string, input: ActionInput): void {
-    this.doc.transact(() => {
+    this.transact(() => {
       const inputs = this.inputsOf(id);
       if (!inputs || inputs.has(inputId(input))) {
         return;
@@ -575,13 +617,13 @@ export class EditableGame extends Game {
         last = Math.max(last, rank);
       });
       inputs.set(inputId(input), last + 1);
-    }, LOCAL_ORIGIN);
+    });
   }
 
   unplugInput(id: string, input: ActionInput): void {
-    this.doc.transact(() => {
+    this.transact(() => {
       this.inputsOf(id)?.delete(inputId(input));
-    }, LOCAL_ORIGIN);
+    });
   }
 
   /**
@@ -589,12 +631,12 @@ export class EditableGame extends Game {
    * the same preset write the same entries.
    */
   applyPreset(preset: InputPresetId): void {
-    this.doc.transact(() => {
+    this.transact(() => {
       this.actionsMap.clear();
       INPUT_PRESETS[preset].forEach((draft, order) => {
         this.writeAction(draft.name, draft, order);
       });
-    }, LOCAL_ORIGIN);
+    });
   }
 
   // ---- palette --------------------------------------------------------------
@@ -603,24 +645,24 @@ export class EditableGame extends Game {
     if (index < 0 || index >= PALETTE_SIZE) {
       return;
     }
-    this.doc.transact(() => {
+    this.transact(() => {
       if (this.paletteArray.length !== PALETTE_SIZE) {
         this.paletteArray.delete(0, this.paletteArray.length);
         this.paletteArray.insert(0, [...BUBBLEGUM_16]);
       }
       this.paletteArray.delete(index, 1);
       this.paletteArray.insert(index, [hex.toLowerCase()]);
-    }, LOCAL_ORIGIN);
+    });
   }
 
   setPalette(colours: readonly string[]): void {
-    this.doc.transact(() => {
+    this.transact(() => {
       this.paletteArray.delete(0, this.paletteArray.length);
       this.paletteArray.insert(
         0,
         colours.slice(0, PALETTE_SIZE).map((colour) => colour.toLowerCase()),
       );
-    }, LOCAL_ORIGIN);
+    });
   }
 
   // ---- code -----------------------------------------------------------------
@@ -628,10 +670,11 @@ export class EditableGame extends Game {
   /**
    * `id` is only passed when the key has to be reproducible across clients — the entry file, so a
    * concurrent seed converges instead of merging into two entries. Everything else gets a UUID.
+   * Null where the game may not be written.
    */
-  addFile(name: string, source = '', id: string = crypto.randomUUID()): CodeFile {
+  addFile(name: string, source = '', id: string = crypto.randomUUID()): CodeFile | null {
     const order = this.files.reduce((max, file) => Math.max(max, file.order), -1) + 1;
-    this.doc.transact(() => {
+    const written = this.transact(() => {
       const entry = new Y.Map<unknown>();
       const text = new Y.Text();
       this.codeFiles.set(id, entry);
@@ -644,7 +687,11 @@ export class EditableGame extends Game {
       if (!this.codeMeta.has(META_KEYS.entry) && name === MAIN_FILE) {
         this.codeMeta.set(META_KEYS.entry, id);
       }
-    }, LOCAL_ORIGIN);
+    });
+    if (!written) {
+      return null;
+    }
+
     return {
       id,
       name,
@@ -655,7 +702,9 @@ export class EditableGame extends Game {
   }
 
   renameFile(id: string, name: string): void {
-    this.codeFiles.get(id)?.set(ENTRY_KEYS.name, name);
+    this.transact(() => {
+      this.codeFiles.get(id)?.set(ENTRY_KEYS.name, name);
+    });
   }
 
   /**
@@ -665,10 +714,10 @@ export class EditableGame extends Game {
   reorderFiles(ids: readonly string[]): void {
     const ranked = new Map(ids.map((id, i) => [id, i]));
     const rest = this.files.filter((file) => !ranked.has(file.id));
-    this.doc.transact(() => {
+    this.transact(() => {
       ids.forEach((id, i) => this.codeFiles.get(id)?.set(ENTRY_KEYS.order, i));
       rest.forEach((file, i) => this.codeFiles.get(file.id)?.set(ENTRY_KEYS.order, ids.length + i));
-    }, LOCAL_ORIGIN);
+    });
   }
 
   setFileColour(id: string, colour: number | null): void {
@@ -676,35 +725,95 @@ export class EditableGame extends Game {
     if (!entry) {
       return;
     }
-    if (colour === null) {
-      entry.delete(ENTRY_KEYS.colour);
-    } else {
-      entry.set(ENTRY_KEYS.colour, colour);
-    }
+    this.transact(() => {
+      if (colour === null) {
+        entry.delete(ENTRY_KEYS.colour);
+      } else {
+        entry.set(ENTRY_KEYS.colour, colour);
+      }
+    });
   }
 
   removeFile(id: string): void {
     if (this.files.length <= 1) {
       return;
     }
-    this.doc.transact(() => {
+    this.transact(() => {
       this.codeFiles.delete(id);
       if (this.codeMeta.get(META_KEYS.entry) === id) {
         this.codeMeta.delete(META_KEYS.entry);
       }
-    }, LOCAL_ORIGIN);
+    });
   }
 
   // ---- sound ----------------------------------------------------------------
 
   setInstrument(instrument: Instrument): void {
-    this.instruments.set(instrument.id, JSON.stringify(instrument));
+    this.transact(() => {
+      this.instruments.set(instrument.id, JSON.stringify(instrument));
+    });
   }
   setPattern(pattern: Pattern): void {
-    this.patterns.set(pattern.id, JSON.stringify(pattern));
+    this.transact(() => {
+      this.patterns.set(pattern.id, JSON.stringify(pattern));
+    });
   }
   setSong(slot: number, song: Song): void {
-    this.songs.set(String(slot), JSON.stringify(song));
+    this.transact(() => {
+      this.songs.set(String(slot), JSON.stringify(song));
+    });
+  }
+
+  // ---- net permissions ------------------------------------------------------
+
+  /** Every rule on a path and under it, as [path, flags]. */
+  private netPermissionsUnder(path: string): [string, number][] {
+    const under: [string, number][] = [];
+    this.netRules.forEach((value, key) => {
+      if (key === path || key.startsWith(`${path}.`)) {
+        under.push([key, value.flags]);
+      }
+    });
+
+    return under;
+  }
+
+  setNetPermission(path: string, flags: number): void {
+    this.transact(() => {
+      this.netRules.set(path, { flags });
+    });
+  }
+
+  /**
+   * Takes the rules of a path and of everything under it to another name, in one transaction:
+   * what reads them must never see one branch under two names.
+   */
+  moveNetPermissions(from: string, to: string): void {
+    const moved = this.netPermissionsUnder(from);
+    if (!moved.length) {
+      return;
+    }
+    this.transact(() => {
+      for (const [key] of moved) {
+        this.netRules.delete(key);
+      }
+      for (const [key, flags] of moved) {
+        this.netRules.set(to + key.slice(from.length), { flags });
+      }
+    });
+  }
+
+  /** Drops the rules of a path and of everything under it. */
+  removeNetPermissions(path: string): void {
+    const gone = this.netPermissionsUnder(path);
+    if (!gone.length) {
+      return;
+    }
+    this.transact(() => {
+      for (const [key] of gone) {
+        this.netRules.delete(key);
+      }
+    });
   }
 
   // ---- versions -------------------------------------------------------------
@@ -786,7 +895,7 @@ export class EditableGame extends Game {
     const scratch = new Y.Doc();
     Y.applyUpdate(scratch, update);
     try {
-      this.doc.transact(() => {
+      this.transact(() => {
         for (const [name, kind] of Object.entries(RESTORE_KINDS)) {
           const key = KEYS[name as keyof typeof KEYS];
           switch (kind) {
@@ -807,7 +916,7 @@ export class EditableGame extends Game {
               break;
           }
         }
-      }, LOCAL_ORIGIN);
+      });
     } finally {
       scratch.destroy();
     }
@@ -869,7 +978,7 @@ export class EditableGame extends Game {
    * with them, so the first stroke edits the sheet rather than adding to it.
    */
   seedSheetAndMap(): void {
-    this.doc.transact(() => {
+    this.transact(() => {
       for (const [entries, id, width, height, cells] of [
         [
           this.sheetsMap,
@@ -893,7 +1002,7 @@ export class EditableGame extends Game {
         }
       }
       this.forgetProjections();
-    }, LOCAL_ORIGIN);
+    });
   }
 
   /**
@@ -904,7 +1013,7 @@ export class EditableGame extends Game {
    * replace the cells it moved and the actions its author set.
    */
   seedDefaults(): void {
-    this.doc.transact(() => {
+    this.transact(() => {
       if (!this.meta.has(META_KEYS.schemaVersion)) {
         this.meta.set(META_KEYS.schemaVersion, GAME_SCHEMA_VERSION);
         this.seedSheetAndMap();
@@ -921,6 +1030,6 @@ export class EditableGame extends Game {
         }
       }
       this.dedupeEntryFile();
-    }, LOCAL_ORIGIN);
+    });
   }
 }

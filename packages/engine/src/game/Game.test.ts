@@ -34,11 +34,11 @@ describe('Game document', () => {
     const game = blankGame();
     game.seedDefaults();
     const util = game.addFile('util', 'return 1');
-    game.renameFile(util.id, 'helpers');
+    game.renameFile(util?.id ?? '', 'helpers');
     expect(game.files.map((file) => file.name)).toEqual(['main', 'helpers']);
     expect(game.entryFile?.name).toBe('main');
     expect(game.sources().map((file) => file.name)).toEqual(['main', 'helpers']);
-    game.removeFile(util.id);
+    game.removeFile(util?.id ?? '');
     expect(game.files).toHaveLength(1);
     game.removeFile(game.files[0]?.id ?? '');
     expect(game.files).toHaveLength(1);
@@ -75,7 +75,7 @@ describe('Game document', () => {
 
     expect(game.files.filter((file) => file.name === 'main')).toHaveLength(1);
     expect(game.entryFile?.text.toString()).toBe(source);
-    expect(game.files.find((file) => file.id === diverged.id)?.name).toMatch(/^main recovered /);
+    expect(game.files.find((file) => file.id === diverged?.id)?.name).toMatch(/^main recovered /);
   });
 
   describe('restoreFrom', () => {
@@ -115,7 +115,7 @@ describe('Game document', () => {
       const snapshot = snapshotOf(doc);
 
       game.addFile('scratch', 'oops');
-      game.removeFile(kept.id);
+      game.removeFile(kept?.id ?? '');
 
       game.restoreFrom(snapshot);
 

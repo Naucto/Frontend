@@ -577,7 +577,7 @@ export class Game {
     }
   }
 
-  private writeSheetPixel(sheetId: string, x: number, y: number, colour: number): void {
+  protected writeSheetPixel(sheetId: string, x: number, y: number, colour: number): void {
     const cells = this.sheetCells(sheetId, ENTRY_KEYS.pixels);
     const key = coordKey(x, y);
     if (colour === 0) {
@@ -589,7 +589,7 @@ export class Game {
     }
   }
 
-  private writeSheetFlag(sheetId: string, local: number, value: number): void {
+  protected writeSheetFlag(sheetId: string, local: number, value: number): void {
     const cells = this.sheetCells(sheetId, ENTRY_KEYS.flags);
     const key = String(local);
     const masked = value & 0xff;
@@ -601,7 +601,7 @@ export class Game {
       cells.set(key, masked);
     }
   }
-  private writeMapTile(mapId: string, x: number, y: number, sprite: number): void {
+  protected writeMapTile(mapId: string, x: number, y: number, sprite: number): void {
     const cells = this.mapCells(mapId);
     const key = coordKey(x, y);
     if (sprite === 0) {

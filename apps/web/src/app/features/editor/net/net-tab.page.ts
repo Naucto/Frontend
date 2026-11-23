@@ -358,9 +358,7 @@ export default class NetTabPage {
     const bit = which === 'read' ? PERM_CLIENT_READ : PERM_CLIENT_WRITE;
     const current = (row.read ? PERM_CLIENT_READ : 0) | (row.write ? PERM_CLIENT_WRITE : 0);
     const flags = on ? current | bit : current & ~bit;
-    this.work.game.transact(() => {
-      this.work.game.netPermissions.set(row.path, { flags });
-    });
+    this.work.game.setNetPermission(row.path, flags);
   }
 
   /** How many children a container has. Transloco has no plural rule, so the key carries both. */
@@ -413,9 +411,7 @@ export default class NetTabPage {
     }
     // Declaring it is what makes it a node with nothing running behind it. Open both ways, which is
     // what an unconfigured path already resolves to: the entry names the path, it does not close it.
-    this.work.game.transact(() => {
-      this.work.game.netPermissions.set(path, { flags: PERM_CLIENT_READ | PERM_CLIENT_WRITE });
-    });
+    this.work.game.setNetPermission(path, PERM_CLIENT_READ | PERM_CLIENT_WRITE);
     // A new node has to hold something for the live tree to carry it; the empty string is the one
     // value that is visibly a placeholder rather than a number someone meant.
     if (this.canEdit()) {
@@ -431,7 +427,7 @@ export default class NetTabPage {
       return;
     }
     const to = parent ? `${parent}.${key}` : key;
-    this.movePermissions(row.path, to);
+    this.work.game.moveNetPermissions(row.path, to);
     const session = this.session();
     if (session && row.live && this.canEdit()) {
       this.movePath(session, row.path, to);
@@ -439,56 +435,10 @@ export default class NetTabPage {
   }
 
   protected remove(row: Row): void {
-    this.dropPermissions(row.path);
+    this.work.game.removeNetPermissions(row.path);
     if (row.live && this.canEdit()) {
       this.session()?.deleteSubtree(row.path);
     }
-  }
-
-  /** Every permission on a path and under it, as [key, flags]. */
-  private permissionsUnder(path: string): [string, number][] {
-    const under: [string, number][] = [];
-    this.work.game.netPermissions.forEach((value, key) => {
-      if (key === path || key.startsWith(`${path}.`)) {
-        under.push([key, value.flags]);
-      }
-    });
-    return under;
-  }
-
-  /**
-   * A rename takes the permissions with the name, in one transaction: everything downstream reloads
-   * on this map and must never see one branch under two names.
-   */
-  private movePermissions(from: string, to: string): void {
-    const map = this.work.game.netPermissions;
-    const moved = this.permissionsUnder(from).map(
-      ([key, flags]) => [key, to + key.slice(from.length), flags] as const,
-    );
-    if (!moved.length) {
-      return;
-    }
-    this.work.game.transact(() => {
-      for (const [key] of moved) {
-        map.delete(key);
-      }
-      for (const [, key, flags] of moved) {
-        map.set(key, { flags });
-      }
-    });
-  }
-
-  private dropPermissions(path: string): void {
-    const map = this.work.game.netPermissions;
-    const gone = this.permissionsUnder(path);
-    if (!gone.length) {
-      return;
-    }
-    this.work.game.transact(() => {
-      for (const [key] of gone) {
-        map.delete(key);
-      }
-    });
   }
 
   /** Rename is a move: every leaf under the old path is written under the new one, then dropped. */
