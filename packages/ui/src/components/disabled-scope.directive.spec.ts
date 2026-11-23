@@ -13,6 +13,7 @@ import { InputDirective } from './input.directive';
 import { NumberFieldComponent } from './number-field.component';
 import { RatingComponent } from './rating.component';
 import { SearchComponent } from './search.component';
+import { SelectComponent } from './select.component';
 import { SegmentedComponent } from './segmented.component';
 import { SliderComponent } from './slider.component';
 import { SlotGridComponent } from './slot-grid.component';
@@ -36,6 +37,7 @@ import { ToolGroupComponent } from './tool-group.component';
     RatingComponent,
     SearchComponent,
     SegmentedComponent,
+    SelectComponent,
     SliderComponent,
     SlotGridComponent,
     StepperComponent,
@@ -71,6 +73,7 @@ import { ToolGroupComponent } from './tool-group.component';
       <nc-tool-group [items]="tools" value="pen" label="Tools" />
       <nc-number-field [value]="4" ariaLabel="Steps" />
       <nc-search placeholder="Invite by name" />
+      <nc-select [options]="options" label="Audience" />
 
       <div data-testid="looks">
         <button ncButton ncLooksOnly>Zoom in</button>

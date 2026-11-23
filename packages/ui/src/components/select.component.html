@@ -8,7 +8,7 @@
   [attr.aria-label]="label()"
   [attr.aria-controls]="listId"
   [attr.aria-activedescendant]="active() < 0 ? null : optionId(active())"
-  [disabled]="disabled()"
+  [disabled]="closed()"
   [ncPopover]="list"
   [(popoverOpen)]="open"
   (keydown)="onKey($event)"

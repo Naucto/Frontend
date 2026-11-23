@@ -15,6 +15,7 @@ import {
   viewChild,
 } from '@angular/core';
 
+import { closedBy } from './disabled-scope.directive';
 import { WELL, WELL_DISABLED } from './input.directive';
 import { MarkComponent } from './mark.component';
 import { OptionDirective } from './option.directive';
@@ -59,6 +60,7 @@ export class SelectComponent<T extends string = string> {
   /** The name, where no label points at the field. */
   readonly label = input<string>();
 
+  protected readonly closed = closedBy(() => this.disabled());
   protected readonly TRIGGER = TRIGGER;
   protected readonly listId = `nc-select-${String(nextId++)}`;
   protected readonly open = signal(false);
