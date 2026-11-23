@@ -19,6 +19,7 @@ import {
   InputDirective,
   MarkComponent,
   NoticeComponent,
+  SelectComponent,
 } from '@naucto/ui';
 
 import { violationsOf } from '../../core/api/api-errors';
@@ -93,6 +94,7 @@ export function categoryFor(path: string): BugCategory {
     MarkComponent,
     InputDirective,
     NoticeComponent,
+    SelectComponent,
   ],
   templateUrl: './bug-report.dialog.html',
   host: { '(paste)': 'onPaste($event)' },

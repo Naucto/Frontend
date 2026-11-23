@@ -8,13 +8,7 @@
     (submit)="$event.preventDefault(); send()"
     (keydown)="onKey($event)">
     <nc-field [label]="t('feedback.bug.category')" for="bug-category">
-      <select ncInput id="bug-category" (change)="category.set($any($event.target).value)">
-        @for (option of categories(); track option.value) {
-          <option [value]="option.value" [selected]="option.value === category()">
-            {{ option.label }}
-          </option>
-        }
-      </select>
+      <nc-select inputId="bug-category" [options]="categories()" [(value)]="category" />
     </nc-field>
 
     <nc-field

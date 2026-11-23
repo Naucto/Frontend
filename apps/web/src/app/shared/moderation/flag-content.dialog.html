@@ -5,16 +5,12 @@
   [closeLabel]="t('feedback.close')">
   <form class="flex flex-col gap-2" (submit)="$event.preventDefault(); send()">
     <nc-field [label]="t('moderation.report.reason')" for="flag-reason">
-      <select ncInput id="flag-reason" (change)="setReason($any($event.target).value)">
-        <option value="" [selected]="reason() === null">
-          {{ t('moderation.report.chooseReason') }}
-        </option>
-        @for (option of reasons(); track option.value) {
-          <option [value]="option.value" [selected]="option.value === reason()">
-            {{ option.label }}
-          </option>
-        }
-      </select>
+      <nc-select
+        inputId="flag-reason"
+        [options]="reasons()"
+        [placeholder]="t('moderation.report.chooseReason')"
+        [value]="reason() ?? undefined"
+        (valueChange)="reason.set($event ?? null)" />
     </nc-field>
 
     <nc-field

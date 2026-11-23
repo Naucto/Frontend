@@ -66,7 +66,8 @@ test.describe('bug reports', () => {
     await page.getByTestId('report-problem').click();
     const dialog = page.getByRole('dialog', { name: 'Report a problem' });
     await expect(dialog.getByRole('button', { name: 'Send report' })).toBeDisabled();
-    await dialog.getByLabel('What is it about?').selectOption({ label: 'Sound' });
+    await dialog.getByRole('combobox', { name: 'What is it about?' }).click();
+    await page.getByRole('option', { name: 'Sound' }).click();
     await dialog.getByLabel('Summary').fill('No music on the hub');
     await dialog.getByLabel('What happened?').fill('The hub trailer plays without any sound.');
     await dialog

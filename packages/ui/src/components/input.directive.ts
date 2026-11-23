@@ -10,14 +10,17 @@ export const WELL =
   'aria-invalid:bevel-lo-hot aria-invalid:not-focus-within:hover:bevel-lo-hot-hover ' +
   'has-aria-invalid:bevel-lo-hot has-aria-invalid:not-focus-within:hover:bevel-lo-hot-hover';
 
-/** Styles native text inputs, textareas and selects as a well. */
+/** A well that takes nothing: drawn flat, with no fill, in the faintest ink. */
+export const WELL_DISABLED =
+  'disabled:cursor-not-allowed disabled:bevel-edge-line disabled:bevel-lo-line disabled:bevel-fill-transparent disabled:text-ink-4';
+
+/** Styles native text inputs and textareas as a well. */
 @Directive({
-  selector: 'input[ncInput], textarea[ncInput], select[ncInput]',
+  selector: 'input[ncInput], textarea[ncInput]',
   host: {
     class:
       `${WELL} block h-(--nc-h-lg) w-full px-1.5 font-ui text-body text-ink outline-none placeholder:text-ink-4 ` +
-      '[&:is(textarea)]:h-auto [&:is(textarea)]:py-[10px] ' +
-      'disabled:cursor-not-allowed disabled:bevel-edge-line disabled:bevel-lo-line disabled:bevel-fill-transparent disabled:text-ink-4',
+      `[&:is(textarea)]:h-auto [&:is(textarea)]:py-[10px] ${WELL_DISABLED}`,
   },
 })
 export class InputDirective {}

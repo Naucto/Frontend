@@ -15,6 +15,12 @@ interface Sent {
   json: Record<string, unknown>;
 }
 
+/** Opens the list under a field and takes the option of that name. */
+async function pick(field: string, option: string): Promise<void> {
+  await userEvent.click(await screen.findByRole('combobox', { name: field }));
+  await userEvent.click(await screen.findByRole('option', { name: option }));
+}
+
 describe('BugReportDialog', () => {
   let sent: Sent[];
   const close = vi.fn();
@@ -103,13 +109,13 @@ describe('BugReportDialog', () => {
     await open({ description: 'Loading takes ages' });
 
     expect(await screen.findByLabelText('What happened?')).toHaveValue('Loading takes ages');
-    expect(screen.getByLabelText('What is it about?')).toHaveValue('OTHER');
+    expect(screen.getByRole('combobox', { name: 'What is it about?' })).toHaveTextContent('Other');
   });
 
   it('sends the category picked from the list', async () => {
     await open();
 
-    await userEvent.selectOptions(await screen.findByLabelText('What is it about?'), 'NETPLAY');
+    await pick('What is it about?', 'Multiplayer');
     await fill();
     await userEvent.click(screen.getByRole('button', { name: 'Send report' }));
 

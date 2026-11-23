@@ -9,6 +9,7 @@ import {
   FieldComponent,
   InputDirective,
   NoticeComponent,
+  SelectComponent,
 } from '@naucto/ui';
 
 import { ApiError } from '../../core/api/api-errors';
@@ -47,6 +48,7 @@ const REFUSALS: Record<string, string> = {
     FieldComponent,
     InputDirective,
     NoticeComponent,
+    SelectComponent,
   ],
   templateUrl: './flag-content.dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -68,10 +70,6 @@ export class FlagContentDialog {
   protected readonly details = signal('');
   protected readonly pending = this.submit.isPending;
   protected readonly failed = signal<string | null>(null);
-
-  protected setReason(value: string): void {
-    this.reason.set(FLAG_REASONS.find((reason) => reason === value) ?? null);
-  }
 
   protected async send(): Promise<void> {
     const reason = this.reason();

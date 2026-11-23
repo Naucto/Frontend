@@ -11,6 +11,12 @@ const realFetch = globalThis.fetch;
 
 const COMMENT: FlagContentData = { targetType: 'COMMENT', targetId: 7, label: 'buy cheap coins' };
 
+/** Opens the list under a field and takes the option of that name. */
+async function pick(field: string, option: string): Promise<void> {
+  await userEvent.click(await screen.findByRole('combobox', { name: field }));
+  await userEvent.click(await screen.findByRole('option', { name: option }));
+}
+
 describe('FlagContentDialog', () => {
   let sent: { path: string; json: Record<string, unknown> }[];
   let answer: () => Response;
@@ -59,13 +65,13 @@ describe('FlagContentDialog', () => {
     const send = screen.getByRole('button', { name: 'Send report' });
     expect(send).toBeDisabled();
 
-    await userEvent.selectOptions(screen.getByLabelText('What is wrong with it?'), 'SPAM');
+    await pick('What is wrong with it?', 'Spam or advertising');
     expect(send).toBeEnabled();
   });
 
   it('sends the target, the reason and the trimmed details, and closes as sent', async () => {
     await open();
-    await userEvent.selectOptions(await screen.findByLabelText('What is wrong with it?'), 'SPAM');
+    await pick('What is wrong with it?', 'Spam or advertising');
     await userEvent.type(
       screen.getByLabelText('Anything the moderators should know'),
       '  Third time today  ',
@@ -85,7 +91,7 @@ describe('FlagContentDialog', () => {
 
   it('leaves the details out when nothing was written', async () => {
     await open({ targetType: 'USER', targetId: 4, label: '@bob' });
-    await userEvent.selectOptions(await screen.findByLabelText('What is wrong with it?'), 'HATE');
+    await pick('What is wrong with it?', 'Hate');
     await userEvent.click(screen.getByRole('button', { name: 'Send report' }));
 
     await vi.waitFor(() => {
@@ -101,7 +107,7 @@ describe('FlagContentDialog', () => {
   ])('answers a %s refusal in its own words and stays open', async (code, message) => {
     answer = () => json(409, { code, message: 'refused' });
     await open();
-    await userEvent.selectOptions(await screen.findByLabelText('What is wrong with it?'), 'SPAM');
+    await pick('What is wrong with it?', 'Spam or advertising');
     await userEvent.click(screen.getByRole('button', { name: 'Send report' }));
 
     expect(await screen.findByText(message)).toBeTruthy();

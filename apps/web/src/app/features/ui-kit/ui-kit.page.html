@@ -324,7 +324,7 @@
     <div class="flex items-baseline gap-2">
       <h2 class="font-display text-display text-ink">Inputs</h2>
       <span class="text-meta text-ink-3">
-        wells, a search that shares the well, a rim that focus turns gold
+        wells, a search that shares the well, a list in a well, a rim that focus turns gold
       </span>
     </div>
     <div
@@ -374,6 +374,18 @@
       <nc-field label="Disabled" for="f-off">
         <input ncInput id="f-off" value="Locked while published" disabled />
       </nc-field>
+      <div class="grid content-start gap-[14px]" data-testid="select">
+        <nc-field label="Genre" for="f-genre">
+          <nc-select
+            inputId="f-genre"
+            placeholder="Choose a genre"
+            [options]="genres"
+            [(value)]="genre" />
+        </nc-field>
+        <nc-field label="Locked" for="f-genre-off">
+          <nc-select inputId="f-genre-off" [options]="genres" value="puzzle" disabled />
+        </nc-field>
+      </div>
       <div class="flex flex-wrap items-center gap-1.5">
         @for (key of keys; track key) {
           <nc-keycap>{{ key }}</nc-keycap>

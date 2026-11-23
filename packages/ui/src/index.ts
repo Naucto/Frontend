@@ -45,6 +45,7 @@ export * from './components/scramble.directive';
 export * from './components/search.component';
 export * from './components/section.component';
 export * from './components/segmented.component';
+export * from './components/select.component';
 export * from './components/setting-row.component';
 export * from './components/settings-group.component';
 export * from './components/share-code.component';

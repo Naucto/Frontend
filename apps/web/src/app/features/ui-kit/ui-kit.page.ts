@@ -50,6 +50,7 @@ import {
   SearchComponent,
   SectionComponent,
   SegmentedComponent,
+  SelectComponent,
   SettingRowComponent,
   SettingsGroupComponent,
   ShareCodeComponent,
@@ -116,6 +117,7 @@ import { HubPiecesSection } from './hub-pieces.section';
     SectionComponent,
     BrandMarkComponent,
     SegmentedComponent,
+    SelectComponent,
     SkeletonComponent,
     SliderComponent,
     TableDirective,
@@ -197,6 +199,7 @@ export default class UiKitPage {
   protected readonly regexp = signal(false);
   protected readonly visibilityValue = signal('draft');
   protected readonly monetizationValue = signal('none');
+  protected readonly genre = signal<string | undefined>(undefined);
   protected readonly bpm = signal(124);
   protected readonly red = signal(255);
   protected readonly paletteSlots = this.palette.map((_, slot) => slot);
@@ -352,6 +355,14 @@ export default class UiKitPage {
     { value: 'console', label: 'Console', mark: 'prompt' as const },
     { value: 'doc', label: 'Doc' },
     { value: 'perf', label: 'Perf', mark: 'chart' as const },
+  ];
+  protected readonly genres = [
+    { value: 'arcade', label: 'Arcade' },
+    { value: 'platformer', label: 'Platformer' },
+    { value: 'puzzle', label: 'Puzzle' },
+    { value: 'racing', label: 'Racing' },
+    { value: 'rpg', label: 'Role-playing' },
+    { value: 'shooter', label: 'Shooter' },
   ];
   protected readonly shelves = [
     { value: 'games', label: 'Games' },
