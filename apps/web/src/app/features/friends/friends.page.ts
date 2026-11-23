@@ -62,6 +62,7 @@ const ACCENT: Record<string, { rule: string; name: string }> = {
   ],
   templateUrl: './friends.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'xl:px-[72px]' },
 })
 export default class FriendsPage {
   private readonly auth = inject(AuthStore);
