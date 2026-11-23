@@ -42,6 +42,7 @@ import { VisibilityChipComponent } from '../../shared/collections/visibility-chi
 import { diskStyleFor } from '../../shared/game-card/disk-style';
 import { DISK_RATIO, FloppyComponent } from '../../shared/game-card/floppy.component';
 import { ShelfDiskComponent } from '../../shared/hub/shelf-disk.component';
+import { GoodStandingAction } from '../../shared/moderation/good-standing-action';
 import {
   injectCollection,
   injectDeleteCollection,
@@ -97,6 +98,7 @@ export default class CollectionPage {
   readonly id = input.required<string>();
 
   private readonly auth = inject(AuthStore);
+  private readonly standing = inject(GoodStandingAction);
   private readonly router = inject(Router);
   private readonly dialogs = inject(DialogService);
   private readonly toasts = inject(ToastService);
@@ -181,32 +183,41 @@ export default class CollectionPage {
   }
 
   protected edit(collection: CollectionDto): void {
-    this.dialogs.open<CollectionDialogComponent, CollectionDialogData>(CollectionDialogComponent, {
-      width: '520px',
-      data: { collection },
+    this.standing.run(() => {
+      this.dialogs.open<CollectionDialogComponent, CollectionDialogData>(
+        CollectionDialogComponent,
+        { width: '520px', data: { collection } },
+      );
     });
   }
 
-  protected async delete(collection: CollectionDto): Promise<void> {
-    const confirmed = await this.dialogs.confirmDanger({
-      kicker: this.i18n.translate('collections.deleteConfirm'),
-      title: this.i18n.translate('collections.deleteTitle', { title: collection.title }),
-      message: this.i18n.translate('collections.deleteMessage'),
-      confirmLabel: this.i18n.translate('collections.deleteConfirm'),
+  protected delete(collection: CollectionDto): void {
+    this.standing.run(() => {
+      void this.dialogs
+        .confirmDanger({
+          kicker: this.i18n.translate('collections.deleteConfirm'),
+          title: this.i18n.translate('collections.deleteTitle', { title: collection.title }),
+          message: this.i18n.translate('collections.deleteMessage'),
+          confirmLabel: this.i18n.translate('collections.deleteConfirm'),
+        })
+        .then((confirmed) => {
+          if (!confirmed) {
+            return;
+          }
+          this.deletion.mutate(collection.id, {
+            onSuccess: () => {
+              this.toasts.show(
+                this.i18n.translate('collections.deleted', { title: collection.title }),
+                'success',
+              );
+              void this.router.navigate(['/games']);
+            },
+            onError: () => {
+              this.toasts.show(this.i18n.translate('collections.deleteFailed'), 'error');
+            },
+          });
+        });
     });
-    if (!confirmed) {
-      return;
-    }
-    try {
-      await this.deletion.mutateAsync(collection.id);
-      this.toasts.show(
-        this.i18n.translate('collections.deleted', { title: collection.title }),
-        'success',
-      );
-      void this.router.navigate(['/games']);
-    } catch {
-      this.toasts.show(this.i18n.translate('collections.deleteFailed'), 'error');
-    }
   }
 
   protected pick(game: number, on: boolean): void {
@@ -221,17 +232,20 @@ export default class CollectionPage {
     });
   }
 
-  protected async remove(games: Iterable<number>): Promise<void> {
-    const id = this.id();
-    const results = await Promise.allSettled(
-      Array.from(games, (projectId) =>
-        this.membership.mutateAsync({ id, projectId, holds: false }),
-      ),
-    );
-    this.picked.set(new Set());
-    if (results.some((result) => result.status === 'rejected')) {
-      this.toasts.show(this.i18n.translate('collections.removeFailed'), 'error');
-    }
+  protected remove(games: Iterable<number>): void {
+    this.standing.run(() => {
+      const id = this.id();
+      void Promise.allSettled(
+        Array.from(games, (projectId) =>
+          this.membership.mutateAsync({ id, projectId, holds: false }),
+        ),
+      ).then((results) => {
+        this.picked.set(new Set());
+        if (results.some((result) => result.status === 'rejected')) {
+          this.toasts.show(this.i18n.translate('collections.removeFailed'), 'error');
+        }
+      });
+    });
   }
 
   private place(from: number, to: number): void {
@@ -240,24 +254,31 @@ export default class CollectionPage {
     if (!game || !games[to] || to === from) {
       return;
     }
-    const projectIds = games.map((other) => other.id);
-    projectIds.splice(to, 0, ...projectIds.splice(from, 1));
-    this.order.set(projectIds);
-    this.moved.set(
-      this.i18n.translate('collections.moved', {
-        name: game.name,
-        position: to + 1,
-        count: games.length,
-      }),
-    );
-    this.reorder.mutate(
-      { id: this.id(), projectIds },
-      {
-        onError: () => {
-          this.following.set(null);
-          this.order.set(null);
-          this.toasts.show(this.i18n.translate('collections.reorderFailed'), 'error');
-        },
+    this.standing.run(
+      () => {
+        const projectIds = games.map((other) => other.id);
+        projectIds.splice(to, 0, ...projectIds.splice(from, 1));
+        this.order.set(projectIds);
+        this.moved.set(
+          this.i18n.translate('collections.moved', {
+            name: game.name,
+            position: to + 1,
+            count: games.length,
+          }),
+        );
+        this.reorder.mutate(
+          { id: this.id(), projectIds },
+          {
+            onError: () => {
+              this.following.set(null);
+              this.order.set(null);
+              this.toasts.show(this.i18n.translate('collections.reorderFailed'), 'error');
+            },
+          },
+        );
+      },
+      () => {
+        this.following.set(null);
       },
     );
   }

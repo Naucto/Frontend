@@ -31,6 +31,7 @@ import { CollectionBoxComponent } from '../../shared/hub/collection-box.componen
 import { GameFlyoutComponent } from '../../shared/hub/game-flyout.component';
 import type { HubGame } from '../../shared/hub/hub-game';
 import { ShelfDiskComponent } from '../../shared/hub/shelf-disk.component';
+import { GoodStandingAction } from '../../shared/moderation/good-standing-action';
 import { injectMyCollections } from '../../shared/queries/collections.queries';
 import { qk } from '../../shared/queries/query-keys';
 
@@ -73,6 +74,7 @@ export default class MyGamesPage {
 
   protected readonly router = inject(Router);
   private readonly dialogs = inject(DialogService);
+  private readonly standing = inject(GoodStandingAction);
 
   protected readonly query = injectQuery(() => ({
     queryKey: qk.myProjects({ page: 1, limit: 100 }),
@@ -103,15 +105,17 @@ export default class MyGamesPage {
   protected readonly isGame = (game: HubGame | null): boolean => game !== null;
 
   protected newCollection(): void {
-    this.dialogs
-      .open<CollectionDialogComponent, CollectionDialogData, CollectionDto>(
-        CollectionDialogComponent,
-        { width: '520px', data: {} },
-      )
-      .closed.subscribe((created) => {
-        if (created) {
-          void this.router.navigate(['/collections', created.id]);
-        }
-      });
+    this.standing.run(() => {
+      this.dialogs
+        .open<CollectionDialogComponent, CollectionDialogData, CollectionDto>(
+          CollectionDialogComponent,
+          { width: '520px', data: {} },
+        )
+        .closed.subscribe((created) => {
+          if (created) {
+            void this.router.navigate(['/collections', created.id]);
+          }
+        });
+    });
   }
 }
