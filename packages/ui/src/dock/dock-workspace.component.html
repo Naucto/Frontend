@@ -1,0 +1,253 @@
+<ng-template #nodeTpl let-node>
+  @if (asLeaf(node); as leaf) {
+    <section
+      class="isolate flex h-full min-h-0 min-w-0 flex-col border border-line bg-panel"
+      [class.outline-2]="several() && active() === leaf.active"
+      [class.-outline-offset-2]="several() && active() === leaf.active"
+      [class.outline-gold]="several() && active() === leaf.active"
+      [attr.data-dock-leaf]="leaf.id"
+      [attr.aria-label]="windowOf(leaf.active)?.title"
+      (pointerdown)="select(leaf.active)">
+      <div
+        class="flex h-(--nc-bar-h) shrink-0 items-end gap-0.5 border-b border-line px-1"
+        data-dock-tabs>
+        <div class="flex min-w-0 items-end gap-0.5 overflow-x-auto" role="tablist">
+          @for (id of leaf.tabs; track id) {
+            <div
+              role="tab"
+              tabindex="0"
+              class="group flex h-[calc(var(--nc-bar-h)-6px)] shrink-0 cursor-pointer touch-none items-center gap-1 border border-b-0 border-transparent px-1.25 control-type text-ink-3 select-none hover:text-ink aria-selected:border-line aria-selected:bg-raised aria-selected:text-ink"
+              [attr.aria-selected]="id === leaf.active"
+              [attr.data-dock-tab]="id"
+              [class.opacity-40]="tabDrag()?.window === id"
+              (pointerdown)="$event.stopPropagation(); onTabDown($event, id)"
+              (keydown.enter)="select(id)"
+              (keydown.space)="$event.preventDefault(); select(id)">
+              @if (windowOf(id); as win) {
+                <nc-icon [name]="win.icon" [size]="12" />
+                <span class="uppercase tracking-button">{{ win.title }}</span>
+                <nc-presence-dots [peers]="win.peers ?? []" />
+                @if (isMarked(id)) {
+                  <span class="size-[6px] rounded-full bg-hot" aria-hidden="true"></span>
+                }
+                @if (!fallback()) {
+                  <button
+                    type="button"
+                    class="ml-0.5 hidden text-ink-3 group-hover:inline-flex group-focus-within:inline-flex group-aria-selected:inline-flex hover:text-ink"
+                    [attr.aria-label]="labels().popOut(win.title)"
+                    (pointerdown)="$event.stopPropagation()"
+                    (click)="popOutWindow(id)">
+                    <nc-icon name="pip" [size]="12" />
+                  </button>
+                }
+              }
+            </div>
+          }
+        </div>
+        @if (!fallback() && missingFrom(leaf).length) {
+          <button
+            ncButton
+            variant="ghost"
+            size="sm"
+            iconOnly
+            class="mb-[3px] shrink-0"
+            [attr.aria-label]="labels().addTab"
+            [ncPopover]="addMenu"
+            (pointerdown)="$event.stopPropagation()">
+            <nc-icon name="plus" [size]="12" />
+          </button>
+          <ng-template #addMenu>
+            <nc-popover-panel>
+              <div class="grid min-w-[240px] gap-0.5 p-0.5" role="menu">
+                <span class="label px-1 pt-0.5 pb-0.5 text-ink-3">{{ labels().openHere }}</span>
+                @for (win of missingFrom(leaf); track win.id) {
+                  <button
+                    type="button"
+                    role="menuitem"
+                    class="flex h-[40px] w-full items-center gap-1.5 border border-transparent px-1 text-left control-type text-ink-2 uppercase hover:border-line-strong hover:text-ink"
+                    (click)="bringHere(win.id, leaf.id)">
+                    <nc-icon [name]="win.icon" [size]="12" />
+                    <span class="flex-1">{{ win.title }}</span>
+                    <small class="text-micro text-ink-4 normal-case">
+                      {{ isFloating(win.id) ? labels().floating : labels().elsewhere }}
+                    </small>
+                  </button>
+                }
+              </div>
+            </nc-popover-panel>
+          </ng-template>
+        }
+      </div>
+      <div class="relative min-h-0 flex-1">
+        <ng-container [ngTemplateOutlet]="paneFor(leaf.active)" />
+      </div>
+    </section>
+  } @else {
+    <div class="flex h-full min-h-0 min-w-0" [class.flex-col]="node.direction === 'column'">
+      <div class="min-h-0 min-w-0 basis-0" [style.flex-grow]="node.ratio">
+        <ng-container
+          [ngTemplateOutlet]="nodeTpl"
+          [ngTemplateOutletContext]="{ $implicit: node.first }" />
+      </div>
+      <div
+        role="separator"
+        class="shrink-0 touch-none bg-page hover:bg-line-strong"
+        [class]="
+          node.direction === 'row' ? 'w-[6px] cursor-col-resize' : 'h-[6px] cursor-row-resize'
+        "
+        [attr.aria-label]="labels().resize"
+        [attr.aria-orientation]="node.direction === 'row' ? 'vertical' : 'horizontal'"
+        (pointerdown)="onGutterDown($event, node.id, node.direction)"></div>
+      <div class="min-h-0 min-w-0 basis-0" [style.flex-grow]="1 - node.ratio">
+        <ng-container
+          [ngTemplateOutlet]="nodeTpl"
+          [ngTemplateOutletContext]="{ $implicit: node.second }" />
+      </div>
+    </div>
+  }
+</ng-template>
+
+@if (shown().root; as root) {
+  <ng-container [ngTemplateOutlet]="nodeTpl" [ngTemplateOutletContext]="{ $implicit: root }" />
+} @else {
+  <div class="flex h-full items-center justify-center p-4">
+    <p class="label max-w-[280px] text-center text-ink-4">{{ labels().empty }}</p>
+  </div>
+}
+
+@for (entry of floats(); track entry.id) {
+  @if (windowOf(entry.id); as win) {
+    <section
+      class="absolute isolate flex min-h-0 flex-col border border-line-strong bg-panel shadow-[0_8px_24px_var(--nc-inset)]"
+      [class.pointer-events-none]="floatDrag()?.window === entry.id"
+      [class.opacity-85]="floatDrag()?.window === entry.id"
+      [class.outline-2]="several() && active() === entry.id"
+      [class.outline-gold]="several() && active() === entry.id"
+      [style.left.px]="entry.float.x"
+      [style.top.px]="entry.float.y"
+      [style.width.px]="entry.float.width"
+      [style.height.px]="entry.float.height"
+      [style.z-index]="entry.float.z + 10"
+      [attr.aria-label]="win.title"
+      (pointerdown)="select(entry.id)">
+      <div
+        class="flex h-(--nc-bar-h) shrink-0 cursor-move touch-none items-center gap-1 border-b border-line bg-raised px-1.25 control-type text-ink select-none"
+        (pointerdown)="onGrabDown($event, entry.id)">
+        <nc-icon [name]="win.icon" [size]="12" />
+        <span class="uppercase tracking-button">{{ win.title }}</span>
+        <nc-presence-dots [peers]="win.peers ?? []" />
+        @if (isMarked(entry.id)) {
+          <span class="size-[6px] rounded-full bg-hot" aria-hidden="true"></span>
+        }
+        <span class="flex-1"></span>
+        <button
+          ncButton
+          variant="ghost"
+          size="sm"
+          iconOnly
+          [attr.aria-label]="labels().dock(win.title)"
+          (click)="dockWindow(entry.id)">
+          <nc-icon name="collapse" [size]="12" />
+        </button>
+      </div>
+      <div class="relative min-h-0 flex-1">
+        <ng-container [ngTemplateOutlet]="paneFor(entry.id)" />
+      </div>
+      <span
+        class="absolute right-0 bottom-0 size-2 cursor-nwse-resize touch-none"
+        aria-hidden="true"
+        (pointerdown)="$event.stopPropagation(); onSizeDown($event, entry.id)"></span>
+    </section>
+  }
+}
+
+@if (floatDrag() || tabDrag()) {
+  <div class="pointer-events-none absolute inset-0 z-[9000]">
+    @if (hover(); as current) {
+      @if (current.kind === 'tabs') {
+        <div
+          class="absolute bg-gold"
+          [style.left.px]="current.marker.x"
+          [style.top.px]="current.marker.y"
+          [style.width.px]="current.marker.width"
+          [style.height.px]="current.marker.height"></div>
+      } @else {
+        <div
+          class="absolute flex items-center justify-center bg-gold-wash opacity-90 outline-3 -outline-offset-[6px] outline-gold outline-dashed"
+          [style.left.px]="current.preview.x"
+          [style.top.px]="current.preview.y"
+          [style.width.px]="current.preview.width"
+          [style.height.px]="current.preview.height">
+          <span class="bg-gold px-1.5 py-0.5 control-type tracking-button text-on-accent uppercase">
+            {{ current.label }}
+          </span>
+        </div>
+      }
+    }
+    @if (floatDrag(); as drag) {
+      @if (shown().root) {
+        @for (side of EDGE_SIDES; track side) {
+          <span
+            class="absolute border-2 p-[6px]"
+            [class]="
+              isHot(side, true)
+                ? 'border-gold bg-gold'
+                : drag.edgesOff.includes(side)
+                  ? 'border-line bg-inset opacity-30'
+                  : 'border-line-strong bg-raised'
+            "
+            [style.width.px]="SQUARE"
+            [style.height.px]="SQUARE"
+            [style]="edgeStyle(side)">
+            <span [class]="glyph(side, isHot(side, true))"></span>
+          </span>
+        }
+      }
+      @if (drag.compass; as compass) {
+        @for (zone of COMPASS_ZONES; track zone) {
+          @if (!compass.onlyCenter || zone === 'tab') {
+            <span
+              class="absolute border-2 p-[6px]"
+              [class]="
+                isHot(zone, false)
+                  ? 'border-gold bg-gold'
+                  : compass.off.includes(zone)
+                    ? 'border-line bg-inset opacity-30'
+                    : 'border-line-strong bg-raised'
+              "
+              [style.width.px]="SQUARE"
+              [style.height.px]="SQUARE"
+              [style.left.px]="
+                compass.x - SQUARE / 2 + (zone === 'left' ? -STEP : zone === 'right' ? STEP : 0)
+              "
+              [style.top.px]="
+                compass.y - SQUARE / 2 + (zone === 'top' ? -STEP : zone === 'bottom' ? STEP : 0)
+              ">
+              <span [class]="glyph(zone, isHot(zone, false))"></span>
+            </span>
+          }
+        }
+      }
+    }
+    @if (tabDrag(); as drag) {
+      @if (windowOf(drag.window); as win) {
+        <span
+          class="absolute flex h-[32px] items-center gap-1 border border-line-strong bg-raised px-1.25 control-type tracking-button text-ink uppercase opacity-90"
+          [style.left.px]="drag.x - 40"
+          [style.top.px]="drag.y - 16">
+          <nc-icon [name]="win.icon" [size]="12" />
+          {{ win.title }}
+        </span>
+      }
+    }
+  </div>
+}
+
+@if (fallback()) {
+  <div
+    class="absolute bottom-1 left-1/2 z-[9001] flex -translate-x-1/2 items-center gap-1.5 border border-line-strong bg-raised px-1.5 py-0.5 text-body text-ink-2"
+    role="status">
+    <span>{{ labels().fallback }}</span>
+    <button ncButton variant="ghost" size="sm" (click)="resetLayout()">{{ labels().reset }}</button>
+  </div>
+}

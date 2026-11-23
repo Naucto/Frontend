@@ -2,6 +2,7 @@ import { OverlayContainer } from '@angular/cdk/overlay';
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, inject } from '@angular/core';
 
 import type { IconName } from '../icons/paths';
+import { ButtonDirective } from './button.directive';
 import { IconComponent } from './icon.component';
 import { ToastService, type ToastTone } from './toast.service';
 
@@ -26,7 +27,7 @@ const TONE: Record<ToastTone, { shell: string; mark: string; icon: IconName }> =
  */
 @Component({
   selector: 'nc-toast-host',
-  imports: [IconComponent],
+  imports: [ButtonDirective, IconComponent],
   templateUrl: './toast-host.component.html',
   styles: `
     @keyframes nc-toast-in {

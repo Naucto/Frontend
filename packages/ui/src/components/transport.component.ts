@@ -22,6 +22,7 @@ import { IconComponent } from './icon.component';
 export class TransportComponent {
   readonly playing = input(false, { transform: booleanAttribute });
   readonly canRewind = input(true, { transform: booleanAttribute });
+  readonly rewind = input(true, { transform: booleanAttribute });
   readonly canStop = input(true, { transform: booleanAttribute });
   readonly playLabel = input('Play');
   readonly pauseLabel = input('Pause');

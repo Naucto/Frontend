@@ -1,0 +1,14 @@
+@if (peers().length) {
+  <span
+    class="inline-flex items-center gap-[3px]"
+    role="img"
+    [attr.aria-label]="names()"
+    [attr.title]="names()">
+    @for (peer of shown(); track peer.id) {
+      <span class="size-[7px] border border-panel" [class]="fill(peer.colour)"></span>
+    }
+    @if (more()) {
+      <span class="font-mono text-[9px] text-ink-3">+{{ more() }}</span>
+    }
+  </span>
+}

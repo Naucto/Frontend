@@ -2,17 +2,19 @@ import { ChangeDetectionStrategy, Component, input, model } from '@angular/core'
 
 import { type IconName } from '../icons/paths';
 import { IconComponent } from './icon.component';
+import { type PresenceDot, PresenceDotsComponent } from './presence-dots.component';
 
 export interface RailItem<T extends string> {
   value: T;
   label: string;
   icon: IconName;
+  peers?: readonly PresenceDot[];
 }
 
 /** Vertical tool rail: the active item raised and barred in gold. */
 @Component({
   selector: 'nc-rail',
-  imports: [IconComponent],
+  imports: [IconComponent, PresenceDotsComponent],
   templateUrl: './rail.component.html',
   // The border sits on the host: the nav is only as tall as its buttons, and a rule drawn on it
   // would stop where they do.
