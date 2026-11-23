@@ -73,13 +73,13 @@
             (focusout)="focusOut($event, $index)">
             @if (cell.placement; as placement) {
               <nc-shelf-flyout
-                [id]="flyoutId($index)"
+                [id]="cell.flyoutId"
                 [placement]="placement"
                 [itemWidth]="layout().itemWidth"
                 [open]="$index === active()">
                 <ng-container
                   [ngTemplateOutlet]="flyout()?.template ?? null"
-                  [ngTemplateOutletContext]="{ $implicit: cell.item, index: $index }" />
+                  [ngTemplateOutletContext]="{ $implicit: cell.item }" />
               </nc-shelf-flyout>
             }
             @if (cell.near) {
@@ -88,9 +88,8 @@
                   [ngTemplateOutlet]="template()"
                   [ngTemplateOutletContext]="{
                     $implicit: cell.item,
-                    index: $index,
                     open: $index === active(),
-                    flyoutId: cell.placement ? flyoutId($index) : null,
+                    flyoutId: cell.flyoutId,
                   }" />
               </div>
             }

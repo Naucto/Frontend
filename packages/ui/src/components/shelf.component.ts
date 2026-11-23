@@ -138,16 +138,18 @@ export class ShelfComponent<T> {
       .ncShelfItemOf()
       .map((item, index) => {
         const { page, row, column } = shelfPlace(index, per, this.rows());
+        const placement =
+          page === current && speaks?.(item)
+            ? flyoutPlacement(this.width(), itemWidth, column)
+            : null;
         return {
           item,
           page,
           gridRow: row + 1,
           gridColumn: page * per + column + 1,
           near: Math.abs(page - current) <= 1,
-          placement:
-            page === current && speaks?.(item)
-              ? flyoutPlacement(this.width(), itemWidth, column)
-              : null,
+          placement,
+          flyoutId: placement ? `nc-shelf-${String(this.serial)}-flyout-${String(index)}` : null,
         };
       });
   });
@@ -202,10 +204,6 @@ export class ShelfComponent<T> {
   private swipe: Swipe | null = null;
   private swiped = false;
   private pointer = 'mouse';
-
-  protected flyoutId(index: number): string {
-    return `nc-shelf-${String(this.serial)}-flyout-${String(index)}`;
-  }
 
   protected close(): void {
     clearTimeout(this.timer);

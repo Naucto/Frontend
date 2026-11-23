@@ -2,7 +2,6 @@ import { Directive, inject, input, TemplateRef } from '@angular/core';
 
 export interface ShelfItemContext<T> {
   $implicit: T;
-  index: number;
   /** Whether this item's flyout is open: what it shows of itself while it is. */
   open: boolean;
   /** The id of this item's flyout, for the link's `aria-controls`; null where it has none. */
@@ -25,7 +24,6 @@ export class ShelfItemDirective<T> {
 
 export interface ShelfFlyoutContext<T> {
   $implicit: T;
-  index: number;
 }
 
 /**
