@@ -155,14 +155,13 @@ for (const width of [1280, 1440]) {
 }
 
 /**
- * The SOUND header's fields keep their names inside the roll column from the editor's floor width
- * up.
+ * The SOUND bar's fields keep their names inside their window from the editor's floor width up.
  */
 for (const width of [1024, 1152, 1280, 1440, 1920]) {
   test.describe(`SOUND header (${String(width)}px)`, () => {
     test.use({ viewport: { width, height: 900 } });
 
-    test('keeps the STEPS field, with its name, inside the roll column', async ({ page }) => {
+    test('keeps the BPM field, with its name, inside the Patterns window', async ({ page }) => {
       await mockEditor(page);
       await page.goto(editorUrl('sound'));
       await page.getByRole('button', { name: 'Add instrument' }).first().click();
@@ -170,13 +169,13 @@ for (const width of [1024, 1152, 1280, 1440, 1920]) {
         .getByRole('dialog', { name: 'New instrument' })
         .getByRole('button', { name: 'Custom' })
         .click();
-      const steps = page.getByRole('textbox', { name: 'Steps' });
-      await expect(steps).toBeVisible();
-      const box = steps.locator('xpath=ancestor::nc-number-field');
-      await expect(box.getByText('Steps', { exact: true })).toBeVisible();
+      const bpm = page.getByRole('textbox', { name: 'BPM' });
+      await expect(bpm).toBeVisible();
+      const box = bpm.locator('xpath=ancestor::nc-number-field');
+      await expect(box.getByText('BPM', { exact: true })).toBeVisible();
       const [field, bar] = await Promise.all([
         box.boundingBox(),
-        steps.locator('xpath=ancestor::header').boundingBox(),
+        page.locator('nc-note-sheet-editor').boundingBox(),
       ]);
       if (!field || !bar) {
         throw new Error('header off screen');

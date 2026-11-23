@@ -157,7 +157,13 @@ export default class EditorShellComponent implements OnInit {
   private readonly transloco = inject(TranslocoService);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   protected readonly rail = computed<RailItem<EditorTab>[]>(() =>
-    RAIL.map((item) => ({ ...item, label: this.transloco.translate(`editor.rail.${item.value}`) })),
+    RAIL.map((item) => ({
+      ...item,
+      label: this.transloco.translate(`editor.rail.${item.value}`),
+      peers: this.sessionPresence
+        .peersIn(item.value)
+        .map((peer) => ({ id: peer.clientId, name: peer.name, colour: peer.colour })),
+    })),
   );
   /**
    * The name and the summary as the GAME tab edits them.
@@ -265,6 +271,12 @@ export default class EditorShellComponent implements OnInit {
     // The room is told which player this editor's game is at the table, for as long as it is.
     effect(() => {
       this.sessionPresence.setPlayer(this.editorRuntime.bridge()?.session()?.selfPlayer ?? null);
+    });
+    effect(() => {
+      const tab = this.ui.activeTab();
+      if (tab !== 'sound') {
+        this.sessionPresence.setView({ tab });
+      }
     });
     this.ui.setViewportWidth(window.innerWidth);
     this.ui.setViewportHeight(window.innerHeight);

@@ -136,7 +136,7 @@ in `.claude/skills/naucto-frontend-change/SKILL.md`.
   `packages/engine/src/api/luaApiTable.ts` is the single source of truth (docs manifest parity,
   editor completions). Old games are migrated on load against frozen tables of their own
   (`migrations/v0_to_v1/globals.ts`, `migrations/v1_to_v2/renames.ts` and `actions.ts`,
-  `migrations/v2_to_v3/legacy.ts`), never against the live API or the live presets; what a
+  `migrations/v2_to_v3/legacy.ts`, `migrations/v3_to_v4/legacy.ts`), never against the live API or the live presets; what a
   migration cannot rewrite is a warning on its line in the CODE tab.
 - **Game document shape**: every sheet, every map and every action is an entry of its collection
   (`gfx.sheets`, `map.maps`, `input.actions`); a sheet and a map hold their own cells and size,
@@ -157,6 +157,12 @@ in `.claude/skills/naucto-frontend-change/SKILL.md`.
   every runtime follows them through `GamepadSource.assign`.
   A new game starts on the `classic` preset (`input/presets.ts`), the nine actions every game had
   before v3, which is what keeps the starter code, the tutorials and the docs examples running.
+- **Sound storage**: `sound.patterns`, `sound.songs` and `sound.effects` hold one JSON string per
+  entry, written and read only through `packages/engine/src/sound/storage.ts`. Notes are
+  `[step, pitch, length, instrument, volume?]` and blocks `[id, pattern, start, repeat?]`, a
+  volume or a repeat of 1 left out, because the project budget counts these bytes. The reader
+  still takes the object form older documents hold. Musics as blocks and sound effects of their own
+  came with schema v4 (`migrations/v3_to_v4`).
 - **Theming**: every colour comes from a token in `packages/ui/src/tokens.css`; never write raw hex in
   components. Dark is the default; light is `[data-theme=light]` or `prefers-color-scheme`.
 - **Pixel kit**: one pixel is 3px (`--nc-px`) and every stroke is a whole number of them; boxes,
@@ -478,11 +484,9 @@ broken; an absence reads as not built.
 - **Drag-to-reposition in the touch pad panel.** SIZE and OPACITY are real and drive the pad; moving
   individual buttons is not built, and the panel's copy does not claim it.
 
-- **The STEPS field moves by 16, not by 4.** The sheet's own tooltip says `4-64, step 4`, and the
-  same box's buttons are captioned `+1`/`-1` — the sheet does not agree with itself. Four steps is
-  not a phrase, so a pattern is never cut there, and by-4 puts fifteen stops between the two lengths
-  anybody uses. BPM keeps the sheet's `40-240, step 1`, which is a tempo and is asked for one at a
-  time.
+- **No STEPS field in the SOUND tab.** The sheet draws one; the length of a pattern or an SFX is set
+  the way FL Studio sets it instead: drag END in the roll's ruler, a beat at a time, or write a note
+  past the end, which lengthens it to the next beat. BPM keeps the sheet's `40-240, step 1`.
 
 ## Gotchas
 

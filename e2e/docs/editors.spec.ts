@@ -291,31 +291,62 @@ for (const theme of THEMES) {
     });
 
     test('sound', async ({ page }) => {
+      await page.route('**/features', (route) =>
+        route.fulfill({ json: { monetization: false, analytics: false } }),
+      );
       await page.goto(editorUrl('sound'));
       await page.getByRole('img', { name: 'Piano roll' }).waitFor();
       await page.waitForTimeout(500);
+      const tab = (name: string): Locator =>
+        page.getByRole('tab', { name: new RegExp(`^${name}`) });
       await shoot(page, OUT, 'sound', theme);
-      await shoot(page, OUT, 'sound-instruments', theme, page.locator('nc-instrument-list'));
+      await shoot(
+        page,
+        OUT,
+        'sound-instruments',
+        theme,
+        page.locator('nc-instrument-list').first(),
+      );
       await shoot(page, OUT, 'sound-roll', theme, page.locator('nc-piano-roll'));
-      await shoot(page, OUT, 'sound-inspector', theme, page.locator('nc-instrument-inspector'));
-      // A pattern no slot holds yet, put in a free one, so the bank shows its three states at once.
-      await page.getByRole('button', { name: 'SFX slot 2', exact: true }).click();
+      await shoot(page, OUT, 'sound-transport', theme, page.locator('nc-note-sheet-editor header'));
+      await page.getByRole('button', { name: 'Shortcuts' }).click();
+      await page.getByRole('dialog', { name: 'Shortcuts' }).waitFor();
+      await shoot(page, OUT, 'sound-help', theme, page.getByRole('dialog', { name: 'Shortcuts' }));
+      await page.keyboard.press('Escape');
+
+      await tab('Instruments').click();
+      await page.locator('nc-instrument-inspector').waitFor();
+      await shoot(page, OUT, 'sound-inspector', theme, page.locator('nc-instrument-editor'));
+
+      await tab('SFX').click();
+      await page.getByRole('img', { name: 'Piano roll' }).waitFor();
       await page.waitForTimeout(200);
-      await shoot(page, OUT, 'sound-sfx', theme, page.locator('nc-slot-grid').first());
-      // Five places filled with pattern 0 and one left empty: the orange hole the music stops at.
-      const cells = page.locator('nc-song-list [role="group"] nc-number-field input');
-      for (const i of [0, 1, 2, 4, 5]) {
-        await cells.nth(i).fill('0');
-        await cells.nth(i).press('Enter');
+      await shoot(page, OUT, 'sound-sfx', theme, page.locator('nc-sfx-editor'));
+
+      await tab('Timeline').click();
+      await page.locator('[data-lane]').waitFor();
+      await page.waitForTimeout(200);
+      await shoot(page, OUT, 'sound-timeline', theme, page.locator('nc-timeline-editor'));
+
+      const grab = await tab('SFX').boundingBox();
+      if (grab) {
+        await page.mouse.move(grab.x + 20, grab.y + grab.height / 2);
+        await page.mouse.down();
+        await page.mouse.move(grab.x + 300, grab.y + 400, { steps: 12 });
+        const lane = page.locator('nc-dock-workspace').first();
+        const box = await lane.boundingBox();
+        if (box) {
+          await page.mouse.move(box.x + box.width / 2 - 52, box.y + box.height / 2, { steps: 12 });
+        }
+        await page.waitForTimeout(200);
+        await shoot(page, OUT, 'sound-dock', theme);
+        await page.keyboard.press('Escape');
+        await page.mouse.move(0, 0);
+        await page.mouse.up();
+        await page.getByRole('button', { name: 'Base view' }).click();
       }
-      await page.waitForTimeout(200);
-      await shoot(page, OUT, 'sound-music', theme, page.locator('nc-song-list'));
-      await shoot(page, OUT, 'sound-transport', theme, page.locator('nc-transport').first());
-      // The help bubble the "?" beside the SFX slots opens.
-      await page.getByRole('button', { name: /^Numbered slots/ }).hover();
-      await page.getByRole('tooltip').waitFor();
-      await shoot(page, OUT, 'sound-sfx-help', theme, page.getByRole('tooltip'));
-      await page.mouse.move(0, 0);
+
+      await tab('Patterns').click();
       await page.getByRole('button', { name: 'Add instrument' }).first().click();
       const dialog = page.getByRole('dialog', { name: 'New instrument' });
       await shoot(page, OUT, 'sound-new-instrument', theme, dialog);

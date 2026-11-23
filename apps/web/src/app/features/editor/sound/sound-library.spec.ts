@@ -1,12 +1,36 @@
-import { defaultPattern, EditableGame, INSTRUMENT_PRESETS, LOCAL_ORIGIN } from '@naucto/engine';
+import {
+  defaultPattern,
+  defaultSfx,
+  defaultSong,
+  EditableGame,
+  INSTRUMENT_PRESETS,
+  LOCAL_ORIGIN,
+  type Note,
+  type Song,
+  type SongBlock,
+} from '@naucto/engine';
 import { beforeEach, describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
 
 import { SoundLibrary } from './sound-library';
 
+const block = (id: string, pattern: string, start: number): SongBlock => ({
+  id,
+  pattern,
+  start,
+  repeat: 1,
+});
+
+const tune = (...blocks: SongBlock[]): Song => ({ ...defaultSong(120), blocks });
+
 describe('SoundLibrary', () => {
   let game: EditableGame;
   let library: SoundLibrary;
+
+  const starts = (slot: number): number[] =>
+    (library.songs().get(String(slot))?.blocks ?? [])
+      .map((each) => each.start)
+      .sort((a, b) => a - b);
 
   beforeEach(() => {
     game = new EditableGame(new Y.Doc());
@@ -52,33 +76,87 @@ describe('SoundLibrary', () => {
   });
 
   it('puts a sound effect at any number at all', () => {
-    const pattern = defaultPattern('p0', 0, 'pattern 00');
-    library.putPattern(pattern);
-    library.assignSfx(200, pattern.id);
-    expect(library.sfx().get('200')).toBe(pattern.id);
+    library.putSfx(200, defaultSfx('jump'));
+    expect(library.sfx().get('200')?.name).toBe('jump');
 
-    // Below zero is not a slot, so nothing is written and the bank is unchanged.
-    library.assignSfx(-1, pattern.id);
+    library.putSfx(-1, defaultSfx('nope'));
     expect(library.sfx().size).toBe(1);
+    expect(library.nextSfxSlot()).toBe(201);
+
+    library.removeSfx(200);
+    expect(library.sfx().size).toBe(0);
   });
 
-  it('chains any pattern number into any music number at all', () => {
-    const pattern = defaultPattern('p120', 120, 'pattern 120');
-    library.putPattern(pattern);
-    library.setSongSequence(20, [pattern.id]);
-    expect(library.songs().get('20')?.sequence).toEqual([pattern.id]);
+  it('puts a music at any number at all', () => {
+    library.putSong(20, tune(block('a', 'p0', 0)));
+    expect(library.songs().get('20')?.blocks).toHaveLength(1);
 
-    library.setSongSequence(-1, [pattern.id]);
+    library.putSong(-1, tune());
     expect(library.songs().size).toBe(1);
+    expect(library.nextSongSlot()).toBe(0);
   });
 
-  it('keeps the empty places of a music, which is what a hole is written as', () => {
-    const first = defaultPattern('p0', 0, 'pattern 00');
-    const second = defaultPattern('p1', 1, 'pattern 01');
-    library.putPattern(first);
-    library.putPattern(second);
-    library.setSongSequence(0, [first.id, null, second.id]);
-    expect(library.songs().get('0')?.sequence).toEqual([first.id, null, second.id]);
+  it('pushes the blocks after a pattern made longer with END, in every music, and not when made shorter', () => {
+    library.putPattern({ ...defaultPattern('p0', 0), steps: 16 });
+    library.putPattern({ ...defaultPattern('p1', 1), steps: 16 });
+    library.putSong(0, tune(block('a', 'p0', 0), block('b', 'p1', 1)));
+    library.putSong(1, tune(block('c', 'p1', 0), block('d', 'p0', 1), block('e', 'p1', 2)));
+
+    library.setPatternLength('p0', 32);
+    expect(starts(0)).toEqual([0, 2]);
+    expect(starts(1)).toEqual([0, 1, 3]);
+
+    library.setPatternLength('p0', 16);
+    expect(starts(0)).toEqual([0, 2]);
+  });
+
+  it('grows and shrinks a pattern with its notes without moving any block, as FL Studio does', () => {
+    const note = (step: number): Note => ({
+      step,
+      pitch: 60,
+      length: 1,
+      instrument: 'i',
+      volume: 1,
+    });
+    library.putPattern({ ...defaultPattern('p0', 0), steps: 16, notes: [note(0)] });
+    library.putPattern({ ...defaultPattern('p1', 1), steps: 16 });
+    library.putSong(0, tune(block('a', 'p0', 0), block('b', 'p1', 1)));
+
+    library.setPatternNotes('p0', [note(0), note(20)]);
+    expect(library.patterns().get('p0')?.steps).toBe(32);
+    expect(starts(0)).toEqual([0, 1]);
+
+    library.setPatternNotes('p0', [note(0)]);
+    expect(library.patterns().get('p0')?.steps).toBe(16);
+    expect(starts(0)).toEqual([0, 1]);
+  });
+
+  it('takes a removed pattern out of every music, and says where it was used', () => {
+    library.putPattern(defaultPattern('p0', 0));
+    library.putPattern(defaultPattern('p1', 1));
+    library.putSong(3, { ...tune(block('a', 'p0', 0), block('b', 'p1', 2)), name: 'boss' });
+    expect(library.patternUsage('p0')).toEqual([{ slot: 3, name: 'boss', uses: 1 }]);
+
+    library.removePattern('p0');
+    expect(library.patterns().has('p0')).toBe(false);
+    expect(
+      library
+        .songs()
+        .get('3')
+        ?.blocks.map((each) => each.id),
+    ).toEqual(['b']);
+  });
+
+  it('takes a removed instrument out of the SFX too', () => {
+    const inst = library.addInstrument();
+    library.putSfx(0, {
+      ...defaultSfx(),
+      notes: [{ step: 0, pitch: 60, length: 1, instrument: inst.id, volume: 1 }],
+    });
+    expect(library.usedBy(inst.id).sfx).toEqual([0]);
+
+    library.removeInstrument(inst.id);
+    expect(library.sfx().get('0')?.notes).toEqual([]);
   });
 
   it('leaves a duplicate the sample bytes when the original clears its own', () => {
@@ -151,7 +229,7 @@ describe('SoundLibrary', () => {
 });
 
 describe('SoundLibrary under the SOUND tab history', () => {
-  it('takes a chained pattern and its place in the music back as one step, and a sample too', () => {
+  it('takes a music back as one step, and a sample too', () => {
     const game = new EditableGame(new Y.Doc());
     const library = new SoundLibrary(game);
     const undo = new Y.UndoManager(
@@ -162,12 +240,12 @@ describe('SoundLibrary under the SOUND tab history', () => {
     const pattern = defaultPattern('p0', 0, 'pattern 00');
     library.putPattern(pattern);
     undo.stopCapturing();
-    library.setSongSequence(0, [pattern.id]);
-    expect(game.getSongs().get('0')?.sequence).toEqual([pattern.id]);
+    library.putSong(0, tune(block('a', pattern.id, 0)));
+    expect(game.getSongs().get('0')?.blocks).toHaveLength(1);
     undo.undo();
     expect(game.getSongs().size).toBe(0);
     undo.redo();
-    expect(game.getSongs().get('0')?.sequence).toEqual([pattern.id]);
+    expect(game.getSongs().get('0')?.blocks).toHaveLength(1);
 
     const inst = library.addInstrument();
     undo.stopCapturing();

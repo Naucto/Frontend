@@ -1,0 +1,72 @@
+<ng-container *transloco="let t; prefix: 'editor.sound.help'">
+  <button
+    ncButton
+    ncLooksOnly
+    variant="ghost"
+    size="sm"
+    iconOnly
+    popoverAlign="end"
+    [ncPopover]="panel"
+    [attr.aria-label]="t('open')"
+    [ncTooltip]="t('open')">
+    ?
+  </button>
+  <ng-template #entry let-entry>
+    <dt class="flex items-center gap-0.5 text-meta whitespace-nowrap text-ink-body">
+      @for (key of entry.keys ?? []; track $index) {
+        <nc-keycap size="sm">{{ key }}</nc-keycap>
+      }
+      @if (entry.gesture; as gesture) {
+        <span>{{ t('gesture.' + gesture) }}</span>
+      }
+    </dt>
+    <dd class="text-meta whitespace-nowrap text-ink-3">{{ t('action.' + entry.action) }}</dd>
+  </ng-template>
+  <ng-template #panel>
+    <nc-popover-panel>
+      <div
+        class="grid w-max max-w-[90vw] gap-1.5 p-1.5"
+        role="dialog"
+        [attr.aria-label]="t('title')">
+        @if (intro()) {
+          <p class="max-w-[560px] text-meta text-ink-2">{{ t('sfxIntro') }}</p>
+        }
+        <div class="flex items-start gap-3">
+          @if (help().mouse.length) {
+            <section class="grid gap-0.5">
+              <span class="label text-ink-3">{{ t('mouse') }}</span>
+              <dl class="grid grid-cols-[auto_auto] items-center gap-x-1.5 gap-y-0.5">
+                @for (each of help().mouse; track each.action + (each.gesture ?? '')) {
+                  <ng-container
+                    [ngTemplateOutlet]="entry"
+                    [ngTemplateOutletContext]="{ $implicit: each }" />
+                }
+              </dl>
+            </section>
+          }
+          @if (help().keyboard.length) {
+            <section class="grid gap-0.5">
+              <span class="label text-ink-3">{{ t('keyboard') }}</span>
+              <dl class="grid grid-cols-[auto_auto] items-center gap-x-1.5 gap-y-0.5">
+                @for (each of help().keyboard; track each.action) {
+                  <ng-container
+                    [ngTemplateOutlet]="entry"
+                    [ngTemplateOutletContext]="{ $implicit: each }" />
+                }
+              </dl>
+            </section>
+          }
+        </div>
+        <dl class="flex flex-wrap items-center gap-x-3 gap-y-0.5 border-t-3 border-line pt-1">
+          @for (each of help().shared; track each.action) {
+            <div class="flex items-center gap-1">
+              <ng-container
+                [ngTemplateOutlet]="entry"
+                [ngTemplateOutletContext]="{ $implicit: each }" />
+            </div>
+          }
+        </dl>
+      </div>
+    </nc-popover-panel>
+  </ng-template>
+</ng-container>
