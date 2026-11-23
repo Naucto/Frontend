@@ -64,24 +64,21 @@ const DOUBLED_ICON_HOME = 'apps/web/src/app/shared/game-screen/game-screen.compo
 const ICON_RESIZED_CSS = /nc-icon\s*>?\s*svg\s*\{[^}]*\b(?:width|height|scale|zoom)\s*:/g;
 
 /**
- * The height of each step of the button ladder. A raised frame takes 3px above and 6px below, and
- * a glyph keeps one pixel clear of it on every side: a button holds a glyph up to its height less
- * 15, which is a mark at 30, an icon of 18 at 36 and one of 24 from 40.
+ * The height of each step of the button ladder, read from the kit's tokens. A raised frame takes
+ * 3px above and 6px below, and a glyph keeps one pixel clear of it on every side: a button holds
+ * a glyph up to its height less 15, which is a mark at 30, an icon of 18 at 36 and one of 24 from
+ * 40.
  */
-const BUTTON_HEIGHT = {
-  xs: 28,
-  sm: 30,
-  tool: 30,
-  md: 36,
-  strip: 36,
-  lg: 40,
-  xl: 44,
-  bar: 48,
-  hero: 56,
-};
+const HEIGHT = Object.fromEntries(
+  [
+    ...readFileSync(join(ROOT, 'packages/ui/src/tokens.css'), 'utf8').matchAll(
+      /--nc-h-(\w+):\s*(\d+)px/g,
+    ),
+  ].map(([, step, px]) => [step, Number(px)]),
+);
+const BUTTON_HEIGHT = { ...HEIGHT, tool: HEIGHT.sm, strip: HEIGHT.md };
 const FRAME_AND_CLEARANCE = 15;
 const TAG = /<(\/?)([a-zA-Z][\w-]*)((?:"[^"]*"|'[^']*'|[^'">])*)>/g;
-const VOID = new Set(['input', 'img', 'br', 'hr', 'source', 'path', 'rect', 'circle']);
 
 /**
  * The glyphs of a template that leave less than a pixel between their box and the frame of the
@@ -111,7 +108,7 @@ function misfits(template) {
     if (glyph && room && glyph > room) {
       total += 1;
     }
-    if (!attributes.endsWith('/') && !VOID.has(tag)) {
+    if (!attributes.endsWith('/')) {
       const size = /(?<![\w[])size="(\w+)"/.exec(attributes)?.[1];
       const height =
         tag === 'nc-toggle-button'
@@ -140,22 +137,15 @@ function violations(path, text) {
   const found = {
     rounded: 0,
     border: 0,
-    'stroke-width': 0,
-    density: 0,
-    separator: 0,
-    'icon-scale': 0,
-    'icon-fit': 0,
+    'stroke-width': count(text, STROKE_WIDTH, ([, width]) => offPixel(Number(width))),
+    density: count(text, DENSITY),
+    separator: separators(path, text),
+    'icon-scale':
+      count(text, ICON_SIZE, ([, size]) => size !== '18' && size !== '24') +
+      count(text, ICON_RESIZED) +
+      (path.endsWith(DOUBLED_ICON_HOME) ? 0 : count(text, ICON_DOUBLED)),
+    'icon-fit': path.endsWith('.html') ? misfits(text) : 0,
   };
-  found.separator = separators(path, text);
-  found['icon-scale'] =
-    count(text, ICON_SIZE, ([, size]) => size !== '18' && size !== '24') +
-    count(text, ICON_RESIZED) +
-    (path.endsWith(DOUBLED_ICON_HOME) ? 0 : count(text, ICON_DOUBLED));
-  found.density = count(text, DENSITY);
-  found['stroke-width'] = count(text, STROKE_WIDTH, ([, width]) => offPixel(Number(width)));
-  if (path.endsWith('.html')) {
-    found['icon-fit'] = misfits(text);
-  }
   if (path.endsWith('.css')) {
     found.border = count(text, CSS_STROKE, ([, width]) => offPixel(Number(width)));
     found.rounded = count(text, /border-radius\s*:/g);
