@@ -68,7 +68,7 @@ const RULE_ON_PANEL =
  * name alone, apart from the number, the swatch and the buttons beside it. `marks` says the
  * buttons of a tab are marks, where the tab is too low to hold an icon.
  */
-const VARIANT: Record<
+export const TAB_LOOKS: Record<
   TabsVariant,
   { frame: string; list: string; off: string; on: string; label: string; marks: boolean }
 > = {
@@ -155,7 +155,7 @@ export class TabsComponent<T extends string = string> {
   private readonly tabEls = viewChildren<ElementRef<HTMLElement>>('tab');
   private readonly scroller = viewChild<ElementRef<HTMLElement>>('scroller');
 
-  protected readonly look = computed(() => VARIANT[this.variant()]);
+  protected readonly look = computed(() => TAB_LOOKS[this.variant()]);
   /** How far the run of tabs is scrolled, and how far it could be. Measured, not derived. */
   private readonly scrolled = signal(0);
   private readonly overflow = signal(0);

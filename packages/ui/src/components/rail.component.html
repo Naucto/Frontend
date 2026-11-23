@@ -7,6 +7,9 @@
       (click)="value.set(it.value)"
       [class]="it.value === value() ? onClass : offClass">
       <nc-icon [name]="it.icon" [size]="24" />
+      @if (it.peers?.length) {
+        <nc-presence-dots class="absolute top-[6px] right-[6px]" [peers]="it.peers" />
+      }
       <span class="font-ui text-label tracking-strip uppercase">{{ it.label }}</span>
     </button>
   }
