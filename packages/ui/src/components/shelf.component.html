@@ -114,14 +114,15 @@
     <nc-mark name="chevron-right" />
   </button>
 </div>
-@if (layout().pages > 1) {
-  <nc-pager
-    class="mt-[18px] justify-self-center"
-    [arrows]="false"
-    [count]="layout().pages"
-    [value]="current()"
-    [controls]="ids.rail"
-    [label]="pagesLabel()"
-    [pageLabel]="pageLabel()"
-    (valueChange)="go($event)" />
-}
+<!-- A shelf of one page keeps its pager's room, hidden, so every shelf is as tall as the next. -->
+<nc-pager
+  class="mt-[18px] justify-self-center"
+  [class.invisible]="layout().pages <= 1"
+  [attr.aria-hidden]="layout().pages <= 1 ? 'true' : null"
+  [arrows]="false"
+  [count]="layout().pages"
+  [value]="current()"
+  [controls]="ids.rail"
+  [label]="pagesLabel()"
+  [pageLabel]="pageLabel()"
+  (valueChange)="go($event)" />
