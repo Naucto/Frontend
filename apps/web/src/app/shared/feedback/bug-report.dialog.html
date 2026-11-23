@@ -91,7 +91,9 @@
         class="flat-sm mt-[6px] grid grid-cols-[auto_minmax(0,1fr)] gap-x-[14px] gap-y-[4px] bevel-fill-inset px-[12px] py-[10px] text-meta">
         @for (row of contextRows(); track row.label) {
           <dt class="text-ink-4">{{ row.label }}</dt>
-          <dd class="font-mono break-words whitespace-pre-wrap text-ink-2">{{ row.value }}</dd>
+          <dd class="break-words whitespace-pre-wrap text-ink-2" [class.font-mono]="row.identifier">
+            {{ row.value }}
+          </dd>
         }
       </dl>
     </nc-disclosure>

@@ -306,23 +306,31 @@ export class BugReportDialog {
     };
   }
 
-  private describeContext(): { label: string; value: string }[] {
+  private describeContext(): { label: string; value: string; identifier?: boolean }[] {
     const label = (key: string): string => this.transloco.translate(`feedback.bug.included.${key}`);
     const rows = [
       { label: label('page'), value: this.route },
       { label: label('browser'), value: label('browserValue') },
       { label: label('viewport'), value: this.context.viewport ?? '' },
       { label: label('language'), value: this.context.language ?? '' },
-      { label: label('release'), value: APP_RELEASE },
+      { label: label('release'), value: APP_RELEASE, identifier: true },
     ];
     if (this.subject.releaseId !== undefined) {
-      rows.push({ label: label('game'), value: `#${String(this.subject.releaseId)}` });
+      rows.push({
+        label: label('game'),
+        value: `#${String(this.subject.releaseId)}`,
+        identifier: true,
+      });
     }
     if (this.subject.projectId !== undefined) {
-      rows.push({ label: label('project'), value: `#${String(this.subject.projectId)}` });
+      rows.push({
+        label: label('project'),
+        value: `#${String(this.subject.projectId)}`,
+        identifier: true,
+      });
     }
     if (this.context.engineError) {
-      rows.push({ label: label('engineError'), value: this.context.engineError });
+      rows.push({ label: label('engineError'), value: this.context.engineError, identifier: true });
     }
     if (this.context.console) {
       rows.push({
@@ -330,6 +338,7 @@ export class BugReportDialog {
         value: this.transloco.translate('feedback.bug.included.consoleLines', {
           count: this.context.console.length,
         }),
+        identifier: true,
       });
     }
     return rows;
