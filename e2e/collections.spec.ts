@@ -67,8 +67,8 @@ test.describe('a collection page', () => {
       'Night Courier',
     ]);
     await expect(tray(page).first()).toHaveAttribute('href', `/play/${uuidOf(11)}`);
-    // The disks carry no place number: the order of the tray is the collection's.
-    await expect(page.getByTestId('tray').locator('li').nth(2)).not.toContainText('3');
+    // Outside Organize a disk stands alone in its cell: no place number, no row above it.
+    await expect(page.getByTestId('tray').locator('li').first().locator('> div')).toHaveCount(0);
 
     await expect(page.getByRole('switch', { name: 'Organize' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Edit details' })).toHaveCount(0);
