@@ -129,5 +129,20 @@ test.describe('a profile', () => {
     await page.reload();
     await expect(page.getByRole('button', { name: 'Change banner' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Remove the banner' })).toBeVisible();
+    const boxes = await Promise.all(
+      [
+        page.getByRole('link', { name: 'Settings' }),
+        page.getByRole('button', { name: 'Change banner' }),
+        page.getByRole('button', { name: 'Remove the banner' }),
+      ].map((control) =>
+        control.evaluate((el) => {
+          const { top, height } = el.getBoundingClientRect();
+          return { top, height };
+        }),
+      ),
+    );
+    expect(new Set(boxes.map(({ top, height }) => `${String(top)} ${String(height)}`)).size).toBe(
+      1,
+    );
   });
 });

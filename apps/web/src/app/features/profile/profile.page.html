@@ -103,10 +103,10 @@
               <button
                 ncButton
                 variant="ghost"
-                size="sm"
+                size="lg"
                 type="button"
                 (click)="editImage('banner')">
-                <nc-mark name="upload" />
+                <nc-icon name="upload" />
                 {{
                   profile.backgroundImageUrl ? t('profile.changeBanner') : t('profile.setBanner')
                 }}
@@ -115,13 +115,13 @@
                 <button
                   ncButton
                   variant="ghost"
-                  size="sm"
+                  size="lg"
                   iconOnly
                   type="button"
                   [attr.aria-label]="t('profile.image.clear.banner')"
                   [attr.title]="t('profile.image.clear.banner')"
                   (click)="clearImage('banner')">
-                  <nc-mark name="trash" />
+                  <nc-icon name="trash" [size]="24" />
                 </button>
               }
             } @else if (auth.isAuthenticated()) {
