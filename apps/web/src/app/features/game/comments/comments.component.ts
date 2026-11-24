@@ -1,7 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { TranslocoDirective } from '@jsverse/transloco';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import {
   type CommentResponseDto,
   projectCommentControllerCreateComment,
@@ -13,6 +13,7 @@ import {
   AvatarComponent,
   ButtonDirective,
   ChipComponent,
+  DialogService,
   EmptyStateComponent,
   InputDirective,
   MarkComponent,
@@ -61,6 +62,8 @@ export class CommentsComponent {
   protected readonly auth = inject(AuthStore);
   private readonly qc = inject(QueryClient);
   private readonly toasts = inject(ToastService);
+  private readonly dialogs = inject(DialogService);
+  private readonly transloco = inject(TranslocoService);
   private readonly features = inject(FeaturesService);
   private readonly flags = inject(ContentFlagLauncher);
   private readonly standing = inject(GoodStandingAction);
@@ -156,6 +159,14 @@ export class CommentsComponent {
   }
 
   protected async remove(commentId: number): Promise<void> {
+    const confirmed = await this.dialogs.confirmDanger({
+      title: this.transloco.translate('comments.deleteTitle'),
+      message: this.transloco.translate('comments.deleteMessage'),
+      confirmLabel: this.transloco.translate('comments.delete'),
+    });
+    if (!confirmed) {
+      return;
+    }
     try {
       unwrap(
         await projectCommentControllerDeleteComment({

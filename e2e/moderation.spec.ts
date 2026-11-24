@@ -74,6 +74,32 @@ test.describe('moderation', () => {
     ]);
   });
 
+  test('deleting a comment asks first, and Cancel sends nothing', async ({ page }) => {
+    await serveGame(page, 'function _draw() gfx.cls(1) end');
+    await mockSignedIn(page);
+    await mockComments(page, 42, [comment(3, { author: { id: 1, username: 'alexis' } })]);
+    const deleted: string[] = [];
+    await page.route('**/projects/42/comments/*', (route) => {
+      if (route.request().method() === 'DELETE') {
+        deleted.push(route.request().url());
+        return route.fulfill({ status: 204 });
+      }
+      return route.fallback();
+    });
+    await page.goto('/play/42');
+
+    const thread = page.locator('nc-comments');
+    await thread.getByRole('button', { name: 'Delete' }).click();
+    const confirm = page.getByRole('dialog').filter({ hasText: 'Delete this comment?' });
+    await confirm.getByRole('button', { name: 'Cancel' }).click();
+    await expect(confirm).toHaveCount(0);
+    expect(deleted).toEqual([]);
+
+    await thread.getByRole('button', { name: 'Delete' }).click();
+    await confirm.getByRole('button', { name: 'Delete' }).click();
+    await expect.poll(() => deleted.length).toBe(1);
+  });
+
   test('Report is one control on a game, a profile and a comment, and never on a removed one', async ({
     page,
   }) => {

@@ -489,6 +489,8 @@
     "author": "Author",
     "reply": "Reply",
     "delete": "Delete",
+    "deleteTitle": "Delete this comment?",
+    "deleteMessage": "It reads as deleted for everyone, and cannot be brought back.",
     "deleted": "[deleted]",
     "removedByModeration": "A moderator removed this comment.",
     "replyPlaceholder": "Write a reply…",
