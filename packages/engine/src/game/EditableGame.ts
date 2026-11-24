@@ -19,7 +19,14 @@ import {
   DEFAULT_PLAYER_SPRITE_INDICES,
   DEFAULT_SPRITE_COLOUR,
 } from './defaults';
-import { type CodeFile, coordKey, Game, LOCAL_ORIGIN, type NetPermissionRules } from './Game';
+import {
+  type CodeFile,
+  coordKey,
+  Game,
+  LOCAL_ORIGIN,
+  type NetPermissionRules,
+  type NetRule,
+} from './Game';
 import { clampMapSize, clampSheetSize } from './geometry';
 import {
   ENTRY_KEYS,
@@ -173,8 +180,8 @@ export class EditableGame extends Game {
   declare readonly samples: Y.Map<string>;
   /** Read and watched from outside, and written through the net permission methods alone. */
   declare readonly netPermissions: NetPermissionRules &
-    Pick<Y.Map<{ flags: number }>, 'observe' | 'unobserve'>;
-  private readonly netRules: Y.Map<{ flags: number }>;
+    Pick<Y.Map<NetRule>, 'observe' | 'unobserve'>;
+  private readonly netRules: Y.Map<NetRule>;
 
   /**
    * @param mayWrite Asked before every write, by whoever builds the game: whether the one holding
@@ -766,18 +773,32 @@ export class EditableGame extends Game {
 
   // ---- net permissions ------------------------------------------------------
 
-  /** Every rule on a path and under it, as [path, flags]. */
-  private netPermissionsUnder(path: string): [string, number][] {
-    const under: [string, number][] = [];
-    this.netRules.forEach((value, key) => {
+  /** Every entry on a path and under it, rules and declarations alike. */
+  private netPermissionsUnder(path: string): [string, NetRule][] {
+    const under: [string, NetRule][] = [];
+    this.netRules.forEach((rule, key) => {
       if (key === path || key.startsWith(`${path}.`)) {
-        under.push([key, value.flags]);
+        under.push([key, rule]);
       }
     });
 
     return under;
   }
 
+  /**
+   * Names a path with no rule of its own, so it takes its nearest ancestor's. A path already named,
+   * with a rule or without, is left as it is.
+   */
+  declareNetPath(path: string): void {
+    if (this.netRules.has(path)) {
+      return;
+    }
+    this.transact(() => {
+      this.netRules.set(path, {});
+    });
+  }
+
+  /** Gives a path a rule of its own. */
   setNetPermission(path: string, flags: number): void {
     this.transact(() => {
       this.netRules.set(path, { flags });
@@ -785,7 +806,24 @@ export class EditableGame extends Game {
   }
 
   /**
-   * Takes the rules of a path and of everything under it to another name, in one transaction:
+   * Drops a path's own rule and keeps the path declared, so it takes its nearest ancestor's rule
+   * again; the rules under it stay. The root has no ancestor, so without a rule it is not named.
+   */
+  inheritNetPermission(path: string): void {
+    if (this.netRules.get(path)?.flags === undefined) {
+      return;
+    }
+    this.transact(() => {
+      if (path) {
+        this.netRules.set(path, {});
+      } else {
+        this.netRules.delete(path);
+      }
+    });
+  }
+
+  /**
+   * Takes the entries of a path and of everything under it to another name, in one transaction:
    * what reads them must never see one branch under two names.
    */
   moveNetPermissions(from: string, to: string): void {
@@ -797,13 +835,13 @@ export class EditableGame extends Game {
       for (const [key] of moved) {
         this.netRules.delete(key);
       }
-      for (const [key, flags] of moved) {
-        this.netRules.set(to + key.slice(from.length), { flags });
+      for (const [key, rule] of moved) {
+        this.netRules.set(to + key.slice(from.length), { ...rule });
       }
     });
   }
 
-  /** Drops the rules of a path and of everything under it. */
+  /** Drops the entries of a path and of everything under it. */
   removeNetPermissions(path: string): void {
     const gone = this.netPermissionsUnder(path);
     if (!gone.length) {

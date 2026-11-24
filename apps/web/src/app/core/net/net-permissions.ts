@@ -35,7 +35,9 @@ export function netPermissionsOf(game: Game): NetPermissions {
   const read = (): ReadonlyMap<string, number> => {
     const out = new Map<string, number>();
     game.netPermissions.forEach((entry, path) => {
-      out.set(path, entry.flags);
+      if (entry.flags !== undefined) {
+        out.set(path, entry.flags);
+      }
     });
     return out;
   };

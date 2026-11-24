@@ -56,8 +56,17 @@ export interface CodeFile {
 /** The part of the sound library an edit touched. */
 export type SoundLibraryPart = 'instruments' | 'patterns' | 'sfx' | 'songs' | 'samples';
 
+/**
+ * An entry of the game's net rules, keyed by `net.state` path. With `flags`, the path has a rule
+ * of its own; without, the path is only declared and takes the rule of its nearest ancestor that
+ * has one.
+ */
+export interface NetRule {
+  flags?: number;
+}
+
 /** What a running game may ask of its permission rules; writing them is the editor's. */
-export type NetPermissionRules = Pick<Y.Map<{ flags: number }>, 'forEach' | 'get' | 'has'>;
+export type NetPermissionRules = Pick<Y.Map<NetRule>, 'forEach' | 'get' | 'has'>;
 
 export const coordKey = (x: number, y: number): string => `${String(x)},${String(y)}`;
 const parseCoord = (key: string): [number, number] => {

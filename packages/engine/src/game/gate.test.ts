@@ -213,10 +213,22 @@ const MUTATORS: Record<string, Mutation> = {
       game.setSong(0, defaultSong());
     },
   },
+  declareNetPath: {
+    on: seeded,
+    run: (game) => {
+      game.declareNetPath('players.name');
+    },
+  },
   setNetPermission: {
     on: seeded,
     run: (game) => {
       game.setNetPermission('players.score', 3);
+    },
+  },
+  inheritNetPermission: {
+    on: seeded,
+    run: (game) => {
+      game.inheritNetPermission('players.score');
     },
   },
   moveNetPermissions: {

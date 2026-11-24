@@ -213,7 +213,7 @@ someone who may not change it.
      (`new EditableGame(doc, mayWrite)`; the session answers yes while it opens, then
      `mode.canWrite()`). Refused, it runs nothing and returns `false`; it never throws. Every
      mutator goes through it, as do the pixels, flags and tiles a `Sheet` or a `GameMap` writes,
-     the net rules (`setNetPermission` and its two siblings) and `yTextField`. A load
+     the net rules (`declareNetPath`, `setNetPermission` and their siblings) and `yTextField`. A load
      (`Y.applyUpdate`, the session's `remote-init` writes), a migration and a peer's update are
      not edits and do not pass it. CodeMirror takes its writability from the mode through a
      compartment (`code-editor.component.ts`). A local update seen while the mode does not write

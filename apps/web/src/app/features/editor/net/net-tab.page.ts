@@ -204,7 +204,11 @@ export default class NetTabPage {
     this.tick();
     this.permsVersion();
     const perms = new Map<string, number>();
-    this.work.game.netPermissions.forEach((permission, path) => perms.set(path, permission.flags));
+    this.work.game.netPermissions.forEach((permission, path) => {
+      if (permission.flags !== undefined) {
+        perms.set(path, permission.flags);
+      }
+    });
     return buildRows({
       session: this.session(),
       perms,
