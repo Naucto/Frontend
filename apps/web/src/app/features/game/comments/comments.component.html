@@ -119,72 +119,59 @@
 
   <ng-template #item let-entry="entry" let-depth="depth">
     @let creator = entry.author.id === authorId();
-    <div class="flex items-start gap-[18px]">
-      <a [routerLink]="['/u', entry.author.username]" class="shrink-0">
-        <nc-user-avatar [name]="entry.author.username" [userId]="entry.author.id" [size]="40" />
-      </a>
-      <div
-        class="bubble flat-sm relative grid min-w-0 flex-1 gap-[6px] bevel-fill-raised pt-[10px] pr-[14px] pb-1 pl-2.5"
-        [class.bevel-edge-creator]="creator"
-        [class.by-creator]="creator">
-        <span class="tail" aria-hidden="true"></span>
-        <div class="flex flex-wrap items-center gap-x-[10px] gap-y-0.5">
-          <a
-            [routerLink]="['/u', entry.author.username]"
-            class="truncate text-body hover:text-gold-ink"
-            [class]="creator ? 'text-gold-ink' : 'text-ink'">
-            {{ entry.author.nickname || entry.author.username }}
-          </a>
-          @if (creator) {
-            <nc-chip tone="gold">{{ t('comments.author') }}</nc-chip>
-          }
-          <span class="text-micro tracking-wide text-ink-4 uppercase">
-            {{ entry.createdAt | ncRelativeTime }}
-          </span>
-        </div>
-        @if (entry.deleted && entry.removedBy === 'MODERATION') {
-          <nc-notice tone="info" data-testid="comment-moderated">
-            {{ t('comments.removedByModeration') }}
-          </nc-notice>
-        } @else {
-          <!-- Bound, not interpolated: under whitespace-pre-wrap the template newlines around an
-               interpolation render as spaces, and Prettier will not keep the tag on one line. -->
-          <p
-            class="text-body leading-[1.55] wrap-anywhere whitespace-pre-wrap"
-            [class.text-ink-4]="entry.deleted"
-            [class.text-ink-body]="!entry.deleted"
-            [textContent]="entry.deleted ? t('comments.deleted') : entry.content"></p>
-        }
-        <div class="mt-0.5 -ml-[13px] flex items-center gap-[3px] empty:hidden">
-          @if (auth.isAuthenticated()) {
-            @if (depth === 0) {
-              <button
-                ncButton
-                variant="ghost"
-                size="sm"
-                type="button"
-                [pressed]="replyTo() === entry.id"
-                [attr.aria-expanded]="replyTo() === entry.id"
-                (click)="replyTo.set(replyTo() === entry.id ? null : entry.id)">
-                {{ t('comments.reply') }}
-              </button>
-            }
-            @if (
-              (entry.author.id === auth.userId() || authorId() === auth.userId()) && !entry.deleted
-            ) {
-              <button ncButton variant="ghost" size="sm" type="button" (click)="remove(entry.id)">
-                {{ t('comments.delete') }}
-              </button>
-            }
-          }
-          @if (canReport(entry)) {
-            <button ncButton variant="ghost" size="sm" type="button" (click)="report(entry)">
-              <nc-mark name="flag" />
-              {{ t('moderation.reportComment') }}
+    <nc-comment-bubble
+      [authorId]="entry.author.id"
+      [name]="entry.author.nickname || entry.author.username"
+      [username]="entry.author.username"
+      [creator]="creator">
+      @if (creator) {
+        <nc-chip meta tone="gold">{{ t('comments.author') }}</nc-chip>
+      }
+      <span meta class="text-micro tracking-wide text-ink-4 uppercase">
+        {{ entry.createdAt | ncRelativeTime }}
+      </span>
+      @if (entry.deleted && entry.removedBy === 'MODERATION') {
+        <nc-notice tone="info" data-testid="comment-moderated">
+          {{ t('comments.removedByModeration') }}
+        </nc-notice>
+      } @else {
+        <!-- Bound, not interpolated: under whitespace-pre-wrap the template newlines around an
+             interpolation render as spaces, and Prettier will not keep the tag on one line. -->
+        <p
+          class="text-body leading-[1.55] wrap-anywhere whitespace-pre-wrap"
+          [class.text-ink-4]="entry.deleted"
+          [class.text-ink-body]="!entry.deleted"
+          [textContent]="entry.deleted ? t('comments.deleted') : entry.content"></p>
+      }
+      <div actions class="mt-0.5 -ml-[13px] flex items-center gap-[3px] empty:hidden">
+        @if (auth.isAuthenticated()) {
+          @if (depth === 0) {
+            <button
+              ncButton
+              variant="ghost"
+              size="sm"
+              type="button"
+              [pressed]="replyTo() === entry.id"
+              [attr.aria-expanded]="replyTo() === entry.id"
+              (click)="replyTo.set(replyTo() === entry.id ? null : entry.id)">
+              {{ t('comments.reply') }}
             </button>
           }
-        </div>
+          @if (
+            (entry.author.id === auth.userId() || authorId() === auth.userId()) && !entry.deleted
+          ) {
+            <button ncButton variant="ghost" size="sm" type="button" (click)="remove(entry.id)">
+              {{ t('comments.delete') }}
+            </button>
+          }
+        }
+        @if (canReport(entry)) {
+          <button ncButton variant="ghost" size="sm" type="button" (click)="report(entry)">
+            <nc-mark name="flag" />
+            {{ t('moderation.reportComment') }}
+          </button>
+        }
       </div>
-    </div>
+    </nc-comment-bubble>
   </ng-template>
 </section>

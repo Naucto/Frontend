@@ -13,8 +13,8 @@ import {
 } from '@naucto/ui';
 
 import { ApiError } from '../../core/api/api-errors';
+import { CommentBubbleComponent } from '../comments/comment-bubble.component';
 import { injectFlagContent } from '../queries/moderation.queries';
-import { UserAvatarComponent } from '../user-avatar.component';
 
 const FLAG_DETAILS_MAX = 1000;
 
@@ -47,6 +47,7 @@ const REFUSALS: Record<string, string> = {
 @Component({
   selector: 'nc-flag-content-dialog',
   imports: [
+    CommentBubbleComponent,
     TranslocoDirective,
     ButtonDirective,
     DialogShellComponent,
@@ -54,7 +55,6 @@ const REFUSALS: Record<string, string> = {
     InputDirective,
     NoticeComponent,
     SelectComponent,
-    UserAvatarComponent,
   ],
   templateUrl: './flag-content.dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

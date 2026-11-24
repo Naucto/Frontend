@@ -5,15 +5,11 @@
   [closeLabel]="t('feedback.close')">
   <form class="flex flex-col gap-[14px]" (submit)="$event.preventDefault(); send()">
     @if (data.author; as author) {
-      <figure class="flex gap-1.5 flat-sm bevel-edge-line-strong bevel-fill-inset p-1.5">
-        <nc-user-avatar class="shrink-0" [userId]="author.id" [name]="author.name" [size]="24" />
-        <div class="min-w-0">
-          <figcaption class="text-meta text-ink-3">{{ author.name }}</figcaption>
-          <p class="line-clamp-3 text-small whitespace-pre-wrap wrap-anywhere text-ink-body">
-            {{ data.label }}
-          </p>
-        </div>
-      </figure>
+      <nc-comment-bubble [authorId]="author.id" [name]="author.name" [avatarSize]="24">
+        <p
+          class="line-clamp-3 text-small whitespace-pre-wrap wrap-anywhere text-ink-body"
+          [textContent]="data.label"></p>
+      </nc-comment-bubble>
     }
     <nc-field [label]="t('moderation.report.reason')" for="flag-reason">
       <nc-select

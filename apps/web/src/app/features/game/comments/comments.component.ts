@@ -1,7 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
 import {
   type CommentResponseDto,
@@ -27,10 +26,10 @@ import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-quer
 import { unwrap } from '../../../core/api/api-errors';
 import { AuthStore } from '../../../core/auth/auth.store';
 import { FeaturesService } from '../../../core/config/features.service';
+import { CommentBubbleComponent } from '../../../shared/comments/comment-bubble.component';
 import { ContentFlagLauncher } from '../../../shared/moderation/content-flag-launcher.service';
 import { GoodStandingAction } from '../../../shared/moderation/good-standing-action';
 import { qk } from '../../../shared/queries/query-keys';
-import { UserAvatarComponent } from '../../../shared/user-avatar.component';
 
 const PAGE = 20;
 const MAX_LEN = 500;
@@ -40,7 +39,6 @@ const MAX_LEN = 500;
   imports: [
     NgTemplateOutlet,
     FormsModule,
-    RouterLink,
     TranslocoDirective,
     AvatarComponent,
     ButtonDirective,
@@ -51,10 +49,10 @@ const MAX_LEN = 500;
     NoticeComponent,
     RelativeTimePipe,
     SkeletonComponent,
-    UserAvatarComponent,
+    CommentBubbleComponent,
   ],
   templateUrl: './comments.component.html',
-  styleUrl: './comments.component.css',
+  styleUrl: '../../../shared/comments/speech-tail.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CommentsComponent {

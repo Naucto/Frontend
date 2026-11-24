@@ -1,0 +1,28 @@
+@if (username(); as handle) {
+  <a [routerLink]="['/u', handle]" class="shrink-0">
+    <nc-user-avatar [name]="handle" [userId]="authorId()" [size]="avatarSize()" />
+  </a>
+} @else {
+  <nc-user-avatar class="shrink-0" [name]="name()" [userId]="authorId()" [size]="avatarSize()" />
+}
+<div
+  class="bubble flat-sm relative grid min-w-0 flex-1 gap-[6px] bevel-fill-raised pt-[10px] pr-[14px] pb-1 pl-2.5"
+  [class.bevel-edge-creator]="creator()"
+  [class.by-creator]="creator()">
+  <span class="tail" aria-hidden="true"></span>
+  <div class="flex flex-wrap items-center gap-x-[10px] gap-y-0.5">
+    @if (username(); as handle) {
+      <a
+        [routerLink]="['/u', handle]"
+        class="truncate text-body hover:text-gold-ink"
+        [class]="creator() ? 'text-gold-ink' : 'text-ink'">
+        {{ name() }}
+      </a>
+    } @else {
+      <span class="truncate text-body text-ink">{{ name() }}</span>
+    }
+    <ng-content select="[meta]" />
+  </div>
+  <ng-content />
+  <ng-content select="[actions]" />
+</div>
