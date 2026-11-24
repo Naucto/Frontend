@@ -17,7 +17,7 @@ import { UserAvatarComponent } from '../user-avatar.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CommentBubbleComponent {
-  readonly authorId = input.required<number>();
+  readonly authorId = input.required<string>();
   readonly name = input.required<string>();
   readonly username = input<string>();
   readonly creator = input(false);

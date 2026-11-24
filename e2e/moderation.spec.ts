@@ -78,16 +78,18 @@ test.describe('moderation', () => {
   test('deleting a comment asks first, and Cancel sends nothing', async ({ page }) => {
     await serveGame(page, 'function _draw() gfx.cls(1) end');
     await mockSignedIn(page);
-    await mockComments(page, 42, [comment(3, { author: { id: 1, username: 'alexis' } })]);
+    await mockComments(page, release.id, [
+      comment(3, { author: { id: uuidOf(1), username: 'alexis' } }),
+    ]);
     const deleted: string[] = [];
-    await page.route('**/projects/42/comments/*', (route) => {
+    await page.route(`**/projects/${release.id}/comments/*`, (route) => {
       if (route.request().method() === 'DELETE') {
         deleted.push(route.request().url());
         return route.fulfill({ status: 204 });
       }
       return route.fallback();
     });
-    await page.goto('/play/42');
+    await page.goto(PLAY);
 
     const thread = page.locator('nc-comments');
     await thread.getByRole('button', { name: 'Delete' }).click();
