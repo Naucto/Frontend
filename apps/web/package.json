@@ -38,7 +38,7 @@
     "@naucto/engine": "*",
     "@naucto/ui": "*",
     "tailwindcss": "^4.3.3",
-    "@tailwindcss/postcss": "^4.3.3",
+    "@tailwindcss/postcss": "^4.3.5",
     "postcss": "^8.5.0"
   },
   "devDependencies": {
