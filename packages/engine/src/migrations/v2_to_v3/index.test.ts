@@ -70,7 +70,7 @@ describe('a v2 game brought to v3', () => {
 
     expect(report).toMatchObject({
       from: 2,
-      to: 3,
+      to: GAME_SCHEMA_VERSION,
       applied: true,
       warnings: [],
       counts: { actions: 9, actionLabels: 2, reshaped: 0 },

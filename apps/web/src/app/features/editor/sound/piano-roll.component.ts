@@ -12,22 +12,26 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
-import { type Instrument, type Note, type Pattern, SUBSTEPS } from '@naucto/engine';
+import {
+  type Instrument,
+  MAX_SHEET_STEPS,
+  type Note,
+  type Pattern,
+  SUBSTEPS,
+} from '@naucto/engine';
 import { PresenceLayerComponent, type PresenceMark, type PresenceViewport } from '@naucto/ui';
 
 import { ThemeService } from '../../../core/theme/theme.service';
 import { cssVar } from '../../../shared/pixel/pixel-tools';
 import { EditorModeService } from '../state/editor-mode.service';
 import { type Collaborator } from '../work-session/session-presence.service';
+import { KEY_W, PITCH_MAX, PITCH_MIN, ROW_H, RULER_H } from './piano-geometry';
 import { PianoKeysComponent } from './piano-keys.component';
 
-export const PITCH_MIN = 24;
-export const PITCH_MAX = 95;
-// Measured off the artboard: a row tall enough to grab a note by its edge, a key column wide enough
-// for a note name.
-export const ROW_H = 20;
-export const KEY_W = 52;
-export const RULER_H = 24;
+export { KEY_W, PITCH_MAX, PITCH_MIN, ROW_H, RULER_H };
+
+export const MAX_STEPS = MAX_SHEET_STEPS;
+const END_GRAB = 10;
 
 /**
  * Closest two grid lines may sit before they stop being a grid. Under it the ground between them is
@@ -108,7 +112,9 @@ export class PianoRollComponent {
   readonly playhead = input<number | null>(null);
   readonly collaborators = input<readonly Collaborator[]>([]);
   readonly label = input.required<string>();
+  readonly endLabel = input('END');
   readonly notesChange = output<Note[]>();
+  readonly stepsChange = output<number>();
   readonly audition = output<{ instrument: string; pitch: number }>();
   /**
    * A key of the side keyboard was pressed, and holds until {@link keyReleased}.
@@ -126,9 +132,13 @@ export class PianoRollComponent {
   /** The ruler gesture is over, so whatever was following the head can pick it up again. */
   readonly seekEnd = output();
 
-  private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
+  private readonly canvas = viewChild<ElementRef<HTMLCanvasElement>>('canvas');
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly working = signal<Note[] | null>(null);
+  private readonly fin = signal<number | null>(null);
+  private finFrom: { steps: number; x: number } | null = null;
+  protected readonly overEnd = signal(false);
+  protected readonly steps = computed(() => this.fin() ?? this.pattern().steps);
   private readonly hoverCell = signal<{ step: number; pitch: number } | null>(null);
 
   /** Where the head sits and which step it is over, or null while nothing is playing. */
@@ -162,7 +172,10 @@ export class PianoRollComponent {
   readonly stepW = computed(() => Math.round(24 * this.zoom()));
   /** As wide as the pattern, widened to the window when the window is the roomier of the two. */
   protected readonly width = computed(() =>
-    Math.max(this.pattern().steps * this.stepW(), this.hostBox().w - KEY_W),
+    Math.max(
+      Math.min(MAX_STEPS, this.steps() + this.pattern().stepsPerBeat * 4) * this.stepW(),
+      this.hostBox().w - KEY_W,
+    ),
   );
   protected readonly height = computed(() => RULER_H + (PITCH_MAX - PITCH_MIN + 1) * ROW_H);
   protected readonly marks = computed<PresenceMark[]>(() =>
@@ -170,7 +183,7 @@ export class PianoRollComponent {
       .filter(
         (collaborator) =>
           !collaborator.isSelf &&
-          collaborator.cursor?.tab === 'sound' &&
+          collaborator.cursor?.tab.startsWith('sound') === true &&
           collaborator.cursor.scope === this.pattern().id,
       )
       .map((collaborator) => ({
@@ -231,6 +244,7 @@ export class PianoRollComponent {
     // frame and would otherwise track nothing. Anything new that `draw()` reads has to be added
     // here too — a missing entry does not fail, it just stops repainting.
     effect(() => {
+      this.canvas();
       this.pattern();
       this.hostBox();
       this.snap();
@@ -240,6 +254,7 @@ export class PianoRollComponent {
       this.instrumentId();
       this.zoom();
       this.working();
+      this.fin();
       this.hoverCell();
       this.scrollY();
       this.dpr();
@@ -259,8 +274,12 @@ export class PianoRollComponent {
     return this.working() ?? this.pattern().notes;
   }
 
+  private canvasRect(): DOMRect {
+    return this.canvas()?.nativeElement.getBoundingClientRect() ?? new DOMRect();
+  }
+
   private cellOf(event: PointerEvent): { step: number; pitch: number } {
-    const rect = this.canvas().nativeElement.getBoundingClientRect();
+    const rect = this.canvasRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
     const step = Math.max(0, x / this.stepW());
@@ -275,12 +294,12 @@ export class PianoRollComponent {
   private newNote(step: number): NoteSpan {
     const unit = this.snapUnit();
     const length = unit || 1 / SUBSTEPS;
-    return { step: Math.min(cellStep(step, unit), this.pattern().steps - length), length };
+    return { step: Math.min(cellStep(step, unit), MAX_STEPS - length), length };
   }
 
   /** The same position as `cellOf`, unsnapped on both axes. */
   private pointOf(event: PointerEvent): { x: number; y: number } {
-    const rect = this.canvas().nativeElement.getBoundingClientRect();
+    const rect = this.canvasRect();
     return {
       x: Math.max(0, (event.clientX - rect.left) / this.stepW()),
       y: PITCH_MAX - (event.clientY - rect.top - RULER_H) / ROW_H,
@@ -323,9 +342,14 @@ export class PianoRollComponent {
     }
   }
 
+  private nearEnd(event: PointerEvent): boolean {
+    const x = event.clientX - this.canvasRect().left;
+    return Math.abs(x - this.steps() * this.stepW()) <= END_GRAB;
+  }
+
   /** Whether the pointer is over the ruler, which rides at the top of the view rather than the roll. */
   private inRuler(event: PointerEvent): boolean {
-    const rect = this.canvas().nativeElement.getBoundingClientRect();
+    const rect = this.canvasRect();
     return event.clientY - rect.top - this.scrollY() < RULER_H;
   }
 
@@ -335,8 +359,14 @@ export class PianoRollComponent {
     // A ruler press seeks and stops here: the pitch clamp would otherwise turn it into a note on
     // the top row.
     if (this.inRuler(event)) {
+      if (event.button === 0 && this.mode.canWrite() && this.nearEnd(event)) {
+        this.canvas()?.nativeElement.setPointerCapture(event.pointerId);
+        this.finFrom = { steps: this.pattern().steps, x: event.clientX };
+        this.fin.set(this.pattern().steps);
+        return;
+      }
       if (event.button === 0) {
-        this.canvas().nativeElement.setPointerCapture(event.pointerId);
+        this.canvas()?.nativeElement.setPointerCapture(event.pointerId);
         this.seeking = true;
         this.seek.emit(
           Math.min(this.snapStep(step), this.pattern().steps - (this.snapUnit() || 1 / SUBSTEPS)),
@@ -360,7 +390,7 @@ export class PianoRollComponent {
     if (event.button !== 0) {
       return;
     }
-    this.canvas().nativeElement.setPointerCapture(event.pointerId);
+    this.canvas()?.nativeElement.setPointerCapture(event.pointerId);
     if (index >= 0) {
       const note = notes[index];
       if (!note) {
@@ -399,6 +429,13 @@ export class PianoRollComponent {
 
   protected onMove(event: PointerEvent): void {
     const { step, pitch } = this.cellOf(event);
+    const beat = this.pattern().stepsPerBeat;
+    if (this.finFrom) {
+      const moved = Math.round((event.clientX - this.finFrom.x) / this.stepW() / beat) * beat;
+      this.fin.set(Math.max(beat, Math.min(MAX_STEPS, this.finFrom.steps + moved)));
+      return;
+    }
+    this.overEnd.set(this.mode.canWrite() && this.inRuler(event) && this.nearEnd(event));
     if (this.seeking) {
       this.seek.emit(
         Math.min(this.snapStep(step), this.pattern().steps - (this.snapUnit() || 1 / SUBSTEPS)),
@@ -418,7 +455,7 @@ export class PianoRollComponent {
     }
     const notes = [...this.notes()];
     const original = drag.original;
-    const max = this.pattern().steps;
+    const max = MAX_STEPS;
     let note: Note;
     switch (drag.mode) {
       case 'create':
@@ -458,6 +495,15 @@ export class PianoRollComponent {
   }
 
   protected onUp(): void {
+    if (this.finFrom) {
+      const steps = this.fin();
+      this.finFrom = null;
+      this.fin.set(null);
+      if (steps !== null && steps !== this.pattern().steps) {
+        this.stepsChange.emit(steps);
+      }
+      return;
+    }
     if (this.seeking) {
       this.seeking = false;
       this.seekEnd.emit();
@@ -489,13 +535,17 @@ export class PianoRollComponent {
   }
 
   private draw(): void {
-    const el = this.canvas().nativeElement;
+    const el = this.canvas()?.nativeElement;
+    if (!el) {
+      return;
+    }
     const ctx = el.getContext('2d');
     if (!ctx) {
       return;
     }
     ctx.setTransform(this.dpr(), 0, 0, this.dpr(), 0, 0);
     const pattern = this.pattern();
+    const steps = this.steps();
     const sw = this.stepW();
     const width = this.width();
     const height = this.height();
@@ -518,7 +568,7 @@ export class PianoRollComponent {
     ctx.beginPath();
     const unit = this.snapUnit();
     if (unit * sw >= MIN_GRID_PX) {
-      for (let step = unit; step < pattern.steps; step += unit) {
+      for (let step = unit; step < steps; step += unit) {
         if (step % pattern.stepsPerBeat === 0) {
           continue;
         }
@@ -534,7 +584,7 @@ export class PianoRollComponent {
     if (unit) {
       ctx.strokeStyle = cssVar(el, '--nc-line-strong');
       ctx.beginPath();
-      for (let step = 0; step <= pattern.steps; step += pattern.stepsPerBeat) {
+      for (let step = 0; step <= steps; step += pattern.stepsPerBeat) {
         ctx.moveTo(step * sw + 0.5, 0);
         ctx.lineTo(step * sw + 0.5, height);
       }
@@ -542,8 +592,8 @@ export class PianoRollComponent {
     }
 
     // Past the pattern's last step, the hatch a game with no cover wears — the app's mark for
-    // ground that is not a surface. Nothing can be written there; STEPS is what moves the edge.
-    const endX = pattern.steps * sw;
+    // ground that is not a surface. A note written there, or the END mark dragged, moves the edge.
+    const endX = steps * sw;
     if (endX < width) {
       ctx.save();
       ctx.beginPath();
@@ -586,9 +636,16 @@ export class PianoRollComponent {
     ctx.font = `10px ${cssVar(el, '--font-ui')}`;
     ctx.textBaseline = 'middle';
     ctx.fillStyle = cssVar(el, '--nc-ink-4');
-    for (let step = 0; step < pattern.steps; step += pattern.stepsPerBeat) {
+    for (let step = 0; step < steps; step += pattern.stepsPerBeat) {
       ctx.fillText(String(step / pattern.stepsPerBeat + 1), step * sw + 4, sy + RULER_H / 2);
     }
+    ctx.fillStyle = cssVar(el, '--nc-gold');
+    ctx.fillRect(endX - 1, sy, 3, height - sy);
+    const label = this.endLabel();
+    const labelW = ctx.measureText(label).width + 10;
+    ctx.fillRect(endX - labelW, sy + 3, labelW, RULER_H - 6);
+    ctx.fillStyle = cssVar(el, '--color-on-accent');
+    ctx.fillText(label, endX - labelW + 5, sy + RULER_H / 2);
 
     // Hover cell.
     const hv = this.hoverCell();

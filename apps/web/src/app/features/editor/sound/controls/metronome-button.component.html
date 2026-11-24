@@ -1,0 +1,68 @@
+<ng-container *transloco="let t">
+  <nc-toggle-button
+    size="strip"
+    accent="jade"
+    [label]="t('editor.sound.metronome')"
+    [checked]="store.metronome()"
+    (checkedChange)="store.setMetronome($event)">
+    <nc-icon name="metronome" />
+    <span class="hidden @min-[900px]:inline">{{ t('editor.sound.metronome') }}</span>
+  </nc-toggle-button>
+  <button
+    ncButton
+    variant="ghost"
+    size="sm"
+    iconOnly
+    popoverAlign="end"
+    [ncPopover]="settings"
+    [attr.aria-label]="t('editor.sound.metro.settings')"
+    [ncTooltip]="t('editor.sound.metro.settings')">
+    <nc-mark name="chevron-down" />
+  </button>
+  <ng-template #settings>
+    <nc-popover-panel>
+      <div class="grid w-[340px] gap-1.5 p-1.5">
+        <div class="flex items-center justify-between">
+          <span class="label text-ink-3">{{ t('editor.sound.metronome') }}</span>
+          <nc-help-dot
+            [title]="t('editor.sound.metronome')"
+            [text]="t('editor.sound.metro.note')" />
+        </div>
+        <div class="flex items-center justify-between gap-1">
+          <span class="label text-ink-3">{{ t('editor.sound.metro.beat') }}</span>
+          <nc-segmented
+            size="sm"
+            [options]="divisions"
+            [value]="division()"
+            [label]="t('editor.sound.metro.beat')"
+            (valueChange)="setDivision($event)" />
+        </div>
+        <div class="flex items-center justify-between gap-1">
+          <span class="label text-ink-3">{{ t('editor.sound.metro.volume') }}</span>
+          <nc-slider
+            class="w-[200px]"
+            hideLabel
+            accent="jade"
+            [min]="0"
+            [max]="100"
+            [value]="store.metronomeSettings().volume"
+            [readout]="store.metronomeSettings().volume + ' %'"
+            [label]="t('editor.sound.metro.volume')"
+            (valueChange)="store.setMetronomeSettings({ volume: $event })" />
+        </div>
+        <nc-toggle
+          [label]="t('editor.sound.metro.accent')"
+          [checked]="store.metronomeSettings().accent"
+          (checkedChange)="store.setMetronomeSettings({ accent: $event })">
+          <span class="label">{{ t('editor.sound.metro.accent') }}</span>
+        </nc-toggle>
+        <nc-toggle
+          [label]="t('editor.sound.metro.countIn')"
+          [checked]="store.metronomeSettings().countIn"
+          (checkedChange)="store.setMetronomeSettings({ countIn: $event })">
+          <span class="label">{{ t('editor.sound.metro.countIn') }}</span>
+        </nc-toggle>
+      </div>
+    </nc-popover-panel>
+  </ng-template>
+</ng-container>

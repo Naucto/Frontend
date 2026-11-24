@@ -11,7 +11,8 @@ import {
   MAX_ACTIONS,
 } from '../input/actions';
 import { INPUT_PRESETS, type InputPresetId } from '../input/presets';
-import type { Instrument, Pattern, Song } from '../sound/model';
+import type { Instrument, Pattern, Sfx, Song } from '../sound/model';
+import { encodePattern, encodeSfx, encodeSong } from '../sound/storage';
 import {
   BUBBLEGUM_16,
   DEFAULT_GAME_CODE,
@@ -762,12 +763,17 @@ export class EditableGame extends Game {
   }
   setPattern(pattern: Pattern): void {
     this.transact(() => {
-      this.patterns.set(pattern.id, JSON.stringify(pattern));
+      this.patterns.set(pattern.id, encodePattern(pattern));
     });
   }
   setSong(slot: number, song: Song): void {
     this.transact(() => {
-      this.songs.set(String(slot), JSON.stringify(song));
+      this.songs.set(String(slot), encodeSong(song));
+    });
+  }
+  setSfx(slot: number, sfx: Sfx): void {
+    this.transact(() => {
+      this.sfx.set(String(slot), encodeSfx(sfx));
     });
   }
 

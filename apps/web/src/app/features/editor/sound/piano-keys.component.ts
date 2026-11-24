@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { midiToNoteName } from '@naucto/engine';
 
-import { PITCH_MAX, PITCH_MIN, ROW_H, RULER_H } from './piano-roll.component';
+import { PITCH_MAX, PITCH_MIN, ROW_H, RULER_H } from './piano-geometry';
 
 /** Measured off the artboard; the white bed shows to its right. */
 const BLACK_KEY_W = 34;
@@ -21,14 +21,21 @@ interface Key {
   black: boolean;
   /** A C, which the keyboard marks with a brighter key rather than with a label of its own. */
   c: boolean;
+  top: number;
+  height: number;
 }
 
-/** Raised on hover, sunk while held: the one shaded control in the app, with hard edges because a
- * screen of whole pixels has no gradient. */
-const KEY_UP =
-  'absolute inset-0 hover:bg-gold/15 hover:shadow-[inset_0_1px_0_var(--color-key-lit),inset_0_-2px_0_var(--color-key-sharp)]';
-const KEY_DOWN =
-  'absolute inset-0 bg-gold/30 shadow-[inset_0_2px_0_var(--color-key-sharp),inset_0_-1px_0_var(--color-key-lit)]';
+const ROWS = PITCH_MAX - PITCH_MIN + 1;
+const LOWER_WHITES = [0, 2, 4];
+const UPPER_WHITES = [5, 7, 9, 11];
+
+function whiteSpan(degree: number): { from: number; rows: number } {
+  const lower = LOWER_WHITES.indexOf(degree);
+  if (lower >= 0) {
+    return { from: (lower * 5) / 3, rows: 5 / 3 };
+  }
+  return { from: 5 + (UPPER_WHITES.indexOf(degree) * 7) / 4, rows: 7 / 4 };
+}
 
 /**
  * The keyboard beside the roll: a white bed with the black keys laid over it.
@@ -61,8 +68,7 @@ export class PianoKeysComponent {
   protected readonly ROW_H = ROW_H;
   protected readonly RULER_H = RULER_H;
   protected readonly BLACK_KEY_W = BLACK_KEY_W;
-  protected readonly KEY_UP = KEY_UP;
-  protected readonly KEY_DOWN = KEY_DOWN;
+  protected readonly BED_H = ROWS * ROW_H;
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   /** The key under the pointer while it is down; nothing between presses. */
   protected readonly held = signal<number | null>(null);
@@ -101,15 +107,22 @@ export class PianoKeysComponent {
     this.released.emit();
   }
 
-  protected readonly keys = computed<Key[]>(() =>
-    Array.from({ length: PITCH_MAX - PITCH_MIN + 1 }, (_, i) => {
-      const pitch = PITCH_MAX - i;
-      return {
-        pitch,
-        name: midiToNoteName(pitch),
-        black: BLACK.has(pitch % 12),
-        c: pitch % 12 === 0,
-      };
-    }),
-  );
+  protected readonly keys = computed<Key[]>(() => {
+    const out: Key[] = [];
+    for (let pitch = PITCH_MIN; pitch <= PITCH_MAX; pitch++) {
+      const degree = pitch % 12;
+      const black = BLACK.has(degree);
+      const rowTop = (PITCH_MAX - pitch) * ROW_H;
+      let top = rowTop;
+      let height = ROW_H;
+      if (!black) {
+        const octaveBottom = (PITCH_MAX - (pitch - degree)) * ROW_H + ROW_H;
+        const span = whiteSpan(degree);
+        top = octaveBottom - (span.from + span.rows) * ROW_H;
+        height = span.rows * ROW_H;
+      }
+      out.push({ pitch, name: midiToNoteName(pitch), black, c: degree === 0, top, height });
+    }
+    return out.sort((a, b) => Number(a.black) - Number(b.black));
+  });
 }

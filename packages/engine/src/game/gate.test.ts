@@ -4,7 +4,7 @@ import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
 
-import { defaultInstrument, defaultPattern, defaultSong } from '../sound/model';
+import { defaultInstrument, defaultPattern, defaultSfx, defaultSong } from '../sound/model';
 import { EditableGame } from './EditableGame';
 import { FIRST_MAP_ID, FIRST_SHEET_ID, MAIN_FILE_ID } from './keys';
 
@@ -211,6 +211,12 @@ const MUTATORS: Record<string, Mutation> = {
     on: seeded,
     run: (game) => {
       game.setSong(0, defaultSong());
+    },
+  },
+  setSfx: {
+    on: seeded,
+    run: (game) => {
+      game.setSfx(0, defaultSfx());
     },
   },
   declareNetPath: {

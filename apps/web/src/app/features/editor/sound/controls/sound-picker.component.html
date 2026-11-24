@@ -1,0 +1,108 @@
+<ng-container *transloco="let t">
+  <button
+    ncButton
+    ncLooksOnly
+    size="strip"
+    class="min-w-0 normal-case!"
+    [ncPopover]="menu"
+    [attr.aria-label]="title()">
+    @if (current().swatch; as swatch) {
+      <span class="size-1.5 shrink-0" [style.background]="swatch"></span>
+    }
+    <span class="font-mono text-gold-ink">{{ current().number }}</span>
+    <span class="max-w-[200px] truncate" [class.text-ink-4]="current().free">
+      {{ current().name }}
+    </span>
+    <nc-presence-dots [peers]="peersOf()(current().key)" />
+    <nc-mark name="chevron-down" />
+  </button>
+  <ng-template #menu>
+    <nc-popover-panel>
+      <div class="grid max-h-[60vh] min-w-[270px] gap-0.5 overflow-y-auto p-0.5" role="menu">
+        <div class="flex items-center justify-between pr-0.5 pb-0.5 pl-1">
+          <span class="label text-ink-3">{{ title() }}</span>
+          <button
+            ncButton
+            variant="ghost"
+            size="sm"
+            iconOnly
+            [attr.aria-label]="addLabel()"
+            [ncTooltip]="addLabel()"
+            (click)="created.emit()">
+            <nc-mark name="plus" />
+          </button>
+        </div>
+        @for (item of items(); track item.key) {
+          <div class="group relative">
+            @if (renaming() === item.key) {
+              <div
+                class="flex h-(--nc-h-lg) items-center gap-1.5 flat-sm bevel-edge-gold bevel-fill-raised px-[10px] text-body tracking-button uppercase">
+                @if (item.swatch; as swatch) {
+                  <span class="size-1.5 shrink-0" [style.background]="swatch"></span>
+                }
+                <span class="font-mono text-gold-ink">{{ item.number }}</span>
+                <input
+                  #field
+                  class="min-w-0 flex-1 bg-transparent text-ink outline-none"
+                  [attr.aria-label]="t('editor.sound.nameLabel')"
+                  [attr.maxlength]="maxName()"
+                  [value]="item.free ? '' : item.name"
+                  [attr.placeholder]="item.name"
+                  (keydown.enter)="commit(item.key, field.value)"
+                  (keydown.escape)="cancel()"
+                  (blur)="commit(item.key, field.value)" />
+              </div>
+            } @else {
+              <button
+                type="button"
+                role="menuitem"
+                ncOption
+                shape="menu"
+                [selected]="item.key === current().key"
+                [attr.aria-current]="item.key === current().key"
+                (mousedown)="$event.preventDefault()"
+                (click)="press(item)">
+                @if (item.swatch; as swatch) {
+                  <span class="size-1.5 shrink-0" [style.background]="swatch"></span>
+                }
+                <span class="font-mono text-gold-ink">{{ item.number }}</span>
+                <span class="min-w-0 flex-1 truncate" [class.text-ink-4]="item.free">
+                  {{ item.name }}
+                </span>
+                <nc-presence-dots
+                  class="group-focus-within:hidden group-hover:hidden"
+                  [peers]="peersOf()(item.key)" />
+              </button>
+              <span
+                class="absolute top-1/2 right-0.5 hidden -translate-y-1/2 gap-0.5 group-focus-within:flex group-hover:flex"
+                (mousedown)="$event.preventDefault()">
+                <button
+                  ncButton
+                  variant="ghost"
+                  size="sm"
+                  iconOnly
+                  [attr.aria-label]="t('editor.sound.duplicate')"
+                  [ncTooltip]="t('editor.sound.duplicate')"
+                  [disabled]="item.canDuplicate === false"
+                  (click)="duplicated.emit(item.key)">
+                  <nc-mark name="copy" />
+                </button>
+                <button
+                  ncButton
+                  variant="ghost"
+                  size="sm"
+                  iconOnly
+                  [attr.aria-label]="t('editor.sound.remove')"
+                  [ncTooltip]="t('editor.sound.remove')"
+                  [disabled]="item.canRemove === false"
+                  (click)="removed.emit(item.key)">
+                  <nc-mark name="trash" />
+                </button>
+              </span>
+            }
+          </div>
+        }
+      </div>
+    </nc-popover-panel>
+  </ng-template>
+</ng-container>

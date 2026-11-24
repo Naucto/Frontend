@@ -1,0 +1,360 @@
+<ng-container *transloco="let t">
+  @if (!folded()) {
+    <aside class="flex w-[200px] shrink-0 flex-col border-r-3 border-line bg-panel">
+      <div class="flex h-(--nc-h-bar) shrink-0 items-center border-b-3 border-line px-1.5">
+        <span class="label text-ink-3">{{ t('editor.sound.patterns') }}</span>
+        <span class="flex-1"></span>
+        <button
+          ncButton
+          variant="ghost"
+          size="sm"
+          iconOnly
+          [attr.aria-label]="t('editor.sound.newPattern')"
+          [ncTooltip]="t('editor.sound.newPattern')"
+          (click)="deck.createPattern()">
+          <nc-mark name="plus" />
+        </button>
+      </div>
+      <div
+        class="min-h-0 flex-1 overflow-y-auto"
+        role="list"
+        [attr.aria-label]="t('editor.sound.patterns')">
+        @for (pattern of patterns(); track pattern.id) {
+          <div
+            role="listitem"
+            tabindex="0"
+            class="group flex touch-none items-center gap-1 border-l-[3px] border-transparent px-1.5 py-[7px] select-none hover:bg-raised aria-[current=true]:border-gold aria-[current=true]:bg-raised"
+            [class.cursor-grab]="deck.mode.canWrite()"
+            [attr.aria-current]="pattern.slot === store.patternSlot()"
+            (pointerdown)="gestures.onListDown($event, pattern)"
+            (dblclick)="deck.mode.canWrite() && deck.askPatternName(pattern)"
+            (keydown.enter)="store.selectPattern(pattern.slot)">
+            <span class="size-1.5 shrink-0" [style.background]="tint(pattern)"></span>
+            <span class="font-mono text-gold-ink">{{ pad(pattern.slot) }}</span>
+            <span class="min-w-0 flex-1 truncate text-body text-ink">{{ label(pattern) }}</span>
+            <nc-presence-dots
+              class="group-focus-within:hidden group-hover:hidden"
+              [peers]="deck.patternPeers(pattern.slot)" />
+            <span class="hidden gap-0 group-focus-within:flex group-hover:flex">
+              <button
+                ncButton
+                variant="ghost"
+                size="sm"
+                iconOnly
+                [attr.aria-label]="t('editor.sound.rename')"
+                [ncTooltip]="t('editor.sound.rename')"
+                (pointerdown)="$event.stopPropagation()"
+                (click)="deck.askPatternName(pattern)">
+                <nc-mark name="edit" />
+              </button>
+              <button
+                ncButton
+                variant="ghost"
+                size="sm"
+                iconOnly
+                [attr.aria-label]="t('editor.sound.duplicate')"
+                [ncTooltip]="t('editor.sound.duplicate')"
+                (pointerdown)="$event.stopPropagation()"
+                (click)="deck.duplicatePattern(pattern.id)">
+                <nc-mark name="copy" />
+              </button>
+              <button
+                ncButton
+                variant="ghost"
+                size="sm"
+                iconOnly
+                [attr.aria-label]="t('editor.sound.remove')"
+                [ncTooltip]="t('editor.sound.remove')"
+                (pointerdown)="$event.stopPropagation()"
+                (click)="deck.removePattern(pattern.id)">
+                <nc-mark name="trash" />
+              </button>
+            </span>
+          </div>
+        } @empty {
+          <p class="label p-1.5 text-ink-4">{{ t('editor.sound.noPatterns') }}</p>
+        }
+      </div>
+    </aside>
+  }
+  <section class="@container relative flex min-h-0 min-w-0 flex-1 flex-col">
+    <nc-edge-handle
+      class="left-0! z-30!"
+      [mark]="folded() ? 'chevron-right' : 'chevron-left'"
+      [label]="folded() ? t('editor.sound.showPatterns') : t('editor.sound.hidePatterns')"
+      (pressed)="store.toggleSide('timeline')" />
+    <header
+      class="flex shrink-0 flex-wrap items-center gap-1 border-b-3 border-line bg-panel px-2 py-[6px]">
+      <nc-sound-picker
+        [title]="t('editor.sound.musics')"
+        [addLabel]="t('editor.sound.newMusic')"
+        [items]="songItems()"
+        [current]="songItem()"
+        [peersOf]="deck.songPeers"
+        (picked)="pickSong($event)"
+        (created)="createSong()"
+        (duplicated)="duplicateSong($event)"
+        (removed)="removeSong($event)"
+        (renamed)="renameSong($event)" />
+      <span class="flex-1"></span>
+      <nc-transport
+        [playing]="playing()"
+        [rewind]="false"
+        [canStop]="playing() || head() > 0"
+        [playLabel]="t('editor.sound.playMusic')"
+        [pauseLabel]="t('editor.sound.pauseMusic')"
+        [stopLabel]="t('editor.sound.stopMusic')"
+        (started)="play()"
+        (paused)="deck.pause()"
+        (stopped)="deck.stop('timeline')" />
+      <nc-toggle-button
+        size="strip"
+        [label]="t('editor.sound.loop')"
+        [checked]="song().loop"
+        (checkedChange)="setLoop($event)">
+        <nc-icon name="repeat" />
+        <span class="hidden @min-[900px]:inline">{{ t('editor.sound.loop') }}</span>
+      </nc-toggle-button>
+      <nc-metronome-button />
+    </header>
+    <div
+      class="flex shrink-0 flex-wrap items-center gap-1 border-b-3 border-line bg-panel px-2 py-[6px]">
+      <nc-number-field
+        class="h-(--nc-h-md) shrink-0"
+        fill
+        [label]="t('editor.sound.bpm')"
+        [ariaLabel]="t('editor.sound.musicBpm')"
+        [value]="song().bpm"
+        [min]="BPM_MIN"
+        [max]="BPM_MAX"
+        (requested)="setBpm($event)" />
+      <nc-toggle-button
+        ncLooksOnly
+        [controlled]="true"
+        [checked]="true"
+        [label]="t('editor.sound.snapBars')"
+        (activated)="cycleDivision()">
+        <nc-mark name="grid" />
+        1/{{ store.barDivision() }}
+      </nc-toggle-button>
+      @if (selected().size) {
+        <button
+          ncButton
+          variant="ghost"
+          size="sm"
+          iconOnly
+          [attr.aria-label]="t('editor.sound.duplicateBlocks')"
+          [ncTooltip]="t('editor.sound.duplicateBlocks')"
+          (click)="edits.duplicateSelected()">
+          <nc-mark name="copy" />
+        </button>
+        <button
+          ncButton
+          variant="ghost"
+          size="sm"
+          iconOnly
+          [attr.aria-label]="t('editor.sound.removeBlocks')"
+          [ncTooltip]="t('editor.sound.removeBlocks')"
+          (click)="edits.deleteSelected()">
+          <nc-mark name="trash" />
+        </button>
+      }
+      <span class="flex-1"></span>
+      <nc-oscilloscope
+        class="h-(--nc-h-sm) w-[88px] shrink-0 border-3 border-line"
+        [peaks]="deck.peaks"
+        [label]="t('editor.sound.liveOut')" />
+      <nc-sound-zoom
+        [value]="store.barZoom()"
+        [min]="MIN_BAR_ZOOM"
+        [max]="MAX_BAR_ZOOM"
+        (changed)="store.setBarZoom($event)" />
+      <button
+        ncButton
+        variant="ghost"
+        iconOnly
+        [attr.aria-label]="t('editor.undo')"
+        [ncTooltip]="t('editor.undo')"
+        [disabled]="!deck.undo.canUndo()"
+        (click)="deck.undo.manager.undo()">
+        <nc-icon name="undo" />
+      </button>
+      <button
+        ncButton
+        variant="ghost"
+        iconOnly
+        [attr.aria-label]="t('editor.redo')"
+        [ncTooltip]="t('editor.redo')"
+        [disabled]="!deck.undo.canRedo()"
+        (click)="deck.undo.manager.redo()">
+        <nc-icon name="redo" />
+      </button>
+      <nc-sound-help editor="timeline" />
+    </div>
+    <div
+      #scroller
+      class="min-h-0 flex-1 overflow-auto bg-inset"
+      tabindex="-1"
+      (scroll)="onScroll(scroller)"
+      (pointerenter)="onScroll(scroller)"
+      (pointermove)="onTrackMove($event)"
+      (pointerleave)="onTrackLeave()">
+      <div #content class="relative flex" [style.width.px]="HEAD_W + bars() * barWidth()">
+        <nc-presence-layer [marks]="peerMarks()" [viewport]="viewport()" />
+        <div class="sticky left-0 z-20 w-[96px] shrink-0 border-r-3 border-line bg-panel">
+          <div class="label flex h-[30px] items-center border-b-3 border-line px-1 text-ink-3">
+            {{ t('editor.sound.bars') }}
+          </div>
+          <div class="label flex h-[72px] items-center px-1 text-ink-3">
+            {{ t('editor.sound.sequence') }}
+          </div>
+        </div>
+        <div class="relative shrink-0" [style.width.px]="bars() * barWidth()">
+          <div
+            #ruler
+            class="relative h-[30px] cursor-pointer touch-none border-b-3 border-line bg-panel"
+            [attr.aria-label]="t('editor.sound.ruler')"
+            (pointerdown)="gestures.onRulerDown($event)">
+            @if (song().loop && loopEnd() > loopStart()) {
+              <div
+                class="absolute top-0 h-[6px] bg-gold-wash"
+                [style.left.px]="loopStart() * barWidth()"
+                [style.width.px]="(loopEnd() - loopStart()) * barWidth()"></div>
+              <span
+                class="absolute top-0 z-10 h-full w-[9px] -translate-x-1/2 cursor-ew-resize touch-none border-x-3 border-gold"
+                role="slider"
+                tabindex="0"
+                [attr.aria-label]="t('editor.sound.loopStart')"
+                [attr.aria-valuenow]="loopStart()"
+                [style.left.px]="loopStart() * barWidth()"
+                (pointerdown)="gestures.onLoopDown($event, 'start')"></span>
+              <span
+                class="absolute top-0 z-10 h-full w-[9px] -translate-x-1/2 cursor-ew-resize touch-none border-x-3 border-orange"
+                role="slider"
+                tabindex="0"
+                [attr.aria-label]="t('editor.sound.loopEnd')"
+                [attr.aria-valuenow]="loopEnd()"
+                [style.left.px]="loopEnd() * barWidth()"
+                (pointerdown)="gestures.onLoopDown($event, 'end')"></span>
+            }
+            @for (i of barNumbers(); track i) {
+              <span
+                class="pointer-events-none absolute top-[9px] font-mono text-micro text-ink-3"
+                [style.left.px]="i * barWidth() + 5">
+                {{ i + 1 }}
+              </span>
+            }
+          </div>
+          <div
+            #lane
+            data-lane
+            class="relative h-[72px] touch-none"
+            [style.background-image]="'linear-gradient(to right, var(--color-line-strong) 3px, transparent 3px), linear-gradient(to right, var(--color-line-faint) 3px, transparent 3px)'"
+            [style.background-size]="barWidth() * 4 + 'px 100%, ' + barWidth() + 'px 100%'"
+            (pointerdown)="gestures.onLaneDown($event)">
+            @for (item of blocks(); track item.block.id) {
+              <div
+                class="absolute top-[6px] bottom-[6px] overflow-hidden border-3 font-mono text-micro select-none"
+                [class]="
+                  item.leaving
+                    ? 'border-hot bg-hot-wash text-hot-ink'
+                    : 'border-line-strong text-on-accent'
+                "
+                [class.cursor-grab]="deck.mode.canWrite()"
+                [class.outline-3]="selected().has(item.block.id)"
+                [class.outline-ink]="selected().has(item.block.id)"
+                [style.left.px]="item.left"
+                [style.width.px]="item.width"
+                [style.background]="item.leaving ? null : item.colour"
+                [style.translate]="item.leaving ? item.shift.x + 'px ' + item.shift.y + 'px' : null"
+                [class.z-30]="item.leaving"
+                [attr.aria-label]="label(item.pattern)"
+                [attr.data-block]="item.block.id"
+                [attr.data-leaving]="item.leaving ? '' : null"
+                (pointerdown)="gestures.onBlockDown($event, item.block)"
+                (dblclick)="openPattern(item.pattern)">
+                @for (rep of item.reps; track rep) {
+                  <span
+                    class="absolute top-0 bottom-0 border-r-3 border-line"
+                    [style.left.px]="rep * item.repWidth"
+                    [style.width.px]="item.repWidth">
+                    @if (minis().get(item.pattern.id); as mini) {
+                      <svg
+                        class="absolute inset-x-[2px] top-[16px] bottom-[3px] h-[calc(100%-19px)] w-[calc(100%-4px)] opacity-70"
+                        preserveAspectRatio="none"
+                        aria-hidden="true"
+                        [attr.viewBox]="mini.viewBox">
+                        <path fill="currentColor" [attr.d]="mini.path"></path>
+                      </svg>
+                    }
+                  </span>
+                }
+                @if (peerBlocks().get(item.block.id); as outline) {
+                  <span
+                    class="pointer-events-none absolute inset-0 border-3"
+                    [class]="outline"></span>
+                }
+                <span class="relative px-0.5">{{ pad(item.pattern.slot) }}</span>
+                @if (item.leaving) {
+                  <!-- The word needs about 80px; a block of one bar at a small zoom keeps the mark. -->
+                  <span
+                    class="absolute inset-0 flex items-center justify-center gap-0.5 bg-hot-wash text-meta text-hot-ink">
+                    <nc-mark name="trash" />
+                    @if (item.width >= 80) {
+                      {{ t('editor.sound.remove') }}
+                    }
+                  </span>
+                }
+                <span
+                  class="absolute top-0 right-0 bottom-0 w-[9px] touch-none"
+                  [class.cursor-ew-resize]="deck.mode.canWrite()"
+                  aria-hidden="true"
+                  (pointerdown)="gestures.onGrowDown($event, item.block)"></span>
+              </div>
+            }
+            @if (placing(); as ghost) {
+              @if (ghost.over !== null) {
+                <div
+                  class="pointer-events-none absolute top-[6px] bottom-[6px] overflow-hidden border-3 border-gold font-mono text-micro text-on-accent opacity-75"
+                  [style.left.px]="ghost.left"
+                  [style.width.px]="ghost.width"
+                  [style.background]="ghost.colour">
+                  @if (minis().get(ghost.pattern.id); as mini) {
+                    <svg
+                      class="absolute inset-x-[2px] top-[16px] bottom-[3px] h-[calc(100%-19px)] w-[calc(100%-4px)] opacity-70"
+                      preserveAspectRatio="none"
+                      aria-hidden="true"
+                      [attr.viewBox]="mini.viewBox">
+                      <path fill="currentColor" [attr.d]="mini.path"></path>
+                    </svg>
+                  }
+                  <span class="relative px-0.5">{{ pad(ghost.pattern.slot) }}</span>
+                </div>
+              }
+            }
+          </div>
+          <div
+            class="pointer-events-none absolute top-0 bottom-0 w-[3px] bg-ink-3"
+            [style.left.px]="end() * barWidth()"></div>
+          <div
+            class="pointer-events-none absolute top-0 bottom-0 w-[3px] bg-hot"
+            [style.left.px]="head() * barWidth()"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+  @if (placing(); as ghost) {
+    @if (ghost.over === null) {
+      <div
+        class="pointer-events-none absolute z-[9500] flex items-center gap-1 flat-sm bevel-edge-line-strong bevel-fill-raised px-1 py-0.5 text-meta text-ink"
+        [style.left.px]="ghost.x"
+        [style.top.px]="ghost.y">
+        <span class="size-1.5 shrink-0" [style.background]="ghost.colour"></span>
+        <span class="font-mono text-gold-ink">{{ pad(ghost.pattern.slot) }}</span>
+        <span>{{ label(ghost.pattern) }}</span>
+        <span class="text-ink-4">{{ t('editor.sound.placeHere') }}</span>
+      </div>
+    }
+  }
+  <nc-sound-peers window="timeline" />
+</ng-container>

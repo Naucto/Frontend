@@ -1,0 +1,28 @@
+<nc-note-sheet-editor
+  *transloco="let t"
+  source="sfx"
+  [sheet]="sheet()"
+  [loop]="store.sfxLoop()"
+  [showVoices]="false"
+  [clearLabel]="t('editor.sound.clearSfx', { n: pad(store.sfxSlot()) })"
+  (notesChange)="setNotes($event)"
+  (bpmChange)="setBpm($event)"
+  (stepsChange)="setSteps($event)"
+  [emptyTitle]="t('editor.sound.emptySfx')"
+  emptyIcon="zap"
+  (loopChange)="store.setSfxLoop($event)"
+  (cleared)="clear()">
+  <nc-sound-picker
+    menu
+    [title]="t('editor.sound.sfx')"
+    [addLabel]="t('editor.sound.newSfx')"
+    [items]="items()"
+    [current]="currentItem()"
+    [maxName]="16"
+    [peersOf]="deck.sfxPeers"
+    (picked)="pick($event)"
+    (created)="create()"
+    (duplicated)="duplicate($event)"
+    (removed)="remove($event)"
+    (renamed)="rename($event)" />
+</nc-note-sheet-editor>

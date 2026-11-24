@@ -9,6 +9,7 @@
     <canvas
       #canvas
       class="block cursor-crosshair touch-none"
+      [class.cursor-ew-resize!]="overEnd()"
       [width]="width() * dpr()"
       [height]="height() * dpr()"
       [style.width.px]="width()"

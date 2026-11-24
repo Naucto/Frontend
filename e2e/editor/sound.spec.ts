@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
 import { editorUrl, mockEditor } from '../editor-mocks';
 import { expect, test } from '../fixtures';
@@ -10,12 +10,10 @@ test.beforeEach(async ({ page }) => {
   await mockEditor(page);
 });
 
-/** The piano roll's keyboard column; every horizontal offset into the note grid clears it. */
 const PIANO_KEY_GUTTER = 56;
-/** A few steps in from the gutter — enough to land on a cell, not on its edge. */
 const FIRST_NOTE_X = PIANO_KEY_GUTTER + 30;
+const STEP_W = 24;
 
-/** The SOUND tab's + button, answered with a blank instrument. */
 const addInstrument = async (page: Page): Promise<void> => {
   await page.getByRole('button', { name: 'Add instrument' }).first().click();
   await page
@@ -24,48 +22,69 @@ const addInstrument = async (page: Page): Promise<void> => {
     .click();
 };
 
-test('the roll ends where the pattern ends', async ({ page }) => {
-  await page.goto(editorUrl('sound'));
-  await addInstrument(page);
-  const roll = page.getByRole('img', { name: 'Piano roll' });
-  await expect(roll).toBeVisible();
+const tab = (page: Page, name: string): Locator =>
+  page.getByRole('tab', { name: new RegExp(`^${name}`) });
 
-  const steps = async (): Promise<string | null> =>
-    page.getByRole('textbox', { name: 'Steps' }).inputValue();
-  // The roll's own canvas is floored at the width of its window, so it does not shrink on a
-  // wide screen. The track of voices under it is exactly as wide as the pattern, and has to
-  // stay in step with it.
-  const track = page.locator('nc-voices-lane').getByRole('img');
-  const laneWidth = async (): Promise<number> =>
-    await track.evaluate((el: HTMLElement) => el.offsetWidth);
+const rulerY = async (page: Page, roll: Locator): Promise<number> => {
+  const box = await boxOf(roll);
+  const scrolled = await page.evaluate(() => {
+    let el = document.querySelector('nc-piano-roll canvas')?.parentElement ?? null;
+    while (el && el.scrollHeight <= el.clientHeight) {
+      el = el.parentElement;
+    }
+    return el?.scrollTop ?? 0;
+  });
+  return box.y + scrolled + 12;
+};
 
-  const long = await laneWidth();
-  // The pattern is fresh, so nothing is past the new end and the field shortens without asking.
-  await page.getByRole('button', { name: 'Steps -16' }).click();
-  await expect.poll(steps).toBe('16');
+const laneWidth = (page: Page): Promise<number> =>
+  page
+    .locator('nc-voices-lane')
+    .getByRole('img')
+    .evaluate((el: HTMLElement) => el.offsetWidth);
 
-  await expect.poll(laneWidth).toBeLessThan(long);
-});
-
-/** Three independent mechanisms, so none of these assertions stands in for another. */
-test('the head can be dragged, rewound and resumed', async ({ page }) => {
+test('a note past the end lengthens the pattern to its bar, and taking it out shortens it back', async ({
+  page,
+}) => {
   await page.goto(editorUrl('sound'));
   await addInstrument(page);
   const roll = page.getByRole('img', { name: 'Piano roll' });
   await expect(roll).toBeVisible();
   const box = await boxOf(roll);
+  const y = box.y + box.height / 2;
+  const short = await laneWidth(page);
 
-  // The ruler rides at the top of the *view*, so it sits at the canvas top plus however far the
-  // roll has been scrolled — which is not zero: the roll opens on the middle of the keyboard.
-  const rulerY =
-    box.y +
-    (await page.evaluate(() => {
-      let el = document.querySelector('nc-piano-roll canvas')?.parentElement ?? null;
-      while (el && el.scrollHeight <= el.clientHeight) {
-        el = el.parentElement;
-      }
-      return (el?.scrollTop ?? 0) + 12;
-    }));
+  const past = box.x + 20 * STEP_W + 5;
+  await page.mouse.click(past, y);
+  await expect.poll(() => laneWidth(page)).toBeGreaterThan(short);
+
+  await page.mouse.click(past, y, { button: 'right' });
+  await expect.poll(() => laneWidth(page)).toBe(short);
+});
+
+test('END drags the end of the pattern a beat at a time', async ({ page }) => {
+  await page.goto(editorUrl('sound'));
+  await addInstrument(page);
+  const roll = page.getByRole('img', { name: 'Piano roll' });
+  const box = await boxOf(roll);
+  const y = await rulerY(page, roll);
+  const short = await laneWidth(page);
+
+  await page.mouse.move(box.x + 16 * STEP_W, y);
+  await page.mouse.down();
+  await page.mouse.move(box.x + 24 * STEP_W, y, { steps: 8 });
+  await page.mouse.up();
+
+  await expect.poll(() => laneWidth(page)).toBeGreaterThan(short);
+});
+
+test('the head can be dragged, played, paused and stopped', async ({ page }) => {
+  await page.goto(editorUrl('sound'));
+  await addInstrument(page);
+  const roll = page.getByRole('img', { name: 'Piano roll' });
+  const box = await boxOf(roll);
+  const y = await rulerY(page, roll);
+  await expect(page.getByRole('button', { name: 'Back to the start' })).toHaveCount(0);
 
   const head = async (): Promise<number | null> =>
     page.evaluate(() => {
@@ -73,68 +92,40 @@ test('the head can be dragged, rewound and resumed', async ({ page }) => {
       return line ? Math.round(line.getBoundingClientRect().left) : null;
     });
 
-  await page.mouse.move(box.x + 200, rulerY);
+  await page.mouse.move(box.x + 100, y);
   await page.mouse.down();
-  await page.mouse.move(box.x + 320, rulerY, { steps: 8 });
+  await page.mouse.move(box.x + 200, y, { steps: 6 });
   await page.mouse.up();
-  const dragged = await head();
-  expect(dragged).not.toBeNull();
-
-  const rewind = page.getByRole('button', { name: 'Back to the start' });
-  await rewind.click();
-  await expect.poll(head).toBeLessThan(dragged ?? 0);
-
-  await page.getByRole('button', { name: 'Play', exact: true }).click();
-  await expect.poll(head).toBeGreaterThan(0);
-  await page.getByRole('button', { name: 'Pause', exact: true }).click();
-  const paused = await head();
-  expect(paused).not.toBeNull();
-
-  await page.getByRole('button', { name: 'Play', exact: true }).click();
-  await page.waitForTimeout(600);
   expect(await head()).not.toBeNull();
 
-  // Read with the head held still: rewound, the music keeps going, so a poll left to converge
-  // follows it back out past where it started and says nothing about where the rewind put it.
-  const running = await head();
-  await rewind.click();
+  await page.getByRole('button', { name: 'Play', exact: true }).click();
+  await page.waitForTimeout(500);
   await page.getByRole('button', { name: 'Pause', exact: true }).click();
-  await expect.poll(head).toBeLessThan(running ?? 0);
+  expect(await head()).not.toBeNull();
+
+  await page.getByRole('button', { name: 'Stop', exact: true }).click();
+  await expect.poll(head).toBeNull();
 });
 
-test('the sound column reaches its last row on a short screen', async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 700 });
-  await page.goto(editorUrl('sound'));
-  const boxes = page.locator('nc-song-list [role=group] nc-number-field input');
-  await expect(boxes).toHaveCount(20);
-  // The two banks stand at a fixed height, so on a screen too short for both the column has to
-  // be scrollable: a row of the music that cannot be reached is a row that cannot be written.
-  const last = boxes.nth(19);
-  await last.scrollIntoViewIfNeeded();
-  await expect(last).toBeInViewport();
-});
-
-test('SOUND tab adds an instrument and paints notes', async ({ page }) => {
+test('SOUND adds an instrument and paints notes in a pattern and in an SFX', async ({ page }) => {
   await page.goto(editorUrl('sound'));
   await addInstrument(page);
+  await expect(page.getByText('Empty pattern')).toBeVisible();
   const roll = page.getByRole('img', { name: 'Piano roll' });
-  await expect(roll).toBeVisible();
   const box = await boxOf(roll);
-  // Halfway down the roll: the ruler rides at the top of the view, and a press there moves
-  // the playhead instead of writing a note.
   const x = box.x + FIRST_NOTE_X;
   const y = box.y + box.height / 2;
   await page.mouse.move(x, y);
   await page.mouse.down();
   await page.mouse.move(x + 60, y, { steps: 4 });
   await page.mouse.up();
-  await expect(page.getByText('Not used yet — paint some notes.')).toHaveCount(0);
+  await expect(page.getByText('Empty pattern')).toHaveCount(0);
 
-  // There is no last slot, so nothing counts what the bank holds: the slot itself is what says
-  // it took the pattern.
-  const slot = page.getByRole('button', { name: 'SFX slot 0' });
-  await slot.click();
-  await expect(slot).toHaveAttribute('aria-pressed', 'true');
+  await tab(page, 'SFX').click();
+  await expect(page.getByText('Empty SFX')).toBeVisible();
+  const sfxRoll = await boxOf(page.getByRole('img', { name: 'Piano roll' }));
+  await page.mouse.click(sfxRoll.x + FIRST_NOTE_X, sfxRoll.y + sfxRoll.height / 2);
+  await expect(page.getByText('Empty SFX')).toHaveCount(0);
   await page.screenshot({ path: 'test-results/v-editor-sound.png' });
 });
 
@@ -142,28 +133,35 @@ test('SOUND asks before removing an instrument that has notes, not an unused one
   page,
 }) => {
   await page.goto(editorUrl('sound'));
+  const remove = page.getByRole('button', { name: 'Remove lead' });
+  const row = page.getByRole('list', { name: 'Instruments' }).getByRole('listitem').first();
   await addInstrument(page);
-  // A blank instrument goes at once: undo has it.
-  await page.getByRole('button', { name: 'Remove lead' }).click();
+  await row.hover();
+  await remove.click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Remove lead' })).toHaveCount(0);
+  await expect(remove).toHaveCount(0);
 
   await addInstrument(page);
   const roll = page.getByRole('img', { name: 'Piano roll' });
   const box = await boxOf(roll);
   await page.mouse.click(box.x + FIRST_NOTE_X, box.y + box.height / 2);
-  await expect(page.getByText('Not used yet — paint some notes.')).toHaveCount(0);
+  await expect(page.getByText('Empty pattern')).toHaveCount(0);
 
-  await page.getByRole('button', { name: 'Remove lead' }).click();
+  await row.hover();
+  await remove.click();
   const dialog = page.getByRole('dialog');
   await expect(dialog).toContainText('Remove lead?');
   await expect(dialog).toContainText('1 pattern');
   await dialog.getByRole('button', { name: 'Cancel' }).click();
-  await expect(page.getByRole('button', { name: 'Remove lead' })).toBeVisible();
+  await row.hover();
+  await expect(remove).toBeVisible();
 
-  await page.getByRole('button', { name: 'Remove lead' }).click();
+  await remove.click();
   await page.getByRole('dialog').getByRole('button', { name: 'Remove' }).click();
-  await expect(page.getByRole('button', { name: 'Remove lead' })).toHaveCount(0);
+  await expect(remove).toHaveCount(0);
+  const toast = page.getByRole('button', { name: 'Undo', exact: true }).last();
+  await toast.click();
+  await expect(page.getByText('Empty pattern')).toHaveCount(0);
 });
 
 test('Ctrl+Y redoes in SOUND and in MAP', async ({ page }) => {
@@ -171,15 +169,14 @@ test('Ctrl+Y redoes in SOUND and in MAP', async ({ page }) => {
   await addInstrument(page);
   const roll = page.getByRole('img', { name: 'Piano roll' });
   const box = await boxOf(roll);
-  // Past the history's capture window, so the note is a step of its own, not the instrument's.
   await page.waitForTimeout(400);
   await page.mouse.click(box.x + FIRST_NOTE_X, box.y + box.height / 2);
-  const unused = page.getByText('Not used yet — paint some notes.');
-  await expect(unused).toHaveCount(0);
+  const empty = page.getByText('Empty pattern');
+  await expect(empty).toHaveCount(0);
   await page.keyboard.press('Control+z');
-  await expect(unused).toBeVisible();
+  await expect(empty).toBeVisible();
   await page.keyboard.press('Control+y');
-  await expect(unused).toHaveCount(0);
+  await expect(empty).toHaveCount(0);
 
   await page.locator('nc-rail').getByRole('button', { name: 'Map' }).click();
   const canvas = page.getByRole('img', { name: 'Map canvas' });
@@ -198,15 +195,14 @@ test('a held key glides across the keyboard', async ({ page }) => {
   await addInstrument(page);
   const c4 = page.getByRole('button', { name: 'C4', exact: true });
   const d4 = page.getByRole('button', { name: 'D4', exact: true });
-  const at = async (key: typeof c4): Promise<[number, number]> => {
+  const at = async (key: Locator): Promise<[number, number]> => {
     const box = await boxOf(key);
-    return [box.x + 10, box.y + box.height / 2];
+    return [box.x + box.width - 6, box.y + box.height / 2];
   };
 
   await page.mouse.move(...(await at(c4)));
   await page.mouse.down();
   await expect(c4).toHaveAttribute('aria-pressed', 'true');
-  // The button stays down: the key changes under the pointer, and the sound with it.
   await page.mouse.move(...(await at(d4)), { steps: 4 });
   await expect(d4).toHaveAttribute('aria-pressed', 'true');
   await expect(c4).toHaveAttribute('aria-pressed', 'false');
@@ -223,7 +219,6 @@ test('an instrument is born from a preset, under its name', async ({ page }) => 
     const height = await tall();
     await dialog.getByRole('button', { name: 'From a preset' }).click();
     await expect(dialog.getByRole('radio')).toHaveCount(23);
-    // One box, one height: the step and the shelf change what is in it and nothing else.
     expect(await tall()).toBe(height);
     const drums = dialog.getByRole('button', { name: 'Drums', exact: true });
     await drums.click();
@@ -241,33 +236,146 @@ test('an instrument is born from a preset, under its name', async ({ page }) => 
   };
 
   await born();
+  const rows = page.getByRole('list', { name: 'Instruments' }).getByRole('listitem');
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toContainText('Noise hat');
+  await tab(page, 'Instruments').click();
   await expect(page.getByRole('radio', { name: 'Noise', exact: true })).toHaveAttribute(
     'aria-checked',
     'true',
   );
-  const rows = page.getByRole('list', { name: 'Instruments' }).getByRole('listitem');
-  await expect(rows).toHaveCount(1);
-  await expect(rows.first()).toContainText('Noise hat');
 
-  // The same preset again is the same name, told apart by a number.
   await born();
   await expect(rows).toHaveCount(2);
   await expect(rows.nth(1)).toContainText('Noise hat 2');
 });
 
-/** The project's size budget is the only ceiling, so a number field never stops at a last one. */
-test('a pattern and a music go past any number', async ({ page }) => {
+test('the pattern menu creates a pattern and renames the chosen one in place', async ({ page }) => {
   await page.goto(editorUrl('sound'));
   await addInstrument(page);
-  const pattern = page.getByRole('textbox', { name: 'Pattern', exact: true });
-  await pattern.fill('120');
-  await pattern.press('Tab');
-  await expect(pattern).toHaveValue('120');
+  const roll = await boxOf(page.getByRole('img', { name: 'Piano roll' }));
+  await page.mouse.click(roll.x + FIRST_NOTE_X, roll.y + roll.height / 2);
+  const menu = page.getByRole('button', { name: 'Patterns', exact: true });
+  await menu.click();
+  await page.getByRole('button', { name: 'New pattern', exact: true }).click();
+  await expect(menu).toContainText('01');
 
-  const music = page.getByRole('textbox', { name: '#', exact: true });
-  await music.fill('20');
-  await music.press('Tab');
-  await music.click();
-  await music.press('ArrowUp');
-  await expect(music).toHaveValue('21');
+  await page.getByRole('menuitem').filter({ hasText: '01' }).click();
+  const field = page.getByRole('textbox', { name: 'Name' });
+  await field.fill('chorus');
+  await field.press('Enter');
+  await expect(page.getByRole('menuitem').filter({ hasText: 'chorus' })).toBeVisible();
+});
+
+test('a window popped out of its tabs goes back where it came from', async ({ page }) => {
+  await page.goto(editorUrl('sound'));
+  await tab(page, 'SFX').hover();
+  await page.getByRole('button', { name: 'Pop SFX out' }).click();
+  await expect(tab(page, 'SFX')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Base view' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Put SFX back' }).click();
+  await expect(tab(page, 'SFX')).toHaveCount(1);
+  await expect(page.getByRole('button', { name: 'Base view' })).toHaveCount(0);
+});
+
+test('a pattern dragged from the list lands on the timeline as a block', async ({ page }) => {
+  await page.goto(editorUrl('sound'));
+  await addInstrument(page);
+  const roll = await boxOf(page.getByRole('img', { name: 'Piano roll' }));
+  await page.mouse.click(roll.x + FIRST_NOTE_X, roll.y + roll.height / 2);
+
+  await tab(page, 'Timeline').click();
+  const row = page.getByRole('list', { name: 'Patterns' }).getByRole('listitem').first();
+  const from = await boxOf(row);
+  const lane = page.locator('[data-lane]');
+  const to = await boxOf(lane);
+  await page.mouse.move(from.x + 40, from.y + from.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(to.x + 30, to.y + to.height / 2, { steps: 10 });
+  await page.mouse.up();
+
+  const blocks = page.locator('[data-block]');
+  await expect(blocks).toHaveCount(1);
+  await blocks.first().click();
+  await page.keyboard.press('Delete');
+  await expect(blocks).toHaveCount(0);
+});
+
+test('each editor lists its shortcuts behind its ?', async ({ page }) => {
+  await page.goto(editorUrl('sound'));
+  await addInstrument(page);
+  await page.getByRole('button', { name: 'Shortcuts' }).click();
+  const help = page.getByRole('dialog', { name: 'Shortcuts' });
+  await expect(help).toContainText('Drag END');
+  await page.keyboard.press('Escape');
+
+  await tab(page, 'Timeline').click();
+  await page.getByRole('button', { name: 'Shortcuts' }).click();
+  const timeline = page.getByRole('dialog', { name: 'Shortcuts' });
+  await expect(timeline).toContainText('insert at the playhead');
+  await expect(timeline).toContainText('paste at the playhead');
+});
+
+test('row actions show on hover and keyboard focus, and not after a click', async ({ page }) => {
+  await page.goto(editorUrl('sound'));
+  await addInstrument(page);
+  const row = page.getByRole('list', { name: 'Instruments' }).getByRole('listitem').first();
+  const remove = page.getByRole('button', { name: 'Remove lead' });
+  await row.click({ position: { x: 40, y: 10 } });
+  await page.mouse.move(900, 900);
+  await expect(remove).toBeHidden();
+  await row.hover();
+  await expect(remove).toBeVisible();
+  await page.mouse.move(900, 900);
+  await expect(remove).toBeHidden();
+
+  await page.getByRole('button', { name: 'Add instrument' }).first().focus();
+  await page.keyboard.press('Tab');
+  await expect(row).toBeFocused();
+  await expect(remove).toBeVisible();
+  for (let k = 0; k < 3; k++) {
+    await page.keyboard.press('Tab');
+  }
+  await expect(remove).toBeFocused();
+});
+
+test('timeline blocks move, duplicate, paste and leave the lane', async ({ page }) => {
+  await page.goto(editorUrl('sound'));
+  await addInstrument(page);
+  const roll = await boxOf(page.getByRole('img', { name: 'Piano roll' }));
+  await page.mouse.click(roll.x + FIRST_NOTE_X, roll.y + roll.height / 2);
+
+  await tab(page, 'Timeline').click();
+  const row = page.getByRole('list', { name: 'Patterns' }).getByRole('listitem').first();
+  await row.click({ position: { x: 40, y: 10 } });
+  const lane = page.locator('[data-lane]');
+  await lane.click({ position: { x: 5, y: 10 } });
+  await page.keyboard.press('Enter');
+  const blocks = page.locator('[data-block]');
+  await expect(blocks).toHaveCount(1);
+
+  const before = await boxOf(blocks.first());
+  await page.mouse.move(before.x + 10, before.y + before.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(before.x + 10 + 2 * before.width, before.y + before.height / 2, {
+    steps: 8,
+  });
+  await page.mouse.up();
+  await expect.poll(async () => (await boxOf(blocks.first())).x).toBeGreaterThan(before.x);
+
+  await page.keyboard.press('Control+d');
+  await expect(blocks).toHaveCount(2);
+  await page.keyboard.press('Control+c');
+  await page.keyboard.press('Control+v');
+  await expect(blocks).toHaveCount(3);
+
+  const last = await boxOf(blocks.last());
+  await page.mouse.move(last.x + 10, last.y + last.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(last.x + 10, last.y + 300, { steps: 8 });
+  await expect(page.locator('[data-block][data-leaving]')).toHaveCount(1);
+  await page.mouse.up();
+  await expect(blocks).toHaveCount(2);
+  await expect(page.locator('[data-leaving]')).toHaveCount(0);
 });

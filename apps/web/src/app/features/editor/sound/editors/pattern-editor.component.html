@@ -1,0 +1,26 @@
+<nc-note-sheet-editor
+  *transloco="let t"
+  source="patterns"
+  [sheet]="pattern()"
+  [loop]="store.loop()"
+  [clearLabel]="t('editor.sound.clearPattern', { n: pad(pattern().slot) })"
+  (notesChange)="setNotes($event)"
+  (bpmChange)="setBpm($event)"
+  (stepsChange)="setSteps($event)"
+  [emptyTitle]="t('editor.sound.emptyPattern')"
+  emptyIcon="grid"
+  (loopChange)="setLoop($event)"
+  (cleared)="clear()">
+  <nc-sound-picker
+    menu
+    [title]="t('editor.sound.patterns')"
+    [addLabel]="t('editor.sound.newPattern')"
+    [items]="items()"
+    [current]="currentItem()"
+    [peersOf]="peersOf"
+    (picked)="pick($event)"
+    (created)="deck.createPattern()"
+    (duplicated)="deck.duplicatePattern($event)"
+    (removed)="deck.removePattern($event)"
+    (renamed)="rename($event)" />
+</nc-note-sheet-editor>

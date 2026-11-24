@@ -41,9 +41,9 @@ describe('migrateGame across steps', () => {
 
     const report = migrateGame(doc);
 
-    expect(report).toMatchObject({ from: 0, to: 3, applied: true });
+    expect(report).toMatchObject({ from: 0, to: GAME_SCHEMA_VERSION, applied: true });
     const game = new EditableGame(doc);
-    expect(game.schemaVersion).toBe(3);
+    expect(game.schemaVersion).toBe(GAME_SCHEMA_VERSION);
     expect(game.files[0]?.text.toString()).toContain('input.key_pressed("ArrowLeft")');
     expect(game.actions.map((action) => action.name)).toEqual([
       'left',
@@ -73,10 +73,10 @@ describe('migrateGame across steps', () => {
 
     const report = migrateGame(doc);
 
-    expect(report).toMatchObject({ from: 1, to: 3, applied: true });
+    expect(report).toMatchObject({ from: 1, to: GAME_SCHEMA_VERSION, applied: true });
     expect(report.warnings).toEqual([]);
     const game = new EditableGame(doc);
-    expect(game.schemaVersion).toBe(3);
+    expect(game.schemaVersion).toBe(GAME_SCHEMA_VERSION);
     expect(game.files[0]?.text.toString()).toBe(
       [
         'function _init()',
@@ -124,14 +124,22 @@ describe('migrateGame across steps', () => {
 
 describe('migrateGame renames past the schema', () => {
   it('brings a current game to the current names without moving its version', () => {
-    const doc = docAt(3, 'local p, s = sound.music_position()\nif input.btn("a") then end');
+    const doc = docAt(
+      GAME_SCHEMA_VERSION,
+      'local p, s = sound.music_position()\nif input.btn("a") then end',
+    );
     expect(needsMigration(doc)).toBe(true);
 
     const report = migrateGame(doc);
 
-    expect(report).toMatchObject({ from: 3, to: 3, applied: true, counts: { 'rewrites:main': 2 } });
+    expect(report).toMatchObject({
+      from: GAME_SCHEMA_VERSION,
+      to: GAME_SCHEMA_VERSION,
+      applied: true,
+      counts: { 'rewrites:main': 2 },
+    });
     const game = new EditableGame(doc);
-    expect(game.schemaVersion).toBe(3);
+    expect(game.schemaVersion).toBe(GAME_SCHEMA_VERSION);
     expect(doc.getMap(KEYS.meta).has('migratedFrom')).toBe(false);
     expect(game.files[0]?.text.toString()).toBe(
       'local p, s = sound.music_pos()\nif input.held("a") then end',
@@ -144,21 +152,29 @@ describe('migrateGame renames past the schema', () => {
 
     const report = migrateGame(doc);
 
-    expect(report).toMatchObject({ from: 1, to: 3, applied: true });
+    expect(report).toMatchObject({ from: 1, to: GAME_SCHEMA_VERSION, applied: true });
     expect(new EditableGame(doc).files[0]?.text.toString()).toBe(
       'if input.pressed("a") then local p, s = sound.music_pos() end',
     );
   });
 
   it('leaves a current game with nothing to rename untouched', () => {
-    const doc = docAt(3, 'local p, s = sound.music_pos()\n-- sound.music_position() was its name');
+    const doc = docAt(
+      GAME_SCHEMA_VERSION,
+      'local p, s = sound.music_pos()\n-- sound.music_position() was its name',
+    );
     const updates: unknown[] = [];
     doc.on('update', (update: unknown) => updates.push(update));
 
     expect(needsMigration(doc)).toBe(false);
     const report = migrateGame(doc);
 
-    expect(report).toMatchObject({ from: 3, to: 3, applied: false, counts: {} });
+    expect(report).toMatchObject({
+      from: GAME_SCHEMA_VERSION,
+      to: GAME_SCHEMA_VERSION,
+      applied: false,
+      counts: {},
+    });
     expect(updates).toEqual([]);
   });
 });

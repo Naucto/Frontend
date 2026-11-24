@@ -52,7 +52,7 @@ export const INSTRUMENT_BOUNDS = {
  */
 export const PATTERN_BOUNDS = {
   bpm: { min: 40, max: 240 },
-  steps: { min: 1, max: 64 },
+  steps: { min: 1, max: 128 },
 } as const satisfies Record<'bpm' | 'steps', Bound>;
 
 /** Everything that makes an instrument sound — not what it is called or shown as. */

@@ -1,7 +1,7 @@
 /* eslint-disable */
 // AudioWorkletProcessor wrapping SynthCore + Sequencer. Bundled to a string by
 // scripts/build-worklet.mjs and loaded through a Blob URL by WebAudioBackend.
-import type { Instrument, Pattern } from '../model';
+import type { Instrument, Pattern, Sfx } from '../model';
 import { Sequencer } from '../Sequencer';
 import { SynthCore } from '../SynthCore';
 import type { SynthCommand, SynthEvent } from './protocol';
@@ -21,6 +21,7 @@ class NauctoSynthProcessor extends AudioWorkletProcessor {
   private readonly seq = new Sequencer(this.synth, sampleRate);
   private instruments = new Map<string, Instrument>();
   private patterns = new Map<string, Pattern>();
+  private sfx = new Map<string, Sfx>();
   private tick = 0;
   private lastPos: string | null = null;
   /** Frozen, not silenced: the clock and the voices stay where they are, to go on from there. */
@@ -48,6 +49,7 @@ class NauctoSynthProcessor extends AudioWorkletProcessor {
       case 'library':
         this.instruments = new Map(cmd.instruments);
         this.patterns = new Map(cmd.patterns);
+        this.sfx = new Map(cmd.sfx);
         this.seq.setLibrary(this.instruments, this.patterns);
         break;
       case 'sample':
@@ -62,7 +64,7 @@ class NauctoSynthProcessor extends AudioWorkletProcessor {
         this.synth.noteOff(cmd.channel);
         break;
       case 'play_sfx': {
-        const p = this.patterns.get(cmd.pattern);
+        const p = this.sfx.get(cmd.slot);
         if (p) this.seq.playSfx(p, cmd.pitchOffset, cmd.volume, cmd.channel);
         break;
       }
@@ -71,6 +73,9 @@ class NauctoSynthProcessor extends AudioWorkletProcessor {
         break;
       case 'set_loop':
         this.seq.setLoop(cmd.loop);
+        break;
+      case 'set_bpm':
+        this.seq.setBpm(cmd.bpm);
         break;
       case 'stop_music':
         this.seq.stopMusic(cmd.fadeOut);
@@ -120,10 +125,10 @@ class NauctoSynthProcessor extends AudioWorkletProcessor {
 
     if (++this.tick % 8 === 0) {
       const pos = this.seq.position();
-      const key = pos ? `${String(pos.pattern)}:${String(pos.step)}` : null;
+      const key = pos ? String(pos.beat) : null;
       if (key !== this.lastPos) {
         this.lastPos = key;
-        if (pos) this.send({ type: 'position', pattern: pos.pattern, step: pos.step });
+        if (pos) this.send({ type: 'position', beat: pos.beat });
         else this.send({ type: 'stopped' });
       }
       let voices = 0;

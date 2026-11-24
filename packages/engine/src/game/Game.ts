@@ -10,7 +10,8 @@ import {
   MAX_ACTIONS,
   parseInputId,
 } from '../input/actions';
-import type { Instrument, Pattern, Song } from '../sound/model';
+import type { Instrument, Pattern, Sfx, Song } from '../sound/model';
+import { decodePattern, decodeSfx, decodeSong } from '../sound/storage';
 import { BUBBLEGUM_16 } from './defaults';
 import { GameMap, type MapWriter } from './GameMap';
 import { clampMapSize, clampSheetSize, type Geometry, geometryOf } from './geometry';
@@ -863,17 +864,30 @@ export class Game {
   getInstruments(): Map<string, Instrument> {
     return this.parseMap<Instrument>(this.instruments);
   }
+  private decodeMap<T>(map: Y.Map<string>, decode: (raw: unknown) => T | null): Map<string, T> {
+    const out = new Map<string, T>();
+    map.forEach((raw, key) => {
+      try {
+        const value = decode(JSON.parse(raw));
+        if (value) {
+          out.set(key, value);
+        }
+      } catch {
+        /* ignore corrupt entry */
+      }
+    });
+    return out;
+  }
+
   getPatterns(): Map<string, Pattern> {
-    return this.parseMap<Pattern>(this.patterns);
+    return this.decodeMap(this.patterns, decodePattern);
   }
   getSongs(): Map<string, Song> {
-    return this.parseMap<Song>(this.songs);
+    return this.decodeMap(this.songs, decodeSong);
   }
-  /** sfx slot number → pattern id */
-  getSfxSlots(): Map<string, string> {
-    const out = new Map<string, string>();
-    this.sfx.forEach((patternId, key) => out.set(key, patternId));
-    return out;
+  /** sfx slot number → its SFX */
+  getSfx(): Map<string, Sfx> {
+    return this.decodeMap(this.sfx, decodeSfx);
   }
   /** Sample id → its encoded PCM, as stored. */
   getSamples(): Map<string, string> {
