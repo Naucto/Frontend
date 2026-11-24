@@ -145,7 +145,9 @@ icons drawn on the kit pixel, Bubblegum-16 palette, dark + light themes).
   enters it with no dialog until the session is left, ends or refuses the player. The page drops
   the params once the session is joined or turned down, so a reload never goes back in.
   Permissions come from the game's `net.permissions` map (`core/net/net-permissions.ts`, bits
-  CLIENT_READ=1 / CLIENT_WRITE=2, allow-by-default).
+  CLIENT_READ=1 / CLIENT_WRITE=2, allow-by-default). An entry with `flags` is a path's own rule; one
+  without declares the path, which takes the rule of its nearest ancestor that has one. The NET
+  tab declares paths before anything runs and adds the session's values beside them once one does.
 - **Usage analytics** (`core/analytics`): nothing is collected while the backend's `analytics`
   feature flag is off. The banner in `shared/consent` asks once, and the answer lives six months in
   the `naucto_consent` cookie. With consent, page views (`analytics.service.ts`), beats
