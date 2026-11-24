@@ -13,17 +13,12 @@ export const CLIP_SECONDS = 25;
 const CLIP_MAX_BYTES = 4 * 1024 * 1024;
 
 /**
- * How many video pixels a game pixel becomes, nearest-neighbour. Encoders store colour once per
- * 2×2 block of pixels: at 1:1 every game pixel shares its colour with its neighbours and edges
- * bleed; at 2 each game pixel fills a whole block, so its colour survives.
+ * Video encoders store colour once per 2×2 block of pixels: each game pixel must fill whole
+ * blocks, or its colour bleeds into its neighbours.
  */
 const CLIP_SCALE = 2;
 
-/**
- * What the encoder aims for: a clip of {@link CLIP_SECONDS} at this rate weighs under {@link
- * CLIP_MAX_BYTES}, and flat colour at {@link CLIP_SCALE}× stays free of blocks. Busy games stay
- * well below it; the rate is a ceiling, not what a pixel-art clip spends.
- */
+/** At this rate a clip of {@link CLIP_SECONDS} stays under {@link CLIP_MAX_BYTES}. */
 const CLIP_BITS_PER_SECOND = 1_000_000;
 
 const CLIP_FRAMES_PER_SECOND = 30;
@@ -31,10 +26,6 @@ const CLIP_FRAMES_PER_SECOND = 30;
 /** In the order they are tried: the first one this browser records wins. */
 const CLIP_TYPES = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/mp4'];
 
-/**
- * A copy of `source` at {@link CLIP_SCALE}×, redrawn every frame without smoothing, so the
- * recording gets crisp pixels. `stop` ends the copying.
- */
 function scaledCopy(source: HTMLCanvasElement): { canvas: HTMLCanvasElement; stop: () => void } {
   const canvas = document.createElement('canvas');
   canvas.width = source.width * CLIP_SCALE;
