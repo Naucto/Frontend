@@ -39,7 +39,11 @@
       <nc-field
         [label]="t('feedback.rating.liked')"
         for="rating-liked"
-        [counter]="liked().length > commentMax * 0.8 ? liked().length + '/' + commentMax : ''">
+        [counter]="
+          liked().length > commentMax * 0.8
+            ? t('count', { n: liked().length, max: commentMax })
+            : ''
+        ">
         <textarea
           ncInput
           id="rating-liked"
@@ -53,7 +57,11 @@
       <nc-field
         [label]="low() ? t('feedback.rating.why') : t('feedback.rating.improve')"
         for="rating-improve"
-        [counter]="improve().length > commentMax * 0.8 ? improve().length + '/' + commentMax : ''">
+        [counter]="
+          improve().length > commentMax * 0.8
+            ? t('count', { n: improve().length, max: commentMax })
+            : ''
+        ">
         <textarea
           ncInput
           id="rating-improve"

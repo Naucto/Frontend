@@ -74,17 +74,17 @@ test('a session disk wears its players, and joining lands the viewer on its open
 
   await link.focus();
   const flyout = shelf.locator(`[id="${(await link.getAttribute('aria-controls')) ?? ''}"]`);
-  await expect(flyout).toContainText('2/4');
+  await expect(flyout).toContainText('2 of 4');
 
   await item.locator('.action.join .rind').click();
   await expect(page).toHaveURL(/\/ui-kit$/);
   await expect(item.locator('.sticker.away .card')).toHaveCount(0);
   await expect(item.locator('.sticker.away .seat')).toHaveCount(1);
   await expect(item.locator('.action')).toHaveCount(0);
-  await expect(flyout).toContainText('3/4');
+  await expect(flyout).toContainText('3 of 4');
 
   await flyout.getByRole('button', { name: 'Leave' }).click();
-  await expect(flyout).toContainText('2/4');
+  await expect(flyout).toContainText('2 of 4');
   await expect(item.locator('.sticker.away .card')).toHaveCount(1);
 });
 

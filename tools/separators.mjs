@@ -96,3 +96,18 @@ export function separators(path, text) {
   }
   return [...shown.replace(SPELLINGS, '·').matchAll(SEPARATOR)].length;
 }
+
+/**
+ * A count written with a slash ("3/10", "{{ n }} / {{ max }}") where the app writes "3 of 10":
+ * two interpolations a slash apart in a template or the catalogue, or a slash concatenated
+ * between two values in a binding. A path or a URL is a slash inside one string and is not read.
+ */
+const SLASH_COUNT = /\}\}\s*\/\s*\{\{|\+\s*'\s*\/\s*'\s*\+/g;
+
+export function slashCounts(path, text) {
+  const shown = path.endsWith('.html') ? withoutMarkupComments(text) : text;
+  if (!path.endsWith('.html') && !path.endsWith('.json')) {
+    return 0;
+  }
+  return [...shown.matchAll(SLASH_COUNT)].length;
+}

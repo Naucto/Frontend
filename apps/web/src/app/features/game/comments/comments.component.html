@@ -28,7 +28,9 @@
             [placeholder]="t('comments.placeholder')"></textarea>
         </div>
         <div class="flex items-center justify-between">
-          <span class="text-label text-ink-4">{{ draft.length }} / {{ maxLen }}</span>
+          <span class="text-label text-ink-4">
+            {{ t('count', { n: draft.length, max: maxLen }) }}
+          </span>
           <button
             ncButton
             variant="primary"
@@ -76,7 +78,9 @@
                   (keydown.escape)="replyTo.set(null)"></textarea>
               </div>
               <div class="flex items-center justify-between">
-                <span class="text-label text-ink-4">{{ replyDraft.length }} / {{ maxLen }}</span>
+                <span class="text-label text-ink-4">
+                  {{ t('count', { n: replyDraft.length, max: maxLen }) }}
+                </span>
                 <button
                   ncButton
                   variant="primary"

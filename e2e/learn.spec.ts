@@ -118,12 +118,12 @@ test.describe('learn', () => {
     await step3.evaluate((el) => {
       el.scrollIntoView({ block: 'start' });
     });
-    await expect(bar).toContainText('Step 3/5');
+    await expect(bar).toContainText('Step 3 of 5');
     await expect(bar).toContainText('Walk into walls');
 
     await bar.getByRole('button', { name: 'Next step' }).click();
     await expect(page.locator('h2[data-step="4"]')).toBeInViewport();
-    await expect(bar).toContainText('Step 4/5');
+    await expect(bar).toContainText('Step 4 of 5');
     await expect(page).toHaveURL(/#step-4-/);
   });
 

@@ -15,7 +15,7 @@
     <nc-field
       [label]="t('feedback.bug.summary')"
       for="bug-title"
-      [counter]="title().length + '/' + titleMax">
+      [counter]="t('count', { n: title().length, max: titleMax })">
       <input
         ncInput
         id="bug-title"
@@ -31,7 +31,7 @@
       [label]="t('feedback.bug.description')"
       for="bug-description"
       [hint]="t('feedback.bug.descriptionHint')"
-      [counter]="description().length + '/' + descriptionMax">
+      [counter]="t('count', { n: description().length, max: descriptionMax })">
       <textarea
         ncInput
         id="bug-description"

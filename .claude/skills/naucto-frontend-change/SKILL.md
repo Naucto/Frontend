@@ -100,6 +100,9 @@ before touching a route parameter, a sort or anything of netplay.
   actions carry the `footer` attribute, the only thing the shell projects into its footer. One
   that a root service or the shell opens is fetched with `import()` when it opens and named by
   `import type` (`shared/moderation/content-flag-launcher.service.ts` is the model).
+- A count against a ceiling (characters typed, seats taken, a size against its budget) is
+  `t('count', { n, max })`, which reads "3 of 10": never a slash between the two numbers
+  (Design rule 7, checked by `pixel:check`).
 - A colour is a token, a frame a bevel utility, a size a step of the `--nc-h-*` ladder.
 - Reach the document through Angular (`inject(DOCUMENT)`, a template reference, `ElementRef`),
   never through the global.

@@ -14,7 +14,7 @@
 import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 
-import { separators, withoutMarkupComments } from './separators.mjs';
+import { separators, slashCounts, withoutMarkupComments } from './separators.mjs';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const ALLOW = join(ROOT, 'tools/pixel-allow.json');
@@ -140,6 +140,7 @@ function violations(path, text) {
     'stroke-width': count(text, STROKE_WIDTH, ([, width]) => offPixel(Number(width))),
     density: count(text, DENSITY),
     separator: separators(path, text),
+    count: slashCounts(path, text),
     'icon-scale':
       count(text, ICON_SIZE, ([, size]) => size !== '18' && size !== '24') +
       count(text, ICON_RESIZED) +
@@ -174,9 +175,14 @@ for (const dir of SOURCES) {
 // A catalogue is copy, so only the separator is looked for: a sentence that says "border" names
 // no class.
 for (const name of readdirSync(join(ROOT, CATALOGUES))) {
-  const separator = separators(name, readFileSync(join(ROOT, CATALOGUES, name), 'utf8'));
-  if (separator > 0) {
-    found[`${CATALOGUES}/${name}`] = { separator };
+  const text = readFileSync(join(ROOT, CATALOGUES, name), 'utf8');
+  const owed = Object.fromEntries(
+    Object.entries({ separator: separators(name, text), count: slashCounts(name, text) }).filter(
+      ([, total]) => total > 0,
+    ),
+  );
+  if (Object.keys(owed).length > 0) {
+    found[`${CATALOGUES}/${name}`] = owed;
   }
 }
 
@@ -213,7 +219,8 @@ if (over.length > 0) {
   console.error(
     '\nrounded: corners are stepped by the bevel utilities. border: a stroke is 3px or a multiple' +
       ' (border-3, or a bevel). density: use the --nc-h-* ladder. separator: no "·" between two' +
-      ' things; a chip, a label and its value, or two elements a gap apart. icon-scale: an icon' +
+      ' things; a chip, a label and its value, or two elements a gap apart. count: a count is' +
+      ' "3 of 10", the catalogue\'s `count` key, never "3/10". icon-scale: an icon' +
       ' is 18 beside words or 24 standing alone; a smaller mark is an nc-mark, drawn for its size.' +
       " icon-fit: a glyph keeps one pixel clear of its button's frame; a button of 36 holds an" +
       ' icon of 18, one of 40 or more an icon of 24, one of 30 a mark, one of 28 none.',

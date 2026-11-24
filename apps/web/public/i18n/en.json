@@ -1,4 +1,5 @@
 {
+  "count": "{{n}} of {{max}}",
   "nav": {
     "main": "Main navigation",
     "hub": "Hub",
@@ -821,7 +822,7 @@
       "renumberUnsure": "{{n}} calls name a sprite with something other than a plain number, so nothing can follow those — check them yourself.",
       "renumberConfirm": "Renumber",
       "shrinkMessage": "{{n}} drawn sprites fall outside a sheet that size. They stay in the file and come back if you grow it again, but nothing can reach them meanwhile.",
-      "used": "{{used}} / {{total}} used",
+      "used": "{{used}} of {{total}} used",
       "flags": "Flags",
       "flagsHelp": "Eight bits per sprite. The engine ignores them; your game reads them with `map.flag(index, bit)`.\n\nWhat each bit means is yours to decide: flag 0 can mean solid, flag 2 water.",
       "palette": "Palette",
@@ -1149,7 +1150,7 @@
     "hosts": "hosts",
     "elapsed": "{{when}}",
     "openToCollab": "open to collaborators",
-    "players": "{{n}} / {{m}} players"
+    "players": "{{n}} of {{m}} players"
   },
   "profile": {
     "games": "Games",
@@ -1212,7 +1213,7 @@
     "seeAlso": "See also",
     "previous": "Previous",
     "next": "Next",
-    "stepOf": "Step {{n}}/{{m}}",
+    "stepOf": "Step {{n}} of {{m}}",
     "prevStep": "Previous step",
     "nextStep": "Next step",
     "copyToNewGame": "Copy to new game",

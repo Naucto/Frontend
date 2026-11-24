@@ -53,7 +53,7 @@ describe('the bodies of a shelf flyout', () => {
 
     it('says when it started, which game it is and how full it is', () => {
       expect(text(host)).toContain('Started 12 min ago Bomberman');
-      expect(text(host)).toContain('Players 3/5');
+      expect(text(host)).toContain('Players 3 of 5');
     });
 
     it('lists the players under a label, the host badged, the seats left last', () => {

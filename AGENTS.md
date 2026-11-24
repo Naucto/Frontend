@@ -415,6 +415,10 @@ the rule wins.
    gains one, and a page does not draw a one-off. A piece is used for what it is for: a frame
    holds controls and data, so prose (a policy, an explanation) is headings and paragraphs, as
    the privacy page is, and never a stack of panels.
+7. **A count against its ceiling reads "3 of 10".** Characters typed against a limit, players
+   against seats, a size against its budget: the catalogue's `count` key (`{{n}} of {{max}}`),
+   never "3/10" or "3 / 10", which is rule 1's slash. `npm run pixel:check` (`count`) fails on two
+   values a slash apart in a template or the catalogue.
 
 ## Deliberate divergences from the design
 

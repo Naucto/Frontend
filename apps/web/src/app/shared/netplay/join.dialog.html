@@ -35,7 +35,10 @@
                 {{ t('net.join.hostedBy', { name: session.host }) }}
               </div>
             </div>
-            <nc-stat class="shrink-0" icon="users" [value]="session.players + '/' + session.max" />
+            <nc-stat
+              class="shrink-0"
+              icon="users"
+              [value]="t('count', { n: session.players, max: session.max })" />
             @if (session.players >= session.max) {
               <span class="label shrink-0 text-ink-4">{{ t('net.join.full') }}</span>
             } @else {

@@ -7,7 +7,7 @@
     <nc-field
       for="collection-title"
       [label]="t('collections.dialog.title')"
-      [counter]="title().length + ' / ' + TITLE_MAX">
+      [counter]="t('count', { n: title().length, max: TITLE_MAX })">
       <input
         ncInput
         id="collection-title"
@@ -20,7 +20,7 @@
     <nc-field
       for="collection-description"
       [label]="t('collections.dialog.description')"
-      [counter]="description().length + ' / ' + DESCRIPTION_MAX">
+      [counter]="t('count', { n: description().length, max: DESCRIPTION_MAX })">
       <textarea
         ncInput
         id="collection-description"

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { separators } from './separators.mjs';
+import { separators, slashCounts } from './separators.mjs';
 
 describe('separators', () => {
   it('counts a dot between two things in the catalogue', () => {
@@ -44,5 +44,19 @@ describe('separators', () => {
 
   it('reads a string that holds a comment marker as a string', () => {
     expect(separators('x.ts', "const url = 'https://naucto.net'; const a = 'a · b';")).toBe(1);
+  });
+});
+
+describe('slashCounts', () => {
+  it('counts a count written with a slash in a template and the catalogue', () => {
+    expect(slashCounts('x.html', '<span>{{ n }} / {{ max }}</span>')).toBe(1);
+    expect(slashCounts('x.html', '<nc-stat [value]="taken + \'/\' + max" />')).toBe(1);
+    expect(slashCounts('en.json', '{ "a": "{{used}}/{{total}} used" }')).toBe(1);
+  });
+
+  it('leaves paths, URLs and "of" alone', () => {
+    expect(slashCounts('x.html', '<a [routerLink]="\'/u/\' + name"></a>')).toBe(0);
+    expect(slashCounts('x.html', "<span>{{ t('count', { n: 3, max: 10 }) }}</span>")).toBe(0);
+    expect(slashCounts('x.ts', "const path = a + '/' + b;")).toBe(0);
   });
 });

@@ -12,7 +12,7 @@
       <span class="text-label tracking-label text-ink-3 uppercase">
         {{ t('hub.session.players') }}
       </span>
-      <nc-chip>{{ session().playerCount }}/{{ session().maxPlayers }}</nc-chip>
+      <nc-chip>{{ t('count', { n: session().playerCount, max: session().maxPlayers }) }}</nc-chip>
     </div>
     <ul class="grid gap-[6px]" [attr.aria-label]="t('hub.session.players')">
       @for (row of rows(); track $index) {
